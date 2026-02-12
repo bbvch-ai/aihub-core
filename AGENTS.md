@@ -10,7 +10,7 @@ uvicorn + gunicorn. Custom OAuth2/OIDC auth (Azure AD). LlamaIndex workflow engi
 asset-based data pipelines. Nuxt 3 + Vue 3 frontend with TypeScript. PrimeVue UI components, FormKit forms, VueFlow
 workflows. Docker Compose for all environments (dev, local, nightly, latest, GPU). VitePress docs with automated LLM
 translation. Valkey (Redis v5 client) for state, FerretDB (MongoEngine) for persistence, Milvus for vectors. Azure SDK
-suite (20+ packages). OpenTelemetry + OpenInference + Arize Phoenix for observability. Pydantic v2 validation. MyPy
+suite (20+ packages). OpenTelemetry + OpenInference + Langfuse for observability. Pydantic v2 validation. MyPy
 strict type checking. pytest-bdd for Gherkin BDD tests. Black formatter, Ruff linter. pnpm for frontend. Pulumi for
 Azure IaC.
 
@@ -103,7 +103,10 @@ packages.
 
 - **OpenTelemetry**: End-to-end distributed tracing
 - **OpenInference**: LLM-specific instrumentation
-- **Arize Phoenix**: AI observability and trace visualization (http://localhost:6006)
+- **Langfuse**: AI observability platform providing:
+  - Real-time trace visualization for agent execution flows
+  - Dataset management for evaluation (question-answer pairs)
+  - UI-driven experiment workflows (run agents against test datasets)
 
 **Messaging**:
 
@@ -268,7 +271,6 @@ Before marking task complete:
 
 **MCP Servers**:
 
-- **Phoenix MCP**: AI observability/tracing data (http://localhost:6006)
 - **MongoDB MCP**: Read-only database access (mongodb://admin:admin@localhost:27017/aihub)
 - **AI-Hub API MCP**: API endpoint testing (http://localhost:8000/mcp)
 
@@ -300,7 +302,7 @@ Before marking task complete:
 - Admin UI: http://localhost:3000
 - API: http://localhost:8000
 - Dagster: http://localhost:3000
-- Phoenix: http://localhost:6006
+- Langfuse: http://localhost:6006
 - SeaweedFS: http://localhost:8889
 
 ## Scope-Specific Guidance

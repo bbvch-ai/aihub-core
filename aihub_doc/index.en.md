@@ -61,7 +61,7 @@ how we compare in the [Comparison Matrix](docs/1_vision_and_positioning/2_why_sw
 
 ::: details How can we ensure AI decisions made within our Swiss company are traceable and auditable?
 The Swiss AI Hub community prioritizes **transparency for trust**. Our platform provides deep observability features.
-Every step an AI agent takes is visible, decisions are logged with context, and costs are tracked. Tools like Phoenix
+Every step an AI agent takes is visible, decisions are logged with context, and costs are tracked. Tools like Langfuse
 allow tracing every interaction, so you can always understand *why* an AI provided a certain answer, which is crucial
 for **compliance and auditing**. Explore these features under [Auditing & Observability](docs/2_platform/12_auditing/).
 :::

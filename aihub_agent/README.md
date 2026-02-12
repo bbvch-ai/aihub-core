@@ -275,7 +275,7 @@ Due to the asynchronous, event-driven nature of agents, traditional debugging wi
 #### 🔍 The Debugging Mindset: Tracing and Logging over Breakpoints
 
 ::: tip Debugging Tools
-Your primary tools are **Phoenix Tracing** for visual flow analysis and **structured logging** for detailed event inspection. Use `print` statements within steps for quick checks.
+Your primary tools are **Langfuse Tracing** for visual flow analysis and **structured logging** for detailed event inspection. Use `print` statements within steps for quick checks.
 :::
 
 #### 📝 Essential Debugging Tool: The `trigger.py` Script
@@ -304,30 +304,30 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-#### 👁️ Primary Observability Tool: Phoenix Tracing (Port 6006)
+#### 👁️ Primary Observability Tool: Langfuse Tracing (Port 6006)
 
-::: warning Phoenix Tracing
-**Phoenix** is your most important debugging tool. It provides a web UI to visualize the step-by-step execution of your agent, showing the flow of events, timings, and errors.
+::: warning Langfuse Tracing
+**Langfuse** is your most important debugging tool. It provides a web UI to visualize the step-by-step execution of your agent, showing the flow of events, timings, and errors.
 :::
 
 - **Access**: `http://localhost:6006` (available when the Docker stack is running).
-- **Usage**: Run your agent via its `trigger.py` script, then open the Phoenix UI to find the execution trace. Click on steps to inspect inputs, outputs, and metadata.
+- **Usage**: Run your agent via its `trigger.py` script, then open the Langfuse UI to find the execution trace. Click on steps to inspect inputs, outputs, and metadata.
 
-#### 🔗 Phoenix MCP Server Integration
+#### 🔗 Langfuse Integration
 
-::: info Phoenix MCP Server
-The Phoenix MCP server is running alongside the development environment and provides programmatic access to trace data for debugging and monitoring agent executions. This integration allows you to query trace information directly from your development tools.
+::: info Langfuse
+Langfuse is running alongside the development environment and provides programmatic access to trace data for debugging and monitoring agent executions. This integration allows you to query trace information directly from your development tools.
 :::
 
 **Key Concepts:**
 
-- **Projects**: Each agent is its own project in Phoenix
+- **Projects**: Each agent is its own project in Langfuse
 - **Traces**: Each agent run is its own trace
 - **Spans**: Each step within an agent run is its own span
 
 **Usage in Development:**
 
-- Use the Phoenix MCP server to programmatically check if an agent run was successful
+- Use the Langfuse API to programmatically check if an agent run was successful
 - Query trace data to analyze agent performance and behavior patterns
 - Access span annotations and metadata for detailed debugging
 - Retrieve experiment results and dataset information for evaluation
@@ -649,7 +649,7 @@ python run.py
 
 ::: tip Key Takeaways
 - **Start in the Playground**: The best way to learn is to study the examples in `/playground/minimal_workflow/`. Each directory demonstrates a specific pattern.
-- **Debug with Phoenix**: Always have `http://localhost:6006` open during development.
+- **Debug with Langfuse**: Always have `http://localhost:6006` open during development.
 - **Test with BDD**: Follow the `pytest-bdd` and `AgentTestRunner` patterns for all new agents.
 - **Compose Patterns**: Advanced agents are built by combining the simple patterns outlined in this guide.
 :::
@@ -676,11 +676,11 @@ This glossary defines terms, concepts, and technologies that have specific meani
 | **Context**               | State management system with two types: `RunContext` (ephemeral, single-run) and `ThreadContext` (persistent, cross-run). Used for maintaining state within and across agent executions.                                                        |
 | **Dispatchable Workflow** | The base class for all agents. Provides the infrastructure for event-driven step execution, event routing, and workflow orchestration.                                                                                                          |
 | **Event**                 | The atomic unit of communication in agent workflows. Pydantic models representing specific occurrences (e.g., `UserMessageEvent`, `StopEvent`, custom domain events).                                                                           |
-| **Event Flow**            | The sequence of events produced and consumed by agent steps. Visible in logs and Phoenix traces, crucial for debugging agent workflows.                                                                                                         |
+| **Event Flow**            | The sequence of events produced and consumed by agent steps. Visible in logs and Langfuse traces, crucial for debugging agent workflows.                                                                                                         |
 | **Fan-Out**               | A workflow pattern where a single step returns a list of events processed in parallel by downstream steps. Used for batch processing and concurrent operations.                                                                                 |
 | **Form Duality Pattern**  | A pattern where a single Pydantic model serves two purposes: **Form Mode** (fields contain `FormkitElement` instances for UI rendering) and **Data Mode** (fields contain primitive values). Enabled by the `as_form()` factory method.         |
 | **Human-in-the-Loop**     | A pattern where the workflow pauses to request input from a human user, emitting a request event and waiting for a response before continuing.                                                                                                  |
-| **Phoenix Tracing**       | A web-based debugging tool available at `http://localhost:6006` that provides step-by-step visualization of agent execution, event flow, and performance analysis.                                                                              |
+| **Langfuse Tracing**      | A web-based debugging tool available at `http://localhost:6006` that provides step-by-step visualization of agent execution, event flow, and performance analysis.                                                                              |
 | **Playground**            | The `/playground` directory containing self-contained examples of every agent pattern. Essential for learning and reference, organized into `agent/` (production examples) and `minimal_workflow/` (pattern examples).                          |
 | **Precondition**          | A function decorated with `@precondition()` that must return `True` for a step to execute. Used for synchronizing parallel workflow branches and ensuring data availability.                                                                    |
 | **Run**                   | A single, traceable execution of an agent's workflow, beginning with a `StartEvent` and ending with a `StopEvent`. Has an ephemeral `RunContext` for state management.                                                                          |

@@ -10,7 +10,7 @@ Der AI-Hub bietet **End-to-End Distributed Tracing und tiefe Observability** unt
 OpenTelemetry-Standards, was Ihnen vollständige Transparenz über jeden Aspekt Ihrer KI-Workflows verschafft. Von
 einzelnen Agent-Schritten bis hin zu komplexen Multi-Service-Prozessen können Sie jede Komponente Ihres KI-Ökosystems
 mit unternehmensgerechter Observability verfolgen, überwachen und optimieren, die sich nahtlos in
-Industriestandard-Tools wie Phoenix, SigNoz oder DataDog integriert.
+Industriestandard-Tools wie Langfuse, SigNoz oder DataDog integriert.
 :::
 
 ## Was ist tiefe Observability und wie implementiert der AI-Hub sie? :brain:
@@ -57,7 +57,7 @@ Benutzer, Agenten oder Workflows. Treffen Sie datengestützte Entscheidungen üb
 Kostenoptimierung.
 
 **🌐 Herstellerunabhängige Flexibilität**: OpenTelemetry stellt sicher, dass Ihre Observability-Daten mit jedem
-OTLP-kompatiblen Backend funktionieren. Beginnen Sie mit Phoenix für KI-spezifische Analysen und migrieren Sie dann zu
+OTLP-kompatiblen Backend funktionieren. Beginnen Sie mit Langfuse für KI-spezifische Analysen und migrieren Sie dann zu
 Unternehmens-Tools wie DataDog oder New Relic, ohne Daten zu verlieren oder die Instrumentierung zu ändern.
 
 ::: details **Automatische Instrumentierungsabdeckung**
@@ -142,7 +142,7 @@ LLM-Operationen werden automatisch über die LlamaIndex-Instrumentierung getrace
 **Semantische Ereignisse**: KI-spezifische Operationen emittieren semantische Ereignisse mit detaillierten Metadaten
 (Token-Anzahl, Modellnamen, abgerufene Dokumente), die Traces mit domänenspezifischen Informationen anreichern.
 
-**Sichtbarkeit**: Alle KI-Operationen erscheinen in der Phoenix Tracing UI mit spezialisierten Ansichten für die
+**Sichtbarkeit**: Alle KI-Operationen erscheinen in der Langfuse Tracing UI mit spezialisierten Ansichten für die
 LLM-Performance-Analyse.
 
 ### HTTP- und Datenbankoperationen (Operativ)
@@ -174,26 +174,26 @@ graph TB
     subgraph Collector["OpenTelemetry Collector"]
         direction TB
         CloudPipeline[traces/cloud Pipeline<br/>otlp → Filter/Rauschen → Batch → Cloud]
-        PhoenixPipeline[traces/phoenix Pipeline<br/>otlp → Filter/Phoenix → Transformieren → Batch → Phoenix]
+        LangfusePipeline[traces/langfuse Pipeline<br/>otlp → Filter/Langfuse → Transformieren → Batch → Langfuse]
     end
 
     subgraph Backends["Trace-Backends"]
-        Phoenix[Phoenix<br/>LLM-Observability]
+        Langfuse[Langfuse<br/>LLM-Observability]
         Cloud[Cloud-Backend<br/>Alle Traces]
     end
 
     Agents --> CloudPipeline
-    Agents --> PhoenixPipeline
+    Agents --> LangfusePipeline
     LLM --> CloudPipeline
-    LLM --> PhoenixPipeline
+    LLM --> LangfusePipeline
     HTTP --> CloudPipeline
     DBs --> CloudPipeline
 
     CloudPipeline --> Cloud
-    PhoenixPipeline --> Phoenix
+    LangfusePipeline --> Langfuse
 
     style CloudPipeline fill:#e1f5ff
-    style PhoenixPipeline fill:#fff4e1
+    style LangfusePipeline fill:#fff4e1
 ```
 
 ### Sammlungs-Pipelines
@@ -206,12 +206,12 @@ Der OpenTelemetry Collector verarbeitet Traces über zwei spezialisierte Pipelin
 - Prozessoren: `filter/noise` (entfernt Health Checks, Metrik-Endpunkte, routinemäßige DB-Abfragen), `batch`
 - Exporter: `otlp/cloud`
 
-**traces/phoenix**: Sendet KI-spezifische Traces an das lokale Phoenix
+**traces/langfuse**: Sendet KI-spezifische Traces an das lokale Langfuse
 
 - Receiver: `otlp` (gRPC Port 4317, HTTP Port 4318)
-- Prozessoren: `filter/phoenix` (behält nur OpenInference-Spans), `transform/phoenix` (fügt Projektmetadaten hinzu),
+- Prozessoren: `filter/langfuse` (behält nur OpenInference-Spans), `transform/langfuse` (fügt Projektmetadaten hinzu),
   `batch`
-- Exporter: `otlp/phoenix` (Port 6007)
+- Exporter: `otlp/langfuse` (Port 6007)
 
 ### Instrumentierung
 
@@ -266,9 +266,9 @@ Vertrauen der Benutzer stärkt.
 
 ## Zugriff auf Trace-Informationen
 
-### Phoenix UI (Entwicklung)
+### Langfuse UI (Entwicklung)
 
-Phoenix bietet spezialisierte LLM-Observability unter `http://localhost:6006`:
+Langfuse bietet spezialisierte LLM-Observability unter `http://localhost:6006`:
 
 **Funktionen**:
 
@@ -341,12 +341,12 @@ benutzerdefinierte Attribute zu Spans hinzufügen, um anwendungsspezifischen Kon
 
 ## Plattformflexibilität
 
-Während Phoenix LLM-spezifische Observability während der Entwicklung bietet, unterstützt die OpenTelemetry-Grundlage
+Während Langfuse LLM-spezifische Observability während der Entwicklung bietet, unterstützt die OpenTelemetry-Grundlage
 jedes OTLP-kompatible Backend:
 
 **Unterstützte Plattformen**:
 
-- **Phoenix**: Open-Source LLM-Observability (aktuelle lokale Entwicklung)
+- **Langfuse**: Open-Source LLM-Observability (aktuelle lokale Entwicklung)
 - **SigNoz**: Open-Source Observability-Plattform
 - **Jaeger**: Distributed Tracing fokussiert auf Microservices
 - **Tempo** (Grafana): Cloud-native Distributed Tracing
@@ -386,7 +386,7 @@ Das Distributed Tracing der Plattform bietet:
 
 ✅ **Automatische Instrumentierung**: HTTP-, Datenbank- und asynchrone Operationen ohne manuelle Codeänderungen getraced
 
-✅ **Unterstützung für Dual-Backend**: Phoenix für LLM-spezifische Entwicklungs-Observability, Cloud-Backend für die
+✅ **Unterstützung für Dual-Backend**: Langfuse für LLM-spezifische Entwicklungs-Observability, Cloud-Backend für die
 Produktion
 
 ✅ **Standardbasiert**: OpenTelemetry gewährleistet Herstellerflexibilität durch das OTLP-Protokoll
@@ -601,7 +601,7 @@ Die OpenTelemetry-Grundlage unterstützt den gleichzeitigen Export an mehrere Pl
 
 **Unterstützte Plattformen**:
 
-- **Phoenix**: Open-Source LLM-Observability (aktueller lokaler Entwicklungsschwerpunkt)
+- **Langfuse**: Open-Source LLM-Observability (aktueller lokaler Entwicklungsschwerpunkt)
 - **SigNoz**: Open-Source Observability-Plattform
 - **Datadog**: Kommerzielles APM mit umfassenden Funktionen
 - **Grafana Cloud**: Verwaltetes Prometheus, Loki und Tempo

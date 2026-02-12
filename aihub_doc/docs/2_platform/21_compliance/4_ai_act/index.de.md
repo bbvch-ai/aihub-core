@@ -37,7 +37,7 @@ Die Plattform bietet technische Maßnahmen, die die Compliance unterstützen:
 
 - Audit-Logging und Rückverfolgbarkeit
 - Human-in-the-Loop-Fähigkeiten
-- Phoenix-Tracing für Transparenz
+- Langfuse-Tracing für Transparenz
 - Quellenzuordnung für KI-Ausgaben
 - Konfigurierbare Zugriffssteuerungen
 

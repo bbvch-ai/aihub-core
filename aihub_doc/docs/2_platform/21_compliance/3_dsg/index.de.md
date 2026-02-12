@@ -36,7 +36,7 @@ EU-Bürger anbieten oder das Verhalten von EU-Personen überwachen. Siehe
 ### Hochrisikoprofiling
 
 Das revDSG erfordert die Überwachung der automatisierten Bewertung persönlicher Aspekte wie Risikobewertung und
-Verhaltensvorhersage. Die Plattform bietet Human-in-the-Loop-Funktionen, Phoenix-Tracing und Quellenzuordnung zur
+Verhaltensvorhersage. Die Plattform bietet Human-in-the-Loop-Funktionen, Langfuse-Tracing und Quellenzuordnung zur
 Unterstützung dieser Anforderung. Organisationen müssen Hochrisikoprofiling-Aktivitäten identifizieren,
 Datenschutz-Folgenabschätzungen durchführen und eine angemessene menschliche Aufsicht implementieren.
 

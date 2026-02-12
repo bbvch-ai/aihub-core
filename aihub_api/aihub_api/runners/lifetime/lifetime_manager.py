@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 
 import boto3
 from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
+from aihub_lib.infrastructure.langfuse.LangfuseProvisioner import LangfuseProvisioner
 from aihub_lib.infrastructure.milvus.MilvusSettings import MilvusSettings
 from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.infrastructure.nats.NatsSettings import NatsSettings
@@ -172,12 +173,15 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
 
         api_app = app.state.api_app
 
+        langfuse_provisioner = LangfuseProvisioner()
+
         if hasattr(api_app.state, "agent_controller"):
             agent_discovery_service = AgentEndpointsDiscoveryService(
                 nc=nc,
                 api_app=api_app,
                 controller=api_app.state.agent_controller,
                 locale_handler=ApiLocaleHandler(),
+                langfuse_provisioner=langfuse_provisioner,
                 discovery_interval=60,  # Check for new agents every 60 seconds
             )
             await agent_discovery_service.start()
@@ -200,6 +204,9 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
 
         await initialize_roles()
         await initialize_knowledge_buckets()
+
+        # Provision Langfuse with AI-Hub LLM connections
+        await langfuse_provisioner.provision()
 
         # Yield control back to FastAPI to start serving requests
         yield

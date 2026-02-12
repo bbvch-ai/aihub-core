@@ -63,7 +63,7 @@ durch die Koordination mehrerer spezialisierter Agents gelöst.
    die Abfolge der Schritte, die er unternehmen wird, um sein Ziel zu erreichen.
 2. **Implementieren Sie die Kernlogik**: Schreiben Sie Ihre `Agent`-Klasse, definieren Sie ihre stark typisierte
    `AgentConfig` und implementieren Sie die `@step`-Methoden, die Ereignisse transformieren.
-3. **Testen und Debuggen**: Verwenden Sie den `AgentTestRunner` für Unit-Tests und ein Tracing-Tool wie Phoenix, um den
+3. **Testen und Debuggen**: Verwenden Sie den `AgentTestRunner` für Unit-Tests und ein Tracing-Tool wie Langfuse, um den
    Ereignisfluss durch Ihren Agent visuell zu debuggen.
 4. **Deployen und Überwachen**: Packen Sie Ihren Agent und deployen Sie ihn im AI-Hub, wo seine Leistung und sein
    Verhalten in Echtzeit überwacht werden können.

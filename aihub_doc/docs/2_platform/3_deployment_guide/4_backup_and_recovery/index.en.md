@@ -40,7 +40,7 @@ snapshots (Azure with VM agent, VMware with quiesce). Create snapshots before ma
 
 ### What to back up
 
-PostgreSQL stores multiple databases: OpenWebUI, Phoenix, Dagster, and LiteLLM. A separate PostgreSQL instance stores
+PostgreSQL stores multiple databases: OpenWebUI, Langfuse, Dagster, and LiteLLM. A separate PostgreSQL instance stores
 the FerretDB backend. Use pg_basebackup for full backups and WAL archiving for point-in-time recovery.
 
 FerretDB stores agent configurations, process definitions, chat histories, user sessions, and knowledge base metadata.
