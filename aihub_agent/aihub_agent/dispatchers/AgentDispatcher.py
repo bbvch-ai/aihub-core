@@ -83,7 +83,7 @@ class AgentDispatcher(BaseDispatcher):
         # Pre-compute non-configurable values for merging with incoming configs
         self._non_configurable_values = agent_config.get_non_configurable_values()
 
-        self.agent_run_tracer = AgentRunTracer(redis=redis)
+        self.agent_run_tracer = AgentRunTracer()
 
         # Client for fetching agent configuration via NATS RPC
         self._config_client = AgentConfigClient(nc=nc)
@@ -154,17 +154,15 @@ class AgentDispatcher(BaseDispatcher):
         if event.is_stop_event or event.is_exception_event:
             logger.debug(f"Handling final event: {event.event_name}")
 
-            await self.agent_run_tracer.trace_run_completion(
-                topic=topic,
-                final_event=event,
-            )
+            try:
+                await run_context.delete_all()
+                await self.event_store.delete_all(topic.execution_context_id)
+                await self.step_store.delete_all(topic.execution_context_id)
 
-            await run_context.delete_all()
-            await self.event_store.delete_all(topic.execution_context_id)
-            await self.step_store.delete_all(topic.execution_context_id)
-
-            if event.is_exception_event:
-                await self.step_store.mark_execution_context_as_crashed(topic.execution_context_id)
+                if event.is_exception_event:
+                    await self.step_store.mark_execution_context_as_crashed(topic.execution_context_id)
+            finally:
+                self.agent_run_tracer.clear_run(topic.run_id)
             return
 
         steps = self.agent.get_steps_waiting_for_event(type(event))
@@ -300,14 +298,19 @@ class AgentDispatcher(BaseDispatcher):
                 logger.exception(f"Error executing step '{step_method.__name__}': {e}")
                 return
 
-            # If the step returns events, publish them
+            # Always finalize the span so Langfuse receives trace metadata (name, session,
+            # user) even for steps that return None (e.g. side-effect-only steps).
+            result_events = None
             if result:
                 if not isinstance(result, list):
                     result = [result]
+                result_events = result
 
-                self.agent_run_tracer.trace_step_stop(step_span, result)
+            await self.agent_run_tracer.trace_step_stop(step_span, result_events, topic)
 
-                for event in result:
+            # If the step returns events, publish them
+            if result_events:
+                for event in result_events:
                     if event.is_hitl_request_event:
                         logger.debug(f"Handling special event: HumanInTheLoopRequestEvent: {event.event_name}")
                         # Complete the event's topic info

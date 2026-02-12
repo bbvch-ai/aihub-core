@@ -43,7 +43,7 @@ This agent automatically:
 
 - Streams updates through the platform's WebSocket connections
 - Appears in the chat interface
-- Gets traced in Phoenix
+- Gets traced in Langfuse
 - Respects platform authentication
 - Stores state in platform databases
 - Handles errors according to platform patterns
@@ -59,7 +59,7 @@ SDK development happens outside the platform runtime. Developers work in their I
 before deploying. No need to understand the platform's internal architecture to build agents.
 
 **Update isolation**\
-Platform updates (new versions of Phoenix, LiteLLM, or the web UI) don't break your custom agents. SDK updates (new
+Platform updates (new versions of Langfuse, LiteLLM, or the web UI) don't break your custom agents. SDK updates (new
 decorators or patterns) don't require platform changes. Each layer evolves independently.
 
 **Clear ownership boundaries**\

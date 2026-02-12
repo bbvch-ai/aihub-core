@@ -9,7 +9,7 @@ from aihub_lib.infrastructure.logging.logger import enable_logging
 
 from aihub_api.routes.agent.AgentController import AgentController
 from aihub_api.routes.docling.DoclingController import DoclingController
-from aihub_api.routes.evaluation.EvaluationController import EvaluationController
+from aihub_api.routes.evaluation.DatasetController import DatasetController
 from aihub_api.routes.event.EventController import EventController
 from aihub_api.routes.file.FileController import FileController
 from aihub_api.routes.health.ApiHealthController import ApiHealthController
@@ -85,17 +85,7 @@ runner.mount(
     .generate_image()
     .stt()
     .tts(),
-    EvaluationController(
-        auth=auth,
-        judge=LLMConfig(model_name="text-generation/large"),
-    )
-    .create_dataset()
-    .get_datasets()
-    .get_dataset()
-    .update_dataset()
-    .get_experiment()
-    .get_experiments()
-    .run_experiment(),
+    DatasetController(auth=auth).create_dataset().get_datasets().get_dataset().update_dataset(),
     KnowledgeController(
         auth=auth,
         translation_llm_config=LLMConfig(model_name="text-generation/mini"),

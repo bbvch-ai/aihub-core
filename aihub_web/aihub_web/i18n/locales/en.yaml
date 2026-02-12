@@ -503,6 +503,7 @@ dashboard:
       label: "Tasks Delegated"
 
 evaluation:
+  langfuse_link: "Run Experiments"
   dataset:
     title: "Datasets"
     created_at: "Created:"
@@ -527,37 +528,6 @@ evaluation:
     save_action: "Save"
     saved_summary: "Saved"
     saved_detail: "Dataset saved"
-  experiment:
-    title: "Experiments"
-    created_at: "Run at:"
-    dataset: "Dataset"
-    language_and_dataset: "Language & Dataset"
-    language: "Experiment language:"
-    create_description: "Create a new experiment with a dataset and an Assistant!"
-    name: "Name"
-    description: "Description"
-    agent: "Agent"
-    select_dataset: "Select an Dataset"
-    select_assistant: "Select an Assistant"
-    cancel: "Cancel"
-    save: "Save"
-    running: "Experiment is running!"
-    running_description: "This might take several minutes. You can also leave this page and come back later."
-    failed: "Experiment Failed!"
-    failed_description: "Please contact AI-Hub dev team to find out what went wrong."
-    filter_by_assistant: "Filter by Assistant"
-    filter_by_dataset: "Filter by Dataset"
-    run_experiment: "Run Experiment"
-    create_new: "Create new Experiment"
-    result:
-      question: "Question"
-      reference_answer: "Reference Answer"
-      assistant_answer: "Assistant Answer"
-      latency_ms: "Latency"
-      conciseness: "Conciseness"
-      correctness: "Correctness"
-      completeness: "Completeness"
-
 role:
   title: "Access Roles"
   name: "Name"
