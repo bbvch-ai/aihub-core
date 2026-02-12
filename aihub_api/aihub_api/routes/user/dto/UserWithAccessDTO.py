@@ -36,9 +36,10 @@ class UserWithAccessDTO(UserDTO):
 
         dashboard_data = user_entity.dashboard.to_mongo()
         dashboard_dto = DashboardDTO(**dashboard_data)
-        valid_roles = RoleEntity.filter_existing_roles(user_entity.roles)
+        roles = user_entity.get_roles()
+        valid_roles = RoleEntity.filter_existing_roles(roles)
 
-        access_rules = RoleEntity.get_access_rules_for_roles(user_entity.roles)
+        access_rules = RoleEntity.get_access_rules_for_roles(roles)
 
         access_checker = AccessChecker(list(access_rules))
         access = Access()

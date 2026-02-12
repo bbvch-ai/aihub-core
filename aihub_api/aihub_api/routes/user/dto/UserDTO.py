@@ -20,7 +20,7 @@ class UserDTO(MinimalUserDTO):
         dashboard_data = user_entity.dashboard.to_mongo()
         dashboard_dto = DashboardDTO(**dashboard_data)
 
-        valid_roles = RoleEntity.filter_existing_roles(user_entity.roles)
+        valid_roles = RoleEntity.filter_existing_roles(user_entity.get_roles())
 
         return cls(
             id=user_entity.id,

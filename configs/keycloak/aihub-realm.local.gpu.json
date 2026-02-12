@@ -451,8 +451,8 @@
     "contentSecurityPolicyReportOnly": "",
     "xContentTypeOptions": "nosniff",
     "xRobotsTag": "none",
-    "xFrameOptions": "SAMEORIGIN",
-    "contentSecurityPolicy": "frame-src 'self'; frame-ancestors 'self' https://*.${DOMAIN}; object-src 'none';"
+    "xFrameOptions": "",
+    "contentSecurityPolicy": "frame-src 'self'; frame-ancestors 'self' https://${DOMAIN} https://*.${DOMAIN}; object-src 'none';"
   },
 
   "smtpServer": {},

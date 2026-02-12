@@ -344,7 +344,11 @@ services:
       OAUTH2_PROXY_CLIENT_ID: oauth2-proxy-datalake
       OAUTH2_PROXY_PROVIDER: oidc
       OAUTH2_PROXY_PROVIDER_DISPLAY_NAME: ${OAUTH_PROVIDER_NAME}
+      OAUTH2_PROXY_SKIP_OIDC_DISCOVERY: "true"
       OAUTH2_PROXY_OIDC_ISSUER_URL: https://auth.${DOMAIN}/realms/{{ KEYCLOAK_REALM }}
+      OAUTH2_PROXY_LOGIN_URL: https://auth.${DOMAIN}/realms/{{ KEYCLOAK_REALM }}/protocol/openid-connect/auth
+      OAUTH2_PROXY_REDEEM_URL: {{ KEYCLOAK_INTERNAL_URL }}/realms/{{ KEYCLOAK_REALM }}/protocol/openid-connect/token
+      OAUTH2_PROXY_OIDC_JWKS_URL: {{ KEYCLOAK_INTERNAL_URL }}/realms/{{ KEYCLOAK_REALM }}/protocol/openid-connect/certs
       OAUTH2_PROXY_COOKIE_SECRET: ${OAUTH_COOKIE_SECRET_SEAWEEDFS}
       OAUTH2_PROXY_CLIENT_SECRET: ${KEYCLOAK_OAUTH2_PROXY_DATALAKE_SECRET}
       OAUTH2_PROXY_EMAIL_DOMAINS: "*"
@@ -542,7 +546,11 @@ services:
       OAUTH2_PROXY_CLIENT_ID: oauth2-proxy-attu
       OAUTH2_PROXY_PROVIDER: oidc
       OAUTH2_PROXY_PROVIDER_DISPLAY_NAME: ${OAUTH_PROVIDER_NAME}
+      OAUTH2_PROXY_SKIP_OIDC_DISCOVERY: "true"
       OAUTH2_PROXY_OIDC_ISSUER_URL: https://auth.${DOMAIN}/realms/{{ KEYCLOAK_REALM }}
+      OAUTH2_PROXY_LOGIN_URL: https://auth.${DOMAIN}/realms/{{ KEYCLOAK_REALM }}/protocol/openid-connect/auth
+      OAUTH2_PROXY_REDEEM_URL: {{ KEYCLOAK_INTERNAL_URL }}/realms/{{ KEYCLOAK_REALM }}/protocol/openid-connect/token
+      OAUTH2_PROXY_OIDC_JWKS_URL: {{ KEYCLOAK_INTERNAL_URL }}/realms/{{ KEYCLOAK_REALM }}/protocol/openid-connect/certs
       OAUTH2_PROXY_COOKIE_SECRET: ${OAUTH_COOKIE_SECRET_ATTU}
       OAUTH2_PROXY_CLIENT_SECRET: ${KEYCLOAK_OAUTH2_PROXY_ATTU_SECRET}
       OAUTH2_PROXY_EMAIL_DOMAINS: "*"
@@ -829,7 +837,7 @@ services:
               || echo "ERROR: Failed to apply identity providers."
           ) &
         fi
-        exec /opt/keycloak/bin/kc.sh start --import-realm --hostname=auth.$$DOMAIN --proxy-headers=xforwarded --http-enabled=true
+        exec /opt/keycloak/bin/kc.sh start --import-realm --hostname=https://auth.$$DOMAIN --proxy-headers=xforwarded --http-enabled=true
     {%- endif %}
     environment:
       KC_DB: postgres
@@ -851,6 +859,12 @@ services:
       KEYCLOAK_DEV_USER_FIRSTNAME: ${KEYCLOAK_DEV_USER_FIRSTNAME}
       KEYCLOAK_DEV_USER_LASTNAME: ${KEYCLOAK_DEV_USER_LASTNAME}
       KEYCLOAK_DEV_USER_ROLES_JSON: ${KEYCLOAK_DEV_USER_ROLES_JSON}
+      # Client secrets (used by bash_envsubst in realm template)
+      KEYCLOAK_API_CLIENT_SECRET: ${KEYCLOAK_API_CLIENT_SECRET}
+      KEYCLOAK_OPENWEBUI_CLIENT_SECRET: ${KEYCLOAK_OPENWEBUI_CLIENT_SECRET}
+      KEYCLOAK_OAUTH2_PROXY_DAGSTER_SECRET: ${KEYCLOAK_OAUTH2_PROXY_DAGSTER_SECRET}
+      KEYCLOAK_OAUTH2_PROXY_DATALAKE_SECRET: ${KEYCLOAK_OAUTH2_PROXY_DATALAKE_SECRET}
+      KEYCLOAK_OAUTH2_PROXY_ATTU_SECRET: ${KEYCLOAK_OAUTH2_PROXY_ATTU_SECRET}
       # Azure Entra ID configuration (for identity provider federation)
       KEYCLOAK_AZURE_CLIENT_ID: ${KEYCLOAK_AZURE_CLIENT_ID}
       KEYCLOAK_AZURE_CLIENT_SECRET: ${KEYCLOAK_AZURE_CLIENT_SECRET}
@@ -1837,7 +1851,11 @@ services:
       OAUTH2_PROXY_CLIENT_ID: oauth2-proxy-dagster
       OAUTH2_PROXY_PROVIDER: oidc
       OAUTH2_PROXY_PROVIDER_DISPLAY_NAME: ${OAUTH_PROVIDER_NAME}
+      OAUTH2_PROXY_SKIP_OIDC_DISCOVERY: "true"
       OAUTH2_PROXY_OIDC_ISSUER_URL: https://auth.${DOMAIN}/realms/{{ KEYCLOAK_REALM }}
+      OAUTH2_PROXY_LOGIN_URL: https://auth.${DOMAIN}/realms/{{ KEYCLOAK_REALM }}/protocol/openid-connect/auth
+      OAUTH2_PROXY_REDEEM_URL: {{ KEYCLOAK_INTERNAL_URL }}/realms/{{ KEYCLOAK_REALM }}/protocol/openid-connect/token
+      OAUTH2_PROXY_OIDC_JWKS_URL: {{ KEYCLOAK_INTERNAL_URL }}/realms/{{ KEYCLOAK_REALM }}/protocol/openid-connect/certs
       OAUTH2_PROXY_COOKIE_SECRET: ${OAUTH_COOKIE_SECRET_DAGSTER}
       OAUTH2_PROXY_CLIENT_SECRET: ${KEYCLOAK_OAUTH2_PROXY_DAGSTER_SECRET}
       OAUTH2_PROXY_EMAIL_DOMAINS: "*"
