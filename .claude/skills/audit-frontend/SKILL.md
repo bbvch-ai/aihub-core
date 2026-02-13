@@ -1,8 +1,11 @@
 ---
 name: audit-frontend
-description: Comprehensive frontend code audit. Checks SDK freshness, unused components,
-  i18n coverage, composable patterns, accessibility, and Tailwind usage. Reports
-  issues with file locations and severity.
+description: >-
+  Run a comprehensive frontend code audit of the Nuxt 3 admin interface. Checks SDK freshness,
+  unused components, i18n coverage, composable patterns, accessibility, and Tailwind usage. Use
+  when user says 'audit the frontend', 'check frontend code quality', 'find unused components',
+  'i18n coverage report', 'composable health check', 'accessibility audit', or 'frontend code
+  review'. Reports issues with file locations and severity levels.
 allowed-tools: Read, Bash, Grep, Glob
 ---
 
@@ -92,3 +95,19 @@ Present findings as a summary table:
 | Tailwind Usage | pass/warn | Count | Low |
 
 Then list each issue with: file path, line number, description, suggested fix.
+
+## Examples
+
+- `/audit-frontend all` -- Run all 6 audits and produce summary table
+- `/audit-frontend i18n` -- Cross-check translation keys across de/en/fr/it locales only
+- `/audit-frontend composables` -- Check defineQuery/defineMutation patterns and cache invalidation
+- `/audit-frontend sdk` -- Compare SDK functions against running API OpenAPI spec
+
+## Troubleshooting
+
+| Issue | Resolution |
+|-------|-----------|
+| API not accessible for SDK check | Skip SDK freshness audit, report as "skipped (API unreachable)" |
+| Too many unused components found | Verify auto-import naming convention before flagging -- `Agent/Card.vue` becomes `AgentCard` |
+| False positive on i18n keys | Some keys are dynamically constructed -- check for template literals like `t(\`agent.${type}\`)` |
+| Composable uses bare `useQuery` | May be intentional for non-cached queries -- flag as warning, not error |

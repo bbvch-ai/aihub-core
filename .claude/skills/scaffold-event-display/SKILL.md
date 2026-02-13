@@ -1,8 +1,11 @@
 ---
 name: scaffold-event-display
-description: Create a new event display component for the agent event timeline.
-  Generates the Vue component with EventDisplayBase wrapper and registers it in the
-  event component resolver.
+description: >-
+  Create a new event display component for the agent event timeline. Generates the Vue component
+  with EventDisplayBase wrapper and registers it in the event component resolver. Use when user
+  says 'create event display', 'scaffold event component', 'add event to timeline', 'new agent
+  event UI', 'display a new event type', or 'register event display component'. Takes an event
+  name as argument.
 disable-model-invocation: true
 allowed-tools: Read, Write, Edit, Grep, Glob
 ---
@@ -102,6 +105,24 @@ Browse icons at https://icon-sets.iconify.design/. The project uses these icon s
 - `prime:*` (PrimeVue icons)
 
 Match the icon to the event's semantic meaning (e.g., `mynaui:tool` for tools, `hugeicons:brain` for LLM).
+
+## Examples
+
+**Typical invocation**: `/scaffold-event-display ToolCall`
+
+**Result**: Creates:
+- `components/Event/Display/ToolCallEvent.vue` — display component with EventDisplayBase wrapper
+- Updated `useEventComponent.ts` — import and mapping entry added
+
+## Troubleshooting
+
+| Problem | Solution |
+|---------|----------|
+| Event not rendered in timeline | Check mapping in `useEventComponent.ts` — event type name must match exactly |
+| Type errors on event props | Verify SDK types are generated — run `/generate-sdk` if missing |
+| Icon not showing | Verify icon name at https://icon-sets.iconify.design/ |
+| Component renders but empty | Check that `isEmpty` prop is not set and slot content accesses correct fields |
+| Inheritance fallback not working | Verify `_parent_event_names` includes the parent event type |
 
 ## Key Conventions
 

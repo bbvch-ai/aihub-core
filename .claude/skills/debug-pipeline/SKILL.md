@@ -2,40 +2,40 @@
 name: debug-pipeline
 description: >-
   Debug a Dagster pipeline by analyzing failed materializations, sensor issues, partition problems,
-  resource configuration errors, and IO manager failures. Use when a pipeline run fails, sensors
-  stop firing, assets don't materialize, or rclone/S3/Milvus connections fail.
+  resource config errors, and IO manager failures. Use when user says 'pipeline failed', 'asset
+  won't materialize', 'sensor not firing', 'S3 connection failed', 'Milvus error', 'partition
+  stuck', 'rclone not working', 'embedding failed', 'document parsing error', or 'Dagster run
+  failed'. Covers all infrastructure connections and pipeline stages.
 arguments:
   - name: issue
     description: Description of the pipeline issue (e.g., "asset won't materialize", "sensor not firing", "S3 connection failed", "partition stuck")
 allowed-tools: Read, Grep, Glob, Bash
 ---
 
-# Debug Pipeline — Troubleshooting Guide
+# Debug Pipeline -- Troubleshooting Guide
 
 Investigate the pipeline issue described via `$ARGUMENTS`.
 
-Follow the diagnostic steps below systematically. Read the referenced files to understand the code patterns, then help
+Follow the diagnostic steps below systematically. Read the referenced files to understand the code patterns, then
 identify the root cause.
 
 ---
 
 ## Step 1: Understand the Pipeline Structure
 
-Read the pipeline's definition file to understand which assets, resources, sensors, and schedules are configured.
-
-**Key entry point**: The `Definitions` object in the pipeline module (usually `__init__.py` or a file using
-`definitions_util.py` factories).
+1. Read the pipeline's definition file to understand which assets, resources, sensors, and schedules are configured
+2. **Key entry point**: The `Definitions` object in the pipeline module (usually `__init__.py` or a file using `definitions_util.py` factories)
 
 ```
 Read: aihub_pipeline/aihub_pipeline/util/definitions_util.py
 Read: aihub_pipeline/playground/__init__.py
 ```
 
-Check:
-- Which `default_*_definitions()` factory is used?
-- What assets are included?
-- What resources are configured?
-- Are sensors and schedules present?
+3. Determine:
+   - Which `default_*_definitions()` factory is used
+   - What assets are included
+   - What resources are configured
+   - Whether sensors and schedules are present
 
 ---
 
@@ -340,3 +340,12 @@ Read: aihub_pipeline/aihub_pipeline/resources/rclone/RcloneResource.py
 | **NATS settings** | `aihub_lib/aihub_lib/infrastructure/nats/NatsSettings.py` |
 | **Bucket → store name** | `aihub_pipeline/aihub_pipeline/util/bucket_utils.py` |
 | **Executor** | `aihub_pipeline/aihub_pipeline/executors/factory.py` |
+
+---
+
+## Examples
+
+- `/debug-pipeline asset won't materialize` -- Check automation conditions, upstream asset versions, sensor status
+- `/debug-pipeline S3 connection failed` -- Verify MinIO is running, check S3_ENDPOINT env var, test connectivity
+- `/debug-pipeline sensor not firing` -- Check sensor is in Definitions, verify NATS connectivity, check minimum_interval
+- `/debug-pipeline embedding failed after retries` -- Check LiteLLM endpoint, token limits, batch splitting logic

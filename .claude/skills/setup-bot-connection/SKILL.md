@@ -3,7 +3,9 @@ name: setup-bot-connection
 description: >-
   End-to-end guide for setting up a new bot connection: Azure App Registration,
   Bot Channels Registration, Teams/Slack channel configuration, PathEntity creation,
-  DevTunnel for local dev. Use when connecting the bot to a new channel or environment.
+  DevTunnel for local dev. Use when user says 'set up a bot', 'connect bot to Teams',
+  'connect bot to Slack', 'configure bot channel', 'create bot connection', 'DevTunnel setup',
+  'bot local development', or 'Azure bot registration'. Covers automated and manual setup.
 arguments:
   - name: channel
     description: Target channel or question (e.g., "Teams", "Slack", "local dev", "from scratch", "DevTunnel setup")

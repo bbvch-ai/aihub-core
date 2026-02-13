@@ -1,68 +1,94 @@
 ---
 name: update-doc
-description: Synchronize documentation with code changes. Reviews affected READMEs,
-  identifies stale documentation, and updates or creates missing docs.
+description: "Synchronize documentation with code changes by reviewing affected READMEs,
+  identifying stale docs, and updating or creating missing documentation. Use when
+  user says 'update docs', 'sync documentation', 'fix README', 'docs are outdated',
+  'update the README', or after any code change that affects documented behavior.
+  Covers root README, scope READMEs, and subdirectory docs."
 allowed-tools: Read, Grep, Glob, Edit, Write
 ---
 
-# Update Documentation - Keep Your Docs in Sync
+# Update Documentation - Sync Docs with Code Changes
 
-Guide for updating documentation to match code changes.
+Ensure all documentation accurately reflects current code. Finds stale READMEs, updates incorrect information, adds
+missing docs, and creates new READMEs where needed.
 
-## Overview
+## Steps
 
-1. Review what you've changed in your code
-2. Read all potentially affected README files
-3. Identify documentation that needs updates
-4. Fix inaccurate documentation
-5. Add missing documentation
-6. Create new README files where needed
-
-## Step 1: Survey Your Changes
+### 1. Survey Your Changes
 
 ```bash
 git diff main...HEAD
 git diff --name-only main...HEAD
 ```
 
-Note: Which scopes did you touch? New features or changed behavior? Undocumented quirks?
+Determine: Which scopes were touched? New features or changed behavior? Undocumented quirks?
 
-## Step 2: Read the Documentation Landscape
+### 2. Read the Documentation Landscape
 
-Read every README that could be affected by changes:
+Read every README that could be affected:
 
-- Start with the project root README
-- Check each scope-level README
-- Find all README files in subdirectories of modified scopes
+- `/home/user/aihub-core/README.md` (project root)
+- Scope-level READMEs (e.g., `aihub_api/README.md`)
+- Subdirectory READMEs within modified scopes
 
-## Step 3: The Critical Questions
+### 3. Evaluate Each README Against Code
 
-As you read each README, ask:
+For each README, ask:
 
-- **Is documentation now wrong?** Changed signatures, workflows, config, patterns?
-- **What's missing that would have helped you?** Gotchas, dependencies, setup steps?
-- **Does documentation conflict with reality?** Code is ALWAYS ground truth — fix the README.
+- **Is it now wrong?** Changed signatures, workflows, config, patterns?
+- **What is missing?** Gotchas, dependencies, setup steps that would have helped?
+- **Does it conflict with reality?** Code is ALWAYS ground truth -- fix the README.
 
-## Step 4: Fix Inaccurate Documentation
+### 4. Fix Inaccurate Documentation
 
-Update incorrect sections to match code changes. Examples: API endpoints, config parameters, workflow steps, dependencies.
+Update incorrect sections to match code. Common targets:
+- API endpoints and parameters
+- Configuration options and defaults
+- Workflow steps and prerequisites
+- Dependency lists and version requirements
 
-## Step 5: Add Missing Documentation
+### 5. Add Missing Documentation
 
-For new features: what it does, how to use it, config options, limitations.
-For discovered knowledge: setup steps, integration points, performance considerations, pitfalls.
+- **New features**: what it does, how to use it, config options, limitations
+- **Discovered knowledge**: setup steps, integration points, pitfalls
 
-## Step 6: Create New README Files
+### 6. Create New README Files (If Needed)
 
-Create when: new subdirectories with multiple files, complex features, standalone components.
+**Create when**: new subdirectories with multiple files, complex features, standalone components.
 
-Do NOT create when: folder has very few files, code is easy to read, docstrings are sufficient.
+**Do NOT create when**: folder has very few files, code is self-explanatory, docstrings are sufficient.
 
-### Writing Style
+## Writing Style
 
-- **Be VERY concise but complete**: Every word should add value
-- **Write for your future self**: Assume you'll forget everything
-- **Include "why" not just "what"**: Context matters
-- **DO NOT** copy over code (falls out of sync quickly)
-- **DO NOT** include import/usage code blocks (too low-level)
-- **DO NOT** create a README just for one file
+- Be VERY concise but complete -- every word should add value
+- Write for your future self -- assume you will forget everything
+- Include "why" not just "what" -- context matters
+- DO NOT copy over code (falls out of sync quickly)
+- DO NOT include import/usage code blocks (too low-level)
+- DO NOT create a README just for one file
+
+## Examples
+
+**Typical invocation**: `/update-doc` after completing a feature or refactor
+
+**Scope of changes**: If you modified `aihub_api/aihub_api/controller/agent.py`, check:
+- `aihub_api/README.md` for API endpoint docs
+- Root `README.md` for any high-level changes
+- Subdirectory READMEs near the modified file
+
+## Troubleshooting
+
+| Problem | Solution |
+|---------|----------|
+| Unsure which READMEs to update | Run `git diff --name-only main...HEAD` and check for READMEs in those directories |
+| README references removed code | Delete or rewrite the section -- do not leave stale references |
+| No README exists for new complex directory | Create one following the writing style above |
+| Conflicting information across READMEs | Code is ground truth -- update all READMEs to match |
+
+## Done When
+
+- All READMEs in affected scopes are accurate
+- No stale references to old code, endpoints, or config
+- New features have appropriate documentation
+- Writing style guidelines are followed

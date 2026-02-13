@@ -3,8 +3,10 @@ name: bot-reference
 description: >-
   Comprehensive reference for the bot integration platform: handler architecture,
   CompletionHandler pattern, multi-channel handling, HITL flow, conversation state,
-  NATS integration, streaming, and testing. Use when working on bot features or
-  understanding how the bot system works.
+  NATS integration, streaming, and testing. Use when user says 'how does the bot work',
+  'CompletionHandler pattern', 'bot architecture', 'Slack thread handling', 'HITL flow',
+  'bot streaming', 'conversation state management', 'bot testing', 'how do bot channels work',
+  or 'BaseChatBot'. Covers all bot components, request flow, and testing patterns.
 arguments:
   - name: topic
     description: Topic or question (e.g., "CompletionHandler", "Slack threads", "HITL flow", "streaming", "testing", "conversation state")

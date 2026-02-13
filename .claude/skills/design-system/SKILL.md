@@ -1,8 +1,6 @@
 ---
 name: design-system
-description: Reference guide for the AI-Hub design system. Describes the color palette,
-  typography, spacing, component patterns, dark mode, layout system, and design
-  principles. Use before building any UI to ensure visual consistency.
+description: Reference guide for the AI-Hub design system covering colors, typography, spacing, component patterns, dark mode, layout, borders, radius, and icons. Use when user says "what colors to use", "design system", "Tailwind classes for cards", "dark mode classes", "spacing values", "which border radius", "typography scale", "layout structure", "icon sizes", "how to style X", or before building any UI to ensure visual consistency. Returns exact Tailwind classes and design tokens.
 disable-model-invocation: true
 allowed-tools: Read, Grep, Glob
 ---

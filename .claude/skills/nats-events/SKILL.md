@@ -1,16 +1,17 @@
 ---
 name: nats-events
 description: >-
-  Comprehensive reference for NATS, JetStream, the Swiss AI Agent Protocol,
-  events, pub/sub, RPC, topics, and message flow. Use when working with
-  event-driven messaging, adding new events, creating publishers/subscribers,
-  or understanding inter-service communication.
+  Reference for NATS messaging, JetStream, and the Swiss AI Agent Protocol. Use when user says
+  'how to publish an event', 'create a subscriber', 'NATS subject format', 'event hierarchy',
+  'add a new event type', 'JetStream consumer setup', 'RPC pattern', 'Control vs Display event',
+  'TopicManager usage', 'how events flow between services', or 'NATS connection config'. Covers
+  events, pub/sub, RPC, topics, streams, dispatchers, and tracing.
 arguments:
   - name: topic
     description: Topic or question (e.g., "publish event", "RPC pattern", "event hierarchy", "JetStream consumer")
 ---
 
-# NATS & Events — Swiss AI Agent Protocol Reference
+# NATS & Events -- Swiss AI Agent Protocol Reference
 
 Look up NATS/event information. Topic or question via `$ARGUMENTS`.
 

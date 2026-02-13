@@ -1,8 +1,11 @@
 ---
 name: api-auth-guide
-description: Reference guide for the API authentication system, UserIdentity, permission
-  model, AccessChecker, and RBAC. Covers OAuth2, API keys, superuser auth,
-  permission templates, and access level checks.
+description: >-
+  Reference guide for the API authentication and authorization system. Use when user says 'how
+  does auth work', 'add permission to endpoint', 'create a role', 'UserIdentity', 'API key
+  setup', 'RBAC permissions', 'AccessChecker usage', 'OAuth2 config', 'superuser token',
+  'permission template syntax', or 'protect an endpoint'. Covers OAuth2, API keys, superuser
+  auth, RBAC roles, permission wildcards, and AccessChecker patterns.
 disable-model-invocation: true
 allowed-tools: Read, Grep, Glob
 ---
@@ -436,3 +439,22 @@ SUPERUSER_TOKEN=<min-64-chars>
 # OpenWebUI
 AUTH_OPEN_WEBUI_SIGNING_SECRET=<min-64-chars>
 ```
+
+---
+
+## Examples
+
+- `/api-auth-guide how to protect a new endpoint` -- Shows `user_with_permission` pattern with Security dependency
+- `/api-auth-guide permission template syntax` -- Explains wildcards (`*`, `>`, `?*`, `?>`) and template format
+- `/api-auth-guide create a role for agent viewers` -- Shows RoleEntity creation with access rules
+- `/api-auth-guide test auth in dev` -- Shows DangerousDevelopmentOnlyAuthHandler and superuser token usage
+
+## Troubleshooting
+
+| Issue | Likely Cause | Fix |
+|-------|-------------|-----|
+| 401 Unauthorized on all endpoints | SUPERUSER_TOKEN not set or too short | Set token with min 64 chars in .env |
+| 403 Forbidden despite valid token | User's roles lack required access rule | Check RoleEntity access_rules match the permission template |
+| OAuth2 token rejected | Wrong OAUTH_CLIENT_ID or AUTHORITY_URL | Verify Azure AD app registration matches env vars |
+| API key not working | `AUTH_ENABLE_API_ACCESS` is false | Set to `true` in env, restart API |
+| Permission template not matching | Path params not resolving in template | Verify `{param}` names match FastAPI path parameter names exactly |
