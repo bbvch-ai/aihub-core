@@ -45,7 +45,10 @@ This directory contains all Claude Code configuration for the aihub-core monorep
 │   ├── nats-events/       # NATS, JetStream, events, pub/sub, RPC reference
 │   ├── dagster-pipelines/ # Dagster assets, resources, IO managers, partitions reference
 │   ├── rclone-guide/      # Rclone cloud storage integration reference
-│   └── debug-pipeline/    # Pipeline troubleshooting and debugging
+│   ├── debug-pipeline/    # Pipeline troubleshooting and debugging
+│   ├── setup-bot-connection/ # Bot connection setup (Azure, Teams, Slack)
+│   ├── debug-bot/         # Bot troubleshooting and debugging
+│   └── bot-reference/     # Bot architecture and patterns reference
 ├── agents/                # Custom subagents with specialized roles
 │   ├── codebase-expert.md # Deep knowledge builder (with memory)
 │   ├── code-reviewer.md   # Quality and security reviewer
@@ -78,7 +81,7 @@ This directory contains all Claude Code configuration for the aihub-core monorep
 
 ## Quick Reference
 
-### Skills (37 total)
+### Skills (40 total)
 
 | Category | Skill | Description |
 |----------|-------|-------------|
@@ -119,6 +122,9 @@ This directory contains all Claude Code configuration for the aihub-core monorep
 | | `/dagster-pipelines` | Dagster assets, resources, IO managers, partitions |
 | | `/rclone-guide` | Rclone cloud storage integration |
 | | `/debug-pipeline` | Pipeline troubleshooting and debugging |
+| Bot | `/setup-bot-connection` | Bot connection setup (Azure, Teams, Slack) |
+| | `/debug-bot` | Bot troubleshooting and debugging |
+| | `/bot-reference` | Bot architecture and patterns reference |
 
 ### Local Overrides (gitignored)
 

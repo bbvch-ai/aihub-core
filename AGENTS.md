@@ -264,7 +264,7 @@ Before marking task complete:
 
 **Full documentation**: `/home/user/aihub-core/.claude/README.md`
 
-**Skills** (37 total — invoke via `/skill-name`):
+**Skills** (40 total — invoke via `/skill-name`):
 
 - **Documentation**: `/create-pr`, `/update-doc`, `/explain`, `/document-decision`, `/document-feature`,
   `/document-solution`, `/implement-feedback-from-pr`
@@ -276,6 +276,7 @@ Before marking task complete:
   `/debug-frontend`, `/audit-frontend`, `/primevue-lookup`, `/scaffold-frontend-subpage`,
   `/scaffold-frontend-component`, `/design-system`
 - **API & Pipeline**: `/api-auth-guide`, `/nats-events`, `/dagster-pipelines`, `/rclone-guide`
+- **Bot**: `/setup-bot-connection`, `/debug-bot`, `/bot-reference`
 
 **Custom Subagents** (7 — Claude Code uses these automatically for specialized tasks):
 
