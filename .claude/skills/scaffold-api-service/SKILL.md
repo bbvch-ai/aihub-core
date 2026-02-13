@@ -14,7 +14,7 @@ Generate a service layer for a resource. The resource name should be provided vi
 
 ## Step 1: Read Reference Materials
 
-1. Read the API scope guide: `/home/user/aihub-core/aihub_api/AGENTS.md`
+1. Read the API scope guide: `/home/user/aihub-core/aihub_api/CLAUDE.md`
 2. Study these reference services:
    - CRUD: `aihub_api/aihub_api/routes/agent/AgentService.py`
    - Pagination: `aihub_api/aihub_api/routes/thread/ThreadService.py`

@@ -43,7 +43,7 @@ for scope in "${scopes[@]}"; do
   if echo "$new_string" | grep -qE "from ${scope}[. ]|import ${scope}"; then
     if ! check_violation "$scope"; then
       echo "WARNING: Cross-scope import detected. '$source_scope' is importing from '$scope'." >&2
-      echo "Shared code should go through aihub_lib. See AGENTS.md for scope boundaries." >&2
+      echo "Shared code should go through aihub_lib. See CLAUDE.md for scope boundaries." >&2
     fi
   fi
 done

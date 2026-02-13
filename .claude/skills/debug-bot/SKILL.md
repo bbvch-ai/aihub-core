@@ -17,7 +17,7 @@ Investigate the bot issue described via `$ARGUMENTS`.
 
 ## Step 0: Read Scope Documentation
 
-Read `/home/user/aihub-core/aihub_bot/AGENTS.md` to understand bot architecture and patterns.
+Read `/home/user/aihub-core/aihub_bot/CLAUDE.md` to understand bot architecture and patterns.
 
 ---
 

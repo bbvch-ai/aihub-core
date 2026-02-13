@@ -11,7 +11,7 @@ Generate a new Vue component. Component name and type should be provided via `$A
 
 ## Before You Start
 
-1. Read the frontend scope guide: `/home/user/aihub-core/aihub_web/AGENTS.md`
+1. Read the frontend scope guide: `/home/user/aihub-core/aihub_web/CLAUDE.md`
 2. Study existing components for the pattern you need:
    - **Card**: `aihub_web/aihub_web/components/Agent/Card.vue`
    - **Empty card**: `aihub_web/aihub_web/components/Agent/EmptyCard.vue`

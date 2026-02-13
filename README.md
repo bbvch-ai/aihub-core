@@ -509,7 +509,7 @@ servers. Full details are in `.claude/README.md`.
 #### Custom Subagents (7 — used automatically for specialized tasks)
 
 - **`codebase-expert`**: Deep monorepo knowledge, cross-scope tracing, architectural questions (with memory)
-- **`code-reviewer`**: Quality, security, and standards review against AGENTS.md conventions
+- **`code-reviewer`**: Quality, security, and standards review against CLAUDE.md conventions
 - **`event-flow-analyzer`**: Traces Swiss AI Agent Protocol event flows end-to-end (with memory)
 - **`docker-ops`**: Docker infrastructure expert for 30+ services, networks, and health checks
 - **`test-analyzer`**: Test coverage analysis, gap identification, pytest-bdd and custom test runners
@@ -526,7 +526,7 @@ servers. Full details are in `.claude/README.md`.
 - **`session-start.sh`** (SessionStart): Installs dependencies, checks environment, warns about main branch
 
 ::: info AI Assistant Context Files
-Each scope contains `CLAUDE.md` and `GEMINI.md` files that reference the respective `AGENTS.md`. These provide AI
+Each scope contains `CLAUDE.md` files with scope-specific architecture, patterns, and examples. These provide AI
 assistants with proper context about each component's purpose and architecture. Local overrides (gitignored):
 `CLAUDE.local.md`, `.claude/settings.local.json`, `.claude/mcp.local.json`.
 :::

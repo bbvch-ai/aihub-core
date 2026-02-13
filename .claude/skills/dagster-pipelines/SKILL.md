@@ -792,7 +792,7 @@ defs = default_definitions(
 ### Architecture & Config
 | File | Purpose |
 |------|---------|
-| `aihub_pipeline/AGENTS.md` | Scope architecture overview |
+| `aihub_pipeline/CLAUDE.md` | Scope architecture overview |
 | `aihub_pipeline/playground/__init__.py` | Working example (START HERE) |
 | `aihub_pipeline/aihub_pipeline/util/definitions_util.py` | Pipeline factory functions |
 | `aihub_pipeline/aihub_pipeline/const/pipeline_names.py` | Pipeline constants |

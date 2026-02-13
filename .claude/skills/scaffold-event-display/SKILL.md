@@ -16,7 +16,7 @@ Create a display component for a new agent event type. The event name should be 
 
 ## Before You Start
 
-Read the frontend scope guide: `/home/user/aihub-core/aihub_web/AGENTS.md`
+Read the frontend scope guide: `/home/user/aihub-core/aihub_web/CLAUDE.md`
 
 Study existing event display components:
 - Simple: `aihub_web/aihub_web/components/Event/Display/ThoughtEvent.vue`

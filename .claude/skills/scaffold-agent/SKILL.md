@@ -14,7 +14,7 @@ Generate all boilerplate for a new AI agent. The agent name/description should b
 
 ## Step 1: Read Reference Materials
 
-1. Read the agent scope guide: `/home/user/aihub-core/aihub_agent/AGENTS.md`
+1. Read the agent scope guide: `/home/user/aihub-core/aihub_agent/CLAUDE.md`
 2. Study an existing agent for reference patterns (e.g., the playground agents in `aihub_agent/playground/`)
 3. Extract the agent name from `$ARGUMENTS` and convert to `snake_case` for directories, `CamelCase` for classes
 

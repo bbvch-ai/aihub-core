@@ -14,7 +14,7 @@ Generate boilerplate for a new data pipeline. The pipeline name/purpose should b
 
 ## Step 1: Read Reference Materials
 
-1. Read the pipeline scope guide: `/home/user/aihub-core/aihub_pipeline/AGENTS.md`
+1. Read the pipeline scope guide: `/home/user/aihub-core/aihub_pipeline/CLAUDE.md`
 2. Study existing pipelines in `aihub_pipeline/aihub_pipeline/pipelines/` for reference patterns
 3. Extract the pipeline name from `$ARGUMENTS` and convert to `snake_case`
 

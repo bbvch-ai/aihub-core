@@ -14,7 +14,7 @@ automated translation. Arc42 ADRs in arc42/decisions/ for architectural decision
 
 ## Scope Responsibility
 
-User-facing documentation with automated English→German translation. NOT for AI agents (use `AGENTS.md` files) or
+User-facing documentation with automated English→German translation. NOT for AI agents (use `CLAUDE.md` files) or
 internal notes.
 
 ## Folder Structure

@@ -14,7 +14,7 @@ Generate boilerplate for a new bot conversation handler. The bot type/purpose sh
 
 ## Step 1: Read Reference Materials
 
-1. Read the bot scope guide: `/home/user/aihub-core/aihub_bot/AGENTS.md`
+1. Read the bot scope guide: `/home/user/aihub-core/aihub_bot/CLAUDE.md`
 2. Study existing bot handlers in `aihub_bot/aihub_bot/bots/` for reference patterns
 3. Extract the bot name and target platform (Teams/Slack) from `$ARGUMENTS`
 

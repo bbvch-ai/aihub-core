@@ -68,7 +68,7 @@ cd /home/user/aihub-core && make generate-compose && git diff --stat
 ## Check 6: Documentation Freshness
 
 1. For each changed scope (from `git diff --name-only origin/main...HEAD`), verify its `README.md` is up to date
-2. Check `AGENTS.md` files are accurate for changed scopes
+2. Check `CLAUDE.md` files are accurate for changed scopes
 3. Verify ADRs exist in `/home/user/aihub-core/aihub_doc/arc42/decisions/` for any significant architectural changes
 
 **Pass criteria**: Documentation reflects current code state.

@@ -11,7 +11,7 @@ Generate a list page for a new resource. The resource name should be provided vi
 
 ## Before You Start
 
-1. Read the frontend scope guide: `/home/user/aihub-core/aihub_web/AGENTS.md`
+1. Read the frontend scope guide: `/home/user/aihub-core/aihub_web/CLAUDE.md`
 2. Study these reference pages:
    - Simple list: `aihub_web/aihub_web/pages/service/roles.vue`
    - Complex list with grouping: `aihub_web/aihub_web/pages/service/agents.vue`

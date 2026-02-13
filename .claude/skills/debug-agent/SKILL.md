@@ -14,7 +14,7 @@ Debug an AI agent. Agent name or issue description via `$ARGUMENTS`.
 
 ## Step 1: Read Scope Documentation
 
-Read `/home/user/aihub-core/aihub_agent/AGENTS.md` to understand agent architecture and patterns.
+Read `/home/user/aihub-core/aihub_agent/CLAUDE.md` to understand agent architecture and patterns.
 
 ## Step 2: Locate the Agent
 

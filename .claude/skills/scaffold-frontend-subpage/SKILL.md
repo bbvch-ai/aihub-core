@@ -11,7 +11,7 @@ Generate a detail wrapper page with tab navigation and tab content pages. The re
 
 ## Before You Start
 
-1. Read the frontend scope guide: `/home/user/aihub-core/aihub_web/AGENTS.md`
+1. Read the frontend scope guide: `/home/user/aihub-core/aihub_web/CLAUDE.md`
 2. Study these reference files:
    - Detail wrapper with tabs: `aihub_web/aihub_web/pages/service/agents/[agent_class]-[agent_id].vue`
    - Tab content page: `aihub_web/aihub_web/pages/service/agents/[agent_class]-[agent_id]/overview.vue`

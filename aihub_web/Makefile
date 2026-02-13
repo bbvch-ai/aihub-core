@@ -8,7 +8,7 @@ lint:
 	cd aihub_web && pnpm lint
 
 test:
-	@echo "No frontend tests configured. See aihub_web/AGENTS.md"
+	@echo "No frontend tests configured. See aihub_web/CLAUDE.md"
 
 dev:
 	cd aihub_web && pnpm dev

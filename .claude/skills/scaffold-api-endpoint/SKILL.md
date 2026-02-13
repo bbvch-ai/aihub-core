@@ -14,7 +14,7 @@ Generate a new controller with endpoints. The resource name should be provided v
 
 ## Step 1: Read Reference Materials
 
-1. Read the API scope guide: `/home/user/aihub-core/aihub_api/AGENTS.md`
+1. Read the API scope guide: `/home/user/aihub-core/aihub_api/CLAUDE.md`
 2. Study these reference controllers:
    - CRUD: `aihub_api/aihub_api/routes/agent/AgentController.py`
    - Simple: `aihub_api/aihub_api/routes/role/RoleController.py`
