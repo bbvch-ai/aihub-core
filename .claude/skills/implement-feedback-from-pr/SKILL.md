@@ -1,8 +1,10 @@
 ---
 name: implement-feedback-from-pr
-description: Implement review feedback from a pull request. Fetches PR comments,
-  distinguishes human from bot feedback, prioritizes and implements changes,
-  then validates.
+description: >-
+  Implement review feedback from a pull request. Fetches PR comments, distinguishes human from
+  bot feedback, prioritizes and implements changes, then validates. Use when user says 'implement
+  PR feedback', 'address review comments', 'fix PR review', 'apply PR suggestions', 'handle
+  reviewer feedback', or 'implement changes from review'. Takes a PR number as argument.
 disable-model-invocation: true
 allowed-tools: Bash, Read, Edit, Grep, Glob
 ---
@@ -65,6 +67,25 @@ make pr-ready
 make test
 exit
 ```
+
+## Examples
+
+**Typical invocation**: `/implement-feedback-from-pr 42`
+
+**Common scenarios**:
+1. Reviewer asks to simplify a function → refactor, test, commit
+2. SonarCloud flags a code smell → evaluate and fix if valid
+3. Reviewer requests documentation → add docstrings or update README
+4. Coverage dropped → add targeted tests for new code paths
+
+## Troubleshooting
+
+| Problem | Solution |
+|---------|----------|
+| `gh pr view -c` shows no comments | Check PR number is correct: `gh pr list` |
+| Cannot determine which files are affected | Run `gh pr diff` to see all changed files |
+| Bot feedback conflicts with human feedback | Human feedback always takes priority |
+| `make pr-ready` fails after changes | Fix lint/type errors introduced by your fixes, re-run |
 
 ## Done When
 

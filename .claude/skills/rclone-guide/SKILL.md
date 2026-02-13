@@ -3,8 +3,9 @@ name: rclone-guide
 description: >-
   Reference for rclone integration in the pipeline system. Covers rclone configuration, supported backends,
   RcloneResource, RcloneClient, RcloneIOManager, observable rclone assets, and setting up new cloud storage
-  connectors. Use when adding rclone-based source connectors, troubleshooting rclone issues, or configuring
-  new cloud storage backends.
+  connectors. Use when user says 'set up OneDrive connector', 'rclone configuration', 'add cloud storage
+  backend', 'rclone filter patterns', 'connect Google Drive', 'rclone authentication', 'RcloneSourceConfig',
+  'troubleshoot rclone', or 'how does rclone work'. Covers 70+ storage backends.
 arguments:
   - name: topic
     description: Topic or question (e.g., "OneDrive setup", "filter patterns", "authentication", "RcloneSourceConfig", "backends")

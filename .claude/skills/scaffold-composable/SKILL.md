@@ -1,8 +1,11 @@
 ---
 name: scaffold-composable
-description: Generate a Pinia-Colada composable for a backend API resource. Creates
-  query and mutation composables following the established defineQuery/defineMutation
-  patterns with SDK integration.
+description: >-
+  Generate Pinia-Colada composables for a backend API resource. Creates query and mutation
+  composables following the established defineQuery/defineMutation patterns with SDK integration.
+  Use when user says 'create a composable', 'scaffold composable', 'add query composable',
+  'generate useQuery hook', 'create mutation composable', 'Pinia-Colada setup', or 'add API
+  composable for resource'. Takes a resource name as argument.
 disable-model-invocation: true
 allowed-tools: Read, Write, Bash, Grep, Glob
 ---
@@ -127,6 +130,26 @@ export const useCreate<Resource> = defineMutation(() => {
   }
 })
 ```
+
+## Examples
+
+**Typical invocation**: `/scaffold-composable pipeline`
+
+**Result**: Creates composable files in `aihub_web/aihub_web/composables/pipeline/`:
+- `usePipelines.ts` — list query
+- `usePipeline.ts` — single item query with route params
+- `useCreatePipeline.ts` — create mutation with cache invalidation
+- `useDeletePipeline.ts` — delete mutation
+
+## Troubleshooting
+
+| Problem | Solution |
+|---------|----------|
+| SDK functions not found | Run `/generate-sdk` first to regenerate the client SDK |
+| Query never resolves | Check `enabled` flag — use `useRouteReady()` for route-dependent queries |
+| Stale data after mutation | Ensure `queryCache.invalidateQueries({ key: ['resources'] })` is called |
+| Type errors on DTO imports | Regenerate SDK — types may be outdated |
+| Composable not auto-imported | Nuxt auto-imports from `composables/` — ensure file is in the right directory |
 
 ## Key Conventions
 

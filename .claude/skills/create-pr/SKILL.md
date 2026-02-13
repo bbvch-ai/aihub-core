@@ -1,109 +1,54 @@
 ---
 name: create-pr
-description: Pre-pull request validation and preparation. Run formatting, linting,
-  type checking, and tests across all affected scopes before creating a PR.
+description: "Validate and prepare code for a pull request: commit, format, lint,
+  type-check, and test all affected scopes. Use when user says 'create a PR',
+  'prepare pull request', 'get ready for PR', 'run pr-ready', 'validate my changes',
+  or 'prepare for review'. Commits work, runs make pr-ready and make test in every
+  scope, reviews diff against main, and updates docs."
 disable-model-invocation: true
 allowed-tools: Bash, Read, Grep, Glob, Edit
 ---
 
-# Create PR - Pre-Pull Request Validation Command
+# Create PR - Pre-Pull Request Validation
 
-You're about to prepare your code for a pull request. Follow this comprehensive validation cookbook to ensure your
-changes meet all quality standards and pass all checks.
+Prepare code for a pull request by committing, formatting, linting, testing, and reviewing all changes. This skill does
+NOT create the actual PR -- it ensures everything is ready for one.
 
-## Overview
+## Steps
 
-Here's what you need to do:
-
-1. Commit your current work using semantic commits
-2. Format and lint all code across every scope
-3. Run all tests and fix any failures
-4. Review your changes against the main branch
-5. Validate adherence to our coding standards
-6. Fix any issues you find along the way
-7. Update documentation if needed
-
-## Your Step-by-Step Cookbook
-
-### Step 1: Commit Your Current State
-
-Before diving into validation, let's save your current work. Use semantic commits following our convention:
+### 1. Commit Current Work
 
 ```bash
-# First, see what you've changed
 git status
 git diff
-
-# Stage your changes (be selective!)
-git add <files>
-
-# Commit with a semantic message
-# Format: <type>(<scope>): <subject>
-# Types: fix, feat, test, doc, chore
-# Example: feat(agent): Add retry logic to RAG agent
-git commit -m "type(scope): Your descriptive message"
+git add <specific-files>
+git commit -m "type(scope): Descriptive message"
 ```
 
-Remember:
+- **Commit format**: `type(scope): subject` (types: fix, feat, test, doc, chore)
+- Keep commits focused -- one logical change per commit
+- Use imperative mood ("Add feature" not "Added feature")
 
-- Keep commits focused - one logical change per commit
-- Write clear, imperative messages ("Add feature" not "Added feature")
-- If you have multiple unrelated changes, create multiple commits
+### 2. Format and Lint All Affected Scopes
 
-### Step 2: Format and Lint Your Code
-
-Time to make your code squeaky clean! Navigate to each scope and run the quality checks. When you encounter errors, fix
-them immediately and re-run until everything passes:
+Run `make pr-ready` in each scope. Fix errors immediately and re-run until clean.
 
 ```bash
-# Start with the core library - this is the foundation everything depends on
-cd aihub_lib
-poetry shell
-make pr-ready
-# Got errors? Fix them now and run make pr-ready again until it's green!
-exit
-
-# Next, tackle the pipeline scope
-cd ../aihub_pipeline
-poetry shell
-make pr-ready
-exit
-
-# Move on to the agent scope
-cd ../aihub_agent
-poetry shell
-make pr-ready
-exit
-
-# Process scope is next
-cd ../aihub_process
-poetry shell
-make pr-ready
-exit
-
-# Almost there! Check the API scope
-cd ../aihub_api
-poetry shell
-make pr-ready
-exit
-
-# Finally, the bot scope
-cd ../aihub_bot
-poetry shell
-make pr-ready
-exit
-
-# Great! Return to the project root
+# Run in each affected scope (always start with aihub_lib if modified)
+cd aihub_lib && poetry shell && make pr-ready && exit
+cd ../aihub_pipeline && poetry shell && make pr-ready && exit
+cd ../aihub_agent && poetry shell && make pr-ready && exit
+cd ../aihub_process && poetry shell && make pr-ready && exit
+cd ../aihub_api && poetry shell && make pr-ready && exit
+cd ../aihub_bot && poetry shell && make pr-ready && exit
 cd ..
 ```
 
-### Step 3: Make All Tests Pass
+**Expected output**: No formatting errors, no lint warnings, no type check failures.
 
-Now it's time to ensure your code actually works! Run the test suite for each scope:
+### 3. Run All Tests
 
-1. Read the error message carefully - understand what's breaking
-2. Fix the root cause (never disable or skip tests!)
-3. Re-run the tests until you see green
+Run `make test` in each scope. Every test must pass.
 
 ```bash
 cd aihub_lib && poetry shell && make test && exit
@@ -115,50 +60,69 @@ cd ../aihub_bot && poetry shell && make test && exit
 cd ..
 ```
 
-### Step 4: Review Your Changes
+- Read error messages carefully -- fix the root cause
+- Never disable or skip tests
+- Re-run until all green
 
-Look at every single change you've made:
+### 4. Review Changes Against Main
 
 ```bash
 git diff main...HEAD
 ```
 
-Inspection checklist:
+**Inspection checklist**:
+- Hunt for bugs: edge cases, null pointers, resource leaks, race conditions
+- Enforce coding standards: "why" comments, docstrings on public APIs, type annotations, Pydantic over dicts, fail-fast error handling
+- Respect architecture: code in the right scope, shared code in aihub_lib, no customer-specific info
 
-1. **Hunt for bugs**: edge cases, null pointers, resource leaks, race conditions
-2. **Enforce coding standards**: comments explain "why", docstrings on public APIs, type annotations everywhere, Pydantic models over dicts, fail fast error handling, snake_case naming
-3. **Respect the architecture**: code in the right scope, shared code in aihub_lib, no customer-specific information
+### 5. Fix Issues Found
 
-### Step 5: Fix What You Found
-
-1. Fix each problem properly
+1. Fix each problem properly (not symptoms)
 2. Re-run `make pr-ready` and `make test` for affected scopes
 3. Verify fixes actually solved the problems
 
-### Step 6: The Final Check
+### 6. Final Check
 
-1. Run `git status` - inventory everything you've touched
-2. Run `git diff` one more time - final read-through
-3. Ask: "Does this solve exactly what the task asked for?"
+1. Run `git status` -- inventory everything touched
+2. Run `git diff` -- final read-through
+3. Confirm: "Does this solve exactly what the task asked for?"
 
-### Step 7: Update Documentation
+### 7. Update Documentation
 
-Follow the /update-doc skill instructions to ensure documentation stays in sync with code changes.
+Follow the `/update-doc` skill to sync documentation with code changes.
 
 ## Critical Rules
 
-- **COMMIT** strategically - use semantic commits for logical changes
-- **STOP!** Do NOT create a pull request - you're just preparing
-- **STOP!** Do NOT skip any failing test - every single one must pass
-- **FIX** the actual problem, not the symptom
-- **FOLLOW** typing and documentation standards
-- **UPDATE** documentation when changes affect it
+- **DO NOT** create the actual pull request -- only prepare for one
+- **DO NOT** skip any failing test -- every single one must pass
+- Fix the actual problem, not the symptom
+- Follow typing and documentation standards
+- Update documentation when changes affect it
 
-## You're Done When
+## Examples
 
-- Changes are committed with proper semantic commit messages
-- Every `make pr-ready` runs clean
+**Typical invocation**: `/create-pr` after finishing a feature branch
+
+**Expected workflow**:
+1. User completes feature work on a branch
+2. Runs `/create-pr`
+3. Skill commits, formats, tests, reviews all changes
+4. User then manually creates the PR or asks separately
+
+## Troubleshooting
+
+| Problem | Solution |
+|---------|----------|
+| `make pr-ready` fails with import errors | Run `poetry install` in the scope first |
+| Tests fail with missing fixtures | Check if scope depends on aihub_lib changes -- run aihub_lib tests first |
+| MyPy strict mode errors | Add type annotations to all parameters, returns, and variables |
+| `poetry shell` not found | Ensure Poetry is installed and you are in the correct scope directory |
+
+## Done When
+
+- Changes committed with proper semantic commit messages
+- Every `make pr-ready` runs clean in all affected scopes
 - Every `make test` shows all green
-- Git diff is spotless
+- Git diff reviewed and clean
 - Code does exactly what was asked
 - Documentation is updated

@@ -1,8 +1,11 @@
 ---
 name: debug-frontend
-description: Debug the Nuxt 3 admin UI using Playwright MCP for visual inspection,
-  console error analysis, and network request tracing. Use when the UI is misbehaving
-  or to verify visual changes.
+description: >-
+  Debug the Nuxt 3 admin UI using Playwright MCP for visual inspection, console error analysis,
+  and network request tracing. Use when user says 'UI is broken', 'page not loading', 'frontend
+  bug', 'console errors', 'API call failing in UI', 'component not rendering', 'blank page',
+  'verify my UI changes', or 'check the admin interface'. Captures screenshots, DOM snapshots,
+  and network traces.
 allowed-tools: Read, Bash, Grep, Glob
 ---
 
@@ -89,7 +92,24 @@ Once the issue is identified:
 
 ## Step 6: Report
 
-Provide:
-- **What was observed** (screenshot + console errors)
-- **Root cause** (which file/line is responsible)
-- **Suggested fix** (specific code change)
+Provide a structured report with:
+- **What was observed**: Screenshot + console errors + failed network requests
+- **Root cause**: Which file and line is responsible
+- **Suggested fix**: Specific code change to resolve the issue
+
+## Examples
+
+- `/debug-frontend the agents page shows a blank table` -- Navigate to agents page, check network requests for API failures, inspect DOM for missing data bindings
+- `/debug-frontend console errors on the dashboard` -- Open dashboard, capture console errors, trace to source component
+- `/debug-frontend verify my changes to the roles page` -- Navigate to roles page, take screenshot, check for regressions
+
+## Troubleshooting Quick Reference
+
+| Symptom | Likely Cause | Where to Look |
+|---------|-------------|---------------|
+| Blank page | JavaScript error blocking render | `browser_console_messages` with level "error" |
+| Spinner never stops | API call hanging or query `enabled` flag is false | `browser_network_requests` + composable `enabled` prop |
+| 401 on API calls | Auth not configured for dev | `plugins/oidc-client.ts`, check dev mode fake auth |
+| Missing translations | i18n key not in locale file | `i18n/locales/en.yaml`, search for the raw key |
+| Stale data after mutation | Missing `queryCache.invalidateQueries()` | Composable mutation `onSuccess` callback |
+| Component not found | Auto-import name mismatch | Verify component file path matches Nuxt auto-import convention |

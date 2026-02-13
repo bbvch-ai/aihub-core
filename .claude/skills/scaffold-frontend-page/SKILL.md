@@ -1,8 +1,6 @@
 ---
 name: scaffold-frontend-page
-description: Generate a new list page with StructuralScreen/Column layout, Pinia-Colada
-  data fetching, card grid, create modal, and NuxtPage outlet for nested detail
-  routes. Follows the exact patterns from agents.vue and roles.vue.
+description: Scaffold a new Nuxt 3 list page with StructuralScreen/Column layout, Pinia-Colada data fetching, card grid, create modal, and NuxtPage outlet for nested detail routes. Use when user says "create a new page", "scaffold a frontend page", "add a list page", "new resource page", "generate a Vue page for X", or "build a page like agents/roles". Generates page + card + i18n following agents.vue and roles.vue patterns.
 disable-model-invocation: true
 allowed-tools: Read, Write, Edit, Bash, Grep, Glob
 ---
@@ -13,12 +11,11 @@ Generate a list page for a new resource. The resource name should be provided vi
 
 ## Before You Start
 
-Read the frontend scope guide: `/home/user/aihub-core/aihub_web/AGENTS.md`
-
-Study these reference pages:
-- Simple list: `aihub_web/aihub_web/pages/service/roles.vue`
-- Complex list with grouping: `aihub_web/aihub_web/pages/service/agents.vue`
-- Knowledge list: `aihub_web/aihub_web/pages/service/knowledge.vue`
+1. Read the frontend scope guide: `/home/user/aihub-core/aihub_web/AGENTS.md`
+2. Study these reference pages:
+   - Simple list: `aihub_web/aihub_web/pages/service/roles.vue`
+   - Complex list with grouping: `aihub_web/aihub_web/pages/service/agents.vue`
+   - Knowledge list: `aihub_web/aihub_web/pages/service/knowledge.vue`
 
 ## Step 1: Check SDK Availability
 
@@ -195,10 +192,36 @@ Check if the page needs to be registered in the API's suite/service configuratio
 
 ## Key Conventions
 
-- **PrimeVue components only**: `Button`, `Tag`, `Dialog`, `DataTable` — never raw HTML for interactive elements
+- **PrimeVue components only**: `Button`, `Tag`, `Dialog`, `DataTable` -- never raw HTML for interactive elements
 - **Tailwind only**: No custom CSS (exception: scoped `:deep()` for PrimeVue overrides)
 - **SDK types for props**: Import from `@core/sdk/client`, never define manually
 - **i18n all text**: `{{ t('key.path') }}` for everything user-visible
-- **Pinia-Colada**: `defineQuery`/`defineMutation` — never raw fetch or global stores
-- **`useLocalePath()`**: Always for navigation — `router.push(localePath('/path'))`
+- **Pinia-Colada**: `defineQuery`/`defineMutation` -- never raw fetch or global stores
+- **`useLocalePath()`**: Always for navigation -- `router.push(localePath('/path'))`
 - **`useConfirm()` + `useToast()`**: For delete confirmations and success/error messages
+
+## Examples
+
+**Input**: `$ARGUMENTS = "pipeline"`
+
+**Output files created**:
+1. `aihub_web/aihub_web/pages/service/pipelines.vue` -- List page with card grid
+2. `aihub_web/aihub_web/components/Pipeline/Card.vue` -- Resource card component
+3. `aihub_web/aihub_web/composables/pipeline/usePipelines.ts` -- List query composable
+4. `aihub_web/aihub_web/composables/pipeline/useCreatePipeline.ts` -- Create mutation composable
+5. i18n keys added to all 4 locale files (`de.yaml`, `en.yaml`, `fr.yaml`, `it.yaml`)
+
+**Input**: `$ARGUMENTS = "connector"`
+
+**Output**: Same structure with `connector` replacing `pipeline` -- `connectors.vue`, `Connector/Card.vue`, `useConnectors.ts`, etc.
+
+## Troubleshooting
+
+| Problem | Cause | Fix |
+|---------|-------|-----|
+| SDK types not found for resource | SDK not generated yet | Tell user to run `/generate-sdk` first |
+| Page not appearing in sidebar | Not registered in service config | Check `useSuite()` / `useApps()` API service definitions |
+| Cards not rendering | Composable returns empty array | Verify SDK endpoint URL and check browser Network tab for API errors |
+| i18n keys showing raw paths | Missing translation keys | Ensure keys were added to ALL 4 locale files (`de`, `en`, `fr`, `it`) |
+| Route not matching / 404 | File naming mismatch | Verify filename matches Nuxt file-based routing: `<resource>s.vue` (plural) |
+| Dark mode broken on cards | Missing `dark:` variant | Every `bg-*` class must have a corresponding `dark:bg-*` class |

@@ -1,9 +1,10 @@
 ---
 name: debug-bot
 description: >-
-  Troubleshoot bot integration issues: non-responding agents, auth failures, Slack/Teams
-  channel problems, NATS connectivity, HITL not working, conversation TTL, streaming timeouts.
-  Use when a bot is not responding or behaving unexpectedly.
+  Troubleshoot bot integration issues with Teams, Slack, and Web Chat. Use when user says 'bot not
+  responding', 'Teams bot broken', 'Slack bot error', '401 from bot', 'HITL not working', 'bot
+  timeout', 'conversation expired', 'streaming stuck', 'bot can't reach agent', or 'Slack thread
+  lost'. Covers auth, NATS connectivity, channel-specific issues, and conversation state.
 arguments:
   - name: issue
     description: Description of the bot issue (e.g., "bot not responding in Teams", "Slack thread not working", "HITL timeout", "auth 401 error")
@@ -14,9 +15,9 @@ allowed-tools: Read, Grep, Glob, Bash
 
 Investigate the bot issue described via `$ARGUMENTS`.
 
-## Before You Start
+## Step 0: Read Scope Documentation
 
-Read: `/home/user/aihub-core/aihub_bot/AGENTS.md`
+Read `/home/user/aihub-core/aihub_bot/AGENTS.md` to understand bot architecture and patterns.
 
 ---
 
@@ -378,4 +379,15 @@ docker compose -f docker-compose.dev.yml exec ferretdb mongosh --eval 'db.bot_co
 
 ## Summary
 
-After investigating, report: the symptom category, root cause identified, affected files, and recommended fix.
+After investigating, provide a structured report with:
+- **Symptom category**: Which section from Step 1 matched
+- **Root cause**: Specific file and line responsible
+- **Affected files**: All files involved in the issue
+- **Recommended fix**: Specific code or configuration change
+
+## Examples
+
+- `/debug-bot bot not responding in Teams` -- Check PathEntity, Azure credentials, endpoint URL, NATS connectivity
+- `/debug-bot Slack thread context lost` -- Check conversation ID parsing, thread timestamp extraction
+- `/debug-bot HITL not working` -- Verify BotInTheLoopHandler subscriber, channel_config, Slack token
+- `/debug-bot conversation expired unexpectedly` -- Check TTL settings, ConversationTracker, MongoDB TTL index

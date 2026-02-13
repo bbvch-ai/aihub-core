@@ -3,8 +3,10 @@ name: dagster-pipelines
 description: >-
   Comprehensive reference for Dagster pipelines, asset-based architecture, resources, IO managers,
   sensors, schedules, partitions, automation conditions, ops, and the two-stage pipeline pattern.
-  Use when working with data pipelines, adding new assets, creating resources, or understanding
-  the ingestion and processing architecture.
+  Use when user says 'how do pipelines work', 'create a new asset', 'add a resource', 'IO manager',
+  'configure a sensor', 'pipeline architecture', 'observable asset', 'partition setup', 'dagster
+  definitions', 'asset factory', 'automation condition', or 'two-stage pipeline'. Covers the full
+  ingestion and processing architecture from source to vector store.
 arguments:
   - name: topic
     description: Topic or question (e.g., "asset factory", "resources", "IO managers", "partitions", "sensors", "observable assets", "definitions factory")

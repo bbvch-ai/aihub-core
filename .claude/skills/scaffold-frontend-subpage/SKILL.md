@@ -1,8 +1,6 @@
 ---
 name: scaffold-frontend-subpage
-description: Generate a detail wrapper with tab navigation and a tab subpage. Creates
-  the SelectButton-based tab bar, NavItem routing, and StructuralColumn content
-  following the [agent_class]-[agent_id].vue pattern.
+description: Scaffold a detail wrapper with SelectButton tab navigation and nested tab subpages. Creates the tab bar, NavItem routing, StructuralColumn content, and overview tab following the [agent_class]-[agent_id].vue pattern. Use when user says "add a detail page", "create subpage with tabs", "scaffold detail view", "add tab navigation", "create nested route page", or "build a detail page like agents". Generates wrapper + tab pages + composable + i18n.
 disable-model-invocation: true
 allowed-tools: Read, Write, Edit, Bash, Grep, Glob
 ---
@@ -13,13 +11,12 @@ Generate a detail wrapper page with tab navigation and tab content pages. The re
 
 ## Before You Start
 
-Read the frontend scope guide: `/home/user/aihub-core/aihub_web/AGENTS.md`
-
-Study these reference files:
-- Detail wrapper with tabs: `aihub_web/aihub_web/pages/service/agents/[agent_class]-[agent_id].vue`
-- Tab content page: `aihub_web/aihub_web/pages/service/agents/[agent_class]-[agent_id]/overview.vue`
-- Another wrapper: `aihub_web/aihub_web/pages/service/threads/[thread_id].vue`
-- NavItem type: `aihub_web/aihub_web/types/NavItem.ts`
+1. Read the frontend scope guide: `/home/user/aihub-core/aihub_web/AGENTS.md`
+2. Study these reference files:
+   - Detail wrapper with tabs: `aihub_web/aihub_web/pages/service/agents/[agent_class]-[agent_id].vue`
+   - Tab content page: `aihub_web/aihub_web/pages/service/agents/[agent_class]-[agent_id]/overview.vue`
+   - Another wrapper: `aihub_web/aihub_web/pages/service/threads/[thread_id].vue`
+   - NavItem type: `aihub_web/aihub_web/types/NavItem.ts`
 
 ## Architecture: How Nested Routing Works
 
@@ -242,3 +239,29 @@ aihub_web/aihub_web/
 - **Loading gates content**: StructuralColumn doesn't render children until `loading === false`
 - **Close navigates to list**: `close-route` on StructuralColumn always points back to the parent list
 - **Composable reuse**: The same `use<Resource>()` composable is shared between wrapper and tab pages (Pinia-Colada deduplicates the query)
+
+## Examples
+
+**Input**: `$ARGUMENTS = "pipeline"`
+
+**Output files created**:
+1. `aihub_web/aihub_web/pages/service/pipelines/[pipeline_id].vue` -- Detail wrapper with tab bar
+2. `aihub_web/aihub_web/pages/service/pipelines/[pipeline_id]/overview.vue` -- Overview tab
+3. `aihub_web/aihub_web/pages/service/pipelines/[pipeline_id]/configuration.vue` -- Configuration tab
+4. `aihub_web/aihub_web/composables/pipeline/usePipeline.ts` -- Single-item query composable
+5. i18n keys added for navigation labels and field labels in all 4 locales
+
+**Input**: `$ARGUMENTS = "connector with tabs: overview, settings, logs"`
+
+**Output**: Wrapper at `[connector_id].vue` plus three tab files (`overview.vue`, `settings.vue`, `logs.vue`) with NavItem entries for each tab.
+
+## Troubleshooting
+
+| Problem | Cause | Fix |
+|---------|-------|-----|
+| Tab content not rendering | Missing `NuxtPage` in wrapper | Ensure wrapper template has `<NuxtPage />` inside the flex container |
+| Tab bar not highlighting active tab | `isActive()` path mismatch | Verify `subPath()` builds the correct URL with `route.params` values |
+| Detail page not appearing as second column | Parent list page missing `NuxtPage` | Ensure the parent list page (`<resource>s.vue`) has `<NuxtPage />` as sibling of `StructuralColumn` |
+| Route params undefined | Filename bracket syntax wrong | Dynamic route file must be named `[<resource>_id].vue` with square brackets |
+| Composable fetches on every tab switch | Not using `staleTime` | Set `staleTime: minutesToMilliseconds(5)` in the query options |
+| Close button navigates to wrong page | Incorrect `close-route` prop | Set `close-route="/service/<resource>s"` (plural, pointing to list page) |

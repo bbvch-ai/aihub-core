@@ -1,8 +1,6 @@
 ---
 name: scaffold-frontend-component
-description: Generate a new Vue 3 component following project conventions. Supports
-  card, modal, list, form, and display component patterns with PrimeVue, Tailwind,
-  typed props/emits, and i18n.
+description: Scaffold a new Vue 3 component following project conventions. Supports card, modal/dialog, list/DataTable, form, empty card, and display patterns with PrimeVue, Tailwind, typed props/emits, and i18n. Use when user says "create a component", "add a Vue component", "scaffold a card", "create a modal", "build a DataTable component", "new form component", or "add a dialog for X". Generates component file with correct placement, typed props/emits, and dark mode.
 disable-model-invocation: true
 allowed-tools: Read, Write, Edit, Grep, Glob
 ---
@@ -13,14 +11,13 @@ Generate a new Vue component. Component name and type should be provided via `$A
 
 ## Before You Start
 
-Read the frontend scope guide: `/home/user/aihub-core/aihub_web/AGENTS.md`
-
-Study existing components for the pattern you need:
-- **Card**: `aihub_web/aihub_web/components/Agent/Card.vue`
-- **Empty card**: `aihub_web/aihub_web/components/Agent/EmptyCard.vue`
-- **Modal**: `aihub_web/aihub_web/components/Agent/CreateModal.vue`
-- **List/Table**: `aihub_web/aihub_web/components/Thread/List.vue`
-- **Display**: `aihub_web/aihub_web/components/Event/Display/Base.vue`
+1. Read the frontend scope guide: `/home/user/aihub-core/aihub_web/AGENTS.md`
+2. Study existing components for the pattern you need:
+   - **Card**: `aihub_web/aihub_web/components/Agent/Card.vue`
+   - **Empty card**: `aihub_web/aihub_web/components/Agent/EmptyCard.vue`
+   - **Modal**: `aihub_web/aihub_web/components/Agent/CreateModal.vue`
+   - **List/Table**: `aihub_web/aihub_web/components/Thread/List.vue`
+   - **Display**: `aihub_web/aihub_web/components/Event/Display/Base.vue`
 
 ## Step 1: Determine Component Type
 
@@ -328,3 +325,30 @@ components/
 ├── FormKit/               # Custom FormKit inputs
 └── Navigation/            # Nav components
 ```
+
+## Examples
+
+**Input**: `$ARGUMENTS = "Pipeline Card"`
+
+**Output**: `aihub_web/aihub_web/components/Pipeline/Card.vue` -- Pattern A card component with `PipelineDto` typed props, click emit, active state from route params, icon + title + status Tag layout.
+
+**Input**: `$ARGUMENTS = "Connector CreateModal"`
+
+**Output**: `aihub_web/aihub_web/components/Connector/CreateModal.vue` -- Pattern C modal with `v-model:visible`, `useCreateConnector()` mutation, cancel/submit footer buttons, and `success` emit.
+
+**Input**: `$ARGUMENTS = "Knowledge List table"`
+
+**Output**: `aihub_web/aihub_web/components/Knowledge/List.vue` -- Pattern D DataTable with `KnowledgeDto[]` prop, single selection mode, custom column templates for status and dates.
+
+**Auto-import name resolution**: Directory + File = component name. `Pipeline/Card.vue` becomes `<PipelineCard />`, `Connector/CreateModal.vue` becomes `<ConnectorCreateModal />`.
+
+## Troubleshooting
+
+| Problem | Cause | Fix |
+|---------|-------|-----|
+| Component not auto-imported | Wrong directory or naming | Must be under `components/` in PascalCase directory, file must be PascalCase `.vue` |
+| Raw HTML elements in template | Not using PrimeVue | Replace `button` with `Button`, `input` with FormKit input, `select` with FormKit Select |
+| Dark mode colors broken | Missing `dark:` variants | Every `bg-*`, `text-*`, `border-*` class needs a corresponding `dark:` variant |
+| Props not type-safe | Using `defineProps({})` object syntax | Use generic syntax: `defineProps<{ item: ResourceDto }>()` with SDK types |
+| FormKit-wrapped component not rendering | Imported from PrimeVue instead of FormKit | `InputText`, `Textarea`, `Select`, `MultiSelect`, etc. are excluded from PrimeVue auto-import; use FormKit versions |
+| Delete button triggers card click | Missing `@click.stop` | Add `.stop` modifier to prevent event bubbling: `@click.stop="confirmDelete"` |

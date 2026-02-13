@@ -1,7 +1,10 @@
 ---
 name: scaffold-dashboard-widget
-description: Create a new dashboard widget using GridStack and ApexCharts. Generates
-  the widget component, registers it in the dashboard system, and adds configuration.
+description: >-
+  Create a new dashboard widget using GridStack and ApexCharts. Generates the widget component,
+  registers it in the dashboard system, and adds configuration. Use when user says 'create a
+  dashboard widget', 'add a chart widget', 'scaffold dashboard component', 'new ApexCharts widget',
+  'add number widget to dashboard', or 'create GridStack widget'. Takes a widget name/type as argument.
 disable-model-invocation: true
 allowed-tools: Read, Write, Edit, Grep, Glob
 ---
@@ -114,6 +117,25 @@ export const use<WidgetName>Data = defineQuery(() => {
   return { data, isLoading: isPending }
 })
 ```
+
+## Examples
+
+**Typical invocation**: `/scaffold-dashboard-widget cost-breakdown`
+
+**Result**: Creates:
+- `components/Dashboard/Component/CostBreakdown.vue` — widget component
+- Updated `DashboardWidget.ts` — new widget type added to union
+- Updated `useDashboardComponent.ts` — component resolver mapping
+
+## Troubleshooting
+
+| Problem | Solution |
+|---------|----------|
+| Chart not rendering | Ensure `ClientOnly` wrapper is present — ApexCharts doesn't work with SSR |
+| Widget doesn't appear on dashboard | Check component resolver mapping in `useDashboardComponent.ts` |
+| Widget overflows its grid cell | Use `h-full` and `flex` classes for responsive sizing |
+| Dark mode colors wrong | Set `theme: { mode: 'dark' }` and `chart: { background: 'transparent' }` |
+| Type error on widget type | Add the new type to the union in `DashboardWidget.ts` |
 
 ## Key Conventions
 

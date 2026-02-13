@@ -1,8 +1,11 @@
 ---
 name: scaffold-api-repository
-description: Generate a MongoEngine Document entity that combines schema definition
-  with repository methods (classmethods). Follows the Entity pattern used instead
-  of separate repository classes.
+description: >-
+  Generate a MongoEngine Document entity that combines schema definition with repository methods
+  (classmethods). Follows the Entity pattern used instead of separate repository classes. Use when
+  user says 'create an entity', 'scaffold a repository', 'add MongoDB model', 'new database entity',
+  'generate MongoEngine document', 'create persistence layer', or 'scaffold data model'. Takes a
+  resource name as argument.
 disable-model-invocation: true
 allowed-tools: Read, Write, Edit, Grep, Glob
 ---
@@ -393,6 +396,26 @@ aihub_lib/aihub_lib/persistence/
 └── <resource>/                  <-- NEW
     └── <Resource>Entity.py
 ```
+
+## Examples
+
+**Typical invocation**: `/scaffold-api-repository notification`
+
+**Result**: Creates `aihub_lib/aihub_lib/persistence/notification/NotificationEntity.py` with:
+- Document class with schema fields
+- Repository classmethods (get_by_id, find_by_name, get_all, create, delete)
+- Proper indexes and meta configuration
+- OpenTelemetry tracing on all methods
+
+## Troubleshooting
+
+| Problem | Solution |
+|---------|----------|
+| `DoesNotExist` at runtime | Entity not found — catch in the service layer, not in the entity |
+| Duplicate key error | Check `meta["indexes"]` — a unique constraint is being violated |
+| `strict` mode errors | Set `meta["strict"] = False` to allow extra fields |
+| Missing collection in MongoDB | MongoEngine auto-creates collections on first write |
+| Import error from other scope | Ensure entity is in `aihub_lib`, not in a scope-specific package |
 
 ## Key Conventions
 

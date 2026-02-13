@@ -1,8 +1,9 @@
 ---
 name: scaffold-api-endpoint
 description: Generate a new REST API controller with fluent builder pattern, typed
-  endpoints, permission-based auth, DTOs, and registration in main.py. Follows the
-  exact AgentController/RoleController patterns.
+  endpoints, permission-based auth, DTOs, and main.py registration. Use when user says
+  "create API endpoint", "scaffold controller", "new REST endpoint", "add CRUD API",
+  "generate API route", "build endpoint for X", or "add API controller".
 disable-model-invocation: true
 allowed-tools: Read, Write, Edit, Bash, Grep, Glob
 ---
@@ -11,18 +12,18 @@ allowed-tools: Read, Write, Edit, Bash, Grep, Glob
 
 Generate a new controller with endpoints. The resource name should be provided via `$ARGUMENTS`.
 
-## Before You Start
+## Step 1: Read Reference Materials
 
-Read the API scope guide: `/home/user/aihub-core/aihub_api/AGENTS.md`
+1. Read the API scope guide: `/home/user/aihub-core/aihub_api/AGENTS.md`
+2. Study these reference controllers:
+   - CRUD: `aihub_api/aihub_api/routes/agent/AgentController.py`
+   - Simple: `aihub_api/aihub_api/routes/role/RoleController.py`
+   - Complex: `aihub_api/aihub_api/routes/thread/ThreadController.py`
+   - Base class: `aihub_lib/aihub_lib/routes/Controller.py`
+   - Registration: `aihub_api/app/main.py`
+3. Extract the resource name from `$ARGUMENTS` and derive `snake_case` (dirs/files) and `CamelCase` (classes)
 
-Study these reference controllers:
-- CRUD: `aihub_api/aihub_api/routes/agent/AgentController.py`
-- Simple: `aihub_api/aihub_api/routes/role/RoleController.py`
-- Complex: `aihub_api/aihub_api/routes/thread/ThreadController.py`
-- Base class: `aihub_lib/aihub_lib/routes/Controller.py`
-- Registration: `aihub_api/app/main.py`
-
-## Step 1: Create Directory Structure
+## Step 2: Create Directory Structure
 
 ```
 aihub_api/aihub_api/routes/<resource>/
@@ -37,7 +38,7 @@ aihub_api/aihub_api/routes/<resource>/
     └── Paginated<Resource>sResponse.py
 ```
 
-## Step 2: Create the Controller
+## Step 3: Create the Controller
 
 File: `aihub_api/aihub_api/routes/<resource>/<Resource>Controller.py`
 
@@ -185,7 +186,7 @@ user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"
 _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.<resource>"))]
 ```
 
-## Step 3: Register in main.py
+## Step 4: Register in main.py
 
 Edit `aihub_api/app/main.py`:
 
@@ -203,7 +204,7 @@ runner.mount(
 )
 ```
 
-## Step 4: Add i18n Keys
+## Step 5: Add i18n Keys
 
 Add to `aihub_api/aihub_api/i18n/locales/{en,de,fr,it}.yaml`:
 
@@ -222,5 +223,23 @@ api:
 - **Docstrings on endpoints**: Short description of what the endpoint does
 - **Locale handler**: Always inject `t: Annotated[LocaleHandler, Depends(use_locale)]`
 - **Pagination types**: Use `PageNumber` and `PageSize` type aliases from `aihub_api.pagination.type`
-- **Error handling**: Let services raise `HTTPException` — don't catch in controllers
+- **Error handling**: Let services raise `HTTPException` -- don't catch in controllers
 - **Path validation**: Use `Path(pattern=r"^[a-f0-9]{24}$")` for MongoDB ObjectId params
+
+## Examples
+
+**Input**: `$ARGUMENTS = "project"`
+**Expected output files**:
+- `aihub_api/aihub_api/routes/project/ProjectController.py` with `ProjectController(Controller)`
+- `aihub_api/aihub_api/routes/project/ProjectService.py` (stub -- use `/scaffold-api-service` for full service)
+- `aihub_api/aihub_api/routes/project/dto/ProjectDTO.py`, `CreateProjectRequest.py`, `UpdateProjectRequest.py`, `PaginatedProjectsResponse.py`
+- Registration added to `aihub_api/app/main.py`
+- i18n keys added to `aihub_api/aihub_api/i18n/locales/{en,de,fr,it}.yaml`
+
+## Troubleshooting
+
+- **404 on new endpoint**: Verify the controller is mounted in `main.py` and the fluent builder methods are chained
+- **Permission denied (403)**: Check the permission template string matches what is configured in the role system (e.g., `aihub.user.?>` vs `aihub.admin.resource`)
+- **Missing tags in Swagger**: Ensure `tags=self.tags` is passed to every router decorator
+- **i18n key not found**: Verify locale YAML files have the correct nested path under `api.controllers.<resource>`
+- **Duplicate route conflict**: Check that `route` parameter default values do not clash with existing controllers

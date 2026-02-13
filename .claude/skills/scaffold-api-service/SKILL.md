@@ -1,8 +1,9 @@
 ---
 name: scaffold-api-service
 description: Generate a new API service layer with stateless static methods, OpenTelemetry
-  tracing, DTO conversion, pagination, and error handling. Follows the exact
-  AgentService/ThreadService patterns.
+  tracing, DTO conversion, pagination, and error handling. Use when user says "create
+  service layer", "scaffold API service", "new service class", "add business logic
+  layer", "generate service for X", or "build service between controller and entity".
 disable-model-invocation: true
 allowed-tools: Read, Write, Edit, Grep, Glob
 ---
@@ -11,15 +12,15 @@ allowed-tools: Read, Write, Edit, Grep, Glob
 
 Generate a service layer for a resource. The resource name should be provided via `$ARGUMENTS`.
 
-## Before You Start
+## Step 1: Read Reference Materials
 
-Read the API scope guide: `/home/user/aihub-core/aihub_api/AGENTS.md`
-
-Study these reference services:
-- CRUD: `aihub_api/aihub_api/routes/agent/AgentService.py`
-- Pagination: `aihub_api/aihub_api/routes/thread/ThreadService.py`
-- Bulk ops: `aihub_api/aihub_api/routes/notification/NotificationService.py`
-- Simple: `aihub_api/aihub_api/routes/user/UserService.py`
+1. Read the API scope guide: `/home/user/aihub-core/aihub_api/AGENTS.md`
+2. Study these reference services:
+   - CRUD: `aihub_api/aihub_api/routes/agent/AgentService.py`
+   - Pagination: `aihub_api/aihub_api/routes/thread/ThreadService.py`
+   - Bulk ops: `aihub_api/aihub_api/routes/notification/NotificationService.py`
+   - Simple: `aihub_api/aihub_api/routes/user/UserService.py`
+3. Extract the resource name from `$ARGUMENTS` and derive `CamelCase` for class names
 
 ## Architecture: Where Services Fit
 
