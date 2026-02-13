@@ -14,7 +14,7 @@ Generate boilerplate for a new business process. The process name/purpose should
 
 ## Step 1: Read Reference Materials
 
-1. Read the process scope guide: `/home/user/aihub-core/aihub_process/AGENTS.md`
+1. Read the process scope guide: `/home/user/aihub-core/aihub_process/CLAUDE.md`
 2. Study existing processes in `aihub_process/playground/minimal_processes/` for examples
 3. Extract the process name from `$ARGUMENTS` and convert to `snake_case` for directories, `CamelCase` for classes
 

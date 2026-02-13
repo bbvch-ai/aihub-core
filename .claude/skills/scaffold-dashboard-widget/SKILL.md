@@ -15,7 +15,7 @@ Create a new dashboard widget for the admin interface. The widget name/type shou
 
 ## Before You Start
 
-Read the frontend scope guide: `/home/user/aihub-core/aihub_web/AGENTS.md`
+Read the frontend scope guide: `/home/user/aihub-core/aihub_web/CLAUDE.md`
 
 Study existing dashboard components:
 - Grid layout: `aihub_web/aihub_web/components/Dashboard/Grid.vue`

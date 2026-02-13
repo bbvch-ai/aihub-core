@@ -16,7 +16,7 @@ Generate Pinia-Colada composables for a backend API resource. The resource name 
 
 ## Before You Start
 
-Read the frontend scope guide: `/home/user/aihub-core/aihub_web/AGENTS.md`
+Read the frontend scope guide: `/home/user/aihub-core/aihub_web/CLAUDE.md`
 
 Study an existing composable directory for reference:
 - Simple query: `aihub_web/aihub_web/composables/agent/useAgentInstances.ts`

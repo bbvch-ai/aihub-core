@@ -4,7 +4,7 @@ description: Analyzes test coverage, identifies gaps, and suggests test
   improvements. Understands pytest-bdd, async testing, and the custom test
   runners (AgentTestRunner, ProcessTestRunner, ApiTestRunner, BotTestRunner).
 tools: Read, Grep, Glob, Bash
-model: sonnet
+model: opus
 ---
 
 # Test Analyzer

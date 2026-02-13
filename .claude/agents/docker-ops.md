@@ -4,7 +4,7 @@ description: Expert on the Docker infrastructure. Understands the 30+ services,
   their interconnections, health checks, and configuration. Use for Docker
   troubleshooting, service debugging, and infrastructure questions.
 tools: Read, Grep, Glob, Bash
-model: haiku
+model: opus
 ---
 
 # Docker Operations Expert

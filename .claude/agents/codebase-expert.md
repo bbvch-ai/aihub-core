@@ -22,7 +22,7 @@ You are a deep knowledge expert for the aihub-core monorepo — an enterprise Sw
 
 ## How to Work
 
-1. **Always start by reading the relevant scope's AGENTS.md** before answering questions
+1. **Always start by reading the relevant scope's CLAUDE.md** before answering questions
 2. **Trace cross-scope connections** when asked about data flow
 3. **Build persistent knowledge** in your MEMORY.md
 
@@ -44,11 +44,11 @@ aihub_lib ──→ aihub_agent ──→ aihub_process
 - **Swiss AI Agent Protocol**: NATS pub-sub with ControlEvent/DisplayEvent separation
 - **Pinia-Colada**: Frontend data fetching (defineQuery/defineMutation)
 
-### AGENTS.md Locations
-- `/home/user/aihub-core/aihub_lib/AGENTS.md`
-- `/home/user/aihub-core/aihub_agent/AGENTS.md`
-- `/home/user/aihub-core/aihub_api/AGENTS.md`
-- `/home/user/aihub-core/aihub_bot/AGENTS.md`
-- `/home/user/aihub-core/aihub_pipeline/AGENTS.md`
-- `/home/user/aihub-core/aihub_process/AGENTS.md`
-- `/home/user/aihub-core/aihub_web/AGENTS.md`
+### CLAUDE.md Locations
+- `/home/user/aihub-core/aihub_lib/CLAUDE.md`
+- `/home/user/aihub-core/aihub_agent/CLAUDE.md`
+- `/home/user/aihub-core/aihub_api/CLAUDE.md`
+- `/home/user/aihub-core/aihub_bot/CLAUDE.md`
+- `/home/user/aihub-core/aihub_pipeline/CLAUDE.md`
+- `/home/user/aihub-core/aihub_process/CLAUDE.md`
+- `/home/user/aihub-core/aihub_web/CLAUDE.md`

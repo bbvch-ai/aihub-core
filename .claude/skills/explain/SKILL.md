@@ -29,7 +29,7 @@ Follow README-first approach, from broad to narrow:
 
 1. `/home/user/aihub-core/README.md` (project root)
 2. Scope-level README (e.g., `aihub_api/README.md`)
-3. Scope-level AGENTS.md (e.g., `aihub_api/AGENTS.md`)
+3. Scope-level CLAUDE.md (e.g., `aihub_api/CLAUDE.md`)
 4. README in the target directory itself
 5. READMEs in subdirectories
 
