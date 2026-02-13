@@ -474,37 +474,71 @@ AI assistants will automatically detect and use this configuration when present 
 The AI-Hub includes comprehensive Claude Code enablement with skills, custom subagents, automated hooks, and MCP
 servers. Full details are in `.claude/README.md`.
 
-#### Skills (21 total — invoke via `/skill-name`)
+#### Skills (43 total — invoke via `/skill-name`)
+
+**Workflow**:
+
+- **`/review-diff`**: Pre-PR code review — analyze diff as a senior developer
+- **`/create-pr`**: Pre-PR validation, formatting, linting, type checking, and tests across affected scopes
+- **`/implement-feedback-from-pr`**: Fetch PR comments and implement reviewer feedback
+- **`/plan-issue`**: Fetch GitHub issue and create detailed implementation plan
+- **`/reflect`**: Session retrospective — identify mistakes, improve CLAUDE.md and skills
+- **`/release-prep`**: Comprehensive pre-release validation across all scopes
+- **`/test-scope`**: Smart scoped test runner — detects affected scopes from git diff
 
 **Documentation**:
 
-- **`/create-pr`**: Pre-pull request validation, formatting, linting, type checking, and tests across affected scopes
-- **`/update-doc`**: Synchronize documentation with code changes (model-invocable)
-- **`/explain`**: Analyze and explain code structure, identify gaps (model-invocable)
+- **`/update-doc`**: Sync docs, CLAUDE.md, and skills with code changes
+- **`/explain`**: Analyze and explain code structure, identify gaps
 - **`/document-decision`**: Create Architecture Decision Records (ADRs)
 - **`/document-feature`**: Create user-facing VitePress feature documentation
 - **`/document-solution`**: Edit solution concept docs for procurement evaluators
-- **`/implement-feedback-from-pr`**: Systematically implement PR review feedback
 
 **Scaffolding**:
 
-- **`/scaffold-agent`**: Generate complete AI agent boilerplate (class, events, config, tests, Dockerfile)
+- **`/scaffold-agent`**: Generate AI agent boilerplate (class, events, config, tests)
 - **`/scaffold-pipeline`**: Generate Dagster pipeline boilerplate (asset factory, I/O manager, resources)
 - **`/scaffold-process`**: Generate process orchestration boilerplate (entity delegation, work events)
-- **`/scaffold-api-endpoint`**: Generate REST API endpoint boilerplate (Controller, Service, DTO, tests)
+- **`/scaffold-api-endpoint`**: Generate REST API controller (endpoints, DTOs, registration)
+- **`/scaffold-api-service`**: Generate API service layer (business logic, validation)
+- **`/scaffold-api-repository`**: Generate MongoEngine entity (schema, indexes, methods)
 - **`/scaffold-frontend-page`**: Generate Nuxt page boilerplate (composables, pages, components)
 - **`/scaffold-bot-handler`**: Generate bot conversation handler boilerplate (ChatBot subclass)
 
 **Developer Experience**:
 
-- **`/test-scope`**: Smart scoped test runner — detects affected scopes from git diff, runs tests in dependency order
 - **`/docker-dev`**: Manage Docker dev environment (up, down, health, logs, restart, ports, status)
 - **`/check-i18n`**: Validate all 4 locale files have matching keys, report missing translations
 - **`/generate-sdk`**: Regenerate frontend API SDK from OpenAPI specification
 - **`/dependency-audit`**: Audit dependencies for outdated packages, vulnerabilities, version drift
 - **`/validate-events`**: Validate event hierarchy, registration, and subscriber matching
 - **`/debug-agent`**: Debug agent event flow, NATS subscriptions, and Phoenix traces
-- **`/release-prep`**: Comprehensive pre-release validation across all scopes
+- **`/debug-pipeline`**: Debug Dagster pipeline failures, sensor issues, resource config
+
+**Frontend**:
+
+- **`/scaffold-composable`**: Generate Pinia-Colada composable (query + mutation)
+- **`/scaffold-event-display`**: Generate event timeline component
+- **`/scaffold-dashboard-widget`**: Generate dashboard widget (ApexCharts, GridStack)
+- **`/scaffold-frontend-subpage`**: Generate detail page with tab subpages
+- **`/scaffold-frontend-component`**: Generate Vue component (card, modal, list, form)
+- **`/debug-frontend`**: Visual UI debugging with Playwright
+- **`/audit-frontend`**: Frontend code audit (SDK, i18n, accessibility, patterns)
+- **`/primevue-lookup`**: PrimeVue component docs lookup
+- **`/design-system`**: Design system reference guide
+
+**API & Pipeline**:
+
+- **`/api-auth-guide`**: Auth, identity, permissions reference
+- **`/nats-events`**: NATS, JetStream, events, pub/sub, RPC reference
+- **`/dagster-pipelines`**: Dagster assets, resources, IO managers, partitions reference
+- **`/rclone-guide`**: Rclone cloud storage integration reference
+
+**Bot**:
+
+- **`/setup-bot-connection`**: Bot connection setup (Azure, Teams, Slack)
+- **`/debug-bot`**: Bot troubleshooting and debugging
+- **`/bot-reference`**: Bot architecture and patterns reference
 
 #### Custom Subagents (7 — used automatically for specialized tasks)
 

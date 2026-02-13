@@ -130,9 +130,10 @@ packages.
 
 01. **Type-hint everything**: Return types mandatory. Use `Annotated` for parameters. Modern syntax: `str | None` not
     `Optional[str]`, `list[str]` not `List[str]`.
-02. **Pydantic over dicts/dataclasses**: Use Pydantic models for structured data (validation, serialization, SecretStr).
-03. **Fail fast**: No defensive try-catch wrappers. Validate inputs immediately. Let exceptions propagate.
-04. **Comments explain "why"**: Never "what" or "how" (code is self-documenting). Docstrings for design rationale.
+02. **Pydantic over dicts/dataclasses**: Always Pydantic models, never dataclasses. Add `@classmethod` factory methods
+    like `from_entity()`, `from_request()` to make construction easier.
+03. **Fail fast**: No defensive try-catch wrappers. No catching errors to return None. Let exceptions propagate.
+04. **No comments**: Never comment what code does — code is self-documenting. Only explain "why" when non-obvious.
 05. **Async consistently**: All I/O operations (network, database, Redis) use async/await.
 06. **Keep methods short**: < 50 lines, cognitive complexity < 15. Extract sub-functions if needed.
 07. **Inheritance only when beneficial**: Event hierarchies, shared infrastructure, framework integration. Not for code
@@ -143,6 +144,12 @@ packages.
 10. **Modern Python**: Use `|` unions, `@property`, `@override`, `match/case`.
 11. **Controller → Service → Entity**: Separation of concerns (HTTP layer → business logic → persistence).
 12. **Dependency injection**: FastAPI `Depends` and `Security` for clean parameter injection.
+13. **One class per file**: File name MUST match class name (`MyClass` → `MyClass.py`). No multi-class files.
+14. **No loose functions**: Avoid files containing standalone functions. Create service classes with `@staticmethod` or
+    `@classmethod` methods instead.
+15. **No backwards compatibility**: Breaking changes are fine. Do not add compatibility shims, re-exports, or renamed
+    aliases unless explicitly asked.
+16. **No new abstractions**: Do not introduce abstractions that do not follow existing patterns in the codebase.
 
 **Example**:
 
@@ -170,10 +177,10 @@ class AgentDTO(BaseModel):  # Pydantic not dict
 - **Type Checker**: MyPy (`strict = true`). Config: `/home/user/aihub-core/pyproject.toml`
 - **Naming**: `snake_case` for files/dirs, `CamelCase` for classes, `test_*.py` for tests
 - **Types**: Mandatory type annotations. Use modern syntax (`list[int]`, `int | None`). Avoid complex types (dicts,
-  tuples)—use Pydantic models or dataclasses
+  tuples)—use Pydantic models. Use `Annotated` for parameter metadata instead of docstring `Args:` sections.
 - **Error Handling**: Let functions fail. Do NOT catch errors and return None
-- **Docstrings**: Required for all public modules/classes/methods. Explain "why", not "what". Never use `Args:` or
-  `Returns:` sections—keep docstrings concise
+- **Docstrings**: Explain "why", not "what". Never use `Args:` or `Returns:` sections—use type hints and `Annotated`
+  instead. Keep docstrings concise, one or two sentences max.
 
 ## Development Workflow
 
@@ -264,14 +271,15 @@ Before marking task complete:
 
 **Full documentation**: `/home/user/aihub-core/.claude/README.md`
 
-**Skills** (40 total — invoke via `/skill-name`):
+**Skills** (43 total — invoke via `/skill-name`):
 
-- **Documentation**: `/create-pr`, `/update-doc`, `/explain`, `/document-decision`, `/document-feature`,
-  `/document-solution`, `/implement-feedback-from-pr`
+- **Workflow**: `/review-diff`, `/create-pr`, `/implement-feedback-from-pr`, `/plan-issue`, `/reflect`,
+  `/release-prep`, `/test-scope`
+- **Documentation**: `/update-doc`, `/explain`, `/document-decision`, `/document-feature`, `/document-solution`
 - **Scaffolding**: `/scaffold-agent`, `/scaffold-pipeline`, `/scaffold-process`, `/scaffold-api-endpoint`,
   `/scaffold-api-service`, `/scaffold-api-repository`, `/scaffold-frontend-page`, `/scaffold-bot-handler`
-- **Developer Experience**: `/test-scope`, `/docker-dev`, `/check-i18n`, `/generate-sdk`, `/dependency-audit`,
-  `/validate-events`, `/debug-agent`, `/debug-pipeline`, `/release-prep`
+- **Developer Experience**: `/docker-dev`, `/check-i18n`, `/generate-sdk`, `/dependency-audit`,
+  `/validate-events`, `/debug-agent`, `/debug-pipeline`
 - **Frontend**: `/scaffold-composable`, `/scaffold-event-display`, `/scaffold-dashboard-widget`,
   `/debug-frontend`, `/audit-frontend`, `/primevue-lookup`, `/scaffold-frontend-subpage`,
   `/scaffold-frontend-component`, `/design-system`

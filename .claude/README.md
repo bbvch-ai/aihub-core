@@ -48,7 +48,10 @@ This directory contains all Claude Code configuration for the aihub-core monorep
 │   ├── debug-pipeline/    # Pipeline troubleshooting and debugging
 │   ├── setup-bot-connection/ # Bot connection setup (Azure, Teams, Slack)
 │   ├── debug-bot/         # Bot troubleshooting and debugging
-│   └── bot-reference/     # Bot architecture and patterns reference
+│   ├── bot-reference/     # Bot architecture and patterns reference
+│   ├── review-diff/       # Pre-PR code review (diff analysis)
+│   ├── plan-issue/        # GitHub issue → implementation plan
+│   └── reflect/           # Session retrospective → improve CLAUDE.md/skills
 ├── agents/                # Custom subagents with specialized roles
 │   ├── codebase-expert.md # Deep knowledge builder (with memory)
 │   ├── code-reviewer.md   # Quality and security reviewer
@@ -81,17 +84,22 @@ This directory contains all Claude Code configuration for the aihub-core monorep
 
 ## Quick Reference
 
-### Skills (40 total)
+### Skills (43 total)
 
 | Category | Skill | Description |
 |----------|-------|-------------|
-| Docs | `/create-pr` | Pre-PR validation |
-| | `/update-doc` | Sync docs with code |
+| Workflow | `/review-diff` | Pre-PR code review (diff analysis) |
+| | `/create-pr` | Pre-PR validation |
+| | `/implement-feedback-from-pr` | Apply PR feedback |
+| | `/plan-issue` | GitHub issue → implementation plan |
+| | `/reflect` | Session retrospective → improve CLAUDE.md/skills |
+| | `/release-prep` | Pre-release validation |
+| | `/test-scope` | Scoped test runner |
+| Docs | `/update-doc` | Sync docs, CLAUDE.md, and skills with code |
 | | `/explain` | Analyze and explain code |
 | | `/document-decision` | Create ADRs |
 | | `/document-feature` | Document features |
 | | `/document-solution` | Edit solution concepts |
-| | `/implement-feedback-from-pr` | Apply PR feedback |
 | Scaffold | `/scaffold-agent` | New AI agent |
 | | `/scaffold-pipeline` | New Dagster pipeline |
 | | `/scaffold-process` | New agentic process |
@@ -100,14 +108,13 @@ This directory contains all Claude Code configuration for the aihub-core monorep
 | | `/scaffold-api-repository` | New MongoEngine entity |
 | | `/scaffold-frontend-page` | New frontend page |
 | | `/scaffold-bot-handler` | New bot handler |
-| DevEx | `/test-scope` | Scoped test runner |
-| | `/docker-dev` | Docker env management |
+| DevEx | `/docker-dev` | Docker env management |
 | | `/check-i18n` | Translation validation |
 | | `/generate-sdk` | API SDK regeneration |
 | | `/dependency-audit` | Dep health check |
 | | `/validate-events` | Event system validation |
 | | `/debug-agent` | Agent debugging |
-| | `/release-prep` | Pre-release validation |
+| | `/debug-pipeline` | Pipeline troubleshooting and debugging |
 | Frontend | `/scaffold-composable` | New Pinia-Colada composable |
 | | `/scaffold-event-display` | New event display component |
 | | `/scaffold-dashboard-widget` | New dashboard widget |
@@ -121,7 +128,6 @@ This directory contains all Claude Code configuration for the aihub-core monorep
 | | `/nats-events` | NATS, JetStream, events, pub/sub, RPC |
 | | `/dagster-pipelines` | Dagster assets, resources, IO managers, partitions |
 | | `/rclone-guide` | Rclone cloud storage integration |
-| | `/debug-pipeline` | Pipeline troubleshooting and debugging |
 | Bot | `/setup-bot-connection` | Bot connection setup (Azure, Teams, Slack) |
 | | `/debug-bot` | Bot troubleshooting and debugging |
 | | `/bot-reference` | Bot architecture and patterns reference |
