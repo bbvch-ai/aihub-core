@@ -7,6 +7,7 @@ from typing import Any
 from cachetools import TTLCache
 from aihub_lib.context.BaseContext import BaseContext
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
+from aihub_lib.infrastructure.opentelemetry.tracing.openinference_context import openinference_trace_context
 from aihub_lib.infrastructure.opentelemetry.tracing.SmartTracer import get_tracer
 from aihub_lib.nats.events import BaseEvent, StartEvent
 from aihub_lib.nats.topics.agents.AgentInstanceTopic import AgentInstanceTopic
@@ -113,13 +114,14 @@ class AgentRunTracer:
         ctx = set_span_in_context(span)
         token = context.attach(ctx)
 
-        try:
-            yield span
-        finally:
-            # Always detach the context and end the span
-            context.detach(token)
-            span.end()
-            logger.debug(f"Finished tracing step: {span_name}")
+        with openinference_trace_context():
+            try:
+                yield span
+            finally:
+                # Always detach the context and end the span
+                context.detach(token)
+                span.end()
+                logger.debug(f"Finished tracing step: {span_name}")
 
     async def trace_step_stop(self, span: Span, output_events: list[BaseEvent] | None, topic: AgentInstanceTopic):
         """
