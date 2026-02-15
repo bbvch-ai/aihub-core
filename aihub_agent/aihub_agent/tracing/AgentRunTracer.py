@@ -7,7 +7,10 @@ from typing import Any
 from cachetools import TTLCache
 from aihub_lib.context.BaseContext import BaseContext
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
-from aihub_lib.infrastructure.opentelemetry.tracing.openinference_context import openinference_trace_context
+from aihub_lib.infrastructure.opentelemetry.tracing.openinference_context import (
+    get_step_parent_context,
+    openinference_trace_context,
+)
 from aihub_lib.infrastructure.opentelemetry.tracing.SmartTracer import get_tracer
 from aihub_lib.nats.events import BaseEvent, StartEvent
 from aihub_lib.nats.topics.agents.AgentInstanceTopic import AgentInstanceTopic
@@ -45,6 +48,12 @@ class AgentRunTracer:
         self._run_inputs: TTLCache[str, str] = TTLCache(maxsize=_CACHE_MAX_SIZE, ttl=_CACHE_TTL_SECONDS)
         self._run_user_ids: TTLCache[str, str] = TTLCache(maxsize=_CACHE_MAX_SIZE, ttl=_CACHE_TTL_SECONDS)
         self._run_outputs: TTLCache[str, str] = TTLCache(maxsize=_CACHE_MAX_SIZE, ttl=_CACHE_TTL_SECONDS)
+        # Cached step parent per run — read once on first step, reused for all
+        # subsequent steps in the same run.  Without caching, internal NATS
+        # messages between steps would overwrite the ContextVar and break nesting.
+        self._run_step_parents: TTLCache[str, context.Context | None] = TTLCache(
+            maxsize=_CACHE_MAX_SIZE, ttl=_CACHE_TTL_SECONDS
+        )
 
     async def trace_run_start(self, topic: AgentInstanceTopic, event: StartEvent):
         """
@@ -102,11 +111,20 @@ class AgentRunTracer:
             SpanAttributes.TAG_TAGS: [topic.thread_id, topic.display_id, topic.run_id],
         }
 
+        # On the first step for this run, snapshot the step parent context and
+        # cache it.  Subsequent steps reuse the cached value so that internal
+        # NATS messages between steps don't overwrite the parent reference.
+        if topic.run_id not in self._run_step_parents:
+            self._run_step_parents[topic.run_id] = get_step_parent_context()
+
+        step_parent = self._run_step_parents.get(topic.run_id)
+
         # Start span without making it current yet
         span = self.tracer.start_span(
             name=span_name,
             kind=trace.SpanKind.CONSUMER,
             attributes=attributes,
+            context=step_parent,
         )
 
         # Create a new context with this span as the current span
@@ -194,3 +212,4 @@ class AgentRunTracer:
         self._run_inputs.pop(run_id, None)
         self._run_user_ids.pop(run_id, None)
         self._run_outputs.pop(run_id, None)
+        self._run_step_parents.pop(run_id, None)

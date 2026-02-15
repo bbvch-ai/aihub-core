@@ -2,6 +2,10 @@ import logging
 
 from opentelemetry import context, propagate, trace
 
+from aihub_lib.infrastructure.opentelemetry.tracing.openinference_context import (
+    OPENINFERENCE_ACTIVE_HEADER,
+    set_step_parent,
+)
 from aihub_lib.infrastructure.opentelemetry.tracing.SmartTracer import get_tracer
 
 logger = logging.getLogger(__name__)
@@ -34,6 +38,11 @@ class NATSTraceContextPropagator:
     def extract_and_activate_trace_context(headers: dict[str, str]) -> context.Context:
         """
         Extract trace context from NATS message headers and activate it.
+
+        When the message originates from an agent step (indicated by the
+        X-Openinference-Active header), the extracted context is stored as the
+        step parent so downstream agent steps can nest under the orchestrator's
+        step span.
         """
         if not headers:
             logger.debug("No headers provided, using current context")
@@ -46,6 +55,11 @@ class NATSTraceContextPropagator:
             return extracted_context
 
         context.attach(extracted_context)
+
+        if headers.get(OPENINFERENCE_ACTIVE_HEADER):
+            set_step_parent(extracted_context)
+            logger.debug("Stored step parent from cross-agent message")
+
         logger.debug(f"Activated trace context from headers: {headers}")
 
         return extracted_context
