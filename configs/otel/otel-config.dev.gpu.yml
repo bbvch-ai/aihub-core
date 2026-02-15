@@ -89,7 +89,7 @@ service:
     # Send OpenInference traces to the stack-local Langfuse instance
     traces/langfuse:
       receivers: [ otlp ]
-      processors: [ filter/langfuse, batch ]
+      processors: [ filter/noise, filter/langfuse, batch ]
       exporters: [ otlphttp/langfuse ]
     # Accept logs but use debug exporter (Langfuse doesn't support logs via OTEL)
     logs:

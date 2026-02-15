@@ -40,7 +40,7 @@ processors:
         - 'resource.attributes["service.name"] == "litellm" and attributes["service"] == "postgres"'
         - 'resource.attributes["service.name"] == "litellm" and attributes["service"] == "auth"'
 
-  # Filter spans for Langfuse: only keep LLM-related traces with OpenInference semantic conventions
+  # Filter spans for Langfuse: only keep spans with OpenInference semantic conventions
   filter/langfuse:
     error_mode: ignore
     traces:
@@ -89,7 +89,7 @@ service:
     # Send OpenInference traces to the stack-local Langfuse instance
     traces/langfuse:
       receivers: [ otlp ]
-      processors: [ filter/langfuse, batch ]
+      processors: [ filter/noise, filter/langfuse, batch ]
       exporters: [ otlphttp/langfuse ]
     # Accept logs but use debug exporter (Langfuse doesn't support logs via OTEL)
     logs:

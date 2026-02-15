@@ -669,6 +669,8 @@ services:
         condition: service_started
       clickhouse:
         condition: service_healthy
+      langfuse-web:
+        condition: service_healthy
     ports:
       - "127.0.0.1:3030:3030"
     environment:
@@ -722,8 +724,6 @@ services:
         condition: service_started
       clickhouse:
         condition: service_healthy
-      langfuse-worker:
-        condition: service_started
     ports:
       - "6006:3000"
     environment:
@@ -1794,6 +1794,7 @@ services:
 
       # Docling
       DOCLING_API_BASE_URL: http://docling:5001
+      DOCLING_API_KEY: ${DOCLING_API_KEY}
       DOCLING_API_TIMEOUT: ${DOCLING_API_TIMEOUT}
       DOCLING_PIPELINE_TYPE: ${DOCLING_PIPELINE_TYPE}
       DOCLING_HOSTED_VLM_API_BASE_URL: http://litellm:4000
@@ -2332,6 +2333,7 @@ services:
 
       # Docling
       DOCLING_API_BASE_URL: http://docling:5001
+      DOCLING_API_KEY: ${DOCLING_API_KEY}
       DOCLING_API_TIMEOUT: ${DOCLING_API_TIMEOUT}
       DOCLING_PIPELINE_TYPE: ${DOCLING_PIPELINE_TYPE}
       DOCLING_HOSTED_VLM_API_BASE_URL: http://litellm:4000
@@ -2398,6 +2400,7 @@ services:
 
       # Docling
       DOCLING_API_BASE_URL: http://docling:5001
+      DOCLING_API_KEY: ${DOCLING_API_KEY}
       DOCLING_API_TIMEOUT: ${DOCLING_API_TIMEOUT}
       DOCLING_PIPELINE_TYPE: ${DOCLING_PIPELINE_TYPE}
       DOCLING_HOSTED_VLM_API_BASE_URL: http://litellm:4000
