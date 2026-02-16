@@ -48,7 +48,7 @@ class TestUsageLimitEnforcement:
     """Tests for usage limit enforcement in OpenAI chat completions."""
 
     @pytest.mark.asyncio
-    @patch("aihub_api.routes.openai.OpenaiService.AgentService.get_agent", new_callable=AsyncMock)
+    @patch("aihub_api.routes.openai.OpenaiService.AgentService.get_agent_instance", new_callable=AsyncMock)
     @patch("aihub_api.routes.openai.OpenaiService.UsageLimits.check_and_raise", new_callable=AsyncMock)
     async def test_returns_429_when_limit_exceeded(self, mock_check_usage: AsyncMock, mock_get_agent: AsyncMock):
         """Test that a 429 error is returned when usage limit is exceeded."""

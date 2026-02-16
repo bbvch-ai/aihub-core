@@ -215,7 +215,8 @@ class TestGetEffectiveLimitsForRoles:
         assert limits[0].period == "1d"
 
     @patch("aihub_lib.persistence.access.entities.RoleEntity.RoleEntity")
-    def test_role_without_limits_contributes_nothing(self, mock_role_entity: MagicMock):
+    def test_role_without_limits_grants_unlimited(self, mock_role_entity: MagicMock):
+        """A role without limits means unlimited — if any role is unlimited, user is unlimited."""
         mock_role_entity.get_usage_limits_for_roles.return_value = [
             [rl(f"{AGENT_PREFIX}>", 50, "1d")],
             [],
@@ -225,8 +226,7 @@ class TestGetEffectiveLimitsForRoles:
             ["role1", "role2"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
         )
 
-        assert len(limits) == 1
-        assert limits[0].limit == 50
+        assert limits == []
 
     @patch("aihub_lib.persistence.access.entities.RoleEntity.RoleEntity")
     def test_three_levels_all_returned(self, mock_role_entity: MagicMock):

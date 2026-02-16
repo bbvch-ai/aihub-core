@@ -38,15 +38,6 @@ class UsageLimits:
         return RateLimitStore(self._redis, user_id)
 
     @staticmethod
-    def build_resource_path(scope: str, resource_type: ResourceType, resource_class: str, resource_id: str) -> str:
-        """Build a fully qualified resource path from its parts.
-
-        >>> UsageLimits.build_resource_path("aihub.user", ResourceType.AGENT, "MyAgent", "v1")
-        'aihub.user.agent.MyAgent.v1'
-        """
-        return f"{scope}.{resource_type}.{resource_class}.{resource_id}"
-
-    @staticmethod
     def _pattern_matches(pattern: str, concrete_path: str) -> bool:
         """Wildcard matching: ``*`` = single level, ``>`` = one or more trailing levels."""
         pattern_parts = pattern.split(".")
@@ -111,7 +102,8 @@ class UsageLimits:
 
         all_role_limits = RoleEntity.get_usage_limits_for_roles(role_names)
 
-        if not any(role_limits for role_limits in all_role_limits):
+        # A role without limits means unlimited access — if any role grants unlimited, the user is unlimited
+        if not all_role_limits or any(not role_limits for role_limits in all_role_limits):
             return []
 
         if resource_path is None:
@@ -235,7 +227,7 @@ class UsageLimits:
 
         from aihub_lib.auth.usage.UsageLimitMessages import UsageLimitMessages
 
-        resource_path = self.build_resource_path(USER_SCOPE, resource_type, resource_class, resource_id)
+        resource_path = f"{USER_SCOPE}.{resource_type}.{resource_class}.{resource_id}"
         usage_status = await self.check_and_increment(user.id, user.roles, resource_path=resource_path)
         if usage_status.is_exceeded:
             effective_locale = locale or LocaleHandler.DEFAULT_LOCALE
