@@ -1,6 +1,6 @@
 import logging
 from asyncio import sleep
-from typing import Annotated, override
+from typing import Annotated, Any, override
 
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
@@ -147,7 +147,50 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
                     default_process_config=process_class_dto.default_process_config,
                 )
 
+                # Auto-create default profile if provided and not already existing
+                if response.default_profile:
+                    self._create_default_process_profile(response.process_class, response.default_profile, response)
+
         return list(unique_classes_dict.values())
+
+    @staticmethod
+    def _create_default_process_profile(
+        process_class: str,
+        default_profile: dict[str, Any],
+        response: ProcessClassDiscoveryResponseEvent,
+    ) -> None:
+        """Create a default process profile in the DB if one doesn't already exist."""
+        process_id = default_profile.get("process_id")
+        if not process_id:
+            logger.warning(f"Default profile for {process_class} has no process_id, skipping auto-creation.")
+            return
+
+        existing = ProcessConfigEntityDocument.find_for_class_and_id(process_class, process_id)
+        if existing:
+            return
+
+        name_data = default_profile.get("name") or {}
+        description_data = default_profile.get("description") or {}
+
+        from aihub_lib.i18n.LocaleString import LocaleString
+        from aihub_lib.persistence.i18n.LocaleStringEntity import LocaleStringEntity
+
+        name = LocaleStringEntity.from_locale_string(LocaleString(**name_data) if name_data else response.name)
+        description = LocaleStringEntity.from_locale_string(
+            LocaleString(**description_data) if description_data else response.description
+        )
+        icon = default_profile.get("icon") or response.icon
+
+        entity = ProcessConfigEntityDocument(
+            process_class=process_class,
+            process_id=process_id,
+            name=name,
+            description=description,
+            icon=icon,
+            config_data=default_profile,
+        )
+        entity.save()
+        logger.info(f"Auto-created default profile '{process_class}/{process_id}' from process declaration.")
 
     def _register_class_endpoints(self, process_class_dto: ProcessClassDTO):
         """Registers class-level endpoints with dynamic {process_id} path parameter."""

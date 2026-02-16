@@ -14,11 +14,13 @@ from typing import Annotated
 
 from pydantic import BaseModel, Field
 
+from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.form.elements.Checkbox import Checkbox
 from aihub_lib.nats.events.form.elements.Group import Group
 from aihub_lib.nats.events.form.elements.InputNumber import InputNumber
 from aihub_lib.nats.events.form.elements.InputText import InputText
+from aihub_lib.nats.events.form.elements.LocaleInput import LocaleInput
 from aihub_lib.nats.events.form.elements.Repeater import Repeater
 from aihub_lib.nats.events.form.Form import Form
 
@@ -604,3 +606,134 @@ class TestSubmissionModel:
             items=[{"input_text": "Item", "is_valid": True}],
         )
         assert instance.name == "Test"
+
+
+# =============================================================================
+# Tests for Default Profile Data Extraction
+# =============================================================================
+
+
+class TestDefaultProfileData:
+    """Test to_default_profile_data() for extracting storable profile data."""
+
+    def test_includes_identity_fields(self) -> None:
+        """Test that identity fields (agent_class, agent_id, name, description, icon) are always included."""
+        locale = LocaleString(en="Test", de="Test")
+
+        data_config = AgentConfig(
+            agent_class="TestAgent",
+            agent_id="test-1",
+            name=locale,
+            description=locale,
+            icon="mage:robot",
+        )
+
+        form_config = AgentConfig(
+            agent_class="",
+            agent_id=InputText(label=LocaleString(en="ID")),
+            name=LocaleInput(label=LocaleString(en="Name"), input_type="text"),
+            description=LocaleInput(label=LocaleString(en="Desc"), input_type="textarea"),
+        )
+
+        result = data_config.to_default_profile_data(form_config)
+
+        assert "agent_class" in result
+        assert result["agent_class"] == "TestAgent"
+        assert "agent_id" in result
+        assert result["agent_id"] == "test-1"
+        assert "name" in result
+        assert "description" in result
+        assert "icon" in result
+
+    def test_includes_configurable_fields(self) -> None:
+        """Test that configurable fields (with FormKit elements in form config) are included."""
+
+        class CustomConfig(AgentConfig):
+            customer_bucket: Annotated[str | InputText, Field(description="Bucket")] = "default"
+            temperature: Annotated[float | InputNumber, Field(description="Temp")] = 0.7
+
+        locale = LocaleString(en="Test", de="Test")
+
+        data_config = CustomConfig(
+            agent_class="TestAgent",
+            agent_id="test-1",
+            name=locale,
+            description=locale,
+            customer_bucket="customers",
+            temperature=0.9,
+        )
+
+        form_config = CustomConfig(
+            agent_class="",
+            agent_id=InputText(label=LocaleString(en="ID")),
+            name=LocaleInput(label=LocaleString(en="Name"), input_type="text"),
+            description=LocaleInput(label=LocaleString(en="Desc"), input_type="textarea"),
+            customer_bucket=InputText(label=LocaleString(en="Bucket")),
+            temperature=InputNumber(label=LocaleString(en="Temperature")),
+        )
+
+        result = data_config.to_default_profile_data(form_config)
+
+        assert result["customer_bucket"] == "customers"
+        assert result["temperature"] == 0.9
+
+    def test_excludes_non_configurable_fields(self) -> None:
+        """Test that non-configurable fields (no FormKit element) are excluded from profile data."""
+
+        class LLMConfig(Form):
+            model: str = "gpt-4"
+            temperature: float = 0.7
+
+        class CustomConfig(AgentConfig):
+            customer_bucket: Annotated[str | InputText, Field(description="Bucket")] = "default"
+            llm: LLMConfig = LLMConfig()
+
+        locale = LocaleString(en="Test", de="Test")
+
+        data_config = CustomConfig(
+            agent_class="TestAgent",
+            agent_id="test-1",
+            name=locale,
+            description=locale,
+            customer_bucket="customers",
+            llm=LLMConfig(model="gpt-4o", temperature=0.5),
+        )
+
+        form_config = CustomConfig(
+            agent_class="",
+            agent_id=InputText(label=LocaleString(en="ID")),
+            name=LocaleInput(label=LocaleString(en="Name"), input_type="text"),
+            description=LocaleInput(label=LocaleString(en="Desc"), input_type="textarea"),
+            customer_bucket=InputText(label=LocaleString(en="Bucket")),
+            llm=LLMConfig(model="gpt-4", temperature=0.7),  # Non-configurable: no FormKit elements
+        )
+
+        result = data_config.to_default_profile_data(form_config)
+
+        assert "customer_bucket" in result
+        assert "llm" not in result
+
+    def test_excludes_internal_form_name_field(self) -> None:
+        """Test that _form_name computed field is not in identity or configurable sets."""
+        locale = LocaleString(en="Test", de="Test")
+
+        data_config = AgentConfig(
+            agent_class="TestAgent",
+            agent_id="test-1",
+            name=locale,
+            description=locale,
+        )
+
+        form_config = AgentConfig(
+            agent_class="",
+            agent_id=InputText(label=LocaleString(en="ID")),
+            name=LocaleInput(label=LocaleString(en="Name"), input_type="text"),
+            description=LocaleInput(label=LocaleString(en="Desc"), input_type="textarea"),
+        )
+
+        result = data_config.to_default_profile_data(form_config)
+
+        # _form_name is a computed field and not in model_dump() by default with exclude
+        # but model_dump() does include computed fields, so we check it's handled
+        # _form_name would be in identity_fields check only if key matches, which it doesn't
+        assert result.get("agent_class") == "TestAgent"

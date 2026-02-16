@@ -9,7 +9,6 @@ from fastapi import HTTPException
 from aihub_api.routes.evaluation.DatasetService import DatasetService
 from aihub_api.routes.evaluation.dto.dataset.DatasetCreate import DatasetCreate
 from aihub_api.routes.evaluation.dto.dataset.DatasetItemCreate import DatasetItemCreate
-from aihub_api.routes.evaluation.dto.dataset.DatasetUpdate import DatasetUpdate
 
 
 def _mock_langfuse_dataset(

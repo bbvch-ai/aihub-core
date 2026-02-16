@@ -1,7 +1,6 @@
 """Tests for AgentRunTracer — OTEL + Langfuse span enrichment for agent runs."""
 
-import json
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from aihub_lib.nats.events import StartEvent
@@ -9,7 +8,7 @@ from aihub_lib.nats.topics.agents.AgentInstanceTopic import AgentInstanceTopic
 from bson import ObjectId
 from opentelemetry.trace import StatusCode
 
-from aihub_agent.tracing.AgentRunTracer import AgentRunTracer, _CACHE_MAX_SIZE, _CACHE_TTL_SECONDS
+from aihub_agent.tracing.AgentRunTracer import _CACHE_MAX_SIZE, _CACHE_TTL_SECONDS, AgentRunTracer
 
 
 @pytest.fixture

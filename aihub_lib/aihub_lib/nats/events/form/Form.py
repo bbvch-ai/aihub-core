@@ -531,6 +531,19 @@ class Form(BaseModel):
                     non_configurable[field_name] = value
         return non_configurable
 
+    def to_default_profile_data(self, form_config: Form) -> dict[str, Any]:
+        """Extract configurable field values and identity fields for DB storage.
+
+        Given a data-mode instance and the corresponding form-mode config,
+        returns only the fields that should be persisted as a default profile.
+        Non-configurable deployment-specific values (e.g. LLMConfig) are excluded
+        because they are merged at runtime by the dispatcher via deep_merge().
+        """
+        configurable_fields = form_config.get_configurable_fields()
+        full_dump = self.model_dump()
+        identity_fields = {"agent_class", "agent_id", "process_class", "process_id", "name", "description", "icon"}
+        return {k: v for k, v in full_dump.items() if k in configurable_fields or k in identity_fields}
+
     def to_configurable_submission_model(self) -> type[BaseModel]:
         """
         Creates a Pydantic model for validating form submissions based on instance values.
