@@ -23,7 +23,8 @@
 
 {# Extract model aliases from service configs #}
 {%- set llama_cpp_alias = 'gemma-3-4b' -%}
-{%- set mineru_vlm_alias = 'mineru' -%}
+{%- set mineru_vlm_alias = 'MinerU2.5-2509-1.2B' -%}
+{%- set mineru_vlm_alias_cloud = 'mineru' -%}
 {%- if stage in ['nightly', 'latest'] -%}
 {%- set llama_cpp_alias = 'gemma-3-12b' -%}
 {%- endif %}
@@ -93,7 +94,7 @@ model_list:
       api_base: http://mineru-vlm:30000/v1
       api_key: os.environ/LOCAL_LLM_TOKEN
 {%- else %}
-      model: litellm_proxy/{{ mineru_vlm_alias }}
+      model: litellm_proxy/{{ mineru_vlm_alias_cloud }}
       api_base: os.environ/SWISS_LLM_CLOUD_API_BASE_URL
       api_key: os.environ/SWISS_LLM_CLOUD_API_KEY
 {%- endif %}

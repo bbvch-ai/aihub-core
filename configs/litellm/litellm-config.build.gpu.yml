@@ -50,7 +50,7 @@ model_list:
 
   - model_name: text-generation/ocr
     litellm_params:
-      model: openai/mineru
+      model: openai/MinerU2.5-2509-1.2B
       api_base: http://mineru-vlm:30000/v1
       api_key: os.environ/LOCAL_LLM_TOKEN
       drop_params: true
