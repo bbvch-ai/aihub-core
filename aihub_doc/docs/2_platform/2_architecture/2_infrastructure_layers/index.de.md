@@ -137,9 +137,9 @@ bestehen bleiben oder von anderen Agent-Instanzen zugänglich sein sollen. Redis
 In-Memory-Leistung und seiner Unabhängigkeit von Python-Prozessen gewählt, wodurch Agents, die in jeder Sprache
 geschrieben sind, auf denselben Zustandsspeicher zugreifen können.
 
-**Phoenix** bietet KI-spezifische Observability über OpenTelemetry hinaus. Es erfasst LLM-Interaktionen mit
+**Langfuse** bietet KI-spezifische Observability über OpenTelemetry hinaus. Es erfasst LLM-Interaktionen mit
 vollständigen Prompts und Antworten, verfolgt RAG-Abfragen, die zeigen, welche Dokumente verwendet wurden, analysiert
-die Embedding-Qualität und -Drift und bietet spezialisierte Dashboards für KI-Metriken. Phoenix integriert sich in die
+die Embedding-Qualität und -Drift und bietet spezialisierte Dashboards für KI-Metriken. Langfuse integriert sich in die
 bestehende OpenTelemetry-Infrastruktur und fügt Standard-Traces KI-spezifischen Kontext hinzu.
 
 **MCP (Model Context Protocol)** öffnet die Plattform für externe Tools. VSCode-Erweiterungen können sich mit laufenden

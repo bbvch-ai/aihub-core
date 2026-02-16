@@ -28,7 +28,7 @@ Workflow-Schritte ausführen.
 Vertrauen erfordert Sichtbarkeit. Die Plattform bietet vier Ebenen der Beobachtbarkeit:
 
 - **Infrastruktur-Monitoring** über OpenTelemetry und Signoz verfolgt Ressourcennutzung und API-Performance
-- **Agenten-Ausführungsverfolgung** über OpenInference und Phoenix zeigt jeden LLM-Aufruf und jede Entscheidung
+- **Agenten-Ausführungsverfolgung** über OpenInference und Langfuse zeigt jeden LLM-Aufruf und jede Entscheidung
 - **Workflow-Event-Streams** machen jeden Schritt im Prozess des Agenten sichtbar und debugbar
 - **Pipeline-Beobachtbarkeit** über Dagster zeigt genau, wie Ihre Daten verarbeitet werden und wohin sie gelangen
 

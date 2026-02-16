@@ -5557,7 +5557,7 @@ export const DatasetSchema = {
         id: {
             type: 'string',
             title: 'Id',
-            description: 'The unique identifier of the dataset in Phoenix.'
+            description: 'The unique identifier of the dataset in Langfuse.'
         },
         dataset_name: {
             type: 'string',
@@ -5601,6 +5601,18 @@ export const DatasetSchema = {
             ],
             title: 'Updated At',
             description: 'The timestamp when the dataset was last updated.'
+        },
+        langfuse_url: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Langfuse Url',
+            description: 'Direct URL to this dataset in the Langfuse UI.'
         },
         items: {
             items: {
@@ -5669,7 +5681,7 @@ export const DatasetItemSchema = {
                 }
             ],
             title: 'Id',
-            description: 'The unique identifier for the dataset item, managed by Phoenix.'
+            description: 'The unique identifier for the dataset item, managed by Langfuse.'
         },
         question: {
             type: 'string',
@@ -5719,7 +5731,7 @@ export const DatasetUpdateSchema = {
             },
             type: 'array',
             title: 'Items',
-            description: 'The complete list of new question-answer items. This will replace all existing items for the dataset version being created/updated.'
+            description: 'New question-answer items to append to the dataset.'
         }
     },
     type: 'object',
@@ -6841,88 +6853,6 @@ export const EmbeddingsResponseSchema = {
     title: 'EmbeddingsResponse'
 } as const;
 
-export const EvaluationDataSchema = {
-    properties: {
-        name: {
-            type: 'string',
-            title: 'Name',
-            description: 'Name of the evaluator.'
-        },
-        annotator_kind: {
-            type: 'string',
-            enum: [
-                'LLM',
-                'Code'
-            ],
-            title: 'Annotator Kind',
-            description: 'Kind of evaluator, either LLM or Code.'
-        },
-        score: {
-            type: 'number',
-            title: 'Score',
-            description: 'Score between 0 and 1.'
-        },
-        explanation: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Explanation',
-            description: 'Explanation given by Judge LLM.'
-        },
-        error: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Error',
-            description: 'Error message if the task run failed.'
-        }
-    },
-    type: 'object',
-    required: [
-        'name',
-        'annotator_kind',
-        'score'
-    ],
-    title: 'EvaluationData'
-} as const;
-
-export const EvaluationSummaryDataSchema = {
-    properties: {
-        evaluator: {
-            type: 'string',
-            title: 'Evaluator',
-            description: 'Name of the evaluator.'
-        },
-        n: {
-            type: 'integer',
-            title: 'N',
-            description: 'Number of items evaluated.'
-        },
-        avg_score: {
-            type: 'number',
-            title: 'Avg Score',
-            description: 'Average score from this evaluator.'
-        }
-    },
-    type: 'object',
-    required: [
-        'evaluator',
-        'n',
-        'avg_score'
-    ],
-    title: 'EvaluationSummaryData'
-} as const;
-
 export const EventBucketSchema = {
     properties: {
         start_time: {
@@ -7221,288 +7151,6 @@ export const ExceptionEventSchema = {
     ],
     title: 'ExceptionEvent',
     description: 'An event signaling that an exception or error has occurred during a run.\n\n### Why ExceptionEvent?\nIn a complex, event-driven workflow, errors are inevitable. Some steps might fail due to\ninvalid inputs, external service outages, or internal logic errors. The `ExceptionEvent`\nprovides a unified way to:\n- Halt or adjust the workflow’s control flow as a `ControlEvent`.\n- Communicate the error details to end-users or logging systems as a `DisplayEvent`.\n\nBy appearing as both a control and display event, `ExceptionEvent` ensures that the workflow\ncan stop further processing while also making the error visible in UI dashboards, logs, or\nmonitoring tools—giving operators and developers immediate insight into what went wrong.'
-} as const;
-
-export const ExperimentSchema = {
-    properties: {
-        id: {
-            type: 'string',
-            title: 'Id',
-            description: 'The unique identifier of the experiment in Phoenix.'
-        },
-        name: {
-            type: 'string',
-            title: 'Name',
-            description: 'The name of the experiment.'
-        },
-        description: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Description',
-            description: 'The description of the experiment.'
-        },
-        agent: {
-            $ref: '#/components/schemas/MinimalAgentInstanceDTO',
-            description: 'Agent that was evaluated'
-        },
-        created_at: {
-            anyOf: [
-                {
-                    type: 'string',
-                    format: 'date-time'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Created At',
-            description: 'Timestamp of when the experiment data was recorded or fetched.'
-        },
-        dataset: {
-            $ref: '#/components/schemas/MinimalDataset',
-            description: 'The dataset associated with this experiment.'
-        },
-        locale: {
-            type: 'string',
-            title: 'Locale',
-            description: 'The locale of the experiment.'
-        },
-        conciseness: {
-            anyOf: [
-                {
-                    $ref: '#/components/schemas/EvaluationSummaryData'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'How concise is the answer'
-        },
-        correctness: {
-            anyOf: [
-                {
-                    $ref: '#/components/schemas/EvaluationSummaryData'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'How correct is the answer'
-        },
-        completeness: {
-            anyOf: [
-                {
-                    $ref: '#/components/schemas/EvaluationSummaryData'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'How complete is the answer'
-        },
-        items: {
-            items: {
-                $ref: '#/components/schemas/ExperimentRunRecord'
-            },
-            type: 'array',
-            title: 'Items',
-            description: 'Detailed records of each run within the experiment, including inputs, outputs, and evaluations.'
-        }
-    },
-    type: 'object',
-    required: [
-        'id',
-        'name',
-        'agent',
-        'dataset',
-        'locale',
-        'items'
-    ],
-    title: 'Experiment'
-} as const;
-
-export const ExperimentCreateSchema = {
-    properties: {
-        agent_class: {
-            type: 'string',
-            title: 'Agent Class',
-            description: 'The class name of the agent to be evaluated.'
-        },
-        agent_id: {
-            type: 'string',
-            title: 'Agent Id',
-            description: 'The specific ID of the agent instance to be evaluated.'
-        },
-        dataset_id: {
-            type: 'string',
-            title: 'Dataset Id',
-            description: 'The ID of the Phoenix dataset to use for evaluation.'
-        },
-        experiment_name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Experiment Name',
-            description: 'An optional custom name for the Phoenix experiment. If not provided, a name will be generated.'
-        },
-        experiment_description: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Experiment Description',
-            description: 'An optional description for the Phoenix experiment.'
-        },
-        experiment_metadata: {
-            anyOf: [
-                {
-                    additionalProperties: true,
-                    type: 'object'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Experiment Metadata',
-            description: 'Optional metadata to associate with the Phoenix experiment.'
-        }
-    },
-    type: 'object',
-    required: [
-        'agent_class',
-        'agent_id',
-        'dataset_id'
-    ],
-    title: 'ExperimentCreate'
-} as const;
-
-export const ExperimentRunRecordSchema = {
-    properties: {
-        example_id: {
-            type: 'string',
-            title: 'Example Id',
-            description: 'ID of the dataset example for this run.'
-        },
-        question: {
-            type: 'string',
-            title: 'Question',
-            description: 'Input question.'
-        },
-        reference_answer: {
-            type: 'string',
-            title: 'Reference Answer',
-            description: 'Expected answer for this example.'
-        },
-        assistant_answer: {
-            type: 'string',
-            title: 'Assistant Answer',
-            description: 'Response given by assistant.'
-        },
-        thread_id: {
-            type: 'string',
-            title: 'Thread Id'
-        },
-        display_id: {
-            type: 'string',
-            title: 'Display Id'
-        },
-        error: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Error',
-            description: 'Error message if the task run failed.'
-        },
-        latency_ms: {
-            anyOf: [
-                {
-                    type: 'number'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Latency Ms',
-            description: 'Latency of the task run in milliseconds.'
-        },
-        start_time: {
-            type: 'string',
-            format: 'date-time',
-            title: 'Start Time',
-            description: 'Start time of the task run.'
-        },
-        end_time: {
-            type: 'string',
-            format: 'date-time',
-            title: 'End Time',
-            description: 'End time of the task run.'
-        },
-        conciseness: {
-            anyOf: [
-                {
-                    $ref: '#/components/schemas/EvaluationData'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'How concise is the answer'
-        },
-        correctness: {
-            anyOf: [
-                {
-                    $ref: '#/components/schemas/EvaluationData'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'How correct is the answer'
-        },
-        completeness: {
-            anyOf: [
-                {
-                    $ref: '#/components/schemas/EvaluationData'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'How complete is the answer'
-        }
-    },
-    type: 'object',
-    required: [
-        'example_id',
-        'question',
-        'reference_answer',
-        'assistant_answer',
-        'thread_id',
-        'display_id',
-        'start_time',
-        'end_time'
-    ],
-    title: 'ExperimentRunRecord'
 } as const;
 
 export const FewShotAcceptEventSchema = {
@@ -9825,7 +9473,7 @@ export const ImagesResponseSchema = {
         usage: {
             anyOf: [
                 {
-                    $ref: '#/components/schemas/openai__types__images_response__Usage'
+                    $ref: '#/components/schemas/Usage'
                 },
                 {
                     type: 'null'
@@ -13393,7 +13041,7 @@ export const MinimalDatasetSchema = {
         id: {
             type: 'string',
             title: 'Id',
-            description: 'The unique identifier of the dataset in Phoenix.'
+            description: 'The unique identifier of the dataset in Langfuse.'
         },
         dataset_name: {
             type: 'string',
@@ -13437,29 +13085,8 @@ export const MinimalDatasetSchema = {
             ],
             title: 'Updated At',
             description: 'The timestamp when the dataset was last updated.'
-        }
-    },
-    type: 'object',
-    required: [
-        'id',
-        'dataset_name'
-    ],
-    title: 'MinimalDataset'
-} as const;
-
-export const MinimalExperimentSchema = {
-    properties: {
-        id: {
-            type: 'string',
-            title: 'Id',
-            description: 'The unique identifier of the experiment in Phoenix.'
         },
-        name: {
-            type: 'string',
-            title: 'Name',
-            description: 'The name of the experiment.'
-        },
-        description: {
+        langfuse_url: {
             anyOf: [
                 {
                     type: 'string'
@@ -13468,45 +13095,16 @@ export const MinimalExperimentSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Description',
-            description: 'The description of the experiment.'
-        },
-        agent: {
-            $ref: '#/components/schemas/MinimalAgentInstanceDTO',
-            description: 'Agent that was evaluated'
-        },
-        created_at: {
-            anyOf: [
-                {
-                    type: 'string',
-                    format: 'date-time'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Created At',
-            description: 'Timestamp of when the experiment data was recorded or fetched.'
-        },
-        dataset: {
-            $ref: '#/components/schemas/MinimalDataset',
-            description: 'The dataset associated with this experiment.'
-        },
-        locale: {
-            type: 'string',
-            title: 'Locale',
-            description: 'The locale of the experiment.'
+            title: 'Langfuse Url',
+            description: 'Direct URL to this dataset in the Langfuse UI.'
         }
     },
     type: 'object',
     required: [
         'id',
-        'name',
-        'agent',
-        'dataset',
-        'locale'
+        'dataset_name'
     ],
-    title: 'MinimalExperiment'
+    title: 'MinimalDataset'
 } as const;
 
 export const MinimalUserDTOSchema = {
@@ -13591,7 +13189,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1770105688
+            default: 1770811509
         },
         owned_by: {
             type: 'string',
@@ -15802,8 +15400,8 @@ export const ProcessConfigDTOSchema = {
         icon: {
             type: 'string',
             title: 'Icon',
-            description: 'The icon representing the agent.',
-            default: 'mage:robot'
+            description: 'The icon representing the process.',
+            default: 'mage:arrowlist'
         }
     },
     type: 'object',
@@ -18256,7 +17854,7 @@ export const SemanticEventSchema = {
         '_parent_event_names'
     ],
     title: 'SemanticEvent',
-    description: 'A base class for events that must report their data to an OpenInference-compatible tracing system,\nsuch as Arize Phoenix. By inheriting from both `ControlEvent` and `DisplayEvent`, `SemanticEvent`:\n- Influences workflow execution and can control the system flow (like any `ControlEvent`).\n- Remains visible to the end-user or UI (like any `DisplayEvent`).\n- Introduces the requirement to define a `to_semantic_convention()` method,\n  providing structured semantic attributes for OpenInference tracing.\n\n### Why SemanticEvent?\nThe primary purpose is to provide a flexible foundation for events that carry semantically rich\ninformation which should be recorded in tracing and observability tools. By encouraging a\n`to_semantic_convention()` method, `SemanticEvent` standardizes the process of converting event\ndata into a form suitable for advanced analytics, debugging, and telemetry.\n\n### Integrating with OpenInference\nOpenInference mandates a set of semantic conventions for attributes, ensuring that tooling\n(like Arize Phoenix) can interpret and visualize LLM application behavior. Subclasses of\n`SemanticEvent` should implement `to_semantic_convention()` to:\n- Flatten nested structures into simple key-value pairs following the OpenInference attribute schema.\n- Use reserved attribute names (e.g. `llm.model_name`, `document.id`) as defined in the specification.\n\nThis allows downstream systems to understand and correlate complex operations like retrieval,\nreranking, or prompt tuning with high-level performance metrics or user outcomes.\n\n### Note\nSince `to_semantic_convention()` is not implemented here, subclasses must provide their own logic\nto translate the event’s internal state into OpenInference semantic attributes.'
+    description: 'A base class for events that must report their data to an OpenInference-compatible tracing system,\nsuch as Langfuse. By inheriting from both `ControlEvent` and `DisplayEvent`, `SemanticEvent`:\n- Influences workflow execution and can control the system flow (like any `ControlEvent`).\n- Remains visible to the end-user or UI (like any `DisplayEvent`).\n- Introduces the requirement to define a `to_semantic_convention()` method,\n  providing structured semantic attributes for OpenInference tracing.\n\n### Why SemanticEvent?\nThe primary purpose is to provide a flexible foundation for events that carry semantically rich\ninformation which should be recorded in tracing and observability tools. By encouraging a\n`to_semantic_convention()` method, `SemanticEvent` standardizes the process of converting event\ndata into a form suitable for advanced analytics, debugging, and telemetry.\n\n### Integrating with OpenInference\nOpenInference mandates a set of semantic conventions for attributes, ensuring that tooling\n(like Langfuse) can interpret and visualize LLM application behavior. Subclasses of\n`SemanticEvent` should implement `to_semantic_convention()` to:\n- Flatten nested structures into simple key-value pairs following the OpenInference attribute schema.\n- Use reserved attribute names (e.g. `llm.model_name`, `document.id`) as defined in the specification.\n\nThis allows downstream systems to understand and correlate complex operations like retrieval,\nreranking, or prompt tuning with high-level performance metrics or user outcomes.\n\n### Note\nSince `to_semantic_convention()` is not implemented here, subclasses must provide their own logic\nto translate the event’s internal state into OpenInference semantic attributes.'
 } as const;
 
 export const SensitiveInfoAcceptEventSchema = {
@@ -20584,7 +20182,7 @@ export const TranscriptionVerboseSchema = {
         usage: {
             anyOf: [
                 {
-                    $ref: '#/components/schemas/Usage'
+                    $ref: '#/components/schemas/openai__types__audio__transcription_verbose__Usage'
                 },
                 {
                     type: 'null'
@@ -20879,21 +20477,29 @@ export const UpdateRoleRequestSchema = {
 
 export const UsageSchema = {
     properties: {
-        seconds: {
-            type: 'number',
-            title: 'Seconds'
+        input_tokens: {
+            type: 'integer',
+            title: 'Input Tokens'
         },
-        type: {
-            type: 'string',
-            const: 'duration',
-            title: 'Type'
+        input_tokens_details: {
+            $ref: '#/components/schemas/UsageInputTokensDetails'
+        },
+        output_tokens: {
+            type: 'integer',
+            title: 'Output Tokens'
+        },
+        total_tokens: {
+            type: 'integer',
+            title: 'Total Tokens'
         }
     },
     additionalProperties: true,
     type: 'object',
     required: [
-        'seconds',
-        'type'
+        'input_tokens',
+        'input_tokens_details',
+        'output_tokens',
+        'total_tokens'
     ],
     title: 'Usage'
 } as const;
@@ -21709,6 +21315,27 @@ export const WorkflowGraphSchema = {
     description: 'Complete workflow graph representation.'
 } as const;
 
+export const openai__types__audio__transcription_verbose__UsageSchema = {
+    properties: {
+        seconds: {
+            type: 'number',
+            title: 'Seconds'
+        },
+        type: {
+            type: 'string',
+            const: 'duration',
+            title: 'Type'
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: [
+        'seconds',
+        'type'
+    ],
+    title: 'Usage'
+} as const;
+
 export const openai__types__chat__chat_completion_message_custom_tool_call_param__CustomSchema = {
     properties: {
         input: {
@@ -21801,35 +21428,6 @@ export const openai__types__chat__completion_create_params__FunctionSchema = {
         'name'
     ],
     title: 'Function'
-} as const;
-
-export const openai__types__images_response__UsageSchema = {
-    properties: {
-        input_tokens: {
-            type: 'integer',
-            title: 'Input Tokens'
-        },
-        input_tokens_details: {
-            $ref: '#/components/schemas/UsageInputTokensDetails'
-        },
-        output_tokens: {
-            type: 'integer',
-            title: 'Output Tokens'
-        },
-        total_tokens: {
-            type: 'integer',
-            title: 'Total Tokens'
-        }
-    },
-    additionalProperties: true,
-    type: 'object',
-    required: [
-        'input_tokens',
-        'input_tokens_details',
-        'output_tokens',
-        'total_tokens'
-    ],
-    title: 'Usage'
 } as const;
 
 export const AddMemoryToChatHistoryEventWritableSchema = {
@@ -24820,110 +24418,6 @@ export const ExceptionEventWritableSchema = {
     ],
     title: 'ExceptionEvent',
     description: 'An event signaling that an exception or error has occurred during a run.\n\n### Why ExceptionEvent?\nIn a complex, event-driven workflow, errors are inevitable. Some steps might fail due to\ninvalid inputs, external service outages, or internal logic errors. The `ExceptionEvent`\nprovides a unified way to:\n- Halt or adjust the workflow’s control flow as a `ControlEvent`.\n- Communicate the error details to end-users or logging systems as a `DisplayEvent`.\n\nBy appearing as both a control and display event, `ExceptionEvent` ensures that the workflow\ncan stop further processing while also making the error visible in UI dashboards, logs, or\nmonitoring tools—giving operators and developers immediate insight into what went wrong.'
-} as const;
-
-export const ExperimentWritableSchema = {
-    properties: {
-        id: {
-            type: 'string',
-            title: 'Id',
-            description: 'The unique identifier of the experiment in Phoenix.'
-        },
-        name: {
-            type: 'string',
-            title: 'Name',
-            description: 'The name of the experiment.'
-        },
-        description: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Description',
-            description: 'The description of the experiment.'
-        },
-        agent: {
-            $ref: '#/components/schemas/MinimalAgentInstanceDTOWritable',
-            description: 'Agent that was evaluated'
-        },
-        created_at: {
-            anyOf: [
-                {
-                    type: 'string',
-                    format: 'date-time'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Created At',
-            description: 'Timestamp of when the experiment data was recorded or fetched.'
-        },
-        dataset: {
-            $ref: '#/components/schemas/MinimalDataset',
-            description: 'The dataset associated with this experiment.'
-        },
-        locale: {
-            type: 'string',
-            title: 'Locale',
-            description: 'The locale of the experiment.'
-        },
-        conciseness: {
-            anyOf: [
-                {
-                    $ref: '#/components/schemas/EvaluationSummaryData'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'How concise is the answer'
-        },
-        correctness: {
-            anyOf: [
-                {
-                    $ref: '#/components/schemas/EvaluationSummaryData'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'How correct is the answer'
-        },
-        completeness: {
-            anyOf: [
-                {
-                    $ref: '#/components/schemas/EvaluationSummaryData'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'How complete is the answer'
-        },
-        items: {
-            items: {
-                $ref: '#/components/schemas/ExperimentRunRecord'
-            },
-            type: 'array',
-            title: 'Items',
-            description: 'Detailed records of each run within the experiment, including inputs, outputs, and evaluations.'
-        }
-    },
-    type: 'object',
-    required: [
-        'id',
-        'name',
-        'agent',
-        'dataset',
-        'locale',
-        'items'
-    ],
-    title: 'Experiment'
 } as const;
 
 export const FewShotAcceptEventWritableSchema = {
@@ -28675,68 +28169,6 @@ export const MinimalAgentInstanceDTOWritableSchema = {
     description: 'Encapsulates the data transfer object (DTO) for a minimal agent INSTANCE.\nOnly contains minimal information about a specific agent instance.\n\nNOTE: This represents an INSTANCE (with agent_id), not an agent CLASS.\nFor class-level data only, use AgentClassDTO.'
 } as const;
 
-export const MinimalExperimentWritableSchema = {
-    properties: {
-        id: {
-            type: 'string',
-            title: 'Id',
-            description: 'The unique identifier of the experiment in Phoenix.'
-        },
-        name: {
-            type: 'string',
-            title: 'Name',
-            description: 'The name of the experiment.'
-        },
-        description: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Description',
-            description: 'The description of the experiment.'
-        },
-        agent: {
-            $ref: '#/components/schemas/MinimalAgentInstanceDTOWritable',
-            description: 'Agent that was evaluated'
-        },
-        created_at: {
-            anyOf: [
-                {
-                    type: 'string',
-                    format: 'date-time'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Created At',
-            description: 'Timestamp of when the experiment data was recorded or fetched.'
-        },
-        dataset: {
-            $ref: '#/components/schemas/MinimalDataset',
-            description: 'The dataset associated with this experiment.'
-        },
-        locale: {
-            type: 'string',
-            title: 'Locale',
-            description: 'The locale of the experiment.'
-        }
-    },
-    type: 'object',
-    required: [
-        'id',
-        'name',
-        'agent',
-        'dataset',
-        'locale'
-    ],
-    title: 'MinimalExperiment'
-} as const;
-
 export const ModelDTOWritableSchema = {
     properties: {
         model_name: {
@@ -31629,7 +31061,7 @@ export const SemanticEventWritableSchema = {
     additionalProperties: true,
     type: 'object',
     title: 'SemanticEvent',
-    description: 'A base class for events that must report their data to an OpenInference-compatible tracing system,\nsuch as Arize Phoenix. By inheriting from both `ControlEvent` and `DisplayEvent`, `SemanticEvent`:\n- Influences workflow execution and can control the system flow (like any `ControlEvent`).\n- Remains visible to the end-user or UI (like any `DisplayEvent`).\n- Introduces the requirement to define a `to_semantic_convention()` method,\n  providing structured semantic attributes for OpenInference tracing.\n\n### Why SemanticEvent?\nThe primary purpose is to provide a flexible foundation for events that carry semantically rich\ninformation which should be recorded in tracing and observability tools. By encouraging a\n`to_semantic_convention()` method, `SemanticEvent` standardizes the process of converting event\ndata into a form suitable for advanced analytics, debugging, and telemetry.\n\n### Integrating with OpenInference\nOpenInference mandates a set of semantic conventions for attributes, ensuring that tooling\n(like Arize Phoenix) can interpret and visualize LLM application behavior. Subclasses of\n`SemanticEvent` should implement `to_semantic_convention()` to:\n- Flatten nested structures into simple key-value pairs following the OpenInference attribute schema.\n- Use reserved attribute names (e.g. `llm.model_name`, `document.id`) as defined in the specification.\n\nThis allows downstream systems to understand and correlate complex operations like retrieval,\nreranking, or prompt tuning with high-level performance metrics or user outcomes.\n\n### Note\nSince `to_semantic_convention()` is not implemented here, subclasses must provide their own logic\nto translate the event’s internal state into OpenInference semantic attributes.'
+    description: 'A base class for events that must report their data to an OpenInference-compatible tracing system,\nsuch as Langfuse. By inheriting from both `ControlEvent` and `DisplayEvent`, `SemanticEvent`:\n- Influences workflow execution and can control the system flow (like any `ControlEvent`).\n- Remains visible to the end-user or UI (like any `DisplayEvent`).\n- Introduces the requirement to define a `to_semantic_convention()` method,\n  providing structured semantic attributes for OpenInference tracing.\n\n### Why SemanticEvent?\nThe primary purpose is to provide a flexible foundation for events that carry semantically rich\ninformation which should be recorded in tracing and observability tools. By encouraging a\n`to_semantic_convention()` method, `SemanticEvent` standardizes the process of converting event\ndata into a form suitable for advanced analytics, debugging, and telemetry.\n\n### Integrating with OpenInference\nOpenInference mandates a set of semantic conventions for attributes, ensuring that tooling\n(like Langfuse) can interpret and visualize LLM application behavior. Subclasses of\n`SemanticEvent` should implement `to_semantic_convention()` to:\n- Flatten nested structures into simple key-value pairs following the OpenInference attribute schema.\n- Use reserved attribute names (e.g. `llm.model_name`, `document.id`) as defined in the specification.\n\nThis allows downstream systems to understand and correlate complex operations like retrieval,\nreranking, or prompt tuning with high-level performance metrics or user outcomes.\n\n### Note\nSince `to_semantic_convention()` is not implemented here, subclasses must provide their own logic\nto translate the event’s internal state into OpenInference semantic attributes.'
 } as const;
 
 export const SensitiveInfoAcceptEventWritableSchema = {

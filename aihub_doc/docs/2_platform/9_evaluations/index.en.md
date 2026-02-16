@@ -97,7 +97,8 @@ Update your agent's knowledge base, system prompts, or retrieval settings based 
 verify improvements.
 
 ::: tip
-Phoenix can be accessed for deeper investigation, including conversation traces and raw telemetry data.
+Langfuse can be accessed for deeper investigation, including conversation traces, cost attribution, and raw telemetry
+data. In development, access Langfuse at `http://localhost:6006`.
 :::
 
 ## What's not implemented

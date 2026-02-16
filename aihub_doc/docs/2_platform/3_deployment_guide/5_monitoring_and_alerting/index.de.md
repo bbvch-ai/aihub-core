@@ -94,7 +94,7 @@ Out-of-the-box erhalten Sie Zugriff auf mehrere wichtige Dashboards:
 Für tiefere Einblicke enthält die Plattform auch integrierte Dashboards für spezifische Infrastrukturkomponenten:
 
 - **Traefik (Reverse Proxy)**: Visualisiert Anforderungs-Routing, Dienstzustand und TLS-Zertifikatstatus.
-- **Phoenix (LLM Observability)**: Verfolgt jede LLM-Operation und zeigt Token-Nutzung, Latenz und den vollständigen
+- **Langfuse (LLM Observability)**: Verfolgt jede LLM-Operation und zeigt Token-Nutzung, Latenz und den vollständigen
   Prompt/Response-Kontext zur Fehlerbehebung an.
 - **Dagster (Workflow Engine)**: Überwacht den Status, die Historie und die Leistung aller Datenaufnahme- und
   Verarbeitungspipelines.

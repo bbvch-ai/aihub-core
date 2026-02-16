@@ -28,7 +28,7 @@ dedizierte Infrastruktur: separate Datenbanken, Vektor-Speicher, Dateispeicher u
 
 Die Instanz umfasst die API, Agents, Pipelines, das Web-Interface und Bot-Integrationen. Sie verfügt über eigene
 Datenbanken (FerretDB/PostgreSQL), Vektor-Speicher (Milvus oder Azure AI Search) und Dateispeicher (SeaweedFS oder Azure
-Data Lake). Das Monitoring erfolgt über SigNoz und Phoenix. NATS wickelt das Event-Streaming ab. Die Instanz verfügt
+Data Lake). Das Monitoring erfolgt über SigNoz und Langfuse. NATS wickelt das Event-Streaming ab. Die Instanz verfügt
 über einen eigenen LiteLLM-Proxy für Kostenverfolgung und Versionskontrolle.
 
 ### LLM-Backend
@@ -172,7 +172,7 @@ AI-Hub Instance
 │   └── Presidio (PII anonymization)
 │
 ├── Observability Layer
-│   ├── Phoenix (AI tracing and evaluation)
+│   ├── Langfuse (AI tracing and evaluation)
 │   └── OpenTelemetry (distributed tracing)
 │
 └── Infrastructure Layer
