@@ -3806,41 +3806,6 @@ export type DocumentBlock = {
 };
 
 /**
- * DocumentParsingMetadata
- *
- * Metadata about the converted document.
- */
-export type DocumentConversionMetadata = {
-    /**
-     * Filename
-     *
-     * Original filename
-     */
-    filename: string;
-};
-
-/**
- * DocumentParsingResponse
- *
- * Response schema for document conversion.
- *
- * Follows the OpenWebUI External Document Loader specification.
- * Can return either a single document or a list of documents (one per page).
- */
-export type DocumentConversionResponse = {
-    /**
-     * Page Content
-     *
-     * Extracted text content (markdown)
-     */
-    page_content: string;
-    /**
-     * Document metadata
-     */
-    metadata?: DocumentConversionMetadata | null;
-};
-
-/**
  * DocumentDTO
  */
 export type DocumentDto = {
@@ -3904,6 +3869,41 @@ export type DocumentDto = {
      * Document title.
      */
     document_title?: string | null;
+};
+
+/**
+ * DocumentParsingMetadata
+ *
+ * Metadata about the converted document.
+ */
+export type DocumentParsingMetadata = {
+    /**
+     * Filename
+     *
+     * Original filename
+     */
+    filename: string;
+};
+
+/**
+ * DocumentParsingResponse
+ *
+ * Response schema for document conversion.
+ *
+ * Follows the OpenWebUI External Document Loader specification.
+ * Can return either a single document or a list of documents (one per page).
+ */
+export type DocumentParsingResponse = {
+    /**
+     * Page Content
+     *
+     * Extracted text content (markdown)
+     */
+    page_content: string;
+    /**
+     * Document metadata
+     */
+    metadata?: DocumentParsingMetadata | null;
 };
 
 /**
@@ -23328,10 +23328,7 @@ export type UpdateOrganizationMemoryResponses = {
 export type UpdateOrganizationMemoryResponse = UpdateOrganizationMemoryResponses[keyof UpdateOrganizationMemoryResponses];
 
 export type ProcessDocumentData = {
-    /**
-     * Body
-     */
-    body: Blob | File;
+    body?: never;
     headers?: {
         /**
          * X-Filename
@@ -23365,7 +23362,7 @@ export type ProcessDocumentResponses = {
     /**
      * Successful Response
      */
-    200: DocumentConversionResponse;
+    200: DocumentParsingResponse;
 };
 
 export type ProcessDocumentResponse = ProcessDocumentResponses[keyof ProcessDocumentResponses];

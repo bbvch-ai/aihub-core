@@ -6264,49 +6264,6 @@ export const DocumentBlockSchema = {
     description: 'A representation of a document to directly pass to the LLM.'
 } as const;
 
-export const DocumentConversionMetadataSchema = {
-    properties: {
-        filename: {
-            type: 'string',
-            title: 'Filename',
-            description: 'Original filename'
-        }
-    },
-    type: 'object',
-    required: [
-        'filename'
-    ],
-    title: 'DocumentConversionMetadata',
-    description: 'Metadata about the converted document.'
-} as const;
-
-export const DocumentConversionResponseSchema = {
-    properties: {
-        page_content: {
-            type: 'string',
-            title: 'Page Content',
-            description: 'Extracted text content (markdown)'
-        },
-        metadata: {
-            anyOf: [
-                {
-                    $ref: '#/components/schemas/DocumentParsingMetadata'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'Document metadata'
-        }
-    },
-    type: 'object',
-    required: [
-        'page_content'
-    ],
-    title: 'DocumentConversionResponse',
-    description: 'Response schema for document conversion.\n\nFollows the OpenWebUI External Document Loader specification.\nCan return either a single document or a list of documents (one per page).'
-} as const;
-
 export const DocumentDTOSchema = {
     properties: {
         id: {
@@ -6399,6 +6356,49 @@ export const DocumentDTOSchema = {
         'is_ingested'
     ],
     title: 'DocumentDTO'
+} as const;
+
+export const DocumentParsingMetadataSchema = {
+    properties: {
+        filename: {
+            type: 'string',
+            title: 'Filename',
+            description: 'Original filename'
+        }
+    },
+    type: 'object',
+    required: [
+        'filename'
+    ],
+    title: 'DocumentParsingMetadata',
+    description: 'Metadata about the converted document.'
+} as const;
+
+export const DocumentParsingResponseSchema = {
+    properties: {
+        page_content: {
+            type: 'string',
+            title: 'Page Content',
+            description: 'Extracted text content (markdown)'
+        },
+        metadata: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/DocumentParsingMetadata'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Document metadata'
+        }
+    },
+    type: 'object',
+    required: [
+        'page_content'
+    ],
+    title: 'DocumentParsingResponse',
+    description: 'Response schema for document conversion.\n\nFollows the OpenWebUI External Document Loader specification.\nCan return either a single document or a list of documents (one per page).'
 } as const;
 
 export const DocumentUploadRequestSchema = {
@@ -13207,7 +13207,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1770393923
+            default: 1771256394
         },
         owned_by: {
             type: 'string',
@@ -21331,27 +21331,6 @@ export const WorkflowGraphSchema = {
     ],
     title: 'WorkflowGraph',
     description: 'Complete workflow graph representation.'
-} as const;
-
-export const openai__types__audio__transcription_verbose__UsageSchema = {
-    properties: {
-        seconds: {
-            type: 'number',
-            title: 'Seconds'
-        },
-        type: {
-            type: 'string',
-            const: 'duration',
-            title: 'Type'
-        }
-    },
-    additionalProperties: true,
-    type: 'object',
-    required: [
-        'seconds',
-        'type'
-    ],
-    title: 'Usage'
 } as const;
 
 export const openai__types__audio__transcription_verbose__UsageSchema = {

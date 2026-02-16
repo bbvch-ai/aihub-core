@@ -8,7 +8,6 @@ from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.infrastructure.logging.logger import enable_logging
 
 from aihub_api.routes.agent.AgentController import AgentController
-from aihub_api.routes.evaluation.EvaluationController import EvaluationController
 from aihub_api.routes.evaluation.DatasetController import DatasetController
 from aihub_api.routes.event.EventController import EventController
 from aihub_api.routes.file.FileController import FileController
