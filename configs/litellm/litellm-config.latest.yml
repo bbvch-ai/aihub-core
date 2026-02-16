@@ -50,7 +50,7 @@ model_list:
 
   - model_name: text-generation/ocr
     litellm_params:
-      model: litellm_proxy/MinerU2.5-2509-1.2B
+      model: litellm_proxy/mineru
       api_base: os.environ/SWISS_LLM_CLOUD_API_BASE_URL
       api_key: os.environ/SWISS_LLM_CLOUD_API_KEY
       drop_params: true
