@@ -6,8 +6,6 @@ import httpx
 import pytest
 
 from aihub_lib.infrastructure.langfuse.LangfuseProvisioner import (
-    AIHUB_CONNECTION_NAME,
-    LITELLM_CONNECTION_NAME,
     LangfuseProvisioner,
 )
 

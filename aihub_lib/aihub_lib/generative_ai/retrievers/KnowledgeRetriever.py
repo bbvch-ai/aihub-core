@@ -1,3 +1,5 @@
+from pymilvus import MilvusClient
+
 from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
 from aihub_lib.generative_ai.retrieval.retrieve_nodes import retrieve_nodes
 from aihub_lib.generative_ai.retrieval.retrieve_parent_summary_nodes import retrieve_parent_summary_nodes
@@ -11,15 +13,16 @@ from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import t
 class KnowledgeRetriever(BaseRetriever):
     """Retriever for knowledge from a vector store (Milvus)."""
 
-    def __init__(self, config: KnowledgeRetrieverConfig):
+    def __init__(self, config: KnowledgeRetrieverConfig, milvus_client: MilvusClient | None = None):
         super().__init__(config)
         self.config: KnowledgeRetrieverConfig = config
+        self._milvus_client = milvus_client
 
     @trace_fn
     async def retrieve(self, query: str, t: LocaleHandler) -> list[IngestedNode]:
         """Retrieve nodes from the vector store matching the query."""
         embed_model, _ = self.config.embed_model.to_llama_index()
-        vector_store = self.config.vector_store.to_llama_index()
+        vector_store = self.config.vector_store.to_llama_index(client=self._milvus_client)
 
         nodes = retrieve_nodes(
             message=query,

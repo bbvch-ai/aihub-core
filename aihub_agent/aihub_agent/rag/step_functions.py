@@ -27,6 +27,7 @@ from aihub_lib.nats.events.semantic.llm import LLMEvent, LLMStopEvent
 from aihub_lib.nats.events.semantic.reranker import RerankerEvent
 from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from pymilvus import MilvusClient
 
 from aihub_agent.agents.RagAgent.configs.RerankingConfig import RerankingConfig
 from aihub_agent.agents.RagAgent.events.ContextInsufficientWithQueryEvent import ContextInsufficientWithQueryEvent
@@ -126,13 +127,14 @@ async def do_retrieve(
     event: StandaloneQuestionCondenserEvent | ContextInsufficientWithQueryEvent,
     retrievers: list[KnowledgeRetrieverConfig],
     t: LocaleHandler,
+    milvus_client: MilvusClient | None = None,
 ) -> RetrieverEvent:
     """Retrieve nodes from all sources and return RetrieverEvent."""
     if isinstance(event, StandaloneQuestionCondenserEvent):
         query = event.condensed_chat_message.content or ""
     else:
         query = event.new_query
-    all_nodes = await retrieve_from_all_sources(query, retrievers, t)
+    all_nodes = await retrieve_from_all_sources(query, retrievers, t, milvus_client=milvus_client)
     nodes_with_score = [node.to_llama_index_node_with_score() for node in all_nodes]
     return RetrieverEvent.from_nodes(nodes_with_score)
 

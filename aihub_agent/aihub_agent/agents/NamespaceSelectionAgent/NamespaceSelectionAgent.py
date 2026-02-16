@@ -5,6 +5,7 @@ from typing import ClassVar
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.generative_ai.retrievers.BucketNamespacePair import BucketNamespacePair
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.infrastructure.connectors.MongoConnector import MongoConnector
 from aihub_lib.nats.events import AgentInTheLoop, StopEvent
 from aihub_lib.nats.events.user import UserMessageEvent
 from aihub_lib.persistence.rag.datalake.entities.BucketEntity import BucketEntity
@@ -107,6 +108,7 @@ class NamespaceSelectionAgent(Agent):
         "agent.namespace_selection_agent.metadata.description"
     )
     icon: ClassVar[str] = "mage:book"
+    connectors: ClassVar = [MongoConnector]
 
     # === First-time flow: No selection exists ===
 

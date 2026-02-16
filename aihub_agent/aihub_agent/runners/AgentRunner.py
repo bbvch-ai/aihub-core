@@ -2,9 +2,7 @@ import asyncio
 import logging
 
 from aihub_lib.agents.AgentConfig import AgentConfig
-from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
-from aihub_lib.infrastructure.milvus.MilvusSettings import MilvusSettings
-from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
+from aihub_lib.infrastructure.connectors.InfrastructureConnector import InfrastructureConnector
 from aihub_lib.infrastructure.nats.NatsSettings import NatsSettings
 from aihub_lib.infrastructure.redis.RedisSettings import RedisSettings
 from aihub_lib.nats.events import UserMessageEvent
@@ -24,13 +22,10 @@ from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicMan
 from aihub_lib.nats.topics.discovery.agent.AgentClassDiscoveryTopic import AgentClassDiscoveryTopic
 from aihub_lib.nats.workflow.visualizers.WorkflowVisualizer import WorkflowVisualizer
 from aihub_lib.routes.health.dto.HealthResponse import AgentHealthChecks
-from aihub_lib.routes.health.health_checks import check_milvus, check_nats_sync, check_redis_sync
+from aihub_lib.routes.health.health_checks import check_nats_sync, check_redis_sync
 from aihub_lib.routes.health.HealthServer import HealthCheckProvider, HealthServer
-from mongoengine import connect, disconnect
-from mongoengine.connection import get_connection
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
-from pymilvus import MilvusClient
 from redis.asyncio import Redis
 
 from aihub_agent.agents.Agent import Agent
@@ -89,7 +84,8 @@ class AgentRunner(HealthCheckProvider):
         self.nc: NATS | None = None
         self.js: JetStreamContext | None = None
         self.redis: Redis | None = None
-        self.milvus_client: MilvusClient | None = None
+
+        self._connectors: list[InfrastructureConnector] = [cls() for cls in agent_type.connectors]
 
         self.dispatcher: AgentDispatcher | None = None
 
@@ -115,11 +111,12 @@ class AgentRunner(HealthCheckProvider):
         return "agent"
 
     def get_readiness_checks(self) -> AgentHealthChecks:
+        connector_checks = {c.name: c.check_health() for c in self._connectors}
         return AgentHealthChecks(
             running=self.running,
             nats=check_nats_sync(self.nc, self._loop) if self._loop else False,
             redis=check_redis_sync(self.redis, self._loop) if self._loop else False,
-            milvus=check_milvus(self.milvus_client),
+            **connector_checks,
         )
 
     async def discovery_handler(self, event: ClassDiscoveryRequestEvent, topic: AgentClassDiscoveryTopic):
@@ -186,19 +183,9 @@ class AgentRunner(HealthCheckProvider):
         self.js = self.nc.jetstream(timeout=60, publish_async_max_pending=10_000)
         self.redis = RedisSettings.create_client()
 
-        # Connect to Milvus
-        milvus_settings = MilvusSettings()
-        self.milvus_client = MilvusClient(uri=milvus_settings.URL, token=milvus_settings.get_token())
-
-        # Connect to MongoDB (skip if already connected)
-        try:
-            get_connection()
-        except Exception:
-            connect(
-                db=AIHubSettings().MONGO_MAIN_DB_NAME,
-                host=MongoSettings().CONNECTION_STRING.get_secret_value(),
-                uuidRepresentation="standard",
-            )
+        # Connect optional infrastructure
+        for connector in self._connectors:
+            await connector.connect()
 
         self.dispatcher = AgentDispatcher(
             self.agent_type,
@@ -208,6 +195,7 @@ class AgentRunner(HealthCheckProvider):
             self.redis,
             self.topic_manager,
             self.locale_handler,
+            self._connectors,
         )
         await self.dispatcher.start()
 
@@ -269,10 +257,9 @@ class AgentRunner(HealthCheckProvider):
         if self.redis:
             await self.redis.close()
 
-        if self.milvus_client:
-            self.milvus_client.close()
-
-        disconnect()
+        # Disconnect optional infrastructure in reverse order
+        for connector in reversed(self._connectors):
+            await connector.disconnect()
 
     async def _run_loop(self):
         """A background task that keeps the runner alive until stopped."""

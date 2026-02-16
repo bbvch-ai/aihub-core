@@ -1,6 +1,7 @@
 import functools
 from typing import ClassVar
 
+from aihub_lib.infrastructure.connectors.InfrastructureConnector import InfrastructureConnector
 from aihub_lib.nats.events import HumanInTheLoopRequestEvent, HumanInTheLoopResponseEvent
 from aihub_lib.nats.events.control.start import StartEvent
 from aihub_lib.nats.events.control.stop import StopEvent
@@ -46,6 +47,7 @@ class Agent(DispatchableWorkflow):
     name: ClassVar[AgentLocaleString] = AgentLocaleString.from_i18n_path("agent.base_agent.metadata.name")
     description: ClassVar[AgentLocaleString] = AgentLocaleString.from_i18n_path("agent.base_agent.metadata.description")
     icon: ClassVar[str] = "mage:robot"
+    connectors: ClassVar[list[type[InfrastructureConnector]]] = []
 
     STEP_ANNOTATION = "_is_agent_step"
 

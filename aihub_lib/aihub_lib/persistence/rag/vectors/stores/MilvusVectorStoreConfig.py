@@ -30,10 +30,14 @@ class MilvusVectorStoreConfig(BasePydanticVectorStoreConfig):
         Field(description="Dimensions of the embeddings (defaults to MilvusSettings.DIMENSION)"),
     ] = Field(default_factory=lambda: MilvusSettings().DIMENSION)
 
-    def to_llama_index(self) -> MilvusVectorStore:
-        """Create a MilvusVectorStore instance using connection settings from MilvusSettings."""
+    def to_llama_index(self, client: MilvusClient | None = None) -> MilvusVectorStore:
+        """Create a MilvusVectorStore instance using connection settings from MilvusSettings.
+
+        When a shared MilvusClient is provided, it is reused instead of creating a new connection.
+        """
         settings = MilvusSettings()
-        client = MilvusClient(uri=settings.URL, token=settings.get_token())
+        if client is None:
+            client = MilvusClient(uri=settings.URL, token=settings.get_token())
         return MilvusVectorStoreFactory.create_milvus_vector_store(
             client=client,
             collection_name=self.collection_name,

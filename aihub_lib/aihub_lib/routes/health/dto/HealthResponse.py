@@ -19,7 +19,8 @@ class AgentHealthChecks(BaseModel):
     running: Annotated[bool, Field(description="Whether the agent runner is running.")]
     nats: Annotated[bool, Field(description="NATS message broker connectivity.")]
     redis: Annotated[bool, Field(description="Redis/Valkey cache connectivity.")]
-    milvus: Annotated[bool, Field(description="Milvus vector database connectivity.")]
+    milvus: Annotated[bool | None, Field(default=None, description="Milvus vector database connectivity.")]
+    mongodb: Annotated[bool | None, Field(default=None, description="MongoDB database connectivity.")]
 
 
 class ProcessHealthChecks(BaseModel):

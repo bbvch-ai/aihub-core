@@ -117,7 +117,7 @@ class HealthServer:
                 health_status = {
                     "status": "ok" if is_healthy else "unhealthy",
                     f"{provider.entity_type}_class": provider.entity_name,
-                    "checks": checks.model_dump(),
+                    "checks": checks.model_dump(exclude_none=True),
                 }
 
                 status_code = 200 if is_healthy else 503

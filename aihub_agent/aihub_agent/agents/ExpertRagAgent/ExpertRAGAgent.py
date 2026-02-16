@@ -11,6 +11,8 @@ from aihub_lib.generative_ai.chat_history.format_expert_conversation import form
 from aihub_lib.generative_ai.memory.AgentMemory import AgentMemory
 from aihub_lib.generative_ai.utils.filter_retrievers_by_namespace import filter_retrievers_by_namespace
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.infrastructure.connectors.MilvusConnector import MilvusConnector
+from aihub_lib.infrastructure.connectors.MongoConnector import MongoConnector
 from aihub_lib.nats.events import (
     AgentInTheLoop,
     HumanInTheLoop,
@@ -185,6 +187,7 @@ class ExpertRAGAgent(Agent):
         "agent.expert_rag_agent.metadata.description"
     )
     icon: ClassVar[str] = "mage:building-a"
+    connectors: ClassVar = [MongoConnector, MilvusConnector]
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.retrieve_user_memory.name"),
@@ -334,13 +337,14 @@ class ExpertRAGAgent(Agent):
         start_event: UserMessageEvent | NamespaceAwareUserMessageEvent,
         agent_config: ExpertRAGAgentConfig,
         t: LocaleHandler,
+        milvus: MilvusConnector,
     ) -> RetrieverEvent:
         """Retrieves relevant nodes from multiple knowledge sources in parallel."""
         if isinstance(start_event, NamespaceAwareUserMessageEvent):
             retrievers = filter_retrievers_by_namespace(agent_config.retrievers, start_event.selected_namespaces)
         else:
             retrievers = agent_config.retrievers
-        return await do_retrieve(event, retrievers, t)
+        return await do_retrieve(event, retrievers, t, milvus_client=milvus.client)
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.rerank_nodes.name"),

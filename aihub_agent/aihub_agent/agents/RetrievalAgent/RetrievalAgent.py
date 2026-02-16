@@ -5,6 +5,8 @@ from aihub_lib.generative_ai.retrieval.combine_nodes_in_order import combine_nod
 from aihub_lib.generative_ai.retrieval.retrieve_nodes import retrieve_nodes
 from aihub_lib.generative_ai.retrieval.retrieve_prev_next_nodes import retrieve_prev_next_nodes
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.infrastructure.connectors.MilvusConnector import MilvusConnector
+from aihub_lib.infrastructure.connectors.MongoConnector import MongoConnector
 from aihub_lib.nats.events.semantic.retriever import RetrieverEvent
 
 from aihub_agent.agents.Agent import Agent
@@ -29,6 +31,7 @@ class RetrievalAgent(Agent):
         "agent.retrieval_agent.metadata.description"
     )
     icon: ClassVar[str] = "mage:search"
+    connectors: ClassVar = [MongoConnector, MilvusConnector]
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.retrieval_agent.steps.retrieve_nodes.name"),
@@ -41,6 +44,7 @@ class RetrievalAgent(Agent):
         agent_config: RetrievalAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
+        milvus: MilvusConnector,
     ) -> RetrieverEvent:
         """
         Retrieves relevant nodes from the knowledge base.
@@ -49,7 +53,7 @@ class RetrievalAgent(Agent):
         retriever = agent_config.retriever
         embedding, _ = retriever.embed_model.to_llama_index()
 
-        vector_store = retriever.vector_store.to_llama_index()
+        vector_store = retriever.vector_store.to_llama_index(client=milvus.client)
 
         nodes = retrieve_nodes(
             message=event.question,

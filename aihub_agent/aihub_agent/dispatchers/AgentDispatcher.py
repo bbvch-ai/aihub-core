@@ -8,6 +8,8 @@ from aihub_lib.agents.AgentConfig import AgentConfig, StepConfig
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.generative_ai.memory.AgentMemory import AgentMemory
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.infrastructure.connectors.InfrastructureConnector import InfrastructureConnector
+from aihub_lib.infrastructure.connectors.MilvusConnector import MilvusConnector
 from aihub_lib.nats.dispatcher.BaseDispatcher import BaseDispatcher, EventsAndKwargs
 from aihub_lib.nats.events import BaseEvent, ControlEvent, ExceptionEvent, StartEvent
 from aihub_lib.nats.events.agent_in_the_loop.request.AgentInTheLoopRequestEvent import AgentInTheLoopRequestEvent
@@ -72,6 +74,7 @@ class AgentDispatcher(BaseDispatcher):
         redis: Annotated[Redis, "Redis client for distributed storage."],
         topic_manager: Annotated[AgentClassTopicManager, "Manages event subjects for this agent instance."],
         locale_handler: Annotated[AgentLocaleHandler, "Manages localization for the agent."],
+        connectors: Annotated[list[InfrastructureConnector], "Connected infrastructure instances."] | None = None,
     ):
         super().__init__(nc, js, redis, topic_manager, AgentClassTopic, dispatch_entity_name=agent.__name__)
         self.agent = agent
@@ -84,6 +87,11 @@ class AgentDispatcher(BaseDispatcher):
         self._non_configurable_values = agent_config.get_non_configurable_values()
 
         self.agent_run_tracer = AgentRunTracer()
+
+        # Build lookup dict for connector injection into workflow steps
+        self._connectors_by_type: dict[type[InfrastructureConnector], InfrastructureConnector] = {
+            type(c): c for c in (connectors or [])
+        }
 
         # Client for fetching agent configuration via NATS RPC
         self._config_client = AgentConfigClient(nc=nc)
@@ -424,8 +432,22 @@ class AgentDispatcher(BaseDispatcher):
             return self.locale_handler.in_locale(locale)
 
         if param.annotation == AgentMemory:
+            if MilvusConnector not in self._connectors_by_type:
+                raise ValueError(
+                    f"Step requests 'AgentMemory' which requires Milvus (via Mem0), "
+                    f"but agent '{self.agent.__name__}' does not declare MilvusConnector in connectors."
+                )
             locale = await run_context.get("locale", LocaleHandler.DEFAULT_LOCALE)
             return AgentMemory(agent_config=agent_config, t=self.locale_handler.in_locale(locale))
+
+        if inspect.isclass(param.annotation) and issubclass(param.annotation, InfrastructureConnector):
+            connector = self._connectors_by_type.get(param.annotation)
+            if connector is None:
+                raise ValueError(
+                    f"Step requests '{param.annotation.__name__}' but agent '{self.agent.__name__}' "
+                    f"does not declare it in connectors."
+                )
+            return connector
 
         if param.annotation in [AgentInstanceTopic, AgentClassTopic, PartialAgentTopic]:
             return topic
