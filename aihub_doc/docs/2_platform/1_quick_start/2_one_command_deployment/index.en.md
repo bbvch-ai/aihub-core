@@ -184,11 +184,21 @@ LITELLM_MASTER_KEY="REPLACE_WITH_RANDOM_STRING"
 # Service Configuration
 # -----------------------------------------------------------------------------
 JUPYTER_TOKEN="REPLACE_WITH_RANDOM_STRING"
-PHOENIX_SECRET="REPLACE_WITH_RANDOM_STRING"
+# Langfuse Configuration (LLM observability and evaluation)
+LANGFUSE_SALT="REPLACE_WITH_RANDOM_STRING"
+LANGFUSE_NEXTAUTH_SECRET="REPLACE_WITH_RANDOM_STRING"
+LANGFUSE_ENCRYPTION_KEY="REPLACE_WITH_64_HEX_CHARS"
+LANGFUSE_NEXTAUTH_URL="https://langfuse.${DOMAIN}"
+LANGFUSE_PUBLIC_KEY="pk-lf-REPLACE_WITH_LANGFUSE_PUBLIC_KEY"
+LANGFUSE_SECRET_KEY="sk-lf-REPLACE_WITH_LANGFUSE_SECRET_KEY"
+LANGFUSE_INIT_USER_EMAIL="admin@your-company.com"
+LANGFUSE_INIT_USER_PASSWORD="REPLACE_WITH_RANDOM_STRING"
+LANGFUSE_CLICKHOUSE_PASSWORD="REPLACE_WITH_RANDOM_STRING"
 
-# MinerU Configuration
-MINERU_API_TIMEOUT="600"
-MINERU_VLM_MODEL_NAME="text-generation/ocr"
+# Docling Configuration
+DOCLING_API_TIMEOUT="600"
+DOCLING_VLM_MODEL_NAME="text-generation/ocr"
+DOCLING_HTTP_RETRIES=3
 
 # Milvus Configuration (must match your embedding model dimensions)
 MILVUS_DIMENSION="3072"
@@ -331,8 +341,8 @@ docker compose -f docker-compose.latest.yml ps
 - **Databases** (FerretDB, PostgreSQL, Valkey)
 - **Vector Database** (Milvus)
 - **LLM Proxy** (LiteLLM)
-- **Document Processing** (MinerU)
-- **Observability** (Phoenix)
+- **Document Processing** (Docling)
+- **Observability** (Langfuse)
 - **Message Queue** (NATS)
 - **Storage** (SeaweedFS)
 

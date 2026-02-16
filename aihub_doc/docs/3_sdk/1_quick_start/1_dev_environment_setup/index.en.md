@@ -172,7 +172,7 @@ Click on your agent and send a test message. You should receive a response showi
 
 ### Step 3: Observe Agent Behavior
 
-Visit `http://localhost:6006` to see Phoenix tracing. You'll see detailed traces of your agent's execution, showing each
+Visit `http://localhost:6006` to see Langfuse tracing. You'll see detailed traces of your agent's execution, showing each
 step and its inputs/outputs.
 
 ## What Just Happened?

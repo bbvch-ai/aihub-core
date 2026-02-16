@@ -3337,7 +3337,7 @@ export type Dataset = {
     /**
      * Id
      *
-     * The unique identifier of the dataset in Phoenix.
+     * The unique identifier of the dataset in Langfuse.
      */
     id: string;
     /**
@@ -3364,6 +3364,12 @@ export type Dataset = {
      * The timestamp when the dataset was last updated.
      */
     updated_at?: Date | null;
+    /**
+     * Langfuse Url
+     *
+     * Direct URL to this dataset in the Langfuse UI.
+     */
+    langfuse_url?: string | null;
     /**
      * Items
      *
@@ -3403,7 +3409,7 @@ export type DatasetItem = {
     /**
      * Id
      *
-     * The unique identifier for the dataset item, managed by Phoenix.
+     * The unique identifier for the dataset item, managed by Langfuse.
      */
     id?: string | null;
     /**
@@ -3445,7 +3451,7 @@ export type DatasetUpdate = {
     /**
      * Items
      *
-     * The complete list of new question-answer items. This will replace all existing items for the dataset version being created/updated.
+     * New question-answer items to append to the dataset.
      */
     items: Array<DatasetItemCreate>;
 };
@@ -4239,66 +4245,6 @@ export type EmbeddingsResponse = {
 };
 
 /**
- * EvaluationData
- */
-export type EvaluationData = {
-    /**
-     * Name
-     *
-     * Name of the evaluator.
-     */
-    name: string;
-    /**
-     * Annotator Kind
-     *
-     * Kind of evaluator, either LLM or Code.
-     */
-    annotator_kind: 'LLM' | 'Code';
-    /**
-     * Score
-     *
-     * Score between 0 and 1.
-     */
-    score: number;
-    /**
-     * Explanation
-     *
-     * Explanation given by Judge LLM.
-     */
-    explanation?: string | null;
-    /**
-     * Error
-     *
-     * Error message if the task run failed.
-     */
-    error?: string | null;
-};
-
-/**
- * EvaluationSummaryData
- */
-export type EvaluationSummaryData = {
-    /**
-     * Evaluator
-     *
-     * Name of the evaluator.
-     */
-    evaluator: string;
-    /**
-     * N
-     *
-     * Number of items evaluated.
-     */
-    n: number;
-    /**
-     * Avg Score
-     *
-     * Average score from this evaluator.
-     */
-    avg_score: number;
-};
-
-/**
  * EventBucket
  *
  * Represents a time bucket with event counts by type.
@@ -4539,186 +4485,6 @@ export type ExceptionEvent = {
      */
     readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<string> | undefined;
-};
-
-/**
- * Experiment
- */
-export type Experiment = {
-    /**
-     * Id
-     *
-     * The unique identifier of the experiment in Phoenix.
-     */
-    id: string;
-    /**
-     * Name
-     *
-     * The name of the experiment.
-     */
-    name: string;
-    /**
-     * Description
-     *
-     * The description of the experiment.
-     */
-    description?: string | null;
-    /**
-     * Agent that was evaluated
-     */
-    agent: MinimalAgentInstanceDto;
-    /**
-     * Created At
-     *
-     * Timestamp of when the experiment data was recorded or fetched.
-     */
-    created_at?: Date | null;
-    /**
-     * The dataset associated with this experiment.
-     */
-    dataset: MinimalDataset;
-    /**
-     * Locale
-     *
-     * The locale of the experiment.
-     */
-    locale: string;
-    /**
-     * How concise is the answer
-     */
-    conciseness?: EvaluationSummaryData | null;
-    /**
-     * How correct is the answer
-     */
-    correctness?: EvaluationSummaryData | null;
-    /**
-     * How complete is the answer
-     */
-    completeness?: EvaluationSummaryData | null;
-    /**
-     * Items
-     *
-     * Detailed records of each run within the experiment, including inputs, outputs, and evaluations.
-     */
-    items: Array<ExperimentRunRecord>;
-};
-
-/**
- * ExperimentCreate
- */
-export type ExperimentCreate = {
-    /**
-     * Agent Class
-     *
-     * The class name of the agent to be evaluated.
-     */
-    agent_class: string;
-    /**
-     * Agent Id
-     *
-     * The specific ID of the agent instance to be evaluated.
-     */
-    agent_id: string;
-    /**
-     * Dataset Id
-     *
-     * The ID of the Phoenix dataset to use for evaluation.
-     */
-    dataset_id: string;
-    /**
-     * Experiment Name
-     *
-     * An optional custom name for the Phoenix experiment. If not provided, a name will be generated.
-     */
-    experiment_name?: string | null;
-    /**
-     * Experiment Description
-     *
-     * An optional description for the Phoenix experiment.
-     */
-    experiment_description?: string | null;
-    /**
-     * Experiment Metadata
-     *
-     * Optional metadata to associate with the Phoenix experiment.
-     */
-    experiment_metadata?: {
-        [key: string]: unknown;
-    } | null;
-};
-
-/**
- * ExperimentRunRecord
- */
-export type ExperimentRunRecord = {
-    /**
-     * Example Id
-     *
-     * ID of the dataset example for this run.
-     */
-    example_id: string;
-    /**
-     * Question
-     *
-     * Input question.
-     */
-    question: string;
-    /**
-     * Reference Answer
-     *
-     * Expected answer for this example.
-     */
-    reference_answer: string;
-    /**
-     * Assistant Answer
-     *
-     * Response given by assistant.
-     */
-    assistant_answer: string;
-    /**
-     * Thread Id
-     */
-    thread_id: string;
-    /**
-     * Display Id
-     */
-    display_id: string;
-    /**
-     * Error
-     *
-     * Error message if the task run failed.
-     */
-    error?: string | null;
-    /**
-     * Latency Ms
-     *
-     * Latency of the task run in milliseconds.
-     */
-    latency_ms?: number | null;
-    /**
-     * Start Time
-     *
-     * Start time of the task run.
-     */
-    start_time: Date;
-    /**
-     * End Time
-     *
-     * End time of the task run.
-     */
-    end_time: Date;
-    /**
-     * How concise is the answer
-     */
-    conciseness?: EvaluationData | null;
-    /**
-     * How correct is the answer
-     */
-    correctness?: EvaluationData | null;
-    /**
-     * How complete is the answer
-     */
-    completeness?: EvaluationData | null;
 };
 
 /**
@@ -8297,7 +8063,7 @@ export type MinimalDataset = {
     /**
      * Id
      *
-     * The unique identifier of the dataset in Phoenix.
+     * The unique identifier of the dataset in Langfuse.
      */
     id: string;
     /**
@@ -8324,50 +8090,12 @@ export type MinimalDataset = {
      * The timestamp when the dataset was last updated.
      */
     updated_at?: Date | null;
-};
-
-/**
- * MinimalExperiment
- */
-export type MinimalExperiment = {
     /**
-     * Id
+     * Langfuse Url
      *
-     * The unique identifier of the experiment in Phoenix.
+     * Direct URL to this dataset in the Langfuse UI.
      */
-    id: string;
-    /**
-     * Name
-     *
-     * The name of the experiment.
-     */
-    name: string;
-    /**
-     * Description
-     *
-     * The description of the experiment.
-     */
-    description?: string | null;
-    /**
-     * Agent that was evaluated
-     */
-    agent: MinimalAgentInstanceDto;
-    /**
-     * Created At
-     *
-     * Timestamp of when the experiment data was recorded or fetched.
-     */
-    created_at?: Date | null;
-    /**
-     * The dataset associated with this experiment.
-     */
-    dataset: MinimalDataset;
-    /**
-     * Locale
-     *
-     * The locale of the experiment.
-     */
-    locale: string;
+    langfuse_url?: string | null;
 };
 
 /**
@@ -11314,7 +11042,7 @@ export type SelectButton = {
  * SemanticEvent
  *
  * A base class for events that must report their data to an OpenInference-compatible tracing system,
- * such as Arize Phoenix. By inheriting from both `ControlEvent` and `DisplayEvent`, `SemanticEvent`:
+ * such as Langfuse. By inheriting from both `ControlEvent` and `DisplayEvent`, `SemanticEvent`:
  * - Influences workflow execution and can control the system flow (like any `ControlEvent`).
  * - Remains visible to the end-user or UI (like any `DisplayEvent`).
  * - Introduces the requirement to define a `to_semantic_convention()` method,
@@ -11328,7 +11056,7 @@ export type SelectButton = {
  *
  * ### Integrating with OpenInference
  * OpenInference mandates a set of semantic conventions for attributes, ensuring that tooling
- * (like Arize Phoenix) can interpret and visualize LLM application behavior. Subclasses of
+ * (like Langfuse) can interpret and visualize LLM application behavior. Subclasses of
  * `SemanticEvent` should implement `to_semantic_convention()` to:
  * - Flatten nested structures into simple key-value pairs following the OpenInference attribute schema.
  * - Use reserved attribute names (e.g. `llm.model_name`, `document.id`) as defined in the specification.
@@ -15678,68 +15406,6 @@ export type ExceptionEventWritable = {
 };
 
 /**
- * Experiment
- */
-export type ExperimentWritable = {
-    /**
-     * Id
-     *
-     * The unique identifier of the experiment in Phoenix.
-     */
-    id: string;
-    /**
-     * Name
-     *
-     * The name of the experiment.
-     */
-    name: string;
-    /**
-     * Description
-     *
-     * The description of the experiment.
-     */
-    description?: string | null;
-    /**
-     * Agent that was evaluated
-     */
-    agent: MinimalAgentInstanceDtoWritable;
-    /**
-     * Created At
-     *
-     * Timestamp of when the experiment data was recorded or fetched.
-     */
-    created_at?: Date | null;
-    /**
-     * The dataset associated with this experiment.
-     */
-    dataset: MinimalDataset;
-    /**
-     * Locale
-     *
-     * The locale of the experiment.
-     */
-    locale: string;
-    /**
-     * How concise is the answer
-     */
-    conciseness?: EvaluationSummaryData | null;
-    /**
-     * How correct is the answer
-     */
-    correctness?: EvaluationSummaryData | null;
-    /**
-     * How complete is the answer
-     */
-    completeness?: EvaluationSummaryData | null;
-    /**
-     * Items
-     *
-     * Detailed records of each run within the experiment, including inputs, outputs, and evaluations.
-     */
-    items: Array<ExperimentRunRecord>;
-};
-
-/**
  * FewShotAcceptEvent
  *
  * Event indicating that the few-shot guard accepted the request.
@@ -17889,50 +17555,6 @@ export type MinimalAgentInstanceDtoWritable = {
 };
 
 /**
- * MinimalExperiment
- */
-export type MinimalExperimentWritable = {
-    /**
-     * Id
-     *
-     * The unique identifier of the experiment in Phoenix.
-     */
-    id: string;
-    /**
-     * Name
-     *
-     * The name of the experiment.
-     */
-    name: string;
-    /**
-     * Description
-     *
-     * The description of the experiment.
-     */
-    description?: string | null;
-    /**
-     * Agent that was evaluated
-     */
-    agent: MinimalAgentInstanceDtoWritable;
-    /**
-     * Created At
-     *
-     * Timestamp of when the experiment data was recorded or fetched.
-     */
-    created_at?: Date | null;
-    /**
-     * The dataset associated with this experiment.
-     */
-    dataset: MinimalDataset;
-    /**
-     * Locale
-     *
-     * The locale of the experiment.
-     */
-    locale: string;
-};
-
-/**
  * ModelDTO
  */
 export type ModelDtoWritable = {
@@ -19602,7 +19224,7 @@ export type SelectButtonWritable = {
  * SemanticEvent
  *
  * A base class for events that must report their data to an OpenInference-compatible tracing system,
- * such as Arize Phoenix. By inheriting from both `ControlEvent` and `DisplayEvent`, `SemanticEvent`:
+ * such as Langfuse. By inheriting from both `ControlEvent` and `DisplayEvent`, `SemanticEvent`:
  * - Influences workflow execution and can control the system flow (like any `ControlEvent`).
  * - Remains visible to the end-user or UI (like any `DisplayEvent`).
  * - Introduces the requirement to define a `to_semantic_convention()` method,
@@ -19616,7 +19238,7 @@ export type SelectButtonWritable = {
  *
  * ### Integrating with OpenInference
  * OpenInference mandates a set of semantic conventions for attributes, ensuring that tooling
- * (like Arize Phoenix) can interpret and visualize LLM application behavior. Subclasses of
+ * (like Langfuse) can interpret and visualize LLM application behavior. Subclasses of
  * `SemanticEvent` should implement `to_semantic_convention()` to:
  * - Flatten nested structures into simple key-value pairs following the OpenInference attribute schema.
  * - Use reserved attribute names (e.g. `llm.model_name`, `document.id`) as defined in the specification.
@@ -22648,12 +22270,12 @@ export type GetDatasetsData = {
     body?: never;
     path?: never;
     query?: never;
-    url: '/evaluations/datasets';
+    url: '/datasets/';
 };
 
 export type GetDatasetsResponses = {
     /**
-     * Response Get Datasets Evaluations Datasets Get
+     * Response Get Datasets Datasets  Get
      *
      * Successful Response
      */
@@ -22666,7 +22288,7 @@ export type CreateDatasetData = {
     body: DatasetCreate;
     path?: never;
     query?: never;
-    url: '/evaluations/datasets';
+    url: '/datasets/';
 };
 
 export type CreateDatasetErrors = {
@@ -22698,7 +22320,7 @@ export type GetDatasetData = {
         dataset_id: string;
     };
     query?: never;
-    url: '/evaluations/datasets/{dataset_id}';
+    url: '/datasets/{dataset_id}';
 };
 
 export type GetDatasetErrors = {
@@ -22730,7 +22352,7 @@ export type UpdateDatasetData = {
         dataset_id: string;
     };
     query?: never;
-    url: '/evaluations/datasets/{dataset_id}';
+    url: '/datasets/{dataset_id}';
 };
 
 export type UpdateDatasetErrors = {
@@ -22750,81 +22372,6 @@ export type UpdateDatasetResponses = {
 };
 
 export type UpdateDatasetResponse = UpdateDatasetResponses[keyof UpdateDatasetResponses];
-
-export type GetExperimentData = {
-    body?: never;
-    path: {
-        /**
-         * Experiment Id
-         *
-         * The unique identifier of the experiment to retrieve.
-         */
-        experiment_id: string;
-    };
-    query?: never;
-    url: '/evaluations/experiments/{experiment_id}';
-};
-
-export type GetExperimentErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type GetExperimentError = GetExperimentErrors[keyof GetExperimentErrors];
-
-export type GetExperimentResponses = {
-    /**
-     * Successful Response
-     */
-    200: Experiment;
-};
-
-export type GetExperimentResponse = GetExperimentResponses[keyof GetExperimentResponses];
-
-export type GetExperimentsData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/evaluations/experiments';
-};
-
-export type GetExperimentsResponses = {
-    /**
-     * Response Get Experiments Evaluations Experiments Get
-     *
-     * Successful Response
-     */
-    200: Array<MinimalExperiment>;
-};
-
-export type GetExperimentsResponse = GetExperimentsResponses[keyof GetExperimentsResponses];
-
-export type RunExperimentData = {
-    body: ExperimentCreate;
-    path?: never;
-    query?: never;
-    url: '/evaluations/experiments';
-};
-
-export type RunExperimentErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type RunExperimentError = RunExperimentErrors[keyof RunExperimentErrors];
-
-export type RunExperimentResponses = {
-    /**
-     * Successful Response
-     */
-    200: Experiment;
-};
-
-export type RunExperimentResponse = RunExperimentResponses[keyof RunExperimentResponses];
 
 export type CreateNamespaceData = {
     body: CreateNamespaceRequest;
