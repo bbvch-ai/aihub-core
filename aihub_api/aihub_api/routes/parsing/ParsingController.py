@@ -9,7 +9,7 @@ from fastapi import Depends, Header, Query, Security
 
 from aihub_api.i18n.ApiLocaleString import ApiLocaleString
 from aihub_api.routes.parsing.dependencies.use_limited_body import use_limited_body
-from aihub_api.routes.parsing.dto.DocumentConversionResponse import DocumentConversionResponse
+from aihub_api.routes.parsing.dto.DocumentParsingResponse import DocumentParsingResponse
 from aihub_api.routes.parsing.dto.ImageMode import ImageMode
 from aihub_api.routes.parsing.ParsingService import ParsingService
 
@@ -61,7 +61,7 @@ class ParsingController(Controller):
                 ImageMode,
                 Query(description="Image handling: 's3' (signed URLs) or 'base64' (embedded data URIs)"),
             ] = ImageMode.S3,
-        ) -> DocumentConversionResponse:
+        ) -> DocumentParsingResponse:
             return await ParsingService.convert_from_bytes(
                 content=body,
                 filename=x_file_name or x_filename,

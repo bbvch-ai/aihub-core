@@ -3,13 +3,13 @@ from typing import Annotated
 from pydantic import BaseModel, Field
 
 
-class DocumentConversionMetadata(BaseModel):
+class DocumentParsingMetadata(BaseModel):
     """Metadata about the converted document."""
 
     filename: Annotated[str, Field(description="Original filename")]
 
 
-class DocumentConversionResponse(BaseModel):
+class DocumentParsingResponse(BaseModel):
     """
     Response schema for document conversion.
 
@@ -19,6 +19,6 @@ class DocumentConversionResponse(BaseModel):
 
     page_content: Annotated[str, Field(description="Extracted text content (markdown)")]
     metadata: Annotated[
-        DocumentConversionMetadata | None,
+        DocumentParsingMetadata | None,
         Field(default=None, description="Document metadata"),
     ]

@@ -21,9 +21,9 @@ class MineruSettings(EnvironmentSettings):
     API_BASE_URL: Annotated[str, Field(description="MinerU API endpoint URL")] = "http://mineru-api:8000"
     API_TIMEOUT: Annotated[int, Field(description="Timeout for MinerU API calls in seconds")] = 600
 
-    VL_SERVER_URL: Annotated[str, Field(description="LiteLLM proxy URL for VLM routing")] = "http://litellm:4000"
-    VL_API_KEY: Annotated[SecretStr, Field(description="LiteLLM API key for VLM requests")] = SecretStr("")
-    VL_MODEL_NAME: Annotated[str, Field(description="LiteLLM model alias for MinerU VLM")] = "text-generation/ocr"
+    VLM_SERVER_URL: Annotated[str, Field(description="LiteLLM proxy URL for VLM routing")] = "http://litellm:4000"
+    VLM_SERVER_API_KEY: Annotated[SecretStr, Field(description="LiteLLM API key for VLM requests")] = SecretStr("")
+    VLM_MODEL_NAME: Annotated[str, Field(description="LiteLLM model alias for MinerU VLM")] = "text-generation/ocr"
 
     FORMULA_ENABLE: Annotated[bool, Field(description="Enable formula/equation parsing")] = True
     TABLE_ENABLE: Annotated[bool, Field(description="Enable table detection and parsing")] = True

@@ -1,6 +1,6 @@
-from aihub_api.routes.parsing.dto.DocumentConversionResponse import (
-    DocumentConversionMetadata,
-    DocumentConversionResponse,
+from aihub_api.routes.parsing.dto.DocumentParsingResponse import (
+    DocumentParsingMetadata,
+    DocumentParsingResponse,
 )
 
-__all__ = ["DocumentConversionMetadata", "DocumentConversionResponse"]
+__all__ = ["DocumentParsingMetadata", "DocumentParsingResponse"]

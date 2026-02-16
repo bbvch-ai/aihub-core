@@ -206,10 +206,10 @@ class MineruLoader(BaseReader):
         ext = os.path.splitext(filename)[1].lower()
         content_type = self.CONTENT_TYPE_MAP.get(ext, "application/octet-stream")
 
-        vlm_server_url = self.config.VL_SERVER_URL.rstrip("/")
+        vlm_server_url = self.config.VLM_SERVER_URL.rstrip("/")
         vlm_headers = {}
-        if self.config.VL_API_KEY.get_secret_value():
-            vlm_headers["Authorization"] = f"Bearer {self.config.VL_API_KEY.get_secret_value()}"
+        if self.config.VLM_SERVER_API_KEY.get_secret_value():
+            vlm_headers["Authorization"] = f"Bearer {self.config.VLM_SERVER_API_KEY.get_secret_value()}"
 
         try:
             async with httpx.AsyncClient(timeout=httpx.Timeout(self.config.API_TIMEOUT)) as client:
@@ -221,7 +221,7 @@ class MineruLoader(BaseReader):
                     data={
                         "backend": "vlm-http-client",
                         "server_url": f"{vlm_server_url}/v1/chat/completions",
-                        "model_name": self.config.VL_MODEL_NAME,
+                        "model_name": self.config.VLM_MODEL_NAME,
                         "return_md": "true",
                         "return_middle_json": "true",
                         "return_images": str(include_images).lower(),

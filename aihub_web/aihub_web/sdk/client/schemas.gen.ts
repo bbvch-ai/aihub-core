@@ -6278,7 +6278,7 @@ export const DocumentConversionResponseSchema = {
         metadata: {
             anyOf: [
                 {
-                    $ref: '#/components/schemas/DocumentConversionMetadata'
+                    $ref: '#/components/schemas/DocumentParsingMetadata'
                 },
                 {
                     type: 'null'

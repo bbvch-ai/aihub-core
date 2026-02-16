@@ -4,7 +4,7 @@
 # It uses HTTP/REST communication only - AGPL-licensed MinerU code is isolated
 # from proprietary code through network boundaries.
 #
-# VLM requests are routed through LiteLLM (MINERU_VL_SERVER_URL) which handles
+# VLM requests are routed through LiteLLM (MINERU_VLM_SERVER_URL) which handles
 # model routing to either self-hosted GPU or external cloud providers.
 
 FROM python:3.12-slim

@@ -3800,7 +3800,7 @@ export type DocumentBlock = {
 };
 
 /**
- * DocumentConversionMetadata
+ * DocumentParsingMetadata
  *
  * Metadata about the converted document.
  */
@@ -3814,7 +3814,7 @@ export type DocumentConversionMetadata = {
 };
 
 /**
- * DocumentConversionResponse
+ * DocumentParsingResponse
  *
  * Response schema for document conversion.
  *

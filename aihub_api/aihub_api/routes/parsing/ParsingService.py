@@ -11,9 +11,9 @@ from aihub_lib.infrastructure.mineru.MineruSettings import MineruSettings
 from aihub_lib.infrastructure.s3.use_s3 import create_s3_filesystem
 from fastapi import HTTPException
 
-from aihub_api.routes.parsing.dto.DocumentConversionResponse import (
-    DocumentConversionMetadata,
-    DocumentConversionResponse,
+from aihub_api.routes.parsing.dto.DocumentParsingResponse import (
+    DocumentParsingMetadata,
+    DocumentParsingResponse,
 )
 from aihub_api.routes.parsing.dto.ImageMode import ImageMode
 
@@ -48,7 +48,7 @@ class ParsingService:
         content_type: str = "",
         image_mode: ImageMode | None = None,
         s3_service: S3AnonymousFileAccessService | None = None,
-    ) -> DocumentConversionResponse:
+    ) -> DocumentParsingResponse:
         """
         Convert a document from raw bytes to markdown.
 
@@ -122,9 +122,9 @@ class ParsingService:
 
         logger.info(f"Document converted: {filename}, {len(markdown_content)} chars")
 
-        return DocumentConversionResponse(
+        return DocumentParsingResponse(
             page_content=markdown_content,
-            metadata=DocumentConversionMetadata(
+            metadata=DocumentParsingMetadata(
                 filename=filename,
             ),
         )
