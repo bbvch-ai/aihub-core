@@ -544,6 +544,15 @@ role:
   calls_per: "chiamate"
   unlimited: "Illimitato"
   no_access_rules: "Nessuna regola di accesso definita"
+  access_rules_help_intro: "Le regole gerarchiche controllano l'accesso alle risorse:"
+  access_rules_help_all_agents: "Tutti gli agenti"
+  access_rules_help_agent_instances: "Tutte le istanze di MyAgent"
+  access_rules_help_service: "Servizio Knowledge"
+  access_rules_help_admin: "Accesso admin a tutto"
+  pattern_help_intro: "I modelli usano caratteri jolly per gli agenti:"
+  pattern_help_all: "Tutti gli agenti"
+  pattern_help_wildcard: "Tutte le istanze di MyAgent"
+  pattern_help_specific: "Solo un'istanza specifica"
   create_dialog:
     description: "Crea un nuovo ruolo con regole di accesso. Per assegnare il nuovo ruolo agli utenti, utilizza il tuo AD."
   remove_dialog:

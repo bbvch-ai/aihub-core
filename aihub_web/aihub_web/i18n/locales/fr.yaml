@@ -544,6 +544,15 @@ role:
   calls_per: "appels"
   unlimited: "Illimité"
   no_access_rules: "Aucune règle d'accès définie"
+  access_rules_help_intro: "Les règles hiérarchiques contrôlent l'accès aux ressources :"
+  access_rules_help_all_agents: "Tous les agents"
+  access_rules_help_agent_instances: "Toutes les instances de MyAgent"
+  access_rules_help_service: "Service Knowledge"
+  access_rules_help_admin: "Accès admin à tout"
+  pattern_help_intro: "Les modèles utilisent des jokers pour les agents :"
+  pattern_help_all: "Tous les agents"
+  pattern_help_wildcard: "Toutes les instances de MyAgent"
+  pattern_help_specific: "Uniquement une instance spécifique"
   create_dialog:
     description: "Créez un nouveau rôle avec des règles d'accès. Pour attribuer le nouveau rôle aux utilisateurs, veuillez utiliser votre AD."
   remove_dialog:

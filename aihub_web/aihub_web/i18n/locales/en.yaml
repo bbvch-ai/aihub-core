@@ -546,6 +546,15 @@ role:
   calls_per: "calls"
   unlimited: "Unlimited"
   no_access_rules: "No access rules defined"
+  access_rules_help_intro: "Hierarchical rules control access to resources:"
+  access_rules_help_all_agents: "All agents"
+  access_rules_help_agent_instances: "All instances of MyAgent"
+  access_rules_help_service: "Knowledge service"
+  access_rules_help_admin: "Admin access to everything"
+  pattern_help_intro: "Patterns use wildcards to match agents:"
+  pattern_help_all: "All agents"
+  pattern_help_wildcard: "All instances of MyAgent"
+  pattern_help_specific: "Only a specific instance"
   create_dialog:
     description: "Create a new role with access rules. To assigne the new role to users, please use your AD."
   remove_dialog:

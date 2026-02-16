@@ -28,7 +28,26 @@
         <thead>
           <tr>
             <th class="py-2 text-start font-medium">
-              {{ t('role.usage_pattern') }}
+              <span class="flex items-center gap-1">
+                {{ t('role.usage_pattern') }}
+                <i
+                  class="pi pi-question-circle text-surface-400"
+                  @mouseenter="(e: Event) => patternHelp?.show(e)"
+                  @mouseleave="() => patternHelp?.hide()"
+                />
+              </span>
+              <Popover ref="patternHelp">
+                <div class="text-sm font-normal">
+                  <p class="mb-2">
+                    {{ t('role.pattern_help_intro') }}
+                  </p>
+                  <ul class="flex flex-col gap-1">
+                    <li class="whitespace-nowrap"><Badge value=">" severity="secondary" size="small" /> — {{ t('role.pattern_help_all') }}</li>
+                    <li class="whitespace-nowrap"><Badge value="MyAgent.*" severity="secondary" size="small" /> — {{ t('role.pattern_help_wildcard') }}</li>
+                    <li class="whitespace-nowrap"><Badge value="MyAgent.prod" severity="secondary" size="small" /> — {{ t('role.pattern_help_specific') }}</li>
+                  </ul>
+                </div>
+              </Popover>
             </th>
             <th class="py-2 text-start font-medium">
               {{ t('role.usage_limit_value') }}
@@ -46,11 +65,19 @@
             class="border-b border-surface-200 dark:border-surface-700"
           >
             <td class="py-2">
-              <Badge
-                :value="ul.pattern"
-                severity="secondary"
-                class="border border-gray-400/30"
-              />
+              <div class="flex items-center gap-2">
+                <Badge
+                  :value="ul.pattern"
+                  severity="secondary"
+                  class="border border-gray-400/30"
+                />
+                <small
+                  v-if="ul.description"
+                  class="text-surface-500 dark:text-surface-400"
+                >
+                  {{ ul.description }}
+                </small>
+              </div>
             </td>
             <td class="py-2">
               {{ ul.limit }} {{ t('role.calls_per') }}
@@ -133,6 +160,7 @@ import type { UsageLimitDTO } from '@core/sdk/client'
 
 const { t } = useI18n()
 
+const patternHelp = ref()
 const AGENT_PREFIX = 'aihub.user.agent.'
 const PERIOD_VALUES = ['1h', '1d', '7d', '1mo'] as const
 

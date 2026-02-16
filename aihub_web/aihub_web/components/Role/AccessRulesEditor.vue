@@ -1,6 +1,26 @@
 <template>
   <div class="flex flex-col gap-2 rounded-lg border border-surface-200 p-4 dark:border-surface-700">
-    <span class="font-semibold">{{ t('role.access_rules') }}</span>
+    <span class="flex items-center gap-1 font-semibold">
+      {{ t('role.access_rules') }}
+      <i
+        class="pi pi-question-circle text-surface-400"
+        @mouseenter="(e: Event) => accessRulesHelp?.show(e)"
+        @mouseleave="() => accessRulesHelp?.hide()"
+      />
+      <Popover ref="accessRulesHelp">
+        <div class="text-sm font-normal">
+          <p class="mb-2">
+            {{ t('role.access_rules_help_intro') }}
+          </p>
+          <ul class="flex flex-col gap-1">
+            <li class="whitespace-nowrap"><Badge value="aihub.user.agent.>" severity="secondary" size="small" /> — {{ t('role.access_rules_help_all_agents') }}</li>
+            <li class="whitespace-nowrap"><Badge value="aihub.user.agent.MyAgent.*" severity="secondary" size="small" /> — {{ t('role.access_rules_help_agent_instances') }}</li>
+            <li class="whitespace-nowrap"><Badge value="aihub.user.service.knowledge" severity="secondary" size="small" /> — {{ t('role.access_rules_help_service') }}</li>
+            <li class="whitespace-nowrap"><Badge value="aihub.admin.>" severity="secondary" size="small" /> — {{ t('role.access_rules_help_admin') }}</li>
+          </ul>
+        </div>
+      </Popover>
+    </span>
     <DataTable
       v-if="rules.length"
       :value="tableRows"
@@ -69,6 +89,7 @@ import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
 
+const accessRulesHelp = ref()
 const rules = defineModel<string[]>('rules', { required: true })
 
 const props = defineProps<{

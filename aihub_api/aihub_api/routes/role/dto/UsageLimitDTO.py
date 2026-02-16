@@ -17,6 +17,7 @@ class UsageLimitDTO(BaseModel):
     ]
     limit: Annotated[int, Field(ge=1, description="Max calls per period for this pattern.")]
     period: Annotated[UsageLimitPeriod, Field(description="Period for limit: 1h, 1d, 7d, 1mo.")]
+    description: Annotated[str | None, Field(description="Human-readable description of the pattern.")] = None
 
     @field_validator("pattern")
     @classmethod

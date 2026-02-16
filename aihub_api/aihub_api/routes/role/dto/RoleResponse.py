@@ -1,5 +1,6 @@
 from typing import Annotated, Self
 
+from aihub_lib.auth.usage import AccessRuleDescriber
 from aihub_lib.persistence.access.entities.RoleEntity import RoleEntity
 from pydantic import BaseModel, Field
 
@@ -29,6 +30,7 @@ class RoleResponse(BaseModel):
                     pattern=usage_limit.pattern,
                     limit=usage_limit.limit,
                     period=usage_limit.period,
+                    description=AccessRuleDescriber.describe_pattern(usage_limit.pattern),
                 )
                 for usage_limit in (role_entity.usage_limits or [])
             ],

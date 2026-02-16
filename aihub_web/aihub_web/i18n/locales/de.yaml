@@ -545,6 +545,15 @@ role:
   calls_per: "Aufrufe"
   unlimited: "Unbegrenzt"
   no_access_rules: "Keine Zugriffsregeln definiert"
+  access_rules_help_intro: "Hierarchische Regeln steuern den Zugriff auf Ressourcen:"
+  access_rules_help_all_agents: "Alle Agenten"
+  access_rules_help_agent_instances: "Alle Instanzen von MyAgent"
+  access_rules_help_service: "Knowledge-Service"
+  access_rules_help_admin: "Admin-Zugriff auf alles"
+  pattern_help_intro: "Muster verwenden Platzhalter für Agenten:"
+  pattern_help_all: "Alle Agenten"
+  pattern_help_wildcard: "Alle Instanzen von MyAgent"
+  pattern_help_specific: "Nur eine bestimmte Instanz"
   create_dialog:
     description: "Erstellen Sie eine neue Rolle mit Zugriffsregeln. Um die neue Rolle Benutzern zuzuweisen, verwenden Sie bitte Ihr AD."
   remove_dialog:
