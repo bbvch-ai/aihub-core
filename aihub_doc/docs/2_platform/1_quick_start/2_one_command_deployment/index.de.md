@@ -199,7 +199,7 @@ LANGFUSE_CLICKHOUSE_PASSWORD="REPLACE_WITH_RANDOM_STRING"
 
 # MinerU Configuration
 MINERU_API_TIMEOUT="600"
-MINERU_VLM_MODEL_NAME="text-generation/ocr"
+MINERU_VLM_NAME="text-generation/ocr"
 
 # Milvus-Konfiguration (muss mit den Dimensionen Ihres Embedding-Modells übereinstimmen)
 MILVUS_DIMENSION="3072"

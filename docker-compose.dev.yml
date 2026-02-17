@@ -1002,7 +1002,7 @@ services:
       # MinerU-specific configuration (used by mineru_vl_utils HttpVlmClient)
       MINERU_VL_SERVER: http://litellm:4000/v1
       MINERU_VL_API_KEY: ${LITELLM_MASTER_KEY}
-      MINERU_VL_MODEL_NAME: ${MINERU_VLM_MODEL_NAME}
+      MINERU_VL_MODEL_NAME: ${MINERU_VLM_NAME}
       # Processing configuration
       MINERU_API_MAX_CONCURRENT_REQUESTS: ${MINERU_API_MAX_CONCURRENT_REQUESTS}
     healthcheck:
