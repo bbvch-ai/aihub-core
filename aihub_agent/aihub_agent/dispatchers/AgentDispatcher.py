@@ -83,7 +83,7 @@ class AgentDispatcher(BaseDispatcher):
         # Pre-compute non-configurable values for merging with incoming configs
         self._non_configurable_values = agent_config.get_non_configurable_values()
 
-        self.agent_run_tracer = AgentRunTracer()
+        self.agent_run_tracer = AgentRunTracer(redis)
 
         # Client for fetching agent configuration via NATS RPC
         self._config_client = AgentConfigClient(nc=nc)
@@ -154,15 +154,12 @@ class AgentDispatcher(BaseDispatcher):
         if event.is_stop_event or event.is_exception_event:
             logger.debug(f"Handling final event: {event.event_name}")
 
-            try:
-                await run_context.delete_all()
-                await self.event_store.delete_all(topic.execution_context_id)
-                await self.step_store.delete_all(topic.execution_context_id)
+            await run_context.delete_all()
+            await self.event_store.delete_all(topic.execution_context_id)
+            await self.step_store.delete_all(topic.execution_context_id)
 
-                if event.is_exception_event:
-                    await self.step_store.mark_execution_context_as_crashed(topic.execution_context_id)
-            finally:
-                self.agent_run_tracer.clear_run(topic.run_id)
+            if event.is_exception_event:
+                await self.step_store.mark_execution_context_as_crashed(topic.execution_context_id)
             return
 
         steps = self.agent.get_steps_waiting_for_event(type(event))

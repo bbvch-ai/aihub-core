@@ -9,12 +9,39 @@ from aihub_lib.nats.topics.agents.AgentInstanceTopic import AgentInstanceTopic
 from bson import ObjectId
 from opentelemetry.trace import StatusCode
 
-from aihub_agent.tracing.AgentRunTracer import AgentRunTracer, _CACHE_MAX_SIZE, _CACHE_TTL_SECONDS
+from aihub_agent.tracing.AgentRunTracer import AgentRunTracer
 
 
 @pytest.fixture
-def tracer() -> AgentRunTracer:
-    return AgentRunTracer()
+def mock_redis() -> AsyncMock:
+    """Mock Redis client that stores data in a local dict."""
+    redis_data: dict[str, bytes] = {}
+
+    mock = AsyncMock()
+
+    async def mock_get(key: str):
+        return redis_data.get(key)
+
+    async def mock_set(key: str, value: str, ex: int | None = None):
+        redis_data[key] = value.encode() if isinstance(value, str) else value
+
+    async def mock_delete(key: str):
+        redis_data.pop(key, None)
+
+    async def mock_scan(match: str = "*", count: int = 100):
+        matching = [k.encode() for k in redis_data if k.startswith(match.replace("*", ""))]
+        return (0, matching)
+
+    mock.get = AsyncMock(side_effect=mock_get)
+    mock.set = AsyncMock(side_effect=mock_set)
+    mock.delete = AsyncMock(side_effect=mock_delete)
+    mock.scan = AsyncMock(side_effect=mock_scan)
+    return mock
+
+
+@pytest.fixture
+def tracer(mock_redis: AsyncMock) -> AgentRunTracer:
+    return AgentRunTracer(mock_redis)
 
 
 @pytest.fixture
@@ -31,65 +58,36 @@ def topic() -> AgentInstanceTopic:
     )
 
 
-class TestTTLCacheConfiguration:
-    """Verify that run metadata uses TTLCache (prevents memory leaks)."""
-
-    def test_caches_have_correct_max_size(self, tracer: AgentRunTracer) -> None:
-        assert tracer._run_inputs.maxsize == _CACHE_MAX_SIZE
-        assert tracer._run_user_ids.maxsize == _CACHE_MAX_SIZE
-        assert tracer._run_outputs.maxsize == _CACHE_MAX_SIZE
-
-    def test_caches_have_correct_ttl(self, tracer: AgentRunTracer) -> None:
-        assert tracer._run_inputs.ttl == _CACHE_TTL_SECONDS
-        assert tracer._run_user_ids.ttl == _CACHE_TTL_SECONDS
-        assert tracer._run_outputs.ttl == _CACHE_TTL_SECONDS
-
-
 class TestTraceRunStart:
-    """Tests for trace_run_start — stores per-run metadata."""
+    """Tests for trace_run_start — stores per-run metadata in Redis."""
 
     @pytest.mark.asyncio
-    async def test_stores_user_query_for_user_message(self, tracer: AgentRunTracer, topic: AgentInstanceTopic) -> None:
+    async def test_stores_user_query_for_user_message(
+        self, tracer: AgentRunTracer, topic: AgentInstanceTopic, mock_redis: AsyncMock
+    ) -> None:
         event = MagicMock(spec=StartEvent)
         event.is_user_message_event = True
         event.user_query = "Hello world"
         event.user = MagicMock()
         event.user.id = "user-42"
 
-        await tracer.trace_run_start(topic, event)
+        with patch("aihub_agent.tracing.AgentRunTracer.get_step_parent_context", return_value=None):
+            await tracer.trace_run_start(topic, event)
 
-        assert tracer._run_inputs[topic.run_id] == "Hello world"
-        assert tracer._run_user_ids[topic.run_id] == "user-42"
+        # Verify Redis was called for input and user_id
+        assert mock_redis.set.call_count >= 2
 
     @pytest.mark.asyncio
-    async def test_stores_empty_for_non_user_message(self, tracer: AgentRunTracer, topic: AgentInstanceTopic) -> None:
+    async def test_stores_empty_for_non_user_message(
+        self, tracer: AgentRunTracer, topic: AgentInstanceTopic, mock_redis: AsyncMock
+    ) -> None:
         event = MagicMock(spec=StartEvent)
         event.is_user_message_event = False
 
-        await tracer.trace_run_start(topic, event)
+        with patch("aihub_agent.tracing.AgentRunTracer.get_step_parent_context", return_value=None):
+            await tracer.trace_run_start(topic, event)
 
-        assert tracer._run_inputs[topic.run_id] == ""
-        assert tracer._run_user_ids[topic.run_id] == ""
-
-
-class TestClearRun:
-    """Tests for clear_run — removes cached run metadata."""
-
-    def test_clears_all_caches(self, tracer: AgentRunTracer) -> None:
-        run_id = "run-123"
-        tracer._run_inputs[run_id] = "input"
-        tracer._run_user_ids[run_id] = "user"
-        tracer._run_outputs[run_id] = "output"
-
-        tracer.clear_run(run_id)
-
-        assert run_id not in tracer._run_inputs
-        assert run_id not in tracer._run_user_ids
-        assert run_id not in tracer._run_outputs
-
-    def test_clear_nonexistent_run_is_safe(self, tracer: AgentRunTracer) -> None:
-        """clear_run should not raise for an unknown run_id."""
-        tracer.clear_run("nonexistent-run")
+        assert mock_redis.set.call_count >= 2
 
 
 class TestTraceStepStart:
@@ -146,8 +144,15 @@ class TestTraceStepStop:
 
     @pytest.mark.asyncio
     async def test_sets_langfuse_trace_attributes(self, tracer: AgentRunTracer, topic: AgentInstanceTopic) -> None:
-        tracer._run_inputs[topic.run_id] = "user question"
-        tracer._run_user_ids[topic.run_id] = "user-42"
+        # Store metadata via trace_run_start so Redis has the data
+        event = MagicMock(spec=StartEvent)
+        event.is_user_message_event = True
+        event.user_query = "user question"
+        event.user = MagicMock()
+        event.user.id = "user-42"
+
+        with patch("aihub_agent.tracing.AgentRunTracer.get_step_parent_context", return_value=None):
+            await tracer.trace_run_start(topic, event)
 
         mock_span = MagicMock()
 
@@ -164,19 +169,35 @@ class TestTraceStepStop:
 
     @pytest.mark.asyncio
     async def test_sets_output_on_final_step(self, tracer: AgentRunTracer, topic: AgentInstanceTopic) -> None:
-        tracer._run_inputs[topic.run_id] = ""
-        tracer._run_user_ids[topic.run_id] = ""
-        tracer._run_outputs[topic.run_id] = "final answer"
+        # Store empty input/user via trace_run_start
+        event = MagicMock(spec=StartEvent)
+        event.is_user_message_event = False
+        with patch("aihub_agent.tracing.AgentRunTracer.get_step_parent_context", return_value=None):
+            await tracer.trace_run_start(topic, event)
+
+        # Simulate a semantic event that caches output
+        semantic_event = MagicMock()
+        semantic_event.is_stop_event = False
+        semantic_event.is_semantic_event = True
+        semantic_event.to_trace_dict.return_value = {"type": "llm"}
+        semantic_event.to_semantic_convention.return_value = {}
+        semantic_event.output_messages = [MagicMock(content="final answer")]
+        semantic_event.token_count_prompt = None
+        semantic_event.token_count_completion = None
 
         mock_span = MagicMock()
+        await tracer.trace_step_stop(mock_span, [semantic_event], topic)
+
+        # Now test the final step reads the cached output
         stop_event = MagicMock()
         stop_event.is_stop_event = True
         stop_event.is_semantic_event = False
         stop_event.to_trace_dict.return_value = {"type": "stop"}
 
-        await tracer.trace_step_stop(mock_span, [stop_event], topic)
+        mock_span2 = MagicMock()
+        await tracer.trace_step_stop(mock_span2, [stop_event], topic)
 
-        attrs = mock_span.set_attributes.call_args_list[-1][0][0]
+        attrs = mock_span2.set_attributes.call_args_list[-1][0][0]
         assert attrs["langfuse.trace.output"] == "final answer"
 
 

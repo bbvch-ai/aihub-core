@@ -2,9 +2,8 @@ import json
 import logging
 from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
-from typing import Any
+from typing import Annotated, Any
 
-from cachetools import TTLCache
 from aihub_lib.context.BaseContext import BaseContext
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.infrastructure.opentelemetry.tracing.openinference_context import (
@@ -16,14 +15,19 @@ from aihub_lib.nats.events import BaseEvent, StartEvent
 from aihub_lib.nats.topics.agents.AgentInstanceTopic import AgentInstanceTopic
 from aihub_lib.nats.workflow.annotations.custom_types.ListOfSize import ListOfSize
 from openinference.semconv.trace import OpenInferenceMimeTypeValues, OpenInferenceSpanKindValues, SpanAttributes
-from opentelemetry import context, trace
+from opentelemetry import context, propagate, trace
 from opentelemetry.trace import Span, StatusCode, set_span_in_context
 from pydantic import BaseModel
+from redis.asyncio import Redis
+
+from aihub_agent.context.run.RunContext import RunContext
 
 logger = logging.getLogger(__name__)
 
-_CACHE_MAX_SIZE = 10_000
-_CACHE_TTL_SECONDS = 300
+_TRACE_INPUT_KEY = "_trace_input"
+_TRACE_USER_ID_KEY = "_trace_user_id"
+_TRACE_OUTPUT_KEY = "_trace_output"
+_TRACE_STEP_PARENT_KEY = "_trace_step_parent"
 
 
 class AgentRunTracer:
@@ -32,8 +36,12 @@ class AgentRunTracer:
 
     Each workflow step gets its own span with Langfuse trace-level attributes
     (name, session, user, input/output) set via span attributes. Langfuse
-    groups these spans into traces automatically. Run metadata (user input,
-    user ID) is cached in-memory per run_id and cleaned up on run completion.
+    groups these spans into traces automatically.
+
+    Run metadata (user input, user ID, step parent context, LLM output) is
+    stored in Redis via RunContext for cross-runner access in distributed
+    environments. Cleanup is handled by RunContext.delete_all() in the
+    dispatcher on run completion.
 
     The ``langfuse.*`` span attributes used throughout this class are the
     documented way to enrich standard OTEL spans for Langfuse's OTEL ingestion
@@ -42,28 +50,46 @@ class AgentRunTracer:
     not understand these attributes simply ignores them.
     """
 
-    def __init__(self):
+    def __init__(self, redis: Annotated[Redis, "Redis client for distributed storage."]):
+        self.redis = redis
         self.tracer = get_tracer(__name__)
-        # TTLCache prevents memory leaks when clear_run() is missed (e.g. agent crash)
-        self._run_inputs: TTLCache[str, str] = TTLCache(maxsize=_CACHE_MAX_SIZE, ttl=_CACHE_TTL_SECONDS)
-        self._run_user_ids: TTLCache[str, str] = TTLCache(maxsize=_CACHE_MAX_SIZE, ttl=_CACHE_TTL_SECONDS)
-        self._run_outputs: TTLCache[str, str] = TTLCache(maxsize=_CACHE_MAX_SIZE, ttl=_CACHE_TTL_SECONDS)
-        # Cached step parent per run — read once on first step, reused for all
-        # subsequent steps in the same run.  Without caching, internal NATS
-        # messages between steps would overwrite the ContextVar and break nesting.
-        self._run_step_parents: TTLCache[str, context.Context | None] = TTLCache(
-            maxsize=_CACHE_MAX_SIZE, ttl=_CACHE_TTL_SECONDS
-        )
+
+    def _run_context_for(self, topic: AgentInstanceTopic) -> RunContext:
+        """Create a RunContext scoped to the given topic for trace metadata storage."""
+        return RunContext.for_topic(self.redis, topic)
 
     async def trace_run_start(self, topic: AgentInstanceTopic, event: StartEvent):
         """
-        Stores the user input and user id for the run in-memory, keyed by run_id.
+        Stores the user input, user ID, and initial step parent context for the
+        run in Redis for cross-runner access.
         """
         user_input = event.user_query if event.is_user_message_event else ""
         user_id = event.user.id if event.is_user_message_event else ""
         logger.debug(f"Storing run metadata for {topic.run_id}")
-        self._run_inputs[topic.run_id] = user_input
-        self._run_user_ids[topic.run_id] = user_id
+
+        run_context = self._run_context_for(topic)
+        await run_context.set(_TRACE_INPUT_KEY, user_input)
+        await run_context.set(_TRACE_USER_ID_KEY, user_id)
+
+        # Capture the initial step parent context (set by JSSubscriber when
+        # extracting trace context from the external NATS message that started
+        # this run). Serialize to W3C headers for Redis storage so other
+        # runners can reconstruct the same parent and keep all steps as siblings.
+        step_parent = get_step_parent_context()
+        if step_parent is not None:
+            headers: dict[str, str] = {}
+            propagate.inject(headers, context=step_parent)
+            await run_context.set(_TRACE_STEP_PARENT_KEY, headers)
+
+    async def _get_step_parent(self, topic: AgentInstanceTopic) -> context.Context | None:
+        """Retrieve the original step parent context from Redis."""
+        run_context = self._run_context_for(topic)
+        headers = await run_context.get(_TRACE_STEP_PARENT_KEY)
+
+        if headers is not None and isinstance(headers, dict):
+            return propagate.extract(headers)
+
+        return None
 
     @asynccontextmanager
     async def trace_step_start(
@@ -111,13 +137,7 @@ class AgentRunTracer:
             SpanAttributes.TAG_TAGS: [topic.thread_id, topic.display_id, topic.run_id],
         }
 
-        # On the first step for this run, snapshot the step parent context and
-        # cache it.  Subsequent steps reuse the cached value so that internal
-        # NATS messages between steps don't overwrite the parent reference.
-        if topic.run_id not in self._run_step_parents:
-            self._run_step_parents[topic.run_id] = get_step_parent_context()
-
-        step_parent = self._run_step_parents.get(topic.run_id)
+        step_parent = await self._get_step_parent(topic)
 
         # Start span without making it current yet
         span = self.tracer.start_span(
@@ -145,8 +165,9 @@ class AgentRunTracer:
         """
         Ends the step span with a success status and sets Langfuse trace-level display.
         """
-        user_input = self._run_inputs.get(topic.run_id, "")
-        user_id = self._run_user_ids.get(topic.run_id, "")
+        run_context = self._run_context_for(topic)
+        user_input = await run_context.get(_TRACE_INPUT_KEY, "")
+        user_id = await run_context.get(_TRACE_USER_ID_KEY, "")
 
         is_final_step = False
         if output_events:
@@ -159,7 +180,7 @@ class AgentRunTracer:
             )
             semantic_event = next((ev for ev in output_events if ev.is_semantic_event), None)
             if semantic_event:
-                self._set_semantic_attributes(span, semantic_event, topic.run_id)
+                await self._set_semantic_attributes(span, semantic_event, topic)
 
         # Set Langfuse trace-level display attributes
         trace_attrs: dict[str, Any] = {
@@ -175,17 +196,19 @@ class AgentRunTracer:
             "deployment.environment.name": "agent",
         }
         if is_final_step:
-            trace_attrs["langfuse.trace.output"] = self._run_outputs.get(topic.run_id, "")
+            trace_attrs["langfuse.trace.output"] = await run_context.get(_TRACE_OUTPUT_KEY, "")
         span.set_attributes(trace_attrs)
 
         span.set_status(StatusCode.OK)
 
-    def _set_semantic_attributes(self, span: Span, semantic_event: BaseEvent, run_id: str):
+    async def _set_semantic_attributes(self, span: Span, semantic_event: BaseEvent, topic: AgentInstanceTopic):
         """Extracts semantic conventions, usage details, and caches LLM output for the trace."""
         span.set_attributes(semantic_event.to_semantic_convention())
 
         if hasattr(semantic_event, "output_messages") and semantic_event.output_messages:
-            self._run_outputs[run_id] = semantic_event.output_messages[-1].content or ""
+            output = semantic_event.output_messages[-1].content or ""
+            run_context = self._run_context_for(topic)
+            await run_context.set(_TRACE_OUTPUT_KEY, output)
 
         if hasattr(semantic_event, "token_count_prompt") and hasattr(semantic_event, "token_count_completion"):
             usage_details = {
@@ -204,12 +227,3 @@ class AgentRunTracer:
         """
         span.set_status(StatusCode.ERROR, str(error))
         # Don't call span.end() - the context manager handles that
-
-    def clear_run(self, run_id: str):
-        """
-        Removes the cached run metadata for the given run_id.
-        """
-        self._run_inputs.pop(run_id, None)
-        self._run_user_ids.pop(run_id, None)
-        self._run_outputs.pop(run_id, None)
-        self._run_step_parents.pop(run_id, None)
