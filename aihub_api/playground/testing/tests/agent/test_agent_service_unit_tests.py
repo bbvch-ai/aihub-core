@@ -26,7 +26,6 @@ enable_logging()
 def sample_agent_config():
     """Create a sample AgentConfig for testing."""
     return AgentConfig(
-        agent_class="TestAgent",
         agent_id="test_agent_1",
         name=LocaleString(en="Test Agent 1"),
         description=LocaleString(en="A test agent for validation"),

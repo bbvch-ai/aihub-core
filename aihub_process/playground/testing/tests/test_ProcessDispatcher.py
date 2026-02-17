@@ -46,7 +46,6 @@ class MockProcess(AgenticProcess):
 def mock_process_config():
     """Create a mock process configuration."""
     return ProcessConfig(
-        process_class="MockProcess",
         process_id="test_process",
         name=LocaleString(en="Test Process"),
         description=LocaleString(en="Test process for dispatcher testing"),
@@ -234,7 +233,6 @@ class TestProcessDispatcherHandleEvent:
         """Test handling InitialProcessWorkEvent with process config sets up context correctly."""
         # Arrange
         custom_config = ProcessConfig(
-            process_class="MockProcess",
             process_id="custom_process",
             name=LocaleString(en="Custom Process"),
             description=LocaleString(en="Custom test process"),
@@ -486,7 +484,6 @@ class TestProcessDispatcherIntegration:
         """Test the complete flow from event receipt to step execution with minimal mocking."""
         # Arrange
         custom_config = ProcessConfig(
-            process_class="MockProcess",
             process_id="integration_test_process",
             name=LocaleString(en="Integration Test Process"),
             description=LocaleString(en="Process for testing complete flow"),

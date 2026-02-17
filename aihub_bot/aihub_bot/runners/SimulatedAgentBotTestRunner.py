@@ -90,7 +90,6 @@ class SimulatedAgentBotTestRunner(BotTestRunner):
         self.simulated_events: list[BaseEvent] = simulated_events or []
 
         self.agent_config: AgentConfig = AgentConfig(
-            agent_class=self.agent_class,
             agent_id=self.agent_id,
             name=LocaleString(de="Test Agent"),
             description=LocaleString(de="Test Agent Description"),

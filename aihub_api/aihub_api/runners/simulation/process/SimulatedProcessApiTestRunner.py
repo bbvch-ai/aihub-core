@@ -111,7 +111,6 @@ class SimulatedProcessApiTestRunner(ApiTestRunner):
         self.agent_inputs: list[AgentInSpecs] = []
 
         self.default_process_config = ProcessConfig(
-            process_class=self.process_class,
             process_id=self.process_id,
             name=LocaleString(de="Test Process"),
             description=LocaleString(de="Test Process Description"),

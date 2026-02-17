@@ -10,11 +10,13 @@ from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_methods  # 
 enable_logging()
 
 
+PROCESS_CLASS = "TestProcess"
+
+
 @pytest.fixture
 def sample_process_config():
     """Create a sample ProcessConfig for testing."""
     return ProcessConfig(
-        process_class="TestProcess",
         process_id="test_process_1",
         name=LocaleString(en="Test Process 1"),
         description=LocaleString(en="A test process for validation"),
@@ -26,7 +28,6 @@ def sample_process_config():
 def sample_default_config():
     """Create a sample default ProcessConfig for testing."""
     return ProcessConfig(
-        process_class="TestProcess",
         process_id="default_process",
         name=LocaleString(en="Default Test Process"),
         description=LocaleString(en="Default test process configuration"),
@@ -38,7 +39,7 @@ def sample_default_config():
 def mock_process_config_document(sample_process_config):
     """Create a mock ProcessConfigEntityDocument."""
     mock_doc = Mock()
-    mock_doc.process_class = sample_process_config.process_class
+    mock_doc.process_class = PROCESS_CLASS
     mock_doc.process_id = sample_process_config.process_id
     mock_doc.name = sample_process_config.name
     mock_doc.description = sample_process_config.description
@@ -96,7 +97,6 @@ class TestProcessConfigDatabaseOperations:
         """Test scenario where DB config should override default config."""
         # Create different configs to test override
         db_config = ProcessConfig(
-            process_class="TestProcess",
             process_id="test_process_1",
             name=LocaleString(en="DB Test Process"),
             description=LocaleString(en="Process config from database"),
@@ -104,7 +104,6 @@ class TestProcessConfigDatabaseOperations:
         )
 
         default_config = ProcessConfig(
-            process_class="TestProcess",
             process_id="test_process_1",
             name=LocaleString(en="Default Test Process"),
             description=LocaleString(en="Default process config"),
@@ -142,7 +141,6 @@ class TestProcessConfigDatabaseOperations:
         """Test that DB config with same ID as default overrides default."""
         # Create DB config with same ID as default
         db_config = ProcessConfig(
-            process_class="TestProcess",
             process_id="default_process",  # Same ID as default
             name=LocaleString(en="Overridden Default"),
             description=LocaleString(en="DB config overriding default"),
@@ -196,7 +194,6 @@ class TestProcessConfigDatabaseOperations:
         mock_doc2.config_data = {}
 
         config1 = ProcessConfig(
-            process_class="TestProcess",
             process_id="process_1",
             name=LocaleString(en="Process 1"),
             description=LocaleString(en="First process"),
@@ -204,7 +201,6 @@ class TestProcessConfigDatabaseOperations:
         )
 
         config2 = ProcessConfig(
-            process_class="TestProcess",
             process_id="process_2",
             name=LocaleString(en="Process 2"),
             description=LocaleString(en="Second process"),
@@ -244,7 +240,6 @@ class TestProcessConfigDatabaseOperations:
 
         # Scenario 1: DB config exists - should use DB config
         db_config = ProcessConfig(
-            process_class="TestProcess",
             process_id="test_process",
             name=LocaleString(en="DB Config"),
             description=LocaleString(en="From database"),
