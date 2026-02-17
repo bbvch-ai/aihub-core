@@ -6,6 +6,10 @@ set -e
 #
 # Uses the certified mcp-nats server (sinadarbouy/mcp-nats) via Docker.
 # Connection uses NATS_TOKEN from .env for authentication.
+#
+# Auth strategy: mcp-nats supports credentials, user/password, and anonymous modes.
+# Our NATS uses token auth. We embed the token in the URL (nats://token@host:port)
+# and use anonymous mode, so account_name="anonymous" in all tool calls.
 cd "$(dirname "$0")/../.."
 if [[ -f .env ]]; then
   # shellcheck disable=SC1091
@@ -13,18 +17,18 @@ if [[ -f .env ]]; then
 fi
 
 # .env.dev uses NATS_ENDPOINT for the connection URL and NATS_TOKEN for auth.
-NATS_HOST="${NATS_ENDPOINT:-${NATS_URL:-nats://localhost:4222}}"
+NATS_BASE="${NATS_ENDPOINT:-${NATS_URL:-nats://localhost:4222}}"
 
-docker_args=(
-  run -i --rm --init
-  --network=host
-  -e "NATS_URL=$NATS_HOST"
-)
-
+# Embed token in URL for auth (nats://token@host:port).
+# The nats CLI authenticates via the URL's userinfo field.
 if [[ -n "$NATS_TOKEN" ]]; then
-  docker_args+=(-e "NATS_TOKEN=$NATS_TOKEN")
+  NATS_CONNECT="${NATS_BASE/nats:\/\//nats:\/\/${NATS_TOKEN}@}"
 else
-  docker_args+=(-e "NATS_NO_AUTHENTICATION=true")
+  NATS_CONNECT="$NATS_BASE"
 fi
 
-exec docker "${docker_args[@]}" cnadb/mcp-nats --transport stdio
+exec docker run -i --rm --init \
+  --network=host \
+  -e "NATS_URL=$NATS_CONNECT" \
+  -e "NATS_NO_AUTHENTICATION=true" \
+  cnadb/mcp-nats --transport stdio
