@@ -30,6 +30,7 @@ mdformat-vuepress = "^0.1.0"
 mdformat-myst = "^0.2.1"
 huggingface-hub = {extras = ["cli"], version = "^0.34.4"}
 tomlkit = "^0.13.3"
+yamlfix = "^1.19.1"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
@@ -68,3 +69,22 @@ exclude = [
 wrap = 120
 number = true
 end_of_line = "lf"
+
+[tool.yamlfix]
+line_length = 200
+quotes_representation = "double"
+preserve_quotes = false
+sequence_style = "block_style"
+explicit_start = false
+none_representation = ""
+indent_mapping = 2
+indent_offset = 0
+indent_sequence = 2
+section_whitelines = 1
+exclude = [
+    "node_modules/",
+    ".venv/",
+    "local_volumes/",
+    ".pnpm/",
+    "pnpm-lock.yaml",
+]

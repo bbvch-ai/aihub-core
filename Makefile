@@ -21,6 +21,10 @@ format-md:
 	@echo "Formatting markdown files..."
 	@poetry run mdformat --number $$(git ls-files '*.md')
 
+format-yaml:
+	@echo "Formatting YAML files..."
+	@poetry run yamlfix $$(git ls-files '*.yaml' '*.yml')
+
 format-md-win:
 	@echo "Formatting markdown files..."
 	@powershell -Command "git ls-files *.md | ForEach-Object { poetry run mdformat --number $$_ }"
@@ -46,6 +50,7 @@ pr-ready:
 	@(cd aihub_bot &&  make pr-ready)
 	@(cd aihub_web && make pr-ready)
 	@poetry run mdformat --number $$(git ls-files '*.md')
+	@poetry run yamlfix $$(git ls-files '*.yaml' '*.yml')
 
 # Use local cores for development (with poetry install)
 use-local-core:
@@ -116,6 +121,7 @@ help:
 	@echo "Available targets:"
 	@echo "  make format      - Format all Python code (Ruff)"
 	@echo "  make format-md   - Format all Markdown files"
+	@echo "  make format-yaml - Format all YAML files"
 	@echo "  make lint        - Lint all Python code (Ruff)"
 	@echo "  make typecheck   - Type-check all scopes (MyPy)"
 	@echo "  make pr-ready    - Format + lint (pre-commit gate)"

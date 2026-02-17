@@ -1,6 +1,5 @@
 #!/bin/bash
-# Stop hook: Detect modified scopes and run make pr-ready on them before ending a session.
-# Also warns about untracked files that may need to be staged.
+# Stop hook: Run make pr-ready on modified scopes and stage untracked files before ending a session.
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$REPO_ROOT" || exit 0
@@ -19,21 +18,33 @@ for scope in "${SCOPES[@]}"; do
   fi
 done
 
-# Check for markdown changes (handled by root make format-md)
+# Check for markdown changes
 md_changed=false
 if echo "$all_changed" | grep -qE '\.md$'; then
   md_changed=true
 fi
 
 # Run make pr-ready on each dirty scope
-if [[ ${#dirty_scopes[@]} -gt 0 || "$md_changed" == "true" ]]; then
-  echo "Running pr-ready on modified scopes before stopping..." >&2
-  for scope in "${dirty_scopes[@]}"; do
-    echo "  make pr-ready in $scope" >&2
-  done
-  if [[ "$md_changed" == "true" ]]; then
-    echo "  make format-md (markdown files changed)" >&2
+failed=false
+for scope in "${dirty_scopes[@]}"; do
+  echo "Running make pr-ready in $scope..." >&2
+  if ! make -C "$REPO_ROOT/$scope" pr-ready 2>&1 | tail -5 >&2; then
+    echo "FAILED: make pr-ready in $scope" >&2
+    failed=true
   fi
+done
+
+# Run make format-md if markdown files changed
+if [[ "$md_changed" == "true" ]]; then
+  echo "Running make format-md..." >&2
+  if ! make -C "$REPO_ROOT" format-md 2>&1 | tail -3 >&2; then
+    echo "FAILED: make format-md" >&2
+    failed=true
+  fi
+fi
+
+if [[ "$failed" == "true" ]]; then
+  echo "Some pr-ready checks failed. Please fix before stopping." >&2
   exit 2
 fi
 
