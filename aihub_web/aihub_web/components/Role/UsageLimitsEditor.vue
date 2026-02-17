@@ -42,8 +42,10 @@
                     {{ t('role.pattern_help_intro') }}
                   </p>
                   <ul class="flex flex-col gap-1">
-                    <li class="whitespace-nowrap"><Badge value=">" severity="secondary" size="small" /> — {{ t('role.pattern_help_all') }}</li>
-                    <li class="whitespace-nowrap"><Badge value="MyAgent.*" severity="secondary" size="small" /> — {{ t('role.pattern_help_wildcard') }}</li>
+                    <li class="whitespace-nowrap">
+<Badge value=">" severity="secondary" size="small" /> — {{ t('role.pattern_help_all') }}</li>
+                    <li class="whitespace-nowrap">
+<Badge value="MyAgent.*" severity="secondary" size="small" /> — {{ t('role.pattern_help_wildcard') }}</li>
                     <li class="whitespace-nowrap"><Badge value="MyAgent.prod" severity="secondary" size="small" /> — {{ t('role.pattern_help_specific') }}</li>
                   </ul>
                 </div>
