@@ -221,7 +221,7 @@ class MineruLoader(BaseReader):
                     data={
                         "backend": "vlm-http-client",
                         "server_url": f"{vlm_server_url}/v1/chat/completions",
-                        "model_name": self.config.VLM_MODEL_NAME,
+                        "model_name": self.config.VLM_NAME,
                         "return_md": "true",
                         "return_middle_json": "true",
                         "return_images": str(include_images).lower(),
