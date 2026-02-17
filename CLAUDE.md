@@ -355,7 +355,7 @@ Development servers (work independently):
 - OpenWebUI: http://localhost:8080
 - Admin UI: http://localhost:3000
 - API: http://localhost:8000
-- Dagster: http://localhost:3000
+- Dagster: http://localhost:3002
 - Langfuse: http://localhost:6006
 - SeaweedFS: http://localhost:8889
 

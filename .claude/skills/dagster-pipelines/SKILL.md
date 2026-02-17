@@ -783,7 +783,7 @@ defs = default_definitions(
 ```
 
 **Run**: `make playground` or `poetry run dagster dev -m playground`
-**Access**: http://localhost:3000 (Dagster UI)
+**Access**: http://localhost:3002 (Dagster UI)
 
 ---
 

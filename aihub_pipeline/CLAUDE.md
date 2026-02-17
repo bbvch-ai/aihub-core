@@ -157,7 +157,7 @@ class MyIOManager(ConfigurableIOManager):
 3. **Create asset factory**: Compose ops into assets in `assets/factories/`
 4. **Test**: Unit test ops, integration test assets
 5. **Run Dagster UI**: `make playground` or `poetry run dagster dev -m playground`
-6. **Observe**: http://localhost:3000 (asset lineage, run logs, errors)
+6. **Observe**: http://localhost:3002 (asset lineage, run logs, errors)
 
 ## Testing
 

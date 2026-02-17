@@ -27,11 +27,11 @@ test:
 
 playground:
 	@echo "Running playground..."
-	OTEL_ENABLED=false poetry run dagster dev -m playground --use-legacy-code-server-behavior
+	OTEL_ENABLED=false poetry run dagster dev -m playground --use-legacy-code-server-behavior -p 3002
 
 quickstart:
 	@echo "Running quickstart..."
-	OTEL_ENABLED=false poetry run dagster dev -f playground/quick_start/simple_pipeline.py -f playground/quick_start/my_document_pipeline.py
+	OTEL_ENABLED=false poetry run dagster dev -f playground/quick_start/simple_pipeline.py -f playground/quick_start/my_document_pipeline.py -p 3002
 
 rag-pipelines:
-	OTEL_ENABLED=false poetry run dagster dev -m app.default_rag_pipeline -m app.shared_rag_pipeline
+	OTEL_ENABLED=false poetry run dagster dev -m app.default_rag_pipeline -m app.shared_rag_pipeline -p 3002

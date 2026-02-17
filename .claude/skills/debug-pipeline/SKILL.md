@@ -230,7 +230,7 @@ docker compose -f docker-compose.dev.yml logs nats --tail=50
 
 ## Step 4: Check Dagster UI
 
-**Access**: http://localhost:3000 (playground) or http://localhost:3002 (production)
+**Access**: http://localhost:3002
 
 ### What to Check
 
@@ -255,7 +255,7 @@ make playground
 # or
 poetry run dagster dev -m playground
 
-# Access Dagster UI at http://localhost:3000
+# Access Dagster UI at http://localhost:3002
 ```
 
 ### Trigger Manually
