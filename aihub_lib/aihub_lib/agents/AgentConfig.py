@@ -73,7 +73,7 @@ class AgentConfig(Form):
 
     agent_class: Annotated[
         str | InputText,
-        Field(description="The class name of the agent, used for identification."),
+        Field(default="", description="The class name of the agent, used for identification."),
     ]
     agent_id: Annotated[
         str | InputText,

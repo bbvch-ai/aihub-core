@@ -36,7 +36,7 @@ class ProcessConfig(Form):
 
     process_class: Annotated[
         str | InputText,
-        Field(description="The class name of the process, used for identification."),
+        Field(default="", description="The class name of the process, used for identification."),
     ]
     process_id: Annotated[
         str | InputText,
