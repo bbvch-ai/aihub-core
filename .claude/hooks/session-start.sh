@@ -1,6 +1,6 @@
 #!/bin/bash
 # SessionStart hook: Set up the development environment at the start of a Claude Code session.
-# Detects web vs local sessions and installs dependencies accordingly.
+# Local sessions run make use-local-core. Web sessions install dependencies from scratch.
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$REPO_ROOT" || exit 0
@@ -22,8 +22,17 @@ if command -v docker &>/dev/null; then
   fi
 fi
 
-# For web sessions, install dependencies
-if [[ -n "$CLAUDE_CODE_REMOTE" ]]; then
+if [[ -z "$CLAUDE_CODE_REMOTE" ]]; then
+  # Local session: switch to local aihub_lib and install all scopes
+  echo "Local session. Running make use-local-core..." >&2
+  make use-local-core 2>&1 | tail -3 >&2
+
+  # Install frontend dependencies
+  if [[ -d "$REPO_ROOT/aihub_web/aihub_web" && -f "$REPO_ROOT/aihub_web/aihub_web/package.json" ]]; then
+    (cd "$REPO_ROOT/aihub_web/aihub_web" && pnpm install --frozen-lockfile 2>&1 | tail -1) >&2
+  fi
+else
+  # Web session: install from scratch
   echo "Web session detected. Checking dependencies..." >&2
 
   # Copy .env if missing
@@ -38,20 +47,14 @@ if [[ -n "$CLAUDE_CODE_REMOTE" ]]; then
     pip install poetry 2>&1 | tail -1 >&2
   fi
 
-  # Install Python dependencies in all scopes (background, best-effort)
-  for scope in aihub_pipeline aihub_lib aihub_agent aihub_process aihub_api aihub_bot; do
-    if [[ -d "$REPO_ROOT/$scope" && -f "$REPO_ROOT/$scope/pyproject.toml" ]]; then
-      (cd "$REPO_ROOT/$scope" && poetry install --no-interaction 2>&1 | tail -1) &
-    fi
-  done
+  # Use local core (switches deps + installs)
+  make use-local-core 2>&1 | tail -3 >&2
 
-  # Install frontend dependencies (background, best-effort)
+  # Install frontend dependencies
   if [[ -d "$REPO_ROOT/aihub_web/aihub_web" && -f "$REPO_ROOT/aihub_web/aihub_web/package.json" ]]; then
-    (cd "$REPO_ROOT/aihub_web/aihub_web" && pnpm install --frozen-lockfile 2>&1 | tail -1) &
+    (cd "$REPO_ROOT/aihub_web/aihub_web" && pnpm install --frozen-lockfile 2>&1 | tail -1) >&2
   fi
 
-  # Wait for all background installs (don't block session if they fail)
-  wait 2>/dev/null
   echo "Dependency installation complete." >&2
 fi
 

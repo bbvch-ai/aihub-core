@@ -6,7 +6,8 @@
         "matcher": "Edit|Write",
         "hooks": [
           { "type": "command", "command": ".claude/hooks/auto-format-python.sh" },
-          { "type": "command", "command": ".claude/hooks/auto-format-frontend.sh" }
+          { "type": "command", "command": ".claude/hooks/auto-format-frontend.sh" },
+          { "type": "command", "command": ".claude/hooks/auto-format-markdown.sh" }
         ]
       }
     ],
@@ -53,6 +54,7 @@
       "Bash(git log *)",
       "Bash(git branch *)",
       "Bash(git stash *)",
+      "Bash(git add *)",
       "Bash(gh pr *)",
       "Bash(gh issue *)",
       "Bash(docker compose -f docker-compose.dev.yml *)",
