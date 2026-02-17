@@ -1,11 +1,6 @@
 ---
 name: document-solution
-description: "Edit solution descriptions and concept documents for public-sector AI
-  platform tenders. Use when user says 'edit the solution doc', 'update tender
-  document', 'fix solution description', 'update proposal section', or 'edit
-  solution concept'. Requires a section path and optional edit instructions. Writes
-  high-level architecture prose for procurement evaluators -- no implementation
-  details."
+description: Edit solution descriptions and concept documents for public-sector AI platform tenders. Use when user says 'edit the solution doc', 'update tender document', 'fix solution description', 'update proposal section', or 'edit solution concept'. Requires a section path and optional edit instructions. Writes high-level architecture prose for procurement evaluators -- no implementation details.
 allowed-tools: Read, Edit, Grep
 ---
 
@@ -17,6 +12,7 @@ writer and solution architect.
 ## Input Requirements
 
 User MUST provide:
+
 1. **Exact section path** to edit (e.g., `High-Level Architecture > Event Backbone`)
 2. **Edit instructions** (optional but recommended)
 
@@ -32,6 +28,7 @@ document flow.
 ### 2. Verify Claims Against Code
 
 Before writing any capability claims, check the actual codebase:
+
 - Search for relevant code, configs, and implementations
 - Only claim capabilities that are verifiable in the code
 - Use `> TODO:` comments for assumptions that need verification
@@ -73,12 +70,14 @@ After editing, provide a brief summary of what was changed and why.
 ## Examples
 
 **Typical invocation**:
+
 ```
 /document-solution High-Level Architecture > Event Backbone
 Update to mention JetStream persistence and at-least-once delivery guarantees.
 ```
 
 **Another example**:
+
 ```
 /document-solution Security > Authentication
 Add section about Azure AD integration with OIDC flow.
@@ -86,11 +85,11 @@ Add section about Azure AD integration with OIDC flow.
 
 ## Troubleshooting
 
-| Problem | Solution |
-|---------|----------|
-| Section path is ambiguous | Ask the user for the exact heading hierarchy |
-| Cannot verify a capability claim | Add `> TODO: verify` comment and note it in the summary |
-| Section does not exist yet | Create it as a subsection at the most logical location |
+| Problem                          | Solution                                                         |
+| -------------------------------- | ---------------------------------------------------------------- |
+| Section path is ambiguous        | Ask the user for the exact heading hierarchy                     |
+| Cannot verify a capability claim | Add `> TODO: verify` comment and note it in the summary          |
+| Section does not exist yet       | Create it as a subsection at the most logical location           |
 | Edit would require restructuring | Only edit the target section -- suggest restructuring separately |
 
 ## Done When

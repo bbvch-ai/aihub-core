@@ -1,9 +1,6 @@
 ---
 name: docker-dev
-description: Manage the Docker Compose development stack (start, stop, health, logs,
-  restart, status, ports). Use when user says 'start docker', 'stop containers',
-  'check service health', 'show logs', 'restart service', 'docker status',
-  'which ports are used', or 'is the API running'. Pass action as argument.
+description: Manage the Docker Compose development stack (start, stop, health, logs, restart, status, ports). Use when user says 'start docker', 'stop containers', 'check service health', 'show logs', 'restart service', 'docker status', 'which ports are used', or 'is the API running'. Pass action as argument.
 allowed-tools: Bash, Read
 ---
 
@@ -20,6 +17,7 @@ docker compose -f docker-compose.dev.yml --env-file .env up -d --build
 ```
 
 **Pre-check**: Verify `.env` exists at `/home/user/aihub-core/.env`. If missing, copy from `.env.dev`:
+
 ```bash
 cp /home/user/aihub-core/.env.dev /home/user/aihub-core/.env
 ```
@@ -64,14 +62,14 @@ docker stats --no-stream --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}"
 
 ### 7. `ports` — Show all exposed service URLs
 
-| Service    | URL                   | Purpose            |
-|------------|-----------------------|--------------------|
-| API        | http://localhost:8000 | REST API + Swagger |
-| OpenWebUI  | http://localhost:8080 | Chat interface     |
-| Admin UI   | http://localhost:3000 | Nuxt management UI |
-| Langfuse   | http://localhost:6006 | LLM observability  |
-| NATS       | http://localhost:8222 | NATS dashboard     |
-| SeaweedFS  | http://localhost:8889 | Object storage     |
+| Service   | URL                   | Purpose            |
+| --------- | --------------------- | ------------------ |
+| API       | http://localhost:8000 | REST API + Swagger |
+| OpenWebUI | http://localhost:8080 | Chat interface     |
+| Admin UI  | http://localhost:3000 | Nuxt management UI |
+| Langfuse  | http://localhost:6006 | LLM observability  |
+| NATS      | http://localhost:8222 | NATS dashboard     |
+| SeaweedFS | http://localhost:8889 | Object storage     |
 
 ## Examples
 
@@ -86,9 +84,11 @@ docker stats --no-stream --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}"
 ## Troubleshooting
 
 - **".env file not found"**: Copy `.env.dev` to `.env` at the repo root.
-- **Port already in use**: Another process is using the port. Run `lsof -i :<port>` to find it, then stop or change the port.
+- **Port already in use**: Another process is using the port. Run `lsof -i :<port>` to find it, then stop or change the
+  port.
 - **Service keeps restarting**: Check logs with `/docker-dev logs <service>` for error details.
-- **"no matching manifest for linux/arm64"**: Some images may not support ARM. Check the compose file for platform overrides.
+- **"no matching manifest for linux/arm64"**: Some images may not support ARM. Check the compose file for platform
+  overrides.
 
 ## Key Files
 

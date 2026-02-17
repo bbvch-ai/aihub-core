@@ -11,7 +11,8 @@ allowed-tools: Read, Grep, Glob
 
 # API Authentication & Authorization Guide
 
-Look up auth information. Topic or question via `$ARGUMENTS` (e.g., "permission templates", "UserIdentity", "API keys", "RBAC", "AccessChecker").
+Look up auth information. Topic or question via `$ARGUMENTS` (e.g., "permission templates", "UserIdentity", "API keys",
+"RBAC", "AccessChecker").
 
 ## Authentication Overview
 
@@ -67,12 +68,12 @@ _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.resou
 
 ### UserIdentity fields
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `user.id` | `str` | Unique user OID (from Azure AD or custom) |
-| `user.name` | `str` | Display name |
-| `user.email` | `str` | Email address |
-| `user.roles` | `list[str]` | Role names from identity provider |
+| Field                | Type          | Description                                    |
+| -------------------- | ------------- | ---------------------------------------------- |
+| `user.id`            | `str`         | Unique user OID (from Azure AD or custom)      |
+| `user.name`          | `str`         | Display name                                   |
+| `user.email`         | `str`         | Email address                                  |
+| `user.roles`         | `list[str]`   | Role names from identity provider              |
 | `user.profile_image` | `str \| None` | Base64 data URL (`data:image/jpeg;base64,...`) |
 
 ---
@@ -81,12 +82,12 @@ _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.resou
 
 ### 1. OAuth2 (Azure AD)
 
-**Handler**: `OAuth2AuthHandler`
-**File**: `aihub_lib/aihub_lib/auth/dependencies/OAuth2AuthHandler/`
+**Handler**: `OAuth2AuthHandler` **File**: `aihub_lib/aihub_lib/auth/dependencies/OAuth2AuthHandler/`
 
 **Flow**: JWT token -> Verify JWKS signature -> Extract OID -> Fetch from Microsoft Graph API
 
 **Config**:
+
 ```bash
 OAUTH_CLIENT_ID=<azure-app-client-id>
 OAUTH_AUTHORITY_URL=https://login.microsoftonline.com/<tenant-id>
@@ -97,28 +98,29 @@ AUTH_IDENTITY_PROVIDER=azure
 
 ### 2. API Keys (Bearer Tokens)
 
-**Handler**: `TokenAuthHandler`
-**File**: `aihub_lib/aihub_lib/auth/dependencies/TokenAuthHandler/`
+**Handler**: `TokenAuthHandler` **File**: `aihub_lib/aihub_lib/auth/dependencies/TokenAuthHandler/`
 
 **Flow**: Bearer token -> Parse `<oid>.<random128>` -> Lookup in MongoDB -> Verify expiry
 
-**Token format**: `507f1f77bcf86cd799439011.kj3h4k2jh3k4jhk2j3hk4j2h3kj4h2k3jh...` (24-char ObjectId + `.` + 128-char random)
+**Token format**: `507f1f77bcf86cd799439011.kj3h4k2jh3k4jhk2j3hk4j2h3kj4h2k3jh...` (24-char ObjectId + `.` + 128-char
+random)
 
 **Entity**: `BearerToken` in `aihub_lib/aihub_lib/persistence/access/entities/BearerToken.py`
 
 **Config**:
+
 ```bash
 AUTH_ENABLE_API_ACCESS=true
 ```
 
 ### 3. Superuser (Master Key)
 
-**Handler**: `SuperuserAuthHandler`
-**File**: `aihub_lib/aihub_lib/auth/dependencies/SuperuserAuthHandler/`
+**Handler**: `SuperuserAuthHandler` **File**: `aihub_lib/aihub_lib/auth/dependencies/SuperuserAuthHandler/`
 
 **Flow**: Bearer token -> Constant-time compare with env var -> Fixed identity from env
 
 **Config**:
+
 ```bash
 SUPERUSER_ENABLED=true
 SUPERUSER_NAME="AI Hub Superuser"
@@ -130,14 +132,15 @@ SUPERUSER_TOKEN=<min-64-char-secret>
 
 ### 4. OpenWebUI Proxy
 
-**Handler**: `OpenWebuiAuthHandler`
-**File**: `aihub_lib/aihub_lib/auth/dependencies/OpenWebuiAuthHandler/`
+**Handler**: `OpenWebuiAuthHandler` **File**: `aihub_lib/aihub_lib/auth/dependencies/OpenWebuiAuthHandler/`
 
-**Flow**: Delegate to base handler (Superuser/Token) -> Verify HMAC signature of OpenWebUI headers -> Lookup user by email
+**Flow**: Delegate to base handler (Superuser/Token) -> Verify HMAC signature of OpenWebUI headers -> Lookup user by
+email
 
 **Headers**: `X-OpenWebUI-User-Name`, `X-OpenWebUI-User-Email`, `X-OpenWebUI-Signature`
 
 **Config**:
+
 ```bash
 AUTH_OPEN_WEBUI_SIGNING_SECRET=<min-64-char-secret>
 ```
@@ -153,6 +156,7 @@ aihub.[user|admin].<resource>.<subresource>.<id>
 ```
 
 **Examples**:
+
 ```
 aihub.user.?>                                    # Any authenticated user
 aihub.user.agent.?>                              # Any agent access
@@ -164,10 +168,12 @@ aihub.admin.service.user                         # Admin access to user service
 ### Wildcards
 
 **In Access Rules (what roles grant)**:
+
 - `*` — Single-level wildcard (matches one segment)
 - `>` — Multi-level wildcard (matches remaining path, MUST be last)
 
 **In Permission Templates (what endpoints require)**:
+
 - `?*` — Implicit single-level check (matches if user has ANY rule at this level)
 - `?>` — Implicit multi-level check (matches if user has ANY rule at or below this level)
 
@@ -230,16 +236,16 @@ access_checker = AccessChecker.from_user(user)
 
 ### Methods
 
-| Method | Returns | Purpose |
-|--------|---------|---------|
-| `has_access(template)` | `bool` | General permission check |
-| `access_level(template)` | `AccessLevel` | Get admin/user/denied level |
-| `has_access_to_service(name)` | `bool` | Service-level check |
-| `has_access_to_agent(cls, id)` | `bool` | Agent instance access |
-| `has_access_to_agent_class(cls)` | `bool` | Any instance in class |
-| `has_access_to_process(cls, id)` | `bool` | Process instance access |
-| `access_level_for_agent(cls, id)` | `AccessLevel` | Admin vs user for agent |
-| `access_level_for_service(name)` | `AccessLevel` | Admin vs user for service |
+| Method                            | Returns       | Purpose                     |
+| --------------------------------- | ------------- | --------------------------- |
+| `has_access(template)`            | `bool`        | General permission check    |
+| `access_level(template)`          | `AccessLevel` | Get admin/user/denied level |
+| `has_access_to_service(name)`     | `bool`        | Service-level check         |
+| `has_access_to_agent(cls, id)`    | `bool`        | Agent instance access       |
+| `has_access_to_agent_class(cls)`  | `bool`        | Any instance in class       |
+| `has_access_to_process(cls, id)`  | `bool`        | Process instance access     |
+| `access_level_for_agent(cls, id)` | `AccessLevel` | Admin vs user for agent     |
+| `access_level_for_service(name)`  | `AccessLevel` | Admin vs user for service   |
 
 ### AccessLevel Enum
 
@@ -394,23 +400,23 @@ response = await client.get("/api/v1/resources", headers=headers)
 
 ## Key Files Reference
 
-| Category | File |
-|----------|------|
+| Category              | File                                                                                   |
+| --------------------- | -------------------------------------------------------------------------------------- |
 | **Composite handler** | `aihub_lib/aihub_lib/auth/dependencies/TokenAndOauth2Handler/TokenAndOauth2Handler.py` |
-| **OAuth2** | `aihub_lib/aihub_lib/auth/dependencies/OAuth2AuthHandler/OAuth2AuthHandler.py` |
-| **API keys** | `aihub_lib/aihub_lib/auth/dependencies/TokenAuthHandler/TokenAuthHandler.py` |
-| **Superuser** | `aihub_lib/aihub_lib/auth/dependencies/SuperuserAuthHandler/SuperuserAuthHandler.py` |
-| **OpenWebUI** | `aihub_lib/aihub_lib/auth/dependencies/OpenWebuiAuthHandler/OpenWebuiAuthHandler.py` |
-| **UserIdentity** | `aihub_lib/aihub_lib/auth/identity/UserIdentity.py` |
-| **AccessChecker** | `aihub_lib/aihub_lib/auth/access/AccessChecker.py` |
-| **AccessLevel** | `aihub_lib/aihub_lib/auth/access/AccessLevel.py` |
-| **Controller base** | `aihub_lib/aihub_lib/routes/Controller.py` |
-| **RoleEntity** | `aihub_lib/aihub_lib/persistence/access/entities/RoleEntity.py` |
-| **BearerToken** | `aihub_lib/aihub_lib/persistence/access/entities/BearerToken.py` |
-| **UserEntity** | `aihub_lib/aihub_lib/persistence/user/UserEntity.py` |
-| **Auth settings** | `aihub_lib/aihub_lib/auth/dependencies/AuthSettings.py` |
-| **Superuser ADR** | `aihub_doc/arc42/decisions/2025_08_11_global_superuser_authentication.md` |
-| **Main app** | `aihub_api/app/main.py` |
+| **OAuth2**            | `aihub_lib/aihub_lib/auth/dependencies/OAuth2AuthHandler/OAuth2AuthHandler.py`         |
+| **API keys**          | `aihub_lib/aihub_lib/auth/dependencies/TokenAuthHandler/TokenAuthHandler.py`           |
+| **Superuser**         | `aihub_lib/aihub_lib/auth/dependencies/SuperuserAuthHandler/SuperuserAuthHandler.py`   |
+| **OpenWebUI**         | `aihub_lib/aihub_lib/auth/dependencies/OpenWebuiAuthHandler/OpenWebuiAuthHandler.py`   |
+| **UserIdentity**      | `aihub_lib/aihub_lib/auth/identity/UserIdentity.py`                                    |
+| **AccessChecker**     | `aihub_lib/aihub_lib/auth/access/AccessChecker.py`                                     |
+| **AccessLevel**       | `aihub_lib/aihub_lib/auth/access/AccessLevel.py`                                       |
+| **Controller base**   | `aihub_lib/aihub_lib/routes/Controller.py`                                             |
+| **RoleEntity**        | `aihub_lib/aihub_lib/persistence/access/entities/RoleEntity.py`                        |
+| **BearerToken**       | `aihub_lib/aihub_lib/persistence/access/entities/BearerToken.py`                       |
+| **UserEntity**        | `aihub_lib/aihub_lib/persistence/user/UserEntity.py`                                   |
+| **Auth settings**     | `aihub_lib/aihub_lib/auth/dependencies/AuthSettings.py`                                |
+| **Superuser ADR**     | `aihub_doc/arc42/decisions/2025_08_11_global_superuser_authentication.md`              |
+| **Main app**          | `aihub_api/app/main.py`                                                                |
 
 ---
 
@@ -450,10 +456,10 @@ AUTH_OPEN_WEBUI_SIGNING_SECRET=<min-64-chars>
 
 ## Troubleshooting
 
-| Issue | Likely Cause | Fix |
-|-------|-------------|-----|
-| 401 Unauthorized on all endpoints | SUPERUSER_TOKEN not set or too short | Set token with min 64 chars in .env |
-| 403 Forbidden despite valid token | User's roles lack required access rule | Check RoleEntity access_rules match the permission template |
-| OAuth2 token rejected | Wrong OAUTH_CLIENT_ID or AUTHORITY_URL | Verify Azure AD app registration matches env vars |
-| API key not working | `AUTH_ENABLE_API_ACCESS` is false | Set to `true` in env, restart API |
-| Permission template not matching | Path params not resolving in template | Verify `{param}` names match FastAPI path parameter names exactly |
+| Issue                             | Likely Cause                           | Fix                                                               |
+| --------------------------------- | -------------------------------------- | ----------------------------------------------------------------- |
+| 401 Unauthorized on all endpoints | SUPERUSER_TOKEN not set or too short   | Set token with min 64 chars in .env                               |
+| 403 Forbidden despite valid token | User's roles lack required access rule | Check RoleEntity access_rules match the permission template       |
+| OAuth2 token rejected             | Wrong OAUTH_CLIENT_ID or AUTHORITY_URL | Verify Azure AD app registration matches env vars                 |
+| API key not working               | `AUTH_ENABLE_API_ACCESS` is false      | Set to `true` in env, restart API                                 |
+| Permission template not matching  | Path params not resolving in template  | Verify `{param}` names match FastAPI path parameter names exactly |

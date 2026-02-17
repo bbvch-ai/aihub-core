@@ -1,10 +1,6 @@
 ---
 name: update-doc
-description: "Synchronize documentation with code changes by reviewing affected READMEs,
-  CLAUDE.md files, and skills. Use when user says 'update docs', 'sync documentation',
-  'fix README', 'docs are outdated', 'update the README', 'sync skills with code',
-  or after any code change that affects documented behavior. Covers root README, scope
-  READMEs, CLAUDE.md files, skills, and subdirectory docs."
+description: Synchronize documentation with code changes by reviewing affected READMEs, CLAUDE.md files, and skills. Use when user says 'update docs', 'sync documentation', 'fix README', 'docs are outdated', 'update the README', 'sync skills with code', or after any code change that affects documented behavior. Covers root README, scope READMEs, CLAUDE.md files, skills, and subdirectory docs.
 allowed-tools: Read, Grep, Glob, Edit, Write, Bash
 ---
 
@@ -56,6 +52,7 @@ Check if changes affect any skills in `.claude/skills/`:
 - **File paths in skills**: If referenced files were moved or renamed, update the skill
 
 Search for affected skills:
+
 ```bash
 # Find skills that reference modified files
 git diff --name-only main...HEAD | while read f; do
@@ -66,6 +63,7 @@ done | sort -u
 ### 5. Fix Inaccurate Documentation
 
 Update incorrect sections to match code. Common targets:
+
 - API endpoints and parameters
 - Configuration options and defaults
 - Workflow steps and prerequisites
@@ -97,6 +95,7 @@ Update incorrect sections to match code. Common targets:
 **Typical invocation**: `/update-doc` after completing a feature or refactor
 
 **Scope of changes**: If you modified `aihub_api/aihub_api/controller/agent.py`, check:
+
 - `aihub_api/README.md` for API endpoint docs
 - `aihub_api/CLAUDE.md` for AI assistant context
 - Root `README.md` for any high-level changes
@@ -104,13 +103,13 @@ Update incorrect sections to match code. Common targets:
 
 ## Troubleshooting
 
-| Problem | Solution |
-|---------|----------|
-| Unsure which docs to update | Run `git diff --name-only main...HEAD` and check for docs in those directories |
-| README references removed code | Delete or rewrite the section -- do not leave stale references |
-| Skill references moved file | Update the file path in the skill |
-| CLAUDE.md has stale architecture | Rewrite the section to match current code structure |
-| No README exists for new complex directory | Create one following the writing style above |
+| Problem                                    | Solution                                                                       |
+| ------------------------------------------ | ------------------------------------------------------------------------------ |
+| Unsure which docs to update                | Run `git diff --name-only main...HEAD` and check for docs in those directories |
+| README references removed code             | Delete or rewrite the section -- do not leave stale references                 |
+| Skill references moved file                | Update the file path in the skill                                              |
+| CLAUDE.md has stale architecture           | Rewrite the section to match current code structure                            |
+| No README exists for new complex directory | Create one following the writing style above                                   |
 
 ## Done When
 

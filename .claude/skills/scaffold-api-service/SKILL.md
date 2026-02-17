@@ -1,9 +1,6 @@
 ---
 name: scaffold-api-service
-description: Generate a new API service layer with stateless static methods, OpenTelemetry
-  tracing, DTO conversion, pagination, and error handling. Use when user says "create
-  service layer", "scaffold API service", "new service class", "add business logic
-  layer", "generate service for X", or "build service between controller and entity".
+description: Generate a new API service layer with stateless static methods, OpenTelemetry tracing, DTO conversion, pagination, and error handling. Use when user says "create service layer", "scaffold API service", "new service class", "add business logic layer", "generate service for X", or "build service between controller and entity".
 allowed-tools: Read, Write, Edit, Grep, Glob
 ---
 
@@ -37,6 +34,7 @@ MongoDB (via FerretDB)
 ```
 
 Services are the **business logic layer**. They:
+
 - Accept primitive types and DTOs as parameters
 - Call Entity class methods for data access
 - Return DTOs to controllers
@@ -336,14 +334,14 @@ class Paginated<Resource>sResponse(PageDTO):
 
 ### DTO Conventions
 
-| Pattern | Naming | Purpose |
-|---------|--------|---------|
-| Response | `<Resource>DTO` | Standard response |
-| Full response | `Full<Resource>DTO` | Detailed response with relations |
-| Minimal response | `Minimal<Resource>DTO` | Lightweight list item |
-| Create request | `Create<Resource>Request` | POST body |
-| Update request | `Update<Resource>Request` | PUT/PATCH body (all fields optional) |
-| Paginated response | `Paginated<Resource>sResponse` | Extends `PageDTO` |
+| Pattern            | Naming                         | Purpose                              |
+| ------------------ | ------------------------------ | ------------------------------------ |
+| Response           | `<Resource>DTO`                | Standard response                    |
+| Full response      | `Full<Resource>DTO`            | Detailed response with relations     |
+| Minimal response   | `Minimal<Resource>DTO`         | Lightweight list item                |
+| Create request     | `Create<Resource>Request`      | POST body                            |
+| Update request     | `Update<Resource>Request`      | PUT/PATCH body (all fields optional) |
+| Paginated response | `Paginated<Resource>sResponse` | Extends `PageDTO`                    |
 
 ### DTO Rules
 

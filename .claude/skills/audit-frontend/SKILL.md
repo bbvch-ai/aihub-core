@@ -11,7 +11,8 @@ allowed-tools: Read, Bash, Grep, Glob
 
 # Frontend Code Audit
 
-Run a comprehensive audit of the Nuxt 3 admin interface. Scope via `$ARGUMENTS` (all, i18n, sdk, components, composables, accessibility).
+Run a comprehensive audit of the Nuxt 3 admin interface. Scope via `$ARGUMENTS` (all, i18n, sdk, components,
+composables, accessibility).
 
 Default scope is `all` if no argument provided.
 
@@ -20,11 +21,13 @@ Default scope is `all` if no argument provided.
 Check if the generated SDK matches the running API.
 
 1. Check if API is accessible:
+
 ```bash
 curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/api/v1/openapi.json
 ```
 
 2. If accessible, compare the OpenAPI spec endpoints with SDK functions:
+
    - Read `aihub_web/aihub_web/sdk/client/sdk.gen.ts` for generated functions
    - Fetch `http://localhost:8000/api/v1/openapi.json` and compare paths
    - Report: new endpoints missing from SDK, removed endpoints still in SDK
@@ -85,14 +88,14 @@ Verify Tailwind conventions:
 
 Present findings as a summary table:
 
-| Audit Area | Status | Issues Found | Severity |
-|-----------|--------|-------------|----------|
-| SDK Freshness | pass/warn/fail | Count | High/Medium/Low |
-| Unused Components | pass/warn | Count | Low |
-| Composable Health | pass/warn/fail | Count | Medium |
-| i18n Coverage | pass/warn/fail | Count + % | Medium |
-| Accessibility | pass/warn | Count | Medium |
-| Tailwind Usage | pass/warn | Count | Low |
+| Audit Area        | Status         | Issues Found | Severity        |
+| ----------------- | -------------- | ------------ | --------------- |
+| SDK Freshness     | pass/warn/fail | Count        | High/Medium/Low |
+| Unused Components | pass/warn      | Count        | Low             |
+| Composable Health | pass/warn/fail | Count        | Medium          |
+| i18n Coverage     | pass/warn/fail | Count + %    | Medium          |
+| Accessibility     | pass/warn      | Count        | Medium          |
+| Tailwind Usage    | pass/warn      | Count        | Low             |
 
 Then list each issue with: file path, line number, description, suggested fix.
 
@@ -105,9 +108,9 @@ Then list each issue with: file path, line number, description, suggested fix.
 
 ## Troubleshooting
 
-| Issue | Resolution |
-|-------|-----------|
-| API not accessible for SDK check | Skip SDK freshness audit, report as "skipped (API unreachable)" |
-| Too many unused components found | Verify auto-import naming convention before flagging -- `Agent/Card.vue` becomes `AgentCard` |
-| False positive on i18n keys | Some keys are dynamically constructed -- check for template literals like `t(\`agent.${type}\`)` |
-| Composable uses bare `useQuery` | May be intentional for non-cached queries -- flag as warning, not error |
+| Issue                            | Resolution                                                                                          |
+| -------------------------------- | --------------------------------------------------------------------------------------------------- |
+| API not accessible for SDK check | Skip SDK freshness audit, report as "skipped (API unreachable)"                                     |
+| Too many unused components found | Verify auto-import naming convention before flagging -- `Agent/Card.vue` becomes `AgentCard`        |
+| False positive on i18n keys      | Some keys are dynamically constructed -- check for template literals like `t(\`agent.\$\{type}\`)\` |
+| Composable uses bare `useQuery`  | May be intentional for non-cached queries -- flag as warning, not error                             |

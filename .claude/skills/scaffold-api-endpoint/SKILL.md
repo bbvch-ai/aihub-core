@@ -1,9 +1,6 @@
 ---
 name: scaffold-api-endpoint
-description: Generate a new REST API controller with fluent builder pattern, typed
-  endpoints, permission-based auth, DTOs, and main.py registration. Use when user says
-  "create API endpoint", "scaffold controller", "new REST endpoint", "add CRUD API",
-  "generate API route", "build endpoint for X", or "add API controller".
+description: Generate a new REST API controller with fluent builder pattern, typed endpoints, permission-based auth, DTOs, and main.py registration. Use when user says "create API endpoint", "scaffold controller", "new REST endpoint", "add CRUD API", "generate API route", "build endpoint for X", or "add API controller".
 allowed-tools: Read, Write, Edit, Bash, Grep, Glob
 ---
 
@@ -166,13 +163,13 @@ class <Resource>Controller(Controller):
 
 ### Permission Patterns
 
-| Access Level | Template | Usage |
-|-------------|----------|-------|
-| Any user | `"aihub.user.?>"` | List own resources |
-| Specific resource | `"aihub.user.<resource>.{<resource>_id}"` | View specific resource |
-| Admin-only | `"aihub.admin.<resource>"` | Create resources |
-| Admin + resource | `"aihub.admin.<resource>.{<resource>_id}"` | Update/delete |
-| Service admin | `f"aihub.admin.service.{self.service_name}"` | Manage entire service |
+| Access Level      | Template                                     | Usage                  |
+| ----------------- | -------------------------------------------- | ---------------------- |
+| Any user          | `"aihub.user.?>"`                            | List own resources     |
+| Specific resource | `"aihub.user.<resource>.{<resource>_id}"`    | View specific resource |
+| Admin-only        | `"aihub.admin.<resource>"`                   | Create resources       |
+| Admin + resource  | `"aihub.admin.<resource>.{<resource>_id}"`   | Update/delete          |
+| Service admin     | `f"aihub.admin.service.{self.service_name}"` | Manage entire service  |
 
 ### User Identity Usage
 
@@ -227,18 +224,20 @@ api:
 
 ## Examples
 
-**Input**: `$ARGUMENTS = "project"`
-**Expected output files**:
+**Input**: `$ARGUMENTS = "project"` **Expected output files**:
+
 - `aihub_api/aihub_api/routes/project/ProjectController.py` with `ProjectController(Controller)`
 - `aihub_api/aihub_api/routes/project/ProjectService.py` (stub -- use `/scaffold-api-service` for full service)
-- `aihub_api/aihub_api/routes/project/dto/ProjectDTO.py`, `CreateProjectRequest.py`, `UpdateProjectRequest.py`, `PaginatedProjectsResponse.py`
+- `aihub_api/aihub_api/routes/project/dto/ProjectDTO.py`, `CreateProjectRequest.py`, `UpdateProjectRequest.py`,
+  `PaginatedProjectsResponse.py`
 - Registration added to `aihub_api/app/main.py`
 - i18n keys added to `aihub_api/aihub_api/i18n/locales/{en,de,fr,it}.yaml`
 
 ## Troubleshooting
 
 - **404 on new endpoint**: Verify the controller is mounted in `main.py` and the fluent builder methods are chained
-- **Permission denied (403)**: Check the permission template string matches what is configured in the role system (e.g., `aihub.user.?>` vs `aihub.admin.resource`)
+- **Permission denied (403)**: Check the permission template string matches what is configured in the role system (e.g.,
+  `aihub.user.?>` vs `aihub.admin.resource`)
 - **Missing tags in Swagger**: Ensure `tags=self.tags` is passed to every router decorator
 - **i18n key not found**: Verify locale YAML files have the correct nested path under `api.controllers.<resource>`
 - **Duplicate route conflict**: Check that `route` parameter default values do not clash with existing controllers

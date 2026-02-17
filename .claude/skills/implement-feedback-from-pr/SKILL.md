@@ -10,7 +10,7 @@ allowed-tools: Bash, Read, Edit, Grep, Glob
 
 # Implement PR Feedback - Turn Reviews into Improvements
 
-Implement review feedback from a pull request. Use $ARGUMENTS for the PR number.
+Implement review feedback from a pull request. Use \$ARGUMENTS for the PR number.
 
 ## Process
 
@@ -30,20 +30,24 @@ gh pr view -c
 
 ### Human Feedback (TOP PRIORITY)
 
-Comments from team members, code reviewers, anyone with human names. These ask about design decisions, suggest better approaches, point out logic issues, request clarification.
+Comments from team members, code reviewers, anyone with human names. These ask about design decisions, suggest better
+approaches, point out logic issues, request clarification.
 
 ### Bot Feedback (EVALUATE CRITICALLY)
 
-Common bots: SonarCloud (code quality/security), CodeQL (vulnerability scanning), test/linting/coverage bots. Bot comments have systematic formatting and links to reports.
+Common bots: SonarCloud (code quality/security), CodeQL (vulnerability scanning), test/linting/coverage bots. Bot
+comments have systematic formatting and links to reports.
 
 ## Step 3: Implement Human Feedback First
 
 For each human comment:
+
 1. Navigate to the file mentioned
 2. Make the requested change
 3. Mark it as done
 
 Handle common feedback types:
+
 - "Can you explain why..." → Add code comment explaining reasoning
 - "This could be simplified..." → Implement simplification, test
 - "What happens if..." → Add error handling + test for edge case
@@ -72,6 +76,7 @@ exit
 **Typical invocation**: `/implement-feedback-from-pr 42`
 
 **Common scenarios**:
+
 1. Reviewer asks to simplify a function → refactor, test, commit
 2. SonarCloud flags a code smell → evaluate and fix if valid
 3. Reviewer requests documentation → add docstrings or update README
@@ -79,12 +84,12 @@ exit
 
 ## Troubleshooting
 
-| Problem | Solution |
-|---------|----------|
-| `gh pr view -c` shows no comments | Check PR number is correct: `gh pr list` |
-| Cannot determine which files are affected | Run `gh pr diff` to see all changed files |
-| Bot feedback conflicts with human feedback | Human feedback always takes priority |
-| `make pr-ready` fails after changes | Fix lint/type errors introduced by your fixes, re-run |
+| Problem                                    | Solution                                              |
+| ------------------------------------------ | ----------------------------------------------------- |
+| `gh pr view -c` shows no comments          | Check PR number is correct: `gh pr list`              |
+| Cannot determine which files are affected  | Run `gh pr diff` to see all changed files             |
+| Bot feedback conflicts with human feedback | Human feedback always takes priority                  |
+| `make pr-ready` fails after changes        | Fix lint/type errors introduced by your fixes, re-run |
 
 ## Done When
 

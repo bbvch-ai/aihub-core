@@ -1,15 +1,13 @@
 ---
 name: test-scope
-description: Detect affected scopes from git changes and run their tests in dependency
-  order. Use when user says 'run tests', 'test my changes', 'check what broke',
-  'verify scopes', 'test affected packages', or 'make sure tests pass'.
-  Supports explicit scope names or auto-detection from git diff. Reports PASS/FAIL per scope.
+description: Detect affected scopes from git changes and run their tests in dependency order. Use when user says 'run tests', 'test my changes', 'check what broke', 'verify scopes', 'test affected packages', or 'make sure tests pass'. Supports explicit scope names or auto-detection from git diff. Reports PASS/FAIL per scope.
 allowed-tools: Bash, Read, Grep, Glob
 ---
 
 # Smart Scoped Test Runner
 
-Run tests only for scopes affected by current changes. Scope names can be provided via `$ARGUMENTS` or auto-detected from git diff.
+Run tests only for scopes affected by current changes. Scope names can be provided via `$ARGUMENTS` or auto-detected
+from git diff.
 
 ## Scope Dependency Graph
 
@@ -57,11 +55,11 @@ Skip scopes not in the affected set. If a scope fails, continue running remainin
 
 Produce a summary table:
 
-| Scope | Status | Details |
-|-------|--------|---------|
-| aihub_lib | PASS | 42 tests passed |
-| aihub_api | FAIL | 2 failures in test_auth.py |
-| aihub_web | SKIP | Not affected |
+| Scope     | Status | Details                    |
+| --------- | ------ | -------------------------- |
+| aihub_lib | PASS   | 42 tests passed            |
+| aihub_api | FAIL   | 2 failures in test_auth.py |
+| aihub_web | SKIP   | Not affected               |
 
 ## Examples
 
@@ -73,6 +71,7 @@ Produce a summary table:
 ## Troubleshooting
 
 - **"No changes detected"**: Ensure you have uncommitted changes. Run `git status` to verify.
-- **"make test fails with ModuleNotFoundError"**: The Poetry virtualenv may not be active. Run `poetry install` in the scope directory first.
+- **"make test fails with ModuleNotFoundError"**: The Poetry virtualenv may not be active. Run `poetry install` in the
+  scope directory first.
 - **No root `make test` exists**: Each scope must be tested individually from its own directory.
 - **Frontend scope**: `aihub_web` uses `pnpm lint`, not `make test`. Run from `aihub_web/aihub_web/`.

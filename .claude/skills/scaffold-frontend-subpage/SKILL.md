@@ -7,7 +7,8 @@ allowed-tools: Read, Write, Edit, Bash, Grep, Glob
 
 # Scaffold a Frontend Subpage (Detail + Tabs)
 
-Generate a detail wrapper page with tab navigation and tab content pages. The resource name should be provided via `$ARGUMENTS`.
+Generate a detail wrapper page with tab navigation and tab content pages. The resource name should be provided via
+`$ARGUMENTS`.
 
 ## Before You Start
 
@@ -29,16 +30,19 @@ pages/service/<resource>s.vue           <- List page (has <NuxtPage /> outlet)
       other-tab.vue                     <- Tab content page
 ```
 
-The list page renders as the left column. When a user clicks an item, the detail wrapper renders as a second column via `<NuxtPage />`. The wrapper shows the tab bar and renders the active tab's content via its own nested `<NuxtPage />`.
+The list page renders as the left column. When a user clicks an item, the detail wrapper renders as a second column via
+`<NuxtPage />`. The wrapper shows the tab bar and renders the active tab's content via its own nested `<NuxtPage />`.
 
 ## Step 1: Create Composable (if needed)
 
 Ensure a single-item composable exists:
+
 ```
 composables/<resource>/use<Resource>.ts  <- Fetches by route param ID
 ```
 
 Follow the pattern from `composables/agent/useAgentInstance.ts`:
+
 ```typescript
 export const use<Resource> = defineQuery(() => {
   const route = useRoute()
@@ -129,11 +133,13 @@ const activeNavItem = computed<NavItem | undefined>(() => {
 3. **`subPath()` helper**: Builds child route paths from current params.
 4. **`isActive()` helper**: Returns a function that checks `route.path.startsWith(localizedPath)`.
 5. **`<NuxtPage />`**: Renders the active tab content as a nested route.
-6. **Conditional tabs**: Tabs can be added conditionally based on resource state (e.g., show chat tab only if `is_conversational`).
+6. **Conditional tabs**: Tabs can be added conditionally based on resource state (e.g., show chat tab only if
+   `is_conversational`).
 
 ### Dynamic Route Params
 
 For compound identifiers (like agents), use `[agent_class]-[agent_id].vue`:
+
 ```typescript
 const subPath = (path: string) => {
   return `/service/agents/${route.params.agent_class}-${route.params.agent_id}/${path}`
@@ -141,6 +147,7 @@ const subPath = (path: string) => {
 ```
 
 For simple identifiers, use `[<resource>_id].vue`:
+
 ```typescript
 const subPath = (path: string) => {
   return `/service/<resource>s/${route.params.<resource>_id}/${path}`
@@ -238,13 +245,15 @@ aihub_web/aihub_web/
 - **SelectButton, not TabView**: Tab navigation uses PrimeVue `SelectButton` with `NavItem` type
 - **Loading gates content**: StructuralColumn doesn't render children until `loading === false`
 - **Close navigates to list**: `close-route` on StructuralColumn always points back to the parent list
-- **Composable reuse**: The same `use<Resource>()` composable is shared between wrapper and tab pages (Pinia-Colada deduplicates the query)
+- **Composable reuse**: The same `use<Resource>()` composable is shared between wrapper and tab pages (Pinia-Colada
+  deduplicates the query)
 
 ## Examples
 
 **Input**: `$ARGUMENTS = "pipeline"`
 
 **Output files created**:
+
 1. `aihub_web/aihub_web/pages/service/pipelines/[pipeline_id].vue` -- Detail wrapper with tab bar
 2. `aihub_web/aihub_web/pages/service/pipelines/[pipeline_id]/overview.vue` -- Overview tab
 3. `aihub_web/aihub_web/pages/service/pipelines/[pipeline_id]/configuration.vue` -- Configuration tab
@@ -253,15 +262,16 @@ aihub_web/aihub_web/
 
 **Input**: `$ARGUMENTS = "connector with tabs: overview, settings, logs"`
 
-**Output**: Wrapper at `[connector_id].vue` plus three tab files (`overview.vue`, `settings.vue`, `logs.vue`) with NavItem entries for each tab.
+**Output**: Wrapper at `[connector_id].vue` plus three tab files (`overview.vue`, `settings.vue`, `logs.vue`) with
+NavItem entries for each tab.
 
 ## Troubleshooting
 
-| Problem | Cause | Fix |
-|---------|-------|-----|
-| Tab content not rendering | Missing `NuxtPage` in wrapper | Ensure wrapper template has `<NuxtPage />` inside the flex container |
-| Tab bar not highlighting active tab | `isActive()` path mismatch | Verify `subPath()` builds the correct URL with `route.params` values |
+| Problem                                    | Cause                               | Fix                                                                                                 |
+| ------------------------------------------ | ----------------------------------- | --------------------------------------------------------------------------------------------------- |
+| Tab content not rendering                  | Missing `NuxtPage` in wrapper       | Ensure wrapper template has `<NuxtPage />` inside the flex container                                |
+| Tab bar not highlighting active tab        | `isActive()` path mismatch          | Verify `subPath()` builds the correct URL with `route.params` values                                |
 | Detail page not appearing as second column | Parent list page missing `NuxtPage` | Ensure the parent list page (`<resource>s.vue`) has `<NuxtPage />` as sibling of `StructuralColumn` |
-| Route params undefined | Filename bracket syntax wrong | Dynamic route file must be named `[<resource>_id].vue` with square brackets |
-| Composable fetches on every tab switch | Not using `staleTime` | Set `staleTime: minutesToMilliseconds(5)` in the query options |
-| Close button navigates to wrong page | Incorrect `close-route` prop | Set `close-route="/service/<resource>s"` (plural, pointing to list page) |
+| Route params undefined                     | Filename bracket syntax wrong       | Dynamic route file must be named `[<resource>_id].vue` with square brackets                         |
+| Composable fetches on every tab switch     | Not using `staleTime`               | Set `staleTime: minutesToMilliseconds(5)` in the query options                                      |
+| Close button navigates to wrong page       | Incorrect `close-route` prop        | Set `close-route="/service/<resource>s"` (plural, pointing to list page)                            |

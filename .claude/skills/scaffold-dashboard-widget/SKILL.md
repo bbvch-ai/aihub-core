@@ -18,6 +18,7 @@ Create a new dashboard widget for the admin interface. The widget name/type shou
 Read the frontend scope guide: `/home/user/aihub-core/aihub_web/CLAUDE.md`
 
 Study existing dashboard components:
+
 - Grid layout: `aihub_web/aihub_web/components/Dashboard/Grid.vue`
 - Widget wrapper: `aihub_web/aihub_web/components/Dashboard/Item.vue`
 - Chart widgets: `aihub_web/aihub_web/components/Dashboard/Component/BarChart.vue`
@@ -29,7 +30,8 @@ Study existing dashboard components:
 
 ## Step 1: Define the Widget Type
 
-Check the existing widget types in `aihub_web/aihub_web/types/DashboardWidget.ts` and add your new widget type to the union.
+Check the existing widget types in `aihub_web/aihub_web/types/DashboardWidget.ts` and add your new widget type to the
+union.
 
 ## Step 2: Create the Widget Component
 
@@ -101,11 +103,13 @@ const formattedValue = computed(() => /* format logic */)
 
 ## Step 3: Register in Component Resolver
 
-Edit `aihub_web/aihub_web/composables/dashboard/useDashboardComponent.ts` to add your widget to the component resolution map.
+Edit `aihub_web/aihub_web/composables/dashboard/useDashboardComponent.ts` to add your widget to the component resolution
+map.
 
 ## Step 4: Add Data Composable (if needed)
 
-If the widget needs its own API data, create a composable following the Pinia-Colada pattern in `aihub_web/aihub_web/composables/dashboard/`:
+If the widget needs its own API data, create a composable following the Pinia-Colada pattern in
+`aihub_web/aihub_web/composables/dashboard/`:
 
 ```typescript
 export const use<WidgetName>Data = defineQuery(() => {
@@ -123,19 +127,20 @@ export const use<WidgetName>Data = defineQuery(() => {
 **Typical invocation**: `/scaffold-dashboard-widget cost-breakdown`
 
 **Result**: Creates:
+
 - `components/Dashboard/Component/CostBreakdown.vue` — widget component
 - Updated `DashboardWidget.ts` — new widget type added to union
 - Updated `useDashboardComponent.ts` — component resolver mapping
 
 ## Troubleshooting
 
-| Problem | Solution |
-|---------|----------|
-| Chart not rendering | Ensure `ClientOnly` wrapper is present — ApexCharts doesn't work with SSR |
-| Widget doesn't appear on dashboard | Check component resolver mapping in `useDashboardComponent.ts` |
-| Widget overflows its grid cell | Use `h-full` and `flex` classes for responsive sizing |
-| Dark mode colors wrong | Set `theme: { mode: 'dark' }` and `chart: { background: 'transparent' }` |
-| Type error on widget type | Add the new type to the union in `DashboardWidget.ts` |
+| Problem                            | Solution                                                                  |
+| ---------------------------------- | ------------------------------------------------------------------------- |
+| Chart not rendering                | Ensure `ClientOnly` wrapper is present — ApexCharts doesn't work with SSR |
+| Widget doesn't appear on dashboard | Check component resolver mapping in `useDashboardComponent.ts`            |
+| Widget overflows its grid cell     | Use `h-full` and `flex` classes for responsive sizing                     |
+| Dark mode colors wrong             | Set `theme: { mode: 'dark' }` and `chart: { background: 'transparent' }`  |
+| Type error on widget type          | Add the new type to the union in `DashboardWidget.ts`                     |
 
 ## Key Conventions
 

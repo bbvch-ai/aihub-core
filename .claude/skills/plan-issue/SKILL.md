@@ -20,6 +20,7 @@ gh issue view $ARGUMENTS -c
 ```
 
 Read the full issue description and all comments. Extract:
+
 - **Goal**: What needs to be achieved
 - **Constraints**: Any requirements or limitations mentioned
 - **Context**: Related issues, PRs, or discussions referenced
@@ -71,6 +72,7 @@ Low / Medium / High — with brief justification
 ```
 
 ### Rules
+
 - Every step must reference concrete files and existing patterns
 - Follow existing abstractions — do not invent new ones
 - Identify dependencies between steps (what must happen first)
@@ -84,9 +86,9 @@ Low / Medium / High — with brief justification
 
 ## Troubleshooting
 
-| Problem | Solution |
-|---------|----------|
-| Issue not found | Check the issue number: `gh issue list` |
-| Issue is vague | List what needs clarification and suggest asking the issue author |
-| Spans too many scopes | Break into sub-tasks and suggest splitting the issue |
-| No existing pattern to follow | Flag this as a risk — may need an ADR for the new pattern |
+| Problem                       | Solution                                                          |
+| ----------------------------- | ----------------------------------------------------------------- |
+| Issue not found               | Check the issue number: `gh issue list`                           |
+| Issue is vague                | List what needs clarification and suggest asking the issue author |
+| Spans too many scopes         | Break into sub-tasks and suggest splitting the issue              |
+| No existing pattern to follow | Flag this as a risk — may need an ADR for the new pattern         |

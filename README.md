@@ -447,8 +447,8 @@ enabled by default), each with a wrapper script in `.claude/mcp/`:
 
 **Development Servers** (work independently):
 
-8. **Context7 MCP**: Up-to-date library documentation for LlamaIndex, FastAPI, Pydantic, and other dependencies
-9. **PrimeVue MCP**: Official component library — props, events, slots, theming, Pass Through, design tokens
+08. **Context7 MCP**: Up-to-date library documentation for LlamaIndex, FastAPI, Pydantic, and other dependencies
+09. **PrimeVue MCP**: Official component library — props, events, slots, theming, Pass Through, design tokens
 10. **Nuxt MCP**: Official framework docs, API references, and deployment guides (remote at nuxt.com/mcp)
 11. **Playwright MCP**: Browser automation and UI debugging — visual inspection, screenshots, DOM/CSS analysis
 12. **GitHub MCP**: Issues, PRs, code search, CI status — disabled by default, requires `GITHUB_PERSONAL_ACCESS_TOKEN`

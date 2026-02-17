@@ -10,9 +10,8 @@ uvicorn + gunicorn. Custom OAuth2/OIDC auth (Azure AD). LlamaIndex workflow engi
 asset-based data pipelines. Nuxt 3 + Vue 3 frontend with TypeScript. PrimeVue UI components, FormKit forms, VueFlow
 workflows. Docker Compose for all environments (dev, local, nightly, latest, GPU). VitePress docs with automated LLM
 translation. Valkey (Redis v5 client) for state, FerretDB (MongoEngine) for persistence, Milvus for vectors. Azure SDK
-suite (20+ packages). OpenTelemetry + OpenInference + Langfuse for observability. Pydantic v2 validation. MyPy
-strict type checking. pytest-bdd for Gherkin BDD tests. Black formatter, Ruff linter. pnpm for frontend. Pulumi for
-Azure IaC.
+suite (20+ packages). OpenTelemetry + OpenInference + Langfuse for observability. Pydantic v2 validation. MyPy strict
+type checking. pytest-bdd for Gherkin BDD tests. Black formatter, Ruff linter. pnpm for frontend. Pulumi for Azure IaC.
 
 **Core Philosophy**: Privacy-first, Swiss data sovereignty, security by design, radical transparency through
 workflow-based agents (not black boxes).
@@ -273,23 +272,22 @@ Before marking task complete:
 
 **Skills** (43 total — invoke via `/skill-name`):
 
-- **Workflow**: `/review-diff`, `/create-pr`, `/implement-feedback-from-pr`, `/plan-issue`, `/reflect`,
-  `/release-prep`, `/test-scope`
+- **Workflow**: `/review-diff`, `/create-pr`, `/implement-feedback-from-pr`, `/plan-issue`, `/reflect`, `/release-prep`,
+  `/test-scope`
 - **Documentation**: `/update-doc`, `/explain`, `/document-decision`, `/document-feature`, `/document-solution`
 - **Scaffolding**: `/scaffold-agent`, `/scaffold-pipeline`, `/scaffold-process`, `/scaffold-api-endpoint`,
   `/scaffold-api-service`, `/scaffold-api-repository`, `/scaffold-frontend-page`, `/scaffold-bot-handler`
-- **Developer Experience**: `/docker-dev`, `/check-i18n`, `/generate-sdk`, `/dependency-audit`,
-  `/validate-events`, `/debug-agent`, `/debug-pipeline`
-- **Frontend**: `/scaffold-composable`, `/scaffold-event-display`, `/scaffold-dashboard-widget`,
-  `/debug-frontend`, `/audit-frontend`, `/primevue-lookup`, `/scaffold-frontend-subpage`,
-  `/scaffold-frontend-component`, `/design-system`
+- **Developer Experience**: `/docker-dev`, `/check-i18n`, `/generate-sdk`, `/dependency-audit`, `/validate-events`,
+  `/debug-agent`, `/debug-pipeline`
+- **Frontend**: `/scaffold-composable`, `/scaffold-event-display`, `/scaffold-dashboard-widget`, `/debug-frontend`,
+  `/audit-frontend`, `/primevue-lookup`, `/scaffold-frontend-subpage`, `/scaffold-frontend-component`, `/design-system`
 - **API & Pipeline**: `/api-auth-guide`, `/nats-events`, `/dagster-pipelines`, `/rclone-guide`
 - **Bot**: `/setup-bot-connection`, `/debug-bot`, `/bot-reference`
 
 **Custom Subagents** (7 — Claude Code uses these automatically for specialized tasks):
 
-- `codebase-expert` (with memory), `code-reviewer`, `event-flow-analyzer` (with memory), `docker-ops`,
-  `test-analyzer`, `frontend-analyzer`, `documentation-keeper` (with memory)
+- `codebase-expert` (with memory), `code-reviewer`, `event-flow-analyzer` (with memory), `docker-ops`, `test-analyzer`,
+  `frontend-analyzer`, `documentation-keeper` (with memory)
 
 **Hooks** (6 — run automatically, no invocation needed):
 

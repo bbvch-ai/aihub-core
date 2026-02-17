@@ -21,7 +21,8 @@ Look up bot architecture information. Topic or question via `$ARGUMENTS`.
 
 ## Architecture Overview
 
-The **aihub_bot** scope provides chatbot logic for MS Teams, Slack, and Web Chat, connecting users to AI-Hub agents via conversational interfaces.
+The **aihub_bot** scope provides chatbot logic for MS Teams, Slack, and Web Chat, connecting users to AI-Hub agents via
+conversational interfaces.
 
 ### Three-Layer Architecture
 
@@ -103,10 +104,10 @@ class CompletionHandler:
 
 ### Implementations
 
-| Handler | File | Purpose |
-|---------|------|---------|
-| `AgentCompletionHandler` | `bots/chat/agent/AgentCompletionHandler.py` | NATS → Agent via ChatService |
-| `OpenaiCompletionHandler` | `bots/chat/openai/OpenaiCompletionHandler.py` | Direct LLM calls |
+| Handler                   | File                                          | Purpose                      |
+| ------------------------- | --------------------------------------------- | ---------------------------- |
+| `AgentCompletionHandler`  | `bots/chat/agent/AgentCompletionHandler.py`   | NATS → Agent via ChatService |
+| `OpenaiCompletionHandler` | `bots/chat/openai/OpenaiCompletionHandler.py` | Direct LLM calls             |
 
 ### Agent Completion Flow
 
@@ -152,6 +153,7 @@ elif turn_context.activity.channel_id == Channels.webchat:
 ```
 
 **Direct message detection**:
+
 ```python
 # CompletionHandler._is_teams_direct_message()
 channel_data = turn_context.activity.channel_data
@@ -161,6 +163,7 @@ is_dm = channel_data is None or channel_data.get("channel") is None
 ### Slack Specifics
 
 **Conversation ID formats**:
+
 ```
 Channel message:  B[bot_id]:T[team_id]:C[channel_id]
 Thread message:   B[bot_id]:T[team_id]:C[channel_id]:[timestamp]
@@ -168,12 +171,14 @@ Direct message:   B[bot_id]:T[team_id]:D[dm_id]:[timestamp]
 ```
 
 **Thread handling** (`CompletionHandler._update_slack_turn_context()`):
+
 1. Detect channel message via regex: `^B[0-9A-Z]+:T[0-9A-Z]+:C[0-9A-Z]+$`
 2. Extract thread timestamp from `channel_data["SlackMessage"]["event"]["ts"]`
 3. Append `:{ts}` to conversation ID → unique thread identifier
 4. Fetch parent channel messages for context
 
 **Mention handling**:
+
 - Bot only responds in channels if **@mentioned** or in an existing bot thread
 - `_is_bot_mentioned()` checks `activity.get_mentions()` against `activity.recipient.id`
 - `_mark_conversation_as_mentioned()` persists mention state in ConversationEntity
@@ -215,12 +220,12 @@ Direct message:   B[bot_id]:T[team_id]:D[dm_id]:[timestamp]
 
 ### Key Components
 
-| Component | File | Direction |
-|-----------|------|-----------|
-| **BotInTheLoopHandler** | `routes/bot_in_the_loop/BotInTheLoopHandler.py` | Outbound: agent → channel |
-| **BotInTheLoopBot** | `bots/bot_in_the_loop/BotInTheLoopBot.py` | Inbound: channel → agent |
-| **BotInTheLoopController** | `routes/bot_in_the_loop/BotInTheLoopController.py` | HTTP endpoint |
-| **SlackUtils** | `routes/bot_in_the_loop/SlackUtils.py` | Slack API helpers |
+| Component                  | File                                               | Direction                 |
+| -------------------------- | -------------------------------------------------- | ------------------------- |
+| **BotInTheLoopHandler**    | `routes/bot_in_the_loop/BotInTheLoopHandler.py`    | Outbound: agent → channel |
+| **BotInTheLoopBot**        | `bots/bot_in_the_loop/BotInTheLoopBot.py`          | Inbound: channel → agent  |
+| **BotInTheLoopController** | `routes/bot_in_the_loop/BotInTheLoopController.py` | HTTP endpoint             |
+| **SlackUtils**             | `routes/bot_in_the_loop/SlackUtils.py`             | Slack API helpers         |
 
 ### Thread Tracking
 
@@ -309,6 +314,7 @@ ContentExtractor.extract_content_from_activity(path, activity) -> list[Content]
 ```
 
 **Supported types**:
+
 - Text → `Content(type="text")`
 - Images → `Content(type="image_url")` with base64 data URL
 - Text files → `Content(type="text")` with `<file name='...'>content</file>` wrapper
@@ -420,13 +426,13 @@ class RoutesService(ChatService):
 
 ## Bot Endpoint Routes
 
-| Controller | Route | Bot Class |
-|-----------|-------|-----------|
-| `AgentChatController` | `/agent/chat/completions/{class}/{id}/json` | `AgentChatBot` |
-| `AgentChatController` | `/agent/chat/completions/{class}/{id}/stream` | `StreamAgentChatBot` |
-| `OpenaiChatController` | `/openai/chat/completions/json` | `OpenaiChatBot` |
-| `OpenaiChatController` | `/openai/chat/completions/stream` | `StreamOpenaiChatBot` |
-| `BotInTheLoopController` | `/bot_in_the_loop/response` | `BotInTheLoopBot` |
+| Controller               | Route                                         | Bot Class             |
+| ------------------------ | --------------------------------------------- | --------------------- |
+| `AgentChatController`    | `/agent/chat/completions/{class}/{id}/json`   | `AgentChatBot`        |
+| `AgentChatController`    | `/agent/chat/completions/{class}/{id}/stream` | `StreamAgentChatBot`  |
+| `OpenaiChatController`   | `/openai/chat/completions/json`               | `OpenaiChatBot`       |
+| `OpenaiChatController`   | `/openai/chat/completions/stream`             | `StreamOpenaiChatBot` |
+| `BotInTheLoopController` | `/bot_in_the_loop/response`                   | `BotInTheLoopBot`     |
 
 ---
 
@@ -434,10 +440,10 @@ class RoutesService(ChatService):
 
 ### Test Runners
 
-| Runner | File | Purpose |
-|--------|------|---------|
-| `BotRunner` | `runners/BotRunner.py` | Production server |
-| `BotTestRunner` | `runners/BotTestRunner.py` | Test server (no NATS) |
+| Runner                        | File                                     | Purpose                |
+| ----------------------------- | ---------------------------------------- | ---------------------- |
+| `BotRunner`                   | `runners/BotRunner.py`                   | Production server      |
+| `BotTestRunner`               | `runners/BotTestRunner.py`               | Test server (no NATS)  |
 | `SimulatedAgentBotTestRunner` | `runners/SimulatedAgentBotTestRunner.py` | Mocked agent responses |
 
 ### SimulatedAgentBotTestRunner
@@ -509,46 +515,51 @@ class Credentials(EmbeddedDocument):
 ## Key Files Reference
 
 ### Bot Implementations
-| File | Purpose |
-|------|---------|
-| `aihub_bot/aihub_bot/bots/chat/BaseChatBot.py` | Base bot class |
-| `aihub_bot/aihub_bot/bots/chat/CompletionHandler.py` | Handler interface + utilities |
-| `aihub_bot/aihub_bot/bots/chat/ContentExtractor.py` | Extract text/files from Activity |
-| `aihub_bot/aihub_bot/bots/chat/agent/AgentChatBot.py` | Agent-based chat bot |
-| `aihub_bot/aihub_bot/bots/chat/agent/AgentCompletionHandler.py` | Agent completion via NATS |
-| `aihub_bot/aihub_bot/bots/chat/agent/StreamAgentChatBot.py` | Streaming agent chat bot |
-| `aihub_bot/aihub_bot/bots/chat/openai/OpenaiChatBot.py` | Direct LLM chat bot |
-| `aihub_bot/aihub_bot/bots/chat/openai/OpenaiCompletionHandler.py` | Direct LLM completion |
+
+| File                                                              | Purpose                          |
+| ----------------------------------------------------------------- | -------------------------------- |
+| `aihub_bot/aihub_bot/bots/chat/BaseChatBot.py`                    | Base bot class                   |
+| `aihub_bot/aihub_bot/bots/chat/CompletionHandler.py`              | Handler interface + utilities    |
+| `aihub_bot/aihub_bot/bots/chat/ContentExtractor.py`               | Extract text/files from Activity |
+| `aihub_bot/aihub_bot/bots/chat/agent/AgentChatBot.py`             | Agent-based chat bot             |
+| `aihub_bot/aihub_bot/bots/chat/agent/AgentCompletionHandler.py`   | Agent completion via NATS        |
+| `aihub_bot/aihub_bot/bots/chat/agent/StreamAgentChatBot.py`       | Streaming agent chat bot         |
+| `aihub_bot/aihub_bot/bots/chat/openai/OpenaiChatBot.py`           | Direct LLM chat bot              |
+| `aihub_bot/aihub_bot/bots/chat/openai/OpenaiCompletionHandler.py` | Direct LLM completion            |
 
 ### HITL
-| File | Purpose |
-|------|---------|
-| `aihub_bot/aihub_bot/bots/bot_in_the_loop/BotInTheLoopBot.py` | Inbound: human → agent |
-| `aihub_bot/aihub_bot/routes/bot_in_the_loop/BotInTheLoopHandler.py` | Outbound: agent → channel |
-| `aihub_bot/aihub_bot/routes/bot_in_the_loop/BotInTheLoopController.py` | HTTP endpoint |
-| `aihub_bot/aihub_bot/routes/bot_in_the_loop/SlackUtils.py` | Slack API utilities |
+
+| File                                                                   | Purpose                   |
+| ---------------------------------------------------------------------- | ------------------------- |
+| `aihub_bot/aihub_bot/bots/bot_in_the_loop/BotInTheLoopBot.py`          | Inbound: human → agent    |
+| `aihub_bot/aihub_bot/routes/bot_in_the_loop/BotInTheLoopHandler.py`    | Outbound: agent → channel |
+| `aihub_bot/aihub_bot/routes/bot_in_the_loop/BotInTheLoopController.py` | HTTP endpoint             |
+| `aihub_bot/aihub_bot/routes/bot_in_the_loop/SlackUtils.py`             | Slack API utilities       |
 
 ### Persistence
-| File | Purpose |
-|------|---------|
+
+| File                                                             | Purpose                  |
+| ---------------------------------------------------------------- | ------------------------ |
 | `aihub_bot/aihub_bot/persistence/entities/ConversationEntity.py` | Conversation state + TTL |
-| `aihub_bot/aihub_bot/persistence/entities/PathEntity.py` | Bot credentials + config |
+| `aihub_bot/aihub_bot/persistence/entities/PathEntity.py`         | Bot credentials + config |
 
 ### Infrastructure
-| File | Purpose |
-|------|---------|
-| `aihub_bot/aihub_bot/routes/RoutesService.py` | CloudAdapter caching |
-| `aihub_bot/aihub_bot/routes/agent/AgentChatController.py` | Agent chat endpoints |
-| `aihub_bot/aihub_bot/routes/openai/OpenaiChatController.py` | OpenAI chat endpoints |
-| `aihub_bot/aihub_bot/runners/lifetime/lifetime_manager.py` | NATS + MongoDB startup |
-| `aihub_bot/aihub_bot/runners/BotRunner.py` | Production runner |
-| `aihub_bot/aihub_bot/setup_azure_bot.py` | Azure Bot provisioning |
-| `aihub_bot/aihub_bot/add_path_entity.py` | PathEntity CLI |
+
+| File                                                        | Purpose                |
+| ----------------------------------------------------------- | ---------------------- |
+| `aihub_bot/aihub_bot/routes/RoutesService.py`               | CloudAdapter caching   |
+| `aihub_bot/aihub_bot/routes/agent/AgentChatController.py`   | Agent chat endpoints   |
+| `aihub_bot/aihub_bot/routes/openai/OpenaiChatController.py` | OpenAI chat endpoints  |
+| `aihub_bot/aihub_bot/runners/lifetime/lifetime_manager.py`  | NATS + MongoDB startup |
+| `aihub_bot/aihub_bot/runners/BotRunner.py`                  | Production runner      |
+| `aihub_bot/aihub_bot/setup_azure_bot.py`                    | Azure Bot provisioning |
+| `aihub_bot/aihub_bot/add_path_entity.py`                    | PathEntity CLI         |
 
 ### Testing
-| File | Purpose |
-|------|---------|
-| `aihub_bot/aihub_bot/runners/BotTestRunner.py` | Test runner |
+
+| File                                                         | Purpose             |
+| ------------------------------------------------------------ | ------------------- |
+| `aihub_bot/aihub_bot/runners/BotTestRunner.py`               | Test runner         |
 | `aihub_bot/aihub_bot/runners/SimulatedAgentBotTestRunner.py` | Mocked agent runner |
-| `aihub_bot/playground/testing/main.py` | Local test server |
-| `aihub_bot/playground/testing/tests/test_ChatBot.py` | Bot message tests |
+| `aihub_bot/playground/testing/main.py`                       | Local test server   |
+| `aihub_bot/playground/testing/tests/test_ChatBot.py`         | Bot message tests   |

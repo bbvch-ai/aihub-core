@@ -19,6 +19,7 @@ Create a display component for a new agent event type. The event name should be 
 Read the frontend scope guide: `/home/user/aihub-core/aihub_web/CLAUDE.md`
 
 Study existing event display components:
+
 - Simple: `aihub_web/aihub_web/components/Event/Display/ThoughtEvent.vue`
 - With data fields: `aihub_web/aihub_web/components/Event/Display/ToolEvent.vue`
 - Complex: `aihub_web/aihub_web/components/Event/Display/LLMEvent.vue`
@@ -29,6 +30,7 @@ Check the event component resolver: `aihub_web/aihub_web/composables/event/useEv
 ## Step 1: Identify the Event Type
 
 Check the backend event definition in `aihub_lib/aihub_lib/events/` to understand:
+
 - Event class name (e.g., `MyNewEvent`)
 - Fields available on the event
 - Parent event class (for inheritance-based resolution)
@@ -67,21 +69,22 @@ defineProps<{
 
 The `Base.vue` wrapper provides the card layout, raw data toggle, and agent badge. Your component fills the `<slot>`:
 
-| Prop | Type | Description |
-|------|------|-------------|
-| `event` | `ContextualizedAgentEvent` | Required. The event object |
-| `thread` | `ThreadDto` | Required. Parent thread |
-| `icon` | `string` | Required. Iconify icon name (e.g., `mynaui:tool`, `hugeicons:brain`) |
-| `isExternal` | `boolean` | Optional. Striped background for external agents |
-| `isEmpty` | `boolean` | Optional. Hides slot content area |
-| `isWarning` | `boolean` | Optional. Yellow warning border |
-| `isError` | `boolean` | Optional. Red error border |
+| Prop         | Type                       | Description                                                          |
+| ------------ | -------------------------- | -------------------------------------------------------------------- |
+| `event`      | `ContextualizedAgentEvent` | Required. The event object                                           |
+| `thread`     | `ThreadDto`                | Required. Parent thread                                              |
+| `icon`       | `string`                   | Required. Iconify icon name (e.g., `mynaui:tool`, `hugeicons:brain`) |
+| `isExternal` | `boolean`                  | Optional. Striped background for external agents                     |
+| `isEmpty`    | `boolean`                  | Optional. Hides slot content area                                    |
+| `isWarning`  | `boolean`                  | Optional. Yellow warning border                                      |
+| `isError`    | `boolean`                  | Optional. Red error border                                           |
 
 ## Step 3: Register in Event Resolver
 
 Edit `aihub_web/aihub_web/composables/event/useEventComponent.ts`:
 
 1. Add the import to the `#components` import block:
+
 ```typescript
 import {
   // ... existing imports
@@ -90,6 +93,7 @@ import {
 ```
 
 2. Add the mapping entry inside `resolveComponentForEvent`:
+
 ```typescript
 const mapping = {
   // ... existing mappings
@@ -100,6 +104,7 @@ const mapping = {
 ## Step 4: Choose an Icon
 
 Browse icons at https://icon-sets.iconify.design/. The project uses these icon sets:
+
 - `mynaui:*` (clean line icons)
 - `hugeicons:*` (detailed icons)
 - `prime:*` (PrimeVue icons)
@@ -111,18 +116,19 @@ Match the icon to the event's semantic meaning (e.g., `mynaui:tool` for tools, `
 **Typical invocation**: `/scaffold-event-display ToolCall`
 
 **Result**: Creates:
+
 - `components/Event/Display/ToolCallEvent.vue` — display component with EventDisplayBase wrapper
 - Updated `useEventComponent.ts` — import and mapping entry added
 
 ## Troubleshooting
 
-| Problem | Solution |
-|---------|----------|
-| Event not rendered in timeline | Check mapping in `useEventComponent.ts` — event type name must match exactly |
-| Type errors on event props | Verify SDK types are generated — run `/generate-sdk` if missing |
-| Icon not showing | Verify icon name at https://icon-sets.iconify.design/ |
-| Component renders but empty | Check that `isEmpty` prop is not set and slot content accesses correct fields |
-| Inheritance fallback not working | Verify `_parent_event_names` includes the parent event type |
+| Problem                          | Solution                                                                      |
+| -------------------------------- | ----------------------------------------------------------------------------- |
+| Event not rendered in timeline   | Check mapping in `useEventComponent.ts` — event type name must match exactly  |
+| Type errors on event props       | Verify SDK types are generated — run `/generate-sdk` if missing               |
+| Icon not showing                 | Verify icon name at https://icon-sets.iconify.design/                         |
+| Component renders but empty      | Check that `isEmpty` prop is not set and slot content accesses correct fields |
+| Inheritance fallback not working | Verify `_parent_event_names` includes the parent event type                   |
 
 ## Key Conventions
 

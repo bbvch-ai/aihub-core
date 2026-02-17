@@ -1,17 +1,12 @@
 ---
 name: document-feature
-description: "Create user-facing feature documentation for the VitePress docs site.
-  Deep-dives into the codebase, analyzes user value, and produces structured docs.
-  Use when user says 'document this feature', 'write feature docs', 'create docs
-  for X', 'add feature to docs site', or 'user-facing documentation for'. Takes
-  feature name as argument. Outputs VitePress-formatted markdown with TL;DR,
-  benefits, setup, and getting started sections."
+description: Create user-facing feature documentation for the VitePress docs site. Deep-dives into the codebase, analyzes user value, and produces structured docs. Use when user says 'document this feature', 'write feature docs', 'create docs for X', 'add feature to docs site', or 'user-facing documentation for'. Takes feature name as argument. Outputs VitePress-formatted markdown with TL;DR, benefits, setup, and getting started sections.
 allowed-tools: Read, Grep, Glob, Write
 ---
 
 # Document Feature - Create User-Facing VitePress Documentation
 
-Create user-facing documentation for feature "$ARGUMENTS" on the AI-Hub VitePress docs site. Analyzes the codebase to
+Create user-facing documentation for feature "\$ARGUMENTS" on the AI-Hub VitePress docs site. Analyzes the codebase to
 understand the feature, then produces structured documentation for end users.
 
 ## Steps
@@ -37,10 +32,11 @@ Search for the feature across all scopes. Answer these questions:
 
 ### 3. Create Documentation File
 
-**Platform features**: `aihub_doc/docs/2_platform/5_feature_overview/`
-**SDK features**: `aihub_doc/docs/3_sdk/1_feature_overview/`
+**Platform features**: `aihub_doc/docs/2_platform/5_feature_overview/` **SDK features**:
+`aihub_doc/docs/3_sdk/1_feature_overview/`
 
 **Required front matter**:
+
 ```yaml
 ---
 title: "Feature Title"
@@ -49,6 +45,7 @@ index: 1
 ```
 
 **Required document structure**:
+
 1. TL;DR info box (`::: info`)
 2. What it is and How it works section
 3. Why it is Important section with 5 benefits
@@ -58,8 +55,7 @@ index: 1
 ### 4. Verify Consistency
 
 - Compare with existing feature docs for tone and structure
-- Reference the MCP Integration docs as a template:
-  `aihub_doc/docs/2_platform/5_feature_overview/mcp/index.md`
+- Reference the MCP Integration docs as a template: `aihub_doc/docs/2_platform/5_feature_overview/mcp/index.md`
 
 ## VitePress Standards
 
@@ -71,6 +67,7 @@ index: 1
 ## Examples
 
 **Typical invocation**:
+
 ```
 /document-feature RAG Pipeline
 ```
@@ -79,18 +76,19 @@ index: 1
 full VitePress-formatted documentation including TL;DR, benefits, setup, and getting started.
 
 **Another example**:
+
 ```
 /document-feature MCP Integration
 ```
 
 ## Troubleshooting
 
-| Problem | Solution |
-|---------|----------|
-| Feature spans many scopes | Focus on user-visible behavior, not internal architecture |
-| Unsure if platform or SDK feature | If users interact via UI or chat, it is platform; if via code/API, it is SDK |
-| No existing template to follow | Use `aihub_doc/docs/2_platform/5_feature_overview/mcp/index.md` as reference |
-| Feature is not yet fully implemented | Use `::: warning` boxes to note incomplete sections |
+| Problem                              | Solution                                                                     |
+| ------------------------------------ | ---------------------------------------------------------------------------- |
+| Feature spans many scopes            | Focus on user-visible behavior, not internal architecture                    |
+| Unsure if platform or SDK feature    | If users interact via UI or chat, it is platform; if via code/API, it is SDK |
+| No existing template to follow       | Use `aihub_doc/docs/2_platform/5_feature_overview/mcp/index.md` as reference |
+| Feature is not yet fully implemented | Use `::: warning` boxes to note incomplete sections                          |
 
 ## Done When
 

@@ -19,16 +19,19 @@ steer or correct Claude. Propose concrete CLAUDE.md and skill improvements to pr
 Review the conversation history and identify:
 
 ### Mistakes Made
+
 - Wrong approaches that had to be corrected
 - Code that didn't follow project conventions
 - Incorrect assumptions about architecture or patterns
 
 ### Steering Required
+
 - Places where the user had to redirect the approach
 - Times the user said "no", "don't do that", "instead do X"
 - Repeated corrections for the same issue
 
 ### Inefficiencies
+
 - Unnecessary research that could have been avoided with better CLAUDE.md
 - Missing context that caused wrong first attempts
 - Patterns that should have been documented but weren't
@@ -37,13 +40,13 @@ Review the conversation history and identify:
 
 For each issue found, determine the fix category:
 
-| Category | When to Use | Target File |
-|----------|-------------|-------------|
-| **Convention** | Claude used wrong coding pattern | Root `CLAUDE.md` or scope `CLAUDE.md` |
-| **Architecture** | Claude misunderstood how components connect | Scope `CLAUDE.md` |
-| **Skill gap** | A skill gave wrong instructions or missed a step | `.claude/skills/*/SKILL.md` |
-| **Missing skill** | A common task has no skill | New skill needed |
-| **Agent gap** | A subagent lacks necessary context | `.claude/agents/*.md` |
+| Category          | When to Use                                      | Target File                           |
+| ----------------- | ------------------------------------------------ | ------------------------------------- |
+| **Convention**    | Claude used wrong coding pattern                 | Root `CLAUDE.md` or scope `CLAUDE.md` |
+| **Architecture**  | Claude misunderstood how components connect      | Scope `CLAUDE.md`                     |
+| **Skill gap**     | A skill gave wrong instructions or missed a step | `.claude/skills/*/SKILL.md`           |
+| **Missing skill** | A common task has no skill                       | New skill needed                      |
+| **Agent gap**     | A subagent lacks necessary context               | `.claude/agents/*.md`                 |
 
 ## Step 3: Propose Changes
 
@@ -85,9 +88,9 @@ After presenting all proposals, ask the user which ones to apply. Then:
 
 ## Troubleshooting
 
-| Problem | Solution |
-|---------|----------|
-| Session was mostly Q&A, no code | Focus on knowledge gaps rather than coding patterns |
-| Too many issues to fix at once | Prioritize by frequency — fix the most recurring issue first |
-| Proposed change conflicts with existing rule | Resolve the conflict explicitly — update or remove the old rule |
-| Unclear if issue is one-off or systemic | Only add to CLAUDE.md if it would affect multiple future sessions |
+| Problem                                      | Solution                                                          |
+| -------------------------------------------- | ----------------------------------------------------------------- |
+| Session was mostly Q&A, no code              | Focus on knowledge gaps rather than coding patterns               |
+| Too many issues to fix at once               | Prioritize by frequency — fix the most recurring issue first      |
+| Proposed change conflicts with existing rule | Resolve the conflict explicitly — update or remove the old rule   |
+| Unclear if issue is one-off or systemic      | Only add to CLAUDE.md if it would affect multiple future sessions |

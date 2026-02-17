@@ -1,9 +1,6 @@
 ---
 name: scaffold-pipeline
-description: Generate a new Dagster data pipeline with the two-stage pattern (source
-  ingestion + unified processing). Creates assets, resources, I/O managers, and tests.
-  Use when user says "create a pipeline", "scaffold pipeline", "new data pipeline",
-  "add ingestion pipeline", "generate Dagster pipeline", or "build a pipeline for X".
+description: Generate a new Dagster data pipeline with the two-stage pattern (source ingestion + unified processing). Creates assets, resources, I/O managers, and tests. Use when user says "create a pipeline", "scaffold pipeline", "new data pipeline", "add ingestion pipeline", "generate Dagster pipeline", or "build a pipeline for X".
 
 allowed-tools: Read, Write, Bash, Grep, Glob
 ---
@@ -36,11 +33,13 @@ Create in `aihub_pipeline/aihub_pipeline/pipelines/<pipeline_name>/`:
 The platform uses a two-stage pipeline pattern:
 
 **Stage 1: Source Ingestion**
+
 - Fetch data from external sources (APIs, files, databases)
 - Normalize to internal format
 - Store raw artifacts in SeaweedFS (S3-compatible)
 
 **Stage 2: Unified Processing**
+
 - Process ingested data
 - Generate embeddings for vector search (Milvus)
 - Create searchable indices
@@ -56,6 +55,7 @@ Use Dagster asset factories for reusable asset definitions:
 ## Step 5: Define Resources
 
 Define Dagster resources for external dependencies:
+
 - API clients (httpx.AsyncClient)
 - Storage clients (SeaweedFS/S3)
 - Database connections (Milvus, FerretDB)
@@ -67,6 +67,7 @@ Create a playground entry for local testing in `aihub_pipeline/playground/`.
 ## Step 7: Create Tests
 
 Create in `aihub_pipeline/tests/pipelines/<pipeline_name>/`:
+
 - `test_<pipeline_name>.py` -- Unit tests with mocked resources
 - Test both asset materialization and error handling
 
@@ -79,15 +80,19 @@ Create in `aihub_pipeline/tests/pipelines/<pipeline_name>/`:
 
 ## Examples
 
-**Input**: `$ARGUMENTS = "confluence_sync - Pipeline to ingest Confluence wiki pages"`
-**Expected output files**:
-- `aihub_pipeline/aihub_pipeline/pipelines/confluence_sync/assets.py` with `@asset` definitions for ingestion and processing
+**Input**: `$ARGUMENTS = "confluence_sync - Pipeline to ingest Confluence wiki pages"` **Expected output files**:
+
+- `aihub_pipeline/aihub_pipeline/pipelines/confluence_sync/assets.py` with `@asset` definitions for ingestion and
+  processing
 - `aihub_pipeline/aihub_pipeline/pipelines/confluence_sync/resources.py` with Confluence API client resource
 - `aihub_pipeline/tests/pipelines/confluence_sync/test_confluence_sync.py`
 
 ## Troubleshooting
 
-- **Asset materialization fails**: Ensure resources are properly configured and injected via `@asset(required_resource_keys=...)`
-- **Partition errors**: Verify partition definitions match the data source's natural partitioning (e.g., by date, by page)
-- **I/O manager issues**: Check that custom I/O managers handle both load and store operations, and that `output_config` matches expectations
+- **Asset materialization fails**: Ensure resources are properly configured and injected via
+  `@asset(required_resource_keys=...)`
+- **Partition errors**: Verify partition definitions match the data source's natural partitioning (e.g., by date, by
+  page)
+- **I/O manager issues**: Check that custom I/O managers handle both load and store operations, and that `output_config`
+  matches expectations
 - **Playground not loading**: Verify the playground entry is properly registered in the Dagster definitions

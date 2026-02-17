@@ -25,17 +25,17 @@ The platform uses **Dagster** for data pipeline orchestration with a **pure asse
 job/ops pattern). Pipelines prepare data for RAG applications: document ingestion, parsing, embedding generation, and
 vector storage.
 
-| Concept | Pattern | Purpose |
-|---------|---------|---------|
-| **Assets** | `@graph_asset` | Concrete data artifacts (documents, nodes, embeddings) |
-| **Observable Assets** | `@observable_source_asset` | Monitor external sources for changes |
-| **Ops** | `@op` | Individual processing steps composed WITHIN graph assets |
-| **Resources** | `ConfigurableResource` | External dependencies (LLM, storage, parsers) |
-| **IO Managers** | `ConfigurableIOManager` | Handle asset storage/retrieval per storage system |
-| **Jobs** | `define_asset_job` | Trigger observation or cleanup (NOT traditional op-based) |
-| **Sensors** | `@sensor` | Event-driven triggers (NATS, automation) |
-| **Schedules** | `ScheduleDefinition` | Time-based triggers (daily observation) |
-| **Partitions** | `DynamicPartitionsDefinition` | Each document = separate partition |
+| Concept               | Pattern                       | Purpose                                                   |
+| --------------------- | ----------------------------- | --------------------------------------------------------- |
+| **Assets**            | `@graph_asset`                | Concrete data artifacts (documents, nodes, embeddings)    |
+| **Observable Assets** | `@observable_source_asset`    | Monitor external sources for changes                      |
+| **Ops**               | `@op`                         | Individual processing steps composed WITHIN graph assets  |
+| **Resources**         | `ConfigurableResource`        | External dependencies (LLM, storage, parsers)             |
+| **IO Managers**       | `ConfigurableIOManager`       | Handle asset storage/retrieval per storage system         |
+| **Jobs**              | `define_asset_job`            | Trigger observation or cleanup (NOT traditional op-based) |
+| **Sensors**           | `@sensor`                     | Event-driven triggers (NATS, automation)                  |
+| **Schedules**         | `ScheduleDefinition`          | Time-based triggers (daily observation)                   |
+| **Partitions**        | `DynamicPartitionsDefinition` | Each document = separate partition                        |
 
 **Key Rule**: Everything is asset-centric. Jobs exist only to trigger observation or cleanup. Ops exist only inside
 graph assets. Never create standalone job-based pipelines.
@@ -51,12 +51,14 @@ Enterprise Source → DataLakeFile (in S3)
 ```
 
 Multiple independent pipelines, one per source connector:
+
 - **SharePoint** → S3 (`default_sharepoint_to_datalake_definitions`)
 - **Local Filesystem** → S3 (`default_local_filesystem_to_datalake_definitions`)
 - **Rclone (70+ providers)** → S3 (`default_rclone_to_datalake_definitions`)
 - **S3/Azure ADLS** (direct — no Stage 1 needed)
 
 Each Stage 1 pipeline produces:
+
 1. `observable_source` — monitors source for changes
 2. `data_lake_files` — downloads source files to S3
 3. `placeholder_refdocs` — creates placeholder RefDocs in MongoDB (optional)
@@ -174,8 +176,8 @@ stage2 = default_definitions(
 
 ## Asset Factory Pattern
 
-All assets are created via **factory functions** that return parameterized `@graph_asset` or
-`@observable_source_asset` definitions.
+All assets are created via **factory functions** that return parameterized `@graph_asset` or `@observable_source_asset`
+definitions.
 
 ### Graph Asset Factory
 
@@ -211,6 +213,7 @@ def documents_factory(
 ```
 
 **Key characteristics**:
+
 - `automation_condition=AutomationCondition.eager()` — auto-materialize when upstream changes
 - `partitions_def` — dynamic partitions (1 document = 1 partition)
 - `group_name` — logical grouping in Dagster UI
@@ -248,6 +251,7 @@ def observable_data_lake_factory(
 ```
 
 **Key characteristics**:
+
 - Returns `DataVersionsByPartition` (content hash per partition)
 - Content hash change triggers downstream rematerialization
 - `io_manager_key` — controls how partition data is loaded by downstream assets
@@ -314,24 +318,24 @@ Resources are external dependencies injected into ops. All use Dagster's `Config
 
 ### Resource Types
 
-| Resource | Purpose | Key |
-|----------|---------|-----|
-| `DocumentParserResource` | Docling / Azure Doc Intelligence | `document_parser` |
-| `MarkdownStructuralNodeParserResource` | Structural chunking | `node_parser` |
-| `RecursiveSummaryParserResource` | Hierarchical summaries | `summary_parser` |
-| `TableRefinementResource` | LLM table refinement | `table_refinement` |
-| `EmbeddingModelResource` | LiteLLM embeddings | `embedding_model` |
-| `LanguageModelResource` | LiteLLM text generation | `language_model` |
-| `S3DataLakeClientResource` | S3/MinIO client | `data_lake_client` |
-| `S3DataLakeFileSystemResource` | S3 filesystem (s3fs) | `data_lake_file_system` |
-| `AzureDataLakeClientResource` | Azure ADLS client | `data_lake_client` |
-| `MongoDocumentStoreResource` | MongoDB doc store | `doc_store` |
-| `MilvusVectorStoreResource` | Milvus vector store | `vector_store` |
-| `SharePointResource` | SharePoint connector | `share_point_client` |
-| `LocalFileSystemResource` | Local/network FS | `local_file_system_client` |
-| `RcloneResource` | Universal cloud storage | `rclone_client` |
-| `DataLakeResource` | Container/directory config | `data_lake_resource` |
-| `DocStoreResource` | Doc store name config | `doc_store_resource` |
+| Resource                               | Purpose                          | Key                        |
+| -------------------------------------- | -------------------------------- | -------------------------- |
+| `DocumentParserResource`               | Docling / Azure Doc Intelligence | `document_parser`          |
+| `MarkdownStructuralNodeParserResource` | Structural chunking              | `node_parser`              |
+| `RecursiveSummaryParserResource`       | Hierarchical summaries           | `summary_parser`           |
+| `TableRefinementResource`              | LLM table refinement             | `table_refinement`         |
+| `EmbeddingModelResource`               | LiteLLM embeddings               | `embedding_model`          |
+| `LanguageModelResource`                | LiteLLM text generation          | `language_model`           |
+| `S3DataLakeClientResource`             | S3/MinIO client                  | `data_lake_client`         |
+| `S3DataLakeFileSystemResource`         | S3 filesystem (s3fs)             | `data_lake_file_system`    |
+| `AzureDataLakeClientResource`          | Azure ADLS client                | `data_lake_client`         |
+| `MongoDocumentStoreResource`           | MongoDB doc store                | `doc_store`                |
+| `MilvusVectorStoreResource`            | Milvus vector store              | `vector_store`             |
+| `SharePointResource`                   | SharePoint connector             | `share_point_client`       |
+| `LocalFileSystemResource`              | Local/network FS                 | `local_file_system_client` |
+| `RcloneResource`                       | Universal cloud storage          | `rclone_client`            |
+| `DataLakeResource`                     | Container/directory config       | `data_lake_resource`       |
+| `DocStoreResource`                     | Doc store name config            | `doc_store_resource`       |
 
 ### Resource Factory Pattern
 
@@ -388,12 +392,12 @@ class MyApiResource(ConfigurableResource):
 
 Resources read connection details from `aihub_lib` settings (Pydantic `BaseSettings`):
 
-| Settings Class | Env Prefix | Purpose |
-|---------------|------------|---------|
-| `S3StorageSettings` | `S3_` | S3/MinIO connection |
-| `MilvusSettings` | `MILVUS_` | Milvus vector DB |
-| `RcloneSettings` | `RCLONE_` | Rclone RC API |
-| `DoclingSettings` | `DOCLING_` | Docling parser |
+| Settings Class                      | Env Prefix                     | Purpose                |
+| ----------------------------------- | ------------------------------ | ---------------------- |
+| `S3StorageSettings`                 | `S3_`                          | S3/MinIO connection    |
+| `MilvusSettings`                    | `MILVUS_`                      | Milvus vector DB       |
+| `RcloneSettings`                    | `RCLONE_`                      | Rclone RC API          |
+| `DoclingSettings`                   | `DOCLING_`                     | Docling parser         |
 | `AzureDocumentIntelligenceSettings` | `AZURE_DOCUMENT_INTELLIGENCE_` | Azure Doc Intelligence |
 
 ---
@@ -404,16 +408,16 @@ IO managers control how assets are stored and retrieved. Each storage system has
 
 ### IO Manager Registry
 
-| IO Manager | Key | Storage | Direction | Partition Behavior |
-|-----------|-----|---------|-----------|-------------------|
-| `S3DataLakeIOManager` | `data_lake_io_manager` | S3/MinIO | Read + Write | Partition key = file URI |
-| `AzureDataLakeIOManager` | `data_lake_io_manager` | Azure ADLS | Read + Write | Partition key = file URI |
-| `DocStoreIOManager` | `doc_store_io_manager` | MongoDB | Read + Write | Partition key = document URI/ID |
-| `VectorStoreIOManager` | `vector_store_io_manager` | Milvus | Read + Write | Partition key = document URI/ID |
-| `SharePointIOManager` | `sharepoint_io_manager` | SharePoint | **Read-only** | Partition key = SP file path |
-| `LocalFileSystemIOManager` | `local_file_system_io_manager` | Local FS | **Read-only** | Partition key = file path |
-| `RcloneIOManager` | `rclone_io_manager` | Rclone (70+) | **Read-only** | Partition key = file path |
-| `S3PickleIOManager` | `io_manager` (default) | S3/MinIO | Read + Write | Pickled Python objects |
+| IO Manager                 | Key                            | Storage      | Direction     | Partition Behavior              |
+| -------------------------- | ------------------------------ | ------------ | ------------- | ------------------------------- |
+| `S3DataLakeIOManager`      | `data_lake_io_manager`         | S3/MinIO     | Read + Write  | Partition key = file URI        |
+| `AzureDataLakeIOManager`   | `data_lake_io_manager`         | Azure ADLS   | Read + Write  | Partition key = file URI        |
+| `DocStoreIOManager`        | `doc_store_io_manager`         | MongoDB      | Read + Write  | Partition key = document URI/ID |
+| `VectorStoreIOManager`     | `vector_store_io_manager`      | Milvus       | Read + Write  | Partition key = document URI/ID |
+| `SharePointIOManager`      | `sharepoint_io_manager`        | SharePoint   | **Read-only** | Partition key = SP file path    |
+| `LocalFileSystemIOManager` | `local_file_system_io_manager` | Local FS     | **Read-only** | Partition key = file path       |
+| `RcloneIOManager`          | `rclone_io_manager`            | Rclone (70+) | **Read-only** | Partition key = file path       |
+| `S3PickleIOManager`        | `io_manager` (default)         | S3/MinIO     | Read + Write  | Pickled Python objects          |
 
 **Read-only IO managers**: Source connectors (SharePoint, LocalFS, Rclone) never write back to sources.
 
@@ -598,8 +602,8 @@ sensor = nats_document_uploaded_sensor(
 )
 ```
 
-**Flow**: Document uploaded → `SourceUpdatedEvent` to NATS → Sensor triggers `observe_job` → Observable asset
-detects new partition → Downstream auto-materializes.
+**Flow**: Document uploaded → `SourceUpdatedEvent` to NATS → Sensor triggers `observe_job` → Observable asset detects
+new partition → Downstream auto-materializes.
 
 ---
 
@@ -781,112 +785,120 @@ defs = default_definitions(
 )
 ```
 
-**Run**: `make playground` or `poetry run dagster dev -m playground`
-**Access**: http://localhost:3002 (Dagster UI)
+**Run**: `make playground` or `poetry run dagster dev -m playground` **Access**: http://localhost:3002 (Dagster UI)
 
 ---
 
 ## Key File Reference
 
 ### Architecture & Config
-| File | Purpose |
-|------|---------|
-| `aihub_pipeline/CLAUDE.md` | Scope architecture overview |
-| `aihub_pipeline/playground/__init__.py` | Working example (START HERE) |
-| `aihub_pipeline/aihub_pipeline/util/definitions_util.py` | Pipeline factory functions |
-| `aihub_pipeline/aihub_pipeline/const/pipeline_names.py` | Pipeline constants |
+
+| File                                                     | Purpose                      |
+| -------------------------------------------------------- | ---------------------------- |
+| `aihub_pipeline/CLAUDE.md`                               | Scope architecture overview  |
+| `aihub_pipeline/playground/__init__.py`                  | Working example (START HERE) |
+| `aihub_pipeline/aihub_pipeline/util/definitions_util.py` | Pipeline factory functions   |
+| `aihub_pipeline/aihub_pipeline/const/pipeline_names.py`  | Pipeline constants           |
 
 ### Asset Factories
-| File | Purpose |
-|------|---------|
-| `aihub_pipeline/aihub_pipeline/assets/factories/data_lake_to_vector_store/observable_data_lake_factory.py` | Stage 2: S3 observer |
-| `aihub_pipeline/aihub_pipeline/assets/factories/data_lake_to_vector_store/documents_factory.py` | Stage 2: Document processing |
-| `aihub_pipeline/aihub_pipeline/assets/factories/data_lake_to_vector_store/nodes_factory.py` | Stage 2: Node chunking + embedding |
-| `aihub_pipeline/aihub_pipeline/assets/factories/data_lake_to_vector_store/summary_nodes_factory.py` | Stage 2: Summary generation |
-| `aihub_pipeline/aihub_pipeline/assets/factories/data_lake_to_vector_store/removed_documents_factory.py` | Stage 2: Cleanup |
-| `aihub_pipeline/aihub_pipeline/assets/factories/share_point_to_data_lake/observable_share_point_factory.py` | Stage 1: SharePoint observer |
-| `aihub_pipeline/aihub_pipeline/assets/factories/local_files_system_to_data_lake/observable_local_file_system_factory.py` | Stage 1: Local FS observer |
-| `aihub_pipeline/aihub_pipeline/assets/factories/rclone_to_data_lake/observable_rclone_factory.py` | Stage 1: Rclone observer |
-| `aihub_pipeline/aihub_pipeline/assets/factories/source_to_data_lake/data_lake_file_factory.py` | Stage 1: Source → S3 file |
-| `aihub_pipeline/aihub_pipeline/assets/factories/source_to_data_lake/placeholder_refdocs_factory.py` | Stage 1: Placeholder RefDocs |
-| `aihub_pipeline/aihub_pipeline/assets/factories/source_to_data_lake/removed_data_lake_files_factory.py` | Stage 1: Cleanup |
+
+| File                                                                                                                     | Purpose                            |
+| ------------------------------------------------------------------------------------------------------------------------ | ---------------------------------- |
+| `aihub_pipeline/aihub_pipeline/assets/factories/data_lake_to_vector_store/observable_data_lake_factory.py`               | Stage 2: S3 observer               |
+| `aihub_pipeline/aihub_pipeline/assets/factories/data_lake_to_vector_store/documents_factory.py`                          | Stage 2: Document processing       |
+| `aihub_pipeline/aihub_pipeline/assets/factories/data_lake_to_vector_store/nodes_factory.py`                              | Stage 2: Node chunking + embedding |
+| `aihub_pipeline/aihub_pipeline/assets/factories/data_lake_to_vector_store/summary_nodes_factory.py`                      | Stage 2: Summary generation        |
+| `aihub_pipeline/aihub_pipeline/assets/factories/data_lake_to_vector_store/removed_documents_factory.py`                  | Stage 2: Cleanup                   |
+| `aihub_pipeline/aihub_pipeline/assets/factories/share_point_to_data_lake/observable_share_point_factory.py`              | Stage 1: SharePoint observer       |
+| `aihub_pipeline/aihub_pipeline/assets/factories/local_files_system_to_data_lake/observable_local_file_system_factory.py` | Stage 1: Local FS observer         |
+| `aihub_pipeline/aihub_pipeline/assets/factories/rclone_to_data_lake/observable_rclone_factory.py`                        | Stage 1: Rclone observer           |
+| `aihub_pipeline/aihub_pipeline/assets/factories/source_to_data_lake/data_lake_file_factory.py`                           | Stage 1: Source → S3 file          |
+| `aihub_pipeline/aihub_pipeline/assets/factories/source_to_data_lake/placeholder_refdocs_factory.py`                      | Stage 1: Placeholder RefDocs       |
+| `aihub_pipeline/aihub_pipeline/assets/factories/source_to_data_lake/removed_data_lake_files_factory.py`                  | Stage 1: Cleanup                   |
 
 ### IO Managers
-| File | Purpose |
-|------|---------|
-| `aihub_pipeline/aihub_pipeline/io/S3DataLakeIOManager.py` | S3/MinIO data lake files |
-| `aihub_pipeline/aihub_pipeline/io/AzureDataLakeIOManager.py` | Azure ADLS data lake files |
-| `aihub_pipeline/aihub_pipeline/io/DocStoreIOManager.py` | MongoDB RefDocs |
-| `aihub_pipeline/aihub_pipeline/io/VectorStoreIOManager.py` | Milvus vector nodes |
-| `aihub_pipeline/aihub_pipeline/io/SharePointIOManager.py` | SharePoint files (read-only) |
-| `aihub_pipeline/aihub_pipeline/io/LocalFileSystemIOManager.py` | Local FS files (read-only) |
-| `aihub_pipeline/aihub_pipeline/io/RcloneIOManager.py` | Rclone files (read-only) |
+
+| File                                                           | Purpose                      |
+| -------------------------------------------------------------- | ---------------------------- |
+| `aihub_pipeline/aihub_pipeline/io/S3DataLakeIOManager.py`      | S3/MinIO data lake files     |
+| `aihub_pipeline/aihub_pipeline/io/AzureDataLakeIOManager.py`   | Azure ADLS data lake files   |
+| `aihub_pipeline/aihub_pipeline/io/DocStoreIOManager.py`        | MongoDB RefDocs              |
+| `aihub_pipeline/aihub_pipeline/io/VectorStoreIOManager.py`     | Milvus vector nodes          |
+| `aihub_pipeline/aihub_pipeline/io/SharePointIOManager.py`      | SharePoint files (read-only) |
+| `aihub_pipeline/aihub_pipeline/io/LocalFileSystemIOManager.py` | Local FS files (read-only)   |
+| `aihub_pipeline/aihub_pipeline/io/RcloneIOManager.py`          | Rclone files (read-only)     |
 
 ### Resources
-| File | Purpose |
-|------|---------|
-| `aihub_pipeline/aihub_pipeline/resources/factory.py` | Resource factory functions |
-| `aihub_pipeline/aihub_pipeline/resources/parser/DocumentParserResource.py` | Docling / Azure DI |
-| `aihub_pipeline/aihub_pipeline/resources/parser/MarkdownStructuralNodeParserResource.py` | Structural chunking |
-| `aihub_pipeline/aihub_pipeline/resources/parser/RecursiveSummaryParserResource.py` | Summary generation |
-| `aihub_pipeline/aihub_pipeline/resources/parser/TableRefinementResource.py` | LLM table refinement |
-| `aihub_pipeline/aihub_pipeline/resources/llm/EmbeddingModelResource.py` | LiteLLM embeddings |
-| `aihub_pipeline/aihub_pipeline/resources/llm/LanguageModelResource.py` | LiteLLM text gen |
-| `aihub_pipeline/aihub_pipeline/resources/data_lake/s3/S3DataLakeClientResource.py` | S3 client |
-| `aihub_pipeline/aihub_pipeline/resources/data_lake/azure/AzureDataLakeClientResource.py` | Azure ADLS client |
-| `aihub_pipeline/aihub_pipeline/resources/doc_store/MongoDocumentStoreResource.py` | MongoDB doc store |
-| `aihub_pipeline/aihub_pipeline/resources/vector_store/MilvusVectorStoreResource.py` | Milvus vector store |
-| `aihub_pipeline/aihub_pipeline/resources/share_point/SharePointResource.py` | SharePoint connector |
-| `aihub_pipeline/aihub_pipeline/resources/local_file_system/LocalFileSystemResource.py` | Local FS connector |
-| `aihub_pipeline/aihub_pipeline/resources/rclone/RcloneResource.py` | Rclone connector |
-| `aihub_pipeline/aihub_pipeline/resources/rclone/RcloneClient.py` | Rclone RC API client |
+
+| File                                                                                     | Purpose                    |
+| ---------------------------------------------------------------------------------------- | -------------------------- |
+| `aihub_pipeline/aihub_pipeline/resources/factory.py`                                     | Resource factory functions |
+| `aihub_pipeline/aihub_pipeline/resources/parser/DocumentParserResource.py`               | Docling / Azure DI         |
+| `aihub_pipeline/aihub_pipeline/resources/parser/MarkdownStructuralNodeParserResource.py` | Structural chunking        |
+| `aihub_pipeline/aihub_pipeline/resources/parser/RecursiveSummaryParserResource.py`       | Summary generation         |
+| `aihub_pipeline/aihub_pipeline/resources/parser/TableRefinementResource.py`              | LLM table refinement       |
+| `aihub_pipeline/aihub_pipeline/resources/llm/EmbeddingModelResource.py`                  | LiteLLM embeddings         |
+| `aihub_pipeline/aihub_pipeline/resources/llm/LanguageModelResource.py`                   | LiteLLM text gen           |
+| `aihub_pipeline/aihub_pipeline/resources/data_lake/s3/S3DataLakeClientResource.py`       | S3 client                  |
+| `aihub_pipeline/aihub_pipeline/resources/data_lake/azure/AzureDataLakeClientResource.py` | Azure ADLS client          |
+| `aihub_pipeline/aihub_pipeline/resources/doc_store/MongoDocumentStoreResource.py`        | MongoDB doc store          |
+| `aihub_pipeline/aihub_pipeline/resources/vector_store/MilvusVectorStoreResource.py`      | Milvus vector store        |
+| `aihub_pipeline/aihub_pipeline/resources/share_point/SharePointResource.py`              | SharePoint connector       |
+| `aihub_pipeline/aihub_pipeline/resources/local_file_system/LocalFileSystemResource.py`   | Local FS connector         |
+| `aihub_pipeline/aihub_pipeline/resources/rclone/RcloneResource.py`                       | Rclone connector           |
+| `aihub_pipeline/aihub_pipeline/resources/rclone/RcloneClient.py`                         | Rclone RC API client       |
 
 ### Ops
-| File | Purpose |
-|------|---------|
-| `aihub_pipeline/aihub_pipeline/ops/data_lake/parse_document_from_data_lake.py` | Parse DataLakeFile → RefDoc |
-| `aihub_pipeline/aihub_pipeline/ops/data_lake/fetch_all_files_in_data_lake.py` | List S3 files |
-| `aihub_pipeline/aihub_pipeline/ops/data_lake/generate_figure_descriptions.py` | Vision LLM descriptions |
-| `aihub_pipeline/aihub_pipeline/ops/document/insert_ref_doc_into_docstore.py` | MongoDB insert |
-| `aihub_pipeline/aihub_pipeline/ops/document/refine_document_tables.py` | LLM table refinement |
-| `aihub_pipeline/aihub_pipeline/ops/document/ensure_refdoc_default_metadata.py` | Metadata validation |
-| `aihub_pipeline/aihub_pipeline/ops/nodes/chunk_ref_doc_into_nodes_using_md_structural_node_parser.py` | Chunking |
-| `aihub_pipeline/aihub_pipeline/ops/nodes/embed_nodes.py` | Embedding generation |
-| `aihub_pipeline/aihub_pipeline/ops/nodes/insert_nodes_into_vector_store.py` | Milvus insert |
+
+| File                                                                                                  | Purpose                     |
+| ----------------------------------------------------------------------------------------------------- | --------------------------- |
+| `aihub_pipeline/aihub_pipeline/ops/data_lake/parse_document_from_data_lake.py`                        | Parse DataLakeFile → RefDoc |
+| `aihub_pipeline/aihub_pipeline/ops/data_lake/fetch_all_files_in_data_lake.py`                         | List S3 files               |
+| `aihub_pipeline/aihub_pipeline/ops/data_lake/generate_figure_descriptions.py`                         | Vision LLM descriptions     |
+| `aihub_pipeline/aihub_pipeline/ops/document/insert_ref_doc_into_docstore.py`                          | MongoDB insert              |
+| `aihub_pipeline/aihub_pipeline/ops/document/refine_document_tables.py`                                | LLM table refinement        |
+| `aihub_pipeline/aihub_pipeline/ops/document/ensure_refdoc_default_metadata.py`                        | Metadata validation         |
+| `aihub_pipeline/aihub_pipeline/ops/nodes/chunk_ref_doc_into_nodes_using_md_structural_node_parser.py` | Chunking                    |
+| `aihub_pipeline/aihub_pipeline/ops/nodes/embed_nodes.py`                                              | Embedding generation        |
+| `aihub_pipeline/aihub_pipeline/ops/nodes/insert_nodes_into_vector_store.py`                           | Milvus insert               |
 
 ### Sensors, Schedules, Jobs
-| File | Purpose |
-|------|---------|
-| `aihub_pipeline/aihub_pipeline/sensors/factory.py` | Automation condition sensor |
-| `aihub_pipeline/aihub_pipeline/sensors/nats/nats_document_uploaded_sensor.py` | NATS event sensor |
-| `aihub_pipeline/aihub_pipeline/schedules/factory.py` | Schedule definitions |
-| `aihub_pipeline/aihub_pipeline/jobs/factory.py` | Job definitions |
-| `aihub_pipeline/aihub_pipeline/executors/factory.py` | Executor config |
-| `aihub_pipeline/aihub_pipeline/automation/all_deps_completed.py` | Custom automation condition |
+
+| File                                                                          | Purpose                     |
+| ----------------------------------------------------------------------------- | --------------------------- |
+| `aihub_pipeline/aihub_pipeline/sensors/factory.py`                            | Automation condition sensor |
+| `aihub_pipeline/aihub_pipeline/sensors/nats/nats_document_uploaded_sensor.py` | NATS event sensor           |
+| `aihub_pipeline/aihub_pipeline/schedules/factory.py`                          | Schedule definitions        |
+| `aihub_pipeline/aihub_pipeline/jobs/factory.py`                               | Job definitions             |
+| `aihub_pipeline/aihub_pipeline/executors/factory.py`                          | Executor config             |
+| `aihub_pipeline/aihub_pipeline/automation/all_deps_completed.py`              | Custom automation condition |
 
 ### Data Types
-| File | Purpose |
-|------|---------|
-| `aihub_pipeline/aihub_pipeline/types/DataLakeFile.py` | Unified data lake file |
-| `aihub_pipeline/aihub_pipeline/types/RefDocDocument.py` | Parsed document |
-| `aihub_pipeline/aihub_pipeline/types/SourceFile.py` | Abstract source file |
-| `aihub_pipeline/aihub_pipeline/types/RcloneFile.py` | Rclone file |
-| `aihub_pipeline/aihub_pipeline/types/SharePointFile.py` | SharePoint file |
+
+| File                                                    | Purpose                |
+| ------------------------------------------------------- | ---------------------- |
+| `aihub_pipeline/aihub_pipeline/types/DataLakeFile.py`   | Unified data lake file |
+| `aihub_pipeline/aihub_pipeline/types/RefDocDocument.py` | Parsed document        |
+| `aihub_pipeline/aihub_pipeline/types/SourceFile.py`     | Abstract source file   |
+| `aihub_pipeline/aihub_pipeline/types/RcloneFile.py`     | Rclone file            |
+| `aihub_pipeline/aihub_pipeline/types/SharePointFile.py` | SharePoint file        |
 
 ### Utilities
-| File | Purpose |
-|------|---------|
-| `aihub_pipeline/aihub_pipeline/util/partition_utils.py` | Dynamic partition management |
-| `aihub_pipeline/aihub_pipeline/util/id_utils.py` | URI → document ID conversion |
-| `aihub_pipeline/aihub_pipeline/util/key_utils.py` | AssetKey helpers |
-| `aihub_pipeline/aihub_pipeline/util/bucket_utils.py` | Bucket → store name conversion |
+
+| File                                                    | Purpose                        |
+| ------------------------------------------------------- | ------------------------------ |
+| `aihub_pipeline/aihub_pipeline/util/partition_utils.py` | Dynamic partition management   |
+| `aihub_pipeline/aihub_pipeline/util/id_utils.py`        | URI → document ID conversion   |
+| `aihub_pipeline/aihub_pipeline/util/key_utils.py`       | AssetKey helpers               |
+| `aihub_pipeline/aihub_pipeline/util/bucket_utils.py`    | Bucket → store name conversion |
 
 ### Settings (aihub_lib)
-| File | Purpose |
-|------|---------|
-| `aihub_lib/aihub_lib/infrastructure/s3/S3StorageSettings.py` | S3/MinIO connection |
-| `aihub_lib/aihub_lib/infrastructure/milvus/MilvusSettings.py` | Milvus connection |
-| `aihub_lib/aihub_lib/infrastructure/rclone/RcloneSettings.py` | Rclone RC API |
+
+| File                                                              | Purpose              |
+| ----------------------------------------------------------------- | -------------------- |
+| `aihub_lib/aihub_lib/infrastructure/s3/S3StorageSettings.py`      | S3/MinIO connection  |
+| `aihub_lib/aihub_lib/infrastructure/milvus/MilvusSettings.py`     | Milvus connection    |
+| `aihub_lib/aihub_lib/infrastructure/rclone/RcloneSettings.py`     | Rclone RC API        |
 | `aihub_lib/aihub_lib/infrastructure/rclone/RcloneSourceConfig.py` | Rclone remote config |
 
 ---

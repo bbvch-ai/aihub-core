@@ -4,8 +4,8 @@
 
 The aihub-core monorepo had a solid foundation for AI-assisted development with 10 AGENTS.md files, 7 legacy slash
 commands in `.claude/commands/`, 2 MCP servers, and 1 global stop hook. However, it was not leveraging the full
-capabilities of Claude Code's modern features — Skills system, project-level hooks, custom subagents with memory,
-and comprehensive tool scoping.
+capabilities of Claude Code's modern features — Skills system, project-level hooks, custom subagents with memory, and
+comprehensive tool scoping.
 
 As the team grows and the platform matures, developer onboarding speed, code quality consistency, and workflow
 automation become critical. Claude Code provides mechanisms (Skills, Hooks, Subagents, MCP) that encode development
@@ -26,8 +26,8 @@ Adopt a comprehensive Claude Code enablement strategy:
 
 1. **6 project-level hooks**: Auto-formatting (Python + frontend), sensitive file protection, scope boundary checking,
    git hygiene enforcement, and session initialization
-2. **7 migrated skills**: All legacy `.claude/commands/` moved to `.claude/skills/` with proper YAML frontmatter
-   (name, description, disable-model-invocation, allowed-tools). Legacy commands directory deleted.
+2. **7 migrated skills**: All legacy `.claude/commands/` moved to `.claude/skills/` with proper YAML frontmatter (name,
+   description, disable-model-invocation, allowed-tools). Legacy commands directory deleted.
 3. **6 scaffolding skills**: New skills encoding platform abstractions (scaffold-agent, scaffold-pipeline,
    scaffold-process, scaffold-api-endpoint, scaffold-frontend-page, scaffold-bot-handler)
 4. **8 developer experience skills**: Daily workflow skills (test-scope, docker-dev, check-i18n, generate-sdk,

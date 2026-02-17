@@ -16,6 +16,7 @@ Generate a MongoEngine Document entity for a resource. The resource name should 
 ## Before You Start
 
 Read these reference entities:
+
 - Agent class: `aihub_lib/aihub_lib/persistence/agents/AgentClassEntity.py`
 - Agent config: `aihub_lib/aihub_lib/persistence/agents/AgentConfigEntityDocument.py`
 - Thread: `aihub_lib/aihub_lib/persistence/messaging/entities/ThreadEntity.py`
@@ -195,40 +196,40 @@ class <Resource>Entity(Document):
 
 ### Basic Fields
 
-| Field | Usage | Example |
-|-------|-------|---------|
-| `StringField` | Text | `name = StringField(required=True, unique=True)` |
-| `IntField` | Integer | `count = IntField(default=0)` |
-| `FloatField` | Decimal | `cost = FloatField(default=0.0)` |
-| `BooleanField` | Boolean | `active = BooleanField(default=True)` |
-| `DateTimeField` | Timestamp | `created_at = DateTimeField(default=lambda: datetime.now(UTC))` |
-| `DictField` | Flexible JSON | `config_data = DictField(default=dict)` |
+| Field           | Usage         | Example                                                         |
+| --------------- | ------------- | --------------------------------------------------------------- |
+| `StringField`   | Text          | `name = StringField(required=True, unique=True)`                |
+| `IntField`      | Integer       | `count = IntField(default=0)`                                   |
+| `FloatField`    | Decimal       | `cost = FloatField(default=0.0)`                                |
+| `BooleanField`  | Boolean       | `active = BooleanField(default=True)`                           |
+| `DateTimeField` | Timestamp     | `created_at = DateTimeField(default=lambda: datetime.now(UTC))` |
+| `DictField`     | Flexible JSON | `config_data = DictField(default=dict)`                         |
 
 ### Collection Fields
 
-| Field | Usage | Example |
-|-------|-------|---------|
-| `ListField(StringField())` | String array | `tags = ListField(StringField())` |
-| `ListField(DictField())` | Array of objects | `items = ListField(DictField())` |
-| `ListField(EmbeddedDocumentField(X))` | Typed array | `users = ListField(EmbeddedDocumentField(User))` |
+| Field                                 | Usage            | Example                                          |
+| ------------------------------------- | ---------------- | ------------------------------------------------ |
+| `ListField(StringField())`            | String array     | `tags = ListField(StringField())`                |
+| `ListField(DictField())`              | Array of objects | `items = ListField(DictField())`                 |
+| `ListField(EmbeddedDocumentField(X))` | Typed array      | `users = ListField(EmbeddedDocumentField(User))` |
 
 ### Embedded Documents
 
-| Field | Usage | Example |
-|-------|-------|---------|
+| Field                      | Usage         | Example                                            |
+| -------------------------- | ------------- | -------------------------------------------------- |
 | `EmbeddedDocumentField(X)` | Nested object | `name = EmbeddedDocumentField(LocaleStringEntity)` |
 
 ### Field Options
 
-| Option | Purpose | Example |
-|--------|---------|---------|
-| `required=True` | Field must be set | `name = StringField(required=True)` |
-| `unique=True` | Unique constraint | `email = StringField(unique=True)` |
-| `default=value` | Default value | `status = StringField(default="active")` |
-| `default=callable` | Default factory | `created_at = DateTimeField(default=lambda: datetime.now(UTC))` |
-| `choices=(...)` | Enum constraint | `type = StringField(choices=("info", "warn", "error"))` |
-| `null=True` | Allow null | `profile_image = StringField(null=True)` |
-| `primary_key=True` | Custom primary key | `id = StringField(primary_key=True)` |
+| Option             | Purpose            | Example                                                         |
+| ------------------ | ------------------ | --------------------------------------------------------------- |
+| `required=True`    | Field must be set  | `name = StringField(required=True)`                             |
+| `unique=True`      | Unique constraint  | `email = StringField(unique=True)`                              |
+| `default=value`    | Default value      | `status = StringField(default="active")`                        |
+| `default=callable` | Default factory    | `created_at = DateTimeField(default=lambda: datetime.now(UTC))` |
+| `choices=(...)`    | Enum constraint    | `type = StringField(choices=("info", "warn", "error"))`         |
+| `null=True`        | Allow null         | `profile_image = StringField(null=True)`                        |
+| `primary_key=True` | Custom primary key | `id = StringField(primary_key=True)`                            |
 
 ## Meta Configuration
 
@@ -278,16 +279,16 @@ cls.objects().distinct("status")
 
 ### Filter Operators
 
-| Operator | Meaning | Example |
-|----------|---------|---------|
-| `__exact` | Exact match (default) | `name=value` |
-| `__in` | In list | `status__in=["active", "pending"]` |
-| `__ne` | Not equal | `status__ne="deleted"` |
-| `__gt`, `__gte` | Greater (or equal) | `created_at__gte=cutoff_date` |
-| `__lt`, `__lte` | Less (or equal) | `cost__lt=100` |
-| `__contains` | String contains | `name__contains="test"` |
-| `__icontains` | Case-insensitive contains | `name__icontains="test"` |
-| `__exists` | Field exists | `config__exists=True` |
+| Operator        | Meaning                   | Example                            |
+| --------------- | ------------------------- | ---------------------------------- |
+| `__exact`       | Exact match (default)     | `name=value`                       |
+| `__in`          | In list                   | `status__in=["active", "pending"]` |
+| `__ne`          | Not equal                 | `status__ne="deleted"`             |
+| `__gt`, `__gte` | Greater (or equal)        | `created_at__gte=cutoff_date`      |
+| `__lt`, `__lte` | Less (or equal)           | `cost__lt=100`                     |
+| `__contains`    | String contains           | `name__contains="test"`            |
+| `__icontains`   | Case-insensitive contains | `name__icontains="test"`           |
+| `__exists`      | Field exists              | `config__exists=True`              |
 
 ### Bulk Update Patterns
 
@@ -338,6 +339,7 @@ class AgentInstanceRef(EmbeddedDocument):
 ```
 
 Used in parent entity:
+
 ```python
 class ThreadEntity(Document):
     agents = ListField(EmbeddedDocumentField(AgentInstanceRef))
@@ -356,6 +358,7 @@ class MyEntity(Document):
 ```
 
 `LocaleStringEntity` stores:
+
 ```python
 class LocaleStringEntity(EmbeddedDocument):
     en = StringField()
@@ -401,6 +404,7 @@ aihub_lib/aihub_lib/persistence/
 **Typical invocation**: `/scaffold-api-repository notification`
 
 **Result**: Creates `aihub_lib/aihub_lib/persistence/notification/NotificationEntity.py` with:
+
 - Document class with schema fields
 - Repository classmethods (get_by_id, find_by_name, get_all, create, delete)
 - Proper indexes and meta configuration
@@ -408,12 +412,12 @@ aihub_lib/aihub_lib/persistence/
 
 ## Troubleshooting
 
-| Problem | Solution |
-|---------|----------|
-| `DoesNotExist` at runtime | Entity not found — catch in the service layer, not in the entity |
-| Duplicate key error | Check `meta["indexes"]` — a unique constraint is being violated |
-| `strict` mode errors | Set `meta["strict"] = False` to allow extra fields |
-| Missing collection in MongoDB | MongoEngine auto-creates collections on first write |
+| Problem                       | Solution                                                         |
+| ----------------------------- | ---------------------------------------------------------------- |
+| `DoesNotExist` at runtime     | Entity not found — catch in the service layer, not in the entity |
+| Duplicate key error           | Check `meta["indexes"]` — a unique constraint is being violated  |
+| `strict` mode errors          | Set `meta["strict"] = False` to allow extra fields               |
+| Missing collection in MongoDB | MongoEngine auto-creates collections on first write              |
 | Import error from other scope | Ensure entity is in `aihub_lib`, not in a scope-specific package |
 
 ## Key Conventions

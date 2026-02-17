@@ -29,6 +29,7 @@ For each scope touched by the diff, read its `CLAUDE.md` to understand scope-spe
 ## Step 3: Review Checklist
 
 ### Architecture & Design
+
 - Code is in the correct scope (shared code in aihub_lib, scope-specific code in its scope)
 - No cross-scope imports (only through aihub_lib, exception: aihub_process → aihub_agent)
 - Controller → Service → Entity separation respected
@@ -38,6 +39,7 @@ For each scope touched by the diff, read its `CLAUDE.md` to understand scope-spe
 - No unnecessary backwards compatibility shims
 
 ### Coding Standards
+
 - All parameters and returns have type annotations
 - `Annotated` used for parameter metadata (not docstring `Args:` sections)
 - Modern Python syntax: `str | None`, `list[str]`, `match/case`
@@ -50,6 +52,7 @@ For each scope touched by the diff, read its `CLAUDE.md` to understand scope-spe
 - Descriptive naming (no abbreviations)
 
 ### Security (OWASP Top 10)
+
 - No string concatenation in queries or shell commands
 - Permission checks via `Security(...)` on all endpoints
 - Secrets use `SecretStr`, never plain strings
@@ -57,12 +60,14 @@ For each scope touched by the diff, read its `CLAUDE.md` to understand scope-spe
 - Input validation at system boundaries
 
 ### Correctness
+
 - Edge cases handled
 - Race conditions considered for async code
 - Resource cleanup (connections, file handles)
 - Error messages are helpful and specific
 
 ### Testing
+
 - New code has corresponding tests
 - Tests are specific (not just "no exception")
 - External services properly mocked
@@ -89,6 +94,7 @@ Organize findings by severity:
 ```
 
 ### Rules
+
 - Be specific: reference exact files and line numbers
 - Be constructive: suggest the fix, not just the problem
 - Be honest: if the code is good, say so
@@ -98,12 +104,12 @@ Organize findings by severity:
 ## Examples
 
 - `/review-diff` — Review all changes on the current branch vs main
-- `/review-diff feat/new-agent` — Review a specific branch (if provided via $ARGUMENTS)
+- `/review-diff feat/new-agent` — Review a specific branch (if provided via \$ARGUMENTS)
 
 ## Troubleshooting
 
-| Problem | Solution |
-|---------|----------|
-| No diff found | Ensure you are on a feature branch, not main |
-| Diff is very large | Focus on architectural issues first, then drill into details |
-| Cannot determine scope conventions | Read the scope's `CLAUDE.md` for patterns |
+| Problem                            | Solution                                                     |
+| ---------------------------------- | ------------------------------------------------------------ |
+| No diff found                      | Ensure you are on a feature branch, not main                 |
+| Diff is very large                 | Focus on architectural issues first, then drill into details |
+| Cannot determine scope conventions | Read the scope's `CLAUDE.md` for patterns                    |

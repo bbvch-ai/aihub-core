@@ -1,9 +1,6 @@
 ---
 name: scaffold-agent
-description: Generate a new LlamaIndex AI agent with all required boilerplate (agent
-  class, events, config with form duality, BDD tests, trigger, runner). Use when user
-  says "create new agent", "scaffold an agent", "generate agent boilerplate", "add AI
-  agent", "new workflow agent", or "build an agent for X".
+description: Generate a new LlamaIndex AI agent with all required boilerplate (agent class, events, config with form duality, BDD tests, trigger, runner). Use when user says "create new agent", "scaffold an agent", "generate agent boilerplate", "add AI agent", "new workflow agent", or "build an agent for X".
 allowed-tools: Read, Write, Bash, Grep, Glob
 ---
 
@@ -78,16 +75,19 @@ Set up agent registration via `trigger.py` or `ClassDiscoveryRequest`.
 
 ## Examples
 
-**Input**: `$ARGUMENTS = "document_summarizer - An agent that summarizes uploaded documents"`
-**Expected output files**:
+**Input**: `$ARGUMENTS = "document_summarizer - An agent that summarizes uploaded documents"` **Expected output files**:
+
 - `aihub_agent/aihub_agent/agents/document_summarizer/agent.py` with class `DocumentSummarizerWorkflow`
-- `aihub_agent/aihub_agent/agents/document_summarizer/events/events.py` with `DocumentSummarizerStartEvent`, `DocumentSummarizerStopEvent`
+- `aihub_agent/aihub_agent/agents/document_summarizer/events/events.py` with `DocumentSummarizerStartEvent`,
+  `DocumentSummarizerStopEvent`
 - `aihub_agent/aihub_agent/agents/document_summarizer/config/config.py` with form duality config
 - `aihub_agent/tests/agents/document_summarizer/test_document_summarizer.py`
 
 ## Troubleshooting
 
-- **Missing event consumer**: If you get "event has no consumer" errors, ensure every emitted event type has a `@step` method that accepts it
+- **Missing event consumer**: If you get "event has no consumer" errors, ensure every emitted event type has a `@step`
+  method that accepts it
 - **Import errors**: Verify all `__init__.py` files export the necessary classes
-- **Form duality issues**: Config must inherit from Pydantic BaseModel AND define `@property` methods returning `FormGroup`
+- **Form duality issues**: Config must inherit from Pydantic BaseModel AND define `@property` methods returning
+  `FormGroup`
 - **BDD test limitations**: pytest-bdd has async limitations -- use plain pytest for async step tests

@@ -1,10 +1,6 @@
 ---
 name: create-pr
-description: "Validate and prepare code for a pull request: commit, format, lint,
-  type-check, and test all affected scopes. Use when user says 'create a PR',
-  'prepare pull request', 'get ready for PR', 'run pr-ready', 'validate my changes',
-  or 'prepare for review'. Commits work, runs make pr-ready and make test in every
-  scope, reviews diff against main, and updates docs."
+description: "Validate and prepare code for a pull request: commit, format, lint, type-check, and test all affected scopes. Use when user says 'create a PR', 'prepare pull request', 'get ready for PR', 'run pr-ready', 'validate my changes', or 'prepare for review'. Commits work, runs make pr-ready and make test in every scope, reviews diff against main, and updates docs."
 allowed-tools: Bash, Read, Grep, Glob, Edit
 ---
 
@@ -70,8 +66,10 @@ git diff main...HEAD
 ```
 
 **Inspection checklist**:
+
 - Hunt for bugs: edge cases, null pointers, resource leaks, race conditions
-- Enforce coding standards: "why" comments, docstrings on public APIs, type annotations, Pydantic over dicts, fail-fast error handling
+- Enforce coding standards: "why" comments, docstrings on public APIs, type annotations, Pydantic over dicts, fail-fast
+  error handling
 - Respect architecture: code in the right scope, shared code in aihub_lib, no customer-specific info
 
 ### 5. Fix Issues Found
@@ -103,6 +101,7 @@ Follow the `/update-doc` skill to sync documentation with code changes.
 **Typical invocation**: `/create-pr` after finishing a feature branch
 
 **Expected workflow**:
+
 1. User completes feature work on a branch
 2. Runs `/create-pr`
 3. Skill commits, formats, tests, reviews all changes
@@ -110,12 +109,12 @@ Follow the `/update-doc` skill to sync documentation with code changes.
 
 ## Troubleshooting
 
-| Problem | Solution |
-|---------|----------|
-| `make pr-ready` fails with import errors | Run `poetry install` in the scope first |
-| Tests fail with missing fixtures | Check if scope depends on aihub_lib changes -- run aihub_lib tests first |
-| MyPy strict mode errors | Add type annotations to all parameters, returns, and variables |
-| `poetry shell` not found | Ensure Poetry is installed and you are in the correct scope directory |
+| Problem                                  | Solution                                                                 |
+| ---------------------------------------- | ------------------------------------------------------------------------ |
+| `make pr-ready` fails with import errors | Run `poetry install` in the scope first                                  |
+| Tests fail with missing fixtures         | Check if scope depends on aihub_lib changes -- run aihub_lib tests first |
+| MyPy strict mode errors                  | Add type annotations to all parameters, returns, and variables           |
+| `poetry shell` not found                 | Ensure Poetry is installed and you are in the correct scope directory    |
 
 ## Done When
 

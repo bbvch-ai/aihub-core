@@ -25,16 +25,16 @@ Read `/home/user/aihub-core/aihub_bot/CLAUDE.md` to understand bot architecture 
 
 Match the reported issue to one of these categories and jump to the relevant section:
 
-| Symptom | Section |
-|---------|---------|
-| Bot doesn't respond at all | [Connection & Auth](#connection--auth-issues) |
-| Bot responds with error message | [Error Messages](#error-messages) |
-| Bot responds but agent doesn't work | [NATS & Agent Issues](#nats--agent-issues) |
-| Slack-specific problems | [Slack Issues](#slack-issues) |
-| Teams-specific problems | [Teams Issues](#teams-issues) |
-| Bot-in-the-loop not working | [HITL Issues](#hitl-issues) |
-| Streaming not updating | [Streaming Issues](#streaming-issues) |
-| Conversation history lost/expired | [Conversation State](#conversation-state-issues) |
+| Symptom                             | Section                                          |
+| ----------------------------------- | ------------------------------------------------ |
+| Bot doesn't respond at all          | [Connection & Auth](#connection--auth-issues)    |
+| Bot responds with error message     | [Error Messages](#error-messages)                |
+| Bot responds but agent doesn't work | [NATS & Agent Issues](#nats--agent-issues)       |
+| Slack-specific problems             | [Slack Issues](#slack-issues)                    |
+| Teams-specific problems             | [Teams Issues](#teams-issues)                    |
+| Bot-in-the-loop not working         | [HITL Issues](#hitl-issues)                      |
+| Streaming not updating              | [Streaming Issues](#streaming-issues)            |
+| Conversation history lost/expired   | [Conversation State](#conversation-state-issues) |
 
 ---
 
@@ -45,6 +45,7 @@ Match the reported issue to one of these categories and jump to the relevant sec
 **Cause**: PathEntity missing or path mismatch.
 
 **Diagnose**:
+
 ```python
 # Check MongoDB for PathEntity
 # File: aihub_bot/aihub_bot/persistence/entities/PathEntity.py
@@ -52,6 +53,7 @@ PathEntity.get_credentials_by_path(path)  # Returns None if missing
 ```
 
 **Fix**:
+
 1. Check the exact URL path the request is hitting (logged in AgentChatController)
 2. Verify PathEntity exists in `bot_paths` collection with matching `path` field
 3. The path must match **exactly** including query params (e.g., `?model_name=...`)
@@ -62,11 +64,13 @@ PathEntity.get_credentials_by_path(path)  # Returns None if missing
 **Cause**: Invalid or expired Azure AD credentials.
 
 **Diagnose**:
+
 1. Check CloudAdapter creation in `RoutesService.get_adapter()`:
    - File: `aihub_bot/aihub_bot/routes/RoutesService.py`
 2. Check credentials stored in PathEntity match Azure AD App Registration
 
 **Fix**:
+
 ```bash
 # Regenerate credentials
 az ad app credential reset --id <APP_ID>
@@ -82,6 +86,7 @@ az ad app credential reset --id <APP_ID>
 ### Bot service unreachable
 
 **Diagnose**:
+
 ```bash
 # Check if bot service is running
 docker compose -f docker-compose.dev.yml ps | grep bot
@@ -94,6 +99,7 @@ curl -s -o /dev/null -w "%{http_code}" http://localhost:8001/api/v1/agent/chat/c
 ```
 
 **Fix**:
+
 - Verify port 8001 is exposed and not blocked
 - Check gunicorn/uvicorn startup in logs
 - For DevTunnel: verify tunnel is active and port matches (8001)
@@ -109,11 +115,13 @@ curl -s -o /dev/null -w "%{http_code}" http://localhost:8001/api/v1/agent/chat/c
 **File**: `aihub_bot/aihub_bot/bots/chat/CompletionHandler.py` (line ~310)
 
 **Diagnose**:
+
 1. Check if the agent is running and processing events
 2. Check NATS connectivity between bot and agent
 3. Check agent logs for errors or slow LLM calls
 
 **Fix**:
+
 - Increase `typing_timeout_seconds` in controller: `completions_json(typing_timeout_seconds=120)`
 - Check agent is subscribed to correct NATS subjects
 - Check LLM endpoint is responsive
@@ -141,6 +149,7 @@ curl -s -o /dev/null -w "%{http_code}" http://localhost:8001/api/v1/agent/chat/c
 ### Agent not receiving messages
 
 **Diagnose**:
+
 ```
 File: aihub_bot/aihub_bot/runners/lifetime/lifetime_manager.py
 
@@ -150,6 +159,7 @@ File: aihub_bot/aihub_bot/runners/lifetime/lifetime_manager.py
 ```
 
 **Common causes**:
+
 - NATS server not running: `docker compose -f docker-compose.dev.yml ps nats`
 - Agent service not running (aihub_agent container)
 - Wrong agent_class or agent_id in endpoint URL
@@ -160,6 +170,7 @@ File: aihub_bot/aihub_bot/runners/lifetime/lifetime_manager.py
 **Cause**: `ExternalAgentEventDistributor` subscriber not receiving display events.
 
 **Diagnose**:
+
 1. Check the display_id and thread_id are correctly derived from conversation_id:
    - `thread_id = str_to_object_id(conversation_id)` (BaseChatBot line ~152)
    - `display_id = str_to_object_id(activity.id)` (BaseChatBot line ~153)
@@ -170,7 +181,8 @@ File: aihub_bot/aihub_bot/runners/lifetime/lifetime_manager.py
 
 **Cause**: Agent threw an error during processing.
 
-**Diagnose**: Check `resources.stop_event` in AgentCompletionHandler — if it's an `ExceptionEvent`, the error message is propagated as a `RuntimeError`.
+**Diagnose**: Check `resources.stop_event` in AgentCompletionHandler — if it's an `ExceptionEvent`, the error message is
+propagated as a `RuntimeError`.
 
 ---
 
@@ -183,10 +195,12 @@ File: aihub_bot/aihub_bot/runners/lifetime/lifetime_manager.py
 **File**: `aihub_bot/aihub_bot/bots/chat/CompletionHandler.py`
 
 **How it works**: In channels, the bot only responds if:
+
 1. Bot is **@mentioned** in the message, OR
 2. The conversation is already **marked as mentioned** (ongoing thread)
 
 **Diagnose**:
+
 - Check `_is_bot_mentioned()` — compares `mention.mentioned.id` with `activity.recipient.id`
 - Check `_is_mentioned_in_conversation()` — looks up `ConversationEntity.is_mentioned`
 - For DMs: check `_is_slack_direct_message()` regex: `^B[0-9A-Z]+:T[0-9A-Z]+:D[0-9A-Z]+:\d+[.]\d+$`
@@ -200,6 +214,7 @@ File: aihub_bot/aihub_bot/runners/lifetime/lifetime_manager.py
 **File**: `aihub_bot/aihub_bot/bots/chat/CompletionHandler.py` — `_update_slack_turn_context()`
 
 **Diagnose**:
+
 - Channel message regex: `^B[0-9A-Z]+:T[0-9A-Z]+:C[0-9A-Z]+$`
 - Thread messages get `:ts` appended to create thread-specific conversation ID
 - Check `channel_data["SlackMessage"]["event"]["ts"]` exists in Activity
@@ -210,11 +225,13 @@ File: aihub_bot/aihub_bot/runners/lifetime/lifetime_manager.py
 
 **File**: `aihub_bot/aihub_bot/bots/chat/ContentExtractor.py`
 
-**Diagnose**: Check `PathEntity.slack_token` is set for the bot's path — file downloads use this token via `SlackUtils.download_file()`.
+**Diagnose**: Check `PathEntity.slack_token` is set for the bot's path — file downloads use this token via
+`SlackUtils.download_file()`.
 
 ### Slack formatting broken
 
 **Expected conversions** (Markdown → Slack):
+
 - `**text**` → `*text*`
 - `[text](url)` → `<url|text>`
 
@@ -231,6 +248,7 @@ Check the formatting logic in the CompletionHandler response chain.
 **File**: `aihub_bot/aihub_bot/bots/chat/BaseChatBot.py` — `on_conversation_update_activity()`
 
 **How it works**:
+
 1. `on_conversation_update_activity` detects bot re-added (`members_added` contains bot)
 2. `ConversationTracker.mark_explicitly_deleted()` records this
 3. `completion_handler.delete_conversation_if_exists()` wipes conversation
@@ -244,6 +262,7 @@ Check the formatting logic in the CompletionHandler response chain.
 **File**: `aihub_bot/aihub_bot/bots/chat/BaseChatBot.py` — `_process_message()`
 
 **How it works**:
+
 1. `ConversationTracker.should_show_expiration_message()` checks if conversation existed before but is now gone
 2. If tracker exists AND not explicitly deleted AND ConversationEntity is gone → TTL expired
 
@@ -262,6 +281,7 @@ Check the formatting logic in the CompletionHandler response chain.
 ### Bot-in-the-loop questions not reaching Slack/Teams
 
 **Diagnose**:
+
 ```
 File: aihub_bot/aihub_bot/routes/bot_in_the_loop/BotInTheLoopHandler.py
 
@@ -276,6 +296,7 @@ File: aihub_bot/aihub_bot/routes/bot_in_the_loop/BotInTheLoopHandler.py
 **File**: `aihub_bot/aihub_bot/bots/bot_in_the_loop/BotInTheLoopBot.py`
 
 **Diagnose**:
+
 1. Check thread matching: `_find_matching_thread(base_conversation_id, thread_identifier)`
 2. Check `BotInTheLoopHandler.threads` dict has an active entry for the thread_id
 3. Check `ExternalAgentEventDistributor.distribute_event()` is called with correct thread_id
@@ -283,10 +304,12 @@ File: aihub_bot/aihub_bot/routes/bot_in_the_loop/BotInTheLoopHandler.py
 ### HITL thread identifier parsing
 
 **Slack format**:
+
 - Base: `B[bot_id]:T[team_id]:C[channel_id]`
 - With thread: `B[bot_id]:T[team_id]:C[channel_id]:[timestamp]`
 
 **Teams format**:
+
 - Base: `19:abc...@thread.tacv2`
 - With message: `19:abc...@thread.tacv2;messageid=123`
 
@@ -299,11 +322,13 @@ File: aihub_bot/aihub_bot/routes/bot_in_the_loop/BotInTheLoopHandler.py
 **File**: `aihub_bot/aihub_bot/bots/chat/CompletionHandler.py` — `send_response_stream()`
 
 **How streaming works**:
+
 1. First chunk → `send_activity()` (creates initial message)
 2. Subsequent chunks → `update_activity()` (updates in-place)
 3. Throttled by asyncio task completion (not time-based)
 
 **Diagnose**:
+
 - Check if first chunk arrives (if not, agent issue)
 - Check if `update_activity` throws (message too long → auto-splits)
 - Check `msg_too_long` error handling — creates new message when update exceeds limit
@@ -323,6 +348,7 @@ File: aihub_bot/aihub_bot/routes/bot_in_the_loop/BotInTheLoopHandler.py
 ### Conversation history empty
 
 **Diagnose**:
+
 1. Check MongoDB `bot_conversations` collection for the conversation_id + bot_id pair
 2. Check TTL index: `db.bot_conversations.getIndexes()` — look for `expireAfterSeconds`
 3. Check `ConversationEntity.add_messages_to_conversation()` is being called
@@ -332,6 +358,7 @@ File: aihub_bot/aihub_bot/routes/bot_in_the_loop/BotInTheLoopHandler.py
 **File**: `aihub_bot/aihub_bot/persistence/entities/ConversationEntity.py`
 
 **Diagnose**:
+
 - Check MongoDB connection: `MongoSettings.CONNECTION_STRING`
 - Check `AIHubSettings.MONGO_MAIN_DB_NAME` (database name)
 - Check the `bot_conversations` collection exists
@@ -361,25 +388,26 @@ docker compose -f docker-compose.dev.yml exec ferretdb mongosh --eval 'db.bot_co
 
 ## Key Files for Debugging
 
-| Category | File |
-|----------|------|
-| **Base bot** | `aihub_bot/aihub_bot/bots/chat/BaseChatBot.py` |
-| **Completion handler** | `aihub_bot/aihub_bot/bots/chat/CompletionHandler.py` |
-| **Agent handler** | `aihub_bot/aihub_bot/bots/chat/agent/AgentCompletionHandler.py` |
-| **Content extraction** | `aihub_bot/aihub_bot/bots/chat/ContentExtractor.py` |
-| **HITL handler** | `aihub_bot/aihub_bot/routes/bot_in_the_loop/BotInTheLoopHandler.py` |
-| **HITL bot** | `aihub_bot/aihub_bot/bots/bot_in_the_loop/BotInTheLoopBot.py` |
-| **Routes service** | `aihub_bot/aihub_bot/routes/RoutesService.py` |
-| **PathEntity** | `aihub_bot/aihub_bot/persistence/entities/PathEntity.py` |
-| **ConversationEntity** | `aihub_bot/aihub_bot/persistence/entities/ConversationEntity.py` |
-| **Lifetime manager** | `aihub_bot/aihub_bot/runners/lifetime/lifetime_manager.py` |
-| **Agent controller** | `aihub_bot/aihub_bot/routes/agent/AgentChatController.py` |
+| Category               | File                                                                |
+| ---------------------- | ------------------------------------------------------------------- |
+| **Base bot**           | `aihub_bot/aihub_bot/bots/chat/BaseChatBot.py`                      |
+| **Completion handler** | `aihub_bot/aihub_bot/bots/chat/CompletionHandler.py`                |
+| **Agent handler**      | `aihub_bot/aihub_bot/bots/chat/agent/AgentCompletionHandler.py`     |
+| **Content extraction** | `aihub_bot/aihub_bot/bots/chat/ContentExtractor.py`                 |
+| **HITL handler**       | `aihub_bot/aihub_bot/routes/bot_in_the_loop/BotInTheLoopHandler.py` |
+| **HITL bot**           | `aihub_bot/aihub_bot/bots/bot_in_the_loop/BotInTheLoopBot.py`       |
+| **Routes service**     | `aihub_bot/aihub_bot/routes/RoutesService.py`                       |
+| **PathEntity**         | `aihub_bot/aihub_bot/persistence/entities/PathEntity.py`            |
+| **ConversationEntity** | `aihub_bot/aihub_bot/persistence/entities/ConversationEntity.py`    |
+| **Lifetime manager**   | `aihub_bot/aihub_bot/runners/lifetime/lifetime_manager.py`          |
+| **Agent controller**   | `aihub_bot/aihub_bot/routes/agent/AgentChatController.py`           |
 
 ---
 
 ## Summary
 
 After investigating, provide a structured report with:
+
 - **Symptom category**: Which section from Step 1 matched
 - **Root cause**: Specific file and line responsible
 - **Affected files**: All files involved in the issue

@@ -1,15 +1,13 @@
 ---
 name: dependency-audit
-description: Audit Python and Node.js dependencies for outdated packages, security
-  vulnerabilities, license issues, and aihub-lib version consistency across scopes.
-  Use when user says 'check dependencies', 'audit packages', 'find vulnerabilities',
-  'outdated deps', 'license check', or 'are all scopes on the same aihub-lib version'.
+description: Audit Python and Node.js dependencies for outdated packages, security vulnerabilities, license issues, and aihub-lib version consistency across scopes. Use when user says 'check dependencies', 'audit packages', 'find vulnerabilities', 'outdated deps', 'license check', or 'are all scopes on the same aihub-lib version'.
 allowed-tools: Bash, Read, Grep, Glob
 ---
 
 # Dependency Health Audit
 
-Audit all project dependencies for outdated packages, vulnerabilities, and version consistency. Scope via `$ARGUMENTS`: a specific scope name (e.g., `aihub_api`), `frontend`, or `all` (default).
+Audit all project dependencies for outdated packages, vulnerabilities, and version consistency. Scope via `$ARGUMENTS`:
+a specific scope name (e.g., `aihub_api`), `frontend`, or `all` (default).
 
 ## Step 1: Audit Python Scopes
 
@@ -39,6 +37,7 @@ cd /home/user/aihub-core/<scope> && poetry run pip-licenses --format=table --ord
 ```
 
 Flag any packages with these license types:
+
 - **GPL** (any version) — copyleft, incompatible with proprietary use
 - **AGPL** — strong copyleft
 - **Unknown** — license not detected, needs manual review
@@ -56,13 +55,14 @@ Report outdated count and any security advisories.
 
 Produce a table:
 
-| Scope | Dep Count | Outdated | Vulnerabilities | aihub-lib Version | License Flags |
-|-------|-----------|----------|-----------------|-------------------|---------------|
-| aihub_lib | 45 | 3 | 0 | v1.2.3 | None |
-| aihub_api | 62 | 5 | 1 (moderate) | v1.2.3 | 1 unknown |
-| frontend | 38 | 2 | 0 | N/A | None |
+| Scope     | Dep Count | Outdated | Vulnerabilities | aihub-lib Version | License Flags |
+| --------- | --------- | -------- | --------------- | ----------------- | ------------- |
+| aihub_lib | 45        | 3        | 0               | v1.2.3            | None          |
+| aihub_api | 62        | 5        | 1 (moderate)    | v1.2.3            | 1 unknown     |
+| frontend  | 38        | 2        | 0               | N/A               | None          |
 
 Include actionable recommendations:
+
 - Critical vulnerabilities to fix immediately
 - aihub-lib version mismatches to align
 - Licenses requiring review

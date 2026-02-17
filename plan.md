@@ -2,16 +2,16 @@
 
 ## Vision
 
-Transform aihub-core from "good CLAUDE.md files + 7 legacy commands" into a **showcase
-reference implementation** of how an enterprise monorepo should be Claude Code enabled.
-Every common developer workflow — scaffolding agents, debugging events, managing Docker,
-running scoped tests, reviewing PRs, writing docs — gets a dedicated skill, agent, or hook.
+Transform aihub-core from "good CLAUDE.md files + 7 legacy commands" into a **showcase reference implementation** of how
+an enterprise monorepo should be Claude Code enabled. Every common developer workflow — scaffolding agents, debugging
+events, managing Docker, running scoped tests, reviewing PRs, writing docs — gets a dedicated skill, agent, or hook.
 
 ---
 
 ## Current State Summary
 
 **What exists:**
+
 - 10 AGENTS.md files (excellent progressive disclosure hierarchy)
 - 7 legacy slash commands in `.claude/commands/` (no frontmatter, no model-invocation)
 - 2 MCP servers (MongoDB read-only, AI-Hub API)
@@ -20,7 +20,9 @@ running scoped tests, reviewing PRs, writing docs — gets a dedicated skill, ag
 - No `.claude/skills/`, `.claude/agents/`, `.claude/hooks/` directories
 
 **What's missing for SOTA:**
-- No scaffolding skills for the platform's core abstractions (agents, pipelines, processes, API endpoints, frontend pages)
+
+- No scaffolding skills for the platform's core abstractions (agents, pipelines, processes, API endpoints, frontend
+  pages)
 - No custom subagents for specialized tasks (code review, event tracing, Docker ops, testing)
 - No project-level hooks (no auto-format, no security guards, no session setup)
 - No MCP for Phoenix observability (already referenced in AGENTS.md but not configured)
@@ -33,12 +35,13 @@ running scoped tests, reviewing PRs, writing docs — gets a dedicated skill, ag
 
 ## Phase 1: Foundation — Hooks & Settings (Week 1)
 
-Deterministic guardrails that enforce quality automatically. These benefit every
-subsequent phase because all future work goes through these gates.
+Deterministic guardrails that enforce quality automatically. These benefit every subsequent phase because all future
+work goes through these gates.
 
 ### 1.1 Create `.claude/hooks/` directory with 6 hook scripts
 
 #### Hook 1: `auto-format-python.sh` (PostToolUse → Edit|Write)
+
 - Detect if edited file is Python (`.py`)
 - Determine which scope the file belongs to (parse path for aihub_lib, aihub_agent, etc.)
 - Run `poetry run ruff format <file>` + `poetry run ruff check --fix <file>` within that scope
@@ -46,23 +49,27 @@ subsequent phase because all future work goes through these gates.
 - Handles edge case: file outside any scope (skip formatting)
 
 #### Hook 2: `auto-format-frontend.sh` (PostToolUse → Edit|Write)
+
 - Detect if edited file is TypeScript/Vue (`.ts`, `.vue`, `.tsx`)
 - Run `npx eslint --fix <file>` within aihub_web/aihub_web/
 - Exit 0 always
 
 #### Hook 3: `protect-sensitive-files.sh` (PreToolUse → Edit|Write|Read)
+
 - Parse tool input for file path
-- Block access to patterns: `*.env*`, `*/certs/*`, `*credentials*`, `*secret*`,
-  `*.pem`, `*.key`, `*_TOKEN*` files, `poetry.lock` (prevent manual edits)
+- Block access to patterns: `*.env*`, `*/certs/*`, `*credentials*`, `*secret*`, `*.pem`, `*.key`, `*_TOKEN*` files,
+  `poetry.lock` (prevent manual edits)
 - Exit 2 with descriptive message if blocked
 - Exit 0 otherwise
 
 #### Hook 4: `stop-hook-git-check.sh` (Stop)
+
 - Port existing `/root/.claude/stop-hook-git-check.sh` to project level
 - Same functionality: check uncommitted changes, untracked files, unpushed commits
 - Register in project `.claude/settings.json` (portable with repo)
 
 #### Hook 5: `session-start.sh` (SessionStart)
+
 - Detect environment: check `$CLAUDE_CODE_REMOTE` for web vs local
 - For web sessions (async mode to reduce startup latency):
   - Install Poetry if missing
@@ -75,9 +82,10 @@ subsequent phase because all future work goes through these gates.
   - Check if Docker dev stack is running (quick `docker compose ps` check)
 
 #### Hook 6: `scope-boundary-check.sh` (PreToolUse → Edit|Write)
+
 - Parse file path to determine target scope
-- Check if the edit introduces imports from other scopes that bypass aihub_lib
-  (e.g., aihub_api importing directly from aihub_agent — violation)
+- Check if the edit introduces imports from other scopes that bypass aihub_lib (e.g., aihub_api importing directly from
+  aihub_agent — violation)
 - Warn (stderr message, exit 0) but don't block — just make Claude aware
 - Exception: aihub_process is allowed to import aihub_agent (documented dev dependency)
 
@@ -163,6 +171,7 @@ CLAUDE.local.md
 ### 1.4 `CLAUDE.local.md` template
 
 Create `.claude/CLAUDE.local.md.template` as a documented starting point:
+
 ```markdown
 # Personal Claude Code Overrides
 # Copy this to CLAUDE.local.md (gitignored) for local preferences.
@@ -177,12 +186,13 @@ Create `.claude/CLAUDE.local.md.template` as a documented starting point:
 
 ## Phase 2: Migrate Legacy Commands to Skills (Week 1-2)
 
-Move all 7 commands from `.claude/commands/` to `.claude/skills/` with proper
-SKILL.md frontmatter, then delete the commands directory.
+Move all 7 commands from `.claude/commands/` to `.claude/skills/` with proper SKILL.md frontmatter, then delete the
+commands directory.
 
 ### Migration for each command:
 
 #### 2.1 `create-pr` → `.claude/skills/create-pr/SKILL.md`
+
 ```yaml
 ---
 name: create-pr
@@ -192,10 +202,12 @@ description: Pre-pull request validation and preparation. Run formatting, lintin
 allowed-tools: Bash, Read, Grep, Glob, Edit
 ---
 ```
+
 - Preserve existing 237 lines of instructions
 - User-invocable only (side-effects: git operations, gh CLI)
 
 #### 2.2 `update-doc` → `.claude/skills/update-doc/SKILL.md`
+
 ```yaml
 ---
 name: update-doc
@@ -204,9 +216,11 @@ description: Synchronize documentation with code changes. Update READMEs, docstr
 allowed-tools: Read, Grep, Glob, Edit, Write
 ---
 ```
+
 - Model-invocable (Claude can auto-suggest when docs drift after code changes)
 
 #### 2.3 `explain` → `.claude/skills/explain/SKILL.md`
+
 ```yaml
 ---
 name: explain
@@ -215,9 +229,11 @@ description: Analyze and explain a specific part of the codebase. Creates or upd
 allowed-tools: Read, Grep, Glob
 ---
 ```
+
 - Model-invocable (read-only, advisory)
 
 #### 2.4 `document-decision` → `.claude/skills/document-decision/SKILL.md`
+
 ```yaml
 ---
 name: document-decision
@@ -229,6 +245,7 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 ```
 
 #### 2.5 `document-feature` → `.claude/skills/document-feature/SKILL.md`
+
 ```yaml
 ---
 name: document-feature
@@ -240,6 +257,7 @@ allowed-tools: Read, Grep, Glob, Write
 ```
 
 #### 2.6 `document-solution` → `.claude/skills/document-solution/SKILL.md`
+
 ```yaml
 ---
 name: document-solution
@@ -251,6 +269,7 @@ allowed-tools: Read, Edit, Grep
 ```
 
 #### 2.7 `implement-feedback-from-pr` → `.claude/skills/implement-feedback-from-pr/SKILL.md`
+
 ```yaml
 ---
 name: implement-feedback-from-pr
@@ -267,8 +286,8 @@ allowed-tools: Bash, Read, Edit, Grep, Glob
 
 ## Phase 3: Platform Scaffolding Skills (Week 2-3)
 
-These are entirely new skills that encode the platform's development patterns into
-reusable, one-command workflows. Each eliminates significant boilerplate.
+These are entirely new skills that encode the platform's development patterns into reusable, one-command workflows. Each
+eliminates significant boilerplate.
 
 ### 3.1 `scaffold-agent` — Generate complete AI agent boilerplate
 
@@ -286,22 +305,23 @@ allowed-tools: Read, Write, Bash, Grep, Glob
 ```
 
 **What it generates** (based on patterns discovered in aihub_agent):
-1. Agent class inheriting from `Agent` with `@step` decorated methods
-2. Custom events (StartEvent, StopEvent) following BaseEvent hierarchy
-3. AgentConfig with form duality (`as_form()` factory method)
-4. StepConfig subclasses if agent has configurable steps
-5. `trigger.py` for one-shot testing
-6. `run.py` for interactive development
-7. `tests/` directory with:
-   - BDD `.feature` file with happy path scenario
-   - Step implementation file using `AgentTestRunner`
-   - `@async_test` decorator integration
-8. `Dockerfile` following multi-stage build pattern
-9. Entry in playground for Dagster-compatible debugging
+
+01. Agent class inheriting from `Agent` with `@step` decorated methods
+02. Custom events (StartEvent, StopEvent) following BaseEvent hierarchy
+03. AgentConfig with form duality (`as_form()` factory method)
+04. StepConfig subclasses if agent has configurable steps
+05. `trigger.py` for one-shot testing
+06. `run.py` for interactive development
+07. `tests/` directory with:
+    - BDD `.feature` file with happy path scenario
+    - Step implementation file using `AgentTestRunner`
+    - `@async_test` decorator integration
+08. `Dockerfile` following multi-stage build pattern
+09. Entry in playground for Dagster-compatible debugging
 10. README.md for the agent
 
-**Supporting files**: Include reference to existing playground patterns
-(`/aihub_agent/playground/minimal_workflow/`) as templates.
+**Supporting files**: Include reference to existing playground patterns (`/aihub_agent/playground/minimal_workflow/`) as
+templates.
 
 ### 3.2 `scaffold-pipeline` — Generate Dagster pipeline boilerplate
 
@@ -318,6 +338,7 @@ allowed-tools: Read, Write, Bash, Grep, Glob
 ```
 
 **What it generates** (based on aihub_pipeline patterns):
+
 1. Asset factory in `assets/factories/<domain>/`
 2. I/O manager in `io/<domain>/`
 3. Resources in `resources/<domain>/`
@@ -344,6 +365,7 @@ allowed-tools: Read, Write, Bash, Grep, Glob
 ```
 
 **What it generates** (based on aihub_process patterns):
+
 1. AgenticProcess class with `@process_step` methods
 2. WorkEvent / WorkRequestEvent subclasses per entity type
 3. Entity delegation annotations (Agent.In/Out, Human.In/Out, Program.In/Out)
@@ -368,6 +390,7 @@ allowed-tools: Read, Write, Bash, Grep, Glob
 ```
 
 **What it generates** (based on aihub_api patterns):
+
 1. Controller class with fluent API (`def create_resource(self) -> Self:`)
 2. Service class with `@staticmethod @trace_fn` methods
 3. Request/Response DTOs (Pydantic BaseModel)
@@ -392,6 +415,7 @@ allowed-tools: Read, Write, Bash, Grep, Glob
 ```
 
 **What it generates** (based on aihub_web patterns):
+
 1. Query composable (`composables/<service>/use<Service>.ts`) with Pinia-Colada
 2. Mutation composable (`composables/<service>/useCreate<Service>.ts`)
 3. List page (`pages/service/<service>.vue`) with StructuralColumn
@@ -415,6 +439,7 @@ allowed-tools: Read, Write, Bash, Grep, Glob
 ```
 
 **What it generates** (based on aihub_bot patterns):
+
 1. ChatBot subclass extending `BaseChatBot`
 2. CompletionHandler for response generation
 3. Channel-specific message formatting
@@ -443,6 +468,7 @@ allowed-tools: Bash, Read, Grep, Glob
 ```
 
 **Logic**:
+
 1. Run `git diff --name-only` to find changed files
 2. Map files to scopes (aihub_lib → aihub_agent → aihub_api, etc.)
 3. Include downstream scopes (changes to aihub_lib affect all consumers)
@@ -465,6 +491,7 @@ allowed-tools: Bash, Read
 ```
 
 **Capabilities**:
+
 - `$ARGUMENTS = up`: Start dev stack (`docker compose -f docker-compose.dev.yml up -d`)
 - `$ARGUMENTS = down`: Stop dev stack
 - `$ARGUMENTS = health`: Check all service health statuses, report unhealthy
@@ -487,6 +514,7 @@ allowed-tools: Read, Bash, Grep, Glob
 ```
 
 **Logic**:
+
 1. Parse all 4 YAML locale files (`aihub_web/aihub_web/i18n/locales/{de,en,fr,it}.yaml`)
 2. Extract all key paths recursively
 3. Compare key sets across languages
@@ -509,6 +537,7 @@ allowed-tools: Bash, Read
 ```
 
 **Logic**:
+
 1. Check if API is running at http://localhost:8000
 2. If not, warn user to start it (or offer to run `make run-dev` in background)
 3. Run `cd aihub_web/aihub_web && pnpm generate-sdk`
@@ -530,6 +559,7 @@ allowed-tools: Bash, Read, Grep, Glob
 ```
 
 **Logic**:
+
 1. For each Python scope: `poetry show --outdated`
 2. For frontend: `pnpm outdated`
 3. Check for known vulnerabilities: `poetry audit` (if available) or `pip-audit`
@@ -553,6 +583,7 @@ allowed-tools: Read, Grep, Glob
 ```
 
 **Logic**:
+
 1. Find all BaseEvent subclasses across all scopes
 2. Verify each has `_event_name` set (auto-registration)
 3. Check ControlEvent vs DisplayEvent classification
@@ -575,6 +606,7 @@ allowed-tools: Bash, Read, Grep, Glob
 ```
 
 **Logic**:
+
 1. Accept agent class name as argument
 2. Find agent definition, read its @step methods
 3. Map expected event flow (StartEvent → intermediate events → StopEvent)
@@ -598,6 +630,7 @@ allowed-tools: Bash, Read, Grep, Glob
 ```
 
 **Logic**:
+
 1. Run `make pr-ready` at root (all scopes: format + lint + typecheck)
 2. Run `make test` in each scope with results tracking
 3. Verify version consistency (all scopes at same aihub_lib tag)
@@ -631,6 +664,7 @@ memory: project
 ```
 
 **Instructions**:
+
 - Always start by reading the relevant scope's AGENTS.md
 - Trace cross-scope connections (e.g., agent events → API WebSocket → frontend)
 - Build persistent knowledge in MEMORY.md:
@@ -656,6 +690,7 @@ model: sonnet
 ```
 
 **Instructions**:
+
 - Read the relevant scope's AGENTS.md for conventions
 - Check coding style: type hints (mandatory), Pydantic over dicts, async consistently
 - Security: OWASP top 10, no SQL injection in MongoDB queries, proper auth checks
@@ -680,6 +715,7 @@ memory: project
 ```
 
 **Instructions**:
+
 - Trace complete event lifecycle: Agent @step → NATS publish → API subscribe → WebSocket → Frontend
 - Map ControlEvent flows (workflow execution) vs DisplayEvent flows (UI updates)
 - Verify topic hierarchy (Thread → Display → Run scoping)
@@ -702,6 +738,7 @@ model: haiku
 ```
 
 **Instructions**:
+
 - Know the 5 network topology (proxy, backend, data, storage, egress)
 - Understand service dependencies and startup order
 - Know health check endpoints for each service
@@ -725,6 +762,7 @@ model: sonnet
 ```
 
 **Instructions**:
+
 - Know the test runner hierarchy (AgentTestRunner, ProcessTestRunner, ApiTestRunner, BotTestRunner)
 - Understand BDD patterns (Gherkin features, step implementations, @async_test)
 - Identify untested code paths by comparing code vs test coverage
@@ -748,6 +786,7 @@ model: sonnet
 ```
 
 **Instructions**:
+
 - Know the composable pattern (defineQuery, defineMutation, useQueryCache)
 - Understand SDK generation flow (API → OpenAPI → HeyAPI → TypeScript)
 - Know PrimeVue component library and Tailwind conventions
@@ -772,6 +811,7 @@ memory: project
 ```
 
 **Instructions**:
+
 - Compare git log dates of code files vs their documentation
 - Check README.md files exist for all significant directories
 - Verify AGENTS.md files reference current file paths (not stale)
@@ -798,14 +838,14 @@ exec npx -y mcp-remote@latest http://localhost:6006/mcp
 ```
 
 Register in `.mcp.json`:
+
 ```json
 "phoenix": {
   "command": "./.claude/mcp/mcp-phoenix.sh"
 }
 ```
 
-**Enables**: Query traces, view LLM call details, analyze agent performance
-directly from Claude Code sessions.
+**Enables**: Query traces, view LLM call details, analyze agent performance directly from Claude Code sessions.
 
 ### 6.2 NATS Monitoring MCP Server
 
@@ -821,13 +861,13 @@ exec npx -y mcp-remote@latest http://localhost:8222/mcp 2>/dev/null || \
   echo "NATS monitoring not available as MCP. Use HTTP: http://localhost:8222"
 ```
 
-**Note**: NATS may not have a native MCP endpoint. In that case, create a
-lightweight wrapper using `fastmcp` that exposes NATS monitoring endpoints
-(`/connz`, `/routez`, `/subsz`, `/varz`) as MCP tools.
+**Note**: NATS may not have a native MCP endpoint. In that case, create a lightweight wrapper using `fastmcp` that
+exposes NATS monitoring endpoints (`/connz`, `/routez`, `/subsz`, `/varz`) as MCP tools.
 
 ### 6.3 Review `.mcp.json` configuration
 
 Update to include all configured servers with clear documentation:
+
 ```json
 {
   "mcpServers": {
@@ -955,19 +995,20 @@ repos:
 **File**: `aihub_doc/arc42/decisions/2026_02_11_claude-code-sota-enablement.md`
 
 Document the entire migration:
+
 - **Context**: Moving from legacy commands to modern Skills, adding hooks/agents/MCP
-- **Decision Drivers**: Developer productivity, deterministic enforcement, context
-  window efficiency, team standardization, onboarding speed
-- **Decision**: Adopt Skills system (replacing commands), project-level hooks,
-  custom subagents with memory, enhanced MCP, scaffolding workflows
+- **Decision Drivers**: Developer productivity, deterministic enforcement, context window efficiency, team
+  standardization, onboarding speed
+- **Decision**: Adopt Skills system (replacing commands), project-level hooks, custom subagents with memory, enhanced
+  MCP, scaffolding workflows
 - **Consequences**:
-  - Positive: Faster onboarding, consistent code quality, reusable workflows,
-    portable configuration
+  - Positive: Faster onboarding, consistent code quality, reusable workflows, portable configuration
   - Negative: Initial migration effort, team needs to learn new invocations
 
 ### 8.2 Update root README.md
 
 Update the "AI Coding Assistant Integration" section to reflect:
+
 - Skills (not slash commands) — list all 15+ skills with descriptions
 - Custom subagents — list all 7 with purposes
 - Hooks — explain the 6 guardrails
@@ -977,6 +1018,7 @@ Update the "AI Coding Assistant Integration" section to reflect:
 ### 8.3 Update root AGENTS.md
 
 Add brief section on:
+
 - `CLAUDE.local.md` pattern for personal overrides
 - Skills invocation (`/skill-name`)
 - Custom subagent usage
@@ -985,6 +1027,7 @@ Add brief section on:
 ### 8.4 Create `.claude/README.md`
 
 Document the `.claude/` directory structure for new contributors:
+
 ```markdown
 # Claude Code Configuration
 
@@ -1008,17 +1051,17 @@ Document the `.claude/` directory structure for new contributors:
 
 ### File Count by Phase
 
-| Phase | New Files | Modified Files | Deleted Files |
-|-------|-----------|----------------|---------------|
-| 1. Hooks & Settings | 8 | 2 | 0 |
-| 2. Migrate Commands | 7 | 0 | 7 |
-| 3. Scaffolding Skills | 6 | 0 | 0 |
-| 4. DX Skills | 8 | 0 | 0 |
-| 5. Subagents | 7 | 0 | 0 |
-| 6. MCP | 2 | 1 | 0 |
-| 7. Infrastructure | 1 | 3 | 0 |
-| 8. Documentation | 4 | 2 | 0 |
-| **Total** | **~43** | **~8** | **7** |
+| Phase                 | New Files | Modified Files | Deleted Files |
+| --------------------- | --------- | -------------- | ------------- |
+| 1. Hooks & Settings   | 8         | 2              | 0             |
+| 2. Migrate Commands   | 7         | 0              | 7             |
+| 3. Scaffolding Skills | 6         | 0              | 0             |
+| 4. DX Skills          | 8         | 0              | 0             |
+| 5. Subagents          | 7         | 0              | 0             |
+| 6. MCP                | 2         | 1              | 0             |
+| 7. Infrastructure     | 1         | 3              | 0             |
+| 8. Documentation      | 4         | 2              | 0             |
+| **Total**             | **~43**   | **~8**         | **7**         |
 
 ### Dependency Order
 
@@ -1031,12 +1074,13 @@ Phase 1 → Phase 7 (Infrastructure)
 All phases → Phase 8 (Documentation)
 ```
 
-Phase 1 is the foundation — everything else builds on having proper hooks and settings.
-Phases 2-7 can be parallelized after Phase 1 completes.
+Phase 1 is the foundation — everything else builds on having proper hooks and settings. Phases 2-7 can be parallelized
+after Phase 1 completes.
 
 ### Verification Per Phase
 
 After each phase:
+
 1. Verify hooks fire correctly with test edits
 2. Verify skills are listed via `/skills` and invocable via `/skill-name`
 3. Verify subagents appear via `/agents`

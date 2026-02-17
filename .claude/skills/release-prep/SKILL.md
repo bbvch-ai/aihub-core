@@ -1,20 +1,18 @@
 ---
 name: release-prep
-description: Run comprehensive pre-release validation across all scopes. Checks formatting,
-  linting, type checking, tests, version consistency, git cleanliness, compose generation,
-  and documentation freshness. Use when user says 'prepare for release', 'pre-merge checks',
-  'is this ready to merge', 'run all checks', 'pr-ready all scopes', or 'release validation'.
-  Supports 'quick' mode for lint-only.
+description: Run comprehensive pre-release validation across all scopes. Checks formatting, linting, type checking, tests, version consistency, git cleanliness, compose generation, and documentation freshness. Use when user says 'prepare for release', 'pre-merge checks', 'is this ready to merge', 'run all checks', 'pr-ready all scopes', or 'release validation'. Supports 'quick' mode for lint-only.
 allowed-tools: Bash, Read, Grep, Glob
 ---
 
 # Pre-Release Validation
 
-Run all quality gates before merging to main or creating a release. Mode via `$ARGUMENTS`: `quick` (lint-only) or `full` (default, everything).
+Run all quality gates before merging to main or creating a release. Mode via `$ARGUMENTS`: `quick` (lint-only) or `full`
+(default, everything).
 
 ## Quick Mode
 
-If `$ARGUMENTS` contains `quick`, run ONLY Checks 1, 3, and 4 (format/lint, version consistency, git cleanliness). Skip tests, compose generation, and documentation checks.
+If `$ARGUMENTS` contains `quick`, run ONLY Checks 1, 3, and 4 (format/lint, version consistency, git cleanliness). Skip
+tests, compose generation, and documentation checks.
 
 ## Check 1: Format and Lint (All Scopes)
 
@@ -22,8 +20,8 @@ If `$ARGUMENTS` contains `quick`, run ONLY Checks 1, 3, and 4 (format/lint, vers
 cd /home/user/aihub-core && make pr-ready
 ```
 
-**Pass criteria**: Zero errors remaining after auto-fix completes.
-**If it fails**: Review the error output. Common issues are import ordering (fixed by ruff) and type errors (require manual fixes).
+**Pass criteria**: Zero errors remaining after auto-fix completes. **If it fails**: Review the error output. Common
+issues are import ordering (fixed by ruff) and type errors (require manual fixes).
 
 ## Check 2: Tests (All Scopes)
 
@@ -62,7 +60,8 @@ If a scope fails, continue running remaining scopes to collect all failures.
 cd /home/user/aihub-core && make generate-compose && git diff --stat
 ```
 
-**Pass criteria**: No diff after regeneration. If files changed, the compose templates were modified without regenerating.
+**Pass criteria**: No diff after regeneration. If files changed, the compose templates were modified without
+regenerating.
 
 ## Check 6: Documentation Freshness
 
@@ -74,14 +73,14 @@ cd /home/user/aihub-core && make generate-compose && git diff --stat
 
 ## Summary Report
 
-| Check | Status | Details |
-|-------|--------|---------|
-| Format & Lint | PASS | Zero errors |
-| Tests | FAIL | aihub_api: 2 failures |
-| Version Consistency | PASS | All scopes: v1.2.3 |
-| Git Cleanliness | WARN | 1 uncommitted file |
-| Compose Generation | PASS | No diff |
-| Documentation | SKIP | No scope READMEs changed |
+| Check               | Status | Details                  |
+| ------------------- | ------ | ------------------------ |
+| Format & Lint       | PASS   | Zero errors              |
+| Tests               | FAIL   | aihub_api: 2 failures    |
+| Version Consistency | PASS   | All scopes: v1.2.3       |
+| Git Cleanliness     | WARN   | 1 uncommitted file       |
+| Compose Generation  | PASS   | No diff                  |
+| Documentation       | SKIP   | No scope READMEs changed |
 
 ## Examples
 
@@ -91,7 +90,9 @@ cd /home/user/aihub-core && make generate-compose && git diff --stat
 
 ## Troubleshooting
 
-- **"make pr-ready" not found**: Ensure you are running from the repo root `/home/user/aihub-core/`, not a scope directory.
+- **"make pr-ready" not found**: Ensure you are running from the repo root `/home/user/aihub-core/`, not a scope
+  directory.
 - **Tests fail with import errors**: Run `poetry install` in the failing scope first.
 - **Compose generation shows diff**: Run `make generate-compose` and commit the regenerated files.
-- **Version mismatch across scopes**: Update the lagging scope's `pyproject.toml` to reference the correct aihub-lib tag, then run `poetry lock --no-update`.
+- **Version mismatch across scopes**: Update the lagging scope's `pyproject.toml` to reference the correct aihub-lib
+  tag, then run `poetry lock --no-update`.

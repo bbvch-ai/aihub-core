@@ -23,20 +23,21 @@ Generate a new Vue component. Component name and type should be provided via `$A
 
 Based on the user's description, identify the component pattern:
 
-| Pattern | When to Use |
-|---------|-------------|
-| **Card** | Clickable item in a grid, shows summary info |
-| **Empty Card** | Dashed-border placeholder for "add new" action |
-| **Modal** | Dialog for create/edit forms with v-model visibility |
+| Pattern        | When to Use                                             |
+| -------------- | ------------------------------------------------------- |
+| **Card**       | Clickable item in a grid, shows summary info            |
+| **Empty Card** | Dashed-border placeholder for "add new" action          |
+| **Modal**      | Dialog for create/edit forms with v-model visibility    |
 | **List/Table** | DataTable with columns, selection, and custom templates |
-| **Display** | Read-only data visualization (charts, stats, details) |
-| **Form** | FormKit-based input form (standalone or inside modal) |
+| **Display**    | Read-only data visualization (charts, stats, details)   |
+| **Form**       | FormKit-based input form (standalone or inside modal)   |
 
 ## Step 2: Create the Component File
 
 Place in `aihub_web/aihub_web/components/<Domain>/<ComponentName>.vue`.
 
 Naming rules:
+
 - **Directory**: Domain/resource name in PascalCase (`Agent/`, `Thread/`, `Process/`)
 - **File**: PascalCase descriptive name (`Card.vue`, `CreateModal.vue`, `List.vue`)
 - **Auto-import name**: Directory + File = `AgentCard`, `ThreadList`, `ProcessCreateModal`
@@ -114,15 +115,15 @@ const isActive = computed(() => route.params.id === props.item.id)
 
 **Card Design Token Reference:**
 
-| Element | Classes |
-|---------|---------|
-| Container | `rounded-xl border border-surface-200 p-4 dark:border-surface-800` |
-| Hover | `hover:bg-surface-100 hover:dark:bg-surface-800` |
-| Active | `bg-surface-100 dark:bg-surface-800` |
-| Icon container | `rounded-full bg-white p-3 dark:bg-surface-900` |
-| Title | `font-semibold opacity-80` |
-| Subtitle | `text-xs font-light opacity-70` |
-| Description | `text-xs` |
+| Element        | Classes                                                            |
+| -------------- | ------------------------------------------------------------------ |
+| Container      | `rounded-xl border border-surface-200 p-4 dark:border-surface-800` |
+| Hover          | `hover:bg-surface-100 hover:dark:bg-surface-800`                   |
+| Active         | `bg-surface-100 dark:bg-surface-800`                               |
+| Icon container | `rounded-full bg-white p-3 dark:bg-surface-900`                    |
+| Title          | `font-semibold opacity-80`                                         |
+| Subtitle       | `text-xs font-light opacity-70`                                    |
+| Description    | `text-xs`                                                          |
 
 ---
 
@@ -158,13 +159,13 @@ const emit = defineEmits<{ add: [] }>()
 
 **Empty Card Design Token Reference:**
 
-| Element | Classes |
-|---------|---------|
-| Container | `rounded-xl border-2 border-dashed border-surface-300 p-4 dark:border-surface-600` |
-| Hover | `hover:border-primary-500 hover:bg-surface-50 dark:hover:bg-surface-800` |
-| Icon | `pi pi-plus-circle text-surface-400` at `1.5rem` |
-| Title | `font-medium text-surface-600 dark:text-surface-400` |
-| Description | `text-sm text-surface-500 dark:text-surface-400` |
+| Element     | Classes                                                                            |
+| ----------- | ---------------------------------------------------------------------------------- |
+| Container   | `rounded-xl border-2 border-dashed border-surface-300 p-4 dark:border-surface-600` |
+| Hover       | `hover:border-primary-500 hover:bg-surface-50 dark:hover:bg-surface-800`           |
+| Icon        | `pi pi-plus-circle text-surface-400` at `1.5rem`                                   |
+| Title       | `font-medium text-surface-600 dark:text-surface-400`                               |
+| Description | `text-sm text-surface-500 dark:text-surface-400`                                   |
 
 ---
 
@@ -226,6 +227,7 @@ const handleSubmit = async () => {
 ```
 
 **Modal Pattern Notes:**
+
 - Use `v-model` pattern: prop `modelValue` + emit `update:modelValue`
 - Parent uses `<MyModal v-model="isOpen" @success="handleSuccess" />`
 - PrimeVue `Dialog` with `modal` prop for backdrop
@@ -280,6 +282,7 @@ const selectedItem = computed(() => {
 ```
 
 **DataTable Pattern Notes:**
+
 - Always use `size="small"` for compact display
 - `selection-mode="single"` for row click selection
 - `data-key="id"` for row identity
@@ -330,25 +333,29 @@ components/
 
 **Input**: `$ARGUMENTS = "Pipeline Card"`
 
-**Output**: `aihub_web/aihub_web/components/Pipeline/Card.vue` -- Pattern A card component with `PipelineDto` typed props, click emit, active state from route params, icon + title + status Tag layout.
+**Output**: `aihub_web/aihub_web/components/Pipeline/Card.vue` -- Pattern A card component with `PipelineDto` typed
+props, click emit, active state from route params, icon + title + status Tag layout.
 
 **Input**: `$ARGUMENTS = "Connector CreateModal"`
 
-**Output**: `aihub_web/aihub_web/components/Connector/CreateModal.vue` -- Pattern C modal with `v-model:visible`, `useCreateConnector()` mutation, cancel/submit footer buttons, and `success` emit.
+**Output**: `aihub_web/aihub_web/components/Connector/CreateModal.vue` -- Pattern C modal with `v-model:visible`,
+`useCreateConnector()` mutation, cancel/submit footer buttons, and `success` emit.
 
 **Input**: `$ARGUMENTS = "Knowledge List table"`
 
-**Output**: `aihub_web/aihub_web/components/Knowledge/List.vue` -- Pattern D DataTable with `KnowledgeDto[]` prop, single selection mode, custom column templates for status and dates.
+**Output**: `aihub_web/aihub_web/components/Knowledge/List.vue` -- Pattern D DataTable with `KnowledgeDto[]` prop,
+single selection mode, custom column templates for status and dates.
 
-**Auto-import name resolution**: Directory + File = component name. `Pipeline/Card.vue` becomes `<PipelineCard />`, `Connector/CreateModal.vue` becomes `<ConnectorCreateModal />`.
+**Auto-import name resolution**: Directory + File = component name. `Pipeline/Card.vue` becomes `<PipelineCard />`,
+`Connector/CreateModal.vue` becomes `<ConnectorCreateModal />`.
 
 ## Troubleshooting
 
-| Problem | Cause | Fix |
-|---------|-------|-----|
-| Component not auto-imported | Wrong directory or naming | Must be under `components/` in PascalCase directory, file must be PascalCase `.vue` |
-| Raw HTML elements in template | Not using PrimeVue | Replace `button` with `Button`, `input` with FormKit input, `select` with FormKit Select |
-| Dark mode colors broken | Missing `dark:` variants | Every `bg-*`, `text-*`, `border-*` class needs a corresponding `dark:` variant |
-| Props not type-safe | Using `defineProps({})` object syntax | Use generic syntax: `defineProps<{ item: ResourceDto }>()` with SDK types |
+| Problem                                 | Cause                                     | Fix                                                                                                                 |
+| --------------------------------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Component not auto-imported             | Wrong directory or naming                 | Must be under `components/` in PascalCase directory, file must be PascalCase `.vue`                                 |
+| Raw HTML elements in template           | Not using PrimeVue                        | Replace `button` with `Button`, `input` with FormKit input, `select` with FormKit Select                            |
+| Dark mode colors broken                 | Missing `dark:` variants                  | Every `bg-*`, `text-*`, `border-*` class needs a corresponding `dark:` variant                                      |
+| Props not type-safe                     | Using `defineProps({})` object syntax     | Use generic syntax: `defineProps<{ item: ResourceDto }>()` with SDK types                                           |
 | FormKit-wrapped component not rendering | Imported from PrimeVue instead of FormKit | `InputText`, `Textarea`, `Select`, `MultiSelect`, etc. are excluded from PrimeVue auto-import; use FormKit versions |
-| Delete button triggers card click | Missing `@click.stop` | Add `.stop` modifier to prevent event bubbling: `@click.stop="confirmDelete"` |
+| Delete button triggers card click       | Missing `@click.stop`                     | Add `.stop` modifier to prevent event bubbling: `@click.stop="confirmDelete"`                                       |

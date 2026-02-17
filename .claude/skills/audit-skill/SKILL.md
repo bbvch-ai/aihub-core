@@ -13,18 +13,16 @@ allowed-tools: Bash(find:*) Bash(grep:*) Bash(git:*) Bash(cat:*) Bash(head:*) Ba
 
 # Build or Review Codebase-Specific Skills
 
-You help engineers build skills that encode THIS codebase's specific
-workflows, and you review contributed skills to keep generic junk out
-of the skills directory.
+You help engineers build skills that encode THIS codebase's specific workflows, and you review contributed skills to
+keep generic junk out of the skills directory.
 
 ## Core Principle: The Portability Test
 
-A skill belongs in this repo's `.claude/skills/` ONLY if it would
-**fail** in a different codebase. If someone could drop the skill into
-an unrelated project and it would work unchanged, it's generic and
-does not belong here.
+A skill belongs in this repo's `.claude/skills/` ONLY if it would **fail** in a different codebase. If someone could
+drop the skill into an unrelated project and it would work unchanged, it's generic and does not belong here.
 
 Concretely, a codebase-specific skill:
+
 - References ≥3 real file paths, commands, or patterns from THIS repo
 - Encodes knowledge about THIS architecture, not general programming
 - Mentions specific tools, helpers, or conventions unique to THIS team
@@ -42,11 +40,9 @@ Before writing anything, determine whether this SHOULD be a skill:
 **Ask yourself (and the user if unclear):**
 
 1. **Is this multi-step?** Single-step procedures belong in CLAUDE.md.
-2. **Is this codebase-specific?** Generic programming workflows
-   (writing tests, creating components, using git) don't need skills
-   unless your codebase does them in a non-obvious way.
-3. **Is this frequent enough?** If it happens <1x/month, a doc
-   pointer in CLAUDE.md is sufficient.
+2. **Is this codebase-specific?** Generic programming workflows (writing tests, creating components, using git) don't
+   need skills unless your codebase does them in a non-obvious way.
+3. **Is this frequent enough?** If it happens \<1x/month, a doc pointer in CLAUDE.md is sufficient.
 4. **Is it already covered?** Check existing skills and CLAUDE.md:
 
 ```bash
@@ -60,17 +56,16 @@ done
 cat CLAUDE.md 2>/dev/null
 ```
 
-5. **Should it be a hook instead?** If the rule is "always do X after
-   Y" and X is deterministic, a PostToolUse hook is better.
+5. **Should it be a hook instead?** If the rule is "always do X after Y" and X is deterministic, a PostToolUse hook is
+   better.
 
-If the answer to questions 1-3 is "no" or question 4-5 is "yes",
-tell the user why a skill isn't the right tool and suggest the
-alternative.
+If the answer to questions 1-3 is "no" or question 4-5 is "yes", tell the user why a skill isn't the right tool and
+suggest the alternative.
 
 ### Step 2: Find the Existing Pattern
 
-The skill should encode what senior engineers already do, not invent
-a new procedure. Investigate how this workflow actually happens today:
+The skill should encode what senior engineers already do, not invent a new procedure. Investigate how this workflow
+actually happens today:
 
 ```bash
 # Find example files that follow the pattern
@@ -92,6 +87,7 @@ git log --pretty=format: --name-only -100 | \
 ```
 
 Read 2-3 real examples of this workflow being executed. Note:
+
 - The exact files created or modified
 - The exact commands run for verification
 - The order of operations
@@ -143,24 +139,19 @@ allowed-tools: {scope to what's needed — read-only skills should
 
 **Critical rules while writing:**
 
-- **Every instruction must reference a real file path, command, or
-  pattern from this codebase.** If you find yourself writing generic
-  advice ("use descriptive names", "handle errors properly"), delete
-  it — it's not earning its tokens.
+- **Every instruction must reference a real file path, command, or pattern from this codebase.** If you find yourself
+  writing generic advice ("use descriptive names", "handle errors properly"), delete it — it's not earning its tokens.
 
-- **The description field decides routing.** Spend extra time on it.
-  Include 3+ trigger phrases using language engineers actually say.
-  Include at least one "Do NOT use for" clause.
+- **The description field decides routing.** Spend extra time on it. Include 3+ trigger phrases using language engineers
+  actually say. Include at least one "Do NOT use for" clause.
 
-- **Verification is non-negotiable.** Every skill must end with a
-  concrete verification step: a test command, a validation script,
-  or a specific check. "Make sure it works" is not verification.
+- **Verification is non-negotiable.** Every skill must end with a concrete verification step: a test command, a
+  validation script, or a specific check. "Make sure it works" is not verification.
 
 ### Step 4: Build a Validation Script (When Appropriate)
 
-If the workflow has a "completeness check" — did all the files get
-created, did the registration step happen, did the config get
-updated — write a script:
+If the workflow has a "completeness check" — did all the files get created, did the registration step happen, did the
+config get updated — write a script:
 
 ```
 .claude/skills/{skill-name}/
@@ -169,8 +160,8 @@ updated — write a script:
 ```
 
 The script should:
-- Take the key identifier as an argument (resource name, component
-  name, etc.)
+
+- Take the key identifier as an argument (resource name, component name, etc.)
 - Check each expected artifact exists
 - Check each registration/wiring step was completed
 - Output clear error messages for each missing piece
@@ -190,16 +181,15 @@ Fix any errors or warnings before proceeding.
 
 Then verify semantically:
 
-1. **Trigger test:** "When would you use the {skill-name} skill?"
-   — Claude should accurately describe the intended use case.
-2. **Negative test:** Would this trigger for unrelated queries?
-   — The description should have sufficient "Do NOT" scoping.
-3. **File path test:** Count the real file paths referenced in the
-   body. If fewer than 3, it's too generic.
+1. **Trigger test:** "When would you use the \{skill-name} skill?" — Claude should accurately describe the intended use
+   case.
+2. **Negative test:** Would this trigger for unrelated queries? — The description should have sufficient "Do NOT"
+   scoping.
+3. **File path test:** Count the real file paths referenced in the body. If fewer than 3, it's too generic.
 4. **Token check:** Estimate the SKILL.md size. Flag if >500 lines.
 
-Present the skill to the user with a summary of what it encodes and
-which evidence from the codebase informed each section.
+Present the skill to the user with a summary of what it encodes and which evidence from the codebase informed each
+section.
 
 ---
 
@@ -209,8 +199,7 @@ Trigger: User asks to review a skill, or points to a SKILL.md file.
 
 ### The Review Protocol
 
-Read the skill. Then run the structural check first, followed by the
-six semantic gates.
+Read the skill. Then run the structural check first, followed by the six semantic gates.
 
 #### Step 0: Structural Validation
 
@@ -220,16 +209,15 @@ Run the bundled validation script before doing any semantic review:
 bash .claude/skills/audit-skill/scripts/validate-skill.sh {path-to-SKILL.md}
 ```
 
-If this fails (exit code 1), stop and report the structural errors.
-No point reviewing content if the skeleton is broken — the user needs
-to fix naming, frontmatter, or forbidden characters first.
+If this fails (exit code 1), stop and report the structural errors. No point reviewing content if the skeleton is broken
+— the user needs to fix naming, frontmatter, or forbidden characters first.
 
 If it passes with warnings, note them and continue to the gates below.
 
 #### Gate 1: The Portability Test (Hard Fail)
 
-Read every instruction in the SKILL.md body. For each one, ask:
-"Does this reference something specific to THIS codebase?"
+Read every instruction in the SKILL.md body. For each one, ask: "Does this reference something specific to THIS
+codebase?"
 
 ```bash
 # Count codebase-specific references
@@ -239,15 +227,14 @@ grep -cE '(/[a-z_-]+/|apps/|packages/|src/|pnpm |npm run |yarn )' \
 ```
 
 **Hard fail if:**
-- The skill body contains <3 references to real files, commands, or
-  patterns from this codebase
-- You could copy-paste the skill into a random GitHub repo and it
-  would work identically
-- The instructions are generic programming advice ("use meaningful
-  variable names", "write clean code", "follow SOLID principles")
 
-**Report:** List each instruction and classify it as CODEBASE-SPECIFIC
-or GENERIC. The ratio should be heavily codebase-specific.
+- The skill body contains \<3 references to real files, commands, or patterns from this codebase
+- You could copy-paste the skill into a random GitHub repo and it would work identically
+- The instructions are generic programming advice ("use meaningful variable names", "write clean code", "follow SOLID
+  principles")
+
+**Report:** List each instruction and classify it as CODEBASE-SPECIFIC or GENERIC. The ratio should be heavily
+codebase-specific.
 
 #### Gate 2: Overlap Check (Hard Fail)
 
@@ -268,7 +255,8 @@ cat .claude/settings.json 2>/dev/null | jq '.hooks' 2>/dev/null
 ```
 
 **Hard fail if:**
-- >50% of the skill's content duplicates CLAUDE.md entries
+
+- > 50% of the skill's content duplicates CLAUDE.md entries
 - Another skill covers the same workflow with >70% overlap
 - A hook already enforces the skill's core rule
 
@@ -277,16 +265,14 @@ cat .claude/settings.json 2>/dev/null | jq '.hooks' 2>/dev/null
 Check the `description` field in frontmatter:
 
 - [ ] Includes WHAT the skill does
-- [ ] Includes ≥3 trigger phrases using natural language engineers
-      would actually say
+- [ ] Includes ≥3 trigger phrases using natural language engineers would actually say
 - [ ] Includes ≥1 "Do NOT use for" clause defining the boundary
 - [ ] Under 1024 characters
 - [ ] No XML angle brackets (`<` or `>`)
 - [ ] Specific enough to avoid false triggers on unrelated queries
 
-**Test it:** Ask yourself — "If a user said '{trigger phrase}', should
-this skill load?" and "If a user said something adjacent but different,
-would this wrongly trigger?"
+**Test it:** Ask yourself — "If a user said '{trigger phrase}', should this skill load?" and "If a user said something
+adjacent but different, would this wrongly trigger?"
 
 #### Gate 4: Instruction Quality (Soft Fail)
 
@@ -298,12 +284,11 @@ For each step in the skill body:
 - [ ] Does not duplicate what a linter/formatter/hook enforces
 
 Check for common antipatterns:
-- **Vague validation:** "Make sure everything works" → should be a
-  specific test command or validation script
-- **Missing registration:** The workflow creates files but doesn't
-  mention where to register/wire them (the #1 source of broken skills)
-- **Aspirational steps:** Instructions about what the code SHOULD do
-  rather than what the codebase ACTUALLY does
+
+- **Vague validation:** "Make sure everything works" → should be a specific test command or validation script
+- **Missing registration:** The workflow creates files but doesn't mention where to register/wire them (the #1 source of
+  broken skills)
+- **Aspirational steps:** Instructions about what the code SHOULD do rather than what the codebase ACTUALLY does
 - **Stale references:** File paths that don't exist
 
 ```bash
@@ -316,8 +301,7 @@ done
 
 #### Gate 5: Safety and Side Effects (Soft Fail)
 
-- [ ] `allowed-tools` scoped appropriately (review-only skills should
-      not have Write/Edit permissions)
+- [ ] `allowed-tools` scoped appropriately (review-only skills should not have Write/Edit permissions)
 - [ ] No credentials, API keys, or secrets in the skill
 - [ ] Validation scripts don't have destructive side effects
 
@@ -330,17 +314,16 @@ wc -w .claude/skills/{name}/SKILL.md
 ```
 
 - Under 300 lines / ~3,000 tokens: ✅ good
-- 300-500 lines / ~5,000 tokens: ⚠️ consider moving details to
-  `references/` subdirectory
+- 300-500 lines / ~5,000 tokens: ⚠️ consider moving details to `references/` subdirectory
 - Over 500 lines: ❌ too large — will degrade performance when loaded
 
 Also check total skill count:
+
 ```bash
 find .claude/skills -name "SKILL.md" 2>/dev/null | wc -l
 ```
 
-If >20 skills enabled, flag the cumulative description cost
-(~100 tokens per skill in the system prompt, every session).
+If >20 skills enabled, flag the cumulative description cost (~100 tokens per skill in the system prompt, every session).
 
 ### Review Output
 
@@ -408,14 +391,13 @@ find .claude/skills -name "SKILL.md" | while read f; do
 done
 ```
 
-Skills that hard-fail go directly into the "Recommend Removal or Fix"
-bucket. Skills that pass move on to the semantic gates.
+Skills that hard-fail go directly into the "Recommend Removal or Fix" bucket. Skills that pass move on to the semantic
+gates.
 
 ### Step 3: Run Portability Test and Overlap Check on Passing Skills
 
-For each skill that passed structural validation, run Gates 1-2
-from the review protocol. These are the most common reasons skills
-should be removed.
+For each skill that passed structural validation, run Gates 1-2 from the review protocol. These are the most common
+reasons skills should be removed.
 
 ### Step 4: Identify Gaps
 
@@ -464,16 +446,11 @@ Recommended target: ~{Y} tokens (after removing/consolidating)
 
 ## Interaction Style
 
-- **Always investigate the codebase before writing.** Never generate
-  a skill from the user's description alone — verify against the
-  actual code.
-- **Show your evidence.** When you reference a convention, cite the
-  file where you found it.
-- **Ask before writing files.** Present the proposed skill and get
-  confirmation before creating it in `.claude/skills/`.
-- **Be blunt about rejections.** If a proposed skill is generic, say
-  so clearly and explain what would make it codebase-specific. Don't
-  soften the feedback — generic skills actively harm performance.
-- **Suggest the right tool.** If the user's need is better served by
-  a CLAUDE.md entry, a hook, a subagent, or a doc pointer, say so
-  instead of building a skill.
+- **Always investigate the codebase before writing.** Never generate a skill from the user's description alone — verify
+  against the actual code.
+- **Show your evidence.** When you reference a convention, cite the file where you found it.
+- **Ask before writing files.** Present the proposed skill and get confirmation before creating it in `.claude/skills/`.
+- **Be blunt about rejections.** If a proposed skill is generic, say so clearly and explain what would make it
+  codebase-specific. Don't soften the feedback — generic skills actively harm performance.
+- **Suggest the right tool.** If the user's need is better served by a CLAUDE.md entry, a hook, a subagent, or a doc
+  pointer, say so instead of building a skill.

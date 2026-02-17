@@ -86,51 +86,51 @@ This directory contains all Claude Code configuration for the aihub-core monorep
 
 ### Skills (43 total)
 
-| Category | Skill | Description |
-|----------|-------|-------------|
-| Workflow | `/review-diff` | Pre-PR code review (diff analysis) |
-| | `/create-pr` | Pre-PR validation |
-| | `/implement-feedback-from-pr` | Apply PR feedback |
-| | `/plan-issue` | GitHub issue → implementation plan |
-| | `/reflect` | Session retrospective → improve CLAUDE.md/skills |
-| | `/release-prep` | Pre-release validation |
-| | `/test-scope` | Scoped test runner |
-| Docs | `/update-doc` | Sync docs, CLAUDE.md, and skills with code |
-| | `/explain` | Analyze and explain code |
-| | `/document-decision` | Create ADRs |
-| | `/document-feature` | Document features |
-| | `/document-solution` | Edit solution concepts |
-| Scaffold | `/scaffold-agent` | New AI agent |
-| | `/scaffold-pipeline` | New Dagster pipeline |
-| | `/scaffold-process` | New agentic process |
-| | `/scaffold-api-endpoint` | New REST API controller |
-| | `/scaffold-api-service` | New API service layer |
-| | `/scaffold-api-repository` | New MongoEngine entity |
-| | `/scaffold-frontend-page` | New frontend page |
-| | `/scaffold-bot-handler` | New bot handler |
-| DevEx | `/docker-dev` | Docker env management |
-| | `/check-i18n` | Translation validation |
-| | `/generate-sdk` | API SDK regeneration |
-| | `/dependency-audit` | Dep health check |
-| | `/validate-events` | Event system validation |
-| | `/debug-agent` | Agent debugging |
-| | `/debug-pipeline` | Pipeline troubleshooting and debugging |
-| Frontend | `/scaffold-composable` | New Pinia-Colada composable |
-| | `/scaffold-event-display` | New event display component |
-| | `/scaffold-dashboard-widget` | New dashboard widget |
-| | `/debug-frontend` | Visual UI debugging (Playwright) |
-| | `/audit-frontend` | Frontend code audit |
-| | `/primevue-lookup` | PrimeVue component docs |
-| | `/scaffold-frontend-subpage` | New detail page with tabs |
-| | `/scaffold-frontend-component` | New Vue component (card, modal, list) |
-| | `/design-system` | Design system reference |
-| API & Pipeline | `/api-auth-guide` | Auth, identity, permissions reference |
-| | `/nats-events` | NATS, JetStream, events, pub/sub, RPC |
-| | `/dagster-pipelines` | Dagster assets, resources, IO managers, partitions |
-| | `/rclone-guide` | Rclone cloud storage integration |
-| Bot | `/setup-bot-connection` | Bot connection setup (Azure, Teams, Slack) |
-| | `/debug-bot` | Bot troubleshooting and debugging |
-| | `/bot-reference` | Bot architecture and patterns reference |
+| Category       | Skill                          | Description                                        |
+| -------------- | ------------------------------ | -------------------------------------------------- |
+| Workflow       | `/review-diff`                 | Pre-PR code review (diff analysis)                 |
+|                | `/create-pr`                   | Pre-PR validation                                  |
+|                | `/implement-feedback-from-pr`  | Apply PR feedback                                  |
+|                | `/plan-issue`                  | GitHub issue → implementation plan                 |
+|                | `/reflect`                     | Session retrospective → improve CLAUDE.md/skills   |
+|                | `/release-prep`                | Pre-release validation                             |
+|                | `/test-scope`                  | Scoped test runner                                 |
+| Docs           | `/update-doc`                  | Sync docs, CLAUDE.md, and skills with code         |
+|                | `/explain`                     | Analyze and explain code                           |
+|                | `/document-decision`           | Create ADRs                                        |
+|                | `/document-feature`            | Document features                                  |
+|                | `/document-solution`           | Edit solution concepts                             |
+| Scaffold       | `/scaffold-agent`              | New AI agent                                       |
+|                | `/scaffold-pipeline`           | New Dagster pipeline                               |
+|                | `/scaffold-process`            | New agentic process                                |
+|                | `/scaffold-api-endpoint`       | New REST API controller                            |
+|                | `/scaffold-api-service`        | New API service layer                              |
+|                | `/scaffold-api-repository`     | New MongoEngine entity                             |
+|                | `/scaffold-frontend-page`      | New frontend page                                  |
+|                | `/scaffold-bot-handler`        | New bot handler                                    |
+| DevEx          | `/docker-dev`                  | Docker env management                              |
+|                | `/check-i18n`                  | Translation validation                             |
+|                | `/generate-sdk`                | API SDK regeneration                               |
+|                | `/dependency-audit`            | Dep health check                                   |
+|                | `/validate-events`             | Event system validation                            |
+|                | `/debug-agent`                 | Agent debugging                                    |
+|                | `/debug-pipeline`              | Pipeline troubleshooting and debugging             |
+| Frontend       | `/scaffold-composable`         | New Pinia-Colada composable                        |
+|                | `/scaffold-event-display`      | New event display component                        |
+|                | `/scaffold-dashboard-widget`   | New dashboard widget                               |
+|                | `/debug-frontend`              | Visual UI debugging (Playwright)                   |
+|                | `/audit-frontend`              | Frontend code audit                                |
+|                | `/primevue-lookup`             | PrimeVue component docs                            |
+|                | `/scaffold-frontend-subpage`   | New detail page with tabs                          |
+|                | `/scaffold-frontend-component` | New Vue component (card, modal, list)              |
+|                | `/design-system`               | Design system reference                            |
+| API & Pipeline | `/api-auth-guide`              | Auth, identity, permissions reference              |
+|                | `/nats-events`                 | NATS, JetStream, events, pub/sub, RPC              |
+|                | `/dagster-pipelines`           | Dagster assets, resources, IO managers, partitions |
+|                | `/rclone-guide`                | Rclone cloud storage integration                   |
+| Bot            | `/setup-bot-connection`        | Bot connection setup (Azure, Teams, Slack)         |
+|                | `/debug-bot`                   | Bot troubleshooting and debugging                  |
+|                | `/bot-reference`               | Bot architecture and patterns reference            |
 
 ### Local Overrides (gitignored)
 

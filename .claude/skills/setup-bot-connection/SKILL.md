@@ -34,6 +34,7 @@ BaseChatBot → CompletionHandler → NATS → Agent
 ```
 
 **Key concept**: Each bot endpoint has a **PathEntity** in MongoDB (`bot_paths` collection) containing:
+
 - Azure AD credentials (APP_ID, APP_PASSWORD, APP_TENANTID)
 - System message template
 - Slack OAuth token (for Slack channels)
@@ -85,6 +86,7 @@ poetry run python aihub_bot/setup_azure_bot.py \
 ```
 
 **What the script does**:
+
 1. Creates Azure AD App Registration (`az ad app create`)
 2. Creates Service Principal (`az ad sp create`)
 3. Resets credentials → generates APP_PASSWORD
@@ -111,6 +113,7 @@ az ad app credential reset --id <appId>
 ```
 
 Save these values:
+
 - `APP_ID` = `appId`
 - `APP_PASSWORD` = `password`
 - `APP_TENANTID` = `tenant` (for single-tenant/Teams)
@@ -167,12 +170,14 @@ client["aihub"]["bot_paths"].update_one(
 ### Step 4: Configure Channel in Azure Portal
 
 **For Teams**:
+
 1. Azure Portal → Bot Services → your bot → Channels
 2. Click "Microsoft Teams" → Configure
 3. Enable messaging
 4. Save
 
 **For Slack**:
+
 1. Create Slack App at https://api.slack.com/apps
 2. Enable "Bot User OAuth Token" → copy token (`xoxb-...`)
 3. In Azure Portal → Bot Services → your bot → Channels
@@ -180,6 +185,7 @@ client["aihub"]["bot_paths"].update_one(
 5. Save the `slack_token` in PathEntity
 
 **For Web Chat**:
+
 1. Azure Portal → Bot Services → your bot → Channels
 2. Web Chat is enabled by default
 3. Copy the secret key for embedding
@@ -229,23 +235,25 @@ poetry run python main.py
 
 Each bot type has a specific URL pattern. The path must match the PathEntity in MongoDB:
 
-| Bot Type | Endpoint Pattern |
-|----------|-----------------|
-| Agent (JSON) | `/api/v1/agent/chat/completions/{agent_class}/{agent_id}/json` |
-| Agent (Stream) | `/api/v1/agent/chat/completions/{agent_class}/{agent_id}/stream` |
-| OpenAI (JSON) | `/api/v1/openai/chat/completions/json?model_name=<model>` |
-| OpenAI (Stream) | `/api/v1/openai/chat/completions/stream?model_name=<model>` |
-| Bot-in-the-Loop | `/api/v1/bot_in_the_loop/response` |
+| Bot Type        | Endpoint Pattern                                                 |
+| --------------- | ---------------------------------------------------------------- |
+| Agent (JSON)    | `/api/v1/agent/chat/completions/{agent_class}/{agent_id}/json`   |
+| Agent (Stream)  | `/api/v1/agent/chat/completions/{agent_class}/{agent_id}/stream` |
+| OpenAI (JSON)   | `/api/v1/openai/chat/completions/json?model_name=<model>`        |
+| OpenAI (Stream) | `/api/v1/openai/chat/completions/stream?model_name=<model>`      |
+| Bot-in-the-Loop | `/api/v1/bot_in_the_loop/response`                               |
 
 ---
 
 ## System Message Templates
 
 System messages support placeholders:
+
 - `{username}` → replaced with the user's display name
 - `{assistant_name}` → replaced with the bot's display name
 
 Example:
+
 ```
 You are {assistant_name}, an AI assistant for the Swiss AI Hub platform.
 The user's name is {username}. Be helpful, concise, and professional.
@@ -271,25 +279,25 @@ After setup, verify:
 
 ## Key Files
 
-| File | Purpose |
-|------|---------|
-| `aihub_bot/aihub_bot/setup_azure_bot.py` | Automated Azure Bot provisioning |
-| `aihub_bot/aihub_bot/add_path_entity.py` | CLI for adding PathEntity to MongoDB |
-| `aihub_bot/aihub_bot/persistence/entities/PathEntity.py` | PathEntity model (credentials + system message) |
-| `aihub_bot/aihub_bot/routes/RoutesService.py` | CloudAdapter caching per path |
-| `aihub_bot/aihub_bot/routes/agent/AgentChatController.py` | Agent chat endpoints |
-| `aihub_bot/aihub_bot/runners/lifetime/lifetime_manager.py` | NATS + MongoDB startup |
-| `aihub_bot/playground/testing/main.py` | Local test server |
+| File                                                       | Purpose                                         |
+| ---------------------------------------------------------- | ----------------------------------------------- |
+| `aihub_bot/aihub_bot/setup_azure_bot.py`                   | Automated Azure Bot provisioning                |
+| `aihub_bot/aihub_bot/add_path_entity.py`                   | CLI for adding PathEntity to MongoDB            |
+| `aihub_bot/aihub_bot/persistence/entities/PathEntity.py`   | PathEntity model (credentials + system message) |
+| `aihub_bot/aihub_bot/routes/RoutesService.py`              | CloudAdapter caching per path                   |
+| `aihub_bot/aihub_bot/routes/agent/AgentChatController.py`  | Agent chat endpoints                            |
+| `aihub_bot/aihub_bot/runners/lifetime/lifetime_manager.py` | NATS + MongoDB startup                          |
+| `aihub_bot/playground/testing/main.py`                     | Local test server                               |
 
 ---
 
 ## Troubleshooting Quick Reference
 
-| Symptom | Likely Cause | Fix |
-|---------|-------------|-----|
-| "No credentials found for path" | PathEntity missing | Insert PathEntity in MongoDB |
-| 401 Unauthorized from Azure | APP_PASSWORD expired | `az ad app credential reset --id <appId>` |
-| Bot doesn't respond in Teams | Wrong endpoint URL | Update Azure Bot Resource endpoint |
-| Bot doesn't respond in Slack | Missing slack_token | Add `slack_token` to PathEntity |
-| "Connection refused" locally | Bot server not running | Start with `python main.py` or `make run-prod` |
-| DevTunnel not forwarding | Port mismatch | Verify tunnel port matches bot server port (8001) |
+| Symptom                         | Likely Cause           | Fix                                               |
+| ------------------------------- | ---------------------- | ------------------------------------------------- |
+| "No credentials found for path" | PathEntity missing     | Insert PathEntity in MongoDB                      |
+| 401 Unauthorized from Azure     | APP_PASSWORD expired   | `az ad app credential reset --id <appId>`         |
+| Bot doesn't respond in Teams    | Wrong endpoint URL     | Update Azure Bot Resource endpoint                |
+| Bot doesn't respond in Slack    | Missing slack_token    | Add `slack_token` to PathEntity                   |
+| "Connection refused" locally    | Bot server not running | Start with `python main.py` or `make run-prod`    |
+| DevTunnel not forwarding        | Port mismatch          | Verify tunnel port matches bot server port (8001) |

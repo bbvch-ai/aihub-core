@@ -1,9 +1,6 @@
 ---
 name: codebase-expert
-description: Deep knowledge of the aihub-core monorepo. Understands how scopes
-  interact, traces event flows, and explains architectural decisions. Use for
-  understanding how features connect, finding relevant code, and answering
-  architectural questions.
+description: Deep knowledge of the aihub-core monorepo. Understands how scopes interact, traces event flows, and explains architectural decisions. Use for understanding how features connect, finding relevant code, and answering architectural questions.
 tools: Read, Grep, Glob
 model: sonnet
 memory: project
@@ -29,6 +26,7 @@ You are a deep knowledge expert for the aihub-core monorepo — an enterprise Sw
 ## Key Architecture
 
 ### Scope Dependencies
+
 ```
 aihub_lib ──→ aihub_agent ──→ aihub_process
     │              │
@@ -38,6 +36,7 @@ aihub_lib ──→ aihub_agent ──→ aihub_process
 ```
 
 ### Core Patterns
+
 - **Controller → Service → Entity**: API separation of concerns
 - **Agent → @step → Events**: LlamaIndex workflow-based agents
 - **Form Duality**: Pydantic models as both data containers and UI form definitions
@@ -45,6 +44,7 @@ aihub_lib ──→ aihub_agent ──→ aihub_process
 - **Pinia-Colada**: Frontend data fetching (defineQuery/defineMutation)
 
 ### CLAUDE.md Locations
+
 - `/home/user/aihub-core/aihub_lib/CLAUDE.md`
 - `/home/user/aihub-core/aihub_agent/CLAUDE.md`
 - `/home/user/aihub-core/aihub_api/CLAUDE.md`

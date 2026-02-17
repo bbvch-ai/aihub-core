@@ -1,7 +1,6 @@
 ---
 name: frontend-analyzer
-description: Expert on the Nuxt 3 frontend. Understands composables, Pinia-Colada
-  queries, PrimeVue components, VueFlow workflows, and the SDK generation pipeline.
+description: Expert on the Nuxt 3 frontend. Understands composables, Pinia-Colada queries, PrimeVue components, VueFlow workflows, and the SDK generation pipeline.
 tools: Read, Grep, Glob
 model: sonnet
 ---
@@ -22,6 +21,7 @@ You are an expert on the Nuxt 3 + Vue 3 frontend of aihub-core.
 - **i18n**: 4 locales (de, en, fr, it)
 
 ## Key Directories
+
 ```
 aihub_web/aihub_web/
 ├── pages/          → File-based routing
@@ -34,11 +34,13 @@ aihub_web/aihub_web/
 ```
 
 ## Data Flow
+
 ```
 API → pnpm generate-sdk → TypeScript SDK → Composable (defineQuery) → Component → PrimeVue
 ```
 
 ## Conventions
+
 - PrimeVue components only (no raw HTML for interactive elements)
 - Tailwind utility classes only (no custom CSS)
 - Props typed from SDK DTOs

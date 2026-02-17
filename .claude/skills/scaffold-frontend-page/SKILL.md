@@ -19,11 +19,13 @@ Generate a list page for a new resource. The resource name should be provided vi
 
 ## Step 1: Check SDK Availability
 
-Search `aihub_web/aihub_web/sdk/client/` for the resource's SDK functions and DTO types. If they don't exist, warn the user to run `/generate-sdk` first.
+Search `aihub_web/aihub_web/sdk/client/` for the resource's SDK functions and DTO types. If they don't exist, warn the
+user to run `/generate-sdk` first.
 
 ## Step 2: Create Composables
 
 If composables don't exist yet, create them first using the patterns from `/scaffold-composable`. At minimum you need:
+
 - `composables/<resource>/use<Resource>s.ts` — List query
 - `composables/<resource>/useCreate<Resource>.ts` — Create mutation (if applicable)
 
@@ -95,9 +97,12 @@ const toDetail = (item: <Resource>Dto) => {
 
 ### Key Structural Elements
 
-1. **`<StructuralScreen>`**: Top-level wrapper. Provides `h-[calc(100vh-50px)]` viewport, `bg-surface-50 dark:bg-surface-950`, horizontal flex at `2xl:`.
-2. **`<StructuralColumn>`**: Card container with rounded-3xl, loading progress bar, title/close button. Props: `title`, `loading`, `size`, `closeRoute`, `childColumn`.
-3. **`<NuxtPage />`**: MUST be placed as a sibling of StructuralColumn inside StructuralScreen. This renders nested detail routes as a second column.
+1. **`<StructuralScreen>`**: Top-level wrapper. Provides `h-[calc(100vh-50px)]` viewport,
+   `bg-surface-50 dark:bg-surface-950`, horizontal flex at `2xl:`.
+2. **`<StructuralColumn>`**: Card container with rounded-3xl, loading progress bar, title/close button. Props: `title`,
+   `loading`, `size`, `closeRoute`, `childColumn`.
+3. **`<NuxtPage />`**: MUST be placed as a sibling of StructuralColumn inside StructuralScreen. This renders nested
+   detail routes as a second column.
 4. **Card grid**: Use `grid grid-cols-2 gap-4 2xl:grid-cols-2` for consistent card layout.
 5. **Create button**: Top-right aligned with `flex w-full justify-end`.
 6. **Navigation**: Always use `localePath()` for i18n-aware routing.
@@ -188,7 +193,8 @@ Add translation keys in all 4 locale files (`aihub_web/aihub_web/i18n/locales/{d
 
 ## Step 6: Verify Navigation
 
-Check if the page needs to be registered in the API's suite/service configuration for sidebar navigation. The sidebar is populated from `useSuite()` → `useApps()` which fetches service definitions from the API.
+Check if the page needs to be registered in the API's suite/service configuration for sidebar navigation. The sidebar is
+populated from `useSuite()` → `useApps()` which fetches service definitions from the API.
 
 ## Key Conventions
 
@@ -205,6 +211,7 @@ Check if the page needs to be registered in the API's suite/service configuratio
 **Input**: `$ARGUMENTS = "pipeline"`
 
 **Output files created**:
+
 1. `aihub_web/aihub_web/pages/service/pipelines.vue` -- List page with card grid
 2. `aihub_web/aihub_web/components/Pipeline/Card.vue` -- Resource card component
 3. `aihub_web/aihub_web/composables/pipeline/usePipelines.ts` -- List query composable
@@ -213,15 +220,16 @@ Check if the page needs to be registered in the API's suite/service configuratio
 
 **Input**: `$ARGUMENTS = "connector"`
 
-**Output**: Same structure with `connector` replacing `pipeline` -- `connectors.vue`, `Connector/Card.vue`, `useConnectors.ts`, etc.
+**Output**: Same structure with `connector` replacing `pipeline` -- `connectors.vue`, `Connector/Card.vue`,
+`useConnectors.ts`, etc.
 
 ## Troubleshooting
 
-| Problem | Cause | Fix |
-|---------|-------|-----|
-| SDK types not found for resource | SDK not generated yet | Tell user to run `/generate-sdk` first |
-| Page not appearing in sidebar | Not registered in service config | Check `useSuite()` / `useApps()` API service definitions |
-| Cards not rendering | Composable returns empty array | Verify SDK endpoint URL and check browser Network tab for API errors |
-| i18n keys showing raw paths | Missing translation keys | Ensure keys were added to ALL 4 locale files (`de`, `en`, `fr`, `it`) |
-| Route not matching / 404 | File naming mismatch | Verify filename matches Nuxt file-based routing: `<resource>s.vue` (plural) |
-| Dark mode broken on cards | Missing `dark:` variant | Every `bg-*` class must have a corresponding `dark:bg-*` class |
+| Problem                          | Cause                            | Fix                                                                         |
+| -------------------------------- | -------------------------------- | --------------------------------------------------------------------------- |
+| SDK types not found for resource | SDK not generated yet            | Tell user to run `/generate-sdk` first                                      |
+| Page not appearing in sidebar    | Not registered in service config | Check `useSuite()` / `useApps()` API service definitions                    |
+| Cards not rendering              | Composable returns empty array   | Verify SDK endpoint URL and check browser Network tab for API errors        |
+| i18n keys showing raw paths      | Missing translation keys         | Ensure keys were added to ALL 4 locale files (`de`, `en`, `fr`, `it`)       |
+| Route not matching / 404         | File naming mismatch             | Verify filename matches Nuxt file-based routing: `<resource>s.vue` (plural) |
+| Dark mode broken on cards        | Missing `dark:` variant          | Every `bg-*` class must have a corresponding `dark:bg-*` class              |

@@ -21,9 +21,9 @@ Look up NATS/event information. Topic or question via `$ARGUMENTS`.
 
 The platform uses **NATS** as its central message bus with two tiers:
 
-| Tier | Protocol | Durability | Use Case |
-|------|----------|-----------|----------|
-| **NATS Core** | `nc.publish()` / `nc.subscribe()` | Ephemeral (fire-and-forget) | Display events, discovery, real-time UI |
+| Tier          | Protocol                          | Durability                    | Use Case                                    |
+| ------------- | --------------------------------- | ----------------------------- | ------------------------------------------- |
+| **NATS Core** | `nc.publish()` / `nc.subscribe()` | Ephemeral (fire-and-forget)   | Display events, discovery, real-time UI     |
 | **JetStream** | `js.publish()` / `js.subscribe()` | Persistent (30-day retention) | Control events, workflow state, audit trail |
 
 **Key Rule**: Control events go through JetStream (durable). Display events go through NATS Core (ephemeral).
@@ -36,13 +36,14 @@ The platform uses **NATS** as its central message bus with two tiers:
 
 All events inherit from `BaseEvent` and are classified into two categories:
 
-| Category | Base Class | Purpose | Transport | Failure Impact |
-|----------|-----------|---------|-----------|----------------|
-| **Control Event** | `ControlEvent` | Drives workflow execution | JetStream | Breaks agent logic |
-| **Display Event** | `DisplayEvent` | Observability / UI updates | NATS Core | No workflow impact |
-| **Both** | `ControlAndDisplayEvent` | Workflow + user-visible | Both channels | Depends on consumer |
+| Category          | Base Class               | Purpose                    | Transport     | Failure Impact      |
+| ----------------- | ------------------------ | -------------------------- | ------------- | ------------------- |
+| **Control Event** | `ControlEvent`           | Drives workflow execution  | JetStream     | Breaks agent logic  |
+| **Display Event** | `DisplayEvent`           | Observability / UI updates | NATS Core     | No workflow impact  |
+| **Both**          | `ControlAndDisplayEvent` | Workflow + user-visible    | Both channels | Depends on consumer |
 
-**Core Rule**: Only `ControlEvent` types trigger agent `@step()` methods. Display events MUST NEVER influence workflow logic.
+**Core Rule**: Only `ControlEvent` types trigger agent `@step()` methods. Display events MUST NEVER influence workflow
+logic.
 
 ### Event Hierarchy
 
@@ -116,11 +117,14 @@ class BaseEvent(BaseModel):
     _jetstream_sequence: int | None  # JetStream sequence number (set by subscriber)
 ```
 
-**Auto-Registration**: Every `BaseEvent` subclass auto-registers in `_event_registry` via `__pydantic_init_subclass__`. No manual registration needed.
+**Auto-Registration**: Every `BaseEvent` subclass auto-registers in `_event_registry` via `__pydantic_init_subclass__`.
+No manual registration needed.
 
-**Deserialization**: `BaseEvent.deserialize_event(data)` looks up `_event_name` in registry, falls back to parent classes, preserves unknown fields.
+**Deserialization**: `BaseEvent.deserialize_event(data)` looks up `_event_name` in registry, falls back to parent
+classes, preserves unknown fields.
 
 **Type Checking Properties**:
+
 ```python
 event.is_control_event      # "ControlEvent" in _parent_event_names
 event.is_display_event      # "DisplayEvent" in _parent_event_names
@@ -144,16 +148,16 @@ agent.{agent_class}.{agent_id}.{thread_id}.{display_id}.{run_id}.{event_type}.{e
   0        1             2          3            4           5         6            7            8
 ```
 
-| Segment | Example | Purpose |
-|---------|---------|---------|
-| `agent_class` | `RAGAgent` | Agent blueprint type |
-| `agent_id` | `wiki_agent` | Specific agent instance |
-| `thread_id` | `t948a201...` | Conversation context (ObjectId) |
-| `display_id` | `d135bfc9...` | UI display grouping (ObjectId) |
-| `run_id` | `r4fg68bb...` | Single execution trace (ObjectId) |
-| `event_type` | `control_event` / `display_event` | Event classification |
-| `event_name` | `ChunkEvent` | Event class name |
-| `event_id` | `e423...` | Unique event instance ID |
+| Segment       | Example                           | Purpose                           |
+| ------------- | --------------------------------- | --------------------------------- |
+| `agent_class` | `RAGAgent`                        | Agent blueprint type              |
+| `agent_id`    | `wiki_agent`                      | Specific agent instance           |
+| `thread_id`   | `t948a201...`                     | Conversation context (ObjectId)   |
+| `display_id`  | `d135bfc9...`                     | UI display grouping (ObjectId)    |
+| `run_id`      | `r4fg68bb...`                     | Single execution trace (ObjectId) |
+| `event_type`  | `control_event` / `display_event` | Event classification              |
+| `event_name`  | `ChunkEvent`                      | Event class name                  |
+| `event_id`    | `e423...`                         | Unique event instance ID          |
 
 ### Process Subject Pattern
 
@@ -178,11 +182,11 @@ instance_discovery.agent.{agent_class}.{agent_id}.*.request.{call_id}
 
 ### Hierarchical Scoping (Thread > Display > Run)
 
-| Scope | Purpose | Access Control |
-|-------|---------|----------------|
-| **Thread** | Conversation context, long-lived (days/months) | Users granted access at thread level |
-| **Display** | UI grouping, can span multiple agents | Shared or isolated between delegated agents |
-| **Run** | Single execution (StartEvent → StopEvent) | Isolated per workflow invocation |
+| Scope       | Purpose                                        | Access Control                              |
+| ----------- | ---------------------------------------------- | ------------------------------------------- |
+| **Thread**  | Conversation context, long-lived (days/months) | Users granted access at thread level        |
+| **Display** | UI grouping, can span multiple agents          | Shared or isolated between delegated agents |
+| **Run**     | Single execution (StartEvent → StopEvent)      | Isolated per workflow invocation            |
 
 **Security**: Users can only observe events from threads they're members of (`ThreadEntity.users`).
 
@@ -233,6 +237,7 @@ ttm.get_subject_for_display_event_in_thread(event_name="ChunkEvent", event_id="e
 ```
 
 **File locations**:
+
 - `aihub_lib/aihub_lib/nats/topic_managers/TopicManager.py`
 - `aihub_lib/aihub_lib/nats/topic_managers/agents/AgentTopicManager.py`
 - `aihub_lib/aihub_lib/nats/topic_managers/agents/AgentClassTopicManager.py`
@@ -253,6 +258,7 @@ await publisher.publish_event(event, subject)
 ```
 
 **Characteristics**:
+
 - Fire-and-forget, no retry
 - Adds OpenTelemetry trace context headers
 - Validates event-subject alignment (warns on mismatch)
@@ -268,6 +274,7 @@ await publisher.publish_event(event, subject, retries=10)
 ```
 
 **Characteristics**:
+
 - Retry with 1s backoff, up to 10 attempts (configurable)
 - 5-second timeout per attempt
 - UUID message ID for deduplication
@@ -323,6 +330,7 @@ await subscriber.stop()
 **Handler signature**: `async def handler(event: TEvent, topic: Topic) -> None`
 
 **Characteristics**:
+
 - Ephemeral (no persistence, no replay)
 - Non-blocking: spawns `asyncio.Task` per message
 - Extracts trace context from headers
@@ -347,6 +355,7 @@ await subscriber.start()
 ```
 
 **Characteristics**:
+
 - Ensures stream exists before subscribing
 - Queue groups for load-balanced delivery across instances
 - Immediate ACK (at-least-once semantics)
@@ -422,7 +431,8 @@ await responder.start()
 
 **Handler signature**: `async def handler(request: TRequest, subject: str) -> TResponse`
 
-**Error handling**: On exception, responds with `{"error": str, "error_type": str}`. Requester raises `TimeoutError` on no response.
+**Error handling**: On exception, responds with `{"error": str, "error_type": str}`. Requester raises `TimeoutError` on
+no response.
 
 ### High-Level RPC Client (Preferred)
 
@@ -556,10 +566,10 @@ Frontend WebSocket ← ContextualizedAgentEvent { event, agent_class, thread_id,
 
 The API creates two subscribers on startup:
 
-| Subscriber | Subject | Handler | Purpose |
-|-----------|---------|---------|---------|
-| `AgentEventPersister` | `agent.*.*.*.*.*.*.*.*` (all events) | `persister.persist_agent_event` | MongoDB audit log |
-| `WebSockets` | `agent.*.*.*.*.*.display_event.*.*` (display only) | `ws_sender.send_event` | Real-time UI streaming |
+| Subscriber            | Subject                                            | Handler                         | Purpose                |
+| --------------------- | -------------------------------------------------- | ------------------------------- | ---------------------- |
+| `AgentEventPersister` | `agent.*.*.*.*.*.*.*.*` (all events)               | `persister.persist_agent_event` | MongoDB audit log      |
+| `WebSockets`          | `agent.*.*.*.*.*.display_event.*.*` (display only) | `ws_sender.send_event`          | Real-time UI streaming |
 
 ### SSE Streaming (OpenAI-compatible)
 
@@ -616,6 +626,7 @@ def use_nats_ws(request: WebSocket) -> NATS:
 **File**: `aihub_api/aihub_api/runners/lifetime/lifetime_manager.py`
 
 Startup order:
+
 1. MongoDB → Redis → Milvus → S3
 2. **NATS** (`NatsSettings.create_client()`) → **JetStream** (`nc.jetstream()`)
 3. Event persisters (NCSubscriber for all agent + process events)
@@ -629,25 +640,25 @@ Shutdown: reverse order, NATS closed in `finally` block.
 
 ### Environment Variables
 
-| Variable | Default | Purpose |
-|----------|---------|---------|
+| Variable        | Default  | Purpose                                    |
+| --------------- | -------- | ------------------------------------------ |
 | `NATS_ENDPOINT` | Required | Server URL (e.g., `nats://localhost:4222`) |
-| `NATS_TOKEN` | Optional | Token authentication |
+| `NATS_TOKEN`    | Optional | Token authentication                       |
 
 ### NATS Server Config
 
 **Template**: `deployment/templates/configs/nats-config.conf.j2`
 
-| Setting | Dev | Prod |
-|---------|-----|------|
-| `max_payload` | 1MB | 2MB |
-| `max_connections` | 64 | 256 |
-| `max_subscriptions` | 1000 | 5000 |
-| `max_pending` | 512MB | 2GB |
-| JetStream `max_memory_store` | 512MB | 2GB |
-| JetStream `max_file_store` | 10GB | 50GB |
-| JetStream `sync_interval` | 1m | 2m |
-| JetStream `domain` | `dev` | `prod` |
+| Setting                      | Dev   | Prod   |
+| ---------------------------- | ----- | ------ |
+| `max_payload`                | 1MB   | 2MB    |
+| `max_connections`            | 64    | 256    |
+| `max_subscriptions`          | 1000  | 5000   |
+| `max_pending`                | 512MB | 2GB    |
+| JetStream `max_memory_store` | 512MB | 2GB    |
+| JetStream `max_file_store`   | 10GB  | 50GB   |
+| JetStream `sync_interval`    | 1m    | 2m     |
+| JetStream `domain`           | `dev` | `prod` |
 
 ---
 
@@ -797,88 +808,98 @@ class MyNCSubscriber(NCSubscriber[MyEvent]):
 ## Key File Reference
 
 ### Core Infrastructure
-| File | Purpose |
-|------|---------|
+
+| File                                                      | Purpose                |
+| --------------------------------------------------------- | ---------------------- |
 | `aihub_lib/aihub_lib/infrastructure/nats/NatsSettings.py` | NATS connection config |
-| `aihub_lib/aihub_lib/nats/dependencies/use_nats.py` | FastAPI DI |
+| `aihub_lib/aihub_lib/nats/dependencies/use_nats.py`       | FastAPI DI             |
 
 ### Publishers
-| File | Purpose |
-|------|---------|
+
+| File                                                       | Purpose              |
+| ---------------------------------------------------------- | -------------------- |
 | `aihub_lib/aihub_lib/nats/publishers/AbstractPublisher.py` | Publisher base class |
-| `aihub_lib/aihub_lib/nats/publishers/NCPublisher.py` | NATS Core publisher |
-| `aihub_lib/aihub_lib/nats/publishers/JSPublisher.py` | JetStream publisher |
+| `aihub_lib/aihub_lib/nats/publishers/NCPublisher.py`       | NATS Core publisher  |
+| `aihub_lib/aihub_lib/nats/publishers/JSPublisher.py`       | JetStream publisher  |
 
 ### Subscribers
-| File | Purpose |
-|------|---------|
-| `aihub_lib/aihub_lib/nats/subscribers/AbstractSubscriber.py` | Subscriber base class |
-| `aihub_lib/aihub_lib/nats/subscribers/NCSubscriber.py` | NATS Core subscriber |
-| `aihub_lib/aihub_lib/nats/subscribers/JSSubscriber.py` | JetStream subscriber |
+
+| File                                                              | Purpose                       |
+| ----------------------------------------------------------------- | ----------------------------- |
+| `aihub_lib/aihub_lib/nats/subscribers/AbstractSubscriber.py`      | Subscriber base class         |
+| `aihub_lib/aihub_lib/nats/subscribers/NCSubscriber.py`            | NATS Core subscriber          |
+| `aihub_lib/aihub_lib/nats/subscribers/JSSubscriber.py`            | JetStream subscriber          |
 | `aihub_lib/aihub_lib/nats/subscribers/agent/AgentNCSubscriber.py` | Agent NC subscriber factories |
 | `aihub_lib/aihub_lib/nats/subscribers/agent/AgentJSSubscriber.py` | Agent JS subscriber factories |
 
 ### RPC
-| File | Purpose |
-|------|---------|
-| `aihub_lib/aihub_lib/nats/requester/NCRequester.py` | RPC client |
-| `aihub_lib/aihub_lib/nats/responder/NCResponder.py` | RPC server |
-| `aihub_lib/aihub_lib/nats/rpc/AgentConfigClient.py` | Agent config RPC client |
-| `aihub_lib/aihub_lib/nats/rpc/models.py` | RPC request/response models |
-| `aihub_api/aihub_api/rpc/AgentConfigResponder.py` | Agent config RPC server |
+
+| File                                                | Purpose                     |
+| --------------------------------------------------- | --------------------------- |
+| `aihub_lib/aihub_lib/nats/requester/NCRequester.py` | RPC client                  |
+| `aihub_lib/aihub_lib/nats/responder/NCResponder.py` | RPC server                  |
+| `aihub_lib/aihub_lib/nats/rpc/AgentConfigClient.py` | Agent config RPC client     |
+| `aihub_lib/aihub_lib/nats/rpc/models.py`            | RPC request/response models |
+| `aihub_api/aihub_api/rpc/AgentConfigResponder.py`   | Agent config RPC server     |
 
 ### Events
-| File | Purpose |
-|------|---------|
-| `aihub_lib/aihub_lib/nats/events/BaseEvent.py` | Event base + registry + deserialization |
-| `aihub_lib/aihub_lib/nats/events/control/ControlEvent.py` | Workflow event base |
-| `aihub_lib/aihub_lib/nats/events/display/DisplayEvent.py` | UI event base |
-| `aihub_lib/aihub_lib/nats/events/ControlAndDisplayEvent.py` | Hybrid event base |
-| `aihub_lib/aihub_lib/nats/events/control/start/StartEvent.py` | Run start |
-| `aihub_lib/aihub_lib/nats/events/control/stop/StopEvent.py` | Run stop |
-| `aihub_lib/aihub_lib/nats/events/control/exception/ExceptionEvent.py` | Error |
-| `aihub_lib/aihub_lib/nats/events/display/ChunkEvent.py` | Streaming text |
-| `aihub_lib/aihub_lib/nats/events/display/ThoughtEvent.py` | Agent reasoning |
-| `aihub_lib/aihub_lib/nats/events/user/UserMessageEvent.py` | User chat message |
+
+| File                                                                  | Purpose                                 |
+| --------------------------------------------------------------------- | --------------------------------------- |
+| `aihub_lib/aihub_lib/nats/events/BaseEvent.py`                        | Event base + registry + deserialization |
+| `aihub_lib/aihub_lib/nats/events/control/ControlEvent.py`             | Workflow event base                     |
+| `aihub_lib/aihub_lib/nats/events/display/DisplayEvent.py`             | UI event base                           |
+| `aihub_lib/aihub_lib/nats/events/ControlAndDisplayEvent.py`           | Hybrid event base                       |
+| `aihub_lib/aihub_lib/nats/events/control/start/StartEvent.py`         | Run start                               |
+| `aihub_lib/aihub_lib/nats/events/control/stop/StopEvent.py`           | Run stop                                |
+| `aihub_lib/aihub_lib/nats/events/control/exception/ExceptionEvent.py` | Error                                   |
+| `aihub_lib/aihub_lib/nats/events/display/ChunkEvent.py`               | Streaming text                          |
+| `aihub_lib/aihub_lib/nats/events/display/ThoughtEvent.py`             | Agent reasoning                         |
+| `aihub_lib/aihub_lib/nats/events/user/UserMessageEvent.py`            | User chat message                       |
 
 ### Topics & Streams
-| File | Purpose |
-|------|---------|
-| `aihub_lib/aihub_lib/nats/topics/Topic.py` | Topic base + registry |
-| `aihub_lib/aihub_lib/nats/topics/agents/AgentInstanceTopic.py` | Full agent topic |
-| `aihub_lib/aihub_lib/nats/topic_managers/TopicManager.py` | Subject builder base |
-| `aihub_lib/aihub_lib/nats/topic_managers/agents/AgentTopicManager.py` | Agent subjects |
-| `aihub_lib/aihub_lib/nats/streams/StreamManager.py` | Stream creation |
+
+| File                                                                  | Purpose               |
+| --------------------------------------------------------------------- | --------------------- |
+| `aihub_lib/aihub_lib/nats/topics/Topic.py`                            | Topic base + registry |
+| `aihub_lib/aihub_lib/nats/topics/agents/AgentInstanceTopic.py`        | Full agent topic      |
+| `aihub_lib/aihub_lib/nats/topic_managers/TopicManager.py`             | Subject builder base  |
+| `aihub_lib/aihub_lib/nats/topic_managers/agents/AgentTopicManager.py` | Agent subjects        |
+| `aihub_lib/aihub_lib/nats/streams/StreamManager.py`                   | Stream creation       |
 
 ### Dispatcher & Event Store
-| File | Purpose |
-|------|---------|
-| `aihub_lib/aihub_lib/nats/dispatcher/BaseDispatcher.py` | Dispatcher base |
-| `aihub_lib/aihub_lib/nats/dispatcher/stores/event/JetStreamEventStore.py` | Event store |
-| `aihub_lib/aihub_lib/nats/polling/JSPoller.py` | Pull consumer |
-| `aihub_agent/aihub_agent/dispatchers/AgentDispatcher.py` | Agent dispatcher |
-| `aihub_process/aihub_process/dispatchers/ProcessDispatcher.py` | Process dispatcher |
+
+| File                                                                      | Purpose            |
+| ------------------------------------------------------------------------- | ------------------ |
+| `aihub_lib/aihub_lib/nats/dispatcher/BaseDispatcher.py`                   | Dispatcher base    |
+| `aihub_lib/aihub_lib/nats/dispatcher/stores/event/JetStreamEventStore.py` | Event store        |
+| `aihub_lib/aihub_lib/nats/polling/JSPoller.py`                            | Pull consumer      |
+| `aihub_agent/aihub_agent/dispatchers/AgentDispatcher.py`                  | Agent dispatcher   |
+| `aihub_process/aihub_process/dispatchers/ProcessDispatcher.py`            | Process dispatcher |
 
 ### Tracing
-| File | Purpose |
-|------|---------|
-| `aihub_lib/aihub_lib/nats/tracing/NATSMessageHeaders.py` | Header builder |
+
+| File                                                             | Purpose               |
+| ---------------------------------------------------------------- | --------------------- |
+| `aihub_lib/aihub_lib/nats/tracing/NATSMessageHeaders.py`         | Header builder        |
 | `aihub_lib/aihub_lib/nats/tracing/NATSTraceContextPropagator.py` | W3C trace propagation |
 
 ### Lifetime & Integration
-| File | Purpose |
-|------|---------|
-| `aihub_api/aihub_api/runners/lifetime/lifetime_manager.py` | API startup/shutdown |
-| `aihub_api/aihub_api/sockets/sender/WebSocketSender.py` | NATS → WebSocket bridge |
-| `aihub_api/aihub_api/sockets/manager/WebSocketManager.py` | WebSocket connections |
-| `aihub_lib/aihub_lib/nats/distributor/ExternalAgentEventDistributor.py` | API → NATS bridge |
-| `aihub_agent/aihub_agent/runners/AgentRunner.py` | Agent NATS bootstrap |
+
+| File                                                                    | Purpose                 |
+| ----------------------------------------------------------------------- | ----------------------- |
+| `aihub_api/aihub_api/runners/lifetime/lifetime_manager.py`              | API startup/shutdown    |
+| `aihub_api/aihub_api/sockets/sender/WebSocketSender.py`                 | NATS → WebSocket bridge |
+| `aihub_api/aihub_api/sockets/manager/WebSocketManager.py`               | WebSocket connections   |
+| `aihub_lib/aihub_lib/nats/distributor/ExternalAgentEventDistributor.py` | API → NATS bridge       |
+| `aihub_agent/aihub_agent/runners/AgentRunner.py`                        | Agent NATS bootstrap    |
 
 ### Documentation
-| File | Purpose |
-|------|---------|
-| `aihub_doc/docs/2_platform/2_architecture/3_swiss_ai_agent_protocol/index.en.md` | Protocol spec |
-| `deployment/templates/configs/nats-config.conf.j2` | NATS server config template |
+
+| File                                                                             | Purpose                     |
+| -------------------------------------------------------------------------------- | --------------------------- |
+| `aihub_doc/docs/2_platform/2_architecture/3_swiss_ai_agent_protocol/index.en.md` | Protocol spec               |
+| `deployment/templates/configs/nats-config.conf.j2`                               | NATS server config template |
 
 ---
 

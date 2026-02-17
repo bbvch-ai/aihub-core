@@ -1,9 +1,6 @@
 ---
 name: scaffold-process
-description: Generate a new agentic business process with entity delegation (Agent,
-  Human, Program). Creates process class, work events, forms, config, and BDD tests.
-  Use when user says "create a process", "scaffold process", "new business process",
-  "add agentic process", "orchestrate agents and humans", or "build a workflow for X".
+description: Generate a new agentic business process with entity delegation (Agent, Human, Program). Creates process class, work events, forms, config, and BDD tests. Use when user says "create a process", "scaffold process", "new business process", "add agentic process", "orchestrate agents and humans", or "build a workflow for X".
 
 allowed-tools: Read, Write, Bash, Grep, Glob
 ---
@@ -57,6 +54,7 @@ Create in `aihub_process/aihub_process/agentic_processes/<process_name>/`:
 ## Step 5: Create Forms (`forms/forms.py`)
 
 For `Human.In` events, define FormGroup with:
+
 - Field definitions for user input
 - Validation rules
 - LocaleString labels in all 4 locales (de, en, fr, it)
@@ -70,6 +68,7 @@ For `Human.In` events, define FormGroup with:
 ## Step 7: Create Tests
 
 Create in `aihub_process/tests/agentic_processes/<process_name>/`:
+
 - `test_<process_name>.py` -- Unit tests
 - `tests/features/<process_name>.feature` -- BDD Gherkin scenarios
 
@@ -84,13 +83,19 @@ Create in `aihub_process/tests/agentic_processes/<process_name>/`:
 
 **Input**: `$ARGUMENTS = "invoice_approval - Process where an agent extracts invoice data and a human approves it"`
 **Expected output files**:
+
 - `aihub_process/aihub_process/agentic_processes/invoice_approval/process.py` with class `InvoiceApprovalProcess`
-- `aihub_process/aihub_process/agentic_processes/invoice_approval/events/events.py` with `InvoiceApprovalStartEvent`, `InvoiceApprovalExtractWorkRequestEvent`, `InvoiceApprovalExtractWorkEvent`, `InvoiceApprovalApproveWorkRequestEvent`, `InvoiceApprovalApproveWorkEvent`, `InvoiceApprovalStopEvent`
+- `aihub_process/aihub_process/agentic_processes/invoice_approval/events/events.py` with `InvoiceApprovalStartEvent`,
+  `InvoiceApprovalExtractWorkRequestEvent`, `InvoiceApprovalExtractWorkEvent`, `InvoiceApprovalApproveWorkRequestEvent`,
+  `InvoiceApprovalApproveWorkEvent`, `InvoiceApprovalStopEvent`
 - `aihub_process/aihub_process/agentic_processes/invoice_approval/forms/forms.py` with approval FormGroup
 
 ## Troubleshooting
 
-- **Unpaired WorkEvents**: Every `WorkRequestEvent` must have exactly one matching `WorkEvent` -- missing pairs cause runtime errors
-- **Entity delegation mismatch**: Ensure `Agent.In`/`Agent.Out`, `Human.In`/`Human.Out`, `Program.In`/`Program.Out` annotations match the event types
-- **Missing locale strings**: Forms must define labels in all 4 locales (de, en, fr, it) or the UI will show empty labels
+- **Unpaired WorkEvents**: Every `WorkRequestEvent` must have exactly one matching `WorkEvent` -- missing pairs cause
+  runtime errors
+- **Entity delegation mismatch**: Ensure `Agent.In`/`Agent.Out`, `Human.In`/`Human.Out`, `Program.In`/`Program.Out`
+  annotations match the event types
+- **Missing locale strings**: Forms must define labels in all 4 locales (de, en, fr, it) or the UI will show empty
+  labels
 - **Dead-end steps**: Verify the chain StartEvent --> ... --> StopEvent is complete with no orphan steps

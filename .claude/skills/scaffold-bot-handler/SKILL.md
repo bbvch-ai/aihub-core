@@ -1,9 +1,6 @@
 ---
 name: scaffold-bot-handler
-description: Scaffold a new bot conversation handler for MS Teams or Slack. Generates
-  ChatBot subclass, completion handler, message formatter, config, and tests. Use when
-  user says "create a bot", "scaffold bot handler", "new Teams bot", "add Slack bot",
-  "generate bot integration", "build a chatbot for X", or "add bot handler".
+description: Scaffold a new bot conversation handler for MS Teams or Slack. Generates ChatBot subclass, completion handler, message formatter, config, and tests. Use when user says "create a bot", "scaffold bot handler", "new Teams bot", "add Slack bot", "generate bot integration", "build a chatbot for X", or "add bot handler".
 allowed-tools: Read, Write, Bash, Grep, Glob
 ---
 
@@ -64,6 +61,7 @@ Register a webhook endpoint in the API for receiving bot platform callbacks.
 ## Step 8: Create Tests
 
 Create in `aihub_bot/tests/bots/<bot_name>/`:
+
 - `test_<bot_name>.py` -- Unit tests using BotTestRunner
 - Test message handling, formatting, and error cases
 
@@ -77,8 +75,9 @@ Create in `aihub_bot/tests/bots/<bot_name>/`:
 
 ## Examples
 
-**Input**: `$ARGUMENTS = "teams_support_bot - A Teams bot that routes support questions to the FAQ agent"`
-**Expected output files**:
+**Input**: `$ARGUMENTS = "teams_support_bot - A Teams bot that routes support questions to the FAQ agent"` **Expected
+output files**:
+
 - `aihub_bot/aihub_bot/bots/teams_support_bot/bot.py` with class `TeamsSupportBot(BaseChatBot)`
 - `aihub_bot/aihub_bot/bots/teams_support_bot/handler.py` with `TeamsSupportCompletionHandler`
 - `aihub_bot/aihub_bot/bots/teams_support_bot/formatter.py` with Teams Adaptive Card formatting
@@ -87,8 +86,12 @@ Create in `aihub_bot/tests/bots/<bot_name>/`:
 
 ## Troubleshooting
 
-- **Bot not receiving messages**: Verify the webhook endpoint is registered and the bot platform's messaging endpoint URL is correct
-- **MSAL auth failures**: Ensure Azure AD app registration credentials are configured in `.env` and match the bot channel registration
-- **Conversation state lost**: Check ConversationEntity TTL settings -- conversations expire after the configured timeout
+- **Bot not receiving messages**: Verify the webhook endpoint is registered and the bot platform's messaging endpoint
+  URL is correct
+- **MSAL auth failures**: Ensure Azure AD app registration credentials are configured in `.env` and match the bot
+  channel registration
+- **Conversation state lost**: Check ConversationEntity TTL settings -- conversations expire after the configured
+  timeout
 - **NATS connection issues**: Verify NATS is running and the bot can publish/subscribe to agent event topics
-- **Message formatting errors**: Test formatting separately -- Teams Adaptive Cards and Slack Blocks have different structure requirements
+- **Message formatting errors**: Test formatting separately -- Teams Adaptive Cards and Slack Blocks have different
+  structure requirements

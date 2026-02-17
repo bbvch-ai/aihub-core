@@ -18,6 +18,7 @@ Generate Pinia-Colada composables for a backend API resource. The resource name 
 Read the frontend scope guide: `/home/user/aihub-core/aihub_web/CLAUDE.md`
 
 Study an existing composable directory for reference:
+
 - Simple query: `aihub_web/aihub_web/composables/agent/useAgentInstances.ts`
 - Query with route params: `aihub_web/aihub_web/composables/agent/useAgentInstance.ts`
 - Mutation with cache invalidation: `aihub_web/aihub_web/composables/agent/useCreateAgentInstance.ts`
@@ -26,6 +27,7 @@ Study an existing composable directory for reference:
 ## Step 1: Check SDK Availability
 
 Find the SDK functions and types for the resource in `aihub_web/aihub_web/sdk/client/`. Identify:
+
 - **GET list**: e.g., `getAll<Resource>s`
 - **GET single**: e.g., `get<Resource>`
 - **POST create**: e.g., `create<Resource>`
@@ -135,6 +137,7 @@ export const useCreate<Resource> = defineMutation(() => {
 **Typical invocation**: `/scaffold-composable pipeline`
 
 **Result**: Creates composable files in `aihub_web/aihub_web/composables/pipeline/`:
+
 - `usePipelines.ts` — list query
 - `usePipeline.ts` — single item query with route params
 - `useCreatePipeline.ts` — create mutation with cache invalidation
@@ -142,12 +145,12 @@ export const useCreate<Resource> = defineMutation(() => {
 
 ## Troubleshooting
 
-| Problem | Solution |
-|---------|----------|
-| SDK functions not found | Run `/generate-sdk` first to regenerate the client SDK |
-| Query never resolves | Check `enabled` flag — use `useRouteReady()` for route-dependent queries |
-| Stale data after mutation | Ensure `queryCache.invalidateQueries({ key: ['resources'] })` is called |
-| Type errors on DTO imports | Regenerate SDK — types may be outdated |
+| Problem                      | Solution                                                                      |
+| ---------------------------- | ----------------------------------------------------------------------------- |
+| SDK functions not found      | Run `/generate-sdk` first to regenerate the client SDK                        |
+| Query never resolves         | Check `enabled` flag — use `useRouteReady()` for route-dependent queries      |
+| Stale data after mutation    | Ensure `queryCache.invalidateQueries({ key: ['resources'] })` is called       |
+| Type errors on DTO imports   | Regenerate SDK — types may be outdated                                        |
 | Composable not auto-imported | Nuxt auto-imports from `composables/` — ensure file is in the right directory |
 
 ## Key Conventions

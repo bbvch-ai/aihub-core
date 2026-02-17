@@ -52,13 +52,13 @@ Read `/home/user/aihub-core/aihub_agent/CLAUDE.md` to understand agent architect
 
 ## Step 6: Diagnose by Symptom
 
-| Symptom | What to Check |
-|---------|---------------|
-| **Won't start** | StartEvent handler exists, runner config correct, NATS connectivity, agent registered |
-| **Stops unexpectedly** | Unhandled exceptions in steps, missing `await` on async calls, LLM call failures |
-| **Wrong output** | Logic errors in steps, incorrect model name, wrong system prompt, RAG retrieval issues |
-| **Slow performance** | Vector search `top_k` too high, wrong model selection, unnecessary re-indexing, blocking I/O |
-| **No response** | Check if StopEvent is ever reached, check NATS subject matching |
+| Symptom                | What to Check                                                                                |
+| ---------------------- | -------------------------------------------------------------------------------------------- |
+| **Won't start**        | StartEvent handler exists, runner config correct, NATS connectivity, agent registered        |
+| **Stops unexpectedly** | Unhandled exceptions in steps, missing `await` on async calls, LLM call failures             |
+| **Wrong output**       | Logic errors in steps, incorrect model name, wrong system prompt, RAG retrieval issues       |
+| **Slow performance**   | Vector search `top_k` too high, wrong model selection, unnecessary re-indexing, blocking I/O |
+| **No response**        | Check if StopEvent is ever reached, check NATS subject matching                              |
 
 ## Step 7: Check Tests
 
@@ -70,6 +70,7 @@ Read `/home/user/aihub-core/aihub_agent/CLAUDE.md` to understand agent architect
 ## Step 8: Report
 
 Provide a structured report with:
+
 - **Agent location**: File path and class name
 - **Event flow**: Complete step/event chain (valid or broken)
 - **Configuration**: Valid or issues found
@@ -80,9 +81,9 @@ Provide a structured report with:
 
 ## Troubleshooting Quick Reference
 
-| Error | Likely Cause | Fix |
-|-------|-------------|-----|
-| `TimeoutError` on agent call | NATS not connected or agent not subscribed | Check NATS service, verify agent runner is started |
-| `ExceptionEvent` returned | Unhandled error in a step | Check agent logs for full traceback |
-| Agent registered but not found | Discovery not working | Verify `ClassDiscoveryRequest` handler returns correct metadata |
-| Config validation error | Invalid config values | Check Config class defaults and env variable overrides |
+| Error                          | Likely Cause                               | Fix                                                             |
+| ------------------------------ | ------------------------------------------ | --------------------------------------------------------------- |
+| `TimeoutError` on agent call   | NATS not connected or agent not subscribed | Check NATS service, verify agent runner is started              |
+| `ExceptionEvent` returned      | Unhandled error in a step                  | Check agent logs for full traceback                             |
+| Agent registered but not found | Discovery not working                      | Verify `ClassDiscoveryRequest` handler returns correct metadata |
+| Config validation error        | Invalid config values                      | Check Config class defaults and env variable overrides          |

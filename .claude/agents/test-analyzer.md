@@ -1,8 +1,6 @@
 ---
 name: test-analyzer
-description: Analyzes test coverage, identifies gaps, and suggests test
-  improvements. Understands pytest-bdd, async testing, and the custom test
-  runners (AgentTestRunner, ProcessTestRunner, ApiTestRunner, BotTestRunner).
+description: Analyzes test coverage, identifies gaps, and suggests test improvements. Understands pytest-bdd, async testing, and the custom test runners (AgentTestRunner, ProcessTestRunner, ApiTestRunner, BotTestRunner).
 tools: Read, Grep, Glob, Bash
 model: opus
 ---
@@ -21,13 +19,16 @@ You are a test infrastructure expert for aihub-core.
 ## Test Patterns
 
 ### pytest-bdd (BDD with Gherkin)
+
 ```
 tests/features/*.feature  → Gherkin scenarios
 tests/step_defs/          → Step implementations
 ```
+
 Limitation: async challenges — use plain pytest with `@pytest.mark.asyncio` for async.
 
 ### Test Markers
+
 - `@pytest.mark.slow` — long-running
 - `@pytest.mark.integration` — requires external services
 - `@pytest.mark.azure` — requires Azure credentials
@@ -35,6 +36,7 @@ Limitation: async challenges — use plain pytest with `@pytest.mark.asyncio` fo
 - `@pytest.mark.experimental` — new/unstable
 
 ### Test Locations
+
 ```
 aihub_lib/tests/       aihub_agent/tests/
 aihub_api/tests/       aihub_bot/tests/
