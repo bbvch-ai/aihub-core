@@ -501,6 +501,7 @@ dashboard:
       label: "Compiti delegati"
 
 evaluation:
+  langfuse_link: "Esegui esperimenti"
   dataset:
     title: "Set di dati"
     created_at: "Creato:"
@@ -525,37 +526,6 @@ evaluation:
     save_action: "Salva"
     saved_summary: "Salvato"
     saved_detail: "Set di dati salvato"
-  experiment:
-    title: "Esperimenti"
-    created_at: "Eseguito il:"
-    dataset: "Set di dati"
-    language_and_dataset: "Lingua e set di dati"
-    language: "Lingua dell'esperimento:"
-    create_description: "Crea un nuovo esperimento con un set di dati e un Assistente!"
-    name: "Nome"
-    description: "Descrizione"
-    agent: "Agente"
-    select_dataset: "Seleziona un set di dati"
-    select_assistant: "Seleziona un Assistente"
-    cancel: "Annulla"
-    save: "Salva"
-    running: "L'esperimento è in esecuzione!"
-    running_description: "Questo potrebbe richiedere diversi minuti. Puoi anche lasciare questa pagina e tornare più tardi."
-    failed: "Esperimento fallito!"
-    failed_description: "Contatta il team di sviluppo AI-Hub per scoprire cosa è andato storto."
-    filter_by_assistant: "Filtra per Assistente"
-    filter_by_dataset: "Filtra per set di dati"
-    run_experiment: "Esegui esperimento"
-    create_new: "Crea nuovo esperimento"
-    result:
-      question: "Domanda"
-      reference_answer: "Risposta di riferimento"
-      assistant_answer: "Risposta dell'assistente"
-      latency_ms: "Latenza"
-      conciseness: "Concisione"
-      correctness: "Correttezza"
-      completeness: "Completezza"
-
 role:
   title: "Ruoli di accesso"
   name: "Nome"

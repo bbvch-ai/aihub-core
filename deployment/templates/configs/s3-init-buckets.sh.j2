@@ -14,7 +14,7 @@ DEFAULT_BUCKET=${AIHUB_DEFAULT_BUCKET_NAME}
 SHARED_BUCKET=${AIHUB_SHARED_BUCKET_NAME}
 
 # Always create core infrastructure buckets
-BUCKETS="open-webui milvus"
+BUCKETS="open-webui milvus langfuse"
 
 # Conditionally add knowledge buckets
 if [ "$CREATE_DEFAULT_BUCKETS" = "True" ] || [ "$CREATE_DEFAULT_BUCKETS" = "true" ]; then

@@ -1,7 +1,7 @@
 <template>
   <StructuralColumn
     :title="dataset?.dataset_name"
-    close-route="/service/evaluations/datasets"
+    close-route="/service/datasets"
     :loading="datasetIsLoading"
   >
     <ConfirmPopup />

@@ -55,7 +55,7 @@ Our architecture is built on a set of non-negotiable principles that reflect the
 - **Radical Transparency and Auditability**: We believe trust is earned through transparency. Our "AI Agents as
   Workflows" philosophy ensures that agent behavior is not a "black box". Agents and assistants are built as structured,
   step-by-step workflows, making them inherently transparent and testable. Every step can be visually monitored and
-  audited using tools like Phoenix Tracing, which is crucial for gaining the trust of employees, managers, and
+  audited using tools like Langfuse Tracing, which is crucial for gaining the trust of employees, managers, and
   regulators.
 :::
 
@@ -150,7 +150,7 @@ see all our platform-level features work for your component automatically, out-o
 
 - **Automatic Observability**: Your new agent will immediately appear in the **`aihub_web`** UI, where it can be managed
   and observed.
-- **Built-in Traceability**: Every run of your agent is automatically traced and can be audited visually in Phoenix
+- **Built-in Traceability**: Every run of your agent is automatically traced and can be audited visually in Langfuse
   without any extra work.
 - **Seamless Interaction**: Your agent can be invoked from the chat interface and can use our built-in protocols to
   interact with other agents in the Hub.
@@ -226,7 +226,7 @@ Our AI capabilities are primarily powered by the LlamaIndex ecosystem and integr
 - **Monitoring**: We use a combination of tools for comprehensive application monitoring:
   - **OpenTelemetry**: The foundational toolkit for generating and exporting telemetry data (traces, metrics, logs).
   - **OpenInference**: A specialized instrumentation library for monitoring LLM applications built with LlamaIndex.
-  - **Arize Phoenix**: For ML observability and model performance evaluation.
+  - **Langfuse**: For LLM observability, tracing, and model performance evaluation.
 - **Asynchronous Messaging**:
   - **NATS**: Used for high-performance, asynchronous communication between services.
 
@@ -427,7 +427,7 @@ MCP integration provides AI coding assistants with:
 - **Real-time observation** of running services and their state
 - **Direct access** to development databases for debugging
 - **API interaction** capabilities for testing and validation
-- **Observability integration** with Phoenix tracing and monitoring
+- **Observability integration** with Langfuse tracing and monitoring
 :::
 
 #### :gear: MCP Configuration
@@ -459,7 +459,7 @@ enabled by default), each with a wrapper script in `.claude/mcp/`:
 Once your development environment is running, AI coding assistants that support MCP can automatically discover and use
 these integrations:
 
-- **Query agent execution traces** through Phoenix MCP
+- **Query agent execution traces** through Langfuse UI at http://localhost:6006
 - **Inspect database state** through MongoDB MCP (read-only)
 - **Test API endpoints** through AI-Hub API MCP
 - **Debug complex issues** with full development context
