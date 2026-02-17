@@ -2,62 +2,107 @@
 
 ## Project Overview
 
-**Swiss AI-Hub**: Enterprise-grade, sovereign AI platform for integrating AI into business processes. A complete
-production-ready ecosystem with batteries included (database, API, UI, pipelines, Docker deployment).
+**Swiss AI-Hub**: Open-source, self-hosted AI platform for enterprises. Organizations run it on their own infrastructure
+— no SaaS dependency, full data sovereignty. The platform handles authentication, multi-tenancy, cost control,
+observability, LLM routing, vector storage, and document parsing as commodity infrastructure. Developers focus on
+building agents, pipelines, and processes using the SDK; the platform provides the runtime.
 
-Tech Stack & Paradigms: Python 3 monorepo with Poetry. NATS pub-sub event-driven architecture. FastAPI REST APIs with
-uvicorn + gunicorn. Custom OAuth2/OIDC auth (Azure AD). LlamaIndex workflow engine for transparent agents. Dagster
-asset-based data pipelines. Nuxt 3 + Vue 3 frontend with TypeScript. PrimeVue UI components, FormKit forms, VueFlow
-workflows. Docker Compose for all environments (dev, local, nightly, latest, GPU). VitePress docs with automated LLM
-translation. Valkey (Redis v5 client) for state, FerretDB (MongoEngine) for persistence, Milvus for vectors. Azure SDK
-suite (20+ packages). OpenTelemetry + OpenInference + Langfuse for observability. Pydantic v2 validation. MyPy strict
-type checking. pytest-bdd for Gherkin BDD tests. Black formatter, Ruff linter. pnpm for frontend. Pulumi for Azure IaC.
+**Platform vs SDK**: The platform is the runtime infrastructure (Docker, Traefik, LiteLLM, Milvus, Dagster, NATS,
+PostgreSQL — handles SSO, routing, cost tracking, UI hosting). The SDK is where you build: agents, data pipelines, bot
+integrations, and processes. SDK code inherits all platform capabilities — no custom REST APIs, WebSocket management,
+database schemas, or auth logic needed.
 
-**Core Philosophy**: Privacy-first, Swiss data sovereignty, security by design, radical transparency through
-workflow-based agents (not black boxes).
+**Swiss AI Agent Protocol**: Event-driven protocol over NATS. Strict Control Event (workflow) vs Display Event
+(observability) separation. Hierarchical scoping (Thread → Display → Run). See
+`aihub_doc/docs/2_platform/2_architecture/3_swiss_ai_agent_protocol/index.en.md`.
 
-**Three-Tier Architecture**:
+## Platform Architecture
 
-- **Tier 1**: Secure LLM access via OpenWebUI chat interface
-- **Tier 1+**: Integration with MS Teams, Slack, Outlook (Azure Bot Framework)
-- **Tier 2**: AI agents with organizational knowledge (RAG, vector search)
-- **Tier 3**: Process orchestration (agents + humans + external systems)
+The platform follows an event-driven microservice architecture where NATS serves as the central communication backbone.
+All inter-component communication flows through the Swiss AI Agent Protocol, which distinguishes between Control Events
+(workflow state transitions consumed by agents and orchestrators) and Display Events (observability data consumed by
+frontends and tracing systems). This separation allows the chat UI to visualize agent reasoning in real-time without
+interfering with workflow execution.
 
-**Swiss AI Agent Protocol**: Internal event-driven protocol governing all communication between platform components.
-Publish-subscribe model over NATS with strict Control Event (workflow) vs Display Event (observability) separation.
-Hierarchical scoping (Thread → Display → Run) for security and tracing.
+**LLM Gateway**: All model access is mediated by LiteLLM, which provides a unified OpenAI-compatible interface to cloud
+providers (Azure OpenAI, Google, Cohere), local models (llama.cpp for chat, embedding, and reranking), and audio models
+(Speaches for STT/TTS). Presidio intercepts requests for PII detection and anonymization before they reach external
+providers. This gateway pattern decouples application code from specific providers — switching models requires only a
+configuration change in LiteLLM, not code modifications.
 
-## Repository Structure
+**Agent Runtime**: Agents run as independent microservices that subscribe to NATS topics and publish events. Each agent
+reconstructs its conversational state by replaying the event history for a given thread, augmented by ephemeral state
+stored in Valkey (Redis-compatible). Agents access organizational knowledge through Milvus vector search, where document
+embeddings are indexed for semantic retrieval. This design allows agents to scale horizontally and be deployed or
+updated independently without affecting the rest of the platform.
 
-**Monorepo**: Single `aihub-core` repository containing all platform code. Open-source and reusable.
+**Data Pipeline**: Dagster orchestrates the ingestion workflow: sources (SharePoint, OneDrive via Rclone) are monitored
+for changes, documents are downloaded to SeaweedFS, parsed by Docling (OCR + structural extraction), chunked
+semantically, embedded via configured models, and stored in Milvus. The asset-based pipeline model provides lineage from
+every vector embedding back to its source document.
 
-**Package Separation**: Code shared by 2+ services belongs in `aihub_lib`. Service-specific code stays in respective
-packages.
+**Process Orchestration**: The process engine coordinates multi-step workflows involving agents, humans, and external
+systems (Power Automate, n8n, UiPath). Process state is persisted in FerretDB (MongoDB-compatible API over PostgreSQL).
+When a step requires human judgment, a task appears in the Process UI; when it requires AI, the engine delegates to an
+agent via NATS; when it requires an external action, it triggers a webhook.
+
+**Storage Layer**: The platform uses purpose-specific storage: PostgreSQL for relational data (OpenWebUI, Langfuse,
+Dagster, LiteLLM), FerretDB for document storage (conversations, app data, events), Milvus for vector embeddings,
+SeaweedFS for S3-compatible file storage (uploads, artifacts, pipeline data), Valkey for ephemeral agent state, and
+Neo4j for graph-based memory. etcd serves as the metadata backend for both Milvus and SeaweedFS.
+
+**Observability**: OpenTelemetry collects distributed traces across all services, forwarded by the OTEL Collector.
+Langfuse adds AI-specific observability on top — full prompt/response capture, per-trace cost tracking, RAG retrieval
+tracing, and evaluation datasets. Both integrate via the same trace context, providing end-to-end visibility from user
+request to LLM response.
+
+**Network Isolation**: Docker Compose defines five network zones: `proxy` (external ingress via Traefik), `backend`
+(application services), `data` (databases, caches, message broker), `storage` (SeaweedFS cluster), and `egress`
+(outbound internet with inter-container communication disabled). Services are assigned only the networks they require.
+
+## Dev Stack Services
+
+The `docker-compose.dev.yml` runs ~30 containers. Key services by role:
+
+**User-Facing**: OpenWebUI (chat UI, :8080), Admin UI and Process UI (Nuxt, :3000, run locally outside Docker)
+
+**API & Gateway**: FastAPI REST + WebSocket (:8000, run locally), LiteLLM universal LLM proxy (:4000), Traefik reverse
+proxy (production only)
+
+**AI Inference**: llama-cpp chat model (gemma-3-4b, :8182), llama-cpp embedding (Qwen3-0.6B, :8183), llama-cpp reranker
+(Qwen3-Reranker-0.6B, :8184), Speaches STT/TTS (:8185), Presidio analyzer + anonymizer (PII filtering)
+
+**Databases**: PostgreSQL with pgvector (:5432, 4 DBs: openwebui/langfuse/dagster/litellm), FerretDB (:27017,
+MongoDB-compatible over its own PostgreSQL), Milvus vector DB (:19530), Neo4j graph DB (:7474/:7687), Valkey/Redis
+(:6379), ClickHouse (Langfuse analytics), etcd (metadata for Milvus + SeaweedFS)
+
+**Storage**: SeaweedFS cluster (master + volume + filer + S3 gateway at :9000, filer UI at :8889), Rclone cloud sync
+(:5572)
+
+**Pipelines**: Dagster orchestrator (:3002, run locally), pipeline workers (run locally)
+
+**Document Processing**: Docling OCR + parsing (:5001)
+
+**Observability**: Langfuse web (:6006) + worker, OTEL Collector (:4317/:4318)
+
+**Utility**: Jupyter Lab (:8888, code execution sandbox), Playwright (:3036, browser automation), Attu (:3003, Milvus
+admin UI)
 
 ## Package Architecture
 
-**Monorepo Scopes** (Python packages):
+Code shared by 2+ services belongs in `aihub_lib`. Service-specific code stays in its scope.
 
-**Foundation**:
-
-- **`aihub_lib`**: Shared library used by all other packages. Place code here if used by 2+ services.
-
-**Core Logic**:
-
-- **`aihub_agent`**: Agent definitions and workflows (LlamaIndex-based, transparent, auditable).
+- **`aihub_lib`**: Shared library used by all other packages.
+- **`aihub_agent`**: Agent definitions and workflows (Our custom Workflow-Engine, transparent, auditable).
 - **`aihub_pipeline`**: Data ingestion/processing pipelines (Dagster).
 - **`aihub_process`**: High-level business process orchestration (agents + humans + external programs).
-
-**Integration**:
-
 - **`aihub_api`**: REST API + WebSocket gateway (FastAPI).
-- **`aihub_web`**: Frontend UI (Nuxt.js, Vue 3).
-- **`aihub_bot`**: Collaboration platform integrations (MS Teams, Slack, etc.).
-
-**Operations**:
-
+- **`aihub_web`**: Frontend UI (Nuxt 3, Vue 3, PrimeVue, Tailwind).
+- **`aihub_bot`**: Collaboration platform integrations (MS Teams, Slack).
 - **`aihub_action`**: Reusable GitHub Actions for CI/CD.
-- **`aihub_doc`**: arc42 documentation + ADRs.
+- **`aihub_doc`**: arc42 documentation + ADRs (VitePress).
+
+Each scope has its own `CLAUDE.md` — consult it before working in that scope.
 
 ## Key Terminology
 
@@ -65,67 +110,8 @@ packages.
 - **AI Agent**: Autonomous process partner that proactively executes tasks. Workflow-based, transparent, traceable.
 - **Pipeline**: Dagster-based data ingestion/processing workflow.
 - **Process**: Orchestrated collaboration between agents, humans, and programs.
-- **Swiss AI Agent Protocol**: Internal event-driven communication protocol. NATS publish-subscribe with Control/Display
-  event separation.
 
-## Tech Stack
-
-**Core Platform**:
-
-- **OpenWebUI**: Primary chat interface with dual pipeline architecture (event-based for agents via SSE,
-  OpenAI-compatible for direct model access)
-- **LiteLLM**: Universal LLM gateway (unified interface for OpenAI, Anthropic, Google, local models). Cost tracking,
-  request routing, retry policies.
-- **Admin UI**: Nuxt.js-based management interface, developed by us
-
-**AI/LLM**:
-
-- **LlamaIndex**: Core framework for RAG
-- **Providers**: OpenAI, Azure OpenAI, Google GenAI, Hugging Face, vLLM & llama.cpp (local models)
-
-**Data/Storage**:
-
-- **FerretDB**: MongoDB-compatible NoSQL (PostgreSQL backend), accessed via MongoEngine
-- **Valkey**: Redis-compatible in-memory state storage for agents (RunContext, ThreadContext)
-- **Milvus**: Primary vector store for semantic search
-- **SeaweedFS**: S3-compatible object storage (files, artifacts)
-- **PostgreSQL**: Relational database backend
-
-**Backend**:
-
-- **Python 3.13**: Core language
-- **Poetry**: Dependency management
-- **FastAPI**: REST API + WebSocket
-- **Pydantic**: Data validation
-
-**Observability**:
-
-- **OpenTelemetry**: End-to-end distributed tracing
-- **OpenInference**: LLM-specific instrumentation
-- **Langfuse**: LLM observability — tracing, cost tracking, prompt management, evaluations (http://localhost:6006)
-
-**Messaging**:
-
-- **NATS**: Event-driven async communication backbone (Swiss AI Agent Protocol message bus)
-
-**Deployment**:
-
-- **Docker Compose**: Multi-environment support (dev, local, nightly, latest, GPU variants). 100% Docker Compose—no
-  separate IaC tooling.
-- **Traefik**: Reverse proxy and API gateway
-- **OAuth2**: Enterprise authentication (Azure AD with superuser fallback for Docker deployments)
-
-**Docker Compose Conventions**:
-
-- **No default values in env var assignments**: Never use `${VAR:-default}` syntax in docker-compose templates. Define
-  all default values in `.env.dev` and `.env.prod` files instead. This keeps defaults centralized and explicit.
-- **Template location**: `deployment/templates/docker-compose.yml.j2` (Jinja2 template)
-- **Config location**: `deployment/compose-config.yml` (image tags, stage-specific values)
-- **Regenerate after changes**: Run `make generate-compose` after modifying templates or config
-
-## Coding Style & Conventions
-
-**Key Principles**:
+## Coding Conventions
 
 01. **Type-hint everything**: Return types mandatory. Use `Annotated` for parameters. Modern syntax: `str | None` not
     `Optional[str]`, `list[str]` not `List[str]`.
@@ -140,7 +126,10 @@ packages.
 08. **No premature optimization**: Readability first. Optimize only when profiling shows bottlenecks.
 09. **Descriptive naming**: `not_authorized_to_view_exception` not `auth_ex`. Classes: `CamelCase`, functions:
     `snake_case`, constants: `UPPER_SNAKE_CASE`.
-10. **Modern Python**: Use `|` unions, `@property`, `@override`, `match/case`.
+10. **Modern Python**: Use `|` unions, `@property`, `@override`, `match/case`. Return `Self` (from `typing`) instead of
+    `"ClassName"` for methods returning own type. Use PEP 695 generic syntax `class Foo[T: Bound]:` and
+    `def bar[T](x: T)` instead of `TypeVar`. See `aihub_lib/aihub_lib/nats/subscribers/AbstractSubscriber.py` for the
+    pattern.
 11. **Controller → Service → Entity**: Separation of concerns (HTTP layer → business logic → persistence).
 12. **Dependency injection**: FastAPI `Depends` and `Security` for clean parameter injection.
 13. **One class per file**: File name MUST match class name (`MyClass` → `MyClass.py`). No multi-class files.
@@ -150,224 +139,137 @@ packages.
     aliases unless explicitly asked.
 16. **No new abstractions**: Do not introduce abstractions that do not follow existing patterns in the codebase.
 
-**Example**:
+**Naming**: `snake_case` for files/dirs, `CamelCase` for classes, `test_*.py` for tests.
 
-```python
-# Type-hint return, Annotated params, Pydantic, fail fast, async
-async def api_key_for_user(
-    user: Annotated[UserIdentity, Security(...)],
-    client: Annotated[httpx.AsyncClient, Depends(...)],
-) -> str:
-    response = await client.get("/user/info", params={"user_id": user.id})
-    response.raise_for_status()  # Fail fast
-    return response.json()["key"]
+**Docstrings**: Explain "why", not "what". Never use `Args:` or `Returns:` sections — use type hints and `Annotated`
+instead. Keep docstrings concise, one or two sentences max.
 
-class AgentDTO(BaseModel):  # Pydantic not dict
-    agent_class: str
-    is_online: bool
-```
+## Tooling
 
-## Coding Conventions (Tools)
+**What hooks handle automatically — do NOT run these manually:**
 
-**Python** (Backend):
+- **Formatting** (PostToolUse hooks on every file edit): Ruff format for Python, ESLint --fix for TS/Vue, mdformat for
+  Markdown, yamlfix for YAML. Config: per-scope `pyproject.toml`, `aihub_web/aihub_web/eslint.config.js`.
+- **Linting** (PostToolUse hook): Ruff check --fix (rules: E pycodestyle, F pyflakes, UP pyupgrade, I isort).
+- **`make pr-ready`** (stop hook at session end): Automatically runs on all dirty scopes before session closes.
+  Hard-blocks if it fails. Do not run manually mid-session — it runs at the end.
+- **`poetry.lock` protection** (PreToolUse hook): Edits to `poetry.lock` are hard-blocked. Use
+  `poetry add/remove/update`.
+- **Scope boundary checks** (PreToolUse hook): Warns if you import directly between scopes instead of through
+  `aihub_lib`.
+- **Dependency setup** (SessionStart hook): `make use-local-core` + `pnpm install` run at session start.
 
-- **Formatter**: Black (line length: 120). Config: `/home/user/aihub-core/pyproject.toml`
-- **Linter**: Ruff (rules: E, F, UP, I). Config: `/home/user/aihub-core/pyproject.toml`
-- **Type Checker**: MyPy (`strict = true`). Config: `/home/user/aihub-core/pyproject.toml`
-- **Naming**: `snake_case` for files/dirs, `CamelCase` for classes, `test_*.py` for tests
-- **Types**: Mandatory type annotations. Use modern syntax (`list[int]`, `int | None`). Avoid complex types (dicts,
-  tuples)—use Pydantic models. Use `Annotated` for parameter metadata instead of docstring `Args:` sections.
-- **Error Handling**: Let functions fail. Do NOT catch errors and return None
-- **Docstrings**: Explain "why", not "what". Never use `Args:` or `Returns:` sections—use type hints and `Annotated`
-  instead. Keep docstrings concise, one or two sentences max.
+**What you MUST run manually:**
+
+- **`make test`**: Run pytest in all modified scopes. No hook automates this.
+
+## Commands
+
+Run from within scope directory with Poetry shell activated:
+
+| Command            | What it does                                        |
+| ------------------ | --------------------------------------------------- |
+| `make test`        | Run pytest suite (MUST pass before commit)          |
+| `poetry add <pkg>` | Add dependency (NEVER edit pyproject.toml manually) |
 
 ## Development Workflow
 
-### Setup
-
-1. **Clone**: `git clone https://github.com/bbvch-ai/aihub-core`
-2. **Python scopes**: `cd <scope>` → `poetry shell` → `poetry install`
-3. **Frontend**: `cd aihub_web/aihub_web` → `pnpm install`
-4. **Docker stack (dev)**: `docker compose -f docker-compose.dev.yml up -d`
-
-### Pre-Commit Checklist (Per Scope)
-
-Run from activated Poetry shell:
-
-1. **`make pr-ready`**: Auto-format + lint + type check (MUST pass before commit)
-2. **`make test`**: Run all tests (MUST pass before commit)
-
 ### Git Workflow
 
-- **Branching**: `main` branch only. Feature branches: `<type>/short-description` (`feat/`, `fix/`, `chore/`, `test/`,
-  `doc/`)
-- **Commits**: Conventional Commits format: `<type>(<scope>): <subject>` (e.g., `feat(aihub): Add new agent workflow`)
-- **PRs**: GitHub CLI (`gh pr create`). Squash merge only. Title must follow Conventional Commits
-- **Protection**: `main` branch requires 1 approval, linear history, passing checks
+**Branch naming** (CI-enforced via `branchlint`):
+
+- Feature branches: `^([a-z]{2,})\/([a-z-0-9]{2,})$` — e.g., `feat/add-auth`, `fix/login-bug`
+- Claude branches: `^claude\/[a-zA-Z0-9-]+$` — e.g., `claude/fix-issue-42`
+- No uppercase, no underscores in branch names. Prefix must be all-lowercase (`feat`, `fix`, `chore`, `test`, `doc`).
+
+**Commits**: Conventional Commits: `<type>(<scope>): <subject>` (e.g., `feat(aihub): Add new agent workflow`)
+
+**PR title** (CI-enforced via `semantic-pr`):
+
+- Format: `<type>(<scope>): <Subject starting with uppercase>`
+- Scope is **mandatory**.
+- Allowed types: `fix`, `feat`, `doc`, `test`, `chore`
+- Allowed scopes: `aihub`, `iac`, `ci-cd`, `agent-custom`, `agent-xp`, `avatar`, `bots`, `chat-xp`, `chat-backend`,
+  `debt`, `dagster`, `confidence`, `deploy`, `ui`, `guards`, `rag`, `local`, `tracing`, `workflows`, `micro`
+
+**PR labels** (CI-enforced): Every PR must have exactly one version label: `major`, `minor`, or `patch`. Controls
+automatic semver bumps on merge.
+
+**Merge**: Squash merge only. `main` requires 1 approval, linear history, passing checks. Draft PRs skip CI (except
+frontend lint).
 
 ### Task Completion Protocol
 
-Before marking task complete:
+Before marking task complete (`make pr-ready` runs automatically via stop hook):
 
-1. **Code quality**: Run `make pr-ready` and `make test` in all modified scopes
-2. **Documentation**:
-   - Update docstrings for new/changed code
-   - Update scope `README.md` if changes affect architecture/usage
-   - Update root `/home/user/aihub-core/README.md` if changes affect overall platform
-   - Create ADR in `/home/user/aihub-core/aihub_doc/arc42/decisions/` for significant architectural decisions
-3. **Commit & push**: Follow Git workflow above
-
-## Architectural Decisions (ADRs)
-
-**CRITICAL**: Consult existing ADRs before significant changes. Located:
-`/home/user/aihub-core/aihub_doc/arc42/decisions/`
-
-**Create ADR if**:
-
-- Adding major dependencies
-- Introducing new tools/frameworks
-- Altering fundamental patterns (e.g., Service/Controller/Repository abstraction, Swiss AI Agent Protocol)
-
-**ADR Format**: `YYYY_MM_DD_short-decision-summary.md` (Context → Decision Drivers → Decision → Consequences)
-
-## Work Management
-
-**GitHub Project**:
-
-- **Unified Project**: `gh project view 13 --owner bbvch-ai` (https://github.com/orgs/bbvch-ai/projects/13)
-- Roadmap + backlog in one project, organized by monthly sprints
-
-**Task Workflow**:
-
-1. Find task: `gh issue list -R "bbvch-ai/aihub-core" -a "@me"`
-2. View context: `gh issue view <issue_number> -c`
-3. Track progress in project board
-
-## Package Dependencies
-
-**Inter-package refs**: All packages reference `aihub_lib` via Git URL in `pyproject.toml`. Versioning via Git tags.
-
-**Local dev**: `make use-local-core` to switch to local `aihub_lib`.
-
-**Dependency mgmt**: `poetry add/remove/update` (NEVER edit `pyproject.toml` or `poetry.lock` manually).
+1. Run `make test` in all modified scopes (not automated by any hook)
+2. Update docstrings for new/changed code
+3. Update scope `README.md` if changes affect architecture/usage
+4. Create ADR in `aihub_doc/arc42/decisions/` for significant architectural decisions
+5. Commit & push following Git workflow above
 
 ## Testing
 
-**Framework**: pytest (Python), Vitest (frontend)
-
-**Python**:
+**Framework**: pytest (Python), Vitest (frontend — not yet configured)
 
 - **Location**: `tests/` dir at same level as code
 - **Naming**: `test_*.py`
-- **Markers**: `@pytest.mark.slow`, `@pytest.mark.integration` (defined in `pyproject.toml`)
+- **Markers**: `slow`, `azure`, `integration`, `flaky`, `self_hosted`, `experimental` (per-scope `pyproject.toml`)
+- **CI excludes**: `pytest -m "not azure and not flaky"` — these markers skip in CI
 - **BDD**: Use `pytest-bdd` for agent/process workflows (Gherkin `.feature` files in `tests/features/`)
 - **Async**: pytest-bdd has limitations; use plain pytest for async tests
-- **Run**: `make test` (within Poetry shell)
 
 **Philosophy**: Pragmatic, not TDD. Write tests when straightforward. MUST run all tests before commit.
 
-## Claude Code Integration
+## Architectural Decisions (ADRs)
 
-**Full documentation**: `/home/user/aihub-core/.claude/README.md`
+**CRITICAL**: Consult existing ADRs before significant changes. Located: `aihub_doc/arc42/decisions/`
 
-**Skills** (43 total — invoke via `/skill-name`):
+**Create ADR if**: Adding major dependencies, introducing new tools/frameworks, or altering fundamental patterns.
 
-- **Workflow**: `/review-diff`, `/create-pr`, `/implement-feedback-from-pr`, `/plan-issue`, `/reflect`, `/release-prep`,
-  `/test-scope`
-- **Documentation**: `/update-doc`, `/explain`, `/document-decision`, `/document-feature`, `/document-solution`
-- **Scaffolding**: `/scaffold-agent`, `/scaffold-pipeline`, `/scaffold-process`, `/scaffold-api-endpoint`,
-  `/scaffold-api-service`, `/scaffold-api-repository`, `/scaffold-frontend-page`, `/scaffold-bot-handler`
-- **Developer Experience**: `/docker-dev`, `/check-i18n`, `/generate-sdk`, `/dependency-audit`, `/validate-events`,
-  `/debug-agent`, `/debug-pipeline`
-- **Frontend**: `/scaffold-composable`, `/scaffold-event-display`, `/scaffold-dashboard-widget`, `/debug-frontend`,
-  `/audit-frontend`, `/primevue-lookup`, `/scaffold-frontend-subpage`, `/scaffold-frontend-component`, `/design-system`
-- **API & Pipeline**: `/api-auth-guide`, `/nats-events`, `/dagster-pipelines`, `/rclone-guide`
-- **Bot**: `/setup-bot-connection`, `/debug-bot`, `/bot-reference`
+**ADR Format**: `YYYY_MM_DD_short-decision-summary.md` (Context → Decision Drivers → Decision → Consequences)
 
-**Custom Subagents** (7 — Claude Code uses these automatically for specialized tasks):
+## Package Dependencies
 
-- `codebase-expert` (with memory), `code-reviewer`, `event-flow-analyzer` (with memory), `docker-ops`, `test-analyzer`,
-  `frontend-analyzer`, `documentation-keeper` (with memory)
+- All packages reference `aihub_lib` via Git URL in `pyproject.toml`. Versioning via Git tags.
+- Use `poetry add/remove/update` — NEVER edit `pyproject.toml` manually.
 
-**Hooks** (6 — run automatically, no invocation needed):
+## Docker Compose Conventions
 
-- `auto-format-python.sh` (PostToolUse): Ruff format + check on Python file edits
-- `auto-format-frontend.sh` (PostToolUse): ESLint fix on TS/Vue file edits
-- `protect-sensitive-files.sh` (PreToolUse): Blocks access to .env, .pem, .key, credentials
-- `scope-boundary-check.sh` (PreToolUse): Warns about cross-scope import violations
-- `stop-hook-git-check.sh` (Stop): Checks uncommitted changes at session end
-- `session-start.sh` (SessionStart): Installs dependencies, checks environment
+- **No default values in env var assignments**: Never use `${VAR:-default}` syntax in docker-compose templates. Define
+  all default values in `.env.dev` and `.env.prod` files instead.
+- **Template**: `deployment/templates/docker-compose.yml.j2` (Jinja2)
+- **Config**: `deployment/compose-config.yml` (image tags, stage-specific values)
+- **Regenerate**: Run `make generate-compose` after modifying templates or config
 
-**Local overrides** (gitignored): `CLAUDE.local.md`, `.claude/settings.local.json`, `.claude/mcp.local.json`
+## MCP & Claude Code
 
-## MCP Integration (AI Assistant Context)
+Skills, hooks, agents, and MCP servers are configured in `.claude/`. Claude Code discovers these automatically — see
+`.claude/README.md` for full documentation.
 
-**Model Context Protocol**: Provides AI assistants (Claude Code, Gemini CLI) with development environment access.
+Platform MCP servers (MongoDB, PostgreSQL, NATS, Milvus, Dagster, Langfuse, API) require the Docker dev stack running.
+Development MCP servers (Context7, PrimeVue, Nuxt, Playwright) work independently.
 
-**Config**: `/home/user/aihub-core/.mcp.json`
-
-**MCP Servers** (12 total, 11 enabled by default):
-
-Platform servers (require running Docker dev stack):
-
-- **Langfuse MCP**: LLM observability — prompt management, tracing, evaluations (http://localhost:6006)
-- **MongoDB MCP**: Read-only database access (FerretDB/MongoDB layer)
-- **AI-Hub API MCP**: API endpoint testing (http://localhost:8000/mcp)
-- **PostgreSQL MCP**: Read-only access to infrastructure databases (Langfuse, Dagster, LiteLLM, OpenWebUI)
-- **Milvus MCP**: Vector database operations — manage collections, run similarity searches, inspect indexes
-- **NATS MCP**: Messaging system — inspect subjects, view messages, monitor JetStream streams
-- **Dagster MCP**: Pipeline orchestration — explore pipelines, monitor runs, manage assets
-
-Development servers (work independently):
-
-- **Context7 MCP**: Up-to-date library documentation for LlamaIndex, FastAPI, Pydantic, and other dependencies
-- **PrimeVue MCP**: Official component library docs — props, events, slots, theming, Pass Through, design tokens
-- **Nuxt MCP**: Official framework docs, API references, deployment guides (remote at nuxt.com/mcp)
-- **Playwright MCP**: Browser automation and UI debugging for the Nuxt 3 admin interface (headless Chromium)
-- **GitHub MCP**: Issues, PRs, code search, CI status (disabled — requires `GITHUB_PERSONAL_ACCESS_TOKEN` in `.env`)
+Local overrides (gitignored): `CLAUDE.local.md`, `.claude/settings.local.json`, `.claude/mcp.local.json`
 
 ## Quick Reference
 
-**Essential Files**:
-
-- Root README (human-friendly): `/home/user/aihub-core/README.md`
-- Docker Compose (dev): `/home/user/aihub-core/docker-compose.dev.yml`
-- Env config: `/home/user/aihub-core/.env` (copy from `.env.dev`)
-- Makefile (per scope): `/home/user/aihub-core/<scope>/Makefile`
-- ADRs: `/home/user/aihub-core/aihub_doc/arc42/decisions/`
-- Architecture docs: `/home/user/aihub-core/aihub_doc/docs/2_platform/2_architecture/`
-- Swiss AI Agent Protocol:
-  `/home/user/aihub-core/aihub_doc/docs/2_platform/2_architecture/3_swiss_ai_agent_protocol/index.en.md`
-
-**Common Commands** (within scope dir, Poetry shell activated):
-
-- `poetry install`: Install dependencies
-- `poetry add <pkg>`: Add dependency
-- `make format`: Run Black formatter
-- `make lint`: Run Ruff + MyPy
-- `make pr-ready`: Format + lint with auto-fix (RUN BEFORE COMMIT)
-- `make test`: Run pytest suite (RUN BEFORE COMMIT)
-
 **Access Points** (docker-compose.dev.yml):
 
-- OpenWebUI: http://localhost:8080
-- Admin UI: http://localhost:3000
-- API: http://localhost:8000
-- Dagster: http://localhost:3002
-- Langfuse: http://localhost:6006
-- SeaweedFS: http://localhost:8889
+| Service   | URL                   |
+| --------- | --------------------- |
+| OpenWebUI | http://localhost:8080 |
+| Admin UI  | http://localhost:3000 |
+| API       | http://localhost:8000 |
+| Dagster   | http://localhost:3002 |
+| Langfuse  | http://localhost:6006 |
+| SeaweedFS | http://localhost:8889 |
 
-## Scope-Specific Guidance
+**Key Paths**:
 
-Each package has its own `CLAUDE.md` with scope-specific architecture, folder structure, and examples. Consult before
-working on a scope:
+- ADRs: `aihub_doc/arc42/decisions/`
+- Architecture docs: `aihub_doc/docs/2_platform/2_architecture/`
+- Docker Compose (dev): `docker-compose.dev.yml`
+- Env config: `.env` (copy from `.env.dev`)
 
-- `/home/user/aihub-core/aihub_lib/CLAUDE.md`
-- `/home/user/aihub-core/aihub_agent/CLAUDE.md`
-- `/home/user/aihub-core/aihub_api/CLAUDE.md`
-- `/home/user/aihub-core/aihub_bot/CLAUDE.md`
-- `/home/user/aihub-core/aihub_pipeline/CLAUDE.md`
-- `/home/user/aihub-core/aihub_process/CLAUDE.md`
-- `/home/user/aihub-core/aihub_web/CLAUDE.md`
-- `/home/user/aihub-core/aihub_action/CLAUDE.md`
-- `/home/user/aihub-core/aihub_doc/CLAUDE.md`
+**Work Management**: `gh issue list -R "bbvch-ai/aihub-core" -a "@me"` | `gh project view 13 --owner bbvch-ai`

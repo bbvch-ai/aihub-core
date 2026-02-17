@@ -92,5 +92,7 @@
       "Bash(docker logs *)",
       "Skill"
     ]
-  }
+  },
+  "model": "opus",
+  "availableModels": ["opus","sonnet"]
 }

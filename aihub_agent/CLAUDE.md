@@ -1,171 +1,104 @@
-# aihub_agent - AI Agent Workflows
+# aihub_agent - AI Agent SDK
 
-**Purpose**: Agent logic and workflow definitions. Autonomous AI components designed for proactive process automation.
-
-Tech Stack & Paradigms: LlamaIndex Core workflow engine with custom @step decorator. LlamaIndex LLMs (OpenAI, Azure OpenAI). NATS pub-sub for event-driven architecture. Redis v5 client for Valkey state (RunContext ephemeral, ThreadContext persistent). MongoEngine for persistence. OpenTelemetry SDK + API + OTLP exporter. OpenInference LlamaIndex instrumentation. Pydantic v2 + pydantic-settings. python-i18n for translations. colorlog for logging. cachetools for TTL caching. stringcase for string manipulation. DispatchableWorkflow base class. Transparent, auditable workflows (not black-box). pytest-bdd for Gherkin BDD tests. AgentRunner and AgentTestRunner. pytest-mock + pytest-asyncio. Development tools: matplotlib, seaborn, tabulate for analysis.
-
-## Scope Responsibility
-
-Implements transparent, workflow-based agents (NOT black boxes). Agents are dispatchable workflows with explicit steps, traceable execution, and integration with processes.
-
-## Agent Blueprint vs Agent Profile
-
-The platform distinguishes between **Agent Blueprints** (code-level definitions) and **Agent Profiles** (runtime configurations):
-
-- **Agent Blueprint**: The agent class defined in code. Contains workflow steps, form schema, event specifications, and default configuration. Discovered automatically when agents come online. Stored in `agent_classes` collection.
-- **Agent Profile**: A user-created configuration of a blueprint. Has unique ID, name, description, icon, and specific settings. Multiple profiles can be created from one blueprint. Stored in `agent_configs` collection.
-
-This separation enables self-service deployment: developers define blueprints, while admins create and configure profiles through the UI without code changes.
+**Purpose**: SDK for building transparent, workflow-based AI agents. Three parts: the framework (`aihub_agent/`),
+pre-built agents (`agents/` + `app/`), and playground examples (`playground/`). Business logic for individual steps
+(retrieval, LLM calls, memory) lives in agent-specific code or `aihub_lib`, not in the SDK framework itself.
 
 ## Folder Structure
 
 ```
-aihub_agent/
-├── agents/                    # Production agent implementations (RagAgent, LLMWrappingAgent)
-├── context/                   # RunContext (ephemeral) + ThreadContext (persistent)
-├── runners/                   # AgentRunner, AgentTestRunner
-├── workflow/                  # Core: @step decorator, DispatchableWorkflow
-└── playground/                # START HERE for learning
-    ├── agent/                 # Production agent examples
-    └── minimal_workflow/      # Self-contained pattern examples (ESSENTIAL)
+aihub_agent/                       # SDK framework
+├── agents/                        # Agent base class + production agent implementations
+│   ├── Agent.py                   # Base class (extends DispatchableWorkflow)
+│   ├── RagAgent/                  # Knowledge QA with retrieval, reranking, memory
+│   ├── LLMWrappingAgent/          # Simple LLM chat passthrough
+│   ├── ExpertAskingAgent/         # Human expert escalation via Teams/Slack
+│   ├── ExpertRagAgent/            # RAG with expert fallback
+│   ├── FewShotAgent/              # Pattern-matching with examples
+│   ├── NamespaceSelectionAgent/   # LLM-driven knowledge routing
+│   └── RetrievalAgent/            # Pure document retrieval (no LLM)
+├── context/
+│   ├── run/RunContext.py           # Per-run ephemeral state (Redis, 30d TTL)
+│   └── thread/ThreadContext.py     # Per-thread persistent state (Redis, 30d TTL)
+├── dispatchers/
+│   └── AgentDispatcher.py          # Core workflow executor (DI, config fetch, step dispatch)
+├── i18n/
+│   ├── AgentLocaleString.py        # Multi-locale string resolution for agents
+│   └── translations/agent/         # Translation files: {name}.{de|en|fr|it}.yml
+├── rag/                            # Shared RAG step functions and preconditions
+├── runners/
+│   ├── AgentRunner.py              # Production runner (NATS, Redis, Milvus, discovery)
+│   └── AgentTestRunner.py          # Test runner (sandboxed, event capture, mock config)
+├── steps/                          # Shared step configs (e.g., FewShotStepConfig)
+├── tracing/
+│   └── AgentRunTracer.py           # OpenTelemetry + Langfuse trace integration
+└── workflow/
+    └── decorators/
+        ├── step.py                 # @step() decorator — defines workflow building blocks
+        └── precondition.py         # @precondition() decorator — step readiness checks
+
+app/                               # Entry points (one per agent, each with main.py + Dockerfile)
+├── rag_agent/main.py
+├── llm_wrapping_agent/main.py
+├── expert_asking_agent/main.py
+├── expert_rag_agent/main.py
+├── few_shot_agent/main.py
+├── namespace_selection_agent/main.py
+└── retrieval_agent/main.py
+
+playground/                        # Examples and testing
+├── agent/                         # Production-like agents (BotInTheLoopAgent, HitlDemoAgent)
+├── minimal_workflow/              # 20 self-contained pattern showcases (START HERE)
+├── performance/                   # Load testing with PerformanceTestingAgent
+└── testing/                       # SDK integration tests
 ```
 
-## Key Concepts
+## Agent Blueprint vs Agent Profile
 
-**Agent = Dispatchable Workflow**:
+The platform separates **what an agent can do** (code) from **how it's configured** (data).
 
-- `Agent` inherits from `DispatchableWorkflow`
-- Structured operations: `@step()` methods consume events → produce events
-- Transparent: Every step traceable in Phoenix
+**Agent Blueprint** (`agent_class`): The Python class. Defines workflow steps, event specs, form schema, default config.
+One per agent type. Discovered automatically when agents come online. Stored in MongoDB `agent_classes` collection.
+Example: `RAGAgent`.
 
-**Step Decorator**:
+**Agent Profile** (`agent_id`): A user-created configuration of a blueprint. Has a unique URL-safe slug, name,
+description, icon, and specific settings. Multiple profiles from one blueprint. Stored in MongoDB `agent_configs`
+collection. Example: `rag-agent-hr`, `rag-agent-legal`.
 
-- `@step()`: Defines workflow building blocks
-- Parameters: `max_executions_per_run`, `stop_on_error`, `name`, `description`, `icon`, `precondition`
-- Example: `/home/user/aihub-core/aihub_agent/aihub_agent/workflow/decorators/step.py`
+**What you start**: An `AgentRunner` with an agent class (blueprint). It listens on NATS for all profiles of that class.
 
-**Context Management**:
+**What gets a run**: An agent profile. When a `StartEvent` arrives, it carries an `agent_id` linking to a specific
+profile. The dispatcher fetches that profile's config via NATS RPC.
 
-- **RunContext**: Ephemeral state within single run. Expires 30 days. Use for intermediate calculations.
-- **ThreadContext**: Persistent state across runs. Maintains conversation history. Expires 30 days.
+**Analogy**: Blueprint = Docker image, Profile = container. Or: Blueprint = class definition, Profile = instance.
 
-**Event Flow**:
+**In code**: `AgentConfig.agent_class` is the blueprint name, `AgentConfig.agent_id` is the profile slug.
 
-- Agents consume/produce events (from `aihub_lib.nats.events`)
-- `StartEvent` → workflow steps → `StopEvent`
-- Phoenix visualizes flow: http://localhost:6006
+## Architecture: Decentralized Event-Driven Workflows
 
-**Form Duality Pattern**:
+This is a custom workflow engine — LlamaIndex is only used for LLMs and retrievers, not for workflow orchestration.
 
-- `AgentConfig` inherits from `Form`, enabling dual-purpose models
-- **Form mode**: Fields contain `FormkitElement` instances (InputText, Select, etc.) → renders UI form
-- **Data mode**: Fields contain primitive values → holds validated configuration
-- `as_form()` factory method creates form-mode config for registration
-- Configuration injection: Dispatcher fetches profile config and injects into step parameters
+**Inheritance chain**: `DispatchableWorkflow` → `Agent` → concrete agents (e.g., `RAGAgent`)
 
-## Common Patterns
+**Key design property**: Everything is decentralized. Steps are dispatched via NATS/JetStream — consecutive steps on the
+same run may execute on different servers. This means:
 
-**Reference**: `/home/user/aihub-core/aihub_agent/playground/minimal_workflow/`
+- No instance state on the agent class
+- No in-memory workflow state
+- All state lives in Redis (`RunContext`/`ThreadContext`) and JetStream (event history)
+- `AgentRunner` cannot track run state — it subscribes to events and delegates to `AgentDispatcher`
+- The dispatcher creates a fresh `agent()` instance for each step execution
 
-- **Simple Linear**: `simple_workflow/` - Sequential A→B→C
-- **Conditional**: `conditional_workflow/` - Branch based on data
-- **Human-in-the-Loop**: `human_in_the_loop_workflow/` - Pause for human input
-- **Agent-in-the-Loop**: `agent_in_the_loop_workflow/` - Orchestrate sub-agents
-- **Bounded Loop**: `bounded_loop/` - Iterate with RunContext counter
-- **Fan-Out**: `fan_out_workflow/` - Parallel processing with `list[Event]`
-- **Precondition**: `precondition_workflow/` - Synchronize parallel branches
-- **Multi-Locale**: `multi_locale_workflow/` - i18n with LocaleHandler
+## The Agent Class
 
-## Development Workflow
-
-1. **Create agent**: Inherit `Agent`, add `@step()` methods
-2. **Create config**: `AgentConfig` subclass with form duality (see below)
-3. **Define form**: Implement `as_form()` factory method with FormKit elements
-4. **Create events**: Custom events if needed
-5. **Test**: `AgentTestRunner` + `pytest-bdd` (Gherkin features in `tests/features/`)
-6. **Debug**: `trigger.py` (one-shot test) or `run.py` (interactive)
-7. **Observe**: Phoenix tracing (http://localhost:6006)
-
-## Defining Configurable Agent Forms
-
-Use the form duality pattern to make agent configuration editable through the Admin UI:
-
-```python
-class MyAgentConfig(AgentConfig):
-    # Field with duality: str for data, InputText for form
-    model_name: Annotated[str | InputText, Field(description="LLM model")] = "gpt-4"
-    temperature: Annotated[float | InputNumber, Ge(0.0), Le(2.0)] = 0.7
-
-    @classmethod
-    def as_form(cls) -> "MyAgentConfig":
-        base = AgentConfig.as_form()
-        return cls(
-            agent_id=base.agent_id,
-            name=base.name,
-            description=base.description,
-            icon=base.icon,
-            agent_class=base.agent_class,
-            model_name=InputText(label=LocaleString(en="Model")),
-            temperature=InputNumber(label=LocaleString(en="Temperature"), min=0.0, max=2.0),
-        )
-```
-
-**Register with AgentRunner**:
-
-```python
-runner = AgentRunner(
-    agent_type=MyAgent,
-    agent_config=MyAgentConfig.as_form(),  # Form mode for discovery
-)
-```
-
-**Key Points**:
-
-- Use `Ge`, `Le`, `Pattern` from `aihub_lib.nats.events.form.constraints` (not Pydantic's `ge=`, `le=`)
-- Nested forms (e.g., `LLMConfig`) automatically become `Group` elements
-- List of forms (e.g., `list[ExampleForm]`) become `Repeater` elements
-- Non-configurable fields (deployment-specific) should have no FormKit alternative in the type union
-
-## Testing
-
-**BDD with pytest-bdd**:
-
-- Feature files: `tests/features/*.feature` (Gherkin)
-- Step implementations: `tests/test_*.py`
-- Runner: `AgentTestRunner` provides sandboxed env
-
-**Debug Tools**:
-
-- `trigger.py`: Focused one-shot testing
-- `run.py`: Interactive multi-run testing
-- Phoenix MCP: Programmatic trace access
-
-## Pre-Commit
-
-```bash
-make pr-ready  # Format + lint + type check
-make test      # pytest -k "not azure"
-```
-
-## Essential Files
-
-- Base agent: `/home/user/aihub-core/aihub_agent/aihub_agent/agents/Agent.py`
-- Step decorator: `/home/user/aihub-core/aihub_agent/aihub_agent/workflow/decorators/step.py`
-- Test runner: `/home/user/aihub-core/aihub_agent/aihub_agent/runners/AgentTestRunner.py`
-- Agent runner: `/home/user/aihub-core/aihub_agent/aihub_agent/runners/AgentRunner.py`
-- Agent dispatcher: `/home/user/aihub-core/aihub_agent/aihub_agent/dispatchers/AgentDispatcher.py`
-- Context: `/home/user/aihub-core/aihub_agent/aihub_agent/context/`
-- Playground: `/home/user/aihub-core/aihub_agent/playground/`
-- Form base class: `/home/user/aihub-core/aihub_lib/aihub_lib/nats/events/form/Form.py`
-- Agent config base: `/home/user/aihub-core/aihub_lib/aihub_lib/agents/AgentConfig.py`
-- FormKit elements: `/home/user/aihub-core/aihub_lib/aihub_lib/nats/events/form/elements/`
-
-## Quick Reference
-
-**Create agent**:
+Minimal and stateless. Only class-level attributes — never instantiated by hand.
 
 ```python
 class MyAgent(Agent):
+    name: ClassVar[AgentLocaleString] = AgentLocaleString.from_i18n_path("agent.my_agent.metadata.name")
+    description: ClassVar[AgentLocaleString] = AgentLocaleString.from_i18n_path("agent.my_agent.metadata.description")
+    icon: ClassVar[str] = "mage:robot"
+
     @step()
     async def start_step(self, event: UserMessageEvent) -> CustomEvent:
         return CustomEvent(data="processed")
@@ -175,36 +108,280 @@ class MyAgent(Agent):
         return StopEvent()
 ```
 
-**Access config in step** (injected by dispatcher):
+`Agent` (extends `DispatchableWorkflow`) provides introspection: `get_start_events()`, `get_stop_events()`,
+`get_hitl_request_events()`, `get_hitl_response_events()` — all cached classmethods that scan `@step()` signatures.
+
+## The @step Decorator
 
 ```python
-@step()
-async def my_step(self, event: MyEvent, agent_config: MyAgentConfig):
-    model = agent_config.model_name  # From profile configuration
-```
-
-**Access context**:
-
-```python
-@step()
-async def my_step(self, event: MyEvent, run_context: RunContext, thread_context: ThreadContext):
-    count = await thread_context.get("count", 0)
-    await thread_context.set("count", count + 1)
-```
-
-**Run agent with form-mode config**:
-
-```python
-runner = AgentRunner(
-    agent_type=MyAgent,
-    agent_config=MyAgentConfig.as_form(),
+@step(
+    name=LocaleString(en="My Step"),         # UI display name
+    description=LocaleString(en="Does X"),   # UI description
+    icon="mage:magic-wand",                  # Iconify icon
+    precondition=my_precondition_fn,         # Async callable → bool
+    max_executions_per_run=3,                # Limits re-execution in loops
+    stop_on_error=True,                      # Default: stop workflow on exception
 )
+async def my_step(self, event: InputEvent) -> OutputEvent:
+    ...
+```
+
+Input events are inferred from parameter type annotations, output events from the return type. The decorator extracts
+event metadata and stores it as function attributes — it does not modify the function itself.
+
+## Step Dependency Injection
+
+The dispatcher resolves `@step()` parameters by type annotation. Declare what you need, the dispatcher provides it:
+
+| Type Annotation                         | What Gets Injected                              |
+| --------------------------------------- | ----------------------------------------------- |
+| Event subclass (e.g., `MyEvent`)        | Matched from event history by type              |
+| `AgentConfig` subclass                  | The merged runtime config for this run          |
+| `StepConfig` subclass                   | Step-specific config extracted from AgentConfig |
+| `RunContext`                            | Per-run ephemeral state (Redis)                 |
+| `ThreadContext`                         | Per-thread persistent state (Redis)             |
+| `EventDisplayer`                        | Emit display events for frontend visualization  |
+| `LocaleHandler` or `AgentLocaleHandler` | i18n handler in the run's locale                |
+| `AgentMemory`                           | User and organization memory access             |
+| `AgentInstanceTopic`                    | NATS topic info for this event                  |
+| `AgentClassTopic`                       | NATS topic info (class level)                   |
+| `PartialAgentTopic`                     | NATS topic info (partial/wildcard)              |
+
+Source: `AgentDispatcher._get_parameter_value()` in `dispatchers/AgentDispatcher.py`.
+
+## AgentConfig, Form Duality & Config Lifecycle
+
+### Form Duality Pattern
+
+`AgentConfig` inherits from `Form` — a dual-purpose Pydantic model. Every configurable field uses a union type:
+
+```python
+class MyAgentConfig(AgentConfig):
+    temperature: Annotated[float | InputNumber, Field(description="LLM temperature"), Ge(0.0), Le(2.0)] = 0.7
+    model_name: Annotated[str | InputText, Field(description="LLM model")] = "gpt-4"
+
+    @classmethod
+    def as_form(cls) -> Self:
+        base = AgentConfig.as_form()
+        return cls(
+            **base.model_dump(),
+            temperature=InputNumber(label=LocaleString(en="Temperature"), min=0.0, max=2.0),
+            model_name=InputText(label=LocaleString(en="Model")),
+        )
+```
+
+- **Form mode**: Fields hold `FormkitElement` instances → UI rendering. Created by `as_form()`.
+- **Data mode**: Fields hold primitive values → runtime configuration. Created by `model_validate()`.
+- **Configurable fields**: Set to a FormkitElement in `as_form()` — user edits in Admin UI.
+- **Non-configurable fields**: Set to a primitive in `as_form()` — deployment-specific, baked in.
+
+### FormKit Elements
+
+From `aihub_lib.nats.events.form.elements`:
+
+- **Input**: `InputText`, `InputNumber`, `Textarea`, `Password`, `InputMask`, `InputOtp`
+- **Selection**: `Select`, `MultiSelect`, `CascadeSelect`, `Checkbox`, `ToggleSwitch`, `ToggleButton`, `RadioButton`,
+  `SelectButton`, `Listbox`
+- **Specialized**: `ModelSelect` (LLM picker), `AgentSelector` (class+id cascading),
+  `KnowledgeDatabaseSelector`, `VectorStoreInput`, `IconSelector`, `LocaleInput` (multi-language), `ColorPicker`,
+  `DatePicker`, `Knob`, `Rating`, `Slider`
+- **Layout**: `Group` (nested forms — auto-created from nested `Form` subclasses),
+  `Repeater` (list of forms — auto-created from `list[FormSubclass]`)
+
+### Form Constraints
+
+Use form-aware constraints from `aihub_lib.nats.events.form.constraints` — NOT Pydantic's `ge=`, `le=`:
+
+- `Ge()`, `Le()`, `Gt()`, `Lt()` — numeric bounds
+- `MinLen()`, `MaxLen()` — string/list length
+- `Pattern()` — regex validation
+
+These are `AfterValidator`s that skip validation when the value is a `FormkitElement`.
+
+### StepConfig
+
+`StepConfig` is a marker subclass of `Form`. Fields of type `StepConfig` on `AgentConfig` are extracted by
+`get_step_configs()` and injected into steps that declare the matching type as a parameter.
+
+### The Config Lifecycle
+
+1. **Definition**: Developer subclasses `AgentConfig`, annotates fields with `type | FormkitElement` unions, implements
+   `as_form()`.
+
+2. **Discovery**: `AgentRunner` receives `MyConfig.as_form()` at init. On discovery request:
+
+   - `to_formkit_form()` → extracts FormKit elements for Admin UI
+   - `get_non_configurable_values()` → pre-computes deployment-fixed values
+   - `AgentConfigSpecs.from_agent_config()` → `to_configurable_submission_model().model_json_schema()` → JSON schema
+   - All published in `AgentClassDiscoveryResponseEvent` (form, specs, event specs, workflow graph)
+
+3. **Storage**: Admin creates a profile via Admin UI. API validates submission against
+   `agent_config_specs.agent_config_schema`, saves to `AgentConfigEntityDocument` (MongoDB `agent_configs` collection)
+   with `(agent_class, agent_id)` compound unique index.
+
+4. **Runtime Fetch**: On each `StartEvent`, dispatcher calls `AgentConfigClient.fetch_config(agent_class, agent_id)` →
+   NATS RPC (`aihub.rpc.config.agent.{class}.{id}`) → `AgentConfigResponder` (API side) →
+   `AgentConfigEntityDocument.find_for_class_and_id()` → returns `config_data` dict.
+
+5. **Merge**: `Form.deep_merge(non_configurable_values, submitted_config)` → combines deployment-fixed values with
+   user-configured values. Result stored in `RunContext`.
+
+6. **Injection**: `agent_config_type.model_validate(merged_dict)` reconstructs typed config in data mode. Injected into
+   `@step()` methods that declare the `AgentConfig` subclass as a parameter.
+
+## AgentRunner & AgentDispatcher
+
+**AgentRunner**: Connects agent to infrastructure (NATS, JetStream, Redis, Milvus, MongoDB). Responds to discovery
+requests. Subscribes to control events and delegates to dispatcher. Constructed with `agent_type` (the class) and
+`agent_config` (form-mode instance from `as_form()`). Includes health check server.
+
+```python
+runner = AgentRunner(agent_type=MyAgent, agent_config=MyAgentConfig.as_form())
 await runner.run_forever()
 ```
 
-**Enable logging**:
+**AgentDispatcher** (extends `BaseDispatcher`): The core workflow executor.
 
-```python
-from aihub_lib.infrastructure.logging.logger import enable_logging
-enable_logging()
+- On `StartEvent`: fetches config via NATS RPC, deep-merges with non-configurable defaults, stores in `RunContext`
+- For each event: finds waiting steps via `get_steps_waiting_for_event()`, checks preconditions, executes ready steps
+- Builds kwargs via dependency injection (events from history + injected services)
+- Instantiates a fresh `agent()` for each step execution (stateless)
+- Publishes output events to JetStream (control) or NATS Core (display)
+- Checks idempotency: skips if step was already called with same input events
+- On `StopEvent`/`ExceptionEvent`: cleans up `RunContext`, marks completion
+
+## Topic Hierarchy
+
+NATS subject format:
+
 ```
+agent.{agent_class}.{agent_id}.{thread_id}.{display_id}.{run_id}.{event_type}.{event_name}.{event_id}
+```
+
+Topic classes form a narrowing hierarchy:
+
+| Class                | Specificity | Description                                      |
+| -------------------- | ----------- | ------------------------------------------------ |
+| `PartialAgentTopic`  | Loose       | Wildcards allowed, for broad subscriptions       |
+| `AgentClassTopic`    | Medium      | `agent_class` specified, `agent_id` may wildcard |
+| `AgentInstanceTopic` | Tight       | Fully specified including `agent_id`             |
+
+Topic managers mirror the hierarchy (`AgentTopicManager` → `AgentClassTopicManager` → `AgentInstanceTopicManager`),
+constructing NATS subjects at each specificity level. See `aihub_lib/aihub_lib/nats/topic_managers/agents/`.
+
+## Context Management
+
+- **RunContext**: Per-run ephemeral state in Redis/Valkey. Scoped to `(thread_id, run_id)`. 30-day TTL. Use for: loop
+  counters, intermediate results, retrieved docs. Cleaned up on StopEvent.
+- **ThreadContext**: Per-thread persistent state in Redis/Valkey. Scoped to `thread_id`. 30-day TTL. Use for:
+  conversation history, user preferences, namespace selections. Persists across runs.
+- Both use `async get(key, default)` / `async set(key, value)` / `async delete(key)` API.
+- Factory: `RunContext.for_topic(redis, topic)`, `ThreadContext.for_topic(redis, topic)`.
+
+## Event System
+
+- `ControlEvent` — workflow state transitions (dispatched via JetStream, consumed by steps)
+- `StartEvent` — triggers a new run (subclass of `ControlEvent`)
+- `StopEvent` — terminates a run (subclass of `ControlEvent`)
+- `DisplayEvent` — observability (dispatched via NATS Core, consumed by API/frontend)
+- `HumanInTheLoopRequestEvent` / `ResponseEvent` — HITL pause/resume
+- `BotInTheLoopRequestEvent` / `ResponseEvent` — bot channel escalation
+- `AgentInTheLoopRequestEvent` / `ResponseEvent` — agent-to-agent delegation
+- Custom events: inherit from `ControlEvent`, define payload fields
+
+## i18n
+
+- `AgentLocaleString.from_i18n_path()` for agent/step `name` and `description`
+- Translation files: `aihub_agent/i18n/translations/agent/*.{locale}.yml` (4 locales: de, en, fr, it)
+- `AgentLocaleHandler` extends `LocaleHandler` with agent-specific translation paths
+- Injected into steps via DI: declare `t: LocaleHandler` or `t: AgentLocaleHandler` as a parameter
+
+## Pre-Built Agents
+
+| Agent                       | Purpose                          | Key Pattern                                            |
+| --------------------------- | -------------------------------- | ------------------------------------------------------ |
+| **RAGAgent**                | Knowledge QA with retrieval      | Multi-source retrieval + reranking + user/org memory   |
+| **LLMWrappingAgent**        | Simple LLM chat passthrough      | Minimal 2-step workflow, no retrieval                  |
+| **ExpertAskingAgent**       | Human expert escalation          | BotInTheLoop + iterative refinement + org memory       |
+| **ExpertRAGAgent**          | RAG with expert fallback         | RAGAgent steps + HITL consent + AgentInTheLoop         |
+| **FewShotAgent**            | Pattern-matching with examples   | Suitability guard + few-shot example injection         |
+| **NamespaceSelectionAgent** | LLM-driven knowledge routing     | HITL namespace approval + ThreadContext + RAG delegate |
+| **RetrievalAgent**          | Pure document retrieval (no LLM) | Retrieval-only, returns structured context             |
+
+Each agent has: `agents/{Name}/` (implementation), `app/{snake_name}/main.py` (entry point),
+`agents/{Name}/tests/` (BDD tests).
+
+## Playground
+
+- `playground/agent/` — Production-like agents (BotInTheLoopAgent, HitlDemoAgent)
+- `playground/minimal_workflow/` — **START HERE**. Self-contained pattern examples:
+  `simple_workflow`, `conditional_workflow`, `human_in_the_loop_workflow`, `agent_in_the_loop_workflow`, `fan_out_workflow`,
+  `precondition_workflow`, `bounded_loop`, `context_workflow`, `configured_workflow`, `custom_start_stop_events`,
+  `discoverable_workflow`, `displaying_workflow`, `multi_locale_workflow`, `optional_workflow`,
+  `organization_memory_workflow`, `semantic_workflow`, `user_memory_workflow`, `multistep_human_in_the_loop_workflow`,
+  `long_running_agent`, `llama_index_workflow`
+- `playground/performance/` — Load testing with PerformanceTestingAgent
+
+## Testing
+
+- BDD with pytest-bdd: `.feature` files (Gherkin) + `test_*.py` (step implementations)
+- `AgentTestRunner` (extends `AgentRunner`): sandboxed test environment with `test_run()` context manager
+- Mocks the config client so tests don't need the API running
+- `@async_test` decorator from `aihub_lib.testing.asyncio_utils.bdd` wraps pytest-bdd steps for async
+- Pattern: `Given` creates runner → `When` sends event via `send_event_from_topic()` → `Then` asserts
+  `has_start_event`/`has_stop_event`/`get_events_of_class()`
+- `wait_for_event(event_class, timeout)` for async assertions
+- `ensure_dependent_agent_stream(agent_class)` for agent-in-the-loop tests
+- Test markers: `azure`, `self_hosted`, `slow`, `integration`, `experimental`, `flaky`
+
+## New Agent Checklist
+
+1. Create agent class inheriting `Agent`, set `name`/`description`/`icon` with `AgentLocaleString`
+2. Add `@step()` methods consuming/producing events
+3. Create `AgentConfig` subclass with `as_form()` (form duality)
+4. Create custom events inheriting `ControlEvent`/`StartEvent`/`StopEvent`
+5. Add i18n translations in `aihub_agent/i18n/translations/agent/`
+6. Create `app/my_agent/main.py` entry point with `AgentRunner`
+7. Write BDD tests with `AgentTestRunner`
+8. Run `make test`
+
+## Essential Files
+
+**SDK Framework**:
+
+- Agent base: `aihub_agent/agents/Agent.py`
+- Step decorator: `aihub_agent/workflow/decorators/step.py`
+- Precondition decorator: `aihub_agent/workflow/decorators/precondition.py`
+- AgentDispatcher: `aihub_agent/dispatchers/AgentDispatcher.py`
+- AgentRunner: `aihub_agent/runners/AgentRunner.py`
+- AgentTestRunner: `aihub_agent/runners/AgentTestRunner.py`
+- RunContext: `aihub_agent/context/run/RunContext.py`
+- ThreadContext: `aihub_agent/context/thread/ThreadContext.py`
+- AgentLocaleString: `aihub_agent/i18n/AgentLocaleString.py`
+- AgentRunTracer: `aihub_agent/tracing/AgentRunTracer.py`
+
+**From aihub_lib** (config & form system):
+
+- DispatchableWorkflow: `aihub_lib/nats/workflow/DispatchableWorkflow.py`
+- AgentConfig: `aihub_lib/agents/AgentConfig.py`
+- Form base: `aihub_lib/nats/events/form/Form.py`
+- FormKit elements: `aihub_lib/nats/events/form/elements/`
+- Form constraints: `aihub_lib/nats/events/form/constraints.py`
+- AgentConfigSpecs: `aihub_lib/nats/events/discovery/agent/AgentConfigSpecs.py`
+- AgentConfigClient (RPC): `aihub_lib/nats/rpc/AgentConfigClient.py`
+- AgentConfigEntityDocument: `aihub_lib/persistence/agents/AgentConfigEntityDocument.py`
+- EventDisplayer: `aihub_lib/displayers/EventDisplayer.py`
+- AgentMemory: `aihub_lib/generative_ai/memory/AgentMemory.py`
+- Topics: `aihub_lib/nats/topics/agents/`
+- Topic managers: `aihub_lib/nats/topic_managers/agents/`
+
+**From aihub_api** (config responder):
+
+- AgentConfigResponder: `aihub_api/rpc/AgentConfigResponder.py`
+
+**Reference implementation**:
+
+- RAGAgent: `aihub_agent/agents/RagAgent/RAGAgent.py`
+- RAGAgentConfig: `aihub_agent/agents/RagAgent/configs/RAGAgentConfig.py`
+
+**Playground patterns**: `playground/minimal_workflow/`

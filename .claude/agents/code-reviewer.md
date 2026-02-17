@@ -2,7 +2,7 @@
 name: code-reviewer
 description: Reviews code for quality, security, and adherence to aihub-core standards. Checks against CLAUDE.md conventions, OWASP vulnerabilities, type hints, and test coverage.
 tools: Read, Grep, Glob
-model: sonnet
+model: opus
 ---
 
 # Code Reviewer

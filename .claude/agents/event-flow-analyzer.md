@@ -2,7 +2,7 @@
 name: event-flow-analyzer
 description: Traces event flows through the Swiss AI Agent Protocol. Maps how events propagate from agents through NATS to the API and frontend. Use when debugging event routing or understanding data flow.
 tools: Read, Grep, Glob
-model: sonnet
+model: opus
 memory: project
 ---
 

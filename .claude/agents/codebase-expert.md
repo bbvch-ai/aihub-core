@@ -2,7 +2,7 @@
 name: codebase-expert
 description: Deep knowledge of the aihub-core monorepo. Understands how scopes interact, traces event flows, and explains architectural decisions. Use for understanding how features connect, finding relevant code, and answering architectural questions.
 tools: Read, Grep, Glob
-model: sonnet
+model: opus
 memory: project
 ---
 

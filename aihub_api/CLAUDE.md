@@ -1,216 +1,232 @@
-# aihub_api - REST API & WebSocket Gateway
+# aihub_api - REST API, WebSocket Gateway & MCP Server
 
-**Purpose**: Main user-facing REST API (FastAPI) + WebSocket gateway. Connects frontend to AI-Hub services.
-
-Tech Stack & Paradigms: FastAPI REST API with async support. uvicorn + gunicorn ASGI servers. Azure Identity + Azure mgmt SDKs (Cosmos, resources). OAuth2/OpenID Connect (custom implementation). cryptography + PyJWT for token handling. httpx async HTTP client. NATS pub-sub for agent communication. MongoEngine for persistence. python-multipart for file uploads. pydub + audioop-lts for audio processing (Python 3.13 compat). LlamaIndex text-embeddings-inference for embeddings. Arize Phoenix observability. fastmcp for Model Context Protocol server. OpenTelemetry FastAPI instrumentation. Jambo (external lib from bbvch-ai). cachetools TTLCache. Controller-Service-DTO pattern. Pydantic v2 validation. OpenAPI/Swagger auto-docs. Hierarchical permissions (aihub.user.resource.action). ApiRunner and ApiTestRunner. pytest-bdd + asgi-lifespan for testing.
+**Purpose**: FastAPI REST API + WebSocket gateway + MCP server. Bridges frontends and external clients to AI-Hub
+services via the Swiss AI Agent Protocol.
 
 ## Scope Responsibility
 
-HTTP endpoints, real-time WebSocket communication, agent/process discovery, thread management, authentication enforcement. NOT business logic (delegate to services).
+HTTP endpoints, real-time WebSocket events, agent/process discovery, thread management, authentication enforcement,
+protocol conversion (NATS events ↔ REST/WebSocket/SSE/OpenAI). NOT business logic — delegate to services.
 
 ## Folder Structure
 
 ```
 aihub_api/
-├── routes/                    # Controllers + Services + DTOs (by domain)
-│   ├── agent/                 # Agent management endpoints
-│   ├── thread/                # Thread/conversation management
-│   ├── user/                  # User management
-│   ├── openai/                # OpenAI-compatible API
-│   └── ...                    # Other domain routes
-├── sockets/                   # WebSocket connection management
-├── runners/                   # ApiRunner, ApiTestRunner
-├── pagination/                # PageNumber, PageSize types
-└── playground/testing/        # Test server with frontend
+├── app/main.py                 # Production entry — registers all controllers
+├── aihub_api/
+│   ├── routes/                 # Controllers + Services + DTOs (by domain)
+│   │   ├── agent/              # Agent class/instance management
+│   │   ├── thread/             # Conversation management
+│   │   ├── user/               # User profiles, dashboards
+│   │   ├── openai/             # OpenAI-compatible chat/embeddings/audio/images
+│   │   ├── event/              # Event streaming + WebSocket endpoint
+│   │   ├── process/            # Process orchestration
+│   │   ├── knowledge/          # Vector DB / RAG operations
+│   │   ├── memory/             # User & organization memory
+│   │   ├── evaluation/         # Dataset & evaluation management
+│   │   ├── role/               # Permission & role management
+│   │   ├── file/               # File upload/download
+│   │   ├── model/              # LLM model access
+│   │   ├── notification/       # User notifications
+│   │   ├── token/              # API token management
+│   │   ├── translation/        # Translation service
+│   │   ├── suite/              # Suite management
+│   │   ├── health/             # Health & readiness checks
+│   │   ├── i18n/               # Locale endpoints
+│   │   ├── docling/            # Document parsing
+│   │   └── parsing/            # Document parsing
+│   ├── services/               # Dynamic endpoint discovery (NATS-based)
+│   ├── events/                 # EventModelCreationService (Jambo)
+│   ├── rpc/                    # NATS RPC responders (agent/process config)
+│   ├── sockets/                # WebSocket manager, sender, event wrapping
+│   ├── runners/                # ApiRunner, ApiTestRunner, simulation runners
+│   ├── i18n/                   # Locale handling, translations, middleware
+│   ├── pagination/             # PageNumber, PageSize types
+│   ├── persistance/            # Event persistence to MongoDB
+│   ├── audio/                  # Audio chunking service
+│   └── testing/                # Auth bypass utilities for tests
+├── playground/testing/          # Interactive test server + test suite
+│   ├── main.py                 # Dev server entry point
+│   └── tests/                  # All API tests (by domain)
+├── Makefile                    # run-dev, run-prod, test, pr-ready
+└── Dockerfile                  # Production container build
 ```
 
-## Key Pattern: Controller-Service-DTO-Entity
+## API as an SDK
 
-**Controller**: HTTP endpoint definition, auth/validation, routing.
-**Service**: Business logic, external system integration (NATS, DB via Entities).
-**DTO**: Pydantic models for request/response validation + docs.
-**Entity**: MongoDB document schema + repository methods (lives in `aihub_lib/persistence/`, shared across services).
+`aihub_api` serves dual purposes: it IS the production API, and it's an importable Python package. End-users can import
+controllers from `aihub_api.routes.*`, mount them on an `ApiRunner`, and build custom APIs with any subset of endpoints.
 
-### Example Structure
+**Production API**: `app/main.py` registers all controllers and creates the app. New controllers MUST be registered
+here, otherwise they won't be served. `runner.create_app()` also mounts an MCP server at `/mcp`, making the API
+available as a Claude Code MCP tool for testing.
+
+**Commands**: `make run-dev` (uvicorn with hot reload on :8000), `make run-prod` (gunicorn multi-worker).
+
+**Docker**: `Dockerfile` builds the production image using `make run-prod` as entrypoint. End-users can also build their
+own Docker image importing only the controllers they need.
+
+## Controller-Service-DTO Pattern
+
+**Controller** → HTTP endpoint definition, auth, routing. Fluent builder returning `Self`.
+**Service** → Business logic with `@staticmethod` + `@trace_fn`. Stateless. Calls entities for persistence.
+**DTO** → Pydantic v2 models. `@classmethod` factories (`from_entity()`, `from_discovery_event()`). `in_locale(t)` for
+localization.
+**Entity** → MongoEngine documents with repository classmethods (lives in `aihub_lib/persistence/`).
+
+Controllers must define class attributes: `name` and `description` via `ApiLocaleString.from_i18n_path()`, plus `icon`
+(Iconify identifier). See `routes/agent/AgentController.py` for the reference implementation.
+
+Registration in `app/main.py`:
 
 ```python
-# Controller (routes/my_domain/MyController.py)
-class MyController(Controller):
-    def create_resource(self, route: str = "/") -> "MyController":
-        @self.router.post(route, tags=self.tags)
-        async def create_resource(request: MyRequestDTO, ...) -> MyResponseDTO:
-            return await MyService.create_resource(request, t)
-        return self
-
-# Service (routes/my_domain/MyService.py)
-class MyService:
-    @staticmethod
-    async def create_resource(request: MyRequestDTO, t: LocaleHandler) -> MyResponseDTO:
-        entity = MyResourceEntity.create_resource(name=request.name)  # Use Entity
-        return MyResponseDTO(id=str(entity.id), name=entity.name)
-
-# Entity (aihub_lib/persistence/my_domain/MyResourceEntity.py) - Repository pattern
-class MyResourceEntity(Document):
-    meta = {"collection": "my_resources"}
-    name = StringField(required=True)
-
-    @classmethod  # Repository methods as classmethods
-    def create_resource(cls, name: str) -> "MyResourceEntity": ...
+runner.mount(MyController(auth=auth).create_resource().get_resource().delete_resource())
 ```
 
-**CRITICAL**: Register controllers in `/home/user/aihub-core/aihub_api/app/main.py`:
+## FastAPI Dependencies
 
-```python
-from aihub_api.routes.my_domain.MyController import MyController
-runner.mount(MyController(auth=auth).create_resource().get_resource())
-```
+Custom dependencies injected via `Depends()` and `Security()` — use these in every endpoint:
+
+| Dependency                                        | Provides                          | Source                             |
+| ------------------------------------------------- | --------------------------------- | ---------------------------------- |
+| `Security(self.user_with_permission(template))`   | `UserIdentity` + permission check | `Controller` base class            |
+| `Depends(use_locale)` / `use_locale_ws`           | `ApiLocaleHandler` (i18n)         | `aihub_api/i18n/dependencies/`     |
+| `Depends(use_nats)` / `use_nats_ws`               | NATS client                       | `aihub_lib/nats/dependencies/`     |
+| `Depends(use_external_agent_event_distributor)`   | Publish events to agents          | `aihub_lib/nats/distributor/`      |
+| `Depends(use_external_process_event_distributor)` | Publish events to processes       | `aihub_lib/nats/distributor/`      |
+| `Depends(use_s3)` / `use_s3_public`               | S3 client (internal / presigned)  | `aihub_lib/infrastructure/s3/`     |
+| `Depends(use_milvus)`                             | Milvus vector DB client           | `aihub_lib/infrastructure/milvus/` |
+| `Depends(use_redis)`                              | Redis/Valkey client               | `aihub_lib/infrastructure/redis/`  |
+| `Depends(use_vector_store_factory)`               | Vector store creation             | `aihub_lib/infrastructure/milvus/` |
+| `Depends(use_ws_manager)` / `use_ws_manager_ws`   | WebSocket connection manager      | `aihub_api/sockets/`               |
+
+All infrastructure clients are initialized in `runners/lifetime/lifetime_manager.py` and stored in `app.state`.
+
+## i18n System
+
+**Hierarchy**: `LocaleString`/`LocaleHandler` (aihub_lib) → `ApiLocaleString`/`ApiLocaleHandler` (aihub_api extends
+with API-specific translation paths).
+
+**Translation files**: `i18n/translations/api/controllers.{locale}.yml` and `common.{locale}.yml` (4 locales: de, en,
+fr, it). Path format: `api.controllers.agent.name` resolves to `controllers.{locale}.yml` → key `agent.name`.
+
+**Controller usage**: Always use `ApiLocaleString.from_i18n_path()` for `name` and `description` class attributes. Add
+translation keys for new controllers in all 4 locale files.
+
+**Endpoint flow**: `I18nMiddleware` extracts locale from request headers (`lang`, `locale`, `Accept-Language`), query
+params, or path params (default: `"de"`, whitelist: `["de", "en", "fr", "it"]`). Injected via `Depends(use_locale)` as
+`t: LocaleHandler`. Pass to services and DTOs. DTOs with user-facing strings implement `in_locale(t)`.
 
 ## Authentication & Authorization
 
-**Permission Format**: `aihub.[user|admin].<resource>.<subresource>.<id>`
+**Permission template**: `aihub.[user|admin].<resource>.{path_param}` — path parameters (`{agent_class}`,
+`{agent_id}`, `{thread_id}`) are interpolated from the URL at request time.
 
-**Common Patterns**:
+**Wildcards**: `?>` matches single level, `>` matches multiple levels.
 
-- `aihub.user.?>`: General user access
-- `aihub.user.agent.{agent_class}.{agent_id}`: Specific agent
-- `aihub.admin.service.roles`: Admin service access
+**Controller integration**: `Security(self.user_with_permission("aihub.user.agent.{agent_class}.?>"))` handles auth +
+permission validation + OpenTelemetry span enrichment (user ID, email, roles, resource context) automatically.
 
-**Dynamic Checks**: Use `AccessChecker.from_user(user).has_access_to_agent()` in services.
+**Service-level checks**: `AccessChecker.from_user(user).has_access_to_agent(agent_class, agent_id)` for fine-grained
+authorization beyond endpoint-level permissions.
 
-## Pagination
+## Dynamic Endpoint Registration
 
-**Standard Pattern**:
+The API doesn't hardcode agent or process endpoints. Discovery services dynamically register/deregister FastAPI routes
+based on what's available on NATS.
 
-```python
-def get_resources(
-    page: PageNumber = 1,  # Defaults to 1
-    page_size: PageSize = 20,  # Defaults to 20, max varies
-) -> PaginatedResourcesResponse:
-    total, resources = await Service.get_paginated(page, page_size)
-    return PaginatedResourcesResponse(resources=resources, total=total, page=page, page_size=page_size)
-```
+**`AgentEndpointsDiscoveryService`**: Every 60 seconds, broadcasts `ClassDiscoveryRequestEvent` via NATS. Online agents
+respond with metadata (start/stop/HITL event specs, config schema, form definition). The service creates FastAPI
+endpoints for each agent class's events — both regular and streaming variants. When agents go offline, their endpoints
+are removed and the OpenAPI schema is invalidated.
 
-## Agent Communication Bridge
+**`ProcessEndpointsDiscoveryService`**: Same pattern for processes. Registers form GET/POST endpoints for human input
+steps and data POST endpoints for programmatic input.
 
-**Purpose**: Bridge between Swiss AI Agent Protocol (NATS events) and external protocols (OpenAI, WebSocket, SSE).
+**`ModelCreationService`** + **`EventModelCreationService`**: Convert agent event JSON schemas into Pydantic models at
+runtime using `jambo.SchemaConverter.build()`. Input models exclude framework fields (`event_id`, `created_at`, `user`,
+`locale`). Output models exclude internal fields (`_event_name`, `_parent_event_names`). These models power the dynamic
+endpoint request/response validation and OpenAPI documentation.
 
-### How It Works
+## Agent-API Communication
 
-**Outbound (API → Agents)**:
+**API → Agents** (pub/sub): `ExternalAgentEventDistributor` publishes `StartEvent`/`HumanInTheLoopResponseEvent` to
+agent NATS topics. Agents subscribe to thread-specific subjects.
 
-- `ExternalAgentEventDistributor` publishes events to NATS via `AgentThreadTopicManager`
-- Agents subscribe to thread-specific subjects and process events
+**Agents → API** (pub/sub): Agents publish `DisplayEvent`s. The API has two parallel NATS subscribers:
+`EventPersister` stores ALL events to MongoDB (audit trail). `WebSocketSender` broadcasts display events to connected
+WebSocket clients in real-time, wrapped in `ContextualizedAgentEvent` (adds agent_class, thread_id, locale context).
 
-**Inbound (Agents → API)**:
+**Agents → API** (RPC): `AgentConfigResponder` and `ProcessConfigResponder` serve configuration data via NATS
+request-reply on `aihub.rpc.config.agent.*.*` / `aihub.rpc.config.process.*.*`. Agents fetch their config at runtime
+without needing it baked into event payloads.
 
-- Agents publish `DisplayEvent`s to NATS
-- API subscribes with TWO parallel handlers:
-  - `EventPersister`: Persists ALL events to MongoDB (audit/history)
-  - `WebSocketSender`: Broadcasts to connected WebSocket clients in real-time
+**Protocol conversion**: WebSocket sends `ContextualizedAgentEvent` JSON. OpenAI-compatible SSE streams
+`ChatCompletionChunk`. Aggregated endpoint collects events into `ChatCompletion` response.
 
-**Protocol Conversion**:
+## WebSocket
 
-- **WebSocket**: Events wrapped in `ContextualizedAgentEvent` (adds agent_class, thread_id context), sent as JSON
-- **SSE (OpenAI streaming)**: Events queued, converted to `ChatCompletionChunk`, streamed as `data: {...}\n\n`
-- **Aggregated JSON**: Events collected, aggregated, returned as complete `ChatCompletion` response
+- Endpoint: `/api/v1/events/ws` (in `EventController`)
+- Auth: First message must contain `{"token": "Bearer ..."}` — validated against auth handler
+- Read-only from client: inbound messages after auth are ignored (security)
+- Multi-connection per user: `WebSocketManager` tracks connections per user ID, syncs across tabs/devices
+- Event routing: `WebSocketSender` finds thread participants via `ThreadEntity`, broadcasts to all their connections
 
-### Key Files
+## Lifetime Manager
 
-- Discovery: `/home/user/aihub-core/aihub_api/aihub_api/routes/agent/AgentService.py` (L113-246, L447-551)
-- SSE streaming: `/home/user/aihub-core/aihub_api/aihub_api/routes/openai/OpenaiService.py` (L342-423)
-- WebSocket: `/home/user/aihub-core/aihub_api/aihub_api/sockets/manager/WebSocketManager.py`
-- Event wrapping: `/home/user/aihub-core/aihub_api/aihub_api/sockets/events/server_to_user/ContextualizedAgentEvent.py`
-- Lifecycle/wiring: `/home/user/aihub-core/aihub_api/aihub_api/runners/lifetime/lifetime_manager.py` (L84-111)
+`runners/lifetime/lifetime_manager.py` — FastAPI lifespan context manager wiring all infrastructure at startup.
+
+**Startup order**: MongoDB → Redis/Milvus/S3 → NATS + JetStream → event persistence subscribers → WebSocket
+infrastructure → event distributors → RPC responders → discovery services → DB initialization (default roles, knowledge
+buckets, Langfuse provisioning).
+
+All resources stored in `app.state`, accessible via the dependencies listed above.
 
 ## Testing
 
-### Test Types
+**Location**: `playground/testing/tests/<domain>/test_*.py`
 
-**1. Controller/API Tests** (HTTP-level with `AsyncClient`):
+**Three test types**:
 
-- Test status codes, auth, response structure
-- Use `ApiTestRunner` or `SimulatedAgentApiTestRunner` (for agent interactions)
-- Location: `playground/testing/tests/<domain>/test_*_api.py`
+1. **API tests** (`test_*_api.py`): HTTP-level with `AsyncClient` + `ASGITransport`. Use `ApiTestRunner` or
+   `SimulatedAgentApiTestRunner`.
+2. **Service unit tests** (`test_*_service_unit_tests.py`): Mocked NATS/DB via `patch.object` on entities.
+3. **Integration tests** (`test_*_api_with_custom_event.py`): Full flow with `SimulatedAgentApiTestRunner` — simulates
+   agent discovery responses and event handling over real NATS.
 
-**2. Service Tests** (unit tests with mocked NATS/DB):
+**Key classes**: `ApiTestRunner` (sync tests), `SimulatedAgentApiTestRunner` (async, simulates agents via NATS —
+`.with_simple_chunk_events()`, `.create_agent_config_in_db()`, auto-responds to discovery requests).
 
-- Test business logic in isolation
-- Mock `AgentEntity`, NATS subscribers, discovery responses
-- Location: `playground/testing/tests/<domain>/test_*_service_unit_tests.py`
+**Auth bypass**: `DangerousDevelopmentOnlyAuthHandler` with `DangerousDevelopmentOnlyIdentityProvider`.
 
-**3. Integration Tests** (with simulated agents):
+**Interactive testing**: `cd playground/testing && python main.py` → http://localhost:8000 (frontend),
+http://localhost:8000/api/v1/docs (Swagger).
 
-- Test full agent interaction flow (send event → receive response)
-- Use `SimulatedAgentApiTestRunner` to simulate agent behavior over NATS
-- Tests discovery, event distribution, response aggregation
+**Pagination**: `PageNumber` and `PageSize` types in `pagination/`. Services return `tuple[int, list[DTO]]`.
 
-### Basic Setup
+## New Endpoint Workflow
 
-```python
-# Simple controller test
-@pytest_asyncio.fixture
-async def client():
-    auth = DangerousDevelopmentOnlyAuthHandler()
-    runner = ApiTestRunner()
-    runner.mount(MyController(auth=auth).create_resource())
-    app = runner.create_app()
-    async with LifespanManager(app) as lifespan:
-        async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url="http://test") as client:
-            yield client
-
-# Test with simulated agent
-@pytest_asyncio.fixture
-async def agent_client():
-    runner = SimulatedAgentApiTestRunner(agent_class="TestAgent", agent_id="test_1")
-    runner.with_simple_chunk_events()  # Simulate agent responses
-    await runner.start_simulation()
-    # ... mount controllers, create app, yield client
-```
-
-### Key Fixtures & Utilities
-
-- `DangerousDevelopmentOnlyAuthHandler`: Bypass auth for testing
-- `mock_role_entity_methods`: Mock role/permission checks
-- `enable_logging()`: Enable debug logs in tests
-- `AgentService._clear_cache()`: Clear discovery cache between tests
-
-### Example Test Files
-
-- API test: `playground/testing/tests/agent/test_agent_api.py`
-- Service test: `playground/testing/tests/agent/test_agent_service_unit_tests.py`
-- Integration test: `playground/testing/tests/agent/test_agent_api_with_custom_event.py`
-- Simulated runner: `aihub_api/runners/simulation/agent/SimulatedAgentApiTestRunner.py`
-
-## Playground
-
-**Location**: `/home/user/aihub-core/aihub_api/playground/testing/`
-**Start**: `cd playground/testing && python main.py`
-**Access**: http://localhost:8000 (frontend), http://localhost:8000/api/v1/docs (Swagger)
-
-## Pre-Commit
-
-```bash
-make pr-ready  # Format + lint
-make test      # Run tests
-```
+1. Create DTOs in `routes/my_domain/dto/` (Pydantic v2, `from_entity()` factory, `in_locale(t)` if localized)
+2. Create Service in `routes/my_domain/MyService.py` (`@staticmethod` + `@trace_fn`, call entities for persistence)
+3. Create Controller in `routes/my_domain/MyController.py` (extend `Controller`, set `name`/`description` via
+   `ApiLocaleString.from_i18n_path()`, `icon`, fluent methods returning `Self`)
+4. Add translations in `i18n/translations/api/controllers.{de,en,fr,it}.yml`
+5. Register in `app/main.py`: `runner.mount(MyController(auth=auth).method_a().method_b())`
+6. Write tests in `playground/testing/tests/my_domain/`
+7. Run `make test`
 
 ## Essential Files
 
-- Base controller: `/home/user/aihub-core/aihub_lib/aihub_lib/routes/Controller.py`
-- Playground main: `/home/user/aihub-core/aihub_api/playground/testing/main.py`
-- Example controller: `/home/user/aihub-core/aihub_api/routes/agent/AgentController.py`
-- Example service: `/home/user/aihub-core/aihub_api/routes/agent/AgentService.py`
-- WebSocket manager: `/home/user/aihub-core/aihub_api/sockets/manager/`
-
-## Quick Reference
-
-**New endpoint workflow**:
-
-1. Create DTOs in `routes/my_domain/dto/`
-2. Create Service in `routes/my_domain/MyService.py` (`@staticmethod` methods)
-3. Create Controller in `routes/my_domain/MyController.py` (fluent API: `.create_resource().get_resource()`)
-4. Mount in runner: `runner.mount(MyController(auth=auth).create_resource())`
-5. Test: `pytest playground/testing/tests/`
-6. Interactive test: Add to `playground/testing/main.py`, run, access http://localhost:8000
-
-**Error handling**: Raise `HTTPException(status_code=..., detail=...)`. Let unexpected errors propagate to FastAPI middleware.
+- Production entry: `aihub_api/app/main.py`
+- Controller base class: `aihub_lib/aihub_lib/routes/Controller.py`
+- Example controller: `aihub_api/aihub_api/routes/agent/AgentController.py`
+- Example service: `aihub_api/aihub_api/routes/agent/AgentService.py`
+- Lifetime manager: `aihub_api/aihub_api/runners/lifetime/lifetime_manager.py`
+- Agent discovery: `aihub_api/aihub_api/services/AgentEndpointsDiscoveryService.py`
+- Model creation: `aihub_api/aihub_api/services/ModelCreationService.py`
+- Event models: `aihub_api/aihub_api/events/EventModelCreationService.py`
+- RPC responders: `aihub_api/aihub_api/rpc/AgentConfigResponder.py`
+- WebSocket manager: `aihub_api/aihub_api/sockets/manager/WebSocketManager.py`
+- i18n: `aihub_api/aihub_api/i18n/ApiLocaleString.py`, `ApiLocaleHandler.py`
+- Test runner: `aihub_api/aihub_api/runners/simulation/agent/SimulatedAgentApiTestRunner.py`
+- Playground: `aihub_api/playground/testing/main.py`
