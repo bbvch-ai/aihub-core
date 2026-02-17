@@ -71,7 +71,7 @@ number = true
 end_of_line = "lf"
 
 [tool.yamlfix]
-line_length = 200
+line_length = 120
 quotes_representation = "double"
 preserve_quotes = false
 sequence_style = "block_style"
@@ -86,5 +86,5 @@ exclude = [
     ".venv/",
     "local_volumes/",
     ".pnpm/",
-    "pnpm-lock.yaml",
+    "**/pnpm-lock.yaml",
 ]
