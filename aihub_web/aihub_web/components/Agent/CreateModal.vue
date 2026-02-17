@@ -44,6 +44,24 @@
         </div>
 
         <div
+          v-if="templateOptions.length > 0"
+          class="flex flex-col gap-2"
+        >
+          <label class="text-sm font-medium">
+            {{ t('agent.create.selectTemplate') }}
+          </label>
+          <Select
+            v-model="selectedTemplate"
+            :options="templateOptions"
+            option-label="label"
+            option-value="value"
+            :placeholder="t('agent.create.selectTemplatePlaceholder')"
+            class="w-full"
+            :disabled="isCreating"
+          />
+        </div>
+
+        <div
           v-if="selectedClassData && configForm.length > 0"
           class="content flex flex-col gap-2"
         >
@@ -148,6 +166,7 @@ import {
   setNestedValue,
 } from '@core/composables/form/useFormKitTransform'
 import { getNode } from '@formkit/core'
+import merge from 'lodash/merge'
 
 import type { AgentClassDto } from '@core/composables/agent/useAgentClasses'
 import type { FormKitSchemaNode } from '@formkit/core'
@@ -168,6 +187,7 @@ const { agentClasses, agentClassesAreLoading } = useAgentClasses()
 const { createAgentInstance, isCreating } = useCreateAgentInstance()
 
 const selectedClass = ref<string>(props.initialClass ?? '')
+const selectedTemplate = ref<number | null>(null)
 const formData = ref<Record<string, unknown>>({})
 const activeStep = ref(0)
 
@@ -191,6 +211,33 @@ const selectedClassData = computed<AgentClassDto | undefined>(() => {
 
 const configForm = computed(() => {
   return selectedClassData.value?.form || []
+})
+
+const availableTemplates = computed(() => {
+  return selectedClassData.value?.templates ?? []
+})
+
+const templateOptions = computed(() => {
+  if (availableTemplates.value.length === 0) return []
+  const options = availableTemplates.value.map((template, index) => {
+    const name = template.name as Record<string, string> | undefined
+    const label = name?.[locale.value] ?? name?.en ?? template.agent_id as string ?? `Template ${index + 1}`
+    return { label, value: index }
+  })
+  return [{ label: t('agent.create.startFromScratch'), value: -1 }, ...options]
+})
+
+watch(selectedTemplate, (index) => {
+  if (index === null || index === -1) {
+    // Reset to default form data (FormKit defaults from elements)
+    formData.value = initializeGroupData(configForm.value as FormElement[], {})
+    return
+  }
+  const template = availableTemplates.value[index]
+  if (template) {
+    const base = initializeGroupData(configForm.value as FormElement[], {})
+    formData.value = merge(base, template)
+  }
 })
 
 const categorizedElements = computed(() => {
@@ -230,6 +277,7 @@ function getRepeaterStepIndex(repeaterIndex: number): number {
 }
 
 watch(selectedClassData, (newClass) => {
+  selectedTemplate.value = null
   if (newClass?.form && newClass.form.length > 0) {
     // Initialize form data with proper structure for groups/repeaters
     // Default values are embedded in the FormKit elements themselves
@@ -282,6 +330,7 @@ function closeModal() {
 
 function resetForm() {
   selectedClass.value = props.initialClass ?? ''
+  selectedTemplate.value = null
   formData.value = {}
   activeStep.value = 0
 }
