@@ -358,7 +358,7 @@ The playground provides a full API server with frontend for interactive testing.
    - **Frontend**: `http://localhost:8000` (interactive testing interface)
    - **API Docs**: `http://localhost:8000/api/v1/docs` (Swagger UI)
    - **ReDoc**: `http://localhost:8000/api/v1/redoc` (Alternative API docs)
-   - **Langfuse Traces**: `http://localhost:6006` (agent execution traces)
+   - **Phoenix Traces**: `http://localhost:6006` (agent execution traces)
 
 4. **Test with curl/wget**: You can use curl or wget to make requests to API endpoints:
 
@@ -396,7 +396,7 @@ enable_logging()
 - **FastAPI Docs**: Interactive API testing at `/docs`
 - **Network Tab**: Browser developer tools for HTTP requests
 - **Logs**: Structured logging for request/response debugging
-- **Langfuse Traces**: Agent interaction visualization
+- **Phoenix Traces**: Agent interaction visualization
 :::
 
 ::: warning Common Debugging Patterns

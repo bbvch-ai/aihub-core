@@ -2,8 +2,8 @@
 
 import { type Client, type Composable, formDataBodySerializer, type Options as Options2, type TDataShape } from './client';
 import { client } from './client.gen';
-import { createDatasetResponseTransformer, createTokenEndpointResponseTransformer, getAgentEventTimeseriesResponseTransformer, getDatasetResponseTransformer, getDatasetsResponseTransformer, getMyUserResponseTransformer, getNotificationsResponseTransformer, getUserResponseTransformer, getUsersResponseTransformer, listTokensEndpointResponseTransformer, updateDatasetResponseTransformer, updateNotificationResponseTransformer, updateNotificationsBulkResponseTransformer } from './transformers.gen';
-import type { AddAgentToThreadData, AddAgentToThreadError, AddAgentToThreadResponse, AddUserToThreadData, AddUserToThreadError, AddUserToThreadResponse, ChatCompletionWithAssistantsData, ChatCompletionWithAssistantsError, ChatCompletionWithAssistantsResponse, CreateAgentInstanceData, CreateAgentInstanceError, CreateAgentInstanceResponse, CreateDatasetData, CreateDatasetError, CreateDatasetResponse, CreateNamespaceData, CreateNamespaceError, CreateNamespaceResponse, CreateProcessInstanceData, CreateProcessInstanceError, CreateProcessInstanceResponse, CreateRoleData, CreateRoleError, CreateRoleResponse, CreateSpeechData, CreateSpeechError, CreateThreadData, CreateThreadError, CreateThreadResponse, CreateTokenEndpointData, CreateTokenEndpointError, CreateTokenEndpointResponse, CreateTranscriptionData, CreateTranscriptionError, CreateTranscriptionResponse, DeleteAgentInstanceData, DeleteAgentInstanceError, DeleteAgentInstanceResponse, DeleteAllOrganizationMemoriesData, DeleteAllOrganizationMemoriesResponse, DeleteAllUserMemoriesData, DeleteAllUserMemoriesResponse, DeleteOrganizationMemoryData, DeleteOrganizationMemoryError, DeleteOrganizationMemoryResponse, DeleteProcessInstanceData, DeleteProcessInstanceError, DeleteProcessInstanceResponse, DeleteRoleData, DeleteRoleError, DeleteRoleResponse2, DeleteUserMemoryData, DeleteUserMemoryError, DeleteUserMemoryResponse, GenerateImageData, GenerateImageError, GenerateImageResponse, GetAgentClassData, GetAgentClassError, GetAgentClassesData, GetAgentClassesError, GetAgentClassesResponse, GetAgentClassInstancesData, GetAgentClassInstancesError, GetAgentClassInstancesResponse, GetAgentClassResponse, GetAgentEventsInThreadData, GetAgentEventsInThreadError, GetAgentEventsInThreadResponse, GetAgentEventTimeseriesData, GetAgentEventTimeseriesError, GetAgentEventTimeseriesResponse, GetAgentInstanceData, GetAgentInstanceError, GetAgentInstanceResponse, GetAgentInstanceThreadsData, GetAgentInstanceThreadsError, GetAgentInstanceThreadsResponse, GetAllAgentInstancesData, GetAllAgentInstancesError, GetAllAgentInstancesResponse, GetAllProcessInstancesData, GetAllProcessInstancesError, GetAllProcessInstancesResponse, GetAnonymousFileRedirectData, GetAnonymousFileRedirectError, GetAnonymousFileUrlData, GetAnonymousFileUrlError, GetDatabasesData, GetDatabasesResponse, GetDatasetData, GetDatasetError, GetDatasetResponse, GetDatasetsData, GetDatasetsResponse, GetDocumentByIdData, GetDocumentByIdError, GetDocumentByIdResponse, GetDocumentsForNamespaceData, GetDocumentsForNamespaceError, GetDocumentsForNamespaceResponse, GetEmbeddingsData, GetEmbeddingsError, GetEmbeddingsResponse, GetFileRedirectData, GetFileRedirectError, GetFileUrlData, GetFileUrlError, GetFileUrlResponse, GetHealthData, GetHealthResponse, GetLitellmModelData, GetLitellmModelError, GetLitellmModelResponse, GetLitellmModelsByModeData, GetLitellmModelsByModeError, GetLitellmModelsByModeResponse, GetLitellmModelsData, GetLitellmModelsResponse, GetLocaleData, GetLocaleResponse, GetModelsData, GetModelsResponse, GetModelWithAssistantsData, GetModelWithAssistantsError, GetModelWithAssistantsResponse, GetMyDashboardData, GetMyDashboardResponse, GetMyUserData, GetMyUserResponse, GetNodesForDocumentData, GetNodesForDocumentError, GetNodesForDocumentResponse, GetNotificationsData, GetNotificationsError, GetNotificationsResponse, GetOpenChatHitlData, GetOpenChatHitlError, GetOpenChatHitlResponse, GetOrganizationMemoriesData, GetOrganizationMemoriesError, GetOrganizationMemoriesResponse, GetProcessClassData, GetProcessClassError, GetProcessClassesData, GetProcessClassesError, GetProcessClassesResponse, GetProcessClassInstancesData, GetProcessClassInstancesError, GetProcessClassInstancesResponse, GetProcessClassResponse, GetProcessInstanceData, GetProcessInstanceError, GetProcessInstanceResponse, GetProcessOpenFormsData, GetProcessOpenFormsError, GetProcessOpenFormsResponse, GetProcessStartFormsData, GetProcessStartFormsError, GetProcessStartFormsResponse, GetProcessWalkthroughsData, GetProcessWalkthroughsError, GetProcessWalkthroughsResponse, GetReadyData, GetReadyResponse, GetRoleData, GetRoleError, GetRoleResponse, GetRolesData, GetRolesResponse, GetSuiteData, GetSuiteResponse, GetSummaryNodesForDocumentData, GetSummaryNodesForDocumentError, GetSummaryNodesForDocumentResponse, GetSupportedFileTypesData, GetSupportedFileTypesResponse, GetThreadData, GetThreadError, GetThreadResponse, GetUserData, GetUserError, GetUserMemoriesData, GetUserMemoriesError, GetUserMemoriesResponse, GetUserResponse, GetUsersData, GetUsersError, GetUsersResponse, GetUserThreadsData, GetUserThreadsError, GetUserThreadsResponse, InitiateDocumentUploadData, InitiateDocumentUploadError, InitiateDocumentUploadResponse, ListTokensEndpointData, ListTokensEndpointResponse, ProcessDocumentData, ProcessDocumentResponse, RemoveAgentFromThreadData, RemoveAgentFromThreadError, RemoveAgentFromThreadResponse, RemoveUserFromThreadData, RemoveUserFromThreadError, RemoveUserFromThreadResponse, RevokeTokenEndpointData, RevokeTokenEndpointError, RevokeTokenEndpointResponse, SearchOrganizationMemoriesData, SearchOrganizationMemoriesError, SearchOrganizationMemoriesResponse, SearchUserMemoriesData, SearchUserMemoriesError, SearchUserMemoriesResponse, SendProcessOpenFormData, SendProcessOpenFormError, SendProcessOpenFormResponse, SendProcessStartFormData, SendProcessStartFormError, SendProcessStartFormResponse, TranslateTextData, TranslateTextError, TranslateTextResponse, UpdateAgentInstanceData, UpdateAgentInstanceError, UpdateAgentInstanceResponse, UpdateDatasetData, UpdateDatasetError, UpdateDatasetResponse, UpdateMyDashboardData, UpdateMyDashboardError, UpdateMyDashboardResponse, UpdateNamespaceData, UpdateNamespaceError, UpdateNamespaceResponse, UpdateNotificationData, UpdateNotificationError, UpdateNotificationResponse, UpdateNotificationsBulkData, UpdateNotificationsBulkError, UpdateNotificationsBulkResponse, UpdateOrganizationMemoryData, UpdateOrganizationMemoryError, UpdateOrganizationMemoryResponse, UpdateProcessInstanceData, UpdateProcessInstanceError, UpdateProcessInstanceResponse, UpdateRoleData, UpdateRoleError, UpdateRoleResponse, UpdateUserMemoryData, UpdateUserMemoryError, UpdateUserMemoryResponse, ValidateDocumentUploadData, ValidateDocumentUploadError, ValidateDocumentUploadResponse } from './types.gen';
+import { createDatasetResponseTransformer, createTokenEndpointResponseTransformer, getAgentEventTimeseriesResponseTransformer, getDatasetResponseTransformer, getDatasetsResponseTransformer, getExperimentResponseTransformer, getExperimentsResponseTransformer, getMyUserResponseTransformer, getNotificationsResponseTransformer, getUserResponseTransformer, getUsersResponseTransformer, listTokensEndpointResponseTransformer, runExperimentResponseTransformer, updateDatasetResponseTransformer, updateNotificationResponseTransformer, updateNotificationsBulkResponseTransformer } from './transformers.gen';
+import type { AddAgentToThreadData, AddAgentToThreadError, AddAgentToThreadResponse, AddUserToThreadData, AddUserToThreadError, AddUserToThreadResponse, ChatCompletionWithAssistantsData, ChatCompletionWithAssistantsError, ChatCompletionWithAssistantsResponse, CreateAgentInstanceData, CreateAgentInstanceError, CreateAgentInstanceResponse, CreateDatasetData, CreateDatasetError, CreateDatasetResponse, CreateNamespaceData, CreateNamespaceError, CreateNamespaceResponse, CreateProcessInstanceData, CreateProcessInstanceError, CreateProcessInstanceResponse, CreateRoleData, CreateRoleError, CreateRoleResponse, CreateSpeechData, CreateSpeechError, CreateThreadData, CreateThreadError, CreateThreadResponse, CreateTokenEndpointData, CreateTokenEndpointError, CreateTokenEndpointResponse, CreateTranscriptionData, CreateTranscriptionError, CreateTranscriptionResponse, DeleteAgentInstanceData, DeleteAgentInstanceError, DeleteAgentInstanceResponse, DeleteAllOrganizationMemoriesData, DeleteAllOrganizationMemoriesResponse, DeleteAllUserMemoriesData, DeleteAllUserMemoriesResponse, DeleteOrganizationMemoryData, DeleteOrganizationMemoryError, DeleteOrganizationMemoryResponse, DeleteProcessInstanceData, DeleteProcessInstanceError, DeleteProcessInstanceResponse, DeleteRoleData, DeleteRoleError, DeleteRoleResponse2, DeleteUserMemoryData, DeleteUserMemoryError, DeleteUserMemoryResponse, GenerateImageData, GenerateImageError, GenerateImageResponse, GetAgentClassData, GetAgentClassError, GetAgentClassesData, GetAgentClassesError, GetAgentClassesResponse, GetAgentClassInstancesData, GetAgentClassInstancesError, GetAgentClassInstancesResponse, GetAgentClassResponse, GetAgentEventsInThreadData, GetAgentEventsInThreadError, GetAgentEventsInThreadResponse, GetAgentEventTimeseriesData, GetAgentEventTimeseriesError, GetAgentEventTimeseriesResponse, GetAgentInstanceData, GetAgentInstanceError, GetAgentInstanceResponse, GetAgentInstanceThreadsData, GetAgentInstanceThreadsError, GetAgentInstanceThreadsResponse, GetAllAgentInstancesData, GetAllAgentInstancesError, GetAllAgentInstancesResponse, GetAllProcessInstancesData, GetAllProcessInstancesError, GetAllProcessInstancesResponse, GetAnonymousFileRedirectData, GetAnonymousFileRedirectError, GetAnonymousFileUrlData, GetAnonymousFileUrlError, GetDatabasesData, GetDatabasesResponse, GetDatasetData, GetDatasetError, GetDatasetResponse, GetDatasetsData, GetDatasetsResponse, GetDocumentByIdData, GetDocumentByIdError, GetDocumentByIdResponse, GetDocumentsForNamespaceData, GetDocumentsForNamespaceError, GetDocumentsForNamespaceResponse, GetEmbeddingsData, GetEmbeddingsError, GetEmbeddingsResponse, GetExperimentData, GetExperimentError, GetExperimentResponse, GetExperimentsData, GetExperimentsResponse, GetFileRedirectData, GetFileRedirectError, GetFileUrlData, GetFileUrlError, GetFileUrlResponse, GetHealthData, GetHealthResponse, GetLitellmModelData, GetLitellmModelError, GetLitellmModelResponse, GetLitellmModelsByModeData, GetLitellmModelsByModeError, GetLitellmModelsByModeResponse, GetLitellmModelsData, GetLitellmModelsResponse, GetLocaleData, GetLocaleResponse, GetModelsData, GetModelsResponse, GetModelWithAssistantsData, GetModelWithAssistantsError, GetModelWithAssistantsResponse, GetMyDashboardData, GetMyDashboardResponse, GetMyUserData, GetMyUserResponse, GetNodesForDocumentData, GetNodesForDocumentError, GetNodesForDocumentResponse, GetNotificationsData, GetNotificationsError, GetNotificationsResponse, GetOpenChatHitlData, GetOpenChatHitlError, GetOpenChatHitlResponse, GetOrganizationMemoriesData, GetOrganizationMemoriesError, GetOrganizationMemoriesResponse, GetProcessClassData, GetProcessClassError, GetProcessClassesData, GetProcessClassesError, GetProcessClassesResponse, GetProcessClassInstancesData, GetProcessClassInstancesError, GetProcessClassInstancesResponse, GetProcessClassResponse, GetProcessInstanceData, GetProcessInstanceError, GetProcessInstanceResponse, GetProcessOpenFormsData, GetProcessOpenFormsError, GetProcessOpenFormsResponse, GetProcessStartFormsData, GetProcessStartFormsError, GetProcessStartFormsResponse, GetProcessWalkthroughsData, GetProcessWalkthroughsError, GetProcessWalkthroughsResponse, GetReadyData, GetReadyResponse, GetRoleData, GetRoleError, GetRoleResponse, GetRolesData, GetRolesResponse, GetSuiteData, GetSuiteResponse, GetSummaryNodesForDocumentData, GetSummaryNodesForDocumentError, GetSummaryNodesForDocumentResponse, GetSupportedFileTypesData, GetSupportedFileTypesResponse, GetThreadData, GetThreadError, GetThreadResponse, GetUserData, GetUserError, GetUserMemoriesData, GetUserMemoriesError, GetUserMemoriesResponse, GetUserResponse, GetUsersData, GetUsersError, GetUsersResponse, GetUserThreadsData, GetUserThreadsError, GetUserThreadsResponse, InitiateDocumentUploadData, InitiateDocumentUploadError, InitiateDocumentUploadResponse, ListTokensEndpointData, ListTokensEndpointResponse, ProcessDocumentData, ProcessDocumentResponse, RemoveAgentFromThreadData, RemoveAgentFromThreadError, RemoveAgentFromThreadResponse, RemoveUserFromThreadData, RemoveUserFromThreadError, RemoveUserFromThreadResponse, RevokeTokenEndpointData, RevokeTokenEndpointError, RevokeTokenEndpointResponse, RunExperimentData, RunExperimentError, RunExperimentResponse, SearchOrganizationMemoriesData, SearchOrganizationMemoriesError, SearchOrganizationMemoriesResponse, SearchUserMemoriesData, SearchUserMemoriesError, SearchUserMemoriesResponse, SendProcessOpenFormData, SendProcessOpenFormError, SendProcessOpenFormResponse, SendProcessStartFormData, SendProcessStartFormError, SendProcessStartFormResponse, TranslateTextData, TranslateTextError, TranslateTextResponse, UpdateAgentInstanceData, UpdateAgentInstanceError, UpdateAgentInstanceResponse, UpdateDatasetData, UpdateDatasetError, UpdateDatasetResponse, UpdateMyDashboardData, UpdateMyDashboardError, UpdateMyDashboardResponse, UpdateNamespaceData, UpdateNamespaceError, UpdateNamespaceResponse, UpdateNotificationData, UpdateNotificationError, UpdateNotificationResponse, UpdateNotificationsBulkData, UpdateNotificationsBulkError, UpdateNotificationsBulkResponse, UpdateOrganizationMemoryData, UpdateOrganizationMemoryError, UpdateOrganizationMemoryResponse, UpdateProcessInstanceData, UpdateProcessInstanceError, UpdateProcessInstanceResponse, UpdateRoleData, UpdateRoleError, UpdateRoleResponse, UpdateUserMemoryData, UpdateUserMemoryError, UpdateUserMemoryResponse, ValidateDocumentUploadData, ValidateDocumentUploadError, ValidateDocumentUploadResponse } from './types.gen';
 
 export type Options<TComposable extends Composable = '$fetch', TData extends TDataShape = TDataShape, ResT = unknown, DefaultT = undefined> = Options2<TComposable, TData, ResT, DefaultT> & {
     /**
@@ -147,39 +147,6 @@ export const getAgentEventTimeseries = <TComposable extends Composable = '$fetch
 });
 
 /**
- * Get Litellm Models
- *
- * Retrieve a list of all available models grouped by type.
- */
-export const getLitellmModels = <TComposable extends Composable = '$fetch', DefaultT extends GetLitellmModelsResponse = GetLitellmModelsResponse>(options: Options<TComposable, GetLitellmModelsData, GetLitellmModelsResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetLitellmModelsResponse | DefaultT, unknown, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/models',
-    ...options
-});
-
-/**
- * Get Litellm Models By Mode
- *
- * Retrieve all models filtered by their mode (chat, embedding, rerank, etc.).
- */
-export const getLitellmModelsByMode = <TComposable extends Composable = '$fetch', DefaultT extends GetLitellmModelsByModeResponse = GetLitellmModelsByModeResponse>(options: Options<TComposable, GetLitellmModelsByModeData, GetLitellmModelsByModeResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetLitellmModelsByModeResponse | DefaultT, GetLitellmModelsByModeError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/models/mode/{mode}',
-    ...options
-});
-
-/**
- * Get Litellm Model
- *
- * Retrieve a specific model by name.
- */
-export const getLitellmModel = <TComposable extends Composable = '$fetch', DefaultT extends GetLitellmModelResponse = GetLitellmModelResponse>(options: Options<TComposable, GetLitellmModelData, GetLitellmModelResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetLitellmModelResponse | DefaultT, GetLitellmModelError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/models/{model_name}',
-    ...options
-});
-
-/**
  * Get User Threads
  *
  * Returns all threads that the authenticated user is a member of.
@@ -281,6 +248,39 @@ export const removeUserFromThread = <TComposable extends Composable = '$fetch', 
 export const getOpenChatHitl = <TComposable extends Composable = '$fetch', DefaultT extends GetOpenChatHitlResponse = GetOpenChatHitlResponse>(options: Options<TComposable, GetOpenChatHitlData, GetOpenChatHitlResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetOpenChatHitlResponse | DefaultT, GetOpenChatHitlError, DefaultT>({
     security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
     url: '/threads/{thread_id}/open-chat-hitl',
+    ...options
+});
+
+/**
+ * Get Litellm Models
+ *
+ * Retrieve a list of all available models grouped by type.
+ */
+export const getLitellmModels = <TComposable extends Composable = '$fetch', DefaultT extends GetLitellmModelsResponse = GetLitellmModelsResponse>(options: Options<TComposable, GetLitellmModelsData, GetLitellmModelsResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetLitellmModelsResponse | DefaultT, unknown, DefaultT>({
+    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
+    url: '/models',
+    ...options
+});
+
+/**
+ * Get Litellm Models By Mode
+ *
+ * Retrieve all models filtered by their mode (chat, embedding, rerank, etc.).
+ */
+export const getLitellmModelsByMode = <TComposable extends Composable = '$fetch', DefaultT extends GetLitellmModelsByModeResponse = GetLitellmModelsByModeResponse>(options: Options<TComposable, GetLitellmModelsByModeData, GetLitellmModelsByModeResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetLitellmModelsByModeResponse | DefaultT, GetLitellmModelsByModeError, DefaultT>({
+    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
+    url: '/models/mode/{mode}',
+    ...options
+});
+
+/**
+ * Get Litellm Model
+ *
+ * Retrieve a specific model by name.
+ */
+export const getLitellmModel = <TComposable extends Composable = '$fetch', DefaultT extends GetLitellmModelResponse = GetLitellmModelResponse>(options: Options<TComposable, GetLitellmModelData, GetLitellmModelResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetLitellmModelResponse | DefaultT, GetLitellmModelError, DefaultT>({
+    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
+    url: '/models/{model_name}',
     ...options
 });
 
@@ -762,7 +762,7 @@ export const createSpeech = <TComposable extends Composable = '$fetch', DefaultT
 export const getDatasets = <TComposable extends Composable = '$fetch', DefaultT extends GetDatasetsResponse = GetDatasetsResponse>(options: Options<TComposable, GetDatasetsData, GetDatasetsResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetDatasetsResponse | DefaultT, unknown, DefaultT>({
     responseTransformer: getDatasetsResponseTransformer,
     security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/datasets/',
+    url: '/evaluations/datasets',
     ...options
 });
 
@@ -774,7 +774,7 @@ export const getDatasets = <TComposable extends Composable = '$fetch', DefaultT 
 export const createDataset = <TComposable extends Composable = '$fetch', DefaultT extends CreateDatasetResponse = CreateDatasetResponse>(options: Options<TComposable, CreateDatasetData, CreateDatasetResponse, DefaultT>) => (options.client ?? client).post<TComposable, CreateDatasetResponse | DefaultT, CreateDatasetError, DefaultT>({
     responseTransformer: createDatasetResponseTransformer,
     security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/datasets/',
+    url: '/evaluations/datasets',
     ...options,
     headers: {
         'Content-Type': 'application/json',
@@ -790,7 +790,7 @@ export const createDataset = <TComposable extends Composable = '$fetch', Default
 export const getDataset = <TComposable extends Composable = '$fetch', DefaultT extends GetDatasetResponse = GetDatasetResponse>(options: Options<TComposable, GetDatasetData, GetDatasetResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetDatasetResponse | DefaultT, GetDatasetError, DefaultT>({
     responseTransformer: getDatasetResponseTransformer,
     security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/datasets/{dataset_id}',
+    url: '/evaluations/datasets/{dataset_id}',
     ...options
 });
 
@@ -802,7 +802,47 @@ export const getDataset = <TComposable extends Composable = '$fetch', DefaultT e
 export const updateDataset = <TComposable extends Composable = '$fetch', DefaultT extends UpdateDatasetResponse = UpdateDatasetResponse>(options: Options<TComposable, UpdateDatasetData, UpdateDatasetResponse, DefaultT>) => (options.client ?? client).put<TComposable, UpdateDatasetResponse | DefaultT, UpdateDatasetError, DefaultT>({
     responseTransformer: updateDatasetResponseTransformer,
     security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/datasets/{dataset_id}',
+    url: '/evaluations/datasets/{dataset_id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Get Specific Experiment
+ *
+ * Retrieves the definition of a specific evaluation experiment by its ID.
+ */
+export const getExperiment = <TComposable extends Composable = '$fetch', DefaultT extends GetExperimentResponse = GetExperimentResponse>(options: Options<TComposable, GetExperimentData, GetExperimentResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetExperimentResponse | DefaultT, GetExperimentError, DefaultT>({
+    responseTransformer: getExperimentResponseTransformer,
+    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
+    url: '/evaluations/experiments/{experiment_id}',
+    ...options
+});
+
+/**
+ * List Evaluation Experiments
+ *
+ * Retrieves a list of all evaluation experiments.
+ */
+export const getExperiments = <TComposable extends Composable = '$fetch', DefaultT extends GetExperimentsResponse = GetExperimentsResponse>(options: Options<TComposable, GetExperimentsData, GetExperimentsResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetExperimentsResponse | DefaultT, unknown, DefaultT>({
+    responseTransformer: getExperimentsResponseTransformer,
+    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
+    url: '/evaluations/experiments',
+    ...options
+});
+
+/**
+ * Run Evaluation Experiment
+ *
+ * Creates and runs a new evaluation experiment.
+ */
+export const runExperiment = <TComposable extends Composable = '$fetch', DefaultT extends RunExperimentResponse = RunExperimentResponse>(options: Options<TComposable, RunExperimentData, RunExperimentResponse, DefaultT>) => (options.client ?? client).post<TComposable, RunExperimentResponse | DefaultT, RunExperimentError, DefaultT>({
+    responseTransformer: runExperimentResponseTransformer,
+    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
+    url: '/evaluations/experiments',
     ...options,
     headers: {
         'Content-Type': 'application/json',

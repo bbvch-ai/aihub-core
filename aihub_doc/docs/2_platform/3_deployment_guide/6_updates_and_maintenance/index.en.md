@@ -119,7 +119,7 @@ before production updates.
 
 ## Monitoring
 
-The observability stack includes Langfuse for AI-specific tracing, OpenTelemetry for distributed tracing, and optional
+The observability stack includes Phoenix for AI-specific tracing, OpenTelemetry for distributed tracing, and optional
 SigNoz Cloud for external metrics and logs. Monitor core services (API, Web, Dagster) and customer services (agents,
 pipelines, processes) during and after updates.
 

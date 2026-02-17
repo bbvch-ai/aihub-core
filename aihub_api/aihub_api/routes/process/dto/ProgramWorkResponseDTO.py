@@ -59,16 +59,12 @@ class ProgramWorkResponseDTO(WorkResponseDTO):
                 submitted_by = MinimalUserDTO.model_validate(
                     {
                         "id": user_id or "",
-                        "name": (
-                            submitted_by_data.get("name")
-                            if isinstance(submitted_by_data, dict)
-                            else getattr(submitted_by_data, "name", "")
-                        ),
-                        "email": (
-                            submitted_by_data.get("email")
-                            if isinstance(submitted_by_data, dict)
-                            else getattr(submitted_by_data, "email", "")
-                        ),
+                        "name": submitted_by_data.get("name")
+                        if isinstance(submitted_by_data, dict)
+                        else getattr(submitted_by_data, "name", ""),
+                        "email": submitted_by_data.get("email")
+                        if isinstance(submitted_by_data, dict)
+                        else getattr(submitted_by_data, "email", ""),
                         "profile_image": profile_image,
                     }
                 )

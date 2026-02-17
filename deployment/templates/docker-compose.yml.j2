@@ -25,7 +25,7 @@
 {%- set MILVUS_ENDPOINT = "http://milvus-standalone:19530" %}
 {%- set MILVUS_HOST = "milvus-standalone" %}
 {%- set MILVUS_PORT = "19530" %}
-{%- set LANGFUSE_BASE_URL = "http://langfuse-web:3000" %}
+{%- set PHOENIX_ENDPOINT = "http://phoenix:6006" %}
 {%- set NATS_ENDPOINT = "nats://nats:4222" %}
 {%- set REDIS_ENDPOINT = "redis://valkey:6379" %}
 {%- set LITE_LLM_PROXY_BASE_URL = "http://litellm:4000" %}
@@ -585,7 +585,7 @@ services:
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_MULTIPLE_DATABASES: openwebui,langfuse,dagster,litellm
+      POSTGRES_MULTIPLE_DATABASES: openwebui,phoenix,dagster,litellm,metamcp
     volumes:
       - {{ global.volume_root }}/postgres-data:/var/lib/postgresql/data
       - ./configs/postgres/init-multiple-dbs.sh:/docker-entrypoint-initdb.d/init-multiple-dbs.sh:ro
@@ -735,93 +735,28 @@ services:
       - data  # Graph database for Mem0 memory storage
 
   # ===================================================================
-  # Langfuse Stack (LLM Observability & Evaluation)
+  # Phoenix Stack (ML Observability)
   # ===================================================================
-  # Langfuse provides tracing, evaluation, and observability for LLM apps.
-  # Open-source alternative with MIT license for self-hosted deployments.
+  # Phoenix helps visualize and debug AI model traces and evaluations.
   # ===================================================================
 
-  clickhouse:
-    container_name: clickhouse
-    image: {{ global.registry_prefix }}{{ image_tags.clickhouse }}
-    restart: always
-    environment:
-      CLICKHOUSE_DB: default
-      CLICKHOUSE_USER: "clickhouse"
-      CLICKHOUSE_PASSWORD: ${LANGFUSE_CLICKHOUSE_PASSWORD}
-    volumes:
-    {%- if stage == 'dev' %}
-      # Named volumes avoid Windows bind-mount issues with ClickHouse atomic renames
-      - clickhouse-data:/var/lib/clickhouse
-      - clickhouse-logs:/var/log/clickhouse-server
-    {%- else %}
-      - {{ global.volume_root }}/clickhouse-data:/var/lib/clickhouse
-      - {{ global.volume_root }}/clickhouse-logs:/var/log/clickhouse-server
-    {%- endif %}
-    {%- if stage in ['dev', 'local', 'build'] %}
-    ports:
-      - "127.0.0.1:8123:8123"
-      - "127.0.0.1:9009:9000"
-    {%- endif %}
-    healthcheck:
-      test: wget --no-verbose --tries=1 --spider http://localhost:8123/ping || exit 1
-      interval: 5s
-      timeout: 5s
-      retries: 10
-      start_period: 1s
-    logging:
-      driver: json-file
-      options:
-        max-size: 10m
-        max-file: 2
-    networks:
-      - data
-
-  langfuse-worker:
-    container_name: langfuse-worker
-    image: {{ global.registry_prefix }}{{ image_tags.langfuse_worker }}
+  phoenix:
+    container_name: phoenix
+    image: {{ global.registry_prefix }}{{ image_tags.phoenix }}
     restart: always
     depends_on:
       postgres:
         condition: service_healthy
-      valkey:
-        condition: service_started
-      clickhouse:
-        condition: service_healthy
     {%- if stage in ['dev', 'local', 'build'] %}
     ports:
-      - "127.0.0.1:3030:3030"
+      - "6006:6006"
+      - "6007:6007"
     {%- endif %}
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/langfuse
-      SALT: ${LANGFUSE_SALT}
-      ENCRYPTION_KEY: ${LANGFUSE_ENCRYPTION_KEY}
-      TELEMETRY_ENABLED: "false"
-      LANGFUSE_ENABLE_EXPERIMENTAL_FEATURES: "true"
-      CLICKHOUSE_MIGRATION_URL: clickhouse://clickhouse:9000
-      CLICKHOUSE_URL: http://clickhouse:8123
-      CLICKHOUSE_USER: "clickhouse"
-      CLICKHOUSE_PASSWORD: ${LANGFUSE_CLICKHOUSE_PASSWORD}
-      CLICKHOUSE_CLUSTER_ENABLED: "false"
-      # Use SeaweedFS for S3-compatible storage
-      LANGFUSE_S3_EVENT_UPLOAD_BUCKET: langfuse
-      LANGFUSE_S3_EVENT_UPLOAD_REGION: auto
-      LANGFUSE_S3_EVENT_UPLOAD_ACCESS_KEY_ID: ${S3_STORAGE_ACCESS_KEY}
-      LANGFUSE_S3_EVENT_UPLOAD_SECRET_ACCESS_KEY: ${S3_STORAGE_SECRET_KEY}
-      LANGFUSE_S3_EVENT_UPLOAD_ENDPOINT: {{ S3_STORAGE_ENDPOINT }}
-      LANGFUSE_S3_EVENT_UPLOAD_FORCE_PATH_STYLE: "true"
-      LANGFUSE_S3_EVENT_UPLOAD_PREFIX: events/
-      LANGFUSE_S3_MEDIA_UPLOAD_BUCKET: langfuse
-      LANGFUSE_S3_MEDIA_UPLOAD_REGION: auto
-      LANGFUSE_S3_MEDIA_UPLOAD_ACCESS_KEY_ID: ${S3_STORAGE_ACCESS_KEY}
-      LANGFUSE_S3_MEDIA_UPLOAD_SECRET_ACCESS_KEY: ${S3_STORAGE_SECRET_KEY}
-      LANGFUSE_S3_MEDIA_UPLOAD_ENDPOINT: {{ S3_STORAGE_ENDPOINT }}
-      LANGFUSE_S3_MEDIA_UPLOAD_FORCE_PATH_STYLE: "true"
-      LANGFUSE_S3_MEDIA_UPLOAD_PREFIX: media/
-      LANGFUSE_S3_BATCH_EXPORT_ENABLED: "false"
-      REDIS_HOST: valkey
-      REDIS_PORT: 6379
-      REDIS_AUTH: ${REDIS_TOKEN}
+      PHOENIX_SQL_DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/phoenix
+      PHOENIX_ENABLE_AUTH: False
+      PHOENIX_GRPC_PORT: 6007
+      PHOENIX_PORT: 6006
     logging:
       driver: json-file
       options:
@@ -830,84 +765,42 @@ services:
     networks:
       - backend
       - data  # For PostgreSQL access
-      - storage  # For SeaweedFS S3 access
 
-  langfuse-web:
-    container_name: langfuse-web
-    image: {{ global.registry_prefix }}{{ image_tags.langfuse_web }}
+  # ===================================================================
+  # MetaMCP (MCP Gateway / Aggregator)
+  # ===================================================================
+  # MetaMCP aggregates multiple MCP servers into a single unified
+  # endpoint. Agents connect to MetaMCP as MCP Hosts, and MetaMCP
+  # routes tool calls to the correct backend MCP server.
+  # ===================================================================
+
+  {%- if image_tags.metamcp is defined %}
+  metamcp:
+    container_name: metamcp
+    image: {{ image_tags.metamcp }}
     restart: always
     depends_on:
       postgres:
         condition: service_healthy
-      valkey:
-        condition: service_started
-      clickhouse:
-        condition: service_healthy
-      langfuse-worker:
-        condition: service_started
     {%- if stage in ['dev', 'local', 'build'] %}
     ports:
-      - "6006:3000"
+      - "12008:12008"
     {%- endif %}
     environment:
-      HOSTNAME: "0.0.0.0"
-      NEXTAUTH_URL: ${LANGFUSE_NEXTAUTH_URL}
-      NEXTAUTH_SECRET: ${LANGFUSE_NEXTAUTH_SECRET}
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/langfuse
-      SALT: ${LANGFUSE_SALT}
-      ENCRYPTION_KEY: ${LANGFUSE_ENCRYPTION_KEY}
-      TELEMETRY_ENABLED: "false"
-      LANGFUSE_ENABLE_EXPERIMENTAL_FEATURES: "true"
-      CLICKHOUSE_MIGRATION_URL: clickhouse://clickhouse:9000
-      CLICKHOUSE_URL: http://clickhouse:8123
-      CLICKHOUSE_USER: "clickhouse"
-      CLICKHOUSE_PASSWORD: ${LANGFUSE_CLICKHOUSE_PASSWORD}
-      CLICKHOUSE_CLUSTER_ENABLED: "false"
-      # Use SeaweedFS for S3-compatible storage
-      LANGFUSE_S3_EVENT_UPLOAD_BUCKET: langfuse
-      LANGFUSE_S3_EVENT_UPLOAD_REGION: auto
-      LANGFUSE_S3_EVENT_UPLOAD_ACCESS_KEY_ID: ${S3_STORAGE_ACCESS_KEY}
-      LANGFUSE_S3_EVENT_UPLOAD_SECRET_ACCESS_KEY: ${S3_STORAGE_SECRET_KEY}
-      LANGFUSE_S3_EVENT_UPLOAD_ENDPOINT: {{ S3_STORAGE_ENDPOINT }}
-      LANGFUSE_S3_EVENT_UPLOAD_FORCE_PATH_STYLE: "true"
-      LANGFUSE_S3_EVENT_UPLOAD_PREFIX: events/
-      LANGFUSE_S3_MEDIA_UPLOAD_BUCKET: langfuse
-      LANGFUSE_S3_MEDIA_UPLOAD_REGION: auto
-      LANGFUSE_S3_MEDIA_UPLOAD_ACCESS_KEY_ID: ${S3_STORAGE_ACCESS_KEY}
-      LANGFUSE_S3_MEDIA_UPLOAD_SECRET_ACCESS_KEY: ${S3_STORAGE_SECRET_KEY}
-      LANGFUSE_S3_MEDIA_UPLOAD_ENDPOINT: {{ S3_STORAGE_ENDPOINT }}
-      LANGFUSE_S3_MEDIA_UPLOAD_FORCE_PATH_STYLE: "true"
-      LANGFUSE_S3_MEDIA_UPLOAD_PREFIX: media/
-      LANGFUSE_S3_BATCH_EXPORT_ENABLED: "false"
-      REDIS_HOST: valkey
-      REDIS_PORT: 6379
-      REDIS_AUTH: ${REDIS_TOKEN}
-      # Auto-initialize default project for API access
-      LANGFUSE_INIT_ORG_ID: "aihub-org"
-      LANGFUSE_INIT_ORG_NAME: "AI-Hub"
-      LANGFUSE_INIT_PROJECT_ID: "aihub-project"
-      LANGFUSE_INIT_PROJECT_NAME: "AI-Hub"
-      LANGFUSE_INIT_PROJECT_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY}
-      LANGFUSE_INIT_PROJECT_SECRET_KEY: ${LANGFUSE_SECRET_KEY}
-      LANGFUSE_INIT_USER_EMAIL: ${LANGFUSE_INIT_USER_EMAIL}
-      LANGFUSE_INIT_USER_NAME: "AI-Hub Admin"
-      LANGFUSE_INIT_USER_PASSWORD: ${LANGFUSE_INIT_USER_PASSWORD}
-      # Azure AD SSO — dedicated app registration with "assignment required"
-      AUTH_AZURE_AD_CLIENT_ID: ${LANGFUSE_AZURE_AD_CLIENT_ID}
-      AUTH_AZURE_AD_CLIENT_SECRET: ${LANGFUSE_AZURE_AD_CLIENT_SECRET}
-      AUTH_AZURE_AD_TENANT_ID: ${LANGFUSE_AZURE_AD_TENANT_ID}
-      AUTH_AZURE_AD_ALLOW_ACCOUNT_LINKING: "true"
-      # Auto-provisioning — assigned SSO users get MEMBER in the AI-Hub org/project
-      LANGFUSE_DEFAULT_ORG_ID: "aihub-org"
-      LANGFUSE_DEFAULT_ORG_ROLE: "MEMBER"
-      LANGFUSE_DEFAULT_PROJECT_ID: "aihub-project"
-      LANGFUSE_DEFAULT_PROJECT_ROLE: "MEMBER"
-      # Auth controls
-      AUTH_DISABLE_USERNAME_PASSWORD: "{{ 'true' if stage in ['nightly', 'latest'] else 'false' }}"
-      AUTH_DISABLE_SIGNUP: "false"
-      LANGFUSE_ALLOWED_ORGANIZATION_CREATORS: ${LANGFUSE_ALLOWED_ORGANIZATION_CREATORS}
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/metamcp
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: metamcp
+      APP_URL: ${METAMCP_APP_URL}
+      NEXT_PUBLIC_APP_URL: ${METAMCP_APP_URL}
+      BETTER_AUTH_SECRET: ${METAMCP_AUTH_SECRET}
+      TRANSFORM_LOCALHOST_TO_DOCKER_INTERNAL: "true"
+      LOG_LEVEL: info
     healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://$(hostname):3000/api/public/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:12008"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -917,27 +810,38 @@ services:
       options:
         max-size: 10m
         max-file: 2
-    {%- if stage != 'dev' %}
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.langfuse.rule=Host(`langfuse.${DOMAIN}`)"
-      - "traefik.http.routers.langfuse.priority=4000"
-      - "traefik.http.routers.langfuse.entrypoints=websecure"
-      - "traefik.http.routers.langfuse.middlewares=security-headers@file"
-      - "traefik.http.services.langfuse.loadbalancer.server.port=3000"
-      {%- if stage not in ['local', 'build'] %}
-      - "traefik.http.routers.langfuse.tls.certresolver=letsencrypt"
-      {%- else %}
-      - "traefik.http.routers.langfuse.tls=true"
-      {%- endif %}
-    {%- endif %}
     networks:
       - backend
-      - data  # For PostgreSQL access
-      - storage  # For SeaweedFS S3 access
-      {%- if stage != 'dev' %}
-      - proxy  # For Traefik access
-      {%- endif %}
+      - data
+
+  metamcp-init:
+    container_name: metamcp-init
+    image: {{ global.registry_prefix }}{{ image_tags.postgres }}
+    restart: "no"
+    depends_on:
+      metamcp:
+        condition: service_healthy
+    environment:
+      PGHOST: postgres
+      PGPORT: "5432"
+      PGUSER: ${POSTGRES_USER}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: metamcp
+      METAMCP_ADMIN_EMAIL: ${METAMCP_ADMIN_EMAIL}
+      METAMCP_ADMIN_PASSWORD: ${METAMCP_ADMIN_PASSWORD}
+      METAMCP_ADMIN_NAME: ${METAMCP_ADMIN_NAME}
+    volumes:
+      - .\configs\metamcp\init-metamcp.sh:/init-metamcp.sh:ro
+    entrypoint: ["/bin/sh", "/init-metamcp.sh"]
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks:
+      - backend
+      - data
+  {%- endif %}
 
   # ===================================================================
   # Nats & Valkey Stack (Messaging and Caching)
@@ -1512,8 +1416,6 @@ services:
     environment:
       - OTEL_CLOUD_ENDPOINT=${OTEL_CLOUD_ENDPOINT}
       - OTEL_CLOUD_HEADERS=${OTEL_CLOUD_HEADERS}
-      - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY}
-      - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY}
     volumes:
       - ./configs/otel/otel-config.{{ stage_postfix }}.yml:/etc/otel-config.yml
     {%- if stage in ['dev', 'local', 'build'] %}
@@ -1524,7 +1426,7 @@ services:
       - "55679:55679"
     {%- endif %}
     depends_on:
-      - langfuse-web
+      - phoenix
     healthcheck:
       test: [ "NONE" ]
     logging:
@@ -2196,14 +2098,8 @@ services:
       S3_STORAGE_URL_SIGNING_SECRET: ${S3_STORAGE_SECRET_KEY}
       ANONYMOUS_FILE_ACCESS_SERVICE_STORAGE_BACKEND: s3
 
-      # Langfuse
-      LANGFUSE_BASE_URL: {{ LANGFUSE_BASE_URL }}
-      LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY}
-      LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY}
-      LANGFUSE_PUBLIC_URL: {{ 'http://localhost:6006' if stage == 'dev' else 'https://langfuse.${DOMAIN}' }}
-      LANGFUSE_PROJECT_ID: "aihub-project"
-      AIHUB_OPENAI_API_BASE_URL: http://{{ 'localhost' if stage == 'dev' else 'api' }}:8000/api/v1/openai
-
+      # Phoenix
+      PHOENIX_ENDPOINT: {{ PHOENIX_ENDPOINT }}
 
       # NATs
       NATS_ENDPOINT: {{ NATS_ENDPOINT }}
@@ -2229,7 +2125,6 @@ services:
 
       # Docling
       DOCLING_API_BASE_URL: {{ DOCLING_API_BASE_URL }}
-      DOCLING_API_KEY: ${DOCLING_API_KEY}
       DOCLING_API_TIMEOUT: ${DOCLING_API_TIMEOUT}
       DOCLING_PIPELINE_TYPE: ${DOCLING_PIPELINE_TYPE}
       DOCLING_HOSTED_VLM_API_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}
@@ -2368,10 +2263,6 @@ services:
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
-      # AI-Hub Settings
-      AIHUB_API_VERSION: ${AIHUB_API_VERSION}
-      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
-
       # LiteLLM Access
       LITE_LLM_PROXY_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
@@ -2438,10 +2329,6 @@ services:
     {%- endif %}
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
-
-      # AI-Hub Settings
-      AIHUB_API_VERSION: ${AIHUB_API_VERSION}
-      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
 
       # LiteLLM Access
       LITE_LLM_PROXY_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}
@@ -2514,10 +2401,6 @@ services:
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
-      # AI-Hub Settings
-      AIHUB_API_VERSION: ${AIHUB_API_VERSION}
-      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
-
       # LiteLLM Access
       LITE_LLM_PROXY_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
@@ -2579,10 +2462,6 @@ services:
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
-      # AI-Hub Settings
-      AIHUB_API_VERSION: ${AIHUB_API_VERSION}
-      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
-
       # LiteLLM Access
       LITE_LLM_PROXY_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
@@ -2642,10 +2521,6 @@ services:
     {%- endif %}
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
-
-      # AI-Hub Settings
-      AIHUB_API_VERSION: ${AIHUB_API_VERSION}
-      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
 
       # LiteLLM Access
       LITE_LLM_PROXY_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}
@@ -2708,10 +2583,6 @@ services:
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
-      # AI-Hub Settings
-      AIHUB_API_VERSION: ${AIHUB_API_VERSION}
-      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
-
       # LiteLLM Access
       LITE_LLM_PROXY_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
@@ -2758,10 +2629,6 @@ services:
     {%- endif %}
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
-
-      # AI-Hub Settings
-      AIHUB_API_VERSION: ${AIHUB_API_VERSION}
-      AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
 
       # LiteLLM Access
       LITE_LLM_PROXY_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}
@@ -2826,7 +2693,6 @@ services:
 
       # Docling
       DOCLING_API_BASE_URL: {{ DOCLING_API_BASE_URL }}
-      DOCLING_API_KEY: ${DOCLING_API_KEY}
       DOCLING_API_TIMEOUT: ${DOCLING_API_TIMEOUT}
       DOCLING_PIPELINE_TYPE: ${DOCLING_PIPELINE_TYPE}
       DOCLING_HOSTED_VLM_API_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}
@@ -2898,7 +2764,6 @@ services:
 
       # Docling
       DOCLING_API_BASE_URL: {{ DOCLING_API_BASE_URL }}
-      DOCLING_API_KEY: ${DOCLING_API_KEY}
       DOCLING_API_TIMEOUT: ${DOCLING_API_TIMEOUT}
       DOCLING_PIPELINE_TYPE: ${DOCLING_PIPELINE_TYPE}
       DOCLING_HOSTED_VLM_API_BASE_URL: {{ LITE_LLM_PROXY_BASE_URL }}
@@ -3068,16 +2933,3 @@ networks:
     driver: bridge
     driver_opts:
       com.docker.network.bridge.enable_icc: "false"
-
-{%- if stage == 'dev' %}
-# ===================================================================
-# Named Volumes
-# ===================================================================
-# ClickHouse requires Linux filesystem semantics (atomic rename) that
-# are not supported by Windows bind mounts. Named Docker volumes run
-# inside the Docker VM where this works correctly.
-# ===================================================================
-volumes:
-  clickhouse-data:
-  clickhouse-logs:
-{%- endif %}

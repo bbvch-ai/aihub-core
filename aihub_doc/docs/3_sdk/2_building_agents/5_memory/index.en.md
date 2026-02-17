@@ -535,7 +535,7 @@ data stays on Swiss infrastructure.
 
 ::: tip Next steps
 Explore the complete examples in `playground/minimal_workflow/user_memory_workflow/` and
-`playground/minimal_workflow/organization_memory_workflow/`. Review memory events in Langfuse after running a
+`playground/minimal_workflow/organization_memory_workflow/`. Review memory events in Phoenix after running a
 memory-enhanced agent. Try building a hybrid agent combining both memory types, or experiment with namespace scoping for
 department-level isolation.
 :::

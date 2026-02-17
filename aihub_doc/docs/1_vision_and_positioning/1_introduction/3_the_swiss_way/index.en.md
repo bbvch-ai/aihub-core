@@ -26,7 +26,7 @@ anticipate—it can only execute the workflow steps you've defined.
 Trust requires visibility. The platform provides four layers of observability:
 
 - **Infrastructure monitoring** through OpenTelemetry and Signoz tracks resource usage and API performance
-- **Agent execution tracing** through OpenInference and Langfuse shows every LLM call and decision
+- **Agent execution tracing** through OpenInference and Phoenix shows every LLM call and decision
 - **Workflow event streams** make every step in the agent's process visible and debuggable
 - **Pipeline observability** through Dagster shows exactly how your data is processed and where it goes
 

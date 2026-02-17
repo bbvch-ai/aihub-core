@@ -547,7 +547,7 @@ Infrastruktur.
 
 ::: tip Nächste Schritte
 Erkunden Sie die vollständigen Beispiele unter `playground/minimal_workflow/user_memory_workflow/` und
-`playground/minimal_workflow/organization_memory_workflow/`. Überprüfen Sie die Gedächtnis-Events in Langfuse, nachdem
+`playground/minimal_workflow/organization_memory_workflow/`. Überprüfen Sie die Gedächtnis-Events in Phoenix, nachdem
 Sie einen gedächtnisgestützten Agent ausgeführt haben. Versuchen Sie, einen hybriden Agent zu erstellen, der beide
 Gedächtnis-Typen kombiniert, oder experimentieren Sie mit Namespace-Scoping für die Isolation auf Abteilungsebene.
 :::

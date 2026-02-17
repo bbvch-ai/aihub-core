@@ -59,7 +59,7 @@ aihub_lib/
 │   ├── infrastructure/        # Cloud service configurations
 │   │   ├── azure/             # Azure service integrations
 │   │   ├── google/            # Google Cloud service configs
-│   │   └── langfuse/          # Langfuse observability configuration
+│   │   └── phoenix/           # Phoenix tracing configuration
 │   ├── persistence/           # Database and storage abstractions
 │   │   ├── agents/            # Agent entity management
 │   │   ├── messaging/         # Message persistence
@@ -295,7 +295,7 @@ Key characteristics:
 - Examples: `WorkEvent`, `WorkRequestEvent`
 
 **4. Semantic Events** (`SemanticEvent`)
-Events that must report to OpenInference-compatible tracing systems like Langfuse.
+Events that must report to OpenInference-compatible tracing systems like Arize Phoenix.
 
 Key characteristics:
 

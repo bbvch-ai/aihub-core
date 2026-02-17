@@ -55,7 +55,7 @@ Our architecture is built on a set of non-negotiable principles that reflect the
 - **Radical Transparency and Auditability**: We believe trust is earned through transparency. Our "AI Agents as
   Workflows" philosophy ensures that agent behavior is not a "black box". Agents and assistants are built as structured,
   step-by-step workflows, making them inherently transparent and testable. Every step can be visually monitored and
-  audited using tools like Langfuse Tracing, which is crucial for gaining the trust of employees, managers, and
+  audited using tools like Phoenix Tracing, which is crucial for gaining the trust of employees, managers, and
   regulators.
 :::
 
@@ -150,7 +150,7 @@ see all our platform-level features work for your component automatically, out-o
 
 - **Automatic Observability**: Your new agent will immediately appear in the **`aihub_web`** UI, where it can be managed
   and observed.
-- **Built-in Traceability**: Every run of your agent is automatically traced and can be audited visually in Langfuse
+- **Built-in Traceability**: Every run of your agent is automatically traced and can be audited visually in Phoenix
   without any extra work.
 - **Seamless Interaction**: Your agent can be invoked from the chat interface and can use our built-in protocols to
   interact with other agents in the Hub.
@@ -226,7 +226,7 @@ Our AI capabilities are primarily powered by the LlamaIndex ecosystem and integr
 - **Monitoring**: We use a combination of tools for comprehensive application monitoring:
   - **OpenTelemetry**: The foundational toolkit for generating and exporting telemetry data (traces, metrics, logs).
   - **OpenInference**: A specialized instrumentation library for monitoring LLM applications built with LlamaIndex.
-  - **Langfuse**: For LLM observability, tracing, and model performance evaluation.
+  - **Arize Phoenix**: For ML observability and model performance evaluation.
 - **Asynchronous Messaging**:
   - **NATS**: Used for high-performance, asynchronous communication between services.
 
@@ -427,16 +427,17 @@ MCP integration provides AI coding assistants with:
 - **Real-time observation** of running services and their state
 - **Direct access** to development databases for debugging
 - **API interaction** capabilities for testing and validation
-- **Observability integration** with Langfuse tracing and monitoring
+- **Observability integration** with Phoenix tracing and monitoring
 :::
 
 #### :gear: MCP Configuration
 
-The MCP integration is configured through the `.mcp.json` file in the project root. This file defines two key MCP
+The MCP integration is configured through the `.mcp.json` file in the project root. This file defines three key MCP
 servers:
 
-1. **MongoDB MCP Server**: Enables database queries and monitoring (read-only)
-2. **AI-Hub API MCP Server**: Exposes AI-Hub API functionality to AI assistants
+1. **Phoenix MCP Server**: Provides access to AI observability and tracing data
+2. **MongoDB MCP Server**: Enables database queries and monitoring (read-only)
+3. **AI-Hub API MCP Server**: Exposes AI-Hub API functionality to AI assistants
 
 ::: details :wrench: MCP Server Configuration
 The `.mcp.json` file contains the following configuration:
@@ -444,6 +445,21 @@ The `.mcp.json` file contains the following configuration:
 ```json
 {
   "mcpServers": {
+    "phoenix": {
+      "command": "docker",
+      "args": [
+        "run",
+        "--rm",
+        "-i",
+        "--network=host",
+        "node:22-alpine",
+        "npx",
+        "-y",
+        "@arizeai/phoenix-mcp@latest",
+        "--baseUrl",
+        "http://localhost:6006"
+      ]
+    },
     "mongodb": {
       "command": "docker",
       "args": [
@@ -474,7 +490,7 @@ The `.mcp.json` file contains the following configuration:
 Once your development environment is running, AI coding assistants that support MCP can automatically discover and use
 these integrations:
 
-- **Query agent execution traces** through Langfuse UI at http://localhost:6006
+- **Query agent execution traces** through Phoenix MCP
 - **Inspect database state** through MongoDB MCP (read-only)
 - **Test API endpoints** through AI-Hub API MCP
 - **Debug complex issues** with full development context

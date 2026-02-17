@@ -49,7 +49,7 @@ When you deploy the Swiss AI Hub, you immediately have:
 - **Full audit trails** for compliance and debugging
 - **Cost tracking and limits** per user, team, or model
 - **API tokens** for programmatic access
-- **Langfuse tracing** for complete observability
+- **Phoenix tracing** for complete observability
 :::
 
 ::: details User interfaces
@@ -74,7 +74,7 @@ control.
 :::
 
 ::: tip "Can we track what the AI is doing?"
-Every agent action is traced through Langfuse. Every API call is logged. Every decision is auditable.
+Every agent action is traced through Phoenix. Every API call is logged. Every decision is auditable.
 :::
 
 ::: tip "How do we control costs?"

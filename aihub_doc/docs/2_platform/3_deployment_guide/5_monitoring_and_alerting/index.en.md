@@ -86,8 +86,8 @@ Out-of-the-box, you get access to several key dashboards:
 For deeper insights, the platform also includes built-in dashboards for specific infrastructure components:
 
 - **Traefik (Reverse Proxy)**: Visualizes request routing, service health, and TLS certificate status.
-- **Langfuse (LLM Observability)**: Traces every LLM operation, showing token usage, latency, cost attribution, and full
-  prompt/response context. Also provides dataset management and experiment evaluation.
+- **Phoenix (LLM Observability)**: Traces every LLM operation, showing token usage, latency, and full prompt/response
+  context for debugging.
 - **Dagster (Workflow Engine)**: Monitors the status, history, and performance of all data ingestion and processing
   pipelines.
 :::

@@ -45,7 +45,7 @@ Testen Sie Wiederherstellungen regelmäßig.
 
 ### Was zu sichern ist
 
-PostgreSQL speichert mehrere Datenbanken: OpenWebUI, Langfuse, Dagster und LiteLLM. Eine separate PostgreSQL-Instanz
+PostgreSQL speichert mehrere Datenbanken: OpenWebUI, Phoenix, Dagster und LiteLLM. Eine separate PostgreSQL-Instanz
 speichert das FerretDB-Backend. Verwenden Sie pg_basebackup für vollständige Backups und WAL-Archivierung für
 Point-in-Time Recovery.
 

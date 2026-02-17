@@ -123,10 +123,10 @@ when they need data to survive across conversation turns or be accessible to oth
 its extremely fast in-memory performance and independence from Python processes, allowing agents written in any language
 to access the same state store.
 
-**Langfuse** provides AI-specific observability beyond OpenTelemetry. It captures LLM interactions with full prompts and
-responses, traces RAG retrievals showing which documents were used, tracks per-trace and per-user costs, and provides
-dataset management with experiment evaluation. Langfuse integrates with the existing OpenTelemetry infrastructure,
-adding AI-specific context to standard traces. It supports Azure AD SSO for production access control.
+**Phoenix** provides AI-specific observability beyond OpenTelemetry. It captures LLM interactions with full prompts and
+responses, traces RAG retrievals showing which documents were used, analyzes embedding quality and drift, and provides
+specialized dashboards for AI metrics. Phoenix integrates with the existing OpenTelemetry infrastructure, adding
+AI-specific context to standard traces.
 
 **MCP (Model Context Protocol)** opens the platform to external tools. VSCode extensions can connect to running agents
 for debugging, external AI systems can interact with our agents, and automation tools can submit work items to

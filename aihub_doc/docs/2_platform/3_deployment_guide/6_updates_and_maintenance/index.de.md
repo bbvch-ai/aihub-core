@@ -121,7 +121,7 @@ Kompatibilitätstests vor Produktions-Updates verwenden.
 
 ## Monitoring
 
-Der Observability-Stack umfasst Langfuse für KI-spezifisches Tracing, OpenTelemetry für verteiltes Tracing und optional
+Der Observability-Stack umfasst Phoenix für KI-spezifisches Tracing, OpenTelemetry für verteiltes Tracing und optional
 SigNoz Cloud für externe Metriken und Logs. Überwachen Sie Core-Services (API, Web, Dagster) und Kunden-Services
 (Agents, Pipelines, Prozesse) während und nach Updates.
 

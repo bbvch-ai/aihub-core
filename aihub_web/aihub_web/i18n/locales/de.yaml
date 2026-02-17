@@ -502,7 +502,6 @@ dashboard:
       label: "Delegierte Aufgaben"
 
 evaluation:
-  langfuse_link: "Experimente ausführen"
   dataset:
     title: "Datensätze"
     created_at: "Erstellt:"
@@ -527,6 +526,37 @@ evaluation:
     save_action: "Speichern"
     saved_summary: "Gespeichert"
     saved_detail: "Datensatz gespeichert"
+  experiment:
+    title: "Experimente"
+    created_at: "Ausgeführt am:"
+    dataset: "Datensatz"
+    language_and_dataset: "Sprache & Datensatz"
+    language: "Experimentsprache:"
+    create_description: "Erstellen Sie ein neues Experiment mit einem Datensatz und einem Assistenten!"
+    name: "Name"
+    description: "Beschreibung"
+    agent: "Agent"
+    select_dataset: "Wählen Sie einen Datensatz"
+    select_assistant: "Wählen Sie einen Assistenten"
+    cancel: "Abbrechen"
+    save: "Speichern"
+    running: "Experiment läuft!"
+    running_description: "Dies kann mehrere Minuten dauern. Sie können diese Seite auch verlassen und später zurückkehren."
+    failed: "Experiment fehlgeschlagen!"
+    failed_description: "Bitte kontaktieren Sie das AI-Hub Entwicklungsteam, um herauszufinden, was schief gelaufen ist."
+    filter_by_assistant: "Nach Assistent filtern"
+    filter_by_dataset: "Nach Datensatz filtern"
+    run_experiment: "Experiment ausführen"
+    create_new: "Neues Experiment erstellen"
+    result:
+      question: "Frage"
+      reference_answer: "Referenzantwort"
+      assistant_answer: "Assistentenantwort"
+      latency_ms: "Latenz"
+      conciseness: "Prägnanz"
+      correctness: "Korrektheit"
+      completeness: "Vollständigkeit"
+
 role:
   title: "Zugriffsrollen"
   name: "Name"

@@ -430,7 +430,7 @@ Erwartete Ausgabe:
 Agent abgeschlossen: True
 ```
 
-2. **Mit Langfuse Tracing debuggen** – Öffnen Sie `http://localhost:6006`, um Folgendes zu sehen:
+2. **Mit Phoenix Tracing debuggen** – Öffnen Sie `http://localhost:6006`, um Folgendes zu sehen:
 
    - Schritt-für-Schritt-Ausführungsfluss
    - Event-Daten, die zwischen den Schritten fließen
@@ -459,7 +459,7 @@ Jeder Schritt:
 - **Benutzerdefinierte Events**: Erstellen typisierter Datenobjekte zur Übergabe zwischen Schritten
 - **Konfiguration**: Verwenden typisierter Einstellungen zur Steuerung des Agentenverhaltens
 - **Testen**: `AgentTestRunner` für isolierte Tests verwenden
-- **Debuggen**: Langfuse Tracing und Logging für Observability
+- **Debuggen**: Phoenix Tracing und Logging für Observability
 
 ## Nächste Schritte
 

@@ -501,7 +501,6 @@ dashboard:
       label: "Tâches déléguées"
 
 evaluation:
-  langfuse_link: "Lancer des expériences"
   dataset:
     title: "Jeux de données"
     created_at: "Créé le:"
@@ -526,6 +525,37 @@ evaluation:
     save_action: "Enregistrer"
     saved_summary: "Enregistré"
     saved_detail: "Jeu de données enregistré"
+  experiment:
+    title: "Expériences"
+    created_at: "Exécuté le:"
+    dataset: "Jeu de données"
+    language_and_dataset: "Langue & Jeu de données"
+    language: "Langue de l'expérience:"
+    create_description: "Créez une nouvelle expérience avec un jeu de données et un Assistant!"
+    name: "Nom"
+    description: "Description"
+    agent: "Agent"
+    select_dataset: "Sélectionner un jeu de données"
+    select_assistant: "Sélectionner un Assistant"
+    cancel: "Annuler"
+    save: "Enregistrer"
+    running: "L'expérience est en cours d'exécution!"
+    running_description: "Cela peut prendre plusieurs minutes. Vous pouvez également quitter cette page et revenir plus tard."
+    failed: "L'expérience a échoué!"
+    failed_description: "Veuillez contacter l'équipe de développement AI-Hub pour savoir ce qui s'est mal passé."
+    filter_by_assistant: "Filtrer par Assistant"
+    filter_by_dataset: "Filtrer par jeu de données"
+    run_experiment: "Exécuter l'expérience"
+    create_new: "Créer une nouvelle expérience"
+    result:
+      question: "Question"
+      reference_answer: "Réponse de référence"
+      assistant_answer: "Réponse de l'assistant"
+      latency_ms: "Latence"
+      conciseness: "Concision"
+      correctness: "Exactitude"
+      completeness: "Complétude"
+
 role:
   title: "Rôles d'accès"
   name: "Nom"

@@ -2,6 +2,7 @@ import json
 import logging
 from typing import Annotated, Any
 
+from pydantic import SecretStr
 from redis.asyncio import Redis
 
 logger = logging.getLogger(__name__)
@@ -47,13 +48,20 @@ class BaseContext:
         """Build a namespaced Redis key"""
         return f"{self.store_name}:{key}"
 
+    @staticmethod
+    def _default_serializer(obj: Any) -> Any:
+        """Handle Pydantic SecretStr and other non-standard types during JSON serialization."""
+        if isinstance(obj, SecretStr):
+            return obj.get_secret_value()
+        raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
+
     async def set(self, key: str, value: Any):
         """
         Store a JSON-serializable value under the given key.
         Overwrites any existing value.
         """
         redis_key = self._build_key(key)
-        serialized_value = json.dumps(value)
+        serialized_value = json.dumps(value, default=self._default_serializer)
         logger.debug(f"Storing key '{redis_key}'")
         await self.redis.set(redis_key, serialized_value, ex=self.default_ttl)
 

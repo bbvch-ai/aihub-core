@@ -282,7 +282,7 @@ Process testing uses BDD with `pytest-bdd` and the `ProcessTestRunner`. This pro
 #### 🔍 The Debugging Mindset: Event Flow Analysis
 
 ::: tip Debugging Approach
-Process debugging focuses on understanding the flow of work events between entities. Use **structured logging** and **Langfuse tracing** to visualize process execution.
+Process debugging focuses on understanding the flow of work events between entities. Use **structured logging** and **Phoenix tracing** to visualize process execution.
 :::
 
 #### 🛠️ Essential Debugging Tools
@@ -337,7 +337,7 @@ Process debugging focuses on understanding the flow of work events between entit
 
 #### 👁️ Primary Observability Tools
 
-- **Langfuse Tracing**: `http://localhost:6006` for visual process flow analysis
+- **Phoenix Tracing**: `http://localhost:6006` for visual process flow analysis
 - **ProcessTestRunner**: Built-in event observation for testing and debugging
 - **Structured Logging**: Real-time event flow monitoring
 

@@ -261,7 +261,7 @@ class MultiStageApprovalAgent(Agent):
 - **Asynchronous Processing**: Non-blocking human interactions with parallel workflow support
 - **Event Persistence**: Full conversation history stored for audit and replay
 - **Cross-Agent Communication**: Responses can be shared between different agent workflows
-- **Monitoring Integration**: Langfuse tracing and observability for human interaction patterns
+- **Monitoring Integration**: Phoenix tracing and observability for human interaction patterns
 
 ## Security and Best Practices
 

@@ -54,7 +54,7 @@ Internal application and processing services:
 - **agents**: All agent workers (rag, expert, wrapping)
 - **pipelines**: Data processing pipelines
 - **dagster-**\*: Pipeline orchestration
-- **langfuse**: AI observability
+- **phoenix**: AI observability
 - **otel-collector**: Telemetry aggregation
 
 ### Data Network Services
@@ -119,7 +119,7 @@ flowchart TB
         playwright[playwright]
         dagster[dagster-*]
         pipelines[pipelines]
-        langfuse[langfuse]
+        phoenix[phoenix]
         otel[otel-collector]
     end
 
@@ -159,7 +159,7 @@ flowchart TB
     agents --> neo4j
     pipelines --> nats
     dagster --> postgres
-    langfuse --> postgres
+    phoenix --> postgres
     litellm --> postgres
 
     milvus --> etcd

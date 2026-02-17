@@ -1,0 +1,20 @@
+metadata:
+  name: MCP Orchestrator Agent
+  description: Agent that combines MCP tool calling with agent delegation in a unified ReAct loop
+config:
+  system_prompt:
+    label: System Prompt
+    help: Instructions for the orchestrator's behavior and tool usage.
+steps:
+  initialize:
+    name: "Initialize"
+    description: "Discovers MCP tools, builds schemas, and initializes conversation."
+  plan:
+    name: "Plan"
+    description: "Calls LLM with tools, executes MCP tools, or delegates to agents."
+  agent_response:
+    name: "Agent Response"
+    description: "Handles successful response from a delegated agent."
+  agent_exception:
+    name: "Agent Exception"
+    description: "Handles exception from a delegated agent."

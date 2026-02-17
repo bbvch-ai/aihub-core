@@ -51,7 +51,7 @@ Wenn Sie den Swiss AI Hub deployen, haben Sie sofort:
 - **Vollständige Audit-Trails** für Compliance und Debugging
 - **Kostenverfolgung und Limits** pro Benutzer, Team oder Modell
 - **API-Tokens** für den programmatischen Zugriff
-- **Langfuse-Tracing** für vollständige Observability
+- **Phoenix-Tracing** für vollständige Observability
 :::
 
 ::: details Benutzeroberflächen
@@ -77,7 +77,7 @@ Cloud. Ihre Infrastruktur, Ihre Kontrolle.
 :::
 
 ::: tip „Können wir verfolgen, was die KI tut?"
-Jede Agentenaktion wird durch Langfuse nachverfolgt. Jeder API-Aufruf wird protokolliert. Jede Entscheidung ist
+Jede Agentenaktion wird durch Phoenix nachverfolgt. Jeder API-Aufruf wird protokolliert. Jede Entscheidung ist
 auditierbar.
 :::
 

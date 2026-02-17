@@ -26,7 +26,7 @@ infrastructure: separate databases, vector stores, file storage, and application
 
 The instance includes the API, agents, pipelines, web interface, and bot integrations. It has its own databases
 (FerretDB/PostgreSQL), vector stores (Milvus or Azure AI Search), and file storage (SeaweedFS or Azure Data Lake).
-Monitoring runs through SigNoz and Langfuse. NATS handles event streaming. The instance has its own LiteLLM proxy for
+Monitoring runs through SigNoz and Phoenix. NATS handles event streaming. The instance has its own LiteLLM proxy for
 cost tracking and version control.
 
 ### LLM backend
@@ -162,7 +162,7 @@ AI-Hub Instance
 │   └── Presidio (PII anonymization)
 │
 ├── Observability Layer
-│   ├── Langfuse (LLM tracing, cost tracking, and evaluation)
+│   ├── Phoenix (AI tracing and evaluation)
 │   └── OpenTelemetry (distributed tracing)
 │
 └── Infrastructure Layer

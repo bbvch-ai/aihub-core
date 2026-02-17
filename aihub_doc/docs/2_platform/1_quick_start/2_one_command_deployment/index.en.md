@@ -184,16 +184,7 @@ LITELLM_MASTER_KEY="REPLACE_WITH_RANDOM_STRING"
 # Service Configuration
 # -----------------------------------------------------------------------------
 JUPYTER_TOKEN="REPLACE_WITH_RANDOM_STRING"
-# Langfuse Configuration (LLM observability and evaluation)
-LANGFUSE_SALT="REPLACE_WITH_RANDOM_STRING"
-LANGFUSE_NEXTAUTH_SECRET="REPLACE_WITH_RANDOM_STRING"
-LANGFUSE_ENCRYPTION_KEY="REPLACE_WITH_64_HEX_CHARS"
-LANGFUSE_NEXTAUTH_URL="https://langfuse.${DOMAIN}"
-LANGFUSE_PUBLIC_KEY="pk-lf-REPLACE_WITH_LANGFUSE_PUBLIC_KEY"
-LANGFUSE_SECRET_KEY="sk-lf-REPLACE_WITH_LANGFUSE_SECRET_KEY"
-LANGFUSE_INIT_USER_EMAIL="admin@your-company.com"
-LANGFUSE_INIT_USER_PASSWORD="REPLACE_WITH_RANDOM_STRING"
-LANGFUSE_CLICKHOUSE_PASSWORD="REPLACE_WITH_RANDOM_STRING"
+PHOENIX_SECRET="REPLACE_WITH_RANDOM_STRING"
 
 # Docling Configuration
 DOCLING_API_TIMEOUT="600"
@@ -342,7 +333,7 @@ docker compose -f docker-compose.latest.yml ps
 - **Vector Database** (Milvus)
 - **LLM Proxy** (LiteLLM)
 - **Document Processing** (Docling)
-- **Observability** (Langfuse)
+- **Observability** (Phoenix)
 - **Message Queue** (NATS)
 - **Storage** (SeaweedFS)
 

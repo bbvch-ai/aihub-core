@@ -424,7 +424,7 @@ Expected output:
 Agent completed: True
 ```
 
-2. **Debug with Langfuse Tracing** - Open `http://localhost:6006` to see:
+2. **Debug with Phoenix Tracing** - Open `http://localhost:6006` to see:
 
    - Step-by-step execution flow
    - Event data flowing between steps
@@ -453,7 +453,7 @@ Each step:
 - **Custom events**: Creating typed data objects to pass between steps
 - **Configuration**: Using typed settings to control agent behavior
 - **Testing**: Use `AgentTestRunner` for isolated testing
-- **Debugging**: Langfuse tracing and logging for observability
+- **Debugging**: Phoenix tracing and logging for observability
 
 ## Next steps
 

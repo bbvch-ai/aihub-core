@@ -178,7 +178,7 @@ Agent die Anfrage verarbeitet hat.
 
 ### Schritt 3: Beobachten Sie das Agentenverhalten
 
-Besuchen Sie `http://localhost:6006`, um das Langfuse-Tracing zu sehen. Sie werden detaillierte Traces der Ausführung
+Besuchen Sie `http://localhost:6006`, um das Phoenix-Tracing zu sehen. Sie werden detaillierte Traces der Ausführung
 Ihres Agenten sehen, die jeden Schritt sowie dessen Ein- und Ausgaben zeigen.
 
 ## Was ist gerade passiert?

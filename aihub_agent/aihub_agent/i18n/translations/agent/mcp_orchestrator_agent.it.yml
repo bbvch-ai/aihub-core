@@ -1,0 +1,20 @@
+metadata:
+  name: Agente Orchestratore MCP
+  description: Agente che combina chiamate MCP con delega ad altri agenti in un loop ReAct unificato
+config:
+  system_prompt:
+    label: Prompt di Sistema
+    help: Istruzioni per il comportamento dell'orchestratore e l'uso degli strumenti.
+steps:
+  initialize:
+    name: "Inizializzazione"
+    description: "Scopre gli strumenti MCP, costruisce gli schemi e inizializza la conversazione."
+  plan:
+    name: "Pianificazione"
+    description: "Chiama LLM con gli strumenti, esegue strumenti MCP o delega ad agenti."
+  agent_response:
+    name: "Risposta dell'agente"
+    description: "Gestisce la risposta riuscita di un agente delegato."
+  agent_exception:
+    name: "Eccezione dell'agente"
+    description: "Gestisce l'eccezione di un agente delegato."

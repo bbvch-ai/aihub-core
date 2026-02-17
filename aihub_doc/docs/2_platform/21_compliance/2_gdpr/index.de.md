@@ -42,7 +42,7 @@ fest:
 
 ### Rechtmäßigkeit, Fairness und Transparenz
 
-Die Plattform bietet Audit-Trails, Quellenzuordnung und Langfuse-Tracing für Transparenz. Organisationen müssen ihre
+Die Plattform bietet Audit-Trails, Quellenzuordnung und Phoenix-Tracing für Transparenz. Organisationen müssen ihre
 Rechtsgrundlage für die Verarbeitung dokumentieren, Datenschutzhinweise bereitstellen, Verzeichnisse der
 Verarbeitungstätigkeiten führen und Datenschutz-Folgenabschätzungen durchführen. Die Verarbeitung muss rechtmäßig, fair
 und für die betroffenen Personen transparent sein.

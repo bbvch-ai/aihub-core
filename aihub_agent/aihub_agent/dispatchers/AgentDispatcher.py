@@ -8,6 +8,8 @@ from aihub_lib.agents.AgentConfig import AgentConfig, StepConfig
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.generative_ai.memory.AgentMemory import AgentMemory
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.mcp.McpHostConfig import McpHostConfig
+from aihub_lib.mcp.McpHostManager import McpHostManager
 from aihub_lib.nats.dispatcher.BaseDispatcher import BaseDispatcher, EventsAndKwargs
 from aihub_lib.nats.events import BaseEvent, ControlEvent, ExceptionEvent, StartEvent
 from aihub_lib.nats.events.agent_in_the_loop.request.AgentInTheLoopRequestEvent import AgentInTheLoopRequestEvent
@@ -83,10 +85,13 @@ class AgentDispatcher(BaseDispatcher):
         # Pre-compute non-configurable values for merging with incoming configs
         self._non_configurable_values = agent_config.get_non_configurable_values()
 
-        self.agent_run_tracer = AgentRunTracer()
+        self.agent_run_tracer = AgentRunTracer(redis=redis)
 
         # Client for fetching agent configuration via NATS RPC
         self._config_client = AgentConfigClient(nc=nc)
+
+        # MCP Host instances keyed by run_id (lazy-initialized per run)
+        self._mcp_hosts: dict[str, McpHostManager] = {}
 
     @override
     async def handle_event(
@@ -154,15 +159,18 @@ class AgentDispatcher(BaseDispatcher):
         if event.is_stop_event or event.is_exception_event:
             logger.debug(f"Handling final event: {event.event_name}")
 
-            try:
-                await run_context.delete_all()
-                await self.event_store.delete_all(topic.execution_context_id)
-                await self.step_store.delete_all(topic.execution_context_id)
+            await self.agent_run_tracer.trace_run_completion(
+                topic=topic,
+                final_event=event,
+            )
 
-                if event.is_exception_event:
-                    await self.step_store.mark_execution_context_as_crashed(topic.execution_context_id)
-            finally:
-                self.agent_run_tracer.clear_run(topic.run_id)
+            await self._cleanup_mcp_host(topic.run_id)
+            await run_context.delete_all()
+            await self.event_store.delete_all(topic.execution_context_id)
+            await self.step_store.delete_all(topic.execution_context_id)
+
+            if event.is_exception_event:
+                await self.step_store.mark_execution_context_as_crashed(topic.execution_context_id)
             return
 
         steps = self.agent.get_steps_waiting_for_event(type(event))
@@ -298,19 +306,14 @@ class AgentDispatcher(BaseDispatcher):
                 logger.exception(f"Error executing step '{step_method.__name__}': {e}")
                 return
 
-            # Always finalize the span so Langfuse receives trace metadata (name, session,
-            # user) even for steps that return None (e.g. side-effect-only steps).
-            result_events = None
+            # If the step returns events, publish them
             if result:
                 if not isinstance(result, list):
                     result = [result]
-                result_events = result
 
-            await self.agent_run_tracer.trace_step_stop(step_span, result_events, topic)
+                self.agent_run_tracer.trace_step_stop(step_span, result)
 
-            # If the step returns events, publish them
-            if result_events:
-                for event in result_events:
+                for event in result:
                     if event.is_hitl_request_event:
                         logger.debug(f"Handling special event: HumanInTheLoopRequestEvent: {event.event_name}")
                         # Complete the event's topic info
@@ -430,6 +433,9 @@ class AgentDispatcher(BaseDispatcher):
         if param.annotation in [AgentInstanceTopic, AgentClassTopic, PartialAgentTopic]:
             return topic
 
+        if param.annotation == McpHostManager:
+            return await self._get_or_create_mcp_host(topic.run_id, agent_config)
+
         return None
 
     def get_topic_manager_for_thread(
@@ -446,6 +452,33 @@ class AgentDispatcher(BaseDispatcher):
             display_id=topic.display_id,
             run_id=topic.run_id,
         )
+
+    async def _get_or_create_mcp_host(
+        self,
+        run_id: str,
+        agent_config: AgentConfig,
+    ) -> McpHostManager | None:
+        """Lazy-initialize an McpHostManager for the current run."""
+        if run_id in self._mcp_hosts:
+            return self._mcp_hosts[run_id]
+
+        step_configs = agent_config.get_step_configs()
+        mcp_config = step_configs.get(McpHostConfig)
+        if not isinstance(mcp_config, McpHostConfig):
+            return None
+
+        host = McpHostManager(mcp_config)
+        await host.connect_all()
+        self._mcp_hosts[run_id] = host
+        logger.debug("Created McpHostManager for run '%s' with %d connections", run_id, len(mcp_config.connections))
+        return host
+
+    async def _cleanup_mcp_host(self, run_id: str) -> None:
+        """Disconnect MCP Host when a run completes."""
+        host = self._mcp_hosts.pop(run_id, None)
+        if host is not None:
+            await host.disconnect_all()
+            logger.debug("Cleaned up McpHostManager for run '%s'", run_id)
 
     async def trigger_agent_in_the_loop(
         self, aitl_request_event: AgentInTheLoopRequestEvent, topic: AgentInstanceTopic

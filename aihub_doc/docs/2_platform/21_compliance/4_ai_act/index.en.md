@@ -35,7 +35,7 @@ The platform provides technical measures that support compliance:
 
 - Audit logging and traceability
 - Human-in-the-loop capabilities
-- Langfuse tracing for transparency
+- Phoenix tracing for transparency
 - Source attribution for AI outputs
 - Configurable access controls
 

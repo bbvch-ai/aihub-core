@@ -17,19 +17,6 @@
           {{ dataset.dataset_name }}
         </h3>
       </div>
-      <Button
-        v-if="langfuseDatasetUrl"
-        :label="t('evaluation.langfuse_link')"
-        icon="pi pi-external-link"
-        icon-pos="right"
-        size="small"
-        outlined
-        as="a"
-        :href="langfuseDatasetUrl"
-        target="_blank"
-        rel="noopener noreferrer"
-        @click.stop
-      />
     </div>
     <div>
       <span class="text-xs">
@@ -58,7 +45,6 @@ import type { MinimalDataset } from '@core/sdk/client'
 
 const props = defineProps<{
   dataset: MinimalDataset
-  langfuseDatasetUrl?: string
 }>()
 
 const route = useRoute()

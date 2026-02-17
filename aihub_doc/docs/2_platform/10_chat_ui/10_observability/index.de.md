@@ -55,9 +55,9 @@ Workflow-Schritten fließen. Dies unterstützt ausgeklügeltes Debugging und Val
 Von den Trace-Ansichten aus navigieren Benutzer zu verwandten Funktionen – Wissensdokumente, auf die während der Abfrage
 zugegriffen wurde, Agentenkonfigurationen, Systemprotokolle.
 
-## Langfuse Trace-Integration
+## Phoenix Trace-Integration
 
-Die Plattform verwendet Langfuse, eine Open-Source-Plattform für KI-Beobachtbarkeit.
+Die Plattform verwendet Arize Phoenix, eine Open-Source-Plattform für KI-Beobachtbarkeit.
 
 Die Implementierung folgt den semantischen Konventionen von OpenInference. Trace-Daten verwenden standardisierte
 Formate, die mit branchenüblichen Beobachtbarkeits-Tools kompatibel sind.

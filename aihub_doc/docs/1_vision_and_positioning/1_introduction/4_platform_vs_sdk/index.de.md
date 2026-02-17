@@ -47,7 +47,7 @@ Dieser Agent führt automatisch folgende Schritte aus:
 
 - Streamt Updates über die WebSocket-Verbindungen der Plattform
 - Erscheint in der Chat-Oberfläche
-- Wird in Langfuse nachverfolgt
+- Wird in Phoenix nachverfolgt
 - Berücksichtigt die Plattform-Authentifizierung
 - Speichert den Zustand in Plattform-Datenbanken
 - Behandelt Fehler gemäß den Plattform-Mustern
@@ -62,7 +62,7 @@ Agents arbeiten. Die Plattform bietet vom ersten Tag an einen Mehrwert.
 in ihrer IDE mit vertrauten Tools und testen lokal vor der Bereitstellung. Es ist nicht notwendig, die interne
 Architektur der Plattform zu verstehen, um Agents zu erstellen.
 
-**Update-Isolation** Plattform-Updates (neue Versionen von Langfuse, LiteLLM oder der Web-Benutzeroberfläche)
+**Update-Isolation** Plattform-Updates (neue Versionen von Phoenix, LiteLLM oder der Web-Benutzeroberfläche)
 beeinträchtigen Ihre benutzerdefinierten Agents nicht. SDK-Updates (neue Decorators oder Muster) erfordern keine
 Plattformänderungen. Jede Schicht entwickelt sich unabhängig voneinander.
 

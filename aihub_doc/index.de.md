@@ -66,7 +66,7 @@ abschneiden.
 ::: details Wie können wir sicherstellen, dass KI-Entscheidungen, die in unserem Schweizer Unternehmen getroffen werden, nachvollziehbar und auditierbar sind?
 Die Swiss AI Hub Community priorisiert **Transparenz für Vertrauen**. Unsere Plattform bietet umfangreiche
 Observability-Funktionen. Jeder Schritt, den ein KI-Agent unternimmt, ist sichtbar, Entscheidungen werden mit Kontext
-protokolliert und Kosten werden verfolgt. Tools wie Langfuse ermöglichen die Nachverfolgung jeder Interaktion, sodass Sie
+protokolliert und Kosten werden verfolgt. Tools wie Phoenix ermöglichen die Nachverfolgung jeder Interaktion, sodass Sie
 immer verstehen können, *warum* eine KI eine bestimmte Antwort gegeben hat, was entscheidend für **Compliance und
 Auditing** ist. Erkunden Sie diese Funktionen unter [Auditing & Observability](/de/docs/2_platform/12_auditing/).
 :::

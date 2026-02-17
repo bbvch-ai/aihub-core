@@ -32,7 +32,7 @@ individuals' behavior. See [GDPR Applicability](../2_gdpr/#applicability-to-swis
 ### High-risk profiling
 
 The revDSG requires oversight for automated evaluation of personal aspects like risk assessment and behavioral
-prediction. The platform provides human-in-the-loop capabilities, Langfuse tracing, and source attribution to support
+prediction. The platform provides human-in-the-loop capabilities, Phoenix tracing, and source attribution to support
 this requirement. Organizations must identify high-risk profiling activities, conduct data protection impact
 assessments, and implement appropriate human oversight.
 

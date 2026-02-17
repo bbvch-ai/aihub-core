@@ -12,7 +12,7 @@ from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExport
 from opentelemetry.sdk._logs import LoggerProvider, LoggingHandler
 from opentelemetry.sdk._logs.export import BatchLogRecordProcessor
 from opentelemetry.sdk.resources import Resource
-from opentelemetry.sdk.trace import SpanLimits, TracerProvider
+from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from pydantic import Field
 
@@ -61,9 +61,7 @@ class OpenTelemetrySettings(EnvironmentSettings):
             }
         )
 
-        # RetrieverEvent spans can exceed the default 128-attribute limit
-        span_limits = SpanLimits(max_attributes=512)
-        tracer_provider = TracerProvider(resource=resource, span_limits=span_limits)
+        tracer_provider = TracerProvider(resource=resource)
 
         if self.EXPORTER_OTLP_PROTOCOL == "grpc":
             otlp_exporter = GRPCSpanExporter(endpoint=self.EXPORTER_OTLP_ENDPOINT, insecure=self.EXPORTER_OTLP_INSECURE)

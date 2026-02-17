@@ -57,7 +57,7 @@ models. Milvus provides production-grade vector storage. Changed documents trigg
 **Day 2 problem:** The AI gives a wrong answer. What happened? Which documents did it reference? What was the actual
 prompt sent to the model? How do you debug a system where every run is different?
 
-**Already solved:** Multiple layers of observability are built in. Langfuse tracing shows every LLM call with inputs and
+**Already solved:** Multiple layers of observability are built in. Phoenix tracing shows every LLM call with inputs and
 outputs. Workflow events make each step visible. Dagster provides complete pipeline lineage. OpenTelemetry tracks system
 metrics. When something goes wrong, you can trace the entire execution path.
 
@@ -88,7 +88,7 @@ break existing functionality? How do you validate agent behavior before producti
 
 **Already solved:** The SDK provides `AgentTestRunner` for deterministic testing. BDD patterns with pytest-bdd for
 behavior verification. Evaluation frameworks to measure accuracy against test datasets. Sandbox environments for safe
-testing. Langfuse tracing for test debugging.
+testing. Phoenix tracing for test debugging.
 
 ## Compliance and governance
 
