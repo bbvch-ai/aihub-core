@@ -63,7 +63,7 @@ class ProcessRunner(HealthCheckProvider):
         self,
         process_type: type[AgenticProcess],
         process_config: ProcessConfig,
-        default_profile: ProcessConfig | None = None,
+        templates: list[ProcessConfig] | None = None,
         locale_paths: list[str] | None = None,
         health_port: int = 8080,
     ):
@@ -74,7 +74,7 @@ class ProcessRunner(HealthCheckProvider):
 
         self.process_type = process_type
         self.process_config = process_config
-        self.default_profile = default_profile
+        self.templates = templates
         self.process_config_type = process_config.__class__
 
         self.name = process_type.name
@@ -178,9 +178,9 @@ class ProcessRunner(HealthCheckProvider):
 
         process_config_specs = ProcessConfigSpecs.from_process_config(self.process_config, self.process_class)
 
-        default_profile_data = None
-        if self.default_profile is not None:
-            default_profile_data = self.default_profile.to_default_profile_data(self.process_config)
+        templates_data = None
+        if self.templates:
+            templates_data = [t.to_template_data(self.process_config) for t in self.templates]
 
         process_discovery_response_event = ProcessClassDiscoveryResponseEvent(
             process_class=self.process_class,
@@ -193,7 +193,7 @@ class ProcessRunner(HealthCheckProvider):
             program_inputs=program_inputs,
             agent_inputs=agent_inputs,
             default_process_config=self.process_config,
-            default_profile=default_profile_data,
+            templates=templates_data,
         )
         await self.nc_publisher.publish_event(process_discovery_response_event, subject)
 

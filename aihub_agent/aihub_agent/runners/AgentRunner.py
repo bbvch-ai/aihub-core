@@ -61,7 +61,7 @@ class AgentRunner(HealthCheckProvider):
         self,
         agent_type: type[Agent],
         agent_config: AgentConfig,
-        default_profile: AgentConfig | None = None,
+        templates: list[AgentConfig] | None = None,
         locale_paths: list[str] | None = None,
         health_port: int = 8080,
     ):
@@ -72,7 +72,7 @@ class AgentRunner(HealthCheckProvider):
 
         self.agent_type = agent_type
         self.agent_config = agent_config
-        self.default_profile = default_profile
+        self.templates = templates
         self.agent_config_type = agent_config.__class__
 
         self.name = agent_type.name
@@ -155,9 +155,9 @@ class AgentRunner(HealthCheckProvider):
 
         agent_config_specs = AgentConfigSpecs.from_agent_config(self.agent_config, self.agent_class)
 
-        default_profile_data = None
-        if self.default_profile is not None:
-            default_profile_data = self.default_profile.to_default_profile_data(self.agent_config)
+        templates_data = None
+        if self.templates:
+            templates_data = [t.to_template_data(self.agent_config) for t in self.templates]
 
         agent_discovery_response_event = AgentClassDiscoveryResponseEvent(
             agent_class=self.agent_class,
@@ -172,7 +172,7 @@ class AgentRunner(HealthCheckProvider):
             hitl_request_events=hitl_request_event_specs,
             hitl_response_events=hitl_response_event_specs,
             network_graph=network_graph.to_pydantic(),
-            default_profile=default_profile_data,
+            templates=templates_data,
         )
         await self.nc_publisher.publish_event(agent_discovery_response_event, subject)
 
