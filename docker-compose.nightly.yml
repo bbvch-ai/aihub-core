@@ -1699,6 +1699,7 @@ services:
 
       # Docling
       DOCLING_API_BASE_URL: http://docling:5001
+      DOCLING_API_KEY: ${DOCLING_API_KEY}
       DOCLING_API_TIMEOUT: ${DOCLING_API_TIMEOUT}
       DOCLING_PIPELINE_TYPE: ${DOCLING_PIPELINE_TYPE}
       DOCLING_HOSTED_VLM_API_BASE_URL: http://litellm:4000
@@ -2126,6 +2127,11 @@ services:
       # Mongo DB
       MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
 
+      # MILVUS
+      MILVUS_URL: http://milvus-standalone:19530
+      MILVUS_DIMENSION: ${MILVUS_DIMENSION}
+      MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
+
       # NATs
       NATS_ENDPOINT: nats://nats:4222
       NATS_TOKEN: ${NATS_TOKEN}
@@ -2169,6 +2175,11 @@ services:
 
       # Mongo DB
       MONGO_CONNECTION_STRING: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@ferretdb:27017/
+
+      # MILVUS
+      MILVUS_URL: http://milvus-standalone:19530
+      MILVUS_DIMENSION: ${MILVUS_DIMENSION}
+      MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
 
       # NATs
       NATS_ENDPOINT: nats://nats:4222
@@ -2219,6 +2230,7 @@ services:
 
       # Docling
       DOCLING_API_BASE_URL: http://docling:5001
+      DOCLING_API_KEY: ${DOCLING_API_KEY}
       DOCLING_API_TIMEOUT: ${DOCLING_API_TIMEOUT}
       DOCLING_PIPELINE_TYPE: ${DOCLING_PIPELINE_TYPE}
       DOCLING_HOSTED_VLM_API_BASE_URL: http://litellm:4000
@@ -2283,6 +2295,7 @@ services:
 
       # Docling
       DOCLING_API_BASE_URL: http://docling:5001
+      DOCLING_API_KEY: ${DOCLING_API_KEY}
       DOCLING_API_TIMEOUT: ${DOCLING_API_TIMEOUT}
       DOCLING_PIPELINE_TYPE: ${DOCLING_PIPELINE_TYPE}
       DOCLING_HOSTED_VLM_API_BASE_URL: http://litellm:4000
