@@ -1,0 +1,8 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Use Local Core" type="MAKEFILE_TARGET_RUN_CONFIGURATION" factoryName="Makefile" folderName="Make Tooling">
+    <makefile filename="$PROJECT_DIR$/Makefile" target="use-local-core" workingDirectory="" arguments="">
+      <envs />
+    </makefile>
+    <method v="2" />
+  </configuration>
+</component>

@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Agent" type="tests" factoryName="py.test" folderName="Test">
+  <configuration default="false" name="Agent Tests" type="tests" factoryName="py.test" folderName="Test">
     <module name="aihub_agent" />
     <option name="ENV_FILES" value="" />
     <option name="INTERPRETER_OPTIONS" value="" />
