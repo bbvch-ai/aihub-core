@@ -23,7 +23,7 @@ format-md:
 
 format-yaml:
 	@echo "Formatting YAML files..."
-	@poetry run yamlfix $$(git ls-files '*.yaml' '*.yml')
+	@poetry run yamlfix $$(git ls-files '*.yaml' '*.yml' | grep -v 'pnpm-lock.yaml')
 
 format-md-win:
 	@echo "Formatting markdown files..."
@@ -50,7 +50,7 @@ pr-ready:
 	@(cd aihub_bot &&  make pr-ready)
 	@(cd aihub_web && make pr-ready)
 	@poetry run mdformat --number $$(git ls-files '*.md')
-	@poetry run yamlfix $$(git ls-files '*.yaml' '*.yml')
+	@poetry run yamlfix $$(git ls-files '*.yaml' '*.yml' | grep -v 'pnpm-lock.yaml')
 
 # Use local cores for development (with poetry install)
 use-local-core:
