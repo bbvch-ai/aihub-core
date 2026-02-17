@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from fastapi import HTTPException
 
-from aihub_lib.auth.usage.RateLimitStore import RateLimitStore
+from aihub_lib.auth.usage.RateLimitStore import CounterState, RateLimitStore
 from aihub_lib.auth.usage.usage_limit_models import ResourceType, RoleUsageLimit, UsageLimitPeriod
 from aihub_lib.auth.usage.UsageLimits import UsageLimits
 
@@ -303,7 +303,7 @@ class TestGetUsageStatus:
             [rl(f"{AGENT_PREFIX}>", 100, "1d"), rl(f"{AGENT_PREFIX}LLMWrappingAgent.>", 10, "1h")]
         ]
         store = AsyncMock(spec=RateLimitStore)
-        store.get_counts.return_value = [(42, None), (5, None)]
+        store.get_counts.return_value = [CounterState(42, None), CounterState(5, None)]
         service = create_service_with_store(store)
 
         status = await service.get_usage_status(
@@ -321,7 +321,7 @@ class TestGetUsageStatus:
         ]
         store = AsyncMock(spec=RateLimitStore)
         # catchall: 42/100 (ok), class: 10/10 (exceeded)
-        store.get_counts.return_value = [(42, None), (10, None)]
+        store.get_counts.return_value = [CounterState(42, None), CounterState(10, None)]
         service = create_service_with_store(store)
 
         status = await service.get_usage_status(
@@ -358,7 +358,7 @@ class TestCheckAndIncrement:
             [rl(f"{AGENT_PREFIX}>", 100, "1d"), rl(f"{AGENT_PREFIX}LLMWrappingAgent.>", 20, "1h")]
         ]
         store = AsyncMock(spec=RateLimitStore)
-        store.check_and_increment.return_value = (True, [(6, None), (4, None)])
+        store.check_and_increment.return_value = (True, [CounterState(6, None), CounterState(4, None)])
         service = create_service_with_store(store)
 
         status = await service.check_and_increment(
@@ -377,7 +377,7 @@ class TestCheckAndIncrement:
             [rl(f"{AGENT_PREFIX}>", 100, "1d"), rl(f"{AGENT_PREFIX}LLMWrappingAgent.>", 10, "1h")]
         ]
         store = AsyncMock(spec=RateLimitStore)
-        store.check_and_increment.return_value = (False, [(5, None), (10, None)])
+        store.check_and_increment.return_value = (False, [CounterState(5, None), CounterState(10, None)])
         service = create_service_with_store(store)
 
         status = await service.check_and_increment(
@@ -393,7 +393,7 @@ class TestCheckAndIncrement:
         """Single limit uses the same atomic call."""
         mock_role_entity.get_usage_limits_for_roles.return_value = [[rl(f"{AGENT_PREFIX}>", 100, "1d")]]
         store = AsyncMock(spec=RateLimitStore)
-        store.check_and_increment.return_value = (True, [(1, None)])
+        store.check_and_increment.return_value = (True, [CounterState(1, None)])
         service = create_service_with_store(store)
 
         await service.check_and_increment("user123", ["user"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev")
@@ -477,7 +477,7 @@ class TestCheckAndIncrementIntegration:
             [rl(f"{AGENT_PREFIX}>", 100, "1d"), rl(f"{AGENT_PREFIX}LLMWrappingAgent.>", 20, "1h")],
         ]
         store = AsyncMock(spec=RateLimitStore)
-        store.check_and_increment.return_value = (True, [(4, None), (6, None)])
+        store.check_and_increment.return_value = (True, [CounterState(4, None), CounterState(6, None)])
         service = create_service_with_store(store)
 
         status = await service.check_and_increment(
@@ -495,7 +495,7 @@ class TestCheckAndIncrementIntegration:
             [rl(f"{AGENT_PREFIX}>", 100, "1d"), rl(f"{AGENT_PREFIX}LLMWrappingAgent.>", 10, "1h")],
         ]
         store = AsyncMock(spec=RateLimitStore)
-        store.check_and_increment.return_value = (False, [(5, None), (10, None)])
+        store.check_and_increment.return_value = (False, [CounterState(5, None), CounterState(10, None)])
         service = create_service_with_store(store)
 
         status = await service.check_and_increment(
@@ -514,7 +514,7 @@ class TestCheckAndIncrementIntegration:
             [rl(f"{AGENT_PREFIX}>", 200, "1d")],
         ]
         store = AsyncMock(spec=RateLimitStore)
-        store.check_and_increment.return_value = (True, [(61, None)])
+        store.check_and_increment.return_value = (True, [CounterState(61, None)])
         service = create_service_with_store(store)
 
         status = await service.check_and_increment(
@@ -537,7 +537,7 @@ class TestBackwardCompatProperties:
             [rl(f"{AGENT_PREFIX}>", 100, "1d"), rl(f"{AGENT_PREFIX}LLMWrappingAgent.>", 10, "1h")]
         ]
         store = AsyncMock(spec=RateLimitStore)
-        store.get_counts.return_value = [(42, None), (9, None)]
+        store.get_counts.return_value = [CounterState(42, None), CounterState(9, None)]
         service = create_service_with_store(store)
 
         status = await service.get_usage_status("user1", ["role1"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev")
@@ -607,7 +607,7 @@ class TestCheckAndRaise:
     async def test_raises_429_when_exceeded(self, mock_role_entity: MagicMock):
         mock_role_entity.get_usage_limits_for_roles.return_value = [[rl(f"{AGENT_PREFIX}>", 10, "1h")]]
         store = AsyncMock(spec=RateLimitStore)
-        store.check_and_increment.return_value = (False, [(10, None)])
+        store.check_and_increment.return_value = (False, [CounterState(10, None)])
         service = create_service_with_store(store)
 
         user = MagicMock()
@@ -628,7 +628,7 @@ class TestCheckAndRaise:
     async def test_does_not_raise_when_within_limit(self, mock_role_entity: MagicMock):
         mock_role_entity.get_usage_limits_for_roles.return_value = [[rl(f"{AGENT_PREFIX}>", 100, "1d")]]
         store = AsyncMock(spec=RateLimitStore)
-        store.check_and_increment.return_value = (True, [(5, None)])
+        store.check_and_increment.return_value = (True, [CounterState(5, None)])
         service = create_service_with_store(store)
 
         user = MagicMock()
