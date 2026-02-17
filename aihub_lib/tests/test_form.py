@@ -609,12 +609,12 @@ class TestSubmissionModel:
 
 
 # =============================================================================
-# Tests for Default Profile Data Extraction
+# Tests for Template Data Extraction
 # =============================================================================
 
 
-class TestDefaultProfileData:
-    """Test to_default_profile_data() for extracting storable profile data."""
+class TestTemplateData:
+    """Test to_template_data() for extracting storable template data."""
 
     def test_includes_identity_fields(self) -> None:
         """Test that identity fields (agent_class, agent_id, name, description, icon) are always included."""
@@ -635,7 +635,7 @@ class TestDefaultProfileData:
             description=LocaleInput(label=LocaleString(en="Desc"), input_type="textarea"),
         )
 
-        result = data_config.to_default_profile_data(form_config)
+        result = data_config.to_template_data(form_config)
 
         assert "agent_class" in result
         assert result["agent_class"] == "TestAgent"
@@ -672,13 +672,13 @@ class TestDefaultProfileData:
             temperature=InputNumber(label=LocaleString(en="Temperature")),
         )
 
-        result = data_config.to_default_profile_data(form_config)
+        result = data_config.to_template_data(form_config)
 
         assert result["customer_bucket"] == "customers"
         assert result["temperature"] == 0.9
 
     def test_excludes_non_configurable_fields(self) -> None:
-        """Test that non-configurable fields (no FormKit element) are excluded from profile data."""
+        """Test that non-configurable fields (no FormKit element) are excluded from template data."""
 
         class LLMConfig(Form):
             model: str = "gpt-4"
@@ -708,7 +708,7 @@ class TestDefaultProfileData:
             llm=LLMConfig(model="gpt-4", temperature=0.7),  # Non-configurable: no FormKit elements
         )
 
-        result = data_config.to_default_profile_data(form_config)
+        result = data_config.to_template_data(form_config)
 
         assert "customer_bucket" in result
         assert "llm" not in result
@@ -731,9 +731,56 @@ class TestDefaultProfileData:
             description=LocaleInput(label=LocaleString(en="Desc"), input_type="textarea"),
         )
 
-        result = data_config.to_default_profile_data(form_config)
+        result = data_config.to_template_data(form_config)
 
         # _form_name is a computed field and not in model_dump() by default with exclude
         # but model_dump() does include computed fields, so we check it's handled
         # _form_name would be in identity_fields check only if key matches, which it doesn't
         assert result.get("agent_class") == "TestAgent"
+
+    def test_multiple_templates_produce_independent_data(self) -> None:
+        """Test that two configs with different values produce distinct template dicts."""
+
+        class CustomConfig(AgentConfig):
+            customer_bucket: Annotated[str | InputText, Field(description="Bucket")] = "default"
+            temperature: Annotated[float | InputNumber, Field(description="Temp")] = 0.7
+
+        locale = LocaleString(en="Test", de="Test")
+
+        form_config = CustomConfig(
+            agent_class="",
+            agent_id=InputText(label=LocaleString(en="ID")),
+            name=LocaleInput(label=LocaleString(en="Name"), input_type="text"),
+            description=LocaleInput(label=LocaleString(en="Desc"), input_type="textarea"),
+            customer_bucket=InputText(label=LocaleString(en="Bucket")),
+            temperature=InputNumber(label=LocaleString(en="Temperature")),
+        )
+
+        template_a = CustomConfig(
+            agent_class="TestAgent",
+            agent_id="qa-mode",
+            name=LocaleString(en="Q&A Mode", de="Q&A-Modus"),
+            description=locale,
+            customer_bucket="qa-bucket",
+            temperature=0.3,
+        )
+
+        template_b = CustomConfig(
+            agent_class="TestAgent",
+            agent_id="summary-mode",
+            name=LocaleString(en="Summary Mode", de="Zusammenfassungsmodus"),
+            description=locale,
+            customer_bucket="summary-bucket",
+            temperature=0.9,
+        )
+
+        result_a = template_a.to_template_data(form_config)
+        result_b = template_b.to_template_data(form_config)
+
+        assert result_a["agent_id"] == "qa-mode"
+        assert result_b["agent_id"] == "summary-mode"
+        assert result_a["temperature"] == 0.3
+        assert result_b["temperature"] == 0.9
+        assert result_a["customer_bucket"] == "qa-bucket"
+        assert result_b["customer_bucket"] == "summary-bucket"
+        assert result_a != result_b

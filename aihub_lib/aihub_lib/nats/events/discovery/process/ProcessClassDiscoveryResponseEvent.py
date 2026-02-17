@@ -55,7 +55,7 @@ class ProcessClassDiscoveryResponseEvent(BaseEvent):
         list[AgentInSpecs], Field(description="List of agent work events that the process can receive.")
     ]
     default_process_config: Annotated[ProcessConfig, Field(description="Default configuration for the process class.")]
-    default_profile: Annotated[
-        dict[str, Any] | None,
-        Field(description="Optional default profile data for auto-creation during discovery."),
+    templates: Annotated[
+        list[dict[str, Any]] | None,
+        Field(description="Optional list of profile templates for quick profile creation in the Admin UI."),
     ] = None

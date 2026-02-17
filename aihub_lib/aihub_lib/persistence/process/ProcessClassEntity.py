@@ -162,6 +162,7 @@ class ProcessClassEntity(Document):
     program_inputs = ListField(EmbeddedDocumentField(ProgramInSpecsEntity), default=list)
     agent_inputs = ListField(EmbeddedDocumentField(AgentInSpecsEntity), default=list)
     default_process_config = EmbeddedDocumentField(ProcessConfigEntityEmbeddedDocument, required=False)
+    templates = ListField(DictField(), default=list)
 
     first_discovered = DateTimeField(required=True, default=datetime.now)
     last_discovered = DateTimeField(required=True, default=datetime.now)
@@ -195,6 +196,7 @@ class ProcessClassEntity(Document):
         program_inputs: list[ProgramInSpecsEntity],
         agent_inputs: list[AgentInSpecsEntity],
         default_process_config: ProcessConfigEntityEmbeddedDocument | None,
+        templates: list[dict] | None = None,
         process_class_entity_id: ObjectId | None = None,
     ) -> Self:
         process = cls(
@@ -209,6 +211,7 @@ class ProcessClassEntity(Document):
             program_inputs=program_inputs,
             agent_inputs=agent_inputs,
             default_process_config=default_process_config,
+            templates=templates or [],
             first_discovered=datetime.now(),
             last_discovered=datetime.now(),
         )
@@ -229,6 +232,7 @@ class ProcessClassEntity(Document):
         program_inputs: list[ProgramInSpecs],
         agent_inputs: list[AgentInSpecs],
         default_process_config: "ProcessConfig",
+        templates: list[dict] | None = None,
     ) -> Self:
         """
         Creates a new ProcessClassEntity or updates an existing one if a process
@@ -259,6 +263,7 @@ class ProcessClassEntity(Document):
             existing_process.program_inputs = program_inputs_entities
             existing_process.agent_inputs = agent_inputs_entities
             existing_process.default_process_config = default_config_entity
+            existing_process.templates = templates or []
             existing_process.last_discovered = datetime.now()
             existing_process.save()
             return existing_process
@@ -274,6 +279,7 @@ class ProcessClassEntity(Document):
                 program_inputs=program_inputs_entities,
                 agent_inputs=agent_inputs_entities,
                 default_process_config=default_config_entity,
+                templates=templates,
             )
 
     @classmethod

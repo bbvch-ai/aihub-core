@@ -59,7 +59,7 @@ runner = AgentRunner(
 )
 ```
 
-Templates are data-mode `AgentConfig` / `ProcessConfig` instances. They use the same `to_default_profile_data()` method
+Templates are data-mode `AgentConfig` / `ProcessConfig` instances. They use the same `to_template_data()` method
 (filtering to configurable + identity fields) to produce the payload sent during discovery.
 
 ### 2. Discovery Transport

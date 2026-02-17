@@ -80,7 +80,7 @@ class AgentClassDiscoveryResponseEvent(BaseEvent):
             description="A network graph of the agent, showing how different components are connected and interact.",
         ),
     ]
-    default_profile: Annotated[
-        dict[str, Any] | None,
-        Field(description="Optional default profile data for auto-creation during discovery."),
+    templates: Annotated[
+        list[dict[str, Any]] | None,
+        Field(description="Optional list of profile templates for quick profile creation in the Admin UI."),
     ] = None

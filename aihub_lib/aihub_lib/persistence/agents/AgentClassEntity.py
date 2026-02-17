@@ -150,6 +150,7 @@ class AgentClassEntity(Document):
     hitl_request_events = ListField(EmbeddedDocumentField(EventSpec), default=list)
     hitl_response_events = ListField(EmbeddedDocumentField(EventSpec), default=list)
     network_graph = DictField(required=True)
+    templates = ListField(DictField(), default=list)
     first_discovered = DateTimeField(required=True, default=datetime.now)
     last_discovered = DateTimeField(required=True, default=datetime.now)
 
@@ -184,6 +185,7 @@ class AgentClassEntity(Document):
         hitl_request_events: list[EventSpec],
         hitl_response_events: list[EventSpec],
         network_graph: dict,
+        templates: list[dict] | None = None,
         agent_class_entity_id: ObjectId | None = None,
     ) -> Self:
         agent = cls(
@@ -200,6 +202,7 @@ class AgentClassEntity(Document):
             hitl_request_events=hitl_request_events,
             hitl_response_events=hitl_response_events,
             network_graph=network_graph,
+            templates=templates or [],
             first_discovered=datetime.now(),
             last_discovered=datetime.now(),
         )
@@ -222,6 +225,7 @@ class AgentClassEntity(Document):
         hitl_request_events: list[EventSpecs],
         hitl_response_events: list[EventSpecs],
         network_graph: WorkflowGraph,
+        templates: list[dict] | None = None,
     ) -> Self:
         """
         Creates a new AgentClassEntity or updates an existing one if an agent
@@ -256,6 +260,7 @@ class AgentClassEntity(Document):
             existing_agent.hitl_request_events = hitl_request_events_entities
             existing_agent.hitl_response_events = hitl_response_events_entities
             existing_agent.network_graph = network_graph_dict
+            existing_agent.templates = templates or []
             existing_agent.last_discovered = datetime.now()
             existing_agent.save()
             return existing_agent
@@ -273,6 +278,7 @@ class AgentClassEntity(Document):
                 hitl_request_events=hitl_request_events_entities,
                 hitl_response_events=hitl_response_events_entities,
                 network_graph=network_graph_dict,
+                templates=templates,
             )
 
     @classmethod
