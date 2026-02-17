@@ -65,7 +65,7 @@ After editing, provide a brief summary of what was changed and why.
 - Platform-model separation with vendor-neutral LLM proxy (LiteLLM)
 - Event-driven architecture with NATS + JetStream
 - Python (FastAPI, LlamaIndex) backend; Nuxt/Vue frontend; Dockerized
-- Observability via OpenTelemetry; Phoenix for LLM specifics
+- Observability via OpenTelemetry; Langfuse for LLM specifics
 - Core services: API, Agent Service, Process Service, Bot API, Ingestion Pipelines
 - Multi-tenancy with per-tenant isolation; shared LLM infra
 - Data sovereignty: on-premise, Swiss private cloud, or hybrid

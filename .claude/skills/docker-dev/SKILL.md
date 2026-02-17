@@ -40,7 +40,7 @@ docker compose -f docker-compose.dev.yml down
 3. Test connectivity to key endpoints with `curl -s -o /dev/null -w "%{http_code}"`:
    - API: http://localhost:8000
    - OpenWebUI: http://localhost:8080
-   - Phoenix: http://localhost:6006
+   - Langfuse: http://localhost:6006
    - NATS: http://localhost:8222
    - SeaweedFS: http://localhost:8889
 
@@ -70,7 +70,7 @@ docker stats --no-stream --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}"
 | API        | http://localhost:8000 | REST API + Swagger |
 | OpenWebUI  | http://localhost:8080 | Chat interface     |
 | Admin UI   | http://localhost:3000 | Nuxt management UI |
-| Phoenix    | http://localhost:6006 | AI observability   |
+| Langfuse   | http://localhost:6006 | LLM observability  |
 | NATS       | http://localhost:8222 | NATS dashboard     |
 | SeaweedFS  | http://localhost:8889 | Object storage     |
 

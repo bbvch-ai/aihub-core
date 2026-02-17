@@ -437,10 +437,10 @@ enabled by default), each with a wrapper script in `.claude/mcp/`:
 
 **Platform Servers** (require running Docker dev stack):
 
-1. **Phoenix MCP**: AI observability and tracing data — query agent traces, view LLM call details
+1. **Langfuse MCP**: LLM observability — prompt management, tracing, cost tracking, evaluations
 2. **MongoDB MCP**: Read-only database access to the FerretDB/MongoDB data layer
 3. **AI-Hub API MCP**: Test API endpoints directly through MCP
-4. **PostgreSQL MCP**: Read-only access to infrastructure databases (Phoenix, Dagster, LiteLLM, OpenWebUI)
+4. **PostgreSQL MCP**: Read-only access to infrastructure databases (Langfuse, Dagster, LiteLLM, OpenWebUI)
 5. **Milvus MCP**: Vector database operations — manage collections, run similarity searches, inspect indexes
 6. **NATS MCP**: Messaging system integration — inspect subjects, view messages, monitor JetStream streams
 7. **Dagster MCP**: Pipeline orchestration — explore pipelines, monitor runs, manage data assets
@@ -512,7 +512,7 @@ servers. Full details are in `.claude/README.md`.
 - **`/generate-sdk`**: Regenerate frontend API SDK from OpenAPI specification
 - **`/dependency-audit`**: Audit dependencies for outdated packages, vulnerabilities, version drift
 - **`/validate-events`**: Validate event hierarchy, registration, and subscriber matching
-- **`/debug-agent`**: Debug agent event flow, NATS subscriptions, and Phoenix traces
+- **`/debug-agent`**: Debug agent event flow, NATS subscriptions, and Langfuse traces
 - **`/debug-pipeline`**: Debug Dagster pipeline failures, sensor issues, resource config
 
 **Frontend**:

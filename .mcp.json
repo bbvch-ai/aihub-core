@@ -6,8 +6,8 @@
     "aihub_api": {
       "command": "./.claude/mcp/mcp-aihub-api.sh"
     },
-    "phoenix": {
-      "command": "./.claude/mcp/mcp-phoenix.sh"
+    "langfuse": {
+      "command": "./.claude/mcp/mcp-langfuse.sh"
     },
     "context7": {
       "command": "./.claude/mcp/mcp-context7.sh"

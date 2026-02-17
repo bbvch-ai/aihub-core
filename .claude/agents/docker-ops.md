@@ -30,7 +30,7 @@ egress    → LiteLLM, LLM providers
 | ferretdb   | 27017 | data     |
 | valkey     | 6379  | storage  |
 | milvus     | 19530 | data     |
-| phoenix    | 6006  | backend  |
+| langfuse   | 6006  | backend  |
 
 ## Key Files
 - Dev compose: `/home/user/aihub-core/docker-compose.dev.yml`

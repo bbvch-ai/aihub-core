@@ -2,7 +2,7 @@
 set -e
 # PostgreSQL MCP — read-only access to the PostgreSQL databases backing the platform.
 # Complements MongoDB MCP by providing lower-level access to the infrastructure databases
-# used by Phoenix (traces), Dagster (pipelines), LiteLLM (routing), and OpenWebUI (chat).
+# used by Langfuse (traces), Dagster (pipelines), LiteLLM (routing), and OpenWebUI (chat).
 #
 # Tools: query (read-only SQL), list_tables, describe_table
 # Connection uses credentials from .env (POSTGRES_USER, POSTGRES_PASSWORD).

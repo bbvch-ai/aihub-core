@@ -70,7 +70,7 @@ This directory contains all Claude Code configuration for the aihub-core monorep
 └── mcp/                   # Model Context Protocol server scripts (12 total)
     ├── mcp-mongodb.sh     # Read-only database access (FerretDB/MongoDB)
     ├── mcp-aihub-api.sh   # API endpoint testing
-    ├── mcp-phoenix.sh     # AI observability and tracing
+    ├── mcp-langfuse.sh    # LLM observability (prompts, tracing, evaluations)
     ├── mcp-context7.sh    # Up-to-date library documentation lookup
     ├── mcp-playwright.sh  # Browser automation and UI debugging
     ├── mcp-github.sh      # GitHub issues, PRs, code search (needs PAT, disabled)
