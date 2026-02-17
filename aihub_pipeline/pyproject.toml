@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aihub_pipeline"
-version = "v0.261.5"
+version = "v0.262.2"
 description = "pipeline core"
 authors = [
     "Joel Barmettler <joel.barmettler@bbv.ch>",
@@ -26,8 +26,9 @@ s3fs = "^2024.10.0"
 boto3 = "^1.41.5"
 
 [tool.poetry.dependencies.aihub_lib]
-path = "../aihub_lib"
-develop = true
+git = "https://github.com/bbvch-ai/aihub-core.git"
+tag = "v0.262.2"
+subdirectory = "aihub_lib"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.1"
@@ -36,7 +37,6 @@ ruff = "^0.8.1"
 mypy = "^1.13.0"
 pytest-cov = "^6.0.0"
 pip-licenses = "^5.0.0"
-sqlean-py = "3.49.1"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

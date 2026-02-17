@@ -5,6 +5,129 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.262.2] - YYYY-MM-DD - Introducing the LLM-Powered Whitepaper Generation System
+
+### Added
+
+- ✨ **LLM-Powered Whitepaper Generation System**: A comprehensive, iterative system has been introduced to automatically
+  transform technical documentation into business-focused whitepapers, ensuring consistency, professional output, and
+  maintainability.
+- 📄 **Automated Chapter Content and Structure**: Each whitepaper chapter is now generated via an LLM, organized in
+  self-contained folders with dedicated prompts, source mappings, and generated outputs (`chapters/*/`).
+- 🔍 **LLM-Based Source Discovery**: Implemented `generate-sources.py` to intelligently identify and map relevant
+  technical documentation files for each chapter, dynamically keeping content synchronized with evolving technical
+  documents.
+- 🚀 **Python-Based Iterative Generation**: The `generate-whitepaper.py` script facilitates sequential chapter
+  generation, leveraging Jinja2 templates and previous chapters as context to maintain narrative flow and style
+  consistency.
+- 💰 **Integrated Cost Tracking and Observability**: LLM calls within the generation process now include token usage and
+  estimated cost summaries for better financial transparency and operational oversight.
+- 📚 **Centralized Glossary and General Writing Guidelines**: New configuration files (`glossary.md`,
+  `general_prompt.md`) are used to enforce consistent terminology and writing style across all generated whitepaper
+  chapters.
+- 📈 **Professional PDF Output with LaTeX**: The system now supports direct Markdown to LaTeX to PDF conversion using
+  `pandoc` and a custom LaTeX template, ensuring high-quality, professional-looking whitepapers.
+- 🧹 **Automated Markdown Formatting**: Generated `.md` files are automatically formatted using `mdformat` to ensure
+  consistent readability and adherence to project styling.
+- 📝 **Architectural Decision Record**: An `arc42` decision record
+  (`2025_12_05_llm_based_whitepaper_generation_system.md`) outlines the context, drivers, decision, and consequences of
+  adopting this new LLM-based whitepaper generation system.
+
+---
+
+## [v0.262.1] - 2026-02-17 - Expanded External Service Configuration
+
+### Added
+
+- ✨ **Milvus Vector Database Configuration**: Introduced new environment variables (`MILVUS_URL`, `MILVUS_DIMENSION`,
+  `MILVUS_ROOT_PASSWORD`) across deployment files, enabling flexible configuration and integration with the Milvus
+  vector database.
+- 🔑 **Docling API Key Support**: Added the `DOCLING_API_KEY` environment variable to allow for secure authentication and
+  access control for the Docling document processing service.
+
+---
+
+## [v0.262.0] - 2026-02-12 - Comprehensive Observability Upgrade: Migrating to Langfuse for LLM Tracing and Evaluation
+
+### Added
+
+- ✨ **Langfuse Observability Platform**: Integrated Langfuse as the new open-source LLM observability and evaluation
+  platform, replacing Arize Phoenix. This provides enhanced tracing, cost tracking, dataset management, and UI-driven
+  experiment workflows.
+- 📦 **Langfuse Docker Services**: Introduced `clickhouse`, `langfuse-worker`, and `langfuse-web` services to the Docker
+  Compose stack for robust self-hosted Langfuse deployment.
+- ⚙️ **Automated Langfuse Provisioning**: Added a `LangfuseProvisioner` to automatically configure Langfuse on API
+  startup, including registering AI-Hub agent models, LLM connections (e.g., LiteLLM), and default prompt templates.
+- 🔑 **Comprehensive Langfuse Configuration**: New environment variables for Langfuse API keys, database settings, SSO
+  (Azure AD) integration, and access control for production deployments.
+- 📊 **Evaluation Dataset Management API**: Introduced new API endpoints under `/datasets` for creating, retrieving, and
+  updating evaluation datasets in Langfuse, supporting structured testing of AI agents.
+- 📈 **Langfuse Trace Attributes**: Enhanced agent tracing (`AgentRunTracer`) to enrich OpenTelemetry spans with
+  Langfuse-specific trace-level attributes (name, session, user, input/output, usage details) for richer visualization
+  and analytics.
+- 🛡️ **Increased OpenTelemetry Span Limits**: Expanded the maximum number of attributes per span to 512 to prevent
+  truncation of detailed telemetry data, especially for complex RAG traces.
+
+### Changed
+
+- 🔄 **Core Observability Switch**: Replaced all references to Arize Phoenix with Langfuse across the entire platform,
+  including documentation, code comments, and configuration files, for a consistent observability experience.
+- 🔬 **Streamlined LLM Evaluation Workflow**: Shifted from a custom, programmatic experiment evaluation framework to
+  leveraging Langfuse's native UI for managing and running experiments against datasets, simplifying evaluation
+  processes and reducing custom code.
+- 📡 **Agent Instance Sync to Langfuse**: The `AgentEndpointsDiscoveryService` now automatically syncs online agent
+  instances to Langfuse, ensuring they are visible and selectable for experiment evaluation within the Langfuse UI.
+- 📄 **Updated Documentation**: All relevant documentation has been updated to reflect the transition to Langfuse,
+  detailing its features and usage for tracing and evaluation.
+
+### Refactor
+
+- 🧹 **Simplified AgentRunTracer Logic**: Refactored the `AgentRunTracer` to directly leverage Langfuse's OpenTelemetry
+  ingestion capabilities, removing Phoenix-specific logic for root spans and complex context storage.
+
+### Removed
+
+- 🗑️ **Arize Phoenix Components**: Eliminated all Docker services, configuration, API endpoints, and associated Python
+  code (including `PhoenixExperimentEvaluator` and `JudgeOutput`) related to Arize Phoenix due to licensing
+  incompatibility and technical advantages of Langfuse.
+- 🚫 **Experiment Management Frontend**: Removed the custom frontend components for managing and running evaluation
+  experiments, as these functionalities are now handled directly within the Langfuse UI.
+
+---
+
+## [v0.261.7] - 2026-02-11 - Enhanced Docling Configuration with API Key Support
+
+### Added
+
+- 🔑 **Docling API Key Support:** Introduced a new configuration option (`DOCLING_API_KEY`) to allow specifying an API
+  key for the Docling service, improving secure access and authentication.
+
+---
+
+## [v0.261.6] - 2026-02-11 - Enhanced Deployment Flexibility and Routing Accuracy
+
+### Added
+
+- 🚀 **Introduced dynamic frontend configuration:** Environment variables (`AIHUB_API_VERSION`, `AIHUB_FRONTEND_ORIGIN`)
+  are now passed to AI-Hub frontend services in Docker Compose setups, enabling more flexible and dynamic deployment
+  settings.
+
+### Changed
+
+- ⚙️ **Optimized Nuxt.js prerendering:** Specific authentication routes (e.g., `/en/auth`) are now explicitly ignored
+  during Nuxt.js prerendering, which enhances build efficiency and better accommodates dynamic authentication pages.
+
+### Fixed
+
+- 🐛 **Resolved authentication path matching issues:** The authentication middleware now correctly identifies public
+  paths, regardless of trailing slashes, ensuring consistent access to non-authenticated routes.
+- 🐞 **Corrected Nginx absolute redirect behavior:** Disabled absolute redirects in Nginx to prevent issues with
+  incorrect schemes or ports when the application is deployed behind a reverse proxy.
+- ⚡️ **Improved Nginx SPA routing:** Refined the Nginx configuration for single-page applications to ensure all non-file
+  requests are reliably served by `index.html`.
+
+---
+
 ## [v0.261.5] - 2026-02-10 - Streamlined Development and Dependency Management
 
 ### Refactor
