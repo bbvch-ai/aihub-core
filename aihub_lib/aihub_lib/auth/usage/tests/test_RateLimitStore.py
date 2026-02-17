@@ -185,20 +185,20 @@ class TestCheckAndIncrement:
         assert "86400" in call_args
 
 
-class TestParseInterleavedCountsTtls:
-    """Tests for RateLimitStore._parse_interleaved_counts_ttls"""
+class TestParseLuaResult:
+    """Tests for RateLimitStore._parse_lua_result"""
 
     def test_empty_input(self):
-        result = RateLimitStore._parse_interleaved_counts_ttls([])
+        result = RateLimitStore._parse_lua_result([])
         assert result == []
 
     def test_single_entry(self):
-        result = RateLimitStore._parse_interleaved_counts_ttls([42, 3600])
+        result = RateLimitStore._parse_lua_result([42, 3600])
         assert len(result) == 1
         assert result[0][0] == 42
         assert result[0][1] is not None
 
     def test_negative_ttl_gives_none_reset(self):
-        result = RateLimitStore._parse_interleaved_counts_ttls([5, -1])
+        result = RateLimitStore._parse_lua_result([5, -1])
         assert result[0][0] == 5
         assert result[0][1] is None

@@ -14,15 +14,6 @@ class UsageLimit(EmbeddedDocument):
     limit = IntField(required=True, min_value=1)
     period = StringField(required=True, choices=["1h", "1d", "7d", "1mo"])
 
-    def clean(self) -> None:
-        """Validate pattern syntax before saving."""
-        segments = self.pattern.split(".")
-        if not segments or any(s == "" for s in segments):
-            raise ValidationError("Pattern must not contain empty segments")
-        for i, segment in enumerate(segments):
-            if segment == ">" and i != len(segments) - 1:
-                raise ValidationError("'>' wildcard must be the last segment in the pattern")
-
 
 class RoleEntity(Document):
     """

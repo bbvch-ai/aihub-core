@@ -3,12 +3,21 @@ from __future__ import annotations
 import logging
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from typing import NamedTuple
 
 from redis.asyncio import Redis
 
 from aihub_lib.auth.usage.usage_limit_models import RoleUsageLimit, UsageLimitPeriod
 
 logger = logging.getLogger(__name__)
+
+
+class CounterState(NamedTuple):
+    """Current value and expiry of a single rate-limit counter."""
+
+    count: int
+    reset_at: datetime | None
+
 
 _LUA_DIR = Path(__file__).parent / "lua"
 _CHECK_AND_INCREMENT_LUA = (_LUA_DIR / "check_and_increment.lua").read_text()
@@ -44,14 +53,14 @@ class RateLimitStore:
         return datetime.now(UTC).replace(microsecond=0) + timedelta(seconds=ttl)
 
     @staticmethod
-    def _parse_interleaved_counts_ttls(raw_values: list[int]) -> list[tuple[int, datetime | None]]:
-        """Parse interleaved [count1, ttl1, count2, ttl2, ...] into [(count, reset_at), ...]."""
-        result: list[tuple[int, datetime | None]] = []
+    def _parse_lua_result(raw_values: list[int]) -> list[CounterState]:
+        """Parse interleaved [count1, ttl1, count2, ttl2, ...] into CounterState list."""
+        result: list[CounterState] = []
         for i in range(0, len(raw_values), 2):
             count = int(raw_values[i])
             ttl = int(raw_values[i + 1])
             reset_at = RateLimitStore._ttl_to_reset_at(ttl)
-            result.append((count, reset_at))
+            result.append(CounterState(count, reset_at))
         return result
 
     async def _register_functions(self) -> None:
@@ -62,7 +71,7 @@ class RateLimitStore:
         await self.redis.function_load(_GET_COUNTS_LUA, replace=True)
         RateLimitStore._functions_registered = True
 
-    async def get_counts(self, limits: list[RoleUsageLimit]) -> list[tuple[int, datetime | None]]:
+    async def get_counts(self, limits: list[RoleUsageLimit]) -> list[CounterState]:
         """Read current counter values and TTLs atomically (no increment)."""
         if not limits:
             return []
@@ -72,9 +81,9 @@ class RateLimitStore:
         await self._register_functions()
         result = await self.redis.fcall("aihub_get_counts", len(keys), *keys)
 
-        return self._parse_interleaved_counts_ttls(result)
+        return self._parse_lua_result(result)
 
-    async def check_and_increment(self, limits: list[RoleUsageLimit]) -> tuple[bool, list[tuple[int, datetime | None]]]:
+    async def check_and_increment(self, limits: list[RoleUsageLimit]) -> tuple[bool, list[CounterState]]:
         """Atomically check all limits and increment all counters if none exceeded.
 
         Uses a single Lua script so the check-then-increment is atomic within Redis,
@@ -84,17 +93,17 @@ class RateLimitStore:
             return True, []
 
         keys = [self._build_key(limit.pattern, limit.period) for limit in limits]
-        argv: list[str] = []
+        # Lua expects interleaved args: [limit1, ttl1, limit2, ttl2, ...]
+        args: list[str] = []
         for limit in limits:
-            argv.append(str(limit.limit))
-            argv.append(str(limit.period.seconds))
+            args.append(str(limit.limit))
+            args.append(str(limit.period.seconds))
 
         await self._register_functions()
-        result = await self.redis.fcall("aihub_check_and_increment", len(keys), *keys, *argv)
+        result = await self.redis.fcall("aihub_check_and_increment", len(keys), *keys, *args)
 
-        exceeded_flag = int(result[0])
-        interleaved = result[1:]
-        incremented = exceeded_flag == 0
+        was_exceeded = bool(result[0])
+        incremented = not was_exceeded
 
-        counts_and_resets = self._parse_interleaved_counts_ttls(interleaved)
+        counts_and_resets = self._parse_lua_result(result[1:])
         return incremented, counts_and_resets

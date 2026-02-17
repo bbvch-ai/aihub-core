@@ -13,14 +13,26 @@
             {{ t('role.access_rules_help_intro') }}
           </p>
           <ul class="flex flex-col gap-1">
-            <li class="whitespace-nowrap"><Badge value="aihub.user.agent.>"
-severity="secondary" size="small" /> — {{ t('role.access_rules_help_all_agents') }}</li>
-            <li class="whitespace-nowrap"><Badge value="aihub.user.agent.MyAgent.*"
-severity="secondary" size="small" /> — {{ t('role.access_rules_help_agent_instances') }}</li>
-            <li class="whitespace-nowrap"><Badge value="aihub.user.service.knowledge"
-severity="secondary" size="small" /> — {{ t('role.access_rules_help_service') }}</li>
-            <li class="whitespace-nowrap"><Badge value="aihub.admin.>"
-severity="secondary" size="small" /> — {{ t('role.access_rules_help_admin') }}</li>
+            <li class="whitespace-nowrap"><Badge
+              value="aihub.user.agent.>"
+              severity="secondary"
+              size="small"
+            /> — {{ t('role.access_rules_help_all_agents') }}</li>
+            <li class="whitespace-nowrap"><Badge
+              value="aihub.user.agent.MyAgent.*"
+              severity="secondary"
+              size="small"
+            /> — {{ t('role.access_rules_help_agent_instances') }}</li>
+            <li class="whitespace-nowrap"><Badge
+              value="aihub.user.service.knowledge"
+              severity="secondary"
+              size="small"
+            /> — {{ t('role.access_rules_help_service') }}</li>
+            <li class="whitespace-nowrap"><Badge
+              value="aihub.admin.>"
+              severity="secondary"
+              size="small"
+            /> — {{ t('role.access_rules_help_admin') }}</li>
           </ul>
         </div>
       </Popover>

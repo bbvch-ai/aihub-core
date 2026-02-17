@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-from datetime import datetime
-
 from redis.asyncio import Redis
 
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
-from aihub_lib.auth.usage.RateLimitStore import RateLimitStore
+from aihub_lib.auth.usage.RateLimitStore import CounterState, RateLimitStore
 from aihub_lib.auth.usage.usage_limit_models import (
     USER_SCOPE,
     ResourceType,
@@ -61,9 +59,8 @@ class UsageLimits:
 
     @staticmethod
     def _build_limit_status(
-        effective_limit: RoleUsageLimit,
-        current_count: int,
-        reset_at: datetime | None,
+        limit: RoleUsageLimit,
+        counter: CounterState,
         *,
         post_increment: bool = False,
     ) -> RoleUsageLimitStatus:
@@ -74,15 +71,13 @@ class UsageLimits:
         just reading) the counter hasn't been bumped yet, so hitting the limit
         exactly (``>=``) already means no more calls are allowed.
         """
-        is_exceeded = (
-            current_count > effective_limit.limit if post_increment else current_count >= effective_limit.limit
-        )
+        is_exceeded = counter.count > limit.limit if post_increment else counter.count >= limit.limit
         return RoleUsageLimitStatus(
-            pattern=effective_limit.pattern,
-            limit=effective_limit.limit,
-            period=effective_limit.period,
-            current_count=current_count,
-            reset_at=reset_at,
+            pattern=limit.pattern,
+            limit=limit.limit,
+            period=limit.period,
+            current_count=counter.count,
+            reset_at=counter.reset_at,
             is_exceeded=is_exceeded,
         )
 
@@ -168,11 +163,10 @@ class UsageLimits:
             return UsageStatus(limits=[], is_exceeded=False)
 
         store = self._store_for_user(user_id)
-        counts_and_resets = await store.get_counts(effective_limits)
+        counters: list[CounterState] = await store.get_counts(effective_limits)
 
         limit_statuses = [
-            self._build_limit_status(effective_limit, current_count, reset_at)
-            for effective_limit, (current_count, reset_at) in zip(effective_limits, counts_and_resets)
+            self._build_limit_status(limit, counter) for limit, counter in zip(effective_limits, counters)
         ]
 
         return UsageStatus(
@@ -197,11 +191,11 @@ class UsageLimits:
             return UsageStatus(limits=[], is_exceeded=False)
 
         store = self._store_for_user(user_id)
-        incremented, counts_and_resets = await store.check_and_increment(effective_limits)
+        incremented, counters = await store.check_and_increment(effective_limits)
 
         limit_statuses = [
-            self._build_limit_status(limit, count, reset_at, post_increment=incremented)
-            for limit, (count, reset_at) in zip(effective_limits, counts_and_resets)
+            self._build_limit_status(limit, counter, post_increment=incremented)
+            for limit, counter in zip(effective_limits, counters)
         ]
 
         return UsageStatus(

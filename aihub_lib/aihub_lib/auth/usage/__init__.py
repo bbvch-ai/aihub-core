@@ -1,7 +1,7 @@
 from aihub_lib.auth.usage.AccessRuleDescriber import AccessRuleDescriber
 from aihub_lib.auth.usage.models.ExceededDetail import ExceededDetail
 from aihub_lib.auth.usage.models.LimitDetail import LimitDetail
-from aihub_lib.auth.usage.RateLimitStore import RateLimitStore
+from aihub_lib.auth.usage.RateLimitStore import CounterState, RateLimitStore
 from aihub_lib.auth.usage.usage_limit_models import (
     USER_SCOPE,
     ResourceType,
@@ -17,6 +17,7 @@ from aihub_lib.auth.usage.use_usage_limits import use_usage_limits
 
 __all__ = [
     "AccessRuleDescriber",
+    "CounterState",
     "ExceededDetail",
     "LimitDetail",
     "RateLimitStore",

@@ -12,5 +12,5 @@ class UsageLimitSettings(EnvironmentSettings):
 
     WARNING_THRESHOLD_PERCENT: Annotated[
         int,
-        Field(default=80, ge=0, le=100, description="Usage percentage at which warning headers are emitted"),
-    ]
+        Field(ge=0, le=100, description="Usage percentage at which warning headers are emitted"),
+    ] = 80

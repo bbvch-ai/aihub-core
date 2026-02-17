@@ -35,15 +35,6 @@ from bson import ObjectId
 logger = logging.getLogger(__name__)
 
 
-def _extract_error_message(detail: dict | str, fallback: str = "Unknown error") -> str:
-    """Extract a human-readable message from a structured error detail."""
-    if isinstance(detail, str):
-        return detail
-    if isinstance(detail, dict) and detail.get("message"):
-        return detail["message"]
-    return fallback
-
-
 # ============================================================================
 # Authentication Service
 # ============================================================================
@@ -227,25 +218,6 @@ class Pipe:
                 json=payload,
                 headers=headers,
             ) as stream_response:
-                # Check for error status codes before processing stream
-                if stream_response.status_code >= 400:
-                    # Read error body while still in context
-                    error_body = await stream_response.aread()
-                    error_detail = error_body.decode()
-
-                    logger.debug(f"HTTP {stream_response.status_code} error body: {error_detail}")
-                    logger.error(f"HTTP error: {stream_response.status_code} - {error_detail}")
-
-                    try:
-                        error_data = json.loads(error_detail)
-                        detail = error_data.get("detail", error_detail)
-                        error_msg = _extract_error_message(detail, fallback=f"API Error: Status {stream_response.status_code}")
-                    except (json.JSONDecodeError, KeyError):
-                        error_msg = f"API Error: Status {stream_response.status_code}"
-
-                    yield f"data: {json.dumps({'error': error_msg})}\n\n"
-                    return
-
                 # Process the stream line by line
                 async for line in stream_response.aiter_lines():
                     line = line.strip()
@@ -278,7 +250,13 @@ class Pipe:
                 await stream_response.aclose()
 
         except httpx.HTTPStatusError as e:
-            logger.error(f"HTTP status error: {e.response.status_code}")
+            try:
+                error_body = await e.response.aread()
+                error_detail = error_body.decode()
+            except Exception:
+                error_detail = "(Could not decode error body)"
+
+            logger.exception(f"HTTP error during streaming: {e.response.status_code} - {error_detail}")
             yield f"data: {json.dumps({'error': f'API Error: Status {e.response.status_code}'})}\n\n"
 
         except Exception as e:
@@ -329,22 +307,13 @@ class Pipe:
             return completion_response
 
         except httpx.HTTPStatusError as e:
-            error_detail = "(Could not decode error body)"
             try:
-                error_detail = e.response.text
-                logger.debug(f"HTTP {e.response.status_code} error body: {error_detail}")
+                error_body = await e.response.aread()
+                error_detail = error_body.decode()
+            except Exception:
+                error_detail = "(Could not decode error body)"
 
-                try:
-                    error_data = json.loads(error_detail)
-                    detail = error_data.get("detail", error_detail)
-                    error_msg = _extract_error_message(detail, fallback=f"API Error: Status {e.response.status_code}")
-                    return {"error": error_msg}
-                except (json.JSONDecodeError, KeyError):
-                    pass
-            except Exception as read_err:
-                logger.warning(f"Failed to read error response body: {read_err}")
-
-            logger.error(f"HTTP error: {e.response.status_code} - {error_detail}")
+            logger.exception(f"HTTP error: {e.response.status_code} - {error_detail}")
             return {"error": f"API Error: Status {e.response.status_code} - {error_detail}"}
 
         except Exception as e:
