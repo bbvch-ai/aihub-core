@@ -3123,6 +3123,12 @@ export type CreateRoleRequest = {
      * A list of access rules granted by this role.
      */
     access_rules?: Array<string>;
+    /**
+     * Usage Limits
+     *
+     * Pattern-based usage limit rules.
+     */
+    usage_limits?: Array<UsageLimitDto>;
 };
 
 /**
@@ -5811,8 +5817,8 @@ export type ImagesResponse = {
      * Size
      */
     size?: '1024x1024' | '1024x1536' | '1536x1024' | null;
-    usage?: Usage | null;
-    [key: string]: unknown | number | 'transparent' | 'opaque' | null | Array<Image> | null | 'png' | 'webp' | 'jpeg' | null | 'low' | 'medium' | 'high' | null | '1024x1024' | '1024x1536' | '1536x1024' | null | Usage | null | undefined;
+    usage?: OpenaiTypesImagesResponseUsage | null;
+    [key: string]: unknown | number | 'transparent' | 'opaque' | null | Array<Image> | null | 'png' | 'webp' | 'jpeg' | null | 'low' | 'medium' | 'high' | null | '1024x1024' | '1024x1536' | '1536x1024' | null | OpenaiTypesImagesResponseUsage | null | undefined;
 };
 
 /**
@@ -10539,6 +10545,12 @@ export type RoleResponse = {
      * The list of access rules for the role.
      */
     access_rules: Array<string>;
+    /**
+     * Usage Limits
+     *
+     * Pattern-based usage limit rules.
+     */
+    usage_limits?: Array<UsageLimitDto>;
 };
 
 /**
@@ -12604,12 +12616,12 @@ export type TranscriptionVerbose = {
      * Segments
      */
     segments?: Array<TranscriptionSegment> | null;
-    usage?: OpenaiTypesAudioTranscriptionVerboseUsage | null;
+    usage?: Usage | null;
     /**
      * Words
      */
     words?: Array<TranscriptionWord> | null;
-    [key: string]: unknown | number | string | Array<TranscriptionSegment> | null | OpenaiTypesAudioTranscriptionVerboseUsage | null | Array<TranscriptionWord> | null | undefined;
+    [key: string]: unknown | number | string | Array<TranscriptionSegment> | null | Usage | null | Array<TranscriptionWord> | null | undefined;
 };
 
 /**
@@ -12795,6 +12807,12 @@ export type UpdateRoleRequest = {
      * The new list of access rules.
      */
     access_rules?: Array<string> | null;
+    /**
+     * Usage Limits
+     *
+     * Pattern-based usage limit rules.
+     */
+    usage_limits?: Array<UsageLimitDto> | null;
 };
 
 /**
@@ -12802,19 +12820,14 @@ export type UpdateRoleRequest = {
  */
 export type Usage = {
     /**
-     * Input Tokens
+     * Seconds
      */
-    input_tokens: number;
-    input_tokens_details: UsageInputTokensDetails;
+    seconds: number;
     /**
-     * Output Tokens
+     * Type
      */
-    output_tokens: number;
-    /**
-     * Total Tokens
-     */
-    total_tokens: number;
-    [key: string]: unknown | number | UsageInputTokensDetails;
+    type: 'duration';
+    [key: string]: unknown | number | 'duration';
 };
 
 /**
@@ -12846,6 +12859,55 @@ export type UsageInputTokensDetails = {
     text_tokens: number;
     [key: string]: unknown | number;
 };
+
+/**
+ * UsageLimitDTO
+ *
+ * Pattern-based usage limit rule.
+ */
+export type UsageLimitDto = {
+    /**
+     * Pattern
+     *
+     * Full dotted resource pattern with wildcards (e.g. 'aihub.user.agent.>', 'aihub.user.process.MyProcess.*').
+     */
+    pattern: string;
+    /**
+     * Limit
+     *
+     * Max calls per period for this pattern.
+     */
+    limit: number;
+    /**
+     * Period for limit: 1h, 1d, 7d, 1mo.
+     */
+    period: UsageLimitPeriod;
+    /**
+     * Description
+     *
+     * Human-readable description of the pattern.
+     */
+    description?: string | null;
+};
+
+/**
+ * UsageLimitPeriod
+ *
+ * Supported usage limit periods.
+ */
+export const UsageLimitPeriod = {
+    '1H': '1h',
+    '1D': '1d',
+    '7D': '7d',
+    '1MO': '1mo'
+} as const;
+
+/**
+ * UsageLimitPeriod
+ *
+ * Supported usage limit periods.
+ */
+export type UsageLimitPeriod = typeof UsageLimitPeriod[keyof typeof UsageLimitPeriod];
 
 /**
  * UsageTokens
@@ -13383,21 +13445,6 @@ export type WorkflowGraph = {
 };
 
 /**
- * Usage
- */
-export type OpenaiTypesAudioTranscriptionVerboseUsage = {
-    /**
-     * Seconds
-     */
-    seconds: number;
-    /**
-     * Type
-     */
-    type: 'duration';
-    [key: string]: unknown | number | 'duration';
-};
-
-/**
  * Custom
  */
 export type OpenaiTypesChatChatCompletionMessageCustomToolCallParamCustom = {
@@ -13470,6 +13517,26 @@ export type OpenaiTypesChatCompletionCreateParamsFunction = {
     [key: string]: unknown | string | {
         [key: string]: unknown;
     } | undefined;
+};
+
+/**
+ * Usage
+ */
+export type OpenaiTypesImagesResponseUsage = {
+    /**
+     * Input Tokens
+     */
+    input_tokens: number;
+    input_tokens_details: UsageInputTokensDetails;
+    /**
+     * Output Tokens
+     */
+    output_tokens: number;
+    /**
+     * Total Tokens
+     */
+    total_tokens: number;
+    [key: string]: unknown | number | UsageInputTokensDetails;
 };
 
 /**
