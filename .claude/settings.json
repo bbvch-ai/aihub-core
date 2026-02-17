@@ -1,14 +1,31 @@
 {
   "includeCoAuthoredBy": false,
+  "statusLine": {
+    "type": "command",
+    "command": ".claude/statusline.sh",
+    "padding": 0
+  },
   "hooks": {
     "PostToolUse": [
       {
         "matcher": "Edit|Write",
         "hooks": [
-          { "type": "command", "command": ".claude/hooks/auto-format-python.sh" },
-          { "type": "command", "command": ".claude/hooks/auto-format-frontend.sh" },
-          { "type": "command", "command": ".claude/hooks/auto-format-markdown.sh" },
-          { "type": "command", "command": ".claude/hooks/auto-format-yaml.sh" }
+          {
+            "type": "command",
+            "command": ".claude/hooks/auto-format-python.sh"
+          },
+          {
+            "type": "command",
+            "command": ".claude/hooks/auto-format-frontend.sh"
+          },
+          {
+            "type": "command",
+            "command": ".claude/hooks/auto-format-markdown.sh"
+          },
+          {
+            "type": "command",
+            "command": ".claude/hooks/auto-format-yaml.sh"
+          }
         ]
       }
     ],
@@ -16,13 +33,19 @@
       {
         "matcher": "Edit|Write|Read",
         "hooks": [
-          { "type": "command", "command": ".claude/hooks/protect-sensitive-files.sh" }
+          {
+            "type": "command",
+            "command": ".claude/hooks/protect-sensitive-files.sh"
+          }
         ]
       },
       {
         "matcher": "Edit|Write",
         "hooks": [
-          { "type": "command", "command": ".claude/hooks/scope-boundary-check.sh" }
+          {
+            "type": "command",
+            "command": ".claude/hooks/scope-boundary-check.sh"
+          }
         ]
       }
     ],
@@ -30,7 +53,10 @@
       {
         "matcher": "",
         "hooks": [
-          { "type": "command", "command": ".claude/hooks/stop-hook-git-check.sh" }
+          {
+            "type": "command",
+            "command": ".claude/hooks/stop-hook-git-check.sh"
+          }
         ]
       }
     ],
@@ -38,7 +64,10 @@
       {
         "matcher": "",
         "hooks": [
-          { "type": "command", "command": ".claude/hooks/session-start.sh" }
+          {
+            "type": "command",
+            "command": ".claude/hooks/session-start.sh"
+          }
         ]
       }
     ]

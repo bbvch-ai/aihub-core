@@ -95,6 +95,21 @@ def main():
         )
 
 
+def _venv_exists(scope_dir: Path) -> bool:
+    """Check if a Poetry virtualenv exists for this scope."""
+    # Check in-project .venv first (most common with poetry config virtualenvs.in-project true)
+    if (scope_dir / ".venv" / "bin" / "python").exists():
+        return True
+    # Fall back to asking Poetry (slower, ~1s)
+    result = subprocess.run(
+        ["poetry", "env", "info", "--path"],
+        cwd=scope_dir,
+        capture_output=True,
+        text=True,
+    )
+    return result.returncode == 0 and Path(result.stdout.strip()).is_dir()
+
+
 def process_file(pyproject_path: Path, mode: str, remote_tag: str, run_install: bool):
     original_text = pyproject_path.read_text(encoding="utf-8")
     doc = tomlkit.parse(original_text)
@@ -102,13 +117,28 @@ def process_file(pyproject_path: Path, mode: str, remote_tag: str, run_install: 
     for dependency_name in MICROSERVICE_DIRS:
         update_dependency(doc, mode, remote_tag, dependency_name)
 
-    # Write the updated pyproject.toml
-    pyproject_path.write_text(tomlkit.dumps(doc), encoding="utf-8")
-    print(f"✅ Updated {pyproject_path}")
+    new_text = tomlkit.dumps(doc)
+    scope_name = pyproject_path.parent.name
+    lock_path = pyproject_path.parent / "poetry.lock"
+    pyproject_unchanged = new_text == original_text
+
+    # Skip if pyproject.toml didn't change, lock file exists, and venv is present
+    if pyproject_unchanged and lock_path.exists() and run_install:
+        if _venv_exists(pyproject_path.parent):
+            print(f"⏭️  {scope_name}: Already up to date, skipping.")
+            return
+        else:
+            print(f"🔄 {scope_name}: venv missing, reinstalling...")
+
+    if not pyproject_unchanged:
+        pyproject_path.write_text(new_text, encoding="utf-8")
+        print(f"✅ Updated {pyproject_path}")
+    else:
+        print(f"✅ {scope_name}: pyproject.toml already in {mode} mode.")
 
     # Only run poetry commands if --install flag is set
     if run_install:
-        print(f"📦 Running poetry lock for {pyproject_path.parent.name}...")
+        print(f"📦 Running poetry lock for {scope_name}...")
         result = subprocess.run(["poetry", "lock"], cwd=pyproject_path.parent, capture_output=True, text=True)
         if result.stdout:
             print(result.stdout)
@@ -118,7 +148,7 @@ def process_file(pyproject_path: Path, mode: str, remote_tag: str, run_install: 
                 print(f"stderr: {result.stderr}")
             sys.exit(1)
 
-        print(f"📦 Running poetry install for {pyproject_path.parent.name}...")
+        print(f"📦 Running poetry install for {scope_name}...")
         if mode == "local":
             result = subprocess.run(
                 ["poetry", "install", "--with", "dev"], cwd=pyproject_path.parent, capture_output=True, text=True
@@ -133,9 +163,9 @@ def process_file(pyproject_path: Path, mode: str, remote_tag: str, run_install: 
             if result.stderr:
                 print(f"stderr: {result.stderr}")
             sys.exit(1)
-        print(f"✅ Successfully installed dependencies for {pyproject_path.parent.name}")
+        print(f"✅ Successfully installed dependencies for {scope_name}")
     else:
-        print(f"ℹ️  Skipping poetry lock/install for {pyproject_path.parent.name} (--install flag not set)")
+        print(f"ℹ️  Skipping poetry lock/install for {scope_name} (--install flag not set)")
 
 
 def update_dependency(doc: tomlkit.container.Container, mode: str, remote_tag: str, dependency_name: str):
