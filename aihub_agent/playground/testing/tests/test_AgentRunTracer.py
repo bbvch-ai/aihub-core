@@ -133,7 +133,7 @@ class TestTraceStepStart:
             mock_ctx.attach.return_value = "token"
 
             with pytest.raises(ValueError):
-                async with tracer.trace_step_start(topic, dummy_step, {}) as span:
+                async with tracer.trace_step_start(topic, dummy_step, {}) as _:
                     raise ValueError("step failed")
 
             mock_ctx.detach.assert_called_once_with("token")

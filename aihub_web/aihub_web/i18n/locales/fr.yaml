@@ -81,7 +81,7 @@ http_error:
     404: "Désolé, nous n'avons pas pu trouver cette page."
     405: "Cette action n'est pas autorisée ici."
     408: "La requête a expiré. Veuillez réessayer."
-    429: "Trop de requêtes. Veuillez patienter un instant."
+    429: "Trop de requêtes."
 
     # 5xx Server Errors
     500: "Une erreur s'est produite sur nos serveurs."
@@ -540,6 +540,22 @@ role:
   is_new: "Nouveau"
   save_button: "Enregistrer"
   access_rules: "Règles d'accès"
+  usage_limits: "Limites d'utilisation"
+  usage_pattern: "Modèle"
+  usage_limit_value: "Limite"
+  usage_period: "Période"
+  calls_per: "appels"
+  unlimited: "Illimité"
+  no_access_rules: "Aucune règle d'accès définie"
+  access_rules_help_intro: "Les règles hiérarchiques contrôlent l'accès aux ressources :"
+  access_rules_help_all_agents: "Tous les agents"
+  access_rules_help_agent_instances: "Toutes les instances de MyAgent"
+  access_rules_help_service: "Service Knowledge"
+  access_rules_help_admin: "Accès admin à tout"
+  pattern_help_intro: "Les modèles utilisent des jokers pour les agents :"
+  pattern_help_all: "Tous les agents"
+  pattern_help_wildcard: "Toutes les instances de MyAgent"
+  pattern_help_specific: "Uniquement une instance spécifique"
   create_dialog:
     description: "Créez un nouveau rôle avec des règles d'accès. Pour attribuer le nouveau rôle aux utilisateurs, veuillez utiliser votre AD."
   remove_dialog:
@@ -553,6 +569,20 @@ role:
   role_saved:
     summary: "Rôle enregistré"
     detail: "Rôle enregistré avec succès, les nouvelles règles d'accès prennent effet immédiatement."
+
+usage:
+  title: "Utilisation"
+  calls_remaining: "{current} / {limit} appels agent"
+  unlimited_calls: "Appels agent illimités"
+  resets_at: "Réinitialisation {time}"
+  limit_exceeded: "Limite d'appels agent atteinte"
+  limit_exceeded_detail: "Veuillez patienter jusqu'à {time} ou contacter votre administrateur"
+
+period:
+  1h: "Par heure"
+  1d: "Par jour"
+  7d: "Par semaine"
+  1mo: "Par mois"
 
 notification:
   title: "Notifications"

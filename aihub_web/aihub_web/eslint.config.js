@@ -64,6 +64,7 @@ export default withNuxt(
           'p-invalid',
           'pi-plus',
           'pi-plus-circle',
+          'pi-question-circle',
         ],
       },
     },

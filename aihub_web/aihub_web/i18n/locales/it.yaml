@@ -81,7 +81,7 @@ http_error:
     404: "Spiacenti, non siamo riusciti a trovare quella pagina."
     405: "Questa azione non è consentita qui."
     408: "La richiesta è scaduta. Riprova."
-    429: "Troppe richieste. Attendi un momento."
+    429: "Troppe richieste."
 
     # 5xx Server Errors
     500: "Si è verificato un errore sui nostri server."
@@ -540,6 +540,22 @@ role:
   is_new: "Nuovo"
   save_button: "Salva"
   access_rules: "Regole di accesso"
+  usage_limits: "Limiti di utilizzo"
+  usage_pattern: "Modello"
+  usage_limit_value: "Limite"
+  usage_period: "Periodo"
+  calls_per: "chiamate"
+  unlimited: "Illimitato"
+  no_access_rules: "Nessuna regola di accesso definita"
+  access_rules_help_intro: "Le regole gerarchiche controllano l'accesso alle risorse:"
+  access_rules_help_all_agents: "Tutti gli agenti"
+  access_rules_help_agent_instances: "Tutte le istanze di MyAgent"
+  access_rules_help_service: "Servizio Knowledge"
+  access_rules_help_admin: "Accesso admin a tutto"
+  pattern_help_intro: "I modelli usano caratteri jolly per gli agenti:"
+  pattern_help_all: "Tutti gli agenti"
+  pattern_help_wildcard: "Tutte le istanze di MyAgent"
+  pattern_help_specific: "Solo un'istanza specifica"
   create_dialog:
     description: "Crea un nuovo ruolo con regole di accesso. Per assegnare il nuovo ruolo agli utenti, utilizza il tuo AD."
   remove_dialog:
@@ -553,6 +569,20 @@ role:
   role_saved:
     summary: "Ruolo salvato"
     detail: "Ruolo salvato con successo, le nuove regole di accesso hanno effetto immediato."
+
+usage:
+  title: "Utilizzo"
+  calls_remaining: "{current} / {limit} chiamate agente"
+  unlimited_calls: "Chiamate agente illimitate"
+  resets_at: "Reset {time}"
+  limit_exceeded: "Limite chiamate agente raggiunto"
+  limit_exceeded_detail: "Attendere fino a {time} o contattare l'amministratore"
+
+period:
+  1h: "All'ora"
+  1d: "Al giorno"
+  7d: "Alla settimana"
+  1mo: "Al mese"
 
 notification:
   title: "Notifiche"
