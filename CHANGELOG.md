@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.262.3] - 2026-02-17 - Enhanced Developer Tooling and IDE Configurations
+
+### Added
+
+- 🚀 **Introduced Service Run Configurations:** Added new PyCharm configurations to facilitate direct execution of core
+  services, such as the **API**, from within the IDE for improved development workflow.
+- 🛠️ **Expanded Makefile Target Configurations:** Integrated new PyCharm run configurations for critical development
+  tasks, including **Generate Compose**, **License Check**, **Use Local Core**, and **Use Remote Core**, making common
+  operations more accessible.
+
+### Changed
+
+- 🔄 **Renamed Test Configurations:** Clarified existing PyCharm test configurations by appending "Tests" to their names
+  (e.g., **API Tests**, **Agent Tests**, **Bot Tests**, **Lib Tests**, **Process Tests**), enhancing consistency and
+  discoverability for developers.
+
+---
+
 ## [v0.262.2] - YYYY-MM-DD - Introducing the LLM-Powered Whitepaper Generation System
 
 ### Added
