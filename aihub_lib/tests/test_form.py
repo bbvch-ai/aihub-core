@@ -617,11 +617,10 @@ class TestTemplateData:
     """Test to_template_data() for extracting storable template data."""
 
     def test_includes_identity_fields(self) -> None:
-        """Test that identity fields (agent_class, agent_id, name, description, icon) are always included."""
+        """Test that identity fields (agent_id, name, description, icon) are always included."""
         locale = LocaleString(en="Test", de="Test")
 
         data_config = AgentConfig(
-            agent_class="TestAgent",
             agent_id="test-1",
             name=locale,
             description=locale,
@@ -629,7 +628,6 @@ class TestTemplateData:
         )
 
         form_config = AgentConfig(
-            agent_class="",
             agent_id=InputText(label=LocaleString(en="ID")),
             name=LocaleInput(label=LocaleString(en="Name"), input_type="text"),
             description=LocaleInput(label=LocaleString(en="Desc"), input_type="textarea"),
@@ -637,8 +635,6 @@ class TestTemplateData:
 
         result = data_config.to_template_data(form_config)
 
-        assert "agent_class" in result
-        assert result["agent_class"] == "TestAgent"
         assert "agent_id" in result
         assert result["agent_id"] == "test-1"
         assert "name" in result
@@ -655,7 +651,6 @@ class TestTemplateData:
         locale = LocaleString(en="Test", de="Test")
 
         data_config = CustomConfig(
-            agent_class="TestAgent",
             agent_id="test-1",
             name=locale,
             description=locale,
@@ -664,7 +659,6 @@ class TestTemplateData:
         )
 
         form_config = CustomConfig(
-            agent_class="",
             agent_id=InputText(label=LocaleString(en="ID")),
             name=LocaleInput(label=LocaleString(en="Name"), input_type="text"),
             description=LocaleInput(label=LocaleString(en="Desc"), input_type="textarea"),
@@ -691,7 +685,6 @@ class TestTemplateData:
         locale = LocaleString(en="Test", de="Test")
 
         data_config = CustomConfig(
-            agent_class="TestAgent",
             agent_id="test-1",
             name=locale,
             description=locale,
@@ -700,7 +693,6 @@ class TestTemplateData:
         )
 
         form_config = CustomConfig(
-            agent_class="",
             agent_id=InputText(label=LocaleString(en="ID")),
             name=LocaleInput(label=LocaleString(en="Name"), input_type="text"),
             description=LocaleInput(label=LocaleString(en="Desc"), input_type="textarea"),
@@ -718,14 +710,12 @@ class TestTemplateData:
         locale = LocaleString(en="Test", de="Test")
 
         data_config = AgentConfig(
-            agent_class="TestAgent",
             agent_id="test-1",
             name=locale,
             description=locale,
         )
 
         form_config = AgentConfig(
-            agent_class="",
             agent_id=InputText(label=LocaleString(en="ID")),
             name=LocaleInput(label=LocaleString(en="Name"), input_type="text"),
             description=LocaleInput(label=LocaleString(en="Desc"), input_type="textarea"),
@@ -735,8 +725,7 @@ class TestTemplateData:
 
         # _form_name is a computed field and not in model_dump() by default with exclude
         # but model_dump() does include computed fields, so we check it's handled
-        # _form_name would be in identity_fields check only if key matches, which it doesn't
-        assert result.get("agent_class") == "TestAgent"
+        assert result.get("agent_id") == "test-1"
 
     def test_multiple_templates_produce_independent_data(self) -> None:
         """Test that two configs with different values produce distinct template dicts."""
@@ -748,7 +737,6 @@ class TestTemplateData:
         locale = LocaleString(en="Test", de="Test")
 
         form_config = CustomConfig(
-            agent_class="",
             agent_id=InputText(label=LocaleString(en="ID")),
             name=LocaleInput(label=LocaleString(en="Name"), input_type="text"),
             description=LocaleInput(label=LocaleString(en="Desc"), input_type="textarea"),
@@ -757,7 +745,6 @@ class TestTemplateData:
         )
 
         template_a = CustomConfig(
-            agent_class="TestAgent",
             agent_id="qa-mode",
             name=LocaleString(en="Q&A Mode", de="Q&A-Modus"),
             description=locale,
@@ -766,7 +753,6 @@ class TestTemplateData:
         )
 
         template_b = CustomConfig(
-            agent_class="TestAgent",
             agent_id="summary-mode",
             name=LocaleString(en="Summary Mode", de="Zusammenfassungsmodus"),
             description=locale,

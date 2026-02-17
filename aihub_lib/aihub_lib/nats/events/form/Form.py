@@ -541,7 +541,7 @@ class Form(BaseModel):
         """
         configurable_fields = form_config.get_configurable_fields()
         full_dump = self.model_dump()
-        identity_fields = {"agent_class", "agent_id", "process_class", "process_id", "name", "description", "icon"}
+        identity_fields = {"agent_id", "process_id", "name", "description", "icon"}
         return {k: v for k, v in full_dump.items() if k in configurable_fields or k in identity_fields}
 
     def to_configurable_submission_model(self) -> type[BaseModel]:

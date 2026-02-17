@@ -32,10 +32,10 @@ class ProcessConfigEntity(BaseDocument):
 
     @classmethod
     @trace_fn
-    def from_process_config(cls, process_config: ProcessConfig) -> Self:
+    def from_process_config(cls, process_config: ProcessConfig, process_class: str) -> Self:
         """Create an instance entity from a ProcessConfig."""
         return cls(
-            process_class=process_config.process_class,
+            process_class=process_class,
             process_id=process_config.process_id,
             name=LocaleStringEntity.from_locale_string(process_config.name),
             description=LocaleStringEntity.from_locale_string(process_config.description),
@@ -44,9 +44,9 @@ class ProcessConfigEntity(BaseDocument):
         )
 
     @trace_fn
-    def update_from_process_config(self, process_config: ProcessConfig) -> Self:
+    def update_from_process_config(self, process_config: ProcessConfig, process_class: str) -> Self:
         """Update an existing instance entity from a ProcessConfig."""
-        self.process_class = process_config.process_class
+        self.process_class = process_class
         self.process_id = process_config.process_id
         self.name = LocaleStringEntity.from_locale_string(process_config.name)
         self.description = LocaleStringEntity.from_locale_string(process_config.description)

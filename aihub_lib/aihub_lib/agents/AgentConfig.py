@@ -71,10 +71,6 @@ class AgentConfig(Form):
     ```
     """
 
-    agent_class: Annotated[
-        str | InputText,
-        Field(default="", description="The class name of the agent, used for identification."),
-    ]
     agent_id: Annotated[
         str | InputText,
         Field(description="Uniquely identifies the agent instance."),
@@ -131,14 +127,11 @@ class AgentConfig(Form):
                 help=LocaleString.from_i18n_path("lib.agents.config.icon.help"),
                 placeholder=LocaleString.from_i18n_path("lib.agents.config.placeholder.icon"),
             ),
-            # agent_class is not user-configurable - it's determined by which class is selected
-            agent_class="",
         )
 
     @classmethod
     def from_entity(cls, entity: "AgentConfigEntity") -> Self:
         data = {
-            "agent_class": entity.agent_class,
             "agent_id": entity.agent_id,
             "name": entity.name.to_locale_string(),
             "description": entity.description.to_locale_string(),

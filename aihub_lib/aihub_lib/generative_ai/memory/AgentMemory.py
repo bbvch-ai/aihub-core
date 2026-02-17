@@ -24,7 +24,7 @@ class AgentMemory:
     interacted with the user, enabling specialized memory banks per agent type.
     """
 
-    def __init__(self, agent_config: AgentConfig, t: LocaleHandler):
+    def __init__(self, agent_config: AgentConfig, agent_class: str, t: LocaleHandler):
         """
         Initialize agent memory with customized fact extraction prompts.
 
@@ -32,6 +32,7 @@ class AgentMemory:
         conversations. This personalization ensures memories are relevant to the agent's domain and includes
         temporal context (current date) for time-sensitive information.
         """
+        self._agent_class = agent_class
         custom_fact_extraction_prompt = t(
             "lib.prompt.memory.fact_extraction",
             agent_name=t.extract(agent_config.name),
@@ -63,7 +64,7 @@ class AgentMemory:
         This composite ID is used as the 'name' field in conversation history for mem0, distinguishing
         agent messages from user messages and enabling memory filtering by which agent was involved.
         """
-        return f"{self._agent_config.agent_class}/{self._agent_config.agent_id}"
+        return f"{self._agent_class}/{self._agent_config.agent_id}"
 
     def messages_to_dict(
         self, messages: list[ChatMessage], user_id: str, remove_system_message: bool = True

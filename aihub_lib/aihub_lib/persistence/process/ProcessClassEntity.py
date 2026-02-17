@@ -251,7 +251,9 @@ class ProcessClassEntity(Document):
         program_inputs_entities = [ProgramInSpecsEntity.from_specs(p) for p in program_inputs]
         agent_inputs_entities = [AgentInSpecsEntity.from_specs(a) for a in agent_inputs]
 
-        default_config_entity = ProcessConfigEntityEmbeddedDocument.from_process_config(default_process_config)
+        default_config_entity = ProcessConfigEntityEmbeddedDocument.from_process_config(
+            default_process_config, process_class
+        )
 
         if existing_process:
             existing_process.name = name_entity
