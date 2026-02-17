@@ -6,7 +6,6 @@ description: >-
   setup', 'RBAC permissions', 'AccessChecker usage', 'OAuth2 config', 'superuser token',
   'permission template syntax', or 'protect an endpoint'. Covers OAuth2, API keys, superuser
   auth, RBAC roles, permission wildcards, and AccessChecker patterns.
-disable-model-invocation: true
 allowed-tools: Read, Grep, Glob
 ---
 

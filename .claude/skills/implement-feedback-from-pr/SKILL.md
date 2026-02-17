@@ -5,7 +5,6 @@ description: >-
   bot feedback, prioritizes and implements changes, then validates. Use when user says 'implement
   PR feedback', 'address review comments', 'fix PR review', 'apply PR suggestions', 'handle
   reviewer feedback', or 'implement changes from review'. Takes a PR number as argument.
-disable-model-invocation: true
 allowed-tools: Bash, Read, Edit, Grep, Glob
 ---
 

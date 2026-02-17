@@ -6,7 +6,6 @@ description: >-
   user says 'create an entity', 'scaffold a repository', 'add MongoDB model', 'new database entity',
   'generate MongoEngine document', 'create persistence layer', or 'scaffold data model'. Takes a
   resource name as argument.
-disable-model-invocation: true
 allowed-tools: Read, Write, Edit, Grep, Glob
 ---
 

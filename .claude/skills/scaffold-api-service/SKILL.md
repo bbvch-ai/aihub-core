@@ -4,7 +4,6 @@ description: Generate a new API service layer with stateless static methods, Ope
   tracing, DTO conversion, pagination, and error handling. Use when user says "create
   service layer", "scaffold API service", "new service class", "add business logic
   layer", "generate service for X", or "build service between controller and entity".
-disable-model-invocation: true
 allowed-tools: Read, Write, Edit, Grep, Glob
 ---
 

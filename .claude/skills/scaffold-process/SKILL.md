@@ -4,7 +4,7 @@ description: Generate a new agentic business process with entity delegation (Age
   Human, Program). Creates process class, work events, forms, config, and BDD tests.
   Use when user says "create a process", "scaffold process", "new business process",
   "add agentic process", "orchestrate agents and humans", or "build a workflow for X".
-disable-model-invocation: true
+
 allowed-tools: Read, Write, Bash, Grep, Glob
 ---
 

@@ -9,7 +9,7 @@ description: >-
 arguments:
   - name: channel
     description: Target channel or question (e.g., "Teams", "Slack", "local dev", "from scratch", "DevTunnel setup")
-disable-model-invocation: true
+
 allowed-tools: Read, Grep, Glob, Bash
 ---
 

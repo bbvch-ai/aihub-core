@@ -6,7 +6,6 @@ description: "Create user-facing feature documentation for the VitePress docs si
   for X', 'add feature to docs site', or 'user-facing documentation for'. Takes
   feature name as argument. Outputs VitePress-formatted markdown with TL;DR,
   benefits, setup, and getting started sections."
-disable-model-invocation: true
 allowed-tools: Read, Grep, Glob, Write
 ---
 

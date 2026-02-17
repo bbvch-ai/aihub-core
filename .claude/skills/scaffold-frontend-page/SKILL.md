@@ -1,7 +1,7 @@
 ---
 name: scaffold-frontend-page
 description: Scaffold a new Nuxt 3 list page with StructuralScreen/Column layout, Pinia-Colada data fetching, card grid, create modal, and NuxtPage outlet for nested detail routes. Use when user says "create a new page", "scaffold a frontend page", "add a list page", "new resource page", "generate a Vue page for X", or "build a page like agents/roles". Generates page + card + i18n following agents.vue and roles.vue patterns.
-disable-model-invocation: true
+
 allowed-tools: Read, Write, Edit, Bash, Grep, Glob
 ---
 

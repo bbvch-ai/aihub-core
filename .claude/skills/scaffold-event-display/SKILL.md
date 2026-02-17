@@ -6,7 +6,7 @@ description: >-
   says 'create event display', 'scaffold event component', 'add event to timeline', 'new agent
   event UI', 'display a new event type', or 'register event display component'. Takes an event
   name as argument.
-disable-model-invocation: true
+
 allowed-tools: Read, Write, Edit, Grep, Glob
 ---
 

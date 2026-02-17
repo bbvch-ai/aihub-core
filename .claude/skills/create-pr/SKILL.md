@@ -5,7 +5,6 @@ description: "Validate and prepare code for a pull request: commit, format, lint
   'prepare pull request', 'get ready for PR', 'run pr-ready', 'validate my changes',
   or 'prepare for review'. Commits work, runs make pr-ready and make test in every
   scope, reviews diff against main, and updates docs."
-disable-model-invocation: true
 allowed-tools: Bash, Read, Grep, Glob, Edit
 ---
 

@@ -5,7 +5,6 @@ description: Regenerate the frontend TypeScript API client from the OpenAPI spec
   Use when user says 'regenerate SDK', 'update API client', 'sync frontend types',
   'generate TypeScript client', or 'API changed, update frontend'.
   Requires the API server to be running on localhost:8000.
-disable-model-invocation: true
 allowed-tools: Bash, Read
 ---
 

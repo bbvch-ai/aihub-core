@@ -4,7 +4,6 @@ description: Generate a new REST API controller with fluent builder pattern, typ
   endpoints, permission-based auth, DTOs, and main.py registration. Use when user says
   "create API endpoint", "scaffold controller", "new REST endpoint", "add CRUD API",
   "generate API route", "build endpoint for X", or "add API controller".
-disable-model-invocation: true
 allowed-tools: Read, Write, Edit, Bash, Grep, Glob
 ---
 

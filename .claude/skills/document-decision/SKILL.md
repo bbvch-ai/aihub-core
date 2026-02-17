@@ -5,7 +5,6 @@ description: "Create Architecture Decision Records (ADRs) for significant techni
   architecture decision', 'why did we choose X', 'document the rationale', or when
   adding major dependencies, new frameworks, or changing fundamental patterns.
   Reviews changes, checks existing ADRs, writes new ADR in arc42 format."
-disable-model-invocation: true
 allowed-tools: Read, Grep, Glob, Write, Bash
 ---
 

@@ -8,12 +8,7 @@ description: >
   CLAUDE.md", or "bootstrap CLAUDE.md". Also use when user says "onboard Claude
   to this repo" or "set up Claude Code for this project". Do NOT use for
   writing skills (use audit-skill instead) or for general documentation tasks.
-disable-model-invocation: true
 allowed-tools: Bash(find:*) Bash(grep:*) Bash(git:*) Bash(cat:*) Bash(head:*) Bash(wc:*) Bash(ls:*) Bash(jq:*) Read Write Edit Grep Glob
-metadata:
-  author: platform-team
-  version: 1.0.0
-  category: meta
 ---
 
 # Audit or Build CLAUDE.md from Codebase Evidence

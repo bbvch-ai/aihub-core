@@ -4,7 +4,6 @@ description: Scaffold a new bot conversation handler for MS Teams or Slack. Gene
   ChatBot subclass, completion handler, message formatter, config, and tests. Use when
   user says "create a bot", "scaffold bot handler", "new Teams bot", "add Slack bot",
   "generate bot integration", "build a chatbot for X", or "add bot handler".
-disable-model-invocation: true
 allowed-tools: Read, Write, Bash, Grep, Glob
 ---
 

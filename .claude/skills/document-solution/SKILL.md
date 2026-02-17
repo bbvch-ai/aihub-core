@@ -6,7 +6,6 @@ description: "Edit solution descriptions and concept documents for public-sector
   solution concept'. Requires a section path and optional edit instructions. Writes
   high-level architecture prose for procurement evaluators -- no implementation
   details."
-disable-model-invocation: true
 allowed-tools: Read, Edit, Grep
 ---
 

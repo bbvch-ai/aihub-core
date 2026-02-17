@@ -4,7 +4,6 @@ description: Audit Python and Node.js dependencies for outdated packages, securi
   vulnerabilities, license issues, and aihub-lib version consistency across scopes.
   Use when user says 'check dependencies', 'audit packages', 'find vulnerabilities',
   'outdated deps', 'license check', or 'are all scopes on the same aihub-lib version'.
-disable-model-invocation: true
 allowed-tools: Bash, Read, Grep, Glob
 ---
 

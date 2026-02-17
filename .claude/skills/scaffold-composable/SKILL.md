@@ -6,7 +6,6 @@ description: >-
   Use when user says 'create a composable', 'scaffold composable', 'add query composable',
   'generate useQuery hook', 'create mutation composable', 'Pinia-Colada setup', or 'add API
   composable for resource'. Takes a resource name as argument.
-disable-model-invocation: true
 allowed-tools: Read, Write, Bash, Grep, Glob
 ---
 

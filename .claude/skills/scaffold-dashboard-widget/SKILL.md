@@ -5,7 +5,7 @@ description: >-
   registers it in the dashboard system, and adds configuration. Use when user says 'create a
   dashboard widget', 'add a chart widget', 'scaffold dashboard component', 'new ApexCharts widget',
   'add number widget to dashboard', or 'create GridStack widget'. Takes a widget name/type as argument.
-disable-model-invocation: true
+
 allowed-tools: Read, Write, Edit, Grep, Glob
 ---
 

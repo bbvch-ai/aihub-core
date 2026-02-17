@@ -188,7 +188,7 @@ SKILL.md frontmatter, then delete the commands directory.
 name: create-pr
 description: Pre-pull request validation and preparation. Run formatting, linting,
   type checking, and tests across all affected scopes before creating a PR.
-disable-model-invocation: true
+
 allowed-tools: Bash, Read, Grep, Glob, Edit
 ---
 ```
@@ -223,7 +223,7 @@ allowed-tools: Read, Grep, Glob
 name: document-decision
 description: Create an Architecture Decision Record (ADR) for significant technical
   decisions. Use when adding major dependencies, new frameworks, or altering patterns.
-disable-model-invocation: true
+
 allowed-tools: Read, Grep, Glob, Write, Bash
 ---
 ```
@@ -234,7 +234,7 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 name: document-feature
 description: Create user-facing feature documentation following VitePress standards.
   Generates structured docs with setup, configuration, and examples.
-disable-model-invocation: true
+
 allowed-tools: Read, Grep, Glob, Write
 ---
 ```
@@ -245,7 +245,7 @@ allowed-tools: Read, Grep, Glob, Write
 name: document-solution
 description: Edit solution concept documentation for public-sector procurement
   evaluators. Targets neutral, verifiable prose.
-disable-model-invocation: true
+
 allowed-tools: Read, Edit, Grep
 ---
 ```
@@ -256,7 +256,7 @@ allowed-tools: Read, Edit, Grep
 name: implement-feedback-from-pr
 description: Systematically implement feedback from PR reviews. Categorizes human
   vs bot feedback and handles each type appropriately.
-disable-model-invocation: true
+
 allowed-tools: Bash, Read, Edit, Grep, Glob
 ---
 ```
@@ -280,7 +280,7 @@ name: scaffold-agent
 description: Scaffold a new AI agent with all required boilerplate. Generates the
   agent class, events, config with form duality, test runner setup, BDD feature
   file, trigger.py, run.py, and Dockerfile. Use when creating a new agent.
-disable-model-invocation: true
+
 allowed-tools: Read, Write, Bash, Grep, Glob
 ---
 ```
@@ -312,7 +312,7 @@ allowed-tools: Read, Write, Bash, Grep, Glob
 name: scaffold-pipeline
 description: Scaffold a new Dagster data pipeline with asset factory, I/O manager,
   resources, and ops. Generates the two-stage pipeline pattern used in aihub_pipeline.
-disable-model-invocation: true
+
 allowed-tools: Read, Write, Bash, Grep, Glob
 ---
 ```
@@ -338,7 +338,7 @@ name: scaffold-process
 description: Scaffold a new agentic process with entity delegation, work events,
   and process steps. Generates the orchestration pattern connecting agents, humans,
   and external programs.
-disable-model-invocation: true
+
 allowed-tools: Read, Write, Bash, Grep, Glob
 ---
 ```
@@ -362,7 +362,7 @@ allowed-tools: Read, Write, Bash, Grep, Glob
 name: scaffold-api-endpoint
 description: Scaffold a new REST API endpoint with Controller, Service, DTO, and
   test setup. Follows the fluent API pattern used in aihub_api.
-disable-model-invocation: true
+
 allowed-tools: Read, Write, Bash, Grep, Glob
 ---
 ```
@@ -386,7 +386,7 @@ allowed-tools: Read, Write, Bash, Grep, Glob
 name: scaffold-frontend-page
 description: Scaffold a new frontend page with composable, list/detail pages, and
   PrimeVue components. Follows the Pinia-Colada query pattern used in aihub_web.
-disable-model-invocation: true
+
 allowed-tools: Read, Write, Bash, Grep, Glob
 ---
 ```
@@ -409,7 +409,7 @@ allowed-tools: Read, Write, Bash, Grep, Glob
 name: scaffold-bot-handler
 description: Scaffold a new bot conversation handler for MS Teams or Slack.
   Generates ChatBot subclass with completion handler and conversation management.
-disable-model-invocation: true
+
 allowed-tools: Read, Write, Bash, Grep, Glob
 ---
 ```
@@ -459,7 +459,7 @@ allowed-tools: Bash, Read, Grep, Glob
 name: docker-dev
 description: Manage the Docker development environment. Start, stop, check health,
   view logs, and troubleshoot services. Use when working with the Docker stack.
-disable-model-invocation: true
+
 allowed-tools: Bash, Read
 ---
 ```
@@ -503,7 +503,7 @@ allowed-tools: Read, Bash, Grep, Glob
 name: generate-sdk
 description: Regenerate the frontend API SDK from the OpenAPI specification.
   Checks if the API server is running, starts it if needed, then generates.
-disable-model-invocation: true
+
 allowed-tools: Bash, Read
 ---
 ```
@@ -524,7 +524,7 @@ allowed-tools: Bash, Read
 name: dependency-audit
 description: Audit Python and Node.js dependencies for outdated packages,
   vulnerabilities, and version constraint issues across all scopes.
-disable-model-invocation: true
+
 allowed-tools: Bash, Read, Grep, Glob
 ---
 ```
@@ -593,7 +593,6 @@ name: release-prep
 description: Run comprehensive pre-release validation. Checks all scopes for
   formatting, linting, type checking, tests, documentation freshness, and
   version consistency. Use before merging to main.
-disable-model-invocation: true
 allowed-tools: Bash, Read, Grep, Glob
 ---
 ```

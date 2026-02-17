@@ -8,12 +8,7 @@ description: >
   directory". Also use when user says "this workflow should be a skill" or
   "help me turn this into a skill". Do NOT use for CLAUDE.md files (use
   audit-claude-md instead) or for general documentation tasks.
-disable-model-invocation: true
 allowed-tools: Bash(find:*) Bash(grep:*) Bash(git:*) Bash(cat:*) Bash(head:*) Bash(wc:*) Bash(ls:*) Bash(jq:*) Read Write Edit Grep Glob
-metadata:
-  author: platform-team
-  version: 1.0.0
-  category: meta
 ---
 
 # Build or Review Codebase-Specific Skills
@@ -120,9 +115,6 @@ disable-model-invocation: {true if the workflow has side effects
   if it's safe for Claude to auto-invoke}
 allowed-tools: {scope to what's needed — read-only skills should
   not have Write or Edit}
-metadata:
-  author: {team-name}
-  version: 1.0.0
 ---
 
 # {Skill Title}
@@ -163,10 +155,6 @@ metadata:
 - **Verification is non-negotiable.** Every skill must end with a
   concrete verification step: a test command, a validation script,
   or a specific check. "Make sure it works" is not verification.
-
-- **Set `disable-model-invocation: true` for anything with side
-  effects.** Deployments, PR creation, database migrations, releases
-  — these should require explicit user invocation via `/skill-name`.
 
 ### Step 4: Build a Validation Script (When Appropriate)
 
@@ -328,8 +316,6 @@ done
 
 #### Gate 5: Safety and Side Effects (Soft Fail)
 
-- [ ] `disable-model-invocation: true` set for workflows that create
-      PRs, deploy, modify databases, or push to git
 - [ ] `allowed-tools` scoped appropriately (review-only skills should
       not have Write/Edit permissions)
 - [ ] No credentials, API keys, or secrets in the skill

@@ -10,7 +10,6 @@ description: >-
 arguments:
   - name: topic
     description: Topic or question (e.g., "CompletionHandler", "Slack threads", "HITL flow", "streaming", "testing", "conversation state")
-disable-model-invocation: true
 allowed-tools: Read, Grep, Glob
 ---
 

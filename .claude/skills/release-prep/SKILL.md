@@ -5,7 +5,6 @@ description: Run comprehensive pre-release validation across all scopes. Checks 
   and documentation freshness. Use when user says 'prepare for release', 'pre-merge checks',
   'is this ready to merge', 'run all checks', 'pr-ready all scopes', or 'release validation'.
   Supports 'quick' mode for lint-only.
-disable-model-invocation: true
 allowed-tools: Bash, Read, Grep, Glob
 ---
 

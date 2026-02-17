@@ -4,7 +4,7 @@ description: Generate a new Dagster data pipeline with the two-stage pattern (so
   ingestion + unified processing). Creates assets, resources, I/O managers, and tests.
   Use when user says "create a pipeline", "scaffold pipeline", "new data pipeline",
   "add ingestion pipeline", "generate Dagster pipeline", or "build a pipeline for X".
-disable-model-invocation: true
+
 allowed-tools: Read, Write, Bash, Grep, Glob
 ---
 

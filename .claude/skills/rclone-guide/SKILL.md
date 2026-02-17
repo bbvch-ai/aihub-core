@@ -9,7 +9,6 @@ description: >-
 arguments:
   - name: topic
     description: Topic or question (e.g., "OneDrive setup", "filter patterns", "authentication", "RcloneSourceConfig", "backends")
-disable-model-invocation: true
 allowed-tools: Read, Grep, Glob
 ---
 

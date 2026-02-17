@@ -4,7 +4,6 @@ description: Generate a new LlamaIndex AI agent with all required boilerplate (a
   class, events, config with form duality, BDD tests, trigger, runner). Use when user
   says "create new agent", "scaffold an agent", "generate agent boilerplate", "add AI
   agent", "new workflow agent", or "build an agent for X".
-disable-model-invocation: true
 allowed-tools: Read, Write, Bash, Grep, Glob
 ---
 

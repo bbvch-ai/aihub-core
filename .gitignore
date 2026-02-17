@@ -20,3 +20,4 @@ aihub_doc/aihub
 CLAUDE.local.md
 .claude/settings.local.json
 .claude/mcp.local.json
+.claude/mcp/bin/

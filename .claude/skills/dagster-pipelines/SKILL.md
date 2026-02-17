@@ -10,7 +10,6 @@ description: >-
 arguments:
   - name: topic
     description: Topic or question (e.g., "asset factory", "resources", "IO managers", "partitions", "sensors", "observable assets", "definitions factory")
-disable-model-invocation: true
 allowed-tools: Read, Grep, Glob
 ---
 

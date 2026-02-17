@@ -4,7 +4,6 @@ description: Manage the Docker Compose development stack (start, stop, health, l
   restart, status, ports). Use when user says 'start docker', 'stop containers',
   'check service health', 'show logs', 'restart service', 'docker status',
   'which ports are used', or 'is the API running'. Pass action as argument.
-disable-model-invocation: true
 allowed-tools: Bash, Read
 ---
 

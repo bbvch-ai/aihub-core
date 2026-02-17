@@ -1,7 +1,7 @@
 ---
 name: scaffold-frontend-component
 description: Scaffold a new Vue 3 component following project conventions. Supports card, modal/dialog, list/DataTable, form, empty card, and display patterns with PrimeVue, Tailwind, typed props/emits, and i18n. Use when user says "create a component", "add a Vue component", "scaffold a card", "create a modal", "build a DataTable component", "new form component", or "add a dialog for X". Generates component file with correct placement, typed props/emits, and dark mode.
-disable-model-invocation: true
+
 allowed-tools: Read, Write, Edit, Grep, Glob
 ---
 

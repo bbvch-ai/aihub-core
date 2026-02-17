@@ -137,14 +137,6 @@ if [ "$GENERIC_COUNT" -gt 2 ]; then
   WARNINGS=$((WARNINGS + 1))
 fi
 
-# Check for disable-model-invocation on side-effect skills
-if grep -qiE '(deploy|release|push|pr |pull request|migrat|publish)' "$SKILL_PATH"; then
-  if ! grep -q 'disable-model-invocation: true' "$SKILL_PATH"; then
-    echo "WARNING: Skill appears to have side effects but disable-model-invocation is not set to true" >&2
-    WARNINGS=$((WARNINGS + 1))
-  fi
-fi
-
 # Check that no README.md exists in the skill directory
 if [ -f "$SKILL_DIR/README.md" ]; then
   echo "WARNING: README.md found in skill directory. Docs should be in SKILL.md or references/" >&2

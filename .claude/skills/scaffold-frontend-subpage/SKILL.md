@@ -1,7 +1,7 @@
 ---
 name: scaffold-frontend-subpage
 description: Scaffold a detail wrapper with SelectButton tab navigation and nested tab subpages. Creates the tab bar, NavItem routing, StructuralColumn content, and overview tab following the [agent_class]-[agent_id].vue pattern. Use when user says "add a detail page", "create subpage with tabs", "scaffold detail view", "add tab navigation", "create nested route page", or "build a detail page like agents". Generates wrapper + tab pages + composable + i18n.
-disable-model-invocation: true
+
 allowed-tools: Read, Write, Edit, Bash, Grep, Glob
 ---
 
