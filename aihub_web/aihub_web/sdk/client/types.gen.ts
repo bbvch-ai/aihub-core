@@ -102,7 +102,7 @@ export type AddMemoryToChatHistoryEvent = {
      *
      * Chat history extended with user memories.
      */
-    extended_history: Array<ChatMessage>;
+    extended_history: Array<ChatMessageOutput>;
     /**
      * Event Name
      *
@@ -116,7 +116,7 @@ export type AddMemoryToChatHistoryEvent = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessage> | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessageOutput> | Array<string> | undefined;
 };
 
 /**
@@ -151,7 +151,7 @@ export type AddOrganizationMemoryToChatHistoryEvent = {
      *
      * Chat history extended with user memories.
      */
-    extended_history: Array<ChatMessage>;
+    extended_history: Array<ChatMessageOutput>;
     /**
      * Event Name
      *
@@ -165,7 +165,7 @@ export type AddOrganizationMemoryToChatHistoryEvent = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessage> | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessageOutput> | Array<string> | undefined;
 };
 
 /**
@@ -200,7 +200,7 @@ export type AddUserMemoryToChatHistoryEvent = {
      *
      * Chat history extended with user memories.
      */
-    extended_history: Array<ChatMessage>;
+    extended_history: Array<ChatMessageOutput>;
     /**
      * Event Name
      *
@@ -214,7 +214,7 @@ export type AddUserMemoryToChatHistoryEvent = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessage> | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessageOutput> | Array<string> | undefined;
 };
 
 /**
@@ -307,6 +307,14 @@ export type AgentClassDto = {
      * Indicates whether the agent class is online and reachable.
      */
     is_online?: boolean | null;
+    /**
+     * Templates
+     *
+     * Optional list of profile templates for quick profile creation.
+     */
+    templates?: Array<{
+        [key: string]: unknown;
+    }> | null;
 };
 
 /**
@@ -1261,7 +1269,35 @@ export type Audio = {
  *
  * A representation of audio data to directly pass to/from the LLM.
  */
-export type AudioBlock = {
+export type AudioBlockInput = {
+    /**
+     * Block Type
+     */
+    block_type?: 'audio';
+    /**
+     * Audio
+     */
+    audio?: Blob | File | null;
+    /**
+     * Path
+     */
+    path?: string | null;
+    /**
+     * Url
+     */
+    url?: string | string | null;
+    /**
+     * Format
+     */
+    format?: string | null;
+};
+
+/**
+ * AudioBlock
+ *
+ * A representation of audio data to directly pass to/from the LLM.
+ */
+export type AudioBlockOutput = {
     /**
      * Block Type
      */
@@ -1502,24 +1538,6 @@ export type BodyCreateTranscriptionOpenaiAudioTranscriptionsPost = {
      * Timestamp granularities (e.g. 'word' or 'segment'); only used with verbose_json response_format
      */
     timestamp_granularities?: Array<'word' | 'segment'> | null;
-};
-
-/**
- * BulkUpdateNotificationRequest
- *
- * Request model for updating multiple notifications at once.
- */
-export type BulkUpdateNotificationRequest = {
-    /**
-     * Notification Ids
-     *
-     * The IDs of the notifications to update.
-     */
-    notification_ids: Array<string>;
-    /**
-     * The updates to apply to each notification.
-     */
-    updates: UpdateNotificationRequest;
 };
 
 /**
@@ -2344,7 +2362,7 @@ export type ChatCompletionUserMessageParam = {
  *
  * Chat message.
  */
-export type ChatMessage = {
+export type ChatMessageOutput = {
     role?: MessageRole;
     /**
      * Additional Kwargs
@@ -2357,23 +2375,30 @@ export type ChatMessage = {
         block_type: 'text';
     } & TextBlock) | ({
         block_type: 'image';
-    } & ImageBlock) | ({
+    } & ImageBlockOutput) | ({
         block_type: 'audio';
-    } & AudioBlock) | ({
+    } & AudioBlockOutput) | ({
         block_type: 'video';
-    } & VideoBlock) | ({
+    } & VideoBlockOutput) | ({
         block_type: 'document';
-    } & DocumentBlock) | ({
+    } & DocumentBlockOutput) | ({
         block_type: 'cache';
     } & CachePoint) | ({
         block_type: 'citable';
-    } & CitableBlock) | ({
+    } & CitableBlockOutput) | ({
         block_type: 'citation';
-    } & CitationBlock) | ({
+    } & CitationBlockOutput) | ({
         block_type: 'thinking';
-    } & ThinkingBlock) | ({
+    } & ThinkingBlockOutput) | ({
         block_type: 'tool_call';
-    } & ToolCallBlock)>;
+    } & ToolCallBlockOutput)>;
+};
+
+/**
+ * ChatMessage.additional_kwargs
+ */
+export type ChatMessageAdditionalKwargs = {
+    [key: string]: unknown;
 };
 
 /**
@@ -2598,7 +2623,7 @@ export type ChunkEvent = {
  *
  * Supports providing citable content to LLMs that have built-in citation support.
  */
-export type CitableBlock = {
+export type CitableBlockInput = {
     /**
      * Block Type
      */
@@ -2618,9 +2643,39 @@ export type CitableBlock = {
         block_type: 'text';
     } & TextBlock) | ({
         block_type: 'image';
-    } & ImageBlock) | ({
+    } & ImageBlockInput) | ({
         block_type: 'document';
-    } & DocumentBlock)>;
+    } & DocumentBlockInput)>;
+};
+
+/**
+ * CitableBlock
+ *
+ * Supports providing citable content to LLMs that have built-in citation support.
+ */
+export type CitableBlockOutput = {
+    /**
+     * Block Type
+     */
+    block_type?: 'citable';
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Source
+     */
+    source: string;
+    /**
+     * Content
+     */
+    content: Array<({
+        block_type: 'text';
+    } & TextBlock) | ({
+        block_type: 'image';
+    } & ImageBlockOutput) | ({
+        block_type: 'document';
+    } & DocumentBlockOutput)>;
 };
 
 /**
@@ -2628,7 +2683,7 @@ export type CitableBlock = {
  *
  * A representation of cited content from past messages.
  */
-export type CitationBlock = {
+export type CitationBlockInput = {
     /**
      * Block Type
      */
@@ -2640,7 +2695,39 @@ export type CitationBlock = {
         block_type: 'text';
     } & TextBlock) | ({
         block_type: 'image';
-    } & ImageBlock);
+    } & ImageBlockInput);
+    /**
+     * Source
+     */
+    source: string;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Additional Location Info
+     */
+    additional_location_info: CitationBlockAdditionalLocationInfo;
+};
+
+/**
+ * CitationBlock
+ *
+ * A representation of cited content from past messages.
+ */
+export type CitationBlockOutput = {
+    /**
+     * Block Type
+     */
+    block_type?: 'citation';
+    /**
+     * Cited Content
+     */
+    cited_content: ({
+        block_type: 'text';
+    } & TextBlock) | ({
+        block_type: 'image';
+    } & ImageBlockOutput);
     /**
      * Source
      */
@@ -2655,6 +2742,13 @@ export type CitationBlock = {
     additional_location_info: {
         [key: string]: number;
     };
+};
+
+/**
+ * CitationBlock.additional_location_info
+ */
+export type CitationBlockAdditionalLocationInfo = {
+    [key: string]: unknown;
 };
 
 /**
@@ -3053,30 +3147,6 @@ export type CreateAgentInstanceRequest = {
 };
 
 /**
- * CreateNamespaceRequest
- */
-export type CreateNamespaceRequest = {
-    /**
-     * Folder Name
-     *
-     * The name of the folder to which the namespace belongs.
-     */
-    folder_name: string;
-    /**
-     * Display Name
-     *
-     * The display name of the namespace in the user's locale.
-     */
-    display_name?: string | null;
-    /**
-     * Description
-     *
-     * A short description of the namespace in the user's locale.
-     */
-    description?: string | null;
-};
-
-/**
  * CreateProcessInstanceRequest
  *
  * Request body for creating a new process instance.
@@ -3100,32 +3170,6 @@ export type CreateProcessInstanceRequest = {
 };
 
 /**
- * CreateRoleRequest
- *
- * Request model for creating a new role.
- */
-export type CreateRoleRequest = {
-    /**
-     * Name
-     *
-     * The unique name of the role.
-     */
-    name: string;
-    /**
-     * Description
-     *
-     * A short description of the role's purpose.
-     */
-    description: string;
-    /**
-     * Access Rules
-     *
-     * A list of access rules granted by this role.
-     */
-    access_rules?: Array<string>;
-};
-
-/**
  * CreateThreadRequest
  */
 export type CreateThreadRequest = {
@@ -3145,54 +3189,6 @@ export type CreateThreadRequest = {
      * List of agents to be associated with the thread
      */
     agents?: Array<ThreadAgentDto>;
-};
-
-/**
- * CreateTokenRequest
- */
-export type CreateTokenRequest = {
-    /**
-     * Name
-     *
-     * Token name between 1 and 100 characters
-     */
-    name: string;
-    /**
-     * Expiry Date
-     *
-     * Expiry date in ISO format (must be in the future)
-     */
-    expiry_date: Date;
-};
-
-/**
- * CreateTokenResponse
- */
-export type CreateTokenResponse = {
-    /**
-     * Id
-     *
-     * The token ID
-     */
-    id: string;
-    /**
-     * Name
-     *
-     * The name of the API token
-     */
-    name: string;
-    /**
-     * Expiry Date
-     *
-     * Expiry date
-     */
-    expiry_date: Date;
-    /**
-     * Token
-     *
-     * The generated API token, only returned at creation
-     */
-    token: string;
 };
 
 /**
@@ -3298,162 +3294,6 @@ export type DashboardItemDto = {
      * The type of event data the widget displays.
      */
     event?: string | null;
-};
-
-/**
- * DatabaseDTO
- */
-export type DatabaseDto = {
-    /**
-     * Name
-     *
-     * Name of database
-     */
-    name: string;
-    /**
-     * Display Name
-     *
-     * Localized display name of database
-     */
-    display_name: string | null;
-    /**
-     * Auto Sync
-     *
-     * Whether this database auto-syncs namespaces
-     */
-    auto_sync: boolean;
-    /**
-     * Namespaces
-     *
-     * List of namespaces
-     */
-    namespaces: Array<NamespaceDto>;
-};
-
-/**
- * Dataset
- */
-export type Dataset = {
-    /**
-     * Id
-     *
-     * The unique identifier of the dataset in Langfuse.
-     */
-    id: string;
-    /**
-     * Dataset Name
-     *
-     * The name of the dataset.
-     */
-    dataset_name: string;
-    /**
-     * Description
-     *
-     * An optional description for the dataset.
-     */
-    description?: string | null;
-    /**
-     * Created At
-     *
-     * The timestamp when the dataset was created.
-     */
-    created_at?: Date | null;
-    /**
-     * Updated At
-     *
-     * The timestamp when the dataset was last updated.
-     */
-    updated_at?: Date | null;
-    /**
-     * Langfuse Url
-     *
-     * Direct URL to this dataset in the Langfuse UI.
-     */
-    langfuse_url?: string | null;
-    /**
-     * Items
-     *
-     * The list of question-answer items in the dataset.
-     */
-    items: Array<DatasetItem>;
-};
-
-/**
- * DatasetCreate
- */
-export type DatasetCreate = {
-    /**
-     * Dataset Name
-     *
-     * The name for the new dataset.
-     */
-    dataset_name: string;
-    /**
-     * Items
-     *
-     * A list of question-answer items to include in the dataset.
-     */
-    items: Array<DatasetItemCreate>;
-    /**
-     * Description
-     *
-     * An optional description for the dataset.
-     */
-    description?: string | null;
-};
-
-/**
- * DatasetItem
- */
-export type DatasetItem = {
-    /**
-     * Id
-     *
-     * The unique identifier for the dataset item, managed by Langfuse.
-     */
-    id?: string | null;
-    /**
-     * Question
-     *
-     * The input question for the agent evaluation.
-     */
-    question: string;
-    /**
-     * Answer
-     *
-     * The reference (expected) answer for the question.
-     */
-    answer: string;
-};
-
-/**
- * DatasetItemCreate
- */
-export type DatasetItemCreate = {
-    /**
-     * Question
-     *
-     * The input question for the agent evaluation.
-     */
-    question: string;
-    /**
-     * Answer
-     *
-     * The reference (expected) answer for the question.
-     */
-    answer: string;
-};
-
-/**
- * DatasetUpdate
- */
-export type DatasetUpdate = {
-    /**
-     * Items
-     *
-     * New question-answer items to append to the dataset.
-     */
-    items: Array<DatasetItemCreate>;
 };
 
 /**
@@ -3579,54 +3419,6 @@ export type DatePicker = {
     [key: string]: unknown | true | string | null | string | null | 'primeDatePicker' | string | null | LocaleString | string | LocaleString | string | null | string | number | number | boolean | Array<string> | {
         [key: string]: string;
     } | null | boolean | string | null | LocaleString | string | null | string | null | string | null | 'single' | 'range' | 'multiple' | string | undefined;
-};
-
-/**
- * DeleteAllMemoriesResponse
- *
- * Response for deleting all memories.
- */
-export type DeleteAllMemoriesResponse = {
-    /**
-     * Status
-     *
-     * Operation status. Always 'deleted_all' on success; errors raise HTTPException.
-     */
-    status: string;
-};
-
-/**
- * DeleteMemoryResponse
- *
- * Response for deleting a single memory.
- */
-export type DeleteMemoryResponse = {
-    /**
-     * Status
-     *
-     * Operation status. Always 'deleted' on success; errors raise HTTPException.
-     */
-    status: string;
-    /**
-     * Memory Id
-     *
-     * ID of the memory that was deleted. Echoed from request path.
-     */
-    memory_id: string;
-};
-
-/**
- * DeleteRoleResponse
- *
- * Confirmation response for a successful deletion.
- */
-export type DeleteRoleResponse = {
-    /**
-     * Detail
-     *
-     * A confirmation message for the deletion.
-     */
-    detail?: string;
 };
 
 /**
@@ -3778,7 +3570,7 @@ export type DisplayStatistics = {
  *
  * A representation of a document to directly pass to the LLM.
  */
-export type DocumentBlock = {
+export type DocumentBlockInput = {
     /**
      * Block Type
      */
@@ -3806,219 +3598,35 @@ export type DocumentBlock = {
 };
 
 /**
- * DocumentConversionMetadata
+ * DocumentBlock
+ *
+ * A representation of a document to directly pass to the LLM.
  */
-export type DocumentConversionMetadata = {
+export type DocumentBlockOutput = {
     /**
-     * Filename
-     *
-     * Original filename of the converted document
+     * Block Type
      */
-    filename: string;
-};
-
-/**
- * DocumentConversionResponse
- */
-export type DocumentConversionResponse = {
+    block_type?: 'document';
     /**
-     * Page Content
-     *
-     * Markdown content extracted from the document
+     * Data
      */
-    page_content: string;
+    data?: Blob | File | null;
     /**
-     * Metadata about the converted document
+     * Path
      */
-    metadata: DocumentConversionMetadata;
-};
-
-/**
- * DocumentDTO
- */
-export type DocumentDto = {
+    path?: string | null;
     /**
-     * Id
-     *
-     * Unique identifier of the document.
+     * Url
      */
-    id: string;
+    url?: string | null;
     /**
-     * Source
-     *
-     * Source path without protocol prefix (e.g., 'bucket/path/file.pdf').
+     * Title
      */
-    source: string;
+    title?: string | null;
     /**
-     * Namespace
-     *
-     * The namespace of the document within its metadata.
+     * Document Mimetype
      */
-    namespace: string;
-    /**
-     * Created At
-     *
-     * Date source document was created (ISO format string)
-     */
-    created_at: string;
-    /**
-     * Updated At
-     *
-     * Date source document was last updated (ISO format string)
-     */
-    updated_at: string;
-    /**
-     * Inserted At
-     *
-     * Date source document was inserted into document store (ISO format string)
-     */
-    inserted_at: string | null;
-    /**
-     * Is Ingested
-     *
-     * Whether the document has been fully ingested.
-     */
-    is_ingested: boolean;
-    /**
-     * Content
-     *
-     * Content of the document.
-     */
-    content?: string | null;
-    /**
-     * Number Of Pages
-     *
-     * Number of Pages in the Document.
-     */
-    number_of_pages?: number | null;
-    /**
-     * Document Title
-     *
-     * Document title.
-     */
-    document_title?: string | null;
-};
-
-/**
- * DocumentUploadRequest
- *
- * Request payload for initiating file upload to knowledge base.
- *
- * This request is used to get presigned URLs for direct S3/MinIO upload
- * of files that will be processed and indexed in the knowledge base.
- */
-export type DocumentUploadRequest = {
-    /**
-     * Filename
-     *
-     * Original filename of the file
-     */
-    filename: string;
-    /**
-     * Content Type
-     *
-     * MIME type of the file
-     */
-    content_type: string;
-    /**
-     * Content Length
-     *
-     * Size of the file in bytes
-     */
-    content_length: number;
-};
-
-/**
- * DocumentUploadResponse
- *
- * Response payload for file upload initialization.
- *
- * Contains the presigned URL for direct datalake upload and metadata
- * needed to complete the upload process.
- */
-export type DocumentUploadResponse = {
-    /**
-     * Upload Url
-     *
-     * Presigned URL for uploading the file to a datalake
-     */
-    upload_url: string;
-    /**
-     * Upload Id
-     *
-     * Unique identifier for this upload session
-     */
-    upload_id: string;
-    /**
-     * Container
-     *
-     * The bucket/container name where file will be stored
-     */
-    container: string;
-    /**
-     * Folder
-     *
-     * The folder name within the bucket/container
-     */
-    folder: string;
-    /**
-     * Object Key
-     *
-     * The object key/path for the uploaded file
-     */
-    object_key: string;
-    /**
-     * Expires In
-     *
-     * Upload URL expiration time in seconds
-     */
-    expires_in: number;
-};
-
-/**
- * DocumentUploadValidationRequest
- *
- * Request for validating whether a file was successfully uploaded to cloud storage.
- *
- * This request contains the information needed to verify that a file upload completed
- * successfully in the globally configured datalake (S3, MinIO, or Azure Blob Storage).
- */
-export type DocumentUploadValidationRequest = {
-    /**
-     * File Path
-     *
-     * Path/key of the uploaded file within the container
-     */
-    file_path: string;
-};
-
-/**
- * DocumentUploadValidationResponse
- *
- * Response containing the validation result of a file upload.
- *
- * This response indicates whether the uploaded file exists in the globally
- * configured datalake and provides information about the validation process.
- */
-export type DocumentUploadValidationResponse = {
-    /**
-     * Exists
-     *
-     * Whether the file exists in the datalake
-     */
-    exists: boolean;
-    /**
-     * File Path
-     *
-     * Path/key of the file that was validated
-     */
-    file_path: string;
-    /**
-     * Container
-     *
-     * Name of the container/bucket
-     */
-    container: string;
+    document_mimetype?: string | null;
 };
 
 /**
@@ -4238,32 +3846,6 @@ export type EmbeddingsResponse = {
 };
 
 /**
- * EventBucket
- *
- * Represents a time bucket with event counts by type.
- */
-export type EventBucket = {
-    /**
-     * Start Time
-     *
-     * Start time of the bucket
-     */
-    start_time: Date;
-    /**
-     * End Time
-     *
-     * End time of the bucket
-     */
-    end_time: Date;
-    /**
-     * Total Events
-     *
-     * Total number of events in this bucket
-     */
-    total_events?: number;
-};
-
-/**
  * EventInfo
  *
  * Information about an event.
@@ -4357,64 +3939,6 @@ export type EventSpecs = {
      * A list of parent event names that this event is derived from, allowing for hierarchical event structures.
      */
     event_parents: Array<string>;
-};
-
-/**
- * EventTimeseries
- *
- * Timeseries of events for a given time-range.
- */
-export type EventTimeseries = {
-    /**
-     * Thread Id
-     *
-     * The thread ID to filter for
-     */
-    thread_id: string | null;
-    /**
-     * Agent Id
-     *
-     * The Agent ID to filter for
-     */
-    agent_id: string | null;
-    /**
-     * Agent Class
-     *
-     * The Agent Class to filter for
-     */
-    agent_class: string | null;
-    /**
-     * Event Name
-     *
-     * Event Name to filter for
-     */
-    event_name: string | null;
-    /**
-     * Time range for the statistics
-     */
-    time_range: TimeRange;
-    /**
-     * Resolution of the buckets
-     */
-    resolution: Resolution;
-    /**
-     * Start Time
-     *
-     * Start time of the entire range
-     */
-    start_time: Date;
-    /**
-     * End Time
-     *
-     * End time of the entire range
-     */
-    end_time: Date;
-    /**
-     * Buckets
-     *
-     * List of time buckets with event counts
-     */
-    buckets: Array<EventBucket>;
 };
 
 /**
@@ -5684,7 +5208,39 @@ export type Image = {
  *
  * A representation of image data to directly pass to/from the LLM.
  */
-export type ImageBlock = {
+export type ImageBlockInput = {
+    /**
+     * Block Type
+     */
+    block_type?: 'image';
+    /**
+     * Image
+     */
+    image?: Blob | File | null;
+    /**
+     * Path
+     */
+    path?: string | null;
+    /**
+     * Url
+     */
+    url?: string | string | null;
+    /**
+     * Image Mimetype
+     */
+    image_mimetype?: string | null;
+    /**
+     * Detail
+     */
+    detail?: string | null;
+};
+
+/**
+ * ImageBlock
+ *
+ * A representation of image data to directly pass to/from the LLM.
+ */
+export type ImageBlockOutput = {
     /**
      * Block Type
      */
@@ -5811,8 +5367,8 @@ export type ImagesResponse = {
      * Size
      */
     size?: '1024x1024' | '1024x1536' | '1536x1024' | null;
-    usage?: Usage | null;
-    [key: string]: unknown | number | 'transparent' | 'opaque' | null | Array<Image> | null | 'png' | 'webp' | 'jpeg' | null | 'low' | 'medium' | 'high' | null | '1024x1024' | '1024x1536' | '1536x1024' | null | Usage | null | undefined;
+    usage?: OpenaiTypesImagesResponseUsage | null;
+    [key: string]: unknown | number | 'transparent' | 'opaque' | null | Array<Image> | null | 'png' | 'webp' | 'jpeg' | null | 'low' | 'medium' | 'high' | null | '1024x1024' | '1024x1536' | '1536x1024' | null | OpenaiTypesImagesResponseUsage | null | undefined;
 };
 
 /**
@@ -7212,6 +6768,123 @@ export type LlmStopEvent = {
 };
 
 /**
+ * LLMStopEvent.invocation_parameters.sub0
+ */
+export type LlmStopEventInvocationParametersSub0 = {
+    [key: string]: unknown;
+};
+
+/**
+ * LLMStopEvent.prompt_template_variables.sub0
+ */
+export type LlmStopEventPromptTemplateVariablesSub0 = {
+    [key: string]: unknown;
+};
+
+/**
+ * LLMStopEvent.tools.sub0
+ */
+export type LlmStopEventToolsSub0 = {
+    [key: string]: unknown;
+};
+
+/**
+ * LLMStopEventOutput
+ */
+export type LlmStopEventOutput = {
+    /**
+     * Display Name
+     *
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display Description
+     *
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Input Messages
+     *
+     * List of messages sent to the LLM as input.
+     */
+    input_messages?: Array<JamboParserObjectTypeParserMessage> | null;
+    /**
+     * Output Messages
+     *
+     * List of messages received from the LLM as output.
+     */
+    output_messages?: Array<JamboParserObjectTypeParserMessage> | null;
+    /**
+     * Invocation Parameters
+     *
+     * Parameters used during the invocation of the LLM.
+     */
+    invocation_parameters?: LlmStopEventInvocationParametersSub0 | null;
+    /**
+     * Chat Model Name
+     *
+     * The name of the language model being utilized.
+     */
+    chat_model_name?: string | null;
+    /**
+     * Provider
+     *
+     * The hosting provider of the LLM, e.g., OpenAI, Azure.
+     */
+    provider?: string | null;
+    /**
+     * System
+     *
+     * The AI product as identified by the client or server.
+     */
+    system?: string | null;
+    /**
+     * Prompt Template
+     *
+     * The prompt template as a Python f-string.
+     */
+    prompt_template?: string | null;
+    /**
+     * Prompt Template Variables
+     *
+     * A dictionary of input variables to the prompt template.
+     */
+    prompt_template_variables?: LlmStopEventPromptTemplateVariablesSub0 | null;
+    /**
+     * Prompt Template Version
+     *
+     * The version of the prompt template being used.
+     */
+    prompt_template_version?: string | null;
+    /**
+     * Token Count Prompt
+     *
+     * The number of tokens in the prompt.
+     */
+    token_count_prompt?: number | null;
+    /**
+     * Token Count Completion
+     *
+     * The number of tokens in the completion.
+     */
+    token_count_completion?: number | null;
+    /**
+     * Token Count Total
+     *
+     * The total number of tokens, including both prompt and completion.
+     */
+    token_count_total?: number | null;
+    /**
+     * Tools
+     *
+     * List of tools that are advertised to the LLM to be able to call.
+     */
+    tools?: Array<LlmStopEventToolsSub0> | null;
+};
+
+/**
  * LimitChatHistoryEvent
  *
  * Limits the chat messages based on number of input tokens.
@@ -7240,7 +6913,7 @@ export type LimitChatHistoryEvent = {
      *
      * Limited chat history based on number of input tokens.
      */
-    limited_history: Array<ChatMessage>;
+    limited_history: Array<ChatMessageOutput>;
     /**
      * Event Name
      *
@@ -7254,7 +6927,7 @@ export type LimitChatHistoryEvent = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessage> | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessageOutput> | Array<string> | undefined;
 };
 
 /**
@@ -7619,32 +7292,6 @@ export type Logprob = {
 };
 
 /**
- * MemoriesResponse
- *
- * Response for listing user memories with full knowledge graph.
- */
-export type MemoriesResponse = {
-    /**
-     * Total
-     *
-     * Total number of memories returned. Respects limit and filters. Does not include graph relation count.
-     */
-    total: number;
-    /**
-     * Memories
-     *
-     * List of memory items. Limited by the 'limit' query parameter and filtered by user/agent.
-     */
-    memories: Array<MemoryDto>;
-    /**
-     * Relations
-     *
-     * FULL knowledge graph relations for the user. Includes all graph triples regardless of limit/filters for complete graph visualization.
-     */
-    relations: Array<MemoryRelationDto>;
-};
-
-/**
  * Memory
  */
 export type Memory = {
@@ -7682,68 +7329,6 @@ export type Memory = {
      * The metadata associated with the memory.
      */
     metadata: MemoryMetadata;
-};
-
-/**
- * MemoryDTO
- *
- * Data Transfer Object for a single memory item.
- */
-export type MemoryDto = {
-    /**
-     * Id
-     *
-     * The unique identifier of the memory.
-     */
-    id: string;
-    /**
-     * Memory
-     *
-     * The memory content deduced from the text data.
-     */
-    memory: string;
-    /**
-     * Score
-     *
-     * The relevance score of the memory (present for search results, null otherwise).
-     */
-    score?: number | null;
-    /**
-     * Created At
-     *
-     * ISO timestamp when the memory was created.
-     */
-    created_at: string;
-    /**
-     * User Id
-     *
-     * The unique identifier of the user who owns this memory.
-     */
-    user_id?: string | null;
-    /**
-     * Agent Id
-     *
-     * The unique identifier of the agent that created this memory.
-     */
-    agent_id?: string | null;
-    /**
-     * Thread Id
-     *
-     * The unique identifier of the thread in which this memory was created.
-     */
-    thread_id?: string | null;
-    /**
-     * Display Id
-     *
-     * The unique identifier of the display in which this memory was created..
-     */
-    display_id?: string | null;
-    /**
-     * Run Id
-     *
-     * The unique identifier of the run in which this memory was created.
-     */
-    run_id?: string | null;
 };
 
 /**
@@ -7825,64 +7410,6 @@ export type MemoryRelation = {
 };
 
 /**
- * MemoryRelationDTO
- *
- * Data Transfer Object for a knowledge graph relation (triple).
- */
-export type MemoryRelationDto = {
-    /**
-     * Source
-     *
-     * The source entity in the knowledge graph.
-     */
-    source: string;
-    /**
-     * Relation
-     *
-     * The relationship type between source and target entities.
-     */
-    relation: string;
-    /**
-     * Target
-     *
-     * The target entity in the knowledge graph.
-     */
-    target: string;
-};
-
-/**
- * MemorySearchResponse
- *
- * Response for searching memories with scored results and matching graph relations.
- */
-export type MemorySearchResponse = {
-    /**
-     * Query
-     *
-     * The original search query used.
-     */
-    query: string;
-    /**
-     * Total
-     *
-     * Total number of search results matching the query.
-     */
-    total: number;
-    /**
-     * Memories
-     *
-     * List of memories matching the search query, ordered by relevance score. Each memory includes a score field indicating relevance to the query.
-     */
-    memories: Array<MemoryDto>;
-    /**
-     * Relations
-     *
-     * Knowledge graph relations involving entities from the search results. Used for highlighting matching triples in the graph visualization. Only includes relations where both source AND target appear in the search results.
-     */
-    relations: Array<MemoryRelationDto>;
-};
-
-/**
  * MemoryType
  */
 export const MemoryType = { USER_MEMORY: 'user_memory', ORGANIZATION_MEMORY: 'organization_memory' } as const;
@@ -7946,6 +7473,20 @@ export type Message = {
      * Content
      */
     readonly content: string;
+};
+
+/**
+ * Message.function_call_arguments_json.sub0
+ */
+export type MessageFunctionCallArgumentsJsonSub0 = {
+    [key: string]: unknown;
+};
+
+/**
+ * Message.tool_calls.sub0
+ */
+export type MessageToolCallsSub0 = {
+    [key: string]: unknown;
 };
 
 /**
@@ -8036,48 +7577,6 @@ export type MinimalAgentInstanceDto = {
 };
 
 /**
- * MinimalDataset
- */
-export type MinimalDataset = {
-    /**
-     * Id
-     *
-     * The unique identifier of the dataset in Langfuse.
-     */
-    id: string;
-    /**
-     * Dataset Name
-     *
-     * The name of the dataset.
-     */
-    dataset_name: string;
-    /**
-     * Description
-     *
-     * An optional description for the dataset.
-     */
-    description?: string | null;
-    /**
-     * Created At
-     *
-     * The timestamp when the dataset was created.
-     */
-    created_at?: Date | null;
-    /**
-     * Updated At
-     *
-     * The timestamp when the dataset was last updated.
-     */
-    updated_at?: Date | null;
-    /**
-     * Langfuse Url
-     *
-     * Direct URL to this dataset in the Langfuse UI.
-     */
-    langfuse_url?: string | null;
-};
-
-/**
  * MinimalUserDTO
  */
 export type MinimalUserDto = {
@@ -8105,26 +7604,6 @@ export type MinimalUserDto = {
      * User's profile image in base64.
      */
     profile_image?: string | null;
-};
-
-/**
- * ModelDTO
- */
-export type ModelDto = {
-    /**
-     * Model Name
-     *
-     * The name/identifier of the model
-     */
-    model_name: string;
-    /**
-     * Detailed information about the model
-     */
-    model_info: ModelInfoDto;
-    /**
-     * Icon
-     */
-    readonly icon: string;
 };
 
 /**
@@ -8167,240 +7646,6 @@ export type ModelDetails = {
      * The agent ID of the model.
      */
     agent_id?: string | null;
-};
-
-/**
- * ModelInfoDTO
- */
-export type ModelInfoDto = {
-    /**
-     * Mode
-     *
-     * The mode of the model (e.g., 'chat', 'completion', 'embedding')
-     */
-    mode: string;
-    /**
-     * Max Input Tokens
-     *
-     * Maximum number of input tokens the model can handle
-     */
-    max_input_tokens?: number | null;
-    /**
-     * Max Output Tokens
-     *
-     * Maximum number of output tokens the model can generate
-     */
-    max_output_tokens?: number | null;
-    /**
-     * Input Cost Per Token
-     *
-     * Cost per input token in USD
-     */
-    input_cost_per_token?: number | null;
-    /**
-     * Output Cost Per Token
-     *
-     * Cost per output token in USD
-     */
-    output_cost_per_token?: number | null;
-    /**
-     * Cache Creation Input Token Cost
-     *
-     * Cost for creating cache from input tokens
-     */
-    cache_creation_input_token_cost?: number | null;
-    /**
-     * Cache Read Input Token Cost
-     *
-     * Cost for reading cached input tokens
-     */
-    cache_read_input_token_cost?: number | null;
-    /**
-     * Input Cost Per Token Above 128K Tokens
-     *
-     * Cost per input token for contexts above 128k tokens
-     */
-    input_cost_per_token_above_128k_tokens?: number | null;
-    /**
-     * Input Cost Per Token Above 200K Tokens
-     *
-     * Cost per input token for contexts above 200k tokens
-     */
-    input_cost_per_token_above_200k_tokens?: number | null;
-    /**
-     * Input Cost Per Audio Token
-     *
-     * Cost per audio input token
-     */
-    input_cost_per_audio_token?: number | null;
-    /**
-     * Input Cost Per Token Batches
-     *
-     * Cost per input token when using batch API
-     */
-    input_cost_per_token_batches?: number | null;
-    /**
-     * Output Cost Per Token Batches
-     *
-     * Cost per output token when using batch API
-     */
-    output_cost_per_token_batches?: number | null;
-    /**
-     * Output Cost Per Audio Token
-     *
-     * Cost per audio output token
-     */
-    output_cost_per_audio_token?: number | null;
-    /**
-     * Output Cost Per Reasoning Token
-     *
-     * Cost per reasoning token for models with reasoning capabilities
-     */
-    output_cost_per_reasoning_token?: number | null;
-    /**
-     * Output Cost Per Token Above 128K Tokens
-     *
-     * Cost per output token for contexts above 128k tokens
-     */
-    output_cost_per_token_above_128k_tokens?: number | null;
-    /**
-     * Output Cost Per Token Above 200K Tokens
-     *
-     * Cost per output token for contexts above 200k tokens
-     */
-    output_cost_per_token_above_200k_tokens?: number | null;
-    /**
-     * Output Cost Per Image
-     *
-     * Cost per image output
-     */
-    output_cost_per_image?: number | null;
-    /**
-     * Search Context Cost Per Query
-     *
-     * Cost per search context query
-     */
-    search_context_cost_per_query?: number | null;
-    /**
-     * Output Vector Size
-     *
-     * Size of output vectors for embedding models
-     */
-    output_vector_size?: number | null;
-    /**
-     * Supports System Messages
-     *
-     * Whether the model supports system messages
-     */
-    supports_system_messages?: boolean | null;
-    /**
-     * Supports Response Schema
-     *
-     * Whether the model supports structured response schemas
-     */
-    supports_response_schema?: boolean | null;
-    /**
-     * Supports Vision
-     *
-     * Whether the model supports vision/image input
-     */
-    supports_vision?: boolean | null;
-    /**
-     * Supports Function Calling
-     *
-     * Whether the model supports function calling
-     */
-    supports_function_calling?: boolean | null;
-    /**
-     * Supports Tool Choice
-     *
-     * Whether the model supports tool choice selection
-     */
-    supports_tool_choice?: boolean | null;
-    /**
-     * Supports Assistant Prefill
-     *
-     * Whether the model supports assistant message prefilling
-     */
-    supports_assistant_prefill?: boolean | null;
-    /**
-     * Supports Prompt Caching
-     *
-     * Whether the model supports prompt caching
-     */
-    supports_prompt_caching?: boolean | null;
-    /**
-     * Supports Audio Input
-     *
-     * Whether the model supports audio input
-     */
-    supports_audio_input?: boolean | null;
-    /**
-     * Supports Audio Output
-     *
-     * Whether the model supports audio output
-     */
-    supports_audio_output?: boolean | null;
-    /**
-     * Supports Pdf Input
-     *
-     * Whether the model supports PDF input
-     */
-    supports_pdf_input?: boolean | null;
-    /**
-     * Supports Embedding Image Input
-     *
-     * Whether the model supports image input for embeddings
-     */
-    supports_embedding_image_input?: boolean | null;
-    /**
-     * Supports Native Streaming
-     *
-     * Whether the model supports native streaming
-     */
-    supports_native_streaming?: boolean | null;
-    /**
-     * Supports Web Search
-     *
-     * Whether the model supports web search capabilities
-     */
-    supports_web_search?: boolean | null;
-    /**
-     * Supports Url Context
-     *
-     * Whether the model supports URL context input
-     */
-    supports_url_context?: boolean | null;
-    /**
-     * Supports Reasoning
-     *
-     * Whether the model supports reasoning capabilities
-     */
-    supports_reasoning?: boolean | null;
-    /**
-     * Supports Computer Use
-     *
-     * Whether the model supports computer use capabilities
-     */
-    supports_computer_use?: boolean | null;
-    /**
-     * Tpm
-     *
-     * Tokens per minute rate limit
-     */
-    tpm?: number | null;
-    /**
-     * Rpm
-     *
-     * Requests per minute rate limit
-     */
-    rpm?: number | null;
-    /**
-     * Supported Openai Params
-     *
-     * List of supported OpenAI API parameters
-     */
-    supported_openai_params?: Array<string> | null;
 };
 
 /**
@@ -8559,24 +7804,6 @@ export type ModelSelect = {
 };
 
 /**
- * ModelTypeGroupDTO
- */
-export type ModelTypeGroupDto = {
-    /**
-     * Name
-     *
-     * The name/type of the model group
-     */
-    name: string;
-    /**
-     * Models
-     *
-     * List of models in this group
-     */
-    models: Array<ModelDto>;
-};
-
-/**
  * MultiSelect
  *
  * https://formkit-primevue.netlify.app/inputs/MultiSelect
@@ -8700,108 +7927,6 @@ export type MultiSelect = {
 };
 
 /**
- * NamespaceDTO
- */
-export type NamespaceDto = {
-    /**
-     * Id
-     *
-     * Unique identifier of the namespace
-     */
-    id: string;
-    /**
-     * Name
-     *
-     * Name of namespace
-     */
-    name: string;
-    /**
-     * Database Id
-     *
-     * ID of the database containing the namespace
-     */
-    database_id: string;
-    /**
-     * Display Name
-     *
-     * Display name of namespace, can be localized
-     */
-    display_name?: string | null;
-    /**
-     * Description
-     *
-     * Description of namespace, can be localized
-     */
-    description?: string | null;
-    /**
-     * Number Of Documents
-     *
-     * Number of documents in namespace
-     */
-    number_of_documents: number;
-    /**
-     * Updated At
-     *
-     * Latest timestamp when any document in the namespace was updated
-     */
-    updated_at: number;
-    /**
-     * Inserted At
-     *
-     * Latest timestamp when any document in the namespace was inserted
-     */
-    inserted_at: number;
-    /**
-     * Created At
-     *
-     * Oldest timestamp when any document in the namespace was created
-     */
-    created_at: number;
-};
-
-/**
- * NamespaceResponse
- */
-export type NamespaceResponse = {
-    /**
-     * Id
-     *
-     * The unique identifier for the namespace.
-     */
-    id: string;
-    /**
-     * Bucket Id
-     *
-     * The ID of the parent bucket containing the namespace.
-     */
-    bucket_id: string;
-    /**
-     * Namespace Name
-     *
-     * The name of the namespace.
-     */
-    namespace_name: string;
-    /**
-     * Folder Name
-     *
-     * The corresponding folder name in the data storage.
-     */
-    folder_name: string;
-    /**
-     * Display Name
-     *
-     * A user-friendly display name for the namespace.
-     */
-    display_name?: string | null;
-    /**
-     * Description
-     *
-     * A brief description of the namespace's contents.
-     */
-    description?: string | null;
-};
-
-/**
  * NodeData
  *
  * Data for a node in the workflow graph.
@@ -8872,98 +7997,6 @@ export type NodeData = {
 };
 
 /**
- * NodeSummaryDTO
- */
-export type NodeSummaryDto = {
-    /**
-     * Level
-     *
-     * Level of the summary
-     */
-    level: number;
-    /**
-     * Nodes
-     *
-     * List of nodes in the summary
-     */
-    nodes: Array<IngestedNode>;
-};
-
-/**
- * NotificationDTO
- *
- * Data Transfer Object for a notification.
- */
-export type NotificationDto = {
-    /**
-     * Id
-     *
-     * The unique identifier of the notification.
-     */
-    id: string;
-    /**
-     * User Id
-     *
-     * The unique identifier of the user associated with the notification.
-     */
-    user_id: string;
-    /**
-     * Notification Group Id
-     *
-     * The identifier of the notification group this notification belongs to.
-     */
-    notification_group_id?: string | null;
-    /**
-     * Title
-     *
-     * The internationalized title of the notification.
-     */
-    title: string;
-    /**
-     * Message
-     *
-     * The internationalized content of the notification.
-     */
-    message: string;
-    /**
-     * Read
-     *
-     * Indicates if the notification has been read by the user.
-     */
-    read?: boolean;
-    /**
-     * Done
-     *
-     * Indicates if the task associated with the notification has been completed.
-     */
-    done?: boolean;
-    /**
-     * Type
-     *
-     * Categorizes the notification for visual representation (e.g., icon and color).
-     */
-    type?: 'success' | 'info' | 'warn' | 'error';
-    /**
-     * Severity
-     *
-     * The priority level of the notification.
-     */
-    severity: 'low' | 'medium' | 'high' | 'critical';
-    /**
-     * Link
-     *
-     * A relative internal link to navigate to the relevant resource.
-     */
-    link: string;
-    /**
-     * Created At
-     *
-     * The timestamp when the notification was created.
-     */
-    created_at: Date;
-};
-
-/**
  * OpenChatHitlResponse
  *
  * Response indicating whether there's an open chat HITL request for a thread.
@@ -8979,80 +8012,6 @@ export type OpenChatHitlResponse = {
      * The HITL request event if there is an open chat HITL, None otherwise.
      */
     hitl_request?: HumanInTheLoopRequestEvent | null;
-};
-
-/**
- * PaginatedDocumentsResponse
- */
-export type PaginatedDocumentsResponse = {
-    /**
-     * Total
-     *
-     * Total number of items available
-     */
-    total: number;
-    /**
-     * Page
-     *
-     * Current page number (1-indexed)
-     */
-    page: number;
-    /**
-     * Page Size
-     *
-     * Number of threads per page
-     */
-    page_size: number;
-    /**
-     * Total Pages
-     *
-     * Total number of pages available
-     */
-    total_pages: number;
-    /**
-     * Documents
-     *
-     * List of Document DTOs objects for the current page
-     */
-    documents: Array<DocumentDto>;
-};
-
-/**
- * PaginatedNotificationsResponse
- *
- * A paginated response container for notifications.
- */
-export type PaginatedNotificationsResponse = {
-    /**
-     * Total
-     *
-     * The total number of notifications matching the filter criteria.
-     */
-    total: number;
-    /**
-     * Page
-     *
-     * The current page number (1-indexed).
-     */
-    page: number;
-    /**
-     * Page Size
-     *
-     * The number of notifications requested per page.
-     */
-    page_size: number;
-    /**
-     * Total Pages
-     *
-     * The total number of pages available based on the page size.
-     */
-    total_pages: number;
-    /**
-     * Notifications
-     *
-     * The list of notifications for the current page.
-     */
-    notifications: Array<NotificationDto>;
 };
 
 /**
@@ -9127,44 +8086,6 @@ export type PaginatedThreadsResponse = {
      * List of ThreadDTO objects for the current page
      */
     threads: Array<ThreadDto>;
-};
-
-/**
- * PaginatedUsersResponse
- *
- * Represents a paginated response containing a list of users.
- */
-export type PaginatedUsersResponse = {
-    /**
-     * Total
-     *
-     * Total number of items available
-     */
-    total: number;
-    /**
-     * Page
-     *
-     * Current page number (1-indexed)
-     */
-    page: number;
-    /**
-     * Page Size
-     *
-     * Number of threads per page
-     */
-    page_size: number;
-    /**
-     * Total Pages
-     *
-     * Total number of pages available
-     */
-    total_pages: number;
-    /**
-     * Users
-     *
-     * List of MinimalUserDTO objects for the current page.
-     */
-    users: Array<UserDto>;
 };
 
 /**
@@ -9446,6 +8367,14 @@ export type ProcessClassDto = {
      * The default process configuration for this process class. This is the configuration that will be used if no specific configuration is provided.
      */
     default_process_config: ProcessConfig;
+    /**
+     * Templates
+     *
+     * Optional list of profile templates for quick profile creation.
+     */
+    templates?: Array<{
+        [key: string]: unknown;
+    }> | null;
 };
 
 /**
@@ -10295,21 +9224,6 @@ export type RerankerEvent = {
 };
 
 /**
- * Resolution
- */
-export const Resolution = {
-    '1M': '1m',
-    '1H': '1h',
-    '1D': '1d',
-    '1W': '1w'
-} as const;
-
-/**
- * Resolution
- */
-export type Resolution = typeof Resolution[keyof typeof Resolution];
-
-/**
  * ResponseFormatJSONObject
  */
 export type ResponseFormatJsonObject = {
@@ -10495,50 +9409,6 @@ export type RetrieverEvent = {
      */
     readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<IngestedNode> | null | Array<string> | undefined;
-};
-
-/**
- * RevokeTokenResponse
- */
-export type RevokeTokenResponse = {
-    /**
-     * Detail
-     *
-     * Status message about the token revocation
-     */
-    detail: string;
-};
-
-/**
- * RoleResponse
- *
- * Response model representing a role.
- */
-export type RoleResponse = {
-    /**
-     * Id
-     *
-     * The unique identifier of the role.
-     */
-    id: string;
-    /**
-     * Name
-     *
-     * The name of the role.
-     */
-    name: string;
-    /**
-     * Description
-     *
-     * The description of the role.
-     */
-    description: string;
-    /**
-     * Access Rules
-     *
-     * The list of access rules for the role.
-     */
-    access_rules: Array<string>;
 };
 
 /**
@@ -11189,54 +10059,6 @@ export type SensitiveInfoRejectEvent = {
 };
 
 /**
- * ServiceDTO
- */
-export type ServiceDto = {
-    /**
-     * Name
-     *
-     * The name of the service.
-     */
-    name: string;
-    /**
-     * Description
-     *
-     * A description of the service.
-     */
-    description: string;
-    /**
-     * Icon
-     *
-     * The icon representing the service.
-     */
-    icon: string;
-    /**
-     * Path
-     *
-     * The path under which the service is callable in the frontend.
-     */
-    path: string;
-    /**
-     * User Is Admin
-     *
-     * Whether the user is an admin of the service.
-     */
-    user_is_admin?: boolean;
-};
-
-/**
- * SignedUrlDto
- */
-export type SignedUrlDto = {
-    /**
-     * Url
-     *
-     * The signed URL of the file
-     */
-    url: string;
-};
-
-/**
  * Slider
  *
  * https://formkit-primevue.netlify.app/inputs/Slider
@@ -11382,7 +10204,7 @@ export type StandaloneQuestionCondenserEvent = {
     /**
      * Single chat message containing the condensed user question.
      */
-    condensed_chat_message: ChatMessage;
+    condensed_chat_message: ChatMessageOutput;
     /**
      * Event Name
      *
@@ -11396,7 +10218,7 @@ export type StandaloneQuestionCondenserEvent = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | ChatMessage | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | ChatMessageOutput | Array<string> | undefined;
 };
 
 /**
@@ -11454,6 +10276,13 @@ export type StartEvent = {
 };
 
 /**
+ * StartEventInput
+ */
+export type StartEventInput = {
+    [key: string]: unknown;
+};
+
+/**
  * StopEvent
  *
  * An event signaling the conclusion of a run within a thread, acting both as a control signal
@@ -11507,6 +10336,24 @@ export type StopEvent = {
      */
     readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<string> | undefined;
+};
+
+/**
+ * StopEventOutput
+ */
+export type StopEventOutput = {
+    /**
+     * Display Name
+     *
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display Description
+     *
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
 };
 
 /**
@@ -11679,18 +10526,6 @@ export type SubmittedFormDto = {
      * Unique identifier for this specific process walk through.
      */
     process_walkthrough_id: string;
-};
-
-/**
- * SuiteDTO
- */
-export type SuiteDto = {
-    /**
-     * Services
-     *
-     * The services in the suite.
-     */
-    services: Array<ServiceDto>;
 };
 
 /**
@@ -11876,7 +10711,35 @@ export type Textarea = {
  *
  * A representation of the content streamed from reasoning/thinking processes by LLMs
  */
-export type ThinkingBlock = {
+export type ThinkingBlockInput = {
+    /**
+     * Block Type
+     */
+    block_type?: 'thinking';
+    /**
+     * Content
+     *
+     * Content of the reasoning/thinking process, if available
+     */
+    content?: string | null;
+    /**
+     * Num Tokens
+     *
+     * Number of token used for reasoning/thinking, if available
+     */
+    num_tokens?: number | null;
+    /**
+     * Additional Information
+     */
+    additional_information?: ThinkingBlockAdditionalInformation;
+};
+
+/**
+ * ThinkingBlock
+ *
+ * A representation of the content streamed from reasoning/thinking processes by LLMs
+ */
+export type ThinkingBlockOutput = {
     /**
      * Block Type
      */
@@ -11901,6 +10764,15 @@ export type ThinkingBlock = {
     additional_information?: {
         [key: string]: unknown;
     };
+};
+
+/**
+ * ThinkingBlock.additional_information
+ *
+ * Additional information related to the thinking/reasoning process, if available
+ */
+export type ThinkingBlockAdditionalInformation = {
+    [key: string]: unknown;
 };
 
 /**
@@ -12121,21 +10993,6 @@ export type ThreadDto = {
      */
     llm_cost?: number;
 };
-
-/**
- * TimeRange
- */
-export const TimeRange = {
-    '1H': '1h',
-    '24H': '24h',
-    '30D': '30d',
-    '365D': '365d'
-} as const;
-
-/**
- * TimeRange
- */
-export type TimeRange = typeof TimeRange[keyof typeof TimeRange];
 
 /**
  * ToggleButton
@@ -12370,39 +11227,37 @@ export type ToggleSwitch = {
 };
 
 /**
- * TokenResponse
+ * ToolCallBlock
  */
-export type TokenResponse = {
+export type ToolCallBlockInput = {
     /**
-     * Id
-     *
-     * The token ID
+     * Block Type
      */
-    id: string;
+    block_type?: 'tool_call';
     /**
-     * Name
+     * Tool Call Id
      *
-     * The name of the API token
+     * ID of the tool call, if provided
      */
-    name: string;
+    tool_call_id?: string | null;
     /**
-     * Expiry Date
+     * Tool Name
      *
-     * Expiry date
+     * Name of the called tool
      */
-    expiry_date: Date;
+    tool_name: string;
     /**
-     * Roles
+     * Tool Kwargs
      *
-     * List of roles granted to the access token
+     * Arguments provided to the tool, if available
      */
-    roles: Array<string>;
+    tool_kwargs?: ToolCallBlockToolKwargsSub0 | string;
 };
 
 /**
  * ToolCallBlock
  */
-export type ToolCallBlock = {
+export type ToolCallBlockOutput = {
     /**
      * Block Type
      */
@@ -12427,6 +11282,13 @@ export type ToolCallBlock = {
     tool_kwargs?: {
         [key: string]: unknown;
     } | string;
+};
+
+/**
+ * ToolCallBlock.tool_kwargs.sub0
+ */
+export type ToolCallBlockToolKwargsSub0 = {
+    [key: string]: unknown;
 };
 
 /**
@@ -12604,12 +11466,12 @@ export type TranscriptionVerbose = {
      * Segments
      */
     segments?: Array<TranscriptionSegment> | null;
-    usage?: OpenaiTypesAudioTranscriptionVerboseUsage | null;
+    usage?: Usage | null;
     /**
      * Words
      */
     words?: Array<TranscriptionWord> | null;
-    [key: string]: unknown | number | string | Array<TranscriptionSegment> | null | OpenaiTypesAudioTranscriptionVerboseUsage | null | Array<TranscriptionWord> | null | undefined;
+    [key: string]: unknown | number | string | Array<TranscriptionSegment> | null | Usage | null | Array<TranscriptionWord> | null | undefined;
 };
 
 /**
@@ -12684,78 +11546,6 @@ export type UpdateAgentInstanceDto = {
 };
 
 /**
- * UpdateMemoryRequest
- *
- * Request for updating a memory's content.
- */
-export type UpdateMemoryRequest = {
-    /**
-     * Data
-     *
-     * New content to update the memory with.
-     */
-    data: string;
-};
-
-/**
- * UpdateMemoryResponse
- *
- * Response for updating a memory.
- */
-export type UpdateMemoryResponse = {
-    /**
-     * Status
-     *
-     * Operation status. Always 'updated' on success; errors raise HTTPException.
-     */
-    status: string;
-    /**
-     * Memory Id
-     *
-     * ID of the memory that was updated. Echoed from request path.
-     */
-    memory_id: string;
-};
-
-/**
- * UpdateNamespaceRequest
- */
-export type UpdateNamespaceRequest = {
-    /**
-     * Display Name
-     *
-     * The new display name for the namespace.
-     */
-    display_name?: string | null;
-    /**
-     * Description
-     *
-     * The new description of the namespace's contents.
-     */
-    description?: string | null;
-};
-
-/**
- * UpdateNotificationRequest
- *
- * Request model for partially updating a notification.
- */
-export type UpdateNotificationRequest = {
-    /**
-     * Read
-     *
-     * The new 'read' status of the notification.
-     */
-    read?: boolean | null;
-    /**
-     * Done
-     *
-     * The new 'done' status for the notification's task.
-     */
-    done?: boolean | null;
-};
-
-/**
  * UpdateProcessInstanceDTO
  *
  * Request body for updating a process instance configuration.
@@ -12772,49 +11562,18 @@ export type UpdateProcessInstanceDto = {
 };
 
 /**
- * UpdateRoleRequest
- *
- * Request model for updating an existing role. All fields are optional.
- */
-export type UpdateRoleRequest = {
-    /**
-     * Name
-     *
-     * The new unique name of the role.
-     */
-    name?: string | null;
-    /**
-     * Description
-     *
-     * The new description for the role.
-     */
-    description?: string | null;
-    /**
-     * Access Rules
-     *
-     * The new list of access rules.
-     */
-    access_rules?: Array<string> | null;
-};
-
-/**
  * Usage
  */
 export type Usage = {
     /**
-     * Input Tokens
+     * Seconds
      */
-    input_tokens: number;
-    input_tokens_details: UsageInputTokensDetails;
+    seconds: number;
     /**
-     * Output Tokens
+     * Type
      */
-    output_tokens: number;
-    /**
-     * Total Tokens
-     */
-    total_tokens: number;
-    [key: string]: unknown | number | UsageInputTokensDetails;
+    type: 'duration';
+    [key: string]: unknown | number | 'duration';
 };
 
 /**
@@ -12900,58 +11659,6 @@ export type UserAccess = {
      * Users access level to service/agent/process
      */
     level: AccessLevel;
-};
-
-/**
- * UserDTO
- */
-export type UserDto = {
-    /**
-     * Id
-     *
-     * The user's unique identifier (OID).
-     */
-    id: string;
-    /**
-     * Name
-     *
-     * The user's name.
-     */
-    name: string;
-    /**
-     * Email
-     *
-     * The user's email address.
-     */
-    email: string;
-    /**
-     * Profile Image
-     *
-     * User's profile image in base64.
-     */
-    profile_image?: string | null;
-    /**
-     * Last Accessed
-     *
-     * Last time the user was updated
-     */
-    last_accessed: Date;
-    /**
-     * Roles
-     *
-     * List of roles assigned to the user
-     */
-    roles?: Array<string>;
-    /**
-     * Favorite Modules
-     *
-     * List of favorite modules from aihub suite
-     */
-    favorite_modules?: Array<string>;
-    /**
-     * User dashboard configuration for index page
-     */
-    dashboard?: DashboardDto | null;
 };
 
 /**
@@ -13050,7 +11757,7 @@ export type UserMessageEvent = {
      *
      * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
      */
-    messages?: Array<ChatMessage>;
+    messages?: Array<ChatMessageOutput>;
     /**
      * Files
      *
@@ -13070,7 +11777,25 @@ export type UserMessageEvent = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | UserIdentity | Array<ChatMessage> | Array<UserUploadedFile> | null | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | UserIdentity | Array<ChatMessageOutput> | Array<UserUploadedFile> | null | Array<string> | undefined;
+};
+
+/**
+ * UserMessageEventInput
+ */
+export type UserMessageEventInput = {
+    /**
+     * Messages
+     *
+     * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
+     */
+    messages?: Array<JamboParserObjectTypeParserChatMessage2>;
+    /**
+     * Files
+     *
+     * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
+     */
+    files?: Array<UserUploadedFile> | null;
 };
 
 /**
@@ -13311,7 +12036,43 @@ export type VectorStoreInput = {
  *
  * A representation of video data to directly pass to/from the LLM.
  */
-export type VideoBlock = {
+export type VideoBlockInput = {
+    /**
+     * Block Type
+     */
+    block_type?: 'video';
+    /**
+     * Video
+     */
+    video?: Blob | File | null;
+    /**
+     * Path
+     */
+    path?: string | null;
+    /**
+     * Url
+     */
+    url?: string | string | null;
+    /**
+     * Video Mimetype
+     */
+    video_mimetype?: string | null;
+    /**
+     * Detail
+     */
+    detail?: string | null;
+    /**
+     * Fps
+     */
+    fps?: number | null;
+};
+
+/**
+ * VideoBlock
+ *
+ * A representation of video data to directly pass to/from the LLM.
+ */
+export type VideoBlockOutput = {
     /**
      * Block Type
      */
@@ -13383,18 +12144,239 @@ export type WorkflowGraph = {
 };
 
 /**
- * Usage
+ * LLMStopEventOutput
  */
-export type OpenaiTypesAudioTranscriptionVerboseUsage = {
+export type AihubApiServicesModelCreationServiceLlmStopEventOutput2 = {
     /**
-     * Seconds
+     * Display Name
+     *
+     * Display name for the event
      */
-    seconds: number;
+    display_name?: LocaleString | null;
     /**
-     * Type
+     * Display Description
+     *
+     * Display description for the event
      */
-    type: 'duration';
-    [key: string]: unknown | number | 'duration';
+    display_description?: LocaleString | null;
+    /**
+     * Input Messages
+     *
+     * List of messages sent to the LLM as input.
+     */
+    input_messages?: Array<JamboParserObjectTypeParserMessage> | null;
+    /**
+     * Output Messages
+     *
+     * List of messages received from the LLM as output.
+     */
+    output_messages?: Array<JamboParserObjectTypeParserMessage> | null;
+    /**
+     * Invocation Parameters
+     *
+     * Parameters used during the invocation of the LLM.
+     */
+    invocation_parameters?: LlmStopEventInvocationParametersSub0 | null;
+    /**
+     * Chat Model Name
+     *
+     * The name of the language model being utilized.
+     */
+    chat_model_name?: string | null;
+    /**
+     * Provider
+     *
+     * The hosting provider of the LLM, e.g., OpenAI, Azure.
+     */
+    provider?: string | null;
+    /**
+     * System
+     *
+     * The AI product as identified by the client or server.
+     */
+    system?: string | null;
+    /**
+     * Prompt Template
+     *
+     * The prompt template as a Python f-string.
+     */
+    prompt_template?: string | null;
+    /**
+     * Prompt Template Variables
+     *
+     * A dictionary of input variables to the prompt template.
+     */
+    prompt_template_variables?: LlmStopEventPromptTemplateVariablesSub0 | null;
+    /**
+     * Prompt Template Version
+     *
+     * The version of the prompt template being used.
+     */
+    prompt_template_version?: string | null;
+    /**
+     * Token Count Prompt
+     *
+     * The number of tokens in the prompt.
+     */
+    token_count_prompt?: number | null;
+    /**
+     * Token Count Completion
+     *
+     * The number of tokens in the completion.
+     */
+    token_count_completion?: number | null;
+    /**
+     * Token Count Total
+     *
+     * The total number of tokens, including both prompt and completion.
+     */
+    token_count_total?: number | null;
+    /**
+     * Tools
+     *
+     * List of tools that are advertised to the LLM to be able to call.
+     */
+    tools?: Array<LlmStopEventToolsSub0> | null;
+};
+
+/**
+ * UserMessageEventInput
+ */
+export type AihubApiServicesModelCreationServiceUserMessageEventInput1 = {
+    /**
+     * Messages
+     *
+     * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
+     */
+    messages?: Array<JamboParserObjectTypeParserChatMessage1>;
+    /**
+     * Files
+     *
+     * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
+     */
+    files?: Array<UserUploadedFile> | null;
+};
+
+/**
+ * ChatMessage
+ *
+ * Chat message.
+ */
+export type JamboParserObjectTypeParserChatMessage1 = {
+    role?: MessageRole;
+    /**
+     * Additional Kwargs
+     */
+    additional_kwargs?: ChatMessageAdditionalKwargs;
+    /**
+     * Blocks
+     */
+    blocks?: Array<({
+        block_type: 'text';
+    } & TextBlock) | ({
+        block_type: 'image';
+    } & ImageBlockInput) | ({
+        block_type: 'audio';
+    } & AudioBlockInput) | ({
+        block_type: 'video';
+    } & VideoBlockInput) | ({
+        block_type: 'document';
+    } & DocumentBlockInput) | ({
+        block_type: 'cache';
+    } & CachePoint) | ({
+        block_type: 'citable';
+    } & CitableBlockInput) | ({
+        block_type: 'citation';
+    } & CitationBlockInput) | ({
+        block_type: 'thinking';
+    } & ThinkingBlockInput) | ({
+        block_type: 'tool_call';
+    } & ToolCallBlockInput)>;
+};
+
+/**
+ * ChatMessage
+ *
+ * Chat message.
+ */
+export type JamboParserObjectTypeParserChatMessage2 = {
+    role?: MessageRole;
+    /**
+     * Additional Kwargs
+     */
+    additional_kwargs?: ChatMessageAdditionalKwargs;
+    /**
+     * Blocks
+     */
+    blocks?: Array<({
+        block_type: 'text';
+    } & TextBlock) | ({
+        block_type: 'image';
+    } & ImageBlockInput) | ({
+        block_type: 'audio';
+    } & AudioBlockInput) | ({
+        block_type: 'video';
+    } & VideoBlockInput) | ({
+        block_type: 'document';
+    } & DocumentBlockInput) | ({
+        block_type: 'cache';
+    } & CachePoint) | ({
+        block_type: 'citable';
+    } & CitableBlockInput) | ({
+        block_type: 'citation';
+    } & CitationBlockInput) | ({
+        block_type: 'thinking';
+    } & ThinkingBlockInput) | ({
+        block_type: 'tool_call';
+    } & ToolCallBlockInput)>;
+};
+
+/**
+ * Message
+ */
+export type JamboParserObjectTypeParserMessage = {
+    /**
+     * Role
+     *
+     * The role of the message, such as 'user', 'assistant', or 'system'.
+     */
+    role: string;
+    /**
+     * Name
+     *
+     * The name of the function or agent generating the message.
+     */
+    name?: string | null;
+    /**
+     * Tool Calls
+     *
+     * List of tool calls generated by the model, such as function calls.
+     */
+    tool_calls?: Array<MessageToolCallsSub0> | null;
+    /**
+     * Function Call Name
+     *
+     * The name of the function being called in the message.
+     */
+    function_call_name?: string | null;
+    /**
+     * Function Call Arguments Json
+     *
+     * JSON representing arguments passed to the function during a function call.
+     */
+    function_call_arguments_json?: MessageFunctionCallArgumentsJsonSub0 | null;
+    /**
+     * Tool Call Id
+     *
+     * The ID of the tool call, if applicable.
+     */
+    tool_call_id?: string | null;
+    /**
+     * Contents
+     *
+     * The message contents as an array of content blocks (text, image, audio).
+     */
+    contents?: Array<TextContent | ImageContent | AudioContent> | null;
 };
 
 /**
@@ -13473,6 +12455,26 @@ export type OpenaiTypesChatCompletionCreateParamsFunction = {
 };
 
 /**
+ * Usage
+ */
+export type OpenaiTypesImagesResponseUsage = {
+    /**
+     * Input Tokens
+     */
+    input_tokens: number;
+    input_tokens_details: UsageInputTokensDetails;
+    /**
+     * Output Tokens
+     */
+    output_tokens: number;
+    /**
+     * Total Tokens
+     */
+    total_tokens: number;
+    [key: string]: unknown | number | UsageInputTokensDetails;
+};
+
+/**
  * AddMemoryToChatHistoryEvent
  *
  * A control and display event emitted when an agent extends chat history with retrieved memories.
@@ -13514,8 +12516,8 @@ export type AddMemoryToChatHistoryEventWritable = {
      *
      * Chat history extended with user memories.
      */
-    extended_history: Array<ChatMessage>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessage> | undefined;
+    extended_history: Array<ChatMessageOutput>;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessageOutput> | undefined;
 };
 
 /**
@@ -13550,8 +12552,8 @@ export type AddOrganizationMemoryToChatHistoryEventWritable = {
      *
      * Chat history extended with user memories.
      */
-    extended_history: Array<ChatMessage>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessage> | undefined;
+    extended_history: Array<ChatMessageOutput>;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessageOutput> | undefined;
 };
 
 /**
@@ -13586,8 +12588,8 @@ export type AddUserMemoryToChatHistoryEventWritable = {
      *
      * Chat history extended with user memories.
      */
-    extended_history: Array<ChatMessage>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessage> | undefined;
+    extended_history: Array<ChatMessageOutput>;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessageOutput> | undefined;
 };
 
 /**
@@ -13670,6 +12672,14 @@ export type AgentClassDtoWritable = {
      * Indicates whether the agent class is online and reachable.
      */
     is_online?: boolean | null;
+    /**
+     * Templates
+     *
+     * Optional list of profile templates for quick profile creation.
+     */
+    templates?: Array<{
+        [key: string]: unknown;
+    }> | null;
 };
 
 /**
@@ -14587,6 +13597,13 @@ export type ChainEventWritable = {
 };
 
 /**
+ * ChatMessage.additional_kwargs
+ */
+export type ChatMessageAdditionalKwargsWritable = {
+    [key: string]: unknown;
+};
+
+/**
  * Checkbox
  *
  * https://formkit-primevue.netlify.app/inputs/Checkbox
@@ -14752,6 +13769,13 @@ export type ChunkEventWritable = {
      */
     model_name?: string;
     [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | undefined;
+};
+
+/**
+ * CitationBlock.additional_location_info
+ */
+export type CitationBlockAdditionalLocationInfoWritable = {
+    [key: string]: unknown;
 };
 
 /**
@@ -17169,6 +16193,27 @@ export type LlmStopEventWritable = {
 };
 
 /**
+ * LLMStopEvent.invocation_parameters.sub0
+ */
+export type LlmStopEventInvocationParametersSub0Writable = {
+    [key: string]: unknown;
+};
+
+/**
+ * LLMStopEvent.prompt_template_variables.sub0
+ */
+export type LlmStopEventPromptTemplateVariablesSub0Writable = {
+    [key: string]: unknown;
+};
+
+/**
+ * LLMStopEvent.tools.sub0
+ */
+export type LlmStopEventToolsSub0Writable = {
+    [key: string]: unknown;
+};
+
+/**
  * LimitChatHistoryEvent
  *
  * Limits the chat messages based on number of input tokens.
@@ -17197,8 +16242,8 @@ export type LimitChatHistoryEventWritable = {
      *
      * Limited chat history based on number of input tokens.
      */
-    limited_history: Array<ChatMessage>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessage> | undefined;
+    limited_history: Array<ChatMessageOutput>;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessageOutput> | undefined;
 };
 
 /**
@@ -17500,6 +16545,20 @@ export type MessageWritable = {
 };
 
 /**
+ * Message.function_call_arguments_json.sub0
+ */
+export type MessageFunctionCallArgumentsJsonSub0Writable = {
+    [key: string]: unknown;
+};
+
+/**
+ * Message.tool_calls.sub0
+ */
+export type MessageToolCallsSub0Writable = {
+    [key: string]: unknown;
+};
+
+/**
  * MinimalAgentInstanceDTO
  *
  * Encapsulates the data transfer object (DTO) for a minimal agent INSTANCE.
@@ -17531,22 +16590,6 @@ export type MinimalAgentInstanceDtoWritable = {
      * Whether the agent can participate in a chat-based conversation
      */
     is_conversational: boolean;
-};
-
-/**
- * ModelDTO
- */
-export type ModelDtoWritable = {
-    /**
-     * Model Name
-     *
-     * The name/identifier of the model
-     */
-    model_name: string;
-    /**
-     * Detailed information about the model
-     */
-    model_info: ModelInfoDto;
 };
 
 /**
@@ -17680,24 +16723,6 @@ export type ModelSelectWritable = {
     [key: string]: unknown | true | string | null | string | null | 'modelSelect' | string | null | LocaleString | string | LocaleString | string | null | string | number | number | boolean | Array<string> | {
         [key: string]: string;
     } | null | boolean | string | null | 'chat' | 'embedding' | 'rerank' | 'image_generation' | 'audio_transcription' | 'audio_speech' | LocaleString | string | null | undefined;
-};
-
-/**
- * ModelTypeGroupDTO
- */
-export type ModelTypeGroupDtoWritable = {
-    /**
-     * Name
-     *
-     * The name/type of the model group
-     */
-    name: string;
-    /**
-     * Models
-     *
-     * List of models in this group
-     */
-    models: Array<ModelDtoWritable>;
 };
 
 /**
@@ -18115,6 +17140,14 @@ export type ProcessClassDtoWritable = {
      * The default process configuration for this process class. This is the configuration that will be used if no specific configuration is provided.
      */
     default_process_config: ProcessConfigWritable;
+    /**
+     * Templates
+     *
+     * Optional list of profile templates for quick profile creation.
+     */
+    templates?: Array<{
+        [key: string]: unknown;
+    }> | null;
 };
 
 /**
@@ -19473,8 +18506,8 @@ export type StandaloneQuestionCondenserEventWritable = {
     /**
      * Single chat message containing the condensed user question.
      */
-    condensed_chat_message: ChatMessage;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | ChatMessage | undefined;
+    condensed_chat_message: ChatMessageOutput;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | ChatMessageOutput | undefined;
 };
 
 /**
@@ -19516,6 +18549,13 @@ export type StartEventWritable = {
      */
     display_description?: LocaleString | null;
     [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | undefined;
+};
+
+/**
+ * StartEventInput
+ */
+export type StartEventInputWritable = {
+    [key: string]: unknown;
 };
 
 /**
@@ -19784,6 +18824,15 @@ export type TextareaWritable = {
     [key: string]: unknown | true | string | null | string | null | 'primeTextarea' | string | null | LocaleString | string | LocaleString | string | null | string | number | number | boolean | Array<string> | {
         [key: string]: string;
     } | null | boolean | string | null | LocaleString | string | null | number | null | undefined;
+};
+
+/**
+ * ThinkingBlock.additional_information
+ *
+ * Additional information related to the thinking/reasoning process, if available
+ */
+export type ThinkingBlockAdditionalInformationWritable = {
+    [key: string]: unknown;
 };
 
 /**
@@ -20203,6 +19252,13 @@ export type ToggleSwitchWritable = {
 };
 
 /**
+ * ToolCallBlock.tool_kwargs.sub0
+ */
+export type ToolCallBlockToolKwargsSub0Writable = {
+    [key: string]: unknown;
+};
+
+/**
  * ToolEvent
  */
 export type ToolEventWritable = {
@@ -20319,14 +19375,14 @@ export type UserMessageEventWritable = {
      *
      * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
      */
-    messages?: Array<ChatMessage>;
+    messages?: Array<ChatMessageOutput>;
     /**
      * Files
      *
      * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
      */
     files?: Array<UserUploadedFile> | null;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | UserIdentity | Array<ChatMessage> | Array<UserUploadedFile> | null | undefined;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | UserIdentity | Array<ChatMessageOutput> | Array<UserUploadedFile> | null | undefined;
 };
 
 /**
@@ -20476,38 +19532,6 @@ export type GetHealthResponses = {
 
 export type GetHealthResponse = GetHealthResponses[keyof GetHealthResponses];
 
-export type GetReadyData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/health/ready';
-};
-
-export type GetReadyResponses = {
-    /**
-     * Successful Response
-     */
-    200: HealthResponse;
-};
-
-export type GetReadyResponse = GetReadyResponses[keyof GetReadyResponses];
-
-export type GetSuiteData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/suites/';
-};
-
-export type GetSuiteResponses = {
-    /**
-     * Successful Response
-     */
-    200: SuiteDto;
-};
-
-export type GetSuiteResponse = GetSuiteResponses[keyof GetSuiteResponses];
-
 export type GetMyUserData = {
     body?: never;
     path?: never;
@@ -20523,76 +19547,6 @@ export type GetMyUserResponses = {
 };
 
 export type GetMyUserResponse = GetMyUserResponses[keyof GetMyUserResponses];
-
-export type GetUserData = {
-    body?: never;
-    path: {
-        /**
-         * User Id
-         *
-         * The user's unique identifier (OID).
-         */
-        user_id: string;
-    };
-    query?: never;
-    url: '/users/{user_id}';
-};
-
-export type GetUserErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type GetUserError = GetUserErrors[keyof GetUserErrors];
-
-export type GetUserResponses = {
-    /**
-     * Successful Response
-     */
-    200: UserWithAccessDto;
-};
-
-export type GetUserResponse = GetUserResponses[keyof GetUserResponses];
-
-export type GetUsersData = {
-    body?: never;
-    path?: never;
-    query?: {
-        /**
-         * Page Number
-         *
-         * Page number to retrieve (starting from 1)
-         */
-        page?: number;
-        /**
-         * Page Size
-         *
-         * Number of items per page (maximum 100)
-         */
-        page_size?: number;
-    };
-    url: '/users/';
-};
-
-export type GetUsersErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type GetUsersError = GetUsersErrors[keyof GetUsersErrors];
-
-export type GetUsersResponses = {
-    /**
-     * Successful Response
-     */
-    200: PaginatedUsersResponse;
-};
-
-export type GetUsersResponse = GetUsersResponses[keyof GetUsersResponses];
 
 export type GetMyDashboardData = {
     body?: never;
@@ -20689,135 +19643,6 @@ export type GetAgentEventsInThreadResponses = {
 };
 
 export type GetAgentEventsInThreadResponse = GetAgentEventsInThreadResponses[keyof GetAgentEventsInThreadResponses];
-
-export type GetAgentEventTimeseriesData = {
-    body?: never;
-    path: {
-        /**
-         * Time Range
-         *
-         * Time range for the statistics (1h, 24h, 30d, 365d)
-         */
-        time_range: TimeRange;
-    };
-    query?: {
-        /**
-         * Thread Id
-         */
-        thread_id?: string;
-        /**
-         * Agent Class
-         */
-        agent_class?: string;
-        /**
-         * Agent ID
-         */
-        agent_id?: string;
-        /**
-         * Event Name
-         */
-        event_name?: string;
-    };
-    url: '/events/agents/timeseries/{time_range}';
-};
-
-export type GetAgentEventTimeseriesErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type GetAgentEventTimeseriesError = GetAgentEventTimeseriesErrors[keyof GetAgentEventTimeseriesErrors];
-
-export type GetAgentEventTimeseriesResponses = {
-    /**
-     * Successful Response
-     */
-    200: EventTimeseries;
-};
-
-export type GetAgentEventTimeseriesResponse = GetAgentEventTimeseriesResponses[keyof GetAgentEventTimeseriesResponses];
-
-export type GetLitellmModelsData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/models';
-};
-
-export type GetLitellmModelsResponses = {
-    /**
-     * Response Get Litellm Models Models Get
-     *
-     * Successful Response
-     */
-    200: Array<ModelTypeGroupDto>;
-};
-
-export type GetLitellmModelsResponse = GetLitellmModelsResponses[keyof GetLitellmModelsResponses];
-
-export type GetLitellmModelsByModeData = {
-    body?: never;
-    path: {
-        /**
-         * Mode
-         */
-        mode: string;
-    };
-    query?: never;
-    url: '/models/mode/{mode}';
-};
-
-export type GetLitellmModelsByModeErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type GetLitellmModelsByModeError = GetLitellmModelsByModeErrors[keyof GetLitellmModelsByModeErrors];
-
-export type GetLitellmModelsByModeResponses = {
-    /**
-     * Response Get Litellm Models By Mode Models Mode  Mode  Get
-     *
-     * Successful Response
-     */
-    200: Array<ModelDto>;
-};
-
-export type GetLitellmModelsByModeResponse = GetLitellmModelsByModeResponses[keyof GetLitellmModelsByModeResponses];
-
-export type GetLitellmModelData = {
-    body?: never;
-    path: {
-        /**
-         * Model Name
-         */
-        model_name: string;
-    };
-    query?: never;
-    url: '/models/{model_name}';
-};
-
-export type GetLitellmModelErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type GetLitellmModelError = GetLitellmModelErrors[keyof GetLitellmModelErrors];
-
-export type GetLitellmModelResponses = {
-    /**
-     * Successful Response
-     */
-    200: ModelDto;
-};
-
-export type GetLitellmModelResponse = GetLitellmModelResponses[keyof GetLitellmModelResponses];
 
 export type GetUserThreadsData = {
     body?: never;
@@ -21868,212 +20693,6 @@ export type SendProcessOpenFormResponses = {
 
 export type SendProcessOpenFormResponse = SendProcessOpenFormResponses[keyof SendProcessOpenFormResponses];
 
-export type ListTokensEndpointData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/tokens/';
-};
-
-export type ListTokensEndpointResponses = {
-    /**
-     * Response List Tokens Endpoint Tokens  Get
-     *
-     * Successful Response
-     */
-    200: Array<TokenResponse>;
-};
-
-export type ListTokensEndpointResponse = ListTokensEndpointResponses[keyof ListTokensEndpointResponses];
-
-export type CreateTokenEndpointData = {
-    body: CreateTokenRequest;
-    path?: never;
-    query?: never;
-    url: '/tokens/';
-};
-
-export type CreateTokenEndpointErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type CreateTokenEndpointError = CreateTokenEndpointErrors[keyof CreateTokenEndpointErrors];
-
-export type CreateTokenEndpointResponses = {
-    /**
-     * Successful Response
-     */
-    201: CreateTokenResponse;
-};
-
-export type CreateTokenEndpointResponse = CreateTokenEndpointResponses[keyof CreateTokenEndpointResponses];
-
-export type RevokeTokenEndpointData = {
-    body?: never;
-    path: {
-        /**
-         * Token Id
-         */
-        token_id: string;
-    };
-    query?: never;
-    url: '/tokens/{token_id}';
-};
-
-export type RevokeTokenEndpointErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type RevokeTokenEndpointError = RevokeTokenEndpointErrors[keyof RevokeTokenEndpointErrors];
-
-export type RevokeTokenEndpointResponses = {
-    /**
-     * Successful Response
-     */
-    200: RevokeTokenResponse;
-};
-
-export type RevokeTokenEndpointResponse = RevokeTokenEndpointResponses[keyof RevokeTokenEndpointResponses];
-
-export type DeleteRoleData = {
-    body?: never;
-    path: {
-        /**
-         * Role Id
-         */
-        role_id: string;
-    };
-    query?: never;
-    url: '/roles/{role_id}';
-};
-
-export type DeleteRoleErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type DeleteRoleError = DeleteRoleErrors[keyof DeleteRoleErrors];
-
-export type DeleteRoleResponses = {
-    /**
-     * Successful Response
-     */
-    200: DeleteRoleResponse;
-};
-
-export type DeleteRoleResponse2 = DeleteRoleResponses[keyof DeleteRoleResponses];
-
-export type GetRoleData = {
-    body?: never;
-    path: {
-        /**
-         * Role Id
-         */
-        role_id: string;
-    };
-    query?: never;
-    url: '/roles/{role_id}';
-};
-
-export type GetRoleErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type GetRoleError = GetRoleErrors[keyof GetRoleErrors];
-
-export type GetRoleResponses = {
-    /**
-     * Successful Response
-     */
-    200: RoleResponse;
-};
-
-export type GetRoleResponse = GetRoleResponses[keyof GetRoleResponses];
-
-export type UpdateRoleData = {
-    body: UpdateRoleRequest;
-    path: {
-        /**
-         * Role Id
-         */
-        role_id: string;
-    };
-    query?: never;
-    url: '/roles/{role_id}';
-};
-
-export type UpdateRoleErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type UpdateRoleError = UpdateRoleErrors[keyof UpdateRoleErrors];
-
-export type UpdateRoleResponses = {
-    /**
-     * Successful Response
-     */
-    200: RoleResponse;
-};
-
-export type UpdateRoleResponse = UpdateRoleResponses[keyof UpdateRoleResponses];
-
-export type GetRolesData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/roles/';
-};
-
-export type GetRolesResponses = {
-    /**
-     * Response Get Roles Roles  Get
-     *
-     * Successful Response
-     */
-    200: Array<RoleResponse>;
-};
-
-export type GetRolesResponse = GetRolesResponses[keyof GetRolesResponses];
-
-export type CreateRoleData = {
-    body: CreateRoleRequest;
-    path?: never;
-    query?: never;
-    url: '/roles/';
-};
-
-export type CreateRoleErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type CreateRoleError = CreateRoleErrors[keyof CreateRoleErrors];
-
-export type CreateRoleResponses = {
-    /**
-     * Successful Response
-     */
-    201: RoleResponse;
-};
-
-export type CreateRoleResponse = CreateRoleResponses[keyof CreateRoleResponses];
-
 export type GetModelsData = {
     body?: never;
     path?: never;
@@ -22090,7 +20709,7 @@ export type GetModelsResponses = {
 
 export type GetModelsResponse = GetModelsResponses[keyof GetModelsResponses];
 
-export type GetModelWithAssistantsData = {
+export type GetModelData = {
     body?: never;
     path: {
         /**
@@ -22102,23 +20721,23 @@ export type GetModelWithAssistantsData = {
     url: '/openai/models/{full_path}';
 };
 
-export type GetModelWithAssistantsErrors = {
+export type GetModelErrors = {
     /**
      * Validation Error
      */
     422: HttpValidationError;
 };
 
-export type GetModelWithAssistantsError = GetModelWithAssistantsErrors[keyof GetModelWithAssistantsErrors];
+export type GetModelError = GetModelErrors[keyof GetModelErrors];
 
-export type GetModelWithAssistantsResponses = {
+export type GetModelResponses = {
     /**
      * Successful Response
      */
     200: ModelDetails;
 };
 
-export type GetModelWithAssistantsResponse = GetModelWithAssistantsResponses[keyof GetModelWithAssistantsResponses];
+export type GetModelResponse = GetModelResponses[keyof GetModelResponses];
 
 export type GetEmbeddingsData = {
     body: EmbeddingsRequest;
@@ -22145,30 +20764,30 @@ export type GetEmbeddingsResponses = {
 
 export type GetEmbeddingsResponse = GetEmbeddingsResponses[keyof GetEmbeddingsResponses];
 
-export type ChatCompletionWithAssistantsData = {
+export type ChatCompletionData = {
     body: ChatCompletionRequest;
     path?: never;
     query?: never;
     url: '/openai/chat/completions';
 };
 
-export type ChatCompletionWithAssistantsErrors = {
+export type ChatCompletionErrors = {
     /**
      * Validation Error
      */
     422: HttpValidationError;
 };
 
-export type ChatCompletionWithAssistantsError = ChatCompletionWithAssistantsErrors[keyof ChatCompletionWithAssistantsErrors];
+export type ChatCompletionError = ChatCompletionErrors[keyof ChatCompletionErrors];
 
-export type ChatCompletionWithAssistantsResponses = {
+export type ChatCompletionResponses = {
     /**
      * Successful Response
      */
     200: ChatCompletion;
 };
 
-export type ChatCompletionWithAssistantsResponse = ChatCompletionWithAssistantsResponses[keyof ChatCompletionWithAssistantsResponses];
+export type ChatCompletionResponse = ChatCompletionResponses[keyof ChatCompletionResponses];
 
 export type GenerateImageData = {
     body: ImageGenerationRequest;
@@ -22245,1083 +20864,6 @@ export type CreateSpeechResponses = {
     200: unknown;
 };
 
-export type GetDatasetsData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/datasets/';
-};
-
-export type GetDatasetsResponses = {
-    /**
-     * Response Get Datasets Datasets  Get
-     *
-     * Successful Response
-     */
-    200: Array<MinimalDataset>;
-};
-
-export type GetDatasetsResponse = GetDatasetsResponses[keyof GetDatasetsResponses];
-
-export type CreateDatasetData = {
-    body: DatasetCreate;
-    path?: never;
-    query?: never;
-    url: '/datasets/';
-};
-
-export type CreateDatasetErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type CreateDatasetError = CreateDatasetErrors[keyof CreateDatasetErrors];
-
-export type CreateDatasetResponses = {
-    /**
-     * Successful Response
-     */
-    200: Dataset;
-};
-
-export type CreateDatasetResponse = CreateDatasetResponses[keyof CreateDatasetResponses];
-
-export type GetDatasetData = {
-    body?: never;
-    path: {
-        /**
-         * Dataset Id
-         *
-         * The unique identifier of the dataset to retrieve.
-         */
-        dataset_id: string;
-    };
-    query?: never;
-    url: '/datasets/{dataset_id}';
-};
-
-export type GetDatasetErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type GetDatasetError = GetDatasetErrors[keyof GetDatasetErrors];
-
-export type GetDatasetResponses = {
-    /**
-     * Successful Response
-     */
-    200: Dataset;
-};
-
-export type GetDatasetResponse = GetDatasetResponses[keyof GetDatasetResponses];
-
-export type UpdateDatasetData = {
-    body: DatasetUpdate;
-    path: {
-        /**
-         * Dataset Id
-         *
-         * The unique identifier of the dataset to update.
-         */
-        dataset_id: string;
-    };
-    query?: never;
-    url: '/datasets/{dataset_id}';
-};
-
-export type UpdateDatasetErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type UpdateDatasetError = UpdateDatasetErrors[keyof UpdateDatasetErrors];
-
-export type UpdateDatasetResponses = {
-    /**
-     * Successful Response
-     */
-    200: Dataset;
-};
-
-export type UpdateDatasetResponse = UpdateDatasetResponses[keyof UpdateDatasetResponses];
-
-export type CreateNamespaceData = {
-    body: CreateNamespaceRequest;
-    path: {
-        /**
-         * Database name
-         */
-        database: string;
-        /**
-         * Namespace
-         */
-        namespace: string;
-    };
-    query?: never;
-    url: '/knowledge/databases/{database}/namespaces/{namespace}';
-};
-
-export type CreateNamespaceErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type CreateNamespaceError = CreateNamespaceErrors[keyof CreateNamespaceErrors];
-
-export type CreateNamespaceResponses = {
-    /**
-     * Successful Response
-     */
-    200: NamespaceResponse;
-};
-
-export type CreateNamespaceResponse = CreateNamespaceResponses[keyof CreateNamespaceResponses];
-
-export type UpdateNamespaceData = {
-    body: UpdateNamespaceRequest;
-    path: {
-        /**
-         * Database name
-         */
-        database: string;
-        /**
-         * Namespace
-         */
-        namespace: string;
-    };
-    query?: never;
-    url: '/knowledge/databases/{database}/namespaces/{namespace}';
-};
-
-export type UpdateNamespaceErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type UpdateNamespaceError = UpdateNamespaceErrors[keyof UpdateNamespaceErrors];
-
-export type UpdateNamespaceResponses = {
-    /**
-     * Successful Response
-     */
-    200: NamespaceResponse;
-};
-
-export type UpdateNamespaceResponse = UpdateNamespaceResponses[keyof UpdateNamespaceResponses];
-
-export type GetDatabasesData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/knowledge/databases';
-};
-
-export type GetDatabasesResponses = {
-    /**
-     * Response Get Databases Knowledge Databases Get
-     *
-     * Successful Response
-     */
-    200: Array<DatabaseDto>;
-};
-
-export type GetDatabasesResponse = GetDatabasesResponses[keyof GetDatabasesResponses];
-
-export type GetDocumentsForNamespaceData = {
-    body?: never;
-    path: {
-        /**
-         * Database name
-         */
-        database: string;
-        /**
-         * Namespace
-         */
-        namespace: string;
-    };
-    query?: {
-        /**
-         * Page Number
-         *
-         * Page number to retrieve (starting from 1)
-         */
-        page?: number;
-        /**
-         * Page Size
-         *
-         * Number of items per page (maximum 100)
-         */
-        page_size?: number;
-        /**
-         * Search
-         *
-         * Search by document title or filename
-         */
-        search?: string | null;
-        /**
-         * Sort Field
-         *
-         * Field to sort by: document_title, created_at, updated_at
-         */
-        sort_field?: string | null;
-        /**
-         * Sort Order
-         *
-         * Sort order: 1 for ascending, -1 for descending
-         */
-        sort_order?: number;
-    };
-    url: '/knowledge/databases/{database}/namespaces/{namespace}/documents';
-};
-
-export type GetDocumentsForNamespaceErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type GetDocumentsForNamespaceError = GetDocumentsForNamespaceErrors[keyof GetDocumentsForNamespaceErrors];
-
-export type GetDocumentsForNamespaceResponses = {
-    /**
-     * Successful Response
-     */
-    200: PaginatedDocumentsResponse;
-};
-
-export type GetDocumentsForNamespaceResponse = GetDocumentsForNamespaceResponses[keyof GetDocumentsForNamespaceResponses];
-
-export type GetDocumentByIdData = {
-    body?: never;
-    path: {
-        /**
-         * Database name
-         */
-        database: string;
-        /**
-         * Namespace
-         */
-        namespace: string;
-        /**
-         * Document ID
-         */
-        document_id: string;
-    };
-    query?: never;
-    url: '/knowledge/databases/{database}/namespaces/{namespace}/documents/{document_id}';
-};
-
-export type GetDocumentByIdErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type GetDocumentByIdError = GetDocumentByIdErrors[keyof GetDocumentByIdErrors];
-
-export type GetDocumentByIdResponses = {
-    /**
-     * Successful Response
-     */
-    200: DocumentDto;
-};
-
-export type GetDocumentByIdResponse = GetDocumentByIdResponses[keyof GetDocumentByIdResponses];
-
-export type GetNodesForDocumentData = {
-    body?: never;
-    path: {
-        /**
-         * Database name
-         */
-        database: string;
-        /**
-         * Namespace
-         */
-        namespace: string;
-        /**
-         * Document ID
-         */
-        document_id: string;
-    };
-    query?: never;
-    url: '/knowledge/databases/{database}/namespaces/{namespace}/documents/{document_id}/nodes';
-};
-
-export type GetNodesForDocumentErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type GetNodesForDocumentError = GetNodesForDocumentErrors[keyof GetNodesForDocumentErrors];
-
-export type GetNodesForDocumentResponses = {
-    /**
-     * Response Get Nodes For Document Knowledge Databases  Database  Namespaces  Namespace  Documents  Document Id  Nodes Get
-     *
-     * Successful Response
-     */
-    200: Array<IngestedNode>;
-};
-
-export type GetNodesForDocumentResponse = GetNodesForDocumentResponses[keyof GetNodesForDocumentResponses];
-
-export type GetSummaryNodesForDocumentData = {
-    body?: never;
-    path: {
-        /**
-         * Database name
-         */
-        database: string;
-        /**
-         * Namespace
-         */
-        namespace: string;
-        /**
-         * Document ID
-         */
-        document_id: string;
-    };
-    query?: never;
-    url: '/knowledge/databases/{database}/namespaces/{namespace}/documents/{document_id}/summaries';
-};
-
-export type GetSummaryNodesForDocumentErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type GetSummaryNodesForDocumentError = GetSummaryNodesForDocumentErrors[keyof GetSummaryNodesForDocumentErrors];
-
-export type GetSummaryNodesForDocumentResponses = {
-    /**
-     * Response Get Summary Nodes For Document Knowledge Databases  Database  Namespaces  Namespace  Documents  Document Id  Summaries Get
-     *
-     * Successful Response
-     */
-    200: Array<NodeSummaryDto>;
-};
-
-export type GetSummaryNodesForDocumentResponse = GetSummaryNodesForDocumentResponses[keyof GetSummaryNodesForDocumentResponses];
-
-export type InitiateDocumentUploadData = {
-    body: DocumentUploadRequest;
-    path: {
-        /**
-         * Database name
-         */
-        database: string;
-        /**
-         * Namespace
-         */
-        namespace: string;
-    };
-    query?: never;
-    url: '/knowledge/databases/{database}/namespaces/{namespace}/documents/upload/initiate';
-};
-
-export type InitiateDocumentUploadErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type InitiateDocumentUploadError = InitiateDocumentUploadErrors[keyof InitiateDocumentUploadErrors];
-
-export type InitiateDocumentUploadResponses = {
-    /**
-     * Successful Response
-     */
-    200: DocumentUploadResponse;
-};
-
-export type InitiateDocumentUploadResponse = InitiateDocumentUploadResponses[keyof InitiateDocumentUploadResponses];
-
-export type ValidateDocumentUploadData = {
-    body: DocumentUploadValidationRequest;
-    path: {
-        /**
-         * Database name
-         */
-        database: string;
-        /**
-         * Namespace
-         */
-        namespace: string;
-    };
-    query?: never;
-    url: '/knowledge/databases/{database}/namespaces/{namespace}/documents/upload/validate';
-};
-
-export type ValidateDocumentUploadErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type ValidateDocumentUploadError = ValidateDocumentUploadErrors[keyof ValidateDocumentUploadErrors];
-
-export type ValidateDocumentUploadResponses = {
-    /**
-     * Successful Response
-     */
-    200: DocumentUploadValidationResponse;
-};
-
-export type ValidateDocumentUploadResponse = ValidateDocumentUploadResponses[keyof ValidateDocumentUploadResponses];
-
-export type GetSupportedFileTypesData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/knowledge/supported-types';
-};
-
-export type GetSupportedFileTypesResponses = {
-    /**
-     * Response Get Supported File Types Knowledge Supported Types Get
-     *
-     * Successful Response
-     */
-    200: Array<string>;
-};
-
-export type GetSupportedFileTypesResponse = GetSupportedFileTypesResponses[keyof GetSupportedFileTypesResponses];
-
-export type GetFileUrlData = {
-    body?: never;
-    path: {
-        /**
-         * Container
-         */
-        container: string;
-        /**
-         * File Path
-         */
-        file_path: string;
-    };
-    query?: never;
-    url: '/files/logged-in/url/{container}/{file_path}';
-};
-
-export type GetFileUrlErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type GetFileUrlError = GetFileUrlErrors[keyof GetFileUrlErrors];
-
-export type GetFileUrlResponses = {
-    /**
-     * Successful Response
-     */
-    200: SignedUrlDto;
-};
-
-export type GetFileUrlResponse = GetFileUrlResponses[keyof GetFileUrlResponses];
-
-export type GetFileRedirectData = {
-    body?: never;
-    path: {
-        /**
-         * Container
-         */
-        container: string;
-        /**
-         * File Path
-         */
-        file_path: string;
-    };
-    query?: never;
-    url: '/files/logged-in/redirect/{container}/{file_path}';
-};
-
-export type GetFileRedirectErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type GetFileRedirectError = GetFileRedirectErrors[keyof GetFileRedirectErrors];
-
-export type GetFileRedirectResponses = {
-    /**
-     * Successful Response
-     */
-    200: unknown;
-};
-
-export type GetAnonymousFileUrlData = {
-    body?: never;
-    path: {
-        /**
-         * Container
-         */
-        container: string;
-        /**
-         * File Path
-         */
-        file_path: string;
-    };
-    query: {
-        /**
-         * Expires
-         *
-         * The UNIX timestamp when the link expires.
-         */
-        expires: number;
-        /**
-         * Signature
-         *
-         * The signature to validate the request.
-         */
-        signature: string;
-    };
-    url: '/files/anonymous/url/{container}/{file_path}';
-};
-
-export type GetAnonymousFileUrlErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type GetAnonymousFileUrlError = GetAnonymousFileUrlErrors[keyof GetAnonymousFileUrlErrors];
-
-export type GetAnonymousFileUrlResponses = {
-    /**
-     * Successful Response
-     */
-    200: unknown;
-};
-
-export type GetAnonymousFileRedirectData = {
-    body?: never;
-    path: {
-        /**
-         * Container
-         */
-        container: string;
-        /**
-         * File Path
-         */
-        file_path: string;
-    };
-    query: {
-        /**
-         * Expires
-         *
-         * The UNIX timestamp when the link expires.
-         */
-        expires: number;
-        /**
-         * Signature
-         *
-         * The signature to validate the request.
-         */
-        signature: string;
-    };
-    url: '/files/anonymous/redirect/{container}/{file_path}';
-};
-
-export type GetAnonymousFileRedirectErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type GetAnonymousFileRedirectError = GetAnonymousFileRedirectErrors[keyof GetAnonymousFileRedirectErrors];
-
-export type GetAnonymousFileRedirectResponses = {
-    /**
-     * Successful Response
-     */
-    200: unknown;
-};
-
-export type GetNotificationsData = {
-    body?: never;
-    path?: never;
-    query?: {
-        /**
-         * Page
-         */
-        page?: number;
-        /**
-         * Page Size
-         */
-        page_size?: number;
-        /**
-         * Types
-         */
-        types?: Array<string> | null;
-        /**
-         * Severities
-         */
-        severities?: Array<string> | null;
-        /**
-         * Read
-         */
-        read?: boolean | null;
-        /**
-         * Done
-         */
-        done?: boolean | null;
-    };
-    url: '/notifications';
-};
-
-export type GetNotificationsErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type GetNotificationsError = GetNotificationsErrors[keyof GetNotificationsErrors];
-
-export type GetNotificationsResponses = {
-    /**
-     * Successful Response
-     */
-    200: PaginatedNotificationsResponse;
-};
-
-export type GetNotificationsResponse = GetNotificationsResponses[keyof GetNotificationsResponses];
-
-export type UpdateNotificationsBulkData = {
-    body: BulkUpdateNotificationRequest;
-    path?: never;
-    query?: never;
-    url: '/notifications/';
-};
-
-export type UpdateNotificationsBulkErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type UpdateNotificationsBulkError = UpdateNotificationsBulkErrors[keyof UpdateNotificationsBulkErrors];
-
-export type UpdateNotificationsBulkResponses = {
-    /**
-     * Response Update Notifications Bulk Notifications  Patch
-     *
-     * Successful Response
-     */
-    200: Array<NotificationDto>;
-};
-
-export type UpdateNotificationsBulkResponse = UpdateNotificationsBulkResponses[keyof UpdateNotificationsBulkResponses];
-
-export type UpdateNotificationData = {
-    body: UpdateNotificationRequest;
-    path: {
-        /**
-         * Notification Id
-         */
-        notification_id: string;
-    };
-    query?: never;
-    url: '/notifications/{notification_id}';
-};
-
-export type UpdateNotificationErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type UpdateNotificationError = UpdateNotificationErrors[keyof UpdateNotificationErrors];
-
-export type UpdateNotificationResponses = {
-    /**
-     * Successful Response
-     */
-    200: NotificationDto;
-};
-
-export type UpdateNotificationResponse = UpdateNotificationResponses[keyof UpdateNotificationResponses];
-
-export type DeleteAllUserMemoriesData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/user-memories';
-};
-
-export type DeleteAllUserMemoriesResponses = {
-    /**
-     * Successful Response
-     */
-    200: DeleteAllMemoriesResponse;
-};
-
-export type DeleteAllUserMemoriesResponse = DeleteAllUserMemoriesResponses[keyof DeleteAllUserMemoriesResponses];
-
-export type GetUserMemoriesData = {
-    body?: never;
-    path?: never;
-    query?: {
-        /**
-         * Limit
-         *
-         * Maximum number of memories to return
-         */
-        limit?: number;
-    };
-    url: '/user-memories';
-};
-
-export type GetUserMemoriesErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type GetUserMemoriesError = GetUserMemoriesErrors[keyof GetUserMemoriesErrors];
-
-export type GetUserMemoriesResponses = {
-    /**
-     * Successful Response
-     */
-    200: MemoriesResponse;
-};
-
-export type GetUserMemoriesResponse = GetUserMemoriesResponses[keyof GetUserMemoriesResponses];
-
-export type SearchUserMemoriesData = {
-    body?: never;
-    path?: never;
-    query: {
-        /**
-         * Query
-         *
-         * Search query for semantic search
-         */
-        query: string;
-        /**
-         * Limit
-         *
-         * Maximum number of results to return
-         */
-        limit?: number;
-        /**
-         * Agent Class
-         *
-         * Filter by agent class
-         */
-        agent_class?: string | null;
-        /**
-         * Agent Id
-         *
-         * Filter by agent ID
-         */
-        agent_id?: string | null;
-        /**
-         * Thread Id
-         *
-         * Filter by thread ID
-         */
-        thread_id?: string | null;
-    };
-    url: '/user-memories/search';
-};
-
-export type SearchUserMemoriesErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type SearchUserMemoriesError = SearchUserMemoriesErrors[keyof SearchUserMemoriesErrors];
-
-export type SearchUserMemoriesResponses = {
-    /**
-     * Successful Response
-     */
-    200: MemorySearchResponse;
-};
-
-export type SearchUserMemoriesResponse = SearchUserMemoriesResponses[keyof SearchUserMemoriesResponses];
-
-export type DeleteUserMemoryData = {
-    body?: never;
-    path: {
-        /**
-         * Memory Id
-         *
-         * Memory ID to delete
-         */
-        memory_id: string;
-    };
-    query?: never;
-    url: '/user-memories/{memory_id}';
-};
-
-export type DeleteUserMemoryErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type DeleteUserMemoryError = DeleteUserMemoryErrors[keyof DeleteUserMemoryErrors];
-
-export type DeleteUserMemoryResponses = {
-    /**
-     * Successful Response
-     */
-    200: DeleteMemoryResponse;
-};
-
-export type DeleteUserMemoryResponse = DeleteUserMemoryResponses[keyof DeleteUserMemoryResponses];
-
-export type UpdateUserMemoryData = {
-    body: UpdateMemoryRequest;
-    path: {
-        /**
-         * Memory Id
-         *
-         * Memory ID to update
-         */
-        memory_id: string;
-    };
-    query?: never;
-    url: '/user-memories/{memory_id}';
-};
-
-export type UpdateUserMemoryErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type UpdateUserMemoryError = UpdateUserMemoryErrors[keyof UpdateUserMemoryErrors];
-
-export type UpdateUserMemoryResponses = {
-    /**
-     * Successful Response
-     */
-    200: UpdateMemoryResponse;
-};
-
-export type UpdateUserMemoryResponse = UpdateUserMemoryResponses[keyof UpdateUserMemoryResponses];
-
-export type DeleteAllOrganizationMemoriesData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/organization-memories';
-};
-
-export type DeleteAllOrganizationMemoriesResponses = {
-    /**
-     * Successful Response
-     */
-    200: DeleteAllMemoriesResponse;
-};
-
-export type DeleteAllOrganizationMemoriesResponse = DeleteAllOrganizationMemoriesResponses[keyof DeleteAllOrganizationMemoriesResponses];
-
-export type GetOrganizationMemoriesData = {
-    body?: never;
-    path?: never;
-    query?: {
-        /**
-         * Limit
-         *
-         * Maximum number of memories to return
-         */
-        limit?: number;
-    };
-    url: '/organization-memories';
-};
-
-export type GetOrganizationMemoriesErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type GetOrganizationMemoriesError = GetOrganizationMemoriesErrors[keyof GetOrganizationMemoriesErrors];
-
-export type GetOrganizationMemoriesResponses = {
-    /**
-     * Successful Response
-     */
-    200: MemoriesResponse;
-};
-
-export type GetOrganizationMemoriesResponse = GetOrganizationMemoriesResponses[keyof GetOrganizationMemoriesResponses];
-
-export type SearchOrganizationMemoriesData = {
-    body?: never;
-    path?: never;
-    query: {
-        /**
-         * Query
-         *
-         * Search query for semantic search
-         */
-        query: string;
-        /**
-         * Limit
-         *
-         * Maximum number of results to return
-         */
-        limit?: number;
-        /**
-         * Agent Class
-         *
-         * Filter by agent class
-         */
-        agent_class?: string | null;
-        /**
-         * Agent Id
-         *
-         * Filter by agent ID
-         */
-        agent_id?: string | null;
-        /**
-         * Thread Id
-         *
-         * Filter by thread ID
-         */
-        thread_id?: string | null;
-    };
-    url: '/organization-memories/search';
-};
-
-export type SearchOrganizationMemoriesErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type SearchOrganizationMemoriesError = SearchOrganizationMemoriesErrors[keyof SearchOrganizationMemoriesErrors];
-
-export type SearchOrganizationMemoriesResponses = {
-    /**
-     * Successful Response
-     */
-    200: MemorySearchResponse;
-};
-
-export type SearchOrganizationMemoriesResponse = SearchOrganizationMemoriesResponses[keyof SearchOrganizationMemoriesResponses];
-
-export type DeleteOrganizationMemoryData = {
-    body?: never;
-    path: {
-        /**
-         * Memory Id
-         *
-         * Memory ID to delete
-         */
-        memory_id: string;
-    };
-    query?: never;
-    url: '/organization-memories/{memory_id}';
-};
-
-export type DeleteOrganizationMemoryErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type DeleteOrganizationMemoryError = DeleteOrganizationMemoryErrors[keyof DeleteOrganizationMemoryErrors];
-
-export type DeleteOrganizationMemoryResponses = {
-    /**
-     * Successful Response
-     */
-    200: DeleteMemoryResponse;
-};
-
-export type DeleteOrganizationMemoryResponse = DeleteOrganizationMemoryResponses[keyof DeleteOrganizationMemoryResponses];
-
-export type UpdateOrganizationMemoryData = {
-    body: UpdateMemoryRequest;
-    path: {
-        /**
-         * Memory Id
-         *
-         * Memory ID to update
-         */
-        memory_id: string;
-    };
-    query?: never;
-    url: '/organization-memories/{memory_id}';
-};
-
-export type UpdateOrganizationMemoryErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type UpdateOrganizationMemoryError = UpdateOrganizationMemoryErrors[keyof UpdateOrganizationMemoryErrors];
-
-export type UpdateOrganizationMemoryResponses = {
-    /**
-     * Successful Response
-     */
-    200: UpdateMemoryResponse;
-};
-
-export type UpdateOrganizationMemoryResponse = UpdateOrganizationMemoryResponses[keyof UpdateOrganizationMemoryResponses];
-
-export type ProcessDocumentData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/docling/process';
-};
-
-export type ProcessDocumentResponses = {
-    /**
-     * Successful Response
-     */
-    200: DocumentConversionResponse;
-};
-
-export type ProcessDocumentResponse = ProcessDocumentResponses[keyof ProcessDocumentResponses];
-
 export type TranslateTextData = {
     body: TranslationRequest;
     path?: never;
@@ -23346,3 +20888,167 @@ export type TranslateTextResponses = {
 };
 
 export type TranslateTextResponse = TranslateTextResponses[keyof TranslateTextResponses];
+
+export type SendStartEventToMyAgentClassAgentsClassesMyAgentClassInstancesAgentIdStartEventPostData = {
+    body: StartEventInputWritable;
+    path: {
+        /**
+         * Agent ID
+         *
+         * The specific agent instance ID
+         */
+        agent_id: string;
+    };
+    query?: {
+        /**
+         * Thread Id
+         */
+        thread_id?: string;
+        /**
+         * Display Id
+         */
+        display_id?: string;
+    };
+    url: '/agents/classes/my_agent_class/instances/{agent_id}/StartEvent';
+};
+
+export type SendStartEventToMyAgentClassAgentsClassesMyAgentClassInstancesAgentIdStartEventPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SendStartEventToMyAgentClassAgentsClassesMyAgentClassInstancesAgentIdStartEventPostError = SendStartEventToMyAgentClassAgentsClassesMyAgentClassInstancesAgentIdStartEventPostErrors[keyof SendStartEventToMyAgentClassAgentsClassesMyAgentClassInstancesAgentIdStartEventPostErrors];
+
+export type SendStartEventToMyAgentClassAgentsClassesMyAgentClassInstancesAgentIdStartEventPostResponses = {
+    /**
+     * Response Send Start Event To My Agent Class Agents Classes My Agent Class Instances  Agent Id  Startevent Post
+     *
+     * Successful Response
+     */
+    200: StopEventOutput | AihubApiServicesModelCreationServiceLlmStopEventOutput2;
+};
+
+export type SendStartEventToMyAgentClassAgentsClassesMyAgentClassInstancesAgentIdStartEventPostResponse = SendStartEventToMyAgentClassAgentsClassesMyAgentClassInstancesAgentIdStartEventPostResponses[keyof SendStartEventToMyAgentClassAgentsClassesMyAgentClassInstancesAgentIdStartEventPostResponses];
+
+export type StreamStartEventToMyAgentClassAgentsClassesMyAgentClassInstancesAgentIdStartEventStreamPostData = {
+    body: StartEventInputWritable;
+    path: {
+        /**
+         * Agent ID
+         *
+         * The specific agent instance ID
+         */
+        agent_id: string;
+    };
+    query?: {
+        /**
+         * Thread Id
+         */
+        thread_id?: string;
+        /**
+         * Display Id
+         */
+        display_id?: string;
+    };
+    url: '/agents/classes/my_agent_class/instances/{agent_id}/StartEvent/stream';
+};
+
+export type StreamStartEventToMyAgentClassAgentsClassesMyAgentClassInstancesAgentIdStartEventStreamPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type StreamStartEventToMyAgentClassAgentsClassesMyAgentClassInstancesAgentIdStartEventStreamPostError = StreamStartEventToMyAgentClassAgentsClassesMyAgentClassInstancesAgentIdStartEventStreamPostErrors[keyof StreamStartEventToMyAgentClassAgentsClassesMyAgentClassInstancesAgentIdStartEventStreamPostErrors];
+
+export type StreamStartEventToMyAgentClassAgentsClassesMyAgentClassInstancesAgentIdStartEventStreamPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type SendUserMessageEventToMyAgentClassAgentsClassesMyAgentClassInstancesAgentIdUserMessageEventPostData = {
+    body: UserMessageEventInput;
+    path: {
+        /**
+         * Agent ID
+         *
+         * The specific agent instance ID
+         */
+        agent_id: string;
+    };
+    query?: {
+        /**
+         * Thread Id
+         */
+        thread_id?: string;
+        /**
+         * Display Id
+         */
+        display_id?: string;
+    };
+    url: '/agents/classes/my_agent_class/instances/{agent_id}/UserMessageEvent';
+};
+
+export type SendUserMessageEventToMyAgentClassAgentsClassesMyAgentClassInstancesAgentIdUserMessageEventPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SendUserMessageEventToMyAgentClassAgentsClassesMyAgentClassInstancesAgentIdUserMessageEventPostError = SendUserMessageEventToMyAgentClassAgentsClassesMyAgentClassInstancesAgentIdUserMessageEventPostErrors[keyof SendUserMessageEventToMyAgentClassAgentsClassesMyAgentClassInstancesAgentIdUserMessageEventPostErrors];
+
+export type SendUserMessageEventToMyAgentClassAgentsClassesMyAgentClassInstancesAgentIdUserMessageEventPostResponses = {
+    /**
+     * Response Send User Message Event To My Agent Class Agents Classes My Agent Class Instances  Agent Id  Usermessageevent Post
+     *
+     * Successful Response
+     */
+    200: StopEventOutput | AihubApiServicesModelCreationServiceLlmStopEventOutput2;
+};
+
+export type SendUserMessageEventToMyAgentClassAgentsClassesMyAgentClassInstancesAgentIdUserMessageEventPostResponse = SendUserMessageEventToMyAgentClassAgentsClassesMyAgentClassInstancesAgentIdUserMessageEventPostResponses[keyof SendUserMessageEventToMyAgentClassAgentsClassesMyAgentClassInstancesAgentIdUserMessageEventPostResponses];
+
+export type StreamUserMessageEventToMyAgentClassAgentsClassesMyAgentClassInstancesAgentIdUserMessageEventStreamPostData = {
+    body: UserMessageEventInput;
+    path: {
+        /**
+         * Agent ID
+         *
+         * The specific agent instance ID
+         */
+        agent_id: string;
+    };
+    query?: {
+        /**
+         * Thread Id
+         */
+        thread_id?: string;
+        /**
+         * Display Id
+         */
+        display_id?: string;
+    };
+    url: '/agents/classes/my_agent_class/instances/{agent_id}/UserMessageEvent/stream';
+};
+
+export type StreamUserMessageEventToMyAgentClassAgentsClassesMyAgentClassInstancesAgentIdUserMessageEventStreamPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type StreamUserMessageEventToMyAgentClassAgentsClassesMyAgentClassInstancesAgentIdUserMessageEventStreamPostError = StreamUserMessageEventToMyAgentClassAgentsClassesMyAgentClassInstancesAgentIdUserMessageEventStreamPostErrors[keyof StreamUserMessageEventToMyAgentClassAgentsClassesMyAgentClassInstancesAgentIdUserMessageEventStreamPostErrors];
+
+export type StreamUserMessageEventToMyAgentClassAgentsClassesMyAgentClassInstancesAgentIdUserMessageEventStreamPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};

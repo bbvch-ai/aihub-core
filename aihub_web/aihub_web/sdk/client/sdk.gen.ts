@@ -2,8 +2,8 @@
 
 import { type Client, type Composable, formDataBodySerializer, type Options as Options2, type TDataShape } from './client';
 import { client } from './client.gen';
-import { createDatasetResponseTransformer, createTokenEndpointResponseTransformer, getAgentEventTimeseriesResponseTransformer, getDatasetResponseTransformer, getDatasetsResponseTransformer, getMyUserResponseTransformer, getNotificationsResponseTransformer, getUserResponseTransformer, getUsersResponseTransformer, listTokensEndpointResponseTransformer, updateDatasetResponseTransformer, updateNotificationResponseTransformer, updateNotificationsBulkResponseTransformer } from './transformers.gen';
-import type { AddAgentToThreadData, AddAgentToThreadError, AddAgentToThreadResponse, AddUserToThreadData, AddUserToThreadError, AddUserToThreadResponse, ChatCompletionWithAssistantsData, ChatCompletionWithAssistantsError, ChatCompletionWithAssistantsResponse, CreateAgentInstanceData, CreateAgentInstanceError, CreateAgentInstanceResponse, CreateDatasetData, CreateDatasetError, CreateDatasetResponse, CreateNamespaceData, CreateNamespaceError, CreateNamespaceResponse, CreateProcessInstanceData, CreateProcessInstanceError, CreateProcessInstanceResponse, CreateRoleData, CreateRoleError, CreateRoleResponse, CreateSpeechData, CreateSpeechError, CreateThreadData, CreateThreadError, CreateThreadResponse, CreateTokenEndpointData, CreateTokenEndpointError, CreateTokenEndpointResponse, CreateTranscriptionData, CreateTranscriptionError, CreateTranscriptionResponse, DeleteAgentInstanceData, DeleteAgentInstanceError, DeleteAgentInstanceResponse, DeleteAllOrganizationMemoriesData, DeleteAllOrganizationMemoriesResponse, DeleteAllUserMemoriesData, DeleteAllUserMemoriesResponse, DeleteOrganizationMemoryData, DeleteOrganizationMemoryError, DeleteOrganizationMemoryResponse, DeleteProcessInstanceData, DeleteProcessInstanceError, DeleteProcessInstanceResponse, DeleteRoleData, DeleteRoleError, DeleteRoleResponse2, DeleteUserMemoryData, DeleteUserMemoryError, DeleteUserMemoryResponse, GenerateImageData, GenerateImageError, GenerateImageResponse, GetAgentClassData, GetAgentClassError, GetAgentClassesData, GetAgentClassesError, GetAgentClassesResponse, GetAgentClassInstancesData, GetAgentClassInstancesError, GetAgentClassInstancesResponse, GetAgentClassResponse, GetAgentEventsInThreadData, GetAgentEventsInThreadError, GetAgentEventsInThreadResponse, GetAgentEventTimeseriesData, GetAgentEventTimeseriesError, GetAgentEventTimeseriesResponse, GetAgentInstanceData, GetAgentInstanceError, GetAgentInstanceResponse, GetAgentInstanceThreadsData, GetAgentInstanceThreadsError, GetAgentInstanceThreadsResponse, GetAllAgentInstancesData, GetAllAgentInstancesError, GetAllAgentInstancesResponse, GetAllProcessInstancesData, GetAllProcessInstancesError, GetAllProcessInstancesResponse, GetAnonymousFileRedirectData, GetAnonymousFileRedirectError, GetAnonymousFileUrlData, GetAnonymousFileUrlError, GetDatabasesData, GetDatabasesResponse, GetDatasetData, GetDatasetError, GetDatasetResponse, GetDatasetsData, GetDatasetsResponse, GetDocumentByIdData, GetDocumentByIdError, GetDocumentByIdResponse, GetDocumentsForNamespaceData, GetDocumentsForNamespaceError, GetDocumentsForNamespaceResponse, GetEmbeddingsData, GetEmbeddingsError, GetEmbeddingsResponse, GetFileRedirectData, GetFileRedirectError, GetFileUrlData, GetFileUrlError, GetFileUrlResponse, GetHealthData, GetHealthResponse, GetLitellmModelData, GetLitellmModelError, GetLitellmModelResponse, GetLitellmModelsByModeData, GetLitellmModelsByModeError, GetLitellmModelsByModeResponse, GetLitellmModelsData, GetLitellmModelsResponse, GetLocaleData, GetLocaleResponse, GetModelsData, GetModelsResponse, GetModelWithAssistantsData, GetModelWithAssistantsError, GetModelWithAssistantsResponse, GetMyDashboardData, GetMyDashboardResponse, GetMyUserData, GetMyUserResponse, GetNodesForDocumentData, GetNodesForDocumentError, GetNodesForDocumentResponse, GetNotificationsData, GetNotificationsError, GetNotificationsResponse, GetOpenChatHitlData, GetOpenChatHitlError, GetOpenChatHitlResponse, GetOrganizationMemoriesData, GetOrganizationMemoriesError, GetOrganizationMemoriesResponse, GetProcessClassData, GetProcessClassError, GetProcessClassesData, GetProcessClassesError, GetProcessClassesResponse, GetProcessClassInstancesData, GetProcessClassInstancesError, GetProcessClassInstancesResponse, GetProcessClassResponse, GetProcessInstanceData, GetProcessInstanceError, GetProcessInstanceResponse, GetProcessOpenFormsData, GetProcessOpenFormsError, GetProcessOpenFormsResponse, GetProcessStartFormsData, GetProcessStartFormsError, GetProcessStartFormsResponse, GetProcessWalkthroughsData, GetProcessWalkthroughsError, GetProcessWalkthroughsResponse, GetReadyData, GetReadyResponse, GetRoleData, GetRoleError, GetRoleResponse, GetRolesData, GetRolesResponse, GetSuiteData, GetSuiteResponse, GetSummaryNodesForDocumentData, GetSummaryNodesForDocumentError, GetSummaryNodesForDocumentResponse, GetSupportedFileTypesData, GetSupportedFileTypesResponse, GetThreadData, GetThreadError, GetThreadResponse, GetUserData, GetUserError, GetUserMemoriesData, GetUserMemoriesError, GetUserMemoriesResponse, GetUserResponse, GetUsersData, GetUsersError, GetUsersResponse, GetUserThreadsData, GetUserThreadsError, GetUserThreadsResponse, InitiateDocumentUploadData, InitiateDocumentUploadError, InitiateDocumentUploadResponse, ListTokensEndpointData, ListTokensEndpointResponse, ProcessDocumentData, ProcessDocumentResponse, RemoveAgentFromThreadData, RemoveAgentFromThreadError, RemoveAgentFromThreadResponse, RemoveUserFromThreadData, RemoveUserFromThreadError, RemoveUserFromThreadResponse, RevokeTokenEndpointData, RevokeTokenEndpointError, RevokeTokenEndpointResponse, SearchOrganizationMemoriesData, SearchOrganizationMemoriesError, SearchOrganizationMemoriesResponse, SearchUserMemoriesData, SearchUserMemoriesError, SearchUserMemoriesResponse, SendProcessOpenFormData, SendProcessOpenFormError, SendProcessOpenFormResponse, SendProcessStartFormData, SendProcessStartFormError, SendProcessStartFormResponse, TranslateTextData, TranslateTextError, TranslateTextResponse, UpdateAgentInstanceData, UpdateAgentInstanceError, UpdateAgentInstanceResponse, UpdateDatasetData, UpdateDatasetError, UpdateDatasetResponse, UpdateMyDashboardData, UpdateMyDashboardError, UpdateMyDashboardResponse, UpdateNamespaceData, UpdateNamespaceError, UpdateNamespaceResponse, UpdateNotificationData, UpdateNotificationError, UpdateNotificationResponse, UpdateNotificationsBulkData, UpdateNotificationsBulkError, UpdateNotificationsBulkResponse, UpdateOrganizationMemoryData, UpdateOrganizationMemoryError, UpdateOrganizationMemoryResponse, UpdateProcessInstanceData, UpdateProcessInstanceError, UpdateProcessInstanceResponse, UpdateRoleData, UpdateRoleError, UpdateRoleResponse, UpdateUserMemoryData, UpdateUserMemoryError, UpdateUserMemoryResponse, ValidateDocumentUploadData, ValidateDocumentUploadError, ValidateDocumentUploadResponse } from './types.gen';
+import { getMyUserResponseTransformer } from './transformers.gen';
+import type { AddAgentToThreadData, AddAgentToThreadError, AddAgentToThreadResponse, AddUserToThreadData, AddUserToThreadError, AddUserToThreadResponse, ChatCompletionData, ChatCompletionError, ChatCompletionResponse, CreateAgentInstanceData, CreateAgentInstanceError, CreateAgentInstanceResponse, CreateProcessInstanceData, CreateProcessInstanceError, CreateProcessInstanceResponse, CreateSpeechData, CreateSpeechError, CreateThreadData, CreateThreadError, CreateThreadResponse, CreateTranscriptionData, CreateTranscriptionError, CreateTranscriptionResponse, DeleteAgentInstanceData, DeleteAgentInstanceError, DeleteAgentInstanceResponse, DeleteProcessInstanceData, DeleteProcessInstanceError, DeleteProcessInstanceResponse, GenerateImageData, GenerateImageError, GenerateImageResponse, GetAgentClassData, GetAgentClassError, GetAgentClassesData, GetAgentClassesError, GetAgentClassesResponse, GetAgentClassInstancesData, GetAgentClassInstancesError, GetAgentClassInstancesResponse, GetAgentClassResponse, GetAgentEventsInThreadData, GetAgentEventsInThreadError, GetAgentEventsInThreadResponse, GetAgentInstanceData, GetAgentInstanceError, GetAgentInstanceResponse, GetAgentInstanceThreadsData, GetAgentInstanceThreadsError, GetAgentInstanceThreadsResponse, GetAllAgentInstancesData, GetAllAgentInstancesError, GetAllAgentInstancesResponse, GetAllProcessInstancesData, GetAllProcessInstancesError, GetAllProcessInstancesResponse, GetEmbeddingsData, GetEmbeddingsError, GetEmbeddingsResponse, GetHealthData, GetHealthResponse, GetLocaleData, GetLocaleResponse, GetModelData, GetModelError, GetModelResponse, GetModelsData, GetModelsResponse, GetMyDashboardData, GetMyDashboardResponse, GetMyUserData, GetMyUserResponse, GetOpenChatHitlData, GetOpenChatHitlError, GetOpenChatHitlResponse, GetProcessClassData, GetProcessClassError, GetProcessClassesData, GetProcessClassesError, GetProcessClassesResponse, GetProcessClassInstancesData, GetProcessClassInstancesError, GetProcessClassInstancesResponse, GetProcessClassResponse, GetProcessInstanceData, GetProcessInstanceError, GetProcessInstanceResponse, GetProcessOpenFormsData, GetProcessOpenFormsError, GetProcessOpenFormsResponse, GetProcessStartFormsData, GetProcessStartFormsError, GetProcessStartFormsResponse, GetProcessWalkthroughsData, GetProcessWalkthroughsError, GetProcessWalkthroughsResponse, GetThreadData, GetThreadError, GetThreadResponse, GetUserThreadsData, GetUserThreadsError, GetUserThreadsResponse, RemoveAgentFromThreadData, RemoveAgentFromThreadError, RemoveAgentFromThreadResponse, RemoveUserFromThreadData, RemoveUserFromThreadError, RemoveUserFromThreadResponse, SendProcessOpenFormData, SendProcessOpenFormError, SendProcessOpenFormResponse, SendProcessStartFormData, SendProcessStartFormError, SendProcessStartFormResponse, SendStartEventToMyAgentClassAgentsClassesMyAgentClassInstancesAgentIdStartEventPostData, SendStartEventToMyAgentClassAgentsClassesMyAgentClassInstancesAgentIdStartEventPostError, SendStartEventToMyAgentClassAgentsClassesMyAgentClassInstancesAgentIdStartEventPostResponse, SendUserMessageEventToMyAgentClassAgentsClassesMyAgentClassInstancesAgentIdUserMessageEventPostData, SendUserMessageEventToMyAgentClassAgentsClassesMyAgentClassInstancesAgentIdUserMessageEventPostError, SendUserMessageEventToMyAgentClassAgentsClassesMyAgentClassInstancesAgentIdUserMessageEventPostResponse, StreamStartEventToMyAgentClassAgentsClassesMyAgentClassInstancesAgentIdStartEventStreamPostData, StreamStartEventToMyAgentClassAgentsClassesMyAgentClassInstancesAgentIdStartEventStreamPostError, StreamUserMessageEventToMyAgentClassAgentsClassesMyAgentClassInstancesAgentIdUserMessageEventStreamPostData, StreamUserMessageEventToMyAgentClassAgentsClassesMyAgentClassInstancesAgentIdUserMessageEventStreamPostError, TranslateTextData, TranslateTextError, TranslateTextResponse, UpdateAgentInstanceData, UpdateAgentInstanceError, UpdateAgentInstanceResponse, UpdateMyDashboardData, UpdateMyDashboardError, UpdateMyDashboardResponse, UpdateProcessInstanceData, UpdateProcessInstanceError, UpdateProcessInstanceResponse } from './types.gen';
 
 export type Options<TComposable extends Composable = '$fetch', TData extends TDataShape = TDataShape, ResT = unknown, DefaultT = undefined> = Options2<TComposable, TData, ResT, DefaultT> & {
     /**
@@ -28,55 +28,13 @@ export type Options<TComposable extends Composable = '$fetch', TData extends TDa
 export const getHealth = <TComposable extends Composable = '$fetch', DefaultT extends GetHealthResponse = GetHealthResponse>(options: Options<TComposable, GetHealthData, GetHealthResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetHealthResponse | DefaultT, unknown, DefaultT>({ url: '/health/', ...options });
 
 /**
- * Get Ready
- *
- * Readiness check that verifies all API dependencies are available.
- * Returns 200 if all checks pass, 503 if any check fails.
- */
-export const getReady = <TComposable extends Composable = '$fetch', DefaultT extends GetReadyResponse = GetReadyResponse>(options: Options<TComposable, GetReadyData, GetReadyResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetReadyResponse | DefaultT, unknown, DefaultT>({ url: '/health/ready', ...options });
-
-/**
- * Get Suite
- */
-export const getSuite = <TComposable extends Composable = '$fetch', DefaultT extends GetSuiteResponse = GetSuiteResponse>(options: Options<TComposable, GetSuiteData, GetSuiteResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetSuiteResponse | DefaultT, unknown, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/suites/',
-    ...options
-});
-
-/**
  * Get My User
  *
  * Returns a `MinimalUserDTO` representing the currently logged-in user.
  */
 export const getMyUser = <TComposable extends Composable = '$fetch', DefaultT extends GetMyUserResponse = GetMyUserResponse>(options: Options<TComposable, GetMyUserData, GetMyUserResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetMyUserResponse | DefaultT, unknown, DefaultT>({
     responseTransformer: getMyUserResponseTransformer,
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
     url: '/users/me',
-    ...options
-});
-
-/**
- * Get User
- *
- * Retrieve user info by their OID.
- */
-export const getUser = <TComposable extends Composable = '$fetch', DefaultT extends GetUserResponse = GetUserResponse>(options: Options<TComposable, GetUserData, GetUserResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetUserResponse | DefaultT, GetUserError, DefaultT>({
-    responseTransformer: getUserResponseTransformer,
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/users/{user_id}',
-    ...options
-});
-
-/**
- * Get Users
- *
- * Returns a paginated list of all users.
- */
-export const getUsers = <TComposable extends Composable = '$fetch', DefaultT extends GetUsersResponse = GetUsersResponse>(options: Options<TComposable, GetUsersData, GetUsersResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetUsersResponse | DefaultT, GetUsersError, DefaultT>({
-    responseTransformer: getUsersResponseTransformer,
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/users/',
     ...options
 });
 
@@ -85,11 +43,7 @@ export const getUsers = <TComposable extends Composable = '$fetch', DefaultT ext
  *
  * Returns a `DashboardDTO` representing the user's dashboard settings, or null if none exist.
  */
-export const getMyDashboard = <TComposable extends Composable = '$fetch', DefaultT extends GetMyDashboardResponse = GetMyDashboardResponse>(options: Options<TComposable, GetMyDashboardData, GetMyDashboardResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetMyDashboardResponse | DefaultT, unknown, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/users/me/dashboard',
-    ...options
-});
+export const getMyDashboard = <TComposable extends Composable = '$fetch', DefaultT extends GetMyDashboardResponse = GetMyDashboardResponse>(options: Options<TComposable, GetMyDashboardData, GetMyDashboardResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetMyDashboardResponse | DefaultT, unknown, DefaultT>({ url: '/users/me/dashboard', ...options });
 
 /**
  * Update My Dashboard
@@ -98,7 +52,6 @@ export const getMyDashboard = <TComposable extends Composable = '$fetch', Defaul
  * Accepts a `DashboardDTO` in the request body.
  */
 export const updateMyDashboard = <TComposable extends Composable = '$fetch', DefaultT extends UpdateMyDashboardResponse = UpdateMyDashboardResponse>(options: Options<TComposable, UpdateMyDashboardData, UpdateMyDashboardResponse, DefaultT>) => (options.client ?? client).put<TComposable, UpdateMyDashboardResponse | DefaultT, UpdateMyDashboardError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
     url: '/users/me/dashboard',
     ...options,
     headers: {
@@ -112,83 +65,21 @@ export const updateMyDashboard = <TComposable extends Composable = '$fetch', Def
  *
  * Return the user's current locale and a localized test string.
  */
-export const getLocale = <TComposable extends Composable = '$fetch', DefaultT extends GetLocaleResponse = GetLocaleResponse>(options: Options<TComposable, GetLocaleData, GetLocaleResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetLocaleResponse | DefaultT, unknown, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/i18n/my-locale',
-    ...options
-});
+export const getLocale = <TComposable extends Composable = '$fetch', DefaultT extends GetLocaleResponse = GetLocaleResponse>(options: Options<TComposable, GetLocaleData, GetLocaleResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetLocaleResponse | DefaultT, unknown, DefaultT>({ url: '/i18n/my-locale', ...options });
 
 /**
  * Get Agent Events In Thread
  *
  * Returns all events in a given thread
  */
-export const getAgentEventsInThread = <TComposable extends Composable = '$fetch', DefaultT extends GetAgentEventsInThreadResponse = GetAgentEventsInThreadResponse>(options: Options<TComposable, GetAgentEventsInThreadData, GetAgentEventsInThreadResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetAgentEventsInThreadResponse | DefaultT, GetAgentEventsInThreadError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/events/agents/threads/{thread_id}',
-    ...options
-});
-
-/**
- * Get Agent Event Timeseries
- *
- * Retrieves time-based statistics.
- * Returns event counts in time buckets with resolution based on the time range:
- * - 1h: 1 minute resolution
- * - 24h: 1 hour resolution
- * - 30d: 1 day resolution
- * - 365d: 1 week resolution
- */
-export const getAgentEventTimeseries = <TComposable extends Composable = '$fetch', DefaultT extends GetAgentEventTimeseriesResponse = GetAgentEventTimeseriesResponse>(options: Options<TComposable, GetAgentEventTimeseriesData, GetAgentEventTimeseriesResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetAgentEventTimeseriesResponse | DefaultT, GetAgentEventTimeseriesError, DefaultT>({
-    responseTransformer: getAgentEventTimeseriesResponseTransformer,
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/events/agents/timeseries/{time_range}',
-    ...options
-});
-
-/**
- * Get Litellm Models
- *
- * Retrieve a list of all available models grouped by type.
- */
-export const getLitellmModels = <TComposable extends Composable = '$fetch', DefaultT extends GetLitellmModelsResponse = GetLitellmModelsResponse>(options: Options<TComposable, GetLitellmModelsData, GetLitellmModelsResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetLitellmModelsResponse | DefaultT, unknown, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/models',
-    ...options
-});
-
-/**
- * Get Litellm Models By Mode
- *
- * Retrieve all models filtered by their mode (chat, embedding, rerank, etc.).
- */
-export const getLitellmModelsByMode = <TComposable extends Composable = '$fetch', DefaultT extends GetLitellmModelsByModeResponse = GetLitellmModelsByModeResponse>(options: Options<TComposable, GetLitellmModelsByModeData, GetLitellmModelsByModeResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetLitellmModelsByModeResponse | DefaultT, GetLitellmModelsByModeError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/models/mode/{mode}',
-    ...options
-});
-
-/**
- * Get Litellm Model
- *
- * Retrieve a specific model by name.
- */
-export const getLitellmModel = <TComposable extends Composable = '$fetch', DefaultT extends GetLitellmModelResponse = GetLitellmModelResponse>(options: Options<TComposable, GetLitellmModelData, GetLitellmModelResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetLitellmModelResponse | DefaultT, GetLitellmModelError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/models/{model_name}',
-    ...options
-});
+export const getAgentEventsInThread = <TComposable extends Composable = '$fetch', DefaultT extends GetAgentEventsInThreadResponse = GetAgentEventsInThreadResponse>(options: Options<TComposable, GetAgentEventsInThreadData, GetAgentEventsInThreadResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetAgentEventsInThreadResponse | DefaultT, GetAgentEventsInThreadError, DefaultT>({ url: '/events/agents/threads/{thread_id}', ...options });
 
 /**
  * Get User Threads
  *
  * Returns all threads that the authenticated user is a member of.
  */
-export const getUserThreads = <TComposable extends Composable = '$fetch', DefaultT extends GetUserThreadsResponse = GetUserThreadsResponse>(options: Options<TComposable, GetUserThreadsData, GetUserThreadsResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetUserThreadsResponse | DefaultT, GetUserThreadsError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/threads/',
-    ...options
-});
+export const getUserThreads = <TComposable extends Composable = '$fetch', DefaultT extends GetUserThreadsResponse = GetUserThreadsResponse>(options: Options<TComposable, GetUserThreadsData, GetUserThreadsResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetUserThreadsResponse | DefaultT, GetUserThreadsError, DefaultT>({ url: '/threads/', ...options });
 
 /**
  * Create Thread
@@ -197,7 +88,6 @@ export const getUserThreads = <TComposable extends Composable = '$fetch', Defaul
  * Automatically adds the authenticated user if not already included.
  */
 export const createThread = <TComposable extends Composable = '$fetch', DefaultT extends CreateThreadResponse = CreateThreadResponse>(options: Options<TComposable, CreateThreadData, CreateThreadResponse, DefaultT>) => (options.client ?? client).post<TComposable, CreateThreadResponse | DefaultT, CreateThreadError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
     url: '/threads/',
     ...options,
     headers: {
@@ -212,11 +102,7 @@ export const createThread = <TComposable extends Composable = '$fetch', DefaultT
  * Retrieves details of a specific thread.
  * Raises 403 if the user is not a member of that thread.
  */
-export const getThread = <TComposable extends Composable = '$fetch', DefaultT extends GetThreadResponse = GetThreadResponse>(options: Options<TComposable, GetThreadData, GetThreadResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetThreadResponse | DefaultT, GetThreadError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/threads/{thread_id}',
-    ...options
-});
+export const getThread = <TComposable extends Composable = '$fetch', DefaultT extends GetThreadResponse = GetThreadResponse>(options: Options<TComposable, GetThreadData, GetThreadResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetThreadResponse | DefaultT, GetThreadError, DefaultT>({ url: '/threads/{thread_id}', ...options });
 
 /**
  * Add Agent To Thread
@@ -224,7 +110,6 @@ export const getThread = <TComposable extends Composable = '$fetch', DefaultT ex
  * Adds an agent to a specified thread, if the user is a member of that thread.
  */
 export const addAgentToThread = <TComposable extends Composable = '$fetch', DefaultT extends AddAgentToThreadResponse = AddAgentToThreadResponse>(options: Options<TComposable, AddAgentToThreadData, AddAgentToThreadResponse, DefaultT>) => (options.client ?? client).post<TComposable, AddAgentToThreadResponse | DefaultT, AddAgentToThreadError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
     url: '/threads/{thread_id}/agents',
     ...options,
     headers: {
@@ -238,11 +123,7 @@ export const addAgentToThread = <TComposable extends Composable = '$fetch', Defa
  *
  * Removes an agent from the thread, if the user is part of that thread.
  */
-export const removeAgentFromThread = <TComposable extends Composable = '$fetch', DefaultT extends RemoveAgentFromThreadResponse = RemoveAgentFromThreadResponse>(options: Options<TComposable, RemoveAgentFromThreadData, RemoveAgentFromThreadResponse, DefaultT>) => (options.client ?? client).delete<TComposable, RemoveAgentFromThreadResponse | DefaultT, RemoveAgentFromThreadError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/threads/{thread_id}/agents/{agent_class}/{agent_id}',
-    ...options
-});
+export const removeAgentFromThread = <TComposable extends Composable = '$fetch', DefaultT extends RemoveAgentFromThreadResponse = RemoveAgentFromThreadResponse>(options: Options<TComposable, RemoveAgentFromThreadData, RemoveAgentFromThreadResponse, DefaultT>) => (options.client ?? client).delete<TComposable, RemoveAgentFromThreadResponse | DefaultT, RemoveAgentFromThreadError, DefaultT>({ url: '/threads/{thread_id}/agents/{agent_class}/{agent_id}', ...options });
 
 /**
  * Add User To Thread
@@ -250,7 +131,6 @@ export const removeAgentFromThread = <TComposable extends Composable = '$fetch',
  * Adds another user to the thread, provided the current user is a member of the thread.
  */
 export const addUserToThread = <TComposable extends Composable = '$fetch', DefaultT extends AddUserToThreadResponse = AddUserToThreadResponse>(options: Options<TComposable, AddUserToThreadData, AddUserToThreadResponse, DefaultT>) => (options.client ?? client).post<TComposable, AddUserToThreadResponse | DefaultT, AddUserToThreadError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
     url: '/threads/{thread_id}/users',
     ...options,
     headers: {
@@ -264,11 +144,7 @@ export const addUserToThread = <TComposable extends Composable = '$fetch', Defau
  *
  * Removes a user from the thread if the authenticated user is a member of the thread.
  */
-export const removeUserFromThread = <TComposable extends Composable = '$fetch', DefaultT extends RemoveUserFromThreadResponse = RemoveUserFromThreadResponse>(options: Options<TComposable, RemoveUserFromThreadData, RemoveUserFromThreadResponse, DefaultT>) => (options.client ?? client).delete<TComposable, RemoveUserFromThreadResponse | DefaultT, RemoveUserFromThreadError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/threads/{thread_id}/users/{remove_user_id}',
-    ...options
-});
+export const removeUserFromThread = <TComposable extends Composable = '$fetch', DefaultT extends RemoveUserFromThreadResponse = RemoveUserFromThreadResponse>(options: Options<TComposable, RemoveUserFromThreadData, RemoveUserFromThreadResponse, DefaultT>) => (options.client ?? client).delete<TComposable, RemoveUserFromThreadResponse | DefaultT, RemoveUserFromThreadError, DefaultT>({ url: '/threads/{thread_id}/users/{remove_user_id}', ...options });
 
 /**
  * Get Open Chat Hitl
@@ -278,11 +154,7 @@ export const removeUserFromThread = <TComposable extends Composable = '$fetch', 
  * Chat HITLs are HITL requests where the question appears as a regular chat message
  * and the user responds by typing a normal chat message (not via popup dialog).
  */
-export const getOpenChatHitl = <TComposable extends Composable = '$fetch', DefaultT extends GetOpenChatHitlResponse = GetOpenChatHitlResponse>(options: Options<TComposable, GetOpenChatHitlData, GetOpenChatHitlResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetOpenChatHitlResponse | DefaultT, GetOpenChatHitlError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/threads/{thread_id}/open-chat-hitl',
-    ...options
-});
+export const getOpenChatHitl = <TComposable extends Composable = '$fetch', DefaultT extends GetOpenChatHitlResponse = GetOpenChatHitlResponse>(options: Options<TComposable, GetOpenChatHitlData, GetOpenChatHitlResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetOpenChatHitlResponse | DefaultT, GetOpenChatHitlError, DefaultT>({ url: '/threads/{thread_id}/open-chat-hitl', ...options });
 
 /**
  * Get Agent Classes
@@ -290,33 +162,21 @@ export const getOpenChatHitl = <TComposable extends Composable = '$fetch', Defau
  * Retrieve all available agent classes.
  * Use `?online=true` for online classes only, `?online=false` for offline only.
  */
-export const getAgentClasses = <TComposable extends Composable = '$fetch', DefaultT extends GetAgentClassesResponse = GetAgentClassesResponse>(options: Options<TComposable, GetAgentClassesData, GetAgentClassesResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetAgentClassesResponse | DefaultT, GetAgentClassesError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/agents/classes',
-    ...options
-});
+export const getAgentClasses = <TComposable extends Composable = '$fetch', DefaultT extends GetAgentClassesResponse = GetAgentClassesResponse>(options: Options<TComposable, GetAgentClassesData, GetAgentClassesResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetAgentClassesResponse | DefaultT, GetAgentClassesError, DefaultT>({ url: '/agents/classes', ...options });
 
 /**
  * Get Agent Class
  *
  * Retrieve details for a specific agent class.
  */
-export const getAgentClass = <TComposable extends Composable = '$fetch', DefaultT extends GetAgentClassResponse = GetAgentClassResponse>(options: Options<TComposable, GetAgentClassData, GetAgentClassResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetAgentClassResponse | DefaultT, GetAgentClassError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/agents/classes/{agent_class}',
-    ...options
-});
+export const getAgentClass = <TComposable extends Composable = '$fetch', DefaultT extends GetAgentClassResponse = GetAgentClassResponse>(options: Options<TComposable, GetAgentClassData, GetAgentClassResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetAgentClassResponse | DefaultT, GetAgentClassError, DefaultT>({ url: '/agents/classes/{agent_class}', ...options });
 
 /**
  * Get Agent Class Instances
  *
  * Retrieve all instances of a specific agent class.
  */
-export const getAgentClassInstances = <TComposable extends Composable = '$fetch', DefaultT extends GetAgentClassInstancesResponse = GetAgentClassInstancesResponse>(options: Options<TComposable, GetAgentClassInstancesData, GetAgentClassInstancesResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetAgentClassInstancesResponse | DefaultT, GetAgentClassInstancesError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/agents/classes/{agent_class}/instances',
-    ...options
-});
+export const getAgentClassInstances = <TComposable extends Composable = '$fetch', DefaultT extends GetAgentClassInstancesResponse = GetAgentClassInstancesResponse>(options: Options<TComposable, GetAgentClassInstancesData, GetAgentClassInstancesResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetAgentClassInstancesResponse | DefaultT, GetAgentClassInstancesError, DefaultT>({ url: '/agents/classes/{agent_class}/instances', ...options });
 
 /**
  * Create Agent Instance
@@ -324,7 +184,6 @@ export const getAgentClassInstances = <TComposable extends Composable = '$fetch'
  * Create a new agent instance from an existing agent class.
  */
 export const createAgentInstance = <TComposable extends Composable = '$fetch', DefaultT extends CreateAgentInstanceResponse = CreateAgentInstanceResponse>(options: Options<TComposable, CreateAgentInstanceData, CreateAgentInstanceResponse, DefaultT>) => (options.client ?? client).post<TComposable, CreateAgentInstanceResponse | DefaultT, CreateAgentInstanceError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
     url: '/agents/classes/{agent_class}/instances',
     ...options,
     headers: {
@@ -338,22 +197,14 @@ export const createAgentInstance = <TComposable extends Composable = '$fetch', D
  *
  * Delete an agent instance.
  */
-export const deleteAgentInstance = <TComposable extends Composable = '$fetch', DefaultT extends DeleteAgentInstanceResponse = DeleteAgentInstanceResponse>(options: Options<TComposable, DeleteAgentInstanceData, DeleteAgentInstanceResponse, DefaultT>) => (options.client ?? client).delete<TComposable, DeleteAgentInstanceResponse | DefaultT, DeleteAgentInstanceError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/agents/classes/{agent_class}/instances/{agent_id}',
-    ...options
-});
+export const deleteAgentInstance = <TComposable extends Composable = '$fetch', DefaultT extends DeleteAgentInstanceResponse = DeleteAgentInstanceResponse>(options: Options<TComposable, DeleteAgentInstanceData, DeleteAgentInstanceResponse, DefaultT>) => (options.client ?? client).delete<TComposable, DeleteAgentInstanceResponse | DefaultT, DeleteAgentInstanceError, DefaultT>({ url: '/agents/classes/{agent_class}/instances/{agent_id}', ...options });
 
 /**
  * Get Agent Instance
  *
  * Retrieve details for a specific agent instance, including its configuration.
  */
-export const getAgentInstance = <TComposable extends Composable = '$fetch', DefaultT extends GetAgentInstanceResponse = GetAgentInstanceResponse>(options: Options<TComposable, GetAgentInstanceData, GetAgentInstanceResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetAgentInstanceResponse | DefaultT, GetAgentInstanceError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/agents/classes/{agent_class}/instances/{agent_id}',
-    ...options
-});
+export const getAgentInstance = <TComposable extends Composable = '$fetch', DefaultT extends GetAgentInstanceResponse = GetAgentInstanceResponse>(options: Options<TComposable, GetAgentInstanceData, GetAgentInstanceResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetAgentInstanceResponse | DefaultT, GetAgentInstanceError, DefaultT>({ url: '/agents/classes/{agent_class}/instances/{agent_id}', ...options });
 
 /**
  * Update Agent Instance
@@ -361,7 +212,6 @@ export const getAgentInstance = <TComposable extends Composable = '$fetch', Defa
  * Update the configuration for a specific agent instance.
  */
 export const updateAgentInstance = <TComposable extends Composable = '$fetch', DefaultT extends UpdateAgentInstanceResponse = UpdateAgentInstanceResponse>(options: Options<TComposable, UpdateAgentInstanceData, UpdateAgentInstanceResponse, DefaultT>) => (options.client ?? client).put<TComposable, UpdateAgentInstanceResponse | DefaultT, UpdateAgentInstanceError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
     url: '/agents/classes/{agent_class}/instances/{agent_id}',
     ...options,
     headers: {
@@ -375,11 +225,7 @@ export const updateAgentInstance = <TComposable extends Composable = '$fetch', D
  *
  * Retrieve all threads that a specific agent instance is part of.
  */
-export const getAgentInstanceThreads = <TComposable extends Composable = '$fetch', DefaultT extends GetAgentInstanceThreadsResponse = GetAgentInstanceThreadsResponse>(options: Options<TComposable, GetAgentInstanceThreadsData, GetAgentInstanceThreadsResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetAgentInstanceThreadsResponse | DefaultT, GetAgentInstanceThreadsError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/agents/classes/{agent_class}/instances/{agent_id}/threads',
-    ...options
-});
+export const getAgentInstanceThreads = <TComposable extends Composable = '$fetch', DefaultT extends GetAgentInstanceThreadsResponse = GetAgentInstanceThreadsResponse>(options: Options<TComposable, GetAgentInstanceThreadsData, GetAgentInstanceThreadsResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetAgentInstanceThreadsResponse | DefaultT, GetAgentInstanceThreadsError, DefaultT>({ url: '/agents/classes/{agent_class}/instances/{agent_id}/threads', ...options });
 
 /**
  * Get All Agent Instances
@@ -387,11 +233,7 @@ export const getAgentInstanceThreads = <TComposable extends Composable = '$fetch
  * Retrieve a list of all agent instances across all classes.
  * Use `?online=true` for online instances only, `?online=false` for offline only.
  */
-export const getAllAgentInstances = <TComposable extends Composable = '$fetch', DefaultT extends GetAllAgentInstancesResponse = GetAllAgentInstancesResponse>(options: Options<TComposable, GetAllAgentInstancesData, GetAllAgentInstancesResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetAllAgentInstancesResponse | DefaultT, GetAllAgentInstancesError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/agents/instances',
-    ...options
-});
+export const getAllAgentInstances = <TComposable extends Composable = '$fetch', DefaultT extends GetAllAgentInstancesResponse = GetAllAgentInstancesResponse>(options: Options<TComposable, GetAllAgentInstancesData, GetAllAgentInstancesResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetAllAgentInstancesResponse | DefaultT, GetAllAgentInstancesError, DefaultT>({ url: '/agents/instances', ...options });
 
 /**
  * Get Process Classes
@@ -399,33 +241,21 @@ export const getAllAgentInstances = <TComposable extends Composable = '$fetch', 
  * Retrieve all available process classes.
  * Use `?online=true` for online classes only, `?online=false` for offline only.
  */
-export const getProcessClasses = <TComposable extends Composable = '$fetch', DefaultT extends GetProcessClassesResponse = GetProcessClassesResponse>(options: Options<TComposable, GetProcessClassesData, GetProcessClassesResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetProcessClassesResponse | DefaultT, GetProcessClassesError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/processes/classes',
-    ...options
-});
+export const getProcessClasses = <TComposable extends Composable = '$fetch', DefaultT extends GetProcessClassesResponse = GetProcessClassesResponse>(options: Options<TComposable, GetProcessClassesData, GetProcessClassesResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetProcessClassesResponse | DefaultT, GetProcessClassesError, DefaultT>({ url: '/processes/classes', ...options });
 
 /**
  * Get Process Class
  *
  * Retrieve details for a specific process class.
  */
-export const getProcessClass = <TComposable extends Composable = '$fetch', DefaultT extends GetProcessClassResponse = GetProcessClassResponse>(options: Options<TComposable, GetProcessClassData, GetProcessClassResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetProcessClassResponse | DefaultT, GetProcessClassError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/processes/classes/{process_class}',
-    ...options
-});
+export const getProcessClass = <TComposable extends Composable = '$fetch', DefaultT extends GetProcessClassResponse = GetProcessClassResponse>(options: Options<TComposable, GetProcessClassData, GetProcessClassResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetProcessClassResponse | DefaultT, GetProcessClassError, DefaultT>({ url: '/processes/classes/{process_class}', ...options });
 
 /**
  * Get Process Class Instances
  *
  * Retrieve all instances of a specific process class.
  */
-export const getProcessClassInstances = <TComposable extends Composable = '$fetch', DefaultT extends GetProcessClassInstancesResponse = GetProcessClassInstancesResponse>(options: Options<TComposable, GetProcessClassInstancesData, GetProcessClassInstancesResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetProcessClassInstancesResponse | DefaultT, GetProcessClassInstancesError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/processes/classes/{process_class}/instances',
-    ...options
-});
+export const getProcessClassInstances = <TComposable extends Composable = '$fetch', DefaultT extends GetProcessClassInstancesResponse = GetProcessClassInstancesResponse>(options: Options<TComposable, GetProcessClassInstancesData, GetProcessClassInstancesResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetProcessClassInstancesResponse | DefaultT, GetProcessClassInstancesError, DefaultT>({ url: '/processes/classes/{process_class}/instances', ...options });
 
 /**
  * Create Process Instance
@@ -433,7 +263,6 @@ export const getProcessClassInstances = <TComposable extends Composable = '$fetc
  * Create a new process instance from an existing process class.
  */
 export const createProcessInstance = <TComposable extends Composable = '$fetch', DefaultT extends CreateProcessInstanceResponse = CreateProcessInstanceResponse>(options: Options<TComposable, CreateProcessInstanceData, CreateProcessInstanceResponse, DefaultT>) => (options.client ?? client).post<TComposable, CreateProcessInstanceResponse | DefaultT, CreateProcessInstanceError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
     url: '/processes/classes/{process_class}/instances',
     ...options,
     headers: {
@@ -447,22 +276,14 @@ export const createProcessInstance = <TComposable extends Composable = '$fetch',
  *
  * Delete a process instance.
  */
-export const deleteProcessInstance = <TComposable extends Composable = '$fetch', DefaultT extends DeleteProcessInstanceResponse = DeleteProcessInstanceResponse>(options: Options<TComposable, DeleteProcessInstanceData, DeleteProcessInstanceResponse, DefaultT>) => (options.client ?? client).delete<TComposable, DeleteProcessInstanceResponse | DefaultT, DeleteProcessInstanceError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/processes/classes/{process_class}/instances/{process_id}',
-    ...options
-});
+export const deleteProcessInstance = <TComposable extends Composable = '$fetch', DefaultT extends DeleteProcessInstanceResponse = DeleteProcessInstanceResponse>(options: Options<TComposable, DeleteProcessInstanceData, DeleteProcessInstanceResponse, DefaultT>) => (options.client ?? client).delete<TComposable, DeleteProcessInstanceResponse | DefaultT, DeleteProcessInstanceError, DefaultT>({ url: '/processes/classes/{process_class}/instances/{process_id}', ...options });
 
 /**
  * Get Process Instance
  *
  * Retrieve details for a specific process instance, including its configuration.
  */
-export const getProcessInstance = <TComposable extends Composable = '$fetch', DefaultT extends GetProcessInstanceResponse = GetProcessInstanceResponse>(options: Options<TComposable, GetProcessInstanceData, GetProcessInstanceResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetProcessInstanceResponse | DefaultT, GetProcessInstanceError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/processes/classes/{process_class}/instances/{process_id}',
-    ...options
-});
+export const getProcessInstance = <TComposable extends Composable = '$fetch', DefaultT extends GetProcessInstanceResponse = GetProcessInstanceResponse>(options: Options<TComposable, GetProcessInstanceData, GetProcessInstanceResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetProcessInstanceResponse | DefaultT, GetProcessInstanceError, DefaultT>({ url: '/processes/classes/{process_class}/instances/{process_id}', ...options });
 
 /**
  * Update Process Instance
@@ -470,7 +291,6 @@ export const getProcessInstance = <TComposable extends Composable = '$fetch', De
  * Update the configuration for a specific process instance.
  */
 export const updateProcessInstance = <TComposable extends Composable = '$fetch', DefaultT extends UpdateProcessInstanceResponse = UpdateProcessInstanceResponse>(options: Options<TComposable, UpdateProcessInstanceData, UpdateProcessInstanceResponse, DefaultT>) => (options.client ?? client).put<TComposable, UpdateProcessInstanceResponse | DefaultT, UpdateProcessInstanceError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
     url: '/processes/classes/{process_class}/instances/{process_id}',
     ...options,
     headers: {
@@ -485,44 +305,28 @@ export const updateProcessInstance = <TComposable extends Composable = '$fetch',
  * Retrieve a list of all process instances across all classes.
  * Use `?online=true` for online instances only, `?online=false` for offline only.
  */
-export const getAllProcessInstances = <TComposable extends Composable = '$fetch', DefaultT extends GetAllProcessInstancesResponse = GetAllProcessInstancesResponse>(options: Options<TComposable, GetAllProcessInstancesData, GetAllProcessInstancesResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetAllProcessInstancesResponse | DefaultT, GetAllProcessInstancesError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/processes/instances',
-    ...options
-});
+export const getAllProcessInstances = <TComposable extends Composable = '$fetch', DefaultT extends GetAllProcessInstancesResponse = GetAllProcessInstancesResponse>(options: Options<TComposable, GetAllProcessInstancesData, GetAllProcessInstancesResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetAllProcessInstancesResponse | DefaultT, GetAllProcessInstancesError, DefaultT>({ url: '/processes/instances', ...options });
 
 /**
  * Get Process Walkthroughs
  *
  * Get paginated process walkthroughs with detailed step information for a specific process.
  */
-export const getProcessWalkthroughs = <TComposable extends Composable = '$fetch', DefaultT extends GetProcessWalkthroughsResponse = GetProcessWalkthroughsResponse>(options: Options<TComposable, GetProcessWalkthroughsData, GetProcessWalkthroughsResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetProcessWalkthroughsResponse | DefaultT, GetProcessWalkthroughsError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/processes/classes/{process_class}/instances/{process_id}/walkthroughs',
-    ...options
-});
+export const getProcessWalkthroughs = <TComposable extends Composable = '$fetch', DefaultT extends GetProcessWalkthroughsResponse = GetProcessWalkthroughsResponse>(options: Options<TComposable, GetProcessWalkthroughsData, GetProcessWalkthroughsResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetProcessWalkthroughsResponse | DefaultT, GetProcessWalkthroughsError, DefaultT>({ url: '/processes/classes/{process_class}/instances/{process_id}/walkthroughs', ...options });
 
 /**
  * Get Process Start Forms
  *
  * Returns a list of formkit forms that the user can submit to start the process.
  */
-export const getProcessStartForms = <TComposable extends Composable = '$fetch', DefaultT extends GetProcessStartFormsResponse = GetProcessStartFormsResponse>(options: Options<TComposable, GetProcessStartFormsData, GetProcessStartFormsResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetProcessStartFormsResponse | DefaultT, GetProcessStartFormsError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/processes/classes/{process_class}/instances/{process_id}/start_forms',
-    ...options
-});
+export const getProcessStartForms = <TComposable extends Composable = '$fetch', DefaultT extends GetProcessStartFormsResponse = GetProcessStartFormsResponse>(options: Options<TComposable, GetProcessStartFormsData, GetProcessStartFormsResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetProcessStartFormsResponse | DefaultT, GetProcessStartFormsError, DefaultT>({ url: '/processes/classes/{process_class}/instances/{process_id}/start_forms', ...options });
 
 /**
  * Get Process Open Forms
  *
  * Returns a list of formkit forms that the user can submit to continue the given process walkthrough
  */
-export const getProcessOpenForms = <TComposable extends Composable = '$fetch', DefaultT extends GetProcessOpenFormsResponse = GetProcessOpenFormsResponse>(options: Options<TComposable, GetProcessOpenFormsData, GetProcessOpenFormsResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetProcessOpenFormsResponse | DefaultT, GetProcessOpenFormsError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/processes/classes/{process_class}/instances/{process_id}/{process_walkthrough_id}/open_forms',
-    ...options
-});
+export const getProcessOpenForms = <TComposable extends Composable = '$fetch', DefaultT extends GetProcessOpenFormsResponse = GetProcessOpenFormsResponse>(options: Options<TComposable, GetProcessOpenFormsData, GetProcessOpenFormsResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetProcessOpenFormsResponse | DefaultT, GetProcessOpenFormsError, DefaultT>({ url: '/processes/classes/{process_class}/instances/{process_id}/{process_walkthrough_id}/open_forms', ...options });
 
 /**
  * Send Process Start Form
@@ -530,7 +334,6 @@ export const getProcessOpenForms = <TComposable extends Composable = '$fetch', D
  * Submit an object satisfying a form to start a process.
  */
 export const sendProcessStartForm = <TComposable extends Composable = '$fetch', DefaultT extends SendProcessStartFormResponse = SendProcessStartFormResponse>(options: Options<TComposable, SendProcessStartFormData, SendProcessStartFormResponse, DefaultT>) => (options.client ?? client).post<TComposable, SendProcessStartFormResponse | DefaultT, SendProcessStartFormError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
     url: '/processes/classes/{process_class}/instances/{process_id}/submit_start_form',
     ...options,
     headers: {
@@ -545,110 +348,7 @@ export const sendProcessStartForm = <TComposable extends Composable = '$fetch', 
  * Submit an object satisfying a form to continue a process walkthrough.
  */
 export const sendProcessOpenForm = <TComposable extends Composable = '$fetch', DefaultT extends SendProcessOpenFormResponse = SendProcessOpenFormResponse>(options: Options<TComposable, SendProcessOpenFormData, SendProcessOpenFormResponse, DefaultT>) => (options.client ?? client).post<TComposable, SendProcessOpenFormResponse | DefaultT, SendProcessOpenFormError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
     url: '/processes/classes/{process_class}/instances/{process_id}/{process_walkthrough_id}/submit_open_form',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * List API Tokens
- *
- * Lists all API tokens for the authenticated user. The token value is not returned.
- */
-export const listTokensEndpoint = <TComposable extends Composable = '$fetch', DefaultT extends ListTokensEndpointResponse = ListTokensEndpointResponse>(options: Options<TComposable, ListTokensEndpointData, ListTokensEndpointResponse, DefaultT>) => (options.client ?? client).get<TComposable, ListTokensEndpointResponse | DefaultT, unknown, DefaultT>({
-    responseTransformer: listTokensEndpointResponseTransformer,
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/tokens/',
-    ...options
-});
-
-/**
- * Create API Token
- *
- * Creates a new API token.
- */
-export const createTokenEndpoint = <TComposable extends Composable = '$fetch', DefaultT extends CreateTokenEndpointResponse = CreateTokenEndpointResponse>(options: Options<TComposable, CreateTokenEndpointData, CreateTokenEndpointResponse, DefaultT>) => (options.client ?? client).post<TComposable, CreateTokenEndpointResponse | DefaultT, CreateTokenEndpointError, DefaultT>({
-    responseTransformer: createTokenEndpointResponseTransformer,
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/tokens/',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Revoke API Token
- *
- * Revokes (deletes) an API token for the authenticated user.
- */
-export const revokeTokenEndpoint = <TComposable extends Composable = '$fetch', DefaultT extends RevokeTokenEndpointResponse = RevokeTokenEndpointResponse>(options: Options<TComposable, RevokeTokenEndpointData, RevokeTokenEndpointResponse, DefaultT>) => (options.client ?? client).delete<TComposable, RevokeTokenEndpointResponse | DefaultT, RevokeTokenEndpointError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/tokens/{token_id}',
-    ...options
-});
-
-/**
- * Delete Role
- *
- * Permanently deletes a role.
- */
-export const deleteRole = <TComposable extends Composable = '$fetch', DefaultT extends DeleteRoleResponse2 = DeleteRoleResponse2>(options: Options<TComposable, DeleteRoleData, DeleteRoleResponse2, DefaultT>) => (options.client ?? client).delete<TComposable, DeleteRoleResponse2 | DefaultT, DeleteRoleError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/roles/{role_id}',
-    ...options
-});
-
-/**
- * Get Role
- *
- * Retrieves a single role by its unique ID.
- */
-export const getRole = <TComposable extends Composable = '$fetch', DefaultT extends GetRoleResponse = GetRoleResponse>(options: Options<TComposable, GetRoleData, GetRoleResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetRoleResponse | DefaultT, GetRoleError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/roles/{role_id}',
-    ...options
-});
-
-/**
- * Update Role
- *
- * Updates a role's name, description, or access rules.
- */
-export const updateRole = <TComposable extends Composable = '$fetch', DefaultT extends UpdateRoleResponse = UpdateRoleResponse>(options: Options<TComposable, UpdateRoleData, UpdateRoleResponse, DefaultT>) => (options.client ?? client).patch<TComposable, UpdateRoleResponse | DefaultT, UpdateRoleError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/roles/{role_id}',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * List Roles
- *
- * Retrieves a list of all available roles.
- */
-export const getRoles = <TComposable extends Composable = '$fetch', DefaultT extends GetRolesResponse = GetRolesResponse>(options: Options<TComposable, GetRolesData, GetRolesResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetRolesResponse | DefaultT, unknown, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/roles/',
-    ...options
-});
-
-/**
- * Create Role
- *
- * Creates a new role with a name, description, and access rules.
- */
-export const createRole = <TComposable extends Composable = '$fetch', DefaultT extends CreateRoleResponse = CreateRoleResponse>(options: Options<TComposable, CreateRoleData, CreateRoleResponse, DefaultT>) => (options.client ?? client).post<TComposable, CreateRoleResponse | DefaultT, CreateRoleError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/roles/',
     ...options,
     headers: {
         'Content-Type': 'application/json',
@@ -661,22 +361,14 @@ export const createRole = <TComposable extends Composable = '$fetch', DefaultT e
  *
  * Lists the currently available models, and provides basic information about each one such as the owner and availability.
  */
-export const getModels = <TComposable extends Composable = '$fetch', DefaultT extends GetModelsResponse = GetModelsResponse>(options: Options<TComposable, GetModelsData, GetModelsResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetModelsResponse | DefaultT, unknown, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/openai/models',
-    ...options
-});
+export const getModels = <TComposable extends Composable = '$fetch', DefaultT extends GetModelsResponse = GetModelsResponse>(options: Options<TComposable, GetModelsData, GetModelsResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetModelsResponse | DefaultT, unknown, DefaultT>({ url: '/openai/models', ...options });
 
 /**
- * Retrieve model (including ai-hub assistants)
+ * Retrieve model
  *
- * Retrieves a model or ai-hub assistant instance, providing basic information about the model such as the owner and permissioning.
+ * Retrieves a model instance, providing basic information about the model such as the owner and permissioning.
  */
-export const getModelWithAssistants = <TComposable extends Composable = '$fetch', DefaultT extends GetModelWithAssistantsResponse = GetModelWithAssistantsResponse>(options: Options<TComposable, GetModelWithAssistantsData, GetModelWithAssistantsResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetModelWithAssistantsResponse | DefaultT, GetModelWithAssistantsError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/openai/models/{full_path}',
-    ...options
-});
+export const getModel = <TComposable extends Composable = '$fetch', DefaultT extends GetModelResponse = GetModelResponse>(options: Options<TComposable, GetModelData, GetModelResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetModelResponse | DefaultT, GetModelError, DefaultT>({ url: '/openai/models/{full_path}', ...options });
 
 /**
  * Create embeddings
@@ -684,7 +376,6 @@ export const getModelWithAssistants = <TComposable extends Composable = '$fetch'
  * Creates an embedding vector representing the input text.
  */
 export const getEmbeddings = <TComposable extends Composable = '$fetch', DefaultT extends GetEmbeddingsResponse = GetEmbeddingsResponse>(options: Options<TComposable, GetEmbeddingsData, GetEmbeddingsResponse, DefaultT>) => (options.client ?? client).post<TComposable, GetEmbeddingsResponse | DefaultT, GetEmbeddingsError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
     url: '/openai/embeddings',
     ...options,
     headers: {
@@ -694,12 +385,11 @@ export const getEmbeddings = <TComposable extends Composable = '$fetch', Default
 });
 
 /**
- * Create chat completion (including ai-hub assistants)
+ * Create chat completion
  *
- * Creates a model or ai-hub assistant response for the given chat conversation. Learn more in the text generation, vision, and audio guides. Parameter support can differ depending on the model used to generate the response, particularly for newer reasoning models. Parameters that are only supported for reasoning models are noted below. For the current state of unsupported parameters in reasoning models, refer to the reasoning guide.
+ * Creates a model response for the given chat conversation. Learn more in the text generation, vision, and audio guides. Parameter support can differ depending on the model used to generate the response, particularly for newer reasoning models. Parameters that are only supported for reasoning models are noted below. For the current state of unsupported parameters in reasoning models, refer to the reasoning guide.
  */
-export const chatCompletionWithAssistants = <TComposable extends Composable = '$fetch', DefaultT extends ChatCompletionWithAssistantsResponse = ChatCompletionWithAssistantsResponse>(options: Options<TComposable, ChatCompletionWithAssistantsData, ChatCompletionWithAssistantsResponse, DefaultT>) => (options.client ?? client).post<TComposable, ChatCompletionWithAssistantsResponse | DefaultT, ChatCompletionWithAssistantsError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
+export const chatCompletion = <TComposable extends Composable = '$fetch', DefaultT extends ChatCompletionResponse = ChatCompletionResponse>(options: Options<TComposable, ChatCompletionData, ChatCompletionResponse, DefaultT>) => (options.client ?? client).post<TComposable, ChatCompletionResponse | DefaultT, ChatCompletionError, DefaultT>({
     url: '/openai/chat/completions',
     ...options,
     headers: {
@@ -714,7 +404,6 @@ export const chatCompletionWithAssistants = <TComposable extends Composable = '$
  * Creates an image given a prompt.
  */
 export const generateImage = <TComposable extends Composable = '$fetch', DefaultT extends GenerateImageResponse = GenerateImageResponse>(options: Options<TComposable, GenerateImageData, GenerateImageResponse, DefaultT>) => (options.client ?? client).post<TComposable, GenerateImageResponse | DefaultT, GenerateImageError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
     url: '/openai/images/generations',
     ...options,
     headers: {
@@ -730,7 +419,6 @@ export const generateImage = <TComposable extends Composable = '$fetch', Default
  */
 export const createTranscription = <TComposable extends Composable = '$fetch', DefaultT extends CreateTranscriptionResponse = CreateTranscriptionResponse>(options: Options<TComposable, CreateTranscriptionData, CreateTranscriptionResponse, DefaultT>) => (options.client ?? client).post<TComposable, CreateTranscriptionResponse | DefaultT, CreateTranscriptionError, DefaultT>({
     ...formDataBodySerializer,
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
     url: '/openai/audio/transcriptions',
     ...options,
     headers: {
@@ -745,393 +433,12 @@ export const createTranscription = <TComposable extends Composable = '$fetch', D
  * Generates audio from the input text.
  */
 export const createSpeech = <TComposable extends Composable = '$fetch', DefaultT = undefined>(options: Options<TComposable, CreateSpeechData, unknown, DefaultT>) => (options.client ?? client).post<TComposable, unknown | DefaultT, CreateSpeechError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
     url: '/openai/audio/speech',
     ...options,
     headers: {
         'Content-Type': 'application/json',
         ...options.headers
     }
-});
-
-/**
- * List Evaluation Datasets
- *
- * Retrieves a list of all evaluation datasets.
- */
-export const getDatasets = <TComposable extends Composable = '$fetch', DefaultT extends GetDatasetsResponse = GetDatasetsResponse>(options: Options<TComposable, GetDatasetsData, GetDatasetsResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetDatasetsResponse | DefaultT, unknown, DefaultT>({
-    responseTransformer: getDatasetsResponseTransformer,
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/datasets/',
-    ...options
-});
-
-/**
- * Create Evaluation Dataset
- *
- * Creates a new evaluation dataset.
- */
-export const createDataset = <TComposable extends Composable = '$fetch', DefaultT extends CreateDatasetResponse = CreateDatasetResponse>(options: Options<TComposable, CreateDatasetData, CreateDatasetResponse, DefaultT>) => (options.client ?? client).post<TComposable, CreateDatasetResponse | DefaultT, CreateDatasetError, DefaultT>({
-    responseTransformer: createDatasetResponseTransformer,
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/datasets/',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Get Specific Dataset
- *
- * Retrieves a specific evaluation dataset by its ID, including its items.
- */
-export const getDataset = <TComposable extends Composable = '$fetch', DefaultT extends GetDatasetResponse = GetDatasetResponse>(options: Options<TComposable, GetDatasetData, GetDatasetResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetDatasetResponse | DefaultT, GetDatasetError, DefaultT>({
-    responseTransformer: getDatasetResponseTransformer,
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/datasets/{dataset_id}',
-    ...options
-});
-
-/**
- * Update Evaluation Dataset
- *
- * Appends new question-answer items to an existing evaluation dataset.
- */
-export const updateDataset = <TComposable extends Composable = '$fetch', DefaultT extends UpdateDatasetResponse = UpdateDatasetResponse>(options: Options<TComposable, UpdateDatasetData, UpdateDatasetResponse, DefaultT>) => (options.client ?? client).put<TComposable, UpdateDatasetResponse | DefaultT, UpdateDatasetError, DefaultT>({
-    responseTransformer: updateDatasetResponseTransformer,
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/datasets/{dataset_id}',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Create Namespace
- *
- * Creates a new namespace (folder) in the specified database.
- */
-export const createNamespace = <TComposable extends Composable = '$fetch', DefaultT extends CreateNamespaceResponse = CreateNamespaceResponse>(options: Options<TComposable, CreateNamespaceData, CreateNamespaceResponse, DefaultT>) => (options.client ?? client).post<TComposable, CreateNamespaceResponse | DefaultT, CreateNamespaceError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/knowledge/databases/{database}/namespaces/{namespace}',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Update Namespace
- *
- * Updates display name and description for an existing namespace.
- */
-export const updateNamespace = <TComposable extends Composable = '$fetch', DefaultT extends UpdateNamespaceResponse = UpdateNamespaceResponse>(options: Options<TComposable, UpdateNamespaceData, UpdateNamespaceResponse, DefaultT>) => (options.client ?? client).put<TComposable, UpdateNamespaceResponse | DefaultT, UpdateNamespaceError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/knowledge/databases/{database}/namespaces/{namespace}',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Get Databases
- *
- * Returns all available buckets with their namespaces and document counts.
- * Gets data from BucketEntity and NamespaceEntity in MongoDB.
- */
-export const getDatabases = <TComposable extends Composable = '$fetch', DefaultT extends GetDatabasesResponse = GetDatabasesResponse>(options: Options<TComposable, GetDatabasesData, GetDatabasesResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetDatabasesResponse | DefaultT, unknown, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/knowledge/databases',
-    ...options
-});
-
-/**
- * Get Documents For Namespace
- *
- * Returns paginated documents for a specific namespace within a database.
- * Optionally filter by document title or filename using the search parameter.
- * Supports sorting by document_title, created_at, or updated_at.
- */
-export const getDocumentsForNamespace = <TComposable extends Composable = '$fetch', DefaultT extends GetDocumentsForNamespaceResponse = GetDocumentsForNamespaceResponse>(options: Options<TComposable, GetDocumentsForNamespaceData, GetDocumentsForNamespaceResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetDocumentsForNamespaceResponse | DefaultT, GetDocumentsForNamespaceError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/knowledge/databases/{database}/namespaces/{namespace}/documents',
-    ...options
-});
-
-/**
- * Get Document By Id
- *
- * Returns a single document by its ID.
- */
-export const getDocumentById = <TComposable extends Composable = '$fetch', DefaultT extends GetDocumentByIdResponse = GetDocumentByIdResponse>(options: Options<TComposable, GetDocumentByIdData, GetDocumentByIdResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetDocumentByIdResponse | DefaultT, GetDocumentByIdError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/knowledge/databases/{database}/namespaces/{namespace}/documents/{document_id}',
-    ...options
-});
-
-/**
- * Get Nodes For Document
- *
- * Returns nodes for a given document.
- */
-export const getNodesForDocument = <TComposable extends Composable = '$fetch', DefaultT extends GetNodesForDocumentResponse = GetNodesForDocumentResponse>(options: Options<TComposable, GetNodesForDocumentData, GetNodesForDocumentResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetNodesForDocumentResponse | DefaultT, GetNodesForDocumentError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/knowledge/databases/{database}/namespaces/{namespace}/documents/{document_id}/nodes',
-    ...options
-});
-
-/**
- * Get Summary Nodes For Document
- *
- * Returns nodes for a given document.
- */
-export const getSummaryNodesForDocument = <TComposable extends Composable = '$fetch', DefaultT extends GetSummaryNodesForDocumentResponse = GetSummaryNodesForDocumentResponse>(options: Options<TComposable, GetSummaryNodesForDocumentData, GetSummaryNodesForDocumentResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetSummaryNodesForDocumentResponse | DefaultT, GetSummaryNodesForDocumentError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/knowledge/databases/{database}/namespaces/{namespace}/documents/{document_id}/summaries',
-    ...options
-});
-
-/**
- * Initiate Document Upload
- *
- * Initiates file upload by generating a presigned S3/MinIO URL.
- *
- * This endpoint validates the upload request and returns a presigned URL
- * that allows the client to upload the file directly to S3/MinIO storage.
- */
-export const initiateDocumentUpload = <TComposable extends Composable = '$fetch', DefaultT extends InitiateDocumentUploadResponse = InitiateDocumentUploadResponse>(options: Options<TComposable, InitiateDocumentUploadData, InitiateDocumentUploadResponse, DefaultT>) => (options.client ?? client).post<TComposable, InitiateDocumentUploadResponse | DefaultT, InitiateDocumentUploadError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/knowledge/databases/{database}/namespaces/{namespace}/documents/upload/initiate',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Validate Document Upload
- *
- * Validates whether a file was successfully uploaded to the datalake.
- *
- * This endpoint checks if a file exists in the configured datalake storage
- * (S3/MinIO or Azure Blob Storage) after a presigned URL upload, and publishes
- * a SourceUpdatedEvent to NATS to trigger downstream pipeline processing.
- */
-export const validateDocumentUpload = <TComposable extends Composable = '$fetch', DefaultT extends ValidateDocumentUploadResponse = ValidateDocumentUploadResponse>(options: Options<TComposable, ValidateDocumentUploadData, ValidateDocumentUploadResponse, DefaultT>) => (options.client ?? client).post<TComposable, ValidateDocumentUploadResponse | DefaultT, ValidateDocumentUploadError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/knowledge/databases/{database}/namespaces/{namespace}/documents/upload/validate',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Get supported file types
- *
- * Returns a list of supported file extensions (e.g., [".pdf", ".docx"])
- * that can be used for client-side validation.
- */
-export const getSupportedFileTypes = <TComposable extends Composable = '$fetch', DefaultT extends GetSupportedFileTypesResponse = GetSupportedFileTypesResponse>(options: Options<TComposable, GetSupportedFileTypesData, GetSupportedFileTypesResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetSupportedFileTypesResponse | DefaultT, unknown, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/knowledge/supported-types',
-    ...options
-});
-
-/**
- * Get signed file URL
- *
- * Generates a short-lived secure link to the blob resource, and returns the URL.
- */
-export const getFileUrl = <TComposable extends Composable = '$fetch', DefaultT extends GetFileUrlResponse = GetFileUrlResponse>(options: Options<TComposable, GetFileUrlData, GetFileUrlResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetFileUrlResponse | DefaultT, GetFileUrlError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/files/logged-in/url/{container}/{file_path}',
-    ...options
-});
-
-/**
- * Access file as logged-in user
- *
- * Generates a short-lived secure link to the blob resource, and redirects the user to it.
- */
-export const getFileRedirect = <TComposable extends Composable = '$fetch', DefaultT = undefined>(options: Options<TComposable, GetFileRedirectData, unknown, DefaultT>) => (options.client ?? client).get<TComposable, unknown | DefaultT, GetFileRedirectError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/files/logged-in/redirect/{container}/{file_path}',
-    ...options
-});
-
-/**
- * Access file url via shared link
- *
- * Provides access to a file via a temporary, signed URL and returns the URL.
- */
-export const getAnonymousFileUrl = <TComposable extends Composable = '$fetch', DefaultT = undefined>(options: Options<TComposable, GetAnonymousFileUrlData, unknown, DefaultT>) => (options.client ?? client).get<TComposable, unknown | DefaultT, GetAnonymousFileUrlError, DefaultT>({ url: '/files/anonymous/url/{container}/{file_path}', ...options });
-
-/**
- * Access file via shared link
- *
- * Provides access to a file via a temporary URL and redirects the user to it.
- */
-export const getAnonymousFileRedirect = <TComposable extends Composable = '$fetch', DefaultT = undefined>(options: Options<TComposable, GetAnonymousFileRedirectData, unknown, DefaultT>) => (options.client ?? client).get<TComposable, unknown | DefaultT, GetAnonymousFileRedirectError, DefaultT>({ url: '/files/anonymous/redirect/{container}/{file_path}', ...options });
-
-/**
- * Get Notifications
- *
- * Retrieves a paginated list of notifications with optional filters.
- */
-export const getNotifications = <TComposable extends Composable = '$fetch', DefaultT extends GetNotificationsResponse = GetNotificationsResponse>(options: Options<TComposable, GetNotificationsData, GetNotificationsResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetNotificationsResponse | DefaultT, GetNotificationsError, DefaultT>({
-    responseTransformer: getNotificationsResponseTransformer,
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/notifications',
-    ...options
-});
-
-/**
- * Update Notifications Bulk
- *
- * Partially updates a list of notifications (e.g., marks them as read or done).
- */
-export const updateNotificationsBulk = <TComposable extends Composable = '$fetch', DefaultT extends UpdateNotificationsBulkResponse = UpdateNotificationsBulkResponse>(options: Options<TComposable, UpdateNotificationsBulkData, UpdateNotificationsBulkResponse, DefaultT>) => (options.client ?? client).patch<TComposable, UpdateNotificationsBulkResponse | DefaultT, UpdateNotificationsBulkError, DefaultT>({
-    responseTransformer: updateNotificationsBulkResponseTransformer,
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/notifications/',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Update Notification
- *
- * Partially updates a notification (e.g., marks it as read or done).
- */
-export const updateNotification = <TComposable extends Composable = '$fetch', DefaultT extends UpdateNotificationResponse = UpdateNotificationResponse>(options: Options<TComposable, UpdateNotificationData, UpdateNotificationResponse, DefaultT>) => (options.client ?? client).patch<TComposable, UpdateNotificationResponse | DefaultT, UpdateNotificationError, DefaultT>({
-    responseTransformer: updateNotificationResponseTransformer,
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/notifications/{notification_id}',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Delete All User Memories
- */
-export const deleteAllUserMemories = <TComposable extends Composable = '$fetch', DefaultT extends DeleteAllUserMemoriesResponse = DeleteAllUserMemoriesResponse>(options: Options<TComposable, DeleteAllUserMemoriesData, DeleteAllUserMemoriesResponse, DefaultT>) => (options.client ?? client).delete<TComposable, DeleteAllUserMemoriesResponse | DefaultT, unknown, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/user-memories',
-    ...options
-});
-
-/**
- * Get User Memories
- */
-export const getUserMemories = <TComposable extends Composable = '$fetch', DefaultT extends GetUserMemoriesResponse = GetUserMemoriesResponse>(options: Options<TComposable, GetUserMemoriesData, GetUserMemoriesResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetUserMemoriesResponse | DefaultT, GetUserMemoriesError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/user-memories',
-    ...options
-});
-
-/**
- * Search User Memories
- */
-export const searchUserMemories = <TComposable extends Composable = '$fetch', DefaultT extends SearchUserMemoriesResponse = SearchUserMemoriesResponse>(options: Options<TComposable, SearchUserMemoriesData, SearchUserMemoriesResponse, DefaultT>) => (options.client ?? client).get<TComposable, SearchUserMemoriesResponse | DefaultT, SearchUserMemoriesError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/user-memories/search',
-    ...options
-});
-
-/**
- * Delete User Memory
- */
-export const deleteUserMemory = <TComposable extends Composable = '$fetch', DefaultT extends DeleteUserMemoryResponse = DeleteUserMemoryResponse>(options: Options<TComposable, DeleteUserMemoryData, DeleteUserMemoryResponse, DefaultT>) => (options.client ?? client).delete<TComposable, DeleteUserMemoryResponse | DefaultT, DeleteUserMemoryError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/user-memories/{memory_id}',
-    ...options
-});
-
-/**
- * Update User Memory
- */
-export const updateUserMemory = <TComposable extends Composable = '$fetch', DefaultT extends UpdateUserMemoryResponse = UpdateUserMemoryResponse>(options: Options<TComposable, UpdateUserMemoryData, UpdateUserMemoryResponse, DefaultT>) => (options.client ?? client).patch<TComposable, UpdateUserMemoryResponse | DefaultT, UpdateUserMemoryError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/user-memories/{memory_id}',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Delete All Organization Memories
- */
-export const deleteAllOrganizationMemories = <TComposable extends Composable = '$fetch', DefaultT extends DeleteAllOrganizationMemoriesResponse = DeleteAllOrganizationMemoriesResponse>(options: Options<TComposable, DeleteAllOrganizationMemoriesData, DeleteAllOrganizationMemoriesResponse, DefaultT>) => (options.client ?? client).delete<TComposable, DeleteAllOrganizationMemoriesResponse | DefaultT, unknown, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/organization-memories',
-    ...options
-});
-
-/**
- * Get Organization Memories
- */
-export const getOrganizationMemories = <TComposable extends Composable = '$fetch', DefaultT extends GetOrganizationMemoriesResponse = GetOrganizationMemoriesResponse>(options: Options<TComposable, GetOrganizationMemoriesData, GetOrganizationMemoriesResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetOrganizationMemoriesResponse | DefaultT, GetOrganizationMemoriesError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/organization-memories',
-    ...options
-});
-
-/**
- * Search Organization Memories
- */
-export const searchOrganizationMemories = <TComposable extends Composable = '$fetch', DefaultT extends SearchOrganizationMemoriesResponse = SearchOrganizationMemoriesResponse>(options: Options<TComposable, SearchOrganizationMemoriesData, SearchOrganizationMemoriesResponse, DefaultT>) => (options.client ?? client).get<TComposable, SearchOrganizationMemoriesResponse | DefaultT, SearchOrganizationMemoriesError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/organization-memories/search',
-    ...options
-});
-
-/**
- * Delete Organization Memory
- */
-export const deleteOrganizationMemory = <TComposable extends Composable = '$fetch', DefaultT extends DeleteOrganizationMemoryResponse = DeleteOrganizationMemoryResponse>(options: Options<TComposable, DeleteOrganizationMemoryData, DeleteOrganizationMemoryResponse, DefaultT>) => (options.client ?? client).delete<TComposable, DeleteOrganizationMemoryResponse | DefaultT, DeleteOrganizationMemoryError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/organization-memories/{memory_id}',
-    ...options
-});
-
-/**
- * Update Organization Memory
- */
-export const updateOrganizationMemory = <TComposable extends Composable = '$fetch', DefaultT extends UpdateOrganizationMemoryResponse = UpdateOrganizationMemoryResponse>(options: Options<TComposable, UpdateOrganizationMemoryData, UpdateOrganizationMemoryResponse, DefaultT>) => (options.client ?? client).patch<TComposable, UpdateOrganizationMemoryResponse | DefaultT, UpdateOrganizationMemoryError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/organization-memories/{memory_id}',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Process document (OpenWebUI)
- */
-export const processDocument = <TComposable extends Composable = '$fetch', DefaultT extends ProcessDocumentResponse = ProcessDocumentResponse>(options: Options<TComposable, ProcessDocumentData, ProcessDocumentResponse, DefaultT>) => (options.client ?? client).put<TComposable, ProcessDocumentResponse | DefaultT, unknown, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/docling/process',
-    ...options
 });
 
 /**
@@ -1143,8 +450,63 @@ export const processDocument = <TComposable extends Composable = '$fetch', Defau
  * to all other supported locales (de, en, fr, it) using an LLM.
  */
 export const translateText = <TComposable extends Composable = '$fetch', DefaultT extends TranslateTextResponse = TranslateTextResponse>(options: Options<TComposable, TranslateTextData, TranslateTextResponse, DefaultT>) => (options.client ?? client).post<TComposable, TranslateTextResponse | DefaultT, TranslateTextError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
     url: '/translation/',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Send Start Event To My Agent Class
+ *
+ * Send a specific event type to a specific agent. Returns either a stop event or HITL request event.
+ */
+export const sendStartEventToMyAgentClassAgentsClassesMyAgentClassInstancesAgentIdStartEventPost = <TComposable extends Composable = '$fetch', DefaultT extends SendStartEventToMyAgentClassAgentsClassesMyAgentClassInstancesAgentIdStartEventPostResponse = SendStartEventToMyAgentClassAgentsClassesMyAgentClassInstancesAgentIdStartEventPostResponse>(options: Options<TComposable, SendStartEventToMyAgentClassAgentsClassesMyAgentClassInstancesAgentIdStartEventPostData, SendStartEventToMyAgentClassAgentsClassesMyAgentClassInstancesAgentIdStartEventPostResponse, DefaultT>) => (options.client ?? client).post<TComposable, SendStartEventToMyAgentClassAgentsClassesMyAgentClassInstancesAgentIdStartEventPostResponse | DefaultT, SendStartEventToMyAgentClassAgentsClassesMyAgentClassInstancesAgentIdStartEventPostError, DefaultT>({
+    url: '/agents/classes/my_agent_class/instances/{agent_id}/StartEvent',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Stream Start Event To My Agent Class
+ *
+ * Send a specific event type to a specific agent and stream all events as SSE.
+ */
+export const streamStartEventToMyAgentClassAgentsClassesMyAgentClassInstancesAgentIdStartEventStreamPost = <TComposable extends Composable = '$fetch', DefaultT = undefined>(options: Options<TComposable, StreamStartEventToMyAgentClassAgentsClassesMyAgentClassInstancesAgentIdStartEventStreamPostData, unknown, DefaultT>) => (options.client ?? client).post<TComposable, unknown | DefaultT, StreamStartEventToMyAgentClassAgentsClassesMyAgentClassInstancesAgentIdStartEventStreamPostError, DefaultT>({
+    url: '/agents/classes/my_agent_class/instances/{agent_id}/StartEvent/stream',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Send User Message Event To My Agent Class
+ *
+ * Send a specific event type to a specific agent. Returns either a stop event or HITL request event.
+ */
+export const sendUserMessageEventToMyAgentClassAgentsClassesMyAgentClassInstancesAgentIdUserMessageEventPost = <TComposable extends Composable = '$fetch', DefaultT extends SendUserMessageEventToMyAgentClassAgentsClassesMyAgentClassInstancesAgentIdUserMessageEventPostResponse = SendUserMessageEventToMyAgentClassAgentsClassesMyAgentClassInstancesAgentIdUserMessageEventPostResponse>(options: Options<TComposable, SendUserMessageEventToMyAgentClassAgentsClassesMyAgentClassInstancesAgentIdUserMessageEventPostData, SendUserMessageEventToMyAgentClassAgentsClassesMyAgentClassInstancesAgentIdUserMessageEventPostResponse, DefaultT>) => (options.client ?? client).post<TComposable, SendUserMessageEventToMyAgentClassAgentsClassesMyAgentClassInstancesAgentIdUserMessageEventPostResponse | DefaultT, SendUserMessageEventToMyAgentClassAgentsClassesMyAgentClassInstancesAgentIdUserMessageEventPostError, DefaultT>({
+    url: '/agents/classes/my_agent_class/instances/{agent_id}/UserMessageEvent',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Stream User Message Event To My Agent Class
+ *
+ * Send a specific event type to a specific agent and stream all events as SSE.
+ */
+export const streamUserMessageEventToMyAgentClassAgentsClassesMyAgentClassInstancesAgentIdUserMessageEventStreamPost = <TComposable extends Composable = '$fetch', DefaultT = undefined>(options: Options<TComposable, StreamUserMessageEventToMyAgentClassAgentsClassesMyAgentClassInstancesAgentIdUserMessageEventStreamPostData, unknown, DefaultT>) => (options.client ?? client).post<TComposable, unknown | DefaultT, StreamUserMessageEventToMyAgentClassAgentsClassesMyAgentClassInstancesAgentIdUserMessageEventStreamPostError, DefaultT>({
+    url: '/agents/classes/my_agent_class/instances/{agent_id}/UserMessageEvent/stream',
     ...options,
     headers: {
         'Content-Type': 'application/json',
