@@ -2,7 +2,7 @@
   <EventDisplayBase
     :event="event"
     :thread="thread"
-    icon="material-symbols:alt-route-rounded"
+    icon="mage:arrowlist"
   >
     <div class="flex flex-col gap-3">
       <p class="border-l-4 border-surface-200 pl-3 italic dark:border-surface-600">
@@ -41,14 +41,14 @@
 </template>
 
 <script setup lang="ts">
-import type { RouteOptionsReadable, RouterEventReadable, ThreadDto, AgentEventReadable } from '@core/sdk/client'
+import type { RouteOptions, RouterEvent, ThreadDto, ContextualizedAgentEvent } from '@core/sdk/client'
 
 const props = defineProps<{
-  event: AgentEventReadable & { event: RouterEventReadable }
+  event: ContextualizedAgentEvent & { event: RouterEvent }
   thread: ThreadDto
 }>()
 
-const isSelectedRoute = (route: RouteOptionsReadable) => {
+const isSelectedRoute = (route: RouteOptions) => {
   return route.event_id == props.event.event.selected_option.event_id
 }
 </script>

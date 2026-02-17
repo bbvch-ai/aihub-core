@@ -2,6 +2,7 @@ from asyncio import sleep
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from typing import Annotated
+from unittest.mock import AsyncMock, Mock
 
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.nats.events import BaseEvent
@@ -49,23 +50,35 @@ class AgentTestRunner(AgentRunner):
     def __init__(
         self,
         agent_type: type[Agent],
-        default_agent_config: AgentConfig,
+        agent_config: AgentConfig,
         locale_paths: list[str] | None = None,
     ):
         super().__init__(
             agent_type=agent_type,
-            default_agent_config=default_agent_config,
+            agent_config=agent_config,
             locale_paths=locale_paths,
         )
-        self.topic_manager = AgentInstanceTopicManager(
-            agent_class=self.agent_class, agent_id=default_agent_config.agent_id
-        )
+        self.topic_manager = AgentInstanceTopicManager(agent_class=self.agent_class, agent_id=agent_config.agent_id)
         self.test_event_subscriber: JSSubscriber | None = None
         self.observed_events: list[ObservedEvent] = []
         self.topic: PartialAgentTopic | None = None
 
         self.observe_discovery_event_subscriber: AgentNCSubscriber | None = None
         self.observe_discovery_response_event_subscriber: AgentNCSubscriber | None = None
+
+    async def start(self):
+        """
+        Starts the test runner with a mocked config client.
+
+        In test environment, there's no API server to respond to RPC config requests.
+        We mock the config client to return the test agent_config directly.
+        """
+        await super().start()
+        # Mock the config client to return the test config
+        # This avoids needing a real API server in tests
+        mock_config_client = Mock()
+        mock_config_client.fetch_config = AsyncMock(return_value=self.agent_config.model_dump())
+        self.dispatcher._config_client = mock_config_client
 
     async def send_event(
         self,
@@ -180,7 +193,7 @@ class AgentTestRunner(AgentRunner):
 
         self.topic = PartialAgentTopic(
             agent_class=self.agent_class,
-            agent_id=self.default_agent_config.agent_id,
+            agent_id=self.agent_config.agent_id,
             run_id=run_id,
             thread_id=thread_id,
             display_id=display_id,

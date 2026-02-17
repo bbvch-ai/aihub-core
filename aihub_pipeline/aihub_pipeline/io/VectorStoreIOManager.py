@@ -75,11 +75,9 @@ class VectorStoreIOManager(ConfigurableIOManager):
     document_id_key: str = DOCUMENT_ID
 
     def handle_output(self, context: OutputContext, obj: list[TextNode] | list[list[TextNode]]) -> None:
-        # Check if obj is a list of TextNodes (single document)
         if isinstance(obj, list) and all(isinstance(node, TextNode) for node in obj):
             nodes = obj
             context.log.info(f"Adding {len(nodes)} nodes from a single document to vector store")
-        # Check if obj is a list of lists of TextNodes (multiple documents)
         elif isinstance(obj, list) and all(
             isinstance(sublist, list) and all(isinstance(node, TextNode) for node in sublist) for sublist in obj
         ):
@@ -101,7 +99,6 @@ class VectorStoreIOManager(ConfigurableIOManager):
         context.log.info("Successfully added nodes to vector store")
 
     def load_input(self, context: InputContext) -> list[TextNode] | list[list[TextNode]]:
-        # Check if a partition key is available
         if context.has_partition_key:
             # Single partition key; load nodes for a single document
             doc_id = self._convert_partition_key_to_doc_id(context.partition_key, context)
@@ -113,7 +110,6 @@ class VectorStoreIOManager(ConfigurableIOManager):
             partitions_def = upstream_output.asset_partitions_def
 
             if partitions_def is not None:
-                # Get all partition keys from the upstream asset
                 all_partition_keys = partitions_def.get_partition_keys(dynamic_partitions_store=context.instance)
                 doc_ids = self._get_doc_ids_from_partition_keys(all_partition_keys, context)
                 nodes_per_doc = self._query_vector_store_for_multiple_docs(doc_ids, context)

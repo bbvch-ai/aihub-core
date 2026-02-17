@@ -2,7 +2,7 @@
   <EventDisplayBase
     :event="event"
     :thread="thread"
-    icon="line-md:search-twotone"
+    icon="mage:search"
   >
     <IconField class="w-full">
       <InputIcon class="pi pi-search" />
@@ -16,10 +16,10 @@
 </template>
 
 <script setup lang="ts">
-import type { EmbeddingEventReadable, ThreadDto, AgentEventReadable } from '@core/sdk/client'
+import type { EmbeddingEvent, ThreadDto, ContextualizedAgentEvent } from '@core/sdk/client'
 
 defineProps<{
-  event: AgentEventReadable & { event: EmbeddingEventReadable }
+  event: ContextualizedAgentEvent & { event: EmbeddingEvent }
   thread: ThreadDto
 }>()
 </script>

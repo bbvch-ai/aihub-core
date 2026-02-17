@@ -1,5 +1,5 @@
 import asyncio
-from typing import Annotated
+from typing import Annotated, Self
 
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.infrastructure.milvus.use_milvus import use_milvus
@@ -29,7 +29,7 @@ class ApiHealthController(HealthController):
     ):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
 
-    def get_ready(self, route: str = "/ready") -> "ApiHealthController":
+    def get_ready(self, route: str = "/ready") -> Self:
         """Adds a readiness endpoint that checks all API dependencies."""
 
         @self.router.get(route, tags=self.tags)

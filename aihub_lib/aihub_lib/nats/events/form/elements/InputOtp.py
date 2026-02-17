@@ -1,4 +1,4 @@
-from typing import Annotated, Literal
+from typing import Annotated, Literal, Self
 
 from pydantic import Field, computed_field
 
@@ -32,6 +32,6 @@ class InputOtp(PrimeVueElement):
 
         return "|".join(validation_rules)
 
-    def in_locale(self, t: LocaleHandler) -> "InputOtp":
+    def in_locale(self, t: LocaleHandler) -> Self:
         self_copy = super().in_locale(t)
         return self_copy

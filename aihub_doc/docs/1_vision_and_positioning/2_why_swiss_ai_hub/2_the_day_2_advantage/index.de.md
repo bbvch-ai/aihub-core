@@ -63,7 +63,7 @@ eine automatische Neuverarbeitung aus.
 **Das Day-2-Problem:** Die KI gibt eine falsche Antwort. Was ist passiert? Welche Dokumente wurden referenziert? Was war
 der tatsächlich an das Modell gesendete Prompt? Wie debuggen Sie ein System, bei dem jeder Lauf anders ist?
 
-**Bereits gelöst:** Mehrere Ebenen der Beobachtbarkeit sind integriert. Phoenix Tracing zeigt jeden LLM-Aufruf mit
+**Bereits gelöst:** Mehrere Ebenen der Beobachtbarkeit sind integriert. Langfuse Tracing zeigt jeden LLM-Aufruf mit
 Eingaben und Ausgaben. Workflow-Events machen jeden Schritt sichtbar. Dagster bietet eine vollständige Pipeline- Linie.
 OpenTelemetry verfolgt Systemmetriken. Wenn etwas schiefgeht, können Sie den gesamten Ausführungspfad nachverfolgen.
 
@@ -96,7 +96,7 @@ Agenten vor der Produktionsbereitstellung?
 
 **Bereits gelöst:** Das SDK bietet `AgentTestRunner` für deterministische Tests. BDD-Muster mit pytest-bdd zur
 Verhaltensüberprüfung. Evaluierungs-Frameworks zur Messung der Genauigkeit anhand von Testdatensätzen. Sandbox-
-Umgebungen für sicheres Testen. Phoenix Tracing zur Test-Fehlersuche.
+Umgebungen für sicheres Testen. Langfuse Tracing zur Test-Fehlersuche.
 
 ## Compliance und Governance
 

@@ -1,0 +1,119 @@
+metadata:
+  name: Dokumentennavigations-Assistent
+  description: KI-Assistent, der Ihnen hilft, die richtigen Wissensquellen für Ihre
+    Fragen zu finden und auszuwählen
+config:
+  bucket_names:
+    label: Wissensdatenbanken
+    help: Wählen Sie die Wissensdatenbanken zur Namespace-Abfrage
+  max_conversation_history_entries:
+    label: Max. Verlaufseinträge
+  approval_message_template:
+    label: Genehmigungsnachricht-Vorlage
+defaults:
+  approval_message_template: 'Basierend auf Ihrer Anfrage schlage ich vor, folgende
+    Wissensquellen abzufragen:
+
+
+    {namespaces}
+
+
+    Genehmigen Sie diese Auswahl?
+
+    '
+delegation_config:
+  rag_agent:
+    label: RAG-Agent
+    help: Wählen Sie den RAG-Agenten, an den Anfragen weitergeleitet werden
+    class_placeholder: Agententyp auswählen
+    id_placeholder: Agenteninstanz auswählen
+thoughts:
+  fetching_namespaces: Verfügbare Wissensquellen werden ermittelt
+  starting_determination: Relevante Quellen werden bestimmt
+  analyzing_request: Anfrage wird verstanden
+  llm_decision: '%{reasoning}'
+  processing_follow_up: Antwort wird verarbeitet
+  selection_approved: Quellen bestätigt
+  selection_rejected: Alternative Quellen werden gesucht
+  forwarding_to_rag: Relevante Informationen werden gesucht
+  rag_error: 'Bei der Suche ist ein Fehler aufgetreten: %{error_message}'
+messages:
+  default_follow_up: Könnten Sie bitte weitere Details zu Ihrer Anfrage angeben, damit
+    ich die relevantesten Wissensquellen bestimmen kann?
+  user_rejected_selection: Ich habe die vorgeschlagene Namespace-Auswahl abgelehnt.
+    Bitte schlagen Sie andere Namespaces vor.
+  rag_error: Bei der Verarbeitung Ihrer Anfrage ist ein Fehler aufgetreten. Bitte
+    versuchen Sie es erneut.
+  invalid_selection: 'Ihre Auswahl war ungültig. Sie haben ausgewählt: %{selected}.
+    Verfügbare Namespaces sind: %{available_namespaces}. Bitte wählen Sie nur aus
+    den aufgelisteten verfügbaren Namespaces.'
+prompts:
+  determination: 'Sie sind ein Namespace-Auswahlassistent. Ihre Aufgabe ist es, die
+    Anfrage eines Benutzers zu analysieren und zu bestimmen, welche Wissensquellen
+    (Namespaces) am relevantesten für die Beantwortung seiner Anfrage wären.
+
+
+    Gesprächsverlauf:
+
+    <conversation_history>
+
+    {{ conversation_history }}
+
+    </conversation_history>
+
+
+    <available_namespaces>
+
+    {{ available_namespaces }}
+
+    </available_namespaces>
+
+
+    Anweisungen:
+
+    1. Wenn die Absicht des Benutzers klar genug ist, um bestimmte Namespaces auszuwählen,
+    setzen Sie has_enough_information=true und geben Sie selected_namespaces an, wobei
+    jeder Bucket genau einem Namespace zugeordnet wird.
+
+    2. Wenn Sie mehr Informationen benötigen, setzen Sie has_enough_information=false
+    und stellen Sie eine follow_up_question.
+
+
+    KRITISCHE EINSCHRÄNKUNGEN:
+
+    - Jeder Bucket MUSS genau EINEN Namespace ausgewählt haben - nicht mehr, nicht
+    weniger.
+
+    - Ihre follow_up_question MUSS die exakten Namespace-Namen aus <available_namespaces>
+    oben als Optionen auflisten.
+
+    - Erfinden Sie KEINE Namen - verwenden Sie nur die tatsächlichen Namen, die oben
+    angezeigt werden.
+
+    '
+steps:
+  initialize_determination:
+    name: "Namespace-Bestimmung initialisieren"
+    description: "Lädt Namespaces und initialisiert die Bestimmungsschleife"
+  determine_namespaces:
+    name: "Namespaces bestimmen"
+    description: "LLM analysiert Konversation zur Namespace-Bestimmung"
+  process_follow_up:
+    name: "Nachfrage verarbeiten"
+    description: "Verarbeitet die Nachfrage-Antwort des Benutzers und setzt die Bestimmung fort"
+  process_approval_approved:
+    name: "Genehmigung verarbeiten - Genehmigt"
+    description: "Speichert die Auswahl und leitet an RAG-Agent weiter"
+  process_approval_rejected:
+    name: "Genehmigung verarbeiten - Abgelehnt"
+    description: "Fügt Ablehnung zur Konversation hinzu und kehrt zur Schleife zurück"
+  rag_response:
+    name: "RAG-Antwort"
+    description: "Verarbeitet die Antwort vom RAG-Agent"
+  rag_error:
+    name: "RAG-Fehler"
+    description: "Behandelt Fehler vom RAG-Agent"
+  forward_to_rag:
+    name: "An RAG weiterleiten"
+    description: "Leitet die Anfrage mit Namespace-Auswahl an den RAG-Agent weiter"
+

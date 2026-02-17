@@ -1,39 +1,10 @@
 {
   "mcpServers": {
-    "phoenix": {
-      "command": "docker",
-      "args": [
-        "run",
-        "--rm",
-        "-i",
-        "--network=host",
-        "node:22-alpine",
-        "npx",
-        "-y",
-        "@arizeai/phoenix-mcp@latest",
-        "--baseUrl",
-        "http://localhost:6006"
-      ]
-    },
     "mongodb": {
-      "command": "docker",
-      "args": [
-        "run",
-        "--rm",
-        "-i",
-        "--network=host",
-        "-e",
-        "MDB_MCP_CONNECTION_STRING=mongodb://admin:admin@localhost:27017/aihub",
-        "-e",
-        "MDB_MCP_READ_ONLY=true",
-        "mongodb/mongodb-mcp-server:latest"
-      ]
+      "command": "./.claude/mcp/mcp-mongodb.sh"
     },
     "aihub_api": {
-      "type": "http",
-      "url": "http://localhost:8000/mcp",
-      "disabled": false,
-      "autoApprove": []
+      "command": "./.claude/mcp/mcp-aihub-api.sh"
     }
   }
 }

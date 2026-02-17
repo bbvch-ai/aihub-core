@@ -53,7 +53,6 @@ class FileTypeConfig(BaseModel):
             mime_type, _ = mimetypes.guess_type(f"file{ext}")
             if mime_type:
                 mapping[ext] = mime_type
-            # Handle special cases where mimetypes might not know about them
             elif ext == ".md" or ext == ".markdown":
                 mapping[ext] = "text/markdown"
             elif ext == ".adoc" or ext == ".asciidoc":

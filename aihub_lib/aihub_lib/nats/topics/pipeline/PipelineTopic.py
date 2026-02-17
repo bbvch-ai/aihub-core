@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Self
 
 from pydantic import Field
 
@@ -42,7 +42,7 @@ class PipelineTopic(Topic):
         )
 
     @classmethod
-    def from_subject(cls, subject: str) -> "PipelineTopic":
+    def from_subject(cls, subject: str) -> Self:
         (
             topic_type,
             source_type,

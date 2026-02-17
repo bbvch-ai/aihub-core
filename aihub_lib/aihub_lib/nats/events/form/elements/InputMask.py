@@ -1,4 +1,4 @@
-from typing import Annotated, Literal
+from typing import Annotated, Literal, Self
 
 from pydantic import Field
 
@@ -27,7 +27,7 @@ class InputMask(PrimeVueElement):
         str | None, Field(description="Icon suffix", alias="iconSuffix", pattern=r"^pi pi-[a-z0-9-]+$")
     ] = None
 
-    def in_locale(self, t: LocaleHandler) -> "InputMask":
+    def in_locale(self, t: LocaleHandler) -> Self:
         self_copy = super().in_locale(t)
         if isinstance(self_copy.placeholder, LocaleString):
             self_copy.placeholder = t.extract(self_copy.placeholder)

@@ -1,412 +1,328 @@
 from unittest.mock import Mock, patch
 
 import pytest
+from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.logging.logger import enable_logging
+from aihub_lib.persistence.process.ProcessClassEntity import ProcessClassEntity
 from aihub_lib.persistence.process.ProcessConfigEntityDocument import ProcessConfigEntityDocument
-from aihub_lib.processes.ProcessConfig import ProcessConfig
 from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_methods  # noqa: F401
 from fastapi import HTTPException
 
+from aihub_api.routes.process.dto.FullProcessInstanceDTO import FullProcessInstanceDTO
 from aihub_api.routes.process.dto.ProcessClassDTO import ProcessClassDTO
-from aihub_api.routes.process.dto.ProcessInstanceDTO import ProcessInstanceDTO
-from aihub_api.routes.process.ProcessService import GET_PROCESS_INSTANCE_CACHE, ProcessService
+from aihub_api.routes.process.ProcessService import ProcessService
 
 enable_logging()
 
 
-@pytest.fixture(autouse=True)
-def cleanup_db_and_cache(sample_process_config):
-    ProcessService._clear_cache()
-    yield
-    ProcessService._clear_cache()
+@pytest.fixture
+def mock_locale_handler():
+    """Create a mock LocaleHandler."""
+    return Mock(spec=LocaleHandler)
 
 
 @pytest.fixture
-def sample_process_config():
-    """Create a sample ProcessConfig for testing."""
-    return ProcessConfig(
-        process_class="TestProcess",
-        process_id="test_process_1",
-        name=LocaleString(en="Test Process 1"),
-        description=LocaleString(en="A test process for validation"),
-        icon="test-icon",
-    )
+def mock_class_entity():
+    """Create a mock ProcessClassEntity."""
+    entity = Mock(spec=ProcessClassEntity)
+    entity.process_class = "TestProcess"
+    entity.is_online = True
+    entity.icon = "test-icon"
+    return entity
 
 
 @pytest.fixture
-def sample_default_config():
-    """Create a sample default ProcessConfig for testing."""
-    return ProcessConfig(
-        process_class="TestProcess",
-        process_id="default_process",
-        name=LocaleString(en="Default Test Process"),
-        description=LocaleString(en="Default test process configuration"),
-        icon="default-icon",
-    )
-
-
-@pytest.fixture
-def sample_process_class(sample_default_config):
-    """Create a sample ProcessClass with default config."""
-    mock_process_class = Mock(spec=ProcessClassDTO)
-    mock_process_class.process_class = "TestProcess"
-    mock_process_class.default_process_config = sample_default_config
-    return mock_process_class
-
-
-@pytest.fixture
-def mock_process_config_document(sample_process_config):
+def mock_config_entity():
     """Create a mock ProcessConfigEntityDocument."""
-    mock_doc = Mock()
-    mock_doc.process_class = sample_process_config.process_class
-    mock_doc.process_id = sample_process_config.process_id
-    mock_doc.name = sample_process_config.name
-    mock_doc.description = sample_process_config.description
-    mock_doc.icon = sample_process_config.icon
-    mock_doc.config_data = {}
-    return mock_doc
+    entity = Mock(spec=ProcessConfigEntityDocument)
+    entity.process_class = "TestProcess"
+    entity.process_id = "test_process_1"
+    entity.name = Mock()
+    entity.name.to_locale_string.return_value = LocaleString(en="Test Process 1")
+    entity.description = Mock()
+    entity.description.to_locale_string.return_value = LocaleString(en="A test process")
+    entity.icon = "test-icon"
+    entity.config_data = {}
+    return entity
 
 
 @pytest.fixture
-def mock_nats():
-    """Create a mock NATS connection."""
-    return Mock()
+def mock_config_entity_2():
+    """Create a second mock ProcessConfigEntityDocument."""
+    entity = Mock(spec=ProcessConfigEntityDocument)
+    entity.process_class = "TestProcess"
+    entity.process_id = "test_process_2"
+    entity.name = Mock()
+    entity.name.to_locale_string.return_value = LocaleString(en="Test Process 2")
+    entity.description = Mock()
+    entity.description.to_locale_string.return_value = LocaleString(en="Second test process")
+    entity.icon = "db-icon2"
+    entity.config_data = {"key": "value"}
+    return entity
 
 
 class TestProcessServiceDatabaseIntegration:
-    """Test ProcessService database integration and config override logic."""
+    """Test ProcessService database integration with DB-first CRUD methods."""
 
     @pytest.mark.asyncio
-    async def test_discover_process_instance_with_db_config(
-        self, mock_nats, sample_process_config, sample_process_class, mock_process_config_document
+    async def test_get_process_class_instances_returns_all(
+        self, mock_locale_handler, mock_class_entity, mock_config_entity, mock_config_entity_2
     ):
-        """Test that ProcessService.discover_process_instance correctly fetches and uses DB config."""
-        # Clear any existing cache
-        ProcessService._clear_cache()
-
-        with patch.object(ProcessService, "_discover_process_class") as mock_discover_class:
-            mock_discover_class.return_value = sample_process_class
+        """Test that get_process_class_instances returns all instances for a class from DB."""
+        with patch.object(ProcessClassEntity, "get_by_process_class") as mock_get_class:
+            mock_get_class.return_value = mock_class_entity
 
             with patch.object(ProcessConfigEntityDocument, "find_for_class") as mock_find_configs:
-                mock_find_configs.return_value = [mock_process_config_document]
+                mock_find_configs.return_value = [mock_config_entity, mock_config_entity_2]
 
-                with patch.object(ProcessConfig, "from_entity") as mock_from_entity:
-                    mock_from_entity.return_value = sample_process_config
+                with patch.object(FullProcessInstanceDTO, "from_class_and_config") as mock_from:
+                    dto1 = Mock(spec=FullProcessInstanceDTO)
+                    dto2 = Mock(spec=FullProcessInstanceDTO)
+                    mock_from.side_effect = [dto1, dto2]
 
-                    with patch.object(ProcessInstanceDTO, "from_class_and_config") as mock_from_class_config:
-                        mock_instance = Mock(spec=ProcessInstanceDTO)
-                        mock_instance.process_config = sample_process_config
-                        mock_from_class_config.return_value = mock_instance
+                    result = await ProcessService.get_process_class_instances("TestProcess", mock_locale_handler)
 
-                        # Execute the method
-                        result = await ProcessService.discover_process_instance(
-                            nc=mock_nats, process_class="TestProcess", process_id="test_process_1"
-                        )
-
-                        # Verify the flow
-                        mock_discover_class.assert_called_once_with(mock_nats, "TestProcess")
-                        mock_find_configs.assert_called_once_with("TestProcess")
-                        mock_from_entity.assert_called_once_with(mock_process_config_document)
-                        mock_from_class_config.assert_called_once_with(
-                            class_dto=sample_process_class, process_config=sample_process_config
-                        )
-
-                        # Verify the result
-                        assert result == mock_instance
-                        assert result.process_config == sample_process_config
-
-    @pytest.mark.asyncio
-    async def test_discover_process_instance_fallback_to_default(
-        self, mock_nats, sample_default_config, sample_process_class
-    ):
-        """Test that ProcessService.discover_process_instance falls back to default config when no DB config exists."""
-        # Clear any existing cache
-        ProcessService._clear_cache()
-
-        with patch.object(ProcessService, "_discover_process_class") as mock_discover_class:
-            mock_discover_class.return_value = sample_process_class
-
-            with patch.object(ProcessConfigEntityDocument, "find_for_class") as mock_find_configs:
-                mock_find_configs.return_value = []  # No DB configs found
-
-                with patch.object(ProcessInstanceDTO, "from_class_and_config") as mock_from_class_config:
-                    mock_instance = Mock(spec=ProcessInstanceDTO)
-                    mock_instance.process_config = sample_default_config
-                    mock_from_class_config.return_value = mock_instance
-
-                    # Execute the method
-                    result = await ProcessService.discover_process_instance(
-                        nc=mock_nats, process_class="TestProcess", process_id="default_process"
-                    )
-
-                    # Verify the flow
-                    mock_discover_class.assert_called_once_with(mock_nats, "TestProcess")
+                    mock_get_class.assert_called_once_with("TestProcess")
                     mock_find_configs.assert_called_once_with("TestProcess")
-                    mock_from_class_config.assert_called_once_with(
-                        class_dto=sample_process_class, process_config=sample_default_config
+                    assert len(result) == 2
+                    assert result == [dto1, dto2]
+
+    @pytest.mark.asyncio
+    async def test_get_process_class_instances_empty(self, mock_locale_handler, mock_class_entity):
+        """Test that get_process_class_instances returns empty list when no instances exist."""
+        with patch.object(ProcessClassEntity, "get_by_process_class") as mock_get_class:
+            mock_get_class.return_value = mock_class_entity
+
+            with patch.object(ProcessConfigEntityDocument, "find_for_class") as mock_find_configs:
+                mock_find_configs.return_value = []
+
+                result = await ProcessService.get_process_class_instances("TestProcess", mock_locale_handler)
+
+                assert result == []
+
+    @pytest.mark.asyncio
+    async def test_get_process_class_instances_class_not_found(self, mock_locale_handler):
+        """Test that get_process_class_instances raises 404 when class not found."""
+        with patch.object(ProcessClassEntity, "get_by_process_class") as mock_get_class:
+            mock_get_class.return_value = None
+
+            with pytest.raises(HTTPException) as exc_info:
+                await ProcessService.get_process_class_instances("NonexistentProcess", mock_locale_handler)
+
+            assert exc_info.value.status_code == 404
+
+    @pytest.mark.asyncio
+    async def test_get_process_instance_returns_dto(self, mock_locale_handler, mock_class_entity, mock_config_entity):
+        """Test that get_process_instance returns a FullProcessInstanceDTO from DB."""
+        with patch.object(ProcessClassEntity, "get_by_process_class") as mock_get_class:
+            mock_get_class.return_value = mock_class_entity
+
+            with patch.object(ProcessConfigEntityDocument, "find_for_class_and_id") as mock_find:
+                mock_find.return_value = mock_config_entity
+
+                with patch.object(FullProcessInstanceDTO, "from_class_and_config") as mock_from:
+                    expected_dto = Mock(spec=FullProcessInstanceDTO)
+                    mock_from.return_value = expected_dto
+
+                    result = await ProcessService.get_process_instance(
+                        "TestProcess", "test_process_1", mock_locale_handler
                     )
 
-                    # Verify the result uses default config
-                    assert result == mock_instance
-                    assert result.process_config == sample_default_config
+                    mock_get_class.assert_called_once_with("TestProcess")
+                    mock_find.assert_called_once_with("TestProcess", "test_process_1")
+                    mock_from.assert_called_once_with(mock_class_entity, mock_config_entity, mock_locale_handler)
+                    assert result == expected_dto
 
     @pytest.mark.asyncio
-    async def test_discover_process_instance_db_config_overrides_default(
-        self, mock_nats, sample_process_class, mock_process_config_document
-    ):
-        """Test that DB config overrides default config when both have the same process_id."""
-        # Clear any existing cache
-        ProcessService._clear_cache()
+    async def test_get_process_instance_not_found(self, mock_locale_handler, mock_class_entity):
+        """Test that get_process_instance raises 404 when instance not found in DB."""
+        with patch.object(ProcessClassEntity, "get_by_process_class") as mock_get_class:
+            mock_get_class.return_value = mock_class_entity
 
-        # Create a DB config with same ID as default
-        db_config = ProcessConfig(
-            process_class="TestProcess",
-            process_id="default_process",  # Same ID as default
-            name=LocaleString(en="DB Override Config"),
-            description=LocaleString(en="DB config overriding default"),
-            icon="db-icon",
-        )
+            with patch.object(ProcessConfigEntityDocument, "find_for_class_and_id") as mock_find:
+                mock_find.return_value = None
 
-        # Mock the document to have the same ID as default
-        mock_process_config_document.process_id = "default_process"
-
-        with patch.object(ProcessService, "_discover_process_class") as mock_discover_class:
-            mock_discover_class.return_value = sample_process_class
-
-            with patch.object(ProcessConfigEntityDocument, "find_for_class") as mock_find_configs:
-                mock_find_configs.return_value = [mock_process_config_document]
-
-                with patch.object(ProcessConfig, "from_entity") as mock_from_entity:
-                    mock_from_entity.return_value = db_config
-
-                    with patch.object(ProcessInstanceDTO, "from_class_and_config") as mock_from_class_config:
-                        mock_instance = Mock(spec=ProcessInstanceDTO)
-                        mock_instance.process_config = db_config
-                        mock_from_class_config.return_value = mock_instance
-
-                        # Execute the method
-                        result = await ProcessService.discover_process_instance(
-                            nc=mock_nats, process_class="TestProcess", process_id="default_process"
-                        )
-
-                        # Verify the flow - should use DB config, not default
-                        mock_discover_class.assert_called_once_with(mock_nats, "TestProcess")
-                        mock_find_configs.assert_called_once_with("TestProcess")
-                        mock_from_entity.assert_called_once_with(mock_process_config_document)
-                        mock_from_class_config.assert_called_once_with(
-                            class_dto=sample_process_class,
-                            process_config=db_config,  # Should use DB config, not default
-                        )
-
-                        # Verify the result uses DB config
-                        assert result == mock_instance
-                        assert result.process_config == db_config
-                        assert result.process_config.name.en == "DB Override Config"
-
-    @pytest.mark.asyncio
-    async def test_discover_process_instance_not_found(self, mock_nats, sample_process_class):
-        """Test that ProcessService.discover_process_instance raises 404 when process not found."""
-        # Clear any existing cache
-        ProcessService._clear_cache()
-
-        with patch.object(ProcessService, "_discover_process_class") as mock_discover_class:
-            mock_discover_class.return_value = sample_process_class
-
-            with patch.object(ProcessConfigEntityDocument, "find_for_class") as mock_find_configs:
-                mock_find_configs.return_value = []  # No DB configs found
-
-                # Execute the method with non-existent process_id
                 with pytest.raises(HTTPException) as exc_info:
-                    await ProcessService.discover_process_instance(
-                        nc=mock_nats, process_class="TestProcess", process_id="nonexistent_process"
-                    )
+                    await ProcessService.get_process_instance("TestProcess", "nonexistent_process", mock_locale_handler)
 
-                # Verify the exception
                 assert exc_info.value.status_code == 404
-                assert "Process TestProcess.nonexistent_process not found" in str(exc_info.value.detail)
 
     @pytest.mark.asyncio
-    async def test_discover_process_instances_by_class_with_db_and_default(
-        self,
-        mock_nats,
-        sample_process_class,
-        mock_process_config_document,
-        sample_process_config,
-        sample_default_config,
+    async def test_get_process_instance_class_not_found(self, mock_locale_handler):
+        """Test that get_process_instance raises 404 when class not found."""
+        with patch.object(ProcessClassEntity, "get_by_process_class") as mock_get_class:
+            mock_get_class.return_value = None
+
+            with pytest.raises(HTTPException) as exc_info:
+                await ProcessService.get_process_instance("NonexistentProcess", "test_1", mock_locale_handler)
+
+            assert exc_info.value.status_code == 404
+
+    @pytest.mark.asyncio
+    async def test_get_all_process_instances_cross_class(
+        self, mock_locale_handler, mock_config_entity, mock_config_entity_2
     ):
-        """Test that ProcessService.discover_process_instances_by_class includes both DB and default configs."""
-        # Clear any existing cache
-        ProcessService._clear_cache()
+        """Test that get_all_process_instances returns instances from all classes."""
+        class_entity_1 = Mock(spec=ProcessClassEntity)
+        class_entity_1.process_class = "ProcessA"
+        class_entity_1.is_online = True
 
-        # Create a second DB config with different ID
-        mock_doc2 = Mock()
-        mock_doc2.process_class = "TestProcess"
-        mock_doc2.process_id = "db_process_2"
-        mock_doc2.name = LocaleString(en="DB Process 2")
-        mock_doc2.description = LocaleString(en="Second DB process")
-        mock_doc2.icon = "db-icon2"
-        mock_doc2.config_data = {}
+        class_entity_2 = Mock(spec=ProcessClassEntity)
+        class_entity_2.process_class = "ProcessB"
+        class_entity_2.is_online = True
 
-        config2 = ProcessConfig(
-            process_class="TestProcess",
-            process_id="db_process_2",
-            name=LocaleString(en="DB Process 2"),
-            description=LocaleString(en="Second DB process"),
-            icon="db-icon2",
-        )
+        with patch.object(ProcessClassEntity, "get_all") as mock_get_all:
+            mock_get_all.return_value = [class_entity_1, class_entity_2]
 
-        with patch.object(ProcessService, "_discover_process_class") as mock_discover_class:
-            mock_discover_class.return_value = sample_process_class
+            with patch.object(ProcessConfigEntityDocument, "find_for_class") as mock_find:
+                mock_find.side_effect = [[mock_config_entity], [mock_config_entity_2]]
 
-            with patch.object(ProcessConfigEntityDocument, "find_for_class") as mock_find_configs:
-                mock_find_configs.return_value = [mock_process_config_document, mock_doc2]
+                with patch.object(FullProcessInstanceDTO, "from_class_and_config") as mock_from:
+                    dto1 = Mock(spec=FullProcessInstanceDTO)
+                    dto2 = Mock(spec=FullProcessInstanceDTO)
+                    mock_from.side_effect = [dto1, dto2]
 
-                with patch.object(ProcessConfig, "from_entity") as mock_from_entity:
-                    mock_from_entity.side_effect = [sample_process_config, config2]
+                    result = await ProcessService.get_all_process_instances(mock_locale_handler)
 
-                    with patch.object(ProcessInstanceDTO, "from_class_and_config") as mock_from_class_config:
-                        mock_instance1 = Mock(spec=ProcessInstanceDTO)
-                        mock_instance1.process_config = sample_process_config
-                        mock_instance2 = Mock(spec=ProcessInstanceDTO)
-                        mock_instance2.process_config = config2
-                        mock_instance3 = Mock(spec=ProcessInstanceDTO)
-                        mock_instance3.process_config = sample_default_config
-
-                        mock_from_class_config.side_effect = [mock_instance1, mock_instance2, mock_instance3]
-
-                        # Execute the method
-                        result = await ProcessService.discover_process_instances_by_class(
-                            nc=mock_nats, process_class="TestProcess"
-                        )
-
-                        # Verify the flow
-                        mock_discover_class.assert_called_once_with(mock_nats, "TestProcess")
-                        mock_find_configs.assert_called_once_with("TestProcess")
-                        assert mock_from_entity.call_count == 2
-                        assert mock_from_class_config.call_count == 3  # 2 DB configs + 1 default
-
-                        # Verify the result includes all configs
-                        assert len(result) == 3
-                        process_ids = [instance.process_config.process_id for instance in result]
-                        assert "test_process_1" in process_ids
-                        assert "db_process_2" in process_ids
-                        assert "default_process" in process_ids
+                    assert len(result) == 2
+                    assert result == [dto1, dto2]
 
     @pytest.mark.asyncio
-    async def test_discover_process_instances_by_class_excludes_default_when_db_has_same_id(
-        self, mock_nats, sample_process_class, mock_process_config_document, sample_default_config
-    ):
-        """Test that default config is excluded when DB has config with same process_id."""
-        # Clear any existing cache
-        ProcessService._clear_cache()
+    async def test_get_all_process_instances_filters_online(self, mock_locale_handler, mock_config_entity):
+        """Test that get_all_process_instances filters by online status."""
+        online_class = Mock(spec=ProcessClassEntity)
+        online_class.process_class = "OnlineProcess"
+        online_class.is_online = True
 
-        # Create DB config with same ID as default
-        db_config = ProcessConfig(
-            process_class="TestProcess",
-            process_id="default_process",  # Same ID as default
-            name=LocaleString(en="DB Override Config"),
-            description=LocaleString(en="DB config overriding default"),
-            icon="db-icon",
-        )
+        offline_class = Mock(spec=ProcessClassEntity)
+        offline_class.process_class = "OfflineProcess"
+        offline_class.is_online = False
 
-        mock_process_config_document.process_id = "default_process"
+        with patch.object(ProcessClassEntity, "get_all") as mock_get_all:
+            mock_get_all.return_value = [online_class, offline_class]
 
-        with patch.object(ProcessService, "_discover_process_class") as mock_discover_class:
-            mock_discover_class.return_value = sample_process_class
+            with patch.object(ProcessConfigEntityDocument, "find_for_class") as mock_find:
+                mock_find.return_value = [mock_config_entity]
 
-            with patch.object(ProcessConfigEntityDocument, "find_for_class") as mock_find_configs:
-                mock_find_configs.return_value = [mock_process_config_document]
+                with patch.object(FullProcessInstanceDTO, "from_class_and_config") as mock_from:
+                    dto = Mock(spec=FullProcessInstanceDTO)
+                    mock_from.return_value = dto
 
-                with patch.object(ProcessConfig, "from_entity") as mock_from_entity:
-                    mock_from_entity.return_value = db_config
+                    result = await ProcessService.get_all_process_instances(mock_locale_handler, online=True)
 
-                    with patch.object(ProcessInstanceDTO, "from_class_and_config") as mock_from_class_config:
-                        mock_instance = Mock(spec=ProcessInstanceDTO)
-                        mock_instance.process_config = db_config
-                        mock_from_class_config.return_value = mock_instance
-
-                        # Execute the method
-                        result = await ProcessService.discover_process_instances_by_class(
-                            nc=mock_nats, process_class="TestProcess"
-                        )
-
-                        # Verify the flow
-                        mock_discover_class.assert_called_once_with(mock_nats, "TestProcess")
-                        mock_find_configs.assert_called_once_with("TestProcess")
-                        mock_from_entity.assert_called_once_with(mock_process_config_document)
-                        mock_from_class_config.assert_called_once()  # Only called once for DB config
-
-                        # Verify the result includes only DB config, not default
-                        assert len(result) == 1
-                        assert result[0].process_config == db_config
-                        assert result[0].process_config.name.en == "DB Override Config"
-
-    @pytest.mark.asyncio
-    async def test_discover_process_instances_by_class_cache_behavior(self, mock_nats, sample_process_class):
-        """Test that ProcessService.discover_process_instances_by_class uses cache correctly."""
-        # Clear any existing cache
-        ProcessService._clear_cache()
-
-        cached_result = [Mock(spec=ProcessInstanceDTO)]
-        cache_key = ("TestProcess", "*")
-        GET_PROCESS_INSTANCE_CACHE[cache_key] = cached_result
-
-        # Execute the method
-        result = await ProcessService.discover_process_instances_by_class(nc=mock_nats, process_class="TestProcess")
-
-        # Verify cached result is returned
-        assert result == cached_result
-
-    @pytest.mark.asyncio
-    async def test_discover_process_instance_cache_behavior(self, mock_nats, sample_process_class):
-        """Test that ProcessService.discover_process_instance uses cache correctly."""
-        # Clear any existing cache
-        ProcessService._clear_cache()
-
-        cached_result = Mock(spec=ProcessInstanceDTO)
-        cache_key = ("TestProcess", "test_process_1")
-        GET_PROCESS_INSTANCE_CACHE[cache_key] = cached_result
-
-        # Execute the method
-        result = await ProcessService.discover_process_instance(
-            nc=mock_nats, process_class="TestProcess", process_id="test_process_1"
-        )
-
-        # Verify cached result is returned
-        assert result == cached_result
-
-    @pytest.mark.asyncio
-    async def test_discover_process_instances_by_class_only_default_config(
-        self, mock_nats, sample_process_class, sample_default_config
-    ):
-        """Test that discover_process_instances_by_class returns only default config when no DB configs exist."""
-        # Clear any existing cache
-        ProcessService._clear_cache()
-
-        with patch.object(ProcessService, "_discover_process_class") as mock_discover_class:
-            mock_discover_class.return_value = sample_process_class
-
-            with patch.object(ProcessConfigEntityDocument, "find_for_class") as mock_find_configs:
-                mock_find_configs.return_value = []  # No DB configs found
-
-                with patch.object(ProcessInstanceDTO, "from_class_and_config") as mock_from_class_config:
-                    mock_instance = Mock(spec=ProcessInstanceDTO)
-                    mock_instance.process_config = sample_default_config
-                    mock_from_class_config.return_value = mock_instance
-
-                    # Execute the method
-                    result = await ProcessService.discover_process_instances_by_class(
-                        nc=mock_nats, process_class="TestProcess"
-                    )
-
-                    # Verify the flow
-                    mock_discover_class.assert_called_once_with(mock_nats, "TestProcess")
-                    mock_find_configs.assert_called_once_with("TestProcess")
-                    mock_from_class_config.assert_called_once_with(
-                        class_dto=sample_process_class, process_config=sample_default_config
-                    )
-
-                    # Verify the result includes only the default config
                     assert len(result) == 1
-                    assert result[0].process_config == sample_default_config
+                    # find_for_class should only be called for the online class
+                    mock_find.assert_called_once_with("OnlineProcess")
+
+    @pytest.mark.asyncio
+    async def test_get_all_process_instances_empty(self, mock_locale_handler):
+        """Test that get_all_process_instances returns empty list when no classes exist."""
+        with patch.object(ProcessClassEntity, "get_all") as mock_get_all:
+            mock_get_all.return_value = []
+
+            result = await ProcessService.get_all_process_instances(mock_locale_handler)
+
+            assert result == []
+
+    @pytest.mark.asyncio
+    async def test_delete_process_instance_success(self):
+        """Test that delete_process_instance removes config from DB."""
+        mock_config = Mock(spec=ProcessConfigEntityDocument)
+
+        with patch.object(ProcessConfigEntityDocument, "find_for_class_and_id") as mock_find:
+            mock_find.return_value = mock_config
+
+            with patch.object(ProcessConfigEntityDocument, "delete_if_exists_for_class_and_id") as mock_delete:
+                await ProcessService.delete_process_instance("TestProcess", "test_1")
+
+                mock_find.assert_called_once_with("TestProcess", "test_1")
+                mock_delete.assert_called_once_with("TestProcess", "test_1")
+
+    @pytest.mark.asyncio
+    async def test_delete_process_instance_not_found(self):
+        """Test that delete_process_instance raises 404 when not found."""
+        with patch.object(ProcessConfigEntityDocument, "find_for_class_and_id") as mock_find:
+            mock_find.return_value = None
+
+            with pytest.raises(HTTPException) as exc_info:
+                await ProcessService.delete_process_instance("TestProcess", "nonexistent")
+
+            assert exc_info.value.status_code == 404
+
+    @pytest.mark.asyncio
+    async def test_get_process_configuration_returns_config_data(self):
+        """Test that get_process_configuration returns config data from DB."""
+        mock_config = Mock(spec=ProcessConfigEntityDocument)
+        mock_config.config_data = {"key": "value", "nested": {"a": 1}}
+
+        with patch.object(ProcessConfigEntityDocument, "find_for_class_and_id") as mock_find:
+            mock_find.return_value = mock_config
+
+            result = await ProcessService.get_process_configuration("TestProcess", "test_1")
+
+            assert result == {"key": "value", "nested": {"a": 1}}
+
+    @pytest.mark.asyncio
+    async def test_get_process_configuration_returns_empty_when_no_config(self):
+        """Test that get_process_configuration returns empty dict when no config exists."""
+        with patch.object(ProcessConfigEntityDocument, "find_for_class_and_id") as mock_find:
+            mock_find.return_value = None
+
+            result = await ProcessService.get_process_configuration("TestProcess", "test_1")
+
+            assert result == {}
+
+    @pytest.mark.asyncio
+    async def test_get_process_configuration_returns_empty_when_config_data_is_none(self):
+        """Test that get_process_configuration returns empty dict when config_data is None."""
+        mock_config = Mock(spec=ProcessConfigEntityDocument)
+        mock_config.config_data = None
+
+        with patch.object(ProcessConfigEntityDocument, "find_for_class_and_id") as mock_find:
+            mock_find.return_value = mock_config
+
+            result = await ProcessService.get_process_configuration("TestProcess", "test_1")
+
+            assert result == {}
+
+    @pytest.mark.asyncio
+    async def test_get_process_classes_returns_all(self, mock_locale_handler):
+        """Test that get_process_classes returns all classes from DB."""
+        entity1 = Mock(spec=ProcessClassEntity)
+        entity1.is_online = True
+        entity2 = Mock(spec=ProcessClassEntity)
+        entity2.is_online = False
+
+        with patch.object(ProcessClassEntity, "get_all") as mock_get_all:
+            mock_get_all.return_value = [entity1, entity2]
+
+            with patch.object(ProcessClassDTO, "from_entity") as mock_from:
+                dto1 = Mock(spec=ProcessClassDTO)
+                dto2 = Mock(spec=ProcessClassDTO)
+                mock_from.side_effect = [dto1, dto2]
+
+                result = await ProcessService.get_process_classes(mock_locale_handler)
+
+                assert len(result) == 2
+                assert result == [dto1, dto2]
+
+    @pytest.mark.asyncio
+    async def test_get_process_classes_filters_online(self, mock_locale_handler):
+        """Test that get_process_classes filters by online status."""
+        online = Mock(spec=ProcessClassEntity)
+        online.is_online = True
+        offline = Mock(spec=ProcessClassEntity)
+        offline.is_online = False
+
+        with patch.object(ProcessClassEntity, "get_all") as mock_get_all:
+            mock_get_all.return_value = [online, offline]
+
+            with patch.object(ProcessClassDTO, "from_entity") as mock_from:
+                dto = Mock(spec=ProcessClassDTO)
+                mock_from.return_value = dto
+
+                result = await ProcessService.get_process_classes(mock_locale_handler, online=True)
+
+                assert len(result) == 1
+                mock_from.assert_called_once_with(online, mock_locale_handler)

@@ -139,9 +139,7 @@ class Pipe:
                 "Accept": "application/json",
             }
 
-            async with httpx.AsyncClient(
-                timeout=self.valves.AIHUB_REQUEST_TIMEOUT, follow_redirects=True
-            ) as client:
+            async with httpx.AsyncClient(timeout=self.valves.AIHUB_REQUEST_TIMEOUT, follow_redirects=True) as client:
                 response = await client.get(
                     f"{self.valves.AIHUB_BASE_URL}/api/v1/openai/models",
                     headers=headers,
@@ -162,10 +160,7 @@ class Pipe:
 
     def _validate_configuration(self) -> Annotated[bool, "Configuration validity"]:
         """Validate required configuration"""
-        return bool(
-            self.valves.AIHUB_SUPERUSER_API_KEY
-            and self.valves.OPEN_WEBUI_SIGNING_SECRET
-        )
+        return bool(self.valves.AIHUB_SUPERUSER_API_KEY and self.valves.OPEN_WEBUI_SIGNING_SECRET)
 
     def _extract_model_id(
         self, model_id_with_pipe_prefix: Annotated[str, "Model ID from request"]
@@ -199,9 +194,7 @@ class Pipe:
         This is an async generator function that yields lines of streaming output.
         """
         # Prepare headers and payload
-        headers = self._auth_service.prepare_headers(
-            __user__["name"], __user__["email"]
-        )
+        headers = self._auth_service.prepare_headers(__user__["name"], __user__["email"])
         model_id = self._extract_model_id(body["model"])
         thread_id = self._str_to_object_id(__metadata__.get("chat_id"))
         display_id = self._str_to_object_id(__metadata__.get("message_id"))
@@ -215,7 +208,6 @@ class Pipe:
             },
         }
 
-        # Create a streaming client with infinite timeout
         client = httpx.AsyncClient(timeout=None, follow_redirects=True)
 
         try:
@@ -264,9 +256,7 @@ class Pipe:
             except Exception:
                 error_detail = "(Could not decode error body)"
 
-            logger.exception(
-                f"HTTP error during streaming: {e.response.status_code} - {error_detail}"
-            )
+            logger.exception(f"HTTP error during streaming: {e.response.status_code} - {error_detail}")
             yield f"data: {json.dumps({'error': f'API Error: Status {e.response.status_code}'})}\n\n"
 
         except Exception as e:
@@ -288,9 +278,7 @@ class Pipe:
         Handle non-streaming requests, returning a dict with the completion response.
         This is a regular async function that returns a dictionary.
         """
-        headers = self._auth_service.prepare_headers(
-            __user__["name"], __user__["email"]
-        )
+        headers = self._auth_service.prepare_headers(__user__["name"], __user__["email"])
         model_id = self._extract_model_id(body["model"])
         thread_id = self._str_to_object_id(__metadata__.get("chat_id"))
         display_id = self._str_to_object_id(__metadata__.get("message_id"))
@@ -306,9 +294,7 @@ class Pipe:
 
         try:
             # Use a separate client for non-streaming requests
-            async with httpx.AsyncClient(
-                timeout=self.valves.AIHUB_REQUEST_TIMEOUT, follow_redirects=True
-            ) as client:
+            async with httpx.AsyncClient(timeout=self.valves.AIHUB_REQUEST_TIMEOUT, follow_redirects=True) as client:
                 response = await client.post(
                     url=f"{self.valves.AIHUB_BASE_URL}/api/v1/openai/chat/completions",
                     json=payload,
@@ -328,9 +314,7 @@ class Pipe:
                 error_detail = "(Could not decode error body)"
 
             logger.exception(f"HTTP error: {e.response.status_code} - {error_detail}")
-            return {
-                "error": f"API Error: Status {e.response.status_code} - {error_detail}"
-            }
+            return {"error": f"API Error: Status {e.response.status_code} - {error_detail}"}
 
         except Exception as e:
             logger.exception(f"Error during non-streaming request: {e}")
@@ -346,9 +330,7 @@ class Pipe:
         """Main pipeline entry point"""
 
         is_streaming = body.get("stream", False)
-        logger.debug(
-            f"Request type: {'streaming' if is_streaming else 'non-streaming'}"
-        )
+        logger.debug(f"Request type: {'streaming' if is_streaming else 'non-streaming'}")
 
         if is_streaming:
             # For streaming, we return the async generator object directly

@@ -1,3 +1,6 @@
+from typing import ClassVar
+
+from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import UserMessageEvent
 from aihub_lib.nats.events.agent_in_the_loop.AgentInTheLoop import AgentInTheLoop
 
@@ -9,6 +12,19 @@ from playground.minimal_workflow.agent_in_the_loop_workflow.OrchestratorAgent.Ev
 
 
 class OrchestratorAgent(Agent):
+    """Agent demonstrating orchestration of sub-agents."""
+
+    name: ClassVar[LocaleString] = LocaleString(
+        en="Orchestrator Agent", de="Orchestrator Agent", fr="Agent Orchestrateur", it="Agente Orchestratore"
+    )
+    description: ClassVar[LocaleString] = LocaleString(
+        en="Agent for orchestration demo",
+        de="Agent für Orchestrierungs Demo",
+        fr="Agent pour démo orchestration",
+        it="Agente per demo orchestrazione",
+    )
+    icon: ClassVar[str] = "mage:broadcast"
+
     @step()
     async def start_step(self, event: UserMessageEvent) -> AgentInTheLoop.request:
         print("[OrchestratorAgent.start_step]", event)

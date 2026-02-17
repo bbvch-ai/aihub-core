@@ -102,7 +102,6 @@ async def initialize_roles() -> None:
 
     logger.info("Role initialization completed successfully")
 
-    # Initialize superuser if enabled
     await initialize_superuser()
 
 

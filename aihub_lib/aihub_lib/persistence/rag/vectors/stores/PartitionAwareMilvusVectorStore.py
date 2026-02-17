@@ -151,7 +151,6 @@ class PartitionAwareMilvusVectorStore(MilvusVectorStore):
         if not self._check_has_manual_partitions():
             return super().query(query, **kwargs)
 
-        # Extract namespaces and load their partitions
         namespaces = self._extract_namespaces_from_filters(query)
         if namespaces:
             partition_names = get_partition_names_for_namespaces(namespaces=namespaces)
@@ -171,8 +170,6 @@ class PartitionAwareMilvusVectorStore(MilvusVectorStore):
         This workaround exists because base class doesn't forward kwargs to _hybrid_search().
         If LlamaIndex fixes this, remove this method.
         """
-        from llama_index.core.vector_stores.types import VectorStoreQueryResult
-
         filter_string_expr, output_fields = self._prepare_before_search(query, **kwargs)
         custom_string_expr = kwargs.pop("string_expr", "")
         string_expr = filter_string_expr if filter_string_expr else custom_string_expr
@@ -187,10 +184,8 @@ class PartitionAwareMilvusVectorStore(MilvusVectorStore):
 
         namespaces: list[str] = []
         for filter_item in query.filters.filters:
-            # Check if this is a direct namespace filter
             if self._is_namespace_filter(filter_item):
                 namespaces.append(filter_item.value)
-            # Check nested filters (OR groups with AND conditions)
             elif hasattr(filter_item, "filters"):
                 for nested in filter_item.filters:
                     if self._is_namespace_filter(nested):

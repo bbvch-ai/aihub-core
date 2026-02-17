@@ -109,51 +109,36 @@ def process_file(pyproject_path: Path, mode: str, remote_tag: str, run_install: 
     # Only run poetry commands if --install flag is set
     if run_install:
         print(f"📦 Running poetry lock for {pyproject_path.parent.name}...")
-        result = subprocess.run(
-            ["poetry", "lock"],
-            cwd=pyproject_path.parent,
-            capture_output=True,
-            text=True,
-        )
+        result = subprocess.run(["poetry", "lock"], cwd=pyproject_path.parent, capture_output=True, text=True)
+        if result.stdout:
+            print(result.stdout)
         if result.returncode != 0:
-            print(
-                f"❌ Failed to lock dependencies in {pyproject_path.parent}: {result.stderr}"
-            )
+            print(f"❌ Failed to lock dependencies in {pyproject_path.parent}")
+            if result.stderr:
+                print(f"stderr: {result.stderr}")
             sys.exit(1)
 
         print(f"📦 Running poetry install for {pyproject_path.parent.name}...")
         if mode == "local":
             result = subprocess.run(
-                ["poetry", "install", "--with", "dev"],
-                cwd=pyproject_path.parent,
-                capture_output=True,
-                text=True,
+                ["poetry", "install", "--with", "dev"], cwd=pyproject_path.parent, capture_output=True, text=True
             )
         else:
-            result = subprocess.run(
-                ["poetry", "install"],
-                cwd=pyproject_path.parent,
-                capture_output=True,
-                text=True,
-            )
+            result = subprocess.run(["poetry", "install"], cwd=pyproject_path.parent, capture_output=True, text=True)
 
+        if result.stdout:
+            print(result.stdout)
         if result.returncode != 0:
-            print(
-                f"❌ Failed to install dependencies in {pyproject_path.parent}: {result.stderr}"
-            )
+            print(f"❌ Failed to install dependencies in {pyproject_path.parent}")
+            if result.stderr:
+                print(f"stderr: {result.stderr}")
             sys.exit(1)
-        print(
-            f"✅ Successfully installed dependencies for {pyproject_path.parent.name}"
-        )
+        print(f"✅ Successfully installed dependencies for {pyproject_path.parent.name}")
     else:
-        print(
-            f"ℹ️  Skipping poetry lock/install for {pyproject_path.parent.name} (--install flag not set)"
-        )
+        print(f"ℹ️  Skipping poetry lock/install for {pyproject_path.parent.name} (--install flag not set)")
 
 
-def update_dependency(
-    doc: tomlkit.container.Container, mode: str, remote_tag: str, dependency_name: str
-):
+def update_dependency(doc: tomlkit.container.Container, mode: str, remote_tag: str, dependency_name: str):
     if "tool" not in doc or "poetry" not in doc["tool"]:
         return
 

@@ -1,13 +1,13 @@
-from typing import Annotated
+from typing import Annotated, Self
 
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.generative_ai.document.accessor.S3AnonymousFileAccessService import S3AnonymousFileAccessService
-from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.s3.use_s3 import use_s3_service
 from aihub_lib.routes.Controller import Controller
 from fastapi import Depends, Query, Security
 
+from aihub_api.i18n.ApiLocaleString import ApiLocaleString
 from aihub_api.routes.file.dto.SignedUrlDto import SignedUrlDto
 from aihub_api.routes.file.FileService import FileService
 
@@ -20,21 +20,16 @@ class FileController(Controller):
     URL and redirects the client, offloading the bandwidth to Azure.
     """
 
-    name = LocaleString(en="File Access", de="Dateizugriff", fr="Accès aux fichiers", it="Accesso ai file")
-    description = LocaleString(
-        en="Access and share your files",
-        de="Auf Dateien zugreifen und diese teilen",
-        fr="Accédez et partagez vos fichiers",
-        it="Accedi e condividi i tuoi file",
-    )
-    icon = "line-md:file"
+    name = ApiLocaleString.from_i18n_path("api.controllers.file.name")
+    description = ApiLocaleString.from_i18n_path("api.controllers.file.description")
+    icon = "mage:file"
 
     def __init__(
         self, *, auth: AuthHandler, route: str = "/files", additionally_required_permission: str | None = None
     ):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
 
-    def get_file_url(self, route: str = "/logged-in/url/{container}/{file_path:path}") -> "FileController":
+    def get_file_url(self, route: str = "/logged-in/url/{container}/{file_path:path}") -> Self:
         @self.router.get(route, tags=self.tags, summary="Get signed file URL")
         async def get_file_url(
             container: str,
@@ -50,7 +45,7 @@ class FileController(Controller):
 
         return self
 
-    def get_file_redirect(self, route: str = "/logged-in/redirect/{container}/{file_path:path}") -> "FileController":
+    def get_file_redirect(self, route: str = "/logged-in/redirect/{container}/{file_path:path}") -> Self:
         @self.router.get(route, tags=self.tags, summary="Access file as logged-in user")
         async def get_file_redirect(
             container: str,
@@ -65,7 +60,7 @@ class FileController(Controller):
 
         return self
 
-    def get_anonymous_file_url(self, route: str = "/anonymous/url/{container}/{file_path:path}") -> "FileController":
+    def get_anonymous_file_url(self, route: str = "/anonymous/url/{container}/{file_path:path}") -> Self:
         @self.router.get(route, tags=self.tags, summary="Access file url via shared link")
         async def get_anonymous_file_url(
             container: str,
@@ -83,9 +78,7 @@ class FileController(Controller):
 
         return self
 
-    def get_anonymous_file_redirect(
-        self, route: str = "/anonymous/redirect/{container}/{file_path:path}"
-    ) -> "FileController":
+    def get_anonymous_file_redirect(self, route: str = "/anonymous/redirect/{container}/{file_path:path}") -> Self:
         @self.router.get(route, tags=self.tags, summary="Access file via shared link")
         async def get_anonymous_file_redirect(
             container: str,

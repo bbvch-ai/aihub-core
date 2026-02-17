@@ -1,6 +1,17 @@
 test: "Dies ist ein Test"
 welcome: "Willkommen im bbv ai-hub"
 
+common:
+  actions:
+    save: "Speichern"
+    cancel: "Abbrechen"
+    create: "Erstellen"
+    delete: "Löschen"
+    edit: "Bearbeiten"
+  loading: "Laden..."
+  selectModel: "Modell auswählen"
+  selectDatabase: "Datenbank auswählen"
+
 models:
   title: "Modelle"
   error: "Fehler beim Laden der Modelle"
@@ -70,7 +81,7 @@ http_error:
     404: "Entschuldigung, wir konnten diese Seite nicht finden."
     405: "Diese Aktion ist hier nicht erlaubt."
     408: "Die Anfrage hat das Zeitlimit überschritten. Bitte versuchen Sie es erneut."
-    429: "Zu viele Anfragen. Bitte warten Sie einen Moment."
+    429: "Zu viele Anfragen."
 
     # 5xx Server Errors
     500: "Auf unseren Servern ist ein Fehler aufgetreten."
@@ -254,6 +265,13 @@ service:
 agent:
   title: "Agenten"
   can_chat: "Kann chatten"
+  navigation:
+    basic: "Übersicht"
+    workflow: "Workflow"
+    threads: "Threads"
+    configuration: "Konfiguration"
+    chat: "Chat"
+    memories: "Erinnerungen"
   overview:
     startEvents: "Startereignisse"
     stopEvents: "Stoppereignisse"
@@ -264,17 +282,18 @@ agent:
     status: "Status:"
     online: "Online"
     offline: "Offline"
+  configuration:
+    title: "Agentenkonfiguration"
+    description: "Konfigurieren Sie das Laufzeitverhalten und die Einstellungen für diesen Agenten"
+    runtimeSettings: "Laufzeiteinstellungen"
+    noConfiguration: "Keine Konfiguration für diesen Agenten verfügbar"
+    saveSuccess: "Konfiguration erfolgreich gespeichert"
+    saveError: "Konfiguration konnte nicht gespeichert werden"
   chat:
     title: "Neuen Chat starten"
     placeholder: "Geben Sie die Nachricht ein, die Sie an den Agenten senden möchten"
     createThreadAndSend: "Thread erstellen und senden"
     manuallyCreatedThread: "Manuell erstellter Thread"
-  navigation:
-    basic: "Grundlegend"
-    workflow: "Workflow"
-    threads: "Threads"
-    memories: "Erinnerungen"
-    chat: "Chat"
   availableAgents: "Verfügbare Agenten"
   list:
     name: "Name"
@@ -290,6 +309,43 @@ agent:
     title: "Agenten-Workflow"
   threads:
     title: "Agenten-Threads"
+  create:
+    button: "Neuen Agenten erstellen"
+    title: "Neuen Agenten erstellen"
+    cancel: "Abbrechen"
+    selectClass: "Agententyp"
+    selectClassPlaceholder: "Agententyp auswählen..."
+    agentId: "Agenten-ID"
+    agentIdPlaceholder: "mein-neuer-agent"
+    agentIdHelp: "Eindeutige Kennung (Kleinbuchstaben, Zahlen, Bindestriche, Unterstriche)"
+    agentIdInvalid: "Nur Kleinbuchstaben, Zahlen, Bindestriche und Unterstriche erlaubt"
+    agentIdTooLong: "Agenten-ID darf maximal 100 Zeichen lang sein"
+    configuration: "Konfiguration"
+    noAgentClasses: "Keine Agententypen verfügbar. Stellen Sie sicher, dass mindestens ein Agent läuft."
+    submit: "Agent erstellen"
+    success: "Agent erfolgreich erstellt"
+    error: "Agent konnte nicht erstellt werden"
+    steps:
+      basicInfo: "Grundlagen"
+  delete:
+    button: "Löschen"
+    title: "Agent löschen"
+    confirm: "Möchten Sie diesen Agenten wirklich löschen?"
+    confirmMessage: "Diese Aktion kann nicht rückgängig gemacht werden. Die Agentenkonfiguration wird dauerhaft entfernt."
+    success: "Agent erfolgreich gelöscht"
+    error: "Agent konnte nicht gelöscht werden"
+    cannotDeleteDefault: "Standardkonfigurationen von Agenten können nicht gelöscht werden"
+  add_instance:
+    title: "Agent hinzufügen"
+    description: "Neue Agenteninstanz erstellen"
+  selector:
+    class:
+      label: "Agententyp"
+      placeholder: "Agententyp auswählen..."
+    id:
+      label: "Agentenprofil"
+      placeholder: "Agentenprofil auswählen..."
+      help: "Wählen Sie das spezifische Agentenprofil aus"
   memories:
     title: "Agenten-Erinnerungen"
     description: "Von {agentName} gesammelte Erinnerungen über Sie"
@@ -446,6 +502,7 @@ dashboard:
       label: "Delegierte Aufgaben"
 
 evaluation:
+  langfuse_link: "Experimente ausführen"
   dataset:
     title: "Datensätze"
     created_at: "Erstellt:"
@@ -470,37 +527,6 @@ evaluation:
     save_action: "Speichern"
     saved_summary: "Gespeichert"
     saved_detail: "Datensatz gespeichert"
-  experiment:
-    title: "Experimente"
-    created_at: "Ausgeführt am:"
-    dataset: "Datensatz"
-    language_and_dataset: "Sprache & Datensatz"
-    language: "Experimentsprache:"
-    create_description: "Erstellen Sie ein neues Experiment mit einem Datensatz und einem Assistenten!"
-    name: "Name"
-    description: "Beschreibung"
-    agent: "Agent"
-    select_dataset: "Wählen Sie einen Datensatz"
-    select_assistant: "Wählen Sie einen Assistenten"
-    cancel: "Abbrechen"
-    save: "Speichern"
-    running: "Experiment läuft!"
-    running_description: "Dies kann mehrere Minuten dauern. Sie können diese Seite auch verlassen und später zurückkehren."
-    failed: "Experiment fehlgeschlagen!"
-    failed_description: "Bitte kontaktieren Sie das AI-Hub Entwicklungsteam, um herauszufinden, was schief gelaufen ist."
-    filter_by_assistant: "Nach Assistent filtern"
-    filter_by_dataset: "Nach Datensatz filtern"
-    run_experiment: "Experiment ausführen"
-    create_new: "Neues Experiment erstellen"
-    result:
-      question: "Frage"
-      reference_answer: "Referenzantwort"
-      assistant_answer: "Assistentenantwort"
-      latency_ms: "Latenz"
-      conciseness: "Prägnanz"
-      correctness: "Korrektheit"
-      completeness: "Vollständigkeit"
-
 role:
   title: "Zugriffsrollen"
   name: "Name"
@@ -512,6 +538,22 @@ role:
   is_new: "Neu"
   save_button: "Speichern"
   access_rules: "Zugriffsregeln"
+  usage_limits: "Nutzungslimits"
+  usage_pattern: "Muster"
+  usage_limit_value: "Limit"
+  usage_period: "Zeitraum"
+  calls_per: "Aufrufe"
+  unlimited: "Unbegrenzt"
+  no_access_rules: "Keine Zugriffsregeln definiert"
+  access_rules_help_intro: "Hierarchische Regeln steuern den Zugriff auf Ressourcen:"
+  access_rules_help_all_agents: "Alle Agenten"
+  access_rules_help_agent_instances: "Alle Instanzen von MyAgent"
+  access_rules_help_service: "Knowledge-Service"
+  access_rules_help_admin: "Admin-Zugriff auf alles"
+  pattern_help_intro: "Muster verwenden Platzhalter für Agenten:"
+  pattern_help_all: "Alle Agenten"
+  pattern_help_wildcard: "Alle Instanzen von MyAgent"
+  pattern_help_specific: "Nur eine bestimmte Instanz"
   create_dialog:
     description: "Erstellen Sie eine neue Rolle mit Zugriffsregeln. Um die neue Rolle Benutzern zuzuweisen, verwenden Sie bitte Ihr AD."
   remove_dialog:
@@ -525,6 +567,20 @@ role:
   role_saved:
     summary: "Rolle gespeichert"
     detail: "Rolle erfolgreich gespeichert, die neuen Zugriffsregeln treten sofort in Kraft."
+
+usage:
+  title: "Nutzung"
+  calls_remaining: "{current} / {limit} Agentenaufrufe"
+  unlimited_calls: "Unbegrenzte Agentenaufrufe"
+  resets_at: "Zurücksetzung {time}"
+  limit_exceeded: "Agentenaufruf-Limit erreicht"
+  limit_exceeded_detail: "Bitte warten Sie bis {time} oder kontaktieren Sie Ihren Administrator"
+
+period:
+  1h: "Pro Stunde"
+  1d: "Pro Tag"
+  7d: "Pro Woche"
+  1mo: "Pro Monat"
 
 notification:
   title: "Benachrichtigungen"
@@ -563,6 +619,73 @@ bar:
 
 process:
   title: "Prozesse"
+  overview:
+    name: "Name"
+    class: "Klasse"
+    processId: "Prozess-ID"
+    status: "Status"
+    online: "Online"
+    offline: "Offline"
+  navigation:
+    overview: "Übersicht"
+    walkthroughs: "Durchläufe"
+    start: "Durchlauf starten"
+    configuration: "Konfiguration"
+  list:
+    online: "Online"
+    offline: "Offline"
+  configuration:
+    title: "Prozesskonfiguration"
+    description: "Konfigurieren Sie das Laufzeitverhalten dieser Prozessinstanz."
+    runtimeSettings: "Laufzeiteinstellungen"
+    saveSuccess: "Konfiguration erfolgreich gespeichert"
+    saveError: "Fehler beim Speichern der Konfiguration"
+    noConfiguration: "Keine Konfiguration für diesen Prozess verfügbar."
+  create:
+    title: "Neuen Prozess erstellen"
+    selectClass: "Prozesstyp"
+    selectClassPlaceholder: "Prozesstyp auswählen..."
+    noProcessClasses: "Keine Prozesstypen verfügbar."
+    steps:
+      basicInfo: "Grundinformationen"
+    submit: "Prozess erstellen"
+    cancel: "Abbrechen"
+    success: "Prozess erfolgreich erstellt"
+    error: "Fehler beim Erstellen des Prozesses"
+  delete:
+    button: "Löschen"
+    title: "Prozess löschen"
+    confirmMessage: "Sind Sie sicher, dass Sie diese Prozessinstanz löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden."
+    success: "Prozess erfolgreich gelöscht"
+    error: "Fehler beim Löschen des Prozesses"
+  add_instance:
+    title: "Prozess hinzufügen"
+    description: "Neue Prozessinstanz erstellen"
+  walkthrough:
+    list:
+      created: "Erstellt"
+      updated: "Letzte Interaktion"
+      agents: "Agenten"
+      users: "Benutzer"
+      state: "Status"
+      in_progress: "In Bearbeitung"
+      done: "Abgeschlossen"
+      steps: "Fortschritt"
+
+form:
+  locale_input:
+    translate_tooltip: "In alle Sprachen übersetzen"
+
+lib:
+  vectorStore:
+    label: "Vektorspeicher"
+    help: "Wissensdatenbank und Namensräume für die Suche auswählen"
+    database:
+      label: "Datenbank"
+    namespaces:
+      label: "Namensräume"
+      placeholder: "Namensräume auswählen (leer = alle)"
+      help: "Leer lassen, um alle Namensräume zu durchsuchen"
 
 memory:
   title: "Erinnerungen"

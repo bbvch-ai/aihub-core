@@ -1,5 +1,2 @@
-from .AgentInstanceDiscoveryResponseEvent import AgentInstanceDiscoveryResponseEvent
-
-__all__ = [
-    "AgentInstanceDiscoveryResponseEvent",
-]
+# Agent discovery events
+# AgentClassDiscoveryResponseEvent is imported directly where needed

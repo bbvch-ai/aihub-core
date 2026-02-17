@@ -119,7 +119,7 @@ event_count = len(runner.get_events_of_class(ProcessingEvent))
 
 Traditional debugging with breakpoints doesn't work well for event-driven agents. Use trace-driven debugging instead.
 
-> [!TIP] Your debugging toolkit: Phoenix tracing (primary), comprehensive logging, trigger scripts, event flow
+> [!TIP] Your debugging toolkit: Langfuse tracing (primary), comprehensive logging, trigger scripts, event flow
 > inspection.
 
 ### Essential tool: trigger.py scripts
@@ -181,9 +181,9 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-## Phoenix tracing: visual debugging
+## Langfuse tracing: visual debugging
 
-Phoenix provides step-by-step visualization of agent execution at `http://localhost:6006`.
+Langfuse provides step-by-step visualization of agent execution at `http://localhost:6006`.
 
 **Key features:**
 
@@ -195,7 +195,7 @@ Phoenix provides step-by-step visualization of agent execution at `http://localh
 **Debugging workflow:**
 
 1. Run your `trigger.py` script
-2. Open Phoenix UI at `localhost:6006`
+2. Open Langfuse UI at `localhost:6006`
 3. Find your agent's execution trace
 4. Click through steps to inspect event flow
 5. Identify where things go wrong

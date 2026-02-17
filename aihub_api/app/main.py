@@ -9,13 +9,14 @@ from aihub_lib.infrastructure.logging.logger import enable_logging
 
 from aihub_api.routes.agent.AgentController import AgentController
 from aihub_api.routes.docling.DoclingController import DoclingController
-from aihub_api.routes.evaluation.EvaluationController import EvaluationController
+from aihub_api.routes.evaluation.DatasetController import DatasetController
 from aihub_api.routes.event.EventController import EventController
 from aihub_api.routes.file.FileController import FileController
 from aihub_api.routes.health.ApiHealthController import ApiHealthController
 from aihub_api.routes.i18n.I18nController import I18nController
 from aihub_api.routes.knowledge.KnowledgeController import KnowledgeController
 from aihub_api.routes.memory import OrganizationMemoryController, UserMemoryController
+from aihub_api.routes.model.ModelController import ModelController
 from aihub_api.routes.notification.NotificationController import NotificationController
 from aihub_api.routes.openai.OpenaiController import OpenaiController
 from aihub_api.routes.process.ProcessController import ProcessController
@@ -23,6 +24,7 @@ from aihub_api.routes.role.RoleController import RoleController
 from aihub_api.routes.suite.SuiteController import SuiteController
 from aihub_api.routes.thread.ThreadController import ThreadController
 from aihub_api.routes.token.TokenController import TokenController
+from aihub_api.routes.translation.TranslationController import TranslationController
 from aihub_api.routes.user.UserController import UserController
 from aihub_api.runners.ApiRunner import ApiRunner
 
@@ -39,6 +41,7 @@ runner.mount(
     UserController(auth=auth).get_my_user().get_user().get_users().get_my_dashboard().update_my_dashboard(),
     I18nController(auth=auth).get_my_locale(),
     EventController(auth=auth).ws().get_agent_events_in_thread().get_agent_event_timeseries(),
+    ModelController(auth=auth).get_litellm_models().get_litellm_models_by_mode().get_litellm_model(),
     ThreadController(auth=auth)
     .get_user_threads()
     .create_thread()
@@ -48,11 +51,26 @@ runner.mount(
     .add_user_to_thread()
     .remove_user_from_thread()
     .get_open_chat_hitl(),
-    AgentController(auth=auth).get_agent().get_agent_threads().get_agents().discover_agents(),
+    AgentController(auth=auth)
+    .get_agent_classes()
+    .get_agent_class()
+    .get_agent_class_instances()
+    .create_agent_instance()
+    .get_agent_instance()
+    .update_agent_instance()
+    .delete_agent_instance()
+    .get_agent_instance_threads()
+    .get_all_agent_instances(),
     ProcessController(auth=auth)
-    .get_process()
-    .get_processes()
-    .discover_processes()
+    .get_process_classes()
+    .get_process_class()
+    .get_process_class_instances()
+    .create_process_instance()
+    .get_process_instance()
+    .update_process_instance()
+    .delete_process_instance()
+    .get_all_process_instances()
+    .get_process_walkthroughs()
     .get_process_start_forms()
     .get_process_open_forms()
     .send_process_start_form()
@@ -67,17 +85,7 @@ runner.mount(
     .generate_image()
     .stt()
     .tts(),
-    EvaluationController(
-        auth=auth,
-        judge=LLMConfig(model_name="text-generation/large"),
-    )
-    .create_dataset()
-    .get_datasets()
-    .get_dataset()
-    .update_dataset()
-    .get_experiment()
-    .get_experiments()
-    .run_experiment(),
+    DatasetController(auth=auth).create_dataset().get_datasets().get_dataset().update_dataset(),
     KnowledgeController(
         auth=auth,
         translation_llm_config=LLMConfig(model_name="text-generation/mini"),
@@ -107,6 +115,7 @@ runner.mount(
     .delete_all_organization_memories()
     .update_organization_memory(),
     DoclingController(auth=auth).parse_document(),
+    TranslationController(auth=auth).translate(),
 )
 
 

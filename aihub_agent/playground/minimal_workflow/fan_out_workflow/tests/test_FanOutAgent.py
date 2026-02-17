@@ -18,7 +18,7 @@ scenarios("./features/fan_out_agent.feature")
 def _():
     return AgentTestRunner(
         agent_type=FanOutAgent,
-        default_agent_config=FanOutAgentConfig(
+        agent_config=FanOutAgentConfig(
             agent_id="fan_out_agent",
             agent_class=FanOutAgent.__name__,
             name=LocaleString(en="Fan Out Agent"),

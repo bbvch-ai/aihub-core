@@ -1,17 +1,17 @@
 import logging
-from typing import Annotated
+from typing import Annotated, Self
 
 from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.persistence.messaging.entities.PersistedAgentEventEntity import TimeRange
 from aihub_lib.persistence.utils import str_to_object_id
 from aihub_lib.routes.Controller import Controller
 from fastapi import Depends, HTTPException, Security, WebSocket
 from fastapi.params import Path, Query
 
+from aihub_api.i18n.ApiLocaleString import ApiLocaleString
 from aihub_api.i18n.dependencies.use_locale import use_locale, use_locale_ws
 from aihub_api.routes.event.dto.EventTimeseries import EventTimeseries
 from aihub_api.routes.event.EventService import EventService
@@ -31,21 +31,16 @@ class EventController(Controller):
     The `EventController` provides HTTP and WebSocket endpoints to handle these use cases.
     """
 
-    name = LocaleString(en="Activity Log", de="Aktivitätsprotokoll", fr="Journal d'activité", it="Registro attività")
-    description = LocaleString(
-        en="View system activity and events",
-        de="Systemaktivitäten und Ereignisse anzeigen",
-        fr="Consultez l'activité système et les événements",
-        it="Visualizza attività di sistema ed eventi",
-    )
-    icon = "mdi:apache-kafka"
+    name = ApiLocaleString.from_i18n_path("api.controllers.event.name")
+    description = ApiLocaleString.from_i18n_path("api.controllers.event.description")
+    icon = "mage:broadcast"
 
     def __init__(
         self, *, auth: AuthHandler, route: str = "/events", additionally_required_permission: str | None = None
     ):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
 
-    def get_agent_events_in_thread(self, path: str = "/agents/threads/{thread_id}") -> "EventController":
+    def get_agent_events_in_thread(self, path: str = "/agents/threads/{thread_id}") -> Self:
         @self.router.get(path, tags=self.tags)
         async def get_agent_events_in_thread(
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
@@ -80,7 +75,7 @@ class EventController(Controller):
 
         return self
 
-    def get_agent_event_timeseries(self, route: str = "/agents/timeseries/{time_range}") -> "EventController":
+    def get_agent_event_timeseries(self, route: str = "/agents/timeseries/{time_range}") -> Self:
         @self.router.get(route, tags=self.tags)
         async def get_agent_event_timeseries(
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
@@ -144,7 +139,7 @@ class EventController(Controller):
 
         return self
 
-    def ws(self, path: str = "/ws") -> "EventController":
+    def ws(self, path: str = "/ws") -> Self:
         @self.router.websocket(path)
         async def websocket_endpoint(
             websocket: WebSocket,

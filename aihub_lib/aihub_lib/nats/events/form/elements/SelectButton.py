@@ -1,4 +1,4 @@
-from typing import Annotated, Literal
+from typing import Annotated, Literal, Self
 
 from pydantic import Field
 
@@ -36,7 +36,7 @@ class SelectButton(PrimeVueElement):
         str | None, Field(description="Property name for unique option identification", alias="dataKey")
     ] = None
 
-    def in_locale(self, t: LocaleHandler) -> "SelectButton":
+    def in_locale(self, t: LocaleHandler) -> Self:
         self_copy = super().in_locale(t)
         for option in self_copy.options:
             if isinstance(option, str):

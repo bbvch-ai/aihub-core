@@ -1,4 +1,4 @@
-from typing import Annotated, ClassVar
+from typing import Annotated, ClassVar, Self
 
 from llama_index.core.schema import NodeWithScore
 from openinference.semconv.trace import OpenInferenceSpanKindValues, SpanAttributes
@@ -38,6 +38,6 @@ class RetrieverEvent(SemanticEvent):
         return {k: v for k, v in attributes.items() if v is not None}
 
     @classmethod
-    def from_nodes(cls, nodes: list[NodeWithScore]) -> "RetrieverEvent":
+    def from_nodes(cls, nodes: list[NodeWithScore]) -> Self:
         nodes = [IngestedNode.from_llama_index_node_with_score(node) for node in nodes]
         return cls(nodes=nodes)

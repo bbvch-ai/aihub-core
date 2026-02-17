@@ -3,7 +3,7 @@ from typing import Annotated
 
 from pydantic import BaseModel, Field
 
-from aihub_api.routes.agent.dto.MinimalAgentDTO import MinimalAgentDTO
+from aihub_api.routes.agent.dto.MinimalAgentInstanceDTO import MinimalAgentInstanceDTO
 from aihub_api.routes.thread.dto.statistics.DisplayStatistics import DisplayStatistics
 from aihub_api.routes.user.dto.MinimalUserDTO import MinimalUserDTO
 
@@ -17,7 +17,9 @@ class ThreadDTO(BaseModel):
     id: Annotated[str, Field(description="The thread ID")]
     name: Annotated[str, Field(description="User given name of thread")]
     users: Annotated[list[MinimalUserDTO], Field(description="List of users in thread")]
-    agents: Annotated[list[MinimalAgentDTO], Field(description="List of agents initially associated with thread")]
+    agents: Annotated[
+        list[MinimalAgentInstanceDTO], Field(description="List of agents initially associated with thread")
+    ]
     created_at: Annotated[str, Field(description="Date at which thread was created (ISO format string)")]
 
     process_class: Annotated[str | None, Field(description="Class of the process that generated the thread")] = None
@@ -54,6 +56,6 @@ class ThreadDTO(BaseModel):
         list[DisplayStatistics], Field(description="Displays in this thread, sorted by start time")
     ] = []
     participating_agents: Annotated[
-        list[MinimalAgentDTO], Field(description="All unique agents that participated in the thread's events")
+        list[MinimalAgentInstanceDTO], Field(description="All unique agents that participated in the thread's events")
     ] = []
     llm_cost: Annotated[float, Field(description="Total LLM cost of the thread")] = 0.0

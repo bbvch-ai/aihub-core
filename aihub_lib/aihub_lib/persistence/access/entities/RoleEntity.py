@@ -1,8 +1,18 @@
 from __future__ import annotations
 
-from mongoengine import BooleanField, Document, ListField, StringField
+from mongoengine import BooleanField, Document, EmbeddedDocument, EmbeddedDocumentListField, IntField, ListField, StringField
+from mongoengine.errors import ValidationError
 
+from aihub_lib.auth.usage.usage_limit_models import RoleUsageLimit, UsageLimitPeriod
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
+
+
+class UsageLimit(EmbeddedDocument):
+    """Pattern-based usage limit rule (NATS-style wildcards: * single-level, > multi-level)."""
+
+    pattern = StringField(required=True)
+    limit = IntField(required=True, min_value=1)
+    period = StringField(required=True, choices=["1h", "1d", "7d", "1mo"])
 
 
 class RoleEntity(Document):
@@ -28,8 +38,19 @@ class RoleEntity(Document):
     name = StringField(required=True)
     description = StringField(required=True)
     access_rules = ListField(StringField(), default=list)
+    usage_limits = EmbeddedDocumentListField(UsageLimit, default=list)
     tenant_id = StringField(null=True, default=None)
     is_system_role = BooleanField(default=False)
+
+    def clean(self) -> None:
+        """Reject duplicate (pattern, period) combinations in usage_limits."""
+        seen: set[tuple[str, str]] = set()
+        for limit in self.usage_limits:
+            key = (limit.pattern, limit.period)
+            if key in seen:
+                raise ValidationError(f"Duplicate usage limit: pattern '{limit.pattern}' with period '{limit.period}'")
+            seen.add(key)
+
 
     @classmethod
     @trace_fn
@@ -139,3 +160,18 @@ class RoleEntity(Document):
     def get_system_roles(cls) -> list[RoleEntity]:
         """Returns all system-wide roles."""
         return list(cls.objects(tenant_id=None).order_by("name"))
+
+    @classmethod
+    @trace_fn
+    def get_usage_limits_for_roles(cls, role_names: list[str]) -> list[list[RoleUsageLimit]]:
+        """
+        Returns a list of usage_limits per role.
+        """
+        roles = cls.objects(name__in=role_names).only("usage_limits")
+        return [
+            [
+                RoleUsageLimit(pattern=ul.pattern, limit=ul.limit, period=UsageLimitPeriod(ul.period))
+                for ul in role.usage_limits
+            ]
+            for role in roles
+        ]

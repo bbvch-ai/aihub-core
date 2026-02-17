@@ -21,7 +21,7 @@ enable_logging()
 def process_runner_fixture():
     return ProcessTestRunner(
         process_type=HumanOnlyProcess,
-        default_process_config=ProcessConfig(
+        process_config=ProcessConfig(
             process_id="human_only_process",
             process_class=HumanOnlyProcess.__name__,
             name=LocaleString(en="Human Only Process"),

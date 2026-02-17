@@ -20,7 +20,7 @@ scenarios("./features/custom_start_stop_agent.feature")
 def _():
     return AgentTestRunner(
         agent_type=CustomStartStopEventAgent,
-        default_agent_config=CustomStartStopEventAgentConfig(
+        agent_config=CustomStartStopEventAgentConfig(
             agent_id="custom_start_stop_agent",
             agent_class=CustomStartStopEventAgent.__name__,
             name=LocaleString(en="Custom Start Stop Agent"),

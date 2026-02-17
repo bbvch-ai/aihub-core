@@ -24,7 +24,6 @@ class ApiTestRunner(ApiRunner):
     ```python
     runner = ApiTestRunner()
     runner.mount(MyController())
-    # Run the server (in an async context)
     await runner.run()
     ```
 

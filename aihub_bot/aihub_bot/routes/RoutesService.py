@@ -44,19 +44,16 @@ class RoutesService(ChatService):
         - The credential is needed to verify that requests are coming from the correct bot service.
         - Caching prevents repeated MSAL authentication and improves performance.
         """
-        # Check cache first
         if path in RoutesService._adapter_cache:
             logger.debug(f"Using cached CloudAdapter for path: {path}")
             return RoutesService._adapter_cache[path]
 
-        # Create new adapter and cache it
         logger.debug(f"Creating new CloudAdapter for path: {path}")
         credentials = RoutesService.get_credentials(path)
         if credentials is None:
             raise ValueError(f"No credentials found for path: {path}")
         auth_config_dict = RoutesService._create_auth_configuration_dict(credentials)
 
-        # Create connection manager with the auth configuration
         # MsalConnectionManager expects a dict that it will use to create AgentAuthConfiguration
         connection_manager = MsalConnectionManager(connections_configurations={"SERVICE_CONNECTION": auth_config_dict})
 

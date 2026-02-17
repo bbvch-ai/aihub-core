@@ -1,9 +1,9 @@
-from typing import Annotated
+from typing import Annotated, Self
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.events.discovery.EventSpecs import EventSpecs
 from aihub_lib.nats.events.discovery.process.agent_in.AgentInSpecs import AgentInSpecs
-from aihub_lib.persistence.process.ProcessEntity import AgentInSpecsEntity
+from aihub_lib.persistence.process.ProcessClassEntity import AgentInSpecsEntity
 from pydantic import BaseModel, Field
 
 
@@ -14,7 +14,7 @@ class AgentInDTO(BaseModel):
     event_specs: Annotated[EventSpecs, Field(description="The event specs of the work event.")]
 
     @classmethod
-    def from_agent_in_specs(cls, agent_in_specs: AgentInSpecs, t: LocaleHandler) -> "AgentInDTO":
+    def from_agent_in_specs(cls, agent_in_specs: AgentInSpecs, t: LocaleHandler) -> Self:
         return cls(
             agent_class=agent_in_specs.agent_class,
             agent_id=agent_in_specs.agent_id,
@@ -23,7 +23,7 @@ class AgentInDTO(BaseModel):
         )
 
     @classmethod
-    def from_entity_specs(cls, agent_in_specs_entity: AgentInSpecsEntity, t: LocaleHandler) -> "AgentInDTO":
+    def from_entity_specs(cls, agent_in_specs_entity: AgentInSpecsEntity, t: LocaleHandler) -> Self:
         return cls(
             agent_class=agent_in_specs_entity.agent_class,
             agent_id=agent_in_specs_entity.agent_id,

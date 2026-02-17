@@ -2,7 +2,7 @@
   <EventDisplayBase
     :event="event"
     :thread="thread"
-    icon="mdi:robot-confused"
+    icon="mage:robot-sad"
     is-external
   >
     <div class="py-5">
@@ -17,16 +17,16 @@
 
 <script setup lang="ts">
 import type {
-  HumanInTheLoopResponseEventReadable, ThreadDto, ChatMessageOutput,
-  AgentEventReadable,
+  HumanInTheLoopResponseEvent, ThreadDto, ChatMessage,
+  ContextualizedAgentEvent,
 } from '@core/sdk/client'
 
 const props = defineProps<{
-  event: AgentEventReadable & { event: HumanInTheLoopResponseEventReadable }
+  event: ContextualizedAgentEvent & { event: HumanInTheLoopResponseEvent }
   thread: ThreadDto
 }>()
 
-const message = computed<ChatMessageOutput>(() => {
+const message = computed<ChatMessage>(() => {
   return {
     role: 'user',
     blocks: [

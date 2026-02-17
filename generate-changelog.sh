@@ -16,6 +16,10 @@ EXCLUDE_PATTERNS=(
     ':(exclude)*lock.json'
     ':(exclude)*-lock.yaml'
     ':(exclude)pnpm-lock.yaml'
+    ':(exclude)aihub_web/aihub_web/sdk/**'
+    ':(exclude)LICENSES.md'
+    ':(exclude)licenses.config.json'
+    ':(exclude)*.drawio'
 )
 # The standard header for the changelog file.
 CHANGELOG_HEADER=$(cat <<'EOF'

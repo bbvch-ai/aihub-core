@@ -263,7 +263,6 @@ def process_directory(root_path, current_path, output_dir, depth=0):
 
         # Only process subdirectories (ignore files - we already handled index.de.md)
         if os.path.isdir(item_path):
-            # Create heading for subdirectory
             folder_title = clean_folder_name(item)
             heading_level = "#" * (depth + 1)
             sections.append(f"{heading_level} {folder_title}\n\n")
