@@ -24,6 +24,12 @@ if echo "$all_changed" | grep -qE '\.md$'; then
   md_changed=true
 fi
 
+# Check for YAML changes
+yaml_changed=false
+if echo "$all_changed" | grep -qE '\.(yaml|yml)$'; then
+  yaml_changed=true
+fi
+
 # Run make pr-ready on each dirty scope
 failed=false
 for scope in "${dirty_scopes[@]}"; do
@@ -39,6 +45,15 @@ if [[ "$md_changed" == "true" ]]; then
   echo "Running make format-md..." >&2
   if ! make -C "$REPO_ROOT" format-md 2>&1 | tail -3 >&2; then
     echo "FAILED: make format-md" >&2
+    failed=true
+  fi
+fi
+
+# Run make format-yaml if YAML files changed
+if [[ "$yaml_changed" == "true" ]]; then
+  echo "Running make format-yaml..." >&2
+  if ! make -C "$REPO_ROOT" format-yaml 2>&1 | tail -3 >&2; then
+    echo "FAILED: make format-yaml" >&2
     failed=true
   fi
 fi
