@@ -3,7 +3,7 @@ import logging
 from asyncio import sleep
 from functools import reduce
 from operator import or_
-from typing import Annotated, Any, override
+from typing import Annotated, override
 
 from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
@@ -168,52 +168,10 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
                     hitl_request_events=agent_class_dto.hitl_request_events,
                     hitl_response_events=agent_class_dto.hitl_response_events,
                     network_graph=agent_class_dto.network_graph,
+                    templates=response.templates or [],
                 )
 
-                # Auto-create default profile if provided and not already existing
-                if response.default_profile:
-                    self._create_default_agent_profile(response.agent_class, response.default_profile, response)
-
         return list(unique_agents_dict.values())
-
-    @staticmethod
-    def _create_default_agent_profile(
-        agent_class: str,
-        default_profile: dict[str, Any],
-        response: AgentClassDiscoveryResponseEvent,
-    ) -> None:
-        """Create a default agent profile in the DB if one doesn't already exist."""
-        agent_id = default_profile.get("agent_id")
-        if not agent_id:
-            logger.warning(f"Default profile for {agent_class} has no agent_id, skipping auto-creation.")
-            return
-
-        existing = AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
-        if existing:
-            return
-
-        name_data = default_profile.get("name") or {}
-        description_data = default_profile.get("description") or {}
-
-        from aihub_lib.i18n.LocaleString import LocaleString
-        from aihub_lib.persistence.i18n.LocaleStringEntity import LocaleStringEntity
-
-        name = LocaleStringEntity.from_locale_string(LocaleString(**name_data) if name_data else response.name)
-        description = LocaleStringEntity.from_locale_string(
-            LocaleString(**description_data) if description_data else response.description
-        )
-        icon = default_profile.get("icon") or response.icon
-
-        entity = AgentConfigEntityDocument(
-            agent_class=agent_class,
-            agent_id=agent_id,
-            name=name,
-            description=description,
-            icon=icon,
-            config_data=default_profile,
-        )
-        entity.save()
-        logger.info(f"Auto-created default profile '{agent_class}/{agent_id}' from agent declaration.")
 
     async def _sync_agent_instances_to_langfuse(self) -> None:
         """Sync all online agent instances to Langfuse so they appear in the experiment model dropdown.

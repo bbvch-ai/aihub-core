@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Annotated, Self
+from typing import TYPE_CHECKING, Annotated, Any, Self
 
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.discovery import ProcessClassDiscoveryResponseEvent
@@ -53,6 +53,10 @@ class ProcessClassDTO(BaseModel):
             "This is the configuration that will be used if no specific configuration is provided.",
         ),
     ]
+    templates: Annotated[
+        list[dict[str, Any]] | None,
+        Field(description="Optional list of profile templates for quick profile creation."),
+    ] = None
 
     @classmethod
     def from_discovery_event(
@@ -72,6 +76,7 @@ class ProcessClassDTO(BaseModel):
             agent_inputs=event.agent_inputs,
             is_online=True,
             default_process_config=event.default_process_config,
+            templates=event.templates,
         )
 
     @classmethod
@@ -101,4 +106,5 @@ class ProcessClassDTO(BaseModel):
                 description=entity.description.to_locale_string() if entity.description else LocaleString(en=""),
                 icon=entity.icon or "mage:broadcast",
             ),
+            templates=list(entity.templates) if entity.templates else None,
         )

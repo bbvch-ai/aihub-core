@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Annotated, Self
+from typing import TYPE_CHECKING, Annotated, Any, Self
 
 from aihub_lib.agents.visualizers.types.WorkflowGraph import WorkflowGraph
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
@@ -76,6 +76,10 @@ class AgentClassDTO(BaseModel):
     is_online: Annotated[
         bool | None, Field(description="Indicates whether the agent class is online and reachable.")
     ] = None
+    templates: Annotated[
+        list[dict[str, Any]] | None,
+        Field(description="Optional list of profile templates for quick profile creation."),
+    ] = None
 
     @classmethod
     def from_discovery_event(
@@ -97,6 +101,7 @@ class AgentClassDTO(BaseModel):
             hitl_response_events=event.hitl_response_events,
             network_graph=event.network_graph,
             is_online=True,
+            templates=event.templates,
         )
 
     @classmethod
@@ -159,6 +164,7 @@ class AgentClassDTO(BaseModel):
             hitl_response_events=hitl_response_events,
             network_graph=network_graph,
             is_online=entity.is_online,
+            templates=list(entity.templates) if entity.templates else None,
         )
         return dto.in_locale(t)
 
