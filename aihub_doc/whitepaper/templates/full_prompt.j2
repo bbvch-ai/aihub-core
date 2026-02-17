@@ -1,0 +1,124 @@
+# WHITEPAPER-KAPITEL GENERIERUNG
+
+Sie schreiben ein Whitepaper-Kapitel für die Swiss AI-Hub Plattform.
+Unten finden Sie:
+1. Terminologie-Glossar (verbindliche Begriffsdefinitionen)
+2. Bereits generierte vorherige Kapitel (für Konsistenz)
+3. Quelldokumentation aus der technischen Dokumentation
+4. Spezifische Kapitelanweisungen und -anforderungen
+5. Allgemeine Schreibanweisungen für alle Kapitel
+
+Ihre Aufgabe: Generieren Sie den Kapitelinhalt gemäss den Anweisungen und verwenden Sie die Quelldokumentation als faktische Grundlage.
+Achten Sie auf einen konsistenten Stil und Flow mit den bereits generierten Kapiteln.
+
+═══════════════════════════════════════════════════════════════
+
+## TERMINOLOGIE-GLOSSAR
+
+**WICHTIG**: Verwenden Sie die unten definierten Begriffe EXAKT wie angegeben, um eine konsistente Terminologie im gesamten Whitepaper sicherzustellen.
+
+{{ glossary }}
+
+═══════════════════════════════════════════════════════════════
+
+## ALLGEMEINE ANWEISUNGEN
+
+{{ general_prompt }}
+
+═══════════════════════════════════════════════════════════════
+
+## KAPITEL-SPEZIFISCHE ANWEISUNGEN
+
+{{ chapter_prompt }}
+
+═══════════════════════════════════════════════════════════════
+
+## AKTUELLE VERSION DES KAPITELS
+
+{% if existing_chapter %}
+Nachfolgend finden Sie die aktuelle Version dieses Kapitels.
+Ihre Aufgabe ist es, diese Version zu **verbessern und zu aktualisieren**, falls in der
+bereitgestellten Quelldokumentation neue oder aktualisierte Informationen verfügbar sind.
+
+**Wichtig**:
+- Behalten Sie manuelle Anpassungen bei, sofern sie nicht im Widerspruch zur Quelldokumentation stehen
+- Integrieren Sie neue Informationen nahtlos in die bestehende Struktur
+- Bewahren Sie den Schreibstil und Ton der bestehenden Version
+- Aktualisieren Sie nur die Teile, die durch neue Quelldokumentation überholt sind
+
+### Aktuelle Kapitelversion:
+
+{{ existing_chapter }}
+{% else %}
+*(Keine bestehende Version vorhanden - erstellen Sie das Kapitel neu)*
+
+Da keine bestehende Version existiert, schreiben Sie das Kapitel komplett neu
+basierend auf der bereitgestellten Quelldokumentation und den Anweisungen.
+{% endif %}
+
+═══════════════════════════════════════════════════════════════
+
+## QUELLDOKUMENTATION
+
+Nachfolgend die technische Dokumentation, die Sie als Quellenmaterial verwenden sollen:
+
+{% if source_documents %}
+{% for source in source_documents %}
+### Quelldatei: {{ source.path }}
+
+{{ source.content }}
+
+---
+
+{% endfor %}
+{% else %}
+*(Keine Quelldokumentation bereitgestellt)*
+{% endif %}
+
+═══════════════════════════════════════════════════════════════
+
+## BEREITS GENERIERTE KAPITEL
+
+{% if previous_chapters %}
+Nachfolgend finden Sie die bereits generierten vorherigen Kapitel.
+Verwenden Sie diese, um einen konsistenten Schreibstil, Ton und Struktur beizubehalten.
+
+{% for chapter in previous_chapters %}
+### Kapitel {{ chapter.id }}
+
+{{ chapter.content }}
+
+---
+
+{% endfor %}
+
+**Hinweis**: Achten Sie darauf, dass Ihr neues Kapitel nahtlos an diese vorherigen Kapitel anschliesst.
+{% else %}
+*(Keine vorherigen Kapitel vorhanden - dies ist das erste Kapitel)*
+{% endif %}
+
+═══════════════════════════════════════════════════════════════
+
+## IHRE AUFGABE
+
+{% if existing_chapter %}
+**Verbessern und aktualisieren Sie die aktuelle Kapitelversion:**
+
+1. Prüfen Sie die bereitgestellte Quelldokumentation auf neue oder aktualisierte Informationen
+2. Falls neue Informationen vorhanden sind, integrieren Sie diese in die bestehende Version
+3. Behalten Sie manuelle Anpassungen und den bestehenden Stil bei
+4. Stellen Sie sicher, dass das aktualisierte Kapitel konsistent mit den vorherigen Kapiteln ist
+5. Falls keine neuen Informationen vorhanden sind, geben Sie die aktuelle Version unverändert zurück
+{% else %}
+**Generieren Sie den Kapitelinhalt neu:**
+
+1. Verwenden Sie die Quelldokumentation als faktische Grundlage
+2. Folgen Sie den kapitel-spezifischen und allgemeinen Anweisungen
+3. Stellen Sie sicher, dass der Stil mit den vorherigen Kapiteln konsistent ist
+{% endif %}
+
+Schreiben Sie auf Deutsch (Schweizer Hochdeutsch) in einem geschäftsorientierten Stil.
+
+**WICHTIG**: Geben Sie NUR den Kapitelinhalt zurück, keine Meta-Kommentare oder Erklärungen.
+
+
