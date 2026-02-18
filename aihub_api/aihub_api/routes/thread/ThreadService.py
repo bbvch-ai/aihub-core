@@ -68,6 +68,7 @@ class ThreadService:
             if not user:
                 raise HTTPException(status_code=404, detail=f"User {user_id} not found")
 
+            # If user is not in tenant, this will return an empty array
             user_roles = user.get_roles(tenant.id)
             access_rules = RoleEntity.get_access_rules_for_roles(user_roles, tenant.id)
             access_checker = AccessChecker(list(access_rules), tenant_access_rules=tenant.access_rules)
