@@ -13198,7 +13198,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1771416905
+            default: 1771420149
         },
         owned_by: {
             type: 'string',

@@ -200,11 +200,13 @@ class RoleEntity(Document):
 
     @classmethod
     @trace_fn
-    def get_usage_limits_for_roles(cls, role_names: list[str]) -> list[list[RoleUsageLimit]]:
+    def get_usage_limits_for_roles(cls, role_names: list[str], tenant_id: str) -> list[list[RoleUsageLimit]]:
         """
         Returns a list of usage_limits per role.
+
+        Includes both system roles (tenant_id=None) and tenant-specific roles.
         """
-        roles = cls.objects(name__in=role_names).only("usage_limits")
+        roles = cls.objects(name__in=role_names, tenant_id__in=[None, tenant_id]).only("usage_limits")
         return [
             [
                 RoleUsageLimit(pattern=ul.pattern, limit=ul.limit, period=UsageLimitPeriod(ul.period))

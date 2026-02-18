@@ -6,9 +6,6 @@ import pytest_asyncio
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
     DangerousDevelopmentOnlyAuthHandler,
 )
-from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
-    DangerousDevelopmentOnlyIdentityProvider,
-)
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.persistence.process.ProcessClassEntity import HumanInSpecsEntity, ProcessClassEntity
 from aihub_lib.persistence.process.ProcessConfigEntityDocument import ProcessConfigEntityDocument
