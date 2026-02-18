@@ -50,6 +50,8 @@ class RoleController(Controller):
                 return RoleService.create_role(role_data, user.acting_within_tenant.id)
             except NotUniqueError:
                 raise HTTPException(status_code=409, detail=f"Role with name '{role_data.name}' already exists.")
+            except HTTPException:
+                raise
             except Exception as e:
                 logger.exception("Unexpected error creating role")
                 raise HTTPException(status_code=400, detail=str(e))
@@ -112,6 +114,8 @@ class RoleController(Controller):
                 raise HTTPException(status_code=404, detail="Role not found.")
             except NotUniqueError:
                 raise HTTPException(status_code=409, detail=f"Role with name '{role_data.name}' already exists.")
+            except HTTPException:
+                raise
             except Exception as e:
                 logger.exception("Unexpected error updating role")
                 raise HTTPException(status_code=400, detail=str(e))

@@ -5,7 +5,8 @@ from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.routes.Controller import Controller
-from fastapi import Body, Depends, Path, Security
+from fastapi import Body, Depends, HTTPException, Path, Security
+from mongoengine.errors import DoesNotExist
 from nats.aio.client import Client as NATS
 
 from aihub_api.i18n.ApiLocaleString import ApiLocaleString
@@ -98,9 +99,12 @@ class UserController(Controller):
             """
             Retrieve user info by their OID. Shows access within the admin's current tenant context.
             """
-            return await UserService.get_user_with_access_by_oid(
-                user_id, user.acting_within_tenant, runner=self._runner, nc=nc, t=t
-            )
+            try:
+                return await UserService.get_user_with_access_by_oid(
+                    user_id, user.acting_within_tenant, runner=self._runner, nc=nc, t=t
+                )
+            except DoesNotExist:
+                raise HTTPException(status_code=404, detail="User not found.")
 
         return self
 

@@ -37,7 +37,8 @@ class DangerousDevelopmentOnlyAuthHandler(AuthHandler):
         """
         logger.warning("DangerousDevelopmentOnlyAuthHandler is active. This is not recommended for production use.")
 
-        # Ensure the dev user exists in the database
+        # Use ensure_user_exists (not ensure_user_exists_for_auth) because the dev handler
+        # manages tenant roles separately with validate_roles=False for dev-only roles.
         user_entity = UserEntity.ensure_user_exists(
             oid=self.config.OID,
             name=self.config.NAME,

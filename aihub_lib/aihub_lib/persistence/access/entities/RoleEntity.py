@@ -1,3 +1,4 @@
+import logging
 from typing import Self
 
 from mongoengine import Document, EmbeddedDocument, EmbeddedDocumentListField, IntField, ListField, StringField
@@ -5,6 +6,8 @@ from mongoengine.errors import ValidationError
 
 from aihub_lib.auth.usage.usage_limit_models import RoleUsageLimit, UsageLimitPeriod
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
+
+logger = logging.getLogger(__name__)
 
 
 class UsageLimit(EmbeddedDocument):
@@ -175,11 +178,29 @@ class RoleEntity(Document):
         """
         Deletes a role by its name and tenant_id. Returns True if deleted, False if not found.
 
+        Also removes the role name from all UserTenantRoleEntity associations that reference it.
         For system roles, pass tenant_id=None.
         """
         role = cls.objects(name=role_name, tenant_id=tenant_id).first()
         if not role:
             return False
+
+        # Remove the role name from all user-tenant-role associations
+        from aihub_lib.persistence.access.entities.UserTenantRoleEntity import UserTenantRoleEntity
+
+        if tenant_id:
+            associations = UserTenantRoleEntity.objects(tenant_id=tenant_id, roles=role_name)
+        else:
+            associations = UserTenantRoleEntity.objects(roles=role_name)
+
+        updated_count = 0
+        for assoc in associations:
+            assoc.roles = [r for r in assoc.roles if r != role_name]
+            assoc.save()
+            updated_count += 1
+
+        if updated_count:
+            logger.info(f"Removed role '{role_name}' from {updated_count} user-tenant associations")
 
         role.delete()
         return True

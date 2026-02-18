@@ -522,7 +522,7 @@ This glossary defines terms, concepts, and technologies that have specific meani
 | **Event-Driven Architecture**   | Core architectural pattern where all communication happens via events, enabling scalable, stateless distributed systems.            |
 | **Event Store**                 | Persistence layer for events, providing replay capabilities and audit trails using NATS JetStream.                                  |
 | **Hierarchical Permissions**    | Permission system using dot notation (e.g., `aihub.user.agent.class.id`) with wildcard support for flexible access control.         |
-| **Tenant Identity**             | Pydantic model representing tenant context (id, name, access_rules). Resolved from `x-tenant-id` header or default tenant.         |
+| **Tenant Identity**             | Pydantic model representing tenant context (id, name, access_rules). Resolved from `x-tenant-id` header or default tenant.          |
 | **Internationalization (i18n)** | Multi-language support system with YAML-based translations and dynamic locale switching.                                            |
 | **Locale Handler**              | Core i18n component that manages language-specific content extraction and fallback mechanisms.                                      |
 | **Locale String**               | Multi-language string representation supporting dynamic locale resolution and default fallbacks.                                    |

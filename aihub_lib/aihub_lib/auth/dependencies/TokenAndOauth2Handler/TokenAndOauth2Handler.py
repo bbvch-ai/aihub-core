@@ -3,6 +3,7 @@ import logging
 from fastapi import HTTPException, Request, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
+from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.dependencies.AuthSettings import AuthSettings
 from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2AuthHandler import OAuth2AuthHandler
 from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2Settings import OAuth2Settings
@@ -18,7 +19,7 @@ logger = logging.getLogger(__name__)
 class TokenAndOauth2Handler:
     """A composite authentication handler that sequentially attempts both OAuth2 and Bearer auth strategies."""
 
-    def __init__(self, bearer_handlers: list, oauth2_handlers: list[OAuth2AuthHandler]):
+    def __init__(self, bearer_handlers: list[AuthHandler], oauth2_handlers: list[OAuth2AuthHandler]):
         self.bearer_handlers = bearer_handlers
         self.oauth2_handlers = oauth2_handlers
 
@@ -45,7 +46,7 @@ class TokenAndOauth2Handler:
                     logger.warning(f"OAuth2 authentication {oauth2_handler.__class__.__name__} failed: {e}")
                     errors.append(f"OAuth2 authentication {oauth2_handler.__class__.__name__} failed: {str(e)}")
 
-        logger.exception("Authentication failed for both OAuth2 and Bearer: %s", errors)
+        logger.error("Authentication failed for both OAuth2 and Bearer: %s", errors)
         raise HTTPException(status_code=401, detail=" | ".join(errors))
 
     async def authenticate_token(self, token: str) -> UserIdentity:
@@ -66,12 +67,12 @@ class TokenAndOauth2Handler:
                 logger.warning(f"Bearer authentication {bearer_handler.__class__.__name__} failed: {e}")
                 errors.append(f"Bearer authentication {bearer_handler.__class__.__name__} failed: {str(e)}")
 
-        logger.exception("Authentication failed for both OAuth2 and Bearer: %s", errors)
+        logger.error("Authentication failed for both OAuth2 and Bearer: %s", errors)
         raise HTTPException(status_code=401, detail=" | ".join(errors))
 
     @classmethod
     def from_auth_settings(cls):
-        bearer_handlers: list = []
+        bearer_handlers: list[AuthHandler] = []
         oauth2_handlers: list[OAuth2AuthHandler] = []
 
         config = AuthSettings()

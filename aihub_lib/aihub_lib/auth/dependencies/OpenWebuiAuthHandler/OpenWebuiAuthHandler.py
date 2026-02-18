@@ -8,6 +8,7 @@ from mongoengine import DoesNotExist
 
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.dependencies.AuthSettings import AuthSettings
+from aihub_lib.auth.dependencies.BearerAuthHandler import BearerAuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.persistence.user.UserEntity import UserEntity
 
@@ -22,7 +23,7 @@ class OpenWebuiAuthHandler(AuthHandler):
     from the local database.
     """
 
-    def __init__(self, base_auth_handler):
+    def __init__(self, base_auth_handler: BearerAuthHandler):
         """Initialize with a base auth handler to validate the bearer token."""
         self.base_auth_handler = base_auth_handler
 

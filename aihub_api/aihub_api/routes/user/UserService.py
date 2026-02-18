@@ -47,7 +47,12 @@ class UserService:
         """
         Retrieve a user with their access rules (which services, agents, and processes they can access).
         Access is calculated within the requesting user's tenant context.
+
+        Raises DoesNotExist if the user is not found or does not belong to the given tenant.
         """
+        tenant_user_ids = UserTenantRoleEntity.get_user_ids_in_tenant(tenant.id)
+        if user_oid not in tenant_user_ids:
+            raise DoesNotExist(f"User {user_oid} not found in tenant")
         user_entity = UserEntity.by_oid(user_oid)
         return await UserWithAccessDTO.from_user_entity(user_entity, tenant, runner, nc, t)
 

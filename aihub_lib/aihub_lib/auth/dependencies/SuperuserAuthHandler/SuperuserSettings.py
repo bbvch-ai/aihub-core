@@ -19,7 +19,7 @@ class SuperuserSettings(EnvironmentSettings):
 
     model_config = EnvironmentSettings.create_settings_config("SUPERUSER_")
 
-    ENABLED: Annotated[bool, Field(description="Whether the superuser is enabled.")] = False
+    ENABLED: Annotated[bool, Field(description="Whether the superuser is enabled.")] = True
     NAME: Annotated[str | None, Field(description="The user's displayed name.")] = None
     EMAIL: Annotated[
         str | None,

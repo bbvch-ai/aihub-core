@@ -112,7 +112,7 @@ class OpenaiCompletionHandler(CompletionHandler):
         ]
 
         user_id = turn_context.activity.from_property.id or "UNKNOWN"
-        user_email = turn_context.activity.from_property.name or "UNKNOWN"
+        user_email: str | None = None
 
         connector_client = turn_context.turn_state.get("ConnectorClient")
 
@@ -122,6 +122,16 @@ class OpenaiCompletionHandler(CompletionHandler):
             )
             if teams_account.email is not None:
                 user_email = teams_account.email
+
+        if not user_email:
+            fallback = turn_context.activity.from_property.name
+            if fallback and "@" in fallback:
+                user_email = fallback
+            else:
+                raise ValueError(
+                    f"Could not determine email for user '{turn_context.activity.from_property.name}'. "
+                    "Ensure the user has logged in via OAuth2 before using the bot."
+                )
 
         user_entity = UserEntity.by_email(user_email)
         tenant = AuthHandler.get_default_tenant_for_user(user_entity.id)
