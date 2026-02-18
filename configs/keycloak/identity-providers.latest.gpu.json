@@ -15,6 +15,7 @@
       "storeToken": false,
       "linkOnly": false,
       "firstBrokerLoginFlowAlias": "first broker login",
+      "postBrokerLoginFlowAlias": "Post Broker Login - AIHubAccess Check",
       "config": {
         "clientId": "${KEYCLOAK_AZURE_CLIENT_ID}",
         "clientSecret": "${KEYCLOAK_AZURE_CLIENT_SECRET}",
@@ -29,7 +30,7 @@
         "useJwksUrl": "true",
         "pkceEnabled": "true",
         "pkceMethod": "S256",
-        "syncMode": "IMPORT",
+        "syncMode": "FORCE",
         "clientAuthMethod": "client_secret_post",
         "hideOnLoginPage": "false",
         "backchannelSupported": "false"
@@ -107,6 +108,17 @@
         "claim": "roles",
         "claim.value": "AIHubDeveloper",
         "role": "AIHubDeveloper"
+      }
+    },
+    {
+      "name": "role-mapper-access",
+      "identityProviderAlias": "azure-ad",
+      "identityProviderMapper": "oidc-role-idp-mapper",
+      "config": {
+        "syncMode": "INHERIT",
+        "claim": "roles",
+        "claim.value": "AIHubAccess",
+        "role": "AIHubAccess"
       }
     }
   ]

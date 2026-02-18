@@ -25,6 +25,10 @@
   "roles": {
     "realm": [
       {
+        "name": "AIHubAccess",
+        "description": "Required role to access AI-Hub. Users without this role are denied at login."
+      },
+      {
         "name": "AIHubAdmin",
         "description": "Full administrative access to AI-Hub"
       },
@@ -454,6 +458,66 @@
     "xFrameOptions": "",
     "contentSecurityPolicy": "frame-src 'self'; frame-ancestors 'self' https://${DOMAIN} https://*.${DOMAIN}; object-src 'none';"
   },
+
+  "authenticationFlows": [
+    {
+      "alias": "Post Broker Login - AIHubAccess Check",
+      "description": "Denies access to IdP users who do not have the AIHubAccess realm role",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "flowAlias": "Deny Access Without AIHubAccess",
+          "requirement": "CONDITIONAL",
+          "priority": 0,
+          "userSetupAllowed": false,
+          "autheticatorFlow": true
+        }
+      ]
+    },
+    {
+      "alias": "Deny Access Without AIHubAccess",
+      "description": "Conditional sub-flow: if user does NOT have AIHubAccess role, deny access",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "conditional-user-role",
+          "authenticatorConfig": "aihub-access-role-condition",
+          "requirement": "REQUIRED",
+          "priority": 0,
+          "userSetupAllowed": false,
+          "autheticatorFlow": false
+        },
+        {
+          "authenticator": "deny-access-authenticator",
+          "authenticatorConfig": "aihub-access-deny-message",
+          "requirement": "REQUIRED",
+          "priority": 1,
+          "userSetupAllowed": false,
+          "autheticatorFlow": false
+        }
+      ]
+    }
+  ],
+
+  "authenticatorConfig": [
+    {
+      "alias": "aihub-access-role-condition",
+      "config": {
+        "condUserRole": "AIHubAccess",
+        "negate": "true"
+      }
+    },
+    {
+      "alias": "aihub-access-deny-message",
+      "config": {
+        "error_message": "Access denied. You need the AIHubAccess role to use AI-Hub. Please contact your administrator."
+      }
+    }
+  ],
 
   "smtpServer": {},
 

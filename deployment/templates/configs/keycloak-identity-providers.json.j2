@@ -20,11 +20,12 @@
    2. Set redirect URI: https://auth.YOUR_DOMAIN/realms/aihub/broker/azure-ad/endpoint
    3. Create client secret and copy value
    4. Grant API permissions: openid, email, profile
-   5. Define App Roles in manifest (AIHubAdmin, AIHubUser, AIHubDeveloper)
+   5. Define App Roles in manifest (AIHubAccess, AIHubAdmin, AIHubUser, AIHubDeveloper)
    6. Assign users/groups to roles in Enterprise Applications
 
    Role Mapping:
    Azure AD App Roles are automatically mapped to Keycloak realm roles:
+   - Azure "AIHubAccess" → Keycloak "AIHubAccess" (REQUIRED for login)
    - Azure "AIHubAdmin" → Keycloak "AIHubAdmin"
    - Azure "AIHubUser" → Keycloak "AIHubUser"
    - Azure "AIHubDeveloper" → Keycloak "AIHubDeveloper"
@@ -41,6 +42,7 @@
       "storeToken": false,
       "linkOnly": false,
       "firstBrokerLoginFlowAlias": "first broker login",
+      "postBrokerLoginFlowAlias": "Post Broker Login - AIHubAccess Check",
       "config": {
         "clientId": "${KEYCLOAK_AZURE_CLIENT_ID}",
         "clientSecret": "${KEYCLOAK_AZURE_CLIENT_SECRET}",
@@ -55,7 +57,7 @@
         "useJwksUrl": "true",
         "pkceEnabled": "true",
         "pkceMethod": "S256",
-        "syncMode": "IMPORT",
+        "syncMode": "FORCE",
         "clientAuthMethod": "client_secret_post",
         "hideOnLoginPage": "false",
         "backchannelSupported": "false"
@@ -133,6 +135,17 @@
         "claim": "roles",
         "claim.value": "AIHubDeveloper",
         "role": "AIHubDeveloper"
+      }
+    },
+    {
+      "name": "role-mapper-access",
+      "identityProviderAlias": "azure-ad",
+      "identityProviderMapper": "oidc-role-idp-mapper",
+      "config": {
+        "syncMode": "INHERIT",
+        "claim": "roles",
+        "claim.value": "AIHubAccess",
+        "role": "AIHubAccess"
       }
     }
   ]
