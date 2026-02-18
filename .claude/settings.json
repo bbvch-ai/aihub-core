@@ -1,30 +1,313 @@
 {
-  "includeCoAuthoredBy": false,
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+
+  "model": "opus",
+  "availableModels": ["opus", "sonnet"],
+
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
+
   "statusLine": {
     "type": "command",
     "command": ".claude/statusline.sh",
     "padding": 0
   },
+
+  "enableAllProjectMcpServers": true,
+
+  "permissions": {
+    "defaultMode": "acceptEdits",
+
+    "deny": [
+      "Bash(rm -rf /)",
+      "Bash(rm -rf ~)",
+      "Bash(rm -rf ~/*)",
+      "Bash(rm -rf /*)",
+      "Bash(rm -rf .)",
+      "Bash(rm -rf ..)",
+      "Bash(rm -rf *)",
+      "Bash(rm -rf ./*)",
+      "Bash(chmod -R 777 *)",
+      "Bash(chmod 777 *)",
+      "Bash(mkfs*)",
+      "Bash(dd if=*)",
+
+      "Bash(git push --force)",
+      "Bash(git push --force *)",
+      "Bash(git push -f)",
+      "Bash(git push -f *)",
+      "Bash(git push * --force)",
+      "Bash(git push * --force *)",
+      "Bash(git push * -f)",
+      "Bash(git push * -f *)",
+      "Bash(git reset --hard HEAD~*)",
+      "Bash(git clean -fd *)",
+      "Bash(git clean -fdx *)",
+      "Bash(git checkout -- .)",
+
+      "Bash(docker rm -f *)",
+      "Bash(docker rmi -f *)",
+      "Bash(docker system prune *)",
+      "Bash(docker compose down -v *)",
+      "Bash(docker compose -f docker-compose.prod* *)",
+
+      "Bash(kubectl delete *)",
+      "Bash(kubectl * --context prod*)",
+      "Bash(kubectl * -n prod*)",
+
+      "Bash(npm publish *)",
+      "Bash(pnpm publish *)",
+      "Bash(poetry publish *)",
+      "Bash(pip install --break-system-packages *)",
+
+      "Bash(curl * | sh)",
+      "Bash(curl * | bash)",
+      "Bash(wget * | sh)",
+      "Bash(wget * | bash)",
+
+      "Bash(sudo *)",
+      "Bash(su *)",
+
+      "Bash(ssh *)",
+      "Bash(scp *)",
+      "Bash(rsync * :*)",
+
+      "Bash(> /dev/*)",
+      "Bash(shutdown *)",
+      "Bash(reboot *)",
+      "Bash(kill -9 *)",
+      "Bash(killall *)",
+
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./.env.local)",
+      "Read(./secrets/**)",
+      "Read(./**/*secret*)",
+      "Read(./**/*credential*)",
+      "Read(~/.ssh/**)",
+      "Read(~/.aws/**)",
+      "Read(~/.gnupg/**)",
+      "Read(~/.netrc)",
+      "Read(~/.npmrc)"
+    ],
+
+    "ask": [
+      "Bash(git push *)",
+      "Bash(git push)",
+      "Bash(git merge *)",
+      "Bash(git rebase *)",
+      "Bash(git tag *)",
+      "Bash(git checkout main)",
+      "Bash(git checkout master)",
+      "Bash(git switch main)",
+      "Bash(git switch master)",
+
+      "Bash(docker build *)",
+      "Bash(docker compose up *)",
+      "Bash(docker compose down *)",
+      "Bash(docker exec *)",
+
+      "Bash(gh release *)",
+      "Bash(gh repo *)",
+
+      "Bash(pip install *)",
+      "Bash(poetry add *)",
+      "Bash(npm install -g *)",
+      "Bash(pnpm add -g *)",
+
+      "Bash(curl *)",
+      "Bash(wget *)",
+      "Bash(npx *)"
+    ],
+
+    "allow": [
+      "Read",
+      "Edit",
+      "Write",
+      "Skill",
+      "WebFetch",
+      "WebSearch",
+      "mcp__*",
+
+      "Bash(make *)",
+      "Bash(poetry run *)",
+      "Bash(poetry install)",
+      "Bash(poetry add *)",
+      "Bash(poetry lock *)",
+      "Bash(poetry show *)",
+      "Bash(poetry env *)",
+      "Bash(pnpm *)",
+
+      "Bash(git status)",
+      "Bash(git status *)",
+      "Bash(git diff *)",
+      "Bash(git diff)",
+      "Bash(git log *)",
+      "Bash(git log)",
+      "Bash(git show *)",
+      "Bash(git branch *)",
+      "Bash(git branch)",
+      "Bash(git stash *)",
+      "Bash(git stash)",
+      "Bash(git add *)",
+      "Bash(git -C * add *)",
+      "Bash(git add .)",
+      "Bash(git commit *)",
+      "Bash(git checkout -b *)",
+      "Bash(git switch -c *)",
+      "Bash(git fetch *)",
+      "Bash(git fetch)",
+      "Bash(git remote *)",
+      "Bash(git rev-parse *)",
+      "Bash(git ls-files *)",
+      "Bash(git blame *)",
+      "Bash(git cherry-pick *)",
+
+      "Bash(gh pr *)",
+      "Bash(gh issue *)",
+      "Bash(gh api *)",
+      "Bash(gh auth *)",
+
+      "Bash(docker compose -f docker-compose.dev.yml *)",
+      "Bash(docker compose ps *)",
+      "Bash(docker compose logs *)",
+      "Bash(docker logs *)",
+      "Bash(docker ps *)",
+      "Bash(docker ps)",
+      "Bash(docker images *)",
+      "Bash(docker images)",
+      "Bash(docker inspect *)",
+
+      "Bash(cat *)",
+      "Bash(head *)",
+      "Bash(tail *)",
+      "Bash(less *)",
+      "Bash(wc *)",
+      "Bash(sort *)",
+      "Bash(uniq *)",
+      "Bash(cut *)",
+      "Bash(awk *)",
+      "Bash(sed *)",
+      "Bash(tr *)",
+      "Bash(tee *)",
+      "Bash(diff *)",
+      "Bash(comm *)",
+      "Bash(column *)",
+
+      "Bash(ls *)",
+      "Bash(ls)",
+      "Bash(find *)",
+      "Bash(tree *)",
+      "Bash(tree)",
+      "Bash(file *)",
+      "Bash(stat *)",
+      "Bash(du *)",
+      "Bash(df *)",
+      "Bash(realpath *)",
+      "Bash(dirname *)",
+      "Bash(basename *)",
+      "Bash(pwd)",
+      "Bash(which *)",
+      "Bash(whereis *)",
+      "Bash(type *)",
+
+      "Bash(grep *)",
+      "Bash(rg *)",
+      "Bash(ag *)",
+      "Bash(fd *)",
+      "Bash(fzf *)",
+      "Bash(jq *)",
+      "Bash(yq *)",
+      "Bash(xargs *)",
+
+      "Bash(echo *)",
+      "Bash(printf *)",
+      "Bash(date *)",
+      "Bash(date)",
+      "Bash(env)",
+      "Bash(printenv *)",
+      "Bash(uname *)",
+      "Bash(id)",
+      "Bash(whoami)",
+      "Bash(hostname)",
+
+      "Bash(python *)",
+      "Bash(python3 *)",
+      "Bash(node *)",
+      "Bash(tsx *)",
+      "Bash(ts-node *)",
+      "Bash(deno *)",
+      "Bash(bun *)",
+
+      "Bash(pytest *)",
+      "Bash(mypy *)",
+      "Bash(ruff *)",
+      "Bash(black *)",
+      "Bash(isort *)",
+      "Bash(flake8 *)",
+      "Bash(pylint *)",
+      "Bash(bandit *)",
+      "Bash(eslint *)",
+      "Bash(prettier *)",
+      "Bash(tsc *)",
+      "Bash(biome *)",
+      "Bash(vitest *)",
+      "Bash(jest *)",
+      "Bash(playwright *)",
+      "Bash(cypress *)",
+
+      "Bash(mkdir *)",
+      "Bash(cp *)",
+      "Bash(mv *)",
+      "Bash(touch *)",
+      "Bash(ln *)",
+      "Bash(rm *.pyc)",
+      "Bash(rm -rf __pycache__*)",
+      "Bash(rm -rf node_modules*)",
+      "Bash(rm -rf .pytest_cache*)",
+      "Bash(rm -rf dist*)",
+      "Bash(rm -rf build*)",
+      "Bash(rm -rf .next*)",
+      "Bash(rm -rf .turbo*)",
+      "Bash(rm -rf coverage*)",
+      "Bash(rm -f *.tmp)",
+      "Bash(rm -f *.log)",
+
+      "Bash(cd *)",
+      "Bash(source *)",
+      "Bash(export *)",
+      "Bash(unset *)",
+      "Bash(set *)",
+      "Bash(chmod +x *)",
+      "Bash(true)",
+      "Bash(false)",
+      "Bash(test *)",
+      "Bash([ *)",
+
+      "Bash(tar *)",
+      "Bash(unzip *)",
+      "Bash(gzip *)",
+      "Bash(gunzip *)",
+      "Bash(zip *)",
+
+      "Bash(openssl * -text *)",
+      "Bash(base64 *)",
+      "Bash(md5sum *)",
+      "Bash(sha256sum *)",
+      "Bash(sha1sum *)"
+    ]
+  },
+
   "hooks": {
-    "PostToolUse": [
+    "SessionStart": [
       {
-        "matcher": "Edit|Write",
+        "matcher": "",
         "hooks": [
           {
             "type": "command",
-            "command": ".claude/hooks/auto-format-python.sh"
-          },
-          {
-            "type": "command",
-            "command": ".claude/hooks/auto-format-frontend.sh"
-          },
-          {
-            "type": "command",
-            "command": ".claude/hooks/auto-format-markdown.sh"
-          },
-          {
-            "type": "command",
-            "command": ".claude/hooks/auto-format-yaml.sh"
+            "command": ".claude/hooks/session-start.sh"
           }
         ]
       }
@@ -49,6 +332,29 @@
         ]
       }
     ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/auto-format-python.sh"
+          },
+          {
+            "type": "command",
+            "command": ".claude/hooks/auto-format-frontend.sh"
+          },
+          {
+            "type": "command",
+            "command": ".claude/hooks/auto-format-markdown.sh"
+          },
+          {
+            "type": "command",
+            "command": ".claude/hooks/auto-format-yaml.sh"
+          }
+        ]
+      }
+    ],
     "Stop": [
       {
         "matcher": "",
@@ -59,40 +365,6 @@
           }
         ]
       }
-    ],
-    "SessionStart": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": ".claude/hooks/session-start.sh"
-          }
-        ]
-      }
     ]
-  },
-  "permissions": {
-    "allow": [
-      "Bash(make *)",
-      "Bash(poetry run *)",
-      "Bash(poetry install)",
-      "Bash(poetry add *)",
-      "Bash(pnpm *)",
-      "Bash(git status)",
-      "Bash(git diff *)",
-      "Bash(git log *)",
-      "Bash(git branch *)",
-      "Bash(git stash *)",
-      "Bash(git add *)",
-      "Bash(gh pr *)",
-      "Bash(gh issue *)",
-      "Bash(docker compose -f docker-compose.dev.yml *)",
-      "Bash(docker compose ps *)",
-      "Bash(docker logs *)",
-      "Skill"
-    ]
-  },
-  "model": "opus",
-  "availableModels": ["opus","sonnet"]
+  }
 }

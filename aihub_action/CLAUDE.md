@@ -1,130 +1,119 @@
 # aihub_action - Reusable GitHub Actions
 
-**Purpose**: Modular GitHub Actions for CI/CD workflows. Standardize build, lint, test, coverage, review across customer
-repos.
-
-Tech Stack & Paradigms: GitHub Actions composite actions (YAML workflows). actions/checkout@v4 for repo cloning.
-actions/setup-python@v5 (Python 3 default). actions/setup-node@v4 for Node.js. snok/install-poetry@v1 (Poetry).
-docker/setup-buildx-action@v3 + docker/build-push-action@v6 for multi-platform images. docker/login-action@v2 for GHCR
-auth. reviewdog/action-black@v3 for Black formatter PR comments. pytest with pytest-cov for coverage.
-EnricoMi/publish-unit-test-result-action@v2 for test summaries. actions/upload-artifact@v4 for artifacts.
-actions/cache@v4 for Poetry/HuggingFace model caching. Docker Compose for test services. Stateless, parameterized,
-version-tagged reusable actions.
-
-## Scope Responsibility
-
-Reusable CI/CD automation. NOT repository-specific workflows (those consume these actions).
+**Purpose**: Composite GitHub Actions for CI/CD. Consumed by this repo's workflows (`.github/workflows/`) and external
+customer repos. Each action is a single `action.yml` file. NOT repository-specific workflows — those consume these
+actions.
 
 ## Folder Structure
 
 ```
 aihub_action/
-├── build_image/               # Docker image build + push
-│   └── action.yml
-├── lint_backend/              # Backend linting (Black formatter)
-│   └── action.yml
-├── lint_frontend/             # Frontend linting (ESLint)
-│   └── action.yml
-├── pytest_coverage_comment/   # PR comment with coverage report
-│   └── action.yml
-├── review_pr/                 # AI-assisted PR review
-│   └── action.yml
-├── sonarcloud_scan/           # SonarCloud quality analysis
-│   └── action.yml
-└── test_backend/              # Backend tests with coverage
-    └── action.yml
+├── build_image/               # Docker image build + push to GHCR
+├── lint_backend/              # Python linting (Black via reviewdog)
+├── lint_frontend/             # Nuxt linting (ESLint via reviewdog)
+├── pytest_coverage_comment/   # PR coverage comment (downloads test_backend artifacts)
+├── review_pr/                 # AI-assisted PR review (qodo-ai/pr-agent, Azure OpenAI)
+├── sonarcloud_scan/           # SonarCloud quality analysis (downloads test_backend artifacts)
+└── test_backend/              # Python tests with coverage + artifact upload
 ```
 
-## Action Definition Pattern
+## Composite Action Rules
 
-**Structure**: Each action has `action.yml` with inputs, composite steps.
+- **`shell: bash` required** on every `run:` step. Composite actions do NOT inherit shell from the caller workflow.
+  Omitting it causes a hard failure.
+- All actions start with `actions/checkout@v4` as their first step
+- Git auth: HTTPS token rewrite (`git config --global url."https://$TOKEN@github.com/"...`) or SSH key setup
 
-**Example** (`lint_backend/action.yml`):
+## Action Coupling (test_backend -> coverage/sonar)
 
-```yaml
-name: Lint Backend Code
-description: Run linter on python backend
+`test_backend` uploads artifacts with names derived from `working_directory`:
 
-inputs:
-  github_token:
-    description: 'GitHub token for authentication'
-    required: true
-  working_directory:
-    description: 'Working directory for the linter'
-    required: true
-  python_version:
-    description: 'Python version to install'
-    required: false
-    default: '3.13'
+- `{working_directory}-coverage-report` (coverage.xml)
+- `{working_directory}-pytest-report` (pytest.xml)
 
-runs:
-  using: "composite"
-  steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v4
+Both `pytest_coverage_comment` and `sonarcloud_scan` download artifacts by these **exact names**. Changing the naming
+convention in any one action silently breaks the others. Always update all three together.
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ inputs.python_version }}
+## Deferred Test Failure (test_backend)
 
-    - name: Configure Git to Use GITHUB_TOKEN
-      shell: bash
-      run: git config --global url."https://${{ inputs.github_token }}@github.com/".insteadOf "https://github.com/"
+`test_backend` does NOT fail immediately on test failure:
 
-    - name: Lint
-      uses: reviewdog/action-black@v3
-      with:
-        github_token: ${{ inputs.github_token }}
-        reporter: github-pr-review
-        workdir: ${{ inputs.working_directory }}
-```
+1. Captures pytest exit code into a variable
+2. Exit code 5 (no tests found) creates an empty `pytest.xml` — does NOT fail the action
+3. Exit code != 0 sets `TEST_FAIL=true` env var
+4. Uploads coverage + pytest XML artifacts (always, regardless of test outcome)
+5. "Check if Tests Failed" step runs LAST — `exit 1` only after artifacts are uploaded
 
-## Usage in other Repos
+This ensures downstream jobs (`pytest_coverage_comment`, `sonarcloud_scan`) always receive artifacts even when tests
+fail.
 
-**Reference action**: `uses: bbvch-ai/aihub-core/aihub_action/<action_name>@<ref>`
+## Action Details
 
-**Example workflow** (`.github/workflows/lint.yml`):
+**build_image**: Two separate `docker/build-push-action@v6` steps controlled by `if: ${{ inputs.ssh_key != '' }}`. When
+`ssh_key` is provided, the build gets SSH access to private repos during Docker build. When empty, a simpler step runs
+with just `VERSION` build-arg. Tags: `ghcr.io/{owner}/{repo}/{image_name}:{version}` with optional `secondary_tag`
+(nightly/latest).
 
-```yaml
-name: Lint Backend
+**lint_backend**: Uses `reviewdog/action-black@v3` (Black formatter). Note: local development uses Ruff for formatting,
+but CI lint still uses Black via reviewdog. This is a known divergence — do not "fix" it without explicit instruction.
 
-on:
-  pull_request:
-    branches: [main]
+**lint_frontend**: Requires `lockfile` input (path to pnpm lockfile) in addition to `working_directory` — used for pnpm
+cache key. Runs `nuxi prepare` before linting to generate Nuxt type stubs.
 
-jobs:
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Lint Backend Code
-        uses: bbvch-ai/aihub-core/aihub_action/lint_backend@main
-        with:
-          working_directory: "aihub_agent"
-```
+**test_backend**: Most complex action. Key inputs:
 
-## Best Practices
+- `docker_compose_services`: space-separated list of Docker services to start (empty = no Docker)
+- `use_local_core`: when `true`, runs `make use-local-core-without-install` + `poetry lock` + reinstall (used in CI to
+  test against monorepo's local `aihub_lib`)
+- `install_ffmpeg`: installs FFmpeg via `make install-ffmpeg`
+- `huggingface_api_key`: added to `.env.dev` for model downloads
+- `regenerate_compose`: runs `make generate-compose` before starting Docker services
+- Health check polling: waits up to 10 minutes for Docker services to become healthy
 
-- **Single Responsibility**: Each action focused on one task.
-- **Versioning**: Use tagged releases (`@v1.0.0`) in production, `@main` for testing.
-- **Inputs**: Document all inputs with descriptions, mark required/optional.
-- **Secrets**: Pass sensitive data (tokens, keys) via inputs from repository secrets.
+**pytest_coverage_comment**: Downloads `{working_directory}-pytest-report` and `{working_directory}-coverage-report`
+artifacts from `test_backend`, posts formatted coverage report as PR comment via
+`MishaKav/pytest-coverage-comment@main`.
 
-## Common Inputs
+**sonarcloud_scan**: Downloads `{working_directory}-coverage-report` artifact when `report_coverage: true`. Runs
+`SonarSource/sonarqube-scan-action@v5`. Requires `sonar_token` and `sonar_project_key` inputs. Default organization:
+`bbv-ai`.
 
-- **working_directory**: Path to scope (e.g., `aihub_agent`)
-- **github_token**: `${{ secrets.GITHUB_TOKEN }}`
-- **sonar_token**: `${{ secrets.SONAR_TOKEN }}`
-- **coverage_file**: Path to coverage report
+**review_pr**: Wraps `qodo-ai/pr-agent@main` with Azure OpenAI configuration. Model defaults to `gpt-4o`. Requires
+`azure_openai_key` and `azure_openai_api_base` inputs.
+
+## Local vs Remote References
+
+Actions can be referenced two ways:
+
+- **Local** (same checkout): `uses: ./aihub_action/test_backend` — used in `analyze-test-pr.yml` where the action needs
+  to run within the same checkout (e.g., `use_local_core: true`)
+- **Remote** (cross-job/external): `uses: bbvch-ai/aihub-core/aihub_action/pytest_coverage_comment@main` — used when the
+  action runs in a separate job or from external repos
+
+External repos always use remote refs: `uses: bbvch-ai/aihub-core/aihub_action/<action>@main` (or `@v1.0.0` for pinned
+versions).
+
+## Caching Layers (test_backend / lint_frontend)
+
+| Cache               | Path                            | Key Strategy                                    |
+| ------------------- | ------------------------------- | ----------------------------------------------- |
+| Poetry installation | `~/.local`                      | `{os}-poetry-{version}`                         |
+| Poetry packages     | `~/.cache/pypoetry`             | `{os}-poetry-cache-{module}-{poetry.lock hash}` |
+| pnpm store          | `$(pnpm store path)`            | `{os}-pnpm-{lockfile hash}`                     |
+| HuggingFace models  | `.docker-volumes/llamacpp-data` | `{os}-hf-models-{docker-compose.dev.yml hash}`  |
 
 ## Testing Actions
 
-**Local**: Not directly possible. Test by:
+No unit tests for actions. Changes are tested by:
 
-1. Push to branch in `aihub-core`
-2. Trigger workflow, observe results
+1. Push to a branch in `aihub-core`
+2. Open PR (triggers `analyze-test-pr.yml`, `lint-pr.yml`) or trigger workflow manually
+3. Observe CI results
 
 ## Essential Files
 
-- All actions: `/home/user/aihub-core/aihub_action/*/action.yml`
-- Example: `/home/user/aihub-core/aihub_action/lint_backend/action.yml`
+- All actions: `aihub_action/*/action.yml`
+- Main CI consumer: `.github/workflows/analyze-test-pr.yml` (test + coverage + sonar)
+- Build consumer: `.github/workflows/build-agents.yml`
+- Lint consumer: `.github/workflows/lint-pr.yml`
+- Review consumer: `.github/workflows/review-pr.yml`
