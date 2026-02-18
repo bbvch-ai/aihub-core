@@ -4,7 +4,7 @@
     modal
     :header="t('agent.create.title')"
     :style="{ width: '50rem' }"
-    :closable="!isCreating"
+    :closable="!isSubmitting"
   >
     <div class="flex flex-col gap-6">
       <div
@@ -39,7 +39,7 @@
             option-value="agent_class"
             :placeholder="t('agent.create.selectClassPlaceholder')"
             class="w-full"
-            :disabled="isCreating"
+            :disabled="isSubmitting"
           />
         </div>
 
@@ -57,7 +57,7 @@
             option-value="value"
             :placeholder="t('agent.create.selectTemplatePlaceholder')"
             class="w-full"
-            :disabled="isCreating"
+            :disabled="isSubmitting"
           />
         </div>
 
@@ -74,6 +74,7 @@
               validationVisibility: 'dirty',
             }"
             @submit="handleFormSubmit"
+            @submit-invalid="isSubmitting = false"
           >
             <Stepper
               v-model:value="activeStep"
@@ -143,8 +144,8 @@
       />
       <Button
         :label="t('agent.create.submit')"
-        :disabled="!selectedClass || isCreating"
-        :loading="isCreating"
+        :disabled="!selectedClass || isSubmitting"
+        :loading="isSubmitting"
         @click="triggerFormSubmit"
       />
     </template>
@@ -185,12 +186,13 @@ const emit = defineEmits<{
 const { t, locale } = useI18n()
 const toast = useToast()
 const { agentClasses, agentClassesAreLoading } = useAgentClasses()
-const { createAgentInstance, isCreating } = useCreateAgentInstance()
+const { createAgentInstance } = useCreateAgentInstance()
 
 const selectedClass = ref<string>(props.initialClass ?? '')
 const selectedTemplate = ref<number | null>(null)
 const formData = ref<Record<string, unknown>>({})
 const activeStep = ref(0)
+const isSubmitting = ref(false)
 
 const hasFixedClass = computed(() => !!props.initialClass)
 
@@ -346,11 +348,13 @@ function resetForm() {
 }
 
 function triggerFormSubmit() {
+  isSubmitting.value = true
   const formNode = getNode('create-agent-form')
   if (formNode) {
-    // This triggers FormKit validation on all fields (including nested ones)
-    // If valid, it calls the @submit handler (handleFormSubmit)
     formNode.submit()
+  }
+  else {
+    handleFormSubmit()
   }
 }
 
@@ -406,6 +410,9 @@ async function handleFormSubmit() {
       detail: error instanceof Error ? error.message : String(error),
       life: 5000,
     })
+  }
+  finally {
+    isSubmitting.value = false
   }
 }
 </script>
