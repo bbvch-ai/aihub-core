@@ -32,7 +32,7 @@ optional = false
 python-versions = ">=3.13, <3.14"
 groups = ["main"]
 files = []
-develop = false
+develop = true
 
 [package.dependencies]
 adlfs = "^2025.8.0"
@@ -89,11 +89,8 @@ redis = "^5.2.1"
 transformers = "^4.57.3"
 
 [package.source]
-type = "git"
-url = "https://github.com/bbvch-ai/aihub-core.git"
-reference = "v0.262.3"
-resolved_reference = "6203a2f47b15e0fd9f9658ebbbc0f429cd292279"
-subdirectory = "aihub_lib"
+type = "directory"
+url = "../aihub_lib"
 
 [[package]]
 name = "aiobotocore"
@@ -9024,4 +9021,4 @@ cffi = ["cffi (>=1.17,<2.0) ; platform_python_implementation != \"PyPy\" and pyt
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13, <3.14"
-content-hash = "85110825bdd4b6add3e1111f8d036a4e64de0676d97a77a7b2190fee5c91b85e"
+content-hash = "a6834c29bfab0dba95ad10f491cf0722389f082991a7991515d6488a515ce424"
