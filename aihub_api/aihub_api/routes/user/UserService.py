@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
 from aihub_api.routes.user.dto.MinimalUserDTO import MinimalUserDTO
+from aihub_lib.auth.identity.TenantIdentity import TenantIdentity
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.persistence.user.UserEntity import Dashboard, DashboardItem, UserEntity
@@ -41,16 +42,14 @@ class UserService:
 
     @staticmethod
     async def get_user_with_access_by_oid(
-        user_oid: str, requesting_user: UserIdentity, runner: "Runner", nc: NATS, t: LocaleHandler
+        user_oid: str, tenant: TenantIdentity, runner: "Runner", nc: NATS, t: LocaleHandler
     ) -> UserWithAccessDTO:
         """
         Retrieve a user with their access rules (which services, agents, and processes they can access).
         Access is calculated within the requesting user's tenant context.
         """
         user_entity = UserEntity.by_oid(user_oid)
-        return await UserWithAccessDTO.from_user_entity(
-            user_entity, requesting_user.acting_within_tenant, runner, nc, t
-        )
+        return await UserWithAccessDTO.from_user_entity(user_entity, tenant, runner, nc, t)
 
     @staticmethod
     async def get_paginated_users(page: int = 1, page_size: int = 20) -> tuple[int, list[UserDTO]]:

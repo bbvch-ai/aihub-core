@@ -94,7 +94,9 @@ class UserController(Controller):
             """
             Retrieve user info by their OID. Shows access within the admin's current tenant context.
             """
-            return await UserService.get_user_with_access_by_oid(user_id, user, runner=self._runner, nc=nc, t=t)
+            return await UserService.get_user_with_access_by_oid(
+                user_id, user.acting_within_tenant, runner=self._runner, nc=nc, t=t
+            )
 
         return self
 
