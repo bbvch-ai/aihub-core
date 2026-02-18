@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING
 
+from aihub_api.routes.user.dto.MinimalUserDTO import MinimalUserDTO
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.persistence.user.UserEntity import Dashboard, DashboardItem, UserEntity

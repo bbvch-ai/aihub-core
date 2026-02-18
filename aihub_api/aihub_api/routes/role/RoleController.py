@@ -1,6 +1,5 @@
 from typing import Annotated, Self
 
-from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.routes.Controller import Controller
@@ -34,23 +33,18 @@ class RoleController(Controller):
         @self.router.post(
             route,
             summary="Create Role",
-            description="Creates a new role with a name, description, and access rules.",
+            description="Creates a new tenant-scoped role with a name, description, and access rules.",
             status_code=status.HTTP_201_CREATED,
             tags=self.tags,
         )
         async def create_role(
             role_data: CreateRoleRequest,
-            _: Annotated[UserIdentity, Security(self.user_with_permission(f"aihub.admin.service.{self.service_name}"))],
+            user: Annotated[
+                UserIdentity, Security(self.user_with_permission(f"aihub.admin.service.{self.service_name}"))
+            ],
         ) -> RoleResponse:
             try:
-                for rule in role_data.access_rules:
-                    if not AccessChecker.validate_user_access_rule(rule):
-                        raise HTTPException(
-                            status_code=400,
-                            detail=f"Invalid access rule: {rule}. "
-                            f"Access rules must be in the format <resource>.<action>.",
-                        )
-                return RoleService.create_role(role_data)
+                return RoleService.create_role(role_data, user.acting_within_tenant.id)
             except NotUniqueError:
                 raise HTTPException(status_code=409, detail=f"Role with name '{role_data.name}' already exists.")
             except Exception as e:
@@ -62,13 +56,15 @@ class RoleController(Controller):
         @self.router.get(
             route,
             summary="List Roles",
-            description="Retrieves a list of all available roles.",
+            description="Retrieves all roles available to the current tenant (system + tenant-specific).",
             tags=self.tags,
         )
         async def get_roles(
-            _: Annotated[UserIdentity, Security(self.user_with_permission(f"aihub.admin.service.{self.service_name}"))],
+            user: Annotated[
+                UserIdentity, Security(self.user_with_permission(f"aihub.admin.service.{self.service_name}"))
+            ],
         ) -> list[RoleResponse]:
-            return RoleService.list_roles()
+            return RoleService.list_roles(user.acting_within_tenant.id)
 
         return self
 
@@ -81,10 +77,12 @@ class RoleController(Controller):
         )
         async def get_role(
             role_id: str,
-            _: Annotated[UserIdentity, Security(self.user_with_permission(f"aihub.admin.service.{self.service_name}"))],
+            user: Annotated[
+                UserIdentity, Security(self.user_with_permission(f"aihub.admin.service.{self.service_name}"))
+            ],
         ) -> RoleResponse:
             try:
-                return RoleService.get_role_by_id(role_id)
+                return RoleService.get_role_by_id(role_id, user.acting_within_tenant.id)
             except DoesNotExist:
                 raise HTTPException(status_code=404, detail="Role not found.")
 
@@ -94,23 +92,18 @@ class RoleController(Controller):
         @self.router.patch(
             route,
             summary="Update Role",
-            description="Updates a role's name, description, or access rules.",
+            description="Updates a tenant-scoped role's name, description, or access rules.",
             tags=self.tags,
         )
         async def update_role(
             role_id: str,
             role_data: UpdateRoleRequest,
-            _: Annotated[UserIdentity, Security(self.user_with_permission(f"aihub.admin.service.{self.service_name}"))],
+            user: Annotated[
+                UserIdentity, Security(self.user_with_permission(f"aihub.admin.service.{self.service_name}"))
+            ],
         ) -> RoleResponse:
             try:
-                if role_data.access_rules:
-                    for rule in role_data.access_rules:
-                        if not AccessChecker.validate_user_access_rule(rule):
-                            raise HTTPException(
-                                status_code=400,
-                                detail=f"Invalid access rule: {rule}.",
-                            )
-                return RoleService.update_role(role_id, role_data)
+                return RoleService.update_role(role_id, role_data, user.acting_within_tenant.id)
             except DoesNotExist:
                 raise HTTPException(status_code=404, detail="Role not found.")
             except NotUniqueError:
@@ -124,15 +117,17 @@ class RoleController(Controller):
         @self.router.delete(
             route,
             summary="Delete Role",
-            description="Permanently deletes a role.",
+            description="Permanently deletes a tenant-scoped role.",
             tags=self.tags,
         )
         async def delete_role(
             role_id: str,
-            _: Annotated[UserIdentity, Security(self.user_with_permission(f"aihub.admin.service.{self.service_name}"))],
+            user: Annotated[
+                UserIdentity, Security(self.user_with_permission(f"aihub.admin.service.{self.service_name}"))
+            ],
         ) -> DeleteRoleResponse:
             try:
-                RoleService.delete_role(role_id)
+                RoleService.delete_role(role_id, user.acting_within_tenant.id)
                 return DeleteRoleResponse()
             except DoesNotExist:
                 raise HTTPException(status_code=404, detail="Role not found.")

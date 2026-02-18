@@ -17,6 +17,8 @@ class RoleResponse(BaseModel):
     description: Annotated[str, Field(description="The description of the role.")]
     access_rules: Annotated[list[str], Field(description="The list of access rules for the role.")]
     usage_limits: Annotated[list[UsageLimitDTO], Field(description="Pattern-based usage limit rules.")] = []
+    tenant_id: Annotated[str | None, Field(description="Tenant ID this role belongs to, or None for system roles.")]
+    is_system_role: Annotated[bool, Field(description="Whether this is a system-wide role.")]
 
     @classmethod
     def from_role_entity(cls, role_entity: RoleEntity) -> Self:
@@ -34,4 +36,6 @@ class RoleResponse(BaseModel):
                 )
                 for usage_limit in (role_entity.usage_limits or [])
             ],
+            tenant_id=role_entity.tenant_id,
+            is_system_role=role_entity.is_system_role,
         )

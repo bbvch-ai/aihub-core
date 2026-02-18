@@ -596,7 +596,7 @@ export const revokeTokenEndpoint = <TComposable extends Composable = '$fetch', D
 /**
  * Delete Role
  *
- * Permanently deletes a role.
+ * Permanently deletes a tenant-scoped role.
  */
 export const deleteRole = <TComposable extends Composable = '$fetch', DefaultT extends DeleteRoleResponse2 = DeleteRoleResponse2>(options: Options<TComposable, DeleteRoleData, DeleteRoleResponse2, DefaultT>) => (options.client ?? client).delete<TComposable, DeleteRoleResponse2 | DefaultT, DeleteRoleError, DefaultT>({
     security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
@@ -618,7 +618,7 @@ export const getRole = <TComposable extends Composable = '$fetch', DefaultT exte
 /**
  * Update Role
  *
- * Updates a role's name, description, or access rules.
+ * Updates a tenant-scoped role's name, description, or access rules.
  */
 export const updateRole = <TComposable extends Composable = '$fetch', DefaultT extends UpdateRoleResponse = UpdateRoleResponse>(options: Options<TComposable, UpdateRoleData, UpdateRoleResponse, DefaultT>) => (options.client ?? client).patch<TComposable, UpdateRoleResponse | DefaultT, UpdateRoleError, DefaultT>({
     security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
@@ -633,7 +633,7 @@ export const updateRole = <TComposable extends Composable = '$fetch', DefaultT e
 /**
  * List Roles
  *
- * Retrieves a list of all available roles.
+ * Retrieves all roles available to the current tenant (system + tenant-specific).
  */
 export const getRoles = <TComposable extends Composable = '$fetch', DefaultT extends GetRolesResponse = GetRolesResponse>(options: Options<TComposable, GetRolesData, GetRolesResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetRolesResponse | DefaultT, unknown, DefaultT>({
     security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
@@ -644,7 +644,7 @@ export const getRoles = <TComposable extends Composable = '$fetch', DefaultT ext
 /**
  * Create Role
  *
- * Creates a new role with a name, description, and access rules.
+ * Creates a new tenant-scoped role with a name, description, and access rules.
  */
 export const createRole = <TComposable extends Composable = '$fetch', DefaultT extends CreateRoleResponse = CreateRoleResponse>(options: Options<TComposable, CreateRoleData, CreateRoleResponse, DefaultT>) => (options.client ?? client).post<TComposable, CreateRoleResponse | DefaultT, CreateRoleError, DefaultT>({
     security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
