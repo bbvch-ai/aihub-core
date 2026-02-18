@@ -13,9 +13,9 @@ class InputText(PrimeVueElement):
     formkit: Annotated[Literal["primeInputText"], Field(description="PrimeVue InputText element.")] = "primeInputText"
     disabled: Annotated[bool, Field(description="Whether the input is disabled")] = False
     readonly: Annotated[bool, Field(description="Whether the input is readonly")] = False
-    placeholder: Annotated[LocaleString | None, Field(description="Placeholder text")] = None
-    prefix: Annotated[LocaleString | None, Field(description="Prefix text")] = None
-    suffix: Annotated[LocaleString | None, Field(description="Suffix text")] = None
+    placeholder: Annotated[LocaleString | str | None, Field(description="Placeholder text")] = None
+    prefix: Annotated[LocaleString | str | None, Field(description="Prefix text")] = None
+    suffix: Annotated[LocaleString | str | None, Field(description="Suffix text")] = None
     icon_prefix: Annotated[
         str | None, Field(description="Icon prefix", alias="iconPrefix", pattern=r"^pi pi-[a-z0-9-]+$")
     ] = None
