@@ -55,4 +55,3 @@ source_remote=f"{s3.name}:my-bucket-name/path/to/folder"
 ```bash
 poetry run dagster dev -f pipeline.py
 ```
-

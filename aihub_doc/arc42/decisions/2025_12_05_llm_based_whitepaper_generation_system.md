@@ -20,11 +20,10 @@ automatically like technical docs). Traditional manual creation is time-consumin
 
 **Iterative, Python-based LLM whitepaper generator** with chapter-centric organization:
 
-
 ### Key Components
 
-1. **Chapter-Centric Organization**: Each chapter is a self-contained folder with descriptive name
-   (e.g., `03-data-sovereignty` instead of just `03`). All related files (prompt, sources, output) live together.
+1. **Chapter-Centric Organization**: Each chapter is a self-contained folder with descriptive name (e.g.,
+   `03-data-sovereignty` instead of just `03`). All related files (prompt, sources, output) live together.
 
 2. **LLM-Based Source Discovery**: `generate-sources.py` uses LLM to automatically discover which documentation files
    are relevant for each chapter. This eliminates manual maintenance as documentation evolves.

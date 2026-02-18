@@ -194,7 +194,8 @@ The OpenTelemetry Collector processes traces through two specialized pipelines:
 
 - Receiver: `otlp` (gRPC port 4317, HTTP port 4318)
 - Processors: `filter/langfuse` (keeps only OpenInference spans), `transform/langfuse` (adds project metadata), `batch`
-- Exporter: `otlphttp/langfuse` (Langfuse OTEL ingestion endpoint, authenticated with `LANGFUSE_PUBLIC_KEY` / `LANGFUSE_SECRET_KEY`)
+- Exporter: `otlphttp/langfuse` (Langfuse OTEL ingestion endpoint, authenticated with `LANGFUSE_PUBLIC_KEY` /
+  `LANGFUSE_SECRET_KEY`)
 
 ### Instrumentation
 

@@ -146,7 +146,8 @@ The script:
 4. LLM returns relevant file paths
 5. Writes validated paths to `chapters/XX/sources.md`
 
-**Note:** Generated source files can be manually adjusted. The script adds a comment indicating they were auto-generated.
+**Note:** Generated source files can be manually adjusted. The script adds a comment indicating they were
+auto-generated.
 
 ### Chapter Generation (generate-whitepaper.py)
 
@@ -217,8 +218,8 @@ The script automatically includes all previously generated chapters in the promp
 
 ### 5. Automatic Formatting
 
-Generated markdown files are automatically formatted using `mdformat` with your project's `pyproject.toml`
-configuration (line wrapping at 120 characters, GFM extensions, etc.).
+Generated markdown files are automatically formatted using `mdformat` with your project's `pyproject.toml` configuration
+(line wrapping at 120 characters, GFM extensions, etc.).
 
 ### 6. Cost Tracking
 
