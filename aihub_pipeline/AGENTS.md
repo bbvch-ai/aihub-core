@@ -156,7 +156,7 @@ class MyIOManager(ConfigurableIOManager):
 2. **Create resources**: Define deps in `resources/`
 3. **Create asset factory**: Compose ops into assets in `assets/factories/`
 4. **Test**: Unit test ops, integration test assets
-5. **Run Dagster UI**: `make playground` or `poetry run dagster dev -m playground`
+5. **Run Dagster UI**: `make playground` or `uv run dagster dev -m playground`
 6. **Observe**: http://localhost:3000 (asset lineage, run logs, errors)
 
 ## Testing
@@ -187,7 +187,7 @@ assert result.success
 ## Playground
 
 **Location**: `/home/user/aihub-core/aihub_pipeline/playground/`
-**Start**: `make playground` (or `poetry run dagster dev -m playground`)
+**Start**: `make playground` (or `uv run dagster dev -m playground`)
 **Access**: http://localhost:3000 (Dagster UI)
 
 ## Pre-Commit

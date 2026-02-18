@@ -118,26 +118,19 @@ check_python_project() {
 
     cd "$project"
 
-    echo "Installing dependencies to ensure venv is current..."
-    poetry install --no-interaction --sync >/dev/null 2>&1 || {
-        echo -e "${RED}Failed to install dependencies for $project${NC}"
+    echo "Syncing dependencies to ensure venv is current..."
+    uv sync --package "$(sed -n 's/^name = "\(.*\)"/\1/p' pyproject.toml | head -1)" >/dev/null 2>&1 || {
+        echo -e "${RED}Failed to sync dependencies for $project${NC}"
         cd ..
         return 1
     }
 
-    echo "Finding virtual environment for $project..."
-    local venv_path
-    venv_path=$(poetry env info --path)
-    if [ -z "$venv_path" ]; then
-        echo -e "${RED}Could not find virtual environment for $project. Skipping.${NC}"
-        cd ..
-        return 1
-    fi
-    local python_executable="$venv_path/bin/python"
+    echo "Using workspace venv for $project..."
+    local python_executable="../.venv/bin/python"
     echo "Scanning packages from: $python_executable"
 
     local license_data
-    license_data=$(poetry run pip-licenses \
+    license_data=$(uv run pip-licenses \
         --from=mixed \
         --format=json \
         --ignore-packages pip pip-licenses setuptools wheel tomli prettytable wcwidth \
@@ -506,8 +499,8 @@ main() {
     if ! command -v jq &> /dev/null; then
         echo -e "${RED}Error: jq is required but not installed.${NC}"; exit 1;
     fi
-    if ! command -v poetry &> /dev/null; then
-        echo -e "${RED}Error: poetry is required but not installed.${NC}"; exit 1;
+    if ! command -v uv &> /dev/null; then
+        echo -e "${RED}Error: uv is required but not installed.${NC}"; exit 1;
     fi
 
     init_report

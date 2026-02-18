@@ -5,7 +5,7 @@
 **Swiss AI-Hub**: Enterprise-grade, sovereign AI platform for integrating AI into business processes. A complete
 production-ready ecosystem with batteries included (database, API, UI, pipelines, Docker deployment).
 
-Tech Stack & Paradigms: Python 3 monorepo with Poetry. NATS pub-sub event-driven architecture. FastAPI REST APIs with
+Tech Stack & Paradigms: Python 3 monorepo with uv workspaces. NATS pub-sub event-driven architecture. FastAPI REST APIs with
 uvicorn + gunicorn. Custom OAuth2/OIDC auth (Azure AD). LlamaIndex workflow engine for transparent agents. Dagster
 asset-based data pipelines. Nuxt 3 + Vue 3 frontend with TypeScript. PrimeVue UI components, FormKit forms, VueFlow
 workflows. Docker Compose for all environments (dev, local, nightly, latest, GPU). VitePress docs with automated LLM
@@ -95,7 +95,7 @@ packages.
 **Backend**:
 
 - **Python 3.13**: Core language
-- **Poetry**: Dependency management
+- **uv**: Package manager and workspace orchestrator
 - **FastAPI**: REST API + WebSocket
 - **Pydantic**: Data validation
 
@@ -183,13 +183,13 @@ class AgentDTO(BaseModel):  # Pydantic not dict
 ### Setup
 
 1. **Clone**: `git clone https://github.com/bbvch-ai/aihub-core`
-2. **Python scopes**: `cd <scope>` → `poetry shell` → `poetry install`
+2. **Python scopes**: `uv sync --all-packages` from root (installs all packages)
 3. **Frontend**: `cd aihub_web/aihub_web` → `pnpm install`
 4. **Docker stack (dev)**: `docker compose -f docker-compose.dev.yml up -d`
 
 ### Pre-Commit Checklist (Per Scope)
 
-Run from activated Poetry shell:
+Run from each scope directory:
 
 1. **`make pr-ready`**: Auto-format + lint + type check (MUST pass before commit)
 2. **`make test`**: Run all tests (MUST pass before commit)
@@ -244,9 +244,9 @@ Before marking task complete:
 
 **Inter-package refs**: All packages reference `aihub_lib` via Git URL in `pyproject.toml`. Versioning via Git tags.
 
-**Local dev**: `make use-local-core` to switch to local `aihub_lib`.
+**Local dev**: uv workspaces automatically resolve inter-package deps from local directories.
 
-**Dependency mgmt**: `poetry add/remove/update` (NEVER edit `pyproject.toml` or `poetry.lock` manually).
+**Dependency mgmt**: `uv add/remove` to manage dependencies. Single `uv.lock` at workspace root.
 
 ## Testing
 
@@ -259,7 +259,7 @@ Before marking task complete:
 - **Markers**: `@pytest.mark.slow`, `@pytest.mark.integration` (defined in `pyproject.toml`)
 - **BDD**: Use `pytest-bdd` for agent/process workflows (Gherkin `.feature` files in `tests/features/`)
 - **Async**: pytest-bdd has limitations; use plain pytest for async tests
-- **Run**: `make test` (within Poetry shell)
+- **Run**: `make test` (from scope directory)
 
 **Philosophy**: Pragmatic, not TDD. Write tests when straightforward. MUST run all tests before commit.
 
@@ -287,10 +287,10 @@ Before marking task complete:
 - Swiss AI Agent Protocol:
   `/home/user/aihub-core/aihub_doc/docs/2_platform/2_architecture/3_swiss_ai_agent_protocol/index.en.md`
 
-**Common Commands** (within scope dir, Poetry shell activated):
+**Common Commands** (from workspace root or scope dir):
 
-- `poetry install`: Install dependencies
-- `poetry add <pkg>`: Add dependency
+- `uv sync --all-packages`: Install all packages
+- `uv add <pkg>`: Add dependency (from scope dir)
 - `make format`: Run Black formatter
 - `make lint`: Run Ruff + MyPy
 - `make pr-ready`: Format + lint with auto-fix (RUN BEFORE COMMIT)

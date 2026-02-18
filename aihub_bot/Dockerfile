@@ -2,45 +2,30 @@
 FROM python:3.13-slim AS builder
 ARG VERSION
 
-# Set environment variables
-ENV PYTHONUNBUFFERED=1 \
-    POETRY_VERSION=2.1.1 \
-    POETRY_HOME="/opt/poetry" \
-    POETRY_NO_INTERACTION=1 \
-    POETRY_VIRTUALENVS_IN_PROJECT=1 \
-    POETRY_VIRTUALENVS_CREATE=1 \
-    POETRY_CACHE_DIR=/tmp/poetry_cache \
-    PATH="/opt/poetry/bin:$PATH"
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-# Install system dependencies and Poetry
+ENV PYTHONUNBUFFERED=1 \
+    UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy
+
+# Install system dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     build-essential \
-    curl \
-    git \
-    make && \
-    curl -sSL https://install.python-poetry.org | python3 - --version "${POETRY_VERSION}" && \
+    git && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-
-# Set the working directory
 WORKDIR /app
 
-# Copy only the dependency files first
-COPY Makefile switch_dependencies.py pyproject.toml ./
+# Copy workspace config + relevant packages
+COPY pyproject.toml uv.lock ./
 COPY aihub_bot ./aihub_bot
 COPY aihub_lib ./aihub_lib
 
-RUN poetry install --without dev && \
-    make use-local-core && \
-    rm Makefile switch_dependencies.py pyproject.toml
-
-# Set the working directory
-WORKDIR /app/aihub_bot
-
-RUN poetry install && \
-    rm -rf ~/.cache/pypoetry ~/.cache/pip /tmp/poetry_cache
+# Install dependencies with cache mount
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --locked --no-dev --package aihub-bot
 
 
 # Runtime stage
@@ -48,16 +33,9 @@ FROM python:3.13-slim AS runtime
 
 ARG VERSION
 
-# Set environment variables
 ENV PYTHONUNBUFFERED=1 \
-    POETRY_VERSION=2.1.1 \
-    POETRY_HOME="/opt/poetry" \
-    POETRY_NO_INTERACTION=1 \
-    POETRY_VIRTUALENVS_IN_PROJECT=1 \
-    POETRY_VIRTUALENVS_CREATE=1 \
-    POETRY_CACHE_DIR=/tmp/poetry_cache \
     PYTHONPATH=/app \
-    PATH="/app/.venv/bin:/opt/poetry/bin:$PATH" \
+    PATH="/app/.venv/bin:$PATH" \
     AIHUB_API_VERSION=${VERSION}
 
 # Setup users
@@ -71,13 +49,10 @@ RUN groupadd --gid "$USER_GID" "$USERNAME" && \
     apt-get update && \
     apt-get install -y --no-install-recommends \
     curl \
-    ffmpeg \
-    make && \
-    curl -sSL https://install.python-poetry.org | python3 - --version "${POETRY_VERSION}" && \
+    ffmpeg && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# Set the working directory
 WORKDIR /app
 
 # Copy only the necessary code from the builder stage
@@ -86,10 +61,9 @@ COPY --from=builder --chown="$USERNAME:$USERNAME" /app /app
 # Switch to non-root user
 USER $USERNAME
 
-# Expose port 8001 (bot runs on 8001, see Makefile run-prod)
+# Expose port 8001 (bot runs on 8001)
 EXPOSE 8001
 
 WORKDIR /app/aihub_bot
 
-# Start the server using Makefile
-ENTRYPOINT ["make", "run-prod"]
+ENTRYPOINT ["gunicorn", "-w", "1", "-k", "uvicorn.workers.UvicornWorker", "--timeout=300", "-b", "0.0.0.0:8001", "--forwarded-allow-ips=*", "app.main:app"]

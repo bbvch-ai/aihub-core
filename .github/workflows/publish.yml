@@ -1,0 +1,60 @@
+name: Publish to PyPI
+
+on:
+  workflow_dispatch:
+    inputs:
+      package:
+        description: 'Package to publish'
+        required: true
+        type: choice
+        options:
+          - aihub-core
+          - aihub-agent
+          - aihub-api
+          - aihub-bot
+          - aihub-pipeline
+          - aihub-process
+      index:
+        description: 'PyPI index to publish to'
+        required: true
+        type: choice
+        options:
+          - pypi
+          - testpypi
+        default: 'pypi'
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    name: Build & Publish ${{ inputs.package }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - name: Configure Git Authentication
+        run: git config --global url."git@github.com:".insteadOf "https://github.com/"
+
+      - name: Build package
+        run: uv build --package ${{ inputs.package }}
+
+      - name: Publish to PyPI
+        if: inputs.index == 'pypi'
+        run: uv publish
+
+      - name: Publish to TestPyPI
+        if: inputs.index == 'testpypi'
+        run: uv publish --index testpypi

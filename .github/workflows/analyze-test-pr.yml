@@ -69,7 +69,6 @@ jobs:
           github_token: ${{ secrets.PAT_GITHUB_READ_PACKAGES }}
           working_directory: ${{ matrix.module }}
           docker_compose_services: ${{ matrix.docker_compose_services }}
-          use_local_core: "true"
           install_ffmpeg: ${{ matrix.module == 'aihub_api' }}
           huggingface_api_key: ${{ secrets.HUGGINGFACE_API_KEY }}
           regenerate_compose: "true"
