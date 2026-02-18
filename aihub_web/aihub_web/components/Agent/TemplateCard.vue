@@ -30,8 +30,12 @@
 </template>
 
 <script setup lang="ts">
+import type { TemplateData } from '@core/sdk/client'
+
+type LocaleKey = 'de' | 'en' | 'fr' | 'it'
+
 const props = defineProps<{
-  template: Record<string, unknown>
+  template: TemplateData
   agentClassName: string
   locale: string
 }>()
@@ -41,16 +45,14 @@ const emit = defineEmits<{
 }>()
 
 const templateName = computed(() => {
-  const name = props.template.name as Record<string, string> | undefined
-  return name?.[props.locale] ?? name?.en ?? ''
+  return props.template.name?.[props.locale as LocaleKey] ?? props.template.name?.en ?? ''
 })
 
 const templateDescription = computed(() => {
-  const desc = props.template.description as Record<string, string> | undefined
-  return desc?.[props.locale] ?? desc?.en ?? ''
+  return props.template.description?.[props.locale as LocaleKey] ?? props.template.description?.en ?? ''
 })
 
 const templateIcon = computed(() => {
-  return (props.template.icon as string) ?? 'meteor-icons:robot'
+  return props.template.icon ?? 'meteor-icons:robot'
 })
 </script>

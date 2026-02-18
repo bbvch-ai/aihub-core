@@ -64,16 +64,14 @@
 </template>
 
 <script setup lang="ts">
-import type { NavItem } from '@core/types/NavItem'
-
 import { useLocalePath } from '#i18n'
 
 const router = useRouter()
-const route = useRoute()
 const localePath = useLocalePath()
 const { t, locale } = useI18n()
 
 const { agentClasses, agentClassesAreLoading } = useAgentClasses()
+const { navItems, activeNavItem, toNavItem } = useAgentNavigation()
 
 const createModalOpen = ref(false)
 const selectedClassForCreate = ref('')
@@ -83,31 +81,6 @@ const openCreateModalWithTemplate = (agentClass: string, templateIndex: number) 
   selectedClassForCreate.value = agentClass
   selectedTemplateForCreate.value = templateIndex
   createModalOpen.value = true
-}
-
-const navItems = computed<NavItem[]>(() => [
-  {
-    name: t('agent.tabs.myAgents'),
-    key: 'agents',
-    path: '/service/agents',
-    isActive: () => route.path.startsWith(localePath('/service/agents')),
-  },
-  {
-    name: t('agent.tabs.templates'),
-    key: 'templates',
-    path: '/service/agent-templates',
-    isActive: () => route.path.startsWith(localePath('/service/agent-templates')),
-  },
-])
-
-const activeNavItem = computed<NavItem | undefined>(() => {
-  return navItems.value.filter(navItem => navItem.isActive())[0]
-})
-
-const toNavItem = (navItem: NavItem | null) => {
-  if (navItem) {
-    router.push(localePath(navItem.path))
-  }
 }
 
 const groupedTemplates = computed(() => {
