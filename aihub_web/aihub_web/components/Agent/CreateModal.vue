@@ -174,6 +174,7 @@ import type { FormKitSchemaNode } from '@formkit/core'
 const props = defineProps<{
   modelValue: boolean
   initialClass?: string
+  initialTemplate?: number | null
 }>()
 
 const emit = defineEmits<{
@@ -202,6 +203,15 @@ watch(() => props.initialClass, (newClass) => {
 const visible = computed({
   get: () => props.modelValue,
   set: (value: boolean) => emit('update:modelValue', value),
+})
+
+watch(visible, (isVisible) => {
+  if (isVisible && props.initialTemplate !== undefined && props.initialTemplate !== null) {
+    // Apply after selectedClassData watcher resets selectedTemplate
+    nextTick(() => {
+      selectedTemplate.value = props.initialTemplate!
+    })
+  }
 })
 
 const selectedClassData = computed<AgentClassDto | undefined>(() => {
@@ -330,7 +340,7 @@ function closeModal() {
 
 function resetForm() {
   selectedClass.value = props.initialClass ?? ''
-  selectedTemplate.value = null
+  selectedTemplate.value = props.initialTemplate ?? null
   formData.value = {}
   activeStep.value = 0
 }
