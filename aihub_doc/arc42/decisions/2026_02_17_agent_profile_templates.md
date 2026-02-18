@@ -97,5 +97,5 @@ deployed agent with templates has no active profiles until an admin creates one.
   intentional trade-off: explicitness over convenience.
 - Template definitions add a small amount of boilerplate to agent runner setup. This is comparable to the existing
   `as_form()` pattern and follows the same conventions.
-- The API must store and serve template data per agent class, adding a field to the `agent_classes` /
-  `process_classes` collections.
+- The API must store and serve template data per agent class, adding a field to the `agent_classes` / `process_classes`
+  collections.

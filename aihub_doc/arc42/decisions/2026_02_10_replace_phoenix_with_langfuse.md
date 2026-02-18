@@ -11,9 +11,9 @@ part of a managed or SaaS offering. AI-Hub ships as a turnkey Docker Compose sta
 bundling Phoenix in this stack violates the ELv2 restriction. This licensing incompatibility forced an immediate
 replacement regardless of technical considerations.
 
-Beyond licensing, Phoenix had additional limitations: its experiment workflow required complex programmatic setup tightly
-coupled to our NATS/ChatService infrastructure, cost tracking per model/user/agent was limited, and it is primarily
-positioned as a development tool rather than a production observability platform.
+Beyond licensing, Phoenix had additional limitations: its experiment workflow required complex programmatic setup
+tightly coupled to our NATS/ChatService infrastructure, cost tracking per model/user/agent was limited, and it is
+primarily positioned as a development tool rather than a production observability platform.
 
 Langfuse is an open-source (MIT-licensed) LLM observability platform that covers the same feature set — tracing, cost
 tracking, dataset management, and experiment evaluation — without licensing constraints. It can be self-hosted, meeting
@@ -34,9 +34,9 @@ Swiss data sovereignty requirements.
   custom code for cost visibility.
 - **UI-driven experiment workflow**\
   Langfuse provides built-in dataset management, experiment tracking, annotation tools, and scoring — replacing 850+
-  lines of custom evaluation code (`PhoenixExperimentEvaluator`, `EvaluationController`, `EvaluationService`).
-  By delegating experiment management to Langfuse's UI rather than rebuilding it ourselves, we automatically benefit
-  from any features Langfuse adds in future releases without additional development effort.
+  lines of custom evaluation code (`PhoenixExperimentEvaluator`, `EvaluationController`, `EvaluationService`). By
+  delegating experiment management to Langfuse's UI rather than rebuilding it ourselves, we automatically benefit from
+  any features Langfuse adds in future releases without additional development effort.
 - **OpenTelemetry compatibility**\
   Both Phoenix and Langfuse consume OpenTelemetry spans, so the tracing infrastructure (OTEL Collector, span
   instrumentation) remains unchanged. Only the exporter target changes.
@@ -55,9 +55,9 @@ auth instead of Phoenix.
 Langfuse. When agents come online, the `AgentEndpointsDiscoveryService` syncs them to Langfuse so they appear in the
 experiment UI without manual configuration.
 
-**Tracing**: `AgentRunTracer` enriches standard OTEL spans with `langfuse.*` span attributes (trace name, session,
-user, input/output, usage details). These are the documented way to pass metadata to Langfuse's OTEL ingestion
-endpoint. Regular OTEL consumers ignore them.
+**Tracing**: `AgentRunTracer` enriches standard OTEL spans with `langfuse.*` span attributes (trace name, session, user,
+input/output, usage details). These are the documented way to pass metadata to Langfuse's OTEL ingestion endpoint.
+Regular OTEL consumers ignore them.
 
 **Evaluations**: The programmatic experiment workflow (`PhoenixExperimentEvaluator`) is replaced by Langfuse's UI-driven
 experiment workflow. Datasets are managed via the AI-Hub API (`DatasetService`), experiments are created and run in the
