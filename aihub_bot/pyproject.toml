@@ -45,8 +45,9 @@ asgi-lifespan = "^2.1.0"
 pip-licenses = "^5.0.0"
 
 [tool.poetry.dependencies.aihub_lib]
-path = "../aihub_lib"
-develop = true
+git = "https://github.com/bbvch-ai/aihub-core.git"
+tag = "v0.262.3"
+subdirectory = "aihub_lib"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
