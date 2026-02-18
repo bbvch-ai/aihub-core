@@ -25,7 +25,7 @@ Procurement evaluators and technical reviewers.
 - Platform-model separation with vendor-neutral LLM proxy (LiteLLM).
 - Event-driven architecture with NATS + JetStream.
 - Python (FastAPI, LlamaIndex) backend; Nuxt/Vue frontend; Dockerized.
-- Observability via OpenTelemetry; Phoenix for LLM specifics; cloud stack for prod metrics/logs/traces.
+- Observability via OpenTelemetry; Langfuse for LLM specifics; cloud stack for prod metrics/logs/traces.
 - Core services: API (REST/WebSocket), Agent Service, Process Service, Bot API, Ingestion Pipelines.
 - Multi-tenancy with per-tenant isolation; shared LLM infra.
 - Data sovereignty options: on-premise, Swiss private cloud, or hybrid.

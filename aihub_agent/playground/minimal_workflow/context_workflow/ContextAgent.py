@@ -1,3 +1,6 @@
+from typing import ClassVar
+
+from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import StopEvent
 
 from aihub_agent.agents.Agent import Agent
@@ -11,6 +14,19 @@ from playground.minimal_workflow.context_workflow.events.CustomStartEvent import
 
 
 class ContextAgent(Agent):
+    """Agent demonstrating context usage patterns."""
+
+    name: ClassVar[LocaleString] = LocaleString(
+        en="Context Agent", de="Kontext Agent", fr="Agent Contexte", it="Agente Contesto"
+    )
+    description: ClassVar[LocaleString] = LocaleString(
+        en="Agent for context demo",
+        de="Agent für Kontext Demo",
+        fr="Agent pour démo contexte",
+        it="Agente per demo contesto",
+    )
+    icon: ClassVar[str] = "mage:database"
+
     @step()
     async def start_step(
         self,

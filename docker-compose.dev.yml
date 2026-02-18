@@ -336,7 +336,7 @@ services:
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_MULTIPLE_DATABASES: openwebui,phoenix,dagster,litellm
+      POSTGRES_MULTIPLE_DATABASES: openwebui,langfuse,dagster,litellm
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/postgres-data:/var/lib/postgresql/data
       - ./configs/postgres/init-multiple-dbs.sh:/docker-entrypoint-initdb.d/init-multiple-dbs.sh:ro
@@ -439,26 +439,84 @@ services:
       - data  # Graph database for Mem0 memory storage
 
   # ===================================================================
-  # Phoenix Stack (ML Observability)
+  # Langfuse Stack (LLM Observability & Evaluation)
   # ===================================================================
-  # Phoenix helps visualize and debug AI model traces and evaluations.
+  # Langfuse provides tracing, evaluation, and observability for LLM apps.
+  # Open-source alternative with MIT license for self-hosted deployments.
   # ===================================================================
 
-  phoenix:
-    container_name: phoenix
-    image: ghcr.io/bbvch-ai/aihub-core/phoenix:version-10.0.4
+  clickhouse:
+    container_name: clickhouse
+    image: ghcr.io/bbvch-ai/aihub-core/clickhouse/clickhouse-server:25.8
+    restart: always
+    environment:
+      CLICKHOUSE_DB: default
+      CLICKHOUSE_USER: "clickhouse"
+      CLICKHOUSE_PASSWORD: ${LANGFUSE_CLICKHOUSE_PASSWORD}
+    volumes:
+      # Named volumes avoid Windows bind-mount issues with ClickHouse atomic renames
+      - clickhouse-data:/var/lib/clickhouse
+      - clickhouse-logs:/var/log/clickhouse-server
+    ports:
+      - "127.0.0.1:8123:8123"
+      - "127.0.0.1:9009:9000"
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider http://localhost:8123/ping || exit 1
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 1s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks:
+      - data
+
+  langfuse-worker:
+    container_name: langfuse-worker
+    image: ghcr.io/bbvch-ai/aihub-core/langfuse/langfuse-worker:3
     restart: always
     depends_on:
       postgres:
         condition: service_healthy
+      valkey:
+        condition: service_started
+      clickhouse:
+        condition: service_healthy
     ports:
-      - "6006:6006"
-      - "6007:6007"
+      - "127.0.0.1:3030:3030"
     environment:
-      PHOENIX_SQL_DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/phoenix
-      PHOENIX_ENABLE_AUTH: False
-      PHOENIX_GRPC_PORT: 6007
-      PHOENIX_PORT: 6006
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/langfuse
+      SALT: ${LANGFUSE_SALT}
+      ENCRYPTION_KEY: ${LANGFUSE_ENCRYPTION_KEY}
+      TELEMETRY_ENABLED: "false"
+      LANGFUSE_ENABLE_EXPERIMENTAL_FEATURES: "true"
+      CLICKHOUSE_MIGRATION_URL: clickhouse://clickhouse:9000
+      CLICKHOUSE_URL: http://clickhouse:8123
+      CLICKHOUSE_USER: "clickhouse"
+      CLICKHOUSE_PASSWORD: ${LANGFUSE_CLICKHOUSE_PASSWORD}
+      CLICKHOUSE_CLUSTER_ENABLED: "false"
+      # Use SeaweedFS for S3-compatible storage
+      LANGFUSE_S3_EVENT_UPLOAD_BUCKET: langfuse
+      LANGFUSE_S3_EVENT_UPLOAD_REGION: auto
+      LANGFUSE_S3_EVENT_UPLOAD_ACCESS_KEY_ID: ${S3_STORAGE_ACCESS_KEY}
+      LANGFUSE_S3_EVENT_UPLOAD_SECRET_ACCESS_KEY: ${S3_STORAGE_SECRET_KEY}
+      LANGFUSE_S3_EVENT_UPLOAD_ENDPOINT: http://seaweedfs-s3:9000
+      LANGFUSE_S3_EVENT_UPLOAD_FORCE_PATH_STYLE: "true"
+      LANGFUSE_S3_EVENT_UPLOAD_PREFIX: events/
+      LANGFUSE_S3_MEDIA_UPLOAD_BUCKET: langfuse
+      LANGFUSE_S3_MEDIA_UPLOAD_REGION: auto
+      LANGFUSE_S3_MEDIA_UPLOAD_ACCESS_KEY_ID: ${S3_STORAGE_ACCESS_KEY}
+      LANGFUSE_S3_MEDIA_UPLOAD_SECRET_ACCESS_KEY: ${S3_STORAGE_SECRET_KEY}
+      LANGFUSE_S3_MEDIA_UPLOAD_ENDPOINT: http://seaweedfs-s3:9000
+      LANGFUSE_S3_MEDIA_UPLOAD_FORCE_PATH_STYLE: "true"
+      LANGFUSE_S3_MEDIA_UPLOAD_PREFIX: media/
+      LANGFUSE_S3_BATCH_EXPORT_ENABLED: "false"
+      REDIS_HOST: valkey
+      REDIS_PORT: 6379
+      REDIS_AUTH: ${REDIS_TOKEN}
     logging:
       driver: json-file
       options:
@@ -467,6 +525,95 @@ services:
     networks:
       - backend
       - data  # For PostgreSQL access
+      - storage  # For SeaweedFS S3 access
+
+  langfuse-web:
+    container_name: langfuse-web
+    image: ghcr.io/bbvch-ai/aihub-core/langfuse/langfuse:3
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_started
+      clickhouse:
+        condition: service_healthy
+      langfuse-worker:
+        condition: service_started
+    ports:
+      - "6006:3000"
+    environment:
+      HOSTNAME: "0.0.0.0"
+      NEXTAUTH_URL: ${LANGFUSE_NEXTAUTH_URL}
+      NEXTAUTH_SECRET: ${LANGFUSE_NEXTAUTH_SECRET}
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/langfuse
+      SALT: ${LANGFUSE_SALT}
+      ENCRYPTION_KEY: ${LANGFUSE_ENCRYPTION_KEY}
+      TELEMETRY_ENABLED: "false"
+      LANGFUSE_ENABLE_EXPERIMENTAL_FEATURES: "true"
+      CLICKHOUSE_MIGRATION_URL: clickhouse://clickhouse:9000
+      CLICKHOUSE_URL: http://clickhouse:8123
+      CLICKHOUSE_USER: "clickhouse"
+      CLICKHOUSE_PASSWORD: ${LANGFUSE_CLICKHOUSE_PASSWORD}
+      CLICKHOUSE_CLUSTER_ENABLED: "false"
+      # Use SeaweedFS for S3-compatible storage
+      LANGFUSE_S3_EVENT_UPLOAD_BUCKET: langfuse
+      LANGFUSE_S3_EVENT_UPLOAD_REGION: auto
+      LANGFUSE_S3_EVENT_UPLOAD_ACCESS_KEY_ID: ${S3_STORAGE_ACCESS_KEY}
+      LANGFUSE_S3_EVENT_UPLOAD_SECRET_ACCESS_KEY: ${S3_STORAGE_SECRET_KEY}
+      LANGFUSE_S3_EVENT_UPLOAD_ENDPOINT: http://seaweedfs-s3:9000
+      LANGFUSE_S3_EVENT_UPLOAD_FORCE_PATH_STYLE: "true"
+      LANGFUSE_S3_EVENT_UPLOAD_PREFIX: events/
+      LANGFUSE_S3_MEDIA_UPLOAD_BUCKET: langfuse
+      LANGFUSE_S3_MEDIA_UPLOAD_REGION: auto
+      LANGFUSE_S3_MEDIA_UPLOAD_ACCESS_KEY_ID: ${S3_STORAGE_ACCESS_KEY}
+      LANGFUSE_S3_MEDIA_UPLOAD_SECRET_ACCESS_KEY: ${S3_STORAGE_SECRET_KEY}
+      LANGFUSE_S3_MEDIA_UPLOAD_ENDPOINT: http://seaweedfs-s3:9000
+      LANGFUSE_S3_MEDIA_UPLOAD_FORCE_PATH_STYLE: "true"
+      LANGFUSE_S3_MEDIA_UPLOAD_PREFIX: media/
+      LANGFUSE_S3_BATCH_EXPORT_ENABLED: "false"
+      REDIS_HOST: valkey
+      REDIS_PORT: 6379
+      REDIS_AUTH: ${REDIS_TOKEN}
+      # Auto-initialize default project for API access
+      LANGFUSE_INIT_ORG_ID: "aihub-org"
+      LANGFUSE_INIT_ORG_NAME: "AI-Hub"
+      LANGFUSE_INIT_PROJECT_ID: "aihub-project"
+      LANGFUSE_INIT_PROJECT_NAME: "AI-Hub"
+      LANGFUSE_INIT_PROJECT_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY}
+      LANGFUSE_INIT_PROJECT_SECRET_KEY: ${LANGFUSE_SECRET_KEY}
+      LANGFUSE_INIT_USER_EMAIL: ${LANGFUSE_INIT_USER_EMAIL}
+      LANGFUSE_INIT_USER_NAME: "AI-Hub Admin"
+      LANGFUSE_INIT_USER_PASSWORD: ${LANGFUSE_INIT_USER_PASSWORD}
+      # Azure AD SSO — dedicated app registration with "assignment required"
+      AUTH_AZURE_AD_CLIENT_ID: ${LANGFUSE_AZURE_AD_CLIENT_ID}
+      AUTH_AZURE_AD_CLIENT_SECRET: ${LANGFUSE_AZURE_AD_CLIENT_SECRET}
+      AUTH_AZURE_AD_TENANT_ID: ${LANGFUSE_AZURE_AD_TENANT_ID}
+      AUTH_AZURE_AD_ALLOW_ACCOUNT_LINKING: "true"
+      # Auto-provisioning — assigned SSO users get MEMBER in the AI-Hub org/project
+      LANGFUSE_DEFAULT_ORG_ID: "aihub-org"
+      LANGFUSE_DEFAULT_ORG_ROLE: "MEMBER"
+      LANGFUSE_DEFAULT_PROJECT_ID: "aihub-project"
+      LANGFUSE_DEFAULT_PROJECT_ROLE: "MEMBER"
+      # Auth controls
+      AUTH_DISABLE_USERNAME_PASSWORD: "false"
+      AUTH_DISABLE_SIGNUP: "false"
+      LANGFUSE_ALLOWED_ORGANIZATION_CREATORS: ${LANGFUSE_ALLOWED_ORGANIZATION_CREATORS}
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://$(hostname):3000/api/public/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks:
+      - backend
+      - data  # For PostgreSQL access
+      - storage  # For SeaweedFS S3 access
 
   # ===================================================================
   # Nats & Valkey Stack (Messaging and Caching)
@@ -885,6 +1032,8 @@ services:
     environment:
       - OTEL_CLOUD_ENDPOINT=${OTEL_CLOUD_ENDPOINT}
       - OTEL_CLOUD_HEADERS=${OTEL_CLOUD_HEADERS}
+      - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY}
+      - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY}
     volumes:
       - ./configs/otel/otel-config.dev.yml:/etc/otel-config.yml
     ports:
@@ -893,7 +1042,7 @@ services:
       - "13133:13133"
       - "55679:55679"
     depends_on:
-      - phoenix
+      - langfuse-web
     healthcheck:
       test: [ "NONE" ]
     logging:
@@ -1184,6 +1333,12 @@ services:
 
   
 
+  
+
+  
+
+  
+
 # ===================================================================
 # Network Configuration
 # ===================================================================
@@ -1219,3 +1374,13 @@ networks:
     driver: bridge
     driver_opts:
       com.docker.network.bridge.enable_icc: "false"
+# ===================================================================
+# Named Volumes
+# ===================================================================
+# ClickHouse requires Linux filesystem semantics (atomic rename) that
+# are not supported by Windows bind mounts. Named Docker volumes run
+# inside the Docker VM where this works correctly.
+# ===================================================================
+volumes:
+  clickhouse-data:
+  clickhouse-logs:

@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Self
 
 from pydantic import Field
 
@@ -26,7 +26,7 @@ class ProcessInstanceTopic(ProcessClassTopic):
         cls,
         process_class_topic: ProcessClassTopic,
         process_id: str,
-    ) -> "ProcessInstanceTopic":
+    ) -> Self:
         return cls(
             process_class=process_class_topic.process_class,
             process_id=process_id,

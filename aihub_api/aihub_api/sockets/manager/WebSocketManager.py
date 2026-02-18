@@ -91,7 +91,7 @@ class WebSocketManager:
             locale = self.user_preferred_locale.get(user_id)
             locale_handler = LocaleHandler(locale=locale)
             contextualized_event = ContextualizedAgentEvent(
-                locale=locale,
+                locale=locale or LocaleHandler.DEFAULT_LOCALE,
                 agent_class=topic.agent_class,
                 agent_id=topic.agent_id,
                 thread_id=topic.thread_id,

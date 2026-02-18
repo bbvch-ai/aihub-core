@@ -106,7 +106,6 @@ class PersistedProcessEventEntity(Document):
             {"$match": {"corresponding_work_events": {"$size": 0}}},
         ]
 
-        # Execute the aggregation pipeline
         unanswered_requests_data = list(cls.objects.aggregate(pipeline))
 
         if not unanswered_requests_data:

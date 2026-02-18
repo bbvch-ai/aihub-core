@@ -24,7 +24,7 @@ scenarios("./features/bounded_loop_agent.feature")
 def _(loop_max: int):
     return AgentTestRunner(
         agent_type=BoundedLoopAgent,
-        default_agent_config=BoundedLoopAgentConfig(
+        agent_config=BoundedLoopAgentConfig(
             agent_id="bounded_iterative_loop_agent",
             agent_class=BoundedLoopAgent.__name__,
             name=LocaleString(en="Bounded Iterative Agent"),

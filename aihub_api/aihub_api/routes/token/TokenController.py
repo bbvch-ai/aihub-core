@@ -1,11 +1,11 @@
-from typing import Annotated
+from typing import Annotated, Self
 
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
-from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.routes.Controller import Controller
 from fastapi import HTTPException, Security, status
 
+from aihub_api.i18n.ApiLocaleString import ApiLocaleString
 from aihub_api.routes.token.dto.CreateTokenRequest import CreateTokenRequest
 from aihub_api.routes.token.dto.CreateTokenResponse import CreateTokenResponse
 from aihub_api.routes.token.dto.RevokeTokenResponse import RevokeTokenResponse
@@ -14,21 +14,16 @@ from aihub_api.routes.token.TokenService import TokenService
 
 
 class TokenController(Controller):
-    name = LocaleString(en="API Keys", de="API-Schlüssel", fr="Clés API", it="Chiavi API")
-    description = LocaleString(
-        en="Create and manage API access keys",
-        de="API-Zugriffsschlüssel erstellen und verwalten",
-        fr="Créez et gérez les clés d'accès API",
-        it="Crea e gestisci chiavi di accesso API",
-    )
-    icon = "solar:password-bold"
+    name = ApiLocaleString.from_i18n_path("api.controllers.token.name")
+    description = ApiLocaleString.from_i18n_path("api.controllers.token.description")
+    icon = "mage:key"
 
     def __init__(
         self, *, auth: AuthHandler, route: str = "/tokens", additionally_required_permission: str | None = None
     ):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
 
-    def create_token(self, route: str = "/") -> "TokenController":
+    def create_token(self, route: str = "/") -> Self:
         @self.router.post(
             route,
             summary="Create API Token",
@@ -51,7 +46,7 @@ class TokenController(Controller):
 
         return self
 
-    def list_tokens(self, route: str = "/") -> "TokenController":
+    def list_tokens(self, route: str = "/") -> Self:
         @self.router.get(
             route,
             summary="List API Tokens",
@@ -65,7 +60,7 @@ class TokenController(Controller):
 
         return self
 
-    def revoke_token(self, route: str = "/{token_id}") -> "TokenController":
+    def revoke_token(self, route: str = "/{token_id}") -> Self:
         @self.router.delete(
             route,
             summary="Revoke API Token",

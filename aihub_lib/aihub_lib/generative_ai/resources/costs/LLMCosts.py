@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Self
 
 from pydantic import BaseModel, Field
 
@@ -50,7 +50,7 @@ class LLMCosts(BaseModel):
     ]
 
     @classmethod
-    def from_zero(cls) -> "LLMCosts":
+    def from_zero(cls) -> Self:
         """Return an LLMCosts instance with all counts and costs set to zero."""
         return cls(
             prompt_token_count=0,
@@ -61,7 +61,7 @@ class LLMCosts(BaseModel):
             embedding_tokens_costs=0,
         )
 
-    def __add__(self, other: "LLMCosts") -> "LLMCosts":
+    def __add__(self, other: "LLMCosts") -> Self:
         """Allow aggregation of two LLMCosts objects by adding their fields."""
         return LLMCosts(
             prompt_token_count=self.prompt_token_count + other.prompt_token_count,

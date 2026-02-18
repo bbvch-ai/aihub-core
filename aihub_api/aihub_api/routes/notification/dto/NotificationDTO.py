@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Annotated, Literal
+from typing import Annotated, Literal, Self
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.persistence.notification.NotificationEntity import NotificationEntity
@@ -33,7 +33,7 @@ class NotificationDTO(BaseModel):
     created_at: Annotated[datetime, Field(description="The timestamp when the notification was created.")]
 
     @classmethod
-    def from_entity(cls, entity: NotificationEntity, t: LocaleHandler) -> "NotificationDTO":
+    def from_entity(cls, entity: NotificationEntity, t: LocaleHandler) -> Self:
         """Creates a NotificationDTO from a NotificationEntity."""
         return cls(
             id=str(entity.id),

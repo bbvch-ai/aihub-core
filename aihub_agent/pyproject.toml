@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aihub_agent"
-version = "v0.260.1"
+version = "v0.262.3"
 description = "agents core"
 authors = [
     "Joel Barmettler <joel.barmettler@bbv.ch>",
@@ -22,7 +22,6 @@ pytest-asyncio = "^0.24.0"
 llama-index-core = "0.14.12"
 mongoengine = "^0.29.1"
 python-i18n = "^0.3.9"
-flatdict = "^4.0.1"
 opentelemetry-exporter-otlp = "^1.39.1"
 pydantic-settings = "^2.7.0"
 colorlog = "^6.9.0"

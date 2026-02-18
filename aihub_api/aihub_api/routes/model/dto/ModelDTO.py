@@ -101,15 +101,15 @@ class ModelDTO(BaseModel):
     def icon(self) -> str:
         mode = self.model_info.mode
         if mode == "chat":
-            return "mdi:chat"
+            return "mage:message"
         elif mode == "embedding":
-            return "mdi:vector-triangle"
+            return "mage:chart"
         elif mode == "image_generation":
-            return "mdi:image"
+            return "mage:image"
         elif mode in ("audio_transcription", "audio_speech"):
-            return "mdi:microphone"
+            return "mage:microphone"
         else:
-            return "mdi:robot"
+            return "mage:robot"
 
     def convert_costs_to_microunits(self):
         """Creates a coopy of the model info with converted cosets."""

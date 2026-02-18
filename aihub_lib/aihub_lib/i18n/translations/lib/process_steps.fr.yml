@@ -5,3 +5,17 @@ work_request_event:
 work_event:
   name: "Événement de travail"
   description: "Rapporte le travail effectué par une entité impliquée dans le processus"
+
+config:
+  name:
+    label: "Nom du processus"
+  description:
+    label: "Description"
+  icon:
+    label: "Icône"
+    help: "Identifiant d'icône (par ex. 'carbon:ibm-event-processing')"
+  process_class:
+    label: "Classe de processus"
+  process_id:
+    label: "ID du processus"
+    help: "Identifiant unique (minuscules, chiffres, tirets, underscores)"

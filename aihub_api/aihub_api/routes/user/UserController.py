@@ -1,14 +1,14 @@
-from typing import Annotated
+from typing import Annotated, Self
 
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.routes.Controller import Controller
 from fastapi import Body, Depends, Path, Security
 from nats.aio.client import Client as NATS
 
+from aihub_api.i18n.ApiLocaleString import ApiLocaleString
 from aihub_api.i18n.dependencies.use_locale import use_locale
 from aihub_api.pagination.type.PageNumber import PageNumber
 from aihub_api.pagination.type.PageSize import PageSize
@@ -28,21 +28,16 @@ class UserController(Controller):
     for the authenticated user.
     """
 
-    name = LocaleString(en="My Account", de="Mein Konto", fr="Mon compte", it="Il mio account")
-    description = LocaleString(
-        en="Manage your account settings",
-        de="Kontoeinstellungen verwalten",
-        fr="Gérez les paramètres de votre compte",
-        it="Gestisci le impostazioni del tuo account",
-    )
-    icon = "mdi:user"
+    name = ApiLocaleString.from_i18n_path("api.controllers.user.name")
+    description = ApiLocaleString.from_i18n_path("api.controllers.user.description")
+    icon = "mage:user"
 
     def __init__(
         self, *, auth: AuthHandler, route: str = "/users", additionally_required_permission: str | None = None
     ):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
 
-    def get_users(self, route: str = "/") -> "UserController":
+    def get_users(self, route: str = "/") -> Self:
         """
         Registers an endpoint to retrieve a paginated list of users.
         """
@@ -68,7 +63,7 @@ class UserController(Controller):
 
         return self
 
-    def get_my_user(self, route: str = "/me") -> "UserController":
+    def get_my_user(self, route: str = "/me") -> Self:
         @self.router.get(route, tags=self.tags)
         async def get_my_user(
             nc: Annotated[NATS, Depends(use_nats)],
@@ -82,7 +77,7 @@ class UserController(Controller):
 
         return self
 
-    def get_user(self, route: str = "/{user_id}") -> "UserController":
+    def get_user(self, route: str = "/{user_id}") -> Self:
         """
         Registers an endpoint to retrieve a specific user by their OID.
         """
@@ -103,7 +98,7 @@ class UserController(Controller):
 
         return self
 
-    def get_my_dashboard(self, route: str = "/me/dashboard") -> "UserController":
+    def get_my_dashboard(self, route: str = "/me/dashboard") -> Self:
         """
         Registers an endpoint to retrieve the currently logged-in user's dashboard settings.
         """
@@ -119,7 +114,7 @@ class UserController(Controller):
 
         return self
 
-    def update_my_dashboard(self, route: str = "/me/dashboard") -> "UserController":
+    def update_my_dashboard(self, route: str = "/me/dashboard") -> Self:
         """
         Registers an endpoint to update the currently logged-in user's dashboard settings.
         """

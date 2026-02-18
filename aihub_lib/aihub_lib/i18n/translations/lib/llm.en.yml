@@ -1,0 +1,16 @@
+config:
+  model:
+    label: "LLM Model"
+    help: "Select the language model for generating responses. Different models have varying capabilities and costs."
+  temperature:
+    label: "Temperature"
+    help: "Controls randomness: 0 = deterministic, 2 = very creative. Lower values for factual tasks."
+  logprobs:
+    label: "Return log probabilities"
+    help: "Include token-level log probabilities in the response. Useful for analyzing model confidence."
+  top_logprobs:
+    label: "Top log probabilities"
+    help: "Number of most likely tokens to return probabilities for (0-20). Requires 'Return log probabilities' enabled."
+  timeout:
+    label: "Timeout (seconds)"
+    help: "Maximum time to wait for a response from the LLM. Increase for complex queries or slow connections."

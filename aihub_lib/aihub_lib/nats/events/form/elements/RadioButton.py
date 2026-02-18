@@ -1,4 +1,4 @@
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any, Literal, Self
 
 from pydantic import Field
 
@@ -25,6 +25,6 @@ class RadioButton(PrimeVueElement):
         None
     )
 
-    def in_locale(self, t: LocaleHandler) -> "RadioButton":
+    def in_locale(self, t: LocaleHandler) -> Self:
         self_copy = super().in_locale(t)
         return self_copy

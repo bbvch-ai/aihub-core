@@ -56,7 +56,7 @@ def worker_config():
 def _(orchestrator_config):
     return AgentTestRunner(
         agent_type=OrchestratorAgent,
-        default_agent_config=orchestrator_config,
+        agent_config=orchestrator_config,
     )
 
 
@@ -64,7 +64,7 @@ def _(orchestrator_config):
 def _(worker_config):
     return AgentTestRunner(
         agent_type=WorkerAgent,
-        default_agent_config=worker_config,
+        agent_config=worker_config,
     )
 
 

@@ -29,7 +29,10 @@ class EndpointsDiscoveryService(abc.ABC):
         self.controller: Controller = controller
         self.locale_handler: LocaleHandler = locale_handler
         self.discovery_interval: int = discovery_interval
+        # For instance-based tracking (used by ProcessEndpointsDiscoveryService)
         self.registered_entities: set[tuple[str, str]] = set()
+        # For class-based tracking (used by AgentEndpointsDiscoveryService)
+        self.registered_classes: set[str] = set()
         self.running: bool = False
         self.task: asyncio.Task | None = None
 
@@ -73,18 +76,41 @@ class EndpointsDiscoveryService(abc.ABC):
         """Register endpoints for discovered entities."""
         ...
 
-    def _get_endpoint_base_path(self, entity_class: str, entity_id: str) -> str:
-        """Returns the base path for the agent endpoints."""
-        return f"{self.controller.base_route}/{entity_class}/{entity_id}"
+    def _get_endpoint_base_path_for_instance(self, entity_class: str, entity_id: str) -> str:
+        """Returns the base path for instance-specific endpoints (used by ProcessEndpointsDiscoveryService)."""
+        return f"{self.controller.base_route}/classes/{entity_class}/instances/{entity_id}"
 
-    def _deregister_endpoints(self, entity_class: str, entity_id: str):
-        """Deregister all endpoints for the given entity."""
-        base_path = self._get_endpoint_base_path(entity_class, entity_id)
+    def _get_endpoint_base_path_for_class(self, entity_class: str) -> str:
+        """Returns the base path for class-level endpoints with dynamic {entity_id} path parameter."""
+        return f"{self.controller.base_route}/classes/{entity_class}/instances/{{agent_id}}"
+
+    def _deregister_endpoints_for_instance(self, entity_class: str, entity_id: str):
+        """Deregister all endpoints for a specific entity instance."""
+        base_path = self._get_endpoint_base_path_for_instance(entity_class, entity_id)
 
         for route in list(self.app.routes):
             if route.path.startswith(f"{base_path}/"):
                 self.app.routes.remove(route)
                 logger.info(f"Deregistered endpoint: {route.path}")
 
-        # Remove from registered agents
         self.registered_entities.discard((entity_class, entity_id))
+
+    def _deregister_endpoints_for_class(self, entity_class: str):
+        """Deregister all endpoints for an entity class (class-level endpoints with dynamic {agent_id})."""
+        base_path = self._get_endpoint_base_path_for_class(entity_class)
+
+        for route in list(self.app.routes):
+            if route.path.startswith(f"{base_path}/"):
+                self.app.routes.remove(route)
+                logger.info(f"Deregistered endpoint: {route.path}")
+
+        self.registered_classes.discard(entity_class)
+
+    # Legacy method names for backward compatibility
+    def _get_endpoint_base_path(self, entity_class: str, entity_id: str) -> str:
+        """Legacy method - delegates to _get_endpoint_base_path_for_instance."""
+        return self._get_endpoint_base_path_for_instance(entity_class, entity_id)
+
+    def _deregister_endpoints(self, entity_class: str, entity_id: str):
+        """Legacy method - delegates to _deregister_endpoints_for_instance."""
+        self._deregister_endpoints_for_instance(entity_class, entity_id)

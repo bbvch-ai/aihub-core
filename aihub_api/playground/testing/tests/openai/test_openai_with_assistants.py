@@ -36,6 +36,8 @@ async def api_client():
     await runner.start_simulation()
     app = runner.create_app()
     async with LifespanManager(app) as lifespan:
+        # Create agent config in database after DB connection is established
+        runner.create_agent_config_in_db()
         async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url=BASE_URL) as client:
             yield client
 

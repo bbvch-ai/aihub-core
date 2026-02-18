@@ -1,8 +1,7 @@
 import json
 import logging
-from typing import Annotated
+from typing import Annotated, Any
 
-from flatdict import FlatterDict
 from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.callbacks import TokenCountingHandler
 from llama_index.core.llms import LLM
@@ -18,6 +17,24 @@ from aihub_lib.nats.publishers.JSPublisher import JSPublisher
 from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 
 logger = logging.getLogger(__name__)
+
+
+def _flatten_dict(data: dict[str, Any], prefix: str = "") -> dict[str, Any]:
+    """Flatten a nested dict into dot-delimited keys for OTel span attributes."""
+    result: dict[str, Any] = {}
+    for key, value in data.items():
+        full_key = f"{prefix}.{key}" if prefix else key
+        if isinstance(value, dict):
+            result.update(_flatten_dict(value, full_key))
+        elif isinstance(value, list):
+            for i, item in enumerate(value):
+                if isinstance(item, dict):
+                    result.update(_flatten_dict(item, f"{full_key}.{i}"))
+                else:
+                    result[f"{full_key}.{i}"] = item
+        else:
+            result[full_key] = value
+    return result
 
 
 class EventDisplayer:
@@ -62,7 +79,7 @@ class EventDisplayer:
         Useful for any displayable output that needs to be consumed downstream (UI, logs, etc.).
         """
         subject = self.topic_manager.get_subject_for_display_event_in_thread(event.event_name, event.event_id)
-        attributes = FlatterDict(event.model_dump(), delimiter=".").as_dict()
+        attributes = _flatten_dict(event.model_dump())
 
         current_span = trace.get_current_span()
         current_span.add_event(

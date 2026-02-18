@@ -49,7 +49,7 @@ class TestDisplayEvent(DisplayEvent):
 
 @pytest.fixture
 def test_start_event():
-    return TestStartEvent(message="Hello, world!")
+    return TestStartEvent(message="Hello, world!", agent_id="test-agent-1")
 
 
 @pytest.fixture
@@ -288,6 +288,7 @@ def test_extra_fields():
     extra_data = {
         "_event_name": "TestStartEvent",
         "message": "Hello",
+        "agent_id": "test-agent-1",
         "extra_field": "This wasn't in the original class",
     }
 
@@ -318,6 +319,7 @@ def test_corrupted_parent_event_names():
     corrupted_data = {
         "_event_name": "TestStartEvent",
         "message": "Hello",
+        "agent_id": "test-agent-1",
         "_parent_event_names": "Not a list",  # Should be a list
     }
 
@@ -391,7 +393,7 @@ def test_aitl_without_worker_agent_class(aitl_response_event):
 def test_user_message_event_round_trip():
     """Test that a UserMessageEvent survives a round trip serialization."""
     # Create a user message
-    user_msg = UserMessageEvent(message="Hello agent!", user=fake_user())
+    user_msg = UserMessageEvent(message="Hello agent!", user=fake_user(), agent_id="test-agent-1")
 
     # Simulate crossing process boundary
     remote_msg = simulate_cross_process_boundary(user_msg)

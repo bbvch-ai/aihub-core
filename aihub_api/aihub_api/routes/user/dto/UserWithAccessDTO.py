@@ -67,15 +67,17 @@ class UserWithAccessDTO(UserDTO):
 
             access.services.append(UserAccess(name=t.extract(controller.name), level=user_service_access))
 
-        agents = await AgentService.get_agents(nc, t)
-        for agent in agents:
-            agent_access = access_checker.access_level_for_agent(agent_class=agent.agent_class, agent_id=agent.agent_id)
+        agent_instances = await AgentService.get_all_agent_instances(t)
+        for agent_instance in agent_instances:
+            agent_access = access_checker.access_level_for_agent(
+                agent_class=agent_instance.agent_class, agent_id=agent_instance.agent_id
+            )
             if agent_access == AccessLevel.ACCESS_DENIED:
                 continue
 
-            access.agents.append(UserAccess(name=agent.agent_config.name, level=agent_access))
+            access.agents.append(UserAccess(name=agent_instance.name, level=agent_access))
 
-        processes = await ProcessService.get_processes(nc, t)
+        processes = await ProcessService.get_all_process_instances(t)
         for process in processes:
             process_access = access_checker.access_level_for_process(
                 process_class=process.process_class, process_id=process.process_id

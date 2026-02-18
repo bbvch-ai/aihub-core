@@ -51,9 +51,9 @@ supports sophisticated debugging and validation.
 From trace views, users navigate to related capabilities—knowledge documents accessed during retrieval, agent
 configurations, system logs.
 
-## Phoenix tracing integration
+## Langfuse tracing integration
 
-The platform uses Arize Phoenix, an open-source AI observability platform.
+The platform uses Langfuse, an open-source AI observability platform.
 
 The implementation follows OpenInference semantic conventions. Trace data uses standardized formats compatible with
 industry observability tools.

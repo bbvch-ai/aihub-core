@@ -1,9 +1,10 @@
-from typing import TYPE_CHECKING, Annotated, Any
+from typing import TYPE_CHECKING, Annotated, Any, Self
 
-from aihub_lib.persistence.agents import AgentEntity
+from aihub_lib.persistence.agents.AgentClassEntity import AgentClassEntity
+from aihub_lib.persistence.agents.AgentConfigEntityDocument import AgentConfigEntityDocument
 from pydantic import Field
 
-from aihub_api.routes.agent.dto.MinimalAgentDTO import MinimalAgentDTO
+from aihub_api.routes.agent.dto.MinimalAgentInstanceDTO import MinimalAgentInstanceDTO
 
 from .WorkResponseDTO import WorkResponseDTO
 
@@ -17,7 +18,8 @@ class AgentWorkResponseDTO(WorkResponseDTO):
     agent_class: Annotated[str, Field(description="The class of the agent that should handle this request.")]
     agent_id: Annotated[str, Field(description="The ID of the agent that should handle this request.")]
     agent_info: Annotated[
-        MinimalAgentDTO | None, Field(description="Detailed information about the agent, if available.")
+        MinimalAgentInstanceDTO | None,
+        Field(description="Detailed information about the agent instance, if available."),
     ] = None
     agent_stop_event: Annotated[
         dict[str, Any], Field(description="The stop event returned by the agent after completing the work.")
@@ -31,18 +33,18 @@ class AgentWorkResponseDTO(WorkResponseDTO):
         event_name: str,
         created_at: int,
         t: "LocaleHandler",
-    ) -> "AgentWorkResponseDTO":
+    ) -> Self:
         """Creates an AgentWorkResponseDTO from raw event data."""
-        # Try to get agent information
+        # Try to get agent information from both class and config entities
         agent_class = event_data["submitted_by"]["agent_class"]
         agent_id = event_data["submitted_by"]["agent_id"]
-        agent_info: MinimalAgentDTO | None = None
+        agent_info: MinimalAgentInstanceDTO | None = None
 
-        agent_entity = AgentEntity.get_agent(agent_class, agent_id)
-        if agent_entity:
-            agent_info = MinimalAgentDTO.from_entity(agent_entity, t)
+        class_entity = AgentClassEntity.get_by_agent_class(agent_class)
+        config_entity = AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
+        if class_entity and config_entity:
+            agent_info = MinimalAgentInstanceDTO.from_class_and_config(class_entity, config_entity, t)
 
-        # Extract localized display fields
         display_name: str | None = None
         display_description: str | None = None
         if event_data.get("display_name"):

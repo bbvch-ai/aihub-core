@@ -5,7 +5,7 @@ export const useSupportedFileTypes = defineQuery(() => {
   const { data: supportedFileTypes } = useQuery<string[]>({
     key: () => ['supportedFileTypes'],
     staleTime: minutesToMilliseconds(60),
-
+    enabled: true,
     query: async () => {
       return await getSupportedFileTypes({
         composable: '$fetch',

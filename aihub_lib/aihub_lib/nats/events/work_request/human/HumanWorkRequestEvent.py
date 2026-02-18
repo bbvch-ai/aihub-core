@@ -1,5 +1,5 @@
 from collections import Counter
-from typing import Annotated, ClassVar, get_origin
+from typing import Annotated, ClassVar, Self, get_origin
 
 from pydantic import Field, model_validator
 
@@ -66,7 +66,7 @@ class HumanWorkRequestEvent(WorkRequestEvent):
     forms: Annotated[list[HumanWorkEvent], Field(description="The list of forms.")]
 
     @model_validator(mode="after")
-    def validate_forms_and_attributes(self) -> "HumanWorkRequestEvent":
+    def validate_forms_and_attributes(self) -> Self:
         """Ensures that the forms provided exactly match all work event options placed on the work request event."""
         cls = self.__class__
         forms = self.forms
@@ -97,7 +97,6 @@ class HumanWorkRequestEvent(WorkRequestEvent):
         for key in cls.__annotations__:
             if get_origin(getattr(cls, "__annotations__", {}).get(key)) is ClassVar:
                 class_var_value = getattr(cls, key, None)
-                # Check if the ClassVar's value is a class that inherits from HumanWorkEvent
                 if isinstance(class_var_value, type) and issubclass(class_var_value, HumanWorkEvent):
                     expected_types.append(class_var_value)
 

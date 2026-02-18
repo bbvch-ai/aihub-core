@@ -1,4 +1,5 @@
 import logging
+from typing import Self
 
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.nats.NatsSettings import NatsSettings
@@ -13,13 +14,9 @@ from aihub_lib.nats.events import (
 from aihub_lib.nats.events.discovery import ProcessClassDiscoveryResponseEvent
 from aihub_lib.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
 from aihub_lib.nats.events.discovery.EventSpecs import EventSpecs
-from aihub_lib.nats.events.discovery.InstanceDiscoveryRequestEvent import InstanceDiscoveryRequestEvent
 from aihub_lib.nats.events.discovery.process.agent_in.AgentInSpecs import AgentInSpecs
 from aihub_lib.nats.events.discovery.process.human_in.HumanInSpecs import HumanInSpecs
 from aihub_lib.nats.events.discovery.process.ProcessConfigSpecs import ProcessConfigSpecs
-from aihub_lib.nats.events.discovery.process.ProcessInstanceDiscoveryResponseEvent import (
-    ProcessInstanceDiscoveryResponseEvent,
-)
 from aihub_lib.nats.events.discovery.process.program_in.ProgramInSpecs import ProgramInSpecs
 from aihub_lib.nats.events.form import InputText
 from aihub_lib.nats.events.process.ProcessEvent import ProcessEvent
@@ -39,6 +36,7 @@ from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 
 from aihub_api.i18n.ApiLocaleHandler import ApiLocaleHandler
+from aihub_api.routes.process.dto.ProcessClassDTO import ProcessClassDTO
 from aihub_api.runners.ApiTestRunner import ApiTestRunner
 from aihub_api.runners.simulation.process.events.CustomProcessStopEvent import CustomProcessStopEvent
 from aihub_api.runners.simulation.process.events.HumanBWork import HumanBWork
@@ -51,7 +49,7 @@ logger = logging.getLogger(__name__)
 
 class SimulatedProcessApiTestRunner(ApiTestRunner):
     """
-    A specialized test runner simulating an process’s behavior within the AI Hub environment.
+    A specialized test runner simulating an process's behavior within the AI Hub environment.
 
     ### Why This Class?
     When developing or testing workflows that interact with processes, you may need a controlled,
@@ -69,8 +67,8 @@ class SimulatedProcessApiTestRunner(ApiTestRunner):
       events to a particular process instance.
     - **Simulated Events:** You can provide a list of events that will be published
       after a WorkReqeustEvent arrives.
-    - **Discovery Handling:** Responds to discovery requests with a mock `ProcessDiscoveryResponseEvent`,
-      ensuring clients can "find" this simulated process.
+    - **Discovery Handling:** Responds to discovery requests with a mock `ProcessClassDiscoveryResponseEvent`,
+      ensuring clients can "find" this simulated process class.
 
     ### Lifecycle
     - On `run()`:
@@ -103,8 +101,8 @@ class SimulatedProcessApiTestRunner(ApiTestRunner):
         self.process_work_event_subscriber: JSSubscriber[WorkRequestEvent] | None = None
         self.js_publisher: JSPublisher | None = None
 
-        self.nc_publisher: NCPublisher[ProcessInstanceDiscoveryResponseEvent] | None = None
-        self.discovery_subscriber: NCSubscriber[InstanceDiscoveryRequestEvent] | None = None
+        self.nc_publisher: NCPublisher[ProcessClassDiscoveryResponseEvent] | None = None
+        self.discovery_subscriber: NCSubscriber[ClassDiscoveryRequestEvent] | None = None
 
         self.simulated_events: list[tuple[type[ProcessEvent], ProcessEvent]] = simulated_events or []
 
@@ -133,13 +131,17 @@ class SimulatedProcessApiTestRunner(ApiTestRunner):
 
     async def discovery_handler(self, event: ClassDiscoveryRequestEvent, topic: ProcessClassDiscoveryTopic):
         """
-        Responds to a discovery request by publishing an `ProcessDiscoveryResponseEvent`.
-        This simulates the process being discoverable by clients, providing metadata and start events.
+        Responds to a discovery request by publishing a `ProcessClassDiscoveryResponseEvent`.
+        This simulates the process class being discoverable by clients, providing metadata and start events.
         """
-        logger.debug(f"Received discovery request for {self.process_class} ({self.process_id})")
+        logger.debug(f"Received discovery request for {self.process_class}")
         subject = self.topic_manager.get_process_class_discovery_subject_response(topic.call_id)
         process_discovery_response_event = ProcessClassDiscoveryResponseEvent(
             process_class=self.process_class,
+            name=LocaleString(en=self.process_class),
+            description=LocaleString(en=""),
+            icon="mage:broadcast",
+            form=[],
             human_inputs=self.human_inputs,
             program_inputs=self.program_inputs,
             agent_inputs=self.agent_inputs,
@@ -255,26 +257,26 @@ class SimulatedProcessApiTestRunner(ApiTestRunner):
                 locale_handler=ApiLocaleHandler(),
                 discovery_interval=60,
             )
-            for human_input in self.human_inputs:
-                discovery_service._register_human_endpoint(
-                    process_class=self.process_class,
-                    process_id=self.process_id,
-                    human_input=human_input,
-                    process_config=self.default_process_config,
-                )
-            for program_input in self.program_inputs:
-                discovery_service._register_program_endpoint(
-                    process_class=self.process_class,
-                    process_id=self.process_id,
-                    program_input=program_input,
-                    process_config=self.default_process_config,
-                )
+            process_class_dto = ProcessClassDTO(
+                process_class=self.process_class,
+                name=LocaleString(en=self.process_class),
+                description=LocaleString(en=""),
+                icon="mage:broadcast",
+                form=[],
+                process_config_specs=ProcessConfigSpecs.from_process_config_class(ProcessConfig),
+                human_inputs=self.human_inputs,
+                program_inputs=self.program_inputs,
+                agent_inputs=self.agent_inputs,
+                is_online=True,
+                default_process_config=self.default_process_config,
+            )
+            discovery_service._register_class_endpoints(process_class_dto)
 
     async def run(self):
         await self.start_simulation()
         await super().run()
 
-    def with_simple_human_only_process_events(self) -> "SimulatedProcessApiTestRunner":
+    def with_simple_human_only_process_events(self) -> Self:
         """
         A convenience method to populate a standard sequence of process events with just two humans involved.
         """

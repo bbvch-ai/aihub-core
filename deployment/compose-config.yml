@@ -27,7 +27,9 @@ image_tags:
   milvus: milvus:v2.6.7
   attu: attu:v2.5.12
   postgres: pgvector:pg17
-  phoenix: phoenix:version-10.0.4
+  clickhouse: clickhouse/clickhouse-server:25.8
+  langfuse_web: langfuse/langfuse:3
+  langfuse_worker: langfuse/langfuse-worker:3
   nats: nats:2.11.4
   valkey: valkey:8.0.5
   ferretdb: ferretdb:2.5.0
@@ -95,6 +97,24 @@ image_tags:
     local: expert_asking_agent:latest
     nightly: expert_asking_agent:nightly
     latest: expert_asking_agent:latest
+
+  retrieval_agent:
+    build: localbuild
+    local: retrieval_agent:latest
+    nightly: retrieval_agent:nightly
+    latest: retrieval_agent:latest
+
+  few_shot_agent:
+    build: localbuild
+    local: few_shot_agent:latest
+    nightly: few_shot_agent:nightly
+    latest: few_shot_agent:latest
+
+  namespace_selection_agent:
+    build: localbuild
+    local: namespace_selection_agent:latest
+    nightly: namespace_selection_agent:nightly
+    latest: namespace_selection_agent:latest
 
   default_rag_pipeline:
     build: localbuild

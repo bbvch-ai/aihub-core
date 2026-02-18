@@ -145,7 +145,7 @@ def request_review(...) -> Annotated[ReviewRequest, Human.Out(users=[])]:
 4. **Create config**: `ProcessConfig` with metadata
 5. **Test**: `ProcessTestRunner` + `pytest-bdd`
 6. **Debug**: `trigger.py` (one-shot) or `run.py` (interactive)
-7. **Observe**: Phoenix tracing (http://localhost:6006)
+7. **Observe**: Langfuse tracing (http://localhost:6006)
 
 ## Testing
 
@@ -180,7 +180,7 @@ def verify_human_request(process_runner: ProcessTestRunner):
 
 **trigger.py**: One-shot test with specific event
 **run.py**: Interactive multi-entity test (agents + process)
-**Phoenix**: Visual process flow (http://localhost:6006)
+**Langfuse**: Visual process flow (http://localhost:6006)
 
 ## Pre-Commit
 

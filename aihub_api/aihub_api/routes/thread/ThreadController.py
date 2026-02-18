@@ -1,14 +1,16 @@
-from typing import Annotated
+from typing import Annotated, Self
 
 from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.persistence.access.entities.RoleEntity import RoleEntity
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.routes.Controller import Controller
 from fastapi import Depends, HTTPException, Path, Security
 from mongoengine import DoesNotExist
 
+from aihub_api.i18n.ApiLocaleString import ApiLocaleString
 from aihub_api.i18n.dependencies.use_locale import use_locale
 from aihub_api.pagination.type.PageNumber import PageNumber
 from aihub_api.pagination.type.PageSize import PageSize
@@ -37,14 +39,9 @@ class ThreadController(Controller):
     stay consistent and centralized.
     """
 
-    name = LocaleString(en="Conversations", de="Unterhaltungen", fr="Conversations", it="Conversazioni")
-    description = LocaleString(
-        en="Manage your conversation history",
-        de="Gesprächsverlauf verwalten",
-        fr="Gérez votre historique de conversations",
-        it="Gestisci la cronologia delle conversazioni",
-    )
-    icon = "simple-icons:threads"
+    name = ApiLocaleString.from_i18n_path("api.controllers.thread.name")
+    description = ApiLocaleString.from_i18n_path("api.controllers.thread.description")
+    icon = "mage:message-information"
 
     not_authorized_to_view_exception = HTTPException(status_code=403, detail="Not authorized to view this thread")
     not_authorized_to_modify_exception = HTTPException(status_code=403, detail="Not authorized to modify this thread")
@@ -72,7 +69,7 @@ class ThreadController(Controller):
     ):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
 
-    def get_user_threads(self, route: str = "/") -> "ThreadController":
+    def get_user_threads(self, route: str = "/") -> Self:
         @self.router.get(route, tags=self.tags)
         async def get_user_threads(
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
@@ -95,7 +92,7 @@ class ThreadController(Controller):
 
         return self
 
-    def create_thread(self, route: str = "/") -> "ThreadController":
+    def create_thread(self, route: str = "/") -> Self:
         @self.router.post(route, tags=self.tags)
         async def create_thread(
             create_request_dto: CreateThreadRequest,
@@ -125,7 +122,7 @@ class ThreadController(Controller):
 
         return self
 
-    def get_thread(self, route: str = "/{thread_id}") -> "ThreadController":
+    def get_thread(self, route: str = "/{thread_id}") -> Self:
         @self.router.get(route, tags=self.tags)
         async def get_thread(
             thread_id: Annotated[str, Path(title="Thread ID", pattern=r"^[a-f0-9]{24}$")],
@@ -142,7 +139,7 @@ class ThreadController(Controller):
 
         return self
 
-    def add_agent_to_thread(self, route: str = "/{thread_id}/agents") -> "ThreadController":
+    def add_agent_to_thread(self, route: str = "/{thread_id}/agents") -> Self:
         @self.router.post(route, tags=self.tags)
         async def add_agent_to_thread(
             thread_id: Annotated[str, Path(title="Thread ID", pattern=r"^[a-f0-9]{24}$")],
@@ -172,7 +169,7 @@ class ThreadController(Controller):
 
         return self
 
-    def thread_as_message_history(self, route: str = "/{thread_id}/history") -> "ThreadController":
+    def thread_as_message_history(self, route: str = "/{thread_id}/history") -> Self:
         @self.router.get(route, tags=self.tags)
         async def thread_as_message_history(
             thread_id: Annotated[str, Path(title="Thread ID", pattern=r"^[a-f0-9]{24}$")],
@@ -183,9 +180,7 @@ class ThreadController(Controller):
             ThreadController._check_view_access(thread, user)
             return await ThreadService.thread_as_message_history(thread_id)
 
-    def remove_agent_from_thread(
-        self, route: str = "/{thread_id}/agents/{agent_class}/{agent_id}"
-    ) -> "ThreadController":
+    def remove_agent_from_thread(self, route: str = "/{thread_id}/agents/{agent_class}/{agent_id}") -> Self:
         @self.router.delete(route, tags=self.tags)
         async def remove_agent_from_thread(
             thread_id: Annotated[str, Path(title="Thread ID", pattern=r"^[a-f0-9]{24}$")],
@@ -209,7 +204,7 @@ class ThreadController(Controller):
 
         return self
 
-    def add_user_to_thread(self, route: str = "/{thread_id}/users") -> "ThreadController":
+    def add_user_to_thread(self, route: str = "/{thread_id}/users") -> Self:
         @self.router.post(route, tags=self.tags)
         async def add_user_to_thread(
             thread_id: Annotated[str, Path(title="Thread ID", pattern=r"^[a-f0-9]{24}$")],
@@ -239,7 +234,7 @@ class ThreadController(Controller):
 
         return self
 
-    def remove_user_from_thread(self, route: str = "/{thread_id}/users/{remove_user_id}") -> "ThreadController":
+    def remove_user_from_thread(self, route: str = "/{thread_id}/users/{remove_user_id}") -> Self:
         @self.router.delete(route, tags=self.tags)
         async def remove_user_from_thread(
             thread_id: Annotated[str, Path(title="Thread ID", pattern=r"^[a-f0-9]{24}$")],
@@ -262,7 +257,7 @@ class ThreadController(Controller):
 
         return self
 
-    def get_open_chat_hitl(self, route: str = "/{thread_id}/open-chat-hitl") -> "ThreadController":
+    def get_open_chat_hitl(self, route: str = "/{thread_id}/open-chat-hitl") -> Self:
         @self.router.get(route, tags=self.tags)
         async def get_open_chat_hitl(
             thread_id: Annotated[str, Path(title="Thread ID", pattern=r"^[a-f0-9]{24}$")],

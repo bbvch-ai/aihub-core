@@ -2,12 +2,12 @@
   <EventDisplayBase
     :event="event"
     :thread="thread"
-    icon="material-symbols:history"
+    icon="mage:clock"
   >
     <div class="flex flex-col gap-8">
       <div class="flex items-center gap-2 text-sm text-surface-600 dark:text-surface-400">
         <Icon
-          name="material-symbols:history"
+          name="mage:clock"
           class="size-4"
         />
         <span>{{ t('event.limitChatHistory.summary', { count: event.event.limited_history.length }) }}</span>
@@ -32,13 +32,13 @@
 
 <script setup lang="ts">
 import type {
-  LimitChatHistoryEventReadable,
+  LimitChatHistoryEvent,
   ThreadDto,
-  AgentEventReadable,
+  ContextualizedAgentEvent,
 } from '@core/sdk/client'
 
 const props = defineProps<{
-  event: AgentEventReadable & { event: LimitChatHistoryEventReadable }
+  event: ContextualizedAgentEvent & { event: LimitChatHistoryEvent }
   thread: ThreadDto
 }>()
 

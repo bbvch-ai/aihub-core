@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Self
 
 from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
@@ -7,7 +7,6 @@ from aihub_lib.generative_ai.document.accessor.S3AnonymousFileAccessService impo
 from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.milvus.use_vector_store_factory import use_vector_store_factory
 from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.infrastructure.s3.use_s3 import use_s3_service
@@ -19,6 +18,7 @@ from mongoengine import connect
 from nats.aio.client import Client as NATS
 from pymongo import MongoClient
 
+from aihub_api.i18n.ApiLocaleString import ApiLocaleString
 from aihub_api.i18n.dependencies.use_locale import use_locale
 from aihub_api.pagination.type.PageNumber import PageNumber
 from aihub_api.pagination.type.PageSize import PageSize
@@ -37,14 +37,9 @@ from aihub_api.routes.knowledge.KnowledgeService import KnowledgeService
 
 
 class KnowledgeController(Controller):
-    name = LocaleString(en="Knowledge Base", de="Wissensdatenbank", fr="Base de connaissances", it="Base di conoscenza")
-    description = LocaleString(
-        en="Manage your knowledge base and documents",
-        de="Verwalten Sie Ihre Wissensdatenbank und Dokumente",
-        fr="Gérez votre base de connaissances et documents",
-        it="Gestisci la tua base di conoscenza e documenti",
-    )
-    icon = "famicons:library-outline"
+    name = ApiLocaleString.from_i18n_path("api.controllers.knowledge.name")
+    description = ApiLocaleString.from_i18n_path("api.controllers.knowledge.description")
+    icon = "mage:book"
 
     def __init__(
         self,
@@ -61,7 +56,7 @@ class KnowledgeController(Controller):
 
         self.translation_llm_config = translation_llm_config
 
-    def get_databases(self, route: str = "/databases") -> "KnowledgeController":
+    def get_databases(self, route: str = "/databases") -> Self:
         @self.router.get(route, tags=self.tags)
         async def get_databases(
             user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.knowledge.?>"))],
@@ -95,7 +90,7 @@ class KnowledgeController(Controller):
 
     def get_documents_for_namespace(
         self, route: str = "/databases/{database}/namespaces/{namespace}/documents"
-    ) -> "KnowledgeController":
+    ) -> Self:
         @self.router.get(route, tags=self.tags)
         async def get_documents_for_namespace(
             database: Annotated[str, Path(title="Database name", pattern=r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*$")],
@@ -141,7 +136,7 @@ class KnowledgeController(Controller):
 
     def get_document_by_id(
         self, route: str = "/databases/{database}/namespaces/{namespace}/documents/{document_id}"
-    ) -> "KnowledgeController":
+    ) -> Self:
         @self.router.get(route, tags=self.tags)
         async def get_document_by_id(
             database: Annotated[str, Path(title="Database name", pattern=r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*$")],
@@ -162,7 +157,7 @@ class KnowledgeController(Controller):
 
     def get_nodes_for_document(
         self, route: str = "/databases/{database}/namespaces/{namespace}/documents/{document_id}/nodes"
-    ) -> "KnowledgeController":
+    ) -> Self:
         @self.router.get(route, tags=self.tags)
         async def get_nodes_for_document(
             database: Annotated[str, Path(title="Database name", pattern=r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*$")],
@@ -191,7 +186,7 @@ class KnowledgeController(Controller):
 
     def get_summary_nodes_for_document(
         self, route: str = "/databases/{database}/namespaces/{namespace}/documents/{document_id}/summaries"
-    ) -> "KnowledgeController":
+    ) -> Self:
         @self.router.get(route, tags=self.tags)
         async def get_summary_nodes_for_document(
             database: Annotated[str, Path(title="Database name", pattern=r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*$")],
@@ -218,7 +213,7 @@ class KnowledgeController(Controller):
 
         return self
 
-    def create_namespace(self, route: str = "/databases/{database}/namespaces/{namespace}") -> "KnowledgeController":
+    def create_namespace(self, route: str = "/databases/{database}/namespaces/{namespace}") -> Self:
         @self.router.post(route, tags=self.tags)
         async def create_namespace(
             database: Annotated[str, Path(title="Database name", pattern=r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*$")],
@@ -236,7 +231,7 @@ class KnowledgeController(Controller):
 
         return self
 
-    def update_namespace(self, route: str = "/databases/{database}/namespaces/{namespace}") -> "KnowledgeController":
+    def update_namespace(self, route: str = "/databases/{database}/namespaces/{namespace}") -> Self:
         @self.router.put(route, tags=self.tags)
         async def update_namespace(
             database: Annotated[str, Path(title="Database name", pattern=r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*$")],
@@ -256,7 +251,7 @@ class KnowledgeController(Controller):
 
     def initiate_document_upload(
         self, route: str = "/databases/{database}/namespaces/{namespace}/documents/upload/initiate"
-    ) -> "KnowledgeController":
+    ) -> Self:
         @self.router.post(route, tags=self.tags)
         async def initiate_document_upload(
             database: Annotated[str, Path(title="Database name", pattern=r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*$")],
@@ -279,7 +274,7 @@ class KnowledgeController(Controller):
 
     def validate_document_upload(
         self, route: str = "/databases/{database}/namespaces/{namespace}/documents/upload/validate"
-    ) -> "KnowledgeController":
+    ) -> Self:
         @self.router.post(route, tags=self.tags)
         async def validate_document_upload(
             database: Annotated[str, Path(title="Database name", pattern=r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*$")],
@@ -302,7 +297,7 @@ class KnowledgeController(Controller):
 
         return self
 
-    def get_supported_file_types(self, route: str = "/supported-types") -> "KnowledgeController":
+    def get_supported_file_types(self, route: str = "/supported-types") -> Self:
         @self.router.get(route, tags=self.tags, summary="Get supported file types")
         async def get_supported_file_types(
             _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.knowledge.?>"))],

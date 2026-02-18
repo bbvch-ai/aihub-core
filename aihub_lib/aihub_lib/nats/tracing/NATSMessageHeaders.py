@@ -1,3 +1,5 @@
+from typing import Self
+
 from aihub_lib.nats.tracing.NATSTraceContextPropagator import NATSTraceContextPropagator
 
 
@@ -7,12 +9,12 @@ class NATSMessageHeaders:
     def __init__(self, headers: dict[str, str] = None):
         self.headers = headers or {}
 
-    def with_trace_context(self) -> "NATSMessageHeaders":
+    def with_trace_context(self) -> Self:
         """Add current trace context to headers."""
         self.headers = NATSTraceContextPropagator.inject_trace_context(self.headers)
         return self
 
-    def with_header(self, key: str, value: str) -> "NATSMessageHeaders":
+    def with_header(self, key: str, value: str) -> Self:
         """Add a custom header."""
         self.headers[key] = value
         return self

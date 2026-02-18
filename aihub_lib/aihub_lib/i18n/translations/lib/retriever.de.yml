@@ -1,0 +1,13 @@
+config:
+  index_namespaces:
+    label: "Index-Namespaces"
+    help: "Kommagetrennte Liste der Namespaces für den Abruf. Leer lassen, um aus allen Namespaces abzurufen."
+  retrieve_k:
+    label: "Abzurufende Dokumente"
+    help: "Anzahl der aus dem Vektorspeicher abzurufenden Dokumente."
+  query_mode:
+    label: "Abfragemodus"
+    help: "Legt fest, wie der Vektorspeicher abgefragt werden soll."
+  node_types:
+    label: "Knotentypen"
+    help: "Arten von Knoten, die aus dem Index abgerufen werden sollen."

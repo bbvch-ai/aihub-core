@@ -107,14 +107,12 @@ class LocalFileSystemResource(ConfigurableResource):
         """
         Check if file passes all inclusion filters.
         """
-        # Handle include patterns
         if self._scan_config.include_patterns is not None:
             if not self._scan_config.include_patterns:  # Empty list = include nothing
                 return False
             if not self._matches_any(text=relative_path, patterns=self._scan_config.include_patterns):
                 return False
 
-        # Handle exclude patterns (None and [] both mean "no exclusions")
         if self._scan_config.exclude_patterns:
             if self._matches_any(text=relative_path, patterns=self._scan_config.exclude_patterns):
                 return False

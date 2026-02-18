@@ -1,4 +1,7 @@
+from typing import ClassVar
+
 from aihub_lib.generative_ai.document.types.IngestedNode import IngestedNode
+from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import LLMStopEvent, RerankerEvent, RetrieverEvent, StartEvent
 from aihub_lib.nats.events.semantic import Message
 from aihub_lib.testing.milvus_vector_store_content import DEFAULT_DOCUMENTS
@@ -8,6 +11,22 @@ from aihub_agent.workflow.decorators.step import step
 
 
 class SemanticEventAgent(Agent):
+    """Agent demonstrating semantic event patterns."""
+
+    name: ClassVar[LocaleString] = LocaleString(
+        en="Semantic Event Agent",
+        de="Semantischer Event Agent",
+        fr="Agent Événement Sémantique",
+        it="Agente Evento Semantico",
+    )
+    description: ClassVar[LocaleString] = LocaleString(
+        en="Agent for semantic event demo",
+        de="Agent für semantische Event Demo",
+        fr="Agent pour démo événement sémantique",
+        it="Agente per demo evento semantico",
+    )
+    icon: ClassVar[str] = "mage:tag"
+
     @step()
     async def retriever_step(self, event: StartEvent) -> RetrieverEvent:
         return RetrieverEvent(

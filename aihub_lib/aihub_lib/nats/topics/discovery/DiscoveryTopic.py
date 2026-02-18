@@ -1,3 +1,5 @@
+from typing import Self
+
 from aihub_lib.nats.topic_managers.TopicManager import TopicManager
 from aihub_lib.nats.topics.Topic import Topic
 
@@ -12,7 +14,7 @@ class DiscoveryTopic(Topic):
         return self.call_id
 
     @classmethod
-    def from_subject(cls, subject: str) -> "DiscoveryTopic":
+    def from_subject(cls, subject: str) -> Self:
         topic_type, discovery_topic, request_response, call_id = subject.split(".")
         assert (
             topic_type == TopicManager.INSTANCE_DISCOVERY_TOPIC or topic_type == TopicManager.CLASS_DISCOVERY_TOPIC

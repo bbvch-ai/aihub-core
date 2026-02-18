@@ -1,10 +1,14 @@
-from .agent import AgentInstanceDiscoveryResponseEvent
-from .InstanceDiscoveryRequestEvent import InstanceDiscoveryRequestEvent
-from .process import ProcessClassDiscoveryResponseEvent, ProcessInstanceDiscoveryResponseEvent
+# Lazy imports to avoid circular dependency with AgentConfig
+
+
+def __getattr__(name: str):
+    if name == "ProcessClassDiscoveryResponseEvent":
+        from .process import ProcessClassDiscoveryResponseEvent
+
+        return ProcessClassDiscoveryResponseEvent
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
 
 __all__ = [
-    "AgentInstanceDiscoveryResponseEvent",
     "ProcessClassDiscoveryResponseEvent",
-    "ProcessInstanceDiscoveryResponseEvent",
-    "InstanceDiscoveryRequestEvent",
 ]

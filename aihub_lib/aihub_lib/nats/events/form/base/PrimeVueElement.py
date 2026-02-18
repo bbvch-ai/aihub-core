@@ -1,11 +1,15 @@
 import abc
-from typing import Annotated
+from typing import Annotated, Self
 
 from pydantic import Field, computed_field
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events.form.base.FormkitElement import FormkitElement
+
+# Type alias for form field values - covers all realistic form data types
+# Avoids 'Any' which generates schema without type (breaks jambo)
+FormValue = str | int | float | bool | list[str] | dict[str, str] | None
 
 
 class PrimeVueElement(FormkitElement, abc.ABC):
@@ -20,6 +24,7 @@ class PrimeVueElement(FormkitElement, abc.ABC):
     name: Annotated[str | None, Field(description="Name of this field")] = None
     label: Annotated[LocaleString | str, Field(description="Label of this field")]
     help: Annotated[LocaleString | str | None, Field(description="Help text of this field")] = None
+    value: Annotated[FormValue, Field(description="Default value for this field")] = None
 
     required: Annotated[bool, Field(description="Whether this field is required")] = False
 
@@ -36,7 +41,7 @@ class PrimeVueElement(FormkitElement, abc.ABC):
             rules.append(self.additional_validation_rules)
         return "|".join(rules)
 
-    def in_locale(self, t: LocaleHandler) -> "PrimeVueElement":
+    def in_locale(self, t: LocaleHandler) -> Self:
         self_copy = self.model_copy()
         if isinstance(self_copy.label, LocaleString):
             self_copy.label = t.extract(self_copy.label)

@@ -17,7 +17,7 @@ THREAD_ID = "6756ddb05c399b888009a559"
 async def main():
     runner = AgentTestRunner(
         agent_type=ContextAgent,
-        default_agent_config=ContextAgentConfig(
+        agent_config=ContextAgentConfig(
             agent_id="context_agent",
             agent_class=ContextAgent.__name__,
             name=LocaleString(en="Context Agent"),

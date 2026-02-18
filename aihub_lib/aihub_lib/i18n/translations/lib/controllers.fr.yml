@@ -1,0 +1,7 @@
+base:
+  name: "Contrôleur non nommé"
+  description: "Ce contrôleur n'a pas de description."
+
+health:
+  name: "Santé"
+  description: "Point de terminaison de vérification de la disponibilité du système."

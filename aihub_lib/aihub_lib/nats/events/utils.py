@@ -12,15 +12,12 @@ def get_parent_classes_until_base(cls: type, base_class: type):
     if cls is base_class:
         return set()
 
-    # Check if base_class is in the MRO (Method Resolution Order) of cls
     if base_class not in cls.__mro__:
         # If base_class is not in the hierarchy, collect all parents except 'object'
         return {base.__name__ for base in cls.__mro__[1:] if base is not object}
 
-    # Get position of base_class in MRO
     base_idx = cls.__mro__.index(base_class)
 
-    # Collect all class names between cls and base_class in the MRO, excluding 'object'
     parent_names = {c.__name__ for c in cls.__mro__[1:base_idx] if c is not object}
 
     return parent_names

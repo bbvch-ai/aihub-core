@@ -1,4 +1,4 @@
-from typing import Annotated, Literal
+from typing import Annotated, Literal, Self
 
 from pydantic import Field
 
@@ -19,7 +19,7 @@ class Textarea(PrimeVueElement):
         bool, Field(description="Whether to automatically resize based on content", alias="autoResize")
     ] = False
 
-    def in_locale(self, t: LocaleHandler) -> "Textarea":
+    def in_locale(self, t: LocaleHandler) -> Self:
         self_copy = super().in_locale(t)
         if isinstance(self_copy.placeholder, LocaleString):
             self_copy.placeholder = t.extract(self_copy.placeholder)

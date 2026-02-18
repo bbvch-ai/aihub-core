@@ -3,15 +3,15 @@
     is-empty
     :event="event"
     :thread="thread"
-    icon="mdi:robot-happy"
+    icon="mage:robot-happy"
   />
 </template>
 
 <script setup lang="ts">
-import type { AgentInTheLoopResponseEventReadable, ThreadDto, AgentEventReadable } from '@core/sdk/client'
+import type { AgentInTheLoopResponseEvent, ThreadDto, ContextualizedAgentEvent } from '@core/sdk/client'
 
 defineProps<{
-  event: AgentEventReadable & { event: AgentInTheLoopResponseEventReadable }
+  event: ContextualizedAgentEvent & { event: AgentInTheLoopResponseEvent }
   thread: ThreadDto
 }>()
 </script>

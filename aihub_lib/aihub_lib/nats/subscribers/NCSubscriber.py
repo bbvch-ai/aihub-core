@@ -89,7 +89,7 @@ class NCSubscriber(AbstractSubscriber[TEvent]):
             },
         ) as span:
             try:
-                logger.debug(f"{self.name} received message: {msg.subject} with event data: {msg.data!r}")
+                logger.debug(f"{self.name} received message: {msg.subject}")
                 topic = Topic.from_subject(msg.subject)
                 event_data = msg.data
                 event = self.event_cls.deserialize_event(event_data)
@@ -98,7 +98,7 @@ class NCSubscriber(AbstractSubscriber[TEvent]):
                 span.set_attribute("event.type", event.event_name)
                 span.set_attribute("event.class", event.__class__.__name__)
 
-                logger.debug(f"{self.name} deserialized event: {event}")
+                logger.debug(f"{self.name} deserialized event: {event.event_name}")
                 task = asyncio.create_task(self._run_handler_with_error_handling(event, topic, msg.subject))
                 self._background_tasks.add(task)
                 task.add_done_callback(self._background_tasks.discard)

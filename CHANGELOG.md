@@ -5,6 +5,353 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.262.3] - 2026-02-17 - Enhanced Developer Tooling and IDE Configurations
+
+### Added
+
+- 🚀 **Introduced Service Run Configurations:** Added new PyCharm configurations to facilitate direct execution of core
+  services, such as the **API**, from within the IDE for improved development workflow.
+- 🛠️ **Expanded Makefile Target Configurations:** Integrated new PyCharm run configurations for critical development
+  tasks, including **Generate Compose**, **License Check**, **Use Local Core**, and **Use Remote Core**, making common
+  operations more accessible.
+
+### Changed
+
+- 🔄 **Renamed Test Configurations:** Clarified existing PyCharm test configurations by appending "Tests" to their names
+  (e.g., **API Tests**, **Agent Tests**, **Bot Tests**, **Lib Tests**, **Process Tests**), enhancing consistency and
+  discoverability for developers.
+
+---
+
+## [v0.262.2] - YYYY-MM-DD - Introducing the LLM-Powered Whitepaper Generation System
+
+### Added
+
+- ✨ **LLM-Powered Whitepaper Generation System**: A comprehensive, iterative system has been introduced to automatically
+  transform technical documentation into business-focused whitepapers, ensuring consistency, professional output, and
+  maintainability.
+- 📄 **Automated Chapter Content and Structure**: Each whitepaper chapter is now generated via an LLM, organized in
+  self-contained folders with dedicated prompts, source mappings, and generated outputs (`chapters/*/`).
+- 🔍 **LLM-Based Source Discovery**: Implemented `generate-sources.py` to intelligently identify and map relevant
+  technical documentation files for each chapter, dynamically keeping content synchronized with evolving technical
+  documents.
+- 🚀 **Python-Based Iterative Generation**: The `generate-whitepaper.py` script facilitates sequential chapter
+  generation, leveraging Jinja2 templates and previous chapters as context to maintain narrative flow and style
+  consistency.
+- 💰 **Integrated Cost Tracking and Observability**: LLM calls within the generation process now include token usage and
+  estimated cost summaries for better financial transparency and operational oversight.
+- 📚 **Centralized Glossary and General Writing Guidelines**: New configuration files (`glossary.md`,
+  `general_prompt.md`) are used to enforce consistent terminology and writing style across all generated whitepaper
+  chapters.
+- 📈 **Professional PDF Output with LaTeX**: The system now supports direct Markdown to LaTeX to PDF conversion using
+  `pandoc` and a custom LaTeX template, ensuring high-quality, professional-looking whitepapers.
+- 🧹 **Automated Markdown Formatting**: Generated `.md` files are automatically formatted using `mdformat` to ensure
+  consistent readability and adherence to project styling.
+- 📝 **Architectural Decision Record**: An `arc42` decision record
+  (`2025_12_05_llm_based_whitepaper_generation_system.md`) outlines the context, drivers, decision, and consequences of
+  adopting this new LLM-based whitepaper generation system.
+
+---
+
+## [v0.262.1] - 2026-02-17 - Expanded External Service Configuration
+
+### Added
+
+- ✨ **Milvus Vector Database Configuration**: Introduced new environment variables (`MILVUS_URL`, `MILVUS_DIMENSION`,
+  `MILVUS_ROOT_PASSWORD`) across deployment files, enabling flexible configuration and integration with the Milvus
+  vector database.
+- 🔑 **Docling API Key Support**: Added the `DOCLING_API_KEY` environment variable to allow for secure authentication and
+  access control for the Docling document processing service.
+
+---
+
+## [v0.262.0] - 2026-02-12 - Comprehensive Observability Upgrade: Migrating to Langfuse for LLM Tracing and Evaluation
+
+### Added
+
+- ✨ **Langfuse Observability Platform**: Integrated Langfuse as the new open-source LLM observability and evaluation
+  platform, replacing Arize Phoenix. This provides enhanced tracing, cost tracking, dataset management, and UI-driven
+  experiment workflows.
+- 📦 **Langfuse Docker Services**: Introduced `clickhouse`, `langfuse-worker`, and `langfuse-web` services to the Docker
+  Compose stack for robust self-hosted Langfuse deployment.
+- ⚙️ **Automated Langfuse Provisioning**: Added a `LangfuseProvisioner` to automatically configure Langfuse on API
+  startup, including registering AI-Hub agent models, LLM connections (e.g., LiteLLM), and default prompt templates.
+- 🔑 **Comprehensive Langfuse Configuration**: New environment variables for Langfuse API keys, database settings, SSO
+  (Azure AD) integration, and access control for production deployments.
+- 📊 **Evaluation Dataset Management API**: Introduced new API endpoints under `/datasets` for creating, retrieving, and
+  updating evaluation datasets in Langfuse, supporting structured testing of AI agents.
+- 📈 **Langfuse Trace Attributes**: Enhanced agent tracing (`AgentRunTracer`) to enrich OpenTelemetry spans with
+  Langfuse-specific trace-level attributes (name, session, user, input/output, usage details) for richer visualization
+  and analytics.
+- 🛡️ **Increased OpenTelemetry Span Limits**: Expanded the maximum number of attributes per span to 512 to prevent
+  truncation of detailed telemetry data, especially for complex RAG traces.
+
+### Changed
+
+- 🔄 **Core Observability Switch**: Replaced all references to Arize Phoenix with Langfuse across the entire platform,
+  including documentation, code comments, and configuration files, for a consistent observability experience.
+- 🔬 **Streamlined LLM Evaluation Workflow**: Shifted from a custom, programmatic experiment evaluation framework to
+  leveraging Langfuse's native UI for managing and running experiments against datasets, simplifying evaluation
+  processes and reducing custom code.
+- 📡 **Agent Instance Sync to Langfuse**: The `AgentEndpointsDiscoveryService` now automatically syncs online agent
+  instances to Langfuse, ensuring they are visible and selectable for experiment evaluation within the Langfuse UI.
+- 📄 **Updated Documentation**: All relevant documentation has been updated to reflect the transition to Langfuse,
+  detailing its features and usage for tracing and evaluation.
+
+### Refactor
+
+- 🧹 **Simplified AgentRunTracer Logic**: Refactored the `AgentRunTracer` to directly leverage Langfuse's OpenTelemetry
+  ingestion capabilities, removing Phoenix-specific logic for root spans and complex context storage.
+
+### Removed
+
+- 🗑️ **Arize Phoenix Components**: Eliminated all Docker services, configuration, API endpoints, and associated Python
+  code (including `PhoenixExperimentEvaluator` and `JudgeOutput`) related to Arize Phoenix due to licensing
+  incompatibility and technical advantages of Langfuse.
+- 🚫 **Experiment Management Frontend**: Removed the custom frontend components for managing and running evaluation
+  experiments, as these functionalities are now handled directly within the Langfuse UI.
+
+---
+
+## [v0.261.7] - 2026-02-11 - Enhanced Docling Configuration with API Key Support
+
+### Added
+
+- 🔑 **Docling API Key Support:** Introduced a new configuration option (`DOCLING_API_KEY`) to allow specifying an API
+  key for the Docling service, improving secure access and authentication.
+
+---
+
+## [v0.261.6] - 2026-02-11 - Enhanced Deployment Flexibility and Routing Accuracy
+
+### Added
+
+- 🚀 **Introduced dynamic frontend configuration:** Environment variables (`AIHUB_API_VERSION`, `AIHUB_FRONTEND_ORIGIN`)
+  are now passed to AI-Hub frontend services in Docker Compose setups, enabling more flexible and dynamic deployment
+  settings.
+
+### Changed
+
+- ⚙️ **Optimized Nuxt.js prerendering:** Specific authentication routes (e.g., `/en/auth`) are now explicitly ignored
+  during Nuxt.js prerendering, which enhances build efficiency and better accommodates dynamic authentication pages.
+
+### Fixed
+
+- 🐛 **Resolved authentication path matching issues:** The authentication middleware now correctly identifies public
+  paths, regardless of trailing slashes, ensuring consistent access to non-authenticated routes.
+- 🐞 **Corrected Nginx absolute redirect behavior:** Disabled absolute redirects in Nginx to prevent issues with
+  incorrect schemes or ports when the application is deployed behind a reverse proxy.
+- ⚡️ **Improved Nginx SPA routing:** Refined the Nginx configuration for single-page applications to ensure all non-file
+  requests are reliably served by `index.html`.
+
+---
+
+## [v0.261.5] - 2026-02-10 - Streamlined Development and Dependency Management
+
+### Refactor
+
+- 🔄 **Monorepo Dependency Alignment:** Updated the `aihub_lib` dependency across `aihub_agent`, `aihub_api`,
+  `aihub_bot`, `aihub_pipeline`, and `aihub_process` to use local path references with `develop = true`. This change
+  streamlines local development workflows and better supports a monorepo project structure.
+
+### Removed
+
+- 🗑️ **`flatdict` Dependency:** The `flatdict` library has been removed from the `aihub_agent` package's dependencies
+  and its documentation, simplifying the project's dependency footprint.
+
+---
+
+## [v0.261.4] - 2026-02-10 - Internal Dependency Streamlining
+
+### Refactor
+
+- 🧹 **Streamlined event attribute flattening:** Replaced the external `flatdict` library with a custom, in-house
+  implementation. This change reduces external dependencies and improves control over how event attributes are processed
+  and presented for display.
+
+---
+
+## [v0.261.3] - 2026-02-09 - Dependency Script Logging Enhancements
+
+### Changed
+
+- 📄 **Enhanced `poetry` Command Output:** The `switch_dependencies.py` script now prints the standard output (stdout)
+  from `poetry lock` and `poetry install` commands, offering more transparency into dependency management processes.
+- 🚨 **Clarified Dependency Installation Errors:** Error messages generated by `switch_dependencies.py` for failed
+  `poetry lock` and `poetry install` operations have been improved to explicitly display the standard error (stderr)
+  only when relevant, preventing empty or unhelpful error outputs.
+
+---
+
+## [v0.261.2] - 2026-02-09 - Streamlined CI/CD Builds with Dynamic Image Discovery
+
+### Refactor
+
+- 🔄 **Dynamic Agent Image Discovery:** Improved the `build-agents.yml` workflow to automatically determine which agent
+  images to build by parsing `compose-config.yml`, enhancing build system flexibility and reducing manual configuration.
+- 🔄 **Dynamic Pipeline Image Discovery:** Enhanced the `build-pipelines.yml` workflow to dynamically identify pipeline
+  images for building directly from `compose-config.yml`, streamlining the CI/CD process and ensuring consistency.
+
+---
+
+## [v0.261.1] - 2026-02-09 - Comprehensive Changelog History Update
+
+### Added
+
+- 📄 **Comprehensive Changelog History**: Updated `CHANGELOG.md` to include detailed release notes for recent versions,
+  specifically adding entries for `v0.261.0`, `v0.260.2`, `v0.254.6`, `v0.254.5`, `v0.243.3`, and `v0.243.2`, ensuring a
+  complete and up-to-date historical record of changes.
+
+---
+
+## [v0.261.0] - 2026-02-06 - Dynamic Configuration and Enhanced Management for Agents & Processes
+
+### Added
+
+- ⚙️ **Dynamic Agent Configuration via Admin UI**: Introduced the **Form Duality Pattern** enabling developers to define
+  agent configurations directly in code that are automatically rendered as editable forms in the Admin UI. This empowers
+  administrators to customize agent behavior without code changes.
+- ✨ **New Agent Profile Management API**: Implemented a comprehensive set of API endpoints for managing agent instances
+  (profiles) including creation, retrieval, updates, and deletion. This replaces previous discovery-only mechanisms with
+  robust CRUD operations.
+- ✨ **New Process Instance Management API**: Similarly, introduced a complete API for managing process instances,
+  offering full control over process deployment and configuration through the Admin UI.
+- ⚙️ **NATS RPC for Dynamic Configuration Retrieval**: Added a new NATS RPC mechanism (`AgentConfigClient`,
+  `ProcessConfigClient`, `AgentConfigResponder`, `ProcessConfigResponder`) enabling agents and processes to fetch their
+  runtime configurations dynamically from the API, decoupling configuration from event payloads.
+- ✨ **New FormKit UI Elements**: Developed custom FormKit components (`AgentSelector`, `IconSelector`,
+  `KnowledgeDatabaseSelector`, `LocaleInput`, `ModelSelect`, `Repeater`, `VectorStoreInput`) to support rich, dynamic
+  and multi-language configuration forms in the UI.
+- 📝 **Comprehensive Configuration Documentation**: Added detailed documentation
+  (`arc42/decisions/2026_01_07_enable_dynamic_agent_configuration_ui.md`,
+  `docs/2_platform/5_agents/3_blueprints_and_profiles`, `docs/3_sdk/2_building_agents/8_configurable_agents`) explaining
+  the new configuration paradigm, agent blueprints vs. profiles, and how to build configurable agents.
+- ⚙️ **New Agent Implementations**: Moved and refactored `FewShotAgent`, `RetrievalAgent`, and `NamespaceSelectionAgent`
+  from playground to production-ready `app` directories, making them configurable via the new UI.
+- ⚙️ **LLM-Based Translation Service**: Introduced a new API route and service for performing LLM-based translations of
+  `LocaleString` objects across all supported languages (de, en, fr, it).
+- ✨ **Agent and Process Class Metadata**: Added class-level `name`, `description`, and `icon` properties to `Agent` and
+  `AgenticProcess` base classes, enabling consistent display of agent/process types in the UI.
+- ⚙️ **New Makefile Targets**: Added `run-dev`, `format-md`, and `pr-ready` targets for local development, markdown
+  formatting, and pull request preparation.
+- ✅ **Expanded Test Coverage**: Introduced new unit tests for `AgentConfig`, `Form` classes, and NATS RPC mechanisms,
+  ensuring the robustness of new features.
+- ⚙️ **Enhanced OpenWebUI Integration**: Added a new OpenWebUI function (`memory_action`) to allow viewing agent
+  memories directly from the AI-Hub frontend.
+
+### Changed
+
+- 🔄 **API Restructuring for Agents and Processes**: Overhauled the `/agents` and `/processes` API endpoints to reflect
+  the "class vs. instance" (blueprint vs. profile) distinction, providing more granular control and a clearer hierarchy
+  for management.
+- 🔄 **Centralized Configuration Fetching**: Refactored `AgentService` and `ProcessService` to adopt a **database-first
+  approach** for configuration. Agent/Process dispatchers now fetch runtime configurations dynamically via NATS RPC from
+  the API service, rather than relying on event payloads or local defaults.
+- 🔄 **Updated `AgentRunner` and `ProcessRunner`**: Modified runners to use the new form-mode configuration instances and
+  expose class-level metadata for discovery.
+- 🔄 **Refined `StartEvent` Structure**: Removed the `agent_config` field from `StartEvent` and `UserMessageEvent`,
+  streamlining event payloads as configuration is now fetched dynamically by the receiving agent/process.
+- 🔄 **Dependency Updates**: Updated numerous dependencies in `aihub_web` to their latest versions, including
+  `@pinia/colada`, `@vueuse`, `gridstack`, `oidc-client-ts`, and `socket.io-client`, improving performance and
+  stability.
+- 🔄 **Improved UI/UX Icons**: Updated various icons across the web frontend (e.g., chat, file, search, agent status) for
+  a more consistent and modern look and feel.
+- 🔄 **Console Logging Level Adjustment**: Changed the default logging level for several external libraries in
+  `aihub_lib` to `ERROR` to reduce noise in console output.
+- 🔄 **Unified Workflow Visualization**: Updated `WorkflowVisualizer` to use localized strings for start/end nodes,
+  improving multi-language support.
+- 🔄 **Configurable Milvus Vector Store**: Refactored `MilvusVectorStoreConfig` to expose `index_namespaces` for explicit
+  configuration and now fetches connection details from `MilvusSettings` at runtime.
+- 🔄 **Refined OpenWebUI Integration**: Updated existing OpenWebUI integration to align with the new API endpoint
+  structure for agents and dynamic display of agent names.
+
+### Fixed
+
+- 🐛 **UI Console Log Duplication**: Fixed an issue where console logs were excessively verbose by adjusting default
+  logging levels for common libraries.
+- 🐛 **Process Page Title Display**: Corrected a typo in the process details page title.
+- 🐛 **Agent `StartEvent` Test Data**: Updated test event data to correctly include agent ID, aligning with new event
+  structures.
+
+### Removed
+
+- 🗑️ **Deprecated `WebuiAgent`**: Removed the `WebuiAgent` and all associated files, streamlining the agent portfolio.
+- 🗑️ **Obsolete `open_webui` SDK**: Removed the internal OpenWebUI Python SDK as it is no longer actively maintained.
+- 🗑️ **Legacy Agent and Process Discovery Caches**: Eliminated in-memory caches (e.g., `DISCOVER_AGENTS_CACHE`,
+  `GET_AGENT_INSTANCE_CACHE`) as discovery and configuration now leverage a database-first approach and NATS RPC.
+- 🗑️ **Redundant Agent and Process Entities**: Removed `AgentEntity` and `ProcessEntity` database models, replacing them
+  with `AgentClassEntity` and `ProcessClassEntity` for class-level data, and `AgentConfigEntityDocument` for
+  instance-specific configurations.
+- 🗑️ **Outdated Playground Run Scripts**: Removed various `run.py` and `trigger.py` scripts from the `playground`
+  directories, as agents have been migrated to the `app` directory and integrated with the new configuration system.
+- 🗑️ **Unused Agent/Process Instance Discovery Events**: Removed `AgentInstanceDiscoveryRequestEvent`,
+  `AgentInstanceDiscoveryResponseEvent`, `ProcessInstanceDiscoveryRequestEvent`, and
+  `ProcessInstanceDiscoveryResponseEvent`, shifting to class-level discovery.
+
+### Refactor
+
+- 🧹 **Unified Configuration Logic (`Form` Class)**: Consolidated form generation, data validation, and configuration
+  handling into a single `Form` base class in `aihub_lib`, enabling a consistent "duality pattern" for defining
+  UI-editable configurations across agents and processes.
+- 🧹 **Centralized Type Hinting**: Applied `Self` type hints across numerous methods in `aihub_lib`, `aihub_api`, and
+  `aihub_bot` for improved type inference and code consistency.
+- 🧹 **Cleaned Up Internal Comments**: Removed extraneous comments from various core files to improve code readability
+  and maintainability.
+- 🧹 **Streamlined `.idea/runConfigurations`**: Reorganized and renamed numerous IntelliJ IDEA run configurations for
+  better clarity and ease of use.
+- 🧹 **Modularized API Controllers**: Refactored API controllers by extracting `ApiLocaleString` for localized names and
+  descriptions, enhancing modularity and i18n support.
+- 🧹 **Normalized Form Data**: Introduced new utility functions (`normalize_empty_objects_to_none`,
+  `normalize_empty_locale_strings`, `transform_formkit_arrays`) to standardize form data sent from the frontend to
+  backend Pydantic models.
+
+---
+
+## [v0.260.2] - 2026-02-03 - Universal Data Ingestion with Rclone and Smarter Memory Retrieval
+
+### Added
+
+- 🚀 **Introduced Rclone Integration for Universal Data Ingestion:** A new, unified pipeline now supports syncing
+  documents from over 70 cloud storage providers (including SharePoint, OneDrive, Google Drive, AWS S3, Azure Blob,
+  SFTP, and local filesystems) to your S3 data lake. This replaces previous provider-specific implementations, offering
+  a single, flexible solution.
+- ⚙️ **New `Rclone` Docker Service:** A dedicated `rclone` service has been added to the Docker Compose setup, providing
+  the Rclone Remote Control (RC) API for seamless integration with ingestion pipelines.
+- 📄 **Comprehensive Source Templates:** Pre-configured templates and detailed setup guides have been added for common
+  Rclone sources, simplifying configuration for Azure Blob, Google Drive, Local Filesystem, OneDrive, S3, SFTP, and
+  SharePoint.
+- ✨ **Enhanced Memory Retrieval Display:** New event handlers (`RetrieveUserMemoryEventHandler`,
+  `RetrieveOrganizationMemoryEventHandler`) improve the display of retrieved user and organization memories, providing
+  more detailed source information in the UI.
+- 🔑 **Rclone RC API Environment Variables:** Added `RCLONE_URL`, `RCLONE_RC_USER`, and `RCLONE_RC_PASS` environment
+  variables for configuring the Rclone RC API connection, including secure authentication for production.
+
+### Changed
+
+- 🔄 **Migrated Data Ingestion Documentation:** The data ingestion pipeline documentation has been comprehensively
+  updated to reflect the new Rclone-based universal approach, deprecating the previous SharePoint-specific guide.
+- 🛠️ **Updated Data Lake Definitions Utility:** The `default_sharepoint_to_datalake_definitions` factory has been
+  replaced by `default_rclone_to_datalake_definitions`, streamlining the creation of data ingestion pipelines.
+
+### Removed
+
+- 🗑️ **Deprecated SharePoint-specific Data Lake Definition:** The `default_sharepoint_to_datalake_definitions` factory
+  has been removed, superseded by the more versatile Rclone integration.
+
+### Security
+
+- 🔒 **Rclone RC API Authentication Enforced:** The Rclone service now requires authentication via `RCLONE_RC_USER` and
+  `RCLONE_RC_PASS` in production environments, significantly improving security. Users are explicitly warned to change
+  default credentials in production.
+
+### Refactor
+
+- 🧹 **Flexible Environment Settings Configuration:** The `create_settings_config` method in `EnvironmentSettings` now
+  supports an `extra` argument, allowing for more flexible loading of dynamic, backend-specific Rclone options from
+  environment variables.
+
+---
+
 ## [v0.260.1] - 2026-02-03 - API Configuration Standardization for Docling Loader
 
 ### Refactor
@@ -1343,6 +1690,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   redirect URIs and platform type configurations for the new Attu service.
 - ⚙️ **Deployment Configurations for Attu:** Modified various Docker Compose files and templates to incorporate the Attu
   service and its OAuth2 Proxy into the deployment stack.
+
+---
+
+## [v0.254.6] - 2025-11-24 - Documentation Experience Refresh and Strategic Messaging Update
+
+### Added
+
+- 🖼️ **Enhanced Image Viewing:** Integrated a new lightbox plugin and `medium-zoom` functionality into the
+  documentation, providing an improved and interactive experience when viewing images.
+- ⚡️ **Custom Documentation Layout:** Introduced a dedicated `Layout.vue` component to streamline and centralize
+  documentation theme customizations, including a `GradientBackground` component.
+
+### Changed
+
+- 📄 **Updated Homepage Features:** The homepage (`index.en.md`) feature descriptions have been entirely rewritten to
+  better articulate the platform's value proposition, emphasizing open-source, ownership, rapid deployment, strategic
+  independence, transparency, and collaborative strength.
+- 📐 **Refreshed Architecture Diagrams:** Updated various high-level and low-level architecture diagrams to reflect the
+  latest system design and clarity.
+
+### Refactor
+
+- 🧹 **Documentation Theme Structure:** Refactored the documentation theme's `index.js` to leverage a dedicated
+  `Layout.vue` component, simplifying the theme configuration and improving maintainability.
+- 🔄 **Dependency Import Path:** Adjusted the import path for `CopyOrDownloadAsMarkdownButtons` in the documentation
+  theme for consistency and clarity.
 
 ---
 
@@ -3397,6 +3770,52 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - 🌐 **Documentation Navigation Improvements:** Updated numerous internal links throughout the SDK documentation from
   absolute to relative paths, enhancing navigation robustness and portability.
+
+---
+
+## [v0.243.3] - 2025-09-09 - Next-Gen AI Development: Comprehensive Docs, Core Platform & SDK Refinements
+
+### Added
+
+- ✨ **New Documentation Structure & Content:** Introduced a completely reorganized documentation site, moving from a
+  previous three-part structure to a comprehensive five-part journey: `Vision & Positioning`, `Platform Journey`,
+  `SDK Journey`, `Ecosystem Journey`, and `Reference & Resources`. This includes entirely new sections on the problem
+  solved, our solution, the Swiss approach, and detailed architecture.
+- 🎨 **Interactive Documentation UI:** Enhanced the documentation site with new Vue components for interactive navigation
+  boxes and dynamic gradient backgrounds, significantly improving user experience and visual appeal.
+- 🚀 **Refined Core Platform Deployment:** Introduced `docker-compose-core.dev.yml`, a comprehensive Docker Compose
+  configuration that integrates all core infrastructure services for robust local development and streamlined production
+  deployments.
+- 📦 **SDK Quickstart Examples:** Added new Python files (`my_document_pipeline.py`, `simple_pipeline.py`) to the
+  `aihub_pipeline/playground/quick_start/` directory, providing runnable examples for building data ingestion pipelines.
+- ⚡ **Pipeline Quickstart Tooling:** Added a `quickstart` target to the `aihub_pipeline` Makefile for easily running
+  quickstart pipeline examples.
+- 🌐 **Frontend Development Variables:** Added `WEBUI_URL` and `WS_ENDPOINT` to `.env.dev` to streamline local frontend
+  development.
+- 🧹 **Temporary File Exclusion:** Added `.tmp*` to `.gitignore` in `aihub_pipeline` to ignore temporary build files.
+
+### Changed
+
+- ⚙️ **Deep OpenWebUI Integration & Configuration:** Expanded the `open-webui` service configuration with extensive
+  environment variables, enabling granular control over authentication, storage, model access, PII handling, web search,
+  image generation, code interpretation, audio features, and user permissions.
+- 📖 **Documentation Navigation & Styling:** Updated documentation front matter indices and integrated new custom CSS for
+  enhanced theming, fonts, scrollbars, and improved Mermaid diagram rendering across the site.
+- 🔗 **Documentation Internal Linking:** Updated internal links within `aihub_bot/README.md`, `aihub_lib/README.md`,
+  `aihub_agent/README.md`, `aihub_api/README.md`, and `aihub_process/README.md` to align with the new documentation
+  structure.
+- 📄 **Unified Root README Location:** Modified the `sync-docs.sh` script to correctly place the root `README.md` within
+  the new documentation structure at `docs/6_code_deep_dive/1_introduction/index.md`.
+- 🚀 **Docling UI Enabled by Default:** Enabled the Docling service UI in `docker-compose.dev.yml` for improved
+  visibility during development.
+- 🦶 **Updated Footer Copyright:** Changed the footer message in the documentation site.
+
+### Removed
+
+- 🗑️ **Obsolete Documentation Content:** Deleted outdated documentation sections related to `1_business`,
+  `2_developers`, and `3_features`, which have been superseded by the new, comprehensive documentation structure.
+- 🖼️ **Deprecated Architecture Diagrams:** Removed old architecture diagrams (`tier1.png`, `tier2.png`, etc.) as they
+  have been replaced by new, detailed diagrams reflecting the updated platform vision.
 
 ---
 

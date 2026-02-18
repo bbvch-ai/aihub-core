@@ -1,0 +1,15 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Docs" type="js.build_tools.npm" folderName="Run Documentation">
+    <package-json value="$PROJECT_DIR$/aihub_doc/package.json" />
+    <command value="run" />
+    <scripts>
+      <script value="docs:dev" />
+    </scripts>
+    <node-interpreter value="$USER_HOME$/.nvm/versions/node/v22.16.0/bin/node" />
+    <envs />
+    <EXTENSION ID="com.intellij.javascript.debugger.execution.StartBrowserRunConfigurationExtension">
+      <browser with-js-debugger="true" />
+    </EXTENSION>
+    <method v="2" />
+  </configuration>
+</component>

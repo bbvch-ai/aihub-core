@@ -1,4 +1,7 @@
+from typing import ClassVar
+
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.nats.events import StopEvent, UserMessageEvent
 
 from aihub_agent.agents.Agent import Agent
@@ -8,6 +11,19 @@ from playground.minimal_workflow.multi_locale_workflow.MultiLocaleAgentConfig im
 
 
 class MultiLocaleAgent(Agent):
+    """Agent demonstrating multi-locale patterns."""
+
+    name: ClassVar[LocaleString] = LocaleString(
+        en="Multi Locale Agent", de="Multi-Locale Agent", fr="Agent Multi-Locale", it="Agente Multi-Locale"
+    )
+    description: ClassVar[LocaleString] = LocaleString(
+        en="Agent for multi-locale demo",
+        de="Agent für Multi-Locale Demo",
+        fr="Agent pour démo multi-locale",
+        it="Agente per demo multi-locale",
+    )
+    icon: ClassVar[str] = "mage:globe"
+
     @step()
     async def start_step(
         self, event: UserMessageEvent, t: LocaleHandler, agent_config: MultiLocaleAgentConfig

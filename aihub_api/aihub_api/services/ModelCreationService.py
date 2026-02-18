@@ -1,6 +1,7 @@
 import copy
 
 from aihub_lib.nats.events.discovery.agent.AgentClassDiscoveryResponseEvent import AgentConfigSpecs, EventSpecs
+from aihub_lib.nats.events.discovery.process.ProcessConfigSpecs import ProcessConfigSpecs
 from jambo import SchemaConverter
 from pydantic import BaseModel, ConfigDict, create_model
 
@@ -53,6 +54,11 @@ class ModelCreationService:
     @staticmethod
     def create_agent_config_model(agent_config_specs: AgentConfigSpecs) -> type[BaseModel]:
         schema = copy.deepcopy(agent_config_specs.agent_config_schema)
+        return SchemaConverter.build(schema)
+
+    @staticmethod
+    def create_process_config_model(process_config_specs: ProcessConfigSpecs) -> type[BaseModel]:
+        schema = copy.deepcopy(process_config_specs.process_config_schema)
         return SchemaConverter.build(schema)
 
     @staticmethod

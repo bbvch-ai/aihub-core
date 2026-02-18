@@ -1,6 +1,17 @@
 test: "Ceci est un test"
 welcome: "Bienvenue sur bbv ai-hub"
 
+common:
+  actions:
+    save: "Enregistrer"
+    cancel: "Annuler"
+    create: "Créer"
+    delete: "Supprimer"
+    edit: "Modifier"
+  loading: "Chargement..."
+  selectModel: "Sélectionner un modèle"
+  selectDatabase: "Sélectionner une base de données"
+
 models:
   title: "Modèles"
   error: "Erreur lors du chargement des modèles"
@@ -70,7 +81,7 @@ http_error:
     404: "Désolé, nous n'avons pas pu trouver cette page."
     405: "Cette action n'est pas autorisée ici."
     408: "La requête a expiré. Veuillez réessayer."
-    429: "Trop de requêtes. Veuillez patienter un instant."
+    429: "Trop de requêtes."
 
     # 5xx Server Errors
     500: "Une erreur s'est produite sur nos serveurs."
@@ -253,6 +264,13 @@ service:
 agent:
   title: "Agents"
   can_chat: "Peut chatter"
+  navigation:
+    basic: "Aperçu"
+    workflow: "Flux de travail"
+    threads: "Fils de discussion"
+    configuration: "Configuration"
+    chat: "Chat"
+    memories: "Mémoires"
   overview:
     startEvents: "Événements de démarrage"
     stopEvents: "Événements d'arrêt"
@@ -263,17 +281,18 @@ agent:
     status: "Statut:"
     online: "En ligne"
     offline: "Hors ligne"
+  configuration:
+    title: "Configuration de l'agent"
+    description: "Configurez le comportement d'exécution et les paramètres de cet agent"
+    runtimeSettings: "Paramètres d'exécution"
+    noConfiguration: "Aucune configuration disponible pour cet agent"
+    saveSuccess: "Configuration enregistrée avec succès"
+    saveError: "Échec de l'enregistrement de la configuration"
   chat:
     title: "Démarrer un nouveau chat"
     placeholder: "Tapez le message que vous souhaitez envoyer à l'agent"
     createThreadAndSend: "Créer un fil de discussion et envoyer"
     manuallyCreatedThread: "Fil de discussion créé manuellement"
-  navigation:
-    basic: "De base"
-    workflow: "Flux de travail"
-    threads: "Fils de discussion"
-    memories: "Mémoires"
-    chat: "Chat"
   availableAgents: "Agents disponibles"
   list:
     name: "Nom"
@@ -289,6 +308,43 @@ agent:
     title: "Flux de travail agentique"
   threads:
     title: "Fils de discussion de l'agent"
+  create:
+    button: "Créer un nouvel agent"
+    title: "Créer un nouvel agent"
+    cancel: "Annuler"
+    selectClass: "Type d'agent"
+    selectClassPlaceholder: "Sélectionner un type d'agent..."
+    agentId: "ID de l'agent"
+    agentIdPlaceholder: "mon-nouvel-agent"
+    agentIdHelp: "Identifiant unique (lettres minuscules, chiffres, tirets, underscores)"
+    agentIdInvalid: "Seules les lettres minuscules, les chiffres, les tirets et les underscores sont autorisés"
+    agentIdTooLong: "L'ID de l'agent doit comporter au maximum 100 caractères"
+    configuration: "Configuration"
+    noAgentClasses: "Aucun type d'agent disponible. Assurez-vous qu'au moins un agent est en cours d'exécution."
+    submit: "Créer l'agent"
+    success: "Agent créé avec succès"
+    error: "Échec de la création de l'agent"
+    steps:
+      basicInfo: "Informations de base"
+  delete:
+    button: "Supprimer"
+    title: "Supprimer l'agent"
+    confirm: "Êtes-vous sûr de vouloir supprimer cet agent ?"
+    confirmMessage: "Cette action est irréversible. La configuration de l'agent sera définitivement supprimée."
+    success: "Agent supprimé avec succès"
+    error: "Échec de la suppression de l'agent"
+    cannotDeleteDefault: "Les configurations d'agents par défaut ne peuvent pas être supprimées"
+  add_instance:
+    title: "Ajouter un agent"
+    description: "Créer une nouvelle instance d'agent"
+  selector:
+    class:
+      label: "Type d'agent"
+      placeholder: "Sélectionner un type d'agent..."
+    id:
+      label: "Profil d'agent"
+      placeholder: "Sélectionner un profil d'agent..."
+      help: "Choisissez le profil d'agent spécifique à utiliser"
   memories:
     title: "Mémoires de l'agent"
     description: "Mémoires collectées par {agentName} à votre sujet"
@@ -445,6 +501,7 @@ dashboard:
       label: "Tâches déléguées"
 
 evaluation:
+  langfuse_link: "Lancer des expériences"
   dataset:
     title: "Jeux de données"
     created_at: "Créé le:"
@@ -469,37 +526,6 @@ evaluation:
     save_action: "Enregistrer"
     saved_summary: "Enregistré"
     saved_detail: "Jeu de données enregistré"
-  experiment:
-    title: "Expériences"
-    created_at: "Exécuté le:"
-    dataset: "Jeu de données"
-    language_and_dataset: "Langue & Jeu de données"
-    language: "Langue de l'expérience:"
-    create_description: "Créez une nouvelle expérience avec un jeu de données et un Assistant!"
-    name: "Nom"
-    description: "Description"
-    agent: "Agent"
-    select_dataset: "Sélectionner un jeu de données"
-    select_assistant: "Sélectionner un Assistant"
-    cancel: "Annuler"
-    save: "Enregistrer"
-    running: "L'expérience est en cours d'exécution!"
-    running_description: "Cela peut prendre plusieurs minutes. Vous pouvez également quitter cette page et revenir plus tard."
-    failed: "L'expérience a échoué!"
-    failed_description: "Veuillez contacter l'équipe de développement AI-Hub pour savoir ce qui s'est mal passé."
-    filter_by_assistant: "Filtrer par Assistant"
-    filter_by_dataset: "Filtrer par jeu de données"
-    run_experiment: "Exécuter l'expérience"
-    create_new: "Créer une nouvelle expérience"
-    result:
-      question: "Question"
-      reference_answer: "Réponse de référence"
-      assistant_answer: "Réponse de l'assistant"
-      latency_ms: "Latence"
-      conciseness: "Concision"
-      correctness: "Exactitude"
-      completeness: "Complétude"
-
 role:
   title: "Rôles d'accès"
   name: "Nom"
@@ -511,6 +537,22 @@ role:
   is_new: "Nouveau"
   save_button: "Enregistrer"
   access_rules: "Règles d'accès"
+  usage_limits: "Limites d'utilisation"
+  usage_pattern: "Modèle"
+  usage_limit_value: "Limite"
+  usage_period: "Période"
+  calls_per: "appels"
+  unlimited: "Illimité"
+  no_access_rules: "Aucune règle d'accès définie"
+  access_rules_help_intro: "Les règles hiérarchiques contrôlent l'accès aux ressources :"
+  access_rules_help_all_agents: "Tous les agents"
+  access_rules_help_agent_instances: "Toutes les instances de MyAgent"
+  access_rules_help_service: "Service Knowledge"
+  access_rules_help_admin: "Accès admin à tout"
+  pattern_help_intro: "Les modèles utilisent des jokers pour les agents :"
+  pattern_help_all: "Tous les agents"
+  pattern_help_wildcard: "Toutes les instances de MyAgent"
+  pattern_help_specific: "Uniquement une instance spécifique"
   create_dialog:
     description: "Créez un nouveau rôle avec des règles d'accès. Pour attribuer le nouveau rôle aux utilisateurs, veuillez utiliser votre AD."
   remove_dialog:
@@ -524,6 +566,20 @@ role:
   role_saved:
     summary: "Rôle enregistré"
     detail: "Rôle enregistré avec succès, les nouvelles règles d'accès prennent effet immédiatement."
+
+usage:
+  title: "Utilisation"
+  calls_remaining: "{current} / {limit} appels agent"
+  unlimited_calls: "Appels agent illimités"
+  resets_at: "Réinitialisation {time}"
+  limit_exceeded: "Limite d'appels agent atteinte"
+  limit_exceeded_detail: "Veuillez patienter jusqu'à {time} ou contacter votre administrateur"
+
+period:
+  1h: "Par heure"
+  1d: "Par jour"
+  7d: "Par semaine"
+  1mo: "Par mois"
 
 notification:
   title: "Notifications"
@@ -562,6 +618,73 @@ bar:
 
 process:
   title: "Processus"
+  overview:
+    name: "Nom"
+    class: "Classe"
+    processId: "ID du processus"
+    status: "Statut"
+    online: "En ligne"
+    offline: "Hors ligne"
+  navigation:
+    overview: "Aperçu"
+    walkthroughs: "Exécutions"
+    start: "Démarrer une exécution"
+    configuration: "Configuration"
+  list:
+    online: "En ligne"
+    offline: "Hors ligne"
+  configuration:
+    title: "Configuration du processus"
+    description: "Configurez le comportement d'exécution de cette instance de processus."
+    runtimeSettings: "Paramètres d'exécution"
+    saveSuccess: "Configuration enregistrée avec succès"
+    saveError: "Échec de l'enregistrement de la configuration"
+    noConfiguration: "Aucune configuration disponible pour ce processus."
+  create:
+    title: "Créer un nouveau processus"
+    selectClass: "Type de processus"
+    selectClassPlaceholder: "Sélectionnez un type de processus..."
+    noProcessClasses: "Aucun type de processus disponible."
+    steps:
+      basicInfo: "Informations de base"
+    submit: "Créer le processus"
+    cancel: "Annuler"
+    success: "Processus créé avec succès"
+    error: "Échec de la création du processus"
+  delete:
+    button: "Supprimer"
+    title: "Supprimer le processus"
+    confirmMessage: "Êtes-vous sûr de vouloir supprimer cette instance de processus ? Cette action est irréversible."
+    success: "Processus supprimé avec succès"
+    error: "Échec de la suppression du processus"
+  add_instance:
+    title: "Ajouter un processus"
+    description: "Créer une nouvelle instance de processus"
+  walkthrough:
+    list:
+      created: "Créé"
+      updated: "Dernière interaction"
+      agents: "Agents"
+      users: "Utilisateurs"
+      state: "État"
+      in_progress: "En cours"
+      done: "Terminé"
+      steps: "Progression"
+
+form:
+  locale_input:
+    translate_tooltip: "Traduire dans toutes les langues"
+
+lib:
+  vectorStore:
+    label: "Stockage vectoriel"
+    help: "Sélectionner la base de connaissances et les espaces de noms à rechercher"
+    database:
+      label: "Base de données"
+    namespaces:
+      label: "Espaces de noms"
+      placeholder: "Sélectionner les espaces de noms (vide = tous)"
+      help: "Laisser vide pour rechercher tous les espaces de noms"
 
 memory:
   title: "Souvenirs"

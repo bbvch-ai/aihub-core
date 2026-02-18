@@ -90,6 +90,12 @@ async def process_document(self, event: DocumentUploadEvent) -> DocumentProcesse
 To keep your agent's logic separate from its settings, the SDK uses a strongly-typed configuration system. This allows
 you to change an agent's behavior (e.g., switching LLM models) without changing its code.
 
+::: tip UI-Editable Configuration
+To make your agent's configuration editable through the Admin UI, see
+[Configurable Agent Forms](../8_configurable_agents/). The Form Duality Pattern allows administrators to create and
+customize agent profiles without code changes.
+:::
+
 ### `AgentConfig`: Global Configuration
 
 Define a class that inherits from `AgentConfig` for settings that apply to the entire agent. This object can be injected

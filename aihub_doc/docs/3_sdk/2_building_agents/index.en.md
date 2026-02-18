@@ -33,6 +33,8 @@ This guide is structured to build your knowledge progressively:
 7. [**Production Deployment**](./7_production_deployment/) - Guidelines for packaging and deploying your agent.
 8. [**Agent Observation**](./8_agent_observation/) - Monitoring your agent's behavior and performance with integrated
    tracing.
+9. [**Configurable Agent Forms**](./8_configurable_agents/) - Making agent configuration editable through the Admin UI
+   using the Form Duality Pattern.
 
 ## Key Principles of the SDK
 
@@ -60,7 +62,7 @@ multiple specialized agents.
    take to achieve its goal.
 2. **Implement the Core Logic**: Write your `Agent` class, define its strongly-typed `AgentConfig`, and implement the
    `@step` methods that transform events.
-3. **Test and Debug**: Use the `AgentTestRunner` for unit testing and a tracing tool like Phoenix to visually debug the
+3. **Test and Debug**: Use the `AgentTestRunner` for unit testing and a tracing tool like Langfuse to visually debug the
    flow of events through your agent.
 4. **Deploy and Monitor**: Package your agent and deploy it to the AI-Hub, where its performance and behavior can be
    monitored in real-time.

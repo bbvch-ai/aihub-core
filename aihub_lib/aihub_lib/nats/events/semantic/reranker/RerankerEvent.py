@@ -1,4 +1,4 @@
-from typing import Annotated, ClassVar
+from typing import Annotated, ClassVar, Self
 
 from llama_index.core.schema import NodeWithScore
 from openinference.semconv.trace import OpenInferenceSpanKindValues, RerankerAttributes, SpanAttributes
@@ -58,5 +58,5 @@ class RerankerEvent(SemanticEvent):
         return {k: v for k, v in attributes.items() if v is not None}
 
     @classmethod
-    def from_nodes(cls, nodes: list[NodeWithScore]) -> "RerankerEvent":
+    def from_nodes(cls, nodes: list[NodeWithScore]) -> Self:
         return cls(output_nodes=nodes)
