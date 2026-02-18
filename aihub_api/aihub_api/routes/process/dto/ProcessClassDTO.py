@@ -91,5 +91,5 @@ class ProcessClassDTO(BaseModel):
             program_inputs=[],
             agent_inputs=[],
             is_online=entity.is_online,
-            templates=[TemplateData(**t) for t in entity.templates] if entity.templates else [],
+            templates=[TemplateData.model_validate(t) for t in entity.templates] if entity.templates else [],
         )

@@ -23,6 +23,8 @@ from aihub_lib.nats.events.form.elements.InputText import InputText
 from aihub_lib.nats.events.form.elements.LocaleInput import LocaleInput
 from aihub_lib.nats.events.form.elements.Repeater import Repeater
 from aihub_lib.nats.events.form.Form import Form
+from aihub_lib.nats.events.form.TemplateData import TemplateData
+from aihub_lib.processes.ProcessConfig import ProcessConfig
 
 # =============================================================================
 # Test Form Classes
@@ -777,3 +779,58 @@ class TestTemplateData:
         assert result_a_dict["customer_bucket"] == "qa-bucket"
         assert result_b_dict["customer_bucket"] == "summary-bucket"
         assert result_a != result_b
+
+    def test_process_config_includes_process_id_identity_field(self) -> None:
+        """Test that ProcessConfig uses process_id (not agent_id) as identity field."""
+        locale = LocaleString(en="Test Process", de="Testprozess")
+
+        data_config = ProcessConfig(
+            process_id="proc-1",
+            name=locale,
+            description=locale,
+            icon="mage:broadcast",
+        )
+
+        form_config = ProcessConfig(
+            process_id=InputText(label=LocaleString(en="ID")),
+            name=LocaleInput(label=LocaleString(en="Name"), input_type="text"),
+            description=LocaleInput(label=LocaleString(en="Desc"), input_type="textarea"),
+        )
+
+        result = data_config.to_template_data(form_config)
+        result_dict = result.model_dump()
+
+        assert "process_id" in result_dict
+        assert result_dict["process_id"] == "proc-1"
+        assert "name" in result_dict
+        assert "description" in result_dict
+        assert "icon" in result_dict
+
+    def test_template_data_round_trip_serialization(self) -> None:
+        """Test that TemplateData survives model_dump() → model_validate() round-trip."""
+        locale = LocaleString(en="Test", de="Test")
+
+        data_config = AgentConfig(
+            agent_id="test-1",
+            name=locale,
+            description=locale,
+            icon="mage:robot",
+        )
+
+        form_config = AgentConfig(
+            agent_id=InputText(label=LocaleString(en="ID")),
+            name=LocaleInput(label=LocaleString(en="Name"), input_type="text"),
+            description=LocaleInput(label=LocaleString(en="Desc"), input_type="textarea"),
+        )
+
+        original = data_config.to_template_data(form_config)
+        raw_dict = original.model_dump()
+
+        # Simulate DB round-trip: dict stored in MongoDB, then reconstructed
+        restored = TemplateData.model_validate(raw_dict)
+
+        assert isinstance(restored.name, LocaleString)
+        assert isinstance(restored.description, LocaleString)
+        assert restored.name.en == "Test"
+        assert restored.icon == "mage:robot"
+        assert restored.model_dump() == raw_dict

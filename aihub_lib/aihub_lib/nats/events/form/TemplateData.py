@@ -14,4 +14,4 @@ class TemplateData(BaseModel):
 
     name: LocaleString
     description: LocaleString
-    icon: str
+    icon: str | None = None

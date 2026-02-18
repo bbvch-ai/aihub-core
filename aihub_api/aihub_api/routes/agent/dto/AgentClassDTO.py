@@ -165,7 +165,7 @@ class AgentClassDTO(BaseModel):
             hitl_response_events=hitl_response_events,
             network_graph=network_graph,
             is_online=entity.is_online,
-            templates=[TemplateData(**t) for t in entity.templates] if entity.templates else [],
+            templates=[TemplateData.model_validate(t) for t in entity.templates] if entity.templates else [],
         )
         return dto.in_locale(t)
 
