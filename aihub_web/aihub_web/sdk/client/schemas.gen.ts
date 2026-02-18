@@ -9500,7 +9500,7 @@ export const ImagesResponseSchema = {
         usage: {
             anyOf: [
                 {
-                    $ref: '#/components/schemas/Usage'
+                    $ref: '#/components/schemas/openai__types__images_response__Usage'
                 },
                 {
                     type: 'null'
@@ -13216,7 +13216,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1771416230
+            default: 1771421107
         },
         owned_by: {
             type: 'string',
@@ -18735,6 +18735,37 @@ export const SuiteDTOSchema = {
     title: 'SuiteDTO'
 } as const;
 
+export const TenantIdentitySchema = {
+    properties: {
+        id: {
+            type: 'string',
+            title: 'Id',
+            description: 'Unique tenant identifier'
+        },
+        name: {
+            type: 'string',
+            title: 'Name',
+            description: 'Tenant display name'
+        },
+        access_rules: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Access Rules',
+            description: 'Access rules granted to this tenant'
+        }
+    },
+    type: 'object',
+    required: [
+        'id',
+        'name',
+        'access_rules'
+    ],
+    title: 'TenantIdentity',
+    description: 'Represents a tenant\'s identity in the multi-tenant system.'
+} as const;
+
 export const TextBlockSchema = {
     properties: {
         block_type: {
@@ -20218,7 +20249,7 @@ export const TranscriptionVerboseSchema = {
         usage: {
             anyOf: [
                 {
-                    $ref: '#/components/schemas/openai__types__audio__transcription_verbose__Usage'
+                    $ref: '#/components/schemas/Usage'
                 },
                 {
                     type: 'null'
@@ -20528,29 +20559,21 @@ export const UpdateRoleRequestSchema = {
 
 export const UsageSchema = {
     properties: {
-        input_tokens: {
-            type: 'integer',
-            title: 'Input Tokens'
+        seconds: {
+            type: 'number',
+            title: 'Seconds'
         },
-        input_tokens_details: {
-            $ref: '#/components/schemas/UsageInputTokensDetails'
-        },
-        output_tokens: {
-            type: 'integer',
-            title: 'Output Tokens'
-        },
-        total_tokens: {
-            type: 'integer',
-            title: 'Total Tokens'
+        type: {
+            type: 'string',
+            const: 'duration',
+            title: 'Type'
         }
     },
     additionalProperties: true,
     type: 'object',
     required: [
-        'input_tokens',
-        'input_tokens_details',
-        'output_tokens',
-        'total_tokens'
+        'seconds',
+        'type'
     ],
     title: 'Usage'
 } as const;
@@ -20837,19 +20860,11 @@ export const UserIdentitySchema = {
             },
             type: 'array',
             title: 'Roles',
-            description: 'The roles assigned to the user.'
+            description: 'The roles assigned to the user within the acting tenant.'
         },
-        profile_image: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Profile Image',
-            description: 'Data URL (base64) representation of profile image'
+        acting_within_tenant: {
+            $ref: '#/components/schemas/TenantIdentity',
+            description: 'The tenant context the user is operating within.'
         }
     },
     type: 'object',
@@ -20857,9 +20872,11 @@ export const UserIdentitySchema = {
         'id',
         'name',
         'email',
-        'roles'
+        'roles',
+        'acting_within_tenant'
     ],
-    title: 'UserIdentity'
+    title: 'UserIdentity',
+    description: 'Lightweight identity object for authenticated users.'
 } as const;
 
 export const UserMessageEventSchema = {
@@ -21418,27 +21435,6 @@ export const WorkflowGraphSchema = {
     description: 'Complete workflow graph representation.'
 } as const;
 
-export const openai__types__audio__transcription_verbose__UsageSchema = {
-    properties: {
-        seconds: {
-            type: 'number',
-            title: 'Seconds'
-        },
-        type: {
-            type: 'string',
-            const: 'duration',
-            title: 'Type'
-        }
-    },
-    additionalProperties: true,
-    type: 'object',
-    required: [
-        'seconds',
-        'type'
-    ],
-    title: 'Usage'
-} as const;
-
 export const openai__types__chat__chat_completion_message_custom_tool_call_param__CustomSchema = {
     properties: {
         input: {
@@ -21531,6 +21527,35 @@ export const openai__types__chat__completion_create_params__FunctionSchema = {
         'name'
     ],
     title: 'Function'
+} as const;
+
+export const openai__types__images_response__UsageSchema = {
+    properties: {
+        input_tokens: {
+            type: 'integer',
+            title: 'Input Tokens'
+        },
+        input_tokens_details: {
+            $ref: '#/components/schemas/UsageInputTokensDetails'
+        },
+        output_tokens: {
+            type: 'integer',
+            title: 'Output Tokens'
+        },
+        total_tokens: {
+            type: 'integer',
+            title: 'Total Tokens'
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: [
+        'input_tokens',
+        'input_tokens_details',
+        'output_tokens',
+        'total_tokens'
+    ],
+    title: 'Usage'
 } as const;
 
 export const AddMemoryToChatHistoryEventWritableSchema = {
