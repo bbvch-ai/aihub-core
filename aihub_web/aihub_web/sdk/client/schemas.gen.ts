@@ -6273,41 +6273,6 @@ export const DocumentBlockSchema = {
     description: 'A representation of a document to directly pass to the LLM.'
 } as const;
 
-export const DocumentConversionMetadataSchema = {
-    properties: {
-        filename: {
-            type: 'string',
-            title: 'Filename',
-            description: 'Original filename of the converted document'
-        }
-    },
-    type: 'object',
-    required: [
-        'filename'
-    ],
-    title: 'DocumentConversionMetadata'
-} as const;
-
-export const DocumentConversionResponseSchema = {
-    properties: {
-        page_content: {
-            type: 'string',
-            title: 'Page Content',
-            description: 'Markdown content extracted from the document'
-        },
-        metadata: {
-            $ref: '#/components/schemas/DocumentConversionMetadata',
-            description: 'Metadata about the converted document'
-        }
-    },
-    type: 'object',
-    required: [
-        'page_content',
-        'metadata'
-    ],
-    title: 'DocumentConversionResponse'
-} as const;
-
 export const DocumentDTOSchema = {
     properties: {
         id: {
@@ -6400,6 +6365,49 @@ export const DocumentDTOSchema = {
         'is_ingested'
     ],
     title: 'DocumentDTO'
+} as const;
+
+export const DocumentParsingMetadataSchema = {
+    properties: {
+        filename: {
+            type: 'string',
+            title: 'Filename',
+            description: 'Original filename'
+        }
+    },
+    type: 'object',
+    required: [
+        'filename'
+    ],
+    title: 'DocumentParsingMetadata',
+    description: 'Metadata about the converted document.'
+} as const;
+
+export const DocumentParsingResponseSchema = {
+    properties: {
+        page_content: {
+            type: 'string',
+            title: 'Page Content',
+            description: 'Extracted text content (markdown)'
+        },
+        metadata: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/DocumentParsingMetadata'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Document metadata'
+        }
+    },
+    type: 'object',
+    required: [
+        'page_content'
+    ],
+    title: 'DocumentParsingResponse',
+    description: 'Response schema for document conversion.\n\nFollows the OpenWebUI External Document Loader specification.\nCan return either a single document or a list of documents (one per page).'
 } as const;
 
 export const DocumentUploadRequestSchema = {
@@ -9370,6 +9378,16 @@ export const ImageGenerationRequestSchema = {
         'prompt'
     ],
     title: 'ImageGenerationRequest'
+} as const;
+
+export const ImageModeSchema = {
+    type: 'string',
+    enum: [
+        's3',
+        'base64'
+    ],
+    title: 'ImageMode',
+    description: 'Image handling mode for parsed documents.'
 } as const;
 
 export const ImageURLSchema = {
@@ -13198,7 +13216,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1771420149
+            default: 1771416230
         },
         owned_by: {
             type: 'string',
@@ -18717,37 +18735,6 @@ export const SuiteDTOSchema = {
     title: 'SuiteDTO'
 } as const;
 
-export const TenantIdentitySchema = {
-    properties: {
-        id: {
-            type: 'string',
-            title: 'Id',
-            description: 'Unique tenant identifier'
-        },
-        name: {
-            type: 'string',
-            title: 'Name',
-            description: 'Tenant display name'
-        },
-        access_rules: {
-            items: {
-                type: 'string'
-            },
-            type: 'array',
-            title: 'Access Rules',
-            description: 'Access rules granted to this tenant'
-        }
-    },
-    type: 'object',
-    required: [
-        'id',
-        'name',
-        'access_rules'
-    ],
-    title: 'TenantIdentity',
-    description: 'Represents a tenant\'s identity in the multi-tenant system.'
-} as const;
-
 export const TextBlockSchema = {
     properties: {
         block_type: {
@@ -20850,11 +20837,19 @@ export const UserIdentitySchema = {
             },
             type: 'array',
             title: 'Roles',
-            description: 'The roles assigned to the user within the acting tenant.'
+            description: 'The roles assigned to the user.'
         },
-        acting_within_tenant: {
-            $ref: '#/components/schemas/TenantIdentity',
-            description: 'The tenant context the user is operating within.'
+        profile_image: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Profile Image',
+            description: 'Data URL (base64) representation of profile image'
         }
     },
     type: 'object',
@@ -20862,11 +20857,9 @@ export const UserIdentitySchema = {
         'id',
         'name',
         'email',
-        'roles',
-        'acting_within_tenant'
+        'roles'
     ],
-    title: 'UserIdentity',
-    description: 'Lightweight identity object for authenticated users.'
+    title: 'UserIdentity'
 } as const;
 
 export const UserMessageEventSchema = {

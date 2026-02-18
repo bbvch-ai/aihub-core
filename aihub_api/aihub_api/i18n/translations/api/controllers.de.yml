@@ -2,7 +2,7 @@ agent:
   name: "KI-Assistenten"
   description: "KI-Assistenten durchsuchen und nutzen"
 
-docling:
+parsing:
   name: "Dokumentenkonverter"
   description: "Dokumente in verschiedene Formate konvertieren"
 

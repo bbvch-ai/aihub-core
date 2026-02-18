@@ -221,10 +221,10 @@ storage_resources = {
 
 # B. Document Processing Resources  
 processing_resources = {
-    # Document parser - uses AI-powered Docling for PDF/Word/etc
-    "document_parser": DocumentParserResource(loader_type=LoaderType.DOCLING),
-    
-    # Node parser - chunks documents using structural elements  
+    # Document parser - uses AI-powered MinerU for PDF/Word/etc
+    "document_parser": DocumentParserResource(loader_type=LoaderType.MINERU),
+
+    # Node parser - chunks documents using structural elements
     "node_parser": MarkdownStructuralNodeParserResource(),
 }
 
@@ -318,7 +318,7 @@ defs = Definitions(
         **default_io_manager_s3_datalake_resources(CONTAINER_NAME, DIRECTORY_NAME),
         **s3_data_lake_resources(CONTAINER_NAME, DIRECTORY_NAME, "__figures__"),
         **local_mongo_milvus_storage_context_resource("http://localhost:19530", STORE_NAME, NAMESPACE_NAME),
-        "document_parser": DocumentParserResource(loader_type=LoaderType.DOCLING),
+        "document_parser": DocumentParserResource(loader_type=LoaderType.MINERU),
         "node_parser": MarkdownStructuralNodeParserResource(),
         "embedding_model": EmbeddingModelResource(
             embedding_config=EmbeddingModelConfig(model_name="azure/text-embedding-3-large")
@@ -344,7 +344,7 @@ data_lake (observable) → documents → nodes
 ### 7. Understanding the data flow:
 
 1. **Observable Data Lake**: Monitors for new PDF, Word, Markdown, etc. files
-2. **Documents**: Parses files using AI-powered document intelligence (Docling)
+2. **Documents**: Parses files using AI-powered document intelligence (MinerU)
 3. **Nodes**: Chunks documents using structural parsing and generates embeddings
 
 ### 8. Add jobs and scheduling to your pipeline

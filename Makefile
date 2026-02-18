@@ -46,6 +46,8 @@ pr-ready:
 	@(cd aihub_bot &&  make pr-ready)
 	@(cd aihub_web && make pr-ready)
 	@poetry run mdformat --number $$(git ls-files '*.md')
+	@$(MAKE) generate-compose
+	@$(MAKE) license-check
 
 # Use local cores for development (with poetry install)
 use-local-core:
@@ -57,7 +59,7 @@ use-local-core-without-install:
 	@echo "Switching to local cores without poetry install..."
 	poetry run python switch_dependencies.py local
 
-TAG ?= v0.262.3
+TAG ?= v0.263.0
 
 # Use remote cores (with poetry install)
 use-remote-core:

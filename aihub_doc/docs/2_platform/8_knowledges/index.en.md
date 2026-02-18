@@ -57,7 +57,7 @@ changes into the AI-Hub on the configured schedule.
 
 The system processes each uploaded document through several stages:
 
-Parsing: Docling extracts text, tables, figures, and structure from PDFs and Office documents. It handles complex
+Parsing: MinerU extracts text, tables, figures, and structure from PDFs and Office documents. It handles complex
 layouts, multi-column pages, and embedded content while preserving logical structure.
 
 Chunking: Large documents split into smaller pieces that maintain context. A 50-page manual becomes hundreds of chunks,
@@ -110,7 +110,7 @@ The architecture uses:
 
 - FerretDB for document metadata and processing status
 - Milvus for vector storage and semantic search
-- Docling for document parsing and structure extraction
+- MinerU for document parsing and structure extraction
 - SeaweedFS for S3-compatible file storage
 - LlamaIndex for chunking and embedding orchestration
 

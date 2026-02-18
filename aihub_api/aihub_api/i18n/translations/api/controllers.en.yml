@@ -2,7 +2,7 @@ agent:
   name: "AI Assistants"
   description: "Browse and interact with AI assistants"
 
-docling:
+parsing:
   name: "Document Converter"
   description: "Convert documents to different formats"
 

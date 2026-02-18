@@ -120,6 +120,19 @@ def wrap_tables_with_tags(tables: list[str]) -> str:
     return "\n\n".join(f"<table>{t}</table>" for t in tables if t.strip())
 
 
+def wrap_markdown_tables(markdown_content: str) -> str:
+    """Wrap markdown tables in <table> tags so MarkdownStructuralNodeParser can identify them."""
+    pattern = r"(\|[^\n]+\|\r?\n\|[:\-| ]+\|\r?(?:\n\|[^\n]+\|\r?)*)"
+
+    tables = re.findall(pattern, markdown_content)
+
+    for table in tables:
+        wrapped = wrap_tables_with_tags([table])
+        markdown_content = markdown_content.replace(table, wrapped, 1)
+
+    return markdown_content
+
+
 def split_dataframe_into_chunks(
     df: pd.DataFrame,
     max_tokens: int,

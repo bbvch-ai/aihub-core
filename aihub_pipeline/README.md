@@ -215,7 +215,7 @@ Before implementing new pipeline components, understand the existing data flow a
 
    ```python
    class DocumentParserResource(ConfigurableResource):
-       loader_type: LoaderType = LoaderType.DOCLING
+       loader_type: LoaderType = LoaderType.MINERU
        
        def get_parser(self) -> DocumentParser:
            """Get configured document parser."""
@@ -493,7 +493,7 @@ def development_resources() -> dict[str, ConfigurableResource]:
             namespace_name="dev",
         ),
         "document_parser": DocumentParserResource(
-            loader_type=LoaderType.DOCLING,
+            loader_type=LoaderType.MINERU,
         ),
     }
 
@@ -506,7 +506,7 @@ def production_resources() -> dict[str, ConfigurableResource]:
             namespace_name="production",
         ),
         "document_parser": DocumentParserResource(
-            loader_type=LoaderType.DOCLING,
+            loader_type=LoaderType.MINERU,
             timeout=300,
         ),
     }

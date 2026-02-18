@@ -3812,34 +3812,6 @@ export type DocumentBlock = {
 };
 
 /**
- * DocumentConversionMetadata
- */
-export type DocumentConversionMetadata = {
-    /**
-     * Filename
-     *
-     * Original filename of the converted document
-     */
-    filename: string;
-};
-
-/**
- * DocumentConversionResponse
- */
-export type DocumentConversionResponse = {
-    /**
-     * Page Content
-     *
-     * Markdown content extracted from the document
-     */
-    page_content: string;
-    /**
-     * Metadata about the converted document
-     */
-    metadata: DocumentConversionMetadata;
-};
-
-/**
  * DocumentDTO
  */
 export type DocumentDto = {
@@ -3903,6 +3875,41 @@ export type DocumentDto = {
      * Document title.
      */
     document_title?: string | null;
+};
+
+/**
+ * DocumentParsingMetadata
+ *
+ * Metadata about the converted document.
+ */
+export type DocumentParsingMetadata = {
+    /**
+     * Filename
+     *
+     * Original filename
+     */
+    filename: string;
+};
+
+/**
+ * DocumentParsingResponse
+ *
+ * Response schema for document conversion.
+ *
+ * Follows the OpenWebUI External Document Loader specification.
+ * Can return either a single document or a list of documents (one per page).
+ */
+export type DocumentParsingResponse = {
+    /**
+     * Page Content
+     *
+     * Extracted text content (markdown)
+     */
+    page_content: string;
+    /**
+     * Document metadata
+     */
+    metadata?: DocumentParsingMetadata | null;
 };
 
 /**
@@ -5773,6 +5780,20 @@ export type ImageGenerationRequest = {
     style?: 'vivid' | 'natural' | null;
     [key: string]: unknown | string | string | null | number | null | 'standard' | 'hd' | null | 'url' | 'b64_json' | null | '256x256' | '512x512' | '1024x1024' | '1792x1024' | '1024x1792' | null | 'vivid' | 'natural' | null | undefined;
 };
+
+/**
+ * ImageMode
+ *
+ * Image handling mode for parsed documents.
+ */
+export const ImageMode = { S3: 's3', BASE64: 'base64' } as const;
+
+/**
+ * ImageMode
+ *
+ * Image handling mode for parsed documents.
+ */
+export type ImageMode = typeof ImageMode[keyof typeof ImageMode];
 
 /**
  * ImageURL
@@ -23401,16 +23422,40 @@ export type UpdateOrganizationMemoryResponse = UpdateOrganizationMemoryResponses
 
 export type ProcessDocumentData = {
     body?: never;
+    headers?: {
+        /**
+         * X-Filename
+         */
+        'x-filename'?: string;
+        /**
+         * X-File-Name
+         */
+        'x-file-name'?: string | null;
+    };
     path?: never;
-    query?: never;
-    url: '/docling/process';
+    query?: {
+        /**
+         * Image handling: 's3' (signed URLs) or 'base64' (embedded data URIs)
+         */
+        image_mode?: ImageMode;
+    };
+    url: '/parsing/process';
 };
+
+export type ProcessDocumentErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ProcessDocumentError = ProcessDocumentErrors[keyof ProcessDocumentErrors];
 
 export type ProcessDocumentResponses = {
     /**
      * Successful Response
      */
-    200: DocumentConversionResponse;
+    200: DocumentParsingResponse;
 };
 
 export type ProcessDocumentResponse = ProcessDocumentResponses[keyof ProcessDocumentResponses];
