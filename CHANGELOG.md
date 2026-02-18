@@ -5,6 +5,66 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.262.3] - 2026-02-17 - Enhanced Developer Tooling and IDE Configurations
+
+### Added
+
+- 🚀 **Introduced Service Run Configurations:** Added new PyCharm configurations to facilitate direct execution of core
+  services, such as the **API**, from within the IDE for improved development workflow.
+- 🛠️ **Expanded Makefile Target Configurations:** Integrated new PyCharm run configurations for critical development
+  tasks, including **Generate Compose**, **License Check**, **Use Local Core**, and **Use Remote Core**, making common
+  operations more accessible.
+
+### Changed
+
+- 🔄 **Renamed Test Configurations:** Clarified existing PyCharm test configurations by appending "Tests" to their names
+  (e.g., **API Tests**, **Agent Tests**, **Bot Tests**, **Lib Tests**, **Process Tests**), enhancing consistency and
+  discoverability for developers.
+
+---
+
+## [v0.262.2] - YYYY-MM-DD - Introducing the LLM-Powered Whitepaper Generation System
+
+### Added
+
+- ✨ **LLM-Powered Whitepaper Generation System**: A comprehensive, iterative system has been introduced to automatically
+  transform technical documentation into business-focused whitepapers, ensuring consistency, professional output, and
+  maintainability.
+- 📄 **Automated Chapter Content and Structure**: Each whitepaper chapter is now generated via an LLM, organized in
+  self-contained folders with dedicated prompts, source mappings, and generated outputs (`chapters/*/`).
+- 🔍 **LLM-Based Source Discovery**: Implemented `generate-sources.py` to intelligently identify and map relevant
+  technical documentation files for each chapter, dynamically keeping content synchronized with evolving technical
+  documents.
+- 🚀 **Python-Based Iterative Generation**: The `generate-whitepaper.py` script facilitates sequential chapter
+  generation, leveraging Jinja2 templates and previous chapters as context to maintain narrative flow and style
+  consistency.
+- 💰 **Integrated Cost Tracking and Observability**: LLM calls within the generation process now include token usage and
+  estimated cost summaries for better financial transparency and operational oversight.
+- 📚 **Centralized Glossary and General Writing Guidelines**: New configuration files (`glossary.md`,
+  `general_prompt.md`) are used to enforce consistent terminology and writing style across all generated whitepaper
+  chapters.
+- 📈 **Professional PDF Output with LaTeX**: The system now supports direct Markdown to LaTeX to PDF conversion using
+  `pandoc` and a custom LaTeX template, ensuring high-quality, professional-looking whitepapers.
+- 🧹 **Automated Markdown Formatting**: Generated `.md` files are automatically formatted using `mdformat` to ensure
+  consistent readability and adherence to project styling.
+- 📝 **Architectural Decision Record**: An `arc42` decision record
+  (`2025_12_05_llm_based_whitepaper_generation_system.md`) outlines the context, drivers, decision, and consequences of
+  adopting this new LLM-based whitepaper generation system.
+
+---
+
+## [v0.262.1] - 2026-02-17 - Expanded External Service Configuration
+
+### Added
+
+- ✨ **Milvus Vector Database Configuration**: Introduced new environment variables (`MILVUS_URL`, `MILVUS_DIMENSION`,
+  `MILVUS_ROOT_PASSWORD`) across deployment files, enabling flexible configuration and integration with the Milvus
+  vector database.
+- 🔑 **Docling API Key Support**: Added the `DOCLING_API_KEY` environment variable to allow for secure authentication and
+  access control for the Docling document processing service.
+
+---
+
 ## [v0.262.0] - 2026-02-12 - Comprehensive Observability Upgrade: Migrating to Langfuse for LLM Tracing and Evaluation
 
 ### Added

@@ -81,7 +81,7 @@ http_error:
     404: "Entschuldigung, wir konnten diese Seite nicht finden."
     405: "Diese Aktion ist hier nicht erlaubt."
     408: "Die Anfrage hat das Zeitlimit überschritten. Bitte versuchen Sie es erneut."
-    429: "Zu viele Anfragen. Bitte warten Sie einen Moment."
+    429: "Zu viele Anfragen."
 
     # 5xx Server Errors
     500: "Auf unseren Servern ist ein Fehler aufgetreten."
@@ -538,6 +538,22 @@ role:
   is_new: "Neu"
   save_button: "Speichern"
   access_rules: "Zugriffsregeln"
+  usage_limits: "Nutzungslimits"
+  usage_pattern: "Muster"
+  usage_limit_value: "Limit"
+  usage_period: "Zeitraum"
+  calls_per: "Aufrufe"
+  unlimited: "Unbegrenzt"
+  no_access_rules: "Keine Zugriffsregeln definiert"
+  access_rules_help_intro: "Hierarchische Regeln steuern den Zugriff auf Ressourcen:"
+  access_rules_help_all_agents: "Alle Agenten"
+  access_rules_help_agent_instances: "Alle Instanzen von MyAgent"
+  access_rules_help_service: "Knowledge-Service"
+  access_rules_help_admin: "Admin-Zugriff auf alles"
+  pattern_help_intro: "Muster verwenden Platzhalter für Agenten:"
+  pattern_help_all: "Alle Agenten"
+  pattern_help_wildcard: "Alle Instanzen von MyAgent"
+  pattern_help_specific: "Nur eine bestimmte Instanz"
   create_dialog:
     description: "Erstellen Sie eine neue Rolle mit Zugriffsregeln. Um die neue Rolle Benutzern zuzuweisen, verwenden Sie bitte Ihr AD."
   remove_dialog:
@@ -551,6 +567,20 @@ role:
   role_saved:
     summary: "Rolle gespeichert"
     detail: "Rolle erfolgreich gespeichert, die neuen Zugriffsregeln treten sofort in Kraft."
+
+usage:
+  title: "Nutzung"
+  calls_remaining: "{current} / {limit} Agentenaufrufe"
+  unlimited_calls: "Unbegrenzte Agentenaufrufe"
+  resets_at: "Zurücksetzung {time}"
+  limit_exceeded: "Agentenaufruf-Limit erreicht"
+  limit_exceeded_detail: "Bitte warten Sie bis {time} oder kontaktieren Sie Ihren Administrator"
+
+period:
+  1h: "Pro Stunde"
+  1d: "Pro Tag"
+  7d: "Pro Woche"
+  1mo: "Pro Monat"
 
 notification:
   title: "Benachrichtigungen"

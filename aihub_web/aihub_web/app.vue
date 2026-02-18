@@ -25,10 +25,14 @@ client.setConfig({
   },
   onResponseError: async ({ response }) => {
     console.error('This is the options on error', response)
+    const rawDetail = response._data.detail
+    const message = typeof rawDetail === 'object' && rawDetail?.message
+      ? rawDetail.message
+      : rawDetail
     toast.add({
       severity: 'error',
       summary: t(`http_error.code.${response.status}`),
-      detail: response._data.detail,
+      detail: message,
       life: 10_000,
     })
   },

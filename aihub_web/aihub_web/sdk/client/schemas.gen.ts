@@ -5231,6 +5231,15 @@ export const CreateRoleRequestSchema = {
             title: 'Access Rules',
             description: 'A list of access rules granted by this role.',
             default: []
+        },
+        usage_limits: {
+            items: {
+                $ref: '#/components/schemas/UsageLimitDTO'
+            },
+            type: 'array',
+            title: 'Usage Limits',
+            description: 'Pattern-based usage limit rules.',
+            default: []
         }
     },
     type: 'object',
@@ -6264,6 +6273,41 @@ export const DocumentBlockSchema = {
     description: 'A representation of a document to directly pass to the LLM.'
 } as const;
 
+export const DocumentConversionMetadataSchema = {
+    properties: {
+        filename: {
+            type: 'string',
+            title: 'Filename',
+            description: 'Original filename of the converted document'
+        }
+    },
+    type: 'object',
+    required: [
+        'filename'
+    ],
+    title: 'DocumentConversionMetadata'
+} as const;
+
+export const DocumentConversionResponseSchema = {
+    properties: {
+        page_content: {
+            type: 'string',
+            title: 'Page Content',
+            description: 'Markdown content extracted from the document'
+        },
+        metadata: {
+            $ref: '#/components/schemas/DocumentConversionMetadata',
+            description: 'Metadata about the converted document'
+        }
+    },
+    type: 'object',
+    required: [
+        'page_content',
+        'metadata'
+    ],
+    title: 'DocumentConversionResponse'
+} as const;
+
 export const DocumentDTOSchema = {
     properties: {
         id: {
@@ -6356,49 +6400,6 @@ export const DocumentDTOSchema = {
         'is_ingested'
     ],
     title: 'DocumentDTO'
-} as const;
-
-export const DocumentParsingMetadataSchema = {
-    properties: {
-        filename: {
-            type: 'string',
-            title: 'Filename',
-            description: 'Original filename'
-        }
-    },
-    type: 'object',
-    required: [
-        'filename'
-    ],
-    title: 'DocumentParsingMetadata',
-    description: 'Metadata about the converted document.'
-} as const;
-
-export const DocumentParsingResponseSchema = {
-    properties: {
-        page_content: {
-            type: 'string',
-            title: 'Page Content',
-            description: 'Extracted text content (markdown)'
-        },
-        metadata: {
-            anyOf: [
-                {
-                    $ref: '#/components/schemas/DocumentParsingMetadata'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'Document metadata'
-        }
-    },
-    type: 'object',
-    required: [
-        'page_content'
-    ],
-    title: 'DocumentParsingResponse',
-    description: 'Response schema for document conversion.\n\nFollows the OpenWebUI External Document Loader specification.\nCan return either a single document or a list of documents (one per page).'
 } as const;
 
 export const DocumentUploadRequestSchema = {
@@ -9371,16 +9372,6 @@ export const ImageGenerationRequestSchema = {
     title: 'ImageGenerationRequest'
 } as const;
 
-export const ImageModeSchema = {
-    type: 'string',
-    enum: [
-        's3',
-        'base64'
-    ],
-    title: 'ImageMode',
-    description: 'Image handling mode for parsed documents.'
-} as const;
-
 export const ImageURLSchema = {
     properties: {
         url: {
@@ -9491,7 +9482,7 @@ export const ImagesResponseSchema = {
         usage: {
             anyOf: [
                 {
-                    $ref: '#/components/schemas/Usage'
+                    $ref: '#/components/schemas/openai__types__images_response__Usage'
                 },
                 {
                     type: 'null'
@@ -13207,7 +13198,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1771256394
+            default: 1771234900
         },
         owned_by: {
             type: 'string',
@@ -17013,6 +17004,15 @@ export const RoleResponseSchema = {
             type: 'array',
             title: 'Access Rules',
             description: 'The list of access rules for the role.'
+        },
+        usage_limits: {
+            items: {
+                $ref: '#/components/schemas/UsageLimitDTO'
+            },
+            type: 'array',
+            title: 'Usage Limits',
+            description: 'Pattern-based usage limit rules.',
+            default: []
         }
     },
     type: 'object',
@@ -20200,7 +20200,7 @@ export const TranscriptionVerboseSchema = {
         usage: {
             anyOf: [
                 {
-                    $ref: '#/components/schemas/openai__types__audio__transcription_verbose__Usage'
+                    $ref: '#/components/schemas/Usage'
                 },
                 {
                     type: 'null'
@@ -20486,6 +20486,21 @@ export const UpdateRoleRequestSchema = {
             ],
             title: 'Access Rules',
             description: 'The new list of access rules.'
+        },
+        usage_limits: {
+            anyOf: [
+                {
+                    items: {
+                        $ref: '#/components/schemas/UsageLimitDTO'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Usage Limits',
+            description: 'Pattern-based usage limit rules.'
         }
     },
     type: 'object',
@@ -20495,29 +20510,21 @@ export const UpdateRoleRequestSchema = {
 
 export const UsageSchema = {
     properties: {
-        input_tokens: {
-            type: 'integer',
-            title: 'Input Tokens'
+        seconds: {
+            type: 'number',
+            title: 'Seconds'
         },
-        input_tokens_details: {
-            $ref: '#/components/schemas/UsageInputTokensDetails'
-        },
-        output_tokens: {
-            type: 'integer',
-            title: 'Output Tokens'
-        },
-        total_tokens: {
-            type: 'integer',
-            title: 'Total Tokens'
+        type: {
+            type: 'string',
+            const: 'duration',
+            title: 'Type'
         }
     },
     additionalProperties: true,
     type: 'object',
     required: [
-        'input_tokens',
-        'input_tokens_details',
-        'output_tokens',
-        'total_tokens'
+        'seconds',
+        'type'
     ],
     title: 'Usage'
 } as const;
@@ -20561,6 +20568,58 @@ export const UsageInputTokensDetailsSchema = {
         'text_tokens'
     ],
     title: 'UsageInputTokensDetails'
+} as const;
+
+export const UsageLimitDTOSchema = {
+    properties: {
+        pattern: {
+            type: 'string',
+            title: 'Pattern',
+            description: 'Full dotted resource pattern with wildcards (e.g. \'aihub.user.agent.>\', \'aihub.user.process.MyProcess.*\'). '
+        },
+        limit: {
+            type: 'integer',
+            minimum: 1,
+            title: 'Limit',
+            description: 'Max calls per period for this pattern.'
+        },
+        period: {
+            $ref: '#/components/schemas/UsageLimitPeriod',
+            description: 'Period for limit: 1h, 1d, 7d, 1mo.'
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Description',
+            description: 'Human-readable description of the pattern.'
+        }
+    },
+    type: 'object',
+    required: [
+        'pattern',
+        'limit',
+        'period'
+    ],
+    title: 'UsageLimitDTO',
+    description: 'Pattern-based usage limit rule.'
+} as const;
+
+export const UsageLimitPeriodSchema = {
+    type: 'string',
+    enum: [
+        '1h',
+        '1d',
+        '7d',
+        '1mo'
+    ],
+    title: 'UsageLimitPeriod',
+    description: 'Supported usage limit periods.'
 } as const;
 
 export const UsageTokensSchema = {
@@ -21333,27 +21392,6 @@ export const WorkflowGraphSchema = {
     description: 'Complete workflow graph representation.'
 } as const;
 
-export const openai__types__audio__transcription_verbose__UsageSchema = {
-    properties: {
-        seconds: {
-            type: 'number',
-            title: 'Seconds'
-        },
-        type: {
-            type: 'string',
-            const: 'duration',
-            title: 'Type'
-        }
-    },
-    additionalProperties: true,
-    type: 'object',
-    required: [
-        'seconds',
-        'type'
-    ],
-    title: 'Usage'
-} as const;
-
 export const openai__types__chat__chat_completion_message_custom_tool_call_param__CustomSchema = {
     properties: {
         input: {
@@ -21446,6 +21484,35 @@ export const openai__types__chat__completion_create_params__FunctionSchema = {
         'name'
     ],
     title: 'Function'
+} as const;
+
+export const openai__types__images_response__UsageSchema = {
+    properties: {
+        input_tokens: {
+            type: 'integer',
+            title: 'Input Tokens'
+        },
+        input_tokens_details: {
+            $ref: '#/components/schemas/UsageInputTokensDetails'
+        },
+        output_tokens: {
+            type: 'integer',
+            title: 'Output Tokens'
+        },
+        total_tokens: {
+            type: 'integer',
+            title: 'Total Tokens'
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: [
+        'input_tokens',
+        'input_tokens_details',
+        'output_tokens',
+        'total_tokens'
+    ],
+    title: 'Usage'
 } as const;
 
 export const AddMemoryToChatHistoryEventWritableSchema = {

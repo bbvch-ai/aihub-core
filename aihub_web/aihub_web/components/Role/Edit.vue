@@ -17,7 +17,7 @@
         <Textarea
           id="in_label_description"
           v-model="role.description"
-          rows="5"
+          rows="3"
           cols="30"
           class="w-full"
         />
@@ -26,74 +26,21 @@
         </label>
       </FloatLabel>
     </div>
-    <DataTable
-      :value="accessRules"
-      data-key="id"
-    >
-      <Column
-        field="accessRule"
-        :header="t('role.access_rules')"
-      >
-        <template #body="{ data }">
-          <Badge
-            :value="data.accessRule"
-            severity="secondary"
-            class="border border-gray-400/30"
-          />
-        </template>
-      </Column>
-      <Column
-        class="w-24 !text-end"
-      >
-        <template #body="{ data }">
-          <Tag
-            v-if="isNewAccessRule(data.accessRule)"
-            :value="t('role.is_new')"
-            severity="success"
-          />
-        </template>
-      </Column>
-      <Column
-        class="w-12"
-      >
-        <template #body="{ data }">
-          <Button
-            icon="pi pi-times"
-            severity="secondary"
-            variant="text"
-            rounded
-            size="small"
-            @click="removeAccessRule(data.accessRule)"
-          />
-        </template>
-      </Column>
-    </DataTable>
-    <div class="flex gap-2">
-      <InputGroup>
-        <InputGroupAddon>
-          <i class="pi pi-lock-open" />
-        </InputGroupAddon>
-        <InputText
-          v-model="newRule"
-          :placeholder="t('role.add_access_role')"
-          @click.enter="addRule"
-        />
-      </InputGroup>
-      <div>
-        <Button
-          type="button"
-          :label="t('role.add_button')"
-          icon="pi pi-plus"
-          :disabled="!newRule"
-          @click="addRule"
-        />
-      </div>
-    </div>
+
+    <AccessRulesEditor
+      v-model:rules="accessRules"
+      :initial-rules="initialAccessRules"
+    />
+
+    <UsageLimitsEditor v-model:limits="usageLimits" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
+
+import AccessRulesEditor from './AccessRulesEditor.vue'
+import UsageLimitsEditor from './UsageLimitsEditor.vue'
 
 import type { CreateRoleRequest, RoleResponse } from '@core/sdk/client'
 
@@ -114,42 +61,22 @@ watch(() => props.modelValue, (newValue) => {
   role.value = newValue
 }, { deep: true })
 
-const accessRules = computed(() => {
-  return role.value.access_rules?.map((accessRule: string) => {
-    return {
-      accessRule,
-      id: accessRule,
-    }
-  }) || []
+const accessRules = computed({
+  get: () => role.value.access_rules ?? [],
+  set: (val) => { role.value.access_rules = val },
 })
 
-const newRule = ref<string>('')
+const usageLimits = computed({
+  get: () => role.value.usage_limits ?? [],
+  set: (val) => { role.value.usage_limits = val },
+})
 
-watch(() => [role.value.name, role.value.description, JSON.stringify(role.value.access_rules)], () => {
+watch(() => [
+  role.value.name,
+  role.value.description,
+  JSON.stringify(role.value.access_rules),
+  JSON.stringify(role.value.usage_limits),
+], () => {
   emit('update:modelValue', role.value)
 })
-
-const isNewAccessRule = (accessRule: string) => {
-  return !initialAccessRules.value?.includes(accessRule)
-}
-
-const addRule = () => {
-  if (!newRule.value) return
-  if (!role.value.access_rules) {
-    role.value.access_rules = []
-  }
-  role.value.access_rules.push(newRule.value)
-  newRule.value = ''
-}
-
-const removeAccessRule = (accessRule: string) => {
-  if (!role.value.access_rules) return
-  role.value.access_rules = role.value.access_rules.filter(
-    (rule: string) => rule !== accessRule,
-  )
-}
 </script>
-
-<style scoped>
-
-</style>
