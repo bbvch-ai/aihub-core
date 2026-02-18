@@ -15,6 +15,7 @@ from aihub_lib.nats.events.discovery.process.ProcessClassDiscoveryResponseEvent 
 )
 from aihub_lib.nats.events.discovery.process.ProcessConfigSpecs import ProcessConfigSpecs
 from aihub_lib.nats.events.discovery.process.program_in.ProgramInSpecs import ProgramInSpecs
+from aihub_lib.nats.events.form.TemplateData import TemplateData
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
 from aihub_lib.nats.subscribers.JSSubscriber import JSSubscriber
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
@@ -178,7 +179,7 @@ class ProcessRunner(HealthCheckProvider):
 
         process_config_specs = ProcessConfigSpecs.from_process_config(self.process_config, self.process_class)
 
-        templates_data = None
+        templates_data: list[TemplateData] = []
         if self.templates:
             templates_data = [t.to_template_data(self.process_config) for t in self.templates]
 
@@ -192,7 +193,6 @@ class ProcessRunner(HealthCheckProvider):
             human_inputs=human_inputs,
             program_inputs=program_inputs,
             agent_inputs=agent_inputs,
-            default_process_config=self.process_config,
             templates=templates_data,
         )
         await self.nc_publisher.publish_event(process_discovery_response_event, subject)

@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Annotated, Any, Self
+from typing import TYPE_CHECKING, Annotated, Self
 
 from aihub_lib.agents.visualizers.types.WorkflowGraph import WorkflowGraph
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
@@ -9,6 +9,7 @@ from aihub_lib.nats.events.discovery.agent.AgentClassDiscoveryResponseEvent impo
 )
 from aihub_lib.nats.events.discovery.EventSpecs import EventSpecs
 from aihub_lib.nats.events.form import ALL_FORM_OPTIONS
+from aihub_lib.nats.events.form.TemplateData import TemplateData
 from pydantic import BaseModel, Field
 
 if TYPE_CHECKING:
@@ -77,9 +78,9 @@ class AgentClassDTO(BaseModel):
         bool | None, Field(description="Indicates whether the agent class is online and reachable.")
     ] = None
     templates: Annotated[
-        list[dict[str, Any]] | None,
-        Field(description="Optional list of profile templates for quick profile creation."),
-    ] = None
+        list[TemplateData],
+        Field(description="List of profile templates for quick profile creation."),
+    ] = Field(default_factory=list)
 
     @classmethod
     def from_discovery_event(
@@ -164,7 +165,7 @@ class AgentClassDTO(BaseModel):
             hitl_response_events=hitl_response_events,
             network_graph=network_graph,
             is_online=entity.is_online,
-            templates=list(entity.templates) if entity.templates else None,
+            templates=[TemplateData(**t) for t in entity.templates] if entity.templates else [],
         )
         return dto.in_locale(t)
 

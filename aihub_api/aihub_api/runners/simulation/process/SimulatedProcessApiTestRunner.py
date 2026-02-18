@@ -110,12 +110,6 @@ class SimulatedProcessApiTestRunner(ApiTestRunner):
         self.program_inputs: list[ProgramInSpecs] = []
         self.agent_inputs: list[AgentInSpecs] = []
 
-        self.default_process_config = ProcessConfig(
-            process_id=self.process_id,
-            name=LocaleString(de="Test Process"),
-            description=LocaleString(de="Test Process Description"),
-        )
-
     async def simulate_process(self, event: WorkEvent, topic: ProcessInstanceTopic):
         """
         Handler for work events targeting this process instance. If a WorkEvent arrives,
@@ -145,7 +139,6 @@ class SimulatedProcessApiTestRunner(ApiTestRunner):
             program_inputs=self.program_inputs,
             agent_inputs=self.agent_inputs,
             process_config_specs=ProcessConfigSpecs.from_process_config_class(ProcessConfig),
-            default_process_config=self.default_process_config,
         )
         await self.nc_publisher.publish_event(process_discovery_response_event, subject)
 
@@ -267,7 +260,6 @@ class SimulatedProcessApiTestRunner(ApiTestRunner):
                 program_inputs=self.program_inputs,
                 agent_inputs=self.agent_inputs,
                 is_online=True,
-                default_process_config=self.default_process_config,
             )
             discovery_service._register_class_endpoints(process_class_dto)
 

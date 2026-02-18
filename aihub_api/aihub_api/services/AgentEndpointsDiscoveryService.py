@@ -174,7 +174,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
                     hitl_request_events=agent_class_dto.hitl_request_events,
                     hitl_response_events=agent_class_dto.hitl_response_events,
                     network_graph=agent_class_dto.network_graph,
-                    templates=response.templates or [],
+                    templates=[t.model_dump() for t in response.templates],
                 )
 
         return list(unique_agents_dict.values())

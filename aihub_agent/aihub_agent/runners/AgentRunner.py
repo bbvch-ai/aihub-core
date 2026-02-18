@@ -14,6 +14,7 @@ from aihub_lib.nats.events.discovery.agent.AgentClassDiscoveryResponseEvent impo
 )
 from aihub_lib.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
 from aihub_lib.nats.events.discovery.EventSpecs import EventSpecs
+from aihub_lib.nats.events.form.TemplateData import TemplateData
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
 from aihub_lib.nats.subscribers.agent.AgentJSSubscriber import AgentJSSubscriber
 from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
@@ -155,7 +156,7 @@ class AgentRunner(HealthCheckProvider):
 
         agent_config_specs = AgentConfigSpecs.from_agent_config(self.agent_config, self.agent_class)
 
-        templates_data = None
+        templates_data: list[TemplateData] = []
         if self.templates:
             templates_data = [t.to_template_data(self.agent_config) for t in self.templates]
 
