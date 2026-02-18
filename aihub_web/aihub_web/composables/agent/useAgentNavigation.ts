@@ -13,13 +13,13 @@ export function useAgentNavigation() {
       name: t('agent.tabs.myAgents'),
       key: 'agents',
       path: '/service/agents',
-      isActive: () => route.path.startsWith(localePath('/service/agents')),
+      isActive: () => route.path.startsWith(localePath('/service/agents')) && !route.path.includes('/service/agents/templates'),
     },
     {
       name: t('agent.tabs.templates'),
       key: 'templates',
-      path: '/service/agent-templates',
-      isActive: () => route.path.startsWith(localePath('/service/agent-templates')),
+      path: '/service/agents/templates',
+      isActive: () => route.path.includes('/service/agents/templates'),
     },
   ])
 
