@@ -265,6 +265,11 @@ service:
 agent:
   title: "Agenten"
   can_chat: "Kann chatten"
+  tabs:
+    myAgents: "Meine Agenten"
+    templates: "Vorlagen"
+  templates:
+    empty: "Keine Vorlagen verfügbar"
   navigation:
     basic: "Übersicht"
     workflow: "Workflow"
