@@ -57,4 +57,4 @@ class ProcessClassDiscoveryResponseEvent(BaseEvent):
     templates: Annotated[
         list[TemplateData],
         Field(description="List of profile templates for quick profile creation in the Admin UI."),
-    ] = Field(default_factory=list)
+    ] = []

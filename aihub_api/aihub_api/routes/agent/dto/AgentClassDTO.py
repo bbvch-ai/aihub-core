@@ -80,7 +80,7 @@ class AgentClassDTO(BaseModel):
     templates: Annotated[
         list[TemplateData],
         Field(description="List of profile templates for quick profile creation."),
-    ] = Field(default_factory=list)
+    ] = []
 
     @classmethod
     def from_discovery_event(
