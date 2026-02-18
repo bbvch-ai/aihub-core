@@ -130,6 +130,11 @@ TEMPLATE = FewShotAgentConfig(
                         '{"document_type": "invoice", "invoice_number": "2024-1587", '
                         '"date": "2024-03-15", "vendor": {"name": "Acme Solutions AG", "city": "Zurich"}, '
                         '"client": {"name": "TechCorp GmbH", "city": "Berne"}, '
+                        '"line_items": ['
+                        '{"description": "Services de conseil (fév 2024)", "quantity": 40, '
+                        '"unit": "hours", "unit_price": 200.00, "amount": 8000.00, "currency": "CHF"}, '
+                        '{"description": "Installation infrastructure cloud", "quantity": 1, '
+                        '"unit": "fixed", "unit_price": 3500.00, "amount": 3500.00, "currency": "CHF"}], '
                         '"subtotal": 11500.00, "vat_rate": 8.1, "vat_amount": 931.50, '
                         '"total": 12431.50, "currency": "CHF", "payment_due": "2024-04-14"}'
                     ),
@@ -137,6 +142,11 @@ TEMPLATE = FewShotAgentConfig(
                         '{"document_type": "invoice", "invoice_number": "2024-1587", '
                         '"date": "2024-03-15", "vendor": {"name": "Acme Solutions AG", "city": "Zurigo"}, '
                         '"client": {"name": "TechCorp GmbH", "city": "Berna"}, '
+                        '"line_items": ['
+                        '{"description": "Servizi di consulenza (feb 2024)", "quantity": 40, '
+                        '"unit": "hours", "unit_price": 200.00, "amount": 8000.00, "currency": "CHF"}, '
+                        '{"description": "Setup infrastruttura cloud", "quantity": 1, '
+                        '"unit": "fixed", "unit_price": 3500.00, "amount": 3500.00, "currency": "CHF"}], '
                         '"subtotal": 11500.00, "vat_rate": 8.1, "vat_amount": 931.50, '
                         '"total": 12431.50, "currency": "CHF", "payment_due": "2024-04-14"}'
                     ),
