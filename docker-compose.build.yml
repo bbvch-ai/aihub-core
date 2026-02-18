@@ -119,6 +119,11 @@ services:
     depends_on:
       seaweedfs-master:
         condition: service_healthy
+    labels:
+      healthcheck.enabled: "true"
+      healthcheck.protocol: "http"
+      healthcheck.port: "8080"
+      healthcheck.path: "/status"
     logging:
       driver: json-file
       options:
@@ -583,6 +588,12 @@ services:
     depends_on:
       postgres-ferretdb:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8088/debug/livez || exit 1"]
+      interval: 15s
+      timeout: 3s
+      start_period: 5s
+      retries: 3
     logging:
       driver: json-file
       options:
@@ -831,6 +842,11 @@ services:
     ports:
       - "4222:4222"
       - "8222:8222"
+    labels:
+      healthcheck.enabled: "true"
+      healthcheck.protocol: "http"
+      healthcheck.port: "8222"
+      healthcheck.path: "/healthz"
     logging:
       driver: json-file
       options:
@@ -907,6 +923,11 @@ services:
     container_name: presidio-analyzer
     image: ghcr.io/bbvch-ai/aihub-core/presidio-analyzer:2.2.359
     restart: always
+    labels:
+      healthcheck.enabled: "true"
+      healthcheck.protocol: "http"
+      healthcheck.port: "3000"
+      healthcheck.path: "/health"
     logging:
       driver: json-file
       options:
@@ -919,6 +940,11 @@ services:
     container_name: presidio-anonymizer
     image: ghcr.io/bbvch-ai/aihub-core/presidio-anonymizer:2.2.359
     restart: always
+    labels:
+      healthcheck.enabled: "true"
+      healthcheck.protocol: "http"
+      healthcheck.port: "3000"
+      healthcheck.path: "/health"
     logging:
       driver: json-file
       options:
@@ -1006,6 +1032,12 @@ services:
     environment:
       JUPYTER_ENABLE_LAB: yes
       JUPYTER_TOKEN: ${JUPYTER_TOKEN}
+    healthcheck:
+      test: ["CMD", "/etc/jupyter/docker_healthcheck.py"]
+      interval: 15s
+      timeout: 3s
+      start_period: 10s
+      retries: 3
     logging:
       driver: json-file
       options:
@@ -1104,6 +1136,10 @@ services:
       - langfuse-web
     healthcheck:
       test: [ "NONE" ]
+    labels:
+      healthcheck.enabled: "true"
+      healthcheck.protocol: "http"
+      healthcheck.port: "13133"
     logging:
       driver: json-file
       options:
