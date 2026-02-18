@@ -953,7 +953,6 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       SET_VERBOSE: False
-      DOCLING_API_KEY: ${DOCLING_API_KEY}
     volumes:
       - ./configs/litellm/litellm-config.build.yml:/app/config.yml
     command: --config /app/config.yml
@@ -1042,27 +1041,35 @@ services:
   # ===================================================================
   # Document Processing Stack
   # ===================================================================
-  # This stack, powered by Docling, handles OCR and parsing of
-  # uploaded documents for the RAG pipeline.
+  # This stack, powered by MinerU, handles OCR and parsing of
+  # uploaded documents for the RAG pipeline. VLM requests are routed
+  # through LiteLLM for unified model routing.
   # ===================================================================
 
-  docling:
-    container_name: docling
-    image: ghcr.io/bbvch-ai/aihub-core/docling-serve-cpu:v1.9.0
+  mineru-api:
+    container_name: mineru-api
+    image: ghcr.io/bbvch-ai/aihub-core/mineru-api:v2.7.5
     restart: always
     ports:
-      - "5001:5001"
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:5001/health" ]
+      - "8002:8000"
     environment:
-      DOCLING_SERVE_ARTIFACTS_PATH: "/models"
-      DOCLING_SERVE_LOAD_MODELS_AT_BOOT: 0
-      DOCLING_SERVE_MAX_SYNC_WAIT: 600
-      DOCLING_SERVE_ENABLE_REMOTE_SERVICES: 1
-      DOCLING_SERVE_API_KEY: ${DOCLING_API_KEY}
-      DOCLING_SERVE_SINGLE_USE_RESULTS: 1
-      DOCLING_SERVE_RESULT_REMOVAL_DELAY: 30
-      DOCLING_SERVE_ENABLE_UI: 1
+      # VLM routing through LiteLLM (OpenAI-compatible)
+      # Various API keys for OpenAI client compatibility
+      OPENAI_API_KEY: ${LITELLM_MASTER_KEY}
+      OPENAI_BASE_URL: http://litellm:4000/v1
+      LITELLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
+      # MinerU-specific configuration (used by mineru_vl_utils HttpVlmClient)
+      MINERU_VL_SERVER: http://litellm:4000/v1
+      MINERU_VL_API_KEY: ${LITELLM_MASTER_KEY}
+      MINERU_VL_MODEL_NAME: ${MINERU_VLM_NAME}
+      # Processing configuration
+      MINERU_API_MAX_CONCURRENT_REQUESTS: ${MINERU_API_MAX_CONCURRENT_REQUESTS}
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/openapi.json" ]
+      timeout: 10s
+      interval: 30s
+      retries: 3
+      start_period: 60s
     depends_on:
       litellm:
         condition: service_healthy
@@ -1071,10 +1078,12 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    deploy:
+      resources:
+        limits:
+          memory: 4G
     networks:
       - backend
-
-  
 
   # ===================================================================
   # Observability Stack
@@ -1137,7 +1146,7 @@ services:
         condition: service_healthy
       playwright:
         condition: service_healthy
-      docling:
+      api:
         condition: service_healthy
     environment:
       # --- General Settings ---
@@ -1281,7 +1290,7 @@ services:
       PDF_EXTRACT_IMAGES: True
       RAG_FILE_MAX_COUNT: 4
       CONTENT_EXTRACTION_ENGINE: external
-      EXTERNAL_DOCUMENT_LOADER_URL: http://api:8000/api/v1/docling
+      EXTERNAL_DOCUMENT_LOADER_URL: http://api:8000/api/v1/parsing
       EXTERNAL_DOCUMENT_LOADER_API_KEY: ${SUPERUSER_TOKEN}
       RAG_EMBEDDING_ENGINE: openai
       RAG_EMBEDDING_MODEL: embedding/large
@@ -1659,6 +1668,8 @@ services:
         condition: service_healthy
       neo4j:
         condition: service_healthy
+      mineru-api:
+        condition: service_healthy
     environment:
       # Log Level
       LOG_LEVEL: ${LOG_LEVEL}
@@ -1749,15 +1760,14 @@ services:
       JUPYTER_URL: http://jupyter:8888
       JUPYTER_TOKEN: ${JUPYTER_TOKEN}
 
-      # Docling
-      DOCLING_API_BASE_URL: http://docling:5001
-      DOCLING_API_KEY: ${DOCLING_API_KEY}
-      DOCLING_API_TIMEOUT: ${DOCLING_API_TIMEOUT}
-      DOCLING_PIPELINE_TYPE: ${DOCLING_PIPELINE_TYPE}
-      DOCLING_HOSTED_VLM_API_BASE_URL: http://litellm:4000
-      DOCLING_HOSTED_VLM_API_KEY: ${LITELLM_MASTER_KEY}
-      DOCLING_VLM_MODEL_NAME: ${DOCLING_VLM_MODEL_NAME}
-      DOCLING_HTTP_RETRIES: ${DOCLING_HTTP_RETRIES}
+      # MinerU (document parsing)
+      MINERU_API_BASE_URL: http://mineru-api:8000
+      MINERU_API_TIMEOUT: ${MINERU_API_TIMEOUT}
+      MINERU_VLM_SERVER_URL: http://litellm:4000
+      MINERU_VLM_SERVER_API_KEY: ${LITELLM_MASTER_KEY}
+      MINERU_VLM_NAME: ${MINERU_VLM_NAME}
+      MINERU_FORMULA_ENABLE: ${MINERU_FORMULA_ENABLE}
+      MINERU_TABLE_ENABLE: ${MINERU_TABLE_ENABLE}
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
@@ -2298,15 +2308,14 @@ services:
       LITE_LLM_PROXY_BASE_URL: http://litellm:4000
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
 
-      # Docling
-      DOCLING_API_BASE_URL: http://docling:5001
-      DOCLING_API_KEY: ${DOCLING_API_KEY}
-      DOCLING_API_TIMEOUT: ${DOCLING_API_TIMEOUT}
-      DOCLING_PIPELINE_TYPE: ${DOCLING_PIPELINE_TYPE}
-      DOCLING_HOSTED_VLM_API_BASE_URL: http://litellm:4000
-      DOCLING_HOSTED_VLM_API_KEY: ${LITELLM_MASTER_KEY}
-      DOCLING_VLM_MODEL_NAME: ${DOCLING_VLM_MODEL_NAME}
-      DOCLING_HTTP_RETRIES: ${DOCLING_HTTP_RETRIES}
+      # MinerU (document parsing)
+      MINERU_API_BASE_URL: http://mineru-api:8000
+      MINERU_API_TIMEOUT: ${MINERU_API_TIMEOUT}
+      MINERU_VLM_SERVER_URL: http://litellm:4000
+      MINERU_VLM_SERVER_API_KEY: ${LITELLM_MASTER_KEY}
+      MINERU_VLM_NAME: ${MINERU_VLM_NAME}
+      MINERU_FORMULA_ENABLE: ${MINERU_FORMULA_ENABLE}
+      MINERU_TABLE_ENABLE: ${MINERU_TABLE_ENABLE}
 
       # Postgres
       POSTGRES_USER: ${POSTGRES_USER}
@@ -2365,15 +2374,14 @@ services:
       LITE_LLM_PROXY_BASE_URL: http://litellm:4000
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
 
-      # Docling
-      DOCLING_API_BASE_URL: http://docling:5001
-      DOCLING_API_KEY: ${DOCLING_API_KEY}
-      DOCLING_API_TIMEOUT: ${DOCLING_API_TIMEOUT}
-      DOCLING_PIPELINE_TYPE: ${DOCLING_PIPELINE_TYPE}
-      DOCLING_HOSTED_VLM_API_BASE_URL: http://litellm:4000
-      DOCLING_HOSTED_VLM_API_KEY: ${LITELLM_MASTER_KEY}
-      DOCLING_VLM_MODEL_NAME: ${DOCLING_VLM_MODEL_NAME}
-      DOCLING_HTTP_RETRIES: ${DOCLING_HTTP_RETRIES}
+      # MinerU (document parsing)
+      MINERU_API_BASE_URL: http://mineru-api:8000
+      MINERU_API_TIMEOUT: ${MINERU_API_TIMEOUT}
+      MINERU_VLM_SERVER_URL: http://litellm:4000
+      MINERU_VLM_SERVER_API_KEY: ${LITELLM_MASTER_KEY}
+      MINERU_VLM_NAME: ${MINERU_VLM_NAME}
+      MINERU_FORMULA_ENABLE: ${MINERU_FORMULA_ENABLE}
+      MINERU_TABLE_ENABLE: ${MINERU_TABLE_ENABLE}
 
       # Postgres
       POSTGRES_USER: ${POSTGRES_USER}

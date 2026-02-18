@@ -1,12 +1,12 @@
 # License Report
 
-Generated on: 17.02.2026
+Generated on: 18.02.2026
 
 This document contains license information for all dependencies across the monorepo:
 
-- Python packages (Poetry): **1579 packages**
+- Python packages (Poetry): **1626 packages**
 - Node.js packages (pnpm): **694 packages**
-- External Docker images: **34 images**
+- External Docker images: **32 images**
 
 ### License Compatibility
 
@@ -33,9 +33,11 @@ This document contains license information for all dependencies across the monor
 | ✅     | neo4j-graphrag                               | 1.12.0            | Apache-2.0 (override)                             |       |
 | ✅     | aiosignal                                    | 1.4.0             | Apache Software License                           |       |
 | ✅     | distro                                       | 1.9.0             | Apache Software License                           |       |
+| ✅     | flatbuffers                                  | 25.12.19          | Apache Software License                           |       |
 | ✅     | googleapis-common-protos                     | 1.72.0            | Apache Software License                           |       |
 | ✅     | grpcio                                       | 1.76.0            | Apache Software License                           |       |
 | ✅     | huggingface-hub                              | 0.36.0            | Apache Software License                           |       |
+| ✅     | magika                                       | 0.6.3             | Apache Software License                           |       |
 | ✅     | motor                                        | 3.7.1             | Apache Software License                           |       |
 | ✅     | nats-py                                      | 2.12.0            | Apache Software License                           |       |
 | ✅     | nltk                                         | 3.9.2             | Apache Software License                           |       |
@@ -49,7 +51,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | qdrant-client                                | 1.16.2            | Apache Software License                           |       |
 | ✅     | requests                                     | 2.32.5            | Apache Software License                           |       |
 | ✅     | requests-toolbelt                            | 1.0.0             | Apache Software License                           |       |
-| ✅     | s3transfer                                   | 0.16.0            | Apache Software License                           |       |
+| ✅     | s3transfer                                   | 0.15.0            | Apache Software License                           |       |
 | ✅     | safetensors                                  | 0.7.0             | Apache Software License                           |       |
 | ✅     | tenacity                                     | 9.1.2             | Apache Software License                           |       |
 | ✅     | tokenizers                                   | 0.22.1            | Apache Software License                           |       |
@@ -64,8 +66,9 @@ This document contains license information for all dependencies across the monor
 | ✅     | cryptography                                 | 46.0.3            | Apache-2.0 OR BSD-3-Clause                        |       |
 | ✅     | orjson                                       | 3.11.5            | Apache-2.0 OR MIT                                 |       |
 | ✅     | ormsgpack                                    | 1.12.2            | Apache-2.0 OR MIT                                 |       |
-| ✅     | boto3                                        | 1.42.21           | Apache-2.0                                        |       |
-| ✅     | botocore                                     | 1.42.21           | Apache-2.0                                        |       |
+| ✅     | aiobotocore                                  | 2.26.0            | Apache-2.0                                        |       |
+| ✅     | boto3                                        | 1.41.5            | Apache-2.0                                        |       |
+| ✅     | botocore                                     | 1.41.5            | Apache-2.0                                        |       |
 | ✅     | coverage                                     | 7.13.1            | Apache-2.0                                        |       |
 | ✅     | frozenlist                                   | 1.8.0             | Apache-2.0                                        |       |
 | ✅     | hf-xet                                       | 1.2.0             | Apache-2.0 (override)                             |       |
@@ -103,6 +106,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | Jinja2                                       | 3.1.6             | BSD License                                       |       |
 | ✅     | Pygments                                     | 2.19.2            | BSD License                                       |       |
 | ✅     | adlfs                                        | 2025.8.0          | BSD License                                       |       |
+| ✅     | cobble                                       | 0.1.4             | BSD License                                       |       |
 | ✅     | colorama                                     | 0.4.6             | BSD License                                       |       |
 | ✅     | contourpy                                    | 1.3.3             | BSD License                                       |       |
 | ✅     | cycler                                       | 0.12.1            | BSD License                                       |       |
@@ -115,18 +119,24 @@ This document contains license information for all dependencies across the monor
 | ✅     | jsonpointer                                  | 3.0.0             | BSD License                                       |       |
 | ✅     | kiwisolver                                   | 1.4.9             | BSD License                                       |       |
 | ✅     | lxml                                         | 5.4.0             | BSD License                                       |       |
+| ✅     | mammoth                                      | 1.11.0            | BSD License                                       |       |
+| ✅     | mpmath                                       | 1.3.0             | BSD License                                       |       |
 | ✅     | nest-asyncio                                 | 1.6.0             | BSD License                                       |       |
 | ✅     | numpy                                        | 2.3.5             | BSD License                                       |       |
+| ✅     | olefile                                      | 0.47              | BSD License                                       |       |
 | ✅     | pandas                                       | 2.3.3             | BSD License                                       |       |
 | ✅     | pandas-stubs                                 | 2.3.3.251219      | BSD License                                       |       |
 | ✅     | prompt_toolkit                               | 3.0.52            | BSD License                                       |       |
 | ✅     | pycparser                                    | 2.23              | BSD License                                       |       |
+| ✅     | s3fs                                         | 2024.12.0         | BSD License                                       |       |
 | ✅     | scipy                                        | 1.16.3            | BSD License                                       |       |
 | ✅     | striprtf                                     | 0.0.26            | BSD License                                       |       |
+| ✅     | sympy                                        | 1.14.0            | BSD License                                       |       |
 | ✅     | traitlets                                    | 5.14.3            | BSD License                                       |       |
 | ✅     | uuid_utils                                   | 0.14.0            | BSD License                                       |       |
 | ✅     | webencodings                                 | 0.5.1             | BSD License                                       |       |
 | ✅     | wrapt                                        | 1.17.3            | BSD License                                       |       |
+| ✅     | xlsxwriter                                   | 3.2.9             | BSD License                                       |       |
 | ✅     | xxhash                                       | 3.6.0             | BSD License                                       |       |
 | ✅     | MarkupSafe                                   | 3.0.3             | BSD-3-Clause                                      |       |
 | ✅     | click                                        | 8.3.1             | BSD-3-Clause (override)                           |       |
@@ -143,7 +153,6 @@ This document contains license information for all dependencies across the monor
 | ✅     | dnspython                                    | 2.8.0             | ISC License (ISCL)                                |       |
 | ✅     | pexpect                                      | 4.9.0             | ISC License (ISCL)                                |       |
 | ✅     | ptyprocess                                   | 0.7.0             | ISC License (ISCL)                                |       |
-| ✅     | shellingham                                  | 1.5.4             | ISC License (ISCL)                                |       |
 | ✅     | griffe                                       | 1.15.0            | ISC (override)                                    |       |
 | ✅     | greenlet                                     | 3.3.0             | MIT AND Python-2.0                                |       |
 | ✅     | Deprecated                                   | 1.3.1             | MIT License                                       |       |
@@ -162,30 +171,33 @@ This document contains license information for all dependencies across the monor
 | ✅     | black                                        | 24.10.0           | MIT License                                       |       |
 | ✅     | cachetools                                   | 5.5.2             | MIT License                                       |       |
 | ✅     | cohere                                       | 5.20.1            | MIT License                                       |       |
+| ✅     | coloredlogs                                  | 15.0.1            | MIT License                                       |       |
 | ✅     | colorlog                                     | 6.10.1            | MIT License                                       |       |
 | ✅     | dataclasses-json                             | 0.6.7             | MIT License                                       |       |
+| ✅     | et_xmlfile                                   | 2.0.0             | MIT License                                       |       |
 | ✅     | executing                                    | 2.2.1             | MIT License                                       |       |
 | ✅     | filetype                                     | 1.2.0             | MIT License                                       |       |
 | ✅     | h11                                          | 0.16.0            | MIT License                                       |       |
 | ✅     | h2                                           | 4.3.0             | MIT License                                       |       |
 | ✅     | hpack                                        | 4.1.0             | MIT License                                       |       |
 | ✅     | html5lib                                     | 1.1               | MIT License                                       |       |
+| ✅     | humanfriendly                                | 10.0              | MIT License                                       |       |
 | ✅     | hyperframe                                   | 6.1.0             | MIT License                                       |       |
 | ✅     | jedi                                         | 0.19.2            | MIT License                                       |       |
 | ✅     | jiter                                        | 0.12.0            | MIT License                                       |       |
 | ✅     | jmespath                                     | 1.0.1             | MIT License                                       |       |
 | ✅     | json_repair                                  | 0.44.1            | MIT License                                       |       |
 | ✅     | langfuse                                     | 3.14.1            | MIT License                                       |       |
-| ✅     | latex2mathml                                 | 3.78.1            | MIT License                                       |       |
 | ✅     | librt                                        | 0.7.7             | MIT License                                       |       |
-| ✅     | markdown-it-py                               | 4.0.0             | MIT License                                       |       |
+| ✅     | markdownify                                  | 1.2.2             | MIT License                                       |       |
 | ✅     | marshmallow                                  | 3.26.2            | MIT License                                       |       |
-| ✅     | mdurl                                        | 0.1.2             | MIT License                                       |       |
 | ✅     | memgraph-toolbox                             | 0.1.9             | MIT License                                       |       |
 | ✅     | mongoengine                                  | 0.29.1            | MIT License                                       |       |
 | ✅     | msal                                         | 1.34.0            | MIT License                                       |       |
 | ✅     | msal-extensions                              | 1.3.1             | MIT License                                       |       |
 | ✅     | mypy                                         | 1.19.1            | MIT License                                       |       |
+| ✅     | onnxruntime                                  | 1.20.1            | MIT License                                       |       |
+| ✅     | openpyxl                                     | 3.1.5             | MIT License                                       |       |
 | ✅     | parse                                        | 1.20.2            | MIT License                                       |       |
 | ✅     | parso                                        | 0.8.5             | MIT License                                       |       |
 | ✅     | pluggy                                       | 1.6.0             | MIT License                                       |       |
@@ -195,21 +207,21 @@ This document contains license information for all dependencies across the monor
 | ✅     | pytest-bdd                                   | 8.1.0             | MIT License                                       |       |
 | ✅     | pytest-mock                                  | 3.15.1            | MIT License                                       |       |
 | ✅     | python-i18n                                  | 0.3.9             | MIT License                                       |       |
+| ✅     | python-pptx                                  | 1.0.2             | MIT License                                       |       |
 | ✅     | pytz                                         | 2025.2            | MIT License                                       |       |
 | ✅     | redis                                        | 5.3.1             | MIT License                                       |       |
-| ✅     | rich                                         | 14.2.0            | MIT License                                       |       |
 | ✅     | ruff                                         | 0.8.6             | MIT License                                       |       |
 | ✅     | six                                          | 1.17.0            | MIT License                                       |       |
 | ✅     | stack-data                                   | 0.6.3             | MIT License                                       |       |
 | ✅     | tabulate                                     | 0.9.0             | MIT License                                       |       |
 | ✅     | toml-sort                                    | 0.24.3            | MIT License                                       |       |
 | ✅     | tomlkit                                      | 0.13.3            | MIT License                                       |       |
-| ✅     | typer                                        | 0.19.2            | MIT License                                       |       |
 | ✅     | types-awscrt                                 | 0.31.1            | MIT License                                       |       |
 | ✅     | typing-inspect                               | 0.9.0             | MIT License                                       |       |
 | ✅     | tqdm                                         | 4.67.1            | MIT License; Mozilla Public License 2.0 (MPL 2.0) |       |
 | ✅     | tiktoken                                     | 0.12.0            | MIT (override)                                    |       |
 | ✅     | SQLAlchemy                                   | 2.0.45            | MIT                                               |       |
+| ✅     | aioitertools                                 | 0.13.0            | MIT                                               |       |
 | ✅     | annotated-doc                                | 0.0.4             | MIT                                               |       |
 | ✅     | anyio                                        | 4.12.0            | MIT (override)                                    |       |
 | ✅     | attrs                                        | 25.4.0            | MIT (override)                                    |       |
@@ -219,18 +231,14 @@ This document contains license information for all dependencies across the monor
 | ✅     | botocore-stubs                               | 1.42.35           | MIT                                               |       |
 | ✅     | cffi                                         | 2.0.0             | MIT                                               |       |
 | ✅     | charset-normalizer                           | 3.4.4             | MIT                                               |       |
-| ✅     | docling-core                                 | 2.57.0            | MIT (override)                                    |       |
 | ✅     | fastapi                                      | 0.128.0           | MIT                                               |       |
 | ✅     | fastavro                                     | 1.12.1            | MIT                                               |       |
 | ✅     | fonttools                                    | 4.61.1            | MIT                                               |       |
 | ✅     | gherkin-official                             | 29.0.0            | MIT                                               |       |
 | ✅     | iniconfig                                    | 2.3.0             | MIT                                               |       |
-| ✅     | jsonref                                      | 1.1.0             | MIT                                               |       |
-| ✅     | jsonschema                                   | 4.25.1            | MIT (override)                                    |       |
-| ✅     | jsonschema-specifications                    | 2025.9.1          | MIT (override)                                    |       |
 | ✅     | kuzu                                         | 0.11.3            | MIT                                               |       |
 | ✅     | langchain                                    | 1.2.7             | MIT                                               |       |
-| ✅     | langchain-aws                                | 1.2.1             | MIT                                               |       |
+| ✅     | langchain-aws                                | 1.1.0             | MIT                                               |       |
 | ✅     | langchain-classic                            | 1.0.1             | MIT                                               |       |
 | ✅     | langchain-core                               | 1.2.7             | MIT                                               |       |
 | ✅     | langchain-memgraph                           | 0.1.12            | MIT                                               |       |
@@ -253,6 +261,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | llama-index-storage-kvstore-mongodb          | 0.4.1             | MIT                                               |       |
 | ✅     | llama-index-vector-stores-milvus             | 0.9.4             | MIT (override)                                    |       |
 | ✅     | llama-index-workflows                        | 2.11.6            | MIT (override)                                    |       |
+| ✅     | markitdown                                   | 0.1.4             | MIT                                               |       |
 | ✅     | mypy-boto3-s3                                | 1.42.21           | MIT                                               |       |
 | ✅     | mypy_extensions                              | 1.1.0             | MIT (override)                                    |       |
 | ✅     | parse_type                                   | 0.6.6             | MIT (override)                                    |       |
@@ -262,8 +271,6 @@ This document contains license information for all dependencies across the monor
 | ✅     | pydantic_core                                | 2.41.5            | MIT                                               |       |
 | ✅     | pyparsing                                    | 3.3.1             | MIT                                               |       |
 | ✅     | pytest-cov                                   | 6.3.0             | MIT                                               |       |
-| ✅     | referencing                                  | 0.37.0            | MIT (override)                                    |       |
-| ✅     | rpds-py                                      | 0.30.0            | MIT (override)                                    |       |
 | ✅     | soupsieve                                    | 2.8.1             | MIT                                               |       |
 | ✅     | tokenize_rt                                  | 6.2.0             | MIT                                               |       |
 | ✅     | types-s3transfer                             | 0.16.0            | MIT                                               |       |
@@ -291,11 +298,13 @@ This document contains license information for all dependencies across the monor
 | ✅     | neo4j-graphrag                                   | 1.12.0                | Apache-2.0 (override)                                        |       |
 | ✅     | aiosignal                                        | 1.4.0                 | Apache Software License                                      |       |
 | ✅     | distro                                           | 1.9.0                 | Apache Software License                                      |       |
+| ✅     | flatbuffers                                      | 25.12.19              | Apache Software License                                      |       |
 | ✅     | googleapis-common-protos                         | 1.71.0                | Apache Software License                                      |       |
 | ✅     | grpcio                                           | 1.76.0                | Apache Software License                                      |       |
 | ✅     | huggingface-hub                                  | 0.36.0                | Apache Software License                                      |       |
 | ✅     | importlib_metadata                               | 8.7.0                 | Apache Software License                                      |       |
 | ✅     | jsonschema-path                                  | 0.3.4                 | Apache Software License                                      |       |
+| ✅     | magika                                           | 0.6.3                 | Apache Software License                                      |       |
 | ✅     | motor                                            | 3.7.1                 | Apache Software License                                      |       |
 | ✅     | nats-py                                          | 2.12.0                | Apache Software License                                      |       |
 | ✅     | nltk                                             | 3.9.2                 | Apache Software License                                      |       |
@@ -311,7 +320,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | qdrant-client                                    | 1.16.2                | Apache Software License                                      |       |
 | ✅     | requests                                         | 2.32.5                | Apache Software License                                      |       |
 | ✅     | requests-toolbelt                                | 1.0.0                 | Apache Software License                                      |       |
-| ✅     | s3transfer                                       | 0.16.0                | Apache Software License                                      |       |
+| ✅     | s3transfer                                       | 0.15.0                | Apache Software License                                      |       |
 | ✅     | safetensors                                      | 0.6.2                 | Apache Software License                                      |       |
 | ✅     | tenacity                                         | 9.1.2                 | Apache Software License                                      |       |
 | ✅     | tokenizers                                       | 0.22.1                | Apache Software License                                      |       |
@@ -328,8 +337,9 @@ This document contains license information for all dependencies across the monor
 | ✅     | neo4j                                            | 6.1.0                 | Apache-2.0 AND Python-2.0                                    |       |
 | ✅     | orjson                                           | 3.11.4                | Apache-2.0 OR MIT                                            |       |
 | ✅     | ormsgpack                                        | 1.12.2                | Apache-2.0 OR MIT                                            |       |
-| ✅     | boto3                                            | 1.42.21               | Apache-2.0                                                   |       |
-| ✅     | botocore                                         | 1.42.21               | Apache-2.0                                                   |       |
+| ✅     | aiobotocore                                      | 2.26.0                | Apache-2.0                                                   |       |
+| ✅     | boto3                                            | 1.41.5                | Apache-2.0                                                   |       |
+| ✅     | botocore                                         | 1.41.5                | Apache-2.0                                                   |       |
 | ✅     | coverage                                         | 7.11.0                | Apache-2.0                                                   |       |
 | ✅     | cyclopts                                         | 4.2.1                 | Apache-2.0                                                   |       |
 | ✅     | fastmcp                                          | 2.12.5                | Apache-2.0                                                   |       |
@@ -371,6 +381,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | Werkzeug                                         | 3.1.1                 | BSD License                                                  |       |
 | ✅     | adlfs                                            | 2025.8.0              | BSD License                                                  |       |
 | ✅     | asgiref                                          | 3.10.0                | BSD License                                                  |       |
+| ✅     | cobble                                           | 0.1.4                 | BSD License                                                  |       |
 | ✅     | colorama                                         | 0.4.6                 | BSD License                                                  |       |
 | ✅     | decorator                                        | 5.2.1                 | BSD License                                                  |       |
 | ✅     | fsspec                                           | 2024.12.0             | BSD License                                                  |       |
@@ -381,22 +392,28 @@ This document contains license information for all dependencies across the monor
 | ✅     | jsonpatch                                        | 1.33                  | BSD License                                                  |       |
 | ✅     | jsonpointer                                      | 3.0.0                 | BSD License                                                  |       |
 | ✅     | lxml                                             | 5.4.0                 | BSD License                                                  |       |
+| ✅     | mammoth                                          | 1.11.0                | BSD License                                                  |       |
+| ✅     | mpmath                                           | 1.3.0                 | BSD License                                                  |       |
 | ✅     | nest-asyncio                                     | 1.6.0                 | BSD License                                                  |       |
 | ✅     | networkx                                         | 3.5                   | BSD License                                                  |       |
 | ✅     | numpy                                            | 2.3.4                 | BSD License                                                  |       |
+| ✅     | olefile                                          | 0.47                  | BSD License                                                  |       |
 | ✅     | openapi-core                                     | 0.19.5                | BSD License                                                  |       |
 | ✅     | openapi-schema-validator                         | 0.6.3                 | BSD License                                                  |       |
 | ✅     | pandas                                           | 2.2.3                 | BSD License                                                  |       |
 | ✅     | prompt_toolkit                                   | 3.0.52                | BSD License                                                  |       |
 | ✅     | pycparser                                        | 2.23                  | BSD License                                                  |       |
 | ✅     | pyperclip                                        | 1.11.0                | BSD License                                                  |       |
+| ✅     | s3fs                                             | 2024.12.0             | BSD License                                                  |       |
 | ✅     | scipy                                            | 1.16.3                | BSD License                                                  |       |
 | ✅     | striprtf                                         | 0.0.26                | BSD License                                                  |       |
+| ✅     | sympy                                            | 1.14.0                | BSD License                                                  |       |
 | ✅     | traitlets                                        | 5.14.3                | BSD License                                                  |       |
 | ✅     | uuid_utils                                       | 0.14.0                | BSD License                                                  |       |
 | ✅     | webencodings                                     | 0.5.1                 | BSD License                                                  |       |
 | ✅     | websockets                                       | 15.0.1                | BSD License                                                  |       |
 | ✅     | wrapt                                            | 1.17.3                | BSD License                                                  |       |
+| ✅     | xlsxwriter                                       | 3.2.9                 | BSD License                                                  |       |
 | ✅     | xxhash                                           | 3.6.0                 | BSD License                                                  |       |
 | ✅     | docutils                                         | 0.22.2                | BSD License; GNU General Public License (GPL); Public Domain |       |
 | ✅     | lazy-object-proxy                                | 1.12.0                | BSD-2-Clause                                                 |       |
@@ -415,7 +432,6 @@ This document contains license information for all dependencies across the monor
 | ✅     | dnspython                                        | 2.8.0                 | ISC License (ISCL)                                           |       |
 | ✅     | pexpect                                          | 4.9.0                 | ISC License (ISCL)                                           |       |
 | ✅     | ptyprocess                                       | 0.7.0                 | ISC License (ISCL)                                           |       |
-| ✅     | shellingham                                      | 1.5.4                 | ISC License (ISCL)                                           |       |
 | ✅     | griffe                                           | 1.14.0                | ISC (override)                                               |       |
 | ✅     | greenlet                                         | 3.2.4                 | MIT AND Python-2.0                                           |       |
 | ✅     | Deprecated                                       | 1.3.1                 | MIT License                                                  |       |
@@ -437,9 +453,11 @@ This document contains license information for all dependencies across the monor
 | ✅     | beautifulsoup4                                   | 4.14.2                | MIT License                                                  |       |
 | ✅     | cachetools                                       | 5.5.2                 | MIT License                                                  |       |
 | ✅     | cohere                                           | 5.20.0                | MIT License                                                  |       |
+| ✅     | coloredlogs                                      | 15.0.1                | MIT License                                                  |       |
 | ✅     | colorlog                                         | 6.10.1                | MIT License                                                  |       |
 | ✅     | dataclasses-json                                 | 0.6.7                 | MIT License                                                  |       |
 | ✅     | docstring_parser                                 | 0.17.0                | MIT License                                                  |       |
+| ✅     | et_xmlfile                                       | 2.0.0                 | MIT License                                                  |       |
 | ✅     | exceptiongroup                                   | 1.3.0                 | MIT License                                                  |       |
 | ✅     | executing                                        | 2.2.1                 | MIT License                                                  |       |
 | ✅     | filetype                                         | 1.2.0                 | MIT License                                                  |       |
@@ -448,14 +466,15 @@ This document contains license information for all dependencies across the monor
 | ✅     | h2                                               | 4.3.0                 | MIT License                                                  |       |
 | ✅     | hpack                                            | 4.1.0                 | MIT License                                                  |       |
 | ✅     | html5lib                                         | 1.1                   | MIT License                                                  |       |
+| ✅     | humanfriendly                                    | 10.0                  | MIT License                                                  |       |
 | ✅     | hyperframe                                       | 6.1.0                 | MIT License                                                  |       |
 | ✅     | jedi                                             | 0.19.2                | MIT License                                                  |       |
 | ✅     | jiter                                            | 0.11.1                | MIT License                                                  |       |
 | ✅     | jmespath                                         | 1.0.1                 | MIT License                                                  |       |
 | ✅     | json_repair                                      | 0.44.1                | MIT License                                                  |       |
 | ✅     | langfuse                                         | 3.14.1                | MIT License                                                  |       |
-| ✅     | latex2mathml                                     | 3.78.1                | MIT License                                                  |       |
 | ✅     | markdown-it-py                                   | 4.0.0                 | MIT License                                                  |       |
+| ✅     | markdownify                                      | 1.2.2                 | MIT License                                                  |       |
 | ✅     | marshmallow                                      | 3.26.1                | MIT License                                                  |       |
 | ✅     | mcp                                              | 1.16.0                | MIT License                                                  |       |
 | ✅     | mdurl                                            | 0.1.2                 | MIT License                                                  |       |
@@ -464,7 +483,9 @@ This document contains license information for all dependencies across the monor
 | ✅     | msal                                             | 1.34.0                | MIT License                                                  |       |
 | ✅     | msal-extensions                                  | 1.3.1                 | MIT License                                                  |       |
 | ✅     | mypy                                             | 1.18.2                | MIT License                                                  |       |
+| ✅     | onnxruntime                                      | 1.20.1                | MIT License                                                  |       |
 | ✅     | openapi-pydantic                                 | 0.5.1                 | MIT License                                                  |       |
+| ✅     | openpyxl                                         | 3.1.5                 | MIT License                                                  |       |
 | ✅     | parse                                            | 1.20.2                | MIT License                                                  |       |
 | ✅     | parso                                            | 0.8.5                 | MIT License                                                  |       |
 | ✅     | pluggy                                           | 1.6.0                 | MIT License                                                  |       |
@@ -475,6 +496,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | pytest-bdd                                       | 8.1.0                 | MIT License                                                  |       |
 | ✅     | pytest-mock                                      | 3.15.1                | MIT License                                                  |       |
 | ✅     | python-i18n                                      | 0.3.9                 | MIT License                                                  |       |
+| ✅     | python-pptx                                      | 1.0.2                 | MIT License                                                  |       |
 | ✅     | pytokens                                         | 0.3.0                 | MIT License                                                  |       |
 | ✅     | pytz                                             | 2025.2                | MIT License                                                  |       |
 | ✅     | redis                                            | 5.3.1                 | MIT License                                                  |       |
@@ -486,13 +508,13 @@ This document contains license information for all dependencies across the monor
 | ✅     | tabulate                                         | 0.9.0                 | MIT License                                                  |       |
 | ✅     | toml-sort                                        | 0.24.3                | MIT License                                                  |       |
 | ✅     | tomlkit                                          | 0.13.3                | MIT License                                                  |       |
-| ✅     | typer                                            | 0.19.2                | MIT License                                                  |       |
 | ✅     | types-awscrt                                     | 0.31.1                | MIT License                                                  |       |
 | ✅     | typing-inspect                                   | 0.9.0                 | MIT License                                                  |       |
 | ✅     | watchfiles                                       | 1.1.1                 | MIT License                                                  |       |
 | ✅     | tqdm                                             | 4.67.1                | MIT License; Mozilla Public License 2.0 (MPL 2.0)            |       |
 | ✅     | tiktoken                                         | 0.12.0                | MIT (override)                                               |       |
 | ✅     | SQLAlchemy                                       | 2.0.44                | MIT                                                          |       |
+| ✅     | aioitertools                                     | 0.13.0                | MIT                                                          |       |
 | ✅     | annotated-doc                                    | 0.0.4                 | MIT                                                          |       |
 | ✅     | anyio                                            | 4.11.0                | MIT (override)                                               |       |
 | ✅     | asgi-lifespan                                    | 2.1.0                 | MIT                                                          |       |
@@ -504,7 +526,6 @@ This document contains license information for all dependencies across the monor
 | ✅     | botocore-stubs                                   | 1.42.35               | MIT                                                          |       |
 | ✅     | cffi                                             | 2.0.0                 | MIT                                                          |       |
 | ✅     | charset-normalizer                               | 3.4.4                 | MIT                                                          |       |
-| ✅     | docling-core                                     | 2.54.1                | MIT (override)                                               |       |
 | ✅     | fastapi                                          | 0.128.0               | MIT                                                          |       |
 | ✅     | fastavro                                         | 1.12.1                | MIT                                                          |       |
 | ✅     | gherkin-official                                 | 29.0.0                | MIT                                                          |       |
@@ -512,12 +533,11 @@ This document contains license information for all dependencies across the monor
 | ✅     | httpx-sse                                        | 0.4.0                 | MIT                                                          |       |
 | ✅     | iniconfig                                        | 2.3.0                 | MIT                                                          |       |
 | ✅     | jambo                                            | 0.1.dev234+g1da93a4d2 | MIT                                                          |       |
-| ✅     | jsonref                                          | 1.1.0                 | MIT                                                          |       |
 | ✅     | jsonschema                                       | 4.25.1                | MIT (override)                                               |       |
 | ✅     | jsonschema-specifications                        | 2025.9.1              | MIT (override)                                               |       |
 | ✅     | kuzu                                             | 0.11.3                | MIT                                                          |       |
 | ✅     | langchain                                        | 1.2.7                 | MIT                                                          |       |
-| ✅     | langchain-aws                                    | 1.2.1                 | MIT                                                          |       |
+| ✅     | langchain-aws                                    | 1.1.0                 | MIT                                                          |       |
 | ✅     | langchain-classic                                | 1.0.1                 | MIT                                                          |       |
 | ✅     | langchain-core                                   | 1.2.7                 | MIT                                                          |       |
 | ✅     | langchain-memgraph                               | 0.1.12                | MIT                                                          |       |
@@ -542,6 +562,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | llama-index-utils-huggingface                    | 0.4.1                 | MIT                                                          |       |
 | ✅     | llama-index-vector-stores-milvus                 | 0.9.4                 | MIT (override)                                               |       |
 | ✅     | llama-index-workflows                            | 2.11.6                | MIT (override)                                               |       |
+| ✅     | markitdown                                       | 0.1.4                 | MIT                                                          |       |
 | ✅     | more-itertools                                   | 10.8.0                | MIT                                                          |       |
 | ✅     | mypy-boto3-s3                                    | 1.42.21               | MIT                                                          |       |
 | ✅     | mypy_extensions                                  | 1.1.0                 | MIT (override)                                               |       |
@@ -583,10 +604,12 @@ This document contains license information for all dependencies across the monor
 | ✅     | neo4j-graphrag                               | 1.12.0          | Apache-2.0 (override)                             |       |
 | ✅     | aiosignal                                    | 1.4.0           | Apache Software License                           |       |
 | ✅     | distro                                       | 1.9.0           | Apache Software License                           |       |
+| ✅     | flatbuffers                                  | 25.12.19        | Apache Software License                           |       |
 | ✅     | googleapis-common-protos                     | 1.72.0          | Apache Software License                           |       |
 | ✅     | grpcio                                       | 1.76.0          | Apache Software License                           |       |
 | ✅     | huggingface-hub                              | 0.36.0          | Apache Software License                           |       |
 | ✅     | importlib_metadata                           | 8.7.0           | Apache Software License                           |       |
+| ✅     | magika                                       | 0.6.3           | Apache Software License                           |       |
 | ✅     | motor                                        | 3.7.1           | Apache Software License                           |       |
 | ✅     | nats-py                                      | 2.12.0          | Apache Software License                           |       |
 | ✅     | nltk                                         | 3.9.2           | Apache Software License                           |       |
@@ -600,7 +623,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | qdrant-client                                | 1.16.2          | Apache Software License                           |       |
 | ✅     | requests                                     | 2.32.5          | Apache Software License                           |       |
 | ✅     | requests-toolbelt                            | 1.0.0           | Apache Software License                           |       |
-| ✅     | s3transfer                                   | 0.16.0          | Apache Software License                           |       |
+| ✅     | s3transfer                                   | 0.15.0          | Apache Software License                           |       |
 | ✅     | safetensors                                  | 0.6.2           | Apache Software License                           |       |
 | ✅     | tenacity                                     | 9.1.2           | Apache Software License                           |       |
 | ✅     | tokenizers                                   | 0.22.1          | Apache Software License                           |       |
@@ -616,8 +639,9 @@ This document contains license information for all dependencies across the monor
 | ✅     | neo4j                                        | 6.1.0           | Apache-2.0 AND Python-2.0                         |       |
 | ✅     | orjson                                       | 3.11.4          | Apache-2.0 OR MIT                                 |       |
 | ✅     | ormsgpack                                    | 1.12.2          | Apache-2.0 OR MIT                                 |       |
-| ✅     | boto3                                        | 1.42.21         | Apache-2.0                                        |       |
-| ✅     | botocore                                     | 1.42.21         | Apache-2.0                                        |       |
+| ✅     | aiobotocore                                  | 2.26.0          | Apache-2.0                                        |       |
+| ✅     | boto3                                        | 1.41.5          | Apache-2.0                                        |       |
+| ✅     | botocore                                     | 1.41.5          | Apache-2.0                                        |       |
 | ✅     | coverage                                     | 7.11.3          | Apache-2.0                                        |       |
 | ✅     | frozenlist                                   | 1.8.0           | Apache-2.0                                        |       |
 | ✅     | hf-xet                                       | 1.2.0           | Apache-2.0 (override)                             |       |
@@ -651,6 +675,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | Jinja2                                       | 3.1.6           | BSD License                                       |       |
 | ✅     | Pygments                                     | 2.19.2          | BSD License                                       |       |
 | ✅     | adlfs                                        | 2025.8.0        | BSD License                                       |       |
+| ✅     | cobble                                       | 0.1.4           | BSD License                                       |       |
 | ✅     | colorama                                     | 0.4.6           | BSD License                                       |       |
 | ✅     | decorator                                    | 5.2.1           | BSD License                                       |       |
 | ✅     | fsspec                                       | 2024.12.0       | BSD License                                       |       |
@@ -661,19 +686,25 @@ This document contains license information for all dependencies across the monor
 | ✅     | jsonpatch                                    | 1.33            | BSD License                                       |       |
 | ✅     | jsonpointer                                  | 3.0.0           | BSD License                                       |       |
 | ✅     | lxml                                         | 5.4.0           | BSD License                                       |       |
+| ✅     | mammoth                                      | 1.11.0          | BSD License                                       |       |
+| ✅     | mpmath                                       | 1.3.0           | BSD License                                       |       |
 | ✅     | nest-asyncio                                 | 1.6.0           | BSD License                                       |       |
 | ✅     | networkx                                     | 3.5             | BSD License                                       |       |
 | ✅     | numpy                                        | 2.3.5           | BSD License                                       |       |
+| ✅     | olefile                                      | 0.47            | BSD License                                       |       |
 | ✅     | pandas                                       | 2.2.3           | BSD License                                       |       |
 | ✅     | prompt_toolkit                               | 3.0.52          | BSD License                                       |       |
 | ✅     | pycparser                                    | 2.23            | BSD License                                       |       |
 | ✅     | requests-oauthlib                            | 2.0.0           | BSD License                                       |       |
+| ✅     | s3fs                                         | 2024.12.0       | BSD License                                       |       |
 | ✅     | scipy                                        | 1.16.3          | BSD License                                       |       |
 | ✅     | striprtf                                     | 0.0.26          | BSD License                                       |       |
+| ✅     | sympy                                        | 1.14.0          | BSD License                                       |       |
 | ✅     | traitlets                                    | 5.14.3          | BSD License                                       |       |
 | ✅     | uuid_utils                                   | 0.14.0          | BSD License                                       |       |
 | ✅     | webencodings                                 | 0.5.1           | BSD License                                       |       |
 | ✅     | wrapt                                        | 1.17.3          | BSD License                                       |       |
+| ✅     | xlsxwriter                                   | 3.2.9           | BSD License                                       |       |
 | ✅     | xxhash                                       | 3.6.0           | BSD License                                       |       |
 | ✅     | MarkupSafe                                   | 3.0.3           | BSD-3-Clause                                      |       |
 | ✅     | click                                        | 8.3.1           | BSD-3-Clause (override)                           |       |
@@ -690,7 +721,6 @@ This document contains license information for all dependencies across the monor
 | ✅     | dnspython                                    | 2.8.0           | ISC License (ISCL)                                |       |
 | ✅     | pexpect                                      | 4.9.0           | ISC License (ISCL)                                |       |
 | ✅     | ptyprocess                                   | 0.7.0           | ISC License (ISCL)                                |       |
-| ✅     | shellingham                                  | 1.5.4           | ISC License (ISCL)                                |       |
 | ✅     | griffe                                       | 1.15.0          | ISC (override)                                    |       |
 | ✅     | greenlet                                     | 3.2.4           | MIT AND Python-2.0                                |       |
 | ✅     | Deprecated                                   | 1.3.1           | MIT License                                       |       |
@@ -711,8 +741,10 @@ This document contains license information for all dependencies across the monor
 | ✅     | beautifulsoup4                               | 4.14.2          | MIT License                                       |       |
 | ✅     | cachetools                                   | 5.5.2           | MIT License                                       |       |
 | ✅     | cohere                                       | 5.20.0          | MIT License                                       |       |
+| ✅     | coloredlogs                                  | 15.0.1          | MIT License                                       |       |
 | ✅     | colorlog                                     | 6.10.1          | MIT License                                       |       |
 | ✅     | dataclasses-json                             | 0.6.7           | MIT License                                       |       |
+| ✅     | et_xmlfile                                   | 2.0.0           | MIT License                                       |       |
 | ✅     | executing                                    | 2.2.1           | MIT License                                       |       |
 | ✅     | filetype                                     | 1.2.0           | MIT License                                       |       |
 | ✅     | gunicorn                                     | 23.0.0          | MIT License                                       |       |
@@ -720,22 +752,23 @@ This document contains license information for all dependencies across the monor
 | ✅     | h2                                           | 4.3.0           | MIT License                                       |       |
 | ✅     | hpack                                        | 4.1.0           | MIT License                                       |       |
 | ✅     | html5lib                                     | 1.1             | MIT License                                       |       |
+| ✅     | humanfriendly                                | 10.0            | MIT License                                       |       |
 | ✅     | hyperframe                                   | 6.1.0           | MIT License                                       |       |
 | ✅     | jedi                                         | 0.19.2          | MIT License                                       |       |
 | ✅     | jiter                                        | 0.12.0          | MIT License                                       |       |
 | ✅     | jmespath                                     | 1.0.1           | MIT License                                       |       |
 | ✅     | json_repair                                  | 0.44.1          | MIT License                                       |       |
 | ✅     | langfuse                                     | 3.14.1          | MIT License                                       |       |
-| ✅     | latex2mathml                                 | 3.78.1          | MIT License                                       |       |
-| ✅     | markdown-it-py                               | 4.0.0           | MIT License                                       |       |
+| ✅     | markdownify                                  | 1.2.2           | MIT License                                       |       |
 | ✅     | marshmallow                                  | 3.26.1          | MIT License                                       |       |
-| ✅     | mdurl                                        | 0.1.2           | MIT License                                       |       |
 | ✅     | memgraph-toolbox                             | 0.1.9           | MIT License                                       |       |
 | ✅     | mongoengine                                  | 0.29.1          | MIT License                                       |       |
 | ✅     | msal                                         | 1.34.0          | MIT License                                       |       |
 | ✅     | msal-extensions                              | 1.3.1           | MIT License                                       |       |
 | ✅     | msrest                                       | 0.7.1           | MIT License                                       |       |
 | ✅     | mypy                                         | 1.18.2          | MIT License                                       |       |
+| ✅     | onnxruntime                                  | 1.20.1          | MIT License                                       |       |
+| ✅     | openpyxl                                     | 3.1.5           | MIT License                                       |       |
 | ✅     | parse                                        | 1.20.2          | MIT License                                       |       |
 | ✅     | parso                                        | 0.8.5           | MIT License                                       |       |
 | ✅     | pluggy                                       | 1.6.0           | MIT License                                       |       |
@@ -745,22 +778,22 @@ This document contains license information for all dependencies across the monor
 | ✅     | pytest-bdd                                   | 8.1.0           | MIT License                                       |       |
 | ✅     | pytest-mock                                  | 3.15.1          | MIT License                                       |       |
 | ✅     | python-i18n                                  | 0.3.9           | MIT License                                       |       |
+| ✅     | python-pptx                                  | 1.0.2           | MIT License                                       |       |
 | ✅     | pytokens                                     | 0.3.0           | MIT License                                       |       |
 | ✅     | pytz                                         | 2025.2          | MIT License                                       |       |
 | ✅     | redis                                        | 5.3.1           | MIT License                                       |       |
-| ✅     | rich                                         | 14.2.0          | MIT License                                       |       |
 | ✅     | ruff                                         | 0.8.6           | MIT License                                       |       |
 | ✅     | six                                          | 1.17.0          | MIT License                                       |       |
 | ✅     | stack-data                                   | 0.6.3           | MIT License                                       |       |
 | ✅     | tabulate                                     | 0.9.0           | MIT License                                       |       |
 | ✅     | toml-sort                                    | 0.24.3          | MIT License                                       |       |
 | ✅     | tomlkit                                      | 0.13.3          | MIT License                                       |       |
-| ✅     | typer                                        | 0.19.2          | MIT License                                       |       |
 | ✅     | types-awscrt                                 | 0.31.1          | MIT License                                       |       |
 | ✅     | typing-inspect                               | 0.9.0           | MIT License                                       |       |
 | ✅     | tqdm                                         | 4.67.1          | MIT License; Mozilla Public License 2.0 (MPL 2.0) |       |
 | ✅     | tiktoken                                     | 0.12.0          | MIT (override)                                    |       |
 | ✅     | SQLAlchemy                                   | 2.0.44          | MIT                                               |       |
+| ✅     | aioitertools                                 | 0.13.0          | MIT                                               |       |
 | ✅     | annotated-doc                                | 0.0.4           | MIT                                               |       |
 | ✅     | anyio                                        | 4.11.0          | MIT (override)                                    |       |
 | ✅     | asgi-lifespan                                | 2.1.0           | MIT                                               |       |
@@ -773,18 +806,14 @@ This document contains license information for all dependencies across the monor
 | ✅     | botocore-stubs                               | 1.42.35         | MIT                                               |       |
 | ✅     | cffi                                         | 2.0.0           | MIT                                               |       |
 | ✅     | charset-normalizer                           | 3.4.4           | MIT                                               |       |
-| ✅     | docling-core                                 | 2.54.1          | MIT (override)                                    |       |
 | ✅     | fastapi                                      | 0.128.0         | MIT                                               |       |
 | ✅     | fastavro                                     | 1.12.1          | MIT                                               |       |
 | ✅     | gherkin-official                             | 29.0.0          | MIT                                               |       |
 | ✅     | httpx-sse                                    | 0.4.0           | MIT                                               |       |
 | ✅     | iniconfig                                    | 2.3.0           | MIT                                               |       |
-| ✅     | jsonref                                      | 1.1.0           | MIT                                               |       |
-| ✅     | jsonschema                                   | 4.25.1          | MIT (override)                                    |       |
-| ✅     | jsonschema-specifications                    | 2025.9.1        | MIT (override)                                    |       |
 | ✅     | kuzu                                         | 0.11.3          | MIT                                               |       |
 | ✅     | langchain                                    | 1.2.7           | MIT                                               |       |
-| ✅     | langchain-aws                                | 1.2.1           | MIT                                               |       |
+| ✅     | langchain-aws                                | 1.1.0           | MIT                                               |       |
 | ✅     | langchain-classic                            | 1.0.1           | MIT                                               |       |
 | ✅     | langchain-core                               | 1.2.7           | MIT                                               |       |
 | ✅     | langchain-memgraph                           | 0.1.12          | MIT                                               |       |
@@ -807,6 +836,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | llama-index-storage-kvstore-mongodb          | 0.4.1           | MIT                                               |       |
 | ✅     | llama-index-vector-stores-milvus             | 0.9.4           | MIT (override)                                    |       |
 | ✅     | llama-index-workflows                        | 2.11.6          | MIT (override)                                    |       |
+| ✅     | markitdown                                   | 0.1.4           | MIT                                               |       |
 | ✅     | microsoft-agents-activity                    | 0.5.3           | MIT                                               |       |
 | ✅     | microsoft-agents-authentication-msal         | 0.5.3           | MIT                                               |       |
 | ✅     | microsoft-agents-hosting-aiohttp             | 0.5.3           | MIT                                               |       |
@@ -819,8 +849,6 @@ This document contains license information for all dependencies across the monor
 | ✅     | pydantic-settings                            | 2.12.0          | MIT                                               |       |
 | ✅     | pydantic_core                                | 2.41.5          | MIT                                               |       |
 | ✅     | pytest-cov                                   | 6.3.0           | MIT                                               |       |
-| ✅     | referencing                                  | 0.37.0          | MIT (override)                                    |       |
-| ✅     | rpds-py                                      | 0.29.0          | MIT (override)                                    |       |
 | ✅     | soupsieve                                    | 2.8             | MIT                                               |       |
 | ✅     | tokenize_rt                                  | 6.2.0           | MIT                                               |       |
 | ✅     | types-s3transfer                             | 0.16.0          | MIT                                               |       |
@@ -847,10 +875,12 @@ This document contains license information for all dependencies across the monor
 | ✅     | neo4j-graphrag                               | 1.12.0          | Apache-2.0 (override)                             |       |
 | ✅     | aiosignal                                    | 1.4.0           | Apache Software License                           |       |
 | ✅     | distro                                       | 1.9.0           | Apache Software License                           |       |
+| ✅     | flatbuffers                                  | 25.12.19        | Apache Software License                           |       |
 | ✅     | googleapis-common-protos                     | 1.71.0          | Apache Software License                           |       |
 | ✅     | grpcio                                       | 1.76.0          | Apache Software License                           |       |
 | ✅     | huggingface-hub                              | 0.36.0          | Apache Software License                           |       |
 | ✅     | importlib_metadata                           | 8.7.0           | Apache Software License                           |       |
+| ✅     | magika                                       | 0.6.3           | Apache Software License                           |       |
 | ✅     | motor                                        | 3.7.1           | Apache Software License                           |       |
 | ✅     | nats-py                                      | 2.12.0          | Apache Software License                           |       |
 | ✅     | nltk                                         | 3.9.2           | Apache Software License                           |       |
@@ -864,7 +894,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | qdrant-client                                | 1.16.2          | Apache Software License                           |       |
 | ✅     | requests                                     | 2.32.5          | Apache Software License                           |       |
 | ✅     | requests-toolbelt                            | 1.0.0           | Apache Software License                           |       |
-| ✅     | s3transfer                                   | 0.16.0          | Apache Software License                           |       |
+| ✅     | s3transfer                                   | 0.15.0          | Apache Software License                           |       |
 | ✅     | safetensors                                  | 0.6.2           | Apache Software License                           |       |
 | ✅     | tenacity                                     | 9.1.2           | Apache Software License                           |       |
 | ✅     | tokenizers                                   | 0.22.1          | Apache Software License                           |       |
@@ -880,8 +910,9 @@ This document contains license information for all dependencies across the monor
 | ✅     | cryptography                                 | 46.0.3          | Apache-2.0 OR BSD-3-Clause                        |       |
 | ✅     | orjson                                       | 3.11.4          | Apache-2.0 OR MIT                                 |       |
 | ✅     | ormsgpack                                    | 1.12.2          | Apache-2.0 OR MIT                                 |       |
-| ✅     | boto3                                        | 1.42.21         | Apache-2.0                                        |       |
-| ✅     | botocore                                     | 1.42.21         | Apache-2.0                                        |       |
+| ✅     | aiobotocore                                  | 2.26.0          | Apache-2.0                                        |       |
+| ✅     | boto3                                        | 1.41.5          | Apache-2.0                                        |       |
+| ✅     | botocore                                     | 1.41.5          | Apache-2.0                                        |       |
 | ✅     | coverage                                     | 7.11.0          | Apache-2.0                                        |       |
 | ✅     | frozenlist                                   | 1.8.0           | Apache-2.0                                        |       |
 | ✅     | hf-xet                                       | 1.2.0           | Apache-2.0 (override)                             |       |
@@ -915,6 +946,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | Jinja2                                       | 3.1.6           | BSD License                                       |       |
 | ✅     | Pygments                                     | 2.19.2          | BSD License                                       |       |
 | ✅     | adlfs                                        | 2025.8.0        | BSD License                                       |       |
+| ✅     | cobble                                       | 0.1.4           | BSD License                                       |       |
 | ✅     | colorama                                     | 0.4.6           | BSD License                                       |       |
 | ✅     | contourpy                                    | 1.3.3           | BSD License                                       |       |
 | ✅     | cycler                                       | 0.12.1          | BSD License                                       |       |
@@ -928,19 +960,25 @@ This document contains license information for all dependencies across the monor
 | ✅     | jsonpointer                                  | 3.0.0           | BSD License                                       |       |
 | ✅     | kiwisolver                                   | 1.4.9           | BSD License                                       |       |
 | ✅     | lxml                                         | 5.4.0           | BSD License                                       |       |
+| ✅     | mammoth                                      | 1.11.0          | BSD License                                       |       |
+| ✅     | mpmath                                       | 1.3.0           | BSD License                                       |       |
 | ✅     | nest-asyncio                                 | 1.6.0           | BSD License                                       |       |
 | ✅     | networkx                                     | 3.5             | BSD License                                       |       |
 | ✅     | numpy                                        | 2.3.4           | BSD License                                       |       |
+| ✅     | olefile                                      | 0.47            | BSD License                                       |       |
 | ✅     | pandas                                       | 2.2.3           | BSD License                                       |       |
 | ✅     | prompt_toolkit                               | 3.0.52          | BSD License                                       |       |
 | ✅     | pycparser                                    | 2.23            | BSD License                                       |       |
+| ✅     | s3fs                                         | 2024.12.0       | BSD License                                       |       |
 | ✅     | scipy                                        | 1.16.3          | BSD License                                       |       |
 | ✅     | seaborn                                      | 0.13.2          | BSD License                                       |       |
 | ✅     | striprtf                                     | 0.0.26          | BSD License                                       |       |
+| ✅     | sympy                                        | 1.14.0          | BSD License                                       |       |
 | ✅     | traitlets                                    | 5.14.3          | BSD License                                       |       |
 | ✅     | uuid_utils                                   | 0.14.0          | BSD License                                       |       |
 | ✅     | webencodings                                 | 0.5.1           | BSD License                                       |       |
 | ✅     | wrapt                                        | 1.17.3          | BSD License                                       |       |
+| ✅     | xlsxwriter                                   | 3.2.9           | BSD License                                       |       |
 | ✅     | xxhash                                       | 3.6.0           | BSD License                                       |       |
 | ✅     | MarkupSafe                                   | 3.0.3           | BSD-3-Clause                                      |       |
 | ✅     | click                                        | 8.3.0           | BSD-3-Clause (override)                           |       |
@@ -955,7 +993,6 @@ This document contains license information for all dependencies across the monor
 | ✅     | dnspython                                    | 2.8.0           | ISC License (ISCL)                                |       |
 | ✅     | pexpect                                      | 4.9.0           | ISC License (ISCL)                                |       |
 | ✅     | ptyprocess                                   | 0.7.0           | ISC License (ISCL)                                |       |
-| ✅     | shellingham                                  | 1.5.4           | ISC License (ISCL)                                |       |
 | ✅     | griffe                                       | 1.14.0          | ISC (override)                                    |       |
 | ✅     | greenlet                                     | 3.2.4           | MIT AND Python-2.0                                |       |
 | ✅     | Deprecated                                   | 1.3.1           | MIT License                                       |       |
@@ -973,29 +1010,32 @@ This document contains license information for all dependencies across the monor
 | ✅     | beautifulsoup4                               | 4.14.2          | MIT License                                       |       |
 | ✅     | cachetools                                   | 5.5.2           | MIT License                                       |       |
 | ✅     | cohere                                       | 5.20.0          | MIT License                                       |       |
+| ✅     | coloredlogs                                  | 15.0.1          | MIT License                                       |       |
 | ✅     | colorlog                                     | 6.10.1          | MIT License                                       |       |
 | ✅     | dataclasses-json                             | 0.6.7           | MIT License                                       |       |
+| ✅     | et_xmlfile                                   | 2.0.0           | MIT License                                       |       |
 | ✅     | executing                                    | 2.2.1           | MIT License                                       |       |
 | ✅     | filetype                                     | 1.2.0           | MIT License                                       |       |
 | ✅     | h11                                          | 0.16.0          | MIT License                                       |       |
 | ✅     | h2                                           | 4.3.0           | MIT License                                       |       |
 | ✅     | hpack                                        | 4.1.0           | MIT License                                       |       |
 | ✅     | html5lib                                     | 1.1             | MIT License                                       |       |
+| ✅     | humanfriendly                                | 10.0            | MIT License                                       |       |
 | ✅     | hyperframe                                   | 6.1.0           | MIT License                                       |       |
 | ✅     | jedi                                         | 0.19.2          | MIT License                                       |       |
 | ✅     | jiter                                        | 0.11.1          | MIT License                                       |       |
 | ✅     | jmespath                                     | 1.0.1           | MIT License                                       |       |
 | ✅     | json_repair                                  | 0.44.1          | MIT License                                       |       |
 | ✅     | langfuse                                     | 3.14.1          | MIT License                                       |       |
-| ✅     | latex2mathml                                 | 3.78.1          | MIT License                                       |       |
-| ✅     | markdown-it-py                               | 4.0.0           | MIT License                                       |       |
+| ✅     | markdownify                                  | 1.2.2           | MIT License                                       |       |
 | ✅     | marshmallow                                  | 3.26.1          | MIT License                                       |       |
-| ✅     | mdurl                                        | 0.1.2           | MIT License                                       |       |
 | ✅     | memgraph-toolbox                             | 0.1.9           | MIT License                                       |       |
 | ✅     | mongoengine                                  | 0.29.1          | MIT License                                       |       |
 | ✅     | msal                                         | 1.34.0          | MIT License                                       |       |
 | ✅     | msal-extensions                              | 1.3.1           | MIT License                                       |       |
 | ✅     | mypy                                         | 1.18.2          | MIT License                                       |       |
+| ✅     | onnxruntime                                  | 1.20.1          | MIT License                                       |       |
+| ✅     | openpyxl                                     | 3.1.5           | MIT License                                       |       |
 | ✅     | parse                                        | 1.20.2          | MIT License                                       |       |
 | ✅     | parso                                        | 0.8.5           | MIT License                                       |       |
 | ✅     | pluggy                                       | 1.6.0           | MIT License                                       |       |
@@ -1005,22 +1045,22 @@ This document contains license information for all dependencies across the monor
 | ✅     | pytest-bdd                                   | 8.1.0           | MIT License                                       |       |
 | ✅     | pytest-mock                                  | 3.15.1          | MIT License                                       |       |
 | ✅     | python-i18n                                  | 0.3.9           | MIT License                                       |       |
+| ✅     | python-pptx                                  | 1.0.2           | MIT License                                       |       |
 | ✅     | pytokens                                     | 0.3.0           | MIT License                                       |       |
 | ✅     | pytz                                         | 2025.2          | MIT License                                       |       |
 | ✅     | redis                                        | 5.3.1           | MIT License                                       |       |
-| ✅     | rich                                         | 14.2.0          | MIT License                                       |       |
 | ✅     | ruff                                         | 0.8.6           | MIT License                                       |       |
 | ✅     | six                                          | 1.17.0          | MIT License                                       |       |
 | ✅     | stack-data                                   | 0.6.3           | MIT License                                       |       |
 | ✅     | tabulate                                     | 0.9.0           | MIT License                                       |       |
 | ✅     | toml-sort                                    | 0.24.3          | MIT License                                       |       |
 | ✅     | tomlkit                                      | 0.13.3          | MIT License                                       |       |
-| ✅     | typer                                        | 0.19.2          | MIT License                                       |       |
 | ✅     | types-awscrt                                 | 0.31.1          | MIT License                                       |       |
 | ✅     | typing-inspect                               | 0.9.0           | MIT License                                       |       |
 | ✅     | tqdm                                         | 4.67.1          | MIT License; Mozilla Public License 2.0 (MPL 2.0) |       |
 | ✅     | tiktoken                                     | 0.12.0          | MIT (override)                                    |       |
 | ✅     | SQLAlchemy                                   | 2.0.44          | MIT                                               |       |
+| ✅     | aioitertools                                 | 0.13.0          | MIT                                               |       |
 | ✅     | annotated-doc                                | 0.0.4           | MIT                                               |       |
 | ✅     | anyio                                        | 4.11.0          | MIT (override)                                    |       |
 | ✅     | attrs                                        | 25.4.0          | MIT (override)                                    |       |
@@ -1031,19 +1071,15 @@ This document contains license information for all dependencies across the monor
 | ✅     | botocore-stubs                               | 1.42.35         | MIT                                               |       |
 | ✅     | cffi                                         | 2.0.0           | MIT                                               |       |
 | ✅     | charset-normalizer                           | 3.4.4           | MIT                                               |       |
-| ✅     | docling-core                                 | 2.54.1          | MIT (override)                                    |       |
 | ✅     | fastapi                                      | 0.128.0         | MIT                                               |       |
 | ✅     | fastavro                                     | 1.12.1          | MIT                                               |       |
 | ✅     | fonttools                                    | 4.60.1          | MIT                                               |       |
 | ✅     | gherkin-official                             | 29.0.0          | MIT                                               |       |
 | ✅     | httpx-sse                                    | 0.4.0           | MIT                                               |       |
 | ✅     | iniconfig                                    | 2.3.0           | MIT                                               |       |
-| ✅     | jsonref                                      | 1.1.0           | MIT                                               |       |
-| ✅     | jsonschema                                   | 4.25.1          | MIT (override)                                    |       |
-| ✅     | jsonschema-specifications                    | 2025.9.1        | MIT (override)                                    |       |
 | ✅     | kuzu                                         | 0.11.3          | MIT                                               |       |
 | ✅     | langchain                                    | 1.2.7           | MIT                                               |       |
-| ✅     | langchain-aws                                | 1.2.1           | MIT                                               |       |
+| ✅     | langchain-aws                                | 1.1.0           | MIT                                               |       |
 | ✅     | langchain-classic                            | 1.0.1           | MIT                                               |       |
 | ✅     | langchain-core                               | 1.2.7           | MIT                                               |       |
 | ✅     | langchain-memgraph                           | 0.1.12          | MIT                                               |       |
@@ -1067,6 +1103,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | llama-index-storage-kvstore-mongodb          | 0.4.1           | MIT                                               |       |
 | ✅     | llama-index-vector-stores-milvus             | 0.9.4           | MIT (override)                                    |       |
 | ✅     | llama-index-workflows                        | 2.11.6          | MIT (override)                                    |       |
+| ✅     | markitdown                                   | 0.1.4           | MIT                                               |       |
 | ✅     | mypy-boto3-s3                                | 1.42.21         | MIT                                               |       |
 | ✅     | mypy_extensions                              | 1.1.0           | MIT (override)                                    |       |
 | ✅     | parse_type                                   | 0.6.6           | MIT (override)                                    |       |
@@ -1076,8 +1113,6 @@ This document contains license information for all dependencies across the monor
 | ✅     | pydantic_core                                | 2.41.5          | MIT                                               |       |
 | ✅     | pyparsing                                    | 3.2.5           | MIT                                               |       |
 | ✅     | pytest-cov                                   | 6.3.0           | MIT                                               |       |
-| ✅     | referencing                                  | 0.37.0          | MIT (override)                                    |       |
-| ✅     | rpds-py                                      | 0.28.0          | MIT (override)                                    |       |
 | ✅     | soupsieve                                    | 2.8             | MIT                                               |       |
 | ✅     | stringcase                                   | 1.2.0           | MIT                                               |       |
 | ✅     | tokenize_rt                                  | 6.2.0           | MIT                                               |       |
@@ -1106,10 +1141,12 @@ This document contains license information for all dependencies across the monor
 | ✅     | neo4j-graphrag                               | 1.12.0          | Apache-2.0 (override)                             |       |
 | ✅     | aiosignal                                    | 1.4.0           | Apache Software License                           |       |
 | ✅     | distro                                       | 1.9.0           | Apache Software License                           |       |
+| ✅     | flatbuffers                                  | 25.12.19        | Apache Software License                           |       |
 | ✅     | googleapis-common-protos                     | 1.71.0          | Apache Software License                           |       |
 | ✅     | grpcio                                       | 1.76.0          | Apache Software License                           |       |
 | ✅     | huggingface-hub                              | 0.36.0          | Apache Software License                           |       |
 | ✅     | importlib_metadata                           | 8.7.0           | Apache Software License                           |       |
+| ✅     | magika                                       | 0.6.3           | Apache Software License                           |       |
 | ✅     | motor                                        | 3.7.1           | Apache Software License                           |       |
 | ✅     | nats-py                                      | 2.12.0          | Apache Software License                           |       |
 | ✅     | nltk                                         | 3.9.2           | Apache Software License                           |       |
@@ -1123,7 +1160,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | qdrant-client                                | 1.16.2          | Apache Software License                           |       |
 | ✅     | requests                                     | 2.32.5          | Apache Software License                           |       |
 | ✅     | requests-toolbelt                            | 1.0.0           | Apache Software License                           |       |
-| ✅     | s3transfer                                   | 0.16.0          | Apache Software License                           |       |
+| ✅     | s3transfer                                   | 0.15.0          | Apache Software License                           |       |
 | ✅     | safetensors                                  | 0.6.2           | Apache Software License                           |       |
 | ✅     | tenacity                                     | 9.1.2           | Apache Software License                           |       |
 | ✅     | tokenizers                                   | 0.22.1          | Apache Software License                           |       |
@@ -1140,8 +1177,9 @@ This document contains license information for all dependencies across the monor
 | ✅     | cryptography                                 | 46.0.3          | Apache-2.0 OR BSD-3-Clause                        |       |
 | ✅     | orjson                                       | 3.11.4          | Apache-2.0 OR MIT                                 |       |
 | ✅     | ormsgpack                                    | 1.12.2          | Apache-2.0 OR MIT                                 |       |
-| ✅     | boto3                                        | 1.42.21         | Apache-2.0                                        |       |
-| ✅     | botocore                                     | 1.42.21         | Apache-2.0                                        |       |
+| ✅     | aiobotocore                                  | 2.26.0          | Apache-2.0                                        |       |
+| ✅     | boto3                                        | 1.41.5          | Apache-2.0                                        |       |
+| ✅     | botocore                                     | 1.41.5          | Apache-2.0                                        |       |
 | ✅     | coverage                                     | 7.11.0          | Apache-2.0                                        |       |
 | ✅     | frozenlist                                   | 1.8.0           | Apache-2.0                                        |       |
 | ✅     | hf-xet                                       | 1.2.0           | Apache-2.0 (override)                             |       |
@@ -1175,6 +1213,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | Jinja2                                       | 3.1.6           | BSD License                                       |       |
 | ✅     | Pygments                                     | 2.19.2          | BSD License                                       |       |
 | ✅     | adlfs                                        | 2025.8.0        | BSD License                                       |       |
+| ✅     | cobble                                       | 0.1.4           | BSD License                                       |       |
 | ✅     | colorama                                     | 0.4.6           | BSD License                                       |       |
 | ✅     | decorator                                    | 5.2.1           | BSD License                                       |       |
 | ✅     | fsspec                                       | 2024.12.0       | BSD License                                       |       |
@@ -1185,19 +1224,25 @@ This document contains license information for all dependencies across the monor
 | ✅     | jsonpatch                                    | 1.33            | BSD License                                       |       |
 | ✅     | jsonpointer                                  | 3.0.0           | BSD License                                       |       |
 | ✅     | lxml                                         | 5.4.0           | BSD License                                       |       |
+| ✅     | mammoth                                      | 1.11.0          | BSD License                                       |       |
+| ✅     | mpmath                                       | 1.3.0           | BSD License                                       |       |
 | ✅     | nest-asyncio                                 | 1.6.0           | BSD License                                       |       |
 | ✅     | networkx                                     | 3.5             | BSD License                                       |       |
 | ✅     | numpy                                        | 2.3.4           | BSD License                                       |       |
+| ✅     | olefile                                      | 0.47            | BSD License                                       |       |
 | ✅     | pandas                                       | 2.2.3           | BSD License                                       |       |
 | ✅     | prompt_toolkit                               | 3.0.52          | BSD License                                       |       |
 | ✅     | pycparser                                    | 2.23            | BSD License                                       |       |
+| ✅     | s3fs                                         | 2024.12.0       | BSD License                                       |       |
 | ✅     | scipy                                        | 1.16.3          | BSD License                                       |       |
 | ✅     | striprtf                                     | 0.0.26          | BSD License                                       |       |
+| ✅     | sympy                                        | 1.14.0          | BSD License                                       |       |
 | ✅     | traitlets                                    | 5.14.3          | BSD License                                       |       |
 | ✅     | uuid_utils                                   | 0.14.0          | BSD License                                       |       |
 | ✅     | webencodings                                 | 0.5.1           | BSD License                                       |       |
 | ✅     | websockets                                   | 15.0.1          | BSD License                                       |       |
 | ✅     | wrapt                                        | 1.17.3          | BSD License                                       |       |
+| ✅     | xlsxwriter                                   | 3.2.9           | BSD License                                       |       |
 | ✅     | xxhash                                       | 3.6.0           | BSD License                                       |       |
 | ✅     | MarkupSafe                                   | 3.0.3           | BSD-3-Clause                                      |       |
 | ✅     | click                                        | 8.3.0           | BSD-3-Clause (override)                           |       |
@@ -1213,7 +1258,6 @@ This document contains license information for all dependencies across the monor
 | ✅     | dnspython                                    | 2.8.0           | ISC License (ISCL)                                |       |
 | ✅     | pexpect                                      | 4.9.0           | ISC License (ISCL)                                |       |
 | ✅     | ptyprocess                                   | 0.7.0           | ISC License (ISCL)                                |       |
-| ✅     | shellingham                                  | 1.5.4           | ISC License (ISCL)                                |       |
 | ✅     | griffe                                       | 1.14.0          | ISC (override)                                    |       |
 | ✅     | greenlet                                     | 3.2.4           | MIT AND Python-2.0                                |       |
 | ✅     | Deprecated                                   | 1.3.1           | MIT License                                       |       |
@@ -1231,29 +1275,32 @@ This document contains license information for all dependencies across the monor
 | ✅     | beautifulsoup4                               | 4.14.2          | MIT License                                       |       |
 | ✅     | cachetools                                   | 5.5.2           | MIT License                                       |       |
 | ✅     | cohere                                       | 5.20.0          | MIT License                                       |       |
+| ✅     | coloredlogs                                  | 15.0.1          | MIT License                                       |       |
 | ✅     | colorlog                                     | 6.10.1          | MIT License                                       |       |
 | ✅     | dataclasses-json                             | 0.6.7           | MIT License                                       |       |
+| ✅     | et_xmlfile                                   | 2.0.0           | MIT License                                       |       |
 | ✅     | executing                                    | 2.2.1           | MIT License                                       |       |
 | ✅     | filetype                                     | 1.2.0           | MIT License                                       |       |
 | ✅     | h11                                          | 0.16.0          | MIT License                                       |       |
 | ✅     | h2                                           | 4.3.0           | MIT License                                       |       |
 | ✅     | hpack                                        | 4.1.0           | MIT License                                       |       |
 | ✅     | html5lib                                     | 1.1             | MIT License                                       |       |
+| ✅     | humanfriendly                                | 10.0            | MIT License                                       |       |
 | ✅     | hyperframe                                   | 6.1.0           | MIT License                                       |       |
 | ✅     | jedi                                         | 0.19.2          | MIT License                                       |       |
 | ✅     | jiter                                        | 0.11.1          | MIT License                                       |       |
 | ✅     | jmespath                                     | 1.0.1           | MIT License                                       |       |
 | ✅     | json_repair                                  | 0.44.1          | MIT License                                       |       |
 | ✅     | langfuse                                     | 3.14.1          | MIT License                                       |       |
-| ✅     | latex2mathml                                 | 3.78.1          | MIT License                                       |       |
-| ✅     | markdown-it-py                               | 4.0.0           | MIT License                                       |       |
+| ✅     | markdownify                                  | 1.2.2           | MIT License                                       |       |
 | ✅     | marshmallow                                  | 3.26.1          | MIT License                                       |       |
-| ✅     | mdurl                                        | 0.1.2           | MIT License                                       |       |
 | ✅     | memgraph-toolbox                             | 0.1.9           | MIT License                                       |       |
 | ✅     | mongoengine                                  | 0.29.1          | MIT License                                       |       |
 | ✅     | msal                                         | 1.34.0          | MIT License                                       |       |
 | ✅     | msal-extensions                              | 1.3.1           | MIT License                                       |       |
 | ✅     | mypy                                         | 1.18.2          | MIT License                                       |       |
+| ✅     | onnxruntime                                  | 1.20.1          | MIT License                                       |       |
+| ✅     | openpyxl                                     | 3.1.5           | MIT License                                       |       |
 | ✅     | parse                                        | 1.20.2          | MIT License                                       |       |
 | ✅     | parso                                        | 0.8.5           | MIT License                                       |       |
 | ✅     | pluggy                                       | 1.6.0           | MIT License                                       |       |
@@ -1263,23 +1310,23 @@ This document contains license information for all dependencies across the monor
 | ✅     | pytest-bdd                                   | 8.1.0           | MIT License                                       |       |
 | ✅     | pytest-mock                                  | 3.15.1          | MIT License                                       |       |
 | ✅     | python-i18n                                  | 0.3.9           | MIT License                                       |       |
+| ✅     | python-pptx                                  | 1.0.2           | MIT License                                       |       |
 | ✅     | pytokens                                     | 0.3.0           | MIT License                                       |       |
 | ✅     | pytz                                         | 2025.2          | MIT License                                       |       |
 | ✅     | redis                                        | 5.3.1           | MIT License                                       |       |
-| ✅     | rich                                         | 14.2.0          | MIT License                                       |       |
 | ✅     | ruff                                         | 0.8.6           | MIT License                                       |       |
 | ✅     | six                                          | 1.17.0          | MIT License                                       |       |
 | ✅     | stack-data                                   | 0.6.3           | MIT License                                       |       |
 | ✅     | tabulate                                     | 0.9.0           | MIT License                                       |       |
 | ✅     | toml-sort                                    | 0.24.3          | MIT License                                       |       |
 | ✅     | tomlkit                                      | 0.13.3          | MIT License                                       |       |
-| ✅     | typer                                        | 0.19.2          | MIT License                                       |       |
 | ✅     | types-awscrt                                 | 0.31.1          | MIT License                                       |       |
 | ✅     | typing-inspect                               | 0.9.0           | MIT License                                       |       |
 | ✅     | watchfiles                                   | 1.1.1           | MIT License                                       |       |
 | ✅     | tqdm                                         | 4.67.1          | MIT License; Mozilla Public License 2.0 (MPL 2.0) |       |
 | ✅     | tiktoken                                     | 0.12.0          | MIT (override)                                    |       |
 | ✅     | SQLAlchemy                                   | 2.0.44          | MIT                                               |       |
+| ✅     | aioitertools                                 | 0.13.0          | MIT                                               |       |
 | ✅     | annotated-doc                                | 0.0.4           | MIT                                               |       |
 | ✅     | anyio                                        | 4.11.0          | MIT (override)                                    |       |
 | ✅     | asgi-lifespan                                | 2.1.0           | MIT                                               |       |
@@ -1291,19 +1338,15 @@ This document contains license information for all dependencies across the monor
 | ✅     | botocore-stubs                               | 1.42.35         | MIT                                               |       |
 | ✅     | cffi                                         | 2.0.0           | MIT                                               |       |
 | ✅     | charset-normalizer                           | 3.4.4           | MIT                                               |       |
-| ✅     | docling-core                                 | 2.54.1          | MIT (override)                                    |       |
 | ✅     | fastapi                                      | 0.128.0         | MIT                                               |       |
 | ✅     | fastavro                                     | 1.12.1          | MIT                                               |       |
 | ✅     | gherkin-official                             | 29.0.0          | MIT                                               |       |
 | ✅     | httptools                                    | 0.7.1           | MIT                                               |       |
 | ✅     | httpx-sse                                    | 0.4.0           | MIT                                               |       |
 | ✅     | iniconfig                                    | 2.3.0           | MIT                                               |       |
-| ✅     | jsonref                                      | 1.1.0           | MIT                                               |       |
-| ✅     | jsonschema                                   | 4.25.1          | MIT (override)                                    |       |
-| ✅     | jsonschema-specifications                    | 2025.9.1        | MIT (override)                                    |       |
 | ✅     | kuzu                                         | 0.11.3          | MIT                                               |       |
 | ✅     | langchain                                    | 1.2.7           | MIT                                               |       |
-| ✅     | langchain-aws                                | 1.2.1           | MIT                                               |       |
+| ✅     | langchain-aws                                | 1.1.0           | MIT                                               |       |
 | ✅     | langchain-classic                            | 1.0.1           | MIT                                               |       |
 | ✅     | langchain-core                               | 1.2.7           | MIT                                               |       |
 | ✅     | langchain-memgraph                           | 0.1.12          | MIT                                               |       |
@@ -1327,6 +1370,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | llama-index-storage-kvstore-mongodb          | 0.4.1           | MIT                                               |       |
 | ✅     | llama-index-vector-stores-milvus             | 0.9.4           | MIT (override)                                    |       |
 | ✅     | llama-index-workflows                        | 2.11.6          | MIT (override)                                    |       |
+| ✅     | markitdown                                   | 0.1.4           | MIT                                               |       |
 | ✅     | mypy-boto3-s3                                | 1.42.21         | MIT                                               |       |
 | ✅     | mypy_extensions                              | 1.1.0           | MIT (override)                                    |       |
 | ✅     | parse_type                                   | 0.6.6           | MIT (override)                                    |       |
@@ -1335,8 +1379,6 @@ This document contains license information for all dependencies across the monor
 | ✅     | pydantic-settings                            | 2.11.0          | MIT                                               |       |
 | ✅     | pydantic_core                                | 2.41.5          | MIT                                               |       |
 | ✅     | pytest-cov                                   | 6.3.0           | MIT                                               |       |
-| ✅     | referencing                                  | 0.37.0          | MIT (override)                                    |       |
-| ✅     | rpds-py                                      | 0.28.0          | MIT (override)                                    |       |
 | ✅     | soupsieve                                    | 2.8             | MIT                                               |       |
 | ✅     | stringcase                                   | 1.2.0           | MIT                                               |       |
 | ✅     | tokenize_rt                                  | 6.2.0           | MIT                                               |       |
@@ -1371,11 +1413,13 @@ This document contains license information for all dependencies across the monor
 | ✅     | dagster-webserver                            | 1.11.16         | Apache Software License                             |       |
 | ✅     | dagster_shared                               | 1.11.16         | Apache Software License                             |       |
 | ✅     | distro                                       | 1.9.0           | Apache Software License                             |       |
+| ✅     | flatbuffers                                  | 25.12.19        | Apache Software License                             |       |
 | ✅     | googleapis-common-protos                     | 1.71.0          | Apache Software License                             |       |
 | ✅     | grpcio                                       | 1.76.0          | Apache Software License                             |       |
 | ✅     | grpcio-health-checking                       | 1.71.2          | Apache Software License                             |       |
 | ✅     | huggingface-hub                              | 0.36.0          | Apache Software License                             |       |
 | ✅     | importlib_metadata                           | 8.7.0           | Apache Software License                             |       |
+| ✅     | magika                                       | 0.6.3           | Apache Software License                             |       |
 | ✅     | motor                                        | 3.7.1           | Apache Software License                             |       |
 | ✅     | nats-py                                      | 2.12.0          | Apache Software License                             |       |
 | ✅     | nltk                                         | 3.9.2           | Apache Software License                             |       |
@@ -1444,6 +1488,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | Jinja2                                       | 3.1.6           | BSD License                                         |       |
 | ✅     | Pygments                                     | 2.19.2          | BSD License                                         |       |
 | ✅     | adlfs                                        | 2025.8.0        | BSD License                                         |       |
+| ✅     | cobble                                       | 0.1.4           | BSD License                                         |       |
 | ✅     | colorama                                     | 0.4.6           | BSD License                                         |       |
 | ✅     | contourpy                                    | 1.3.3           | BSD License                                         |       |
 | ✅     | cycler                                       | 0.12.1          | BSD License                                         |       |
@@ -1455,18 +1500,23 @@ This document contains license information for all dependencies across the monor
 | ✅     | jsonpointer                                  | 3.0.0           | BSD License                                         |       |
 | ✅     | kiwisolver                                   | 1.4.9           | BSD License                                         |       |
 | ✅     | lxml                                         | 5.4.0           | BSD License                                         |       |
+| ✅     | mammoth                                      | 1.11.0          | BSD License                                         |       |
+| ✅     | mpmath                                       | 1.3.0           | BSD License                                         |       |
 | ✅     | nest-asyncio                                 | 1.6.0           | BSD License                                         |       |
 | ✅     | networkx                                     | 3.5             | BSD License                                         |       |
 | ✅     | numpy                                        | 2.3.4           | BSD License                                         |       |
+| ✅     | olefile                                      | 0.47            | BSD License                                         |       |
 | ✅     | pandas                                       | 2.2.3           | BSD License                                         |       |
 | ✅     | pycparser                                    | 2.23            | BSD License                                         |       |
 | ✅     | s3fs                                         | 2024.12.0       | BSD License                                         |       |
 | ✅     | scipy                                        | 1.16.3          | BSD License                                         |       |
 | ✅     | striprtf                                     | 0.0.26          | BSD License                                         |       |
+| ✅     | sympy                                        | 1.14.0          | BSD License                                         |       |
 | ✅     | uuid_utils                                   | 0.14.0          | BSD License                                         |       |
 | ✅     | webencodings                                 | 0.5.1           | BSD License                                         |       |
 | ✅     | websockets                                   | 15.0.1          | BSD License                                         |       |
 | ✅     | wrapt                                        | 1.17.3          | BSD License                                         |       |
+| ✅     | xlsxwriter                                   | 3.2.9           | BSD License                                         |       |
 | ✅     | xxhash                                       | 3.6.0           | BSD License                                         |       |
 | ✅     | antlr4-python3-runtime                       | 4.13.2          | BSD                                                 |       |
 | ✅     | MarkupSafe                                   | 3.0.3           | BSD-3-Clause                                        |       |
@@ -1481,7 +1531,6 @@ This document contains license information for all dependencies across the monor
 | ✅     | zstandard                                    | 0.25.0          | BSD-3-Clause                                        |       |
 | ✅     | psycopg2-binary                              | 2.9.11          | GNU Library or Lesser General Public License (LGPL) |       |
 | ✅     | dnspython                                    | 2.8.0           | ISC License (ISCL)                                  |       |
-| ✅     | shellingham                                  | 1.5.4           | ISC License (ISCL)                                  |       |
 | ✅     | griffe                                       | 1.14.0          | ISC (override)                                      |       |
 | ✅     | greenlet                                     | 3.2.4           | MIT AND Python-2.0                                  |       |
 | ✅     | Deprecated                                   | 1.3.1           | MIT License                                         |       |
@@ -1504,6 +1553,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | colorlog                                     | 6.10.1          | MIT License                                         |       |
 | ✅     | dataclasses-json                             | 0.6.7           | MIT License                                         |       |
 | ✅     | docstring_parser                             | 0.17.0          | MIT License                                         |       |
+| ✅     | et_xmlfile                                   | 2.0.0           | MIT License                                         |       |
 | ✅     | filetype                                     | 1.2.0           | MIT License                                         |       |
 | ✅     | graphql-core                                 | 3.2.6           | MIT License                                         |       |
 | ✅     | graphql-relay                                | 3.2.0           | MIT License                                         |       |
@@ -1517,8 +1567,8 @@ This document contains license information for all dependencies across the monor
 | ✅     | jmespath                                     | 1.0.1           | MIT License                                         |       |
 | ✅     | json_repair                                  | 0.44.1          | MIT License                                         |       |
 | ✅     | langfuse                                     | 3.14.1          | MIT License                                         |       |
-| ✅     | latex2mathml                                 | 3.78.1          | MIT License                                         |       |
 | ✅     | markdown-it-py                               | 4.0.0           | MIT License                                         |       |
+| ✅     | markdownify                                  | 1.2.2           | MIT License                                         |       |
 | ✅     | marshmallow                                  | 3.26.1          | MIT License                                         |       |
 | ✅     | mdurl                                        | 0.1.2           | MIT License                                         |       |
 | ✅     | memgraph-toolbox                             | 0.1.9           | MIT License                                         |       |
@@ -1526,11 +1576,14 @@ This document contains license information for all dependencies across the monor
 | ✅     | msal                                         | 1.34.0          | MIT License                                         |       |
 | ✅     | msal-extensions                              | 1.3.1           | MIT License                                         |       |
 | ✅     | mypy                                         | 1.18.2          | MIT License                                         |       |
+| ✅     | onnxruntime                                  | 1.20.1          | MIT License                                         |       |
+| ✅     | openpyxl                                     | 3.1.5           | MIT License                                         |       |
 | ✅     | pluggy                                       | 1.6.0           | MIT License                                         |       |
 | ✅     | posthog                                      | 7.6.0           | MIT License                                         |       |
 | ✅     | pytest                                       | 8.4.2           | MIT License                                         |       |
 | ✅     | pytest-mock                                  | 3.15.1          | MIT License                                         |       |
 | ✅     | python-i18n                                  | 0.3.9           | MIT License                                         |       |
+| ✅     | python-pptx                                  | 1.0.2           | MIT License                                         |       |
 | ✅     | pytz                                         | 2025.2          | MIT License                                         |       |
 | ✅     | redis                                        | 5.3.1           | MIT License                                         |       |
 | ✅     | rich                                         | 14.2.0          | MIT License                                         |       |
@@ -1538,7 +1591,6 @@ This document contains license information for all dependencies across the monor
 | ✅     | six                                          | 1.17.0          | MIT License                                         |       |
 | ✅     | tabulate                                     | 0.9.0           | MIT License                                         |       |
 | ✅     | tomlkit                                      | 0.13.3          | MIT License                                         |       |
-| ✅     | typer                                        | 0.19.2          | MIT License                                         |       |
 | ✅     | types-awscrt                                 | 0.31.1          | MIT License                                         |       |
 | ✅     | typing-inspect                               | 0.9.0           | MIT License                                         |       |
 | ✅     | watchfiles                                   | 1.1.1           | MIT License                                         |       |
@@ -1556,7 +1608,6 @@ This document contains license information for all dependencies across the monor
 | ✅     | botocore-stubs                               | 1.42.35         | MIT                                                 |       |
 | ✅     | cffi                                         | 2.0.0           | MIT                                                 |       |
 | ✅     | charset-normalizer                           | 3.4.4           | MIT                                                 |       |
-| ✅     | docling-core                                 | 2.54.1          | MIT (override)                                      |       |
 | ✅     | fastapi                                      | 0.128.0         | MIT                                                 |       |
 | ✅     | fastavro                                     | 1.12.1          | MIT                                                 |       |
 | ✅     | fonttools                                    | 4.60.1          | MIT                                                 |       |
@@ -1565,9 +1616,6 @@ This document contains license information for all dependencies across the monor
 | ✅     | httptools                                    | 0.7.1           | MIT                                                 |       |
 | ✅     | httpx-sse                                    | 0.4.0           | MIT                                                 |       |
 | ✅     | iniconfig                                    | 2.3.0           | MIT                                                 |       |
-| ✅     | jsonref                                      | 1.1.0           | MIT                                                 |       |
-| ✅     | jsonschema                                   | 4.25.1          | MIT (override)                                      |       |
-| ✅     | jsonschema-specifications                    | 2025.9.1        | MIT (override)                                      |       |
 | ✅     | kuzu                                         | 0.11.3          | MIT                                                 |       |
 | ✅     | langchain                                    | 1.2.7           | MIT                                                 |       |
 | ✅     | langchain-aws                                | 1.1.0           | MIT                                                 |       |
@@ -1593,6 +1641,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | llama-index-storage-kvstore-mongodb          | 0.4.1           | MIT                                                 |       |
 | ✅     | llama-index-vector-stores-milvus             | 0.9.4           | MIT (override)                                      |       |
 | ✅     | llama-index-workflows                        | 2.11.6          | MIT (override)                                      |       |
+| ✅     | markitdown                                   | 0.1.4           | MIT                                                 |       |
 | ✅     | mypy-boto3-s3                                | 1.42.21         | MIT                                                 |       |
 | ✅     | mypy_extensions                              | 1.1.0           | MIT (override)                                      |       |
 | ✅     | platformdirs                                 | 4.5.0           | MIT                                                 |       |
@@ -1601,8 +1650,6 @@ This document contains license information for all dependencies across the monor
 | ✅     | pydantic_core                                | 2.41.5          | MIT                                                 |       |
 | ✅     | pyparsing                                    | 3.2.5           | MIT                                                 |       |
 | ✅     | pytest-cov                                   | 6.3.0           | MIT                                                 |       |
-| ✅     | referencing                                  | 0.37.0          | MIT (override)                                      |       |
-| ✅     | rpds-py                                      | 0.28.0          | MIT (override)                                      |       |
 | ✅     | soupsieve                                    | 2.8             | MIT                                                 |       |
 | ✅     | types-s3transfer                             | 0.16.0          | MIT                                                 |       |
 | ✅     | typing-inspection                            | 0.4.2           | MIT (override)                                      |       |
@@ -2339,12 +2386,10 @@ This document contains license information for all dependencies across the monor
 | ✅     | clickhouse-server               | `ghcr.io/bbvch-ai/aihub-core/clickhouse/clickhouse-server:25.8`             | Apache-2.0         | Permissive license, used by Langfuse for analytics            |
 | ✅     | neo4j                           | `ghcr.io/bbvch-ai/aihub-core/neo4j:5.26.16-community`                       | GPL                | Permissive license                                            |
 | ✅     | docker-socket-proxy             | `tecnativa/docker-socket-proxy:0.3`                                         | Apache-2.0         | Permissive license                                            |
-| ✅     | docling-serve-cpu               | `ghcr.io/bbvch-ai/aihub-core/docling-serve-cpu:v1.9.0`                      | MIT                | Permissive license                                            |
 | ✅     | pgvector                        | `ghcr.io/bbvch-ai/aihub-core/pgvector:pg17`                                 | PostgreSQL License | BSD-style permissive license                                  |
 | ✅     | etcd                            | `ghcr.io/bbvch-ai/aihub-core/etcd:v3.5.25`                                  | Apache-2.0         | Permissive license                                            |
 | ✅     | presidio-analyzer               | `ghcr.io/bbvch-ai/aihub-core/presidio-analyzer:2.2.359`                     | MIT                | Permissive license                                            |
 | ✅     | nats                            | `ghcr.io/bbvch-ai/aihub-core/nats:2.11.4`                                   | Apache-2.0         | Permissive license                                            |
-| ✅     | vllm-openai                     | `ghcr.io/bbvch-ai/aihub-core/vllm-openai:v0.11.0`                           | Apache-2.0         | Permissive license                                            |
 | ✅     | rclone                          | `ghcr.io/bbvch-ai/aihub-core/rclone:1.71.2`                                 | MIT                | Permissive license                                            |
 | ✅     | postgres-documentdb             | `ghcr.io/bbvch-ai/aihub-core/postgres-documentdb:17.0.106.0-ferretdb-2.5.0` | Apache-2.0         | Permissive licenses                                           |
 | ✅     | traefik                         | `ghcr.io/bbvch-ai/aihub-core/traefik:v3.6.2`                                | Apache-2.0         | Permissive license                                            |
@@ -2372,6 +2417,7 @@ This document contains license information for all dependencies across the monor
 The following are our own services and inherit the license we choose:
 
 - rag_agent (`ghcr.io/bbvch-ai/aihub-core/rag_agent:nightly`)
+- mineru-vlm (`ghcr.io/bbvch-ai/aihub-core/mineru-vlm:v2.7.5`)
 - namespace_selection_agent (`ghcr.io/bbvch-ai/aihub-core/namespace_selection_agent:latest`)
 - web (`ghcr.io/bbvch-ai/aihub-core/web:latest`)
 - rag_agent (`ghcr.io/bbvch-ai/aihub-core/rag_agent:latest`)
@@ -2389,6 +2435,7 @@ The following are our own services and inherit the license we choose:
 - retrieval_agent (`ghcr.io/bbvch-ai/aihub-core/retrieval_agent:nightly`)
 - bot (`ghcr.io/bbvch-ai/aihub-core/bot:latest`)
 - few_shot_agent (`ghcr.io/bbvch-ai/aihub-core/few_shot_agent:nightly`)
+- mineru-api (`ghcr.io/bbvch-ai/aihub-core/mineru-api:v2.7.5`)
 - expert_asking_agent (`ghcr.io/bbvch-ai/aihub-core/expert_asking_agent:latest`)
 - api (`ghcr.io/bbvch-ai/aihub-core/api:nightly`)
 - namespace_selection_agent (`ghcr.io/bbvch-ai/aihub-core/namespace_selection_agent:nightly`)

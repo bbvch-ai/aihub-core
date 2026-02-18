@@ -455,15 +455,6 @@ export const AgentClassDTOSchema = {
             ],
             title: 'Is Online',
             description: 'Indicates whether the agent class is online and reachable.'
-        },
-        templates: {
-            items: {
-                $ref: '#/components/schemas/TemplateData'
-            },
-            type: 'array',
-            title: 'Templates',
-            description: 'List of profile templates for quick profile creation.',
-            default: []
         }
     },
     type: 'object',
@@ -6282,41 +6273,6 @@ export const DocumentBlockSchema = {
     description: 'A representation of a document to directly pass to the LLM.'
 } as const;
 
-export const DocumentConversionMetadataSchema = {
-    properties: {
-        filename: {
-            type: 'string',
-            title: 'Filename',
-            description: 'Original filename of the converted document'
-        }
-    },
-    type: 'object',
-    required: [
-        'filename'
-    ],
-    title: 'DocumentConversionMetadata'
-} as const;
-
-export const DocumentConversionResponseSchema = {
-    properties: {
-        page_content: {
-            type: 'string',
-            title: 'Page Content',
-            description: 'Markdown content extracted from the document'
-        },
-        metadata: {
-            $ref: '#/components/schemas/DocumentConversionMetadata',
-            description: 'Metadata about the converted document'
-        }
-    },
-    type: 'object',
-    required: [
-        'page_content',
-        'metadata'
-    ],
-    title: 'DocumentConversionResponse'
-} as const;
-
 export const DocumentDTOSchema = {
     properties: {
         id: {
@@ -6409,6 +6365,49 @@ export const DocumentDTOSchema = {
         'is_ingested'
     ],
     title: 'DocumentDTO'
+} as const;
+
+export const DocumentParsingMetadataSchema = {
+    properties: {
+        filename: {
+            type: 'string',
+            title: 'Filename',
+            description: 'Original filename'
+        }
+    },
+    type: 'object',
+    required: [
+        'filename'
+    ],
+    title: 'DocumentParsingMetadata',
+    description: 'Metadata about the converted document.'
+} as const;
+
+export const DocumentParsingResponseSchema = {
+    properties: {
+        page_content: {
+            type: 'string',
+            title: 'Page Content',
+            description: 'Extracted text content (markdown)'
+        },
+        metadata: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/DocumentParsingMetadata'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Document metadata'
+        }
+    },
+    type: 'object',
+    required: [
+        'page_content'
+    ],
+    title: 'DocumentParsingResponse',
+    description: 'Response schema for document conversion.\n\nFollows the OpenWebUI External Document Loader specification.\nCan return either a single document or a list of documents (one per page).'
 } as const;
 
 export const DocumentUploadRequestSchema = {
@@ -9381,6 +9380,16 @@ export const ImageGenerationRequestSchema = {
     title: 'ImageGenerationRequest'
 } as const;
 
+export const ImageModeSchema = {
+    type: 'string',
+    enum: [
+        's3',
+        'base64'
+    ],
+    title: 'ImageMode',
+    description: 'Image handling mode for parsed documents.'
+} as const;
+
 export const ImageURLSchema = {
     properties: {
         url: {
@@ -10791,13 +10800,9 @@ export const InputTextSchema = {
                     $ref: '#/components/schemas/LocaleString'
                 },
                 {
-                    type: 'string'
-                },
-                {
                     type: 'null'
                 }
             ],
-            title: 'Placeholder',
             description: 'Placeholder text'
         },
         prefix: {
@@ -10806,13 +10811,9 @@ export const InputTextSchema = {
                     $ref: '#/components/schemas/LocaleString'
                 },
                 {
-                    type: 'string'
-                },
-                {
                     type: 'null'
                 }
             ],
-            title: 'Prefix',
             description: 'Prefix text'
         },
         suffix: {
@@ -10821,13 +10822,9 @@ export const InputTextSchema = {
                     $ref: '#/components/schemas/LocaleString'
                 },
                 {
-                    type: 'string'
-                },
-                {
                     type: 'null'
                 }
             ],
-            title: 'Suffix',
             description: 'Suffix text'
         },
         iconPrefix: {
@@ -12346,13 +12343,9 @@ export const LocaleInputSchema = {
                     $ref: '#/components/schemas/LocaleString'
                 },
                 {
-                    type: 'string'
-                },
-                {
                     type: 'null'
                 }
             ],
-            title: 'Placeholder',
             description: 'Placeholder text for each language'
         },
         validation: {
@@ -13223,7 +13216,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1771422429
+            default: 1771416230
         },
         owned_by: {
             type: 'string',
@@ -15309,14 +15302,9 @@ export const ProcessClassDTOSchema = {
             title: 'Is Online',
             description: 'Indicates whether the process class is online and reachable.'
         },
-        templates: {
-            items: {
-                $ref: '#/components/schemas/TemplateData'
-            },
-            type: 'array',
-            title: 'Templates',
-            description: 'List of profile templates for quick profile creation.',
-            default: []
+        default_process_config: {
+            $ref: '#/components/schemas/ProcessConfig',
+            description: 'The default process configuration for this process class. This is the configuration that will be used if no specific configuration is provided.'
         }
     },
     type: 'object',
@@ -15328,10 +15316,94 @@ export const ProcessClassDTOSchema = {
         'process_config_specs',
         'human_inputs',
         'program_inputs',
-        'agent_inputs'
+        'agent_inputs',
+        'default_process_config'
     ],
     title: 'ProcessClassDTO',
     description: 'Encapsulates the data transfer object (DTO) for a process class.\nContains class-level metadata (name, description, icon, form) and configuration specifications.'
+} as const;
+
+export const ProcessConfigSchema = {
+    properties: {
+        process_class: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    $ref: '#/components/schemas/InputText'
+                }
+            ],
+            title: 'Process Class',
+            description: 'The class name of the process, used for identification.'
+        },
+        process_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    $ref: '#/components/schemas/InputText'
+                }
+            ],
+            title: 'Process Id',
+            description: 'Used to uniquely identify this process instance.'
+        },
+        name: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/LocaleString'
+                },
+                {
+                    $ref: '#/components/schemas/LocaleInput'
+                }
+            ],
+            title: 'Name',
+            description: 'The name of the process.'
+        },
+        description: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/LocaleString'
+                },
+                {
+                    $ref: '#/components/schemas/LocaleInput'
+                }
+            ],
+            title: 'Description',
+            description: 'The description of the process.'
+        },
+        icon: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    $ref: '#/components/schemas/IconSelector'
+                }
+            ],
+            title: 'Icon',
+            description: 'The icon representing the process.',
+            default: 'mage:broadcast'
+        },
+        _form_name: {
+            type: 'string',
+            title: 'Form Name',
+            description: 'The form type name, used for polymorphic deserialization.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: [
+        'process_class',
+        'process_id',
+        'name',
+        'description',
+        '_form_name'
+    ],
+    title: 'ProcessConfig',
+    description: 'Each process instance can be configured with its own parameters.\n\nThe process config follows the same duality pattern as AgentConfig:\n- **Form mode** (via `as_form()`): Fields contain FormKit elements for UI rendering.\n- **Data mode**: Fields contain actual primitive values for runtime use.\n\nThis ensures the form schema and the data model can never de-sync.\n\nSubclasses can add domain-specific config fields for process-level settings.'
 } as const;
 
 export const ProcessConfigDTOSchema = {
@@ -18663,30 +18735,6 @@ export const SuiteDTOSchema = {
     title: 'SuiteDTO'
 } as const;
 
-export const TemplateDataSchema = {
-    properties: {
-        name: {
-            $ref: '#/components/schemas/LocaleString'
-        },
-        description: {
-            $ref: '#/components/schemas/LocaleString'
-        },
-        icon: {
-            type: 'string',
-            title: 'Icon'
-        }
-    },
-    additionalProperties: true,
-    type: 'object',
-    required: [
-        'name',
-        'description',
-        'icon'
-    ],
-    title: 'TemplateData',
-    description: 'Typed container for template data extracted from Form.to_template_data().\n\nEach agent/process type has different configurable fields, so extra fields\nare allowed and preserved through serialization.'
-} as const;
-
 export const TextBlockSchema = {
     properties: {
         block_type: {
@@ -21811,15 +21859,6 @@ export const AgentClassDTOWritableSchema = {
             ],
             title: 'Is Online',
             description: 'Indicates whether the agent class is online and reachable.'
-        },
-        templates: {
-            items: {
-                $ref: '#/components/schemas/TemplateData'
-            },
-            type: 'array',
-            title: 'Templates',
-            description: 'List of profile templates for quick profile creation.',
-            default: []
         }
     },
     type: 'object',
@@ -26668,13 +26707,9 @@ export const InputTextWritableSchema = {
                     $ref: '#/components/schemas/LocaleString'
                 },
                 {
-                    type: 'string'
-                },
-                {
                     type: 'null'
                 }
             ],
-            title: 'Placeholder',
             description: 'Placeholder text'
         },
         prefix: {
@@ -26683,13 +26718,9 @@ export const InputTextWritableSchema = {
                     $ref: '#/components/schemas/LocaleString'
                 },
                 {
-                    type: 'string'
-                },
-                {
                     type: 'null'
                 }
             ],
-            title: 'Prefix',
             description: 'Prefix text'
         },
         suffix: {
@@ -26698,13 +26729,9 @@ export const InputTextWritableSchema = {
                     $ref: '#/components/schemas/LocaleString'
                 },
                 {
-                    type: 'string'
-                },
-                {
                     type: 'null'
                 }
             ],
-            title: 'Suffix',
             description: 'Suffix text'
         },
         iconPrefix: {
@@ -28092,13 +28119,9 @@ export const LocaleInputWritableSchema = {
                     $ref: '#/components/schemas/LocaleString'
                 },
                 {
-                    type: 'string'
-                },
-                {
                     type: 'null'
                 }
             ],
-            title: 'Placeholder',
             description: 'Placeholder text for each language'
         }
     },
@@ -29216,14 +29239,9 @@ export const ProcessClassDTOWritableSchema = {
             title: 'Is Online',
             description: 'Indicates whether the process class is online and reachable.'
         },
-        templates: {
-            items: {
-                $ref: '#/components/schemas/TemplateData'
-            },
-            type: 'array',
-            title: 'Templates',
-            description: 'List of profile templates for quick profile creation.',
-            default: []
+        default_process_config: {
+            $ref: '#/components/schemas/ProcessConfigWritable',
+            description: 'The default process configuration for this process class. This is the configuration that will be used if no specific configuration is provided.'
         }
     },
     type: 'object',
@@ -29235,10 +29253,87 @@ export const ProcessClassDTOWritableSchema = {
         'process_config_specs',
         'human_inputs',
         'program_inputs',
-        'agent_inputs'
+        'agent_inputs',
+        'default_process_config'
     ],
     title: 'ProcessClassDTO',
     description: 'Encapsulates the data transfer object (DTO) for a process class.\nContains class-level metadata (name, description, icon, form) and configuration specifications.'
+} as const;
+
+export const ProcessConfigWritableSchema = {
+    properties: {
+        process_class: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    $ref: '#/components/schemas/InputTextWritable'
+                }
+            ],
+            title: 'Process Class',
+            description: 'The class name of the process, used for identification.'
+        },
+        process_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    $ref: '#/components/schemas/InputTextWritable'
+                }
+            ],
+            title: 'Process Id',
+            description: 'Used to uniquely identify this process instance.'
+        },
+        name: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/LocaleString'
+                },
+                {
+                    $ref: '#/components/schemas/LocaleInputWritable'
+                }
+            ],
+            title: 'Name',
+            description: 'The name of the process.'
+        },
+        description: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/LocaleString'
+                },
+                {
+                    $ref: '#/components/schemas/LocaleInputWritable'
+                }
+            ],
+            title: 'Description',
+            description: 'The description of the process.'
+        },
+        icon: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    $ref: '#/components/schemas/IconSelectorWritable'
+                }
+            ],
+            title: 'Icon',
+            description: 'The icon representing the process.',
+            default: 'mage:broadcast'
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: [
+        'process_class',
+        'process_id',
+        'name',
+        'description'
+    ],
+    title: 'ProcessConfig',
+    description: 'Each process instance can be configured with its own parameters.\n\nThe process config follows the same duality pattern as AgentConfig:\n- **Form mode** (via `as_form()`): Fields contain FormKit elements for UI rendering.\n- **Data mode**: Fields contain actual primitive values for runtime use.\n\nThis ensures the form schema and the data model can never de-sync.\n\nSubclasses can add domain-specific config fields for process-level settings.'
 } as const;
 
 export const ProcessWalkthroughDTOWritableSchema = {

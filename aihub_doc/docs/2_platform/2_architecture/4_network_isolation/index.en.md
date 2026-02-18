@@ -45,7 +45,7 @@ Services accessible from outside the Docker network:
 Internal application and processing services:
 
 - **litellm**: LLM gateway and request routing
-- **docling**: Document parsing and extraction
+- **mineru-api**: Document parsing and extraction
 - **presidio-analyzer/anonymizer**: PII detection and anonymization
 - **llama-cpp-**\*: Local LLM inference (chat, embedding, reranking)
 - **speaches**: Speech-to-text and text-to-speech
@@ -111,7 +111,7 @@ flowchart TB
 
     subgraph backend[BACKEND NETWORK]
         litellm[litellm]
-        docling[docling]
+        mineru-api[mineru-api]
         presidio[presidio]
         llama[llama-cpp-*]
         agents[agents]

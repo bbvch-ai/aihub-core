@@ -5,6 +5,113 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.263.0] - 2026-02-18 - Adopting MinerU for Superior Document Processing and Platform Architecture
+
+### Added
+
+- 🚀 **MinerU Integration**: Replaced Docling with MinerU as the primary document parsing engine. This provides improved
+  performance and quality for PDF and image processing, with advanced OCR, table, and formula extraction capabilities.
+- 📄 **MarkItDown Loader**: Introduced a dedicated loader for Office documents (DOCX, PPTX, XLSX, Outlook messages),
+  ensuring comprehensive support for a wider range of file types alongside MinerU.
+- ✨ **Flexible Image Handling**: Implemented new utilities for managing images within parsed documents. This supports
+  both S3-based storage with signed URLs and base64 embedding in markdown, offering greater flexibility for client-side
+  rendering.
+- 🏗️ **Docker Network Isolation Documentation**: Added detailed documentation on the platform's Docker network
+  segmentation, enhancing security and clarifying internal service communication for better architectural understanding.
+- ⚙️ **Configurable Agent Forms**: Introduced a "Form Duality Pattern" for agent configurations, allowing administrators
+  to create and customize agent profiles via the Admin UI without requiring code changes.
+- 🔗 **S3 Filesystem Utility**: Added a new `create_s3_filesystem` helper for consistent and easy S3 access across
+  various services, simplifying file operations.
+- ⚡️ **New API Parsing Endpoint**: Introduced `/api/v1/parsing` as a generic, implementation-agnostic endpoint for
+  document conversion, adhering to the OpenWebUI external loader specification.
+
+### Changed
+
+- 🔄 **Document Parsing Core Logic**: All internal `DoclingLoader` usage across the platform's document processing
+  pipelines has been replaced with `MineruLoader` and `MarkItDownLoader`.
+- 📝 **API Endpoint and Translation Naming**: The API controller group has been renamed from `docling` to `parsing` in
+  translations to reflect the generalized document processing capabilities.
+- 💡 **Pipeline Ingestion Strategy**: Updated the data ingestion pipeline to use a more flexible
+  `default_rclone_to_datalake_definitions` factory, expanding support for various cloud storage providers via Rclone.
+- ⚙️ **Environment Variables**: Migrated all `DOCLING_*` environment variables to `MINERU_*` for configuring the new
+  document parsing services.
+- 🌐 **LLM Proxy Configuration**: Updated LiteLLM configurations to route Visual Language Model (VLM) requests for OCR to
+  the new MinerU VLM, leveraging either local GPU inference or partner-hosted cloud endpoints.
+- 📚 **Documentation Updates**: Numerous documentation pages (e.g., solution overview, quick start, architecture) have
+  been updated to reflect the transition from Docling to MinerU.
+- 🛠️ **API Request Body Limit**: Implemented a `use_limited_body` dependency in the API to enforce a maximum file size
+  for document uploads, preventing excessively large requests.
+- ⚡️ **PR Ready Build Target**: Enhanced the `pr-ready` Makefile target to include `generate-compose` and
+  `license-check` steps, ensuring configuration and compliance checks automatically.
+
+### Refactor
+
+- 🧹 **`aihub_lib` Dependency Management**: Refactored `aihub_lib` dependencies across `aihub_agent`, `aihub_api`,
+  `aihub_bot`, `aihub_pipeline`, and `aihub_process` to use local path references, streamlining the local development
+  workflow.
+- 🗄️ **IDE Run Configurations**: Streamlined API development and production run configurations in `.idea` to use
+  Makefile targets, simplifying IDE setup for developers.
+- 🔄 **Image Path Sanitation**: Improved the `create_figures_folder_name` utility with more robust URI and filename
+  validation and sanitization.
+
+### Removed
+
+- 🗑️ **Docling Components**: Completely removed the `DoclingController`, `DoclingService`, `DoclingLoader`,
+  `DoclingSettings`, and all related DTOs and test files from the codebase.
+- ❌ **Docling Docker Services**: Eliminated the `docling` and `vllm-docling` Docker services, along with their
+  associated image tags and initialization containers.
+- ⛔ **Old API Endpoint**: Deprecated and removed the `/api/v1/docling` API endpoint.
+
+---
+
+## [v0.262.4] - 2026-02-17 - Introducing Role-Based Usage Limits and Enhanced API Feedback
+
+### Added
+
+- ✨ **Introduced Role-Based Usage Limits**: A new powerful system enables administrators to define granular,
+  pattern-based usage limits for agents within specific roles. These limits are enforced in real-time by the API using
+  Redis for atomic counting.
+- ⚡️ **Usage Limit Enforcement in API Endpoints**: Integrated real-time usage limit checks into both OpenAI-compatible
+  chat completion endpoints and direct agent event endpoints, returning a `HTTP 429 Too Many Requests` status when
+  limits are exceeded.
+- 🛠️ **New Usage Limit Configuration UI**: Added a dedicated editor within the role management interface, allowing easy
+  configuration and management of pattern-based usage limits for each role.
+- 🌐 **Localized Usage Limit Messages**: Implemented comprehensive internationalization for usage limit warnings and
+  exceeded messages, providing clear feedback to users in multiple languages (DE, EN, FR, IT).
+- 📄 **Structured Error Responses for Rate Limits**: The API now provides detailed, structured error responses for
+  exceeded usage limits, including localized messages and information about when the limit resets.
+- ⚠️ **Usage Warning Headers for Streaming APIs**: Streaming API responses now include `X-Usage-Warning` headers and
+  messages when a user's usage approaches a defined limit, enabling client applications to provide proactive
+  notifications.
+- ✍️ **Access Rule and Usage Pattern Help Texts**: Added informative help texts and examples directly within the Role
+  editor UI to guide users in defining effective access rules and usage limit patterns.
+
+### Changed
+
+- 🔄 **Improved API Error Display in Web UI**: Enhanced the web application's global error handler to parse structured
+  API error responses (such as usage limit exceeded messages) and display more user-friendly details instead of raw
+  error messages.
+- ⬆️ **Expanded Access Rule Pattern Characters**: Access rule patterns now support uppercase letters, offering greater
+  flexibility in naming conventions for resources.
+- ⚙️ **Updated OpenWebUI Pipeline for Usage Warnings**: The OpenWebUI integration pipeline now processes
+  `X-Usage-Warning` headers from the API to display in-chat notifications when a user is nearing their agent usage
+  limit.
+- 📡 **Refined OpenWebUI API Error Handling**: The OpenWebUI integration pipeline's streaming service now proactively
+  captures HTTP error responses before stream processing begins, parsing structured error bodies for more informative
+  user messages.
+- 📜 **Simplified HTTP 429 Error Message**: The generic `Too Many Requests` error message in the web UI has been made
+  more concise.
+
+### Refactor
+
+- 🧹 **Modularized Role Editor Components**: The access rules editing functionality has been extracted into a dedicated
+  `AccessRulesEditor` component, and a new `UsageLimitsEditor` component was created, significantly improving the
+  maintainability and clarity of the role editor.
+- 🎨 **Enhanced Role Creation UI**: The entry point for creating new roles in the web interface has been redesigned for a
+  cleaner, more intuitive user experience.
+
+---
+
 ## [v0.262.3] - 2026-02-17 - Enhanced Developer Tooling and IDE Configurations
 
 ### Added

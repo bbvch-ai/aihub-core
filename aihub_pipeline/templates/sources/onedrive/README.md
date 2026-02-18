@@ -35,4 +35,3 @@ RCLONE_ONEDRIVE_TENANT=<Directory (tenant) ID>
 poetry run dagster dev -f pipeline.py
 ```
 
-Open http://localhost:3000

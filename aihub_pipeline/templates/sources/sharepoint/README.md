@@ -38,4 +38,3 @@ RCLONE_SHAREPOINT_SITE_URL=https://your-tenant.sharepoint.com/sites/your-site-na
 poetry run dagster dev -f pipeline.py
 ```
 
-Open http://localhost:3000
