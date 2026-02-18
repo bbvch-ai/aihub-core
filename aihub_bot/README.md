@@ -312,8 +312,7 @@ Bot testing uses pytest with the `BotTestRunner` for integration testing. This p
    ```python
    # playground/testing/tests/test_my_bot.py
    import pytest
-   from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler import DangerousDevelopmentOnlyAuthHandler
-   from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider import DangerousDevelopmentOnlyIdentityProvider
+   from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import DangerousDevelopmentOnlyAuthHandler
    from fastapi.testclient import TestClient
    from aihub_bot.runners.BotTestRunner import BotTestRunner
    from aihub_bot.routes.my_bot.MyBotController import MyBotController
@@ -321,9 +320,7 @@ Bot testing uses pytest with the `BotTestRunner` for integration testing. This p
    @pytest.fixture
    def bot_client():
        """Fixture to create a test client for the bot."""
-       auth = DangerousDevelopmentOnlyAuthHandler(
-           identity_provider=DangerousDevelopmentOnlyIdentityProvider()
-       )
+       auth = DangerousDevelopmentOnlyAuthHandler()
        runner = BotTestRunner()
        runner.mount(MyBotController(auth=auth, custom_config=test_config).chat_completion())
        return TestClient(runner.create_app())
@@ -381,9 +378,7 @@ The playground provides a full bot server with web interface for interactive tes
 
    async def main():
        runner = BotTestRunner()
-       auth = DangerousDevelopmentOnlyAuthHandler(
-           identity_provider=DangerousDevelopmentOnlyIdentityProvider()
-       )
+       auth = DangerousDevelopmentOnlyAuthHandler()
        
        runner.mount(
            # ... existing controllers ...

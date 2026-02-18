@@ -10,7 +10,6 @@ from aihub_api.routes.user.dto.MinimalUserDTO import MinimalUserDTO
 
 class UserDTO(MinimalUserDTO):
     last_accessed: Annotated[datetime, Field(description="Last time the user was updated")]
-    roles: Annotated[list[str], Field(description="List of roles assigned to the user")] = []
     favorite_modules: Annotated[list[str], Field(description="List of favorite modules from aihub suite")] = []
     dashboard: Annotated[DashboardDTO | None, Field(description="User dashboard configuration for index page")] = None
 

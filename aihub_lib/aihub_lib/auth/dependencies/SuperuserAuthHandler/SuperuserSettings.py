@@ -55,6 +55,9 @@ class SuperuserSettings(EnvironmentSettings):
         if missing:
             raise ValueError(f"Superuser is enabled but missing required settings: {', '.join(missing)}")
 
+        if self.TOKEN and len(self.TOKEN.get_secret_value()) < 64:
+            raise ValueError("SUPERUSER_TOKEN must be at least 64 characters long when superuser is enabled.")
+
         return self
 
     @computed_field

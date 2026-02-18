@@ -1,3 +1,4 @@
+import logging
 from typing import Annotated, Self
 
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
@@ -13,6 +14,8 @@ from .dto.DeleteRoleResponse import DeleteRoleResponse
 from .dto.RoleResponse import RoleResponse
 from .dto.UpdateRoleRequest import UpdateRoleRequest
 from .RoleService import RoleService
+
+logger = logging.getLogger(__name__)
 
 
 class RoleController(Controller):
@@ -48,6 +51,7 @@ class RoleController(Controller):
             except NotUniqueError:
                 raise HTTPException(status_code=409, detail=f"Role with name '{role_data.name}' already exists.")
             except Exception as e:
+                logger.exception("Unexpected error creating role")
                 raise HTTPException(status_code=400, detail=str(e))
 
         return self
@@ -109,6 +113,7 @@ class RoleController(Controller):
             except NotUniqueError:
                 raise HTTPException(status_code=409, detail=f"Role with name '{role_data.name}' already exists.")
             except Exception as e:
+                logger.exception("Unexpected error updating role")
                 raise HTTPException(status_code=400, detail=str(e))
 
         return self

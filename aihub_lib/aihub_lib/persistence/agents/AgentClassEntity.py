@@ -133,7 +133,6 @@ class AgentClassEntity(Document):
         "strict": False,
         "indexes": [
             {"fields": ["agent_class"], "unique": True},
-            {"fields": ["agent_class"]},
         ],
     }
     agent_class = StringField(required=True, unique=True)

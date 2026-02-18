@@ -56,22 +56,6 @@ class RoleEntity(Document):
 
     @classmethod
     @trace_fn
-    def get_role_by_name(cls, role_name: str, tenant_id: str) -> Self | None:
-        """
-        Fetches a role by its name within a specific tenant.
-
-        First searches for a tenant-specific role, then falls back to system roles
-        (which are available to all tenants).
-        """
-        # Try tenant-specific role first
-        tenant_role = cls.objects(name=role_name, tenant_id=tenant_id).first()
-        if tenant_role:
-            return tenant_role
-        # Fall back to system role
-        return cls.objects(name=role_name, tenant_id=None).first()
-
-    @classmethod
-    @trace_fn
     def get_system_role_by_name(cls, role_name: str) -> Self | None:
         """Fetches a system role by its name. Returns None if not found."""
         return cls.objects(name=role_name, tenant_id=None).first()

@@ -245,9 +245,6 @@ API testing uses pytest with FastAPI's test client and the `ApiTestRunner` or `S
    from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
        DangerousDevelopmentOnlyAuthHandler,
    )
-   from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
-       DangerousDevelopmentOnlyIdentityProvider,
-   )
    from fastapi.testclient import TestClient
    from httpx import AsyncClient
    from asgi_lifespan import LifespanManager
@@ -260,7 +257,7 @@ API testing uses pytest with FastAPI's test client and the `ApiTestRunner` or `S
    @pytest.fixture
    def api_client():
        """Fixture to create a test client for the API."""
-       auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
+       auth = DangerousDevelopmentOnlyAuthHandler()
        runner = ApiTestRunner()
        runner.mount(MyController(auth=auth).create_resource().get_resource())
        return TestClient(runner.create_app())
@@ -269,7 +266,7 @@ API testing uses pytest with FastAPI's test client and the `ApiTestRunner` or `S
    @pytest.fixture
    async def async_api_client():
        """Fixture to create an async test client for the API."""
-       auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
+       auth = DangerousDevelopmentOnlyAuthHandler()
        runner = ApiTestRunner()
        runner.mount(MyController(auth=auth).create_resource().get_resource())
        app = runner.create_app()
@@ -334,9 +331,7 @@ The playground provides a full API server with frontend for interactive testing.
            agent_id="test_agent_id",
        )
        
-       auth = DangerousDevelopmentOnlyAuthHandler(
-           identity_provider=DangerousDevelopmentOnlyIdentityProvider()
-       )
+       auth = DangerousDevelopmentOnlyAuthHandler()
        
        runner.mount(
            # ... existing controllers ...
@@ -377,7 +372,7 @@ The playground provides a full API server with frontend for interactive testing.
    ```
 
 ::: warning Authentication for Testing
-For curl/wget testing to work, you **MUST** set the auth in `main.py` to `DangerousDevelopmentOnlyAuthHandler` and `DangerousDevelopmentOnlyIdentityProvider` to bypass oauth2 authentication (this is already configured in the playground).
+For curl/wget testing to work, you **MUST** set the auth in `main.py` to `DangerousDevelopmentOnlyAuthHandler` to bypass oauth2 authentication (this is already configured in the playground).
 :::
 
 ### 🔍 Step 4: Debug and Observe Your API

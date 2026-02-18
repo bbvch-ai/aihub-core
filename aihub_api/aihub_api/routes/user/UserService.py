@@ -1,9 +1,9 @@
 from typing import TYPE_CHECKING
 
-from aihub_api.routes.user.dto.MinimalUserDTO import MinimalUserDTO
 from aihub_lib.auth.identity.TenantIdentity import TenantIdentity
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.persistence.access.entities.UserTenantRoleEntity import UserTenantRoleEntity
 from aihub_lib.persistence.user.UserEntity import Dashboard, DashboardItem, UserEntity
 from mongoengine import DoesNotExist
 from nats.aio.client import Client as NATS
@@ -52,13 +52,14 @@ class UserService:
         return await UserWithAccessDTO.from_user_entity(user_entity, tenant, runner, nc, t)
 
     @staticmethod
-    async def get_paginated_users(page: int = 1, page_size: int = 20) -> tuple[int, list[UserDTO]]:
+    async def get_paginated_users(tenant_id: str, page: int = 1, page_size: int = 20) -> tuple[int, list[UserDTO]]:
         """
-        Retrieves a paginated list of users from the local database.
+        Retrieves a paginated list of users belonging to the given tenant.
         """
+        tenant_user_ids = UserTenantRoleEntity.get_user_ids_in_tenant(tenant_id)
         skip = (page - 1) * page_size
-        total = UserEntity.count_users()
-        user_entities = UserEntity.get_paginated_users(skip=skip, limit=page_size)
+        total = UserEntity.count_users(user_ids=tenant_user_ids)
+        user_entities = UserEntity.get_paginated_users(skip=skip, limit=page_size, user_ids=tenant_user_ids)
 
         user_dtos = [UserDTO.from_user_entity(user) for user in user_entities]
 

@@ -177,15 +177,18 @@ class UserEntity(Document):
 
     @classmethod
     @trace_fn
-    def count_users(cls) -> int:
-        """Count the total number of users."""
+    def count_users(cls, user_ids: list[str] | None = None) -> int:
+        """Count the total number of users, optionally filtered by user IDs."""
+        if user_ids is not None:
+            return cls.objects(id__in=user_ids).count()
         return cls.objects.count()
 
     @classmethod
     @trace_fn
-    def get_paginated_users(cls, skip: int = 0, limit: int = 20) -> list[Self]:
-        """Get a paginated list of users, ordered by name."""
-        return cls.objects.order_by("name").skip(skip).limit(limit)
+    def get_paginated_users(cls, skip: int = 0, limit: int = 20, user_ids: list[str] | None = None) -> list[Self]:
+        """Get a paginated list of users, ordered by name. Optionally filtered by user IDs."""
+        queryset = cls.objects(id__in=user_ids) if user_ids is not None else cls.objects
+        return queryset.order_by("name").skip(skip).limit(limit)
 
     @classmethod
     @trace_fn
@@ -213,6 +216,21 @@ class UserEntity(Document):
             user.last_updated = datetime.now(UTC)
             user.save()
             logger.info(f"Updated existing user: {email}")
+
+            # Ensure user has a tenant association (repairs failed initial assignment)
+            default_tenant = TenantEntity.get_default_tenant()
+            if default_tenant:
+                existing_roles = UserTenantRoleEntity.get_roles_for_user_in_tenant(oid, default_tenant.id)
+                if not existing_roles:
+                    settings = UserSignupSettings()
+                    roles_to_assign = settings.regular_user_roles_list
+                    UserTenantRoleEntity.create_or_update(
+                        user_id=oid,
+                        tenant_id=default_tenant.id,
+                        roles=roles_to_assign,
+                    )
+                    logger.info(f"Repaired missing tenant association for user {oid} with roles: {roles_to_assign}")
+
             return user
         except DoesNotExist:
             pass

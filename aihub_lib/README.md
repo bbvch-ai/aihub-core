@@ -41,7 +41,7 @@ aihub_lib/
 │   ├── auth/                  # Authentication and authorization system
 │   │   ├── access/            # Permission-based access control
 │   │   ├── dependencies/      # Auth handlers and strategies
-│   │   └── identity/          # User identity providers
+│   │   └── identity/          # Identity models (UserIdentity, TenantIdentity)
 │   ├── nats/                  # Event-driven messaging system
 │   │   ├── events/            # Event definitions and hierarchies
 │   │   ├── dispatcher/        # Workflow orchestration engine
@@ -150,31 +150,23 @@ Follow these patterns for implementing different types of library components.
 
 #### 🔐 Authentication and Authorization Components
 
-::: tip AuthHandlers and IdentityProviders
-**AuthHandlers** are responsible for extracting authentication credentials from HTTP requests and validating them to produce a `UserIdentity`. They serve as the bridge between different authentication mechanisms (OAuth2, token-based, etc.) and the AI-Hub's internal user representation.
+::: tip AuthHandlers and Multi-Tenant Access
+**AuthHandlers** are responsible for extracting authentication credentials from HTTP requests, validating them, and resolving the tenant context to produce a `UserIdentity`. They serve as the bridge between different authentication mechanisms (OAuth2, token-based, etc.) and the AI-Hub's internal user representation.
 
-**IdentityProviders** are responsible for retrieving detailed user information from identity systems (like Microsoft Graph, LDAP, or custom user databases) given a user identifier. They separate the concerns of authentication (validating credentials) from user information retrieval.
+**Multi-Tenant Access Control** uses a two-stage model: user permissions are capped by their tenant's access rules. Roles are stored per-tenant via `UserTenantRoleEntity`, and tenant context is resolved from the `x-tenant-id` header (or defaults to the default tenant).
 :::
 
 **When to Create New AuthHandlers:**
 
 - Supporting a new authentication protocol (e.g., SAML, custom JWT format)
-- Integrating with a new identity provider that requires specific token handling
+- Integrating with a new SSO provider that requires specific token handling
 - Adding multi-factor authentication or custom validation logic
 - Creating development/testing authentication bypasses
-
-**When to Create New IdentityProviders:**
-
-- Connecting to a new user directory service (Active Directory, LDAP, etc.)
-- Supporting a new user profile storage system
-- Adding custom user role resolution logic
-- Creating mock providers for testing environments
 
 1. **Create Auth Handler**: For new authentication strategies.
 
    ```python
    # auth/dependencies/MyAuthHandler/MyAuthHandler.py
-   from typing import Annotated
    from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
    from aihub_lib.auth.identity.UserIdentity import UserIdentity
    from fastapi import HTTPException, Request
@@ -183,53 +175,18 @@ Follow these patterns for implementing different types of library components.
        async def __call__(self, request: Request) -> UserIdentity:
            """Extract and validate authentication from FastAPI Request."""
            token = self.extract_token_from_request(request)
-           return await self.authenticate_token(token)
-       
-       async def authenticate_token(self, token: str) -> UserIdentity:
-           """Validate token and return user identity."""
-           # Implementation-specific authentication logic
-           if not self.validate_token_format(token):
-               raise HTTPException(status_code=401, detail="Invalid token format")
-           
+           return await self.authenticate_token(token, request)
+
+       async def authenticate_token(self, token: str, request: Request | None = None) -> UserIdentity:
+           """Validate token, resolve user from DB, and resolve tenant context."""
            user_data = await self.validate_token_with_provider(token)
            if not user_data:
                raise HTTPException(status_code=401, detail="Invalid token")
-           
-           # Use identity provider to get full user details
-           return await self.identity_provider.get_user_identity_by_oid(user_data["oid"])
-   ```
 
-2. **Create Identity Provider**: For new user identity sources.
+           user_entity = UserEntity.ensure_user_exists(oid=user_data["oid"], ...)
+           tenant = self.resolve_tenant_for_user(request, user_entity.id) if request else self.get_default_tenant_for_user(user_entity.id)
 
-   ```python
-   # auth/identity/MyIdentityProvider/MyIdentityProvider.py
-   from aihub_lib.auth.identity.IdentityProvider import IdentityProvider
-   from aihub_lib.auth.identity.UserIdentity import UserIdentity
-
-   class MyIdentityProvider(IdentityProvider):
-       async def get_user_identity_by_oid(self, user_oid: str) -> UserIdentity:
-           """Retrieve user by Object ID (primary key)."""
-           user_data = await self.fetch_user_from_directory(user_oid)
-           roles = await self.get_user_roles(user_oid)
-           return UserIdentity(
-               id=user_data["id"],
-               email=user_data["email"],
-               display_name=user_data["name"],
-               roles=roles
-           )
-       
-       async def get_user_identity_by_email(self, email: str) -> UserIdentity:
-           """Retrieve user by email address."""
-           user_oid = await self.lookup_oid_by_email(email)
-           return await self.get_user_identity_by_oid(user_oid)
-       
-       async def get_user_roles(self, user_oid: str) -> list[str]:
-           """Get user roles from role management system."""
-           return await self.fetch_roles_from_directory(user_oid)
-       
-       async def get_user_profile_image_data_url(self, user_oid: str) -> str | None:
-           """Get user profile image as data URL."""
-           return await self.fetch_profile_image(user_oid)
+           return UserIdentity.from_user_entity(user_entity, tenant)
    ```
 
 #### 📶 Event System Extensions
@@ -565,7 +522,7 @@ This glossary defines terms, concepts, and technologies that have specific meani
 | **Event-Driven Architecture**   | Core architectural pattern where all communication happens via events, enabling scalable, stateless distributed systems.            |
 | **Event Store**                 | Persistence layer for events, providing replay capabilities and audit trails using NATS JetStream.                                  |
 | **Hierarchical Permissions**    | Permission system using dot notation (e.g., `aihub.user.agent.class.id`) with wildcard support for flexible access control.         |
-| **Identity Provider**           | Strategy pattern implementation for user authentication supporting multiple backends (Azure AD, Token, Development).                |
+| **Tenant Identity**             | Pydantic model representing tenant context (id, name, access_rules). Resolved from `x-tenant-id` header or default tenant.         |
 | **Internationalization (i18n)** | Multi-language support system with YAML-based translations and dynamic locale switching.                                            |
 | **Locale Handler**              | Core i18n component that manages language-specific content extraction and fallback mechanisms.                                      |
 | **Locale String**               | Multi-language string representation supporting dynamic locale resolution and default fallbacks.                                    |

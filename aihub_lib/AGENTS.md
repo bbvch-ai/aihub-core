@@ -15,7 +15,7 @@ aihub_lib/
 ├── auth/                      # Authentication & authorization
 │   ├── access/                # Permission-based access control (AccessChecker)
 │   ├── dependencies/          # Auth handlers (OAuth2, Token, DevOnly)
-│   └── identity/              # Identity providers (Azure AD, Graph, DevOnly)
+│   └── identity/              # Identity models (UserIdentity, TenantIdentity)
 ├── nats/                      # Event-driven messaging (core pattern)
 │   ├── events/                # Event type hierarchy (CRITICAL to understand)
 │   ├── dispatcher/            # Workflow orchestration (BaseDispatcher)
@@ -44,8 +44,9 @@ Used by agentic-processses:
 
 **Auth Pattern**:
 
-- **AuthHandler**: Extracts/validates credentials from requests → UserIdentity.
-- **IdentityProvider**: Retrieves user details from identity systems.
+- **AuthHandler**: Extracts/validates credentials from requests, resolves tenant context → UserIdentity.
+- **TenantIdentity**: Represents tenant context. Resolved from `x-tenant-id` header or default tenant.
+- **Two-stage access control**: User permissions capped by tenant permissions (tenant acts as ceiling).
 - Examples: `/home/user/aihub-core/aihub_lib/aihub_lib/auth/dependencies/`, `/home/user/aihub-core/aihub_lib/aihub_lib/auth/identity/`
 
 **Permission System**:
@@ -112,8 +113,8 @@ make test      # Run tests (exclude Azure: -k "not azure")
 2. Implement `__call__(self, request: Request) -> UserIdentity`
 3. Example: `/home/user/aihub-core/aihub_lib/aihub_lib/auth/dependencies/OAuth2AuthHandler/`
 
-**Create identity provider**:
+**Multi-tenant entities**:
 
-1. Inherit from `IdentityProvider`
-2. Implement `get_user_identity_by_oid()`, `get_user_identity_by_email()`
-3. Example: `/home/user/aihub-core/aihub_lib/aihub_lib/auth/identity/MicrosoftGraphIdentityProvider/`
+- `TenantEntity`: Organization isolation boundary with access rules
+- `UserTenantRoleEntity`: User-tenant-role junction (users can have different roles per tenant)
+- `RoleEntity`: Roles can be system-wide (`tenant_id=None`) or tenant-specific

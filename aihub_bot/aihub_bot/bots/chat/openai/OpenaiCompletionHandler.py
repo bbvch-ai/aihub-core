@@ -7,7 +7,7 @@ from collections.abc import AsyncGenerator
 from typing import override
 
 import openai
-from aihub_lib.auth.identity.TenantIdentity import TenantIdentity
+from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.infrastructure.litellm.LiteLLMService import LiteLLMService
@@ -124,7 +124,8 @@ class OpenaiCompletionHandler(CompletionHandler):
                 user_email = teams_account.email
 
         user_entity = UserEntity.by_email(user_email)
-        user = UserIdentity.from_user_entity(user_entity, TenantIdentity())  # TODO: How to determine tenant context?
+        tenant = AuthHandler.get_default_tenant_for_user(user_entity.id)
+        user = UserIdentity.from_user_entity(user_entity, tenant)
 
         logger.debug(f"Using user identity: {user}")
 

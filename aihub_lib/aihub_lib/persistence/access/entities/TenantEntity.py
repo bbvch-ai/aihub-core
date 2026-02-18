@@ -2,7 +2,7 @@ from datetime import UTC, datetime
 from typing import Self
 
 from bson import ObjectId
-from mongoengine import BooleanField, DateTimeField, Document, ListField, StringField
+from mongoengine import BooleanField, DateTimeField, Document, ListField, NotUniqueError, StringField
 
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 
@@ -90,12 +90,18 @@ class TenantEntity(Document):
         if existing:
             return existing
 
-        return cls.create_tenant(
-            name=name,
-            description=description,
-            access_rules=access_rules,
-            is_default=True,
-        )
+        try:
+            return cls.create_tenant(
+                name=name,
+                description=description,
+                access_rules=access_rules,
+                is_default=True,
+            )
+        except NotUniqueError:
+            existing = cls.get_default_tenant()
+            if existing:
+                return existing
+            raise
 
     @classmethod
     @trace_fn
@@ -132,14 +138,22 @@ class TenantEntity(Document):
         """
         Deletes a tenant by its ID. Returns True if deleted, False if not found.
 
+        Cascades to delete all associated UserTenantRoleEntity and tenant-scoped RoleEntity records.
         The default tenant cannot be deleted - attempting to do so will raise ValueError.
         """
+        from aihub_lib.persistence.access.entities.RoleEntity import RoleEntity
+        from aihub_lib.persistence.access.entities.UserTenantRoleEntity import UserTenantRoleEntity
+
         tenant = cls.get_tenant_by_id(tenant_id)
         if not tenant:
             return False
 
         if tenant.is_default:
             raise ValueError("Cannot delete the default tenant")
+
+        # Cascade: remove all user-tenant-role associations and tenant-scoped roles
+        UserTenantRoleEntity.objects(tenant_id=tenant_id).delete()
+        RoleEntity.objects(tenant_id=tenant_id).delete()
 
         tenant.delete()
         return True

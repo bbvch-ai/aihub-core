@@ -37,17 +37,17 @@ Roles are now managed locally in the database via a multi-tenant model:
 - **TenantIdentity** resolved from `x-tenant-id` HTTP header or defaults to default tenant
 - **Auth handlers** resolve BOTH user and tenant during authentication:
   1. Extract user data from JWT claims
-  2. Call `UserEntity.ensure_user_exists_for_auth()` to create/update user
-  3. Resolve tenant from `x-tenant-id` header via `TenantIdentity.from_request_or_default()`
-  4. Verify user has access to the tenant via `UserTenantRoleEntity`
-  5. Return `UserIdentity` with embedded `TenantIdentity`
+  2. Create or update user in the database
+  3. Resolve tenant from `x-tenant-id` header or fall back to default tenant
+  4. Verify user has at least one role in the tenant
+  5. Return user identity with embedded tenant context
 
 ### Access Control
 
 - **AccessChecker** performs two-stage access checking with tenant as boundary:
-  1. **STAGE 1:** Determine tenant's access level (admin or user)
-  2. **STAGE 2:** Determine user's access level (admin or user)
-  3. **STAGE 3:** Return MINIMUM of both levels (tenant acts as ceiling)
+  1. **STAGE 1:** Determine tenant's access level (admin or user) based on tenant access rules
+  2. **STAGE 2:** Determine user's access level (admin or user) based on user roles, then return MINIMUM of both levels
+     (tenant acts as ceiling)
 - **Tenant access rules act as a filter** - if tenant has no matching access rules for a resource, access is DENIED
   regardless of user roles
 - **User permissions cannot exceed tenant permissions** - even admin users are capped at user-level if tenant only has
@@ -102,8 +102,8 @@ removed entirely. Auth handlers are now standalone classes that validate tokens 
   provided
 - **User-tenant isolation** - users can have different roles in different tenants
 - **Tenant-scoped roles** - roles can be system-wide (`tenant_id=None`) or tenant-specific (`tenant_id` set)
-- **Tenant membership required** - users must have at least one role in a tenant to access it (enforced by
-  `TenantIdentity.from_request_or_default()`)
+- **Tenant membership required** - users must have at least one role in a tenant to access it (enforced during auth
+  handler tenant resolution)
 
 ### Migration & Deployment
 

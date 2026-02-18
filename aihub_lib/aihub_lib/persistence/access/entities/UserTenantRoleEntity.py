@@ -3,7 +3,7 @@ from datetime import UTC, datetime
 from typing import Self
 
 from bson import ObjectId
-from mongoengine import DateTimeField, Document, ListField, StringField
+from mongoengine import DateTimeField, Document, ListField, NotUniqueError, StringField
 
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 
@@ -98,14 +98,23 @@ class UserTenantRoleEntity(Document):
             existing.save()
             return existing
 
-        association = cls(
-            id=str(ObjectId()),
-            user_id=user_id,
-            tenant_id=tenant_id,
-            roles=validated_roles,
-        )
-        association.save()
-        return association
+        try:
+            association = cls(
+                id=str(ObjectId()),
+                user_id=user_id,
+                tenant_id=tenant_id,
+                roles=validated_roles,
+            )
+            association.save()
+            return association
+        except NotUniqueError:
+            existing = cls.get_by_user_and_tenant(user_id, tenant_id)
+            if existing:
+                existing.roles = validated_roles
+                existing.updated_at = datetime.now(UTC)
+                existing.save()
+                return existing
+            raise
 
     @classmethod
     @trace_fn
@@ -128,6 +137,12 @@ class UserTenantRoleEntity(Document):
             return existing
 
         return cls.create_or_update(user_id, tenant_id, validated_roles, validate_roles=False)
+
+    @classmethod
+    @trace_fn
+    def get_user_ids_in_tenant(cls, tenant_id: str) -> list[str]:
+        """Returns the list of user IDs that belong to a specific tenant."""
+        return [assoc.user_id for assoc in cls.objects(tenant_id=tenant_id).only("user_id")]
 
     @classmethod
     @trace_fn

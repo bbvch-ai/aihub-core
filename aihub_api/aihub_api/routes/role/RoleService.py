@@ -21,9 +21,7 @@ class RoleService:
             description=data.description,
             access_rules=data.access_rules,
             tenant_id=tenant_id,
-            usage_limits=[
-                UsageLimit(pattern=ul.pattern, limit=ul.limit, period=ul.period) for ul in data.usage_limits
-            ],
+            usage_limits=[UsageLimit(pattern=ul.pattern, limit=ul.limit, period=ul.period) for ul in data.usage_limits],
         )
         return RoleResponse.from_role_entity(role)
 
