@@ -17,7 +17,7 @@ TEMPLATE = LLMWrappingAgentConfig(
         fr="Explique le code clairement pour un public technique et non technique.",
         it="Spiega il codice in modo chiaro per un pubblico tecnico e non.",
     ),
-    icon="mage:code",
+    icon="mdi:code-tags",
     system_prompt=LocaleString(
         en=(
             "You are a code explanation expert. When the user shares code, explain it clearly and thoroughly.\n\n"
