@@ -10,7 +10,6 @@ from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_agent.agents.FewShotAgent.FewShotAgent import FewShotAgent
 from aihub_agent.agents.FewShotAgent.FewShotAgentConfig import FewShotAgentConfig
 from aihub_agent.runners.AgentRunner import AgentRunner
-
 from app.few_shot_agent.templates import ALL_TEMPLATES
 
 enable_logging()
