@@ -27,13 +27,25 @@
             {{ t('auth.login.pleaseLogin') }}
           </p>
         </div>
-        <Button
-          :label="t('auth.login.loginWithMicrosoft')"
-          icon="pi pi-microsoft"
-          icon-pos="right"
-          class="!bg-white !text-black"
-          @click="login"
-        />
+        <div class="flex flex-col gap-3">
+          <Button
+            v-for="idp in identityProviders"
+            :key="idp.alias"
+            :label="t('auth.login.loginWith', { provider: idp.displayName })"
+            :icon="`pi ${idp.icon}`"
+            icon-pos="right"
+            class="!bg-white !text-black"
+            @click="login(idp.alias || undefined)"
+          />
+          <Button
+            v-if="identityProviders.length === 0"
+            :label="t('auth.login.title')"
+            icon="pi pi-sign-in"
+            icon-pos="right"
+            class="!bg-white !text-black"
+            @click="login()"
+          />
+        </div>
       </div>
       <a
         href="https://bbv.ch/services/generative-ai/"
@@ -50,22 +62,31 @@
 <script setup lang="ts">
 import logo from '@core/assets/images/logo.png'
 
+interface IdentityProvider {
+  alias: string
+  displayName: string
+  icon: string
+}
+
 definePageMeta({
   layout: 'anonymous',
 })
 
 const { t } = useI18n()
+const { login } = useAuth()
 
-// In a real-world scenario, you might retrieve organization info.
-// For now, we use a static default.
 const companyName = 'bbv Software Services AG'
 
-const login = () => {
-  const { $auth } = useNuxtApp()
-  $auth.signinRedirect()
-}
-</script>
+const runtimeConfig = useRuntimeConfig()
 
-<style scoped>
-/* You can add additional styling if needed */
-</style>
+const identityProviders = computed<IdentityProvider[]>(() => {
+  const raw = runtimeConfig.public.auth?.identityProviders
+  if (!raw) return []
+  try {
+    return JSON.parse(raw as string) as IdentityProvider[]
+  }
+  catch {
+    return []
+  }
+})
+</script>

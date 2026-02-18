@@ -462,7 +462,7 @@ auth:
     tagline: "Experience the future of artificial intelligence"
     welcome: "Welcome to the AI Hub of {companyName}"
     pleaseLogin: "Please log in"
-    loginWithMicrosoft: "Login with Microsoft"
+    loginWith: "Login with {provider}"
     customSolutions: "Custom AI solutions for your company"
     logoAlt: "Logo of company"
 

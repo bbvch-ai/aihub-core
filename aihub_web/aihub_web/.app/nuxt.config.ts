@@ -16,6 +16,9 @@ export default defineNuxtConfig({
       ws: {
         endpoint: process.env.ENV == 'dev' ? process.env.WS_ENDPOINT : '',
       },
+      auth: {
+        identityProviders: process.env.ENV == 'dev' ? process.env.IDENTITY_PROVIDERS : '',
+      },
     },
   },
   compatibilityDate: '2024-12-03',

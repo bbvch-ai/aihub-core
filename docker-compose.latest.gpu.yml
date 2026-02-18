@@ -843,7 +843,7 @@ services:
               || echo "ERROR: Failed to apply identity providers."
           ) &
         fi
-        exec /opt/keycloak/bin/kc.sh start --import-realm --hostname=https://auth.$$DOMAIN --proxy-headers=xforwarded --http-enabled=true
+        exec /opt/keycloak/bin/kc.sh start --import-realm --hostname=https://auth.$$DOMAIN --hostname-backchannel-dynamic=true --proxy-headers=xforwarded --http-enabled=true
     environment:
       KC_DB: postgres
       KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
@@ -895,9 +895,13 @@ services:
       - "traefik.docker.network=proxy"
       - "traefik.http.routers.keycloak.rule=Host(`auth.${DOMAIN}`)"
       - "traefik.http.routers.keycloak.entrypoints=websecure"
+      - "traefik.http.routers.keycloak.tls=true"
       - "traefik.http.routers.keycloak.tls.certresolver=letsencrypt"
       - "traefik.http.routers.keycloak.priority=7000"
+      - "traefik.http.routers.keycloak.middlewares=keycloak-security-headers"
       - "traefik.http.services.keycloak.loadbalancer.server.port=8080"
+      - "traefik.http.middlewares.keycloak-security-headers.chain.middlewares=security-headers@file,keycloak-frame-options"
+      - "traefik.http.middlewares.keycloak-frame-options.headers.customResponseHeaders.X-Frame-Options=DENY"
     networks:
       - data   # PostgreSQL access for Keycloak database
       - proxy  # Traefik routing for auth.${DOMAIN}
@@ -1448,6 +1452,7 @@ services:
       OTEL_SERVICE_NAME: open-webui
 
       # --- Auth & OIDC (Keycloak) ---
+      WEBUI_SECRET_KEY: ${WEBUI_SECRET_KEY}
       WEBUI_AUTH: True
       DEFAULT_USER_ROLE: user
       OAUTH_MERGE_ACCOUNTS_BY_EMAIL: True
@@ -1458,7 +1463,7 @@ services:
       OAUTH_PROVIDER_NAME: ${OAUTH_PROVIDER_NAME}
       OAUTH_CLIENT_ID: openwebui
       OAUTH_CLIENT_SECRET: ${KEYCLOAK_OPENWEBUI_CLIENT_SECRET}
-      OPENID_PROVIDER_URL: https://auth.${DOMAIN}/realms/aihub/.well-known/openid-configuration
+      OPENID_PROVIDER_URL: http://keycloak:8080/realms/aihub/.well-known/openid-configuration
       OPENID_REDIRECT_URI: https://openwebui.${DOMAIN}/oauth/oidc/callback
       OAUTH_ALLOWED_DOMAINS: '*'
       OAUTH_SCOPES: openid email profile
@@ -1530,7 +1535,7 @@ services:
       WEBSOCKET_MANAGER: redis
       WEBSOCKET_REDIS_URL: redis://default:${REDIS_TOKEN}@valkey:6379/11
       THREAD_POOL_SIZE: 32
-      CORS_ALLOW_ORIGIN: "*" # TODO: Make this more secure
+      CORS_ALLOW_ORIGIN: "https://openwebui.${DOMAIN},https://${DOMAIN}"
 
       # --- Admin ---
       ENABLE_ADMIN_EXPORT: True
@@ -2094,6 +2099,7 @@ services:
       OAUTH_AUTHORITY_URL: ${OAUTH_AUTHORITY_URL}
       WEBUI_URL: https://openwebui.${DOMAIN}
       WS_ENDPOINT: wss://${DOMAIN}/api/v1/events/ws
+      IDENTITY_PROVIDERS: ${IDENTITY_PROVIDERS}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://127.0.0.1/"]
       interval: 30s
@@ -2446,7 +2452,7 @@ services:
       - data
       - storage
 
-
+  
   few_shot_agent:
     container_name: few-shot-agent
     restart: always
@@ -2495,7 +2501,7 @@ services:
       - backend
       - data
 
-
+  
   namespace_selection_agent:
     container_name: namespace-selection-agent
     restart: always
@@ -2544,7 +2550,7 @@ services:
       - backend
       - data
 
-
+  
   default_rag_pipeline:
     container_name: default-rag-pipeline
     restart: always

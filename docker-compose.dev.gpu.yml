@@ -1217,6 +1217,7 @@ services:
       OTEL_SERVICE_NAME: open-webui
 
       # --- Auth & OIDC (Keycloak) ---
+      WEBUI_SECRET_KEY: ${WEBUI_SECRET_KEY}
       WEBUI_AUTH: True
       DEFAULT_USER_ROLE: user
       OAUTH_MERGE_ACCOUNTS_BY_EMAIL: True
@@ -1299,7 +1300,7 @@ services:
       WEBSOCKET_MANAGER: redis
       WEBSOCKET_REDIS_URL: redis://default:${REDIS_TOKEN}@localhost:6379/11
       THREAD_POOL_SIZE: 8
-      CORS_ALLOW_ORIGIN: "*" # TODO: Make this more secure
+      CORS_ALLOW_ORIGIN: "https://openwebui.${DOMAIN},https://${DOMAIN}"
 
       # --- Admin ---
       ENABLE_ADMIN_EXPORT: True
@@ -1443,11 +1444,11 @@ services:
 
   
 
+  
 
+  
 
-
-
-
+  
 
 # ===================================================================
 # Network Configuration

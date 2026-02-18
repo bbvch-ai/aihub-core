@@ -461,7 +461,7 @@ auth:
     tagline: "Erleben Sie die Zukunft der künstlichen Intelligenz"
     welcome: "Willkommen im AI Hub von {companyName}"
     pleaseLogin: "Bitte melden Sie sich an"
-    loginWithMicrosoft: "Mit Microsoft anmelden"
+    loginWith: "Anmelden mit {provider}"
     customSolutions: "Massgeschneiderte KI-Lösungen für Ihr Unternehmen"
     logoAlt: "Logo des Unternehmens"
 

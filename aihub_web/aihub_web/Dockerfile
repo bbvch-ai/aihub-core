@@ -49,5 +49,5 @@ EXPOSE 80
 
 # Generate config from template and start Nginx on container startup.
 # This replaces the need for an entrypoint.sh script.
-CMD ["/bin/sh", "-c", "envsubst < /usr/share/nginx/html/config.template.json > /usr/share/nginx/html/config.json && nginx -g 'daemon off;'"]
+CMD ["/bin/sh", "-c", "export IDENTITY_PROVIDERS=\"${IDENTITY_PROVIDERS:-[]}\"; envsubst < /usr/share/nginx/html/config.template.json > /usr/share/nginx/html/config.json && nginx -g 'daemon off;'"]
 

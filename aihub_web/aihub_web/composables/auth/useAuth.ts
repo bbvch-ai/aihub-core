@@ -1,7 +1,8 @@
 export const useAuth = () => {
-  const login = () => {
+  const login = (idpHint?: string) => {
     const { $auth } = useNuxtApp()
-    $auth.signinRedirect()
+    const extraQueryParams = idpHint ? { kc_idp_hint: idpHint } : {}
+    $auth.signinRedirect({ extraQueryParams })
   }
 
   const logout = async () => {

@@ -72,10 +72,10 @@ langfuse = "^3.14.1"
 pytest = "^8.4.1"
 pytest-asyncio = "^0.24.0"
 ruff = "^0.8.1"
-matplotlib = "^3.9.3"
+matplotlib = "^3.10.1"
 pytest-bdd = "^8.1.0"
 toml-sort = "^0.24.2"
-black = { extras = ["jupyter"], version = "24.10.0" }
+black = { extras = ["jupyter"], version = "^25.1.0" }
 mypy = "^1.13.0"
 types-pyyaml = "^6.0.12.20240917"
 types-networkx = "^3.4.2.20241115"

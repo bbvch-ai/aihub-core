@@ -2,7 +2,7 @@
   <div class="flex flex-row">
     <div class="h-[calc(100vh-50px)] w-full">
       <iframe
-        :src="runtimeConfig.public.webui.url"
+        :src="`${runtimeConfig.public.webui.url}/oauth/oidc/login`"
         width="100%"
         height="100%"
         title="Open WebUI"
