@@ -25,11 +25,9 @@ from aihub_lib.nats.events.discovery.process.program_in.ProgramInSpecs import Pr
 from aihub_lib.nats.events.form import ALL_FORM_OPTIONS
 from aihub_lib.persistence.agents.AgentClassEntity import EventSpec
 from aihub_lib.persistence.i18n.LocaleStringEntity import LocaleStringEntity
-from aihub_lib.persistence.process.ProcessConfigEntityEmbeddedDocument import ProcessConfigEntityEmbeddedDocument
 
 if TYPE_CHECKING:
     from aihub_lib.nats.events.form.base.FormkitElement import FormkitElement
-    from aihub_lib.processes.ProcessConfig import ProcessConfig
 
 logger = logging.getLogger(__name__)
 
@@ -161,7 +159,6 @@ class ProcessClassEntity(Document):
     human_inputs = ListField(EmbeddedDocumentField(HumanInSpecsEntity), default=list)
     program_inputs = ListField(EmbeddedDocumentField(ProgramInSpecsEntity), default=list)
     agent_inputs = ListField(EmbeddedDocumentField(AgentInSpecsEntity), default=list)
-    default_process_config = EmbeddedDocumentField(ProcessConfigEntityEmbeddedDocument, required=False)
     templates = ListField(DictField(), default=list)
 
     first_discovered = DateTimeField(required=True, default=datetime.now)
@@ -195,7 +192,6 @@ class ProcessClassEntity(Document):
         human_inputs: list[HumanInSpecsEntity],
         program_inputs: list[ProgramInSpecsEntity],
         agent_inputs: list[AgentInSpecsEntity],
-        default_process_config: ProcessConfigEntityEmbeddedDocument | None,
         templates: list[dict] | None = None,
         process_class_entity_id: ObjectId | None = None,
     ) -> Self:
@@ -210,7 +206,6 @@ class ProcessClassEntity(Document):
             human_inputs=human_inputs,
             program_inputs=program_inputs,
             agent_inputs=agent_inputs,
-            default_process_config=default_process_config,
             templates=templates or [],
             first_discovered=datetime.now(),
             last_discovered=datetime.now(),
@@ -231,7 +226,6 @@ class ProcessClassEntity(Document):
         human_inputs: list[HumanInSpecs],
         program_inputs: list[ProgramInSpecs],
         agent_inputs: list[AgentInSpecs],
-        default_process_config: "ProcessConfig",
         templates: list[dict] | None = None,
     ) -> Self:
         """
@@ -251,10 +245,6 @@ class ProcessClassEntity(Document):
         program_inputs_entities = [ProgramInSpecsEntity.from_specs(p) for p in program_inputs]
         agent_inputs_entities = [AgentInSpecsEntity.from_specs(a) for a in agent_inputs]
 
-        default_config_entity = ProcessConfigEntityEmbeddedDocument.from_process_config(
-            default_process_config, process_class
-        )
-
         if existing_process:
             existing_process.name = name_entity
             existing_process.description = description_entity
@@ -264,7 +254,6 @@ class ProcessClassEntity(Document):
             existing_process.human_inputs = human_inputs_entities
             existing_process.program_inputs = program_inputs_entities
             existing_process.agent_inputs = agent_inputs_entities
-            existing_process.default_process_config = default_config_entity
             existing_process.templates = templates or []
             existing_process.last_discovered = datetime.now()
             existing_process.save()
@@ -280,7 +269,6 @@ class ProcessClassEntity(Document):
                 human_inputs=human_inputs_entities,
                 program_inputs=program_inputs_entities,
                 agent_inputs=agent_inputs_entities,
-                default_process_config=default_config_entity,
                 templates=templates,
             )
 

@@ -1,4 +1,4 @@
-from typing import Annotated, Any
+from typing import Annotated
 
 from pydantic import Field
 
@@ -9,7 +9,7 @@ from aihub_lib.nats.events.discovery.process.human_in.HumanInSpecs import HumanI
 from aihub_lib.nats.events.discovery.process.ProcessConfigSpecs import ProcessConfigSpecs
 from aihub_lib.nats.events.discovery.process.program_in.ProgramInSpecs import ProgramInSpecs
 from aihub_lib.nats.events.form import ALL_FORM_OPTIONS
-from aihub_lib.processes.ProcessConfig import ProcessConfig
+from aihub_lib.nats.events.form.TemplateData import TemplateData
 
 
 class ProcessClassDiscoveryResponseEvent(BaseEvent):
@@ -54,8 +54,7 @@ class ProcessClassDiscoveryResponseEvent(BaseEvent):
     agent_inputs: Annotated[
         list[AgentInSpecs], Field(description="List of agent work events that the process can receive.")
     ]
-    default_process_config: Annotated[ProcessConfig, Field(description="Default configuration for the process class.")]
     templates: Annotated[
-        list[dict[str, Any]] | None,
-        Field(description="Optional list of profile templates for quick profile creation in the Admin UI."),
-    ] = None
+        list[TemplateData],
+        Field(description="List of profile templates for quick profile creation in the Admin UI."),
+    ] = Field(default_factory=list)

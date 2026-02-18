@@ -634,12 +634,13 @@ class TestTemplateData:
         )
 
         result = data_config.to_template_data(form_config)
+        result_dict = result.model_dump()
 
-        assert "agent_id" in result
-        assert result["agent_id"] == "test-1"
-        assert "name" in result
-        assert "description" in result
-        assert "icon" in result
+        assert "agent_id" in result_dict
+        assert result_dict["agent_id"] == "test-1"
+        assert "name" in result_dict
+        assert "description" in result_dict
+        assert "icon" in result_dict
 
     def test_includes_configurable_fields(self) -> None:
         """Test that configurable fields (with FormKit elements in form config) are included."""
@@ -667,9 +668,10 @@ class TestTemplateData:
         )
 
         result = data_config.to_template_data(form_config)
+        result_dict = result.model_dump()
 
-        assert result["customer_bucket"] == "customers"
-        assert result["temperature"] == 0.9
+        assert result_dict["customer_bucket"] == "customers"
+        assert result_dict["temperature"] == 0.9
 
     def test_excludes_non_configurable_fields(self) -> None:
         """Test that non-configurable fields (no FormKit element) are excluded from template data."""
@@ -701,9 +703,10 @@ class TestTemplateData:
         )
 
         result = data_config.to_template_data(form_config)
+        result_dict = result.model_dump()
 
-        assert "customer_bucket" in result
-        assert "llm" not in result
+        assert "customer_bucket" in result_dict
+        assert "llm" not in result_dict
 
     def test_excludes_internal_form_name_field(self) -> None:
         """Test that _form_name computed field is not in identity or configurable sets."""
@@ -722,10 +725,11 @@ class TestTemplateData:
         )
 
         result = data_config.to_template_data(form_config)
+        result_dict = result.model_dump()
 
         # _form_name is a computed field and not in model_dump() by default with exclude
         # but model_dump() does include computed fields, so we check it's handled
-        assert result.get("agent_id") == "test-1"
+        assert result_dict.get("agent_id") == "test-1"
 
     def test_multiple_templates_produce_independent_data(self) -> None:
         """Test that two configs with different values produce distinct template dicts."""
@@ -763,10 +767,13 @@ class TestTemplateData:
         result_a = template_a.to_template_data(form_config)
         result_b = template_b.to_template_data(form_config)
 
-        assert result_a["agent_id"] == "qa-mode"
-        assert result_b["agent_id"] == "summary-mode"
-        assert result_a["temperature"] == 0.3
-        assert result_b["temperature"] == 0.9
-        assert result_a["customer_bucket"] == "qa-bucket"
-        assert result_b["customer_bucket"] == "summary-bucket"
+        result_a_dict = result_a.model_dump()
+        result_b_dict = result_b.model_dump()
+
+        assert result_a_dict["agent_id"] == "qa-mode"
+        assert result_b_dict["agent_id"] == "summary-mode"
+        assert result_a_dict["temperature"] == 0.3
+        assert result_b_dict["temperature"] == 0.9
+        assert result_a_dict["customer_bucket"] == "qa-bucket"
+        assert result_b_dict["customer_bucket"] == "summary-bucket"
         assert result_a != result_b
