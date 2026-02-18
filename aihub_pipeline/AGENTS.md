@@ -70,7 +70,7 @@ aihub_pipeline/
 **Stage 2 (Unified)**: `DataLakeFile` → `RefDocDocument` → `TextNode[]`
 
 - Single pipeline processes all data lake files regardless of origin
-- Parsing (Docling/PDF) → Chunking (semantic/structural) → Embedding → Vector Store
+- Parsing (MinerU/MarkItDown) → Chunking (semantic/structural) → Embedding → Vector Store
 - Storage: MongoDB (documents via DocStoreIOManager), Milvus (vectors via VectorStoreIOManager)
 
 ## Asset Factory Pattern
@@ -113,7 +113,7 @@ def parse_document(context, file: DataLakeFile) -> RefDoc:
 
 **Types**:
 
-- **DocumentParser**: Docling, PDF, Markdown parsers
+- **DocumentParser**: MinerU, MarkItDown, PDF, Markdown parsers
 - **LLM/Embedding**: Azure OpenAI, OpenAI, Hugging Face
 - **Storage**: Milvus (primary vector store), MongoDB, Data Lake
 

@@ -2,7 +2,7 @@ agent:
   name: "Assistants IA"
   description: "Parcourez et interagissez avec les assistants IA"
 
-docling:
+parsing:
   name: "Convertisseur de documents"
   description: "Convertissez des documents en différents formats"
 

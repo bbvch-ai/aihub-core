@@ -24,7 +24,9 @@
     "rag_agent",
     "expert_rag_agent",
     "expert_asking_agent",
-    "namespace_selection_agent"
+    "namespace_selection_agent",
+    "mineru-api",
+    "mineru-vlm"
   ],
   "license_categories": {
     "restrictive": [
@@ -69,7 +71,6 @@
     "anyio": "MIT",
     "attrs": "MIT",
     "banks": "BSD-3-Clause",
-    "docling-core": "MIT",
     "griffe": "ISC",
     "jsonschema": "MIT",
     "llama-index-core": "MIT",
@@ -251,18 +252,6 @@
     {
       "service": "playwright",
       "license": "Apache-2.0",
-      "status": "✅",
-      "notes": "Permissive license"
-    },
-    {
-      "service": "docling",
-      "license": "MIT",
-      "status": "✅",
-      "notes": "Permissive license"
-    },
-    {
-      "service": "docling-serve",
-      "license": "MIT",
       "status": "✅",
       "notes": "Permissive license"
     },

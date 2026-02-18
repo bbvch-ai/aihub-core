@@ -1,25 +1,25 @@
+```yaml
 ---
-title: Pipeline-Beobachtung
-source_sha: 905cb549c7c5063aea1541398f6d957099f34988cac49f33cfd568b4e92b5b5b
+title: Pipeline-Observability
+source_sha: "64fee6e1120ef2a5f6e9ce41bb7f52f7cb6dd70b3215eca2dea89a2f57377d04"
 ---
+```
 
-# Pipeline-Beobachtung
+# Pipeline-Observability
 
-Effektives Monitoring und Debugging sind unerlässlich für die Aufrechterhaltung zuverlässiger
-Datenverarbeitungspipelines. AI-Hub bietet umfassende Beobachtbarkeitstools, um die Pipeline-Ausführung zu verfolgen,
-Probleme zu diagnostizieren und die Leistung zu optimieren.
+Effektives Monitoring und Debugging sind essenziell, um zuverlässige Datenverarbeitungs-Pipelines aufrechtzuerhalten. AI-Hub bietet umfassende Observability-Tools, um die Pipeline-Ausführung zu verfolgen, Probleme zu diagnostizieren und die Leistung zu optimieren.
 
 ## Was Sie lernen werden
 
-Dieser Leitfaden behandelt die Pipeline-Beobachtung:
+Dieser Leitfaden behandelt die Pipeline-Observability:
 
-- **Monitoring**: Verfolgung der Pipeline-Ausführung und Leistungskennzahlen
-- **Debugging**: Diagnose und Behebung von Pipeline-Fehlern
-- **Tracing**: Verständnis der Datenherkunft und des Verarbeitungsverlaufs
+- **Monitoring**: Verfolgen Sie die Pipeline-Ausführung und Leistungsmetriken
+- **Debugging**: Diagnostizieren und beheben Sie Pipeline-Fehler
+- **Tracing**: Verstehen Sie Datenherkunft und Verarbeitungshistorie
 
-## Dagster UI Monitoring
+## Dagster UI-Monitoring
 
-### Asset-Abstammung und Abhängigkeiten
+### Asset-Abstammung und -Abhängigkeiten
 
 Die Dagster UI bietet eine visuelle Verfolgung der Asset-Abstammung:
 
@@ -35,7 +35,7 @@ def documents(data_lake_file: DataLakeFile) -> RefDocDocument:
     return process_document(data_lake_file)
 ```
 
-### Asset-Materialisierungsmetadaten
+### Asset-Materialisierungs-Metadaten
 
 Fügen Sie umfassende Metadaten hinzu, um Verarbeitungsdetails zu verfolgen:
 
@@ -60,7 +60,7 @@ def parse_document_with_metadata(
             "processing_time_seconds": processing_time,
             "document_pages": len(document.pages) if hasattr(document, 'pages') else 1,
             "text_length": len(document.text),
-            "parser_version": "docling-1.0",
+            "parser_version": "mineru-2.7",
             "success_rate": 1.0,
             "Table": MetadataValue.table(
                 records=[{
@@ -78,7 +78,7 @@ def parse_document_with_metadata(
     return document
 ```
 
-### Monitoring auf Partitionsebene
+### Partition-Level-Monitoring
 
 Verfolgen Sie den Verarbeitungsstatus über dynamische Partitionen hinweg:
 
@@ -107,4 +107,4 @@ def partitioned_processing(context: AssetExecutionContext) -> ProcessingResult:
 
 ## Nächste Schritte
 
-- Erkunden Sie `aihub_pipeline/playground/` für vollständige Beispiele beobachtbarer Pipelines.
+- Erkunden Sie `aihub_pipeline/playground/` für vollständige Beispiele beobachtbarer Pipelines
