@@ -544,7 +544,7 @@ class Form(BaseModel):
         full_dump = self.model_dump()
         identity_fields = {"agent_id", "process_id", "name", "description", "icon"}
         filtered_dict = {k: v for k, v in full_dump.items() if k in configurable_fields or k in identity_fields}
-        return TemplateData(**filtered_dict)
+        return TemplateData.model_validate(filtered_dict)
 
     def to_configurable_submission_model(self) -> type[BaseModel]:
         """

@@ -1,4 +1,6 @@
-from pydantic import BaseModel, ConfigDict
+from typing import Annotated
+
+from pydantic import BaseModel, ConfigDict, Field
 
 from aihub_lib.i18n.LocaleString import LocaleString
 
@@ -12,6 +14,6 @@ class TemplateData(BaseModel):
 
     model_config = ConfigDict(extra="allow")
 
-    name: LocaleString
-    description: LocaleString
-    icon: str | None = None
+    name: Annotated[LocaleString, Field(description="Localized display name of the template")]
+    description: Annotated[LocaleString, Field(description="Localized description of the template")]
+    icon: Annotated[str | None, Field(description="Icon identifier for the template")] = None

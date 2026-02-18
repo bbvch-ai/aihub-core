@@ -73,7 +73,7 @@ class AgentRunner(HealthCheckProvider):
 
         self.agent_type = agent_type
         self.agent_config = agent_config
-        self.templates = templates
+        self.templates = templates or []
         self.agent_config_type = agent_config.__class__
 
         self.name = agent_type.name
@@ -156,9 +156,7 @@ class AgentRunner(HealthCheckProvider):
 
         agent_config_specs = AgentConfigSpecs.from_agent_config(self.agent_config, self.agent_class)
 
-        templates_data: list[TemplateData] = []
-        if self.templates:
-            templates_data = [t.to_template_data(self.agent_config) for t in self.templates]
+        templates_data: list[TemplateData] = [t.to_template_data(self.agent_config) for t in self.templates]
 
         agent_discovery_response_event = AgentClassDiscoveryResponseEvent(
             agent_class=self.agent_class,
