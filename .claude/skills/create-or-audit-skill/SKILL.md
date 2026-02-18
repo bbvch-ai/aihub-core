@@ -1,5 +1,5 @@
 ---
-name: audit-skill
+name: create-or-audit-skill
 description: >
   Builds new codebase-specific skills or reviews existing/proposed skills
   for quality, specificity, and value. Use when user says "build a skill",
@@ -174,7 +174,7 @@ Reference it in the SKILL.md's verification step.
 First, run the structural validation:
 
 ```bash
-bash .claude/skills/audit-skill/scripts/validate-skill.sh .claude/skills/{skill-name}/SKILL.md
+bash .claude/skills/create-or-audit-skill/scripts/validate-skill.sh .claude/skills/{skill-name}/SKILL.md
 ```
 
 Fix any errors or warnings before proceeding.
@@ -206,7 +206,7 @@ Read the skill. Then run the structural check first, followed by the six semanti
 Run the bundled validation script before doing any semantic review:
 
 ```bash
-bash .claude/skills/audit-skill/scripts/validate-skill.sh {path-to-SKILL.md}
+bash .claude/skills/create-or-audit-skill/scripts/validate-skill.sh {path-to-SKILL.md}
 ```
 
 If this fails (exit code 1), stop and report the structural errors. No point reviewing content if the skeleton is broken
@@ -387,7 +387,7 @@ Run the bundled validation script against every skill:
 ```bash
 find .claude/skills -name "SKILL.md" | while read f; do
   echo ""
-  bash .claude/skills/audit-skill/scripts/validate-skill.sh "$f"
+  bash .claude/skills/create-or-audit-skill/scripts/validate-skill.sh "$f"
 done
 ```
 

@@ -1,179 +1,260 @@
-# aihub_web - Frontend Application
+# aihub_web - Admin & Management UI
 
-**Purpose**: Nuxt 3 web application. User interface for AI-Hub (agents, processes, threads, admin).
-
-Tech Stack & Paradigms: Nuxt 3 with Vue 3 Composition API. TypeScript strict mode. PrimeVue as primary UI component
-library (@primevue/nuxt-module, @primevue/forms, @primeuix/themes). FormKit for form management (@formkit/nuxt,
-@sfxcode/formkit-primevue-nuxt). Pinia + Pinia-Colada for state management and reactive data fetching. VueFlow for
-node-based workflows (@vue-flow/core, background, controls, minimap). Radix Vue for unstyled primitives. Tailwind CSS +
-tailwindcss-primeui. OIDC authentication (oidc-client-ts). Socket.IO client for WebSocket real-time updates. ApexCharts
-for data visualization (vue3-apexcharts). Quill rich text editor. GridStack dashboard layouts. Lucide icons
-(lucide-vue-next). VueUse utilities (@vueuse/nuxt, router, integrations, math). @hey-api for OpenAPI SDK generation.
-i18n (@nuxtjs/i18n). Dagre for graph layouts. ESLint + TypeScript ESLint. Vite for HMR. Client-side only (no SSR).
-
-## Scope Responsibility
-
-Frontend UI, API consumption, real-time updates, state management. NOT backend logic (consume `aihub_api`).
+**Purpose**: Nuxt 3 frontend for AI-Hub. Admin interface for agents, processes, threads, knowledge, models, roles,
+dashboards, and chat. Vue 3 Composition API, TypeScript strict, PrimeVue, Tailwind CSS, Pinia-Colada. Client-side only
+(no SSR).
 
 ## Folder Structure
 
 ```
 aihub_web/aihub_web/
-├── components/                # Vue components (domain-organized)
-│   ├── Agent/                 # Agent UI components
-│   ├── Chat/                  # Chat interface
-│   ├── Process/               # Process management
-│   ├── Thread/                # Thread display
-│   └── ...                    # Other domains
-├── composables/               # Vue composables (API state wrappers)
-│   ├── agent/                 # useAgent(), useAgents()
-│   ├── thread/                # useThread(), useThreads()
-│   └── ...                    # Other domains
-├── pages/                     # File-based routing
-│   ├── service/               # Main app pages
-│   │   ├── agents/            # Agent pages
-│   │   ├── processes/         # Process pages
-│   │   └── ...                # Other services
-│   └── auth/                  # Auth pages
-├── sdk/                       # Generated API client (HeyAPI, type-safe)
-├── i18n/                      # Translations (de, en, fr, it)
-├── layouts/                   # App layouts
-├── middleware/                # Route guards (auth)
-└── themes/                    # PrimeVue themes
+├── .app/                    # Nuxt layer entry point (extends parent, runtimeConfig, FormKit config)
+├── assets/css/              # Global CSS (main.css)
+├── components/              # Domain-organized Vue components (~170 files)
+│   ├── Agent/               # Agent cards, configuration, workflow visualization
+│   ├── Chat/                # Chat interface
+│   ├── Dashboard/           # GridStack dashboard widgets (ApexCharts)
+│   ├── Event/Display/       # 26 event display components (agent timeline)
+│   ├── Event/List/          # Event timeline container (PrimeVue Timeline)
+│   ├── FormKit/             # Custom FormKit inputs (AgentSelector, ModelSelect, etc.)
+│   ├── Navigation/          # Left nav, breadcrumbs
+│   ├── Process/             # Process management + walkthrough UI
+│   ├── Structural/          # Layout primitives (Screen, Column, Substructure)
+│   ├── Thread/              # Thread display
+│   ├── Workflow/            # VueFlow agent workflow visualization
+│   └── ...                  # Costs, Display, Evaluation, Knowledge, Memory, Models, etc.
+├── composables/             # Pinia-Colada query/mutation wrappers (domain-organized)
+│   ├── agent/               # useAgentInstances, useAgentClasses, mutations
+│   ├── thread/              # useThreads, useThreadEvents (WebSocket real-time)
+│   ├── form/                # useFormKitTransform (backend schema → FormKit nodes)
+│   ├── event/               # useEventComponent (event → display component resolver)
+│   └── ...                  # auth, chat, dashboard, document, evaluation, file, etc.
+├── i18n/locales/            # de.yaml, en.yaml, fr.yaml, it.yaml
+├── layouts/                 # default.vue, anonymous.vue
+├── middleware/              # auth.global.ts (OIDC guard on all routes)
+├── pages/                   # File-based routing (all under /service/)
+├── plugins/                 # oidc-client.ts, config-loader.client.ts, apexcharts.client.ts
+├── sdk/client/              # Auto-generated HeyAPI TypeScript client (NEVER edit)
+├── themes/                  # aihub-theme.ts (PrimeVue Aura preset customization)
+└── types/                   # Shared TypeScript types (NavItem, DashboardWidget, etc.)
 ```
 
-## Tech Stack
+## Nuxt Layer Architecture
 
-**Framework**: Nuxt 3, Vue 3 Composition API, TypeScript (strict mode) **UI**: PrimeVue (components), Tailwind CSS
-(styling), PrimeIcons + Iconify **State**: Pinia-Colada (reactive API queries/mutations, NOT global Pinia store)
-**API**: Auto-generated SDK (HeyAPI from OpenAPI), Socket.IO (real-time) **Utils**: VueUse, lodash (sub-packages),
-date-fns **Charting**: ApexCharts
+The `.app/` directory is the actual entry point — it extends the parent via `extends: ['..']` in its `nuxt.config.ts`.
+`pnpm dev` runs `nuxi dev .app`. The parent `aihub_web/aihub_web/` provides components, composables, pages, and config.
+`.app/` adds `runtimeConfig` (OIDC, WebSocket endpoint, env vars) and `formkit.config.ts` (custom input registration).
 
-## Service-Driven Architecture
+## Page Composition Pattern
 
-**Pattern**: Each API service (agent, thread, user, etc.) has:
+Master-detail layout using nested Nuxt routing:
 
-- **Page**: `/pages/service/<service>.vue` (list view)
-- **Nested Pages**: `/pages/service/<service>/<item>.vue` (detail views)
-- **Components**: `/components/<Service>/` (domain-specific UI)
-- **Composables**: `/composables/<service>/` (API wrappers)
+```
+StructuralScreen                          ← list page (agents.vue)
+  StructuralColumn title="Agents"         ← list panel
+    AgentCard × N
+  NuxtPage                                ← renders detail hub page
+    SelectButton (sub-nav)                ← NavItem tabs
+    NuxtPage                              ← renders leaf page (overview, config, etc.)
+      StructuralColumn title="Overview"   ← detail panel (close-route="/service/agents")
+```
 
-**Example**: Agent service
+**StructuralColumn** props: `title`, `loading` (shows ProgressBar, suppresses slot content), `closeRoute` (back button),
+`size` (`'small' | 'normal' | 'large'`), `childColumn` (h2 → h3 heading).
 
-- List: `/pages/service/agents.vue` → `useAgents()`
-- Detail: `/pages/service/agents/agent-[id]-[class].vue` → `useAgent()`
-- Components: `/components/Agent/Card.vue`, `/components/Agent/Workflow.vue`
-- Composables: `/composables/agent/useAgent.ts`, `/composables/agent/useAgents.ts`
+**StructuralScreen**: Full-height scrollable container. `2xl:flex-row` creates side-by-side columns on large screens.
 
-## State Management (Pinia-Colada)
+**Key rule**: List pages contain `<NuxtPage />` — they ARE the layout frame for their detail children. Don't create
+separate layout files for detail pages.
 
-**Query** (GET): Map API to reactive state.
+## NavItem Pattern
 
 ```typescript
-export const useRole = defineQuery(() => {
-  const route = useRoute()
-  const { data: role, isPending: roleIsLoading } = useQuery<RoleResponse>({
-    key: () => ['roles', route.params.role_id as string],
-    staleTime: minutesToMilliseconds(5),
-    query: async () => await getRole({ composable: '$fetch', path: { role_id: route.params.role_id as string } }),
+type NavItem = { name: string; key: string; path: string; isActive: () => boolean }
+```
+
+`isActive` is a **function returning boolean**, not a boolean. Always define as a closure:
+
+```typescript
+const isActive = (path: string) => () => route.path.startsWith(localePath(subPath(path)))
+```
+
+Sub-page navigation uses PrimeVue `<SelectButton>` with NavItem options.
+
+## Pinia-Colada (State Management)
+
+**Query pattern** (GET):
+
+```typescript
+export const useAgentInstances = defineQuery(() => {
+  const { data: agentInstances, isPending: agentInstancesAreLoading } = useQuery<FullAgentInstanceDto[]>({
+    key: () => ['agent-instances'],                                          // MUST be a function
+    staleTime: minutesToMilliseconds(5),                                     // date-fns helper
+    query: async () => await getAllAgentInstances({ composable: '$fetch' }), // composable: '$fetch' REQUIRED
   })
-  return { role, roleIsLoading }
+  return { agentInstances, agentInstancesAreLoading }
 })
 ```
 
-**Mutation** (POST/PUT/DELETE): Update + auto-invalidate queries.
+**Mutation pattern** (POST/PUT/DELETE):
 
 ```typescript
-export const useUpdateRole = defineMutation(() => {
+export const useDeleteAgentInstance = defineMutation(() => {
   const queryCache = useQueryCache()
-  const { mutateAsync: updateRoleMutation } = useMutation({
-    mutation: async ({ roleId, updatedRole }) => {
-      await updateRole({ composable: '$fetch', path: { role_id: roleId }, body: updatedRole })
-      queryCache.invalidateQueries({ key: ['roles'] })  // Triggers useRole() refetch
-      queryCache.invalidateQueries({ key: ['suite'] })  // Cascade invalidation
+  const { mutateAsync: deleteAgentInstanceMutation } = useMutation({
+    mutation: async ({ agentClass, agentId }: { agentClass: string, agentId: string }) => {
+      await deleteAgentInstance({ composable: '$fetch', path: { agent_class: agentClass, agent_id: agentId } })
+      queryCache.invalidateQueries({ key: ['agent-instances'] })                       // Broad
+      queryCache.invalidateQueries({ key: ['agent-class-instances', agentClass] })     // Specific
     },
   })
-  return { updateRole: updateRoleMutation }
+  return { deleteAgentInstance: deleteAgentInstanceMutation }
 })
 ```
+
+**Conventions**:
+
+- `defineQuery`/`defineMutation` are auto-imported — no explicit import needed
+- Query keys: always `() => [...]` (function returning array, not plain array)
+- `staleTime: minutesToMilliseconds(5)` — standard cache duration, use `date-fns` helper
+- Route-dependent queries: `enabled: useRouteReady('param_name')` prevents firing before route resolves
+- Export as `export const useFoo = defineQuery(...)` (named export, not default)
+- Mutations invalidate both broad and specific query keys
+- **`composable: '$fetch'` REQUIRED** on every SDK call (HeyAPI Nuxt adapter requirement)
 
 ## SDK Generation
 
-**Generate**: `pnpm generate-sdk` (from API OpenAPI spec) **Import types**:
-`import type { AgentDto } from '@core/sdk/client'` **Import endpoints**: `import { getAgent } from '@core/sdk/client'`
+- **Generate**: `pnpm generate-sdk` (requires API running at localhost:8000)
+- **Config**: `openapi-ts.config.ts`
+- **Output**: `sdk/client/` — NEVER edit, fully generated
+- **Import types**: `import type { AgentDto } from '@core/sdk/client'`
+- **Import endpoints**: `import { getAgent } from '@core/sdk/client'`
+- **`@core` alias** = app root (`aihub_web/aihub_web/`), defined in `nuxt.config.ts`
+
+SDK client initialized in `app.vue` with global auth token injection and error handling.
+
+## FormKit Dynamic Forms
+
+The backend defines form schemas (`FormkitElement[]`), the frontend renders them dynamically.
+
+**Flow**: Backend `AgentConfig.as_form()` → SDK `FormkitElement[]` → `useFormKitTransform().buildFormKitSchema()` →
+`<FormKitSchema :schema="schema" />` → rendered form.
+
+**Custom FormKit inputs** (registered in `.app/formkit.config.ts`): `agentSelector`, `knowledgeDatabaseSelector`,
+`iconSelector`, `localeInput`, `modelSelect`, `vectorStoreInput`.
+
+Custom input components receive props via `context` (not Vue props): read from `context.value`, write via
+`context.node.input(newValue)`.
+
+**Repeater elements** must be extracted separately and rendered via `<FormKitRepeater>` — the standard `repeater` type
+is not supported inside `<FormKitSchema>`.
+
+## Real-Time Events (WebSocket)
+
+Uses **VueUse `useWebSocket`** — NOT Socket.IO:
+
+- Single WebSocket in `composables/thread/useThreadEvents.ts`
+- Auth via first message: `ws.send(JSON.stringify({ type: 'auth', token }))`
+- New events pushed directly into Pinia-Colada cache via `queryCache.setQueryData()` (no refetch)
+- Terminal events (`StopEvent`, `ExceptionEvent`) trigger `queryCache.invalidateQueries()`
+- Auto-reconnect: `{ retries: -1, delay: 1000 }`
+
+## Event Display System
+
+26 components in `components/Event/Display/` — one per event type (ChunkEvent, LLMEvent, RetrieverEvent, etc.).
+
+- `EventDisplayBase.vue`: wrapper card (icon, timestamp, raw-data toggle). All event components wrap in this.
+- `composables/event/useEventComponent.ts`: `resolveComponentForEvent(event)` maps `_event_name` → Vue component. Falls
+  back through `_parent_event_names` for inheritance-based matching. Unknown events → `EventDisplayUnknownEvent`.
+- **Event timestamps are in nanoseconds** — divide by `1_000_000` for JavaScript milliseconds.
 
 ## i18n
 
-**Required languages**: de (default), en, fr, it **Files**: `/i18n/locales/{de,en,fr,it}.yaml` **Usage**:
-`const { t } = useI18n()` → `{{ t('agent.title') }}` **Structure**: Organize by service domain
+- 4 languages: `de`, `en`, `fr`, `it` (lazy loaded YAML files in `i18n/locales/`)
+- Strategy: `prefix` — URLs include locale: `/en/service/agents`, `/de/service/agents`
+- Default locale: `en`
+- **ALL navigation MUST use `localePath()`**: `router.push(localePath('/service/agents'))` — never bare paths
+- Import `useLocalePath` from `'#i18n'` (auto-imported in most contexts)
+- All 4 locale files must have matching keys
 
-## Component Patterns
+## PrimeVue Component Exclusions
 
-**StructuralColumn**: Standard container with loading, title, close route. Waits for data before rendering children.
-**Routing**: `useLocalePath()` for i18n-aware paths, `router.push(localePath('/path'))` **PrimeVue**: Use built-in
-components (Button, DataTable, etc.). DO NOT rebuild low-level components. **Tailwind**: Utility classes only. NO custom
-CSS classes.
+These PrimeVue components are **excluded from Nuxt auto-import** (registered globally via FormKit bridge instead):
 
-## Development Workflow
+- All form inputs (`wrappedPrimeInputs` in `nuxt.config.ts`): `InputText`, `Select`, `Checkbox`, `DatePicker`, etc.
+- `Button`, `Form`, `FormField`, `Chart`
 
-1. **Add endpoint**: Create in `aihub_api`, generate SDK (`pnpm generate-sdk`)
-2. **Create composables**: Wrap SDK calls in `composables/<service>/use*.ts`
-3. **Create pages**: File-based routing in `pages/service/<service>/`
-4. **Create components**: Domain-specific in `components/<Service>/`
-5. **Add i18n**: Translations in `i18n/locales/*.yaml`
-6. **Lint**: `pnpm lint` (ESLint with SonarJS recommended rules)
-7. **Run**: `pnpm dev` (http://localhost:3000)
+They still work in templates — they're globally registered through `@sfxcode/formkit-primevue` and PrimeVue's own
+registration. Don't add manual imports for them.
 
-## Coding Standards
+## Auto-Imports
 
-**TypeScript**: Strict mode, full typing (NO `any`) **Naming**: `camelCase` (vars/functions), `PascalCase`
-(components/types) **Formatting**: Prettier (auto-format) **Linting**: ESLint config:
-`/home/user/aihub-core/aihub_web/aihub_web/.eslintrc.cjs`
+**Auto-imported** (no explicit import needed):
 
-**Do's**:
+- All composables from `composables/` and `composables/**/`
+- `defineQuery`, `defineMutation`, `useQuery`, `useMutation`, `useQueryCache` (Pinia-Colada)
+- `computed`, `ref`, `watch`, `onMounted` (Vue)
+- `useRoute`, `useRouter`, `navigateTo` (Nuxt)
+- `useI18n` (i18n)
+- PrimeVue components (except excluded ones above)
 
-- Re-use PrimeVue components
-- Use Tailwind utilities
-- Keep components domain-focused
-- Let Pinia-Colada handle caching
+**Needs explicit import**:
 
-**Don'ts**:
+- SDK types/endpoints: `import { ... } from '@core/sdk/client'`
+- `useLocalePath` from `'#i18n'`
+- VueFlow: `import { VueFlow } from '@vue-flow/core'` + CSS imports
+- GridStack: `import { GridStack } from 'gridstack'` + CSS import
 
-- Build custom low-level components (buttons, inputs, etc.)
-- Write inline CSS or custom CSS classes
-- Use global Pinia store (use Pinia-Colada queries/mutations)
-- Over-abstract components
+## Dark Mode
 
-## Pre-Commit
+Class-based: `.dark` on `<html>`. Both Tailwind (`darkMode: ['class']`) and PrimeVue theme (`darkModeSelector: '.dark'`)
+use this. Use `dark:` Tailwind prefix for dark-mode styles.
 
-```bash
-pnpm lint  # ESLint + auto-fix
-```
+## Agent Class vs Agent Instance
+
+The UI strictly separates blueprint from profile:
+
+- **AgentClass** = blueprint/definition (what an agent can do)
+- **AgentInstance** = deployed profile (configured instance of a class)
+- Route params: `agent_class` and `agent_id` are always separate
+- Different composables: `useAgentClasses()` vs `useAgentInstances()`
+
+## Commands
+
+| Command             | What it does                                             |
+| ------------------- | -------------------------------------------------------- |
+| `pnpm dev`          | Dev server at localhost:3000 (via Nuxt layer in `.app/`) |
+| `pnpm lint`         | ESLint + auto-fix (SonarJS, Tailwind, import order)      |
+| `pnpm generate-sdk` | Regenerate TypeScript SDK from API OpenAPI spec          |
+| `pnpm build`        | Production build (static generation)                     |
+
+`make test` is a no-op — no frontend tests are configured.
+
+## Development Workflow (New Feature)
+
+1. Add API endpoint in `aihub_api`, run `pnpm generate-sdk`
+2. Create composables in `composables/<domain>/use*.ts` (defineQuery/defineMutation)
+3. Create list page: `pages/service/<domain>.vue` with StructuralScreen + StructuralColumn + NuxtPage
+4. Create detail hub: `pages/service/<domain>/[param].vue` with SelectButton nav + NuxtPage
+5. Create leaf pages: `pages/service/<domain>/[param]/overview.vue` etc. with StructuralColumn
+6. Create components: `components/<Domain>/Card.vue`, etc.
+7. Add i18n keys to all 4 locale files (`de.yaml`, `en.yaml`, `fr.yaml`, `it.yaml`)
 
 ## Essential Files
 
-- ESLint config: `/home/user/aihub-core/aihub_web/aihub_web/.eslintrc.cjs`
-- Prettier config: `/home/user/aihub-core/aihub_web/aihub_web/.prettierrc`
-- Nuxt config: `/home/user/aihub-core/aihub_web/aihub_web/nuxt.config.ts`
-- Tailwind config: `/home/user/aihub-core/aihub_web/aihub_web/tailwind.config.mjs`
-- SDK client: `/home/user/aihub-core/aihub_web/aihub_web/sdk/client.ts`
-
-## Quick Reference
-
-**Create service UI**:
-
-1. Generate SDK: `pnpm generate-sdk`
-2. Create composables: `composables/my_service/useMyService.ts`
-3. Create list page: `pages/service/my-service.vue` (uses `useMyServices()`)
-4. Create detail page: `pages/service/my-service/[id].vue` (uses `useMyService()`)
-5. Create components: `components/MyService/Card.vue`, etc.
-6. Add i18n: `i18n/locales/en.yaml` → `myService: { title: "..." }`
-
-**File-based routing**:
-
-- `/pages/foo.vue` → `/foo`
-- `/pages/foo/bar.vue` → `/foo/bar`
-- `/pages/foo/[id].vue` → `/foo/:id` (dynamic)
-- `/pages/foo-[id]-[slug].vue` → `/foo-:id-:slug`
-
-**Access params**: `const route = useRoute()` → `route.params.id`
+- Nuxt config: `nuxt.config.ts`
+- Nuxt layer entry: `.app/nuxt.config.ts`
+- FormKit config: `.app/formkit.config.ts`
+- ESLint config: `eslint.config.js`
+- Tailwind config: `tailwind.config.mjs`
+- PrimeVue theme: `themes/aihub-theme.ts`
+- SDK config: `openapi-ts.config.ts`
+- SDK output: `sdk/client/` (generated, never edit)
+- Auth plugin: `plugins/oidc-client.ts`
+- Auth middleware: `middleware/auth.global.ts`
+- Layout primitives: `components/Structural/Screen.vue`, `Column.vue`, `Substructure.vue`
+- FormKit transform: `composables/form/useFormKitTransform.ts`
+- Event resolver: `composables/event/useEventComponent.ts`
+- WebSocket events: `composables/thread/useThreadEvents.ts`
+- NavItem type: `types/NavItem.ts`
+- App entry: `app.vue` (SDK client init, global setup)

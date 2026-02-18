@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # validate-skill.sh — Quick quality check for a SKILL.md file
-# Usage: bash .claude/skills/audit-skill/scripts/validate-skill.sh path/to/SKILL.md
+# Usage: bash .claude/skills/create-or-audit-skill/scripts/validate-skill.sh path/to/SKILL.md
 set -euo pipefail
 
 SKILL_PATH="${1:?Usage: validate-skill.sh <path-to-SKILL.md>}"

@@ -1,5 +1,5 @@
 ---
-name: audit-claude-md
+name: create-or-audit-claude-md
 description: >
   Audits an existing CLAUDE.md or builds one from scratch by analyzing the
   actual codebase — config files, git history, CI/CD, existing docs, and code
