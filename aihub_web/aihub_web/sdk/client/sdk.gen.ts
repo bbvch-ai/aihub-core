@@ -59,7 +59,7 @@ export const getMyUser = <TComposable extends Composable = '$fetch', DefaultT ex
 /**
  * Get User
  *
- * Retrieve user info by their OID.
+ * Retrieve user info by their OID. Shows access within the admin's current tenant context.
  */
 export const getUser = <TComposable extends Composable = '$fetch', DefaultT extends GetUserResponse = GetUserResponse>(options: Options<TComposable, GetUserData, GetUserResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetUserResponse | DefaultT, GetUserError, DefaultT>({
     responseTransformer: getUserResponseTransformer,
