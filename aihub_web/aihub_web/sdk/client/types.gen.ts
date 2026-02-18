@@ -310,11 +310,9 @@ export type AgentClassDto = {
     /**
      * Templates
      *
-     * Optional list of profile templates for quick profile creation.
+     * List of profile templates for quick profile creation.
      */
-    templates?: Array<{
-        [key: string]: unknown;
-    }> | null;
+    templates?: Array<TemplateData>;
 };
 
 /**
@@ -5825,8 +5823,8 @@ export type ImagesResponse = {
      * Size
      */
     size?: '1024x1024' | '1024x1536' | '1536x1024' | null;
-    usage?: OpenaiTypesImagesResponseUsage | null;
-    [key: string]: unknown | number | 'transparent' | 'opaque' | null | Array<Image> | null | 'png' | 'webp' | 'jpeg' | null | 'low' | 'medium' | 'high' | null | '1024x1024' | '1024x1536' | '1536x1024' | null | OpenaiTypesImagesResponseUsage | null | undefined;
+    usage?: Usage | null;
+    [key: string]: unknown | number | 'transparent' | 'opaque' | null | Array<Image> | null | 'png' | 'webp' | 'jpeg' | null | 'low' | 'medium' | 'high' | null | '1024x1024' | '1024x1536' | '1536x1024' | null | Usage | null | undefined;
 };
 
 /**
@@ -6557,17 +6555,23 @@ export type InputText = {
      */
     readonly?: boolean;
     /**
+     * Placeholder
+     *
      * Placeholder text
      */
-    placeholder?: LocaleString | null;
+    placeholder?: LocaleString | string | null;
     /**
+     * Prefix
+     *
      * Prefix text
      */
-    prefix?: LocaleString | null;
+    prefix?: LocaleString | string | null;
     /**
+     * Suffix
+     *
      * Suffix text
      */
-    suffix?: LocaleString | null;
+    suffix?: LocaleString | string | null;
     /**
      * Iconprefix
      *
@@ -6586,7 +6590,7 @@ export type InputText = {
     readonly validation: string;
     [key: string]: unknown | true | string | null | string | null | 'primeInputText' | string | null | LocaleString | string | LocaleString | string | null | string | number | number | boolean | Array<string> | {
         [key: string]: string;
-    } | null | boolean | string | null | LocaleString | null | LocaleString | null | LocaleString | null | string | null | string | null | string | undefined;
+    } | null | boolean | string | null | LocaleString | string | null | LocaleString | string | null | LocaleString | string | null | string | null | string | null | string | undefined;
 };
 
 /**
@@ -7513,16 +7517,18 @@ export type LocaleInput = {
      */
     rows?: number;
     /**
+     * Placeholder
+     *
      * Placeholder text for each language
      */
-    placeholder?: LocaleString | null;
+    placeholder?: LocaleString | string | null;
     /**
      * Validation
      */
     readonly validation: string;
     [key: string]: unknown | true | string | null | string | null | 'localeInput' | string | null | LocaleString | string | LocaleString | string | null | string | number | number | boolean | Array<string> | {
         [key: string]: string;
-    } | null | boolean | string | null | 'text' | 'textarea' | number | LocaleString | null | string | undefined;
+    } | null | boolean | string | null | 'text' | 'textarea' | number | LocaleString | string | null | string | undefined;
 };
 
 /**
@@ -9457,64 +9463,11 @@ export type ProcessClassDto = {
      */
     is_online?: boolean | null;
     /**
-     * The default process configuration for this process class. This is the configuration that will be used if no specific configuration is provided.
-     */
-    default_process_config: ProcessConfig;
-    /**
      * Templates
      *
-     * Optional list of profile templates for quick profile creation.
+     * List of profile templates for quick profile creation.
      */
-    templates?: Array<{
-        [key: string]: unknown;
-    }> | null;
-};
-
-/**
- * ProcessConfig
- *
- * Each process instance can be configured with its own parameters.
- *
- * The process config follows the same duality pattern as AgentConfig:
- * - **Form mode** (via `as_form()`): Fields contain FormKit elements for UI rendering.
- * - **Data mode**: Fields contain actual primitive values for runtime use.
- *
- * This ensures the form schema and the data model can never de-sync.
- *
- * Subclasses can add domain-specific config fields for process-level settings.
- */
-export type ProcessConfig = {
-    /**
-     * Process Id
-     *
-     * Used to uniquely identify this process instance.
-     */
-    process_id: string | InputText;
-    /**
-     * Name
-     *
-     * The name of the process.
-     */
-    name: LocaleString | LocaleInput;
-    /**
-     * Description
-     *
-     * The description of the process.
-     */
-    description: LocaleString | LocaleInput;
-    /**
-     * Icon
-     *
-     * The icon representing the process.
-     */
-    icon?: string | IconSelector;
-    /**
-     * Form Name
-     *
-     * The form type name, used for polymorphic deserialization.
-     */
-    readonly _form_name: string;
-    [key: string]: unknown | string | InputText | LocaleString | LocaleInput | LocaleString | LocaleInput | string | IconSelector | string | undefined;
+    templates?: Array<TemplateData>;
 };
 
 /**
@@ -11716,6 +11669,24 @@ export type SuiteDto = {
 };
 
 /**
+ * TemplateData
+ *
+ * Typed container for template data extracted from Form.to_template_data().
+ *
+ * Each agent/process type has different configurable fields, so extra fields
+ * are allowed and preserved through serialization.
+ */
+export type TemplateData = {
+    name: LocaleString;
+    description: LocaleString;
+    /**
+     * Icon
+     */
+    icon: string;
+    [key: string]: unknown | LocaleString | string;
+};
+
+/**
  * TextBlock
  *
  * A representation of text data to directly pass to/from the LLM.
@@ -12626,12 +12597,12 @@ export type TranscriptionVerbose = {
      * Segments
      */
     segments?: Array<TranscriptionSegment> | null;
-    usage?: Usage | null;
+    usage?: OpenaiTypesAudioTranscriptionVerboseUsage | null;
     /**
      * Words
      */
     words?: Array<TranscriptionWord> | null;
-    [key: string]: unknown | number | string | Array<TranscriptionSegment> | null | Usage | null | Array<TranscriptionWord> | null | undefined;
+    [key: string]: unknown | number | string | Array<TranscriptionSegment> | null | OpenaiTypesAudioTranscriptionVerboseUsage | null | Array<TranscriptionWord> | null | undefined;
 };
 
 /**
@@ -12830,14 +12801,19 @@ export type UpdateRoleRequest = {
  */
 export type Usage = {
     /**
-     * Seconds
+     * Input Tokens
      */
-    seconds: number;
+    input_tokens: number;
+    input_tokens_details: UsageInputTokensDetails;
     /**
-     * Type
+     * Output Tokens
      */
-    type: 'duration';
-    [key: string]: unknown | number | 'duration';
+    output_tokens: number;
+    /**
+     * Total Tokens
+     */
+    total_tokens: number;
+    [key: string]: unknown | number | UsageInputTokensDetails;
 };
 
 /**
@@ -13455,6 +13431,21 @@ export type WorkflowGraph = {
 };
 
 /**
+ * Usage
+ */
+export type OpenaiTypesAudioTranscriptionVerboseUsage = {
+    /**
+     * Seconds
+     */
+    seconds: number;
+    /**
+     * Type
+     */
+    type: 'duration';
+    [key: string]: unknown | number | 'duration';
+};
+
+/**
  * Custom
  */
 export type OpenaiTypesChatChatCompletionMessageCustomToolCallParamCustom = {
@@ -13527,26 +13518,6 @@ export type OpenaiTypesChatCompletionCreateParamsFunction = {
     [key: string]: unknown | string | {
         [key: string]: unknown;
     } | undefined;
-};
-
-/**
- * Usage
- */
-export type OpenaiTypesImagesResponseUsage = {
-    /**
-     * Input Tokens
-     */
-    input_tokens: number;
-    input_tokens_details: UsageInputTokensDetails;
-    /**
-     * Output Tokens
-     */
-    output_tokens: number;
-    /**
-     * Total Tokens
-     */
-    total_tokens: number;
-    [key: string]: unknown | number | UsageInputTokensDetails;
 };
 
 /**
@@ -13750,11 +13721,9 @@ export type AgentClassDtoWritable = {
     /**
      * Templates
      *
-     * Optional list of profile templates for quick profile creation.
+     * List of profile templates for quick profile creation.
      */
-    templates?: Array<{
-        [key: string]: unknown;
-    }> | null;
+    templates?: Array<TemplateData>;
 };
 
 /**
@@ -16663,17 +16632,23 @@ export type InputTextWritable = {
      */
     readonly?: boolean;
     /**
+     * Placeholder
+     *
      * Placeholder text
      */
-    placeholder?: LocaleString | null;
+    placeholder?: LocaleString | string | null;
     /**
+     * Prefix
+     *
      * Prefix text
      */
-    prefix?: LocaleString | null;
+    prefix?: LocaleString | string | null;
     /**
+     * Suffix
+     *
      * Suffix text
      */
-    suffix?: LocaleString | null;
+    suffix?: LocaleString | string | null;
     /**
      * Iconprefix
      *
@@ -16688,7 +16663,7 @@ export type InputTextWritable = {
     iconSuffix?: string | null;
     [key: string]: unknown | true | string | null | string | null | 'primeInputText' | string | null | LocaleString | string | LocaleString | string | null | string | number | number | boolean | Array<string> | {
         [key: string]: string;
-    } | null | boolean | string | null | LocaleString | null | LocaleString | null | LocaleString | null | string | null | string | null | undefined;
+    } | null | boolean | string | null | LocaleString | string | null | LocaleString | string | null | LocaleString | string | null | string | null | string | null | undefined;
 };
 
 /**
@@ -17524,12 +17499,14 @@ export type LocaleInputWritable = {
      */
     rows?: number;
     /**
+     * Placeholder
+     *
      * Placeholder text for each language
      */
-    placeholder?: LocaleString | null;
+    placeholder?: LocaleString | string | null;
     [key: string]: unknown | true | string | null | string | null | 'localeInput' | string | null | LocaleString | string | LocaleString | string | null | string | number | number | boolean | Array<string> | {
         [key: string]: string;
-    } | null | boolean | string | null | 'text' | 'textarea' | number | LocaleString | null | undefined;
+    } | null | boolean | string | null | 'text' | 'textarea' | number | LocaleString | string | null | undefined;
 };
 
 /**
@@ -18197,58 +18174,11 @@ export type ProcessClassDtoWritable = {
      */
     is_online?: boolean | null;
     /**
-     * The default process configuration for this process class. This is the configuration that will be used if no specific configuration is provided.
-     */
-    default_process_config: ProcessConfigWritable;
-    /**
      * Templates
      *
-     * Optional list of profile templates for quick profile creation.
+     * List of profile templates for quick profile creation.
      */
-    templates?: Array<{
-        [key: string]: unknown;
-    }> | null;
-};
-
-/**
- * ProcessConfig
- *
- * Each process instance can be configured with its own parameters.
- *
- * The process config follows the same duality pattern as AgentConfig:
- * - **Form mode** (via `as_form()`): Fields contain FormKit elements for UI rendering.
- * - **Data mode**: Fields contain actual primitive values for runtime use.
- *
- * This ensures the form schema and the data model can never de-sync.
- *
- * Subclasses can add domain-specific config fields for process-level settings.
- */
-export type ProcessConfigWritable = {
-    /**
-     * Process Id
-     *
-     * Used to uniquely identify this process instance.
-     */
-    process_id: string | InputTextWritable;
-    /**
-     * Name
-     *
-     * The name of the process.
-     */
-    name: LocaleString | LocaleInputWritable;
-    /**
-     * Description
-     *
-     * The description of the process.
-     */
-    description: LocaleString | LocaleInputWritable;
-    /**
-     * Icon
-     *
-     * The icon representing the process.
-     */
-    icon?: string | IconSelectorWritable;
-    [key: string]: unknown | string | InputTextWritable | LocaleString | LocaleInputWritable | LocaleString | LocaleInputWritable | string | IconSelectorWritable | undefined;
+    templates?: Array<TemplateData>;
 };
 
 /**
