@@ -11,7 +11,7 @@ from aihub_agent.agents.FewShotAgent.FewShotAgent import FewShotAgent
 from aihub_agent.agents.FewShotAgent.FewShotAgentConfig import FewShotAgentConfig
 from aihub_agent.runners.AgentRunner import AgentRunner
 
-from .templates import ALL_TEMPLATES
+from app.few_shot_agent.templates import ALL_TEMPLATES
 
 enable_logging()
 

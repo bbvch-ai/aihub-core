@@ -11,7 +11,7 @@ from aihub_agent.agents.LLMWrappingAgent.LLMWrappingAgent import LLMWrappingAgen
 from aihub_agent.agents.LLMWrappingAgent.LLMWrappingAgentConfig import LLMWrappingAgentConfig
 from aihub_agent.runners.AgentRunner import AgentRunner
 
-from .templates import ALL_TEMPLATES
+from app.llm_wrapping_agent.templates import ALL_TEMPLATES
 
 enable_logging()
 
