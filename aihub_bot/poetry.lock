@@ -26,13 +26,13 @@ tests = ["arrow", "dask[dataframe]", "docker", "pytest", "pytest-mock"]
 
 [[package]]
 name = "aihub-lib"
-version = "v0.263.0"
+version = "0.263.0"
 description = ""
 optional = false
 python-versions = ">=3.13, <3.14"
 groups = ["main"]
 files = []
-develop = false
+develop = true
 
 [package.dependencies]
 adlfs = "^2025.8.0"
@@ -91,11 +91,8 @@ tabulate = "^0.9.0"
 transformers = "^4.57.3"
 
 [package.source]
-type = "git"
-url = "https://github.com/bbvch-ai/aihub-core.git"
-reference = "v0.263.0"
-resolved_reference = "0ec59c1636b1ee7b53ec582c66ee6a2658ab1f90"
-subdirectory = "aihub_lib"
+type = "directory"
+url = "../aihub_lib"
 
 [[package]]
 name = "aiobotocore"
@@ -8259,4 +8256,4 @@ cffi = ["cffi (>=1.17,<2.0) ; platform_python_implementation != \"PyPy\" and pyt
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13, <3.14"
-content-hash = "8be511298fa63a11ad968ac62d8b1049df29a6950d7c4693c818e28c61c55d99"
+content-hash = "6dbf0204ab7df161771a971489910cfc326fb7548994fd9062d09f61249d1a6d"

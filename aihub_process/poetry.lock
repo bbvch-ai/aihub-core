@@ -35,7 +35,7 @@ files = []
 develop = true
 
 [package.dependencies]
-aihub_lib = {git = "https://github.com/bbvch-ai/aihub-core.git", tag = "v0.263.0", subdirectory = "aihub_lib"}
+aihub_lib = {path = "../aihub_lib", develop = true}
 cachetools = "^5.5.2"
 colorlog = "^6.9.0"
 llama-index-core = "0.14.12"
@@ -61,13 +61,13 @@ url = "../aihub_agent"
 
 [[package]]
 name = "aihub-lib"
-version = "v0.263.0"
+version = "0.263.0"
 description = ""
 optional = false
 python-versions = ">=3.13, <3.14"
 groups = ["main", "dev"]
 files = []
-develop = false
+develop = true
 
 [package.dependencies]
 adlfs = "^2025.8.0"
@@ -126,11 +126,8 @@ tabulate = "^0.9.0"
 transformers = "^4.57.3"
 
 [package.source]
-type = "git"
-url = "https://github.com/bbvch-ai/aihub-core.git"
-reference = "v0.263.0"
-resolved_reference = "0ec59c1636b1ee7b53ec582c66ee6a2658ab1f90"
-subdirectory = "aihub_lib"
+type = "directory"
+url = "../aihub_lib"
 
 [[package]]
 name = "aiobotocore"
@@ -8448,4 +8445,4 @@ cffi = ["cffi (>=1.17,<2.0) ; platform_python_implementation != \"PyPy\" and pyt
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13, <3.14"
-content-hash = "59f3191c02df3dced59fca3e5ea824cf3c03efbe65703711831fc1d9a1d6e065"
+content-hash = "472f89b6576b1f71edc223fdff3ebce7c66d1d4a47ea1e03011fa4daff0b45f7"
