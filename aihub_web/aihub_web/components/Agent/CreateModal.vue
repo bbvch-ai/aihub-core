@@ -44,24 +44,6 @@
         </div>
 
         <div
-          v-if="templateOptions.length > 0"
-          class="flex flex-col gap-2"
-        >
-          <label class="text-sm font-medium">
-            {{ t('agent.create.selectTemplate') }}
-          </label>
-          <Select
-            v-model="selectedTemplate"
-            :options="templateOptions"
-            option-label="label"
-            option-value="value"
-            :placeholder="t('agent.create.selectTemplatePlaceholder')"
-            class="w-full"
-            :disabled="isSubmitting"
-          />
-        </div>
-
-        <div
           v-if="selectedClassData && configForm.length > 0"
           class="content flex flex-col gap-2"
         >
@@ -159,7 +141,7 @@ import { getNode } from '@formkit/core'
 const props = defineProps<{
   modelValue: boolean
   initialClass?: string
-  initialTemplate?: number | null
+  initialData?: Record<string, unknown> | null
 }>()
 
 const emit = defineEmits<{
@@ -174,12 +156,10 @@ const { createAgentInstance } = useCreateAgentInstance()
 
 const {
   selectedClass,
-  selectedTemplate,
   formData,
   activeStep,
   selectedClassData,
   configForm,
-  templateOptions,
   simpleElementsSchema,
   groupConfigs,
   repeaterConfigs,
@@ -188,14 +168,13 @@ const {
   getRepeaterData,
   setRepeaterData,
   cleanFormData,
+  applyInitialData,
   resetForm,
 } = useCreateInstanceForm({
   classes: agentClasses,
   classField: 'agent_class',
   idField: 'agent_id',
   initialClass: () => props.initialClass ?? '',
-  initialTemplate: () => props.initialTemplate ?? null,
-  startFromScratchLabel: computed(() => t('agent.create.startFromScratch')),
   locale,
 })
 
@@ -207,14 +186,9 @@ const visible = computed({
   set: (value: boolean) => emit('update:modelValue', value),
 })
 
-// Ordering dependency: the selectedClassData watcher (in composable) resets selectedTemplate to null
-// whenever the selected class changes. When the modal opens with a preselected template, we
-// must wait for that reset to complete before applying initialTemplate, hence nextTick.
 watch(visible, (isVisible) => {
-  if (isVisible && props.initialTemplate !== undefined && props.initialTemplate !== null) {
-    nextTick(() => {
-      selectedTemplate.value = props.initialTemplate!
-    })
+  if (isVisible && props.initialData) {
+    nextTick(() => applyInitialData(props.initialData!))
   }
 })
 

@@ -1,6 +1,7 @@
 <template>
   <StructuralScreen>
     <StructuralColumn
+      v-if="!isTemplatesRoute"
       :title="t('agent.title')"
       :loading="isLoading"
     >
@@ -39,6 +40,7 @@
               :key="`${agent.agent_class}-${agent.agent_id}`"
               :agent="agent"
               @click="() => toAgent(agent)"
+              @clone="handleClone"
             />
             <AgentEmptyCard
               v-if="group.isAvailable"
@@ -50,6 +52,7 @@
       <AgentCreateModal
         v-model="createModalOpen"
         :initial-class="selectedClassForCreate"
+        :initial-data="initialDataForCreate"
         @success="handleCreateSuccess"
       />
     </StructuralColumn>
@@ -64,6 +67,7 @@ import type { FullAgentInstanceDto } from '@core/sdk/client'
 import { useLocalePath } from '#i18n'
 
 const router = useRouter()
+const route = useRoute()
 const localePath = useLocalePath()
 const { t, locale } = useI18n()
 
@@ -72,12 +76,21 @@ const { agentClasses, agentClassesAreLoading } = useAgentClasses()
 const { navItems, activeNavItem, toNavItem } = useAgentNavigation()
 
 const isLoading = computed(() => agentInstancesAreLoading.value || agentClassesAreLoading.value)
+const isTemplatesRoute = computed(() => route.path.includes('/service/agents/templates'))
 
 const createModalOpen = ref(false)
 const selectedClassForCreate = ref('')
+const initialDataForCreate = ref<Record<string, unknown> | null>(null)
 
 const openCreateModal = (agentClass: string) => {
   selectedClassForCreate.value = agentClass
+  initialDataForCreate.value = null
+  createModalOpen.value = true
+}
+
+const handleClone = (agent: FullAgentInstanceDto) => {
+  selectedClassForCreate.value = agent.agent_class
+  initialDataForCreate.value = agent.configuration ?? null
   createModalOpen.value = true
 }
 

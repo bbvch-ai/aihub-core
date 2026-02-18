@@ -310,6 +310,7 @@ agent:
     status: "Status"
     online: "Online"
     offline: "Offline"
+    clone: "Clone"
   workflow:
     title: "Agentic Workflow"
   threads:
@@ -327,9 +328,6 @@ agent:
     agentIdTooLong: "Agent ID must be 100 characters or less"
     configuration: "Configuration"
     noAgentClasses: "No agent types available. Make sure at least one agent is running."
-    selectTemplate: "Template"
-    selectTemplatePlaceholder: "Select a template..."
-    startFromScratch: "Start from scratch"
     submit: "Create Agent"
     success: "Agent created successfully"
     error: "Failed to create agent"
@@ -655,9 +653,6 @@ process:
     selectClass: "Process Type"
     selectClassPlaceholder: "Select a process type..."
     noProcessClasses: "No process types available."
-    selectTemplate: "Template"
-    selectTemplatePlaceholder: "Select a template..."
-    startFromScratch: "Start from scratch"
     steps:
       basicInfo: "Basic Info"
     submit: "Create Process"

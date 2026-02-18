@@ -310,6 +310,7 @@ agent:
     status: "Status"
     online: "Online"
     offline: "Offline"
+    clone: "Klonen"
   workflow:
     title: "Agenten-Workflow"
   threads:
@@ -327,9 +328,6 @@ agent:
     agentIdTooLong: "Agenten-ID darf maximal 100 Zeichen lang sein"
     configuration: "Konfiguration"
     noAgentClasses: "Keine Agententypen verfügbar. Stellen Sie sicher, dass mindestens ein Agent läuft."
-    selectTemplate: "Vorlage"
-    selectTemplatePlaceholder: "Vorlage auswählen..."
-    startFromScratch: "Ohne Vorlage starten"
     submit: "Agent erstellen"
     success: "Agent erfolgreich erstellt"
     error: "Agent konnte nicht erstellt werden"
@@ -654,9 +652,6 @@ process:
     selectClass: "Prozesstyp"
     selectClassPlaceholder: "Prozesstyp auswählen..."
     noProcessClasses: "Keine Prozesstypen verfügbar."
-    selectTemplate: "Vorlage"
-    selectTemplatePlaceholder: "Vorlage auswählen..."
-    startFromScratch: "Ohne Vorlage starten"
     steps:
       basicInfo: "Grundinformationen"
     submit: "Prozess erstellen"

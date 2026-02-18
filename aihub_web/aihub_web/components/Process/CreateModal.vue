@@ -44,24 +44,6 @@
         </div>
 
         <div
-          v-if="templateOptions.length > 0"
-          class="flex flex-col gap-2"
-        >
-          <label class="text-sm font-medium">
-            {{ t('process.create.selectTemplate') }}
-          </label>
-          <Select
-            v-model="selectedTemplate"
-            :options="templateOptions"
-            option-label="label"
-            option-value="value"
-            :placeholder="t('process.create.selectTemplatePlaceholder')"
-            class="w-full"
-            :disabled="isCreating"
-          />
-        </div>
-
-        <div
           v-if="selectedClassData && configForm.length > 0"
           class="content flex flex-col gap-2"
         >
@@ -158,6 +140,7 @@ import { getNode } from '@formkit/core'
 const props = defineProps<{
   modelValue: boolean
   initialClass?: string
+  initialData?: Record<string, unknown> | null
 }>()
 
 const emit = defineEmits<{
@@ -172,12 +155,10 @@ const { createProcessInstance, isCreating } = useCreateProcessInstance()
 
 const {
   selectedClass,
-  selectedTemplate,
   formData,
   activeStep,
   selectedClassData,
   configForm,
-  templateOptions,
   simpleElementsSchema,
   groupConfigs,
   repeaterConfigs,
@@ -186,14 +167,13 @@ const {
   getRepeaterData,
   setRepeaterData,
   cleanFormData,
+  applyInitialData,
   resetForm,
 } = useCreateInstanceForm({
   classes: processClasses,
   classField: 'process_class',
   idField: 'process_id',
   initialClass: () => props.initialClass ?? '',
-  initialTemplate: () => null,
-  startFromScratchLabel: computed(() => t('process.create.startFromScratch')),
   locale,
 })
 
@@ -202,6 +182,12 @@ const hasFixedClass = computed(() => !!props.initialClass)
 const visible = computed({
   get: () => props.modelValue,
   set: (value: boolean) => emit('update:modelValue', value),
+})
+
+watch(visible, (isVisible) => {
+  if (isVisible && props.initialData) {
+    nextTick(() => applyInitialData(props.initialData!))
+  }
 })
 
 function closeModal() {

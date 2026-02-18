@@ -309,6 +309,7 @@ agent:
     status: "Stato"
     online: "Online"
     offline: "Offline"
+    clone: "Clonare"
   workflow:
     title: "Flusso di lavoro agentico"
   threads:
@@ -326,9 +327,6 @@ agent:
     agentIdTooLong: "L'ID agente deve essere al massimo di 100 caratteri"
     configuration: "Configurazione"
     noAgentClasses: "Nessun tipo di agente disponibile. Assicurati che almeno un agente sia in esecuzione."
-    selectTemplate: "Modello"
-    selectTemplatePlaceholder: "Seleziona un modello..."
-    startFromScratch: "Inizia da zero"
     submit: "Crea agente"
     success: "Agente creato con successo"
     error: "Impossibile creare l'agente"
@@ -653,9 +651,6 @@ process:
     selectClass: "Tipo di processo"
     selectClassPlaceholder: "Seleziona un tipo di processo..."
     noProcessClasses: "Nessun tipo di processo disponibile."
-    selectTemplate: "Modello"
-    selectTemplatePlaceholder: "Seleziona un modello..."
-    startFromScratch: "Inizia da zero"
     steps:
       basicInfo: "Informazioni di base"
     submit: "Crea processo"

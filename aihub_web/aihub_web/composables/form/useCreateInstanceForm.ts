@@ -30,10 +30,6 @@ export interface CreateInstanceFormOptions<T extends ClassDataLike> {
   idField: string
   /** Getter for the initial class selection (from component props) */
   initialClass: () => string
-  /** Getter for the initial template index (from component props) */
-  initialTemplate: () => number | null
-  /** Reactive translated label for the "start from scratch" template option */
-  startFromScratchLabel: Ref<string>
   /** Current locale ref for i18n-aware form rendering */
   locale: Ref<string>
 }
@@ -41,15 +37,14 @@ export interface CreateInstanceFormOptions<T extends ClassDataLike> {
 /**
  * Shared form logic for creating agent/process instances from class definitions.
  *
- * Handles class selection, template application, FormKit schema generation,
- * stepper navigation, and form data lifecycle. Domain-specific submission
- * logic stays in the calling component.
+ * Handles class selection, FormKit schema generation, stepper navigation,
+ * and form data lifecycle. Template/clone pre-filling is done via applyInitialData().
+ * Domain-specific submission logic stays in the calling component.
  */
 export function useCreateInstanceForm<T extends ClassDataLike>(options: CreateInstanceFormOptions<T>) {
-  const { classes, classField, idField, initialClass, initialTemplate, startFromScratchLabel, locale } = options
+  const { classes, classField, initialClass, locale } = options
 
   const selectedClass = ref<string>(initialClass())
-  const selectedTemplate = ref<number | null>(null)
   const formData = ref<Record<string, unknown>>({})
   const activeStep = ref(0)
 
@@ -65,30 +60,6 @@ export function useCreateInstanceForm<T extends ClassDataLike>(options: CreateIn
   })
 
   const configForm = computed(() => selectedClassData.value?.form ?? [])
-
-  const availableTemplates = computed(() => selectedClassData.value?.templates ?? [])
-
-  const templateOptions = computed(() => {
-    if (availableTemplates.value.length === 0) return []
-    const mapped = availableTemplates.value.map((template, index) => {
-      const name = template.name as Record<string, string> | undefined
-      const label = name?.[locale.value] ?? name?.en ?? template[idField] as string ?? `Template ${index + 1}`
-      return { label, value: index }
-    })
-    return [{ label: startFromScratchLabel.value, value: -1 }, ...mapped]
-  })
-
-  watch(selectedTemplate, (index) => {
-    if (index === null || index === -1) {
-      formData.value = initializeGroupData(configForm.value as FormElement[], {})
-      return
-    }
-    const template = availableTemplates.value[index]
-    if (template) {
-      const base = initializeGroupData(configForm.value as FormElement[], {})
-      formData.value = merge(base, template)
-    }
-  })
 
   const categorizedElements = computed(() => {
     return categorizeFormElements(configForm.value as FormElement[])
@@ -125,7 +96,6 @@ export function useCreateInstanceForm<T extends ClassDataLike>(options: CreateIn
   }
 
   watch(selectedClassData, (newClass) => {
-    selectedTemplate.value = null
     if (newClass?.form && newClass.form.length > 0) {
       formData.value = initializeGroupData(configForm.value as FormElement[], {})
     }
@@ -188,21 +158,23 @@ export function useCreateInstanceForm<T extends ClassDataLike>(options: CreateIn
     return result
   }
 
+  function applyInitialData(data: Record<string, unknown>) {
+    const base = initializeGroupData(configForm.value as FormElement[], {})
+    formData.value = merge(base, data)
+  }
+
   function resetForm() {
     selectedClass.value = initialClass()
-    selectedTemplate.value = initialTemplate()
     formData.value = {}
     activeStep.value = 0
   }
 
   return {
     selectedClass,
-    selectedTemplate,
     formData,
     activeStep,
     selectedClassData,
     configForm,
-    templateOptions,
     categorizedElements,
     simpleElementsSchema,
     groupConfigs,
@@ -214,6 +186,7 @@ export function useCreateInstanceForm<T extends ClassDataLike>(options: CreateIn
     setRepeaterData,
     initializeGroupData,
     cleanFormData,
+    applyInitialData,
     resetForm,
   }
 }
