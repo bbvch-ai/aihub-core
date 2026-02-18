@@ -207,9 +207,11 @@ const visible = computed({
   set: (value: boolean) => emit('update:modelValue', value),
 })
 
+// Ordering dependency: the selectedClassData watcher (below) resets selectedTemplate to null
+// whenever the selected class changes. When the modal opens with a preselected template, we
+// must wait for that reset to complete before applying initialTemplate, hence nextTick.
 watch(visible, (isVisible) => {
   if (isVisible && props.initialTemplate !== undefined && props.initialTemplate !== null) {
-    // Apply after selectedClassData watcher resets selectedTemplate
     nextTick(() => {
       selectedTemplate.value = props.initialTemplate!
     })
