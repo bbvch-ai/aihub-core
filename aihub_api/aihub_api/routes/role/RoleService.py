@@ -21,12 +21,10 @@ class RoleService:
             description=data.description,
             access_rules=data.access_rules,
             tenant_id=tenant_id,
-        )
-        if data.usage_limits:
-            role.usage_limits = [
+            usage_limits=[
                 UsageLimit(pattern=ul.pattern, limit=ul.limit, period=ul.period) for ul in data.usage_limits
-            ]
-            role.save()
+            ],
+        )
         return RoleResponse.from_role_entity(role)
 
     @staticmethod
@@ -71,10 +69,9 @@ class RoleService:
         if not update_data:
             return RoleResponse.from_role_entity(role)
 
-        if "usage_limits" in update_data:
+        if "usage_limits" in update_data and data.usage_limits is not None:
             update_data["usage_limits"] = [
-                UsageLimit(pattern=ul["pattern"], limit=ul["limit"], period=ul["period"])
-                for ul in update_data["usage_limits"]
+                UsageLimit(pattern=ul.pattern, limit=ul.limit, period=ul.period) for ul in data.usage_limits
             ]
 
         role.modify(**update_data)

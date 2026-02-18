@@ -133,6 +133,7 @@ class RoleEntity(Document):
         description: str,
         access_rules: list[str],
         tenant_id: str,
+        usage_limits: list["UsageLimit"] | None = None,
     ) -> Self:
         """Creates a new tenant-scoped role."""
         role = cls(
@@ -140,6 +141,7 @@ class RoleEntity(Document):
             description=description,
             access_rules=access_rules,
             tenant_id=tenant_id,
+            usage_limits=usage_limits or [],
         )
         role.save()
         return role
