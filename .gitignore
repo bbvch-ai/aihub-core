@@ -16,3 +16,4 @@ aihub_doc/aihub
 *.log
 .mypy_cache/
 .venv
+.claude/mcp/bin/
