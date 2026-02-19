@@ -5,7 +5,9 @@ from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDe
     DangerousDevelopmentOnlyAuthHandler,
 )
 from aihub_lib.auth.usage import RoleUsageLimitStatus, UsageLimitPeriod, UsageStatus
-from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_admin_only  # noqa: F401
+from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_methods  # noqa: F401
+from aihub_lib.testing.auth_utils.tenant_mocks import mock_tenant_entity_autouse  # noqa: F401
+from aihub_lib.testing.auth_utils.user_mocks import mock_user_entity_autouse  # noqa: F401
 from asgi_lifespan import LifespanManager
 from fastapi import HTTPException
 from httpx import ASGITransport, AsyncClient

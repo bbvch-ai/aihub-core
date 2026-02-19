@@ -19,6 +19,8 @@ from mongoengine import connect, disconnect
 
 from aihub_bot.persistence.entities.ConversationEntity import ConversationEntity
 from aihub_bot.persistence.entities.PathEntity import Credentials, PathEntity
+from aihub_lib.persistence.messaging.entities.ThreadEntity import ThreadEntity
+from aihub_lib.persistence.utils import str_to_object_id
 from aihub_bot.routes.agent.AgentChatController import AgentChatController
 from aihub_bot.runners.SimulatedAgentBotTestRunner import SimulatedAgentBotTestRunner
 
@@ -99,16 +101,19 @@ def patch_requests_adapter(monkeypatch, test_runner):
 
 @pytest.fixture(autouse=True)
 def cleanup_conversation():
-    """Clean up conversation state before each test"""
+    """Clean up conversation and thread state before each test."""
+    thread_id = str(str_to_object_id(CONVERSATION_ID))
     # Clean up before test (connection may not exist yet)
     try:
         ConversationEntity.objects(conversation_id=CONVERSATION_ID).delete()
+        ThreadEntity.objects(id=thread_id).delete()
     except Exception:
         pass
     yield
     # Clean up after test (connection may be closed)
     try:
         ConversationEntity.objects(conversation_id=CONVERSATION_ID).delete()
+        ThreadEntity.objects(id=thread_id).delete()
     except Exception:
         pass
 
