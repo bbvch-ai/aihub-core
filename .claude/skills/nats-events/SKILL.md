@@ -57,6 +57,7 @@ BaseEvent
 │       ├── SemanticEvent (OpenInference tracing)
 │       │   ├── ExceptionEvent (error, halts run)
 │       │   ├── LLMEvent (LLM call details)
+│       │   │   └── LLMStopEvent (terminal LLM response)
 │       │   ├── AgentEvent (agent tracing)
 │       │   ├── ChainEvent (chain tracing)
 │       │   ├── RetrieverEvent (RAG retrieval)

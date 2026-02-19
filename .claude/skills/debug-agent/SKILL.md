@@ -96,7 +96,7 @@ Understanding these rules is essential for diagnosing most agent bugs.
 | R2   | Re-execution on New Data | New event matching an already-consumed param → step re-executes with updated data                   |
 | R3   | List Parameter Semantics | `list[EventType]` collects ALL available events at trigger time (doesn't wait for a specific count) |
 | R4   | StopEvent Constraint     | `StopEvent` must be the LAST event emitted — nothing may follow                                     |
-| R5   | Precondition Override    | `@precondition` guard checked AFTER R1 satisfied — can delay or block execution                     |
+| R5   | Precondition Override    | `@precondition` re-evaluates on each new event arrival AFTER R1 — deadlock if never satisfied       |
 | R6   | Event Persistence        | Every `ControlEvent` persisted in JetStream, replayed on dispatcher restart                         |
 
 Source: `aihub_lib/nats/dispatcher/BaseDispatcher._step_meets_basic_execution_requirements()`

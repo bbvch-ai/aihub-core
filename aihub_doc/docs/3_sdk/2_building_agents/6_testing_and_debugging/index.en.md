@@ -7,9 +7,32 @@ title: Testing and debugging
 Testing and debugging agents needs a different approach than traditional applications because of their event-driven,
 asynchronous nature.
 
-## Testing framework: pytest-bdd + AgentTestRunner
+## Unit testing: direct step invocation
 
-Use Behavior-Driven Development (BDD) with `pytest-bdd` for testing agent workflows.
+The simplest way to test individual steps is to instantiate the agent and call step methods directly with mocked
+dependencies:
+
+```python
+from unittest.mock import AsyncMock, Mock
+
+async def test_retrieve_step():
+    agent = MyAgent()
+    event = UserMessageEvent(messages=[...], user=fake_user(), locale="en")
+    memory = Mock(spec=AgentMemory)
+    memory.search_user_memory = AsyncMock(return_value=MemorySearchResult(...))
+
+    result = await agent.retrieve_step(event, memory)
+
+    assert isinstance(result, RetrieveUserMemoryEvent)
+    memory.search_user_memory.assert_called_once()
+```
+
+This approach tests step logic in isolation without the dispatcher, NATS, or any infrastructure. Mock injected
+dependencies (`AgentMemory`, `EventDisplayer`, `RunContext`) and assert on the returned event.
+
+## Integration testing: pytest-bdd + AgentTestRunner
+
+Use Behavior-Driven Development (BDD) with `pytest-bdd` for testing full agent workflows.
 
 ### Basic test structure
 
@@ -204,14 +227,45 @@ Langfuse provides step-by-step visualization of agent execution at `http://local
 
 ```bash
 # Run all tests (excluding cloud dependencies)
-poetry run pytest -k "not azure"
+uv run pytest -k "not azure"
 
 # Run specific test file
-poetry run pytest tests/test_my_agent.py
+uv run pytest tests/test_my_agent.py
 
 # Run with verbose output
-poetry run pytest -v tests/
+uv run pytest -v tests/
 
 # Run with coverage
-poetry run pytest --cov=aihub_agent tests/
+uv run pytest --cov=aihub_agent tests/
 ```
+
+## Implementation checklist
+
+Use this checklist when building or reviewing agents:
+
+### Before implementation
+
+- [ ] Understand the [execution model](../9_execution_model/) — steps are a dependency graph, not a sequence
+- [ ] Review the [memory lifecycle](../5_memory/) if your agent uses memory
+- [ ] Study production agents: `aihub_agent/agents/RagAgent/`, `ExpertRagAgent/`
+
+### For each step
+
+- [ ] Optional parameters (`T | None = None`) have preconditions checking both config AND event presence
+- [ ] Precondition parameter types are a subset of the step's injectable types
+- [ ] Return type correctly indicates terminal (`StopEvent`) vs. non-terminal
+- [ ] No dependency on `StopEvent` or its subclasses as input parameters
+
+### For memory integration
+
+- [ ] LLM step uses `as_stop_step=False` (returns `LLMEvent`, not `LLMStopEvent`)
+- [ ] Storage step depends on `LLMEvent`
+- [ ] Final step has a precondition waiting for storage completion
+
+### After implementation
+
+- [ ] Langfuse/Phoenix trace shows expected execution order
+- [ ] No duplicate step executions (check for the
+  [optional parameter trap](../9_execution_model/#the-optional-parameter-trap))
+- [ ] No events after `StopEvent`
+- [ ] Tests cover all config flag combinations

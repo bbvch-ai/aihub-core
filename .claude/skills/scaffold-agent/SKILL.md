@@ -179,7 +179,8 @@ def ensure_enough_events(events: list[ParallelEvent], config: MyConfig) -> bool:
 async def collect_step(self, events: list[ParallelEvent]) -> StopEvent: ...
 ```
 
-**Key**: The precondition function uses the same DI system as `@step` — it can receive events, config, context.
+**Key**: The precondition function uses the same DI system as `@step` — it can receive events, config, context. The
+precondition re-evaluates on each new event arrival until it returns `True`.
 
 **Playground**: `playground/minimal_workflow/precondition_workflow/`
 
@@ -226,11 +227,11 @@ Pause workflow to collect human input, then resume. Four HITL subtypes:
 ```python
 @step()
 async def start_step(self, event: StartEvent) -> HumanInTheLoopInput.request:
-    return HumanInTheLoopInput.request(form=MyForm.as_form())
+    return HumanInTheLoopInput.invoke(question="Please enter your feedback:")
 
 @step()
 async def end_step(self, event: HumanInTheLoopInput.response) -> StopEvent:
-    user_data = event.form  # Submitted form data
+    user_data = event.response  # User's text response
     return StopEvent()
 ```
 
@@ -458,8 +459,9 @@ Delegate to another agent, then resume with their result.
 ```python
 @step()
 async def start_step(self, event: UserMessageEvent) -> AgentInTheLoop.request:
-    return AgentInTheLoop.request(
-        topic=PartialAgentTopic(agent_class="WorkerAgent", agent_id="worker-1"),
+    return AgentInTheLoop.invoke(
+        agent_class="WorkerAgent",
+        agent_id="worker-1",
         start_event=UserMessageEvent(message=event.message),
     )
 
@@ -544,6 +546,7 @@ aihub_agent/i18n/translations/agent/
 | Embedding generation             | `EmbeddingEvent`                                              |
 | Tool/function call               | `ToolEvent`                                                   |
 | Guardrail check                  | `GuardEvent`                                                  |
+| Chain execution                  | `ChainEvent`                                                  |
 | Human approval needed            | `HumanInTheLoopRequestEvent`                                  |
 | Agent delegation                 | `AgentInTheLoopRequestEvent`                                  |
 | Memory retrieval                 | `RetrieveUserMemoryEvent` / `RetrieveOrganizationMemoryEvent` |
@@ -728,7 +731,7 @@ When binding events to parameters:
 | R2   | Re-execution on New Data | Optional params cause re-execution when they arrive — use preconditions                                                             |
 | R3   | List Parameter Semantics | `list[E]` triggers on each new event arrival — a list of length 1 satisfies list[T]. Use `FixedList(E, N)` for deterministic fan-in |
 | R4   | StopEvent Constraint     | No events may be published after StopEvent. No step may depend on StopEvent as input                                                |
-| R5   | Precondition Override    | Preconditions delay execution — useful for synchronization                                                                          |
+| R5   | Precondition Override    | Preconditions re-evaluate on each new event arrival, delaying execution until satisfied. Deadlock if never satisfied                |
 | R6   | Event Persistence        | All events persist until run completion. Late steps can access early events                                                         |
 
 For debugging execution issues, see `/debug-agent`.
