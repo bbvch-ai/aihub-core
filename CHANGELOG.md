@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.263.1] - 2026-02-19 - Smarter AI Hub Streaming: Better Errors & Usage Warnings
+
+### Added
+
+- ✨ **Usage Warning Display:** Implemented functionality to detect and display usage warnings (e.g., nearing API limits)
+  received from the AI Hub service via response headers directly in the chat interface.
+
+### Changed
+
+- 🌐 **Localized Error Support:** The `Accept-Language` header from the user's request is now forwarded to the AI Hub
+  service, enabling localized error messages and responses from the backend where supported.
+- 🚀 **Enhanced Streaming Error Handling:** Improved the robustness of streaming requests by allowing for early detection
+  and more detailed handling of HTTP errors before processing the stream, providing clearer feedback to the user.
+- 💡 **Smarter API Error Message Parsing:** The system now intelligently parses JSON error bodies from the AI Hub service
+  to extract and display more specific and user-friendly error messages, improving diagnostic clarity.
+
+### Refactor
+
+- 🧹 **Code Readability Enhancements:** Applied minor formatting and whitespace adjustments across pipeline
+  configurations to improve overall code readability and maintainability.
+
+---
+
 ## [v0.263.0] - 2026-02-18 - Adopting MinerU for Superior Document Processing and Platform Architecture
 
 ### Added

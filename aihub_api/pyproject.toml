@@ -1,6 +1,6 @@
 [project]
 name = "aihub-api"
-version = "0.263.0"
+version = "0.263.1"
 description = "api core"
 requires-python = ">=3.13, <3.14"
 authors = [
@@ -48,7 +48,7 @@ dev = [
     "black[jupyter]>=26.1.0",
     "pytest-bdd>=8.1.0",
     "pytest-cov>=6.0.0",
-    "asgi-lifespan>=2.1.0",
+    "asgi-lifespan>=2.1.1",
     "pip-licenses>=5.0.0",
 ]
 

@@ -1199,9 +1199,7 @@ class StreamingService:
                         await event_emitter(
                             {
                                 "type": "chat:message:delta",
-                                "data": {
-                                    "content": f"\n\n> [!WARNING]\n> {warning_msg}\n"
-                                },
+                                "data": {"content": f"\n\n> [!WARNING]\n> {warning_msg}\n"},
                             }
                         )
             except Exception as e:
