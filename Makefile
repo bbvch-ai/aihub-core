@@ -48,7 +48,7 @@ format:
 
 format-md:
 	@echo "Formatting markdown files..."
-	@uv run mdformat --number $$(git ls-files '*.md')
+	@uv run mdformat --number $$(git ls-files '*.md' | grep -v 'aihub_doc/whitepaper/chapters/')
 
 format-md-win:
 	@echo "Formatting markdown files..."
@@ -74,7 +74,7 @@ pr-ready:
 	@(cd aihub_api &&  make pr-ready)
 	@(cd aihub_bot &&  make pr-ready)
 	@(cd aihub_web && make pr-ready)
-	@uv run mdformat --number $$(git ls-files '*.md')
+	@uv run mdformat --number $$(git ls-files '*.md' | grep -v 'aihub_doc/whitepaper/chapters/')
 	@$(MAKE) generate-compose
 	@$(MAKE) license-check
 
@@ -83,13 +83,13 @@ TAG ?= v0.263.0
 changelog:
 	@echo "Generating changelog"
 	/bin/bash ./generate-changelog.sh
-	@uv run mdformat --number $$(git ls-files '*.md')
+	@uv run mdformat --number $$(git ls-files '*.md' | grep -v 'aihub_doc/whitepaper/chapters/')
 
 # Check licenses across all dependencies
 license-check:
 	@echo "Checking licenses..."
 	/bin/bash ./generate-license.sh
-	@uv run mdformat --number $$(git ls-files '*.md')
+	@uv run mdformat --number $$(git ls-files '*.md' | grep -v 'aihub_doc/whitepaper/chapters/')
 
 # Generate Docker Compose files from the template
 generate-compose:
