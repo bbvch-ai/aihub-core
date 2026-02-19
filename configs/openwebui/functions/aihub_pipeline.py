@@ -260,22 +260,18 @@ class AuthenticationService:
         self,
         user_name: Annotated[str, "User's name"],
         user_email: Annotated[str, "User's email address"],
-        accept_language: Annotated[str | None, "Accept-Language header value"] = None,
     ) -> Annotated[dict[str, str], "HTTP headers with authentication"]:
         """Prepare authenticated request headers"""
         clean_username = urllib.parse.quote(user_name, safe="") if user_name else ""
         signature = self.sign_user_headers(clean_username, user_email)
 
-        headers = {
+        return {
             "Authorization": f"Bearer {self._api_key}",
             "Content-Type": "application/json",
             "X-OpenWebUI-User-Name": clean_username,
             "X-OpenWebUI-User-Email": user_email,
             "X-OpenWebUI-Signature": signature,
         }
-        if accept_language:
-            headers["Accept-Language"] = accept_language
-        return headers
 
 
 # ============================================================================
@@ -1169,7 +1165,7 @@ class StreamingService:
 
         async with httpx.AsyncClient(timeout=None, follow_redirects=True) as client:
             try:
-                result = await self._process_stream(
+                await self._process_stream(
                     client,
                     endpoint_url,
                     event_payload,
@@ -1177,33 +1173,18 @@ class StreamingService:
                     context,
                     stream_start_callback,
                 )
-
-                if result and result.get("type") == "error":
-                    # HTTP error occurred - handle it
-                    state_manager.finalize_all_blocks()
-                    await self._handle_http_error_from_info(result, event_emitter)
-                else:
-                    # Finalize any open blocks when stream ends normally
-                    state_manager.finalize_all_blocks()
-                    # Emit final state if there were unclosed blocks
-                    await event_emitter(
-                        {
-                            "type": "replace",
-                            "data": {"content": state_manager.serialize_to_html()},
-                        }
-                    )
-
-                    # Show usage warning if approaching limit
-                    if result and result.get("type") == "usage_warning":
-                        warning_msg = result.get("message", "Usage limit warning")
-                        await event_emitter(
-                            {
-                                "type": "chat:message:delta",
-                                "data": {
-                                    "content": f"\n\n> [!WARNING]\n> {warning_msg}\n"
-                                },
-                            }
-                        )
+                # Finalize any open blocks when stream ends normally
+                state_manager.finalize_all_blocks()
+                # Emit final state if there were unclosed blocks
+                await event_emitter(
+                    {
+                        "type": "replace",
+                        "data": {"content": state_manager.serialize_to_html()},
+                    }
+                )
+            except httpx.HTTPStatusError as e:
+                state_manager.finalize_all_blocks()
+                await self._handle_http_error(e, event_emitter)
             except Exception as e:
                 state_manager.finalize_all_blocks()
                 await self._handle_general_error(e, event_emitter)
@@ -1216,26 +1197,10 @@ class StreamingService:
         headers: Annotated[dict[str, str], "Request headers"],
         context: Annotated[EventContext, "Processing context"],
         stream_start_callback: Annotated[Callable | None, "Stream start callback"] = None,
-    ) -> Annotated[dict[str, Any] | None, "Error info or usage warning info, None on success without warning"]:
-        """Process the SSE stream. Returns dict with error or usage_warning info, None on plain success."""
+    ) -> None:
+        """Process the SSE stream"""
         async with client.stream("POST", url, json=payload, headers=headers) as response:
-            # Check for error status codes before processing stream
-            if response.status_code >= 400:
-                # Read error body while still in context
-                error_body = await response.aread()
-                return {
-                    "type": "error",
-                    "status_code": response.status_code,
-                    "body": error_body.decode(),
-                }
-
-            # Check for usage warning headers
-            usage_warning = None
-            if response.headers.get("X-Usage-Warning") == "true":
-                usage_warning = {
-                    "type": "usage_warning",
-                    "message": response.headers.get("X-Usage-Warning-Message", "Usage limit warning"),
-                }
+            response.raise_for_status()
 
             if stream_start_callback:
                 await stream_start_callback()
@@ -1243,8 +1208,6 @@ class StreamingService:
             async for line in response.aiter_lines():
                 if not await self._process_line(line, context):
                     break
-
-        return usage_warning
 
     async def _process_line(
         self,
@@ -1276,29 +1239,18 @@ class StreamingService:
             logger.exception(f"Error processing event: {e}")
             return True
 
-    async def _handle_http_error_from_info(
+    async def _handle_http_error(
         self,
-        error_info: Annotated[dict[str, Any], "Error info with status_code and body"],
+        error: Annotated[httpx.HTTPStatusError, "HTTP error"],
         emitter: Annotated[EventEmitter, "Event emitter"],
     ) -> None:
-        """Handle HTTP errors using the pre-formatted message from the API response."""
-        status_code = error_info["status_code"]
-        error_body = error_info["body"]
-        error_msg = f"HTTP {status_code}"
-
-        logger.debug(f"HTTP {status_code} error body: {error_body}")
-
+        """Handle HTTP errors"""
+        error_msg = f"HTTP {error.response.status_code}"
         try:
-            error_data = json.loads(error_body)
-            detail = error_data.get("detail", {})
-            if isinstance(detail, dict) and detail.get("message"):
-                error_msg = detail["message"]
-            elif isinstance(detail, str):
-                error_msg = detail
-            else:
-                error_msg = f"{error_msg}: {error_body}"
-        except (json.JSONDecodeError, KeyError):
-            error_msg = f"{error_msg}: {error_body}"
+            error_detail = await error.response.aread()
+            error_msg = f"{error_msg}: {error_detail.decode()}"
+        except Exception:
+            pass
 
         logger.error(f"HTTP error: {error_msg}")
 
@@ -1676,7 +1628,6 @@ class Pipe:
         __metadata__: Annotated[dict[str, str], "Request metadata"],
         __event_emitter__: Annotated[Any, "Event emitter function"],
         __event_call__: Annotated[Any, "Event caller function"],
-        __request__: Annotated[Any, "HTTP request object"] = None,
         __files__: Annotated[Optional[list[dict[str, Any]]], "Uploaded files"] = None,
         **kwargs,
     ) -> Annotated[str, "Response (always empty for streaming)"]:
@@ -1701,9 +1652,8 @@ class Pipe:
                 logger.debug(f"Processing request for {agent_class}.{agent_id}")
                 logger.debug(f"Thread ID: {thread_id}, Display ID: {display_id}")
 
-                # Prepare authentication (forward Accept-Language for localized error messages)
-                accept_language = __request__.headers.get("Accept-Language") if __request__ else None
-                headers = self._auth_service.prepare_headers(__user__["name"], __user__["email"], accept_language)
+                # Prepare authentication
+                headers = self._auth_service.prepare_headers(__user__["name"], __user__["email"])
                 inject(headers)
 
                 # Convert messages
