@@ -37,7 +37,6 @@ pip-licenses = "^5.0.0"
 path = "../aihub_lib"
 develop = true
 
-
 [tool.poetry.group.dev.dependencies.aihub_agent]
 path = "../aihub_agent"
 develop = true

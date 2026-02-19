@@ -29,7 +29,6 @@ boto3 = "^1.41.5"
 path = "../aihub_lib"
 develop = true
 
-
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.1"
 pytest-asyncio = "^0.24.0"

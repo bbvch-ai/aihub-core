@@ -49,8 +49,8 @@ pr-ready:
 	@(cd aihub_api &&  make pr-ready)
 	@(cd aihub_bot &&  make pr-ready)
 	@(cd aihub_web && make pr-ready)
-	@poetry run mdformat --number $$(git ls-files '*.md')
-	@poetry run yamlfix $$(git ls-files '*.yaml' '*.yml' | grep -v 'pnpm-lock.yaml')
+	@$(MAKE) format-md
+	@$(MAKE) format-yaml
 	@$(MAKE) generate-compose
 	@$(MAKE) license-check
 
