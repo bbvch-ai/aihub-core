@@ -1,6 +1,6 @@
 # License Report
 
-Generated on: 18.02.2026
+Generated on: 19.02.2026
 
 This document contains license information for all dependencies across the monorepo:
 - Python packages (Poetry): **1626 packages**
