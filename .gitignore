@@ -17,3 +17,4 @@ aihub_doc/aihub
 .mypy_cache/
 .venv
 .claude/mcp/bin/
+.claude/statusline.sh
