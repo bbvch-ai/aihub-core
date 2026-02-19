@@ -84,7 +84,7 @@ runs:
 
     - name: Install Dependencies
       shell: bash
-      run: uv sync --all-packages --dev
+      run: uv sync --all-packages --dev --frozen
 
     - name: Generate Docker Compose files
       if: inputs.docker_compose_services != '' && inputs.regenerate_compose == 'true'
