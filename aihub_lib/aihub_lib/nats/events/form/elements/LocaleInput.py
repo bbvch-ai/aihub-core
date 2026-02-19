@@ -56,7 +56,7 @@ class LocaleInput(PrimeVueElement):
         Field(description="Number of rows for textarea mode (ignored for text mode)"),
     ] = 3
 
-    placeholder: Annotated[LocaleString | None, Field(description="Placeholder text for each language")] = None
+    placeholder: Annotated[LocaleString | str | None, Field(description="Placeholder text for each language")] = None
 
     def in_locale(self, t: LocaleHandler) -> Self:
         self_copy = super().in_locale(t)

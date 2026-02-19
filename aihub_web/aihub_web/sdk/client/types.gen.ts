@@ -307,6 +307,12 @@ export type AgentClassDto = {
      * Indicates whether the agent class is online and reachable.
      */
     is_online?: boolean | null;
+    /**
+     * Templates
+     *
+     * List of profile templates for quick profile creation.
+     */
+    templates?: Array<TemplateData>;
 };
 
 /**
@@ -6570,17 +6576,23 @@ export type InputText = {
      */
     readonly?: boolean;
     /**
+     * Placeholder
+     *
      * Placeholder text
      */
-    placeholder?: LocaleString | null;
+    placeholder?: LocaleString | string | null;
     /**
+     * Prefix
+     *
      * Prefix text
      */
-    prefix?: LocaleString | null;
+    prefix?: LocaleString | string | null;
     /**
+     * Suffix
+     *
      * Suffix text
      */
-    suffix?: LocaleString | null;
+    suffix?: LocaleString | string | null;
     /**
      * Iconprefix
      *
@@ -6599,7 +6611,7 @@ export type InputText = {
     readonly validation: string;
     [key: string]: unknown | true | string | null | string | null | 'primeInputText' | string | null | LocaleString | string | LocaleString | string | null | string | number | number | boolean | Array<string> | {
         [key: string]: string;
-    } | null | boolean | string | null | LocaleString | null | LocaleString | null | LocaleString | null | string | null | string | null | string | undefined;
+    } | null | boolean | string | null | LocaleString | string | null | LocaleString | string | null | LocaleString | string | null | string | null | string | null | string | undefined;
 };
 
 /**
@@ -7526,16 +7538,18 @@ export type LocaleInput = {
      */
     rows?: number;
     /**
+     * Placeholder
+     *
      * Placeholder text for each language
      */
-    placeholder?: LocaleString | null;
+    placeholder?: LocaleString | string | null;
     /**
      * Validation
      */
     readonly validation: string;
     [key: string]: unknown | true | string | null | string | null | 'localeInput' | string | null | LocaleString | string | LocaleString | string | null | string | number | number | boolean | Array<string> | {
         [key: string]: string;
-    } | null | boolean | string | null | 'text' | 'textarea' | number | LocaleString | null | string | undefined;
+    } | null | boolean | string | null | 'text' | 'textarea' | number | LocaleString | string | null | string | undefined;
 };
 
 /**
@@ -9470,62 +9484,11 @@ export type ProcessClassDto = {
      */
     is_online?: boolean | null;
     /**
-     * The default process configuration for this process class. This is the configuration that will be used if no specific configuration is provided.
-     */
-    default_process_config: ProcessConfig;
-};
-
-/**
- * ProcessConfig
- *
- * Each process instance can be configured with its own parameters.
- *
- * The process config follows the same duality pattern as AgentConfig:
- * - **Form mode** (via `as_form()`): Fields contain FormKit elements for UI rendering.
- * - **Data mode**: Fields contain actual primitive values for runtime use.
- *
- * This ensures the form schema and the data model can never de-sync.
- *
- * Subclasses can add domain-specific config fields for process-level settings.
- */
-export type ProcessConfig = {
-    /**
-     * Process Class
+     * Templates
      *
-     * The class name of the process, used for identification.
+     * List of profile templates for quick profile creation.
      */
-    process_class: string | InputText;
-    /**
-     * Process Id
-     *
-     * Used to uniquely identify this process instance.
-     */
-    process_id: string | InputText;
-    /**
-     * Name
-     *
-     * The name of the process.
-     */
-    name: LocaleString | LocaleInput;
-    /**
-     * Description
-     *
-     * The description of the process.
-     */
-    description: LocaleString | LocaleInput;
-    /**
-     * Icon
-     *
-     * The icon representing the process.
-     */
-    icon?: string | IconSelector;
-    /**
-     * Form Name
-     *
-     * The form type name, used for polymorphic deserialization.
-     */
-    readonly _form_name: string;
-    [key: string]: unknown | string | InputText | string | InputText | LocaleString | LocaleInput | LocaleString | LocaleInput | string | IconSelector | string | undefined;
+    templates?: Array<TemplateData>;
 };
 
 /**
@@ -11727,6 +11690,24 @@ export type SuiteDto = {
 };
 
 /**
+ * TemplateData
+ *
+ * Typed container for template data extracted from Form.to_template_data().
+ *
+ * Each agent/process type has different configurable fields, so extra fields
+ * are allowed and preserved through serialization.
+ */
+export type TemplateData = {
+    name: LocaleString;
+    description: LocaleString;
+    /**
+     * Icon
+     */
+    icon: string;
+    [key: string]: unknown | LocaleString | string;
+};
+
+/**
  * TextBlock
  *
  * A representation of text data to directly pass to/from the LLM.
@@ -13758,6 +13739,12 @@ export type AgentClassDtoWritable = {
      * Indicates whether the agent class is online and reachable.
      */
     is_online?: boolean | null;
+    /**
+     * Templates
+     *
+     * List of profile templates for quick profile creation.
+     */
+    templates?: Array<TemplateData>;
 };
 
 /**
@@ -16666,17 +16653,23 @@ export type InputTextWritable = {
      */
     readonly?: boolean;
     /**
+     * Placeholder
+     *
      * Placeholder text
      */
-    placeholder?: LocaleString | null;
+    placeholder?: LocaleString | string | null;
     /**
+     * Prefix
+     *
      * Prefix text
      */
-    prefix?: LocaleString | null;
+    prefix?: LocaleString | string | null;
     /**
+     * Suffix
+     *
      * Suffix text
      */
-    suffix?: LocaleString | null;
+    suffix?: LocaleString | string | null;
     /**
      * Iconprefix
      *
@@ -16691,7 +16684,7 @@ export type InputTextWritable = {
     iconSuffix?: string | null;
     [key: string]: unknown | true | string | null | string | null | 'primeInputText' | string | null | LocaleString | string | LocaleString | string | null | string | number | number | boolean | Array<string> | {
         [key: string]: string;
-    } | null | boolean | string | null | LocaleString | null | LocaleString | null | LocaleString | null | string | null | string | null | undefined;
+    } | null | boolean | string | null | LocaleString | string | null | LocaleString | string | null | LocaleString | string | null | string | null | string | null | undefined;
 };
 
 /**
@@ -17527,12 +17520,14 @@ export type LocaleInputWritable = {
      */
     rows?: number;
     /**
+     * Placeholder
+     *
      * Placeholder text for each language
      */
-    placeholder?: LocaleString | null;
+    placeholder?: LocaleString | string | null;
     [key: string]: unknown | true | string | null | string | null | 'localeInput' | string | null | LocaleString | string | LocaleString | string | null | string | number | number | boolean | Array<string> | {
         [key: string]: string;
-    } | null | boolean | string | null | 'text' | 'textarea' | number | LocaleString | null | undefined;
+    } | null | boolean | string | null | 'text' | 'textarea' | number | LocaleString | string | null | undefined;
 };
 
 /**
@@ -18200,56 +18195,11 @@ export type ProcessClassDtoWritable = {
      */
     is_online?: boolean | null;
     /**
-     * The default process configuration for this process class. This is the configuration that will be used if no specific configuration is provided.
-     */
-    default_process_config: ProcessConfigWritable;
-};
-
-/**
- * ProcessConfig
- *
- * Each process instance can be configured with its own parameters.
- *
- * The process config follows the same duality pattern as AgentConfig:
- * - **Form mode** (via `as_form()`): Fields contain FormKit elements for UI rendering.
- * - **Data mode**: Fields contain actual primitive values for runtime use.
- *
- * This ensures the form schema and the data model can never de-sync.
- *
- * Subclasses can add domain-specific config fields for process-level settings.
- */
-export type ProcessConfigWritable = {
-    /**
-     * Process Class
+     * Templates
      *
-     * The class name of the process, used for identification.
+     * List of profile templates for quick profile creation.
      */
-    process_class: string | InputTextWritable;
-    /**
-     * Process Id
-     *
-     * Used to uniquely identify this process instance.
-     */
-    process_id: string | InputTextWritable;
-    /**
-     * Name
-     *
-     * The name of the process.
-     */
-    name: LocaleString | LocaleInputWritable;
-    /**
-     * Description
-     *
-     * The description of the process.
-     */
-    description: LocaleString | LocaleInputWritable;
-    /**
-     * Icon
-     *
-     * The icon representing the process.
-     */
-    icon?: string | IconSelectorWritable;
-    [key: string]: unknown | string | InputTextWritable | string | InputTextWritable | LocaleString | LocaleInputWritable | LocaleString | LocaleInputWritable | string | IconSelectorWritable | undefined;
+    templates?: Array<TemplateData>;
 };
 
 /**

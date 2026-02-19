@@ -7,7 +7,9 @@ source_sha: "64fee6e1120ef2a5f6e9ce41bb7f52f7cb6dd70b3215eca2dea89a2f57377d04"
 
 # Pipeline-Observability
 
-Effektives Monitoring und Debugging sind essenziell, um zuverlässige Datenverarbeitungs-Pipelines aufrechtzuerhalten. AI-Hub bietet umfassende Observability-Tools, um die Pipeline-Ausführung zu verfolgen, Probleme zu diagnostizieren und die Leistung zu optimieren.
+Effektives Monitoring und Debugging sind essenziell, um zuverlässige Datenverarbeitungs-Pipelines aufrechtzuerhalten.
+AI-Hub bietet umfassende Observability-Tools, um die Pipeline-Ausführung zu verfolgen, Probleme zu diagnostizieren und
+die Leistung zu optimieren.
 
 ## Was Sie lernen werden
 

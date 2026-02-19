@@ -73,7 +73,9 @@ async def _(memory_text: str, agent_runner: AgentTestRunner):
 
     # Create AgentMemory instance with the agent config
     locale_handler = LocaleHandler(locale="en")
-    agent_memory = AgentMemory(agent_config=agent_runner.default_agent_config, t=locale_handler)
+    agent_memory = AgentMemory(
+        agent_config=agent_runner.default_agent_config, agent_class=agent_runner.agent_class, t=locale_handler
+    )
 
     # Add the memory
     await agent_memory.add_user_memory(

@@ -19,7 +19,6 @@ from aihub_lib.infrastructure.mem0.types.MemoryType import MemoryType
 def test_agent_config():
     """Test agent configuration."""
     return AgentConfig(
-        agent_class="TestAgent",
         agent_id="test_agent_memory_1",
         name=LocaleString(en="Test Agent", de="Test Agent", fr="Agent de test", it="Agente di test"),
         description=LocaleString(
@@ -40,7 +39,7 @@ def locale_handler():
 @pytest.fixture(scope="module")
 def agent_memory(test_agent_config, locale_handler):
     """Agent memory instance for testing."""
-    return AgentMemory(agent_config=test_agent_config, t=locale_handler)
+    return AgentMemory(agent_config=test_agent_config, agent_class="TestAgent", t=locale_handler)
 
 
 class TestAgentMemory:

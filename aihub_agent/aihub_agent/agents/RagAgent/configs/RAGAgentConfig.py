@@ -120,7 +120,6 @@ class RAGAgentConfig(AgentConfig):
             name=base.name,
             description=base.description,
             icon=base.icon,
-            agent_class=base.agent_class,
             llm=LLMConfig.as_form(),
             retrievers=[KnowledgeRetrieverConfig.as_form()],
             number_of_input_tokens=InputNumber(

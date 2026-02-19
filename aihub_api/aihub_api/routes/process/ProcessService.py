@@ -9,14 +9,12 @@ from aihub_lib.nats.distributor.ExternalProcessEventDistributor import ExternalP
 from aihub_lib.nats.events import ProcessStartEvent, WorkEvent
 from aihub_lib.nats.events.discovery.process.ProcessConfigSpecs import ProcessConfigSpecs
 from aihub_lib.nats.events.form.normalization import normalize_empty_locale_strings, normalize_empty_objects_to_none
-from aihub_lib.persistence.i18n.LocaleStringEntity import LocaleStringEntity
 from aihub_lib.persistence.messaging.entities.PersistedProcessEventEntity import PersistedProcessEventEntity
 from aihub_lib.persistence.process.ProcessClassEntity import ProcessClassEntity
 from aihub_lib.persistence.process.ProcessConfigEntityDocument import ProcessConfigEntityDocument
 from aihub_lib.processes.ProcessConfig import ProcessConfig
 from bson import ObjectId
 from fastapi import HTTPException
-from pydantic import ValidationError
 
 from aihub_api.routes.process.dto import (
     AgentProcessStepDTO,
@@ -31,6 +29,7 @@ from aihub_api.routes.process.dto.ProcessClassDTO import ProcessClassDTO
 from aihub_api.routes.process.dto.ProcessWalkthroughDTO import ProcessWalkthroughDTO
 from aihub_api.routes.process.dto.SubmittedFormDTO import SubmittedFormDTO
 from aihub_api.services.ModelCreationService import ModelCreationService
+from aihub_api.util.instance_config_helper import InstanceConfigHelper
 
 
 class ProcessService:
@@ -332,7 +331,6 @@ class ProcessService:
                 status_code=409, detail=f"Process instance '{process_class}/{request.process_id}' already exists."
             )
 
-        # Normalize and validate configuration
         config = normalize_empty_objects_to_none(request.configuration)
         config = normalize_empty_locale_strings(config) or {}
 
@@ -346,41 +344,10 @@ class ProcessService:
                 else {},
             )
         )
-        try:
-            config_instance = config_model.model_validate(config)
-        except ValidationError as e:
-            error_messages = []
-            for error in e.errors():
-                field_path = ".".join(str(loc) for loc in error["loc"])
-                error_messages.append(f"{field_path}: {error['msg']}")
-            raise HTTPException(status_code=400, detail=f"Configuration validation failed: {'; '.join(error_messages)}")
-
-        name = config_instance.name if hasattr(config_instance, "name") and config_instance.name else None
-        description = (
-            config_instance.description
-            if hasattr(config_instance, "description") and config_instance.description
-            else None
-        )
-        icon = (
-            config_instance.icon
-            if hasattr(config_instance, "icon") and config_instance.icon
-            else class_entity.icon or "mage:broadcast"
-        )
-
-        name_entity = (
-            LocaleStringEntity.from_locale_string(name)
-            if name
-            else LocaleStringEntity(
-                de=f"New {process_class}",
-                en=f"New {process_class}",
-                fr=f"Nouveau {process_class}",
-                it=f"Nuovo {process_class}",
-            )
-        )
-        description_entity = (
-            LocaleStringEntity.from_locale_string(description)
-            if description
-            else LocaleStringEntity(de="", en="", fr="", it="")
+        config_instance = InstanceConfigHelper.validate_config_for_create(config, config_model)
+        metadata = InstanceConfigHelper.extract_config_metadata(config_instance, class_entity.icon)
+        locale = InstanceConfigHelper.build_locale_entities(
+            metadata.name, metadata.description, process_class, metadata.icon
         )
 
         full_config_data = {
@@ -392,9 +359,9 @@ class ProcessService:
         config_entity = ProcessConfigEntityDocument(
             process_class=process_class,
             process_id=request.process_id,
-            name=name_entity,
-            description=description_entity,
-            icon=icon,
+            name=locale.name,
+            description=locale.description,
+            icon=locale.icon,
             config_data=full_config_data,
         )
         config_entity.save()
@@ -415,12 +382,7 @@ class ProcessService:
         if not config_entity:
             raise HTTPException(status_code=404, detail=f"Process instance {process_class}/{process_id} not found.")
 
-        # Filter out FormKit internal fields
-        configuration = {k: v for k, v in configuration.items() if not k.startswith("_")}
-
-        # Normalize configuration before validation
-        configuration = normalize_empty_objects_to_none(configuration)
-        configuration = normalize_empty_locale_strings(configuration)
+        configuration = InstanceConfigHelper.normalize_form_configuration(configuration)
 
         config_model = ModelCreationService.create_process_config_model(
             ProcessConfigSpecs(
@@ -432,19 +394,8 @@ class ProcessService:
                 else {},
             )
         )
-        try:
-            config_instance = config_model.model_validate(configuration)
-        except ValidationError as e:
-            raise HTTPException(status_code=400, detail=f"Configuration validation failed: {e.errors()}")
-
-        if hasattr(config_instance, "name") and config_instance.name:
-            config_entity.name = LocaleStringEntity.from_locale_string(config_instance.name)
-
-        if hasattr(config_instance, "description") and config_instance.description:
-            config_entity.description = LocaleStringEntity.from_locale_string(config_instance.description)
-
-        if hasattr(config_instance, "icon") and config_instance.icon:
-            config_entity.icon = config_instance.icon
+        config_instance = InstanceConfigHelper.validate_config_for_update(configuration, config_model)
+        config_entity = InstanceConfigHelper.apply_metadata_to_entity(config_instance, config_entity)
 
         config_entity.config_data = configuration
         config_entity.save()

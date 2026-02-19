@@ -108,7 +108,6 @@ class ExpertAskingAgentConfig(AgentConfig):
             name=base.name,
             description=base.description,
             icon=base.icon,
-            agent_class=base.agent_class,
             llm=LLMConfig.as_form(),
             loop_max=InputNumber(
                 label=AgentLocaleString.from_i18n_path("agent.expert_asking_agent.config.loop_max.label"),

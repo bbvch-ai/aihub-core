@@ -34,10 +34,6 @@ class ProcessConfig(Form):
     Subclasses can add domain-specific config fields for process-level settings.
     """
 
-    process_class: Annotated[
-        str | InputText,
-        Field(description="The class name of the process, used for identification."),
-    ]
     process_id: Annotated[
         str | InputText,
         Field(description="Used to uniquely identify this process instance."),
@@ -94,8 +90,6 @@ class ProcessConfig(Form):
                 help=LocaleString.from_i18n_path("lib.process_steps.config.icon.help"),
                 placeholder=LocaleString.from_i18n_path("lib.process_steps.config.icon.placeholder"),
             ),
-            # process_class is not user-configurable - it's determined by which class is selected
-            process_class="",
         )
 
     @classmethod
@@ -118,9 +112,6 @@ class ProcessConfig(Form):
                 label=LocaleString.from_i18n_path("lib.process_steps.config.icon.label"),
                 help=LocaleString.from_i18n_path("lib.process_steps.config.icon.help"),
             ),
-            "process_class": InputText(
-                label=LocaleString.from_i18n_path("lib.process_steps.config.process_class.label"),
-            ),
             "process_id": InputText(
                 label=LocaleString.from_i18n_path("lib.process_steps.config.process_id.label"),
                 help=LocaleString.from_i18n_path("lib.process_steps.config.process_id.help"),
@@ -130,7 +121,6 @@ class ProcessConfig(Form):
     @classmethod
     def from_entity(cls, entity: "ProcessConfigEntity") -> Self:
         data = {
-            "process_class": entity.process_class,
             "process_id": entity.process_id,
             "name": entity.name.to_locale_string(),
             "description": entity.description.to_locale_string(),

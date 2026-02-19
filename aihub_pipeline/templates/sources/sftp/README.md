@@ -40,7 +40,6 @@ source_remote=f"{sftp.name}:/path/to/documents"
 poetry run dagster dev -f pipeline.py
 ```
 
-
 ## Using SSH Key
 
 Instead of password, use SSH key file:

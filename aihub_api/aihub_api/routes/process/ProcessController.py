@@ -281,23 +281,12 @@ class ProcessController(Controller):
                     status_code=404, detail=f"Process instance '{process_class}/{process_id}' not found."
                 )
 
-            class_entity = ProcessClassEntity.get_by_process_class(process_class)
-            default_config = class_entity.default_process_config if class_entity else None
-
             process_config = ProcessConfig(
                 process_class=process_class,
                 process_id=process_id,
-                name=(
-                    config_entity.name.to_locale_string()
-                    if config_entity.name
-                    else (ProcessConfig.from_entity(default_config).name if default_config else None)
-                ),
-                description=(
-                    config_entity.description.to_locale_string()
-                    if config_entity.description
-                    else (ProcessConfig.from_entity(default_config).description if default_config else None)
-                ),
-                icon=config_entity.icon or (class_entity.icon if class_entity else "mage:broadcast"),
+                name=config_entity.name.to_locale_string() if config_entity.name else None,
+                description=config_entity.description.to_locale_string() if config_entity.description else None,
+                icon=config_entity.icon,
             )
 
             return await ProcessService.submit_process_start_form(

@@ -179,7 +179,6 @@ Follow this three-part process to define a new agent. Each part builds on the pr
                name=base.name,
                description=base.description,
                icon=base.icon,
-               agent_class=base.agent_class,
                temperature=InputNumber(label=LocaleString(en="Temperature", de="Temperatur"), min=0.0, max=1.0, step=0.1),
                confidence_threshold=InputNumber(label=LocaleString(en="Confidence Threshold"), min=0.0, max=1.0, step=0.1),
            )
@@ -676,7 +675,7 @@ This glossary defines terms, concepts, and technologies that have specific meani
 | **Context**               | State management system with two types: `RunContext` (ephemeral, single-run) and `ThreadContext` (persistent, cross-run). Used for maintaining state within and across agent executions.                                                        |
 | **Dispatchable Workflow** | The base class for all agents. Provides the infrastructure for event-driven step execution, event routing, and workflow orchestration.                                                                                                          |
 | **Event**                 | The atomic unit of communication in agent workflows. Pydantic models representing specific occurrences (e.g., `UserMessageEvent`, `StopEvent`, custom domain events).                                                                           |
-| **Event Flow**            | The sequence of events produced and consumed by agent steps. Visible in logs and Langfuse traces, crucial for debugging agent workflows.                                                                                                         |
+| **Event Flow**            | The sequence of events produced and consumed by agent steps. Visible in logs and Langfuse traces, crucial for debugging agent workflows.                                                                                                        |
 | **Fan-Out**               | A workflow pattern where a single step returns a list of events processed in parallel by downstream steps. Used for batch processing and concurrent operations.                                                                                 |
 | **Form Duality Pattern**  | A pattern where a single Pydantic model serves two purposes: **Form Mode** (fields contain `FormkitElement` instances for UI rendering) and **Data Mode** (fields contain primitive values). Enabled by the `as_form()` factory method.         |
 | **Human-in-the-Loop**     | A pattern where the workflow pauses to request input from a human user, emitting a request event and waiting for a response before continuing.                                                                                                  |

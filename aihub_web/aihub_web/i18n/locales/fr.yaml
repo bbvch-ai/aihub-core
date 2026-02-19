@@ -264,6 +264,11 @@ service:
 agent:
   title: "Agents"
   can_chat: "Peut chatter"
+  tabs:
+    myAgents: "Mes agents"
+    templates: "Modèles"
+  templates:
+    empty: "Aucun modèle disponible"
   navigation:
     basic: "Aperçu"
     workflow: "Flux de travail"
@@ -304,6 +309,7 @@ agent:
     status: "Statut"
     online: "En ligne"
     offline: "Hors ligne"
+    clone: "Cloner"
   workflow:
     title: "Flux de travail agentique"
   threads:

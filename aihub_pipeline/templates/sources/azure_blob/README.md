@@ -34,4 +34,3 @@ source_remote=f"{azureblob.name}:my-container/path/to/folder"
 ```bash
 poetry run dagster dev -f pipeline.py
 ```
-
