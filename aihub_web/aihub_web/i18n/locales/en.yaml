@@ -1,761 +1,762 @@
-test: "This is test"
-welcome: "Welcome to bbv ai-hub"
+test: This is test
+welcome: Welcome to bbv ai-hub
 
 common:
   actions:
-    save: "Save"
-    cancel: "Cancel"
-    create: "Create"
-    delete: "Delete"
-    edit: "Edit"
-  loading: "Loading..."
-  selectModel: "Select a model"
-  selectDatabase: "Select a database"
+    save: Save
+    cancel: Cancel
+    create: Create
+    delete: Delete
+    edit: Edit
+  loading: Loading...
+  selectModel: Select a model
+  selectDatabase: Select a database
 
 models:
-  title: "Models"
-  error: "Error loading models"
+  title: Models
+  error: Error loading models
   card:
-    tokens: "Tokens"
-    costPer1M: "Cost/1M"
+    tokens: Tokens
+    costPer1M: Cost/1M
   modelDetails:
-    overview: "Model Overview"
-    name: "Name"
-    mode: "Mode"
-    additionalInfo: "Additional Information"
-    maxInputTokens: "Max Input Tokens"
-    maxOutputTokens: "Max Output Tokens"
-    basicInputCost: "Input Cost per 1M Tokens"
-    basicOutputCost: "Output Cost per 1M Tokens"
-    advancedPricing: "Advanced Pricing"
-    cacheCreationCost: "Cache Creation Cost"
-    cacheReadCost: "Cache Read Cost"
-    inputCostAbove128k: "Input Cost (Above 128K)"
-    inputCostAbove200k: "Input Cost (Above 200K)"
-    inputAudioCost: "Input Audio Cost"
-    inputBatchCost: "Input Batch Cost"
-    outputBatchCost: "Output Batch Cost"
-    outputAudioCost: "Output Audio Cost"
-    reasoningTokenCost: "Reasoning Token Cost"
-    outputCostAbove128k: "Output Cost (Above 128K)"
-    outputCostAbove200k: "Output Cost (Above 200K)"
-    imageCost: "Image Cost"
-    searchContextCost: "Search Context Cost"
-    rateLimits: "Rate Limits"
-    tokensPerMinute: "Tokens per Minute"
-    requestsPerMinute: "Requests per Minute"
-    capabilities: "Capabilities"
-    supportsSystemMessages: "System Messages"
-    supportsResponseSchema: "Response Schema"
-    supportsVision: "Vision"
-    supportsFunctionCalling: "Function Calling"
-    supportsToolChoice: "Tool Choice"
-    supportsAssistantPrefill: "Assistant Prefill"
-    supportsPromptCaching: "Prompt Caching"
-    supportsAudioInput: "Audio Input"
-    supportsAudioOutput: "Audio Output"
-    supportsPdfInput: "PDF Input"
-    supportsNativeStreaming: "Native Streaming"
-    supportsWebSearch: "Web Search"
-    supportsUrlContext: "URL Context"
-    supportsReasoning: "Reasoning"
-    supportsComputerUse: "Computer Use"
-    otherDetails: "Other Details"
-    outputVectorSize: "Output Vector Size"
-    supportsEmbeddingImageInput: "Embedding Image Input"
-    supportedParams: "Supported OpenAI Parameters"
-    notSpecified: "Not specified"
+    overview: Model Overview
+    name: Name
+    mode: Mode
+    additionalInfo: Additional Information
+    maxInputTokens: Max Input Tokens
+    maxOutputTokens: Max Output Tokens
+    basicInputCost: Input Cost per 1M Tokens
+    basicOutputCost: Output Cost per 1M Tokens
+    advancedPricing: Advanced Pricing
+    cacheCreationCost: Cache Creation Cost
+    cacheReadCost: Cache Read Cost
+    inputCostAbove128k: Input Cost (Above 128K)
+    inputCostAbove200k: Input Cost (Above 200K)
+    inputAudioCost: Input Audio Cost
+    inputBatchCost: Input Batch Cost
+    outputBatchCost: Output Batch Cost
+    outputAudioCost: Output Audio Cost
+    reasoningTokenCost: Reasoning Token Cost
+    outputCostAbove128k: Output Cost (Above 128K)
+    outputCostAbove200k: Output Cost (Above 200K)
+    imageCost: Image Cost
+    searchContextCost: Search Context Cost
+    rateLimits: Rate Limits
+    tokensPerMinute: Tokens per Minute
+    requestsPerMinute: Requests per Minute
+    capabilities: Capabilities
+    supportsSystemMessages: System Messages
+    supportsResponseSchema: Response Schema
+    supportsVision: Vision
+    supportsFunctionCalling: Function Calling
+    supportsToolChoice: Tool Choice
+    supportsAssistantPrefill: Assistant Prefill
+    supportsPromptCaching: Prompt Caching
+    supportsAudioInput: Audio Input
+    supportsAudioOutput: Audio Output
+    supportsPdfInput: PDF Input
+    supportsNativeStreaming: Native Streaming
+    supportsWebSearch: Web Search
+    supportsUrlContext: URL Context
+    supportsReasoning: Reasoning
+    supportsComputerUse: Computer Use
+    otherDetails: Other Details
+    outputVectorSize: Output Vector Size
+    supportsEmbeddingImageInput: Embedding Image Input
+    supportedParams: Supported OpenAI Parameters
+    notSpecified: Not specified
 
 languages:
-  en: "English"
-  de: "German"
-  it: "Italian"
-  fr: "French"
+  en: English
+  de: German
+  it: Italian
+  fr: French
 
 http_error:
   code:
     # 4xx Client Errors
-    400: "Invalid request. Please check the address and try again."
-    401: "Please sign in to access this page."
-    403: "You don't have permission to view this."
-    404: "Sorry, we couldn't find that page."
-    405: "That action is not allowed here."
-    408: "The request timed out. Please try again."
-    429: "Too many requests."
+    400: Invalid request. Please check the address and try again.
+    401: Please sign in to access this page.
+    403: You don't have permission to view this.
+    404: Sorry, we couldn't find that page.
+    405: That action is not allowed here.
+    408: The request timed out. Please try again.
+    429: Too many requests.
 
     # 5xx Server Errors
-    500: "Something went wrong on our servers."
-    502: "A server error occurred. Please try again."
-    503: "Our service is temporarily unavailable."
-    504: "A server is not responding. Please try again."
+    500: Something went wrong on our servers.
+    502: A server error occurred. Please try again.
+    503: Our service is temporarily unavailable.
+    504: A server is not responding. Please try again.
 
 user:
-  title: "User"
-  logout: "Logout"
-  language: "Language"
+  title: User
+  logout: Logout
+  language: Language
   list:
-    name: "Name"
-    email: "E-Mail"
-    avatar: "Profile image"
-    roles: "Roles"
-    last_accessed: "Last active"
+    name: Name
+    email: E-Mail
+    avatar: Profile image
+    roles: Roles
+    last_accessed: Last active
 
 time_ago:
-  last_hour: "Last hour"
-  last_day: "Last day"
-  last_week: "Last week"
-  last_month: "Last month"
-  last_year: "Last year"
-  long_time_ago: "Long time ago"
-
+  last_hour: Last hour
+  last_day: Last day
+  last_week: Last week
+  last_month: Last month
+  last_year: Last year
+  long_time_ago: Long time ago
 
 thread:
-  title: "Interactions"
-  users: "Users"
-  assistants: "Assistants"
+  title: Interactions
+  users: Users
+  assistants: Assistants
   navigation:
-    basic: "Basic"
-    hierarchy: "Hierarchy"
-    chat: "Chat"
-    display: "Turns"
-    memories: "Memories"
+    basic: Basic
+    hierarchy: Hierarchy
+    chat: Chat
+    display: Turns
+    memories: Memories
   list:
-    name: "Name"
-    agents: "Agents"
-    created: "Created"
-    numTurns: "Number of Turns"
-    numEvents: "Number of Events"
-    status: "Status"
-    pending: "Pending"
+    name: Name
+    agents: Agents
+    created: Created
+    numTurns: Number of Turns
+    numEvents: Number of Events
+    status: Status
+    pending: Pending
   utils:
     pendingTypes:
-      hitl: "Human in the Loop"
-      aitl: "Agent in the Loop"
-      bitl: "Bot in the Loop"
-      unknown: "Reason unknown"
+      hitl: Human in the Loop
+      aitl: Agent in the Loop
+      bitl: Bot in the Loop
+      unknown: Reason unknown
   display:
-    title: "Interaction Turns"
+    title: Interaction Turns
     list:
-      started: "Started"
-      duration: "Duration"
-      events: "Events"
-      status: "Status"
-      pending: "Pending"
-      dateFormat: "DD.MM.YYYY HH:mm:ss"
+      started: Started
+      duration: Duration
+      events: Events
+      status: Status
+      pending: Pending
+      dateFormat: DD.MM.YYYY HH:mm:ss
   events:
-    title: "Turn Tracing View"
+    title: Turn Tracing View
   hierarchy:
-    title: "Hierarchical View on Turns"
+    title: Hierarchical View on Turns
   chat:
-    title: "Chat view"
+    title: Chat view
   memories:
-    title: "Thread Memories"
-    description: "Memories collected during {threadName}"
+    title: Thread Memories
+    description: Memories collected during {threadName}
     delete_all:
-      confirm_header: "Delete All Thread Memories"
-      confirm_message: "Are you sure you want to delete all memories from this thread? This action cannot be undone."
+      confirm_header: Delete All Thread Memories
+      confirm_message: Are you sure you want to delete all memories from this thread? This action cannot be undone.
       success:
-        title: "Success"
-        message: "All thread memories deleted successfully"
+        title: Success
+        message: All thread memories deleted successfully
       error:
-        title: "Delete Failed"
-        message: "Failed to delete thread memories. Please try again."
+        title: Delete Failed
+        message: Failed to delete thread memories. Please try again.
 
 chat:
-  assistant: "Assistant"
-  document: "Document"
+  assistant: Assistant
+  document: Document
 
 event:
   list:
-    firstInteraction: "First Interaction:"
-    lastInteraction: "Last Interaction:"
-    costs: "Costs:"
-    duration: "Duration:"
-    pending: "Pending:"
-    no: "No"
-    status: "Status:"
-    error: "Error"
-    successful: "Successful"
-    chat: "Chat"
-    agents: "Agents:"
+    firstInteraction: 'First Interaction:'
+    lastInteraction: 'Last Interaction:'
+    costs: 'Costs:'
+    duration: 'Duration:'
+    pending: 'Pending:'
+    no: 'No'
+    status: 'Status:'
+    error: Error
+    successful: Successful
+    chat: Chat
+    agents: 'Agents:'
   base:
-    view_raw_data: "View raw event data"
-    view_formatted: "View formatted event"
-    event_data: "Event Data"
+    view_raw_data: View raw event data
+    view_formatted: View formatted event
+    event_data: Event Data
   limitChatHistory:
-    summary: "Chat history limited to {count} messages"
-    assistant: "Assistant"
-    system: "System"
-    user: "User"
-    description: "Chat history was truncated based on token limits to stay within model constraints"
+    summary: Chat history limited to {count} messages
+    assistant: Assistant
+    system: System
+    user: User
+    description: Chat history was truncated based on token limits to stay within model constraints
   addMemoryToChatHistory:
-    summary: "Added {count} memory message to chat history | Added {count} memory messages to chat history"
-    description: "Chat history was extended with relevant memories from previous interactions"
-    assistant: "Assistant"
-    system: "System"
-    user: "User"
+    summary: Added {count} memory message to chat history | Added {count} memory messages to chat history
+    description: Chat history was extended with relevant memories from previous interactions
+    assistant: Assistant
+    system: System
+    user: User
   reranker:
-    topDocuments: "Top {count} most relevant documents:"
-    query: "Search Query"
+    topDocuments: 'Top {count} most relevant documents:'
+    query: Search Query
   retriever:
-    foundDocuments: "Found {count} relevant documents"
-    query: "Search Query"
-    chunksFound: "{count} chunks found"
+    foundDocuments: Found {count} relevant documents
+    query: Search Query
+    chunksFound: '{count} chunks found'
   retrieveMemory:
-    title: "Memory Retrieved"
-    memories: "Memories"
-    relations: "Knowledge Graph"
-    score: "Relevance"
-    noMemories: "No memories retrieved"
+    title: Memory Retrieved
+    memories: Memories
+    relations: Knowledge Graph
+    score: Relevance
+    noMemories: No memories retrieved
   storeMemory:
-    title: "Memory Changes"
-    added: "Added"
-    updated: "Updated"
-    deleted: "Deleted"
-    addedRelations: "added relations"
-    deletedRelations: "deleted relations"
-    relationChanges: "Relation Changes"
-    noChanges: "No changes"
-    documentsSpanning: "Spanning {count} documents"
-    avgScore: "Avg relevance: {score}%"
-    chunksFromDoc: "{count} chunk | {count} chunks"
-    chunk: "Chunk"
-    position: "Pos: {pos}"
-    lines: "Lines {start}-{end}"
-    chars: "{count} chars"
-    sourceDocument: "{count} source document | {count} source documents"
-    contentChunk: "{count} content chunk | {count} content chunks"
-    noChunksFound: "No chunks found"
-    noChunksFoundDescription: "The retrieval search didn't find any relevant content chunks."
+    title: Memory Changes
+    added: Added
+    updated: Updated
+    deleted: Deleted
+    addedRelations: added relations
+    deletedRelations: deleted relations
+    relationChanges: Relation Changes
+    noChanges: No changes
+    documentsSpanning: Spanning {count} documents
+    avgScore: 'Avg relevance: {score}%'
+    chunksFromDoc: '{count} chunk | {count} chunks'
+    chunk: Chunk
+    position: 'Pos: {pos}'
+    lines: Lines {start}-{end}
+    chars: '{count} chars'
+    sourceDocument: '{count} source document | {count} source documents'
+    contentChunk: '{count} content chunk | {count} content chunks'
+    noChunksFound: No chunks found
+    noChunksFoundDescription: The retrieval search didn't find any relevant content chunks.
   standaloneQuestionCondenser:
-    summary: "Question refined and condensed"
-    condensedQuestion: "Condensed Question"
-    user: "User"
-    description: "The original question was reformulated to be more specific and context-aware for better search results"
+    summary: Question refined and condensed
+    condensedQuestion: Condensed Question
+    user: User
+    description: The original question was reformulated to be more specific and context-aware for better search results
   statistics:
     charts:
-      agentInvocations: "Agent Invocations"
-      agentStart: "Agent Start"
-      endEvents: "End Events"
-      success: "Success"
-      openHumanInTheLoop: "Open (Human in the loop)"
-      openBotInTheLoop: "Open (Bot in the Loop)"
-      error: "Error"
-      delegations: "Delegations"
-      delegatedTaskAgentInTheLoop: "Delegated Task (Agent in the Loop)"
-      allEvents: "All Events"
+      agentInvocations: Agent Invocations
+      agentStart: Agent Start
+      endEvents: End Events
+      success: Success
+      openHumanInTheLoop: Open (Human in the loop)
+      openBotInTheLoop: Open (Bot in the Loop)
+      error: Error
+      delegations: Delegations
+      delegatedTaskAgentInTheLoop: Delegated Task (Agent in the Loop)
+      allEvents: All Events
 
 costs:
   table:
-    count: "Count"
-    cost: "Cost"
-    input: "Input"
-    output: "Output"
-    embedding: "Embedding"
-    total: "Total"
-    currency: "CHF"
+    count: Count
+    cost: Cost
+    input: Input
+    output: Output
+    embedding: Embedding
+    total: Total
+    currency: CHF
 
 service:
   selection:
-    title: "Services"
-    description: "Here are all the services listed that you have activated"
-    search: "Search"
-    button: "Search"
+    title: Services
+    description: Here are all the services listed that you have activated
+    search: Search
+    button: Search
 
 agent:
-  title: "Agents"
-  can_chat: "Can Chat"
+  title: Agents
+  can_chat: Can Chat
   tabs:
-    myAgents: "My Agents"
-    templates: "Templates"
+    myAgents: My Agents
+    templates: Templates
   templates:
-    empty: "No templates available"
+    empty: No templates available
   navigation:
-    basic: "Overview"
-    workflow: "Workflow"
-    threads: "Threads"
-    configuration: "Configuration"
-    chat: "Chat"
-    memories: "Memories"
+    basic: Overview
+    workflow: Workflow
+    threads: Threads
+    configuration: Configuration
+    chat: Chat
+    memories: Memories
   overview:
-    startEvents: "Start Events"
-    stopEvents: "Stop Events"
-    config: "Config"
-    name: "Name:"
-    class: "Class:"
-    agentId: "Agent ID:"
-    status: "Status:"
-    online: "Online"
-    offline: "Offline"
+    startEvents: Start Events
+    stopEvents: Stop Events
+    config: Config
+    name: 'Name:'
+    class: 'Class:'
+    agentId: 'Agent ID:'
+    status: 'Status:'
+    online: Online
+    offline: Offline
   configuration:
-    title: "Agent Configuration"
-    description: "Configure the runtime behavior and settings for this agent"
-    runtimeSettings: "Runtime Settings"
-    noConfiguration: "No configuration available for this agent"
-    saveSuccess: "Configuration saved successfully"
-    saveError: "Failed to save configuration"
+    title: Agent Configuration
+    description: Configure the runtime behavior and settings for this agent
+    runtimeSettings: Runtime Settings
+    noConfiguration: No configuration available for this agent
+    saveSuccess: Configuration saved successfully
+    saveError: Failed to save configuration
   chat:
-    title: "Start new Chat"
-    placeholder: "Type the message you want to send to the Agent"
-    createThreadAndSend: "Create Thread and Send"
-    manuallyCreatedThread: "Manually created thread"
-  availableAgents: "Available Agents"
+    title: Start new Chat
+    placeholder: Type the message you want to send to the Agent
+    createThreadAndSend: Create Thread and Send
+    manuallyCreatedThread: Manually created thread
+  availableAgents: Available Agents
   list:
-    name: "Name"
-    description: "Description"
-    agent: "Agent"
-    is_conversational: "Conversational"
-    true: "Yes"
-    false: "No"
-    status: "Status"
-    online: "Online"
-    offline: "Offline"
-    clone: "Clone"
+    name: Name
+    description: Description
+    agent: Agent
+    is_conversational: Conversational
+    true: 'Yes'
+    false: 'No'
+    status: Status
+    online: Online
+    offline: Offline
+    clone: Clone
   workflow:
-    title: "Agentic Workflow"
+    title: Agentic Workflow
   threads:
-    title: "Agent Threads"
+    title: Agent Threads
   create:
-    button: "Create New Agent"
-    title: "Create New Agent"
-    cancel: "Cancel"
-    selectClass: "Agent Type"
-    selectClassPlaceholder: "Select an agent type..."
-    agentId: "Agent ID"
-    agentIdPlaceholder: "my-new-agent"
-    agentIdHelp: "Unique identifier (lowercase letters, numbers, hyphens, underscores)"
-    agentIdInvalid: "Only lowercase letters, numbers, hyphens, and underscores are allowed"
-    agentIdTooLong: "Agent ID must be 100 characters or less"
-    configuration: "Configuration"
-    noAgentClasses: "No agent types available. Make sure at least one agent is running."
-    submit: "Create Agent"
-    success: "Agent created successfully"
-    error: "Failed to create agent"
+    button: Create New Agent
+    title: Create New Agent
+    cancel: Cancel
+    selectClass: Agent Type
+    selectClassPlaceholder: Select an agent type...
+    agentId: Agent ID
+    agentIdPlaceholder: my-new-agent
+    agentIdHelp: Unique identifier (lowercase letters, numbers, hyphens, underscores)
+    agentIdInvalid: Only lowercase letters, numbers, hyphens, and underscores are allowed
+    agentIdTooLong: Agent ID must be 100 characters or less
+    configuration: Configuration
+    noAgentClasses: No agent types available. Make sure at least one agent is running.
+    submit: Create Agent
+    success: Agent created successfully
+    error: Failed to create agent
     steps:
-      basicInfo: "Basic Info"
+      basicInfo: Basic Info
   delete:
-    button: "Delete"
-    title: "Delete Agent"
-    confirm: "Are you sure you want to delete this agent?"
-    confirmMessage: "This action cannot be undone. The agent configuration will be permanently removed."
-    success: "Agent deleted successfully"
-    error: "Failed to delete agent"
-    cannotDeleteDefault: "Default agent configurations cannot be deleted"
+    button: Delete
+    title: Delete Agent
+    confirm: Are you sure you want to delete this agent?
+    confirmMessage: This action cannot be undone. The agent configuration will be permanently removed.
+    success: Agent deleted successfully
+    error: Failed to delete agent
+    cannotDeleteDefault: Default agent configurations cannot be deleted
   add_instance:
-    title: "Add Agent"
-    description: "Create a new agent instance"
+    title: Add Agent
+    description: Create a new agent instance
   selector:
     class:
-      label: "Agent Type"
-      placeholder: "Select an agent type..."
+      label: Agent Type
+      placeholder: Select an agent type...
     id:
-      label: "Agent Profile"
-      placeholder: "Select an agent profile..."
-      help: "Choose the specific agent profile to use"
+      label: Agent Profile
+      placeholder: Select an agent profile...
+      help: Choose the specific agent profile to use
   memories:
-    title: "Agent Memories"
-    description: "Memories collected by {agentName} about you"
+    title: Agent Memories
+    description: Memories collected by {agentName} about you
     delete_all:
-      confirm_header: "Delete All Agent Memories"
-      confirm_message: "Are you sure you want to delete all memories collected by this agent? This action cannot be undone."
+      confirm_header: Delete All Agent Memories
+      confirm_message: Are you sure you want to delete all memories collected by this agent? This action cannot be undone.
       success:
-        title: "Success"
-        message: "All agent memories deleted successfully"
+        title: Success
+        message: All agent memories deleted successfully
       error:
-        title: "Delete Failed"
-        message: "Failed to delete agent memories. Please try again."
+        title: Delete Failed
+        message: Failed to delete agent memories. Please try again.
 
 document:
   list:
-    title: "Document Title"
-    created: "Created"
-    updated_at: "Last updated"
-    language: "Language"
-    document_type: "Document Type"
-    number_of_pages: "Number of Pages"
-    download: "Download"
-    is_processing: "Processing"
+    title: Document Title
+    created: Created
+    updated_at: Last updated
+    language: Language
+    document_type: Document Type
+    number_of_pages: Number of Pages
+    download: Download
+    is_processing: Processing
 
 knowledge:
-  title: "Knowledge Databases"
-  created_at: "Created:"
-  updated_at: "Last updated:"
+  title: Knowledge Databases
+  created_at: 'Created:'
+  updated_at: 'Last updated:'
   navigation:
     document:
-      basic: "Overview"
-      original: "Original"
-      content: "Content"
-      nodes: "Chunks"
-      summary: "Summaries"
+      basic: Overview
+      original: Original
+      content: Content
+      nodes: Chunks
+      summary: Summaries
   original:
-    not_available: "Original document view is only available for PDF files."
-    load_error: "Failed to load the original document."
-    view_button: "View Original"
-    open_new_tab: "Open in new tab"
-    title: "Original Document"
-    click_to_view: "Click the button below to view the original PDF document."
+    not_available: Original document view is only available for PDF files.
+    load_error: Failed to load the original document.
+    view_button: View Original
+    open_new_tab: Open in new tab
+    title: Original Document
+    click_to_view: Click the button below to view the original PDF document.
   documents:
-    title: "Documents"
+    title: Documents
     search:
-      placeholder: "Search by document title..."
+      placeholder: Search by document title...
     upload:
-      title: "Upload Documents"
-      drag_and_drop: "Drag files here or click to select files"
+      title: Upload Documents
+      drag_and_drop: Drag files here or click to select files
       target_location:
-        label: "Target Location"
-        help: "Folder where the documents should be stored"
+        label: Target Location
+        help: Folder where the documents should be stored
       errors:
-        unsupported_file_type: "One file has an unsupported type. Supported types are: {supportedTypes} | {count} files have an unsupported type. Supported types are: {supportedTypes}"
+        unsupported_file_type: 'One file has an unsupported type. Supported types are: {supportedTypes} | {count} files have
+          an unsupported type. Supported types are: {supportedTypes}'
       actions:
-        upload: "Upload"
-        cancel: "Cancel"
+        upload: Upload
+        cancel: Cancel
   nodes:
-    title: "Document Chunks"
+    title: Document Chunks
   summary:
-    title: "Document Summaries"
-    level: "Level"
-    no_summaries_at_level: "No summaries on this Level"
+    title: Document Summaries
+    level: Level
+    no_summaries_at_level: No summaries on this Level
   actions:
-    save: "Save"
-    create: "Create"
-    cancel: "Cancel"
+    save: Save
+    create: Create
+    cancel: Cancel
   add_folder:
-    title: "Add Collection"
-    description: "Create a new knowledge collection"
-    cancel: "Cancel"
+    title: Add Collection
+    description: Create a new knowledge collection
+    cancel: Cancel
   auto_sync:
-    title: "Auto-synchronized"
-    description: "Collections are automatically managed"
+    title: Auto-synchronized
+    description: Collections are automatically managed
   manual_management:
-    description: "Collections can be created and managed manually"
-  edit_namespace: "Edit collection"
-  upload_documents: "Upload documents"
+    description: Collections can be created and managed manually
+  edit_namespace: Edit collection
+  upload_documents: Upload documents
   form:
     create:
-      title: "Create Collection"
+      title: Create Collection
     edit:
-      title: "Edit Collection"
+      title: Edit Collection
     database:
-      label: "Knowledge Database"
-      placeholder: "Knowledge Database Name"
+      label: Knowledge Database
+      placeholder: Knowledge Database Name
     folder_name:
-      label: "Collection Name"
-      placeholder: "my-collection"
-      help: "Only alphanumeric characters, hyphens (-), and underscores (_) are allowed"
-      edit_help: "Technical name of the collection"
-      validation_error: "Collection name can only contain alphanumeric characters, hyphens (-), and underscores (_)"
+      label: Collection Name
+      placeholder: my-collection
+      help: Only alphanumeric characters, hyphens (-), and underscores (_) are allowed
+      edit_help: Technical name of the collection
+      validation_error: Collection name can only contain alphanumeric characters, hyphens (-), and underscores (_)
     display_name:
-      label: "Display Name"
-      placeholder: "Display Name"
-      help: "Display name of the collection"
+      label: Display Name
+      placeholder: Display Name
+      help: Display name of the collection
     description:
-      label: "Description"
-      placeholder: "Description"
-      help: "Description of the collection"
+      label: Description
+      placeholder: Description
+      help: Description of the collection
 
 auth:
   renew:
-    processing: "Processing silent token renewal..."
+    processing: Processing silent token renewal...
   callback:
-    processing: "Processing authentication callback..."
-    loggingIn: "Logging you in..."
-    loginError: "Login Error"
-    redirectingToLogin: "Redirecting to login page..."
-    genericError: "An error occurred during login. Please try again."
+    processing: Processing authentication callback...
+    loggingIn: Logging you in...
+    loginError: Login Error
+    redirectingToLogin: Redirecting to login page...
+    genericError: An error occurred during login. Please try again.
   login:
-    title: "Login"
-    description: "Please log in to access the application"
-    tagline: "Experience the future of artificial intelligence"
-    welcome: "Welcome to the AI Hub of {companyName}"
-    pleaseLogin: "Please log in"
-    loginWithMicrosoft: "Login with Microsoft"
-    customSolutions: "Custom AI solutions for your company"
-    logoAlt: "Logo of company"
+    title: Login
+    description: Please log in to access the application
+    tagline: Experience the future of artificial intelligence
+    welcome: Welcome to the AI Hub of {companyName}
+    pleaseLogin: Please log in
+    loginWithMicrosoft: Login with Microsoft
+    customSolutions: Custom AI solutions for your company
+    logoAlt: Logo of company
 
 timerange:
-  1h: "1 Hour"
-  24h: "1 Day"
-  30d: "1 Month"
-  365d: "1 Year"
+  1h: 1 Hour
+  24h: 1 Day
+  30d: 1 Month
+  365d: 1 Year
 
 chart:
-  no_data: "No data available for this period."
-  trending_up: "Trending Up"
-  trending_down: "Trending Down"
+  no_data: No data available for this period.
+  trending_up: Trending Up
+  trending_down: Trending Down
 
 dashboard:
-  all_agents: "All Agents"
-  users: "AI-Hub Users"
-  unknown_agent: "Unknown Agent"
-  add_widget: "Add Widget"
-  select_data_type: "Select Data type"
-  select_agent: "Select an Agent (Optional)"
-  create: "Create"
-  create_widget: "Create new Widget"
+  all_agents: All Agents
+  users: AI-Hub Users
+  unknown_agent: Unknown Agent
+  add_widget: Add Widget
+  select_data_type: Select Data type
+  select_agent: Select an Agent (Optional)
+  create: Create
+  create_widget: Create new Widget
   events:
     StartEvent:
-      label: "Started Agent Runs"
+      label: Started Agent Runs
     StopEvent:
-      label: "Successful Runs"
+      label: Successful Runs
     UserMessageEvent:
-      label: "User Chat Messages"
+      label: User Chat Messages
     ExceptionEvent:
-      label: "Errors"
+      label: Errors
     HumanInTheLoopRequestEvent:
-      label: "Human in the Loop"
+      label: Human in the Loop
     BotInTheLoopRequestEvent:
-      label: "Ask in Slack/Teams"
+      label: Ask in Slack/Teams
     AgentInTheLoopRequestEvent:
-      label: "Tasks Delegated"
+      label: Tasks Delegated
 
 evaluation:
-  langfuse_link: "Run Experiments"
+  langfuse_link: Run Experiments
   dataset:
-    title: "Datasets"
-    created_at: "Created:"
-    updated_at: "Updated at:"
-    create_description: "Create a new dataset that you can use to evaluate the performance of your Assitants!"
-    name: "Name"
-    description: "Description"
-    cancel: "Cancel"
-    save: "Save"
-    create_new: "Create new Dataset"
-    add_at_least_one: "Add at least 1 Datapoint"
-    question_header: "Question"
-    answer_header: "Answer"
-    status: "Status"
-    new: "New"
-    question_placeholder: "Question"
-    answer_placeholder: "Answer"
-    add_button: "Add"
-    save_button: "Save Dataset"
-    save_confirmation: "Save dataset? Once added, you can not remove items again."
-    cancel_button: "Cancel"
-    save_action: "Save"
-    saved_summary: "Saved"
-    saved_detail: "Dataset saved"
+    title: Datasets
+    created_at: 'Created:'
+    updated_at: 'Updated at:'
+    create_description: Create a new dataset that you can use to evaluate the performance of your Assitants!
+    name: Name
+    description: Description
+    cancel: Cancel
+    save: Save
+    create_new: Create new Dataset
+    add_at_least_one: Add at least 1 Datapoint
+    question_header: Question
+    answer_header: Answer
+    status: Status
+    new: New
+    question_placeholder: Question
+    answer_placeholder: Answer
+    add_button: Add
+    save_button: Save Dataset
+    save_confirmation: Save dataset? Once added, you can not remove items again.
+    cancel_button: Cancel
+    save_action: Save
+    saved_summary: Saved
+    saved_detail: Dataset saved
+
 role:
-  title: "Access Roles"
-  name: "Name"
-  description: "Description"
-  edit: "Edit Role"
-  create_new: "New Role"
-  add_access_role: "Add access role"
-  add_button: "Add"
-  is_new: "New"
-  save_button: "Save"
-  access_rules: "Access Rules"
-  usage_limits: "Usage Limits"
-  usage_pattern: "Pattern"
-  usage_limit_value: "Limit"
-  usage_period: "Period"
-  calls_per: "calls"
-  unlimited: "Unlimited"
-  no_access_rules: "No access rules defined"
-  access_rules_help_intro: "Hierarchical rules control access to resources:"
-  access_rules_help_all_agents: "All agents"
-  access_rules_help_agent_instances: "All instances of MyAgent"
-  access_rules_help_service: "Knowledge service"
-  access_rules_help_admin: "Admin access to everything"
-  pattern_help_intro: "Patterns use wildcards to match agents:"
-  pattern_help_all: "All agents"
-  pattern_help_wildcard: "All instances of MyAgent"
-  pattern_help_specific: "Only a specific instance"
+  title: Access Roles
+  name: Name
+  description: Description
+  edit: Edit Role
+  create_new: New Role
+  add_access_role: Add access role
+  add_button: Add
+  is_new: New
+  save_button: Save
+  access_rules: Access Rules
+  usage_limits: Usage Limits
+  usage_pattern: Pattern
+  usage_limit_value: Limit
+  usage_period: Period
+  calls_per: calls
+  unlimited: Unlimited
+  no_access_rules: No access rules defined
+  access_rules_help_intro: 'Hierarchical rules control access to resources:'
+  access_rules_help_all_agents: All agents
+  access_rules_help_agent_instances: All instances of MyAgent
+  access_rules_help_service: Knowledge service
+  access_rules_help_admin: Admin access to everything
+  pattern_help_intro: 'Patterns use wildcards to match agents:'
+  pattern_help_all: All agents
+  pattern_help_wildcard: All instances of MyAgent
+  pattern_help_specific: Only a specific instance
   create_dialog:
-    description: "Create a new role with access rules. To assigne the new role to users, please use your AD."
+    description: Create a new role with access rules. To assigne the new role to users, please use your AD.
   remove_dialog:
-    confirm: "Are you sure?"
-    explanation: "If you remove this role, users might loose access to certain features of the ai-hub."
-    cancel: "Cancel"
-    proceed: "Delete anyways"
+    confirm: Are you sure?
+    explanation: If you remove this role, users might loose access to certain features of the ai-hub.
+    cancel: Cancel
+    proceed: Delete anyways
   role_deleted:
-    summary: "Role deleted"
-    detail: "Role was deleted. Users with this role might have lost access to certain features."
+    summary: Role deleted
+    detail: Role was deleted. Users with this role might have lost access to certain features.
   role_saved:
-    summary: "Role saved"
-    detail: "Role saved successfully, the new access rules take effect immediately."
+    summary: Role saved
+    detail: Role saved successfully, the new access rules take effect immediately.
 
 usage:
-  title: "Usage"
-  calls_remaining: "{current} / {limit} agent calls"
-  unlimited_calls: "Unlimited agent calls"
-  resets_at: "Resets {time}"
-  limit_exceeded: "Agent call limit reached"
-  limit_exceeded_detail: "Please wait until {time} or contact your administrator"
+  title: Usage
+  calls_remaining: '{current} / {limit} agent calls'
+  unlimited_calls: Unlimited agent calls
+  resets_at: Resets {time}
+  limit_exceeded: Agent call limit reached
+  limit_exceeded_detail: Please wait until {time} or contact your administrator
 
 period:
-  1h: "Per hour"
-  1d: "Per day"
-  7d: "Per week"
-  1mo: "Per month"
+  1h: Per hour
+  1d: Per day
+  7d: Per week
+  1mo: Per month
 
 notification:
-  title: "Notifications"
-  no_unread_notifications: "No unread notifications"
-  no_notifications: "No notifications available"
-  no_pending_notifications: "No pending notifications"
-  mark_all_as_read: "Mark all as read"
-  mark_as_read: "Mark as read"
-  mark_as_done: "Mark as done"
-  view_all: "View all notifications"
-  click_to_view: "Click to view notification"
-  clear_selection: "Clear selection"
-  select_all: "Select all notifications"
-  filter_notifications: "Filter notifications"
-  select_notification: "Select notification"
-  view_button: "View"
-  default_summary: "New Notification"
+  title: Notifications
+  no_unread_notifications: No unread notifications
+  no_notifications: No notifications available
+  no_pending_notifications: No pending notifications
+  mark_all_as_read: Mark all as read
+  mark_as_read: Mark as read
+  mark_as_done: Mark as done
+  view_all: View all notifications
+  click_to_view: Click to view notification
+  clear_selection: Clear selection
+  select_all: Select all notifications
+  filter_notifications: Filter notifications
+  select_notification: Select notification
+  view_button: View
+  default_summary: New Notification
   filter:
-    all: "All"
-    unread: "Unread"
-    not_done: "To Do"
+    all: All
+    unread: Unread
+    not_done: To Do
   types:
-    info: "Info"
-    success: "Success"
-    warn: "Warning"
-    error: "Error"
+    info: Info
+    success: Success
+    warn: Warning
+    error: Error
   severities:
-    low: "Low"
-    medium: "Medium"
-    high: "High"
-    critical: "Critical"
+    low: Low
+    medium: Medium
+    high: High
+    critical: Critical
 
 bar:
-  toggle_dark_mode: "Toggle dark mode"
-  show_notifications: "Show notifications"
+  toggle_dark_mode: Toggle dark mode
+  show_notifications: Show notifications
 
 process:
-  title: "Processes"
+  title: Processes
   overview:
-    name: "Name"
-    class: "Class"
-    processId: "Process ID"
-    status: "Status"
-    online: "Online"
-    offline: "Offline"
+    name: Name
+    class: Class
+    processId: Process ID
+    status: Status
+    online: Online
+    offline: Offline
   navigation:
-    overview: "Overview"
-    walkthroughs: "Runs"
-    start: "Start Run"
-    configuration: "Configuration"
+    overview: Overview
+    walkthroughs: Runs
+    start: Start Run
+    configuration: Configuration
   list:
-    online: "Online"
-    offline: "Offline"
+    online: Online
+    offline: Offline
   configuration:
-    title: "Process Configuration"
-    description: "Configure the runtime behavior of this process instance."
-    runtimeSettings: "Runtime Settings"
-    saveSuccess: "Configuration saved successfully"
-    saveError: "Failed to save configuration"
-    noConfiguration: "No configuration available for this process."
+    title: Process Configuration
+    description: Configure the runtime behavior of this process instance.
+    runtimeSettings: Runtime Settings
+    saveSuccess: Configuration saved successfully
+    saveError: Failed to save configuration
+    noConfiguration: No configuration available for this process.
   create:
-    title: "Create New Process"
-    selectClass: "Process Type"
-    selectClassPlaceholder: "Select a process type..."
-    noProcessClasses: "No process types available."
+    title: Create New Process
+    selectClass: Process Type
+    selectClassPlaceholder: Select a process type...
+    noProcessClasses: No process types available.
     steps:
-      basicInfo: "Basic Info"
-    submit: "Create Process"
-    cancel: "Cancel"
-    success: "Process created successfully"
-    error: "Failed to create process"
+      basicInfo: Basic Info
+    submit: Create Process
+    cancel: Cancel
+    success: Process created successfully
+    error: Failed to create process
   delete:
-    button: "Delete"
-    title: "Delete Process"
-    confirmMessage: "Are you sure you want to delete this process instance? This action cannot be undone."
-    success: "Process deleted successfully"
-    error: "Failed to delete process"
+    button: Delete
+    title: Delete Process
+    confirmMessage: Are you sure you want to delete this process instance? This action cannot be undone.
+    success: Process deleted successfully
+    error: Failed to delete process
   add_instance:
-    title: "Add Process"
-    description: "Create a new process instance"
+    title: Add Process
+    description: Create a new process instance
   walkthrough:
     list:
-      created: "Created"
-      updated: "Last Interaction"
-      agents: "Agents"
-      users: "Users"
-      state: "State"
-      in_progress: "In Progress"
-      done: "Done"
-      steps: "Progress"
+      created: Created
+      updated: Last Interaction
+      agents: Agents
+      users: Users
+      state: State
+      in_progress: In Progress
+      done: Done
+      steps: Progress
 
 form:
   locale_input:
-    translate_tooltip: "Translate to all languages"
+    translate_tooltip: Translate to all languages
 
 lib:
   vectorStore:
-    label: "Vector Store"
-    help: "Select the knowledge database and namespaces to search"
+    label: Vector Store
+    help: Select the knowledge database and namespaces to search
     database:
-      label: "Database"
+      label: Database
     namespaces:
-      label: "Namespaces"
-      placeholder: "Select namespaces (empty = all)"
-      help: "Leave empty to search all namespaces"
+      label: Namespaces
+      placeholder: Select namespaces (empty = all)
+      help: Leave empty to search all namespaces
 
 memory:
-  title: "Memories"
+  title: Memories
   graph:
-    title: "Knowledge Graph"
+    title: Knowledge Graph
   list:
-    title: "Memory List"
+    title: Memory List
   detail:
-    title: "Memory Details"
-    created_at: "Created At"
-    agent_link_label: "Created by Agent"
-    thread_link_label: "Related Thread"
-    thread_title: "Thread Interaction"
+    title: Memory Details
+    created_at: Created At
+    agent_link_label: Created by Agent
+    thread_link_label: Related Thread
+    thread_title: Thread Interaction
   update:
     success:
-      title: "Success"
-      message: "Memory updated successfully"
+      title: Success
+      message: Memory updated successfully
     error:
-      title: "Update Failed"
-      message: "Failed to update memory. Please try again."
+      title: Update Failed
+      message: Failed to update memory. Please try again.
   delete:
     success:
-      title: "Success"
-      message: "Memory deleted successfully"
+      title: Success
+      message: Memory deleted successfully
     error:
-      title: "Delete Failed"
-      message: "Failed to delete memory. Please try again."
+      title: Delete Failed
+      message: Failed to delete memory. Please try again.
   edit:
-    memory_content_label: "Memory Content"
-    edit_button: "Edit"
-    save_button: "Save"
-    cancel_button: "Cancel"
-    delete_button: "Delete"
-    delete_confirm_header: "Delete Memory"
-    delete_confirm_message: "Are you sure you want to delete this memory? This action cannot be undone."
-    validation_error: "Validation Error"
-    validation_empty: "Memory content cannot be empty"
+    memory_content_label: Memory Content
+    edit_button: Edit
+    save_button: Save
+    cancel_button: Cancel
+    delete_button: Delete
+    delete_confirm_header: Delete Memory
+    delete_confirm_message: Are you sure you want to delete this memory? This action cannot be undone.
+    validation_error: Validation Error
+    validation_empty: Memory content cannot be empty
   table:
-    memory: "Memory"
-    agent: "Agent"
-    created: "Created"
-    score: "Score"
-    pagination: "Page {currentPage} of {totalPages}"
+    memory: Memory
+    agent: Agent
+    created: Created
+    score: Score
+    pagination: Page {currentPage} of {totalPages}
   search:
-    button: "Search"
-    placeholder: "Search memories..."
-    clear: "Clear"
+    button: Search
+    placeholder: Search memories...
+    clear: Clear
   delete_all:
-    button: "Delete All"
-    confirm_header: "Delete All Memories"
-    confirm_message: "Are you sure you want to delete all memories? This action cannot be undone."
+    button: Delete All
+    confirm_header: Delete All Memories
+    confirm_message: Are you sure you want to delete all memories? This action cannot be undone.
     success:
-      title: "Success"
-      message: "All memories deleted successfully"
+      title: Success
+      message: All memories deleted successfully
     error:
-      title: "Delete Failed"
-      message: "Failed to delete all memories. Please try again."
+      title: Delete Failed
+      message: Failed to delete all memories. Please try again.
 
 openwebui:
   memories:
-    title: "Agent Memories"
-    select_agent: "Select Agent"
-    list: "List"
-    graph: "Graph"
-    user_memories: "User Memories"
-    org_memories: "Organization Memories"
+    title: Agent Memories
+    select_agent: Select Agent
+    list: List
+    graph: Graph
+    user_memories: User Memories
+    org_memories: Organization Memories

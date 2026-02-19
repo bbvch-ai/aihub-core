@@ -29,22 +29,19 @@ agent_description_guard:
     true wenn die Antwort gegeben werden kann, false wenn nicht
   docstring: |
     Datenmodel für die Entscheidung ob eine Antwort gegeben werden kann.
+
 few_shot_guard:
   prompt: |
     Sie erhalten mehrere Beispiele, die zeigen, welche Benutzeranfragen erlaubt sind und welche nicht. Jede Beispielantwort besteht aus zwei Schlüsseln:
-
     "success": ein Boolean (true oder false), der angibt, ob die Anfrage zulässig ist.
     "reasoning": ein String, der die Begründung für diese Entscheidung enthält.
     Wichtig:
     Ihre finale Ausgabe muss ausschliesslich ein JSON-Objekt mit genau den beiden Schlüsseln "success" und "reasoning" sein. Wiederholen Sie nicht das gesamte JSON-Schema oder fügen zusätzliche Meta-Informationen hinzu.
-
     Ihre Aufgabe ist es, zu bestimmen, ob eine neue Benutzeranfrage basierend auf diesen Beispielen zulässig ist.
-
     **Beispiele:**
     <Examples>
     {examples}
     </Examples>
-
     **Benutzeranfrage:**
     <Benutzer>
     {user_query}
@@ -65,6 +62,7 @@ few_shot_guard:
     Begründung für die getroffene Entscheidung.
   docstring: |
     Datenmodell für die Entscheidung, ob die Anfrage akzeptabel ist oder nicht.
+
 context_sufficient_guard:
   doc_string: |
     Ergebnis der Auswertung, ob der Kontext ausreicht, um die Benutzeranfrage zu beantworten.
@@ -79,26 +77,19 @@ context_sufficient_guard:
     Ich gebe Ihnen einen Kontext, eine Frage und frühere Abfragen, falls welche erstellt wurden.
     Wenn die Frage mit dem angegebenen Kontext beantwortet werden kann, kann die Konversation fortgesetzt werden (success=True).
     Ist die Beantwortung der Frage mit dem Kontext nicht möglich, sollte die Konversation beendet werden (success=False).
-    
     Wenn success=False ist, müssen Sie eine neue Abfrage erstellen, mit der Sie weitere Informationen sammeln können. Wenn Sie eine neue Abfrage erstellen:
-
     1. PRIORISIEREN SIE ÜBERGEORDNETE KONZEPTE: Ihre primäre Strategie sollte darin bestehen, in der Begriffshierarchie nach oben zu gehen, um breitere Bereiche zu finden, die auf natürliche Weise Informationen über das ursprüngliche Thema enthalten würden.
        - Wenn z. B. die Frage nach „neuronalen Netzen“ unzureichende Ergebnisse liefert, wechseln Sie zu „Methoden des maschinellen Lernens“ oder „Berechnungsmodelle“, anstatt anders nach neuronalen Netzen zu fragen.
        - Wenn ein Thema keine Ergebnisse liefert, überlegen Sie, zu welchem akademischen Bereich, welcher Branche oder Wissensdomäne es gehört.
-    
     2. Analysieren Sie die vorherigen Abfragen, um Wiederholungen oder geringfügige Variationen derselben Frage zu vermeiden.
-    
     3. Wenn übergeordnete Konzepte bereits erforscht wurden, versuchen Sie diese alternativen Strategien:
        - Untersuchen Sie verwandte Bereiche, die sich mit dem Hauptthema überschneiden.
        - Suchen Sie nach grundlegenden Konzepten, die das Thema untermauern
        - Suchen Sie nach Informationen über die übergeordnete Kategorie oder das Klassifizierungssystem
        - Bitten Sie um Informationen über breitere technologische oder wissenschaftliche Prinzipien
        - Berücksichtigen Sie interdisziplinäre Verbindungen zu anderen Bereichen.
-    
     4. Die neue Abfrage MUSS sich deutlich von allen vorherigen Abfragen unterscheiden und sich von dem spezifischen Thema entfernen, wenn direkte Ansätze fehlgeschlagen sind.
-    
     5. Jede nachfolgende Abfrage sollte eine grössere konzeptionelle Veränderung darstellen als die vorhergehenden.
-    
     Frage:
     <Question>
     {user_query}
@@ -117,10 +108,10 @@ context_sufficient_guard:
     true, wenn der Kontext für die Beantwortung der Benutzeranfrage ausreicht, false, wenn er nicht ausreicht (keine zusätzlichen Sprünge verfügbar).
   docstring_no_hops: |
     Ergebnis der Auswertung, ob der Kontext ausreicht, um die Benutzeranfrage zu beantworten (keine zusätzlichen Sprünge verfügbar).
+
 sensitive_info_guard:
   prompt: |
     Sie sind ein Sicherheitswächter, der für den Schutz sensibler Unternehmensinformationen verantwortlich ist. Ihre Aufgabe ist es, die folgende Antwort zu analysieren und zu bestimmen, ob sie sensible Informationen enthält, die nicht extern geteilt werden sollten.
-
     Suchen Sie nach:
     - Internen Unternehmensprozessen, -verfahren oder -richtlinien
     - Vertraulichen Geschäftsstrategien oder -plänen
@@ -130,13 +121,10 @@ sensitive_info_guard:
     - Kundendaten oder vertraulichen Kundeninformationen
     - Internen Systemdetails, Servernamen oder Infrastrukturinformationen
     - Allen Informationen, die als vertraulich oder nur intern markiert sind
-
     Wenn Sie sensible Informationen finden, stellen Sie eine bereinigte Version der Antwort zur Verfügung, bei der die sensiblen Teile entfernt oder verallgemeinert wurden.
-
     <Zu analysierende Antwort>
     {answer}
     </Zu analysierende Antwort>
-
     Ihre Ausgabe muss ein JSON-Objekt mit genau drei Schlüsseln sein:
     - "success": true, wenn keine sensiblen Informationen gefunden wurden, false, wenn sensible Informationen erkannt wurden
     - "reasoning": Erklärung Ihrer Entscheidung
@@ -149,13 +137,14 @@ sensitive_info_guard:
     Die überarbeitete Antwort mit entfernten oder geschwärzten sensiblen Informationen, falls zutreffend.
   docstring: |
     Ergebnis der Analyse einer Antwort auf sensible Informationen, die nicht extern geteilt werden sollten.
+
 few_shot_example:
   user:
-    label: "Benutzernachricht"
-    help: "Eine beispielhafte Benutzeranfrage oder Nachricht, die ausgewertet wird."
+    label: Benutzernachricht
+    help: Eine beispielhafte Benutzeranfrage oder Nachricht, die ausgewertet wird.
   success:
-    label: "Anfrage akzeptieren"
-    help: "Aktivieren, wenn dieses Beispiel akzeptiert werden soll, deaktivieren wenn abgelehnt."
+    label: Anfrage akzeptieren
+    help: Aktivieren, wenn dieses Beispiel akzeptiert werden soll, deaktivieren wenn abgelehnt.
   reason:
-    label: "Grund"
-    help: "Erklärung, warum die Anfrage akzeptiert oder abgelehnt wird."
+    label: Grund
+    help: Erklärung, warum die Anfrage akzeptiert oder abgelehnt wird.

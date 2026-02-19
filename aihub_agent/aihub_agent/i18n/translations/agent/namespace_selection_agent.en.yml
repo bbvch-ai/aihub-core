@@ -1,7 +1,7 @@
 metadata:
   name: Document Navigation Assistant
-  description: AI assistant that helps you find and select the right knowledge sources
-    for your questions
+  description: AI assistant that helps you find and select the right knowledge sources for your questions
+
 config:
   bucket_names:
     label: Knowledge Databases
@@ -10,23 +10,18 @@ config:
     label: Max history entries
   approval_message_template:
     label: Approval message template
+
 defaults:
-  approval_message_template: 'Based on your request, I suggest querying the following
-    knowledge sources:
+  approval_message_template: "Based on your request, I suggest querying the following knowledge sources:\n\n{namespaces}\n\
+    \nDo you approve this selection?\n"
 
-
-    {namespaces}
-
-
-    Do you approve this selection?
-
-    '
 delegation_config:
   rag_agent:
     label: RAG Agent
     help: Select the RAG agent to forward queries to
     class_placeholder: Select agent type
     id_placeholder: Select agent instance
+
 thoughts:
   fetching_namespaces: Looking up available knowledge sources
   starting_determination: Determining which sources to search
@@ -37,78 +32,47 @@ thoughts:
   selection_rejected: Searching for alternative sources
   forwarding_to_rag: Searching for relevant information
   rag_error: 'An error occurred while searching: %{error_message}'
+
 messages:
-  default_follow_up: Could you please provide more details about your request so I
-    can determine the most relevant knowledge sources?
-  user_rejected_selection: I rejected the proposed namespace selection. Please suggest
-    different namespaces.
+  default_follow_up: Could you please provide more details about your request so I can determine the most relevant knowledge
+    sources?
+  user_rejected_selection: I rejected the proposed namespace selection. Please suggest different namespaces.
   rag_error: An error occurred while processing your request. Please try again.
-  invalid_selection: 'Your selection was invalid. You selected: %{selected}. Available
-    namespaces are: %{available_namespaces}. Please select only from the available
-    namespaces listed.'
+  invalid_selection: 'Your selection was invalid. You selected: %{selected}. Available namespaces are: %{available_namespaces}.
+    Please select only from the available namespaces listed.'
+
 prompts:
-  determination: 'You are a namespace selection assistant. Your task is to analyze
-    a user''s request and determine which knowledge sources (namespaces) would be
-    most relevant to answer their query.
+  determination: "You are a namespace selection assistant. Your task is to analyze a user's request and determine which knowledge\
+    \ sources (namespaces) would be most relevant to answer their query.\n\nConversation history:\n<conversation_history>\n\
+    {{ conversation_history }}\n</conversation_history>\n\n<available_namespaces>\n{{ available_namespaces }}\n</available_namespaces>\n\
+    \nInstructions:\n1. If the user's intent is clear enough to select specific namespaces, set has_enough_information=true\
+    \ and provide selected_namespaces mapping each bucket to exactly one namespace.\n2. If you need more information, set\
+    \ has_enough_information=false and ask a follow_up_question.\n\nCRITICAL CONSTRAINTS:\n- Each bucket MUST have exactly\
+    \ ONE namespace selected - no more, no less.\n- Your follow_up_question MUST list the exact namespace names from <available_namespaces>\
+    \ above as options.\n- Do NOT invent names - use only the actual names shown above.\n"
 
-
-    Conversation history:
-
-    <conversation_history>
-
-    {{ conversation_history }}
-
-    </conversation_history>
-
-
-    <available_namespaces>
-
-    {{ available_namespaces }}
-
-    </available_namespaces>
-
-
-    Instructions:
-
-    1. If the user''s intent is clear enough to select specific namespaces, set has_enough_information=true
-    and provide selected_namespaces mapping each bucket to exactly one namespace.
-
-    2. If you need more information, set has_enough_information=false and ask a follow_up_question.
-
-
-    CRITICAL CONSTRAINTS:
-
-    - Each bucket MUST have exactly ONE namespace selected - no more, no less.
-
-    - Your follow_up_question MUST list the exact namespace names from <available_namespaces>
-    above as options.
-
-    - Do NOT invent names - use only the actual names shown above.
-
-    '
 steps:
   initialize_determination:
-    name: "Initialize Namespace Determination"
-    description: "Fetches namespaces and initializes the determination loop"
+    name: Initialize Namespace Determination
+    description: Fetches namespaces and initializes the determination loop
   determine_namespaces:
-    name: "Determine Namespaces"
-    description: "LLM analyzes conversation to determine namespaces"
+    name: Determine Namespaces
+    description: LLM analyzes conversation to determine namespaces
   process_follow_up:
-    name: "Process Follow-Up"
-    description: "Processes user's follow-up response and continues determination"
+    name: Process Follow-Up
+    description: Processes user's follow-up response and continues determination
   process_approval_approved:
-    name: "Process Approval - Approved"
-    description: "Stores selection and forwards to RAG agent"
+    name: Process Approval - Approved
+    description: Stores selection and forwards to RAG agent
   process_approval_rejected:
-    name: "Process Approval - Rejected"
-    description: "Adds rejection to conversation and loops back"
+    name: Process Approval - Rejected
+    description: Adds rejection to conversation and loops back
   rag_response:
-    name: "RAG Response"
-    description: "Handles response from RAG agent"
+    name: RAG Response
+    description: Handles response from RAG agent
   rag_error:
-    name: "RAG Error"
-    description: "Handles error from RAG agent"
+    name: RAG Error
+    description: Handles error from RAG agent
   forward_to_rag:
-    name: "Forward to RAG"
-    description: "Forwards query to RAG agent with namespace selection"
-
+    name: Forward to RAG
+    description: Forwards query to RAG agent with namespace selection

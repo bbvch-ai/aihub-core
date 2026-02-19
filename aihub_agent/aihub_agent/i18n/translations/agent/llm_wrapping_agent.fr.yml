@@ -1,15 +1,16 @@
 metadata:
   name: Assistant Instruit
-  description: Assistant IA qui suit vos instructions en texte clair pour vous aider
-    dans vos tâches et répondre aux questions
+  description: Assistant IA qui suit vos instructions en texte clair pour vous aider dans vos tâches et répondre aux questions
+
 config:
   system_prompt:
     label: Invite système
     help: Instructions pour l'agent lors de l'utilisation d'exemples few-shot
+
 steps:
   limit_chat_history:
-    name: "Limiter l'historique du chat"
-    description: "Tronque les messages du chat entrants pour respecter la limite de jetons configurée."
+    name: Limiter l'historique du chat
+    description: Tronque les messages du chat entrants pour respecter la limite de jetons configurée.
   start:
-    name: "Traiter le message de l'utilisateur"
-    description: "Transmet le message de l'utilisateur au LLM et diffuse la réponse en continu."
+    name: Traiter le message de l'utilisateur
+    description: Transmet le message de l'utilisateur au LLM et diffuse la réponse en continu.

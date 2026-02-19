@@ -29,22 +29,19 @@ agent_description_guard:
     true si une réponse peut être donnée, false sinon
   docstring: |
     Modèle de données pour la décision concernant la possibilité de fournir une réponse.
+
 few_shot_guard:
   prompt: |
     Vous recevrez plusieurs exemples montrant quelles demandes d'utilisateurs sont autorisées et lesquelles ne le sont pas. Chaque exemple de réponse se compose de deux clés :
-
     "success" : un booléen (vrai ou faux) indiquant si la demande est autorisée.
     "reasoning" : une chaîne de caractères contenant les raisons de cette décision.
     Important :
     Votre résultat final doit être exclusivement un objet JSON contenant exactement les deux clés « success » et « reasoning ». Ne répétez pas l'ensemble du schéma JSON et n'ajoutez pas de méta-informations supplémentaires.
-
     Votre tâche est de déterminer si une nouvelle requête utilisateur est autorisée en vous basant sur ces exemples.
-
     **Exemples :**
     <Examples>
     {examples}
     </Examples>
-
     **Requête utilisateur :**
     <UserQuery>
     {user_query}
@@ -65,6 +62,7 @@ few_shot_guard:
     Justification de la décision prise.
   docstring: |
     Modèle de données pour la décision concernant l'acceptabilité de la requête.
+
 context_sufficient_guard:
   doc_string: |
     Résultat de l'évaluation visant à déterminer si le contexte est suffisant pour répondre à la requête de l'utilisateur.
@@ -79,26 +77,19 @@ context_sufficient_guard:
     Je vais vous donner un contexte, une question et les requêtes précédentes si elles ont été générées.
     Si le contexte fourni permet de répondre à la question, la conversation peut se poursuivre (success=True).
     Si le contexte ne permet pas de répondre à la question, la conversation doit être interrompue (success=False).
-    
     Si success=False, vous devez générer une nouvelle requête qui sera utilisée pour recueillir plus d'informations. Lors de la création d'une nouvelle requête :
-
     1. DONNEZ LA PRIORITÉ AUX CONCEPTS DE HAUT NIVEAU : Votre stratégie principale doit consister à remonter les hiérarchies conceptuelles vers des domaines plus larges qui incluraient naturellement des informations sur le sujet d'origine.
        - Par exemple, si une requête sur les « réseaux neuronaux » ne donne pas de résultats suffisants, passez aux « méthodes d'apprentissage automatique » ou aux « modèles informatiques » au lieu de poser une question différente sur les réseaux neuronaux.
        - Si un sujet ne donne pas de résultats, réfléchissez au domaine académique, à l'industrie ou au domaine de connaissances auquel il appartient.
-    
     2. Analysez les requêtes précédentes pour éviter les répétitions ou les variations mineures de la même question.
-    
     3. Si des concepts de plus haut niveau ont déjà été explorés, essayez ces stratégies alternatives :
        - Examiner les domaines connexes qui recoupent le sujet principal
        - rechercher les concepts fondamentaux qui sous-tendent le sujet
        - Rechercher des informations sur la catégorie ou le système de classification d'origine
        - Demander des informations sur des principes technologiques ou scientifiques plus larges
        - Envisager des liens interdisciplinaires avec d'autres domaines
-    
     4. La nouvelle requête DOIT être clairement distincte de toutes les requêtes précédentes et s'éloigner du sujet spécifique si les approches directes ont échoué.
-    
     5. Chaque requête successive doit représenter un changement conceptuel plus important que les précédentes.
-
     Question:
       <Question>
       { user_query }
@@ -117,10 +108,10 @@ context_sufficient_guard:
     true si le contexte est suffisant pour répondre à la requête de l'utilisateur, false s'il ne l'est pas (aucun saut supplémentaire disponible).
   docstring_no_hops: |
     Résultat de l'évaluation visant à déterminer si le contexte est suffisant pour répondre à la requête de l'utilisateur (aucun saut supplémentaire disponible).
+
 sensitive_info_guard:
   prompt: |
     Vous êtes un gardien de sécurité responsable de la protection des informations confidentielles de l'entreprise. Votre tâche est d'analyser la réponse suivante et de déterminer si elle contient des informations sensibles qui ne devraient pas être partagées en externe.
-
     Recherchez :
     - Processus, procédures ou politiques internes de l'entreprise
     - Stratégies ou plans commerciaux confidentiels
@@ -130,13 +121,10 @@ sensitive_info_guard:
     - Données clients ou informations confidentielles de clients
     - Détails de systèmes internes, noms de serveurs ou informations d'infrastructure
     - Toute information marquée comme confidentielle ou réservée à un usage interne
-
     Si vous trouvez des informations sensibles, fournissez une version nettoyée de la réponse avec les parties sensibles supprimées ou généralisées.
-
     <Réponse à analyser>
     {answer}
     </Réponse à analyser>
-
     Votre sortie doit être un objet JSON avec exactement trois clés :
     - "success" : true si aucune information sensible n'a été trouvée, false si des informations sensibles ont été détectées
     - "reasoning" : explication de votre décision
@@ -149,13 +137,14 @@ sensitive_info_guard:
     La réponse révisée avec les informations sensibles supprimées ou expurgées, le cas échéant.
   docstring: |
     Résultat de l'analyse d'une réponse pour détecter des informations sensibles qui ne devraient pas être partagées en externe.
+
 few_shot_example:
   user:
-    label: "Message utilisateur"
-    help: "Un exemple de demande ou message utilisateur qui sera évalué."
+    label: Message utilisateur
+    help: Un exemple de demande ou message utilisateur qui sera évalué.
   success:
-    label: "Accepter la demande"
-    help: "Cochez si cet exemple doit être accepté, décochez s'il doit être rejeté."
+    label: Accepter la demande
+    help: Cochez si cet exemple doit être accepté, décochez s'il doit être rejeté.
   reason:
-    label: "Raison"
-    help: "Explication de la raison pour laquelle la demande est acceptée ou rejetée."
+    label: Raison
+    help: Explication de la raison pour laquelle la demande est acceptée ou rejetée.

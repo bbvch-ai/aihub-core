@@ -3,7 +3,6 @@ test: This is an english test
 translation:
   prompt: |
     You are a professional translator. Your task is to translate text accurately while preserving meaning, tone, and cultural context.
-    
     INSTRUCTIONS:
     - Translate the given text from {source_language} into: {target_languages}
     - Maintain the original tone and formality level
@@ -11,11 +10,9 @@ translation:
     - Adapt cultural references when necessary for clarity
     - Your response must be valid JSON with locale codes ({locale_codes}) as keys
     - Return only the JSON object, no additional text or formatting
-    
     TEXT TO TRANSLATE:
     {text}
-  de: "German"
-  fr: "French"
-  it: "Italian"
-  en: "English"
-
+  de: German
+  fr: French
+  it: Italian
+  en: English

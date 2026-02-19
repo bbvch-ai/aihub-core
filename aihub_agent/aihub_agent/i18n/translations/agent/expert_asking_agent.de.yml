@@ -1,7 +1,7 @@
 metadata:
   name: Experten-Koordinator-Agent
-  description: Autonomer Agent, der mit menschlichen Experten koordiniert, um spezialisiertes
-    Wissen zu sammeln und zu extrahieren
+  description: Autonomer Agent, der mit menschlichen Experten koordiniert, um spezialisiertes Wissen zu sammeln und zu extrahieren
+
 config:
   channel_type:
     label: Kanaltyp
@@ -12,62 +12,38 @@ config:
     label: Max. Schleifen
   insight_namespace:
     label: Insight-Namespace
+
 routes:
-  answer_sufficient: Der Experte hat die Frage beantwortet. Wählen Sie dies, wenn
-    der Experte IRGENDEINE direkte Antwort gegeben hat.
-  answer_insufficient: Der Experte hat NICHT geantwortet. Wählen Sie dies NUR, wenn
-    der Experte 'Ich weiss nicht' sagte oder die Antwort verweigerte.
+  answer_sufficient: Der Experte hat die Frage beantwortet. Wählen Sie dies, wenn der Experte IRGENDEINE direkte Antwort gegeben
+    hat.
+  answer_insufficient: Der Experte hat NICHT geantwortet. Wählen Sie dies NUR, wenn der Experte 'Ich weiss nicht' sagte oder
+    die Antwort verweigerte.
+
 thoughts:
-  asking_question: 'Frage an Experten stellen: ''%{question}''.'
-  expert_responded: 'Experte hat geantwortet: ''%{response}''.'
+  asking_question: "Frage an Experten stellen: '%{question}'."
+  expert_responded: "Experte hat geantwortet: '%{response}'."
   determine_sufficient: Überprüfen, ob die Antwort des Experten ausreichend ist.
   answer_sufficient: Die Antwort des Experten ist ausreichend.
   max_questions_reached: Maximale Anzahl an Folgefragen erreicht.
   returning_insufficient: Kehre zum Benutzer mit einer unzureichenden Antwort zurück.
   answer_not_sufficient: Antwort ist nicht ausreichend, formuliere eine Folgefrage.
-follow_up_question: 'Der Experte wurde gefragt: "{{ question }}"
 
+follow_up_question: "Der Experte wurde gefragt: \"{{ question }}\"\n\nSeine Antwort:\n{% for message in chat_history %}\n\
+  {% if message.role.value == 'user' %}\n{% for block in message.blocks %}\n{% if block.block_type == 'text' %}\n{{ block.text }}\n\
+  {% endif %}\n{% endfor %}\n{% endif %}\n{% endfor %}\n\nDer Experte sagte entweder, dass er es nicht weiss, hat nicht geantwortet,\
+  \ oder hat nur einen Teil der Frage beantwortet.\nFragen Sie nach den spezifischen fehlenden Informationen. Halten Sie es\
+  \ kurz und höflich. Fragen Sie nur nach dem, was ursprünglich angefragt aber noch nicht beantwortet wurde.\n"
 
-  Seine Antwort:
-
-  {% for message in chat_history %}
-
-  {% if message.role.value == ''user'' %}
-
-  {% for block in message.blocks %}
-
-  {% if block.block_type == ''text'' %}
-
-  {{ block.text }}
-
-  {% endif %}
-
-  {% endfor %}
-
-  {% endif %}
-
-  {% endfor %}
-
-
-  Der Experte sagte entweder, dass er es nicht weiss, hat nicht geantwortet, oder
-  hat nur einen Teil der Frage beantwortet.
-
-  Fragen Sie nach den spezifischen fehlenden Informationen. Halten Sie es kurz und
-  höflich. Fragen Sie nur nach dem, was ursprünglich angefragt aber noch nicht beantwortet
-  wurde.
-
-  '
 steps:
   invoke_expert:
-    name: "Experten aufrufen"
-    description: "Stellt eine Frage an eine Gruppe von Experten."
+    name: Experten aufrufen
+    description: Stellt eine Frage an eine Gruppe von Experten.
   expert_response:
-    name: "Experten-Antwort"
-    description: "Verarbeitet die Antwort des Experten."
+    name: Experten-Antwort
+    description: Verarbeitet die Antwort des Experten.
   response_sufficient_router:
-    name: "Antwort-Ausreichend-Router"
-    description: "Prüft, ob der Experte die Frage ausreichend beantwortet hat."
+    name: Antwort-Ausreichend-Router
+    description: Prüft, ob der Experte die Frage ausreichend beantwortet hat.
   follow_up_question:
-    name: "Nachfrage"
-    description: "Stellt eine Nachfrage an den Experten, da die Antwort noch nicht ausreicht."
-
+    name: Nachfrage
+    description: Stellt eine Nachfrage an den Experten, da die Antwort noch nicht ausreicht.

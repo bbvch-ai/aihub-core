@@ -2,10 +2,12 @@ judge:
   system_base: |
     Sie sind ein unparteiischer und sorgfältiger KI-Richter. Ihre Aufgabe ist es, die Antwort eines KI-Assistenten anhand spezifischer Kriterien zu bewerten.
     Sie MÜSSEN das bereitgestellte Tool/die bereitgestellte Funktion verwenden, um Ihre Bewertung abzugeben. Geben Sie keinen JSON-Text direkt aus.
-  error_response: '{"score": 0.0, "reasoning": "Die Bewertung ist aufgrund eines Fehlers im Richter oder in der Eingabe fehlgeschlagen.", "error": true}'
-
+  error_response: '{"score": 0.0, "reasoning": "Die Bewertung ist aufgrund eines Fehlers im Richter oder in der Eingabe fehlgeschlagen.",
+    "error": true}'
   correctness:
-    system_addon: "Bewerten Sie die Agentenantwort auf ihre sachliche Korrektheit basierend auf der Referenzantwort zur gegebenen Frage. Eine korrekte Antwort behandelt die Frage genau und stimmt mit der Referenzantwort überein. Bestrafen Sie Halluzinationen oder Ungenauigkeiten. Bewerten Sie mit 1.0 für perfekt, 0.0 für völlig falsch."
+    system_addon: Bewerten Sie die Agentenantwort auf ihre sachliche Korrektheit basierend auf der Referenzantwort zur gegebenen
+      Frage. Eine korrekte Antwort behandelt die Frage genau und stimmt mit der Referenzantwort überein. Bestrafen Sie Halluzinationen
+      oder Ungenauigkeiten. Bewerten Sie mit 1.0 für perfekt, 0.0 für völlig falsch.
     user_structure: |
       <Kontext>
       Frage: {question}
@@ -15,45 +17,49 @@ judge:
       Agentenantwort: {agent_response}
       </Zu_Bewertende_Antwort>
     examples:
-      - user: |
-          <Kontext>
-          Frage: Was ist die Hauptstadt von Frankreich?
-          Referenzantwort: Paris
-          </Kontext>
-          <Zu_Bewertende_Antwort>
-          Agentenantwort: Die Hauptstadt von Frankreich ist Paris.
-          </Zu_Bewertende_Antwort>
-        assistant: '{"score": 1.0, "reasoning": "Der Agent hat Paris korrekt als Hauptstadt von Frankreich identifiziert und stimmt mit der Referenzantwort überein."}'
-      - user: |
-          <Kontext>
-          Frage: Was ist 2+2?
-          Referenzantwort: 4
-          </Kontext>
-          <Zu_Bewertende_Antwort>
-          Agentenantwort: Es ist fünf.
-          </Zu_Bewertende_Antwort>
-        assistant: '{"score": 0.0, "reasoning": "Der Agent hat eine falsche Antwort gegeben. Die Referenzantwort ist 4, aber der Agent sagte 5."}'
-      - user: |
-          <Kontext>
-          Frage: Nennen Sie die Grundfarben.
-          Referenzantwort: Rot, Gelb, Blau
-          </Kontext>
-          <Zu_Bewertende_Antwort>
-          Agentenantwort: Die Grundfarben sind Rot, Grün und Blau.
-          </Zu_Bewertende_Antwort>
-        assistant: '{"score": 0.67, "reasoning": "Der Agent hat Rot und Blau korrekt identifiziert, aber fälschlicherweise Grün anstelle von Gelb aufgeführt."}'
-      - user: |
-          <Kontext>
-          Frage: Wer hat 'Hamlet' geschrieben?
-          Referenzantwort: William Shakespeare
-          </Kontext>
-          <Zu_Bewertende_Antwort>
-          Agentenantwort: Ich glaube, es war Christopher Marlowe.
-          </Zu_Bewertende_Antwort>
-        assistant: '{"score": 0.0, "reasoning": "Der Agent hat einen völlig falschen Autor angegeben."}'
-
+    - user: |
+        <Kontext>
+        Frage: Was ist die Hauptstadt von Frankreich?
+        Referenzantwort: Paris
+        </Kontext>
+        <Zu_Bewertende_Antwort>
+        Agentenantwort: Die Hauptstadt von Frankreich ist Paris.
+        </Zu_Bewertende_Antwort>
+      assistant: '{"score": 1.0, "reasoning": "Der Agent hat Paris korrekt als Hauptstadt von Frankreich identifiziert und
+        stimmt mit der Referenzantwort überein."}'
+    - user: |
+        <Kontext>
+        Frage: Was ist 2+2?
+        Referenzantwort: 4
+        </Kontext>
+        <Zu_Bewertende_Antwort>
+        Agentenantwort: Es ist fünf.
+        </Zu_Bewertende_Antwort>
+      assistant: '{"score": 0.0, "reasoning": "Der Agent hat eine falsche Antwort gegeben. Die Referenzantwort ist 4, aber
+        der Agent sagte 5."}'
+    - user: |
+        <Kontext>
+        Frage: Nennen Sie die Grundfarben.
+        Referenzantwort: Rot, Gelb, Blau
+        </Kontext>
+        <Zu_Bewertende_Antwort>
+        Agentenantwort: Die Grundfarben sind Rot, Grün und Blau.
+        </Zu_Bewertende_Antwort>
+      assistant: '{"score": 0.67, "reasoning": "Der Agent hat Rot und Blau korrekt identifiziert, aber fälschlicherweise Grün
+        anstelle von Gelb aufgeführt."}'
+    - user: |
+        <Kontext>
+        Frage: Wer hat 'Hamlet' geschrieben?
+        Referenzantwort: William Shakespeare
+        </Kontext>
+        <Zu_Bewertende_Antwort>
+        Agentenantwort: Ich glaube, es war Christopher Marlowe.
+        </Zu_Bewertende_Antwort>
+      assistant: '{"score": 0.0, "reasoning": "Der Agent hat einen völlig falschen Autor angegeben."}'
   completeness:
-    system_addon: "Bewerten Sie, ob die Agentenantwort alle Aspekte der Frage, sowohl explizite als auch implizite, vollständig behandelt. Berücksichtigen Sie, ob alle Teile der Frage beantwortet wurden. Bewerten Sie mit 1.0 für vollständig, 0.0 für gar nicht behandelt."
+    system_addon: Bewerten Sie, ob die Agentenantwort alle Aspekte der Frage, sowohl explizite als auch implizite, vollständig
+      behandelt. Berücksichtigen Sie, ob alle Teile der Frage beantwortet wurden. Bewerten Sie mit 1.0 für vollständig, 0.0
+      für gar nicht behandelt.
     user_structure: |
       <Kontext>
       Frage: {question}
@@ -62,41 +68,46 @@ judge:
       Agentenantwort: {agent_response}
       </Zu_Bewertende_Antwort>
     examples:
-      - user: |
-          <Kontext>
-          Frage: Erzählen Sie mir von den Vor- und Nachteilen der Solarenergie.
-          </Kontext>
-          <Zu_Bewertende_Antwort>
-          Agentenantwort: Solarenergie ist großartig, weil sie erneuerbar ist und die CO2-Emissionen reduziert.
-          </Zu_Bewertende_Antwort>
-        assistant: '{"score": 0.5, "reasoning": "Der Agent hat Vorteile erwähnt, aber keine Nachteile behandelt, daher ist die Antwort unvollständig."}'
-      - user: |
-          <Kontext>
-          Frage: Was ist Photosynthese?
-          </Kontext>
-          <Zu_Bewertende_Antwort>
-          Agentenantwort: Photosynthese ist der Prozess, den Pflanzen, Algen und bestimmte Bakterien nutzen, um Energie aus Sonnenlicht zu gewinnen und in chemische Energie umzuwandeln.
-          </Zu_Bewertende_Antwort>
-        assistant: '{"score": 1.0, "reasoning": "Der Agent hat eine prägnante und genaue Definition geliefert, die die Hauptaspekte der Photosynthese abdeckt."}'
-      - user: |
-          <Kontext>
-          Frage: Erklären Sie die drei Newtonschen Bewegungsgesetze und geben Sie für jedes ein Beispiel an.
-          </Kontext>
-          <Zu_Bewertende_Antwort>
-          Agentenantwort: Newtons erstes Gesetz handelt von der Trägheit. Das zweite ist F=ma. Das dritte ist Aktion-Reaktion.
-          </Zu_Bewertende_Antwort>
-        assistant: '{"score": 0.4, "reasoning": "Der Agent hat die Gesetze aufgelistet, aber es versäumt, sie zu erklären oder die angeforderten Beispiele zu liefern."}'
-      - user: |
-          <Kontext>
-          Frage: Was sind die Hauptzutaten einer Margherita-Pizza?
-          </Kontext>
-          <Zu_Bewertende_Antwort>
-          Agentenantwort: Sie hat Tomaten und Käse.
-          </Zu_Bewertende_Antwort>
-        assistant: '{"score": 0.6, "reasoning": "Der Agent hat Tomaten und Käse erwähnt, aber Basilikum, eine wichtige Zutat, vergessen."}'
-
+    - user: |
+        <Kontext>
+        Frage: Erzählen Sie mir von den Vor- und Nachteilen der Solarenergie.
+        </Kontext>
+        <Zu_Bewertende_Antwort>
+        Agentenantwort: Solarenergie ist großartig, weil sie erneuerbar ist und die CO2-Emissionen reduziert.
+        </Zu_Bewertende_Antwort>
+      assistant: '{"score": 0.5, "reasoning": "Der Agent hat Vorteile erwähnt, aber keine Nachteile behandelt, daher ist die
+        Antwort unvollständig."}'
+    - user: |
+        <Kontext>
+        Frage: Was ist Photosynthese?
+        </Kontext>
+        <Zu_Bewertende_Antwort>
+        Agentenantwort: Photosynthese ist der Prozess, den Pflanzen, Algen und bestimmte Bakterien nutzen, um Energie aus Sonnenlicht zu gewinnen und in chemische Energie umzuwandeln.
+        </Zu_Bewertende_Antwort>
+      assistant: '{"score": 1.0, "reasoning": "Der Agent hat eine prägnante und genaue Definition geliefert, die die Hauptaspekte
+        der Photosynthese abdeckt."}'
+    - user: |
+        <Kontext>
+        Frage: Erklären Sie die drei Newtonschen Bewegungsgesetze und geben Sie für jedes ein Beispiel an.
+        </Kontext>
+        <Zu_Bewertende_Antwort>
+        Agentenantwort: Newtons erstes Gesetz handelt von der Trägheit. Das zweite ist F=ma. Das dritte ist Aktion-Reaktion.
+        </Zu_Bewertende_Antwort>
+      assistant: '{"score": 0.4, "reasoning": "Der Agent hat die Gesetze aufgelistet, aber es versäumt, sie zu erklären oder
+        die angeforderten Beispiele zu liefern."}'
+    - user: |
+        <Kontext>
+        Frage: Was sind die Hauptzutaten einer Margherita-Pizza?
+        </Kontext>
+        <Zu_Bewertende_Antwort>
+        Agentenantwort: Sie hat Tomaten und Käse.
+        </Zu_Bewertende_Antwort>
+      assistant: '{"score": 0.6, "reasoning": "Der Agent hat Tomaten und Käse erwähnt, aber Basilikum, eine wichtige Zutat,
+        vergessen."}'
   conciseness:
-    system_addon: "Bewerten Sie, ob die Agentenantwort prägnant und auf den Punkt gebracht ist und unnötige Ausführlichkeit oder irrelevante Details für die gegebene Frage vermeidet. Konzentrieren Sie sich *nur* auf die Prägnanz, nicht auf Korrektheit oder Vollständigkeit. Bewerten Sie mit 1.0 für perfekt prägnant, 0.0 für extrem weitschweifig."
+    system_addon: Bewerten Sie, ob die Agentenantwort prägnant und auf den Punkt gebracht ist und unnötige Ausführlichkeit
+      oder irrelevante Details für die gegebene Frage vermeidet. Konzentrieren Sie sich *nur* auf die Prägnanz, nicht auf
+      Korrektheit oder Vollständigkeit. Bewerten Sie mit 1.0 für perfekt prägnant, 0.0 für extrem weitschweifig.
     user_structure: |
       <Kontext>
       Frage: {question}
@@ -105,27 +116,28 @@ judge:
       Agentenantwort: {agent_response}
       </Zu_Bewertende_Antwort>
     examples:
-      - user: |
-          <Kontext>
-          Frage: Wie spät ist es?
-          </Kontext>
-          <Zu_Bewertende_Antwort>
-          Agentenantwort: Es ist gerade 15:00 Uhr. Übrigens, das Wetter heute ist sonnig und ich hatte auch ein tolles Mittagessen. Wussten Sie, dass Zeit ein faszinierendes Konzept ist, das in der Physik untersucht wird?
-          </Zu_Bewertende_Antwort>
-        assistant: '{"score": 0.2, "reasoning": "Der Agent hat die Frage beantwortet, aber viele irrelevante Informationen hinzugefügt, was sie nicht prägnant macht."}'
-      - user: |
-          <Kontext>
-          Frage: Ist Paris die Hauptstadt von Frankreich?
-          </Kontext>
-          <Zu_Bewertende_Antwort>
-          Agentenantwort: Ja.
-          </Zu_Bewertende_Antwort>
-        assistant: '{"score": 1.0, "reasoning": "Der Agent hat eine direkte und prägnante Antwort gegeben."}'
-      - user: |
-          <Kontext>
-          Frage: Können Sie mir helfen?
-          </Kontext>
-          <Zu_Bewertende_Antwort>
-          Agentenantwort: Ja, ich kann sicherlich versuchen, Ihnen bei Ihrer Anfrage zu helfen. Bitte lassen Sie mich wissen, wobei Sie Hilfe benötigen, und ich werde mein Möglichstes tun, um eine zufriedenstellende und umfassende Antwort zu geben, indem ich meine Wissensbasis und meine Fähigkeiten nutze. Wie kann ich Ihnen heute behilflich sein?
-          </Zu_Bewertende_Antwort>
-        assistant: '{"score": 0.3, "reasoning": "Die Antwort ist für eine einfache Bestätigung übermäßig weitschweifig."}'
+    - user: |
+        <Kontext>
+        Frage: Wie spät ist es?
+        </Kontext>
+        <Zu_Bewertende_Antwort>
+        Agentenantwort: Es ist gerade 15:00 Uhr. Übrigens, das Wetter heute ist sonnig und ich hatte auch ein tolles Mittagessen. Wussten Sie, dass Zeit ein faszinierendes Konzept ist, das in der Physik untersucht wird?
+        </Zu_Bewertende_Antwort>
+      assistant: '{"score": 0.2, "reasoning": "Der Agent hat die Frage beantwortet, aber viele irrelevante Informationen hinzugefügt,
+        was sie nicht prägnant macht."}'
+    - user: |
+        <Kontext>
+        Frage: Ist Paris die Hauptstadt von Frankreich?
+        </Kontext>
+        <Zu_Bewertende_Antwort>
+        Agentenantwort: Ja.
+        </Zu_Bewertende_Antwort>
+      assistant: '{"score": 1.0, "reasoning": "Der Agent hat eine direkte und prägnante Antwort gegeben."}'
+    - user: |
+        <Kontext>
+        Frage: Können Sie mir helfen?
+        </Kontext>
+        <Zu_Bewertende_Antwort>
+        Agentenantwort: Ja, ich kann sicherlich versuchen, Ihnen bei Ihrer Anfrage zu helfen. Bitte lassen Sie mich wissen, wobei Sie Hilfe benötigen, und ich werde mein Möglichstes tun, um eine zufriedenstellende und umfassende Antwort zu geben, indem ich meine Wissensbasis und meine Fähigkeiten nutze. Wie kann ich Ihnen heute behilflich sein?
+        </Zu_Bewertende_Antwort>
+      assistant: '{"score": 0.3, "reasoning": "Die Antwort ist für eine einfache Bestätigung übermäßig weitschweifig."}'

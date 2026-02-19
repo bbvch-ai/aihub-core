@@ -1,56 +1,53 @@
 metadata:
   name: Company Knowledge Agent
-  description: Expert knowledge assistant that leverages your organization's collective
-    expertise and can consult human experts when needed
+  description: Expert knowledge assistant that leverages your organization's collective expertise and can consult human experts
+    when needed
+
 config:
   agent:
     label: Expert Agent
     help: Select the agent to escalate to when context is insufficient
+
 thoughts:
   user_asked: 'The user has made the following request: %{user_query}.'
-  need_to_determine_context: I need to determine whether I have sufficient information
-    to answer this question.
-  context_not_sufficient: Context is NOT sufficient. I see the possibility of forwarding
-    this question to an expert.
-  asking_for_consent: Ask the user for permission to forward this question to a group
-    of selected experts.
+  need_to_determine_context: I need to determine whether I have sufficient information to answer this question.
+  context_not_sufficient: Context is NOT sufficient. I see the possibility of forwarding this question to an expert.
+  asking_for_consent: Ask the user for permission to forward this question to a group of selected experts.
   user_consented: The user has given their consent.
   user_declined: The user does not want to forward the question to an expert.
   waiting_for_instructions: Waiting for new instructions.
-  forwarding_to_expert: Forwarding the question to 'ExpertAskingAgent' and waiting
-    for a response.
-  expert_answered: '''ExpertAskingAgent'' has received a response from the expert.'
+  forwarding_to_expert: Forwarding the question to 'ExpertAskingAgent' and waiting for a response.
+  expert_answered: "'ExpertAskingAgent' has received a response from the expert."
   forwarding_expert_info: Forwarding information from the expert to the user.
-  expert_unable_to_answer: '''ExpertAskingAgent'' could not find an expert who could
-    answer the user''s question.'
-  expert_error: '''ExpertAskingAgent'' has returned an error %{error_code}: %{error_message}.'
+  expert_unable_to_answer: "'ExpertAskingAgent' could not find an expert who could answer the user's question."
+  expert_error: "'ExpertAskingAgent' has returned an error %{error_code}: %{error_message}."
   can_answer_question: I can now safely answer the user's question.
+
 messages:
-  consent_question: Unfortunately, I lack the necessary knowledge to answer this question.
-    Would you like me to obtain the required knowledge from an expert and get back
-    to you?
+  consent_question: Unfortunately, I lack the necessary knowledge to answer this question. Would you like me to obtain the
+    required knowledge from an expert and get back to you?
   user_declined_confirmation: Alright.
   expert_forwarding_confirmation: Your question has been forwarded to a team of experts.
-  expert_answer_coming_soon: As soon as an expert is able to answer the question,
-    I will get back to you.
+  expert_answer_coming_soon: As soon as an expert is able to answer the question, I will get back to you.
   expert_unable_to_answer: The expert was unable to answer the question, I apologize.
   expert_error_occurred: An error occurred when communicating with the expert.
+
 steps:
   handle_insufficient_context:
-    name: "Handle Insufficient Context"
-    description: "Handle insufficient context by asking for expert consent."
+    name: Handle Insufficient Context
+    description: Handle insufficient context by asking for expert consent.
   consent_answer:
-    name: "Consent Answer"
-    description: "User answered the question for consent."
+    name: Consent Answer
+    description: User answered the question for consent.
   invoke_expert_agent:
-    name: "Invoke ExpertAskingAgent"
-    description: "Forwarding request to ExpertAskingAgent that will prompt experts."
+    name: Invoke ExpertAskingAgent
+    description: Forwarding request to ExpertAskingAgent that will prompt experts.
   expert_answer_positive:
-    name: "Expert Answer Positive"
-    description: "ExpertAskingAgent was able to extract information from expert."
+    name: Expert Answer Positive
+    description: ExpertAskingAgent was able to extract information from expert.
   expert_answer_negative:
-    name: "Expert Answer Negative"
-    description: "ExpertAskingAgent was NOT able to extract information from expert."
+    name: Expert Answer Negative
+    description: ExpertAskingAgent was NOT able to extract information from expert.
   expert_answer_error:
-    name: "Expert Answer Error"
-    description: "ExpertAskingAgent encountered an error."
+    name: Expert Answer Error
+    description: ExpertAskingAgent encountered an error.

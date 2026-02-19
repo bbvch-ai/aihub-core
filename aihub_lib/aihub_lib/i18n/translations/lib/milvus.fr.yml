@@ -1,8 +1,9 @@
 config:
   collection_name:
-    label: "Nom de la collection"
-    help: "Nom de la collection Milvus pour stocker les vecteurs."
+    label: Nom de la collection
+    help: Nom de la collection Milvus pour stocker les vecteurs.
+
 base:
   dimensions:
-    label: "Dimensions d'intégration"
-    help: "Nombre de dimensions dans les vecteurs d'embeddings."
+    label: Dimensions d'intégration
+    help: Nombre de dimensions dans les vecteurs d'embeddings.

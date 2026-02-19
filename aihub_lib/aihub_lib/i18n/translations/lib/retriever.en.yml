@@ -1,13 +1,13 @@
 config:
   index_namespaces:
-    label: "Index namespaces"
-    help: "Comma-separated list of namespaces to retrieve from. Leave empty to retrieve from all namespaces."
+    label: Index namespaces
+    help: Comma-separated list of namespaces to retrieve from. Leave empty to retrieve from all namespaces.
   retrieve_k:
-    label: "Documents to retrieve"
-    help: "Number of documents to retrieve from the vector store."
+    label: Documents to retrieve
+    help: Number of documents to retrieve from the vector store.
   query_mode:
-    label: "Query mode"
-    help: "Specifies how the vector store should be queried."
+    label: Query mode
+    help: Specifies how the vector store should be queried.
   node_types:
-    label: "Node types"
-    help: "Types of nodes to retrieve from the index."
+    label: Node types
+    help: Types of nodes to retrieve from the index.

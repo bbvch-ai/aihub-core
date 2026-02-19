@@ -3,9 +3,10 @@ judge:
     You are an impartial and meticulous AI Judge. Your task is to evaluate an AI Assistant's response based on specific criteria.
     You MUST use the provided tool/function to submit your evaluation. Do not output JSON text directly.
   error_response: '{"score": 0.0, "reasoning": "Evaluation failed due to an error in the judge or input.", "error": true}'
-
   correctness:
-    system_addon: "Evaluate the AGENT_RESPONSE for its factual correctness based on the REFERENCE_ANSWER to the given QUESTION. A correct response accurately addresses the question and aligns with the reference answer. Penalize hallucinations or inaccuracies. Score 1.0 for perfect, 0.0 for completely wrong."
+    system_addon: Evaluate the AGENT_RESPONSE for its factual correctness based on the REFERENCE_ANSWER to the given QUESTION.
+      A correct response accurately addresses the question and aligns with the reference answer. Penalize hallucinations or
+      inaccuracies. Score 1.0 for perfect, 0.0 for completely wrong.
     user_structure: |
       <Context>
       Question: {question}
@@ -15,45 +16,48 @@ judge:
       Agent Response: {agent_response}
       </Response_To_Evaluate>
     examples:
-      - user: |
-          <Context>
-          Question: What is the capital of France?
-          Reference Answer: Paris
-          </Context>
-          <Response_To_Evaluate>
-          Agent Response: The capital of France is Paris.
-          </Response_To_Evaluate>
-        assistant: '{"score": 1.0, "reasoning": "The agent correctly identified Paris as the capital of France, matching the reference answer."}'
-      - user: |
-          <Context>
-          Question: What is 2+2?
-          Reference Answer: 4
-          </Context>
-          <Response_To_Evaluate>
-          Agent Response: It is five.
-          </Response_To_Evaluate>
-        assistant: '{"score": 0.0, "reasoning": "The agent provided an incorrect answer. The reference answer is 4, but the agent said 5."}'
-      - user: |
-          <Context>
-          Question: List the primary colors.
-          Reference Answer: Red, Yellow, Blue
-          </Context>
-          <Response_To_Evaluate>
-          Agent Response: The primary colors are Red, Green, and Blue.
-          </Response_To_Evaluate>
-        assistant: '{"score": 0.67, "reasoning": "The agent correctly identified Red and Blue but incorrectly listed Green instead of Yellow."}'
-      - user: |
-          <Context>
-          Question: Who wrote 'Hamlet'?
-          Reference Answer: William Shakespeare
-          </Context>
-          <Response_To_Evaluate>
-          Agent Response: I think it was Christopher Marlowe.
-          </Response_To_Evaluate>
-        assistant: '{"score": 0.0, "reasoning": "The agent provided a completely incorrect author."}'
-
+    - user: |
+        <Context>
+        Question: What is the capital of France?
+        Reference Answer: Paris
+        </Context>
+        <Response_To_Evaluate>
+        Agent Response: The capital of France is Paris.
+        </Response_To_Evaluate>
+      assistant: '{"score": 1.0, "reasoning": "The agent correctly identified Paris as the capital of France, matching the
+        reference answer."}'
+    - user: |
+        <Context>
+        Question: What is 2+2?
+        Reference Answer: 4
+        </Context>
+        <Response_To_Evaluate>
+        Agent Response: It is five.
+        </Response_To_Evaluate>
+      assistant: '{"score": 0.0, "reasoning": "The agent provided an incorrect answer. The reference answer is 4, but the
+        agent said 5."}'
+    - user: |
+        <Context>
+        Question: List the primary colors.
+        Reference Answer: Red, Yellow, Blue
+        </Context>
+        <Response_To_Evaluate>
+        Agent Response: The primary colors are Red, Green, and Blue.
+        </Response_To_Evaluate>
+      assistant: '{"score": 0.67, "reasoning": "The agent correctly identified Red and Blue but incorrectly listed Green instead
+        of Yellow."}'
+    - user: |
+        <Context>
+        Question: Who wrote 'Hamlet'?
+        Reference Answer: William Shakespeare
+        </Context>
+        <Response_To_Evaluate>
+        Agent Response: I think it was Christopher Marlowe.
+        </Response_To_Evaluate>
+      assistant: '{"score": 0.0, "reasoning": "The agent provided a completely incorrect author."}'
   completeness:
-    system_addon: "Evaluate if the AGENT_RESPONSE fully addresses all aspects of the QUESTION, both explicit and implicit. Consider if all parts of the question have been answered. Score 1.0 for fully complete, 0.0 for not addressing at all."
+    system_addon: Evaluate if the AGENT_RESPONSE fully addresses all aspects of the QUESTION, both explicit and implicit.
+      Consider if all parts of the question have been answered. Score 1.0 for fully complete, 0.0 for not addressing at all.
     user_structure: |
       <Context>
       Question: {question}
@@ -62,41 +66,45 @@ judge:
       Agent Response: {agent_response}
       </Response_To_Evaluate>
     examples:
-      - user: |
-          <Context>
-          Question: Tell me about the benefits and drawbacks of solar power.
-          </Context>
-          <Response_To_Evaluate>
-          Agent Response: Solar power is great because it's renewable and reduces carbon emissions.
-          </Response_To_Evaluate>
-        assistant: '{"score": 0.5, "reasoning": "The agent mentioned benefits but did not cover any drawbacks, so the answer is incomplete."}'
-      - user: |
-          <Context>
-          Question: What is photosynthesis?
-          </Context>
-          <Response_To_Evaluate>
-          Agent Response: Photosynthesis is the process used by plants, algae and certain bacteria to harness energy from sunlight and turn it into chemical energy.
-          </Response_To_Evaluate>
-        assistant: '{"score": 1.0, "reasoning": "The agent provided a concise and accurate definition covering the main aspects of photosynthesis."}'
-      - user: |
-          <Context>
-          Question: Explain Newton's three laws of motion and give an example for each.
-          </Context>
-          <Response_To_Evaluate>
-          Agent Response: Newton's first law is about inertia. The second is F=ma. The third is action-reaction.
-          </Response_To_Evaluate>
-        assistant: '{"score": 0.4, "reasoning": "The agent listed the laws but failed to explain them or provide the requested examples."}'
-      - user: |
-          <Context>
-          Question: What are the main ingredients in a Margherita pizza?
-          </Context>
-          <Response_To_Evaluate>
-          Agent Response: It has tomatoes and cheese.
-          </Response_To_Evaluate>
-        assistant: '{"score": 0.6, "reasoning": "The agent mentioned tomatoes and cheese but missed basil, a key ingredient."}'
-
+    - user: |
+        <Context>
+        Question: Tell me about the benefits and drawbacks of solar power.
+        </Context>
+        <Response_To_Evaluate>
+        Agent Response: Solar power is great because it's renewable and reduces carbon emissions.
+        </Response_To_Evaluate>
+      assistant: '{"score": 0.5, "reasoning": "The agent mentioned benefits but did not cover any drawbacks, so the answer
+        is incomplete."}'
+    - user: |
+        <Context>
+        Question: What is photosynthesis?
+        </Context>
+        <Response_To_Evaluate>
+        Agent Response: Photosynthesis is the process used by plants, algae and certain bacteria to harness energy from sunlight and turn it into chemical energy.
+        </Response_To_Evaluate>
+      assistant: '{"score": 1.0, "reasoning": "The agent provided a concise and accurate definition covering the main aspects
+        of photosynthesis."}'
+    - user: |
+        <Context>
+        Question: Explain Newton's three laws of motion and give an example for each.
+        </Context>
+        <Response_To_Evaluate>
+        Agent Response: Newton's first law is about inertia. The second is F=ma. The third is action-reaction.
+        </Response_To_Evaluate>
+      assistant: '{"score": 0.4, "reasoning": "The agent listed the laws but failed to explain them or provide the requested
+        examples."}'
+    - user: |
+        <Context>
+        Question: What are the main ingredients in a Margherita pizza?
+        </Context>
+        <Response_To_Evaluate>
+        Agent Response: It has tomatoes and cheese.
+        </Response_To_Evaluate>
+      assistant: '{"score": 0.6, "reasoning": "The agent mentioned tomatoes and cheese but missed basil, a key ingredient."}'
   conciseness:
-    system_addon: "Evaluate if the AGENT_RESPONSE is concise and to the point, avoiding unnecessary verbosity or irrelevant details for the given QUESTION. Focus *only* on conciseness, not correctness or completeness. Score 1.0 for perfectly concise, 0.0 for extremely verbose."
+    system_addon: Evaluate if the AGENT_RESPONSE is concise and to the point, avoiding unnecessary verbosity or irrelevant
+      details for the given QUESTION. Focus *only* on conciseness, not correctness or completeness. Score 1.0 for perfectly
+      concise, 0.0 for extremely verbose.
     user_structure: |
       <Context>
       Question: {question}
@@ -105,28 +113,28 @@ judge:
       Agent Response: {agent_response}
       </Response_To_Evaluate>
     examples:
-      - user: |
-          <Context>
-          Question: What time is it?
-          </Context>
-          <Response_To_Evaluate>
-          Agent Response: It is currently 3:00 PM. By the way, the weather today is sunny and I also had a great lunch. Did you know that time is a fascinating concept studied in physics?
-          </Response_To_Evaluate>
-        assistant: '{"score": 0.2, "reasoning": "The agent answered the question but included a lot of irrelevant information, making it not concise."}'
-      - user: |
-          <Context>
-          Question: Is Paris the capital of France?
-          </Context>
-          <Response_To_Evaluate>
-          Agent Response: Yes.
-          </Response_To_Evaluate>
-        assistant: '{"score": 1.0, "reasoning": "The agent provided a direct and concise answer."}'
-      - user: |
-          <Context>
-          Question: Can you help me?
-          </Context>
-          <Response_To_Evaluate>
-          Agent Response: Yes, I can certainly try to assist you with your query. Please let me know what you need help with, and I will do my utmost to provide a satisfactory and comprehensive response, leveraging my knowledge base and capabilities. How may I be of service today?
-          </Response_To_Evaluate>
-        assistant: '{"score": 0.3, "reasoning": "The response is overly verbose for a simple confirmation."}'
-
+    - user: |
+        <Context>
+        Question: What time is it?
+        </Context>
+        <Response_To_Evaluate>
+        Agent Response: It is currently 3:00 PM. By the way, the weather today is sunny and I also had a great lunch. Did you know that time is a fascinating concept studied in physics?
+        </Response_To_Evaluate>
+      assistant: '{"score": 0.2, "reasoning": "The agent answered the question but included a lot of irrelevant information,
+        making it not concise."}'
+    - user: |
+        <Context>
+        Question: Is Paris the capital of France?
+        </Context>
+        <Response_To_Evaluate>
+        Agent Response: Yes.
+        </Response_To_Evaluate>
+      assistant: '{"score": 1.0, "reasoning": "The agent provided a direct and concise answer."}'
+    - user: |
+        <Context>
+        Question: Can you help me?
+        </Context>
+        <Response_To_Evaluate>
+        Agent Response: Yes, I can certainly try to assist you with your query. Please let me know what you need help with, and I will do my utmost to provide a satisfactory and comprehensive response, leveraging my knowledge base and capabilities. How may I be of service today?
+        </Response_To_Evaluate>
+      assistant: '{"score": 0.3, "reasoning": "The response is overly verbose for a simple confirmation."}'

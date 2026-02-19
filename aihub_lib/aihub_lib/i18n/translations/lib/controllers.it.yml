@@ -1,7 +1,7 @@
 base:
-  name: "Controller senza nome"
-  description: "Questo controller non ha una descrizione."
+  name: Controller senza nome
+  description: Questo controller non ha una descrizione.
 
 health:
-  name: "Salute"
-  description: "Endpoint per verificare la disponibilità del sistema."
+  name: Salute
+  description: Endpoint per verificare la disponibilità del sistema.

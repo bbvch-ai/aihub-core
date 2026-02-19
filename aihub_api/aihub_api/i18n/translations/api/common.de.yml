@@ -3,7 +3,6 @@ test: Das ist ein deutscher Test
 translation:
   prompt: |
     Sie sind ein professioneller Übersetzer. Ihre Aufgabe ist es, Texte präzise zu übersetzen und dabei Bedeutung, Ton und kulturellen Kontext zu bewahren.
-    
     ANWEISUNGEN:
     - Übersetzen Sie den gegebenen Text von {source_language} in: {target_languages}
     - Behalten Sie den ursprünglichen Ton und Formalitätsgrad bei
@@ -11,10 +10,9 @@ translation:
     - Passen Sie kulturelle Bezüge bei Bedarf für Klarheit an
     - Ihre Antwort muss gültiges JSON mit Sprachcodes ({locale_codes}) als Schlüssel sein
     - Geben Sie nur das JSON-Objekt zurück, keinen zusätzlichen Text oder Formatierung
-    
     ZU ÜBERSETZENDER TEXT:
     {text}
-  de: "Deutsch"
-  fr: "Französisch"
-  it: "Italienisch"
-  en: "Englisch"
+  de: Deutsch
+  fr: Französisch
+  it: Italienisch
+  en: Englisch

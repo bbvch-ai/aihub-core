@@ -3,60 +3,52 @@ description: Run linter on Nuxt frontend
 
 inputs:
   github_token:
-    description: 'GitHub token for authentication'
+    description: GitHub token for authentication
     required: true
   working_directory:
-    description: 'Working directory for the linter'
+    description: Working directory for the linter
   lockfile:
-    description: 'Path to the lockfile'
+    description: Path to the lockfile
     required: true
 
 runs:
-  using: "composite"
+  using: composite
   steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v4
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: 22.x
-
-    - name: Install pnpm
-      shell: bash
-      run: npm install -g pnpm
-
-    - name: Get pnpm store path
-      id: pnpm-store-dir-path
-      shell: bash
-      run: echo "dir=$(pnpm store path)" >> $GITHUB_OUTPUT
-
-    - name: Cache Node Modules
-      uses: actions/cache@v4
-      id: pnpm-cache
-      with:
-        path: ${{ steps.pnpm-store-dir-path.outputs.dir }}
-        key: ${{ runner.os }}-pnpm-${{ hashFiles(inputs.lockfile) }}
-        restore-keys: |
-          ${{ runner.os }}-pnpm-
-
-    - name: Configure Git to Use `GITHUB_TOKEN`
-      shell: bash
-      run: git config --global url."https://${{ inputs.github_token }}@github.com/".insteadOf "https://github.com/"
-
-    - name: Install dependencies
-      shell: bash
-      run: pnpm install --frozen-lockfile
-      working-directory: ${{ inputs.working_directory }}
-
-    - name: Prepare Nuxt
-      shell: bash
-      run: pnpm exec nuxi prepare
-      working-directory: ${{ inputs.working_directory }}
-
-    - name: Lint frontend
-      uses: reviewdog/action-eslint@v1
-      with:
-        github_token: ${{ inputs.github_token }}
-        reporter: github-pr-review
-        workdir: ${{ inputs.working_directory }}
+  - name: Checkout Repository
+    uses: actions/checkout@v4
+  - name: Setup Node.js
+    uses: actions/setup-node@v4
+    with:
+      node-version: 22.x
+  - name: Install pnpm
+    shell: bash
+    run: npm install -g pnpm
+  - name: Get pnpm store path
+    id: pnpm-store-dir-path
+    shell: bash
+    run: echo "dir=$(pnpm store path)" >> $GITHUB_OUTPUT
+  - name: Cache Node Modules
+    uses: actions/cache@v4
+    id: pnpm-cache
+    with:
+      path: ${{ steps.pnpm-store-dir-path.outputs.dir }}
+      key: ${{ runner.os }}-pnpm-${{ hashFiles(inputs.lockfile) }}
+      restore-keys: |
+        ${{ runner.os }}-pnpm-
+  - name: Configure Git to Use `GITHUB_TOKEN`
+    shell: bash
+    run: git config --global url."https://${{ inputs.github_token }}@github.com/".insteadOf "https://github.com/"
+  - name: Install dependencies
+    shell: bash
+    run: pnpm install --frozen-lockfile
+    working-directory: ${{ inputs.working_directory }}
+  - name: Prepare Nuxt
+    shell: bash
+    run: pnpm exec nuxi prepare
+    working-directory: ${{ inputs.working_directory }}
+  - name: Lint frontend
+    uses: reviewdog/action-eslint@v1
+    with:
+      github_token: ${{ inputs.github_token }}
+      reporter: github-pr-review
+      workdir: ${{ inputs.working_directory }}

@@ -1,13 +1,13 @@
 config:
   index_namespaces:
-    label: "Namespace degli indici"
-    help: "Elenco di namespace separati da virgole. Lasciare vuoto per recuperare da tutti i namespace."
+    label: Namespace degli indici
+    help: Elenco di namespace separati da virgole. Lasciare vuoto per recuperare da tutti i namespace.
   retrieve_k:
-    label: "Documenti da recuperare"
-    help: "Numero di documenti da recuperare dal vector store."
+    label: Documenti da recuperare
+    help: Numero di documenti da recuperare dal vector store.
   query_mode:
-    label: "Modalità di query"
-    help: "Specifica come interrogare il vector store."
+    label: Modalità di query
+    help: Specifica come interrogare il vector store.
   node_types:
-    label: "Tipi di nodo"
-    help: "Tipi di nodi da recuperare dall'indice."
+    label: Tipi di nodo
+    help: Tipi di nodi da recuperare dall'indice.

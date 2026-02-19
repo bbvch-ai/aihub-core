@@ -1,58 +1,53 @@
 metadata:
   name: Unternehmenswissens-Agent
-  description: Expertenwissens-Assistent, der das kollektive Fachwissen Ihrer Organisation
-    nutzt und bei Bedarf menschliche Experten konsultieren kann
+  description: Expertenwissens-Assistent, der das kollektive Fachwissen Ihrer Organisation nutzt und bei Bedarf menschliche
+    Experten konsultieren kann
+
 config:
   agent:
     label: Experten-Agent
     help: Wählen Sie den Agenten für die Eskalation bei unzureichendem Kontext
+
 thoughts:
   user_asked: 'Der Benutzer hat folgende Anfrage gestellt: %{user_query}.'
-  need_to_determine_context: Ich muss herausfinden, ob ich über ausreichende Informationen
-    verfüge, um diese Frage zu beantworten.
-  context_not_sufficient: Kontext ist NICHT ausreichend. Ich sehe die Möglichkeit,
-    diese Frage an einen Experten weiterzuleiten.
-  asking_for_consent: Frage den Benutzer um Erlaubnis, diese Frage an eine Gruppe
-    ausgewählter Experten weiterzuleiten.
+  need_to_determine_context: Ich muss herausfinden, ob ich über ausreichende Informationen verfüge, um diese Frage zu beantworten.
+  context_not_sufficient: Kontext ist NICHT ausreichend. Ich sehe die Möglichkeit, diese Frage an einen Experten weiterzuleiten.
+  asking_for_consent: Frage den Benutzer um Erlaubnis, diese Frage an eine Gruppe ausgewählter Experten weiterzuleiten.
   user_consented: Der Benutzer hat seine Zustimmung erteilt.
   user_declined: Der Benutzer möchte die Frage nicht an einen Experten weiterleiten.
   waiting_for_instructions: Warte auf neue Anweisungen.
-  forwarding_to_expert: Leite die Frage an 'ExpertAskingAgent' weiter und warte auf
-    die Rückmeldung.
-  expert_answered: '''ExpertAskingAgent'' hat eine Antwort vom Experten erhalten.'
+  forwarding_to_expert: Leite die Frage an 'ExpertAskingAgent' weiter und warte auf die Rückmeldung.
+  expert_answered: "'ExpertAskingAgent' hat eine Antwort vom Experten erhalten."
   forwarding_expert_info: Leite Informationen vom Experten an den Benutzer weiter.
-  expert_unable_to_answer: '''ExpertAskingAgent'' konnte keinen Experten finden, der
-    die Frage des Benutzers beantworten konnte.'
-  expert_error: '''ExpertAskingAgent'' hat einen Fehler zurückgegeben %{error_code}:
-    %{error_message}.'
+  expert_unable_to_answer: "'ExpertAskingAgent' konnte keinen Experten finden, der die Frage des Benutzers beantworten konnte."
+  expert_error: "'ExpertAskingAgent' hat einen Fehler zurückgegeben %{error_code}: %{error_message}."
   can_answer_question: Ich kann die Frage des Benutzers nun sicher beantworten.
+
 messages:
-  consent_question: Mir fehlt leider das nötige Wissen, um diese Frage zu beantworten.
-    Soll ich für dich das nötige Wissen bei einem Experten abholen und auf dich zurück
-    kommen?
+  consent_question: Mir fehlt leider das nötige Wissen, um diese Frage zu beantworten. Soll ich für dich das nötige Wissen
+    bei einem Experten abholen und auf dich zurück kommen?
   user_declined_confirmation: Alles klar.
   expert_forwarding_confirmation: Deine Frage wurde an ein Team von Experten weitergeleitet.
-  expert_answer_coming_soon: Sobald ein Experte die Frage beantworten konnte werde
-    ich auf dich zurück kommen.
-  expert_unable_to_answer: Der Experte konnte die Frage nicht beantworten, ich bitte
-    um Entschuldigung.
+  expert_answer_coming_soon: Sobald ein Experte die Frage beantworten konnte werde ich auf dich zurück kommen.
+  expert_unable_to_answer: Der Experte konnte die Frage nicht beantworten, ich bitte um Entschuldigung.
   expert_error_occurred: Bei der Kommunikation mit dem Experten ist ein Fehler aufgetreten.
+
 steps:
   handle_insufficient_context:
-    name: "Unzureichenden Kontext behandeln"
-    description: "Behandelt unzureichenden Kontext durch Einholung der Experten-Zustimmung."
+    name: Unzureichenden Kontext behandeln
+    description: Behandelt unzureichenden Kontext durch Einholung der Experten-Zustimmung.
   consent_answer:
-    name: "Zustimmungsantwort"
-    description: "Benutzer hat die Zustimmungsfrage beantwortet."
+    name: Zustimmungsantwort
+    description: Benutzer hat die Zustimmungsfrage beantwortet.
   invoke_expert_agent:
-    name: "ExpertAskingAgent aufrufen"
-    description: "Leitet Anfrage an ExpertAskingAgent weiter, der Experten befragt."
+    name: ExpertAskingAgent aufrufen
+    description: Leitet Anfrage an ExpertAskingAgent weiter, der Experten befragt.
   expert_answer_positive:
-    name: "Experten-Antwort positiv"
-    description: "ExpertAskingAgent konnte Informationen vom Experten extrahieren."
+    name: Experten-Antwort positiv
+    description: ExpertAskingAgent konnte Informationen vom Experten extrahieren.
   expert_answer_negative:
-    name: "Experten-Antwort negativ"
-    description: "ExpertAskingAgent konnte KEINE Informationen vom Experten extrahieren."
+    name: Experten-Antwort negativ
+    description: ExpertAskingAgent konnte KEINE Informationen vom Experten extrahieren.
   expert_answer_error:
-    name: "Experten-Antwort Fehler"
-    description: "ExpertAskingAgent ist auf einen Fehler gestossen."
+    name: Experten-Antwort Fehler
+    description: ExpertAskingAgent ist auf einen Fehler gestossen.

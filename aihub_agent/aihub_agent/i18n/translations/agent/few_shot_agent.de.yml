@@ -1,27 +1,28 @@
 metadata:
   name: Lernfähiger Assistent
-  description: KI-Assistent, der aus Ihren Beispielen lernt, um zu verstehen, wie
-    Sie möchten, dass er antwortet
+  description: KI-Assistent, der aus Ihren Beispielen lernt, um zu verstehen, wie Sie möchten, dass er antwortet
+
 config:
   number_of_input_tokens:
     label: Max. Eingabe-Token
     help: Maximale Anzahl der Token, die im Eingabekontext erlaubt sind
+
 steps:
   limit_chat_history:
-    name: "Chat-Verlauf begrenzen"
-    description: "Kürzt eingehende Chat-Nachrichten, um innerhalb des konfigurierten Token-Limits zu bleiben."
+    name: Chat-Verlauf begrenzen
+    description: Kürzt eingehende Chat-Nachrichten, um innerhalb des konfigurierten Token-Limits zu bleiben.
   agent_suitability_guard:
-    name: "Agenteneignungsprüfung"
-    description: "Prüft, ob der Agent für die Bearbeitung der Benutzeranfrage geeignet ist."
+    name: Agenteneignungsprüfung
+    description: Prüft, ob der Agent für die Bearbeitung der Benutzeranfrage geeignet ist.
   condense_standalone_question:
-    name: "Eigenständige Frage verdichten"
-    description: "Verdichtet den Chat-Verlauf und die Benutzeranfrage zu einer eigenständigen Frage."
+    name: Eigenständige Frage verdichten
+    description: Verdichtet den Chat-Verlauf und die Benutzeranfrage zu einer eigenständigen Frage.
   create_few_shot_examples:
-    name: "Few-Shot-Beispiele erstellen"
-    description: "Bereitet Few-Shot-Beispiele vor und erstellt den vollständigen Kontext für das LLM."
+    name: Few-Shot-Beispiele erstellen
+    description: Bereitet Few-Shot-Beispiele vor und erstellt den vollständigen Kontext für das LLM.
   respond_with_llm:
-    name: "Mit LLM antworten"
-    description: "Generiert eine Antwort mit dem LLM basierend auf Few-Shot-Beispielen."
+    name: Mit LLM antworten
+    description: Generiert eine Antwort mit dem LLM basierend auf Few-Shot-Beispielen.
   stop:
-    name: "Stoppen"
-    description: "Stoppt den Agenten, wenn die Anfrage von der Eignungsprüfung abgelehnt wird."
+    name: Stoppen
+    description: Stoppt den Agenten, wenn die Anfrage von der Eignungsprüfung abgelehnt wird.

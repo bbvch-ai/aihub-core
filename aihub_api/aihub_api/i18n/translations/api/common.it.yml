@@ -3,7 +3,6 @@ test: Questo è un test italiano
 translation:
   prompt: |
     Sei un traduttore professionale. Il tuo compito è tradurre testi con precisione preservando significato, tono e contesto culturale.
-    
     ISTRUZIONI:
     - Traduci il testo dato da {source_language} in: {target_languages}
     - Mantieni il tono e il livello di formalità originali
@@ -11,10 +10,9 @@ translation:
     - Adatta i riferimenti culturali quando necessario per chiarezza
     - La tua risposta deve essere JSON valido con i codici lingua ({locale_codes}) come chiavi
     - Restituisci solo l'oggetto JSON, senza testo o formattazione aggiuntivi
-    
     TESTO DA TRADURRE:
     {text}
-  de: "Tedesco"
-  fr: "Francese"
-  it: "Italiano"
-  en: "Inglese"
+  de: Tedesco
+  fr: Francese
+  it: Italiano
+  en: Inglese

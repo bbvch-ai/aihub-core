@@ -1,12 +1,12 @@
-condense_question: "Pose la question dans le contexte de la conversation"
-write_answer_based_on_information: "Rédige une réponse basée sur les informations"
-write_answer_based_on_few_shot_examples: "Rédige une réponse basée sur des exemples prédéfinis"
-searching_knowledge: "Recherche de connaissances"
-retrieving_from: "Récupération depuis %{source}"
-preparing_knowledge: "Traitement des connaissances"
-test: "Test"
-no_context_sufficiency_check: "Aucune vérification de la suffisance du contexte n'a été configurée et effectuée."
-no_few_shot_examples: "Aucun exemple de few-shot n'a été configuré et utilisé."
-reranking_results: "Reclassement des résultats récupérés pour une meilleure pertinence"
-context_sufficient: "Informations suffisantes trouvées pour répondre à la question"
-trying_another_retrieval_hop: "Plus d'informations nécessaires, nouvelle recherche en cours"
+condense_question: Pose la question dans le contexte de la conversation
+write_answer_based_on_information: Rédige une réponse basée sur les informations
+write_answer_based_on_few_shot_examples: Rédige une réponse basée sur des exemples prédéfinis
+searching_knowledge: Recherche de connaissances
+retrieving_from: Récupération depuis %{source}
+preparing_knowledge: Traitement des connaissances
+test: Test
+no_context_sufficiency_check: Aucune vérification de la suffisance du contexte n'a été configurée et effectuée.
+no_few_shot_examples: Aucun exemple de few-shot n'a été configuré et utilisé.
+reranking_results: Reclassement des résultats récupérés pour une meilleure pertinence
+context_sufficient: Informations suffisantes trouvées pour répondre à la question
+trying_another_retrieval_hop: Plus d'informations nécessaires, nouvelle recherche en cours

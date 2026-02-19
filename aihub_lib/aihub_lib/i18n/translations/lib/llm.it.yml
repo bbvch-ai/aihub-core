@@ -1,16 +1,16 @@
 config:
   model:
-    label: "Modello LLM"
-    help: "Seleziona il modello linguistico per generare risposte. Modelli diversi hanno capacità e costi variabili."
+    label: Modello LLM
+    help: Seleziona il modello linguistico per generare risposte. Modelli diversi hanno capacità e costi variabili.
   temperature:
-    label: "Temperatura"
-    help: "Controlla la casualità: 0 = deterministico, 2 = molto creativo. Valori bassi per compiti fattuali."
+    label: Temperatura
+    help: 'Controlla la casualità: 0 = deterministico, 2 = molto creativo. Valori bassi per compiti fattuali.'
   logprobs:
-    label: "Restituire log-probabilità"
-    help: "Includere le log-probabilità per token nella risposta. Utile per analizzare la confidenza del modello."
+    label: Restituire log-probabilità
+    help: Includere le log-probabilità per token nella risposta. Utile per analizzare la confidenza del modello.
   top_logprobs:
-    label: "Top log-probabilità"
-    help: "Numero di token più probabili per cui restituire le probabilità (0-20). Richiede l'attivazione delle log-probabilità."
+    label: Top log-probabilità
+    help: Numero di token più probabili per cui restituire le probabilità (0-20). Richiede l'attivazione delle log-probabilità.
   timeout:
-    label: "Timeout (secondi)"
-    help: "Tempo massimo di attesa per una risposta dal LLM. Aumentare per query complesse o connessioni lente."
+    label: Timeout (secondi)
+    help: Tempo massimo di attesa per una risposta dal LLM. Aumentare per query complesse o connessioni lente.

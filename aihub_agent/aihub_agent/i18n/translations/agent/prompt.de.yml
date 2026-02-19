@@ -4,7 +4,8 @@ guard:
     <Grund>
     {reason}
     </Grund>
-expert_context: |
+
+expert_context: |-
   Du hast folgende Konversation mit einem Experten erhalten. Verwende diese Information, um die Frage des Benutzers zu beantworten.
   <EXPERTEN_KONVERSATION>
   %{expert_conversation}

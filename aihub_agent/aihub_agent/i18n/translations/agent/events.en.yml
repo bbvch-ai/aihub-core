@@ -1,7 +1,7 @@
 namespace_aware_user_message:
-  name: "Namespace-Aware User Message Event"
-  description: "A user message event with pre-selected namespaces for RAG retrieval."
+  name: Namespace-Aware User Message Event
+  description: A user message event with pre-selected namespaces for RAG retrieval.
 
 determine_namespaces:
-  name: "Determine Namespaces Event"
-  description: "Triggers the LLM to determine namespaces from conversation context."
+  name: Determine Namespaces Event
+  description: Triggers the LLM to determine namespaces from conversation context.

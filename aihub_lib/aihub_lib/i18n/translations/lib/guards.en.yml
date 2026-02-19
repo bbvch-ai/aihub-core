@@ -27,17 +27,15 @@ agent_description_guard:
     true if the request can be forwarded to the agent, false if the request does not fall into the responsibility of the agent.
   docstring: |
     Data model for the decision on whether the request is acceptable or not.
+
 few_shot_guard:
   prompt: |
     You will receive several examples showing which user requests are allowed and which are not. Each sample response consists of two keys:
-
     "success": a Boolean (true or false) indicating whether the request is allowed.
     "reasoning": a string containing the reasoning for this decision.
     Important:
     Your final output must be exclusively a JSON object with exactly the two keys “success” and “reasoning”. Do not repeat the entire JSON schema or add additional meta information.
-
     Your task is to determine whether a new user request is allowed based on these examples.
-    
     **Examples:**
     <Examples>
     {examples}
@@ -62,6 +60,7 @@ few_shot_guard:
     Justification for the decision made.
   docstring: |
     Data model for the decision on whether the request is acceptable or not.
+
 context_sufficient_guard:
   doc_string: |
     Result from evaluating whether the context is sufficient to answer the user query.
@@ -76,36 +75,27 @@ context_sufficient_guard:
     I will give you a context, a question, and previous queries if any have been generated.
     If the question can be answered with the provided context, then the conversation may continue (success=True).
     If answering the question is not possible with the context, then the conversation needs more context (success=False).
-    
     When success=False, you must generate a new query that will be used to gather more information. When creating a new query:
-
     1. PRIORITIZE HIGHER-LEVEL CONCEPTS: Your primary strategy should be to move up conceptual hierarchies to broader domains that would naturally include information about the original topic.
        - For example, if asking about "neural networks" yields insufficient results, move to "machine learning methods" or "computational models" instead of asking about neural networks differently.
        - If a topic isn't yielding results, consider what academic field, industry, or knowledge domain it belongs to.
-    
     2. Analyze the previous queries to avoid repetition or minor variations of the same question.
-    
     3. If higher-level concepts have already been explored, try these alternative strategies:
        - Examine related fields that intersect with the main topic
        - Look for foundational concepts that underpin the topic
        - Seek information about the parent category or classification system
        - Request information about broader technological or scientific principles
        - Consider interdisciplinary connections to other domains
-    
     4. The new query MUST be clearly distinct from all previous queries and move away from the specific topic if direct approaches have failed.
-    
     5. Each successive query should represent a more significant conceptual shift than the previous ones.
-    
     Question:
     <Question>
     {user_query}
     </Question>
-    
     Previous Queries:
     <Previous_Queries>
     {prev_queries}
     <\Previous_Queries>
-    
     Context:
     <Context>
     {context}
@@ -116,10 +106,10 @@ context_sufficient_guard:
     true if the context is sufficient to answer the user query, false if it is not (no additional hops available).
   docstring_no_hops: |
     Result from evaluating whether the context is sufficient to answer the user query (no additional hops available).
+
 sensitive_info_guard:
   prompt: |
     You are a security guard responsible for protecting sensitive company information. Your task is to analyze the following response and determine if it contains sensitive information that should not be shared externally.
-
     Look for:
     - Internal company processes, procedures, or policies
     - Confidential business strategies or plans
@@ -129,13 +119,10 @@ sensitive_info_guard:
     - Customer data or confidential client information
     - Internal system details, server names, or infrastructure information
     - Any information marked as confidential or internal-only
-
     If you find sensitive information, provide a cleaned version of the response with the sensitive parts removed or generalized.
-
     <Response to Analyze>
     {answer}
     </Response to Analyze>
-
     Your output must be a JSON object with exactly three keys:
     - "success": true if no sensitive information was found, false if sensitive information was detected
     - "reasoning": explanation of your decision
@@ -148,13 +135,14 @@ sensitive_info_guard:
     The revised response with sensitive information removed or redacted, if applicable.
   docstring: |
     Result from analyzing a response for sensitive information that should not be shared externally.
+
 few_shot_example:
   user:
-    label: "User message"
-    help: "An example user request or message that will be evaluated."
+    label: User message
+    help: An example user request or message that will be evaluated.
   success:
-    label: "Accept request"
-    help: "Check if this example should be accepted, uncheck if rejected."
+    label: Accept request
+    help: Check if this example should be accepted, uncheck if rejected.
   reason:
-    label: "Reason"
-    help: "Explanation of why the request is accepted or rejected."
+    label: Reason
+    help: Explanation of why the request is accepted or rejected.

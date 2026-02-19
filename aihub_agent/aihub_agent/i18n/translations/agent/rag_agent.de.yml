@@ -1,156 +1,108 @@
 metadata:
   name: Dokumentenintelligenz-Assistent
-  description: KI-Assistent, der Ihre Dokumente durchsucht und analysiert, um fundierte,
-    kontextbezogene Antworten zu geben
+  description: KI-Assistent, der Ihre Dokumente durchsucht und analysiert, um fundierte, kontextbezogene Antworten zu geben
+
 config:
   number_of_input_tokens:
     label: Maximale Eingabe-Tokens
-    help: Maximale Anzahl von Tokens in der LLM-Eingabe. Begrenzt die Kontextgrösse
-      zur Kostenkontrolle und Vermeidung von Modellgrenzen.
+    help: Maximale Anzahl von Tokens in der LLM-Eingabe. Begrenzt die Kontextgrösse zur Kostenkontrolle und Vermeidung von
+      Modellgrenzen.
   check_context_sufficiency:
     label: Kontext-Suffizienz prüfen
-    help: Wenn aktiviert, prüft der Agent, ob der abgerufene Kontext genügend Informationen
-      enthält, bevor eine Antwort generiert wird.
+    help: Wenn aktiviert, prüft der Agent, ob der abgerufene Kontext genügend Informationen enthält, bevor eine Antwort generiert
+      wird.
   max_hops:
     label: Maximale Abruf-Sprünge
-    help: Maximale Anzahl von Abruf-Iterationen, wenn der ursprüngliche Kontext unzureichend
-      ist. Höhere Werte können Antworten verbessern, erhöhen aber die Latenz.
+    help: Maximale Anzahl von Abruf-Iterationen, wenn der ursprüngliche Kontext unzureichend ist. Höhere Werte können Antworten
+      verbessern, erhöhen aber die Latenz.
   system_prompt:
     label: Systemprompt
-    help: Anweisungen, die Persönlichkeit, Rolle und Verhaltensrichtlinien des Agenten
-      definieren. Legt den Gesamtton und die Fähigkeiten fest.
-    default: "<persona>\nDu bist RAG Agent, ein Wissensabruf-Assistent. Deine Hauptaufgabe\
-      \ ist es, präzise Antworten ausschliesslich basierend auf abgerufenen Dokumentinformationen\
-      \ zu liefern.\n</persona>\n\n<rules>\n- MUSS: Antworte NUR mit abgerufenem Kontext\
-      \ und Dokumenten\n- MUSS: Zitiere spezifische Passagen, die deine Antwort unterstützen\n\
-      - NIEMALS: Allgemeinwissen ausserhalb des bereitgestellten Kontexts verwenden\n\
-      - VERBOTEN: Spekulationen oder Annahmen, die nicht in den abgerufenen Dokumenten\
-      \ stehen\n</rules>\n\n<instructions>\nBefolge diesen Prozess:\n    1. Analysiere\
-      \ den abgerufenen Kontext\n    2. Identifiziere relevante Passagen\n    3. Extrahiere\
-      \ Schlüsselinformationen\n    4. Liefere Antworten mit direkten Zitaten.\nWenn\
-      \ der Kontext unzureichend ist, teile mit, dass du die Frage mit den verfügbaren\
-      \ Informationen nicht beantworten kannst.\n</instructions>\n"
+    help: Anweisungen, die Persönlichkeit, Rolle und Verhaltensrichtlinien des Agenten definieren. Legt den Gesamtton und
+      die Fähigkeiten fest.
+    default: "<persona>\nDu bist RAG Agent, ein Wissensabruf-Assistent. Deine Hauptaufgabe ist es, präzise Antworten ausschliesslich\
+      \ basierend auf abgerufenen Dokumentinformationen zu liefern.\n</persona>\n\n<rules>\n- MUSS: Antworte NUR mit abgerufenem\
+      \ Kontext und Dokumenten\n- MUSS: Zitiere spezifische Passagen, die deine Antwort unterstützen\n- NIEMALS: Allgemeinwissen\
+      \ ausserhalb des bereitgestellten Kontexts verwenden\n- VERBOTEN: Spekulationen oder Annahmen, die nicht in den abgerufenen\
+      \ Dokumenten stehen\n</rules>\n\n<instructions>\nBefolge diesen Prozess:\n    1. Analysiere den abgerufenen Kontext\n\
+      \    2. Identifiziere relevante Passagen\n    3. Extrahiere Schlüsselinformationen\n    4. Liefere Antworten mit direkten\
+      \ Zitaten.\nWenn der Kontext unzureichend ist, teile mit, dass du die Frage mit den verfügbaren Informationen nicht\
+      \ beantworten kannst.\n</instructions>\n"
   context_prompt:
     label: Kontextprompt
-    help: Vorlage zur Präsentation abgerufener Dokumente an das LLM. Verwenden Sie
-      Platzhalter wie {context} zum Einfügen abgerufener Inhalte.
-    default: '{% chat role="user" %}
-
-      Sie erhalten zusätzliche Kontextinformationen in Form von strukturierten Dokumenten.
-      Jedes Dokument folgt einem
-
-      einheitlichen Format, beginnend mit `<REFERENCE_DOCUMENT [metadata]>` und endend
-      mit `</REFERENCE_DOCUMENT>`. Diese Dokumente enthalten
-
-      wesentliche Details, die genutzt werden sollten, um die Anfrage des Benutzers
-      genau zu verstehen und zu beantworten.
-
-
-      Jedes Dokument enthält Metadaten wie Quelle, Namespace, Typ, Sprache, Version
-      und Zeitstempel. Der Inhalt
-
-      dieser Dokumente liefert wichtige Erkenntnisse, die für den gegebenen Kontext
-      relevant sind.
-
-
-      Nachfolgend finden Sie die relevanten Dokumente:
-
-
-      <context_documents>
-
-      {% for block in context_blocks %}
-
-      {% if block.block_type == ''text'' %}
-
-      {{ block.text }}
-
-      {% endif %}
-
-      {% if block.block_type == ''image'' %}
-
-      {{ block.url.__str__() | image}}
-
-      {% endif %}
-
-      {% endfor %}
-
-      </context_documents>
-
-
-      Anweisung: Erstellen Sie anhand der Informationen aus den bereitgestellten Dokumenten
-      eine detaillierte und gut strukturierte Antwort
-
-      auf die Frage des Benutzers.
-
-      {% endchat %}
-
-      '
+    help: Vorlage zur Präsentation abgerufener Dokumente an das LLM. Verwenden Sie Platzhalter wie {context} zum Einfügen
+      abgerufener Inhalte.
+    default: "{% chat role=\"user\" %}\nSie erhalten zusätzliche Kontextinformationen in Form von strukturierten Dokumenten.\
+      \ Jedes Dokument folgt einem\neinheitlichen Format, beginnend mit `<REFERENCE_DOCUMENT [metadata]>` und endend mit `</REFERENCE_DOCUMENT>`.\
+      \ Diese Dokumente enthalten\nwesentliche Details, die genutzt werden sollten, um die Anfrage des Benutzers genau zu\
+      \ verstehen und zu beantworten.\n\nJedes Dokument enthält Metadaten wie Quelle, Namespace, Typ, Sprache, Version und\
+      \ Zeitstempel. Der Inhalt\ndieser Dokumente liefert wichtige Erkenntnisse, die für den gegebenen Kontext relevant sind.\n\
+      \nNachfolgend finden Sie die relevanten Dokumente:\n\n<context_documents>\n{% for block in context_blocks %}\n{% if\
+      \ block.block_type == 'text' %}\n{{ block.text }}\n{% endif %}\n{% if block.block_type == 'image' %}\n{{ block.url.__str__() | image}}\n\
+      {% endif %}\n{% endfor %}\n</context_documents>\n\nAnweisung: Erstellen Sie anhand der Informationen aus den bereitgestellten\
+      \ Dokumenten eine detaillierte und gut strukturierte Antwort\nauf die Frage des Benutzers.\n{% endchat %}\n"
   context_insufficient_prompt:
     label: Unzureichender-Kontext-Prompt
-    help: Nachricht, die angezeigt wird, wenn der Agent nicht genügend Informationen
-      findet. Leitet, wie der Agent Einschränkungen kommuniziert.
-    default: 'Informiere den Benutzer, dass du die Frage nicht beantworten kannst,
-      aufgrund des folgenden Grundes:'
+    help: Nachricht, die angezeigt wird, wenn der Agent nicht genügend Informationen findet. Leitet, wie der Agent Einschränkungen
+      kommuniziert.
+    default: 'Informiere den Benutzer, dass du die Frage nicht beantworten kannst, aufgrund des folgenden Grundes:'
   reranking_enabled:
     label: Reranking aktivieren
-    help: Verwenden Sie ein Reranking-Modell, um die Relevanz der abgerufenen Dokumente
-      zu verbessern, bevor sie an das LLM übergeben werden.
+    help: Verwenden Sie ein Reranking-Modell, um die Relevanz der abgerufenen Dokumente zu verbessern, bevor sie an das LLM
+      übergeben werden.
   enable_organization_memory:
     label: Organisationsgedächtnis aktivieren
-    help: Ob Organisationserinnerungen (Expertenwissen, das zwischen Benutzern geteilt
-      wird) für den Kontext abgerufen werden sollen.
+    help: Ob Organisationserinnerungen (Expertenwissen, das zwischen Benutzern geteilt wird) für den Kontext abgerufen werden
+      sollen.
   tenant_namespace:
     label: Mandanten-Namespace
-    help: Namespace für die abteilungsspezifische Speicherisolierung. Leer lassen für
-      den Standard-Organisationsbereich.
+    help: Namespace für die abteilungsspezifische Speicherisolierung. Leer lassen für den Standard-Organisationsbereich.
   enable_user_memory_retrieval:
     label: Benutzergedächtnis-Abruf aktivieren
-    help: Ob benutzerspezifische Erinnerungen für personalisierten Kontext abgerufen
-      werden sollen.
+    help: Ob benutzerspezifische Erinnerungen für personalisierten Kontext abgerufen werden sollen.
   enable_user_memory_storage:
     label: Benutzergedächtnis-Speicherung aktivieren
-    help: Ob neue Erinnerungen aus Gesprächen für zukünftigen Abruf gespeichert werden
-      sollen.
+    help: Ob neue Erinnerungen aus Gesprächen für zukünftigen Abruf gespeichert werden sollen.
+
 steps:
   retrieve_user_memory:
-    name: "Benutzergedächtnis abrufen"
-    description: "Ruft relevante benutzerspezifische Erinnerungen für personalisierten Kontext ab"
+    name: Benutzergedächtnis abrufen
+    description: Ruft relevante benutzerspezifische Erinnerungen für personalisierten Kontext ab
   retrieve_organization_memory:
-    name: "Organisationsgedächtnis abrufen"
-    description: "Ruft relevante Organisationserinnerungen (Expertenwissen) basierend auf der Benutzeranfrage ab"
+    name: Organisationsgedächtnis abrufen
+    description: Ruft relevante Organisationserinnerungen (Expertenwissen) basierend auf der Benutzeranfrage ab
   add_memory_to_context:
-    name: "Gedächtnis zum Kontext hinzufügen"
-    description: "Fügt Benutzer- und Organisationserinnerungen als Systemnachrichten zum Chat-Verlauf hinzu"
+    name: Gedächtnis zum Kontext hinzufügen
+    description: Fügt Benutzer- und Organisationserinnerungen als Systemnachrichten zum Chat-Verlauf hinzu
   limit_chat_history:
-    name: "Chat-Verlauf begrenzen"
-    description: "Kürzt eingehende Chat-Nachrichten auf das konfigurierte Token-Limit"
+    name: Chat-Verlauf begrenzen
+    description: Kürzt eingehende Chat-Nachrichten auf das konfigurierte Token-Limit
   condense_standalone_question:
-    name: "Eigenständige Frage kondensieren"
-    description: "Fasst den Chat-Verlauf und die Benutzeranfrage zu einer eigenständigen Frage zusammen."
+    name: Eigenständige Frage kondensieren
+    description: Fasst den Chat-Verlauf und die Benutzeranfrage zu einer eigenständigen Frage zusammen.
   few_shot_guard:
-    name: "Few-Shot-Schutz"
-    description: "Schützt die Frage, um sicherzustellen, dass sie für den Agenten geeignet ist."
+    name: Few-Shot-Schutz
+    description: Schützt die Frage, um sicherzustellen, dass sie für den Agenten geeignet ist.
   retrieve_nodes:
-    name: "Knoten abrufen"
-    description: "Ruft relevante Knoten aus Wissensquellen ab."
+    name: Knoten abrufen
+    description: Ruft relevante Knoten aus Wissensquellen ab.
   rerank_nodes:
-    name: "Abgerufene Knoten neu ordnen"
-    description: "Ordnet abgerufene Dokumente mit einem Reranking-Modell für bessere Relevanz neu"
+    name: Abgerufene Knoten neu ordnen
+    description: Ordnet abgerufene Dokumente mit einem Reranking-Modell für bessere Relevanz neu
   order_nodes:
-    name: "Knoten nach Dokumenten ordnen"
-    description: "Ordnet die abgerufenen Knoten nach ihren Quelldokumenten."
+    name: Knoten nach Dokumenten ordnen
+    description: Ordnet die abgerufenen Knoten nach ihren Quelldokumenten.
   context_sufficient_guard:
-    name: "Kontext-Ausreichend-Schutz"
-    description: "Schützt den Kontext, um sicherzustellen, dass er für eine Antwort ausreicht."
+    name: Kontext-Ausreichend-Schutz
+    description: Schützt den Kontext, um sicherzustellen, dass er für eine Antwort ausreicht.
   limit_chat_history_with_context:
-    name: "Chat-Verlauf mit Kontext begrenzen"
-    description: "Fügt den kombinierten Kontext hinzu und kürzt den Chat-Verlauf erneut."
+    name: Chat-Verlauf mit Kontext begrenzen
+    description: Fügt den kombinierten Kontext hinzu und kürzt den Chat-Verlauf erneut.
   respond_with_llm:
-    name: "Mit LLM antworten"
-    description: "Generiert eine Antwort mit dem konfigurierten LLM."
+    name: Mit LLM antworten
+    description: Generiert eine Antwort mit dem konfigurierten LLM.
   store_user_memory:
-    name: "Benutzergedächtnis speichern"
-    description: "Speichert Erkenntnisse aus dem Gespräch im Langzeit-Benutzergedächtnis für zukünftige Interaktionen"
+    name: Benutzergedächtnis speichern
+    description: Speichert Erkenntnisse aus dem Gespräch im Langzeit-Benutzergedächtnis für zukünftige Interaktionen
   stop:
-    name: "Stopp"
-    description: "Beendet den Workflow nach Abschluss aller erforderlichen Schritte"
+    name: Stopp
+    description: Beendet den Workflow nach Abschluss aller erforderlichen Schritte

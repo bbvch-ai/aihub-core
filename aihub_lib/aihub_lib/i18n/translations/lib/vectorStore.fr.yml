@@ -1,8 +1,10 @@
-label: "Stockage vectoriel"
-help: "Sélectionner la base de connaissances et les espaces de noms à rechercher"
+label: Stockage vectoriel
+help: Sélectionner la base de connaissances et les espaces de noms à rechercher
+
 database:
-  label: "Base de données"
+  label: Base de données
+
 namespaces:
-  label: "Espaces de noms"
-  placeholder: "Sélectionner les espaces de noms (vide = tous)"
-  help: "Laisser vide pour rechercher tous les espaces de noms"
+  label: Espaces de noms
+  placeholder: Sélectionner les espaces de noms (vide = tous)
+  help: Laisser vide pour rechercher tous les espaces de noms

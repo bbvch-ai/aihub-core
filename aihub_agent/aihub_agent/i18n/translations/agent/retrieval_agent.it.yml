@@ -1,17 +1,18 @@
 metadata:
   name: Agente di Retrieval
-  description: Agente RAG semplificato per il recupero di informazioni da una base
-    di conoscenza
+  description: Agente RAG semplificato per il recupero di informazioni da una base di conoscenza
+
 config:
   context_prompt:
     label: Prompt di contesto
+
 steps:
   retrieve_nodes:
-    name: "Recupera nodi"
-    description: "Recupera i nodi rilevanti dalla base di conoscenza."
+    name: Recupera nodi
+    description: Recupera i nodi rilevanti dalla base di conoscenza.
   order_nodes:
-    name: "Ordina nodi per documenti"
-    description: "Ordina i nodi recuperati per i loro documenti sorgente."
+    name: Ordina nodi per documenti
+    description: Ordina i nodi recuperati per i loro documenti sorgente.
   stop:
-    name: "Passo di arresto"
-    description: "Ferma l'agente e restituisce i nodi ordinati come messaggi di contesto."
+    name: Passo di arresto
+    description: Ferma l'agente e restituisce i nodi ordinati come messaggi di contesto.

@@ -1,8 +1,9 @@
 config:
   collection_name:
-    label: "Sammlungsname"
-    help: "Name der Milvus-Sammlung zum Speichern von Vektoren."
+    label: Sammlungsname
+    help: Name der Milvus-Sammlung zum Speichern von Vektoren.
+
 base:
   dimensions:
-    label: "Einbettungsdimensionen"
-    help: "Anzahl der Dimensionen in den Vektor-Embeddings."
+    label: Einbettungsdimensionen
+    help: Anzahl der Dimensionen in den Vektor-Embeddings.

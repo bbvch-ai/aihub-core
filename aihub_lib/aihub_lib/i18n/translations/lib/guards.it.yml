@@ -13,6 +13,7 @@ common:
     true se la risposta può essere fornita, false altrimenti
   docstring: |
     Modello di dati per la decisione se è possibile fornire una risposta.
+
 agent_description_guard:
   prompt: |
     La descrizione di un agente è la seguente:
@@ -30,22 +31,19 @@ agent_description_guard:
     {history}
     </CronologiaConversazionePrecedente>
     L'output finale deve essere esclusivamente un oggetto JSON con esattamente le due chiavi “success” e “reasoning”. Non ripetere l'intero schema JSON né aggiungere ulteriori meta-informazioni.
+
 few_shot_guard:
   prompt: |
     Riceverete diversi esempi che mostrano quali richieste dell'utente sono consentite e quali no. Ogni risposta di esempio è composta da due chiavi:
-
     "success": un booleano (vero o falso) che indica se la richiesta è consentita.
     "reasoning": una stringa contenente la motivazione di questa decisione.
     Importante:
     L'output finale deve essere esclusivamente un oggetto JSON con esattamente le due chiavi “success” e “reasoning”. Non ripetere l'intero schema JSON né aggiungere ulteriori meta-informazioni.
-
     Il tuo compito è determinare se una nuova richiesta dell'utente è consentita in base a questi esempi.
-
     **Esempi:**
     <Examples>
     {examples}
     </Examples>
-
     **Richiesta utente:**
     <UserQuery>
     {user_query}
@@ -66,6 +64,7 @@ few_shot_guard:
     Giustificazione della decisione presa.
   docstring: |
     Modello di dati per la decisione sull'accettabilità della richiesta.
+
 context_sufficient_guard:
   doc_string: |
     Risultato della valutazione se il contesto è sufficiente per rispondere alla domanda dell'utente.
@@ -80,26 +79,19 @@ context_sufficient_guard:
     Fornirò un contesto, una domanda e le query precedenti, se sono state generate.
     Se è possibile rispondere alla domanda con il contesto fornito, la conversazione può continuare (success=True).
     Se non è possibile rispondere alla domanda con il contesto, la conversazione deve essere interrotta (success=False).
-    
     Quando success=False, è necessario generare una nuova query che verrà utilizzata per raccogliere ulteriori informazioni. Quando si crea una nuova query:
-
     1. DARE PRIORITÀ AI CONCETTI DI LIVELLO SUPERIORE: La strategia principale dovrebbe essere quella di risalire le gerarchie concettuali verso domini più ampi che includano naturalmente informazioni sull'argomento originale.
        - Ad esempio, se la richiesta di “reti neurali” non produce risultati sufficienti, spostatevi su “metodi di apprendimento automatico” o “modelli computazionali” invece di chiedere le reti neurali in modo diverso.
        - Se un argomento non produce risultati, considerate il campo accademico, l'industria o il dominio di conoscenza a cui appartiene.
-    
     2. Analizzate le query precedenti per evitare ripetizioni o piccole variazioni della stessa domanda.
-    
     3. Se i concetti di livello superiore sono già stati esplorati, provate queste strategie alternative:
        - Esaminare i campi correlati che si intersecano con l'argomento principale.
        - Cercare i concetti fondamentali che stanno alla base dell'argomento
        - Cercare informazioni sulla categoria o sul sistema di classificazione di riferimento.
        - Richiedere informazioni su principi tecnologici o scientifici più ampi
        - Considerare collegamenti interdisciplinari con altri ambiti
-    
     4. La nuova interrogazione DEVE essere chiaramente distinta da tutte le interrogazioni precedenti e allontanarsi dall'argomento specifico se gli approcci diretti hanno fallito.
-    
     5. Ogni domanda successiva deve rappresentare un cambiamento concettuale più significativo di quelle precedenti.
-    
     Domanda:
     <Domanda>
     {user_query}
@@ -118,10 +110,10 @@ context_sufficient_guard:
     true se il contesto è sufficiente per rispondere alla domanda dell'utente, false se non lo è (nessun salto aggiuntivo disponibile).
   docstring_no_hops: |
     Risultato della valutazione se il contesto è sufficiente per rispondere alla domanda dell'utente (nessun salto aggiuntivo disponibile).
+
 sensitive_info_guard:
   prompt: |
     Sei una guardia di sicurezza responsabile della protezione delle informazioni sensibili dell'azienda. Il tuo compito è analizzare la seguente risposta e determinare se contiene informazioni sensibili che non dovrebbero essere condivise esternamente.
-
     Cerca:
     - Processi, procedure o politiche aziendali interne
     - Strategie o piani aziendali confidenziali
@@ -131,13 +123,10 @@ sensitive_info_guard:
     - Dati dei clienti o informazioni riservate sui clienti
     - Dettagli di sistemi interni, nomi di server o informazioni sull'infrastruttura
     - Qualsiasi informazione contrassegnata come confidenziale o solo per uso interno
-
     Se trovi informazioni sensibili, fornisci una versione pulita della risposta con le parti sensibili rimosse o generalizzate.
-
     <Risposta da analizzare>
     {answer}
     </Risposta da analizzare>
-
     Il tuo output deve essere un oggetto JSON con esattamente tre chiavi:
     - "success": true se non sono state trovate informazioni sensibili, false se sono state rilevate informazioni sensibili
     - "reasoning": spiegazione della tua decisione
@@ -150,13 +139,14 @@ sensitive_info_guard:
     La risposta rivista con informazioni sensibili rimosse o censurate, se applicabile.
   docstring: |
     Risultato dell'analisi di una risposta per informazioni sensibili che non dovrebbero essere condivise esternamente.
+
 few_shot_example:
   user:
-    label: "Messaggio utente"
-    help: "Un esempio di richiesta o messaggio utente che verrà valutato."
+    label: Messaggio utente
+    help: Un esempio di richiesta o messaggio utente che verrà valutato.
   success:
-    label: "Accetta richiesta"
-    help: "Spunta se questo esempio deve essere accettato, deseleziona se deve essere rifiutato."
+    label: Accetta richiesta
+    help: Spunta se questo esempio deve essere accettato, deseleziona se deve essere rifiutato.
   reason:
-    label: "Motivo"
-    help: "Spiegazione del motivo per cui la richiesta è accettata o rifiutata."
+    label: Motivo
+    help: Spiegazione del motivo per cui la richiesta è accettata o rifiutata.

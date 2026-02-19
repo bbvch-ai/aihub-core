@@ -17,18 +17,18 @@
 #
 #   PATTERN MATCHED - entries with "build: localbuild" (images we build ourselves):
 #     api:
-#       build: localbuild           # <-- "localbuild" = included
+#       build: localbuild  # <-- "localbuild" = included
 #       local: api:latest
 #       nightly: api:nightly
 #       latest: api:latest
 #
 #   PATTERN NOT MATCHED - simple string values (third-party infrastructure):
-#     postgres: pgvector:pg17       # Simple string = excluded
+#     postgres: pgvector:pg17  # Simple string = excluded
 #     valkey: valkey:8.0.5
 #
 #   PATTERN NOT MATCHED - dicts without "build: localbuild" (external images):
 #     some_external:
-#       latest: external:v1.0       # No "build: localbuild" = excluded
+#       latest: external:v1.0  # No "build: localbuild" = excluded
 #
 #   The Python script selects entries where:
 #     - The value is a dict with build == "localbuild"
@@ -39,14 +39,13 @@
 #   with the standard map structure will automatically include it here.
 #
 # =============================================================================
-
 name: Set latest Tag on Images
 
 on:
   workflow_dispatch:
     inputs:
       source_tag:
-        description: 'Source tag to copy'
+        description: Source tag to copy
         required: true
 
 jobs:
@@ -58,23 +57,21 @@ jobs:
     outputs:
       matrix: ${{ steps.parse.outputs.matrix }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Parse custom app images from compose-config.yml
-        id: parse
-        run: |
-          # Extract image names where build == "localbuild" (images we build ourselves)
-          images=$(python3 -c "
-          import yaml, json
-          with open('deployment/compose-config.yml') as f:
-              config = yaml.safe_load(f)
-          images = [k for k, v in config['image_tags'].items() if isinstance(v, dict) and v.get('build') == 'localbuild']
-          print(json.dumps(images))
-          ")
-
-          echo "Discovered images: $images"
-          echo "matrix={\"image\":$images}" >> $GITHUB_OUTPUT
+    - name: Checkout code
+      uses: actions/checkout@v4
+    - name: Parse custom app images from compose-config.yml
+      id: parse
+      run: |
+        # Extract image names where build == "localbuild" (images we build ourselves)
+        images=$(python3 -c "
+        import yaml, json
+        with open('deployment/compose-config.yml') as f:
+            config = yaml.safe_load(f)
+        images = [k for k, v in config['image_tags'].items() if isinstance(v, dict) and v.get('build') == 'localbuild']
+        print(json.dumps(images))
+        ")
+        echo "Discovered images: $images"
+        echo "matrix={\"image\":$images}" >> $GITHUB_OUTPUT
 
   # ---------------------------------------------------------------------------
   # Move the "latest" git tag to point to the source tag's commit
@@ -83,67 +80,63 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - name: Move latest git tag
+      env:
+        SOURCE_TAG: ${{ inputs.source_tag }}
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Move latest git tag
-        env:
-          SOURCE_TAG: ${{ inputs.source_tag }}
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          # Verify source tag exists
-          if ! git rev-parse "$SOURCE_TAG" >/dev/null 2>&1; then
-            echo "❌ Error: Source tag '$SOURCE_TAG' does not exist"
-            exit 1
-          fi
-
-          echo "Moving 'latest' tag to same commit as '$SOURCE_TAG'..."
-          git tag -f latest "$SOURCE_TAG"
-          git push origin refs/tags/latest --force
-          echo "Moved 'latest' tag to same commit as $SOURCE_TAG"
+        # Verify source tag exists
+        if ! git rev-parse "$SOURCE_TAG" >/dev/null 2>&1; then
+          echo "❌ Error: Source tag '$SOURCE_TAG' does not exist"
+          exit 1
+        fi
+        echo "Moving 'latest' tag to same commit as '$SOURCE_TAG'..."
+        git tag -f latest "$SOURCE_TAG"
+        git push origin refs/tags/latest --force
+        echo "Moved 'latest' tag to same commit as $SOURCE_TAG"
 
   # ---------------------------------------------------------------------------
   # Retag Docker images: pull source tag, push as "latest" and "{tag}-latest"
   # ---------------------------------------------------------------------------
   retag-docker:
     runs-on: ubuntu-latest
-    needs: [discover-images, retag-git]
+    needs:
+    - discover-images
+    - retag-git
     permissions:
       packages: write
       contents: read
-
     strategy:
       matrix: ${{ fromJson(needs.discover-images.outputs.matrix) }}
-
     steps:
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+    - name: Log in to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    - name: Pull and retag image
+      env:
+        SOURCE_TAG: ${{ inputs.source_tag }}
+      run: |-
+        IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}/${{ matrix.image }}"
 
-      - name: Pull and retag image
-        env:
-          SOURCE_TAG: ${{ inputs.source_tag }}
-        run: |
-          IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}/${{ matrix.image }}"
-          
-          # Pull the source image
-          docker pull "${IMAGE_NAME}:${SOURCE_TAG}"
-          
-          # Tag with {source_tag}-latest
-          docker tag "${IMAGE_NAME}:${SOURCE_TAG}" "${IMAGE_NAME}:${SOURCE_TAG}-latest"
-          docker push "${IMAGE_NAME}:${SOURCE_TAG}-latest"
-          echo "✓ Tagged ${IMAGE_NAME}:${SOURCE_TAG}-latest"
-          
-          # Tag with latest
-          docker tag "${IMAGE_NAME}:${SOURCE_TAG}" "${IMAGE_NAME}:latest"
-          docker push "${IMAGE_NAME}:latest"
-          echo "✓ Tagged ${IMAGE_NAME}:latest"
+        # Pull the source image
+        docker pull "${IMAGE_NAME}:${SOURCE_TAG}"
+
+        # Tag with {source_tag}-latest
+        docker tag "${IMAGE_NAME}:${SOURCE_TAG}" "${IMAGE_NAME}:${SOURCE_TAG}-latest"
+        docker push "${IMAGE_NAME}:${SOURCE_TAG}-latest"
+        echo "✓ Tagged ${IMAGE_NAME}:${SOURCE_TAG}-latest"
+
+        # Tag with latest
+        docker tag "${IMAGE_NAME}:${SOURCE_TAG}" "${IMAGE_NAME}:latest"
+        docker push "${IMAGE_NAME}:latest"
+        echo "✓ Tagged ${IMAGE_NAME}:latest"

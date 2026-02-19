@@ -1,7 +1,7 @@
 namespace_aware_user_message:
-  name: "Événement de message utilisateur avec namespace"
-  description: "Un événement de message utilisateur avec des namespaces présélectionnés pour la récupération RAG."
+  name: Événement de message utilisateur avec namespace
+  description: Un événement de message utilisateur avec des namespaces présélectionnés pour la récupération RAG.
 
 determine_namespaces:
-  name: "Événement de détermination des namespaces"
-  description: "Déclenche le LLM pour déterminer les namespaces à partir du contexte de conversation."
+  name: Événement de détermination des namespaces
+  description: Déclenche le LLM pour déterminer les namespaces à partir du contexte de conversation.
