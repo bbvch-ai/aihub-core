@@ -361,11 +361,7 @@ class ProcessService:
             if hasattr(config_instance, "description") and config_instance.description
             else None
         )
-        icon = (
-            config_instance.icon
-            if hasattr(config_instance, "icon") and config_instance.icon
-            else class_entity.icon or "mage:broadcast"
-        )
+        icon = config_instance.icon if hasattr(config_instance, "icon") and config_instance.icon else class_entity.icon
 
         name_entity = (
             LocaleStringEntity.from_locale_string(name)

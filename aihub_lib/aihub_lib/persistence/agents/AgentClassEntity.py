@@ -140,7 +140,7 @@ class AgentClassEntity(Document):
     description = EmbeddedDocumentField(
         LocaleStringEntity, required=False, description="Description of this agent class."
     )
-    icon = StringField(required=False, default="mage:robot", description="Icon for this agent class.")
+    icon = StringField(required=True, default="mage:robot", description="Icon for this agent class.")
 
     form = ListField(DictField(), default=list, description="FormKit elements defining the agent configuration form.")
     agent_config_specs = EmbeddedDocumentField(AgentConfigSpecsEntity, required=False)

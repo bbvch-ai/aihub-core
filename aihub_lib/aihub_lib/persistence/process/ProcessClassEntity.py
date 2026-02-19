@@ -150,7 +150,7 @@ class ProcessClassEntity(Document):
     description = EmbeddedDocumentField(
         LocaleStringEntity, required=False, description="Description of this process class."
     )
-    icon = StringField(required=False, default="mage:broadcast", description="Icon for this process class.")
+    icon = StringField(required=True, default="mage:broadcast", description="Icon for this process class.")
 
     form = ListField(DictField(), default=list, description="FormKit elements defining the process configuration form.")
     process_config_specs = EmbeddedDocumentField(ProcessConfigSpecsEntity, required=False)
