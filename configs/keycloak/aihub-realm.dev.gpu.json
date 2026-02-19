@@ -141,25 +141,6 @@
       ]
     },
     {
-      "clientId": "aihub-api",
-      "name": "AI-Hub API",
-      "description": "Backend API service account",
-      "enabled": true,
-      "publicClient": false,
-      "standardFlowEnabled": false,
-      "implicitFlowEnabled": false,
-      "directAccessGrantsEnabled": false,
-      "serviceAccountsEnabled": true,
-      "clientAuthenticatorType": "client-secret",
-      "secret": "${KEYCLOAK_API_CLIENT_SECRET}",
-      "protocol": "openid-connect",
-      "defaultClientScopes": [
-        "openid",
-        "profile",
-        "email"
-      ]
-    },
-    {
       "clientId": "oauth2-proxy-dagster",
       "name": "Dagster UI",
       "description": "OAuth2 proxy client for Dagster pipeline management UI",
