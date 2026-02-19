@@ -23,13 +23,11 @@ from aihub_lib.nats.topic_managers.agents.AgentThreadTopicManager import AgentTh
 from aihub_lib.nats.topics import AgentInstanceTopic
 from aihub_lib.persistence.agents.AgentClassEntity import AgentClassEntity
 from aihub_lib.persistence.agents.AgentConfigEntityDocument import AgentConfigEntityDocument
-from aihub_lib.persistence.i18n.LocaleStringEntity import LocaleStringEntity
 from aihub_lib.persistence.messaging.entities.ThreadEntity import AgentInstanceRef, ThreadEntity, User
 from aihub_lib.routes.chat.ChatService import ChatService, JsonResources, StreamingResources
 from bson import ObjectId
 from fastapi import HTTPException
 from nats.aio.client import Client as NATS
-from pydantic import ValidationError
 
 from aihub_api.routes.agent.dto.AgentClassDTO import AgentClassDTO
 from aihub_api.routes.agent.dto.CreateAgentInstanceRequest import CreateAgentInstanceRequest
@@ -38,6 +36,7 @@ from aihub_api.routes.agent.dto.MinimalAgentInstanceDTO import MinimalAgentInsta
 from aihub_api.routes.thread.dto.ThreadDTO import ThreadDTO
 from aihub_api.routes.thread.ThreadService import ThreadService
 from aihub_api.services.ModelCreationService import ModelCreationService
+from aihub_api.util.instance_config_helper import InstanceConfigHelper
 
 logger = logging.getLogger(__name__)
 
@@ -342,12 +341,7 @@ class AgentService:
         if not config_entity:
             raise HTTPException(status_code=404, detail=f"Agent config {agent_class}/{agent_id} not found.")
 
-        # Filter out FormKit internal fields (those starting with '_')
-        configuration = {k: v for k, v in configuration.items() if not k.startswith("_")}
-
-        # Normalize configuration before validation
-        configuration = normalize_empty_objects_to_none(configuration)
-        configuration = normalize_empty_locale_strings(configuration)
+        configuration = InstanceConfigHelper.normalize_form_configuration(configuration)
 
         config_model = ModelCreationService.create_agent_config_model(
             AgentConfigSpecs(
@@ -355,19 +349,8 @@ class AgentService:
                 agent_config_schema=class_entity.agent_config_specs.agent_config_schema,
             )
         )
-        try:
-            config_instance = config_model.model_validate(configuration)
-        except ValidationError as e:
-            raise HTTPException(status_code=400, detail=f"Configuration validation failed: {e.errors()}")
-
-        if hasattr(config_instance, "name") and config_instance.name:
-            config_entity.name = LocaleStringEntity.from_locale_string(config_instance.name)
-
-        if hasattr(config_instance, "description") and config_instance.description:
-            config_entity.description = LocaleStringEntity.from_locale_string(config_instance.description)
-
-        if hasattr(config_instance, "icon") and config_instance.icon:
-            config_entity.icon = config_instance.icon
+        config_instance = InstanceConfigHelper.validate_config_for_update(configuration, config_model)
+        config_entity = InstanceConfigHelper.apply_metadata_to_entity(config_instance, config_entity)
 
         config_entity.config_data = configuration
         config_entity.save()
@@ -435,7 +418,6 @@ class AgentService:
                 status_code=409, detail=f"Agent instance '{agent_class}/{request.agent_id}' already exists."
             )
 
-        # Normalize configuration before validation
         config = normalize_empty_objects_to_none(request.configuration)
         config = normalize_empty_locale_strings(config) or {}
 
@@ -445,37 +427,10 @@ class AgentService:
                 agent_config_schema=class_entity.agent_config_specs.agent_config_schema,
             )
         )
-        try:
-            config_instance = config_model.model_validate(config)
-        except ValidationError as e:
-            error_messages = []
-            for error in e.errors():
-                field_path = ".".join(str(loc) for loc in error["loc"])
-                error_messages.append(f"{field_path}: {error['msg']}")
-            raise HTTPException(status_code=400, detail=f"Configuration validation failed: {'; '.join(error_messages)}")
-
-        name = config_instance.name if hasattr(config_instance, "name") and config_instance.name else None
-        description = (
-            config_instance.description
-            if hasattr(config_instance, "description") and config_instance.description
-            else None
-        )
-        icon = config_instance.icon if hasattr(config_instance, "icon") and config_instance.icon else class_entity.icon
-
-        name_entity = (
-            LocaleStringEntity.from_locale_string(name)
-            if name
-            else LocaleStringEntity(
-                de=f"New {agent_class}",
-                en=f"New {agent_class}",
-                fr=f"Nouveau {agent_class}",
-                it=f"Nuovo {agent_class}",
-            )
-        )
-        description_entity = (
-            LocaleStringEntity.from_locale_string(description)
-            if description
-            else LocaleStringEntity(de="", en="", fr="", it="")
+        config_instance = InstanceConfigHelper.validate_config_for_create(config, config_model)
+        metadata = InstanceConfigHelper.extract_config_metadata(config_instance, class_entity.icon)
+        locale = InstanceConfigHelper.build_locale_entities(
+            metadata.name, metadata.description, agent_class, metadata.icon
         )
 
         full_config_data = {
@@ -487,9 +442,9 @@ class AgentService:
         config_entity = AgentConfigEntityDocument(
             agent_class=agent_class,
             agent_id=request.agent_id,
-            name=name_entity,
-            description=description_entity,
-            icon=icon,
+            name=locale.name,
+            description=locale.description,
+            icon=locale.icon,
             config_data=full_config_data,
         )
         config_entity.save()
