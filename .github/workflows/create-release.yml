@@ -1,0 +1,114 @@
+name: Create GitHub Release
+
+on:
+  repository_dispatch:
+    types: [ release-ready ]
+  workflow_dispatch:
+    inputs:
+      release_version:
+        description: 'Release version (e.g., v0.264.0)'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  create-release:
+    name: Create GitHub Release with Deployment Bundles
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'repository_dispatch'
+    steps:
+      - name: Extract version
+        id: version
+        run: |
+          if [ -n "${{ github.event.inputs.release_version }}" ]; then
+            VERSION="${{ github.event.inputs.release_version }}"
+          elif [ -n "${{ github.event.client_payload.release_version }}" ]; then
+            VERSION="${{ github.event.client_payload.release_version }}"
+          else
+            echo "No release_version provided. Failing."
+            exit 1
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Checkout at release tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.version.outputs.version }}
+          fetch-depth: 0
+
+      - name: Setup Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install dependencies
+        run: pip install jinja2 pyyaml
+
+      - name: Generate release compose files
+        run: |
+          python deployment/generate_compose.py \
+            --release "${{ steps.version.outputs.version }}" \
+            --output-dir dist/release
+
+      - name: Copy static configs into release bundles
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+
+          for variant in cpu gpu; do
+            DEST="dist/release/${variant}"
+
+            # etcd
+            cp configs/etcd/init.Dockerfile "${DEST}/configs/etcd/"
+            cp configs/etcd/init_etcd.sh "${DEST}/configs/etcd/"
+
+            # seaweedfs
+            mkdir -p "${DEST}/configs/seaweedfs"
+            cp configs/seaweedfs/s3-entrypoint.sh "${DEST}/configs/seaweedfs/"
+            cp configs/seaweedfs/init-buckets.sh "${DEST}/configs/seaweedfs/"
+
+            # postgres
+            mkdir -p "${DEST}/configs/postgres"
+            cp configs/postgres/init-multiple-dbs.sh "${DEST}/configs/postgres/"
+
+            # openwebui
+            mkdir -p "${DEST}/configs/openwebui/functions"
+            cp configs/openwebui/init-functions.sh "${DEST}/configs/openwebui/"
+            cp -r configs/openwebui/functions/ "${DEST}/configs/openwebui/functions/"
+
+            # playwright
+            mkdir -p "${DEST}/configs/playwright"
+            cp configs/playwright/Dockerfile "${DEST}/configs/playwright/"
+
+            # .env template
+            cp .env.prod "${DEST}/.env"
+          done
+
+      - name: Create tar.gz archives
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          tar -czf "swissaihub-${VERSION}.tar.gz" -C dist/release/cpu .
+          tar -czf "swissaihub-${VERSION}-gpu.tar.gz" -C dist/release/gpu .
+
+      - name: Extract changelog for this version
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          awk '/^## \['"${VERSION}"'\]/{found=1; next} /^---$/{if(found) exit} found{print}' CHANGELOG.md > release-notes.md
+
+          # If no changelog section found, provide a fallback
+          if [ ! -s release-notes.md ]; then
+            echo "Release ${VERSION}" > release-notes.md
+          fi
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          gh release create "${VERSION}" \
+            --title "Swiss AI Hub ${VERSION}" \
+            --notes-file release-notes.md \
+            "swissaihub-${VERSION}.tar.gz" \
+            "swissaihub-${VERSION}-gpu.tar.gz"

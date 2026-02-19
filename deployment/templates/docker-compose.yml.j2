@@ -6,6 +6,7 @@
 #   - deployment/templates/docker-compose.yml.j2 (for changing structure and logic)
 
 {%- set stage_postfix = stage + ".gpu" if gpu_enabled else stage %}
+{%- set cfg_suffix = config_file_suffix if config_file_suffix is defined else "." + stage_postfix %}
 {%- set hardware = 'gpu' if gpu_enabled else 'cpu' %}
 
 {#- ===================================================================
@@ -476,7 +477,7 @@ services:
       COMMON_SECURITY_DEFAULTROOTPASSWORD: ${MILVUS_ROOT_PASSWORD}
     volumes:
       - {{ global.volume_root }}/milvus-data:/var/lib/milvus
-      - ./configs/milvus/milvus-config.{{ stage_postfix }}.yml:/milvus/configs/milvus.yaml
+      - ./configs/milvus/milvus-config{{ cfg_suffix }}.yml:/milvus/configs/milvus.yaml
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:9091/healthz" ]
       start_period: 90s
@@ -955,7 +956,7 @@ services:
       # Token-based authentication for NATS clients
       NATS_TOKEN: ${NATS_TOKEN}
     volumes:
-      - ./configs/nats/nats-config.{{ stage_postfix }}.conf:/etc/nats/nats-server.conf
+      - ./configs/nats/nats-config{{ cfg_suffix }}.conf:/etc/nats/nats-server.conf
       - {{ global.volume_root }}/nats:/data/nats
     healthcheck:
       test: [ "NONE" ]
@@ -1308,7 +1309,7 @@ services:
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       SET_VERBOSE: False
     volumes:
-      - ./configs/litellm/litellm-config.{{ stage_postfix }}.yml:/app/config.yml
+      - ./configs/litellm/litellm-config{{ cfg_suffix }}.yml:/app/config.yml
     command: --config /app/config.yml
     depends_on:
       postgres:
@@ -1506,7 +1507,7 @@ services:
       - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY}
       - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY}
     volumes:
-      - ./configs/otel/otel-config.{{ stage_postfix }}.yml:/etc/otel-config.yml
+      - ./configs/otel/otel-config{{ cfg_suffix }}.yml:/etc/otel-config.yml
     {%- if stage in ['dev', 'local', 'build'] %}
     ports:
       - "4317:4317"
@@ -1924,8 +1925,8 @@ services:
       - -w
       - /dagster_home/workspace.yaml
     volumes:
-      - ./configs/dagster/dagster-config.{{ stage_postfix }}.yml:/dagster_home/dagster.yaml:ro
-      - ./configs/dagster/workspace.{{ stage_postfix }}.yml:/dagster_home/workspace.yaml:ro
+      - ./configs/dagster/dagster-config{{ cfg_suffix }}.yml:/dagster_home/dagster.yaml:ro
+      - ./configs/dagster/workspace{{ cfg_suffix }}.yml:/dagster_home/workspace.yaml:ro
     environment:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
@@ -1964,8 +1965,8 @@ services:
       - dagster-daemon
       - run
     volumes:
-      - ./configs/dagster/dagster-config.{{ stage_postfix }}.yml:/dagster_home/dagster.yaml:ro
-      - ./configs/dagster/workspace.{{ stage_postfix }}.yml:/dagster_home/workspace.yaml:ro
+      - ./configs/dagster/dagster-config{{ cfg_suffix }}.yml:/dagster_home/dagster.yaml:ro
+      - ./configs/dagster/workspace{{ cfg_suffix }}.yml:/dagster_home/workspace.yaml:ro
     environment:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
@@ -2058,10 +2059,10 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - "./configs/traefik/traefik-config.{{ stage_postfix }}.yml:/etc/traefik/traefik.yml:ro"
-      - "./configs/traefik/middlewares.{{ stage_postfix }}.yml:/etc/traefik/dynamic/middlewares.yml:ro"
+      - "./configs/traefik/traefik-config{{ cfg_suffix }}.yml:/etc/traefik/traefik.yml:ro"
+      - "./configs/traefik/middlewares{{ cfg_suffix }}.yml:/etc/traefik/dynamic/middlewares.yml:ro"
       {%- if stage in ['dev', 'local', 'build'] %}
-      - "./configs/traefik/tls.{{ stage_postfix }}.yml:/etc/traefik/dynamic/tls.yml:ro"
+      - "./configs/traefik/tls{{ cfg_suffix }}.yml:/etc/traefik/dynamic/tls.yml:ro"
       - "./configs/traefik/certs/dev-cert.pem:/certs/dev-cert.pem:ro"
       - "./configs/traefik/certs/dev-key.pem:/certs/dev-key.pem:ro"
       {%- else %}
