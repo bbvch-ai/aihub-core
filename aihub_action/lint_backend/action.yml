@@ -24,13 +24,28 @@ runs:
       with:
         python-version: ${{ inputs.python_version }}
 
+    - name: Set up uv
+      uses: astral-sh/setup-uv@v7
+      with:
+        enable-cache: true
+
     - name: Configure Git to Use `GITHUB_TOKEN`
       shell: bash
       run: git config --global url."https://${{ inputs.github_token }}@github.com/".insteadOf "https://github.com/"
 
-    - name: Lint
-      uses: reviewdog/action-black@v3
+    - name: Install dependencies
+      shell: bash
+      run: uv sync --all-packages --dev
+
+    - name: Install reviewdog
+      uses: reviewdog/action-setup@v1
       with:
-        github_token: ${{ inputs.github_token }}
-        reporter: github-pr-review
-        workdir: ${{ inputs.working_directory }}
+        reviewdog_version: v0.21.0
+
+    - name: Lint with Black
+      shell: bash
+      env:
+        REVIEWDOG_GITHUB_API_TOKEN: ${{ inputs.github_token }}
+      run: |
+        uv run black --diff --quiet --check "${{ inputs.working_directory }}" |
+          reviewdog -f=diff -f.diff.strip=0 -name=black-format -reporter=github-pr-review
