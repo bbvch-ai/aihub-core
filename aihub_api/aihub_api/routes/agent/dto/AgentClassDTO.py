@@ -155,7 +155,7 @@ class AgentClassDTO(BaseModel):
             agent_class=entity.agent_class,
             name=name,
             description=description,
-            icon=entity.icon or "mage:robot",
+            icon=entity.icon,
             form=entity.form_elements,
             agent_config_specs=agent_config_specs,
             is_conversational=entity.is_conversational,
@@ -165,7 +165,7 @@ class AgentClassDTO(BaseModel):
             hitl_response_events=hitl_response_events,
             network_graph=network_graph,
             is_online=entity.is_online,
-            templates=[TemplateData.model_validate(t) for t in entity.templates] if entity.templates else [],
+            templates=[TemplateData.model_validate(td) for td in entity.templates] if entity.templates else [],
         )
         return dto.in_locale(t)
 

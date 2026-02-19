@@ -82,7 +82,7 @@ class ProcessClassDTO(BaseModel):
             process_class=entity.process_class,
             name=entity.name.to_locale_string() if entity.name else LocaleString(en=entity.process_class),
             description=entity.description.to_locale_string() if entity.description else LocaleString(en=""),
-            icon=entity.icon or "mage:broadcast",
+            icon=entity.icon,
             form=entity.form_elements,
             process_config_specs=entity.process_config_specs.to_specs()
             if entity.process_config_specs
@@ -91,5 +91,5 @@ class ProcessClassDTO(BaseModel):
             program_inputs=[],
             agent_inputs=[],
             is_online=entity.is_online,
-            templates=[TemplateData.model_validate(t) for t in entity.templates] if entity.templates else [],
+            templates=[TemplateData.model_validate(td) for td in entity.templates] if entity.templates else [],
         )
