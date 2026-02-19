@@ -166,7 +166,7 @@ jobs:
           enable-cache: true
 
       - name: Install Dependencies
-        run: uv sync --dev
+        run: uv sync --all-packages --dev
 
       - name: Setup LLM for Changelog Generation
         env:
@@ -229,7 +229,7 @@ jobs:
           enable-cache: true
 
       - name: Install Dependencies
-        run: uv sync --dev
+        run: uv sync --all-packages --dev
 
       - name: Update License Report
         id: license_generator
@@ -238,11 +238,11 @@ jobs:
           make license-check
 
       - name: Upload license artifact
-        if: ${{ hashFiles('LICENSES.md') != '' }}
+        if: ${{ hashFiles('LICENSE_REPORT.md') != '' }}
         uses: actions/upload-artifact@v4
         with:
           name: licenses
-          path: LICENSES.md
+          path: LICENSE_REPORT.md
 
   sync-docs:
     name: Sync Documentation Translations
@@ -384,9 +384,9 @@ jobs:
               echo "Changelog updated."
             fi
           fi
-          if [ -f LICENSES.md ]; then
-            if [ -n "$(git status --porcelain LICENSES.md)" ]; then
-              git add LICENSES.md
+          if [ -f LICENSE_REPORT.md ]; then
+            if [ -n "$(git status --porcelain LICENSE_REPORT.md)" ]; then
+              git add LICENSE_REPORT.md
               changed=true
               echo "License report updated."
             fi

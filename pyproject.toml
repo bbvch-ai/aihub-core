@@ -15,7 +15,6 @@ dev = [
     "pip-licenses>=5.0.0",
     "mdformat>=0.7.21",
     "mdformat-gfm>=0.4.1",
-    "mdformat-frontmatter>=2.0.8",
     "mdformat-simple-breaks>=0.0.1",
     "mdformat-pyproject>=0.0.2",
     "mdformat-vuepress>=0.1.0",
@@ -60,7 +59,7 @@ extend-exclude = '''
 '''
 
 [tool.mdformat]
-extensions = ["vuepress", "frontmatter", "gfm", "myst"]
+extensions = ["vuepress", "gfm", "myst"]
 exclude = [
     "node_modules",
     ".pnpm",

@@ -9,7 +9,7 @@ echo "🔄 Syncing README files..."
 
 # First, clean up old files to avoid duplicates
 rm -rf aihub
-rm -f LICENSES.md
+rm -f LICENSE_REPORT.md
 rm -f CHANGELOG.md
 
 # Remove old synced documentation from 6_code_deep_dive (except the index files)
@@ -18,9 +18,9 @@ find docs/6_code_deep_dive -mindepth 1 -maxdepth 1 ! -name 'index.*.md' -exec rm
 
 mkdir -p "licenses"
 mkdir -p "changelog"
-# Copy LICENSES.md as both .en.md and .de.md (no translation needed)
-cp "../LICENSES.md" "./licenses/index.en.md"
-cp "../LICENSES.md" "./licenses/index.de.md"
+# Copy LICENSE_REPORT.md as both .en.md and .de.md (no translation needed)
+cp "../LICENSE_REPORT.md" "./licenses/index.en.md"
+cp "../LICENSE_REPORT.md" "./licenses/index.de.md"
 # Copy CHANGELOG.md as both .en.md and .de.md (no translation needed)
 cp "../CHANGELOG.md" "./changelog/index.en.md"
 cp "../CHANGELOG.md" "./changelog/index.de.md"

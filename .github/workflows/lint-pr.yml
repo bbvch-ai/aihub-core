@@ -65,7 +65,7 @@ jobs:
           enable-cache: true
 
       - name: Install dev dependencies
-        run: uv sync --dev
+        run: uv sync --all-packages --dev
 
       - name: Set up Node.js
         uses: actions/setup-node@v4

@@ -28,8 +28,8 @@ file, resulting in seven separate dependency resolution steps during CI and slow
   Docker images use `uv sync --locked --no-dev --package <name>` to install only production dependencies for a specific
   package. No Poetry installation is needed in the runtime stage — the `.venv/bin` directory is added to PATH directly.
 - **PEP 621 compliance**\
-  uv uses the standard `[project]` table in `pyproject.toml` (PEP 621) instead of Poetry's non-standard
-  `[tool.poetry]` section. This improves compatibility with other Python tooling.
+  uv uses the standard `[project]` table in `pyproject.toml` (PEP 621) instead of Poetry's non-standard `[tool.poetry]`
+  section. This improves compatibility with other Python tooling.
 - **Active development and community momentum**\
   uv is under active development by Astral (the team behind Ruff) with rapid feature additions and strong community
   adoption.
@@ -45,8 +45,8 @@ members.
 **Development workflow**: `uv sync --all-packages` from the workspace root installs all packages into a single shared
 virtual environment. `uv run` replaces `poetry run` in all Makefiles and documentation.
 
-**CI/CD**: GitHub Actions use `astral-sh/setup-uv@v7` with caching enabled. A single `uv sync --all-packages --dev`
-step replaces per-package Poetry installs.
+**CI/CD**: GitHub Actions use `astral-sh/setup-uv@v7` with caching enabled. A single `uv sync --all-packages --dev` step
+replaces per-package Poetry installs.
 
 **Docker**: Multi-stage builds copy uv from `ghcr.io/astral-sh/uv:latest` and use
 `uv sync --locked --no-dev --package <name>` for production installs. Runtime stages reference `.venv/bin` directly

@@ -1,3 +1,6 @@
+# Ensure pnpm is on PATH for non-interactive shells (e.g. make)
+export PATH := $(HOME)/.local/share/pnpm:$(PATH)
+
 setup:
 	@echo "Installing all Python dependencies..."
 	uv sync --all-packages
@@ -108,22 +111,6 @@ up-dev:
 generate-api-token:
 	@echo "Generating API token..."
 	cd aihub_api && uv run python generate_api_token.py
-
-# Build and publish all packages to PyPI
-publish-all:
-	@echo "Publishing all packages..."
-	@for pkg in aihub-core aihub-agent aihub-api aihub-bot aihub-pipeline aihub-process; do \
-		echo "Building and publishing $$pkg..."; \
-		uv build --package $$pkg; \
-		uv publish dist/$$pkg-*.tar.gz dist/$$pkg-*.whl; \
-	done
-
-# Build and publish a single package (PKG=aihub-core)
-PKG ?= aihub-core
-publish:
-	@echo "Publishing $(PKG)..."
-	uv build --package $(PKG)
-	uv publish dist/$(PKG)-*.tar.gz dist/$(PKG)-*.whl
 
 # Bump version across all packages (VERSION=0.264.0)
 VERSION ?= 0.263.0

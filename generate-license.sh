@@ -1,7 +1,7 @@
 #!/bin/bash
 # Comprehensive license checker for entire monorepo
 # Scans Python, Node.js, and Docker dependencies
-# Generates a single LICENSES.md report
+# Generates a single LICENSE_REPORT.md report
 
 set -e
 
@@ -106,28 +106,19 @@ add_section() {
     echo -e "\n## $title\n" >> "$OUTPUT_FILE_ABS"
 }
 
-# check_python_project function
-check_python_project() {
-    local project="$1"
-    echo -e "${BLUE}Checking Python project: $project${NC}"
+# check_python_workspace function
+# With uv workspaces there is a single shared .venv at the root,
+# so we scan it once instead of per-package to avoid duplicates.
+check_python_workspace() {
+    echo -e "${BLUE}Checking Python workspace${NC}"
 
-    if [ ! -d "$project" ]; then
-        echo -e "${RED}Warning: Project $project not found${NC}"
-        return 1
-    fi
-
-    cd "$project"
-
-    echo "Syncing dependencies to ensure venv is current..."
-    uv sync --package "$(sed -n 's/^name = "\(.*\)"/\1/p' pyproject.toml | head -1)" >/dev/null 2>&1 || {
-        echo -e "${RED}Failed to sync dependencies for $project${NC}"
-        cd ..
+    echo "Syncing all workspace packages..."
+    uv sync --all-packages >/dev/null 2>&1 || {
+        echo -e "${RED}Failed to sync workspace dependencies${NC}"
         return 1
     }
 
-    echo "Using workspace venv for $project..."
-    local python_executable="../.venv/bin/python"
-    echo "Scanning packages from: $python_executable"
+    echo "Scanning packages from workspace venv: .venv/bin/python"
 
     local license_data
     local license_stderr
@@ -137,7 +128,7 @@ check_python_project() {
         --format=json \
         --ignore-packages pip pip-licenses setuptools wheel tomli prettytable wcwidth aihub-core aihub-agent aihub-api aihub-bot aihub-pipeline aihub-process \
         2>"$license_stderr") || {
-        echo -e "${RED}Failed to run pip-licenses in $project${NC}"
+        echo -e "${RED}Failed to run pip-licenses${NC}"
         echo "Error output: $(cat "$license_stderr")"
         license_data="[]"
     }
@@ -145,10 +136,8 @@ check_python_project() {
 
     local project_total
     project_total=$(echo "$license_data" | jq '. | length')
-    TOTAL_PYTHON_DEPS=$((TOTAL_PYTHON_DEPS + project_total))
+    TOTAL_PYTHON_DEPS=$project_total
 
-    echo "### $project" >> "$OUTPUT_FILE_ABS"
-    echo "" >> "$OUTPUT_FILE_ABS"
     echo "| Status | Package | Version | License | Notes |" >> "$OUTPUT_FILE_ABS"
     echo "|--------|---------|---------|---------|-------|" >> "$OUTPUT_FILE_ABS"
 
@@ -199,19 +188,19 @@ check_python_project() {
             elif echo "$license" | grep -qE "$REVIEW_LICENSES"; then
                 status="⚠️"
                 echo -e "${YELLOW}⚠️  Review needed: $name uses $display_license${NC}"
-                echo "python:$project:$name:$license" >> "$REVIEW_FILE"
+                echo "python:workspace:$name:$license" >> "$REVIEW_FILE"
             elif echo "$license" | grep -qE "$RESTRICTIVE_LICENSES"; then
                 status="❌"
                 echo -e "${RED}❌ RESTRICTIVE LICENSE: $name uses $display_license${NC}"
-                echo "python:$project:$name:$license" >> "$RESTRICTIVE_FILE"
+                echo "python:workspace:$name:$license" >> "$RESTRICTIVE_FILE"
             elif echo "$license" | grep -qiE "$UNKNOWN_LICENSES"; then
                 status="❌"
                 echo -e "${RED}❌ UNKNOWN LICENSE: $name has '$license'${NC}"
-                echo "python:$project:$name:$license" >> "$UNKNOWN_FILE"
+                echo "python:workspace:$name:$license" >> "$UNKNOWN_FILE"
             else
                 status="❌"
                 echo -e "${RED}❌ UNLISTED/UNKNOWN LICENSE: $name has '$license'${NC}"
-                echo "python:$project:$name:$license" >> "$UNKNOWN_FILE"
+                echo "python:workspace:$name:$license" >> "$UNKNOWN_FILE"
             fi
         fi
 
@@ -219,7 +208,6 @@ check_python_project() {
     done
 
     echo "" >> "$OUTPUT_FILE_ABS"
-    cd ..
 }
 
 # check_web_project function
@@ -424,7 +412,7 @@ generate_summary() {
     [ -f "$UNKNOWN_FILE" ] && unknown_count=$(wc -l < "$UNKNOWN_FILE")
     [ -f "$DOCKER_RESTRICTIVE_FILE" ] && docker_restrictive_count=$(wc -l < "$DOCKER_RESTRICTIVE_FILE")
 
-    tail -n +10 "$OUTPUT_FILE_ABS" > "$temp_file"
+    tail -n +12 "$OUTPUT_FILE_ABS" > "$temp_file"
 
     local total_issues=$((restrictive_count + review_count + unknown_count))
 
@@ -508,9 +496,7 @@ main() {
 
     init_report
     add_section "Python Dependencies"
-    for project in "${PYTHON_PROJECTS[@]}"; do
-        check_python_project "$project" || true
-    done
+    check_python_workspace || true
 
     add_section "JavaScript/TypeScript Dependencies"
     check_web_project || true

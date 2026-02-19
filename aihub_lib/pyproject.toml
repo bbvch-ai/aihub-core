@@ -35,7 +35,6 @@ dependencies = [
     "opentelemetry-exporter-otlp>=1.39.1",
     "pydantic>=2.10.3",
     "llama-index-storage-docstore-mongodb>=0.4.1",
-    "pytest-mock>=3.14.0",
     "llama-index-llms-openai-like>=0.5.3",
     "transformers>=4.57.3",
     "fastapi>=0.128.0",
@@ -73,6 +72,7 @@ dependencies = [
 dev = [
     "pytest>=8.4.1",
     "pytest-asyncio>=0.24.0",
+    "pytest-mock>=3.14.0",
     "ruff>=0.8.1",
     "matplotlib>=3.9.3",
     "pytest-bdd>=8.1.0",
@@ -130,7 +130,7 @@ extend-exclude = '''
   | \.hg
   | \.mypy_cache
   | \.tox
-  | \.venvmake
+  | \.venv
   | build
   | dist
 )/

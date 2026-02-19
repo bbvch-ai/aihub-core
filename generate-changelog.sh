@@ -17,7 +17,7 @@ EXCLUDE_PATTERNS=(
     ':(exclude)*-lock.yaml'
     ':(exclude)pnpm-lock.yaml'
     ':(exclude)aihub_web/aihub_web/sdk/**'
-    ':(exclude)LICENSES.md'
+    ':(exclude)LICENSE_REPORT.md'
     ':(exclude)licenses.config.json'
     ':(exclude)*.drawio'
 )
