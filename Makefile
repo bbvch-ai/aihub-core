@@ -51,6 +51,8 @@ pr-ready:
 	@(cd aihub_web && make pr-ready)
 	@poetry run mdformat --number $$(git ls-files '*.md')
 	@poetry run yamlfix $$(git ls-files '*.yaml' '*.yml' | grep -v 'pnpm-lock.yaml')
+	@$(MAKE) generate-compose
+	@$(MAKE) license-check
 
 # Use local cores for development (with poetry install)
 use-local-core:
@@ -62,7 +64,7 @@ use-local-core-without-install:
 	@echo "Switching to local cores without poetry install..."
 	poetry run python switch_dependencies.py local
 
-TAG ?= v0.262.0
+TAG ?= v0.264.0
 
 # Use remote cores (with poetry install)
 use-remote-core:

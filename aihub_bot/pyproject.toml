@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aihub_bot"
-version = "v0.262.0"
+version = "v0.264.0"
 description = "bots core"
 authors = [
     "Joel Barmettler <joel.barmettler@bbv.ch>",
@@ -47,6 +47,7 @@ pip-licenses = "^5.0.0"
 [tool.poetry.dependencies.aihub_lib]
 path = "../aihub_lib"
 develop = true
+
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

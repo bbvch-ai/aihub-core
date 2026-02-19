@@ -1,0 +1,48 @@
+# MinerU API Container (Lightweight, No GPU)
+#
+# This container runs the MinerU API service that provides document parsing.
+# It uses HTTP/REST communication only - AGPL-licensed MinerU code is isolated
+# from proprietary code through network boundaries.
+#
+# VLM requests are routed through LiteLLM (MINERU_VLM_SERVER_URL) which handles
+# model routing to either self-hosted GPU or external cloud providers.
+
+FROM python:3.12-slim
+
+# Install system dependencies required by MinerU
+# - libgl1: OpenCV dependency for image processing
+# - libglib2.0-0: GLib library for various utilities
+# - fonts-noto-*: CJK and core fonts for proper text rendering
+# - fontconfig: Font configuration library
+# - curl: For healthcheck
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        libgl1 \
+        libglib2.0-0 \
+        fonts-noto-cjk \
+        fonts-noto-core \
+        fontconfig \
+        curl && \
+    fc-cache -fv && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install MinerU with [api] extras for uvicorn, WITHOUT [core] - no local models
+# This keeps the container lightweight (~500MB vs ~4GB with models)
+# Pin version for reproducible builds - update tag when changing version
+RUN pip install --no-cache-dir 'mineru[api]==2.7.5'
+
+# Create non-root user for security
+RUN useradd --create-home --shell /bin/bash mineru
+USER mineru
+WORKDIR /home/mineru
+
+EXPOSE 8000
+
+# Healthcheck to verify the API is responding (MinerU uses /openapi.json)
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
+    CMD curl -f http://localhost:8000/openapi.json || exit 1
+
+# Run the MinerU API server
+ENTRYPOINT ["mineru-api"]
+CMD ["--host", "0.0.0.0", "--port", "8000"]

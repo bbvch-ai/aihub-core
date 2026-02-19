@@ -24,7 +24,6 @@ class AgenticCVProcessConfig(ProcessConfig):
     def as_form(cls) -> Self:
         base = ProcessConfig.as_form()
         return cls(
-            process_class=base.process_class,
             process_id=base.process_id,
             name=base.name,
             description=base.description,

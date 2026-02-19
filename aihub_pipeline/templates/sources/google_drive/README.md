@@ -75,5 +75,3 @@ rclone:
 ```bash
 make playground
 ```
-
-Open http://localhost:3000

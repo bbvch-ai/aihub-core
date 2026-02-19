@@ -48,13 +48,11 @@ class TestAgentConfig:
     def test_agent_config_creation_with_required_fields(self, sample_locale_string: LocaleString) -> None:
         """Test that AgentConfig can be created with required fields."""
         config = AgentConfig(
-            agent_class="TestAgent",
             agent_id="test-agent-1",
             name=sample_locale_string,
             description=sample_locale_string,
         )
 
-        assert config.agent_class == "TestAgent"
         assert config.agent_id == "test-agent-1"
         assert config.name == sample_locale_string
         assert config.description == sample_locale_string
@@ -63,7 +61,6 @@ class TestAgentConfig:
     def test_agent_config_with_custom_icon(self, sample_locale_string: LocaleString) -> None:
         """Test that AgentConfig accepts custom icon."""
         config = AgentConfig(
-            agent_class="TestAgent",
             agent_id="test-agent-1",
             name=sample_locale_string,
             description=sample_locale_string,
@@ -78,7 +75,6 @@ class TestAgentConfig:
         valid_ids = ["test-agent-1", "agent_123", "my-custom-agent", "a", "agent-1-2-3"]
         for agent_id in valid_ids:
             config = AgentConfig(
-                agent_class="TestAgent",
                 agent_id=agent_id,
                 name=sample_locale_string,
                 description=sample_locale_string,
@@ -90,7 +86,6 @@ class TestAgentConfig:
         for agent_id in invalid_ids:
             with pytest.raises(ValidationError):
                 AgentConfig(
-                    agent_class="TestAgent",
                     agent_id=agent_id,
                     name=sample_locale_string,
                     description=sample_locale_string,
@@ -99,7 +94,6 @@ class TestAgentConfig:
     def test_agent_config_extra_fields_allowed(self, sample_locale_string: LocaleString) -> None:
         """Test that AgentConfig accepts extra fields due to extra='allow'."""
         config = AgentConfig(
-            agent_class="TestAgent",
             agent_id="test-agent-1",
             name=sample_locale_string,
             description=sample_locale_string,
@@ -114,7 +108,6 @@ class TestAgentConfig:
         """Test creating AgentConfig from entity with simple config_data."""
         config = AgentConfig.from_entity(sample_agent_config_entity)
 
-        assert config.agent_class == "NestedAgent"
         assert config.agent_id == "nested-agent-1"
         assert config.name.de == "Test Agent"
         assert config.description.en == "Test Agent"
@@ -163,7 +156,6 @@ class TestStepConfig:
     def test_get_step_configs_empty(self, sample_locale_string: LocaleString) -> None:
         """Test get_step_configs returns empty dict when no step configs present."""
         config = AgentConfig(
-            agent_class="TestAgent",
             agent_id="test-agent-1",
             name=sample_locale_string,
             description=sample_locale_string,
@@ -187,7 +179,6 @@ class TestStepConfig:
             regular_field: str = "not_a_step_config"
 
         config = CustomAgentConfig(
-            agent_class="TestAgent",
             agent_id="test-agent-1",
             name=sample_locale_string,
             description=sample_locale_string,
@@ -211,7 +202,6 @@ class TestStepConfig:
             processing: ProcessingConfig = Field(default_factory=lambda: ProcessingConfig(max_items=200))
 
         config = CustomAgentConfig(
-            agent_class="TestAgent",
             agent_id="test-agent-1",
             name=sample_locale_string,
             description=sample_locale_string,
@@ -233,7 +223,7 @@ class TestAgentConfigEntityRoundTrip:
         config = AgentConfig.from_entity(sample_agent_config_entity)
 
         # Config back to Entity
-        new_entity = AgentConfigEntityEmbeddedDocument.from_agent_config(config)
+        new_entity = AgentConfigEntityEmbeddedDocument.from_agent_config(config, "NestedAgent")
 
         # Verify core fields match
         assert new_entity.agent_class == sample_agent_config_entity.agent_class

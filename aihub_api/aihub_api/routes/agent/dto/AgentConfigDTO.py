@@ -54,7 +54,7 @@ class AgentConfigDTO(BaseModel):
         name = t.extract(config_entity.name.to_locale_string())
         description = t.extract(config_entity.description.to_locale_string())
 
-        icon = config_entity.icon or class_entity.icon or "mage:robot"
+        icon = config_entity.icon
 
         return cls(
             agent_id=config_entity.agent_id,

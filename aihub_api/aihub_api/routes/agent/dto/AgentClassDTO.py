@@ -9,6 +9,7 @@ from aihub_lib.nats.events.discovery.agent.AgentClassDiscoveryResponseEvent impo
 )
 from aihub_lib.nats.events.discovery.EventSpecs import EventSpecs
 from aihub_lib.nats.events.form import ALL_FORM_OPTIONS
+from aihub_lib.nats.events.form.TemplateData import TemplateData
 from pydantic import BaseModel, Field
 
 if TYPE_CHECKING:
@@ -76,6 +77,10 @@ class AgentClassDTO(BaseModel):
     is_online: Annotated[
         bool | None, Field(description="Indicates whether the agent class is online and reachable.")
     ] = None
+    templates: Annotated[
+        list[TemplateData],
+        Field(description="List of profile templates for quick profile creation."),
+    ] = []
 
     @classmethod
     def from_discovery_event(
@@ -97,6 +102,7 @@ class AgentClassDTO(BaseModel):
             hitl_response_events=event.hitl_response_events,
             network_graph=event.network_graph,
             is_online=True,
+            templates=event.templates,
         )
 
     @classmethod
@@ -149,7 +155,7 @@ class AgentClassDTO(BaseModel):
             agent_class=entity.agent_class,
             name=name,
             description=description,
-            icon=entity.icon or "mage:robot",
+            icon=entity.icon,
             form=entity.form_elements,
             agent_config_specs=agent_config_specs,
             is_conversational=entity.is_conversational,
@@ -159,6 +165,7 @@ class AgentClassDTO(BaseModel):
             hitl_response_events=hitl_response_events,
             network_graph=network_graph,
             is_online=entity.is_online,
+            templates=[TemplateData.model_validate(td) for td in entity.templates] if entity.templates else [],
         )
         return dto.in_locale(t)
 

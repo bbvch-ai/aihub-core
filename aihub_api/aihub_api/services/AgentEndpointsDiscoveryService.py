@@ -7,6 +7,12 @@ from typing import Annotated, override
 
 from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
+from aihub_lib.auth.usage import (
+    ResourceType,
+    UsageLimitMessages,
+    UsageLimits,
+    use_usage_limits,
+)
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.infrastructure.langfuse.LangfuseProvisioner import LangfuseProvisioner
 from aihub_lib.nats.dependencies.use_nats import use_nats
@@ -168,6 +174,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
                     hitl_request_events=agent_class_dto.hitl_request_events,
                     hitl_response_events=agent_class_dto.hitl_response_events,
                     network_graph=agent_class_dto.network_graph,
+                    templates=[t.model_dump() for t in response.templates],
                 )
 
         return list(unique_agents_dict.values())
@@ -325,6 +332,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
         async def send_event(
             agent_id: Annotated[str, Path(title="Agent ID", description="The specific agent instance ID")],
             nc: Annotated[NATS, Depends(use_nats)],
+            usage_limits: Annotated[UsageLimits, Depends(use_usage_limits)],
             start_event_input: Annotated[input_type, Body],
             external_agent_event_distributor: Annotated[
                 ExternalAgentEventDistributor, Depends(use_external_agent_event_distributor)
@@ -341,6 +349,8 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
             config = AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
             if not config:
                 raise HTTPException(status_code=404, detail=f"Agent instance '{agent_class}/{agent_id}' not found")
+
+            await usage_limits.check_and_raise(user, ResourceType.AGENT, agent_class, agent_id, locale=t.locale)
 
             if thread_id is not None:
                 try:
@@ -403,6 +413,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
         async def stream_event(
             agent_id: Annotated[str, Path(title="Agent ID", description="The specific agent instance ID")],
             nc: Annotated[NATS, Depends(use_nats)],
+            usage_limits: Annotated[UsageLimits, Depends(use_usage_limits)],
             start_event_input: Annotated[input_type, Body],
             external_agent_event_distributor: Annotated[
                 ExternalAgentEventDistributor, Depends(use_external_agent_event_distributor)
@@ -419,6 +430,10 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
             config = AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
             if not config:
                 raise HTTPException(status_code=404, detail=f"Agent instance '{agent_class}/{agent_id}' not found")
+
+            usage_status = await usage_limits.check_and_raise(
+                user, ResourceType.AGENT, agent_class, agent_id, locale=t.locale
+            )
 
             if thread_id is not None:
                 try:
@@ -478,15 +493,18 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
                 # Final event to signal stream end
                 yield "data: [DONE]\n\n"
 
+            response_headers = {
+                "Cache-Control": "no-cache, no-store, must-revalidate, no-transform",
+                "X-Accel-Buffering": "no",
+                "Connection": "keep-alive",
+                "Content-Encoding": "identity",
+                **UsageLimitMessages.build_usage_warning_headers(usage_status, locale=t.locale),
+            }
+
             return StreamingResponse(
                 sse_event_generator(),
                 media_type="text/event-stream",
-                headers={
-                    "Cache-Control": "no-cache, no-store, must-revalidate, no-transform",
-                    "X-Accel-Buffering": "no",
-                    "Connection": "keep-alive",
-                    "Content-Encoding": "identity",
-                },
+                headers=response_headers,
             )
 
         return stream_event

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aihub_pipeline"
-version = "v0.262.0"
+version = "v0.264.0"
 description = "pipeline core"
 authors = [
     "Joel Barmettler <joel.barmettler@bbv.ch>",
@@ -28,6 +28,7 @@ boto3 = "^1.41.5"
 [tool.poetry.dependencies.aihub_lib]
 path = "../aihub_lib"
 develop = true
+
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.1"

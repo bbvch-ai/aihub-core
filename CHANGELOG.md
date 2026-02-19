@@ -5,6 +5,238 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.264.0] - 2026-02-19 - Templates for Agents & Processes: Quick Start and Enhanced Configuration Management
+
+### Added
+
+- ✨ **Agent and Process Profile Templates**: Introduced a new system to define and manage pre-configured templates for
+  agent and process profiles, replacing the previous "default profile" mechanism and offering administrators multiple
+  starting points for instance creation.
+- 🦾 **New Pre-built Agent Templates**: Added a suite of practical templates for `FewShotAgent` (e.g., Structured Data
+  Extractor, Support Ticket Classifier, Professional Tone Rewriter) and `LLMWrappingAgent` (e.g., Code Explainer, Email
+  Drafter, Meeting Minutes Assistant) to accelerate common use cases.
+- 🖼️ **Intuitive UI for Templates and Cloning**: Enhanced the web UI with a dedicated section to browse and select agent
+  templates, and enabled cloning functionality for existing agent instances to pre-fill creation forms.
+- ➕ **Flexible Form Input Elements**: Expanded the capabilities of `InputText` and `LocaleInput` form elements to
+  support both `LocaleString` and plain `str` for `placeholder`, `prefix`, and `suffix` fields, offering more dynamic UI
+  customization.
+- 🗺️ **Agent Navigation in UI**: Introduced new navigation in the web UI to easily switch between "My Agents" and the
+  new "Templates" view.
+
+### Refactor
+
+- 🧹 **Streamlined Agent and Process Configuration Models**: Removed the `agent_class` and `process_class` fields from
+  the `AgentConfig` and `ProcessConfig` Pydantic models, respectively, as these are now derived from the runtime context
+  rather than being user-configurable. This improves data model clarity and type safety.
+- ⚙️ **Centralized Instance Configuration Management**: Consolidated configuration normalization, validation, and
+  metadata extraction logic into a new `InstanceConfigHelper` utility within the API, reducing code duplication and
+  ensuring consistent handling across agent and process instances.
+- 🔄 **Generic UI Composable for Instance Creation**: Developed a reusable `useCreateInstanceForm` composable for the web
+  UI, standardizing the logic for creating both agent and process instances, including handling of class selection,
+  dynamic form rendering, and initial data application from templates or cloned instances.
+- 💾 **Stricter Icon Requirements**: Agent and Process classes now explicitly require an icon to be defined, ensuring
+  consistent visual representation across the platform.
+- 💬 **Improved Agent Memory Initialization**: `AgentMemory` now explicitly receives the `agent_class` during
+  initialization, providing a clearer and more direct way to establish agent-specific memory contexts.
+
+### Removed
+
+- 🗑️ **Deprecated "Default Process Configuration"**: The legacy `default_process_config` field and its associated
+  auto-creation mechanism have been removed from the `ProcessClassDiscoveryResponseEvent` and related backend logic, in
+  favor of the new, more flexible template system.
+
+---
+
+## [v0.263.1] - 2026-02-19 - Smarter AI Hub Streaming: Better Errors & Usage Warnings
+
+### Added
+
+- ✨ **Usage Warning Display:** Implemented functionality to detect and display usage warnings (e.g., nearing API limits)
+  received from the AI Hub service via response headers directly in the chat interface.
+
+### Changed
+
+- 🌐 **Localized Error Support:** The `Accept-Language` header from the user's request is now forwarded to the AI Hub
+  service, enabling localized error messages and responses from the backend where supported.
+- 🚀 **Enhanced Streaming Error Handling:** Improved the robustness of streaming requests by allowing for early detection
+  and more detailed handling of HTTP errors before processing the stream, providing clearer feedback to the user.
+- 💡 **Smarter API Error Message Parsing:** The system now intelligently parses JSON error bodies from the AI Hub service
+  to extract and display more specific and user-friendly error messages, improving diagnostic clarity.
+
+### Refactor
+
+- 🧹 **Code Readability Enhancements:** Applied minor formatting and whitespace adjustments across pipeline
+  configurations to improve overall code readability and maintainability.
+
+---
+
+## [v0.263.0] - 2026-02-18 - Adopting MinerU for Superior Document Processing and Platform Architecture
+
+### Added
+
+- 🚀 **MinerU Integration**: Replaced Docling with MinerU as the primary document parsing engine. This provides improved
+  performance and quality for PDF and image processing, with advanced OCR, table, and formula extraction capabilities.
+- 📄 **MarkItDown Loader**: Introduced a dedicated loader for Office documents (DOCX, PPTX, XLSX, Outlook messages),
+  ensuring comprehensive support for a wider range of file types alongside MinerU.
+- ✨ **Flexible Image Handling**: Implemented new utilities for managing images within parsed documents. This supports
+  both S3-based storage with signed URLs and base64 embedding in markdown, offering greater flexibility for client-side
+  rendering.
+- 🏗️ **Docker Network Isolation Documentation**: Added detailed documentation on the platform's Docker network
+  segmentation, enhancing security and clarifying internal service communication for better architectural understanding.
+- ⚙️ **Configurable Agent Forms**: Introduced a "Form Duality Pattern" for agent configurations, allowing administrators
+  to create and customize agent profiles via the Admin UI without requiring code changes.
+- 🔗 **S3 Filesystem Utility**: Added a new `create_s3_filesystem` helper for consistent and easy S3 access across
+  various services, simplifying file operations.
+- ⚡️ **New API Parsing Endpoint**: Introduced `/api/v1/parsing` as a generic, implementation-agnostic endpoint for
+  document conversion, adhering to the OpenWebUI external loader specification.
+
+### Changed
+
+- 🔄 **Document Parsing Core Logic**: All internal `DoclingLoader` usage across the platform's document processing
+  pipelines has been replaced with `MineruLoader` and `MarkItDownLoader`.
+- 📝 **API Endpoint and Translation Naming**: The API controller group has been renamed from `docling` to `parsing` in
+  translations to reflect the generalized document processing capabilities.
+- 💡 **Pipeline Ingestion Strategy**: Updated the data ingestion pipeline to use a more flexible
+  `default_rclone_to_datalake_definitions` factory, expanding support for various cloud storage providers via Rclone.
+- ⚙️ **Environment Variables**: Migrated all `DOCLING_*` environment variables to `MINERU_*` for configuring the new
+  document parsing services.
+- 🌐 **LLM Proxy Configuration**: Updated LiteLLM configurations to route Visual Language Model (VLM) requests for OCR to
+  the new MinerU VLM, leveraging either local GPU inference or partner-hosted cloud endpoints.
+- 📚 **Documentation Updates**: Numerous documentation pages (e.g., solution overview, quick start, architecture) have
+  been updated to reflect the transition from Docling to MinerU.
+- 🛠️ **API Request Body Limit**: Implemented a `use_limited_body` dependency in the API to enforce a maximum file size
+  for document uploads, preventing excessively large requests.
+- ⚡️ **PR Ready Build Target**: Enhanced the `pr-ready` Makefile target to include `generate-compose` and
+  `license-check` steps, ensuring configuration and compliance checks automatically.
+
+### Refactor
+
+- 🧹 **`aihub_lib` Dependency Management**: Refactored `aihub_lib` dependencies across `aihub_agent`, `aihub_api`,
+  `aihub_bot`, `aihub_pipeline`, and `aihub_process` to use local path references, streamlining the local development
+  workflow.
+- 🗄️ **IDE Run Configurations**: Streamlined API development and production run configurations in `.idea` to use
+  Makefile targets, simplifying IDE setup for developers.
+- 🔄 **Image Path Sanitation**: Improved the `create_figures_folder_name` utility with more robust URI and filename
+  validation and sanitization.
+
+### Removed
+
+- 🗑️ **Docling Components**: Completely removed the `DoclingController`, `DoclingService`, `DoclingLoader`,
+  `DoclingSettings`, and all related DTOs and test files from the codebase.
+- ❌ **Docling Docker Services**: Eliminated the `docling` and `vllm-docling` Docker services, along with their
+  associated image tags and initialization containers.
+- ⛔ **Old API Endpoint**: Deprecated and removed the `/api/v1/docling` API endpoint.
+
+---
+
+## [v0.262.4] - 2026-02-17 - Introducing Role-Based Usage Limits and Enhanced API Feedback
+
+### Added
+
+- ✨ **Introduced Role-Based Usage Limits**: A new powerful system enables administrators to define granular,
+  pattern-based usage limits for agents within specific roles. These limits are enforced in real-time by the API using
+  Redis for atomic counting.
+- ⚡️ **Usage Limit Enforcement in API Endpoints**: Integrated real-time usage limit checks into both OpenAI-compatible
+  chat completion endpoints and direct agent event endpoints, returning a `HTTP 429 Too Many Requests` status when
+  limits are exceeded.
+- 🛠️ **New Usage Limit Configuration UI**: Added a dedicated editor within the role management interface, allowing easy
+  configuration and management of pattern-based usage limits for each role.
+- 🌐 **Localized Usage Limit Messages**: Implemented comprehensive internationalization for usage limit warnings and
+  exceeded messages, providing clear feedback to users in multiple languages (DE, EN, FR, IT).
+- 📄 **Structured Error Responses for Rate Limits**: The API now provides detailed, structured error responses for
+  exceeded usage limits, including localized messages and information about when the limit resets.
+- ⚠️ **Usage Warning Headers for Streaming APIs**: Streaming API responses now include `X-Usage-Warning` headers and
+  messages when a user's usage approaches a defined limit, enabling client applications to provide proactive
+  notifications.
+- ✍️ **Access Rule and Usage Pattern Help Texts**: Added informative help texts and examples directly within the Role
+  editor UI to guide users in defining effective access rules and usage limit patterns.
+
+### Changed
+
+- 🔄 **Improved API Error Display in Web UI**: Enhanced the web application's global error handler to parse structured
+  API error responses (such as usage limit exceeded messages) and display more user-friendly details instead of raw
+  error messages.
+- ⬆️ **Expanded Access Rule Pattern Characters**: Access rule patterns now support uppercase letters, offering greater
+  flexibility in naming conventions for resources.
+- ⚙️ **Updated OpenWebUI Pipeline for Usage Warnings**: The OpenWebUI integration pipeline now processes
+  `X-Usage-Warning` headers from the API to display in-chat notifications when a user is nearing their agent usage
+  limit.
+- 📡 **Refined OpenWebUI API Error Handling**: The OpenWebUI integration pipeline's streaming service now proactively
+  captures HTTP error responses before stream processing begins, parsing structured error bodies for more informative
+  user messages.
+- 📜 **Simplified HTTP 429 Error Message**: The generic `Too Many Requests` error message in the web UI has been made
+  more concise.
+
+### Refactor
+
+- 🧹 **Modularized Role Editor Components**: The access rules editing functionality has been extracted into a dedicated
+  `AccessRulesEditor` component, and a new `UsageLimitsEditor` component was created, significantly improving the
+  maintainability and clarity of the role editor.
+- 🎨 **Enhanced Role Creation UI**: The entry point for creating new roles in the web interface has been redesigned for a
+  cleaner, more intuitive user experience.
+
+---
+
+## [v0.262.3] - 2026-02-17 - Enhanced Developer Tooling and IDE Configurations
+
+### Added
+
+- 🚀 **Introduced Service Run Configurations:** Added new PyCharm configurations to facilitate direct execution of core
+  services, such as the **API**, from within the IDE for improved development workflow.
+- 🛠️ **Expanded Makefile Target Configurations:** Integrated new PyCharm run configurations for critical development
+  tasks, including **Generate Compose**, **License Check**, **Use Local Core**, and **Use Remote Core**, making common
+  operations more accessible.
+
+### Changed
+
+- 🔄 **Renamed Test Configurations:** Clarified existing PyCharm test configurations by appending "Tests" to their names
+  (e.g., **API Tests**, **Agent Tests**, **Bot Tests**, **Lib Tests**, **Process Tests**), enhancing consistency and
+  discoverability for developers.
+
+---
+
+## [v0.262.2] - YYYY-MM-DD - Introducing the LLM-Powered Whitepaper Generation System
+
+### Added
+
+- ✨ **LLM-Powered Whitepaper Generation System**: A comprehensive, iterative system has been introduced to automatically
+  transform technical documentation into business-focused whitepapers, ensuring consistency, professional output, and
+  maintainability.
+- 📄 **Automated Chapter Content and Structure**: Each whitepaper chapter is now generated via an LLM, organized in
+  self-contained folders with dedicated prompts, source mappings, and generated outputs (`chapters/*/`).
+- 🔍 **LLM-Based Source Discovery**: Implemented `generate-sources.py` to intelligently identify and map relevant
+  technical documentation files for each chapter, dynamically keeping content synchronized with evolving technical
+  documents.
+- 🚀 **Python-Based Iterative Generation**: The `generate-whitepaper.py` script facilitates sequential chapter
+  generation, leveraging Jinja2 templates and previous chapters as context to maintain narrative flow and style
+  consistency.
+- 💰 **Integrated Cost Tracking and Observability**: LLM calls within the generation process now include token usage and
+  estimated cost summaries for better financial transparency and operational oversight.
+- 📚 **Centralized Glossary and General Writing Guidelines**: New configuration files (`glossary.md`,
+  `general_prompt.md`) are used to enforce consistent terminology and writing style across all generated whitepaper
+  chapters.
+- 📈 **Professional PDF Output with LaTeX**: The system now supports direct Markdown to LaTeX to PDF conversion using
+  `pandoc` and a custom LaTeX template, ensuring high-quality, professional-looking whitepapers.
+- 🧹 **Automated Markdown Formatting**: Generated `.md` files are automatically formatted using `mdformat` to ensure
+  consistent readability and adherence to project styling.
+- 📝 **Architectural Decision Record**: An `arc42` decision record
+  (`2025_12_05_llm_based_whitepaper_generation_system.md`) outlines the context, drivers, decision, and consequences of
+  adopting this new LLM-based whitepaper generation system.
+
+---
+
+## [v0.262.1] - 2026-02-17 - Expanded External Service Configuration
+
+### Added
+
+- ✨ **Milvus Vector Database Configuration**: Introduced new environment variables (`MILVUS_URL`, `MILVUS_DIMENSION`,
+  `MILVUS_ROOT_PASSWORD`) across deployment files, enabling flexible configuration and integration with the Milvus
+  vector database.
+- 🔑 **Docling API Key Support**: Added the `DOCLING_API_KEY` environment variable to allow for secure authentication and
+  access control for the Docling document processing service.
+
+---
+
 ## [v0.262.0] - 2026-02-12 - Comprehensive Observability Upgrade: Migrating to Langfuse for LLM Tracing and Evaluation
 
 ### Added

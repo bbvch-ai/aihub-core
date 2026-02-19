@@ -307,6 +307,12 @@ export type AgentClassDto = {
      * Indicates whether the agent class is online and reachable.
      */
     is_online?: boolean | null;
+    /**
+     * Templates
+     *
+     * List of profile templates for quick profile creation.
+     */
+    templates?: Array<TemplateData>;
 };
 
 /**
@@ -3123,6 +3129,12 @@ export type CreateRoleRequest = {
      * A list of access rules granted by this role.
      */
     access_rules?: Array<string>;
+    /**
+     * Usage Limits
+     *
+     * Pattern-based usage limit rules.
+     */
+    usage_limits?: Array<UsageLimitDto>;
 };
 
 /**
@@ -3806,34 +3818,6 @@ export type DocumentBlock = {
 };
 
 /**
- * DocumentConversionMetadata
- */
-export type DocumentConversionMetadata = {
-    /**
-     * Filename
-     *
-     * Original filename of the converted document
-     */
-    filename: string;
-};
-
-/**
- * DocumentConversionResponse
- */
-export type DocumentConversionResponse = {
-    /**
-     * Page Content
-     *
-     * Markdown content extracted from the document
-     */
-    page_content: string;
-    /**
-     * Metadata about the converted document
-     */
-    metadata: DocumentConversionMetadata;
-};
-
-/**
  * DocumentDTO
  */
 export type DocumentDto = {
@@ -3897,6 +3881,41 @@ export type DocumentDto = {
      * Document title.
      */
     document_title?: string | null;
+};
+
+/**
+ * DocumentParsingMetadata
+ *
+ * Metadata about the converted document.
+ */
+export type DocumentParsingMetadata = {
+    /**
+     * Filename
+     *
+     * Original filename
+     */
+    filename: string;
+};
+
+/**
+ * DocumentParsingResponse
+ *
+ * Response schema for document conversion.
+ *
+ * Follows the OpenWebUI External Document Loader specification.
+ * Can return either a single document or a list of documents (one per page).
+ */
+export type DocumentParsingResponse = {
+    /**
+     * Page Content
+     *
+     * Extracted text content (markdown)
+     */
+    page_content: string;
+    /**
+     * Document metadata
+     */
+    metadata?: DocumentParsingMetadata | null;
 };
 
 /**
@@ -5769,6 +5788,20 @@ export type ImageGenerationRequest = {
 };
 
 /**
+ * ImageMode
+ *
+ * Image handling mode for parsed documents.
+ */
+export const ImageMode = { S3: 's3', BASE64: 'base64' } as const;
+
+/**
+ * ImageMode
+ *
+ * Image handling mode for parsed documents.
+ */
+export type ImageMode = typeof ImageMode[keyof typeof ImageMode];
+
+/**
  * ImageURL
  */
 export type ImageUrl = {
@@ -6543,17 +6576,23 @@ export type InputText = {
      */
     readonly?: boolean;
     /**
+     * Placeholder
+     *
      * Placeholder text
      */
-    placeholder?: LocaleString | null;
+    placeholder?: LocaleString | string | null;
     /**
+     * Prefix
+     *
      * Prefix text
      */
-    prefix?: LocaleString | null;
+    prefix?: LocaleString | string | null;
     /**
+     * Suffix
+     *
      * Suffix text
      */
-    suffix?: LocaleString | null;
+    suffix?: LocaleString | string | null;
     /**
      * Iconprefix
      *
@@ -6572,7 +6611,7 @@ export type InputText = {
     readonly validation: string;
     [key: string]: unknown | true | string | null | string | null | 'primeInputText' | string | null | LocaleString | string | LocaleString | string | null | string | number | number | boolean | Array<string> | {
         [key: string]: string;
-    } | null | boolean | string | null | LocaleString | null | LocaleString | null | LocaleString | null | string | null | string | null | string | undefined;
+    } | null | boolean | string | null | LocaleString | string | null | LocaleString | string | null | LocaleString | string | null | string | null | string | null | string | undefined;
 };
 
 /**
@@ -7499,16 +7538,18 @@ export type LocaleInput = {
      */
     rows?: number;
     /**
+     * Placeholder
+     *
      * Placeholder text for each language
      */
-    placeholder?: LocaleString | null;
+    placeholder?: LocaleString | string | null;
     /**
      * Validation
      */
     readonly validation: string;
     [key: string]: unknown | true | string | null | string | null | 'localeInput' | string | null | LocaleString | string | LocaleString | string | null | string | number | number | boolean | Array<string> | {
         [key: string]: string;
-    } | null | boolean | string | null | 'text' | 'textarea' | number | LocaleString | null | string | undefined;
+    } | null | boolean | string | null | 'text' | 'textarea' | number | LocaleString | string | null | string | undefined;
 };
 
 /**
@@ -9443,62 +9484,11 @@ export type ProcessClassDto = {
      */
     is_online?: boolean | null;
     /**
-     * The default process configuration for this process class. This is the configuration that will be used if no specific configuration is provided.
-     */
-    default_process_config: ProcessConfig;
-};
-
-/**
- * ProcessConfig
- *
- * Each process instance can be configured with its own parameters.
- *
- * The process config follows the same duality pattern as AgentConfig:
- * - **Form mode** (via `as_form()`): Fields contain FormKit elements for UI rendering.
- * - **Data mode**: Fields contain actual primitive values for runtime use.
- *
- * This ensures the form schema and the data model can never de-sync.
- *
- * Subclasses can add domain-specific config fields for process-level settings.
- */
-export type ProcessConfig = {
-    /**
-     * Process Class
+     * Templates
      *
-     * The class name of the process, used for identification.
+     * List of profile templates for quick profile creation.
      */
-    process_class: string | InputText;
-    /**
-     * Process Id
-     *
-     * Used to uniquely identify this process instance.
-     */
-    process_id: string | InputText;
-    /**
-     * Name
-     *
-     * The name of the process.
-     */
-    name: LocaleString | LocaleInput;
-    /**
-     * Description
-     *
-     * The description of the process.
-     */
-    description: LocaleString | LocaleInput;
-    /**
-     * Icon
-     *
-     * The icon representing the process.
-     */
-    icon?: string | IconSelector;
-    /**
-     * Form Name
-     *
-     * The form type name, used for polymorphic deserialization.
-     */
-    readonly _form_name: string;
-    [key: string]: unknown | string | InputText | string | InputText | LocaleString | LocaleInput | LocaleString | LocaleInput | string | IconSelector | string | undefined;
+    templates?: Array<TemplateData>;
 };
 
 /**
@@ -10539,6 +10529,12 @@ export type RoleResponse = {
      * The list of access rules for the role.
      */
     access_rules: Array<string>;
+    /**
+     * Usage Limits
+     *
+     * Pattern-based usage limit rules.
+     */
+    usage_limits?: Array<UsageLimitDto>;
 };
 
 /**
@@ -11694,6 +11690,24 @@ export type SuiteDto = {
 };
 
 /**
+ * TemplateData
+ *
+ * Typed container for template data extracted from Form.to_template_data().
+ *
+ * Each agent/process type has different configurable fields, so extra fields
+ * are allowed and preserved through serialization.
+ */
+export type TemplateData = {
+    name: LocaleString;
+    description: LocaleString;
+    /**
+     * Icon
+     */
+    icon: string;
+    [key: string]: unknown | LocaleString | string;
+};
+
+/**
  * TextBlock
  *
  * A representation of text data to directly pass to/from the LLM.
@@ -12795,6 +12809,12 @@ export type UpdateRoleRequest = {
      * The new list of access rules.
      */
     access_rules?: Array<string> | null;
+    /**
+     * Usage Limits
+     *
+     * Pattern-based usage limit rules.
+     */
+    usage_limits?: Array<UsageLimitDto> | null;
 };
 
 /**
@@ -12846,6 +12866,55 @@ export type UsageInputTokensDetails = {
     text_tokens: number;
     [key: string]: unknown | number;
 };
+
+/**
+ * UsageLimitDTO
+ *
+ * Pattern-based usage limit rule.
+ */
+export type UsageLimitDto = {
+    /**
+     * Pattern
+     *
+     * Full dotted resource pattern with wildcards (e.g. 'aihub.user.agent.>', 'aihub.user.process.MyProcess.*').
+     */
+    pattern: string;
+    /**
+     * Limit
+     *
+     * Max calls per period for this pattern.
+     */
+    limit: number;
+    /**
+     * Period for limit: 1h, 1d, 7d, 1mo.
+     */
+    period: UsageLimitPeriod;
+    /**
+     * Description
+     *
+     * Human-readable description of the pattern.
+     */
+    description?: string | null;
+};
+
+/**
+ * UsageLimitPeriod
+ *
+ * Supported usage limit periods.
+ */
+export const UsageLimitPeriod = {
+    '1H': '1h',
+    '1D': '1d',
+    '7D': '7d',
+    '1MO': '1mo'
+} as const;
+
+/**
+ * UsageLimitPeriod
+ *
+ * Supported usage limit periods.
+ */
+export type UsageLimitPeriod = typeof UsageLimitPeriod[keyof typeof UsageLimitPeriod];
 
 /**
  * UsageTokens
@@ -13670,6 +13739,12 @@ export type AgentClassDtoWritable = {
      * Indicates whether the agent class is online and reachable.
      */
     is_online?: boolean | null;
+    /**
+     * Templates
+     *
+     * List of profile templates for quick profile creation.
+     */
+    templates?: Array<TemplateData>;
 };
 
 /**
@@ -16578,17 +16653,23 @@ export type InputTextWritable = {
      */
     readonly?: boolean;
     /**
+     * Placeholder
+     *
      * Placeholder text
      */
-    placeholder?: LocaleString | null;
+    placeholder?: LocaleString | string | null;
     /**
+     * Prefix
+     *
      * Prefix text
      */
-    prefix?: LocaleString | null;
+    prefix?: LocaleString | string | null;
     /**
+     * Suffix
+     *
      * Suffix text
      */
-    suffix?: LocaleString | null;
+    suffix?: LocaleString | string | null;
     /**
      * Iconprefix
      *
@@ -16603,7 +16684,7 @@ export type InputTextWritable = {
     iconSuffix?: string | null;
     [key: string]: unknown | true | string | null | string | null | 'primeInputText' | string | null | LocaleString | string | LocaleString | string | null | string | number | number | boolean | Array<string> | {
         [key: string]: string;
-    } | null | boolean | string | null | LocaleString | null | LocaleString | null | LocaleString | null | string | null | string | null | undefined;
+    } | null | boolean | string | null | LocaleString | string | null | LocaleString | string | null | LocaleString | string | null | string | null | string | null | undefined;
 };
 
 /**
@@ -17439,12 +17520,14 @@ export type LocaleInputWritable = {
      */
     rows?: number;
     /**
+     * Placeholder
+     *
      * Placeholder text for each language
      */
-    placeholder?: LocaleString | null;
+    placeholder?: LocaleString | string | null;
     [key: string]: unknown | true | string | null | string | null | 'localeInput' | string | null | LocaleString | string | LocaleString | string | null | string | number | number | boolean | Array<string> | {
         [key: string]: string;
-    } | null | boolean | string | null | 'text' | 'textarea' | number | LocaleString | null | undefined;
+    } | null | boolean | string | null | 'text' | 'textarea' | number | LocaleString | string | null | undefined;
 };
 
 /**
@@ -18112,56 +18195,11 @@ export type ProcessClassDtoWritable = {
      */
     is_online?: boolean | null;
     /**
-     * The default process configuration for this process class. This is the configuration that will be used if no specific configuration is provided.
-     */
-    default_process_config: ProcessConfigWritable;
-};
-
-/**
- * ProcessConfig
- *
- * Each process instance can be configured with its own parameters.
- *
- * The process config follows the same duality pattern as AgentConfig:
- * - **Form mode** (via `as_form()`): Fields contain FormKit elements for UI rendering.
- * - **Data mode**: Fields contain actual primitive values for runtime use.
- *
- * This ensures the form schema and the data model can never de-sync.
- *
- * Subclasses can add domain-specific config fields for process-level settings.
- */
-export type ProcessConfigWritable = {
-    /**
-     * Process Class
+     * Templates
      *
-     * The class name of the process, used for identification.
+     * List of profile templates for quick profile creation.
      */
-    process_class: string | InputTextWritable;
-    /**
-     * Process Id
-     *
-     * Used to uniquely identify this process instance.
-     */
-    process_id: string | InputTextWritable;
-    /**
-     * Name
-     *
-     * The name of the process.
-     */
-    name: LocaleString | LocaleInputWritable;
-    /**
-     * Description
-     *
-     * The description of the process.
-     */
-    description: LocaleString | LocaleInputWritable;
-    /**
-     * Icon
-     *
-     * The icon representing the process.
-     */
-    icon?: string | IconSelectorWritable;
-    [key: string]: unknown | string | InputTextWritable | string | InputTextWritable | LocaleString | LocaleInputWritable | LocaleString | LocaleInputWritable | string | IconSelectorWritable | undefined;
+    templates?: Array<TemplateData>;
 };
 
 /**
@@ -23308,16 +23346,40 @@ export type UpdateOrganizationMemoryResponse = UpdateOrganizationMemoryResponses
 
 export type ProcessDocumentData = {
     body?: never;
+    headers?: {
+        /**
+         * X-Filename
+         */
+        'x-filename'?: string;
+        /**
+         * X-File-Name
+         */
+        'x-file-name'?: string | null;
+    };
     path?: never;
-    query?: never;
-    url: '/docling/process';
+    query?: {
+        /**
+         * Image handling: 's3' (signed URLs) or 'base64' (embedded data URIs)
+         */
+        image_mode?: ImageMode;
+    };
+    url: '/parsing/process';
 };
+
+export type ProcessDocumentErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ProcessDocumentError = ProcessDocumentErrors[keyof ProcessDocumentErrors];
 
 export type ProcessDocumentResponses = {
     /**
      * Successful Response
      */
-    200: DocumentConversionResponse;
+    200: DocumentParsingResponse;
 };
 
 export type ProcessDocumentResponse = ProcessDocumentResponses[keyof ProcessDocumentResponses];
