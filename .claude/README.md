@@ -29,7 +29,6 @@ This directory contains all Claude Code configuration for the aihub-core monorep
 │   ├── dependency-audit/  # Dependency health check
 │   ├── validate-events/   # Event system validation
 │   ├── debug-agent/       # Agent debugging assistant
-│   ├── release-prep/      # Pre-release validation
 │   ├── scaffold-composable/ # Generate Pinia-Colada composable
 │   ├── scaffold-event-display/ # Generate event display component
 │   ├── scaffold-dashboard-widget/ # Generate dashboard widget
@@ -84,16 +83,15 @@ This directory contains all Claude Code configuration for the aihub-core monorep
 
 ## Quick Reference
 
-### Skills (43 total)
+### Skills (42 total)
 
 | Category       | Skill                          | Description                                        |
 | -------------- | ------------------------------ | -------------------------------------------------- |
 | Workflow       | `/review-diff`                 | Pre-PR code review (diff analysis)                 |
-|                | `/create-pr`                   | Pre-PR validation                                  |
+|                | `/create-pr`                   | Pre-PR validation and release readiness            |
 |                | `/implement-feedback-from-pr`  | Apply PR feedback                                  |
 |                | `/plan-issue`                  | GitHub issue → implementation plan                 |
 |                | `/reflect`                     | Session retrospective → improve CLAUDE.md/skills   |
-|                | `/release-prep`                | Pre-release validation                             |
 |                | `/test-scope`                  | Scoped test runner                                 |
 | Docs           | `/update-doc`                  | Sync docs, CLAUDE.md, and skills with code         |
 |                | `/explain`                     | Analyze and explain code                           |

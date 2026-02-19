@@ -8,7 +8,7 @@ description: >
   Do NOT use for running tests (use test-scope skill) or debugging test failures
   (use debug-agent/debug-pipeline skills).
 tools: Read, Grep, Glob, Bash
-model: haiku
+model: sonnet
 permissionMode: plan
 maxTurns: 25
 ---

@@ -1,13 +1,15 @@
 ---
 name: create-pr
-description: "Validate and prepare code for a pull request: commit, format, lint, type-check, and test all affected scopes. Use when user says 'create a PR', 'prepare pull request', 'get ready for PR', 'run pr-ready', 'validate my changes', or 'prepare for review'. Commits work, runs make pr-ready and make test in every scope, reviews diff against main, and updates docs."
+description: Validate and prepare code for a pull request across the aihub-core monorepo. Orchestrates committing, formatting, linting, testing, code review, version consistency, compose generation, and documentation sync. Use when user says 'create a PR', 'prepare pull request', 'get ready for PR', 'run pr-ready', 'validate my changes', 'prepare for review', 'pre-merge checks', 'is this ready to merge', or 'release validation'. Do NOT use for only running tests (use /test-scope), only reviewing code (use /review-diff), or only syncing docs (use /update-doc).
 allowed-tools: Bash, Read, Grep, Glob, Edit
 ---
 
 # Create PR - Pre-Pull Request Validation
 
-Prepare code for a pull request by committing, formatting, linting, testing, and reviewing all changes. This skill does
-NOT create the actual PR -- it ensures everything is ready for one.
+Prepare code for a pull request by committing, formatting, linting, testing, reviewing, and validating all changes
+across the monorepo. This skill does NOT create the actual PR -- it ensures everything is ready for one.
+
+Delegates to specialized skills where available. Run all steps in order -- each depends on the previous.
 
 ## Steps
 
@@ -20,107 +22,125 @@ git add <specific-files>
 git commit -m "type(scope): Descriptive message"
 ```
 
-- **Commit format**: `type(scope): subject` (types: fix, feat, test, doc, chore)
+- **Commit format**: `type(scope): subject` — types: `fix`, `feat`, `test`, `doc`, `chore`
+- **Allowed scopes** (CI-enforced): `aihub`, `iac`, `ci-cd`, `agent-custom`, `agent-xp`, `avatar`, `bots`, `chat-xp`,
+  `chat-backend`, `debt`, `dagster`, `confidence`, `deploy`, `ui`, `guards`, `rag`, `local`, `tracing`, `workflows`,
+  `micro`
 - Keep commits focused -- one logical change per commit
 - Use imperative mood ("Add feature" not "Added feature")
 
-### 2. Format and Lint All Affected Scopes
+### 2. Format and Lint All Scopes
 
-Run `make pr-ready` in each scope. Fix errors immediately and re-run until clean.
-
-```bash
-# Run in each affected scope (always start with aihub_lib if modified)
-cd aihub_lib && poetry shell && make pr-ready && exit
-cd ../aihub_pipeline && poetry shell && make pr-ready && exit
-cd ../aihub_agent && poetry shell && make pr-ready && exit
-cd ../aihub_process && poetry shell && make pr-ready && exit
-cd ../aihub_api && poetry shell && make pr-ready && exit
-cd ../aihub_bot && poetry shell && make pr-ready && exit
-cd ..
-```
-
-**Expected output**: No formatting errors, no lint warnings, no type check failures.
-
-### 3. Run All Tests
-
-Run `make test` in each scope. Every test must pass.
+Run `make pr-ready` from the repo root to format and lint all scopes at once:
 
 ```bash
-cd aihub_lib && poetry shell && make test && exit
-cd ../aihub_pipeline && poetry shell && make test && exit
-cd ../aihub_agent && poetry shell && make test && exit
-cd ../aihub_process && poetry shell && make test && exit
-cd ../aihub_api && poetry shell && make test && exit
-cd ../aihub_bot && poetry shell && make test && exit
-cd ..
+make -C /home/joelbarmettler/projects/aihub/aihub-core pr-ready
 ```
 
-- Read error messages carefully -- fix the root cause
-- Never disable or skip tests
-- Re-run until all green
+This runs `ruff format` + `ruff check --fix` in every scope (`aihub_lib`, `aihub_agent`, `aihub_process`, `aihub_api`,
+`aihub_bot`, `aihub_pipeline`). Fix any errors and re-run until clean.
 
-### 4. Review Changes Against Main
+If only specific scopes are affected, run individually:
 
 ```bash
-git diff main...HEAD
+make -C aihub_lib pr-ready
+make -C aihub_api pr-ready
 ```
 
-**Inspection checklist**:
+### 3. Run Tests via /test-scope
 
-- Hunt for bugs: edge cases, null pointers, resource leaks, race conditions
-- Enforce coding standards: "why" comments, docstrings on public APIs, type annotations, Pydantic over dicts, fail-fast
-  error handling
-- Respect architecture: code in the right scope, shared code in aihub_lib, no customer-specific info
+Delegate to the `/test-scope` skill for smart scoped testing. It auto-detects affected scopes from git diff, expands
+downstream dependencies (e.g. `aihub_lib` change triggers all scopes), and runs `make test` in dependency order.
 
-### 5. Fix Issues Found
+If `/test-scope` is not available, run manually in dependency order:
 
-1. Fix each problem properly (not symptoms)
-2. Re-run `make pr-ready` and `make test` for affected scopes
-3. Verify fixes actually solved the problems
+```bash
+make -C aihub_lib test
+make -C aihub_agent test
+make -C aihub_pipeline test
+make -C aihub_process test
+make -C aihub_api test
+make -C aihub_bot test
+```
 
-### 6. Final Check
+Every test must pass. Never disable or skip tests. Fix root causes, not symptoms.
 
-1. Run `git status` -- inventory everything touched
-2. Run `git diff` -- final read-through
-3. Confirm: "Does this solve exactly what the task asked for?"
+### 4. Review Changes via /review-diff
 
-### 7. Update Documentation
+Delegate to the `/review-diff` skill for a comprehensive code review of `git diff main...HEAD`. It checks architecture,
+coding standards (type hints, Pydantic models, async I/O, fail-fast), security (OWASP top 10), and correctness.
 
-Follow the `/update-doc` skill to sync documentation with code changes.
+Fix all critical and important issues found. Re-run `make pr-ready` and `make test` for any scopes modified during
+fixes.
+
+### 5. Version Consistency Check
+
+Verify all scopes reference the same `aihub-core` (aihub_lib) version:
+
+```bash
+grep -r 'aihub-core' aihub_*/pyproject.toml | grep -E '(version|tag)'
+```
+
+All scopes must use the identical version. If any scope lags behind, update its `pyproject.toml` and run `uv lock` from
+the workspace root.
+
+### 6. Compose Generation Check
+
+Verify Docker Compose files are up to date with templates:
+
+```bash
+make -C /home/joelbarmettler/projects/aihub/aihub-core generate-compose
+git diff --stat
+```
+
+If `git diff` shows changes after regeneration, the templates were modified without regenerating. Commit the regenerated
+files.
+
+### 7. Update Documentation via /update-doc
+
+Delegate to the `/update-doc` skill to sync documentation with code changes. It reviews affected READMEs, CLAUDE.md
+files, and skills for staleness.
+
+For significant architectural changes, also check whether an ADR is needed in `aihub_doc/arc42/decisions/` (see
+`/document-decision`).
+
+### 8. Git Cleanliness
+
+```bash
+git status
+git log --oneline main..HEAD
+```
+
+Verify:
+
+- No uncommitted changes remain
+- All commits follow conventional format (`type(scope): subject`)
+- Branch is pushed and up to date with remote
 
 ## Critical Rules
 
 - **DO NOT** create the actual pull request -- only prepare for one
-- **DO NOT** skip any failing test -- every single one must pass
+- **DO NOT** skip any failing test
 - Fix the actual problem, not the symptom
-- Follow typing and documentation standards
-- Update documentation when changes affect it
-
-## Examples
-
-**Typical invocation**: `/create-pr` after finishing a feature branch
-
-**Expected workflow**:
-
-1. User completes feature work on a branch
-2. Runs `/create-pr`
-3. Skill commits, formats, tests, reviews all changes
-4. User then manually creates the PR or asks separately
+- Commit fixes from review as separate commits (not amended into feature commits)
 
 ## Troubleshooting
 
 | Problem                                  | Solution                                                                 |
 | ---------------------------------------- | ------------------------------------------------------------------------ |
-| `make pr-ready` fails with import errors | Run `poetry install` in the scope first                                  |
+| `make pr-ready` fails with import errors | Run `uv sync --all-packages` from the workspace root                     |
 | Tests fail with missing fixtures         | Check if scope depends on aihub_lib changes -- run aihub_lib tests first |
-| MyPy strict mode errors                  | Add type annotations to all parameters, returns, and variables           |
-| `poetry shell` not found                 | Ensure Poetry is installed and you are in the correct scope directory    |
+| Mypy strict mode errors                  | Add type annotations to all parameters, returns, and variables           |
+| Version mismatch across scopes           | Update lagging scope's `pyproject.toml` and run `uv lock`                |
+| Compose generation shows diff            | Run `make generate-compose` and commit the regenerated files             |
 
 ## Done When
 
-- Changes committed with proper semantic commit messages
-- Every `make pr-ready` runs clean in all affected scopes
-- Every `make test` shows all green
-- Git diff reviewed and clean
-- Code does exactly what was asked
-- Documentation is updated
+- Changes committed with proper conventional commit messages
+- `make pr-ready` runs clean across all scopes
+- All tests pass (via `/test-scope`)
+- Code review passed (via `/review-diff`)
+- All scopes reference the same aihub-core version
+- Docker Compose files match templates
+- Documentation is current (via `/update-doc`)
+- Git working tree is clean

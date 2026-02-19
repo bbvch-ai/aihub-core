@@ -1,21 +1,13 @@
 ---
 name: bot-reference
-description: >-
-  Comprehensive reference for the bot integration platform: handler architecture,
-  CompletionHandler pattern, multi-channel handling, HITL flow, conversation state,
-  NATS integration, streaming, and testing. Use when user says 'how does the bot work',
-  'CompletionHandler pattern', 'bot architecture', 'Slack thread handling', 'HITL flow',
-  'bot streaming', 'conversation state management', 'bot testing', 'how do bot channels work',
-  or 'BaseChatBot'. Covers all bot components, request flow, and testing patterns.
-arguments:
-  - name: topic
-    description: Topic or question (e.g., "CompletionHandler", "Slack threads", "HITL flow", "streaming", "testing", "conversation state")
+description: "Comprehensive reference for the bot integration platform: handler architecture, CompletionHandler pattern, multi-channel handling, BITL flow, conversation state, NATS integration, streaming, and testing. Use when user says 'how does the bot work', 'CompletionHandler pattern', 'bot architecture', 'Slack thread handling', 'BITL flow', 'bot streaming', 'conversation state management', 'bot testing', 'how do bot channels work', or 'BaseChatBot'. Do NOT use for bot setup/provisioning (use setup-bot-connection), bot debugging (use debug-bot), or scaffolding new handlers (use scaffold-bot-handler). Covers all bot components, request flow, and testing patterns."
 allowed-tools: Read, Grep, Glob
 ---
 
 # Bot Integration Platform Reference
 
-Look up bot architecture information. Topic or question via `$ARGUMENTS`.
+Look up bot architecture information. Topic or question via `$ARGUMENTS` (e.g., "CompletionHandler", "Slack threads",
+"BITL flow", "streaming", "testing", "conversation state").
 
 ---
 
@@ -42,6 +34,10 @@ Layer 3: Streaming Variants
     └─ StreamOpenaiChatBot
 ```
 
+**WebChat fallback**: Streaming variants (`StreamAgentChatBot`, `StreamOpenaiChatBot`) detect WebChat channel and fall
+back to non-streaming (`super().on_message_activity()`). Note: `StreamAgentChatBot` uses `Channels.webchat` (enum) while
+`StreamOpenaiChatBot` uses the string literal `"webchat"`.
+
 ### Request Flow
 
 ```
@@ -53,10 +49,11 @@ Layer 3: Streaming Variants
 3. adapter.process(request, bot)
    └─ bot.on_message_activity(turn_context)
 4. BaseChatBot._process_message(turn_context)
+   ├─ ConversationTracker.should_show_expiration_message()  # TTL check
    ├─ ConversationTracker.track_conversation()
-   ├─ CompletionHandler.add_user_message_to_conversation()
-   ├─ handle_slack_message() / handle_teams_message()  # Channel-specific
-   ├─ typing_task = send_typing_activity()  # Background typing indicator
+   ├─ CompletionHandler.add_user_message_to_conversation()  # Persists BEFORE filtering
+   ├─ handle_slack_message() / handle_teams_message()  # Returns None → early return if ignored
+   ├─ typing_task = send_typing_activity()  # Background, every 2s
    └─ response = await _respond()
        └─ CompletionHandler.get_completion() → NATS → Agent → response
 5. CompletionHandler.add_bot_message_to_conversation()
@@ -69,7 +66,9 @@ Layer 3: Streaming Variants
 
 **File**: `aihub_bot/aihub_bot/bots/chat/CompletionHandler.py`
 
-The CompletionHandler is the **core abstraction** for generating responses. All bot variants delegate to a handler.
+The CompletionHandler is the **core abstraction** for generating responses. All methods are `@staticmethod`. Subclasses
+override `get_completion` and `get_stream_completion` with typed parameters resolved via `handler_kwargs` in
+`BaseChatBot`.
 
 ### Interface
 
@@ -77,7 +76,7 @@ The CompletionHandler is the **core abstraction** for generating responses. All 
 class CompletionHandler:
     @staticmethod
     async def get_completion(**kwargs) -> str:
-        """Synchronous: returns full response as string."""
+        """Non-streaming: returns full response as string."""
 
     @staticmethod
     async def get_stream_completion(**kwargs) -> AsyncGenerator[str]:
@@ -104,10 +103,13 @@ class CompletionHandler:
 
 ### Implementations
 
-| Handler                   | File                                          | Purpose                      |
-| ------------------------- | --------------------------------------------- | ---------------------------- |
-| `AgentCompletionHandler`  | `bots/chat/agent/AgentCompletionHandler.py`   | NATS → Agent via ChatService |
-| `OpenaiCompletionHandler` | `bots/chat/openai/OpenaiCompletionHandler.py` | Direct LLM calls             |
+| Handler                   | File                                          | Purpose                             |
+| ------------------------- | --------------------------------------------- | ----------------------------------- |
+| `AgentCompletionHandler`  | `bots/chat/agent/AgentCompletionHandler.py`   | NATS → Agent via ChatService        |
+| `OpenaiCompletionHandler` | `bots/chat/openai/OpenaiCompletionHandler.py` | Direct LLM calls via LiteLLMService |
+
+`OpenaiCompletionHandler` also overrides `handle_exception` to extract LiteLLM-specific error messages from
+`APIStatusError`.
 
 ### Agent Completion Flow
 
@@ -121,13 +123,16 @@ class CompletionHandler:
        external_agent_event_distributor=distributor,
        thread_id=thread_id, display_id=display_id
    )
-4. # JSON mode: await resources.stop_signal.wait() → return content
-5. # Stream mode: yield chunks from resources.chunk_queue
+4. # JSON mode: await resources.stop_signal.wait() → subscriber.stop() → build response
+5. # Stream mode: yield chunks from resources.chunk_queue (30s timeout per chunk)
 ```
 
 ---
 
 ## Multi-Channel Handling
+
+All channel-specific logic is static methods on `CompletionHandler` — there are no separate `TeamsHandler` or
+`SlackHandler` classes, and no channel-specific message formatters.
 
 ### Channel Detection
 
@@ -148,7 +153,7 @@ elif turn_context.activity.channel_id == Channels.webchat:
 
 ```python
 # BaseChatBot.on_conversation_update_activity()
-# Detects: members_added contains bot recipient + not a team channel
+# Detects: members_added contains bot recipient + not a team channel (channel_data.get("team") is None)
 # Action: mark as explicitly deleted, wipe conversation history
 ```
 
@@ -181,7 +186,7 @@ Direct message:   B[bot_id]:T[team_id]:D[dm_id]:[timestamp]
 
 - Bot only responds in channels if **@mentioned** or in an existing bot thread
 - `_is_bot_mentioned()` checks `activity.get_mentions()` against `activity.recipient.id`
-- `_mark_conversation_as_mentioned()` persists mention state in ConversationEntity
+- `_mark_conversation_as_mentioned()` persists mention state in `ConversationEntity.is_mentioned`
 
 ### System Message Templates
 
@@ -197,9 +202,11 @@ Direct message:   B[bot_id]:T[team_id]:D[dm_id]:[timestamp]
 
 ---
 
-## Bot-in-the-Loop (HITL)
+## Bot-in-the-Loop (BITL)
 
 **Purpose**: AI agents pause execution → request human input via Slack/Teams → resume with response.
+
+Not to be confused with HITL (Human-in-the-Loop) which refers to process tasks for humans in the process engine.
 
 ### Flow
 
@@ -207,42 +214,46 @@ Direct message:   B[bot_id]:T[team_id]:D[dm_id]:[timestamp]
 1. Agent emits BotInTheLoopRequestEvent (control event)
 2. BotInTheLoopHandler (subscriber) receives event
    ├─ Extracts channel_config (channel_id, service_url)
-   ├─ Looks up Slack bot/team IDs via Slack API
+   ├─ Looks up Slack bot/team IDs via Slack API (cached 30 days on handler instance)
    ├─ Builds ConversationReference for the target channel
-   └─ Sends question message to Slack/Teams channel
+   └─ Sends question message to Slack/Teams channel via adapter.continue_conversation()
 3. Human replies in channel/thread
-4. BotInTheLoopBot (ActivityHandler) receives reply
+4. BotInTheLoopBot (ActivityHandler, NOT BaseChatBot) receives reply
    ├─ Parses conversation_id → base_conversation_id + thread_identifier
    ├─ Matches to active BotInTheLoopHandler.threads entry
-   └─ Distributes BotInTheLoop.response() via ExternalAgentEventDistributor
+   └─ Distributes BotInTheLoopResponseEvent via ExternalAgentEventDistributor (JetStream)
 5. Agent receives response → continues workflow
 ```
 
 ### Key Components
 
-| Component                  | File                                               | Direction                 |
-| -------------------------- | -------------------------------------------------- | ------------------------- |
-| **BotInTheLoopHandler**    | `routes/bot_in_the_loop/BotInTheLoopHandler.py`    | Outbound: agent → channel |
-| **BotInTheLoopBot**        | `bots/bot_in_the_loop/BotInTheLoopBot.py`          | Inbound: channel → agent  |
-| **BotInTheLoopController** | `routes/bot_in_the_loop/BotInTheLoopController.py` | HTTP endpoint             |
-| **SlackUtils**             | `routes/bot_in_the_loop/SlackUtils.py`             | Slack API helpers         |
+| Component                  | File                                               | Direction                                    |
+| -------------------------- | -------------------------------------------------- | -------------------------------------------- |
+| **BotInTheLoopHandler**    | `routes/bot_in_the_loop/BotInTheLoopHandler.py`    | Outbound: agent → channel                    |
+| **BotInTheLoopBot**        | `bots/bot_in_the_loop/BotInTheLoopBot.py`          | Inbound: channel → agent                     |
+| **BotInTheLoopController** | `routes/bot_in_the_loop/BotInTheLoopController.py` | HTTP endpoint                                |
+| **SlackUtils**             | `routes/bot_in_the_loop/SlackUtils.py`             | Slack API helpers (`auth.test` → `SlackIds`) |
 
 ### Thread Tracking
 
 ```python
-# BotInTheLoopHandler stores active threads:
+# BotInTheLoopHandler stores active threads — IN-MEMORY, process-local:
 threads: dict[str, BotInTheLoopThread] = {}
 # Key: thread_id (from agent event)
-# Value: BotInTheLoopThread(base_conversation_id, thread_identifier, last_request_event)
+# Value: BotInTheLoopThread(thread_id, conversation_id, thread_identifier, last_request_event)
+#
+# WARNING: If the bot process restarts, all pending BITL threads are lost.
+# Slack thread_identifier = Slack ts; Teams thread_identifier = messageid=...
 ```
 
 ---
 
 ## Conversation State Management
 
-### ConversationEntity (MongoDB)
+Both `ConversationEntity` and `ConversationTracker` are defined in the same file:
+`aihub_bot/aihub_bot/persistence/entities/ConversationEntity.py`
 
-**File**: `aihub_bot/aihub_bot/persistence/entities/ConversationEntity.py`
+### ConversationEntity (MongoDB)
 
 ```python
 class ConversationEntity(Document):
@@ -270,7 +281,7 @@ class ConversationEntity(Document):
 
 ### ConversationTracker
 
-**Purpose**: Distinguish between TTL expiration vs explicit deletion.
+Distinguishes between TTL expiration vs explicit deletion (Teams conversation reset).
 
 ```python
 class ConversationTracker(Document):
@@ -278,7 +289,6 @@ class ConversationTracker(Document):
     bot_id: str
     explicitly_deleted: bool = False  # True when user deleted in Teams
 
-# Usage:
 ConversationTracker.should_show_expiration_message(conversation_id, bot_id)
 # Returns True only if: tracker exists AND not explicitly deleted AND ConversationEntity is gone
 ```
@@ -309,15 +319,12 @@ Extracts content from Azure Bot Framework Activity objects:
 ContentExtractor.extract_content_from_activity(path, activity) -> list[Content]
 # Sources:
 # 1. activity.text → Content(text=text, type="text")
-# 2. Slack file attachments → download via SlackUtils → Content(text=data_url, type="image_url")
+# 2. Slack file attachments → Bearer download via PathEntity.slack_token → Content(type="image_url")
 # 3. Bot Framework attachments → Content based on content_type
 ```
 
-**Supported types**:
-
-- Text → `Content(type="text")`
-- Images → `Content(type="image_url")` with base64 data URL
-- Text files → `Content(type="text")` with `<file name='...'>content</file>` wrapper
+**Supported types**: Text → `Content(type="text")`, Images → `Content(type="image_url")` with base64 data URL, Text
+files → `Content(type="text")` with `<file name='...'>content</file>` wrapper.
 
 ---
 
@@ -335,14 +342,14 @@ connect(db=AIHubSettings().MONGO_MAIN_DB_NAME, host=MongoSettings().CONNECTION_S
 nc = await NatsSettings.create_client()
 js = nc.jetstream()
 
-# 3. Start Bot-in-the-Loop subscriber (listens to ALL agent events)
+# 3. Start BITL subscriber (listens to ALL agent events via NATS Core, ephemeral)
 bot_in_the_loop_subscriber = AgentNCSubscriber.for_all_agent_events(
     nc=nc, topic_manager=AgentTopicManager(),
     handler=bot_in_the_loop_handler.handle_event
 )
 await bot_in_the_loop_subscriber.start()
 
-# 4. Create ExternalAgentEventDistributor (for publishing events to agents)
+# 4. Create ExternalAgentEventDistributor (NCPublisher + JSPublisher for publishing)
 external_agent_event_distributor = ExternalAgentEventDistributor(nc=nc, js=js)
 
 # 5. Store in app.state for FastAPI dependency injection
@@ -355,18 +362,20 @@ app.state.external_agent_event_distributor = external_agent_event_distributor
 ```
 Bot sends user message:
   ChatService.start_stream_chat_interaction()
-    → Publishes StartInteractionEvent to JetStream
-    → Subject: agent.{class}.{id}.thread.{tid}.control
+    → Creates AgentNCSubscriber for display events BEFORE publishing (avoids race)
+    → Publishes UserMessageEvent (StartEvent) via JSPublisher (JetStream, durable)
+    → Subject: agent.{class}.{id}.{thread_id}.{display_id}.{run_id}.control.{event_name}.{event_id}
 
 Agent processes and responds:
   Agent emits ChunkEvent (display) + StopEvent (control+display)
-    → Subject: agent.{class}.{id}.thread.{tid}.display.{did}
+    → Subject: agent.{class}.{id}.{thread_id}.{display_id}.{run_id}.display.{event_name}.{event_id}
 
 Bot receives response:
-  ExternalAgentEventDistributor creates temporary subscriber
-    → Listens on: agent.{class}.{id}.thread.{tid}.display.{did}
-    → Queues ChunkEvents → response_generator yields to bot
-    → StopEvent triggers stop_signal
+  AgentNCSubscriber (NATS Core, ephemeral) receives display events
+    → response_aggregator pushes ChunkEvents into asyncio.Queue
+    → StopEvent/ExceptionEvent sets stop_signal
+    → Stream mode: generator yields from queue (30s timeout per chunk)
+    → JSON mode: stop_signal.wait() then build response from collected chunks
 ```
 
 ---
@@ -379,22 +388,22 @@ Bot receives response:
 
 1. **First chunk** → `turn_context.send_activity(text)` — creates initial message
 2. **Subsequent chunks** → `turn_context.update_activity(activity)` — updates in-place
-3. **Message too long** → catches `msg_too_long` error → starts new message
-4. **Throttling** → updates sent as fast as the previous `update_activity` completes (asyncio task)
+3. **Message too long** → catches `msg_too_long` error → starts new message (overflow)
+4. **Throttling** → updates sent as fast as the previous `update_activity` completes (asyncio task chaining)
 
-### Typing Indicator
+Both Teams and Slack use the same update-in-place mechanism — the Bot Framework SDK handles the platform differences
+transparently.
 
-```python
-# Runs in background while waiting for response
-async def send_typing_activity(turn_context, signal, t, timeout_seconds=60):
-    for _ in range(timeout_seconds // 2):
-        if signal.is_set(): break
-        await turn_context.send_activity(Activity(type=ActivityTypes.typing))
-        await asyncio.sleep(2)  # Send every 2 seconds
-    if not signal.is_set():
-        # Timeout! Send error message
-        await turn_context.send_activity(t("bot.error.response_timeout"))
-```
+### Typing Indicator Lifecycle
+
+The typing indicator runs **only while waiting for the agent to respond** — not during streaming.
+
+1. Started as background `asyncio.Task` before `_respond()` is called
+2. Sends `ActivityTypes.typing` every 2 seconds, up to `timeout_seconds // 2` iterations
+3. **Stopped** (`typing_stop_signal.set()`) as soon as `get_stream_completion` returns the generator
+4. During `send_response_stream`, no typing indicator is running — the user sees the message being built
+
+If the signal is never set (agent timeout), sends `bot.error.response_timeout` localized message.
 
 ---
 
@@ -415,7 +424,7 @@ class RoutesService(ChatService):
             "client_id": credentials.APP_ID,
             "client_secret": credentials.APP_PASSWORD,
             "scopes": ["https://api.botframework.com/.default"],
-            "tenant_id": credentials.APP_TENANTID,  # if single-tenant
+            "tenant_id": credentials.APP_TENANTID,
         }})
         adapter = CloudAdapter(connection_manager=connection_manager)
         cache[path] = adapter
@@ -436,15 +445,41 @@ class RoutesService(ChatService):
 
 ---
 
+## PathEntity Configuration
+
+**File**: `aihub_bot/aihub_bot/persistence/entities/PathEntity.py`
+
+```python
+class PathEntity(Document):
+    meta = {"collection": "bot_paths", "indexes": [{"fields": ["path"], "unique": True}]}
+    path = StringField(required=True)                     # Full URL path incl. query string
+    credentials = EmbeddedDocumentField(Credentials)      # Azure AD creds
+    system_message = StringField(required=False)          # LLM instructions with {placeholders}
+    slack_token = StringField(required=False)             # Slack OAuth token (for file downloads)
+
+class Credentials(EmbeddedDocument):
+    APP_TYPE = StringField()      # "SingleTenant" or "MultiTenant"
+    APP_ID = StringField()        # Azure AD App ID
+    APP_PASSWORD = StringField()  # Azure AD Client Secret
+    APP_TENANTID = StringField()  # Tenant ID (None for multi-tenant)
+```
+
+Bot credentials are stored per-path in MongoDB — not in environment variables. Routing is determined by the URL path
+structure: each endpoint maps to exactly one agent via path parameters `{agent_class}/{agent_id}`.
+
+---
+
 ## Testing
+
+**Test location**: `aihub_bot/playground/testing/tests/` (not a top-level `tests/` directory).
 
 ### Test Runners
 
-| Runner                        | File                                     | Purpose                |
-| ----------------------------- | ---------------------------------------- | ---------------------- |
-| `BotRunner`                   | `runners/BotRunner.py`                   | Production server      |
-| `BotTestRunner`               | `runners/BotTestRunner.py`               | Test server (no NATS)  |
-| `SimulatedAgentBotTestRunner` | `runners/SimulatedAgentBotTestRunner.py` | Mocked agent responses |
+| Runner                        | File                                     | Purpose                                   |
+| ----------------------------- | ---------------------------------------- | ----------------------------------------- |
+| `BotRunner`                   | `runners/BotRunner.py`                   | Production (Gunicorn on port 8001)        |
+| `BotTestRunner`               | `runners/BotTestRunner.py`               | Test server (no NATS, captures responses) |
+| `SimulatedAgentBotTestRunner` | `runners/SimulatedAgentBotTestRunner.py` | Mocked agent via fake NATS                |
 
 ### SimulatedAgentBotTestRunner
 
@@ -471,95 +506,44 @@ async def test_send_message(test_runner, client, patch_requests_adapter, setup_t
     assert test_runner.responses[-1].payload["text"] == "First chunk.\nSecond chunk."
 ```
 
+Test fixtures: `conftest.py` patches `MsalAuth.get_access_token` and `aiohttp.ClientSession` methods. Uses `ASGIAdapter`
+from `aihub_lib.testing.route_adapter` to route Bot Framework outbound callbacks to the test app. Markers: `flaky`
+(timing-dependent streaming), `azure` (real credentials).
+
 ### Bot Framework Emulator
 
 1. Download: https://github.com/microsoft/BotFramework-Emulator
-2. Start test server: `cd playground/testing && poetry run python main.py`
+2. Start test server: `cd playground/testing && uv run python main.py`
 3. Connect to: `http://localhost:8000/api/v1/messages`
 4. Leave App ID/Password empty for local testing
-
-### Test Files
-
-```
-playground/testing/tests/
-├── test_ChatBot.py          # Bot message handling tests
-├── test_ConversationTTL.py  # TTL expiration tests
-├── user_message.json        # Sample Activity payload
-└── conversation_update.json # Sample ConversationUpdate payload
-```
-
----
-
-## PathEntity Configuration
-
-**File**: `aihub_bot/aihub_bot/persistence/entities/PathEntity.py`
-
-```python
-class PathEntity(Document):
-    meta = {"collection": "bot_paths", "indexes": [{"fields": ["path"], "unique": True}]}
-
-    path = StringField(required=True)                     # API endpoint path
-    credentials = EmbeddedDocumentField(Credentials)      # Azure AD creds
-    system_message = StringField(required=False)          # LLM instructions
-    slack_token = StringField(required=False)             # Slack OAuth token
-
-class Credentials(EmbeddedDocument):
-    APP_TYPE = StringField()      # "SingleTenant" or "MultiTenant"
-    APP_ID = StringField()        # Azure AD App ID
-    APP_PASSWORD = StringField()  # Azure AD Client Secret
-    APP_TENANTID = StringField()  # Tenant ID (None for multi-tenant)
-```
 
 ---
 
 ## Key Files Reference
 
-### Bot Implementations
-
-| File                                                              | Purpose                          |
-| ----------------------------------------------------------------- | -------------------------------- |
-| `aihub_bot/aihub_bot/bots/chat/BaseChatBot.py`                    | Base bot class                   |
-| `aihub_bot/aihub_bot/bots/chat/CompletionHandler.py`              | Handler interface + utilities    |
-| `aihub_bot/aihub_bot/bots/chat/ContentExtractor.py`               | Extract text/files from Activity |
-| `aihub_bot/aihub_bot/bots/chat/agent/AgentChatBot.py`             | Agent-based chat bot             |
-| `aihub_bot/aihub_bot/bots/chat/agent/AgentCompletionHandler.py`   | Agent completion via NATS        |
-| `aihub_bot/aihub_bot/bots/chat/agent/StreamAgentChatBot.py`       | Streaming agent chat bot         |
-| `aihub_bot/aihub_bot/bots/chat/openai/OpenaiChatBot.py`           | Direct LLM chat bot              |
-| `aihub_bot/aihub_bot/bots/chat/openai/OpenaiCompletionHandler.py` | Direct LLM completion            |
-
-### HITL
-
-| File                                                                   | Purpose                   |
-| ---------------------------------------------------------------------- | ------------------------- |
-| `aihub_bot/aihub_bot/bots/bot_in_the_loop/BotInTheLoopBot.py`          | Inbound: human → agent    |
-| `aihub_bot/aihub_bot/routes/bot_in_the_loop/BotInTheLoopHandler.py`    | Outbound: agent → channel |
-| `aihub_bot/aihub_bot/routes/bot_in_the_loop/BotInTheLoopController.py` | HTTP endpoint             |
-| `aihub_bot/aihub_bot/routes/bot_in_the_loop/SlackUtils.py`             | Slack API utilities       |
-
-### Persistence
-
-| File                                                             | Purpose                  |
-| ---------------------------------------------------------------- | ------------------------ |
-| `aihub_bot/aihub_bot/persistence/entities/ConversationEntity.py` | Conversation state + TTL |
-| `aihub_bot/aihub_bot/persistence/entities/PathEntity.py`         | Bot credentials + config |
-
-### Infrastructure
-
-| File                                                        | Purpose                |
-| ----------------------------------------------------------- | ---------------------- |
-| `aihub_bot/aihub_bot/routes/RoutesService.py`               | CloudAdapter caching   |
-| `aihub_bot/aihub_bot/routes/agent/AgentChatController.py`   | Agent chat endpoints   |
-| `aihub_bot/aihub_bot/routes/openai/OpenaiChatController.py` | OpenAI chat endpoints  |
-| `aihub_bot/aihub_bot/runners/lifetime/lifetime_manager.py`  | NATS + MongoDB startup |
-| `aihub_bot/aihub_bot/runners/BotRunner.py`                  | Production runner      |
-| `aihub_bot/aihub_bot/setup_azure_bot.py`                    | Azure Bot provisioning |
-| `aihub_bot/aihub_bot/add_path_entity.py`                    | PathEntity CLI         |
-
-### Testing
-
-| File                                                         | Purpose             |
-| ------------------------------------------------------------ | ------------------- |
-| `aihub_bot/aihub_bot/runners/BotTestRunner.py`               | Test runner         |
-| `aihub_bot/aihub_bot/runners/SimulatedAgentBotTestRunner.py` | Mocked agent runner |
-| `aihub_bot/playground/testing/main.py`                       | Local test server   |
-| `aihub_bot/playground/testing/tests/test_ChatBot.py`         | Bot message tests   |
+| File                                                                   | Purpose                                                       |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------- |
+| `aihub_bot/aihub_bot/bots/chat/BaseChatBot.py`                         | Base bot: lifecycle, routing, error handling                  |
+| `aihub_bot/aihub_bot/bots/chat/CompletionHandler.py`                   | Strategy base: channel handling, streaming, conversation CRUD |
+| `aihub_bot/aihub_bot/bots/chat/ContentExtractor.py`                    | Multi-channel file/text extraction                            |
+| `aihub_bot/aihub_bot/bots/chat/agent/AgentChatBot.py`                  | Agent-based chat (non-streaming)                              |
+| `aihub_bot/aihub_bot/bots/chat/agent/AgentCompletionHandler.py`        | Agent completion via NATS                                     |
+| `aihub_bot/aihub_bot/bots/chat/agent/StreamAgentChatBot.py`            | Streaming agent chat                                          |
+| `aihub_bot/aihub_bot/bots/chat/openai/OpenaiChatBot.py`                | Direct LLM chat (non-streaming)                               |
+| `aihub_bot/aihub_bot/bots/chat/openai/OpenaiCompletionHandler.py`      | Direct LLM completion                                         |
+| `aihub_bot/aihub_bot/bots/chat/openai/StreamOpenaiChatBot.py`          | Streaming direct LLM                                          |
+| `aihub_bot/aihub_bot/bots/bot_in_the_loop/BotInTheLoopBot.py`          | BITL inbound: human → agent                                   |
+| `aihub_bot/aihub_bot/routes/bot_in_the_loop/BotInTheLoopHandler.py`    | BITL outbound: agent → channel                                |
+| `aihub_bot/aihub_bot/routes/bot_in_the_loop/BotInTheLoopController.py` | BITL HTTP endpoint                                            |
+| `aihub_bot/aihub_bot/routes/bot_in_the_loop/SlackUtils.py`             | Slack API helpers                                             |
+| `aihub_bot/aihub_bot/persistence/entities/ConversationEntity.py`       | ConversationEntity + ConversationTracker                      |
+| `aihub_bot/aihub_bot/persistence/entities/PathEntity.py`               | Bot credentials + config                                      |
+| `aihub_bot/aihub_bot/routes/RoutesService.py`                          | CloudAdapter caching                                          |
+| `aihub_bot/aihub_bot/routes/agent/AgentChatController.py`              | Agent chat endpoints                                          |
+| `aihub_bot/aihub_bot/routes/openai/OpenaiChatController.py`            | OpenAI chat endpoints                                         |
+| `aihub_bot/aihub_bot/runners/lifetime/lifetime_manager.py`             | NATS + MongoDB startup                                        |
+| `aihub_bot/aihub_bot/runners/BotRunner.py`                             | Production runner                                             |
+| `aihub_bot/aihub_bot/runners/BotTestRunner.py`                         | Test runner                                                   |
+| `aihub_bot/aihub_bot/runners/SimulatedAgentBotTestRunner.py`           | Mocked agent runner                                           |
+| `aihub_bot/aihub_bot/setup_azure_bot.py`                               | Azure Bot provisioning                                        |
+| `aihub_bot/aihub_bot/add_path_entity.py`                               | PathEntity CLI                                                |

@@ -129,10 +129,10 @@ Before writing the file, decide each configuration field:
 **model** — Match the model to the task complexity:
 
 - `haiku`: Fast, cheap. Good for: file scanning, grep-heavy exploration, simple validation, high-volume operations where
-  speed matters.
-- `sonnet` or `inherit`: Balanced. Good for: code review, refactoring analysis, debugging, most general work.
-- `opus`: Maximum reasoning. Good for: architecture decisions, complex multi-step debugging, security analysis. Use
-  sparingly — it's slow and expensive.
+  speed matters. Only use this model for trivial tasks.
+- `sonnet` or `inherit`: Balanced. Good for: code review, refactoring analysis, debugging, most simple work.
+- `opus`: Maximum reasoning. Good for: architecture decisions, complex multi-step debugging, security analysis, coding.
+  Use for most tasks like coding, reasoning or complex decision making.
 
 **tools** — Principle of least privilege. Start with the minimum:
 
@@ -375,7 +375,7 @@ Check for common antipatterns:
 
 ### Gate 6: Configuration Hygiene (Soft Fail)
 
-- [ ] `model` matches task complexity (haiku for fast scans, not opus)
+- [ ] `model` matches task complexity (sonnet for fast scans, not opus)
 - [ ] `memory` is enabled only if the agent genuinely accumulates knowledge across sessions
 - [ ] `maxTurns` is set to prevent runaway execution
 - [ ] Preloaded `skills` are all relevant to every invocation (not "nice to have" skills that waste context)

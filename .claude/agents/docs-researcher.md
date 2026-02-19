@@ -9,7 +9,7 @@ description: >
   Do NOT use for codebase-specific questions (use Explore agent) or for
   PrimeVue component lookup with project patterns (use /primevue-lookup skill).
 tools: Read, Grep, Glob, ToolSearch
-model: haiku
+model: sonnet
 permissionMode: plan
 maxTurns: 25
 ---

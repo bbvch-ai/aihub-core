@@ -357,12 +357,12 @@ Hierarchical permission matching: `aihub.[user|admin].<resource>.<subresource>.<
 
 ## Internationalization (i18n)
 
-**Default locale**: German (`de`). **Required**: `de`, `en`, `fr`, `it`.
+**Default locale**: English (`en`). **Required**: `de`, `en`, `fr`, `it`.
 
 **LocaleString**: Multi-language container. `LocaleString(de="Hallo", en="Hello", fr="Bonjour", it="Ciao")`.
 Methods: `in_locale(locale)`, `from_i18n_path(path)` (load from YAML), `as_form(label)` (create `LocaleInput`).
 
-**LocaleHandler**: Runtime resolution. Fallback: requested → `de` → first available.
+**LocaleHandler**: Runtime resolution. Fallback: requested → `en` → first available.
 
 **Translations**: YAML files at `i18n/translations/{scope}/{name}.{locale}.yml`. Accessed via dot notation:
 `lib.events.start_event.name`. Scopes: `lib`, `bot`, `api`, `agent`, `process`, `action`.
