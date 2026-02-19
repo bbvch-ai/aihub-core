@@ -132,8 +132,8 @@ rollenbasierte Zugriffskontrolle beendet die Verarbeitung.
 Die Plattform implementiert Datenschutz durch Technikgestaltung (Privacy by Design) mit obligatorischer
 TLS/SSL-Verschlüsselung, standardmäßig verweigernder Zugriffskontrolle, automatischer Audit-Protokollierung,
 automatischer Löschung ephemerer Daten nach 30 Tagen und minimaler Datenerfassung. Weitere Details finden Sie unter
-[Authentifizierung](../../20_security/1_authentication/), [Verschlüsselung](../../20_security/5_data_encryption/)
-und [Zugriffskontrolle](../../11_access_management/).
+[Authentifizierung](../../20_security/1_authentication/), [Verschlüsselung](../../20_security/5_data_encryption/) und
+[Zugriffskontrolle](../../11_access_management/).
 
 ## Internationale Datenübermittlungen
 
@@ -179,7 +179,7 @@ zur Unterstützung der Untersuchung, Dokumentation und Reaktion auf Verletzungen
 - [DSGVO Volltext](https://gdpr-info.eu/)
 - [EDPB Leitlinien](https://edpb.europa.eu/)
 
----
+______________________________________________________________________
 
 :::info Rechtlicher Hinweis
 Dies ist eine technische Dokumentation, keine Rechtsberatung. Konsultieren Sie Ihren Datenschutzbeauftragten oder

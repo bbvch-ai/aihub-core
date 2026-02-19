@@ -25,7 +25,7 @@ test-cov:
 
 test:
 	@echo "Running tests in aihub_agent..."
-	uv run pytest
+	uv run pytest -m "not azure"
 
 pr-ready: format lint
 	@echo "Running full check (format, sort)..."

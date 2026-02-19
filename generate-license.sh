@@ -91,7 +91,7 @@ init_report() {
 Generated on: $(date +%d.%m.%Y)
 
 This document contains license information for all dependencies across the monorepo:
-- Python packages (Poetry)
+- Python packages (uv)
 - Node.js packages (pnpm)
 - Docker images (from docker-compose files)
 
@@ -130,15 +130,18 @@ check_python_project() {
     echo "Scanning packages from: $python_executable"
 
     local license_data
+    local license_stderr
+    license_stderr=$(mktemp)
     license_data=$(uv run pip-licenses \
         --from=mixed \
         --format=json \
-        --ignore-packages pip pip-licenses setuptools wheel tomli prettytable wcwidth \
-        2>&1) || {
+        --ignore-packages pip pip-licenses setuptools wheel tomli prettytable wcwidth aihub-core aihub-agent aihub-api aihub-bot aihub-pipeline aihub-process \
+        2>"$license_stderr") || {
         echo -e "${RED}Failed to run pip-licenses in $project${NC}"
-        echo "Error output: $license_data"
+        echo "Error output: $(cat "$license_stderr")"
         license_data="[]"
     }
+    rm -f "$license_stderr"
 
     local project_total
     project_total=$(echo "$license_data" | jq '. | length')
@@ -431,7 +434,7 @@ generate_summary() {
 Generated on: $(date +%d.%m.%Y)
 
 This document contains license information for all dependencies across the monorepo:
-- Python packages (Poetry): **$TOTAL_PYTHON_DEPS packages**
+- Python packages (uv): **$TOTAL_PYTHON_DEPS packages**
 - Node.js packages (pnpm): **$TOTAL_NODE_DEPS packages**
 - External Docker images: **$TOTAL_DOCKER_IMAGES images**
 

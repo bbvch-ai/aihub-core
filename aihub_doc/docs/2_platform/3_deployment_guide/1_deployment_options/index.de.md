@@ -38,7 +38,7 @@ Gemini, selbst gehosteten Modellen (vLLM, llama.cpp, HF-TEI) oder einer Mischung
 Modell-Auswahl, Budgets, Ratenbegrenzungen und Versionen. Alle Prompts, Antworten und Benutzerdaten bleiben innerhalb
 der Instanz.
 
----
+______________________________________________________________________
 
 ## Hosting-Optionen
 
@@ -55,7 +55,7 @@ Modellen.
 Die Infrastruktur liegt unter Ihrer Kontrolle. Keine Cloud-Abhängigkeiten. Funktioniert in Air-Gapped-Umgebungen mit
 selbst gehosteten LLMs.
 
----
+______________________________________________________________________
 
 ### Private Cloud (eigene Cloud)
 
@@ -68,7 +68,7 @@ Cloud-Anbieter verfügen typischerweise über Sicherheits- und Compliance-Zertif
 Internetverbindung für den LLM-Proxy-Zugriff (HTTPS), optional VPN für administrativen Zugriff und privates Netzwerk
 zwischen Services (internes DNS).
 
----
+______________________________________________________________________
 
 ### SaaS (Schweizer Cloud-Hosting)
 
@@ -80,7 +80,7 @@ in der Schweiz unter Schweizer Rechtsordnung. Sicherheits- und Compliance-Zertif
 Sie greifen über ein Web-Interface und APIs auf den AI-Hub zu. bbv bietet SLAs für Verfügbarkeit und Support. Weniger
 operativer Aufwand für Ihr Team.
 
----
+______________________________________________________________________
 
 ## Multi-Instanz-Deployment
 
@@ -217,7 +217,7 @@ Netzwerk-Architektur:
 Datenisolation und -souveränität. Unabhängige Skalierung und Ressourcenzuweisung. Benutzerdefinierte Konfigurationen pro
 Instanz. Flexible Update-Zeitpläne. Klare Compliance-Grenzen.
 
----
+______________________________________________________________________
 
 ## Architektur-Diagramme
 
@@ -275,7 +275,7 @@ Jede Instanz hat ihren eigenen LiteLLM-Proxy (unabhängige Kostenverfolgung, Ver
 Instanz-LiteLLM-Proxys verbinden sich mit gemeinsam genutzten LLM-Backend-Ressourcen (Azure OpenAI-Abonnements, selbst
 gehostete Modelle). Prompts, Antworten und Benutzerdaten bleiben innerhalb der Instanzgrenzen.
 
----
+______________________________________________________________________
 
 ## Sicherheitsüberlegungen
 
@@ -302,7 +302,7 @@ für die Produktion und mkcert für die Entwicklung. Die API-Authentifizierung v
 PostgreSQL verwendet transparente Datenverschlüsselung (TDE). Persistente Volumes sind verschlüsselt (LUKS, Azure Disk
 Encryption). Secrets werden über Umgebungsvariablen, Azure Key Vault oder Docker-Secrets verwaltet.
 
----
+______________________________________________________________________
 
 ## Nächste Schritte
 
@@ -315,7 +315,7 @@ Encryption). Secrets werden über Umgebungsvariablen, Azure Key Vault oder Docke
 - [Updates und Wartung](/de/docs/deployment_options/6_updates_and_maintenance/) – Verwaltung von Updates über mehrere
   Instanzen hinweg
 
----
+______________________________________________________________________
 
 ## FAQ
 

@@ -31,6 +31,5 @@ rclone:
 **3. Run Pipeline**
 
 ```bash
-poetry run dagster dev -f pipeline.py
+uv run dagster dev -f pipeline.py
 ```
-

@@ -5,14 +5,13 @@
 **Swiss AI-Hub**: Enterprise-grade, sovereign AI platform for integrating AI into business processes. A complete
 production-ready ecosystem with batteries included (database, API, UI, pipelines, Docker deployment).
 
-Tech Stack & Paradigms: Python 3 monorepo with uv workspaces. NATS pub-sub event-driven architecture. FastAPI REST APIs with
-uvicorn + gunicorn. Custom OAuth2/OIDC auth (Azure AD). LlamaIndex workflow engine for transparent agents. Dagster
+Tech Stack & Paradigms: Python 3 monorepo with uv workspaces. NATS pub-sub event-driven architecture. FastAPI REST APIs
+with uvicorn + gunicorn. Custom OAuth2/OIDC auth (Azure AD). LlamaIndex workflow engine for transparent agents. Dagster
 asset-based data pipelines. Nuxt 3 + Vue 3 frontend with TypeScript. PrimeVue UI components, FormKit forms, VueFlow
 workflows. Docker Compose for all environments (dev, local, nightly, latest, GPU). VitePress docs with automated LLM
 translation. Valkey (Redis v5 client) for state, FerretDB (MongoEngine) for persistence, Milvus for vectors. Azure SDK
-suite (20+ packages). OpenTelemetry + OpenInference + Langfuse for observability. Pydantic v2 validation. MyPy
-strict type checking. pytest-bdd for Gherkin BDD tests. Black formatter, Ruff linter. pnpm for frontend. Pulumi for
-Azure IaC.
+suite (20+ packages). OpenTelemetry + OpenInference + Langfuse for observability. Pydantic v2 validation. MyPy strict
+type checking. pytest-bdd for Gherkin BDD tests. Black formatter, Ruff linter. pnpm for frontend. Pulumi for Azure IaC.
 
 **Core Philosophy**: Privacy-first, Swiss data sovereignty, security by design, radical transparency through
 workflow-based agents (not black boxes).

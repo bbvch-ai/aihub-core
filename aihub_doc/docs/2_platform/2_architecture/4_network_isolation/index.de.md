@@ -1,25 +1,30 @@
 ---
 title: Docker-Netzwerkisolation
-source_sha: "38efec0d96aee1a4529469d6c990a16fc6152e1d29e60930a05c28cceeeb8416"
+source_sha: 38efec0d96aee1a4529469d6c990a16fc6152e1d29e60930a05c28cceeeb8416
 ---
 
 # Docker-Netzwerkisolation
 
-Die AI-Hub Plattform implementiert Netzwerksegmentierung, um Sicherheitsgrenzen zwischen Services durchzusetzen. Dieser Defense-in-Depth-Ansatz begrenzt den "Blast Radius" potenzieller Sicherheitsverletzungen und erzwingt das Prinzip der geringsten Rechte auf der Netzwerkebene.
+Die AI-Hub Plattform implementiert Netzwerksegmentierung, um Sicherheitsgrenzen zwischen Services durchzusetzen. Dieser
+Defense-in-Depth-Ansatz begrenzt den "Blast Radius" potenzieller Sicherheitsverletzungen und erzwingt das Prinzip der
+geringsten Rechte auf der Netzwerkebene.
 
 ## Netzwerkzonen
 
 Die Plattform verwendet fünf isolierte Docker-Netzwerke:
 
-| Netzwerk  | Zweck                             | Externer Zugriff | ICC aktiviert |
-| --------- | --------------------------------- | ---------------- | ------------- |
-| `proxy`   | Externer Traffic über Traefik     | Ingress + Egress | Ja            |
-| `backend` | Interne Anwendungs-Services       | Nein             | Ja            |
-| `data`    | Datenbanken und Message Broker    | Nein             | Ja            |
-| `storage` | SeaweedFS Objekt-Speicher         | Nein             | Ja            |
-| `egress`  | Nur ausgehender Internetzugriff   | Egress only      | Nein          |
+| Netzwerk  | Zweck                           | Externer Zugriff | ICC aktiviert |
+| --------- | ------------------------------- | ---------------- | ------------- |
+| `proxy`   | Externer Traffic über Traefik   | Ingress + Egress | Ja            |
+| `backend` | Interne Anwendungs-Services     | Nein             | Ja            |
+| `data`    | Datenbanken und Message Broker  | Nein             | Ja            |
+| `storage` | SeaweedFS Objekt-Speicher       | Nein             | Ja            |
+| `egress`  | Nur ausgehender Internetzugriff | Egress only      | Nein          |
 
-Das `egress`-Netzwerk ist für Services konzipiert, die das Internet erreichen müssen (ausgehend), aber nicht aus dem Internet erreichbar sein sollen (kein Ingress). Die Inter-Container-Kommunikation (ICC) ist in diesem Netzwerk deaktiviert, was bedeutet, dass Container über dieses Netzwerk nicht miteinander kommunizieren können – sie können es nur für den ausgehenden Internetzugriff nutzen.
+Das `egress`-Netzwerk ist für Services konzipiert, die das Internet erreichen müssen (ausgehend), aber nicht aus dem
+Internet erreichbar sein sollen (kein Ingress). Die Inter-Container-Kommunikation (ICC) ist in diesem Netzwerk
+deaktiviert, was bedeutet, dass Container über dieses Netzwerk nicht miteinander kommunizieren können – sie können es
+nur für den ausgehenden Internetzugriff nutzen.
 
 ## Service-Netzwerkzuweisungen
 
@@ -84,7 +89,9 @@ Services, die ausgehenden Internetzugriff, aber keinen eingehenden Zugriff benö
 
 - **playwright**: Web-Scraping und Browser-Automatisierung (muss Webseiten abrufen)
 
-Dieses Netzwerk hat ICC (Inter-Container-Kommunikation) deaktiviert, wodurch die horizontale Bewegung zwischen Containern in diesem Netzwerk verhindert wird. Services nutzen `egress` ausschließlich für den ausgehenden Internetzugriff und müssen andere Netzwerke (z.B. `backend`) für die Inter-Service-Kommunikation verwenden.
+Dieses Netzwerk hat ICC (Inter-Container-Kommunikation) deaktiviert, wodurch die horizontale Bewegung zwischen
+Containern in diesem Netzwerk verhindert wird. Services nutzen `egress` ausschließlich für den ausgehenden
+Internetzugriff und müssen andere Netzwerke (z.B. `backend`) für die Inter-Service-Kommunikation verwenden.
 
 ## Netzwerktopologie
 
@@ -211,7 +218,9 @@ Beim Hinzufügen eines neuen Services legen Sie fest, welche Netzwerke er benöt
 4. **Benötigt Objekt-Speicher?** → Zum `storage`-Netzwerk hinzufügen
 5. **Benötigt nur ausgehenden Internetzugriff (kein Ingress)?** → Zum `egress`-Netzwerk hinzufügen
 
-Hinweis: Das `egress`-Netzwerk ist speziell für Services gedacht, die externe Websites/APIs erreichen müssen, aber nicht von außen erreichbar sein sollen. Es hat ICC deaktiviert, sodass Services im `egress`-Netzwerk nicht miteinander kommunizieren können – verwenden Sie `backend` für die Inter-Service-Kommunikation.
+Hinweis: Das `egress`-Netzwerk ist speziell für Services gedacht, die externe Websites/APIs erreichen müssen, aber nicht
+von außen erreichbar sein sollen. Es hat ICC deaktiviert, sodass Services im `egress`-Netzwerk nicht miteinander
+kommunizieren können – verwenden Sie `backend` für die Inter-Service-Kommunikation.
 
 ### Fehlerbehebung bei Netzwerkproblemen
 

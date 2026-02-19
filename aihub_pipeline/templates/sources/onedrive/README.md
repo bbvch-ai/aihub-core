@@ -32,6 +32,5 @@ RCLONE_ONEDRIVE_TENANT=<Directory (tenant) ID>
 **4. Run Pipeline**
 
 ```bash
-poetry run dagster dev -f pipeline.py
+uv run dagster dev -f pipeline.py
 ```
-

@@ -7,7 +7,7 @@ Whitepaper-Kapitel für Entscheidungsträger in der Schweiz zu verwandeln. Das D
 Kaufentscheidung (RFP)**. Es muss IT-Profis überzeugen, aber für das C-Level (CEO, CFO) den geschäftlichen Nutzen
 klarstellen.
 
----
+______________________________________________________________________
 
 ## 1. Zwingende Struktur-Logik (Der Roter Faden)
 
@@ -21,28 +21,36 @@ Zwischenüberschriften gegliedert werden.
 
 ### Phase B: Mikro-Struktur (Die sichtbare Dreiteilung)
 
-**Innerhalb JEDES Hauptabschnitts (H2)** musst du zwingend eine dreiteilige Struktur mit **SICHTBAREN H3-ÜBERSCHRIFTEN** implementieren. Diese Struktur muss für den Leser klar erkennbar sein.
+**Innerhalb JEDES Hauptabschnitts (H2)** musst du zwingend eine dreiteilige Struktur mit **SICHTBAREN H3-ÜBERSCHRIFTEN**
+implementieren. Diese Struktur muss für den Leser klar erkennbar sein.
 
 Jeder Hauptabschnitt muss in drei klar strukturierte Unterabschnitte gegliedert werden:
 
 **1. Mehrwert / Nutzen (H3-Überschrift)**
-  - Welche Herausforderung oder Schmerzpunkte haben Unternehmen aktuell in diesem spezifischen Teilbereich?
-  - Was ist der geschäftliche und technische Vorteil einer Lösung?
-  - Adressierung an C-Level (Effizienz, Kosten, Compliance) und IT (Stabilität, Speed).
+
+- Welche Herausforderung oder Schmerzpunkte haben Unternehmen aktuell in diesem spezifischen Teilbereich?
+- Was ist der geschäftliche und technische Vorteil einer Lösung?
+- Adressierung an C-Level (Effizienz, Kosten, Compliance) und IT (Stabilität, Speed).
 
 **2. Konzept & Ansatz (H3-Überschrift)**
-  - Beschreibung der zugrundeliegenden Konzepte, Rollen, Workflows und Governance-Aspekte.
-  - Abstrakt und lösungsorientiert, noch ohne tiefe Code-Ebene.
-  - Wie funktioniert die Lösung fachlich und methodisch?
+
+- Beschreibung der zugrundeliegenden Konzepte, Rollen, Workflows und Governance-Aspekte.
+- Abstrakt und lösungsorientiert, noch ohne tiefe Code-Ebene.
+- Wie funktioniert die Lösung fachlich und methodisch?
 
 **3. Technische Umsetzung im Swiss AI Hub (H3-Überschrift)**
-  - Konkrete Implementierung: Architektur, Komponenten, Module, Technologien.
-  - Wie setzt der Swiss AI Hub die oben genannten Konzepte technisch um?
-  - Welche konkreten Features und Funktionen werden bereitgestellt?
 
-**KRITISCH**: Diese Dreiteilung muss durch H3-Überschriften (###) für den Leser sichtbar gemacht werden. Die exakten Titel können je nach Thema variieren (z.B. «Geschäftlicher Nutzen», «Lösungsansatz», «Plattform-Implementation»), aber die logische Abfolge **Nutzen → Konzept → Technik** muss in jedem Hauptabschnitt eingehalten und durch Überschriften strukturiert werden.
+- Konkrete Implementierung: Architektur, Komponenten, Module, Technologien.
+- Wie setzt der Swiss AI Hub die oben genannten Konzepte technisch um?
+- Welche konkreten Features und Funktionen werden bereitgestellt?
+
+**KRITISCH**: Diese Dreiteilung muss durch H3-Überschriften (###) für den Leser sichtbar gemacht werden. Die exakten
+Titel können je nach Thema variieren (z.B. «Geschäftlicher Nutzen», «Lösungsansatz», «Plattform-Implementation»), aber
+die logische Abfolge **Nutzen → Konzept → Technik** muss in jedem Hauptabschnitt eingehalten und durch Überschriften
+strukturiert werden.
 
 **Beispiel-Struktur:**
+
 ```
 ## Hauptthema (z.B. «Nachvollziehbarkeit von KI-Entscheidungen»)
 
@@ -60,20 +68,24 @@ Jeder Hauptabschnitt muss in drei klar strukturierte Unterabschnitte gegliedert 
 
 **Kapitel-Einstieg:**
 
-Jedes Kapitel muss nach der Hauptüberschrift (H1) mit einem einleitenden Abschnitt beginnen, der aus zwei Teilen besteht:
+Jedes Kapitel muss nach der Hauptüberschrift (H1) mit einem einleitenden Abschnitt beginnen, der aus zwei Teilen
+besteht:
 
 1. **Einleitungstext (1-2 Absätze, kein Extra-Heading):**
+
    - Führt das Leser in das Thema ein
    - Erklärt die Relevanz und den Kontext
    - Stellt die Verbindung zwischen Business-Herausforderung und technischer Lösung her
 
 2. **«Auf einen Blick» (H2-Überschrift):**
+
    - Kompakte Zusammenfassung der wichtigsten Erkenntnisse des Kapitels
    - 3-5 prägnante Bulletpoints, die die Kernbotschaften des Kapitels hervorheben
    - Ermöglicht C-Level-Lesern schnelles Erfassen der Hauptpunkte
    - Jeder Bulletpoint sollte eine konkrete Aussage sein, keine vagen Formulierungen
 
 **Beispiel-Struktur Kapitel-Einstieg:**
+
 ```
 # Kapitel-Titel
 
@@ -97,7 +109,7 @@ Jedes Kapitel muss nach der Hauptüberschrift (H1) mit einem einleitenden Abschn
 - Keine Wiederholungen von bereits Gesagtem
 - Die «Auf einen Blick»-Sektion am Anfang dient bereits als Zusammenfassung
 
----
+______________________________________________________________________
 
 ## 2. Schreibstil & Qualität
 
@@ -131,14 +143,14 @@ Ein Whitepaper ist **kein** Foliensatz.
   Aussagen mit Funktionen).
 - **Konkret statt abstrakt:** "In 30 Minuten via Kubernetes deploybar" statt "Schnell installierbar".
 
----
+______________________________________________________________________
 
 ## 3. Umgang mit Lücken
 
 - **Unklarheiten:** Wenn die Quell-Doku unklar oder widersprüchlich ist, erfinde nichts. Schreibe im Output fett:
   `UNKLARHEIT IN DER DOKU - BITTE PRÜFEN: [Beschreibung]`
 
----
+______________________________________________________________________
 
 ## 4. Kapitel-Kontext & Abgrenzung
 
@@ -165,18 +177,19 @@ zugeordnet sind. Verweise auf andere Themen nur, beschreibe sie aber nicht erneu
 - Zuverlässigkeit und Qualitätssicherung
 - Erweiterbarkeit und Zukunftssicherheit
 
----
+______________________________________________________________________
 
 ## 5. WICHITG
 
-- Beziehe dich im Text die direkt auf die Quelldokumentation in der Formulierung. 
-Aussagen wie "gemäss Quelldokumentation ..." sind verboten!
+- Beziehe dich im Text die direkt auf die Quelldokumentation in der Formulierung. Aussagen wie "gemäss
+  Quelldokumentation ..." sind verboten!
 - Stelle sicher das der Text nicht repetitiv ist. Verwende untershciedlich abschnitts Einleitungen.
 - Achte Darauf das der Text interessant und nicht repetitiv ist
 - Achte darauf das Themen nur einmal ausführlich erklärt werden.
-- Wenn Themen in mehreren Kapitel wichtig sind dann erkläre sie nur einmal ausführlich (im ersten Kapitel) und referenziere bei den anderen darauf.
+- Wenn Themen in mehreren Kapitel wichtig sind dann erkläre sie nur einmal ausführlich (im ersten Kapitel) und
+  referenziere bei den anderen darauf.
 - Die SeitenZahl Angabe ist ein maximum versuche nicht diese mit duplizierten Inhalten zu füllen.
 - Verwende nur Guillemets mit Spitzen nach aussen als Anführungszeichen also «…» und nicht „…“ oder "..."
 - Verwende auf keinen Fall scharfes "S"
-- Verwende auf keinen Fall Gedankenstriche " – " sonder mache in diesen Fälle normale eingeschobene Nebensätze mit Kommas
-
+- Verwende auf keinen Fall Gedankenstriche " – " sonder mache in diesen Fälle normale eingeschobene Nebensätze mit
+  Kommas

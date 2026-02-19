@@ -35,6 +35,5 @@ RCLONE_SHAREPOINT_SITE_URL=https://your-tenant.sharepoint.com/sites/your-site-na
 **4. Run Pipeline**
 
 ```bash
-poetry run dagster dev -f pipeline.py
+uv run dagster dev -f pipeline.py
 ```
-

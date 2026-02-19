@@ -2,11 +2,18 @@
 
 **Purpose**: High-level business process orchestration. Collaborative workflows between agents, humans, and programs.
 
-Tech Stack & Paradigms: Pydantic v2 for process configs and validation. NATS pub-sub for event consumption (StopEvent from agents) and production (StartEvent to next). FastAPI + uvicorn for REST endpoints. MongoEngine for persistence. httpx HTTP client. cachetools for caching. Delegation pattern for agent/human orchestration. Form-based human interaction via HumanInTheLoopEvent. ProcessRunner for local execution. Multi-participant coordination (agents → humans → agents). Observable process flows with explicit state transitions. Minimal process logic (delegates to specialized agents). pytest-bdd for Gherkin BDD tests. asgi-lifespan for testing. Development: aihub_agent as dev dependency for local testing.
+Tech Stack & Paradigms: Pydantic v2 for process configs and validation. NATS pub-sub for event consumption (StopEvent
+from agents) and production (StartEvent to next). FastAPI + uvicorn for REST endpoints. MongoEngine for persistence.
+httpx HTTP client. cachetools for caching. Delegation pattern for agent/human orchestration. Form-based human
+interaction via HumanInTheLoopEvent. ProcessRunner for local execution. Multi-participant coordination (agents → humans
+→ agents). Observable process flows with explicit state transitions. Minimal process logic (delegates to specialized
+agents). pytest-bdd for Gherkin BDD tests. asgi-lifespan for testing. Development: aihub_agent as dev dependency for
+local testing.
 
 ## Scope Responsibility
 
-Process-level coordination (NOT task execution). Transforms entity outputs into entity inputs. Delegates work, waits for results, routes to next entity.
+Process-level coordination (NOT task execution). Transforms entity outputs into entity inputs. Delegates work, waits for
+results, routes to next entity.
 
 ## Folder Structure
 
@@ -178,8 +185,7 @@ def verify_human_request(process_runner: ProcessTestRunner):
 
 ## Debug Tools
 
-**trigger.py**: One-shot test with specific event
-**run.py**: Interactive multi-entity test (agents + process)
+**trigger.py**: One-shot test with specific event **run.py**: Interactive multi-entity test (agents + process)
 **Langfuse**: Visual process flow (http://localhost:6006)
 
 ## Pre-Commit

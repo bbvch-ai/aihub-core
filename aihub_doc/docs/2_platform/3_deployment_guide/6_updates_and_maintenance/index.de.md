@@ -14,14 +14,14 @@ Pipelines und Prozesse. Beide verwenden unabhängige semantische Versionierung u
 Kundencode fixiert eine spezifische Core-Version über `pyproject.toml`:
 
 ```toml
-[tool.poetry.dependencies]
+[project.dependencies]
 aihub-core = { git = "https://github.com/bbvch-ai/aihub-core.git", tag = "v1.2.3" }
 ```
 
 Das bedeutet, dass Core-Updates Kunden-Deployments nicht automatisch beeinflussen. Kunden steuern, wann sie neue
 Core-Versionen übernehmen.
 
----
+______________________________________________________________________
 
 ## Versionierung
 
@@ -62,7 +62,7 @@ ghcr.io/bbvch-ai/aihub-<customer>/agent:v1.2.3
 ghcr.io/bbvch-ai/aihub-<customer>/pipeline:v1.2.3
 ```
 
----
+______________________________________________________________________
 
 ## Updates
 
@@ -83,7 +83,7 @@ die Kunden-Image-Tags in `docker-compose.yml`, pullen Sie die neuen Images und s
 Wenn Kundencode eine neue Core-Version übernimmt, aktualisieren Sie die Core-Versionsfixierung in `pyproject.toml`,
 rebuilden Sie die Kunden-Images und deployen Sie dann Core- und Kunden-Updates gemeinsam.
 
----
+______________________________________________________________________
 
 ## Rollbacks
 
@@ -100,7 +100,7 @@ Wenn Daten mit der vorherigen Version kompatibel bleiben, führen Sie ein Rollba
 Core- und Kundencode können unabhängig voneinander zurückgesetzt werden, wenn sie separat aktualisiert wurden. Wenn
 beide zusammen aktualisiert wurden, setzen Sie zuerst den Core, dann den Kundencode zurück.
 
----
+______________________________________________________________________
 
 ## Kompatibilität
 
@@ -117,7 +117,7 @@ welche Kundenversionen mit welchen Core-Versionen funktionieren:
 Staging-Umgebungen sollten der Produktionsinfrastruktur entsprechen und repräsentative Datensätze für die
 Kompatibilitätstests vor Produktions-Updates verwenden.
 
----
+______________________________________________________________________
 
 ## Monitoring
 
@@ -125,7 +125,7 @@ Der Observability-Stack umfasst Langfuse für KI-spezifisches Tracing, OpenTelem
 SigNoz Cloud für externe Metriken und Logs. Überwachen Sie Core-Services (API, Web, Dagster) und Kunden-Services
 (Agents, Pipelines, Prozesse) während und nach Updates.
 
----
+______________________________________________________________________
 
 ## Verwandte Dokumentation
 

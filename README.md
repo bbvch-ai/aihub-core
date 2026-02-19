@@ -80,7 +80,7 @@ workflows as a deep collaboration between humans and AI, allowing employees to f
 aspects of their jobs while maintaining oversight for key decisions.
 :::
 
----
+______________________________________________________________________
 
 ## 2. :file_folder: Project Structure & Repositories
 
@@ -162,7 +162,7 @@ we already provide? You can. The Hub is designed for this kind of powerful, modu
 logic, and the platform handles the rest.
 :::
 
----
+______________________________________________________________________
 
 ## 3.:computer: Getting Started: Local Development Setup
 
@@ -256,8 +256,8 @@ First, clone the necessary repositories into your local workspace.
 
 #### Install Project Dependencies
 
-The project is a monorepo containing multiple packages ("scopes"), such as `aihub_agent` or `aihub_api`, managed as a
-uv workspace with a single lockfile at the root.
+The project is a monorepo containing multiple packages ("scopes"), such as `aihub_agent` or `aihub_api`, managed as a uv
+workspace with a single lockfile at the root.
 
 ::: warning :warning: Important
 To install all dependencies across the workspace:
@@ -594,7 +594,7 @@ Describe the results of your decision. List both positive outcomes and any poten
 ```
 :::
 
----
+______________________________________________________________________
 
 ## 5. :evergreen_tree: Git & GitHub Workflow
 
@@ -705,7 +705,7 @@ To ensure the stability and integrity of our codebase, the `main` branch is prot
   branch is also restricted.
 :::
 
----
+______________________________________________________________________
 
 ## 6. :test_tube: Testing In-Depth
 
@@ -761,7 +761,7 @@ When possible, we favor BDD for several key reasons:
 - **Closer Collaboration**: The process encourages collaboration between business, QA, and development teams.
 :::
 
----
+______________________________________________________________________
 
 ## 7. :pencil2: Code Conventions
 
@@ -889,7 +889,7 @@ objects or dataclasses to hold complex data structures.
 shall fail.
 :::
 
----
+______________________________________________________________________
 
 ## 8. :repeat: The Core Development Cycle
 
@@ -989,7 +989,7 @@ make test
 ```
 :::
 
----
+______________________________________________________________________
 
 ## 9. :books: Documentation and Self-Improvement
 
@@ -1039,7 +1039,7 @@ After implementing your changes, ask yourself the following questions:
   correct or remove it. In this project, the **code is always the ground truth.**
 :::
 
----
+______________________________________________________________________
 
 ## 10. :book: Technical Reference
 
@@ -1063,7 +1063,7 @@ The AI Hub consists of multiple packages that handle specific functionalities:
 All packages have versions that are increased in sync with the tags in the repository. This means a package's version is
 updated with every merge into the main branch.
 
-The monorepo uses uv workspaces to manage inter-package dependencies. During local development, workspace members
-are automatically resolved from their local directories. When published to PyPI, consumers install packages normally
-from the registry. A single `uv.lock` at the root ensures consistent dependency resolution across all packages.
+The monorepo uses uv workspaces to manage inter-package dependencies. During local development, workspace members are
+automatically resolved from their local directories. When published to PyPI, consumers install packages normally from
+the registry. A single `uv.lock` at the root ensures consistent dependency resolution across all packages.
 :::

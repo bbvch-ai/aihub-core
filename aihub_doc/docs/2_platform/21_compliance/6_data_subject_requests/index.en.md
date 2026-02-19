@@ -51,7 +51,7 @@ platform's access control to stop processing. Organizations must assess whether 
 - [Swiss DSG](../3_dsg/)
 - [Data Retention](../1_data_retention/)
 
----
+______________________________________________________________________
 
 :::info Legal disclaimer
 This is technical documentation, not legal advice. Consult your data protection officer or legal counsel.

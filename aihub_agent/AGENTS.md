@@ -2,20 +2,31 @@
 
 **Purpose**: Agent logic and workflow definitions. Autonomous AI components designed for proactive process automation.
 
-Tech Stack & Paradigms: LlamaIndex Core workflow engine with custom @step decorator. LlamaIndex LLMs (OpenAI, Azure OpenAI). NATS pub-sub for event-driven architecture. Redis v5 client for Valkey state (RunContext ephemeral, ThreadContext persistent). MongoEngine for persistence. OpenTelemetry SDK + API + OTLP exporter. OpenInference LlamaIndex instrumentation. Pydantic v2 + pydantic-settings. python-i18n for translations. colorlog for logging. cachetools for TTL caching. stringcase for string manipulation. DispatchableWorkflow base class. Transparent, auditable workflows (not black-box). pytest-bdd for Gherkin BDD tests. AgentRunner and AgentTestRunner. pytest-mock + pytest-asyncio. Development tools: matplotlib, seaborn, tabulate for analysis.
+Tech Stack & Paradigms: LlamaIndex Core workflow engine with custom @step decorator. LlamaIndex LLMs (OpenAI, Azure
+OpenAI). NATS pub-sub for event-driven architecture. Redis v5 client for Valkey state (RunContext ephemeral,
+ThreadContext persistent). MongoEngine for persistence. OpenTelemetry SDK + API + OTLP exporter. OpenInference
+LlamaIndex instrumentation. Pydantic v2 + pydantic-settings. python-i18n for translations. colorlog for logging.
+cachetools for TTL caching. stringcase for string manipulation. DispatchableWorkflow base class. Transparent, auditable
+workflows (not black-box). pytest-bdd for Gherkin BDD tests. AgentRunner and AgentTestRunner. pytest-mock +
+pytest-asyncio. Development tools: matplotlib, seaborn, tabulate for analysis.
 
 ## Scope Responsibility
 
-Implements transparent, workflow-based agents (NOT black boxes). Agents are dispatchable workflows with explicit steps, traceable execution, and integration with processes.
+Implements transparent, workflow-based agents (NOT black boxes). Agents are dispatchable workflows with explicit steps,
+traceable execution, and integration with processes.
 
 ## Agent Blueprint vs Agent Profile
 
-The platform distinguishes between **Agent Blueprints** (code-level definitions) and **Agent Profiles** (runtime configurations):
+The platform distinguishes between **Agent Blueprints** (code-level definitions) and **Agent Profiles** (runtime
+configurations):
 
-- **Agent Blueprint**: The agent class defined in code. Contains workflow steps, form schema, event specifications, and default configuration. Discovered automatically when agents come online. Stored in `agent_classes` collection.
-- **Agent Profile**: A user-created configuration of a blueprint. Has unique ID, name, description, icon, and specific settings. Multiple profiles can be created from one blueprint. Stored in `agent_configs` collection.
+- **Agent Blueprint**: The agent class defined in code. Contains workflow steps, form schema, event specifications, and
+  default configuration. Discovered automatically when agents come online. Stored in `agent_classes` collection.
+- **Agent Profile**: A user-created configuration of a blueprint. Has unique ID, name, description, icon, and specific
+  settings. Multiple profiles can be created from one blueprint. Stored in `agent_configs` collection.
 
-This separation enables self-service deployment: developers define blueprints, while admins create and configure profiles through the UI without code changes.
+This separation enables self-service deployment: developers define blueprints, while admins create and configure
+profiles through the UI without code changes.
 
 ## Folder Structure
 

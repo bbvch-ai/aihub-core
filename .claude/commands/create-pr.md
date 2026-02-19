@@ -50,45 +50,33 @@ them immediately and re-run until everything passes:
 ```bash
 # Start with the core library - this is the foundation everything depends on
 cd aihub_lib
-poetry shell
 make pr-ready
 # Got errors? Fix them now and run make pr-ready again until it's green!
-exit
 
 # Next, tackle the pipeline scope
 cd ../aihub_pipeline
-poetry shell
 make pr-ready
 # Keep fixing and re-running until all checks pass
-exit
 
 # Move on to the agent scope
 cd ../aihub_agent
-poetry shell
 make pr-ready
 # Don't proceed until this is completely clean
-exit
 
 # Process scope is next
 cd ../aihub_process
-poetry shell
 make pr-ready
 # Fix any issues before moving forward
-exit
 
 # Almost there! Check the API scope
 cd ../aihub_api
-poetry shell
 make pr-ready
 # Resolve all formatting and linting issues
-exit
 
 # Finally, the bot scope
 cd ../aihub_bot
-poetry shell
 make pr-ready
 # One last set of fixes if needed
-exit
 
 # Great! Return to the project root
 cd ..
@@ -106,45 +94,33 @@ fail:
 ```bash
 # Test the core library first - everything depends on this!
 cd aihub_lib
-poetry shell
 make test
 # Red test? Stop here, fix it, and run make test again
-exit
 
 # Pipeline tests - ensure your data processing works
 cd ../aihub_pipeline
-poetry shell
 make test
 # Don't move on until every test is green
-exit
 
 # Agent tests - verify your AI agents behave correctly
 cd ../aihub_agent
-poetry shell
 make test
 # Failed test = broken agent. Fix it now!
-exit
 
 # Process tests - check your business workflows
 cd ../aihub_process
-poetry shell
 make test
 # A failing process test means broken automation
-exit
 
 # API tests - ensure your endpoints work properly
 cd ../aihub_api
-poetry shell
 make test
 # Your API must be rock solid before proceeding
-exit
 
 # Bot tests - verify chat functionality
 cd ../aihub_bot
-poetry shell
 make test
 # Users depend on this - make it perfect
-exit
 
 # Excellent! Back to home base
 cd ..

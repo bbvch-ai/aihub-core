@@ -1,3 +1,29 @@
+setup:
+	@echo "Installing all Python dependencies..."
+	uv sync --all-packages
+	@if [ ! -f .env ]; then \
+		echo "Copying .env.dev to .env..."; \
+		cp .env.dev .env; \
+	else \
+		echo ".env already exists, skipping copy."; \
+	fi
+	@echo "Setup complete! Run 'make up-dev' to start the Docker stack."
+
+setup-frontend:
+	@echo "Installing frontend dependencies..."
+	cd aihub_web/aihub_web && pnpm install
+
+setup-all: setup setup-frontend
+
+test:
+	@echo "Running tests..."
+	@(cd aihub_pipeline && make test)
+	@(cd aihub_lib && make test)
+	@(cd aihub_agent && make test)
+	@(cd aihub_process && make test)
+	@(cd aihub_api && make test)
+	@(cd aihub_bot && make test)
+
 lint:
 	@echo "Running linter..."
 	@(cd aihub_pipeline && make lint)

@@ -2,11 +2,19 @@
 
 **Purpose**: Main user-facing REST API (FastAPI) + WebSocket gateway. Connects frontend to AI-Hub services.
 
-Tech Stack & Paradigms: FastAPI REST API with async support. uvicorn + gunicorn ASGI servers. Azure Identity + Azure mgmt SDKs (Cosmos, resources). OAuth2/OpenID Connect (custom implementation). cryptography + PyJWT for token handling. httpx async HTTP client. NATS pub-sub for agent communication. MongoEngine for persistence. python-multipart for file uploads. pydub + audioop-lts for audio processing (Python 3.13 compat). LlamaIndex text-embeddings-inference for embeddings. Langfuse observability. fastmcp for Model Context Protocol server. OpenTelemetry FastAPI instrumentation. Jambo (external lib from bbvch-ai). cachetools TTLCache. Controller-Service-DTO pattern. Pydantic v2 validation. OpenAPI/Swagger auto-docs. Hierarchical permissions (aihub.user.resource.action). ApiRunner and ApiTestRunner. pytest-bdd + asgi-lifespan for testing.
+Tech Stack & Paradigms: FastAPI REST API with async support. uvicorn + gunicorn ASGI servers. Azure Identity + Azure
+mgmt SDKs (Cosmos, resources). OAuth2/OpenID Connect (custom implementation). cryptography + PyJWT for token handling.
+httpx async HTTP client. NATS pub-sub for agent communication. MongoEngine for persistence. python-multipart for file
+uploads. pydub + audioop-lts for audio processing (Python 3.13 compat). LlamaIndex text-embeddings-inference for
+embeddings. Langfuse observability. fastmcp for Model Context Protocol server. OpenTelemetry FastAPI instrumentation.
+Jambo (external lib from bbvch-ai). cachetools TTLCache. Controller-Service-DTO pattern. Pydantic v2 validation.
+OpenAPI/Swagger auto-docs. Hierarchical permissions (aihub.user.resource.action). ApiRunner and ApiTestRunner.
+pytest-bdd + asgi-lifespan for testing.
 
 ## Scope Responsibility
 
-HTTP endpoints, real-time WebSocket communication, agent/process discovery, thread management, authentication enforcement. NOT business logic (delegate to services).
+HTTP endpoints, real-time WebSocket communication, agent/process discovery, thread management, authentication
+enforcement. NOT business logic (delegate to services).
 
 ## Folder Structure
 
@@ -26,10 +34,9 @@ aihub_api/
 
 ## Key Pattern: Controller-Service-DTO-Entity
 
-**Controller**: HTTP endpoint definition, auth/validation, routing.
-**Service**: Business logic, external system integration (NATS, DB via Entities).
-**DTO**: Pydantic models for request/response validation + docs.
-**Entity**: MongoDB document schema + repository methods (lives in `aihub_lib/persistence/`, shared across services).
+**Controller**: HTTP endpoint definition, auth/validation, routing. **Service**: Business logic, external system
+integration (NATS, DB via Entities). **DTO**: Pydantic models for request/response validation + docs. **Entity**:
+MongoDB document schema + repository methods (lives in `aihub_lib/persistence/`, shared across services).
 
 ### Example Structure
 
@@ -183,8 +190,7 @@ async def agent_client():
 
 ## Playground
 
-**Location**: `/home/user/aihub-core/aihub_api/playground/testing/`
-**Start**: `cd playground/testing && python main.py`
+**Location**: `/home/user/aihub-core/aihub_api/playground/testing/` **Start**: `cd playground/testing && python main.py`
 **Access**: http://localhost:8000 (frontend), http://localhost:8000/api/v1/docs (Swagger)
 
 ## Pre-Commit
@@ -213,4 +219,5 @@ make test      # Run tests
 5. Test: `pytest playground/testing/tests/`
 6. Interactive test: Add to `playground/testing/main.py`, run, access http://localhost:8000
 
-**Error handling**: Raise `HTTPException(status_code=..., detail=...)`. Let unexpected errors propagate to FastAPI middleware.
+**Error handling**: Raise `HTTPException(status_code=..., detail=...)`. Let unexpected errors propagate to FastAPI
+middleware.

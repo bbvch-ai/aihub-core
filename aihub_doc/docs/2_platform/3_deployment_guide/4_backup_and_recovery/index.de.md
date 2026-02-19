@@ -24,7 +24,7 @@ VM-Snapshots erfassen den gesamten Zustand der virtuellen Maschine. Sie stellen 
 her. Komponentenbasierten Backups handhaben individuelle Datenspeicher separat, sodass Sie bestimmte Teile
 wiederherstellen können.
 
----
+______________________________________________________________________
 
 ## VM-Snapshots
 
@@ -39,7 +39,7 @@ Stoppen Sie AI-Hub-Services, bevor Sie einen Snapshot mit `docker compose down` 
 anwendungskonsistente Snapshots (Azure mit VM-Agent, VMware mit Quiesce). Erstellen Sie Snapshots vor größeren Updates.
 Testen Sie Wiederherstellungen regelmäßig.
 
----
+______________________________________________________________________
 
 ## Komponentenbasierten Backups
 
@@ -71,7 +71,7 @@ Sie Snapshot-basierte Backups.
 Die Konfiguration umfasst Umgebungsvariablen, SSL-Zertifikate und Docker Compose-Dateien. Verschlüsseln Sie Backups.
 Speichern Sie Verschlüsselungsschlüssel separat (HSM, Key Management Services, mehrere sichere Standorte).
 
----
+______________________________________________________________________
 
 ## Backup-Automatisierung
 

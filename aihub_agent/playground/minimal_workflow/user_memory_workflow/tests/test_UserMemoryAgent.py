@@ -52,14 +52,14 @@ def agent_config():
 @given("a UserMemoryAgent runner with valid configuration", target_fixture="agent_runner")
 def _(agent_config):
     """Create AgentTestRunner with default English locale."""
-    return AgentTestRunner(agent_type=UserMemoryAgent, default_agent_config=agent_config)
+    return AgentTestRunner(agent_type=UserMemoryAgent, agent_config=agent_config)
 
 
 @given(parsers.parse('a UserMemoryAgent runner with locale "{locale}"'), target_fixture="agent_runner")
 def _(agent_config, locale: str):
     """Create AgentTestRunner with specified locale."""
     # Note: Locale is passed via UserMessageEvent, not AgentConfig
-    return AgentTestRunner(agent_type=UserMemoryAgent, default_agent_config=agent_config)
+    return AgentTestRunner(agent_type=UserMemoryAgent, agent_config=agent_config)
 
 
 @given(parsers.parse('pre-seeded memory: "{memory_text}"'))
@@ -73,7 +73,7 @@ async def _(memory_text: str, agent_runner: AgentTestRunner):
 
     # Create AgentMemory instance with the agent config
     locale_handler = LocaleHandler(locale="en")
-    agent_memory = AgentMemory(agent_config=agent_runner.default_agent_config, t=locale_handler)
+    agent_memory = AgentMemory(agent_config=agent_runner.agent_config, t=locale_handler)
 
     # Add the memory
     await agent_memory.add_user_memory(
@@ -143,9 +143,9 @@ def _(agent_runner: AgentTestRunner, count: int):
     """Check that RetrieveUserMemoryEvent has expected number of memories."""
     event = agent_runner.get_event_of_class(RetrieveUserMemoryEvent)
     assert event is not None, "RetrieveUserMemoryEvent not found"
-    assert (
-        len(event.memories) >= count or len(event.relations) >= count
-    ), f"Expected {count}+ memories or relations, got {len(event.memories)} / {len(event.relations)}"
+    assert len(event.memories) >= count or len(event.relations) >= count, (
+        f"Expected {count}+ memories or relations, got {len(event.memories)} / {len(event.relations)}"
+    )
 
 
 @then(parsers.parse('the memory or relation content contains "{text}"'))

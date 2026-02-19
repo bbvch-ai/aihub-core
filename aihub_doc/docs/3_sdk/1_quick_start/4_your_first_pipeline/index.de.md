@@ -1,11 +1,12 @@
 ---
 title: Ihre erste Pipeline
-source_sha: "c2f2e23557008f5a3233763f6e0cf76edbb84ec23db85dfdba9281767245d5c1"
+source_sha: c2f2e23557008f5a3233763f6e0cf76edbb84ec23db85dfdba9281767245d5c1
 ---
 
 # Ihre erste Pipeline
 
-Erstellen Sie Ihre erste Datenverarbeitungs-Pipeline mit dem AI-Hub Pipeline (`aihub_pipeline`) SDK – einer vollständigen Datentransformations-Pipeline mit mehreren verbundenen Assets.
+Erstellen Sie Ihre erste Datenverarbeitungs-Pipeline mit dem AI-Hub Pipeline (`aihub_pipeline`) SDK – einer
+vollständigen Datentransformations-Pipeline mit mehreren verbundenen Assets.
 
 ## Was Sie lernen werden
 
@@ -19,11 +20,13 @@ Dieser Quickstart behandelt die wesentlichen Bausteine:
 
 ## Voraussetzungen
 
-Sie benötigen die AI-Hub Entwicklungsumgebung. Bevor Sie beginnen, stellen Sie sicher, dass Sie die Schritte zur [Einrichtung der Entwicklungsumgebung](../1_dev_environment_setup/) abgeschlossen haben.
+Sie benötigen die AI-Hub Entwicklungsumgebung. Bevor Sie beginnen, stellen Sie sicher, dass Sie die Schritte zur
+[Einrichtung der Entwicklungsumgebung](../1_dev_environment_setup/) abgeschlossen haben.
 
 ## Wie Pipelines funktionieren
 
-AI-Hub Pipelines sind **Datenverarbeitungs-Workflows**, die auf Dagster basieren und aus drei wesentlichen Teilen bestehen:
+AI-Hub Pipelines sind **Datenverarbeitungs-Workflows**, die auf Dagster basieren und aus drei wesentlichen Teilen
+bestehen:
 
 - **Assets**: Funktionen, die Daten erstellen, transformieren oder konsumieren
 - **Abhängigkeiten**: Automatischer Datenfluss zwischen Assets basierend auf Funktionsparametern
@@ -91,7 +94,7 @@ defs = Definitions(assets=[raw_feedback_data, cleaned_feedback])
 #### 3. Führen Sie Ihre grundlegende Pipeline aus:
 
 ```bash
-poetry run dagster dev -f simple_pipeline.py
+uv run dagster dev -f simple_pipeline.py
 ```
 
 Öffnen Sie `http://localhost:3000`, und Sie werden Folgendes sehen:
@@ -104,7 +107,9 @@ Klicken Sie auf **„Materialize all“**, um die Pipeline auszuführen und den 
 
 ## Erstellen Sie eine echte AI-Hub Pipeline
 
-Lassen Sie uns nun eine realistische Pipeline mithilfe des `aihub_pipeline` SDK erstellen, die Dokumentverarbeitungsmuster demonstriert. Wir werden dies Schritt für Schritt aufschlüsseln, um jede Komponente zu verstehen.
+Lassen Sie uns nun eine realistische Pipeline mithilfe des `aihub_pipeline` SDK erstellen, die
+Dokumentverarbeitungsmuster demonstriert. Wir werden dies Schritt für Schritt aufschlüsseln, um jede Komponente zu
+verstehen.
 
 ### 1. Verständnis der AI-Hub Pipeline-Struktur
 
@@ -187,9 +192,9 @@ assets = [observable_asset, documents_asset, nodes_asset]
 
 **Verständnis der Asset Factories:**
 
-- ``observable_data_lake_factory``: Erstellt ein Asset, das Dateiänderungen überwacht
-- ``documents_factory``: Erstellt ein Asset, das Dateien in RefDoc-Objekte mit Metadaten parst
-- ``nodes_factory``: Erstellt ein Asset, das Dokumente in Chunks zerlegt und Vektor-Embeddings generiert
+- `observable_data_lake_factory`: Erstellt ein Asset, das Dateiänderungen überwacht
+- `documents_factory`: Erstellt ein Asset, das Dateien in RefDoc-Objekte mit Metadaten parst
+- `nodes_factory`: Erstellt ein Asset, das Dokumente in Chunks zerlegt und Vektor-Embeddings generiert
 
 ### 4. Konfigurieren Sie Ihre Pipeline-Ressourcen
 
@@ -325,7 +330,7 @@ defs = Definitions(
 ### 6. Führen Sie Ihre AI-Hub Pipeline aus:
 
 ```bash
-poetry run dagster dev -f my_document_pipeline.py
+uv run dagster dev -f my_document_pipeline.py
 ```
 
 Sie sehen die vollständige Dokumentverarbeitungs-Pipeline:
@@ -378,9 +383,9 @@ defs = Definitions(
 
 **Verständnis von Jobs und Scheduling:**
 
-- ``observe_job``: Manuelles Auslösen der Überwachung des Data Lake
-- ``daily_schedule_at``: Automatisches Data-Lake-Monitoring planen
-- ``default_automation_sensor``: Automatische Auslösung der Asset-Verarbeitung bei Abhängigkeitsänderungen
+- `observe_job`: Manuelles Auslösen der Überwachung des Data Lake
+- `daily_schedule_at`: Automatisches Data-Lake-Monitoring planen
+- `default_automation_sensor`: Automatische Auslösung der Asset-Verarbeitung bei Abhängigkeitsänderungen
 
 Ihre Pipeline unterstützt nun:
 
@@ -395,7 +400,9 @@ Ihre Pipeline unterstützt nun:
 - **Milvus (Attu)**: Monitoring der Vektor-Datenbank
 
 ::: Tipp SeaweedFS Filer
-In der Produktion ist die SeaweedFS Filer Web-UI unter `datalake.${DOMAIN}` zugänglich (OAuth2 geschützt, erfordert die Rolle AIHubDeveloper). Im Entwicklungsmodus ist sie unter `http://localhost:8889` verfügbar, um hochgeladene Dateien zu durchsuchen und den Speicher zu debuggen.
+In der Produktion ist die SeaweedFS Filer Web-UI unter `datalake.${DOMAIN}` zugänglich (OAuth2 geschützt, erfordert die
+Rolle AIHubDeveloper). Im Entwicklungsmodus ist sie unter `http://localhost:8889` verfügbar, um hochgeladene Dateien zu
+durchsuchen und den Speicher zu debuggen.
 :::
 
 ### 10. Verständnis der AI-Hub Pipeline-Muster
