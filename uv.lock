@@ -444,7 +444,6 @@ dev = [
     { name = "black", extra = ["jupyter"] },
     { name = "huggingface-hub" },
     { name = "mdformat" },
-    { name = "mdformat-frontmatter" },
     { name = "mdformat-gfm" },
     { name = "mdformat-myst" },
     { name = "mdformat-pyproject" },
@@ -466,7 +465,6 @@ dev = [
     { name = "black", extras = ["jupyter"], specifier = ">=25.1.0" },
     { name = "huggingface-hub", extras = ["cli"], specifier = ">=0.34.4" },
     { name = "mdformat", specifier = ">=0.7.21" },
-    { name = "mdformat-frontmatter", specifier = ">=2.0.8" },
     { name = "mdformat-gfm", specifier = ">=0.4.1" },
     { name = "mdformat-myst", specifier = ">=0.2.1" },
     { name = "mdformat-pyproject", specifier = ">=0.0.2" },
@@ -3377,20 +3375,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/2c/53/008805510d3006d9aec6c602fa40305750cb96daba8ea9abae477149909b/mdformat_front_matters-2.0.0.tar.gz", hash = "sha256:46efabe93707699120c67d4b33b51fdb4cfe0e040acfb0f8212eb33c9a3e8a9a", size = 12576, upload-time = "2025-12-04T11:44:52.265Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/00/05/4c197c000dab41f1f58290221a4c02bd57804ff42e9374d3dd0f5408aa40/mdformat_front_matters-2.0.0-py3-none-any.whl", hash = "sha256:8ea92d23d1e9427fe6548b9044e5fbf7bcf6c217941f1a9442e0efd8b0a76e61", size = 13411, upload-time = "2025-12-04T11:44:51.209Z" },
-]
-
-[[package]]
-name = "mdformat-frontmatter"
-version = "2.0.10"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "mdformat" },
-    { name = "mdit-py-plugins" },
-    { name = "ruamel-yaml" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/c0/94/ccb15e0535f35c21b2b533cafb232f11ac0e7046dd122029b7ec0513c82e/mdformat_frontmatter-2.0.10.tar.gz", hash = "sha256:decefcb4beb66cf111f17e8c0d82e60b208104c7922ec09564d05365db551bd8", size = 3958, upload-time = "2026-01-19T23:42:23.672Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/ea/40/e61f8ed549bed3159a9677eadb89849ccca6de30eb90bf61e1b6026df96d/mdformat_frontmatter-2.0.10-py3-none-any.whl", hash = "sha256:c99f7c52de0403e39f48b6a1c2bb79a4c8ce69304a799ff0e403e3957aa3669b", size = 4636, upload-time = "2026-01-19T23:42:22.341Z" },
 ]
 
 [[package]]
