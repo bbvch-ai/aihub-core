@@ -166,15 +166,14 @@ jobs:
           enable-cache: true
 
       - name: Install Dependencies
-        run: uv sync --all-packages --dev
+        run: uv sync --all-packages --dev --frozen
 
       - name: Setup LLM for Changelog Generation
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           echo "Installing llm and llm-gemini plugin..."
-          pipx install llm
-          pipx inject llm llm-gemini
+          uv tool install llm --with llm-gemini
 
           echo "Setting Gemini API key..."
           llm keys set gemini --value "$GEMINI_API_KEY"
@@ -229,7 +228,7 @@ jobs:
           enable-cache: true
 
       - name: Install Dependencies
-        run: uv sync --all-packages --dev
+        run: uv sync --all-packages --dev --frozen
 
       - name: Update License Report
         id: license_generator
@@ -271,18 +270,17 @@ jobs:
         working-directory: ./aihub_doc
         run: pnpm install
 
-      - name: Ensure pipx is available
-        run: |
-          python3 -m pip install --user pipx
-          python3 -m pipx ensurepath
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
 
       - name: Setup LLM for translation
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           echo "Installing llm and llm-gemini plugin..."
-          pipx install llm
-          pipx inject llm llm-gemini
+          uv tool install llm --with llm-gemini
 
           echo "Setting Gemini API key..."
           llm keys set gemini --value "$GEMINI_API_KEY"
