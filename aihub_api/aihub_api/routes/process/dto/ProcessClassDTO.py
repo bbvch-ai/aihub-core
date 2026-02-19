@@ -87,9 +87,9 @@ class ProcessClassDTO(BaseModel):
             description=entity.description.to_locale_string() if entity.description else LocaleString(en=""),
             icon=entity.icon or "mage:broadcast",
             form=entity.form_elements,
-            process_config_specs=entity.process_config_specs.to_specs()
-            if entity.process_config_specs
-            else ProcessConfigSpecs(),
+            process_config_specs=(
+                entity.process_config_specs.to_specs() if entity.process_config_specs else ProcessConfigSpecs()
+            ),
             human_inputs=[],
             program_inputs=[],
             agent_inputs=[],
