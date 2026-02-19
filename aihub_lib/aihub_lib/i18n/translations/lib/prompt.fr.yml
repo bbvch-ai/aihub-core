@@ -1574,7 +1574,7 @@ summarizer:
     Résumé TL;DR :
 
 figure_description_generator:
-  context_string: |
+  context_string: |-
     {% chat role="system" %}
     Vous êtes un expert dans la création de descriptions d'images de haute qualité pour l'accessibilité des documents.
     Votre tâche consiste à générer un texte alt détaillé pour les figures dans les documents qui :

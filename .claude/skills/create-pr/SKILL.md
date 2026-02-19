@@ -29,30 +29,30 @@ git commit -m "type(scope): Descriptive message"
 - Keep commits focused -- one logical change per commit
 - Use imperative mood ("Add feature" not "Added feature")
 
-### 2. Format and Lint via /lint
+### 2. Sync with Main via /merge-main
+
+Delegate to the `/merge-main` skill to ensure the branch is up to date with `origin/main`. It commits local work,
+fetches main, reviews what changed, merges, and resolves conflicts (asking the user when unsure). This prevents merge
+conflicts at PR time and ensures CI runs against the latest main.
+
+### 3. Format and Lint via /lint
 
 Delegate to the `/lint` skill. It runs `make pr-ready` from the repo root (ruff format + ruff check + mdformat + yamlfix
 across all scopes), fixes errors, and repeats until clean.
 
-### 3. Run Tests via /test-scope
+### 4. Run Tests via /test-scope
 
 Delegate to the `/test-scope` skill for smart scoped testing. It auto-detects affected scopes from git diff, expands
 downstream dependencies (e.g. `aihub_lib` change triggers all scopes), and runs `make test` in dependency order.
 
 Every test must pass. Never disable or skip tests. Fix root causes, not symptoms.
 
-### 4. Review Changes via /review-diff
+### 5. Review Changes via /review-diff
 
 Delegate to the `/review-diff` skill for a comprehensive code review of `git diff main...HEAD`. It checks architecture,
 coding standards (type hints, Pydantic models, async I/O, fail-fast), security (OWASP top 10), and correctness.
 
 Fix all critical and important issues found. Re-run `/lint` and `/test-scope` for any scopes modified during fixes.
-
-### 5. Sync with Main via /merge-main
-
-Delegate to the `/merge-main` skill to ensure the branch is up to date with `origin/main`. It commits local work,
-fetches main, reviews what changed, merges, and resolves conflicts (asking the user when unsure). This prevents merge
-conflicts at PR time and ensures CI runs against the latest main.
 
 ### 6. Update Documentation via /update-doc
 
