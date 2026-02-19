@@ -1079,8 +1079,16 @@ services:
       - "traefik.http.routers.keycloak.priority=7000"
       - "traefik.http.routers.keycloak.middlewares=keycloak-security-headers"
       - "traefik.http.services.keycloak.loadbalancer.server.port=8080"
-      - "traefik.http.middlewares.keycloak-security-headers.chain.middlewares=security-headers@file,keycloak-frame-options"
-      - "traefik.http.middlewares.keycloak-frame-options.headers.customResponseHeaders.X-Frame-Options=DENY"
+      # Keycloak manages its own X-Frame-Options per realm (master: SAMEORIGIN
+      # for admin console session iframes, aihub: empty for parent app embedding).
+      # We only add non-frame security headers here to avoid overriding Keycloak's
+      # native per-realm frame policy — DENY breaks the admin console.
+      - "traefik.http.middlewares.keycloak-security-headers.headers.sslRedirect=false"
+      - "traefik.http.middlewares.keycloak-security-headers.headers.stsSeconds=31536000"
+      - "traefik.http.middlewares.keycloak-security-headers.headers.stsIncludeSubdomains=true"
+      - "traefik.http.middlewares.keycloak-security-headers.headers.contentTypeNosniff=true"
+      - "traefik.http.middlewares.keycloak-security-headers.headers.browserXssFilter=true"
+      - "traefik.http.middlewares.keycloak-security-headers.headers.referrerPolicy=strict-origin-when-cross-origin"
     {%- endif %}
     networks:
       - data   # PostgreSQL access for Keycloak database

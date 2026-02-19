@@ -120,6 +120,17 @@
         "claim.value": "AIHubAccess",
         "role": "AIHubAccess"
       }
+    },
+    {
+      "name": "role-mapper-sysadmin",
+      "identityProviderAlias": "azure-ad",
+      "identityProviderMapper": "oidc-role-idp-mapper",
+      "config": {
+        "syncMode": "INHERIT",
+        "claim": "roles",
+        "claim.value": "AIHubSysAdmin",
+        "role": "AIHubSysAdmin"
+      }
     }
   ]
 }

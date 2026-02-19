@@ -150,7 +150,7 @@ created. Store in a password manager or secure vault.
 
 App roles enable role-based access control (RBAC) for platform users.
 
-Create three app roles following this process:
+Create four app roles following this process:
 
 1. Navigate to **"App roles"** → **"Create app role"**
 2. Create each of the following roles:
@@ -174,11 +174,19 @@ Create three app roles following this process:
 - **Display name**: `AIHubDeveloper`
 - **Allowed member types**: `Users/Groups`
 - **Value**: `AIHubDeveloper`
-- **Description**: `Developer access to AI-Hub platform services (Dagster, SeaweedFS data lake console)`
+- **Description**: `Developer access to AI-Hub platform services`
+
+**System Administrator role:**
+
+- **Display name**: `AIHubSysAdmin`
+- **Allowed member types**: `Users/Groups`
+- **Value**: `AIHubSysAdmin`
+- **Description**: `System administrator access to infrastructure tools (Dagster, SeaweedFS, Attu)`
 
 ::: tip
-The `AIHubDeveloper` role is required to access the Dagster pipeline orchestration dashboard and the SeaweedFS data lake
-console at `datalake.${DOMAIN}`. Users without this role can still use the main AI-Hub interface and OpenWebUI.
+The `AIHubSysAdmin` role is required to access the Dagster pipeline orchestration dashboard, the SeaweedFS data lake
+console at `datalake.${DOMAIN}`, and the Attu Milvus admin UI. Users without this role can still use the main AI-Hub
+interface and OpenWebUI.
 :::
 
 **Step 6: Configure SPA redirect URIs**

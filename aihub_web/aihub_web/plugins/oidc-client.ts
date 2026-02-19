@@ -22,6 +22,10 @@ export default defineNuxtPlugin(async ({ $i18n, $router }) => {
     userStore: new WebStorageStateStore({ store: window?.localStorage }),
     // Keycloak supports PKCE
     disablePKCE: false,
+    // Disabled: OpenWebUI logout destroys the Keycloak SSO session, but we
+    // intentionally keep the parent app session alive (local JWT stays valid).
+    // The iframe @load handler in openai.vue redirects to home instead.
+    monitorSession: false,
   })
 
   // Add event handlers for token lifecycle events

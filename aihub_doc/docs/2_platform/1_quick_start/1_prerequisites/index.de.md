@@ -153,7 +153,7 @@ neues Geheimnis erstellt werden. Speichern Sie ihn in einem Passwortmanager oder
 
 App-Rollen ermöglichen die rollenbasierte Zugriffssteuerung (RBAC) für Plattformbenutzer.
 
-Erstellen Sie drei App-Rollen nach diesem Prozess:
+Erstellen Sie vier App-Rollen nach diesem Prozess:
 
 1. Navigieren Sie zu **„App-Rollen“** → **„App-Rolle erstellen“**
 2. Erstellen Sie jede der folgenden Rollen:
@@ -177,12 +177,19 @@ Erstellen Sie drei App-Rollen nach diesem Prozess:
 - **Anzeigename**: `AIHubDeveloper`
 - **Zulässige Mitgliedstypen**: `Benutzer/Gruppen`
 - **Wert**: `AIHubDeveloper`
-- **Beschreibung**: `Entwicklerzugriff auf AI-Hub Plattform-Services (Dagster, SeaweedFS Data Lake Konsole)`
+- **Beschreibung**: `Entwicklerzugriff auf AI-Hub Plattform-Services`
+
+**Systemadministrator-Rolle:**
+
+- **Anzeigename**: `AIHubSysAdmin`
+- **Zulässige Mitgliedstypen**: `Benutzer/Gruppen`
+- **Wert**: `AIHubSysAdmin`
+- **Beschreibung**: `Systemadministrator-Zugriff auf Infrastruktur-Tools (Dagster, SeaweedFS, Attu)`
 
 ::: tip
-Die Rolle `AIHubDeveloper` ist erforderlich, um auf das Dagster Pipeline Orchestrierungs-Dashboard und die SeaweedFS
-Data Lake Konsole unter `datalake.${DOMAIN}` zuzugreifen. Benutzer ohne diese Rolle können weiterhin die
-Haupt-AI-Hub-Oberfläche und OpenWebUI nutzen.
+Die Rolle `AIHubSysAdmin` ist erforderlich, um auf das Dagster Pipeline Orchestrierungs-Dashboard, die SeaweedFS
+Data Lake Konsole unter `datalake.${DOMAIN}` und die Attu Milvus Admin-UI zuzugreifen. Benutzer ohne diese Rolle können
+weiterhin die Haupt-AI-Hub-Oberfläche und OpenWebUI nutzen.
 :::
 
 **Schritt 6: SPA-Umleitungs-URIs konfigurieren**

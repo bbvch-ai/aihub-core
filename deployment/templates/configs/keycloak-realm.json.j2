@@ -39,6 +39,10 @@
       {
         "name": "AIHubDeveloper",
         "description": "Developer access to AI-Hub tools (Dagster, Attu, etc.)"
+      },
+      {
+        "name": "AIHubSysAdmin",
+        "description": "System administrator access to infrastructure tools (Dagster, SeaweedFS, Attu, etc.)"
       }
     ]
   },
@@ -515,6 +519,13 @@
           "priority": 0,
           "userSetupAllowed": false,
           "autheticatorFlow": true
+        },
+        {
+          "authenticator": "allow-access-authenticator",
+          "requirement": "REQUIRED",
+          "priority": 1,
+          "userSetupAllowed": false,
+          "autheticatorFlow": false
         }
       ]
     },

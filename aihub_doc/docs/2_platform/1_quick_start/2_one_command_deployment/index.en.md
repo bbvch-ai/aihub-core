@@ -213,9 +213,9 @@ AIHUB_CREATE_DEFAULT_ROLES="True"
 ADMIN_EMAIL="admin@your-company.com"
 
 # OAuth Group Restrictions (Azure AD group names)
-OAUTH_ALLOWED_GROUPS_DAGSTER="AIHubAdmin"
-OAUTH_ALLOWED_GROUPS_SEAWEEDFS="AIHubAdmin"
-OAUTH_ALLOWED_GROUPS_ATTU="AIHubAdmin"
+OAUTH_ALLOWED_GROUPS_DAGSTER="AIHubSysAdmin"
+OAUTH_ALLOWED_GROUPS_SEAWEEDFS="AIHubSysAdmin"
+OAUTH_ALLOWED_GROUPS_ATTU="AIHubSysAdmin"
 
 # -----------------------------------------------------------------------------
 # Expert Asking Agent Configuration (Optional - for expert escalation)
@@ -359,7 +359,7 @@ docker compose -f docker-compose.latest.yml ps --format "table {{.Name}}\t{{.Sta
 
 ### Access the Platform
 
-1. **Make sure your User that you test with have the role "AIHubAdmin" assigned in the Azure Enterprise Application**
+1. **Make sure your User that you test with has the roles "AIHubAdmin" and "AIHubSysAdmin" assigned in the Azure Enterprise Application**
 
 2. **Web Interface:**
 

@@ -38,11 +38,12 @@ SAML, local users) as configured per deployment.
    Keycloak's OIDC endpoints. There is no `IDENTITY_PROVIDER` switch or provider-specific auth handler in the
    application code—only `KeycloakAuthHandler`.
 
-2. **Keycloak Owns Access Gating, Not AI-Hub Roles**: Keycloak manages three realm-level roles that determine *whether*
+2. **Keycloak Owns Access Gating, Not AI-Hub Roles**: Keycloak manages realm-level roles that determine *whether*
    a user may access the platform at all:
    - `AIHubAdmin` — administrative access
    - `AIHubUser` — standard access
    - `AIHubDeveloper` — developer tools access
+   - `AIHubSysAdmin` — system administrator access to infrastructure tools (Dagster, SeaweedFS, Attu)
 
    These roles are mapped from the upstream IdP's claims (e.g., Azure AD app role assignments → Keycloak realm roles via
    identity provider mappers). The upstream IdP only needs to provide the role claims required to grant platform access.
@@ -51,7 +52,7 @@ SAML, local users) as configured per deployment.
    agent permissions, data access controls, workflow authorizations) is handled by the platform's local role management
    system (see ADR `2025_12_25_local_role_management.md`). Keycloak has no knowledge of these roles. This separation
    ensures that:
-   - Onboarding a new IdP only requires configuring role mapping for the three access roles
+   - Onboarding a new IdP only requires configuring role mapping for the access roles
    - AI-Hub's permission model is portable across any identity provider
    - Role changes within the platform do not require IdP administrator involvement
 

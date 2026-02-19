@@ -20,7 +20,7 @@
    2. Set redirect URI: https://auth.YOUR_DOMAIN/realms/aihub/broker/azure-ad/endpoint
    3. Create client secret and copy value
    4. Grant API permissions: openid, email, profile
-   5. Define App Roles in manifest (AIHubAccess, AIHubAdmin, AIHubUser, AIHubDeveloper)
+   5. Define App Roles in manifest (AIHubAccess, AIHubAdmin, AIHubUser, AIHubDeveloper, AIHubSysAdmin)
    6. Assign users/groups to roles in Enterprise Applications
 
    Role Mapping:
@@ -29,6 +29,7 @@
    - Azure "AIHubAdmin" → Keycloak "AIHubAdmin"
    - Azure "AIHubUser" → Keycloak "AIHubUser"
    - Azure "AIHubDeveloper" → Keycloak "AIHubDeveloper"
+   - Azure "AIHubSysAdmin" → Keycloak "AIHubSysAdmin"
 #}
 {
   "realm": "aihub",
@@ -146,6 +147,17 @@
         "claim": "roles",
         "claim.value": "AIHubAccess",
         "role": "AIHubAccess"
+      }
+    },
+    {
+      "name": "role-mapper-sysadmin",
+      "identityProviderAlias": "azure-ad",
+      "identityProviderMapper": "oidc-role-idp-mapper",
+      "config": {
+        "syncMode": "INHERIT",
+        "claim": "roles",
+        "claim.value": "AIHubSysAdmin",
+        "role": "AIHubSysAdmin"
       }
     }
   ]
