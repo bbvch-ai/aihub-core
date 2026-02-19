@@ -1,6 +1,6 @@
 ---
 name: scaffold-api-endpoint
-description: Generate a new REST API controller with fluent builder pattern, typed endpoints, permission-based auth, DTOs, and main.py registration. Use when user says "create API endpoint", "scaffold controller", "new REST endpoint", "add CRUD API", "generate API route", "build endpoint for X", or "add API controller".
+description: Generate a new REST API controller with fluent builder pattern, typed endpoints, permission-based auth, DTOs, and main.py registration. Use when user says "create API endpoint", "scaffold controller", "new REST endpoint", "add CRUD API", "generate API route", "build endpoint for X", or "add API controller". Do NOT use for service layer business logic (use scaffold-api-service), frontend SDK generation (use generate-sdk), or entity/repository scaffolding (use scaffold-api-repository).
 allowed-tools: Read, Write, Edit, Bash, Grep, Glob
 ---
 
@@ -10,7 +10,7 @@ Generate a new controller with endpoints. The resource name should be provided v
 
 ## Step 1: Read Reference Materials
 
-1. Read the API scope guide: `/home/user/aihub-core/aihub_api/CLAUDE.md`
+1. Read the API scope guide: `aihub_api/CLAUDE.md`
 2. Study these reference controllers:
    - CRUD: `aihub_api/aihub_api/routes/agent/AgentController.py`
    - Simple: `aihub_api/aihub_api/routes/role/RoleController.py`
@@ -202,15 +202,30 @@ runner.mount(
 
 ## Step 5: Add i18n Keys
 
-Add to `aihub_api/aihub_api/i18n/locales/{en,de,fr,it}.yaml`:
+Add to all 4 locale files at `aihub_api/aihub_api/i18n/translations/api/controllers.{en,de,fr,it}.yml`:
 
 ```yaml
-api:
-  controllers:
-    <resource>:
-      name: "<Resource>s"
-      description: "Manage <resource>s"
+<resource>:
+  name: "<Resource>s"
+  description: "Manage <resource>s"
 ```
+
+The `api.controllers.` prefix in `ApiLocaleString.from_i18n_path("api.controllers.<resource>.name")` resolves to the
+file path `translations/api/controllers.{locale}.yml` — only the `<resource>.name` part is a key inside the YAML.
+
+## Step 6: Scaffold Tests
+
+Create test directory and stub at `aihub_api/playground/testing/tests/<resource>/test_<resource>_api.py`. Follow the
+patterns in `playground/testing/tests/agent/` or `playground/testing/tests/role/`.
+
+## Step 7: Verify
+
+1. Confirm the controller is importable:
+   `cd aihub_api && uv run python -c "from aihub_api.routes.<resource>.<Resource>Controller import <Resource>Controller"`
+2. Confirm registration in `aihub_api/app/main.py` — the controller must be imported and mounted via `runner.mount()`
+3. Confirm i18n keys exist in all 4 locale files:
+   `aihub_api/aihub_api/i18n/translations/api/controllers.{en,de,fr,it}.yml`
+4. Run tests: `cd aihub_api && make test`
 
 ## Key Conventions
 

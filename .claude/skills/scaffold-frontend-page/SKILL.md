@@ -1,8 +1,7 @@
 ---
 name: scaffold-frontend-page
-description: Scaffold a new Nuxt 3 list page with StructuralScreen/Column layout, Pinia-Colada data fetching, card grid, create modal, and NuxtPage outlet for nested detail routes. Use when user says "create a new page", "scaffold a frontend page", "add a list page", "new resource page", "generate a Vue page for X", or "build a page like agents/roles". Generates page + card + i18n following agents.vue and roles.vue patterns.
-
-allowed-tools: Read, Write, Edit, Bash, Grep, Glob
+description: Scaffold a new Nuxt 3 list page with StructuralScreen/Column layout, Pinia-Colada data fetching, card grid, create modal, and NuxtPage outlet for nested detail routes. Use when user says "create a new page", "scaffold a frontend page", "add a list page", "new resource page", "generate a Vue page for X", or "build a page like agents/roles". Do NOT use for detail pages with tabs (use scaffold-frontend-subpage), individual components (use scaffold-frontend-component), or composables only (use scaffold-composable). Generates page + card + i18n following agents.vue and roles.vue patterns.
+allowed-tools: Read, Write, Edit, Bash, Grep, Glob, mcp__nuxt__get-documentation-page, mcp__nuxt__list-documentation-pages, mcp__context7__resolve-library-id, mcp__context7__query-docs
 ---
 
 # Scaffold a New Frontend Page
@@ -11,7 +10,7 @@ Generate a list page for a new resource. The resource name should be provided vi
 
 ## Before You Start
 
-1. Read the frontend scope guide: `/home/user/aihub-core/aihub_web/CLAUDE.md`
+1. Read the frontend scope guide: `aihub_web/CLAUDE.md`
 2. Study these reference pages:
    - Simple list: `aihub_web/aihub_web/pages/service/roles.vue`
    - Complex list with grouping: `aihub_web/aihub_web/pages/service/agents.vue`
@@ -22,16 +21,19 @@ Generate a list page for a new resource. The resource name should be provided vi
 Search `aihub_web/aihub_web/sdk/client/` for the resource's SDK functions and DTO types. If they don't exist, warn the
 user to run `/generate-sdk` first.
 
+Look up the actual DTO type name in `aihub_web/aihub_web/sdk/client/types.gen.ts` — types may be named
+`{Resource}Response`, `Full{Resource}Dto`, or `{Resource}Dto` depending on the API schema.
+
 ## Step 2: Create Composables
 
 If composables don't exist yet, create them first using the patterns from `/scaffold-composable`. At minimum you need:
 
-- `composables/<resource>/use<Resource>s.ts` — List query
-- `composables/<resource>/useCreate<Resource>.ts` — Create mutation (if applicable)
+- `composables/{resource}/use{Resource}s.ts` — List query
+- `composables/{resource}/useCreate{Resource}.ts` — Create mutation (if applicable)
 
 ## Step 3: Create the List Page
 
-Create `aihub_web/aihub_web/pages/service/<resource>s.vue`:
+Create `aihub_web/aihub_web/pages/service/{resource}s.vue`:
 
 ```vue
 <template>
@@ -109,7 +111,7 @@ const toDetail = (item: <Resource>Dto) => {
 
 ## Step 4: Create Card Component
 
-Create `aihub_web/aihub_web/components/<Resource>/Card.vue` following this exact pattern:
+Create `aihub_web/aihub_web/components/{Resource}/Card.vue` following this exact pattern:
 
 ```vue
 <template>
@@ -177,24 +179,30 @@ const isActive = computed(() => {
 Add translation keys in all 4 locale files (`aihub_web/aihub_web/i18n/locales/{de,en,fr,it}.yaml`):
 
 ```yaml
-<resource>:
-  title: "<Resource>s"
-  create_new: "Create <Resource>"
+{resource}:
+  title: "{Resource}s"
+  create_new: "Create {Resource}"
   list:
-    empty: "No <resource>s found"
+    empty: "No {resource}s found"
   delete:
-    title: "Delete <Resource>"
-    confirmMessage: "Are you sure you want to delete this <resource>?"
+    title: "Delete {Resource}"
+    confirmMessage: "Are you sure you want to delete this {resource}?"
     button: "Delete"
-    success: "<Resource> deleted successfully"
-    error: "Failed to delete <resource>"
+    success: "{Resource} deleted successfully"
+    error: "Failed to delete {resource}"
     cancel: "Cancel"
 ```
 
-## Step 6: Verify Navigation
+## Step 6: Verify
 
-Check if the page needs to be registered in the API's suite/service configuration for sidebar navigation. The sidebar is
-populated from `useSuite()` → `useApps()` which fetches service definitions from the API.
+1. Check Nuxt file-based routing resolves the new page: filename must be `{resource}s.vue` (plural) in `pages/service/`
+2. Verify `NuxtPage` renders nested routes: create a placeholder `pages/service/{resource}s/` directory if detail routes
+   are planned
+3. Check sidebar registration: `useSuite()` → `useApps()` fetches service definitions from the API — the new resource
+   may need API-side registration
+4. Verify i18n keys exist in ALL 4 locale files (`de.yaml`, `en.yaml`, `fr.yaml`, `it.yaml`)
+5. If unsure about Nuxt routing conventions, use `mcp__nuxt__get-documentation-page` with
+   `/docs/4.x/guide/directory-structure/pages` or `mcp__context7__query-docs` with library `/websites/nuxt`
 
 ## Key Conventions
 
@@ -231,5 +239,5 @@ populated from `useSuite()` → `useApps()` which fetches service definitions fr
 | Page not appearing in sidebar    | Not registered in service config | Check `useSuite()` / `useApps()` API service definitions                    |
 | Cards not rendering              | Composable returns empty array   | Verify SDK endpoint URL and check browser Network tab for API errors        |
 | i18n keys showing raw paths      | Missing translation keys         | Ensure keys were added to ALL 4 locale files (`de`, `en`, `fr`, `it`)       |
-| Route not matching / 404         | File naming mismatch             | Verify filename matches Nuxt file-based routing: `<resource>s.vue` (plural) |
+| Route not matching / 404         | File naming mismatch             | Verify filename matches Nuxt file-based routing: `{resource}s.vue` (plural) |
 | Dark mode broken on cards        | Missing `dark:` variant          | Every `bg-*` class must have a corresponding `dark:bg-*` class              |

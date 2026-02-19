@@ -1,98 +1,100 @@
 ---
 name: document-feature
-description: Create user-facing feature documentation for the VitePress docs site. Deep-dives into the codebase, analyzes user value, and produces structured docs. Use when user says 'document this feature', 'write feature docs', 'create docs for X', 'add feature to docs site', or 'user-facing documentation for'. Takes feature name as argument. Outputs VitePress-formatted markdown with TL;DR, benefits, setup, and getting started sections.
+description: Create user-facing feature documentation for the aihub_doc VitePress docs site. Analyzes the codebase and produces an index.en.md in the correct docs directory. Use when user says 'document this feature', 'write feature docs', 'create docs for X', 'add feature to docs site', or 'user-facing documentation for'. Takes feature name as argument. Do NOT use for ADRs (use /document-decision) or syncing existing docs (use /update-doc).
 allowed-tools: Read, Grep, Glob, Write
 ---
 
 # Document Feature - Create User-Facing VitePress Documentation
 
-Create user-facing documentation for feature "\$ARGUMENTS" on the AI-Hub VitePress docs site. Analyzes the codebase to
-understand the feature, then produces structured documentation for end users.
+Create user-facing documentation for feature "\$ARGUMENTS" on the AI-Hub VitePress docs site. Analyzes the codebase,
+then produces an `index.en.md` file for end users.
 
-## Steps
+## Before You Start
 
-### 1. Understand the Feature
+Read these existing feature docs to understand the tone and structure:
 
-Search for the feature across all scopes. Answer these questions:
+- **MCP**: `aihub_doc/docs/2_platform/19_mcp/index.en.md` — standards-based integration doc with capabilities breakdown
+- **Memory**: `aihub_doc/docs/2_platform/15_memory/index.en.md` — conversational style with "why it matters", "how it
+  works", "two types" sections
+- **Cost Control**: `aihub_doc/docs/2_platform/14_cost_control/index.en.md` — uses `::: details` containers organically,
+  includes comparison tables
 
-- **Where is it implemented?** Which scopes contain the core logic?
-- **How does it work?** Key components and interactions?
-- **What APIs does it expose?** REST endpoints, WebSocket events?
-- **How do users interact with it?** Web UI, API calls, other?
-- **What are its dependencies?** Other features or services?
-- **Configuration options?** Customizable behavior?
+Real docs use natural, conversational section headers — NOT a rigid template. Match the style you see.
 
-### 2. Analyze User Value
+## Step 1: Research the Feature
 
-- What problem does it solve?
-- Who is the target user?
-- What workflows does it enable?
-- What makes it special vs alternatives?
-- Measurable benefits (time savings, efficiency)?
+Search for the feature across scopes (`aihub_lib`, `aihub_agent`, `aihub_api`, `aihub_pipeline`, `aihub_process`,
+`aihub_web`). Understand what it does, how users interact with it, and what makes it valuable.
 
-### 3. Create Documentation File
+## Step 2: Choose the Docs Location
 
-**Platform features**: `aihub_doc/docs/2_platform/5_feature_overview/` **SDK features**:
-`aihub_doc/docs/3_sdk/1_feature_overview/`
+Feature docs live under `aihub_doc/docs/`. Determine where based on audience:
 
-**Required front matter**:
+- **Platform features** (user-facing: UI, chat, admin): `aihub_doc/docs/2_platform/{N}_{topic}/index.en.md`
+- **SDK features** (developer-facing: building agents, pipelines, processes): `aihub_doc/docs/3_sdk/6_feature_overview/`
+
+Directory naming uses a **numeric prefix** for sidebar ordering (e.g., `19_mcp/`, `15_memory/`). Check existing
+directories to pick the next available number:
+
+```bash
+ls -d aihub_doc/docs/2_platform/*/
+ls -d aihub_doc/docs/3_sdk/*/
+```
+
+## Step 3: Create the Documentation File
+
+Create `index.en.md` (NOT `index.md`) in the new directory.
+
+**Front matter** — only `title` is required. Ordering comes from the directory prefix, not frontmatter:
 
 ```yaml
 ---
-title: "Feature Title"
-index: 1
+title: Feature Title
 ---
 ```
 
-**Required document structure**:
+**Writing conventions** (from `aihub_doc/CLAUDE.md`):
 
-1. TL;DR info box (`::: info`)
-2. What it is and How it works section
-3. Why it is Important section with 5 benefits
-4. Collapsible setup/usage details (`::: details`)
-5. Getting Started steps
-
-### 4. Verify Consistency
-
-- Compare with existing feature docs for tone and structure
-- Reference the MCP Integration docs as a template: `aihub_doc/docs/2_platform/5_feature_overview/mcp/index.md`
-
-## VitePress Standards
-
-- Emojis only in h1 and h2 headers, placed at the end
-- Use `::: info` for TL;DR, `::: details` for setup, `::: warning` for caveats
 - User-facing perspective, present tense, jargon-free language
-- Benefit-focused writing -- explain value, not implementation
+- VitePress containers: `::: info`, `::: warning`, `::: details` — use organically, not as rigid template
+- No code blocks that will drift out of sync — reference file paths instead
+- Focus on what the feature does for users, not internal architecture
 
-## Examples
+## Step 4: Handle Translation
 
-**Typical invocation**:
+After creating the English file:
 
+- **Never create `index.de.md` manually** — it is auto-generated by `pnpm run docs:translate`
+- The translation pipeline uses SHA-256 hashes to detect changes (`source_sha` in `.de.md` frontmatter)
+- German translations must be committed to git (CI doesn't run translation)
+
+## Step 5: Verify
+
+```bash
+# File exists at the right location
+ls aihub_doc/docs/2_platform/*_{topic}/index.en.md
+
+# Front matter has title
+head -5 aihub_doc/docs/2_platform/*_{topic}/index.en.md
+
+# Preview (if dev server is available)
+cd aihub_doc && pnpm run docs:dev
 ```
-/document-feature RAG Pipeline
-```
 
-**Expected output**: A new markdown file at `aihub_doc/docs/2_platform/5_feature_overview/rag-pipeline/index.md` with
-full VitePress-formatted documentation including TL;DR, benefits, setup, and getting started.
-
-**Another example**:
-
-```
-/document-feature MCP Integration
-```
+Compare your doc with the exemplars from "Before You Start" — it should match their tone and depth.
 
 ## Troubleshooting
 
-| Problem                              | Solution                                                                     |
-| ------------------------------------ | ---------------------------------------------------------------------------- |
-| Feature spans many scopes            | Focus on user-visible behavior, not internal architecture                    |
-| Unsure if platform or SDK feature    | If users interact via UI or chat, it is platform; if via code/API, it is SDK |
-| No existing template to follow       | Use `aihub_doc/docs/2_platform/5_feature_overview/mcp/index.md` as reference |
-| Feature is not yet fully implemented | Use `::: warning` boxes to note incomplete sections                          |
+| Problem                                  | Solution                                                                  |
+| ---------------------------------------- | ------------------------------------------------------------------------- |
+| Unsure if platform or SDK feature        | UI/chat interaction = platform (`2_platform/`); code/API = SDK (`3_sdk/`) |
+| Feature spans many scopes                | Focus on user-visible behavior, not internal architecture                 |
+| Feature not yet fully implemented        | Use `::: warning` boxes to note incomplete sections                       |
+| Don't create docs in `6_code_deep_dive/` | That directory is auto-synced from READMEs via `sync-docs.sh`             |
 
 ## Done When
 
-- Documentation file created in the correct directory
-- All required sections present (TL;DR, What/How, Why, Setup, Getting Started)
-- VitePress standards followed (front matter, containers, emoji placement)
-- Consistent with existing feature documentation in tone and structure
+- `index.en.md` created in the correct `aihub_doc/docs/` subdirectory
+- Front matter has `title` field
+- Style matches existing feature docs (MCP, Memory, Cost Control)
+- No `index.de.md` created manually (translation pipeline handles this)

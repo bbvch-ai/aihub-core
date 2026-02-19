@@ -1,12 +1,7 @@
 ---
 name: scaffold-composable
-description: >-
-  Generate Pinia-Colada composables for a backend API resource. Creates query and mutation
-  composables following the established defineQuery/defineMutation patterns with SDK integration.
-  Use when user says 'create a composable', 'scaffold composable', 'add query composable',
-  'generate useQuery hook', 'create mutation composable', 'Pinia-Colada setup', or 'add API
-  composable for resource'. Takes a resource name as argument.
-allowed-tools: Read, Write, Bash, Grep, Glob
+description: Generate Pinia-Colada composables for a backend API resource. Creates query and mutation composables following the established defineQuery/defineMutation patterns with SDK integration. Use when user says 'create a composable', 'scaffold composable', 'add query composable', 'generate useQuery hook', 'create mutation composable', 'Pinia-Colada setup', or 'add API composable for resource'. Do NOT use for full pages with composables (use scaffold-frontend-page) or composable code audits (use audit-frontend). Takes a resource name as argument.
+allowed-tools: Read, Write, Bash, Grep, Glob, mcp__context7__resolve-library-id, mcp__context7__query-docs
 ---
 
 # Scaffold a New Composable
@@ -15,7 +10,10 @@ Generate Pinia-Colada composables for a backend API resource. The resource name 
 
 ## Before You Start
 
-Read the frontend scope guide: `/home/user/aihub-core/aihub_web/CLAUDE.md`
+Read the frontend scope guide: `aihub_web/CLAUDE.md`
+
+If unsure about Pinia-Colada API (`defineQuery`, `defineMutation`, `useQueryCache`, `staleTime`, etc.), use
+`mcp__context7__query-docs` with library ID `/posva/pinia-colada` to look up current documentation.
 
 Study an existing composable directory for reference:
 
@@ -28,24 +26,24 @@ Study an existing composable directory for reference:
 
 Find the SDK functions and types for the resource in `aihub_web/aihub_web/sdk/client/`. Identify:
 
-- **GET list**: e.g., `getAll<Resource>s`
-- **GET single**: e.g., `get<Resource>`
-- **POST create**: e.g., `create<Resource>`
-- **PUT update**: e.g., `update<Resource>`
-- **DELETE**: e.g., `delete<Resource>`
-- **DTO types**: e.g., `Full<Resource>Dto`, `Create<Resource>Request`
+- **GET list**: e.g., `getAll{Resource}s`
+- **GET single**: e.g., `get{Resource}`
+- **POST create**: e.g., `create{Resource}`
+- **PUT update**: e.g., `update{Resource}`
+- **DELETE**: e.g., `delete{Resource}`
+- **DTO types**: e.g., `Full{Resource}Dto`, `Create{Resource}Request`
 
 If SDK functions don't exist yet, warn the user to run `/generate-sdk` first.
 
 ## Step 2: Create Composable Directory
 
 ```
-aihub_web/aihub_web/composables/<resource>/
-├── use<Resource>s.ts              # List query (GET all)
-├── use<Resource>.ts               # Single item query (GET by ID)
-├── useCreate<Resource>.ts         # Create mutation (POST)
-├── useUpdate<Resource>.ts         # Update mutation (PUT)
-└── useDelete<Resource>.ts         # Delete mutation (DELETE)
+aihub_web/aihub_web/composables/{resource}/
+├── use{Resource}s.ts              # List query (GET all)
+├── use{Resource}.ts               # Single item query (GET by ID)
+├── useCreate{Resource}.ts         # Create mutation (POST)
+├── useUpdate{Resource}.ts         # Update mutation (PUT)
+└── useDelete{Resource}.ts         # Delete mutation (DELETE)
 ```
 
 Only create files for SDK operations that actually exist.
@@ -132,6 +130,14 @@ export const useCreate<Resource> = defineMutation(() => {
 })
 ```
 
+## Step 6: Verify
+
+1. Ensure composable files are in `aihub_web/aihub_web/composables/{resource}/` for Nuxt auto-import
+2. Verify every SDK call includes `composable: '$fetch'`
+3. Verify query keys use arrow functions: `key: () => [...]`, not static arrays
+4. Verify mutations call `queryCache.invalidateQueries()` with the correct list key
+5. Verify `staleTime: minutesToMilliseconds(5)` is set on all queries
+
 ## Examples
 
 **Typical invocation**: `/scaffold-composable pipeline`
@@ -156,10 +162,11 @@ export const useCreate<Resource> = defineMutation(() => {
 ## Key Conventions
 
 - **`{ composable: '$fetch' }`**: Always pass this to SDK calls (uses Nuxt's `$fetch`)
-- **Query keys**: Hierarchical arrays `['<resource>s']`, `['<resource>s', id]`
+- **Query keys**: Hierarchical arrays `['{resource}s']`, `['{resource}s', id]`
 - **`staleTime`**: Use `minutesToMilliseconds(5)` for standard resources
-- **`enabled`**: Use `useRouteReady()` when query depends on route params
-- **Cache invalidation**: Call `queryCache.invalidateQueries({ key: ['<resource>s'] })` after mutations
-- **Naming**: `use<Resource>s` (plural list), `use<Resource>` (single), `useCreate<Resource>` (mutation)
+- **`enabled`**: Use `useRouteReady()` when query depends on route params (defined at
+  `aihub_web/aihub_web/composables/useRouteReady.ts`)
+- **Cache invalidation**: Call `queryCache.invalidateQueries({ key: ['{resource}s'] })` after mutations
+- **Naming**: `use{Resource}s` (plural list), `use{Resource}` (single), `useCreate{Resource}` (mutation)
 - **Exports**: Always wrap in `defineQuery()` or `defineMutation()` (Pinia-Colada composable factories)
 - **Types**: Import DTO types from `@core/sdk/client`, never define manually

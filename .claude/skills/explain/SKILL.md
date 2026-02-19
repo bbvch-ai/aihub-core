@@ -1,97 +1,97 @@
 ---
 name: explain
-description: Analyze and explain code in a specific folder or file. Reads the documentation hierarchy, analyzes structure, and provides comprehensive explanations. Use when user says 'explain this code', 'what does this do', 'how does this work', 'walk me through', 'explain folder X', or 'help me understand'. Takes a file or folder path as argument. Can identify doc gaps.
+description: Analyze and explain code in the aihub-core monorepo by reading the documentation hierarchy (README.md, CLAUDE.md, scope docs) and tracing cross-scope dependencies. Use when user says 'explain this code', 'what does this do', 'how does this work', 'walk me through', 'explain folder X', or 'help me understand'. Takes a file or folder path as argument. Do NOT use for code review (use /review-diff), deep codebase knowledge building (use codebase-expert agent), or documentation updates (use /update-doc).
 allowed-tools: Read, Grep, Glob
 ---
 
 # Explain Code - Analyze and Explain Any File or Folder
 
-Provide a comprehensive explanation of code at a specific path (\$ARGUMENTS). Reads documentation hierarchy, analyzes
-code structure, identifies patterns, and explains purpose, architecture, and workflows.
+Explain the code at \$ARGUMENTS by reading the documentation hierarchy, analyzing structure, and tracing dependencies
+across the aihub-core monorepo.
 
-## Steps
+## Step 1: Identify the Scope
 
-### 1. Navigate and Survey
+Determine which monorepo scope the target path belongs to:
 
-Explore \$ARGUMENTS (the target folder or file):
+| Scope            | Source root                      | Responsibility                                        |
+| ---------------- | -------------------------------- | ----------------------------------------------------- |
+| `aihub_lib`      | `aihub_lib/aihub_lib/`           | Shared library (events, entities, NATS, auth, config) |
+| `aihub_api`      | `aihub_api/aihub_api/`           | REST API + WebSocket (FastAPI)                        |
+| `aihub_agent`    | `aihub_agent/aihub_agent/`       | AI agent workflows (LlamaIndex)                       |
+| `aihub_pipeline` | `aihub_pipeline/aihub_pipeline/` | Data ingestion (Dagster)                              |
+| `aihub_process`  | `aihub_process/aihub_process/`   | Business process orchestration                        |
+| `aihub_bot`      | `aihub_bot/aihub_bot/`           | Bot integrations (Teams, Slack)                       |
+| `aihub_web`      | `aihub_web/aihub_web/`           | Frontend admin UI (Nuxt 3)                            |
 
-- List all files and subdirectories
-- Note the file types, naming patterns, and overall structure
-- Identify the scope this code belongs to (aihub_lib, aihub_api, etc.)
+Note the double-nesting convention: `{scope}/{scope}/` where the outer directory is the package root and the inner
+contains the source code.
 
-### 2. Read the Documentation Hierarchy
+## Step 2: Read the Documentation Hierarchy
 
-Follow README-first approach, from broad to narrow:
+Read docs from broad to narrow — each layer adds context:
 
-1. `/home/user/aihub-core/README.md` (project root)
-2. Scope-level README (e.g., `aihub_api/README.md`)
-3. Scope-level CLAUDE.md (e.g., `aihub_api/CLAUDE.md`)
-4. README in the target directory itself
-5. READMEs in subdirectories
+1. `README.md` — project-wide architecture and services overview
+2. `{scope}/README.md` — scope-level architecture, folder structure, patterns
+3. `{scope}/CLAUDE.md` — coding conventions, key classes, essential files for that scope
+4. README in the target directory itself (if it exists)
+5. READMEs in parent directories between the scope root and the target
 
-### 3. Analyze the Code
+## Step 3: Analyze the Code in Context
 
-Read the actual source files and answer:
+Read the source files at \$ARGUMENTS and trace how they fit into the architecture:
 
-- **Primary purpose**: What problem does this solve? Where does it fit in the system?
-- **Architecture**: How is it organized? What are the main components/classes?
-- **Key workflows**: How does data flow? What are the entry points?
-- **Dependencies**: What does this code depend on? What depends on it?
+- **Architectural layer**: Controller → Service → Entity? Event handler? Dagster asset? LlamaIndex workflow step?
+- **Cross-scope dependencies**: Does it import from `aihub_lib`? Which shared classes does it use (events, entities,
+  NATS subscribers, auth)?
+- **Event system role**: Does it publish or subscribe to Control/Display events? Check `aihub_lib/aihub_lib/events/` for
+  the event hierarchy.
+- **Entry points**: How is this code triggered? (API route registration in `main.py`, NATS subscription, Dagster asset
+  materialization, bot handler registration)
 
-### 4. Identify Documentation Gaps
+## Step 4: Provide the Explanation
 
-- Missing READMEs for complex directories
-- Inaccurate or outdated docs
-- Unclear sections that need improvement
+Structure the explanation as:
 
-### 5. Provide Comprehensive Explanation
-
-Deliver an in-depth explanation covering:
-
-- Purpose and responsibilities
-- Architecture and key components
-- Data flow and workflows
-- Integration points with other parts of the system
-- Any documentation gaps found
+1. **Purpose** — what problem this solves and where it fits in the platform
+2. **Key components** — main classes/files with their roles
+3. **Data flow** — how requests/events flow through this code
+4. **Dependencies** — what it imports from `aihub_lib` and other scopes
+5. **Integration points** — how other parts of the system interact with it
 
 ## Examples
 
-**Explain a folder**:
+**Explain the API routes**:
 
 ```
-/explain aihub_api/aihub_api/controller
+/explain aihub_api/aihub_api/routes/agent
 ```
 
-Output: Explanation of all API controllers, their routes, how they connect to services.
+Output: Explanation of the agent API controllers, services, DTOs, route registration, and how they connect to
+`aihub_lib` entities.
 
-**Explain a file**:
+**Explain an agent**:
 
 ```
-/explain aihub_agent/aihub_agent/workflow/rag_agent.py
+/explain aihub_agent/aihub_agent/agents/RagAgent
 ```
 
-Output: Detailed breakdown of the RAG agent workflow, its steps, and LlamaIndex integration.
+Output: Breakdown of the RAG agent workflow — events, config, LlamaIndex steps, and NATS integration.
 
-## README Creation Guidelines
+**Explain a shared module**:
 
-If documentation gaps are found, you may suggest or create READMEs.
+```
+/explain aihub_lib/aihub_lib/nats
+```
 
-**Create when**: folder with multiple files but no README, complex component, standalone functionality.
-
-**Do NOT create when**: folder has very few files, code is self-explanatory, docstrings suffice.
-
-**Writing style**:
-
-- Be VERY concise but complete
-- Include "why" not just "what"
-- Talk on a high level about philosophy and approach
-- DO NOT copy code into READMEs (falls out of sync)
+Output: How the NATS abstraction layer works — subscribers, publishers, topic management, and the Swiss AI Agent
+Protocol implementation.
 
 ## Troubleshooting
 
-| Problem                    | Solution                                                  |
-| -------------------------- | --------------------------------------------------------- |
-| Target path does not exist | Verify the path -- check for typos or use Glob to find it |
-| No README in the hierarchy | Rely on code analysis and docstrings instead              |
-| Code is highly complex     | Break explanation into sections per file or component     |
-| Scope unclear              | Check which `pyproject.toml` the file falls under         |
+| Problem                    | Solution                                                 |
+| -------------------------- | -------------------------------------------------------- |
+| Target path does not exist | Verify the path — check for typos or use Glob to find it |
+| No README in the hierarchy | Rely on scope CLAUDE.md and code analysis                |
+| Code is highly complex     | Break explanation into sections per file or component    |
+| Scope unclear              | Check which `pyproject.toml` the path falls under        |
+| Cross-scope imports        | Trace back to `aihub_lib` — all shared code lives there  |

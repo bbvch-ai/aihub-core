@@ -106,6 +106,86 @@ BaseEvent
 └── SourceUpdatedEvent (pipeline trigger)
 ```
 
+### Semantic Events & OpenInference
+
+`SemanticEvent` subclasses implement `to_semantic_convention()`, producing attributes compatible with the
+[OpenInference specification](https://github.com/Arize-ai/openinference). This enables export to Langfuse, Arize
+Phoenix, and any OpenTelemetry-compatible system.
+
+| SemanticEvent Subclass | OpenInference Span Kind | Key Attributes                              |
+| ---------------------- | ----------------------- | ------------------------------------------- |
+| `LLMEvent`             | `LLM`                   | Token counts, messages, model name          |
+| `LLMStopEvent`         | `LLM` (terminal)        | Combines LLM data with workflow termination |
+| `RetrieverEvent`       | `RETRIEVER`             | Document IDs, content, scores               |
+| `RerankerEvent`        | `RERANKER`              | Input/output nodes, reranking scores        |
+| `EmbeddingEvent`       | `EMBEDDING`             | Vectors, model info, dimensions             |
+| `ToolEvent`            | `TOOL`                  | Tool name, parameters, result               |
+| `GuardEvent`           | `GUARDRAIL`             | Guard result, accepted/rejected             |
+| `ChainEvent`           | `CHAIN`                 | Chain execution trace                       |
+| `AgentEvent`           | `AGENT`                 | Agent invocation trace                      |
+
+```python
+from aihub_lib.nats.events.semantic import RetrieverEvent
+
+event = RetrieverEvent.from_nodes(retrieved_nodes)
+otel_attributes = event.to_semantic_convention()
+# Produces: openinference.span.kind=RETRIEVER, retrieval.documents.{i}.document.id, etc.
+```
+
+**When to use semantic vs generic events:** Prefer semantic events when observability matters. `RetrieverEvent` over a
+custom `MyRetrieveEvent(ControlAndDisplayEvent)` gives you OpenInference spans for free. For choosing which base event
+to use when building agents, see `/scaffold-agent`.
+
+### Extended Event Reference
+
+#### Guard Events
+
+| Event                            | Base         | Purpose                      |
+| -------------------------------- | ------------ | ---------------------------- |
+| `GuardAcceptEvent`               | `GuardEvent` | Guard passed                 |
+| `GuardRejectionEvent`            | `GuardEvent` | Guard rejected               |
+| `AgentSuitabilityAcceptEvent`    | `GuardEvent` | Agent can handle request     |
+| `AgentSuitabilityRejectEvent`    | `GuardEvent` | Agent cannot handle request  |
+| `ContextSufficientAcceptEvent`   | `GuardEvent` | Sufficient context available |
+| `ContextInsufficientRejectEvent` | `GuardEvent` | Insufficient context         |
+| `SensitiveInfoAcceptEvent`       | `GuardEvent` | No sensitive info detected   |
+| `SensitiveInfoRejectEvent`       | `GuardEvent` | Sensitive info detected      |
+
+#### Utility Events
+
+| Event                              | Base                     | Purpose                |
+| ---------------------------------- | ------------------------ | ---------------------- |
+| `RouterEvent`                      | `ControlAndDisplayEvent` | LLM routing decision   |
+| `LanguageEvent`                    | `ControlEvent`           | Language detection     |
+| `LimitChatHistoryEvent`            | `ControlEvent`           | Truncated history      |
+| `StandaloneQuestionCondenserEvent` | `ControlEvent`           | Question reformulation |
+
+#### Memory Events
+
+| Event                             | Base                     | Purpose                      |
+| --------------------------------- | ------------------------ | ---------------------------- |
+| `BaseRetrieveMemoryEvent`         | `ControlAndDisplayEvent` | Memory retrieval base        |
+| `RetrieveUserMemoryEvent`         | above                    | User-scoped memory retrieval |
+| `RetrieveOrganizationMemoryEvent` | above                    | Org-scoped memory retrieval  |
+| `BaseStoreMemoryEvent`            | `ControlAndDisplayEvent` | Memory storage base          |
+| `StoreUserMemoryEvent`            | above                    | User-scoped memory storage   |
+| `StoreOrganizationMemoryEvent`    | above                    | Org-scoped memory storage    |
+| `AddMemoryToChatHistoryEvent`     | `ControlEvent`           | Extended chat history        |
+
+#### Interaction Events
+
+| Event                                    | Base                         | Purpose                             |
+| ---------------------------------------- | ---------------------------- | ----------------------------------- |
+| `HumanInTheLoopInputRequestEvent`        | `HumanInTheLoopRequestEvent` | Popup with text input field         |
+| `HumanInTheLoopConfirmationRequestEvent` | `HumanInTheLoopRequestEvent` | Yes/No button selection             |
+| `HumanInTheLoopChatRequestEvent`         | `HumanInTheLoopRequestEvent` | Chat message (fallback)             |
+| `HumanInTheLoopResponseEvent[T]`         | `ControlAndDisplayEvent`     | Human replied (generic T)           |
+| `AgentInTheLoopRequestEvent`             | `ControlAndDisplayEvent`     | Delegate to another agent           |
+| `AgentInTheLoopResponseEvent`            | `ControlAndDisplayEvent`     | Delegated agent result              |
+| `AgentInTheLoopExceptionEvent`           | `ControlAndDisplayEvent`     | Delegated agent failure             |
+| `BotInTheLoopRequestEvent`               | `ControlEvent`               | Send message to Teams/Slack channel |
+| `BotInTheLoopResponseEvent`              | `ControlEvent`               | Response from Teams/Slack user      |
+
 ### BaseEvent Core Fields
 
 ```python
@@ -737,6 +817,9 @@ class MyFeatureEvent(ControlAndDisplayEvent):
 ```
 
 **No registration needed** — `__pydantic_init_subclass__` auto-registers the class.
+
+**Choosing the right base class:** See `/scaffold-agent` for a decision table on when to use `ControlEvent` vs
+`ControlAndDisplayEvent` vs `DisplayEvent` vs a semantic event.
 
 ### Step 2: Use in Agent Step
 

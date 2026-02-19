@@ -1,7 +1,7 @@
 ---
 name: generate-sdk
-description: Regenerate the frontend TypeScript API client from the OpenAPI spec. Verifies API server is running, runs the code generator, and lints the output. Use when user says 'regenerate SDK', 'update API client', 'sync frontend types', 'generate TypeScript client', or 'API changed, update frontend'. Requires the API server to be running on localhost:8000.
-allowed-tools: Bash, Read
+description: Regenerate the frontend TypeScript API client from the OpenAPI spec using openapi-ts. Verifies API server is running, runs the code generator against openapi-ts.config.ts, and lints the output into sdk/client/. Use when user says 'regenerate SDK', 'update API client', 'sync frontend types', 'generate TypeScript client', 'API changed, update frontend', or 'openapi-ts'. Do NOT use for scaffolding frontend pages or composables (use scaffold-frontend-page, scaffold-composable), backend API endpoint creation (use scaffold-api-endpoint), or manual SDK file edits (sdk/client/ is fully generated).
+allowed-tools: Bash, Read, Grep, Glob, mcp__context7__resolve-library-id, mcp__context7__query-docs
 ---
 
 # Frontend API SDK Generation
@@ -23,32 +23,45 @@ curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/api/v1/docs
 
 ## Step 2: Generate the SDK
 
+Run from `aihub_web/aihub_web/`:
+
 ```bash
-cd /home/user/aihub-core/aihub_web/aihub_web && pnpm generate-sdk
+cd aihub_web/aihub_web && pnpm generate-sdk
 ```
 
-**Expected output**: TypeScript files regenerated in the SDK output directory. Watch for errors in the generation log.
+This uses the config at `aihub_web/aihub_web/openapi-ts.config.ts` to fetch the OpenAPI spec from
+`http://localhost:8000/api/v1/openapi.json` and regenerate TypeScript files into `aihub_web/aihub_web/sdk/client/`
+(`types.gen.ts`, `sdk.gen.ts`, `schemas.gen.ts`, `client.gen.ts`, `transformers.gen.ts`).
 
 ## Step 3: Lint Generated Code
 
 ```bash
-cd /home/user/aihub-core/aihub_web/aihub_web && pnpm lint --fix
+cd aihub_web/aihub_web && pnpm lint --fix
 ```
 
 This auto-fixes formatting issues in the generated TypeScript files.
 
-## Step 4: Report Changes
+## Step 4: Verify and Report
+
+1. Confirm generated files exist and are non-empty:
 
 ```bash
-cd /home/user/aihub-core && git diff --stat
+ls -la aihub_web/aihub_web/sdk/client/types.gen.ts aihub_web/aihub_web/sdk/client/sdk.gen.ts
 ```
 
-Summarize what changed:
+2. Check for TypeScript compilation errors in the generated output:
 
-- New endpoints added
-- Modified request/response types
-- Removed endpoints
-- Number of files changed
+```bash
+cd aihub_web/aihub_web && pnpm nuxi typecheck 2>&1 | head -30
+```
+
+3. Report what changed:
+
+```bash
+git diff --stat -- aihub_web/aihub_web/sdk/client/
+```
+
+Summarize: new endpoints added, modified request/response types, removed endpoints, number of files changed.
 
 ## Examples
 

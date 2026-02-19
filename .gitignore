@@ -22,4 +22,3 @@ CLAUDE.local.md
 .claude/mcp.local.json
 .claude/mcp/bin/*
 .claude/.deps-fingerprint
-.claude/statusline.sh

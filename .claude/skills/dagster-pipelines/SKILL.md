@@ -1,12 +1,6 @@
 ---
 name: dagster-pipelines
-description: >-
-  Comprehensive reference for Dagster pipelines, asset-based architecture, resources, IO managers,
-  sensors, schedules, partitions, automation conditions, ops, and the two-stage pipeline pattern.
-  Use when user says 'how do pipelines work', 'create a new asset', 'add a resource', 'IO manager',
-  'configure a sensor', 'pipeline architecture', 'observable asset', 'partition setup', 'dagster
-  definitions', 'asset factory', 'automation condition', or 'two-stage pipeline'. Covers the full
-  ingestion and processing architecture from source to vector store.
+description: "Comprehensive reference for Dagster pipelines: asset factories, ops patterns, resources, IO managers, sensors, partitions, automation conditions, and the two-stage pipeline architecture. Use when user says 'how do pipelines work', 'create a new asset', 'add a resource', 'IO manager', 'configure a sensor', 'pipeline architecture', 'observable asset', 'partition setup', 'dagster definitions', 'asset factory', 'automation condition', or 'two-stage pipeline'. Do NOT use for scaffolding new pipelines (use scaffold-pipeline), debugging failed pipelines (use debug-pipeline), or rclone-specific setup (use rclone-guide)."
 arguments:
   - name: topic
     description: Topic or question (e.g., "asset factory", "resources", "IO managers", "partitions", "sensors", "observable assets", "definitions factory")
@@ -17,13 +11,12 @@ allowed-tools: Read, Grep, Glob
 
 Look up Dagster pipeline information. Topic or question via `$ARGUMENTS`.
 
+For architecture overview, folder structure, and domain types, see `aihub_pipeline/CLAUDE.md` (loaded automatically when
+working in the pipeline scope).
+
 ---
 
-## Architecture Overview
-
-The platform uses **Dagster** for data pipeline orchestration with a **pure asset-based paradigm** (no traditional
-job/ops pattern). Pipelines prepare data for RAG applications: document ingestion, parsing, embedding generation, and
-vector storage.
+## Architecture Quick Reference
 
 | Concept               | Pattern                       | Purpose                                                   |
 | --------------------- | ----------------------------- | --------------------------------------------------------- |
@@ -42,51 +35,12 @@ graph assets. Never create standalone job-based pipelines.
 
 ---
 
-## Two-Stage Pipeline Architecture
-
-### Stage 1: Source-Specific Ingestion
-
-```
-Enterprise Source → DataLakeFile (in S3)
-```
-
-Multiple independent pipelines, one per source connector:
-
-- **SharePoint** → S3 (`default_sharepoint_to_datalake_definitions`)
-- **Local Filesystem** → S3 (`default_local_filesystem_to_datalake_definitions`)
-- **Rclone (70+ providers)** → S3 (`default_rclone_to_datalake_definitions`)
-- **S3/Azure ADLS** (direct — no Stage 1 needed)
-
-Each Stage 1 pipeline produces:
-
-1. `observable_source` — monitors source for changes
-2. `data_lake_files` — downloads source files to S3
-3. `placeholder_refdocs` — creates placeholder RefDocs in MongoDB (optional)
-4. `removed_data_lake_files` — cleans up deleted files
-
-### Stage 2: Unified Processing
-
-```
-DataLakeFile → RefDocDocument → TextNode[] → Milvus
-```
-
-Single pipeline processes ALL data lake files regardless of origin:
-
-1. `observable_data_lake` — monitors S3 for changes
-2. `documents` — parse files → RefDocs → MongoDB
-3. `nodes` — chunk → embed → insert into Milvus
-4. `summary_nodes` (optional) — hierarchical summaries
-5. `removed_documents` — cleanup deleted documents
-
-**Pipeline**: S3 → Document Processing → MongoDB → Node Chunking → Summary Generation → Milvus
-
----
-
 ## Definitions Factory Pattern
 
-The `definitions_util.py` provides factory functions that assemble complete `Definitions` objects.
+The `aihub_pipeline/aihub_pipeline/util/definitions_util.py` provides factory functions that assemble complete
+`Definitions` objects with all assets, resources, sensors, jobs, and schedules wired together.
 
-### `default_definitions()` — Stage 2 (DataLake → Vector Store)
+### `default_definitions()` — Stage 2 (DataLake to Vector Store)
 
 ```python
 from aihub_pipeline.util.definitions_util import default_definitions
@@ -109,7 +63,7 @@ defs = default_definitions(
 )
 ```
 
-### `default_sharepoint_to_datalake_definitions()` — Stage 1 (SharePoint → S3)
+### `default_sharepoint_to_datalake_definitions()` — Stage 1 (SharePoint to S3)
 
 ```python
 from aihub_pipeline.util.definitions_util import default_sharepoint_to_datalake_definitions
@@ -124,7 +78,7 @@ defs = default_sharepoint_to_datalake_definitions(
 )
 ```
 
-### `default_local_filesystem_to_datalake_definitions()` — Stage 1 (Local FS → S3)
+### `default_local_filesystem_to_datalake_definitions()` — Stage 1 (Local FS to S3)
 
 ```python
 from aihub_pipeline.util.definitions_util import default_local_filesystem_to_datalake_definitions
@@ -139,7 +93,7 @@ defs = default_local_filesystem_to_datalake_definitions(
 )
 ```
 
-### `default_rclone_to_datalake_definitions()` — Stage 1 (Rclone → S3)
+### `default_rclone_to_datalake_definitions()` — Stage 1 (Rclone to S3)
 
 ```python
 from aihub_pipeline.util.definitions_util import default_rclone_to_datalake_definitions
@@ -154,30 +108,12 @@ defs = default_rclone_to_datalake_definitions(
 )
 ```
 
-### Combining Stage 1 + Stage 2
-
-For a complete pipeline, create BOTH definitions (usually in separate Dagster code locations):
-
-```python
-# Stage 1: SharePoint → S3
-stage1 = default_sharepoint_to_datalake_definitions(
-    datalake_container_name="my-company",
-    target_folders=["/Shared Documents"],
-)
-
-# Stage 2: S3 → Vector Store
-stage2 = default_definitions(
-    datalake_container_name="my-company",
-    embedding_model_name="embedding/large",
-)
-```
-
 ---
 
 ## Asset Factory Pattern
 
 All assets are created via **factory functions** that return parameterized `@graph_asset` or `@observable_source_asset`
-definitions.
+definitions. Factories live in `aihub_pipeline/aihub_pipeline/assets/factories/`.
 
 ### Graph Asset Factory
 
@@ -300,8 +236,6 @@ def embed_nodes(
     return nodes
 ```
 
-**Retry**: 6 retries with exponential backoff (1s, 2s, 4s, 8s, 16s, 32s).
-
 ### Op Conventions
 
 - `code_version` — change detection (bump when logic changes)
@@ -315,8 +249,6 @@ def embed_nodes(
 ## Resources
 
 Resources are external dependencies injected into ops. All use Dagster's `ConfigurableResource` (Pydantic-based).
-
-### Resource Types
 
 | Resource                               | Purpose                          | Key                        |
 | -------------------------------------- | -------------------------------- | -------------------------- |
@@ -340,10 +272,9 @@ Resources are external dependencies injected into ops. All use Dagster's `Config
 ### Resource Factory Pattern
 
 ```python
-# aihub_pipeline/resources/factory.py
+# aihub_pipeline/aihub_pipeline/resources/factory.py
 
 def s3_data_lake_resources(container_name, directory_name=None) -> dict:
-    """Returns dict of S3 data lake resources."""
     data_lake_client = S3DataLakeClientResource(container_name=container_name)
     data_lake_file_system = S3DataLakeFileSystemResource()
     data_lake_io_manager = S3DataLakeIOManager(
@@ -358,34 +289,12 @@ def s3_data_lake_resources(container_name, directory_name=None) -> dict:
     }
 
 def local_mongo_milvus_storage_context_resource(vector_store_uri, store_name, dimensions) -> dict:
-    """Returns combined MongoDB + Milvus resources."""
     return {
         **mongo_document_store_resource(document_store_name=store_name),
         **milvus_vector_store_resource(
             vector_store_uri=vector_store_uri, vector_store_name=store_name, dimensions=dimensions
         ),
     }
-```
-
-### Creating a Custom Resource
-
-```python
-from dagster import ConfigurableResource
-from pydantic import Field
-
-class MyApiResource(ConfigurableResource):
-    """External API client as a Dagster resource."""
-
-    base_url: str = Field(description="API base URL")
-    api_key: str = Field(description="API key")
-    timeout: int = Field(default=30, description="Request timeout in seconds")
-
-    def fetch_data(self, endpoint: str) -> dict:
-        import httpx
-        with httpx.Client(timeout=self.timeout) as client:
-            response = client.get(f"{self.base_url}/{endpoint}", headers={"Authorization": f"Bearer {self.api_key}"})
-            response.raise_for_status()
-            return response.json()
 ```
 
 ### Settings Integration
@@ -404,9 +313,8 @@ Resources read connection details from `aihub_lib` settings (Pydantic `BaseSetti
 
 ## IO Managers
 
-IO managers control how assets are stored and retrieved. Each storage system has a dedicated IO manager.
-
-### IO Manager Registry
+IO managers control how assets are stored and retrieved. Each storage system has a dedicated IO manager in
+`aihub_pipeline/aihub_pipeline/io/`.
 
 | IO Manager                 | Key                            | Storage      | Direction     | Partition Behavior              |
 | -------------------------- | ------------------------------ | ------------ | ------------- | ------------------------------- |
@@ -449,37 +357,11 @@ while datetime.now() < end_time:
     time.sleep(retry_interval)
 ```
 
-### Creating a Custom IO Manager
-
-```python
-from dagster import ConfigurableIOManager, InputContext, OutputContext, ResourceDependency
-
-class MyIOManager(ConfigurableIOManager):
-    my_resource: ResourceDependency[MyResource]
-
-    def handle_output(self, context: OutputContext, obj):
-        # Store the asset output
-        partition_key = context.partition_key if context.has_partition_key else "default"
-        self.my_resource.store(partition_key, obj)
-
-    def load_input(self, context: InputContext):
-        # Retrieve the asset input
-        if context.has_partition_key:
-            return self.my_resource.load(context.partition_key)
-        # Non-partitioned: load all
-        all_keys = context.upstream_output.asset_partitions_def.get_partition_keys(
-            dynamic_partitions_store=context.instance
-        )
-        return [self.my_resource.load(k) for k in all_keys]
-```
-
 ---
 
 ## Dynamic Partitions
 
 Every pipeline uses **dynamic partitions** — each document becomes a separate partition.
-
-### Definition
 
 ```python
 from dagster import DynamicPartitionsDefinition
@@ -492,17 +374,15 @@ document_partitions = DynamicPartitionsDefinition(
 ### Partition Management
 
 ```python
-# aihub_pipeline/util/partition_utils.py
+# aihub_pipeline/aihub_pipeline/util/partition_utils.py
 
 def replace_partition_keys(context, partition_name, keys, max_partitions):
-    """Add new partitions and delete removed partitions."""
     existing = set(context.instance.get_dynamic_partitions(partition_name))
     incoming = set(keys)
 
     to_add = incoming - existing
     to_delete = existing - incoming
 
-    # Limit operations per run
     for key in list(to_add)[:max_partitions]:
         context.instance.add_dynamic_partitions(partition_name, [key])
 
@@ -525,7 +405,7 @@ return DataVersionsByPartition({
 })
 ```
 
-Version change → downstream assets with `AutomationCondition.eager()` auto-materialize.
+Version change triggers downstream assets with `AutomationCondition.eager()` to auto-materialize.
 
 ---
 
@@ -547,7 +427,7 @@ def my_asset(...):
 ### Custom: All Dependencies Completed
 
 ```python
-# aihub_pipeline/automation/all_deps_completed.py
+# aihub_pipeline/aihub_pipeline/automation/all_deps_completed.py
 from dagster import AutomationCondition
 
 all_deps_completed = (
@@ -558,7 +438,7 @@ all_deps_completed = (
 
 ### Automation Sensor (Required)
 
-Automation conditions require a sensor to evaluate them:
+Automation conditions require a sensor to evaluate them. Include in every `Definitions`:
 
 ```python
 from dagster import AutomationConditionSensorDefinition, DefaultSensorStatus
@@ -574,15 +454,7 @@ def default_automation_sensor(assets, minimum_interval_seconds=60):
 
 ---
 
-## Sensors
-
-### Automation Condition Sensor
-
-Evaluates `AutomationCondition` on all assets every 60 seconds:
-
-```python
-sensors=[default_automation_sensor(assets)]
-```
+## Sensors, Schedules, and Jobs
 
 ### NATS Document Uploaded Sensor
 
@@ -602,12 +474,10 @@ sensor = nats_document_uploaded_sensor(
 )
 ```
 
-**Flow**: Document uploaded → `SourceUpdatedEvent` to NATS → Sensor triggers `observe_job` → Observable asset detects
-new partition → Downstream auto-materializes.
+**Flow**: Document uploaded via API sends `SourceUpdatedEvent` to NATS. Sensor triggers `observe_job`. Observable asset
+detects new partition. Downstream assets with `AutomationCondition.eager()` auto-materialize.
 
----
-
-## Schedules
+### Schedules
 
 Time-based triggers (use sparingly — prefer observable assets + automation conditions):
 
@@ -622,32 +492,20 @@ schedules=[
 
 Timezone: `Europe/Berlin`. Default status: `RUNNING`.
 
----
+### Jobs
 
-## Jobs
-
-Jobs wrap asset selections for triggering via sensors/schedules.
-
-### Observation Job
-
-Triggers observation of an observable source asset (discovers new/changed partitions):
+Jobs wrap asset selections for triggering via sensors/schedules:
 
 ```python
-from aihub_pipeline.jobs.factory import observe_source_job
+from aihub_pipeline.jobs.factory import observe_source_job, materialize_asset_job
 
-job = observe_source_job(
+# Observation job (discovers new/changed partitions)
+observe_job = observe_source_job(
     observable_asset=my_observable_asset,
     source_location_name="my-bucket",
 )
-```
 
-### Materialization Job
-
-Triggers materialization of specific assets (e.g., cleanup):
-
-```python
-from aihub_pipeline.jobs.factory import materialize_asset_job
-
+# Materialization job (e.g., cleanup)
 remove_job = materialize_asset_job(
     source_location_name="my-bucket",
     job_name="remove_documents",
@@ -657,40 +515,7 @@ remove_job = materialize_asset_job(
 
 ---
 
-## Executors
-
-```python
-from aihub_pipeline.executors.factory import default_process_executor
-
-# In-process executor: consecutive ops in same process, multi-processing only for parallel runs
-executor = default_process_executor()  # Returns in_process_executor
-```
-
----
-
-## Data Types
-
-### Type Hierarchy
-
-```
-MinimalSourceFile (metadata only)
-├── MinimalRcloneFile
-├── MinimalSharePointFile
-└── MinimalLocalFile
-
-SourceFile (with content)
-├── RcloneFile
-├── SharePointFile
-└── LocalFile
-
-DataLakeFile (unified format after Stage 1)
-RefDocDocument (parsed document in MongoDB)
-TextNode (LlamaIndex node with embeddings)
-```
-
----
-
-## Metadata & Tags
+## Metadata and Tags
 
 ### Output Metadata
 
@@ -727,179 +552,6 @@ assets = link_code_references_to_git(
     git_branch="main",
 )
 ```
-
----
-
-## Testing
-
-### Unit Test Ops
-
-```python
-from dagster import build_op_context
-
-context = build_op_context(resources={"my_resource": MyResource(...)})
-result = my_op(context, input_data)
-assert result.processed
-```
-
-### Integration Test Assets
-
-```python
-from dagster import materialize
-
-result = materialize(
-    assets=[my_asset],
-    partition_key="test_partition",
-    resources={"my_resource": MyResource(...)},
-)
-assert result.success
-```
-
-### Run Tests
-
-```bash
-cd aihub_pipeline && poetry shell
-make test       # pytest
-make test-cov   # pytest with coverage
-```
-
----
-
-## Playground
-
-Working example for local development:
-
-```python
-# aihub_pipeline/playground/__init__.py
-from aihub_pipeline.util.definitions_util import default_definitions
-
-defs = default_definitions(
-    datalake_container_name="playground",
-    embedding_model_name="embedding/large",
-    llm_model_name="text-generation/mini",
-    with_summary_nodes=True,
-    observe_job_hour=2,
-    observe_job_minute=0,
-    remove_job_hour=3,
-    remove_job_minute=0,
-)
-```
-
-**Run**: `make playground` or `poetry run dagster dev -m playground` **Access**: http://localhost:3002 (Dagster UI)
-
----
-
-## Key File Reference
-
-### Architecture & Config
-
-| File                                                     | Purpose                      |
-| -------------------------------------------------------- | ---------------------------- |
-| `aihub_pipeline/CLAUDE.md`                               | Scope architecture overview  |
-| `aihub_pipeline/playground/__init__.py`                  | Working example (START HERE) |
-| `aihub_pipeline/aihub_pipeline/util/definitions_util.py` | Pipeline factory functions   |
-| `aihub_pipeline/aihub_pipeline/const/pipeline_names.py`  | Pipeline constants           |
-
-### Asset Factories
-
-| File                                                                                                                     | Purpose                            |
-| ------------------------------------------------------------------------------------------------------------------------ | ---------------------------------- |
-| `aihub_pipeline/aihub_pipeline/assets/factories/data_lake_to_vector_store/observable_data_lake_factory.py`               | Stage 2: S3 observer               |
-| `aihub_pipeline/aihub_pipeline/assets/factories/data_lake_to_vector_store/documents_factory.py`                          | Stage 2: Document processing       |
-| `aihub_pipeline/aihub_pipeline/assets/factories/data_lake_to_vector_store/nodes_factory.py`                              | Stage 2: Node chunking + embedding |
-| `aihub_pipeline/aihub_pipeline/assets/factories/data_lake_to_vector_store/summary_nodes_factory.py`                      | Stage 2: Summary generation        |
-| `aihub_pipeline/aihub_pipeline/assets/factories/data_lake_to_vector_store/removed_documents_factory.py`                  | Stage 2: Cleanup                   |
-| `aihub_pipeline/aihub_pipeline/assets/factories/share_point_to_data_lake/observable_share_point_factory.py`              | Stage 1: SharePoint observer       |
-| `aihub_pipeline/aihub_pipeline/assets/factories/local_files_system_to_data_lake/observable_local_file_system_factory.py` | Stage 1: Local FS observer         |
-| `aihub_pipeline/aihub_pipeline/assets/factories/rclone_to_data_lake/observable_rclone_factory.py`                        | Stage 1: Rclone observer           |
-| `aihub_pipeline/aihub_pipeline/assets/factories/source_to_data_lake/data_lake_file_factory.py`                           | Stage 1: Source → S3 file          |
-| `aihub_pipeline/aihub_pipeline/assets/factories/source_to_data_lake/placeholder_refdocs_factory.py`                      | Stage 1: Placeholder RefDocs       |
-| `aihub_pipeline/aihub_pipeline/assets/factories/source_to_data_lake/removed_data_lake_files_factory.py`                  | Stage 1: Cleanup                   |
-
-### IO Managers
-
-| File                                                           | Purpose                      |
-| -------------------------------------------------------------- | ---------------------------- |
-| `aihub_pipeline/aihub_pipeline/io/S3DataLakeIOManager.py`      | S3/MinIO data lake files     |
-| `aihub_pipeline/aihub_pipeline/io/AzureDataLakeIOManager.py`   | Azure ADLS data lake files   |
-| `aihub_pipeline/aihub_pipeline/io/DocStoreIOManager.py`        | MongoDB RefDocs              |
-| `aihub_pipeline/aihub_pipeline/io/VectorStoreIOManager.py`     | Milvus vector nodes          |
-| `aihub_pipeline/aihub_pipeline/io/SharePointIOManager.py`      | SharePoint files (read-only) |
-| `aihub_pipeline/aihub_pipeline/io/LocalFileSystemIOManager.py` | Local FS files (read-only)   |
-| `aihub_pipeline/aihub_pipeline/io/RcloneIOManager.py`          | Rclone files (read-only)     |
-
-### Resources
-
-| File                                                                                     | Purpose                    |
-| ---------------------------------------------------------------------------------------- | -------------------------- |
-| `aihub_pipeline/aihub_pipeline/resources/factory.py`                                     | Resource factory functions |
-| `aihub_pipeline/aihub_pipeline/resources/parser/DocumentParserResource.py`               | Docling / Azure DI         |
-| `aihub_pipeline/aihub_pipeline/resources/parser/MarkdownStructuralNodeParserResource.py` | Structural chunking        |
-| `aihub_pipeline/aihub_pipeline/resources/parser/RecursiveSummaryParserResource.py`       | Summary generation         |
-| `aihub_pipeline/aihub_pipeline/resources/parser/TableRefinementResource.py`              | LLM table refinement       |
-| `aihub_pipeline/aihub_pipeline/resources/llm/EmbeddingModelResource.py`                  | LiteLLM embeddings         |
-| `aihub_pipeline/aihub_pipeline/resources/llm/LanguageModelResource.py`                   | LiteLLM text gen           |
-| `aihub_pipeline/aihub_pipeline/resources/data_lake/s3/S3DataLakeClientResource.py`       | S3 client                  |
-| `aihub_pipeline/aihub_pipeline/resources/data_lake/azure/AzureDataLakeClientResource.py` | Azure ADLS client          |
-| `aihub_pipeline/aihub_pipeline/resources/doc_store/MongoDocumentStoreResource.py`        | MongoDB doc store          |
-| `aihub_pipeline/aihub_pipeline/resources/vector_store/MilvusVectorStoreResource.py`      | Milvus vector store        |
-| `aihub_pipeline/aihub_pipeline/resources/share_point/SharePointResource.py`              | SharePoint connector       |
-| `aihub_pipeline/aihub_pipeline/resources/local_file_system/LocalFileSystemResource.py`   | Local FS connector         |
-| `aihub_pipeline/aihub_pipeline/resources/rclone/RcloneResource.py`                       | Rclone connector           |
-| `aihub_pipeline/aihub_pipeline/resources/rclone/RcloneClient.py`                         | Rclone RC API client       |
-
-### Ops
-
-| File                                                                                                  | Purpose                     |
-| ----------------------------------------------------------------------------------------------------- | --------------------------- |
-| `aihub_pipeline/aihub_pipeline/ops/data_lake/parse_document_from_data_lake.py`                        | Parse DataLakeFile → RefDoc |
-| `aihub_pipeline/aihub_pipeline/ops/data_lake/fetch_all_files_in_data_lake.py`                         | List S3 files               |
-| `aihub_pipeline/aihub_pipeline/ops/data_lake/generate_figure_descriptions.py`                         | Vision LLM descriptions     |
-| `aihub_pipeline/aihub_pipeline/ops/document/insert_ref_doc_into_docstore.py`                          | MongoDB insert              |
-| `aihub_pipeline/aihub_pipeline/ops/document/refine_document_tables.py`                                | LLM table refinement        |
-| `aihub_pipeline/aihub_pipeline/ops/document/ensure_refdoc_default_metadata.py`                        | Metadata validation         |
-| `aihub_pipeline/aihub_pipeline/ops/nodes/chunk_ref_doc_into_nodes_using_md_structural_node_parser.py` | Chunking                    |
-| `aihub_pipeline/aihub_pipeline/ops/nodes/embed_nodes.py`                                              | Embedding generation        |
-| `aihub_pipeline/aihub_pipeline/ops/nodes/insert_nodes_into_vector_store.py`                           | Milvus insert               |
-
-### Sensors, Schedules, Jobs
-
-| File                                                                          | Purpose                     |
-| ----------------------------------------------------------------------------- | --------------------------- |
-| `aihub_pipeline/aihub_pipeline/sensors/factory.py`                            | Automation condition sensor |
-| `aihub_pipeline/aihub_pipeline/sensors/nats/nats_document_uploaded_sensor.py` | NATS event sensor           |
-| `aihub_pipeline/aihub_pipeline/schedules/factory.py`                          | Schedule definitions        |
-| `aihub_pipeline/aihub_pipeline/jobs/factory.py`                               | Job definitions             |
-| `aihub_pipeline/aihub_pipeline/executors/factory.py`                          | Executor config             |
-| `aihub_pipeline/aihub_pipeline/automation/all_deps_completed.py`              | Custom automation condition |
-
-### Data Types
-
-| File                                                    | Purpose                |
-| ------------------------------------------------------- | ---------------------- |
-| `aihub_pipeline/aihub_pipeline/types/DataLakeFile.py`   | Unified data lake file |
-| `aihub_pipeline/aihub_pipeline/types/RefDocDocument.py` | Parsed document        |
-| `aihub_pipeline/aihub_pipeline/types/SourceFile.py`     | Abstract source file   |
-| `aihub_pipeline/aihub_pipeline/types/RcloneFile.py`     | Rclone file            |
-| `aihub_pipeline/aihub_pipeline/types/SharePointFile.py` | SharePoint file        |
-
-### Utilities
-
-| File                                                    | Purpose                        |
-| ------------------------------------------------------- | ------------------------------ |
-| `aihub_pipeline/aihub_pipeline/util/partition_utils.py` | Dynamic partition management   |
-| `aihub_pipeline/aihub_pipeline/util/id_utils.py`        | URI → document ID conversion   |
-| `aihub_pipeline/aihub_pipeline/util/key_utils.py`       | AssetKey helpers               |
-| `aihub_pipeline/aihub_pipeline/util/bucket_utils.py`    | Bucket → store name conversion |
-
-### Settings (aihub_lib)
-
-| File                                                              | Purpose              |
-| ----------------------------------------------------------------- | -------------------- |
-| `aihub_lib/aihub_lib/infrastructure/s3/S3StorageSettings.py`      | S3/MinIO connection  |
-| `aihub_lib/aihub_lib/infrastructure/milvus/MilvusSettings.py`     | Milvus connection    |
-| `aihub_lib/aihub_lib/infrastructure/rclone/RcloneSettings.py`     | Rclone RC API        |
-| `aihub_lib/aihub_lib/infrastructure/rclone/RcloneSourceConfig.py` | Rclone remote config |
 
 ---
 

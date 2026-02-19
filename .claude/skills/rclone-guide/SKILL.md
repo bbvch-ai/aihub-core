@@ -1,14 +1,9 @@
 ---
 name: rclone-guide
-description: >-
-  Reference for rclone integration in the pipeline system. Covers rclone configuration, supported backends,
-  RcloneResource, RcloneClient, RcloneIOManager, observable rclone assets, and setting up new cloud storage
-  connectors. Use when user says 'set up OneDrive connector', 'rclone configuration', 'add cloud storage
-  backend', 'rclone filter patterns', 'connect Google Drive', 'rclone authentication', 'RcloneSourceConfig',
-  'troubleshoot rclone', or 'how does rclone work'. Covers 70+ storage backends.
+description: Reference for rclone integration in the pipeline system. Covers RcloneSourceFactory (env-var config), RcloneSourceConfig (programmatic config), RcloneClient (RC API), RcloneResource (Dagster), RcloneIOManager, observable rclone assets, and setting up new cloud storage connectors. Use when user says 'set up OneDrive connector', 'rclone configuration', 'add cloud storage backend', 'rclone filter patterns', 'connect Google Drive', 'rclone authentication', 'RcloneSourceConfig', 'RcloneSourceFactory', 'troubleshoot rclone', or 'how does rclone work'. Do NOT use for scaffolding new pipelines (use scaffold-pipeline), debugging pipeline failures (use debug-pipeline), or general pipeline architecture (use dagster-pipelines).
 arguments:
   - name: topic
-    description: Topic or question (e.g., "OneDrive setup", "filter patterns", "authentication", "RcloneSourceConfig", "backends")
+    description: Topic or question (e.g., "OneDrive setup", "filter patterns", "authentication", "RcloneSourceConfig", "RcloneSourceFactory", "backends")
 allowed-tools: Read, Grep, Glob
 ---
 
@@ -22,10 +17,6 @@ Look up rclone integration information. Topic or question via `$ARGUMENTS`.
 
 **rclone** is a command-line tool for managing files on 70+ cloud storage backends. The platform uses rclone as a
 **universal source connector** for Stage 1 pipelines (Source → DataLake).
-
-**Why rclone**: Single implementation for ALL cloud providers — no provider-specific SDKs, no custom authentication
-code, no per-backend maintenance. One connector handles OneDrive, SharePoint, Google Drive, Dropbox, Box, S3, Azure
-Blob, SFTP, and 60+ more.
 
 ### Architecture
 
@@ -43,25 +34,86 @@ Observable Rclone Asset → DataLakeFile → S3
 
 ### Docker Service
 
-rclone runs as a standalone Docker service with its RC (Remote Control) API exposed:
+rclone runs as a standalone Docker service with its RC (Remote Control) API exposed. In development, no auth
+(`--rc-no-auth`); in production, auth is enabled via `--rc-user` and `--rc-pass`. The `--rc-serve` flag is required for
+file downloads.
 
-```yaml
-rclone:
-  image: rclone/rclone
-  command: rcd --rc-addr=:5572 --rc-no-auth --rc-serve
-  ports:
-    - "5572:5572"
+---
+
+## RcloneSourceFactory (Preferred Configuration)
+
+The standard way to configure rclone sources. Loads config from `RCLONE_{SOURCE}_*` environment variables.
+
+```python
+# aihub_lib/aihub_lib/infrastructure/rclone/RcloneSourceFactory.py
+
+class RcloneSourceSettings(EnvironmentSettings):
+    """Loads RCLONE_{SOURCE}_NAME, RCLONE_{SOURCE}_TYPE, and all other
+    RCLONE_{SOURCE}_* as backend-specific options."""
+
+    @classmethod
+    def load(cls, source: str) -> RcloneSourceConfig:
+        """Load config for a source (e.g., 'AZUREBLOB' loads RCLONE_AZUREBLOB_* env vars)."""
 ```
 
-In production, authentication is enabled:
+### Helper Functions
 
-```yaml
-command: rcd --rc-addr=:5572 --rc-user=${RCLONE_RC_USER} --rc-pass=${RCLONE_RC_PASS} --rc-serve
+Pre-configured loaders for common backends:
+
+| Helper                  | Loads env prefix      | Backend            |
+| ----------------------- | --------------------- | ------------------ |
+| `sharepoint_source()`   | `RCLONE_SHAREPOINT_*` | SharePoint Online  |
+| `onedrive_source()`     | `RCLONE_ONEDRIVE_*`   | OneDrive           |
+| `google_drive_source()` | `RCLONE_GDRIVE_*`     | Google Drive       |
+| `s3_source()`           | `RCLONE_S3_*`         | AWS S3 / MinIO     |
+| `azure_blob_source()`   | `RCLONE_AZUREBLOB_*`  | Azure Blob Storage |
+| `sftp_source()`         | `RCLONE_SFTP_*`       | SFTP               |
+| `local_fs_source()`     | `RCLONE_LOCAL_FS_*`   | Local filesystem   |
+
+### Required Env Vars
+
+For any source, two vars are always required:
+
+```bash
+RCLONE_{SOURCE}_NAME=my-remote       # Remote name (alphanumeric + _ -)
+RCLONE_{SOURCE}_TYPE=onedrive        # Backend type (onedrive, drive, s3, azureblob, sftp, local)
 ```
+
+All other `RCLONE_{SOURCE}_*` vars become backend-specific options:
+
+```bash
+# Example: OneDrive
+RCLONE_ONEDRIVE_NAME=onedrive
+RCLONE_ONEDRIVE_TYPE=onedrive
+RCLONE_ONEDRIVE_CLIENT_ID=your-app-id
+RCLONE_ONEDRIVE_CLIENT_SECRET=your-secret
+RCLONE_ONEDRIVE_TOKEN={"access_token":"...","refresh_token":"..."}
+RCLONE_ONEDRIVE_DRIVE_TYPE=business
+```
+
+### Usage in Pipeline
+
+```python
+from aihub_lib.infrastructure.rclone.RcloneSourceFactory import onedrive_source
+from aihub_pipeline.util.definitions_util import default_rclone_to_datalake_definitions
+
+source = onedrive_source()
+
+defs = default_rclone_to_datalake_definitions(
+    datalake_container_name="company-docs",
+    datalake_directory_name="onedrive-sales",
+    rclone_config=source,
+    source_remote=f"{source.name}:Documents/Sales",
+)
+```
+
+See `aihub_pipeline/templates/sources/` for complete per-backend examples with `.env.template` files.
 
 ---
 
 ## RcloneSettings (Connection Config)
+
+Global rclone service connection settings.
 
 ```python
 # aihub_lib/aihub_lib/infrastructure/rclone/RcloneSettings.py
@@ -82,9 +134,9 @@ class RcloneSettings(EnvironmentSettings):
 
 ---
 
-## RcloneSourceConfig (Remote Definition)
+## RcloneSourceConfig (Programmatic Configuration)
 
-Defines a remote storage backend. Used to programmatically configure rclone remotes.
+For cases where env-var configuration isn't suitable (dynamic config, tests, playground):
 
 ```python
 # aihub_lib/aihub_lib/infrastructure/rclone/RcloneSourceConfig.py
@@ -104,19 +156,9 @@ class RcloneSourceConfig(BaseModel):
 
     def to_rclone_params(self) -> dict[str, Any]:
         """Convert to rclone config/create API payload."""
-        return {
-            "name": self.name,
-            "type": self.backend_type.value,
-            "parameters": {
-                k: v.get_secret_value() if isinstance(v, SecretStr) else v
-                for k, v in self.options.items()
-            },
-        }
 ```
 
-### Backend Configuration Examples
-
-**OneDrive**:
+### Example: Manual OneDrive Config
 
 ```python
 RcloneSourceConfig(
@@ -125,78 +167,35 @@ RcloneSourceConfig(
     options={
         "client_id": "your-app-client-id",
         "client_secret": SecretStr("your-app-client-secret"),
-        "token": '{"access_token":"...","refresh_token":"...","expiry":"..."}',
-        "drive_type": "personal",  # or "business"
-    },
-)
-```
-
-**Google Drive**:
-
-```python
-RcloneSourceConfig(
-    name="gdrive",
-    backend_type=RcloneBackendType.DRIVE,
-    options={
-        "client_id": "your-client-id.apps.googleusercontent.com",
-        "client_secret": SecretStr("your-client-secret"),
         "token": '{"access_token":"...","refresh_token":"..."}',
-        "scope": "drive.readonly",
+        "drive_type": "business",
     },
 )
 ```
 
-**S3-Compatible**:
+### Example: Manual S3 Config
 
 ```python
 RcloneSourceConfig(
     name="external-s3",
     backend_type=RcloneBackendType.S3,
     options={
-        "provider": "AWS",  # or "Minio", "Ceph", etc.
+        "provider": "AWS",  # or "Minio", "Ceph"
         "access_key_id": "AKIA...",
         "secret_access_key": SecretStr("..."),
         "region": "eu-central-1",
-        "endpoint": "",  # Custom endpoint for non-AWS S3
     },
 )
 ```
 
-**Azure Blob Storage**:
-
-```python
-RcloneSourceConfig(
-    name="azblob",
-    backend_type=RcloneBackendType.AZUREBLOB,
-    options={
-        "account": "mystorageaccount",
-        "key": SecretStr("base64-encoded-account-key"),
-        # Or use SAS token:
-        # "sas_url": "https://account.blob.core.windows.net/container?sv=...&sig=...",
-    },
-)
-```
-
-**SFTP**:
-
-```python
-RcloneSourceConfig(
-    name="sftp-server",
-    backend_type=RcloneBackendType.SFTP,
-    options={
-        "host": "sftp.example.com",
-        "user": "username",
-        "pass": SecretStr("password"),
-        "port": "22",
-    },
-)
-```
+Serialization for Dagster resources: `config.model_dump(mode="json", exclude_none=True)`.
 
 ---
 
 ## RcloneClient (Low-Level API)
 
-HTTP client wrapping the rclone RC API. Uses `httpx` for sync config operations and `aiohttp` for async file operations.
+HTTP client wrapping the rclone RC API. Uses `httpx` (sync) for config operations and `aiohttp` (async) for file
+operations.
 
 ```python
 # aihub_pipeline/aihub_pipeline/resources/rclone/RcloneClient.py
@@ -205,7 +204,6 @@ class RcloneClient:
     def __init__(self, base_url: str | None = None, default_remote: str | None = None, timeout: int = 30):
         settings = RcloneSettings()
         self.base_url = (base_url or settings.URL).rstrip("/")
-        self.default_remote = default_remote
         # Auto-configures HTTP Basic Auth if RCLONE_RC_USER/RC_PASS are set
 ```
 
@@ -224,7 +222,6 @@ class RcloneClient:
 ```python
 client = RcloneClient(base_url="http://rclone:5572", default_remote="onedrive:Documents")
 
-# List all PDFs, excluding archive folder
 files = await client.list_files(
     include=["*.pdf", "*.docx"],
     exclude=["**/archive/**", "**/temp/**"],
@@ -232,34 +229,18 @@ files = await client.list_files(
 
 for f in files:
     print(f"{f.path} ({f.size} bytes, modified: {f.modified})")
-    if f.hashes:
-        print(f"  MD5: {f.hashes.get('md5')}")
 ```
 
-### Filter Rule Priority
-
-Rclone applies filters in order:
-
-1. **Excludes first** (noise removal): `- **/archive/**`
-2. **Includes** (scope definition): `+ *.pdf`, `+ *.docx`
-3. **Implicit exclude** (if includes specified): `- **` (exclude everything else)
+Rclone applies filters in order: excludes first → includes → implicit exclude-all (if includes specified).
 
 ### Downloading Files
 
 ```python
-# Download via rclone's native HTTP serve (requires --rc-serve flag)
 file = await client.download_bytes("path/to/document.pdf")
-
-print(f"Name: {file.name}")
-print(f"Size: {len(file.content)} bytes")
-print(f"MIME: {file.mime_type}")
-print(f"Modified: {file.modified}")
+# Returns RcloneFile with .name, .content (bytes), .mime_type, .modified
 ```
 
-Download URL format: `http://host:port/[remote]/path/to/file`
-
-- URL-encoded for special characters (spaces, etc.)
-- Timeout: 600s for read, 30s for connect
+Download requires `--rc-serve` flag on the rclone service. Timeout: 600s read, 30s connect.
 
 ---
 
@@ -286,27 +267,7 @@ class RcloneResource(ConfigurableResource):
 | `fetch_minimal_files_async()`    | `list[MinimalRcloneFile]` | Async version                   |
 | `download_file_async(file_path)` | `RcloneFile`              | Async version                   |
 
-### Auto Remote Configuration
-
-If `rclone_config_dict` is provided, the resource automatically ensures the remote exists before any operation:
-
-```python
-rclone_client = RcloneResource(
-    source_remote="onedrive:Documents",
-    include_patterns=["*.pdf", "*.docx"],
-    rclone_config_dict=config.model_dump(mode="json", exclude_none=True),
-)
-
-# First call: auto-creates remote if needed, then lists files
-files = rclone_client.fetch_minimal_files()
-```
-
-### Manual vs Auto Configuration
-
-**Auto** (via `rclone_config_dict`): Remote configured programmatically on first use. Best for automated deployments.
-
-**Manual** (via `rclone config` CLI): Remote pre-configured in `~/.config/rclone/rclone.conf`. Leave
-`rclone_config_dict` as `None`. Best for development and manual setups.
+If `rclone_config_dict` is provided, the resource auto-creates the remote on first use via `RcloneClient.ensure_remote`.
 
 ---
 
@@ -319,25 +280,14 @@ Read-only IO manager for loading files from rclone remotes.
 
 class RcloneIOManager(ConfigurableIOManager):
     rclone_client: ResourceDependency[RcloneResource]
-
-    def handle_output(self, context, obj):
-        raise NotImplementedError("Writing to rclone remotes not supported (read-only)")
-
-    def load_input(self, context):
-        if context.has_partition_key:
-            # Partitioned: download full file content
-            return self.rclone_client.download_file(context.partition_key)
-        else:
-            # Non-partitioned: metadata only (for cleanup comparison)
-            all_keys = partitions_def.get_partition_keys(...)
-            all_files = self.rclone_client.fetch_minimal_files()
-            return [f for f in all_files if f.path in set(all_keys)]
 ```
 
 **Two loading patterns**:
 
-- **Partitioned** → `RcloneFile` with content (for document processing)
+- **Partitioned** → `RcloneFile` with full content (for document processing)
 - **Non-partitioned** → `list[MinimalRcloneFile]` metadata only (for cleanup comparison — saves memory)
+
+`handle_output()` raises `NotImplementedError` — rclone is read-only.
 
 ---
 
@@ -349,11 +299,7 @@ Monitors a rclone remote for file changes using hash-based change detection.
 # aihub_pipeline/aihub_pipeline/assets/factories/rclone_to_data_lake/observable_rclone_factory.py
 
 def observable_rclone_factory(key, partitions, max_partitions):
-    @observable_source_asset(
-        key=key,
-        partitions_def=partitions,
-        io_manager_key="rclone_io_manager",
-    )
+    @observable_source_asset(key=key, partitions_def=partitions, io_manager_key="rclone_io_manager")
     def observable_rclone(context, rclone_client: RcloneResource) -> DataVersionsByPartition:
         rclone_files = rclone_client.fetch_minimal_files()
         return data_version_by_partition_for_rclone_files(
@@ -363,22 +309,22 @@ def observable_rclone_factory(key, partitions, max_partitions):
     return observable_rclone
 ```
 
-### Change Detection Strategy
+### Change Detection
 
 | Method                      | Priority | When Used                                            |
 | --------------------------- | -------- | ---------------------------------------------------- |
 | **Content hash** (MD5/SHA1) | Primary  | Backend supports hashes (OneDrive, S3, etc.)         |
 | **mtime + size**            | Fallback | Backend doesn't support hashes (local FS, some SFTP) |
 
-Hash-based detection = **zero false positives**. Detects ANY content change, ignores metadata-only changes.
+Change detection op: `aihub_pipeline/aihub_pipeline/ops/rclone/data_version_by_partition_for_rclone_files.py`.
 
 ---
 
 ## RcloneFile Types
 
-### MinimalRcloneFile (Metadata Only)
-
 ```python
+# aihub_pipeline/aihub_pipeline/types/RcloneFile.py
+
 class MinimalRcloneFile(MinimalSourceFile):
     remote: str = ""              # e.g., "onedrive:"
     is_dir: bool = False
@@ -386,11 +332,7 @@ class MinimalRcloneFile(MinimalSourceFile):
     id: str | None = None         # Remote-specific file ID
     hashes: dict[str, str] | None = None  # {"md5": "...", "sha1": "..."}
     created: int = 0              # UNIX timestamp
-```
 
-### RcloneFile (With Content)
-
-```python
 class RcloneFile(SourceFile, MinimalRcloneFile):
     remote_path: str              # Full path within remote
 
@@ -401,193 +343,28 @@ class RcloneFile(SourceFile, MinimalRcloneFile):
 
 ---
 
-## Complete Pipeline Setup
-
-### Quick Start (Rclone → S3 → Vector Store)
-
-```python
-from aihub_pipeline.util.definitions_util import (
-    default_rclone_to_datalake_definitions,
-    default_definitions,
-)
-from aihub_lib.infrastructure.rclone import RcloneSourceConfig, RcloneBackendType
-
-# Stage 1: OneDrive → S3
-rclone_config = RcloneSourceConfig(
-    name="onedrive",
-    backend_type=RcloneBackendType.ONEDRIVE,
-    options={
-        "client_id": "your-app-id",
-        "client_secret": "your-app-secret",
-        "token": '{"access_token":"...","refresh_token":"..."}',
-    },
-)
-
-stage1 = default_rclone_to_datalake_definitions(
-    datalake_container_name="company-docs",
-    source_remote="onedrive:Documents/Sales",
-    rclone_config=rclone_config,
-    include_patterns=["*.pdf", "*.docx", "*.pptx"],
-    exclude_patterns=["**/archive/**", "**/draft/**"],
-)
-
-# Stage 2: S3 → Vector Store
-stage2 = default_definitions(
-    datalake_container_name="company-docs",
-    embedding_model_name="embedding/large",
-)
-```
-
-### Resource Wiring
-
-When using `default_rclone_to_datalake_definitions()`, resources are auto-configured:
-
-```python
-resources={
-    "rclone_client": RcloneResource(
-        source_remote="onedrive:Documents",
-        include_patterns=["*.pdf"],
-        rclone_config_dict=config.model_dump(mode="json", exclude_none=True),
-    ),
-    "rclone_io_manager": RcloneIOManager(rclone_client=rclone_client),
-    **s3_data_lake_resources(container_name="company-docs"),
-}
-```
-
----
-
-## Filter Patterns
-
-Rclone uses **glob patterns** (not regex):
-
-| Pattern         | Matches                      |
-| --------------- | ---------------------------- |
-| `*.pdf`         | All PDF files (any depth)    |
-| `*.{pdf,docx}`  | PDFs and DOCX files          |
-| `Documents/**`  | Everything under Documents/  |
-| `**/archive/**` | Archive folders at any depth |
-| `**/temp/**`    | Temp folders at any depth    |
-| `*.tmp`         | All .tmp files               |
-| `??.txt`        | Two-character .txt files     |
-
-### Filter Examples
-
-```python
-# Only sync documents
-include_patterns=["*.pdf", "*.docx", "*.pptx", "*.xlsx", "*.md", "*.txt"]
-
-# Exclude noise
-exclude_patterns=[
-    "**/archive/**",     # Archive folders
-    "**/temp/**",        # Temp folders
-    "**/draft/**",       # Draft folders
-    "**/.git/**",        # Git folders
-    "*.tmp",             # Temp files
-    "~$*",               # Office lock files
-    "Thumbs.db",         # Windows thumbnails
-    ".DS_Store",         # macOS metadata
-]
-```
-
----
-
-## Supported Backends (Subset)
-
-| Backend          | Type        | Notes                                     |
-| ---------------- | ----------- | ----------------------------------------- |
-| **OneDrive**     | `onedrive`  | Personal & Business. OAuth2, hash support |
-| **SharePoint**   | `onedrive`  | Via OneDrive backend with drive_id        |
-| **Google Drive** | `drive`     | OAuth2, hash support                      |
-| **Dropbox**      | `dropbox`   | OAuth2, hash support                      |
-| **Box**          | `box`       | OAuth2, hash support                      |
-| **AWS S3**       | `s3`        | Access key or IAM, hash support           |
-| **Azure Blob**   | `azureblob` | Account key, SAS token, or Azure AD       |
-| **SFTP**         | `sftp`      | Password or key auth                      |
-| **Local FS**     | `local`     | Direct filesystem access                  |
-| **FTP**          | `ftp`       | Plain FTP                                 |
-| **WebDAV**       | `webdav`    | Nextcloud, ownCloud, etc.                 |
-| **Mega**         | `mega`      | OAuth2                                    |
-| **pCloud**       | `pcloud`    | OAuth2                                    |
-
-Full list: https://rclone.org/overview/
-
----
-
 ## Troubleshooting
 
-### Connection Refused
+For detailed pipeline debugging, use the `/debug-pipeline` skill with Dagster MCP tools.
 
-```
-aiohttp.client_exceptions.ClientConnectorError: Cannot connect to host rclone:5572
-```
+Common rclone-specific errors:
 
-- Rclone Docker service not running
-- Check: `docker compose ps rclone`
-
-### Authentication Failed
-
-```
-403 Forbidden
-```
-
-- `RCLONE_RC_USER` / `RCLONE_RC_PASS` mismatch
-- Production: ensure `--rc-user` / `--rc-pass` flags match env vars
-
-### Remote Not Found
-
-```
-Failed to create file system for "onedrive:Documents": didn't find section in config file
-```
-
-- Remote not configured. Either:
-  - Provide `rclone_config_dict` in `RcloneResource`
-  - Or run `rclone config` manually in the container
-
-### Token Expired
-
-```
-Failed to create file system: token has expired
-```
-
-- OAuth2 tokens have limited lifetime
-- Refresh tokens expire after 90 days (varies by provider)
-- Reconfigure the remote with fresh tokens
-
-### Timeout on Large Files
-
-```
-asyncio.TimeoutError
-```
-
-- Download timeout is 600s by default
-- For very large files, increase `timeout` in `RcloneClient.__init__`
+| Error                                                      | Cause                          | Fix                                                                         |
+| ---------------------------------------------------------- | ------------------------------ | --------------------------------------------------------------------------- |
+| `ClientConnectorError: Cannot connect to host rclone:5572` | Service not running            | `docker compose ps rclone`                                                  |
+| `403 Forbidden`                                            | RC auth mismatch               | Check `RCLONE_RC_USER`/`RCLONE_RC_PASS` match `--rc-user`/`--rc-pass` flags |
+| `didn't find section in config file`                       | Remote not configured          | Provide `rclone_config_dict` or use `RcloneSourceFactory` helpers           |
+| `token has expired`                                        | OAuth2 token lifetime exceeded | Reconfigure remote with fresh tokens (90-day refresh typical)               |
+| `asyncio.TimeoutError`                                     | Large file download            | Increase `timeout` in `RcloneClient.__init__` (default: 600s)               |
 
 ---
 
-## Key File Reference
+## Conventions
 
-| File                                                                                              | Purpose                                    |
-| ------------------------------------------------------------------------------------------------- | ------------------------------------------ |
-| `aihub_lib/aihub_lib/infrastructure/rclone/RcloneSettings.py`                                     | Connection settings                        |
-| `aihub_lib/aihub_lib/infrastructure/rclone/RcloneSourceConfig.py`                                 | Remote config model                        |
-| `aihub_pipeline/aihub_pipeline/resources/rclone/RcloneClient.py`                                  | Low-level RC API client                    |
-| `aihub_pipeline/aihub_pipeline/resources/rclone/RcloneResource.py`                                | Dagster resource wrapper                   |
-| `aihub_pipeline/aihub_pipeline/io/RcloneIOManager.py`                                             | IO manager (read-only)                     |
-| `aihub_pipeline/aihub_pipeline/assets/factories/rclone_to_data_lake/observable_rclone_factory.py` | Observable asset                           |
-| `aihub_pipeline/aihub_pipeline/ops/rclone/data_version_by_partition_for_rclone_files.py`          | Change detection op                        |
-| `aihub_pipeline/aihub_pipeline/types/RcloneFile.py`                                               | File type definitions                      |
-| `aihub_pipeline/aihub_pipeline/util/definitions_util.py`                                          | `default_rclone_to_datalake_definitions()` |
-
----
-
-## Conventions Checklist
-
-- [ ] Use `RcloneSourceConfig` for programmatic remote configuration (not raw dicts)
-- [ ] `RcloneBackendType` enum for type safety on backend selection
-- [ ] `SecretStr` for all credentials in `RcloneSourceConfig.options`
-- [ ] `include_patterns` and `exclude_patterns` use rclone glob syntax (not regex)
-- [ ] IO manager is read-only (`handle_output` raises `NotImplementedError`)
-- [ ] Observable asset uses hash-based change detection with mtime+size fallback
-- [ ] `rclone_config_dict` serialized via `config.model_dump(mode="json", exclude_none=True)`
-- [ ] Remote names are alphanumeric with `_` and `-` only (validated by Pydantic)
-- [ ] RC API authentication configured for non-dev environments
+- Use `RcloneSourceFactory` helpers for production config (env-var-based)
+- Use `RcloneSourceConfig` directly only for tests, playground, and dynamic config
+- `SecretStr` for all credentials in `RcloneSourceConfig.options`
+- Include/exclude patterns use rclone glob syntax (not regex)
+- IO manager is read-only (`handle_output` raises `NotImplementedError`)
+- Remote names: alphanumeric with `_` and `-` only (Pydantic-validated)
+- Serialize config via `config.model_dump(mode="json", exclude_none=True)`

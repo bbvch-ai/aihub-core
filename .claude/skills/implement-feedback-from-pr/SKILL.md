@@ -1,99 +1,86 @@
 ---
 name: implement-feedback-from-pr
-description: >-
-  Implement review feedback from a pull request. Fetches PR comments, distinguishes human from
-  bot feedback, prioritizes and implements changes, then validates. Use when user says 'implement
-  PR feedback', 'address review comments', 'fix PR review', 'apply PR suggestions', 'handle
-  reviewer feedback', or 'implement changes from review'. Takes a PR number as argument.
+description: Implement review feedback from a pull request. Fetches PR comments, distinguishes human from bot feedback, prioritizes and implements changes, then validates. Use when user says 'implement PR feedback', 'address review comments', 'fix PR review', 'apply PR suggestions', 'handle reviewer feedback', or 'implement changes from review'. Takes a PR number as argument. Do NOT use for pre-PR code review (use /review-diff) or PR creation (use /create-pr).
 allowed-tools: Bash, Read, Edit, Grep, Glob
 ---
 
 # Implement PR Feedback - Turn Reviews into Improvements
 
-Implement review feedback from a pull request. Use \$ARGUMENTS for the PR number.
+Implement review feedback from PR \$ARGUMENTS in the `bbvch-ai/aihub-core` monorepo.
 
-## Process
+## Step 1: Fetch All Feedback
 
-1. Find your PR and fetch all review comments
-2. Distinguish human feedback from bot suggestions
-3. Prioritize and implement human feedback first
-4. Critically evaluate automated feedback
-5. Test your changes thoroughly
+Use the GitHub MCP server (`mcp__github__pull_request_read`) to gather structured PR data:
 
-## Step 1: Fetch All Review Comments
+1. **PR overview**: `method: "get"` — title, description, author, base/head branches
+2. **Inline review comments**: `method: "get_review_comments"` — threaded code comments with `isResolved`/`isOutdated`
+   metadata. Skip resolved and outdated threads.
+3. **Conversation comments**: `method: "get_comments"` — general discussion comments
+4. **CI status**: `method: "get_status"` — build and check results
+5. **Changed files**: `method: "get_files"` — list of modified files for scope detection
 
-```bash
-gh pr view -c
-```
+All calls use `owner: "bbvch-ai"`, `repo: "aihub-core"`, `pullNumber: $PR_NUMBER`.
 
-## Step 2: Identify Feedback Sources
+## Step 2: Triage Feedback
 
-### Human Feedback (TOP PRIORITY)
+### Human Comments (TOP PRIORITY)
 
-Comments from team members, code reviewers, anyone with human names. These ask about design decisions, suggest better
-approaches, point out logic issues, request clarification.
+Implement all human reviewer feedback first. Read the referenced file before making changes.
 
 ### Bot Feedback (EVALUATE CRITICALLY)
 
-Common bots: SonarCloud (code quality/security), CodeQL (vulnerability scanning), test/linting/coverage bots. Bot
-comments have systematic formatting and links to reports.
+This repo's CI pipeline (`.github/workflows/analyze-test-pr.yml`) runs three bot checks:
 
-## Step 3: Implement Human Feedback First
+- **`test-modules`** — pytest across scopes. Failures here are real — fix the code.
 
-For each human comment:
+- **`pytest-coverage-comment`** — coverage delta. Add tests only if the uncovered code is meaningful.
 
-1. Navigate to the file mentioned
-2. Make the requested change
-3. Mark it as done
+- **`sonarcloud-scan`** — scans three SonarCloud projects:
 
-Handle common feedback types:
+  - `aihub-core_lib-core` (aihub_lib)
+  - `aihub-core_api-core` (aihub_api)
+  - `aihub-core_agents-core` (aihub_agent)
 
-- "Can you explain why..." → Add code comment explaining reasoning
-- "This could be simplified..." → Implement simplification, test
-- "What happens if..." → Add error handling + test for edge case
-- "Please add documentation..." → Update README or add docstrings
+  SonarCloud bugs and vulnerabilities: almost always fix. Code smells: fix if straightforward. Security hotspots:
+  evaluate case-by-case.
 
-## Step 4: Evaluate Bot Feedback
+## Step 3: Identify Affected Scopes
 
-- **SonarCloud Bugs/Vulnerabilities**: Almost always fix
-- **Code Smells**: Usually worth fixing
-- **Security Hotspots**: Evaluate case-by-case
-- **Coverage drops**: Add tests only if they add value
-- **Linting**: Run `make pr-ready` in affected scope
+Use the file list from Step 1 (`get_files`) to determine which monorepo scopes need testing. Map changed file paths to
+scopes: `aihub_lib/` → aihub_lib, `aihub_api/` → aihub_api, `aihub_agent/` → aihub_agent, `aihub_pipeline/` →
+aihub_pipeline, `aihub_process/` → aihub_process, `aihub_bot/` → aihub_bot, `aihub_web/` → aihub_web.
 
-## Step 5: Validate Changes
+## Step 4: Implement Changes
+
+For each comment, read the referenced file, make the change, and move to the next. Work through human comments first,
+then bot findings.
+
+## Step 5: Validate
+
+After all changes are implemented:
 
 ```bash
-cd affected_scope
-poetry shell
-make pr-ready
-make test
-exit
+# Lint all affected scopes
+make -C /home/joelbarmettler/projects/aihub/aihub-core pr-ready
+
+# Run tests in affected scopes (or delegate to /test-scope)
+make -C aihub_lib test    # if aihub_lib was affected
+make -C aihub_api test    # if aihub_api was affected
 ```
-
-## Examples
-
-**Typical invocation**: `/implement-feedback-from-pr 42`
-
-**Common scenarios**:
-
-1. Reviewer asks to simplify a function → refactor, test, commit
-2. SonarCloud flags a code smell → evaluate and fix if valid
-3. Reviewer requests documentation → add docstrings or update README
-4. Coverage dropped → add targeted tests for new code paths
 
 ## Troubleshooting
 
-| Problem                                    | Solution                                              |
-| ------------------------------------------ | ----------------------------------------------------- |
-| `gh pr view -c` shows no comments          | Check PR number is correct: `gh pr list`              |
-| Cannot determine which files are affected  | Run `gh pr diff` to see all changed files             |
-| Bot feedback conflicts with human feedback | Human feedback always takes priority                  |
-| `make pr-ready` fails after changes        | Fix lint/type errors introduced by your fixes, re-run |
+| Problem                             | Solution                                                              |
+| ----------------------------------- | --------------------------------------------------------------------- |
+| MCP `get` returns no PR             | Verify PR number: `gh pr list`                                        |
+| Inline comments not visible         | Use `get_review_comments` method (not `get_comments`)                 |
+| SonarCloud findings unclear         | Check the SonarCloud link in the bot comment for detailed explanation |
+| `make pr-ready` fails after changes | Fix lint errors introduced by your fixes, re-run                      |
+| Tests fail in unrelated scope       | Check if `aihub_lib` changes broke a downstream scope                 |
 
 ## Done When
 
 - Every human comment addressed or responded to
-- All critical bot warnings resolved
-- Code passes all tests
-- `make pr-ready` runs clean for all affected scopes
+- All critical SonarCloud and test-module findings resolved
+- `make pr-ready` runs clean from repo root
+- `make test` passes in all affected scopes

@@ -1,13 +1,14 @@
 ---
-name: bot-reference
-description: "Comprehensive reference for the bot integration platform: handler architecture, CompletionHandler pattern, multi-channel handling, BITL flow, conversation state, NATS integration, streaming, and testing. Use when user says 'how does the bot work', 'CompletionHandler pattern', 'bot architecture', 'Slack thread handling', 'BITL flow', 'bot streaming', 'conversation state management', 'bot testing', 'how do bot channels work', or 'BaseChatBot'. Do NOT use for bot setup/provisioning (use setup-bot-connection), bot debugging (use debug-bot), or scaffolding new handlers (use scaffold-bot-handler). Covers all bot components, request flow, and testing patterns."
+name: bot-framework
+description: "Comprehensive reference for the bot integration framework (aihub_bot): handler architecture, CompletionHandler pattern, multi-channel handling (Teams, Slack, WebChat), BITL flow, conversation state, NATS integration, streaming, and testing. Use when user says 'how does the bot work', 'CompletionHandler pattern', 'bot architecture', 'Slack thread handling', 'BITL flow', 'bot streaming', 'conversation state management', 'bot testing', 'how do bot channels work', 'BaseChatBot', 'bot framework', 'bot handler', 'bot completion', or 'bot routes'. Do NOT use for bot setup/provisioning (use setup-bot-connection), bot debugging (use debug-bot), or scaffolding new handlers (use scaffold-bot-handler). Covers all bot components, request flow, and testing patterns."
 allowed-tools: Read, Grep, Glob
 ---
 
-# Bot Integration Platform Reference
+# Bot Integration Framework Reference
 
-Look up bot architecture information. Topic or question via `$ARGUMENTS` (e.g., "CompletionHandler", "Slack threads",
-"BITL flow", "streaming", "testing", "conversation state").
+Look up bot framework architecture, patterns, and implementation details. Topic or question via `$ARGUMENTS` (e.g.,
+"CompletionHandler", "Slack threads", "BITL flow", "streaming", "testing", "conversation state", "handler pattern",
+"routes").
 
 ---
 

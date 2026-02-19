@@ -1,8 +1,7 @@
 ---
 name: scaffold-frontend-component
-description: Scaffold a new Vue 3 component following project conventions. Supports card, modal/dialog, list/DataTable, form, empty card, and display patterns with PrimeVue, Tailwind, typed props/emits, and i18n. Use when user says "create a component", "add a Vue component", "scaffold a card", "create a modal", "build a DataTable component", "new form component", or "add a dialog for X". Generates component file with correct placement, typed props/emits, and dark mode.
-
-allowed-tools: Read, Write, Edit, Grep, Glob
+description: Scaffold a new Vue 3 component following project conventions. Supports card, modal/dialog, list/DataTable, form, empty card, and display patterns with PrimeVue, Tailwind, typed props/emits, and i18n. Use when user says "create a component", "add a Vue component", "scaffold a card", "create a modal", "build a DataTable component", "new form component", or "add a dialog for X". Do NOT use for full list pages with card grids (use scaffold-frontend-page), detail pages with tabs (use scaffold-frontend-subpage), composables only (use scaffold-composable), or PrimeVue docs lookup (use primevue-lookup). Generates component file with correct placement, typed props/emits, and dark mode.
+allowed-tools: Read, Write, Edit, Grep, Glob, mcp__primevue__get_component, mcp__primevue__get_component_props, mcp__primevue__get_component_events, mcp__primevue__get_component_slots, mcp__primevue__suggest_component, mcp__context7__resolve-library-id, mcp__context7__query-docs
 ---
 
 # Scaffold a New Frontend Component
@@ -11,7 +10,7 @@ Generate a new Vue component. Component name and type should be provided via `$A
 
 ## Before You Start
 
-1. Read the frontend scope guide: `/home/user/aihub-core/aihub_web/CLAUDE.md`
+1. Read the frontend scope guide: `aihub_web/CLAUDE.md`
 2. Study existing components for the pattern you need:
    - **Card**: `aihub_web/aihub_web/components/Agent/Card.vue`
    - **Empty card**: `aihub_web/aihub_web/components/Agent/EmptyCard.vue`
@@ -34,7 +33,7 @@ Based on the user's description, identify the component pattern:
 
 ## Step 2: Create the Component File
 
-Place in `aihub_web/aihub_web/components/<Domain>/<ComponentName>.vue`.
+Place in `aihub_web/aihub_web/components/{Domain}/{ComponentName}.vue`.
 
 Naming rules:
 
@@ -311,7 +310,7 @@ Every component MUST follow these rules:
 
 ```
 components/
-├── <Domain>/              # Group by domain
+├── {Domain}/              # Group by domain
 │   ├── Card.vue           # Resource card for grid layouts
 │   ├── EmptyCard.vue      # Add-new placeholder
 │   ├── CreateModal.vue    # Create dialog
@@ -328,6 +327,15 @@ components/
 ├── FormKit/               # Custom FormKit inputs
 └── Navigation/            # Nav components
 ```
+
+## Step 4: Verify
+
+1. Confirm the component auto-import name resolves: `{Domain}/{ComponentName}.vue` becomes `{Domain}{ComponentName}`
+2. Verify all PrimeVue components used are auto-imported (not in the FormKit-excluded list — see `primevue-lookup`
+   skill)
+3. Check dark mode: every `bg-*`, `text-*`, `border-*` class has a `dark:` variant
+4. Verify i18n keys exist in ALL 4 locale files for any `t('key')` calls
+5. If unsure about PrimeVue component props/events, use `mcp__primevue__get_component_props` to verify
 
 ## Examples
 
@@ -351,11 +359,11 @@ single selection mode, custom column templates for status and dates.
 
 ## Troubleshooting
 
-| Problem                                 | Cause                                     | Fix                                                                                                                 |
-| --------------------------------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| Component not auto-imported             | Wrong directory or naming                 | Must be under `components/` in PascalCase directory, file must be PascalCase `.vue`                                 |
-| Raw HTML elements in template           | Not using PrimeVue                        | Replace `button` with `Button`, `input` with FormKit input, `select` with FormKit Select                            |
-| Dark mode colors broken                 | Missing `dark:` variants                  | Every `bg-*`, `text-*`, `border-*` class needs a corresponding `dark:` variant                                      |
-| Props not type-safe                     | Using `defineProps({})` object syntax     | Use generic syntax: `defineProps<{ item: ResourceDto }>()` with SDK types                                           |
-| FormKit-wrapped component not rendering | Imported from PrimeVue instead of FormKit | `InputText`, `Textarea`, `Select`, `MultiSelect`, etc. are excluded from PrimeVue auto-import; use FormKit versions |
-| Delete button triggers card click       | Missing `@click.stop`                     | Add `.stop` modifier to prevent event bubbling: `@click.stop="confirmDelete"`                                       |
+| Problem                                 | Cause                                     | Fix                                                                                                                    |
+| --------------------------------------- | ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Component not auto-imported             | Wrong directory or naming                 | Must be under `components/` in PascalCase directory, file must be PascalCase `.vue`                                    |
+| Raw HTML elements in template           | Not using PrimeVue                        | Replace `button` with `Button`, `input` with FormKit input, `select` with FormKit Select                               |
+| Dark mode colors broken                 | Missing `dark:` variants                  | Every `bg-*`, `text-*`, `border-*` class needs a corresponding `dark:` variant                                         |
+| Props not type-safe                     | Using `defineProps({})` object syntax     | Use generic syntax: `defineProps<{ item: ResourceDto }>()` with SDK types                                              |
+| FormKit-wrapped component not rendering | Imported from PrimeVue instead of FormKit | 24 components excluded from PrimeVue auto-import — see `primevue-lookup` skill for full list or check `nuxt.config.ts` |
+| Delete button triggers card click       | Missing `@click.stop`                     | Add `.stop` modifier to prevent event bubbling: `@click.stop="confirmDelete"`                                          |

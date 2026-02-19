@@ -14,7 +14,6 @@ This directory contains all Claude Code configuration for the aihub-core monorep
 │   ├── explain/           # Code analysis and explanation
 │   ├── document-decision/ # ADR creation
 │   ├── document-feature/  # Feature documentation
-│   ├── document-solution/ # Solution concept editing
 │   ├── implement-feedback-from-pr/ # PR feedback implementation
 │   ├── scaffold-agent/    # Generate new AI agent
 │   ├── scaffold-pipeline/ # Generate new Dagster pipeline
@@ -22,6 +21,8 @@ This directory contains all Claude Code configuration for the aihub-core monorep
 │   ├── scaffold-api-endpoint/ # Generate new REST API endpoint
 │   ├── scaffold-frontend-page/ # Generate new frontend page
 │   ├── scaffold-bot-handler/ # Generate new bot integration
+│   ├── lint/              # Format, lint, and type-check all scopes
+│   ├── merge-main/        # Sync feature branch with main
 │   ├── test-scope/        # Smart scoped test runner
 │   ├── docker-dev/        # Docker environment management
 │   ├── check-i18n/        # Internationalization validation
@@ -72,7 +73,7 @@ This directory contains all Claude Code configuration for the aihub-core monorep
     ├── mcp-langfuse.sh    # LLM observability (prompts, tracing, evaluations)
     ├── mcp-context7.sh    # Up-to-date library documentation lookup
     ├── mcp-playwright.sh  # Browser automation and UI debugging
-    ├── mcp-github.sh      # GitHub issues, PRs, code search (needs PAT, disabled)
+    ├── mcp-github.sh      # GitHub issues, PRs, code search (needs PAT)
     ├── mcp-postgres.sh    # Read-only PostgreSQL access (infrastructure DBs)
     ├── mcp-primevue.sh    # PrimeVue component library (props, events, slots, theming)
     ├── mcp-nuxt.sh        # Nuxt framework docs and guides (official remote)
@@ -83,21 +84,22 @@ This directory contains all Claude Code configuration for the aihub-core monorep
 
 ## Quick Reference
 
-### Skills (42 total)
+### Skills (43 total)
 
 | Category       | Skill                          | Description                                        |
 | -------------- | ------------------------------ | -------------------------------------------------- |
 | Workflow       | `/review-diff`                 | Pre-PR code review (diff analysis)                 |
-|                | `/create-pr`                   | Pre-PR validation and release readiness            |
+|                | `/create-pr`                   | Pre-PR validation orchestrator                     |
 |                | `/implement-feedback-from-pr`  | Apply PR feedback                                  |
 |                | `/plan-issue`                  | GitHub issue → implementation plan                 |
 |                | `/reflect`                     | Session retrospective → improve CLAUDE.md/skills   |
+|                | `/lint`                        | Format and lint all scopes                         |
+|                | `/merge-main`                  | Sync feature branch with main                      |
 |                | `/test-scope`                  | Scoped test runner                                 |
 | Docs           | `/update-doc`                  | Sync docs, CLAUDE.md, and skills with code         |
 |                | `/explain`                     | Analyze and explain code                           |
 |                | `/document-decision`           | Create ADRs                                        |
 |                | `/document-feature`            | Document features                                  |
-|                | `/document-solution`           | Edit solution concepts                             |
 | Scaffold       | `/scaffold-agent`              | New AI agent                                       |
 |                | `/scaffold-pipeline`           | New Dagster pipeline                               |
 |                | `/scaffold-process`            | New agentic process                                |

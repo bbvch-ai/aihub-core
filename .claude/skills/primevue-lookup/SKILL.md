@@ -1,7 +1,7 @@
 ---
 name: primevue-lookup
-description: Look up PrimeVue component docs, props, events, slots, and generate project-specific usage examples. Uses PrimeVue and Context7 MCP servers for up-to-date documentation. Use when user says "how do I use DataTable", "PrimeVue Dialog props", "what PrimeVue component for X", "show me how to use Tag", "PrimeVue examples", "which component for dropdowns", or "look up PrimeVue". Returns props/events tables, existing codebase usage, and a ready-to-use code example.
-allowed-tools: Read, Grep, Glob
+description: Look up PrimeVue component docs, props, events, slots, and generate project-specific usage examples. Uses PrimeVue and Context7 MCP servers for up-to-date documentation. Use when user says "how do I use DataTable", "PrimeVue Dialog props", "what PrimeVue component for X", "show me how to use Tag", "PrimeVue examples", "which component for dropdowns", or "look up PrimeVue". Do NOT use for scaffolding new Vue components (use scaffold-frontend-component), design system or theming questions (use design-system), or frontend code audits (use audit-frontend). Returns props/events tables, existing codebase usage, and a ready-to-use code example.
+allowed-tools: Read, Grep, Glob, mcp__primevue__get_component, mcp__primevue__get_component_props, mcp__primevue__get_component_events, mcp__primevue__get_component_slots, mcp__primevue__get_component_methods, mcp__primevue__get_component_pt, mcp__primevue__get_component_tokens, mcp__primevue__get_component_styles, mcp__primevue__get_component_import, mcp__primevue__search_components, mcp__primevue__suggest_component, mcp__primevue__generate_component_template, mcp__primevue__get_example, mcp__primevue__list_examples, mcp__primevue__find_by_prop, mcp__primevue__find_by_event, mcp__primevue__get_accessibility_info, mcp__primevue__get_related_components, mcp__context7__resolve-library-id, mcp__context7__query-docs
 ---
 
 # PrimeVue Component Lookup
@@ -11,15 +11,17 @@ Look up PrimeVue component documentation and generate project-specific usage exa
 
 ## Step 1: Find the Component
 
-1. If the user specified a component name (e.g., "DataTable", "Dialog"), use it directly.
-2. If the user described a use case (e.g., "sortable list", "confirmation popup"), determine the best PrimeVue
-   component.
-3. Use the **PrimeVue MCP server** to look up official component documentation:
-   - Props, events, slots, and their types
-   - Pass Through (PT) options for styling
-   - Accessibility features
-4. Also use the **Context7 MCP server** (`resolve-library-id` then `query-docs`) to fetch up-to-date PrimeVue
-   documentation and code examples.
+1. If the user specified a component name (e.g., "DataTable", "Dialog"), use `mcp__primevue__get_component` directly.
+2. If the user described a use case (e.g., "sortable list", "confirmation popup"), use
+   `mcp__primevue__suggest_component` to find the best match.
+3. Look up component details with these PrimeVue MCP tools:
+   - `mcp__primevue__get_component_props` — props with types and defaults
+   - `mcp__primevue__get_component_events` — events with payload types
+   - `mcp__primevue__get_component_slots` — available slots
+   - `mcp__primevue__get_component_pt` — Pass Through options for styling
+   - `mcp__primevue__get_accessibility_info` — accessibility features
+4. Use `mcp__context7__resolve-library-id` then `mcp__context7__query-docs` to fetch additional PrimeVue documentation
+   and code examples.
 
 ## Step 2: Check Existing Usage in Project
 
@@ -60,9 +62,11 @@ const value = ref<Type>(initialValue)
 ### Project-Specific Rules
 
 - **Auto-imported**: PrimeVue components are auto-imported by `@primevue/nuxt-module` -- no explicit imports needed
-- **FormKit-wrapped**: These components are excluded from PrimeVue auto-import and MUST come from FormKit: `InputText`,
-  `Textarea`, `Select`, `MultiSelect`, `InputNumber`, `DatePicker`, `Password`, `Checkbox`, `RadioButton`,
-  `ToggleSwitch`, `Listbox`, `Slider`, `Rating`
+- **FormKit-wrapped**: These components are excluded from PrimeVue auto-import and MUST come from FormKit:
+  `AutoComplete`, `CascadeSelect`, `Checkbox`, `Chip`, `ColorPicker`, `DatePicker`, `Editor`, `InputMask`,
+  `InputNumber`, `InputOtp`, `InputText`, `Knob`, `Listbox`, `MultiSelect`, `Password`, `RadioButton`, `Rating`,
+  `Select`, `SelectButton`, `Slider`, `Textarea`, `ToggleButton`, `ToggleSwitch`, `TreeSelect`
+- **Also excluded from auto-import** (not FormKit-wrapped, imported differently): `Button`, `Form`, `FormField`, `Chart`
 - **Tailwind only**: Style with Tailwind utility classes, not custom CSS
 - **i18n labels**: All user-visible text must use `$t('key.path')` or `t('key.path')`
 - **Dark mode**: Use `dark:` Tailwind variants for dark mode support
@@ -77,6 +81,13 @@ Provide the following in a structured format:
 4. **Slots** available for customization
 5. **Project-specific usage example** following all conventions above
 6. **Existing usage** -- file paths where this component is already used in the codebase
+
+## Step 6: Verify
+
+1. Confirm the component exists: `mcp__primevue__get_component` should return data
+2. If FormKit-wrapped, verify the example does NOT use a direct PrimeVue import
+3. Check that i18n keys used in the example exist in `aihub_web/aihub_web/i18n/locales/en.yaml`
+4. If referencing existing usage, confirm the file paths are current
 
 ## Examples
 

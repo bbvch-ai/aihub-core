@@ -1,120 +1,108 @@
 ---
 name: update-doc
-description: Synchronize documentation with code changes by reviewing affected READMEs, CLAUDE.md files, and skills. Use when user says 'update docs', 'sync documentation', 'fix README', 'docs are outdated', 'update the README', 'sync skills with code', or after any code change that affects documented behavior. Covers root README, scope READMEs, CLAUDE.md files, skills, and subdirectory docs.
+description: Synchronize documentation with code changes across the aihub-core monorepo. Reviews READMEs, CLAUDE.md files, skills, agents, and VitePress docs for staleness. Use when user says 'update docs', 'sync documentation', 'fix README', 'docs are outdated', 'update the README', 'sync skills with code', or after any code change that affects documented behavior. Do NOT use for writing new feature docs from scratch (use /document-feature) or creating ADRs (use /document-decision).
 allowed-tools: Read, Grep, Glob, Edit, Write, Bash
 ---
 
-# Update Documentation - Sync Docs, CLAUDE.md, and Skills with Code Changes
+# Update Documentation - Sync Docs with Code Changes
 
-Ensure all documentation, CLAUDE.md files, and skills accurately reflect current code. Finds stale content, updates
-incorrect information, and adds missing documentation.
+Sync all documentation across the aihub-core monorepo after code changes. Code is always ground truth — when docs and
+code disagree, fix the docs.
 
-## Steps
+For thorough, multi-scope documentation reviews (e.g., before a large PR), consider launching the `doc-sync` subagent
+instead — it runs in its own context window and produces a structured report.
 
-### 1. Survey Your Changes
+## Step 1: Survey Changes
 
 ```bash
-git diff main...HEAD
 git diff --name-only main...HEAD
+git diff --stat main...HEAD
 ```
 
-Determine: Which scopes were touched? New features or changed behavior? Changed patterns or conventions?
+Identify which scopes were touched and whether public APIs, patterns, or architecture changed.
 
-### 2. Update READMEs
+## Step 2: Identify Documentation Targets
 
-Read every README that could be affected:
+Documentation lives in 5 locations. Check each for staleness against your changes:
 
-- `/home/user/aihub-core/README.md` (project root)
-- Scope-level READMEs (e.g., `aihub_api/README.md`)
-- Subdirectory READMEs within modified scopes
+### 2a. README.md Files
 
-For each README, ask:
+- `README.md` — project root (setup, architecture overview)
+- `{scope}/README.md` — scope-level (e.g., `aihub_api/README.md`, `aihub_agent/README.md`)
+- Subdirectory READMEs within modified scopes (e.g., `aihub_lib/aihub_lib/auth/README.md`)
 
-- **Is it now wrong?** Changed signatures, workflows, config, patterns?
-- **What is missing?** Gotchas, dependencies, setup steps that would have helped?
-- **Does it conflict with reality?** Code is ALWAYS ground truth -- fix the README.
+### 2b. CLAUDE.md Files
 
-### 3. Update CLAUDE.md Files
+- `CLAUDE.md` — root (conventions, tooling, commands, access points, quick reference tables)
+- `{scope}/CLAUDE.md` — scope-level (folder structure, patterns, key classes, essential files)
 
-Check if changes affect AI assistant context:
-
-- **Root `CLAUDE.md`**: Changed conventions, new tools, new commands, new access points
-- **Scope `CLAUDE.md`**: Changed architecture, new patterns, renamed files, new directories
-- **File paths**: If files were moved or renamed, update all path references in CLAUDE.md files
-
-### 4. Update Skills
-
-Check if changes affect any skills in `.claude/skills/`:
-
-- **Scaffold skills**: If the pattern for creating new components changed, update the scaffold template
-- **Debug skills**: If error messages, file locations, or diagnostic steps changed, update them
-- **Reference skills**: If API patterns, event structures, or configuration changed, update references
-- **File paths in skills**: If referenced files were moved or renamed, update the skill
-
-Search for affected skills:
+### 2c. Skills (`.claude/skills/*/SKILL.md`)
 
 ```bash
-# Find skills that reference modified files
+# Find skills that reference any modified file
 git diff --name-only main...HEAD | while read f; do
-  grep -rl "$(basename $f)" .claude/skills/ 2>/dev/null
+  grep -rl "$(basename "$f")" .claude/skills/ 2>/dev/null
 done | sort -u
 ```
 
-### 5. Fix Inaccurate Documentation
+Check scaffold skills if component patterns changed, debug skills if error paths changed, reference skills if APIs or
+events changed.
 
-Update incorrect sections to match code. Common targets:
+### 2d. Agents (`.claude/agents/*.md`)
 
-- API endpoints and parameters
-- Configuration options and defaults
-- Workflow steps and prerequisites
-- File paths and directory structures
-- Code patterns and examples in skills
+```bash
+# Find agents that reference modified paths
+git diff --name-only main...HEAD | while read f; do
+  grep -rl "$(basename "$f")" .claude/agents/ 2>/dev/null
+done | sort -u
+```
 
-### 6. Add Missing Documentation
+### 2e. VitePress Docs (`aihub_doc/docs/**/index.en.md`)
 
-- **New features**: what it does, how to use it, config options, limitations
-- **Discovered knowledge**: setup steps, integration points, pitfalls
+- `aihub_doc/docs/2_platform/` — platform architecture, services, deployment
+- `aihub_doc/docs/3_sdk/` — SDK patterns, agent/pipeline/process building
+- `aihub_doc/docs/4_ecosystem/` — contributing guidelines, AI tooling
+- `aihub_doc/docs/5_references/` — API references, troubleshooting
 
-### 7. Create New README Files (If Needed)
+**VitePress rules**:
 
-**Create when**: new subdirectories with multiple files, complex features, standalone components.
+- Only edit `index.en.md` — never edit `index.de.md` (auto-translated)
+- `docs/6_code_deep_dive/` is auto-synced from README files via `sync-docs.sh` — update the source README, not the
+  synced copy
 
-**Do NOT create when**: folder has very few files, code is self-explanatory, docstrings are sufficient.
+## Step 3: Review and Fix
 
-## Writing Style
+For each documentation target, read the doc file and the code it describes. Ask:
 
-- Be VERY concise but complete -- every word should add value
-- Write for your future self -- assume you will forget everything
-- Include "why" not just "what" -- context matters
-- DO NOT copy over code (falls out of sync quickly)
-- DO NOT include import/usage code blocks (too low-level)
-- DO NOT create a README just for one file
+- **Wrong?** Outdated paths, renamed classes, changed APIs, removed features, wrong config
+- **Missing?** New features undocumented, new patterns not captured, new files not listed
+- **Redundant?** Describes deleted code, references removed files, covers obsolete patterns
 
-## Examples
+Fix what you find. Preserve each file's existing style and level of detail. Don't inline code — reference file paths
+instead.
 
-**Typical invocation**: `/update-doc` after completing a feature or refactor
+## Step 4: Verify No Stale Paths Remain
 
-**Scope of changes**: If you modified `aihub_api/aihub_api/controller/agent.py`, check:
+```bash
+# Spot-check that paths referenced in changed docs still exist
+grep -ohE '["`][a-zA-Z_./]+/[a-zA-Z_.]+["`]' {changed-doc-files} | tr -d '"`' | while read p; do
+  [ ! -e "$p" ] && echo "STALE: $p"
+done
+```
 
-- `aihub_api/README.md` for API endpoint docs
-- `aihub_api/CLAUDE.md` for AI assistant context
-- Root `README.md` for any high-level changes
-- `.claude/skills/scaffold-api-endpoint/SKILL.md` if the controller pattern changed
+## Example
 
-## Troubleshooting
+If you modified `aihub_api/aihub_api/routes/agent/AgentController.py`, check:
 
-| Problem                                    | Solution                                                                       |
-| ------------------------------------------ | ------------------------------------------------------------------------------ |
-| Unsure which docs to update                | Run `git diff --name-only main...HEAD` and check for docs in those directories |
-| README references removed code             | Delete or rewrite the section -- do not leave stale references                 |
-| Skill references moved file                | Update the file path in the skill                                              |
-| CLAUDE.md has stale architecture           | Rewrite the section to match current code structure                            |
-| No README exists for new complex directory | Create one following the writing style above                                   |
+- `aihub_api/README.md` — API endpoint docs
+- `aihub_api/CLAUDE.md` — route patterns, key classes
+- `.claude/skills/scaffold-api-endpoint/SKILL.md` — controller pattern template
+- `.claude/agents/architect.md` — if it references the agent route structure
 
 ## Done When
 
-- All READMEs in affected scopes are accurate
-- CLAUDE.md files reflect current architecture and patterns
-- Skills reference correct file paths and patterns
-- No stale references to old code, endpoints, or config
-- New features have appropriate documentation
+- All READMEs in affected scopes match current code
+- CLAUDE.md files reflect current architecture, paths, and patterns
+- Skills and agents reference correct file paths and patterns
+- VitePress docs updated (only `index.en.md`, never `index.de.md`)
+- No stale path references remain

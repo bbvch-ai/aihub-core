@@ -1,12 +1,7 @@
 ---
 name: debug-frontend
-description: >-
-  Debug the Nuxt 3 admin UI using Playwright MCP for visual inspection, console error analysis,
-  and network request tracing. Use when user says 'UI is broken', 'page not loading', 'frontend
-  bug', 'console errors', 'API call failing in UI', 'component not rendering', 'blank page',
-  'verify my UI changes', or 'check the admin interface'. Captures screenshots, DOM snapshots,
-  and network traces.
-allowed-tools: Read, Bash, Grep, Glob
+description: Debug the Nuxt 3 admin UI using Playwright MCP for visual inspection, console error analysis, and network request tracing. Use when user says 'UI is broken', 'page not loading', 'frontend bug', 'console errors', 'API call failing in UI', 'component not rendering', 'blank page', 'verify my UI changes', or 'check the admin interface'. Do NOT use for static code quality audits (use audit-frontend), backend agent debugging (use debug-agent), or bot platform issues (use debug-bot).
+allowed-tools: Read, Bash, Grep, Glob, mcp__playwright__browser_navigate, mcp__playwright__browser_snapshot, mcp__playwright__browser_take_screenshot, mcp__playwright__browser_console_messages, mcp__playwright__browser_network_requests, mcp__playwright__browser_click, mcp__playwright__browser_type, mcp__playwright__browser_fill_form, mcp__playwright__browser_select_option, mcp__playwright__browser_press_key, mcp__playwright__browser_evaluate
 ---
 
 # Frontend Debugging Assistant
@@ -18,7 +13,7 @@ Debug the Nuxt 3 admin interface visually. Issue description or page URL via `$A
 The admin UI must be running at http://localhost:3000. If not running:
 
 ```bash
-cd /home/user/aihub-core/aihub_web/aihub_web && pnpm dev
+cd aihub_web/aihub_web && pnpm dev
 ```
 
 ## Step 1: Navigate to the Page
@@ -94,9 +89,9 @@ Reproduce the issue step by step and capture screenshots at each stage.
 
 Once the issue is identified:
 
-1. Find the page component: `aihub_web/aihub_web/pages/service/<resource>/`
-2. Find composables: `aihub_web/aihub_web/composables/<resource>/`
-3. Find child components: `aihub_web/aihub_web/components/<Resource>/`
+1. Find the page component: `aihub_web/aihub_web/pages/service/{resource}/`
+2. Find composables: `aihub_web/aihub_web/composables/{resource}/`
+3. Find child components: `aihub_web/aihub_web/components/{Resource}/`
 4. Check SDK types: `aihub_web/aihub_web/sdk/client/`
 
 ## Step 6: Report
@@ -106,6 +101,15 @@ Provide a structured report with:
 - **What was observed**: Screenshot + console errors + failed network requests
 - **Root cause**: Which file and line is responsible
 - **Suggested fix**: Specific code change to resolve the issue
+
+## Step 7: Verify Fix
+
+After applying the suggested fix, re-run Steps 1-2 to confirm:
+
+1. Navigate to the same page with `browser_navigate`
+2. Take a new screenshot with `browser_take_screenshot`
+3. Check `browser_console_messages` for remaining errors
+4. Verify `browser_network_requests` shows successful API calls
 
 ## Examples
 

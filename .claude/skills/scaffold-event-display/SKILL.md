@@ -1,13 +1,7 @@
 ---
 name: scaffold-event-display
-description: >-
-  Create a new event display component for the agent event timeline. Generates the Vue component
-  with EventDisplayBase wrapper and registers it in the event component resolver. Use when user
-  says 'create event display', 'scaffold event component', 'add event to timeline', 'new agent
-  event UI', 'display a new event type', or 'register event display component'. Takes an event
-  name as argument.
-
-allowed-tools: Read, Write, Edit, Grep, Glob
+description: Create a new event display component for the agent event timeline. Generates the Vue component with EventDisplayBase wrapper and registers it in the event component resolver (useEventComponent.ts). Use when user says 'create event display', 'scaffold event component', 'add event to timeline', 'new agent event UI', 'display a new event type', or 'register event display component'. Do NOT use for general Vue components (use scaffold-frontend-component), backend event class definitions (use nats-events reference), or full page scaffolding (use scaffold-frontend-page). Takes an event name as argument.
+allowed-tools: Read, Write, Edit, Grep, Glob, mcp__context7__resolve-library-id, mcp__context7__query-docs
 ---
 
 # Scaffold a New Event Display Component
@@ -16,7 +10,7 @@ Create a display component for a new agent event type. The event name should be 
 
 ## Before You Start
 
-Read the frontend scope guide: `/home/user/aihub-core/aihub_web/CLAUDE.md`
+Read the frontend scope guide: `aihub_web/CLAUDE.md`
 
 Study existing event display components:
 
@@ -29,7 +23,7 @@ Check the event component resolver: `aihub_web/aihub_web/composables/event/useEv
 
 ## Step 1: Identify the Event Type
 
-Check the backend event definition in `aihub_lib/aihub_lib/events/` to understand:
+Check the backend event definition in `aihub_lib/aihub_lib/nats/events/` to understand:
 
 - Event class name (e.g., `MyNewEvent`)
 - Fields available on the event
@@ -39,7 +33,7 @@ Also check the SDK types in `aihub_web/aihub_web/sdk/client/` for the TypeScript
 
 ## Step 2: Create the Component
 
-Create `aihub_web/aihub_web/components/Event/Display/<EventName>Event.vue`:
+Create `aihub_web/aihub_web/components/Event/Display/{EventName}Event.vue`:
 
 ```vue
 <template>
@@ -111,6 +105,14 @@ Browse icons at https://icon-sets.iconify.design/. The project uses these icon s
 
 Match the icon to the event's semantic meaning (e.g., `mynaui:tool` for tools, `hugeicons:brain` for LLM).
 
+## Step 5: Verify
+
+1. Confirm the component file exists at `aihub_web/aihub_web/components/Event/Display/{EventName}Event.vue`
+2. Confirm `useEventComponent.ts` has both the `#components` import and the mapping entry for the new event
+3. Verify the component wraps content in `EventDisplayBase` with `event`, `thread`, and `icon` props
+4. Verify props use the intersection type pattern: `ContextualizedAgentEvent & { event: {EventType} }`
+5. Verify SDK types exist for the event — if not, warn user to run `/generate-sdk`
+
 ## Examples
 
 **Typical invocation**: `/scaffold-event-display ToolCall`
@@ -132,7 +134,8 @@ Match the icon to the event's semantic meaning (e.g., `mynaui:tool` for tools, `
 
 ## Key Conventions
 
-- **Props typing**: Always use `ContextualizedAgentEvent & { event: <SpecificType> }` for type narrowing
+- **Props typing**: Always use `ContextualizedAgentEvent & { event: {SpecificType} }` for type narrowing (see
+  `ThoughtEvent.vue` for example)
 - **Tailwind only**: No custom CSS (exception: Base.vue has scoped styles for PrimeVue overrides)
 - **PrimeVue components**: Use `InputText`, `Button`, `DataTable`, `Tag` etc. for data display
 - **No i18n needed**: Event display names come from the backend `event_display_name` field

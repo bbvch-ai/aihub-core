@@ -1,6 +1,6 @@
 ---
 name: test-scope
-description: Detect affected scopes from git changes and run their tests in dependency order. Use when user says 'run tests', 'test my changes', 'check what broke', 'verify scopes', 'test affected packages', or 'make sure tests pass'. Supports explicit scope names or auto-detection from git diff. Reports PASS/FAIL per scope.
+description: Detect affected scopes from git changes and run their tests in dependency order. Use when user says 'run tests', 'test my changes', 'check what broke', 'verify scopes', 'test affected packages', or 'make sure tests pass'. Supports explicit scope names or auto-detection from git diff. Reports PASS/FAIL per scope. Do NOT use for linting or formatting (use /lint), full PR preparation (use /create-pr), or debugging test failures (use /debug-agent or /debug-pipeline).
 allowed-tools: Bash, Read, Grep, Glob
 ---
 
@@ -47,7 +47,7 @@ Execute `make test` in each affected scope's directory, following this order:
 4. `aihub_process` (depends on agent)
 5. `aihub_api`
 6. `aihub_bot`
-7. `aihub_web` — run `pnpm lint` in `aihub_web/aihub_web/` (no pytest for frontend)
+7. `aihub_web` — run `make -C aihub_web pr-ready` (ESLint, no pytest for frontend)
 
 Skip scopes not in the affected set. If a scope fails, continue running remaining scopes to collect all failures.
 
@@ -71,7 +71,7 @@ Produce a summary table:
 ## Troubleshooting
 
 - **"No changes detected"**: Ensure you have uncommitted changes. Run `git status` to verify.
-- **"make test fails with ModuleNotFoundError"**: The Poetry virtualenv may not be active. Run `poetry install` in the
-  scope directory first.
-- **No root `make test` exists**: Each scope must be tested individually from its own directory.
-- **Frontend scope**: `aihub_web` uses `pnpm lint`, not `make test`. Run from `aihub_web/aihub_web/`.
+- **"make test fails with ModuleNotFoundError"**: Dependencies may not be installed. Run `uv sync --all-packages` from
+  the workspace root.
+- **No root `make test` exists**: Each scope must be tested individually via `make -C <scope> test`.
+- **Frontend scope**: `aihub_web` has no pytest — `make -C aihub_web pr-ready` runs ESLint instead.
