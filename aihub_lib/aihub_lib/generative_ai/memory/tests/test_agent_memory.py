@@ -111,9 +111,9 @@ class TestAgentMemory:
 
         # Verify that EITHER memories OR relations were extracted
         # (Dual architecture: vector memories OR graph relationships)
-        assert (
-            len(memory_added.results) > 0 or len(memory_added.relations.added_entities) > 0
-        ), "Memory extraction should produce either vector memories (results) or graph relationships (relations)"
+        assert len(memory_added.results) > 0 or len(memory_added.relations.added_entities) > 0, (
+            "Memory extraction should produce either vector memories (results) or graph relationships (relations)"
+        )
 
         # Verify metadata fields are set
         assert memory_added.user_id == "test_user_memory_integration"
@@ -200,9 +200,9 @@ class TestAgentMemory:
 
         # Verify that EITHER memories OR relations were extracted
         # (Dual architecture: vector memories OR graph relationships)
-        assert (
-            len(memory_added.results) > 0 or len(memory_added.relations.added_entities) > 0
-        ), "Memory extraction should produce either vector memories (results) or graph relationships (relations)"
+        assert len(memory_added.results) > 0 or len(memory_added.relations.added_entities) > 0, (
+            "Memory extraction should produce either vector memories (results) or graph relationships (relations)"
+        )
 
         # Verify org scoping
         assert memory_added.owner_id == "ACME Corp"

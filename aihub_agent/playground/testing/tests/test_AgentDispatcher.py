@@ -324,7 +324,9 @@ class TestAgentDispatcherHandleEvent:
         mock_tracer.clear_run = Mock(return_value=None)
         agent_dispatcher.agent_run_tracer = mock_tracer
 
-        with (patch("aihub_lib.nats.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle,):
+        with (
+            patch("aihub_lib.nats.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle,
+        ):
             mock_base_handle.return_value = None
 
             # Act
@@ -427,7 +429,9 @@ class TestAgentDispatcherHandleEvent:
         control_event = ControlEvent()
         agent_dispatcher.agent.get_steps_waiting_for_event = Mock(return_value=[])
 
-        with (patch("aihub_lib.nats.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle,):
+        with (
+            patch("aihub_lib.nats.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle,
+        ):
             mock_base_handle.return_value = None
 
             # Act
@@ -468,7 +472,9 @@ class TestAgentDispatcherHandleEvent:
         mock_tracer.trace_run_start = AsyncMock(return_value=None)
         agent_dispatcher.agent_run_tracer = mock_tracer
 
-        with (patch("aihub_lib.nats.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle,):
+        with (
+            patch("aihub_lib.nats.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle,
+        ):
             mock_base_handle.return_value = None
 
             # Act
@@ -505,7 +511,9 @@ class TestAgentDispatcherStepExecution:
         mock_tracer.trace_run_start = AsyncMock(return_value=None)
         agent_dispatcher.agent_run_tracer = mock_tracer
 
-        with (patch("aihub_lib.nats.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle,):
+        with (
+            patch("aihub_lib.nats.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle,
+        ):
             mock_base_handle.return_value = None
 
             # Act

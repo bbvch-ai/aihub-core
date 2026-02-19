@@ -52,6 +52,6 @@ async def human_b_work_with_payload(process_runner: ProcessTestRunner, payload_a
 async def verify_process_stop_event(process_runner: ProcessTestRunner, expected_payload: str):
     event = await process_runner.wait_for_event(CustomProcessStopEvent, timeout=3)
     assert isinstance(event, CustomProcessStopEvent), f"Expected CustomProcessStopEvent, got {type(event)}"
-    assert (
-        event.payload == expected_payload
-    ), f"CustomProcessStopEvent payload mismatch. Expected: '{expected_payload}', Got: '{event.payload}'"
+    assert event.payload == expected_payload, (
+        f"CustomProcessStopEvent payload mismatch. Expected: '{expected_payload}', Got: '{event.payload}'"
+    )

@@ -218,9 +218,9 @@ def _(agent_runner: AgentTestRunner, count: int):
     """Check that RetrieveOrganizationMemoryEvent has expected number of memories."""
     event = agent_runner.get_event_of_class(RetrieveOrganizationMemoryEvent)
     assert event is not None, "RetrieveOrganizationMemoryEvent not found"
-    assert (
-        len(event.memories) >= count or len(event.relations) >= count
-    ), f"Expected {count}+ memories or relations, got {len(event.memories)} / {len(event.relations)}"
+    assert len(event.memories) >= count or len(event.relations) >= count, (
+        f"Expected {count}+ memories or relations, got {len(event.memories)} / {len(event.relations)}"
+    )
 
 
 @then(parsers.parse('the memory content contains "{text}"'))

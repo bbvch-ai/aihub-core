@@ -50,7 +50,8 @@ def no_context_prompt():
 
 @pytest.fixture
 def custom_prompt():
-    return LocaleString(en="""Custom prompt: {% for block in context_blocks %}
+    return LocaleString(
+        en="""Custom prompt: {% for block in context_blocks %}
 {% if block.block_type == 'text' %}
 {{ block.text }}
 {% endif %}
@@ -58,7 +59,8 @@ def custom_prompt():
 {{ block.url.__str__() | image}}
 {% endif %}
 {% endfor %}
-        """)
+        """
+    )
 
 
 @given("a locale handler", target_fixture="the_locale_handler")
