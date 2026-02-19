@@ -97,7 +97,7 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "black", extras = ["jupyter"], specifier = ">=25.1.0" },
+    { name = "black", extras = ["jupyter"], specifier = ">=26.1.0" },
     { name = "matplotlib", specifier = ">=3.10.1" },
     { name = "mypy", specifier = ">=1.13.0" },
     { name = "pip-licenses", specifier = ">=5.0.0" },
@@ -188,7 +188,7 @@ requires-dist = [
 [package.metadata.requires-dev]
 dev = [
     { name = "asgi-lifespan", specifier = ">=2.1.0" },
-    { name = "black", extras = ["jupyter"], specifier = ">=25.1.0" },
+    { name = "black", extras = ["jupyter"], specifier = ">=26.1.0" },
     { name = "mypy", specifier = ">=1.13.0" },
     { name = "pip-licenses", specifier = ">=5.0.0" },
     { name = "pytest", specifier = ">=8.4.1" },
@@ -265,7 +265,7 @@ requires-dist = [
 [package.metadata.requires-dev]
 dev = [
     { name = "asgi-lifespan", specifier = ">=2.1.0" },
-    { name = "black", extras = ["jupyter"], specifier = ">=25.1.0" },
+    { name = "black", extras = ["jupyter"], specifier = ">=26.1.0" },
     { name = "mypy", specifier = ">=1.13.0" },
     { name = "pip-licenses", specifier = ">=5.0.0" },
     { name = "pytest", specifier = ">=8.4.1" },
@@ -413,7 +413,7 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "black", extras = ["jupyter"], specifier = ">=25.1.0" },
+    { name = "black", extras = ["jupyter"], specifier = ">=26.1.0" },
     { name = "matplotlib", specifier = ">=3.9.3" },
     { name = "mypy", specifier = ">=1.13.0" },
     { name = "pandas-stubs", specifier = ">=2.3.3.251201" },
@@ -462,7 +462,7 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "black", extras = ["jupyter"], specifier = ">=25.1.0" },
+    { name = "black", extras = ["jupyter"], specifier = ">=26.1.0" },
     { name = "huggingface-hub", extras = ["cli"], specifier = ">=0.34.4" },
     { name = "mdformat", specifier = ">=0.7.21" },
     { name = "mdformat-gfm", specifier = ">=0.4.1" },
@@ -573,7 +573,7 @@ requires-dist = [
 dev = [
     { name = "aihub-agent", editable = "aihub_agent" },
     { name = "asgi-lifespan", specifier = ">=2.1.0" },
-    { name = "black", extras = ["jupyter"], specifier = ">=25.1.0" },
+    { name = "black", extras = ["jupyter"], specifier = ">=26.1.0" },
     { name = "mypy", specifier = ">=1.13.0" },
     { name = "pip-licenses", specifier = ">=5.0.0" },
     { name = "pytest", specifier = ">=8.4.1" },
