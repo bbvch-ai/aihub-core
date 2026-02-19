@@ -4,7 +4,7 @@ FROM python:3.13-slim AS builder
 ARG AGENT=expert_rag_agent
 ARG VERSION
 
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+COPY --from=ghcr.io/astral-sh/uv:0.10.4 /uv /uvx /bin/
 
 ENV PYTHONUNBUFFERED=1 \
     UV_COMPILE_BYTECODE=1 \
@@ -29,7 +29,7 @@ COPY aihub_lib ./aihub_lib
 
 # Install dependencies with cache mount
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --locked --no-dev --package aihub-agent
+    uv sync --frozen --no-dev --package aihub-agent
 
 
 # Runtime stage
