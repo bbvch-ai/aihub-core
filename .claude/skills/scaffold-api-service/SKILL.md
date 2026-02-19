@@ -1,6 +1,6 @@
 ---
 name: scaffold-api-service
-description: Generate a new API service layer with stateless static methods, OpenTelemetry tracing, DTO conversion, pagination, and error handling. Use when user says "create service layer", "scaffold API service", "new service class", "add business logic layer", "generate service for X", or "build service between controller and entity".
+description: Generate a new API service layer with stateless static methods, OpenTelemetry tracing, DTO conversion, pagination, and error handling. Use when user says "create service layer", "scaffold API service", "new service class", "add business logic layer", "generate service for X", or "build service between controller and entity". Do NOT use for controller/endpoint scaffolding (use scaffold-api-endpoint), frontend SDK generation (use generate-sdk), or entity/repository scaffolding (use scaffold-api-repository).
 allowed-tools: Read, Write, Edit, Grep, Glob
 ---
 
@@ -10,7 +10,7 @@ Generate a service layer for a resource. The resource name should be provided vi
 
 ## Step 1: Read Reference Materials
 
-1. Read the API scope guide: `/home/user/aihub-core/aihub_api/CLAUDE.md`
+1. Read the API scope guide: `aihub_api/CLAUDE.md`
 2. Study these reference services:
    - CRUD: `aihub_api/aihub_api/routes/agent/AgentService.py`
    - Pagination: `aihub_api/aihub_api/routes/thread/ThreadService.py`
@@ -41,7 +41,7 @@ Services are the **business logic layer**. They:
 - Raise `HTTPException` for errors
 - Are stateless (all methods are `@staticmethod`)
 
-## Step 1: Create the Service
+## Step 2: Create the Service
 
 File: `aihub_api/aihub_api/routes/<resource>/<Resource>Service.py`
 
@@ -52,7 +52,9 @@ from mongoengine import DoesNotExist, NotUniqueError
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
-from aihub_lib.persistence.<resource>.<Resource>Entity import <Resource>Entity
+# Entity import path varies by domain — look up in aihub_lib/aihub_lib/persistence/
+# Examples: persistence/agents/AgentClassEntity.py, persistence/access/entities/RoleEntity.py
+from aihub_lib.persistence.<domain>.<Resource>Entity import <Resource>Entity
 
 from aihub_api.routes.<resource>.dto.Create<Resource>Request import Create<Resource>Request
 from aihub_api.routes.<resource>.dto.<Resource>DTO import <Resource>DTO
@@ -215,38 +217,25 @@ async def get_resource_with_stats(resource_id: str, t: LocaleHandler) -> Resourc
     return ResourceWithStatsDTO.from_entity_and_stats(entity, stats, t)
 ```
 
-### Pattern 5: Parallel Fetching
+### Pattern 5: Caching (ThreadService pattern)
 
-```python
-@staticmethod
-@trace_fn
-async def get_resource_detail(resource_id: str, t: LocaleHandler) -> DetailDTO:
-    # Fetch multiple related entities in parallel
-    entity, related_items, stats = await asyncio.gather(
-        ResourceEntity.async_get_by_id(resource_id),
-        RelatedEntity.async_get_for_resource(resource_id),
-        StatsEntity.async_get_for_resource(resource_id),
-    )
-    return DetailDTO.from_entities(entity, related_items, stats, t)
-```
-
-### Pattern 6: Caching Expensive Lookups
+Only use when profiling shows repeated DB queries. See `aihub_api/aihub_api/routes/thread/ThreadService.py`.
 
 ```python
 from cachetools import TTLCache, cached
 
 @staticmethod
 @cached(TTLCache(maxsize=128, ttl=60))
-def _fetch_cached_resource(resource_id: str, t: LocaleHandler) -> ResourceDTO | None:
+def _fetch_cached_resource(resource_id: str) -> ResourceDTO | None:
     """Cached lookup to avoid repeated DB queries."""
     try:
         entity = ResourceEntity.get_by_id(resource_id)
-        return ResourceDTO.from_entity(entity, t)
+        return ResourceDTO.from_entity(entity)
     except DoesNotExist:
         return None
 ```
 
-## Step 2: Create DTOs
+## Step 3: Create DTOs
 
 ### Response DTO
 
@@ -259,7 +248,8 @@ from datetime import datetime
 from pydantic import BaseModel, Field
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.persistence.<resource>.<Resource>Entity import <Resource>Entity
+# Look up actual entity path in aihub_lib/aihub_lib/persistence/
+from aihub_lib.persistence.<domain>.<Resource>Entity import <Resource>Entity
 
 
 class <Resource>DTO(BaseModel):
@@ -352,13 +342,21 @@ class Paginated<Resource>sResponse(PageDTO):
 5. **Validation in requests**: `Field(min_length=1, max_length=200, pattern=...)`
 6. **Inheritance for paginated**: Extend `PageDTO` (provides total, page, page_size, total_pages)
 
+## Step 4: Verify
+
+1. Confirm the service is importable:
+   `cd aihub_api && uv run python -c "from aihub_api.routes.<resource>.<Resource>Service import <Resource>Service"`
+2. Confirm the controller imports and calls the service (if controller already exists)
+3. Run tests: `cd aihub_api && make test`
+
 ## Key Conventions
 
-- **All methods `@staticmethod`**: Services are stateless
-- **All methods `@trace_fn`**: OpenTelemetry tracing
-- **All methods `async`**: Even if currently sync (future-proofing)
-- **Raise `HTTPException`**: For all error cases (404, 409, 400)
+- **All methods `@staticmethod`**: Services are stateless (see `RoleService`, `AgentService`)
+- **All methods `@trace_fn`**: OpenTelemetry tracing on every method
+- **`async` only when needed**: Use `async` for actual async I/O; sync otherwise (e.g., `RoleService` is all sync)
+- **Raise `HTTPException`**: For error cases (404, 409, 400), or let MongoEngine exceptions propagate
 - **Return DTOs**: Never return raw entities or dicts
-- **Accept `LocaleHandler`**: For i18n string extraction
-- **`DoesNotExist` / `NotUniqueError`**: MongoEngine exceptions to catch
+- **Accept `LocaleHandler`**: For i18n string extraction (skip if service has no localized fields, like `RoleService`)
+- **`DoesNotExist` / `NotUniqueError`**: MongoEngine exceptions to catch or let propagate
 - **No defensive try-catch**: Let unexpected errors propagate
+- **Entity paths vary**: Look up actual path in `aihub_lib/aihub_lib/persistence/` — no consistent naming convention

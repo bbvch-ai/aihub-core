@@ -1,11 +1,6 @@
 ---
 name: scaffold-api-repository
-description: >-
-  Generate a MongoEngine Document entity that combines schema definition with repository methods
-  (classmethods). Follows the Entity pattern used instead of separate repository classes. Use when
-  user says 'create an entity', 'scaffold a repository', 'add MongoDB model', 'new database entity',
-  'generate MongoEngine document', 'create persistence layer', or 'scaffold data model'. Takes a
-  resource name as argument.
+description: Generate a MongoEngine Document entity that combines schema definition with repository classmethods in aihub_lib/persistence/. Follows the Entity-as-repository pattern (no separate DAO/repository classes). Use when user says "create an entity", "scaffold a repository", "add MongoDB model", "new database entity", "generate MongoEngine document", "create persistence layer", or "scaffold data model". Do NOT use for service layer business logic (use scaffold-api-service), controller/endpoint scaffolding (use scaffold-api-endpoint), or event display components (use scaffold-event-display).
 allowed-tools: Read, Write, Edit, Grep, Glob
 ---
 
@@ -61,14 +56,13 @@ from mongoengine import (
     DateTimeField,
     DictField,
     Document,
-    DoesNotExist,
     EmbeddedDocumentField,
     ListField,
     StringField,
 )
 
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
-from aihub_lib.persistence.common.LocaleStringEntity import LocaleStringEntity
+from aihub_lib.persistence.i18n.LocaleStringEntity import LocaleStringEntity
 
 
 class <Resource>Entity(Document):
@@ -83,11 +77,10 @@ class <Resource>Entity(Document):
 
     meta = {
         "collection": "<resource>s",
-        "strict": False,
+        "strict": False,  # Commonly used — allows extra fields for forward compatibility
         "indexes": [
             {"fields": ["name"], "unique": True},
             {"fields": ["user_id"]},
-            {"fields": ["created_at"]},
         ],
     }
 
@@ -98,8 +91,10 @@ class <Resource>Entity(Document):
     user_id = StringField(required=True)
     status = StringField(required=True, default="active")
     config_data = DictField(default=dict)
-    created_at = DateTimeField(required=True, default=lambda: datetime.now(UTC))
-    updated_at = DateTimeField(required=True, default=lambda: datetime.now(UTC))
+    # Add created_at/updated_at only if temporal tracking is needed:
+    # created_at = DateTimeField(required=True, default=lambda: datetime.now(UTC))
+    # updated_at = DateTimeField(required=True, default=lambda: datetime.now(UTC))
+    # If using updated_at, override save() — see AgentConfigEntityDocument for the pattern.
 
     # ==================== Properties ====================
 
@@ -107,13 +102,6 @@ class <Resource>Entity(Document):
     def is_active(self) -> bool:
         """Check if the <resource> is currently active."""
         return self.status == "active"
-
-    # ==================== Instance Methods ====================
-
-    def save(self, *args, **kwargs) -> Self:
-        """Override save to update the updated_at timestamp."""
-        self.updated_at = datetime.now(UTC)
-        return super().save(*args, **kwargs)
 
     # ==================== Repository Methods (classmethods) ====================
 
@@ -192,55 +180,35 @@ class <Resource>Entity(Document):
         entity.delete()
 ```
 
-## MongoEngine Field Reference
+## MongoEngine Quick Reference
 
-### Basic Fields
+Common fields used in this codebase (see [MongoEngine docs](https://docs.mongoengine.org/) for full reference):
 
-| Field           | Usage         | Example                                                         |
-| --------------- | ------------- | --------------------------------------------------------------- |
-| `StringField`   | Text          | `name = StringField(required=True, unique=True)`                |
-| `IntField`      | Integer       | `count = IntField(default=0)`                                   |
-| `FloatField`    | Decimal       | `cost = FloatField(default=0.0)`                                |
-| `BooleanField`  | Boolean       | `active = BooleanField(default=True)`                           |
-| `DateTimeField` | Timestamp     | `created_at = DateTimeField(default=lambda: datetime.now(UTC))` |
-| `DictField`     | Flexible JSON | `config_data = DictField(default=dict)`                         |
+```python
+# Scalar fields
+name = StringField(required=True, unique=True)
+count = IntField(default=0)
+active = BooleanField(default=True)
+created_at = DateTimeField(default=lambda: datetime.now(UTC))
+config_data = DictField(default=dict)
 
-### Collection Fields
+# Collection / embedded fields
+tags = ListField(StringField())
+agents = ListField(EmbeddedDocumentField(AgentInstanceRef))
+name = EmbeddedDocumentField(LocaleStringEntity, required=True)
 
-| Field                                 | Usage            | Example                                          |
-| ------------------------------------- | ---------------- | ------------------------------------------------ |
-| `ListField(StringField())`            | String array     | `tags = ListField(StringField())`                |
-| `ListField(DictField())`              | Array of objects | `items = ListField(DictField())`                 |
-| `ListField(EmbeddedDocumentField(X))` | Typed array      | `users = ListField(EmbeddedDocumentField(User))` |
-
-### Embedded Documents
-
-| Field                      | Usage         | Example                                            |
-| -------------------------- | ------------- | -------------------------------------------------- |
-| `EmbeddedDocumentField(X)` | Nested object | `name = EmbeddedDocumentField(LocaleStringEntity)` |
-
-### Field Options
-
-| Option             | Purpose            | Example                                                         |
-| ------------------ | ------------------ | --------------------------------------------------------------- |
-| `required=True`    | Field must be set  | `name = StringField(required=True)`                             |
-| `unique=True`      | Unique constraint  | `email = StringField(unique=True)`                              |
-| `default=value`    | Default value      | `status = StringField(default="active")`                        |
-| `default=callable` | Default factory    | `created_at = DateTimeField(default=lambda: datetime.now(UTC))` |
-| `choices=(...)`    | Enum constraint    | `type = StringField(choices=("info", "warn", "error"))`         |
-| `null=True`        | Allow null         | `profile_image = StringField(null=True)`                        |
-| `primary_key=True` | Custom primary key | `id = StringField(primary_key=True)`                            |
+# Field options: required, unique, default, choices=(...), null=True
+```
 
 ## Meta Configuration
 
 ```python
 meta = {
     "collection": "<resource>s",          # MongoDB collection name
-    "strict": False,                       # Allow extra fields not in schema
+    "strict": False,                       # Commonly used — allows extra fields
     "indexes": [
         {"fields": ["name"], "unique": True},           # Unique index
         {"fields": ["user_id"]},                         # Simple index
-        {"fields": ["created_at"]},                      # Date index
         {"fields": ["user_id", "status"]},               # Compound index
         {"fields": ["-created_at"]},                     # Descending index
     ],
@@ -276,19 +244,6 @@ cls.objects(user_id=user_id).count()
 # Distinct
 cls.objects().distinct("status")
 ```
-
-### Filter Operators
-
-| Operator        | Meaning                   | Example                            |
-| --------------- | ------------------------- | ---------------------------------- |
-| `__exact`       | Exact match (default)     | `name=value`                       |
-| `__in`          | In list                   | `status__in=["active", "pending"]` |
-| `__ne`          | Not equal                 | `status__ne="deleted"`             |
-| `__gt`, `__gte` | Greater (or equal)        | `created_at__gte=cutoff_date`      |
-| `__lt`, `__lte` | Less (or equal)           | `cost__lt=100`                     |
-| `__contains`    | String contains           | `name__contains="test"`            |
-| `__icontains`   | Case-insensitive contains | `name__icontains="test"`           |
-| `__exists`      | Field exists              | `config__exists=True`              |
 
 ### Bulk Update Patterns
 
@@ -350,7 +305,7 @@ class ThreadEntity(Document):
 For multilingual text, use `LocaleStringEntity`:
 
 ```python
-from aihub_lib.persistence.common.LocaleStringEntity import LocaleStringEntity
+from aihub_lib.persistence.i18n.LocaleStringEntity import LocaleStringEntity
 
 class MyEntity(Document):
     name = EmbeddedDocumentField(LocaleStringEntity, required=True)
@@ -384,20 +339,40 @@ aihub_lib/aihub_lib/persistence/
 │       └── RoleEntity.py
 ├── agents/
 │   ├── AgentClassEntity.py
-│   └── AgentConfigEntityDocument.py
+│   ├── AgentConfigEntity.py
+│   ├── AgentConfigEntityDocument.py
+│   └── AgentConfigEntityEmbeddedDocument.py
+├── i18n/
+│   └── LocaleStringEntity.py
 ├── messaging/
 │   └── entities/
 │       ├── ThreadEntity.py
-│       └── PersistedAgentEventEntity.py
+│       ├── PersistedAgentEventEntity.py
+│       └── PersistedProcessEventEntity.py
 ├── notification/
 │   └── NotificationEntity.py
+├── process/
+│   ├── ProcessClassEntity.py
+│   ├── ProcessConfigEntity.py
+│   ├── ProcessConfigEntityDocument.py
+│   └── ProcessConfigEntityEmbeddedDocument.py
+├── rag/
+│   └── datalake/
+│       └── entities/
+│           ├── BucketEntity.py
+│           └── NamespaceEntity.py
 ├── user/
 │   └── UserEntity.py
-├── common/
-│   └── LocaleStringEntity.py
 └── <resource>/                  <-- NEW
     └── <Resource>Entity.py
 ```
+
+## Step 2: Verify
+
+1. Confirm the entity is importable:
+   `cd aihub_lib && uv run python -c "from aihub_lib.persistence.<resource>.<Resource>Entity import <Resource>Entity"`
+2. Confirm the service imports the entity (if service already exists)
+3. Run tests: `cd aihub_lib && make test`
 
 ## Examples
 
@@ -423,10 +398,10 @@ aihub_lib/aihub_lib/persistence/
 ## Key Conventions
 
 - **Entities go in `aihub_lib`**: They're shared across packages
-- **`meta["strict"] = False`**: Allow extra fields for forward compatibility
+- **`meta["strict"] = False`**: Commonly used to allow extra fields — check existing entities for precedent
 - **`@classmethod` for queries**: All data access is via class methods
 - **`@trace_fn` on all methods**: OpenTelemetry tracing
-- **`DoesNotExist` exceptions**: MongoEngine throws these — catch in services
-- **`save()` override**: Update `updated_at` timestamp automatically
+- **`DoesNotExist` exceptions**: MongoEngine throws these — catch in services, not in entities
+- **`save()` override**: Only for entities with `updated_at` — see `AgentConfigEntityDocument` for the pattern
 - **Indexes**: Always index fields used in queries
 - **No repository abstraction**: The Entity IS the repository

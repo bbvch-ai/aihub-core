@@ -136,6 +136,87 @@ otel_attributes = event.to_semantic_convention()
 custom `MyRetrieveEvent(ControlAndDisplayEvent)` gives you OpenInference spans for free. For choosing which base event
 to use when building agents, see `/scaffold-agent`.
 
+### Events as Flow Carriers
+
+Events serve two distinct purposes:
+
+1. **Data carriers:** Transporting values between steps
+2. **Flow carriers:** Controlling execution order independent of data
+
+A step may depend on an event solely to ensure execution ordering, without requiring any data from it:
+
+```python
+class PathA(Event):
+    pass  # No fields - pure flow control
+
+@step()
+async def handle_path_a(self, _: PathA, original: StartEvent) -> StopEvent:
+    # Underscore signals: "I need this event for flow control, not data"
+    process(original.data)
+    return StopEvent()
+```
+
+The `_: EventType` convention indicates dependency on an event's existence rather than its contents. This pattern is
+essential for:
+
+- **Conditional branching:** Different steps execute based on which event type was emitted
+- **Sequencing:** Ensuring step B waits for step A without needing A's output data
+- **Synchronization barriers:** Waiting for a signal that work completed
+
+**Formal definition:** An event *e* is a *pure flow carrier* if *fields(e) = ∅*. The execution constraint *R(s) ⊆ Eₜ*
+depends only on event type existence, not event content. Therefore, a step may depend on an event type *T* without
+accessing any value from instances of *T*.
+
+### Stop Event Constraint
+
+**Constraint:** No step may depend on `StopEvent` or any subclass as an input. When a `StopEvent` is emitted, the run
+terminates. Subsequent steps are not scheduled. No events may be published after `StopEvent`.
+
+```python
+# ILLEGAL: Depending on stop event
+@step()
+async def cleanup(self, stop: LLMStopEvent) -> CleanupEvent:
+    ...  # Never executes
+
+# CORRECT: Use non-stop event, then explicit stop
+@step()
+async def respond(self, event: Input) -> LLMEvent:  # Not LLMStopEvent
+    return await displayer.display_llm_stream(..., as_stop_step=False)
+
+@step()
+async def cleanup(self, llm: LLMEvent) -> CleanupEvent:
+    ...
+
+@step(precondition=cleanup_complete)
+async def finalize(self, cleanup: CleanupEvent) -> StopEvent:
+    return StopEvent()
+```
+
+### Choosing the Right Base Event
+
+| If your event represents...      | Inherit from                                                  | Benefits                                    |
+| -------------------------------- | ------------------------------------------------------------- | ------------------------------------------- |
+| Workflow start condition         | `StartEvent`                                                  | Recognized as entry point                   |
+| User message initiating workflow | `UserMessageEvent`                                            | Chat history, locale, user identity         |
+| Workflow termination             | `StopEvent`                                                   | Signals completion                          |
+| Error/failure                    | `ExceptionEvent`                                              | Error handling patterns                     |
+| LLM invocation result            | `LLMEvent`                                                    | Token counts, messages, OpenInference spans |
+| LLM terminal response            | `LLMStopEvent`                                                | Combines LLM data with workflow termination |
+| Document retrieval               | `RetrieverEvent`                                              | Retrieved nodes, OpenInference spans        |
+| Reranking operation              | `RerankerEvent`                                               | Input/output nodes, OpenInference spans     |
+| Embedding generation             | `EmbeddingEvent`                                              | Vectors, model info, OpenInference spans    |
+| Tool/function call               | `ToolEvent`                                                   | Tool name, parameters, OpenInference spans  |
+| Guardrail check                  | `GuardEvent`                                                  | Guard result, OpenInference spans           |
+| Human approval needed            | `HumanInTheLoopRequestEvent`                                  | Workflow suspension, UI prompt              |
+| Agent delegation                 | `AgentInTheLoopRequestEvent`                                  | Cross-agent communication                   |
+| Memory retrieval                 | `RetrieveUserMemoryEvent` / `RetrieveOrganizationMemoryEvent` | Memory search results                       |
+| Memory storage                   | `StoreUserMemoryEvent` / `StoreOrganizationMemoryEvent`       | Memory persistence confirmation             |
+| Streaming text chunk             | `ChunkEvent`                                                  | Real-time UI updates (display-only)         |
+| Agent thought/reasoning          | `ThoughtEvent`                                                | Transparency display (display-only)         |
+| Cost information                 | `LLMCostEvent`                                                | Token usage, pricing (display-only)         |
+| Generic workflow state           | `ControlAndDisplayEvent`                                      | Triggers dispatcher + UI display            |
+| Generic UI update                | `DisplayEvent`                                                | UI-only, no dispatcher overhead             |
+
 ### Extended Event Reference
 
 #### Guard Events
@@ -185,6 +266,14 @@ to use when building agents, see `/scaffold-agent`.
 | `AgentInTheLoopExceptionEvent`           | `ControlAndDisplayEvent`     | Delegated agent failure             |
 | `BotInTheLoopRequestEvent`               | `ControlEvent`               | Send message to Teams/Slack channel |
 | `BotInTheLoopResponseEvent`              | `ControlEvent`               | Response from Teams/Slack user      |
+
+**HITL Helper Classes** (not events, but workflow utilities):
+
+| Helper                       | UI Behavior                                           | Response Type |
+| ---------------------------- | ----------------------------------------------------- | ------------- |
+| `HumanInTheLoopInput`        | Popup dialog for free-form text entry                 | `str`         |
+| `HumanInTheLoopConfirmation` | Yes/No button selection                               | `bool`        |
+| `HumanInTheLoopChat`         | Message in chat stream (fallback for simple UIs/APIs) | `str`         |
 
 ### BaseEvent Core Fields
 
@@ -618,6 +707,9 @@ class BaseDispatcher(abc.ABC):
 3. **Execute** step → returns `WorkRequestEvent` (delegate to next entity)
 4. **Publish** request to appropriate entity
 
+> **Debugging**: For diagnosing dispatcher issues (steps executing multiple times, steps never firing, events after
+> stop), use `/debug-agent` which provides MCP-powered runtime inspection of NATS streams and MongoDB event stores.
+
 ---
 
 ## Event Flow: End-to-End
@@ -983,6 +1075,68 @@ class MyNCSubscriber(NCSubscriber[MyEvent]):
 | -------------------------------------------------------------------------------- | --------------------------- |
 | `aihub_doc/docs/2_platform/2_architecture/3_swiss_ai_agent_protocol/index.en.md` | Protocol spec               |
 | `deployment/templates/configs/nats-config.conf.j2`                               | NATS server config template |
+
+---
+
+## Formal Protocol Specification
+
+The Swiss AI Agent Protocol is governed by formal dispatch rules and invariants.
+
+### Dispatch Rules
+
+| Rule | Name                     | Statement                                                                                                                                                                             |
+| ---- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R1   | Minimum Viable Input     | A step executes the moment ALL required inputs are satisfied — not before, not after                                                                                                  |
+| R2   | Re-execution on New Data | If a step receives a new event matching a parameter it already consumed, it executes again with the new data                                                                          |
+| R3   | List Parameter Semantics | `list[EventType]` triggers on each new event arrival — a list of length 1 satisfies `list[T]`, causing re-execution on each new event. Use `FixedList(E, N)` for deterministic fan-in |
+| R4   | StopEvent Constraint     | `StopEvent` MUST be the last event emitted by a run — nothing may follow it                                                                                                           |
+| R5   | Precondition Override    | `@precondition` adds a callable guard checked AFTER R1 is satisfied — can delay or block execution                                                                                    |
+| R6   | Event Persistence        | Every `ControlEvent` is persisted in JetStream and replayed on dispatcher restart                                                                                                     |
+
+### Invariants
+
+- **Fundamental Invariant**: Steps declare data requirements, not execution order. Execution order is emergent from the
+  event dependency graph.
+- **Race Condition Theorem**: For a step with parameters `(A, B?)` where B is optional, arrival of A triggers immediate
+  execution (R1). If B arrives later, R2 triggers re-execution. Use `@precondition` or `ListOfSize` to synchronize.
+- **List Parameter Theorem**: A step *s* with parameter `p: list[T]` executes once for each event of type *T* that
+  arrives. A list of length ≥ 1 satisfies the type constraint `list[T]`. Each subsequent arrival of type *T* creates a
+  new state where the constraint is again satisfied with an updated list. **Corollary**: To execute exactly once after
+  *N* events of type *T*, use `FixedList(T, N)` when *N* is compile-time constant, or a precondition checking
+  `len(list) >= expected_count` when *N* is runtime-determined.
+- **Idempotency**: The dispatcher skips re-execution if a step was already called with the exact same input events
+  (tracked via `StepStore.was_called_with_events()`).
+
+### Formal Event Semantics
+
+**Control vs. Display Event Semantics:**
+
+An event *e* is a *control event* if `ControlEvent` ∈ *ancestors(e)*. An event is a *display event* if `DisplayEvent` ∈
+*ancestors(e)*.
+
+**Dispatcher Trigger Rule:** The dispatcher evaluates steps only when a control event is published. Display events are
+processed for UI/observability purposes but do not cause step re-evaluation.
+
+**Implication:** For high-frequency updates (streaming chunks, progress indicators), use `DisplayEvent` to avoid
+dispatcher overhead. Reserve `ControlEvent` (or `ControlAndDisplayEvent`) for state transitions that should trigger
+downstream steps.
+
+**Events as Flow Carriers (Formal):**
+
+An event *e* is a *pure flow carrier* if *fields(e) = ∅*. The execution constraint *R(s) ⊆ Eₜ* depends only on event
+type existence, not event content. Therefore, a step may depend on an event type *T* without accessing any value from
+instances of *T*. The expression `_: T` in a step signature declares a flow dependency without data dependency.
+
+### Validity Conditions
+
+A workflow *W* is valid iff:
+
+1. **Reachability:** ∀s ∈ S, ∃ execution path from StartEvent to s
+2. **Termination:** ∀ execution paths eventually reach StopEvent
+3. **No Stop Dependencies:** ∀s ∈ S, StopEvent ∉ R(s)
+4. **Acyclicity:** The event dependency graph is acyclic (bounded loops via RunContext are valid)
+
+Source: `aihub_lib/nats/dispatcher/BaseDispatcher.py`, `aihub_agent/dispatchers/AgentDispatcher.py`
 
 ---
 

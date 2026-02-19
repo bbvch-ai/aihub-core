@@ -1,14 +1,7 @@
 ---
 name: setup-bot-connection
-description: >-
-  End-to-end guide for setting up a new bot connection: Azure App Registration,
-  Bot Channels Registration, Teams/Slack channel configuration, PathEntity creation,
-  DevTunnel for local dev. Use when user says 'set up a bot', 'connect bot to Teams',
-  'connect bot to Slack', 'configure bot channel', 'create bot connection', 'DevTunnel setup',
-  'bot local development', or 'Azure bot registration'. Covers automated and manual setup.
-arguments:
-  - name: channel
-    description: Target channel or question (e.g., "Teams", "Slack", "local dev", "from scratch", "DevTunnel setup")
+description: End-to-end guide for setting up a new bot connection in aihub_bot. Covers Azure App Registration, Bot Channels Registration, Teams/Slack channel config, PathEntity creation in bot_paths collection, and DevTunnel for local dev. Use when user says "set up a bot", "connect bot to Teams", "connect bot to Slack", "configure bot channel", "create bot connection", "DevTunnel setup", "bot local development", or "Azure bot registration". Do NOT use for bot handler code scaffolding (use scaffold-bot-handler), bot architecture questions (use bot-framework), or agent debugging (use debug-agent).
+disable-model-invocation: true
 
 allowed-tools: Read, Grep, Glob, Bash
 ---
@@ -19,25 +12,12 @@ Set up a new bot connection. Target channel or question via `$ARGUMENTS`.
 
 ---
 
-## Architecture Overview
+## Before You Start
 
-The bot connects to messaging platforms via **Azure Bot Framework**:
+Read `aihub_bot/CLAUDE.md` for full architecture, routes, and essential files.
 
-```
-User (Teams/Slack/Web Chat)
-  ↓
-Azure Bot Service (cloud relay)
-  ↓  HTTPS POST (JWT-authenticated)
-Bot Server (aihub_bot, port 8001)
-  ↓  CloudAdapter.process(request, bot)
-BaseChatBot → CompletionHandler → NATS → Agent
-```
-
-**Key concept**: Each bot endpoint has a **PathEntity** in MongoDB (`bot_paths` collection) containing:
-
-- Azure AD credentials (APP_ID, APP_PASSWORD, APP_TENANTID)
-- System message template
-- Slack OAuth token (for Slack channels)
+**Key concept**: Each bot endpoint has a **PathEntity** in MongoDB (`bot_paths` collection) containing Azure AD
+credentials (APP_ID, APP_PASSWORD, APP_TENANTID), system message template, and Slack OAuth token.
 
 ---
 
@@ -231,20 +211,6 @@ poetry run python main.py
 
 ---
 
-## Bot Endpoint Patterns
-
-Each bot type has a specific URL pattern. The path must match the PathEntity in MongoDB:
-
-| Bot Type        | Endpoint Pattern                                                 |
-| --------------- | ---------------------------------------------------------------- |
-| Agent (JSON)    | `/api/v1/agent/chat/completions/{agent_class}/{agent_id}/json`   |
-| Agent (Stream)  | `/api/v1/agent/chat/completions/{agent_class}/{agent_id}/stream` |
-| OpenAI (JSON)   | `/api/v1/openai/chat/completions/json?model_name=<model>`        |
-| OpenAI (Stream) | `/api/v1/openai/chat/completions/stream?model_name=<model>`      |
-| Bot-in-the-Loop | `/api/v1/bot_in_the_loop/response`                               |
-
----
-
 ## System Message Templates
 
 System messages support placeholders:
@@ -274,20 +240,6 @@ After setup, verify:
 - [ ] NATS server is running (for agent-based bots)
 - [ ] MongoDB/FerretDB is running (for conversation persistence)
 - [ ] Test with Bot Framework Emulator or direct message in Teams/Slack
-
----
-
-## Key Files
-
-| File                                                       | Purpose                                         |
-| ---------------------------------------------------------- | ----------------------------------------------- |
-| `aihub_bot/aihub_bot/setup_azure_bot.py`                   | Automated Azure Bot provisioning                |
-| `aihub_bot/aihub_bot/add_path_entity.py`                   | CLI for adding PathEntity to MongoDB            |
-| `aihub_bot/aihub_bot/persistence/entities/PathEntity.py`   | PathEntity model (credentials + system message) |
-| `aihub_bot/aihub_bot/routes/RoutesService.py`              | CloudAdapter caching per path                   |
-| `aihub_bot/aihub_bot/routes/agent/AgentChatController.py`  | Agent chat endpoints                            |
-| `aihub_bot/aihub_bot/runners/lifetime/lifetime_manager.py` | NATS + MongoDB startup                          |
-| `aihub_bot/playground/testing/main.py`                     | Local test server                               |
 
 ---
 

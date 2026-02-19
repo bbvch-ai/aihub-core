@@ -1,25 +1,22 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
-
   "model": "opus",
-  "availableModels": ["opus", "sonnet"],
-
+  "availableModels": [
+    "opus",
+    "sonnet"
+  ],
   "attribution": {
     "commit": "",
     "pr": ""
   },
-
   "statusLine": {
     "type": "command",
-    "command": ".claude/statusline.sh",
+    "command": "bash .claude/statusline.sh",
     "padding": 0
   },
-
   "enableAllProjectMcpServers": true,
-
   "permissions": {
     "defaultMode": "acceptEdits",
-
     "deny": [
       "Bash(rm -rf /)",
       "Bash(rm -rf ~)",
@@ -33,7 +30,6 @@
       "Bash(chmod 777 *)",
       "Bash(mkfs*)",
       "Bash(dd if=*)",
-
       "Bash(git push --force)",
       "Bash(git push --force *)",
       "Bash(git push -f)",
@@ -46,40 +42,32 @@
       "Bash(git clean -fd *)",
       "Bash(git clean -fdx *)",
       "Bash(git checkout -- .)",
-
       "Bash(docker rm -f *)",
       "Bash(docker rmi -f *)",
       "Bash(docker system prune *)",
       "Bash(docker compose down -v *)",
       "Bash(docker compose -f docker-compose.prod* *)",
-
       "Bash(kubectl delete *)",
       "Bash(kubectl * --context prod*)",
       "Bash(kubectl * -n prod*)",
-
       "Bash(npm publish *)",
       "Bash(pnpm publish *)",
       "Bash(poetry publish *)",
       "Bash(pip install --break-system-packages *)",
-
       "Bash(curl * | sh)",
       "Bash(curl * | bash)",
       "Bash(wget * | sh)",
       "Bash(wget * | bash)",
-
       "Bash(sudo *)",
       "Bash(su *)",
-
       "Bash(ssh *)",
       "Bash(scp *)",
       "Bash(rsync * :*)",
-
       "Bash(> /dev/*)",
       "Bash(shutdown *)",
       "Bash(reboot *)",
       "Bash(kill -9 *)",
       "Bash(killall *)",
-
       "Read(./.env)",
       "Read(./.env.*)",
       "Read(./.env.local)",
@@ -92,7 +80,6 @@
       "Read(~/.netrc)",
       "Read(~/.npmrc)"
     ],
-
     "ask": [
       "Bash(git push *)",
       "Bash(git push)",
@@ -103,25 +90,20 @@
       "Bash(git checkout master)",
       "Bash(git switch main)",
       "Bash(git switch master)",
-
       "Bash(docker build *)",
       "Bash(docker compose up *)",
       "Bash(docker compose down *)",
       "Bash(docker exec *)",
-
       "Bash(gh release *)",
       "Bash(gh repo *)",
-
       "Bash(pip install *)",
       "Bash(poetry add *)",
       "Bash(npm install -g *)",
       "Bash(pnpm add -g *)",
-
       "Bash(curl *)",
       "Bash(wget *)",
       "Bash(npx *)"
     ],
-
     "allow": [
       "Read",
       "Edit",
@@ -130,7 +112,6 @@
       "WebFetch",
       "WebSearch",
       "mcp__*",
-
       "Bash(make *)",
       "Bash(poetry run *)",
       "Bash(poetry install)",
@@ -139,7 +120,6 @@
       "Bash(poetry show *)",
       "Bash(poetry env *)",
       "Bash(pnpm *)",
-
       "Bash(git status)",
       "Bash(git status *)",
       "Bash(git diff *)",
@@ -164,12 +144,10 @@
       "Bash(git ls-files *)",
       "Bash(git blame *)",
       "Bash(git cherry-pick *)",
-
       "Bash(gh pr *)",
       "Bash(gh issue *)",
       "Bash(gh api *)",
       "Bash(gh auth *)",
-
       "Bash(docker compose -f docker-compose.dev.yml *)",
       "Bash(docker compose ps *)",
       "Bash(docker compose logs *)",
@@ -179,7 +157,6 @@
       "Bash(docker images *)",
       "Bash(docker images)",
       "Bash(docker inspect *)",
-
       "Bash(cat *)",
       "Bash(head *)",
       "Bash(tail *)",
@@ -195,7 +172,6 @@
       "Bash(diff *)",
       "Bash(comm *)",
       "Bash(column *)",
-
       "Bash(ls *)",
       "Bash(ls)",
       "Bash(find *)",
@@ -212,7 +188,6 @@
       "Bash(which *)",
       "Bash(whereis *)",
       "Bash(type *)",
-
       "Bash(grep *)",
       "Bash(rg *)",
       "Bash(ag *)",
@@ -221,7 +196,6 @@
       "Bash(jq *)",
       "Bash(yq *)",
       "Bash(xargs *)",
-
       "Bash(echo *)",
       "Bash(printf *)",
       "Bash(date *)",
@@ -232,7 +206,6 @@
       "Bash(id)",
       "Bash(whoami)",
       "Bash(hostname)",
-
       "Bash(python *)",
       "Bash(python3 *)",
       "Bash(node *)",
@@ -240,7 +213,6 @@
       "Bash(ts-node *)",
       "Bash(deno *)",
       "Bash(bun *)",
-
       "Bash(pytest *)",
       "Bash(mypy *)",
       "Bash(ruff *)",
@@ -257,7 +229,6 @@
       "Bash(jest *)",
       "Bash(playwright *)",
       "Bash(cypress *)",
-
       "Bash(mkdir *)",
       "Bash(cp *)",
       "Bash(mv *)",
@@ -274,7 +245,6 @@
       "Bash(rm -rf coverage*)",
       "Bash(rm -f *.tmp)",
       "Bash(rm -f *.log)",
-
       "Bash(cd *)",
       "Bash(source *)",
       "Bash(export *)",
@@ -285,13 +255,11 @@
       "Bash(false)",
       "Bash(test *)",
       "Bash([ *)",
-
       "Bash(tar *)",
       "Bash(unzip *)",
       "Bash(gzip *)",
       "Bash(gunzip *)",
       "Bash(zip *)",
-
       "Bash(openssl * -text *)",
       "Bash(base64 *)",
       "Bash(md5sum *)",
@@ -299,7 +267,6 @@
       "Bash(sha1sum *)"
     ]
   },
-
   "hooks": {
     "SessionStart": [
       {
