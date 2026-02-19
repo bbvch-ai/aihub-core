@@ -8,7 +8,6 @@ from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.infrastructure.logging.logger import enable_logging
 
 from aihub_api.routes.agent.AgentController import AgentController
-from aihub_api.routes.docling.DoclingController import DoclingController
 from aihub_api.routes.evaluation.DatasetController import DatasetController
 from aihub_api.routes.event.EventController import EventController
 from aihub_api.routes.file.FileController import FileController
@@ -19,6 +18,7 @@ from aihub_api.routes.memory import OrganizationMemoryController, UserMemoryCont
 from aihub_api.routes.model.ModelController import ModelController
 from aihub_api.routes.notification.NotificationController import NotificationController
 from aihub_api.routes.openai.OpenaiController import OpenaiController
+from aihub_api.routes.parsing.ParsingController import ParsingController
 from aihub_api.routes.process.ProcessController import ProcessController
 from aihub_api.routes.role.RoleController import RoleController
 from aihub_api.routes.suite.SuiteController import SuiteController
@@ -114,7 +114,7 @@ runner.mount(
     .delete_organization_memory()
     .delete_all_organization_memories()
     .update_organization_memory(),
-    DoclingController(auth=auth).parse_document(),
+    ParsingController(auth=auth).parse_document(),
     TranslationController(auth=auth).translate(),
 )
 

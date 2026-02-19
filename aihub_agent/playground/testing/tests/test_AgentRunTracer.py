@@ -1,7 +1,6 @@
 """Tests for AgentRunTracer — OTEL + Langfuse span enrichment for agent runs."""
 
-import json
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from aihub_lib.nats.events import StartEvent
@@ -132,7 +131,7 @@ class TestTraceStepStart:
             mock_ctx.attach.return_value = "token"
 
             with pytest.raises(ValueError):
-                async with tracer.trace_step_start(topic, dummy_step, {}) as span:
+                async with tracer.trace_step_start(topic, dummy_step, {}) as _:
                     raise ValueError("step failed")
 
             mock_ctx.detach.assert_called_once_with("token")

@@ -35,4 +35,3 @@ source_remote=f"{azureblob.name}:my-container/path/to/folder"
 poetry run dagster dev -f pipeline.py
 ```
 
-Open http://localhost:3000

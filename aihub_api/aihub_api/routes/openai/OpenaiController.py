@@ -5,6 +5,7 @@ from typing import Annotated, Literal, Self
 from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
+from aihub_lib.auth.usage import UsageLimits, use_usage_limits
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.nats.distributor.dependencies.use_external_agent_event_distributor import (
@@ -213,6 +214,7 @@ class OpenaiController(Controller):
         async def chat_completion_with_assistants(
             completion_request: Annotated[ChatCompletionRequest, Body],
             nc: Annotated[NATS, Depends(use_nats)],
+            usage_limits: Annotated[UsageLimits, Depends(use_usage_limits)],
             external_agent_event_distributor: Annotated[
                 ExternalAgentEventDistributor, Depends(use_external_agent_event_distributor)
             ],
@@ -232,6 +234,7 @@ class OpenaiController(Controller):
                 chat_completion_request=completion_request,
                 user=user,
                 nc=nc,
+                usage_limits=usage_limits,
                 external_agent_event_distributor=external_agent_event_distributor,
                 t=t,
             )

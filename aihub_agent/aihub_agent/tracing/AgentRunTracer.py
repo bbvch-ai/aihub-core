@@ -14,6 +14,7 @@ from aihub_lib.infrastructure.opentelemetry.tracing.SmartTracer import get_trace
 from aihub_lib.nats.events import BaseEvent, StartEvent
 from aihub_lib.nats.topics.agents.AgentInstanceTopic import AgentInstanceTopic
 from aihub_lib.nats.workflow.annotations.custom_types.ListOfSize import ListOfSize
+from cachetools import TTLCache
 from openinference.semconv.trace import OpenInferenceMimeTypeValues, OpenInferenceSpanKindValues, SpanAttributes
 from opentelemetry import context, propagate, trace
 from opentelemetry.trace import Span, StatusCode, set_span_in_context

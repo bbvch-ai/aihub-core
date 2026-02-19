@@ -1,14 +1,15 @@
 from enum import StrEnum
 from typing import Annotated
 
-from aihub_lib.generative_ai.document.loaders.DoclingLoader import DoclingLoader
 from aihub_lib.generative_ai.document.loaders.DocumentIntelligenceLoader import DocumentIntelligenceLoader
 from aihub_lib.generative_ai.document.loaders.ImageLoader import ImageLoader
+from aihub_lib.generative_ai.document.loaders.MarkItDownLoader import MarkItDownLoader
+from aihub_lib.generative_ai.document.loaders.MineruLoader import MineruLoader
 from aihub_lib.generative_ai.document.loaders.RawLoader import RawLoader
 from aihub_lib.infrastructure.azure_cognitive_services.AzureDocumentIntelligenceSettings import (
     AzureDocumentIntelligenceSettings,
 )
-from aihub_lib.infrastructure.docling.DoclingSettings import DoclingSettings
+from aihub_lib.infrastructure.mineru.MineruSettings import MineruSettings
 from dagster import ConfigurableResource
 from llama_index.core.readers.base import BaseReader
 from llama_index.readers.file import EpubReader, IPYNBReader, RTFReader
@@ -18,7 +19,7 @@ from pydantic import Field
 class LoaderType(StrEnum):
     """Enum for document loader types."""
 
-    DOCLING = "docling"
+    MINERU = "mineru"
     DOCUMENT_INTELLIGENCE = "document_intelligence"
 
 
@@ -29,12 +30,11 @@ class DocumentParserResource(ConfigurableResource):
     Note that this resource specifies a list of commonly used document parsers. If you have different requirements,
     either make this resource configurable or create a new resource with your specific parsers and decision logic.
 
-    The document parsers for DoclingLoader and DocumentIntelligenceLoader can be configured through environment
-    variables in their configs.
+    The document parsers can be configured through environment variables in their respective settings classes.
 
     You can specify which loader to use through the `loader_type` parameter:
-    - DOCLING: Use only DoclingLoader (default)
-    - DOCUMENT_INTELLIGENCE: Use only DocumentIntelligenceLoader
+    - MINERU: Use MineruLoader for PDF/images and MarkItDownLoader for Office docs (default)
+    - DOCUMENT_INTELLIGENCE: Use Azure DocumentIntelligenceLoader
 
     Example usage:
 
@@ -59,7 +59,7 @@ class DocumentParserResource(ConfigurableResource):
         defs = Definitions(
             assets=[asset1],
             resources={
-                "document_parser": DocumentParserResource(loader_type=LoaderType.DOCLING),
+                "document_parser": DocumentParserResource(loader_type=LoaderType.MINERU),
                 "data_lake_file_system": data_lake_file_system,
             },
         )
@@ -68,33 +68,40 @@ class DocumentParserResource(ConfigurableResource):
     loader_type: Annotated[
         LoaderType,
         Field(
-            description="Specifies which document loader to use. Options: DOCLING, DOCUMENT_INTELLIGENCE",
+            description="Specifies which document loader to use. Options: MINERU (default), DOCUMENT_INTELLIGENCE",
         ),
-    ] = LoaderType.DOCLING
+    ] = LoaderType.MINERU
 
     include_images: Annotated[
         bool, Field(default=True, description="Specifies if images should be embedded into the documents and nodes.")
     ] = True
 
-    _base_readers = {
+    _base_readers: dict[type[BaseReader], list[str]] = {
         EpubReader: ["epub"],
         IPYNBReader: ["ipynb"],
         RawLoader: ["txt", "md"],
         RTFReader: ["rtf"],
-        ImageLoader: ["jpg", "jpeg", "png", "gif", "bmp", "tiff", "webp", "tif", "heif"],
     }
 
     def _get_readers_map(self) -> dict[type[BaseReader], list[str]]:
         """
         Get the readers map based on the configured loader type.
+
+        Note: Image extensions are handled by the document loaders (MinerU),
+        not by ImageLoader, to ensure consistent parsing and image extraction.
         """
         readers_map = self._base_readers.copy()
 
-        if self.loader_type == LoaderType.DOCLING:
-            readers_map[DoclingLoader] = DoclingSettings().EXTENSIONS
+        if self.loader_type == LoaderType.MINERU:
+            # MinerU handles PDF and images
+            readers_map[MineruLoader] = MineruSettings().EXTENSIONS
+            # MarkItDown handles Office documents
+            readers_map[MarkItDownLoader] = MarkItDownLoader.SUPPORTED_EXTENSIONS
 
         if self.loader_type == LoaderType.DOCUMENT_INTELLIGENCE:
             readers_map[DocumentIntelligenceLoader] = AzureDocumentIntelligenceSettings().EXTENSIONS
+            # Fallback ImageLoader for Document Intelligence mode
+            readers_map[ImageLoader] = ["jpg", "jpeg", "png", "gif", "bmp", "tiff", "webp", "tif", "heif"]
 
         return readers_map
 

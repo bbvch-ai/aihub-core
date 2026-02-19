@@ -8,6 +8,7 @@ from datetime import UTC, datetime
 from typing import Any, Literal
 
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
+from aihub_lib.auth.usage import ResourceType, UsageLimits
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.infrastructure.litellm.LiteLLMProxySettings import LiteLLMProxySettings
 from aihub_lib.infrastructure.litellm.LiteLLMService import LiteLLMService
@@ -232,6 +233,7 @@ class OpenaiService:
         chat_completion_request: ChatCompletionRequest,
         user: UserIdentity,
         nc: NATS,
+        usage_limits: UsageLimits,
         external_agent_event_distributor: ExternalAgentEventDistributor,
         t: LocaleHandler,
     ) -> ChatCompletion | StreamingResponse:
@@ -262,6 +264,7 @@ class OpenaiService:
                 chat_completion_request=chat_completion_request,
                 user=user,
                 nc=nc,
+                usage_limits=usage_limits,
                 external_agent_event_distributor=external_agent_event_distributor,
                 locale=t.locale,
             )
@@ -272,6 +275,7 @@ class OpenaiService:
             chat_completion_request=chat_completion_request,
             user=user,
             nc=nc,
+            usage_limits=usage_limits,
             external_agent_event_distributor=external_agent_event_distributor,
             locale=t.locale,
         )
@@ -285,6 +289,7 @@ class OpenaiService:
         chat_completion_request: ChatCompletionRequest,
         user: UserIdentity,
         nc: NATS,
+        usage_limits: UsageLimits,
         external_agent_event_distributor: ExternalAgentEventDistributor,
         locale: str | None = None,
     ):
@@ -294,6 +299,8 @@ class OpenaiService:
                 chat_completion_request, thread_id
             )
         files = OpenaiService._extract_files(chat_completion_request)
+
+        await usage_limits.check_and_raise(user, ResourceType.AGENT, agent_class, agent_id, locale=locale)
 
         resources: JsonResources = await ChatService.start_json_chat_interaction(
             user=user,
@@ -347,6 +354,7 @@ class OpenaiService:
         chat_completion_request: ChatCompletionRequest,
         user: UserIdentity,
         nc: NATS,
+        usage_limits: UsageLimits,
         external_agent_event_distributor: ExternalAgentEventDistributor,
         locale: str | None = None,
     ):
@@ -356,6 +364,8 @@ class OpenaiService:
                 chat_completion_request, thread_id
             )
         files = OpenaiService._extract_files(chat_completion_request)
+
+        await usage_limits.check_and_raise(user, ResourceType.AGENT, agent_class, agent_id, locale=locale)
 
         resources: StreamingResources = await ChatService.start_stream_chat_interaction(
             user=user,

@@ -1,8 +1,18 @@
 from __future__ import annotations
 
-from mongoengine import Document, ListField, StringField
+from mongoengine import Document, EmbeddedDocument, EmbeddedDocumentListField, IntField, ListField, StringField
+from mongoengine.errors import ValidationError
 
+from aihub_lib.auth.usage.usage_limit_models import RoleUsageLimit, UsageLimitPeriod
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
+
+
+class UsageLimit(EmbeddedDocument):
+    """Pattern-based usage limit rule (NATS-style wildcards: * single-level, > multi-level)."""
+
+    pattern = StringField(required=True)
+    limit = IntField(required=True, min_value=1)
+    period = StringField(required=True, choices=["1h", "1d", "7d", "1mo"])
 
 
 class RoleEntity(Document):
@@ -21,6 +31,16 @@ class RoleEntity(Document):
     name = StringField(required=True, unique=True)
     description = StringField(required=True)
     access_rules = ListField(StringField(), default=list)
+    usage_limits = EmbeddedDocumentListField(UsageLimit, default=list)
+
+    def clean(self) -> None:
+        """Reject duplicate (pattern, period) combinations in usage_limits."""
+        seen: set[tuple[str, str]] = set()
+        for limit in self.usage_limits:
+            key = (limit.pattern, limit.period)
+            if key in seen:
+                raise ValidationError(f"Duplicate usage limit: pattern '{limit.pattern}' with period '{limit.period}'")
+            seen.add(key)
 
     @classmethod
     @trace_fn
@@ -54,3 +74,18 @@ class RoleEntity(Document):
         """
         existing_roles_query = RoleEntity.objects(name__in=role_names).only("name")
         return [role.name for role in existing_roles_query]
+
+    @classmethod
+    @trace_fn
+    def get_usage_limits_for_roles(cls, role_names: list[str]) -> list[list[RoleUsageLimit]]:
+        """
+        Returns a list of usage_limits per role.
+        """
+        roles = cls.objects(name__in=role_names).only("usage_limits")
+        return [
+            [
+                RoleUsageLimit(pattern=ul.pattern, limit=ul.limit, period=UsageLimitPeriod(ul.period))
+                for ul in role.usage_limits
+            ]
+            for role in roles
+        ]

@@ -81,7 +81,7 @@ http_error:
     404: "Sorry, we couldn't find that page."
     405: "That action is not allowed here."
     408: "The request timed out. Please try again."
-    429: "Too many requests. Please wait a moment."
+    429: "Too many requests."
 
     # 5xx Server Errors
     500: "Something went wrong on our servers."
@@ -539,6 +539,22 @@ role:
   is_new: "New"
   save_button: "Save"
   access_rules: "Access Rules"
+  usage_limits: "Usage Limits"
+  usage_pattern: "Pattern"
+  usage_limit_value: "Limit"
+  usage_period: "Period"
+  calls_per: "calls"
+  unlimited: "Unlimited"
+  no_access_rules: "No access rules defined"
+  access_rules_help_intro: "Hierarchical rules control access to resources:"
+  access_rules_help_all_agents: "All agents"
+  access_rules_help_agent_instances: "All instances of MyAgent"
+  access_rules_help_service: "Knowledge service"
+  access_rules_help_admin: "Admin access to everything"
+  pattern_help_intro: "Patterns use wildcards to match agents:"
+  pattern_help_all: "All agents"
+  pattern_help_wildcard: "All instances of MyAgent"
+  pattern_help_specific: "Only a specific instance"
   create_dialog:
     description: "Create a new role with access rules. To assigne the new role to users, please use your AD."
   remove_dialog:
@@ -552,6 +568,20 @@ role:
   role_saved:
     summary: "Role saved"
     detail: "Role saved successfully, the new access rules take effect immediately."
+
+usage:
+  title: "Usage"
+  calls_remaining: "{current} / {limit} agent calls"
+  unlimited_calls: "Unlimited agent calls"
+  resets_at: "Resets {time}"
+  limit_exceeded: "Agent call limit reached"
+  limit_exceeded_detail: "Please wait until {time} or contact your administrator"
+
+period:
+  1h: "Per hour"
+  1d: "Per day"
+  7d: "Per week"
+  1mo: "Per month"
 
 notification:
   title: "Notifications"
