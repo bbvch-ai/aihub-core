@@ -4,6 +4,7 @@
       v-if="!isTemplatesRoute"
       :title="t('agent.title')"
       :loading="isLoading"
+      size="large"
     >
       <SelectButton
         :model-value="activeNavItem"
@@ -34,7 +35,7 @@
               {{ group.description }}
             </span>
           </div>
-          <div class="grid grid-cols-2 gap-4 2xl:grid-cols-2">
+          <div class="grid grid-cols-3 gap-4">
             <AgentCard
               v-for="agent in group.instances"
               :key="`${agent.agent_class}-${agent.agent_id}`"
