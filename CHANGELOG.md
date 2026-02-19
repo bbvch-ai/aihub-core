@@ -26,7 +26,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧹 **Code Readability Enhancements:** Applied minor formatting and whitespace adjustments across pipeline
   configurations to improve overall code readability and maintainability.
 
----
+______________________________________________________________________
 
 ## [v0.263.0] - 2026-02-18 - Adopting MinerU for Superior Document Processing and Platform Architecture
 

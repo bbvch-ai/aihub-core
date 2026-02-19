@@ -13,12 +13,6 @@ authors = [
 license = "LicenseRef-Proprietary"
 dependencies = [
     "aihub-core",
-    "pydantic>=2.10.3",
-    "nats-py>=2.9.0",
-    "colorlog>=6.9.0",
-    "fastapi>=0.128.0",
-    "cachetools>=5.5.0",
-    "mongoengine>=0.29.1",
     "azure-identity>=1.19.0",
     "azure-mgmt-cosmosdb>=9.7.0",
     "azure-mgmt-resource>=23.2.0",
@@ -31,7 +25,6 @@ dependencies = [
     "python-multipart>=0.0.20",
     "stringcase>=1.2.0",
     "pydub>=0.25.1",
-    "langfuse>=3.14.1",
     "audioop-lts>=0.2.1",
     "fastmcp>=2.11.2",
     "opentelemetry-instrumentation-fastapi>=0.60b1",
@@ -48,7 +41,7 @@ dev = [
     "black[jupyter]>=26.1.0",
     "pytest-bdd>=8.1.0",
     "pytest-cov>=6.0.0",
-    "asgi-lifespan>=2.1.1",
+    "asgi-lifespan>=2.1.0",
     "pip-licenses>=5.0.0",
 ]
 
@@ -60,7 +53,6 @@ build-backend = "uv_build"
 module-root = ""
 
 [tool.uv.sources]
-aihub-core = { workspace = true }
 jambo = { git = "https://github.com/bbvch-ai/jambo.git" }
 
 [tool.ruff]
