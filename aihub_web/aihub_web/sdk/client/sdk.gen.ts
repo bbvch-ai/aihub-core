@@ -71,7 +71,7 @@ export const getUser = <TComposable extends Composable = '$fetch', DefaultT exte
 /**
  * Get Users
  *
- * Returns a paginated list of all users.
+ * Returns a paginated list of users within the requesting admin's tenant.
  */
 export const getUsers = <TComposable extends Composable = '$fetch', DefaultT extends GetUsersResponse = GetUsersResponse>(options: Options<TComposable, GetUsersData, GetUsersResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetUsersResponse | DefaultT, GetUsersError, DefaultT>({
     responseTransformer: getUsersResponseTransformer,
