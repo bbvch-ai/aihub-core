@@ -90,7 +90,7 @@ def get_expected_user_data(include_dashboard=True, include_access=True):
         data["access"] = {
             "agents": [],
             "processes": [],
-            "services": [{"level": 2, "name": "Mein Konto"}],
+            "services": [{"level": 2, "name": "My Account"}],
         }
 
     return data
