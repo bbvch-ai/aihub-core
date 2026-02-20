@@ -31,7 +31,6 @@ class ExpertRAGAgentConfig(RAGAgentConfig):
             name=base_form.name,
             description=base_form.description,
             icon=base_form.icon,
-            agent_class=base_form.agent_class,
             agent_id=base_form.agent_id,
             llm=base_form.llm,
             retrievers=base_form.retrievers,

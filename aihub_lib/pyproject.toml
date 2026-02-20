@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aihub_lib"
-version = "v0.263.0"
+version = "v0.264.0"
 description = ""
 authors = [
     "Joel Barmettler <joel.barmettler@bbv.ch>",

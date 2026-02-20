@@ -5,6 +5,71 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.264.0] - 2026-02-19 - Templates for Agents & Processes: Quick Start and Enhanced Configuration Management
+
+### Added
+
+- ✨ **Agent and Process Profile Templates**: Introduced a new system to define and manage pre-configured templates for
+  agent and process profiles, replacing the previous "default profile" mechanism and offering administrators multiple
+  starting points for instance creation.
+- 🦾 **New Pre-built Agent Templates**: Added a suite of practical templates for `FewShotAgent` (e.g., Structured Data
+  Extractor, Support Ticket Classifier, Professional Tone Rewriter) and `LLMWrappingAgent` (e.g., Code Explainer, Email
+  Drafter, Meeting Minutes Assistant) to accelerate common use cases.
+- 🖼️ **Intuitive UI for Templates and Cloning**: Enhanced the web UI with a dedicated section to browse and select agent
+  templates, and enabled cloning functionality for existing agent instances to pre-fill creation forms.
+- ➕ **Flexible Form Input Elements**: Expanded the capabilities of `InputText` and `LocaleInput` form elements to
+  support both `LocaleString` and plain `str` for `placeholder`, `prefix`, and `suffix` fields, offering more dynamic UI
+  customization.
+- 🗺️ **Agent Navigation in UI**: Introduced new navigation in the web UI to easily switch between "My Agents" and the
+  new "Templates" view.
+
+### Refactor
+
+- 🧹 **Streamlined Agent and Process Configuration Models**: Removed the `agent_class` and `process_class` fields from
+  the `AgentConfig` and `ProcessConfig` Pydantic models, respectively, as these are now derived from the runtime context
+  rather than being user-configurable. This improves data model clarity and type safety.
+- ⚙️ **Centralized Instance Configuration Management**: Consolidated configuration normalization, validation, and
+  metadata extraction logic into a new `InstanceConfigHelper` utility within the API, reducing code duplication and
+  ensuring consistent handling across agent and process instances.
+- 🔄 **Generic UI Composable for Instance Creation**: Developed a reusable `useCreateInstanceForm` composable for the web
+  UI, standardizing the logic for creating both agent and process instances, including handling of class selection,
+  dynamic form rendering, and initial data application from templates or cloned instances.
+- 💾 **Stricter Icon Requirements**: Agent and Process classes now explicitly require an icon to be defined, ensuring
+  consistent visual representation across the platform.
+- 💬 **Improved Agent Memory Initialization**: `AgentMemory` now explicitly receives the `agent_class` during
+  initialization, providing a clearer and more direct way to establish agent-specific memory contexts.
+
+### Removed
+
+- 🗑️ **Deprecated "Default Process Configuration"**: The legacy `default_process_config` field and its associated
+  auto-creation mechanism have been removed from the `ProcessClassDiscoveryResponseEvent` and related backend logic, in
+  favor of the new, more flexible template system.
+
+---
+
+## [v0.263.1] - 2026-02-19 - Smarter AI Hub Streaming: Better Errors & Usage Warnings
+
+### Added
+
+- ✨ **Usage Warning Display:** Implemented functionality to detect and display usage warnings (e.g., nearing API limits)
+  received from the AI Hub service via response headers directly in the chat interface.
+
+### Changed
+
+- 🌐 **Localized Error Support:** The `Accept-Language` header from the user's request is now forwarded to the AI Hub
+  service, enabling localized error messages and responses from the backend where supported.
+- 🚀 **Enhanced Streaming Error Handling:** Improved the robustness of streaming requests by allowing for early detection
+  and more detailed handling of HTTP errors before processing the stream, providing clearer feedback to the user.
+- 💡 **Smarter API Error Message Parsing:** The system now intelligently parses JSON error bodies from the AI Hub service
+  to extract and display more specific and user-friendly error messages, improving diagnostic clarity.
+
+### Refactor
+
+- 🧹 **Code Readability Enhancements:** Applied minor formatting and whitespace adjustments across pipeline
+  configurations to improve overall code readability and maintainability.
+
+---
+
 ## [v0.263.0] - 2026-02-18 - Adopting MinerU for Superior Document Processing and Platform Architecture
 
 ### Added

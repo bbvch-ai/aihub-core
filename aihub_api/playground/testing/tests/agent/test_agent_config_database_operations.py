@@ -15,11 +15,13 @@ def cleanup_db_and_cache(sample_agent_config):
     yield
 
 
+AGENT_CLASS = "TestAgent"
+
+
 @pytest.fixture
 def sample_agent_config():
     """Create a sample AgentConfig for testing."""
     return AgentConfig(
-        agent_class="TestAgent",
         agent_id="test_agent_1",
         name=LocaleString(en="Test Agent 1"),
         description=LocaleString(en="A test agent for validation"),
@@ -31,7 +33,6 @@ def sample_agent_config():
 def sample_default_config():
     """Create a sample default AgentConfig for testing."""
     return AgentConfig(
-        agent_class="TestAgent",
         agent_id="default_agent",
         name=LocaleString(en="Default Test Agent"),
         description=LocaleString(en="Default test agent configuration"),
@@ -43,7 +44,7 @@ def sample_default_config():
 def mock_agent_config_document(sample_agent_config):
     """Create a mock AgentConfigEntityDocument."""
     mock_doc = Mock()
-    mock_doc.agent_class = sample_agent_config.agent_class
+    mock_doc.agent_class = AGENT_CLASS
     mock_doc.agent_id = sample_agent_config.agent_id
     mock_doc.name = sample_agent_config.name
     mock_doc.description = sample_agent_config.description
@@ -99,7 +100,6 @@ class TestAgentConfigDatabaseOperations:
         """Test scenario where DB config should override default config."""
         # Create different configs to test override
         db_config = AgentConfig(
-            agent_class="TestAgent",
             agent_id="test_agent_1",
             name=LocaleString(en="DB Test Agent"),
             description=LocaleString(en="Agent config from database"),
@@ -107,7 +107,6 @@ class TestAgentConfigDatabaseOperations:
         )
 
         default_config = AgentConfig(
-            agent_class="TestAgent",
             agent_id="test_agent_1",
             name=LocaleString(en="Default Test Agent"),
             description=LocaleString(en="Default agent config"),
@@ -145,7 +144,6 @@ class TestAgentConfigDatabaseOperations:
         """Test that DB config with same ID as default overrides default."""
         # Create DB config with same ID as default
         db_config = AgentConfig(
-            agent_class="TestAgent",
             agent_id="default_agent",  # Same ID as default
             name=LocaleString(en="Overridden Default"),
             description=LocaleString(en="DB config overriding default"),
@@ -199,7 +197,6 @@ class TestAgentConfigDatabaseOperations:
         mock_doc2.config_data = {}
 
         config1 = AgentConfig(
-            agent_class="TestAgent",
             agent_id="agent_1",
             name=LocaleString(en="Agent 1"),
             description=LocaleString(en="First agent"),
@@ -207,7 +204,6 @@ class TestAgentConfigDatabaseOperations:
         )
 
         config2 = AgentConfig(
-            agent_class="TestAgent",
             agent_id="agent_2",
             name=LocaleString(en="Agent 2"),
             description=LocaleString(en="Second agent"),
@@ -247,7 +243,6 @@ class TestAgentConfigDatabaseOperations:
 
         # Scenario 1: DB config exists - should use DB config
         db_config = AgentConfig(
-            agent_class="TestAgent",
             agent_id="test_agent",
             name=LocaleString(en="DB Config"),
             description=LocaleString(en="From database"),

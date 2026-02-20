@@ -44,7 +44,6 @@ class FewShotAgentConfig(AgentConfig):
             name=base.name,
             description=base.description,
             icon=base.icon,
-            agent_class=base.agent_class,
             llm=LLMConfig.as_form(),
             few_shot=FewShotStepConfig.as_form(),
             number_of_input_tokens=InputNumber(

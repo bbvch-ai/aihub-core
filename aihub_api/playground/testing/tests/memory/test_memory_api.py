@@ -663,13 +663,12 @@ class TestUserMemoryIntegration:
 
         # 1. Add memory via AgentMemory directly (simulates agent adding memory)
         agent_config = AgentConfig(
-            agent_class="TestAgent",
             agent_id="test_api_integration",
             name=LocaleString(en="Test Agent"),
             description=LocaleString(en="Test agent for API integration"),
         )
         locale_handler = LocaleHandler(locale="en")
-        agent_memory = AgentMemory(agent_config=agent_config, t=locale_handler)
+        agent_memory = AgentMemory(agent_config=agent_config, agent_class="TestAgent", t=locale_handler)
 
         # Clean up leftover memories from previous test runs to avoid deduplication
         await agent_memory.mem0service.delete_all(owner_id=user_id)
@@ -743,13 +742,12 @@ class TestUserMemoryIntegration:
 
         # Add memory for User A via AgentMemory
         agent_config = AgentConfig(
-            agent_class="TestAgent",
             agent_id="test_api_isolation",
             name=LocaleString(en="Test Agent"),
             description=LocaleString(en="Test agent for API isolation test"),
         )
         locale_handler = LocaleHandler(locale="en")
-        agent_memory = AgentMemory(agent_config=agent_config, t=locale_handler)
+        agent_memory = AgentMemory(agent_config=agent_config, agent_class="TestAgent", t=locale_handler)
 
         await agent_memory.add_user_memory(
             messages=[ChatMessage(content="User A's confidential project information", role=MessageRole.USER)],
