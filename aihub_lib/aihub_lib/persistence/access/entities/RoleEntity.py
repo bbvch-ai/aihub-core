@@ -185,7 +185,7 @@ class RoleEntity(Document):
         if not role:
             return False
 
-        # Remove the role name from all user-tenant-role associations
+        # Runtime import: RoleEntity ↔ UserTenantRoleEntity mutual reference for cascade deletes
         from aihub_lib.persistence.access.entities.UserTenantRoleEntity import UserTenantRoleEntity
 
         if tenant_id:

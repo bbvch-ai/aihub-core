@@ -33,7 +33,7 @@ class UserSignupSettings(EnvironmentSettings):
                 "This user is typically the initial platform administrator."
             ),
         ),
-    ] = "AIHubAdmin,AIHubUser"
+    ] = "AIHubAdmin,AIHubUser"  # aihub.admin.> and aihub.user.> are separate hierarchies
 
     @computed_field
     @property

@@ -31,12 +31,12 @@ class UserService:
         Convert the `UserIdentity` (provided by the auth layer) into a UserDTO,
         including information from the UserEntity like dashboard settings, favorite modules, and roles.
         """
+        # Tenant membership already verified by auth handler during token resolution
         user_entity = UserEntity.by_oid(user.id)
         return await UserWithAccessDTO.from_user_entity(user_entity, user.acting_within_tenant, runner, nc, t)
 
     @staticmethod
     async def get_user_by_oid(user_oid: str) -> UserDTO:
-        """Retrieve user info by OID (id, name, email, profile_image) as a UserDTO."""
         user_entity = UserEntity.by_oid(user_oid)
         return UserDTO.from_user_entity(user_entity)
 

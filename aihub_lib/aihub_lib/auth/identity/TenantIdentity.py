@@ -16,7 +16,7 @@ class TenantIdentity(BaseModel):
     def from_tenant_entity(cls, tenant: TenantEntity) -> Self:
         """Create a TenantIdentity from a TenantEntity database object."""
         return cls(
-            id=tenant.id,
+            id=str(tenant.id),
             name=tenant.name,
             access_rules=tenant.access_rules,
         )

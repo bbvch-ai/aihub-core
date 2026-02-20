@@ -49,4 +49,11 @@ class SuperuserAuthHandler(BearerAuthHandler):
             access_rules=["aihub.admin.>"],
         )
 
-        return settings.get_user_identity(virtual_superuser_tenant)
+        # Construct UserIdentity here (instead of in SuperuserSettings) to avoid circular import
+        return UserIdentity(
+            name=settings.NAME,  # type: ignore[arg-type]
+            email=settings.EMAIL,  # type: ignore[arg-type]
+            id=settings.OID,  # type: ignore[arg-type]
+            roles=settings.ROLES,
+            acting_within_tenant=virtual_superuser_tenant,
+        )

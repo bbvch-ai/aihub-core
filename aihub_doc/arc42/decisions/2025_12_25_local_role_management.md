@@ -63,7 +63,8 @@ Roles are now managed locally in the database via a multi-tenant model:
 ### Superuser Authentication
 
 - **Virtual superuser tenant**: Superuser operates within a virtual (non-persisted) tenant with `aihub.admin.>` access
-  rules
+  rules. The tenant ID is the literal constant `__superuser_tenant__`, defined in `SuperuserAuthHandler.py`. This ID
+  never appears in the database — it exists only in memory during request processing
 - **Bypasses tenant restrictions**: While still going through two-stage access control, the virtual tenant ensures all
   permission checks pass
 - **Static token authentication**: Uses `SUPERUSER_TOKEN` instead of OAuth2

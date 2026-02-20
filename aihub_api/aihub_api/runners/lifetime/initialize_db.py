@@ -10,6 +10,7 @@ import logging
 from aihub_lib.auth.dependencies.SuperuserAuthHandler.SuperuserSettings import SuperuserSettings
 from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.infrastructure.api.DefaultTenantSettings import DefaultTenantSettings
+from aihub_lib.infrastructure.api.UserSignupSettings import UserSignupSettings
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.no_trace import no_trace
 from aihub_lib.persistence.access.entities.RoleEntity import RoleEntity
 from aihub_lib.persistence.access.entities.TenantEntity import TenantEntity
@@ -101,8 +102,31 @@ async def initialize_roles() -> None:
 
     logger.info("Role initialization completed successfully")
 
+    # Validate that all configured signup roles exist in the database
+    await _validate_signup_roles()
+
     # Initialize superuser if enabled
     await initialize_superuser()
+
+
+async def _validate_signup_roles() -> None:
+    """Validate that all configured signup roles exist as system roles in the database."""
+    settings = UserSignupSettings()
+    all_configured_roles = set(settings.regular_user_roles_list + settings.first_admin_user_roles_list)
+
+    default_tenant = TenantEntity.get_default_tenant()
+    tenant_id = str(default_tenant.id) if default_tenant else ""
+
+    existing_roles = set(RoleEntity.filter_existing_roles(list(all_configured_roles), tenant_id))
+    missing_roles = all_configured_roles - existing_roles
+
+    if missing_roles:
+        raise RuntimeError(
+            f"Configured signup roles do not exist in the database: {sorted(missing_roles)}. "
+            f"Check AIHUB_USER_SIGNUP_REGULAR_USER_ROLES and AIHUB_USER_SIGNUP_FIRST_ADMIN_USER_ROLES settings."
+        )
+
+    logger.info(f"All configured signup roles validated: {sorted(all_configured_roles)}")
 
 
 async def initialize_system_role(name: str, description: str, access_rules: list[str]) -> None:
@@ -124,16 +148,6 @@ async def initialize_system_role(name: str, description: str, access_rules: list
     except Exception as e:
         logger.error(f"Failed to create system role '{name}': {e}")
         raise
-
-
-async def initialize_role(name: str, description: str, access_rules: list[str]) -> None:
-    """
-    Initialize a single role in the database if it doesn't already exist.
-
-    Deprecated: Use initialize_system_role for system roles.
-    This function is kept for backwards compatibility.
-    """
-    await initialize_system_role(name, description, access_rules)
 
 
 async def initialize_superuser() -> None:

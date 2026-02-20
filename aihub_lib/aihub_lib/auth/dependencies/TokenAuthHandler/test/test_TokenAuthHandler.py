@@ -115,7 +115,7 @@ def insert_token_document(
     if default_tenant:
         user_tenant_role = UserTenantRoleEntity.create_or_update(
             user_id=user_oid,
-            tenant_id=default_tenant.id,
+            tenant_id=str(default_tenant.id),
             roles=roles_list,
             validate_roles=False,
         )

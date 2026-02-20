@@ -85,9 +85,10 @@ def assign_role_to_user(
 ) -> None:
     """Assign a role to a user in a specific tenant."""
     tenant = context["tenants"][tenant_name]
+    tenant_id_str = str(tenant.id)
     association = UserTenantRoleEntity.create_or_update(
         user_id=user_id,
-        tenant_id=tenant.id,
+        tenant_id=tenant_id_str,
         roles=[role_name],
     )
     cleanup_documents.append(association)
@@ -96,7 +97,7 @@ def assign_role_to_user(
     if user_id not in context["users"]:
         context["users"][user_id] = {}
     context["users"][user_id][tenant_name] = {
-        "tenant_id": tenant.id,
+        "tenant_id": tenant_id_str,
         "roles": [role_name],
     }
 
@@ -110,10 +111,11 @@ def check_access(context: dict[str, Any], user_id: str, tenant_name: str, permis
     tenant = context["tenants"][tenant_name]
 
     # Get user's roles in this tenant
-    user_roles = UserTenantRoleEntity.get_roles_for_user_in_tenant(user_id, tenant.id)
+    tenant_id_str = str(tenant.id)
+    user_roles = UserTenantRoleEntity.get_roles_for_user_in_tenant(user_id, tenant_id_str)
 
     # Get access rules from the user's roles
-    user_access_rules = RoleEntity.get_access_rules_for_roles(user_roles, tenant.id)
+    user_access_rules = RoleEntity.get_access_rules_for_roles(user_roles, tenant_id_str)
 
     # Create access checker with both user and tenant access rules
     checker = AccessChecker(list(user_access_rules), tenant_access_rules=tenant.access_rules)

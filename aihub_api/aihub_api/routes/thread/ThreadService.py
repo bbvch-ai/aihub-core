@@ -59,9 +59,6 @@ class ThreadService:
         agents: list[tuple[str, str]],
         tenant: TenantIdentity,
     ) -> None:
-        """
-        Validates that all specified users have access to all specified agents.
-        """
         users = UserEntity.get_by_ids(user_ids)
         for user_id in user_ids:
             user = users.get(user_id)

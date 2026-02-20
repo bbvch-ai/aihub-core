@@ -56,16 +56,15 @@ class AuthHandler(ABC):
         else:
             tenant_entity = TenantEntity.get_tenant_by_id(tenant_id)
             if not tenant_entity:
-                raise HTTPException(status_code=404, detail=f"Tenant {tenant_id} not found")
+                logger.warning(f"Tenant {tenant_id} not found during resolution for user {user_id}")
+                raise HTTPException(status_code=403, detail="Access denied")
 
         # Verify user has access to this tenant
-        user_roles_in_tenant = UserTenantRoleEntity.get_roles_for_user_in_tenant(user_id, tenant_entity.id)
+        tenant_id_str = str(tenant_entity.id)
+        user_roles_in_tenant = UserTenantRoleEntity.get_roles_for_user_in_tenant(user_id, tenant_id_str)
         if not user_roles_in_tenant:
-            logger.warning(f"User {user_id} attempted to access tenant {tenant_entity.id} without membership")
-            raise HTTPException(
-                status_code=403,
-                detail=f"User does not have access to tenant {tenant_entity.id}",
-            )
+            logger.warning(f"User {user_id} attempted to access tenant {tenant_id_str} without membership")
+            raise HTTPException(status_code=403, detail="Access denied")
 
         return TenantIdentity.from_tenant_entity(tenant_entity)
 
@@ -81,12 +80,9 @@ class AuthHandler(ABC):
             raise HTTPException(status_code=500, detail="Default tenant not configured")
 
         # Verify user has access to default tenant
-        user_roles_in_tenant = UserTenantRoleEntity.get_roles_for_user_in_tenant(user_id, default_tenant.id)
+        user_roles_in_tenant = UserTenantRoleEntity.get_roles_for_user_in_tenant(user_id, str(default_tenant.id))
         if not user_roles_in_tenant:
             logger.warning(f"User {user_id} does not have access to default tenant")
-            raise HTTPException(
-                status_code=403,
-                detail="User does not have access to default tenant",
-            )
+            raise HTTPException(status_code=403, detail="Access denied")
 
         return TenantIdentity.from_tenant_entity(default_tenant)

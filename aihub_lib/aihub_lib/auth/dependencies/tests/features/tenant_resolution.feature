@@ -20,15 +20,15 @@ Feature: Tenant Resolution in Auth Handler
     When the auth handler resolves tenant for user "user-1"
     Then the resolved tenant should be "Default Org"
 
-  Scenario: Invalid tenant ID returns 404 error
+  Scenario: Invalid tenant ID returns 403 error
     Given a request with x-tenant-id header set to "non-existent-tenant-id"
     When the auth handler resolves tenant for user "user-1" expecting error
-    Then a 404 error should be raised with message "Tenant non-existent-tenant-id not found"
+    Then a 403 error should be raised with message "Access denied"
 
   Scenario: User without tenant membership returns 403 error
     Given a request with x-tenant-id header set to the second tenant
     When the auth handler resolves tenant for user "user-2" expecting error
-    Then a 403 error should be raised with message "User does not have access to tenant"
+    Then a 403 error should be raised with message "Access denied"
 
   Scenario: No default tenant and no header returns 500 error
     Given no default tenant exists
@@ -43,4 +43,14 @@ Feature: Tenant Resolution in Auth Handler
   Scenario: Get default tenant for user without membership returns 403 error
     Given user "user-no-default" is a member of the second tenant only with roles "AIHubUser"
     When the auth handler gets default tenant for user "user-no-default" expecting error
-    Then a 403 error should be raised with message "User does not have access to default tenant"
+    Then a 403 error should be raised with message "Access denied"
+
+  Scenario: Non-existent tenant ID returns generic 403 without leaking information
+    Given a request with x-tenant-id header set to "000000000000000000000000"
+    When the auth handler resolves tenant for user "user-1" expecting error
+    Then a 403 error should be raised with message "Access denied"
+
+  Scenario: Superuser virtual tenant ID cannot be used by regular users
+    Given a request with x-tenant-id header set to "__superuser_tenant__"
+    When the auth handler resolves tenant for user "user-1" expecting error
+    Then a 403 error should be raised with message "Access denied"

@@ -75,12 +75,15 @@ def create_mock_request(headers: dict[str, str] | None = None) -> Request:
 
 @given(parsers.parse('the default tenant exists with name "{name}" and access rules "{access_rules}"'))
 def ensure_default_tenant(cleanup_documents: list[Any], context: dict[str, Any], name: str, access_rules: str) -> None:
-    """Ensure the default tenant exists."""
+    """Ensure the default tenant exists with the exact name specified."""
     rules_list = [r.strip() for r in access_rules.split(",")]
-    tenant = TenantEntity.ensure_default_tenant_exists(
+    # Remove all existing default tenants to guarantee clean test state
+    TenantEntity.objects(is_default=True).delete()
+    tenant = TenantEntity.create_tenant(
         name=name,
         description="Default tenant for testing",
         access_rules=rules_list,
+        is_default=True,
     )
     context["default_tenant"] = tenant
     cleanup_documents.append(tenant)
@@ -121,7 +124,7 @@ def add_user_to_default_tenant(cleanup_documents: list[Any], context: dict[str, 
     roles_list = [r.strip() for r in roles.split(",")]
     association = UserTenantRoleEntity.create_or_update(
         user_id=user_id,
-        tenant_id=tenant.id,
+        tenant_id=str(tenant.id),
         roles=roles_list,
     )
     cleanup_documents.append(association)
@@ -134,7 +137,7 @@ def add_user_to_second_tenant(cleanup_documents: list[Any], context: dict[str, A
     roles_list = [r.strip() for r in roles.split(",")]
     association = UserTenantRoleEntity.create_or_update(
         user_id=user_id,
-        tenant_id=tenant.id,
+        tenant_id=str(tenant.id),
         roles=roles_list,
     )
     cleanup_documents.append(association)
@@ -159,7 +162,7 @@ def add_user_to_second_only(cleanup_documents: list[Any], context: dict[str, Any
 def request_with_second_tenant_header(context: dict[str, Any]) -> None:
     """Create a request with x-tenant-id header pointing to the second tenant."""
     tenant = context["second_tenant"]
-    context["request"] = create_mock_request({"x-tenant-id": tenant.id})
+    context["request"] = create_mock_request({"x-tenant-id": str(tenant.id)})
 
 
 @given(parsers.parse('a request with x-tenant-id header set to "{tenant_id}"'))

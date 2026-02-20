@@ -26,7 +26,6 @@ class TenantEntity(Document):
         ],
     }
 
-    id = StringField(primary_key=True)
     name = StringField(required=True, unique=True)
     description = StringField(default="")
     access_rules = ListField(StringField(), default=list)
@@ -38,6 +37,8 @@ class TenantEntity(Document):
     @trace_fn
     def get_tenant_by_id(cls, tenant_id: str) -> Self | None:
         """Fetches a tenant by its ID. Returns None if the tenant does not exist."""
+        if not ObjectId.is_valid(tenant_id):
+            return None
         return cls.objects(id=tenant_id).first()
 
     @classmethod
@@ -63,7 +64,6 @@ class TenantEntity(Document):
     ) -> Self:
         """Creates a new tenant with the given parameters."""
         tenant = cls(
-            id=str(ObjectId()),
             name=name,
             description=description,
             access_rules=access_rules or [],
@@ -141,6 +141,7 @@ class TenantEntity(Document):
         Cascades to delete all associated UserTenantRoleEntity and tenant-scoped RoleEntity records.
         The default tenant cannot be deleted - attempting to do so will raise ValueError.
         """
+        # Runtime import: TenantEntity ↔ RoleEntity/UserTenantRoleEntity mutual reference for cascade deletes
         from aihub_lib.persistence.access.entities.RoleEntity import RoleEntity
         from aihub_lib.persistence.access.entities.UserTenantRoleEntity import UserTenantRoleEntity
 

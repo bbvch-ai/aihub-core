@@ -266,6 +266,18 @@ Feature: User Access Control Checker
       | aihub.user.agent.>           | aihub.user.process.>          | aihub.user.agent.?>         | ACCESS_DENIED  |
       | aihub.admin.agent.>          | aihub.user.process.>          | aihub.user.agent.?>         | ACCESS_DENIED  |
 
+  Scenario: Tenant ceiling caps broad user permissions to narrow tenant scope
+    Given the access rule "aihub.user.>"
+    And the tenant access rule "aihub.user.agent.>"
+    When the access checker checks for the permission "aihub.user.agent.class-a.id-1"
+    Then the result should be ACCESS_USER
+
+  Scenario: Tenant ceiling denies access outside tenant scope
+    Given the access rule "aihub.user.>"
+    And the tenant access rule "aihub.user.agent.>"
+    When the access checker checks for the permission "aihub.user.knowledge.bucket-1.ns-1"
+    Then the result should be ACCESS_DENIED
+
   Scenario Outline: Tenant-Level Access Control - Admin Role Inheritance with Tenant Restrictions
     Given the access rule "<user_access_rule>"
     And the tenant access rule "<tenant_access_rule>"

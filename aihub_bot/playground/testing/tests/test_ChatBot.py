@@ -11,6 +11,8 @@ from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDe
 from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
+from aihub_lib.persistence.messaging.entities.ThreadEntity import ThreadEntity
+from aihub_lib.persistence.utils import str_to_object_id
 from aihub_lib.routes.health.HealthController import HealthController
 from aihub_lib.testing.route_adapter.ASGIAdapter import ASGIAdapter
 from asgi_lifespan import LifespanManager
@@ -19,8 +21,6 @@ from mongoengine import connect, disconnect
 
 from aihub_bot.persistence.entities.ConversationEntity import ConversationEntity
 from aihub_bot.persistence.entities.PathEntity import Credentials, PathEntity
-from aihub_lib.persistence.messaging.entities.ThreadEntity import ThreadEntity
-from aihub_lib.persistence.utils import str_to_object_id
 from aihub_bot.routes.agent.AgentChatController import AgentChatController
 from aihub_bot.runners.SimulatedAgentBotTestRunner import SimulatedAgentBotTestRunner
 

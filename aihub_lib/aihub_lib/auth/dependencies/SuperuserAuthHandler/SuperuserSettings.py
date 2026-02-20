@@ -1,12 +1,8 @@
-from typing import TYPE_CHECKING, Annotated, Self
+from typing import Annotated, Self
 
 from pydantic import Field, SecretStr, computed_field, model_validator
 
 from aihub_lib.settings.EnvironmentSettings import EnvironmentSettings
-
-if TYPE_CHECKING:
-    from aihub_lib.auth.identity.TenantIdentity import TenantIdentity
-    from aihub_lib.auth.identity.UserIdentity import UserIdentity
 
 
 class SuperuserSettings(EnvironmentSettings):
@@ -64,21 +60,3 @@ class SuperuserSettings(EnvironmentSettings):
     @property
     def ROLES(self) -> list[str]:
         return [self.ROLE]
-
-    def get_user_identity(self, tenant: "TenantIdentity") -> "UserIdentity":
-        """
-        Create a UserIdentity for the superuser with the given tenant context.
-
-        Only callable when ENABLED is True (validator ensures credentials are set).
-        """
-        # Import at runtime to avoid circular import
-        from aihub_lib.auth.identity.UserIdentity import UserIdentity
-
-        # Validator guarantees these are set when ENABLED=True
-        return UserIdentity(
-            name=self.NAME,  # type: ignore[arg-type]
-            email=self.EMAIL,  # type: ignore[arg-type]
-            id=self.OID,  # type: ignore[arg-type]
-            roles=self.ROLES,
-            acting_within_tenant=tenant,
-        )

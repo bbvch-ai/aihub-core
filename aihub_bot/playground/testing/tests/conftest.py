@@ -1,10 +1,10 @@
 from unittest.mock import MagicMock
 
 import pytest
-from aiohttp import ClientResponse
 from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_methods  # noqa: F401
 from aihub_lib.testing.auth_utils.tenant_mocks import mock_tenant_entity_autouse  # noqa: F401
 from aihub_lib.testing.auth_utils.user_mocks import mock_user_entity_autouse  # noqa: F401
+from aiohttp import ClientResponse
 
 
 @pytest.fixture(autouse=True)

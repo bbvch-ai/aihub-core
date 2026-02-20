@@ -220,13 +220,14 @@ class UserEntity(Document):
             # Ensure user has a tenant association (repairs failed initial assignment)
             default_tenant = TenantEntity.get_default_tenant()
             if default_tenant:
-                existing_roles = UserTenantRoleEntity.get_roles_for_user_in_tenant(oid, default_tenant.id)
+                default_tenant_id = str(default_tenant.id)
+                existing_roles = UserTenantRoleEntity.get_roles_for_user_in_tenant(oid, default_tenant_id)
                 if not existing_roles:
                     settings = UserSignupSettings()
                     roles_to_assign = settings.regular_user_roles_list
                     UserTenantRoleEntity.create_or_update(
                         user_id=oid,
-                        tenant_id=default_tenant.id,
+                        tenant_id=default_tenant_id,
                         roles=roles_to_assign,
                     )
                     logger.info(f"Repaired missing tenant association for user {oid} with roles: {roles_to_assign}")
@@ -266,7 +267,7 @@ class UserEntity(Document):
 
         UserTenantRoleEntity.create_or_update(
             user_id=oid,
-            tenant_id=default_tenant.id,
+            tenant_id=str(default_tenant.id),
             roles=roles_to_assign,
         )
 

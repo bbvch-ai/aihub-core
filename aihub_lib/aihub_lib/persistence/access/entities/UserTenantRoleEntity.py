@@ -2,7 +2,6 @@ import logging
 from datetime import UTC, datetime
 from typing import Self
 
-from bson import ObjectId
 from mongoengine import DateTimeField, Document, ListField, NotUniqueError, StringField
 
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
@@ -31,7 +30,6 @@ class UserTenantRoleEntity(Document):
         ],
     }
 
-    id = StringField(primary_key=True)
     user_id = StringField(required=True)
     tenant_id = StringField(required=True)
     roles = ListField(StringField(), default=list)
@@ -58,7 +56,7 @@ class UserTenantRoleEntity(Document):
 
         Logs a warning for any invalid roles that were provided.
         """
-        # Import here to avoid circular dependency
+        # Runtime import: UserTenantRoleEntity ↔ RoleEntity mutual reference
         from aihub_lib.persistence.access.entities.RoleEntity import RoleEntity
 
         valid_roles = RoleEntity.filter_existing_roles(roles, tenant_id)
@@ -100,7 +98,6 @@ class UserTenantRoleEntity(Document):
 
         try:
             association = cls(
-                id=str(ObjectId()),
                 user_id=user_id,
                 tenant_id=tenant_id,
                 roles=validated_roles,

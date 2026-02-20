@@ -36,23 +36,17 @@ class UserWithAccessDTO(UserDTO):
     async def from_user_entity(
         cls, user_entity: UserEntity, tenant: TenantIdentity, runner: "Runner", nc: NATS, t: LocaleHandler
     ):
-        """
-        Create a UserWithAccessDTO from a UserEntity within a specific tenant context.
-        """
         from aihub_api.routes.agent.AgentService import AgentService
         from aihub_api.routes.process.ProcessService import ProcessService
 
         dashboard_data = user_entity.dashboard.to_mongo()
         dashboard_dto = DashboardDTO(**dashboard_data)
 
-        # Get roles for user in the specified tenant context
         user_roles = UserTenantRoleEntity.get_roles_for_user_in_tenant(user_entity.id, tenant.id)
         valid_roles = RoleEntity.filter_existing_roles(user_roles, tenant.id)
 
-        # Get access rules from user's roles (scoped to tenant)
         access_rules = RoleEntity.get_access_rules_for_roles(user_roles, tenant.id)
 
-        # Two-stage access control: user permissions capped by tenant permissions
         access_checker = AccessChecker(list(access_rules), tenant_access_rules=tenant.access_rules)
         access = Access()
 

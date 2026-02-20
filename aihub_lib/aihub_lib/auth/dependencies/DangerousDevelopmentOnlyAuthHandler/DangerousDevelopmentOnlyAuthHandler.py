@@ -50,7 +50,7 @@ class DangerousDevelopmentOnlyAuthHandler(AuthHandler):
         if default_tenant:
             UserTenantRoleEntity.create_or_update(
                 user_id=user_entity.id,
-                tenant_id=default_tenant.id,
+                tenant_id=str(default_tenant.id),
                 roles=self.config.ROLES,
                 validate_roles=False,  # Dev roles may not exist in DB
             )

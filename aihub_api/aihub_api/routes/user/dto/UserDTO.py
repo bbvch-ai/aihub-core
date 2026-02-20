@@ -15,11 +15,6 @@ class UserDTO(MinimalUserDTO):
 
     @classmethod
     def from_user_entity(cls, user_entity: UserEntity):
-        """
-        Create a UserDTO from a UserEntity.
-        Note: roles are not populated here as they require tenant context.
-        Use UserWithAccessDTO for role-aware user information.
-        """
         dashboard_data = user_entity.dashboard.to_mongo()
         dashboard_dto = DashboardDTO(**dashboard_data)
 

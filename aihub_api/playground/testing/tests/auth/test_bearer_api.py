@@ -54,7 +54,7 @@ def valid_token(mongo_db):
     if default_tenant:
         user_tenant_role = UserTenantRoleEntity.create_or_update(
             user_id=user.id,
-            tenant_id=default_tenant.id,
+            tenant_id=str(default_tenant.id),
             roles=config.ROLES,
             validate_roles=False,  # Dev roles may not exist in DB
         )
