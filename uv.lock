@@ -35,7 +35,7 @@ wheels = [
 
 [[package]]
 name = "aihub-agent"
-version = "0.263.1"
+version = "0.264.0"
 source = { editable = "aihub_agent" }
 dependencies = [
     { name = "aihub-core" },
@@ -46,18 +46,8 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
-    { name = "black", extra = ["jupyter"] },
     { name = "matplotlib" },
-    { name = "mypy" },
-    { name = "pip-licenses" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-bdd" },
-    { name = "pytest-cov" },
-    { name = "pytest-mock" },
-    { name = "ruff" },
     { name = "seaborn" },
-    { name = "toml-sort" },
 ]
 
 [package.metadata]
@@ -70,23 +60,13 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "black", extras = ["jupyter"], specifier = ">=26.1.0" },
     { name = "matplotlib", specifier = ">=3.10.1" },
-    { name = "mypy", specifier = ">=1.13.0" },
-    { name = "pip-licenses", specifier = ">=5.0.0" },
-    { name = "pytest", specifier = ">=8.4.1" },
-    { name = "pytest-asyncio", specifier = ">=0.24.0" },
-    { name = "pytest-bdd", specifier = ">=8.1.0" },
-    { name = "pytest-cov", specifier = ">=6.0.0" },
-    { name = "pytest-mock", specifier = ">=3.14.0" },
-    { name = "ruff", specifier = ">=0.8.1" },
     { name = "seaborn", specifier = ">=0.13.2" },
-    { name = "toml-sort", specifier = ">=0.24.2" },
 ]
 
 [[package]]
 name = "aihub-api"
-version = "0.263.1"
+version = "0.264.0"
 source = { editable = "aihub_api" }
 dependencies = [
     { name = "aihub-core" },
@@ -111,15 +91,6 @@ dependencies = [
 [package.dev-dependencies]
 dev = [
     { name = "asgi-lifespan" },
-    { name = "black", extra = ["jupyter"] },
-    { name = "mypy" },
-    { name = "pip-licenses" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-bdd" },
-    { name = "pytest-cov" },
-    { name = "ruff" },
-    { name = "toml-sort" },
 ]
 
 [package.metadata]
@@ -144,22 +115,11 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
-dev = [
-    { name = "asgi-lifespan", specifier = ">=2.1.0" },
-    { name = "black", extras = ["jupyter"], specifier = ">=26.1.0" },
-    { name = "mypy", specifier = ">=1.13.0" },
-    { name = "pip-licenses", specifier = ">=5.0.0" },
-    { name = "pytest", specifier = ">=8.4.1" },
-    { name = "pytest-asyncio", specifier = ">=0.24.0" },
-    { name = "pytest-bdd", specifier = ">=8.1.0" },
-    { name = "pytest-cov", specifier = ">=6.0.0" },
-    { name = "ruff", specifier = ">=0.8.1" },
-    { name = "toml-sort", specifier = ">=0.24.2" },
-]
+dev = [{ name = "asgi-lifespan", specifier = ">=2.1.0" }]
 
 [[package]]
 name = "aihub-bot"
-version = "0.263.1"
+version = "0.264.0"
 source = { editable = "aihub_bot" }
 dependencies = [
     { name = "aihub-core" },
@@ -180,15 +140,6 @@ dependencies = [
 [package.dev-dependencies]
 dev = [
     { name = "asgi-lifespan" },
-    { name = "black", extra = ["jupyter"] },
-    { name = "mypy" },
-    { name = "pip-licenses" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-bdd" },
-    { name = "pytest-cov" },
-    { name = "ruff" },
-    { name = "toml-sort" },
 ]
 
 [package.metadata]
@@ -209,22 +160,11 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
-dev = [
-    { name = "asgi-lifespan", specifier = ">=2.1.0" },
-    { name = "black", extras = ["jupyter"], specifier = ">=26.1.0" },
-    { name = "mypy", specifier = ">=1.13.0" },
-    { name = "pip-licenses", specifier = ">=5.0.0" },
-    { name = "pytest", specifier = ">=8.4.1" },
-    { name = "pytest-asyncio", specifier = ">=0.24.0" },
-    { name = "pytest-bdd", specifier = ">=8.1.0" },
-    { name = "pytest-cov", specifier = ">=6.0.0" },
-    { name = "ruff", specifier = ">=0.8.1" },
-    { name = "toml-sort", specifier = ">=0.24.2" },
-]
+dev = [{ name = "asgi-lifespan", specifier = ">=2.1.0" }]
 
 [[package]]
 name = "aihub-core"
-version = "0.263.1"
+version = "0.264.0"
 source = { editable = "aihub_lib" }
 dependencies = [
     { name = "adlfs" },
@@ -284,18 +224,8 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
-    { name = "black", extra = ["jupyter"] },
     { name = "matplotlib" },
-    { name = "mypy" },
     { name = "pandas-stubs" },
-    { name = "pip-licenses" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-bdd" },
-    { name = "pytest-cov" },
-    { name = "pytest-mock" },
-    { name = "ruff" },
-    { name = "toml-sort" },
     { name = "types-networkx" },
     { name = "types-pyyaml" },
 ]
@@ -359,18 +289,8 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "black", extras = ["jupyter"], specifier = ">=26.1.0" },
     { name = "matplotlib", specifier = ">=3.10.1" },
-    { name = "mypy", specifier = ">=1.13.0" },
     { name = "pandas-stubs", specifier = ">=2.3.3.251201" },
-    { name = "pip-licenses", specifier = ">=5.0.0" },
-    { name = "pytest", specifier = ">=8.4.1" },
-    { name = "pytest-asyncio", specifier = ">=0.24.0" },
-    { name = "pytest-bdd", specifier = ">=8.1.0" },
-    { name = "pytest-cov", specifier = ">=6.0.0" },
-    { name = "pytest-mock", specifier = ">=3.14.0" },
-    { name = "ruff", specifier = ">=0.8.1" },
-    { name = "toml-sort", specifier = ">=0.24.2" },
     { name = "types-networkx", specifier = ">=3.4.2.20241115" },
     { name = "types-pyyaml", specifier = ">=6.0.12.20240917" },
 ]
@@ -395,7 +315,15 @@ dev = [
     { name = "mdformat-pyproject" },
     { name = "mdformat-simple-breaks" },
     { name = "mdformat-vuepress" },
+    { name = "mypy" },
     { name = "pip-licenses" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-bdd" },
+    { name = "pytest-cov" },
+    { name = "pytest-mock" },
+    { name = "ruff" },
+    { name = "toml-sort" },
     { name = "tomlkit" },
 ]
 
@@ -416,13 +344,21 @@ dev = [
     { name = "mdformat-pyproject", specifier = ">=0.0.2" },
     { name = "mdformat-simple-breaks", specifier = ">=0.0.1" },
     { name = "mdformat-vuepress", specifier = ">=0.1.0" },
+    { name = "mypy", specifier = ">=1.13.0" },
     { name = "pip-licenses", specifier = ">=5.0.0" },
+    { name = "pytest", specifier = ">=8.4.1" },
+    { name = "pytest-asyncio", specifier = ">=0.24.0" },
+    { name = "pytest-bdd", specifier = ">=8.1.0" },
+    { name = "pytest-cov", specifier = ">=6.0.0" },
+    { name = "pytest-mock", specifier = ">=3.14.0" },
+    { name = "ruff", specifier = ">=0.8.1" },
+    { name = "toml-sort", specifier = ">=0.24.2" },
     { name = "tomlkit", specifier = ">=0.13.3" },
 ]
 
 [[package]]
 name = "aihub-pipeline"
-version = "0.263.1"
+version = "0.264.0"
 source = { editable = "aihub_pipeline" }
 dependencies = [
     { name = "aihub-core" },
@@ -431,16 +367,6 @@ dependencies = [
     { name = "dagster-postgres" },
     { name = "dagster-webserver" },
     { name = "matplotlib" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "mypy" },
-    { name = "pip-licenses" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-cov" },
-    { name = "ruff" },
 ]
 
 [package.metadata]
@@ -454,18 +380,11 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
-dev = [
-    { name = "mypy", specifier = ">=1.13.0" },
-    { name = "pip-licenses", specifier = ">=5.0.0" },
-    { name = "pytest", specifier = ">=8.4.1" },
-    { name = "pytest-asyncio", specifier = ">=0.24.0" },
-    { name = "pytest-cov", specifier = ">=6.0.0" },
-    { name = "ruff", specifier = ">=0.8.1" },
-]
+dev = []
 
 [[package]]
 name = "aihub-process"
-version = "0.263.1"
+version = "0.264.0"
 source = { editable = "aihub_process" }
 dependencies = [
     { name = "aihub-core" },
@@ -477,15 +396,6 @@ dependencies = [
 dev = [
     { name = "aihub-agent" },
     { name = "asgi-lifespan" },
-    { name = "black", extra = ["jupyter"] },
-    { name = "mypy" },
-    { name = "pip-licenses" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-bdd" },
-    { name = "pytest-cov" },
-    { name = "ruff" },
-    { name = "toml-sort" },
 ]
 
 [package.metadata]
@@ -499,15 +409,6 @@ requires-dist = [
 dev = [
     { name = "aihub-agent", editable = "aihub_agent" },
     { name = "asgi-lifespan", specifier = ">=2.1.0" },
-    { name = "black", extras = ["jupyter"], specifier = ">=26.1.0" },
-    { name = "mypy", specifier = ">=1.13.0" },
-    { name = "pip-licenses", specifier = ">=5.0.0" },
-    { name = "pytest", specifier = ">=8.4.1" },
-    { name = "pytest-asyncio", specifier = ">=0.24.0" },
-    { name = "pytest-bdd", specifier = ">=8.1.0" },
-    { name = "pytest-cov", specifier = ">=6.0.0" },
-    { name = "ruff", specifier = ">=0.8.1" },
-    { name = "toml-sort", specifier = ">=0.24.2" },
 ]
 
 [[package]]

@@ -11,7 +11,18 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    # Testing
+    "pytest>=8.4.1",
+    "pytest-asyncio>=0.24.0",
+    "pytest-bdd>=8.1.0",
+    "pytest-cov>=6.0.0",
+    "pytest-mock>=3.14.0",
+    # Linting & formatting
     "black[jupyter]>=26.1.0",
+    "mypy>=1.13.0",
+    "ruff>=0.8.1",
+    "toml-sort>=0.24.2",
+    # Utilities
     "pip-licenses>=5.0.0",
     "mdformat>=0.7.21",
     "mdformat-gfm>=0.4.1",

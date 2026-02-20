@@ -20,19 +20,8 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "pytest>=8.4.1",
-    "pytest-asyncio>=0.24.0",
-    "pytest-mock>=3.14.0",
-    "ruff>=0.8.1",
-    "mypy>=1.13.0",
-    "toml-sort>=0.24.2",
-    "black[jupyter]>=26.1.0",
-    "pytest-bdd>=8.1.0",
-    "pytest-cov>=6.0.0",
-
     "matplotlib>=3.10.1",
     "seaborn>=0.13.2",
-    "pip-licenses>=5.0.0",
 ]
 
 [build-system]

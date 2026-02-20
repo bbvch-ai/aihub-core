@@ -22,14 +22,7 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = [
-    "pytest>=8.4.1",
-    "pytest-asyncio>=0.24.0",
-    "ruff>=0.8.1",
-    "mypy>=1.13.0",
-    "pytest-cov>=6.0.0",
-    "pip-licenses>=5.0.0",
-]
+dev = []
 
 [build-system]
 requires = ["uv_build>=0.10.4,<0.11.0"]
