@@ -50,47 +50,27 @@ jobs:
       - name: Generate release compose files
         run: |
           python deployment/generate_compose.py \
-            --release "${{ steps.version.outputs.version }}" \
+            --release \
+            --tag "${{ steps.version.outputs.version }}" \
             --output-dir dist/release
 
-      - name: Copy static configs into release bundles
+      - name: Verify release bundles
         run: |
           VERSION="${{ steps.version.outputs.version }}"
-
-          for variant in cpu gpu; do
+          for variant in "swissaihub-${VERSION}" "swissaihub-${VERSION}-gpu"; do
             DEST="dist/release/${variant}"
-
-            # etcd
-            cp configs/etcd/init.Dockerfile "${DEST}/configs/etcd/"
-            cp configs/etcd/init_etcd.sh "${DEST}/configs/etcd/"
-
-            # seaweedfs
-            mkdir -p "${DEST}/configs/seaweedfs"
-            cp configs/seaweedfs/s3-entrypoint.sh "${DEST}/configs/seaweedfs/"
-            cp configs/seaweedfs/init-buckets.sh "${DEST}/configs/seaweedfs/"
-
-            # postgres
-            mkdir -p "${DEST}/configs/postgres"
-            cp configs/postgres/init-multiple-dbs.sh "${DEST}/configs/postgres/"
-
-            # openwebui
-            mkdir -p "${DEST}/configs/openwebui/functions"
-            cp configs/openwebui/init-functions.sh "${DEST}/configs/openwebui/"
-            cp -r configs/openwebui/functions/ "${DEST}/configs/openwebui/functions/"
-
-            # playwright
-            mkdir -p "${DEST}/configs/playwright"
-            cp configs/playwright/Dockerfile "${DEST}/configs/playwright/"
-
-            # .env template
-            cp .env.prod "${DEST}/.env"
+            echo "Checking ${variant}..."
+            test -f "${DEST}/docker-compose.yml"
+            test -f "${DEST}/.env.template"
+            test -f "${DEST}/setup-env.py"
+            echo "  OK"
           done
 
       - name: Create tar.gz archives
         run: |
           VERSION="${{ steps.version.outputs.version }}"
-          tar -czf "swissaihub-${VERSION}.tar.gz" -C dist/release/cpu .
-          tar -czf "swissaihub-${VERSION}-gpu.tar.gz" -C dist/release/gpu .
+          tar -czf "swissaihub-${VERSION}.tar.gz" -C "dist/release/swissaihub-${VERSION}" .
+          tar -czf "swissaihub-${VERSION}-gpu.tar.gz" -C "dist/release/swissaihub-${VERSION}-gpu" .
 
       - name: Extract changelog for this version
         run: |

@@ -144,20 +144,81 @@ def generate_default(env, config_data):
     return stats
 
 
-def generate_release(env, config_data, version, output_dir):
+def _release_compose_header(project, version, gpu_enabled):
+    """Build the header comment block for release compose files."""
+    variant = "GPU-enabled" if gpu_enabled else "CPU-only"
+    return (
+        f"# {project} {version} - Docker Compose Configuration ({variant})\n"
+        f"#\n"
+        f"# This is the {'GPU-enabled' if gpu_enabled else 'CPU-only (no GPU)'} deployment configuration.\n"
+        + (
+            f"# It includes GPU-accelerated services such as vLLM and Speaches.\n"
+            if gpu_enabled
+            else f"# GPU-accelerated services are excluded from this configuration.\n"
+        )
+        + f"# For the {'CPU-only' if gpu_enabled else 'GPU-enabled'} variant, "
+        f"see the {project}-{version}{'' if gpu_enabled else '-gpu'} bundle.\n\n"
+    )
+
+
+def _copy_release_static_files(variant_dir):
+    """Copy static files that are not generated from templates into a release bundle."""
+    copied = 0
+
+    # .env.template from .env.prod
+    env_prod = ROOT_DIR / ".env.prod"
+    if env_prod.exists():
+        shutil.copy2(env_prod, variant_dir / ".env.template")
+        copied += 1
+
+    # setup-env.py
+    setup_script = ROOT_DIR / "setup-env.py"
+    if setup_script.exists():
+        shutil.copy2(setup_script, variant_dir / "setup-env.py")
+        copied += 1
+
+    # OpenWebUI functions
+    functions_src = DEPLOYMENT_DIR / "templates" / "openwebui_functions"
+    if functions_src.exists():
+        functions_dst = variant_dir / "configs" / "openwebui" / "functions"
+        functions_dst.mkdir(parents=True, exist_ok=True)
+        for py_file in functions_src.glob("*.py"):
+            shutil.copy2(py_file, functions_dst / py_file.name)
+            copied += 1
+
+    # Playwright Dockerfile
+    playwright_src = ROOT_DIR / "configs" / "playwright" / "Dockerfile"
+    if playwright_src.exists():
+        playwright_dst = variant_dir / "configs" / "playwright"
+        playwright_dst.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(playwright_src, playwright_dst / "Dockerfile")
+        copied += 1
+
+    return copied
+
+
+def generate_release(env, config_data, version, output_dir, project):
     """Generate self-contained release bundles for CPU and GPU variants.
 
     Uses stage='latest' for template rendering so all production conditionals
     (GPU services, TLS, auth, production batch sizes) work correctly. Image tags
     are overridden with version-pinned values, and config_file_suffix='' produces
     clean filenames without stage/hardware suffixes.
+
+    Output folders: <project>-<version> (CPU) and <project>-<version>-gpu (GPU).
     """
     _pin_image_tags_to_version(config_data, version)
     stats = {}
 
-    for gpu_enabled, variant_name in [(False, "cpu"), (True, "gpu")]:
-        variant_dir = output_dir / variant_name
-        print(f"\n  Generating {variant_name.upper()} variant -> {variant_dir}")
+    variants = [
+        (False, f"{project}-{version}"),
+        (True, f"{project}-{version}-gpu"),
+    ]
+
+    for gpu_enabled, folder_name in variants:
+        variant_dir = output_dir / folder_name
+        variant_label = "GPU" if gpu_enabled else "CPU"
+        print(f"\n  Generating {variant_label} variant -> {variant_dir}")
 
         for template_path, rel_output_dir, name_pattern in CONFIG_SPECS:
             template = load_template(env, template_path)
@@ -176,6 +237,9 @@ def generate_release(env, config_data, version, output_dir):
                     "config_file_suffix": "",
                     **config_data,
                 }
+                # Inject release header for docker-compose template only
+                if "docker-compose" in template_path:
+                    context["release_header"] = _release_compose_header(project, version, gpu_enabled)
                 filename = _strip_stage_hardware(name_pattern)
             else:
                 context = {"stage": "default", "gpu_enabled": False, **config_data}
@@ -192,6 +256,12 @@ def generate_release(env, config_data, version, output_dir):
             generate_config(template, context, output_path)
             stats[config_name] += 1
 
+        # Copy static files into the release bundle
+        static_count = _copy_release_static_files(variant_dir)
+        if static_count > 0:
+            print(f"  Copied {static_count} static files into {folder_name}/")
+            stats["static-files"] = stats.get("static-files", 0) + static_count
+
     return stats
 
 
@@ -199,8 +269,20 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Generate Docker Compose configuration files")
     parser.add_argument(
         "--release",
-        metavar="VERSION",
-        help="Generate release artifacts with version-pinned images (e.g., v0.264.0)",
+        action="store_true",
+        help="Generate release artifacts with version-pinned images",
+    )
+    parser.add_argument(
+        "--project",
+        metavar="NAME",
+        default="swissaihub",
+        help="Project name for release folder naming (default: swissaihub)",
+    )
+    parser.add_argument(
+        "--tag",
+        metavar="TAG",
+        default="dev",
+        help="Version tag for release artifacts (default: dev)",
     )
     parser.add_argument(
         "--output-dir",
@@ -217,12 +299,13 @@ def main():
     env = Environment(loader=FileSystemLoader(DEPLOYMENT_DIR))
 
     if args.release:
-        version = args.release
+        version = args.tag
+        project = args.project
         output_dir = Path(args.output_dir) if args.output_dir else ROOT_DIR
         output_dir = output_dir.resolve()
 
-        print(f"Generating release artifacts for {version}...\n")
-        stats = generate_release(env, config_data, version, output_dir)
+        print(f"Generating release artifacts for {project} {version}...\n")
+        stats = generate_release(env, config_data, version, output_dir, project)
     else:
         print("Generating configuration files...\n")
         stats = generate_default(env, config_data)
