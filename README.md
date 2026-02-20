@@ -559,6 +559,60 @@ servers. Full details are in `.claude/README.md`.
 - **`stop-hook-git-check.sh`** (Stop): Checks uncommitted changes at session end
 - **`session-start.sh`** (SessionStart): Installs dependencies, checks environment, warns about main branch
 
+#### Plugins (5 — community plugins from `claude-plugins-official`)
+
+These plugins extend Claude Code with additional slash commands and automated behaviors. They are configured in
+`.claude/settings.json` under `plugins`.
+
+**`code-review`** — Automated PR review with multi-agent architecture
+
+- **`/code-review [--comment]`**: Launches four independent review agents in parallel, each focusing on a different
+  aspect: two check CLAUDE.md compliance, one detects bugs, one analyzes git history context. Every issue is scored
+  0–100 for confidence; only issues scoring 80+ are surfaced. Trivial, draft, and already-reviewed PRs are automatically
+  skipped. Use `--comment` to post the review directly as a PR comment on GitHub.
+
+**`ralph-loop`** — Iterative self-correcting development loop
+
+- **`/ralph-loop "<prompt>" --max-iterations <n> --completion-promise "<text>"`**: Runs Claude Code in a loop,
+  re-injecting the same prompt after each iteration until the completion promise string is output or the iteration limit
+  is reached. Useful for TDD workflows (write failing test, implement, validate, repeat) and well-defined problems with
+  automatically verifiable success criteria. Not suited for subjective design tasks or ambiguous goals.
+- **`/cancel-ralph`**: Terminates an active Ralph loop.
+
+**`commit-commands`** — Git commit, push, and PR automation
+
+- **`/commit`**: Analyzes staged and unstaged changes, matches the repository's existing commit style, generates a
+  conventional commit message, and creates the commit. Skips sensitive files (`.env`, credentials). Attributed to Claude
+  Code.
+- **`/commit-push-pr`**: Full workflow — creates a feature branch if needed, commits changes, pushes to origin, and
+  opens a PR via `gh` with summary and test plan sections.
+- **`/clean_gone`**: Removes local branches marked as `[gone]` (remote-deleted) including their associated worktrees.
+
+**`hookify`** — Custom behavioral rules via markdown files
+
+- **`/hookify [description]`**: Creates behavioral rules from explicit instructions or by analyzing the current
+  conversation for unwanted patterns. Rules are stored as markdown files with YAML frontmatter.
+- **`/hookify:list`**: Lists all configured rules and their enabled/disabled state.
+- **`/hookify:configure`**: Interactive enable/disable management for existing rules.
+- **`/hookify:help`**: Documentation and usage guidance.
+- **Rule anatomy**: Each rule specifies an `event` (bash, file, stop, prompt, or all), an `action` (warn or block), and
+  a `pattern` (Python regex). Conditions support operators like `regex_match`, `contains`, `not_contains`, `equals`,
+  `starts_with`, and `ends_with`. Rules take effect immediately without restart.
+
+**`security-guidance`** — Automatic security pattern scanner (no slash commands — hook only)
+
+- **Trigger**: PreToolUse hook on every `Edit`, `Write`, and `MultiEdit` operation. Runs automatically before file
+  changes are applied.
+- **What it detects**: Scans file paths and content for known vulnerability patterns:
+  - **Command injection**: `child_process.exec()`, `execSync()`, `os.system()`, GitHub Actions workflow injection via
+    untrusted inputs (`issue.title`, `pull_request.body` in `.github/workflows/`)
+  - **Code injection**: `eval()`, `new Function()`, `pickle` deserialization
+  - **XSS**: `dangerouslySetInnerHTML`, `document.write`, `.innerHTML =`
+- **Behavior**: When a pattern is matched, the hook prints a detailed warning explaining the vulnerability and
+  suggesting safer alternatives, then blocks the edit (exit code 2). Warnings are deduplicated per session — the same
+  file/rule combination is only flagged once. Session state is stored in `~/.claude/` and auto-cleaned after 30 days.
+- **Disable**: Set `ENABLE_SECURITY_REMINDER=0` in your environment to turn off.
+
 ::: info AI Assistant Context Files
 Each scope contains `CLAUDE.md` files with scope-specific architecture, patterns, and examples. These provide AI
 assistants with proper context about each component's purpose and architecture. Local overrides (gitignored):
