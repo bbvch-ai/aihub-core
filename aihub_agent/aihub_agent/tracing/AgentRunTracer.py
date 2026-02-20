@@ -14,7 +14,6 @@ from aihub_lib.infrastructure.opentelemetry.tracing.SmartTracer import get_trace
 from aihub_lib.nats.events import BaseEvent, StartEvent
 from aihub_lib.nats.topics.agents.AgentInstanceTopic import AgentInstanceTopic
 from aihub_lib.nats.workflow.annotations.custom_types.ListOfSize import ListOfSize
-from cachetools import TTLCache
 from openinference.semconv.trace import OpenInferenceMimeTypeValues, OpenInferenceSpanKindValues, SpanAttributes
 from opentelemetry import context, propagate, trace
 from opentelemetry.trace import Span, StatusCode, set_span_in_context
@@ -72,15 +71,10 @@ class AgentRunTracer:
         await run_context.set(_TRACE_INPUT_KEY, user_input)
         await run_context.set(_TRACE_USER_ID_KEY, user_id)
 
-        # Capture the initial step parent context (set by JSSubscriber when
-        # extracting trace context from the external NATS message that started
-        # this run). Serialize to W3C headers for Redis storage so other
-        # runners can reconstruct the same parent and keep all steps as siblings.
-        step_parent = get_step_parent_context()
-        if step_parent is not None:
-            headers: dict[str, str] = {}
-            propagate.inject(headers, context=step_parent)
-            await run_context.set(_TRACE_STEP_PARENT_KEY, headers)
+        step_parent = get_step_parent_context() or context.get_current()
+        headers: dict[str, str] = {}
+        propagate.inject(headers, context=step_parent)
+        await run_context.set(_TRACE_STEP_PARENT_KEY, headers)
 
     async def _get_step_parent(self, topic: AgentInstanceTopic) -> context.Context | None:
         """Retrieve the original step parent context from Redis."""
