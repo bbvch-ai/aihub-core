@@ -55,7 +55,6 @@ class MyAgentConfig(AgentConfig):
             name=base.name,
             description=base.description,
             icon=base.icon,
-            agent_class=base.agent_class,
             # Define form elements for custom fields
             model_name=InputText(
                 label=LocaleString(en="Model", de="Modell"),
@@ -228,7 +227,6 @@ class MyAgentConfig(AgentConfig):
             name=base.name,
             description=base.description,
             icon=base.icon,
-            agent_class=base.agent_class,
             model_name=InputText(label=LocaleString(en="Model")),
             channel_config=channel_config,  # Actual value, not FormKit element
         )
@@ -273,7 +271,6 @@ class MyAgentConfig(AgentConfig):
             name=base.name,
             description=base.description,
             icon=base.icon,
-            agent_class=base.agent_class,
             llm=LLMConfig.as_form(),  # Nested form
         )
 ```
@@ -310,7 +307,6 @@ class MyAgentConfig(AgentConfig):
             name=base.name,
             description=base.description,
             icon=base.icon,
-            agent_class=base.agent_class,
             examples=[ExampleForm.as_form()],  # List with one template
         )
 ```
@@ -398,7 +394,6 @@ class QAAgentConfig(AgentConfig):
             name=base.name,
             description=base.description,
             icon=base.icon,
-            agent_class=base.agent_class,
             model_name=ModelSelect(
                 label=LocaleString(en="Model", de="Modell"),
                 help=LocaleString(en="Language model for generating responses"),

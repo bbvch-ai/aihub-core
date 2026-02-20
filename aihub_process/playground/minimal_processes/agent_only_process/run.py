@@ -19,7 +19,6 @@ async def main():
         agent_type=AgentA,
         agent_config=AgentConfig(
             agent_id="agent_a",
-            agent_class=AgentA.__name__,
             name=LocaleString(en="..."),
             description=LocaleString(en="..."),
         ),
@@ -29,7 +28,6 @@ async def main():
         agent_type=AgentB,
         agent_config=AgentConfig(
             agent_id="agent_b",
-            agent_class=AgentB.__name__,
             name=LocaleString(en="..."),
             description=LocaleString(en="..."),
         ),
@@ -39,7 +37,6 @@ async def main():
         process_type=AgentOnlyProcess,
         process_config=ProcessConfig(
             process_id="agent_only_process",
-            process_class=AgentOnlyProcess.__name__,
             name=LocaleString(en="..."),
             description=LocaleString(en="..."),
         ),

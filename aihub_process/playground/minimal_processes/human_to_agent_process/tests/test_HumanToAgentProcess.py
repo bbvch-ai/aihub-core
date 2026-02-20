@@ -22,7 +22,6 @@ def process_runner_fixture():
         process_type=HumanToAgentProcess,
         process_config=ProcessConfig(
             process_id="human_to_agent_process",
-            process_class=HumanToAgentProcess.__name__,
             name=LocaleString(en="Human To Agent Process"),
             description=LocaleString(en="Test Process with Human and Agent"),
         ),
@@ -35,7 +34,6 @@ def agent_a_runner_fixture():
         agent_type=AgentA,
         agent_config=AgentConfig(
             agent_id="agent_a",
-            agent_class=AgentA.__name__,
             name=LocaleString(en="Agent A"),
             description=LocaleString(en="Test Agent A for HumanToAgentProcess"),
         ),

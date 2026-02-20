@@ -127,11 +127,10 @@ async def test_chat_completions_json_with_custom_agent_config(api_client):
     AgentConfigEntityDocument.delete_if_exists_for_class_and_id(agent_class=AGENT_CLASS, agent_id=AGENT_ID)
     custom_agent_config = AgentConfig(
         agent_id=AGENT_ID,
-        agent_class=AGENT_CLASS,
         name=LocaleString(en="Override Test Agent"),
         description=LocaleString(en="This is a test agent with custom config."),
     )
-    custom_agent_config_entity = AgentConfigEntityDocument.from_agent_config(custom_agent_config)
+    custom_agent_config_entity = AgentConfigEntityDocument.from_agent_config(custom_agent_config, AGENT_CLASS)
     custom_agent_config_entity.save()
     payload = {
         "model": f"{AGENT_CLASS}/{AGENT_ID}",

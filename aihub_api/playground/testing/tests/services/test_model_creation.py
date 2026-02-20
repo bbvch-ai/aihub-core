@@ -607,7 +607,6 @@ class TestSchemaValidation:
     def test_agent_discovery_response_event_serialization(self, event_specs):
         agent_config = AgentConfig(
             agent_id="test_agent",
-            agent_class="TestAgent",
             name=LocaleString(en="Test Agent"),
             description=LocaleString(en="Test agent description"),
         )

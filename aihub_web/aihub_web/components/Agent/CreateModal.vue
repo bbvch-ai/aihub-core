@@ -4,7 +4,7 @@
     modal
     :header="t('agent.create.title')"
     :style="{ width: '50rem' }"
-    :closable="!isCreating"
+    :closable="!isSubmitting"
   >
     <div class="flex flex-col gap-6">
       <div
@@ -39,7 +39,7 @@
             option-value="agent_class"
             :placeholder="t('agent.create.selectClassPlaceholder')"
             class="w-full"
-            :disabled="isCreating"
+            :disabled="isSubmitting"
           />
         </div>
 
@@ -56,6 +56,7 @@
               validationVisibility: 'dirty',
             }"
             @submit="handleFormSubmit"
+            @submit-invalid="isSubmitting = false"
           >
             <Stepper
               v-model:value="activeStep"
@@ -125,8 +126,8 @@
       />
       <Button
         :label="t('agent.create.submit')"
-        :disabled="!selectedClass || isCreating"
-        :loading="isCreating"
+        :disabled="!selectedClass || isSubmitting"
+        :loading="isSubmitting"
         @click="triggerFormSubmit"
       />
     </template>
@@ -134,27 +135,13 @@
 </template>
 
 <script setup lang="ts">
-import {
-  type FormElement,
-  type GroupConfig,
-  type RepeaterConfig,
-  buildFormKitSchema,
-  categorizeFormElements,
-  extractGroupConfigs,
-  extractRepeaterConfigs,
-  getFormkitType,
-  getNestedValue,
-  normalizeFormLocaleStrings,
-  setNestedValue,
-} from '@core/composables/form/useFormKitTransform'
+import { normalizeFormLocaleStrings } from '@core/composables/form/useFormKitTransform'
 import { getNode } from '@formkit/core'
-
-import type { AgentClassDto } from '@core/composables/agent/useAgentClasses'
-import type { FormKitSchemaNode } from '@formkit/core'
 
 const props = defineProps<{
   modelValue: boolean
   initialClass?: string
+  initialData?: Record<string, unknown> | null
 }>()
 
 const emit = defineEmits<{
@@ -165,159 +152,63 @@ const emit = defineEmits<{
 const { t, locale } = useI18n()
 const toast = useToast()
 const { agentClasses, agentClassesAreLoading } = useAgentClasses()
-const { createAgentInstance, isCreating } = useCreateAgentInstance()
+const { createAgentInstance } = useCreateAgentInstance()
 
-const selectedClass = ref<string>(props.initialClass ?? '')
-const formData = ref<Record<string, unknown>>({})
-const activeStep = ref(0)
-
-const hasFixedClass = computed(() => !!props.initialClass)
-
-watch(() => props.initialClass, (newClass) => {
-  if (newClass) {
-    selectedClass.value = newClass
-  }
+const {
+  selectedClass,
+  formData,
+  activeStep,
+  selectedClassData,
+  configForm,
+  simpleElementsSchema,
+  groupConfigs,
+  repeaterConfigs,
+  getGroupStepIndex,
+  getRepeaterStepIndex,
+  getRepeaterData,
+  setRepeaterData,
+  cleanFormData,
+  applyInitialData,
+  resetForm,
+} = useCreateInstanceForm({
+  classes: agentClasses,
+  classField: 'agent_class',
+  idField: 'agent_id',
+  initialClass: () => props.initialClass ?? '',
+  locale,
 })
+
+const isSubmitting = ref(false)
+const hasFixedClass = computed(() => !!props.initialClass)
 
 const visible = computed({
   get: () => props.modelValue,
   set: (value: boolean) => emit('update:modelValue', value),
 })
 
-const selectedClassData = computed<AgentClassDto | undefined>(() => {
-  if (!selectedClass.value || !agentClasses.value) return undefined
-  return agentClasses.value.find(c => c.agent_class === selectedClass.value)
-})
-
-const configForm = computed(() => {
-  return selectedClassData.value?.form || []
-})
-
-const categorizedElements = computed(() => {
-  return categorizeFormElements(configForm.value as FormElement[])
-})
-
-const simpleElementsSchema = computed<FormKitSchemaNode[]>(() => {
-  return buildFormKitSchema(categorizedElements.value.simpleElements, {
-    locale: locale.value,
-  })
-})
-
-const groupConfigs = computed<GroupConfig[]>(() => {
-  return extractGroupConfigs(configForm.value as FormElement[], locale.value)
-})
-
-const repeaterConfigs = computed<RepeaterConfig[]>(() => {
-  return extractRepeaterConfigs(configForm.value as FormElement[], locale.value)
-})
-
-function getRepeaterData(path: string): Record<string, unknown>[] {
-  return getNestedValue(formData.value, path)
-}
-
-function setRepeaterData(path: string, value: Record<string, unknown>[]): void {
-  setNestedValue(formData.value, path, value)
-}
-
-const hasSimpleElements = computed(() => simpleElementsSchema.value.length > 0)
-
-function getGroupStepIndex(groupIndex: number): number {
-  return (hasSimpleElements.value ? 1 : 0) + groupIndex
-}
-
-function getRepeaterStepIndex(repeaterIndex: number): number {
-  return (hasSimpleElements.value ? 1 : 0) + groupConfigs.value.length + repeaterIndex
-}
-
-watch(selectedClassData, (newClass) => {
-  if (newClass?.form && newClass.form.length > 0) {
-    // Initialize form data with proper structure for groups/repeaters
-    // Default values are embedded in the FormKit elements themselves
-    formData.value = initializeGroupData(configForm.value as FormElement[], {})
+watch(visible, (isVisible) => {
+  if (isVisible && props.initialData) {
+    nextTick(() => applyInitialData(props.initialData!))
   }
-  else {
-    formData.value = {}
-  }
-}, { immediate: true })
-
-function initializeElementData(
-  element: FormElement,
-  result: Record<string, unknown>,
-  recursiveFn: (elements: FormElement[], data: Record<string, unknown>) => Record<string, unknown>,
-): void {
-  const formkitType = getFormkitType(element)
-  const name = element.name as string
-  const children = element.children as FormElement[] | undefined
-  const hasChildren = children && Array.isArray(children)
-
-  if (formkitType === 'group') {
-    result[name] = result[name] ?? {}
-    if (hasChildren) {
-      result[name] = recursiveFn(children, result[name] as Record<string, unknown>)
-    }
-  }
-  else if (formkitType === 'repeater') {
-    result[name] = result[name] ?? []
-    if (Array.isArray(result[name]) && hasChildren) {
-      result[name] = (result[name] as Record<string, unknown>[]).map(item => recursiveFn(children, item))
-    }
-  }
-}
-
-function initializeGroupData(
-  formElements: FormElement[],
-  data: Record<string, unknown>,
-): Record<string, unknown> {
-  const result = { ...data }
-  for (const element of formElements) {
-    initializeElementData(element, result, initializeGroupData)
-  }
-  return result
-}
+})
 
 function closeModal() {
   visible.value = false
   resetForm()
 }
 
-function resetForm() {
-  selectedClass.value = props.initialClass ?? ''
-  formData.value = {}
-  activeStep.value = 0
-}
-
 function triggerFormSubmit() {
+  isSubmitting.value = true
   const formNode = getNode('create-agent-form')
   if (formNode) {
-    // This triggers FormKit validation on all fields (including nested ones)
-    // If valid, it calls the @submit handler (handleFormSubmit)
     formNode.submit()
   }
-}
-
-function cleanFormData(data: Record<string, unknown>): Record<string, unknown> {
-  const result: Record<string, unknown> = {}
-  // FormKit artifacts that should be stripped from submissions
-  const formkitArtifacts = new Set(['slots'])
-
-  for (const [key, value] of Object.entries(data)) {
-    // Skip FormKit artifacts
-    if (formkitArtifacts.has(key)) continue
-
-    // Recursively clean nested objects
-    if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
-      result[key] = cleanFormData(value as Record<string, unknown>)
-    }
-    else {
-      result[key] = value
-    }
+  else {
+    handleFormSubmit()
   }
-
-  return result
 }
 
 async function handleFormSubmit() {
-  // This function is only called by FormKit when all validation passes
   try {
     const cleanedData = cleanFormData(formData.value)
     const normalizedConfig = normalizeFormLocaleStrings(cleanedData)
@@ -347,6 +238,9 @@ async function handleFormSubmit() {
       detail: error instanceof Error ? error.message : String(error),
       life: 5000,
     })
+  }
+  finally {
+    isSubmitting.value = false
   }
 }
 </script>

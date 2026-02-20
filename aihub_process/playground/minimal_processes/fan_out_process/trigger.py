@@ -20,7 +20,6 @@ async def main():
         agent_type=AgentA,
         agent_config=AgentConfig(
             agent_id="agent_a",
-            agent_class=AgentA.__name__,
             name=LocaleString(en="..."),
             description=LocaleString(en="..."),
         ),
@@ -30,7 +29,6 @@ async def main():
         agent_type=AgentB,
         agent_config=AgentConfig(
             agent_id="agent_b",
-            agent_class=AgentB.__name__,
             name=LocaleString(en="..."),
             description=LocaleString(en="..."),
         ),
@@ -40,7 +38,6 @@ async def main():
         process_type=FanOutProcess,
         process_config=ProcessConfig(
             process_id="fan_out_process",
-            process_class=FanOutProcess.__name__,
             name=LocaleString(en="..."),
             description=LocaleString(en="..."),
         ),

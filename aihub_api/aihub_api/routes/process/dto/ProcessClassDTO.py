@@ -7,7 +7,7 @@ from aihub_lib.nats.events.discovery.process.human_in.HumanInSpecs import HumanI
 from aihub_lib.nats.events.discovery.process.ProcessConfigSpecs import ProcessConfigSpecs
 from aihub_lib.nats.events.discovery.process.program_in.ProgramInSpecs import ProgramInSpecs
 from aihub_lib.nats.events.form import ALL_FORM_OPTIONS
-from aihub_lib.processes.ProcessConfig import ProcessConfig
+from aihub_lib.nats.events.form.TemplateData import TemplateData
 from pydantic import BaseModel, Field
 
 if TYPE_CHECKING:
@@ -46,13 +46,10 @@ class ProcessClassDTO(BaseModel):
     is_online: Annotated[
         bool | None, Field(description="Indicates whether the process class is online and reachable.")
     ] = None
-    default_process_config: Annotated[
-        ProcessConfig,
-        Field(
-            description="The default process configuration for this process class. "
-            "This is the configuration that will be used if no specific configuration is provided.",
-        ),
-    ]
+    templates: Annotated[
+        list[TemplateData],
+        Field(description="List of profile templates for quick profile creation."),
+    ] = []
 
     @classmethod
     def from_discovery_event(
@@ -71,7 +68,7 @@ class ProcessClassDTO(BaseModel):
             program_inputs=event.program_inputs,
             agent_inputs=event.agent_inputs,
             is_online=True,
-            default_process_config=event.default_process_config,
+            templates=event.templates,
         )
 
     @classmethod
@@ -85,7 +82,7 @@ class ProcessClassDTO(BaseModel):
             process_class=entity.process_class,
             name=entity.name.to_locale_string() if entity.name else LocaleString(en=entity.process_class),
             description=entity.description.to_locale_string() if entity.description else LocaleString(en=""),
-            icon=entity.icon or "mage:broadcast",
+            icon=entity.icon,
             form=entity.form_elements,
             process_config_specs=(
                 entity.process_config_specs.to_specs() if entity.process_config_specs else ProcessConfigSpecs()
@@ -94,11 +91,5 @@ class ProcessClassDTO(BaseModel):
             program_inputs=[],
             agent_inputs=[],
             is_online=entity.is_online,
-            default_process_config=ProcessConfig(
-                process_class=entity.process_class,
-                process_id="",
-                name=entity.name.to_locale_string() if entity.name else LocaleString(en=entity.process_class),
-                description=entity.description.to_locale_string() if entity.description else LocaleString(en=""),
-                icon=entity.icon or "mage:broadcast",
-            ),
+            templates=[TemplateData.model_validate(td) for td in entity.templates] if entity.templates else [],
         )

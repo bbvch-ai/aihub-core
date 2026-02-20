@@ -182,7 +182,6 @@ implementation.
                name=base.name,
                description=base.description,
                icon=base.icon,
-               agent_class=base.agent_class,
                temperature=InputNumber(label=LocaleString(en="Temperature", de="Temperatur"), min=0.0, max=1.0, step=0.1),
                confidence_threshold=InputNumber(label=LocaleString(en="Confidence Threshold"), min=0.0, max=1.0, step=0.1),
            )
