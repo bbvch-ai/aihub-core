@@ -189,8 +189,7 @@ Run from within scope directory with Poetry shell activated:
 - Format: `<type>(<scope>): <Subject starting with uppercase>`
 - Scope is **mandatory**.
 - Allowed types: `fix`, `feat`, `doc`, `test`, `chore`
-- Allowed scopes: `aihub`, `iac`, `ci-cd`, `agent-custom`, `agent-xp`, `avatar`, `bots`, `chat-xp`, `chat-backend`,
-  `debt`, `dagster`, `confidence`, `deploy`, `ui`, `guards`, `rag`, `local`, `tracing`, `workflows`, `micro`
+- Allowed scopes: `aihub`, `iac`, `ci-cd`, `bots`, `dagster`, `deploy`, `ui`, `guards`, `rag`, `tracing`, `workflows`
 
 **PR labels** (CI-enforced): Every PR must have exactly one version label: `major`, `minor`, or `patch`. Controls
 automatic semver bumps on merge.

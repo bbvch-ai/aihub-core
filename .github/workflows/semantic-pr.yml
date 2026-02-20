@@ -33,23 +33,14 @@ jobs:
           aihub
           iac
           ci-cd
-          agent-custom
-          agent-xp
-          avatar
           bots
-          chat-xp
-          chat-backend
-          debt
           dagster
-          confidence
           deploy
           ui
           guards
           rag
-          local
           tracing
           workflows
-          micro
         types: |
           fix
           feat

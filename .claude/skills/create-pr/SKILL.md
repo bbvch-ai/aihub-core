@@ -23,9 +23,8 @@ git commit -m "type(scope): Descriptive message"
 ```
 
 - **Commit format**: `type(scope): subject` -- types: `fix`, `feat`, `test`, `doc`, `chore`
-- **Allowed scopes** (CI-enforced): `aihub`, `iac`, `ci-cd`, `agent-custom`, `agent-xp`, `avatar`, `bots`, `chat-xp`,
-  `chat-backend`, `debt`, `dagster`, `confidence`, `deploy`, `ui`, `guards`, `rag`, `local`, `tracing`, `workflows`,
-  `micro`
+- **Allowed scopes** (CI-enforced): `aihub`, `iac`, `ci-cd`, `bots`, `dagster`, `deploy`, `ui`, `guards`, `rag`,
+  `tracing`, `workflows`
 - Keep commits focused -- one logical change per commit
 - Use imperative mood ("Add feature" not "Added feature")
 

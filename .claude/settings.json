@@ -245,7 +245,6 @@
       "Bash(kill -9 *)",
       "Bash(killall *)",
       "Read(./.env)",
-      "Read(./.env.*)",
       "Read(./.env.local)",
       "Read(./secrets/**)",
       "Read(./**/*secret*)",
