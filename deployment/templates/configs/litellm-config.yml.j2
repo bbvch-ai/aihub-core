@@ -55,7 +55,7 @@ model_list:
       drop_params: true
     model_info:
       mode: chat
-      max_input_tokens: 32768
+      max_input_tokens: 131072
       max_output_tokens: 8192
       supports_function_calling: true
 
@@ -124,7 +124,7 @@ model_list:
     litellm_params:
 {%- if has_local_models %}
       model: openai/Systran/faster-whisper-large-v3
-      api_base: http://faster-whisper:8000/
+      api_base: http://speaches:8000/
       api_key: XXX
 {%- else %}
       model: openai/whisper-large-v3

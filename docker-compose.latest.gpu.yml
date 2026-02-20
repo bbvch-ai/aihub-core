@@ -874,7 +874,7 @@ services:
   vllm-gemma:
     container_name: vllm-gemma
     platform: "linux/amd64"
-    image: ghcr.io/bbvch-ai/aihub-core/vllm-openai:v0.11.0
+    image: ghcr.io/bbvch-ai/aihub-core/vllm-openai:v0.15.1
     restart: always
     ipc: host
     volumes:
@@ -889,7 +889,7 @@ services:
       --served-model-name gemma-3n-e4b-it
       --port 8000
       --host 0.0.0.0
-      --gpu-memory-utilization 0.06
+      --gpu-memory-utilization 0.25
       --max-model-len 32768
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
@@ -915,7 +915,7 @@ services:
   vllm-mistral:
     container_name: vllm-mistral
     platform: "linux/amd64"
-    image: ghcr.io/bbvch-ai/aihub-core/vllm-openai:v0.11.0
+    image: ghcr.io/bbvch-ai/aihub-core/vllm-openai:v0.15.1
     restart: always
     ipc: host
     volumes:
@@ -926,15 +926,13 @@ services:
       HUGGING_FACE_HUB_TOKEN: ${HUGGINGFACE_API_KEY}
       VLLM_API_KEY: ${LOCAL_LLM_TOKEN}
     command: >
-      --model mistralai/Mistral-Small-3.2-24B-Instruct-2506
+      --model stelterlab/Mistral-Small-3.2-24B-Instruct-2506-FP8
       --served-model-name mistral-small-3.2-24b
       --port 8000
       --host 0.0.0.0
-      --gpu-memory-utilization 0.60
-      --max-model-len 8192
+      --gpu-memory-utilization 0.55
+      --max-model-len 131072
       --tokenizer_mode mistral
-      --config_format mistral
-      --load_format mistral
       --tool-call-parser mistral
       --enable-auto-tool-choice
       --limit-mm-per-prompt '{"image":10}'
@@ -962,7 +960,7 @@ services:
   vllm-bge-m3:
     container_name: vllm-bge-m3
     platform: "linux/amd64"
-    image: ghcr.io/bbvch-ai/aihub-core/vllm-openai:v0.11.0
+    image: ghcr.io/bbvch-ai/aihub-core/vllm-openai:v0.15.1
     restart: always
     ipc: host
     volumes:
@@ -975,10 +973,11 @@ services:
     command: >
       --model BAAI/bge-m3
       --served-model-name bge-m3
-      --task embed
+      --runner pooling
+      --convert embed
       --port 8000
       --host 0.0.0.0
-      --gpu-memory-utilization 0.025
+      --gpu-memory-utilization 0.03
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
       timeout: 10s
@@ -1003,7 +1002,7 @@ services:
   vllm-bge-reranker:
     container_name: vllm-bge-reranker
     platform: "linux/amd64"
-    image: ghcr.io/bbvch-ai/aihub-core/vllm-openai:v0.11.0
+    image: ghcr.io/bbvch-ai/aihub-core/vllm-openai:v0.15.1
     restart: always
     ipc: host
     volumes:
@@ -1016,10 +1015,10 @@ services:
     command: >
       --model BAAI/bge-reranker-v2-m3
       --served-model-name bge-reranker
-      --task score
+      --runner pooling
       --port 8000
       --host 0.0.0.0
-      --gpu-memory-utilization 0.025
+      --gpu-memory-utilization 0.03
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
       timeout: 10s
@@ -1042,22 +1041,22 @@ services:
       - backend
 
   # ===================================================================
-  # Audio Model Serving (STT via faster-whisper-server)
+  # Audio Model Serving (STT via Speaches)
   # ===================================================================
   # OpenAI-compatible transcription API. GPU only.
   # CPU setups route through Swiss LLM Cloud.
+  # https://github.com/speaches-ai/speaches
   # ===================================================================
 
-  faster-whisper:
-    container_name: faster-whisper
-    image: fedirz/faster-whisper-server:0.4.1-cuda12.8
+  speaches:
+    container_name: speaches
+    image: ghcr.io/speaches-ai/speaches:latest-cuda-12.6.3
     restart: unless-stopped
     volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/huggingface:/root/.cache/huggingface
+      - ${VOLUME_ROOT:-./.docker-volumes}/huggingface:/home/ubuntu/.cache/huggingface/hub
     environment:
-      WHISPER__MODEL: Systran/faster-whisper-large-v3
-      WHISPER__DEVICE: cuda
-      HF_HOME: /root/.cache/huggingface
+      WHISPER__INFERENCE_DEVICE: cuda
+      PRELOAD_MODELS: Systran/faster-whisper-large-v3
     healthcheck:
       test: [ "CMD", "curl", "--fail", "http://0.0.0.0:8000/health" ]
       interval: 30s

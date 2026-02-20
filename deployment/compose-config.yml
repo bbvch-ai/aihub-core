@@ -47,8 +47,8 @@ image_tags:
   oauth2proxy: ghcr.io/bbvch-ai/bbvch-ai/oauth2-proxy:latest
   open_webui: open-webui:v0.6.41
   playwright: playwright:v1.49.0-jammy
-  vllm: vllm-openai:v0.11.0
-  faster_whisper_server: fedirz/faster-whisper-server:0.4.1-cuda12.8
+  vllm: vllm-openai:v0.15.1
+  speaches: ghcr.io/speaches-ai/speaches:latest-cuda-12.6.3
   pgbouncer: pgbouncer:v1.24.1-p1
   rclone: ghcr.io/bbvch-ai/aihub-core/rclone:1.71.2
 

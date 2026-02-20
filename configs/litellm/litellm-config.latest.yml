@@ -39,7 +39,7 @@ model_list:
       drop_params: true
     model_info:
       mode: chat
-      max_input_tokens: 32768
+      max_input_tokens: 131072
       max_output_tokens: 8192
       supports_function_calling: true
 
