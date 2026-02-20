@@ -33,7 +33,7 @@ Feature: RAG Agent
     When the start event is sent with a user query "What is AI Hub?"
     Then a RetrieverEvent is present with more than "2" retrieved nodes
     * a RerankerEvent is present with reranked nodes
-    * the RerankerEvent model name should be "reranker"
+    * the RerankerEvent model name should be "reranker/bge"
     * the RerankerEvent should limit results to "2" nodes
     * an LLMEvent is present with a generated response
     * a StopEvent is present

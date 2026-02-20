@@ -131,9 +131,9 @@ def default_io_manager_s3_datalake_resources(container_name: str) -> dict[str, C
 
 def default_llm_resources() -> dict[str, ConfigurableResourceFactory]:
     embedding_model_resource = EmbeddingModelResource(
-        embedding_config=EmbeddingModelConfig(model_name="embedding/large")
+        embedding_config=EmbeddingModelConfig(model_name="embedding/bge-m3")
     )
-    language_model = LanguageModelResource(llm_config=LLMConfig(model_name="text-generation/mini"))
+    language_model = LanguageModelResource(llm_config=LLMConfig(model_name="text-generation/gemma-3n-e4b"))
     return {
         "embedding_model": embedding_model_resource,
         "language_model": language_model,

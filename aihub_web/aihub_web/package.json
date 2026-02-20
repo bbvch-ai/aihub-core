@@ -4,7 +4,7 @@
   "version": "0.0.1",
   "main": "./nuxt.config.ts",
   "scripts": {
-    "dev": "nuxi prepare && nuxi dev .app --port 8182 --dotenv ../../../.env",
+    "dev": "nuxi prepare && nuxi dev .app --port 3000 --dotenv ../../../.env",
     "dev:prepare": "nuxi prepare && nuxt prepare .app",
     "build": "nuxt generate .app",
     "preview": "nuxt preview .app",

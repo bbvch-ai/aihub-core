@@ -126,7 +126,7 @@ async def test_full_stt_with_chunking(create_test_audio, monkeypatch):
 
     # Mock the model names by type
     async def mock_model_names(*args, **kwargs):
-        return ["transcription"]
+        return ["transcription/whisperx"]
 
     # Test the service
     from aihub_api.routes.openai.OpenaiService import OpenaiService
@@ -138,7 +138,7 @@ async def test_full_stt_with_chunking(create_test_audio, monkeypatch):
             result = await OpenaiService.stt(
                 file=large_file,
                 user=DangerousDevelopmentOnlyAuthSettings().get_user_identity(),
-                model_name="transcription",
+                model_name="transcription/whisperx",
                 language="en",
                 prompt=None,
                 response_format="json",

@@ -24,7 +24,7 @@ def _():
             agent_class=LlamaIndexAgent.__name__,
             name=LocaleString(en="Llama Index Agent"),
             description=LocaleString(en="This is an agent that uses a llama index llm"),
-            llm=LLMConfig(model_name="text-generation/mini"),
+            llm=LLMConfig(model_name="text-generation/mistral-small-3.2-24b"),
         ),
     )
 

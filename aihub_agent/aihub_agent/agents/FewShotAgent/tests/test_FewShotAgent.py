@@ -42,7 +42,7 @@ def self_hosted_llm_config():
     """
     Return an LLM config for testing with LiteLLM.
     """
-    return LLMConfig(model_name="text-generation/mini")
+    return LLMConfig(model_name="text-generation/mistral-small-3.2-24b")
 
 
 @given("I have an empty agent config")

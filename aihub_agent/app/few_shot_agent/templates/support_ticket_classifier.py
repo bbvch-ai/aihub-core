@@ -22,7 +22,7 @@ TEMPLATE = FewShotAgentConfig(
     icon="mage:tag",
     number_of_input_tokens=50000,
     llm=LLMConfig(
-        model_name="text-generation/mini",
+        model_name="text-generation/gemma-3n-e4b",
         default_parameter=LLMParameter(temperature=0.0, timeout=30.0),
     ),
     few_shot=FewShotStepConfig(

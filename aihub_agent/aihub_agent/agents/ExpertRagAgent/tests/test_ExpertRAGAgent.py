@@ -83,7 +83,7 @@ def test_collection(event_loop):
     """Set up and tear down the test collection for all tests."""
     asyncio.set_event_loop(event_loop)
 
-    embedding_config = EmbeddingModelConfig(model_name="embedding/large")
+    embedding_config = EmbeddingModelConfig(model_name="embedding/bge-m3")
     vector_store: MilvusVectorStoreConfig = MilvusVectorStoreConfig(
         uri="http://localhost",
         collection_name="development",
@@ -119,9 +119,9 @@ def mongo_connection(event_loop):
 @pytest.fixture(scope="session")
 def expert_rag_agent_config(test_collection):
     """Return an ExpertRAGAgentConfig with expert escalation enabled."""
-    llm_config = LLMConfig(model_name="text-generation/mini")
-    reranking_config = RerankingModelConfig(model_name="reranker")
-    embedding_config = EmbeddingModelConfig(model_name="embedding/large")
+    llm_config = LLMConfig(model_name="text-generation/mistral-small-3.2-24b")
+    reranking_config = RerankingModelConfig(model_name="reranker/bge")
+    embedding_config = EmbeddingModelConfig(model_name="embedding/bge-m3")
     vector_store: MilvusVectorStoreConfig = MilvusVectorStoreConfig(
         uri="http://localhost",
         collection_name="development",

@@ -150,11 +150,11 @@ class TestRegisterModelDefinitions:
     async def test_registers_models_with_pricing(self, provisioner: LangfuseProvisioner) -> None:
         litellm_models = [
             {
-                "model_name": "text-generation/nano",
+                "model_name": "text-generation/mistral-small-3.2-24b",
                 "model_info": {"input_cost_per_token": 0.001, "output_cost_per_token": 0.002},
             },
             {
-                "model_name": "embedding/small",
+                "model_name": "embedding/bge-m3",
                 "model_info": {"input_cost_per_token": 0.0001, "output_cost_per_token": 0.0},
             },
         ]
@@ -168,8 +168,8 @@ class TestRegisterModelDefinitions:
     @pytest.mark.asyncio
     async def test_skips_models_without_pricing(self, provisioner: LangfuseProvisioner) -> None:
         litellm_models = [
-            {"model_name": "text-generation/nano", "model_info": {}},
-            {"model_name": "reranker", "model_info": {"mode": "rerank"}},
+            {"model_name": "text-generation/mistral-small-3.2-24b", "model_info": {}},
+            {"model_name": "reranker/bge", "model_info": {"mode": "rerank"}},
         ]
         mock_client = AsyncMock(spec=httpx.AsyncClient)
 

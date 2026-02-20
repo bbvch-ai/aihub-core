@@ -72,7 +72,7 @@ TEMPLATE = LLMWrappingAgentConfig(
     ),
     number_of_input_tokens=100000,
     llm=LLMConfig(
-        model_name="text-generation/large",
+        model_name="text-generation/mistral-small-3.2-24b",
         default_parameter=LLMParameter(temperature=0.1, timeout=120.0),
     ),
 )

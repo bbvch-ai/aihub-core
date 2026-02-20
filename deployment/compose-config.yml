@@ -48,10 +48,7 @@ image_tags:
   open_webui: open-webui:v0.6.41
   playwright: playwright:v1.49.0-jammy
   vllm: vllm-openai:v0.11.0
-  llama_cpp_gpu: llama.cpp:server-cuda-b7003
-  llama_cpp_cpu: llama.cpp:server-b7003
-  speaches_gpu: speaches:0.8.3-cuda-12.6.3
-  speaches_cpu: speaches:0.8.3-cpu
+  faster_whisper_server: fedirz/faster-whisper-server:0.4.1-cuda12.8
   pgbouncer: pgbouncer:v1.24.1-p1
   rclone: ghcr.io/bbvch-ai/aihub-core/rclone:1.71.2
 

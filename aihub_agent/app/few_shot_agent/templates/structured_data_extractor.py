@@ -22,7 +22,7 @@ TEMPLATE = FewShotAgentConfig(
     icon="mage:box-3d",
     number_of_input_tokens=100000,
     llm=LLMConfig(
-        model_name="text-generation/large",
+        model_name="text-generation/mistral-small-3.2-24b",
         default_parameter=LLMParameter(temperature=0.0, timeout=60.0),
     ),
     few_shot=FewShotStepConfig(

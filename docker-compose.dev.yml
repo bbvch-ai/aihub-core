@@ -703,148 +703,6 @@ services:
       options:
         max-size: 10m
         max-file: 2
-  # ===================================================================
-  # AI Model Serving (Local Inference)
-  # ===================================================================
-  # GPU variants are only used for 'nightly' and 'latest' stages when
-  # GPU is enabled. All other configurations use CPU variants.
-  # ===================================================================
-  llama-cpp:
-    container_name: llama-cpp
-    platform: "linux/amd64"
-    image: ghcr.io/bbvch-ai/aihub-core/llama.cpp:server-b7003
-    restart: always
-    ports:
-      - "8182:8182"
-    volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/llamacpp-data:/data
-      - ${VOLUME_ROOT:-./.docker-volumes}/huggingface:/root/.cache/huggingface
-      - ${VOLUME_ROOT:-./.docker-volumes}/llamacpp-cache:/root/.cache/llama.cpp
-    environment:
-      HF_HOME: /root/.cache/huggingface
-      LLAMA_API_KEY: ${LOCAL_LLM_TOKEN}
-    command: >
-      -hf google/gemma-3-4b-it-qat-q4_0-gguf
-      --alias gemma-3-4b
-      --port 8182
-      --hf-token ${HUGGINGFACE_API_KEY}
-      --host 0.0.0.0
-      -c 8196
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
-      timeout: 10s
-      interval: 30s
-      retries: 3
-      start_period: 120s
-    logging:
-      driver: json-file
-      options:
-        max-size: 10m
-        max-file: 2
-    networks:
-      - backend
-
-  llama-cpp-embedding:
-    container_name: llama-cpp-embedding
-    platform: "linux/amd64"
-    image: ghcr.io/bbvch-ai/aihub-core/llama.cpp:server-b7003
-    restart: always
-    ports:
-      - "8183:8182"
-    volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/llamacpp-data:/data
-      - ${VOLUME_ROOT:-./.docker-volumes}/huggingface:/root/.cache/huggingface
-      - ${VOLUME_ROOT:-./.docker-volumes}/llamacpp-cache:/root/.cache/llama.cpp
-    environment:
-      HF_HOME: /root/.cache/huggingface
-      LLAMA_API_KEY: ${LOCAL_LLM_TOKEN}
-    command: >
-      -hf Qwen/Qwen3-Embedding-0.6B-GGUF
-      --hf-token ${HUGGINGFACE_API_KEY}
-      --alias qwen-3-embedding
-      --port 8182
-      --host 0.0.0.0
-      --embedding
-      --pooling last
-      -ub 8192
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
-      timeout: 10s
-      interval: 30s
-      retries: 3
-      start_period: 60s
-    logging:
-      driver: json-file
-      options:
-        max-size: 10m
-        max-file: 2
-    networks:
-      - backend
-
-  llama-cpp-reranker:
-    container_name: llama-cpp-reranker
-    platform: "linux/amd64"
-    image: ghcr.io/bbvch-ai/aihub-core/llama.cpp:server-b7003
-    restart: always
-    ports:
-      - "8184:8182"
-    volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/llamacpp-data:/data
-      - ${VOLUME_ROOT:-./.docker-volumes}/huggingface:/root/.cache/huggingface
-      - ${VOLUME_ROOT:-./.docker-volumes}/llamacpp-cache:/root/.cache/llama.cpp
-    environment:
-      HF_HOME: /root/.cache/huggingface
-      LLAMA_API_KEY: ${LOCAL_LLM_TOKEN}
-    command: >
-      -hf ggml-org/Qwen3-Reranker-0.6B-Q8_0-GGUF
-      --hf-token ${HUGGINGFACE_API_KEY}
-      --alias qwen-3-reranking
-      --port 8182
-      --host 0.0.0.0
-      -c 8192
-      --reranking
-      --no-context-shift
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
-      timeout: 10s
-      interval: 30s
-      retries: 3
-      start_period: 60s
-    logging:
-      driver: json-file
-      options:
-        max-size: 10m
-        max-file: 2
-    networks:
-      - backend
-
-  # ===================================================================
-  # Audio Model Serving (SST/TTS)
-  # ===================================================================
-  # We are using speaches to serve audio models in an openai
-  # compatible format. GPU variants are only used for 'nightly' and
-  # 'latest' stages when GPU is enabled.
-  # ===================================================================
-  speaches:
-    container_name: speaches
-    image: ghcr.io/bbvch-ai/aihub-core/speaches:0.8.3-cpu
-    restart: unless-stopped
-    ports:
-      - "8185:8000"
-    volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/huggingface:/root/.cache/huggingface
-    environment:
-      HF_HOME: /root/.cache/huggingface
-      HF_TOKEN: ${HUGGINGFACE_API_KEY}
-      ENABLE_UI: False
-    healthcheck:
-      test: [ "CMD", "curl", "--fail", "http://0.0.0.0:8000/health" ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 5s
-    networks:
-      - backend
 
   # ===================================================================
   # LiteLLM Stack (Model Proxy and Guardrails)
@@ -890,12 +748,16 @@ services:
       UI_PASSWORD: ${LITELLM_UI_PASSWORD}
       LOCAL_LLM_TOKEN: ${LOCAL_LLM_TOKEN}
       REDIS_TOKEN: ${REDIS_TOKEN}
-      AZURE_OPENAI_BASE_URL: ${AZURE_OPENAI_BASE_URL}
-      AZURE_OPENAI_KEY: ${AZURE_OPENAI_KEY}
       SWISS_LLM_CLOUD_API_BASE_URL: ${SWISS_LLM_CLOUD_API_BASE_URL}
       SWISS_LLM_CLOUD_API_KEY: ${SWISS_LLM_CLOUD_API_KEY}
-      COHERE_API_BASE: ${COHERE_API_BASE}
-      COHERE_API_KEY: ${COHERE_API_KEY}
+      SWISS_LLM_CLOUD_EMBEDDING_API_BASE_URL: ${SWISS_LLM_CLOUD_EMBEDDING_API_BASE_URL}
+      SWISS_LLM_CLOUD_EMBEDDING_API_KEY: ${SWISS_LLM_CLOUD_EMBEDDING_API_KEY}
+      SWISS_LLM_CLOUD_RERANKING_API_BASE_URL: ${SWISS_LLM_CLOUD_RERANKING_API_BASE_URL}
+      SWISS_LLM_CLOUD_RERANKING_API_KEY: ${SWISS_LLM_CLOUD_RERANKING_API_KEY}
+      SWISS_LLM_CLOUD_WHISPER_API_BASE_URL: ${SWISS_LLM_CLOUD_WHISPER_API_BASE_URL}
+      SWISS_LLM_CLOUD_WHISPER_API_KEY: ${SWISS_LLM_CLOUD_WHISPER_API_KEY}
+      SWISS_LLM_CLOUD_OCR_API_BASE_URL: ${SWISS_LLM_CLOUD_OCR_API_BASE_URL}
+      SWISS_LLM_CLOUD_OCR_API_KEY: ${SWISS_LLM_CLOUD_OCR_API_KEY}
       GEMINI_API_KEY: ${GEMINI_API_KEY}
       HUGGINGFACE_API_KEY: ${HUGGINGFACE_API_KEY}
       PRESIDIO_ANALYZER_API_BASE: http://presidio-analyzer:3000
@@ -1147,8 +1009,8 @@ services:
       MODELS_CACHE_TTL: 60
       OPENAI_API_BASE_URL: http://localhost:8000/api/v1/openai
       OPENAI_API_KEY: ${SUPERUSER_TOKEN}
-      TASK_MODEL: text-generation/nano
-      TASK_MODEL_EXTERNAL: text-generation/nano
+      TASK_MODEL: text-generation/gemma-3n-e4b
+      TASK_MODEL_EXTERNAL: text-generation/gemma-3n-e4b
       ENABLE_OLLAMA_API: False
       ENABLE_OPENAI_API: True
 
@@ -1233,7 +1095,7 @@ services:
       EXTERNAL_DOCUMENT_LOADER_URL: http://localhost:8000/api/v1/parsing
       EXTERNAL_DOCUMENT_LOADER_API_KEY: ${SUPERUSER_TOKEN}
       RAG_EMBEDDING_ENGINE: openai
-      RAG_EMBEDDING_MODEL: embedding/large
+      RAG_EMBEDDING_MODEL: embedding/bge-m3
       RAG_OPENAI_API_BASE_URL: http://localhost:8000/api/v1/openai
       RAG_OPENAI_API_KEY: ${SUPERUSER_TOKEN}
 
