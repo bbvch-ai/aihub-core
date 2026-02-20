@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class LocaleHandler:
-    DEFAULT_LOCALE = "en"
+    DEFAULT_LOCALE = "de"
     LOCALE_WHITE_LIST = ["de", "en", "fr", "it"]
 
     def __init__(self, locale: str | None = None, locale_paths: list[str] | None = None):
