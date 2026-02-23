@@ -6,7 +6,7 @@ Transform aihub-core from "good CLAUDE.md files + 7 legacy commands" into a **sh
 an enterprise monorepo should be Claude Code enabled. Every common developer workflow — scaffolding agents, debugging
 events, managing Docker, running scoped tests, reviewing PRs, writing docs — gets a dedicated skill, agent, or hook.
 
----
+______________________________________________________________________
 
 ## Current State Summary
 
@@ -31,7 +31,7 @@ events, managing Docker, running scoped tests, reviewing PRs, writing docs — g
 - Legacy commands lack frontmatter (no model-invocation, no tool scoping)
 - No developer experience skills (docker management, i18n validation, SDK generation, dependency audit)
 
----
+______________________________________________________________________
 
 ## Phase 1: Foundation — Hooks & Settings (Week 1)
 
@@ -44,7 +44,7 @@ work goes through these gates.
 
 - Detect if edited file is Python (`.py`)
 - Determine which scope the file belongs to (parse path for aihub_lib, aihub_agent, etc.)
-- Run `poetry run ruff format <file>` + `poetry run ruff check --fix <file>` within that scope
+- Run `uv run ruff format <file>` + `uv run ruff check --fix <file>` within that scope
 - Exit 0 always (formatting is best-effort, should never block Claude)
 - Handles edge case: file outside any scope (skip formatting)
 
@@ -58,7 +58,7 @@ work goes through these gates.
 
 - Parse tool input for file path
 - Block access to patterns: `*.env*`, `*/certs/*`, `*credentials*`, `*secret*`, `*.pem`, `*.key`, `*_TOKEN*` files,
-  `poetry.lock` (prevent manual edits)
+  `uv.lock` (prevent manual edits)
 - Exit 2 with descriptive message if blocked
 - Exit 0 otherwise
 
@@ -72,8 +72,8 @@ work goes through these gates.
 
 - Detect environment: check `$CLAUDE_CODE_REMOTE` for web vs local
 - For web sessions (async mode to reduce startup latency):
-  - Install Poetry if missing
-  - Run `poetry install` in each Python scope
+  - Install uv if missing
+  - Run `uv sync --all-packages`
   - Run `pnpm install` in aihub_web/aihub_web/
   - Copy `.env.dev` to `.env` if `.env` missing
 - For all sessions:
@@ -140,9 +140,9 @@ Expand from 1 setting to full configuration:
   "permissions": {
     "allow": [
       "Bash(make *)",
-      "Bash(poetry run *)",
-      "Bash(poetry install)",
-      "Bash(poetry add *)",
+      "Bash(uv run *)",
+      "Bash(uv sync *)",
+      "Bash(uv add *)",
       "Bash(pnpm *)",
       "Bash(git status)",
       "Bash(git diff *)",
@@ -182,7 +182,7 @@ Create `.claude/CLAUDE.local.md.template` as a documented starting point:
 # - Additional context about your local environment
 ```
 
----
+______________________________________________________________________
 
 ## Phase 2: Migrate Legacy Commands to Skills (Week 1-2)
 
@@ -282,7 +282,7 @@ allowed-tools: Bash, Read, Edit, Grep, Glob
 
 ### 2.8 Delete `.claude/commands/` directory after migration
 
----
+______________________________________________________________________
 
 ## Phase 3: Platform Scaffolding Skills (Week 2-3)
 
@@ -447,7 +447,7 @@ allowed-tools: Read, Write, Bash, Grep, Glob
 5. Webhook route registration
 6. Bot Framework Emulator test configuration
 
----
+______________________________________________________________________
 
 ## Phase 4: Developer Experience Skills (Week 3-4)
 
@@ -560,9 +560,9 @@ allowed-tools: Bash, Read, Grep, Glob
 
 **Logic**:
 
-1. For each Python scope: `poetry show --outdated`
+1. For all Python packages: `uv pip list --outdated`
 2. For frontend: `pnpm outdated`
-3. Check for known vulnerabilities: `poetry audit` (if available) or `pip-audit`
+3. Check for known vulnerabilities: `uv pip audit` or `pip-audit`
 4. Compare `aihub_lib` version tags across all scopes (detect version drift)
 5. Flag pinned versions that could be relaxed
 6. Flag over-broad constraints that risk breakage
@@ -640,7 +640,7 @@ allowed-tools: Bash, Read, Grep, Glob
 7. Verify Docker compose generation is up to date (`make generate-compose`)
 8. Report pass/fail for each check
 
----
+______________________________________________________________________
 
 ## Phase 5: Custom Subagents (Week 4-5)
 
@@ -819,7 +819,7 @@ memory: project
 - Build MEMORY.md tracking known documentation gaps
 - Verify VitePress docs match current architecture
 
----
+______________________________________________________________________
 
 ## Phase 6: Enhanced MCP Integration (Week 5)
 
@@ -884,7 +884,7 @@ Update to include all configured servers with clear documentation:
 }
 ```
 
----
+______________________________________________________________________
 
 ## Phase 7: Infrastructure & Quality Improvements (Week 5-6)
 
@@ -895,12 +895,12 @@ Add missing targets to root Makefile:
 ```makefile
 # Run all tests across all scopes (missing today!)
 test:
-	cd aihub_pipeline && poetry run pytest || echo "Pipeline: No tests"
-	cd aihub_lib && poetry run pytest
-	cd aihub_agent && poetry run pytest
-	cd aihub_process && poetry run pytest
-	cd aihub_api && poetry run pytest
-	cd aihub_bot && poetry run pytest || echo "Bot: No tests"
+	cd aihub_pipeline && uv run pytest || echo "Pipeline: No tests"
+	cd aihub_lib && uv run pytest
+	cd aihub_agent && uv run pytest
+	cd aihub_process && uv run pytest
+	cd aihub_api && uv run pytest
+	cd aihub_bot && uv run pytest || echo "Bot: No tests"
 
 # Show all available targets with descriptions
 help:
@@ -986,7 +986,7 @@ repos:
           - mdformat-frontmatter
 ```
 
----
+______________________________________________________________________
 
 ## Phase 8: Documentation & ADR (Week 6)
 
@@ -1045,7 +1045,7 @@ Document the `.claude/` directory structure for new contributors:
 - Run `/mcp` to manage MCP servers
 ```
 
----
+______________________________________________________________________
 
 ## Execution Summary
 
