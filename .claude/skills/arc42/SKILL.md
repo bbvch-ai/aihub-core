@@ -105,6 +105,10 @@ most.
 **Common mistake**: Writing vague quality goals like "high performance" — instead write measurable scenarios like "The
 system responds to a user's RAG query within 3 seconds under normal load".
 
+Be aware the solution is a platform consisting of multiple components (other open source projects). When Describing the 
+solution platform, describe it as one platform. Any requirement states always applies to the platform. Do not distribute 
+it to the respective component. Do not name the concrete open-source projects used.
+
 ---
 
 ### Section 2: Architecture Constraints
