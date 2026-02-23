@@ -551,28 +551,3 @@ errors:
   not_found: "Resource not found"
 ```
 
-### 📖 Glossary of Library-Specific Terms
-
-This glossary defines terms, concepts, and technologies that have specific meaning within the `aihub_lib` scope, building upon the core AI-Hub terminology.
-
-| Term                            | Definition                                                                                                                          |
-| :------------------------------ | :---------------------------------------------------------------------------------------------------------------------------------- |
-| **Access Checker**              | Core authorization component that evaluates user permissions against resources using hierarchical wildcards (`*`, `>`, `?*`, `?>`). |
-| **Auth Handler**                | Abstract base class for authentication strategies. Implementations include OAuth2, Token, OpenWebUI, and Development-only handlers. |
-| **Base Event**                  | Foundation class for all events in the system. Provides automatic type registration, serialization, and metadata handling.          |
-| **Base Dispatcher**             | Core workflow execution engine that processes events through registered handlers in a stateless, distributed manner.                |
-| **Configuration Management**    | Pydantic-based system for managing service configurations with environment variable integration and validation.                     |
-| **Event-Driven Architecture**   | Core architectural pattern where all communication happens via events, enabling scalable, stateless distributed systems.            |
-| **Event Store**                 | Persistence layer for events, providing replay capabilities and audit trails using NATS JetStream.                                  |
-| **Hierarchical Permissions**    | Permission system using dot notation (e.g., `aihub.user.agent.class.id`) with wildcard support for flexible access control.         |
-| **Identity Provider**           | Strategy pattern implementation for user authentication supporting multiple backends (Azure AD, Token, Development).                |
-| **Internationalization (i18n)** | Multi-language support system with YAML-based translations and dynamic locale switching.                                            |
-| **Locale Handler**              | Core i18n component that manages language-specific content extraction and fallback mechanisms.                                      |
-| **Locale String**               | Multi-language string representation supporting dynamic locale resolution and default fallbacks.                                    |
-| **NATS Integration**            | Message bus integration providing event publishing, subscription, and stream management for distributed communication.              |
-| **Persistence Layer**           | Database abstraction layer supporting multiple storage backends (MongoDB, Cosmos, Redis) with entity management.                    |
-| **Resource Config**             | Pydantic models for configuring AI/ML services including LLMs, embeddings, and other generative AI resources.                       |
-| **Topic Manager**               | NATS subject/topic routing system that manages message distribution across services and workflow components.                        |
-| **User Identity**               | Core user representation including roles, permissions, and authentication state management.                                         |
-| **Vector Store**                | Abstraction for vector database operations supporting multiple backends (Milvus, Azure AI Search) for RAG implementations.          |
-| **Workflow Orchestration**      | Event-driven workflow execution system enabling complex business processes through distributed state management.                    |

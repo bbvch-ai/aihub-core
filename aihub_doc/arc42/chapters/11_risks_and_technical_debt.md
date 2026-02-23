@@ -2,9 +2,7 @@
 
 This chapter documents known technical risks and accumulated technical debt, ordered by severity. Risks are threats to
 the architecture's quality goals that have not yet materialized but require monitoring or mitigation. Technical debt
-represents intentional shortcuts or deferred work that increases the cost of future changes. Items are drawn from the
-project backlog, where the Priority field distinguishes between P0 (blocker or security risk), P1 (customer feature), P2
-(milestone feature), and P3 (enhancement).
+represents intentional shortcuts or deferred work that increases the cost of future changes.
 
 ## Technical risks
 
@@ -158,18 +156,6 @@ coverage of the user interface and the PII protection of the LLM gateway. Multi-
 a P3 enhancement. **Planned mitigation**: Configure per-language Presidio recognizer sets and select the appropriate set
 based on the detected language of each prompt (using the existing locale context or a lightweight language detector).
 
-### No end-to-end test suite
-
-The testing strategy relies on unit tests, BDD workflow tests (with mocked infrastructure), and manual verification.
-There is no automated end-to-end test that exercises the full path from HTTP request through NATS to agent execution and
-back to the frontend. Integration test markers exist (`@pytest.mark.integration`) but the tests behind them require
-running infrastructure and are excluded from CI. An end-to-end test example is tracked as a P2 item. The absence of
-automated integration tests means that regressions in cross-service communication (NATS subject formatting, event
-serialization compatibility, WebSocket protocol changes) are caught late. **Planned mitigation**: Create a reference
-end-to-end test that starts the Docker Compose dev stack, sends an HTTP request through the API, verifies NATS event
-flow to an agent, and checks the response back through SSE and WebSocket channels. Run this test in CI against a
-lightweight stack with mocked LLM responses.
-
 ### Missing observability in the bot scope
 
 The bot integration (`aihub_bot`) is not instrumented with OpenTelemetry. Traces that originate from a Teams or Slack
@@ -195,8 +181,7 @@ blue-green agent deployments.
 Agent runs, human-in-the-loop requests, and bot-in-the-loop delegations have no timeout mechanism. A run that enters a
 state where no step's input event is ever published will remain in progress indefinitely in the `StepStore`. A
 human-in-the-loop request that is never answered blocks the process walkthrough permanently. The platform relies on
-operators noticing stalled runs through the Admin UI or Langfuse traces. Run timeouts and HITL/AITL/BOTL timeouts are
-tracked as separate P3 items. **Planned mitigation**: Add configurable timeout durations to the dispatcher (per-run
+operators noticing stalled runs through the Admin UI or Langfuse traces. **Planned mitigation**: Add configurable timeout durations to the dispatcher (per-run
 maximum wall time) and to delegation annotations (per-step response deadline). On timeout, the dispatcher publishes an
 `ExceptionEvent` with a timeout-specific error code and cleans up the run or walkthrough.
 
@@ -206,7 +191,7 @@ Files uploaded through the API or ingested through the pipeline are stored in Se
 scanning. A document containing embedded malware could be stored, chunked, and served to users through the knowledge
 retrieval system. The pipeline's parsing step (MinerU) processes documents in isolated containers, limiting the blast
 radius of a malicious payload during parsing, but the uploaded file remains in SeaweedFS and can be downloaded by
-authorized users. Malware scanning is tracked as a P3 enhancement. **Planned mitigation**: Integrate ClamAV as a sidecar
+authorized users. **Planned mitigation**: Integrate ClamAV as a sidecar
 container. The upload endpoint would submit files to ClamAV via its REST API before storing them in SeaweedFS, rejecting
 infected files with a descriptive error.
 
@@ -214,15 +199,6 @@ infected files with a descriptive error.
 
 The hosted deployment uses Ansible playbooks that are not based on Ansible Galaxy roles, making them harder to maintain
 and share. OS-level updates on the deployment servers are not automated, creating a risk of unpatched vulnerabilities in
-the host operating system. Migration to Ansible Galaxy roles with automated OS updates is tracked as a P0 item.
+the host operating system.
 **Planned mitigation**: Refactor playbooks into reusable Ansible Galaxy roles with automated `unattended-upgrades` for
 OS patching. Add a CI step that lints Ansible playbooks and validates role dependencies.
-
-## Mitigation status
-
-Several risks that were previously P0 blockers have been resolved. Docker network isolation replaced the original flat
-network (#811). The Traefik docker-socket-proxy eliminated direct socket access (#812). Restrictively-licensed services
-(Redis, Phoenix) were replaced with permissively-licensed alternatives (Valkey, Langfuse) (#575). A centralized backup
-mechanism using Offen and SeaweedFS replication was implemented (#778). Dockerfile security concerns were audited and
-addressed (#604). These closed items demonstrate that the project actively manages its P0 backlog, but the open items
-listed above represent the current risk surface.

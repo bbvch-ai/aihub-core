@@ -6,37 +6,7 @@ building block's documentation alone.
 
 ## Event system
 
-The Swiss AI Agent Protocol defines a typed event hierarchy rooted in `BaseEvent`. Every event subclass self-registers
-in a class-level registry via `__pydantic_init_subclass__` at import time. This registry enables polymorphic
-deserialization: `BaseEvent.deserialize_event(data)` looks up the `_event_name` field in the registry and instantiates
-the correct subclass. If the exact class is unknown (the receiving code does not have that event's module imported), the
-deserializer walks `_parent_event_names` until it finds a known ancestor, preserving forward compatibility when agents
-publish event types that the API has never seen.
-
-The hierarchy branches into three categories. `ControlEvent` drives workflow state transitions. Only control events
-trigger step execution in the dispatcher, and they are published to NATS JetStream for durable delivery. `DisplayEvent`
-provides observability data for frontends and tracing systems. Display events are published to NATS Core for ephemeral
-real-time delivery; losing them does not affect workflow correctness. `ControlAndDisplayEvent` serves both purposes
-simultaneously and is the most common base class for concrete events. `StartEvent`, `StopEvent`,
-`HumanInTheLoopRequestEvent`, and `ExceptionEvent` are all control-and-display events because they drive workflow
-transitions and are visible in the UI.
-
-`SemanticEvent` extends `ControlAndDisplayEvent` with an abstract `to_semantic_convention()` method that returns
-OpenInference-compatible attribute dictionaries. `LLMEvent`, `RetrieverEvent`, `EmbeddingEvent`, `RerankerEvent`,
-`GuardEvent`, and `ExceptionEvent` are semantic events. This makes them simultaneously NATS workflow events (consumed by
-dispatchers and frontends) and OpenTelemetry trace data (exported to Langfuse for AI-specific observability). A single
-event publication serves both the workflow engine and the observability pipeline.
-
-NATS subjects encode routing and scoping information directly in the topic string. Agent subjects follow the pattern
-`agent.{class}.{id}.{thread}.{display}.{run}.{event_type}.{event_name}.{event_id}`, where `event_type` is either
-`control_event` or `display_event`. Process subjects follow
-`process.{class}.{id}.{walkthrough}.{event_type}.{event_name}.{event_id}`. `TopicManager` classes build these subjects
-programmatically, and `Topic.from_subject()` parses them back using the same auto-registration pattern as events.
-
-The three scope levels in agent topics serve different purposes. `thread_id` identifies a user's conversation and
-persists across multiple agent runs. `display_id` groups what the UI should render together within one logical
-interaction. `run_id` identifies a single agent execution and serves as the `execution_context_id` for step tracking,
-event replay, and crash recovery.
+...
 
 ## Form duality
 
@@ -46,30 +16,6 @@ interactive form controls. In data mode, the same fields contain primitive Pytho
 runtime. The type system expresses this with union annotations: a field typed `float | InputNumber` holds either an
 `InputNumber` form element or a `float` value.
 
-The `Form` base class provides methods for both modes. `to_formkit_form()` recursively extracts `FormkitElement`
-instances from the model's fields and produces a list of form element definitions for the frontend. Nested `Form`
-subclasses become `Group` elements; `list[Form]` fields become `Repeater` elements. `to_form_submission_model()` strips
-the `FormkitElement` types from all union annotations and returns a pure-primitives Pydantic model that the API uses to
-validate form submissions. `to_configurable_submission_model()` is instance-based: it only includes fields that
-currently hold `FormkitElement` values, producing a schema that reflects which fields are configurable for a specific
-agent instance.
-
-The distinction between configurable and non-configurable fields is determined by the `as_form()` class method. Fields
-set to `FormkitElement` instances are configurable (the user edits them in the Admin UI). Fields set to primitive values
-are non-configurable (baked into the agent code, invisible to the UI). At runtime, `deep_merge()` combines the
-non-configurable values with the user-submitted configuration, and `model_validate()` reconstructs the typed config
-object in data mode.
-
-Three normalization functions handle FormKit's serialization quirks. `transform_formkit_arrays()` converts FormKit's
-numeric-keyed object encoding (`{"0": {...}, "1": {...}}`) back to Python lists. `normalize_empty_objects_to_none()`
-converts empty dicts (sent by FormKit for disabled nested forms) to `None`. `normalize_empty_locale_strings()` converts
-locale dicts where all values are empty strings to `None`.
-
-Twenty-eight concrete `PrimeVueElement` subclasses cover the standard form controls: text inputs, number inputs,
-checkboxes, toggles, selects, multi-selects, date pickers, sliders, and domain-specific elements like `ModelSelect` (LLM
-model chooser), `KnowledgeDatabaseSelector` (vector store namespace picker), and `LocaleInput` (four-language string
-editor).
-
 ## Authentication
 
 Authentication uses a handler chain pattern. The abstract `AuthHandler` base class defines two methods: `__call__` for
@@ -77,7 +23,7 @@ standard HTTP requests and `authenticate_token` for WebSocket connections where 
 payload rather than in HTTP headers. Concrete handlers extract and validate credentials, then delegate to an
 `IdentityProvider` to resolve the full `UserIdentity` (ID, name, email, roles, profile image).
 
-Seven handler implementations exist. `OAuth2AuthHandler` validates Azure AD JWT tokens by fetching JWKS keys (cached 6
+`OAuth2AuthHandler` validates Azure AD JWT tokens by fetching JWKS keys (cached 6
 hours), verifying the RS256 signature, and checking audience and issuer claims. `TokenAuthHandler` validates API access
 tokens (format: `{ObjectId}.{128-char-random}`) against MongoDB with constant-time comparison and expiry checking.
 `OpenWebuiAuthHandler` verifies HMAC-SHA256 signatures on OpenWebUI's custom headers (`X-OpenWebUI-User-Name`,
@@ -112,26 +58,7 @@ the thread before publishing events.
 
 Role-based rate limiting supplements RBAC. Each role can define usage limits with patterns, counts, and time periods (1
 hour, 1 day, 7 days, 1 month). The `UsageLimits` class uses a Redis Lua script for atomic check-and-increment operations
-and returns HTTP 429 with localized error messages when limits are exceeded.
-
-## PII detection
-
-PII detection and anonymization is implemented as LiteLLM pre-call guardrails using Microsoft Presidio. Two guardrails
-are configured: `presidio-mask-guard` replaces detected entities (person names, email addresses) with tokens like
-`<PERSON>`, and `presidio-block-guard` rejects requests entirely if certain entity types (credit card numbers) are
-detected. Both run in `pre_call` mode, intercepting prompts before they reach any LLM provider. The `output_parse_pii`
-option also scans model responses before returning them to the caller.
-
-Guardrails are not enabled by default. Agent code must explicitly include guardrail names in the LiteLLM request
-metadata (`metadata.guardrails: ["presidio-mask-guard"]`) to activate PII filtering for a specific call. This allows
-agents that work exclusively with local models (where data never leaves the infrastructure) to skip the overhead, while
-agents that route to external providers can enforce PII masking.
-
-Presidio runs as two separate microservices (analyzer for NER detection, anonymizer for text replacement) on the backend
-network. The analyzer uses NER models configured for German by default, with language selection per guardrail.
-
-LiteLLM additionally runs prompt injection detection as a callback, using both pattern-based similarity checking against
-known attack patterns and an LLM-based classifier that evaluates prompts for malicious intent.
+and returns HTTP 429 with localized error messages when limits are exceeded. .
 
 ## Internationalization
 
@@ -169,8 +96,7 @@ suppresses all tracing for a function and its sub-calls (used for health checks 
 suppression to propagate through the call tree.
 
 Trace context propagation across NATS boundaries uses W3C Trace Context headers. `NATSTraceContextPropagator` injects
-the current span context into NATS message headers on publish and extracts it on receive. `NATSMessageHeaders` provides
-a fluent builder: `.with_trace_context().with_header("Nats-Msg-Id", id).to_dict()`. Every `JSPublisher.publish_event()`
+the current span context into NATS message headers on publish and extracts it on receive. Every `JSPublisher.publish_event()`
 call creates a span with semantic messaging attributes (`messaging.system`, `messaging.destination`,
 `messaging.operation`) and injects trace context into the message headers. On the subscriber side, `JSSubscriber`
 extracts the trace context before dispatching to the handler, creating a continuous trace from HTTP request through NATS
@@ -198,12 +124,6 @@ The platform enforces license compliance through a three-layer CI check that run
 Docker images (parsed from all compose files) against a classification in `licenses.config.json`. Restrictive licenses
 (GPL, AGPL, SSPL, OSL-3.0, EUPL) fail the build. Permissive licenses (MIT, Apache, BSD, ISC, PSF, MPL) pass
 automatically. Licenses requiring review (EPL, CDDL, CC-BY-SA) must be explicitly approved.
-
-Three license-driven technology decisions shape the architecture. MinerU (AGPL) runs in isolated Docker containers with
-REST-only communication; no Python imports from MinerU exist in any platform package, maintaining the AGPL license
-boundary. Valkey replaced Redis after Redis changed its license to RSALv2/SSPL, which conflicts with the platform's
-distribution as a bundled Docker Compose stack. Langfuse (MIT) replaced Arize Phoenix (Elastic License 2.0) because ELv2
-prohibits bundling within a managed service offering.
 
 The license checker maintains an override list for packages where `pip-licenses` reports incorrect metadata. Neo4j
 Community Edition (GPL) is manually approved because it runs as a separate container, not as a linked library.
@@ -233,21 +153,6 @@ Agent tests use BDD with pytest-bdd for workflow scenarios and plain pytest for 
 `tests/features/` define scenarios in natural language; step implementations in `test_*.py` files map Given/When/Then
 clauses to Python code. An `@async_test` decorator bridges async step implementations into synchronous pytest-bdd by
 wrapping them in `asyncio.run()`.
-
-`AgentTestRunner` extends `AgentRunner` with test-specific behavior. It mocks the configuration RPC client (returning
-the test's `agent_config.model_dump()` directly, no API server needed) and subscribes to all events published during the
-test run, collecting them in an `observed_events` list. The `test_run()` async context manager starts the runner,
-generates fresh scope IDs (thread, display, run), yields a topic for sending events, and polls for a `StopEvent` before
-teardown. Assertion helpers (`has_event_of_class`, `get_events_of_class`, `wait_for_event`) provide a fluent API for
-verifying workflow outcomes.
-
-Dispatcher unit tests use a different approach: stateful in-memory mock Redis, mocked NATS clients, and real dispatcher
-instances with controlled step readiness via `patch.object`. This tests the dispatcher's routing and error handling
-logic without requiring running infrastructure.
-
-Test markers (`slow`, `azure`, `integration`, `flaky`, `self_hosted`, `experimental`) are defined in per-scope
-`pyproject.toml` files. CI runs `pytest -m "not azure and not flaky"` to exclude tests that require external services or
-have known stability issues.
 
 ## Generated TypeScript SDK
 

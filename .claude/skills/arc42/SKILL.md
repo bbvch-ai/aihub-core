@@ -294,7 +294,7 @@ Do NOT duplicate the `/document-decision` skill's workflow — this section only
 
 - **10.1 Quality Tree**: Overview of quality requirements by category. Use ISO 25010:2023 or the arc42 Q42 model with 9
   dimensions: Reliable, Flexible, Efficient, Usable, Secure, Safe, Maintainable, Suitable, Operable. Format as mindmap,
-  table, or quality attribute utility tree.
+  table, or quality attribute utility tree. Do not repeat quality goals from 1.2 as quality dimension.
 
 - **10.2 Quality Scenarios**: Concrete, measurable scenarios in short form:
 

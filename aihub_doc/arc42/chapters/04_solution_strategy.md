@@ -53,18 +53,6 @@ implements its own authentication logic. It uses aihub_lib abstractions for all 
 exists so that platform updates do not break SDK-built agents and SDK changes do not require platform redeployment. Each
 layer has its own release cycle.
 
-### Tier-based capability adoption
-
-The architecture is structured around four tiers that reflect how organizations typically adopt AI capabilities. Tier 1
-provides secure LLM access through a web chat interface and an LLM gateway. Tier 1+ extends access into collaboration
-tools like Microsoft Teams and Slack. Tier 2 adds document ingestion pipelines, vector search, and custom agents. Tier 3
-introduces process orchestration with human-in-the-loop workflows.
-
-The tiers are not separate products or versions. The platform ships all capabilities at once. The tier model describes a
-recommended adoption sequence and shapes how the architecture is organized internally. Each tier reuses the same NATS
-event bus, the same authentication layer, and the same database infrastructure. Moving from Tier 1 to Tier 2 means
-deploying agents and starting pipelines, not migrating data or reconfiguring authentication.
-
 ## Technology decisions
 
 ### NATS for messaging
@@ -143,16 +131,6 @@ only a new Stage 1 definition; the processing pipeline remains unchanged.
 Dagster's dynamic partitioning treats each document as an independent partition, so processing scales linearly and
 individual document failures do not block the rest of the pipeline.
 
-### Langfuse for LLM observability
-
-Langfuse replaced Arize Phoenix as the platform's LLM observability tool. The replacement was driven by licensing:
-Phoenix uses the Elastic License 2.0, which prohibits bundling the software within a managed service offering. Since the
-platform ships as a turnkey Docker Compose stack, this restriction applied. Langfuse uses the MIT license.
-
-Beyond licensing, Langfuse provides built-in cost attribution per user, per agent, and per trace through its integration
-with LiteLLM. It also provides dataset management and experiment tracking for RAG evaluation, replacing approximately
-850 lines of custom evaluation code that the Phoenix integration required.
-
 ### FastAPI for the API gateway
 
 FastAPI handles HTTP REST, Server-Sent Events, and WebSocket connections between frontends and the NATS event bus. Its
@@ -184,29 +162,6 @@ PostgreSQL hosts four databases: OpenWebUI (chat history and user preferences), 
 FerretDB's storage backend. Using a single database engine for relational needs simplifies operations, backup
 procedures, and monitoring.
 
-## Achieving quality goals
-
-The following table summarizes how each quality goal from chapter 1 (Introduction and goals) maps to architectural
-solution approaches. The subsections below expand on each.
-
-| Quality goal                           | Key solution approaches                                                                                       | Details                                              |
-| -------------------------------------- | ------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
-| **Data sovereignty**                   | Five-network Docker isolation, Presidio PII guardrails, local llama.cpp inference, no phone-home telemetry    | Chapter 7 (Deployment view), Chapter 10 (DS-1–5)     |
-| **Transparency and auditability**      | Immutable NATS event streams, OpenTelemetry tracing across NATS, Langfuse cost attribution, bounded workflows | Chapter 6 (Runtime view), Chapter 10 (TA-1–4)        |
-| **Vendor independence**                | LiteLLM gateway abstraction, permissive-only license stack, replaceable components behind interfaces          | Chapter 8 (License compliance), Chapter 10 (VI-1–4)  |
-| **Operational self-sufficiency**       | Single `docker compose up`, Jinja2 template generation, health-check-ordered startup, externalized state      | Chapter 7 (Deployment view), Chapter 10 (OS-1–5)     |
-| **Extensibility without modification** | NATS-based agent discovery, dynamic endpoint registration, form duality, two-stage pipeline separation        | Chapter 5 (Building block view), Chapter 10 (EX-1–4) |
-
-### Data sovereignty
-
-Data sovereignty is achieved through three reinforcing mechanisms. Network isolation (five Docker networks with the
-egress network disabling inter-container communication) ensures that containers can only reach the networks they are
-explicitly assigned to. PII detection (Presidio analyzer and anonymizer integrated as LiteLLM pre-call guardrails)
-intercepts requests before they leave the platform boundary, masking or blocking sensitive entities. Local model hosting
-(llama.cpp containers for chat, embedding, and reranking) enables fully air-gapped deployments where no data leaves the
-operator's infrastructure. The platform includes no phone-home telemetry; Langfuse and the OTEL Collector run entirely
-self-hosted.
-
 ### Transparency and auditability
 
 Every agent step execution, LLM call, document retrieval, and user interaction is captured as an immutable event in the
@@ -219,20 +174,13 @@ response.
 
 ### Vendor independence
 
-The LiteLLM gateway abstracts all model access behind a single OpenAI-compatible interface. Switching providers is a
+The LLM gateway abstracts all model access behind a single OpenAI-compatible interface. Switching providers is a
 configuration change. All infrastructure components use open-source licenses compatible with the platform's Apache 2.0
-distribution model. Components with incompatible licenses (Phoenix with ELv2, Redis with RSALv2/SSPL) have been replaced
-with compatible alternatives (Langfuse with MIT, Valkey as open-source Redis fork). MinerU (AGPL) runs in isolated
-containers with REST-only communication, maintaining license isolation.
+distribution model. 
 
 ### Operational self-sufficiency
 
-The platform deploys with a single `docker compose up` command. A Jinja2 template system generates Docker Compose files
-for five deployment stages (dev, local, build, nightly, latest) from a single source template, each with appropriate
-resource allocations and TLS configurations. All configuration defaults are defined in `.env.dev` and `.env.prod` files;
-no environment variable uses fallback defaults in the compose templates, preventing silent misconfiguration. Every
-container includes a health check that Docker Compose uses for dependency ordering. Certificate management is automated:
-mkcert for local development, Let's Encrypt ACME for production.
+The platform deploys with a single `docker compose up` command. 
 
 ### Extensibility without platform modification
 
@@ -271,26 +219,9 @@ mechanism, and request/response serialization. Services contain business logic a
 as stateless classes with `@staticmethod` methods. Entities are MongoEngine documents that combine schema definition
 with repository classmethods. Controllers never access the database directly; services never handle HTTP concerns.
 
-### NATS-based agent discovery
-
-The platform uses no static agent registry. The API gateway discovers agents by broadcasting a
-ClassDiscoveryRequestEvent on NATS at regular intervals. Online agents respond with an AgentDiscoveryResponseEvent
-containing their input and output event schemas, configuration schema, and workflow graph. The gateway dynamically
-generates REST endpoints and invalidates the OpenAPI schema when agents come online or go offline. This design means the
-platform's API surface adapts automatically to whatever agents are currently running.
-
 ### Form duality for configuration
 
 Agent and process configurations use a pattern where the same Pydantic model serves two purposes. In form mode, fields
 are FormkitElement instances that the admin UI renders as interactive form controls. In data mode, the same fields
 contain the submitted values as primitive types. A single class definition produces both the UI form schema and the
 runtime configuration validation, eliminating the need to maintain parallel definitions.
-
-### Five-network Docker isolation
-
-Services are assigned to Docker networks based on their role: proxy (external ingress), backend (application services),
-data (databases and message broker), storage (SeaweedFS cluster), and egress (outbound internet only with
-inter-container communication disabled). Each service connects only to the networks it requires. The API service
-connects to four networks because it must accept external requests, communicate with application services, query
-databases, and access file storage. A database connects only to the data network. This minimizes the blast radius of a
-container compromise: an attacker who gains control of a proxy-network service cannot directly reach the data network.
