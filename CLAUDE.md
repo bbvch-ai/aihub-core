@@ -153,11 +153,10 @@ instead. Keep docstrings concise, one or two sentences max.
 - **Linting** (PostToolUse hook): Ruff check --fix (rules: E pycodestyle, F pyflakes, UP pyupgrade, I isort).
 - **`make pr-ready`** (stop hook at session end): Automatically runs on all dirty scopes before session closes.
   Hard-blocks if it fails. Do not run manually mid-session — it runs at the end.
-- **`poetry.lock` protection** (PreToolUse hook): Edits to `poetry.lock` are hard-blocked. Use
-  `poetry add/remove/update`.
+- **`uv.lock` protection** (PreToolUse hook): Edits to `uv.lock` are hard-blocked. Use `uv add/remove`.
 - **Scope boundary checks** (PreToolUse hook): Warns if you import directly between scopes instead of through
   `aihub_lib`.
-- **Dependency setup** (SessionStart hook): `make use-local-core` + `pnpm install` run at session start.
+- **Dependency setup** (SessionStart hook): `uv sync --all-packages` + `pnpm install` run at session start.
 
 **What you MUST run manually:**
 
@@ -165,12 +164,13 @@ instead. Keep docstrings concise, one or two sentences max.
 
 ## Commands
 
-Run from within scope directory with Poetry shell activated:
+Run from the workspace root:
 
-| Command            | What it does                                        |
-| ------------------ | --------------------------------------------------- |
-| `make test`        | Run pytest suite (MUST pass before commit)          |
-| `poetry add <pkg>` | Add dependency (NEVER edit pyproject.toml manually) |
+| Command        | What it does                                        |
+| -------------- | --------------------------------------------------- |
+| `make test`    | Run pytest suite (MUST pass before commit)          |
+| `uv add <pkg>` | Add dependency (NEVER edit pyproject.toml manually) |
+| `uv sync`      | Sync all packages from lockfile                     |
 
 ## Development Workflow
 
@@ -230,8 +230,8 @@ Before marking task complete (`make pr-ready` runs automatically via stop hook):
 
 ## Package Dependencies
 
-- All packages reference `aihub_lib` via Git URL in `pyproject.toml`. Versioning via Git tags.
-- Use `poetry add/remove/update` — NEVER edit `pyproject.toml` manually.
+- All packages reference `aihub_lib` as a workspace dependency via `[tool.uv.sources]`.
+- Use `uv add/remove` — NEVER edit `pyproject.toml` manually.
 
 ## Docker Compose Conventions
 

@@ -23,9 +23,9 @@ if command -v docker &>/dev/null; then
 fi
 
 if [[ -z "$CLAUDE_CODE_REMOTE" ]]; then
-  # Local session: switch to local aihub_lib and install all scopes
-  echo "Local session. Running make use-local-core..." >&2
-  make use-local-core 2>&1 | tail -3 >&2
+  # Local session: sync all packages
+  echo "Local session. Running uv sync --all-packages..." >&2
+  uv sync --all-packages 2>&1 | tail -3 >&2
 
   # Install frontend dependencies
   if [[ -d "$REPO_ROOT/aihub_web/aihub_web" && -f "$REPO_ROOT/aihub_web/aihub_web/package.json" ]]; then
@@ -41,14 +41,14 @@ else
     echo "Copied .env.dev to .env" >&2
   fi
 
-  # Install Poetry if missing
-  if ! command -v poetry &>/dev/null; then
-    echo "Installing Poetry..." >&2
-    pip install poetry 2>&1 | tail -1 >&2
+  # Install uv if missing
+  if ! command -v uv &>/dev/null; then
+    echo "Installing uv..." >&2
+    curl -LsSf https://astral.sh/uv/install.sh | sh 2>&1 | tail -1 >&2
   fi
 
-  # Use local core (switches deps + installs)
-  make use-local-core 2>&1 | tail -3 >&2
+  # Sync all packages
+  uv sync --all-packages 2>&1 | tail -3 >&2
 
   # Install frontend dependencies
   if [[ -d "$REPO_ROOT/aihub_web/aihub_web" && -f "$REPO_ROOT/aihub_web/aihub_web/package.json" ]]; then

@@ -15,6 +15,7 @@ aihub_doc/aihub
 .idea/copilot*
 *.log
 .mypy_cache/
+.venv
 
 # Claude Code local overrides (personal preferences, not shared)
 CLAUDE.local.md

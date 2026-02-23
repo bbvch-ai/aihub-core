@@ -52,7 +52,7 @@ format-md:
 
 format-yaml:
 	@echo "Formatting YAML files..."
-	@poetry run yamlfix $$(git ls-files '*.yaml' '*.yml' | grep -v 'pnpm-lock.yaml')
+	@uv run yamlfix $$(git ls-files '*.yaml' '*.yml' | grep -v 'pnpm-lock.yaml')
 
 format-md-win:
 	@echo "Formatting markdown files..."
@@ -127,40 +127,3 @@ version-bump:
 	@uv lock
 	@echo "Version bumped to $(VERSION)"
 
-# Run all tests across all scopes
-test:
-	@echo "Running tests across all scopes..."
-	@(cd aihub_pipeline && poetry run pytest) || echo "Pipeline: FAILED or no tests"
-	@(cd aihub_lib && poetry run pytest)
-	@(cd aihub_agent && poetry run pytest)
-	@(cd aihub_process && poetry run pytest)
-	@(cd aihub_api && poetry run pytest)
-	@(cd aihub_bot && poetry run pytest) || echo "Bot: FAILED or no tests"
-
-# Show all available targets with descriptions
-help:
-	@echo "Available targets:"
-	@echo "  make format      - Format all Python code (Ruff)"
-	@echo "  make format-md   - Format all Markdown files"
-	@echo "  make format-yaml - Format all YAML files"
-	@echo "  make lint        - Lint all Python code (Ruff)"
-	@echo "  make typecheck   - Type-check all scopes (MyPy)"
-	@echo "  make pr-ready    - Format + lint (pre-commit gate)"
-	@echo "  make test        - Run all tests across all scopes"
-	@echo "  make up-dev      - Start Docker dev environment"
-	@echo "  make generate-compose - Generate Docker Compose files"
-	@echo "  make changelog   - Generate CHANGELOG.md"
-	@echo "  make license-check - Check dependency licenses"
-	@echo "  make use-local-core - Switch to local aihub_lib"
-	@echo "  make use-remote-core TAG=vX.Y.Z - Switch to remote"
-	@echo "  make local-cert  - Generate mkcert TLS certificates"
-	@echo "  make clean       - Remove build artifacts"
-
-# Clean build artifacts across all scopes
-clean:
-	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
-	find . -type d -name .pytest_cache -exec rm -rf {} + 2>/dev/null || true
-	find . -type d -name .mypy_cache -exec rm -rf {} + 2>/dev/null || true
-	find . -type f -name "*.pyc" -delete 2>/dev/null || true
-	find . -type f -name coverage.xml -delete 2>/dev/null || true
-	find . -type f -name pytest.xml -delete 2>/dev/null || true
