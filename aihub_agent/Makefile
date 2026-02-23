@@ -1,16 +1,16 @@
 lint:
 	@echo "Running linter..."
-	poetry run ruff check --fix
+	uv run ruff check --fix
 
 # Format code with Black
 format:
 	@echo "Formatting code..."
-	poetry run ruff format
+	uv run ruff format
 
 # Type-check with MyPy
 typecheck:
 	@echo "Running type checks..."
-	poetry run mypy aihub_agent
+	uv run mypy aihub_agent
 
 clean-jupyter:
 	@echo "Cleaning up notebooks..."
@@ -18,14 +18,14 @@ clean-jupyter:
 
 test-cov:
 	@echo "Running tests in aihub_agent with coverage..."
-	poetry run pytest --cov=. \
+	uv run pytest --cov=. \
 	                  --cov-report=xml:coverage.xml \
 	                  --cov-report=term-missing \
 	                  --junitxml=pytest.xml
 
 test:
 	@echo "Running tests in aihub_agent..."
-	poetry run pytest
+	uv run pytest -m "not azure"
 
 pr-ready: format lint
 	@echo "Running full check (format, sort)..."

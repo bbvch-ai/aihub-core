@@ -4,11 +4,11 @@
 repos.
 
 Tech Stack & Paradigms: GitHub Actions composite actions (YAML workflows). actions/checkout@v4 for repo cloning.
-actions/setup-python@v5 (Python 3 default). actions/setup-node@v4 for Node.js. snok/install-poetry@v1 (Poetry).
+actions/setup-python@v5 (Python 3 default). actions/setup-node@v4 for Node.js. astral-sh/setup-uv@v7 (uv).
 docker/setup-buildx-action@v3 + docker/build-push-action@v6 for multi-platform images. docker/login-action@v2 for GHCR
 auth. reviewdog/action-black@v3 for Black formatter PR comments. pytest with pytest-cov for coverage.
 EnricoMi/publish-unit-test-result-action@v2 for test summaries. actions/upload-artifact@v4 for artifacts.
-actions/cache@v4 for Poetry/HuggingFace model caching. Docker Compose for test services. Stateless, parameterized,
+actions/cache@v4 for HuggingFace model caching. Docker Compose for test services. Stateless, parameterized,
 version-tagged reusable actions.
 
 ## Scope Responsibility

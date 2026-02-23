@@ -2,11 +2,20 @@
 
 **Purpose**: Shared infrastructure library used by ALL AI-Hub services. Code belongs here if used by 2+ services.
 
-Tech Stack & Paradigms: NATS pub-sub (nats-py) with typed Pydantic events. Hierarchical event model: Control (workflow) vs Display (observability). MongoEngine ODM for MongoDB (FerretDB). LlamaIndex Core + extensions (vector stores: Milvus/Azure AI Search, storage: MongoDB docstore, readers: file, postprocessors: Cohere rerank, embeddings/LLMs: OpenAI-like). Redis v5 client for Valkey state storage. Azure SDK suite (speech, cosmos, search, storage, document intelligence, cognitive services). OpenTelemetry full instrumentation suite (SDK, API, exporters, semantic conventions) + OpenInference for LLM tracing. Langfuse for observability and evaluation. FastAPI for REST. python-i18n for translations. Pydantic v2 + pydantic-settings. OpenAI SDK, google-genai, transformers (HuggingFace). MinerU + MarkItDown for document processing. boto3 for AWS. cachetools for TTL caching. colorlog for logging. fsspec for filesystem abstraction. pytest + pytest-bdd + pytest-mock for testing.
+Tech Stack & Paradigms: NATS pub-sub (nats-py) with typed Pydantic events. Hierarchical event model: Control (workflow)
+vs Display (observability). MongoEngine ODM for MongoDB (FerretDB). LlamaIndex Core + extensions (vector stores:
+Milvus/Azure AI Search, storage: MongoDB docstore, readers: file, postprocessors: Cohere rerank, embeddings/LLMs:
+OpenAI-like). Redis v5 client for Valkey state storage. Azure SDK suite (speech, cosmos, search, storage, document
+intelligence, cognitive services). OpenTelemetry full instrumentation suite (SDK, API, exporters, semantic conventions)
+\+ OpenInference for LLM tracing. Langfuse for observability and evaluation. FastAPI for REST. python-i18n for
+translations. Pydantic v2 + pydantic-settings. OpenAI SDK, google-genai, transformers (HuggingFace). MinerU + MarkItDown
+for document processing. boto3 for AWS. cachetools for TTL caching. colorlog for logging. fsspec for filesystem
+abstraction. pytest + pytest-bdd + pytest-mock for testing.
 
 ## Scope Responsibility
 
-Foundation for event-driven architecture, authentication/authorization, internationalization, and testing utilities. NOT for service-specific business logic.
+Foundation for event-driven architecture, authentication/authorization, internationalization, and testing utilities. NOT
+for service-specific business logic.
 
 ## Folder Structure
 
@@ -46,7 +55,8 @@ Used by agentic-processses:
 
 - **AuthHandler**: Extracts/validates credentials from requests → UserIdentity.
 - **IdentityProvider**: Retrieves user details from identity systems.
-- Examples: `/home/user/aihub-core/aihub_lib/aihub_lib/auth/dependencies/`, `/home/user/aihub-core/aihub_lib/aihub_lib/auth/identity/`
+- Examples: `/home/user/aihub-core/aihub_lib/aihub_lib/auth/dependencies/`,
+  `/home/user/aihub-core/aihub_lib/aihub_lib/auth/identity/`
 
 **Permission System**:
 
@@ -80,8 +90,8 @@ Used by agentic-processses:
 
 ## Testing
 
-**BDD**: Use `pytest-bdd` for complex flows. Async support via `@async_test` decorator.
-**Location**: `/home/user/aihub-core/aihub_lib/tests/`
+**BDD**: Use `pytest-bdd` for complex flows. Async support via `@async_test` decorator. **Location**:
+`/home/user/aihub-core/aihub_lib/tests/`
 
 ## Pre-Commit
 

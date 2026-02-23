@@ -15,3 +15,6 @@ aihub_doc/aihub
 .idea/copilot*
 *.log
 .mypy_cache/
+.venv
+.claude/mcp/bin/
+.claude/statusline.sh

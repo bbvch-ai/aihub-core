@@ -160,9 +160,9 @@ async def test_update_memory_with_metadata_parameter(mock_config, mock_vector_st
     actual_payload = kwargs.get("payload")
 
     # Verify underscore fields are still preserved
-    assert (
-        actual_payload["_thread_id"] == "test_thread_789"
-    ), "Underscore fields should be preserved even when metadata is provided"
+    assert actual_payload["_thread_id"] == "test_thread_789", (
+        "Underscore fields should be preserved even when metadata is provided"
+    )
 
     # Verify new metadata is added
     assert actual_payload["custom_field"] == "custom_value", "New metadata should be added"

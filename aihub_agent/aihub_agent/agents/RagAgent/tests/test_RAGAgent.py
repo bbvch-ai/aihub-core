@@ -470,9 +470,9 @@ def _(agent_runner: AgentTestRunner):
 def _(agent_runner: AgentTestRunner):
     reranker_event = agent_runner.get_event_of_class(RerankerEvent)
     assert reranker_event, "RerankerEvent was not produced"
-    assert len(reranker_event.input_nodes) == len(
-        reranker_event.output_nodes
-    ), "Pass-through mode should preserve all nodes"
+    assert len(reranker_event.input_nodes) == len(reranker_event.output_nodes), (
+        "Pass-through mode should preserve all nodes"
+    )
 
 
 @then("the RerankerEvent contains the original nodes from the RetrieverEvent")
@@ -493,18 +493,18 @@ def _(agent_runner: AgentTestRunner):
 def _(agent_runner: AgentTestRunner, top_n: int):
     reranker_event = agent_runner.get_event_of_class(RerankerEvent)
     assert reranker_event, "RerankerEvent was not found"
-    assert (
-        len(reranker_event.output_nodes) <= top_n
-    ), f"Expected at most {top_n} nodes, got {len(reranker_event.output_nodes)}"
+    assert len(reranker_event.output_nodes) <= top_n, (
+        f"Expected at most {top_n} nodes, got {len(reranker_event.output_nodes)}"
+    )
 
 
 @then(parsers.parse('the RerankerEvent model name should be "{model_name}"'))
 def _(agent_runner: AgentTestRunner, model_name: str):
     reranker_event = agent_runner.get_event_of_class(RerankerEvent)
     assert reranker_event, "RerankerEvent was not found"
-    assert (
-        reranker_event.rerank_model_name == model_name
-    ), f"Expected model {model_name}, got {reranker_event.rerank_model_name}"
+    assert reranker_event.rerank_model_name == model_name, (
+        f"Expected model {model_name}, got {reranker_event.rerank_model_name}"
+    )
 
 
 # ====== Organization Memory Retrieval Step Definitions ======

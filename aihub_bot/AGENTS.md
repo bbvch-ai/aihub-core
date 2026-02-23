@@ -2,11 +2,18 @@
 
 **Purpose**: Chatbot logic for MS Teams, Slack, web chat. Connects users to AI-Hub agents via conversational interfaces.
 
-Tech Stack & Paradigms: Azure Bot Framework (botbuilder-integration-aiohttp) for MS Teams/Slack. FastAPI + uvicorn + gunicorn for webhooks. Azure Identity + Azure mgmt SDKs (Cosmos, resources). MongoEngine with 30-day TTL for ConversationEntity. NATS pub-sub for agent communication. httpx HTTP client. cryptography + PyJWT for auth. cachetools for caching. Bot-in-the-loop pattern for human input. Streaming responses with incremental updates. BaseChatBot with AgentChatBot and OpenaiChatBot specializations. CompletionHandler abstraction. Channel-specific formatting (Markdown for Teams, Slack syntax). Azure DevTunnel for local development. BotRunner and BotTestRunner. pytest-bdd + asgi-lifespan for testing.
+Tech Stack & Paradigms: Azure Bot Framework (botbuilder-integration-aiohttp) for MS Teams/Slack. FastAPI + uvicorn +
+gunicorn for webhooks. Azure Identity + Azure mgmt SDKs (Cosmos, resources). MongoEngine with 30-day TTL for
+ConversationEntity. NATS pub-sub for agent communication. httpx HTTP client. cryptography + PyJWT for auth. cachetools
+for caching. Bot-in-the-loop pattern for human input. Streaming responses with incremental updates. BaseChatBot with
+AgentChatBot and OpenaiChatBot specializations. CompletionHandler abstraction. Channel-specific formatting (Markdown for
+Teams, Slack syntax). Azure DevTunnel for local development. BotRunner and BotTestRunner. pytest-bdd + asgi-lifespan for
+testing.
 
 ## Scope Responsibility
 
-Bot Framework integration, conversation management, streaming responses, channel-specific handling. NOT agent logic (delegate to agents via NATS).
+Bot Framework integration, conversation management, streaming responses, channel-specific handling. NOT agent logic
+(delegate to agents via NATS).
 
 ## Folder Structure
 
@@ -36,7 +43,8 @@ aihub_bot/
 
 **MS Teams**:
 
-- **Conversation Reuse**: Teams reuses conversation IDs. Detect fresh conversation via `on_conversation_update_activity` (bot re-added).
+- **Conversation Reuse**: Teams reuses conversation IDs. Detect fresh conversation via `on_conversation_update_activity`
+  (bot re-added).
 - **Critical**: Delete `ConversationEntity` when bot added to reset history.
 
 **Slack** (Bot-in-the-Loop):
@@ -103,8 +111,7 @@ aihub_bot/
 
 ## Playground
 
-**Location**: `/home/user/aihub-core/aihub_bot/playground/testing/`
-**Start**: `cd playground/testing && python main.py`
+**Location**: `/home/user/aihub-core/aihub_bot/playground/testing/` **Start**: `cd playground/testing && python main.py`
 **Access**: http://localhost:8000 (web UI), http://localhost:8000/api/v1/messages (bot endpoint)
 
 ## Pre-Commit

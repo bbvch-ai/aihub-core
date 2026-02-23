@@ -95,7 +95,7 @@ class PatchedMemoryGraph(MemoryGraph):
             if rel["source"] in valid_entities and rel["destination"] in valid_entities:
                 validated.append(rel)
             else:
-                logger.warning(f"Dropped relationship with unknown entity: {rel}. " f"Known entities: {valid_entities}")
+                logger.warning(f"Dropped relationship with unknown entity: {rel}. Known entities: {valid_entities}")
 
         logger.debug(f"Extracted entities: {validated}")
         return validated

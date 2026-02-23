@@ -47,11 +47,11 @@ jobs:
           # Check PR labels to determine version bump type
           # Default to patch if no label is found
           bump_type="patch"
-          
+
           # Get PR labels using GitHub API
           PR_LABELS='${{ toJSON(github.event.pull_request.labels.*.name) }}'
           echo "PR Labels: $PR_LABELS"
-          
+
           # Check for version bump labels
           if echo "$PR_LABELS" | grep -q '"major"'; then
             bump_type="major"
@@ -96,16 +96,16 @@ jobs:
           set -euo pipefail
           git config --local user.name "github-actions[bot]"
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          
+
           TAG_NAME="${{ steps.create-tag.outputs.version }}"
           TAG_MESSAGE="Initial Tag for: $TAG_NAME"
-          
+
           # Check if tag already exists (locally or remotely)
           if git rev-parse "$TAG_NAME" >/dev/null 2>&1 || git ls-remote --tags origin | grep -q "refs/tags/$TAG_NAME$"; then
             echo "Error: Tag $TAG_NAME already exists. Aborting."
             exit 1
           fi
-          
+
           # Create annotated tag
           TARGET_SHA="${{ github.event.pull_request.merge_commit_sha }}"
           if [ -z "$TARGET_SHA" ] || [ "$TARGET_SHA" == "null" ] ; then
@@ -114,23 +114,23 @@ jobs:
             TARGET_SHA="$(git rev-parse origin/main)"
           fi
           git tag -a "$TAG_NAME" -m "$TAG_MESSAGE" "$TARGET_SHA"
-      
+
           # Verify tag exists locally
           if ! git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
             echo "Error: Failed to create tag $TAG_NAME."
             exit 1
           fi
-          
+
           # Push the tag
           echo "Pushing tag $TAG_NAME..."
           git push origin "$TAG_NAME"
-          
+
           # Verify the tag was pushed successfully
           echo "Verifying tag was pushed..."
           git fetch origin --tags
           if git tag -l "$TAG_NAME" | grep -q "^$TAG_NAME$"; then
             echo "Success: Tag $TAG_NAME confirmed on remote."
-            
+
             # Show it's now the latest tag (consistent with your tag discovery logic)
             latest_tag=$(git tag -l "v*" | sort -V | tail -n 1)
             echo "Latest tag is now: $latest_tag"
@@ -160,27 +160,24 @@ jobs:
         with:
           python-version: '3.13'
 
-      - name: Ensure pipx is available
-        run: |
-          python3 -m pip install --user pipx
-          python3 -m pipx ensurepath
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
 
-      - name: Install Poetry
-        run: |
-          pipx install poetry
-          poetry install --only dev
+      - name: Install Dependencies
+        run: uv sync --all-packages --dev --frozen
 
       - name: Setup LLM for Changelog Generation
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           echo "Installing llm and llm-gemini plugin..."
-          pipx install llm
-          pipx inject llm llm-gemini
-          
+          uv tool install llm --with llm-gemini
+
           echo "Setting Gemini API key..."
           llm keys set gemini --value "$GEMINI_API_KEY"
-          
+
           echo "Ensuring changelog script is executable..."
           chmod +x ./generate-changelog.sh
 
@@ -225,12 +222,13 @@ jobs:
           ssh-keyscan github.com >> ~/.ssh/known_hosts
           git config --global url."git@github.com:".insteadOf "https://github.com/"
 
-      - name: Install Poetry
-        run: |
-          python -m pip install --user pipx
-          python -m pipx ensurepath
-          pipx install poetry
-          poetry install --only dev
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - name: Install Dependencies
+        run: uv sync --all-packages --dev --frozen
 
       - name: Update License Report
         id: license_generator
@@ -239,11 +237,11 @@ jobs:
           make license-check
 
       - name: Upload license artifact
-        if: ${{ hashFiles('LICENSES.md') != '' }}
+        if: ${{ hashFiles('LICENSE_REPORT.md') != '' }}
         uses: actions/upload-artifact@v4
         with:
           name: licenses
-          path: LICENSES.md
+          path: LICENSE_REPORT.md
 
   sync-docs:
     name: Sync Documentation Translations
@@ -272,18 +270,17 @@ jobs:
         working-directory: ./aihub_doc
         run: pnpm install
 
-      - name: Ensure pipx is available
-        run: |
-          python3 -m pip install --user pipx
-          python3 -m pipx ensurepath
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
 
       - name: Setup LLM for translation
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           echo "Installing llm and llm-gemini plugin..."
-          pipx install llm
-          pipx inject llm llm-gemini
+          uv tool install llm --with llm-gemini
 
           echo "Setting Gemini API key..."
           llm keys set gemini --value "$GEMINI_API_KEY"
@@ -329,52 +326,35 @@ jobs:
           path: aihub_doc/
         continue-on-error: true
 
-      - name: Define directories
-        id: define-directories
-        run: |
-          echo "directories=aihub_pipeline aihub_agent aihub_api aihub_bot aihub_process" >> $GITHUB_OUTPUT
-
-      - name: Set up Python 3.13 and Poetry
+      - name: Set up Python 3.13
         uses: actions/setup-python@v5
         with:
           python-version: '3.13'
 
-      - name: Increment version-tag in project files
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - name: Increment version in project files
         run: |
           VERSION="${{ needs.compute-and-initial-tag.outputs.version }}"
+          # Strip v prefix for pyproject.toml (PEP 440)
+          PEP_VERSION="${VERSION#v}"
+
           update_version() {
             echo "Update package version in $1"
-            sed -i '/\[tool.poetry\]/,/^version =/ s/version = "[^"]*"/version = "'"$VERSION"'"/' $1
-          }
-          update_lib_tag() {
-            echo "Update package version in $1"
-            sed -i '/\[tool.poetry.dependencies.aihub_lib\]/,/^tag =/ s/tag = "[^"]*"/tag = "'"$VERSION"'"/' $1
+            sed -i '/^\[project\]/,/^version =/ s/version = "[^"]*"/version = "'"$PEP_VERSION"'"/' $1
           }
           update_makefile_tag() {
             echo "Update TAG in $1"
             sed -i 's/^TAG ?= .*/TAG ?= '"$VERSION"'/' $1
           }
-          
-          directories="${{ steps.define-directories.outputs.directories }}"
-          IFS=' ' read -r -a dir_array <<< "$directories"
-          for dir in "${dir_array[@]}"; do
+
+          for dir in . aihub_lib aihub_agent aihub_api aihub_bot aihub_pipeline aihub_process; do
             update_version "$dir/pyproject.toml"
-            update_lib_tag "$dir/pyproject.toml"
           done
-          update_version aihub_lib/pyproject.toml
           update_makefile_tag Makefile
-
-      - name: Install Make
-        run: sudo apt-get update && sudo apt-get install -y make
-
-      - name: Install Dependencies
-        run: |
-          # Use pip to install pipx as it's not on the runner by default
-          python -m pip install --user pipx
-          python -m pipx ensurepath
-          pipx install poetry
-          poetry config virtualenvs.in-project true
-          poetry install --no-interaction --no-root
 
       - name: Set up SSH for GitHub bypass
         run: |
@@ -384,32 +364,8 @@ jobs:
           ssh-keyscan github.com >> ~/.ssh/known_hosts
           git config --global url."git@github.com:".insteadOf "https://github.com/"
 
-      - name: Use Remote Core
-        run: make use-remote-core
-
-      - name: Install dependencies in sub-directories
-        run: |
-          directories="${{ steps.define-directories.outputs.directories }}"
-          IFS=' ' read -r -a dir_array <<< "$directories"
-          for dir in "${dir_array[@]}"; do
-            cd "$dir"
-            poetry lock
-            poetry install --with dev
-            cd -
-          done
-
-      - name: Update lib version tag in poetry.lock
-        run: |
-          VERSION="${{ needs.compute-and-initial-tag.outputs.version }}"
-          update_version_tag() {
-              echo "Update version tag in $1"
-              sed -i '/name = "aihub-lib"/,/^version =/ s/version = "[^"]*"/version = "'"$VERSION"'"/' "$1"
-          }
-          directories="${{ steps.define-directories.outputs.directories }}"
-          IFS=' ' read -r -a dir_array <<< "$directories"
-          for dir in "${dir_array[@]}"; do
-              update_version_tag "$dir/poetry.lock"
-          done
+      - name: Update lockfile
+        run: uv lock
 
       - name: Commit Changelog, License Report, Version Update and Finalize Tag
         run: |
@@ -426,9 +382,9 @@ jobs:
               echo "Changelog updated."
             fi
           fi
-          if [ -f LICENSES.md ]; then
-            if [ -n "$(git status --porcelain LICENSES.md)" ]; then
-              git add LICENSES.md
+          if [ -f LICENSE_REPORT.md ]; then
+            if [ -n "$(git status --porcelain LICENSE_REPORT.md)" ]; then
+              git add LICENSE_REPORT.md
               changed=true
               echo "License report updated."
             fi
@@ -438,12 +394,12 @@ jobs:
             changed=true
             echo "Documentation translations updated."
           fi
-          
+
           git add -A
-  
+
           git commit --amend --no-edit || echo "No file changes to commit."
           git push origin HEAD:${{ github.event.pull_request.base.ref }} --force-with-lease
-          
+
 
           echo "Creating final tag $VERSION and pushing..."
           git tag -a -f "${VERSION}" -m "Release ${VERSION}"

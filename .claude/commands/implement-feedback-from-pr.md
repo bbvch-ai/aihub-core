@@ -129,7 +129,6 @@ Remember: 100% coverage isn't always the goal!
 ```bash
 # These are usually straightforward:
 cd affected_scope
-poetry shell
 make pr-ready
 # This should fix most linting issues automatically
 ```
@@ -148,15 +147,11 @@ After implementing feedback, ensure everything still works:
 
 # Format and lint each affected scope
 cd affected_scope
-poetry shell
 make pr-ready
-exit
 
 # Run tests for each affected scope
 cd affected_scope
-poetry shell
 make test
-exit
 
 # Check that you haven't broken anything new
 git diff

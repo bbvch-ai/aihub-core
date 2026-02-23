@@ -1,12 +1,19 @@
 # aihub_pipeline - Data Ingestion & Processing
 
-**Purpose**: Dagster-based pipelines for document ingestion, parsing, embedding generation, and vector storage. Prepares data for RAG agents.
+**Purpose**: Dagster-based pipelines for document ingestion, parsing, embedding generation, and vector storage. Prepares
+data for RAG agents.
 
-Tech Stack & Paradigms: Dagster asset-based orchestration with dagster-webserver UI (localhost:3002). dagster-postgres for storage backend. dagster-azure for Azure cloud integration (ADLS). dagster-aws for AWS S3 integration. LlamaIndex readers for file ingestion. adlfs for Azure Data Lake. s3fs + boto3 for S3 access. matplotlib for visualizations. lxml for XML/HTML parsing. Observable assets with materialization tracking. I/O managers for storage. Dynamic partitioning. Sensors for event-driven triggers. Schedules for recurring jobs. Multi-asset definitions. Resource management. Structured metadata for lineage tracking. pytest for testing.
+Tech Stack & Paradigms: Dagster asset-based orchestration with dagster-webserver UI (localhost:3002). dagster-postgres
+for storage backend. dagster-azure for Azure cloud integration (ADLS). dagster-aws for AWS S3 integration. LlamaIndex
+readers for file ingestion. adlfs for Azure Data Lake. s3fs + boto3 for S3 access. matplotlib for visualizations. lxml
+for XML/HTML parsing. Observable assets with materialization tracking. I/O managers for storage. Dynamic partitioning.
+Sensors for event-driven triggers. Schedules for recurring jobs. Multi-asset definitions. Resource management.
+Structured metadata for lineage tracking. pytest for testing.
 
 ## Scope Responsibility
 
-Observable data processing workflows. Document lifecycle: ingestion → parsing → chunking → embedding → vector storage. NOT agent logic (pipelines produce data for agents).
+Observable data processing workflows. Document lifecycle: ingestion → parsing → chunking → embedding → vector storage.
+NOT agent logic (pipelines produce data for agents).
 
 ## Folder Structure
 
@@ -156,7 +163,7 @@ class MyIOManager(ConfigurableIOManager):
 2. **Create resources**: Define deps in `resources/`
 3. **Create asset factory**: Compose ops into assets in `assets/factories/`
 4. **Test**: Unit test ops, integration test assets
-5. **Run Dagster UI**: `make playground` or `poetry run dagster dev -m playground`
+5. **Run Dagster UI**: `make playground` or `uv run dagster dev -m playground`
 6. **Observe**: http://localhost:3000 (asset lineage, run logs, errors)
 
 ## Testing
@@ -186,9 +193,8 @@ assert result.success
 
 ## Playground
 
-**Location**: `/home/user/aihub-core/aihub_pipeline/playground/`
-**Start**: `make playground` (or `poetry run dagster dev -m playground`)
-**Access**: http://localhost:3000 (Dagster UI)
+**Location**: `/home/user/aihub-core/aihub_pipeline/playground/` **Start**: `make playground` (or
+`uv run dagster dev -m playground`) **Access**: http://localhost:3000 (Dagster UI)
 
 ## Pre-Commit
 

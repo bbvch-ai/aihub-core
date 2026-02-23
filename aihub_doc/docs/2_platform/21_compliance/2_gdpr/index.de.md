@@ -179,7 +179,7 @@ zur Unterstützung der Untersuchung, Dokumentation und Reaktion auf Verletzungen
 - [DSGVO Volltext](https://gdpr-info.eu/)
 - [EDPB Leitlinien](https://edpb.europa.eu/)
 
----
+______________________________________________________________________
 
 :::info Rechtlicher Hinweis
 Dies ist eine technische Dokumentation, keine Rechtsberatung. Konsultieren Sie Ihren Datenschutzbeauftragten oder

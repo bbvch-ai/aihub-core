@@ -336,12 +336,14 @@ class ProcessService:
 
         config_model = ModelCreationService.create_process_config_model(
             ProcessConfigSpecs(
-                process_class=class_entity.process_config_specs.process_class
-                if class_entity.process_config_specs
-                else process_class,
-                process_config_schema=class_entity.process_config_specs.process_config_schema
-                if class_entity.process_config_specs
-                else {},
+                process_class=(
+                    class_entity.process_config_specs.process_class
+                    if class_entity.process_config_specs
+                    else process_class
+                ),
+                process_config_schema=(
+                    class_entity.process_config_specs.process_config_schema if class_entity.process_config_specs else {}
+                ),
             )
         )
         config_instance = InstanceConfigHelper.validate_config_for_create(config, config_model)
@@ -386,12 +388,14 @@ class ProcessService:
 
         config_model = ModelCreationService.create_process_config_model(
             ProcessConfigSpecs(
-                process_class=class_entity.process_config_specs.process_class
-                if class_entity.process_config_specs
-                else process_class,
-                process_config_schema=class_entity.process_config_specs.process_config_schema
-                if class_entity.process_config_specs
-                else {},
+                process_class=(
+                    class_entity.process_config_specs.process_class
+                    if class_entity.process_config_specs
+                    else process_class
+                ),
+                process_config_schema=(
+                    class_entity.process_config_specs.process_config_schema if class_entity.process_config_specs else {}
+                ),
             )
         )
         config_instance = InstanceConfigHelper.validate_config_for_update(configuration, config_model)

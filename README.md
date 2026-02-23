@@ -80,7 +80,7 @@ workflows as a deep collaboration between humans and AI, allowing employees to f
 aspects of their jobs while maintaining oversight for key decisions.
 :::
 
----
+______________________________________________________________________
 
 ## 2. :file_folder: Project Structure & Repositories
 
@@ -162,7 +162,7 @@ we already provide? You can. The Hub is designed for this kind of powerful, modu
 logic, and the platform handles the rest.
 :::
 
----
+______________________________________________________________________
 
 ## 3.:computer: Getting Started: Local Development Setup
 
@@ -178,7 +178,7 @@ environment.
 
 - **Git**: For version control.
 - **Python**: The project is built on Python, specifically version 3.13.
-- **Poetry**: For dependency management and managing virtual environments for each Python package.
+- **uv**: For dependency management and managing virtual environments across the monorepo workspace.
 - **make**: Used for running common tasks and commands defined in Makefiles.
 - **Docker & Docker Compose**: For containerizing and running the project's infrastructure stack.
 - **Node.js**: The LTS version is used for frontend development, managed via a version manager like NVM.
@@ -256,33 +256,28 @@ First, clone the necessary repositories into your local workspace.
 
 #### Install Project Dependencies
 
-The project is a monorepo containing multiple packages ("scopes"), such as `aihub_agent` or `aihub_api`. Each scope has
-its own isolated Poetry environment and dependencies.
+The project is a monorepo containing multiple packages ("scopes"), such as `aihub_agent` or `aihub_api`, managed as a uv
+workspace with a single lockfile at the root.
 
 ::: warning :warning: Important
-To work on a specific scope, you must first activate its environment:
+To install all dependencies across the workspace:
 
-1. Navigate into the scope's directory (e.g., `cd aihub_agent`).
-2. Activate the environment using the command: `poetry shell`. Poetry shell was moved to a separate plugin, so you may
-   need to install it first with: `poetry self add poetry-plugin-shell`.
-3. Once the shell is activated, install the dependencies with: `poetry install`.
-
-You must run commands from within the correct scope's activated environment. This process needs to be repeated for each
-scope you intend to work on.
+1. From the repository root, run: `uv sync --all-packages`
+2. This creates a single `.venv` at the root with all packages installed.
+3. Run scope-specific commands from within each scope directory using `make` targets (which use `uv run` internally).
 :::
 
 For frontend services (`aihub_web`), follow the setup instructions in that directory's `README.md` file.
 
-#### Manage Dependencies with Poetry
+#### Manage Dependencies with uv
 
-::: tip :package: Poetry Commands
-Use the following commands to manage dependencies within an activated scope environment. Do not edit the`pyproject.toml`
-or `poetry.lock` files manually.
+::: tip :package: uv Commands
+Use the following commands to manage dependencies. The workspace uses a single `uv.lock` at the root.
 
-- `poetry install`: Installs all dependencies defined in `poetry.lock`.
-- `poetry add <package>`: Adds a new package as a dependency.
-- `poetry remove <package>`: Removes a package.
-- `poetry update`: Updates all dependencies to their latest allowed versions.
+- `uv sync --all-packages`: Installs all dependencies from the lockfile.
+- `uv add <package>`: Adds a new package as a dependency (run from the scope directory).
+- `uv remove <package>`: Removes a package (run from the scope directory).
+- `uv lock --upgrade`: Updates all dependencies to their latest allowed versions.
 :::
 
 ### :whale: Starting the Infrastructure Stack (Docker)
@@ -599,7 +594,7 @@ Describe the results of your decision. List both positive outcomes and any poten
 ```
 :::
 
----
+______________________________________________________________________
 
 ## 5. :evergreen_tree: Git & GitHub Workflow
 
@@ -710,7 +705,7 @@ To ensure the stability and integrity of our codebase, the `main` branch is prot
   branch is also restricted.
 :::
 
----
+______________________________________________________________________
 
 ## 6. :test_tube: Testing In-Depth
 
@@ -766,7 +761,7 @@ When possible, we favor BDD for several key reasons:
 - **Closer Collaboration**: The process encourages collaboration between business, QA, and development teams.
 :::
 
----
+______________________________________________________________________
 
 ## 7. :pencil2: Code Conventions
 
@@ -801,8 +796,8 @@ checking is run in `strict = true` mode, which enforces the highest level of typ
 
 ::: danger :rotating_light: Critical Commands
 While these checks run automatically in our CI pipeline, you **must** run them locally before committing your code. Each
-scope (and the root directory) contains a `Makefile` with the necessary commands. Always run these from within an
-activated Poetry shell.
+scope (and the root directory) contains a `Makefile` with the necessary commands. Run these from within each scope
+directory (Makefile targets use `uv run` internally).
 
 - `make format`: Formats all code in the current scope using **Black**.
 - `make lint`: Lints all code using **Ruff** and runs **MyPy** for type checking.
@@ -894,7 +889,7 @@ objects or dataclasses to hold complex data structures.
 shall fail.
 :::
 
----
+______________________________________________________________________
 
 ## 8. :repeat: The Core Development Cycle
 
@@ -964,7 +959,7 @@ Once you have a working implementation, you must run our automated formatting an
 100% compliant with our standards.
 
 ::: tip :white_check_mark: Quality Check
-From within the activated Poetry shell of the scope you worked on, run:
+From within the scope directory you worked on, run:
 
 ```bash
 make pr-ready
@@ -994,7 +989,7 @@ make test
 ```
 :::
 
----
+______________________________________________________________________
 
 ## 9. :books: Documentation and Self-Improvement
 
@@ -1044,7 +1039,7 @@ After implementing your changes, ask yourself the following questions:
   correct or remove it. In this project, the **code is always the ground truth.**
 :::
 
----
+______________________________________________________________________
 
 ## 10. :book: Technical Reference
 
@@ -1068,8 +1063,7 @@ The AI Hub consists of multiple packages that handle specific functionalities:
 All packages have versions that are increased in sync with the tags in the repository. This means a package's version is
 updated with every merge into the main branch.
 
-By default, packages reference `aihub_lib` via its Git URL in the `pyproject.toml` file, which allows versioning to be
-handled by Git tags. For local development, it is possible to switch to a local version of the core library by running
-the command `make use-local-core`. For deployment, the reference is switched back to the GitHub repository, specifying
-the version by its tag.
+The monorepo uses uv workspaces to manage inter-package dependencies. During local development, workspace members are
+automatically resolved from their local directories. When published to PyPI, consumers install packages normally from
+the registry. A single `uv.lock` at the root ensures consistent dependency resolution across all packages.
 :::

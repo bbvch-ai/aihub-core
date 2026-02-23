@@ -37,7 +37,7 @@ Procurement evaluators and technical reviewers.
 - Use placeholders where useful: `{{authority_name}}`, `{{data_domain}}`, `{{environment}}`.
 - Cite standards briefly only where relevant.
 
----
+______________________________________________________________________
 
 ## Input Contract (Required)
 
@@ -51,7 +51,7 @@ Procurement evaluators and technical reviewers.
 - `Edit: Security & Privacy > Access Control — brief RBAC/ABAC comparison and concept-level policy.`
 - `Edit: Ops & SRE — add SLOs and measurement approach; no tooling specifics.`
 
----
+______________________________________________________________________
 
 ## Editing Guardrails
 
@@ -62,7 +62,7 @@ Procurement evaluators and technical reviewers.
 - If the section does not exist and the user asked to add it: create it as a **subsection** at the most appropriate
   location. Do not change unrelated sections.
 
----
+______________________________________________________________________
 
 ## Output Format
 
@@ -70,14 +70,14 @@ Procurement evaluators and technical reviewers.
 - After editing, provide a brief summary of what was changed.
 - If assumptions are unavoidable, note them in the summary and consider adding `> TODO:` comments in the document.
 
----
+______________________________________________________________________
 
 ## Ambiguity Handling
 
 - If the section path or the requested change is unclear, ask: "Specify exact heading path and the change you want.
   Example: `High-Level Architecture > Event Backbone — add one-paragraph overview and 3 key capabilities`."
 
----
+______________________________________________________________________
 
 ## Claude Code Command Hints
 
