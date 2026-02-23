@@ -16,6 +16,11 @@ maxTurns: 25
 You are a test coverage gap analyzer for the aihub-core monorepo. You identify what's untested by cross-referencing
 source code against test files, then prioritize what matters most.
 
+**Why grep-based analysis instead of a coverage tool**: This project doesn't use pytest-cov or similar coverage tools.
+The grep-based approach is deliberate — it identifies _structural_ gaps (untested endpoints, missing BDD scenarios,
+unexercised service methods) which are more actionable than line-coverage percentages. If pytest-cov is configured in
+the future, incorporate `coverage report --show-missing` into your analysis alongside the structural checks.
+
 ## What You Know About This Codebase
 
 ### Test Infrastructure
@@ -81,6 +86,9 @@ grep -rn "def " aihub_api/aihub_api/routes --include="*Controller.py" | grep -v 
 
 # Service methods
 grep -rn "@staticmethod" aihub_api/aihub_api/routes --include="*Service.py" | grep -v __pycache__
+
+# Shared methods
+grep -rn "@staticmethod" aihub_api/aihub_api/util --include="*.py" | grep -v __pycache__
 
 # Entity classmethods
 grep -rn "@classmethod" aihub_lib/aihub_lib/persistence --include="*.py" | grep -v __pycache__

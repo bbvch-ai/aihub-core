@@ -7,7 +7,7 @@ description: >
   our skills", "what skills should we have", or "clean up our skills
   directory". Also use when user says "this workflow should be a skill" or
   "help me turn this into a skill". Do NOT use for CLAUDE.md files (use
-  audit-claude-md instead) or for general documentation tasks.
+  create-or-audit-claude-md instead) or for general documentation tasks.
 allowed-tools: Bash(find:*) Bash(grep:*) Bash(git:*) Bash(cat:*) Bash(head:*) Bash(wc:*) Bash(ls:*) Bash(jq:*) Read Write Edit Grep Glob
 ---
 
@@ -401,7 +401,7 @@ reasons skills should be removed.
 
 ### Step 4: Identify Gaps
 
-Based on the codebase analysis (reuse techniques from audit-claude-md):
+Based on the codebase analysis (reuse techniques from create-or-audit-claude-md):
 
 ```bash
 # Find documented workflows that don't have skills

@@ -18,8 +18,9 @@ Exclude technical implementation details, methods, and functions. Speak to the o
 mechanics.
 
 Sell the feature through clear, factual descriptions of its benefits. Do not use promotional language, tourist-brochure
-adjectives, or grandiose framing. State the concrete benefits directly without describing the feature as stunning or
-breathtaking.
+adjectives, or grandiose framing. State the concrete benefits directly. Avoid words like stunning, breathtaking,
+revolutionary, game-changing, cutting-edge, seamless, world-class, transformative, next-generation, and similar
+superlatives that add hype without substance.
 
 Avoid superficial analysis. Do not add gerund phrases just to explain significance. State the facts of the feature and
 trust the reader to understand the value based on your clear description.

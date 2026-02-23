@@ -36,8 +36,7 @@ Layer 3: Streaming Variants
 ```
 
 **WebChat fallback**: Streaming variants (`StreamAgentChatBot`, `StreamOpenaiChatBot`) detect WebChat channel and fall
-back to non-streaming (`super().on_message_activity()`). Note: `StreamAgentChatBot` uses `Channels.webchat` (enum) while
-`StreamOpenaiChatBot` uses the string literal `"webchat"`.
+back to non-streaming (`super().on_message_activity()`).
 
 ### Request Flow
 
@@ -510,13 +509,6 @@ async def test_send_message(test_runner, client, patch_requests_adapter, setup_t
 Test fixtures: `conftest.py` patches `MsalAuth.get_access_token` and `aiohttp.ClientSession` methods. Uses `ASGIAdapter`
 from `aihub_lib.testing.route_adapter` to route Bot Framework outbound callbacks to the test app. Markers: `flaky`
 (timing-dependent streaming), `azure` (real credentials).
-
-### Bot Framework Emulator
-
-1. Download: https://github.com/microsoft/BotFramework-Emulator
-2. Start test server: `cd playground/testing && uv run python main.py`
-3. Connect to: `http://localhost:8000/api/v1/messages`
-4. Leave App ID/Password empty for local testing
 
 ______________________________________________________________________
 
