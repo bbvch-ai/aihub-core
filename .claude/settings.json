@@ -51,7 +51,6 @@
       "Bash(git merge-base *)",
       "Bash(git grep *)",
       "Bash(git mv *)",
-      "Bash(git restore *)",
       "Bash(git config *)",
       "Bash(gh pr *)",
       "Bash(gh issue *)",
@@ -62,8 +61,6 @@
       "Bash(docker compose -f docker-compose.dev.yml *)",
       "Bash(docker compose ps *)",
       "Bash(docker compose logs *)",
-      "Bash(docker exec *)",
-      "Bash(docker run *)",
       "Bash(docker logs *)",
       "Bash(docker ps *)",
       "Bash(docker ps)",
@@ -182,15 +179,13 @@
       "Bash(sha1sum *)",
       "Bash(curl *)",
       "Bash(timeout *)",
-      "Bash(bash *)",
       "Bash(ss *)",
       "Bash(pgrep *)",
       "Bash(iconv *)",
       "Bash(pip show *)",
       "Bash(pip index *)",
       "Bash(valkey-cli *)",
-      "Bash(redis-cli *)",
-      "Bash(pkill *)"
+      "Bash(redis-cli *)"
     ],
     "deny": [
       "Bash(rm -rf /)",
@@ -269,7 +264,12 @@
       "Bash(pip install *)",
       "Bash(npm install -g *)",
       "Bash(pnpm add -g *)",
-      "Bash(wget *)"
+      "Bash(wget *)",
+      "Bash(pkill *)",
+      "Bash(git restore *)",
+      "Bash(docker exec *)",
+      "Bash(docker run *)",
+      "Bash(bash *)"
     ],
     "defaultMode": "acceptEdits"
   },
