@@ -24,3 +24,4 @@ CLAUDE.local.md
 .claude/mcp/bin/*
 .claude/.deps-fingerprint
 .claude/statusline.sh
+.claude/worktrees/*
