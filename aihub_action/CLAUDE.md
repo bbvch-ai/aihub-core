@@ -63,8 +63,7 @@ cache key. Runs `nuxi prepare` before linting to generate Nuxt type stubs.
 **test_backend**: Most complex action. Key inputs:
 
 - `docker_compose_services`: space-separated list of Docker services to start (empty = no Docker)
-- `use_local_core`: when `true`, runs `make use-local-core-without-install` + `poetry lock` + reinstall (used in CI to
-  test against monorepo's local `aihub_lib`)
+- `use_local_core`: when `true`, runs `uv sync --all-packages` (used in CI to test against monorepo's local `aihub_lib`)
 - `install_ffmpeg`: installs FFmpeg via `make install-ffmpeg`
 - `huggingface_api_key`: added to `.env.dev` for model downloads
 - `regenerate_compose`: runs `make generate-compose` before starting Docker services
@@ -95,12 +94,12 @@ versions).
 
 ## Caching Layers (test_backend / lint_frontend)
 
-| Cache               | Path                            | Key Strategy                                    |
-| ------------------- | ------------------------------- | ----------------------------------------------- |
-| Poetry installation | `~/.local`                      | `{os}-poetry-{version}`                         |
-| Poetry packages     | `~/.cache/pypoetry`             | `{os}-poetry-cache-{module}-{poetry.lock hash}` |
-| pnpm store          | `$(pnpm store path)`            | `{os}-pnpm-{lockfile hash}`                     |
-| HuggingFace models  | `.docker-volumes/llamacpp-data` | `{os}-hf-models-{docker-compose.dev.yml hash}`  |
+| Cache              | Path                            | Key Strategy                                   |
+| ------------------ | ------------------------------- | ---------------------------------------------- |
+| uv installation    | `~/.local`                      | `{os}-uv-{version}`                            |
+| uv cache           | `~/.cache/uv`                   | `{os}-uv-cache-{uv.lock hash}`                 |
+| pnpm store         | `$(pnpm store path)`            | `{os}-pnpm-{lockfile hash}`                    |
+| HuggingFace models | `.docker-volumes/llamacpp-data` | `{os}-hf-models-{docker-compose.dev.yml hash}` |
 
 ## Testing Actions
 

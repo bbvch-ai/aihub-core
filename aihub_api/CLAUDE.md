@@ -68,11 +68,10 @@ own Docker image importing only the controllers they need.
 
 ## Controller-Service-DTO Pattern
 
-**Controller** → HTTP endpoint definition, auth, routing. Fluent builder returning `Self`.
-**Service** → Business logic with `@staticmethod` + `@trace_fn`. Stateless. Calls entities for persistence.
-**DTO** → Pydantic v2 models. `@classmethod` factories (`from_entity()`, `from_discovery_event()`). `in_locale(t)` for
-localization.
-**Entity** → MongoEngine documents with repository classmethods (lives in `aihub_lib/persistence/`).
+**Controller** → HTTP endpoint definition, auth, routing. Fluent builder returning `Self`. **Service** → Business logic
+with `@staticmethod` + `@trace_fn`. Stateless. Calls entities for persistence. **DTO** → Pydantic v2 models.
+`@classmethod` factories (`from_entity()`, `from_discovery_event()`). `in_locale(t)` for localization. **Entity** →
+MongoEngine documents with repository classmethods (lives in `aihub_lib/persistence/`).
 
 Controllers must define class attributes: `name` and `description` via `ApiLocaleString.from_i18n_path()`, plus `icon`
 (Iconify identifier). See `routes/agent/AgentController.py` for the reference implementation.
@@ -104,8 +103,8 @@ All infrastructure clients are initialized in `runners/lifetime/lifetime_manager
 
 ## i18n System
 
-**Hierarchy**: `LocaleString`/`LocaleHandler` (aihub_lib) → `ApiLocaleString`/`ApiLocaleHandler` (aihub_api extends
-with API-specific translation paths).
+**Hierarchy**: `LocaleString`/`LocaleHandler` (aihub_lib) → `ApiLocaleString`/`ApiLocaleHandler` (aihub_api extends with
+API-specific translation paths).
 
 **Translation files**: `i18n/translations/api/controllers.{locale}.yml` and `common.{locale}.yml` (4 locales: de, en,
 fr, it). Path format: `api.controllers.agent.name` resolves to `controllers.{locale}.yml` → key `agent.name`.
@@ -119,8 +118,8 @@ params, or path params (default: `"de"`, whitelist: `["de", "en", "fr", "it"]`).
 
 ## Authentication & Authorization
 
-**Permission template**: `aihub.[user|admin].<resource>.{path_param}` — path parameters (`{agent_class}`,
-`{agent_id}`, `{thread_id}`) are interpolated from the URL at request time.
+**Permission template**: `aihub.[user|admin].<resource>.{path_param}` — path parameters (`{agent_class}`, `{agent_id}`,
+`{thread_id}`) are interpolated from the URL at request time.
 
 **Wildcards**: `?>` matches single level, `>` matches multiple levels.
 
@@ -153,9 +152,9 @@ endpoint request/response validation and OpenAPI documentation.
 **API → Agents** (pub/sub): `ExternalAgentEventDistributor` publishes `StartEvent`/`HumanInTheLoopResponseEvent` to
 agent NATS topics. Agents subscribe to thread-specific subjects.
 
-**Agents → API** (pub/sub): Agents publish `DisplayEvent`s. The API has two parallel NATS subscribers:
-`EventPersister` stores ALL events to MongoDB (audit trail). `WebSocketSender` broadcasts display events to connected
-WebSocket clients in real-time, wrapped in `ContextualizedAgentEvent` (adds agent_class, thread_id, locale context).
+**Agents → API** (pub/sub): Agents publish `DisplayEvent`s. The API has two parallel NATS subscribers: `EventPersister`
+stores ALL events to MongoDB (audit trail). `WebSocketSender` broadcasts display events to connected WebSocket clients
+in real-time, wrapped in `ContextualizedAgentEvent` (adds agent_class, thread_id, locale context).
 
 **Agents → API** (RPC): `AgentConfigResponder` and `ProcessConfigResponder` serve configuration data via NATS
 request-reply on `aihub.rpc.config.agent.*.*` / `aihub.rpc.config.process.*.*`. Agents fetch their config at runtime

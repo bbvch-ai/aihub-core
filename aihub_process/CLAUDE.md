@@ -54,11 +54,12 @@ playground/                            # Examples and testing
 
 Same concept as agents — separates **what a process can do** (code) from **how it's configured** (data).
 
-**Process Blueprint** (`process_class`): The Python class. Defines steps, entity delegation, form schema, default config.
-One per process type. Discovered when processes come online. Stored in MongoDB `process_classes` collection.
+**Process Blueprint** (`process_class`): The Python class. Defines steps, entity delegation, form schema, default
+config. One per process type. Discovered when processes come online. Stored in MongoDB `process_classes` collection.
 
-**Process Profile** (`process_id`): A user-created configuration of a blueprint. Unique URL-safe slug, name, description,
-icon, and specific settings. Multiple profiles from one blueprint. Stored in MongoDB `process_configs` collection.
+**Process Profile** (`process_id`): A user-created configuration of a blueprint. Unique URL-safe slug, name,
+description, icon, and specific settings. Multiple profiles from one blueprint. Stored in MongoDB `process_configs`
+collection.
 
 **In code**: `ProcessConfig.process_class` is the blueprint name, `ProcessConfig.process_id` is the profile slug.
 
@@ -133,8 +134,8 @@ def my_step(self, work: Annotated[SomeWorkEvent, Agent.In(...)]) -> Annotated[So
     ...
 ```
 
-Parameters are simpler than `@step()` for agents — no `precondition`, `max_executions_per_run`, or `stop_on_error`.
-The decorator extracts both standard event metadata AND process-specific In/Out tuples from type annotations.
+Parameters are simpler than `@step()` for agents — no `precondition`, `max_executions_per_run`, or `stop_on_error`. The
+decorator extracts both standard event metadata AND process-specific In/Out tuples from type annotations.
 
 ## Step Dependency Injection
 
@@ -197,16 +198,17 @@ Fields: `process_class`, `process_id`, `name` (LocaleString), `description` (Loc
 2. **Discovery**: `ProcessRunner` publishes `ProcessClassDiscoveryResponseEvent` with form, specs, entity In/Out specs
 3. **Storage**: Admin creates profile via UI → saved to `ProcessConfigEntityDocument` (MongoDB `process_configs`
    collection) with `(process_class, process_id)` compound unique index
-4. **Runtime Fetch**: On first `WorkEvent`, dispatcher calls `ProcessConfigClient.fetch_config(process_class, process_id)`
-   → NATS RPC (`aihub.rpc.config.process.{class}.{id}`) → `ProcessConfigResponder` (API side)
+4. **Runtime Fetch**: On first `WorkEvent`, dispatcher calls
+   `ProcessConfigClient.fetch_config(process_class, process_id)` → NATS RPC (`aihub.rpc.config.process.{class}.{id}`) →
+   `ProcessConfigResponder` (API side)
 5. **Merge**: `Form.deep_merge(non_configurable_values, submitted_config)` → stored in `WalkthroughContext`
 6. **Injection**: `process_config_type.model_validate(merged_dict)` → injected into `@process_step()` methods that
    declare a `ProcessConfig` subclass as a parameter
 
 ## ProcessRunner & ProcessDispatcher
 
-**ProcessRunner**: Connects process to infrastructure (NATS, JetStream, Redis, MongoDB — no Milvus). Creates
-dispatcher, `AgentDelegator`, and `ProcessDelegator`. Responds to discovery requests. Includes health check server.
+**ProcessRunner**: Connects process to infrastructure (NATS, JetStream, Redis, MongoDB — no Milvus). Creates dispatcher,
+`AgentDelegator`, and `ProcessDelegator`. Responds to discovery requests. Includes health check server.
 
 ```python
 runner = ProcessRunner(process_type=MyProcess, process_config=MyProcessConfig.as_form())
@@ -242,9 +244,8 @@ Topic classes form a narrowing hierarchy:
 | `ProcessClassTopic`    | Medium      | `process_class` specified, may wildcard `process_id` |
 | `ProcessInstanceTopic` | Tight       | Fully specified including `process_id`               |
 
-Topic managers mirror the hierarchy: `ProcessTopicManager` → `ProcessClassTopicManager` →
-`ProcessInstanceTopicManager` → `ProcessWalkthroughTopicManager`. See
-`aihub_lib/nats/topic_managers/process/`.
+Topic managers mirror the hierarchy: `ProcessTopicManager` → `ProcessClassTopicManager` → `ProcessInstanceTopicManager`
+→ `ProcessWalkthroughTopicManager`. See `aihub_lib/nats/topic_managers/process/`.
 
 ## WalkthroughContext
 
@@ -266,9 +267,9 @@ Per-walkthrough ephemeral state in Redis/Valkey. Equivalent of `RunContext` for 
 
 - `playground/AgenticCVProcess/` — Complex reference: human CV submission → agent analysis → human accept/reject →
   program save
-- `playground/minimal_processes/` — **START HERE**. 7 self-contained pattern examples:
-  `agent_only_process`, `human_only_process`, `agent_to_human_process`, `human_to_agent_process`,
-  `fan_out_process`, `multi_input_process`, `process_sequence`
+- `playground/minimal_processes/` — **START HERE**. 7 self-contained pattern examples: `agent_only_process`,
+  `human_only_process`, `agent_to_human_process`, `human_to_agent_process`, `fan_out_process`, `multi_input_process`,
+  `process_sequence`
 - `playground/agents/` — Test agents (AgentA, AgentB, AgentC) used by playground processes
 - `playground/events/` — Shared work events for playground
 

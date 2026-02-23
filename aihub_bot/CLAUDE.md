@@ -76,7 +76,8 @@ Every bot endpoint is keyed by its URL path in MongoDB `bot_paths` collection. T
 
 - `path` (unique index) — the API path (e.g., `/api/v1/agent/chat/completions/RAGAgent/rag-hr/json`)
 - `credentials` — `APP_TYPE`, `APP_ID`, `APP_PASSWORD`, `APP_TENANTID` (Azure Bot Service auth)
-- `system_message` — optional text prepended to every conversation (supports `{username}`, `{assistant_name}` placeholders)
+- `system_message` — optional text prepended to every conversation (supports `{username}`, `{assistant_name}`
+  placeholders)
 - `slack_token` — OAuth token for Slack API calls (file downloads, `auth.test`)
 
 `RoutesService.get_adapter(path)` reads credentials → creates `MsalConnectionManager` → caches `CloudAdapter` by path.
@@ -135,7 +136,8 @@ Human expert escalation flow — an agent pauses, asks a human via Slack/Teams, 
 1. Agent publishes `BotInTheLoopRequestEvent` (carries `SlackConfig` or `TeamsConfig` with channel details)
 2. `BotInTheLoopHandler` (subscribed at startup via `AgentNCSubscriber.for_all_agent_events`) receives request
 3. Handler sends question proactively to Slack/Teams channel using `adapter.continue_conversation()`
-4. Handler stores `BotInTheLoopThread` in `threads` dict (maps `thread_id` → `{base_conversation_id, thread_identifier}`)
+4. Handler stores `BotInTheLoopThread` in `threads` dict (maps `thread_id` →
+   `{base_conversation_id, thread_identifier}`)
 5. Human replies in Slack thread or Teams thread reply
 6. `BotInTheLoopBot` (via `POST /bot_in_the_loop/response`) receives reply, matches to thread in registry
 7. Bot publishes `BotInTheLoopResponseEvent` via `ExternalAgentEventDistributor` → agent workflow resumes
@@ -177,8 +179,8 @@ Tests live in `playground/testing/tests/` (NOT a top-level `tests/` dir). Plain 
 - `BotTestRunner`: Extends `BotRunner` with `/service{full_path:path}` catch-all that captures Bot Framework outbound
   calls into `self.responses: list[BotServiceResponse]`
 - `SimulatedAgentBotTestRunner`: Extends `BotTestRunner`. Connects to real NATS, subscribes to discovery + control
-  events, publishes simulated `ChunkEvent`/`LLMCostEvent`/`StopEvent` on `StartEvent`.
-  `with_simple_chunk_events()` builder method populates default simulated events.
+  events, publishes simulated `ChunkEvent`/`LLMCostEvent`/`StopEvent` on `StartEvent`. `with_simple_chunk_events()`
+  builder method populates default simulated events.
 
 **Test fixtures** (`conftest.py`):
 
@@ -190,10 +192,10 @@ Tests live in `playground/testing/tests/` (NOT a top-level `tests/` dir). Plain 
 
 ## Playground
 
-- `playground/development/` — Full dev server with `BotTestRunner` + all controllers (real NATS, 60-day TTL).
-  Run: `cd playground/development && python main.py`
-- `playground/testing/` — Simulated agent test server with `SimulatedAgentBotTestRunner` + static web UI.
-  Run: `cd playground/testing && python main.py`
+- `playground/development/` — Full dev server with `BotTestRunner` + all controllers (real NATS, 60-day TTL). Run:
+  `cd playground/development && python main.py`
+- `playground/testing/` — Simulated agent test server with `SimulatedAgentBotTestRunner` + static web UI. Run:
+  `cd playground/testing && python main.py`
 - Bot Framework Emulator: Connect to `http://localhost:8001/api/v1/messages`, leave App ID/Password empty
 
 ## i18n

@@ -1,7 +1,7 @@
 # aihub_lib - Foundational Shared Library
 
-**Purpose**: Shared infrastructure library used by ALL AI-Hub services. Code belongs here if used by 2+ services.
-Three major systems: NATS event-driven architecture (Swiss AI Agent Protocol), authentication/authorization, and AI/ML
+**Purpose**: Shared infrastructure library used by ALL AI-Hub services. Code belongs here if used by 2+ services. Three
+major systems: NATS event-driven architecture (Swiss AI Agent Protocol), authentication/authorization, and AI/ML
 utilities. NOT for service-specific business logic — that belongs in `aihub_agent`, `aihub_process`, `aihub_pipeline`,
 etc.
 
@@ -129,8 +129,8 @@ aihub_lib/
 
 ## Event System (CRITICAL)
 
-The heart of aihub_lib. All inter-service communication uses NATS events from this hierarchy. Understanding
-Control vs Display separation is essential for working with any service.
+The heart of aihub_lib. All inter-service communication uses NATS events from this hierarchy. Understanding Control vs
+Display separation is essential for working with any service.
 
 ### Auto-Registration
 
@@ -228,9 +228,9 @@ class MyConfig(Form):
 `FormkitElement` → `PrimeVueElement` → 28 concrete elements:
 
 InputText, Textarea, InputNumber, InputMask, Password, InputOtp, Checkbox, ToggleSwitch, ToggleButton, RadioButton,
-Select, MultiSelect, Listbox, CascadeSelect, SelectButton, DatePicker, ColorPicker, Rating, Knob, Slider,
-Group (nested forms), Repeater (arrays), LocaleInput (multi-language), AgentSelector, ModelSelect,
-KnowledgeDatabaseSelector, VectorStoreInput, IconSelector.
+Select, MultiSelect, Listbox, CascadeSelect, SelectButton, DatePicker, ColorPicker, Rating, Knob, Slider, Group (nested
+forms), Repeater (arrays), LocaleInput (multi-language), AgentSelector, ModelSelect, KnowledgeDatabaseSelector,
+VectorStoreInput, IconSelector.
 
 All elements support LocaleString labels/help, validation rules, and `in_locale()` for localization.
 
@@ -249,10 +249,11 @@ Structured NATS subject representations with auto-registry and polymorphic parsi
 
 **Process topic pattern**: `process.{class}.{id}.{walkthrough_id}.{event_type}.{event_name}.{event_id}`
 
-**Pipeline topic pattern**: `pipeline.{source_type}.{source_id}.to.{target_type}.{target_id}.{run_key}.{event_name}.{event_id}`
+**Pipeline topic pattern**:
+`pipeline.{source_type}.{source_id}.to.{target_type}.{target_id}.{run_key}.{event_name}.{event_id}`
 
-**Topic narrowing**: PartialTopic (wildcards) → ClassTopic (class-level) → InstanceTopic (fully specified).
-Each topic has `execution_context_id` (run_id for agents, walkthrough_id for processes).
+**Topic narrowing**: PartialTopic (wildcards) → ClassTopic (class-level) → InstanceTopic (fully specified). Each topic
+has `execution_context_id` (run_id for agents, walkthrough_id for processes).
 
 ### Publishers and Subscribers
 
@@ -285,8 +286,8 @@ Request-reply pattern for config fetching (decouples config from event payloads)
 
 ### Polling
 
-`JSPoller` — generic JetStream batch poller. Yields `PolledMessage` with `.event` (deserialized BaseEvent),
-`.ack()`, and `.nak()`. Used by sensors and consumers that need explicit batch processing.
+`JSPoller` — generic JetStream batch poller. Yields `PolledMessage` with `.event` (deserialized BaseEvent), `.ack()`,
+and `.nak()`. Used by sensors and consumers that need explicit batch processing.
 
 ## Dispatcher and Workflow
 
@@ -296,8 +297,8 @@ Abstract orchestrator that drives workflow execution. Handles:
 
 - Event routing: receives events on NATS, stores in `JetStreamEventStore`, checks step readiness
 - Step execution: builds kwargs from event mapping, executes step method, publishes returned events
-- State management: all state in JetStream (events) + Redis (steps via `StepStore`). No instance state on the
-  dispatcher — enables horizontal scaling and load balancing via JetStream consumer groups.
+- State management: all state in JetStream (events) + Redis (steps via `StepStore`). No instance state on the dispatcher
+  — enables horizontal scaling and load balancing via JetStream consumer groups.
 
 ### DispatchableWorkflow
 
@@ -336,8 +337,8 @@ Key methods:
 
 `IdentityProvider` (abstract) → retrieves full user details from identity systems.
 
-Implementations: `AzureIdentityProvider` (Azure AD/Graph API), `TokenIdentityProvider`,
-`SuperuserIdentityProvider`, `MultiStrategyIdentityProvider`, `DangerousDevelopmentOnlyIdentityProvider`.
+Implementations: `AzureIdentityProvider` (Azure AD/Graph API), `TokenIdentityProvider`, `SuperuserIdentityProvider`,
+`MultiStrategyIdentityProvider`, `DangerousDevelopmentOnlyIdentityProvider`.
 
 ### Permission System (AccessChecker)
 
@@ -359,8 +360,8 @@ Hierarchical permission matching: `aihub.[user|admin].<resource>.<subresource>.<
 
 **Default locale**: English (`en`). **Required**: `de`, `en`, `fr`, `it`.
 
-**LocaleString**: Multi-language container. `LocaleString(de="Hallo", en="Hello", fr="Bonjour", it="Ciao")`.
-Methods: `in_locale(locale)`, `from_i18n_path(path)` (load from YAML), `as_form(label)` (create `LocaleInput`).
+**LocaleString**: Multi-language container. `LocaleString(de="Hallo", en="Hello", fr="Bonjour", it="Ciao")`. Methods:
+`in_locale(locale)`, `from_i18n_path(path)` (load from YAML), `as_form(label)` (create `LocaleInput`).
 
 **LocaleHandler**: Runtime resolution. Fallback: requested → `en` → first available.
 
@@ -383,8 +384,8 @@ class RoleEntity(Document):
 ```
 
 **Key entities**: `RoleEntity` (access), `ThreadEntity` (conversations), `PersistedAgentEventEntity` /
-`PersistedProcessEventEntity` (event storage), `AgentConfigEntity` / `ProcessConfigEntity` (configs),
-`UserEntity`, `NotificationEntity`, `LocaleStringEntity`.
+`PersistedProcessEventEntity` (event storage), `AgentConfigEntity` / `ProcessConfigEntity` (configs), `UserEntity`,
+`NotificationEntity`, `LocaleStringEntity`.
 
 ## Infrastructure Settings
 

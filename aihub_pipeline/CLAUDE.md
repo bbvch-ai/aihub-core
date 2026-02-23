@@ -169,8 +169,8 @@ Key factories (all in `assets/factories/`):
 | `SharePointFile` | `SourceFile`          | + download_url, full_url                               | via SharePointIOManager         |
 | `RcloneFile`     | `SourceFile`          | + remote, remote_path, hashes, mime_type               | via RcloneIOManager             |
 
-`DataLakeFile.from_content(uri, content, metadata)` — factory method for creating from raw bytes. `id_` is computed
-as `uri_to_id(uri)` (MD5 hash). `RefDocDocument.add_metadata_from_data_lake_file()` enriches documents with standard
+`DataLakeFile.from_content(uri, content, metadata)` — factory method for creating from raw bytes. `id_` is computed as
+`uri_to_id(uri)` (MD5 hash). `RefDocDocument.add_metadata_from_data_lake_file()` enriches documents with standard
 metadata keys (`NAMESPACE`, `HASH`, `SOURCE`, `CREATED_AT`, `UPDATED_AT`, `DOCUMENT_TITLE`, etc.).
 
 ## I/O Managers
@@ -217,8 +217,8 @@ assets.
 **LLM/Embedding**: `EmbeddingModelResource` (wraps `EmbeddingModelConfig`), `LanguageModelResource` (wraps `LLMConfig`).
 Both use LiteLLM model names.
 
-**Storage**: `MongoDocumentStoreResource` (LlamaIndex `MongoDocumentStore`),
-`MilvusVectorStoreResource` (uri, collection_name, dimensions, index_type: HNSW or IVF_FLAT).
+**Storage**: `MongoDocumentStoreResource` (LlamaIndex `MongoDocumentStore`), `MilvusVectorStoreResource` (uri,
+collection_name, dimensions, index_type: HNSW or IVF_FLAT).
 
 **Resource factory** (`resources/factory.py`) — assembles resource dicts for `Definitions`:
 
@@ -262,8 +262,7 @@ Three triggering mechanisms work together:
 - `playground/quick_start/simple_pipeline.py` — Hello-world: 2 basic assets, no external deps
 - `playground/quick_start/my_document_pipeline.py` — Complete pipeline with all factories, resources, sensors
 
-Start: `make playground` or `poetry run dagster dev -m playground`
-Access: http://localhost:3002 (Dagster UI)
+Start: `make playground` or `uv run dagster dev -m playground` Access: http://localhost:3002 (Dagster UI)
 
 ## Templates
 
@@ -282,7 +281,7 @@ location, customize. See `templates/sources/README.md` for the full guide includ
 - `default_rag_pipeline/` — per-tenant bucket (`AIHubSettings().DEFAULT_BUCKET_NAME`)
 - `shared_rag_pipeline/` — shared bucket (`AIHubSettings().SHARED_BUCKET_NAME`)
 
-Each has a `Dockerfile` (Python 3.13-slim, Poetry, port 4000):
+Each has a `Dockerfile` (Python 3.13-slim, uv, port 4000):
 `dagster api grpc -h 0.0.0.0 -p 4000 -m "app.{pipeline_name}"`
 
 ## Testing

@@ -47,7 +47,7 @@ deployment/
 ## Generation Pipeline
 
 ```
-make generate-compose  →  poetry run python deployment/generate_compose.py
+make generate-compose  →  uv run python deployment/generate_compose.py
 ```
 
 1. Loads `compose-config.yml` as Jinja2 context

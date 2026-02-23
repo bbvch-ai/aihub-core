@@ -182,11 +182,11 @@ From `aihub_lib.nats.events.form.elements`:
 - **Input**: `InputText`, `InputNumber`, `Textarea`, `Password`, `InputMask`, `InputOtp`
 - **Selection**: `Select`, `MultiSelect`, `CascadeSelect`, `Checkbox`, `ToggleSwitch`, `ToggleButton`, `RadioButton`,
   `SelectButton`, `Listbox`
-- **Specialized**: `ModelSelect` (LLM picker), `AgentSelector` (class+id cascading),
-  `KnowledgeDatabaseSelector`, `VectorStoreInput`, `IconSelector`, `LocaleInput` (multi-language), `ColorPicker`,
-  `DatePicker`, `Knob`, `Rating`, `Slider`
-- **Layout**: `Group` (nested forms — auto-created from nested `Form` subclasses),
-  `Repeater` (list of forms — auto-created from `list[FormSubclass]`)
+- **Specialized**: `ModelSelect` (LLM picker), `AgentSelector` (class+id cascading), `KnowledgeDatabaseSelector`,
+  `VectorStoreInput`, `IconSelector`, `LocaleInput` (multi-language), `ColorPicker`, `DatePicker`, `Knob`, `Rating`,
+  `Slider`
+- **Layout**: `Group` (nested forms — auto-created from nested `Form` subclasses), `Repeater` (list of forms —
+  auto-created from `list[FormSubclass]`)
 
 ### Form Constraints
 
@@ -308,14 +308,14 @@ constructing NATS subjects at each specificity level. See `aihub_lib/aihub_lib/n
 | **NamespaceSelectionAgent** | LLM-driven knowledge routing     | HITL namespace approval + ThreadContext + RAG delegate |
 | **RetrievalAgent**          | Pure document retrieval (no LLM) | Retrieval-only, returns structured context             |
 
-Each agent has: `agents/{Name}/` (implementation), `app/{snake_name}/main.py` (entry point),
-`agents/{Name}/tests/` (BDD tests).
+Each agent has: `agents/{Name}/` (implementation), `app/{snake_name}/main.py` (entry point), `agents/{Name}/tests/` (BDD
+tests).
 
 ## Playground
 
 - `playground/agent/` — Production-like agents (BotInTheLoopAgent, HitlDemoAgent)
-- `playground/minimal_workflow/` — **START HERE**. Self-contained pattern examples:
-  `simple_workflow`, `conditional_workflow`, `human_in_the_loop_workflow`, `agent_in_the_loop_workflow`, `fan_out_workflow`,
+- `playground/minimal_workflow/` — **START HERE**. Self-contained pattern examples: `simple_workflow`,
+  `conditional_workflow`, `human_in_the_loop_workflow`, `agent_in_the_loop_workflow`, `fan_out_workflow`,
   `precondition_workflow`, `bounded_loop`, `context_workflow`, `configured_workflow`, `custom_start_stop_events`,
   `discoverable_workflow`, `displaying_workflow`, `multi_locale_workflow`, `optional_workflow`,
   `organization_memory_workflow`, `semantic_workflow`, `user_memory_workflow`, `multistep_human_in_the_loop_workflow`,
