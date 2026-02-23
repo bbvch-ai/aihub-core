@@ -7,6 +7,5 @@
     </content>
     <orderEntry type="jdk" jdkName="Poetry (aihub_pipeline)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="module" module-name="aihub_lib" />
   </component>
 </module>

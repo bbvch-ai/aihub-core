@@ -85,7 +85,7 @@ providers through LiteLLM.
 - [FDPIC](https://www.edoeb.admin.ch/)
 - [revDSG Text](https://www.admin.ch/opc/en/classified-compilation/19920153/)
 
----
+______________________________________________________________________
 
 :::info Legal disclaimer
 This is technical documentation, not legal advice. Consult legal counsel or the Federal Data Protection and Information

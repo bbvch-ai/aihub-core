@@ -103,7 +103,7 @@ verbindet und genau aufzeigt, was geschah, wo Zeit verbracht wurde und wie Kompo
 Der Swiss AI-Hub verwendet OpenTelemetry für das Tracing mit spezialisierter Unterstützung für KI-Operationen durch
 OpenInference Semantic Conventions.
 
----
+______________________________________________________________________
 
 ## Was wir erfassen
 
@@ -158,7 +158,7 @@ Instrumentierte Bibliotheken erstellen automatisch Spans für externe Service-Au
 **Filterung**: Health Checks, Metrik-Endpunkte und hochvolumige Datenbankabfragen werden aus den Traces gefiltert, um
 Rauschen zu reduzieren.
 
----
+______________________________________________________________________
 
 ## Trace-Sammlungsarchitektur
 
@@ -234,7 +234,7 @@ wird:
 **Smart Tracing**: Der `SmartTracer` berücksichtigt den `suppress_instrumentation`-Kontext, was eine selektive
 Tracing-Steuerung ermöglicht.
 
----
+______________________________________________________________________
 
 ## Geschäftliche Vorteile
 
@@ -262,7 +262,7 @@ Traces zeigen, welche Informationen die KI bei der Generierung von Antworten ber
 Token-Nutzung und Modellauswahl werden sichtbar, was die Einhaltung gesetzlicher Vorschriften unterstützt und das
 Vertrauen der Benutzer stärkt.
 
----
+______________________________________________________________________
 
 ## Zugriff auf Trace-Informationen
 
@@ -286,7 +286,7 @@ EMBEDDING-Spans).
 Traces werden für die langfristige Speicherung und Analyse an Cloud-Observability-Plattformen exportiert. Die Plattform
 unterstützt jedes OTLP-kompatible Backend ausschließlich durch Konfigurationsänderungen.
 
----
+______________________________________________________________________
 
 ## Sicherheit und Datenschutz
 
@@ -310,7 +310,7 @@ Alle Traces werden über verschlüsselte Kanäle (TLS/HTTPS) übertragen, um Abf
 Der Trace-Zugriff ist durch die rollenbasierte Zugriffskontrolle der Observability-Plattform eingeschränkt. Nur
 autorisiertes Personal kann detaillierte Traces einsehen.
 
----
+______________________________________________________________________
 
 ## Integration mit Plattformkomponenten
 
@@ -337,7 +337,7 @@ Die LlamaIndex-Instrumentierung traced automatisch:
 FastAPI-Dienste tracen automatisch eingehende Anfragen, wenn sie instrumentiert sind. Entwickler können
 benutzerdefinierte Attribute zu Spans hinzufügen, um anwendungsspezifischen Kontext bereitzustellen.
 
----
+______________________________________________________________________
 
 ## Plattformflexibilität
 
@@ -356,7 +356,7 @@ jedes OTLP-kompatible Backend:
 Das Umschalten der Backends erfordert lediglich Änderungen an der Collector-Konfiguration. Es sind keine Änderungen am
 Anwendungscode erforderlich.
 
----
+______________________________________________________________________
 
 ## Zukünftige Entwicklung
 
@@ -374,7 +374,7 @@ Abfragen.
 **Performance Budgets**: Automatische Benachrichtigungen, wenn Operationen die erwartete Dauer basierend auf
 historischen Mustern überschreiten.
 
----
+______________________________________________________________________
 
 ## Zusammenfassung
 
@@ -411,7 +411,7 @@ dass die Plattform mit jedem kompatiblen Observability-Backend integriert werden
 Entscheidung bietet Organisationen maximale Flexibilität bei der Wahl der Monitoring-Tools basierend auf ihrer
 Infrastruktur, Compliance-Anforderungen und operativen Präferenzen.
 
----
+______________________________________________________________________
 
 ## Warum OpenTelemetry?
 
@@ -430,7 +430,7 @@ Konfigurationsänderung bleiben, keine Neuentwicklung.
 - **Zukunftssicher:** Entwickeln Sie Plattformen und Richtlinien über den OTel Collector und die Konfiguration weiter,
   nicht über den Anwendungscode.
 
----
+______________________________________________________________________
 
 ## OpenTelemetry Collector
 
@@ -483,7 +483,7 @@ graph TB
 
 **Erweiterungen**: Bieten Hilfsfunktionen wie Health Checks und Profiling.
 
----
+______________________________________________________________________
 
 ## Receiver
 
@@ -498,7 +498,7 @@ Receiver sind Aufnahmepunkte. Sie ziehen Telemetriedaten von Anwendungen und Inf
 
 Ergebnis: Breite Abdeckung mit minimaler Kopplung an ein einzelnes Tool oder eine Laufzeitumgebung.
 
----
+______________________________________________________________________
 
 ## Prozessoren
 
@@ -518,7 +518,7 @@ Analyse vor.
 
 Ergebnis: Saubere, kontextuelle und analysebereite Telemetriedaten.
 
----
+______________________________________________________________________
 
 ## Exporter
 
@@ -531,7 +531,7 @@ Exporter liefern Telemetriedaten an Ziele.
 
 Ergebnis: Steckbare Ausgaben mit sicheren Entwicklungs-Workflows.
 
----
+______________________________________________________________________
 
 ## Telemetrie-Pipelines
 
@@ -544,7 +544,7 @@ sind.
 
 Konzept: zweckgebundene Bahnen, die Signale über den gesamten Stack hinweg konsistent und verknüpfbar halten.
 
----
+______________________________________________________________________
 
 ## Erweiterungen
 
@@ -557,7 +557,7 @@ Erweiterungen fügen operative Fähigkeiten rund um den Collector selbst hinzu.
 
 Ergebnis: Eine handhabbare, inspizierbare Observability-Kontrollebene.
 
----
+______________________________________________________________________
 
 ## Integration mit Plattformdiensten
 
@@ -591,7 +591,7 @@ synthetischen Checks.
 
 **Netzwerk-Observability**: Traefik Proxy-Logs und -Metriken bieten Transparenz bei der Anfragen-Weiterleitung.
 
----
+______________________________________________________________________
 
 ## Multi-Plattform-Unterstützung
 

@@ -65,7 +65,7 @@ scenarios("./features/iterative_agent.feature")
 def _(max_iterations: int):
     return AgentTestRunner(
         agent_type=BoundedLoopAgent,
-        default_agent_config=BoundedLoopAgentConfig(
+        agent_config=BoundedLoopAgentConfig(
             agent_id="iterative_agent",
             loop_max=max_iterations
         )
@@ -161,7 +161,7 @@ enable_logging()
 async def main():
     runner = AgentTestRunner(
         agent_type=MyAgent,
-        default_agent_config=MyAgentConfig(
+        agent_config=MyAgentConfig(
             agent_id="debug_agent"
         )
     )
@@ -194,7 +194,7 @@ enable_logging()
 async def main():
     runner = AgentTestRunner(
         agent_type=MyAgent,
-        default_agent_config=MyAgentConfig(agent_id="interactive_agent")
+        agent_config=MyAgentConfig(agent_id="interactive_agent")
     )
 
     # Keeps agent running for interactive testing

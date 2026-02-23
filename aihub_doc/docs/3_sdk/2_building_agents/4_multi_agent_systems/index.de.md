@@ -36,7 +36,7 @@ Agenten orchestrieren.
 Die Helferklasse `AgentInTheLoop` vereinfacht diesen Prozess, indem sie eine praktische `invoke`-Methode zur Erstellung
 des Anfragenereignisses bereitstellt.
 
----
+______________________________________________________________________
 
 ## Kernmuster: Orchestrator und Worker
 

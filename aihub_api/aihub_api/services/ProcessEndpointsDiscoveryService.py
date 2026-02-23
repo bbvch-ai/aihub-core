@@ -383,8 +383,10 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
             process_config = ProcessConfig(
                 process_class=config_entity.process_class,
                 process_id=config_entity.process_id,
-                name=config_entity.name,
-                description=config_entity.description,
+                name=config_entity.name if config_entity.name else default_process_config.name,
+                description=(
+                    config_entity.description if config_entity.description else default_process_config.description
+                ),
             )
 
             return await ProcessService.submit_process_start_form(

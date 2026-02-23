@@ -90,9 +90,8 @@ it, and storing it in a format that agents can easily consume.
 5. **Vector Storage**: Embeddings are stored in vector databases for retrieval operations
 6. **Summary Generation**: Hierarchical summaries are created for better context preservation
 
-**Data Versions and Traceability:**
-Each partition is assigned **DataVersions** that reflect the current state of the document. If a document changes, its
-DataVersion changes, prompting re-ingestion and re-indexing. This ensures:
+**Data Versions and Traceability:** Each partition is assigned **DataVersions** that reflect the current state of the
+document. If a document changes, its DataVersion changes, prompting re-ingestion and re-indexing. This ensures:
 
 - You can always trace which version of the data was used to produce a given agent response
 - Historical runs can be audited and reproduced, supporting debugging and compliance requirements
@@ -124,10 +123,9 @@ def data_lake_observer(context):
 - **Reactive Processing**: When a new file arrives in the data lake, downstream assets update automatically
 - **Reduced Manual Overhead**: Instead of periodic manual job kicks, pipelines react to data lifecycle changes
 
-**Dynamic Partitions for Scalability:**
-Dagster's **Dynamic Partitions** allow pipelines to treat each file or document as a separate partition. The pipeline
-scales as documents grow - when a new file is detected, only that partition's logic runs, avoiding unnecessary
-reprocessing.
+**Dynamic Partitions for Scalability:** Dagster's **Dynamic Partitions** allow pipelines to treat each file or document
+as a separate partition. The pipeline scales as documents grow - when a new file is detected, only that partition's
+logic runs, avoiding unnecessary reprocessing.
 
 ### 🏗️ The Asset-Based Architecture
 
@@ -153,7 +151,7 @@ def documents_asset(data_lake_file: DataLakeFile) -> RefDoc:
 - **Lineage**: Dependencies between assets provide clear data lineage tracking
 - **Partitioned**: Assets can be partitioned for parallel processing and incremental updates
 
----
+______________________________________________________________________
 
 ## 2. 🚀 The Step-by-Step Development Workflow
 
@@ -163,19 +161,9 @@ This section provides a practical, step-by-step guide to building, testing, and 
 
 Before you begin, ensure you have completed the infrastructure setup from the root project documentation.
 
-::: warning
-Always activate the Poetry environment before working. All subsequent commands must be run from within this activated
-shell.
-:::
-
 ```bash
 # Start required services from the project root
 docker compose -f docker-compose.yml -f milvus-standalone-docker-compose.yml -f docker-compose-webui.yml up -d
-```
-
-```bash
-cd aihub_pipeline
-poetry shell
 ```
 
 ### 🔍 Step 1: Understanding the Pipeline Architecture
@@ -348,7 +336,7 @@ def test_my_asset():
 make playground
 
 # Or run manually
-poetry run dagster dev -m playground --use-legacy-code-server-behavior
+uv run dagster dev -m playground --use-legacy-code-server-behavior
 ```
 
 ::: info Dagster Web Interface
@@ -388,7 +376,7 @@ make test-cov    # Run tests with coverage
 All pipeline code must use strict Python type annotations and follow Dagster best practices. This is enforced by CI/CD.
 :::
 
----
+______________________________________________________________________
 
 ## 3. 🔧 Customization and Reuse
 
@@ -435,7 +423,7 @@ This approach ensures that data ingestion pipelines reduce manual effort, mainta
 more reliable end-to-end AI solution that adapts gracefully as client needs and data environments evolve.
 :::
 
----
+______________________________________________________________________
 
 ## 4. 🎨 Pipeline Patterns and Best Practices
 
