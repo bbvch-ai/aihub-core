@@ -20,7 +20,6 @@ Architecture:
 - SSE streaming to /api/v1/agents/classes/{class}/instances/{id}/{event}/stream endpoints
 """
 
-import base64
 import hashlib
 import hmac
 import html
@@ -37,8 +36,6 @@ from urllib.parse import urlparse
 import httpx
 from pydantic import BaseModel, Field
 from bson import ObjectId
-import boto3
-from botocore.client import Config
 from open_webui.models.files import Files
 from opentelemetry.propagate import inject
 from opentelemetry import trace
@@ -222,14 +219,6 @@ class EventCaller(Protocol):
     ) -> Annotated[dict[str, Any], "Response from event call"]: ...
 
 
-class FileStorageAdapter(Protocol):
-    """Protocol for file storage operations"""
-
-    async def fetch_file(
-        self, path: Annotated[str, "File path"]
-    ) -> Annotated[Optional[bytes], "File content or None if error"]: ...
-
-
 # ============================================================================
 # Authentication Service
 # ============================================================================
@@ -276,58 +265,6 @@ class AuthenticationService:
         if accept_language:
             headers["Accept-Language"] = accept_language
         return headers
-
-
-# ============================================================================
-# File Storage Implementation
-# ============================================================================
-
-
-class S3StorageAdapter:
-    """S3/MinIO storage adapter implementing FileStorageAdapter protocol"""
-
-    def __init__(
-        self,
-        endpoint: Annotated[str, "S3 endpoint URL"],
-        access_key: Annotated[str, "S3 access key"],
-        secret_key: Annotated[str, "S3 secret key"],
-    ):
-        self._endpoint = endpoint
-        self._access_key = access_key
-        self._secret_key = secret_key
-        self._client: Annotated[Optional[Any], "Boto3 S3 client"] = None
-
-    def _get_client(self) -> Annotated[Any, "Boto3 S3 client"]:
-        """Lazy initialization of S3 client"""
-        if not self._client:
-            self._client = boto3.client(
-                "s3",
-                endpoint_url=self._endpoint,
-                aws_access_key_id=self._access_key,
-                aws_secret_access_key=self._secret_key,
-                config=Config(signature_version="s3v4"),
-                region_name="us-east-1",
-            )
-        return self._client
-
-    async def fetch_file(
-        self, s3_path: Annotated[str, "S3 path in format s3://bucket/key"]
-    ) -> Annotated[Optional[bytes], "File content as bytes or None"]:
-        """Fetch file from S3 storage"""
-        parsed = urlparse(s3_path)
-        if parsed.scheme != "s3":
-            logger.error(f"Invalid S3 path: {s3_path}")
-            return None
-
-        bucket = parsed.netloc
-        key = parsed.path.lstrip("/")
-
-        try:
-            response = self._get_client().get_object(Bucket=bucket, Key=key)
-            return response["Body"].read()
-        except Exception as e:
-            logger.exception(f"Error fetching file from S3: {e}")
-            return None
 
 
 # ============================================================================
@@ -1443,9 +1380,6 @@ class AgentDiscoveryService:
 class FileProcessingService:
     """Handles file processing and conversion"""
 
-    def __init__(self, storage_adapter: Annotated[FileStorageAdapter, "Storage adapter instance"]):
-        self._storage_adapter = storage_adapter
-
     async def prepare_files_for_event(
         self, files: Annotated[Optional[list[dict[str, Any]]], "Files from Open WebUI"]
     ) -> Annotated[list[dict[str, str]], "Prepared files for AI-Hub"]:
@@ -1468,7 +1402,7 @@ class FileProcessingService:
     async def _process_single_file(
         self, file: Annotated[dict[str, Any], "Single file to process"]
     ) -> Annotated[Optional[dict[str, str]], "Processed file or None"]:
-        """Process a single file"""
+        """Process a single file — extracts S3 bucket/key reference instead of downloading."""
         logger.debug(f"Processing file: {file.get('name', '')}, ID: {file.get('id', '')}")
 
         file_id = file.get("id", "")
@@ -1482,20 +1416,21 @@ class FileProcessingService:
         filename = file_meta.get("name", "unnamed_file")
         content_type = file_meta.get("content_type", "application/octet-stream")
 
-        file_content = await self._storage_adapter.fetch_file(file_obj.path)
-
-        if not file_content:
-            logger.warning(f"Could not fetch file from storage: {file_obj.path}")
+        parsed = urlparse(file_obj.path)
+        if parsed.scheme != "s3":
+            logger.warning(f"Unsupported storage path scheme: {file_obj.path}")
             return None
 
-        base64_data = base64.b64encode(file_content).decode("utf-8")
+        bucket = parsed.netloc
+        key = parsed.path.lstrip("/")
 
-        logger.debug(f"Successfully prepared file: {filename}")
+        logger.debug(f"Successfully prepared file: {filename} -> s3://{bucket}/{key}")
 
         return {
             "filename": filename,
-            "file_data": base64_data,
             "file_type": content_type,
+            "s3_bucket": bucket,
+            "s3_key": key,
         }
 
 
@@ -1538,19 +1473,6 @@ class Pipe:
             default=int(os.getenv("AIHUB_REQUEST_TIMEOUT", "60")),
             description="Request timeout in seconds",
         )
-        S3_STORAGE_ENDPOINT: str = Field(
-            default=os.getenv("S3_ENDPOINT_URL", ""),
-            description="S3/MinIO endpoint URL",
-        )
-        S3_STORAGE_ACCESS_KEY: str = Field(
-            default=os.getenv("S3_ACCESS_KEY_ID", ""),
-            description="S3/MinIO access key",
-        )
-        S3_STORAGE_SECRET_KEY: str = Field(
-            default=os.getenv("S3_SECRET_ACCESS_KEY", ""),
-            description="S3/MinIO secret key",
-        )
-
     def __init__(self):
         self.valves = self.Valves()
         self._initialize_services()
@@ -1562,15 +1484,8 @@ class Pipe:
             self.valves.OPEN_WEBUI_SIGNING_SECRET, self.valves.AIHUB_SUPERUSER_API_KEY
         )
 
-        # Storage
-        self._storage_adapter = S3StorageAdapter(
-            self.valves.S3_STORAGE_ENDPOINT,
-            self.valves.S3_STORAGE_ACCESS_KEY,
-            self.valves.S3_STORAGE_SECRET_KEY,
-        )
-
         # File Processing
-        self._file_service = FileProcessingService(self._storage_adapter)
+        self._file_service = FileProcessingService()
 
         # Message Conversion
         self._message_converter = MessageConverter()
