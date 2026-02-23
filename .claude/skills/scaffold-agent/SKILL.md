@@ -104,7 +104,7 @@ async def respond(
 **Design approach**: Sketch top-down to understand logical flow, then refine bottom-up to identify true data
 dependencies. For each step ask: *What is the minimal set of data this step requires?*
 
-Source: `aihub_lib/nats/workflow/DispatchableWorkflow.py`, `aihub_agent/agents/Agent.py`
+Source: `aihub_lib/aihub_lib/nats/workflow/DispatchableWorkflow.py`, `aihub_agent/aihub_agent/agents/Agent.py`
 
 ______________________________________________________________________
 
@@ -235,7 +235,7 @@ async def end_step(self, event: HumanInTheLoopInput.response) -> StopEvent:
     return StopEvent()
 ```
 
-Source: `aihub_lib/nats/events/human_in_the_loop/`
+Source: `aihub_lib/aihub_lib/nats/events/human_in_the_loop/`
 
 #### Multiple HITL Interactions
 
@@ -678,7 +678,7 @@ class {AgentName}(Agent):
 | `max_executions_per_run` | `int \| None`                 | `None`  | Limits re-execution count (None = unlimited)     |
 | `stop_on_error`          | `bool`                        | `True`  | Publish ExceptionEvent on error                  |
 
-Source: `aihub_agent/workflow/decorators/step.py`
+Source: `aihub_agent/aihub_agent/workflow/decorators/step.py`
 
 ### Step Return Types
 
@@ -813,7 +813,7 @@ From `aihub_lib/nats/events/form/elements/`:
   `IconSelector`, `LocaleInput` (multi-language), `ColorPicker`, `DatePicker`, `Knob`, `Rating`, `Slider`
 - **Layout**: `Group` (auto-created from nested `Form`), `Repeater` (auto-created from `list[Form]`)
 
-Source: `aihub_lib/agents/AgentConfig.py`, `aihub_lib/nats/events/form/Form.py`
+Source: `aihub_lib/aihub_lib/agents/AgentConfig.py`, `aihub_lib/aihub_lib/nats/events/form/Form.py`
 
 ______________________________________________________________________
 
@@ -837,7 +837,7 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-Source: `aihub_agent/runners/AgentRunner.py`
+Source: `aihub_agent/aihub_agent/runners/AgentRunner.py`
 
 ______________________________________________________________________
 
@@ -1235,24 +1235,24 @@ ______________________________________________________________________
 
 ### Framework Files
 
-| File                                                             | Purpose                               |
-| ---------------------------------------------------------------- | ------------------------------------- |
-| `aihub_agent/agents/Agent.py`                                    | Agent base class                      |
-| `aihub_agent/workflow/decorators/step.py`                        | `@step()` decorator                   |
-| `aihub_agent/workflow/decorators/precondition.py`                | `@precondition()` decorator           |
-| `aihub_agent/dispatchers/AgentDispatcher.py`                     | Core workflow executor (DI, dispatch) |
-| `aihub_agent/runners/AgentRunner.py`                             | Production runner                     |
-| `aihub_agent/runners/AgentTestRunner.py`                         | Test runner                           |
-| `aihub_agent/context/run/RunContext.py`                          | Per-run ephemeral state               |
-| `aihub_agent/context/thread/ThreadContext.py`                    | Per-thread persistent state           |
-| `aihub_agent/i18n/AgentLocaleString.py`                          | Agent i18n strings                    |
-| `aihub_lib/agents/AgentConfig.py`                                | Config base with form duality         |
-| `aihub_lib/nats/events/form/Form.py`                             | Form system                           |
-| `aihub_lib/nats/events/form/elements/`                           | FormKit elements (28 types)           |
-| `aihub_lib/nats/events/form/constraints.py`                      | Form-aware validators                 |
-| `aihub_lib/displayers/EventDisplayer.py`                         | LLM streaming + display events        |
-| `aihub_lib/generative_ai/memory/AgentMemory.py`                  | User + org memory                     |
-| `aihub_lib/nats/workflow/annotations/custom_types/ListOfSize.py` | FixedList for fan-in                  |
+| File                                                                       | Purpose                               |
+| -------------------------------------------------------------------------- | ------------------------------------- |
+| `aihub_agent/aihub_agent/agents/Agent.py`                                  | Agent base class                      |
+| `aihub_agent/aihub_agent/workflow/decorators/step.py`                      | `@step()` decorator                   |
+| `aihub_agent/aihub_agent/workflow/decorators/precondition.py`              | `@precondition()` decorator           |
+| `aihub_agent/aihub_agent/dispatchers/AgentDispatcher.py`                   | Core workflow executor (DI, dispatch) |
+| `aihub_agent/aihub_agent/runners/AgentRunner.py`                           | Production runner                     |
+| `aihub_agent/aihub_agent/runners/AgentTestRunner.py`                       | Test runner                           |
+| `aihub_agent/aihub_agent/context/run/RunContext.py`                        | Per-run ephemeral state               |
+| `aihub_agent/aihub_agent/context/thread/ThreadContext.py`                  | Per-thread persistent state           |
+| `aihub_agent/aihub_agent/i18n/AgentLocaleString.py`                        | Agent i18n strings                    |
+| `aihub_lib/aihub_lib/agents/AgentConfig.py`                                | Config base with form duality         |
+| `aihub_lib/aihub_lib/nats/events/form/Form.py`                             | Form system                           |
+| `aihub_lib/aihub_lib/nats/events/form/elements/`                           | FormKit elements (28 types)           |
+| `aihub_lib/aihub_lib/nats/events/form/constraints.py`                      | Form-aware validators                 |
+| `aihub_lib/aihub_lib/displayers/EventDisplayer.py`                         | LLM streaming + display events        |
+| `aihub_lib/aihub_lib/generative_ai/memory/AgentMemory.py`                  | User + org memory                     |
+| `aihub_lib/aihub_lib/nats/workflow/annotations/custom_types/ListOfSize.py` | FixedList for fan-in                  |
 
 ### Playground Patterns Index
 

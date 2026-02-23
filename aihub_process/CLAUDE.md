@@ -260,7 +260,7 @@ Per-walkthrough ephemeral state in Redis/Valkey. Equivalent of `RunContext` for 
 ## i18n
 
 - `ProcessLocaleString.from_i18n_path()` for process/step `name` and `description`
-- Translation files: `aihub_process/i18n/translations/process/*.{locale}.yml` (4 locales: de, en, fr, it)
+- Translation files: `aihub_process/aihub_process/i18n/translations/process/*.{locale}.yml` (4 locales: de, en, fr, it)
 - `ProcessLocaleHandler` extends `LocaleHandler` with process-specific translation paths
 
 ## Playground
@@ -290,7 +290,7 @@ Per-walkthrough ephemeral state in Redis/Valkey. Equivalent of `RunContext` for 
 2. Define custom `WorkEvent`s and `WorkRequestEvent`s (subclass the entity-specific ones)
 3. Add `@process_step()` methods with entity `In`/`Out` annotations
 4. Create `ProcessConfig` subclass with `as_form()` if custom config needed
-5. Add i18n translations in `aihub_process/i18n/translations/process/`
+5. Add i18n translations in `aihub_process/aihub_process/i18n/translations/process/`
 6. Write BDD tests with `ProcessTestRunner`
 7. Run `make test`
 
@@ -298,24 +298,24 @@ Per-walkthrough ephemeral state in Redis/Valkey. Equivalent of `RunContext` for 
 
 **SDK Framework**:
 
-- AgenticProcess base: `aihub_process/agentic_processes/AgenticProcess.py`
-- Step decorator: `aihub_process/process/decorators/process_step.py`
-- ProcessDispatcher: `aihub_process/dispatchers/ProcessDispatcher.py`
-- ProcessRunner: `aihub_process/runners/ProcessRunner.py`
-- ProcessTestRunner: `aihub_process/runners/ProcessTestRunner.py`
-- WalkthroughContext: `aihub_process/context/walkthrough/WalkthroughContext.py`
-- ProcessLocaleString: `aihub_process/i18n/ProcessLocaleString.py`
+- AgenticProcess base: `aihub_process/aihub_process/agentic_processes/AgenticProcess.py`
+- Step decorator: `aihub_process/aihub_process/process/decorators/process_step.py`
+- ProcessDispatcher: `aihub_process/aihub_process/dispatchers/ProcessDispatcher.py`
+- ProcessRunner: `aihub_process/aihub_process/runners/ProcessRunner.py`
+- ProcessTestRunner: `aihub_process/aihub_process/runners/ProcessTestRunner.py`
+- WalkthroughContext: `aihub_process/aihub_process/context/walkthrough/WalkthroughContext.py`
+- ProcessLocaleString: `aihub_process/aihub_process/i18n/ProcessLocaleString.py`
 
 **Entity Delegation**:
 
-- BaseProcessEntity: `aihub_process/delegators/AbstractProcessEntity.py`
-- AbstractEntityDelegator: `aihub_process/delegators/AbstractEntityDelegator.py`
-- Agent (In/Out): `aihub_process/delegators/agent/Agent.py`
-- AgentDelegator: `aihub_process/delegators/agent/AgentDelegator.py`
-- Human (In/Out): `aihub_process/delegators/human/Human.py`
-- Program (In/Out): `aihub_process/delegators/program/Program.py`
-- Process (In/Out): `aihub_process/delegators/process/Process.py`
-- ProcessDelegator: `aihub_process/delegators/process/ProcessDelegator.py`
+- BaseProcessEntity: `aihub_process/aihub_process/delegators/AbstractProcessEntity.py`
+- AbstractEntityDelegator: `aihub_process/aihub_process/delegators/AbstractEntityDelegator.py`
+- Agent (In/Out): `aihub_process/aihub_process/delegators/agent/Agent.py`
+- AgentDelegator: `aihub_process/aihub_process/delegators/agent/AgentDelegator.py`
+- Human (In/Out): `aihub_process/aihub_process/delegators/human/Human.py`
+- Program (In/Out): `aihub_process/aihub_process/delegators/program/Program.py`
+- Process (In/Out): `aihub_process/aihub_process/delegators/process/Process.py`
+- ProcessDelegator: `aihub_process/aihub_process/delegators/process/ProcessDelegator.py`
 
 **From aihub_lib** (config, events & topics):
 

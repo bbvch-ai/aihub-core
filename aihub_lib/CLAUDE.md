@@ -476,49 +476,49 @@ Real-time event emission for streaming LLM output to the UI:
 
 **Event system**:
 
-- `aihub_lib/nats/events/BaseEvent.py` — event foundation (auto-registry, deserialization)
-- `aihub_lib/nats/events/control/ControlEvent.py` — workflow control base
-- `aihub_lib/nats/events/display/DisplayEvent.py` — UI observability base
-- `aihub_lib/nats/events/ControlAndDisplayEvent.py` — dual-purpose base
-- `aihub_lib/nats/events/form/Form.py` — form duality system
-- `aihub_lib/nats/events/form/base/PrimeVueElement.py` — form element base
-- `aihub_lib/nats/events/form/elements/` — 28 form elements
+- `aihub_lib/aihub_lib/nats/events/BaseEvent.py` — event foundation (auto-registry, deserialization)
+- `aihub_lib/aihub_lib/nats/events/control/ControlEvent.py` — workflow control base
+- `aihub_lib/aihub_lib/nats/events/display/DisplayEvent.py` — UI observability base
+- `aihub_lib/aihub_lib/nats/events/ControlAndDisplayEvent.py` — dual-purpose base
+- `aihub_lib/aihub_lib/nats/events/form/Form.py` — form duality system
+- `aihub_lib/aihub_lib/nats/events/form/base/PrimeVueElement.py` — form element base
+- `aihub_lib/aihub_lib/nats/events/form/elements/` — 28 form elements
 
 **Workflow engine**:
 
-- `aihub_lib/nats/workflow/DispatchableWorkflow.py` — workflow base class
-- `aihub_lib/nats/dispatcher/BaseDispatcher.py` — event orchestration
-- `aihub_lib/nats/topics/Topic.py` — NATS subject parsing
-- `aihub_lib/nats/topic_managers/agents/AgentTopicManager.py` — subject builders
-- `aihub_lib/nats/publishers/JSPublisher.py` — durable event publishing
-- `aihub_lib/nats/rpc/AgentConfigClient.py` — config RPC
+- `aihub_lib/aihub_lib/nats/workflow/DispatchableWorkflow.py` — workflow base class
+- `aihub_lib/aihub_lib/nats/dispatcher/BaseDispatcher.py` — event orchestration
+- `aihub_lib/aihub_lib/nats/topics/Topic.py` — NATS subject parsing
+- `aihub_lib/aihub_lib/nats/topic_managers/agents/AgentTopicManager.py` — subject builders
+- `aihub_lib/aihub_lib/nats/publishers/JSPublisher.py` — durable event publishing
+- `aihub_lib/aihub_lib/nats/rpc/AgentConfigClient.py` — config RPC
 
 **Auth and identity**:
 
-- `aihub_lib/auth/access/AccessChecker.py` — permission engine
-- `aihub_lib/auth/dependencies/AuthHandler.py` — auth handler base
-- `aihub_lib/auth/identity/IdentityProvider.py` — identity provider base
-- `aihub_lib/auth/identity/UserIdentity.py` — user model
+- `aihub_lib/aihub_lib/auth/access/AccessChecker.py` — permission engine
+- `aihub_lib/aihub_lib/auth/dependencies/AuthHandler.py` — auth handler base
+- `aihub_lib/aihub_lib/auth/identity/IdentityProvider.py` — identity provider base
+- `aihub_lib/aihub_lib/auth/identity/UserIdentity.py` — user model
 
 **Config and i18n**:
 
-- `aihub_lib/agents/AgentConfig.py` — agent config with form duality
-- `aihub_lib/processes/ProcessConfig.py` — process config with form duality
-- `aihub_lib/i18n/LocaleString.py` — multi-language strings
-- `aihub_lib/i18n/LocaleHandler.py` — locale resolution
+- `aihub_lib/aihub_lib/agents/AgentConfig.py` — agent config with form duality
+- `aihub_lib/aihub_lib/processes/ProcessConfig.py` — process config with form duality
+- `aihub_lib/aihub_lib/i18n/LocaleString.py` — multi-language strings
+- `aihub_lib/aihub_lib/i18n/LocaleHandler.py` — locale resolution
 
 **Infrastructure**:
 
-- `aihub_lib/infrastructure/api/AIHubSettings.py` — core settings
-- `aihub_lib/infrastructure/opentelemetry/tracing/SmartTracer.py` — tracing
-- `aihub_lib/displayers/EventDisplayer.py` — UI event emission
+- `aihub_lib/aihub_lib/infrastructure/api/AIHubSettings.py` — core settings
+- `aihub_lib/aihub_lib/infrastructure/opentelemetry/tracing/SmartTracer.py` — tracing
+- `aihub_lib/aihub_lib/displayers/EventDisplayer.py` — UI event emission
 
 **Testing**:
 
-- `aihub_lib/testing/asyncio_utils/bdd.py` — async BDD helper
-- `aihub_lib/testing/auth_utils/fake_user.py` — mock users
+- `aihub_lib/aihub_lib/testing/asyncio_utils/bdd.py` — async BDD helper
+- `aihub_lib/aihub_lib/testing/auth_utils/fake_user.py` — mock users
 
 **Persistence**:
 
-- `aihub_lib/persistence/access/entities/RoleEntity.py` — entity pattern example
-- `aihub_lib/routes/Controller.py` — FastAPI controller base
+- `aihub_lib/aihub_lib/persistence/access/entities/RoleEntity.py` — entity pattern example
+- `aihub_lib/aihub_lib/routes/Controller.py` — FastAPI controller base

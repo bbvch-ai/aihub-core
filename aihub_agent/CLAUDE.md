@@ -292,7 +292,7 @@ constructing NATS subjects at each specificity level. See `aihub_lib/aihub_lib/n
 ## i18n
 
 - `AgentLocaleString.from_i18n_path()` for agent/step `name` and `description`
-- Translation files: `aihub_agent/i18n/translations/agent/*.{locale}.yml` (4 locales: de, en, fr, it)
+- Translation files: `aihub_agent/aihub_agent/i18n/translations/agent/*.{locale}.yml` (4 locales: de, en, fr, it)
 - `AgentLocaleHandler` extends `LocaleHandler` with agent-specific translation paths
 - Injected into steps via DI: declare `t: LocaleHandler` or `t: AgentLocaleHandler` as a parameter
 
@@ -340,7 +340,7 @@ tests).
 2. Add `@step()` methods consuming/producing events
 3. Create `AgentConfig` subclass with `as_form()` (form duality)
 4. Create custom events inheriting `ControlEvent`/`StartEvent`/`StopEvent`
-5. Add i18n translations in `aihub_agent/i18n/translations/agent/`
+5. Add i18n translations in `aihub_agent/aihub_agent/i18n/translations/agent/`
 6. Create `app/my_agent/main.py` entry point with `AgentRunner`
 7. Write BDD tests with `AgentTestRunner`
 8. Run `make test`
@@ -349,16 +349,16 @@ tests).
 
 **SDK Framework**:
 
-- Agent base: `aihub_agent/agents/Agent.py`
-- Step decorator: `aihub_agent/workflow/decorators/step.py`
-- Precondition decorator: `aihub_agent/workflow/decorators/precondition.py`
-- AgentDispatcher: `aihub_agent/dispatchers/AgentDispatcher.py`
-- AgentRunner: `aihub_agent/runners/AgentRunner.py`
-- AgentTestRunner: `aihub_agent/runners/AgentTestRunner.py`
-- RunContext: `aihub_agent/context/run/RunContext.py`
-- ThreadContext: `aihub_agent/context/thread/ThreadContext.py`
-- AgentLocaleString: `aihub_agent/i18n/AgentLocaleString.py`
-- AgentRunTracer: `aihub_agent/tracing/AgentRunTracer.py`
+- Agent base: `aihub_agent/aihub_agent/agents/Agent.py`
+- Step decorator: `aihub_agent/aihub_agent/workflow/decorators/step.py`
+- Precondition decorator: `aihub_agent/aihub_agent/workflow/decorators/precondition.py`
+- AgentDispatcher: `aihub_agent/aihub_agent/dispatchers/AgentDispatcher.py`
+- AgentRunner: `aihub_agent/aihub_agent/runners/AgentRunner.py`
+- AgentTestRunner: `aihub_agent/aihub_agent/runners/AgentTestRunner.py`
+- RunContext: `aihub_agent/aihub_agent/context/run/RunContext.py`
+- ThreadContext: `aihub_agent/aihub_agent/context/thread/ThreadContext.py`
+- AgentLocaleString: `aihub_agent/aihub_agent/i18n/AgentLocaleString.py`
+- AgentRunTracer: `aihub_agent/aihub_agent/tracing/AgentRunTracer.py`
 
 **From aihub_lib** (config & form system):
 
@@ -381,7 +381,7 @@ tests).
 
 **Reference implementation**:
 
-- RAGAgent: `aihub_agent/agents/RagAgent/RAGAgent.py`
-- RAGAgentConfig: `aihub_agent/agents/RagAgent/configs/RAGAgentConfig.py`
+- RAGAgent: `aihub_agent/aihub_agent/agents/RagAgent/RAGAgent.py`
+- RAGAgentConfig: `aihub_agent/aihub_agent/agents/RagAgent/configs/RAGAgentConfig.py`
 
 **Playground patterns**: `playground/minimal_workflow/`
