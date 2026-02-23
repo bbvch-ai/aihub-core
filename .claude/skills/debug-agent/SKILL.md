@@ -42,7 +42,7 @@ Events. The dispatcher (not the developer) decides execution order based on data
 
 Source: `aihub_lib/nats/dispatcher/BaseDispatcher.py`, `aihub_agent/dispatchers/AgentDispatcher.py`
 
----
+______________________________________________________________________
 
 ## Step 1: Locate & Map the Agent
 
@@ -62,7 +62,7 @@ Source: `aihub_lib/nats/dispatcher/BaseDispatcher.py`, `aihub_agent/dispatchers/
 
 **Output**: Complete step/event chain with parameter types and decorator options.
 
----
+______________________________________________________________________
 
 ## Step 2: Classify Symptom
 
@@ -82,7 +82,7 @@ Use this triage table to jump to the right diagnostic section:
 | Step called by multiple triggers | [Constraint: Double-Dip](#double-dip)             |
 | Optional param causes re-run     | [Constraint: Optional Param Trap](#optional-trap) |
 
----
+______________________________________________________________________
 
 ## Execution Semantics Deep Dive
 
@@ -178,7 +178,7 @@ exact same set of input events (by event ID), the execution is silently skipped.
 
 Source: `StepStore.was_called_with_events()` in `aihub_lib/nats/dispatcher/stores/step/StepStore.py`
 
----
+______________________________________________________________________
 
 ## Diagnostic Cookbook
 
@@ -244,7 +244,7 @@ async def my_step(self, required: A, optional: B | None) -> StopEvent:
    - Look for: Multiple documents with same `event_name` from the same step
    - Count duplicates to confirm re-execution count
 
----
+______________________________________________________________________
 
 ### Issue 2: Step Never Executes {#issue-2}
 
@@ -306,7 +306,7 @@ async def upstream(self, event: A, ctx: RunContext) -> B:
 
    - Look for: `crashed=true` entry indicating the execution context was marked crashed
 
----
+______________________________________________________________________
 
 ### Issue 3: Events After Stop {#issue-3}
 
@@ -338,7 +338,7 @@ state corruption.
    - Normal: StopEvent has the highest sequence number
    - Abnormal: Any event after StopEvent in the stream
 
----
+______________________________________________________________________
 
 ### Issue 4: Precondition Parameter Mismatch {#issue-4}
 
@@ -373,7 +373,7 @@ fires) or throw TypeError.
 
 Source: `AgentDispatcher._get_parameter_value()` in `aihub_agent/dispatchers/AgentDispatcher.py`
 
----
+______________________________________________________________________
 
 ### Issue 5: Agent Won't Start {#issue-5}
 
@@ -410,7 +410,7 @@ Source: `AgentDispatcher._get_parameter_value()` in `aihub_agent/dispatchers/Age
    - Look for: Consumer count, message count, last sequence
    - Zero consumers = no dispatcher is subscribed
 
----
+______________________________________________________________________
 
 ### Issue 6: Configuration Errors {#issue-6}
 
@@ -449,7 +449,7 @@ Source: `AgentDispatcher._get_parameter_value()` in `aihub_agent/dispatchers/Age
    - Look for: `config_schema` field — does the JSON schema match the AgentConfig class?
    - Check `form` field — do FormKit elements render correctly?
 
----
+______________________________________________________________________
 
 ## Engineering Constraint Violations
 
@@ -668,7 +668,7 @@ async def my_step(self, events: FixedList(MyEvent, 2)) -> StopEvent:
 
 See [Issue 1: Step Executes Multiple Times](#issue-1) for detailed fix patterns.
 
----
+______________________________________________________________________
 
 ## Runtime Environment (Diagnostic View)
 
@@ -722,7 +722,7 @@ async def step_b(self, event_a: EventA, original: E) -> Out:
 | `ThreadContext` for run-scoped | Persists across runs (30d TTL)         | Use `RunContext` for run-scoped data |
 | Large objects in context       | Redis serialization overhead           | Store reference, not data            |
 
----
+______________________________________________________________________
 
 ## MCP Tools Reference
 
@@ -773,7 +773,7 @@ async def step_b(self, event_a: EventA, original: E) -> Out:
 
 For trace inspection (LLM calls, costs, latencies), use the Langfuse web UI at http://localhost:6006.
 
----
+______________________________________________________________________
 
 ## Testing for Verification
 
@@ -819,7 +819,7 @@ Feature: My Agent
 
 Source: `aihub_agent/runners/AgentTestRunner.py`, `aihub_lib/testing/asyncio_utils/bdd.py`
 
----
+______________________________________________________________________
 
 ## Report Template
 
@@ -853,7 +853,7 @@ After debugging, provide a structured report:
 {Test command or assertion to confirm the fix}
 ```
 
----
+______________________________________________________________________
 
 ## Formal Specification
 
@@ -925,7 +925,7 @@ A workflow *W* is valid iff:
 3. **No Stop Dependencies:** ∀s ∈ S, StopEvent ∉ R(s)
 4. **Acyclicity:** The event dependency graph is acyclic (bounded loops via RunContext are valid)
 
----
+______________________________________________________________________
 
 ## Cross-References
 

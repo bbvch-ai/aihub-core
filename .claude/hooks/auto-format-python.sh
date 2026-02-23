@@ -26,9 +26,9 @@ scope=$(echo "$relative_path" | cut -d'/' -f1)
 # Only format files within known scopes
 case "$scope" in
   aihub_lib|aihub_agent|aihub_api|aihub_bot|aihub_pipeline|aihub_process)
-    cd "$REPO_ROOT/$scope" 2>/dev/null || exit 0
-    poetry run ruff format "$file_path" 2>/dev/null
-    poetry run ruff check --fix "$file_path" 2>/dev/null
+    cd "$REPO_ROOT" 2>/dev/null || exit 0
+    uv run ruff format "$file_path" 2>/dev/null
+    uv run ruff check --fix "$file_path" 2>/dev/null
     ;;
 esac
 

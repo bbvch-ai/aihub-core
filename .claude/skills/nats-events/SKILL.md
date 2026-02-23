@@ -15,7 +15,7 @@ arguments:
 
 Look up NATS/event information. Topic or question via `$ARGUMENTS`.
 
----
+______________________________________________________________________
 
 ## Architecture Overview
 
@@ -28,7 +28,7 @@ The platform uses **NATS** as its central message bus with two tiers:
 
 **Key Rule**: Control events go through JetStream (durable). Display events go through NATS Core (ephemeral).
 
----
+______________________________________________________________________
 
 ## Swiss AI Agent Protocol (SAAP)
 
@@ -307,7 +307,7 @@ event.is_chunk_event        # isinstance check
 event.is_hitl_response_event  # isinstance check
 ```
 
----
+______________________________________________________________________
 
 ## NATS Subject (Topic) System
 
@@ -364,7 +364,7 @@ instance_discovery.agent.{agent_class}.{agent_id}.*.request.{call_id}
 
 Streams are named per agent class: `agent_{agent_class}_stream` (e.g., `agent_RAGAgent_stream`).
 
----
+______________________________________________________________________
 
 ## Topic Managers
 
@@ -414,7 +414,7 @@ ttm.get_subject_for_display_event_in_thread(event_name="ChunkEvent", event_id="e
 - `aihub_lib/aihub_lib/nats/topic_managers/agents/AgentInstanceTopicManager.py`
 - `aihub_lib/aihub_lib/nats/topic_managers/agents/AgentThreadTopicManager.py`
 
----
+______________________________________________________________________
 
 ## Publishers
 
@@ -476,7 +476,7 @@ headers = (
 )
 ```
 
----
+______________________________________________________________________
 
 ## Subscribers
 
@@ -561,7 +561,7 @@ sub = AgentJSSubscriber.for_agent_instance_control_events(
 )
 ```
 
----
+______________________________________________________________________
 
 ## RPC (Request-Reply)
 
@@ -629,7 +629,7 @@ class FetchAgentConfigResponse(BaseModel):
     error: str | None = None
 ```
 
----
+______________________________________________________________________
 
 ## JetStream Event Store
 
@@ -676,7 +676,7 @@ async for msg in poller.poll(batch_size=100, timeout=1.0):
     await msg.ack()
 ```
 
----
+______________________________________________________________________
 
 ## Dispatcher Architecture
 
@@ -711,7 +711,7 @@ class BaseDispatcher(abc.ABC):
 > **Debugging**: For diagnosing dispatcher issues (steps executing multiple times, steps never firing, events after
 > stop), use `/debug-agent` which provides MCP-powered runtime inspection of NATS streams and MongoDB event stores.
 
----
+______________________________________________________________________
 
 ## Event Flow: End-to-End
 
@@ -760,7 +760,7 @@ async def sse_event_generator():
         yield f"data: {chunk.model_dump_json()}\n\n"
 ```
 
----
+______________________________________________________________________
 
 ## NATS Connection & Configuration
 
@@ -833,7 +833,7 @@ Shutdown: reverse order, NATS closed in `finally` block.
 | JetStream `sync_interval`    | 1m    | 2m     |
 | JetStream `domain`           | `dev` | `prod` |
 
----
+______________________________________________________________________
 
 ## OpenTelemetry Tracing
 
@@ -882,7 +882,7 @@ with tracer.start_as_current_span(..., context=parent_context):
     ...
 ```
 
----
+______________________________________________________________________
 
 ## Creating a New Event
 
@@ -937,7 +937,7 @@ subscriber = NCSubscriber(
 )
 ```
 
----
+______________________________________________________________________
 
 ## Creating a New Publisher/Subscriber Pair
 
@@ -979,7 +979,7 @@ class MyNCSubscriber(NCSubscriber[MyEvent]):
         )
 ```
 
----
+______________________________________________________________________
 
 ## Key File Reference
 
@@ -1077,7 +1077,7 @@ class MyNCSubscriber(NCSubscriber[MyEvent]):
 | `aihub_doc/docs/2_platform/2_architecture/3_swiss_ai_agent_protocol/index.en.md` | Protocol spec               |
 | `deployment/templates/configs/nats-config.conf.j2`                               | NATS server config template |
 
----
+______________________________________________________________________
 
 ## Formal Protocol Specification
 
@@ -1139,7 +1139,7 @@ A workflow *W* is valid iff:
 
 Source: `aihub_lib/nats/dispatcher/BaseDispatcher.py`, `aihub_agent/dispatchers/AgentDispatcher.py`
 
----
+______________________________________________________________________
 
 ## Conventions Checklist
 

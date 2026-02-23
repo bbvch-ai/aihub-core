@@ -24,8 +24,8 @@ case "$file_path" in
     echo "BLOCKED: Access to certificate files is not allowed." >&2
     exit 2
     ;;
-  */poetry.lock)
-    echo "BLOCKED: Manual edits to poetry.lock are not allowed. Use 'poetry add/remove/update' instead." >&2
+  */uv.lock)
+    echo "BLOCKED: Manual edits to uv.lock are not allowed. Use 'uv add/remove' instead." >&2
     exit 2
     ;;
 esac

@@ -19,7 +19,7 @@ fi
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$REPO_ROOT" 2>/dev/null || exit 0
 
-poetry run yamlfix "$file_path" 2>/dev/null
+uv run yamlfix "$file_path" 2>/dev/null
 
 # Always exit 0 — formatting is best-effort, should never block Claude
 exit 0

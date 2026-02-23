@@ -27,7 +27,7 @@ Concretely, a codebase-specific skill:
 - Encodes knowledge about THIS architecture, not general programming
 - Mentions specific tools, helpers, or conventions unique to THIS team
 
----
+______________________________________________________________________
 
 ## Mode 1: Build a New Skill
 
@@ -191,7 +191,7 @@ Then verify semantically:
 Present the skill to the user with a summary of what it encodes and which evidence from the codebase informed each
 section.
 
----
+______________________________________________________________________
 
 ## Mode 2: Review an Existing Skill
 
@@ -355,7 +355,7 @@ Ratio: {X}/{Y} instructions are codebase-specific ({Z}%)
 {Concrete rewrites, not just "make it more specific"}
 ```
 
----
+______________________________________________________________________
 
 ## Mode 3: Audit All Skills
 
@@ -442,7 +442,7 @@ Current baseline cost: ~{X} tokens from skill descriptions
 Recommended target: ~{Y} tokens (after removing/consolidating)
 ```
 
----
+______________________________________________________________________
 
 ## Interaction Style
 

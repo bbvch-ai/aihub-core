@@ -41,7 +41,7 @@ Naming rules:
 - **File**: PascalCase descriptive name (`Card.vue`, `CreateModal.vue`, `List.vue`)
 - **Auto-import name**: Directory + File = `AgentCard`, `ThreadList`, `ProcessCreateModal`
 
----
+______________________________________________________________________
 
 ### Pattern A: Card Component
 
@@ -124,7 +124,7 @@ const isActive = computed(() => route.params.id === props.item.id)
 | Subtitle       | `text-xs font-light opacity-70`                                    |
 | Description    | `text-xs`                                                          |
 
----
+______________________________________________________________________
 
 ### Pattern B: Empty Card (Add New)
 
@@ -166,7 +166,7 @@ const emit = defineEmits<{ add: [] }>()
 | Title       | `font-medium text-surface-600 dark:text-surface-400`                               |
 | Description | `text-sm text-surface-500 dark:text-surface-400`                                   |
 
----
+______________________________________________________________________
 
 ### Pattern C: Modal Component
 
@@ -232,7 +232,7 @@ const handleSubmit = async () => {
 - PrimeVue `Dialog` with `modal` prop for backdrop
 - Footer buttons: Cancel (secondary, text) + Submit (primary, with loading)
 
----
+______________________________________________________________________
 
 ### Pattern D: List/Table Component
 
@@ -288,7 +288,7 @@ const selectedItem = computed(() => {
 - Custom column templates via `<template #body="{ data }">`
 - Selection synced with route params via computed
 
----
+______________________________________________________________________
 
 ## Step 3: Component Conventions Checklist
 

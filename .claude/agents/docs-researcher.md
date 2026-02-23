@@ -94,7 +94,7 @@ Python backend:
 - Jinja2: `/websites/jinja_palletsprojects_en_stable`
 - pytest: `/pytest-dev/pytest`
 - pytest-bdd: `/pytest-dev/pytest-bdd`
-- Poetry: `/websites/python-poetry`
+- uv: `/astral-sh/uv`
 
 Frontend:
 

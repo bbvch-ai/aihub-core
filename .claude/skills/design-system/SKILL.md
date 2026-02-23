@@ -21,7 +21,7 @@ look up current Tailwind CSS documentation.
 5. **Generous radius**: `rounded-xl` (cards), `rounded-3xl` (columns), `rounded-full` (icons/avatars).
 6. **Information density**: 14px base font, `text-xs` for metadata, compact but readable.
 
----
+______________________________________________________________________
 
 ## Color Palette
 
@@ -65,7 +65,7 @@ Selector: `.dark` CSS class. Config: `darkMode: ['class']` (Tailwind), `darkMode
 
 **Rule**: Every `bg-*` MUST have a `dark:bg-*`. Every `text-surface-*` MUST have a `dark:text-surface-*`.
 
----
+______________________________________________________________________
 
 ## Background Patterns (from real components)
 
@@ -80,7 +80,7 @@ Selector: `.dark` CSS class. Config: `darkMode: ['class']` (Tailwind), `darkMode
 | Nav item hover             | `hover:bg-surface-100` | `dark:hover:bg-surface-950` | Navigation/Left.vue     |
 | Nav item active            | `bg-surface-200`       | `dark:bg-surface-900`       | Navigation/Left.vue     |
 
----
+______________________________________________________________________
 
 ## Typography (from real components)
 
@@ -116,7 +116,7 @@ Selector: `.dark` CSS class. Config: `darkMode: ['class']` (Tailwind), `darkMode
 | `text-surface-500 dark:text-surface-500` | Nav group labels (same in both modes)           |
 | `text-surface-400`                       | `pi pi-plus-circle` icons, disabled text        |
 
----
+______________________________________________________________________
 
 ## Spacing (from real components)
 
@@ -135,7 +135,7 @@ Selector: `.dark` CSS class. Config: `darkMode: ['class']` (Tailwind), `darkMode
 | `py-4`      | Stepper step panel content                                        |
 | `py-8`      | Dialog loading/empty state centering                              |
 
----
+______________________________________________________________________
 
 ## Border Radius and Borders (from real components)
 
@@ -148,7 +148,7 @@ Selector: `.dark` CSS class. Config: `darkMode: ['class']` (Tailwind), `darkMode
 | Nav item         | `rounded-lg`   | None                                                                |
 | FormKit repeater | `rounded-lg`   | `border border-surface-300 dark:border-surface-600`                 |
 
----
+______________________________________________________________________
 
 ## Layout System (from Structural/Screen.vue and Column.vue)
 
@@ -193,7 +193,7 @@ Fixed `w-[260px]`, grouped nav items. Spacer div `min-w-[260px]` prevents conten
 - `>= 2xl (1536px)`: Multi-column `2xl:flex-row`
 - Grids: `grid-cols-2 gap-4 xl:grid-cols-4` (info panels), `grid-cols-1 lg:grid-cols-2` (cards)
 
----
+______________________________________________________________________
 
 ## Component Patterns (from real components)
 
@@ -302,7 +302,7 @@ Badges, formatted dates. Status columns use `<Tag :severity="...">`, counts use 
 </div>
 ```
 
----
+______________________________________________________________________
 
 ## Button Patterns (from real components)
 
@@ -315,7 +315,7 @@ Badges, formatted dates. Status columns use `<Tag :severity="...">`, counts use 
 | Icon-only nav      | `icon="pi pi-chevron-left"`, `text`, `:disabled`                                 | Pagination controls         |
 | Small text + icon  | `:label`, `icon="pi pi-arrow-right"`, `icon-pos="right"`, `size="small"`, `text` | Notification links          |
 
----
+______________________________________________________________________
 
 ## Icon System (from real component analysis)
 
@@ -358,7 +358,7 @@ Icons are NOT centralized. They come from:
 </div>
 ```
 
----
+______________________________________________________________________
 
 ## Severity & Status Mapping (from real composables and components)
 
@@ -393,7 +393,7 @@ Icons are NOT centralized. They come from:
 <Tag :value="t('agent.can_chat')" severity="secondary" icon="pi pi-comments" />
 ```
 
----
+______________________________________________________________________
 
 ## Confirmation & Toast Patterns (from real components)
 
@@ -419,7 +419,7 @@ toast.add({ severity: 'success', summary: t('resource.saved.summary'), detail: t
 toast.add({ severity: 'error', summary: t('resource.error.summary'), detail: error.message, life: 5000 })
 ```
 
----
+______________________________________________________________________
 
 ## Form Patterns (from real components)
 
@@ -454,7 +454,7 @@ Forms use `FormKitSchema` with schema from backend, wrapped in `<Stepper orienta
 </fieldset>
 ```
 
----
+______________________________________________________________________
 
 ## Charts (Event/Timeseries.vue with ApexCharts)
 
@@ -462,7 +462,7 @@ Stacked bar chart: `type: 'bar', stacked: true, toolbar: { show: false }`. Dark 
 `foreColor: isDark ? 'var(--p-surface-200)' : 'var(--p-surface-800)'`, `tooltip.theme: isDark ? 'dark' : 'light'`.
 X-axis labels formatted per time resolution ('1h', '24h', '30d', '365d'). Colors from backend series data.
 
----
+______________________________________________________________________
 
 ## PrimeVue Overrides (only two acceptable forms)
 
@@ -472,7 +472,7 @@ CSS custom properties: `<Popover class="[--p-popover-background:#f9f9f9] dark:[-
 
 No other custom CSS. Everything else uses Tailwind utilities.
 
----
+______________________________________________________________________
 
 ## Design Configuration Files
 
@@ -483,7 +483,7 @@ No other custom CSS. Everything else uses Tailwind utilities.
 | `aihub_web/aihub_web/assets/css/main.css`   | Base font size (14px) and font stack       |
 | `aihub_web/aihub_web/nuxt.config.ts`        | PrimeVue module config, auto-imports       |
 
----
+______________________________________________________________________
 
 ## Visual Verification
 

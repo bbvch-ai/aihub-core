@@ -11,7 +11,7 @@ allowed-tools: Read, Grep, Glob
 
 Look up rclone integration information. Topic or question via `$ARGUMENTS`.
 
----
+______________________________________________________________________
 
 ## Overview
 
@@ -38,7 +38,7 @@ rclone runs as a standalone Docker service with its RC (Remote Control) API expo
 (`--rc-no-auth`); in production, auth is enabled via `--rc-user` and `--rc-pass`. The `--rc-serve` flag is required for
 file downloads.
 
----
+______________________________________________________________________
 
 ## RcloneSourceFactory (Preferred Configuration)
 
@@ -109,7 +109,7 @@ defs = default_rclone_to_datalake_definitions(
 
 See `aihub_pipeline/templates/sources/` for complete per-backend examples with `.env.template` files.
 
----
+______________________________________________________________________
 
 ## RcloneSettings (Connection Config)
 
@@ -132,7 +132,7 @@ class RcloneSettings(EnvironmentSettings):
 | `RCLONE_RC_USER` | None                 | HTTP Basic Auth username |
 | `RCLONE_RC_PASS` | None                 | HTTP Basic Auth password |
 
----
+______________________________________________________________________
 
 ## RcloneSourceConfig (Programmatic Configuration)
 
@@ -190,7 +190,7 @@ RcloneSourceConfig(
 
 Serialization for Dagster resources: `config.model_dump(mode="json", exclude_none=True)`.
 
----
+______________________________________________________________________
 
 ## RcloneClient (Low-Level API)
 
@@ -242,7 +242,7 @@ file = await client.download_bytes("path/to/document.pdf")
 
 Download requires `--rc-serve` flag on the rclone service. Timeout: 600s read, 30s connect.
 
----
+______________________________________________________________________
 
 ## RcloneResource (Dagster Resource)
 
@@ -269,7 +269,7 @@ class RcloneResource(ConfigurableResource):
 
 If `rclone_config_dict` is provided, the resource auto-creates the remote on first use via `RcloneClient.ensure_remote`.
 
----
+______________________________________________________________________
 
 ## RcloneIOManager
 
@@ -289,7 +289,7 @@ class RcloneIOManager(ConfigurableIOManager):
 
 `handle_output()` raises `NotImplementedError` — rclone is read-only.
 
----
+______________________________________________________________________
 
 ## Observable Rclone Asset
 
@@ -318,7 +318,7 @@ def observable_rclone_factory(key, partitions, max_partitions):
 
 Change detection op: `aihub_pipeline/aihub_pipeline/ops/rclone/data_version_by_partition_for_rclone_files.py`.
 
----
+______________________________________________________________________
 
 ## RcloneFile Types
 
@@ -341,7 +341,7 @@ class RcloneFile(SourceFile, MinimalRcloneFile):
         return f"{self.remote}{self.remote_path}"
 ```
 
----
+______________________________________________________________________
 
 ## Troubleshooting
 
@@ -357,7 +357,7 @@ Common rclone-specific errors:
 | `token has expired`                                        | OAuth2 token lifetime exceeded | Reconfigure remote with fresh tokens (90-day refresh typical)               |
 | `asyncio.TimeoutError`                                     | Large file download            | Increase `timeout` in `RcloneClient.__init__` (default: 600s)               |
 
----
+______________________________________________________________________
 
 ## Conventions
 

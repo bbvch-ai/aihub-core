@@ -298,8 +298,8 @@ Key test fixtures from `conftest.py`:
 
 1. Confirm imports work:
    ```bash
-   cd aihub_bot && poetry run python -c "from aihub_bot.bots.chat.<bot_name>.<Name>ChatBot import <Name>ChatBot"
-   cd aihub_bot && poetry run python -c "from aihub_bot.routes.<bot_name>.<Name>ChatController import <Name>ChatController"
+   cd aihub_bot && uv run python -c "from aihub_bot.bots.chat.<bot_name>.<Name>ChatBot import <Name>ChatBot"
+   cd aihub_bot && uv run python -c "from aihub_bot.routes.<bot_name>.<Name>ChatController import <Name>ChatController"
    ```
 2. Confirm controller is mounted in `aihub_bot/app/main.py`
 3. Run tests: `cd aihub_bot && make test`

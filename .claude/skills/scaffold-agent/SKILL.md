@@ -24,7 +24,7 @@ Study existing agents for reference patterns:
 - **Production reference**: `aihub_agent/aihub_agent/agents/RagAgent/RAGAgent.py`
 - **Pattern index**: `aihub_agent/playground/minimal_workflow/` (20 self-contained examples)
 
----
+______________________________________________________________________
 
 ## Architecture & Mental Model
 
@@ -106,7 +106,7 @@ dependencies. For each step ask: *What is the minimal set of data this step requ
 
 Source: `aihub_lib/nats/workflow/DispatchableWorkflow.py`, `aihub_agent/agents/Agent.py`
 
----
+______________________________________________________________________
 
 ## Step 1: Choose Your Pattern
 
@@ -479,7 +479,7 @@ async def handle_exception(self, exception: AgentInTheLoop.exception) -> StopEve
 
 **Playground**: `playground/minimal_workflow/agent_in_the_loop_workflow/`
 
----
+______________________________________________________________________
 
 ## Step 2: Create Directory Structure
 
@@ -513,7 +513,7 @@ aihub_agent/i18n/translations/agent/
 - Events: `{AgentName}{Action}Event.py` — e.g., `SummaryGeneratedEvent.py`
 - Config: `{AgentName}Config.py`
 
----
+______________________________________________________________________
 
 ## Step 3: Define Events
 
@@ -624,7 +624,7 @@ async def handle_path_a(self, _: PathA, original: StartEvent) -> StopEvent:
 The `_: EventType` convention indicates dependency on an event's existence rather than its contents. Essential for
 conditional branching, sequencing without data coupling, and synchronization barriers.
 
----
+______________________________________________________________________
 
 ## Step 4: Create Agent Class
 
@@ -736,7 +736,7 @@ When binding events to parameters:
 
 For debugging execution issues, see `/debug-agent`.
 
----
+______________________________________________________________________
 
 ## Step 5: Create Config
 
@@ -815,7 +815,7 @@ From `aihub_lib/nats/events/form/elements/`:
 
 Source: `aihub_lib/agents/AgentConfig.py`, `aihub_lib/nats/events/form/Form.py`
 
----
+______________________________________________________________________
 
 ## Step 6: Create Entry Point
 
@@ -839,7 +839,7 @@ if __name__ == "__main__":
 
 Source: `aihub_agent/runners/AgentRunner.py`
 
----
+______________________________________________________________________
 
 ## Step 7: Add i18n
 
@@ -880,7 +880,7 @@ async def my_step(self, event: MyEvent, t: LocaleHandler) -> StopEvent:
 
 Source: `aihub_agent/i18n/AgentLocaleString.py`, `aihub_agent/i18n/translations/agent/`
 
----
+______________________________________________________________________
 
 ## Step 8: LLM Integration
 
@@ -930,7 +930,7 @@ automatically. `display_llm_costs()` emits `LLMCostEvent` for billing.
 
 Source: `aihub_lib/displayers/EventDisplayer.py`, `aihub_lib/displayers/stream/StreamProcessor.py`
 
----
+______________________________________________________________________
 
 ## Step 9: Memory Integration
 
@@ -1069,7 +1069,7 @@ class MemoryAgent(Agent):
         return StopEvent()
 ```
 
----
+______________________________________________________________________
 
 ## Step 10: Create Tests
 
@@ -1184,7 +1184,7 @@ async def test_full_workflow():
 
 Source: `aihub_agent/runners/AgentTestRunner.py`
 
----
+______________________________________________________________________
 
 ## Step 11: Register & Verify
 
@@ -1197,7 +1197,7 @@ form schema, event specs, and workflow graph. No manual registration needed.
 cd aihub_agent && uv run python -c "from aihub_agent.agents.{AgentName}.{AgentName} import {AgentName}; print({AgentName}.get_steps())"
 ```
 
----
+______________________________________________________________________
 
 ## Implementation Checklist
 
@@ -1229,7 +1229,7 @@ cd aihub_agent && uv run python -c "from aihub_agent.agents.{AgentName}.{AgentNa
 - [ ] BDD tests pass: `cd aihub_agent && uv run pytest tests/ -k "{agent_name}" -v`
 - [ ] Agent is importable: `uv run python -c "from aihub_agent.agents.{AgentName}.{AgentName} import {AgentName}"`
 
----
+______________________________________________________________________
 
 ## File Reference
 
@@ -1275,7 +1275,7 @@ cd aihub_agent && uv run python -c "from aihub_agent.agents.{AgentName}.{AgentNa
 | `agent_in_the_loop_workflow/`           | AITL delegation        | Agent-to-agent delegation               |
 | `optional_workflow/`                    | Optional parameters    | `EventType \| None` handling            |
 
----
+______________________________________________________________________
 
 ## Commands
 
@@ -1285,7 +1285,7 @@ make test        # Run tests (excluding Azure)
 make test-all    # Run all tests
 ```
 
----
+______________________________________________________________________
 
 ## Cross-References
 

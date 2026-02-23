@@ -47,7 +47,7 @@ Concretely, a codebase-specific subagent:
 - Preloads project-specific skills when relevant
 - Has a description that references this project's domain
 
----
+______________________________________________________________________
 
 ## Mode 1: Build a New Subagent
 
@@ -265,7 +265,7 @@ Then verify semantically:
 Present the subagent to the user with a summary of configuration choices and which evidence from the codebase informed
 the system prompt.
 
----
+______________________________________________________________________
 
 ## Mode 2: Review an Existing Subagent
 
@@ -441,7 +441,7 @@ Ratio: {X}/{Y} instructions are codebase-specific ({Z}%)
 {Concrete rewrites for system prompt, description, and config}
 ```
 
----
+______________________________________________________________________
 
 ## Mode 3: Audit All Subagents
 
@@ -588,7 +588,7 @@ agents — better served as skills in the main conversation}
 {table of all agents with configuration and verdict}
 ```
 
----
+______________________________________________________________________
 
 ## Interaction Style
 

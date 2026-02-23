@@ -13,7 +13,7 @@ Default scope is `all` if no argument provided.
 
 Before starting, read `aihub_web/CLAUDE.md` for the full frontend conventions reference.
 
----
+______________________________________________________________________
 
 ## Audit 1: Pinia-Colada Composables (scope: `composables`)
 
@@ -98,7 +98,7 @@ Keys should be kebab-case string arrays: `['agent-classes']`, `['agent-instances
 - Snake_case keys (`['my_user']` should be `['my-user']`)
 - Keys that don't include all reactive inputs used in the query function
 
----
+______________________________________________________________________
 
 ## Audit 2: TypeScript Strictness (scope: `typescript`)
 
@@ -144,7 +144,7 @@ grep -rn "console\.\(log\|debug\|info\)" aihub_web/aihub_web/ --include="*.vue" 
 
 `console.error` in global error handlers (`app.vue`) is acceptable. `console.log` in pages/components is not.
 
----
+______________________________________________________________________
 
 ## Audit 3: Component Architecture (scope: `components`)
 
@@ -197,7 +197,7 @@ grep -rn "bg-surface-\(50\|100\|200\)" aihub_web/aihub_web/components/ --include
   | grep -v "dark:bg-surface"
 ```
 
----
+______________________________________________________________________
 
 ## Audit 4: Page Architecture (scope: `pages`)
 
@@ -266,7 +266,7 @@ grep -rn "import.*from 'primevue/use" aihub_web/aihub_web/pages/ --include="*.vu
 
 Exception: `useLocalePath` from `'#i18n'` DOES need explicit import.
 
----
+______________________________________________________________________
 
 ## Audit 5: SDK Freshness (scope: `sdk`)
 
@@ -289,7 +289,7 @@ git log -1 --format=%ct aihub_api/
 
 4. Verify SDK is never manually edited — check git status for modifications in `sdk/client/`.
 
----
+______________________________________________________________________
 
 ## Audit 6: i18n Coverage (scope: `i18n`)
 
@@ -302,7 +302,7 @@ git log -1 --format=%ct aihub_api/
 
 Note: some keys are dynamically constructed with template literals — flag them as unverifiable, not missing.
 
----
+______________________________________________________________________
 
 ## Audit 7: Tailwind and Styling (scope: `tailwind`)
 
@@ -334,7 +334,7 @@ grep -rn "text-\(gray\|slate\|zinc\|neutral\|stone\)-" aihub_web/aihub_web/ --in
 grep -rn "bg-\(gray\|slate\|zinc\|neutral\|stone\)-" aihub_web/aihub_web/ --include="*.vue"
 ```
 
----
+______________________________________________________________________
 
 ## Report Format
 

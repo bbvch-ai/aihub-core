@@ -14,7 +14,7 @@ Look up Dagster pipeline information. Topic or question via `$ARGUMENTS`.
 For architecture overview, folder structure, and domain types, see `aihub_pipeline/CLAUDE.md` (loaded automatically when
 working in the pipeline scope).
 
----
+______________________________________________________________________
 
 ## Architecture Quick Reference
 
@@ -33,7 +33,7 @@ working in the pipeline scope).
 **Key Rule**: Everything is asset-centric. Jobs exist only to trigger observation or cleanup. Ops exist only inside
 graph assets. Never create standalone job-based pipelines.
 
----
+______________________________________________________________________
 
 ## Definitions Factory Pattern
 
@@ -108,7 +108,7 @@ defs = default_rclone_to_datalake_definitions(
 )
 ```
 
----
+______________________________________________________________________
 
 ## Asset Factory Pattern
 
@@ -192,7 +192,7 @@ def observable_data_lake_factory(
 - Content hash change triggers downstream rematerialization
 - `io_manager_key` — controls how partition data is loaded by downstream assets
 
----
+______________________________________________________________________
 
 ## Ops Pattern
 
@@ -244,7 +244,7 @@ def embed_nodes(
 - Keep ops focused and small
 - Resources injected via `ResourceParam`, not `required_resource_keys`
 
----
+______________________________________________________________________
 
 ## Resources
 
@@ -309,7 +309,7 @@ Resources read connection details from `aihub_lib` settings (Pydantic `BaseSetti
 | `DoclingSettings`                   | `DOCLING_`                     | Docling parser         |
 | `AzureDocumentIntelligenceSettings` | `AZURE_DOCUMENT_INTELLIGENCE_` | Azure Doc Intelligence |
 
----
+______________________________________________________________________
 
 ## IO Managers
 
@@ -357,7 +357,7 @@ while datetime.now() < end_time:
     time.sleep(retry_interval)
 ```
 
----
+______________________________________________________________________
 
 ## Dynamic Partitions
 
@@ -407,7 +407,7 @@ return DataVersionsByPartition({
 
 Version change triggers downstream assets with `AutomationCondition.eager()` to auto-materialize.
 
----
+______________________________________________________________________
 
 ## Automation Conditions
 
@@ -452,7 +452,7 @@ def default_automation_sensor(assets, minimum_interval_seconds=60):
     )
 ```
 
----
+______________________________________________________________________
 
 ## Sensors, Schedules, and Jobs
 
@@ -513,7 +513,7 @@ remove_job = materialize_asset_job(
 )
 ```
 
----
+______________________________________________________________________
 
 ## Metadata and Tags
 
@@ -553,7 +553,7 @@ assets = link_code_references_to_git(
 )
 ```
 
----
+______________________________________________________________________
 
 ## Conventions Checklist
 

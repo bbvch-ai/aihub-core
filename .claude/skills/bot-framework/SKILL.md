@@ -10,7 +10,7 @@ Look up bot framework architecture, patterns, and implementation details. Topic 
 "CompletionHandler", "Slack threads", "BITL flow", "streaming", "testing", "conversation state", "handler pattern",
 "routes").
 
----
+______________________________________________________________________
 
 ## Architecture Overview
 
@@ -61,7 +61,7 @@ back to non-streaming (`super().on_message_activity()`). Note: `StreamAgentChatB
 6. Return to Azure Bot Service → Channel → User
 ```
 
----
+______________________________________________________________________
 
 ## CompletionHandler Pattern (Strategy)
 
@@ -128,7 +128,7 @@ class CompletionHandler:
 5. # Stream mode: yield chunks from resources.chunk_queue (30s timeout per chunk)
 ```
 
----
+______________________________________________________________________
 
 ## Multi-Channel Handling
 
@@ -201,7 +201,7 @@ Direct message:   B[bot_id]:T[team_id]:D[dm_id]:[timestamp]
 #   {assistant_name} → turn_context.activity.recipient.name
 ```
 
----
+______________________________________________________________________
 
 ## Bot-in-the-Loop (BITL)
 
@@ -247,7 +247,7 @@ threads: dict[str, BotInTheLoopThread] = {}
 # Slack thread_identifier = Slack ts; Teams thread_identifier = messageid=...
 ```
 
----
+______________________________________________________________________
 
 ## Conversation State Management
 
@@ -308,7 +308,7 @@ class Content(EmbeddedDocument):
     type = StringField(required=True)     # "text" or "image_url"
 ```
 
----
+______________________________________________________________________
 
 ## Content Extraction
 
@@ -327,7 +327,7 @@ ContentExtractor.extract_content_from_activity(path, activity) -> list[Content]
 **Supported types**: Text → `Content(type="text")`, Images → `Content(type="image_url")` with base64 data URL, Text
 files → `Content(type="text")` with `<file name='...'>content</file>` wrapper.
 
----
+______________________________________________________________________
 
 ## NATS Integration
 
@@ -379,7 +379,7 @@ Bot receives response:
     → JSON mode: stop_signal.wait() then build response from collected chunks
 ```
 
----
+______________________________________________________________________
 
 ## Streaming Responses
 
@@ -406,7 +406,7 @@ The typing indicator runs **only while waiting for the agent to respond** — no
 
 If the signal is never set (agent timeout), sends `bot.error.response_timeout` localized message.
 
----
+______________________________________________________________________
 
 ## CloudAdapter Caching
 
@@ -432,7 +432,7 @@ class RoutesService(ChatService):
         return adapter
 ```
 
----
+______________________________________________________________________
 
 ## Bot Endpoint Routes
 
@@ -444,7 +444,7 @@ class RoutesService(ChatService):
 | `OpenaiChatController`   | `/openai/chat/completions/stream`             | `StreamOpenaiChatBot` |
 | `BotInTheLoopController` | `/bot_in_the_loop/response`                   | `BotInTheLoopBot`     |
 
----
+______________________________________________________________________
 
 ## PathEntity Configuration
 
@@ -468,7 +468,7 @@ class Credentials(EmbeddedDocument):
 Bot credentials are stored per-path in MongoDB — not in environment variables. Routing is determined by the URL path
 structure: each endpoint maps to exactly one agent via path parameters `{agent_class}/{agent_id}`.
 
----
+______________________________________________________________________
 
 ## Testing
 
@@ -518,7 +518,7 @@ from `aihub_lib.testing.route_adapter` to route Bot Framework outbound callbacks
 3. Connect to: `http://localhost:8000/api/v1/messages`
 4. Leave App ID/Password empty for local testing
 
----
+______________________________________________________________________
 
 ## Key Files Reference
 

@@ -14,7 +14,7 @@ Investigate the pipeline issue described via `$ARGUMENTS`.
 Follow the diagnostic steps below. Start with Dagster MCP tools to gather concrete error data, then investigate the
 code.
 
----
+______________________________________________________________________
 
 ## Step 1: Triage via Dagster MCP
 
@@ -64,7 +64,7 @@ Ask the user for identifying information when you need it:
 - **Asset key**: "Which asset is failing? Here are the assets in this repository: [list from list_assets]"
 - **Repository**: Only ask if multiple code locations exist (rare in dev)
 
----
+______________________________________________________________________
 
 ## Step 2: Diagnose by Symptom
 
@@ -156,7 +156,7 @@ Use the error information from Step 1 to match against these known patterns.
 - Corrupted file content
 - Large file timeout
 
----
+______________________________________________________________________
 
 ## Step 3: Check Infrastructure Connections
 
@@ -232,7 +232,7 @@ docker compose -f docker-compose.dev.yml ps
 docker compose -f docker-compose.dev.yml logs <service> --tail=50
 ```
 
----
+______________________________________________________________________
 
 ## Step 4: Common Error Patterns
 
@@ -263,7 +263,7 @@ Read: `aihub_pipeline/aihub_pipeline/resources/rclone/RcloneResource.py`
 Remote not configured in rclone, `rclone_config_dict` not provided or malformed, remote name doesn't match
 `source_remote` prefix.
 
----
+______________________________________________________________________
 
 ## Step 5: Re-trigger After Fix
 

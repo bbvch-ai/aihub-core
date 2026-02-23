@@ -10,7 +10,7 @@ allowed-tools: Read, Grep, Glob, Bash
 
 Set up a new bot connection. Target channel or question via `$ARGUMENTS`.
 
----
+______________________________________________________________________
 
 ## Before You Start
 
@@ -19,7 +19,7 @@ Read `aihub_bot/CLAUDE.md` for full architecture, routes, and essential files.
 **Key concept**: Each bot endpoint has a **PathEntity** in MongoDB (`bot_paths` collection) containing Azure AD
 credentials (APP_ID, APP_PASSWORD, APP_TENANTID), system message template, and Slack OAuth token.
 
----
+______________________________________________________________________
 
 ## Prerequisites
 
@@ -29,7 +29,7 @@ credentials (APP_ID, APP_PASSWORD, APP_TENANTID), system message template, and S
 4. **NATS server** running (for agent communication)
 5. **Public endpoint** or DevTunnel for the bot server
 
----
+______________________________________________________________________
 
 ## Option A: Automated Setup (Recommended)
 
@@ -39,7 +39,7 @@ credentials (APP_ID, APP_PASSWORD, APP_TENANTID), system message template, and S
 
 ```bash
 cd aihub_bot
-poetry run python aihub_bot/setup_azure_bot.py \
+uv run python aihub_bot/setup_azure_bot.py \
     --resource-group "my-resource-group" \
     --bot-name "ai-hub-bot" \
     --token-url "https://my-domain.com" \
@@ -55,7 +55,7 @@ poetry run python aihub_bot/setup_azure_bot.py \
 
 ```bash
 cd aihub_bot
-poetry run python aihub_bot/setup_azure_bot.py \
+uv run python aihub_bot/setup_azure_bot.py \
     --resource-group "my-resource-group" \
     --bot-name "ai-hub-slack-bot" \
     --token-url "https://my-domain.com" \
@@ -73,7 +73,7 @@ poetry run python aihub_bot/setup_azure_bot.py \
 4. Saves PathEntity to MongoDB `bot_paths` collection
 5. Creates Azure Bot Resource (`az bot create`)
 
----
+______________________________________________________________________
 
 ## Option B: Manual Setup (Step-by-Step)
 
@@ -123,7 +123,7 @@ export BOT_APP_ID="<APP_ID>"
 export BOT_APP_PASSWORD="<APP_PASSWORD>"
 export BOT_TENANT_ID="<APP_TENANTID>"
 export MONGO_CONNECTION_STRING="mongodb://localhost:27017"
-cd aihub_bot && poetry run python aihub_bot/add_path_entity.py
+cd aihub_bot && uv run python aihub_bot/add_path_entity.py
 ```
 
 ```python
@@ -170,7 +170,7 @@ client["aihub"]["bot_paths"].update_one(
 2. Web Chat is enabled by default
 3. Copy the secret key for embedding
 
----
+______________________________________________________________________
 
 ## Local Development Setup
 
@@ -195,7 +195,7 @@ devtunnel host
 2. Start bot locally:
    ```bash
    cd aihub_bot/playground/testing
-   poetry run python main.py
+   uv run python main.py
    ```
 3. Connect emulator to: `http://localhost:8000/api/v1/messages`
 4. Leave App ID and Password **empty** for local testing
@@ -205,11 +205,11 @@ devtunnel host
 
 ```bash
 cd aihub_bot/playground/testing
-poetry run python main.py
+uv run python main.py
 # Open http://localhost:8000 in browser
 ```
 
----
+______________________________________________________________________
 
 ## System Message Templates
 
@@ -226,7 +226,7 @@ The user's name is {username}. Be helpful, concise, and professional.
 Always respond in the user's language.
 ```
 
----
+______________________________________________________________________
 
 ## Verification Checklist
 
@@ -241,7 +241,7 @@ After setup, verify:
 - [ ] MongoDB/FerretDB is running (for conversation persistence)
 - [ ] Test with Bot Framework Emulator or direct message in Teams/Slack
 
----
+______________________________________________________________________
 
 ## Troubleshooting Quick Reference
 

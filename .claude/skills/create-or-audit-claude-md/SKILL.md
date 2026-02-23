@@ -33,7 +33,7 @@ inventing new standards — you are extracting established ones.
 5. **Alternatives, not just prohibitions.** "Use Y instead of X", never just "Don't use X" — Claude gets stuck without
    an alternative.
 
----
+______________________________________________________________________
 
 ## Phase 1: Gather Evidence
 
@@ -55,7 +55,7 @@ ls -la package.json pnpm-workspace.yaml lerna.json nx.json turbo.json \
 
 # Tech stack from lockfiles
 ls -la package-lock.json pnpm-lock.yaml yarn.lock bun.lockb \
-      Cargo.lock go.sum Pipfile.lock poetry.lock 2>/dev/null
+      Cargo.lock go.sum Pipfile.lock uv.lock 2>/dev/null
 
 # Top-level directory map
 ls -d */ 2>/dev/null
@@ -189,7 +189,7 @@ find . -name ".cursorrules" -o -name ".windsurfrules" \
 
 If other AI tool rulefiles exist, read them — they may contain conventions that should be in CLAUDE.md too.
 
----
+______________________________________________________________________
 
 ## Phase 2: Analyze and Synthesize
 
@@ -225,7 +225,7 @@ Existing docs that CLAUDE.md should link to, not duplicate.
 
 Anything a linter, formatter, or CI check already catches.
 
----
+______________________________________________________________________
 
 ## Phase 3: Output
 
@@ -298,7 +298,7 @@ Keep it under 150 lines. Ruthlessly cut anything that doesn't meet the >30% rele
 Also identify subdirectory CLAUDE.md files that should be created, and list their proposed content scope (but don't
 write them yet — let the owning team handle that).
 
----
+______________________________________________________________________
 
 ## Phase 4: Recommend Companion Tooling
 
@@ -312,7 +312,7 @@ Based on what you found, suggest:
 
 3. **Subdirectory CLAUDE.md files** — which areas of the codebase deserve their own file, and what would go in each.
 
----
+______________________________________________________________________
 
 ## Interaction Style
 

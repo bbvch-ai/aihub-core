@@ -23,7 +23,7 @@ Determine which path applies:
   processing pipeline
 - **Path B** (rare): Custom processing -- extend the SDK framework with new ops, resources, or IO managers
 
----
+______________________________________________________________________
 
 ## Path A: New Data Source
 
@@ -132,7 +132,7 @@ my-pipelines:
 4. Trigger the observable source asset manually (click Observe)
 5. Confirm downstream assets auto-materialize
 
----
+______________________________________________________________________
 
 ## Path B: Custom Processing (Extend the SDK)
 
@@ -208,7 +208,7 @@ http://localhost:3002.
 
 Same as Path A Steps 4-5. Create `app/<pipeline_name>/__init__.py` and `app/<pipeline_name>/Dockerfile`.
 
----
+______________________________________________________________________
 
 ## Common Mistakes
 
