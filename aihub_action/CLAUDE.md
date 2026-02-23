@@ -9,7 +9,7 @@ actions.
 ```
 aihub_action/
 ├── build_image/               # Docker image build + push to GHCR
-├── lint_backend/              # Python linting (Black via reviewdog)
+├── lint_backend/              # Python linting (Ruff format via reviewdog)
 ├── lint_frontend/             # Nuxt linting (ESLint via reviewdog)
 ├── pytest_coverage_comment/   # PR coverage comment (downloads test_backend artifacts)
 ├── review_pr/                 # AI-assisted PR review (qodo-ai/pr-agent, Azure OpenAI)
@@ -54,8 +54,8 @@ fail.
 with just `VERSION` build-arg. Tags: `ghcr.io/{owner}/{repo}/{image_name}:{version}` with optional `secondary_tag`
 (nightly/latest).
 
-**lint_backend**: Uses `reviewdog/action-black@v3` (Black formatter). Note: local development uses Ruff for formatting,
-but CI lint still uses Black via reviewdog. This is a known divergence — do not "fix" it without explicit instruction.
+**lint_backend**: Uses `ruff format` via reviewdog. Aligned with local development (`make pr-ready` also uses
+`ruff format`).
 
 **lint_frontend**: Requires `lockfile` input (path to pnpm lockfile) in addition to `working_directory` — used for pnpm
 cache key. Runs `nuxi prepare` before linting to generate Nuxt type stubs.
