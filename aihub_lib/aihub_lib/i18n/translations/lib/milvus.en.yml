@@ -1,8 +1,8 @@
+---
 config:
   collection_name:
     label: Collection name
     help: Name of the Milvus collection to store vectors in.
-
 base:
   dimensions:
     label: Embedding dimensions

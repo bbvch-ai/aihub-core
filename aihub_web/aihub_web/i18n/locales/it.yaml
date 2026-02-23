@@ -1,6 +1,6 @@
+---
 test: Questo è un test
 welcome: Benvenuti in bbv ai-hub
-
 common:
   actions:
     save: Salva
@@ -11,7 +11,6 @@ common:
   loading: Caricamento...
   selectModel: Seleziona un modello
   selectDatabase: Seleziona un database
-
 models:
   title: Modelli
   error: Errore nel caricamento dei modelli
@@ -65,13 +64,11 @@ models:
     supportsEmbeddingImageInput: Input immagine embedding
     supportedParams: Parametri OpenAI supportati
     notSpecified: Non specificato
-
 languages:
   en: Inglese
   de: Tedesco
   it: Italiano
   fr: Francese
-
 http_error:
   code:
     # 4xx Client Errors
@@ -88,7 +85,6 @@ http_error:
     502: Si è verificato un errore del server. Riprova.
     503: Il nostro servizio è temporaneamente non disponibile.
     504: Un server non risponde. Riprova.
-
 user:
   title: Utenti
   logout: Esci
@@ -99,7 +95,6 @@ user:
     avatar: Avatar
     roles: Ruoli
     last_accessed: Ultimo accesso
-
 time_ago:
   last_hour: Ultima ora
   last_day: Ultimo giorno
@@ -107,7 +102,6 @@ time_ago:
   last_month: Lo scorso mese
   last_year: L''anno scorso
   long_time_ago: Molto tempo fa
-
 thread:
   title: Interazioni
   users: Utenti
@@ -152,18 +146,17 @@ thread:
     description: Memorie raccolte durante {threadName}
     delete_all:
       confirm_header: Elimina tutte le memorie del thread
-      confirm_message: Sei sicuro di voler eliminare tutte le memorie da questo thread? Questa azione non può essere annullata.
+      confirm_message: Sei sicuro di voler eliminare tutte le memorie da questo thread?
+        Questa azione non può essere annullata.
       success:
         title: Successo
         message: Tutte le memorie del thread sono state eliminate con successo
       error:
         title: Eliminazione fallita
         message: Impossibile eliminare le memorie del thread. Riprova.
-
 chat:
   assistant: Assistente
   document: Documento
-
 event:
   list:
     firstInteraction: 'Prima interazione:'
@@ -186,7 +179,8 @@ event:
     assistant: Assistente
     system: Sistema
     user: Utente
-    description: La cronologia della chat è stata troncata in base ai limiti di token per rimanere entro i vincoli del modello
+    description: La cronologia della chat è stata troncata in base ai limiti di token
+      per rimanere entro i vincoli del modello
   reranker:
     topDocuments: 'Top {count} documenti più rilevanti:'
     query: Query di ricerca
@@ -204,7 +198,8 @@ event:
     sourceDocument: '{count} documento sorgente | {count} documenti sorgente'
     contentChunk: '{count} frammento di contenuto | {count} frammenti di contenuto'
     noChunksFound: Nessun frammento trovato
-    noChunksFoundDescription: La ricerca di recupero non ha trovato frammenti di contenuto rilevanti.
+    noChunksFoundDescription: La ricerca di recupero non ha trovato frammenti di contenuto
+      rilevanti.
   retrieveMemory:
     title: Memoria recuperata
     memories: Memorie
@@ -221,8 +216,10 @@ event:
     relationChanges: Modifiche alle relazioni
     noChanges: Nessuna modifica
   addMemoryToChatHistory:
-    summary: '{count} messaggio di memoria aggiunto alla cronologia | {count} messaggi di memoria aggiunti alla cronologia'
-    description: La cronologia della chat è stata arricchita con memorie rilevanti dalle interazioni precedenti
+    summary: '{count} messaggio di memoria aggiunto alla cronologia | {count} messaggi
+      di memoria aggiunti alla cronologia'
+    description: La cronologia della chat è stata arricchita con memorie rilevanti
+      dalle interazioni precedenti
     assistant: Assistente
     system: Sistema
     user: Utente
@@ -230,8 +227,8 @@ event:
     summary: Domanda rifinita e condensata
     condensedQuestion: Domanda Condensata
     user: Utente
-    description: La domanda originale è stata riformulata per essere più specifica e consapevole del contesto per migliori
-      risultati di ricerca
+    description: La domanda originale è stata riformulata per essere più specifica
+      e consapevole del contesto per migliori risultati di ricerca
   statistics:
     charts:
       agentInvocations: Invocazioni di agenti
@@ -244,7 +241,6 @@ event:
       delegations: Deleghe
       delegatedTaskAgentInTheLoop: Compito delegato (Agente nel loop)
       allEvents: Tutti gli eventi
-
 costs:
   table:
     count: Conteggio
@@ -254,14 +250,12 @@ costs:
     embedding: Incorporamento
     total: Totale
     currency: CHF
-
 service:
   selection:
     title: Servizi
     description: Qui sono elencati tutti i servizi che hai attivato
     search: Cerca
     button: Cerca
-
 agent:
   title: Agenti
   can_chat: Può chattare
@@ -327,7 +321,8 @@ agent:
     agentIdInvalid: Sono consentiti solo lettere minuscole, numeri, trattini e underscore
     agentIdTooLong: L'ID agente deve essere al massimo di 100 caratteri
     configuration: Configurazione
-    noAgentClasses: Nessun tipo di agente disponibile. Assicurati che almeno un agente sia in esecuzione.
+    noAgentClasses: Nessun tipo di agente disponibile. Assicurati che almeno un agente
+      sia in esecuzione.
     submit: Crea agente
     success: Agente creato con successo
     error: Impossibile creare l'agente
@@ -337,10 +332,12 @@ agent:
     button: Elimina
     title: Elimina agente
     confirm: Sei sicuro di voler eliminare questo agente?
-    confirmMessage: Questa azione non può essere annullata. La configurazione dell'agente verrà rimossa definitivamente.
+    confirmMessage: Questa azione non può essere annullata. La configurazione dell'agente
+      verrà rimossa definitivamente.
     success: Agente eliminato con successo
     error: Impossibile eliminare l'agente
-    cannotDeleteDefault: Le configurazioni degli agenti predefiniti non possono essere eliminate
+    cannotDeleteDefault: Le configurazioni degli agenti predefiniti non possono essere
+      eliminate
   add_instance:
     title: Aggiungi agente
     description: Crea una nuova istanza dell'agente
@@ -357,15 +354,14 @@ agent:
     description: Memorie raccolte da {agentName} su di te
     delete_all:
       confirm_header: Elimina tutte le memorie dell'agente
-      confirm_message: Sei sicuro di voler eliminare tutte le memorie raccolte da questo agente? Questa azione non può essere
-        annullata.
+      confirm_message: Sei sicuro di voler eliminare tutte le memorie raccolte da
+        questo agente? Questa azione non può essere annullata.
       success:
         title: Successo
         message: Tutte le memorie dell'agente sono state eliminate con successo
       error:
         title: Eliminazione fallita
         message: Impossibile eliminare le memorie dell'agente. Riprova.
-
 document:
   list:
     title: Titolo del documento
@@ -376,7 +372,6 @@ document:
     number_of_pages: Numero di pagine
     download: Scarica
     is_processing: Elaborazione in corso
-
 knowledge:
   title: Basi di conoscenza
   created_at: 'Creato:'
@@ -389,11 +384,13 @@ knowledge:
       nodes: Chunk
       summary: Riassunti
   original:
-    not_available: La vista del documento originale è disponibile solo per i file PDF.
+    not_available: La vista del documento originale è disponibile solo per i file
+      PDF.
     load_error: Impossibile caricare il documento originale.
     view_button: Visualizza originale
     open_new_tab: Apri in una nuova scheda
-    click_to_view: Clicca sul pulsante qui sotto per visualizzare il documento PDF originale.
+    click_to_view: Clicca sul pulsante qui sotto per visualizzare il documento PDF
+      originale.
   documents:
     title: Documenti
     search:
@@ -405,8 +402,9 @@ knowledge:
         label: Posizione di destinazione
         help: Cartella dove i documenti dovrebbero essere archiviati
       errors:
-        unsupported_file_type: 'Un file ha un tipo non supportato. I tipi supportati sono: {supportedTypes} | {count} file
-          hanno un tipo non supportato. I tipi supportati sono: {supportedTypes}'
+        unsupported_file_type: 'Un file ha un tipo non supportato. I tipi supportati
+          sono: {supportedTypes} | {count} file hanno un tipo non supportato. I tipi
+          supportati sono: {supportedTypes}'
       actions:
         upload: Carica
         cancel: Annulla
@@ -442,10 +440,11 @@ knowledge:
     folder_name:
       label: Nome collezione
       placeholder: mia-collezione
-      help: Sono consentiti solo caratteri alfanumerici, trattini (-) e trattini bassi (_)
-      edit_help: Nome tecnico della collezione
-      validation_error: Il nome della collezione può contenere solo caratteri alfanumerici, trattini (-) e trattini bassi
+      help: Sono consentiti solo caratteri alfanumerici, trattini (-) e trattini bassi
         (_)
+      edit_help: Nome tecnico della collezione
+      validation_error: Il nome della collezione può contenere solo caratteri alfanumerici,
+        trattini (-) e trattini bassi (_)
     display_name:
       label: Nome visualizzato
       placeholder: Nome visualizzato
@@ -454,7 +453,6 @@ knowledge:
       label: Descrizione
       placeholder: Descrizione
       help: Descrizione della collezione
-
 auth:
   renew:
     processing: Elaborazione del rinnovo silenzioso del token...
@@ -473,18 +471,15 @@ auth:
     loginWithMicrosoft: Accedi con Microsoft
     customSolutions: Soluzioni AI personalizzate per la tua azienda
     logoAlt: Logo dell'azienda
-
 timerange:
   1h: 1 ora
   24h: 1 giorno
   30d: 1 mese
   365d: 1 anno
-
 chart:
   no_data: Nessun dato disponibile per questo periodo.
   trending_up: Tendenza al rialzo
   trending_down: Tendenza al ribasso
-
 dashboard:
   all_agents: Tutti gli agenti
   users: Utenti AI-Hub
@@ -509,14 +504,14 @@ dashboard:
       label: Chiedi in Slack/Teams
     AgentInTheLoopRequestEvent:
       label: Compiti delegati
-
 evaluation:
   langfuse_link: Esegui esperimenti
   dataset:
     title: Set di dati
     created_at: 'Creato:'
     updated_at: 'Aggiornato il:'
-    create_description: Crea un nuovo set di dati che puoi utilizzare per valutare le prestazioni dei tuoi Assistenti!
+    create_description: Crea un nuovo set di dati che puoi utilizzare per valutare
+      le prestazioni dei tuoi Assistenti!
     name: Nome
     description: Descrizione
     cancel: Annulla
@@ -531,12 +526,12 @@ evaluation:
     answer_placeholder: Risposta
     add_button: Aggiungi
     save_button: Salva set di dati
-    save_confirmation: Salvare il set di dati? Una volta aggiunti, non potrai più rimuovere gli elementi.
+    save_confirmation: Salvare il set di dati? Una volta aggiunti, non potrai più
+      rimuovere gli elementi.
     cancel_button: Annulla
     save_action: Salva
     saved_summary: Salvato
     saved_detail: Set di dati salvato
-
 role:
   title: Ruoli di accesso
   name: Nome
@@ -565,19 +560,21 @@ role:
   pattern_help_wildcard: Tutte le istanze di MyAgent
   pattern_help_specific: Solo un'istanza specifica
   create_dialog:
-    description: Crea un nuovo ruolo con regole di accesso. Per assegnare il nuovo ruolo agli utenti, utilizza il tuo AD.
+    description: Crea un nuovo ruolo con regole di accesso. Per assegnare il nuovo
+      ruolo agli utenti, utilizza il tuo AD.
   remove_dialog:
     confirm: Sei sicuro?
-    explanation: Se rimuovi questo ruolo, gli utenti potrebbero perdere l'accesso a determinate funzionalità dell'hub AI.
+    explanation: Se rimuovi questo ruolo, gli utenti potrebbero perdere l'accesso
+      a determinate funzionalità dell'hub AI.
     cancel: Annulla
     proceed: Elimina comunque
   role_deleted:
     summary: Ruolo eliminato
-    detail: Il ruolo è stato eliminato. Gli utenti con questo ruolo potrebbero aver perso l'accesso a determinate funzionalità.
+    detail: Il ruolo è stato eliminato. Gli utenti con questo ruolo potrebbero aver
+      perso l'accesso a determinate funzionalità.
   role_saved:
     summary: Ruolo salvato
     detail: Ruolo salvato con successo, le nuove regole di accesso hanno effetto immediato.
-
 usage:
   title: Utilizzo
   calls_remaining: '{current} / {limit} chiamate agente'
@@ -585,13 +582,11 @@ usage:
   resets_at: Reset {time}
   limit_exceeded: Limite chiamate agente raggiunto
   limit_exceeded_detail: Attendere fino a {time} o contattare l'amministratore
-
 period:
   1h: All'ora
   1d: Al giorno
   7d: Alla settimana
   1mo: Al mese
-
 notification:
   title: Notifiche
   no_unread_notifications: Nessuna notifica non letta
@@ -622,11 +617,9 @@ notification:
     medium: Media
     high: Alta
     critical: Critica
-
 bar:
   toggle_dark_mode: Attiva/disattiva modalità scura
   show_notifications: Mostra notifiche
-
 process:
   title: Processi
   overview:
@@ -665,7 +658,8 @@ process:
   delete:
     button: Elimina
     title: Elimina processo
-    confirmMessage: Sei sicuro di voler eliminare questa istanza del processo? Questa azione non può essere annullata.
+    confirmMessage: Sei sicuro di voler eliminare questa istanza del processo? Questa
+      azione non può essere annullata.
     success: Processo eliminato con successo
     error: Eliminazione del processo non riuscita
   add_instance:
@@ -681,11 +675,9 @@ process:
       in_progress: In corso
       done: Completato
       steps: Progresso
-
 form:
   locale_input:
     translate_tooltip: Traduci in tutte le lingue
-
 lib:
   vectorStore:
     label: Archivio vettoriale
@@ -696,7 +688,6 @@ lib:
       label: Spazi dei nomi
       placeholder: Seleziona gli spazi dei nomi (vuoto = tutti)
       help: Lascia vuoto per cercare tutti gli spazi dei nomi
-
 memory:
   title: Ricordi
   graph:
@@ -730,7 +721,8 @@ memory:
     cancel_button: Annulla
     delete_button: Elimina
     delete_confirm_header: Elimina ricordo
-    delete_confirm_message: Sei sicuro di voler eliminare questo ricordo? Questa azione non può essere annullata.
+    delete_confirm_message: Sei sicuro di voler eliminare questo ricordo? Questa azione
+      non può essere annullata.
     validation_error: Errore di validazione
     validation_empty: Il contenuto del ricordo non può essere vuoto
   table:
@@ -746,14 +738,14 @@ memory:
   delete_all:
     button: Elimina tutto
     confirm_header: Elimina tutti i ricordi
-    confirm_message: Sei sicuro di voler eliminare tutti i ricordi? Questa azione non può essere annullata.
+    confirm_message: Sei sicuro di voler eliminare tutti i ricordi? Questa azione
+      non può essere annullata.
     success:
       title: Successo
       message: Tutti i ricordi sono stati eliminati con successo
     error:
       title: Eliminazione fallita
       message: Impossibile eliminare tutti i ricordi. Riprova.
-
 openwebui:
   memories:
     title: Ricordi dell'Agente

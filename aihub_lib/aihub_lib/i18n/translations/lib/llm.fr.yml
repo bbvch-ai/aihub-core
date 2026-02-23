@@ -1,17 +1,22 @@
+---
 config:
   model:
     label: Modèle LLM
-    help: Sélectionnez le modèle de langue pour générer les réponses. Les modèles diffèrent par leurs capacités et coûts.
+    help: Sélectionnez le modèle de langue pour générer les réponses. Les modèles
+      diffèrent par leurs capacités et coûts.
   temperature:
     label: Température
-    help: "Contrôle l'aléatoire : 0 = déterministe, 2 = très créatif. Valeurs basses pour les tâches factuelles."
+    help: "Contrôle l'aléatoire : 0 = déterministe, 2 = très créatif. Valeurs basses\
+      \ pour les tâches factuelles."
   logprobs:
     label: Retourner les log-probabilités
-    help: Inclure les log-probabilités par token dans la réponse. Utile pour analyser la confiance du modèle.
+    help: Inclure les log-probabilités par token dans la réponse. Utile pour analyser
+      la confiance du modèle.
   top_logprobs:
     label: Top log-probabilités
-    help: Nombre de tokens les plus probables pour lesquels retourner les probabilités (0-20). Nécessite l'activation des
-      log-probabilités.
+    help: Nombre de tokens les plus probables pour lesquels retourner les probabilités
+      (0-20). Nécessite l'activation des log-probabilités.
   timeout:
     label: Délai d'expiration (secondes)
-    help: Temps maximum d'attente pour une réponse du LLM. Augmenter pour les requêtes complexes ou connexions lentes.
+    help: Temps maximum d'attente pour une réponse du LLM. Augmenter pour les requêtes
+      complexes ou connexions lentes.

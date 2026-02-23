@@ -1,80 +1,98 @@
+---
 metadata:
   name: Assistente di Intelligenza Documentale
-  description: Assistente IA che cerca e analizza i tuoi documenti per fornire risposte informate e consapevoli del contesto
-
+  description: Assistente IA che cerca e analizza i tuoi documenti per fornire risposte
+    informate e consapevoli del contesto
 config:
   number_of_input_tokens:
     label: Token di input max
-    help: Numero massimo di token consentiti nell'input del LLM. Limita la dimensione del contesto per gestire i costi ed
-      evitare di superare i limiti del modello.
+    help: Numero massimo di token consentiti nell'input del LLM. Limita la dimensione
+      del contesto per gestire i costi ed evitare di superare i limiti del modello.
   check_context_sufficiency:
     label: Verifica sufficienza contesto
-    help: Quando abilitato, l'agente verifica se il contesto recuperato contiene informazioni sufficienti prima di generare
-      una risposta.
+    help: Quando abilitato, l'agente verifica se il contesto recuperato contiene informazioni
+      sufficienti prima di generare una risposta.
   max_hops:
     label: Salti di recupero max
-    help: Numero massimo di iterazioni di recupero quando il contesto iniziale è insufficiente. Valori più alti possono migliorare
-      le risposte ma aumentano la latenza.
+    help: Numero massimo di iterazioni di recupero quando il contesto iniziale è insufficiente.
+      Valori più alti possono migliorare le risposte ma aumentano la latenza.
   system_prompt:
     label: Prompt di sistema
-    help: Istruzioni che definiscono personalità, ruolo e linee guida comportamentali dell'agente. Imposta il tono generale
-      e le capacità.
-    default: "<persona>\nSei RAG Agent, un assistente per il recupero della conoscenza. La tua missione principale è fornire\
-      \ risposte accurate utilizzando esclusivamente le informazioni dei documenti recuperati.\n</persona>\n\n<rules>\n- DEVE:\
-      \ Rispondere utilizzando SOLO il contesto e i documenti recuperati\n- DEVE: Citare passaggi specifici che supportano\
-      \ la risposta\n- MAI: Utilizzare conoscenze generali oltre il contesto fornito\n- VIETATO: Speculazioni o supposizioni\
-      \ non presenti nei documenti recuperati\n</rules>\n\n<instructions>\nSegui questo processo:\n    1. Analizza il contesto\
-      \ recuperato\n    2. Identifica i passaggi rilevanti\n    3. Estrai le informazioni chiave\n    4. Fornisci la risposta\
-      \ con citazioni dirette.\nQuando il contesto è insufficiente, indica che non puoi rispondere alla domanda con le informazioni\
-      \ disponibili.\n</instructions>\n"
+    help: Istruzioni che definiscono personalità, ruolo e linee guida comportamentali
+      dell'agente. Imposta il tono generale e le capacità.
+    default: "<persona>\nSei RAG Agent, un assistente per il recupero della conoscenza.\
+      \ La tua missione principale è fornire risposte accurate utilizzando esclusivamente\
+      \ le informazioni dei documenti recuperati.\n</persona>\n\n<rules>\n- DEVE:\
+      \ Rispondere utilizzando SOLO il contesto e i documenti recuperati\n- DEVE:\
+      \ Citare passaggi specifici che supportano la risposta\n- MAI: Utilizzare conoscenze\
+      \ generali oltre il contesto fornito\n- VIETATO: Speculazioni o supposizioni\
+      \ non presenti nei documenti recuperati\n</rules>\n\n<instructions>\nSegui questo\
+      \ processo:\n    1. Analizza il contesto recuperato\n    2. Identifica i passaggi\
+      \ rilevanti\n    3. Estrai le informazioni chiave\n    4. Fornisci la risposta\
+      \ con citazioni dirette.\nQuando il contesto è insufficiente, indica che non\
+      \ puoi rispondere alla domanda con le informazioni disponibili.\n</instructions>\n"
   context_prompt:
     label: Prompt di contesto
-    help: Modello per presentare i documenti recuperati al LLM. Usa segnaposto come {context} per inserire il contenuto recuperato.
-    default: "{% chat role=\"user\" %}\nTi vengono fornite informazioni di contesto aggiuntive sotto forma di documenti strutturati.\
-      \ Ogni documento segue un\nformato coerente, che inizia con `<REFERENCE_DOCUMENT [metadata]>` e termina con `</REFERENCE_DOCUMENT>`.\
-      \ Questi documenti contengono\ndettagli essenziali che dovrebbero essere utilizzati per comprendere e rispondere accuratamente\
-      \ alla richiesta dell'utente.\n\nOgni documento include metadati come fonte, namespace, tipo, lingua, versione e timestamp.\
-      \ Il contenuto\ndi questi documenti fornisce informazioni cruciali rilevanti per il contesto dato.\n\nDi seguito sono\
-      \ riportati i documenti pertinenti:\n\n<context_documents>\n{% for block in context_blocks %}\n{% if block.block_type\
-      \ == 'text' %}\n{{ block.text }}\n{% endif %}\n{% if block.block_type == 'image' %}\n{{ block.url.__str__() | image}}\n\
-      {% endif %}\n{% endfor %}\n</context_documents>\n\nIstruzione: Utilizzando le informazioni dai documenti forniti, genera\
-      \ una risposta dettagliata e ben strutturata\nalla domanda dell'utente.\n{% endchat %}\n"
+    help: Modello per presentare i documenti recuperati al LLM. Usa segnaposto come
+      {context} per inserire il contenuto recuperato.
+    default: "{% chat role=\"user\" %}\nTi vengono fornite informazioni di contesto\
+      \ aggiuntive sotto forma di documenti strutturati. Ogni documento segue un\n\
+      formato coerente, che inizia con `<REFERENCE_DOCUMENT [metadata]>` e termina\
+      \ con `</REFERENCE_DOCUMENT>`. Questi documenti contengono\ndettagli essenziali\
+      \ che dovrebbero essere utilizzati per comprendere e rispondere accuratamente\
+      \ alla richiesta dell'utente.\n\nOgni documento include metadati come fonte,\
+      \ namespace, tipo, lingua, versione e timestamp. Il contenuto\ndi questi documenti\
+      \ fornisce informazioni cruciali rilevanti per il contesto dato.\n\nDi seguito\
+      \ sono riportati i documenti pertinenti:\n\n<context_documents>\n{% for block\
+      \ in context_blocks %}\n{% if block.block_type == 'text' %}\n{{ block.text }}\n\
+      {% endif %}\n{% if block.block_type == 'image' %}\n{{ block.url.__str__() | image}}\n\
+      {% endif %}\n{% endfor %}\n</context_documents>\n\nIstruzione: Utilizzando le\
+      \ informazioni dai documenti forniti, genera una risposta dettagliata e ben\
+      \ strutturata\nalla domanda dell'utente.\n{% endchat %}\n"
   context_insufficient_prompt:
     label: Prompt contesto insufficiente
-    help: Messaggio mostrato quando l'agente non trova informazioni sufficienti. Guida come l'agente comunica le limitazioni.
-    default: "Informa l'utente che non puoi rispondere alla domanda per il seguente motivo:"
+    help: Messaggio mostrato quando l'agente non trova informazioni sufficienti. Guida
+      come l'agente comunica le limitazioni.
+    default: "Informa l'utente che non puoi rispondere alla domanda per il seguente\
+      \ motivo:"
   reranking_enabled:
     label: Abilita riclassificazione
-    help: Usa un modello di riclassificazione per migliorare la rilevanza dei documenti recuperati prima di passarli al LLM.
+    help: Usa un modello di riclassificazione per migliorare la rilevanza dei documenti
+      recuperati prima di passarli al LLM.
   enable_organization_memory:
     label: Abilita memoria organizzativa
-    help: Se recuperare le memorie organizzative (conoscenze esperte condivise tra utenti) per il contesto.
+    help: Se recuperare le memorie organizzative (conoscenze esperte condivise tra
+      utenti) per il contesto.
   tenant_namespace:
     label: Namespace del tenant
-    help: Namespace per l'isolamento della memoria a livello dipartimentale. Lasciare vuoto per l'ambito organizzativo predefinito.
+    help: Namespace per l'isolamento della memoria a livello dipartimentale. Lasciare
+      vuoto per l'ambito organizzativo predefinito.
   enable_user_memory_retrieval:
     label: Abilita recupero memoria utente
     help: Se recuperare le memorie specifiche dell'utente per un contesto personalizzato.
   enable_user_memory_storage:
     label: Abilita archiviazione memoria utente
     help: Se archiviare nuove memorie dalle conversazioni per il recupero futuro.
-
 steps:
   retrieve_user_memory:
     name: Recupera memoria utente
     description: Recupera le memorie specifiche dell'utente per un contesto personalizzato
   retrieve_organization_memory:
     name: Recupera memoria organizzativa
-    description: Recupera le memorie organizzative rilevanti (conoscenze esperte) basate sulla richiesta dell'utente
+    description: Recupera le memorie organizzative rilevanti (conoscenze esperte)
+      basate sulla richiesta dell'utente
   add_memory_to_context:
     name: Aggiungi memoria al contesto
-    description: Inserisce le memorie utente e organizzative nella cronologia chat come messaggi di sistema
+    description: Inserisce le memorie utente e organizzative nella cronologia chat
+      come messaggi di sistema
   limit_chat_history:
     name: Limita cronologia chat
-    description: Tronca i messaggi di chat in arrivo per rispettare il limite di token configurato
+    description: Tronca i messaggi di chat in arrivo per rispettare il limite di token
+      configurato
   condense_standalone_question:
     name: Condensa domanda autonoma
-    description: Condensa la cronologia della chat e la query utente in una domanda autonoma.
+    description: Condensa la cronologia della chat e la query utente in una domanda
+      autonoma.
   few_shot_guard:
     name: Guardia Few-Shot
     description: Protegge la domanda per assicurarsi che sia appropriata per l'agente.
@@ -83,22 +101,27 @@ steps:
     description: Recupera i nodi rilevanti dalle fonti di conoscenza.
   rerank_nodes:
     name: Riclassifica nodi recuperati
-    description: Riclassifica i documenti recuperati con un modello di riclassificazione per una migliore rilevanza
+    description: Riclassifica i documenti recuperati con un modello di riclassificazione
+      per una migliore rilevanza
   order_nodes:
     name: Ordina nodi per documenti
     description: Ordina i nodi recuperati per i loro documenti sorgente.
   context_sufficient_guard:
     name: Guardia contesto sufficiente
-    description: Protegge il contesto per assicurarsi che sia sufficiente per generare una risposta.
+    description: Protegge il contesto per assicurarsi che sia sufficiente per generare
+      una risposta.
   limit_chat_history_with_context:
     name: Limita cronologia con contesto
-    description: Include il contesto combinato e tronca nuovamente la cronologia della chat.
+    description: Include il contesto combinato e tronca nuovamente la cronologia della
+      chat.
   respond_with_llm:
     name: Rispondi con LLM
     description: Genera una risposta utilizzando il LLM configurato.
   store_user_memory:
     name: Archivia memoria utente
-    description: Persiste gli apprendimenti della conversazione nella memoria utente a lungo termine per interazioni future
+    description: Persiste gli apprendimenti della conversazione nella memoria utente
+      a lungo termine per interazioni future
   stop:
     name: Stop
-    description: Completa il workflow dopo che tutti i passaggi richiesti sono stati completati
+    description: Completa il workflow dopo che tutti i passaggi richiesti sono stati
+      completati

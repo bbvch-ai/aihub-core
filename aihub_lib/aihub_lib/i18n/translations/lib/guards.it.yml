@@ -1,3 +1,4 @@
+---
 common:
   user_message: |
     <Utente>
@@ -13,7 +14,6 @@ common:
     true se la risposta può essere fornita, false altrimenti
   docstring: |
     Modello di dati per la decisione se è possibile fornire una risposta.
-
 agent_description_guard:
   prompt: |
     La descrizione di un agente è la seguente:
@@ -31,7 +31,6 @@ agent_description_guard:
     {history}
     </CronologiaConversazionePrecedente>
     L'output finale deve essere esclusivamente un oggetto JSON con esattamente le due chiavi “success” e “reasoning”. Non ripetere l'intero schema JSON né aggiungere ulteriori meta-informazioni.
-
 few_shot_guard:
   prompt: |
     Riceverete diversi esempi che mostrano quali richieste dell'utente sono consentite e quali no. Ogni risposta di esempio è composta da due chiavi:
@@ -64,7 +63,6 @@ few_shot_guard:
     Giustificazione della decisione presa.
   docstring: |
     Modello di dati per la decisione sull'accettabilità della richiesta.
-
 context_sufficient_guard:
   doc_string: |
     Risultato della valutazione se il contesto è sufficiente per rispondere alla domanda dell'utente.
@@ -110,7 +108,6 @@ context_sufficient_guard:
     true se il contesto è sufficiente per rispondere alla domanda dell'utente, false se non lo è (nessun salto aggiuntivo disponibile).
   docstring_no_hops: |
     Risultato della valutazione se il contesto è sufficiente per rispondere alla domanda dell'utente (nessun salto aggiuntivo disponibile).
-
 sensitive_info_guard:
   prompt: |
     Sei una guardia di sicurezza responsabile della protezione delle informazioni sensibili dell'azienda. Il tuo compito è analizzare la seguente risposta e determinare se contiene informazioni sensibili che non dovrebbero essere condivise esternamente.
@@ -139,14 +136,14 @@ sensitive_info_guard:
     La risposta rivista con informazioni sensibili rimosse o censurate, se applicabile.
   docstring: |
     Risultato dell'analisi di una risposta per informazioni sensibili che non dovrebbero essere condivise esternamente.
-
 few_shot_example:
   user:
     label: Messaggio utente
     help: Un esempio di richiesta o messaggio utente che verrà valutato.
   success:
     label: Accetta richiesta
-    help: Spunta se questo esempio deve essere accettato, deseleziona se deve essere rifiutato.
+    help: Spunta se questo esempio deve essere accettato, deseleziona se deve essere
+      rifiutato.
   reason:
     label: Motivo
     help: Spiegazione del motivo per cui la richiesta è accettata o rifiutata.

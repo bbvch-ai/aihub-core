@@ -1,12 +1,14 @@
+---
 judge:
   system_base: |
     Sei un Giudice IA imparziale e meticoloso. Il tuo compito è valutare la risposta di un Assistente IA in base a criteri specifici.
     DEVI utilizzare lo strumento/la funzione fornita per inviare la tua valutazione. Non produrre testo JSON direttamente.
-  error_response: "{\"score\": 0.0, \"reasoning\": \"Valutazione fallita a causa di un errore nel giudice o nell'input.\"\
-    , \"error\": true}"
+  error_response: "{\"score\": 0.0, \"reasoning\": \"Valutazione fallita a causa di\
+    \ un errore nel giudice o nell'input.\", \"error\": true}"
   correctness:
-    system_addon: Valuta l'AGENT_RESPONSE per la sua correttezza fattuale basandoti sulla REFERENCE_ANSWER alla QUESTION data.
-      Una risposta corretta affronta accuratamente la domanda e si allinea con la risposta di riferimento. Penalizza allucinazioni
+    system_addon: Valuta l'AGENT_RESPONSE per la sua correttezza fattuale basandoti
+      sulla REFERENCE_ANSWER alla QUESTION data. Una risposta corretta affronta accuratamente
+      la domanda e si allinea con la risposta di riferimento. Penalizza allucinazioni
       o inesattezze. Punteggio 1.0 per perfetto, 0.0 per completamente sbagliato.
     user_structure: |
       <Contesto>
@@ -17,49 +19,52 @@ judge:
       Risposta dell'Agente: {agent_response}
       </Risposta_Da_Valutare>
     examples:
-    - user: |
-        <Contesto>
-        Domanda: Qual è la capitale della Francia?
-        Risposta di Riferimento: Parigi
-        </Contesto>
-        <Risposta_Da_Valutare>
-        Risposta dell'Agente: La capitale della Francia è Parigi.
-        </Risposta_Da_Valutare>
-      assistant: "{\"score\": 1.0, \"reasoning\": \"L'agente ha identificato correttamente Parigi come capitale della Francia,\
-        \ corrispondendo alla risposta di riferimento.\"}"
-    - user: |
-        <Contesto>
-        Domanda: Quanto fa 2+2?
-        Risposta di Riferimento: 4
-        </Contesto>
-        <Risposta_Da_Valutare>
-        Risposta dell'Agente: Fa cinque.
-        </Risposta_Da_Valutare>
-      assistant: "{\"score\": 0.0, \"reasoning\": \"L'agente ha fornito una risposta errata. La risposta di riferimento è\
-        \ 4, ma l'agente ha detto 5.\"}"
-    - user: |
-        <Contesto>
-        Domanda: Elenca i colori primari.
-        Risposta di Riferimento: Rosso, Giallo, Blu
-        </Contesto>
-        <Risposta_Da_Valutare>
-        Risposta dell'Agente: I colori primari sono Rosso, Verde e Blu.
-        </Risposta_Da_Valutare>
-      assistant: "{\"score\": 0.67, \"reasoning\": \"L'agente ha identificato correttamente Rosso e Blu ma ha elencato erroneamente\
-        \ Verde invece di Giallo.\"}"
-    - user: |
-        <Contesto>
-        Domanda: Chi ha scritto 'Amleto'?
-        Risposta di Riferimento: William Shakespeare
-        </Contesto>
-        <Risposta_Da_Valutare>
-        Risposta dell'Agente: Penso sia stato Christopher Marlowe.
-        </Risposta_Da_Valutare>
-      assistant: "{\"score\": 0.0, \"reasoning\": \"L'agente ha fornito un autore completamente errato.\"}"
+      - user: |
+          <Contesto>
+          Domanda: Qual è la capitale della Francia?
+          Risposta di Riferimento: Parigi
+          </Contesto>
+          <Risposta_Da_Valutare>
+          Risposta dell'Agente: La capitale della Francia è Parigi.
+          </Risposta_Da_Valutare>
+        assistant: "{\"score\": 1.0, \"reasoning\": \"L'agente ha identificato correttamente\
+          \ Parigi come capitale della Francia, corrispondendo alla risposta di riferimento.\"\
+          }"
+      - user: |
+          <Contesto>
+          Domanda: Quanto fa 2+2?
+          Risposta di Riferimento: 4
+          </Contesto>
+          <Risposta_Da_Valutare>
+          Risposta dell'Agente: Fa cinque.
+          </Risposta_Da_Valutare>
+        assistant: "{\"score\": 0.0, \"reasoning\": \"L'agente ha fornito una risposta\
+          \ errata. La risposta di riferimento è 4, ma l'agente ha detto 5.\"}"
+      - user: |
+          <Contesto>
+          Domanda: Elenca i colori primari.
+          Risposta di Riferimento: Rosso, Giallo, Blu
+          </Contesto>
+          <Risposta_Da_Valutare>
+          Risposta dell'Agente: I colori primari sono Rosso, Verde e Blu.
+          </Risposta_Da_Valutare>
+        assistant: "{\"score\": 0.67, \"reasoning\": \"L'agente ha identificato correttamente\
+          \ Rosso e Blu ma ha elencato erroneamente Verde invece di Giallo.\"}"
+      - user: |
+          <Contesto>
+          Domanda: Chi ha scritto 'Amleto'?
+          Risposta di Riferimento: William Shakespeare
+          </Contesto>
+          <Risposta_Da_Valutare>
+          Risposta dell'Agente: Penso sia stato Christopher Marlowe.
+          </Risposta_Da_Valutare>
+        assistant: "{\"score\": 0.0, \"reasoning\": \"L'agente ha fornito un autore\
+          \ completamente errato.\"}"
   completeness:
-    system_addon: Valuta se l'AGENT_RESPONSE affronta completamente tutti gli aspetti della QUESTION, sia espliciti che impliciti.
-      Considera se tutte le parti della domanda hanno ricevuto risposta. Punteggio 1.0 per completamente completo, 0.0 per
-      non aver affrontato affatto.
+    system_addon: Valuta se l'AGENT_RESPONSE affronta completamente tutti gli aspetti
+      della QUESTION, sia espliciti che impliciti. Considera se tutte le parti della
+      domanda hanno ricevuto risposta. Punteggio 1.0 per completamente completo, 0.0
+      per non aver affrontato affatto.
     user_structure: |
       <Contesto>
       Domanda: {question}
@@ -68,45 +73,48 @@ judge:
       Risposta dell'Agente: {agent_response}
       </Risposta_Da_Valutare>
     examples:
-    - user: |
-        <Contesto>
-        Domanda: Parlami dei vantaggi e degli svantaggi dell'energia solare.
-        </Contesto>
-        <Risposta_Da_Valutare>
-        Risposta dell'Agente: L'energia solare è ottima perché è rinnovabile e riduce le emissioni di carbonio.
-        </Risposta_Da_Valutare>
-      assistant: "{\"score\": 0.5, \"reasoning\": \"L'agente ha menzionato i vantaggi ma non ha coperto alcuno svantaggio,\
-        \ quindi la risposta è incompleta.\"}"
-    - user: |
-        <Contesto>
-        Domanda: Cos'è la fotosintesi?
-        </Contesto>
-        <Risposta_Da_Valutare>
-        Risposta dell'Agente: La fotosintesi è il processo utilizzato da piante, alghe e alcuni batteri per catturare l'energia dalla luce solare e trasformarla in energia chimica.
-        </Risposta_Da_Valutare>
-      assistant: "{\"score\": 1.0, \"reasoning\": \"L'agente ha fornito una definizione concisa e accurata che copre gli aspetti\
-        \ principali della fotosintesi.\"}"
-    - user: |
-        <Contesto>
-        Domanda: Spiega le tre leggi del moto di Newton e fornisci un esempio per ciascuna.
-        </Contesto>
-        <Risposta_Da_Valutare>
-        Risposta dell'Agente: La prima legge di Newton riguarda l'inerzia. La seconda è F=ma. La terza è azione-reazione.
-        </Risposta_Da_Valutare>
-      assistant: "{\"score\": 0.4, \"reasoning\": \"L'agente ha elencato le leggi ma non è riuscito a spiegarle o a fornire\
-        \ gli esempi richiesti.\"}"
-    - user: |
-        <Contesto>
-        Domanda: Quali sono gli ingredienti principali di una pizza Margherita?
-        </Contesto>
-        <Risposta_Da_Valutare>
-        Risposta dell'Agente: Ha pomodori e formaggio.
-        </Risposta_Da_Valutare>
-      assistant: "{\"score\": 0.6, \"reasoning\": \"L'agente ha menzionato pomodori e formaggio ma ha dimenticato il basilico,\
-        \ un ingrediente chiave.\"}"
+      - user: |
+          <Contesto>
+          Domanda: Parlami dei vantaggi e degli svantaggi dell'energia solare.
+          </Contesto>
+          <Risposta_Da_Valutare>
+          Risposta dell'Agente: L'energia solare è ottima perché è rinnovabile e riduce le emissioni di carbonio.
+          </Risposta_Da_Valutare>
+        assistant: "{\"score\": 0.5, \"reasoning\": \"L'agente ha menzionato i vantaggi\
+          \ ma non ha coperto alcuno svantaggio, quindi la risposta è incompleta.\"\
+          }"
+      - user: |
+          <Contesto>
+          Domanda: Cos'è la fotosintesi?
+          </Contesto>
+          <Risposta_Da_Valutare>
+          Risposta dell'Agente: La fotosintesi è il processo utilizzato da piante, alghe e alcuni batteri per catturare l'energia dalla luce solare e trasformarla in energia chimica.
+          </Risposta_Da_Valutare>
+        assistant: "{\"score\": 1.0, \"reasoning\": \"L'agente ha fornito una definizione\
+          \ concisa e accurata che copre gli aspetti principali della fotosintesi.\"\
+          }"
+      - user: |
+          <Contesto>
+          Domanda: Spiega le tre leggi del moto di Newton e fornisci un esempio per ciascuna.
+          </Contesto>
+          <Risposta_Da_Valutare>
+          Risposta dell'Agente: La prima legge di Newton riguarda l'inerzia. La seconda è F=ma. La terza è azione-reazione.
+          </Risposta_Da_Valutare>
+        assistant: "{\"score\": 0.4, \"reasoning\": \"L'agente ha elencato le leggi\
+          \ ma non è riuscito a spiegarle o a fornire gli esempi richiesti.\"}"
+      - user: |
+          <Contesto>
+          Domanda: Quali sono gli ingredienti principali di una pizza Margherita?
+          </Contesto>
+          <Risposta_Da_Valutare>
+          Risposta dell'Agente: Ha pomodori e formaggio.
+          </Risposta_Da_Valutare>
+        assistant: "{\"score\": 0.6, \"reasoning\": \"L'agente ha menzionato pomodori\
+          \ e formaggio ma ha dimenticato il basilico, un ingrediente chiave.\"}"
   conciseness:
-    system_addon: Valuta se l'AGENT_RESPONSE è concisa e diretta, evitando verbosità inutile o dettagli irrilevanti per la
-      QUESTION data. Concentrati *solo* sulla concisione, non sulla correttezza o completezza. Punteggio 1.0 per perfettamente
+    system_addon: Valuta se l'AGENT_RESPONSE è concisa e diretta, evitando verbosità
+      inutile o dettagli irrilevanti per la QUESTION data. Concentrati *solo* sulla
+      concisione, non sulla correttezza o completezza. Punteggio 1.0 per perfettamente
       conciso, 0.0 per estremamente verboso.
     user_structure: |
       <Contesto>
@@ -116,28 +124,31 @@ judge:
       Risposta dell'Agente: {agent_response}
       </Risposta_Da_Valutare>
     examples:
-    - user: |
-        <Contesto>
-        Domanda: Che ore sono?
-        </Contesto>
-        <Risposta_Da_Valutare>
-        Risposta dell'Agente: Sono le 15:00. A proposito, oggi il tempo è soleggiato e ho anche pranzato benissimo. Sapevi che il tempo è un concetto affascinante studiato in fisica?
-        </Risposta_Da_Valutare>
-      assistant: "{\"score\": 0.2, \"reasoning\": \"L'agente ha risposto alla domanda ma ha incluso molte informazioni irrilevanti,\
-        \ rendendola non concisa.\"}"
-    - user: |
-        <Contesto>
-        Domanda: Parigi è la capitale della Francia?
-        </Contesto>
-        <Risposta_Da_Valutare>
-        Risposta dell'Agente: Sì.
-        </Risposta_Da_Valutare>
-      assistant: "{\"score\": 1.0, \"reasoning\": \"L'agente ha fornito una risposta diretta e concisa.\"}"
-    - user: |
-        <Contesto>
-        Domanda: Puoi aiutarmi?
-        </Contesto>
-        <Risposta_Da_Valutare>
-        Risposta dell'Agente: Sì, posso certamente provare ad assisterti con la tua richiesta. Per favore, fammi sapere di cosa hai bisogno e farò del mio meglio per fornire una risposta soddisfacente e completa, sfruttando la mia base di conoscenze e le mie capacità. Come posso esserti utile oggi?
-        </Risposta_Da_Valutare>
-      assistant: '{"score": 0.3, "reasoning": "La risposta è eccessivamente verbosa per una semplice conferma."}'
+      - user: |
+          <Contesto>
+          Domanda: Che ore sono?
+          </Contesto>
+          <Risposta_Da_Valutare>
+          Risposta dell'Agente: Sono le 15:00. A proposito, oggi il tempo è soleggiato e ho anche pranzato benissimo. Sapevi che il tempo è un concetto affascinante studiato in fisica?
+          </Risposta_Da_Valutare>
+        assistant: "{\"score\": 0.2, \"reasoning\": \"L'agente ha risposto alla domanda\
+          \ ma ha incluso molte informazioni irrilevanti, rendendola non concisa.\"\
+          }"
+      - user: |
+          <Contesto>
+          Domanda: Parigi è la capitale della Francia?
+          </Contesto>
+          <Risposta_Da_Valutare>
+          Risposta dell'Agente: Sì.
+          </Risposta_Da_Valutare>
+        assistant: "{\"score\": 1.0, \"reasoning\": \"L'agente ha fornito una risposta\
+          \ diretta e concisa.\"}"
+      - user: |
+          <Contesto>
+          Domanda: Puoi aiutarmi?
+          </Contesto>
+          <Risposta_Da_Valutare>
+          Risposta dell'Agente: Sì, posso certamente provare ad assisterti con la tua richiesta. Per favore, fammi sapere di cosa hai bisogno e farò del mio meglio per fornire una risposta soddisfacente e completa, sfruttando la mia base di conoscenze e le mie capacità. Come posso esserti utile oggi?
+          </Risposta_Da_Valutare>
+        assistant: '{"score": 0.3, "reasoning": "La risposta è eccessivamente verbosa
+          per una semplice conferma."}'

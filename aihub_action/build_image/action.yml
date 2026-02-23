@@ -1,6 +1,6 @@
+---
 name: Build Image
 version: 1
-
 inputs:
   release_version:
     description: Docker image tag
@@ -27,44 +27,48 @@ inputs:
     description: ssh key to access private aihub core repository
     required: false
   secondary_tag:
-    description: 'secondary tag for the image, besides the release version (e.g., latest, nightly, ...) (default: nightly)'
+    description: 'secondary tag for the image, besides the release version (e.g.,
+      latest, nightly, ...) (default: nightly)'
     default: nightly
     required: false
-
 runs:
   using: composite
   steps:
-  - name: Set up Docker Buildx
-    uses: docker/setup-buildx-action@v3
-  - name: Log in to GitHub Container Registry
-    uses: docker/login-action@v2
-    with:
-      registry: ghcr.io
-      username: ${{ github.actor }}
-      password: ${{ inputs.github_token }}
-  - name: Build and push Docker image with ssh_key
-    if: ${{ inputs.ssh_key != '' }}
-    uses: docker/build-push-action@v6
-    with:
-      context: ${{ inputs.context }}
-      file: ${{ inputs.file }}
-      push: true
-      secrets: |
-        "ssh_key=${{ inputs.ssh_key }}"
-      tags: ${{ inputs.secondary_tag != '' && format('ghcr.io/{0}/{1}/{2}:{3},ghcr.io/{0}/{1}/{2}:{4}', inputs.github_repository_owner,
-        inputs.github_event_repository_name, inputs.image_name, inputs.release_version, inputs.secondary_tag) || format('ghcr.io/{0}/{1}/{2}:{3}',
-        inputs.github_repository_owner, inputs.github_event_repository_name, inputs.image_name, inputs.release_version) }}
-  - name: Build and push Docker image
-    if: ${{ inputs.ssh_key == '' }}
-    uses: docker/build-push-action@v6
-    with:
-      context: ${{ inputs.context }}
-      file: ${{ inputs.file }}
-      push: true
-      build-args: |
-        VERSION=${{ inputs.release_version }}
-      secrets: |
-        "ssh_key=${{ inputs.ssh_key }}"
-      tags: ${{ inputs.secondary_tag != '' && format('ghcr.io/{0}/{1}/{2}:{3},ghcr.io/{0}/{1}/{2}:{4}', inputs.github_repository_owner,
-        inputs.github_event_repository_name, inputs.image_name, inputs.release_version, inputs.secondary_tag) || format('ghcr.io/{0}/{1}/{2}:{3}',
-        inputs.github_repository_owner, inputs.github_event_repository_name, inputs.image_name, inputs.release_version) }}
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    - name: Log in to GitHub Container Registry
+      uses: docker/login-action@v2
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ inputs.github_token }}
+    - name: Build and push Docker image with ssh_key
+      if: ${{ inputs.ssh_key != '' }}
+      uses: docker/build-push-action@v6
+      with:
+        context: ${{ inputs.context }}
+        file: ${{ inputs.file }}
+        push: true
+        secrets: |
+          "ssh_key=${{ inputs.ssh_key }}"
+        tags: ${{ inputs.secondary_tag != '' && format('ghcr.io/{0}/{1}/{2}:{3},ghcr.io/{0}/{1}/{2}:{4}',
+          inputs.github_repository_owner, inputs.github_event_repository_name, inputs.image_name,
+          inputs.release_version, inputs.secondary_tag) || format('ghcr.io/{0}/{1}/{2}:{3}',
+          inputs.github_repository_owner, inputs.github_event_repository_name, inputs.image_name,
+          inputs.release_version) }}
+    - name: Build and push Docker image
+      if: ${{ inputs.ssh_key == '' }}
+      uses: docker/build-push-action@v6
+      with:
+        context: ${{ inputs.context }}
+        file: ${{ inputs.file }}
+        push: true
+        build-args: |
+          VERSION=${{ inputs.release_version }}
+        secrets: |
+          "ssh_key=${{ inputs.ssh_key }}"
+        tags: ${{ inputs.secondary_tag != '' && format('ghcr.io/{0}/{1}/{2}:{3},ghcr.io/{0}/{1}/{2}:{4}',
+          inputs.github_repository_owner, inputs.github_event_repository_name, inputs.image_name,
+          inputs.release_version, inputs.secondary_tag) || format('ghcr.io/{0}/{1}/{2}:{3}',
+          inputs.github_repository_owner, inputs.github_event_repository_name, inputs.image_name,
+          inputs.release_version) }}

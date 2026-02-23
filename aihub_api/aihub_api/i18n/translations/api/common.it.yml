@@ -1,5 +1,5 @@
+---
 test: Questo è un test italiano
-
 translation:
   prompt: |
     Sei un traduttore professionale. Il tuo compito è tradurre testi con precisione preservando significato, tono e contesto culturale.

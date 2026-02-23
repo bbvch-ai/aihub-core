@@ -1,35 +1,26 @@
+---
 name: AI Code Review
-
 on:
   pull_request:
-    branches:
-    - main
-    - initiative/*
-    types:
-    - opened
-    - edited
-    - synchronize
-    - reopened
-    - ready_for_review
+    branches: [main, initiative/*]
+    types: [opened, edited, synchronize, reopened, ready_for_review]
   issue_comment:
-
 permissions:
   issues: write
   pull-requests: write
   contents: write
-
 jobs:
   pr_agent_job:
     name: Run pr agent on every pull request, respond to user comments
     runs-on: ubuntu-latest
     if: ${{ !github.event.pull_request.draft && github.event.sender.type != 'Bot' }}
     steps:
-    - name: PR Agent action step
-      uses: bbvch-ai/aihub-core/aihub_action/review_pr@main
-      with:
-        azure_openai_key: ${{ secrets.AZURE_OPENAI_KEY }}
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        model: o4-mini
-        openai_api_version: 2024-12-01-preview
-        azure_api_version: 2024-12-01-preview
-        azure_openai_api_base: ${{ vars.AZURE_OPENAI_API_BASE }}
+      - name: PR Agent action step
+        uses: bbvch-ai/aihub-core/aihub_action/review_pr@main
+        with:
+          azure_openai_key: ${{ secrets.AZURE_OPENAI_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          model: o4-mini
+          openai_api_version: 2024-12-01-preview
+          azure_api_version: 2024-12-01-preview
+          azure_openai_api_base: ${{ vars.AZURE_OPENAI_API_BASE }}

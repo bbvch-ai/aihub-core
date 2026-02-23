@@ -1,3 +1,4 @@
+---
 agent_description_guard:
   prompt: |
     La description d'un agent est la suivante :
@@ -29,7 +30,6 @@ agent_description_guard:
     true si une réponse peut être donnée, false sinon
   docstring: |
     Modèle de données pour la décision concernant la possibilité de fournir une réponse.
-
 few_shot_guard:
   prompt: |
     Vous recevrez plusieurs exemples montrant quelles demandes d'utilisateurs sont autorisées et lesquelles ne le sont pas. Chaque exemple de réponse se compose de deux clés :
@@ -62,7 +62,6 @@ few_shot_guard:
     Justification de la décision prise.
   docstring: |
     Modèle de données pour la décision concernant l'acceptabilité de la requête.
-
 context_sufficient_guard:
   doc_string: |
     Résultat de l'évaluation visant à déterminer si le contexte est suffisant pour répondre à la requête de l'utilisateur.
@@ -108,7 +107,6 @@ context_sufficient_guard:
     true si le contexte est suffisant pour répondre à la requête de l'utilisateur, false s'il ne l'est pas (aucun saut supplémentaire disponible).
   docstring_no_hops: |
     Résultat de l'évaluation visant à déterminer si le contexte est suffisant pour répondre à la requête de l'utilisateur (aucun saut supplémentaire disponible).
-
 sensitive_info_guard:
   prompt: |
     Vous êtes un gardien de sécurité responsable de la protection des informations confidentielles de l'entreprise. Votre tâche est d'analyser la réponse suivante et de déterminer si elle contient des informations sensibles qui ne devraient pas être partagées en externe.
@@ -137,7 +135,6 @@ sensitive_info_guard:
     La réponse révisée avec les informations sensibles supprimées ou expurgées, le cas échéant.
   docstring: |
     Résultat de l'analyse d'une réponse pour détecter des informations sensibles qui ne devraient pas être partagées en externe.
-
 few_shot_example:
   user:
     label: Message utilisateur

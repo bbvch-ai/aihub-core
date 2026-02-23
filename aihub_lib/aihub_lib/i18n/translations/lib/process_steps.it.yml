@@ -1,11 +1,10 @@
+---
 work_request_event:
   name: Evento di richiesta di lavoro
   description: Richiede un lavoro a qualcuno all'interno del processo
-
 work_event:
   name: Evento di lavoro
   description: Segnala il lavoro svolto da un'entità coinvolta nel processo
-
 config:
   name:
     label: Nome del processo

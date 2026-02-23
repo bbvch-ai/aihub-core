@@ -1,6 +1,6 @@
+---
 test: This is test
 welcome: Welcome to bbv ai-hub
-
 common:
   actions:
     save: Save
@@ -11,7 +11,6 @@ common:
   loading: Loading...
   selectModel: Select a model
   selectDatabase: Select a database
-
 models:
   title: Models
   error: Error loading models
@@ -65,13 +64,11 @@ models:
     supportsEmbeddingImageInput: Embedding Image Input
     supportedParams: Supported OpenAI Parameters
     notSpecified: Not specified
-
 languages:
   en: English
   de: German
   it: Italian
   fr: French
-
 http_error:
   code:
     # 4xx Client Errors
@@ -88,7 +85,6 @@ http_error:
     502: A server error occurred. Please try again.
     503: Our service is temporarily unavailable.
     504: A server is not responding. Please try again.
-
 user:
   title: User
   logout: Logout
@@ -99,7 +95,6 @@ user:
     avatar: Profile image
     roles: Roles
     last_accessed: Last active
-
 time_ago:
   last_hour: Last hour
   last_day: Last day
@@ -107,7 +102,6 @@ time_ago:
   last_month: Last month
   last_year: Last year
   long_time_ago: Long time ago
-
 thread:
   title: Interactions
   users: Users
@@ -152,18 +146,17 @@ thread:
     description: Memories collected during {threadName}
     delete_all:
       confirm_header: Delete All Thread Memories
-      confirm_message: Are you sure you want to delete all memories from this thread? This action cannot be undone.
+      confirm_message: Are you sure you want to delete all memories from this thread?
+        This action cannot be undone.
       success:
         title: Success
         message: All thread memories deleted successfully
       error:
         title: Delete Failed
         message: Failed to delete thread memories. Please try again.
-
 chat:
   assistant: Assistant
   document: Document
-
 event:
   list:
     firstInteraction: 'First Interaction:'
@@ -186,9 +179,11 @@ event:
     assistant: Assistant
     system: System
     user: User
-    description: Chat history was truncated based on token limits to stay within model constraints
+    description: Chat history was truncated based on token limits to stay within model
+      constraints
   addMemoryToChatHistory:
-    summary: Added {count} memory message to chat history | Added {count} memory messages to chat history
+    summary: Added {count} memory message to chat history | Added {count} memory messages
+      to chat history
     description: Chat history was extended with relevant memories from previous interactions
     assistant: Assistant
     system: System
@@ -225,12 +220,14 @@ event:
     sourceDocument: '{count} source document | {count} source documents'
     contentChunk: '{count} content chunk | {count} content chunks'
     noChunksFound: No chunks found
-    noChunksFoundDescription: The retrieval search didn't find any relevant content chunks.
+    noChunksFoundDescription: The retrieval search didn't find any relevant content
+      chunks.
   standaloneQuestionCondenser:
     summary: Question refined and condensed
     condensedQuestion: Condensed Question
     user: User
-    description: The original question was reformulated to be more specific and context-aware for better search results
+    description: The original question was reformulated to be more specific and context-aware
+      for better search results
   statistics:
     charts:
       agentInvocations: Agent Invocations
@@ -243,7 +240,6 @@ event:
       delegations: Delegations
       delegatedTaskAgentInTheLoop: Delegated Task (Agent in the Loop)
       allEvents: All Events
-
 costs:
   table:
     count: Count
@@ -253,14 +249,12 @@ costs:
     embedding: Embedding
     total: Total
     currency: CHF
-
 service:
   selection:
     title: Services
     description: Here are all the services listed that you have activated
     search: Search
     button: Search
-
 agent:
   title: Agents
   can_chat: Can Chat
@@ -323,7 +317,8 @@ agent:
     agentId: Agent ID
     agentIdPlaceholder: my-new-agent
     agentIdHelp: Unique identifier (lowercase letters, numbers, hyphens, underscores)
-    agentIdInvalid: Only lowercase letters, numbers, hyphens, and underscores are allowed
+    agentIdInvalid: Only lowercase letters, numbers, hyphens, and underscores are
+      allowed
     agentIdTooLong: Agent ID must be 100 characters or less
     configuration: Configuration
     noAgentClasses: No agent types available. Make sure at least one agent is running.
@@ -336,7 +331,8 @@ agent:
     button: Delete
     title: Delete Agent
     confirm: Are you sure you want to delete this agent?
-    confirmMessage: This action cannot be undone. The agent configuration will be permanently removed.
+    confirmMessage: This action cannot be undone. The agent configuration will be
+      permanently removed.
     success: Agent deleted successfully
     error: Failed to delete agent
     cannotDeleteDefault: Default agent configurations cannot be deleted
@@ -356,14 +352,14 @@ agent:
     description: Memories collected by {agentName} about you
     delete_all:
       confirm_header: Delete All Agent Memories
-      confirm_message: Are you sure you want to delete all memories collected by this agent? This action cannot be undone.
+      confirm_message: Are you sure you want to delete all memories collected by this
+        agent? This action cannot be undone.
       success:
         title: Success
         message: All agent memories deleted successfully
       error:
         title: Delete Failed
         message: Failed to delete agent memories. Please try again.
-
 document:
   list:
     title: Document Title
@@ -374,7 +370,6 @@ document:
     number_of_pages: Number of Pages
     download: Download
     is_processing: Processing
-
 knowledge:
   title: Knowledge Databases
   created_at: 'Created:'
@@ -404,8 +399,9 @@ knowledge:
         label: Target Location
         help: Folder where the documents should be stored
       errors:
-        unsupported_file_type: 'One file has an unsupported type. Supported types are: {supportedTypes} | {count} files have
-          an unsupported type. Supported types are: {supportedTypes}'
+        unsupported_file_type: 'One file has an unsupported type. Supported types
+          are: {supportedTypes} | {count} files have an unsupported type. Supported
+          types are: {supportedTypes}'
       actions:
         upload: Upload
         cancel: Cancel
@@ -443,7 +439,8 @@ knowledge:
       placeholder: my-collection
       help: Only alphanumeric characters, hyphens (-), and underscores (_) are allowed
       edit_help: Technical name of the collection
-      validation_error: Collection name can only contain alphanumeric characters, hyphens (-), and underscores (_)
+      validation_error: Collection name can only contain alphanumeric characters,
+        hyphens (-), and underscores (_)
     display_name:
       label: Display Name
       placeholder: Display Name
@@ -452,7 +449,6 @@ knowledge:
       label: Description
       placeholder: Description
       help: Description of the collection
-
 auth:
   renew:
     processing: Processing silent token renewal...
@@ -471,18 +467,15 @@ auth:
     loginWithMicrosoft: Login with Microsoft
     customSolutions: Custom AI solutions for your company
     logoAlt: Logo of company
-
 timerange:
   1h: 1 Hour
   24h: 1 Day
   30d: 1 Month
   365d: 1 Year
-
 chart:
   no_data: No data available for this period.
   trending_up: Trending Up
   trending_down: Trending Down
-
 dashboard:
   all_agents: All Agents
   users: AI-Hub Users
@@ -507,14 +500,14 @@ dashboard:
       label: Ask in Slack/Teams
     AgentInTheLoopRequestEvent:
       label: Tasks Delegated
-
 evaluation:
   langfuse_link: Run Experiments
   dataset:
     title: Datasets
     created_at: 'Created:'
     updated_at: 'Updated at:'
-    create_description: Create a new dataset that you can use to evaluate the performance of your Assitants!
+    create_description: Create a new dataset that you can use to evaluate the performance
+      of your Assitants!
     name: Name
     description: Description
     cancel: Cancel
@@ -534,7 +527,6 @@ evaluation:
     save_action: Save
     saved_summary: Saved
     saved_detail: Dataset saved
-
 role:
   title: Access Roles
   name: Name
@@ -563,19 +555,21 @@ role:
   pattern_help_wildcard: All instances of MyAgent
   pattern_help_specific: Only a specific instance
   create_dialog:
-    description: Create a new role with access rules. To assigne the new role to users, please use your AD.
+    description: Create a new role with access rules. To assigne the new role to users,
+      please use your AD.
   remove_dialog:
     confirm: Are you sure?
-    explanation: If you remove this role, users might loose access to certain features of the ai-hub.
+    explanation: If you remove this role, users might loose access to certain features
+      of the ai-hub.
     cancel: Cancel
     proceed: Delete anyways
   role_deleted:
     summary: Role deleted
-    detail: Role was deleted. Users with this role might have lost access to certain features.
+    detail: Role was deleted. Users with this role might have lost access to certain
+      features.
   role_saved:
     summary: Role saved
     detail: Role saved successfully, the new access rules take effect immediately.
-
 usage:
   title: Usage
   calls_remaining: '{current} / {limit} agent calls'
@@ -583,13 +577,11 @@ usage:
   resets_at: Resets {time}
   limit_exceeded: Agent call limit reached
   limit_exceeded_detail: Please wait until {time} or contact your administrator
-
 period:
   1h: Per hour
   1d: Per day
   7d: Per week
   1mo: Per month
-
 notification:
   title: Notifications
   no_unread_notifications: No unread notifications
@@ -620,11 +612,9 @@ notification:
     medium: Medium
     high: High
     critical: Critical
-
 bar:
   toggle_dark_mode: Toggle dark mode
   show_notifications: Show notifications
-
 process:
   title: Processes
   overview:
@@ -663,7 +653,8 @@ process:
   delete:
     button: Delete
     title: Delete Process
-    confirmMessage: Are you sure you want to delete this process instance? This action cannot be undone.
+    confirmMessage: Are you sure you want to delete this process instance? This action
+      cannot be undone.
     success: Process deleted successfully
     error: Failed to delete process
   add_instance:
@@ -679,11 +670,9 @@ process:
       in_progress: In Progress
       done: Done
       steps: Progress
-
 form:
   locale_input:
     translate_tooltip: Translate to all languages
-
 lib:
   vectorStore:
     label: Vector Store
@@ -694,7 +683,6 @@ lib:
       label: Namespaces
       placeholder: Select namespaces (empty = all)
       help: Leave empty to search all namespaces
-
 memory:
   title: Memories
   graph:
@@ -728,7 +716,8 @@ memory:
     cancel_button: Cancel
     delete_button: Delete
     delete_confirm_header: Delete Memory
-    delete_confirm_message: Are you sure you want to delete this memory? This action cannot be undone.
+    delete_confirm_message: Are you sure you want to delete this memory? This action
+      cannot be undone.
     validation_error: Validation Error
     validation_empty: Memory content cannot be empty
   table:
@@ -744,14 +733,14 @@ memory:
   delete_all:
     button: Delete All
     confirm_header: Delete All Memories
-    confirm_message: Are you sure you want to delete all memories? This action cannot be undone.
+    confirm_message: Are you sure you want to delete all memories? This action cannot
+      be undone.
     success:
       title: Success
       message: All memories deleted successfully
     error:
       title: Delete Failed
       message: Failed to delete all memories. Please try again.
-
 openwebui:
   memories:
     title: Agent Memories

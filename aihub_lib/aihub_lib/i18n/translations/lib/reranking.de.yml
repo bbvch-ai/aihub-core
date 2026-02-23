@@ -1,7 +1,10 @@
+---
 config:
   model:
     label: Reranking-Modell
-    help: Wählen Sie das Modell, das abgerufene Dokumente nach semantischer Relevanz zur Anfrage neu sortiert.
+    help: Wählen Sie das Modell, das abgerufene Dokumente nach semantischer Relevanz
+      zur Anfrage neu sortiert.
   top_n:
     label: Top N Ergebnisse
-    help: Anzahl der Dokumente nach dem Reranking. Niedrigere Werte konzentrieren sich auf die relevantesten Inhalte.
+    help: Anzahl der Dokumente nach dem Reranking. Niedrigere Werte konzentrieren
+      sich auf die relevantesten Inhalte.

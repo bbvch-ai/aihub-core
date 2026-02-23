@@ -1,6 +1,6 @@
+---
 test: Dies ist ein Test
 welcome: Willkommen im bbv ai-hub
-
 common:
   actions:
     save: Speichern
@@ -11,7 +11,6 @@ common:
   loading: Laden...
   selectModel: Modell auswählen
   selectDatabase: Datenbank auswählen
-
 models:
   title: Modelle
   error: Fehler beim Laden der Modelle
@@ -65,17 +64,16 @@ models:
     supportsEmbeddingImageInput: Embedding Bild-Input
     supportedParams: Unterstützte OpenAI-Parameter
     notSpecified: Nicht spezifiziert
-
 languages:
   en: Englisch
   de: Deutsch
   it: Italienisch
   fr: Französisch
-
 http_error:
   code:
     # 4xx Client Errors
-    400: Ungültige Anfrage. Bitte überprüfen Sie die Adresse und versuchen Sie es erneut.
+    400: Ungültige Anfrage. Bitte überprüfen Sie die Adresse und versuchen Sie es
+      erneut.
     401: Bitte melden Sie sich an, um auf diese Seite zuzugreifen.
     403: Sie haben keine Berechtigung, dies anzuzeigen.
     404: Entschuldigung, wir konnten diese Seite nicht finden.
@@ -88,7 +86,6 @@ http_error:
     502: Ein Serverfehler ist aufgetreten. Bitte versuchen Sie es erneut.
     503: Unser Dienst ist vorübergehend nicht verfügbar.
     504: Ein Server antwortet nicht. Bitte versuchen Sie es erneut.
-
 user:
   title: Benutzer
   logout: Abmelden
@@ -99,7 +96,6 @@ user:
     avatar: Profilbild
     roles: Rollen
     last_accessed: Zuletzt zugegriffen
-
 time_ago:
   last_hour: Letzte Stunde
   last_day: Letzter Tag
@@ -107,7 +103,6 @@ time_ago:
   last_month: Letzter Monat
   last_year: Letztes Jahr
   long_time_ago: Vor langer Zeit
-
 thread:
   title: Interaktionen
   users: Benutzer
@@ -152,19 +147,18 @@ thread:
     description: Während {threadName} gesammelte Erinnerungen
     delete_all:
       confirm_header: Alle Thread-Erinnerungen löschen
-      confirm_message: Sind Sie sicher, dass Sie alle Erinnerungen aus diesem Thread löschen möchten? Diese Aktion kann nicht
-        rückgängig gemacht werden.
+      confirm_message: Sind Sie sicher, dass Sie alle Erinnerungen aus diesem Thread
+        löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.
       success:
         title: Erfolgreich
         message: Alle Thread-Erinnerungen wurden erfolgreich gelöscht
       error:
         title: Löschen fehlgeschlagen
-        message: Fehler beim Löschen der Thread-Erinnerungen. Bitte versuchen Sie es erneut.
-
+        message: Fehler beim Löschen der Thread-Erinnerungen. Bitte versuchen Sie
+          es erneut.
 chat:
   assistant: Assistent
   document: Dokument
-
 event:
   list:
     firstInteraction: 'Erste Interaktion:'
@@ -187,11 +181,13 @@ event:
     assistant: Assistent
     system: System
     user: Benutzer/in
-    description: Chat-Verlauf wurde aufgrund von Token-Limits gekürzt, um innerhalb der Modellbeschränkungen zu bleiben
+    description: Chat-Verlauf wurde aufgrund von Token-Limits gekürzt, um innerhalb
+      der Modellbeschränkungen zu bleiben
   addMemoryToChatHistory:
-    summary: '{count} Erinnerungsnachricht zum Chat-Verlauf hinzugefügt | {count} Erinnerungsnachrichten zum Chat-Verlauf
-      hinzugefügt'
-    description: Chat-Verlauf wurde mit relevanten Erinnerungen aus früheren Interaktionen erweitert
+    summary: '{count} Erinnerungsnachricht zum Chat-Verlauf hinzugefügt | {count}
+      Erinnerungsnachrichten zum Chat-Verlauf hinzugefügt'
+    description: Chat-Verlauf wurde mit relevanten Erinnerungen aus früheren Interaktionen
+      erweitert
     assistant: Assistent
     system: System
     user: Benutzer/in
@@ -227,13 +223,14 @@ event:
     sourceDocument: '{count} Quelldokument | {count} Quelldokumente'
     contentChunk: '{count} Inhaltsabschnitt | {count} Inhaltsabschnitte'
     noChunksFound: Keine Abschnitte gefunden
-    noChunksFoundDescription: Die Abrufsuche hat keine relevanten Inhaltsabschnitte gefunden.
+    noChunksFoundDescription: Die Abrufsuche hat keine relevanten Inhaltsabschnitte
+      gefunden.
   standaloneQuestionCondenser:
     summary: Frage verfeinert und verdichtet
     condensedQuestion: Verdichtete Frage
     user: Benutzer/in
-    description: Die ursprüngliche Frage wurde reformuliert, um spezifischer und kontextbewusster für bessere Suchergebnisse
-      zu sein
+    description: Die ursprüngliche Frage wurde reformuliert, um spezifischer und kontextbewusster
+      für bessere Suchergebnisse zu sein
   statistics:
     charts:
       agentInvocations: Agentenaufrufe
@@ -246,7 +243,6 @@ event:
       delegations: Delegationen
       delegatedTaskAgentInTheLoop: Delegierte Aufgabe (Agent in der Schleife)
       allEvents: Alle Ereignisse
-
 costs:
   table:
     count: Anzahl
@@ -256,14 +252,12 @@ costs:
     embedding: Einbettung
     total: Gesamt
     currency: CHF
-
 service:
   selection:
     title: Dienste
     description: Hier sind alle Dienste aufgelistet, die Sie aktiviert haben
     search: Suche
     button: Suchen
-
 agent:
   title: Agenten
   can_chat: Kann chatten
@@ -291,7 +285,8 @@ agent:
     offline: Offline
   configuration:
     title: Agentenkonfiguration
-    description: Konfigurieren Sie das Laufzeitverhalten und die Einstellungen für diesen Agenten
+    description: Konfigurieren Sie das Laufzeitverhalten und die Einstellungen für
+      diesen Agenten
     runtimeSettings: Laufzeiteinstellungen
     noConfiguration: Keine Konfiguration für diesen Agenten verfügbar
     saveSuccess: Konfiguration erfolgreich gespeichert
@@ -329,7 +324,8 @@ agent:
     agentIdInvalid: Nur Kleinbuchstaben, Zahlen, Bindestriche und Unterstriche erlaubt
     agentIdTooLong: Agenten-ID darf maximal 100 Zeichen lang sein
     configuration: Konfiguration
-    noAgentClasses: Keine Agententypen verfügbar. Stellen Sie sicher, dass mindestens ein Agent läuft.
+    noAgentClasses: Keine Agententypen verfügbar. Stellen Sie sicher, dass mindestens
+      ein Agent läuft.
     submit: Agent erstellen
     success: Agent erfolgreich erstellt
     error: Agent konnte nicht erstellt werden
@@ -339,10 +335,12 @@ agent:
     button: Löschen
     title: Agent löschen
     confirm: Möchten Sie diesen Agenten wirklich löschen?
-    confirmMessage: Diese Aktion kann nicht rückgängig gemacht werden. Die Agentenkonfiguration wird dauerhaft entfernt.
+    confirmMessage: Diese Aktion kann nicht rückgängig gemacht werden. Die Agentenkonfiguration
+      wird dauerhaft entfernt.
     success: Agent erfolgreich gelöscht
     error: Agent konnte nicht gelöscht werden
-    cannotDeleteDefault: Standardkonfigurationen von Agenten können nicht gelöscht werden
+    cannotDeleteDefault: Standardkonfigurationen von Agenten können nicht gelöscht
+      werden
   add_instance:
     title: Agent hinzufügen
     description: Neue Agenteninstanz erstellen
@@ -359,15 +357,15 @@ agent:
     description: Von {agentName} gesammelte Erinnerungen über Sie
     delete_all:
       confirm_header: Alle Agenten-Erinnerungen löschen
-      confirm_message: Sind Sie sicher, dass Sie alle von diesem Agenten gesammelten Erinnerungen löschen möchten? Diese Aktion
-        kann nicht rückgängig gemacht werden.
+      confirm_message: Sind Sie sicher, dass Sie alle von diesem Agenten gesammelten
+        Erinnerungen löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.
       success:
         title: Erfolgreich
         message: Alle Agenten-Erinnerungen wurden erfolgreich gelöscht
       error:
         title: Löschen fehlgeschlagen
-        message: Fehler beim Löschen der Agenten-Erinnerungen. Bitte versuchen Sie es erneut.
-
+        message: Fehler beim Löschen der Agenten-Erinnerungen. Bitte versuchen Sie
+          es erneut.
 document:
   list:
     title: Dokumenttitel
@@ -378,7 +376,6 @@ document:
     number_of_pages: Anzahl der Seiten
     download: Download
     is_processing: Verarbeitung läuft
-
 knowledge:
   title: Wissensdatenbanken
   created_at: 'Erstellt:'
@@ -407,8 +404,9 @@ knowledge:
         label: Speicherort
         help: Ordner, in dem die Dokumente gespeichert werden sollen
       errors:
-        unsupported_file_type: 'Eine Datei hat einen nicht unterstützten Dateityp. Unterstützte Typen sind: {supportedTypes}
-          | {count} Dateien haben einen nicht unterstützten Dateityp. Unterstützte Typen sind: {supportedTypes}'
+        unsupported_file_type: 'Eine Datei hat einen nicht unterstützten Dateityp.
+          Unterstützte Typen sind: {supportedTypes} | {count} Dateien haben einen
+          nicht unterstützten Dateityp. Unterstützte Typen sind: {supportedTypes}'
       actions:
         upload: Hochladen
         cancel: Abbrechen
@@ -444,9 +442,11 @@ knowledge:
     folder_name:
       label: Sammlungsname
       placeholder: meine-sammlung
-      help: Nur alphanumerische Zeichen, Bindestriche (-) und Unterstriche (_) sind erlaubt
+      help: Nur alphanumerische Zeichen, Bindestriche (-) und Unterstriche (_) sind
+        erlaubt
       edit_help: Technischer Name der Sammlung
-      validation_error: Der Sammlungsname darf nur alphanumerische Zeichen, Bindestriche (-) und Unterstriche (_) enthalten
+      validation_error: Der Sammlungsname darf nur alphanumerische Zeichen, Bindestriche
+        (-) und Unterstriche (_) enthalten
     display_name:
       label: Anzeigename
       placeholder: Anzeigename
@@ -455,7 +455,6 @@ knowledge:
       label: Beschreibung
       placeholder: Beschreibung
       help: Beschreibung der Sammlung
-
 auth:
   renew:
     processing: Stille Token-Erneuerung wird verarbeitet...
@@ -464,7 +463,8 @@ auth:
     loggingIn: Sie werden angemeldet...
     loginError: Anmeldefehler
     redirectingToLogin: Weiterleitung zur Anmeldeseite...
-    genericError: Während der Anmeldung ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut.
+    genericError: Während der Anmeldung ist ein Fehler aufgetreten. Bitte versuchen
+      Sie es erneut.
   login:
     title: Anmelden
     description: Bitte melden Sie sich an, um auf die Anwendung zuzugreifen
@@ -474,18 +474,15 @@ auth:
     loginWithMicrosoft: Mit Microsoft anmelden
     customSolutions: Massgeschneiderte KI-Lösungen für Ihr Unternehmen
     logoAlt: Logo des Unternehmens
-
 timerange:
   1h: 1 Stunde
   24h: 1 Tag
   30d: 1 Monat
   365d: 1 Jahr
-
 chart:
   no_data: Für diesen Zeitraum sind keine Daten verfügbar.
   trending_up: Aufwärtstrend
   trending_down: Abwärtstrend
-
 dashboard:
   all_agents: Alle Agenten
   users: AI-Hub Benutzer
@@ -510,14 +507,14 @@ dashboard:
       label: In Slack/Teams fragen
     AgentInTheLoopRequestEvent:
       label: Delegierte Aufgaben
-
 evaluation:
   langfuse_link: Experimente ausführen
   dataset:
     title: Datensätze
     created_at: 'Erstellt:'
     updated_at: 'Aktualisiert am:'
-    create_description: Erstellen Sie einen neuen Datensatz, mit dem Sie die Leistung Ihrer Assistenten bewerten können!
+    create_description: Erstellen Sie einen neuen Datensatz, mit dem Sie die Leistung
+      Ihrer Assistenten bewerten können!
     name: Name
     description: Beschreibung
     cancel: Abbrechen
@@ -532,12 +529,12 @@ evaluation:
     answer_placeholder: Antwort
     add_button: Hinzufügen
     save_button: Datensatz speichern
-    save_confirmation: Datensatz speichern? Einmal hinzugefügt, können Sie Elemente nicht mehr entfernen.
+    save_confirmation: Datensatz speichern? Einmal hinzugefügt, können Sie Elemente
+      nicht mehr entfernen.
     cancel_button: Abbrechen
     save_action: Speichern
     saved_summary: Gespeichert
     saved_detail: Datensatz gespeichert
-
 role:
   title: Zugriffsrollen
   name: Name
@@ -566,22 +563,22 @@ role:
   pattern_help_wildcard: Alle Instanzen von MyAgent
   pattern_help_specific: Nur eine bestimmte Instanz
   create_dialog:
-    description: Erstellen Sie eine neue Rolle mit Zugriffsregeln. Um die neue Rolle Benutzern zuzuweisen, verwenden Sie bitte
-      Ihr AD.
+    description: Erstellen Sie eine neue Rolle mit Zugriffsregeln. Um die neue Rolle
+      Benutzern zuzuweisen, verwenden Sie bitte Ihr AD.
   remove_dialog:
     confirm: Sind Sie sicher?
-    explanation: Wenn Sie diese Rolle entfernen, verlieren Benutzer möglicherweise den Zugriff auf bestimmte Funktionen des
-      AI-Hubs.
+    explanation: Wenn Sie diese Rolle entfernen, verlieren Benutzer möglicherweise
+      den Zugriff auf bestimmte Funktionen des AI-Hubs.
     cancel: Abbrechen
     proceed: Trotzdem löschen
   role_deleted:
     summary: Rolle gelöscht
-    detail: Die Rolle wurde gelöscht. Benutzer mit dieser Rolle haben möglicherweise den Zugriff auf bestimmte Funktionen
-      verloren.
+    detail: Die Rolle wurde gelöscht. Benutzer mit dieser Rolle haben möglicherweise
+      den Zugriff auf bestimmte Funktionen verloren.
   role_saved:
     summary: Rolle gespeichert
-    detail: Rolle erfolgreich gespeichert, die neuen Zugriffsregeln treten sofort in Kraft.
-
+    detail: Rolle erfolgreich gespeichert, die neuen Zugriffsregeln treten sofort
+      in Kraft.
 usage:
   title: Nutzung
   calls_remaining: '{current} / {limit} Agentenaufrufe'
@@ -589,13 +586,11 @@ usage:
   resets_at: Zurücksetzung {time}
   limit_exceeded: Agentenaufruf-Limit erreicht
   limit_exceeded_detail: Bitte warten Sie bis {time} oder kontaktieren Sie Ihren Administrator
-
 period:
   1h: Pro Stunde
   1d: Pro Tag
   7d: Pro Woche
   1mo: Pro Monat
-
 notification:
   title: Benachrichtigungen
   no_unread_notifications: Keine ungelesenen Benachrichtigungen
@@ -626,11 +621,9 @@ notification:
     medium: Mittel
     high: Hoch
     critical: Kritisch
-
 bar:
   toggle_dark_mode: Dunkelmodus umschalten
   show_notifications: Benachrichtigungen anzeigen
-
 process:
   title: Prozesse
   overview:
@@ -669,8 +662,8 @@ process:
   delete:
     button: Löschen
     title: Prozess löschen
-    confirmMessage: Sind Sie sicher, dass Sie diese Prozessinstanz löschen möchten? Diese Aktion kann nicht rückgängig gemacht
-      werden.
+    confirmMessage: Sind Sie sicher, dass Sie diese Prozessinstanz löschen möchten?
+      Diese Aktion kann nicht rückgängig gemacht werden.
     success: Prozess erfolgreich gelöscht
     error: Fehler beim Löschen des Prozesses
   add_instance:
@@ -686,11 +679,9 @@ process:
       in_progress: In Bearbeitung
       done: Abgeschlossen
       steps: Fortschritt
-
 form:
   locale_input:
     translate_tooltip: In alle Sprachen übersetzen
-
 lib:
   vectorStore:
     label: Vektorspeicher
@@ -701,7 +692,6 @@ lib:
       label: Namensräume
       placeholder: Namensräume auswählen (leer = alle)
       help: Leer lassen, um alle Namensräume zu durchsuchen
-
 memory:
   title: Erinnerungen
   graph:
@@ -720,7 +710,8 @@ memory:
       message: Erinnerung erfolgreich aktualisiert
     error:
       title: Aktualisierung fehlgeschlagen
-      message: Erinnerung konnte nicht aktualisiert werden. Bitte versuchen Sie es erneut.
+      message: Erinnerung konnte nicht aktualisiert werden. Bitte versuchen Sie es
+        erneut.
   delete:
     success:
       title: Erfolg
@@ -735,8 +726,8 @@ memory:
     cancel_button: Abbrechen
     delete_button: Löschen
     delete_confirm_header: Erinnerung löschen
-    delete_confirm_message: Sind Sie sicher, dass Sie diese Erinnerung löschen möchten? Diese Aktion kann nicht rückgängig
-      gemacht werden.
+    delete_confirm_message: Sind Sie sicher, dass Sie diese Erinnerung löschen möchten?
+      Diese Aktion kann nicht rückgängig gemacht werden.
     validation_error: Validierungsfehler
     validation_empty: Der Erinnerungsinhalt darf nicht leer sein
   table:
@@ -752,15 +743,15 @@ memory:
   delete_all:
     button: Alle löschen
     confirm_header: Alle Erinnerungen löschen
-    confirm_message: Sind Sie sicher, dass Sie alle Erinnerungen löschen möchten? Diese Aktion kann nicht rückgängig gemacht
-      werden.
+    confirm_message: Sind Sie sicher, dass Sie alle Erinnerungen löschen möchten?
+      Diese Aktion kann nicht rückgängig gemacht werden.
     success:
       title: Erfolg
       message: Alle Erinnerungen erfolgreich gelöscht
     error:
       title: Löschen fehlgeschlagen
-      message: Alle Erinnerungen konnten nicht gelöscht werden. Bitte versuchen Sie es erneut.
-
+      message: Alle Erinnerungen konnten nicht gelöscht werden. Bitte versuchen Sie
+        es erneut.
 openwebui:
   memories:
     title: Agent-Erinnerungen

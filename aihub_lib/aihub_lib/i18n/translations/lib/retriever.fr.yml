@@ -1,7 +1,9 @@
+---
 config:
   index_namespaces:
     label: Espaces de noms d'index
-    help: Liste de namespaces séparés par des virgules. Laissez vide pour récupérer de tous les namespaces.
+    help: Liste de namespaces séparés par des virgules. Laissez vide pour récupérer
+      de tous les namespaces.
   retrieve_k:
     label: Documents à récupérer
     help: Nombre de documents à récupérer du magasin de vecteurs.

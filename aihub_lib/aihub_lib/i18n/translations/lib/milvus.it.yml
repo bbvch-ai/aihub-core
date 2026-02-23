@@ -1,8 +1,8 @@
+---
 config:
   collection_name:
     label: Nome della collezione
     help: Nome della collezione Milvus per memorizzare i vettori.
-
 base:
   dimensions:
     label: Dimensioni di embedding

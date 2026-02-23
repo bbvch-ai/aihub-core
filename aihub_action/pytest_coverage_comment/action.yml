@@ -1,33 +1,32 @@
+---
 name: Pytest Coverage Comment
 description: Comments on the PR with the coverage report
-
 inputs:
   working_directory:
     description: Working directory for the pytest coverage report
     required: true
-
 runs:
   using: composite
   steps:
-  - name: Checkout repository
-    uses: actions/checkout@v4
-  - name: Download pytest reports
-    uses: actions/download-artifact@v4
-    with:
-      name: ${{ inputs.working_directory }}-pytest-report
-      path: ${{ inputs.working_directory }}
-  - name: Download coverage reports
-    uses: actions/download-artifact@v4
-    with:
-      name: ${{ inputs.working_directory }}-coverage-report
-      path: ${{ inputs.working_directory }}
-  - name: Pytest coverage comment
-    uses: MishaKav/pytest-coverage-comment@main
-    with:
-      unique-id-for-comment: ${{ inputs.working_directory }}
-      junitxml-path: ${{ inputs.working_directory }}/pytest.xml
-      pytest-xml-coverage-path: ${{ inputs.working_directory }}/coverage.xml
-      coverage-path-prefix: ${{ inputs.working_directory }}
-      title: Coverage Report for ${{ inputs.working_directory }}
-      default-branch: main
-      report-only-changed-files: true
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    - name: Download pytest reports
+      uses: actions/download-artifact@v4
+      with:
+        name: ${{ inputs.working_directory }}-pytest-report
+        path: ${{ inputs.working_directory }}
+    - name: Download coverage reports
+      uses: actions/download-artifact@v4
+      with:
+        name: ${{ inputs.working_directory }}-coverage-report
+        path: ${{ inputs.working_directory }}
+    - name: Pytest coverage comment
+      uses: MishaKav/pytest-coverage-comment@main
+      with:
+        unique-id-for-comment: ${{ inputs.working_directory }}
+        junitxml-path: ${{ inputs.working_directory }}/pytest.xml
+        pytest-xml-coverage-path: ${{ inputs.working_directory }}/coverage.xml
+        coverage-path-prefix: ${{ inputs.working_directory }}
+        title: Coverage Report for ${{ inputs.working_directory }}
+        default-branch: main
+        report-only-changed-files: true

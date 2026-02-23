@@ -1,7 +1,8 @@
+---
 metadata:
   name: Agente Coordinatore di Esperti
-  description: Agente autonomo che coordina con esperti umani per raccogliere ed estrarre conoscenze specializzate
-
+  description: Agente autonomo che coordina con esperti umani per raccogliere ed estrarre
+    conoscenze specializzate
 config:
   channel_type:
     label: Tipo di canale
@@ -12,11 +13,11 @@ config:
     label: Loop massimi
   insight_namespace:
     label: Namespace insights
-
 routes:
-  answer_sufficient: L'esperto ha risposto alla domanda. Scegli questo se l'esperto ha fornito QUALSIASI risposta diretta.
-  answer_insufficient: L'esperto NON ha risposto. Scegli questo SOLO se l'esperto ha detto 'Non lo so' o ha rifiutato di rispondere.
-
+  answer_sufficient: L'esperto ha risposto alla domanda. Scegli questo se l'esperto
+    ha fornito QUALSIASI risposta diretta.
+  answer_insufficient: L'esperto NON ha risposto. Scegli questo SOLO se l'esperto
+    ha detto 'Non lo so' o ha rifiutato di rispondere.
 thoughts:
   asking_question: "Porre una domanda all'esperto: '%{question}'."
   expert_responded: "L'esperto ha risposto: '%{response}'."
@@ -24,14 +25,15 @@ thoughts:
   answer_sufficient: La risposta dell'esperto è sufficiente.
   max_questions_reached: Raggiunto il numero massimo di domande di follow-up.
   returning_insufficient: Ritorno all'utente con una risposta insufficiente.
-  answer_not_sufficient: La risposta non è sufficiente, formulazione di una domanda di follow-up.
-
-follow_up_question: "All'esperto è stato chiesto: \"{{ question }}\"\n\nLa sua risposta:\n{% for message in chat_history %}\n\
-  {% if message.role.value == 'user' %}\n{% for block in message.blocks %}\n{% if block.block_type == 'text' %}\n{{ block.text }}\n\
-  {% endif %}\n{% endfor %}\n{% endif %}\n{% endfor %}\n\nL'esperto ha detto che non sa, non ha risposto, o ha risposto solo\
-  \ a parte della domanda.\nChiedi le informazioni specifiche mancanti. Sii breve e cortese. Chiedi solo ciò che è stato originariamente\
+  answer_not_sufficient: La risposta non è sufficiente, formulazione di una domanda
+    di follow-up.
+follow_up_question: "All'esperto è stato chiesto: \"{{ question }}\"\n\nLa sua risposta:\n\
+  {% for message in chat_history %}\n{% if message.role.value == 'user' %}\n{% for\
+  \ block in message.blocks %}\n{% if block.block_type == 'text' %}\n{{ block.text }}\n\
+  {% endif %}\n{% endfor %}\n{% endif %}\n{% endfor %}\n\nL'esperto ha detto che non\
+  \ sa, non ha risposto, o ha risposto solo a parte della domanda.\nChiedi le informazioni\
+  \ specifiche mancanti. Sii breve e cortese. Chiedi solo ciò che è stato originariamente\
   \ richiesto ma non ancora risposto.\n"
-
 steps:
   invoke_expert:
     name: Invoca esperto
@@ -44,4 +46,5 @@ steps:
     description: Verifica se l'esperto ha risposto sufficientemente alla domanda.
   follow_up_question:
     name: Domanda di follow-up
-    description: Pone una domanda di follow-up all'esperto poiché la risposta non è ancora sufficiente.
+    description: Pone una domanda di follow-up all'esperto poiché la risposta non
+      è ancora sufficiente.

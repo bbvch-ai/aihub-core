@@ -1,3 +1,4 @@
+---
 retrieve_prev_next:
   num_nodes:
     label: Numero di nodi
@@ -5,8 +6,8 @@ retrieve_prev_next:
   mode:
     label: Modalità di recupero
     help: Se recuperare i nodi precedenti, successivi o entrambi.
-
 retrieve_summaries:
   max_parent_levels:
     label: Livelli genitore max.
-    help: Numero massimo di livelli genitore da attraversare durante il recupero dei nodi di riepilogo.
+    help: Numero massimo di livelli genitore da attraversare durante il recupero dei
+      nodi di riepilogo.

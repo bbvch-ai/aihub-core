@@ -1,9 +1,9 @@
+---
 periods:
   1h: hour
   1d: day
   7d: week
   1mo: month
-
 weekdays:
   monday: Monday
   tuesday: Tuesday
@@ -12,11 +12,9 @@ weekdays:
   friday: Friday
   saturday: Saturday
   sunday: Sunday
-
 scope:
   all_agents: all agents
   all_resources: all resources
-
 messages:
   limit_warning: 'Usage limit warning: %{remaining} calls remaining'
   limit_exceeded: Usage limit exceeded

@@ -1,6 +1,6 @@
+---
 test: Ceci est un test
 welcome: Bienvenue sur bbv ai-hub
-
 common:
   actions:
     save: Enregistrer
@@ -11,7 +11,6 @@ common:
   loading: Chargement...
   selectModel: Sélectionner un modèle
   selectDatabase: Sélectionner une base de données
-
 models:
   title: Modèles
   error: Erreur lors du chargement des modèles
@@ -65,13 +64,11 @@ models:
     supportsEmbeddingImageInput: Entrée d'image d'embedding
     supportedParams: Paramètres OpenAI supportés
     notSpecified: Non spécifié
-
 languages:
   en: Anglais
   de: Allemand
   it: Italien
   fr: Français
-
 http_error:
   code:
     # 4xx Client Errors
@@ -88,7 +85,6 @@ http_error:
     502: Une erreur de serveur s'est produite. Veuillez réessayer.
     503: Notre service est temporairement indisponible.
     504: Un serveur ne répond pas. Veuillez réessayer.
-
 user:
   title: Utilisateurs
   logout: Déconnexion
@@ -99,7 +95,6 @@ user:
     avatar: Avatar
     roles: Rôles
     last_accessed: Dernier accès
-
 time_ago:
   last_hour: Dernière heure
   last_day: Dernier jour
@@ -107,7 +102,6 @@ time_ago:
   last_month: Le mois dernier
   last_year: L''année dernière
   long_time_ago: Il y a longtemps
-
 thread:
   title: Interactions
   users: Utilisateurs
@@ -152,19 +146,17 @@ thread:
     description: Mémoires collectées pendant {threadName}
     delete_all:
       confirm_header: Supprimer toutes les mémoires du fil
-      confirm_message: Êtes-vous sûr de vouloir supprimer toutes les mémoires de ce fil de discussion ? Cette action ne peut
-        pas être annulée.
+      confirm_message: Êtes-vous sûr de vouloir supprimer toutes les mémoires de ce
+        fil de discussion ? Cette action ne peut pas être annulée.
       success:
         title: Succès
         message: Toutes les mémoires du fil ont été supprimées avec succès
       error:
         title: Échec de la suppression
         message: Impossible de supprimer les mémoires du fil. Veuillez réessayer.
-
 chat:
   assistant: Assistant
   document: Document
-
 event:
   list:
     firstInteraction: 'Première interaction:'
@@ -187,8 +179,8 @@ event:
     assistant: Assistant
     system: Système
     user: Utilisateur
-    description: L'historique de chat a été tronqué en fonction des limites de jetons pour rester dans les contraintes du
-      modèle
+    description: L'historique de chat a été tronqué en fonction des limites de jetons
+      pour rester dans les contraintes du modèle
   reranker:
     topDocuments: 'Top {count} documents les plus pertinents:'
     query: Requête de recherche
@@ -206,7 +198,8 @@ event:
     sourceDocument: '{count} document source | {count} documents sources'
     contentChunk: '{count} fragment de contenu | {count} fragments de contenu'
     noChunksFound: Aucun fragment trouvé
-    noChunksFoundDescription: La recherche de récupération n'a trouvé aucun fragment de contenu pertinent.
+    noChunksFoundDescription: La recherche de récupération n'a trouvé aucun fragment
+      de contenu pertinent.
   retrieveMemory:
     title: Mémoire récupérée
     memories: Mémoires
@@ -223,8 +216,10 @@ event:
     relationChanges: Modifications des relations
     noChanges: Aucune modification
   addMemoryToChatHistory:
-    summary: "{count} message de mémoire ajouté à l'historique | {count} messages de mémoire ajoutés à l'historique"
-    description: L'historique de chat a été enrichi avec des mémoires pertinentes des interactions précédentes
+    summary: "{count} message de mémoire ajouté à l'historique | {count} messages\
+      \ de mémoire ajoutés à l'historique"
+    description: L'historique de chat a été enrichi avec des mémoires pertinentes
+      des interactions précédentes
     assistant: Assistant
     system: Système
     user: Utilisateur
@@ -232,8 +227,8 @@ event:
     summary: Question affinée et condensée
     condensedQuestion: Question Condensée
     user: Utilisateur
-    description: La question originale a été reformulée pour être plus spécifique et contextuelle afin d'améliorer les résultats
-      de recherche
+    description: La question originale a été reformulée pour être plus spécifique
+      et contextuelle afin d'améliorer les résultats de recherche
   statistics:
     charts:
       agentInvocations: Invocations d'agents
@@ -246,7 +241,6 @@ event:
       delegations: Délégations
       delegatedTaskAgentInTheLoop: Tâche déléguée (Agent dans la boucle)
       allEvents: Tous les événements
-
 costs:
   table:
     count: Nombre
@@ -256,14 +250,12 @@ costs:
     embedding: Intégration
     total: Total
     currency: CHF
-
 service:
   selection:
     title: Services
     description: Voici tous les services que vous avez activés
     search: Rechercher
     button: Rechercher
-
 agent:
   title: Agents
   can_chat: Peut chatter
@@ -326,10 +318,12 @@ agent:
     agentId: ID de l'agent
     agentIdPlaceholder: mon-nouvel-agent
     agentIdHelp: Identifiant unique (lettres minuscules, chiffres, tirets, underscores)
-    agentIdInvalid: Seules les lettres minuscules, les chiffres, les tirets et les underscores sont autorisés
+    agentIdInvalid: Seules les lettres minuscules, les chiffres, les tirets et les
+      underscores sont autorisés
     agentIdTooLong: L'ID de l'agent doit comporter au maximum 100 caractères
     configuration: Configuration
-    noAgentClasses: Aucun type d'agent disponible. Assurez-vous qu'au moins un agent est en cours d'exécution.
+    noAgentClasses: Aucun type d'agent disponible. Assurez-vous qu'au moins un agent
+      est en cours d'exécution.
     submit: Créer l'agent
     success: Agent créé avec succès
     error: Échec de la création de l'agent
@@ -339,10 +333,12 @@ agent:
     button: Supprimer
     title: Supprimer l'agent
     confirm: Êtes-vous sûr de vouloir supprimer cet agent ?
-    confirmMessage: Cette action est irréversible. La configuration de l'agent sera définitivement supprimée.
+    confirmMessage: Cette action est irréversible. La configuration de l'agent sera
+      définitivement supprimée.
     success: Agent supprimé avec succès
     error: Échec de la suppression de l'agent
-    cannotDeleteDefault: Les configurations d'agents par défaut ne peuvent pas être supprimées
+    cannotDeleteDefault: Les configurations d'agents par défaut ne peuvent pas être
+      supprimées
   add_instance:
     title: Ajouter un agent
     description: Créer une nouvelle instance d'agent
@@ -359,15 +355,14 @@ agent:
     description: Mémoires collectées par {agentName} à votre sujet
     delete_all:
       confirm_header: Supprimer toutes les mémoires de l'agent
-      confirm_message: Êtes-vous sûr de vouloir supprimer toutes les mémoires collectées par cet agent ? Cette action ne peut
-        pas être annulée.
+      confirm_message: Êtes-vous sûr de vouloir supprimer toutes les mémoires collectées
+        par cet agent ? Cette action ne peut pas être annulée.
       success:
         title: Succès
         message: Toutes les mémoires de l'agent ont été supprimées avec succès
       error:
         title: Échec de la suppression
         message: Échec de la suppression des mémoires de l'agent. Veuillez réessayer.
-
 document:
   list:
     title: Titre du document
@@ -378,7 +373,6 @@ document:
     number_of_pages: Nombre de pages
     download: Télécharger
     is_processing: Traitement en cours
-
 knowledge:
   title: Bases de connaissances
   created_at: 'Créé le:'
@@ -391,11 +385,13 @@ knowledge:
       nodes: Morceaux
       summary: Résumés
   original:
-    not_available: La vue du document original est uniquement disponible pour les fichiers PDF.
+    not_available: La vue du document original est uniquement disponible pour les
+      fichiers PDF.
     load_error: Échec du chargement du document original.
     view_button: Voir l'original
     open_new_tab: Ouvrir dans un nouvel onglet
-    click_to_view: Cliquez sur le bouton ci-dessous pour afficher le document PDF original.
+    click_to_view: Cliquez sur le bouton ci-dessous pour afficher le document PDF
+      original.
   documents:
     title: Documents
     search:
@@ -407,8 +403,9 @@ knowledge:
         label: Emplacement cible
         help: Dossier où les documents doivent être stockés
       errors:
-        unsupported_file_type: "Un fichier est d'un type non pris en charge. Les types pris en charge sont : {supportedTypes}\
-          \ | {count} fichiers sont d'un type non pris en charge. Les types pris en charge sont : {supportedTypes}"
+        unsupported_file_type: "Un fichier est d'un type non pris en charge. Les types\
+          \ pris en charge sont : {supportedTypes} | {count} fichiers sont d'un type\
+          \ non pris en charge. Les types pris en charge sont : {supportedTypes}"
       actions:
         upload: Télécharger
         cancel: Annuler
@@ -444,10 +441,11 @@ knowledge:
     folder_name:
       label: Nom de la collection
       placeholder: ma-collection
-      help: Seuls les caractères alphanumériques, tirets (-) et underscores (_) sont autorisés
+      help: Seuls les caractères alphanumériques, tirets (-) et underscores (_) sont
+        autorisés
       edit_help: Nom technique de la collection
-      validation_error: Le nom de la collection ne peut contenir que des caractères alphanumériques, des tirets (-) et des
-        underscores (_)
+      validation_error: Le nom de la collection ne peut contenir que des caractères
+        alphanumériques, des tirets (-) et des underscores (_)
     display_name:
       label: Nom d'affichage
       placeholder: Nom d'affichage
@@ -456,7 +454,6 @@ knowledge:
       label: Description
       placeholder: Description
       help: Description de la collection
-
 auth:
   renew:
     processing: Traitement du renouvellement silencieux du jeton...
@@ -475,18 +472,15 @@ auth:
     loginWithMicrosoft: Se connecter avec Microsoft
     customSolutions: Solutions d'IA personnalisées pour votre entreprise
     logoAlt: Logo de l'entreprise
-
 timerange:
   1h: 1 Heure
   24h: 1 Jour
   30d: 1 Mois
   365d: 1 An
-
 chart:
   no_data: Aucune donnée disponible pour cette période.
   trending_up: Tendance à la hausse
   trending_down: Tendance à la baisse
-
 dashboard:
   all_agents: Tous les agents
   users: Utilisateurs AI-Hub
@@ -511,14 +505,14 @@ dashboard:
       label: Demander dans Slack/Teams
     AgentInTheLoopRequestEvent:
       label: Tâches déléguées
-
 evaluation:
   langfuse_link: Lancer des expériences
   dataset:
     title: Jeux de données
     created_at: 'Créé le:'
     updated_at: 'Mis à jour le:'
-    create_description: Créez un nouveau jeu de données que vous pouvez utiliser pour évaluer les performances de vos Assistants!
+    create_description: Créez un nouveau jeu de données que vous pouvez utiliser pour
+      évaluer les performances de vos Assistants!
     name: Nom
     description: Description
     cancel: Annuler
@@ -533,12 +527,12 @@ evaluation:
     answer_placeholder: Réponse
     add_button: Ajouter
     save_button: Enregistrer le jeu de données
-    save_confirmation: Enregistrer le jeu de données ? Une fois ajoutés, vous ne pourrez plus supprimer les éléments.
+    save_confirmation: Enregistrer le jeu de données ? Une fois ajoutés, vous ne pourrez
+      plus supprimer les éléments.
     cancel_button: Annuler
     save_action: Enregistrer
     saved_summary: Enregistré
     saved_detail: Jeu de données enregistré
-
 role:
   title: Rôles d'accès
   name: Nom
@@ -557,7 +551,8 @@ role:
   calls_per: appels
   unlimited: Illimité
   no_access_rules: Aucune règle d'accès définie
-  access_rules_help_intro: "Les règles hiérarchiques contrôlent l'accès aux ressources :"
+  access_rules_help_intro: "Les règles hiérarchiques contrôlent l'accès aux ressources\
+    \ :"
   access_rules_help_all_agents: Tous les agents
   access_rules_help_agent_instances: Toutes les instances de MyAgent
   access_rules_help_service: Service Knowledge
@@ -567,21 +562,22 @@ role:
   pattern_help_wildcard: Toutes les instances de MyAgent
   pattern_help_specific: Uniquement une instance spécifique
   create_dialog:
-    description: Créez un nouveau rôle avec des règles d'accès. Pour attribuer le nouveau rôle aux utilisateurs, veuillez
-      utiliser votre AD.
+    description: Créez un nouveau rôle avec des règles d'accès. Pour attribuer le
+      nouveau rôle aux utilisateurs, veuillez utiliser votre AD.
   remove_dialog:
     confirm: Êtes-vous sûr?
-    explanation: Si vous supprimez ce rôle, les utilisateurs risquent de perdre l'accès à certaines fonctionnalités du hub
-      d'IA.
+    explanation: Si vous supprimez ce rôle, les utilisateurs risquent de perdre l'accès
+      à certaines fonctionnalités du hub d'IA.
     cancel: Annuler
     proceed: Supprimer quand même
   role_deleted:
     summary: Rôle supprimé
-    detail: Le rôle a été supprimé. Les utilisateurs avec ce rôle peuvent avoir perdu l'accès à certaines fonctionnalités.
+    detail: Le rôle a été supprimé. Les utilisateurs avec ce rôle peuvent avoir perdu
+      l'accès à certaines fonctionnalités.
   role_saved:
     summary: Rôle enregistré
-    detail: Rôle enregistré avec succès, les nouvelles règles d'accès prennent effet immédiatement.
-
+    detail: Rôle enregistré avec succès, les nouvelles règles d'accès prennent effet
+      immédiatement.
 usage:
   title: Utilisation
   calls_remaining: '{current} / {limit} appels agent'
@@ -589,13 +585,11 @@ usage:
   resets_at: Réinitialisation {time}
   limit_exceeded: Limite d'appels agent atteinte
   limit_exceeded_detail: Veuillez patienter jusqu'à {time} ou contacter votre administrateur
-
 period:
   1h: Par heure
   1d: Par jour
   7d: Par semaine
   1mo: Par mois
-
 notification:
   title: Notifications
   no_unread_notifications: Aucune notification non lue
@@ -626,11 +620,9 @@ notification:
     medium: Moyenne
     high: Élevée
     critical: Critique
-
 bar:
   toggle_dark_mode: Basculer le mode sombre
   show_notifications: Afficher les notifications
-
 process:
   title: Processus
   overview:
@@ -669,7 +661,8 @@ process:
   delete:
     button: Supprimer
     title: Supprimer le processus
-    confirmMessage: Êtes-vous sûr de vouloir supprimer cette instance de processus ? Cette action est irréversible.
+    confirmMessage: Êtes-vous sûr de vouloir supprimer cette instance de processus
+      ? Cette action est irréversible.
     success: Processus supprimé avec succès
     error: Échec de la suppression du processus
   add_instance:
@@ -685,11 +678,9 @@ process:
       in_progress: En cours
       done: Terminé
       steps: Progression
-
 form:
   locale_input:
     translate_tooltip: Traduire dans toutes les langues
-
 lib:
   vectorStore:
     label: Stockage vectoriel
@@ -700,7 +691,6 @@ lib:
       label: Espaces de noms
       placeholder: Sélectionner les espaces de noms (vide = tous)
       help: Laisser vide pour rechercher tous les espaces de noms
-
 memory:
   title: Souvenirs
   graph:
@@ -734,7 +724,8 @@ memory:
     cancel_button: Annuler
     delete_button: Supprimer
     delete_confirm_header: Supprimer le souvenir
-    delete_confirm_message: Êtes-vous sûr de vouloir supprimer ce souvenir ? Cette action est irréversible.
+    delete_confirm_message: Êtes-vous sûr de vouloir supprimer ce souvenir ? Cette
+      action est irréversible.
     validation_error: Erreur de validation
     validation_empty: Le contenu du souvenir ne peut pas être vide
   table:
@@ -750,14 +741,14 @@ memory:
   delete_all:
     button: Tout supprimer
     confirm_header: Supprimer tous les souvenirs
-    confirm_message: Êtes-vous sûr de vouloir supprimer tous les souvenirs ? Cette action est irréversible.
+    confirm_message: Êtes-vous sûr de vouloir supprimer tous les souvenirs ? Cette
+      action est irréversible.
     success:
       title: Succès
       message: Tous les souvenirs ont été supprimés avec succès
     error:
       title: Suppression échouée
       message: Échec de la suppression de tous les souvenirs. Veuillez réessayer.
-
 openwebui:
   memories:
     title: Souvenirs de l'Agent

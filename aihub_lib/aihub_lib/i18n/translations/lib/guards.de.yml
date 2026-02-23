@@ -1,3 +1,4 @@
+---
 agent_description_guard:
   prompt: |
     Die Beschreibung eines Agenten lautet wiefolgt:
@@ -29,7 +30,6 @@ agent_description_guard:
     true wenn die Antwort gegeben werden kann, false wenn nicht
   docstring: |
     Datenmodel für die Entscheidung ob eine Antwort gegeben werden kann.
-
 few_shot_guard:
   prompt: |
     Sie erhalten mehrere Beispiele, die zeigen, welche Benutzeranfragen erlaubt sind und welche nicht. Jede Beispielantwort besteht aus zwei Schlüsseln:
@@ -62,7 +62,6 @@ few_shot_guard:
     Begründung für die getroffene Entscheidung.
   docstring: |
     Datenmodell für die Entscheidung, ob die Anfrage akzeptabel ist oder nicht.
-
 context_sufficient_guard:
   doc_string: |
     Ergebnis der Auswertung, ob der Kontext ausreicht, um die Benutzeranfrage zu beantworten.
@@ -108,7 +107,6 @@ context_sufficient_guard:
     true, wenn der Kontext für die Beantwortung der Benutzeranfrage ausreicht, false, wenn er nicht ausreicht (keine zusätzlichen Sprünge verfügbar).
   docstring_no_hops: |
     Ergebnis der Auswertung, ob der Kontext ausreicht, um die Benutzeranfrage zu beantworten (keine zusätzlichen Sprünge verfügbar).
-
 sensitive_info_guard:
   prompt: |
     Sie sind ein Sicherheitswächter, der für den Schutz sensibler Unternehmensinformationen verantwortlich ist. Ihre Aufgabe ist es, die folgende Antwort zu analysieren und zu bestimmen, ob sie sensible Informationen enthält, die nicht extern geteilt werden sollten.
@@ -137,14 +135,14 @@ sensitive_info_guard:
     Die überarbeitete Antwort mit entfernten oder geschwärzten sensiblen Informationen, falls zutreffend.
   docstring: |
     Ergebnis der Analyse einer Antwort auf sensible Informationen, die nicht extern geteilt werden sollten.
-
 few_shot_example:
   user:
     label: Benutzernachricht
     help: Eine beispielhafte Benutzeranfrage oder Nachricht, die ausgewertet wird.
   success:
     label: Anfrage akzeptieren
-    help: Aktivieren, wenn dieses Beispiel akzeptiert werden soll, deaktivieren wenn abgelehnt.
+    help: Aktivieren, wenn dieses Beispiel akzeptiert werden soll, deaktivieren wenn
+      abgelehnt.
   reason:
     label: Grund
     help: Erklärung, warum die Anfrage akzeptiert oder abgelehnt wird.

@@ -1,11 +1,11 @@
+---
 metadata:
   name: Retrieval Agent
-  description: Vereinfachter RAG-Agent zum Abrufen relevanter Informationen aus einer Wissensbasis
-
+  description: Vereinfachter RAG-Agent zum Abrufen relevanter Informationen aus einer
+    Wissensbasis
 config:
   context_prompt:
     label: Kontextprompt
-
 steps:
   retrieve_nodes:
     name: Knoten abrufen
@@ -15,4 +15,5 @@ steps:
     description: Ordnet die abgerufenen Knoten nach ihren Quelldokumenten.
   stop:
     name: Stopp-Schritt
-    description: Stoppt den Agenten und gibt die geordneten Knoten als Kontextnachrichten zurück.
+    description: Stoppt den Agenten und gibt die geordneten Knoten als Kontextnachrichten
+      zurück.

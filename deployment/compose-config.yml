@@ -1,3 +1,4 @@
+---
 # ===================================================================
 # Single Source of Truth for Docker Compose Generation (v2)
 # ===================================================================
@@ -13,7 +14,6 @@
 global:
   registry_prefix: ghcr.io/bbvch-ai/aihub-core/
   volume_root: ${VOLUME_ROOT:-./.docker-volumes}
-
 # -------------------------------------------------------------------
 # Centralized Image Tag Management
 # Defines which services exist in which stage and their versions.

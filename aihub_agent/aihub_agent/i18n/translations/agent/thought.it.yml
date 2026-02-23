@@ -1,3 +1,4 @@
+---
 condense_question: Formula la domanda nel contesto della conversazione
 write_answer_based_on_information: Scrivi una risposta basata sulle informazioni
 write_answer_based_on_few_shot_examples: Scrivi una risposta basata su esempi predefiniti
@@ -5,7 +6,8 @@ searching_knowledge: Ricerca di conoscenze
 retrieving_from: Recupero da %{source}
 preparing_knowledge: Elaborazione delle conoscenze
 test: Test
-no_context_sufficiency_check: Non è stato configurato ed eseguito alcun controllo di sufficienza del contesto.
+no_context_sufficiency_check: Non è stato configurato ed eseguito alcun controllo
+  di sufficienza del contesto.
 no_few_shot_examples: Non sono stati configurati e utilizzati esempi few-shot.
 reranking_results: Riordinamento dei risultati recuperati per una migliore rilevanza
 context_sufficient: Trovate informazioni sufficienti per rispondere alla domanda

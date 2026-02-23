@@ -1,223 +1,209 @@
+---
 display_event:
   name: Anzeigeereignis
-  description: Ein Ereignis, das dem Benutzer Informationen anzeigt, ohne den Arbeitsablauf zu beeinflussen.
-
+  description: Ein Ereignis, das dem Benutzer Informationen anzeigt, ohne den Arbeitsablauf
+    zu beeinflussen.
 aitl_exception_event:
   name: Fehler bei Aufgabendelegation
-  description: Ein anderer Agent, an den eine Aufgabe delegiert wurde, hat einen Fehler gemeldet und konnte die Anfrage nicht
-    bearbeiten.
-
+  description: Ein anderer Agent, an den eine Aufgabe delegiert wurde, hat einen Fehler
+    gemeldet und konnte die Anfrage nicht bearbeiten.
 aitl_request_event:
   name: Delegation an anderen Agenten
-  description: Der Agent hat eine Aufgabe an einen anderen Agenten weitergeleitet, um von dessen Spezialwissen zu profitieren.
-
+  description: Der Agent hat eine Aufgabe an einen anderen Agenten weitergeleitet,
+    um von dessen Spezialwissen zu profitieren.
 aitl_response_event:
   name: Antwort des delegierten Agenten
-  description: Der andere Agent hat die ihm zugewiesene Aufgabe erfolgreich bearbeitet und eine Antwort zurückgesendet.
-
+  description: Der andere Agent hat die ihm zugewiesene Aufgabe erfolgreich bearbeitet
+    und eine Antwort zurückgesendet.
 bitl_request_event:
   name: Anfrage an Agent
-  description: Eine Anfrage wurde an einen spezialisierten Agent weitergeleitet, um eine bestimmte Aufgabe zu erledigen.
-
+  description: Eine Anfrage wurde an einen spezialisierten Agent weitergeleitet, um
+    eine bestimmte Aufgabe zu erledigen.
 bitl_response_event:
   name: Antwort vom Agent
-  description: Der spezialisierte Agent hat die Anfrage bearbeitet und eine Antwort zurückgesendet.
-
+  description: Der spezialisierte Agent hat die Anfrage bearbeitet und eine Antwort
+    zurückgesendet.
 limit_chat_history_event:
   name: Chatverlauf begrenzt
-  description: Der Chatverlauf wurde aus Effizienzgründen gekürzt, wobei nur die relevantesten Teile beibehalten wurden.
-
+  description: Der Chatverlauf wurde aus Effizienzgründen gekürzt, wobei nur die relevantesten
+    Teile beibehalten wurden.
 start_event:
   name: Prozess gestartet
   description: Ein neuer Prozess oder eine neue Aufgabe wurde gestartet.
-
 stop_event:
   name: Prozess beendet
-  description: Der Agent hat seine Aufgabe abgeschlossen und gibt das Wort zurück an den Benutzer.
-
+  description: Der Agent hat seine Aufgabe abgeschlossen und gibt das Wort zurück
+    an den Benutzer.
 cost_event:
   name: Kostenübersicht
   description: Eine Übersicht der entstandenen Kosten für die durchgeführten Operationen.
-
 llm_cost_event:
   name: Sprachmodell-Kosten
-  description: Bei der Interaktion mit dem Sprachmodell sind Kosten entstanden, die hier aufgelistet werden.
-
+  description: Bei der Interaktion mit dem Sprachmodell sind Kosten entstanden, die
+    hier aufgelistet werden.
 chunk_event:
   name: Teilantwort
-  description: Der Agent hat einen Teil der Antwort generiert und an den Benutzer gesendet, der bereits angezeigt wird.
-
+  description: Der Agent hat einen Teil der Antwort generiert und an den Benutzer
+    gesendet, der bereits angezeigt wird.
 thought_event:
   name: Gedankengang
-  description: Der Agent teilt seinen internen Gedankenprozess mit, der ihm hilft, die Aufgabe zu verstehen und zu lösen.
-
+  description: Der Agent teilt seinen internen Gedankenprozess mit, der ihm hilft,
+    die Aufgabe zu verstehen und zu lösen.
 guard_accept_event:
   name: Anfrage akzeptiert
-  description: Die Anfrage hat alle Sicherheitsprüfungen bestanden und darf fortgesetzt werden.
-
+  description: Die Anfrage hat alle Sicherheitsprüfungen bestanden und darf fortgesetzt
+    werden.
 guard_rejection_event:
   name: Anfrage abgelehnt
-  description: Die Anfrage wurde aus Sicherheitsgründen oder wegen Richtlinienverstössen abgelehnt.
-
+  description: Die Anfrage wurde aus Sicherheitsgründen oder wegen Richtlinienverstössen
+    abgelehnt.
 few_shot_guard_accept_event:
   name: Few-Shot-Prüfung bestanden
-  description: Die Anfrage entspricht den Mustern aus Few-Shot-Beispielen und darf fortgesetzt werden.
-
+  description: Die Anfrage entspricht den Mustern aus Few-Shot-Beispielen und darf
+    fortgesetzt werden.
 few_shot_guard_reject_event:
   name: Few-Shot-Prüfung nicht bestanden
-  description: Die Anfrage entspricht nicht den Mustern aus Few-Shot-Beispielen und wird blockiert.
-
+  description: Die Anfrage entspricht nicht den Mustern aus Few-Shot-Beispielen und
+    wird blockiert.
 right_agent_accept_event:
   name: Richtiger Agent gewählt
   description: Der korrekte Agent wurde für diese spezifische Aufgabe identifiziert.
-
 wrong_agent_reject_event:
   name: Falscher Agent gewählt
   description: Der gewählte Agent ist nicht geeignet für diese spezifische Aufgabe.
-
 agent_suitability_accept_event:
   name: Agent geeignet für Aufgabe
-  description: Die Fähigkeiten des Agenten entsprechen der Benutzeranfrage und können die Aufgabe bewältigen.
-
+  description: Die Fähigkeiten des Agenten entsprechen der Benutzeranfrage und können
+    die Aufgabe bewältigen.
 agent_suitability_reject_event:
   name: Agent ungeeignet für Aufgabe
-  description: Die Fähigkeiten des Agenten entsprechen nicht der Benutzeranfrage und können die Aufgabe nicht bewältigen.
-
+  description: Die Fähigkeiten des Agenten entsprechen nicht der Benutzeranfrage und
+    können die Aufgabe nicht bewältigen.
 context_sufficient_accept_event:
   name: Ausreichend Kontext verfügbar
-  description: Es ist genügend Kontext verfügbar, um die Benutzeranfrage ohne zusätzliche Suche zu beantworten.
-
+  description: Es ist genügend Kontext verfügbar, um die Benutzeranfrage ohne zusätzliche
+    Suche zu beantworten.
 context_insufficient_reject_event:
   name: Unzureichender Kontext verfügbar
-  description: Mehr Kontext ist erforderlich, um die Benutzeranfrage ordnungsgemäss zu beantworten.
-
+  description: Mehr Kontext ist erforderlich, um die Benutzeranfrage ordnungsgemäss
+    zu beantworten.
 expert_reject_event:
   name: Experten-Eskalation abgelehnt
-  description: Der Benutzer hat die Weiterleitung seiner Frage an einen menschlichen Experten abgelehnt.
-
+  description: Der Benutzer hat die Weiterleitung seiner Frage an einen menschlichen
+    Experten abgelehnt.
 sensitive_info_accept_event:
   name: Antwort sicher zu teilen
-  description: Die Antwort enthält keine sensiblen Informationen und kann sicher geteilt werden.
-
+  description: Die Antwort enthält keine sensiblen Informationen und kann sicher geteilt
+    werden.
 sensitive_info_reject_event:
   name: Sensible Informationen erkannt
-  description: Die Antwort enthielt sensible Informationen, die entfernt oder geschwärzt wurden.
-
+  description: Die Antwort enthielt sensible Informationen, die entfernt oder geschwärzt
+    wurden.
 hitl_request_event:
   name: Rückfrage an Benutzer
-  description: Der Agent benötigt zusätzliche Informationen vom Benutzer, um die Aufgabe fortsetzen zu können.
-
+  description: Der Agent benötigt zusätzliche Informationen vom Benutzer, um die Aufgabe
+    fortsetzen zu können.
 hitl_input_request_event:
   name: Texteingabe angefordert
-  description: Der Agent benötigt eine Texteingabe vom Benutzer, um die Aufgabe fortsetzen zu können.
-
+  description: Der Agent benötigt eine Texteingabe vom Benutzer, um die Aufgabe fortsetzen
+    zu können.
 hitl_confirmation_request_event:
   name: Bestätigung angefordert
-  description: Der Agent benötigt eine Ja/Nein-Bestätigung vom Benutzer, um die Aufgabe fortsetzen zu können.
-
+  description: Der Agent benötigt eine Ja/Nein-Bestätigung vom Benutzer, um die Aufgabe
+    fortsetzen zu können.
 hitl_response_event:
   name: Benutzerantwort erhalten
-  description: Der Benutzer hat die Rückfrage beantwortet, und der Agent kann mit der Aufgabe fortfahren.
-
+  description: Der Benutzer hat die Rückfrage beantwortet, und der Agent kann mit
+    der Aufgabe fortfahren.
 hitl_input_response_event:
   name: Texteingabe erhalten
-  description: Der Benutzer hat eine Texteingabe gemacht, und der Agent kann mit der Aufgabe fortfahren.
-
+  description: Der Benutzer hat eine Texteingabe gemacht, und der Agent kann mit der
+    Aufgabe fortfahren.
 hitl_confirmation_response_event:
   name: Bestätigung erhalten
-  description: Der Benutzer hat bestätigt oder abgelehnt, und der Agent kann mit der Aufgabe fortfahren.
-
+  description: Der Benutzer hat bestätigt oder abgelehnt, und der Agent kann mit der
+    Aufgabe fortfahren.
 hitl_chat_request_event:
   name: Chat-Frage
-  description: Der Agent hat eine Frage gestellt, die durch eine Chat-Nachricht beantwortet werden kann.
-
+  description: Der Agent hat eine Frage gestellt, die durch eine Chat-Nachricht beantwortet
+    werden kann.
 hitl_chat_response_event:
   name: Chat-Antwort erhalten
-  description: Der Benutzer hat per Chat-Nachricht geantwortet, und der Agent kann mit der Aufgabe fortfahren.
-
+  description: Der Benutzer hat per Chat-Nachricht geantwortet, und der Agent kann
+    mit der Aufgabe fortfahren.
 router_event:
   name: Optimaler Pfad gewählt
   description: Der Agent hat den optimalen Pfad für das weitere Vorgehen gewählt.
-
 semantic_agent_event:
   name: Agentenaktivität
-  description: Ein spezialisierter Agent führt eine Aufgabe im Rahmen des Gesamtprozesses aus.
-
+  description: Ein spezialisierter Agent führt eine Aufgabe im Rahmen des Gesamtprozesses
+    aus.
 semantic_chain_event:
   name: Verkettete Aktionen
-  description: Eine Reihe von zusammenhängenden Aktionen wird ausgeführt, um ein komplexes Problem zu lösen.
-
+  description: Eine Reihe von zusammenhängenden Aktionen wird ausgeführt, um ein komplexes
+    Problem zu lösen.
 semantic_embedding_event:
   name: Informationssuche
-  description: Der Agent durchsucht seinen Wissensspeicher nach relevanten Informationen zur Beantwortung der Anfrage.
-
+  description: Der Agent durchsucht seinen Wissensspeicher nach relevanten Informationen
+    zur Beantwortung der Anfrage.
 semantic_guard_event:
   name: Sicherheitsprüfung
   description: Die Anfrage wird auf Sicherheit und Einhaltung der Richtlinien überprüft.
-
 semantic_llm_event:
   name: Sprachmodell-Interaktion
-  description: Eine Interaktion mit dem Sprachmodell wurde durchgeführt, um Informationen zu verarbeiten oder zu generieren.
-
+  description: Eine Interaktion mit dem Sprachmodell wurde durchgeführt, um Informationen
+    zu verarbeiten oder zu generieren.
 semantic_llm_stop_event:
   name: Sprachmodell-Interaktion beendet
   description: Die Interaktion mit dem Sprachmodell wurde abgeschlossen.
-
 semantic_reranker_event:
   name: Relevanzoptimierung
-  description: Gefundene Dokumente werden nach Relevanz sortiert, um die passendsten Informationen für die Aufgabe auszuwählen.
-
+  description: Gefundene Dokumente werden nach Relevanz sortiert, um die passendsten
+    Informationen für die Aufgabe auszuwählen.
 semantic_retriever_event:
   name: Dokumente gefunden
-  description: Der Agent hat relevante Dokumente gefunden, die bei der Bearbeitung der Aufgabe hilfreich sein könnten.
-
+  description: Der Agent hat relevante Dokumente gefunden, die bei der Bearbeitung
+    der Aufgabe hilfreich sein könnten.
 semantic_tool_event:
   name: Werkzeugeinsatz
-  description: Der Agent verwendet ein spezialisiertes Werkzeug, um eine bestimmte Aufgabe effizienter zu erledigen.
-
+  description: Der Agent verwendet ein spezialisiertes Werkzeug, um eine bestimmte
+    Aufgabe effizienter zu erledigen.
 exception_event:
   name: Fehler aufgetreten
-  description: Während des Prozesses ist ein Ausnahmefehler aufgetreten, der den Arbeitsablauf unterbricht oder anpasst und
-    Fehlerdetails bereitstellt.
-
+  description: Während des Prozesses ist ein Ausnahmefehler aufgetreten, der den Arbeitsablauf
+    unterbricht oder anpasst und Fehlerdetails bereitstellt.
 user_message_event:
   name: Benutzeranfrage
-  description: Der Agent hat eine Nachricht vom Benutzer erhalten und verarbeitet diese unter Berücksichtigung des bisherigen
-    Chatverlaufs.
-
+  description: Der Agent hat eine Nachricht vom Benutzer erhalten und verarbeitet
+    diese unter Berücksichtigung des bisherigen Chatverlaufs.
 standalone_question_condenser_event:
   name: Kondensierte Einzelanfrage
-  description: Eine komplexe Anfrage wurde in eine klarere und prägnantere Einzelanfrage umgewandelt, um die Bearbeitung zu
-    erleichtern.
-
+  description: Eine komplexe Anfrage wurde in eine klarere und prägnantere Einzelanfrage
+    umgewandelt, um die Bearbeitung zu erleichtern.
 new_memory_event:
   name: Erinnerungen Aktualisiert
-  description: Agent hat Benutzer- oder Organisationsspeicher basierend auf der Konversation aktualisiert
-
+  description: Agent hat Benutzer- oder Organisationsspeicher basierend auf der Konversation
+    aktualisiert
 retrieve_memory_event:
   name: Erinnerungen Abgerufen
   description: Agent hat relevante Erinnerungen für den Kontext abgerufen
-
 retrieve_user_memory_event:
   name: Benutzererinnerungen Abgerufen
-  description: Agent hat private Benutzererinnerungen für personalisierten Kontext abgerufen
-
+  description: Agent hat private Benutzererinnerungen für personalisierten Kontext
+    abgerufen
 retrieve_organization_memory_event:
   name: Organisationserinnerungen Abgerufen
   description: Agent hat gemeinsame Organisationserinnerungen für den Kontext abgerufen
-
 store_organization_memory_event:
   name: Organisationserinnerung Gespeichert
-  description: Agent hat explizite Organisationsfakten gespeichert, die für alle Benutzer geteilt werden
-
+  description: Agent hat explizite Organisationsfakten gespeichert, die für alle Benutzer
+    geteilt werden
 add_memory_to_chat_history_event:
   name: Erinnerungen zum Kontext Hinzugefügt
   description: Agent hat Chat-Verlauf mit Erinnerungen erweitert
-
 add_user_memory_to_chat_history_event:
   name: Benutzererinnerungen zum Kontext Hinzugefügt
   description: Agent hat Chat-Verlauf mit privaten Benutzererinnerungen erweitert
-
 add_organization_memory_to_chat_history_event:
   name: Organisationserinnerungen zum Kontext Hinzugefügt
   description: Agent hat Chat-Verlauf mit gemeinsamen Organisationserinnerungen erweitert

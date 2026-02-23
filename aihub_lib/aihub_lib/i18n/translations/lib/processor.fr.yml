@@ -1,3 +1,4 @@
+---
 retrieve_prev_next:
   num_nodes:
     label: Nombre de nœuds
@@ -5,8 +6,8 @@ retrieve_prev_next:
   mode:
     label: Mode de récupération
     help: Récupérer les nœuds précédents, suivants ou les deux.
-
 retrieve_summaries:
   max_parent_levels:
     label: Niveaux parents max.
-    help: Nombre maximum de niveaux parents à parcourir lors de la récupération des nœuds de résumé.
+    help: Nombre maximum de niveaux parents à parcourir lors de la récupération des
+      nœuds de résumé.

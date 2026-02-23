@@ -1,7 +1,9 @@
+---
 config:
   index_namespaces:
     label: Index-Namespaces
-    help: Kommagetrennte Liste der Namespaces für den Abruf. Leer lassen, um aus allen Namespaces abzurufen.
+    help: Kommagetrennte Liste der Namespaces für den Abruf. Leer lassen, um aus allen
+      Namespaces abzurufen.
   retrieve_k:
     label: Abzurufende Dokumente
     help: Anzahl der aus dem Vektorspeicher abzurufenden Dokumente.

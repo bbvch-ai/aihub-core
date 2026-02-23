@@ -1,11 +1,11 @@
+---
 metadata:
   name: Agente di Retrieval
-  description: Agente RAG semplificato per il recupero di informazioni da una base di conoscenza
-
+  description: Agente RAG semplificato per il recupero di informazioni da una base
+    di conoscenza
 config:
   context_prompt:
     label: Prompt di contesto
-
 steps:
   retrieve_nodes:
     name: Recupera nodi

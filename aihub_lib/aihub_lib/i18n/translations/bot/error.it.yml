@@ -1,2 +1,4 @@
-response_timeout: Mi dispiace, sto impiegando troppo tempo per rispondere. Per favore, riprova.
+---
+response_timeout: Mi dispiace, sto impiegando troppo tempo per rispondere. Per favore,
+  riprova.
 generic_error: Mi dispiace, qualcosa è andato storto. Per favore, riprova.

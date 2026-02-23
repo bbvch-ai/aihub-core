@@ -1,3 +1,4 @@
+---
 agent_description_guard:
   prompt: |
     The description of an agent is as follows:
@@ -27,7 +28,6 @@ agent_description_guard:
     true if the request can be forwarded to the agent, false if the request does not fall into the responsibility of the agent.
   docstring: |
     Data model for the decision on whether the request is acceptable or not.
-
 few_shot_guard:
   prompt: |
     You will receive several examples showing which user requests are allowed and which are not. Each sample response consists of two keys:
@@ -60,7 +60,6 @@ few_shot_guard:
     Justification for the decision made.
   docstring: |
     Data model for the decision on whether the request is acceptable or not.
-
 context_sufficient_guard:
   doc_string: |
     Result from evaluating whether the context is sufficient to answer the user query.
@@ -106,7 +105,6 @@ context_sufficient_guard:
     true if the context is sufficient to answer the user query, false if it is not (no additional hops available).
   docstring_no_hops: |
     Result from evaluating whether the context is sufficient to answer the user query (no additional hops available).
-
 sensitive_info_guard:
   prompt: |
     You are a security guard responsible for protecting sensitive company information. Your task is to analyze the following response and determine if it contains sensitive information that should not be shared externally.
@@ -135,7 +133,6 @@ sensitive_info_guard:
     The revised response with sensitive information removed or redacted, if applicable.
   docstring: |
     Result from analyzing a response for sensitive information that should not be shared externally.
-
 few_shot_example:
   user:
     label: User message

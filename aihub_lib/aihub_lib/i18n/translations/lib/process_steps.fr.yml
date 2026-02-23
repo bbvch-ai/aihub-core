@@ -1,11 +1,10 @@
+---
 work_request_event:
   name: Événement de demande de travail
   description: Demande un travail à une personne au sein du processus
-
 work_event:
   name: Événement de travail
   description: Rapporte le travail effectué par une entité impliquée dans le processus
-
 config:
   name:
     label: Nom du processus

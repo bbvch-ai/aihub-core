@@ -1,8 +1,8 @@
+---
 config:
   collection_name:
     label: Nom de la collection
     help: Nom de la collection Milvus pour stocker les vecteurs.
-
 base:
   dimensions:
     label: Dimensions d'intégration

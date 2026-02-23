@@ -1,6 +1,6 @@
+---
 name: AI Code Review
 description: Run PR agent on every pull request to analyze the code
-
 inputs:
   github_token:
     description: GitHub token for authentication
@@ -23,18 +23,17 @@ inputs:
     description: Azure API version
     required: false
     default: 2024-08-01-preview
-
 runs:
   using: composite
   steps:
-  - name: PR Agent action step
-    uses: qodo-ai/pr-agent@main
-    env:
-      OPENAI_KEY: ${{ inputs.azure_openai_key }}
-      GITHUB_TOKEN: ${{ inputs.github_token }}
-      CONFIG.MODEL: ${{ inputs.model }}
-      OPENAI.API_TYPE: azure
-      OPENAI_API_VERSION: ${{ inputs.openai_api_version }}
-      AZURE_API_VERSION: ${{ inputs.azure_api_version }}
-      OPENAI.API_BASE: ${{ inputs.azure_openai_api_base }}
-      OPENAI.DEPLOYMENT_ID: ${{ inputs.model }}
+    - name: PR Agent action step
+      uses: qodo-ai/pr-agent@main
+      env:
+        OPENAI_KEY: ${{ inputs.azure_openai_key }}
+        GITHUB_TOKEN: ${{ inputs.github_token }}
+        CONFIG.MODEL: ${{ inputs.model }}
+        OPENAI.API_TYPE: azure
+        OPENAI_API_VERSION: ${{ inputs.openai_api_version }}
+        AZURE_API_VERSION: ${{ inputs.azure_api_version }}
+        OPENAI.API_BASE: ${{ inputs.azure_openai_api_base }}
+        OPENAI.DEPLOYMENT_ID: ${{ inputs.model }}

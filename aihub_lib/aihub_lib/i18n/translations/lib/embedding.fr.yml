@@ -1,7 +1,9 @@
+---
 config:
   model:
     label: Modèle d'embedding
-    help: Sélectionnez le modèle d'embedding pour générer des représentations vectorielles du texte.
+    help: Sélectionnez le modèle d'embedding pour générer des représentations vectorielles
+      du texte.
   max_retries:
     label: Tentatives maximales
     help: Nombre maximum de tentatives pour les requêtes d'embedding échouées.
@@ -13,4 +15,5 @@ config:
     help: Format des embeddings retournés. Float est standard, Base64 est plus compact.
   dimensions:
     label: Dimensions
-    help: Nombre de dimensions pour les embeddings de sortie. Supporté uniquement par certains modèles.
+    help: Nombre de dimensions pour les embeddings de sortie. Supporté uniquement
+      par certains modèles.

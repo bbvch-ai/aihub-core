@@ -1,3 +1,4 @@
+---
 condenser:
   standalone_question: |
     <role_and_task>
@@ -14,7 +15,6 @@ condenser:
     3. **Do not add new information**: NEVER add details that are not present in the original question. The reformulated question must be semantically equivalent to the original.
     4. **Output**: Output ONLY the new sentence.
     </instructions>
-
 rag:
   context_prompt: |
     {% chat role="user" %}
@@ -37,7 +37,6 @@ rag:
     Instruction: Using the information from the provided documents, generate a detailed and well-structured response 
     to the user’s question.
     {% endchat %}
-
 router:
   selection_option_index: Index of the selected option (0-based)
   reason: Detailed explanation of why this option is the most appropriate
@@ -120,7 +119,6 @@ router:
       - The expert explicitly says they don't know or refuses to answer
       - The question has multiple parts and only some were answered
       Analyze the chat history carefully in relation to the user's question. Determine whether the expert has already sufficiently answered the question based on the criteria above. Provide a clear decision with detailed reasoning.
-
 summarizer:
   summarize: |
     Task: Summarize the following text as a TL;DR:
@@ -135,7 +133,6 @@ summarizer:
       {text} 
     </Text>
     TL;DR Summary:
-
 figure_description_generator:
   context_string: |
     {% chat role="system" %}
@@ -156,7 +153,6 @@ figure_description_generator:
     {% chat role="user" %}
     Please provide a detailed, accurate description of this image that would serve as effective alt text. Remember: describe only what you actually see, not what the surrounding text suggests should be there.
     {% endchat %}
-
 memory:
   user_memory_system_message: |
     <user_context>

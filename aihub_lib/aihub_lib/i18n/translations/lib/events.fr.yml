@@ -1,223 +1,207 @@
+---
 display_event:
   name: Événement d'Affichage
-  description: Un événement qui affiche des informations à l'utilisateur sans affecter le flux de travail.
-
+  description: Un événement qui affiche des informations à l'utilisateur sans affecter
+    le flux de travail.
 aitl_exception_event:
   name: Erreur de Délégation de Tâche
-  description: Un autre agent à qui une tâche a été déléguée a signalé une erreur et n'a pas pu traiter la demande.
-
+  description: Un autre agent à qui une tâche a été déléguée a signalé une erreur
+    et n'a pas pu traiter la demande.
 aitl_request_event:
   name: Délégation de Tâche à un Autre Agent
-  description: L'agent a transmis une tâche à un autre agent pour bénéficier de ses connaissances spécialisées.
-
+  description: L'agent a transmis une tâche à un autre agent pour bénéficier de ses
+    connaissances spécialisées.
 aitl_response_event:
   name: Réponse de l'Agent Délégué
-  description: L'autre agent a traité avec succès la tâche assignée et a renvoyé une réponse.
-
+  description: L'autre agent a traité avec succès la tâche assignée et a renvoyé une
+    réponse.
 bitl_request_event:
   name: Demande au Agent
-  description: Une demande a été transmise à un agent spécialisé pour accomplir une tâche spécifique.
-
+  description: Une demande a été transmise à un agent spécialisé pour accomplir une
+    tâche spécifique.
 bitl_response_event:
   name: Réponse du Agent
   description: Le agent spécialisé a traité la demande et a renvoyé une réponse.
-
 limit_chat_history_event:
   name: Historique de Chat Limité
-  description: L'historique du chat a été raccourci pour des raisons d'efficacité, en ne conservant que les parties les plus
-    pertinentes.
-
+  description: L'historique du chat a été raccourci pour des raisons d'efficacité,
+    en ne conservant que les parties les plus pertinentes.
 start_event:
   name: Processus Démarré
   description: Un nouveau processus ou une nouvelle tâche a été initié.
-
 stop_event:
   name: Processus Terminé
   description: L'agent a terminé sa tâche et rend le contrôle à l'utilisateur.
-
 cost_event:
   name: Aperçu des Coûts
   description: Un aperçu des coûts encourus pour les opérations effectuées.
-
 llm_cost_event:
   name: Coûts du Modèle de Langage
-  description: Des coûts ont été encourus lors de l'interaction avec le modèle de langage, qui sont listés ici.
-
+  description: Des coûts ont été encourus lors de l'interaction avec le modèle de
+    langage, qui sont listés ici.
 chunk_event:
   name: Réponse Partielle
-  description: L'agent a généré une partie de la réponse et l'a envoyée à l'utilisateur, qui est déjà affichée.
-
+  description: L'agent a généré une partie de la réponse et l'a envoyée à l'utilisateur,
+    qui est déjà affichée.
 thought_event:
   name: Processus de Réflexion
-  description: L'agent partage son processus de réflexion interne, ce qui l'aide à comprendre et à résoudre la tâche.
-
+  description: L'agent partage son processus de réflexion interne, ce qui l'aide à
+    comprendre et à résoudre la tâche.
 guard_accept_event:
   name: Demande Acceptée
-  description: La demande a passé toutes les vérifications de sécurité et est autorisée à continuer.
-
+  description: La demande a passé toutes les vérifications de sécurité et est autorisée
+    à continuer.
 guard_rejection_event:
   name: Demande Rejetée
-  description: La demande a été rejetée pour des raisons de sécurité ou en raison de violations de politique.
-
+  description: La demande a été rejetée pour des raisons de sécurité ou en raison
+    de violations de politique.
 few_shot_guard_accept_event:
   name: Garde Few-Shot Accepté
-  description: La demande correspond aux modèles des exemples few-shot et est autorisée à continuer.
-
+  description: La demande correspond aux modèles des exemples few-shot et est autorisée
+    à continuer.
 few_shot_guard_reject_event:
   name: Garde Few-Shot Rejeté
-  description: La demande ne correspond pas aux modèles des exemples few-shot et est bloquée.
-
+  description: La demande ne correspond pas aux modèles des exemples few-shot et est
+    bloquée.
 right_agent_accept_event:
   name: Bon Agent Sélectionné
   description: L'agent correct a été identifié pour gérer cette tâche spécifique.
-
 wrong_agent_reject_event:
   name: Mauvais Agent Sélectionné
   description: L'agent sélectionné n'est pas approprié pour gérer cette tâche spécifique.
-
 agent_suitability_accept_event:
   name: Agent Adapté à la Tâche
-  description: Les capacités de l'agent correspondent à la demande de l'utilisateur et peuvent gérer la tâche.
-
+  description: Les capacités de l'agent correspondent à la demande de l'utilisateur
+    et peuvent gérer la tâche.
 agent_suitability_reject_event:
   name: Agent Inadapté à la Tâche
-  description: Les capacités de l'agent ne correspondent pas à la demande de l'utilisateur et ne peuvent pas gérer la tâche.
-
+  description: Les capacités de l'agent ne correspondent pas à la demande de l'utilisateur
+    et ne peuvent pas gérer la tâche.
 context_sufficient_accept_event:
   name: Contexte Suffisant Disponible
-  description: Il y a suffisamment de contexte disponible pour répondre à la requête de l'utilisateur sans récupération supplémentaire.
-
+  description: Il y a suffisamment de contexte disponible pour répondre à la requête
+    de l'utilisateur sans récupération supplémentaire.
 context_insufficient_reject_event:
   name: Contexte Insuffisant Disponible
-  description: Plus de contexte est nécessaire pour répondre correctement à la requête de l'utilisateur.
-
+  description: Plus de contexte est nécessaire pour répondre correctement à la requête
+    de l'utilisateur.
 expert_reject_event:
   name: Escalade Expert Refusée
   description: L'utilisateur a refusé de transmettre sa question à un expert humain.
-
 sensitive_info_accept_event:
   name: Réponse Sûre à Partager
-  description: La réponse ne contient pas d'informations sensibles et peut être partagée en toute sécurité.
-
+  description: La réponse ne contient pas d'informations sensibles et peut être partagée
+    en toute sécurité.
 sensitive_info_reject_event:
   name: Informations Sensibles Détectées
-  description: La réponse contenait des informations sensibles qui ont été supprimées ou expurgées.
-
+  description: La réponse contenait des informations sensibles qui ont été supprimées
+    ou expurgées.
 hitl_request_event:
   name: Demande à l'Utilisateur
-  description: L'agent a besoin d'informations supplémentaires de l'utilisateur pour poursuivre la tâche.
-
+  description: L'agent a besoin d'informations supplémentaires de l'utilisateur pour
+    poursuivre la tâche.
 hitl_input_request_event:
   name: Demande de Saisie
-  description: L'agent a besoin d'une saisie texte de l'utilisateur pour poursuivre la tâche.
-
+  description: L'agent a besoin d'une saisie texte de l'utilisateur pour poursuivre
+    la tâche.
 hitl_confirmation_request_event:
   name: Demande de Confirmation
-  description: L'agent a besoin d'une confirmation oui/non de l'utilisateur pour poursuivre la tâche.
-
+  description: L'agent a besoin d'une confirmation oui/non de l'utilisateur pour poursuivre
+    la tâche.
 hitl_response_event:
   name: Réponse de l'Utilisateur Reçue
-  description: L'utilisateur a répondu à la demande, et l'agent peut poursuivre la tâche.
-
+  description: L'utilisateur a répondu à la demande, et l'agent peut poursuivre la
+    tâche.
 hitl_input_response_event:
   name: Saisie Reçue
-  description: L'utilisateur a fourni une saisie texte, et l'agent peut poursuivre la tâche.
-
+  description: L'utilisateur a fourni une saisie texte, et l'agent peut poursuivre
+    la tâche.
 hitl_confirmation_response_event:
   name: Confirmation Reçue
   description: L'utilisateur a confirmé ou refusé, et l'agent peut poursuivre la tâche.
-
 hitl_chat_request_event:
   name: Question Chat
-  description: L'agent a posé une question qui peut être répondue par un message de chat.
-
+  description: L'agent a posé une question qui peut être répondue par un message de
+    chat.
 hitl_chat_response_event:
   name: Réponse Chat Reçue
-  description: L'utilisateur a répondu par message de chat, et l'agent peut poursuivre la tâche.
-
+  description: L'utilisateur a répondu par message de chat, et l'agent peut poursuivre
+    la tâche.
 router_event:
   name: Chemin optimal choisi
   description: L'agent a choisi le chemin optimal pour la suite.
-
 semantic_agent_event:
   name: Activité de l'Agent
   description: Un agent spécialisé effectue une tâche dans le cadre du processus global.
-
 semantic_chain_event:
   name: Actions Enchaînées
-  description: Une série d'actions interconnectées est exécutée pour résoudre un problème complexe.
-
+  description: Une série d'actions interconnectées est exécutée pour résoudre un problème
+    complexe.
 semantic_embedding_event:
   name: Recherche d'Informations
-  description: L'agent recherche dans sa base de connaissances des informations pertinentes pour répondre à la demande.
-
+  description: L'agent recherche dans sa base de connaissances des informations pertinentes
+    pour répondre à la demande.
 semantic_guard_event:
   name: Vérification de Sécurité
   description: La demande est vérifiée pour la sécurité et la conformité aux politiques.
-
 semantic_llm_event:
   name: Interaction avec le Modèle de Langage
-  description: Une interaction avec le modèle de langage a été effectuée pour traiter ou générer des informations.
-
+  description: Une interaction avec le modèle de langage a été effectuée pour traiter
+    ou générer des informations.
 semantic_llm_stop_event:
   name: Interaction avec le Modèle de Langage Terminée
   description: L'interaction avec le modèle de langage a été terminée.
-
 semantic_reranker_event:
   name: Optimisation de la Pertinence
-  description: Les documents trouvés sont triés par pertinence pour sélectionner les informations les plus appropriées pour
-    la tâche.
-
+  description: Les documents trouvés sont triés par pertinence pour sélectionner les
+    informations les plus appropriées pour la tâche.
 semantic_retriever_event:
   name: Documents Trouvés
-  description: L'agent a trouvé des documents pertinents qui pourraient être utiles dans le traitement de la tâche.
-
+  description: L'agent a trouvé des documents pertinents qui pourraient être utiles
+    dans le traitement de la tâche.
 semantic_tool_event:
   name: Utilisation d'Outil
-  description: L'agent utilise un outil spécialisé pour accomplir une tâche spécifique plus efficacement.
-
+  description: L'agent utilise un outil spécialisé pour accomplir une tâche spécifique
+    plus efficacement.
 exception_event:
   name: Erreur Survenue
-  description: Une exception ou une erreur est survenue pendant le processus, arrêtant ou ajustant le flux de travail et fournissant
-    des détails sur l'erreur.
-
+  description: Une exception ou une erreur est survenue pendant le processus, arrêtant
+    ou ajustant le flux de travail et fournissant des détails sur l'erreur.
 user_message_event:
   name: Demande de l'Utilisateur
-  description: L'agent a reçu un message de l'utilisateur et le traite, en tenant compte de l'historique de chat précédent.
-
+  description: L'agent a reçu un message de l'utilisateur et le traite, en tenant
+    compte de l'historique de chat précédent.
 standalone_question_condenser_event:
   name: Demande Indépendante Condensée
-  description: Une demande complexe a été transformée en une demande indépendante plus claire et concise pour faciliter le
-    traitement.
-
+  description: Une demande complexe a été transformée en une demande indépendante
+    plus claire et concise pour faciliter le traitement.
 new_memory_event:
   name: Mémoire Mise à Jour
-  description: L'agent a mis à jour les mémoires de l'utilisateur ou de l'organisation basées sur la conversation
-
+  description: L'agent a mis à jour les mémoires de l'utilisateur ou de l'organisation
+    basées sur la conversation
 retrieve_memory_event:
   name: Mémoire Récupérée
   description: L'agent a récupéré les mémoires pertinentes pour le contexte
-
 retrieve_user_memory_event:
   name: Mémoire Utilisateur Récupérée
-  description: L'agent a récupéré les mémoires utilisateur privées pour un contexte personnalisé
-
+  description: L'agent a récupéré les mémoires utilisateur privées pour un contexte
+    personnalisé
 retrieve_organization_memory_event:
   name: Mémoire d'Organisation Récupérée
-  description: L'agent a récupéré les mémoires organisationnelles partagées pour le contexte
-
+  description: L'agent a récupéré les mémoires organisationnelles partagées pour le
+    contexte
 store_organization_memory_event:
   name: Mémoire d'Organisation Stockée
-  description: L'agent a stocké un fait organisationnel explicite partagé entre tous les utilisateurs
-
+  description: L'agent a stocké un fait organisationnel explicite partagé entre tous
+    les utilisateurs
 add_memory_to_chat_history_event:
   name: Mémoire Ajoutée au Contexte
   description: L'agent a étendu l'historique de chat avec les mémoires
-
 add_user_memory_to_chat_history_event:
   name: Mémoire Utilisateur Ajoutée au Contexte
-  description: L'agent a étendu l'historique de chat avec les mémoires utilisateur privées
-
+  description: L'agent a étendu l'historique de chat avec les mémoires utilisateur
+    privées
 add_organization_memory_to_chat_history_event:
   name: Mémoire d'Organisation Ajoutée au Contexte
-  description: L'agent a étendu l'historique de chat avec les mémoires organisationnelles partagées
+  description: L'agent a étendu l'historique de chat avec les mémoires organisationnelles
+    partagées

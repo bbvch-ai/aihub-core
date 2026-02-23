@@ -1,7 +1,9 @@
+---
 config:
   index_namespaces:
     label: Index namespaces
-    help: Comma-separated list of namespaces to retrieve from. Leave empty to retrieve from all namespaces.
+    help: Comma-separated list of namespaces to retrieve from. Leave empty to retrieve
+      from all namespaces.
   retrieve_k:
     label: Documents to retrieve
     help: Number of documents to retrieve from the vector store.

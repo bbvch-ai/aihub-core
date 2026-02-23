@@ -1,11 +1,10 @@
+---
 work_request_event:
   name: Work Request Event
   description: Requests a piece of work from someone within the process
-
 work_event:
   name: Work Event
   description: Reports work done by an entity involved in process
-
 config:
   name:
     label: Process Name

@@ -1,37 +1,41 @@
+---
 metadata:
   name: Agente di Conoscenza Aziendale
-  description: Assistente esperto che sfrutta le competenze collettive della tua organizzazione e può consultare esperti umani
-    quando necessario
-
+  description: Assistente esperto che sfrutta le competenze collettive della tua organizzazione
+    e può consultare esperti umani quando necessario
 config:
   agent:
     label: Agente esperto
     help: Seleziona l'agente a cui inoltrare quando il contesto è insufficiente
-
 thoughts:
   user_asked: "L'utente ha fatto la seguente richiesta: %{user_query}."
-  need_to_determine_context: Devo determinare se ho informazioni sufficienti per rispondere a questa domanda.
-  context_not_sufficient: Il contesto NON è sufficiente. Vedo la possibilità di inoltrare questa domanda a un esperto.
-  asking_for_consent: Chiedere all'utente il permesso di inoltrare questa domanda a un gruppo di esperti selezionati.
+  need_to_determine_context: Devo determinare se ho informazioni sufficienti per rispondere
+    a questa domanda.
+  context_not_sufficient: Il contesto NON è sufficiente. Vedo la possibilità di inoltrare
+    questa domanda a un esperto.
+  asking_for_consent: Chiedere all'utente il permesso di inoltrare questa domanda
+    a un gruppo di esperti selezionati.
   user_consented: L'utente ha dato il suo consenso.
   user_declined: L'utente non desidera inoltrare la domanda a un esperto.
   waiting_for_instructions: In attesa di nuove istruzioni.
   forwarding_to_expert: Inoltro la domanda a 'ExpertAskingAgent' e attendo una risposta.
   expert_answered: "'ExpertAskingAgent' ha ricevuto una risposta dall'esperto."
   forwarding_expert_info: Inoltro le informazioni dall'esperto all'utente.
-  expert_unable_to_answer: "'ExpertAskingAgent' non ha trovato un esperto in grado di rispondere alla domanda dell'utente."
+  expert_unable_to_answer: "'ExpertAskingAgent' non ha trovato un esperto in grado\
+    \ di rispondere alla domanda dell'utente."
   expert_error: "'ExpertAskingAgent' ha restituito un errore %{error_code}: %{error_message}."
   can_answer_question: Ora posso rispondere in sicurezza alla domanda dell'utente.
-
 messages:
-  consent_question: Purtroppo non dispongo delle conoscenze necessarie per rispondere a questa domanda. Desideri che acquisisca
-    le conoscenze necessarie da un esperto e poi ti ricontatti?
+  consent_question: Purtroppo non dispongo delle conoscenze necessarie per rispondere
+    a questa domanda. Desideri che acquisisca le conoscenze necessarie da un esperto
+    e poi ti ricontatti?
   user_declined_confirmation: Va bene.
   expert_forwarding_confirmation: La tua domanda è stata inoltrata a un team di esperti.
-  expert_answer_coming_soon: Non appena un esperto sarà in grado di rispondere alla domanda, ti ricontatterò.
-  expert_unable_to_answer: L'esperto non è stato in grado di rispondere alla domanda, mi scuso.
+  expert_answer_coming_soon: Non appena un esperto sarà in grado di rispondere alla
+    domanda, ti ricontatterò.
+  expert_unable_to_answer: L'esperto non è stato in grado di rispondere alla domanda,
+    mi scuso.
   expert_error_occurred: Si è verificato un errore durante la comunicazione con l'esperto.
-
 steps:
   handle_insufficient_context:
     name: Gestisci contesto insufficiente

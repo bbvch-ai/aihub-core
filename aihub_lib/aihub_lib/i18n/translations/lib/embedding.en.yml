@@ -1,3 +1,4 @@
+---
 config:
   model:
     label: Embedding Model

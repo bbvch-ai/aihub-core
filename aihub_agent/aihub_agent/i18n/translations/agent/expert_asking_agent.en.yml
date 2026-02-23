@@ -1,7 +1,8 @@
+---
 metadata:
   name: Expert Coordinator Agent
-  description: Autonomous agent that coordinates with human experts to gather and extract specialized knowledge
-
+  description: Autonomous agent that coordinates with human experts to gather and
+    extract specialized knowledge
 config:
   channel_type:
     label: Channel Type
@@ -12,11 +13,11 @@ config:
     label: Max loops
   insight_namespace:
     label: Insight namespace
-
 routes:
-  answer_sufficient: The expert answered the question. Choose this if the expert provided ANY direct answer.
-  answer_insufficient: The expert did NOT answer. Choose ONLY if the expert said 'I don't know' or refused to answer.
-
+  answer_sufficient: The expert answered the question. Choose this if the expert provided
+    ANY direct answer.
+  answer_insufficient: The expert did NOT answer. Choose ONLY if the expert said 'I
+    don't know' or refused to answer.
 thoughts:
   asking_question: "Asking question to expert: '%{question}'."
   expert_responded: "Expert has responded: '%{response}'."
@@ -25,13 +26,13 @@ thoughts:
   max_questions_reached: Maximum number of follow-up questions reached.
   returning_insufficient: Returning to the user with an insufficient answer.
   answer_not_sufficient: Answer is not sufficient, formulating a follow-up question.
-
-follow_up_question: "The expert was asked: \"{{ question }}\"\n\nTheir response:\n{% for message in chat_history %}\n{% if\
-  \ message.role.value == 'user' %}\n{% for block in message.blocks %}\n{% if block.block_type == 'text' %}\n{{ block.text }}\n\
-  {% endif %}\n{% endfor %}\n{% endif %}\n{% endfor %}\n\nThe expert either said they don't know, didn't answer, or only answered\
-  \ part of the question.\nAsk for the specific missing information. Keep it short and polite. Only ask for what was originally\
-  \ requested but not yet answered.\n"
-
+follow_up_question: "The expert was asked: \"{{ question }}\"\n\nTheir response:\n\
+  {% for message in chat_history %}\n{% if message.role.value == 'user' %}\n{% for\
+  \ block in message.blocks %}\n{% if block.block_type == 'text' %}\n{{ block.text }}\n\
+  {% endif %}\n{% endfor %}\n{% endif %}\n{% endfor %}\n\nThe expert either said they\
+  \ don't know, didn't answer, or only answered part of the question.\nAsk for the\
+  \ specific missing information. Keep it short and polite. Only ask for what was\
+  \ originally requested but not yet answered.\n"
 steps:
   invoke_expert:
     name: Invoke Expert Step
@@ -41,7 +42,8 @@ steps:
     description: Processes the expert response.
   response_sufficient_router:
     name: Response Sufficient Router
-    description: Checks whether the expert has sufficiently answered the question yet.
+    description: Checks whether the expert has sufficiently answered the question
+      yet.
   follow_up_question:
     name: Follow up question
     description: Poses follow up question to expert as answer is not sufficient yet.

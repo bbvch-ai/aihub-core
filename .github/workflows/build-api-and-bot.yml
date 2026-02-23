@@ -1,9 +1,8 @@
+---
 name: Build and Release Api and Bot Images
-
 on:
   repository_dispatch:
-    types:
-    - release-ready
+    types: [release-ready]
   workflow_dispatch:
     inputs:
       release_version:
@@ -14,15 +13,10 @@ on:
         description: Secondary tag to apply (optional), [nightly, latest, *empty*]
         required: false
         default: ''
-        options:
-        - ''
-        - nightly
-        - latest
-
+        options: ['', nightly, latest]
 permissions:
   contents: write
   packages: write
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -31,42 +25,40 @@ jobs:
       github.event_name == 'repository_dispatch'
     strategy:
       matrix:
-        image:
-        - api
-        - bot
+        image: [api, bot]
     continue-on-error: true
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-    - name: Extract Tag / Version
-      id: get_tag
-      run: |
-        # 1) Prefer workflow_dispatch input
-        if [ -n "${{ github.event.inputs.release_version }}" ] && [ "${{ github.event.inputs.release_version }}" != "manual" ]; then
-          TAG_NAME="${{ github.event.inputs.release_version }}"
-          echo "Using release version from workflow_dispatch input: $TAG_NAME"
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Extract Tag / Version
+        id: get_tag
+        run: |
+          # 1) Prefer workflow_dispatch input
+          if [ -n "${{ github.event.inputs.release_version }}" ] && [ "${{ github.event.inputs.release_version }}" != "manual" ]; then
+            TAG_NAME="${{ github.event.inputs.release_version }}"
+            echo "Using release version from workflow_dispatch input: $TAG_NAME"
 
-        # 2) Then repository_dispatch client_payload
-        elif [ -n "${{ github.event.client_payload.release_version }}" ]; then
-          TAG_NAME="${{ github.event.client_payload.release_version }}"
-          echo "Using release version from repository_dispatch payload: $TAG_NAME"
+          # 2) Then repository_dispatch client_payload
+          elif [ -n "${{ github.event.client_payload.release_version }}" ]; then
+            TAG_NAME="${{ github.event.client_payload.release_version }}"
+            echo "Using release version from repository_dispatch payload: $TAG_NAME"
 
-        # 3) No Fallback
-        else
-          echo "❌ No release_version provided. Failing."
-          exit 1
-        fi
-        echo "tag=$TAG_NAME" >> $GITHUB_OUTPUT
-    - name: build and release docker image
-      uses: ./aihub_action/build_image
-      with:
-        release_version: ${{ inputs.release_version || steps.get_tag.outputs.tag || format('testing-{0}', github.run_number) }}
-        image_name: ${{ matrix.image }}
-        github_repository_owner: ${{ github.repository_owner }}
-        github_event_repository_name: ${{ github.event.repository.name }}
-        context: .
-        file: ./aihub_${{ matrix.image }}/Dockerfile
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        secondary_tag: ${{ github.event_name == 'repository_dispatch' && 'nightly' || github.event.inputs.secondary_tag }}
+          # 3) No Fallback
+          else
+            echo "❌ No release_version provided. Failing."
+            exit 1
+          fi
+          echo "tag=$TAG_NAME" >> $GITHUB_OUTPUT
+      - name: build and release docker image
+        uses: ./aihub_action/build_image
+        with:
+          release_version: ${{ inputs.release_version || steps.get_tag.outputs.tag || format('testing-{0}', github.run_number) }}
+          image_name: ${{ matrix.image }}
+          github_repository_owner: ${{ github.repository_owner }}
+          github_event_repository_name: ${{ github.event.repository.name }}
+          context: .
+          file: ./aihub_${{ matrix.image }}/Dockerfile
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          secondary_tag: ${{ github.event_name == 'repository_dispatch' && 'nightly' || github.event.inputs.secondary_tag }}

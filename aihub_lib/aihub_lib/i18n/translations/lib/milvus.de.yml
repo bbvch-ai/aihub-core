@@ -1,8 +1,8 @@
+---
 config:
   collection_name:
     label: Sammlungsname
     help: Name der Milvus-Sammlung zum Speichern von Vektoren.
-
 base:
   dimensions:
     label: Einbettungsdimensionen

@@ -1,17 +1,18 @@
+---
 metadata:
   name: Assistente Istruito
-  description: Assistente IA che segue le tue istruzioni in testo semplice per aiutarti con le attività e rispondere alle
-    domande
-
+  description: Assistente IA che segue le tue istruzioni in testo semplice per aiutarti
+    con le attività e rispondere alle domande
 config:
   system_prompt:
     label: Prompt di sistema
     help: Istruzioni per l'agente quando si utilizzano esempi few-shot
-
 steps:
   limit_chat_history:
     name: Limita cronologia chat
-    description: Tronca i messaggi della chat in arrivo per rispettare il limite di token configurato.
+    description: Tronca i messaggi della chat in arrivo per rispettare il limite di
+      token configurato.
   start:
     name: Elabora messaggio utente
-    description: Inoltra il messaggio dell'utente al LLM e trasmette la risposta in streaming.
+    description: Inoltra il messaggio dell'utente al LLM e trasmette la risposta in
+      streaming.

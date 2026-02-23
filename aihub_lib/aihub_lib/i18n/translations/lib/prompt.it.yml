@@ -1,3 +1,4 @@
+---
 condenser:
   standalone_question: |
     <role_and_task>
@@ -14,7 +15,6 @@ condenser:
     3. **Non aggiungere nuove informazioni**: Non aggiungere MAI dettagli che non sono presenti nella domanda originale. La domanda riformulata deve essere semanticamente equivalente all'originale.
     4. **Output**: Restituisci SOLO la nuova frase.
     </instructions>
-
 rag:
   context_prompt: |
     {% chat role="user" %}
@@ -37,7 +37,6 @@ rag:
     Istruzione: Utilizza le informazioni dai documenti forniti per generare una risposta dettagliata e ben strutturata 
     alla domanda dell'utente.
     {% endchat %}
-
 router:
   selection_option_index: Index of the selected option (0-based)
   reason: Detailed explanation of why this option is the most appropriate
@@ -120,7 +119,6 @@ router:
       - L'esperto dice esplicitamente che non sa o rifiuta di rispondere
       - La domanda ha più parti e solo alcune sono state risposte
       Analizza attentamente la cronologia della chat in relazione alla domanda dell'utente. Determina se l'esperto ha già risposto sufficientemente alla domanda in base ai criteri sopra indicati. Fornisci una decisione chiara con un ragionamento dettagliato.
-
 memory:
   user_memory_system_message: |
     <user_context>
@@ -1557,7 +1555,6 @@ memory:
 
     ### Esempio: Nulla da eliminare
     Se nessuna relazione dovrebbe essere eliminata, semplicemente non chiamare affatto lo strumento.
-
 summarizer:
   summarize: |
     Compito: Riassumi il testo seguente come TL;DR:  
@@ -1572,7 +1569,6 @@ summarizer:
       {text} 
     </Text>  
     Riassunto TL;DR:
-
 figure_description_generator:
   context_string: |-
     {% chat role="system" %}
