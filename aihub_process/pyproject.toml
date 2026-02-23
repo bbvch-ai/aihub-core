@@ -1,6 +1,6 @@
 [project]
 name = "aihub-process"
-version = "0.265.0"
+version = "0.265.1"
 description = "agentic process automation"
 requires-python = ">=3.13, <3.14"
 authors = [

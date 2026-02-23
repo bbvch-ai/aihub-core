@@ -1,21 +1,25 @@
+---
 name: Semantic PR
-
 on:
   pull_request:
-    branches: [ main, initiative/* ]
-    types: [ opened, edited, synchronize, reopened, ready_for_review, labeled, unlabeled ]
-
+    branches: [main, initiative/*]
+    types:
+      - opened
+      - edited
+      - synchronize
+      - reopened
+      - ready_for_review
+      - labeled
+      - unlabeled
 jobs:
   lint-pr-title:
     name: Lint PR Title
     runs-on: ubuntu-latest
     if: ${{ !github.event.pull_request.draft }}
-
     permissions:
       checks: write
       contents: read
       pull-requests: read
-
     steps:
       - name: Semantic Pull Request
         uses: amannn/action-semantic-pull-request@v5
@@ -26,42 +30,30 @@ jobs:
             aihub
             iac
             ci-cd
-            agent-custom
-            agent-xp
-            avatar
             bots
-            chat-xp
-            chat-backend
-            debt
             dagster
-            confidence
             deploy
             ui
             guards
             rag
-            local
             tracing
             workflows
-            micro
           types: |
             fix
             feat
             doc
             test
             chore
-
           requireScope: true
           subjectPattern: ^([A-Z]).+$
           subjectPatternError: |
             The subject "{subject}" found in the pull request title "{title}"
             didn't match the configured pattern. Please ensure that the subject
             starts with an uppercase character.
-
   lint-branch-name:
     name: Lint Branch Name
     runs-on: ubuntu-latest
     if: ${{ !github.event.pull_request.draft }}
-
     permissions:
       checks: write
       contents: read
@@ -70,39 +62,34 @@ jobs:
       - name: Lint branch name
         uses: lekterable/branchlint-action@2.1.0
         with:
-          errorMessage: 'Invalid branch name. Please follow the pattern'
+          errorMessage: Invalid branch name. Please follow the pattern
           allowed: |
             main
             /^([a-z]{2,})\/([a-z-0-9]{2,})$/
             /^claude\/[a-zA-Z0-9-]+$/
-
   check-version-label:
     name: Check Version Label
     runs-on: ubuntu-latest
     if: ${{ !github.event.pull_request.draft }}
-    
     permissions:
       checks: write
       contents: read
       pull-requests: read
-
     steps:
       - name: Check for version label
-        run: |
+        run: |-
           echo "Checking for version bump labels (major, minor, patch)..."
-          
+
           # Get PR labels
           PR_LABELS='${{ toJSON(github.event.pull_request.labels.*.name) }}'
           echo "PR Labels: $PR_LABELS"
-          
+
           # Check if at least one version label exists
           has_version_label=false
-          
           if echo "$PR_LABELS" | grep -qE '"(major|minor|patch)"'; then
             echo "✅ Found version label (major, minor, or patch)"
             has_version_label=true
           fi
-          
           if [ "$has_version_label" = false ]; then
             echo "❌ ERROR: No version label found!"
             echo "Please add one of the following labels to this PR:"
@@ -111,5 +98,4 @@ jobs:
             echo "  • patch - for bug fixes"
             exit 1
           fi
-          
           echo "✅ Version label check passed"

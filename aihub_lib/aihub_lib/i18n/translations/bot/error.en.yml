@@ -1,2 +1,3 @@
-response_timeout: "Sorry, I am taking too long to respond. Please try again."
-generic_error: "Sorry, something went wrong. Please try again."
+---
+response_timeout: Sorry, I am taking too long to respond. Please try again.
+generic_error: Sorry, something went wrong. Please try again.

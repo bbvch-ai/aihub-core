@@ -85,6 +85,44 @@ async def process_document(self, event: DocumentUploadEvent) -> DocumentProcesse
     return DocumentProcessedEvent(...)
 ```
 
+::: warning Step execution isolation
+A fresh `Agent` instance is created for **every** step execution. Do not store state on `self` — it will be lost.
+Multiple steps for the same run may execute in parallel on different instances. Use events to pass data between steps.
+:::
+
+### Step return types
+
+| Return type        | Behavior                            |
+| ------------------ | ----------------------------------- |
+| `EventA`           | Single event published              |
+| `EventA \| EventB` | One event published (branching)     |
+| `list[EventA]`     | Multiple events published (fan-out) |
+| `None`             | Side-effect only, no event          |
+
+### Internationalized step names
+
+Use `LocaleString` for step names and descriptions that appear in the UI:
+
+```python
+from aihub_lib.i18n.LocaleString import LocaleString
+
+@step(
+    name=LocaleString(
+        en="Search Knowledge Base",
+        de="Wissensdatenbank durchsuchen",
+        fr="Rechercher dans la base de connaissances",
+        it="Cerca nella base di conoscenza",
+    ),
+    description=LocaleString(en="Retrieves relevant documents", ...),
+)
+async def search(self, event: UserMessageEvent, t: LocaleHandler) -> SearchEvent:
+    await displayer.display_thought(t("agent.thought.searching"))
+    ...
+```
+
+Translation files live in `aihub_agent/i18n/translations/agent/<agent_name>/` with one YAML file per locale (`en.yml`,
+`de.yml`, etc.). Lookup order: Local agent translations, agent scope, library, English fallback.
+
 ## Configuration: Making Agents Reusable
 
 To keep your agent's logic separate from its settings, the SDK uses a strongly-typed configuration system. This allows
@@ -141,13 +179,18 @@ async def summarize_text(self, event: TextEvent, config: SummarizeStepConfig):
 As you've seen, you don't need to manually pass objects like configs or contexts to your steps. The **Agent Dispatcher**
 provides them automatically based on the parameter's type hint.
 
-Here are the key objects you can have injected:
+Here are the objects you can have injected:
 
-- **`AgentConfig`**: Your agent's main configuration object.
-- **`StepConfig`**: A specific configuration class for a single step.
-- **`RunContext`**: A temporary key-value store for a *single* agent run.
-- **`ThreadContext`**: A persistent key-value store for a conversation *thread*.
-- **`EventDisplayer`**: A helper for emitting `DisplayEvent`s to the UI.
+| Type                 | Scope  | Description                                                   |
+| -------------------- | ------ | ------------------------------------------------------------- |
+| `AgentConfig`        | Run    | Your agent's main configuration object (immutable per run)    |
+| `StepConfig`         | Step   | A specific configuration class for a single step              |
+| `RunContext`         | Run    | Redis-backed KV store, ephemeral (cleared on run completion)  |
+| `ThreadContext`      | Thread | Redis-backed KV store, persistent across runs                 |
+| `EventDisplayer`     | Step   | Helper for emitting `DisplayEvent`s to the UI                 |
+| `AgentMemory`        | Step   | Long-term memory operations (retrieve, store)                 |
+| `LocaleHandler`      | Run    | Internationalization — call `t("key")` for translated strings |
+| `AgentInstanceTopic` | Step   | Metadata: `agent_id`, `thread_id`, `run_id`, `display_id`     |
 
 This powerful feature keeps your code clean and focused on business logic.
 

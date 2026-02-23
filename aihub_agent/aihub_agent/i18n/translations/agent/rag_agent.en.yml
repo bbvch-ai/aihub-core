@@ -1,3 +1,4 @@
+---
 metadata:
   name: Document Intelligence Assistant
   description: AI assistant that searches and analyzes your documents to provide informed,
@@ -33,56 +34,19 @@ config:
     label: Context prompt
     help: Template for presenting retrieved documents to the LLM. Use placeholders
       like {context} to inject retrieved content.
-    default: '{% chat role="user" %}
-
-      You are provided with additional context information in the form of structured
-      documents. Each document follows a
-
-      consistent format, beginning with `<REFERENCE_DOCUMENT [metadata]>` and ending
-      with `</REFERENCE_DOCUMENT>`. These documents contain
-
-      essential details that should be utilized to accurately understand and respond
-      to the user''s query.
-
-
-      Each document includes metadata such as source, namespace, type, language, version,
-      and timestamps. The content
-
-      within these documents provides crucial insights relevant to the given context.
-
-
-      Below are the relevant documents:
-
-
-      <context_documents>
-
-      {% for block in context_blocks %}
-
-      {% if block.block_type == ''text'' %}
-
-      {{ block.text }}
-
-      {% endif %}
-
-      {% if block.block_type == ''image'' %}
-
-      {{ block.url.__str__() | image}}
-
-      {% endif %}
-
-      {% endfor %}
-
-      </context_documents>
-
-
-      Instruction: Using the information from the provided documents, generate a detailed
-      and well-structured response
-
-      to the user''s question.
-
-      {% endchat %}
-
-      '
+    default: "{% chat role=\"user\" %}\nYou are provided with additional context information\
+      \ in the form of structured documents. Each document follows a\nconsistent format,\
+      \ beginning with `<REFERENCE_DOCUMENT [metadata]>` and ending with `</REFERENCE_DOCUMENT>`.\
+      \ These documents contain\nessential details that should be utilized to accurately\
+      \ understand and respond to the user's query.\n\nEach document includes metadata\
+      \ such as source, namespace, type, language, version, and timestamps. The content\n\
+      within these documents provides crucial insights relevant to the given context.\n\
+      \nBelow are the relevant documents:\n\n<context_documents>\n{% for block in\
+      \ context_blocks %}\n{% if block.block_type == 'text' %}\n{{ block.text }}\n\
+      {% endif %}\n{% if block.block_type == 'image' %}\n{{ block.url.__str__() | image}}\n\
+      {% endif %}\n{% endfor %}\n</context_documents>\n\nInstruction: Using the information\
+      \ from the provided documents, generate a detailed and well-structured response\n\
+      to the user's question.\n{% endchat %}\n"
   context_insufficient_prompt:
     label: Context insufficient prompt
     help: Message shown when the agent cannot find sufficient information to answer.
@@ -109,44 +73,50 @@ config:
     help: Whether to store new memories from conversations for future retrieval.
 steps:
   retrieve_user_memory:
-    name: "Retrieve User Memory"
-    description: "Retrieves relevant user-specific memories for personalized context"
+    name: Retrieve User Memory
+    description: Retrieves relevant user-specific memories for personalized context
   retrieve_organization_memory:
-    name: "Retrieve Organization Memory"
-    description: "Retrieves relevant organization memories (expert knowledge) based on user query"
+    name: Retrieve Organization Memory
+    description: Retrieves relevant organization memories (expert knowledge) based
+      on user query
   add_memory_to_context:
-    name: "Add Memory to Context"
-    description: "Injects user and organization memories into chat history as system messages"
+    name: Add Memory to Context
+    description: Injects user and organization memories into chat history as system
+      messages
   limit_chat_history:
-    name: "Limit Chat History"
-    description: "Truncates incoming chat messages to fit within the configured token limit"
+    name: Limit Chat History
+    description: Truncates incoming chat messages to fit within the configured token
+      limit
   condense_standalone_question:
-    name: "Condense Standalone Question"
-    description: "Condenses the chat history and user query into a standalone question."
+    name: Condense Standalone Question
+    description: Condenses the chat history and user query into a standalone question.
   few_shot_guard:
-    name: "Few Shot Guard"
-    description: "Guards the question to ensure it is appropriate for the agent to answer."
+    name: Few Shot Guard
+    description: Guards the question to ensure it is appropriate for the agent to
+      answer.
   retrieve_nodes:
-    name: "Retrieve Nodes"
-    description: "Retrieves relevant nodes from knowledge sources."
+    name: Retrieve Nodes
+    description: Retrieves relevant nodes from knowledge sources.
   rerank_nodes:
-    name: "Rerank Retrieved Nodes"
-    description: "Reranks retrieved documents using a dedicated reranking model for improved relevance"
+    name: Rerank Retrieved Nodes
+    description: Reranks retrieved documents using a dedicated reranking model for
+      improved relevance
   order_nodes:
-    name: "Order Nodes by Documents"
-    description: "Orders the retrieved nodes by their source documents."
+    name: Order Nodes by Documents
+    description: Orders the retrieved nodes by their source documents.
   context_sufficient_guard:
-    name: "Context Sufficient Guard"
-    description: "Guards the context to ensure it is sufficient for generating a response."
+    name: Context Sufficient Guard
+    description: Guards the context to ensure it is sufficient for generating a response.
   limit_chat_history_with_context:
-    name: "Limit Chat History with Context"
-    description: "Includes the combined context and truncates chat history again."
+    name: Limit Chat History with Context
+    description: Includes the combined context and truncates chat history again.
   respond_with_llm:
-    name: "Respond with LLM"
-    description: "Generates a response using the configured LLM."
+    name: Respond with LLM
+    description: Generates a response using the configured LLM.
   store_user_memory:
-    name: "Store User Memory"
-    description: "Persists conversation learnings to long-term user memory for future interactions"
+    name: Store User Memory
+    description: Persists conversation learnings to long-term user memory for future
+      interactions
   stop:
-    name: "Stop"
-    description: "Completes the workflow after all required steps are done"
+    name: Stop
+    description: Completes the workflow after all required steps are done

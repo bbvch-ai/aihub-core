@@ -1,45 +1,41 @@
+---
 name: Test Backend
 description: Run tests with coverage on Python backend
-
 inputs:
   github_token:
-    description: 'GitHub token for authentication'
+    description: GitHub token for authentication
     required: true
   working_directory:
-    description: 'Working directory for the module'
+    description: Working directory for the module
     required: true
   docker_compose_services:
-    description: 'Space-separated list of Docker Compose services (empty if not needed)'
+    description: Space-separated list of Docker Compose services (empty if not needed)
     required: false
   install_ffmpeg:
-    description: 'Install ffmpeg'
+    description: Install ffmpeg
     required: false
     default: 'false'
   python_version:
-    description: 'Python version to install'
+    description: Python version to install
     required: false
     default: '3.13'
   huggingface_api_key:
-    description: 'HuggingFace API key for model downloads'
+    description: HuggingFace API key for model downloads
     required: false
     default: ''
   regenerate_compose:
-    description: 'Regenerate Docker Compose files'
+    description: Regenerate Docker Compose files
     required: false
     default: 'false'
-
 runs:
-  using: "composite"
-
+  using: composite
   steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
-
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: ${{ inputs.python_version }}
-
     - name: Install uv
       uses: astral-sh/setup-uv@v7
       with:
@@ -77,20 +73,16 @@ runs:
       run: |
         mkdir -p ./.docker-volumes/llamacpp-data
         chmod 777 ./.docker-volumes/llamacpp-data
-
     - name: Configure Git Authentication
       shell: bash
       run: git config --global url."git@github.com:".insteadOf "https://github.com/"
-
     - name: Install Dependencies
       shell: bash
       run: uv sync --all-packages --dev --frozen
-
     - name: Generate Docker Compose files
       if: inputs.docker_compose_services != '' && inputs.regenerate_compose == 'true'
       shell: bash
       run: make generate-compose
-
     - name: Pre-pull Docker images (if services needed)
       if: inputs.docker_compose_services != ''
       shell: bash
@@ -100,32 +92,27 @@ runs:
         # Pre-pull images in parallel to use cache effectively
         echo "Pre-pulling Docker images for faster startup..."
         docker compose -f docker-compose.dev.yml --env-file .env.dev pull --quiet ${{ inputs.docker_compose_services }} || true
-
     - name: Add HuggingFace token to environment variables
       if: inputs.huggingface_api_key != ''
       shell: bash
       run: |
         echo "HUGGINGFACE_API_KEY=${{ inputs.huggingface_api_key }}" >> .env.dev
-
     - name: Start Docker services (if needed)
       if: inputs.docker_compose_services != ''
       shell: bash
       run: |
         docker compose -f docker-compose.dev.yml --env-file .env.dev up -d ${{ inputs.docker_compose_services }}
-
     - name: Install FFmpeg
       if: inputs.install_ffmpeg == 'true'
       shell: bash
       run: make install-ffmpeg
       working-directory: ${{ inputs.working_directory }}
-
     - name: Setup environment variables for tests
       shell: bash
       run: |
         # Copy .env.dev to .env so that Pydantic BaseSettings can find it
         cp .env.dev .env
         echo "Copied .env.dev to .env for test environment"
-
     - name: Wait for Docker services to become healthy
       if: inputs.docker_compose_services != ''
       shell: bash
@@ -148,18 +135,15 @@ runs:
         INTERVAL=5
         # Counter
         ELAPSED=0
-
         while [ $ELAPSED -lt $MAX_WAIT ]; do
           # Check if any containers are unhealthy - approach with fewer assumptions about output format
           UNHEALTHY_CONTAINERS=$(docker ps --format "{{.Names}}: {{.Status}}" | grep -i "unhealthy" || true)
           STARTING_CONTAINERS=$(docker ps --format "{{.Names}}: {{.Status}}" | grep -i "starting" || true)
-
           if [ -z "$UNHEALTHY_CONTAINERS" ] && [ -z "$STARTING_CONTAINERS" ]; then
             echo "All Docker services are in a healthy state!"
             docker ps
             break
           fi
-
           echo "Some containers are still starting or unhealthy:"
           [ -n "$UNHEALTHY_CONTAINERS" ] && echo "$UNHEALTHY_CONTAINERS"
           [ -n "$STARTING_CONTAINERS" ] && echo "$STARTING_CONTAINERS"
@@ -169,13 +153,11 @@ runs:
           ELAPSED=$((ELAPSED + INTERVAL))
           echo "Waited for $ELAPSED seconds out of $MAX_WAIT maximum..."
         done
-
         if [ $ELAPSED -ge $MAX_WAIT ]; then
           echo "Timed out waiting for Docker services to become healthy after $MAX_WAIT seconds."
           docker ps
           echo "Continuing with tests anyway, but they may fail if services aren't ready."
         fi
-
     - name: Run Tests with Coverage and Generate Report
       shell: bash
       working-directory: ${{ inputs.working_directory }}
@@ -185,7 +167,6 @@ runs:
                          --cov-report=xml:coverage.xml \
                          --cov-report=term-missing \
                          --junitxml=pytest.xml || pytest_exit_code=$?
-
         if [[ $pytest_exit_code -eq 5 ]]; then
           echo "No tests found! Creating an empty pytest.xml..."
           echo '<?xml version="1.0" encoding="UTF-8"?><testsuites></testsuites>' > pytest.xml
@@ -194,25 +175,21 @@ runs:
           echo "Some tests failed!"
           echo "TEST_FAIL=true" >> $GITHUB_ENV
         fi
-
     - name: Stop Docker services (if started)
       if: inputs.docker_compose_services != ''
       shell: bash
       run: |
         docker compose -f docker-compose.dev.yml down --remove-orphans
-
     - name: Upload Coverage Report
       uses: actions/upload-artifact@v4
       with:
         name: ${{ inputs.working_directory }}-coverage-report
         path: ${{ inputs.working_directory }}/coverage.xml
-
     - name: Upload Pytest Report
       uses: actions/upload-artifact@v4
       with:
         name: ${{ inputs.working_directory }}-pytest-report
         path: ${{ inputs.working_directory }}/pytest.xml
-
     - name: Publish Test Results
       uses: EnricoMi/publish-unit-test-result-action@v2
       if: always()
@@ -221,10 +198,9 @@ runs:
           ${{ inputs.working_directory }}/pytest.xml
         check_name: ${{ inputs.working_directory }}
         comment_title: Test results for ${{ inputs.working_directory }}
-
     - name: Check if Tests Failed
       if: env.TEST_FAIL == 'true'
       shell: bash
-      run: |
+      run: |-
         echo "Tests have failed!"
         exit 1

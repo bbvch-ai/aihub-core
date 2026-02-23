@@ -5,6 +5,71 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.265.1] - 2026-02-23 - Revolutionizing AI-Assisted Development with Comprehensive Claude Code Integration
+
+### Added
+
+- 🦾 **Extended Claude Code Integration**: Introduced a comprehensive suite of new capabilities for AI-assisted
+  development, including 7 specialized **Custom Subagents** (e.g., `architect`, `codebase-expert`, `test-analyzer`), 8
+  **Automated Hooks** for enforcing code quality, security, and environment setup, and 39 detailed **Skills** to
+  streamline workflows from scaffolding to debugging across all project scopes.
+- 🔗 **New MCP Server Integrations**: Integrated 11 additional **Model Context Protocol (MCP) servers**, providing
+  enhanced, real-time access to documentation and runtime insights for key technologies such as **Langfuse**, **Context7
+  (general library docs)**, **Playwright**, **PostgreSQL**, **PrimeVue**, **Nuxt**, **Milvus**, and **NATS**.
+- 🛠️ **Developer Tooling**: Added new **pre-commit hooks** for automated Python (Ruff), YAML, and Markdown formatting,
+  along with checks for common issues, ensuring code consistency before commits.
+- 📄 **Critical Documentation**: Introduced new, in-depth documentation pages for **Agent Execution Model** and **Events
+  Reference**, providing foundational knowledge for building robust AI agents.
+- ✍️ **Claude Code Context Files**: Created dedicated `CLAUDE.md` context files for `aihub_action`, `aihub_api`,
+  `aihub_bot`, `aihub_doc`, `aihub_lib`, `aihub_process`, `aihub_web`, and `deployment` scopes, offering AI assistants
+  precise, scope-specific guidance.
+- ✨ **Developer Convenience**: Added new `Makefile` targets in `aihub_web` for streamlined frontend development tasks
+  like formatting, linting, and SDK generation.
+
+### Changed
+
+- ⚙️ **Claude Code Configuration Overhaul**: Rewrote the core `.claude/settings.json` to enable granular tool
+  permissions, define available AI models, integrate automated hooks, and activate advanced Claude Code plugins,
+  significantly enhancing AI assistant capabilities and security.
+- 🚀 **Main `CLAUDE.md` and `README.md`**: Updated the primary project documentation to reflect the extensive new Claude
+  Code features, revised architectural overview, and updated tooling ecosystem.
+- 📝 **Agent Documentation Enhancements**: Expanded existing documentation for agent fundamentals, Human-in-the-Loop
+  (HITL), and memory integration to cover new patterns like **Bot-in-the-Loop (BITL)**, dynamic HITL type selection, and
+  config-driven memory management.
+- 🔄 **Backend Linting Action**: Switched the `lint_backend` GitHub Action from using `black` to `ruff format` for Python
+  code formatting, aligning CI with local development tooling.
+- 🏗️ **Process Endpoint Configuration**: Modified the `ProcessEndpointsDiscoveryService` to now expect explicit `name`
+  and `description` fields for process configurations, removing previous conditional defaults.
+
+### Fixed
+
+- 🐛 **Dagster UI Port Correction**: Updated the documented Dagster UI access port from `3000` to `3002` in
+  `aihub_pipeline/README.md` for accuracy.
+
+### Removed
+
+- 🗑️ **Legacy Claude Code Commands**: Replaced the outdated `.claude/commands/` directory with the new, more powerful
+  and structured **Claude Code Skills** system.
+- 🧹 **Old Gemini CLI Integration**: Removed the `AGENTS.md` context file and `.gemini/settings.json`, standardizing AI
+  assistant context management exclusively through the `.claude/` directory.
+- 🌐 **Obsolete Frontend Testing Files**: Removed old placeholder frontend testing assets (`index.html`, `logo.png`,
+  `script.js`) from the `aihub_api` playground.
+
+### Refactor
+
+- 🧹 **YAML File Consistency**: Standardized YAML file formatting across the repository by adding the `---` document
+  start indicator to numerous configuration and i18n files.
+- 🔧 **Docker Compose Restart Syntax**: Updated `restart: no` to `restart: "no"` in Docker Compose templates and
+  generated files for improved YAML parser compatibility and consistency.
+- 📄 **Makefile Formatting Tasks**: Streamlined code formatting workflows by integrating `format-md` and a new
+  `format-yaml` target into the main `pr-ready` Makefile command.
+- 🩹 **MCP Script Robustness**: Improved the `.claude/mcp/mcp-aihub-api.sh` and `mcp-mongodb.sh` scripts with more
+  robust, conditional sourcing of environment variables.
+- 📝 **Gitignore Updates**: Expanded `.gitignore` to include new Claude Code local override files, ensuring a cleaner and
+  more focused repository.
+
+______________________________________________________________________
+
 ## [v0.265.0] - 2026-02-23 - Major Infrastructure Upgrade: Embracing uv for Superior Python Dependency Management
 
 ### Added

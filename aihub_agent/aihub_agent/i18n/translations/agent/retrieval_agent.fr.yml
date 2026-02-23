@@ -1,3 +1,4 @@
+---
 metadata:
   name: Agent de Retrieval
   description: Agent RAG simplifié axé sur la récupération d'informations pertinentes
@@ -6,11 +7,11 @@ config:
     label: Prompt de contexte
 steps:
   retrieve_nodes:
-    name: "Récupérer les nœuds"
-    description: "Récupère les nœuds pertinents de la base de connaissances."
+    name: Récupérer les nœuds
+    description: Récupère les nœuds pertinents de la base de connaissances.
   order_nodes:
-    name: "Ordonner les nœuds par documents"
-    description: "Ordonne les nœuds récupérés par leurs documents sources."
+    name: Ordonner les nœuds par documents
+    description: Ordonne les nœuds récupérés par leurs documents sources.
   stop:
-    name: "Étape d'arrêt"
-    description: "Arrête l'agent et retourne les nœuds ordonnés comme messages de contexte."
+    name: Étape d'arrêt
+    description: Arrête l'agent et retourne les nœuds ordonnés comme messages de contexte.

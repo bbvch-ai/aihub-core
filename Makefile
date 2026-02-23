@@ -50,6 +50,10 @@ format-md:
 	@echo "Formatting markdown files..."
 	@uv run mdformat --number $$(git ls-files '*.md' | grep -v 'aihub_doc/whitepaper/chapters/')
 
+format-yaml:
+	@echo "Formatting YAML files..."
+	@uv run yamlfix $$(git ls-files '*.yaml' '*.yml' | grep -v 'pnpm-lock.yaml')
+
 format-md-win:
 	@echo "Formatting markdown files..."
 	@powershell -Command "git ls-files *.md | ForEach-Object { uv run mdformat --number $$_ }"
@@ -74,11 +78,12 @@ pr-ready:
 	@(cd aihub_api &&  make pr-ready)
 	@(cd aihub_bot &&  make pr-ready)
 	@(cd aihub_web && make pr-ready)
-	@uv run mdformat --number $$(git ls-files '*.md' | grep -v 'aihub_doc/whitepaper/chapters/')
+	@$(MAKE) format-md
+	@$(MAKE) format-yaml
 	@$(MAKE) generate-compose
 	@$(MAKE) license-check
 
-TAG ?= v0.265.0
+TAG ?= v0.265.1
 
 changelog:
 	@echo "Generating changelog"
@@ -121,3 +126,4 @@ version-bump:
 	done
 	@uv lock
 	@echo "Version bumped to $(VERSION)"
+
