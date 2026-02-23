@@ -269,17 +269,16 @@ from the codebase. Restrict to the most important topics for YOUR system.
 
 ### Section 9: Architecture Decisions
 
-**Purpose**: Point to the ADR directory and summarize key decisions. This section bridges to the detailed ADRs.
+**Purpose**: Point to the ADR directory.
 
-**Content**: Reference the ADRs in `aihub_doc/arc42/decisions/`. List important decisions with their rationale. Avoid
-redundancy with Section 4 (which captures high-level strategy).
+**Content**: Reference the ADRs in `aihub_doc/arc42/decisions/`. 
 
 **ADR format** (documented in `aihub_doc/arc42/decisions/0000_00_00_template.md`):
 
 - Context → Decision Drivers → Decision → Consequences
 - File naming: `YYYY_MM_DD_short_decision_summary.md`
 
-Do NOT duplicate the `/document-decision` skill's workflow — this section summarizes and cross-references existing ADRs.
+Do NOT duplicate the `/document-decision` skill's workflow — this section only points to the ADRs.
 
 ---
 
