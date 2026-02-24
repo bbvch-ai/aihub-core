@@ -434,7 +434,7 @@ ______________________________________________________________________
 
 ______________________________________________________________________
 
-## [v0.262.2] - YYYY-MM-DD - Introducing the LLM-Powered Whitepaper Generation System
+## [v0.262.2] - 2026-02-17 - Introducing the LLM-Powered Whitepaper Generation System
 
 ### Added
 
