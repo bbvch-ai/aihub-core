@@ -1,23 +1,23 @@
+````markdown
 ---
 title: Konfigurierbare Agentenformulare
-source_sha: 3d0a9047edaeff71305234fe9500ea8b3d379dd642e3177851d129f5dc1a147c
+source_sha: "26826340f61f5add37c57394ce94e9f56625aeb51f99b9d3043f43da82f6f59f"
 ---
 
 # Konfigurierbare Agentenformulare
 
-Diese Anleitung erklärt, wie Sie Agenten-Konfigurationsformulare definieren, die es Administratoren ermöglichen,
-Agentenprofile ohne Codeänderungen zu erstellen und anzupassen.
+Dieser Leitfaden erklärt, wie Agentenkonfigurationsformulare definiert werden, die Administratoren das Erstellen und Anpassen von Agentenprofilen ohne Codeänderungen ermöglichen.
 
 ## Überblick
 
-Das SDK verwendet das **Form-Duality-Pattern**, bei dem ein einziges Pydantic-Modell zwei Zwecken dient:
+Das SDK verwendet das **Formular-Dualitätsmuster**, bei dem ein einziges Pydantic-Modell zwei Zwecken dient:
 
-1. **Formularmodus**: Felder enthalten `FormkitElement`-Instanzen, die das UI-Formular definieren
-2. **Datenmodus**: Felder enthalten primitive Werte, die die validierte Konfiguration speichern
+1.  **Formularmodus**: Felder enthalten `FormkitElement`-Instanzen, die das UI-Formular definieren
+2.  **Datenmodus**: Felder enthalten primitive Werte, die die validierte Konfiguration halten
 
-Dieses Pattern stellt sicher, dass das Formularschema und das Datenmodell nicht desynchronisiert werden können.
+Dieses Muster stellt sicher, dass das Formularschema und das Datenmodell nicht desynchronisiert werden können.
 
-## Grundlegendes Pattern
+## Grundlegendes Muster
 
 ### Definieren einer konfigurierbaren AgentConfig
 
@@ -56,7 +56,6 @@ class MyAgentConfig(AgentConfig):
             name=base.name,
             description=base.description,
             icon=base.icon,
-            agent_class=base.agent_class,
             # Define form elements for custom fields
             model_name=InputText(
                 label=LocaleString(en="Model", de="Modell"),
@@ -70,9 +69,9 @@ class MyAgentConfig(AgentConfig):
                 step=0.1,
             ),
         )
-```
+````
 
-### Registrierung mit AgentRunner
+### Registrieren mit AgentRunner
 
 ```python
 from aihub_agent.runners.AgentRunner import AgentRunner
@@ -89,9 +88,9 @@ async def main():
     await runner.run_forever()
 ```
 
-Der `as_form()`-Aufruf erstellt eine Konfigurationsinstanz im Formularmodus. Wenn der Agent sich via Discovery
-registriert, wird das Formularschema extrahiert und gespeichert. Administratoren können dann Profile über die Admin-UI
-erstellen.
+Der Aufruf `as_form()` erstellt eine Konfigurationsinstanz im Formularmodus. Wenn der Agent sich über Discovery
+registriert, wird das Formularschema extrahiert und gespeichert. Administratoren können dann Profile über die
+Admin-Benutzeroberfläche erstellen.
 
 ## Verfügbare FormKit-Elemente
 
@@ -174,7 +173,7 @@ greeting=LocaleInput(
 )
 ```
 
-### Modellselektor
+### Modellauswahl
 
 ```python
 from aihub_lib.nats.events.form.elements import ModelSelect
@@ -192,8 +191,8 @@ Das `ModelSelect`-Element wird zur Laufzeit automatisch aus dem LiteLLM-Modellre
 
 ## Formularsichere Constraints
 
-Standard-Pydantic-Constraints (`Field(ge=0, le=1)`) funktionieren nicht mit dem Duality-Pattern, da sie
-`FormkitElement`-Typen nicht validieren können. Verwenden Sie stattdessen SDK-eigene Constraints:
+Standard-Pydantic-Constraints (`Field(ge=0, le=1)`) funktionieren nicht mit dem Dualitätsmuster, da sie
+`FormkitElement`-Typen nicht validieren können. Verwenden Sie stattdessen die vom SDK bereitgestellten Constraints:
 
 ```python
 from aihub_lib.nats.events.form.constraints import Ge, Le, Gt, Lt, MinLen, MaxLen, Pattern
@@ -210,9 +209,9 @@ agent_id: Annotated[str | InputText, Pattern(r"^[a-z0-9_-]+$")] = ""
 Diese Constraints überspringen die Validierung, wenn das Feld ein `FormkitElement` enthält, wodurch die
 Pydantic-Validierung in beiden Modi funktioniert.
 
-## Nicht konfigurierbare Felder
+## Nicht-konfigurierbare Felder
 
-Einige Felder sollten nicht im Formular erscheinen (Deployment-spezifische Konfiguration). Lassen Sie die
+Einige Felder sollten nicht im Formular erscheinen (bereitstellungsspezifische Konfiguration). Lassen Sie die
 FormKit-Element-Alternative weg:
 
 ```python
@@ -231,18 +230,17 @@ class MyAgentConfig(AgentConfig):
             name=base.name,
             description=base.description,
             icon=base.icon,
-            agent_class=base.agent_class,
             model_name=InputText(label=LocaleString(en="Model")),
             channel_config=channel_config,  # Actual value, not FormKit element
         )
 ```
 
-Nicht konfigurierbare Felder werden zur Laufzeit mit der vom Benutzer übermittelten Konfiguration zusammengeführt. Das
+Nicht-konfigurierbare Felder werden zur Laufzeit mit der vom Benutzer übermittelten Konfiguration zusammengeführt. Das
 Formular zeigt nur konfigurierbare Felder an.
 
 ## Verschachtelte Formulare
 
-Formulare können andere Formulare unter Verwendung des `Group`-Elements enthalten:
+Formulare können andere Formulare mithilfe des `Group`-Elements enthalten:
 
 ```python
 from aihub_lib.nats.events.form.Form import Form
@@ -276,16 +274,15 @@ class MyAgentConfig(AgentConfig):
             name=base.name,
             description=base.description,
             icon=base.icon,
-            agent_class=base.agent_class,
             llm=LLMConfig.as_form(),  # Nested form
         )
 ```
 
-Verschachtelte Formulare werden in der UI automatisch als einklappbare `Group`-Elemente gerendert.
+Verschachtelte Formulare werden in der Benutzeroberfläche automatisch als einklappbare `Group`-Elemente gerendert.
 
 ## Repeater-Formulare (Arrays)
 
-Für Listen konfigurierbarer Elemente verwenden Sie eine Liste von Formularen:
+Für Listen von konfigurierbaren Elementen verwenden Sie eine Liste von Formularen:
 
 ```python
 class ExampleForm(Form):
@@ -313,17 +310,16 @@ class MyAgentConfig(AgentConfig):
             name=base.name,
             description=base.description,
             icon=base.icon,
-            agent_class=base.agent_class,
             examples=[ExampleForm.as_form()],  # List with one template
         )
 ```
 
-Listen von Formularen werden als `Repeater`-Elemente gerendert, die es Benutzern ermöglichen, Elemente dynamisch
-hinzuzufügen/zu entfernen.
+Listen von Formularen werden als `Repeater`-Elemente gerendert, wodurch Benutzer Elemente dynamisch hinzufügen/entfernen
+können.
 
 ## Zugriff auf die Konfiguration in Schritten
 
-Der Dispatcher injiziert die validierte Konfiguration über Typannotationen in Schrittmethoden:
+Der Dispatcher injiziert die validierte Konfiguration über Typannotation in die Schrittmethoden:
 
 ```python
 from aihub_agent.workflow.decorators.step import step
@@ -346,12 +342,12 @@ class MyAgent(Agent):
         # ...
 ```
 
-Die Konfiguration wird via RPC abgerufen, wenn der Agent ein `StartEvent` empfängt, gegen das Pydantic-Modell validiert
+Die Konfiguration wird via RPC abgerufen, wenn der Agent ein `StartEvent` erhält, gegen das Pydantic-Modell validiert
 und für die Dauer des Laufs zwischengespeichert.
 
 ## Bedingte Feldsichtbarkeit
 
-Felder basierend auf den Werten anderer Felder anzeigen oder ausblenden:
+Felder basierend auf Werten anderer Felder anzeigen oder ausblenden:
 
 ```python
 use_custom_prompt: Annotated[bool | ToggleSwitch, Field()] = False
@@ -366,7 +362,7 @@ custom_prompt=InputText(
 ```
 
 Der Parameter `condition_if` verwendet die Ausdruckssyntax von FormKit. Das Feld erscheint nur, wenn die Bedingung als
-wahr evaluiert wird.
+wahr ausgewertet wird.
 
 ## Vollständiges Beispiel
 
@@ -402,7 +398,6 @@ class QAAgentConfig(AgentConfig):
             name=base.name,
             description=base.description,
             icon=base.icon,
-            agent_class=base.agent_class,
             model_name=ModelSelect(
                 label=LocaleString(en="Model", de="Modell"),
                 help=LocaleString(en="Language model for generating responses"),
@@ -450,26 +445,29 @@ async def main():
     await runner.run_forever()
 ```
 
-## Best Practices
+## Bewährte Verfahren
 
 ### Feldnamen
 
-- Verwenden Sie deskriptive Feldnamen, die für Administratoren verständlich sind
-- Bieten Sie `help`-Text an, der erklärt, was jede Einstellung bewirkt
+- Verwenden Sie beschreibende Feldnamen, die für Administratoren sinnvoll sind
+- Stellen Sie `help`-Text bereit, der erklärt, was jede Einstellung bewirkt
 - Fügen Sie sinnvolle Standardwerte hinzu
 
 ### Validierung
 
-- Verwenden Sie immer Constraints (`Ge`, `Le`, `Pattern`) für numerische und String-Felder
-- Validieren Sie frühzeitig, um zu verhindern, dass ungültige Konfigurationen gespeichert werden
+- Verwenden Sie immer Constraints (`Ge`, `Le`, `Pattern`) für numerische Felder und String-Felder
+- Validieren Sie frühzeitig, um das Speichern ungültiger Konfigurationen zu verhindern
 
 ### Lokalisierung
 
 - Verwenden Sie `LocaleString` für alle benutzeroberflächenrelevanten Texte (Labels, Hilfe, Beschreibungen)
 - Unterstützen Sie mindestens Deutsch und Englisch (`de`, `en`)
 
-### Tests
+### Testen
 
 - Testen Sie sowohl den Formularmodus (`as_form()`) als auch den Datenmodus (mit tatsächlichen Werten)
 - Überprüfen Sie die Generierung des Formularschemas mit `config.to_formkit_form()`
-- Testen Sie die Konfigurationsinjektion in Schrittmethoden
+- Testen Sie die Konfigurationsinjektion in den Schrittmethoden
+
+```
+```

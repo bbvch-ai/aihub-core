@@ -523,4 +523,3 @@ def documented_operation(context, input_data: InputType) -> OutputType:
 
     return result
 ```
-

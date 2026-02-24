@@ -765,4 +765,3 @@ async def test_service_logic():
     mock_nc.publish.assert_called_once()
     mock_locale.get_string.assert_called_with("success_message")
 ```
-
