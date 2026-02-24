@@ -90,9 +90,10 @@ jobs:
       - name: Install dependencies
         run: uv sync --all-packages --dev --frozen
       - name: Run E2E tests
+        id: pytest
+        continue-on-error: true
         working-directory: aihub_backup
-        run: |
-          uv run pytest tests/test_e2e.py -v --timeout=600 --junitxml=e2e-pytest.xml || true
+        run: uv run pytest tests/test_e2e.py -v --timeout=600 --junitxml=e2e-pytest.xml
       - name: Stop services
         if: always()
         run: docker compose -f docker-compose.build.yml --env-file .env.dev down --remove-orphans
@@ -108,17 +109,5 @@ jobs:
           name: backup-e2e-test-report
           path: aihub_backup/e2e-pytest.xml
       - name: Check test results
-        working-directory: aihub_backup
-        run: |-
-          if [ -f e2e-pytest.xml ]; then
-            # Check for failures in the XML
-            FAILURES=$(grep -c 'failures="[1-9]' e2e-pytest.xml || true)
-            ERRORS=$(grep -c 'errors="[1-9]' e2e-pytest.xml || true)
-            if [ "$FAILURES" != "0" ] || [ "$ERRORS" != "0" ]; then
-              echo "E2E tests had failures or errors"
-              exit 1
-            fi
-          else
-            echo "No test report found"
-            exit 1
-          fi
+        if: steps.pytest.outcome == 'failure'
+        run: exit 1
