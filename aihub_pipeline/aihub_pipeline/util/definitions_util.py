@@ -120,7 +120,10 @@ def default_definitions(
     removed_documents_key = AssetKey([datalake_container_name, "datalake_to_vectorstore", "removed_documents"])
 
     observable_asset = observable_data_lake_factory(
-        data_lake_key, document_partitions, max_partitions, encode_partition_keys=encode
+        data_lake_key,
+        document_partitions,
+        max_partitions,
+        encode_partition_keys=encode,
     )
     assets = [
         observable_asset,
