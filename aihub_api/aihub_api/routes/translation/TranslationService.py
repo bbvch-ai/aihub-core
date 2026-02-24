@@ -18,7 +18,7 @@ class TranslationService:
     Service for automatically translating content to all supported locales using a single LLM call.
     """
 
-    DEFAULT_MODEL = "text-generation/gemma-3n-e4b"
+    DEFAULT_MODEL = "text-generation/Mistral-Small-3.2-24B-Instruct-2506"
 
     @classmethod
     @trace_fn

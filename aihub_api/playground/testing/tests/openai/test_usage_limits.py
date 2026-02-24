@@ -95,7 +95,7 @@ class TestUsageLimitEnforcement:
         async with LifespanManager(app) as lifespan:
             async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url=BASE_URL) as client:
                 payload = {
-                    "model": "text-generation/mistral-small-3.2-24b",
+                    "model": "text-generation/Mistral-Small-3.2-24B-Instruct-2506",
                     "messages": [{"role": "user", "content": "Hello"}],
                     "stream": False,
                 }

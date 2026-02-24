@@ -8,7 +8,7 @@ enable_logging()
 defs = default_definitions(
     datalake_container_name=AIHubSettings().DEFAULT_BUCKET_NAME,
     embedding_model_name="embedding/bge-m3",
-    llm_model_name="text-generation/gemma-3n-e4b",
+    llm_model_name="text-generation/Mistral-Small-3.2-24B-Instruct-2506",
     with_summary_nodes=True,
     with_table_refinement=True,
     observe_job_hour=0,

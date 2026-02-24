@@ -40,7 +40,7 @@ def agent_config():
         agent_class=UserMemoryAgent.__name__,
         name=LocaleString(en="Memory Test Agent", de="Speicher Test Agent"),
         description=LocaleString(en="Test agent for memory integration", de="Testagent für Speicherintegration"),
-        llm=LLMConfig(model_name="text-generation/mistral-small-3.2-24b"),
+        llm=LLMConfig(model_name="text-generation/Mistral-Small-3.2-24B-Instruct-2506"),
     )
 
 

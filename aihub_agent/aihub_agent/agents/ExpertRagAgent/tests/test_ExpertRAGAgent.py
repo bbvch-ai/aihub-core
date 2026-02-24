@@ -119,7 +119,7 @@ def mongo_connection(event_loop):
 @pytest.fixture(scope="session")
 def expert_rag_agent_config(test_collection):
     """Return an ExpertRAGAgentConfig with expert escalation enabled."""
-    llm_config = LLMConfig(model_name="text-generation/mistral-small-3.2-24b")
+    llm_config = LLMConfig(model_name="text-generation/Mistral-Small-3.2-24B-Instruct-2506")
     reranking_config = RerankingModelConfig(model_name="reranker/bge")
     embedding_config = EmbeddingModelConfig(model_name="embedding/bge-m3")
     vector_store: MilvusVectorStoreConfig = MilvusVectorStoreConfig(

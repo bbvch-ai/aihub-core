@@ -133,7 +133,9 @@ def default_llm_resources() -> dict[str, ConfigurableResourceFactory]:
     embedding_model_resource = EmbeddingModelResource(
         embedding_config=EmbeddingModelConfig(model_name="embedding/bge-m3")
     )
-    language_model = LanguageModelResource(llm_config=LLMConfig(model_name="text-generation/gemma-3n-e4b"))
+    language_model = LanguageModelResource(
+        llm_config=LLMConfig(model_name="text-generation/Mistral-Small-3.2-24B-Instruct-2506")
+    )
     return {
         "embedding_model": embedding_model_resource,
         "language_model": language_model,

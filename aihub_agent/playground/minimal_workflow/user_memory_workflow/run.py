@@ -24,7 +24,10 @@ async def main():
             agent_id="memory_agent",
             name=LocaleString(en="User Memory Agent"),
             description=LocaleString(en="This is the Memory Agent config"),
-            llm=LLMConfig(model_name="text-generation/gemma-3n-e4b", default_parameter=LLMParameter(temperature=1.0)),
+            llm=LLMConfig(
+                model_name="text-generation/Mistral-Small-3.2-24B-Instruct-2506",
+                default_parameter=LLMParameter(temperature=1.0),
+            ),
         ),
     )
 

@@ -51,7 +51,7 @@ def agent_config():
             en="Test agent for organization memory integration",
             de="Testagent für Organisationsspeicherintegration",
         ),
-        llm=LLMConfig(model_name="text-generation/mistral-small-3.2-24b"),
+        llm=LLMConfig(model_name="text-generation/Mistral-Small-3.2-24B-Instruct-2506"),
         tenant_id="default_tenant",
         tenant_namespace="default_namespace",
     )

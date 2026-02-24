@@ -28,7 +28,10 @@ async def main():
             description=LocaleString(
                 en="Agent for storing and retrieving explicit organizational facts shared across all users"
             ),
-            llm=LLMConfig(model_name="text-generation/gemma-3n-e4b", default_parameter=LLMParameter(temperature=1.0)),
+            llm=LLMConfig(
+                model_name="text-generation/Mistral-Small-3.2-24B-Instruct-2506",
+                default_parameter=LLMParameter(temperature=1.0),
+            ),
             tenant_id="default_tenant",
             tenant_namespace="default_namespace",
         ),

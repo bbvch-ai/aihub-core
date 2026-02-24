@@ -7,6 +7,7 @@
 
 {%- set stage_postfix = stage + ".gpu" if gpu_enabled else stage %}
 {%- set hardware = 'gpu' if gpu_enabled else 'cpu' %}
+{%- set default_model = 'text-generation/Qwen3-VL-30B-A3B-Instruct-FP8' if gpu_enabled else 'text-generation/Mistral-Small-3.2-24B-Instruct-2506' %}
 
 {#- ===================================================================
     Internal Service Endpoints (Identical Across All Stages)
@@ -1069,8 +1070,8 @@ services:
   # for a unified experience.
   # ===================================================================
 
-  vllm-gemma:
-    container_name: vllm-gemma
+  vllm:
+    container_name: vllm
     platform: "linux/amd64"
     image: {{ global.registry_prefix }}{{ image_tags.vllm }}
     restart: always
@@ -1087,61 +1088,18 @@ services:
       HUGGING_FACE_HUB_TOKEN: ${HUGGINGFACE_API_KEY}
       VLLM_API_KEY: ${LOCAL_LLM_TOKEN}
     command: >
-      --model google/gemma-3n-E4B-it
-      --served-model-name gemma-3n-e4b-it
+      --model Qwen/Qwen3-VL-30B-A3B-Instruct-FP8
+      --served-model-name qwen3-vl-30b
       --port 8000
       --host 0.0.0.0
-      --gpu-memory-utilization 0.25
-      --max-model-len 32768
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
-      timeout: 10s
-      interval: 30s
-      retries: 3
-      start_period: 300s
-    logging:
-      driver: json-file
-      options:
-        max-size: 10m
-        max-file: 2
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              device_ids: [ '0' ]
-              capabilities: [ gpu ]
-    networks:
-      - backend
-
-  vllm-mistral:
-    container_name: vllm-mistral
-    platform: "linux/amd64"
-    image: {{ global.registry_prefix }}{{ image_tags.vllm }}
-    restart: always
-    ipc: host
-    {%- if stage in ['dev', 'local', 'build'] %}
-    ports:
-      - "8186:8000"
-    {%- endif %}
-    volumes:
-      - {{ global.volume_root }}/huggingface:/root/.cache/huggingface
-      - {{ global.volume_root }}/vllm-cache:/root/.cache/vllm
-    environment:
-      HF_HOME: /root/.cache/huggingface
-      HUGGING_FACE_HUB_TOKEN: ${HUGGINGFACE_API_KEY}
-      VLLM_API_KEY: ${LOCAL_LLM_TOKEN}
-    command: >
-      --model stelterlab/Mistral-Small-3.2-24B-Instruct-2506-FP8
-      --served-model-name mistral-small-3.2-24b
-      --port 8000
-      --host 0.0.0.0
-      --gpu-memory-utilization 0.55
+      --gpu-memory-utilization 0.85
       --max-model-len 131072
-      --tokenizer_mode mistral
-      --tool-call-parser mistral
-      --enable-auto-tool-choice
-      --limit-mm-per-prompt '{"image":10}'
+      --max-num-seqs 16
+      --max-num-batched-tokens 4096
+      --enable-chunked-prefill
+      --limit-mm-per-prompt '{"image": 8, "video": 0}'
+      --async-scheduling
+      --dtype auto
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
       timeout: 10s
@@ -1271,7 +1229,7 @@ services:
       - "8185:8000"
     {%- endif %}
     volumes:
-      - {{ global.volume_root }}/huggingface:/home/ubuntu/.cache/huggingface/hub
+      - {{ global.volume_root }}/speaches-models:/home/ubuntu/.cache/huggingface/hub
     environment:
       WHISPER__INFERENCE_DEVICE: cuda
       PRELOAD_MODELS: Systran/faster-whisper-large-v3
@@ -1533,6 +1491,12 @@ services:
       - "30000:30000"
     {%- endif %}
     # No volume mount - VLM models are baked into the image for faster startup
+    command: >
+      mineru-vllm-server
+      --host 0.0.0.0
+      --port 30000
+      --served-model-name MinerU2.5-2509-1.2B
+      --gpu-memory-utilization 0.05
     environment:
       MINERU_MODEL_SOURCE: local
     healthcheck:
@@ -1695,8 +1659,8 @@ services:
       MODELS_CACHE_TTL: 60
       OPENAI_API_BASE_URL: http://{{ 'localhost' if stage == 'dev' else 'api' }}:8000/api/v1/openai
       OPENAI_API_KEY: ${SUPERUSER_TOKEN}
-      TASK_MODEL: text-generation/gemma-3n-e4b
-      TASK_MODEL_EXTERNAL: text-generation/gemma-3n-e4b
+      TASK_MODEL: {{ default_model }}
+      TASK_MODEL_EXTERNAL: {{ default_model }}
       ENABLE_OLLAMA_API: False
       ENABLE_OPENAI_API: True
 
@@ -2286,7 +2250,7 @@ services:
       NEO4J_PASSWORD: ${NEO4J_PASSWORD}
 
       # Mem0
-      MEM0_LLM_NAME: "text-generation/mistral-small-3.2-24b"
+      MEM0_LLM_NAME: "{{ default_model }}"
       MEM0_EMBEDDING_MODEL_NAME: "embedding/bge-m3"
       MEM0_RERANKING_MODEL_NAME: "reranker/bge"
 
@@ -2464,7 +2428,7 @@ services:
       NEO4J_PASSWORD: ${NEO4J_PASSWORD}
 
       # Mem0
-      MEM0_LLM_NAME: "text-generation/mistral-small-3.2-24b"
+      MEM0_LLM_NAME: "{{ default_model }}"
       MEM0_EMBEDDING_MODEL_NAME: "embedding/bge-m3"
       MEM0_RERANKING_MODEL_NAME: "reranker/bge"
 
@@ -2543,7 +2507,7 @@ services:
       NEO4J_PASSWORD: ${NEO4J_PASSWORD}
 
       # Mem0
-      MEM0_LLM_NAME: "text-generation/mistral-small-3.2-24b"
+      MEM0_LLM_NAME: "{{ default_model }}"
       MEM0_EMBEDDING_MODEL_NAME: "embedding/bge-m3"
       MEM0_RERANKING_MODEL_NAME: "reranker/bge"
 
@@ -3009,7 +2973,7 @@ services:
       NEO4J_PASSWORD: ${NEO4J_PASSWORD}
 
       # Mem0
-      MEM0_LLM_NAME: "text-generation/mistral-small-3.2-24b"
+      MEM0_LLM_NAME: "{{ default_model }}"
       MEM0_EMBEDDING_MODEL_NAME: "embedding/bge-m3"
       MEM0_RERANKING_MODEL_NAME: "reranker/bge"
     healthcheck:
@@ -3060,7 +3024,7 @@ services:
       NEO4J_URL: bolt://neo4j:7687
       NEO4J_USERNAME: ${NEO4J_USERNAME}
       NEO4J_PASSWORD: ${NEO4J_PASSWORD}
-      MEM0_LLM_NAME: "text-generation/mistral-small-3.2-24b"
+      MEM0_LLM_NAME: "{{ default_model }}"
       MEM0_EMBEDDING_MODEL_NAME: "embedding/bge-m3"
       MEM0_RERANKING_MODEL_NAME: "reranker/bge"
       LOG_LEVEL: ${LOG_LEVEL}

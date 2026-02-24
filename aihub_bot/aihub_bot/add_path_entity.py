@@ -25,10 +25,11 @@ if env_path.exists():
 Each path entity is associated with a specific API endpoint and has its own set of credentials.
 
 BITL PATH: /api/v1/bot_in_the_loop/response
-OPENAI PATH: /api/v1/openai/chat/completions/json?model_name=text-generation/gemma-3n-e4b
-OPENAI STREAMING PATH: /api/v1/openai/chat/completions/stream?model_name=text-generation/gemma-3n-e4b
+OPENAI PATH: /api/v1/openai/chat/completions/json?model_name=<model>
+OPENAI STREAMING PATH: /api/v1/openai/chat/completions/stream?model_name=<model>
 """
-PATH = "/api/v1/openai/chat/completions/json?model_name=text-generation/gemma-3n-e4b"
+MODEL = "text-generation/Mistral-Small-3.2-24B-Instruct-2506"
+PATH = f"/api/v1/openai/chat/completions/json?model_name={MODEL}"
 
 
 def main():
