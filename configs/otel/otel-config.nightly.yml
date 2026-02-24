@@ -1,10 +1,10 @@
----
 # ===================================================================
 # OpenTelemetry Collector Configuration - Stage: nightly
 # ===================================================================
 # Generated from template. Do not edit directly.
 # Collects traces, metrics, and logs for observability.
 # ===================================================================
+
 extensions:
   health_check:
     endpoint: 0.0.0.0:13133
@@ -12,8 +12,9 @@ extensions:
   # Basic auth extension for Langfuse authentication
   basicauth/langfuse:
     client_auth:
-      username: ${LANGFUSE_PUBLIC_KEY}
-      password: ${LANGFUSE_SECRET_KEY}
+      username: "${LANGFUSE_PUBLIC_KEY}"
+      password: "${LANGFUSE_SECRET_KEY}"
+
 receivers:
   otlp:
     protocols:
@@ -21,37 +22,39 @@ receivers:
         endpoint: 0.0.0.0:4317
       http:
         endpoint: 0.0.0.0:4318
+
 processors:
   batch:
     send_batch_size: 1000
     timeout: 10s
+
   filter/noise:
     error_mode: ignore
     traces:
       span:
-        - attributes["http.route"] == "/health"
-        - attributes["http.route"] == "/metrics"
-        - attributes["db.system"] == "redis"
-        - attributes["db.system"] == "postgresql"
-        - attributes["db.system"] == "mongodb"
-        - resource.attributes["service.name"] == "litellm" and attributes["service"]
-          == "postgres"
-        - resource.attributes["service.name"] == "litellm" and attributes["service"]
-          == "auth"
+        - 'attributes["http.route"] == "/health"'
+        - 'attributes["http.route"] == "/metrics"'
+        - 'attributes["db.system"] == "redis"'
+        - 'attributes["db.system"] == "postgresql"'
+        - 'attributes["db.system"] == "mongodb"'
+        - 'resource.attributes["service.name"] == "litellm" and attributes["service"] == "postgres"'
+        - 'resource.attributes["service.name"] == "litellm" and attributes["service"] == "auth"'
 
   # Filter spans for Langfuse: only keep LLM-related traces with OpenInference semantic conventions
   filter/langfuse:
     error_mode: ignore
     traces:
-      span: ['attributes["openinference.span.kind"] == nil']
+      span:
+        - 'attributes["openinference.span.kind"] == nil'
+
 exporters:
   # Generic cloud exporter with configurable headers
   # Controlled via environment variables:
   #   - OTEL_CLOUD_ENDPOINT: Target endpoint URL
   #   - OTEL_CLOUD_HEADERS: Authentication headers (e.g., "api-key=xxx")
   otlp/cloud:
-    endpoint: ${OTEL_CLOUD_ENDPOINT}
-    headers: ${OTEL_CLOUD_HEADERS}
+    endpoint: "${OTEL_CLOUD_ENDPOINT}"
+    headers: "${OTEL_CLOUD_HEADERS}"
     tls:
       insecure: false
     compression: gzip
@@ -64,7 +67,7 @@ exporters:
   # Langfuse OTLP exporter for AI observability
   # Langfuse accepts OTLP traces via HTTP with basic auth
   otlphttp/langfuse:
-    endpoint: http://langfuse-web:3000/api/public/otel
+    endpoint: "http://langfuse-web:3000/api/public/otel"
     auth:
       authenticator: basicauth/langfuse
     tls:
@@ -74,14 +77,15 @@ exporters:
       enabled: true
       initial_interval: 5s
       max_interval: 30s
+
 service:
-  extensions: [health_check, basicauth/langfuse]
+  extensions: [ health_check, basicauth/langfuse ]
   pipelines:
     # Send OpenInference traces to the stack-local Langfuse instance
     traces/langfuse:
-      receivers: [otlp]
-      processors: [filter/langfuse, batch]
-      exporters: [otlphttp/langfuse]
+      receivers: [ otlp ]
+      processors: [ filter/langfuse, batch ]
+      exporters: [ otlphttp/langfuse ]
     # Send traces to cloud backend
     traces/cloud:
       receivers: [otlp]
