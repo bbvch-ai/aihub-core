@@ -32,10 +32,11 @@ from aihub_backup.models import BACKUP_SERVICES
 # Constants
 # ---------------------------------------------------------------------------
 REPO_ROOT = Path(__file__).resolve().parents[2]
-DAGSTER_HOST = "localhost"
-DAGSTER_PORT = 3004
-S3_ENDPOINT = "http://localhost:9000"
-MILVUS_API = "http://localhost:19530/v2/vectordb"
+# Use 127.0.0.1 instead of localhost to avoid IPv6 resolution issues in CI
+DAGSTER_HOST = "127.0.0.1"
+DAGSTER_PORT = 3004  # Keep as 3004 (matches docker-compose)
+S3_ENDPOINT = "http://127.0.0.1:9000"
+MILVUS_API = "http://127.0.0.1:19530/v2/vectordb"
 
 BACKUP_PREFIX_RE = re.compile(r"^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}_(online|offline)/$")
 
@@ -58,12 +59,6 @@ def _dagster_available() -> bool:
         return resp.ok
     except Exception:
         return False
-
-
-pytestmark = pytest.mark.skipif(
-    not _dagster_available(),
-    reason="Dagster not reachable — start Docker stack first",
-)
 
 
 # ---------------------------------------------------------------------------
