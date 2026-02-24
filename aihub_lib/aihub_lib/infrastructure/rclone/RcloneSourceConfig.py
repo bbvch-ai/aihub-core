@@ -1,10 +1,10 @@
-from enum import Enum
+from enum import StrEnum
 from typing import Annotated, Any
 
 from pydantic import BaseModel, ConfigDict, Field, SecretStr
 
 
-class RcloneBackendType(str, Enum):
+class RcloneBackendType(StrEnum):
     ONEDRIVE = "onedrive"
     DRIVE = "drive"
     S3 = "s3"

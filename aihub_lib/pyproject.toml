@@ -1,93 +1,88 @@
-[tool.poetry]
-name = "aihub_lib"
-version = "v0.264.0"
+[project]
+name = "aihub-core"
+version = "0.265.1"
 description = ""
+requires-python = ">=3.13, <3.14"
 authors = [
-    "Joel Barmettler <joel.barmettler@bbv.ch>",
-    "Marius Högger <marius.hoegger@bbv.ch>",
-    "Michèle Fundneider <michele.fundneider@bbv.ch>",
-    "Thomas Mannhart <thomas.mannhart@bbv.ch>",
-    "Noah Hermann <noah.hermann@bbv.ch>",
+    { name = "Joel Barmettler", email = "joel.barmettler@bbv.ch" },
+    { name = "Marius Högger", email = "marius.hoegger@bbv.ch" },
+    { name = "Michèle Fundneider", email = "michele.fundneider@bbv.ch" },
+    { name = "Thomas Mannhart", email = "thomas.mannhart@bbv.ch" },
+    { name = "Noah Hermann", email = "noah.hermann@bbv.ch" },
 ]
-license = "Proprietary"
+license = "LicenseRef-Proprietary"
 readme = "README.md"
+dependencies = [
+    "mongoengine>=0.29.1",
+    "llama-index-core==0.14.12",
+    "networkx>=3.4.2",
+    "azure-ai-documentintelligence>=1.0.2",
+    "pydantic-settings>=2.7.0",
+    "python-i18n>=0.3.9",
+    "nats-py>=2.9.0",
+    "pyyaml>=6.0.2",
+    "llama-index-vector-stores-milvus>=0.9.4",
+    "fsspec>=2024.10.0",
+    "llama-index-readers-file>=0.5.6",
+    "colorlog>=6.9.0",
+    "openinference-instrumentation>=0.1.38",
+    "openinference-instrumentation-llama-index>=4.2.1",
+    "openinference-semantic-conventions>=0.1.21",
+    "opentelemetry-api>=1.39.1",
+    "opentelemetry-instrumentation>=0.60b1",
+    "opentelemetry-sdk>=1.39.1",
+    "opentelemetry-semantic-conventions>=0.60b1",
+    "opentelemetry-exporter-otlp>=1.39.1",
+    "pydantic>=2.10.3",
+    "llama-index-storage-docstore-mongodb>=0.4.1",
+    "llama-index-llms-openai-like>=0.5.3",
+    "transformers>=4.57.3",
+    "fastapi>=0.128.0",
+    "azure-storage-file-datalake>=12.22.0",
+    "adlfs>=2025.8.0",
+    "redis>=5.2.1",
+    "openai>=1.76.2",
+    "cachetools>=5.5.2",
+    "markitdown[docx,outlook,pptx,xlsx]>=0.1.4",
+    "boto3>=1.41.5",
+    "llama-index-embeddings-openai-like>=0.2.2",
+    "opentelemetry-exporter-otlp-proto-grpc>=1.39.1",
+    "opentelemetry-instrumentation-httpx>=0.60b1",
+    "opentelemetry-instrumentation-requests>=0.60b1",
+    "opentelemetry-instrumentation-pymongo>=0.60b1",
+    "opentelemetry-instrumentation-jinja2>=0.60b1",
+    "opentelemetry-instrumentation-asyncio>=0.60b1",
+    "opentelemetry-instrumentation-redis>=0.60b1",
+    "opentelemetry-instrumentation-botocore>=0.60b1",
+    "opentelemetry-instrumentation-milvus>=0.47.0",
+    "opentelemetry-instrumentation-logging>=0.60b1",
+    "opentelemetry-instrumentation-aiohttp-client>=0.60b1",
+    "llama-index-postprocessor-cohere-rerank>=0.5.1",
+    "lxml>=5.4.0",
+    "mem0ai[graph]>=1.0.2",
+    "html5lib>=1.1",
+    "pypdf>=6.1.3",
+    "boto3-stubs[s3]>=1.42.30",
+    "langfuse>=3.14.1",
+    "s3fs>=2024.10.0,<2025.0.0",
+    "tabulate>=0.9.0",
+]
 
-[tool.poetry.dependencies]
-python = ">=3.13, <3.14"
-mongoengine = "^0.29.1"
-llama-index-core = "0.14.12"
-networkx = "^3.4.2"
-azure-ai-documentintelligence = "^1.0.2"
-pydantic-settings = "^2.6.1"
-python-i18n = "^0.3.9"
-nats-py = "^2.9.0"
-pyyaml = "^6.0.2"
-llama-index-vector-stores-milvus = "^0.9.4"
-fsspec = "^2024.10.0"
-llama-index-readers-file = "^0.5.6"
-colorlog = "^6.9.0"
-openinference-instrumentation = "^0.1.38"
-openinference-instrumentation-llama-index = "^4.2.1"
-openinference-semantic-conventions = "^0.1.21"
-opentelemetry-api = "^1.39.1"
-opentelemetry-instrumentation = "^0.60b1"
-opentelemetry-sdk = "^1.39.1"
-opentelemetry-semantic-conventions = "^0.60b1"
-opentelemetry-exporter-otlp = "^1.39.1"
-pydantic = "^2.10.3"
-llama-index-storage-docstore-mongodb = "^0.4.1"
-pytest-mock = "^3.14.0"
-llama-index-llms-openai-like = "^0.5.3"
-transformers = "^4.57.3"
-fastapi = "^0.128.0"
-azure-storage-file-datalake = "^12.22.0"
-adlfs = "^2025.8.0"
-redis = "^5.2.1"
-openai = "^1.76.2"
-cachetools = "^5.5.2"
-markitdown = {extras = ["docx", "outlook", "pptx", "xlsx"], version = "^0.1.4"}
-boto3 = "^1.41.5"
-llama-index-embeddings-openai-like = "^0.2.2"
-opentelemetry-exporter-otlp-proto-grpc = "^1.39.1"
-opentelemetry-instrumentation-httpx = "^0.60b1"
-opentelemetry-instrumentation-requests = "^0.60b1"
-opentelemetry-instrumentation-pymongo = "^0.60b1"
-opentelemetry-instrumentation-jinja2 = "^0.60b1"
-opentelemetry-instrumentation-asyncio = "^0.60b1"
-opentelemetry-instrumentation-redis = "^0.60b1"
-opentelemetry-instrumentation-botocore = "^0.60b1"
-opentelemetry-instrumentation-milvus = "^0.47.0"
-opentelemetry-instrumentation-logging = "^0.60b1"
-opentelemetry-instrumentation-aiohttp-client = "^0.60b1"
-llama-index-postprocessor-cohere-rerank = "^0.5.1"
-lxml = "^5.4.0"
-mem0ai = {extras = ["graph"], version = "^1.0.2"}
-html5lib = "^1.1"
-pypdf = "^6.1.3"
-boto3-stubs = {extras = ["s3"], version = "^1.42.30"}
-langfuse = "^3.14.1"
-s3fs = ">=2024.10.0,<2025.0.0"
-tabulate = "^0.9.0"
-
-
-[tool.poetry.group.dev.dependencies]
-pytest = "^8.4.1"
-pytest-asyncio = "^0.24.0"
-ruff = "^0.8.1"
-matplotlib = "^3.9.3"
-pytest-bdd = "^8.1.0"
-toml-sort = "^0.24.2"
-black = { extras = ["jupyter"], version = "24.10.0" }
-mypy = "^1.13.0"
-types-pyyaml = "^6.0.12.20240917"
-types-networkx = "^3.4.2.20241115"
-pytest-cov = "^6.0.0"
-pip-licenses = "^5.0.0"
-pandas-stubs = "^2.3.3.251201"
+[dependency-groups]
+dev = [
+    "matplotlib>=3.10.1",
+    "pandas-stubs>=2.3.3.251201",
+    "types-networkx>=3.4.2.20241115",
+    "types-pyyaml>=6.0.12.20240917",
+]
 
 [build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["uv_build>=0.10.4,<0.11.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-root = ""
+module-name = "aihub_lib"
 
 [tool.tomlsort]
 all = true
@@ -104,7 +99,7 @@ target-version = 'py313'
 select = ["E", "F", "UP", "I"]
 
 [tool.mypy]
-python_version = "v13.0"
+python_version = "3.13"
 strict = true
 warn_redundant_casts = true
 warn_unused_ignores = true
@@ -125,7 +120,7 @@ extend-exclude = '''
   | \.hg
   | \.mypy_cache
   | \.tox
-  | \.venvmake
+  | \.venv
   | build
   | dist
 )/

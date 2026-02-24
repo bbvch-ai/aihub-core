@@ -41,6 +41,6 @@ See it in action here:
 
 <br >
 
----
+______________________________________________________________________
 
 Next, let's explore what you can learn from these interactions.

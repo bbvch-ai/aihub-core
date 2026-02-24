@@ -1,37 +1,37 @@
+---
 name: Lint Code
-
 on:
   pull_request:
-    branches: [ main, initiative/* ]
-    types: [ opened, edited, synchronize, reopened, ready_for_review ]
-
+    branches: [main, initiative/*]
+    types: [opened, edited, synchronize, reopened, ready_for_review]
 permissions:
   checks: write
   contents: read
   pull-requests: write
-
 jobs:
   lint-backend:
     name: Lint Backend
     runs-on: ubuntu-latest
     if: ${{ !github.event.pull_request.draft }}
-
     strategy:
       fail-fast: false
       matrix:
-        folder: [ aihub_agent, aihub_api, aihub_lib, aihub_pipeline, aihub_bot, aihub_process ]
-
+        folder:
+          - aihub_agent
+          - aihub_api
+          - aihub_lib
+          - aihub_pipeline
+          - aihub_bot
+          - aihub_process
     steps:
       - name: Lint backend
         uses: bbvch-ai/aihub-core/aihub_action/lint_backend@main
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           working_directory: ${{ matrix.folder }}
-
   lint-frontend:
     name: Lint Web
     runs-on: ubuntu-latest
-
     steps:
       - name: Lint frontend
         uses: bbvch-ai/aihub-core/aihub_action/lint_frontend@main
@@ -39,45 +39,34 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           working_directory: aihub_web/aihub_web
           lockfile: aihub_web/aihub_web/pnpm-lock.yaml
-
   license-check:
     name: License Check
     runs-on: ubuntu-latest
     if: ${{ !github.event.pull_request.draft }}
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
       - name: Set up Python 3.13
         uses: actions/setup-python@v5
         with:
           python-version: '3.13'
-
       - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y jq make
-
-      - name: Install Poetry
-        run: |
-          python -m pip install --user pipx
-          python -m pipx ensurepath
-          pipx install poetry
-
-      - name: Install Poetry dev dependencies
-        run: poetry install --only dev
-
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+      - name: Install dev dependencies
+        run: uv sync --all-packages --dev --frozen
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22.x
-
       - name: Install pnpm
         run: npm install -g pnpm
-
       - name: Make license check script executable
         run: chmod +x ./generate-license.sh
-
       - name: Run license check
         run: make license-check

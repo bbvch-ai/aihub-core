@@ -17,15 +17,19 @@ index: 4
 
 ## 1. 🎯 Foundational Knowledge of API Development
 
-This section covers the foundational architecture, patterns, and terminology you need to know before building API endpoints.
+This section covers the foundational architecture, patterns, and terminology you need to know before building API
+endpoints.
 
 ::: info
-This documentation assumes you have completed the general AI-Hub setup as described in the main README.md. Make sure you have the required infrastructure running before proceeding.
+This documentation assumes you have completed the general AI-Hub setup as described in the main README.md. Make sure you
+have the required infrastructure running before proceeding.
 :::
 
 ### 📚 Introduction to `aihub_api`
 
-You are contributing to the **aihub_api** scope, which contains the main user-facing REST API (FastAPI) and WebSocket gateway within the AI-Hub platform. This scope implements HTTP endpoints and real-time communication that connect frontend applications to the underlying AI-Hub services.
+You are contributing to the **aihub_api** scope, which contains the main user-facing REST API (FastAPI) and WebSocket
+gateway within the AI-Hub platform. This scope implements HTTP endpoints and real-time communication that connect
+frontend applications to the underlying AI-Hub services.
 
 ### 📁 Project Structure
 
@@ -118,7 +122,7 @@ The API is built on FastAPI, providing:
 - Connection management
 - Message routing
 
----
+______________________________________________________________________
 
 ## 2. 🚀 The Step-by-Step Development Workflow
 
@@ -128,24 +132,16 @@ This section provides a practical, step-by-step guide to building, testing, and 
 
 Before you begin, ensure you have completed the infrastructure setup from the root project documentation.
 
-::: warning
-Always activate the Poetry environment before working. All subsequent commands must be run from within this activated shell.
-:::
-
 ```bash
 # Start required services from the project root
 docker compose -f docker-compose.yml -f milvus-standalone-docker-compose.yml -f docker-compose-webui.yml up -d
 ```
 
-```bash
-cd aihub_api
-poetry shell
-```
-
 ### 🛠️ Step 1: Create Controller, Service, and DTOs
 
 ::: info
-Follow this three-part process to define a new API endpoint domain. Each part builds on the previous one to create a complete API implementation.
+Follow this three-part process to define a new API endpoint domain. Each part builds on the previous one to create a
+complete API implementation.
 :::
 
 1. **Create the DTO Models**: Define the data structures for requests and responses.
@@ -300,14 +296,14 @@ API testing uses pytest with FastAPI's test client and the `ApiTestRunner` or `S
        assert data["id"] == resource_id
    ```
 
-2. **Run Tests**: Execute tests from your activated Poetry shell.
+2. **Run Tests**: Execute tests from the scope directory.
 
    ```bash
    # Run all tests
-   poetry run pytest
+   uv run pytest
 
    # Run specific test file
-   poetry run pytest playground/testing/tests/my_domain/test_my_domain_api.py
+   uv run pytest playground/testing/tests/my_domain/test_my_domain_api.py
 
    # Run with coverage
    make test-cov
@@ -416,10 +412,11 @@ make lint        # Ruff linting
 ```
 
 ::: danger
-All API code must use strict Python type annotations and follow the Controller-Service-DTO pattern. This is enforced by CI/CD.
+All API code must use strict Python type annotations and follow the Controller-Service-DTO pattern. This is enforced by
+CI/CD.
 :::
 
----
+______________________________________________________________________
 
 ## 3. 🎨 API Design Patterns and Best Practices
 
@@ -428,7 +425,8 @@ This section covers common patterns and best practices for building robust API e
 ### 🔐 Authentication and Authorization Patterns
 
 ::: info Permission System
-The AI-Hub uses a sophisticated hierarchical permission system with wildcards and implicit checks. All permissions follow the format: `aihub.[user|admin].<resource_type>.<resource_subtype>.<resource_id>.[...]`
+The AI-Hub uses a sophisticated hierarchical permission system with wildcards and implicit checks. All permissions
+follow the format: `aihub.[user|admin].<resource_type>.<resource_subtype>.<resource_id>.[...]`
 :::
 
 #### 🔐 Permission-Based Access Control
@@ -489,7 +487,10 @@ class SecureController(Controller):
 #### 🔄 Dynamic Permission Checking with AccessChecker
 
 ::: tip Dynamic Permission Checks
-While controller endpoints handle most permission checks via the `@Security` decorator, sometimes you need to perform dynamic permission checks within service methods. The `AccessChecker` class provides programmatic access to the permission system, allowing you to check permissions based on runtime values or implement more complex authorization logic.
+While controller endpoints handle most permission checks via the `@Security` decorator, sometimes you need to perform
+dynamic permission checks within service methods. The `AccessChecker` class provides programmatic access to the
+permission system, allowing you to check permissions based on runtime values or implement more complex authorization
+logic.
 :::
 
 ```python
@@ -519,7 +520,9 @@ class ResourceService:
 ### 📊 Pagination Patterns
 
 ::: info Pagination System
-The API uses a consistent pagination approach across all endpoints that return lists of resources. The pagination system uses `PageNumber` and `PageSize` types to ensure type safety and validation, with reasonable defaults and limits to prevent abuse.
+The API uses a consistent pagination approach across all endpoints that return lists of resources. The pagination system
+uses `PageNumber` and `PageSize` types to ensure type safety and validation, with reasonable defaults and limits to
+prevent abuse.
 :::
 
 #### 📊 Standard Pagination
@@ -555,7 +558,9 @@ class ListController(Controller):
 ### 🚨 Error Handling Patterns
 
 ::: warning Error Handling Philosophy
-The AI-Hub API follows a "fail fast" philosophy - we don't wrap everything in try-except blocks but rather let errors propagate naturally. Controllers and Services always raise `HTTPException` for client errors and let unexpected exceptions bubble up to FastAPI's error handling middleware.
+The AI-Hub API follows a "fail fast" philosophy - we don't wrap everything in try-except blocks but rather let errors
+propagate naturally. Controllers and Services always raise `HTTPException` for client errors and let unexpected
+exceptions bubble up to FastAPI's error handling middleware.
 :::
 
 #### 📝 Structured Error Responses
@@ -588,7 +593,9 @@ class ErrorHandlingService:
 ### 💾 Caching Patterns
 
 ::: tip Caching Strategy
-The API uses in-memory caching to reduce load on external services like NATS and databases. The `TTLCache` from `cachetools` is the standard choice, providing automatic expiration and memory management. Caching is typically implemented at the service layer to benefit all endpoints.
+The API uses in-memory caching to reduce load on external services like NATS and databases. The `TTLCache` from
+`cachetools` is the standard choice, providing automatic expiration and memory management. Caching is typically
+implemented at the service layer to benefit all endpoints.
 :::
 
 #### ⏰ TTL-Based Caching
@@ -622,7 +629,9 @@ class CachedService:
 ### 🔌 WebSocket Integration Patterns
 
 ::: info WebSocket Usage
-WebSockets provide real-time communication between the frontend and backend, primarily used for streaming events and live updates. The WebSocket manager handles connection lifecycle, message broadcasting, and maintains client subscriptions to specific threads or topics.
+WebSockets provide real-time communication between the frontend and backend, primarily used for streaming events and
+live updates. The WebSocket manager handles connection lifecycle, message broadcasting, and maintains client
+subscriptions to specific threads or topics.
 :::
 
 #### 🔴 Real-time Event Streaming
@@ -652,7 +661,9 @@ class EventController(Controller):
 ### 📶 NATS Integration Patterns
 
 ::: info NATS Integration
-NATS serves as the message bus connecting the API to agents and other services. The API uses NATS for agent discovery, sending events to agents, and subscribing to responses. Topic managers handle the complex routing and naming conventions for different types of agent communication.
+NATS serves as the message bus connecting the API to agents and other services. The API uses NATS for agent discovery,
+sending events to agents, and subscribing to responses. Topic managers handle the complex routing and naming conventions
+for different types of agent communication.
 :::
 
 #### 🤖 Agent Communication
@@ -694,7 +705,9 @@ class AgentIntegrationService:
 #### 🎮 Controller Testing
 
 ::: info Controller Testing Focus
-Controller tests focus on HTTP-level concerns: request/response handling, authentication, authorization, and proper error status codes. These tests use the full FastAPI test client to simulate real HTTP requests and verify the complete request flow from endpoint to response.
+Controller tests focus on HTTP-level concerns: request/response handling, authentication, authorization, and proper
+error status codes. These tests use the full FastAPI test client to simulate real HTTP requests and verify the complete
+request flow from endpoint to response.
 :::
 
 ```python
@@ -724,7 +737,9 @@ async def test_controller_endpoint(client: AsyncClient):
 #### 💼 Service Testing
 
 ::: info Service Testing Focus
-Service tests focus on business logic, data processing, and integration with external systems like NATS and databases. These tests use mocks to isolate the service logic from external dependencies, allowing for fast, reliable unit testing of core functionality.
+Service tests focus on business logic, data processing, and integration with external systems like NATS and databases.
+These tests use mocks to isolate the service logic from external dependencies, allowing for fast, reliable unit testing
+of core functionality.
 :::
 
 ```python
@@ -752,7 +767,8 @@ async def test_service_logic():
 
 ### 📖 Glossary of API-Specific Terms
 
-This glossary defines terms, concepts, and technologies that have specific meaning within the `aihub_api` scope, building upon the core AI-Hub terminology.
+This glossary defines terms, concepts, and technologies that have specific meaning within the `aihub_api` scope,
+building upon the core AI-Hub terminology.
 
 | Term                           | Definition                                                                                                                                                                                               |
 | :----------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

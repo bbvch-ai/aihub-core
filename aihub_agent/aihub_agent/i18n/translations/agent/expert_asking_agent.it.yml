@@ -1,3 +1,4 @@
+---
 metadata:
   name: Agente Coordinatore di Esperti
   description: Agente autonomo che coordina con esperti umani per raccogliere ed estrarre
@@ -18,56 +19,32 @@ routes:
   answer_insufficient: L'esperto NON ha risposto. Scegli questo SOLO se l'esperto
     ha detto 'Non lo so' o ha rifiutato di rispondere.
 thoughts:
-  asking_question: 'Porre una domanda all''esperto: ''%{question}''.'
-  expert_responded: 'L''esperto ha risposto: ''%{response}''.'
+  asking_question: "Porre una domanda all'esperto: '%{question}'."
+  expert_responded: "L'esperto ha risposto: '%{response}'."
   determine_sufficient: Verificare se la risposta dell'esperto è sufficiente.
   answer_sufficient: La risposta dell'esperto è sufficiente.
   max_questions_reached: Raggiunto il numero massimo di domande di follow-up.
   returning_insufficient: Ritorno all'utente con una risposta insufficiente.
   answer_not_sufficient: La risposta non è sufficiente, formulazione di una domanda
     di follow-up.
-follow_up_question: 'All''esperto è stato chiesto: "{{ question }}"
-
-
-  La sua risposta:
-
-  {% for message in chat_history %}
-
-  {% if message.role.value == ''user'' %}
-
-  {% for block in message.blocks %}
-
-  {% if block.block_type == ''text'' %}
-
-  {{ block.text }}
-
-  {% endif %}
-
-  {% endfor %}
-
-  {% endif %}
-
-  {% endfor %}
-
-
-  L''esperto ha detto che non sa, non ha risposto, o ha risposto solo a parte della
-  domanda.
-
-  Chiedi le informazioni specifiche mancanti. Sii breve e cortese. Chiedi solo ciò
-  che è stato originariamente richiesto ma non ancora risposto.
-
-  '
+follow_up_question: "All'esperto è stato chiesto: \"{{ question }}\"\n\nLa sua risposta:\n\
+  {% for message in chat_history %}\n{% if message.role.value == 'user' %}\n{% for\
+  \ block in message.blocks %}\n{% if block.block_type == 'text' %}\n{{ block.text }}\n\
+  {% endif %}\n{% endfor %}\n{% endif %}\n{% endfor %}\n\nL'esperto ha detto che non\
+  \ sa, non ha risposto, o ha risposto solo a parte della domanda.\nChiedi le informazioni\
+  \ specifiche mancanti. Sii breve e cortese. Chiedi solo ciò che è stato originariamente\
+  \ richiesto ma non ancora risposto.\n"
 steps:
   invoke_expert:
-    name: "Invoca esperto"
-    description: "Pone una domanda a un gruppo di esperti."
+    name: Invoca esperto
+    description: Pone una domanda a un gruppo di esperti.
   expert_response:
-    name: "Risposta esperto"
-    description: "Elabora la risposta dell'esperto."
+    name: Risposta esperto
+    description: Elabora la risposta dell'esperto.
   response_sufficient_router:
-    name: "Router risposta sufficiente"
-    description: "Verifica se l'esperto ha risposto sufficientemente alla domanda."
+    name: Router risposta sufficiente
+    description: Verifica se l'esperto ha risposto sufficientemente alla domanda.
   follow_up_question:
-    name: "Domanda di follow-up"
-    description: "Pone una domanda di follow-up all'esperto poiché la risposta non è ancora sufficiente."
-
+    name: Domanda di follow-up
+    description: Pone una domanda di follow-up all'esperto poiché la risposta non
+      è ancora sufficiente.

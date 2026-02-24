@@ -17,15 +17,20 @@ index: 7
 
 ## 1. 🎯 Foundational Knowledge of Process Development
 
-This section covers the foundational architecture, patterns, and terminology you need to know before building agentic processes.
+This section covers the foundational architecture, patterns, and terminology you need to know before building agentic
+processes.
 
 ::: info
-This documentation assumes you have completed the general AI-Hub setup as described in the main README.md. Make sure you have the required infrastructure running before proceeding.
+This documentation assumes you have completed the general AI-Hub setup as described in the main README.md. Make sure you
+have the required infrastructure running before proceeding.
 :::
 
 ### 📚 Introduction to `aihub_process`
 
-You are contributing to the **aihub_process** scope, which orchestrates high-level business processes that involve collaboration between agents, humans, and programs within the AI-Hub platform. This scope implements the highest tier of AI-Hub's evolution—**Agentic Process Automation**—where workflows are redesigned as dynamic collaborations between different actors.
+You are contributing to the **aihub_process** scope, which orchestrates high-level business processes that involve
+collaboration between agents, humans, and programs within the AI-Hub platform. This scope implements the highest tier of
+AI-Hub's evolution—**Agentic Process Automation**—where workflows are redesigned as dynamic collaborations between
+different actors.
 
 ### 📁 Project Structure
 
@@ -63,7 +68,9 @@ aihub_process/
 ### 🤖 The AgenticProcess: A Collaborative Workflow Orchestrator
 
 ::: info Core Concept
-An agentic process is a **dispatchable workflow** that orchestrates high-level business processes through collaboration between agents, humans, and programs. Processes follow a delegation-based approach where work is distributed to the most appropriate actors.
+An agentic process is a **dispatchable workflow** that orchestrates high-level business processes through collaboration
+between agents, humans, and programs. Processes follow a delegation-based approach where work is distributed to the most
+appropriate actors.
 :::
 
 ```python
@@ -91,7 +98,8 @@ class AgenticProcess(DispatchableWorkflow):
 ### 🏷️ The `@process_step` Decorator: Delegation Points
 
 ::: tip Process Steps
-Process steps are defined using the `@process_step()` decorator, which creates delegation points where work is assigned to specific entities.
+Process steps are defined using the `@process_step()` decorator, which creates delegation points where work is assigned
+to specific entities.
 :::
 
 ```python
@@ -120,7 +128,7 @@ Processes delegate work to four types of entities:
 - **Program**: External programs and APIs (`Program.In`, `Program.Out`)
 - **Process**: Other agentic processes (`Process.In`, `Process.Out`)
 
----
+______________________________________________________________________
 
 ## 2. 🚀 The Step-by-Step Development Workflow
 
@@ -130,27 +138,20 @@ This section provides a practical, step-by-step guide to building, testing, and 
 
 Before you begin, ensure you have completed the infrastructure setup from the root project documentation.
 
-::: warning
-Always activate the Poetry environment before working. All subsequent commands must be run from within this activated shell.
-:::
-
 ```bash
 # Start required services from the project root
 docker compose -f docker-compose.yml -f milvus-standalone-docker-compose.yml -f docker-compose-webui.yml up -d
 ```
 
-```bash
-cd aihub_process
-poetry shell
-```
-
 ### 🛠️ Step 1: Create the Process, Configuration, and Events
 
 ::: info
-Follow this three-part process to define a new agentic process. Each part builds on the previous one to create a complete process implementation.
+Follow this three-part process to define a new agentic process. Each part builds on the previous one to create a
+complete process implementation.
 :::
 
-1. **Create the Process Class**: Define the process workflow by creating a class that inherits from `AgenticProcess` and uses the `@process_step` decorator.
+1. **Create the Process Class**: Define the process workflow by creating a class that inherits from `AgenticProcess` and
+   uses the `@process_step` decorator.
 
    ```python
    # my_process/MyProcess.py
@@ -213,7 +214,8 @@ Follow this three-part process to define a new agentic process. Each part builds
 ### 🧪 Step 2: Write and Run Tests
 
 ::: tip Testing with BDD
-Process testing uses BDD with `pytest-bdd` and the `ProcessTestRunner`. This provides a natural language description of process behavior.
+Process testing uses BDD with `pytest-bdd` and the `ProcessTestRunner`. This provides a natural language description of
+process behavior.
 :::
 
 1. **Write a Feature File**: Describe the process behavior in Gherkin syntax.
@@ -267,14 +269,14 @@ Process testing uses BDD with `pytest-bdd` and the `ProcessTestRunner`. This pro
        assert process_runner.has_event_of_class(HumanReviewRequest)
    ```
 
-3. **Run the Tests**: Execute tests from your activated Poetry shell.
+3. **Run the Tests**: Execute tests from the scope directory.
 
    ```bash
    # Run all tests
-   poetry run pytest
+   uv run pytest
 
    # Run specific test file
-   poetry run pytest tests/test_MyProcess.py
+   uv run pytest tests/test_MyProcess.py
    ```
 
 ### 🔍 Step 3: Debug and Observe Your Process
@@ -282,7 +284,8 @@ Process testing uses BDD with `pytest-bdd` and the `ProcessTestRunner`. This pro
 #### 🔍 The Debugging Mindset: Event Flow Analysis
 
 ::: tip Debugging Approach
-Process debugging focuses on understanding the flow of work events between entities. Use **structured logging** and **Langfuse tracing** to visualize process execution.
+Process debugging focuses on understanding the flow of work events between entities. Use **structured logging** and
+**Langfuse tracing** to visualize process execution.
 :::
 
 #### 🛠️ Essential Debugging Tools
@@ -358,10 +361,11 @@ make typecheck   # MyPy type checking
 ```
 
 ::: danger
-All process code must use strict Python type annotations and follow the delegation-based design pattern. This is enforced by CI/CD.
+All process code must use strict Python type annotations and follow the delegation-based design pattern. This is
+enforced by CI/CD.
 :::
 
----
+______________________________________________________________________
 
 ## 3. 🎨 Process Design Patterns and Best Practices
 
@@ -549,7 +553,8 @@ def request_human_decision(
 
 ### 📖 Glossary of Process-Specific Terms
 
-This glossary defines terms, concepts, and technologies that have specific meaning within the `aihub_process` scope, building upon the core AI-Hub terminology.
+This glossary defines terms, concepts, and technologies that have specific meaning within the `aihub_process` scope,
+building upon the core AI-Hub terminology.
 
 | Term                       | Definition                                                                                                                                                                                          |
 | :------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

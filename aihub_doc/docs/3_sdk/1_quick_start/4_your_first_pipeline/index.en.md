@@ -95,7 +95,7 @@ defs = Definitions(assets=[raw_feedback_data, cleaned_feedback])
 #### 3. Run your basic pipeline:
 
 ```bash
-poetry run dagster dev -f simple_pipeline.py
+uv run dagster dev -f simple_pipeline.py
 ```
 
 Open `http://localhost:3000` and you'll see:
@@ -330,7 +330,7 @@ defs = Definitions(
 ### 6. Run your AI-Hub pipeline:
 
 ```bash
-poetry run dagster dev -f my_document_pipeline.py
+uv run dagster dev -f my_document_pipeline.py
 ```
 
 You'll see the complete document processing pipeline:

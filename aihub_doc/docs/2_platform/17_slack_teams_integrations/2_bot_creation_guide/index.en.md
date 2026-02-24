@@ -79,7 +79,7 @@ Before starting, ensure you have access to:
 - **Azure Bot Framework** - For multi-channel bot management
 - **Slack Workspace** with admin permissions - For Slack integration
 
----
+______________________________________________________________________
 
 ## Part 1: Teams Developer Portal Setup :microsoft:
 
@@ -180,7 +180,7 @@ immediately. If lost, you'll need to generate a new secret and update your Mongo
 4. Wait for admin approval (if required)
 5. Once approved, note the **App/Client ID** and **Tenant ID**
 
----
+______________________________________________________________________
 
 ## Part 2: MongoDB Configuration :floppy_disk:
 
@@ -251,7 +251,7 @@ Use descriptive path names that indicate the agent or functionality, making it e
 example, `/api/v1/agent/chat/completions/CustomerSupportAgent/production/json` clearly identifies the bot's purpose.
 :::
 
----
+______________________________________________________________________
 
 ## Part 3: Bot Framework & Slack Integration :slack:
 
@@ -445,7 +445,7 @@ db.bot_paths.updateOne(
 )
 ```
 
----
+______________________________________________________________________
 
 ## App Manifest Examples :page_facing_up:
 
@@ -617,7 +617,7 @@ create apps programmatically.
 4. In Teams Developer Portal, click **"Import app"**
 5. Upload the zip file
 
----
+______________________________________________________________________
 
 ## Verification Checklist :white_check_mark:
 
@@ -658,7 +658,7 @@ After completing all steps, verify:
 - [ ] Bot responds to messages in Slack channels
 - [ ] Bot responds to direct messages in Slack
 
----
+______________________________________________________________________
 
 ## Troubleshooting :wrench:
 
@@ -705,7 +705,7 @@ After completing all steps, verify:
 - Validate `APP_ID` and `APP_TENANTID` are in correct UUID format
 - Confirm `path` field starts with `/api/`
 
----
+______________________________________________________________________
 
 ## Security Best Practices :shield:
 
@@ -717,7 +717,7 @@ After completing all steps, verify:
 6. **Keep audit logs of bot path modifications**
 7. **Use HTTPS for all messaging endpoints**
 
----
+______________________________________________________________________
 
 ## Support :sos:
 
@@ -728,7 +728,7 @@ For issues or questions:
 - **Bot Framework**: [Azure Bot Service Documentation](https://learn.microsoft.com/en-us/azure/bot-service/)
 - **Slack API**: [Slack API Documentation](https://api.slack.com/)
 
----
+______________________________________________________________________
 
 ## Next Steps :rocket:
 
@@ -742,6 +742,6 @@ After completing the manual bot setup:
    implementations
 5. **Monitor Performance**: Set up observability and monitoring for production deployments
 
----
+______________________________________________________________________
 
 *Last Updated: November 14, 2025*

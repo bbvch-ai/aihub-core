@@ -303,7 +303,7 @@ services:
   seaweedfs-init:
     container_name: seaweedfs-init
     image: {{ global.registry_prefix }}{{ image_tags.aws_cli }}
-    restart: no
+    restart: "no"
     depends_on:
       seaweedfs-s3:
         condition: service_healthy
@@ -438,7 +438,7 @@ services:
     build:
       context: ./configs/etcd
       dockerfile: init.Dockerfile
-    restart: no
+    restart: "no"
     depends_on:
       etcd:
         condition: service_started

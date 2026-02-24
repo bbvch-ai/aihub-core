@@ -1,11 +1,15 @@
+---
 judge:
   system_base: |
     Vous êtes un Juge IA impartial et méticuleux. Votre tâche est d'évaluer la réponse d'un Assistant IA selon des critères spécifiques.
     Vous DEVEZ utiliser l'outil/la fonction fourni(e) pour soumettre votre évaluation. Ne produisez pas de texte JSON directement.
-  error_response: '{"score": 0.0, "reasoning": "L''évaluation a échoué en raison d''une erreur dans le juge ou l''entrée.", "error": true}'
-
+  error_response: "{\"score\": 0.0, \"reasoning\": \"L'évaluation a échoué en raison\
+    \ d'une erreur dans le juge ou l'entrée.\", \"error\": true}"
   correctness:
-    system_addon: "Évaluez l'AGENT_RESPONSE pour sa correction factuelle en vous basant sur la REFERENCE_ANSWER à la QUESTION donnée. Une réponse correcte aborde précisément la question et correspond à la réponse de référence. Pénalisez les hallucinations ou les inexactitudes. Notez 1.0 pour parfait, 0.0 pour complètement faux."
+    system_addon: Évaluez l'AGENT_RESPONSE pour sa correction factuelle en vous basant
+      sur la REFERENCE_ANSWER à la QUESTION donnée. Une réponse correcte aborde précisément
+      la question et correspond à la réponse de référence. Pénalisez les hallucinations
+      ou les inexactitudes. Notez 1.0 pour parfait, 0.0 pour complètement faux.
     user_structure: |
       <Contexte>
       Question: {question}
@@ -23,7 +27,9 @@ judge:
           <Réponse_A_Évaluer>
           Réponse de l'Agent: La capitale de la France est Paris.
           </Réponse_A_Évaluer>
-        assistant: '{"score": 1.0, "reasoning": "L''agent a correctement identifié Paris comme la capitale de la France, ce qui correspond à la réponse de référence."}'
+        assistant: "{\"score\": 1.0, \"reasoning\": \"L'agent a correctement identifié\
+          \ Paris comme la capitale de la France, ce qui correspond à la réponse de\
+          \ référence.\"}"
       - user: |
           <Contexte>
           Question: Combien font 2+2 ?
@@ -32,7 +38,8 @@ judge:
           <Réponse_A_Évaluer>
           Réponse de l'Agent: C'est cinq.
           </Réponse_A_Évaluer>
-        assistant: '{"score": 0.0, "reasoning": "L''agent a fourni une réponse incorrecte. La réponse de référence est 4, mais l''agent a dit 5."}'
+        assistant: "{\"score\": 0.0, \"reasoning\": \"L'agent a fourni une réponse\
+          \ incorrecte. La réponse de référence est 4, mais l'agent a dit 5.\"}"
       - user: |
           <Contexte>
           Question: Listez les couleurs primaires.
@@ -41,7 +48,9 @@ judge:
           <Réponse_A_Évaluer>
           Réponse de l'Agent: Les couleurs primaires sont le Rouge, le Vert et le Bleu.
           </Réponse_A_Évaluer>
-        assistant: '{"score": 0.67, "reasoning": "L''agent a correctement identifié le Rouge et le Bleu mais a incorrectement listé le Vert au lieu du Jaune."}'
+        assistant: "{\"score\": 0.67, \"reasoning\": \"L'agent a correctement identifié\
+          \ le Rouge et le Bleu mais a incorrectement listé le Vert au lieu du Jaune.\"\
+          }"
       - user: |
           <Contexte>
           Question: Qui a écrit 'Hamlet' ?
@@ -50,10 +59,13 @@ judge:
           <Réponse_A_Évaluer>
           Réponse de l'Agent: Je pense que c'était Christopher Marlowe.
           </Réponse_A_Évaluer>
-        assistant: '{"score": 0.0, "reasoning": "L''agent a fourni un auteur complètement incorrect."}'
-
+        assistant: "{\"score\": 0.0, \"reasoning\": \"L'agent a fourni un auteur complètement\
+          \ incorrect.\"}"
   completeness:
-    system_addon: "Évaluez si l'AGENT_RESPONSE aborde complètement tous les aspects de la QUESTION, explicites et implicites. Considérez si toutes les parties de la question ont reçu une réponse. Notez 1.0 pour complètement exhaustif, 0.0 pour n'ayant pas du tout abordé."
+    system_addon: Évaluez si l'AGENT_RESPONSE aborde complètement tous les aspects
+      de la QUESTION, explicites et implicites. Considérez si toutes les parties de
+      la question ont reçu une réponse. Notez 1.0 pour complètement exhaustif, 0.0
+      pour n'ayant pas du tout abordé.
     user_structure: |
       <Contexte>
       Question: {question}
@@ -69,7 +81,9 @@ judge:
           <Réponse_A_Évaluer>
           Réponse de l'Agent: L'énergie solaire est formidable car elle est renouvelable et réduit les émissions de carbone.
           </Réponse_A_Évaluer>
-        assistant: '{"score": 0.5, "reasoning": "L''agent a mentionné les avantages mais n''a couvert aucun inconvénient, la réponse est donc incomplète."}'
+        assistant: "{\"score\": 0.5, \"reasoning\": \"L'agent a mentionné les avantages\
+          \ mais n'a couvert aucun inconvénient, la réponse est donc incomplète.\"\
+          }"
       - user: |
           <Contexte>
           Question: Qu'est-ce que la photosynthèse ?
@@ -77,7 +91,9 @@ judge:
           <Réponse_A_Évaluer>
           Réponse de l'Agent: La photosynthèse est le processus utilisé par les plantes, les algues et certaines bactéries pour exploiter l'énergie du soleil et la transformer en énergie chimique.
           </Réponse_A_Évaluer>
-        assistant: '{"score": 1.0, "reasoning": "L''agent a fourni une définition concise et précise couvrant les principaux aspects de la photosynthèse."}'
+        assistant: "{\"score\": 1.0, \"reasoning\": \"L'agent a fourni une définition\
+          \ concise et précise couvrant les principaux aspects de la photosynthèse.\"\
+          }"
       - user: |
           <Contexte>
           Question: Expliquez les trois lois du mouvement de Newton et donnez un exemple pour chacune.
@@ -85,7 +101,8 @@ judge:
           <Réponse_A_Évaluer>
           Réponse de l'Agent: La première loi de Newton concerne l'inertie. La deuxième est F=ma. La troisième est action-réaction.
           </Réponse_A_Évaluer>
-        assistant: '{"score": 0.4, "reasoning": "L''agent a listé les lois mais n''a pas réussi à les expliquer ou à fournir les exemples demandés."}'
+        assistant: "{\"score\": 0.4, \"reasoning\": \"L'agent a listé les lois mais\
+          \ n'a pas réussi à les expliquer ou à fournir les exemples demandés.\"}"
       - user: |
           <Contexte>
           Question: Quels sont les principaux ingrédients d'une pizza Margherita ?
@@ -93,10 +110,13 @@ judge:
           <Réponse_A_Évaluer>
           Réponse de l'Agent: Elle a des tomates et du fromage.
           </Réponse_A_Évaluer>
-        assistant: '{"score": 0.6, "reasoning": "L''agent a mentionné les tomates et le fromage mais a oublié le basilic, un ingrédient clé."}'
-
+        assistant: "{\"score\": 0.6, \"reasoning\": \"L'agent a mentionné les tomates\
+          \ et le fromage mais a oublié le basilic, un ingrédient clé.\"}"
   conciseness:
-    system_addon: "Évaluez si l'AGENT_RESPONSE est concise et directe, évitant la verbosité inutile ou les détails non pertinents pour la QUESTION donnée. Concentrez-vous *uniquement* sur la concision, pas sur la correction ou l'exhaustivité. Notez 1.0 pour parfaitement concis, 0.0 pour extrêmement verbeux."
+    system_addon: Évaluez si l'AGENT_RESPONSE est concise et directe, évitant la verbosité
+      inutile ou les détails non pertinents pour la QUESTION donnée. Concentrez-vous
+      *uniquement* sur la concision, pas sur la correction ou l'exhaustivité. Notez
+      1.0 pour parfaitement concis, 0.0 pour extrêmement verbeux.
     user_structure: |
       <Contexte>
       Question: {question}
@@ -112,7 +132,9 @@ judge:
           <Réponse_A_Évaluer>
           Réponse de l'Agent: Il est actuellement 15h00. Au fait, le temps aujourd'hui est ensoleillé et j'ai aussi eu un excellent déjeuner. Saviez-vous que le temps est un concept fascinant étudié en physique ?
           </Réponse_A_Évaluer>
-        assistant: '{"score": 0.2, "reasoning": "L''agent a répondu à la question mais a inclus beaucoup d''informations non pertinentes, ce qui la rend non concise."}'
+        assistant: "{\"score\": 0.2, \"reasoning\": \"L'agent a répondu à la question\
+          \ mais a inclus beaucoup d'informations non pertinentes, ce qui la rend\
+          \ non concise.\"}"
       - user: |
           <Contexte>
           Question: Paris est-elle la capitale de la France ?
@@ -120,7 +142,8 @@ judge:
           <Réponse_A_Évaluer>
           Réponse de l'Agent: Oui.
           </Réponse_A_Évaluer>
-        assistant: '{"score": 1.0, "reasoning": "L''agent a fourni une réponse directe et concise."}'
+        assistant: "{\"score\": 1.0, \"reasoning\": \"L'agent a fourni une réponse\
+          \ directe et concise.\"}"
       - user: |
           <Contexte>
           Question: Pouvez-vous m'aider ?
@@ -128,4 +151,5 @@ judge:
           <Réponse_A_Évaluer>
           Réponse de l'Agent: Oui, je peux certainement essayer de vous aider avec votre requête. Veuillez me faire savoir ce dont vous avez besoin, et je ferai de mon mieux pour fournir une réponse satisfaisante et complète, en m'appuyant sur ma base de connaissances et mes capacités. Comment puis-je vous être utile aujourd'hui ?
           </Réponse_A_Évaluer>
-        assistant: '{"score": 0.3, "reasoning": "La réponse est excessivement verbeuse pour une simple confirmation."}'
+        assistant: '{"score": 0.3, "reasoning": "La réponse est excessivement verbeuse
+          pour une simple confirmation."}'

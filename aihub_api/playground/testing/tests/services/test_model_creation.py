@@ -371,9 +371,9 @@ class TestFieldTyping:
 
             # For basic types, annotations should be identical
             if input_field.annotation in (str, int, float, bool):
-                assert (
-                    input_field.annotation == output_field.annotation
-                ), f"Field {field_name} has inconsistent basic type annotations"
+                assert input_field.annotation == output_field.annotation, (
+                    f"Field {field_name} has inconsistent basic type annotations"
+                )
 
             # For complex types, check structural equivalence
             else:
@@ -391,32 +391,32 @@ class TestFieldTyping:
                     # For nested models and complex types, verify structural compatibility
                     input_args = get_args(input_field.annotation)
                     output_args = get_args(output_field.annotation)
-                    assert len(input_args) == len(
-                        output_args
-                    ), f"Field {field_name} has different number of type arguments"
+                    assert len(input_args) == len(output_args), (
+                        f"Field {field_name} has different number of type arguments"
+                    )
 
                 else:
                     # Both should be BaseModel subclasses with same name
                     if isinstance(input_field.annotation, type) and issubclass(input_field.annotation, BaseModel):
-                        assert isinstance(
-                            output_field.annotation, type
-                        ), f"Field {field_name} type mismatch: input is BaseModel, output is not"
-                        assert issubclass(
-                            output_field.annotation, BaseModel
-                        ), f"Field {field_name} output type is not BaseModel subclass"
-                        assert (
-                            input_field.annotation.__name__ == output_field.annotation.__name__
-                        ), f"Field {field_name} BaseModel names don't match"
+                        assert isinstance(output_field.annotation, type), (
+                            f"Field {field_name} type mismatch: input is BaseModel, output is not"
+                        )
+                        assert issubclass(output_field.annotation, BaseModel), (
+                            f"Field {field_name} output type is not BaseModel subclass"
+                        )
+                        assert input_field.annotation.__name__ == output_field.annotation.__name__, (
+                            f"Field {field_name} BaseModel names don't match"
+                        )
 
             # Compare required status
-            assert (
-                input_field.is_required() == output_field.is_required()
-            ), f"Field {field_name} has inconsistent required status between input and output models"
+            assert input_field.is_required() == output_field.is_required(), (
+                f"Field {field_name} has inconsistent required status between input and output models"
+            )
 
             # Compare defaults
-            assert (
-                input_field.default == output_field.default
-            ), f"Field {field_name} has inconsistent defaults between input and output models"
+            assert input_field.default == output_field.default, (
+                f"Field {field_name} has inconsistent defaults between input and output models"
+            )
 
     def test_python_version_compatibility(self, input_model, output_model):
         """Test that type annotations work correctly across Python versions"""

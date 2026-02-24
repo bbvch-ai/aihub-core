@@ -43,7 +43,7 @@ scenarios("./features/iterative_agent.feature")
 def _(max_iterations: int):
     return AgentTestRunner(
         agent_type=BoundedLoopAgent,
-        default_agent_config=BoundedLoopAgentConfig(
+        agent_config=BoundedLoopAgentConfig(
             agent_id="iterative_agent",
             loop_max=max_iterations
         )
@@ -140,7 +140,7 @@ enable_logging()
 async def main():
     runner = AgentTestRunner(
         agent_type=MyAgent,
-        default_agent_config=MyAgentConfig(
+        agent_config=MyAgentConfig(
             agent_id="debug_agent"
         )
     )
@@ -173,7 +173,7 @@ enable_logging()
 async def main():
     runner = AgentTestRunner(
         agent_type=MyAgent,
-        default_agent_config=MyAgentConfig(agent_id="interactive_agent")
+        agent_config=MyAgentConfig(agent_id="interactive_agent")
     )
 
     # Keeps agent running for interactive testing
@@ -206,14 +206,14 @@ Langfuse bietet eine Schritt-für-Schritt-Visualisierung der Agent-Ausführung u
 
 ```bash
 # Run all tests (excluding cloud dependencies)
-poetry run pytest -k "not azure"
+uv run pytest -k "not azure"
 
 # Run specific test file
-poetry run pytest tests/test_my_agent.py
+uv run pytest tests/test_my_agent.py
 
 # Run with verbose output
-poetry run pytest -v tests/
+uv run pytest -v tests/
 
 # Run with coverage
-poetry run pytest --cov=aihub_agent tests/
+uv run pytest --cov=aihub_agent tests/
 ```

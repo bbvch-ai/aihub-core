@@ -7,7 +7,7 @@ Whitepaper-Kapitel für Entscheidungsträger in der Schweiz zu verwandeln. Das D
 Kaufentscheidung (RFP)**. Es muss IT-Profis überzeugen, aber für das C-Level (CEO, CFO) den geschäftlichen Nutzen
 klarstellen.
 
----
+______________________________________________________________________
 
 ## 1. Zwingende Struktur-Logik (Der Roter Faden)
 
@@ -109,7 +109,7 @@ besteht:
 - Keine Wiederholungen von bereits Gesagtem
 - Die «Auf einen Blick»-Sektion am Anfang dient bereits als Zusammenfassung
 
----
+______________________________________________________________________
 
 ## 2. Schreibstil & Qualität
 
@@ -143,14 +143,14 @@ Ein Whitepaper ist **kein** Foliensatz.
   Aussagen mit Funktionen).
 - **Konkret statt abstrakt:** "In 30 Minuten via Kubernetes deploybar" statt "Schnell installierbar".
 
----
+______________________________________________________________________
 
 ## 3. Umgang mit Lücken
 
 - **Unklarheiten:** Wenn die Quell-Doku unklar oder widersprüchlich ist, erfinde nichts. Schreibe im Output fett:
   `UNKLARHEIT IN DER DOKU - BITTE PRÜFEN: [Beschreibung]`
 
----
+______________________________________________________________________
 
 ## 4. Kapitel-Kontext & Abgrenzung
 
@@ -177,7 +177,7 @@ zugeordnet sind. Verweise auf andere Themen nur, beschreibe sie aber nicht erneu
 - Zuverlässigkeit und Qualitätssicherung
 - Erweiterbarkeit und Zukunftssicherheit
 
----
+______________________________________________________________________
 
 ## 5. WICHITG
 

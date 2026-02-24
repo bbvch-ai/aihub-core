@@ -29,7 +29,7 @@ Each step below shows commands for both deployment types. Simply follow the comm
 mode.
 :::
 
----
+______________________________________________________________________
 
 ## Step 1: Get Deployment Files
 
@@ -72,7 +72,7 @@ The `*.127.0.0.1.nip.io` domain automatically resolves to your localhost (127.0.
 without needing to modify your hosts file. This allows subdomain-based routing in local development.
 :::
 
----
+______________________________________________________________________
 
 ## Step 2: Configure Environment Variables
 
