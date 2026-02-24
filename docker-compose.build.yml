@@ -1315,9 +1315,9 @@ services:
         condition: service_healthy
       playwright:
         condition: service_healthy
-      api:
-        condition: service_healthy
       keycloak:
+        condition: service_healthy
+      api:
         condition: service_healthy
     environment:
       # --- General Settings ---
