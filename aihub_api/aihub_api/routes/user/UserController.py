@@ -23,7 +23,7 @@ class UserController(Controller):
 
     name = ApiLocaleString.from_i18n_path("api.controllers.user.name")
     description = ApiLocaleString.from_i18n_path("api.controllers.user.description")
-    icon = "mage:user"
+    icon = "mage:users"
 
     def __init__(
         self, *, auth: AuthHandler, route: str = "/users", additionally_required_permission: str | None = None
