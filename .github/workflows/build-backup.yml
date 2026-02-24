@@ -1,5 +1,5 @@
 ---
-name: Build and Release Backup Image
+name: Build and Release Backup Service Image
 on:
   repository_dispatch:
     types: [release-ready]
