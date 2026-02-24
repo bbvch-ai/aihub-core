@@ -4,7 +4,6 @@ from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.persistence.access.entities.RoleEntity import RoleEntity
 from aihub_lib.routes.Controller import Controller
 from fastapi import Depends, HTTPException, Path, Security
 from mongoengine import DoesNotExist
@@ -105,16 +104,12 @@ class ThreadController(Controller):
             if user.id not in create_request_dto.user_ids:
                 create_request_dto.user_ids.append(user.id)
 
-            for user_id in create_request_dto.user_ids:
-                user_roles = await self.auth.identity_provider.get_user_roles(user_id)
-                access_rules = RoleEntity.get_access_rules_for_roles(user_roles)
-                access = AccessChecker(list(access_rules))
-                for agent in create_request_dto.agents:
-                    if not access.has_access_to_agent(agent.agent_class, agent.agent_id):
-                        raise HTTPException(
-                            status_code=403,
-                            detail=f"User {user_id} does not have access to agent {agent.agent_class}:{agent.agent_id}",
-                        )
+            agents = [(agent.agent_class, agent.agent_id) for agent in create_request_dto.agents]
+            ThreadService.validate_users_have_agent_access(
+                user_ids=create_request_dto.user_ids,
+                agents=agents,
+                tenant=user.acting_within_tenant,
+            )
 
             return await ThreadService.create_thread(
                 name=create_request_dto.name,
@@ -161,15 +156,12 @@ class ThreadController(Controller):
             if user.id not in [u.id for u in thread.users]:
                 raise self.not_authorized_to_modify_exception
 
-            for thread_user in thread.users:
-                user_roles = await self.auth.identity_provider.get_user_roles(thread_user.id)
-                access_rules = RoleEntity.get_access_rules_for_roles(user_roles)
-                access = AccessChecker(list(access_rules))
-                if not access.has_access_to_agent(req.agent_class, req.agent_id):
-                    raise HTTPException(
-                        status_code=403,
-                        detail=f"User {thread_user.id} does not have access to agent {req.agent_class}:{req.agent_id}",
-                    )
+            user_ids = [u.id for u in thread.users]
+            ThreadService.validate_users_have_agent_access(
+                user_ids=user_ids,
+                agents=[(req.agent_class, req.agent_id)],
+                tenant=user.acting_within_tenant,
+            )
 
             return await ThreadService.add_agent_to_thread(thread_id, req.agent_id, req.agent_class, t=t)
 
@@ -224,20 +216,17 @@ class ThreadController(Controller):
             thread = await ThreadController._get_thread_or_404(thread_id, t)
 
             if thread.process_class or thread.process_id:
-                raise HTTPException(status_code=403, detail="Cannot remove agent from process thread")
+                raise HTTPException(status_code=403, detail="Cannot add user to process thread")
 
             if user.id not in [u.id for u in thread.users]:
                 raise self.not_authorized_to_modify_exception
 
-            user_to_add_roles = await self.auth.identity_provider.get_user_roles(add_user_dto.user_id)
-            access_rules = RoleEntity.get_access_rules_for_roles(user_to_add_roles)
-            for agent in thread.agents:
-                if not AccessChecker(list(access_rules)).has_access_to_agent(agent.agent_class, agent.agent_id):
-                    raise HTTPException(
-                        status_code=403,
-                        detail=f"User {add_user_dto.user_id} does not have access "
-                        f"to agent {agent.agent_class}:{agent.agent_id}",
-                    )
+            agents = [(agent.agent_class, agent.agent_id) for agent in thread.agents]
+            ThreadService.validate_users_have_agent_access(
+                user_ids=[add_user_dto.user_id],
+                agents=agents,
+                tenant=user.acting_within_tenant,
+            )
 
             return await ThreadService.add_user_to_thread(thread_id, add_user_dto.user_id, t=t)
 

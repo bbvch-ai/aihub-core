@@ -3,6 +3,7 @@ from typing import Annotated
 from pydantic import Field, field_validator
 from pydantic_settings import NoDecode
 
+from aihub_lib.auth.identity.TenantIdentity import TenantIdentity
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.settings.EnvironmentSettings import EnvironmentSettings
 
@@ -49,4 +50,9 @@ class DangerousDevelopmentOnlyAuthSettings(EnvironmentSettings):
             email=DangerousDevelopmentOnlyAuthSettings().EMAIL,
             id=DangerousDevelopmentOnlyAuthSettings().OID,
             roles=DangerousDevelopmentOnlyAuthSettings().ROLES,
+            acting_within_tenant=TenantIdentity(
+                id="__dangerous_development_only_tenant__",
+                name="Dangerous Development Only Tenant",
+                access_rules=["aihub.admin.>"],
+            ),
         )

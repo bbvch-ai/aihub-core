@@ -25,7 +25,11 @@ from aihub_api.i18n.ApiLocaleHandler import ApiLocaleHandler
 from aihub_api.persistance.events.EventPersister import EventPersister
 from aihub_api.rpc.AgentConfigResponder import AgentConfigResponder
 from aihub_api.rpc.ProcessConfigResponder import ProcessConfigResponder
-from aihub_api.runners.lifetime.initialize_db import initialize_knowledge_buckets, initialize_roles
+from aihub_api.runners.lifetime.initialize_db import (
+    initialize_default_tenant,
+    initialize_knowledge_buckets,
+    initialize_roles,
+)
 from aihub_api.services.AgentEndpointsDiscoveryService import AgentEndpointsDiscoveryService
 from aihub_api.services.ProcessEndpointsDiscoveryService import ProcessEndpointsDiscoveryService
 from aihub_api.sockets.manager.WebSocketManager import WebSocketManager
@@ -202,6 +206,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         else:
             logger.warning("Unable to start ProcessEndpointsDiscoveryService due to missing state.process_controller")
 
+        await initialize_default_tenant()
         await initialize_roles()
         await initialize_knowledge_buckets()
 

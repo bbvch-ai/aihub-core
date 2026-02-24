@@ -190,58 +190,21 @@ This permission-aware architecture ensures that the Swiss AI Hub suite provides 
 interface precisely tailored to their authorization level and organizational role, while maintaining the operational
 simplicity and security rigor required for enterprise and public sector deployments.
 
-# Role-Based Access Control (RBAC) :shield: :lock:
+# Role-Based Access Control (RBAC)
 
-::: info **Documentation Structure Update**
-The RBAC documentation has been reorganized to better serve different audiences. This page provides quick access to the
-appropriate documentation for your needs.
-:::
-
-## Quick Navigation
-
-### For Developers and SDK Users
-
-If you're implementing RBAC in your custom agents, APIs, or services, and need technical implementation details:
-
-::: tip **SDK Documentation**
-🛠️ **[Complete SDK RBAC Implementation Guide](../../../3_sdk/5_advanced_topics/5_rbac/)**
-
-Covers:
-
-- Controller-level access protection
-- Dynamic permission resolution
-- Service and agent access control implementation
-- Advanced permission patterns and wildcards
-- Custom validation logic
-- Testing RBAC implementations
-- Performance optimization and best practices
-:::
-
-## Quick Overview
+## Overview
 
 **Role-Based Access Control (RBAC)** is a security framework that restricts system access based on user roles within an
-organization. The AI-Hub implements a sophisticated, hierarchical RBAC system that provides granular control over every
-aspect of your AI platform.
-
-### Key Benefits
-
-**🛡️ Enterprise Security Compliance**: Meet strict regulatory requirements with comprehensive audit trails and granular
-access controls.
-
-**🎯 Granular Resource Control**: Control access to specific AI agents, processes, and services with precision.
-
-**⚡ Scalable Permission Management**: Manage permissions efficiently across large organizations using role-based
-hierarchies.
-
-**🔗 Seamless Enterprise Integration**: Native integration with existing enterprise identity systems.
-
-**🧠 Risk-Aware AI Deployment**: Deploy AI capabilities with confidence knowing access is controlled and monitored.
+organization. The AI-Hub implements a hierarchical RBAC system with tenant-scoped roles that provides granular control
+over every aspect of the platform.
 
 ### Core Components
 
-- **Roles**: Named collections of access rules that define what users can do
+- **Roles**: Named collections of access rules that define what users can do (managed locally, not synced from identity
+  providers)
+- **Tenants**: Organizational boundaries that scope role assignments
 - **Access Rules**: Specific permissions using dot-notation (e.g., `aihub.admin.service.roles`)
-- **User Identity**: Integration with enterprise authentication systems (Azure AD, OAuth2)
+- **User Identity**: Authenticated via OAuth2/OIDC, with roles resolved from the local tenant-scoped role database
 - **Permission Templates**: Dynamic permission checking with path parameter substitution
 - **Wildcard Support**: Flexible pattern matching using `*`, `>`, `?*`, and `?>` wildcards
 
@@ -259,8 +222,5 @@ aihub.[user|admin].[resource_type].[resource_category].[resource_identifier]
 - `aihub.admin.service.roles` - Admin access to role management
 - `aihub.user.agent.?>` - User access to any agent (wildcard)
 
-## Choose Your Path
-
-- **Developers & Integrators**: Begin with the [SDK Implementation Guide](../../../3_sdk/5_advanced_topics/5_rbac/)
-
-Both guides provide comprehensive coverage of the AI-Hub RBAC system tailored to your specific needs and use cases.
+For multi-tenancy and access control details, see the
+[Multi-Tenancy Access Control](../../16_multi_tenancy/4_access_control/) documentation.

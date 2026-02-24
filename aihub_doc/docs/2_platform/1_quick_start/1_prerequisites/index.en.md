@@ -117,18 +117,13 @@ cause authentication failures.
    - `email` - Required for email address
    - `offline_access` - Required for refresh tokens
    - `User.Read` - Required for user profile reading
-   - `Group.Read.All` - Required for group membership information
-4. Select **"Microsoft Graph"** → **"Application permissions"**
-5. Add the following permissions:
-   - `User.ReadBasic.All` - Required for reading all users' basic profiles
-   - `Directory.Read.All` - Required for reading directory data
-   - `ProfilePhoto.Read.All` - Required for reading profile photos
-6. Click **"Grant admin consent for [Your Organization]"**
-7. Verify all permissions display **"Granted for [Your Organization]"** status
+4. Click **"Grant admin consent for [Your Organization]"**
+5. Verify all permissions display **"Granted for [Your Organization]"** status
 
-::: warning
-All listed permissions are required for platform functionality. Missing permissions will cause authentication or
-authorization failures during deployment.
+::: tip
+The platform manages roles and user profiles locally — no Microsoft Graph API application permissions (such as
+`User.ReadBasic.All`, `Directory.Read.All`, or `ProfilePhoto.Read.All`) are required. Only standard OIDC delegated
+permissions are needed for authentication.
 :::
 
 **Step 4: Create client secret**
@@ -146,11 +141,15 @@ The client secret value is displayed only once immediately after creation. If th
 created. Store in a password manager or secure vault.
 :::
 
-**Step 5: Configure app roles**
+**Step 5: Configure app roles (optional)**
 
-App roles enable role-based access control (RBAC) for platform users.
+::: tip
+App roles in Azure Entra ID are **optional** for the AI-Hub platform. Platform roles (AIHubAdmin, AIHubUser) are managed
+locally through the admin interface, not synced from the identity provider. These Azure app roles are only needed if you
+want to control access to integrated services (Dagster, SeaweedFS, Attu) that use their own OAuth2 flows.
+:::
 
-Create three app roles following this process:
+If you need app role-based access for integrated services, create them following this process:
 
 1. Navigate to **"App roles"** → **"Create app role"**
 2. Create each of the following roles:

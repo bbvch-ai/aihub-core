@@ -9,11 +9,11 @@ from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDe
 )
 from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2AuthHandler import OAuth2AuthHandler
 from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2Settings import OAuth2Settings
-from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
-    DangerousDevelopmentOnlyIdentityProvider,
-)
 from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
+from aihub_lib.persistence.access.entities.TenantEntity import TenantEntity
+from aihub_lib.persistence.access.entities.UserTenantRoleEntity import UserTenantRoleEntity
+from aihub_lib.persistence.user.UserEntity import UserEntity
 from aihub_lib.testing.auth_utils.oauth2_utils.oauth2_test_utils import (
     DummyResponse,
     generate_rsa_keypair,
@@ -104,6 +104,44 @@ def valid_oauth2_token(oauth2_config, rsa_keys):
 
 
 @pytest.fixture
+def setup_test_user(mongo_db):
+    """Create the test user with expected roles before the test runs."""
+    config = DangerousDevelopmentOnlyAuthSettings()
+
+    # Remove any existing user with this OID to ensure clean state
+    try:
+        existing_user = UserEntity.objects.get(id=config.OID)
+        existing_user.delete()
+    except Exception:
+        pass
+
+    # Create the user
+    user = UserEntity.create_user(
+        oid=config.OID,
+        name=config.NAME,
+        email=config.EMAIL,
+    )
+
+    # Assign the expected roles in the default tenant
+    default_tenant = TenantEntity.get_default_tenant()
+    user_tenant_role = None
+    if default_tenant:
+        user_tenant_role = UserTenantRoleEntity.create_or_update(
+            user_id=user.id,
+            tenant_id=str(default_tenant.id),
+            roles=config.ROLES,
+            validate_roles=False,  # Dev roles may not exist in DB
+        )
+
+    yield user
+
+    # Cleanup
+    if user_tenant_role:
+        user_tenant_role.delete()
+    user.delete()
+
+
+@pytest.fixture
 def expected_user_data():
     """Return the expected user data from token claims."""
     return {
@@ -120,7 +158,7 @@ def expected_user_data():
 async def oauth2_api_client():
     """Return a TestClient with OAuth2AuthHandler and UserController mounted."""
     runner = ApiTestRunner()
-    auth = OAuth2AuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
+    auth = OAuth2AuthHandler()
     runner.mount(UserController(auth=auth).get_my_user())
     app = runner.create_app()
     async with LifespanManager(app) as lifespan:
@@ -129,7 +167,9 @@ async def oauth2_api_client():
 
 
 @pytest.mark.asyncio
-async def test_get_user_with_valid_oauth2_token(oauth2_api_client, valid_oauth2_token, expected_user_data):
+async def test_get_user_with_valid_oauth2_token(
+    oauth2_api_client, valid_oauth2_token, expected_user_data, setup_test_user
+):
     """Test GET /user/me returns expected user data with a valid OAuth2 token."""
     headers = {
         "Authorization": f"Bearer {valid_oauth2_token}",
