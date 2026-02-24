@@ -25,12 +25,12 @@ from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
 from mongoengine import connect, disconnect
 
-from aihub_api.routes.user.UserController import UserController
+from aihub_api.routes.my_account.MyAccountController import MyAccountController
 from aihub_api.runners.ApiTestRunner import ApiTestRunner
 
 # Constants for the tests
 BASE_URL = "http://test"
-USER_ENDPOINT = "/api/v1/users/me"
+USER_ENDPOINT = "/api/v1/my-account"
 EXPECTED_USER_FIELDS = ["id", "name", "email"]
 TOKEN_EXPIRY_MINUTES = 10
 
@@ -156,10 +156,10 @@ def expected_user_data():
 
 @pytest_asyncio.fixture(scope="module")
 async def oauth2_api_client():
-    """Return a TestClient with OAuth2AuthHandler and UserController mounted."""
+    """Return a TestClient with OAuth2AuthHandler and MyAccountController mounted."""
     runner = ApiTestRunner()
     auth = OAuth2AuthHandler()
-    runner.mount(UserController(auth=auth).get_my_user())
+    runner.mount(MyAccountController(auth=auth).get_my_account())
     app = runner.create_app()
     async with LifespanManager(app) as lifespan:
         async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url=BASE_URL) as client:
@@ -170,7 +170,7 @@ async def oauth2_api_client():
 async def test_get_user_with_valid_oauth2_token(
     oauth2_api_client, valid_oauth2_token, expected_user_data, setup_test_user
 ):
-    """Test GET /user/me returns expected user data with a valid OAuth2 token."""
+    """Test GET /account returns expected user data with a valid OAuth2 token."""
     headers = {
         "Authorization": f"Bearer {valid_oauth2_token}",
         "Content-Type": "application/json",
@@ -191,7 +191,7 @@ async def test_get_user_with_valid_oauth2_token(
 
 @pytest.mark.asyncio
 async def test_get_user_with_invalid_oauth2_token(oauth2_api_client):
-    """Test GET /user/me returns an error for an invalid OAuth2 token."""
+    """Test GET /account returns an error for an invalid OAuth2 token."""
     headers = {
         "Authorization": "Bearer invalid.token.value",
         "Content-Type": "application/json",

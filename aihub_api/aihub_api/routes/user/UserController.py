@@ -5,7 +5,7 @@ from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.routes.Controller import Controller
-from fastapi import Body, Depends, HTTPException, Path, Security
+from fastapi import Depends, HTTPException, Path, Security
 from mongoengine.errors import DoesNotExist
 from nats.aio.client import Client as NATS
 
@@ -13,21 +13,13 @@ from aihub_api.i18n.ApiLocaleString import ApiLocaleString
 from aihub_api.i18n.dependencies.use_locale import use_locale
 from aihub_api.pagination.type.PageNumber import PageNumber
 from aihub_api.pagination.type.PageSize import PageSize
-from aihub_api.routes.user.dto.Dashboard.DashboardDTO import DashboardDTO
 from aihub_api.routes.user.dto.PaginatedUsersResponse import PaginatedUsersResponse
 from aihub_api.routes.user.dto.UserWithAccessDTO import UserWithAccessDTO
 from aihub_api.routes.user.UserService import UserService
 
 
 class UserController(Controller):
-    """
-    A controller that manages user-related endpoints, particularly retrieving the currently logged-in user.
-
-    ### Why UserController?
-    In many applications, authenticated users may want to retrieve their own profile or check who they are
-    logged in as. The `UserController` provides a simple endpoint that returns a `MinimalUserDTO`
-    for the authenticated user.
-    """
+    """Admin controller for managing users within a tenant."""
 
     name = ApiLocaleString.from_i18n_path("api.controllers.user.name")
     description = ApiLocaleString.from_i18n_path("api.controllers.user.description")
@@ -39,9 +31,7 @@ class UserController(Controller):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
 
     def get_users(self, route: str = "/") -> Self:
-        """
-        Registers an endpoint to retrieve a paginated list of users.
-        """
+        """Registers an endpoint to retrieve a paginated list of users."""
 
         @self.router.get(route, tags=self.tags)
         async def get_users(
@@ -51,9 +41,7 @@ class UserController(Controller):
             page: PageNumber = 1,
             page_size: PageSize = 20,
         ) -> PaginatedUsersResponse:
-            """
-            Returns a paginated list of users within the requesting admin's tenant.
-            """
+            """Returns a paginated list of users within the requesting admin's tenant."""
             total, user_dtos = await UserService.get_paginated_users(
                 tenant_id=user.acting_within_tenant.id, page=page, page_size=page_size
             )
@@ -68,24 +56,8 @@ class UserController(Controller):
 
         return self
 
-    def get_my_user(self, route: str = "/me") -> Self:
-        @self.router.get(route, tags=self.tags)
-        async def get_my_user(
-            nc: Annotated[NATS, Depends(use_nats)],
-            t: Annotated[LocaleHandler, Depends(use_locale)],
-            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
-        ) -> UserWithAccessDTO:
-            """
-            Returns a `MinimalUserDTO` representing the currently logged-in user.
-            """
-            return await UserService.get_logged_in_user(user, runner=self._runner, nc=nc, t=t)
-
-        return self
-
     def get_user(self, route: str = "/{user_id}") -> Self:
-        """
-        Registers an endpoint to retrieve a specific user by their OID.
-        """
+        """Registers an endpoint to retrieve a specific user by their OID."""
 
         @self.router.get(route, tags=self.tags)
         async def get_user(
@@ -96,49 +68,12 @@ class UserController(Controller):
                 UserIdentity, Security(self.user_with_permission(f"aihub.admin.service.{self.service_name}"))
             ],
         ) -> UserWithAccessDTO:
-            """
-            Retrieve user info by their OID. Shows access within the admin's current tenant context.
-            """
+            """Retrieve user info by their OID. Shows access within the admin's current tenant context."""
             try:
                 return await UserService.get_user_with_access_by_oid(
                     user_id, user.acting_within_tenant, runner=self._runner, nc=nc, t=t
                 )
             except DoesNotExist:
                 raise HTTPException(status_code=404, detail="User not found.")
-
-        return self
-
-    def get_my_dashboard(self, route: str = "/me/dashboard") -> Self:
-        """
-        Registers an endpoint to retrieve the currently logged-in user's dashboard settings.
-        """
-
-        @self.router.get(route, tags=self.tags)
-        async def get_my_dashboard(
-            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
-        ) -> DashboardDTO | None:
-            """
-            Returns a `DashboardDTO` representing the user's dashboard settings, or null if none exist.
-            """
-            return UserService.get_user_dashboard(user)
-
-        return self
-
-    def update_my_dashboard(self, route: str = "/me/dashboard") -> Self:
-        """
-        Registers an endpoint to update the currently logged-in user's dashboard settings.
-        """
-
-        @self.router.put(route, tags=self.tags, status_code=204)
-        async def update_my_dashboard(
-            dashboard_dto: Annotated[DashboardDTO, Body],
-            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
-        ) -> None:
-            """
-            Updates the user's dashboard settings.
-            Accepts a `DashboardDTO` in the request body.
-            """
-            await UserService.update_user_dashboard(user, dashboard_dto)
-            return None
 
         return self

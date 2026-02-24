@@ -47,9 +47,12 @@ token:
 translation:
   name: Übersetzung
   description: Text in alle unterstützten Sprachen übersetzen
-user:
+my_account:
   name: Mein Konto
   description: Kontoeinstellungen verwalten
+user:
+  name: Benutzerverwaltung
+  description: Benutzer und deren Zugriff verwalten
 user_memory:
   name: Benutzer-Erinnerungen
   description: Persönliche Erinnerungen aus mem0 anzeigen und verwalten

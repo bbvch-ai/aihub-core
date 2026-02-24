@@ -12,11 +12,11 @@ from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
 from mongoengine import connect, disconnect
 
-from aihub_api.routes.user.UserController import UserController
+from aihub_api.routes.my_account.MyAccountController import MyAccountController
 from aihub_api.runners.ApiTestRunner import ApiTestRunner
 
 BASE_URL = "http://test"
-USER_ENDPOINT = "/api/v1/users/me"
+USER_ENDPOINT = "/api/v1/my-account"
 EXPECTED_USER_FIELDS = ["id", "name", "email"]
 
 
@@ -34,10 +34,10 @@ def mongo_db():
 
 @pytest_asyncio.fixture(scope="module")
 async def api_client():
-    """Create a test client for the API with UserController mounted."""
+    """Create a test client for the API with MyAccountController mounted."""
     runner = ApiTestRunner()
     auth = DangerousDevelopmentOnlyAuthHandler()
-    runner.mount(UserController(auth=auth).get_my_user())
+    runner.mount(MyAccountController(auth=auth).get_my_account())
     app = runner.create_app()
     async with LifespanManager(app) as lifespan:
         async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url=BASE_URL) as client:
@@ -46,7 +46,7 @@ async def api_client():
 
 @pytest.mark.asyncio
 async def test_get_user_endpoint(api_client):
-    """Test GET /user/me returns expected user data."""
+    """Test GET /account returns expected user data."""
     headers = {"Content-Type": "application/json"}
     response = await api_client.get(USER_ENDPOINT, headers=headers)
     assert response.status_code == 200, f"Expected status code 200, got {response.status_code}"
@@ -84,7 +84,7 @@ async def test_user_dto_structure(api_client):
     ],
 )
 async def test_user_endpoint_different_headers(api_client, headers):
-    """Test GET /user/me with various headers."""
+    """Test GET /account with various headers."""
     response = await api_client.get(USER_ENDPOINT, headers=headers)
     assert response.status_code == 200
     assert "id" in response.json()

@@ -10,10 +10,10 @@ from aihub_lib.routes.health.HealthController import HealthController
 from aihub_api.routes.agent.AgentController import AgentController
 from aihub_api.routes.event.EventController import EventController
 from aihub_api.routes.i18n.I18nController import I18nController
+from aihub_api.routes.my_account.MyAccountController import MyAccountController
 from aihub_api.routes.openai.OpenaiController import OpenaiController
 from aihub_api.routes.thread.ThreadController import ThreadController
 from aihub_api.routes.translation.TranslationController import TranslationController
-from aihub_api.routes.user.UserController import UserController
 from aihub_api.runners.simulation.agent.SimulatedAgentApiTestRunner import SimulatedAgentApiTestRunner
 
 enable_logging()
@@ -31,7 +31,7 @@ async def main():
 
     runner.mount(
         HealthController(auth=auth).get_health(),
-        UserController(auth=auth).get_my_user().get_my_dashboard().update_my_dashboard(),
+        MyAccountController(auth=auth).get_my_account().get_my_dashboard().update_my_dashboard(),
         I18nController(auth=auth).get_my_locale(),
         EventController(auth=auth).ws().get_agent_events_in_thread(),
         ThreadController(auth=auth)
