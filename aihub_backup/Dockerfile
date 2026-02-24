@@ -44,14 +44,19 @@ RUN ARCH=$([ "$TARGETARCH" = "arm64" ] && echo "arm64" || echo "amd64") && \
 WORKDIR /app
 
 # Install Python dependencies (lockfile from workspace root)
+# Add --no-install-project so it ONLY installs 3rd-party dependencies here
 COPY pyproject.toml uv.lock ./
 COPY aihub_backup/pyproject.toml ./aihub_backup/pyproject.toml
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev --package aihub-backup
+    uv sync --frozen --no-dev --no-install-project --package aihub-backup
 
 # Copy application code
 COPY aihub_backup/aihub_backup ./aihub_backup/aihub_backup
 COPY aihub_backup/milvus-backup.yaml /etc/backup/milvus-backup.yaml
+
+# Run sync again to install the local project itself now that the code is present
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-dev --package aihub-backup
 
 # Dagster workspace and entrypoint
 ENV DAGSTER_HOME=/dagster_home \
