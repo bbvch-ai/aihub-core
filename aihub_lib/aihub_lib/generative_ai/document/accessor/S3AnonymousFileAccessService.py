@@ -150,13 +150,7 @@ class S3AnonymousFileAccessService:
 
     @trace_fn
     def download_file(self, container: str, file_path: str) -> bytes:
-        """
-        Download a file's content from S3/MinIO storage.
-
-        Returns the raw bytes of the object. Use this in DI-enabled contexts
-        (e.g., FastAPI endpoints) where an injected S3 client is available.
-        For standalone usage without DI, see UserUploadedFile.fetch_content().
-        """
+        """Download a file's content from S3/MinIO storage."""
         if not container or not container.strip():
             raise ValueError("Container name cannot be empty")
         if not file_path or not file_path.strip():

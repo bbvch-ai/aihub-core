@@ -102,7 +102,7 @@ export type AddMemoryToChatHistoryEvent = {
      *
      * Chat history extended with user memories.
      */
-    extended_history: Array<ChatMessage>;
+    extended_history: Array<ChatMessageOutput>;
     /**
      * Event Name
      *
@@ -116,7 +116,7 @@ export type AddMemoryToChatHistoryEvent = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessage> | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessageOutput> | Array<string> | undefined;
 };
 
 /**
@@ -151,7 +151,7 @@ export type AddOrganizationMemoryToChatHistoryEvent = {
      *
      * Chat history extended with user memories.
      */
-    extended_history: Array<ChatMessage>;
+    extended_history: Array<ChatMessageOutput>;
     /**
      * Event Name
      *
@@ -165,7 +165,7 @@ export type AddOrganizationMemoryToChatHistoryEvent = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessage> | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessageOutput> | Array<string> | undefined;
 };
 
 /**
@@ -200,7 +200,7 @@ export type AddUserMemoryToChatHistoryEvent = {
      *
      * Chat history extended with user memories.
      */
-    extended_history: Array<ChatMessage>;
+    extended_history: Array<ChatMessageOutput>;
     /**
      * Event Name
      *
@@ -214,7 +214,7 @@ export type AddUserMemoryToChatHistoryEvent = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessage> | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessageOutput> | Array<string> | undefined;
 };
 
 /**
@@ -1180,6 +1180,8 @@ export type AgentWorkResponseDto = {
 
 /**
  * Annotation
+ *
+ * A URL citation when using web search.
  */
 export type Annotation = {
     /**
@@ -1192,6 +1194,8 @@ export type Annotation = {
 
 /**
  * AnnotationURLCitation
+ *
+ * A URL citation when using web search.
  */
 export type AnnotationUrlCitation = {
     /**
@@ -1253,6 +1257,9 @@ export type ApiHealthChecks = {
 
 /**
  * Audio
+ *
+ * Data about a previous audio response from the model.
+ * [Learn more](https://platform.openai.com/docs/guides/audio).
  */
 export type Audio = {
     /**
@@ -1267,7 +1274,35 @@ export type Audio = {
  *
  * A representation of audio data to directly pass to/from the LLM.
  */
-export type AudioBlock = {
+export type AudioBlockInput = {
+    /**
+     * Block Type
+     */
+    block_type?: 'audio';
+    /**
+     * Audio
+     */
+    audio?: Blob | File | null;
+    /**
+     * Path
+     */
+    path?: string | null;
+    /**
+     * Url
+     */
+    url?: string | string | null;
+    /**
+     * Format
+     */
+    format?: string | null;
+};
+
+/**
+ * AudioBlock
+ *
+ * A representation of audio data to directly pass to/from the LLM.
+ */
+export type AudioBlockOutput = {
     /**
      * Block Type
      */
@@ -1511,6 +1546,26 @@ export type BodyCreateTranscriptionOpenaiAudioTranscriptionsPost = {
 };
 
 /**
+ * BucketNamespacePair
+ *
+ * A bucket-namespace selection pair for RAG retrieval filtering.
+ */
+export type BucketNamespacePair = {
+    /**
+     * Bucket Name
+     *
+     * The name of the bucket
+     */
+    bucket_name: string;
+    /**
+     * Namespace Name
+     *
+     * The name of the selected namespace in the bucket
+     */
+    namespace_name: string;
+};
+
+/**
  * BulkUpdateNotificationRequest
  *
  * Request model for updating multiple notifications at once.
@@ -1746,6 +1801,8 @@ export type ChainEvent = {
 
 /**
  * ChatCompletion
+ *
+ * Represents a chat completion response returned by model, based on the provided input.
  */
 export type ChatCompletion = {
     /**
@@ -1782,6 +1839,8 @@ export type ChatCompletion = {
 
 /**
  * ChatCompletionAllowedToolChoiceParam
+ *
+ * Constrains the tools available to the model to a pre-defined set.
  */
 export type ChatCompletionAllowedToolChoiceParam = {
     allowed_tools: ChatCompletionAllowedToolsParam;
@@ -1794,6 +1853,8 @@ export type ChatCompletionAllowedToolChoiceParam = {
 
 /**
  * ChatCompletionAllowedToolsParam
+ *
+ * Constrains the tools available to the model to a pre-defined set.
  */
 export type ChatCompletionAllowedToolsParam = {
     /**
@@ -1813,6 +1874,8 @@ export type ChatCompletionAllowedToolsParam = {
 
 /**
  * ChatCompletionAssistantMessageParam
+ *
+ * Messages sent by the model in response to user messages.
  */
 export type ChatCompletionAssistantMessageParam = {
     /**
@@ -1842,6 +1905,9 @@ export type ChatCompletionAssistantMessageParam = {
 
 /**
  * ChatCompletionAudio
+ *
+ * If the audio output modality is requested, this object contains data
+ * about the audio response from the model. [Learn more](https://platform.openai.com/docs/guides/audio).
  */
 export type ChatCompletionAudio = {
     /**
@@ -1865,6 +1931,11 @@ export type ChatCompletionAudio = {
 
 /**
  * ChatCompletionAudioParam
+ *
+ * Parameters for audio output.
+ *
+ * Required when audio output is requested with
+ * `modalities: ["audio"]`. [Learn more](https://platform.openai.com/docs/guides/audio).
  */
 export type ChatCompletionAudioParam = {
     /**
@@ -1880,6 +1951,8 @@ export type ChatCompletionAudioParam = {
 
 /**
  * ChatCompletionContentPartImageParam
+ *
+ * Learn about [image inputs](https://platform.openai.com/docs/guides/vision).
  */
 export type ChatCompletionContentPartImageParam = {
     image_url: ImageUrl;
@@ -1892,6 +1965,8 @@ export type ChatCompletionContentPartImageParam = {
 
 /**
  * ChatCompletionContentPartInputAudioParam
+ *
+ * Learn about [audio inputs](https://platform.openai.com/docs/guides/audio).
  */
 export type ChatCompletionContentPartInputAudioParam = {
     input_audio: InputAudio;
@@ -1919,6 +1994,8 @@ export type ChatCompletionContentPartRefusalParam = {
 
 /**
  * ChatCompletionContentPartTextParam
+ *
+ * Learn about [text inputs](https://platform.openai.com/docs/guides/text-generation).
  */
 export type ChatCompletionContentPartTextParam = {
     /**
@@ -1934,6 +2011,10 @@ export type ChatCompletionContentPartTextParam = {
 
 /**
  * ChatCompletionDeveloperMessageParam
+ *
+ * Developer-provided instructions that the model should follow, regardless of
+ * messages sent by the user. With o1 models and newer, `developer` messages
+ * replace the previous `system` messages.
  */
 export type ChatCompletionDeveloperMessageParam = {
     /**
@@ -1953,6 +2034,8 @@ export type ChatCompletionDeveloperMessageParam = {
 
 /**
  * ChatCompletionFunctionCallOptionParam
+ *
+ * Specifying a particular function via `{"name": "my_function"}` forces the model to call that function.
  */
 export type ChatCompletionFunctionCallOptionParam = {
     /**
@@ -1983,6 +2066,8 @@ export type ChatCompletionFunctionMessageParam = {
 
 /**
  * ChatCompletionFunctionToolParam
+ *
+ * A function tool that can be used to generate a response.
  */
 export type ChatCompletionFunctionToolParam = {
     function: FunctionDefinition;
@@ -1995,6 +2080,8 @@ export type ChatCompletionFunctionToolParam = {
 
 /**
  * ChatCompletionMessage
+ *
+ * A chat completion message generated by the model.
  */
 export type ChatCompletionMessage = {
     /**
@@ -2024,6 +2111,8 @@ export type ChatCompletionMessage = {
 
 /**
  * ChatCompletionMessageCustomToolCall
+ *
+ * A call to a custom tool created by the model.
  */
 export type ChatCompletionMessageCustomToolCall = {
     /**
@@ -2040,6 +2129,8 @@ export type ChatCompletionMessageCustomToolCall = {
 
 /**
  * ChatCompletionMessageCustomToolCallParam
+ *
+ * A call to a custom tool created by the model.
  */
 export type ChatCompletionMessageCustomToolCallParam = {
     /**
@@ -2056,6 +2147,8 @@ export type ChatCompletionMessageCustomToolCallParam = {
 
 /**
  * ChatCompletionMessageFunctionToolCall
+ *
+ * A call to a function tool created by the model.
  */
 export type ChatCompletionMessageFunctionToolCall = {
     /**
@@ -2072,6 +2165,8 @@ export type ChatCompletionMessageFunctionToolCall = {
 
 /**
  * ChatCompletionMessageFunctionToolCallParam
+ *
+ * A call to a function tool created by the model.
  */
 export type ChatCompletionMessageFunctionToolCallParam = {
     /**
@@ -2088,6 +2183,10 @@ export type ChatCompletionMessageFunctionToolCallParam = {
 
 /**
  * ChatCompletionNamedToolChoiceCustomParam
+ *
+ * Specifies a tool the model should use.
+ *
+ * Use to force the model to call a specific custom tool.
  */
 export type ChatCompletionNamedToolChoiceCustomParam = {
     custom: OpenaiTypesChatChatCompletionNamedToolChoiceCustomParamCustom;
@@ -2100,6 +2199,10 @@ export type ChatCompletionNamedToolChoiceCustomParam = {
 
 /**
  * ChatCompletionNamedToolChoiceParam
+ *
+ * Specifies a tool the model should use.
+ *
+ * Use to force the model to call a specific function.
  */
 export type ChatCompletionNamedToolChoiceParam = {
     function: OpenaiTypesChatChatCompletionNamedToolChoiceParamFunction;
@@ -2112,6 +2215,9 @@ export type ChatCompletionNamedToolChoiceParam = {
 
 /**
  * ChatCompletionPredictionContentParam
+ *
+ * Static predicted output content, such as the content of a text file that is
+ * being regenerated.
  */
 export type ChatCompletionPredictionContentParam = {
     /**
@@ -2140,7 +2246,7 @@ export type ChatCompletionRequest = {
      *
      * ID of the model to use for the chat completion.
      */
-    model: string | 'gpt-5' | 'gpt-5-mini' | 'gpt-5-nano' | 'gpt-5-2025-08-07' | 'gpt-5-mini-2025-08-07' | 'gpt-5-nano-2025-08-07' | 'gpt-5-chat-latest' | 'gpt-4.1' | 'gpt-4.1-mini' | 'gpt-4.1-nano' | 'gpt-4.1-2025-04-14' | 'gpt-4.1-mini-2025-04-14' | 'gpt-4.1-nano-2025-04-14' | 'o4-mini' | 'o4-mini-2025-04-16' | 'o3' | 'o3-2025-04-16' | 'o3-mini' | 'o3-mini-2025-01-31' | 'o1' | 'o1-2024-12-17' | 'o1-preview' | 'o1-preview-2024-09-12' | 'o1-mini' | 'o1-mini-2024-09-12' | 'gpt-4o' | 'gpt-4o-2024-11-20' | 'gpt-4o-2024-08-06' | 'gpt-4o-2024-05-13' | 'gpt-4o-audio-preview' | 'gpt-4o-audio-preview-2024-10-01' | 'gpt-4o-audio-preview-2024-12-17' | 'gpt-4o-audio-preview-2025-06-03' | 'gpt-4o-mini-audio-preview' | 'gpt-4o-mini-audio-preview-2024-12-17' | 'gpt-4o-search-preview' | 'gpt-4o-mini-search-preview' | 'gpt-4o-search-preview-2025-03-11' | 'gpt-4o-mini-search-preview-2025-03-11' | 'chatgpt-4o-latest' | 'codex-mini-latest' | 'gpt-4o-mini' | 'gpt-4o-mini-2024-07-18' | 'gpt-4-turbo' | 'gpt-4-turbo-2024-04-09' | 'gpt-4-0125-preview' | 'gpt-4-turbo-preview' | 'gpt-4-1106-preview' | 'gpt-4-vision-preview' | 'gpt-4' | 'gpt-4-0314' | 'gpt-4-0613' | 'gpt-4-32k' | 'gpt-4-32k-0314' | 'gpt-4-32k-0613' | 'gpt-3.5-turbo' | 'gpt-3.5-turbo-16k' | 'gpt-3.5-turbo-0301' | 'gpt-3.5-turbo-0613' | 'gpt-3.5-turbo-1106' | 'gpt-3.5-turbo-0125' | 'gpt-3.5-turbo-16k-0613';
+    model: string | 'gpt-5.2' | 'gpt-5.2-2025-12-11' | 'gpt-5.2-chat-latest' | 'gpt-5.2-pro' | 'gpt-5.2-pro-2025-12-11' | 'gpt-5.1' | 'gpt-5.1-2025-11-13' | 'gpt-5.1-codex' | 'gpt-5.1-mini' | 'gpt-5.1-chat-latest' | 'gpt-5' | 'gpt-5-mini' | 'gpt-5-nano' | 'gpt-5-2025-08-07' | 'gpt-5-mini-2025-08-07' | 'gpt-5-nano-2025-08-07' | 'gpt-5-chat-latest' | 'gpt-4.1' | 'gpt-4.1-mini' | 'gpt-4.1-nano' | 'gpt-4.1-2025-04-14' | 'gpt-4.1-mini-2025-04-14' | 'gpt-4.1-nano-2025-04-14' | 'o4-mini' | 'o4-mini-2025-04-16' | 'o3' | 'o3-2025-04-16' | 'o3-mini' | 'o3-mini-2025-01-31' | 'o1' | 'o1-2024-12-17' | 'o1-preview' | 'o1-preview-2024-09-12' | 'o1-mini' | 'o1-mini-2024-09-12' | 'gpt-4o' | 'gpt-4o-2024-11-20' | 'gpt-4o-2024-08-06' | 'gpt-4o-2024-05-13' | 'gpt-4o-audio-preview' | 'gpt-4o-audio-preview-2024-10-01' | 'gpt-4o-audio-preview-2024-12-17' | 'gpt-4o-audio-preview-2025-06-03' | 'gpt-4o-mini-audio-preview' | 'gpt-4o-mini-audio-preview-2024-12-17' | 'gpt-4o-search-preview' | 'gpt-4o-mini-search-preview' | 'gpt-4o-search-preview-2025-03-11' | 'gpt-4o-mini-search-preview-2025-03-11' | 'chatgpt-4o-latest' | 'codex-mini-latest' | 'gpt-4o-mini' | 'gpt-4o-mini-2024-07-18' | 'gpt-4-turbo' | 'gpt-4-turbo-2024-04-09' | 'gpt-4-0125-preview' | 'gpt-4-turbo-preview' | 'gpt-4-1106-preview' | 'gpt-4-vision-preview' | 'gpt-4' | 'gpt-4-0314' | 'gpt-4-0613' | 'gpt-4-32k' | 'gpt-4-32k-0314' | 'gpt-4-32k-0613' | 'gpt-3.5-turbo' | 'gpt-3.5-turbo-16k' | 'gpt-3.5-turbo-0301' | 'gpt-3.5-turbo-0613' | 'gpt-3.5-turbo-1106' | 'gpt-3.5-turbo-0125' | 'gpt-3.5-turbo-16k-0613';
     /**
      * Stream
      *
@@ -2203,7 +2309,7 @@ export type ChatCompletionRequest = {
     /**
      * Reasoning Effort
      */
-    reasoning_effort?: 'minimal' | 'low' | 'medium' | 'high' | null;
+    reasoning_effort?: 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | null;
     /**
      * Response Format
      */
@@ -2245,13 +2351,15 @@ export type ChatCompletionRequest = {
      * Top P
      */
     top_p?: number | null;
-    [key: string]: unknown | Array<ChatCompletionDeveloperMessageParam | ChatCompletionSystemMessageParam | ChatCompletionUserMessageParam | ChatCompletionAssistantMessageParam | ChatCompletionToolMessageParam | ChatCompletionFunctionMessageParam> | null | string | 'gpt-5' | 'gpt-5-mini' | 'gpt-5-nano' | 'gpt-5-2025-08-07' | 'gpt-5-mini-2025-08-07' | 'gpt-5-nano-2025-08-07' | 'gpt-5-chat-latest' | 'gpt-4.1' | 'gpt-4.1-mini' | 'gpt-4.1-nano' | 'gpt-4.1-2025-04-14' | 'gpt-4.1-mini-2025-04-14' | 'gpt-4.1-nano-2025-04-14' | 'o4-mini' | 'o4-mini-2025-04-16' | 'o3' | 'o3-2025-04-16' | 'o3-mini' | 'o3-mini-2025-01-31' | 'o1' | 'o1-2024-12-17' | 'o1-preview' | 'o1-preview-2024-09-12' | 'o1-mini' | 'o1-mini-2024-09-12' | 'gpt-4o' | 'gpt-4o-2024-11-20' | 'gpt-4o-2024-08-06' | 'gpt-4o-2024-05-13' | 'gpt-4o-audio-preview' | 'gpt-4o-audio-preview-2024-10-01' | 'gpt-4o-audio-preview-2024-12-17' | 'gpt-4o-audio-preview-2025-06-03' | 'gpt-4o-mini-audio-preview' | 'gpt-4o-mini-audio-preview-2024-12-17' | 'gpt-4o-search-preview' | 'gpt-4o-mini-search-preview' | 'gpt-4o-search-preview-2025-03-11' | 'gpt-4o-mini-search-preview-2025-03-11' | 'chatgpt-4o-latest' | 'codex-mini-latest' | 'gpt-4o-mini' | 'gpt-4o-mini-2024-07-18' | 'gpt-4-turbo' | 'gpt-4-turbo-2024-04-09' | 'gpt-4-0125-preview' | 'gpt-4-turbo-preview' | 'gpt-4-1106-preview' | 'gpt-4-vision-preview' | 'gpt-4' | 'gpt-4-0314' | 'gpt-4-0613' | 'gpt-4-32k' | 'gpt-4-32k-0314' | 'gpt-4-32k-0613' | 'gpt-3.5-turbo' | 'gpt-3.5-turbo-16k' | 'gpt-3.5-turbo-0301' | 'gpt-3.5-turbo-0613' | 'gpt-3.5-turbo-1106' | 'gpt-3.5-turbo-0125' | 'gpt-3.5-turbo-16k-0613' | boolean | string | null | ChatCompletionAudioParam | null | number | null | 'none' | 'auto' | ChatCompletionFunctionCallOptionParam | null | Array<OpenaiTypesChatCompletionCreateParamsFunction> | null | {
+    [key: string]: unknown | Array<ChatCompletionDeveloperMessageParam | ChatCompletionSystemMessageParam | ChatCompletionUserMessageParam | ChatCompletionAssistantMessageParam | ChatCompletionToolMessageParam | ChatCompletionFunctionMessageParam> | null | string | 'gpt-5.2' | 'gpt-5.2-2025-12-11' | 'gpt-5.2-chat-latest' | 'gpt-5.2-pro' | 'gpt-5.2-pro-2025-12-11' | 'gpt-5.1' | 'gpt-5.1-2025-11-13' | 'gpt-5.1-codex' | 'gpt-5.1-mini' | 'gpt-5.1-chat-latest' | 'gpt-5' | 'gpt-5-mini' | 'gpt-5-nano' | 'gpt-5-2025-08-07' | 'gpt-5-mini-2025-08-07' | 'gpt-5-nano-2025-08-07' | 'gpt-5-chat-latest' | 'gpt-4.1' | 'gpt-4.1-mini' | 'gpt-4.1-nano' | 'gpt-4.1-2025-04-14' | 'gpt-4.1-mini-2025-04-14' | 'gpt-4.1-nano-2025-04-14' | 'o4-mini' | 'o4-mini-2025-04-16' | 'o3' | 'o3-2025-04-16' | 'o3-mini' | 'o3-mini-2025-01-31' | 'o1' | 'o1-2024-12-17' | 'o1-preview' | 'o1-preview-2024-09-12' | 'o1-mini' | 'o1-mini-2024-09-12' | 'gpt-4o' | 'gpt-4o-2024-11-20' | 'gpt-4o-2024-08-06' | 'gpt-4o-2024-05-13' | 'gpt-4o-audio-preview' | 'gpt-4o-audio-preview-2024-10-01' | 'gpt-4o-audio-preview-2024-12-17' | 'gpt-4o-audio-preview-2025-06-03' | 'gpt-4o-mini-audio-preview' | 'gpt-4o-mini-audio-preview-2024-12-17' | 'gpt-4o-search-preview' | 'gpt-4o-mini-search-preview' | 'gpt-4o-search-preview-2025-03-11' | 'gpt-4o-mini-search-preview-2025-03-11' | 'chatgpt-4o-latest' | 'codex-mini-latest' | 'gpt-4o-mini' | 'gpt-4o-mini-2024-07-18' | 'gpt-4-turbo' | 'gpt-4-turbo-2024-04-09' | 'gpt-4-0125-preview' | 'gpt-4-turbo-preview' | 'gpt-4-1106-preview' | 'gpt-4-vision-preview' | 'gpt-4' | 'gpt-4-0314' | 'gpt-4-0613' | 'gpt-4-32k' | 'gpt-4-32k-0314' | 'gpt-4-32k-0613' | 'gpt-3.5-turbo' | 'gpt-3.5-turbo-16k' | 'gpt-3.5-turbo-0301' | 'gpt-3.5-turbo-0613' | 'gpt-3.5-turbo-1106' | 'gpt-3.5-turbo-0125' | 'gpt-3.5-turbo-16k-0613' | boolean | string | null | ChatCompletionAudioParam | null | number | null | 'none' | 'auto' | ChatCompletionFunctionCallOptionParam | null | Array<OpenaiTypesChatCompletionCreateParamsFunction> | null | {
         [key: string]: number;
-    } | null | boolean | null | number | null | number | null | Metadata | null | Array<'text' | 'audio'> | null | number | null | boolean | null | ChatCompletionPredictionContentParam | null | number | null | 'minimal' | 'low' | 'medium' | 'high' | null | ResponseFormatText | ResponseFormatJsonSchema | ResponseFormatJsonObject | null | number | null | 'auto' | 'default' | null | string | Array<string> | null | boolean | null | ChatCompletionStreamOptionsParam | null | number | null | 'none' | 'auto' | 'required' | ChatCompletionAllowedToolChoiceParam | ChatCompletionNamedToolChoiceParam | ChatCompletionNamedToolChoiceCustomParam | null | Array<ChatCompletionFunctionToolParam> | null | number | null | number | null | undefined;
+    } | null | boolean | null | number | null | number | null | Metadata | null | Array<'text' | 'audio'> | null | number | null | boolean | null | ChatCompletionPredictionContentParam | null | number | null | 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | null | ResponseFormatText | ResponseFormatJsonSchema | ResponseFormatJsonObject | null | number | null | 'auto' | 'default' | null | string | Array<string> | null | boolean | null | ChatCompletionStreamOptionsParam | null | number | null | 'none' | 'auto' | 'required' | ChatCompletionAllowedToolChoiceParam | ChatCompletionNamedToolChoiceParam | ChatCompletionNamedToolChoiceCustomParam | null | Array<ChatCompletionFunctionToolParam> | null | number | null | number | null | undefined;
 };
 
 /**
  * ChatCompletionStreamOptionsParam
+ *
+ * Options for streaming response. Only set this when you set `stream: true`.
  */
 export type ChatCompletionStreamOptionsParam = {
     /**
@@ -2267,6 +2375,10 @@ export type ChatCompletionStreamOptionsParam = {
 
 /**
  * ChatCompletionSystemMessageParam
+ *
+ * Developer-provided instructions that the model should follow, regardless of
+ * messages sent by the user. With o1 models and newer, use `developer` messages
+ * for this purpose instead.
  */
 export type ChatCompletionSystemMessageParam = {
     /**
@@ -2328,6 +2440,9 @@ export type ChatCompletionToolMessageParam = {
 
 /**
  * ChatCompletionUserMessageParam
+ *
+ * Messages sent by an end user, containing prompts or additional context
+ * information.
  */
 export type ChatCompletionUserMessageParam = {
     /**
@@ -2350,7 +2465,7 @@ export type ChatCompletionUserMessageParam = {
  *
  * Chat message.
  */
-export type ChatMessage = {
+export type ChatMessageOutput = {
     role?: MessageRole;
     /**
      * Additional Kwargs
@@ -2363,23 +2478,23 @@ export type ChatMessage = {
         block_type: 'text';
     } & TextBlock) | ({
         block_type: 'image';
-    } & ImageBlock) | ({
+    } & ImageBlockOutput) | ({
         block_type: 'audio';
-    } & AudioBlock) | ({
+    } & AudioBlockOutput) | ({
         block_type: 'video';
-    } & VideoBlock) | ({
+    } & VideoBlockOutput) | ({
         block_type: 'document';
-    } & DocumentBlock) | ({
+    } & DocumentBlockOutput) | ({
         block_type: 'cache';
     } & CachePoint) | ({
         block_type: 'citable';
-    } & CitableBlock) | ({
+    } & CitableBlockOutput) | ({
         block_type: 'citation';
-    } & CitationBlock) | ({
+    } & CitationBlockOutput) | ({
         block_type: 'thinking';
-    } & ThinkingBlock) | ({
+    } & ThinkingBlockOutput) | ({
         block_type: 'tool_call';
-    } & ToolCallBlock)>;
+    } & ToolCallBlockOutput)>;
 };
 
 /**
@@ -2526,6 +2641,8 @@ export type Choice = {
 
 /**
  * ChoiceLogprobs
+ *
+ * Log probability information for the choice.
  */
 export type ChoiceLogprobs = {
     /**
@@ -2604,7 +2721,7 @@ export type ChunkEvent = {
  *
  * Supports providing citable content to LLMs that have built-in citation support.
  */
-export type CitableBlock = {
+export type CitableBlockInput = {
     /**
      * Block Type
      */
@@ -2624,9 +2741,39 @@ export type CitableBlock = {
         block_type: 'text';
     } & TextBlock) | ({
         block_type: 'image';
-    } & ImageBlock) | ({
+    } & ImageBlockInput) | ({
         block_type: 'document';
-    } & DocumentBlock)>;
+    } & DocumentBlockInput)>;
+};
+
+/**
+ * CitableBlock
+ *
+ * Supports providing citable content to LLMs that have built-in citation support.
+ */
+export type CitableBlockOutput = {
+    /**
+     * Block Type
+     */
+    block_type?: 'citable';
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Source
+     */
+    source: string;
+    /**
+     * Content
+     */
+    content: Array<({
+        block_type: 'text';
+    } & TextBlock) | ({
+        block_type: 'image';
+    } & ImageBlockOutput) | ({
+        block_type: 'document';
+    } & DocumentBlockOutput)>;
 };
 
 /**
@@ -2634,7 +2781,7 @@ export type CitableBlock = {
  *
  * A representation of cited content from past messages.
  */
-export type CitationBlock = {
+export type CitationBlockInput = {
     /**
      * Block Type
      */
@@ -2646,7 +2793,39 @@ export type CitationBlock = {
         block_type: 'text';
     } & TextBlock) | ({
         block_type: 'image';
-    } & ImageBlock);
+    } & ImageBlockInput);
+    /**
+     * Source
+     */
+    source: string;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Additional Location Info
+     */
+    additional_location_info: AdditionalLocationInfo;
+};
+
+/**
+ * CitationBlock
+ *
+ * A representation of cited content from past messages.
+ */
+export type CitationBlockOutput = {
+    /**
+     * Block Type
+     */
+    block_type?: 'citation';
+    /**
+     * Cited Content
+     */
+    cited_content: ({
+        block_type: 'text';
+    } & TextBlock) | ({
+        block_type: 'image';
+    } & ImageBlockOutput);
     /**
      * Source
      */
@@ -2766,6 +2945,8 @@ export type ColorPicker = {
 
 /**
  * CompletionTokensDetails
+ *
+ * Breakdown of tokens used in a completion.
  */
 export type CompletionTokensDetails = {
     /**
@@ -2789,6 +2970,8 @@ export type CompletionTokensDetails = {
 
 /**
  * CompletionUsage
+ *
+ * Usage statistics for the completion request.
  */
 export type CompletionUsage = {
     /**
@@ -3209,6 +3392,8 @@ export type CreateTokenResponse = {
 
 /**
  * Custom
+ *
+ * The custom tool that the model called.
  */
 export type CustomOutput = {
     /**
@@ -3790,7 +3975,39 @@ export type DisplayStatistics = {
  *
  * A representation of a document to directly pass to the LLM.
  */
-export type DocumentBlock = {
+export type DocumentBlockInput = {
+    /**
+     * Block Type
+     */
+    block_type?: 'document';
+    /**
+     * Data
+     */
+    data?: Blob | File | null;
+    /**
+     * Path
+     */
+    path?: string | null;
+    /**
+     * Url
+     */
+    url?: string | null;
+    /**
+     * Title
+     */
+    title?: string | null;
+    /**
+     * Document Mimetype
+     */
+    document_mimetype?: string | null;
+};
+
+/**
+ * DocumentBlock
+ *
+ * A representation of a document to directly pass to the LLM.
+ */
+export type DocumentBlockOutput = {
     /**
      * Block Type
      */
@@ -4603,6 +4820,8 @@ export type FewShotRejectEvent = {
 
 /**
  * File
+ *
+ * Learn about [file inputs](https://platform.openai.com/docs/guides/text) for text generation.
  */
 export type File = {
     file: FileFile;
@@ -4784,6 +5003,8 @@ export type FullProcessInstanceDto = {
 
 /**
  * Function
+ *
+ * The function that the model called.
  */
 export type FunctionOutput = {
     /**
@@ -4799,6 +5020,10 @@ export type FunctionOutput = {
 
 /**
  * FunctionCall
+ *
+ * Deprecated and replaced by `tool_calls`.
+ *
+ * The name and arguments of a function that should be called, as generated by the model.
  */
 export type FunctionCall = {
     /**
@@ -5681,6 +5906,8 @@ export type IconSelector = {
 
 /**
  * Image
+ *
+ * Represents the content or the URL of an image generated by the OpenAI API.
  */
 export type Image = {
     /**
@@ -5703,7 +5930,39 @@ export type Image = {
  *
  * A representation of image data to directly pass to/from the LLM.
  */
-export type ImageBlock = {
+export type ImageBlockInput = {
+    /**
+     * Block Type
+     */
+    block_type?: 'image';
+    /**
+     * Image
+     */
+    image?: Blob | File | null;
+    /**
+     * Path
+     */
+    path?: string | null;
+    /**
+     * Url
+     */
+    url?: string | string | null;
+    /**
+     * Image Mimetype
+     */
+    image_mimetype?: string | null;
+    /**
+     * Detail
+     */
+    detail?: string | null;
+};
+
+/**
+ * ImageBlock
+ *
+ * A representation of image data to directly pass to/from the LLM.
+ */
+export type ImageBlockOutput = {
     /**
      * Block Type
      */
@@ -5818,6 +6077,8 @@ export type ImageUrl = {
 
 /**
  * ImagesResponse
+ *
+ * The response from the image generation endpoint.
  */
 export type ImagesResponse = {
     /**
@@ -5844,8 +6105,8 @@ export type ImagesResponse = {
      * Size
      */
     size?: '1024x1024' | '1024x1536' | '1536x1024' | null;
-    usage?: Usage | null;
-    [key: string]: unknown | number | 'transparent' | 'opaque' | null | Array<Image> | null | 'png' | 'webp' | 'jpeg' | null | 'low' | 'medium' | 'high' | null | '1024x1024' | '1024x1536' | '1536x1024' | null | Usage | null | undefined;
+    usage?: OpenaiTypesImagesResponseUsage | null;
+    [key: string]: unknown | number | 'transparent' | 'opaque' | null | Array<Image> | null | 'png' | 'webp' | 'jpeg' | null | 'low' | 'medium' | 'high' | null | '1024x1024' | '1024x1536' | '1536x1024' | null | OpenaiTypesImagesResponseUsage | null | undefined;
 };
 
 /**
@@ -6616,6 +6877,8 @@ export type InputText = {
 
 /**
  * JSONSchema
+ *
+ * Structured Outputs configuration options, including a JSON Schema.
  */
 export type JsonSchema = {
     /**
@@ -7279,7 +7542,7 @@ export type LimitChatHistoryEvent = {
      *
      * Limited chat history based on number of input tokens.
      */
-    limited_history: Array<ChatMessage>;
+    limited_history: Array<ChatMessageOutput>;
     /**
      * Event Name
      *
@@ -7293,7 +7556,7 @@ export type LimitChatHistoryEvent = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessage> | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessageOutput> | Array<string> | undefined;
 };
 
 /**
@@ -8741,6 +9004,30 @@ export type MultiSelect = {
 };
 
 /**
+ * NamespaceAwareUserMessageEventInput
+ */
+export type NamespaceAwareUserMessageEventInput = {
+    /**
+     * Messages
+     *
+     * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
+     */
+    messages?: Array<JamboParserObjectTypeParserChatMessage1>;
+    /**
+     * Files
+     *
+     * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
+     */
+    files?: Array<UserUploadedFile> | null;
+    /**
+     * Selected Namespaces
+     *
+     * List of bucket-namespace pairs for RAG retrieval filtering.
+     */
+    selected_namespaces: Array<BucketNamespacePair>;
+};
+
+/**
  * NamespaceDTO
  */
 export type NamespaceDto = {
@@ -9846,6 +10133,8 @@ export type ProgramWorkResponseDto = {
 
 /**
  * PromptTokensDetails
+ *
+ * Breakdown of tokens used in the prompt.
  */
 export type PromptTokensDetails = {
     /**
@@ -10301,6 +10590,13 @@ export type Resolution = typeof Resolution[keyof typeof Resolution];
 
 /**
  * ResponseFormatJSONObject
+ *
+ * JSON object response format.
+ *
+ * An older method of generating JSON responses.
+ * Using `json_schema` is recommended for models that support it. Note that the
+ * model will not generate JSON without a system or user message instructing it
+ * to do so.
  */
 export type ResponseFormatJsonObject = {
     /**
@@ -10312,6 +10608,11 @@ export type ResponseFormatJsonObject = {
 
 /**
  * ResponseFormatJSONSchema
+ *
+ * JSON Schema response format.
+ *
+ * Used to generate structured JSON responses.
+ * Learn more about [Structured Outputs](https://platform.openai.com/docs/guides/structured-outputs).
  */
 export type ResponseFormatJsonSchema = {
     json_schema: JsonSchema;
@@ -10324,6 +10625,8 @@ export type ResponseFormatJsonSchema = {
 
 /**
  * ResponseFormatText
+ *
+ * Default response format. Used to generate text responses.
  */
 export type ResponseFormatText = {
     /**
@@ -11378,7 +11681,7 @@ export type StandaloneQuestionCondenserEvent = {
     /**
      * Single chat message containing the condensed user question.
      */
-    condensed_chat_message: ChatMessage;
+    condensed_chat_message: ChatMessageOutput;
     /**
      * Event Name
      *
@@ -11392,7 +11695,7 @@ export type StandaloneQuestionCondenserEvent = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | ChatMessage | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | ChatMessageOutput | Array<string> | undefined;
 };
 
 /**
@@ -11503,6 +11806,24 @@ export type StopEvent = {
      */
     readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<string> | undefined;
+};
+
+/**
+ * StopEventOutput
+ */
+export type StopEventOutput = {
+    /**
+     * Display Name
+     *
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display Description
+     *
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
 };
 
 /**
@@ -11698,13 +12019,21 @@ export type SuiteDto = {
  * are allowed and preserved through serialization.
  */
 export type TemplateData = {
+    /**
+     * Localized display name of the template
+     */
     name: LocaleString;
+    /**
+     * Localized description of the template
+     */
     description: LocaleString;
     /**
      * Icon
+     *
+     * Icon identifier for the template
      */
-    icon: string;
-    [key: string]: unknown | LocaleString | string;
+    icon?: string | null;
+    [key: string]: unknown | LocaleString | string | null | undefined;
 };
 
 /**
@@ -11890,7 +12219,35 @@ export type Textarea = {
  *
  * A representation of the content streamed from reasoning/thinking processes by LLMs
  */
-export type ThinkingBlock = {
+export type ThinkingBlockInput = {
+    /**
+     * Block Type
+     */
+    block_type?: 'thinking';
+    /**
+     * Content
+     *
+     * Content of the reasoning/thinking process, if available
+     */
+    content?: string | null;
+    /**
+     * Num Tokens
+     *
+     * Number of token used for reasoning/thinking, if available
+     */
+    num_tokens?: number | null;
+    /**
+     * Additional Information
+     */
+    additional_information?: AdditionalInformation;
+};
+
+/**
+ * ThinkingBlock
+ *
+ * A representation of the content streamed from reasoning/thinking processes by LLMs
+ */
+export type ThinkingBlockOutput = {
     /**
      * Block Type
      */
@@ -12416,7 +12773,35 @@ export type TokenResponse = {
 /**
  * ToolCallBlock
  */
-export type ToolCallBlock = {
+export type ToolCallBlockInput = {
+    /**
+     * Block Type
+     */
+    block_type?: 'tool_call';
+    /**
+     * Tool Call Id
+     *
+     * ID of the tool call, if provided
+     */
+    tool_call_id?: string | null;
+    /**
+     * Tool Name
+     *
+     * Name of the called tool
+     */
+    tool_name: string;
+    /**
+     * Tool Kwargs
+     *
+     * Arguments provided to the tool, if available
+     */
+    tool_kwargs?: Sub0 | string;
+};
+
+/**
+ * ToolCallBlock
+ */
+export type ToolCallBlockOutput = {
     /**
      * Block Type
      */
@@ -12534,6 +12919,8 @@ export type TopLogprob = {
 
 /**
  * Transcription
+ *
+ * Represents a transcription response returned by model, based on the provided input.
  */
 export type Transcription = {
     /**
@@ -12600,6 +12987,8 @@ export type TranscriptionSegment = {
 
 /**
  * TranscriptionVerbose
+ *
+ * Represents a verbose json transcription response returned by model, based on the provided input.
  */
 export type TranscriptionVerbose = {
     /**
@@ -12818,27 +13207,9 @@ export type UpdateRoleRequest = {
 };
 
 /**
- * Usage
- */
-export type Usage = {
-    /**
-     * Input Tokens
-     */
-    input_tokens: number;
-    input_tokens_details: UsageInputTokensDetails;
-    /**
-     * Output Tokens
-     */
-    output_tokens: number;
-    /**
-     * Total Tokens
-     */
-    total_tokens: number;
-    [key: string]: unknown | number | UsageInputTokensDetails;
-};
-
-/**
  * UsageDuration
+ *
+ * Usage statistics for models billed by audio input duration.
  */
 export type UsageDuration = {
     /**
@@ -12854,6 +13225,8 @@ export type UsageDuration = {
 
 /**
  * UsageInputTokensDetails
+ *
+ * The input tokens detailed information for the image generation.
  */
 export type UsageInputTokensDetails = {
     /**
@@ -12917,7 +13290,26 @@ export const UsageLimitPeriod = {
 export type UsageLimitPeriod = typeof UsageLimitPeriod[keyof typeof UsageLimitPeriod];
 
 /**
+ * UsageOutputTokensDetails
+ *
+ * The output token details for the image generation.
+ */
+export type UsageOutputTokensDetails = {
+    /**
+     * Image Tokens
+     */
+    image_tokens: number;
+    /**
+     * Text Tokens
+     */
+    text_tokens: number;
+    [key: string]: unknown | number;
+};
+
+/**
  * UsageTokens
+ *
+ * Usage statistics for models billed by token usage.
  */
 export type UsageTokens = {
     /**
@@ -12942,6 +13334,8 @@ export type UsageTokens = {
 
 /**
  * UsageTokensInputTokenDetails
+ *
+ * Details about the input tokens billed for this request.
  */
 export type UsageTokensInputTokenDetails = {
     /**
@@ -13119,7 +13513,7 @@ export type UserMessageEvent = {
      *
      * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
      */
-    messages?: Array<ChatMessage>;
+    messages?: Array<ChatMessageOutput>;
     /**
      * Files
      *
@@ -13139,7 +13533,25 @@ export type UserMessageEvent = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | UserIdentity | Array<ChatMessage> | Array<UserUploadedFile> | null | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | UserIdentity | Array<ChatMessageOutput> | Array<UserUploadedFile> | null | Array<string> | undefined;
+};
+
+/**
+ * UserMessageEventInput
+ */
+export type UserMessageEventInput = {
+    /**
+     * Messages
+     *
+     * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
+     */
+    messages?: Array<JamboParserObjectTypeParserChatMessage2>;
+    /**
+     * Files
+     *
+     * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
+     */
+    files?: Array<UserUploadedFile> | null;
 };
 
 /**
@@ -13153,17 +13565,23 @@ export type UserUploadedFile = {
      */
     filename: string;
     /**
-     * File Data
-     *
-     * Base64 encoded content of the uploaded file.
-     */
-    file_data: string;
-    /**
      * File Type
      *
      * The MIME type of the uploaded file.
      */
     file_type: string;
+    /**
+     * S3 Bucket
+     *
+     * The S3 bucket where the file is stored.
+     */
+    s3_bucket: string;
+    /**
+     * S3 Key
+     *
+     * The S3 object key for the file.
+     */
+    s3_key: string;
 };
 
 /**
@@ -13238,6 +13656,16 @@ export type ValidationError = {
      * Error Type
      */
     type: string;
+    /**
+     * Input
+     */
+    input?: unknown;
+    /**
+     * Context
+     */
+    ctx?: {
+        [key: string]: unknown;
+    };
 };
 
 /**
@@ -13380,7 +13808,43 @@ export type VectorStoreInput = {
  *
  * A representation of video data to directly pass to/from the LLM.
  */
-export type VideoBlock = {
+export type VideoBlockInput = {
+    /**
+     * Block Type
+     */
+    block_type?: 'video';
+    /**
+     * Video
+     */
+    video?: Blob | File | null;
+    /**
+     * Path
+     */
+    path?: string | null;
+    /**
+     * Url
+     */
+    url?: string | string | null;
+    /**
+     * Video Mimetype
+     */
+    video_mimetype?: string | null;
+    /**
+     * Detail
+     */
+    detail?: string | null;
+    /**
+     * Fps
+     */
+    fps?: number | null;
+};
+
+/**
+ * VideoBlock
+ *
+ * A representation of video data to directly pass to/from the LLM.
+ */
+export type VideoBlockOutput = {
     /**
      * Block Type
      */
@@ -13452,7 +13916,106 @@ export type WorkflowGraph = {
 };
 
 /**
+ * ThinkingBlock.additional_information
+ *
+ * Additional information related to the thinking/reasoning process, if available
+ */
+export type AdditionalInformation = {
+    [key: string]: unknown;
+};
+
+/**
+ * ChatMessage.additional_kwargs
+ */
+export type AdditionalKwargs = {
+    [key: string]: unknown;
+};
+
+/**
+ * CitationBlock.additional_location_info
+ */
+export type AdditionalLocationInfo = {
+    [key: string]: unknown;
+};
+
+/**
+ * ChatMessage
+ *
+ * Chat message.
+ */
+export type JamboParserObjectTypeParserChatMessage1 = {
+    role?: MessageRole;
+    /**
+     * Additional Kwargs
+     */
+    additional_kwargs?: AdditionalKwargs;
+    /**
+     * Blocks
+     */
+    blocks?: Array<({
+        block_type: 'text';
+    } & TextBlock) | ({
+        block_type: 'image';
+    } & ImageBlockInput) | ({
+        block_type: 'audio';
+    } & AudioBlockInput) | ({
+        block_type: 'video';
+    } & VideoBlockInput) | ({
+        block_type: 'document';
+    } & DocumentBlockInput) | ({
+        block_type: 'cache';
+    } & CachePoint) | ({
+        block_type: 'citable';
+    } & CitableBlockInput) | ({
+        block_type: 'citation';
+    } & CitationBlockInput) | ({
+        block_type: 'thinking';
+    } & ThinkingBlockInput) | ({
+        block_type: 'tool_call';
+    } & ToolCallBlockInput)>;
+};
+
+/**
+ * ChatMessage
+ *
+ * Chat message.
+ */
+export type JamboParserObjectTypeParserChatMessage2 = {
+    role?: MessageRole;
+    /**
+     * Additional Kwargs
+     */
+    additional_kwargs?: AdditionalKwargs;
+    /**
+     * Blocks
+     */
+    blocks?: Array<({
+        block_type: 'text';
+    } & TextBlock) | ({
+        block_type: 'image';
+    } & ImageBlockInput) | ({
+        block_type: 'audio';
+    } & AudioBlockInput) | ({
+        block_type: 'video';
+    } & VideoBlockInput) | ({
+        block_type: 'document';
+    } & DocumentBlockInput) | ({
+        block_type: 'cache';
+    } & CachePoint) | ({
+        block_type: 'citable';
+    } & CitableBlockInput) | ({
+        block_type: 'citation';
+    } & CitationBlockInput) | ({
+        block_type: 'thinking';
+    } & ThinkingBlockInput) | ({
+        block_type: 'tool_call';
+    } & ToolCallBlockInput)>;
+};
+
+/**
  * Usage
+ *
+ * Usage statistics for models billed by audio input duration.
  */
 export type OpenaiTypesAudioTranscriptionVerboseUsage = {
     /**
@@ -13468,6 +14031,8 @@ export type OpenaiTypesAudioTranscriptionVerboseUsage = {
 
 /**
  * Custom
+ *
+ * The custom tool that the model called.
  */
 export type OpenaiTypesChatChatCompletionMessageCustomToolCallParamCustom = {
     /**
@@ -13483,6 +14048,8 @@ export type OpenaiTypesChatChatCompletionMessageCustomToolCallParamCustom = {
 
 /**
  * Function
+ *
+ * The function that the model called.
  */
 export type OpenaiTypesChatChatCompletionMessageFunctionToolCallParamFunction = {
     /**
@@ -13542,6 +14109,36 @@ export type OpenaiTypesChatCompletionCreateParamsFunction = {
 };
 
 /**
+ * Usage
+ *
+ * For `gpt-image-1` only, the token usage information for the image generation.
+ */
+export type OpenaiTypesImagesResponseUsage = {
+    /**
+     * Input Tokens
+     */
+    input_tokens: number;
+    input_tokens_details: UsageInputTokensDetails;
+    /**
+     * Output Tokens
+     */
+    output_tokens: number;
+    /**
+     * Total Tokens
+     */
+    total_tokens: number;
+    output_tokens_details?: UsageOutputTokensDetails | null;
+    [key: string]: unknown | number | UsageInputTokensDetails | UsageOutputTokensDetails | null | undefined;
+};
+
+/**
+ * ToolCallBlock.tool_kwargs.sub0
+ */
+export type Sub0 = {
+    [key: string]: unknown;
+};
+
+/**
  * AddMemoryToChatHistoryEvent
  *
  * A control and display event emitted when an agent extends chat history with retrieved memories.
@@ -13583,8 +14180,8 @@ export type AddMemoryToChatHistoryEventWritable = {
      *
      * Chat history extended with user memories.
      */
-    extended_history: Array<ChatMessage>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessage> | undefined;
+    extended_history: Array<ChatMessageOutput>;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessageOutput> | undefined;
 };
 
 /**
@@ -13619,8 +14216,8 @@ export type AddOrganizationMemoryToChatHistoryEventWritable = {
      *
      * Chat history extended with user memories.
      */
-    extended_history: Array<ChatMessage>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessage> | undefined;
+    extended_history: Array<ChatMessageOutput>;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessageOutput> | undefined;
 };
 
 /**
@@ -13655,8 +14252,8 @@ export type AddUserMemoryToChatHistoryEventWritable = {
      *
      * Chat history extended with user memories.
      */
-    extended_history: Array<ChatMessage>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessage> | undefined;
+    extended_history: Array<ChatMessageOutput>;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessageOutput> | undefined;
 };
 
 /**
@@ -17278,8 +17875,8 @@ export type LimitChatHistoryEventWritable = {
      *
      * Limited chat history based on number of input tokens.
      */
-    limited_history: Array<ChatMessage>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessage> | undefined;
+    limited_history: Array<ChatMessageOutput>;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessageOutput> | undefined;
 };
 
 /**
@@ -19511,8 +20108,8 @@ export type StandaloneQuestionCondenserEventWritable = {
     /**
      * Single chat message containing the condensed user question.
      */
-    condensed_chat_message: ChatMessage;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | ChatMessage | undefined;
+    condensed_chat_message: ChatMessageOutput;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | ChatMessageOutput | undefined;
 };
 
 /**
@@ -20357,14 +20954,14 @@ export type UserMessageEventWritable = {
      *
      * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
      */
-    messages?: Array<ChatMessage>;
+    messages?: Array<ChatMessageOutput>;
     /**
      * Files
      *
      * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
      */
     files?: Array<UserUploadedFile> | null;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | UserIdentity | Array<ChatMessage> | Array<UserUploadedFile> | null | undefined;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | UserIdentity | Array<ChatMessageOutput> | Array<UserUploadedFile> | null | undefined;
 };
 
 /**
@@ -20496,6 +21093,36 @@ export type VectorStoreInputWritable = {
     [key: string]: unknown | true | string | null | string | null | 'vectorStoreInput' | string | null | LocaleString | string | LocaleString | string | null | string | number | number | boolean | Array<string> | {
         [key: string]: string;
     } | null | boolean | string | null | LocaleString | string | null | LocaleString | string | null | undefined;
+};
+
+/**
+ * ThinkingBlock.additional_information
+ *
+ * Additional information related to the thinking/reasoning process, if available
+ */
+export type AdditionalInformationWritable = {
+    [key: string]: unknown;
+};
+
+/**
+ * ChatMessage.additional_kwargs
+ */
+export type AdditionalKwargsWritable = {
+    [key: string]: unknown;
+};
+
+/**
+ * CitationBlock.additional_location_info
+ */
+export type AdditionalLocationInfoWritable = {
+    [key: string]: unknown;
+};
+
+/**
+ * ToolCallBlock.tool_kwargs.sub0
+ */
+export type Sub0Writable = {
+    [key: string]: unknown;
 };
 
 export type GetHealthData = {
@@ -23408,3 +24035,163 @@ export type TranslateTextResponses = {
 };
 
 export type TranslateTextResponse = TranslateTextResponses[keyof TranslateTextResponses];
+
+export type SendNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventPostData = {
+    body: NamespaceAwareUserMessageEventInput;
+    path: {
+        /**
+         * Agent ID
+         *
+         * The specific agent instance ID
+         */
+        agent_id: string;
+    };
+    query?: {
+        /**
+         * Thread Id
+         */
+        thread_id?: string;
+        /**
+         * Display Id
+         */
+        display_id?: string;
+    };
+    url: '/agents/classes/RAGAgent/instances/{agent_id}/NamespaceAwareUserMessageEvent';
+};
+
+export type SendNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SendNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventPostError = SendNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventPostErrors[keyof SendNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventPostErrors];
+
+export type SendNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: StopEventOutput;
+};
+
+export type SendNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventPostResponse = SendNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventPostResponses[keyof SendNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventPostResponses];
+
+export type StreamNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventStreamPostData = {
+    body: NamespaceAwareUserMessageEventInput;
+    path: {
+        /**
+         * Agent ID
+         *
+         * The specific agent instance ID
+         */
+        agent_id: string;
+    };
+    query?: {
+        /**
+         * Thread Id
+         */
+        thread_id?: string;
+        /**
+         * Display Id
+         */
+        display_id?: string;
+    };
+    url: '/agents/classes/RAGAgent/instances/{agent_id}/NamespaceAwareUserMessageEvent/stream';
+};
+
+export type StreamNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventStreamPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type StreamNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventStreamPostError = StreamNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventStreamPostErrors[keyof StreamNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventStreamPostErrors];
+
+export type StreamNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventStreamPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type SendUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostData = {
+    body: UserMessageEventInput;
+    path: {
+        /**
+         * Agent ID
+         *
+         * The specific agent instance ID
+         */
+        agent_id: string;
+    };
+    query?: {
+        /**
+         * Thread Id
+         */
+        thread_id?: string;
+        /**
+         * Display Id
+         */
+        display_id?: string;
+    };
+    url: '/agents/classes/RAGAgent/instances/{agent_id}/UserMessageEvent';
+};
+
+export type SendUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SendUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostError = SendUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostErrors[keyof SendUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostErrors];
+
+export type SendUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: StopEventOutput;
+};
+
+export type SendUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostResponse = SendUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostResponses[keyof SendUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostResponses];
+
+export type StreamUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventStreamPostData = {
+    body: UserMessageEventInput;
+    path: {
+        /**
+         * Agent ID
+         *
+         * The specific agent instance ID
+         */
+        agent_id: string;
+    };
+    query?: {
+        /**
+         * Thread Id
+         */
+        thread_id?: string;
+        /**
+         * Display Id
+         */
+        display_id?: string;
+    };
+    url: '/agents/classes/RAGAgent/instances/{agent_id}/UserMessageEvent/stream';
+};
+
+export type StreamUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventStreamPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type StreamUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventStreamPostError = StreamUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventStreamPostErrors[keyof StreamUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventStreamPostErrors];
+
+export type StreamUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventStreamPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
