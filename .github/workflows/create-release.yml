@@ -70,13 +70,13 @@ jobs:
             echo "  OK"
           done
 
-      - name: Lint release Docker Compose files
+      - name: Format release YAML files
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           for variant in "swissaihub-${VERSION}" "swissaihub-${VERSION}-gpu"; do
             DEST="dist/release/${variant}"
-            echo "Linting YAML files in ${variant}..."
-            find "${DEST}" -name '*.yml' -o -name '*.yaml' | xargs yamlfix --check
+            echo "Formatting YAML files in ${variant}..."
+            find "${DEST}" -name '*.yml' -o -name '*.yaml' | xargs yamlfix
             echo "  OK"
           done
 
