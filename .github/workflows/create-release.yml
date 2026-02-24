@@ -9,9 +9,6 @@ on:
       release_version:
         description: 'Release version (e.g., v0.264.0)'
         required: true
-  # TODO: Remove before merging — temporary trigger for testing
-  push:
-    branches: [ feat/gh-releases ]
 
 permissions:
   contents: write
@@ -20,7 +17,9 @@ jobs:
   create-release:
     name: Create GitHub Release with Deployment Bundles
     runs-on: ubuntu-latest
-    # TODO: Restore original condition before merging: github.event_name == 'workflow_dispatch' || github.event_name == 'repository_dispatch'
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'repository_dispatch'
     steps:
       - name: Extract version
         id: version
@@ -30,17 +29,15 @@ jobs:
           elif [ -n "${{ github.event.client_payload.release_version }}" ]; then
             VERSION="${{ github.event.client_payload.release_version }}"
           else
-            # TODO: Remove before merging — fallback for push-triggered test runs
-            VERSION="v0.0.0-test"
-            echo "No release_version provided. Using test version: $VERSION"
+            echo "No release_version provided. Failing."
+            exit 1
           fi
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Checkout at release tag
         uses: actions/checkout@v4
         with:
-          # TODO: Restore to steps.version.outputs.version before merging
-          ref: ${{ github.ref }}
+          ref: ${{ steps.version.outputs.version }}
           fetch-depth: 0
 
       - name: Setup Python 3.13
