@@ -17,19 +17,24 @@ index: 2
 
 ## 1. 🎯 Foundational Knowledge of Library Development
 
-This section covers the foundational architecture, patterns, and terminology you need to know before contributing to the shared library.
+This section covers the foundational architecture, patterns, and terminology you need to know before contributing to the
+shared library.
 
 ::: info
-This documentation assumes you have completed the general AI-Hub setup as described in the main README.md. Make sure you have the required infrastructure running before proceeding.
+This documentation assumes you have completed the general AI-Hub setup as described in the main README.md. Make sure you
+have the required infrastructure running before proceeding.
 :::
 
 ### 📚 Introduction to `aihub_lib`
 
 ::: tip Core Principle
-You are contributing to the **aihub_lib** scope, which serves as the foundational shared library within the AI-Hub platform. This scope implements core infrastructure and utilities used across all other services. The guiding principle is simple: **if code is used by more than one other service, it belongs here**.
+You are contributing to the **aihub_lib** scope, which serves as the foundational shared library within the AI-Hub
+platform. This scope implements core infrastructure and utilities used across all other services. The guiding principle
+is simple: **if code is used by more than one other service, it belongs here**.
 :::
 
-The library provides essential building blocks including event-driven architecture, authentication/authorization systems, internationalization support, generative AI utilities, and comprehensive testing frameworks.
+The library provides essential building blocks including event-driven architecture, authentication/authorization
+systems, internationalization support, generative AI utilities, and comprehensive testing frameworks.
 
 ### 📁 Project Structure
 
@@ -83,7 +88,8 @@ The library is built on these foundational principles:
 
 #### 📶 1. Event-Driven Architecture
 
-All communication happens via events, enabling loose coupling and scalability. Events are strongly typed Pydantic models with automatic registration and serialization.
+All communication happens via events, enabling loose coupling and scalability. Events are strongly typed Pydantic models
+with automatic registration and serialization.
 
 #### ⚙️ 2. Configuration-Driven Development
 
@@ -91,9 +97,10 @@ Pydantic-based configuration management with environment variable integration, v
 
 #### 🌍 3. Internationalization by Design
 
-Built-in multi-language support with YAML-based translations, dynamic locale switching, and comprehensive fallback mechanisms.
+Built-in multi-language support with YAML-based translations, dynamic locale switching, and comprehensive fallback
+mechanisms.
 
----
+______________________________________________________________________
 
 ## 2. 🚀 The Step-by-Step Development Workflow
 
@@ -103,18 +110,9 @@ This section provides a practical, step-by-step guide to contributing to the sha
 
 Before you begin, ensure you have completed the infrastructure setup from the root project documentation.
 
-::: warning
-Always activate the Poetry environment before working. All subsequent commands must be run from within this activated shell.
-:::
-
 ```bash
 # Start required services from the project root
 docker compose -f docker-compose.yml -f milvus-standalone-docker-compose.yml -f docker-compose-webui.yml up -d
-```
-
-```bash
-cd aihub_lib
-poetry shell
 ```
 
 ### 🔍 Step 1: Understanding the Domain and Scope
@@ -151,9 +149,13 @@ Follow these patterns for implementing different types of library components.
 #### 🔐 Authentication and Authorization Components
 
 ::: tip AuthHandlers and IdentityProviders
-**AuthHandlers** are responsible for extracting authentication credentials from HTTP requests and validating them to produce a `UserIdentity`. They serve as the bridge between different authentication mechanisms (OAuth2, token-based, etc.) and the AI-Hub's internal user representation.
+**AuthHandlers** are responsible for extracting authentication credentials from HTTP requests and validating them to
+produce a `UserIdentity`. They serve as the bridge between different authentication mechanisms (OAuth2, token-based,
+etc.) and the AI-Hub's internal user representation.
 
-**IdentityProviders** are responsible for retrieving detailed user information from identity systems (like Microsoft Graph, LDAP, or custom user databases) given a user identifier. They separate the concerns of authentication (validating credentials) from user information retrieval.
+**IdentityProviders** are responsible for retrieving detailed user information from identity systems (like Microsoft
+Graph, LDAP, or custom user databases) given a user identifier. They separate the concerns of authentication (validating
+credentials) from user information retrieval.
 :::
 
 **When to Create New AuthHandlers:**
@@ -235,7 +237,8 @@ Follow these patterns for implementing different types of library components.
 #### 📶 Event System Extensions
 
 ::: info Event System Architecture
-The AI-Hub event system is a sophisticated event-driven architecture that powers all communication between components. Understanding the event hierarchy and when to create new event types is crucial for extending the system effectively.
+The AI-Hub event system is a sophisticated event-driven architecture that powers all communication between components.
+Understanding the event hierarchy and when to create new event types is crucial for extending the system effectively.
 :::
 
 **Event Directory Structure:**
@@ -265,8 +268,8 @@ aihub_lib/nats/events/
 ```
 
 ::: details Event Type Categories
-**1. Control Events** (`ControlEvent`)
-Control events are system-level signals that influence workflow execution. **Only ControlEvent types can drive workflow steps and control system flow.**
+**1. Control Events** (`ControlEvent`) Control events are system-level signals that influence workflow execution. **Only
+ControlEvent types can drive workflow steps and control system flow.**
 
 Key characteristics:
 
@@ -275,8 +278,8 @@ Key characteristics:
 - Drive the progression of automated processes
 - Examples: `StartEvent`, `StopEvent`, `ExceptionEvent`, `RouterEvent`
 
-**2. Display Events** (`DisplayEvent`)
-Display events are user-facing informational events for UIs and monitoring dashboards. They are purely informational and never affect control flow.
+**2. Display Events** (`DisplayEvent`) Display events are user-facing informational events for UIs and monitoring
+dashboards. They are purely informational and never affect control flow.
 
 Key characteristics:
 
@@ -285,8 +288,7 @@ Key characteristics:
 - Never influence workflow execution
 - Examples: `ChunkEvent`, `ThoughtEvent`, general `DisplayEvent`
 
-**3. Process Events** (`ProcessEvent`)
-Base class for events that influence process control flow, extending `BaseEvent`.
+**3. Process Events** (`ProcessEvent`) Base class for events that influence process control flow, extending `BaseEvent`.
 
 Key characteristics:
 
@@ -294,8 +296,8 @@ Key characteristics:
 - Used in agentic process orchestration
 - Examples: `WorkEvent`, `WorkRequestEvent`
 
-**4. Semantic Events** (`SemanticEvent`)
-Events that must report to OpenInference-compatible tracing systems like Langfuse.
+**4. Semantic Events** (`SemanticEvent`) Events that must report to OpenInference-compatible tracing systems like
+Langfuse.
 
 Key characteristics:
 
@@ -304,8 +306,7 @@ Key characteristics:
 - Provide structured semantic attributes for observability
 - Examples: `LLMEvent`, `RetrieverEvent`, `EmbeddingEvent`
 
-**5. Work Events** (`WorkEvent`)
-Signal successful work completion by entities in agentic processes.
+**5. Work Events** (`WorkEvent`) Signal successful work completion by entities in agentic processes.
 
 Key characteristics:
 
@@ -314,8 +315,7 @@ Key characteristics:
 - Signal step completion to process dispatchers
 - Variants: `AgentWorkEvent`, `HumanWorkEvent`, `ProcessWorkEvent`, `ProgramWorkEvent`
 
-**6. Work Request Events** (`WorkRequestEvent`)
-Delegate work to specific entities in agentic processes.
+**6. Work Request Events** (`WorkRequestEvent`) Delegate work to specific entities in agentic processes.
 
 Key characteristics:
 
@@ -323,8 +323,7 @@ Key characteristics:
 - Request work from specific entity types
 - Variants: `AgentWorkRequestEvent`, `HumanWorkRequestEvent`, `ProgramWorkRequestEvent`
 
-**7. Discovery Events**
-Enable dynamic service discovery and integration.
+**7. Discovery Events** Enable dynamic service discovery and integration.
 
 Key characteristics:
 
@@ -332,8 +331,7 @@ Key characteristics:
 - `ProcessDiscoveryResponseEvent`: Exposes process inputs for humans/programs/agents
 - Enable runtime service integration without manual configuration
 
-**8. In-The-Loop Events**
-Support human, agent, and bot involvement in workflows.
+**8. In-The-Loop Events** Support human, agent, and bot involvement in workflows.
 
 Key characteristics:
 
@@ -448,7 +446,7 @@ make test-cov    # Run tests with coverage reporting
 - Tests must cover both success and failure scenarios
 :::
 
----
+______________________________________________________________________
 
 ## 3. 🎨 Core Library Patterns and Best Practices
 
@@ -459,7 +457,9 @@ This section covers established patterns and best practices for building robust 
 #### 📝 Pydantic-Based Configuration
 
 ::: tip Configuration Management
-The AI-Hub uses Pydantic's `BaseSettings` for configuration management rather than `python-dotenv`. This approach provides automatic type validation, environment variable parsing, and comprehensive configuration management without requiring explicit dotenv loading.
+The AI-Hub uses Pydantic's `BaseSettings` for configuration management rather than `python-dotenv`. This approach
+provides automatic type validation, environment variable parsing, and comprehensive configuration management without
+requiring explicit dotenv loading.
 :::
 
 Pydantic's `BaseSettings` automatically:
@@ -494,11 +494,14 @@ config = ServiceConfig()
 #### 📊 Entity Design
 
 ::: info Entity Pattern
-In the AI-Hub, entity classes serve a dual purpose: they define the database schema using MongoEngine's `Document` class, and they also function as repositories by implementing business logic and data access methods as `@classmethod` methods. This pattern combines the Active Record and Repository patterns, providing both data structure definition and data access logic in a single class.
+In the AI-Hub, entity classes serve a dual purpose: they define the database schema using MongoEngine's `Document`
+class, and they also function as repositories by implementing business logic and data access methods as `@classmethod`
+methods. This pattern combines the Active Record and Repository patterns, providing both data structure definition and
+data access logic in a single class.
 :::
 
-**Repository Pattern via Class Methods:**
-Entity classes use `@classmethod` methods to implement repository-like functionality for data access, creation, and business operations. This approach:
+**Repository Pattern via Class Methods:** Entity classes use `@classmethod` methods to implement repository-like
+functionality for data access, creation, and business operations. This approach:
 
 - Centralizes data access logic within the entity class
 - Provides a consistent interface for database operations
@@ -525,7 +528,9 @@ class ResourceEntity(Document):
 #### 🌍 Multi-Language Support
 
 ::: warning Multi-Language Requirement
-The AI-Hub provides comprehensive internationalization (i18n) support with a **mandatory minimum of four languages**: English (en), German (de), French (fr), and Italian (it). German serves as the default locale, reflecting the primary development region. All user-facing content must support these four languages at minimum.
+The AI-Hub provides comprehensive internationalization (i18n) support with a **mandatory minimum of four languages**:
+English (en), German (de), French (fr), and Italian (it). German serves as the default locale, reflecting the primary
+development region. All user-facing content must support these four languages at minimum.
 :::
 
 **Key Characteristics:**
@@ -551,28 +556,4 @@ errors:
   not_found: "Resource not found"
 ```
 
-### 📖 Glossary of Library-Specific Terms
 
-This glossary defines terms, concepts, and technologies that have specific meaning within the `aihub_lib` scope, building upon the core AI-Hub terminology.
-
-| Term                            | Definition                                                                                                                          |
-| :------------------------------ | :---------------------------------------------------------------------------------------------------------------------------------- |
-| **Access Checker**              | Core authorization component that evaluates user permissions against resources using hierarchical wildcards (`*`, `>`, `?*`, `?>`). |
-| **Auth Handler**                | Abstract base class for authentication strategies. Implementations include OAuth2, Token, OpenWebUI, and Development-only handlers. |
-| **Base Event**                  | Foundation class for all events in the system. Provides automatic type registration, serialization, and metadata handling.          |
-| **Base Dispatcher**             | Core workflow execution engine that processes events through registered handlers in a stateless, distributed manner.                |
-| **Configuration Management**    | Pydantic-based system for managing service configurations with environment variable integration and validation.                     |
-| **Event-Driven Architecture**   | Core architectural pattern where all communication happens via events, enabling scalable, stateless distributed systems.            |
-| **Event Store**                 | Persistence layer for events, providing replay capabilities and audit trails using NATS JetStream.                                  |
-| **Hierarchical Permissions**    | Permission system using dot notation (e.g., `aihub.user.agent.class.id`) with wildcard support for flexible access control.         |
-| **Identity Provider**           | Strategy pattern implementation for user authentication supporting multiple backends (Azure AD, Token, Development).                |
-| **Internationalization (i18n)** | Multi-language support system with YAML-based translations and dynamic locale switching.                                            |
-| **Locale Handler**              | Core i18n component that manages language-specific content extraction and fallback mechanisms.                                      |
-| **Locale String**               | Multi-language string representation supporting dynamic locale resolution and default fallbacks.                                    |
-| **NATS Integration**            | Message bus integration providing event publishing, subscription, and stream management for distributed communication.              |
-| **Persistence Layer**           | Database abstraction layer supporting multiple storage backends (MongoDB, Cosmos, Redis) with entity management.                    |
-| **Resource Config**             | Pydantic models for configuring AI/ML services including LLMs, embeddings, and other generative AI resources.                       |
-| **Topic Manager**               | NATS subject/topic routing system that manages message distribution across services and workflow components.                        |
-| **User Identity**               | Core user representation including roles, permissions, and authentication state management.                                         |
-| **Vector Store**                | Abstraction for vector database operations supporting multiple backends (Milvus, Azure AI Search) for RAG implementations.          |
-| **Workflow Orchestration**      | Event-driven workflow execution system enabling complex business processes through distributed state management.                    |

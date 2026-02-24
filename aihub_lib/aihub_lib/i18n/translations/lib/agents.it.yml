@@ -1,16 +1,17 @@
+---
 config:
   placeholder:
-    name: "Il mio assistente IA"
-    description: "Descrivi cosa fa questo agente e come può aiutare gli utenti..."
-    icon: "Seleziona o inserisci icona..."
+    name: Il mio assistente IA
+    description: Descrivi cosa fa questo agente e come può aiutare gli utenti...
+    icon: Seleziona o inserisci icona...
   agent_id:
-    label: "ID agente"
-    help: "Identificatore univoco (minuscole, numeri, trattini, underscore)"
-    placeholder: "il_mio_id_agente_unico"
+    label: ID agente
+    help: Identificatore univoco (minuscole, numeri, trattini, underscore)
+    placeholder: il_mio_id_agente_unico
   name:
-    label: "Nome dell'agente"
+    label: Nome dell'agente
   description:
-    label: "Descrizione"
+    label: Descrizione
   icon:
-    label: "Icona"
-    help: "Seleziona un'icona predefinita o inserisci un nome icona Iconify"
+    label: Icona
+    help: Seleziona un'icona predefinita o inserisci un nome icona Iconify

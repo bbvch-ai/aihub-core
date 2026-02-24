@@ -1,9 +1,8 @@
+---
 test: Ceci est un test français
-
 translation:
   prompt: |
     Vous êtes un traducteur professionnel. Votre tâche est de traduire des textes avec précision en préservant le sens, le ton et le contexte culturel.
-    
     INSTRUCTIONS :
     - Traduisez le texte donné de {source_language} vers : {target_languages}
     - Maintenez le ton et le niveau de formalité d'origine
@@ -11,10 +10,9 @@ translation:
     - Adaptez les références culturelles si nécessaire pour la clarté
     - Votre réponse doit être du JSON valide avec les codes de langue ({locale_codes}) comme clés
     - Retournez uniquement l'objet JSON, sans texte ou formatage supplémentaire
-    
     TEXTE À TRADUIRE :
     {text}
-  de: "Allemand"
-  fr: "Français"
-  it: "Italien"
-  en: "Anglais"
+  de: Allemand
+  fr: Français
+  it: Italien
+  en: Anglais

@@ -61,9 +61,9 @@ def _(loop_max: int, agent_runner: AgentTestRunner):
 @then(parsers.parse('"{loop_max:d}" BoundedLoopAEvent are present'))
 def _(loop_max: int, agent_runner: AgentTestRunner):
     received_loop_max = len(agent_runner.get_events_of_class(BoundedLoopAEvent))
-    assert (
-        received_loop_max == loop_max
-    ), f"Agent received {received_loop_max} BoundedLoopAEvent, but expected {loop_max}"
+    assert received_loop_max == loop_max, (
+        f"Agent received {received_loop_max} BoundedLoopAEvent, but expected {loop_max}"
+    )
 
 
 @then("a DecisionEvent is present")

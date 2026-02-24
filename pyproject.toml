@@ -1,39 +1,56 @@
-[tool.poetry]
-name = "aihub-core"
-version = "v0.13.0"
-description = "aihub core"
-authors = [
-    "Joel Barmettler <joel.barmettler@bbv.ch>",
-    "Marius Högger <marius.hoegger@bbv.ch>",
-    "Michèle Fundneider <michele.fundneider@bbv.ch>",
-    "Thomas Mannhart <thomas.mannhart@bbv.ch>",
-    "Noah Hermann <noah.hermann@bbv.ch>",
+[project]
+name = "aihub-core-workspace"
+version = "0.265.3"
+requires-python = ">=3.13, <3.14"
+description = "AI-Hub Core Monorepo Workspace"
+dependencies = [
+    "tomlkit>=0.13.3",
+    "pyyaml>=6.0.3",
+    "jinja2>=3.1.6",
 ]
-license = "Proprietary"
-package-mode = false
 
-[tool.poetry.dependencies]
-python = ">=3.13, <3.14"
-tomlkit = "^0.13.2"
-pyyaml = "^6.0.3"
-jinja2 = "^3.1.6"
+[dependency-groups]
+dev = [
+    # Testing
+    "pytest>=8.4.1",
+    "pytest-asyncio>=0.24.0",
+    "pytest-bdd>=8.1.0",
+    "pytest-cov>=6.0.0",
+    "pytest-mock>=3.14.0",
+    # Linting & formatting
+    "black[jupyter]>=26.1.0",
+    "mypy>=1.13.0",
+    "ruff>=0.8.1",
+    "toml-sort>=0.24.2",
+    # Utilities
+    "pip-licenses>=5.0.0",
+    "mdformat>=0.7.21",
+    "mdformat-gfm>=0.4.1",
+    "mdformat-simple-breaks>=0.0.1",
+    "mdformat-pyproject>=0.0.2",
+    "mdformat-vuepress>=0.1.0",
+    "mdformat-myst>=0.2.1",
+    "huggingface-hub[cli]>=0.34.4",
+    "tomlkit>=0.13.3",
+    "yamlfix>=1.19.1",
+]
 
-[tool.poetry.group.dev.dependencies]
-black = { extras = ["jupyter"], version = "^25.1.0" }
-pip-licenses = "^5.0.0"
-mdformat = "^0.7.21"
-mdformat-gfm = "^0.4.1"
-mdformat-frontmatter = "^2.0.8"
-mdformat-simple-breaks = "^0.0.1"
-mdformat-pyproject = "^0.0.2"
-mdformat-vuepress = "^0.1.0"
-mdformat-myst = "^0.2.1"
-huggingface-hub = {extras = ["cli"], version = "^0.34.4"}
-tomlkit = "^0.13.3"
+[tool.uv]
+package = false
 
-[build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
-build-backend = "poetry.core.masonry.api"
+[tool.uv.workspace]
+members = [
+    "aihub_lib",
+    "aihub_agent",
+    "aihub_api",
+    "aihub_bot",
+    "aihub_pipeline",
+    "aihub_process",
+]
+
+[tool.uv.sources]
+aihub-core = { workspace = true }
+aihub-agent = { workspace = true }
 
 [tool.black]
 line-length = 120
@@ -54,7 +71,7 @@ extend-exclude = '''
 '''
 
 [tool.mdformat]
-extensions = ["vuepress", "frontmatter", "gfm", "myst"]
+extensions = ["vuepress", "gfm", "myst"]
 exclude = [
     "node_modules",
     ".pnpm",
@@ -63,7 +80,8 @@ exclude = [
     "local_volumes",
     ".idea",
     "venv",
-    ".git"
+    ".git",
+    "aihub_doc/whitepaper/chapters",
 ]
 wrap = 120
 number = true

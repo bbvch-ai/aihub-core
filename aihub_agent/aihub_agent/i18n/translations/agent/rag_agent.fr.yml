@@ -1,3 +1,4 @@
+---
 metadata:
   name: Assistant d'Intelligence Documentaire
   description: Assistant IA qui recherche et analyse vos documents pour fournir des
@@ -36,63 +37,26 @@ config:
     label: Prompt de contexte
     help: Modèle pour présenter les documents récupérés au LLM. Utilisez des espaces
       réservés comme {context} pour injecter le contenu récupéré.
-    default: '{% chat role="user" %}
-
-      Vous disposez d''informations contextuelles supplémentaires sous forme de documents
-      structurés. Chaque document suit un
-
-      format cohérent, commençant par `<REFERENCE_DOCUMENT [metadata]>` et se terminant
-      par `</REFERENCE_DOCUMENT>`. Ces documents contiennent
-
-      des détails essentiels qui doivent être utilisés pour comprendre et répondre
-      précisément à la requête de l''utilisateur.
-
-
-      Chaque document comprend des métadonnées telles que la source, l''espace de
-      noms, le type, la langue, la version et les horodatages. Le contenu
-
-      de ces documents fournit des informations cruciales pertinentes pour le contexte
-      donné.
-
-
-      Voici les documents pertinents :
-
-
-      <context_documents>
-
-      {% for block in context_blocks %}
-
-      {% if block.block_type == ''text'' %}
-
-      {{ block.text }}
-
-      {% endif %}
-
-      {% if block.block_type == ''image'' %}
-
-      {{ block.url.__str__() | image}}
-
-      {% endif %}
-
-      {% endfor %}
-
-      </context_documents>
-
-
-      Instruction : En utilisant les informations des documents fournis, générez une
-      réponse détaillée et bien structurée
-
-      à la question de l''utilisateur.
-
-      {% endchat %}
-
-      '
+    default: "{% chat role=\"user\" %}\nVous disposez d'informations contextuelles\
+      \ supplémentaires sous forme de documents structurés. Chaque document suit un\n\
+      format cohérent, commençant par `<REFERENCE_DOCUMENT [metadata]>` et se terminant\
+      \ par `</REFERENCE_DOCUMENT>`. Ces documents contiennent\ndes détails essentiels\
+      \ qui doivent être utilisés pour comprendre et répondre précisément à la requête\
+      \ de l'utilisateur.\n\nChaque document comprend des métadonnées telles que la\
+      \ source, l'espace de noms, le type, la langue, la version et les horodatages.\
+      \ Le contenu\nde ces documents fournit des informations cruciales pertinentes\
+      \ pour le contexte donné.\n\nVoici les documents pertinents :\n\n<context_documents>\n\
+      {% for block in context_blocks %}\n{% if block.block_type == 'text' %}\n{{ block.text }}\n\
+      {% endif %}\n{% if block.block_type == 'image' %}\n{{ block.url.__str__() | image}}\n\
+      {% endif %}\n{% endfor %}\n</context_documents>\n\nInstruction : En utilisant\
+      \ les informations des documents fournis, générez une réponse détaillée et bien\
+      \ structurée\nà la question de l'utilisateur.\n{% endchat %}\n"
   context_insufficient_prompt:
     label: Prompt contexte insuffisant
     help: Message affiché lorsque l'agent ne trouve pas suffisamment d'informations.
       Guide la façon dont l'agent communique ses limitations.
-    default: 'Informez l''utilisateur que vous ne pouvez pas répondre à la question
-      pour la raison suivante :'
+    default: "Informez l'utilisateur que vous ne pouvez pas répondre à la question\
+      \ pour la raison suivante :"
   reranking_enabled:
     label: Activer le reclassement
     help: Utilisez un modèle de reclassement pour améliorer la pertinence des documents
@@ -113,44 +77,52 @@ config:
     help: Stocker les nouvelles mémoires des conversations pour une récupération future.
 steps:
   retrieve_user_memory:
-    name: "Récupérer la mémoire utilisateur"
-    description: "Récupère les mémoires spécifiques à l'utilisateur pour un contexte personnalisé"
+    name: Récupérer la mémoire utilisateur
+    description: Récupère les mémoires spécifiques à l'utilisateur pour un contexte
+      personnalisé
   retrieve_organization_memory:
-    name: "Récupérer la mémoire organisationnelle"
-    description: "Récupère les mémoires organisationnelles pertinentes (connaissances d'experts) basées sur la requête utilisateur"
+    name: Récupérer la mémoire organisationnelle
+    description: Récupère les mémoires organisationnelles pertinentes (connaissances
+      d'experts) basées sur la requête utilisateur
   add_memory_to_context:
-    name: "Ajouter la mémoire au contexte"
-    description: "Injecte les mémoires utilisateur et organisationnelles dans l'historique du chat comme messages système"
+    name: Ajouter la mémoire au contexte
+    description: Injecte les mémoires utilisateur et organisationnelles dans l'historique
+      du chat comme messages système
   limit_chat_history:
-    name: "Limiter l'historique du chat"
-    description: "Tronque les messages de chat entrants pour respecter la limite de tokens configurée"
+    name: Limiter l'historique du chat
+    description: Tronque les messages de chat entrants pour respecter la limite de
+      tokens configurée
   condense_standalone_question:
-    name: "Condenser la question autonome"
-    description: "Condense l'historique du chat et la requête utilisateur en une question autonome."
+    name: Condenser la question autonome
+    description: Condense l'historique du chat et la requête utilisateur en une question
+      autonome.
   few_shot_guard:
-    name: "Garde Few-Shot"
-    description: "Protège la question pour s'assurer qu'elle est appropriée pour l'agent."
+    name: Garde Few-Shot
+    description: Protège la question pour s'assurer qu'elle est appropriée pour l'agent.
   retrieve_nodes:
-    name: "Récupérer les nœuds"
-    description: "Récupère les nœuds pertinents des sources de connaissances."
+    name: Récupérer les nœuds
+    description: Récupère les nœuds pertinents des sources de connaissances.
   rerank_nodes:
-    name: "Reclasser les nœuds récupérés"
-    description: "Reclasse les documents récupérés avec un modèle de reclassement pour une meilleure pertinence"
+    name: Reclasser les nœuds récupérés
+    description: Reclasse les documents récupérés avec un modèle de reclassement pour
+      une meilleure pertinence
   order_nodes:
-    name: "Ordonner les nœuds par documents"
-    description: "Ordonne les nœuds récupérés par leurs documents sources."
+    name: Ordonner les nœuds par documents
+    description: Ordonne les nœuds récupérés par leurs documents sources.
   context_sufficient_guard:
-    name: "Garde de contexte suffisant"
-    description: "Protège le contexte pour s'assurer qu'il est suffisant pour générer une réponse."
+    name: Garde de contexte suffisant
+    description: Protège le contexte pour s'assurer qu'il est suffisant pour générer
+      une réponse.
   limit_chat_history_with_context:
-    name: "Limiter l'historique avec contexte"
-    description: "Inclut le contexte combiné et tronque à nouveau l'historique du chat."
+    name: Limiter l'historique avec contexte
+    description: Inclut le contexte combiné et tronque à nouveau l'historique du chat.
   respond_with_llm:
-    name: "Répondre avec LLM"
-    description: "Génère une réponse en utilisant le LLM configuré."
+    name: Répondre avec LLM
+    description: Génère une réponse en utilisant le LLM configuré.
   store_user_memory:
-    name: "Stocker la mémoire utilisateur"
-    description: "Persiste les apprentissages de la conversation dans la mémoire utilisateur à long terme pour les interactions futures"
+    name: Stocker la mémoire utilisateur
+    description: Persiste les apprentissages de la conversation dans la mémoire utilisateur
+      à long terme pour les interactions futures
   stop:
-    name: "Arrêt"
-    description: "Termine le workflow après l'achèvement de toutes les étapes requises"
+    name: Arrêt
+    description: Termine le workflow après l'achèvement de toutes les étapes requises

@@ -38,7 +38,7 @@ A **Resource** manages the connection to an external system, such as a database,
 - **Role**: Resources separate your pipeline's logic from its environment configuration, allowing the same pipeline code
   to run seamlessly across development, testing, and production.
 
----
+______________________________________________________________________
 
 ## Core Architectural Principles
 

@@ -5,6 +5,180 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.265.3] - 2026-02-24 - Enhanced Service Health Monitoring for Docker Compose
+
+### Added
+
+- ✨ **Implemented standardized HTTP health check labels** for various core services, including **SeaweedFS Volume**,
+  **Ferretdb**, **NATS Server**, **Presidio Analyzer**, **Presidio Anonymizer**, and **Langfuse Server**. These labels
+  provide explicit metadata (protocol, port, path) for external monitoring and orchestration tools to determine service
+  readiness and liveness.
+- 🚀 **Configured native Docker health checks** for the **Jupyter Notebook** service, introducing robust internal
+  validation of its operational status with defined intervals, timeouts, and retries.
+- 🔄 **Explicitly set Docker's internal health check to `NONE`** for **Ferretdb** and **Langfuse Server** services. This
+  clarifies the monitoring strategy, indicating that external systems should rely on the newly added health check labels
+  for status checks rather than Docker's default internal mechanism.
+
+______________________________________________________________________
+
+## [v0.265.2] - 2026-02-24 - Comprehensive Architecture Documentation and AI-Powered Management
+
+### Added
+
+- ✨ **Arc42 Skill**: Introduced a new Claude skill designed to write, edit, and review architecture documentation
+  chapters following the official `arc42` framework. This enhances the ability to generate structured, high-quality
+  architectural documentation.
+- 📖 **Complete Arc42 Documentation Set**: Added all 12 chapters of the `arc42` architecture documentation (Introduction,
+  Constraints, Context, Solution Strategy, Building Blocks, Runtime, Deployment, Crosscutting Concepts, Architecture
+  Decisions, Quality Requirements, Risks, and Glossary). This provides a foundational and detailed understanding of the
+  platform's design, operational aspects, quality goals, risks, and deployment views.
+
+### Refactor
+
+- 📚 **Centralized Glossary**: Consolidated all project-specific terminology from individual component `README.md` files
+  into a single, comprehensive `arc42` glossary (Chapter 12). This significantly improves documentation consistency and
+  ease of reference across all stakeholders.
+
+### Removed
+
+- 🗑️ **Redundant Component Glossaries**: Eliminated duplicate glossary sections from component-specific `README.md`
+  files (e.g., `aihub_agent`, `aihub_api`, `aihub_bot`, `aihub_lib`, `aihub_pipeline`, `aihub_process`, `aihub_web`),
+  streamlining documentation and reducing information fragmentation.
+
+______________________________________________________________________
+
+## [v0.265.1] - 2026-02-23 - Revolutionizing AI-Assisted Development with Comprehensive Claude Code Integration
+
+### Added
+
+- 🦾 **Extended Claude Code Integration**: Introduced a comprehensive suite of new capabilities for AI-assisted
+  development, including 7 specialized **Custom Subagents** (e.g., `architect`, `codebase-expert`, `test-analyzer`), 8
+  **Automated Hooks** for enforcing code quality, security, and environment setup, and 39 detailed **Skills** to
+  streamline workflows from scaffolding to debugging across all project scopes.
+- 🔗 **New MCP Server Integrations**: Integrated 11 additional **Model Context Protocol (MCP) servers**, providing
+  enhanced, real-time access to documentation and runtime insights for key technologies such as **Langfuse**, **Context7
+  (general library docs)**, **Playwright**, **PostgreSQL**, **PrimeVue**, **Nuxt**, **Milvus**, and **NATS**.
+- 🛠️ **Developer Tooling**: Added new **pre-commit hooks** for automated Python (Ruff), YAML, and Markdown formatting,
+  along with checks for common issues, ensuring code consistency before commits.
+- 📄 **Critical Documentation**: Introduced new, in-depth documentation pages for **Agent Execution Model** and **Events
+  Reference**, providing foundational knowledge for building robust AI agents.
+- ✍️ **Claude Code Context Files**: Created dedicated `CLAUDE.md` context files for `aihub_action`, `aihub_api`,
+  `aihub_bot`, `aihub_doc`, `aihub_lib`, `aihub_process`, `aihub_web`, and `deployment` scopes, offering AI assistants
+  precise, scope-specific guidance.
+- ✨ **Developer Convenience**: Added new `Makefile` targets in `aihub_web` for streamlined frontend development tasks
+  like formatting, linting, and SDK generation.
+
+### Changed
+
+- ⚙️ **Claude Code Configuration Overhaul**: Rewrote the core `.claude/settings.json` to enable granular tool
+  permissions, define available AI models, integrate automated hooks, and activate advanced Claude Code plugins,
+  significantly enhancing AI assistant capabilities and security.
+- 🚀 **Main `CLAUDE.md` and `README.md`**: Updated the primary project documentation to reflect the extensive new Claude
+  Code features, revised architectural overview, and updated tooling ecosystem.
+- 📝 **Agent Documentation Enhancements**: Expanded existing documentation for agent fundamentals, Human-in-the-Loop
+  (HITL), and memory integration to cover new patterns like **Bot-in-the-Loop (BITL)**, dynamic HITL type selection, and
+  config-driven memory management.
+- 🔄 **Backend Linting Action**: Switched the `lint_backend` GitHub Action from using `black` to `ruff format` for Python
+  code formatting, aligning CI with local development tooling.
+- 🏗️ **Process Endpoint Configuration**: Modified the `ProcessEndpointsDiscoveryService` to now expect explicit `name`
+  and `description` fields for process configurations, removing previous conditional defaults.
+
+### Fixed
+
+- 🐛 **Dagster UI Port Correction**: Updated the documented Dagster UI access port from `3000` to `3002` in
+  `aihub_pipeline/README.md` for accuracy.
+
+### Removed
+
+- 🗑️ **Legacy Claude Code Commands**: Replaced the outdated `.claude/commands/` directory with the new, more powerful
+  and structured **Claude Code Skills** system.
+- 🧹 **Old Gemini CLI Integration**: Removed the `AGENTS.md` context file and `.gemini/settings.json`, standardizing AI
+  assistant context management exclusively through the `.claude/` directory.
+- 🌐 **Obsolete Frontend Testing Files**: Removed old placeholder frontend testing assets (`index.html`, `logo.png`,
+  `script.js`) from the `aihub_api` playground.
+
+### Refactor
+
+- 🧹 **YAML File Consistency**: Standardized YAML file formatting across the repository by adding the `---` document
+  start indicator to numerous configuration and i18n files.
+- 🔧 **Docker Compose Restart Syntax**: Updated `restart: no` to `restart: "no"` in Docker Compose templates and
+  generated files for improved YAML parser compatibility and consistency.
+- 📄 **Makefile Formatting Tasks**: Streamlined code formatting workflows by integrating `format-md` and a new
+  `format-yaml` target into the main `pr-ready` Makefile command.
+- 🩹 **MCP Script Robustness**: Improved the `.claude/mcp/mcp-aihub-api.sh` and `mcp-mongodb.sh` scripts with more
+  robust, conditional sourcing of environment variables.
+- 📝 **Gitignore Updates**: Expanded `.gitignore` to include new Claude Code local override files, ensuring a cleaner and
+  more focused repository.
+
+______________________________________________________________________
+
+## [v0.265.0] - 2026-02-23 - Major Infrastructure Upgrade: Embracing uv for Superior Python Dependency Management
+
+### Added
+
+- ✨ **Introduced uv Workspaces:** The project has fully migrated to `uv` workspaces, simplifying Python package
+  management across the monorepo with a single virtual environment and lockfile.
+- 📄 **New Architectural Decision Record:** Added a detailed Architectural Decision Record
+  (`2026_02_18_migrate_from_poetry_to_uv.md`) outlining the strategic decision and benefits of migrating from Poetry to
+  uv.
+- ⚙️ **Standardized Python Version:** A new `.python-version` file is now included to explicitly declare Python `3.13`
+  as the required version for the project, ensuring consistent environments.
+
+### Changed
+
+- 🔄 **Updated Core Development Stack:** All Python package management has transitioned from Poetry to `uv`, drastically
+  improving dependency resolution and installation speed for developers.
+- 🛠️ **Refined CI/CD Workflows:** GitHub Actions for tagging, testing, and linting have been updated to leverage `uv`
+  and its caching mechanisms for faster, more reliable, and consistent execution.
+- 🐳 **Optimized Docker Builds:** Dockerfiles for all microservices (agents, API, bots, pipelines) now utilize `uv` for
+  lean, multi-stage builds, eliminating Poetry from runtime images and simplifying application entrypoints.
+- 📝 **Comprehensive Documentation Updates:** All developer guides, `AGENTS.md` files, and quick start instructions
+  across the monorepo have been extensively updated to reflect the new `uv`-based setup and workflows.
+- 💡 **Improved Makefile Targets:** The root `Makefile` now includes `uv` commands for `setup`, `test`, `format-md`,
+  `changelog`, `license-check`, `generate-compose`, `generate-api-token`, and `version-bump`, streamlining the developer
+  experience.
+- 🏷️ **Renamed License Report:** The project's license report is now generated as `LICENSE_REPORT.md` instead of
+  `LICENSES.md` for clearer identification and consistency.
+- 🎨 **IDE Configuration Alignment:** Updated PyCharm/IntelliJ IDEA project and run configurations to seamlessly
+  recognize and utilize the `uv` virtual environment and workspace structure.
+- 💻 **Enhanced Frontend Linting Script:** The `lint` script in `aihub_web/aihub_web/package.json` has been made more
+  robust, ensuring `nuxi prepare` only runs when necessary.
+
+### Fixed
+
+- 🐛 **Robust Process Configuration Fetching:** Improved process configuration fetching logic in
+  `ProcessEndpointsDiscoveryService` to ensure `name` and `description` fields correctly fall back to default values if
+  not explicitly provided in the configuration.
+- 🔒 **Explicit Azure Identity Provider in Tests:** Added an explicit environment variable (`AUTH_IDENTITY_PROVIDER`) in
+  `OpenWebuiAuthHandler` tests to ensure the Azure Identity Provider is correctly mocked, preventing potential test
+  flakiness.
+
+### Refactor
+
+- 🧹 **Consolidated Python Dependency Scanning:** The license generation script (`generate-license.sh`) has been
+  refactored to scan all Python dependencies from a single shared `uv` workspace environment, improving efficiency and
+  accuracy.
+- ♻️ **Streamlined Internal Build Scripts:** Removed the custom `switch_dependencies.py` script, which previously
+  managed local versus remote dependency paths, as `uv` workspaces natively handle this functionality.
+- 🧹 **Unified Python Enum Usage:** Replaced `enum.Enum` with `enum.StrEnum` in `RcloneSourceConfig` for improved type
+  safety and clarity, aligning with modern Python best practices.
+- ⚙️ **Simplified Docker Entrypoints:** The entrypoints for `aihub_api` and `aihub_bot` Docker images now directly
+  execute `gunicorn`, removing an intermediate `make run-prod` call for better efficiency.
+
+### Removed
+
+- 🗑️ **Deprecated PR Agent Configuration:** The `.pr_agent.toml` configuration file has been removed, streamlining
+  project configuration.
+- 🗑️ **Eliminated Redundant Module Entries:** Removed explicit module entries for sub-packages from the
+  `.idea/modules.xml` file, as the IDE now infers them directly from the workspace.
+- 🗑️ **Removed Local/Remote Core Switching Tooling:** Deleted the `switch_dependencies.py` script along with related
+  Makefile targets (`use-local-core`, `use-remote-core`) and IDE run configurations, as `uv` provides native workspace
+  dependency resolution.
+- 🗑️ **Removed `aihub_lib` Module Dependency in Pipeline IDE Config:** The explicit module dependency for `aihub_lib`
+  has been removed from `aihub_pipeline/.idea/aihub_pipeline.iml`, aligning with the new workspace structure.
+
+______________________________________________________________________
+
 ## [v0.264.0] - 2026-02-19 - Templates for Agents & Processes: Quick Start and Enhanced Configuration Management
 
 ### Added
@@ -45,7 +219,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   auto-creation mechanism have been removed from the `ProcessClassDiscoveryResponseEvent` and related backend logic, in
   favor of the new, more flexible template system.
 
----
+______________________________________________________________________
 
 ## [v0.263.1] - 2026-02-19 - Smarter AI Hub Streaming: Better Errors & Usage Warnings
 
@@ -68,7 +242,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧹 **Code Readability Enhancements:** Applied minor formatting and whitespace adjustments across pipeline
   configurations to improve overall code readability and maintainability.
 
----
+______________________________________________________________________
 
 ## [v0.263.0] - 2026-02-18 - Adopting MinerU for Superior Document Processing and Platform Architecture
 
@@ -127,7 +301,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   associated image tags and initialization containers.
 - ⛔ **Old API Endpoint**: Deprecated and removed the `/api/v1/docling` API endpoint.
 
----
+______________________________________________________________________
 
 ## [v0.262.4] - 2026-02-17 - Introducing Role-Based Usage Limits and Enhanced API Feedback
 
@@ -175,7 +349,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🎨 **Enhanced Role Creation UI**: The entry point for creating new roles in the web interface has been redesigned for a
   cleaner, more intuitive user experience.
 
----
+______________________________________________________________________
 
 ## [v0.262.3] - 2026-02-17 - Enhanced Developer Tooling and IDE Configurations
 
@@ -193,7 +367,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   (e.g., **API Tests**, **Agent Tests**, **Bot Tests**, **Lib Tests**, **Process Tests**), enhancing consistency and
   discoverability for developers.
 
----
+______________________________________________________________________
 
 ## [v0.262.2] - YYYY-MM-DD - Introducing the LLM-Powered Whitepaper Generation System
 
@@ -223,7 +397,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   (`2025_12_05_llm_based_whitepaper_generation_system.md`) outlines the context, drivers, decision, and consequences of
   adopting this new LLM-based whitepaper generation system.
 
----
+______________________________________________________________________
 
 ## [v0.262.1] - 2026-02-17 - Expanded External Service Configuration
 
@@ -235,7 +409,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🔑 **Docling API Key Support**: Added the `DOCLING_API_KEY` environment variable to allow for secure authentication and
   access control for the Docling document processing service.
 
----
+______________________________________________________________________
 
 ## [v0.262.0] - 2026-02-12 - Comprehensive Observability Upgrade: Migrating to Langfuse for LLM Tracing and Evaluation
 
@@ -283,7 +457,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🚫 **Experiment Management Frontend**: Removed the custom frontend components for managing and running evaluation
   experiments, as these functionalities are now handled directly within the Langfuse UI.
 
----
+______________________________________________________________________
 
 ## [v0.261.7] - 2026-02-11 - Enhanced Docling Configuration with API Key Support
 
@@ -292,7 +466,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🔑 **Docling API Key Support:** Introduced a new configuration option (`DOCLING_API_KEY`) to allow specifying an API
   key for the Docling service, improving secure access and authentication.
 
----
+______________________________________________________________________
 
 ## [v0.261.6] - 2026-02-11 - Enhanced Deployment Flexibility and Routing Accuracy
 
@@ -316,7 +490,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - ⚡️ **Improved Nginx SPA routing:** Refined the Nginx configuration for single-page applications to ensure all non-file
   requests are reliably served by `index.html`.
 
----
+______________________________________________________________________
 
 ## [v0.261.5] - 2026-02-10 - Streamlined Development and Dependency Management
 
@@ -331,7 +505,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🗑️ **`flatdict` Dependency:** The `flatdict` library has been removed from the `aihub_agent` package's dependencies
   and its documentation, simplifying the project's dependency footprint.
 
----
+______________________________________________________________________
 
 ## [v0.261.4] - 2026-02-10 - Internal Dependency Streamlining
 
@@ -341,7 +515,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   implementation. This change reduces external dependencies and improves control over how event attributes are processed
   and presented for display.
 
----
+______________________________________________________________________
 
 ## [v0.261.3] - 2026-02-09 - Dependency Script Logging Enhancements
 
@@ -353,7 +527,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   `poetry lock` and `poetry install` operations have been improved to explicitly display the standard error (stderr)
   only when relevant, preventing empty or unhelpful error outputs.
 
----
+______________________________________________________________________
 
 ## [v0.261.2] - 2026-02-09 - Streamlined CI/CD Builds with Dynamic Image Discovery
 
@@ -364,7 +538,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🔄 **Dynamic Pipeline Image Discovery:** Enhanced the `build-pipelines.yml` workflow to dynamically identify pipeline
   images for building directly from `compose-config.yml`, streamlining the CI/CD process and ensuring consistency.
 
----
+______________________________________________________________________
 
 ## [v0.261.1] - 2026-02-09 - Comprehensive Changelog History Update
 
@@ -374,7 +548,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   specifically adding entries for `v0.261.0`, `v0.260.2`, `v0.254.6`, `v0.254.5`, `v0.243.3`, and `v0.243.2`, ensuring a
   complete and up-to-date historical record of changes.
 
----
+______________________________________________________________________
 
 ## [v0.261.0] - 2026-02-06 - Dynamic Configuration and Enhanced Management for Agents & Processes
 
@@ -477,7 +651,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   `normalize_empty_locale_strings`, `transform_formkit_arrays`) to standardize form data sent from the frontend to
   backend Pydantic models.
 
----
+______________________________________________________________________
 
 ## [v0.260.2] - 2026-02-03 - Universal Data Ingestion with Rclone and Smarter Memory Retrieval
 
@@ -522,7 +696,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   supports an `extra` argument, allowing for more flexible loading of dynamic, backend-specific Rclone options from
   environment variables.
 
----
+______________________________________________________________________
 
 ## [v0.260.1] - 2026-02-03 - API Configuration Standardization for Docling Loader
 
@@ -532,7 +706,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   URL from `BASE_API_URL` to `API_BASE_URL` within the `DoclingLoader` for improved consistency and clarity in the
   codebase.
 
----
+______________________________________________________________________
 
 ## [v0.260.0] - 2026-02-02 - Enhanced Memory Management and Agent Context
 
@@ -581,7 +755,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🐛 **Improved Mem0 Metadata Filtering**: Corrected Mem0 service logic to accurately filter out empty strings in
   addition to `None` values when processing metadata and filters, preventing unintended memory retrieval behavior.
 
----
+______________________________________________________________________
 
 ## [v0.259.3] - 2024-07-29 - Automated Latest Tagging Workflow Enhancement
 
@@ -594,7 +768,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 📄 **Improved Workflow Documentation:** Comprehensive comments have been added to the `set-latest.yml` GitHub Actions
   workflow, clearly detailing its purpose, usage, and the logic used for image selection and promotion.
 
----
+______________________________________________________________________
 
 ## [v0.259.2] - 2026-01-30 - Strengthened Security with Docker Network Isolation
 
@@ -630,7 +804,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   and Neo4j, respectively, for more robust startup sequences.
 - 🧹 Refined **health check commands for `postgres-ferretdb` and `litellm`** for improved accuracy and reliability.
 
----
+______________________________________________________________________
 
 ## [v0.259.1] - 2026-01-30 - Enhanced OAuth Security and Granular Access Control
 
@@ -656,7 +830,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🗑️ **Deprecated Shared OAuth Cookie Secret:** The generic `OAUTH_COOKIE_SECRET` environment variable has been removed
   in favor of service-specific secrets, reducing potential security exposure.
 
----
+______________________________________________________________________
 
 ## [v0.259.0] - 2026-01-28 - Empowering Agents with Long-Term Memory and Knowledge Graphs
 
@@ -714,7 +888,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🗑️ **Deprecated GDPR Documentation:** Removed previous GDPR documentation pages, as the content has been updated and
   integrated into the new compliance and memory management sections.
 
----
+______________________________________________________________________
 
 ## [v0.258.4] - 2026-01-19 - Enhanced Service Health, API Stability, and Richer Chat Interactions
 
@@ -758,7 +932,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   `S3AnonymousFileAccessService` within the `KnowledgeController` to FastAPI's dependency injection system, enhancing
   modularity and maintainability.
 
----
+______________________________________________________________________
 
 ## [v0.258.3] - 2026-01-19 - Hardened Docker Integration with Socket Proxy
 
@@ -786,7 +960,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   has been removed across all deployment configurations, delegating Docker socket interaction to the new, more secure
   proxy service.
 
----
+______________________________________________________________________
 
 ## [v0.258.2] - 2026-01-13 - Deepening Knowledge: Insights Now Integral to Document & Node Retrieval
 
@@ -818,7 +992,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   `IngestedNode` directly into the `InsightEntity` class, improving modularity and reusability.
 - 📄 **Minor Logging Message Formatting:** Adjusted a logging message in the `DoclingLoader` for improved clarity.
 
----
+______________________________________________________________________
 
 ## [v0.258.1] - 2026-01-13 - Knowledge Base Evolution: Advanced Document Management and Visibility
 
@@ -869,7 +1043,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 📚 **Streamlined Models API**: Several deprecated model-related DTOs and API endpoints have been removed or
   consolidated, simplifying the API surface for model management.
 
----
+______________________________________________________________________
 
 ## [v0.258.0] - 2026-01-12 - Fortified Core Services: Enhanced Security, Streamlined Configuration, and Improved Observability
 
@@ -918,7 +1092,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - ⚙️ **Simplified Agent and Process runners** by removing direct NATS server list and Redis URL parameters, now
   leveraging `NatsSettings` and `RedisSettings` for configuration.
 
----
+______________________________________________________________________
 
 ## [v0.257.2] - 2026-01-11 - Core Pipeline Refinements and Human-in-the-Loop Context
 
@@ -932,7 +1106,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧹 **Code Readability**: Improved code readability and conciseness across various AI Hub pipeline components by
   optimizing variable assignments and method signatures.
 
----
+______________________________________________________________________
 
 ## [v0.257.1] - 2026-01-09 - Enhanced Knowledge Retriever Namespace Flexibility
 
@@ -948,7 +1122,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   `index_namespaces` is empty, it will skip namespace-specific filtering, allowing retrieval of nodes across all
   namespaces based solely on node type.
 
----
+______________________________________________________________________
 
 ## [v0.257.0] - 2026-01-08 - Empowering RAG with Dynamic Namespace Selection and Enhanced Retrieval
 
@@ -978,7 +1152,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🐛 **OpenAI Service Header Injection:** Corrected an issue in the OpenAI service where additional headers were not
   consistently injected into SDK calls, ensuring proper instrumentation and metadata propagation for requests.
 
----
+______________________________________________________________________
 
 ## [v0.256.14] - 2026-01-08 - Robust Timeout Management and Enhanced Dagster Run Monitoring
 
@@ -1009,7 +1183,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧹 **Streamlined DoclingLoader Asynchronous Logic:** Refactored the asynchronous document loading method in
   `DoclingLoader` by extracting core logic into an internal helper method, improving readability and maintainability.
 
----
+______________________________________________________________________
 
 ## [v0.256.13] - 2026-01-08 - Enhanced Observability for Document Parsing
 
@@ -1019,7 +1193,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   operation to provide greater visibility and easier debugging for document loading, parsing, and metadata application
   steps.
 
----
+______________________________________________________________________
 
 ## [v0.256.12] - 2026-01-07 - Improved Database Connectivity for Docker Environments
 
@@ -1029,7 +1203,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   configurations, leveraging `ferretdb` and existing environment variables (`MONGO_USERNAME`, `MONGO_PASSWORD`) for a
   more robust and clearer database setup.
 
----
+______________________________________________________________________
 
 ## [v0.256.11] - 2026-01-06 - Enhanced Document Processing and Interactive AI
 
@@ -1052,7 +1226,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🚀 **Updated Docling Service Configurations:** Modified Docker Compose templates to enable `SINGLE_USE_RESULTS` and set
   a `RESULT_REMOVAL_DELAY` for the Docling service, complementing client-side cleanup efforts.
 
----
+______________________________________________________________________
 
 ## [v0.256.10] - 2026-01-05 - Improved PDF Handling and Development Workflow
 
@@ -1079,7 +1253,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧹 **Centralized Asynchronous Test Setup:** Refactored Milvus-related test fixtures and helper functions to leverage
   the new `run_with_event_loop` utility, centralizing and improving the management of asynchronous operations in tests.
 
----
+______________________________________________________________________
 
 ## [v0.256.9] - 2026-01-05 - Introducing Chat-Style Human-in-the-Loop for Seamless Agent Collaboration
 
@@ -1120,7 +1294,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🏗️ **Streamlined HITL Event Imports**: Imports for Human-in-the-Loop event types have been simplified and made
   consistent across the agent codebase and playground examples, reducing verbosity and improving code readability.
 
----
+______________________________________________________________________
 
 ## [v0.256.8] - 2025-12-30 - Enhanced Document Upload Security and Validation
 
@@ -1133,7 +1307,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   all uploaded filenames consistently include a valid, single extension and preventing issues arising from improperly
   formatted document types.
 
----
+______________________________________________________________________
 
 ## [v0.256.7] - 2025-12-23 - Enhanced Agent Context Evaluation and Retrieval
 
@@ -1143,7 +1317,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   process, indicating when it has gathered sufficient information to answer a question or when it needs to perform
   additional retrieval steps to find more relevant data.
 
----
+______________________________________________________________________
 
 ## [v0.256.6] - 2025-12-19 - Optimized Streaming for Real-time Interactions
 
@@ -1153,7 +1327,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   and agent event endpoints by adding critical HTTP headers. This prevents caching and buffering issues from
   intermediary proxies, ensuring more reliable, real-time data delivery and a smoother user experience.
 
----
+______________________________________________________________________
 
 ## [v0.256.5] - 2025-12-19 - Enhanced Docling Reliability with Automatic Retries
 
@@ -1178,7 +1352,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧹 **Streamlined Docling API Execution:** The underlying HTTP request execution logic for Docling API interactions has
   been refactored into dedicated internal methods, improving code clarity and maintainability.
 
----
+______________________________________________________________________
 
 ## [v0.256.4] - 2025-12-19 - Enhanced Document Processing: Configurable Figure Descriptions and Robustness
 
@@ -1198,7 +1372,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - ⚙️ **Updated Quick Start Pipeline:** The `my_document_pipeline` example now explicitly enables both table refinement
   and figure description generation, showcasing recommended best practices and demonstrating the new feature.
 
----
+______________________________________________________________________
 
 ## [v0.256.3] - 2025-12-17 - Enhanced Knowledge Management with Shared RAG Pipelines and Dynamic Buckets
 
@@ -1228,7 +1402,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 💡 **Unified RAG Pipelines Development Setup:** Replaced the specific "Default RAG Pipeline Dev" run configuration with
   a consolidated "RAG Pipelines Dev" setup to streamline development for all RAG pipelines.
 
----
+______________________________________________________________________
 
 ## [v0.256.2] - 2025-12-17 - Platform-wide Observability Boost
 
@@ -1239,7 +1413,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   comprehensive OpenTelemetry instrumentation, significantly improving distributed tracing and telemetry for better
   system monitoring and debugging capabilities.
 
----
+______________________________________________________________________
 
 ## [v0.256.1] - 2025-12-16 - Empowering RAG with Human Expertise: Introducing Expert RAG and Asking Agents
 
@@ -1283,7 +1457,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - ⚡️ **Simplified Retrieval Event Display**: Streamlined the `retrieve_from_all_sources` utility by removing the direct
   `displayer` argument, centralizing thought message handling at the agent step level.
 
----
+______________________________________________________________________
 
 ## [v0.256.0] - 2025-12-16 - Enhanced Dynamic Partition Naming for Clarity
 
@@ -1294,7 +1468,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   ensures unique and contextually relevant partition names, enhancing system clarity and preventing potential naming
   collisions in complex environments.
 
----
+______________________________________________________________________
 
 ## [v0.255.6] - 2025-12-12 - Smarter Data Lake Cleanup and Milvus Compatibility
 
@@ -1327,7 +1501,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧹 **Streamlined figure folder naming:** The `create_figures_folder_name` utility has been refactored for cleaner and
   more direct URI parsing, reducing reliance on `os.path` functions.
 
----
+______________________________________________________________________
 
 ## [v0.255.5] - 2025-12-12 - RAG Agent Rejection Message Customization
 
@@ -1345,7 +1519,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 📄 **Flexible internationalized guard rejection prompts:** Updated the `guard.reject` translations to support a dynamic
   `{prompt}` placeholder, enabling greater customization of rejection messages across all supported languages.
 
----
+______________________________________________________________________
 
 ## [v0.255.4] - 2025-12-11 - Smarter Standalone Questions: Multimodal Support and Centralized Prompts
 
@@ -1378,7 +1552,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   from `FewShotAgentConfig` and `RAGAgentConfig`, streamlining agent configuration by relying on the new centralized
   prompt definition.
 
----
+______________________________________________________________________
 
 ## [v0.255.3] - 2025-12-11 - Enhanced Milvus Performance and Smarter Data Management
 
@@ -1405,7 +1579,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - ⚙️ **Upgraded Core Infrastructure Components**: Updated **Milvus** to `v2.6.7` and **Etcd** to `v3.5.25`,
   incorporating performance improvements, bug fixes, and new features from these latest versions.
 
----
+______________________________________________________________________
 
 ## [v0.255.2] - 2025-12-11 - Unlocking Knowledge: Expert Insights and Advanced RAG for Smarter Agents
 
@@ -1447,7 +1621,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   refined, abstracting common `Request` and `Response` patterns into base classes and introducing dedicated subclasses
   for specific interaction types.
 
----
+______________________________________________________________________
 
 ## [v0.255.1] - 2025-12-11 - Enhanced Database Connection Management with PgBouncer
 
@@ -1473,7 +1647,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   conditionally configure database connections: direct to PostgreSQL for `dev` stage, and via PgBouncer for all other
   stages.
 
----
+______________________________________________________________________
 
 ## [v0.255.0] - 2025-12-10 - Enhanced Platform Experience and High-Availability Storage
 
@@ -1528,7 +1702,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧹 **User Mock Data Adjustment**: Updated the user mock data to reflect the new `My Account` localization for service
   names.
 
----
+______________________________________________________________________
 
 ## [v0.254.19] - 2025-12-10 - Refined Contextual Chat History Management
 
@@ -1538,7 +1712,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   after the limited chat history but before the final user prompt, optimizing the input structure for generative AI
   models to potentially enhance comprehension and response quality.
 
----
+______________________________________________________________________
 
 ## [v0.254.18] - 2025-12-09 - Docling Loader Robustness and Development Workflow Enhancements
 
@@ -1553,7 +1727,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🔄 **Expanded PR Branch Naming:** Updated CI/CD rules to allow feature branches prefixed with `claude/` to pass
   semantic pull request checks, streamlining specific development workflows.
 
----
+______________________________________________________________________
 
 ## [v0.254.17] - 2025-12-09 - Enhanced RAG Agent with Expert Escalation and Streamlined Bot Communication
 
@@ -1604,7 +1778,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - ✂️ **Unused `stringcase` Dependency**: Cleaned up the `stringcase` dependency from `pyproject.toml` as it was no
   longer utilized.
 
----
+______________________________________________________________________
 
 ## [v0.254.16] - 2025-12-05 - Enhanced Data Versioning for Active Partitions
 
@@ -1615,7 +1789,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   improvement ensures that the system tracks versions exclusively for partitions recognized by Dagster, enhancing
   efficiency and preventing the generation of version keys for stale or non-existent partitions.
 
----
+______________________________________________________________________
 
 ## [v0.254.15] - 2025-12-04 - Deeper OpenWebUI Integration, Smarter Document Processing, and Refined Model Management
 
@@ -1678,7 +1852,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🐞 **WebSocket Endpoint Correction**: Fixed an incorrect WebSocket endpoint path in the API service configuration,
   ensuring proper real-time event streaming for clients.
 
----
+______________________________________________________________________
 
 ## [v0.254.14] - 2025-12-03 - LLM Input Processing and Multimodal Enhancements
 
@@ -1705,7 +1879,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   now directly utilizes `OpenAILike`. This change centralizes message preprocessing logic within the agent's flow rather
   than the LLM wrapper, simplifying the overall architecture.
 
----
+______________________________________________________________________
 
 ## [v0.254.13] - 2025-12-03 - Robust Evaluation and Phoenix Client Modernization
 
@@ -1731,7 +1905,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🛠️ **Corrected Phoenix Experiment ID Access**: Addressed an issue where `RanExperiment` data was accessed incorrectly,
   ensuring reliable retrieval of experiment IDs after an experiment run.
 
----
+______________________________________________________________________
 
 ## [v0.254.12] - 2025-12-03 - Enhanced Document Processing and Model Updates
 
@@ -1763,7 +1937,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧹 **Standardized Docling API Configuration:** The `DOCLING_API_ENDPOINT` environment variable has been renamed to
   `DOCLING_BASE_API_URL` across the codebase, improving clarity and consistency in Docling service configuration.
 
----
+______________________________________________________________________
 
 ## [v0.254.11] - 2025-12-02 - Enhanced Document Intelligence Figure Extraction
 
@@ -1777,7 +1951,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🐛 **Strengthened Figure Data Validation:** Introduced validation checks for figure span information to gracefully
   handle cases where span data is missing or out of bounds, preventing errors during document processing.
 
----
+______________________________________________________________________
 
 ## [v0.254.10] - 2025-12-02 - AI-Powered Code Review and On-Demand Assistance with Claude
 
@@ -1790,7 +1964,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   issues, pull request comments, and reviews by tagging `@claude`. This facilitates on-demand code assistance,
   explanations, and insights.
 
----
+______________________________________________________________________
 
 ## [v0.254.9] - 2025-12-02 - Unified File System Filtering with Flexible Patterns
 
@@ -1826,7 +2000,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   `include_folders`, `exclude_paths`, `include_extensions`) from `LocalFileSystemResource` and related utility
   functions, replaced by the unified pattern-based approach.
 
----
+______________________________________________________________________
 
 ## [v0.254.8] - 2025-12-01 - Smarter Data Fetching for Enhanced UI Stability
 
@@ -1843,7 +2017,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   **Threads**, and **Users**. This change prevents API queries from running prematurely, leading to more stable UI
   states and improved application reliability during route transitions.
 
----
+______________________________________________________________________
 
 ## [v0.254.7] - 2025-11-28 - New Service Integration: Attu Platform
 
@@ -1863,7 +2037,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - ⚙️ **Deployment Configurations for Attu:** Modified various Docker Compose files and templates to incorporate the Attu
   service and its OAuth2 Proxy into the deployment stack.
 
----
+______________________________________________________________________
 
 ## [v0.254.6] - 2025-11-24 - Documentation Experience Refresh and Strategic Messaging Update
 
@@ -1889,7 +2063,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🔄 **Dependency Import Path:** Adjusted the import path for `CopyOrDownloadAsMarkdownButtons` in the documentation
   theme for consistency and clarity.
 
----
+______________________________________________________________________
 
 ## [v0.254.5] - 2025-11-24 - Platform Configuration Update and Docling Refinements
 
@@ -1904,7 +2078,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   checking and downloading Docling models, has been removed, indicating an updated or integrated approach to model
   management.
 
----
+______________________________________________________________________
 
 ## [v0.254.4] - 2025-11-21 - Internal Consistency Improvements
 
@@ -1913,7 +2087,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧹 **Standardized `build_uri` parameter:** Updated the `data_lake_client.build_uri` method call within the data lake
   file removal process to use `file_path` instead of `path`, enhancing parameter naming consistency across the API.
 
----
+______________________________________________________________________
 
 ## [v0.254.3] - 2025-11-18 - Unlocking Multi-Tenancy and Streamlined Onboarding with Enhanced Platform Clarity
 
@@ -1966,7 +2140,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 📦 **VitePress plugin import simplification:** Updated the import path for `CopyOrDownloadAsMarkdownButtons` in the
   documentation theme for better maintainability.
 
----
+______________________________________________________________________
 
 ## [v0.254.2] - 2025-11-18 - New Service Integrations and Deployment Enhancements
 
@@ -1978,7 +2152,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   timeouts, and model specifics across all Docker Compose configurations, preparing the ground for advanced document
   processing and visual language model integrations.
 
----
+______________________________________________________________________
 
 ## [v0.254.1] - 2025-11-18 - Milvus Partitioning for Memory Efficiency and System Enhancements
 
@@ -2018,7 +2192,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🗑️ **Redundant Dagster Volume Mounts**: Eliminated redundant `dagster-data` volume mounts from several Dagster-related
   services in Docker Compose configurations, reducing clutter and simplifying deployment setups.
 
----
+______________________________________________________________________
 
 ## [v0.254.0] - 2025-11-18 - Enhanced Data Persistence and Pipeline Management
 
@@ -2038,7 +2212,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🔒 **Simplified OAuth2 Proxy Configuration:** The explicit `OAUTH2_PROXY_SCOPE` setting has been removed from the
   OAuth2 proxy configuration, streamlining its setup while maintaining robust authentication flows.
 
----
+______________________________________________________________________
 
 ## [v0.253.4] - 2025-11-18 - Next-Gen Process Management: Introducing Walkthroughs and Advanced Form Capabilities
 
@@ -2181,7 +2355,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🗑️ **Streamlined Dagster Volume Mounts**: Removed explicit volume mounts for Dagster data from `docker-compose`
   configurations, simplifying deployment and relying on other means for data persistence if needed.
 
----
+______________________________________________________________________
 
 ## [v0.253.3] - 2025-11-16 - Deployment Configuration Refinements and Service Cleanups
 
@@ -2200,7 +2374,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🗑️ **Deprecated Dagster Pipeline Configuration:** The `default_rag_pipeline` configuration for Dagster has been
   removed, streamlining the Dagster workspace setup.
 
----
+______________________________________________________________________
 
 ## [v0.253.2] - 2025-11-14 - Comprehensive Bot Setup Documentation
 
@@ -2216,7 +2390,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🔗 **Updated Chat Interface Documentation Link**: Corrected and updated an internal documentation link pointing to the
   chat interface feature overview, ensuring users are directed to the most current information.
 
----
+______________________________________________________________________
 
 ## [v0.253.1] - 2025-11-14 - Robust Milvus Vector Store Configuration and CI/CD Streamlining
 
@@ -2249,7 +2423,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧹 **Refined Milvus Type Hints:** Updated internal type hints for Milvus vector store configurations, improving
   codebase clarity and maintainability.
 
----
+______________________________________________________________________
 
 ## [v0.253.0] - 2025-11-14 - Unified Deployment, Local AI Power, and Docling VLM Integration
 
@@ -2309,7 +2483,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   `rabbitmq`, `kafka`, `airflow`, `grafana`, `prometheus`, and various base image references), ensuring an accurate and
   up-to-date record of third-party licenses.
 
----
+______________________________________________________________________
 
 ## [v0.252.2] - 2025-11-14 - Streamlined Docker Builds with Enhanced Security
 
@@ -2338,7 +2512,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 📦 **Precise Environment PATH:** Adjusted the `PATH` environment variable for the `default_rag_pipeline` to more
   accurately reference its virtual environment, enhancing environment isolation and reliability.
 
----
+______________________________________________________________________
 
 ## [v0.252.1] - 2025-11-14 - Strengthened Data Integrity and Pipeline Organization
 
@@ -2361,7 +2535,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧹 Streamlined internal dependencies by updating the import path for **OpenAILike** to directly reference
   `llama_index.llms.openai_like`.
 
----
+______________________________________________________________________
 
 ## [v0.252.0] - 2025-11-12 - Broadening Horizons: Local Filesystem Integration and Generalized Data Sources
 
@@ -2409,7 +2583,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - ❌ **Legacy SharePoint-Specific Operations**: Removed individual operations for extracting content, metadata, and URIs
   specific to SharePoint files, which are now replaced by their generic `SourceFile` counterparts.
 
----
+______________________________________________________________________
 
 ## [v0.251.4] - 2025-11-11 - Azure Integration Overhaul and Infrastructure Simplification
 
@@ -2457,7 +2631,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧹 **Workflow Visualizer Event Naming:** Minor adjustment to the string slicing logic in the workflow visualizer for
   more accurate extraction of event names.
 
----
+______________________________________________________________________
 
 ## [v0.251.3] - 2025-11-11 - Enhanced Multilingual Documentation and Content Synchronization
 
@@ -2482,7 +2656,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   multilingual documentation, ensuring correct cleanup of synced files and automatic duplication of English content to
   German for the "Code Deep Dive" section.
 
----
+______________________________________________________________________
 
 ## [v0.251.2] - 2025-11-11 - Quick Start Guide Enhancements: Clearer Conversations and Deeper Insights
 
@@ -2502,7 +2676,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 📝 **Refined "What Just Happened?" Section:** Improved the introductory text and streamlined descriptions for
   navigation options in the quick start summary, enhancing overall readability and guidance.
 
----
+______________________________________________________________________
 
 ## [v0.251.1] - 2025-11-10 - Streamlined AI Assistant Integration via AGENTS.md Documentation
 
@@ -2528,7 +2702,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   documentation, have been removed from the root and all packages. Their functionality is now superseded by the new
   `.gemini/settings.json` and dedicated `AGENTS.md` files.
 
----
+______________________________________________________________________
 
 ## [v0.251.0] - 2025-11-10 - NATS-Powered Eventing for Smarter Data Pipelines
 
@@ -2572,7 +2746,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 💬 **Clarified Process Topic Descriptions:** Updated comments for process-related NATS topics to accurately reflect
   their purpose, improving documentation.
 
----
+______________________________________________________________________
 
 ## [v0.250.2] - 2025-11-07 - Streamlined Local Development and Documentation Clarity
 
@@ -2610,7 +2784,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🗑️ **Deprecated Central Traefik Middleware File:** The standalone `traefik/middlewares.yml` file has been removed, as
   middleware configurations are now dynamically loaded from specific `configs` directories for better modularity.
 
----
+______________________________________________________________________
 
 ## [v0.250.1] - 2025-11-07 - Streamlined Deployment and Core Service Upgrades
 
@@ -2670,7 +2844,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🔄 **Centralized Traefik Configuration**: Streamlined Traefik configuration by moving some parameters directly into the
   `command` section and standardizing SSL certificate resolution with Let's Encrypt.
 
----
+______________________________________________________________________
 
 ## [v0.250.0] - 2025-11-06 - Next-Gen Bot Framework: Microsoft Agents SDK Integration and Multi-Bot Capabilities
 
@@ -2710,7 +2884,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🔄 **Centralized Bot Message Handling:** Refactored common bot message processing logic into a shared `_handle_message`
   method, simplifying the distinction between direct and channel interactions for Teams and Slack.
 
----
+______________________________________________________________________
 
 ## [v0.249.4] - 2025-11-06 - Refined Document Metadata for Clearer Source Tracking
 
@@ -2731,7 +2905,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🗑️ **Deprecated `DATA_LAKE_URI` metadata field:** The `DATA_LAKE_URI` field has been removed to streamline and
   simplify document metadata, with its functionality now handled by the `source` field.
 
----
+______________________________________________________________________
 
 ## [v0.249.3] - 2025-11-05 - Streamlined LiteLLM API Parameter Handling
 
@@ -2742,7 +2916,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   automatically **drop extraneous parameters** from API requests, enhancing compatibility and robustness with underlying
   services.
 
----
+______________________________________________________________________
 
 ## [v0.249.2] - 2025-11-05 - Enhanced Model Agnosticism and New Azure GPT-5 Series Integration
 
@@ -2774,7 +2948,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   `LLMConfig`, allowing for fine-grained control over model behavior for specific aliases, such as setting a default
   temperature for `text-generation/nano`.
 
----
+______________________________________________________________________
 
 ## [v0.249.1] - 2025-11-04 - Enhanced Authentication Service Robustness
 
@@ -2783,7 +2957,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🐛 **Resolved intermittent connectivity issues** with external authentication and identity services (JWKS and Azure
   Graph API) by extending connection timeouts to better accommodate IPv6 fallback mechanisms.
 
----
+______________________________________________________________________
 
 ## [v0.249.0] - 2025-11-04 - Streamlined Knowledge Management and Enhanced Security
 
@@ -2824,7 +2998,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - ♻️ **Renamed File Upload DTOs:** Data Transfer Objects related to file uploads (e.g., `FileUploadRequest` to
   `DocumentUploadRequest`) were renamed to better reflect their new purpose and scope within the Knowledge Base context.
 
----
+______________________________________________________________________
 
 ## [v0.248.1] - 2025-11-03 - Enhanced Document Processing and Data Lake Organization
 
@@ -2848,7 +3022,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - 🗑️ **SonarLint Configuration**: Deleted an obsolete SonarLint project configuration file from the codebase.
 
----
+______________________________________________________________________
 
 ## [v0.248.0] - 2025-11-03 - Smarter Document Understanding: Advanced Table Processing
 
@@ -2881,7 +3055,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   `DocumentIntelligenceLoader` has been removed, as its functionality is now integrated and optimized within the core
   parsing mechanisms.
 
----
+______________________________________________________________________
 
 ## [v0.247.7] - 2025-11-03 - Enhanced RAG with Hybrid Search and Model Updates
 
@@ -2897,7 +3071,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - ⬆️ **Updated Default LLM Model:** Switched the default Large Language Model in **RAG pipelines** from
   `gemma-3-multimodal-small` to `qwen-2.5-multimodal-small`, enhancing model performance and capabilities.
 
----
+______________________________________________________________________
 
 ## [v0.247.6] - 2025-10-31 - Empowering Contributors with New Guidelines
 
@@ -2907,7 +3081,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   for anyone looking to contribute to the Swiss AI-Hub project, covering everything from code contributions to
   documentation, community engagement, and advocacy, fostering a more collaborative environment.
 
----
+______________________________________________________________________
 
 ## [v0.247.5] - 2025-10-31 - Enhanced Security Measures
 
@@ -2917,7 +3091,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   how to report security vulnerabilities, outlining supported versions, and detailing the coordinated disclosure
   process.
 
----
+______________________________________________________________________
 
 ## [v0.247.4] - 2025-10-31 - Community Guidelines Established
 
@@ -2927,7 +3101,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   community by outlining expected behaviors, restricted actions, and a clear process for reporting and addressing
   issues.
 
----
+______________________________________________________________________
 
 ## [v0.247.3] - 2025-10-31 - Empowering Bots with Teams Integration and Enhanced Core Functionality
 
@@ -2985,7 +3159,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   completion methods, as client acquisition is now handled internally by `OpenaiCompletionHandler` using the new
   `LiteLLMService` integration.
 
----
+______________________________________________________________________
 
 ## [v0.247.2] - 2025-10-31 - Optimized CI Documentation Builds
 
@@ -2997,7 +3171,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - ⚙️ **Introduced dedicated `docs:build:ci` script:** Added a specialized `docs:build:ci` command to `package.json`,
   which supports the faster documentation building process for CI by omitting the translation step.
 
----
+______________________________________________________________________
 
 ## [v0.247.1] - 2025-10-30 - Enhanced Documentation System and LLM Control
 
@@ -3050,7 +3224,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   (`docs/2_platform/6_pipelines/rag/index.en.md`) as its content has been integrated or superseded by other
   documentation.
 
----
+______________________________________________________________________
 
 ## [v0.247.0] - 2025-10-29 - RAG Reranking and AI Model Updates
 
@@ -3093,7 +3267,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 📄 **Documentation Refinements**: Applied minor formatting and content adjustments across various platform
   documentation pages to improve readability and consistency.
 
----
+______________________________________________________________________
 
 ## [v0.246.12] - 2025-10-28 - Major Documentation Overhaul and Core Infrastructure Alignment
 
@@ -3164,7 +3338,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🗑️ **Retired Platform Customization Sections:** Several older customization documents (`2_platform/4_customization/*`)
   were removed as part of the broader documentation overhaul and refactoring into more specific areas.
 
----
+______________________________________________________________________
 
 ## [v0.246.11] - 2025-10-27 - AI-Hub SDK Documentation: Clarity and Depth for Agent and Pipeline Development
 
@@ -3194,7 +3368,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🗑️ **Deprecated Pipeline Documentation:** Removed outdated documentation pages for **Pipeline Patterns** and **Data
   Ingestion Pipeline**, replacing them with the new, restructured guides for improved clarity and accuracy.
 
----
+______________________________________________________________________
 
 ## [v0.246.10] - 2025-10-24 - Enhanced Security and Access Control for Data Lake and Workflows
 
@@ -3228,7 +3402,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧹 **Refined OAuth Proxy Architecture:** Streamlined the deployment architecture by separating OAuth2 proxy
   configurations into distinct services for Dagster and SeaweedFS, improving modularity and maintainability.
 
----
+______________________________________________________________________
 
 ## [v0.246.9] - 2025-10-22 - Streamlined DoclingLoader File Handling
 
@@ -3237,7 +3411,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - ⚡️ **Optimized `DoclingLoader` file content retrieval:** Improved the internal efficiency of `DoclingLoader` by
   switching to `fs.cat_file` for more direct and potentially faster reading of file contents.
 
----
+______________________________________________________________________
 
 ## [v0.246.8] - 2025-10-21 - Core Bot Service Setup and Infrastructure Expansion
 
@@ -3259,7 +3433,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧹 **Corrected module import paths** within the bot service's Makefile for improved consistency and robustness in
   production builds.
 
----
+______________________________________________________________________
 
 ## [v0.246.7] - 2025-10-20 - Performance Optimizations and SeaweedFS Development Enhancements
 
@@ -3284,7 +3458,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 💾 **Optimized SeaweedFS volume configuration:** Adjusted `seaweedfs-master` settings to use a `volumeSizeLimitMB` of
   512MB and disabled `volumePreallocate` for more efficient resource utilization in development.
 
----
+______________________________________________________________________
 
 ## [v0.246.6] - 2025-10-15 - Improved CI/CD Tagging and Release Process
 
@@ -3306,7 +3480,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   a dedicated `actions/checkout` step, and bot user configuration to ensure secure, reliable, and explicit git tag
   manipulation.
 
----
+______________________________________________________________________
 
 ## [v0.246.5] - 2025-10-14 - Refined S3 URI Handling in Data Lake Components
 
@@ -3319,7 +3493,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 📄 **Enhanced S3 Write Logging:** Updated the logging message for successful S3 writes to display the fully
   reconstructed S3 URI, improving clarity and debuggability.
 
----
+______________________________________________________________________
 
 ## [v0.246.4] - 2025-10-13 - S3 Writing Efficiency and Document Parsing Simplification
 
@@ -3340,7 +3514,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - ⚡️ **Optimized S3 Object Writing:** The `S3DataLakeIOManager` now writes S3 objects using a single `put_object` call,
   combining content, metadata, and content type settings for improved efficiency and atomic operations.
 
----
+______________________________________________________________________
 
 ## [v0.246.3] - 2025-10-13 - Enhanced S3 URI Robustness
 
@@ -3350,7 +3524,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   "s3://" prefix when a URI starts directly with the configured container name, reducing errors and making input more
   flexible.
 
----
+______________________________________________________________________
 
 ## [v0.246.2] - 2025-10-10 - Simplified Pipelines, Smarter SharePoint Sync
 
@@ -3392,7 +3566,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   `app/default_rag_pipeline/__init__.py` and `aihub_pipeline/playground/__init__.py` by leveraging the new centralized
   definition utility.
 
----
+______________________________________________________________________
 
 ## [v0.246.1] - 2025-10-09 - Retrieval Agent Context Customization
 
@@ -3402,7 +3576,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   `RetrievalAgent`, allowing users to define a custom prompt that dictates how combined and ordered retrieved nodes are
   formatted.
 
----
+______________________________________________________________________
 
 ## [v0.246.0] - 2025-10-07 - Modernizing Data Persistence: Introducing SeaweedFS, FerretDB, and Valkey
 
@@ -3441,7 +3615,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🚫 **Redis In-Memory Cache:** The Redis service has been replaced by Valkey and removed from all deployment
   configurations.
 
----
+______________________________________________________________________
 
 ## [v0.245.9] - 2025-10-07 - Enhanced User Data Handling in Authentication
 
@@ -3450,7 +3624,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - ⚡️ **Improved User Header Encoding**: Switched from Base64 to URL encoding for usernames in authentication headers and
   signatures, enhancing compatibility and robustness when handling special characters.
 
----
+______________________________________________________________________
 
 ## [v0.245.8] - 2025-10-07 - Streamlined Data Lake Operations and Document Management
 
@@ -3478,7 +3652,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 💡 **Optimized Store Name Retrieval:** Removed an unnecessary wrapper function for retrieving the store name in the
   default RAG pipeline, leading to more direct and efficient utilization of the `bucket_utils` functionality.
 
----
+______________________________________________________________________
 
 ## [v0.245.7] - 2025-10-02 - Agent Guard Message Consistency
 
@@ -3488,7 +3662,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   guard rejections by using the correct reason property (`event.reason`), improving clarity and consistency in agent
   responses.
 
----
+______________________________________________________________________
 
 ## [v0.245.6] - 2025-10-01 - Containerization of Aihub Bot for Enhanced Deployment
 
@@ -3501,7 +3675,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🔒 **Enhanced Operational Security and Dependency Management:** Configured a non-root user for improved security and
   integrated Poetry for robust Python dependency management within the container.
 
----
+______________________________________________________________________
 
 ## [v0.245.5] - 2025-09-30 - Infrastructure and Developer Experience Enhancements
 
@@ -3517,7 +3691,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - ⚡️ **Optimized ESLint Configuration:** Streamlined the ESLint setup by expanding global ignore rules to skip
   unnecessary files and simplifying plugin imports, leading to faster linting and a cleaner development environment.
 
----
+______________________________________________________________________
 
 ## [v0.245.4] - 2025-09-30 - Internal Codebase Refinements
 
@@ -3526,7 +3700,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧹 **Standardized Event Types:** Aligned internal naming conventions by updating the `ChunkEventReadable` type to
   `ChunkEvent` within the event component resolution logic, enhancing code consistency.
 
----
+______________________________________________________________________
 
 ## [v0.245.3] - 2025-09-25 - LLM Event Metadata Refinement and Developer Experience Improvements
 
@@ -3540,7 +3714,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧹 **Improved `.gitignore`:** Added a rule to ignore **GitHub Copilot** related files, streamlining the development
   environment setup and reducing repository clutter.
 
----
+______________________________________________________________________
 
 ## [v0.245.2] - 2025-09-24 - Introducing Advanced Guardrails & Granular Event Visibility
 
@@ -3599,7 +3773,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - ⚙️ **Refined Async Test Utility:** The `async_test` decorator in the testing utilities now correctly returns the
   result of the decorated asynchronous function, improving testing flexibility.
 
----
+______________________________________________________________________
 
 ## [v0.245.1] - 2025-09-24 - LLM Preprocessing, Gemma 3 Support, and Core System Refinements
 
@@ -3650,7 +3824,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🔄 **Pipeline Job Parameter Renaming:** Updated pipeline job definitions to use `source_location_name` instead of
   `namespace_name`, aligning with recent Dagster API changes for better clarity and consistency.
 
----
+______________________________________________________________________
 
 ## [v0.245.0] - 2025-09-18 - Comprehensive Distributed Tracing with OpenTelemetry
 
@@ -3701,7 +3875,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🗑️ **Deprecated Legacy Tracing Modules:** Removed `RunTraceCoordinator` and the generic `tracing` decorator, which
   have been superseded by the new OpenTelemetry instrumentation framework.
 
----
+______________________________________________________________________
 
 ## [v0.244.2] - 2025-09-16 - Specialized Image Processing and Loader Refinements
 
@@ -3731,7 +3905,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   `DocumentIntelligenceLoader` and `DoclingLoader`. This improves modularity and clarifies responsibility across
   document loaders.
 
----
+______________________________________________________________________
 
 ## [v0.244.1] - 2025-09-16 - Persistence Layer Refinement
 
@@ -3740,7 +3914,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧹 **Namespace Entity field renamed:** Renamed the `last_updated` field to `updated_at` in the `NamespaceEntity` for
   improved consistency and clarity in data lake persistence.
 
----
+______________________________________________________________________
 
 ## [v0.244.0] - 2025-09-15 - Knowledge Base Evolution: Streamlined Uploads, Localized Collections, and Improved Pipeline Harmony
 
@@ -3822,7 +3996,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - ⚙️ **Streamlined Pipeline Resources:** Refactored pipeline asset factories and jobs to align with the new, simplified
   data lake resource model, reducing redundancy and improving maintainability.
 
----
+______________________________________________________________________
 
 ## [v0.243.10] - 2025-09-13 - Quick Start Documentation Refinement
 
@@ -3836,7 +4010,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   comparison with other AI frameworks and platforms. This content, previously marked as Work In Progress (WIP), has been
   temporarily cleared.
 
----
+______________________________________________________________________
 
 ## [v0.243.9] - 2025-09-11 - Fine-Grained Control Over Document Image Extraction
 
@@ -3858,7 +4032,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - ⚡️ **Pipeline Integration:** The `parse_document_from_data_lake` operation now passes the `include_images` setting
   from the `DocumentParserResource` to the document loaders, ensuring consistent behavior across the pipeline.
 
----
+______________________________________________________________________
 
 ## [v0.243.8] - 2025-09-11 - Enhanced Asynchronous Document Loading and Docling Integration
 
@@ -3889,7 +4063,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   methods across `DoclingLoader` and `DocumentIntelligenceLoader`, reducing code duplication and enhancing
   maintainability.
 
----
+______________________________________________________________________
 
 ## [v0.243.7] - 2025-09-11 - Streamlined Release Tagging Workflow
 
@@ -3900,7 +4074,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   via an atomic amend operation, and utilizes a safer `force-with-lease` push strategy. Additionally, redundant tag
   verification steps have been removed to streamline the overall release process.
 
----
+______________________________________________________________________
 
 ## [v0.243.6] - 2025-09-10 - Robust Release Tagging Workflow
 
@@ -3916,7 +4090,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   GitHub Actions by directly fetching remote tags and performing a local check, providing clearer success and failure
   indications during the release tagging workflow.
 
----
+______________________________________________________________________
 
 ## [v0.243.5] - 2025-09-09 - Enhanced CI/CD Tag Verification Reliability
 
@@ -3926,7 +4100,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   multiple retry attempts with a brief delay, making the remote tag verification process more robust and resilient to
   transient network issues or eventual consistency delays.
 
----
+______________________________________________________________________
 
 ## [v0.243.4] - 2025-09-09 - Documentation & Local Setup Enhancements
 
@@ -3943,7 +4117,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🌐 **Documentation Navigation Improvements:** Updated numerous internal links throughout the SDK documentation from
   absolute to relative paths, enhancing navigation robustness and portability.
 
----
+______________________________________________________________________
 
 ## [v0.243.3] - 2025-09-09 - Next-Gen AI Development: Comprehensive Docs, Core Platform & SDK Refinements
 
@@ -3989,7 +4163,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🖼️ **Deprecated Architecture Diagrams:** Removed old architecture diagrams (`tier1.png`, `tier2.png`, etc.) as they
   have been replaced by new, detailed diagrams reflecting the updated platform vision.
 
----
+______________________________________________________________________
 
 ## [v0.243.2] - 2025-09-09 - Streamlined Release Process and Robust Tagging
 
@@ -4009,7 +4183,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🔄 **Optimized Job Dependencies:** Removed an intermediate `update-and-dependencies` job, streamlining the flow between
   tag computation, changelog generation, license reporting, and final release actions.
 
----
+______________________________________________________________________
 
 ## [v0.243.1] - 2025-09-03 - Advanced RAG Agent, Secure Local Dev & OpenWebUI Enhancements
 
@@ -4059,7 +4233,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🗑️ **Deprecated Pipeline Runner Settings File**: Removed `PipelineRunnerSettings.py` to streamline configuration, with
   settings now primarily managed through environment variables.
 
----
+______________________________________________________________________
 
 ## [v0.243.0] - 2025-09-02 - Refined Image Tagging for Build Action
 
@@ -4068,7 +4242,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - ⚡️ **Improved Image Tagging:** The `build_image` GitHub Action has been updated to use comma-separated values for
   secondary image tags, ensuring more robust and widely compatible tag assignment for published images.
 
----
+______________________________________________________________________
 
 ## [v0.242.0] - 2025-09-02 - New Model Catalog and Advanced AI Features
 
@@ -4099,7 +4273,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🗑️ **Streamlined Agent DTOs**: Removed `hitl_request_events` and `hitl_response_events` fields from the `AgentDto`
   schema, simplifying agent configuration related to human-in-the-loop interactions.
 
----
+______________________________________________________________________
 
 ## [v0.241.2] - 2025-08-29 - Streamlined Builds, Dependencies, and Naming
 
@@ -4128,7 +4302,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🗑️ **Deprecated local `mdformat-vuepress` plugin files:** Removed the now-obsolete local `mdformat-vuepress` source
   files as the plugin is integrated via a standard package manager.
 
----
+______________________________________________________________________
 
 ## [v0.241.1] - 2025-08-28 - Enhanced Docker Image Tagging and Build Control
 
@@ -4145,7 +4319,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   based on the trigger event, defaulting to `nightly` for `repository_dispatch` events, or utilizing the user-specified
   `secondary_tag` input.
 
----
+______________________________________________________________________
 
 ## [v0.241.0] - 2025-08-28 - Live Thinking Agents and Seamless Open-WebUI Streaming
 
@@ -4218,7 +4392,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🗑️ **Removed Reasoning Content from `ChunkEvent`**: The `reasoning_content` field has been removed from `ChunkEvent`,
   now being explicitly handled by the `ThoughtEvent`.
 
----
+______________________________________________________________________
 
 ## [v0.240.6] - 2025-08-26 - S3 Security Hardening and Configuration Alignment
 
@@ -4233,7 +4407,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🔄 **Standardized S3 Endpoint Configuration:** Renamed the S3 configuration parameter `ENDPOINT_URL` to `ENDPOINT` for
   consistency across all related S3 services and resources, simplifying configuration management.
 
----
+______________________________________________________________________
 
 ## [v0.240.5] - 2025-08-22 - Core Infrastructure Updates and Build System Refinements
 
@@ -4246,7 +4420,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 📦 **Streamlined Docker build processes** by temporarily including the `mdformat-vuepress` module in several service
   images (`aihub_agent`, `aihub_api`, `aihub_pipeline`) to ensure internal tool compatibility.
 
----
+______________________________________________________________________
 
 ## [v0.240.4] - 2025-08-15 - Enhanced CI/CD Actions with Python Version Flexibility
 
@@ -4256,7 +4430,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   support a new `python_version` input. This allows users to specify the Python version used for linting and testing
   within their workflows, providing greater flexibility while maintaining `3.13` as the default.
 
----
+______________________________________________________________________
 
 ## [v0.240.3] - 2025-08-15 - Core Infrastructure Enhancements and Frontend Streamlining
 
@@ -4278,7 +4452,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - ⚡️ **Streamlined CI/CD Dependency Management**: Refactored Poetry installation and dependency management steps across
   GitHub Actions workflows for enhanced efficiency and consistency.
 
----
+______________________________________________________________________
 
 ## [v0.240.2] - 2025-08-14 - Architectural Evolution: Containerized Deployment and New AI Capabilities
 
@@ -4325,7 +4499,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 📐 **Core Application Restructuring**: Restructured the main application entry points for `aihub_api` and `aihub_bot`
   into `app/main.py` files, improving modularity and maintainability.
 
----
+______________________________________________________________________
 
 ## [v0.240.1] - 2025-08-13 - Enhanced Documentation Formatting and Tooling
 
@@ -4343,7 +4517,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧹 **Unified Documentation Styling**: Applied a comprehensive set of markdown formatting rules across all documentation
   files, improving readability and consistency.
 
----
+______________________________________________________________________
 
 ## [v0.240.0] - 2025-08-12 - Streamlined Setup with Superuser Authentication and Enhanced Security
 
@@ -4383,7 +4557,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   `MultiStrategyIdentityProvider` to accurately reflect its role in aggregating various identity provider types, not
   just token-based ones.
 
----
+______________________________________________________________________
 
 ## [v0.239.0] - 2025-08-08 - Architectural Overhaul: Streamlined AI Integration and Enhanced Development Workflow
 
@@ -4462,7 +4636,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 💬 **Improved LLM Cost Reporting**: Updated `EventDisplayer` to use the `model_name` attribute from the new `LLMConfig`
   for more accurate and consistent cost reporting.
 
----
+______________________________________________________________________
 
 ## [v0.238.1] - 2025-08-07 - Empowering Developers: New Documentation, Enhanced CI/CD, and AI Assistant Integration
 
@@ -4523,7 +4697,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🏗️ **Refined API and Bot Runner Structures**: Simplified base application creation and mounting logic within
   `ApiRunner` and `BotRunner` for a cleaner architecture.
 
----
+______________________________________________________________________
 
 ## [v0.238.0] - 2025-08-06 - Internal Version Alignment
 
@@ -4533,7 +4707,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   `aihub_api`, `aihub_bot`, `aihub_iac`, `aihub_lib`, `aihub_pipeline`, `aihub_process`) and synchronized internal
   dependency tags to `v0.238.0`, ensuring consistent versioning for the new release.
 
----
+______________________________________________________________________
 
 ## [v0.237.0] - 2025-08-06 - GitHub Action Streamlining
 
@@ -4542,7 +4716,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🗑️ **Removed GitHub Release creation:** The automated step within the build image action that previously created a
   GitHub Release for the built Docker image has been removed.
 
----
+______________________________________________________________________
 
 ## [v0.236.0] - 2025-08-06 - RAGAgent: Enhanced Control with System Prompts
 
@@ -4568,7 +4742,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧹 **Optimized Test Fixture Scope**: Changed the `self_hosted_agent_config` pytest fixture to be session-scoped,
   improving test execution performance by setting up the configuration once per test session instead of per function.
 
----
+______________________________________________________________________
 
 ## [v0.235.0] - 2025-08-06 - Platform Upgrade and Enhanced License Compliance
 
@@ -4595,7 +4769,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧹 **Type Hint Modernization**: Migrated `typing_extensions.override` annotations to Python's built-in
   `typing.override` for cleaner and more consistent type declarations, aligning with Python 3.13 standards.
 
----
+______________________________________________________________________
 
 ## [v0.234.2] - 2025-08-07 - Enhanced PR Agent Configuration and Performance Updates
 
@@ -4616,7 +4790,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧹 **Centralized PR Agent Settings:** Migrated several hardcoded PR agent configurations from `action.yml` into the new
   `pr_agent.toml` file, streamlining configuration management and improving overall maintainability.
 
----
+______________________________________________________________________
 
 ## [v0.234.1] - 2025-08-07 - Platform Evolution: Python 3.13, Automated Compliance, and RAG Agent Enhancements
 
@@ -4667,7 +4841,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 📦 **Streamlined Poetry Setup in CI**: Refined the Poetry installation and caching steps in GitHub Actions workflows,
   improving CI efficiency and consistency.
 
----
+______________________________________________________________________
 
 ## [v0.234.0] - 2025-08-04 - Major Notification System Overhaul and Web Experience Improvements
 
@@ -4714,7 +4888,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🗑️ **Deprecated User Avatar Component:** Removed the standalone `User/Avatar.vue` component, as its functionality has
   been streamlined and integrated directly into the `User/Bar.vue` component for better modularity.
 
----
+______________________________________________________________________
 
 ## [v0.233.0] - 2025-07-30 - Internal Dependency Enhancements
 
@@ -4722,7 +4896,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - ⚡️ **Internal Dependency Updates:** Upgraded core libraries to enhance stability and prepare for future improvements.
 
----
+______________________________________________________________________
 
 ## [v0.232.0] - 2025-07-29 - Enhanced Dashboard Trend Clarity
 
@@ -4732,7 +4906,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   now correctly reflect their severity, displaying green for trending down (good) and red for trending up (bad) to
   provide more intuitive visual feedback.
 
----
+______________________________________________________________________
 
 ## [v0.231.0] - 2025-07-29 - Enhanced Agent Testing with Custom Events
 
@@ -4758,7 +4932,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🗑️ **Internal Claude AI Integration Scripts:** Removed development-specific scripts related to Claude AI integration,
   streamlining the project's internal tooling.
 
----
+______________________________________________________________________
 
 ## [v0.230.0] - 2025-07-29 - NATS Topic Management and Refined Process Configurations
 
@@ -4834,7 +5008,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧹 **Redundant Agent Config Start Event Test**: Removed a test file (`test_agent_config_start_event.py`) as its
   functionality is now fully covered by updated and more comprehensive dispatcher tests.
 
----
+______________________________________________________________________
 
 ## [v0.229.0] - 2025-07-25 - Multi-Cloud Storage for Files and Pipelines
 
@@ -4882,7 +5056,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   URI-based creation method into cloud-specific data lake client implementations for better encapsulation and
   maintainability.
 
----
+______________________________________________________________________
 
 ## [v0.228.0] - 2025-07-25 - Azure Document Intelligence Key Access Alignment
 
@@ -4891,7 +5065,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🔄 **Updated Azure Document Intelligence Key Access:** Aligned the method for retrieving primary keys from Azure
   Document Intelligence services with recent API changes, ensuring robust and consistent authentication.
 
----
+______________________________________________________________________
 
 ## [v0.227.0] - 2025-07-23 - Improved Azure Identity Service Robustness
 
@@ -4906,7 +5080,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧹 **Import Statement Placement**: Relocated the `asyncio` import to the top-level of the `AzureGraphService` module,
   aligning with best practices for improved code readability and organization.
 
----
+______________________________________________________________________
 
 ## [v0.226.0] - 2025-07-22 - API Refinements and DTO Consolidation
 
@@ -4939,7 +5113,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   `AgentInstanceDiscoveryResponseEvent` as its functionality has been moved to the `AgentInstanceDTO` for better
   encapsulation.
 
----
+______________________________________________________________________
 
 ## [v0.225.0] - 2025-07-21 - Enhanced Document Structure and Content Rendering
 
@@ -4965,7 +5139,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧹 **Streamlined Timestamp Handling**: An internal utility for formatting Unix timestamps has been removed, as date and
   time handling for document metadata is now managed more efficiently by the underlying system.
 
----
+______________________________________________________________________
 
 ## [v0.224.0] - 2025-07-21 - Flexible Agent Configuration and Advanced Discovery
 
@@ -5043,7 +5217,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   base `AgentConfig` and `AgentConfigDTO`, streamlining the core configuration and allowing for more flexible,
   agent-specific prompt and UI customization to be defined in agent subclasses.
 
----
+______________________________________________________________________
 
 ## [v0.223.0] - 2025-07-18 - Streamlined Pipeline Operations and Enhanced Robustness
 
@@ -5066,7 +5240,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🐛 **Robust Figure Deletion**: Improved the document figure deletion process to gracefully handle cases where
   associated figure directories do not exist, preventing unnecessary errors and log messages.
 
----
+______________________________________________________________________
 
 ## [v0.222.0] - 2025-07-15 - Agentic Processes Go Live: Full Stack Support for Complex Workflows
 
@@ -5136,7 +5310,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   `simulation/process` directory structure.
 - ✂️ **Removed Redundant Health Page**: A basic placeholder health page in the frontend was removed.
 
----
+______________________________________________________________________
 
 ## [v0.221.0] - 2025-07-14 - Prompt Refinements and Image Handling Improvements for RAG
 
@@ -5152,7 +5326,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   URLs were not consistently processed, ensuring that images are now correctly referenced and displayed by explicitly
   converting their URL object to a string representation.
 
----
+______________________________________________________________________
 
 ## [v0.220.0] - 2025-07-11 - Enhanced SharePoint Integration Clarity and Data Lake Observability
 
@@ -5173,7 +5347,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - ⚡️ **Improved Data Lake Document Parsing Logging**: Added a new log statement to output the Data Lake file URI during
   the document parsing process, enhancing observability and assisting with debugging.
 
----
+______________________________________________________________________
 
 ## [v0.219.0] - 2025-07-11 - Internal Workflow Automation Adjustment
 
@@ -5182,7 +5356,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🗑️ **Automatic Draft PR Workflow:** The GitHub Actions workflow that previously created automatic draft pull requests
   for new branches has been removed.
 
----
+______________________________________________________________________
 
 ## [v0.218.0] - 2025-07-11 - Enhanced API Configuration and Extensibility
 
@@ -5192,7 +5366,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   and inject additional environment variables, including secret references, directly into API deployments, significantly
   increasing configuration flexibility and integration possibilities.
 
----
+______________________________________________________________________
 
 ## [v0.217.0] - 2025-07-10 - Automated Agent API Integration and Event Inheritance
 
@@ -5236,7 +5410,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   for agent events from `AgentController` and related playground examples, fully transitioning to the dynamic agent
   discovery service.
 
----
+______________________________________________________________________
 
 ## [v0.216.0] - 2025-07-08 - Foundational Polish: Modernizing Python Syntax and Enhancing Type Safety
 
@@ -5272,7 +5446,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧹 **Linting and Formatting Overhaul:** Consolidated and enhanced code quality checks by deprecating `isort` and
   configuring `ruff` to handle import sorting and enforce stricter linting rules.
 
----
+______________________________________________________________________
 
 ## [v0.215.0] - 2025-07-08 - Granular Access Control and Enhanced User Management
 
@@ -5346,7 +5520,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - ⏱️ **Standardized Caching Durations**: Updated `staleTime` configurations across multiple composables to use
   `date-fns` `minutesToMilliseconds` for better readability and consistency.
 
----
+______________________________________________________________________
 
 ## [v0.214.0] - 2025-07-08 - Streamlined Event Model Handling and Enhanced Developer Experience
 
@@ -5375,7 +5549,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🗑️ **Deprecated Event Model Functions**: Removed the standalone `create_input_model` and `create_output_model`
   functions, as their functionality has been absorbed and improved by the new `EventModelCreationService`.
 
----
+______________________________________________________________________
 
 ## [v0.213.0] - 2025-07-07 - New Retrieval Agent for Focused Data Access
 
@@ -5394,7 +5568,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   tests to ensure the robust and reliable operation of the new `RetrievalAgent`, validating its ability to accurately
   retrieve and combine relevant documents.
 
----
+______________________________________________________________________
 
 ## [v0.212.0] - 2025-07-03 - Flexible OpenAI Authentication & Resource Management
 
@@ -5419,7 +5593,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧹 **Streamlined API Key Definitions**: Removed redundant `api_key` fields from specific model configurations (e.g.,
   chat LLMs, embedding LLMs, image models) as they are now managed centrally by the generalized `ResourceConfig`.
 
----
+______________________________________________________________________
 
 ## [v0.211.0] - 2025-07-03 - Enhanced RAG Context and Workflow Streamlining
 
@@ -5438,7 +5612,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - ⚡️ **Streamlined LLM Response Workflow:** The RAG Agent's LLM response step now directly signals the completion of the
   workflow, simplifying internal event handling and removing the need for a separate `StopEvent`.
 
----
+______________________________________________________________________
 
 ## [v0.210.0] - 2025-07-03 - SharePoint Ingestion and Pipeline Structure Enhancements
 
@@ -5464,7 +5638,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🔄 **Centralized SharePoint Utilities**: Consolidated SharePoint-related operations, resources, and data types into
   dedicated modules for better code organization and clarity, preparing for future expansions.
 
----
+______________________________________________________________________
 
 ## [v0.209.0] - 2025-07-03 - Automated PR Readiness Checks with Claude Integration
 
@@ -5477,7 +5651,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   after any file modifications (Write, Edit, MultiEdit), providing instant feedback on code quality and readiness within
   the development workflow.
 
----
+______________________________________________________________________
 
 ## [v0.208.0] - 2025-07-03 - Refined Context Metadata for Generative AI
 
@@ -5489,7 +5663,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🗑️ **Consolidated Node Metadata Fields**: To simplify and optimize the context provided to generative AI models, the
   `namespace`, `type`, and `content_type` fields are no longer emitted as part of the combined node metadata.
 
----
+______________________________________________________________________
 
 ## [v0.207.0] - 2025-07-01 - Streamlined Release Tagging
 
@@ -5504,7 +5678,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   `aihub_lib`, `aihub_pipeline`, `aihub_process`) and their internal `aihub_lib` dependencies have been updated to
   `v0.207.0`, ensuring a unified and consistent release across the entire platform.
 
----
+______________________________________________________________________
 
 ## [v0.206.0] - 2025-07-01 - Core System Modernization: Enhanced Model Definitions
 
@@ -5515,7 +5689,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   `webui_pipelines`) to leverage Pydantic v2's `Annotated` type hint and explicit default value assignments. This
   enhances code clarity, type safety, and aligns the codebase with modern Python best practices.
 
----
+______________________________________________________________________
 
 ## [v0.205.0] - 2025-07-01 - Core Module Version Synchronization
 
@@ -5527,7 +5701,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - ⚙️ **Build Tag Update**: The default build tag in the `Makefile` has been updated to `v0.205.0` to reflect the latest
   release version.
 
----
+______________________________________________________________________
 
 ## [v0.204.0] - 2025-07-01 - Release Workflow Enhancements and Changelog Automation Robustness
 
@@ -5554,7 +5728,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧹 **Python Poetry Cache Removal:** Streamlined the GitHub Actions Python setup by removing the explicit Poetry cache
   configuration, potentially improving caching efficiency or addressing previous issues.
 
----
+______________________________________________________________________
 
 ## [v0.203.0] - 2025-06-30 - Automated Changelog Generation & Enhanced Release Workflow
 
@@ -5582,7 +5756,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧹 **Optimized CI/CD Workflow Steps**: Internal steps within the `add-tag.yml` workflow have been reorganized and
   renamed for better clarity and maintainability, streamlining the automated release pipeline.
 
----
+______________________________________________________________________
 
 ## [v0.202.0] - 2025-06-30 - Unified Identity & Auth: Stronger, Smarter, Safer
 
@@ -5637,7 +5811,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🗑️ **Unauthenticated Health Endpoint:** The health endpoint no longer requires user authentication, simplifying its
   use for external readiness and liveness probes.
 
----
+______________________________________________________________________
 
 ## [v0.201.0] - 2025-06-30 - Unified User Identity & Authentication Overhaul
 
@@ -5677,7 +5851,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🗑️ **Legacy `AuthenticatedUser` Model**: The outdated **`AuthenticatedUser`** model has been fully removed from
   `aihub_lib`, completing the transition to `UserIdentity`.
 
----
+______________________________________________________________________
 
 ## [v0.200.0] - 2025-06-30 - Process Orchestration and Core Refinements for Enhanced Modularity
 
@@ -5746,7 +5920,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   its core, generic functionality, with all agent-specific topic logic moving to the new `AgentTopicManager` and its
   subclasses.
 
----
+______________________________________________________________________
 
 ## [v0.199.0] - 2025-06-27 - Enhanced Document Processing and New Docling Integration
 
@@ -5791,7 +5965,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   `doc_with_figures_to_ref_doc`, `inject_figures`, `reformat_tables`, and `save_figures_to_data_lake`, as their
   functionalities have been integrated directly into document loaders.
 
----
+______________________________________________________________________
 
 ## [v0.198.0] - 2025-06-24 - Pipeline Embedding Enhancements
 
@@ -5801,7 +5975,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   `get_content(metadata_mode=MetadataMode.EMBED)` for extracting text. This ensures that relevant metadata is also
   considered, leading to potentially richer and more accurate vector embeddings.
 
----
+______________________________________________________________________
 
 ## [v0.197.0] - 2025-06-24 - Enhanced Infrastructure with Azure Data Lake Storage Support
 
@@ -5817,7 +5991,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 📄 **Standardized Data Lake Naming:** Defined a consistent naming convention for Azure Data Lake Storage resources,
   improving resource organization and clarity within the infrastructure.
 
----
+______________________________________________________________________
 
 ## [v0.196.0] - 2025-06-20 - Automation Enhancements and Version Synchronization
 
@@ -5833,7 +6007,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   `aihub_api`, `aihub_bot`, `aihub_iac`, `aihub_lib`, and `aihub_pipeline`, to version `v0.196.0` for consistent
   dependency management and release coordination.
 
----
+______________________________________________________________________
 
 ## [v0.195.0] - 2025-06-20 - Enhanced Pipeline Efficiency
 
@@ -5843,7 +6017,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   significantly improved to efficiently add and delete only the necessary dynamic partitions, thereby reducing
   unnecessary operations and enhancing overall performance for data pipeline execution.
 
----
+______________________________________________________________________
 
 ## [v0.194.0] - 2025-06-19 - Core System Alignment and Pipeline Operation Streamlining
 
@@ -5858,7 +6032,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   module to remove direct `OpExecutionContext` dependency and internal logging, promoting cleaner, more focused data
   retrieval logic.
 
----
+______________________________________________________________________
 
 ## [v0.193.0] - 2025-06-19 - Enhanced Draft PR Automation with Structured Branching
 
@@ -5880,7 +6054,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧹 **Streamlined Workflow Authentication:** The workflow now utilizes a more secure and efficient method for
   authenticating with the GitHub API.
 
----
+______________________________________________________________________
 
 ## [v0.192.0] - 2025-06-18 - Streamlined Branch Naming and Project Alignment
 
@@ -5893,7 +6067,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   (`aihub_agent`, `aihub_api`, `aihub_bot`, `aihub_iac`, `aihub_lib`, `aihub_pipeline`) to the new `v0.192.0` release
   tag, ensuring consistent versioning throughout the codebase.
 
----
+______________________________________________________________________
 
 ## [v0.191.0] - 2025-06-18 - LLM Event Reporting Enhancements
 
@@ -5902,7 +6076,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - ✨ **Improved LLM Event Reporting**: Introduced a new `from_chat_response` method to `LLMEvent` for easier creation of
   LLM events directly from LlamaIndex chat responses, automatically capturing token usage for enhanced observability.
 
----
+______________________________________________________________________
 
 ## [v0.190.0] - 2025-06-16 - Core Updates and Path Robustness
 
@@ -5912,7 +6086,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   transitioning to a more robust file name parsing method (`os.path.splitext`), ensuring accurate and reliable folder
   structures regardless of complex file naming conventions.
 
----
+______________________________________________________________________
 
 ## [v0.189.0] - 2025-06-16 - Multimodal RAG and Enhanced File Access
 
@@ -5951,7 +6125,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 📦 **Reorganized File Access Logic**: The internal logic for generating and validating anonymous file signatures and
   SAS tokens has been refactored and moved to dedicated services for better module separation and maintainability.
 
----
+______________________________________________________________________
 
 ## [v0.188.0] - 2025-06-13 - Advanced Document Handling: Secure Access & Improved Markdown Rendering
 
@@ -5997,7 +6171,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🐛 **API Base URL Configuration:** Ensured correct API base URL configuration for the web client, standardizing API
   access and preventing potential routing issues.
 
----
+______________________________________________________________________
 
 ## [v0.187.0] - 2025-06-12 - Core Refinements and Stability Updates
 
@@ -6013,7 +6187,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - ⚙️ **Pipeline Function Clarity:** Updated function calls within the `documents_factory` in the pipeline to
   consistently use keyword arguments, improving code readability and maintainability.
 
----
+______________________________________________________________________
 
 ## [v0.186.0] - 2025-06-12 - Enhanced Data Flexibility and Azure AI Integration
 
@@ -6025,7 +6199,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🔑 **Enhanced Azure OpenAI Embedding Authentication:** Explicitly enabled Azure Active Directory (AAD) authentication
   for Azure OpenAI embedding models, providing more secure and robust integration with Azure environments.
 
----
+______________________________________________________________________
 
 ## [v0.185.0] - 2025-06-11 - Internal Updates and CI/CD Streamlining
 
@@ -6034,7 +6208,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧹 **Optimized Build Process:** Removed the explicit code checkout step within the `build_image` GitHub Action,
   streamlining the image building process and potentially reducing redundant operations.
 
----
+______________________________________________________________________
 
 ## [v0.184.0] - 2025-06-11 - Web UI Streamlining and Configuration Updates
 
@@ -6057,7 +6231,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🗑️ **Deprecated `shad` Makefile Command**: Removed the `shad` command from the `aihub_web` Makefile, simplifying build
   scripts.
 
----
+______________________________________________________________________
 
 ## [v0.183.0] - 2025-06-11 - Smarter Document Summarization and Enhanced Data Traceability
 
@@ -6092,7 +6266,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧹 **Cleaned `RecursiveSummaryParser` Internals:** Streamlined internal logic by integrating previously separate helper
   methods directly, improving code readability and maintainability.
 
----
+______________________________________________________________________
 
 ## [v0.182.0] - 2025-06-11 - Enhanced Bot Responsiveness
 
@@ -6102,7 +6276,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   when the bot is actively processing a response, preventing misleading indicators for interactions the bot is
   configured not to respond to (e.g., expired conversations).
 
----
+______________________________________________________________________
 
 ## [v0.181.0] - 2025-06-10 - Core Enhancements and Stability Improvements
 
@@ -6129,7 +6303,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - ⚙️ **Standardized Channel ID Usage:** Replaced a hardcoded string with the `Channels.webchat` constant in
   `StreamAgentChatBot` for improved consistency and maintainability.
 
----
+______________________________________________________________________
 
 ## [v0.180.0] - 2025-06-10 - Enhanced Bot Robustness and Core Version Alignment
 
@@ -6138,7 +6312,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🐛 **Improved Chat Bot Locale Handling:** Addressed an issue in the `BaseChatBot` to gracefully handle scenarios where
   user locale information might be missing, ensuring robust locale resolution by falling back to a default.
 
----
+______________________________________________________________________
 
 ## [v0.179.0] - 2025-06-10 - Next-Gen Chat: File Uploads & Seamless WebUI Integration
 
@@ -6163,7 +6337,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🛠️ Addressed a compatibility issue in the **API token generation script** (`generate_api_token.py`) for improved
   reliability with Azure CLI.
 
----
+______________________________________________________________________
 
 ## [v0.178.0] - 2025-06-05 - Infrastructure Control and WebUI Scalability
 
@@ -6190,7 +6364,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧹 **Codebase Cleanup**: Removed several unused imports across Agent, API, Bot, and WebUI configurations for cleaner
   and more efficient code.
 
----
+______________________________________________________________________
 
 ## [v0.177.0] - 2025-06-04 - Enhanced Document Processing with AI-Powered Figure & Table Management
 
@@ -6230,7 +6404,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🐛 **Typo in Document Store Removal Logic:** Corrected a minor typo in the logic for fetching reference documents to be
   removed from the document store.
 
----
+______________________________________________________________________
 
 ## [v0.176.0] - 2025-06-04 - Introducing Advanced Document Intelligence with Visual Content Processing
 
@@ -6267,7 +6441,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🗑️ **Automated Figure Cleanup**: Implemented automatic deletion of associated figure data from the data lake when a
   document is removed, ensuring data hygiene.
 
----
+______________________________________________________________________
 
 ## [v0.175.0] - 2025-06-02 - Refined OpenAI Integrations and Infrastructure Control
 
@@ -6285,7 +6459,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   for **PostgreSQL with PgVector** and **Open WebUI**, providing greater control and consistency over deployment
   environments.
 
----
+______________________________________________________________________
 
 ## [v0.174.0] - 2025-05-30 - Infrastructure Constant Refinement
 
@@ -6295,7 +6469,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   module into a new, dedicated constants file, enhancing code organization and maintainability within the infrastructure
   components.
 
----
+______________________________________________________________________
 
 ## [v0.173.0] - 2025-05-30 - Infrastructure Enhancements: Cosmos DB Document Store Support
 
@@ -6308,7 +6482,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🔑 **Automated Identity Permissions for Cosmos DB:** Enhanced user-assigned identity management to automatically assign
   the necessary roles for secure interaction with Cosmos DB document stores.
 
----
+______________________________________________________________________
 
 ## [v0.172.0] - 2025-05-28 - Revolutionizing LLM Evaluation: New Suite, API Refinements, and Core Infrastructure Upgrades
 
@@ -6365,7 +6539,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🌱 **LlamaIndex Schema Alignment**: Updated the `VectorPrevNextPostProcessor` tests to replace `Document` with
   `TextNode`, aligning with recent schema changes in the LlamaIndex library.
 
----
+______________________________________________________________________
 
 ## [v0.171.0] - 2025-05-27 - Granular Network Control and Performance Boosts
 
@@ -6407,7 +6581,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🐛 **Resolved Storage Account Name Resolution**: Addressed an issue in file share creation where the storage account
   name might not be fully resolved, ensuring reliable provisioning.
 
----
+______________________________________________________________________
 
 ## [v0.170.0] - 2025-05-26 - Infrastructure Tooling Enhancements
 
@@ -6416,7 +6590,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🚀 **New `mirror-image` Makefile Target:** Introduced a utility in `aihub_iac` to easily pull, retag, and push Docker
   images between registries, streamlining image management and distribution for internal consumption.
 
----
+______________________________________________________________________
 
 ## [v0.169.0] - 2025-05-26 - Enhanced DataLakeFile Handling
 
@@ -6427,7 +6601,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   environment variable (Windows), and falls back to a default `pipeline-user` if no specific user is found, ensuring
   proper ownership assignment in varied execution contexts.
 
----
+______________________________________________________________________
 
 ## [v0.168.0] - 2025-05-24 - Infrastructure Refinements for Enhanced Stability
 
@@ -6436,7 +6610,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🔄 **NATS Container IP Address**: Assigned a fixed private IP address to the NATS container instance in Azure
   deployments. This enhancement improves network stability and predictability for NATS within the infrastructure.
 
----
+______________________________________________________________________
 
 ## [v0.167.0] - 2025-05-23 - Knowledge Base and RAG System Evolution
 
@@ -6505,7 +6679,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🗑️ **Removed RAG Agent Trigger Script**: Removed an outdated trigger script for the RAG agent in the playground
   environment.
 
----
+______________________________________________________________________
 
 ## [v0.166.0] - 2025-05-20 - Enhanced RAG Pipelines and System Reliability
 
@@ -6534,7 +6708,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 📈 **Enhanced Vector Store Query Reliability:** Implemented a retry mechanism within `VectorStoreIOManager` when
   fetching nodes, making the pipeline more robust against transient issues and improving data retrieval stability.
 
----
+______________________________________________________________________
 
 ## [v0.165.0] - 2025-05-16 - Enhanced User Experience with Dashboards and Revamped Identity Management
 
@@ -6590,7 +6764,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   `BearerToken` documents has been removed, enhancing data normalization and security by centralizing user information
   in the new `UserEntity`.
 
----
+______________________________________________________________________
 
 ## [v0.164.0] - 2025-05-15 - Dependency and Infrastructure Alignment
 
@@ -6599,7 +6773,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🔄 **Refined Infrastructure Type Definitions:** Updated environment variable argument types in the Azure Container
   Instance module for improved consistency and clarity in infrastructure-as-code deployments.
 
----
+______________________________________________________________________
 
 ## [v0.163.0] - 2025-05-15 - Enhanced Agent Configuration and Infrastructure Tools
 
@@ -6616,7 +6790,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - ⚙️ **IAC Resource Naming Refinement**: Updated the internal logic for generating AI search resource names within the
   IAC module for improved consistency.
 
----
+______________________________________________________________________
 
 ## [v0.162.0] - 2025-05-14 - Enhanced Azure Bot Setup for Improved Integration
 
@@ -6625,7 +6799,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - ⚙️ **Azure Bot Setup**: The `setup_azure_bot.py` script now automatically creates a service principal for Azure AD app
   registrations, streamlining the setup process and ensuring smoother integration with Azure resources.
 
----
+______________________________________________________________________
 
 ## [v0.161.0] - 2025-05-13 - Streamlined Admin Experience & Data Lake Optimization
 
@@ -6677,7 +6851,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 📄 **I18n Usage Consistency**: Standardized the way internationalization functions are called (from `$t()` to `t()`)
   throughout numerous web components and pages for improved consistency.
 
----
+______________________________________________________________________
 
 ## [v0.160.0] - 2025-05-13 - Refined Embedding Model Configuration
 
@@ -6693,7 +6867,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   model configuration to specific provider configurations, improving modularity and ensuring parameters are only present
   where relevant.
 
----
+______________________________________________________________________
 
 ## [v0.159.0] - 2025-05-13 - Enhanced LLM Embeddings and Event Query Performance
 
@@ -6705,7 +6879,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - ⚡️ **Improved Event Persistence Querying:** Added a new index on `event_data.created_at` for `PersistedEventEntity`,
   significantly enhancing the performance of time-based queries on persisted event data.
 
----
+______________________________________________________________________
 
 ## [v0.158.0] - 2025-05-12 - Core API Simplifications
 
@@ -6714,7 +6888,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧹 **Streamlined Pydantic Model Creation**: Removed redundant `__base__=BaseModel` arguments from `create_model` calls
   in the API event model generation, simplifying the code while maintaining full functionality.
 
----
+______________________________________________________________________
 
 ## [v0.157.0] - 2025-05-08 - Infrastructure Enhancements for WebUI Deployment
 
@@ -6727,7 +6901,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🔗 **Integrated Registry Settings for WebUI**: Added `RegistrySettings` to `WebUIConfig`, allowing for more robust and
   configurable container registry management for WebUI deployments.
 
----
+______________________________________________________________________
 
 ## [v0.156.0] - 2025-05-08 - Introducing Comprehensive Event Statistics & UI Overhaul
 
@@ -6775,7 +6949,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🔄 **Updated Query Naming Conventions**: Standardized query keys and transitioned from `isLoading` to `isPending` in
   various Vue composables for consistency with `pinia/colada`'s query state management.
 
----
+______________________________________________________________________
 
 ## [v0.155.0] - 2025-05-08 - Enhanced Speech-to-Text Capabilities and Infrastructure Updates
 
@@ -6791,7 +6965,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧪 **Comprehensive Audio Tests**: Added extensive test coverage for the new audio chunking and transcription merging
   functionalities to guarantee robust performance and accuracy.
 
----
+______________________________________________________________________
 
 ## [v0.154.0] - 2025-05-08 - Streamlined Versioning and IAC Integration
 
@@ -6800,7 +6974,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🔄 **Automated Versioning Scope**: The `aihub_iac` project has been fully integrated into the automated version tagging
   workflow, ensuring consistent release management and version alignment across all core components.
 
----
+______________________________________________________________________
 
 ## [v0.153.0] - 2025-05-08 - Internal Tooling and CI/CD Scope Expansion
 
@@ -6809,7 +6983,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - ⚙️ **Expanded Semantic PR Scopes:** Added `iac` (Infrastructure as Code) and `ci-cd` as recognized scopes for semantic
   pull requests, enhancing consistency and automation for relevant contributions.
 
----
+______________________________________________________________________
 
 ## [v0.152.0] - 2025-05-08 - Introducing Comprehensive Azure Infrastructure as Code
 
@@ -6834,7 +7008,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   on-premises technologies, specifically detailing **Postgres (SQL DB)**, **PG-vector** for vector capabilities, and
   **Docker** for application environments.
 
----
+______________________________________________________________________
 
 ## [v0.151.0] - 2025-05-06 - Comprehensive Thread Management & Enhanced Agent Insights
 
@@ -6902,7 +7076,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🗑️ **Redundant Playground Components**: Removed legacy playground components like `UserMessageEvent` form and
   `Thread/Chat` that are superseded by new UI and testing features.
 
----
+______________________________________________________________________
 
 ## [v0.150.0] - 2025-05-04 - LLM Evolution: Introducing Gemini and Intelligent Content Summarization
 
@@ -6931,7 +7105,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧹 **Internal Module Reorganization**: Reorganized internal imports and module structures within `aihub_agent` and
   `aihub_bot` to improve code clarity and maintainability.
 
----
+______________________________________________________________________
 
 ## [v0.149.0] - 2025-05-04 - Enhanced LLM Flexibility with Gemini Support
 
@@ -6949,7 +7123,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   moved to a new, more logical module path (`aihub_agent.agents.RagAgent`), streamlining the internal structure of agent
   implementations.
 
----
+______________________________________________________________________
 
 ## [v0.148.0] - 2025-04-24 - Enhanced RAG Agent Context Sufficiency
 
@@ -6963,7 +7137,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   providing clearer indications when the maximum retrieval attempts have been reached or when further queries are still
   possible.
 
----
+______________________________________________________________________
 
 ## [v0.147.0] - 2025-04-24 - Enhanced Azure AI Search Vector Store Configuration
 
@@ -6975,7 +7149,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   different embedding models used for RAG operations. This enhancement is available through `aihub_lib` and integrated
   into `aihub_pipeline` resources and definitions for seamless configuration.
 
----
+______________________________________________________________________
 
 ## [v0.146.0] - 2025-04-17 - Enhanced Conversation Management and Bot Persistence
 
@@ -7001,7 +7175,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧹 **Conversation Reset Logic**: Improved handling of conversation resets in platforms like Microsoft Teams by
   explicitly marking conversations as deleted when a user initiates a new chat session with the same conversation ID.
 
----
+______________________________________________________________________
 
 ## [v0.145.0] - 2025-04-16 - Streamlined AI Hub Connections and Agent Playgrounds
 
@@ -7029,7 +7203,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   chat completion requests into distinct, specialized functions (`pipe_stream` and `pipe_non_stream`) for better code
   organization and maintainability.
 
----
+______________________________________________________________________
 
 ## [v0.144.0] - 2025-04-15 - Introducing Adaptive Context Retrieval for RAG Agents
 
@@ -7061,7 +7235,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🗑️ **Cleaned Azure OpenAI Embedding Parameters:** Removed the `dimensions` field from `AzureOpenAIEmbeddingParameter`
   for schema simplification, as it was not actively used.
 
----
+______________________________________________________________________
 
 ## [v0.143.0] - 2025-04-11 - Agent Evolution, Advanced Routing, and Integration Enhancements
 
@@ -7128,7 +7302,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🛠️ **Event Naming Consistency**: Rectified an inconsistency in event naming for `HumanInTheLoopResponseEvent` within
   the chat service, improving internal consistency.
 
----
+______________________________________________________________________
 
 ## [v0.142.0] - 2025-04-10 - Streamlined Bot-in-the-Loop Interactions and Improved Azure Bot Setup
 
@@ -7154,7 +7328,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 📄 **New Slack Utilities Module:** Introduced `SlackUtils` to encapsulate logic for interacting with the Slack API,
   specifically for fetching essential bot and team IDs, supporting the new conversation ID management.
 
----
+______________________________________________________________________
 
 ## [v0.141.0] - 2025-04-09 - Enhanced Test Infrastructure and Core Library Updates
 
@@ -7172,7 +7346,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   operations by introducing a small, strategic delay after data ingestion, ensuring that the vector store is fully ready
   for subsequent test queries.
 
----
+______________________________________________________________________
 
 ## [v0.140.0] - 2025-04-09 - Enhanced Agent-Bot Interaction with Bot-in-the-Loop Capabilities
 
@@ -7203,7 +7377,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🛠️ **Improved Dependency Management**: The `switch_dependencies.py` script now automatically runs `poetry install`
   after `poetry lock`, simplifying environment setup for developers.
 
----
+______________________________________________________________________
 
 ## [v0.139.0] - 2025-04-08 - Visualizing Agent Journeys: UI Refresh and Event System Evolution
 
@@ -7271,7 +7445,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🗑️ **Outdated WebSocket Receiver Modules:** Cleaned up and removed old `aihub_api/aihub_api/sockets/receiver` modules,
   replaced by the new, refactored WebSocket architecture.
 
----
+______________________________________________________________________
 
 ## [v0.138.0] - 2025-04-07 - Core Infrastructure and Testing Improvements
 
@@ -7284,7 +7458,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - ⚙️ **Streamlined Local Development Setup:** Refined the NATS service configuration in `docker-compose.yml` by removing
   the health check, which helps optimize the local development environment startup.
 
----
+______________________________________________________________________
 
 ## [v0.137.0] - 2025-04-07 - Core Event System Enhancements
 
@@ -7294,7 +7468,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   `HumanInTheLoopResponseEvent` within the chat service to ensure proper type information is consistently included,
   leading to more robust and reliable event processing.
 
----
+______________________________________________________________________
 
 ## [v0.136.0] - 2025-04-02 - Improved LLM Guarding and Structured Output
 
@@ -7312,7 +7486,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 📄 **Updated Internationalization Definitions**: Adjusted translation files for `context_sufficient_guard` to support
   the new structured output fields and streamline prompt templates, improving clarity and consistency across languages.
 
----
+______________________________________________________________________
 
 ## [v0.135.0] - 2025-04-01 - Bot Core Overhaul: Architecture Refinements and Localized Messaging
 
@@ -7345,7 +7519,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 📝 **Flexible Locale Handling:** Updated `LocaleHandler.t_object` to allow optional locale arguments, providing more
   flexible usage when retrieving translated objects.
 
----
+______________________________________________________________________
 
 ## [v0.134.0] - 2025-04-01 - Core Component Synchronization
 
@@ -7357,7 +7531,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - ⚙️ **Makefile Tag Update:** The `Makefile`'s default `TAG` for remote core operations has been updated to `v0.134.0`
   to reflect the new coordinated release version.
 
----
+______________________________________________________________________
 
 ## [v0.133.0] - 2025-04-01 - Improved API Error Handling with Custom Status Codes
 
@@ -7374,7 +7548,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🔄 **Agent Service Error Propagation:** The `AgentService` has been updated to explicitly allow the return of an
   `ExceptionEvent`, ensuring more detailed error information is propagated from agent operations.
 
----
+______________________________________________________________________
 
 ## [v0.132.0] - 2025-04-01 - Improved Chatbot Reliability and User Feedback
 
@@ -7388,7 +7562,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🔗 **Improved Internal Exception Propagation:** Enhanced the system's ability to propagate specific `ExceptionEvent`
   types from core services, allowing for more precise and robust error management within the chatbot framework.
 
----
+______________________________________________________________________
 
 ## [v0.131.0] - 2025-04-01 - Enhanced Markdown Parsing Accuracy
 
@@ -7397,7 +7571,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🐛 **Markdown Parsing:** Improved the accuracy of Markdown document parsing by automatically unescaping HTML entities,
   ensuring that content extracted from Markdown files is correctly represented without escaped characters.
 
----
+______________________________________________________________________
 
 ## [v0.130.0] - 2025-03-31 - Visual Workflows, Dynamic APIs, and UX Polish
 
@@ -7461,7 +7635,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🗑️ **Deprecated Workflow Visualizer**: Removed the old `NetworkXVisualizer` class, which has been entirely superseded
   by the new, more capable `WorkflowVisualizer`.
 
----
+______________________________________________________________________
 
 ## [v0.129.0] - 2025-03-28 - Introducing Bounded Loop Workflows and Enhanced Agent Examples
 
@@ -7478,7 +7652,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🚀 **Provided a `trigger.py` example:** A simple script to easily run and observe the `BoundedLoopAgent` in action,
   aiding in understanding and demonstration.
 
----
+______________________________________________________________________
 
 ## [v0.128.0] - 2025-03-27 - Improved Embedding Reliability
 
@@ -7488,7 +7662,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   gracefully handle validation errors that might occur during batch embedding generation, improving the reliability of
   vector generation for large inputs.
 
----
+______________________________________________________________________
 
 ## [v0.127.0] - 2025-03-25 - Enhanced Bot Chat Interactions
 
@@ -7497,7 +7671,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - ⚡️ **Enhanced Typing Indicators**: Implemented continuous and stoppable typing indicators for agent and OpenAI chat
   bots, providing a more responsive and fluid user experience during bot message processing.
 
----
+______________________________________________________________________
 
 ## [v0.126.0] - 2025-03-24 - Enhanced LLM Call Reliability
 
@@ -7509,7 +7683,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   both **Azure OpenAI** and **Self-Hosted LLM** integrations, providing greater control and improved reliability for API
   call durations.
 
----
+______________________________________________________________________
 
 ## [v0.125.0] - 2025-03-21 - Introducing WebUI Agent and API Modernization
 
@@ -7546,7 +7720,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 📄 **Type Hint Refinement**: Improved type annotations for `asturn_llm_for_cost_reporting` to enhance code clarity and
   correctness.
 
----
+______________________________________________________________________
 
 ## [v0.124.0] - 2025-03-21 - Core Service Refinements and Enhanced Agent Interactions
 
@@ -7562,7 +7736,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   unified the database name to `aihub` for the bot service. This improves database organization and consistency across
   services.
 
----
+______________________________________________________________________
 
 ## [v0.123.0] - 2025-03-21 - Enhanced Document Processing and Metadata Management
 
@@ -7589,7 +7763,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - ⚙️ **Pydantic v2 Migration:** The `MarkdownStructuralNodeParser` has been updated to align with Pydantic v2, enhancing
   type handling and configuration management for improved stability and future compatibility.
 
----
+______________________________________________________________________
 
 ## [v0.122.0] - 2025-03-21 - Enhanced Error Handling and System Stability
 
@@ -7607,7 +7781,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🔄 **Extended Event Handling Signature:** The `stop_event` mechanism within the Chat Service (`aihub_lib`) has been
   updated to explicitly recognize and store `ExceptionEvent`s, allowing for more comprehensive error state management.
 
----
+______________________________________________________________________
 
 ## [v0.121.0] - 2025-03-20 - Enhanced Event Causality and Dispatching Reliability
 
@@ -7626,7 +7800,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   upon reception, providing a foundational improvement for strictly ordered event processing and dependency resolution
   within the agent framework.
 
----
+______________________________________________________________________
 
 ## [v0.120.0] - 2025-03-20 - Introducing Language Detection for Enhanced Processing
 
@@ -7641,7 +7815,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧹 **Streamlined IDE Module Configuration**: Optimized internal `.idea` project files to improve module referencing and
   overall development environment setup.
 
----
+______________________________________________________________________
 
 ## [v0.119.0] - 2025-03-19 - API Routing Improvements
 
@@ -7650,7 +7824,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🔄 **Enhanced dynamic route naming for agent event controllers** to incorporate a route postfix, which improves the
   uniqueness and clarity of dynamically generated API endpoints.
 
----
+______________________________________________________________________
 
 ## [v0.118.0] - 2025-03-19 - Improved Event Handling and Core Updates
 
@@ -7665,7 +7839,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧹 **Refined Event Method Overrides:** Added the `@override` decorator to the `model_dump` method in `BaseEvent` for
   improved code clarity and maintainability.
 
----
+______________________________________________________________________
 
 ## [v0.117.0] - 2025-03-19 - Empowering Custom Workflow Control
 
@@ -7679,7 +7853,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧪 **Dedicated Tests for Custom Workflows**: Included new BDD tests to validate the functionality of custom start and
   stop events, ensuring reliability and providing a robust example for extending agent capabilities.
 
----
+______________________________________________________________________
 
 ## [v0.116.0] - 2025-03-19 - Enhanced Chat Control and Event Visibility
 
@@ -7713,7 +7887,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧹 **Streamlined NATS Event Imports:** Cleaned up and reorganized NATS event-related imports in
   `ExternalEventDistributor` and `OpenaiService` for improved code clarity and maintainability.
 
----
+______________________________________________________________________
 
 ## [v0.115.0] - 2025-03-19 - Enhanced Event Distribution
 
@@ -7730,7 +7904,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   user input have been updated to seamlessly integrate with the new `ExternalEventDistributor`, ensuring consistent and
   channel-agnostic event flow across the platform.
 
----
+______________________________________________________________________
 
 ## [v0.114.0] - 2025-03-19 - Enhanced Event Robustness and API Output Control
 
@@ -7760,7 +7934,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧹 **Internal Event Type Handling**: Consolidated and improved the internal handling of event types across dispatchers,
   tracing coordinators, and publishers to align with the new property-based type checking.
 
----
+______________________________________________________________________
 
 ## [v0.113.0] - 2025-03-17 - Enhanced Event Persistence and Querying
 
@@ -7785,7 +7959,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   new class method `PersistedEventEntity.persist_event`, centralizing persistence responsibilities within the entity
   itself.
 
----
+______________________________________________________________________
 
 ## [v0.112.0] - 2025-03-17 - Deeper Conversations: Human-in-the-Loop and Extended API Capabilities
 
@@ -7823,7 +7997,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - ⏱️ **Corrected Chronological Ordering of Display Events**: Ensured all persisted display events, including chat
   messages and Human-in-the-Loop requests, are retrieved and ordered chronologically for accurate conversation playback.
 
----
+______________________________________________________________________
 
 ## [v0.111.0] - 2025-03-17 - Optimized NATS Message Routing for Display Events
 
@@ -7834,7 +8008,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🔄 Updated **API** and **Bot** services to align with the new **WebSocketReceiver** architecture, passing the NATS
   client instance during initialization.
 
----
+______________________________________________________________________
 
 ## [v0.110.0] - 2025-03-14 - Improved Bot Message Handling with Dedicated Content Extraction
 
@@ -7855,7 +8029,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   into a dedicated `ContentExtractor` class, significantly improving code modularity, readability, and maintainability
   within the bot service.
 
----
+______________________________________________________________________
 
 ## [v0.109.0] - 2025-03-14 - Enhanced Chat Bot Interactions and Attachment Processing
 
@@ -7877,7 +8051,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   centralize and simplify the fetching and encoding of file attachments, leading to cleaner and more maintainable code
   for handling various file types.
 
----
+______________________________________________________________________
 
 ## [v0.108.0] - 2025-03-13 - Asynchronous Preconditions for Flexible Workflow Control
 
@@ -7889,7 +8063,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🔄 **Updated Dispatcher Logic**: The internal dispatcher has been updated to correctly handle and await asynchronous
   precondition functions, ensuring seamless integration and execution of the new capability.
 
----
+______________________________________________________________________
 
 ## [v0.107.0] - 2025-03-13 - API Enhancements and Internal Utilities
 
@@ -7899,7 +8073,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   in-memory caches used for agent discovery, primarily beneficial for testing purposes to ensure fresh discovery
   requests.
 
----
+______________________________________________________________________
 
 ## [v0.106.0] - 2025-03-11 - Core Event System Refinements
 
@@ -7918,7 +8092,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🗑️ **Deprecated Playground Event Files**: The `LLMStopEvent` file and its associated `__init__.py` have been removed
   from the `playground` directory, reflecting its migration to the core `aihub_lib`.
 
----
+______________________________________________________________________
 
 ## [v0.105.0] - 2025-03-11 - Core Component Version Alignment and Documentation Refinement
 
@@ -7929,7 +8103,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 📄 **Documentation Formatting**: Minor cosmetic adjustments were made to the Mermaid flowchart syntax within the
   introduction documentation for improved clarity.
 
----
+______________________________________________________________________
 
 ## [v0.104.0] - 2025-03-10 - Enhanced Bot Attachment Handling and Slack Integration
 
@@ -7953,7 +8127,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   logging and error handling for various attachment types, including explicitly ignoring redundant HTML attachments from
   Teams and warning about unsupported file types.
 
----
+______________________________________________________________________
 
 ## [v0.103.0] - 2025-03-10 - Streamlined Agent Interactions: API Endpoints and Event System Enhancements
 
@@ -7983,7 +8157,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 📦 **Centralized LLMStopEvent:** Moved the **`LLMStopEvent`** definition from agent-specific folders to the `aihub_lib`
   package under a new `semantic/llm` namespace, centralizing event definitions and improving modularity.
 
----
+______________________________________________________________________
 
 ## [v0.102.0] - 2025-03-07 - Enhanced Document Metadata Handling
 
@@ -7999,7 +8173,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   prioritize existing metadata fields and gracefully fall back to default attributes when populating document properties
   like `namespace`, `hash`, `updated`, `source`, and `document title`.
 
----
+______________________________________________________________________
 
 ## [v0.101.0] - 2025-03-07 - Next-Gen Event Persistence and Workflow Control
 
@@ -8051,7 +8225,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🛠️ **Consistent Resource Cleanup:** Ensured all dispatcher and subscriber resources are properly stopped and cleaned
   up during agent shutdown for better stability.
 
----
+______________________________________________________________________
 
 ## [v0.100.0] - 2025-03-07 - Enhanced Bot Setup and Structural Refinements
 
@@ -8066,7 +8240,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧹 **Relocated Azure Bot Setup Script:** The `setup_azure_bot.py` script has been moved into its own dedicated
   subdirectory (`aihub_bot/aihub_bot/`), improving the overall organization and clarity of the bot module.
 
----
+______________________________________________________________________
 
 ## [v0.99.0] - 2025-03-07 - Enhanced Chat Context and Resilience
 
@@ -8090,7 +8264,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🐛 **Improved OpenAI Error Handling:** Gracefully handles `BadRequestError` responses from OpenAI API calls, sending
   the detailed error message back to the user instead of failing silently.
 
----
+______________________________________________________________________
 
 ## [v0.98.0] - 2025-03-06 - Next-Gen Chat: Multimodal Support and Enhanced Slack Integration
 
@@ -8124,7 +8298,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - ⚙️ **Internal Helper Renames**: Renamed several internal message conversion helper methods to follow private naming
   conventions (e.g., `message_to_chat_message` to `_message_to_chat_message`), improving encapsulation.
 
----
+______________________________________________________________________
 
 ## [v0.97.0] - 2025-03-06 - LLM Configuration Enhancements
 
@@ -8134,7 +8308,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   optional `system_prompt` parameter, allowing for direct configuration of system messages for Large Language Models
   within cost-tracked sessions.
 
----
+______________________________________________________________________
 
 ## [v0.96.0] - 2025-03-06 - Enhanced Bot Message Handling
 
@@ -8143,7 +8317,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🐛 **Improved Bot Message Sending:** The bot service now gracefully handles empty message buffers, preventing
   unnecessary activity updates and enhancing the reliability of message delivery.
 
----
+______________________________________________________________________
 
 ## [v0.95.0] - 2025-03-06 - Improved Chatbot Interactions and Streamlined Environment Setup
 
@@ -8164,7 +8338,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧹 **Optimized Chat Service Message Sending**: Inlined the text sending logic within the `send_response_stream` method,
   improving the internal organization and maintainability of the chat service.
 
----
+______________________________________________________________________
 
 ## [v0.94.0] - 2025-03-05 - Enhanced Bot Streaming and Configuration Flexibility
 
@@ -8181,7 +8355,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🐛 **Agent Stream Timeout Robustness**: Resolved an issue where agent streaming responses could lead to indefinite
   waits by implementing a timeout mechanism with graceful handling for stream termination, improving overall stability.
 
----
+______________________________________________________________________
 
 ## [v0.93.0] - 2025-03-05 - Core Component Version Alignment
 
@@ -8191,7 +8365,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   all `aihub_agent`, `aihub_api`, `aihub_bot`, `aihub_lib`, and `aihub_pipeline` components to `v0.93.0` to ensure full
   system compatibility and release alignment.
 
----
+______________________________________________________________________
 
 ## [v0.92.0] - 2025-03-05 - Intelligent Context Handling for RAG Agents
 
@@ -8217,7 +8391,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - ✨ **Streamlined Few-Shot Guard Acceptance:** Simplified the `FewShotAcceptEvent` creation in the
   `few_shot_guard_step`, removing redundant `success=True` parameter as it is implied by the event type.
 
----
+______________________________________________________________________
 
 ## [v0.91.0] - 2025-03-05 - Parallel Agents, GPU Support, and Enhanced Observability
 
@@ -8250,7 +8424,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🗑️ **Deprecated Docker Compose File:** Removed the non-functional `docker-compose-open-webui.yml`, cleaning up the
   project structure.
 
----
+______________________________________________________________________
 
 ## [v0.90.0] - 2025-03-04 - Improved Observability and Code Structure
 
@@ -8284,7 +8458,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🗑️ **Redundant NATS Event Modules:** Deleted empty `__init__.py` files previously used for re-exporting
   `AgentInTheLoop` events, simplifying the module structure.
 
----
+______________________________________________________________________
 
 ## [v0.89.0] - 2025-03-03 - Enhanced Agent Dispatching with Idempotency
 
@@ -8294,7 +8468,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   executions within the same run when called with identical input events. This significantly enhances the reliability
   and efficiency of agent dispatching by avoiding redundant processing.
 
----
+______________________________________________________________________
 
 ## [v0.88.0] - 2025-03-03 - Streamlined Communication and Resource Management
 
@@ -8318,7 +8492,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   (`aihub_agent`, `aihub_api`, `aihub_bot`, `aihub_lib`, `aihub_pipeline`) to consistently run formatting before
   linting, streamlining development workflows.
 
----
+______________________________________________________________________
 
 ## [v0.87.0] - 2025-03-03 - Infrastructure Upgrade: Redis for Distributed State & Workflow Optimizations
 
@@ -8352,7 +8526,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🔄 **Streamlined Agent Event Imports**: Cleaned up various agent files by removing explicit `StartEvent` imports where
   not directly consumed, reflecting a more consolidated approach to initial event handling within the agent framework.
 
----
+______________________________________________________________________
 
 ## [v0.86.0] - 2025-03-03 - Streamlined Bot Services
 
@@ -8362,7 +8536,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   `OpenaiChatBot`, and `StreamOpenaiChatBot` to centralize and simplify how system messages are handled within bot
   services.
 
----
+______________________________________________________________________
 
 ## [v0.85.0] - 2025-02-28 - Core Component Alignment and API Refinements
 
@@ -8373,7 +8547,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 📄 **Enhanced Document Intelligence Loader**: Adapted the **Document Intelligence Loader** to align with the latest API
   specifications by updating the parameter name from `analyze_request` to `body` for improved compatibility.
 
----
+______________________________________________________________________
 
 ## [v0.84.0] - 2025-02-28 - Minor Refinements and Event Stream Optimization
 
@@ -8382,7 +8556,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🗑️ **Removed `LimitChatHistoryWithContextEvent`:** The event previously used for explicitly limiting chat messages and
   context within the `FewShotAgent` has been removed.
 
----
+______________________________________________________________________
 
 ## [v0.83.0] - 2025-02-27 - Core Performance and Stability Improvements
 
@@ -8394,7 +8568,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - ⚙️ **Enhanced KV Store Creation Robustness:** Improved the error handling for Key-Value store creation, ensuring that
   the system more gracefully attempts to retrieve an existing store if creation fails, leading to increased stability.
 
----
+______________________________________________________________________
 
 ## [v0.82.0] - 2025-02-27 - Core Optimizations and Logic Refinements
 
@@ -8414,7 +8588,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧹 Removed **mutex-based synchronization and retry configuration** attributes (`max_retries`, `base_backoff`, and
   `synchronized_update` method) from `BaseContext`, simplifying the underlying NATS context management.
 
----
+______________________________________________________________________
 
 ## [v0.81.0] - 2025-02-27 - Enhanced Reliability and Concurrency
 
@@ -8438,7 +8612,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧹 **Enhanced internal `StoreBase` utilities**, introducing a dedicated method for storing raw byte values and
   generalizing the retry mechanism for various operations across the agent.
 
----
+______________________________________________________________________
 
 ## [v0.80.0] - 2025-02-27 - Enhanced Localization Capabilities
 
@@ -8447,7 +8621,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🌍 **Improved Internationalization (i18n)**: The `LocaleHandler` now supports passing additional arguments for dynamic
   content interpolation within translated strings, enabling more flexible and context-aware localized messages.
 
----
+______________________________________________________________________
 
 ## [v0.79.0] - 2025-02-27 - Enhanced Data Consistency with Atomic Store Operations
 
@@ -8469,7 +8643,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧹 **Refined KV Store Key Retrieval:** Key-value store listing methods across `StoreBase` and `BaseContext` now
   automatically filter out internal mutex keys, providing cleaner and more relevant results.
 
----
+______________________________________________________________________
 
 ## [v0.78.0] - 2025-02-27 - Streamlined Azure AI Search Configuration
 
@@ -8479,7 +8653,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   utilizes a default value for `semantic_configuration_name`, which streamlines the configuration process and simplifies
   the internal logic for setting up Azure AI Search vector stores.
 
----
+______________________________________________________________________
 
 ## [v0.77.0] - 2025-02-26 - Enhanced Message Processing Reliability
 
@@ -8489,7 +8663,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   immediately upon receipt, preventing re-delivery of messages if subsequent processing tasks encounter issues. This
   enhances the reliability and predictability of message consumption.
 
----
+______________________________________________________________________
 
 ## [v0.76.0] - 2025-02-26 - NATS Message Processing Refinement
 
@@ -8500,7 +8674,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   potential re-delivery of messages in scenarios where the handler might encounter an error after initial processing has
   begun.
 
----
+______________________________________________________________________
 
 ## [v0.75.0] - 2025-02-26 - Enhanced Asynchronous NATS Message Processing
 
@@ -8513,7 +8687,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   non-blocking fashion. This change ensures that message handling is more robust and efficient, improving overall system
   responsiveness.
 
----
+______________________________________________________________________
 
 ## [v0.74.0] - 2025-02-26 - Enhanced Document Metadata Handling
 
@@ -8522,7 +8696,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🐛 **Corrected Document Title Extraction:** Ensured that the document title is accurately extracted from the
   **DataLakeFile** URI when enriching **RefDocDocument** metadata, preventing incorrect title assignments.
 
----
+______________________________________________________________________
 
 ## [v0.73.0] - 2025-02-26 - Core Stability Enhancements and Version Alignment
 
@@ -8536,7 +8710,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🔄 **Project-wide Version Bump:** Aligned all core microservices and internal dependencies to version `v0.73.0` for
   consistent build and deployment.
 
----
+______________________________________________________________________
 
 ## [v0.72.0] - 2025-02-26 - Enhanced Document Metadata for RAG
 
@@ -8546,7 +8720,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   adding the **document title** and **source URI** to `RefDocDocument` instances. This enhancement provides richer, more
   granular context for Retrieval-Augmented Generation (RAG) applications.
 
----
+______________________________________________________________________
 
 ## [v0.71.0] - 2025-02-26 - Improved Self-Hosted LLM Compatibility
 
@@ -8556,7 +8730,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   base model names by stripping additional suffixes (`-bnb` and `-4bit`), improving compatibility with various quantized
   model formats for tokenization.
 
----
+______________________________________________________________________
 
 ## [v0.70.0] - 2025-02-26 - Expanded Azure OpenAI Authentication Options
 
@@ -8565,7 +8739,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🔑 **Enhanced Azure OpenAI LLM Authentication:** Enabled direct API key authentication for **Azure OpenAI Large
   Language Models**, providing a flexible alternative to Azure AD for resource access.
 
----
+______________________________________________________________________
 
 ## [v0.69.0] - 2025-02-25 - Enhanced Build Stability and CI Efficiency
 
@@ -8578,7 +8752,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧹 **Streamlined Build Dependencies:** Removed direct `pip install` commands for global tools like `tomlkit` in CI, now
   relying entirely on Poetry for comprehensive dependency management.
 
----
+______________________________________________________________________
 
 ## [v0.68.0] - 2025-02-25 - Enhanced Self-Hosted LLM Configuration
 
@@ -8588,7 +8762,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   correctly load tokenizers for various self-hosted models by stripping common suffixes (like `-GGUF` and `-AWQ`) from
   model names and ensuring the proper encoding function is returned.
 
----
+______________________________________________________________________
 
 ## [v0.67.0] - 2025-02-25 - Build System Enhancements and Poetry Integration
 
@@ -8600,7 +8774,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   core dependency switching scripts, streamlining the development workflow and aligning with Poetry's project management
   practices.
 
----
+______________________________________________________________________
 
 ## [v0.66.0] - 2025-02-25 - Enhanced Authentication, UI Overhaul, and API Clarity
 
@@ -8657,7 +8831,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - ⚙️ **Component Organization**: Reorganized and renamed the chat component (`Chat.vue` to `ThreadChat.vue`) and moved
   it into a dedicated `thread` subdirectory for better module clarity.
 
----
+______________________________________________________________________
 
 ## [v0.65.0] - 2025-02-25 - Core Agent LLM Flexibility
 
@@ -8667,7 +8841,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   `ChatLLMConfig` instead of the provider-specific `AzureOpenAILLMConfig`. This modification provides greater
   flexibility, enabling the LLM Wrapping Agent to integrate seamlessly with a broader range of chat LLM providers.
 
----
+______________________________________________________________________
 
 ## [v0.64.0] - 2025-02-24 - Improved Core Robustness and System Alignment
 
@@ -8676,7 +8850,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🐛 **Enhanced Locale Handling:** Ensured that the system's locale context reliably defaults to a predefined value when
   no specific locale is provided, improving overall stability and preventing potential issues.
 
----
+______________________________________________________________________
 
 ## [v0.63.0] - 2025-02-21 - Refined Guards and Enhanced Testability
 
@@ -8688,7 +8862,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   an `event_filter` parameter, allowing for more granular observation and testing of events based on their specific
   event type.
 
----
+______________________________________________________________________
 
 ## [v0.62.0] - 2025-02-20 - Streamlined Development and Enhanced CI/CD
 
@@ -8699,7 +8873,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - ✨ **Simplified NoAuth Configuration**: The `NoAuthHandler` now provides default values for user `NAME`, `EMAIL`, and
   `ROLES`, reducing the need for explicit configuration in local development environments.
 
----
+______________________________________________________________________
 
 ## [v0.61.0] - 2025-02-20 - Major Pipeline Configuration Overhaul
 
@@ -8746,7 +8920,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧹 **Obsolete Utility Functions**: Discarded various utility functions related to customer and namespace path handling,
   streamlining the codebase after the resource configuration overhaul.
 
----
+______________________________________________________________________
 
 ## [v0.60.0] - 2025-02-20 - Build Action Configuration Update
 
@@ -8756,7 +8930,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   value. This change requires users to explicitly specify the Dockerfile path, promoting clearer and more explicit build
   configurations.
 
----
+______________________________________________________________________
 
 ## [v0.59.0] - 2025-02-20 - Minor Infrastructure Enhancements
 
@@ -8767,7 +8941,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🔄 **Updated LLM Inference Server:** Upgraded the `llama.cpp` Docker image to the latest `server` tag, ensuring access
   to the most recent optimizations and features from the underlying LLM inference backend.
 
----
+______________________________________________________________________
 
 ## [v0.58.0] - 2025-02-20 - Enhanced Image Building Flexibility
 
@@ -8776,7 +8950,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - ✨ **Improved `build_image` GitHub Action:** The `build_image` action now supports specifying a custom `Dockerfile`
   path via a new `file` input, providing greater flexibility for projects with non-standard Dockerfile locations.
 
----
+______________________________________________________________________
 
 ## [v0.57.0] - 2025-02-20 - Enhanced User Authentication and Context Management
 
@@ -8796,7 +8970,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - ⚡️ **API Playground Default Authentication:** The `aihub_api` development playground now defaults to using the
   `OpenWebuiAuthHandler`, demonstrating its integration with the new authentication method.
 
----
+______________________________________________________________________
 
 ## [v0.56.0] - 2025-02-20 - Unified Core Version Update and Release Automation
 
@@ -8811,7 +8985,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🛠️ **Updated Default Remote Core Tag**: The `Makefile` now defaults to `v0.56.0` for the remote core tag, simplifying
   setup for new environments.
 
----
+______________________________________________________________________
 
 ## [v0.55.0] - 2025-02-20 - Unified AI-Hub API: OpenAI Standard for Agents and Enhanced Conversational Flows
 
@@ -8845,7 +9019,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 📂 **Logical Chat Message Grouping**: `AssistantChatMessage` and `UserChatMessage` definitions have been relocated to
   `aihub_lib/nats/events/user/content` for better logical organization.
 
----
+______________________________________________________________________
 
 ## [v0.54.0] - 2025-02-19 - Unified Authentication, API Tokens, and Chatbot Expansion
 
@@ -8923,7 +9097,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🗑️ **Outdated HTTP Client Tests**: Removed several legacy `.http` client test files from the `aihub_api` playground,
   as their functionality is now covered by the new, comprehensive `pytest` test suite.
 
----
+______________________________________________________________________
 
 ## [v0.53.0] - 2025-02-19 - Enhanced Security & Scalable Platform Foundations
 
@@ -8983,7 +9157,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧹 **General Code Cleanup:** Removed extraneous SonarLint settings from project files and performed minor import
   reordering for better code hygiene.
 
----
+______________________________________________________________________
 
 ## [v0.52.0] - 2025-02-19 - Bot Reliability and Code Clarity Improvements
 
@@ -8997,7 +9171,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧹 **Refined Conversation Entity Type Hinting:** Updated internal type hints for conversation message access, providing
   a more accurate representation of the data structure and improving code clarity.
 
----
+______________________________________________________________________
 
 ## [v0.51.0] - 2025-02-19 - Unveiling the Future of AI-Hub: Tiered Services and Enhanced Architectural Clarity
 
@@ -9018,7 +9192,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 📄 **Updated High-Level Architecture Diagram:** The architectural overview diagram now clearly illustrates the expanded
   ecosystem of AI-Hub components, including new user interfaces and integration points.
 
----
+______________________________________________________________________
 
 ## [v0.50.0] - 2025-02-19 - Smarter Slack Bot Responses in Channels
 
@@ -9034,7 +9208,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   have been added to accurately detect Slack channel messages and identify when the bot is mentioned. These utilities
   are crucial for enabling the new, more selective response behavior in Slack.
 
----
+______________________________________________________________________
 
 ## [v0.49.0] - 2025-02-19 - Enhanced Bot Architecture and Flexible Deployments
 
@@ -9078,7 +9252,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🚫 **User Tracking in Conversations**: Direct user tracking fields have been removed from the `ConversationEntity` to
   simplify the database schema and conversation management.
 
----
+______________________________________________________________________
 
 ## [v0.48.0] - 2025-02-19 - Enhanced Test Stability and Build System Updates
 
@@ -9092,7 +9266,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🐛 Improved **chatbot test stability** by significantly extending timeouts for asynchronous operations, which helps
   prevent flaky test failures related to health checks and streaming response validations.
 
----
+______________________________________________________________________
 
 ## [v0.47.0] - 2025-02-18 - Streamlined Azure Integrations and Core Refinements
 
@@ -9123,7 +9297,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🗑️ **Configuration Cleanup**: Removed the `ENVIRONMENT` variable from `BaseConfig` as part of the broader effort to
   streamline Azure infrastructure configuration.
 
----
+______________________________________________________________________
 
 ## [v0.46.0] - 2025-02-18 - Streamlined Azure Integration and Configuration
 
@@ -9151,7 +9325,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🔐 **CI/CD Azure Subscription ID Support:** Updated CI/CD workflows to pass the `AZURE_SUBSCRIPTION_ID` secret,
   ensuring alignment of testing environments with the new Azure configuration standards.
 
----
+______________________________________________________________________
 
 ## [v0.45.0] - 2025-02-17 - Internal Workflow Enhancements
 
@@ -9161,7 +9335,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   `poetry lock --no-update` for dependency management, ensuring more current dependency resolution during build
   processes.
 
----
+______________________________________________________________________
 
 ## [v0.44.0] - 2025-02-17 - Flexible Azure Bot Deployments and Development Enhancements
 
@@ -9194,7 +9368,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - ⚙️ **Optimized Cosmos DB ID Generation:** The `setup_azure_bot.py` script no longer explicitly generates object IDs
   for Cosmos DB entries, allowing the database to handle ID assignment automatically.
 
----
+______________________________________________________________________
 
 ## [v0.43.0] - 2025-02-17 - Core Tooling and Build System Enhancements
 
@@ -9205,7 +9379,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - ⚙️ **Refined Poetry Core Requirements:** Standardized and updated the `poetry-core` build system requirements across
   all `pyproject.toml` files to `>=2.0.0,<3.0.0`, enhancing build stability and future compatibility.
 
----
+______________________________________________________________________
 
 ## [v0.42.0] - 2025-02-17 - Internal API Refinement
 
@@ -9214,7 +9388,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧹 **Updated Node Post-processing**: Renamed the `process` method to `postprocess_nodes` within
   `ScoreScalerPostProcessor` for better clarity and consistency in node manipulation utilities.
 
----
+______________________________________________________________________
 
 ## [v0.41.0] - 2025-02-17 - Enhanced Azure AI Search Capabilities
 
@@ -9223,7 +9397,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - ✨ **Expanded Azure AI Search Configuration:** Introduced the ability to specify a `semantic_configuration_name` when
   creating Azure AI Search vector stores, providing more control over semantic search behavior and relevance tuning.
 
----
+______________________________________________________________________
 
 ## [v0.40.0] - 2025-02-14 - Enhanced Azure Bot Management and Multi-Tenancy
 
@@ -9254,7 +9428,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧹 **Streamlined Service Class**: The `on_error` handler and static `ADAPTER` have been removed from the general
   `Service` class, contributing to a cleaner and more focused design for bot service routing.
 
----
+______________________________________________________________________
 
 ## [v0.39.0] - 2025-02-14 - Improved RAG Agent Rejection Handling and Data Consistency
 
@@ -9271,7 +9445,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   processing across the system. This refactor includes corresponding updates to test cases to align with the new integer
   type expectation for metadata fields such as `inserted_at`, `updated_at`, and `created_at`.
 
----
+______________________________________________________________________
 
 ## [v0.38.0] - 2025-02-13 - Bot Stability and OpenAI Integration Enhancements
 
@@ -9282,7 +9456,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - ⚡️ **Enhanced OpenAI Streaming Reliability**: Added robust error handling for OpenAI chat completions, ensuring the
   stream continues smoothly even if content chunks are empty or null.
 
----
+______________________________________________________________________
 
 ## [v0.37.0] - 2025-02-13 - Enhanced RAG Context and Expanded Localization
 
@@ -9310,7 +9484,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   translations, as they are now managed centrally in `aihub_lib`.
 - 🗑️ **Outdated Test Prompts:** Removed `test` prompts from agent translation files in `aihub_agent`.
 
----
+______________________________________________________________________
 
 ## [v0.36.0] - 2025-02-13 - Streamlined Configuration & Azure Bot Service Enhancements
 
@@ -9328,7 +9502,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧪 **Updated Playground LLM Configurations**: The `main.py` playground example in `aihub_bot` has been updated to
   reflect the streamlined LLM configuration and now includes `gpt-4o-mini` as an example Azure OpenAI model.
 
----
+______________________________________________________________________
 
 ## [v0.35.0] - 2025-02-12 - Agent Intelligence Boost: Few-Shot Guarding and Workflow Optimization
 
@@ -9368,7 +9542,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 📁 **Standardized Directory Naming:** Renamed `Configs` to `configs` and `Events` to `events` within the `rag` agent
   modules for consistent lowercase naming conventions across the project.
 
----
+______________________________________________________________________
 
 ## [v0.34.0] - 2025-02-11 - Introducing `aihub_bot` and Core Project Enhancements
 
@@ -9390,7 +9564,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🗑️ **Removed Playground Environment Configuration**: The dedicated `.env` file for the bot playground testing has been
   deleted, streamlining local environment management.
 
----
+______________________________________________________________________
 
 ## [v0.33.0] - 2025-02-10 - Enhanced RAG Agent with Contextual Node Retrieval
 
@@ -9413,7 +9587,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   vector store content management, has been moved from the RAG agent's playground to `aihub_lib/aihub_lib/testing` to
   improve organization and reusability across the platform.
 
----
+______________________________________________________________________
 
 ## [v0.32.0] - 2025-02-10 - Expanded Bot Capabilities: OpenAI Integration and Refined Agent Interactions
 
@@ -9450,7 +9624,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - ⚙️ **Corrected Activity Model Type Mapping:** Adjusted the internal type mapping for `object` in activity models for
   improved data handling.
 
----
+______________________________________________________________________
 
 ## [v0.31.0] - 2025-02-07 - Enhanced Tracing Authentication
 
@@ -9460,7 +9634,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   authenticate tracing data sent to the Phoenix endpoint, enhancing the security and control over your observability
   data.
 
----
+______________________________________________________________________
 
 ## [v0.30.0] - 2025-02-07 - Improved Chat Event Handling
 
@@ -9470,7 +9644,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   `ChatService` by directly providing the full list of messages, enhancing consistency and streamlining how user message
   events are handled.
 
----
+______________________________________________________________________
 
 ## [v0.29.0] - 2025-02-07 - Enhanced Bot Connectivity and Development Workflow
 
@@ -9481,7 +9655,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 📄 **Updated Semantic PR Workflow:** Added `bots` as a recognized type in the semantic PR workflow, standardizing and
   streamlining the development process for bot-related contributions.
 
----
+______________________________________________________________________
 
 ## [v0.28.0] - 2025-02-07 - OpenAI API Emulation and Unified AI Resource Management
 
@@ -9526,7 +9700,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 💬 **Chat Service Updates**: Adjusted the internal `ChatService` in `aihub_api` to align with the new generative AI
   resource paths.
 
----
+______________________________________________________________________
 
 ## [v0.27.0] - 2025-02-06 - Introducing Chat Streaming and Enhanced API Definitions
 
@@ -9555,7 +9729,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧹 **Minor Code Enhancements**: Applied `@override` decorators for clarity and adherence to best practices, along with
   minor formatting adjustments.
 
----
+______________________________________________________________________
 
 ## [v0.26.0] - 2025-02-06 - Robust Event Management and Enhanced Data Persistence
 
@@ -9576,7 +9750,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   specifically catch `KeyNotFoundError` when retrieving events and added comprehensive logging for other exceptions,
   enhancing the store's reliability and diagnostic capabilities.
 
----
+______________________________________________________________________
 
 ## [v0.25.0] - 2025-02-06 - Enhanced Testing Framework
 
@@ -9593,7 +9767,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   (`multistep_human_in_the_loop_agent.feature`) and its associated `pytest-bdd` imports and decorators from the
   `MultistepHumanInTheLoopAgent` test suite.
 
----
+______________________________________________________________________
 
 ## [v0.24.0] - 2025-02-06 - Core Module Synchronization and CI/CD Enhancements
 
@@ -9608,7 +9782,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧹 **Streamlined CI/CD Test Workflow**: The GitHub Actions test workflow now references the `test_backend` action
   locally within the repository, improving build reliability and simplifying the continuous integration setup.
 
----
+______________________________________________________________________
 
 ## [v0.23.0] - 2025-02-05 - Empowering Chatbots with New Bot Service and Enhanced Core Reusability
 
@@ -9646,7 +9820,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🚚 **Centralized Docker Compose Files:** Moved `docker-compose.yml` and `milvus-standalone-docker-compose.yml` to the
   project root, making them accessible and standard for all microservices.
 
----
+______________________________________________________________________
 
 ## [v0.22.0] - 2025-02-04 - Internal System Alignment and Workflow Stabilization
 
@@ -9658,7 +9832,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - ⚙️ **Refined CI/CD Workflow References:** Updated GitHub Actions workflows (analyze, lint, review) to reference the
   stable `main` branch of AIHub Core actions, enhancing the reliability and consistency of automated checks.
 
----
+______________________________________________________________________
 
 ## [v0.21.0] - 2025-02-04 - CI/CD Modernization: Streamlined Workflows with Reusable Actions
 
@@ -9682,7 +9856,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧹 **Unified SonarCloud Scans:** The SonarCloud scanning process has been unified, integrating the `aihub_web` scan
   into the primary `sonarcloud-scan` job for a more cohesive analysis pipeline.
 
----
+______________________________________________________________________
 
 ## [v0.20.0] - 2025-02-03 - Introducing Few-Shot Agents and Core System Improvements
 
@@ -9724,7 +9898,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - ⬆️ **Document Intelligence Integration**: The `DocumentIntelligenceLoader` has been updated to align with the latest
   `DocumentContentFormat` enum from Azure's SDK, ensuring compatibility with updated dependency APIs.
 
----
+______________________________________________________________________
 
 ## [v0.19.0] - 2025-01-31 - Core Component Release Synchronization
 
@@ -9734,7 +9908,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   `aihub_pipeline`, have been synchronized and updated to version `v0.19.0`. This ensures all projects utilize the
   latest features and improvements from `aihub_lib`.
 
----
+______________________________________________________________________
 
 ## [v0.18.0] - 2025-01-31 - Refined Release Workflow
 
@@ -9743,7 +9917,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧹 **Improved Release Tagging Workflow:** Reordered the SSH key cleanup step in the GitHub Actions workflow to ensure
   it executes consistently after all tagging operations, enhancing the robustness of the release process.
 
----
+______________________________________________________________________
 
 ## [v0.17.0] - 2025-01-31 - Enhanced Agent Orchestration, Flexible LLM Integration, and Developer Experience Boost
 
@@ -9807,7 +9981,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧹 **Specific LLM Stop Event**: Removed the `LLMStopEvent` class, streamlining event handling as `LLMEvent` and
   `StopEvent` can be used directly or composed for similar functionality.
 
----
+______________________________________________________________________
 
 ## [v0.16.0] - 2025-01-22 - Unleashing Self-Hosted LLMs and Bolstering CI/CD
 
@@ -9846,7 +10020,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🛠️ **Refined CI/CD Script Logic:** Updated the method for iterating over directories and reordered the tag deletion
   process within the auto-tagging workflow for improved script robustness and clarity.
 
----
+______________________________________________________________________
 
 ## [v0.15.0] - 2025-01-21 - Workflow Refinements
 
@@ -9855,7 +10029,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - ⚙️ **CI/CD Workflow Stability:** Enhanced the Pytest coverage comment job within pull requests to ensure it
   exclusively triggers on pull request events, improving workflow reliability.
 
----
+______________________________________________________________________
 
 ## [v0.14.0] - 2025-01-21 - Streamlined Workflows and Robust Testing
 
@@ -9914,7 +10088,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 💡 **Playground Workflow Renaming**: Renamed `discovery_workflow` to `discoverable_workflow` for clearer semantic
   meaning, alongside renaming some associated test files and agent types.
 
----
+______________________________________________________________________
 
 ## [v0.13.0] - 2025-01-17 - Enhanced Workflow Observability and Type System Robustness
 
@@ -9930,7 +10104,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧹 **Improved Type Extraction for Fixed-Size Lists**: Refactored the internal mechanism for extracting item types from
   `FixedList` annotations, leading to more robust and explicit type handling within the workflow system.
 
----
+______________________________________________________________________
 
 ## [v0.12.0] - 2025-01-17 - Streamlined Development Environment & Setup
 
@@ -9947,7 +10121,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🗑️ **Obsolete PyCharm Run Configurations:** Removed outdated PyCharm run configuration files (`.run/*.xml`) that are
   no longer necessary following the revised development environment setup instructions.
 
----
+______________________________________________________________________
 
 ## [v0.11.0] - 2025-01-16 - Smart Agents Get Smarter: RAG Capabilities & Enhanced Developer Experience
 
@@ -9983,7 +10157,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - ⚙️ **Internal Build Process Updates**: Updated internal dependency references and `Makefile` structures to streamline
   **build and test processes** for `aihub_agent` and `aihub_api`.
 
----
+______________________________________________________________________
 
 ## [v0.10.0] - 2025-01-16 - Introducing Robust Branch Protection Policies
 
@@ -9994,7 +10168,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   prevent deletions and force pushes, require a linear commit history, and mandate pull requests with specific approval
   processes (including squashed merges), significantly enhancing codebase stability and integrity.
 
----
+______________________________________________________________________
 
 ## [v0.9.0] - 2025-01-16 - Enhanced Windows Setup Documentation
 
@@ -10003,7 +10177,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 📄 **Improved Windows Setup Guide**: Added specific instructions for installing and verifying `make` on Windows,
   streamlining the prerequisite setup for Windows users.
 
----
+______________________________________________________________________
 
 ## [v0.8.0] - 2025-01-15 - Documentation Enhancements and Version Update
 
@@ -10012,7 +10186,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 📄 **Improved Docker Setup Guide:** Added troubleshooting information and a helpful resource link in the `README.md` to
   assist users with common Docker Desktop WSL update issues during setup.
 
----
+______________________________________________________________________
 
 ## [v0.7.0] - 2025-01-15 - Enhanced Local Development Experience
 
@@ -10034,7 +10208,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - 🗑️ **Dropped the `bson` dependency** from `aihub_lib`, streamlining the library's overall dependencies.
 
----
+______________________________________________________________________
 
 ## [v0.6.0] - 2025-01-13 - Agent Workflow Refinements, New LLM Agent, and Comprehensive Testing
 
@@ -10068,7 +10242,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🗑️ **Deprecated Playground Agents and APIs:** Removed several older, individual playground agent implementations and
   their corresponding API examples, streamlining the codebase by eliminating redundant or outdated examples.
 
----
+______________________________________________________________________
 
 ## [v0.4.0] - 2025-01-07 - Improved Onboarding and Automated Code Analysis
 
@@ -10085,7 +10259,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   extensive sections on project structure, repository types, branching strategy, and a comprehensive "Getting Started"
   guide, greatly improving developer onboarding and project clarity.
 
----
+______________________________________________________________________
 
 ## [v0.2.0] - 2025-01-07 - Enhanced Context Understanding and Pipeline Alignment
 
@@ -10101,4 +10275,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - 🧹 **Dependency Management**: Transitioned **aihub_pipeline**'s dependency on **aihub_lib** from a local path to a
   direct Git repository reference, streamlining module integration and future releases.
 
----
+______________________________________________________________________

@@ -1,13 +1,15 @@
+---
 config:
   index_namespaces:
-    label: "Espaces de noms d'index"
-    help: "Liste de namespaces séparés par des virgules. Laissez vide pour récupérer de tous les namespaces."
+    label: Espaces de noms d'index
+    help: Liste de namespaces séparés par des virgules. Laissez vide pour récupérer
+      de tous les namespaces.
   retrieve_k:
-    label: "Documents à récupérer"
-    help: "Nombre de documents à récupérer du magasin de vecteurs."
+    label: Documents à récupérer
+    help: Nombre de documents à récupérer du magasin de vecteurs.
   query_mode:
-    label: "Mode de requête"
-    help: "Spécifie comment le magasin de vecteurs doit être interrogé."
+    label: Mode de requête
+    help: Spécifie comment le magasin de vecteurs doit être interrogé.
   node_types:
-    label: "Types de nœuds"
-    help: "Types de nœuds à récupérer de l'index."
+    label: Types de nœuds
+    help: Types de nœuds à récupérer de l'index.

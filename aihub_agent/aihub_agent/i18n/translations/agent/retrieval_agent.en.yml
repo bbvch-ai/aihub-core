@@ -1,3 +1,4 @@
+---
 metadata:
   name: Retrieval Agent
   description: Simplified RAG agent focused on retrieving relevant information from
@@ -7,11 +8,11 @@ config:
     label: Context Prompt
 steps:
   retrieve_nodes:
-    name: "Retrieve nodes"
-    description: "Retrieves relevant nodes from the knowledge base."
+    name: Retrieve nodes
+    description: Retrieves relevant nodes from the knowledge base.
   order_nodes:
-    name: "Order nodes by documents"
-    description: "Orders the retrieved nodes by their source documents."
+    name: Order nodes by documents
+    description: Orders the retrieved nodes by their source documents.
   stop:
-    name: "Stop step"
-    description: "Stops the agent and returns the ordered nodes as context messages."
+    name: Stop step
+    description: Stops the agent and returns the ordered nodes as context messages.

@@ -1,21 +1,20 @@
+---
 work_request_event:
-  name: "Work Request Event"
-  description: "Requests a piece of work from someone within the process"
-
+  name: Work Request Event
+  description: Requests a piece of work from someone within the process
 work_event:
-  name: "Work Event"
-  description: "Reports work done by an entity involved in process"
-
+  name: Work Event
+  description: Reports work done by an entity involved in process
 config:
   name:
-    label: "Process Name"
+    label: Process Name
   description:
-    label: "Description"
+    label: Description
   icon:
-    label: "Icon"
-    help: "Icon identifier (e.g., 'carbon:ibm-event-processing')"
+    label: Icon
+    help: Icon identifier (e.g., 'carbon:ibm-event-processing')
   process_class:
-    label: "Process Class"
+    label: Process Class
   process_id:
-    label: "Process ID"
-    help: "Unique identifier (lowercase, numbers, hyphens, underscores)"
+    label: Process ID
+    help: Unique identifier (lowercase, numbers, hyphens, underscores)

@@ -1,59 +1,38 @@
-# syntax = docker/dockerfile:1.2
-
 # Build stage
 FROM python:3.13-slim AS builder
 
-# Set environment variables
-ENV PYTHONUNBUFFERED=1 \
-    POETRY_VERSION=2.1.1 \
-    POETRY_HOME="/opt/poetry" \
-    POETRY_NO_INTERACTION=1 \
-    POETRY_VIRTUALENVS_IN_PROJECT=1 \
-    POETRY_VIRTUALENVS_CREATE=1 \
-    POETRY_CACHE_DIR=/tmp/poetry_cache \
-    PATH="/opt/poetry/bin:$PATH"
+COPY --from=ghcr.io/astral-sh/uv:0.10.4 /uv /uvx /bin/
 
-# Install system dependencies and Poetry
+ENV PYTHONUNBUFFERED=1 \
+    UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy
+
+# Install system dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     build-essential \
-    curl \
-    git \
-    make && \
-    curl -sSL https://install.python-poetry.org | python3 - --version "${POETRY_VERSION}" && \
+    git && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-COPY Makefile switch_dependencies.py pyproject.toml ./
+# Copy workspace config + relevant packages
+COPY pyproject.toml uv.lock ./
 COPY aihub_pipeline ./aihub_pipeline
 COPY aihub_lib ./aihub_lib
 
-RUN poetry install --without dev && \
-    make use-local-core && \
-    rm Makefile switch_dependencies.py pyproject.toml
-
-# Set the working directory
-WORKDIR /app/aihub_pipeline
-
-RUN poetry install && \
-    rm -rf ~/.cache/pypoetry ~/.cache/pip /tmp/poetry_cache
+# Install dependencies with cache mount
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-dev --package aihub-pipeline
 
 
-# --- Runtime stage ---
+# Runtime stage
 FROM python:3.13-slim AS runtime
 
-# Set environment variables
 ENV PYTHONUNBUFFERED=1 \
-    POETRY_VERSION=2.1.1 \
-    POETRY_HOME="/opt/poetry" \
-    POETRY_NO_INTERACTION=1 \
-    POETRY_VIRTUALENVS_IN_PROJECT=1 \
-    POETRY_VIRTUALENVS_CREATE=1 \
-    POETRY_CACHE_DIR=/tmp/poetry_cache \
     PYTHONPATH=/app \
-    PATH="/app/.venv/bin:/opt/poetry/bin:$PATH"
+    PATH="/app/.venv/bin:$PATH"
 
 # Setup users
 ARG USERNAME=user
@@ -66,7 +45,6 @@ RUN groupadd --gid "$USER_GID" "$USERNAME" && \
     apt-get update && \
     apt-get install -y --no-install-recommends \
     curl && \
-    curl -sSL https://install.python-poetry.org | python3 - --version "${POETRY_VERSION}" && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* && \
     mkdir -p /dagster_home && \
@@ -74,7 +52,6 @@ RUN groupadd --gid "$USER_GID" "$USERNAME" && \
 
 ENV DAGSTER_HOME=/dagster_home
 
-# Set the working directory
 WORKDIR /app
 
 COPY --from=builder --chown="$USERNAME:$USERNAME" /app /app

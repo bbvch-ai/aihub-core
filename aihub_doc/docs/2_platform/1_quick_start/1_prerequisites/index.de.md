@@ -276,7 +276,7 @@ Nach Abschluss der Azure-Einrichtung sollten Sie folgendes haben:
 
 Sie benötigen diese Werte während der Konfiguration des Plattform-Deployments.
 
----
+______________________________________________________________________
 
 ## Voraussetzungen für das Produktions-Deployment
 
@@ -310,7 +310,7 @@ Siehe [Netzwerkanforderungen](../../3_deployment_guide/7_network_requirements/) 
 Fehlerbehebung.
 :::
 
----
+______________________________________________________________________
 
 ## Voraussetzungen für das lokale Deployment
 
@@ -367,7 +367,7 @@ installiert automatisch eine lokale Zertifizierungsstelle (CA) in Ihrem System-T
 generierten Zertifikate von Ihrem Browser als vertrauenswürdig eingestuft werden.
 :::
 
----
+______________________________________________________________________
 
 ## Nächste Schritte
 

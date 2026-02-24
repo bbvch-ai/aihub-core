@@ -54,6 +54,7 @@ class MockCredential:
 @pytest.fixture(autouse=True)
 def mock_azure_credential(monkeypatch):
     """Mock the DefaultAzureCredential to prevent actual Azure authentication."""
+    monkeypatch.setenv("AUTH_IDENTITY_PROVIDER", "azure")
     monkeypatch.setattr(
         "aihub_lib.auth.identity.AzureIdentityProvider.AzureGraphService.AsyncDefaultAzureCredential",
         lambda: MockCredential(),

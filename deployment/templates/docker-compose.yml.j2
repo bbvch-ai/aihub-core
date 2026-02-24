@@ -187,6 +187,11 @@ services:
     depends_on:
       seaweedfs-master:
         condition: service_healthy
+    labels:
+      healthcheck.enabled: "true"
+      healthcheck.protocol: "http"
+      healthcheck.port: "8080"
+      healthcheck.path: "/status"
     logging:
       driver: json-file
       options:
@@ -308,7 +313,7 @@ services:
   seaweedfs-init:
     container_name: seaweedfs-init
     image: {{ global.registry_prefix }}{{ image_tags.aws_cli }}
-    restart: no
+    restart: "no"
     depends_on:
       seaweedfs-s3:
         condition: service_healthy
@@ -443,7 +448,7 @@ services:
     build:
       context: ./configs/etcd
       dockerfile: init.Dockerfile
-    restart: no
+    restart: "no"
     depends_on:
       etcd:
         condition: service_started
@@ -694,6 +699,13 @@ services:
     depends_on:
       postgres-ferretdb:
         condition: service_healthy
+    healthcheck:
+      test: [ "NONE" ]
+    labels:
+      healthcheck.enabled: "true"
+      healthcheck.protocol: "http"
+      healthcheck.port: "8088"
+      healthcheck.path: "/debug/livez"
     logging:
       driver: json-file
       options:
@@ -969,6 +981,11 @@ services:
       - "4222:4222"
       - "8222:8222"
     {%- endif %}
+    labels:
+      healthcheck.enabled: "true"
+      healthcheck.protocol: "http"
+      healthcheck.port: "8222"
+      healthcheck.path: "/healthz"
     logging:
       driver: json-file
       options:
@@ -1264,6 +1281,11 @@ services:
     container_name: presidio-analyzer
     image: {{ global.registry_prefix }}{{ image_tags.presidio_analyzer }}
     restart: always
+    labels:
+      healthcheck.enabled: "true"
+      healthcheck.protocol: "http"
+      healthcheck.port: "3000"
+      healthcheck.path: "/health"
     logging:
       driver: json-file
       options:
@@ -1276,6 +1298,11 @@ services:
     container_name: presidio-anonymizer
     image: {{ global.registry_prefix }}{{ image_tags.presidio_anonymizer }}
     restart: always
+    labels:
+      healthcheck.enabled: "true"
+      healthcheck.protocol: "http"
+      healthcheck.port: "3000"
+      healthcheck.path: "/health"
     logging:
       driver: json-file
       options:
@@ -1374,6 +1401,12 @@ services:
     environment:
       JUPYTER_ENABLE_LAB: yes
       JUPYTER_TOKEN: ${JUPYTER_TOKEN}
+    healthcheck:
+      test: ["CMD", "/etc/jupyter/docker_healthcheck.py"]
+      interval: 15s
+      timeout: 3s
+      start_period: 10s
+      retries: 3
     logging:
       driver: json-file
       options:
@@ -1523,6 +1556,11 @@ services:
       - langfuse-web
     healthcheck:
       test: [ "NONE" ]
+    labels:
+      healthcheck.enabled: "true"
+      healthcheck.protocol: "http"
+      healthcheck.port: "13133"
+      healthcheck.path: "/"
     logging:
       driver: json-file
       options:

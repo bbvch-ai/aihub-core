@@ -344,7 +344,7 @@ Sie können die Konfigurationswerte in Ihrer `trigger.py` oder beim Bau des Agen
 async def main():
     runner = AgentRunner(
         agent_type=MyCustomAgent,
-        default_agent_config=MyCustomAgentConfig(
+        agent_config=MyCustomAgentConfig(
             agent_class=MyCustomAgent.__name__,
             agent_id="my_custom_agent",
             name=LocaleString(en="My Custom Agent"),
@@ -397,7 +397,7 @@ async def main():
     )
     
     # Create test runner
-    runner = AgentTestRunner(agent_type=MyAgent, default_agent_config=config)
+    runner = AgentTestRunner(agent_type=MyAgent, agent_config=config)
     
     # Run the agent with a test message
     async with runner.test_run() as topic:

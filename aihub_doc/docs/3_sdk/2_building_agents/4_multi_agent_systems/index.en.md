@@ -32,7 +32,7 @@ The AITL pattern is managed by a trio of events that orchestrate the delegation,
 The `AgentInTheLoop` helper class simplifies this process by providing a convenient `invoke` method to create the
 request event.
 
----
+______________________________________________________________________
 
 ## Core Pattern: Orchestrator and Worker
 
