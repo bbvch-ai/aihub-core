@@ -89,11 +89,30 @@ class MilvusVectorStoreResource(ConfigurableResource[MilvusVectorStore]):
 
     def create_resource(self, context: InitResourceContext) -> MilvusVectorStore:
         client = MilvusClient(uri=self.uri, token=self.token)
-        return create_milvus_vector_store(
-            client=client,
-            collection_name=self.collection_name,
-            embedding_vector_dimension=self.embedding_vector_dimension,
-            index_type=self.index_type,
-            uri=self.uri,
-            token=self.token,
-        )
+
+        # pymilvus 2.6+ creates an AsyncMilvusClient during MilvusVectorStore init,
+        # which requires asyncio.get_running_loop(). Dagster's resource init is
+        # synchronous, so we run initialization inside a loop to satisfy that.
+        def _create() -> MilvusVectorStore:
+            return create_milvus_vector_store(
+                client=client,
+                collection_name=self.collection_name,
+                embedding_vector_dimension=self.embedding_vector_dimension,
+                index_type=self.index_type,
+                uri=self.uri,
+                token=self.token,
+            )
+
+        import asyncio
+
+        try:
+            asyncio.get_running_loop()
+            return _create()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
+            async def _init_with_loop() -> MilvusVectorStore:
+                return _create()
+
+            return loop.run_until_complete(_init_with_loop())
