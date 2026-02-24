@@ -2,7 +2,6 @@ from typing import Annotated
 
 from pydantic import Field, SecretStr, computed_field
 
-from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.settings.EnvironmentSettings import EnvironmentSettings
 
 
@@ -13,7 +12,6 @@ class SuperuserSettings(EnvironmentSettings):
 
     model_config = EnvironmentSettings.create_settings_config("SUPERUSER_")
 
-    ENABLED: Annotated[bool, Field(description="Whether the superuser is enabled.")] = True
     NAME: Annotated[str, Field(description="The user's displayed name.")]
     EMAIL: Annotated[
         str,
@@ -28,17 +26,9 @@ class SuperuserSettings(EnvironmentSettings):
         ),
     ]
     ROLE: Annotated[str, Field(description="The role the superuser possesses.")] = "AIHubSuperuser"
-    TOKEN: Annotated[SecretStr, Field(description="The superuser's access token.", min_length=64)]
+    TOKEN: Annotated[SecretStr, Field(description="The superuser's access token.")]
 
     @computed_field
     @property
     def ROLES(self) -> list[str]:
         return [self.ROLE]
-
-    def get_user_identity(self) -> UserIdentity:
-        return UserIdentity(
-            name=self.NAME,
-            email=self.EMAIL,
-            id=self.OID,
-            roles=self.ROLES,
-        )

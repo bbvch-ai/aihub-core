@@ -1,9 +1,11 @@
 import asyncio
 from collections.abc import AsyncGenerator
 
+from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.nats.events import ExceptionEvent
+from aihub_lib.persistence.user.UserEntity import UserEntity
 from aihub_lib.routes.chat.ChatService import ChatService, JsonResources, StreamingResources
 from bson import ObjectId
 from llama_index.core.base.llms.types import ChatMessage, ContentBlock, ImageBlock, MessageRole, TextBlock
@@ -137,12 +139,9 @@ class AgentCompletionHandler(CompletionHandler):
         chat_messages: list[ChatMessage] = [
             AgentCompletionHandler._message_to_chat_message(message) for message in persisted_messages
         ]
-        user = UserIdentity(
-            name=turn_context.activity.from_property.name,
-            email=turn_context.activity.from_property.name,
-            id=turn_context.activity.from_property.id,
-            roles=[],
-        )
+        user_entity = UserEntity.by_email(turn_context.activity.from_property.name)
+        tenant = AuthHandler.get_default_tenant_for_user(user_entity.id)
+        user = UserIdentity.from_user_entity(user_entity, tenant)
         if stream:
             return await ChatService.start_stream_chat_interaction(
                 user=user,

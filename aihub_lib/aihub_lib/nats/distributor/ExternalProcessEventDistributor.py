@@ -54,7 +54,6 @@ class ExternalProcessEventDistributor:
         event = external_event.event.model_copy(deep=True)
         event.event_id = str(ObjectId())
         event.submitted_by = user.model_copy()
-        event.submitted_by.profile_image = None
         topic_manager = ProcessWalkthroughTopicManager(
             process_walkthrough_id=external_event.process_walkthrough_id,
             process_class=external_event.process_class,

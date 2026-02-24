@@ -8,12 +8,11 @@ import requests
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
     DangerousDevelopmentOnlyAuthHandler,
 )
-from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
-    DangerousDevelopmentOnlyIdentityProvider,
-)
 from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
+from aihub_lib.persistence.messaging.entities.ThreadEntity import ThreadEntity
+from aihub_lib.persistence.utils import str_to_object_id
 from aihub_lib.routes.health.HealthController import HealthController
 from aihub_lib.testing.route_adapter.ASGIAdapter import ASGIAdapter
 from asgi_lifespan import LifespanManager
@@ -102,16 +101,19 @@ def patch_requests_adapter(monkeypatch, test_runner):
 
 @pytest.fixture(autouse=True)
 def cleanup_conversation():
-    """Clean up conversation state before each test"""
+    """Clean up conversation and thread state before each test."""
+    thread_id = str(str_to_object_id(CONVERSATION_ID))
     # Clean up before test (connection may not exist yet)
     try:
         ConversationEntity.objects(conversation_id=CONVERSATION_ID).delete()
+        ThreadEntity.objects(id=thread_id).delete()
     except Exception:
         pass
     yield
     # Clean up after test (connection may be closed)
     try:
         ConversationEntity.objects(conversation_id=CONVERSATION_ID).delete()
+        ThreadEntity.objects(id=thread_id).delete()
     except Exception:
         pass
 
@@ -121,7 +123,7 @@ async def test_runner(captured_responses):
     runner = SimulatedAgentBotTestRunner(agent_class=AGENT_CLASS, agent_id=AGENT_ID)
     runner.with_simple_chunk_events()
     runner.responses = captured_responses  # Wire captured responses to test_runner
-    auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
+    auth = DangerousDevelopmentOnlyAuthHandler()
     runner.mount(
         HealthController(auth=auth).get_health(), AgentChatController(auth=auth).completions_json().completions_stream()
     )

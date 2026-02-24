@@ -31,9 +31,9 @@ class UsageLimits:
     def __init__(self, redis: Redis):
         self._redis = redis
 
-    def _store_for_user(self, user_id: str) -> RateLimitStore:
-        """Create a RateLimitStore scoped to a specific user."""
-        return RateLimitStore(self._redis, user_id)
+    def _store_for_user(self, user_id: str, tenant_id: str) -> RateLimitStore:
+        """Create a RateLimitStore scoped to a specific user and tenant."""
+        return RateLimitStore(self._redis, user_id, tenant_id)
 
     @staticmethod
     def _pattern_matches(pattern: str, concrete_path: str) -> bool:
@@ -85,6 +85,7 @@ class UsageLimits:
     @trace_fn
     def get_effective_limits_for_roles(
         role_names: list[str],
+        tenant_id: str,
         resource_path: str | None = None,
     ) -> list[RoleUsageLimit]:
         """
@@ -95,7 +96,7 @@ class UsageLimits:
         """
         from aihub_lib.persistence.access.entities.RoleEntity import RoleEntity
 
-        all_role_limits = RoleEntity.get_usage_limits_for_roles(role_names)
+        all_role_limits = RoleEntity.get_usage_limits_for_roles(role_names, tenant_id)
 
         # A role without limits means unlimited access — if any role grants unlimited, the user is unlimited
         if not all_role_limits or any(not role_limits for role_limits in all_role_limits):
@@ -142,10 +143,11 @@ class UsageLimits:
     @trace_fn
     def get_effective_limit_for_roles(
         role_names: list[str],
+        tenant_id: str,
         resource_path: str | None = None,
     ) -> RoleUsageLimit | None:
         """Return the most specific matching limit across all roles."""
-        limits = UsageLimits.get_effective_limits_for_roles(role_names, resource_path)
+        limits = UsageLimits.get_effective_limits_for_roles(role_names, tenant_id, resource_path)
         if not limits:
             return None
         return max(limits, key=lambda effective_limit: UsageLimits._specificity(effective_limit.pattern))
@@ -155,14 +157,15 @@ class UsageLimits:
         self,
         user_id: str,
         role_names: list[str],
+        tenant_id: str,
         resource_path: str | None = None,
     ) -> UsageStatus:
         """Get current usage status without incrementing any counter."""
-        effective_limits = self.get_effective_limits_for_roles(role_names, resource_path)
+        effective_limits = self.get_effective_limits_for_roles(role_names, tenant_id, resource_path)
         if not effective_limits:
             return UsageStatus(limits=[], is_exceeded=False)
 
-        store = self._store_for_user(user_id)
+        store = self._store_for_user(user_id, tenant_id)
         counters: list[CounterState] = await store.get_counts(effective_limits)
 
         limit_statuses = [
@@ -179,6 +182,7 @@ class UsageLimits:
         self,
         user_id: str,
         role_names: list[str],
+        tenant_id: str,
         resource_path: str | None = None,
     ) -> UsageStatus:
         """Atomically check all usage limits and increment all counters if none exceeded.
@@ -186,11 +190,11 @@ class UsageLimits:
         Uses a single Lua script so the check-then-increment is atomic within Redis,
         preventing race conditions under concurrent requests.
         """
-        effective_limits = self.get_effective_limits_for_roles(role_names, resource_path)
+        effective_limits = self.get_effective_limits_for_roles(role_names, tenant_id, resource_path)
         if not effective_limits:
             return UsageStatus(limits=[], is_exceeded=False)
 
-        store = self._store_for_user(user_id)
+        store = self._store_for_user(user_id, tenant_id)
         incremented, counters = await store.check_and_increment(effective_limits)
 
         limit_statuses = [
@@ -222,7 +226,8 @@ class UsageLimits:
         from aihub_lib.auth.usage.UsageLimitMessages import UsageLimitMessages
 
         resource_path = f"{USER_SCOPE}.{resource_type}.{resource_class}.{resource_id}"
-        usage_status = await self.check_and_increment(user.id, user.roles, resource_path=resource_path)
+        tenant_id = user.acting_within_tenant.id
+        usage_status = await self.check_and_increment(user.id, user.roles, tenant_id, resource_path=resource_path)
         if usage_status.is_exceeded:
             effective_locale = locale or LocaleHandler.DEFAULT_LOCALE
             raise HTTPException(

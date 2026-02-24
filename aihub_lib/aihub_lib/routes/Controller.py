@@ -10,9 +10,6 @@ from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
     DangerousDevelopmentOnlyAuthHandler,
 )
-from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
-    DangerousDevelopmentOnlyIdentityProvider,
-)
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.i18n.LocaleString import LocaleString
@@ -64,9 +61,7 @@ class Controller(abc.ABC):
 
     def __init__(self, *, auth: AuthHandler, route: str, additionally_required_permission: str | None = None):
         self.base_route: str = route
-        self.auth: AuthHandler = auth or DangerousDevelopmentOnlyAuthHandler(
-            identity_provider=DangerousDevelopmentOnlyIdentityProvider()
-        )
+        self.auth: AuthHandler = auth or DangerousDevelopmentOnlyAuthHandler()
         self.router: APIRouter = APIRouter()
         self.additionally_required_permission = additionally_required_permission
         self._runner: Runner | None = None

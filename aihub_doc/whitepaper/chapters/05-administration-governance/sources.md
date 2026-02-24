@@ -15,7 +15,7 @@
 2_platform/16_multi_tenancy/1_concept/index.en.md 2_platform/16_multi_tenancy/2_creating_tenants/index.en.md
 2_platform/16_multi_tenancy/3_user_management/index.en.md 2_platform/16_multi_tenancy/4_access_control/index.en.md
 2_platform/20_security/index.en.md 2_platform/20_security/1_authentication/index.en.md
-3_sdk/5_advanced_topics/5_rbac/index.en.md 6_code_deep_dive/aihub_lib/aihub_lib/auth/index.en.md
+2_platform/16_multi_tenancy/4_access_control/index.en.md 6_code_deep_dive/aihub_lib/aihub_lib/auth/index.en.md
 
 # Auditing and Observability
 

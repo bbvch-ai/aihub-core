@@ -1,29 +1,29 @@
 ---
-title: EU KI-Gesetz
-source_sha: 114b474a9c68300b82c19598ad4d4915d0bcd0379353b078e5950deaf7f4f73a
+title: EU-Gesetz über künstliche Intelligenz
+source_sha: 778fbc86e510247d6237db2e0b9341e6b7ca3bd48d0eebfe43645473009425be
 ---
 
-# EU KI-Gesetz
+# EU-Gesetz über künstliche Intelligenz
 
-Das EU KI-Gesetz legt Anforderungen für KI-Systeme basierend auf ihrem Risikograd fest. Das Gesetz wurde am 12. Juli
-2024 im Amtsblatt veröffentlicht und trat am 1. August 2024 in Kraft.
+Das EU-Gesetz über künstliche Intelligenz legt Anforderungen für KI-Systeme basierend auf ihrem Risikograd fest. Das
+Gesetz wurde am 12. Juli 2024 im Amtsblatt veröffentlicht und trat am 1. August 2024 in Kraft.
 
-## Umsetzungszeitplan
+## Zeitplan für die Umsetzung
 
 Das Gesetz wird schrittweise umgesetzt:
 
 - Verbotene Praktiken: 2. Februar 2025
-- Allzweck-KI-Modelle: 2. August 2025
-- Hochrisiko-Systeme: 2. August 2026
-- Hochrisiko-Systeme in regulierten Produkten: 2. August 2027
+- KI-Modelle für allgemeine Zwecke: 2. August 2025
+- Hochrisikosysteme: 2. August 2026
+- Hochrisikosysteme in regulierten Produkten: 2. August 2027
 
-Dokumentation zu den Compliance-Maßnahmen der Plattform wird hinzugefügt, sobald die Umsetzungsanforderungen klar sind.
+Die Dokumentation zu den Konformitätsmaßnahmen der Plattform wird ergänzt, sobald die Umsetzungsanforderungen klar sind.
 
 ## Risikoklassifizierung
 
 Das KI-Gesetz klassifiziert Systeme nach Risiko:
 
-- **Verboten**: Manipulative KI, Social Scoring, biometrische Echtzeit-Identifikation (mit Ausnahmen)
+- **Verboten**: Manipulative KI, Social Scoring, biometrische Echtzeit-Identifizierung (mit Ausnahmen)
 - **Hochrisiko**: Systeme in sensiblen Bereichen (Beschäftigung, Bildung, Strafverfolgung, kritische Infrastruktur)
 - **Begrenztes Risiko**: Chatbots und Systeme, die Transparenz erfordern
 - **Minimales Risiko**: Die meisten anderen KI-Anwendungen
@@ -31,14 +31,14 @@ Das KI-Gesetz klassifiziert Systeme nach Risiko:
 Die meisten Anwendungsfälle der Plattform fallen in die Kategorien begrenzten oder minimalen Risikos, wobei spezifische
 Implementierungen variieren können.
 
-## Plattform-Überlegungen
+## Überlegungen zur Plattform
 
 Die Plattform bietet technische Maßnahmen, die die Compliance unterstützen:
 
-- Audit-Logging und Rückverfolgbarkeit
+- Audit-Protokollierung und Nachverfolgbarkeit
 - Human-in-the-Loop-Fähigkeiten
 - Langfuse-Tracing für Transparenz
-- Quellenzuordnung für KI-Ausgaben
+- Quellenzuordnung für KI-Outputs
 - Konfigurierbare Zugriffssteuerungen
 
-Detaillierte Compliance-Leitlinien werden hinzugefügt, sobald sich die regulatorischen Anforderungen klären.
+Detaillierte Compliance-Leitlinien werden ergänzt, sobald sich die regulatorischen Anforderungen klären.

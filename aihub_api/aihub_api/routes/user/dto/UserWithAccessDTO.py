@@ -2,8 +2,10 @@ from typing import TYPE_CHECKING, Annotated
 
 from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.auth.access.AccessLevel import AccessLevel
+from aihub_lib.auth.identity.TenantIdentity import TenantIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.persistence.access.entities.RoleEntity import RoleEntity
+from aihub_lib.persistence.access.entities.UserTenantRoleEntity import UserTenantRoleEntity
 from aihub_lib.persistence.user.UserEntity import UserEntity
 from nats.aio.client import Client as NATS
 from pydantic import BaseModel, Field
@@ -27,20 +29,25 @@ class Access(BaseModel):
 
 
 class UserWithAccessDTO(UserDTO):
+    roles: Annotated[list[str], Field(description="List of roles assigned to the user in the current tenant")] = []
     access: Annotated[Access, Field(description="User access levels")]
 
     @classmethod
-    async def from_user_entity(cls, user_entity: UserEntity, runner: "Runner", nc: NATS, t: LocaleHandler):
+    async def from_user_entity(
+        cls, user_entity: UserEntity, tenant: TenantIdentity, runner: "Runner", nc: NATS, t: LocaleHandler
+    ):
         from aihub_api.routes.agent.AgentService import AgentService
         from aihub_api.routes.process.ProcessService import ProcessService
 
         dashboard_data = user_entity.dashboard.to_mongo()
         dashboard_dto = DashboardDTO(**dashboard_data)
-        valid_roles = RoleEntity.filter_existing_roles(user_entity.roles)
 
-        access_rules = RoleEntity.get_access_rules_for_roles(user_entity.roles)
+        user_roles = UserTenantRoleEntity.get_roles_for_user_in_tenant(user_entity.id, tenant.id)
+        valid_roles = RoleEntity.filter_existing_roles(user_roles, tenant.id)
 
-        access_checker = AccessChecker(list(access_rules))
+        access_rules = RoleEntity.get_access_rules_for_roles(user_roles, tenant.id)
+
+        access_checker = AccessChecker(list(access_rules), tenant_access_rules=tenant.access_rules)
         access = Access()
 
         for controller in runner.controllers:

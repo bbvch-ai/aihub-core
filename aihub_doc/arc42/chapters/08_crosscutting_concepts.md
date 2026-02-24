@@ -23,9 +23,9 @@ standard HTTP requests and `authenticate_token` for WebSocket connections where 
 payload rather than in HTTP headers. Concrete handlers extract and validate credentials, then delegate to an
 `IdentityProvider` to resolve the full `UserIdentity` (ID, name, email, roles, profile image).
 
-`OAuth2AuthHandler` validates Azure AD JWT tokens by fetching JWKS keys (cached 6
-hours), verifying the RS256 signature, and checking audience and issuer claims. `TokenAuthHandler` validates API access
-tokens (format: `{ObjectId}.{128-char-random}`) against MongoDB with constant-time comparison and expiry checking.
+`OAuth2AuthHandler` validates Azure AD JWT tokens by fetching JWKS keys (cached 6 hours), verifying the RS256 signature,
+and checking audience and issuer claims. `TokenAuthHandler` validates API access tokens (format:
+`{ObjectId}.{128-char-random}`) against MongoDB with constant-time comparison and expiry checking.
 `OpenWebuiAuthHandler` verifies HMAC-SHA256 signatures on OpenWebUI's custom headers (`X-OpenWebUI-User-Name`,
 `X-OpenWebUI-User-Email`, `X-OpenWebUI-Signature`) before delegating to a wrapped inner handler. `SuperuserAuthHandler`
 compares bearer tokens against a hardcoded environment variable for service-to-service authentication.
@@ -96,11 +96,11 @@ suppresses all tracing for a function and its sub-calls (used for health checks 
 suppression to propagate through the call tree.
 
 Trace context propagation across NATS boundaries uses W3C Trace Context headers. `NATSTraceContextPropagator` injects
-the current span context into NATS message headers on publish and extracts it on receive. Every `JSPublisher.publish_event()`
-call creates a span with semantic messaging attributes (`messaging.system`, `messaging.destination`,
-`messaging.operation`) and injects trace context into the message headers. On the subscriber side, `JSSubscriber`
-extracts the trace context before dispatching to the handler, creating a continuous trace from HTTP request through NATS
-to agent step execution.
+the current span context into NATS message headers on publish and extracts it on receive. Every
+`JSPublisher.publish_event()` call creates a span with semantic messaging attributes (`messaging.system`,
+`messaging.destination`, `messaging.operation`) and injects trace context into the message headers. On the subscriber
+side, `JSSubscriber` extracts the trace context before dispatching to the handler, creating a continuous trace from HTTP
+request through NATS to agent step execution.
 
 The OTEL Collector serves as the central telemetry hub. It receives traces from all instrumented services via OTLP (gRPC
 on port 4317, HTTP on port 4318) and routes them through two processing pipelines. A noise filter drops health check

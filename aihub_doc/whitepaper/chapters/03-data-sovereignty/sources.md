@@ -28,7 +28,7 @@
 
 2_platform/11_access_management/index.en.md 2_platform/11_access_management/2_permissions/index.en.md
 2_platform/16_multi_tenancy/index.en.md 2_platform/16_multi_tenancy/1_concept/index.en.md
-2_platform/16_multi_tenancy/4_access_control/index.en.md 3_sdk/5_advanced_topics/5_rbac/index.en.md
+2_platform/16_multi_tenancy/4_access_control/index.en.md 2_platform/16_multi_tenancy/4_access_control/index.en.md
 6_code_deep_dive/aihub_agent/.venv/lib/python3.13/site-packages/aihub_lib/auth/index.en.md
 
 # Auditing, Transparency and Observability

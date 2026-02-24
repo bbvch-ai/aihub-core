@@ -1,6 +1,4 @@
-from __future__ import annotations
-
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from bson import ObjectId
 from mongoengine import DictField, Document, ListField, StringField
@@ -18,6 +16,7 @@ class PersistedProcessEventEntity(Document):
         "strict": False,
         "indexes": [
             {"fields": ["process_class", "process_id", "process_walkthrough_id", "event_parents"]},
+            {"fields": ["process_class", "process_id"]},
             {"fields": ["event_data.forms._event_name"]},
         ],
     }
@@ -32,7 +31,7 @@ class PersistedProcessEventEntity(Document):
 
     @classmethod
     @trace_fn
-    def persist_event(cls, event: BaseEvent, topic: ProcessInstanceTopic, db: str):
+    def persist_event(cls, event: "BaseEvent", topic: "ProcessInstanceTopic", db: str) -> None:
         persisted_entity = cls(
             id=ObjectId(),
             process_class=topic.process_class,
@@ -51,7 +50,7 @@ class PersistedProcessEventEntity(Document):
     @trace_fn
     def get_open_human_work_requests(
         cls, process_class: str, process_id: str, process_walkthrough_id: str
-    ) -> list[PersistedProcessEventEntity]:
+    ) -> list[Self]:
         """
         Finds unanswered human work requests for a given process walkthrough.
 
@@ -122,7 +121,7 @@ class PersistedProcessEventEntity(Document):
     @trace_fn
     def find_request_for_work_event(
         cls, process_class: str, process_id: str, process_walkthrough_id: str, event_name: str
-    ) -> PersistedProcessEventEntity | None:
+    ) -> Self | None:
         """
         Finds the specific HumanWorkRequestEvent that corresponds to a given work event name
         within a process walkthrough.
