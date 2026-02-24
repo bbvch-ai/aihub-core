@@ -88,7 +88,7 @@ class S3Manager:
             objects: list[dict[str, str]] = [{"Key": obj["Key"]} for obj in page.get("Contents", [])]
             for i in range(0, len(objects), _S3_DELETE_BATCH_SIZE):
                 batch = objects[i : i + _S3_DELETE_BATCH_SIZE]
-                self._client.delete_objects(Bucket=self._bucket, Delete={"Objects": batch})
+                self._client.delete_objects(Bucket=self._bucket, Delete={"Objects": batch})  # type: ignore[typeddict-item]
         logger.info("Deleted s3://%s/%s", self._bucket, prefix)
 
     def resolve_timestamp(self, timestamp: str) -> str:

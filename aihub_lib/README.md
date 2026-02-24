@@ -555,5 +555,3 @@ errors:
   unauthorized: "Unauthorized access"
   not_found: "Resource not found"
 ```
-
-

@@ -15,8 +15,6 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict
-
 import boto3
 import docker
 import pytest
@@ -25,6 +23,7 @@ from botocore.config import Config as BotoConfig
 from dagster import DagsterRunStatus, RunConfig
 from dagster_graphql import DagsterGraphQLClient
 from dotenv import dotenv_values
+from pydantic import BaseModel, ConfigDict
 
 from aihub_backup.dagster.config import BackupConfig, RestoreConfig, SingleServiceRestoreConfig
 from aihub_backup.models import BACKUP_SERVICES
@@ -678,9 +677,9 @@ class TestOfflineBackup:
         ]
         for key in expected_keys:
             assert _s3_key_exists(s3_client, s3_bucket, key), f"Missing offline artifact: {key}"
-        assert _s3_prefix_has_objects(
-            s3_client, s3_bucket, f"{offline_backup.timestamp}/milvus_backup_"
-        ), "Missing offline milvus backup"
+        assert _s3_prefix_has_objects(s3_client, s3_bucket, f"{offline_backup.timestamp}/milvus_backup_"), (
+            "Missing offline milvus backup"
+        )
 
 
 # ===========================================================================

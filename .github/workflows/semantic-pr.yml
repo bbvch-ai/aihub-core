@@ -38,6 +38,7 @@ jobs:
             rag
             tracing
             workflows
+            backup
           types: |
             fix
             feat

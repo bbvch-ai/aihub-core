@@ -126,7 +126,7 @@ check_python_workspace() {
     license_data=$(uv run pip-licenses \
         --from=mixed \
         --format=json \
-        --ignore-packages pip pip-licenses setuptools wheel tomli prettytable wcwidth aihub-core aihub-agent aihub-api aihub-bot aihub-pipeline aihub-process \
+        --ignore-packages pip pip-licenses setuptools wheel tomli prettytable wcwidth aihub-core aihub-agent aihub-api aihub-bot aihub-pipeline aihub-process aihub-backup \
         2>"$license_stderr") || {
         echo -e "${RED}Failed to run pip-licenses${NC}"
         echo "Error output: $(cat "$license_stderr")"

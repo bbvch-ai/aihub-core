@@ -159,7 +159,9 @@ def test_backup_accepts_hyphenated_timestamp(tmp_dir: Path, ch_handler: ClickHou
     ch_handler.backup("2026-02-19_02-00-00_online", "2026-02-19_02-00-00_online")
 
 
-def test_restore_skips_invalid_table_name(tmp_dir: Path, ch_handler: ClickHouseHandler, caplog: pytest.LogCaptureFixture) -> None:
+def test_restore_skips_invalid_table_name(
+    tmp_dir: Path, ch_handler: ClickHouseHandler, caplog: pytest.LogCaptureFixture
+) -> None:
     """Tables with invalid names returned by system.tables are skipped with a warning."""
     import shutil
     import tarfile
@@ -190,9 +192,7 @@ def test_restore_skips_invalid_table_name(tmp_dir: Path, ch_handler: ClickHouseH
 
     assert any("Skipping table with invalid name" in r.message for r in caplog.records)
     # Only 1 DROP (valid_table), the invalid name is skipped
-    drop_calls = [
-        c for c in docker.exec_in_container.call_args_list if any("DROP TABLE" in str(a) for a in c[0])
-    ]
+    drop_calls = [c for c in docker.exec_in_container.call_args_list if any("DROP TABLE" in str(a) for a in c[0])]
     assert len(drop_calls) == 1
 
 

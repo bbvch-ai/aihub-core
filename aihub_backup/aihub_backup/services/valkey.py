@@ -92,7 +92,7 @@ class ValkeyHandler(BackupHandler):
             shutil.copy2(rdb_file, aof_dir / "appendonly.aof.1.base.rdb")
             (aof_dir / "appendonly.aof.1.incr.aof").touch()
             (aof_dir / "appendonly.aof.manifest").write_text(
-                "file appendonly.aof.1.base.rdb seq 1 type b\n" "file appendonly.aof.1.incr.aof seq 1 type i\n"
+                "file appendonly.aof.1.base.rdb seq 1 type b\nfile appendonly.aof.1.incr.aof seq 1 type i\n"
             )
 
             logger.info("Copying restored data into container...")
