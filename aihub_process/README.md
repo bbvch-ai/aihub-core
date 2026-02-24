@@ -551,26 +551,4 @@ def request_human_decision(
     )
 ```
 
-### 📖 Glossary of Process-Specific Terms
 
-This glossary defines terms, concepts, and technologies that have specific meaning within the `aihub_process` scope,
-building upon the core AI-Hub terminology.
-
-| Term                       | Definition                                                                                                                                                                                          |
-| :------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Agentic Process**        | A dispatchable workflow that orchestrates high-level business processes through collaboration between agents, humans, and programs. The core abstraction that inherits from `DispatchableWorkflow`. |
-| **Process Step**           | A method decorated with `@process_step()` that defines a single transformation and delegation point in a process. Steps consume work from one entity and delegate work to another.                  |
-| **Entity Delegation**      | The pattern where process steps delegate work to specific entities (agents, humans, or programs) and wait for results. Core to the process orchestration model.                                     |
-| **Work Event**             | Events that signal successful completion of work by entities. Include `AgentWorkEvent`, `HumanWorkEvent`, `ProcessWorkEvent`, and `ProgramWorkEvent`.                                               |
-| **Work Request Event**     | Events that delegate work to specific entities. Include `AgentWorkRequestEvent`, `HumanWorkRequestEvent`, and `ProgramWorkRequestEvent`.                                                            |
-| **Process Configuration**  | A `ProcessConfig` object that defines process metadata including ID, name, and description for process identification and discovery.                                                                |
-| **Process Runner**         | Production infrastructure (`ProcessRunner`) for running processes in live environments with NATS integration and event handling.                                                                    |
-| **Process Test Runner**    | Testing infrastructure (`ProcessTestRunner`) that provides a sandboxed environment for testing processes with event observation and assertion capabilities.                                         |
-| **Entity Delegator**       | Abstract base classes (`Agent`, `Human`, `Program`, `Process`) that define input/output configurations for work delegation to specific entity types.                                                |
-| **Process Discovery**      | System for discovering available processes and their input/output specifications through `ProcessDiscoveryResponseEvent` broadcasts.                                                                |
-| **Process Walkthrough**    | A single execution instance of a process, tracked through a unique walkthrough ID for event correlation and monitoring.                                                                             |
-| **Process Dispatcher**     | Event dispatching system that routes work events to the appropriate process steps based on event types and delegation configurations.                                                               |
-| **Collaborative Workflow** | The fundamental design pattern where processes orchestrate work between different actor types (agents, humans, programs) rather than executing work directly.                                       |
-| **Work Transformation**    | The light data processing that occurs within process steps to transform the output of one entity into valid input for the next entity.                                                              |
-| **Process Annotation**     | Metadata attached to process steps via the `@process_step()` decorator, including step names, descriptions, and entity delegation configurations.                                                   |
-| **Minimal Process**        | Simple, focused process examples in the playground that demonstrate specific patterns (agent-only, human-only, fan-out, etc.) for learning and reference.                                           |
