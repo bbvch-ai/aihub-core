@@ -1,6 +1,6 @@
 ---
 name: Build and Release Dagster
-run-name: "Build Dagster — ${{ github.event.client_payload.release_version || github.event.inputs.release_version || 'manual' }}"
+run-name: "Build Dagster - ${{ github.event.client_payload.release_version || github.event.inputs.release_version || 'manual' }}"
 on:
   repository_dispatch:
     types: [release-ready]
