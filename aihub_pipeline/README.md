@@ -524,33 +524,3 @@ def documented_operation(context, input_data: InputType) -> OutputType:
     return result
 ```
 
-### 📖 Glossary of Pipeline-Specific Terms
-
-This glossary defines terms, concepts, and technologies that have specific meaning within the `aihub_pipeline` scope,
-building upon the core AI-Hub terminology.
-
-| Term                   | Definition                                                                                                                                                                |
-| :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Asset**              | A Dagster concept representing a data object or file that is produced by a pipeline. Assets can be materialized (computed) and have dependencies on other assets.         |
-| **Asset Factory**      | A function that creates and configures Dagster assets with specific parameters, enabling reusable asset definitions across different pipeline configurations.             |
-| **Data Lake File**     | A structured representation of a document stored in Azure Data Lake, containing content, metadata, and URI information for downstream processing.                         |
-| **Dagster**            | The core orchestration framework used for building and managing data pipelines. Provides scheduling, monitoring, and dependency management capabilities.                  |
-| **Document Parser**    | A resource that extracts text content and metadata from various document formats (PDF, Word, PowerPoint, etc.) using different parsing strategies.                        |
-| **Dynamic Partitions** | Dagster's mechanism for handling datasets where the partition keys are determined at runtime, allowing flexible processing of varying document sets.                      |
-| **Embedding Model**    | AI model resource that converts text content into high-dimensional vector representations for semantic search and retrieval applications.                                 |
-| **Graph Asset**        | A Dagster asset composed of multiple operations (ops) that work together to transform input data into output data through a defined workflow.                             |
-| **I/O Manager**        | Dagster resource responsible for storing and retrieving assets from specific storage systems (Azure Data Lake, MongoDB, Milvus, etc.).                                    |
-| **Job Definition**     | A Dagster construct that defines a selection of assets to materialize, along with their execution configuration and resource requirements.                                |
-| **Language Model**     | LLM resource used for generating summaries, descriptions, and other text-based processing tasks within the pipeline.                                                      |
-| **Node**               | A processed chunk of a document that has been parsed, embedded, and prepared for storage in a vector database for retrieval operations.                                   |
-| **Observable Asset**   | A Dagster asset that monitors external systems for changes and reports new partitions, triggering downstream processing when new data is available.                       |
-| **Operation (Op)**     | A Dagster concept representing a single unit of computation that takes inputs and produces outputs, forming the building blocks of pipeline workflows.                    |
-| **Partition**          | A subset of data that can be processed independently, typically representing individual documents or time-based slices of data.                                           |
-| **Pipeline**           | A complete data processing workflow that transforms source data through multiple stages to produce final outputs, typically from document ingestion to vector embeddings. |
-| **RefDoc**             | A reference document that serves as the authoritative source for a particular piece of content, stored in the document store with associated metadata.                    |
-| **Resource**           | A Dagster concept for managing external dependencies and configurations (databases, APIs, models) that are shared across multiple operations.                             |
-| **Run Config**         | Configuration object that specifies how a particular pipeline run should be executed, including resource configurations and parameter values.                             |
-| **Sensor**             | A Dagster component that monitors external systems or schedules and triggers pipeline runs based on specific conditions or time intervals.                                |
-| **Share Point File**   | A document retrieved from Microsoft SharePoint, containing raw content and metadata that serves as input for the data processing pipeline.                                |
-| **Summary Node**       | A processed document chunk that contains summarized information, created using recursive summarization techniques for better context preservation.                        |
-| **Vector Store**       | A database optimized for storing and searching high-dimensional vectors, supporting similarity search operations for RAG applications.                                    |
