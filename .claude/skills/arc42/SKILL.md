@@ -81,7 +81,7 @@ Cross-reference between chapters — arc42 sections are interconnected:
 
 Each arc42 section has specific content requirements. Follow the guidance for the section you're working on:
 
-______________________________________________________________________
+---
 
 ### Section 1: Introduction and Goals
 
@@ -105,11 +105,11 @@ most.
 **Common mistake**: Writing vague quality goals like "high performance" — instead write measurable scenarios like "The
 system responds to a user's RAG query within 3 seconds under normal load".
 
-Be aware the solution is a platform consisting of multiple components (other open source projects). When Describing the
-solution platform, describe it as one platform. Any requirement states always applies to the platform. Do not distribute
+Be aware the solution is a platform consisting of multiple components (other open source projects). When Describing the 
+solution platform, describe it as one platform. Any requirement states always applies to the platform. Do not distribute 
 it to the respective component. Do not name the concrete open-source projects used.
 
-______________________________________________________________________
+---
 
 ### Section 2: Architecture Constraints
 
@@ -124,7 +124,7 @@ ______________________________________________________________________
 **Key principle**: Constraints are non-negotiable. If it's a preference, it belongs in Section 4 (Solution Strategy),
 not here. Document the consequences of each constraint on stakeholders and design outcomes.
 
-______________________________________________________________________
+---
 
 ### Section 3: Context and Scope
 
@@ -146,7 +146,7 @@ documentation. Restrict to overview level, avoid excessive detail. Explicitly no
 For AI-Hub, external partners include: end users via OpenWebUI, admin users via Admin UI, cloud LLM providers via
 LiteLLM, SharePoint/OneDrive via Rclone, MS Teams/Slack via bot integrations, SSO/IdP, and GitHub for CI/CD.
 
-______________________________________________________________________
+---
 
 ### Section 4: Solution Strategy
 
@@ -169,7 +169,7 @@ approach, and how quality goals are achieved.
 **Style**: Keep it compact — keyword lists rather than lengthy prose. Cross-reference Section 5 (structure), Section 8
 (concepts), Section 9 (decisions). Iterate gradually — this section evolves as the architecture matures.
 
-______________________________________________________________________
+---
 
 ### Section 5: Building Block View
 
@@ -202,7 +202,7 @@ blocks. Use tables for efficient documentation. Map source code locations to bui
 For AI-Hub Level 1 building blocks: `aihub_lib`, `aihub_agent`, `aihub_api`, `aihub_pipeline`, `aihub_process`,
 `aihub_web`, `aihub_bot`, plus infrastructure services (NATS, Milvus, PostgreSQL, SeaweedFS, LiteLLM).
 
-______________________________________________________________________
+---
 
 ### Section 6: Runtime View
 
@@ -225,7 +225,7 @@ ______________________________________________________________________
 - Partial scenarios are acceptable — document excerpts rather than complete flows
 - Mix abstraction levels — include both fine-grained (agent event handling) and coarse (full pipeline run) scenarios
 
-______________________________________________________________________
+---
 
 ### Section 7: Deployment View
 
@@ -245,7 +245,7 @@ ______________________________________________________________________
 **Multiple environments**: Document dev (Docker Compose), production (Kubernetes/Docker Swarm), and any staging
 environments separately when they differ.
 
-______________________________________________________________________
+---
 
 ### Section 8: Crosscutting Concepts
 
@@ -269,13 +269,13 @@ Hyperlink between building blocks (Section 5) and concepts.
 **Key principle**: "Document concepts with source code!" — abstract descriptions are less useful than concrete examples
 from the codebase. Restrict to the most important topics for YOUR system.
 
-______________________________________________________________________
+---
 
 ### Section 9: Architecture Decisions
 
 **Purpose**: Point to the ADR directory.
 
-**Content**: Reference the ADRs in `aihub_doc/arc42/decisions/`.
+**Content**: Reference the ADRs in `aihub_doc/arc42/decisions/`. 
 
 **ADR format** (documented in `aihub_doc/arc42/decisions/0000_00_00_template.md`):
 
@@ -284,7 +284,7 @@ ______________________________________________________________________
 
 Do NOT duplicate the `/document-decision` skill's workflow — this section only points to the ADRs.
 
-______________________________________________________________________
+---
 
 ### Section 10: Quality Requirements
 
@@ -308,7 +308,7 @@ ______________________________________________________________________
 **Key principle**: If quality goals from Section 1.2 are vague ("high availability"), this section MUST make them
 concrete and measurable. Consider usage, change, and fault/failure scenarios.
 
-______________________________________________________________________
+---
 
 ### Section 11: Risks and Technical Debt
 
@@ -330,7 +330,7 @@ ______________________________________________________________________
 **Key principle**: "Risk management is project management for grown-ups" — be transparent about what could go wrong.
 This section exists for management stakeholders who need to prioritize risk mitigation.
 
-______________________________________________________________________
+---
 
 ### Section 12: Glossary
 
@@ -349,7 +349,7 @@ ______________________________________________________________________
 
 **Key principle**: "Keep the glossary compact! Avoid trivia" — only terms that stakeholders actually need clarified.
 
-______________________________________________________________________
+---
 
 ### Step 3: Apply Writing Standards
 

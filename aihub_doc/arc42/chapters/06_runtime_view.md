@@ -65,8 +65,8 @@ after discovering the agent class on NATS (described in the next scenario). The 
 `ExternalAgentEventDistributor.distribute_event()` bridges the HTTP boundary into the event-driven world. For a
 `StartEvent` (which `UserMessageEvent` is), the distributor generates a fresh `run_id`, constructs an
 `AgentThreadTopicManager` for each agent assigned to the thread, and publishes the event to JetStream on subject like
-`agent.{class}.{id}.{thread}.{display}.{run}.control_event.{event_name}.{event_id}`. Because `UserMessageEvent` is both
-a `StartEvent` and a `DisplayEvent`, the distributor also publishes it to NATS Core on the display subject so that the
+`agent.{class}.{id}.{thread}.{display}.{run}.control_event.{event_name}.{event_id}`. Because `UserMessageEvent` is both a
+`StartEvent` and a `DisplayEvent`, the distributor also publishes it to NATS Core on the display subject so that the
 user's own message appears immediately in the event stream.
 
 JetStream publication is durable. If the agent is temporarily offline, the message persists in the stream and will be
@@ -196,8 +196,8 @@ endpoints. The generated TypeScript SDK in the frontend is built from this schem
 
 For agent classes that were previously registered but did not respond in this discovery cycle,
 `_deregister_endpoints_for_class()` removes their routes. Agent class metadata (name, description, icon, event schemas,
-configuration schema, workflow graph) is upserted into MongoDB (FerredDB) via `AgentClassEntity.create_or_update()`, and
-the `last_discovered` timestamp determines whether the class is considered online.
+configuration schema, workflow graph) is upserted into MongoDB (FerredDB) via `AgentClassEntity.create_or_update()`, and the
+`last_discovered` timestamp determines whether the class is considered online.
 
 The same discovery pattern applies to processes, with `ProcessEndpointsDiscoveryService` broadcasting
 `ProcessClassDiscoveryRequestEvent` and dynamically registering process-specific routes.

@@ -181,10 +181,9 @@ blue-green agent deployments.
 Agent runs, human-in-the-loop requests, and bot-in-the-loop delegations have no timeout mechanism. A run that enters a
 state where no step's input event is ever published will remain in progress indefinitely in the `StepStore`. A
 human-in-the-loop request that is never answered blocks the process walkthrough permanently. The platform relies on
-operators noticing stalled runs through the Admin UI or Langfuse traces. **Planned mitigation**: Add configurable
-timeout durations to the dispatcher (per-run maximum wall time) and to delegation annotations (per-step response
-deadline). On timeout, the dispatcher publishes an `ExceptionEvent` with a timeout-specific error code and cleans up the
-run or walkthrough.
+operators noticing stalled runs through the Admin UI or Langfuse traces. **Planned mitigation**: Add configurable timeout durations to the dispatcher (per-run
+maximum wall time) and to delegation annotations (per-step response deadline). On timeout, the dispatcher publishes an
+`ExceptionEvent` with a timeout-specific error code and cleans up the run or walkthrough.
 
 ### No malware scanning for uploads
 
@@ -192,12 +191,14 @@ Files uploaded through the API or ingested through the pipeline are stored in Se
 scanning. A document containing embedded malware could be stored, chunked, and served to users through the knowledge
 retrieval system. The pipeline's parsing step (MinerU) processes documents in isolated containers, limiting the blast
 radius of a malicious payload during parsing, but the uploaded file remains in SeaweedFS and can be downloaded by
-authorized users. **Planned mitigation**: Integrate ClamAV as a sidecar container. The upload endpoint would submit
-files to ClamAV via its REST API before storing them in SeaweedFS, rejecting infected files with a descriptive error.
+authorized users. **Planned mitigation**: Integrate ClamAV as a sidecar
+container. The upload endpoint would submit files to ClamAV via its REST API before storing them in SeaweedFS, rejecting
+infected files with a descriptive error.
 
 ### Ansible configuration drift
 
 The hosted deployment uses Ansible playbooks that are not based on Ansible Galaxy roles, making them harder to maintain
 and share. OS-level updates on the deployment servers are not automated, creating a risk of unpatched vulnerabilities in
-the host operating system. **Planned mitigation**: Refactor playbooks into reusable Ansible Galaxy roles with automated
-`unattended-upgrades` for OS patching. Add a CI step that lints Ansible playbooks and validates role dependencies.
+the host operating system.
+**Planned mitigation**: Refactor playbooks into reusable Ansible Galaxy roles with automated `unattended-upgrades` for
+OS patching. Add a CI step that lints Ansible playbooks and validates role dependencies.

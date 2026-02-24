@@ -2,7 +2,7 @@
 
 ## Level 1: overall system
 
-## Level 2:
+## Level 2: 
 
 ### aihub_lib
 
@@ -86,7 +86,7 @@ storage), and UserEntity (user profiles).
 #### Infrastructure configuration
 
 Infrastructure settings classes use Pydantic BaseSettings to load configuration from environment variables with
-validation.
+validation. 
 
 #### Internationalization
 
@@ -136,11 +136,11 @@ duplicate processing of the same event and cleans up RunContext on workflow comp
 
 #### AgentRunner
 
-AgentRunner initializes the production infrastructure such NATS and JetStream connections and the AgentDispatcher. It
-sets up a JetStream subscriber for Control Events and a NATS Core subscriber for discovery requests. When the API
-broadcasts a ClassDiscoveryRequestEvent, the runner responds with an AgentClassDiscoveryResponseEvent containing the
-agent's FormKit form schema, input and output event specifications, and a serialized workflow graph. AgentTestRunner
-extends the runner with event observation capabilities for testing.
+AgentRunner initializes the production infrastructure such NATS and JetStream connections and the
+AgentDispatcher. It sets up a JetStream subscriber for Control Events and a NATS Core subscriber for discovery requests.
+When the API broadcasts a ClassDiscoveryRequestEvent, the runner responds with an AgentClassDiscoveryResponseEvent
+containing the agent's FormKit form schema, input and output event specifications, and a serialized workflow graph.
+AgentTestRunner extends the runner with event observation capabilities for testing.
 
 #### Context classes
 

@@ -176,11 +176,11 @@ response.
 
 The LLM gateway abstracts all model access behind a single OpenAI-compatible interface. Switching providers is a
 configuration change. All infrastructure components use open-source licenses compatible with the platform's Apache 2.0
-distribution model.
+distribution model. 
 
 ### Operational self-sufficiency
 
-The platform deploys with a single `docker compose up` command.
+The platform deploys with a single `docker compose up` command. 
 
 ### Extensibility without platform modification
 

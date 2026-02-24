@@ -20,13 +20,14 @@ The quality tree organizes requirements into categories. Each leaf references on
 
 ### Performance
 
-**PF-1: Streaming response tokens reach the user within the LLM's time-to-first-token.**
+**PF-1: Streaming response tokens reach the user within the LLM's time-to-first-token.** 
 
 **PF-2: Document processing scales linearly with document count.** Each document is an independent Dagster partition.
 Processing one document does not block or slow down any other document. A failure in one partition does not affect
-others.
+others. 
 
 ### Security
 
-**SE-1: Authentication supports multiple identity providers and token types.** **SE-2: Permissions are granular to
-individual agent instances.** **SE-3: Container compromise does not grant access to unrelated services.**
+**SE-1: Authentication supports multiple identity providers and token types.**
+**SE-2: Permissions are granular to individual agent instances.**
+**SE-3: Container compromise does not grant access to unrelated services.** 
