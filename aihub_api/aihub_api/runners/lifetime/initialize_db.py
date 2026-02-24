@@ -109,7 +109,6 @@ async def initialize_roles() -> None:
 
 
 async def _validate_signup_roles() -> None:
-    """Validate that all configured signup roles exist as system roles in the database."""
     settings = UserSignupSettings()
     all_configured_roles = set(settings.regular_user_roles_list + settings.first_admin_user_roles_list)
 
