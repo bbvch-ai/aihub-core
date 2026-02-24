@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.265.2] - 2026-02-24 - Comprehensive Architecture Documentation and AI-Powered Management
+
+### Added
+
+- ✨ **Arc42 Skill**: Introduced a new Claude skill designed to write, edit, and review architecture documentation
+  chapters following the official `arc42` framework. This enhances the ability to generate structured, high-quality
+  architectural documentation.
+- 📖 **Complete Arc42 Documentation Set**: Added all 12 chapters of the `arc42` architecture documentation (Introduction,
+  Constraints, Context, Solution Strategy, Building Blocks, Runtime, Deployment, Crosscutting Concepts, Architecture
+  Decisions, Quality Requirements, Risks, and Glossary). This provides a foundational and detailed understanding of the
+  platform's design, operational aspects, quality goals, risks, and deployment views.
+
+### Refactor
+
+- 📚 **Centralized Glossary**: Consolidated all project-specific terminology from individual component `README.md` files
+  into a single, comprehensive `arc42` glossary (Chapter 12). This significantly improves documentation consistency and
+  ease of reference across all stakeholders.
+
+### Removed
+
+- 🗑️ **Redundant Component Glossaries**: Eliminated duplicate glossary sections from component-specific `README.md`
+  files (e.g., `aihub_agent`, `aihub_api`, `aihub_bot`, `aihub_lib`, `aihub_pipeline`, `aihub_process`, `aihub_web`),
+  streamlining documentation and reducing information fragmentation.
+
+______________________________________________________________________
+
 ## [v0.265.1] - 2026-02-23 - Revolutionizing AI-Assisted Development with Comprehensive Claude Code Integration
 
 ### Added

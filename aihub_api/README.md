@@ -772,28 +772,3 @@ async def test_service_logic():
     mock_locale.get_string.assert_called_with("success_message")
 ```
 
-### 📖 Glossary of API-Specific Terms
-
-This glossary defines terms, concepts, and technologies that have specific meaning within the `aihub_api` scope,
-building upon the core AI-Hub terminology.
-
-| Term                           | Definition                                                                                                                                                                                               |
-| :----------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Controller**                 | FastAPI router class that defines HTTP endpoints for a specific domain (e.g., `AgentController`, `ThreadController`). Controllers handle request/response logic and delegate business logic to Services. |
-| **Service**                    | Business logic layer that processes requests from Controllers. Services interact with external systems (NATS, databases) and handle complex operations like agent discovery or thread management.        |
-| **DTO (Data Transfer Object)** | Pydantic models that define the structure of API requests and responses. DTOs provide validation, serialization, and documentation for API endpoints.                                                    |
-| **API Runner**                 | Infrastructure for starting and configuring the FastAPI application. Includes `ApiRunner` for production and `ApiTestRunner` for testing.                                                                |
-| **WebSocket Manager**          | System for managing WebSocket connections, handling connection lifecycle, and routing messages between clients and the AI-Hub backend.                                                                   |
-| **Auth Handler**               | Authentication and authorization system that validates requests, extracts user identity, and enforces permissions across API endpoints.                                                                  |
-| **Locale Handler**             | Internationalization system that provides localized strings and handles multi-language support in API responses.                                                                                         |
-| **Pagination**                 | System for handling large datasets by splitting them into pages. Includes `PageNumber`, `PageSize`, and `PaginatedResponse` types.                                                                       |
-| **Route Mounting**             | Pattern for registering Controller endpoints with the FastAPI application. Controllers use fluent API to define and mount their routes.                                                                  |
-| **NATS Integration**           | Connection to the NATS messaging system for communicating with agents, processes, and other AI-Hub components.                                                                                           |
-| **Discovery Service**          | System for finding and retrieving information about available agents, their capabilities, and current status.                                                                                            |
-| **Thread Management**          | API endpoints for managing conversations (threads) between users and agents, including message history and participant management.                                                                       |
-| **Event Streaming**            | Real-time communication system using WebSockets to stream events and updates to connected clients.                                                                                                       |
-| **OpenAI Compatibility**       | API endpoints that implement OpenAI-compatible interfaces for chat completions, embeddings, and other AI model interactions.                                                                             |
-| **Simulated Agent**            | Testing infrastructure that creates mock agents for API testing without requiring actual agent services.                                                                                                 |
-| **Access Control**             | Permission system that restricts API access based on user roles and resource ownership.                                                                                                                  |
-| **Cache Management**           | In-memory caching system (TTLCache) for reducing load on external services and improving API response times.                                                                                             |
-| **Playground**                 | Directory containing test servers, example configurations, and development tools for API testing and experimentation.                                                                                    |
