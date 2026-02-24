@@ -19,7 +19,7 @@ This chapter assumes a multi-instance deployment model where each organization h
 For multi-tenancy (logical separation within a single instance), see [Multi-tenancy](../../16_multi_tenancy/).
 :::
 
----
+______________________________________________________________________
 
 ## What gets backed up
 
@@ -42,7 +42,7 @@ cannot back up SeaweedFS into itself.
 Valkey and NATS backups are non-critical — missing backups produce warnings, not errors. Valkey stores cache and session
 state that rebuilds on restart. NATS stores transient messages; important events are already persisted in FerretDB.
 
----
+______________________________________________________________________
 
 ## Configuration
 
@@ -58,7 +58,7 @@ The backup schedule (daily at 2 AM Europe/Zurich) is defined in Dagster and can 
 
 Offline backups are never auto-deleted by retention cleanup and are preserved indefinitely.
 
----
+______________________________________________________________________
 
 ## Backup modes
 
@@ -81,14 +81,14 @@ To trigger an offline backup, launch the `backup_asset_job` from the Dagster UI 
 Neo4j requires a brief container stop even in online mode because Neo4j Community Edition does not support online
 backups.
 
----
+______________________________________________________________________
 
 ## Listing backups
 
 Open the Dagster UI at `http://localhost:3004` to see the backup asset calendar view, which shows daily backup coverage
 at a glance. The asset metadata includes timestamp, mode, and S3 prefix for each backup.
 
----
+______________________________________________________________________
 
 ## Recovery
 
