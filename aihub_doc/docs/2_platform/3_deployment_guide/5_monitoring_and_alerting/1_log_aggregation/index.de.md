@@ -150,7 +150,7 @@ OTel-kompatible System zu senden. Um ein alternatives Backend zu verwenden, aktu
 dass sie auf den OTLP-Endpunkt Ihres gewählten Systems zeigen. Einige Backends erfordern möglicherweise zusätzliche
 Exporter-Konfigurationen in der OTel Collector Konfigurationsdatei.
 
----
+______________________________________________________________________
 
 ## Nächste Schritte
 

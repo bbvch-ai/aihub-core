@@ -1,29 +1,26 @@
+---
 periods:
-  1h: "hour"
-  1d: "day"
-  7d: "week"
-  1mo: "month"
-
+  1h: hour
+  1d: day
+  7d: week
+  1mo: month
 weekdays:
-  monday: "Monday"
-  tuesday: "Tuesday"
-  wednesday: "Wednesday"
-  thursday: "Thursday"
-  friday: "Friday"
-  saturday: "Saturday"
-  sunday: "Sunday"
-
+  monday: Monday
+  tuesday: Tuesday
+  wednesday: Wednesday
+  thursday: Thursday
+  friday: Friday
+  saturday: Saturday
+  sunday: Sunday
 scope:
-  all_agents: "all agents"
-
-  all_resources: "all resources"
-
+  all_agents: all agents
+  all_resources: all resources
 messages:
-  limit_warning: "Usage limit warning: %{remaining} calls remaining"
-  limit_exceeded: "Usage limit exceeded"
-  limit_reached: "Usage limit reached: %{limit} calls per %{period}"
-  limit_detail: "%{current}/%{limit} per %{period} (%{scope})"
-  resets_at: "Resets at %{time}"
-  resets_tomorrow_at: "Resets tomorrow at %{time}"
-  resets_on_weekday_at: "Resets on %{weekday} at %{time}"
-  resets_on_date_at: "Resets on %{date} at %{time}"
+  limit_warning: 'Usage limit warning: %{remaining} calls remaining'
+  limit_exceeded: Usage limit exceeded
+  limit_reached: 'Usage limit reached: %{limit} calls per %{period}'
+  limit_detail: '%{current}/%{limit} per %{period} (%{scope})'
+  resets_at: Resets at %{time}
+  resets_tomorrow_at: Resets tomorrow at %{time}
+  resets_on_weekday_at: Resets on %{weekday} at %{time}
+  resets_on_date_at: Resets on %{date} at %{time}

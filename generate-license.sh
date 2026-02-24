@@ -1,7 +1,7 @@
 #!/bin/bash
 # Comprehensive license checker for entire monorepo
 # Scans Python, Node.js, and Docker dependencies
-# Generates a single LICENSES.md report
+# Generates a single LICENSE_REPORT.md report
 
 set -e
 
@@ -91,7 +91,7 @@ init_report() {
 Generated on: $(date +%d.%m.%Y)
 
 This document contains license information for all dependencies across the monorepo:
-- Python packages (Poetry)
+- Python packages (uv)
 - Node.js packages (pnpm)
 - Docker images (from docker-compose files)
 
@@ -106,53 +106,38 @@ add_section() {
     echo -e "\n## $title\n" >> "$OUTPUT_FILE_ABS"
 }
 
-# check_python_project function
-check_python_project() {
-    local project="$1"
-    echo -e "${BLUE}Checking Python project: $project${NC}"
+# check_python_workspace function
+# With uv workspaces there is a single shared .venv at the root,
+# so we scan it once instead of per-package to avoid duplicates.
+check_python_workspace() {
+    echo -e "${BLUE}Checking Python workspace${NC}"
 
-    if [ ! -d "$project" ]; then
-        echo -e "${RED}Warning: Project $project not found${NC}"
-        return 1
-    fi
-
-    cd "$project"
-
-    echo "Installing dependencies to ensure venv is current..."
-    poetry install --no-interaction --sync >/dev/null 2>&1 || {
-        echo -e "${RED}Failed to install dependencies for $project${NC}"
-        cd ..
+    echo "Syncing all workspace packages..."
+    uv sync --all-packages >/dev/null 2>&1 || {
+        echo -e "${RED}Failed to sync workspace dependencies${NC}"
         return 1
     }
 
-    echo "Finding virtual environment for $project..."
-    local venv_path
-    venv_path=$(poetry env info --path)
-    if [ -z "$venv_path" ]; then
-        echo -e "${RED}Could not find virtual environment for $project. Skipping.${NC}"
-        cd ..
-        return 1
-    fi
-    local python_executable="$venv_path/bin/python"
-    echo "Scanning packages from: $python_executable"
+    echo "Scanning packages from workspace venv: .venv/bin/python"
 
     local license_data
-    license_data=$(poetry run pip-licenses \
+    local license_stderr
+    license_stderr=$(mktemp)
+    license_data=$(uv run pip-licenses \
         --from=mixed \
         --format=json \
-        --ignore-packages pip pip-licenses setuptools wheel tomli prettytable wcwidth \
-        2>&1) || {
-        echo -e "${RED}Failed to run pip-licenses in $project${NC}"
-        echo "Error output: $license_data"
+        --ignore-packages pip pip-licenses setuptools wheel tomli prettytable wcwidth aihub-core aihub-agent aihub-api aihub-bot aihub-pipeline aihub-process \
+        2>"$license_stderr") || {
+        echo -e "${RED}Failed to run pip-licenses${NC}"
+        echo "Error output: $(cat "$license_stderr")"
         license_data="[]"
     }
+    rm -f "$license_stderr"
 
     local project_total
     project_total=$(echo "$license_data" | jq '. | length')
-    TOTAL_PYTHON_DEPS=$((TOTAL_PYTHON_DEPS + project_total))
+    TOTAL_PYTHON_DEPS=$project_total
 
-    echo "### $project" >> "$OUTPUT_FILE_ABS"
-    echo "" >> "$OUTPUT_FILE_ABS"
     echo "| Status | Package | Version | License | Notes |" >> "$OUTPUT_FILE_ABS"
     echo "|--------|---------|---------|---------|-------|" >> "$OUTPUT_FILE_ABS"
 
@@ -203,19 +188,19 @@ check_python_project() {
             elif echo "$license" | grep -qE "$REVIEW_LICENSES"; then
                 status="⚠️"
                 echo -e "${YELLOW}⚠️  Review needed: $name uses $display_license${NC}"
-                echo "python:$project:$name:$license" >> "$REVIEW_FILE"
+                echo "python:workspace:$name:$license" >> "$REVIEW_FILE"
             elif echo "$license" | grep -qE "$RESTRICTIVE_LICENSES"; then
                 status="❌"
                 echo -e "${RED}❌ RESTRICTIVE LICENSE: $name uses $display_license${NC}"
-                echo "python:$project:$name:$license" >> "$RESTRICTIVE_FILE"
+                echo "python:workspace:$name:$license" >> "$RESTRICTIVE_FILE"
             elif echo "$license" | grep -qiE "$UNKNOWN_LICENSES"; then
                 status="❌"
                 echo -e "${RED}❌ UNKNOWN LICENSE: $name has '$license'${NC}"
-                echo "python:$project:$name:$license" >> "$UNKNOWN_FILE"
+                echo "python:workspace:$name:$license" >> "$UNKNOWN_FILE"
             else
                 status="❌"
                 echo -e "${RED}❌ UNLISTED/UNKNOWN LICENSE: $name has '$license'${NC}"
-                echo "python:$project:$name:$license" >> "$UNKNOWN_FILE"
+                echo "python:workspace:$name:$license" >> "$UNKNOWN_FILE"
             fi
         fi
 
@@ -223,7 +208,6 @@ check_python_project() {
     done
 
     echo "" >> "$OUTPUT_FILE_ABS"
-    cd ..
 }
 
 # check_web_project function
@@ -428,7 +412,7 @@ generate_summary() {
     [ -f "$UNKNOWN_FILE" ] && unknown_count=$(wc -l < "$UNKNOWN_FILE")
     [ -f "$DOCKER_RESTRICTIVE_FILE" ] && docker_restrictive_count=$(wc -l < "$DOCKER_RESTRICTIVE_FILE")
 
-    tail -n +10 "$OUTPUT_FILE_ABS" > "$temp_file"
+    tail -n +12 "$OUTPUT_FILE_ABS" > "$temp_file"
 
     local total_issues=$((restrictive_count + review_count + unknown_count))
 
@@ -438,7 +422,7 @@ generate_summary() {
 Generated on: $(date +%d.%m.%Y)
 
 This document contains license information for all dependencies across the monorepo:
-- Python packages (Poetry): **$TOTAL_PYTHON_DEPS packages**
+- Python packages (uv): **$TOTAL_PYTHON_DEPS packages**
 - Node.js packages (pnpm): **$TOTAL_NODE_DEPS packages**
 - External Docker images: **$TOTAL_DOCKER_IMAGES images**
 
@@ -506,15 +490,13 @@ main() {
     if ! command -v jq &> /dev/null; then
         echo -e "${RED}Error: jq is required but not installed.${NC}"; exit 1;
     fi
-    if ! command -v poetry &> /dev/null; then
-        echo -e "${RED}Error: poetry is required but not installed.${NC}"; exit 1;
+    if ! command -v uv &> /dev/null; then
+        echo -e "${RED}Error: uv is required but not installed.${NC}"; exit 1;
     fi
 
     init_report
     add_section "Python Dependencies"
-    for project in "${PYTHON_PROJECTS[@]}"; do
-        check_python_project "$project" || true
-    done
+    check_python_workspace || true
 
     add_section "JavaScript/TypeScript Dependencies"
     check_web_project || true

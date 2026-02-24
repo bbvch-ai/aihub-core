@@ -1,3 +1,4 @@
+---
 metadata:
   name: Company Knowledge Agent
   description: Expert knowledge assistant that leverages your organization's collective
@@ -19,11 +20,11 @@ thoughts:
   waiting_for_instructions: Waiting for new instructions.
   forwarding_to_expert: Forwarding the question to 'ExpertAskingAgent' and waiting
     for a response.
-  expert_answered: '''ExpertAskingAgent'' has received a response from the expert.'
+  expert_answered: "'ExpertAskingAgent' has received a response from the expert."
   forwarding_expert_info: Forwarding information from the expert to the user.
-  expert_unable_to_answer: '''ExpertAskingAgent'' could not find an expert who could
-    answer the user''s question.'
-  expert_error: '''ExpertAskingAgent'' has returned an error %{error_code}: %{error_message}.'
+  expert_unable_to_answer: "'ExpertAskingAgent' could not find an expert who could\
+    \ answer the user's question."
+  expert_error: "'ExpertAskingAgent' has returned an error %{error_code}: %{error_message}."
   can_answer_question: I can now safely answer the user's question.
 messages:
   consent_question: Unfortunately, I lack the necessary knowledge to answer this question.
@@ -37,20 +38,20 @@ messages:
   expert_error_occurred: An error occurred when communicating with the expert.
 steps:
   handle_insufficient_context:
-    name: "Handle Insufficient Context"
-    description: "Handle insufficient context by asking for expert consent."
+    name: Handle Insufficient Context
+    description: Handle insufficient context by asking for expert consent.
   consent_answer:
-    name: "Consent Answer"
-    description: "User answered the question for consent."
+    name: Consent Answer
+    description: User answered the question for consent.
   invoke_expert_agent:
-    name: "Invoke ExpertAskingAgent"
-    description: "Forwarding request to ExpertAskingAgent that will prompt experts."
+    name: Invoke ExpertAskingAgent
+    description: Forwarding request to ExpertAskingAgent that will prompt experts.
   expert_answer_positive:
-    name: "Expert Answer Positive"
-    description: "ExpertAskingAgent was able to extract information from expert."
+    name: Expert Answer Positive
+    description: ExpertAskingAgent was able to extract information from expert.
   expert_answer_negative:
-    name: "Expert Answer Negative"
-    description: "ExpertAskingAgent was NOT able to extract information from expert."
+    name: Expert Answer Negative
+    description: ExpertAskingAgent was NOT able to extract information from expert.
   expert_answer_error:
-    name: "Expert Answer Error"
-    description: "ExpertAskingAgent encountered an error."
+    name: Expert Answer Error
+    description: ExpertAskingAgent encountered an error.

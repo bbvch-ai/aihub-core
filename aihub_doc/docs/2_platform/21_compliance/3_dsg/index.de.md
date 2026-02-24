@@ -93,7 +93,7 @@ Organisationen können auch Schweizer oder EU LLM-Anbieter über LiteLLM nutzen.
 - [EDÖB](https://www.edoeb.admin.ch/)
 - [Text des revDSG](https://www.admin.ch/opc/en/classified-compilation/19920153/)
 
----
+______________________________________________________________________
 
 :::info Rechtlicher Hinweis
 Dies ist eine technische Dokumentation, keine Rechtsberatung. Konsultieren Sie einen Rechtsbeistand oder den

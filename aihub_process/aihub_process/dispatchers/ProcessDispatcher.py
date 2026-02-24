@@ -90,8 +90,7 @@ class ProcessDispatcher(BaseDispatcher):
             )
         except Exception as e:
             logger.warning(
-                f"Failed to fetch config via RPC for {process_class}/{process_id}: {e}. "
-                f"Falling back to event config."
+                f"Failed to fetch config via RPC for {process_class}/{process_id}: {e}. Falling back to event config."
             )
             return event_config
 

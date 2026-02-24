@@ -30,7 +30,7 @@ Jeder untenstehende Schritt zeigt Befehle für beide Deployment-Typen. Folgen Si
 gewählten Deployment-Modus entsprechen.
 :::
 
----
+______________________________________________________________________
 
 ## Schritt 1: Deployment-Dateien abrufen
 
@@ -74,7 +74,7 @@ Wildcard-DNS-Auflösung, ohne dass Sie Ihre Hosts-Datei ändern müssen. Dies er
 lokalen Entwicklung.
 :::
 
----
+______________________________________________________________________
 
 ## Schritt 2: Umgebungsvariablen konfigurieren
 

@@ -1,3 +1,4 @@
+---
 metadata:
   name: Agente di Conoscenza Aziendale
   description: Assistente esperto che sfrutta le competenze collettive della tua organizzazione
@@ -7,7 +8,7 @@ config:
     label: Agente esperto
     help: Seleziona l'agente a cui inoltrare quando il contesto è insufficiente
 thoughts:
-  user_asked: 'L''utente ha fatto la seguente richiesta: %{user_query}.'
+  user_asked: "L'utente ha fatto la seguente richiesta: %{user_query}."
   need_to_determine_context: Devo determinare se ho informazioni sufficienti per rispondere
     a questa domanda.
   context_not_sufficient: Il contesto NON è sufficiente. Vedo la possibilità di inoltrare
@@ -18,11 +19,11 @@ thoughts:
   user_declined: L'utente non desidera inoltrare la domanda a un esperto.
   waiting_for_instructions: In attesa di nuove istruzioni.
   forwarding_to_expert: Inoltro la domanda a 'ExpertAskingAgent' e attendo una risposta.
-  expert_answered: '''ExpertAskingAgent'' ha ricevuto una risposta dall''esperto.'
+  expert_answered: "'ExpertAskingAgent' ha ricevuto una risposta dall'esperto."
   forwarding_expert_info: Inoltro le informazioni dall'esperto all'utente.
-  expert_unable_to_answer: '''ExpertAskingAgent'' non ha trovato un esperto in grado
-    di rispondere alla domanda dell''utente.'
-  expert_error: '''ExpertAskingAgent'' ha restituito un errore %{error_code}: %{error_message}.'
+  expert_unable_to_answer: "'ExpertAskingAgent' non ha trovato un esperto in grado\
+    \ di rispondere alla domanda dell'utente."
+  expert_error: "'ExpertAskingAgent' ha restituito un errore %{error_code}: %{error_message}."
   can_answer_question: Ora posso rispondere in sicurezza alla domanda dell'utente.
 messages:
   consent_question: Purtroppo non dispongo delle conoscenze necessarie per rispondere
@@ -37,20 +38,20 @@ messages:
   expert_error_occurred: Si è verificato un errore durante la comunicazione con l'esperto.
 steps:
   handle_insufficient_context:
-    name: "Gestisci contesto insufficiente"
-    description: "Gestisce il contesto insufficiente chiedendo il consenso per l'esperto."
+    name: Gestisci contesto insufficiente
+    description: Gestisce il contesto insufficiente chiedendo il consenso per l'esperto.
   consent_answer:
-    name: "Risposta consenso"
-    description: "L'utente ha risposto alla domanda di consenso."
+    name: Risposta consenso
+    description: L'utente ha risposto alla domanda di consenso.
   invoke_expert_agent:
-    name: "Invoca ExpertAskingAgent"
-    description: "Inoltra la richiesta a ExpertAskingAgent che interrogherà gli esperti."
+    name: Invoca ExpertAskingAgent
+    description: Inoltra la richiesta a ExpertAskingAgent che interrogherà gli esperti.
   expert_answer_positive:
-    name: "Risposta esperto positiva"
-    description: "ExpertAskingAgent è riuscito a estrarre informazioni dall'esperto."
+    name: Risposta esperto positiva
+    description: ExpertAskingAgent è riuscito a estrarre informazioni dall'esperto.
   expert_answer_negative:
-    name: "Risposta esperto negativa"
-    description: "ExpertAskingAgent NON è riuscito a estrarre informazioni dall'esperto."
+    name: Risposta esperto negativa
+    description: ExpertAskingAgent NON è riuscito a estrarre informazioni dall'esperto.
   expert_answer_error:
-    name: "Errore risposta esperto"
-    description: "ExpertAskingAgent ha incontrato un errore."
+    name: Errore risposta esperto
+    description: ExpertAskingAgent ha incontrato un errore.

@@ -228,7 +228,7 @@ services:
   seaweedfs-init:
     container_name: seaweedfs-init
     image: ghcr.io/bbvch-ai/aihub-core/aws-cli-alpine:3.22.1
-    restart: no
+    restart: "no"
     depends_on:
       seaweedfs-s3:
         condition: service_healthy
@@ -345,7 +345,7 @@ services:
     build:
       context: ./configs/etcd
       dockerfile: init.Dockerfile
-    restart: no
+    restart: "no"
     depends_on:
       etcd:
         condition: service_started

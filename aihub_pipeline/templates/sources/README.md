@@ -1,7 +1,6 @@
 # Pre-configured Source Templates
 
-This directory contains pre-configured templates for common cloud storage sources.
-Each template provides:
+This directory contains pre-configured templates for common cloud storage sources. Each template provides:
 
 1. **Environment variable template** (`.env.template`) - Required rclone configuration
 2. **Pipeline example** (`pipeline.py`) - Ready-to-use Dagster pipeline definition
@@ -35,7 +34,8 @@ Each template provides:
 
 ## Environment Variable Convention
 
-All rclone source configuration uses the `RCLONE_` prefix to avoid conflicts with other tools (AWS SDK, Azure CLI, etc.):
+All rclone source configuration uses the `RCLONE_` prefix to avoid conflicts with other tools (AWS SDK, Azure CLI,
+etc.):
 
 ```
 RCLONE_{SOURCE}_{OPTION}=value
@@ -97,8 +97,8 @@ defs = default_rclone_to_datalake_definitions(
 )
 ```
 
-All synced files end up in `myproject/all-docs/...` → namespace `"all-docs"`.
-Use when: All documents should be searchable as one knowledge base.
+All synced files end up in `myproject/all-docs/...` → namespace `"all-docs"`. Use when: All documents should be
+searchable as one knowledge base.
 
 **Option 2: Preserve source structure** (omit `datalake_directory_name`):
 
@@ -164,5 +164,5 @@ in a single namespace.
 
 ## Creating Custom Sources
 
-For sources not listed here, you can configure any of the 70+ rclone-supported backends.
-See the [rclone documentation](https://rclone.org/overview/) for available providers.
+For sources not listed here, you can configure any of the 70+ rclone-supported backends. See the
+[rclone documentation](https://rclone.org/overview/) for available providers.
