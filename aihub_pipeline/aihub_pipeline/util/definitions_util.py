@@ -1,3 +1,4 @@
+import warnings
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Annotated
@@ -96,6 +97,10 @@ def default_definitions(
     vector_store_dimensions: Annotated[int | None, "Embedding vector dimensions must match model"] = None,
     max_partitions: Annotated[int, "Maximum number of partitions to create or delete at once"] = 1000,
     document_parser_loader_type: Annotated[LoaderType, "Document parser loader type"] = LoaderType.MINERU,
+    encode_partition_keys: Annotated[
+        bool | None,
+        "URL-encode special characters in partition keys. Will default to True in a future version.",
+    ] = None,
 ) -> Definitions:
     """
     Creates a complete DataLake to vector store pipeline using local resources.
@@ -105,6 +110,8 @@ def default_definitions(
 
     Pipeline: S3 → Document Processing → Mongo → Node Chunking → Summary Generation → Milvus
     """
+    encode = resolve_encode_partition_keys(encode_partition_keys)
+
     document_partitions = DynamicPartitionsDefinition(name=f"{datalake_container_name}_document_partitions")
 
     data_lake_key = AssetKey([datalake_container_name, "datalake_to_vectorstore", "data_lake"])
@@ -112,7 +119,9 @@ def default_definitions(
     nodes_key = AssetKey([datalake_container_name, "datalake_to_vectorstore", "nodes"])
     removed_documents_key = AssetKey([datalake_container_name, "datalake_to_vectorstore", "removed_documents"])
 
-    observable_asset = observable_data_lake_factory(data_lake_key, document_partitions, max_partitions)
+    observable_asset = observable_data_lake_factory(
+        data_lake_key, document_partitions, max_partitions, encode_partition_keys=encode
+    )
     assets = [
         observable_asset,
         removed_documents_factory(removed_documents_key, data_lake_key=data_lake_key),
@@ -160,6 +169,7 @@ def default_definitions(
         ),
         **s3_data_lake_resources(
             container_name=datalake_container_name,
+            encode_partition_keys=encode,
         ),
         "embedding_model": EmbeddingModelResource(
             embedding_config=embedding_config,
@@ -302,6 +312,10 @@ def default_local_filesystem_to_datalake_definitions(
     remove_job_hour: Annotated[int, "Hour to run daily removed files cleanup job"] = 1,
     remove_job_minute: Annotated[int, "Minute to run daily removed files cleanup job"] = 0,
     max_partitions: Annotated[int, "Maximum number of partitions to create or delete at once"] = 1000,
+    encode_partition_keys: Annotated[
+        bool | None,
+        "URL-encode special characters in partition keys. Will default to True in a future version.",
+    ] = None,
 ) -> Definitions:
     """
     Creates a Local File System to DataLake pipeline using S3-compatible storage.
@@ -322,6 +336,8 @@ def default_local_filesystem_to_datalake_definitions(
     This is the first step - combine with default_definitions() to process files into
     embeddings for RAG applications.
     """
+    encode = resolve_encode_partition_keys(encode_partition_keys)
+
     filesystem_partitions = DynamicPartitionsDefinition(name=f"{datalake_container_name}_local_fs_partitions")
 
     filesystem_key = AssetKey([datalake_container_name, "local_fs_to_datalake", "local_fs"])
@@ -333,6 +349,7 @@ def default_local_filesystem_to_datalake_definitions(
         filesystem_key,
         filesystem_partitions,
         max_partitions,
+        encode_partition_keys=encode,
     )
 
     assets = [
@@ -370,7 +387,10 @@ def default_local_filesystem_to_datalake_definitions(
         exclude_patterns=exclude_patterns,
     )
 
-    filesystem_io_manager = LocalFileSystemIOManager(local_file_system_client=filesystem_client)
+    filesystem_io_manager = LocalFileSystemIOManager(
+        local_file_system_client=filesystem_client,
+        encode_partition_keys=encode,
+    )
 
     store_name = get_db_name_from_bucket_name(bucket_name=datalake_container_name, auto_sync=True)
 
@@ -382,6 +402,7 @@ def default_local_filesystem_to_datalake_definitions(
             **s3_data_lake_resources(
                 container_name=datalake_container_name,
                 directory_name=datalake_directory_name,
+                encode_partition_keys=encode,
             ),
             **mongo_document_store_resource(document_store_name=store_name),
         },
@@ -414,6 +435,10 @@ def default_rclone_to_datalake_definitions(
     remove_job_hour: Annotated[int, "Hour to run daily removed files cleanup job"] = 1,
     remove_job_minute: Annotated[int, "Minute to run daily removed files cleanup job"] = 0,
     max_partitions: Annotated[int, "Maximum number of partitions to create or delete at once"] = 1000,
+    encode_partition_keys: Annotated[
+        bool | None,
+        "URL-encode special characters in partition keys. Will default to True in a future version.",
+    ] = None,
 ) -> Definitions:
     """
     Creates an Rclone to DataLake pipeline using S3-compatible storage.
@@ -453,6 +478,8 @@ def default_rclone_to_datalake_definitions(
             include_patterns=["*.pdf"],
         )
     """
+    encode = resolve_encode_partition_keys(encode_partition_keys)
+
     rclone_partitions = DynamicPartitionsDefinition(name="rclone_partitions")
 
     # Extract source name from config or from source_remote (e.g., "onedrive:Documents" -> "onedrive")
@@ -474,7 +501,9 @@ def default_rclone_to_datalake_definitions(
     data_lake_files_key = AssetKey([datalake_container_name, pipeline_group, "data_lake_files"])
     removed_data_lake_files_key = AssetKey([datalake_container_name, pipeline_group, "removed_data_lake_files"])
 
-    observable_rclone_asset = observable_rclone_factory(rclone_key, rclone_partitions, max_partitions)
+    observable_rclone_asset = observable_rclone_factory(
+        rclone_key, rclone_partitions, max_partitions, encode_partition_keys=encode
+    )
 
     assets = [
         observable_rclone_asset,
@@ -507,7 +536,7 @@ def default_rclone_to_datalake_definitions(
         rclone_config_dict=rclone_config.model_dump(mode="json", exclude_none=True) if rclone_config else None,
     )
 
-    rclone_io_manager = RcloneIOManager(rclone_client=rclone_client)
+    rclone_io_manager = RcloneIOManager(rclone_client=rclone_client, encode_partition_keys=encode)
 
     return Definitions(
         assets=assets,
@@ -517,6 +546,7 @@ def default_rclone_to_datalake_definitions(
             **s3_data_lake_resources(
                 container_name=datalake_container_name,
                 directory_name=datalake_directory_name,
+                encode_partition_keys=encode,
             ),
         },
         sensors=[default_automation_sensor(assets)],
@@ -527,3 +557,24 @@ def default_rclone_to_datalake_definitions(
             daily_schedule_at(remove_job, hour=remove_job_hour, minute=remove_job_minute),
         ],
     )
+
+
+def resolve_encode_partition_keys(value: bool | None) -> bool:
+    """Resolve encode_partition_keys for S3-based pipelines, emitting a deprecation warning when unset.
+
+    Only applies to pipelines that use file paths as partition keys (local filesystem, rclone, S3 data lake).
+    SharePoint pipelines use opaque item IDs that need no encoding. The Azure Data Lake IO manager is not
+    wired through definition builders (manual assembly only) and will be added when needed.
+    """
+    if value is not None:
+        return value
+    warnings.warn(
+        "encode_partition_keys is not set and defaults to False. "
+        "In a future version it will default to True, which URL-encodes special characters "
+        "in Dagster partition keys but invalidates existing partitions (triggering full re-processing). "
+        "Set encode_partition_keys=False explicitly to keep the current behavior, "
+        "or set encode_partition_keys=True to opt in now.",
+        DeprecationWarning,
+        stacklevel=3,
+    )
+    return False
