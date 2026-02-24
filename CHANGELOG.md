@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.265.3] - 2026-02-24 - Enhanced Service Health Monitoring for Docker Compose
+
+### Added
+
+- ✨ **Implemented standardized HTTP health check labels** for various core services, including **SeaweedFS Volume**,
+  **Ferretdb**, **NATS Server**, **Presidio Analyzer**, **Presidio Anonymizer**, and **Langfuse Server**. These labels
+  provide explicit metadata (protocol, port, path) for external monitoring and orchestration tools to determine service
+  readiness and liveness.
+- 🚀 **Configured native Docker health checks** for the **Jupyter Notebook** service, introducing robust internal
+  validation of its operational status with defined intervals, timeouts, and retries.
+- 🔄 **Explicitly set Docker's internal health check to `NONE`** for **Ferretdb** and **Langfuse Server** services. This
+  clarifies the monitoring strategy, indicating that external systems should rely on the newly added health check labels
+  for status checks rather than Docker's default internal mechanism.
+
+______________________________________________________________________
+
 ## [v0.265.2] - 2026-02-24 - Comprehensive Architecture Documentation and AI-Powered Management
 
 ### Added
