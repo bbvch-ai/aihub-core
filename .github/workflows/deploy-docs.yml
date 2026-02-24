@@ -1,5 +1,6 @@
 ---
 name: Deploy Documentation to GitHub Pages
+run-name: "Deploy Docs — ${{ github.event.client_payload.release_version || 'manual' }}"
 on:
   repository_dispatch:
     types: [release-ready]
