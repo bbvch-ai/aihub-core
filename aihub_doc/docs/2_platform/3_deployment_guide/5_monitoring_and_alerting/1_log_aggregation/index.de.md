@@ -1,18 +1,18 @@
 ---
 title: Externe Log-Aggregation
-source_sha: 9fdb9b75b156f46ad8a81d10c8c96628cde13c92fcb070c080c6455e1288b27f
+source_sha: b177b21c66cc169681e13071a457eb4a37997076f8097dc8fb69dce56a3a8720
 ---
 
 # Externe Log-Aggregation
 
-Die Beobachtbarkeitsarchitektur des Swiss AI-Hubs basiert auf **OpenTelemetry**, wodurch Sie Logs, Metriken und Traces
-in externe Systeme für zentralisierte Verwaltung, Langzeitarchivierung und erweiterte Analysen exportieren können.
-Während die Plattform vorkonfiguriert ist, um mit **SigNoz** als offiziell unterstütztem Backend zu arbeiten, stellt die
-OpenTelemetry-Grundlage sicher, dass Sie nie an einen einzigen Anbieter gebunden sind.
+Die Observability-Architektur des Swiss AI-Hub basiert auf **OpenTelemetry** und ermöglicht Ihnen den Export von Logs,
+Metriken und Traces in externe Systeme für zentralisiertes Management, langfristige Speicherung und erweiterte Analysen.
+Obwohl die Plattform vorkonfiguriert ist, um mit **SigNoz** als offiziell unterstütztem Backend zu arbeiten, stellt die
+OpenTelemetry-Grundlage sicher, dass Sie nie an einen einzelnen Anbieter gebunden sind.
 
 ## Architekturübersicht
 
-Alle Telemetriedaten fließen durch einen zentralen **OpenTelemetry Collector**, der als Verarbeitungs- und Routing-Hub
+Die gesamte Telemetrie fließt durch einen zentralen **OpenTelemetry Collector**, der als Verarbeitungs- und Routing-Hub
 fungiert:
 
 ```mermaid
@@ -34,10 +34,10 @@ graph TB
 Der Collector empfängt Telemetriedaten über das **OpenTelemetry Protocol (OTLP)**, verarbeitet sie (Filterung, Batching,
 Anreicherung) und exportiert sie an ein oder mehrere Backends. Diese Architektur bietet mehrere wesentliche Vorteile:
 
-- **Zentrale Steuerung**: Ein einziger Punkt zur Konfiguration von Datenflüssen und Transformationen
+- **Zentralisierte Kontrolle**: Ein einziger Punkt zur Konfiguration von Datenflüssen und Transformationen
 - **Performance**: Batching und Komprimierung reduzieren den Netzwerk-Overhead
-- **Flexibilität**: Verschiedene Datentypen an verschiedene Backends leiten
-- **Resilienz**: Integrierte Wiederholungsversuche und Warteschlangen verarbeiten vorübergehende Ausfälle
+- **Flexibilität**: Weiterleitung verschiedener Datentypen an unterschiedliche Backends
+- **Resilienz**: Integrierte Wiederholungsversuche und Warteschlangen bewältigen temporäre Ausfälle
 
 ## SigNoz: Das offizielle Backend
 
@@ -48,36 +48,36 @@ bereitstellt.
 ### Warum SigNoz?
 
 - **OpenTelemetry Native**: Von Grund auf auf OTel-Standards aufgebaut
-- **Vereinheitlichte Observability**: Logs, Metriken und Traces in einer Plattform
-- **Kosteneffizient**: Open Source mit vorhersehbarer Preisgestaltung
+- **Vereinheitlichte Observability**: Logs, Metriken und Traces auf einer Plattform
+- **Kosteneffizient**: Open Source mit vorhersehbaren Preisen
 - **Volltextsuche**: Leistungsstarke Log-Abfrage und -Filterung
 - **Distributed Tracing**: End-to-End-Visualisierung des Anfrageflusses
 - **Benutzerdefinierte Dashboards**: Vorgefertigte und anpassbare Visualisierungen
-- **Flexible Alarmierung**: Multi-Kanal-Benachrichtigungen (E-Mail, Slack, Teams, PagerDuty)
+- **Flexible Benachrichtigungen**: Multi-Kanal-Benachrichtigungen (E-Mail, Slack, Teams, PagerDuty)
 
-### Bereitstellungsoptionen
+### Deployment-Optionen
 
-Die Plattform unterstützt zwei SigNoz-Bereitstellungsmodelle:
+Die Plattform unterstützt zwei SigNoz-Deployment-Modelle:
 
 #### SigNoz Cloud (Am einfachsten)
 
-SigNoz bietet einen vollständig verwalteten Cloud-Dienst mit regionalen Endpunkten (EU, US, IN). Der AI-Hub ist für die
-Nutzung von SigNoz Cloud vorkonfiguriert – Sie müssen lediglich Ihren Ingestion Key und den regionalen Endpunkt über
-Umgebungsvariablen bereitstellen:
+SigNoz bietet einen vollständig verwalteten Cloud-Service mit regionalen Endpunkten (EU, US, IN). Der AI-Hub ist
+vorkonfiguriert, um SigNoz Cloud zu verwenden – Sie müssen lediglich Ihren Ingestion Key und den regionalen Endpunkt
+über Umgebungsvariablen bereitstellen:
 
 ```bash
 OTEL_CLOUD_ENDPOINT="ingest.eu.signoz.cloud:443"
 OTEL_CLOUD_HEADERS="{'signoz-ingestion-key':<your_key>}"
 ```
 
-#### Self-Hosted SigNoz (Für die Produktion empfohlen)
+#### Self-Hosted SigNoz (Für Produktion empfohlen)
 
-Für Produktionsbereitstellungen wird die **Selbst-Hinterlegung von SigNoz auf einer dedizierten VM** aus mehreren
-Gründen dringend empfohlen:
+Für Produktions-Deployments wird **das Self-Hosting von SigNoz auf einer dedizierten VM** aus mehreren Gründen dringend
+empfohlen:
 
-- **Leistungsisolation**: Observability-Overhead beeinflusst die Anwendungsleistung nicht
-- **Hohe Verfügbarkeit**: Die Anwendung läuft weiter, auch wenn die Überwachung fehlschlägt
-- **Datenhoheit**: Volle Kontrolle über den Speicherort und die Aufbewahrung von Telemetriedaten
+- **Performance-Isolation**: Observability-Overhead beeinträchtigt die Anwendungs-Performance nicht
+- **Hohe Verfügbarkeit**: Die Anwendung läuft auch bei Ausfall des Monitorings weiter
+- **Datenhoheit**: Volle Kontrolle über Speicherort und Aufbewahrung von Telemetriedaten
 - **Sicherheit**: Netzwerkisolation zwischen Anwendungs- und Observability-Ebenen
 
 ```mermaid
@@ -97,9 +97,9 @@ graph TB
     classDef default font-size:16px,padding:20px
 ```
 
-SigNoz kann mit Docker Compose auf einer separaten VM mit geeigneten Ressourcen (4+ CPU-Kerne, 8+ GB RAM, 100+ GB
-Speicher) bereitgestellt werden. Der OTel Collector des AI-Hubs wird dann so konfiguriert, dass er auf den selbst
-gehosteten Endpunkt statt auf SigNoz Cloud zeigt.
+SigNoz kann mittels Docker Compose auf einer separaten VM mit entsprechenden Ressourcen (4+ CPU-Kerne, 8+ GB RAM, 100+
+GB Speicher) deployed werden. Der OTel Collector des AI-Hub wird dann so konfiguriert, dass er auf den selbst gehosteten
+Endpunkt anstatt auf SigNoz Cloud verweist.
 
 ## Datenerfassung
 
@@ -107,27 +107,27 @@ Die Plattform sammelt und exportiert automatisch:
 
 ### Logs
 
-- **Anwendungsprotokolle**: Strukturierte JSON-Logs von allen Python-Diensten (INFO, WARNING, ERROR, CRITICAL)
+- **Anwendungs-Logs**: Strukturierte JSON-Logs von allen Python Services (INFO, WARNING, ERROR, CRITICAL)
 - **Container-Logs**: Alle stdout/stderr-Ausgaben von Docker-Containern
-- **Zugriffsprotokolle**: HTTP-Anfragen und -Antworten vom API-Gateway
-- **Sicherheitsprotokolle**: Authentifizierungsereignisse und Berechtigungsprüfungen
+- **Zugriffs-Logs**: HTTP-Anfragen und -Antworten vom API Gateway
+- **Sicherheits-Logs**: Authentifizierungsereignisse und Berechtigungsprüfungen
 
 ### Traces
 
-- **Verteilte Traces**: End-to-End-Anfrageflüsse über Dienste hinweg (API → Agent → LLM → Datenbank)
-- **OpenInference Traces**: LLM-spezifische Spans mit Prompt-/Antwortinhalten, Token-Nutzung und Kosten
+- **Distributed Traces**: End-to-End-Anfrageflüsse über Services hinweg (API → Agent → LLM → Datenbank)
+- **OpenInference Traces**: LLM-spezifische Spans mit Prompt-/Response-Inhalt, Token-Nutzung und Kosten
 
-::: info Dual Tracing Strategy
-OpenInference Traces werden an **sowohl** Langfuse (lokales, spezialisiertes LLM-Debugging) als auch SigNoz (Cloud,
-Langzeitarchivierung und Korrelation) gesendet. Dieser duale Ansatz bietet sofortige Debugging-Fähigkeiten bei
-gleichzeitiger umfassender Beobachtbarkeit.
+::: info Dual-Tracing-Strategie
+OpenInference-Traces werden **sowohl** an Langfuse (lokales, spezialisiertes LLM-Debugging) als auch an SigNoz (Cloud,
+Langzeitspeicherung und Korrelation) gesendet. Dieser duale Ansatz bietet sofortige Debugging-Fähigkeiten bei
+gleichzeitiger umfassender Observability.
 :::
 
 ### Metriken
 
-- **Infrastrukturmetriken** (geplant): CPU, Speicher, Netzwerk, Festplatten-I/O pro Container
-- **Anwendungsmetriken** (geplant): API-Latenz, Fehlerraten, Agent-Ausführungszeiten
-- **Geschäftsmetriken**: Aktive Sitzungen, Dokumentenverarbeitungsdurchsatz, Kosten pro Operation
+- **Infrastruktur-Metriken** (geplant): CPU, Arbeitsspeicher, Netzwerk, Disk I/O pro Container
+- **Anwendungs-Metriken** (geplant): API-Latenz, Fehlerraten, Agent-Ausführungszeiten
+- **Business-Metriken**: Aktive Sessions, Dokumentenverarbeitungsdurchsatz, Kosten pro Operation
 
 ## Konfiguration
 
@@ -137,25 +137,25 @@ umfasst:
 - **Generischer Cloud Exporter**: Konfiguriert über Umgebungsvariablen für Flexibilität
 - **Filterung**: Entfernt überflüssige Health-Check- und Datenbank-Spans
 - **Batching**: Optimiert die Netzwerknutzung durch Batching von Telemetriedaten
-- **Wiederholungslogik**: Behandelt temporäre Netzwerkausfälle
-- **Komprimierung**: Reduziert die Bandbreite mit Gzip-Kompression
+- **Retry-Logik**: Behandelt temporäre Netzwerkausfälle
+- **Komprimierung**: Reduziert die Bandbreite mit gzip-Kompression
 
-Alle Backends werden über Umgebungsvariablen konfiguriert, was den Wechsel zwischen SigNoz Cloud, selbst gehostetem
-SigNoz oder alternativen Backends ohne Codeänderung erleichtert.
+Alle Backends werden über Umgebungsvariablen konfiguriert, was den einfachen Wechsel zwischen SigNoz Cloud, selbst
+gehostetem SigNoz oder alternativen Backends ohne Codeänderungen ermöglicht.
 
 ## Alternative Backends
 
-Während **SigNoz das offiziell unterstützte Backend ist**, ermöglicht Ihnen die OpenTelemetry-Grundlage, Daten an jedes
-OTel-kompatible System zu senden. Um ein alternatives Backend zu verwenden, aktualisieren Sie die Umgebungsvariablen so,
-dass sie auf den OTLP-Endpunkt Ihres gewählten Systems zeigen. Einige Backends erfordern möglicherweise zusätzliche
-Exporter-Konfigurationen in der OTel Collector Konfigurationsdatei.
+Obwohl **SigNoz das offiziell unterstützte Backend ist**, ermöglicht die OpenTelemetry-Grundlage, Daten an jedes
+OTel-kompatible System zu senden. Um ein alternatives Backend zu verwenden, aktualisieren Sie die Umgebungsvariablen, um
+auf den OTLP-Endpunkt Ihres gewählten Systems zu verweisen. Einige Backends erfordern möglicherweise eine zusätzliche
+Exporter-Konfiguration in der OTel Collector Konfigurationsdatei.
 
----
+______________________________________________________________________
 
 ## Nächste Schritte
 
-- Erkunden Sie die [SigNoz-Dokumentation](https://signoz.io/docs/) für Abfrage-Builder und Alarmkonfiguration
-- Überprüfen Sie die [OpenTelemetry Collector Dokumentation](https://opentelemetry.io/docs/collector/) für erweiterte
+- Erkunden Sie die [SigNoz-Dokumentation](https://signoz.io/docs/) für Query Builder und Alert-Konfiguration
+- Lesen Sie die [OpenTelemetry Collector-Dokumentation](https://opentelemetry.io/docs/collector/) für erweiterte
   Konfiguration
 - Konfigurieren Sie [Langfuse LLM Observability](../../../10_chat_ui/10_observability/) für AI-spezifisches Debugging
-- Richten Sie [Kostenverfolgung](../../../14_cost_control/) für die Überwachung der LLM-Nutzung ein
+- Richten Sie [Kosten-Tracking](../../../14_cost_control/) für die Überwachung der LLM-Nutzung ein

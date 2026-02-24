@@ -16,7 +16,7 @@ async def main():
     """One-shot test runner for UserMemoryAgent."""
     runner = AgentTestRunner(
         agent_type=UserMemoryAgent,
-        default_agent_config=UserMemoryAgentConfig(
+        agent_config=UserMemoryAgentConfig(
             agent_class=UserMemoryAgent.__name__,
             agent_id="memory_agent",
             name=LocaleString(en="User Memory Agent"),

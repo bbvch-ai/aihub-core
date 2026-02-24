@@ -4,11 +4,10 @@ import pytest
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
     DangerousDevelopmentOnlyAuthHandler,
 )
-from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
-    DangerousDevelopmentOnlyIdentityProvider,
-)
 from aihub_lib.auth.usage import RoleUsageLimitStatus, UsageLimitPeriod, UsageStatus
-from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_admin_only  # noqa: F401
+from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_methods  # noqa: F401
+from aihub_lib.testing.auth_utils.tenant_mocks import mock_tenant_entity_autouse  # noqa: F401
+from aihub_lib.testing.auth_utils.user_mocks import mock_user_entity_autouse  # noqa: F401
 from asgi_lifespan import LifespanManager
 from fastapi import HTTPException
 from httpx import ASGITransport, AsyncClient
@@ -62,7 +61,7 @@ class TestUsageLimitEnforcement:
             status_code=429, detail=build_exceeded_detail(exceeded, locale="en").model_dump()
         )
 
-        auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
+        auth = DangerousDevelopmentOnlyAuthHandler()
         controller = OpenaiController(auth=auth).chat_completion_with_assistants()
         runner = ApiTestRunner()
         runner.mount(controller)
@@ -87,7 +86,7 @@ class TestUsageLimitEnforcement:
     @patch("aihub_api.routes.openai.OpenaiService.UsageLimits.check_and_raise", new_callable=AsyncMock)
     async def test_direct_model_calls_not_counted(self, mock_check_usage: AsyncMock):
         """Test that direct model calls (not agent calls) are not counted."""
-        auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
+        auth = DangerousDevelopmentOnlyAuthHandler()
         controller = OpenaiController(auth=auth).chat_completion_with_assistants()
         runner = ApiTestRunner()
         runner.mount(controller)

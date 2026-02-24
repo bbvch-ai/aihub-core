@@ -20,12 +20,15 @@ index: 3
 This section covers the foundational architecture, patterns, and terminology you need to know before building an agent.
 
 ::: info
-This documentation assumes you have completed the general AI-Hub setup as described in the main README.md. Make sure you have the required infrastructure running before proceeding.
+This documentation assumes you have completed the general AI-Hub setup as described in the main README.md. Make sure you
+have the required infrastructure running before proceeding.
 :::
 
 ### 📚 Introduction to `aihub_agent`
 
-You are contributing to the **aihub_agent** scope, which contains all agent logic and workflow definitions within the AI-Hub platform. This scope implements autonomous AI agents designed for proactive process automation—components that work alongside humans to execute tasks as part of redesigned business processes.
+You are contributing to the **aihub_agent** scope, which contains all agent logic and workflow definitions within the
+AI-Hub platform. This scope implements autonomous AI agents designed for proactive process automation—components that
+work alongside humans to execute tasks as part of redesigned business processes.
 
 ### 📁 Project Structure
 
@@ -47,7 +50,8 @@ aihub_agent/
 ### 🤖 The Agent: A Dispatchable Workflow
 
 ::: info Core Concept
-An agent is a **dispatchable workflow** that performs structured operations on input data to achieve a pre-defined goal. Agents follow a step-based approach where complex tasks are broken down into discrete, testable operations.
+An agent is a **dispatchable workflow** that performs structured operations on input data to achieve a pre-defined goal.
+Agents follow a step-based approach where complex tasks are broken down into discrete, testable operations.
 :::
 
 ```python
@@ -78,7 +82,8 @@ Agents communicate through **events**—structured data objects that represent s
 ### 🏷️ The `@step` Decorator: Building Blocks of Workflows
 
 ::: tip Step Decorator
-Steps are the fundamental building blocks of agent workflows, defined using the `@step()` decorator. This decorator orchestrates the flow of events between functions.
+Steps are the fundamental building blocks of agent workflows, defined using the `@step()` decorator. This decorator
+orchestrates the flow of events between functions.
 :::
 
 ```python
@@ -107,10 +112,13 @@ async def classify_request(self, event: UserMessageEvent) -> ClassificationEvent
 Agents use two types of context for state management:
 :::
 
-- **RunContext**: Short-lived storage for ephemeral data **within a single run**. It's isolated between different runs and is ideal for intermediate calculations or temporary caching. It expires after 30 days.
-- **ThreadContext**: Persistent storage for state **across multiple runs** within the same conversation thread. It maintains conversational history and user preferences, enabling contextual follow-up interactions. It also has a 30-day TTL.
+- **RunContext**: Short-lived storage for ephemeral data **within a single run**. It's isolated between different runs
+  and is ideal for intermediate calculations or temporary caching. It expires after 30 days.
+- **ThreadContext**: Persistent storage for state **across multiple runs** within the same conversation thread. It
+  maintains conversational history and user preferences, enabling contextual follow-up interactions. It also has a
+  30-day TTL.
 
----
+______________________________________________________________________
 
 ## 2. 🚀 The Step-by-Step Development Workflow
 
@@ -120,27 +128,20 @@ This section provides a practical, step-by-step guide to building, testing, and 
 
 Before you begin, ensure you have completed the infrastructure setup from the root project documentation.
 
-::: warning
-Always activate the Poetry environment before working. All subsequent commands must be run from within this activated shell.
-:::
-
 ```bash
 # Start required services from the project root
 docker compose -f docker-compose.yml -f milvus-standalone-docker-compose.yml -f docker-compose-webui.yml up -d
 ```
 
-```bash
-cd aihub_agent
-poetry shell
-```
-
 ### 🛠️ Step 1: Create the Agent, Configuration, and Events
 
 ::: info
-Follow this three-part process to define a new agent. Each part builds on the previous one to create a complete agent implementation.
+Follow this three-part process to define a new agent. Each part builds on the previous one to create a complete agent
+implementation.
 :::
 
-1. **Create the Agent Class**: Define the agent's workflow by creating a class that inherits from `Agent` and uses the `@step` decorator.
+1. **Create the Agent Class**: Define the agent's workflow by creating a class that inherits from `Agent` and uses the
+   `@step` decorator.
    ```python
    # my_agent/MyAgent.py
    from aihub_agent.agents.Agent import Agent
@@ -155,7 +156,9 @@ Follow this three-part process to define a new agent. Each part builds on the pr
        async def process_step(self, event: MyCustomEvent) -> StopEvent:
            # ...
    ```
-2. **Define the Agent Configuration**: Create a Pydantic model inheriting from `AgentConfig` using the **form duality pattern**. This allows the same model to define both the UI form (for the Admin UI) and the runtime configuration data.
+2. **Define the Agent Configuration**: Create a Pydantic model inheriting from `AgentConfig` using the **form duality
+   pattern**. This allows the same model to define both the UI form (for the Admin UI) and the runtime configuration
+   data.
    ```python
    # my_agent/MyAgentConfig.py
    from typing import Annotated
@@ -185,10 +188,12 @@ Follow this three-part process to define a new agent. Each part builds on the pr
    ```
 
    ::: tip Form Duality Pattern
-The `as_form()` method returns the config with FormKit elements instead of values. When registering with `AgentRunner`, use form mode. At runtime, the dispatcher injects the actual values from the database.
+The `as_form()` method returns the config with FormKit elements instead of values. When registering with `AgentRunner`,
+use form mode. At runtime, the dispatcher injects the actual values from the database.
    :::
 
-3. **Define Custom Events**: If your workflow requires custom data structures to be passed between steps, define them as Pydantic models inheriting from `Event`.
+3. **Define Custom Events**: If your workflow requires custom data structures to be passed between steps, define them as
+   Pydantic models inheriting from `Event`.
    ```python
    # my_agent/events/MyCustomEvent.py
    from aihub_lib.nats.events import Event
@@ -213,7 +218,8 @@ We use Behavior-Driven Development (BDD) with `pytest-bdd` as the primary method
        When the user sends a message with content: "Hello"
        Then the agent run should complete
    ```
-2. **Implement the Test Steps**: Write Python code to implement the Gherkin steps using the `AgentTestRunner`. The test runner provides a sandboxed environment to execute the agent and inspect the resulting events.
+2. **Implement the Test Steps**: Write Python code to implement the Gherkin steps using the `AgentTestRunner`. The test
+   runner provides a sandboxed environment to execute the agent and inspect the resulting events.
    ```python
    # tests/test_MyAgent.py
    from aihub_lib.i18n.LocaleString import LocaleString
@@ -256,31 +262,34 @@ We use Behavior-Driven Development (BDD) with `pytest-bdd` as the primary method
    def _(agent_runner: AgentTestRunner):
        assert agent_runner.has_stop_event, "Agent did not receive stop event"
    ```
-3. **Run the Tests**: Execute tests from your activated Poetry shell.
+3. **Run the Tests**: Execute tests from the scope directory.
    ```bash
    # Run all tests (excluding cloud dependencies)
-   poetry run pytest -k "not azure"
+   uv run pytest -k "not azure"
 
    # Run a specific test file
-   poetry run pytest tests/test_MyAgent.py
+   uv run pytest tests/test_MyAgent.py
    ```
 
 ### 🔍 Step 3: Debug and Observe Your Agent
 
 ::: warning Debugging Approach
-Due to the asynchronous, event-driven nature of agents, traditional debugging with breakpoints is often ineffective. Instead, adopt a trace-driven debugging methodology.
+Due to the asynchronous, event-driven nature of agents, traditional debugging with breakpoints is often ineffective.
+Instead, adopt a trace-driven debugging methodology.
 :::
 
 #### 🔍 The Debugging Mindset: Tracing and Logging over Breakpoints
 
 ::: tip Debugging Tools
-Your primary tools are **Langfuse Tracing** for visual flow analysis and **structured logging** for detailed event inspection. Use `print` statements within steps for quick checks.
+Your primary tools are **Langfuse Tracing** for visual flow analysis and **structured logging** for detailed event
+inspection. Use `print` statements within steps for quick checks.
 :::
 
 #### 📝 Essential Debugging Tool: The `trigger.py` Script
 
 ::: tip Trigger Script
-For any non-trivial agent, create a `trigger.py` script. This script programmatically starts your agent and sends it a specific `StartEvent`, allowing you to test a precise scenario in isolation without needing a frontend.
+For any non-trivial agent, create a `trigger.py` script. This script programmatically starts your agent and sends it a
+specific `StartEvent`, allowing you to test a precise scenario in isolation without needing a frontend.
 :::
 
 ```python
@@ -306,16 +315,20 @@ if __name__ == "__main__":
 #### 👁️ Primary Observability Tool: Langfuse Tracing (Port 6006)
 
 ::: warning Langfuse Tracing
-**Langfuse** is your most important debugging tool. It provides a web UI to visualize the step-by-step execution of your agent, showing the flow of events, timings, and errors.
+**Langfuse** is your most important debugging tool. It provides a web UI to visualize the step-by-step execution of your
+agent, showing the flow of events, timings, and errors.
 :::
 
 - **Access**: `http://localhost:6006` (available when the Docker stack is running).
-- **Usage**: Run your agent via its `trigger.py` script, then open the Langfuse UI to find the execution trace. Click on steps to inspect inputs, outputs, and metadata.
+- **Usage**: Run your agent via its `trigger.py` script, then open the Langfuse UI to find the execution trace. Click on
+  steps to inspect inputs, outputs, and metadata.
 
 #### 🔗 Langfuse Integration
 
 ::: info Langfuse
-Langfuse is running alongside the development environment and provides programmatic access to trace data for debugging and monitoring agent executions. This integration allows you to query trace information directly from your development tools.
+Langfuse is running alongside the development environment and provides programmatic access to trace data for debugging
+and monitoring agent executions. This integration allows you to query trace information directly from your development
+tools.
 :::
 
 **Key Concepts:**
@@ -338,12 +351,14 @@ Langfuse is running alongside the development environment and provides programma
 - Retrieve span annotations to understand step outcomes
 - Access experiment data for agent evaluation workflows
 
-This integration is particularly useful for automated testing, performance analysis, and building monitoring dashboards around agent behavior.
+This integration is particularly useful for automated testing, performance analysis, and building monitoring dashboards
+around agent behavior.
 
 #### 📝 Analyzing Event Flow with Logging
 
 ::: tip Event Flow Analysis
-Enable logging in your `trigger.py` script to see a detailed, real-time feed of events being produced and consumed by each step. This is invaluable for understanding why a workflow might be stalled or taking an unexpected path.
+Enable logging in your `trigger.py` script to see a detailed, real-time feed of events being produced and consumed by
+each step. This is invaluable for understanding why a workflow might be stalled or taking an unexpected path.
 :::
 
 ```python
@@ -371,11 +386,12 @@ make lint
 All agent code must use strict Python type annotations. This is enforced by CI/CD.
 :::
 
----
+______________________________________________________________________
 
 ## 3. 🎨 A Library of Agent Design Patterns
 
-This section provides a library of established patterns for building robust and sophisticated agents. Each pattern includes a conceptual explanation, use cases, and a reference to a working example in the playground.
+This section provides a library of established patterns for building robust and sophisticated agents. Each pattern
+includes a conceptual explanation, use cases, and a reference to a working example in the playground.
 
 ### 📎 Basic Patterns
 
@@ -393,7 +409,8 @@ This section provides a library of established patterns for building robust and 
 
 #### 🔀 Conditional Workflow
 
-- **Concept**: A workflow that takes different paths based on data or logic. A step returns one of several possible event types, and the workflow engine routes it to the appropriate downstream step.
+- **Concept**: A workflow that takes different paths based on data or logic. A step returns one of several possible
+  event types, and the workflow engine routes it to the appropriate downstream step.
 - **Reference**: `/playground/minimal_workflow/conditional_workflow/`
   ```python
   class ConditionalAgent(Agent):
@@ -407,7 +424,8 @@ This section provides a library of established patterns for building robust and 
 
 #### 👥 Human-in-the-Loop
 
-- **Concept**: Pauses the workflow to request input from a human user. The agent emits a request event and waits for a corresponding response event before continuing.
+- **Concept**: Pauses the workflow to request input from a human user. The agent emits a request event and waits for a
+  corresponding response event before continuing.
 - **Reference**: `/playground/minimal_workflow/human_in_the_loop_workflow/`
   ```python
   class HumanInTheLoopAgent(Agent):
@@ -420,7 +438,8 @@ This section provides a library of established patterns for building robust and 
 
 #### 🤖 Agent-in-the-Loop (Orchestration)
 
-- **Concept**: An agent (the orchestrator) invokes another agent (the worker) and waits for its result. This allows for creating complex workflows by composing smaller, specialized agents.
+- **Concept**: An agent (the orchestrator) invokes another agent (the worker) and waits for its result. This allows for
+  creating complex workflows by composing smaller, specialized agents.
 - **Reference**: `/playground/minimal_workflow/agent_in_the_loop_workflow/`
   ```python
   class OrchestratorAgent(Agent):
@@ -433,7 +452,8 @@ This section provides a library of established patterns for building robust and 
 
 #### 🔄 Multistep Human-in-the-Loop
 
-- **Concept**: A workflow with multiple, distinct points of human interaction, often used for multi-stage approval processes.
+- **Concept**: A workflow with multiple, distinct points of human interaction, often used for multi-stage approval
+  processes.
 - **Reference**: `/playground/minimal_workflow/multistep_human_in_the_loop_workflow/`
   ```python
   class MultistepHumanInTheLoopAgent(Agent):
@@ -451,7 +471,8 @@ This section provides a library of established patterns for building robust and 
 
 #### 🔁 Bounded Loop
 
-- **Concept**: An iterative workflow that repeats a cycle of steps until a condition is met or a maximum number of iterations is reached. State (like a loop counter) is managed using `RunContext`.
+- **Concept**: An iterative workflow that repeats a cycle of steps until a condition is met or a maximum number of
+  iterations is reached. State (like a loop counter) is managed using `RunContext`.
 - **Reference**: `/playground/minimal_workflow/bounded_loop/`
   ```python
   class BoundedLoopAgent(Agent):
@@ -472,7 +493,8 @@ This section provides a library of established patterns for building robust and 
 
 #### 🔀 Fan-Out (Parallel Processing)
 
-- **Concept**: A single step returns a `list` of events, which are then processed in parallel by downstream steps. This is useful for batch processing or concurrent operations.
+- **Concept**: A single step returns a `list` of events, which are then processed in parallel by downstream steps. This
+  is useful for batch processing or concurrent operations.
 - **Reference**: `/playground/minimal_workflow/fan_out_workflow/`
   ```python
   class FanOutAgent(Agent):
@@ -488,7 +510,8 @@ This section provides a library of established patterns for building robust and 
 
 #### ✅ Precondition-Based Control
 
-- **Concept**: A step is decorated with a `@precondition` function that must return `True` for the step to execute. This is useful for synchronizing parallel branches of a workflow.
+- **Concept**: A step is decorated with a `@precondition` function that must return `True` for the step to execute. This
+  is useful for synchronizing parallel branches of a workflow.
 - **Reference**: `/playground/minimal_workflow/precondition_workflow/`
   ```python
   @precondition()
@@ -524,7 +547,8 @@ This section provides a library of established patterns for building robust and 
 
 #### ⚙️ Complex, Validated Configuration
 
-- **Concept**: Using nested Pydantic models with detailed `Annotated` fields to create sophisticated, self-validating configurations for production-grade agents.
+- **Concept**: Using nested Pydantic models with detailed `Annotated` fields to create sophisticated, self-validating
+  configurations for production-grade agents.
 - **Reference**: `/aihub_agent/agents/RagAgent/configs/RAGAgentConfig.py`
   ```python
   class RAGAgentConfig(AgentConfig):
@@ -536,7 +560,8 @@ This section provides a library of established patterns for building robust and 
 
 #### 📶 Configuration-Driven Behavior
 
-- **Concept**: The agent's internal logic branches based on values from its configuration object, allowing its behavior to be changed without altering code.
+- **Concept**: The agent's internal logic branches based on values from its configuration object, allowing its behavior
+  to be changed without altering code.
 - **Reference**: Many agents, such as `BoundedLoopAgent`, use this.
   ```python
   class ConfigurableAgent(Agent):
@@ -558,7 +583,8 @@ This section provides a library of established patterns for building robust and 
 
 #### 🌍 Multi-Locale Support (i18n)
 
-- **Concept**: Building agents that support multiple languages by using the `LocaleHandler` to fetch translated strings from YAML files.
+- **Concept**: Building agents that support multiple languages by using the `LocaleHandler` to fetch translated strings
+  from YAML files.
 - **Reference**: `/playground/minimal_workflow/multi_locale_workflow/`
   ```python
   class MultiLocaleAgent(Agent):
@@ -573,7 +599,8 @@ This section provides a library of established patterns for building robust and 
 
 #### 🛡️ Error Handling and Resilience
 
-- **Concept**: Building robust workflows by setting `stop_on_error=False` on steps that might fail, allowing the agent to catch `ExceptionEvent` and proceed along a failure path.
+- **Concept**: Building robust workflows by setting `stop_on_error=False` on steps that might fail, allowing the agent
+  to catch `ExceptionEvent` and proceed along a failure path.
 - **Reference**: The `@step` decorator parameters.
   ```python
   class ResilientAgent(Agent):
@@ -592,7 +619,8 @@ This section provides a library of established patterns for building robust and 
 
 #### 📱 Agent Step Metadata for UI
 
-- **Concept**: Providing `name`, `description`, and `icon` metadata in the `@step` decorator to automatically populate monitoring and user-facing UIs.
+- **Concept**: Providing `name`, `description`, and `icon` metadata in the `@step` decorator to automatically populate
+  monitoring and user-facing UIs.
 - **Reference**: The `@step` decorator parameters.
   ```python
   class DocumentProcessingAgent(Agent):
@@ -611,7 +639,8 @@ This section provides a library of established patterns for building robust and 
 
 #### 🚀 Performance Testing & Optimization
 
-- **Concept**: Using a dedicated agent and framework to measure performance, identify bottlenecks, and test workflows under load.
+- **Concept**: Using a dedicated agent and framework to measure performance, identify bottlenecks, and test workflows
+  under load.
 - **Reference**: `/playground/performance/PerformanceTestingAgent/`
   ```python
   class PerformanceTestingAgent(Agent):
@@ -626,7 +655,7 @@ This section provides a library of established patterns for building robust and 
           return StopEvent()
   ```
 
----
+______________________________________________________________________
 
 ## 4. 📚 Reference Material
 
@@ -635,7 +664,9 @@ This section serves as an appendix for locating key files and running specific t
 ### 🎮 Running Agents Interactively (`run.py`)
 
 ::: tip Interactive Testing
-While `trigger.py` is for debugging specific, one-shot scenarios, `run.py` is used for interactive testing. A script named `run.py` starts an agent and keeps it running, allowing it to be triggered multiple times from a frontend application. This is useful for testing conversational flows and stateful behavior.
+While `trigger.py` is for debugging specific, one-shot scenarios, `run.py` is used for interactive testing. A script
+named `run.py` starts an agent and keeps it running, allowing it to be triggered multiple times from a frontend
+application. This is useful for testing conversational flows and stateful behavior.
 :::
 
 ```bash
@@ -647,7 +678,8 @@ python run.py
 ### 📝 Key Takeaways and Essential Files
 
 ::: tip Key Takeaways
-- **Start in the Playground**: The best way to learn is to study the examples in `/playground/minimal_workflow/`. Each directory demonstrates a specific pattern.
+- **Start in the Playground**: The best way to learn is to study the examples in `/playground/minimal_workflow/`. Each
+  directory demonstrates a specific pattern.
 - **Debug with Langfuse**: Always have `http://localhost:6006` open during development.
 - **Test with BDD**: Follow the `pytest-bdd` and `AgentTestRunner` patterns for all new agents.
 - **Compose Patterns**: Advanced agents are built by combining the simple patterns outlined in this guide.
@@ -659,34 +691,3 @@ python run.py
 - `/aihub_agent/runners/AgentTestRunner.py`: The foundation for all agent testing.
 - `/aihub_agent/context/`: The context management system.
 :::
-
-### 📖 Glossary of Agent-Specific Terms
-
-This glossary defines terms, concepts, and technologies that have specific meaning within the `aihub_agent` scope, building upon the core AI-Hub terminology.
-
-| Term                      | Definition                                                                                                                                                                                                                                      |
-| :------------------------ | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Agent**                 | A **dispatchable workflow** that performs structured operations on input data to achieve a pre-defined goal. Agents are autonomous AI components designed for proactive process automation, working alongside humans to execute tasks.          |
-| **Agent Blueprint**       | The code-level definition of an agent (also called Agent Class). Contains workflow steps, form schema, event specifications, and default configuration. Discovered automatically when agents come online. User-friendly term for "Agent Class". |
-| **Agent Configuration**   | A Pydantic model inheriting from `AgentConfig` that defines agent settings, parameters, and behavior. Uses the Form Duality Pattern with `Annotated` fields for both UI form generation and data validation.                                    |
-| **Agent Profile**         | A user-created configuration of an Agent Blueprint (also called Agent Instance). Has a unique ID, name, description, icon, and specific settings. Multiple profiles can be created from one blueprint. User-friendly term for "Agent Instance". |
-| **Agent Test Runner**     | A specialized testing framework (`AgentTestRunner`) that provides a sandboxed environment to execute agents and inspect resulting events. Essential for BDD testing with pytest-bdd.                                                            |
-| **Agent-in-the-Loop**     | A pattern where one agent (orchestrator) invokes another agent (worker) and waits for its result. Enables complex workflows by composing smaller, specialized agents.                                                                           |
-| **Context**               | State management system with two types: `RunContext` (ephemeral, single-run) and `ThreadContext` (persistent, cross-run). Used for maintaining state within and across agent executions.                                                        |
-| **Dispatchable Workflow** | The base class for all agents. Provides the infrastructure for event-driven step execution, event routing, and workflow orchestration.                                                                                                          |
-| **Event**                 | The atomic unit of communication in agent workflows. Pydantic models representing specific occurrences (e.g., `UserMessageEvent`, `StopEvent`, custom domain events).                                                                           |
-| **Event Flow**            | The sequence of events produced and consumed by agent steps. Visible in logs and Langfuse traces, crucial for debugging agent workflows.                                                                                                        |
-| **Fan-Out**               | A workflow pattern where a single step returns a list of events processed in parallel by downstream steps. Used for batch processing and concurrent operations.                                                                                 |
-| **Form Duality Pattern**  | A pattern where a single Pydantic model serves two purposes: **Form Mode** (fields contain `FormkitElement` instances for UI rendering) and **Data Mode** (fields contain primitive values). Enabled by the `as_form()` factory method.         |
-| **Human-in-the-Loop**     | A pattern where the workflow pauses to request input from a human user, emitting a request event and waiting for a response before continuing.                                                                                                  |
-| **Langfuse Tracing**      | A web-based debugging tool available at `http://localhost:6006` that provides step-by-step visualization of agent execution, event flow, and performance analysis.                                                                              |
-| **Playground**            | The `/playground` directory containing self-contained examples of every agent pattern. Essential for learning and reference, organized into `agent/` (production examples) and `minimal_workflow/` (pattern examples).                          |
-| **Precondition**          | A function decorated with `@precondition()` that must return `True` for a step to execute. Used for synchronizing parallel workflow branches and ensuring data availability.                                                                    |
-| **Run**                   | A single, traceable execution of an agent's workflow, beginning with a `StartEvent` and ending with a `StopEvent`. Has an ephemeral `RunContext` for state management.                                                                          |
-| **Run Context**           | Short-lived storage for ephemeral data within a single agent run. Isolated between runs, ideal for intermediate calculations and temporary caching. Expires after 30 days.                                                                      |
-| **Step**                  | A method decorated with `@step()` that represents a single operation in an agent workflow. Steps consume events as input and produce events as output, enabling clear workflow composition.                                                     |
-| **Step Metadata**         | Rich information attached to steps via the `@step()` decorator, including localized names, descriptions, and icons for UI integration and monitoring.                                                                                           |
-| **Thread**                | A logical grouping of multiple runs that form a continuous conversation. Maintains state across runs via persistent `ThreadContext` for contextual follow-up interactions.                                                                      |
-| **Thread Context**        | Persistent storage for state across multiple agent runs within the same conversation thread. Maintains conversational history and user preferences with 30-day TTL.                                                                             |
-| **Trigger Script**        | A Python script (`trigger.py`) that programmatically starts an agent, sends it a specific event, and terminates. Essential for focused debugging and testing specific scenarios.                                                                |
-| **Workflow**              | The fundamental design pattern for agents. A task broken down into a series of structured, explicit `@step`-decorated methods ensuring testability and transparency.                                                                            |

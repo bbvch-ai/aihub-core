@@ -8,7 +8,7 @@
     "aihub_pipeline"
   ],
   "web_project": "aihub_web/aihub_web",
-  "output_file": "LICENSES.md",
+  "output_file": "LICENSE_REPORT.md",
   "own_images": [
     "api",
     "web",
@@ -143,6 +143,12 @@
       "license": "MIT",
       "status": "✅",
       "notes": "MIT license per GitHub repo; npm reports Unknown due to missing license field."
+    },
+    {
+      "name": "yamlfix",
+      "license": "GPL-3.0",
+      "status": "✅",
+      "notes": "Dev-only YAML formatting tool; not distributed in production builds."
     }
   ],
   "docker_licenses": [

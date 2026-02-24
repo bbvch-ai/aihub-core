@@ -1,3 +1,4 @@
+---
 # ===================================================================
 # Single Source of Truth for Docker Compose Generation (v2)
 # ===================================================================
@@ -10,11 +11,9 @@
 #    current stage/hardware. No tag = no service.
 # 2. To build a service from source, use the special tag 'localbuild'.
 # ===================================================================
-
 global:
   registry_prefix: ghcr.io/bbvch-ai/aihub-core/
   volume_root: ${VOLUME_ROOT:-./.docker-volumes}
-
 # -------------------------------------------------------------------
 # Centralized Image Tag Management
 # Defines which services exist in which stage and their versions.
@@ -58,76 +57,63 @@ image_tags:
     local: api:latest
     nightly: api:nightly
     latest: api:latest
-
   web:
     build: localbuild
     local: web:latest
     nightly: web:nightly
     latest: web:latest
-
   dagster:
     build: localbuild
     local: dagster:latest
     nightly: dagster:nightly
     latest: dagster:latest
-
   llm_wrapping_agent:
     build: localbuild
     local: llm_wrapping_agent:latest
     nightly: llm_wrapping_agent:nightly
     latest: llm_wrapping_agent:latest
-
   rag_agent:
     build: localbuild
     local: rag_agent:latest
     nightly: rag_agent:nightly
     latest: rag_agent:latest
-
   expert_rag_agent:
     build: localbuild
     local: expert_rag_agent:latest
     nightly: expert_rag_agent:nightly
     latest: expert_rag_agent:latest
-
   expert_asking_agent:
     build: localbuild
     local: expert_asking_agent:latest
     nightly: expert_asking_agent:nightly
     latest: expert_asking_agent:latest
-
   retrieval_agent:
     build: localbuild
     local: retrieval_agent:latest
     nightly: retrieval_agent:nightly
     latest: retrieval_agent:latest
-
   few_shot_agent:
     build: localbuild
     local: few_shot_agent:latest
     nightly: few_shot_agent:nightly
     latest: few_shot_agent:latest
-
   namespace_selection_agent:
     build: localbuild
     local: namespace_selection_agent:latest
     nightly: namespace_selection_agent:nightly
     latest: namespace_selection_agent:latest
-
   default_rag_pipeline:
     build: localbuild
     local: default_rag_pipeline:latest
     nightly: default_rag_pipeline:nightly
     latest: default_rag_pipeline:latest
-
   shared_rag_pipeline:
     build: localbuild
     local: shared_rag_pipeline:latest
     nightly: shared_rag_pipeline:nightly
     latest: shared_rag_pipeline:latest
-
   bot:
     build: localbuild
     local: bot:latest
     nightly: bot:nightly
     latest: bot:latest
-

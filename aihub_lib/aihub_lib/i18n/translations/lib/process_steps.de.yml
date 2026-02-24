@@ -1,21 +1,20 @@
+---
 work_request_event:
-  name: "Arbeitsanfrage-Ereignis"
-  description: "Fordert eine Arbeit von jemandem innerhalb des Prozesses an"
-
+  name: Arbeitsanfrage-Ereignis
+  description: Fordert eine Arbeit von jemandem innerhalb des Prozesses an
 work_event:
-  name: "Arbeitsereignis"
-  description: "Meldet die von einer am Prozess beteiligten Einheit geleistete Arbeit"
-
+  name: Arbeitsereignis
+  description: Meldet die von einer am Prozess beteiligten Einheit geleistete Arbeit
 config:
   name:
-    label: "Prozess-Name"
+    label: Prozess-Name
   description:
-    label: "Beschreibung"
+    label: Beschreibung
   icon:
-    label: "Symbol"
-    help: "Symbol-Kennung (z.B. 'carbon:ibm-event-processing')"
+    label: Symbol
+    help: Symbol-Kennung (z.B. 'carbon:ibm-event-processing')
   process_class:
-    label: "Prozess-Klasse"
+    label: Prozess-Klasse
   process_id:
-    label: "Prozess-ID"
-    help: "Eindeutige Kennung (Kleinbuchstaben, Zahlen, Bindestriche, Unterstriche)"
+    label: Prozess-ID
+    help: Eindeutige Kennung (Kleinbuchstaben, Zahlen, Bindestriche, Unterstriche)

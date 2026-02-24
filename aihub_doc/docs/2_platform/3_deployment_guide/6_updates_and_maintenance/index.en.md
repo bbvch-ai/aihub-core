@@ -13,14 +13,14 @@ and processes. Both use independent semantic versioning and can be updated separ
 Customer code pins to a specific core version through `pyproject.toml`:
 
 ```toml
-[tool.poetry.dependencies]
+[project.dependencies]
 aihub-core = { git = "https://github.com/bbvch-ai/aihub-core.git", tag = "v1.2.3" }
 ```
 
 This means core updates don't automatically affect customer deployments. Customers control when they adopt new core
 versions.
 
----
+______________________________________________________________________
 
 ## Versioning
 
@@ -61,7 +61,7 @@ ghcr.io/bbvch-ai/aihub-<customer>/agent:v1.2.3
 ghcr.io/bbvch-ai/aihub-<customer>/pipeline:v1.2.3
 ```
 
----
+______________________________________________________________________
 
 ## Updates
 
@@ -81,7 +81,7 @@ in `docker-compose.yml`, pull the new images, and restart the customer services.
 When customer code adopts a new core version, update the core version pin in `pyproject.toml`, rebuild the customer
 images, then deploy both core and customer updates together.
 
----
+______________________________________________________________________
 
 ## Rollbacks
 
@@ -98,7 +98,7 @@ previous versions, pulling those images, and restarting services.
 Core and customer code can be rolled back independently if they were updated separately. If both were updated together,
 roll back core first, then customer code.
 
----
+______________________________________________________________________
 
 ## Compatibility
 
@@ -115,7 +115,7 @@ versions work with which core versions:
 Staging environments should match production infrastructure and use representative datasets for testing compatibility
 before production updates.
 
----
+______________________________________________________________________
 
 ## Monitoring
 
@@ -123,7 +123,7 @@ The observability stack includes Langfuse for AI-specific tracing, OpenTelemetry
 SigNoz Cloud for external metrics and logs. Monitor core services (API, Web, Dagster) and customer services (agents,
 pipelines, processes) during and after updates.
 
----
+______________________________________________________________________
 
 ## Related documentation
 

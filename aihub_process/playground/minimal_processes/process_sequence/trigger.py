@@ -18,7 +18,7 @@ enable_logging()
 async def main():
     agent_runner_a = AgentTestRunner(
         agent_type=AgentA,
-        default_agent_config=AgentConfig(
+        agent_config=AgentConfig(
             agent_id="agent_a",
             name=LocaleString(en="..."),
             description=LocaleString(en="..."),

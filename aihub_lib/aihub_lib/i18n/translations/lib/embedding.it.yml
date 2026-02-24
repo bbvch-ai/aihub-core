@@ -1,16 +1,19 @@
+---
 config:
   model:
-    label: "Modello di embedding"
-    help: "Seleziona il modello di embedding per generare rappresentazioni vettoriali del testo."
+    label: Modello di embedding
+    help: Seleziona il modello di embedding per generare rappresentazioni vettoriali
+      del testo.
   max_retries:
-    label: "Tentativi massimi"
-    help: "Numero massimo di tentativi per richieste di embedding fallite."
+    label: Tentativi massimi
+    help: Numero massimo di tentativi per richieste di embedding fallite.
   timeout:
-    label: "Timeout (secondi)"
-    help: "Tempo massimo di attesa per una risposta di embedding."
+    label: Timeout (secondi)
+    help: Tempo massimo di attesa per una risposta di embedding.
   encoding_format:
-    label: "Formato di codifica"
-    help: "Formato degli embedding restituiti. Float è standard, Base64 è più compatto."
+    label: Formato di codifica
+    help: Formato degli embedding restituiti. Float è standard, Base64 è più compatto.
   dimensions:
-    label: "Dimensioni"
-    help: "Numero di dimensioni per gli embedding di output. Supportato solo da alcuni modelli."
+    label: Dimensioni
+    help: Numero di dimensioni per gli embedding di output. Supportato solo da alcuni
+      modelli.

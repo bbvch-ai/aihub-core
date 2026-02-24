@@ -2,7 +2,7 @@
 Script to add the bot_in_the_loop PathEntity to MongoDB.
 
 Usage:
-    poetry run python aihub_bot/add_path_entity.py
+    uv run python aihub_bot/add_path_entity.py
 
 Reads credentials from environment variables (or .env file):
     - BOT_APP_ID

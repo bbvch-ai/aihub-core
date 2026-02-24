@@ -48,6 +48,38 @@ individual user preferences over time—code assistants, personal productivity a
 
 Reference implementation: `playground/minimal_workflow/user_memory_workflow/`
 
+::: warning The termination constraint
+If memory persistence depends on LLM output, the LLM step **must not** return `StopEvent`. When `as_stop_step=True`, the
+workflow terminates immediately with an `LLMStopEvent` — the memory storage step never executes.
+
+```python
+# INCORRECT: LLMStopEvent terminates before storage
+@step()
+async def respond(self, ..., displayer: EventDisplayer) -> LLMStopEvent:
+    return await displayer.display_llm_stream(..., as_stop_step=True)  # Workflow ends here
+
+@step()
+async def store(self, llm: LLMStopEvent, ...) -> StoreMemoryEvent:
+    ...  # Never executes — StopEvent already terminated the run
+
+# CORRECT: LLMEvent allows downstream steps
+@step()
+async def respond(self, ..., displayer: EventDisplayer) -> LLMEvent:
+    return await displayer.display_llm_stream(..., as_stop_step=False)
+
+@step()
+async def store(self, llm: LLMEvent, memory: AgentMemory) -> StoreUserMemoryEvent:
+    await memory.add_user_memory(messages=llm.chat_messages, ...)
+    return StoreUserMemoryEvent(...)
+
+@step()
+async def stop_step(self, _: StoreUserMemoryEvent) -> StopEvent:
+    return StopEvent()
+```
+
+See [The dangling stop violation](../9_execution_model/#the-dangling-stop-violation) for the general rule.
+:::
+
 ### Complete example
 
 ::: code-group
@@ -507,6 +539,43 @@ class SpecializedMemoryAgent(Agent):
 
 Code assistants extract technical preferences, RAG agents extract domain interests—all automatically based on agent
 type.
+
+### Config-driven memory
+
+Production agents often make memory features optional via configuration flags. Use preconditions to gate memory steps
+based on config, preventing race conditions with optional events:
+
+```python
+from aihub_agent.workflow.decorators.precondition import precondition
+
+@precondition()
+def check_memory_ready(
+    user_event: UserMessageEvent,
+    user_memory: RetrieveUserMemoryEvent | None,
+    org_memory: RetrieveOrganizationMemoryEvent | None,
+    config: AgentConfig,
+) -> bool:
+    if config.enable_user_memory and user_memory is None:
+        return False
+    if config.enable_org_memory and org_memory is None:
+        return False
+    return config.enable_user_memory or config.enable_org_memory
+
+@precondition()
+def check_storage_complete(
+    llm: LLMEvent,
+    stored: StoreUserMemoryEvent | None,
+    config: AgentConfig,
+) -> bool:
+    if config.enable_memory_storage and stored is None:
+        return False
+    return True
+```
+
+The `check_memory_ready` precondition blocks the history extension step until all enabled memory types have been
+retrieved. The `check_storage_complete` precondition blocks the final stop step until storage completes (if enabled).
+This prevents the [optional parameter trap](../9_execution_model/#the-optional-parameter-trap) where steps execute
+prematurely with `None` values.
 
 ## Observability
 

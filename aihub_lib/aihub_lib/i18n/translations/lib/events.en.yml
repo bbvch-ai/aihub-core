@@ -1,219 +1,198 @@
+---
 display_event:
-  name: "Display Event"
-  description: "An event that displays information to the user without affecting the workflow."
-
+  name: Display Event
+  description: An event that displays information to the user without affecting the
+    workflow.
 aitl_exception_event:
-  name: "Error in Task Delegation"
-  description: "Another agent to which a task was delegated reported an error and couldn't process the request."
-
+  name: Error in Task Delegation
+  description: Another agent to which a task was delegated reported an error and couldn't
+    process the request.
 aitl_request_event:
-  name: "Task Delegation to Another Agent"
-  description: "The agent has forwarded a task to another agent to benefit from their specialized knowledge."
-
+  name: Task Delegation to Another Agent
+  description: The agent has forwarded a task to another agent to benefit from their
+    specialized knowledge.
 aitl_response_event:
-  name: "Delegated Agent Response"
-  description: "The other agent has successfully processed the assigned task and sent back a response."
-
+  name: Delegated Agent Response
+  description: The other agent has successfully processed the assigned task and sent
+    back a response.
 bitl_request_event:
-  name: "Agent Request"
-  description: "A request was forwarded to a specialized agent to complete a specific task."
-
+  name: Agent Request
+  description: A request was forwarded to a specialized agent to complete a specific
+    task.
 bitl_response_event:
-  name: "Agent Response"
-  description: "The specialized agent has processed the request and sent back a response."
-
+  name: Agent Response
+  description: The specialized agent has processed the request and sent back a response.
 limit_chat_history_event:
-  name: "Chat History Limited"
-  description: "The chat history has been shortened for efficiency, keeping only the most relevant parts."
-
+  name: Chat History Limited
+  description: The chat history has been shortened for efficiency, keeping only the
+    most relevant parts.
 start_event:
-  name: "Process Started"
-  description: "A new process or task has been initiated."
-
+  name: Process Started
+  description: A new process or task has been initiated.
 stop_event:
-  name: "Process Completed"
-  description: "The agent has completed its task and is returning control to the user."
-
+  name: Process Completed
+  description: The agent has completed its task and is returning control to the user.
 cost_event:
-  name: "Cost Overview"
-  description: "An overview of the costs incurred for the operations performed."
-
+  name: Cost Overview
+  description: An overview of the costs incurred for the operations performed.
 llm_cost_event:
-  name: "Language Model Costs"
-  description: "Costs have been incurred during interaction with the language model, which are listed here."
-
+  name: Language Model Costs
+  description: Costs have been incurred during interaction with the language model,
+    which are listed here.
 chunk_event:
-  name: "Partial Response"
-  description: "The agent has generated a part of the answer and sent it to the user, which is already being displayed."
-
+  name: Partial Response
+  description: The agent has generated a part of the answer and sent it to the user,
+    which is already being displayed.
 thought_event:
-  name: "Thought Process"
-  description: "The agent shares its internal thought process, which helps it understand and solve the task."
-
+  name: Thought Process
+  description: The agent shares its internal thought process, which helps it understand
+    and solve the task.
 guard_accept_event:
-  name: "Request Accepted"
-  description: "The request passed all guard checks and is allowed to proceed."
-
+  name: Request Accepted
+  description: The request passed all guard checks and is allowed to proceed.
 guard_rejection_event:
-  name: "Request Rejected"
-  description: "The request was rejected for security reasons or due to policy violations."
-
+  name: Request Rejected
+  description: The request was rejected for security reasons or due to policy violations.
 few_shot_guard_accept_event:
-  name: "Few-Shot Guard Accepted"
-  description: "The request matches the patterns from few-shot examples and is allowed to proceed."
-
+  name: Few-Shot Guard Accepted
+  description: The request matches the patterns from few-shot examples and is allowed
+    to proceed.
 few_shot_guard_reject_event:
-  name: "Few-Shot Guard Rejected"
-  description: "The request does not match the patterns from few-shot examples and is blocked."
-
+  name: Few-Shot Guard Rejected
+  description: The request does not match the patterns from few-shot examples and
+    is blocked.
 right_agent_accept_event:
-  name: "Right Agent Selected"
-  description: "The correct agent has been identified for handling this specific task."
-
+  name: Right Agent Selected
+  description: The correct agent has been identified for handling this specific task.
 wrong_agent_reject_event:
-  name: "Wrong Agent Selected"
-  description: "The selected agent is not appropriate for handling this specific task."
-
+  name: Wrong Agent Selected
+  description: The selected agent is not appropriate for handling this specific task.
 agent_suitability_accept_event:
-  name: "Agent Suitable for Task"
-  description: "The agent's capabilities match the user's request and can handle the task."
-
+  name: Agent Suitable for Task
+  description: The agent's capabilities match the user's request and can handle the
+    task.
 agent_suitability_reject_event:
-  name: "Agent Unsuitable for Task"
-  description: "The agent's capabilities do not match the user's request and cannot handle the task."
-
+  name: Agent Unsuitable for Task
+  description: The agent's capabilities do not match the user's request and cannot
+    handle the task.
 context_sufficient_accept_event:
-  name: "Sufficient Context Available"
-  description: "There is enough context available to answer the user's query without additional retrieval."
-
+  name: Sufficient Context Available
+  description: There is enough context available to answer the user's query without
+    additional retrieval.
 context_insufficient_reject_event:
-  name: "Insufficient Context Available"
-  description: "More context is needed to properly answer the user's query."
-
+  name: Insufficient Context Available
+  description: More context is needed to properly answer the user's query.
 expert_reject_event:
-  name: "Expert Escalation Declined"
-  description: "The user declined to escalate their question to a human expert."
-
+  name: Expert Escalation Declined
+  description: The user declined to escalate their question to a human expert.
 sensitive_info_accept_event:
-  name: "Response Safe to Share"
-  description: "The response does not contain sensitive information and can be safely shared."
-
+  name: Response Safe to Share
+  description: The response does not contain sensitive information and can be safely
+    shared.
 sensitive_info_reject_event:
-  name: "Sensitive Information Detected"
-  description: "The response contained sensitive information that has been removed or redacted."
-
+  name: Sensitive Information Detected
+  description: The response contained sensitive information that has been removed
+    or redacted.
 hitl_request_event:
-  name: "User Query"
-  description: "The agent needs additional information from the user to continue with the task."
-
+  name: User Query
+  description: The agent needs additional information from the user to continue with
+    the task.
 hitl_input_request_event:
-  name: "User Input Request"
-  description: "The agent needs text input from the user to continue with the task."
-
+  name: User Input Request
+  description: The agent needs text input from the user to continue with the task.
 hitl_confirmation_request_event:
-  name: "User Confirmation Request"
-  description: "The agent needs a yes/no confirmation from the user to continue with the task."
-
+  name: User Confirmation Request
+  description: The agent needs a yes/no confirmation from the user to continue with
+    the task.
 hitl_response_event:
-  name: "User Response Received"
-  description: "The user has answered the query, and the agent can proceed with the task."
-
+  name: User Response Received
+  description: The user has answered the query, and the agent can proceed with the
+    task.
 hitl_input_response_event:
-  name: "User Input Received"
-  description: "The user has provided text input, and the agent can proceed with the task."
-
+  name: User Input Received
+  description: The user has provided text input, and the agent can proceed with the
+    task.
 hitl_confirmation_response_event:
-  name: "User Confirmation Received"
-  description: "The user has confirmed or declined, and the agent can proceed with the task."
-
+  name: User Confirmation Received
+  description: The user has confirmed or declined, and the agent can proceed with
+    the task.
 hitl_chat_request_event:
-  name: "Chat Question"
-  description: "The agent has asked a question that can be answered by typing a chat message."
-
+  name: Chat Question
+  description: The agent has asked a question that can be answered by typing a chat
+    message.
 hitl_chat_response_event:
-  name: "Chat Answer Received"
-  description: "The user has answered via chat message, and the agent can proceed with the task."
-
+  name: Chat Answer Received
+  description: The user has answered via chat message, and the agent can proceed with
+    the task.
 router_event:
-  name: "Decided for optimal next path"
-  description: "The agent decided for the optimal path to go from here."
-
+  name: Decided for optimal next path
+  description: The agent decided for the optimal path to go from here.
 semantic_agent_event:
-  name: "Agent Activity"
-  description: "A specialized agent is performing a task as part of the overall process."
-
+  name: Agent Activity
+  description: A specialized agent is performing a task as part of the overall process.
 semantic_chain_event:
-  name: "Chained Actions"
-  description: "A series of interconnected actions is being executed to solve a complex problem."
-
+  name: Chained Actions
+  description: A series of interconnected actions is being executed to solve a complex
+    problem.
 semantic_embedding_event:
-  name: "Information Search"
-  description: "The agent is searching its knowledge base for relevant information to answer the request."
-
+  name: Information Search
+  description: The agent is searching its knowledge base for relevant information
+    to answer the request.
 semantic_guard_event:
-  name: "Security Check"
-  description: "The request is being checked for security and compliance with policies."
-
+  name: Security Check
+  description: The request is being checked for security and compliance with policies.
 semantic_llm_event:
-  name: "Language Model Interaction"
-  description: "An interaction with the language model has been performed to process or generate information."
-
+  name: Language Model Interaction
+  description: An interaction with the language model has been performed to process
+    or generate information.
 semantic_llm_stop_event:
-  name: "Language Model Interaction Completed"
-  description: "The interaction with the language model has been completed."
-
+  name: Language Model Interaction Completed
+  description: The interaction with the language model has been completed.
 semantic_reranker_event:
-  name: "Relevance Optimization"
-  description: "Found documents are being sorted by relevance to select the most appropriate information for the task."
-
+  name: Relevance Optimization
+  description: Found documents are being sorted by relevance to select the most appropriate
+    information for the task.
 semantic_retriever_event:
-  name: "Documents Found"
-  description: "The agent has found relevant documents that could be helpful in processing the task."
-
+  name: Documents Found
+  description: The agent has found relevant documents that could be helpful in processing
+    the task.
 semantic_tool_event:
-  name: "Tool Usage"
-  description: "The agent is using a specialized tool to complete a specific task more efficiently."
-
+  name: Tool Usage
+  description: The agent is using a specialized tool to complete a specific task more
+    efficiently.
 exception_event:
-  name: "Error Occurred"
-  description: "An exception or error has occurred during the process, halting or adjusting the workflow and providing error details."
-
+  name: Error Occurred
+  description: An exception or error has occurred during the process, halting or adjusting
+    the workflow and providing error details.
 user_message_event:
-  name: "User Request"
-  description: "The agent has received a message from the user and is processing it, taking into account the previous chat history."
-
+  name: User Request
+  description: The agent has received a message from the user and is processing it,
+    taking into account the previous chat history.
 standalone_question_condenser_event:
-  name: "Question Condensed"
-  description: "The user's request has been condensed to a standalone question for better retrieval."
-
+  name: Question Condensed
+  description: The user's request has been condensed to a standalone question for
+    better retrieval.
 new_memory_event:
-  name: "Memory Updated"
-  description: "Agent updated user or organization memories based on conversation"
-
+  name: Memory Updated
+  description: Agent updated user or organization memories based on conversation
 retrieve_memory_event:
-  name: "Memory Retrieved"
-  description: "Agent retrieved relevant memories for context"
-
+  name: Memory Retrieved
+  description: Agent retrieved relevant memories for context
 retrieve_user_memory_event:
-  name: "User Memory Retrieved"
-  description: "Agent retrieved private user memories for personalized context"
-
+  name: User Memory Retrieved
+  description: Agent retrieved private user memories for personalized context
 retrieve_organization_memory_event:
-  name: "Organization Memory Retrieved"
-  description: "Agent retrieved shared organizational memories for context"
-
+  name: Organization Memory Retrieved
+  description: Agent retrieved shared organizational memories for context
 store_organization_memory_event:
-  name: "Organization Memory Stored"
-  description: "Agent stored explicit organizational fact shared across all users"
-
+  name: Organization Memory Stored
+  description: Agent stored explicit organizational fact shared across all users
 add_memory_to_chat_history_event:
-  name: "Memory Added to Context"
-  description: "Agent extended chat history with memories"
-
+  name: Memory Added to Context
+  description: Agent extended chat history with memories
 add_user_memory_to_chat_history_event:
-  name: "User Memory Added to Context"
-  description: "Agent extended chat history with private user memories"
-
+  name: User Memory Added to Context
+  description: Agent extended chat history with private user memories
 add_organization_memory_to_chat_history_event:
-  name: "Organization Memory Added to Context"
-  description: "Agent extended chat history with shared organizational memories"
+  name: Organization Memory Added to Context
+  description: Agent extended chat history with shared organizational memories

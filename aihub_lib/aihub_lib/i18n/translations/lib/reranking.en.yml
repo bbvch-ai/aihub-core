@@ -1,7 +1,10 @@
+---
 config:
   model:
-    label: "Reranking model"
-    help: "Select the model used to rerank retrieved documents by semantic relevance to the query."
+    label: Reranking model
+    help: Select the model used to rerank retrieved documents by semantic relevance
+      to the query.
   top_n:
-    label: "Top N results"
-    help: "Number of documents to keep after reranking. Lower values focus on the most relevant content."
+    label: Top N results
+    help: Number of documents to keep after reranking. Lower values focus on the most
+      relevant content.

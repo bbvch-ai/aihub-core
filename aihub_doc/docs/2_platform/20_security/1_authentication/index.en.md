@@ -2,8 +2,6 @@
 title: Authentication and Authorization
 ---
 
-# TODO: @mhoegger verify
-
 # Authentication and Authorization
 
 The Swiss AI-Hub implements authentication and authorization based on industry-standard OpenID Connect (OIDC) and OAuth
@@ -27,8 +25,8 @@ endpoint and uses them to verify the cryptographic signature of each JWT token. 
 token's issuer, audience, expiration time, and signature integrity according to the JWT standard (RFC 7519).
 
 **User Identity Resolution:** After successful token validation, the platform extracts the user's unique identifier
-(OID) from the token claims and retrieves complete user information including name, email, and role assignments from the
-identity provider through the Microsoft Graph API.
+(OID) and basic profile information (name, email) from the JWT token claims. Role assignments are managed locally within
+the platform through tenant-scoped role entities, not fetched from the identity provider.
 
 ### Supported Authentication Methods
 
@@ -49,17 +47,16 @@ hierarchical permission model described in the [Permissions](../../11_access_man
 
 ### Enterprise Identity Provider Integration
 
-The platform integrates with enterprise identity providers through standard OIDC/OAuth 2.0 protocols. The primary
-integration point is Microsoft Entra ID (Azure Active Directory), with support for extensibility to other OIDC-compliant
-identity providers.
+The platform integrates with enterprise identity providers through standard OIDC/OAuth 2.0 protocols. Any OIDC-compliant
+provider (Microsoft Entra ID, Google Workspace, Okta, Auth0, Keycloak) can be used for authentication.
 
-**Microsoft Entra ID Integration:** The platform connects to Microsoft Entra ID as an OAuth 2.0 authorization server and
-OIDC identity provider. User authentication is delegated to Entra ID, which handles credential validation, multi-factor
-authentication, and session management according to the organization's security policies.
+**Generic OIDC Integration:** The platform connects to the configured OIDC provider as an OAuth 2.0 authorization server
+and identity provider. User authentication is delegated to the provider, which handles credential validation,
+multi-factor authentication, and session management according to the organization's security policies.
 
-**User Profile and Role Retrieval:** After authentication, the platform queries the Microsoft Graph API to retrieve
-complete user profiles including display name, email address, and organizational group memberships. These group
-memberships are mapped to platform roles, which determine the user's access permissions within the AI-Hub.
+**Local Role Management:** User profiles are extracted from JWT token claims (name, email, OID). Roles are managed
+locally within the platform through tenant-scoped role assignments, not synced from the identity provider. This
+decouples platform authorization from any specific identity provider's group or role model.
 
 ### How Authorization Works
 
@@ -68,7 +65,7 @@ authentication, the platform determines what resources and operations the user c
 
 **Permission Evaluation Process:**
 
-1. The platform extracts the user's role assignments from the identity provider
+1. The platform resolves the user's role assignments from the local tenant-scoped role database
 2. Each role is associated with a set of access rules stored in the platform database
 3. For every API request, the platform evaluates the required permission against the user's access rules
 4. Access rules support hierarchical matching with wildcard patterns for flexible permission management

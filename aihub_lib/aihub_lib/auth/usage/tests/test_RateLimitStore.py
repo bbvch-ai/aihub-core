@@ -11,29 +11,32 @@ def rl(pattern: str, limit: int, period: str) -> RoleUsageLimit:
     return RoleUsageLimit(pattern=pattern, limit=limit, period=period)
 
 
-class TestValidateUserId:
-    """Tests for RateLimitStore._validate_user_id"""
+TEST_TENANT_ID = "test-tenant"
 
-    def test_valid_user_id(self):
-        RateLimitStore._validate_user_id("user123")
-        RateLimitStore._validate_user_id("user@example.com")
-        RateLimitStore._validate_user_id("123-456-789")
 
-    def test_empty_user_id_raises(self):
+class TestValidateKeySegment:
+    """Tests for RateLimitStore._validate_key_segment"""
+
+    def test_valid_values(self):
+        RateLimitStore._validate_key_segment("user123", "user_id")
+        RateLimitStore._validate_key_segment("user@example.com", "user_id")
+        RateLimitStore._validate_key_segment("123-456-789", "tenant_id")
+
+    def test_empty_value_raises(self):
         with pytest.raises(ValueError, match="must not be empty"):
-            RateLimitStore._validate_user_id("")
+            RateLimitStore._validate_key_segment("", "user_id")
 
-    def test_user_id_with_colon_raises(self):
+    def test_value_with_colon_raises(self):
         with pytest.raises(ValueError, match="must not be empty or contain"):
-            RateLimitStore._validate_user_id("user:123")
+            RateLimitStore._validate_key_segment("user:123", "user_id")
 
-    def test_user_id_with_newline_raises(self):
+    def test_value_with_newline_raises(self):
         with pytest.raises(ValueError, match="must not be empty or contain"):
-            RateLimitStore._validate_user_id("user\n123")
+            RateLimitStore._validate_key_segment("user\n123", "tenant_id")
 
-    def test_user_id_with_carriage_return_raises(self):
+    def test_value_with_carriage_return_raises(self):
         with pytest.raises(ValueError, match="must not be empty or contain"):
-            RateLimitStore._validate_user_id("user\r123")
+            RateLimitStore._validate_key_segment("user\r123", "tenant_id")
 
 
 class TestBuildKey:
@@ -41,20 +44,25 @@ class TestBuildKey:
 
     def test_builds_key_with_default_prefix(self):
         redis = AsyncMock()
-        store = RateLimitStore(redis, "user123")
+        store = RateLimitStore(redis, "user123", TEST_TENANT_ID)
         key = store._build_key("aihub.user.agent.>", UsageLimitPeriod.ONE_DAY)
-        assert key == "usage:calls:user123:aihub.user.agent.>:1d"
+        assert key == f"usage:calls:{TEST_TENANT_ID}:user123:aihub.user.agent.>:1d"
 
     def test_builds_key_with_custom_prefix(self):
         redis = AsyncMock()
-        store = RateLimitStore(redis, "user123", key_prefix="custom:prefix")
+        store = RateLimitStore(redis, "user123", TEST_TENANT_ID, key_prefix="custom:prefix")
         key = store._build_key("aihub.user.agent.>", UsageLimitPeriod.ONE_HOUR)
-        assert key == "custom:prefix:user123:aihub.user.agent.>:1h"
+        assert key == f"custom:prefix:{TEST_TENANT_ID}:user123:aihub.user.agent.>:1h"
 
     def test_validates_user_id_in_constructor(self):
         redis = AsyncMock()
         with pytest.raises(ValueError):
-            RateLimitStore(redis, "user:123")
+            RateLimitStore(redis, "user:123", TEST_TENANT_ID)
+
+    def test_validates_tenant_id_in_constructor(self):
+        redis = AsyncMock()
+        with pytest.raises(ValueError):
+            RateLimitStore(redis, "user123", "tenant:bad")
 
 
 class TestTtlToResetAt:
@@ -78,7 +86,7 @@ class TestGetCounts:
     @pytest.mark.asyncio
     async def test_empty_limits_returns_empty_list(self):
         redis = AsyncMock()
-        store = RateLimitStore(redis, "user123")
+        store = RateLimitStore(redis, "user123", TEST_TENANT_ID)
 
         result = await store.get_counts([])
 
@@ -88,7 +96,7 @@ class TestGetCounts:
     async def test_returns_counts_and_reset_times(self):
         redis = AsyncMock()
         redis.fcall.return_value = [42, 3600, 5, 1800]
-        store = RateLimitStore(redis, "user123")
+        store = RateLimitStore(redis, "user123", TEST_TENANT_ID)
 
         limits = [
             rl("aihub.user.agent.>", 100, "1d"),
@@ -106,7 +114,7 @@ class TestGetCounts:
     async def test_handles_missing_keys(self):
         redis = AsyncMock()
         redis.fcall.return_value = [0, -1, 5, 1800]
-        store = RateLimitStore(redis, "user123")
+        store = RateLimitStore(redis, "user123", TEST_TENANT_ID)
 
         limits = [
             rl("aihub.user.agent.>", 100, "1d"),
@@ -126,7 +134,7 @@ class TestCheckAndIncrement:
     @pytest.mark.asyncio
     async def test_empty_limits_returns_true_and_empty_list(self):
         redis = AsyncMock()
-        store = RateLimitStore(redis, "user123")
+        store = RateLimitStore(redis, "user123", TEST_TENANT_ID)
 
         incremented, counts = await store.check_and_increment([])
 
@@ -137,7 +145,7 @@ class TestCheckAndIncrement:
     async def test_increments_when_not_exceeded(self):
         redis = AsyncMock()
         redis.fcall.return_value = [0, 6, 80000, 4, 3600]
-        store = RateLimitStore(redis, "user123")
+        store = RateLimitStore(redis, "user123", TEST_TENANT_ID)
 
         limits = [
             rl("aihub.user.agent.>", 100, "1d"),
@@ -154,7 +162,7 @@ class TestCheckAndIncrement:
     async def test_does_not_increment_when_exceeded(self):
         redis = AsyncMock()
         redis.fcall.return_value = [1, 5, 1800, 10, 3600]
-        store = RateLimitStore(redis, "user123")
+        store = RateLimitStore(redis, "user123", TEST_TENANT_ID)
 
         limits = [
             rl("aihub.user.agent.>", 100, "1d"),
@@ -171,7 +179,7 @@ class TestCheckAndIncrement:
     async def test_passes_correct_arguments_to_fcall(self):
         redis = AsyncMock()
         redis.fcall.return_value = [0, 1, 86400]
-        store = RateLimitStore(redis, "user123")
+        store = RateLimitStore(redis, "user123", TEST_TENANT_ID)
 
         limits = [rl("aihub.user.agent.>", 100, "1d")]
         await store.check_and_increment(limits)
@@ -180,7 +188,7 @@ class TestCheckAndIncrement:
         call_args = redis.fcall.call_args[0]
         assert call_args[0] == "aihub_check_and_increment"
         assert call_args[1] == 1  # num_keys
-        assert call_args[2] == "usage:calls:user123:aihub.user.agent.>:1d"
+        assert call_args[2] == f"usage:calls:{TEST_TENANT_ID}:user123:aihub.user.agent.>:1d"
         assert "100" in call_args
         assert "86400" in call_args
 

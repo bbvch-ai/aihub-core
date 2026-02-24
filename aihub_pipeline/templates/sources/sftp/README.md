@@ -37,7 +37,7 @@ source_remote=f"{sftp.name}:/path/to/documents"
 **4. Run Pipeline**
 
 ```bash
-poetry run dagster dev -f pipeline.py
+uv run dagster dev -f pipeline.py
 ```
 
 ## Using SSH Key
@@ -72,6 +72,6 @@ RCLONE_SFTP_KNOWN_HOSTS_FILE=/secrets/known_hosts
 RCLONE_SFTP_SKIP_LINKS=true
 ```
 
-> **Note on host key verification**: By default, rclone uses the system's known_hosts file.
-> To skip host key verification in development (not recommended for production),
-> set `RCLONE_SFTP_KNOWN_HOSTS_FILE` to an empty or non-existent file.
+> **Note on host key verification**: By default, rclone uses the system's known_hosts file. To skip host key
+> verification in development (not recommended for production), set `RCLONE_SFTP_KNOWN_HOSTS_FILE` to an empty or
+> non-existent file.
