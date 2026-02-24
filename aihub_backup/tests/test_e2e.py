@@ -2,8 +2,6 @@
 
 Tests exercise backup and restore through Dagster's GraphQL API,
 verifying S3 artifacts and data integrity after restore.
-
-Auto-skips when Dagster is not reachable (no Docker stack running).
 """
 
 from __future__ import annotations
