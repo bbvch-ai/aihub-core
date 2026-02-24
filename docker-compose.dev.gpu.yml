@@ -1121,6 +1121,7 @@ services:
       healthcheck.enabled: "true"
       healthcheck.protocol: "http"
       healthcheck.port: "13133"
+      healthcheck.path: "/"
     logging:
       driver: json-file
       options:
