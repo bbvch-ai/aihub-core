@@ -54,7 +54,7 @@ image_tags:
   speaches_cpu: speaches:0.8.3-cpu
   pgbouncer: pgbouncer:v1.24.1-p1
   rclone: ghcr.io/bbvch-ai/aihub-core/rclone:1.71.2
-  keycloak: keycloak:26.0
+  keycloak: keycloak:26.5.4
 
   # --- Custom Application Services ---
   api:

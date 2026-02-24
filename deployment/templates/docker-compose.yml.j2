@@ -1002,7 +1002,7 @@ services:
         if [ -f /tmp/identity-providers.json ]; then
           (
             echo "Waiting for Keycloak to be ready before applying identity providers..."
-            until /opt/keycloak/bin/kcadm.sh config credentials --server http://localhost:8080 --realm master --user "$$KEYCLOAK_ADMIN" --password "$$KEYCLOAK_ADMIN_PASSWORD" > /dev/null 2>&1; do sleep 3; done
+            until /opt/keycloak/bin/kcadm.sh config credentials --server http://localhost:8080 --realm master --user "$$KC_BOOTSTRAP_ADMIN_USERNAME" --password "$$KC_BOOTSTRAP_ADMIN_PASSWORD" > /dev/null 2>&1; do sleep 3; done
             /opt/keycloak/bin/kcadm.sh create partialImport -r aihub \
               -s ifResourceExists=OVERWRITE \
               -f /tmp/identity-providers.json \
@@ -1017,8 +1017,8 @@ services:
       KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
       KC_DB_USERNAME: ${POSTGRES_USER}
       KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
-      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN_USER}
-      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN_USER}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
       KC_FEATURES: token-exchange,admin-fine-grained-authz
       KC_HEALTH_ENABLED: "true"
       KC_METRICS_ENABLED: "true"

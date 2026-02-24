@@ -49,6 +49,19 @@
 
   "defaultRoles": ["AIHubUser"],
 
+  "groups": [
+    {
+      "name": "tenants",
+      "subGroups": [
+        {
+          "name": "default"
+        }
+      ]
+    }
+  ],
+
+  "defaultGroups": ["/tenants/default"],
+
   "clients": [
     {
       "clientId": "aihub-frontend",
@@ -76,7 +89,8 @@
         "openid",
         "profile",
         "email",
-        "roles"
+        "roles",
+        "tenants"
       ],
       "protocolMappers": [
         {
@@ -426,6 +440,31 @@
           "config": {
             "claim.name": "roles",
             "jsonType.label": "String",
+            "multivalued": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "name": "tenants",
+      "description": "Tenant group memberships. Users are assigned to tenant groups under /tenants/. See ADR 2026_02_20_keycloak_tenant_assignment_via_groups.",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "false"
+      },
+      "protocolMappers": [
+        {
+          "name": "tenant groups",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-group-membership-mapper",
+          "consentRequired": false,
+          "config": {
+            "claim.name": "tenants",
+            "full.path": "true",
             "multivalued": "true",
             "id.token.claim": "true",
             "access.token.claim": "true",

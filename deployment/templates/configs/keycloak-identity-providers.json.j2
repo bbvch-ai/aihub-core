@@ -30,6 +30,31 @@
    - Azure "AIHubUser" → Keycloak "AIHubUser"
    - Azure "AIHubDeveloper" → Keycloak "AIHubDeveloper"
    - Azure "AIHubSysAdmin" → Keycloak "AIHubSysAdmin"
+
+   Multi-Tenant IDP-to-Tenant Mapping (Optional, Not Default):
+   ============================================================
+   The platform supports automatic tenant assignment based on which identity
+   provider a user authenticates through. This is useful when each Azure AD
+   app registration represents a different tenant/organization.
+
+   To set this up:
+   1. Create a tenant group under /tenants/ in Keycloak (e.g., /tenants/tenant-a)
+   2. Create a corresponding tenant in the AI-Hub application
+   3. Add a separate identity provider (e.g., "azure-ad") with the
+      customer's Azure AD app registration credentials
+   4. Add a "Hardcoded Group" IDP mapper on that identity provider:
+      {
+        "name": "tenant-mapper-tenant-a",
+        "identityProviderAlias": "azure-ad",
+        "identityProviderMapper": "oidc-hardcoded-group-idp-mapper",
+        "config": {
+          "syncMode": "INHERIT",
+          "group": "/tenants/tenant-a"
+        }
+      }
+   5. Users authenticating via that IDP will be automatically assigned to
+      the tenant group. Group membership is additive — logging in via
+      multiple IDPs accumulates tenant memberships.
 #}
 {
   "realm": "aihub",
