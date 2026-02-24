@@ -1,0 +1,61 @@
+[project]
+name = "aihub-backup"
+version = "0.265.1"
+description = "backup and restore core"
+requires-python = ">=3.13, <3.14"
+authors = [
+    { name = "Joel Barmettler", email = "joel.barmettler@bbv.ch" },
+    { name = "Marius Högger", email = "marius.hoegger@bbv.ch" },
+    { name = "Michèle Fundneider", email = "michele.fundneider@bbv.ch" },
+    { name = "Thomas Mannhart", email = "thomas.mannhart@bbv.ch" },
+    { name = "Noah Hermann", email = "noah.hermann@bbv.ch" },
+]
+license = "LicenseRef-Proprietary"
+dependencies = [
+    "boto3>=1.35",
+    "pydantic>=2.10.3",
+    "pydantic-settings>=2.6.1",
+    "docker>=7.0",
+    "dagster>=1.11.2",
+    "dagster-webserver>=1.11.2",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4.1",
+    "ruff>=0.8.1",
+    "mypy>=1.13.0",
+    "pytest-cov>=6.0.0",
+    "types-docker>=7.1.0.20260109",
+]
+
+[build-system]
+requires = ["uv_build>=0.10.4,<0.11.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-root = ""
+
+[tool.ruff]
+line-length = 120
+target-version = 'py313'
+
+[tool.ruff.lint]
+select = ["E", "F", "UP", "I"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+
+[[tool.mypy.overrides]]
+module = ["boto3.*", "botocore.*", "dagster.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["aihub_backup.dagster.*"]
+disallow_any_generics = false

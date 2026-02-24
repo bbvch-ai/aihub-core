@@ -60,6 +60,9 @@
 # ===================================================================
 
 services:
+  # SYNC: If you add, remove, or rename a container_name below, update the
+  # matching tuples in aihub_backup/aihub_backup/orchestrator.py
+  # (APP_CONTAINERS, INFRA_CONSUMERS, DATABASE_CONTAINERS, START_ORDER_*).
   # ===================================================================
   # SeaweedFS Stack (Distributed Object Storage)
   # ===================================================================
@@ -653,6 +656,7 @@ services:
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/clickhouse-data:/var/lib/clickhouse
       - ${VOLUME_ROOT:-./.docker-volumes}/clickhouse-logs:/var/log/clickhouse-server
+      - ./configs/clickhouse/backup-config.xml:/etc/clickhouse-server/config.d/backup-config.xml:ro
     ports:
       - "127.0.0.1:8123:8123"
       - "127.0.0.1:9009:9000"
@@ -860,8 +864,10 @@ services:
     container_name: valkey
     image: ghcr.io/bbvch-ai/aihub-core/valkey:8.0.5
     restart: always
-    # Password authentication enabled via --requirepass
-    command: valkey-server --save 30 1 --loglevel warning --requirepass ${REDIS_TOKEN}
+    # Password authentication enabled via --requirepass.
+    # --appendonly yes enables AOF persistence for durability between BGSAVE
+    # intervals, ensuring centralized backup captures the most recent state.
+    command: valkey-server --save 30 1 --loglevel warning --requirepass ${REDIS_TOKEN} --appendonly yes --appendfsync everysec
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/valkey-data:/data
     ports:
@@ -912,6 +918,97 @@ services:
       options:
         max-size: 10m
         max-file: 2
+
+  
+  # ===================================================================
+  # Backup Service (Dagster-based Automated Database Backups)
+  # ===================================================================
+  # Daily-partitioned asset backups of PostgreSQL, Milvus, Neo4j, and
+  # ClickHouse to SeaweedFS S3. Dagster UI on port 3004 for monitoring,
+  # manual triggers, and parameterized restores.
+  #
+  # Docker socket: mounted directly instead of via docker-socket-proxy
+  # because backup/restore needs CONTAINERS + EXEC + POST + IMAGES
+  # (stop, start, exec, cp, create, wait, logs, remove), which is
+  # near-full Docker API access — the proxy would provide no meaningful
+  # restriction. Access is limited to the internal data network.
+  # ===================================================================
+
+  backup:
+    container_name: backup
+    image: ghcr.io/bbvch-ai/aihub-core/backup:latest
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      postgres-ferretdb:
+        condition: service_healthy
+      seaweedfs-s3:
+        condition: service_healthy
+      neo4j:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+      milvus-standalone:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+      nats:
+        condition: service_started
+    environment:
+      DAGSTER_HOME: /dagster_home
+      # Retention & skip flags
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS}
+      BACKUP_SKIP_MILVUS_ONLINE: ${BACKUP_SKIP_MILVUS_ONLINE}
+      BACKUP_SKIP_MILVUS_OFFLINE: ${BACKUP_SKIP_MILVUS_OFFLINE}
+      # PostgreSQL (main)
+      POSTGRES_HOST: postgres
+      POSTGRES_USER: ${POSTGRES_USER}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      # PostgreSQL (FerretDB)
+      POSTGRES_FERRETDB_HOST: postgres-ferretdb
+      POSTGRES_FERRETDB_USER: ${MONGO_USERNAME}
+      PGPASSWORD_FERRETDB: ${MONGO_PASSWORD}
+      # Milvus (for milvus-backup tool)
+      MILVUS_HOST: milvus-standalone
+      MILVUS_PORT: "19530"
+      MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
+      # Neo4j (container name for docker stop/start/cp)
+      NEO4J_CONTAINER: neo4j
+      # ClickHouse
+      CLICKHOUSE_HOST: clickhouse
+      CLICKHOUSE_USER: clickhouse
+      CLICKHOUSE_PASSWORD: ${LANGFUSE_CLICKHOUSE_PASSWORD}
+      # S3 (SeaweedFS)
+      AWS_ACCESS_KEY_ID: ${S3_STORAGE_ACCESS_KEY}
+      AWS_SECRET_ACCESS_KEY: ${S3_STORAGE_SECRET_KEY}
+      AWS_ENDPOINT_URL: http://seaweedfs-s3:9000
+      BACKUP_S3_BUCKET: ${BACKUP_S3_BUCKET}
+      # Valkey (for BGSAVE trigger via docker exec)
+      VALKEY_CONTAINER: valkey
+      REDIS_TOKEN: ${REDIS_TOKEN}
+      # NATS JetStream (for nats CLI backup)
+      NATS_URL: nats://nats:4222
+      NATS_TOKEN: ${NATS_TOKEN}
+    ports:
+      - "127.0.0.1:3004:3000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${VOLUME_ROOT:-./.docker-volumes}/backup-dagster-home:/dagster_home
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/server_info"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks:
+      - data
+      - storage
 
   # ===================================================================
   # LiteLLM Stack (Model Proxy and Guardrails)

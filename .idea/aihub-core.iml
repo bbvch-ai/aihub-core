@@ -8,6 +8,7 @@
       <sourceFolder url="file://$MODULE_DIR$/aihub_lib" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/aihub_pipeline" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/aihub_process" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/aihub_backup" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/aihub_web/aihub_web/.app/.output" />
       <excludeFolder url="file://$MODULE_DIR$/aihub_web/aihub_web/.playground/.output" />
       <excludeFolder url="file://$MODULE_DIR$/local-volumes" />

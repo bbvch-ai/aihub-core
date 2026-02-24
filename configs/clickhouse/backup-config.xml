@@ -1,0 +1,5 @@
+<clickhouse>
+    <backups>
+        <allowed_disk>default</allowed_disk>
+    </backups>
+</clickhouse>

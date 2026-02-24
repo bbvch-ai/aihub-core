@@ -6,6 +6,11 @@ title: Backup and Recovery
 
 ## Overview
 
+AI-Hub includes an automated backup service that periodically dumps all stateful services to the internal SeaweedFS S3
+storage (`s3://backups/`). Backups run on a daily schedule (2 AM Europe/Zurich) with automatic retention cleanup. The
+backup service is a standalone Dagster instance with a web UI for monitoring, manual triggers, and parameterized
+restores.
+
 Each instance has independent backups. Data isolation between instances. Recovery operations don't affect other
 instances.
 
@@ -14,61 +19,134 @@ This chapter assumes a multi-instance deployment model where each organization h
 For multi-tenancy (logical separation within a single instance), see [Multi-tenancy](../../16_multi_tenancy/).
 :::
 
-## Backup approaches
+---
 
-You can back up the AI-Hub using VM snapshots or component-level backups.
+## What gets backed up
 
-VM snapshots capture the entire virtual machine state. You restore the whole system at once. Component-level backups
-handle individual data stores separately, so you can restore specific parts.
+| Service               | Method                          | Online?         | Data                                              |
+| --------------------- | ------------------------------- | --------------- | ------------------------------------------------- |
+| PostgreSQL (main)     | `pg_dumpall`                    | Yes             | OpenWebUI, Langfuse, Dagster, LiteLLM databases   |
+| PostgreSQL (FerretDB) | `pg_dumpall`                    | Yes             | Agent configs, users, threads, tokens, RBAC roles |
+| Milvus                | `milvus-backup` (official tool) | Yes             | Vector collections with consistent metadata       |
+| Neo4j                 | `neo4j-admin database dump`     | No (brief stop) | Agent memory graphs (Mem0)                        |
+| ClickHouse            | `clickhouse-client` BACKUP      | Yes             | Langfuse traces, observations, scores             |
+| Valkey                | `BGSAVE` + RDB copy             | Yes             | Cache and session state (RDB snapshot)            |
+| NATS                  | `nats` CLI stream backup        | Yes             | JetStream streams                                 |
+
+### What is NOT backed up by the platform
+
+**SeaweedFS bucket data** (user-uploaded documents, knowledge base files, chat attachments) is the responsibility of the
+infrastructure layer. Use VM snapshots, rclone sync, or external S3 replication to protect this data. The platform
+cannot back up SeaweedFS into itself.
+
+Valkey and NATS backups are non-critical — missing backups produce warnings, not errors. Valkey stores cache and session
+state that rebuilds on restart. NATS stores transient messages; important events are already persisted in FerretDB.
+
+---
+
+## Configuration
+
+Configure the backup service via environment variables in `.env`:
+
+```bash
+BACKUP_RETENTION_DAYS="7"            # Keep online backups for N days (dev: 7, prod: 30)
+BACKUP_SKIP_MILVUS_ONLINE="false"    # Skip Milvus in online backups (large vector data)
+BACKUP_SKIP_MILVUS_OFFLINE="false"   # Skip Milvus in offline backups
+```
+
+The backup schedule (daily at 2 AM Europe/Zurich) is defined in Dagster and can be toggled on/off via the Dagster UI.
+
+Offline backups are never auto-deleted by retention cleanup and are preserved indefinitely.
+
+---
+
+## Backup modes
+
+### Online backup (default)
+
+Each service is dumped individually without stopping application services. Per-service dumps are internally consistent
+(PostgreSQL uses MVCC, milvus-backup flushes and pauses GC). Minor cross-service drift is possible within the ~1-2
+minute backup window.
+
+To trigger a manual online backup, open the Dagster UI at `http://localhost:3004`, navigate to the backup asset, and
+click "Materialize".
+
+### Offline backup (manual)
+
+Stops all application services before running backups, guaranteeing perfect cross-service consistency. Use this before
+major upgrades or when a known-good snapshot is needed.
+
+To trigger an offline backup, launch the `backup_asset_job` from the Dagster UI Launchpad with `mode: "offline"`.
+
+Neo4j requires a brief container stop even in online mode because Neo4j Community Edition does not support online
+backups.
+
+---
+
+## Listing backups
+
+Open the Dagster UI at `http://localhost:3004` to see the backup asset calendar view, which shows daily backup coverage
+at a glance. The asset metadata includes timestamp, mode, and S3 prefix for each backup.
+
+---
+
+## Recovery
+
+### Full-system restore
+
+Restores the entire platform to a specific backup. Stops all services, restores each database, then restarts everything
+in dependency order with health checks.
+
+To run a full restore, open the Dagster UI at `http://localhost:3004`, navigate to Jobs → `full_restore_job` →
+Launchpad, enter the backup timestamp, and click "Launch Run".
+
+The restore process follows three phases:
+
+1. **Full stop**: All application and database containers are stopped (except SeaweedFS, which is needed for S3 access)
+2. **Restore data**: Each service is restored from its backup. PostgreSQL instances are started temporarily for SQL
+   import. Milvus is started temporarily for the milvus-backup restore API.
+3. **Full start**: All containers are started in dependency order (infrastructure first, then databases, then
+   applications). Health checks verify each service.
+
+### Per-service restore
+
+For targeted recovery of individual services, use Jobs → `single_service_restore_job` → Launchpad in the Dagster UI.
+Enter the service name and optionally a timestamp (defaults to the latest backup).
 
 ______________________________________________________________________
 
 ## VM snapshots
 
-VM snapshots capture everything: OS, Docker, data, configuration. You restore the entire VM in one operation. No backup
-scripts needed. All services are consistent at the same point in time.
-
-Backup sizes are large since you're copying the entire disk. Backup times are longer. You can't selectively restore
-individual databases. The VM needs to be stopped, or you need a snapshot-capable hypervisor.
+VM snapshots remain a valid complementary strategy, especially for protecting SeaweedFS data. They capture everything:
+OS, Docker, data, configuration. You restore the entire VM in one operation.
 
 Stop AI-Hub services before creating a snapshot using `docker compose down`. Alternatively, use application-consistent
-snapshots (Azure with VM agent, VMware with quiesce). Create snapshots before major updates. Test restores regularly.
+snapshots (Azure with VM agent, VMware with quiesce). Create snapshots before major updates.
 
 ______________________________________________________________________
 
-## Component-level backups
+## Backup storage layout
 
-### What to back up
+Each backup is stored in a flat, timestamped directory with the mode (online/offline) in the name:
 
-PostgreSQL stores multiple databases: OpenWebUI, Langfuse, Dagster, and LiteLLM. A separate PostgreSQL instance stores
-the FerretDB backend. Use pg_basebackup for full backups and WAL archiving for point-in-time recovery.
-
-FerretDB stores agent configurations, process definitions, chat histories, user sessions, and knowledge base metadata.
-The PostgreSQL backup for the FerretDB instance covers this. You can optionally create MongoDB-format exports for
-portability.
-
-Milvus stores vector embeddings for RAG. Export collections to S3-compatible storage. Embeddings can be regenerated from
-source documents if needed.
-
-SeaweedFS stores user-uploaded documents, RAG knowledge base files, and chat attachments. The SeaweedFS Filer uses etcd
-for metadata storage (backed up with etcd snapshots below). Back up the actual file data using S3-compatible sync tools.
-
-Valkey stores cache data and WebSocket session state for OpenWebUI. Valkey persists to disk automatically. Back up the
-data volume.
-
-NATS stores event streams and message persistence for the event-driven architecture. Back up the data volume.
-
-etcd stores Milvus coordination metadata, SeaweedFS Filer metadata, and service discovery information. Use
-snapshot-based backup.
-
-Configuration includes environment variables, SSL certificates, and Docker compose files. Encrypt backups. Store
-encryption keys separately (HSM, key management services, multiple secure locations).
-
-______________________________________________________________________
-
-## Backup automation
-
-Automate backup tasks with cron or similar schedulers. Schedule backups during low-usage periods to avoid performance
-impact. Verify backup integrity regularly and alert on failures.
+```
+s3://backups/
+  2026-02-17_02-00-00_online/
+    postgres-main.sql.gz
+    postgres-ferretdb.sql.gz
+    backup_2026_02_17_02_00_00/...       (Milvus backup)
+    neo4j.dump
+    clickhouse.tar.gz
+    valkey.rdb
+    nats-jetstream.tar.gz
+  2026-02-18_03-00-00_offline/
+    postgres-main.sql.gz
+    postgres-ferretdb.sql.gz
+    backup_2026_02_18_03_00_00/...
+    neo4j.dump
+    clickhouse.tar.gz
+    valkey.rdb
+    nats-jetstream.tar.gz
+```
 
 ______________________________________________________________________
