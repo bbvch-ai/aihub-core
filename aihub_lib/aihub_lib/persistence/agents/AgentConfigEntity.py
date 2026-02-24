@@ -29,10 +29,10 @@ class AgentConfigEntity(BaseDocument):
 
     @classmethod
     @trace_fn
-    def from_agent_config(cls, agent_config: AgentConfig) -> Self:
+    def from_agent_config(cls, agent_config: AgentConfig, agent_class: str) -> Self:
         """Create an instance entity from an AgentConfig."""
         return cls(
-            agent_class=agent_config.agent_class,
+            agent_class=agent_class,
             agent_id=agent_config.agent_id,
             name=LocaleStringEntity.from_locale_string(agent_config.name),
             description=LocaleStringEntity.from_locale_string(agent_config.description),
@@ -41,9 +41,9 @@ class AgentConfigEntity(BaseDocument):
         )
 
     @trace_fn
-    def update_from_agent_config(self, agent_config: AgentConfig) -> Self:
+    def update_from_agent_config(self, agent_config: AgentConfig, agent_class: str) -> Self:
         """Update an existing instance entity from an AgentConfig."""
-        self.agent_class = agent_config.agent_class
+        self.agent_class = agent_class
         self.agent_id = agent_config.agent_id
         self.name = LocaleStringEntity.from_locale_string(agent_config.name)
         self.description = LocaleStringEntity.from_locale_string(agent_config.description)

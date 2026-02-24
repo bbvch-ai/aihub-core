@@ -19,22 +19,26 @@ build [Your First Agent](../1_quick_start/3_your_first_agent/).
 
 This guide is structured to build your knowledge progressively:
 
-1. [**Agent Fundamentals**](./1_agent_fundamentals/) - The core architecture, including events, steps, and
-   configuration.
-2. [**Core Patterns**](./2_core_patterns/) - Essential workflow patterns like conditional logic, loops, and state
-   management.
-3. [**Human in the Loop**](./3_human_in_the_loop/) - Building interactive workflows that require human approval or
-   input.
-4. [**Multi-Agent Systems**](./4_multi_agent_systems/) - Coordinating multiple agents to solve complex problems.
-5. [**Memory**](./5_memory/) - Adding persistent memory to your agents for user preferences and organizational
-   knowledge.
-6. [**Testing and Debugging**](./6_testing_and_debugging/) - Best practices for ensuring your agent is reliable and
-   correct.
-7. [**Production Deployment**](./7_production_deployment/) - Guidelines for packaging and deploying your agent.
-8. [**Agent Observation**](./8_agent_observation/) - Monitoring your agent's behavior and performance with integrated
-   tracing.
-9. [**Configurable Agent Forms**](./8_configurable_agents/) - Making agent configuration editable through the Admin UI
-   using the Form Duality Pattern.
+01. [**Agent Fundamentals**](./1_agent_fundamentals/) - The core architecture, including events, steps, and
+    configuration.
+02. [**Core Patterns**](./2_core_patterns/) - Essential workflow patterns like conditional logic, loops, and state
+    management.
+03. [**Human in the Loop**](./3_human_in_the_loop/) - Building interactive workflows that require human approval or
+    input.
+04. [**Multi-Agent Systems**](./4_multi_agent_systems/) - Coordinating multiple agents to solve complex problems.
+05. [**Memory**](./5_memory/) - Adding persistent memory to your agents for user preferences and organizational
+    knowledge.
+06. [**Testing and Debugging**](./6_testing_and_debugging/) - Best practices for ensuring your agent is reliable and
+    correct.
+07. [**Production Deployment**](./7_production_deployment/) - Guidelines for packaging and deploying your agent.
+08. [**Agent Observation**](./8_agent_observation/) - Monitoring your agent's behavior and performance with integrated
+    tracing.
+09. [**Configurable Agent Forms**](./8_configurable_agents/) - Making agent configuration editable through the Admin UI
+    using the Form Duality Pattern.
+10. [**Execution Model**](./9_execution_model/) - How the dispatcher executes steps, synchronization primitives,
+    anti-patterns, and troubleshooting.
+11. [**Events Reference**](./10_events_reference/) - Complete event hierarchy, choosing the right base event, and
+    available events catalog.
 
 ## Key Principles of the SDK
 

@@ -1,75 +1,59 @@
+---
 agent:
-  name: "Assistants IA"
-  description: "Parcourez et interagissez avec les assistants IA"
-
-docling:
-  name: "Convertisseur de documents"
-  description: "Convertissez des documents en différents formats"
-
+  name: Assistants IA
+  description: Parcourez et interagissez avec les assistants IA
+parsing:
+  name: Convertisseur de documents
+  description: Convertissez des documents en différents formats
 evaluation:
-  name: "Tests de qualité"
-  description: "Testez et évaluez la qualité des assistants IA"
-
+  name: Tests de qualité
+  description: Testez et évaluez la qualité des assistants IA
 event:
-  name: "Journal d'activité"
-  description: "Consultez l'activité système et les événements"
-
+  name: Journal d'activité
+  description: Consultez l'activité système et les événements
 file:
-  name: "Accès aux fichiers"
-  description: "Accédez et partagez vos fichiers"
-
+  name: Accès aux fichiers
+  description: Accédez et partagez vos fichiers
 i18n:
-  name: "Paramètres de langue"
-  description: "Gérez vos préférences linguistiques"
-
+  name: Paramètres de langue
+  description: Gérez vos préférences linguistiques
 knowledge:
-  name: "Base de connaissances"
-  description: "Gérez votre base de connaissances et documents"
-
+  name: Base de connaissances
+  description: Gérez votre base de connaissances et documents
 model:
-  name: "Modèles IA"
-  description: "Consultez les modèles IA disponibles"
-
+  name: Modèles IA
+  description: Consultez les modèles IA disponibles
 notification:
-  name: "Notifications"
-  description: "Consultez et gérez vos notifications"
-
+  name: Notifications
+  description: Consultez et gérez vos notifications
 openai:
-  name: "Chat"
-  description: "Conversez avec les assistants IA"
-
+  name: Chat
+  description: Conversez avec les assistants IA
 process:
-  name: "Flux de travail"
-  description: "Gérez les processus métier automatisés"
-
+  name: Flux de travail
+  description: Gérez les processus métier automatisés
 role:
-  name: "Rôles d'utilisateur"
-  description: "Configurez les autorisations d'accès et les rôles"
-
+  name: Rôles d'utilisateur
+  description: Configurez les autorisations d'accès et les rôles
 suite:
-  name: "Vue d'ensemble de la plateforme"
-  description: "Consultez les fonctionnalités et paramètres de la plateforme"
-
+  name: Vue d'ensemble de la plateforme
+  description: Consultez les fonctionnalités et paramètres de la plateforme
 thread:
-  name: "Conversations"
-  description: "Gérez votre historique de conversations"
-
+  name: Conversations
+  description: Gérez votre historique de conversations
 token:
-  name: "Clés API"
-  description: "Créez et gérez les clés d'accès API"
-
+  name: Clés API
+  description: Créez et gérez les clés d'accès API
 translation:
-  name: "Traduction"
-  description: "Traduire le texte dans toutes les langues prises en charge"
-
+  name: Traduction
+  description: Traduire le texte dans toutes les langues prises en charge
 user:
-  name: "Mon compte"
-  description: "Gérez les paramètres de votre compte"
-
+  name: Mon compte
+  description: Gérez les paramètres de votre compte
 user_memory:
-  name: "Mémoires utilisateur"
-  description: "Afficher et gérer vos mémoires personnelles depuis mem0"
-
+  name: Mémoires utilisateur
+  description: Afficher et gérer vos mémoires personnelles depuis mem0
 organization_memory:
-  name: "Mémoires organisationnelles"
-  description: "Afficher et gérer les mémoires à l'échelle de l'organisation depuis mem0"
+  name: Mémoires organisationnelles
+  description: Afficher et gérer les mémoires à l'échelle de l'organisation depuis
+    mem0

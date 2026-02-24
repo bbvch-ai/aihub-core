@@ -29,7 +29,7 @@ Each step below shows commands for both deployment types. Simply follow the comm
 mode.
 :::
 
----
+______________________________________________________________________
 
 ## Step 1: Get Deployment Files
 
@@ -72,7 +72,7 @@ The `*.127.0.0.1.nip.io` domain automatically resolves to your localhost (127.0.
 without needing to modify your hosts file. This allows subdomain-based routing in local development.
 :::
 
----
+______________________________________________________________________
 
 ## Step 2: Configure Environment Variables
 
@@ -195,10 +195,9 @@ LANGFUSE_INIT_USER_EMAIL="admin@your-company.com"
 LANGFUSE_INIT_USER_PASSWORD="REPLACE_WITH_RANDOM_STRING"
 LANGFUSE_CLICKHOUSE_PASSWORD="REPLACE_WITH_RANDOM_STRING"
 
-# Docling Configuration
-DOCLING_API_TIMEOUT="600"
-DOCLING_VLM_MODEL_NAME="text-generation/ocr"
-DOCLING_HTTP_RETRIES=3
+# MinerU Configuration
+MINERU_API_TIMEOUT="600"
+MINERU_VLM_NAME="text-generation/ocr"
 
 # Milvus Configuration (must match your embedding model dimensions)
 MILVUS_DIMENSION="3072"
@@ -341,7 +340,7 @@ docker compose -f docker-compose.latest.yml ps
 - **Databases** (FerretDB, PostgreSQL, Valkey)
 - **Vector Database** (Milvus)
 - **LLM Proxy** (LiteLLM)
-- **Document Processing** (Docling)
+- **Document Processing** (MinerU)
 - **Observability** (Langfuse)
 - **Message Queue** (NATS)
 - **Storage** (SeaweedFS)

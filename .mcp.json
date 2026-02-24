@@ -5,6 +5,37 @@
     },
     "aihub_api": {
       "command": "./.claude/mcp/mcp-aihub-api.sh"
+    },
+    "langfuse": {
+      "command": "./.claude/mcp/mcp-langfuse.sh"
+    },
+    "context7": {
+      "command": "./.claude/mcp/mcp-context7.sh"
+    },
+    "playwright": {
+      "command": "./.claude/mcp/mcp-playwright.sh"
+    },
+    "github": {
+      "command": "./.claude/mcp/mcp-github.sh",
+      "disabled": true
+    },
+    "postgres": {
+      "command": "./.claude/mcp/mcp-postgres.sh"
+    },
+    "primevue": {
+      "command": "./.claude/mcp/mcp-primevue.sh"
+    },
+    "nuxt": {
+      "command": "./.claude/mcp/mcp-nuxt.sh"
+    },
+    "milvus": {
+      "command": "./.claude/mcp/mcp-milvus.sh"
+    },
+    "nats": {
+      "command": "./.claude/mcp/mcp-nats.sh"
+    },
+    "dagster": {
+      "command": "./.claude/mcp/mcp-dagster.sh"
     }
   }
 }

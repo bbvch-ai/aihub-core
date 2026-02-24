@@ -13,6 +13,7 @@ from pydantic_core import PydanticUndefined
 
 from aihub_lib.nats.events.form.base.FormkitElement import FormkitElement
 from aihub_lib.nats.events.form.base.PrimeVueElement import PrimeVueElement
+from aihub_lib.nats.events.form.TemplateData import TemplateData
 
 if TYPE_CHECKING:
     from aihub_lib.i18n.LocaleString import LocaleString
@@ -530,6 +531,20 @@ class Form(BaseModel):
                 else:
                     non_configurable[field_name] = value
         return non_configurable
+
+    def to_template_data(self, form_config: Form) -> TemplateData:
+        """Extract configurable field values and identity fields for DB storage.
+
+        Given a data-mode instance and the corresponding form-mode config,
+        returns only the fields that should be persisted as a template.
+        Non-configurable deployment-specific values (e.g. LLMConfig) are excluded
+        because they are merged at runtime by the dispatcher via deep_merge().
+        """
+        configurable_fields = form_config.get_configurable_fields()
+        full_dump = self.model_dump()
+        identity_fields = {"agent_id", "process_id", "name", "description", "icon"}
+        filtered_dict = {k: v for k, v in full_dump.items() if k in configurable_fields or k in identity_fields}
+        return TemplateData.model_validate(filtered_dict)
 
     def to_configurable_submission_model(self) -> type[BaseModel]:
         """

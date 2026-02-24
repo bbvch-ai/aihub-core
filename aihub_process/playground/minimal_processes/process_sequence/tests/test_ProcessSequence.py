@@ -21,7 +21,6 @@ def agent_a_runner_fixture():
         agent_type=AgentA,
         agent_config=AgentConfig(
             agent_id="agent_a",
-            agent_class=AgentA.__name__,
             name=LocaleString(en="Agent A for Sequence"),
             description=LocaleString(en="Test Agent A"),
         ),
@@ -34,7 +33,6 @@ def initial_process_runner_fixture():
         process_type=InitialProcess,
         process_config=ProcessConfig(
             process_id="initial_process",
-            process_class=InitialProcess.__name__,
             name=LocaleString(en="Initial Process"),
             description=LocaleString(en="Test Initial Process"),
         ),
@@ -47,7 +45,6 @@ def subsequent_process_runner_fixture():
         process_type=SubsequentProcess,
         process_config=ProcessConfig(
             process_id="subsequent_process",
-            process_class=SubsequentProcess.__name__,
             name=LocaleString(en="Subsequent Process"),
             description=LocaleString(en="Test Subsequent Process"),
         ),
@@ -76,6 +73,6 @@ async def agent_a_started_for_sequence(
 async def verify_subsequent_process_stop_event(subsequent_process_runner: ProcessTestRunner, expected_payload: str):
     event = await subsequent_process_runner.wait_for_event(CustomProcessStopEvent, timeout=10)
     assert isinstance(event, CustomProcessStopEvent), f"Expected CustomProcessStopEvent, got {type(event)}"
-    assert (
-        event.payload == expected_payload
-    ), f"CustomProcessStopEvent payload mismatch. Expected: '{expected_payload}', Got: '{event.payload}'"
+    assert event.payload == expected_payload, (
+        f"CustomProcessStopEvent payload mismatch. Expected: '{expected_payload}', Got: '{event.payload}'"
+    )

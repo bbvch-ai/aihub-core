@@ -1,58 +1,35 @@
-[tool.poetry]
-name = "aihub_agent"
-version = "v0.262.3"
+[project]
+name = "aihub-agent"
+version = "0.265.1"
 description = "agents core"
+requires-python = ">=3.13, <3.14"
 authors = [
-    "Joel Barmettler <joel.barmettler@bbv.ch>",
-    "Marius Högger <marius.hoegger@bbv.ch>",
-    "Michèle Fundneider <michele.fundneider@bbv.ch>",
-    "Thomas Mannhart <thomas.mannhart@bbv.ch>",
-    "Noah Hermann <noah.hermann@bbv.ch>",
+    { name = "Joel Barmettler", email = "joel.barmettler@bbv.ch" },
+    { name = "Marius Högger", email = "marius.hoegger@bbv.ch" },
+    { name = "Michèle Fundneider", email = "michele.fundneider@bbv.ch" },
+    { name = "Thomas Mannhart", email = "thomas.mannhart@bbv.ch" },
+    { name = "Noah Hermann", email = "noah.hermann@bbv.ch" },
 ]
-license = "Proprietary"
+license = "LicenseRef-Proprietary"
+dependencies = [
+    "aihub-core",
+    "llama-index-llms-openai>=0.6.12",
+    "llama-index-llms-azure-openai>=0.4.2",
+    "stringcase>=1.2.0",
+]
 
-[tool.poetry.dependencies]
-python = ">=3.13, <3.14"
-pydantic = "^2.10.3"
-nats-py = "^2.9.0"
-openinference-instrumentation-llama-index = "^4.2.1"
-opentelemetry-sdk = "^1.39.1"
-opentelemetry-api = "^1.39.1"
-pytest-asyncio = "^0.24.0"
-llama-index-core = "0.14.12"
-mongoengine = "^0.29.1"
-python-i18n = "^0.3.9"
-opentelemetry-exporter-otlp = "^1.39.1"
-pydantic-settings = "^2.7.0"
-colorlog = "^6.9.0"
-llama-index-llms-openai = "^0.6.12"
-llama-index-llms-azure-openai = "^0.4.2"
-pytest-mock = "^3.14.0"
-cachetools = "^5.5.2"
-redis = "^5.2.1"
-stringcase = "^1.2.0"
-
-[tool.poetry.dependencies.aihub_lib]
-git = "https://github.com/bbvch-ai/aihub-core.git"
-tag = "v0.262.3"
-subdirectory = "aihub_lib"
-[tool.poetry.group.dev.dependencies]
-pytest = "^8.4.1"
-pytest-asyncio = "^0.24.0"
-ruff = "^0.8.1"
-mypy = "^1.13.0"
-toml-sort = "^0.24.2"
-black = { extras = ["jupyter"], version = "^25.1.0" }
-pytest-bdd = "^8.1.0"
-pytest-cov = "^6.0.0"
-tabulate = "^0.9.0"
-matplotlib = "^3.10.1"
-seaborn = "^0.13.2"
-pip-licenses = "^5.0.0"
+[dependency-groups]
+dev = [
+    "matplotlib>=3.10.1",
+    "seaborn>=0.13.2",
+]
 
 [build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["uv_build>=0.10.4,<0.11.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-root = ""
 
 [tool.ruff]
 line-length = 120
@@ -89,4 +66,3 @@ markers = [
     "flaky: mark a test as flaky (may fail intermittently)",
 ]
 addopts = "--strict-markers"
-

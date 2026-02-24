@@ -65,14 +65,14 @@ def agent_config():
 @given("an OrganizationMemoryAgent runner with valid configuration", target_fixture="agent_runner")
 def _(agent_config):
     """Create AgentTestRunner with default configuration."""
-    return AgentTestRunner(agent_type=OrganizationMemoryAgent, default_agent_config=agent_config)
+    return AgentTestRunner(agent_type=OrganizationMemoryAgent, agent_config=agent_config)
 
 
 @given(parsers.parse('tenant namespace is "{namespace}"'), target_fixture="agent_runner")
 def _(agent_config, namespace: str):
     """Create AgentTestRunner with specified tenant namespace."""
     agent_config.tenant_namespace = namespace
-    return AgentTestRunner(agent_type=OrganizationMemoryAgent, default_agent_config=agent_config)
+    return AgentTestRunner(agent_type=OrganizationMemoryAgent, agent_config=agent_config)
 
 
 @given(parsers.parse('pre-seeded organization memory: "{memory_text}"'))
@@ -86,7 +86,9 @@ async def _(memory_text: str, agent_runner: AgentTestRunner):
 
     # Create AgentMemory instance with the agent config
     locale_handler = LocaleHandler(locale="en")
-    agent_memory = AgentMemory(agent_config=agent_runner.default_agent_config, t=locale_handler)
+    agent_memory = AgentMemory(
+        agent_config=agent_runner.agent_config, agent_class=agent_runner.agent_class, t=locale_handler
+    )
 
     # Add the organization memory
     await agent_memory.add_organization_memory(
@@ -95,8 +97,8 @@ async def _(memory_text: str, agent_runner: AgentTestRunner):
         thread_id="test_thread_seed",
         display_id="test_display_seed",
         run_id="test_run_seed",
-        tenant_id=agent_runner.default_agent_config.tenant_id,
-        tenant_namespace=agent_runner.default_agent_config.tenant_namespace,
+        tenant_id=agent_runner.agent_config.tenant_id,
+        tenant_namespace=agent_runner.agent_config.tenant_namespace,
     )
 
 
@@ -111,7 +113,9 @@ async def _(memory_text: str, namespace: str, agent_runner: AgentTestRunner):
 
     # Create AgentMemory instance with the agent config
     locale_handler = LocaleHandler(locale="en")
-    agent_memory = AgentMemory(agent_config=agent_runner.default_agent_config, t=locale_handler)
+    agent_memory = AgentMemory(
+        agent_config=agent_runner.agent_config, agent_class=agent_runner.agent_class, t=locale_handler
+    )
 
     # Add the tenant memory with specific namespace
     await agent_memory.add_organization_memory(
@@ -120,7 +124,7 @@ async def _(memory_text: str, namespace: str, agent_runner: AgentTestRunner):
         thread_id="test_thread_seed",
         display_id="test_display_seed",
         run_id="test_run_seed",
-        tenant_id=agent_runner.default_agent_config.tenant_id,
+        tenant_id=agent_runner.agent_config.tenant_id,
         tenant_namespace=namespace,
     )
 
@@ -218,9 +222,9 @@ def _(agent_runner: AgentTestRunner, count: int):
     """Check that RetrieveOrganizationMemoryEvent has expected number of memories."""
     event = agent_runner.get_event_of_class(RetrieveOrganizationMemoryEvent)
     assert event is not None, "RetrieveOrganizationMemoryEvent not found"
-    assert (
-        len(event.memories) >= count or len(event.relations) >= count
-    ), f"Expected {count}+ memories or relations, got {len(event.memories)} / {len(event.relations)}"
+    assert len(event.memories) >= count or len(event.relations) >= count, (
+        f"Expected {count}+ memories or relations, got {len(event.memories)} / {len(event.relations)}"
+    )
 
 
 @then(parsers.parse('the memory content contains "{text}"'))

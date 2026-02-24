@@ -44,7 +44,7 @@ class MinimalProcessInstanceDTO(BaseModel):
             process_id=config_entity.process_id,
             name=t.extract(config_entity.name.to_locale_string()),
             description=t.extract(config_entity.description.to_locale_string()),
-            icon=config_entity.icon or class_entity.icon or "mage:broadcast",
+            icon=config_entity.icon,
         )
         return cls(
             process_class=class_entity.process_class,

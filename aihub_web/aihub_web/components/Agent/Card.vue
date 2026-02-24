@@ -35,6 +35,15 @@
           :value="t('agent.list.offline')"
         />
         <Button
+          v-tooltip.top="t('agent.list.clone')"
+          icon="pi pi-clone"
+          severity="secondary"
+          text
+          rounded
+          size="small"
+          @click.stop="emit('clone', agent)"
+        />
+        <Button
           v-if="showDelete"
           icon="pi pi-trash"
           severity="secondary"
@@ -75,6 +84,7 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits<{
   deleted: [agentClass: string, agentId: string]
   click: [agent: FullAgentInstanceDto]
+  clone: [agent: FullAgentInstanceDto]
 }>()
 
 const route = useRoute()

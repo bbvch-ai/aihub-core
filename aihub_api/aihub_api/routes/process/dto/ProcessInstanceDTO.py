@@ -34,5 +34,4 @@ class ProcessInstanceDTO(ProcessClassDTO):
             program_inputs=class_dto.program_inputs,
             agent_inputs=class_dto.agent_inputs,
             is_online=class_dto.is_online,
-            default_process_config=class_dto.default_process_config,
         )

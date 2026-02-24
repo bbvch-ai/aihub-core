@@ -10,6 +10,7 @@ from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_agent.agents.LLMWrappingAgent.LLMWrappingAgent import LLMWrappingAgent
 from aihub_agent.agents.LLMWrappingAgent.LLMWrappingAgentConfig import LLMWrappingAgentConfig
 from aihub_agent.runners.AgentRunner import AgentRunner
+from app.llm_wrapping_agent.templates import ALL_TEMPLATES
 
 enable_logging()
 
@@ -18,6 +19,7 @@ async def main():
     runner = AgentRunner(
         agent_type=LLMWrappingAgent,
         agent_config=LLMWrappingAgentConfig.as_form(),
+        templates=ALL_TEMPLATES,
     )
 
     await runner.run_forever()

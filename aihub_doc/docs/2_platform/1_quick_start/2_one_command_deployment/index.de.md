@@ -30,7 +30,7 @@ Jeder untenstehende Schritt zeigt Befehle für beide Deployment-Typen. Folgen Si
 gewählten Deployment-Modus entsprechen.
 :::
 
----
+______________________________________________________________________
 
 ## Schritt 1: Deployment-Dateien abrufen
 
@@ -74,7 +74,7 @@ Wildcard-DNS-Auflösung, ohne dass Sie Ihre Hosts-Datei ändern müssen. Dies er
 lokalen Entwicklung.
 :::
 
----
+______________________________________________________________________
 
 ## Schritt 2: Umgebungsvariablen konfigurieren
 
@@ -197,10 +197,9 @@ LANGFUSE_INIT_USER_EMAIL="admin@your-company.com"
 LANGFUSE_INIT_USER_PASSWORD="REPLACE_WITH_RANDOM_STRING"
 LANGFUSE_CLICKHOUSE_PASSWORD="REPLACE_WITH_RANDOM_STRING"
 
-# Docling-Konfiguration
-DOCLING_API_TIMEOUT="600"
-DOCLING_VLM_MODEL_NAME="text-generation/ocr"
-DOCLING_HTTP_RETRIES=3
+# MinerU Configuration
+MINERU_API_TIMEOUT="600"
+MINERU_VLM_NAME="text-generation/ocr"
 
 # Milvus-Konfiguration (muss mit den Dimensionen Ihres Embedding-Modells übereinstimmen)
 MILVUS_DIMENSION="3072"

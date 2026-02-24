@@ -15,12 +15,9 @@ Feature: Combine nodes in order
       You are provided with additional context information in the form of structured documents. Each document follows a
       consistent format, beginning with `<REFERENCE_DOCUMENT [metadata]>` and ending with `</REFERENCE_DOCUMENT>`. These documents contain
       essential details that should be utilized to accurately understand and respond to the user’s query.
-
       Each document includes metadata such as source, namespace, type, language, version, and timestamps. The content
       within these documents provides crucial insights relevant to the given context.
-
       Below are the relevant documents:
-
       <context_documents>
       <REFERENCE_DOCUMENT source='doc1' document_title='Doc 1 Title' language='en' version='1' created_at='2024-01-10T10:00:00Z' updated_at='2024-01-11T10:00:00Z' inserted_at='2024-01-12T10:00:00Z'>
 
@@ -45,7 +42,6 @@ Feature: Combine nodes in order
       ---
 
       </context_documents>
-
       Instruction: Using the information from the provided documents, generate a detailed and well-structured response
       to the user’s question.
       """
@@ -67,12 +63,9 @@ Feature: Combine nodes in order
       You are provided with additional context information in the form of structured documents. Each document follows a
       consistent format, beginning with `<REFERENCE_DOCUMENT [metadata]>` and ending with `</REFERENCE_DOCUMENT>`. These documents contain
       essential details that should be utilized to accurately understand and respond to the user’s query.
-
       Each document includes metadata such as source, namespace, type, language, version, and timestamps. The content
       within these documents provides crucial insights relevant to the given context.
-
       Below are the relevant documents:
-
       <context_documents>
       <REFERENCE_DOCUMENT source='doc1' document_title='Hierarchical' language='de' version='1' created_at='2024-03-01T09:00:00Z' updated_at='2024-03-01T10:00:00Z' inserted_at='2024-03-01T11:00:00Z'>
 
@@ -95,7 +88,6 @@ Feature: Combine nodes in order
       ---
 
       </context_documents>
-
       Instruction: Using the information from the provided documents, generate a detailed and well-structured response
       to the user’s question.
       """
@@ -111,15 +103,11 @@ Feature: Combine nodes in order
       You are provided with additional context information in the form of structured documents. Each document follows a
       consistent format, beginning with `<REFERENCE_DOCUMENT [metadata]>` and ending with `</REFERENCE_DOCUMENT>`. These documents contain
       essential details that should be utilized to accurately understand and respond to the user’s query.
-
       Each document includes metadata such as source, namespace, type, language, version, and timestamps. The content
       within these documents provides crucial insights relevant to the given context.
-
       Below are the relevant documents:
-
       <context_documents>
       </context_documents>
-
       Instruction: Using the information from the provided documents, generate a detailed and well-structured response
       to the user’s question.
       """
@@ -193,12 +181,9 @@ Feature: Combine nodes in order
       You are provided with additional context information in the form of structured documents. Each document follows a
       consistent format, beginning with `<REFERENCE_DOCUMENT [metadata]>` and ending with `</REFERENCE_DOCUMENT>`. These documents contain
       essential details that should be utilized to accurately understand and respond to the user’s query.
-
       Each document includes metadata such as source, namespace, type, language, version, and timestamps. The content
       within these documents provides crucial insights relevant to the given context.
-
       Below are the relevant documents:
-
       <context_documents>
       <REFERENCE_DOCUMENT source='doc3' document_title='Special Chars' language='de' version='1' created_at='2024-03-01T11:20:00Z' updated_at='2024-03-01T11:20:00Z' inserted_at='2024-03-01T11:20:00Z'>
 
@@ -217,7 +202,6 @@ Feature: Combine nodes in order
       ---
 
       </context_documents>
-
       Instruction: Using the information from the provided documents, generate a detailed and well-structured response
       to the user’s question.
       """
@@ -238,12 +222,9 @@ Feature: Combine nodes in order
       You are provided with additional context information in the form of structured documents. Each document follows a
       consistent format, beginning with `<REFERENCE_DOCUMENT [metadata]>` and ending with `</REFERENCE_DOCUMENT>`. These documents contain
       essential details that should be utilized to accurately understand and respond to the user’s query.
-
       Each document includes metadata such as source, namespace, type, language, version, and timestamps. The content
       within these documents provides crucial insights relevant to the given context.
-
       Below are the relevant documents:
-
       <context_documents>
       <REFERENCE_DOCUMENT source='doc4' document_title='Skipped Levels' language='de' version='1' created_at='2024-03-01T11:21:40Z' updated_at='2024-03-01T11:21:40Z' inserted_at='2024-03-01T11:21:40Z'>
 
@@ -264,7 +245,6 @@ Feature: Combine nodes in order
       ---
 
       </context_documents>
-
       Instruction: Using the information from the provided documents, generate a detailed and well-structured response
       to the user’s question.
       """

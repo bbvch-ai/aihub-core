@@ -58,7 +58,7 @@ def parse_document_with_metadata(
             "processing_time_seconds": processing_time,
             "document_pages": len(document.pages) if hasattr(document, 'pages') else 1,
             "text_length": len(document.text),
-            "parser_version": "docling-1.0",
+            "parser_version": "mineru-2.7",
             "success_rate": 1.0,
             "Table": MetadataValue.table(
                 records=[{

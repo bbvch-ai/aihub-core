@@ -435,7 +435,7 @@ const saveRole = async () => {
 - **Optimistic Updates**: Immediate UI updates with rollback on error
 - **Background Refetching**: Automatic data synchronization
 
----
+______________________________________________________________________
 
 ## The Step-by-Step Development Workflow
 
@@ -719,7 +719,7 @@ pnpm lint
 - **Import Sorting**: Automatic import organization
 - **Tailwind CSS**: Utility-first styling with consistent design system
 
----
+______________________________________________________________________
 
 ## Glossary of Web Frontend Terms
 

@@ -43,6 +43,6 @@ Sehen Sie es hier in Aktion:
 
 <br >
 
----
+______________________________________________________________________
 
 Als Nächstes wollen wir untersuchen, was Sie aus diesen Interaktionen lernen können.

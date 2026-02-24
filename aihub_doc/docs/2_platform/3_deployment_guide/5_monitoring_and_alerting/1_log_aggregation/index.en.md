@@ -143,7 +143,7 @@ While **SigNoz is the officially supported backend**, the OpenTelemetry foundati
 OTel-compatible system. To use an alternative backend, update the environment variables to point to your chosen system's
 OTLP endpoint. Some backends may require additional exporter configuration in the OTel Collector config file.
 
----
+______________________________________________________________________
 
 ## Next Steps
 

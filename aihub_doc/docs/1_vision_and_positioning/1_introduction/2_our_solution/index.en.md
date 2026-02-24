@@ -27,7 +27,7 @@ When you deploy the Swiss AI Hub, you immediately have:
 ::: details Infrastructure layer
 - **Unified LLM gateway** through LiteLLM, connecting to any model provider
 - **Vector databases** (Milvus) for semantic search and RAG
-- **Document processing** with Docling for PDFs, Office files, and more
+- **Document processing** with MinerU for PDFs, Office files, and more
 - **Data pipelines** using Dagster for ingestion and processing
 - **Message queuing** with NATS for event-driven architecture
 - **Object storage** via SeaweedFS S3-compatible layer

@@ -3,17 +3,17 @@ export
 
 lint:
 	@echo "Running linter..."
-	poetry run ruff check --fix
+	uv run ruff check --fix
 
 # Format code with Black
 format:
 	@echo "Formatting code..."
-	poetry run ruff format
+	uv run ruff format
 
 # Type-check with MyPy
 typecheck:
 	@echo "Running type checks..."
-	poetry run mypy aihub_bot
+	uv run mypy aihub_bot
 
 clean-jupyter:
 	@echo "Cleaning up notebooks..."
@@ -21,7 +21,7 @@ clean-jupyter:
 
 test-cov:
 	@echo "Running tests in aihub_bot with coverage..."
-	poetry run pytest --cov=. \
+	uv run pytest --cov=. \
 	                  --cov-report=xml:coverage.xml \
 	                  --cov-report=term-missing \
 	                  --junitxml=pytest.xml \
@@ -29,14 +29,14 @@ test-cov:
 
 test:
 	@echo "Running tests in aihub_bot..."
-	poetry run pytest || echo "No tests found. Skipping..."
+	uv run pytest || echo "No tests found. Skipping..."
 
 pr-ready: format lint
 	@echo "Running full check (format, lint)..."
 
 run-prod:
 	@echo "Starting server with Gunicorn using ${NUM_WORKERS} workers..."
-	poetry run gunicorn -w ${NUM_WORKERS} \
+	uv run gunicorn -w ${NUM_WORKERS} \
 		-k uvicorn.workers.UvicornWorker \
 		--timeout=300 \
 		-b 0.0.0.0:8001 \
