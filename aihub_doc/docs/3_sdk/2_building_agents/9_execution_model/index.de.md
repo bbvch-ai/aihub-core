@@ -1,21 +1,27 @@
 ---
 title: Ausführungsmodell
-source_sha: "05b412645a06ad90027efd39ceb57f169eab963aa2629b389f70172fcf5e4587"
+source_sha: 05b412645a06ad90027efd39ceb57f169eab963aa2629b389f70172fcf5e4587
 ---
 
 # Ausführungsmodell
 
-Das Verständnis des Ausführungsmodells ist für die Entwicklung korrekter Agents unerlässlich. Die meisten Fehler in der Agent-Entwicklung resultieren aus einem Missverständnis, wie der Dispatcher Schritte plant. Diese Seite erklärt die Mechanik im Detail.
+Das Verständnis des Ausführungsmodells ist für die Entwicklung korrekter Agents unerlässlich. Die meisten Fehler in der
+Agent-Entwicklung resultieren aus einem Missverständnis, wie der Dispatcher Schritte plant. Diese Seite erklärt die
+Mechanik im Detail.
 
 ## Das DAG-Mentalmodell
 
-Ein Agent ist keine Abfolge von Funktionsaufrufen. Es ist ein **Gerichteter Azyklischer Graph (DAG)**, bei dem Knoten **Schritte** und Kanten **Ereignisse** sind. Die Workflow-Topologie ist implizit und leitet sich vollständig von den Typ-Hinweisen Ihrer `@step`-Methoden ab.
+Ein Agent ist keine Abfolge von Funktionsaufrufen. Es ist ein **Gerichteter Azyklischer Graph (DAG)**, bei dem Knoten
+**Schritte** und Kanten **Ereignisse** sind. Die Workflow-Topologie ist implizit und leitet sich vollständig von den
+Typ-Hinweisen Ihrer `@step`-Methoden ab.
 
 **Schritte deklarieren Datenanforderungen, nicht die Ausführungsreihenfolge.**
 
-Ein Schritt wird ausgeführt, wenn die Workflow-Engine alle seine erforderlichen Parameter bereitstellen kann – nicht, wenn ein vorheriger Schritt ihn "aufruft". Dies hat drei entscheidende Implikationen:
+Ein Schritt wird ausgeführt, wenn die Workflow-Engine alle seine erforderlichen Parameter bereitstellen kann – nicht,
+wenn ein vorheriger Schritt ihn "aufruft". Dies hat drei entscheidende Implikationen:
 
-1. Jeder Schritt kann von jedem Ereignis abhängen, einschließlich des ursprünglichen `StartEvent`, unabhängig davon, wie viele Schritte seitdem ausgeführt wurden
+1. Jeder Schritt kann von jedem Ereignis abhängen, einschließlich des ursprünglichen `StartEvent`, unabhängig davon, wie
+   viele Schritte seitdem ausgeführt wurden
 2. Parallele Ausführung ist automatisch: Schritte mit unabhängigen Abhängigkeiten werden gleichzeitig ausgeführt
 3. Der Workflow ist ein Abhängigkeitsgraph, keine Sequenz
 
@@ -24,7 +30,8 @@ Ein Schritt wird ausgeführt, wenn die Workflow-Engine alle seine erforderlichen
 Der `AgentDispatcher` agiert als reaktiver Zustandsautomat:
 
 1. **Ingestion**: Abonniert das NATS JetStream Subject des Agents und empfängt Ereignisse
-2. **Evaluation**: Beim Empfang von Ereignis *e* werden alle Schritte *S* identifiziert, bei denen *e* einem Eingabetyp von *S* entspricht
+2. **Evaluation**: Beim Empfang von Ereignis *e* werden alle Schritte *S* identifiziert, bei denen *e* einem Eingabetyp
+   von *S* entspricht
 3. **Trigger**: Ruft Schritt *S* nur dann auf, wenn alle erforderlichen Eingaben im Event Store vorhanden sind
 
 Die Ausführungsreihenfolge ist emergent, nicht präskriptiv.
@@ -35,11 +42,13 @@ Die Ausführungsreihenfolge ist emergent, nicht präskriptiv.
 
 #### Top-down: "Was habe ich, was mache ich als Nächstes?"
 
-Beginnen Sie mit der Eingabe, fahren Sie mit der Ausgabe fort. Natürlich für sequentielle Pipelines, fördert aber lineare Ketten und unnötige Datenübergabe.
+Beginnen Sie mit der Eingabe, fahren Sie mit der Ausgabe fort. Natürlich für sequentielle Pipelines, fördert aber
+lineare Ketten und unnötige Datenübergabe.
 
 #### Bottom-up: "Was brauche ich, was liefert es?"
 
-Beginnen Sie mit der gewünschten Ausgabe, arbeiten Sie rückwärts. Identifiziert auf natürliche Weise alle Datenabhängigkeiten und macht direkte Abhängigkeiten vom `StartEvent` offensichtlich.
+Beginnen Sie mit der gewünschten Ausgabe, arbeiten Sie rückwärts. Identifiziert auf natürliche Weise alle
+Datenabhängigkeiten und macht direkte Abhängigkeiten vom `StartEvent` offensichtlich.
 
 ### Der entscheidende Unterschied
 
@@ -56,7 +65,8 @@ async def respond(self, event: RetrieveEvent) -> StopEvent:
     return await generate(event.user_query, event.nodes)  # Accessing passed-through data
 ```
 
-Das Feld `user_query` auf `RetrieveEvent` ist eine **Pass-Through-Verschmutzung** — das Ereignis transportiert Daten, die es semantisch nicht repräsentiert, nur um sie weiterzuleiten.
+Das Feld `user_query` auf `RetrieveEvent` ist eine **Pass-Through-Verschmutzung** — das Ereignis transportiert Daten,
+die es semantisch nicht repräsentiert, nur um sie weiterzuleiten.
 
 **Bottom-up erzeugt dies (korrekt):**
 
@@ -70,7 +80,8 @@ async def respond(
     return await generate(user_event.user_query, retrieve_event.nodes)
 ```
 
-Jedes Ereignis enthält nur die Daten, die es semantisch repräsentiert. Der `respond`-Schritt deklariert genau, was er benötigt: die abgerufenen Knoten *und* die ursprüngliche Benutzernachricht.
+Jedes Ereignis enthält nur die Daten, die es semantisch repräsentiert. Der `respond`-Schritt deklariert genau, was er
+benötigt: die abgerufenen Knoten *und* die ursprüngliche Benutzernachricht.
 
 ### Der vereinheitlichte Ansatz
 
@@ -86,10 +97,13 @@ Fragen Sie für jeden Schritt:
 ## Schritt-Ausführungsisolation
 
 ::: warning
-Für **jede** Schrittausführung wird eine neue `Agent`-Instanz erstellt. Speichern Sie keinen Zustand auf `self` – er geht zwischen den Schritten verloren. Mehrere Schritte für denselben Run können parallel auf verschiedenen Instanzen ausgeführt werden.
+Für **jede** Schrittausführung wird eine neue `Agent`-Instanz erstellt. Speichern Sie keinen Zustand auf `self` – er
+geht zwischen den Schritten verloren. Mehrere Schritte für denselben Run können parallel auf verschiedenen Instanzen
+ausgeführt werden.
 :::
 
-Verwenden Sie Ereignisse, um Daten zwischen Schritten zu übergeben, `RunContext` für Schleifenzähler und `ThreadContext` für den Zustandsübergreifenden Run.
+Verwenden Sie Ereignisse, um Daten zwischen Schritten zu übergeben, `RunContext` für Schleifenzähler und `ThreadContext`
+für den Zustandsübergreifenden Run.
 
 ## Ausführungsregeln
 
@@ -103,7 +117,8 @@ Gegeben sei ein Schritt *S* mit:
 - **O(S)** = Menge der optionalen Parameter (getypt als `T | None = None`)
 - **E** = Menge der verfügbaren Ereignisse
 
-**Auslösebedingung:** Die Ausführung erfolgt, wenn **R(S) ⊆ E** — alle erforderlichen Parametertypen im Event Store verfügbar sind.
+**Auslösebedingung:** Die Ausführung erfolgt, wenn **R(S) ⊆ E** — alle erforderlichen Parametertypen im Event Store
+verfügbar sind.
 
 - Erforderliche Parameter: aus passenden Ereignissen injiziert
 - Optionale Parameter: injiziert, falls vorhanden, sonst `None`
@@ -120,27 +135,30 @@ async def merge(self, primary: EventA, secondary: EventB | None = None) -> Outpu
 
 **Ausführungssequenz:**
 
-| Zeit | Ereignis trifft ein | R(S) erfüllt | O(S) erfüllt | Ergebnis                                          |
-| ---- | ------------------- | ------------ | ------------ | ------------------------------------------------- |
-| t1   | EventA              | Ja           | Nein         | Schritt wird mit `(EventA, None)` ausgeführt      |
+| Zeit | Ereignis trifft ein | R(S) erfüllt | O(S) erfüllt | Ergebnis                                                  |
+| ---- | ------------------- | ------------ | ------------ | --------------------------------------------------------- |
+| t1   | EventA              | Ja           | Nein         | Schritt wird mit `(EventA, None)` ausgeführt              |
 | t2   | EventB              | Ja           | Ja           | Schritt wird **erneut** mit `(EventA, EventB)` ausgeführt |
 
-Der Schritt wurde zweimal ausgeführt. Dies ist kein Bug – es ist das definierte Verhalten. Die Regel der minimal realisierbaren Eingabe löst die Ausführung aus, sobald die erforderlichen Parameter erfüllt sind, und erneut, wenn optionale Parameter eintreffen.
+Der Schritt wurde zweimal ausgeführt. Dies ist kein Bug – es ist das definierte Verhalten. Die Regel der minimal
+realisierbaren Eingabe löst die Ausführung aus, sobald die erforderlichen Parameter erfüllt sind, und erneut, wenn
+optionale Parameter eintreffen.
 
 ::: warning
-Verwenden Sie keine optionalen Ereignisparameter, um auf Daten zu "warten", die möglicherweise später eintreffen. Verwenden Sie stattdessen `@precondition`.
+Verwenden Sie keine optionalen Ereignisparameter, um auf Daten zu "warten", die möglicherweise später eintreffen.
+Verwenden Sie stattdessen `@precondition`.
 :::
 
 ### Die sechs Ausführungsregeln
 
-| Regel   | Aussage                                                     | Folge der Verletzung                                        |
-| ------ | ----------------------------------------------------------- | ----------------------------------------------------------- |
-| **R1** | Schritte werden ausgeführt, wenn R(S) ⊆ E                    | Race Conditions mit optionalen Parametern                   |
-| **R2** | Schritte können pro Run mehrfach ausgeführt werden          | Doppelte Verarbeitung, verschwendete Ressourcen             |
-| **R3** | `list[Event]` Parameter lösen bei jedem neuen Ereignis aus  | Unerwartete erneute Ausführung ohne Precondition oder `FixedList` |
-| **R4** | Nach `StopEvent` dürfen keine Ereignisse veröffentlicht werden | Illegaler Workflow-Zustand                                  |
-| **R5** | Preconditions steuern die Ausführung                        | Deadlock, wenn Precondition nie erfüllt wird               |
-| **R6** | Alle Ereignisse bleiben bis zum Abschluss des Runs bestehen | Späte Schritte können auf frühe Ereignisse zugreifen        |
+| Regel  | Aussage                                                        | Folge der Verletzung                                              |
+| ------ | -------------------------------------------------------------- | ----------------------------------------------------------------- |
+| **R1** | Schritte werden ausgeführt, wenn R(S) ⊆ E                      | Race Conditions mit optionalen Parametern                         |
+| **R2** | Schritte können pro Run mehrfach ausgeführt werden             | Doppelte Verarbeitung, verschwendete Ressourcen                   |
+| **R3** | `list[Event]` Parameter lösen bei jedem neuen Ereignis aus     | Unerwartete erneute Ausführung ohne Precondition oder `FixedList` |
+| **R4** | Nach `StopEvent` dürfen keine Ereignisse veröffentlicht werden | Illegaler Workflow-Zustand                                        |
+| **R5** | Preconditions steuern die Ausführung                           | Deadlock, wenn Precondition nie erfüllt wird                      |
+| **R6** | Alle Ereignisse bleiben bis zum Abschluss des Runs bestehen    | Späte Schritte können auf frühe Ereignisse zugreifen              |
 
 ## Synchronisations-Primitive
 
@@ -154,7 +172,8 @@ Eine Precondition ist eine Gatekeeper-Funktion, die vor der Schrittlogik ausgef�
 - Wenn sie `False` zurückgibt, wird der Schritt nicht geplant
 - Die Precondition wird bei jedem neuen Ereignis erneut evaluiert
 
-**Kritische Einschränkung:** Precondition-Parameter müssen eine **Untermenge** der injizierbaren Typen des Schritts sein. Parameternamen sind irrelevant; Dependency Injection löst nach Typ auf.
+**Kritische Einschränkung:** Precondition-Parameter müssen eine **Untermenge** der injizierbaren Typen des Schritts
+sein. Parameternamen sind irrelevant; Dependency Injection löst nach Typ auf.
 
 ```python
 from aihub_agent.workflow.decorators.precondition import precondition
@@ -181,7 +200,8 @@ async def process(
 
 ### Listenparameter
 
-Wenn ein Schrittparameter als `list[EventType]` getypt ist, wird der Schritt bei **jedem neuen Ereigniseingang** ausgeführt:
+Wenn ein Schrittparameter als `list[EventType]` getypt ist, wird der Schritt bei **jedem neuen Ereigniseingang**
+ausgeführt:
 
 ```python
 @step()
@@ -192,17 +212,19 @@ async def aggregate(self, results: list[ResultEvent]) -> StopEvent:
 
 **Ausführungssequenz für 3 erzeugte Ereignisse:**
 
-| Ereigniseingang    | Listeninhalte                                    | Schritt wird ausgeführt |
-| ------------------ | ------------------------------------------------ | ----------------------- |
-| ResultEvent #1     | [ResultEvent #1]                                 | Ja                      |
-| ResultEvent #2     | [ResultEvent #1, ResultEvent #2]                 | Ja                      |
-| ResultEvent #3     | [ResultEvent #1, ResultEvent #2, ResultEvent #3] | Ja                      |
+| Ereigniseingang | Listeninhalte                                    | Schritt wird ausgeführt |
+| --------------- | ------------------------------------------------ | ----------------------- |
+| ResultEvent #1  | [ResultEvent #1]                                 | Ja                      |
+| ResultEvent #2  | [ResultEvent #1, ResultEvent #2]                 | Ja                      |
+| ResultEvent #3  | [ResultEvent #1, ResultEvent #2, ResultEvent #3] | Ja                      |
 
-Der Schritt wird 3 Mal ausgeführt. Dies folgt aus der Regel der minimal realisierbaren Eingabe: Eine Liste der Länge 1 erfüllt `list[T]`. Ereignisse in der Liste sind nach Ankunftszeit geordnet.
+Der Schritt wird 3 Mal ausgeführt. Dies folgt aus der Regel der minimal realisierbaren Eingabe: Eine Liste der Länge 1
+erfüllt `list[T]`. Ereignisse in der Liste sind nach Ankunftszeit geordnet.
 
 ### FixedList für zur Kompilierzeit bekannte Anzahlen
 
-Wenn Sie die genaue Anzahl der Ereignisse zum Zeitpunkt der Definition kennen, verwenden Sie `FixedList`, um zu blockieren, bis alle Ereignisse verfügbar sind:
+Wenn Sie die genaue Anzahl der Ereignisse zum Zeitpunkt der Definition kennen, verwenden Sie `FixedList`, um zu
+blockieren, bis alle Ereignisse verfügbar sind:
 
 ```python
 from aihub_lib.nats.workflow.annotations.custom_types.ListOfSize import FixedList
@@ -236,9 +258,12 @@ async def aggregate(self, results: list[ResultEvent], config: AgentConfig) -> St
 
 Beim Binden von Ereignissen an Schrittparameter:
 
-1. **Feste Sammlung:** `FixedList(Event, N)` blockiert, bis genau *N* Ereignisse verfügbar sind, und gibt dann alle *N* zurück
-2. **Unbegrenzte Liste:** `list[Event]` gibt alle Ereignisse dieses Typs zurück, die derzeit verfügbar sind; der Schritt wird bei jedem neuen Ereignis erneut ausgeführt
-3. **Einzelinstanz:** Wenn das auslösende Ereignis dem Parametertyp entspricht, wird diese Instanz verwendet. Andernfalls wird das zuletzt erstellte Ereignis dieses Typs verwendet.
+1. **Feste Sammlung:** `FixedList(Event, N)` blockiert, bis genau *N* Ereignisse verfügbar sind, und gibt dann alle *N*
+   zurück
+2. **Unbegrenzte Liste:** `list[Event]` gibt alle Ereignisse dieses Typs zurück, die derzeit verfügbar sind; der Schritt
+   wird bei jedem neuen Ereignis erneut ausgeführt
+3. **Einzelinstanz:** Wenn das auslösende Ereignis dem Parametertyp entspricht, wird diese Instanz verwendet.
+   Andernfalls wird das zuletzt erstellte Ereignis dieses Typs verwendet.
 
 ## Technische Einschränkungen (Anti-Pattern)
 
@@ -293,13 +318,16 @@ async def step_b(self, event_a: EventA, original: InputEvent) -> OutputEvent:
     ...
 ```
 
-**Ausnahme:** `RunContext` ist nur für den Kontrollflusszustand gültig (Schleifenzähler, Rekursionstiefe, Wiederholungsversuche).
+**Ausnahme:** `RunContext` ist nur für den Kontrollflusszustand gültig (Schleifenzähler, Rekursionstiefe,
+Wiederholungsversuche).
 
 ### Die "Config Lie"-Verletzung
 
-**Einschränkung:** Prüfen Sie `AgentConfig` nicht innerhalb eines Schritts, um zu bestimmen, ob Sie auf ein Ereignis hätten warten sollen.
+**Einschränkung:** Prüfen Sie `AgentConfig` nicht innerhalb eines Schritts, um zu bestimmen, ob Sie auf ein Ereignis
+hätten warten sollen.
 
-Zum Zeitpunkt der Ausführung hat der Dispatcher die Planungsentscheidung bereits getroffen. Die Race Condition ist bereits aufgetreten.
+Zum Zeitpunkt der Ausführung hat der Dispatcher die Planungsentscheidung bereits getroffen. Die Race Condition ist
+bereits aufgetreten.
 
 ```python
 # VIOLATION: config check inside step
@@ -319,7 +347,8 @@ async def process(self, required: EventA, optional: EventB | None = None, config
 
 **Einschränkung:** Verwenden Sie nicht denselben Ereignistyp für mehrere unterschiedliche logische Phasen.
 
-Der Dispatcher fragt nach Typ. Nachfolgende Schritte können unvorhersehbar ausgelöst werden oder die falsche Instanz verarbeiten.
+Der Dispatcher fragt nach Typ. Nachfolgende Schritte können unvorhersehbar ausgelöst werden oder die falsche Instanz
+verarbeiten.
 
 ```python
 # VIOLATION: same event type for different stages
@@ -363,7 +392,8 @@ async def process(self, a: EventA, b: EventB | None = None, config: AgentConfig)
 
 **Symptom:** Phoenix/Langfuse Trace zeigt doppelte Schrittausführungen.
 
-**Grundursache:** Optionale Parameter ohne Precondition. Der Schritt löst aus, wenn R(S) ⊆ E, und dann erneut, wenn optionale Ereignisse eintreffen.
+**Grundursache:** Optionale Parameter ohne Precondition. Der Schritt löst aus, wenn R(S) ⊆ E, und dann erneut, wenn
+optionale Ereignisse eintreffen.
 
 **Diagnose:**
 
@@ -377,7 +407,8 @@ async def process(self, a: EventA, b: EventB | None = None, config: AgentConfig)
 
 **Symptom:** Schritt fehlt im Trace.
 
-**Grundursache:** Precondition gibt nie `True` zurück, oder das erforderliche Ereignis wird nie von einem vorgeschalteten Schritt emittiert.
+**Grundursache:** Precondition gibt nie `True` zurück, oder das erforderliche Ereignis wird nie von einem
+vorgeschalteten Schritt emittiert.
 
 **Diagnose:**
 
@@ -385,15 +416,18 @@ async def process(self, a: EventA, b: EventB | None = None, config: AgentConfig)
 2. Verifizieren Sie, dass vorgeschaltete Schritte die erwarteten Ereignisse emittieren
 3. Überprüfen Sie Konfigurationsflags – eine deaktivierte Funktion kann die Ereignisemission verhindern
 
-**Lösung:** Stellen Sie sicher, dass die Precondition deaktivierte Funktionen berücksichtigt: `if not config.enable_feature: return True`
+**Lösung:** Stellen Sie sicher, dass die Precondition deaktivierte Funktionen berücksichtigt:
+`if not config.enable_feature: return True`
 
 ### Ereignisse nach StopEvent
 
 **Symptom:** Trace zeigt Ereignisse, die nach `StopEvent` datiert sind.
 
-**Grundursache:** Ein Schritt hängt von `StopEvent` oder einer Unterklasse (wie `LLMStopEvent`) ab, oder ein asynchroner Schritt wird nach der Beendigung abgeschlossen.
+**Grundursache:** Ein Schritt hängt von `StopEvent` oder einer Unterklasse (wie `LLMStopEvent`) ab, oder ein asynchroner
+Schritt wird nach der Beendigung abgeschlossen.
 
-**Lösung:** Verwenden Sie `LLMEvent` (nicht `LLMStopEvent`) mit `as_stop_step=False`, und fügen Sie dann einen expliziten letzten Schritt mit einer Precondition hinzu.
+**Lösung:** Verwenden Sie `LLMEvent` (nicht `LLMStopEvent`) mit `as_stop_step=False`, und fügen Sie dann einen
+expliziten letzten Schritt mit einer Precondition hinzu.
 
 ### Precondition-Parameter-Fehlübereinstimmung
 
@@ -401,7 +435,8 @@ async def process(self, a: EventA, b: EventB | None = None, config: AgentConfig)
 
 **Grundursache:** Precondition fordert einen Typ an, der im Kontext des Schritts nicht injizierbar ist.
 
-**Lösung:** Stellen Sie sicher, dass die Parametertypen der Precondition eine Untermenge der injizierbaren Typen des Schritts sind. Parameternamen sind irrelevant; nur die Typen müssen übereinstimmen.
+**Lösung:** Stellen Sie sicher, dass die Parametertypen der Precondition eine Untermenge der injizierbaren Typen des
+Schritts sind. Parameternamen sind irrelevant; nur die Typen müssen übereinstimmen.
 
 ## Checkliste zur Implementierung
 

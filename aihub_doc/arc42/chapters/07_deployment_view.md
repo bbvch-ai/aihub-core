@@ -8,7 +8,6 @@ development and production deployments.
 
 ## Infrastructure level 1
 
-
 ### Network topology
 
 The following diagram shows the production deployment topology with all five network zones and the services assigned to
@@ -155,17 +154,15 @@ In the production stages, Traefik uses Let's Encrypt ACME with the HTTP-01 chall
 (`acme.json`) is bind-mounted from the host at `/srv/app/traefik/`. An ACME challenge router at priority 9000 ensures
 that Let's Encrypt validation requests on port 80 reach Traefik before the HTTP-to-HTTPS redirect rule at priority 10.
 
-
 ### GPU support
 
 Each deployment stage has a GPU variant (e.g., `docker-compose.nightly.gpu.yml`) that adds NVIDIA GPU access to
 inference services. GPU support uses Docker's `deploy.resources.reservations.devices` with the NVIDIA driver and GPU
 capability.
 
-In the production stages, the GPU variant switches llama.cpp to CUDA
-images, upgrades the chat model from Gemma-3-4B to Gemma-3-12B with full GPU offloading (`-ngl -1`), enables partial GPU
-offloading for the reranker (`-ngl 10`), switches Speaches to a CUDA image, and adds MinerU VLM.
+In the production stages, the GPU variant switches llama.cpp to CUDA images, upgrades the chat model from Gemma-3-4B to
+Gemma-3-12B with full GPU offloading (`-ngl -1`), enables partial GPU offloading for the reranker (`-ngl 10`), switches
+Speaches to a CUDA image, and adds MinerU VLM.
 
 All GPU services are pinned to device 0 (`device_ids: ['0']`). Multi-GPU deployments require manual configuration
 changes to distribute services across devices.
-
