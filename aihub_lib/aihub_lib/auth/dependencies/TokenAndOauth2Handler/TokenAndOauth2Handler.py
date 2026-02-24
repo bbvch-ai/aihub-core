@@ -9,7 +9,6 @@ from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2AuthHandler import OAut
 from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2Settings import OAuth2Settings
 from aihub_lib.auth.dependencies.OpenWebuiAuthHandler.OpenWebuiAuthHandler import OpenWebuiAuthHandler
 from aihub_lib.auth.dependencies.SuperuserAuthHandler.SuperuserAuthHandler import SuperuserAuthHandler
-from aihub_lib.auth.dependencies.SuperuserAuthHandler.SuperuserSettings import SuperuserSettings
 from aihub_lib.auth.dependencies.TokenAuthHandler.TokenAuthHandler import TokenAuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 
@@ -77,18 +76,13 @@ class TokenAndOauth2Handler:
 
         config = AuthSettings()
 
-        if config.IDENTITY_PROVIDER == "sso":
-            logger.info("Using SSO identity provider")
-            oauth2_handler = OAuth2AuthHandler()
-            oauth2_handlers.append(oauth2_handler)
-        else:
-            raise ValueError(f"Unknown identity provider: {config.IDENTITY_PROVIDER}")
+        oauth2_handler = OAuth2AuthHandler()
+        oauth2_handlers.append(oauth2_handler)
 
-        if SuperuserSettings().ENABLED:
-            logger.info("Using superuser authentication")
-            superuser_handler = SuperuserAuthHandler()
-            bearer_handlers.append(OpenWebuiAuthHandler(base_auth_handler=superuser_handler))
-            bearer_handlers.append(superuser_handler)
+        logger.info("Using superuser authentication")
+        superuser_handler = SuperuserAuthHandler()
+        bearer_handlers.append(OpenWebuiAuthHandler(base_auth_handler=superuser_handler))
+        bearer_handlers.append(superuser_handler)
 
         if config.ENABLE_API_ACCESS:
             logger.info("Using token authentication")

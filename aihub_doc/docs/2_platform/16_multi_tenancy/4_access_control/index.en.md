@@ -164,7 +164,6 @@ The global superuser role bypasses tenant restrictions:
 Configure through:
 
 ```bash
-SUPERUSER_ENABLED="true"
 SUPERUSER_TOKEN="<secure-token>"
 SUPERUSER_OID="<user-id>"
 ```

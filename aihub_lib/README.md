@@ -149,11 +149,13 @@ Follow these patterns for implementing different types of library components.
 #### 🔐 Authentication and Authorization Components
 
 ::: tip AuthHandlers and Multi-Tenant Access
-**AuthHandlers** are responsible for extracting authentication credentials from HTTP requests, validating them, and resolving the tenant context to
-produce a `UserIdentity`. They serve as the bridge between different authentication mechanisms (OAuth2, token-based,
-etc.) and the AI-Hub's internal user representation.
+**AuthHandlers** are responsible for extracting authentication credentials from HTTP requests, validating them, and
+resolving the tenant context to produce a `UserIdentity`. They serve as the bridge between different authentication
+mechanisms (OAuth2, token-based, etc.) and the AI-Hub's internal user representation.
 
-**Multi-Tenant Access Control** uses a two-stage model: user permissions are capped by their tenant's access rules. Roles are stored per-tenant via `UserTenantRoleEntity`, and tenant context is resolved from the `x-tenant-id` header (or defaults to the default tenant).
+**Multi-Tenant Access Control** uses a two-stage model: user permissions are capped by their tenant's access rules.
+Roles are stored per-tenant via `UserTenantRoleEntity`, and tenant context is resolved from the `x-tenant-id` header (or
+defaults to the default tenant).
 :::
 
 **When to Create New AuthHandlers:**

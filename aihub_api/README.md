@@ -368,7 +368,8 @@ The playground provides a full API server with frontend for interactive testing.
    ```
 
 ::: warning Authentication for Testing
-For curl/wget testing to work, you **MUST** set the auth in `main.py` to `DangerousDevelopmentOnlyAuthHandler` to bypass oauth2 authentication (this is already configured in the playground).
+For curl/wget testing to work, you **MUST** set the auth in `main.py` to `DangerousDevelopmentOnlyAuthHandler` to bypass
+oauth2 authentication (this is already configured in the playground).
 :::
 
 ### 🔍 Step 4: Debug and Observe Your API

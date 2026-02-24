@@ -244,11 +244,7 @@ class UserEntity(Document):
             return cls.create_user(oid=oid, name=name, email=email, profile_image=profile_image)
 
         # Exclude superuser from count when determining first "real" user
-        superuser_settings = SuperuserSettings()
-        if superuser_settings.ENABLED and superuser_settings.OID:
-            real_user_count = cls.objects(id__ne=superuser_settings.OID).count()
-        else:
-            real_user_count = cls.count_users()
+        real_user_count = cls.objects(id__ne=SuperuserSettings().OID).count()
 
         is_first_user = real_user_count == 0
         if is_first_user:

@@ -56,12 +56,11 @@ async def initialize_roles() -> None:
     This function orchestrates the creation of all necessary roles
     for the AI-Hub to operate properly.
     """
-    if SuperuserSettings().ENABLED:
-        await initialize_system_role(
-            name="AIHubSuperuser",
-            description="Grants the AI-Hub Superuser global administrative access",
-            access_rules=["aihub.admin.>"],
-        )
+    await initialize_system_role(
+        name="AIHubSuperuser",
+        description="Grants the AI-Hub Superuser global administrative access",
+        access_rules=["aihub.admin.>"],
+    )
 
     if AIHubSettings().CREATE_DEFAULT_ROLES:
         await initialize_system_role(
@@ -158,19 +157,14 @@ async def initialize_superuser() -> None:
     Note: Superuser uses a virtual tenant when authenticating, but we still create
     the user record for auditing purposes.
     """
-    # Validator ensures credentials are set when ENABLED=True
     settings = SuperuserSettings()
-
-    if not settings.ENABLED:
-        logger.info("Superuser is not enabled, skipping initialization")
-        return
 
     try:
         # Create the user entity (for audit trail, even though superuser uses virtual tenant)
         UserEntity.ensure_user_exists(
-            oid=settings.OID,  # type: ignore[arg-type]
-            name=settings.NAME,  # type: ignore[arg-type]
-            email=settings.EMAIL,  # type: ignore[arg-type]
+            oid=settings.OID,
+            name=settings.NAME,
+            email=settings.EMAIL,
         )
 
         logger.info(f"Superuser initialization completed for user '{settings.NAME}'")

@@ -36,9 +36,8 @@ class SuperuserAuthHandler(BearerAuthHandler):
         if not token_str:
             raise HTTPException(status_code=401, detail="Token missing.")
 
-        # Validator ensures credentials are set when ENABLED=True
         settings = SuperuserSettings()
-        if token_str != settings.TOKEN.get_secret_value():  # type: ignore[union-attr]
+        if token_str != settings.TOKEN.get_secret_value():
             raise HTTPException(status_code=401, detail="Invalid token.")
 
         # Create virtual superuser tenant with full admin access

@@ -168,7 +168,6 @@ Die globale Superuser-Rolle umgeht Mandantenbeschränkungen:
 Konfigurieren über:
 
 ```bash
-SUPERUSER_ENABLED="true"
 SUPERUSER_TOKEN="<secure-token>"
 SUPERUSER_OID="<user-id>"
 ```

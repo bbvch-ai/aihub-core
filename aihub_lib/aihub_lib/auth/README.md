@@ -31,7 +31,8 @@ The authentication system is built around these main abstractions:
 5. **Tenant Resolution**: Tenant context is resolved from `x-tenant-id` header or defaults to default tenant
 6. **Membership Verification**: User's membership in the tenant is verified via UserTenantRoleEntity
 7. **Identity Creation**: UserIdentity DTO is created with embedded TenantIdentity
-8. **Permission Evaluation**: AccessChecker performs two-stage authorization (tenant + user) based on locally-managed roles
+8. **Permission Evaluation**: AccessChecker performs two-stage authorization (tenant + user) based on locally-managed
+   roles
 
 ## Permission System
 
@@ -63,7 +64,8 @@ The system uses dot-notation permissions with wildcard support:
 - If tenant has only user-level access, admin users are capped at user-level access
 - Both tenant AND user must have matching permissions for access to be granted
 
-**Example**: Even if a user has `aihub.admin.agent.>` role, if their tenant only has `aihub.user.agent.>` access rules, the user gets user-level access (not admin).
+**Example**: Even if a user has `aihub.admin.agent.>` role, if their tenant only has `aihub.user.agent.>` access rules,
+the user gets user-level access (not admin).
 
 ### Permission Templates
 
