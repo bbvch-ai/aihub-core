@@ -88,7 +88,7 @@ pr-ready:
 	@$(MAKE) generate-compose
 	@$(MAKE) license-check
 
-TAG ?= v0.265.3
+TAG ?= v0.266.0
 
 changelog:
 	@echo "Generating changelog"
@@ -126,10 +126,6 @@ backup-list:
 up-dev:
 	@echo "Starting development environment with Docker Compose..."
 	docker compose -f docker-compose.dev.yml --env-file .env up -d --build
-
-generate-api-token:
-	@echo "Generating API token..."
-	cd aihub_api && uv run python generate_api_token.py
 
 # Bump version across all packages (VERSION=0.264.0)
 VERSION ?= 0.263.0

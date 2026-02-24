@@ -16,7 +16,7 @@ aihub_lib/
 ├── auth/                            # Authentication & authorization
 │   ├── access/AccessChecker.py      # Permission matching engine (hierarchical wildcards)
 │   ├── dependencies/                # Auth handlers (AuthHandler → OAuth2, Token, Bearer, OpenWebUI, Superuser, DevOnly)
-│   └── identity/                    # Identity providers (IdentityProvider → Azure, Token, Superuser, DevOnly)
+│   └── identity/                    # Identity models (UserIdentity, TenantIdentity)
 ├── context/                         # Context utilities
 ├── displayers/                      # Real-time event emission for UI streaming
 │   ├── EventDisplayer.py            # Core: display_chunk(), display_thought(), display_llm_stream()
@@ -104,11 +104,11 @@ aihub_lib/
 │   ├── streams/                     # StreamManager (JetStream stream lifecycle)
 │   └── tracing/                     # NATSMessageHeaders (OTEL trace context propagation)
 ├── persistence/                     # Database abstractions (MongoEngine ODM)
-│   ├── access/                      # RoleEntity (roles + access rules)
+│   ├── access/                      # RoleEntity, TenantEntity, UserTenantRoleEntity
 │   ├── agents/                      # AgentConfigEntity
 │   ├── process/                     # ProcessConfigEntity
 │   ├── messaging/                   # ThreadEntity, PersistedAgentEventEntity, PersistedProcessEventEntity
-│   ├── user/                        # UserEntity
+│   ├── user/                        # UserEntity (tenant-associated)
 │   ├── i18n/                        # LocaleStringEntity
 │   ├── rag/                         # RAG document persistence
 │   ├── notification/                # NotificationEntity
@@ -325,20 +325,13 @@ Key methods:
 
 | Handler                               | Mechanism                     |
 | ------------------------------------- | ----------------------------- |
-| `OAuth2AuthHandler`                   | OpenID Connect (Azure AD)     |
+| `OAuth2AuthHandler`                   | OpenID Connect (generic OIDC) |
 | `TokenAuthHandler`                    | Simple token validation       |
 | `BearerAuthHandler`                   | Bearer token header           |
 | `TokenAndOauth2Handler`               | Combined token + OAuth2       |
 | `OpenWebuiAuthHandler`                | OpenWebUI session integration |
 | `SuperuserAuthHandler`                | Hardcoded superuser token     |
 | `DangerousDevelopmentOnlyAuthHandler` | No validation (dev only)      |
-
-### Identity Providers
-
-`IdentityProvider` (abstract) → retrieves full user details from identity systems.
-
-Implementations: `AzureIdentityProvider` (Azure AD/Graph API), `TokenIdentityProvider`, `SuperuserIdentityProvider`,
-`MultiStrategyIdentityProvider`, `DangerousDevelopmentOnlyIdentityProvider`.
 
 ### Permission System (AccessChecker)
 
@@ -383,9 +376,10 @@ class RoleEntity(Document):
         return {rule for role in cls.objects(name__in=role_names) for rule in role.access_rules}
 ```
 
-**Key entities**: `RoleEntity` (access), `ThreadEntity` (conversations), `PersistedAgentEventEntity` /
-`PersistedProcessEventEntity` (event storage), `AgentConfigEntity` / `ProcessConfigEntity` (configs), `UserEntity`,
-`NotificationEntity`, `LocaleStringEntity`.
+**Key entities**: `RoleEntity` (access rules), `TenantEntity` (tenants), `UserTenantRoleEntity` (tenant-scoped role
+assignments), `ThreadEntity` (conversations), `PersistedAgentEventEntity` / `PersistedProcessEventEntity` (event
+storage), `AgentConfigEntity` / `ProcessConfigEntity` (configs), `UserEntity` (tenant-associated), `NotificationEntity`,
+`LocaleStringEntity`.
 
 ## Infrastructure Settings
 
@@ -497,8 +491,8 @@ Real-time event emission for streaming LLM output to the UI:
 
 - `aihub_lib/aihub_lib/auth/access/AccessChecker.py` — permission engine
 - `aihub_lib/aihub_lib/auth/dependencies/AuthHandler.py` — auth handler base
-- `aihub_lib/aihub_lib/auth/identity/IdentityProvider.py` — identity provider base
-- `aihub_lib/aihub_lib/auth/identity/UserIdentity.py` — user model
+- `aihub_lib/aihub_lib/auth/identity/UserIdentity.py` — user identity model
+- `aihub_lib/aihub_lib/auth/identity/TenantIdentity.py` — tenant identity model
 
 **Config and i18n**:
 

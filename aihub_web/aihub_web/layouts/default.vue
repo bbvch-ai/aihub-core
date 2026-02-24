@@ -4,7 +4,7 @@
       <div class="flex h-[50px] w-full items-center justify-center">
         <ServiceSelection />
       </div>
-      <div class="flex flex-col justify-center gap-8">
+      <div class="flex flex-col justify-center gap-2">
         <nuxt-link-locale
           v-for="app in nonAdminApps"
           :key="app.path"

@@ -1,32 +1,34 @@
+```yaml
 ---
 title: Agenten-Gedächtnis
-source_sha: f1d4ea7abb818065e9593b1a584bb742abb49ea0232797c1f0a24db908df1197
+source_sha: "126171bbd53493ceb319ac02ddac2a0b34c3a66d2655f30512d54ec4bbd02910"
 ---
+```
 
 # Agenten-Gedächtnis
 
-Das Agenten-Gedächtnis ermöglicht langfristige Personalisierung und den organisationsweiten Wissensaustausch über die
-Chat-Historie einer einzelnen Session hinaus. Das SDK bietet zwei unterschiedliche Gedächtnis-Scopes:
-Benutzer-Gedächtnis für private, pro-Benutzer-Präferenzen und Organisations-Gedächtnis für gemeinsame, Mandanten-weite
+Das Agenten-Gedächtnis ermöglicht langfristige Personalisierung und den Austausch von organisationsweitem Wissen über
+die Chat-Historie einer einzelnen Session hinaus. Das SDK bietet zwei unterschiedliche Speicherbereiche:
+Benutzerspeicher für private, benutzerspezifische Präferenzen und Organisationsspeicher für gemeinsame, mandantenweite
 Fakten.
 
-Das Gedächtnis wird automatisch über Dependency Injection und dedizierte Events in Agent-Workflows integriert.
+Der Speicher wird durch Dependency Injection und dedizierte Events automatisch in die Agenten-Workflows integriert.
 
-## Zwei Gedächtnis-Scopes
+## Zwei Speicherbereiche
 
-Das Benutzer-Gedächtnis ist privat für einzelne Benutzer und wird vom LLM automatisch aus Konversationsnachrichten
-extrahiert. Es speichert persönliche Präferenzen, Arbeitsweisen und individuellen Kontext – Dinge wie „Der Benutzer
-bevorzugt prägnante Codebeispiele in Python.“ Sowohl Vektor- (semantische Suche) als auch Graph-Speicher (Beziehungen)
+Der Benutzerspeicher ist privat für einzelne Benutzer und wird automatisch von den LLM aus Konversationsnachrichten
+extrahiert. Er speichert persönliche Präferenzen, Arbeitsweisen und individuellen Kontext – Dinge wie „Benutzer
+bevorzugt prägnante Codebeispiele in Python.“ Sowohl Vektor- (semantische Suche) als auch Graphenspeicher (Beziehungen)
 ermöglichen den Abruf.
 
-Das Organisations-Gedächtnis wird von allen Benutzern in einem Mandanten oder Namespace geteilt. Im Gegensatz zum
-Benutzer-Gedächtnis erfordert es eine explizite Dokumentation anstelle einer automatischen Inferenz. Es speichert
-Unternehmensrichtlinien, Projektdetails und Teamkonventionen – Dinge wie „Wir deployen freitags in die Produktion.“ Der
-gleiche Vektor- und Graph-Speicher unterstützt semantischen und relationalen Abruf.
+Der Organisationsspeicher wird von allen Benutzern in einem Mandanten oder Namespace geteilt. Im Gegensatz zum
+Benutzerspeicher erfordert er eine explizite Dokumentation anstelle einer automatischen Inferenz. Er speichert
+Unternehmensrichtlinien, Projektdetails und Teamkonventionen – Dinge wie „Wir deployen freitags in die Produktion.“
+Derselbe Vektor- und Graphenspeicher unterstützt semantischen und relationalen Abruf.
 
-## Gedächtnis-Workflow-Muster
+## Workflow-Muster für den Speicher
 
-Beide Gedächtnis-Typen folgen einem gemeinsamen Vier-Schritte-Workflow:
+Beide Speichertypen folgen einem gemeinsamen vierstufigen Workflow:
 
 ```mermaid
 graph LR
@@ -41,17 +43,51 @@ graph LR
     I --> J[StopEvent]
 ```
 
-Das Muster ruft relevante Gedächtnisinhalte ab, injiziert sie als Systemnachricht in die Chat-Historie, generiert eine
-gedächtnisbewusste Antwort und persistiert neue Erkenntnisse.
+Das Muster ruft relevante Speicher ab, injiziert sie als Systemnachricht in die Chat-Historie, generiert eine
+speicherbewusste Antwort und persistiert neue Erkenntnisse.
 
-## Benutzer-Gedächtnis-Muster
+## Muster für den Benutzerspeicher
 
-Das Benutzer-Gedächtnis lernt persönliche Präferenzen automatisch aus Konversationen. Der Agent extrahiert Fakten über
-den Arbeitsstil des Benutzers, ohne dass eine explizite Dokumentation erforderlich ist. Verwenden Sie dieses Muster für
+Der Benutzerspeicher lernt persönliche Präferenzen automatisch aus Konversationen. Der Agent extrahiert Fakten über den
+Arbeitsstil des Benutzers, ohne dass eine explizite Dokumentation erforderlich ist. Verwenden Sie dieses Muster für
 konversationelle Agents, die sich im Laufe der Zeit an individuelle Benutzerpräferenzen anpassen sollen –
 Code-Assistenten, persönliche Produktivitäts-Agents, benutzerdefinierte Assistenten.
 
 Referenzimplementierung: `playground/minimal_workflow/user_memory_workflow/`
+
+::: warning Die Abbruchbedingung
+Wenn die Speicherpersistenz vom LLM-Output abhängt, darf der LLM-Schritt **kein** `StopEvent` zurückgeben. Wenn
+`as_stop_step=True` gesetzt ist, terminiert der Workflow sofort mit einem `LLMStopEvent` – der Speicherablageschritt
+wird niemals ausgeführt.
+
+```python
+# INCORRECT: LLMStopEvent terminates before storage
+@step()
+async def respond(self, ..., displayer: EventDisplayer) -> LLMStopEvent:
+    return await displayer.display_llm_stream(..., as_stop_step=True)  # Workflow ends here
+
+@step()
+async def store(self, llm: LLMStopEvent, ...) -> StoreMemoryEvent:
+    ...  # Never executes — StopEvent already terminated the run
+
+# CORRECT: LLMEvent allows downstream steps
+@step()
+async def respond(self, ..., displayer: EventDisplayer) -> LLMEvent:
+    return await displayer.display_llm_stream(..., as_stop_step=False)
+
+@step()
+async def store(self, llm: LLMEvent, memory: AgentMemory) -> StoreUserMemoryEvent:
+    await memory.add_user_memory(messages=llm.chat_messages, ...)
+    return StoreUserMemoryEvent(...)
+
+@step()
+async def stop_step(self, _: StoreUserMemoryEvent) -> StopEvent:
+    return StopEvent()
+```
+
+Siehe [Die Verletzung der hängenden Stopp-Bedingung](../9_execution_model/#the-dangling-stop-violation) für die
+allgemeine Regel.
+:::
 
 ### Vollständiges Beispiel
 
@@ -170,7 +206,7 @@ class UserMemoryAgentConfig(AgentConfig):
 
 #### AgentMemory-Injektion
 
-Das `AgentMemory`-Objekt wird automatisch über Dependency Injection in die Schritte injiziert:
+Das `AgentMemory`-Objekt wird über Dependency Injection automatisch in Schritte injiziert:
 
 ```python
 @step()
@@ -188,15 +224,15 @@ async def retrieve_memory_step(
     )
 ```
 
-#### Gedächtnis-Abruf
+#### Abrufen des Speichers
 
-`search_user_memory()` führt eine semantische Suche im privaten Gedächtnisspeicher des Benutzers durch. Es benötigt die
-Suchanfrage (typischerweise die aktuelle Nachricht des Benutzers), die Benutzer-ID und ein optionales Limit (Standard:
-100). Es gibt ein `MemorySearchResult` zurück, das Gedächtnisinhalte und Beziehungen enthält.
+`search_user_memory()` führt eine semantische Suche im privaten Benutzerspeicher durch. Es verwendet die Suchanfrage
+(typischerweise die aktuelle Nachricht des Benutzers), die Benutzer-ID und eine optionale Begrenzung (Standard: 100). Es
+gibt ein `MemorySearchResult`-Objekt zurück, das Speicher und Beziehungen enthält.
 
-#### Chat-Historie-Erweiterung
+#### Erweiterung der Chat-Historie
 
-Der Helfer `extend_chat_history_with_user_memory()` fügt Gedächtnisinhalte als Systemnachricht ein:
+Der Helfer `extend_chat_history_with_user_memory()` fügt Speicher als Systemnachricht ein:
 
 ```python
 extended_chat_history = extend_chat_history_with_user_memory(
@@ -208,11 +244,11 @@ extended_chat_history = extend_chat_history_with_user_memory(
 )
 ```
 
-LLMs behandeln Systemnachrichten als autoritative Hintergrundinformationen, daher werden Gedächtnisinhalte als
-optionaler Kontext präsentiert, den das LLM je nach Relevanz nutzen kann oder auch nicht. Die Gedächtnisinhalte werden
-nach bestehenden Systemnachrichten (Agent-Persönlichkeit/-Verhalten), aber vor Benutzernachrichten eingefügt.
+LLMs behandeln Systemnachrichten als maßgebliche Hintergrundinformationen, daher werden Speicher als optionaler Kontext
+präsentiert, den das LLM je nach Relevanz verwenden kann oder auch nicht. Die Speicher werden nach bestehenden
+Systemnachrichten (Agenten-Persönlichkeit/-Verhalten), aber vor Benutzernachrichten eingefügt.
 
-#### Gedächtnis-Persistenz
+#### Speicherpersistenz
 
 `add_user_memory()` verwendet ein LLM, um Erkenntnisse aus der Konversation zu extrahieren:
 
@@ -226,14 +262,14 @@ memory_added = await memory.add_user_memory(
 )
 ```
 
-Das LLM analysiert die Konversation und extrahiert Fakten wie „Der Benutzer bevorzugt Python gegenüber JavaScript“, ohne
-die gesamte Konversation zu speichern.
+Das LLM analysiert die Konversation und extrahiert Fakten wie „Benutzer bevorzugt Python gegenüber JavaScript“, ohne die
+gesamte Konversation zu speichern.
 
-## Organisations-Gedächtnis-Muster
+## Muster für den Organisationsspeicher
 
-Das Organisations-Gedächtnis speichert explizites, geteiltes Organisationswissen. Im Gegensatz zum Benutzer-Gedächtnis
-(das inferiert wird) erfordert das Organisations-Gedächtnis von Benutzern, Fakten bewusst zu dokumentieren. Verwenden
-Sie dieses Muster für Agents, die geteilten organisatorischen Kontext verwalten – Teamkonventionen,
+Der Organisationsspeicher speichert explizites, geteiltes Organisationswissen. Im Gegensatz zum Benutzerspeicher (der
+inferiert wird) erfordert der Organisationsspeicher, dass Benutzer Fakten absichtlich dokumentieren. Verwenden Sie
+dieses Muster für Agents, die einen gemeinsamen organisatorischen Kontext verwalten – Teamkonventionen,
 Projektdokumentation, Unternehmensrichtlinien oder technische Fakten, die alle Benutzer kennen sollten.
 
 Referenzimplementierung: `playground/minimal_workflow/organization_memory_workflow/`
@@ -358,11 +394,11 @@ class OrganizationMemoryAgentConfig(AgentConfig):
 ```
 :::
 
-### Hauptunterschiede zum Benutzer-Gedächtnis
+### Hauptunterschiede zum Benutzerspeicher
 
 #### Explizite Speicherung (keine Inferenz)
 
-Das Organisations-Gedächtnis wird direkt so gespeichert, wie es vom Benutzer bereitgestellt wird:
+Der Organisationsspeicher wird direkt so gespeichert, wie er vom Benutzer bereitgestellt wird:
 
 ```python
 memory_added = await memory.add_organization_memory(
@@ -371,12 +407,12 @@ memory_added = await memory.add_organization_memory(
 )
 ```
 
-Organisations-Gedächtnisinhalte betreffen alle Benutzer, daher gewährleistet eine explizite Dokumentation Genauigkeit
-und Absichtlichkeit. Dies verhindert die versehentliche Erstellung von Richtlinien aus beiläufigen Konversationen.
+Organisationsspeicher betreffen alle Benutzer, daher gewährleistet eine explizite Dokumentation Genauigkeit und
+Absichtlichkeit. Dies verhindert die versehentliche Erstellung von Richtlinien aus beiläufigen Konversationen.
 
 #### Mandanten-Scoping
 
-Das Organisations-Gedächtnis unterstützt Multi-Mandanten- und Abteilungs-level-Isolation:
+Der Organisationsspeicher unterstützt Multi-Mandanten- und Abteilungsebene-Isolation:
 
 ```python
 memory_search_result = await memory.search_organization_memory(
@@ -387,34 +423,34 @@ memory_search_result = await memory.search_organization_memory(
 )
 ```
 
-Der Namespace-Parameter grenzt Gedächtnisinhalte auf Abteilungen ein. „Engineering“ könnte technische Dokumentation und
+Der Namespace-Parameter begrenzt Speicher auf Abteilungen. „Engineering“ könnte technische Dokumentation und
 Deployment-Prozeduren enthalten, „Sales“ könnte Produktpreise und Kundensegmente enthalten, und `None` zeigt globales
-Mandanten-Wissen an.
+Mandantenwissen an.
 
 #### Geteilte Sichtbarkeit
 
-Abgerufene Gedächtnisinhalte sind für alle Benutzer im Mandanten/Namespace sichtbar, nicht nur für den Benutzer, der sie
-erstellt hat.
+Abgerufene Speicher sind für alle Benutzer im Mandanten/Namespace sichtbar, nicht nur für den Benutzer, der sie erstellt
+hat.
 
-## Gedächtnis-Events
+## Speicher-Events
 
-Das Gedächtnissystem bietet sechs spezialisierte Events zur Workflow-Steuerung:
+Das Speichersystem bietet sechs spezialisierte Events zur Workflow-Steuerung:
 
-| Event type                                | Zweck                                                          |
-| :---------------------------------------- | :------------------------------------------------------------- |
-| `RetrieveUserMemoryEvent`                 | Enthält abgerufene Benutzer-Gedächtnisinhalte                  |
-| `RetrieveOrganizationMemoryEvent`         | Enthält abgerufene Organisations-Gedächtnisinhalte             |
-| `AddUserMemoryToChatHistoryEvent`         | Enthält Chat-Historie mit injiziertem Benutzer-Gedächtnis      |
-| `AddOrganizationMemoryToChatHistoryEvent` | Enthält Chat-Historie mit injiziertem Organisations-Gedächtnis |
-| `StoreUserMemoryEvent`                    | Bestätigt die Persistenz des Benutzer-Gedächtnisses            |
-| `StoreOrganizationMemoryEvent`            | Bestätigt die Persistenz des Organisations-Gedächtnisses       |
+| Event-Typ                                 | Zweck                                                       |
+| ----------------------------------------- | ----------------------------------------------------------- |
+| `RetrieveUserMemoryEvent`                 | Enthält abgerufene Benutzerspeicher                         |
+| `RetrieveOrganizationMemoryEvent`         | Enthält abgerufene Organisationsspeicher                    |
+| `AddUserMemoryToChatHistoryEvent`         | Enthält Chat-Historie mit injiziertem Benutzerspeicher      |
+| `AddOrganizationMemoryToChatHistoryEvent` | Enthält Chat-Historie mit injiziertem Organisationsspeicher |
+| `StoreUserMemoryEvent`                    | Bestätigt die Persistenz des Benutzerspeichers              |
+| `StoreOrganizationMemoryEvent`            | Bestätigt die Persistenz des Organisationsspeichers         |
 
-Der Gedächtnis-Abruf und die Speicherung emittieren automatisch Display-Events für die Observability. Diese erscheinen
-im Trace des Swiss AI Agent Protocol und erfordern keine spezielle Behandlung.
+Das Abrufen und Speichern von Daten löst automatisch Display-Events für die Observability aus. Diese erscheinen im Swiss
+AI Agent Protocol Trace und erfordern keine spezielle Behandlung.
 
-## Kombination von Benutzer- und Organisations-Gedächtnis
+## Kombination von Benutzer- und Organisationsspeicher
 
-Für Agents, die beide Gedächtnis-Typen benötigen, kombinieren Sie die Workflows:
+Für Agents, die beide Speichertypen benötigen, kombinieren Sie die Workflows:
 
 ```python
 class HybridMemoryAgent(Agent):
@@ -464,14 +500,14 @@ class HybridMemoryAgent(Agent):
         return CombinedMemoryEvent(extended_history=chat_history)
 ```
 
-Die Reihenfolge ist wichtig: Benutzer-Gedächtnisinhalte werden zuerst hinzugefügt (allgemeinerer Kontext), dann
-Organisations-Gedächtnisinhalte (spezifische Fakten).
+Die Reihenfolge ist wichtig: Benutzerspeicher werden zuerst hinzugefügt (allgemeinerer Kontext), dann
+Organisationsspeicher (spezifische Fakten).
 
 ## Fortgeschrittene Nutzung
 
-### Filtern des Gedächtnis-Abrufs
+### Filtern des Speicherabrufs
 
-Grenzen Sie Gedächtnissuchen nach Agent oder Thread ein:
+Schränken Sie Speichersuchen nach Agent oder Thread ein:
 
 ```python
 @step()
@@ -487,13 +523,13 @@ async def retrieve_memory_step(
     return RetrieveUserMemoryEvent.from_memory_search_result(result)
 ```
 
-Thread-spezifisches Filtern unterstützt Anwendungsfälle wie „Erinnern, was wir in dieser Konversation besprochen haben“.
-Agent-spezifisches Filtern verhindert, dass ein Code-Assistent Gedächtnisinhalte sieht, die von einem RAG-Agent erstellt
+Thread-spezifisches Filtern unterstützt Anwendungsfälle wie „erinnern, was wir in dieser Konversation besprochen haben“.
+Agenten-spezifisches Filtern verhindert, dass ein Code-Assistent Speicher sieht, die von einem RAG-Agenten erstellt
 wurden.
 
-### Benutzerdefinierte Gedächtnis-Extraktion
+### Benutzerdefinierte Speicherextraktion
 
-Die `AgentMemory`-Klasse passt die Extraktion automatisch basierend auf der Agent-Klasse an:
+Die `AgentMemory`-Klasse passt die Extraktion automatisch basierend auf der Agentenklasse an:
 
 ```python
 class SpecializedMemoryAgent(Agent):
@@ -514,40 +550,76 @@ class SpecializedMemoryAgent(Agent):
 ```
 
 Code-Assistenten extrahieren technische Präferenzen, RAG-Agents extrahieren Domäneninteressen – alles automatisch
-basierend auf dem Agent-Typ.
+basierend auf dem Agenten-Typ.
+
+### Konfigurationsgesteuerter Speicher
+
+Produktions-Agents machen Speicherfunktionen oft über Konfigurations-Flags optional. Verwenden Sie Preconditions, um
+Speicherschritte basierend auf der Konfiguration zu steuern und Race Conditions mit optionalen Events zu verhindern:
+
+```python
+from aihub_agent.workflow.decorators.precondition import precondition
+
+@precondition()
+def check_memory_ready(
+    user_event: UserMessageEvent,
+    user_memory: RetrieveUserMemoryEvent | None,
+    org_memory: RetrieveOrganizationMemoryEvent | None,
+    config: AgentConfig,
+) -> bool:
+    if config.enable_user_memory and user_memory is None:
+        return False
+    if config.enable_org_memory and org_memory is None:
+        return False
+    return config.enable_user_memory or config.enable_org_memory
+
+@precondition()
+def check_storage_complete(
+    llm: LLMEvent,
+    stored: StoreUserMemoryEvent | None,
+    config: AgentConfig,
+) -> bool:
+    if config.enable_memory_storage and stored is None:
+        return False
+    return True
+```
+
+Die `check_memory_ready`-Precondition blockiert den Schritt zur Historie-Erweiterung, bis alle aktivierten Speichertypen
+abgerufen wurden. Die `check_storage_complete`-Precondition blockiert den letzten Stopp-Schritt, bis die Speicherung
+abgeschlossen ist (sofern aktiviert). Dies verhindert die
+[Falle optionaler Parameter](../9_execution_model/#the-optional-parameter-trap), bei der Schritte vorzeitig mit
+`None`-Werten ausgeführt werden.
 
 ## Observability
 
-Alle Gedächtnisoperationen werden automatisch im Observability-Dashboard getraced. Abruf-Traces zeigen die Anfrage,
-zurückgegebene Gedächtnisinhalte und Relevanz-Scores. Speicher-Traces zeigen extrahierte Gedächtnisinhalte, Beziehungen
-und Metadaten. Die Erweiterung der Chat-Historie zeigt die Systemnachricht mit Gedächtnisinhalt an.
+Alle Speicheroperationen werden automatisch im Observability-Dashboard nachverfolgt. Retrieval-Traces zeigen die
+Abfrage, die zurückgegebenen Speicher und Relevanzwerte. Storage-Traces zeigen extrahierte Speicher, Beziehungen und
+Metadaten. Die Chat-Historie-Erweiterung zeigt die Systemnachricht mit dem Speicherinhalt an.
 
-Alle Gedächtnisinhalte speichern den vollständigen Kontext des Swiss AI Agent Protocol: `agent_id` (welcher Agent den
-Gedächtnisinhalt erstellt hat), `thread_id` (welcher Konversations-Thread), `display_id` (UI-Display-Kontext), `run_id`
-(Workflow-Ausführungs-ID) und `user_id` (wem der Gedächtnisinhalt gehört oder wer ihn dokumentiert hat). Dies ermöglicht
-vollständige Auditierbarkeit – Sie können zurückverfolgen, welche Konversation dem Agent eine bestimmte Präferenz
+Alle Speicher enthalten den vollständigen Swiss AI Agent Protocol Kontext: `agent_id` (welcher Agent den Speicher
+erstellt hat), `thread_id` (welcher Konversations-Thread), `display_id` (UI-Anzeigekontext), `run_id`
+(Workflow-Ausführungs-ID) und `user_id` (wem der Speicher gehört oder wer ihn dokumentiert hat). Dies ermöglicht eine
+vollständige Auditierbarkeit – Sie können zurückverfolgen, welche Konversation dem Agenten eine bestimmte Präferenz
 gelehrt hat.
 
 ## Best Practices
 
-Verwenden Sie das Benutzer-Gedächtnis für Präferenzen („Der Benutzer bevorzugt kurze Antworten“) und das
-Organisations-Gedächtnis für Fakten („Wir deployen freitags“). Lassen Sie das Benutzer-Gedächtnis aus der Konversation
-inferieren, während Sie das Organisations-Gedächtnis explizit dokumentieren. Rufen Sie Gedächtnisinhalte immer zu Beginn
-des Workflows ab, damit der Gedächtniskontext die gesamte Antwort leitet, und speichern Sie neue Erkenntnisse am Ende
-des Workflows, nachdem die LLM-Antwort inkludiert ist.
+Verwenden Sie den Benutzerspeicher für Präferenzen („Benutzer bevorzugt kurze Antworten“) und den Organisationsspeicher
+für Fakten („Wir deployen freitags“). Lassen Sie den Benutzerspeicher aus der Konversation inferieren, während Sie den
+Organisationsspeicher explizit dokumentieren. Rufen Sie Speicher immer zu Beginn des Workflows ab, damit der
+Speicherkontext die gesamte Antwort leitet, und speichern Sie neue Erkenntnisse am Ende des Workflows, nachdem die
+LLM-Antwort enthalten ist.
 
-Der Gedächtnis-Abruf fügt ungefähr 100ms Latenz hinzu. Verwenden Sie den `limit`-Parameter, um eine Überforderung des
-Kontexts zu vermeiden, und filtern Sie bei Bedarf nach Agent oder Thread, um irrelevante Gedächtnisinhalte zu
-reduzieren.
+Das Abrufen von Speichern fügt eine Latenz von etwa 100ms hinzu. Verwenden Sie den `limit`-Parameter, um eine Überladung
+des Kontexts zu vermeiden, und filtern Sie bei Bedarf nach Agent oder Thread, um irrelevante Speicher zu reduzieren.
 
-Das Benutzer-Gedächtnis ist DSGVO-konform – Benutzer können all ihre Gedächtnisinhalte einsehen, bearbeiten und löschen.
-Das Organisations-Gedächtnis erfordert Zugriffskontrolle, da Änderungen alle Benutzer betreffen. Jeder Gedächtnisinhalt
-verfolgt, wer ihn wann erstellt hat, zur Auditierbarkeit, und alle Gedächtnisdaten bleiben auf der Schweizer
-Infrastruktur.
+Der Benutzerspeicher ist DSGVO-konform – Benutzer können alle ihre Speicher einsehen, bearbeiten und löschen. Der
+Organisationsspeicher erfordert Zugriffskontrolle, da Änderungen alle Benutzer betreffen. Jeder Speicher verfolgt, wer
+ihn wann erstellt hat, zur Auditierbarkeit, und alle Speicherdaten bleiben auf der Schweizer Infrastruktur.
 
 ::: tip Nächste Schritte
 Erkunden Sie die vollständigen Beispiele unter `playground/minimal_workflow/user_memory_workflow/` und
-`playground/minimal_workflow/organization_memory_workflow/`. Überprüfen Sie die Gedächtnis-Events in Langfuse, nachdem
-Sie einen gedächtnisgestützten Agent ausgeführt haben. Versuchen Sie, einen hybriden Agent zu erstellen, der beide
-Gedächtnis-Typen kombiniert, oder experimentieren Sie mit Namespace-Scoping für die Isolation auf Abteilungsebene.
+`playground/minimal_workflow/organization_memory_workflow/`. Überprüfen Sie Speicher-Events in Langfuse, nachdem Sie
+einen speichererweiterten Agenten ausgeführt haben. Versuchen Sie, einen Hybrid-Agenten zu erstellen, der beide
+Speichertypen kombiniert, oder experimentieren Sie mit Namespace-Scoping für die Isolation auf Abteilungsebene.
 :::

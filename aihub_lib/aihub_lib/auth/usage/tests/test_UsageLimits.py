@@ -8,6 +8,7 @@ from aihub_lib.auth.usage.usage_limit_models import ResourceType, RoleUsageLimit
 from aihub_lib.auth.usage.UsageLimits import UsageLimits
 
 AGENT_PREFIX = "aihub.user.agent."
+TEST_TENANT_ID = "test-tenant"
 
 
 def rl(pattern: str, limit: int, period: str) -> RoleUsageLimit:
@@ -95,7 +96,7 @@ class TestGetEffectiveLimitsForRoles:
         mock_role_entity.get_usage_limits_for_roles.return_value = [[], []]
 
         limits = UsageLimits.get_effective_limits_for_roles(
-            ["role1", "role2"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev"
+            ["role1", "role2"], TEST_TENANT_ID, resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev"
         )
 
         assert limits == []
@@ -104,7 +105,7 @@ class TestGetEffectiveLimitsForRoles:
     def test_returns_empty_when_no_roles(self, mock_role_entity: MagicMock):
         mock_role_entity.get_usage_limits_for_roles.return_value = []
 
-        limits = UsageLimits.get_effective_limits_for_roles([])
+        limits = UsageLimits.get_effective_limits_for_roles([], TEST_TENANT_ID)
 
         assert limits == []
 
@@ -115,7 +116,7 @@ class TestGetEffectiveLimitsForRoles:
         ]
 
         limits = UsageLimits.get_effective_limits_for_roles(
-            ["role1"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
+            ["role1"], TEST_TENANT_ID, resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
         )
 
         assert len(limits) == 1
@@ -134,7 +135,7 @@ class TestGetEffectiveLimitsForRoles:
         ]
 
         limits = UsageLimits.get_effective_limits_for_roles(
-            ["role1"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
+            ["role1"], TEST_TENANT_ID, resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
         )
 
         assert len(limits) == 2
@@ -159,7 +160,7 @@ class TestGetEffectiveLimitsForRoles:
         ]
 
         limits = UsageLimits.get_effective_limits_for_roles(
-            ["role1", "role2"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
+            ["role1", "role2"], TEST_TENANT_ID, resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
         )
 
         assert len(limits) == 1
@@ -179,7 +180,7 @@ class TestGetEffectiveLimitsForRoles:
         ]
 
         limits = UsageLimits.get_effective_limits_for_roles(
-            ["roleA", "roleB"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
+            ["roleA", "roleB"], TEST_TENANT_ID, resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
         )
 
         assert len(limits) == 2
@@ -197,7 +198,7 @@ class TestGetEffectiveLimitsForRoles:
         ]
 
         limits = UsageLimits.get_effective_limits_for_roles(
-            ["role1"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
+            ["role1"], TEST_TENANT_ID, resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
         )
 
         assert limits == []
@@ -208,7 +209,7 @@ class TestGetEffectiveLimitsForRoles:
             [rl(f"{AGENT_PREFIX}>", 100, "1d"), rl(f"{AGENT_PREFIX}LLMWrappingAgent.>", 20, "1h")],
         ]
 
-        limits = UsageLimits.get_effective_limits_for_roles(["role1"])
+        limits = UsageLimits.get_effective_limits_for_roles(["role1"], TEST_TENANT_ID)
 
         assert len(limits) == 1
         assert limits[0].limit == 100
@@ -223,7 +224,7 @@ class TestGetEffectiveLimitsForRoles:
         ]
 
         limits = UsageLimits.get_effective_limits_for_roles(
-            ["role1", "role2"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
+            ["role1", "role2"], TEST_TENANT_ID, resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
         )
 
         assert limits == []
@@ -240,7 +241,7 @@ class TestGetEffectiveLimitsForRoles:
         ]
 
         limits = UsageLimits.get_effective_limits_for_roles(
-            ["role1"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
+            ["role1"], TEST_TENANT_ID, resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
         )
 
         assert len(limits) == 3
@@ -263,7 +264,7 @@ class TestGetEffectiveLimitForRoles:
         ]
 
         result = UsageLimits.get_effective_limit_for_roles(
-            ["role1"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
+            ["role1"], TEST_TENANT_ID, resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
         )
 
         assert result is not None
@@ -275,7 +276,9 @@ class TestGetEffectiveLimitForRoles:
     def test_returns_none_when_no_limits(self, mock_role_entity: MagicMock):
         mock_role_entity.get_usage_limits_for_roles.return_value = [[]]
 
-        result = UsageLimits.get_effective_limit_for_roles(["role1"], resource_path=f"{AGENT_PREFIX}Foo.bar")
+        result = UsageLimits.get_effective_limit_for_roles(
+            ["role1"], TEST_TENANT_ID, resource_path=f"{AGENT_PREFIX}Foo.bar"
+        )
 
         assert result is None
 
@@ -290,7 +293,7 @@ class TestGetUsageStatus:
         store = AsyncMock(spec=RateLimitStore)
         service = create_service_with_store(store)
 
-        status = await service.get_usage_status("user123", ["admin"])
+        status = await service.get_usage_status("user123", ["admin"], TEST_TENANT_ID)
 
         assert status.limits == []
         assert status.is_exceeded is False
@@ -307,7 +310,7 @@ class TestGetUsageStatus:
         service = create_service_with_store(store)
 
         status = await service.get_usage_status(
-            "user123", ["user"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev"
+            "user123", ["user"], TEST_TENANT_ID, resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev"
         )
 
         assert len(status.limits) == 2
@@ -325,7 +328,7 @@ class TestGetUsageStatus:
         service = create_service_with_store(store)
 
         status = await service.get_usage_status(
-            "user123", ["user"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev"
+            "user123", ["user"], TEST_TENANT_ID, resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev"
         )
 
         assert status.is_exceeded is True
@@ -344,7 +347,7 @@ class TestCheckAndIncrement:
         store = AsyncMock(spec=RateLimitStore)
         service = create_service_with_store(store)
 
-        status = await service.check_and_increment("user123", ["admin"])
+        status = await service.check_and_increment("user123", ["admin"], TEST_TENANT_ID)
 
         assert status.limits == []
         assert status.is_exceeded is False
@@ -362,7 +365,7 @@ class TestCheckAndIncrement:
         service = create_service_with_store(store)
 
         status = await service.check_and_increment(
-            "user1", ["role1"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev"
+            "user1", ["role1"], TEST_TENANT_ID, resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev"
         )
 
         assert len(status.limits) == 2
@@ -381,7 +384,7 @@ class TestCheckAndIncrement:
         service = create_service_with_store(store)
 
         status = await service.check_and_increment(
-            "user1", ["role1"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev"
+            "user1", ["role1"], TEST_TENANT_ID, resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev"
         )
 
         assert status.is_exceeded is True
@@ -396,7 +399,9 @@ class TestCheckAndIncrement:
         store.check_and_increment.return_value = (True, [CounterState(1, None)])
         service = create_service_with_store(store)
 
-        await service.check_and_increment("user123", ["user"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev")
+        await service.check_and_increment(
+            "user123", ["user"], TEST_TENANT_ID, resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev"
+        )
 
         store.check_and_increment.assert_called_once()
 
@@ -412,7 +417,7 @@ class TestMultiRoleWithIndependentLimits:
         ]
 
         limits = UsageLimits.get_effective_limits_for_roles(
-            ["roleA", "roleB"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
+            ["roleA", "roleB"], TEST_TENANT_ID, resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
         )
 
         assert len(limits) == 1
@@ -431,7 +436,7 @@ class TestMultiRoleWithIndependentLimits:
         ]
 
         limits = UsageLimits.get_effective_limits_for_roles(
-            ["roleA", "roleB"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
+            ["roleA", "roleB"], TEST_TENANT_ID, resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
         )
 
         assert len(limits) == 2
@@ -450,7 +455,7 @@ class TestMultiRoleWithIndependentLimits:
         ]
 
         limits = UsageLimits.get_effective_limits_for_roles(
-            ["r1", "r2", "r3"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
+            ["r1", "r2", "r3"], TEST_TENANT_ID, resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
         )
 
         assert len(limits) == 1
@@ -461,7 +466,7 @@ class TestMultiRoleWithIndependentLimits:
         mock_role_entity.get_usage_limits_for_roles.return_value = [[], []]
 
         limits = UsageLimits.get_effective_limits_for_roles(
-            ["roleA", "roleB"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
+            ["roleA", "roleB"], TEST_TENANT_ID, resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
         )
 
         assert limits == []
@@ -481,7 +486,7 @@ class TestCheckAndIncrementIntegration:
         service = create_service_with_store(store)
 
         status = await service.check_and_increment(
-            "user1", ["role1"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
+            "user1", ["role1"], TEST_TENANT_ID, resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
         )
 
         assert status.is_exceeded is False
@@ -499,7 +504,7 @@ class TestCheckAndIncrementIntegration:
         service = create_service_with_store(store)
 
         status = await service.check_and_increment(
-            "user1", ["role1"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
+            "user1", ["role1"], TEST_TENANT_ID, resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
         )
 
         assert status.is_exceeded is True
@@ -518,7 +523,7 @@ class TestCheckAndIncrementIntegration:
         service = create_service_with_store(store)
 
         status = await service.check_and_increment(
-            "user1", ["roleA", "roleB"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
+            "user1", ["roleA", "roleB"], TEST_TENANT_ID, resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
         )
 
         assert status.is_exceeded is False
@@ -540,7 +545,9 @@ class TestBackwardCompatProperties:
         store.get_counts.return_value = [CounterState(42, None), CounterState(9, None)]
         service = create_service_with_store(store)
 
-        status = await service.get_usage_status("user1", ["role1"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev")
+        status = await service.get_usage_status(
+            "user1", ["role1"], TEST_TENANT_ID, resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev"
+        )
 
         # 9/10 = 0.9 ratio vs 42/100 = 0.42 ratio → class-level is most restrictive
         assert status.limit == 10
@@ -554,7 +561,7 @@ class TestBackwardCompatProperties:
         store = AsyncMock(spec=RateLimitStore)
         service = create_service_with_store(store)
 
-        status = await service.get_usage_status("user1", ["admin"])
+        status = await service.get_usage_status("user1", ["admin"], TEST_TENANT_ID)
 
         assert status.limit is None
         assert status.period is None
@@ -590,7 +597,7 @@ class TestPatternPeriodCombinations:
         ]
 
         limits = UsageLimits.get_effective_limits_for_roles(
-            ["role1"], resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
+            ["role1"], TEST_TENANT_ID, resource_path=f"{AGENT_PREFIX}LLMWrappingAgent.dev_agent"
         )
 
         assert len(limits) == 2
@@ -613,6 +620,7 @@ class TestCheckAndRaise:
         user = MagicMock()
         user.id = "user123"
         user.roles = ["role1"]
+        user.acting_within_tenant.id = TEST_TENANT_ID
 
         with pytest.raises(HTTPException) as exc_info:
             await service.check_and_raise(user, ResourceType.AGENT, "MyAgent", "v1", locale="en")
@@ -634,6 +642,7 @@ class TestCheckAndRaise:
         user = MagicMock()
         user.id = "user123"
         user.roles = ["role1"]
+        user.acting_within_tenant.id = TEST_TENANT_ID
 
         status = await service.check_and_raise(user, ResourceType.AGENT, "MyAgent", "v1", locale="en")
 
@@ -649,6 +658,7 @@ class TestCheckAndRaise:
         user = MagicMock()
         user.id = "user123"
         user.roles = ["admin"]
+        user.acting_within_tenant.id = TEST_TENANT_ID
 
         status = await service.check_and_raise(user, ResourceType.AGENT, "MyAgent", "v1", locale="en")
 

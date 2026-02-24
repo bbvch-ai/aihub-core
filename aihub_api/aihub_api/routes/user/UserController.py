@@ -5,7 +5,8 @@ from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.routes.Controller import Controller
-from fastapi import Body, Depends, Path, Security
+from fastapi import Body, Depends, HTTPException, Path, Security
+from mongoengine.errors import DoesNotExist
 from nats.aio.client import Client as NATS
 
 from aihub_api.i18n.ApiLocaleString import ApiLocaleString
@@ -44,14 +45,18 @@ class UserController(Controller):
 
         @self.router.get(route, tags=self.tags)
         async def get_users(
-            _: Annotated[UserIdentity, Security(self.user_with_permission(f"aihub.admin.service.{self.service_name}"))],
+            user: Annotated[
+                UserIdentity, Security(self.user_with_permission(f"aihub.admin.service.{self.service_name}"))
+            ],
             page: PageNumber = 1,
             page_size: PageSize = 20,
         ) -> PaginatedUsersResponse:
             """
-            Returns a paginated list of all users.
+            Returns a paginated list of users within the requesting admin's tenant.
             """
-            total, user_dtos = await UserService.get_paginated_users(page=page, page_size=page_size)
+            total, user_dtos = await UserService.get_paginated_users(
+                tenant_id=user.acting_within_tenant.id, page=page, page_size=page_size
+            )
             total_pages = (total + page_size - 1) // page_size if page_size > 0 else 0
             return PaginatedUsersResponse(
                 users=user_dtos,
@@ -87,12 +92,19 @@ class UserController(Controller):
             user_id: Annotated[str, Path(description="The user's unique identifier (OID).")],
             nc: Annotated[NATS, Depends(use_nats)],
             t: Annotated[LocaleHandler, Depends(use_locale)],
-            _: Annotated[UserIdentity, Security(self.user_with_permission(f"aihub.admin.service.{self.service_name}"))],
+            user: Annotated[
+                UserIdentity, Security(self.user_with_permission(f"aihub.admin.service.{self.service_name}"))
+            ],
         ) -> UserWithAccessDTO:
             """
-            Retrieve user info by their OID.
+            Retrieve user info by their OID. Shows access within the admin's current tenant context.
             """
-            return await UserService.get_user_with_access_by_oid(user_id, runner=self._runner, nc=nc, t=t)
+            try:
+                return await UserService.get_user_with_access_by_oid(
+                    user_id, user.acting_within_tenant, runner=self._runner, nc=nc, t=t
+                )
+            except DoesNotExist:
+                raise HTTPException(status_code=404, detail="User not found.")
 
         return self
 

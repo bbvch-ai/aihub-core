@@ -142,27 +142,28 @@ Configure default behavior through environment variables:
 
 ```bash
 # Default tenant created on first startup
-DEFAULT_TENANT_NAME="Default Organization"
-DEFAULT_TENANT_ACCESS_RULES="aihub.admin.>"
+AIHUB_DEFAULT_TENANT_NAME="Default Organization"
+AIHUB_DEFAULT_TENANT_ACCESS_RULES="aihub.admin.>"
 
 # Automatic user signup
-USER_SIGNUP_DEFAULT_TENANT="default"
-USER_SIGNUP_DEFAULT_ROLES="AIHubUser,AIHubAgentUser"
-FIRST_USER_SIGNUP_DEFAULT_ROLES="AIHubAdmin"
+AIHUB_USER_SIGNUP_DEFAULT_TENANT="default"
+AIHUB_USER_SIGNUP_DEFAULT_ROLES="AIHubUser,AIHubAgentUser"
+FIRST_AIHUB_USER_SIGNUP_DEFAULT_ROLES="AIHubAdmin"
 ```
 
 ## Superuser bypass
 
 The global superuser role bypasses tenant restrictions:
 
-- Doesn't require tenant selection
-- Not checked against tenant boundaries
-- Has admin access to all resources across all tenants
+- **Virtual superuser tenant**: Operates within a virtual tenant that has `aihub.admin.>` access rules
+- **Full admin access**: Has admin access to all resources across all tenants
+- **Bypasses boundaries**: While still going through the two-stage access control system, the virtual tenant ensures all
+  checks pass
+- **Always authenticated**: Uses a static token rather than identity provider authentication
 
 Configure through:
 
 ```bash
-SUPERUSER_ENABLED="true"
 SUPERUSER_TOKEN="<secure-token>"
 SUPERUSER_OID="<user-id>"
 ```

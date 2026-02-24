@@ -29,21 +29,23 @@ class RateLimitStore:
 
     _functions_registered: bool = False
 
-    def __init__(self, redis: Redis, user_id: str, key_prefix: str = "usage:calls"):
-        self._validate_user_id(user_id)
+    def __init__(self, redis: Redis, user_id: str, tenant_id: str, key_prefix: str = "usage:calls"):
+        self._validate_key_segment(user_id, "user_id")
+        self._validate_key_segment(tenant_id, "tenant_id")
         self.redis = redis
         self.user_id = user_id
+        self.tenant_id = tenant_id
         self.key_prefix = key_prefix
 
     @staticmethod
-    def _validate_user_id(user_id: str) -> None:
-        """Validate user_id contains no characters that could cause Redis key injection."""
-        if not user_id or ":" in user_id or "\n" in user_id or "\r" in user_id:
-            raise ValueError(f"Invalid user_id for Redis: must not be empty or contain ':'/newlines, got {user_id!r}")
+    def _validate_key_segment(value: str, name: str) -> None:
+        """Validate a value contains no characters that could cause Redis key injection."""
+        if not value or ":" in value or "\n" in value or "\r" in value:
+            raise ValueError(f"Invalid {name} for Redis: must not be empty or contain ':'/newlines, got {value!r}")
 
     def _build_key(self, pattern: str, period: UsageLimitPeriod) -> str:
         """Build a Redis key for a rate limit counter."""
-        return f"{self.key_prefix}:{self.user_id}:{pattern}:{period}"
+        return f"{self.key_prefix}:{self.tenant_id}:{self.user_id}:{pattern}:{period}"
 
     @staticmethod
     def _ttl_to_reset_at(ttl: int) -> datetime | None:

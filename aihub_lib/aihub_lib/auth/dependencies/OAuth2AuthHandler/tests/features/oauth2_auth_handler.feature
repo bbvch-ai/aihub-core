@@ -7,7 +7,6 @@ Feature: OAuth2AuthHandler
     When I invoke the OAuth2AuthHandler with the token
     Then the returned user should have name "Test User"
     And the returned user should have preferred_username "testuser@example.com"
-    And the returned user should have roles "user" and "admin"
 
   Scenario: Invalid token format is rejected
     Given an OAuth2 configuration client_id "test-client", and authority_url "https://login.microsoftonline.com/test-tenant"
@@ -26,7 +25,7 @@ Feature: OAuth2AuthHandler
     And a valid OAuth2 token is generated with name "Unknown Kid", email "unknownkid@example.com", and roles "user,admin"
     And I modify the token's header to use kid "unknown-key-id"
     When I invoke the OAuth2AuthHandler with the token expecting error
-    Then I should receive an HTTP error with detail "500: Authentication error"
+    Then I should receive an HTTP error with detail "Token verification failed"
 
   Scenario: Token with invalid signature is rejected
     Given an OAuth2 configuration client_id "test-client", and authority_url "https://login.microsoftonline.com/test-tenant"
