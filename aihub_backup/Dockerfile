@@ -10,7 +10,8 @@ ENV PYTHONUNBUFFERED=1 \
 # curl for healthcheck, gzip for pg_dumpall compression, unzip for nats CLI
 RUN apt-get update && \
     apt-get install -y --no-install-recommends wget gnupg && \
-    echo "deb http://apt.postgresql.org/pub/repos/apt bookworm-pgdg main" \
+    . /etc/os-release && \
+    echo "deb http://apt.postgresql.org/pub/repos/apt ${VERSION_CODENAME}-pgdg main" \
         > /etc/apt/sources.list.d/pgdg.list && \
     wget -qO - https://www.postgresql.org/media/keys/ACCC4CF8.asc \
         | gpg --dearmor -o /etc/apt/trusted.gpg.d/pgdg.gpg && \
