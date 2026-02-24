@@ -1,7 +1,10 @@
+---
 config:
   model:
-    label: "Modello di riclassificazione"
-    help: "Seleziona il modello usato per riclassificare i documenti recuperati per rilevanza semantica alla query."
+    label: Modello di riclassificazione
+    help: Seleziona il modello usato per riclassificare i documenti recuperati per
+      rilevanza semantica alla query.
   top_n:
-    label: "Top N risultati"
-    help: "Numero di documenti da mantenere dopo la riclassificazione. Valori più bassi si concentrano sul contenuto più rilevante."
+    label: Top N risultati
+    help: Numero di documenti da mantenere dopo la riclassificazione. Valori più bassi
+      si concentrano sul contenuto più rilevante.

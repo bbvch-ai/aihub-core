@@ -41,7 +41,7 @@ Dateispeicher.
 - **Rolle**: Resources trennen die Logik Ihrer Pipeline von ihrer Umgebungskonfiguration, wodurch derselbe Pipeline-Code
   nahtlos in Entwicklung, Test und Produktion ausgeführt werden kann.
 
----
+______________________________________________________________________
 
 ## Architektonische Kernprinzipien
 

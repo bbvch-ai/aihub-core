@@ -113,7 +113,6 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         self.hitl_response_events: list[EventSpecs] | None = hitl_response_events
 
         self.agent_config: AgentConfig = AgentConfig(
-            agent_class=self.agent_class,
             agent_id=self.agent_id,
             name=LocaleString(de="Test Agent"),
             description=LocaleString(de="Test Agent Description"),
@@ -323,9 +322,9 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
 
         existing = AgentConfigEntityDocument.find_for_class_and_id(self.agent_class, self.agent_id)
         if existing:
-            existing.update_from_agent_config(self.agent_config)
+            existing.update_from_agent_config(self.agent_config, self.agent_class)
             existing.save()
         else:
-            config_entity = AgentConfigEntityDocument.from_agent_config(self.agent_config)
+            config_entity = AgentConfigEntityDocument.from_agent_config(self.agent_config, self.agent_class)
             config_entity.save()
         logger.info(f"Created agent class and config in database: {self.agent_class}/{self.agent_id}")

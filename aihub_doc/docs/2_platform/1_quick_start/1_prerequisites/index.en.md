@@ -278,7 +278,7 @@ After completing Azure setup, you should have:
 
 You'll need these values during platform deployment configuration.
 
----
+______________________________________________________________________
 
 ## Production Deployment Prerequisites
 
@@ -311,7 +311,7 @@ See [network requirements](../../3_deployment_guide/7_network_requirements/) for
 troubleshooting.
 :::
 
----
+______________________________________________________________________
 
 ## Local Deployment Prerequisites
 
@@ -367,7 +367,7 @@ installs a local Certificate Authority (CA) in your system trust store, so certi
 browser.
 :::
 
----
+______________________________________________________________________
 
 ## Next steps
 

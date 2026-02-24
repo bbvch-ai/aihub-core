@@ -1,7 +1,7 @@
+---
 base:
-  name: "Unbenannter Controller"
-  description: "Dieser Controller hat keine Beschreibung."
-
+  name: Unbenannter Controller
+  description: Dieser Controller hat keine Beschreibung.
 health:
-  name: "Gesundheit"
-  description: "Endpunkt zur Überprüfung der Systemverfügbarkeit."
+  name: Gesundheit
+  description: Endpunkt zur Überprüfung der Systemverfügbarkeit.

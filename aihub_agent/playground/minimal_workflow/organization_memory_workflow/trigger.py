@@ -18,7 +18,7 @@ async def main():
     """One-shot test runner for OrganizationMemoryAgent."""
     runner = AgentTestRunner(
         agent_type=OrganizationMemoryAgent,
-        default_agent_config=OrganizationMemoryAgentConfig(
+        agent_config=OrganizationMemoryAgentConfig(
             agent_class=OrganizationMemoryAgent.__name__,
             agent_id="org_memory_agent",
             name=LocaleString(en="Organization Memory Agent"),

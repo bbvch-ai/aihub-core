@@ -35,7 +35,7 @@ The instance connects to LLM services via its LiteLLM proxy. The proxy can conne
 self-hosted models (vLLM, llama.cpp, HF-TEI), or a mix of these. The proxy handles model selection, budgets, rate
 limits, and versions. All prompts, responses, and user data stay within the instance.
 
----
+______________________________________________________________________
 
 ## Hosting options
 
@@ -50,7 +50,7 @@ either outbound HTTPS for cloud-based LLM services, or air-gapped with local mod
 
 Infrastructure is under your control. No cloud dependencies. Works in air-gapped environments with self-hosted LLMs.
 
----
+______________________________________________________________________
 
 ### Private cloud (bring your own cloud)
 
@@ -62,7 +62,7 @@ manage the cloud resources and costs.
 Cloud providers typically have security and compliance certifications. You need internet connectivity for LLM proxy
 access (HTTPS), optionally VPN for administrative access, and private networking between services (internal DNS).
 
----
+______________________________________________________________________
 
 ### SaaS (Swiss cloud hosting)
 
@@ -74,7 +74,7 @@ under Swiss legal jurisdiction. Security and compliance certifications from the 
 You access the AI-Hub through a web interface and APIs. bbv provides SLAs for uptime and support. Less operational
 overhead for your team.
 
----
+______________________________________________________________________
 
 ## Multi-instance deployment
 
@@ -167,7 +167,7 @@ AI-Hub Instance
 │
 └── Infrastructure Layer
     ├── NATS (message bus)
-    ├── Docling (document processing)
+    ├── MinerU (document processing)
     └── Traefik (reverse proxy + SSL termination)
 ```
 
@@ -206,7 +206,7 @@ Network architecture:
 Data isolation and sovereignty. Independent scaling and resource allocation. Custom configurations per instance.
 Flexible update schedules. Clear compliance boundaries.
 
----
+______________________________________________________________________
 
 ## Architecture diagrams
 
@@ -264,7 +264,7 @@ Each instance has their own LiteLLM proxy (independent cost tracking, versioning
 proxies connect to shared LLM backend resources (Azure OpenAI subscriptions, self-hosted models). Prompts, responses,
 and user data stay within instance boundaries.
 
----
+______________________________________________________________________
 
 ## Security considerations
 
@@ -290,7 +290,7 @@ production and mkcert for development. API authentication uses bearer tokens (OA
 PostgreSQL uses transparent data encryption (TDE). Persistent volumes are encrypted (LUKS, Azure Disk Encryption).
 Secrets are managed via environment variables, Azure Key Vault, or Docker secrets.
 
----
+______________________________________________________________________
 
 ## Next steps
 
@@ -300,7 +300,7 @@ Secrets are managed via environment variables, Azure Key Vault, or Docker secret
 - [Backup and Recovery](../4_backup_and_recovery/) - Backup strategies for per-instance architecture
 - [Updates and Maintenance](../6_updates_and_maintenance/) - Managing updates across multiple instances
 
----
+______________________________________________________________________
 
 ## FAQ
 

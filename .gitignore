@@ -15,6 +15,16 @@ aihub_doc/aihub
 .idea/copilot*
 *.log
 .mypy_cache/
+.venv
+
+# Claude Code local overrides (personal preferences, not shared)
+CLAUDE.local.md
+.claude/settings.local.json
+.claude/mcp.local.json
+.claude/mcp/bin/*
+.claude/.deps-fingerprint
+.claude/statusline.sh
+.claude/worktrees/*
 
 # E2E (Playwright)
 /e2e/node_modules

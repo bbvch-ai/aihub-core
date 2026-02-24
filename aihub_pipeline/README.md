@@ -90,9 +90,8 @@ it, and storing it in a format that agents can easily consume.
 5. **Vector Storage**: Embeddings are stored in vector databases for retrieval operations
 6. **Summary Generation**: Hierarchical summaries are created for better context preservation
 
-**Data Versions and Traceability:**
-Each partition is assigned **DataVersions** that reflect the current state of the document. If a document changes, its
-DataVersion changes, prompting re-ingestion and re-indexing. This ensures:
+**Data Versions and Traceability:** Each partition is assigned **DataVersions** that reflect the current state of the
+document. If a document changes, its DataVersion changes, prompting re-ingestion and re-indexing. This ensures:
 
 - You can always trace which version of the data was used to produce a given agent response
 - Historical runs can be audited and reproduced, supporting debugging and compliance requirements
@@ -124,10 +123,9 @@ def data_lake_observer(context):
 - **Reactive Processing**: When a new file arrives in the data lake, downstream assets update automatically
 - **Reduced Manual Overhead**: Instead of periodic manual job kicks, pipelines react to data lifecycle changes
 
-**Dynamic Partitions for Scalability:**
-Dagster's **Dynamic Partitions** allow pipelines to treat each file or document as a separate partition. The pipeline
-scales as documents grow - when a new file is detected, only that partition's logic runs, avoiding unnecessary
-reprocessing.
+**Dynamic Partitions for Scalability:** Dagster's **Dynamic Partitions** allow pipelines to treat each file or document
+as a separate partition. The pipeline scales as documents grow - when a new file is detected, only that partition's
+logic runs, avoiding unnecessary reprocessing.
 
 ### 🏗️ The Asset-Based Architecture
 
@@ -153,7 +151,7 @@ def documents_asset(data_lake_file: DataLakeFile) -> RefDoc:
 - **Lineage**: Dependencies between assets provide clear data lineage tracking
 - **Partitioned**: Assets can be partitioned for parallel processing and incremental updates
 
----
+______________________________________________________________________
 
 ## 2. 🚀 The Step-by-Step Development Workflow
 
@@ -163,19 +161,9 @@ This section provides a practical, step-by-step guide to building, testing, and 
 
 Before you begin, ensure you have completed the infrastructure setup from the root project documentation.
 
-::: warning
-Always activate the Poetry environment before working. All subsequent commands must be run from within this activated
-shell.
-:::
-
 ```bash
 # Start required services from the project root
 docker compose -f docker-compose.yml -f milvus-standalone-docker-compose.yml -f docker-compose-webui.yml up -d
-```
-
-```bash
-cd aihub_pipeline
-poetry shell
 ```
 
 ### 🔍 Step 1: Understanding the Pipeline Architecture
@@ -215,7 +203,7 @@ Before implementing new pipeline components, understand the existing data flow a
 
    ```python
    class DocumentParserResource(ConfigurableResource):
-       loader_type: LoaderType = LoaderType.DOCLING
+       loader_type: LoaderType = LoaderType.MINERU
        
        def get_parser(self) -> DocumentParser:
            """Get configured document parser."""
@@ -348,11 +336,11 @@ def test_my_asset():
 make playground
 
 # Or run manually
-poetry run dagster dev -m playground --use-legacy-code-server-behavior
+uv run dagster dev -m playground --use-legacy-code-server-behavior
 ```
 
 ::: info Dagster Web Interface
-This starts the Dagster web interface at `http://localhost:3000` where you can:
+This starts the Dagster web interface at `http://localhost:3002` where you can:
 
 - View asset lineage and dependencies
 - Materialize assets manually
@@ -388,7 +376,7 @@ make test-cov    # Run tests with coverage
 All pipeline code must use strict Python type annotations and follow Dagster best practices. This is enforced by CI/CD.
 :::
 
----
+______________________________________________________________________
 
 ## 3. 🔧 Customization and Reuse
 
@@ -435,7 +423,7 @@ This approach ensures that data ingestion pipelines reduce manual effort, mainta
 more reliable end-to-end AI solution that adapts gracefully as client needs and data environments evolve.
 :::
 
----
+______________________________________________________________________
 
 ## 4. 🎨 Pipeline Patterns and Best Practices
 
@@ -493,7 +481,7 @@ def development_resources() -> dict[str, ConfigurableResource]:
             namespace_name="dev",
         ),
         "document_parser": DocumentParserResource(
-            loader_type=LoaderType.DOCLING,
+            loader_type=LoaderType.MINERU,
         ),
     }
 
@@ -506,7 +494,7 @@ def production_resources() -> dict[str, ConfigurableResource]:
             namespace_name="production",
         ),
         "document_parser": DocumentParserResource(
-            loader_type=LoaderType.DOCLING,
+            loader_type=LoaderType.MINERU,
             timeout=300,
         ),
     }
@@ -536,33 +524,3 @@ def documented_operation(context, input_data: InputType) -> OutputType:
     return result
 ```
 
-### 📖 Glossary of Pipeline-Specific Terms
-
-This glossary defines terms, concepts, and technologies that have specific meaning within the `aihub_pipeline` scope,
-building upon the core AI-Hub terminology.
-
-| Term                   | Definition                                                                                                                                                                |
-| :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Asset**              | A Dagster concept representing a data object or file that is produced by a pipeline. Assets can be materialized (computed) and have dependencies on other assets.         |
-| **Asset Factory**      | A function that creates and configures Dagster assets with specific parameters, enabling reusable asset definitions across different pipeline configurations.             |
-| **Data Lake File**     | A structured representation of a document stored in Azure Data Lake, containing content, metadata, and URI information for downstream processing.                         |
-| **Dagster**            | The core orchestration framework used for building and managing data pipelines. Provides scheduling, monitoring, and dependency management capabilities.                  |
-| **Document Parser**    | A resource that extracts text content and metadata from various document formats (PDF, Word, PowerPoint, etc.) using different parsing strategies.                        |
-| **Dynamic Partitions** | Dagster's mechanism for handling datasets where the partition keys are determined at runtime, allowing flexible processing of varying document sets.                      |
-| **Embedding Model**    | AI model resource that converts text content into high-dimensional vector representations for semantic search and retrieval applications.                                 |
-| **Graph Asset**        | A Dagster asset composed of multiple operations (ops) that work together to transform input data into output data through a defined workflow.                             |
-| **I/O Manager**        | Dagster resource responsible for storing and retrieving assets from specific storage systems (Azure Data Lake, MongoDB, Milvus, etc.).                                    |
-| **Job Definition**     | A Dagster construct that defines a selection of assets to materialize, along with their execution configuration and resource requirements.                                |
-| **Language Model**     | LLM resource used for generating summaries, descriptions, and other text-based processing tasks within the pipeline.                                                      |
-| **Node**               | A processed chunk of a document that has been parsed, embedded, and prepared for storage in a vector database for retrieval operations.                                   |
-| **Observable Asset**   | A Dagster asset that monitors external systems for changes and reports new partitions, triggering downstream processing when new data is available.                       |
-| **Operation (Op)**     | A Dagster concept representing a single unit of computation that takes inputs and produces outputs, forming the building blocks of pipeline workflows.                    |
-| **Partition**          | A subset of data that can be processed independently, typically representing individual documents or time-based slices of data.                                           |
-| **Pipeline**           | A complete data processing workflow that transforms source data through multiple stages to produce final outputs, typically from document ingestion to vector embeddings. |
-| **RefDoc**             | A reference document that serves as the authoritative source for a particular piece of content, stored in the document store with associated metadata.                    |
-| **Resource**           | A Dagster concept for managing external dependencies and configurations (databases, APIs, models) that are shared across multiple operations.                             |
-| **Run Config**         | Configuration object that specifies how a particular pipeline run should be executed, including resource configurations and parameter values.                             |
-| **Sensor**             | A Dagster component that monitors external systems or schedules and triggers pipeline runs based on specific conditions or time intervals.                                |
-| **Share Point File**   | A document retrieved from Microsoft SharePoint, containing raw content and metadata that serves as input for the data processing pipeline.                                |
-| **Summary Node**       | A processed document chunk that contains summarized information, created using recursive summarization techniques for better context preservation.                        |
-| **Vector Store**       | A database optimized for storing and searching high-dimensional vectors, supporting similarity search operations for RAG applications.                                    |

@@ -17,7 +17,7 @@ Bevor wir beginnen, stellen Sie sicher, dass Sie diese Tools installiert haben:
 **Wesentliche Tools:**
 
 - **Python 3.13** - Das SDK erfordert Python 3.13 für alle Komponenten
-- **Poetry** - Für das Abhängigkeitsmanagement und virtuelle Umgebungen
+- **uv** - Für das Abhängigkeitsmanagement und virtuelle Umgebungen
 - **Docker & Docker Compose** - Zum Betrieb der Plattforminfrastruktur
 - **make** - Zum Ausführen gängiger Entwicklungsbefehle
 
@@ -32,7 +32,7 @@ Bevor wir beginnen, stellen Sie sicher, dass Sie diese Tools installiert haben:
 
 ```bash
 python --version    # Should show 3.13.x
-poetry --version    # Any recent version
+uv --version        # Any recent version
 docker --version    # Any recent version
 make --version      # Any version
 ```
@@ -44,10 +44,10 @@ make --version      # Any version
 
 Erstellen Sie ein neues Python-Projekt und öffnen Sie ein Terminal im Stammverzeichnis dieses Projekts.
 
-Initialisieren Sie ein neues Poetry-Projekt:
+Initialisieren Sie ein neues uv-Projekt:
 
 ```bash
-poetry init --no-interaction
+uv init
 ```
 
 ### Schritt 2: Installieren Sie das AI-Hub CLI
@@ -55,7 +55,7 @@ poetry init --no-interaction
 Das CLI-Tool automatisiert die meisten Einrichtungsaufgaben:
 
 ```bash
-poetry add --group dev aihub-cli
+uv add --dev aihub-cli
 ```
 
 ### Schritt 3: Generieren Sie die Plattforminfrastruktur
@@ -63,7 +63,7 @@ poetry add --group dev aihub-cli
 Erstellen Sie den Entwicklungs-Infrastruktur-Stack:
 
 ```bash
-poetry run aihub generate-compose
+uv run aihub generate-compose
 ```
 
 Dies erstellt die Datei `docker-compose.platform.dev.yml` mit allen benötigten Services: NATS Messaging, MongoDB, Redis,
@@ -74,7 +74,7 @@ Vektordatenbanken und den AI-Hub Plattformkomponenten.
 Generieren Sie die Umgebungskonfiguration:
 
 ```bash
-poetry run aihub generate-env
+uv run aihub generate-env
 ```
 
 Dies erstellt die Datei `.env.core` mit sinnvollen Standardeinstellungen. Sie sehen Platzhalterwerte für die
@@ -109,7 +109,7 @@ verwendet werden.
 Erstellen Sie Ihren ersten benutzerdefinierten Agenten:
 
 ```bash
-poetry run aihub new-agent my_custom_agent
+uv run aihub new-agent my_custom_agent
 ```
 
 Dies erstellt eine vollständige Agentenstruktur:
@@ -145,7 +145,7 @@ Dieser Agent demonstriert die Kernmuster des SDK:
 Generieren Sie eine Docker-Compose-Datei, die Ihren Agenten enthält:
 
 ```bash
-poetry run aihub generate-agent-compose --with-agent my_custom_agent
+uv run aihub generate-agent-compose --with-agent my_custom_agent
 ```
 
 Dies erstellt die Datei `docker-compose-agents.dev.yml` mit Ihrem Agenten, der für die Entwicklung konfiguriert ist (Hot

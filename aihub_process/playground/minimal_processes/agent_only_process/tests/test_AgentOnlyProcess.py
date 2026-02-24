@@ -24,7 +24,6 @@ def agent_a_runner_fixture():
         agent_type=AgentA,
         agent_config=AgentConfig(
             agent_id="agent_a",
-            agent_class=AgentA.__name__,
             name=LocaleString(en="Agent A"),
             description=LocaleString(en="Test Agent A for AgentOnlyProcess"),
         ),
@@ -37,7 +36,6 @@ def agent_b_runner_fixture():
         agent_type=AgentB,
         agent_config=AgentConfig(
             agent_id="agent_b",
-            agent_class=AgentB.__name__,
             name=LocaleString(en="Agent B"),
             description=LocaleString(en="Test Agent B for AgentOnlyProcess"),
         ),
@@ -50,7 +48,6 @@ def process_runner_fixture():
         process_type=AgentOnlyProcess,
         process_config=ProcessConfig(
             process_id="agent_only_process",
-            process_class=AgentOnlyProcess.__name__,
             name=LocaleString(en="Agent Only Process"),
             description=LocaleString(en="Test Agent Only Process with AgentA and AgentB"),
         ),

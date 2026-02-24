@@ -1,56 +1,43 @@
-[tool.poetry]
-name = "aihub_bot"
-version = "v0.262.3"
+[project]
+name = "aihub-bot"
+version = "0.265.3"
 description = "bots core"
+requires-python = ">=3.13, <3.14"
 authors = [
-    "Joel Barmettler <joel.barmettler@bbv.ch>",
-    "Marius Högger <marius.hoegger@bbv.ch>",
-    "Michèle Fundneider <michele.fundneider@bbv.ch>",
-    "Thomas Mannhart <thomas.mannhart@bbv.ch>",
-    "Noah Hermann <noah.hermann@bbv.ch>",
+    { name = "Joel Barmettler", email = "joel.barmettler@bbv.ch" },
+    { name = "Marius Högger", email = "marius.hoegger@bbv.ch" },
+    { name = "Michèle Fundneider", email = "michele.fundneider@bbv.ch" },
+    { name = "Thomas Mannhart", email = "thomas.mannhart@bbv.ch" },
+    { name = "Noah Hermann", email = "noah.hermann@bbv.ch" },
 ]
-license = "Proprietary"
+license = "LicenseRef-Proprietary"
+dependencies = [
+    "aihub-core",
+    "azure-identity>=1.19.0",
+    "azure-mgmt-cosmosdb>=9.7.0",
+    "azure-mgmt-resource>=23.2.0",
+    "uvicorn>=0.34.0",
+    "httpx>=0.28.1",
+    "cryptography>=44.0.0",
+    "pyjwt>=2.10.1",
+    "microsoft-agents-hosting-core>=0.5.0",
+    "microsoft-agents-hosting-aiohttp>=0.5.0",
+    "microsoft-agents-activity>=0.5.0",
+    "microsoft-agents-authentication-msal>=0.5.0",
+    "gunicorn>=23.0.0",
+]
 
-[tool.poetry.dependencies]
-python = ">=3.13, <3.14"
-pydantic = "^2.10.3"
-nats-py = "^2.9.0"
-colorlog = "^6.9.0"
-fastapi = "^0.128.0"
-cachetools = "^5.5.0"
-mongoengine = "^0.29.1"
-azure-identity = "^1.19.0"
-azure-mgmt-cosmosdb = "^9.7.0"
-azure-mgmt-resource = "^23.2.0"
-uvicorn = "^0.34.0"
-httpx = "^0.28.1"
-cryptography = "^44.0.0"
-pyjwt = "^2.10.1"
-microsoft-agents-hosting-core = "^0.5.0"
-microsoft-agents-hosting-aiohttp = "^0.5.0"
-microsoft-agents-activity = "^0.5.0"
-microsoft-agents-authentication-msal = "^0.5.0"
-gunicorn = "^23.0.0"
-
-[tool.poetry.group.dev.dependencies]
-pytest = "^8.4.1"
-pytest-asyncio = "^0.24.0"
-ruff = "^0.8.1"
-mypy = "^1.13.0"
-toml-sort = "^0.24.2"
-black = { extras = ["jupyter"], version = "^25.1.0" }
-pytest-bdd = "^8.1.0"
-pytest-cov = "^6.0.0"
-asgi-lifespan = "^2.1.0"
-pip-licenses = "^5.0.0"
-
-[tool.poetry.dependencies.aihub_lib]
-path = "../aihub_lib"
-develop = true
+[dependency-groups]
+dev = [
+    "asgi-lifespan>=2.1.0",
+]
 
 [build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["uv_build>=0.10.4,<0.11.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-root = ""
 
 [tool.ruff]
 line-length = 120
@@ -82,4 +69,3 @@ markers = [
     "flaky: Tests that are unreliable or timing-dependent (skipped in CI)",
     "azure: Tests requiring Azure credentials",
 ]
-

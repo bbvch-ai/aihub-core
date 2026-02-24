@@ -53,7 +53,5 @@ source_remote=f"{s3.name}:my-bucket-name/path/to/folder"
 **4. Run Pipeline**
 
 ```bash
-poetry run dagster dev -f pipeline.py
+uv run dagster dev -f pipeline.py
 ```
-
-Open http://localhost:3000

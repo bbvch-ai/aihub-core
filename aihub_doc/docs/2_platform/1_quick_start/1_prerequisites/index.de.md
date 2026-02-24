@@ -283,7 +283,7 @@ Nach Abschluss der Azure-Einrichtung sollten Sie folgendes haben:
 
 Sie benötigen diese Werte während der Konfiguration des Plattform-Deployments.
 
----
+______________________________________________________________________
 
 ## Voraussetzungen für das Produktions-Deployment
 
@@ -313,11 +313,11 @@ Subdomains, die auf die IP-Adresse Ihres Servers zeigen.
 - Die VM muss in der Lage sein, ihre eigenen Domainnamen aufzulösen (interne DNS-Auflösung).
 - Konfigurieren Sie die Nameserver korrekt, um OAuth-Authentifizierungs-Timeouts zu vermeiden.
 
-Siehe [Netzwerkanforderungen](/de/docs/3_deployment_guide/7_network_requirements/) für detaillierte DNS-Konfiguration
-und Fehlerbehebung.
+Siehe [Netzwerkanforderungen](../../3_deployment_guide/7_network_requirements/) für detaillierte DNS-Konfiguration und
+Fehlerbehebung.
 :::
 
----
+______________________________________________________________________
 
 ## Voraussetzungen für das lokale Deployment
 
@@ -374,9 +374,9 @@ installiert automatisch eine lokale Zertifizierungsstelle (CA) in Ihrem System-T
 generierten Zertifikate von Ihrem Browser als vertrauenswürdig eingestuft werden.
 :::
 
----
+______________________________________________________________________
 
 ## Nächste Schritte
 
-Fahren Sie mit dem [One-Command-Deployment](/de/docs/2_deployment_guide/2_one_command_deployment/) fort, um die
-Plattform mithilfe der aufgezeichneten Konfigurationswerte zu deployen.
+Fahren Sie mit dem [One-Command-Deployment](../2_one_command_deployment/) fort, um die Plattform mithilfe der
+aufgezeichneten Konfigurationswerte zu deployen.

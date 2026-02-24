@@ -8,7 +8,7 @@
     "aihub_pipeline"
   ],
   "web_project": "aihub_web/aihub_web",
-  "output_file": "LICENSES.md",
+  "output_file": "LICENSE_REPORT.md",
   "own_images": [
     "api",
     "web",
@@ -24,7 +24,9 @@
     "rag_agent",
     "expert_rag_agent",
     "expert_asking_agent",
-    "namespace_selection_agent"
+    "namespace_selection_agent",
+    "mineru-api",
+    "mineru-vlm"
   ],
   "license_categories": {
     "restrictive": [
@@ -69,7 +71,6 @@
     "anyio": "MIT",
     "attrs": "MIT",
     "banks": "BSD-3-Clause",
-    "docling-core": "MIT",
     "griffe": "ISC",
     "jsonschema": "MIT",
     "llama-index-core": "MIT",
@@ -142,6 +143,12 @@
       "license": "MIT",
       "status": "✅",
       "notes": "MIT license per GitHub repo; npm reports Unknown due to missing license field."
+    },
+    {
+      "name": "yamlfix",
+      "license": "GPL-3.0",
+      "status": "✅",
+      "notes": "Dev-only YAML formatting tool; not distributed in production builds."
     }
   ],
   "docker_licenses": [
@@ -251,18 +258,6 @@
     {
       "service": "playwright",
       "license": "Apache-2.0",
-      "status": "✅",
-      "notes": "Permissive license"
-    },
-    {
-      "service": "docling",
-      "license": "MIT",
-      "status": "✅",
-      "notes": "Permissive license"
-    },
-    {
-      "service": "docling-serve",
-      "license": "MIT",
       "status": "✅",
       "notes": "Permissive license"
     },

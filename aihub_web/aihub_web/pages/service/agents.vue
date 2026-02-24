@@ -1,10 +1,20 @@
 <template>
   <StructuralScreen>
     <StructuralColumn
+      v-if="!isTemplatesRoute"
       :title="t('agent.title')"
       :loading="isLoading"
+      size="large"
     >
-      <div class="flex flex-col gap-12">
+      <SelectButton
+        :model-value="activeNavItem"
+        :options="navItems"
+        data-key="key"
+        option-label="name"
+        size="small"
+        @update:model-value="toNavItem"
+      />
+      <div class="flex flex-col gap-12 pt-4">
         <div
           v-for="group in groupedAgents"
           :key="group.agentClass"
@@ -25,12 +35,13 @@
               {{ group.description }}
             </span>
           </div>
-          <div class="grid grid-cols-2 gap-4 2xl:grid-cols-2">
+          <div class="grid grid-cols-3 gap-4">
             <AgentCard
               v-for="agent in group.instances"
               :key="`${agent.agent_class}-${agent.agent_id}`"
               :agent="agent"
               @click="() => toAgent(agent)"
+              @clone="handleClone"
             />
             <AgentEmptyCard
               v-if="group.isAvailable"
@@ -42,6 +53,7 @@
       <AgentCreateModal
         v-model="createModalOpen"
         :initial-class="selectedClassForCreate"
+        :initial-data="initialDataForCreate"
         @success="handleCreateSuccess"
       />
     </StructuralColumn>
@@ -56,19 +68,30 @@ import type { FullAgentInstanceDto } from '@core/sdk/client'
 import { useLocalePath } from '#i18n'
 
 const router = useRouter()
+const route = useRoute()
 const localePath = useLocalePath()
 const { t, locale } = useI18n()
 
 const { agentInstances, agentInstancesAreLoading } = useAgentInstances()
 const { agentClasses, agentClassesAreLoading } = useAgentClasses()
+const { navItems, activeNavItem, toNavItem } = useAgentNavigation()
 
 const isLoading = computed(() => agentInstancesAreLoading.value || agentClassesAreLoading.value)
+const isTemplatesRoute = computed(() => route.path.includes('/service/agents/templates'))
 
 const createModalOpen = ref(false)
 const selectedClassForCreate = ref('')
+const initialDataForCreate = ref<Record<string, unknown> | null>(null)
 
 const openCreateModal = (agentClass: string) => {
   selectedClassForCreate.value = agentClass
+  initialDataForCreate.value = null
+  createModalOpen.value = true
+}
+
+const handleClone = (agent: FullAgentInstanceDto) => {
+  selectedClassForCreate.value = agent.agent_class
+  initialDataForCreate.value = agent.configuration ?? null
   createModalOpen.value = true
 }
 
@@ -106,7 +129,6 @@ const groupedAgents = computed(() => {
         existing.instances.push(agent)
       }
       else {
-        // Class not available - create group but mark as unavailable
         groups.set(agent.agent_class, {
           agentClass: agent.agent_class,
           name: agent.agent_class,
@@ -128,7 +150,6 @@ const toAgent = (agent: FullAgentInstanceDto) => {
 }
 
 const handleCreateSuccess = (agentClass: string, agentId: string) => {
-  // Navigate to the newly created agent
   router.push(localePath(`/service/agents/${agentClass}-${agentId}/overview`))
 }
 </script>

@@ -144,7 +144,7 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
                     human_inputs=process_class_dto.human_inputs,
                     program_inputs=process_class_dto.program_inputs,
                     agent_inputs=process_class_dto.agent_inputs,
-                    default_process_config=process_class_dto.default_process_config,
+                    templates=[t.model_dump() for t in response.templates],
                 )
 
         return list(unique_classes_dict.values())
@@ -154,10 +154,10 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
         process_class = process_class_dto.process_class
 
         for human_input in process_class_dto.human_inputs:
-            self._register_human_endpoint(process_class, human_input, process_class_dto.default_process_config)
+            self._register_human_endpoint(process_class, human_input)
 
         for program_input in process_class_dto.program_inputs:
-            self._register_program_endpoint(process_class, program_input, process_class_dto.default_process_config)
+            self._register_program_endpoint(process_class, program_input)
 
     def _get_endpoint_base_path_for_process_class(self, process_class: str) -> str:
         """Returns the base path for class-level endpoints with dynamic {process_id} path parameter."""
@@ -178,7 +178,6 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
         self,
         process_class: str,
         human_input: HumanInSpecs,
-        default_process_config: ProcessConfig,
     ):
         """Register endpoints that allow humans to interact with a process by getting and submitting forms."""
         base_path = self._get_endpoint_base_path_for_process_class(process_class)
@@ -224,7 +223,6 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
                 process_class=process_class,
                 process_controller=self.controller,
                 input_specs=human_input,
-                default_process_config=default_process_config,
             ),
             methods=[human_input.method],
             name=post_endpoint_name,
@@ -236,7 +234,6 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
         self,
         process_class: str,
         program_input: ProgramInSpecs,
-        default_process_config: ProcessConfig,
     ):
         """Register endpoints that allow programs to interact with a process submitting data."""
         base_path = self._get_endpoint_base_path_for_process_class(process_class)
@@ -261,7 +258,6 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
                 process_class=process_class,
                 process_controller=self.controller,
                 input_specs=program_input,
-                default_process_config=default_process_config,
             ),
             methods=[program_input.method],
             name=post_endpoint_name,
@@ -363,7 +359,6 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
         process_class: str,
         process_controller: ProcessController,
         input_specs: HumanInSpecs | ProgramInSpecs,
-        default_process_config: ProcessConfig,
     ):
         """Create an endpoint to submit a form for starting a process."""
 
@@ -388,10 +383,8 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
             process_config = ProcessConfig(
                 process_class=config_entity.process_class,
                 process_id=config_entity.process_id,
-                name=config_entity.name if config_entity.name else default_process_config.name,
-                description=config_entity.description
-                if config_entity.description
-                else default_process_config.description,
+                name=config_entity.name,
+                description=config_entity.description,
             )
 
             return await ProcessService.submit_process_start_form(
@@ -414,7 +407,6 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
         process_class: str,
         process_controller: ProcessController,
         input_specs: HumanInSpecs | ProgramInSpecs,
-        default_process_config: ProcessConfig,  # Used for fallback values
     ):
         """Create an endpoint to submit a form for continuing a process."""
 

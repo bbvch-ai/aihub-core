@@ -1,27 +1,22 @@
+---
 name: Build and Release Dagster
-
 on:
   repository_dispatch:
-    types: [ release-ready ]
+    types: [release-ready]
   workflow_dispatch:
     inputs:
       release_version:
-          description: 'Docker image release version'
-          required: true
-          default: "manual"
+        description: Docker image release version
+        required: true
+        default: manual
       secondary_tag:
-          description: 'Secondary tag to apply (optional), [nightly, latest, *empty*]'
-          required: false
-          default: ''
-          options:
-            - ''
-            - nightly
-            - latest
-
+        description: Secondary tag to apply (optional), [nightly, latest, *empty*]
+        required: false
+        default: ''
+        options: ['', nightly, latest]
 permissions:
   contents: write
   packages: write
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -33,7 +28,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
       - name: Extract Tag / Version
         id: get_tag
         run: |
@@ -52,9 +46,7 @@ jobs:
             echo "❌ No release_version provided. Failing."
             exit 1
           fi
-
           echo "tag=$TAG_NAME" >> $GITHUB_OUTPUT
-
       - name: build and release docker image
         uses: ./aihub_action/build_image
         with:

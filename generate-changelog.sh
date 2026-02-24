@@ -17,7 +17,7 @@ EXCLUDE_PATTERNS=(
     ':(exclude)*-lock.yaml'
     ':(exclude)pnpm-lock.yaml'
     ':(exclude)aihub_web/aihub_web/sdk/**'
-    ':(exclude)LICENSES.md'
+    ':(exclude)LICENSE_REPORT.md'
     ':(exclude)licenses.config.json'
     ':(exclude)*.drawio'
 )
@@ -49,7 +49,7 @@ if [ ! -f "$SYSTEM_PROMPT_FILE" ]; then
     exit 1
 fi
 if ! command -v llm &> /dev/null; then
-    echo "Error: 'llm' command not found. Please install using 'pipx install llm'." >&2
+    echo "Error: 'llm' command not found. Please install using 'uv tool install llm'." >&2
     exit 1
 fi
 if ! git rev-parse --is-inside-work-tree > /dev/null 2>&1; then

@@ -59,7 +59,7 @@ beurteilen, ob überwiegende berechtigte Interessen vorliegen.
 - [Schweizer DSG](../3_dsg/)
 - [Datenaufbewahrung](../1_data_retention/)
 
----
+______________________________________________________________________
 
 :::info Rechtlicher Hinweis
 Dies ist eine technische Dokumentation, keine Rechtsberatung. Konsultieren Sie Ihren Datenschutzbeauftragten oder

@@ -33,7 +33,7 @@ def refine_document_tables_with_metadata(markdown_text: str, llm_config: "LLMCon
     - Detect multi-row headers
     - Split incorrectly merged tables
 
-    Tables must already be wrapped in <table> tags (as produced by DoclingLoader).
+    Tables must already be wrapped in <table> tags (as produced by the document loaders).
     """
     matches = list(TABLE_PATTERN.finditer(markdown_text))
 
