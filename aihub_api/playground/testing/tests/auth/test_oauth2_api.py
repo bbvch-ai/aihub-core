@@ -170,7 +170,7 @@ async def oauth2_api_client():
 async def test_get_user_with_valid_oauth2_token(
     oauth2_api_client, valid_oauth2_token, expected_user_data, setup_test_user
 ):
-    """Test GET /account returns expected user data with a valid OAuth2 token."""
+    """Test GET /my-account returns expected user data with a valid OAuth2 token."""
     headers = {
         "Authorization": f"Bearer {valid_oauth2_token}",
         "Content-Type": "application/json",
@@ -191,7 +191,7 @@ async def test_get_user_with_valid_oauth2_token(
 
 @pytest.mark.asyncio
 async def test_get_user_with_invalid_oauth2_token(oauth2_api_client):
-    """Test GET /account returns an error for an invalid OAuth2 token."""
+    """Test GET /my-account returns an error for an invalid OAuth2 token."""
     headers = {
         "Authorization": "Bearer invalid.token.value",
         "Content-Type": "application/json",

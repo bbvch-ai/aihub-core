@@ -46,7 +46,7 @@ async def api_client():
 
 @pytest.mark.asyncio
 async def test_get_user_endpoint(api_client):
-    """Test GET /account returns expected user data."""
+    """Test GET /my-account returns expected user data."""
     headers = {"Content-Type": "application/json"}
     response = await api_client.get(USER_ENDPOINT, headers=headers)
     assert response.status_code == 200, f"Expected status code 200, got {response.status_code}"
@@ -84,7 +84,7 @@ async def test_user_dto_structure(api_client):
     ],
 )
 async def test_user_endpoint_different_headers(api_client, headers):
-    """Test GET /account with various headers."""
+    """Test GET /my-account with various headers."""
     response = await api_client.get(USER_ENDPOINT, headers=headers)
     assert response.status_code == 200
     assert "id" in response.json()

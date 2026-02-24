@@ -95,7 +95,7 @@ async def token_api_client():
 
 @pytest.mark.asyncio
 async def test_get_user_with_valid_token(token_api_client, valid_token, expected_user_data):
-    """Test GET /account with a valid token returns expected user data."""
+    """Test GET /my-account with a valid token returns expected user data."""
     headers = {
         "Authorization": f"Bearer {valid_token}",
         "Content-Type": "application/json",
@@ -115,7 +115,7 @@ async def test_get_user_with_valid_token(token_api_client, valid_token, expected
 
 @pytest.mark.asyncio
 async def test_get_user_with_invalid_token(token_api_client):
-    """Test GET /account with an invalid token returns 401 or 403."""
+    """Test GET /my-account with an invalid token returns 401 or 403."""
     headers = {
         "Authorization": "Bearer invalid.token.value",
         "Content-Type": "application/json",
