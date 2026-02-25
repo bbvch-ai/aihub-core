@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.266.5] - 2026-02-25 - Milvus Compatibility Update
+
+### Fixed
+
+- 🐛 **Resolved Milvus Resource Initialization:** Addressed an issue where the **MilvusVectorStoreResource** could fail
+  to initialize in synchronous environments (e.g., Dagster resource creation) when using `pymilvus 2.6+`. This was due
+  to `pymilvus`'s internal reliance on an `asyncio` event loop during initialization, and the fix ensures a loop is
+  present to allow for seamless and robust resource setup.
+
+______________________________________________________________________
+
 ## [v0.266.4] - 2026-02-25 - Port Harmonization for Streamlined Local Development
 
 ### Changed
