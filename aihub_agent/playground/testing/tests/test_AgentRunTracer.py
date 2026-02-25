@@ -179,6 +179,7 @@ class TestTraceStepStop:
         semantic_event.output_messages = [MagicMock(content="final answer")]
         semantic_event.token_count_prompt = None
         semantic_event.token_count_completion = None
+        semantic_event.token_count_total = None
 
         mock_span = MagicMock()
         await tracer.trace_step_stop(mock_span, [semantic_event], topic)
