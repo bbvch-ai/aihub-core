@@ -18,7 +18,7 @@ def create_figures_folder_name(uri: str) -> str:
 def encode_partition_key(path: str) -> str:
     """URL-encode a file path for use as a Dagster partition key.
 
-    Reversible via ``decode_partition_key``. Preserves ``/`` separators.
+    Reversible via ``decode_partition_key``. Preserves ``/`` separators and ``:`` for URI scheme prefixes.
     """
     return quote(path, safe="/:")
 

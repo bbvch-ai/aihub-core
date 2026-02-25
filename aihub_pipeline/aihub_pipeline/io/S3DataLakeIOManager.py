@@ -133,10 +133,8 @@ class S3DataLakeIOManager(ConfigurableIOManager):
     def load_input(self, context: InputContext) -> DataLakeFile | list[DataLakeFile]:
         if context.has_partition_key:
             partition_key = context.partition_key
-            if self.encode_partition_keys:
-                uri = decode_partition_key(partition_key)
-                return self._load_data_lake_file_from_uri(context, uri)
-            return self._load_data_lake_file_from_uri(context, partition_key)
+            uri = decode_partition_key(partition_key) if self.encode_partition_keys else partition_key
+            return self._load_data_lake_file_from_uri(context, uri)
         else:
             upstream_output = context.upstream_output
             partitions_def = upstream_output.asset_partitions_def
