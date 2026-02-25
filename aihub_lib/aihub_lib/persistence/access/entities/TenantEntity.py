@@ -1,9 +1,8 @@
-from __future__ import annotations
-
 from datetime import UTC, datetime
-from uuid import uuid4
+from typing import Self
 
-from mongoengine import BooleanField, DateTimeField, Document, ListField, StringField
+from bson import ObjectId
+from mongoengine import BooleanField, DateTimeField, Document, ListField, NotUniqueError, StringField
 
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 
@@ -27,7 +26,6 @@ class TenantEntity(Document):
         ],
     }
 
-    id = StringField(primary_key=True, default=lambda: str(uuid4()))
     name = StringField(required=True, unique=True)
     description = StringField(default="")
     access_rules = ListField(StringField(), default=list)
@@ -37,19 +35,21 @@ class TenantEntity(Document):
 
     @classmethod
     @trace_fn
-    def get_tenant_by_id(cls, tenant_id: str) -> TenantEntity | None:
+    def get_tenant_by_id(cls, tenant_id: str) -> Self | None:
         """Fetches a tenant by its ID. Returns None if the tenant does not exist."""
+        if not ObjectId.is_valid(tenant_id):
+            return None
         return cls.objects(id=tenant_id).first()
 
     @classmethod
     @trace_fn
-    def get_tenant_by_name(cls, name: str) -> TenantEntity | None:
+    def get_tenant_by_name(cls, name: str) -> Self | None:
         """Fetches a tenant by its name. Returns None if the tenant does not exist."""
         return cls.objects(name=name).first()
 
     @classmethod
     @trace_fn
-    def get_default_tenant(cls) -> TenantEntity | None:
+    def get_default_tenant(cls) -> Self | None:
         """Fetches the default tenant. Returns None if no default tenant exists."""
         return cls.objects(is_default=True).first()
 
@@ -61,7 +61,7 @@ class TenantEntity(Document):
         description: str = "",
         access_rules: list[str] | None = None,
         is_default: bool = False,
-    ) -> TenantEntity:
+    ) -> Self:
         """Creates a new tenant with the given parameters."""
         tenant = cls(
             name=name,
@@ -79,7 +79,7 @@ class TenantEntity(Document):
         name: str,
         description: str = "",
         access_rules: list[str] | None = None,
-    ) -> TenantEntity:
+    ) -> Self:
         """
         Ensures a default tenant exists, creating it if necessary.
 
@@ -90,38 +90,71 @@ class TenantEntity(Document):
         if existing:
             return existing
 
-        return cls.create_tenant(
-            name=name,
-            description=description,
-            access_rules=access_rules,
-            is_default=True,
-        )
+        try:
+            return cls.create_tenant(
+                name=name,
+                description=description,
+                access_rules=access_rules,
+                is_default=True,
+            )
+        except NotUniqueError:
+            existing = cls.get_default_tenant()
+            if existing:
+                return existing
+            raise
 
+    @classmethod
+    @trace_fn
     def update_tenant(
-        self,
+        cls,
+        tenant_id: str,
         name: str | None = None,
         description: str | None = None,
         access_rules: list[str] | None = None,
-    ) -> TenantEntity:
-        """Updates the tenant with the given parameters."""
+    ) -> Self | None:
+        """
+        Updates an existing tenant. Returns the updated tenant or None if not found.
+
+        Only provided fields are updated. Pass None to skip updating a field.
+        """
+        tenant = cls.get_tenant_by_id(tenant_id)
+        if not tenant:
+            return None
+
         if name is not None:
-            self.name = name
+            tenant.name = name
         if description is not None:
-            self.description = description
+            tenant.description = description
         if access_rules is not None:
-            self.access_rules = access_rules
-        self.updated_at = datetime.now(UTC)
-        self.save()
-        return self
+            tenant.access_rules = access_rules
+
+        tenant.updated_at = datetime.now(UTC)
+        tenant.save()
+        return tenant
 
     @classmethod
     @trace_fn
-    def count_tenants(cls) -> int:
-        """Count the total number of tenants."""
-        return cls.objects.count()
+    def delete_tenant(cls, tenant_id: str) -> bool:
+        """
+        Deletes a tenant by its ID. Returns True if deleted, False if not found.
 
-    @classmethod
-    @trace_fn
-    def get_all_tenants(cls) -> list[TenantEntity]:
-        """Get all tenants, ordered by name."""
-        return list(cls.objects.order_by("name"))
+        Cascades to delete all associated UserTenantRoleEntity and tenant-scoped RoleEntity records.
+        The default tenant cannot be deleted - attempting to do so will raise ValueError.
+        """
+        # Runtime import: TenantEntity ↔ RoleEntity/UserTenantRoleEntity mutual reference for cascade deletes
+        from aihub_lib.persistence.access.entities.RoleEntity import RoleEntity
+        from aihub_lib.persistence.access.entities.UserTenantRoleEntity import UserTenantRoleEntity
+
+        tenant = cls.get_tenant_by_id(tenant_id)
+        if not tenant:
+            return False
+
+        if tenant.is_default:
+            raise ValueError("Cannot delete the default tenant")
+
+        # Cascade: remove all user-tenant-role associations and tenant-scoped roles
+        UserTenantRoleEntity.objects(tenant_id=tenant_id).delete()
+        RoleEntity.objects(tenant_id=tenant_id).delete()
+
+        tenant.delete()
+        return True

@@ -4,6 +4,7 @@ from fastapi import HTTPException, Request, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from mongoengine import DoesNotExist
 
+from aihub_lib.auth.dependencies.BearerAuthHandler import BearerAuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.persistence.access.entities.BearerToken import BearerToken
 from aihub_lib.persistence.user.UserEntity import UserEntity
@@ -11,7 +12,7 @@ from aihub_lib.persistence.user.UserEntity import UserEntity
 logger = logging.getLogger(__name__)
 
 
-class TokenAuthHandler:
+class TokenAuthHandler(BearerAuthHandler):
     """
     A FastAPI dependency for token-based authentication.
 
@@ -23,10 +24,14 @@ class TokenAuthHandler:
         self, request: Request, bearer_token: HTTPAuthorizationCredentials = Security(HTTPBearer())
     ) -> UserIdentity:
         token_str = bearer_token.credentials
-        return await self.authenticate_token(token_str)
+        return await self.authenticate_token(token_str, request)
 
-    async def authenticate_token(self, token_str: str) -> UserIdentity:
-        """Authenticates a user using a bearer token string."""
+    async def authenticate_token(self, token_str: str, request: Request | None = None) -> UserIdentity:
+        """
+        Authenticates a user using a bearer token string.
+
+        Resolves tenant context from the optional request parameter or uses the default tenant.
+        """
         if not token_str:
             raise HTTPException(status_code=401, detail="Token missing.")
 
@@ -41,4 +46,11 @@ class TokenAuthHandler:
         except DoesNotExist:
             raise HTTPException(status_code=401, detail="User not found.")
 
-        return UserIdentity.from_user_entity(user)
+        # Resolve tenant context from request or use default
+        if request:
+            tenant = self.resolve_tenant_for_user(request, user.id)
+        else:
+            # Fallback for contexts without request (e.g., WebSocket)
+            tenant = self.get_default_tenant_for_user(user.id)
+
+        return UserIdentity.from_user_entity(user, tenant)

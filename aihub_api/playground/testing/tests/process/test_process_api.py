@@ -10,6 +10,8 @@ from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.persistence.process.ProcessClassEntity import HumanInSpecsEntity, ProcessClassEntity
 from aihub_lib.persistence.process.ProcessConfigEntityDocument import ProcessConfigEntityDocument
 from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_methods  # noqa: F401
+from aihub_lib.testing.auth_utils.tenant_mocks import mock_tenant_entity_autouse  # noqa: F401
+from aihub_lib.testing.auth_utils.user_mocks import mock_user_entity_autouse  # noqa: F401
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
 

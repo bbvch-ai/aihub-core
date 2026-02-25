@@ -12,10 +12,13 @@ from pytest_bdd import given, parsers, scenarios, then, when
 
 from aihub_lib.auth.dependencies.OpenWebuiAuthHandler.OpenWebuiAuthHandler import OpenWebuiAuthHandler
 from aihub_lib.auth.dependencies.TokenAuthHandler.TokenAuthHandler import TokenAuthHandler
+from aihub_lib.auth.identity.TenantIdentity import TenantIdentity
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.persistence.access.entities.BearerToken import BearerToken
+from aihub_lib.persistence.access.entities.TenantEntity import TenantEntity
+from aihub_lib.persistence.access.entities.UserTenantRoleEntity import UserTenantRoleEntity
 from aihub_lib.persistence.user.UserEntity import UserEntity
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 
@@ -29,6 +32,14 @@ def mongo_connection(monkeypatch: pytest.MonkeyPatch) -> Generator[None]:
         db=AIHubSettings().MONGO_MAIN_DB_NAME,
         host=MongoSettings().CONNECTION_STRING.get_secret_value(),
     )
+
+    # Ensure default tenant exists for multi-tenant auth tests
+    TenantEntity.ensure_default_tenant_exists(
+        name="Default Tenant",
+        description="Default tenant for testing",
+        access_rules=["aihub.admin.>"],
+    )
+
     yield
     disconnect()
 
@@ -130,6 +141,25 @@ def insert_token_document(
     cleanup_document.append(user)
     cleanup_document.append(token_doc)
 
+    # Assign user to default tenant (skip role validation for test data)
+    default_tenant = TenantEntity.get_default_tenant()
+    if default_tenant:
+        user_tenant_role = UserTenantRoleEntity.create_or_update(
+            user_id=user_oid,
+            tenant_id=str(default_tenant.id),
+            roles=roles_list,
+            validate_roles=False,
+        )
+        cleanup_document.append(user_tenant_role)
+        tenant_identity = TenantIdentity.from_tenant_entity(default_tenant)
+    else:
+        # Fallback - create a test tenant identity
+        tenant_identity = TenantIdentity(
+            id="test-tenant",
+            name="Test Tenant",
+            access_rules=["aihub.admin.>"],
+        )
+
     # Don't rely on the Microsoft Graph API - use fallback authentication
     # The handler should use the token's user information directly
     async def mock_handler_call(
@@ -140,6 +170,7 @@ def insert_token_document(
             email=email,
             id=user_oid,
             roles=roles_list,
+            acting_within_tenant=tenant_identity,
         )
 
     # Replace the entire call method

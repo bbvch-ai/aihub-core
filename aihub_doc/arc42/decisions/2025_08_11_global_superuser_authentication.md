@@ -1,5 +1,10 @@
 # Introduce Global Superuser Authentication for Docker Compose and Backend-Only Deployments
 
+> **Partially superseded** by [2025_12_25_local_role_management](./2025_12_25_local_role_management.md): The
+> `SUPERUSER_ENABLED` toggle and `SuperuserIdentityProvider` were removed. Superuser authentication is now always
+> available (via `SuperuserAuthHandler`) and operates within a virtual `__superuser_tenant__` tenant context. The
+> `IdentityProvider` abstraction no longer exists.
+
 ## Context
 
 The AI-Hub platform faced critical authentication gaps that prevented seamless deployment and integration in two key

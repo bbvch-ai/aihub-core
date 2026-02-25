@@ -3,7 +3,7 @@ import logging
 import httpx
 import jwt
 from cachetools import TTLCache
-from fastapi import HTTPException, Security
+from fastapi import HTTPException, Request, Security
 from jwt.algorithms import RSAAlgorithm
 
 from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2Settings import OAuth2Settings
@@ -13,12 +13,11 @@ from aihub_lib.persistence.user.UserEntity import UserEntity
 logger = logging.getLogger(__name__)
 
 
-class OAuth2AuthHandler:
+class OAuth2AuthHandler(AuthHandler):
     """
     A FastAPI dependency for OAuth2 authentication via Azure AD.
 
-    Validates JWT tokens using JWKS from Microsoft Identity Platform. User data
-    is extracted directly from JWT claims - no external Graph API calls needed.
+    Validates JWT tokens. User data is extracted directly from JWT claims.
     """
 
     _jwks_cache: TTLCache = TTLCache(maxsize=100, ttl=21600)
@@ -27,8 +26,8 @@ class OAuth2AuthHandler:
     def __init__(self):
         self.config = OAuth2Settings()
 
-    async def __call__(self, oauth_token: str = Security(OAuth2Settings().SCHEMA)) -> UserIdentity:
-        return await self.authenticate_token(oauth_token)
+    async def __call__(self, request: Request, oauth_token: str = Security(OAuth2Settings().SCHEMA)) -> UserIdentity:
+        return await self.authenticate_token(oauth_token, request)
 
     async def _get_jwks(self) -> dict:
         """Retrieves the JWKS from the configured URL, using caching to minimize API calls."""
@@ -63,8 +62,10 @@ class OAuth2AuthHandler:
 
         return None
 
-    async def authenticate_token(self, oauth_token: str) -> UserIdentity:
-        """Authenticates a user using an OAuth2 token string."""
+    async def authenticate_token(self, oauth_token: str, request: Request | None = None) -> UserIdentity:
+        """
+        Authenticates a user using an OAuth2 token string.
+        """
         try:
             unverified_header = jwt.get_unverified_header(oauth_token)
             kid = unverified_header.get("kid")
@@ -101,7 +102,14 @@ class OAuth2AuthHandler:
                 email=email,
             )
 
-            return UserIdentity.from_user_entity(user_entity)
+            # Resolve tenant context from request or use default
+            if request:
+                tenant = self.resolve_tenant_for_user(request, user_entity.id)
+            else:
+                # Fallback for contexts without request (e.g., WebSocket)
+                tenant = self.get_default_tenant_for_user(user_entity.id)
+
+            return UserIdentity.from_user_entity(user_entity, tenant)
 
         except jwt.ExpiredSignatureError:
             logger.info("Token expired")
@@ -109,6 +117,9 @@ class OAuth2AuthHandler:
         except jwt.InvalidTokenError as e:
             logger.warning("Invalid token: %s", str(e))
             raise HTTPException(status_code=401, detail="Token verification failed: Invalid token")
+        except HTTPException:
+            # Re-raise HTTPExceptions as-is (e.g., from tenant resolution)
+            raise
         except httpx.HTTPError:
             logger.exception("HTTP error during token validation")
             raise HTTPException(status_code=500, detail="Authentication service unavailable")

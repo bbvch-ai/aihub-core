@@ -33,20 +33,19 @@ modify, and self-host every component.
 
 The platform is structured around a tier model that reflects how organizations typically adopt AI:
 
-**Tier 1 (Secure AI access):** A web-based chat interface provides LLM access through a unified gateway
-that routes to cloud models (LLMs) or locally hosted models (llama.cpp, vLLM).
-An admin UI handles user management, model configuration, and usage monitoring. All queries and responses stay within
-the organization's infrastructure unless external model access is explicitly configured.
+**Tier 1 (Secure AI access):** A web-based chat interface provides LLM access through a unified gateway that routes to
+cloud models (LLMs) or locally hosted models (llama.cpp, vLLM). An admin UI handles user management, model
+configuration, and usage monitoring. All queries and responses stay within the organization's infrastructure unless
+external model access is explicitly configured.
 
 **Tier 1+ (Channel integrations):** The platform extends into collaboration tools employees already use, including
-Microsoft Teams, Slack, and Outlook. The same security policies and governance controls
-apply across all channels.
+Microsoft Teams, Slack, and Outlook. The same security policies and governance controls apply across all channels.
 
 **Tier 2 (Contextual intelligence):** Dagster-orchestrated data pipelines ingest documents from sources like SharePoint
 and OneDrive, parse them with MinerU (OCR and structural extraction), chunk them semantically, generate vector
-embeddings, and store them in the vector database. Specialized agents built with the SDK can query this organizational knowledge base
-to give contextually grounded answers. The Swiss AI Agent Protocol, an event-driven communication standard over a message broker,
-governs how agents, the API gateway, and frontends exchange information.
+embeddings, and store them in the vector database. Specialized agents built with the SDK can query this organizational
+knowledge base to give contextually grounded answers. The Swiss AI Agent Protocol, an event-driven communication
+standard over a message broker, governs how agents, the API gateway, and frontends exchange information.
 
 **Tier 3 (Process orchestration):** A process engine coordinates multi-step workflows that involve AI agents, human
 decision-makers, and external systems (Power Automate, n8n, UiPath). The engine maintains process state, handles
@@ -59,19 +58,19 @@ licensed under Apache 2.0.
 
 ### Key functional requirements
 
-| Requirement                     | Description                                                                                                                                                                |
-| ------------------------------- |----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Requirement                     | Description                                                                                                                                                                 |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Self-hosted deployment          | The entire platform runs on a single server or cluster owned by the customer, with no mandatory external dependencies. Air-gapped operation with local models is supported. |
-| Model-agnostic LLM routing      | Provides a unified OpenAI-compatible API to any configured model. Switching providers requires a configuration change, not a code change.                                  |
-| Document ingestion pipeline     | Automated ingestion from cloud storage (SharePoint, OneDrive, S3, Google Drive, SFTP) through parsing, chunking, embedding, and indexing.                                  |
-| Agent SDK                       | A Python SDK for building workflow-based agents with step decorators, event-driven dispatch, and automatic observability integration.                                      |
-| Process orchestration           | Multi-step workflows that delegate tasks to agents, humans, or external programs, with state persistence and error handling.                                               |
-| Multi-channel bot integration   | Agents accessible through Microsoft Teams, Slack, and web chat, using the same backend logic and security policies.                                                        |
-| PII detection and anonymization | Intercepts requests before they reach external LLM providers, detecting and redacting personally identifiable information.                                                 |
-| Per-user cost tracking          | Track token consumption and cost per user, per agent, and per trace. Token budgets can be set per user.                                                                    |
-| Full audit trail                | Every agent step, LLM call, retrieval operation, and user interaction is logged as an immutable event in the NATS event stream and persisted to Storage.                   |
-| Role-based access control       | Hierarchical permissions with wildcard-capable permission strings scoped to specific agents and resources.                                         |
-| Internationalization            | The platform supports German, English, French, and Italian across all user-facing interfaces, agent responses, and administrative tools.                                   |
+| Model-agnostic LLM routing      | Provides a unified OpenAI-compatible API to any configured model. Switching providers requires a configuration change, not a code change.                                   |
+| Document ingestion pipeline     | Automated ingestion from cloud storage (SharePoint, OneDrive, S3, Google Drive, SFTP) through parsing, chunking, embedding, and indexing.                                   |
+| Agent SDK                       | A Python SDK for building workflow-based agents with step decorators, event-driven dispatch, and automatic observability integration.                                       |
+| Process orchestration           | Multi-step workflows that delegate tasks to agents, humans, or external programs, with state persistence and error handling.                                                |
+| Multi-channel bot integration   | Agents accessible through Microsoft Teams, Slack, and web chat, using the same backend logic and security policies.                                                         |
+| PII detection and anonymization | Intercepts requests before they reach external LLM providers, detecting and redacting personally identifiable information.                                                  |
+| Per-user cost tracking          | Track token consumption and cost per user, per agent, and per trace. Token budgets can be set per user.                                                                     |
+| Full audit trail                | Every agent step, LLM call, retrieval operation, and user interaction is logged as an immutable event in the NATS event stream and persisted to Storage.                    |
+| Role-based access control       | Hierarchical permissions with wildcard-capable permission strings scoped to specific agents and resources.                                                                  |
+| Internationalization            | The platform supports German, English, French, and Italian across all user-facing interfaces, agent responses, and administrative tools.                                    |
 
 ## Quality goals
 
@@ -79,7 +78,7 @@ The following quality goals shape the architecture. They are ordered by priority
 stakeholders (regulated Swiss organizations and the platform development team).
 
 | Priority | Quality goal                                    | Scenario                                                                                                                                                                                                                                                                                                                                                                                                              |
-| -------- | ----------------------------------------------- |-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| -------- | ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 1        | **Data sovereignty**                            | A cantonal administration deploys the platform on its own servers. No data leaves the canton's network. When external LLM access is configured, PII is redacted before the request leaves the platform. The organization can verify this by inspecting the open-source code and the network isolation configuration.                                                                                                  |
 | 2        | **Transparency and auditability**               | A compliance officer at a law firm reviews how an AI agent arrived at a recommendation. She opens the thread in the admin UI and sees every step the agent executed, every LLM call it made (including the full prompt and response), every document it retrieved, and the cost of each operation. The agent's workflow is a deterministic sequence of named steps, not an opaque chain-of-thought.                   |
 | 3        | **Vendor independence**                         | An organization currently using Azure OpenAI GPT-4o decides to switch to a locally hosted Llama model after evaluating costs. An administrator changes the model assignment in Swiss Ai Hub's configuration. No agent code changes. No data migration. The switch takes effect on the next request.                                                                                                                   |
@@ -88,13 +87,13 @@ stakeholders (regulated Swiss organizations and the platform development team).
 
 ## Stakeholders
 
-| Role                                                          | Expectations                                                                                                                                                                                                                                                                                          |
-|---------------------------------------------------------------| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Platform operators** (IT departments, system administrators) | Straightforward deployment (Docker Compose or Kubernetes). Clear operational documentation. Manageable resource requirements. Automated updates. Monitoring and alerting out of the box. No vendor dependency for day-to-day operations.                                                              |
-| **End users** (employees in client organizations)             | A chat interface that works like the consumer AI tools they already know. Access through Teams or Slack without switching applications. Fast, relevant answers grounded in company data. No need to understand the underlying infrastructure.                                                         |
-| **Agent developers** (software engineers building on the SDK) | A well-documented SDK with clear abstractions. Working examples and playground projects. Type-safe Python with modern syntax. Automatic integration with platform capabilities (tracing, cost tracking, event streaming) without boilerplate. The ability to test agents locally before deploying them. |
-| **Compliance and security officers**                          | Full audit trail for every AI interaction. Verifiable data residency (no data leaves defined boundaries). PII detection before external API calls. Role-based access control integrated with existing identity providers. Open-source code they can inspect or have audited by a third party.         |
-| **Organization leadership** (CIOs, CDOs, managing partners)   | Predictable, transparent costs (per-user and per-token tracking). No vendor lock-in (open-source, model-agnostic). Compliance with Swiss data protection law and professional secrecy obligations. A platform that scales from a pilot project to organization-wide deployment without re-architecture. |
-| **Platform developer**                                        | A codebase that supports rapid iteration (monorepo, shared libraries, automated testing). A clear boundary between platform and SDK that allows independent release cycles. Open-source distribution that builds trust in regulated markets.                                                          |
-| **Integration partners** (IT service providers)               | A platform they can deploy and operate for their own clients without deep AI expertise. Clear documentation and tooling. Clear licensing terms.                                                                                |
-| **Open-source community**                                     | Permissive licensing (Apache 2.0) for the platform. Transparent development practices (public repository, issue tracker, CI).                                          |
+| Role                                                           | Expectations                                                                                                                                                                                                                                                                                            |
+| -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Platform operators** (IT departments, system administrators) | Straightforward deployment (Docker Compose or Kubernetes). Clear operational documentation. Manageable resource requirements. Automated updates. Monitoring and alerting out of the box. No vendor dependency for day-to-day operations.                                                                |
+| **End users** (employees in client organizations)              | A chat interface that works like the consumer AI tools they already know. Access through Teams or Slack without switching applications. Fast, relevant answers grounded in company data. No need to understand the underlying infrastructure.                                                           |
+| **Agent developers** (software engineers building on the SDK)  | A well-documented SDK with clear abstractions. Working examples and playground projects. Type-safe Python with modern syntax. Automatic integration with platform capabilities (tracing, cost tracking, event streaming) without boilerplate. The ability to test agents locally before deploying them. |
+| **Compliance and security officers**                           | Full audit trail for every AI interaction. Verifiable data residency (no data leaves defined boundaries). PII detection before external API calls. Role-based access control integrated with existing identity providers. Open-source code they can inspect or have audited by a third party.           |
+| **Organization leadership** (CIOs, CDOs, managing partners)    | Predictable, transparent costs (per-user and per-token tracking). No vendor lock-in (open-source, model-agnostic). Compliance with Swiss data protection law and professional secrecy obligations. A platform that scales from a pilot project to organization-wide deployment without re-architecture. |
+| **Platform developer**                                         | A codebase that supports rapid iteration (monorepo, shared libraries, automated testing). A clear boundary between platform and SDK that allows independent release cycles. Open-source distribution that builds trust in regulated markets.                                                            |
+| **Integration partners** (IT service providers)                | A platform they can deploy and operate for their own clients without deep AI expertise. Clear documentation and tooling. Clear licensing terms.                                                                                                                                                         |
+| **Open-source community**                                      | Permissive licensing (Apache 2.0) for the platform. Transparent development practices (public repository, issue tracker, CI).                                                                                                                                                                           |

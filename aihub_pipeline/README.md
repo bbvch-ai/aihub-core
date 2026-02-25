@@ -340,7 +340,7 @@ uv run dagster dev -m playground --use-legacy-code-server-behavior
 ```
 
 ::: info Dagster Web Interface
-This starts the Dagster web interface at `http://localhost:3002` where you can:
+This starts the Dagster web interface at `http://localhost:3000` where you can:
 
 - View asset lineage and dependencies
 - Materialize assets manually
@@ -523,4 +523,3 @@ def documented_operation(context, input_data: InputType) -> OutputType:
 
     return result
 ```
-

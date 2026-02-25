@@ -33,14 +33,15 @@ Agents and pipelines can call your existing enterprise systems.
 | SOAP Services    | Customer-specific         | 443  | SOAP      | WS-Security, Basic Auth         |
 :::
 
-### Microsoft services
+### Identity provider services
 
-User authentication and management use Microsoft Entra ID.
+User authentication requires connectivity to your configured OIDC provider. The example below shows Microsoft Entra ID
+endpoints; substitute with your provider's endpoints as needed.
 
-| Service            | Endpoint                    | Purpose                            |
-| ------------------ | --------------------------- | ---------------------------------- |
-| Microsoft Entra ID | `login.microsoftonline.com` | OAuth2 user authentication         |
-| Microsoft Graph    | `graph.microsoft.com`       | User profiles and group membership |
+| Service            | Endpoint                    | Purpose                                                         |
+| ------------------ | --------------------------- | --------------------------------------------------------------- |
+| Microsoft Entra ID | `login.microsoftonline.com` | OAuth2/OIDC user authentication                                 |
+| Microsoft Graph    | `graph.microsoft.com`       | Only needed for SharePoint/OneDrive pipeline sources (not auth) |
 
 ### Inbound connections
 

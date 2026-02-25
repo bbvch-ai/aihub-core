@@ -2,15 +2,20 @@ import asyncio
 import logging
 from datetime import UTC, datetime
 
+from aihub_lib.auth.access.AccessChecker import AccessChecker
+from aihub_lib.auth.identity.TenantIdentity import TenantIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from aihub_lib.nats.events import BaseEvent
 from aihub_lib.nats.events.human_in_the_loop.request.HumanInTheLoopRequestEvent import HumanInTheLoopRequestEvent
 from aihub_lib.nats.events.human_in_the_loop.response.HumanInTheLoopResponseEvent import HumanInTheLoopResponseEvent
+from aihub_lib.persistence.access.entities.RoleEntity import RoleEntity
 from aihub_lib.persistence.messaging.entities.PersistedAgentEventEntity import PersistedAgentEventEntity
 from aihub_lib.persistence.messaging.entities.ThreadEntity import AgentInstanceRef, ThreadEntity, User
+from aihub_lib.persistence.user.UserEntity import UserEntity
 from bson import ObjectId
 from cachetools import TTLCache, cached
+from fastapi import HTTPException
 from llama_index.core.base.llms.types import AudioBlock, ImageBlock, TextBlock
 from mongoengine import DoesNotExist
 from openai.types.chat import (
@@ -47,6 +52,30 @@ class ThreadService:
     """
     A service layer that handles business logic for thread operations.
     """
+
+    @staticmethod
+    def validate_users_have_agent_access(
+        user_ids: list[str],
+        agents: list[tuple[str, str]],
+        tenant: TenantIdentity,
+    ) -> None:
+        users = UserEntity.get_by_ids(user_ids)
+        for user_id in user_ids:
+            user = users.get(user_id)
+            if not user:
+                raise HTTPException(status_code=404, detail=f"User {user_id} not found")
+
+            # If user is not in tenant, this will return an empty array
+            user_roles = user.get_roles(tenant.id)
+            access_rules = RoleEntity.get_access_rules_for_roles(user_roles, tenant.id)
+            access_checker = AccessChecker(list(access_rules), tenant_access_rules=tenant.access_rules)
+
+            for agent_class, agent_id in agents:
+                if not access_checker.has_access_to_agent(agent_class, agent_id):
+                    raise HTTPException(
+                        status_code=403,
+                        detail=f"User {user_id} does not have access to agent {agent_class}:{agent_id}",
+                    )
 
     @staticmethod
     @trace_fn

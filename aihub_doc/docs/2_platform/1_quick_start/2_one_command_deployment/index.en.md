@@ -125,7 +125,6 @@ COHERE_API_KEY=""
 # -----------------------------------------------------------------------------
 # OAuth2 / OIDC Configuration (REQUIRED)
 # -----------------------------------------------------------------------------
-AUTH_IDENTITY_PROVIDER="azure"
 OAUTH_PROVIDER_NAME="Azure AD"
 OAUTH_CLIENT_ID="REPLACE_WITH_YOUR_CLIENT_ID"
 OAUTH_CLIENT_SECRET="REPLACE_WITH_YOUR_CLIENT_SECRET"
@@ -149,7 +148,6 @@ OAUTH_CUSTOM_SIGN_IN_LOGO=""
 AUTH_OPEN_WEBUI_SIGNING_SECRET="REPLACE_WITH_RANDOM_STRING"
 
 # Superuser Configuration
-SUPERUSER_ENABLED="True"
 SUPERUSER_NAME="AI-Hub Superuser"
 SUPERUSER_EMAIL="admin@your-company.com"
 SUPERUSER_OID="REPLACE_WITH_RANDOM_STRING"

@@ -7,7 +7,14 @@ from aihub_lib.persistence.access.entities.RoleEntity import RoleEntity
 
 class AccessChecker:
     """
-    Performs authorization checks based on a user's hierarchical access rules.
+    Performs authorization checks based on tenant and user hierarchical access rules.
+
+    CRITICAL: Access is checked in TWO stages:
+    1. TENANT access check (first) - The tenant must have access to the resource
+    2. USER access check (second) - The user must have access within that tenant
+
+    If the tenant doesn't have access, the user is denied regardless of their personal permissions.
+    This ensures tenant-level access controls are always enforced.
 
     This class supports two types of checks:
     1.  Direct Check: Verifies if a user can access a specific, concrete resource.
@@ -28,14 +35,20 @@ class AccessChecker:
         - Permission Template: `aihub.user.agent.class_a.?*` -> Match, user will enter with AccessLevel.ACCESS_ADMIN
     """
 
-    def __init__(self, user_access_rules: list[str]):
-        self.valid_access_rules = self._get_validated_access_rules(user_access_rules)
-        self.admin_access_rules = {r for r in self.valid_access_rules if r.startswith("aihub.admin.")}
-        self.user_access_rules = {r for r in self.valid_access_rules if r.startswith("aihub.user.")}
+    def __init__(self, user_access_rules: list[str], tenant_access_rules: list[str]):
+        # User access rules
+        self.user_valid_access_rules = self._get_validated_access_rules(user_access_rules)
+        self.user_admin_access_rules = {r for r in self.user_valid_access_rules if r.startswith("aihub.admin.")}
+        self.user_user_access_rules = {r for r in self.user_valid_access_rules if r.startswith("aihub.user.")}
+
+        # Tenant access rules (required - if empty, user has no access to anything)
+        self.tenant_valid_access_rules = self._get_validated_access_rules(tenant_access_rules)
+        self.tenant_admin_access_rules = {r for r in self.tenant_valid_access_rules if r.startswith("aihub.admin.")}
+        self.tenant_user_access_rules = {r for r in self.tenant_valid_access_rules if r.startswith("aihub.user.")}
 
     @property
     def access_rules(self):
-        return self.valid_access_rules
+        return self.user_valid_access_rules
 
     @classmethod
     def from_user(cls, user: UserIdentity, tenant_id: str | None = None):
@@ -136,7 +149,13 @@ class AccessChecker:
     def access_level(self, permission_template: str) -> AccessLevel:
         """
         Checks for the highest level of permission (Admin, User, or Denied).
-        It orchestrates validation and matching, prioritizing admin access.
+
+        CRITICAL: Tenant access rules act as a BOUNDARY/CEILING for user permissions.
+        The access level returned is the MINIMUM of:
+        1. Tenant's access level (what the tenant allows)
+        2. User's access level (what the user has been granted)
+
+        If tenant has only user-level access, user is capped at user-level even if they have admin permissions.
         """
         self.validate_permission_template(permission_template)
         is_implicit_check = "?" in permission_template
@@ -146,19 +165,57 @@ class AccessChecker:
             else self._access_rule_matches_concrete_permission
         )
 
-        # 1. Check for Admin access (admins implicitly have user-access as well)
         admin_perm_to_check = permission_template.replace("aihub.user.", "aihub.admin.", 1)
-        for access_rule in self.admin_access_rules:
+
+        # STAGE 1: Determine what level of access the TENANT has
+        tenant_has_admin_access = False
+        tenant_has_user_access = False
+
+        # Check tenant admin access
+        for access_rule in self.tenant_admin_access_rules:
             if match_func(access_rule, admin_perm_to_check):
-                return AccessLevel.ACCESS_ADMIN
+                tenant_has_admin_access = True
+                break
 
-        # 2. Check for User access (only if permission is user-level)
+        # Check tenant user access (only if permission is user-level)
         if permission_template.startswith("aihub.user."):
-            for access_rule in self.user_access_rules:
+            for access_rule in self.tenant_user_access_rules:
                 if match_func(access_rule, permission_template):
-                    return AccessLevel.ACCESS_USER
+                    tenant_has_user_access = True
+                    break
 
-        # 3. Default to Denied
+        # If tenant has no access at any level, deny
+        if not tenant_has_admin_access and not tenant_has_user_access:
+            return AccessLevel.ACCESS_DENIED
+
+        # STAGE 2: Determine what level of access the USER has
+        user_has_admin_access = False
+        user_has_user_access = False
+
+        # Check user admin access
+        for access_rule in self.user_admin_access_rules:
+            if match_func(access_rule, admin_perm_to_check):
+                user_has_admin_access = True
+                break
+
+        # Check user user access (only if permission is user-level)
+        if permission_template.startswith("aihub.user."):
+            for access_rule in self.user_user_access_rules:
+                if match_func(access_rule, permission_template):
+                    user_has_user_access = True
+                    break
+
+        # STAGE 3: Return the MINIMUM of tenant and user access levels
+        # Both must have admin access for user to get admin level
+        if tenant_has_admin_access and user_has_admin_access:
+            return AccessLevel.ACCESS_ADMIN
+
+        # If either has only user access, and both have at least user access
+        # (Note: admin access implies user access)
+        if (tenant_has_admin_access or tenant_has_user_access) and (user_has_admin_access or user_has_user_access):
+            return AccessLevel.ACCESS_USER
+
+        # Otherwise, deny
         return AccessLevel.ACCESS_DENIED
 
     def has_access(self, permission_template: str) -> bool:

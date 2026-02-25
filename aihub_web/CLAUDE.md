@@ -223,7 +223,7 @@ The UI strictly separates blueprint from profile:
 
 | Command             | What it does                                             |
 | ------------------- | -------------------------------------------------------- |
-| `pnpm dev`          | Dev server at localhost:3000 (via Nuxt layer in `.app/`) |
+| `pnpm dev`          | Dev server at localhost:3333 (via Nuxt layer in `.app/`) |
 | `pnpm lint`         | ESLint + auto-fix (SonarJS, Tailwind, import order)      |
 | `pnpm generate-sdk` | Regenerate TypeScript SDK from API OpenAPI spec          |
 | `pnpm build`        | Production build (static generation)                     |

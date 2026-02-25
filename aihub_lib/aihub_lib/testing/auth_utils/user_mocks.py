@@ -10,40 +10,50 @@ from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDe
 )
 from aihub_lib.persistence.user.UserEntity import UserEntity
 
+MOCK_USER_LAST_UPDATED = datetime(2025, 7, 4, 12, 14, 45, 185140, tzinfo=UTC)
 
-def _create_mock_user_entity_function():
-    """
-    Create a mock function for UserEntity.by_oid that returns a dummy user.
-    """
+
+def _create_mock_user(user_id: str | None = None, email: str | None = None) -> UserEntity:
+    """Create a mock UserEntity with properties from DangerousDevelopmentOnlyAuthSettings."""
     config = DangerousDevelopmentOnlyAuthSettings()
-
-    def mock_by_oid(user_oid):
-        user = UserEntity(
-            id=user_oid,
-            name=config.NAME,
-            email=config.EMAIL,
-            roles=config.ROLES,
-            profile_image=None,
-            favorite_modules=[],
-            dashboard=UserEntity.create_default_dashboard(),
-            last_updated=datetime(2025, 7, 4, 12, 14, 45, 185140, tzinfo=UTC),
-        )
-        return user
-
-    return mock_by_oid
+    return UserEntity(
+        id=user_id or config.OID,
+        name=config.NAME,
+        email=email or config.EMAIL,
+        profile_image=None,
+        favorite_modules=[],
+        dashboard=UserEntity.create_default_dashboard(),
+        last_updated=MOCK_USER_LAST_UPDATED,
+    )
 
 
 @pytest.fixture(autouse=True)
 def mock_user_entity_autouse():
     """
-    Mock UserEntity.by_oid to return a dummy user with properties from DangerousDevelopmentOnlyAuthSettings.
+    Mock UserEntity lookup and creation methods to return a dummy user.
 
-    This fixture is useful for tests that need a consistent user object without database dependencies.
-
-    This mock will return a user with the provided user_oid, regardless of what it is.
-    This ensures that tests can use any user ID they want, not just the one from the config.
+    Mocks by_oid, by_email, and ensure_user_exists so tests don't need a real database.
+    The mock user has properties from DangerousDevelopmentOnlyAuthSettings.
     """
-    with patch.object(UserEntity, "by_oid", side_effect=_create_mock_user_entity_function()):
+
+    def mock_by_oid(user_oid):
+        return _create_mock_user(user_id=user_oid)
+
+    def mock_by_email(email):
+        return _create_mock_user(email=email)
+
+    def mock_ensure_user_exists(oid, name, email, profile_image=None):
+        return _create_mock_user(user_id=oid, email=email)
+
+    def mock_get_by_ids(user_ids):
+        return {uid: _create_mock_user(user_id=uid) for uid in user_ids}
+
+    with (
+        patch.object(UserEntity, "by_oid", side_effect=mock_by_oid),
+        patch.object(UserEntity, "by_email", side_effect=mock_by_email),
+        patch.object(UserEntity, "ensure_user_exists", side_effect=mock_ensure_user_exists),
+        patch.object(UserEntity, "get_by_ids", side_effect=mock_get_by_ids),
+    ):
         yield
 
 

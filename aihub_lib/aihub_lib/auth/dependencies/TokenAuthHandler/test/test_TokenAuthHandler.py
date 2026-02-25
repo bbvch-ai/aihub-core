@@ -14,6 +14,8 @@ from aihub_lib.auth.dependencies.TokenAuthHandler.TokenAuthHandler import TokenA
 from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.persistence.access.entities.BearerToken import BearerToken
+from aihub_lib.persistence.access.entities.TenantEntity import TenantEntity
+from aihub_lib.persistence.access.entities.UserTenantRoleEntity import UserTenantRoleEntity
 from aihub_lib.persistence.user.UserEntity import UserEntity
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 
@@ -27,6 +29,14 @@ def mongo_connection(monkeypatch: pytest.MonkeyPatch) -> Generator[None]:
         db=AIHubSettings().MONGO_MAIN_DB_NAME,
         host=MongoSettings().CONNECTION_STRING.get_secret_value(),
     )
+
+    # Ensure default tenant exists for multi-tenant auth tests
+    TenantEntity.ensure_default_tenant_exists(
+        name="Default Tenant",
+        description="Default tenant for testing",
+        access_rules=["aihub.admin.>"],
+    )
+
     yield
     disconnect()
 
@@ -99,6 +109,18 @@ def insert_token_document(
         name=name,
         email=email,
     )
+
+    # Assign user to default tenant (skip role validation for test data)
+    default_tenant = TenantEntity.get_default_tenant()
+    if default_tenant:
+        user_tenant_role = UserTenantRoleEntity.create_or_update(
+            user_id=user_oid,
+            tenant_id=str(default_tenant.id),
+            roles=roles_list,
+            validate_roles=False,
+        )
+        cleanup_document.append(user_tenant_role)
+
     expiry = datetime.now(UTC) + timedelta(hours=1)
     token_doc = BearerToken.create_new_token(
         name="token-name",

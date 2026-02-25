@@ -13,9 +13,14 @@ from mongoengine import (
     IntField,
     ListField,
     StringField,
+    ValidationError,
 )
 
+from aihub_lib.auth.dependencies.SuperuserAuthHandler.SuperuserSettings import SuperuserSettings
+from aihub_lib.infrastructure.api.UserSignupSettings import UserSignupSettings
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
+from aihub_lib.persistence.access.entities.TenantEntity import TenantEntity
+from aihub_lib.persistence.access.entities.UserTenantRoleEntity import UserTenantRoleEntity
 
 logger = logging.getLogger(__name__)
 
@@ -58,6 +63,18 @@ class UserEntity(Document):
     last_updated = DateTimeField(required=True)
     favorite_modules = ListField(StringField(), default=list)
     dashboard = EmbeddedDocumentField(Dashboard)
+
+    def clean(self):
+        """
+        Validate document fields before saving.
+
+        Ensures profile_image is a valid URL (not a data URL or base64).
+        """
+        if self.profile_image and not self.profile_image.startswith(("http://", "https://")):
+            raise ValidationError(
+                "Profile image must be a valid http:// or https:// URL. "
+                "Data URLs and base64-encoded images are not allowed."
+            )
 
     @staticmethod
     @trace_fn
@@ -118,22 +135,12 @@ class UserEntity(Document):
         return user
 
     @trace_fn
-    def get_roles(self, tenant_id: str | None = None) -> list[str]:
+    def get_roles(self, tenant_id: str) -> list[str]:
         """
         Retrieves the user's roles from the authoritative UserTenantRoleEntity.
 
-        If tenant_id is None, uses the default tenant. Returns an empty list
-        if no tenant assignment exists.
+        Returns an empty list if the user has no roles in the specified tenant.
         """
-        from aihub_lib.persistence.access.entities.TenantEntity import TenantEntity
-        from aihub_lib.persistence.access.entities.UserTenantRoleEntity import UserTenantRoleEntity
-
-        if tenant_id is None:
-            default_tenant = TenantEntity.get_default_tenant()
-            if not default_tenant:
-                return []
-            tenant_id = default_tenant.id
-
         return UserTenantRoleEntity.get_roles_for_user_in_tenant(self.id, tenant_id)
 
     @classmethod
@@ -162,15 +169,106 @@ class UserEntity(Document):
 
     @classmethod
     @trace_fn
-    def count_users(cls) -> int:
-        """Count the total number of users."""
+    def get_by_ids(cls, user_ids: list[str]) -> dict[str, Self]:
+        """
+        Retrieve multiple users by their IDs and return as a dict.
+        """
+        return {u.id: u for u in cls.objects(id__in=user_ids)}
+
+    @classmethod
+    @trace_fn
+    def count_users(cls, user_ids: list[str] | None = None) -> int:
+        """Count the total number of users, optionally filtered by user IDs."""
+        if user_ids is not None:
+            return cls.objects(id__in=user_ids).count()
         return cls.objects.count()
 
     @classmethod
     @trace_fn
-    def get_paginated_users(cls, skip: int = 0, limit: int = 20) -> list["UserEntity"]:
-        """Get a paginated list of users, ordered by name."""
-        return cls.objects.order_by("name").skip(skip).limit(limit)
+    def get_paginated_users(cls, skip: int = 0, limit: int = 20, user_ids: list[str] | None = None) -> list[Self]:
+        """Get a paginated list of users, ordered by name. Optionally filtered by user IDs."""
+        queryset = cls.objects(id__in=user_ids) if user_ids is not None else cls.objects
+        return queryset.order_by("name").skip(skip).limit(limit)
+
+    @classmethod
+    @trace_fn
+    def ensure_user_exists_for_auth(
+        cls,
+        oid: str,
+        name: str,
+        email: str,
+        profile_image: str | None = None,
+    ) -> Self:
+        """
+        Ensures a user exists during authentication, with proper tenant assignment.
+
+        For existing users: Updates profile info (name, email, image).
+        For new users: Creates the user and assigns them to the default tenant with
+        appropriate roles (admin roles for first user, standard roles for others).
+
+        Roles are stored in UserTenantRoleEntity and retrieved via get_roles().
+        """
+        try:
+            user = cls.objects.get(id=oid)
+            user.name = name
+            user.email = email
+            user.profile_image = profile_image
+            user.last_updated = datetime.now(UTC)
+            user.save()
+            logger.info(f"Updated existing user: {email}")
+
+            # Ensure user has a tenant association (repairs failed initial assignment)
+            default_tenant = TenantEntity.get_default_tenant()
+            if default_tenant:
+                default_tenant_id = str(default_tenant.id)
+                existing_roles = UserTenantRoleEntity.get_roles_for_user_in_tenant(oid, default_tenant_id)
+                if not existing_roles:
+                    settings = UserSignupSettings()
+                    roles_to_assign = settings.regular_user_roles_list
+                    UserTenantRoleEntity.create_or_update(
+                        user_id=oid,
+                        tenant_id=default_tenant_id,
+                        roles=roles_to_assign,
+                    )
+                    logger.info(f"Repaired missing tenant association for user {oid} with roles: {roles_to_assign}")
+
+            return user
+        except DoesNotExist:
+            pass
+
+        settings = UserSignupSettings()
+        default_tenant = TenantEntity.get_default_tenant()
+
+        if not default_tenant:
+            logger.warning("Default tenant not found. User will be created without tenant assignment.")
+            return cls.create_user(oid=oid, name=name, email=email, profile_image=profile_image)
+
+        # Exclude superuser from count when determining first "real" user
+        real_user_count = cls.objects(id__ne=SuperuserSettings().OID).count()
+
+        is_first_user = real_user_count == 0
+        if is_first_user:
+            roles_to_assign = settings.first_admin_user_roles_list
+            logger.info(f"First user signup, assigning admin roles: {roles_to_assign}")
+        else:
+            roles_to_assign = settings.regular_user_roles_list
+            logger.info(f"Regular user signup, assigning default roles: {roles_to_assign}")
+
+        user = cls.create_user(
+            oid=oid,
+            name=name,
+            email=email,
+            profile_image=profile_image,
+        )
+
+        UserTenantRoleEntity.create_or_update(
+            user_id=oid,
+            tenant_id=str(default_tenant.id),
+            roles=roles_to_assign,
+        )
+
+        logger.info(f"Created new user {email} in tenant {default_tenant.name} with roles: {roles_to_assign}")
+        return user
 
     @classmethod
     @trace_fn

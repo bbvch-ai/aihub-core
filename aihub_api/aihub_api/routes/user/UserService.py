@@ -1,7 +1,9 @@
 from typing import TYPE_CHECKING
 
+from aihub_lib.auth.identity.TenantIdentity import TenantIdentity
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.persistence.access.entities.UserTenantRoleEntity import UserTenantRoleEntity
 from aihub_lib.persistence.user.UserEntity import Dashboard, DashboardItem, UserEntity
 from mongoengine import DoesNotExist
 from nats.aio.client import Client as NATS
@@ -29,32 +31,40 @@ class UserService:
         Convert the `UserIdentity` (provided by the auth layer) into a UserDTO,
         including information from the UserEntity like dashboard settings, favorite modules, and roles.
         """
-        return await UserService.get_user_with_access_by_oid(user.id, runner, nc, t)
+        # Tenant membership already verified by auth handler during token resolution
+        user_entity = UserEntity.by_oid(user.id)
+        return await UserWithAccessDTO.from_user_entity(user_entity, user.acting_within_tenant, runner, nc, t)
 
     @staticmethod
     async def get_user_by_oid(user_oid: str) -> UserDTO:
-        """Retrieve user info by OID (id, name, email, profile_image) as a UserDTO."""
         user_entity = UserEntity.by_oid(user_oid)
         return UserDTO.from_user_entity(user_entity)
 
     @staticmethod
     async def get_user_with_access_by_oid(
-        user_oid: str, runner: "Runner", nc: NATS, t: LocaleHandler
+        user_oid: str, tenant: TenantIdentity, runner: "Runner", nc: NATS, t: LocaleHandler
     ) -> UserWithAccessDTO:
         """
-        Retrieve a user with their access rules (which services, agents, and processes they can access)
+        Retrieve a user with their access rules (which services, agents, and processes they can access).
+        Access is calculated within the requesting user's tenant context.
+
+        Raises DoesNotExist if the user is not found or does not belong to the given tenant.
         """
+        tenant_user_ids = UserTenantRoleEntity.get_user_ids_in_tenant(tenant.id)
+        if user_oid not in tenant_user_ids:
+            raise DoesNotExist(f"User {user_oid} not found in tenant")
         user_entity = UserEntity.by_oid(user_oid)
-        return await UserWithAccessDTO.from_user_entity(user_entity, runner, nc, t)
+        return await UserWithAccessDTO.from_user_entity(user_entity, tenant, runner, nc, t)
 
     @staticmethod
-    async def get_paginated_users(page: int = 1, page_size: int = 20) -> tuple[int, list[UserDTO]]:
+    async def get_paginated_users(tenant_id: str, page: int = 1, page_size: int = 20) -> tuple[int, list[UserDTO]]:
         """
-        Retrieves a paginated list of users from the local database.
+        Retrieves a paginated list of users belonging to the given tenant.
         """
+        tenant_user_ids = UserTenantRoleEntity.get_user_ids_in_tenant(tenant_id)
         skip = (page - 1) * page_size
-        total = UserEntity.count_users()
-        user_entities = UserEntity.get_paginated_users(skip=skip, limit=page_size)
+        total = UserEntity.count_users(user_ids=tenant_user_ids)
+        user_entities = UserEntity.get_paginated_users(skip=skip, limit=page_size, user_ids=tenant_user_ids)
 
         user_dtos = [UserDTO.from_user_entity(user) for user in user_entities]
 

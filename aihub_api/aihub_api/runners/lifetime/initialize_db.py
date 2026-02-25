@@ -9,11 +9,11 @@ import logging
 
 from aihub_lib.auth.dependencies.SuperuserAuthHandler.SuperuserSettings import SuperuserSettings
 from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
-from aihub_lib.infrastructure.api.TenantSettings import TenantSettings
+from aihub_lib.infrastructure.api.DefaultTenantSettings import DefaultTenantSettings
+from aihub_lib.infrastructure.api.UserSignupSettings import UserSignupSettings
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.no_trace import no_trace
 from aihub_lib.persistence.access.entities.RoleEntity import RoleEntity
 from aihub_lib.persistence.access.entities.TenantEntity import TenantEntity
-from aihub_lib.persistence.access.entities.UserTenantRoleEntity import UserTenantRoleEntity
 from aihub_lib.persistence.rag.datalake.entities.BucketEntity import BucketEntity
 from aihub_lib.persistence.rag.datalake.entities.NamespaceEntity import NamespaceEntity
 from aihub_lib.persistence.user.UserEntity import UserEntity
@@ -30,7 +30,7 @@ async def initialize_default_tenant() -> TenantEntity | None:
     The default tenant is created on first startup and provides a backwards-compatible
     single-tenant experience. All users are automatically added to this tenant.
     """
-    settings = TenantSettings()
+    settings = DefaultTenantSettings()
 
     existing_tenant = TenantEntity.get_default_tenant()
     if existing_tenant:
@@ -38,9 +38,9 @@ async def initialize_default_tenant() -> TenantEntity | None:
         return existing_tenant
 
     tenant = TenantEntity.ensure_default_tenant_exists(
-        name=settings.DEFAULT_NAME,
-        description=settings.DEFAULT_DESCRIPTION,
-        access_rules=settings.default_access_rules_list,
+        name=settings.NAME,
+        description=settings.DESCRIPTION,
+        access_rules=settings.access_rules_list,
     )
 
     logger.info(f"Successfully created default tenant '{tenant.name}'")
@@ -56,12 +56,11 @@ async def initialize_roles() -> None:
     This function orchestrates the creation of all necessary roles
     for the AI-Hub to operate properly.
     """
-    if SuperuserSettings().ENABLED:
-        await initialize_system_role(
-            name="AIHubSuperuser",
-            description="Grants the AI-Hub Superuser global administrative access",
-            access_rules=["aihub.admin.>"],
-        )
+    await initialize_system_role(
+        name="AIHubSuperuser",
+        description="Grants the AI-Hub Superuser global administrative access",
+        access_rules=["aihub.admin.>"],
+    )
 
     if AIHubSettings().CREATE_DEFAULT_ROLES:
         await initialize_system_role(
@@ -102,7 +101,30 @@ async def initialize_roles() -> None:
 
     logger.info("Role initialization completed successfully")
 
+    # Validate that all configured signup roles exist in the database
+    await _validate_signup_roles()
+
+    # Initialize superuser if enabled
     await initialize_superuser()
+
+
+async def _validate_signup_roles() -> None:
+    settings = UserSignupSettings()
+    all_configured_roles = set(settings.regular_user_roles_list + settings.first_admin_user_roles_list)
+
+    default_tenant = TenantEntity.get_default_tenant()
+    tenant_id = str(default_tenant.id) if default_tenant else ""
+
+    existing_roles = set(RoleEntity.filter_existing_roles(list(all_configured_roles), tenant_id))
+    missing_roles = all_configured_roles - existing_roles
+
+    if missing_roles:
+        raise RuntimeError(
+            f"Configured signup roles do not exist in the database: {sorted(missing_roles)}. "
+            f"Check AIHUB_USER_SIGNUP_REGULAR_USER_ROLES and AIHUB_USER_SIGNUP_FIRST_ADMIN_USER_ROLES settings."
+        )
+
+    logger.info(f"All configured signup roles validated: {sorted(all_configured_roles)}")
 
 
 async def initialize_system_role(name: str, description: str, access_rules: list[str]) -> None:
@@ -140,36 +162,22 @@ async def initialize_superuser() -> None:
     """
     Initialize the superuser in the database if superuser auth is enabled.
 
-    This function ensures that the superuser account exists in the database
-    and is assigned to the default tenant with the superuser role.
+    This function ensures that the superuser account exists in the database.
+    Note: Superuser uses a virtual tenant when authenticating, but we still create
+    the user record for auditing purposes.
     """
-    if not SuperuserSettings().ENABLED:
-        logger.info("Superuser is not enabled, skipping initialization")
-        return
+    settings = SuperuserSettings()
 
     try:
-        settings = SuperuserSettings()
-        user_identity = settings.get_user_identity()
-
+        # Create the user entity (for audit trail, even though superuser uses virtual tenant)
         UserEntity.ensure_user_exists(
-            oid=user_identity.id,
-            name=user_identity.name,
-            email=user_identity.email,
-            profile_image=user_identity.profile_image,
+            oid=settings.OID,
+            name=settings.NAME,
+            email=settings.EMAIL,
         )
 
-        default_tenant = TenantEntity.get_default_tenant()
-        if default_tenant:
-            UserTenantRoleEntity.create_or_update(
-                user_id=user_identity.id,
-                tenant_id=default_tenant.id,
-                roles=user_identity.roles,
-            )
-            logger.info(f"Superuser '{user_identity.name}' added to default tenant with roles: {user_identity.roles}")
-        else:
-            logger.warning("Default tenant not found, superuser not added to any tenant")
-
-        logger.info(f"Superuser initialization completed for user '{user_identity.name}'")
+        logger.info(f"Superuser initialization completed for user '{settings.NAME}'")
+        logger.info("Note: Superuser operates with virtual tenant (full admin access)")
 
     except Exception as e:
         logger.error(f"Failed to initialize superuser: {e}")

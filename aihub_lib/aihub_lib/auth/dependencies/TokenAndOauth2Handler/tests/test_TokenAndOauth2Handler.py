@@ -6,6 +6,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2Settings import OAuth2Settings
+from aihub_lib.auth.identity.TenantIdentity import TenantIdentity
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 
@@ -26,6 +27,7 @@ class DummySuccessAuth:
             email="dummy@success.com",
             id="1",
             roles=["user"],
+            acting_within_tenant=TenantIdentity(id="t1", name="Tenant1", access_rules=["aihub.admin.>"]),
         )
 
 

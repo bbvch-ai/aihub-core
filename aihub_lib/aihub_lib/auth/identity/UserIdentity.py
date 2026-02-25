@@ -1,34 +1,29 @@
-from __future__ import annotations
-
-from typing import TYPE_CHECKING, Annotated
+from typing import Annotated, Self
 
 from pydantic import BaseModel, Field
 
-if TYPE_CHECKING:
-    from aihub_lib.persistence.user.UserEntity import UserEntity
+from aihub_lib.auth.identity.TenantIdentity import TenantIdentity
+from aihub_lib.persistence.user.UserEntity import UserEntity
 
 
 class UserIdentity(BaseModel):
-    """
-    Lightweight identity object for authenticated users.
-
-    Used in authentication handlers and API responses. This is a DTO (Data Transfer Object)
-    that represents the authenticated user's identity without database dependencies.
-    """
+    """Lightweight identity object for authenticated users."""
 
     id: Annotated[str, Field(description="The unique identifier for the user.")]
     name: Annotated[str, Field(description="The name of the user.")]
     email: Annotated[str, Field(description="The email address of the user.")]
-    roles: Annotated[list[str], Field(description="The roles assigned to the user.")]
-    profile_image: Annotated[str | None, Field(description="Data URL (base64) representation of profile image")] = None
+    roles: Annotated[list[str], Field(description="The roles assigned to the user within the acting tenant.")]
+    acting_within_tenant: Annotated[
+        TenantIdentity, Field(description="The tenant context the user is operating within.")
+    ]
 
     @classmethod
-    def from_user_entity(cls, user: UserEntity, tenant_id: str | None = None) -> UserIdentity:
-        """Create a UserIdentity from a UserEntity database object."""
+    def from_user_entity(cls, user: UserEntity, tenant: TenantIdentity) -> Self:
+        """Create a UserIdentity from a UserEntity and tenant context."""
         return cls(
             id=user.id,
             name=user.name,
             email=user.email,
-            roles=user.get_roles(tenant_id),
-            profile_image=user.profile_image,
+            roles=user.get_roles(tenant.id),
+            acting_within_tenant=tenant,
         )

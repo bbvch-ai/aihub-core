@@ -3,6 +3,8 @@ from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDe
     DangerousDevelopmentOnlyAuthHandler,
 )
 from aihub_lib.routes.health.HealthController import HealthController
+from aihub_lib.testing.auth_utils.tenant_mocks import mock_tenant_entity_autouse  # noqa: F401
+from aihub_lib.testing.auth_utils.user_mocks import mock_user_entity_autouse  # noqa: F401
 from fastapi.testclient import TestClient
 
 from aihub_api.runners.ApiTestRunner import ApiTestRunner

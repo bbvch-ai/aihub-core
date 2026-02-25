@@ -1849,7 +1849,7 @@ services:
 
       # --- AI-Hub Internal Connection ---
       AIHUB_BASE_URL: http://{{ 'localhost' if stage == 'dev' else 'api' }}:8000
-      AIHUB_FRONTEND_URL: {{ 'http://localhost:3000' if stage == 'dev' else 'https://${DOMAIN}' }}
+      AIHUB_FRONTEND_URL: {{ 'http://localhost:3333' if stage == 'dev' else 'https://${DOMAIN}' }}
       AIHUB_SUPERUSER_API_KEY: ${SUPERUSER_TOKEN}
       OPEN_WEBUI_SIGNING_SECRET: ${AUTH_OPEN_WEBUI_SIGNING_SECRET}
       AIHUB_PIPELINE_PREFIX: "aihub/"
@@ -2118,7 +2118,7 @@ services:
         condition: service_healthy
     {%- if stage in ['dev', 'local', 'build'] %}
     ports:
-      - "3002:3000"
+      - "3000:3000"
     {%- endif %}
     entrypoint:
       - dagster-webserver
@@ -2346,7 +2346,6 @@ services:
       # General Auth settings
       AUTH_ENABLE_API_ACCESS: True
       AUTH_OPEN_WEBUI_SIGNING_SECRET: ${AUTH_OPEN_WEBUI_SIGNING_SECRET}
-      AUTH_IDENTITY_PROVIDER: ${AUTH_IDENTITY_PROVIDER}
 
       # Keycloak OIDC config
       KEYCLOAK_URL: {{ KEYCLOAK_INTERNAL_URL }}
@@ -2364,7 +2363,6 @@ services:
       AZURE_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
 
       # Superuser
-      SUPERUSER_ENABLED: True
       SUPERUSER_NAME: ${SUPERUSER_NAME}
       SUPERUSER_EMAIL: ${SUPERUSER_EMAIL}
       SUPERUSER_OID: ${SUPERUSER_OID}

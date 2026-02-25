@@ -5,6 +5,125 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.266.4] - 2026-02-25 - Port Harmonization for Streamlined Local Development
+
+### Changed
+
+- ⚡️ **Standardized Local Development Ports:** Aligned the default development ports for key services to improve
+  consistency and reduce potential conflicts during local development:
+  - The **Admin UI (Frontend)** now runs on `http://localhost:3333` (previously `3000`).
+  - The **Dagster Orchestrator** now runs on `http://localhost:3000` (previously `3002`).
+- 🦾 **Improved Dagster Tool Integration:** Updated the `mcp-server-dagster` script to correctly utilize the `--url`
+  argument for specifying the Dagster instance, simplifying its configuration and removing the need for an inline Python
+  patch.
+- 📄 **Updated Documentation and Configuration:** All relevant documentation, skill prerequisites, environment variables
+  (`.env.dev`), and Docker Compose configurations have been updated to reflect the new port assignments for the Admin UI
+  and Dagster.
+
+______________________________________________________________________
+
+## [v0.266.3] - 2026-02-25 - Enhanced Git Push Command Management
+
+### Changed
+
+- ✨ **Expanded `git push` Command Recognition:** The system now recognizes and handles a significantly broader range of
+  `git push` commands, including those with advanced options such as `--force-with-lease`, `--delete`, `--mirror`,
+  `--all`, and `--tags`. This enhances the system's ability to understand and process complex push operations more
+  intelligently.
+- 🚀 **Streamlined `git push` Interactions:** Generic and specific `git push` operations have been refined in their
+  handling, potentially leading to more seamless execution and fewer prompts during typical `git push` workflows.
+
+______________________________________________________________________
+
+## [v0.266.2] - 2026-02-25 - Streamlined Workflow Configuration
+
+### Changed
+
+- 🔄 **Streamlined GitHub Actions YAML:** Updated the `additional_permissions` configuration in `claude.yml` to use a
+  more concise single-line scalar format, improving the readability of workflow definitions.
+
+### Refactor
+
+- 🧹 **Cleaned Workflow Configurations:** Removed unnecessary blank lines and commented-out placeholders from both
+  `claude-code-review.yml` and `claude.yml`, enhancing file clarity and reducing clutter within the workflow
+  definitions.
+
+______________________________________________________________________
+
+## [v0.266.1] - 2026-02-24 - Changelog Precision Update
+
+### Fixed
+
+- 🐛 **Updated changelog entry date:** Corrected the placeholder date for the `v0.262.2` release from `YYYY-MM-DD` to
+  `2026-02-17` to ensure historical accuracy.
+
+______________________________________________________________________
+
+## [v0.266.0] - 2026-02-24 - Major Overhaul: Multi-Tenant Access Control and Core System Refinements
+
+### Added
+
+- ✨ Introduced **Multi-Tenant Architecture**: Core entities such as `TenantEntity` and `UserTenantRoleEntity` enable
+  robust organizational isolation and tenant-scoped user management.
+- 🔑 New **Local Role Management**: Roles are now managed directly within the platform's database, supporting both
+  system-wide and tenant-specific roles, which reduces external dependencies for role synchronization.
+- 🚀 Enabled **Automatic Default Tenant Initialization**: A default tenant is now automatically created and configured
+  during the initial startup, ensuring immediate multi-tenant functionality.
+- 👥 Implemented **Configurable User Signup Roles**: Roles are now automatically assigned to the first administrator and
+  subsequent regular users upon their initial login, streamlining user onboarding.
+- 📄 New SDK documentation for the **Agent Execution Model** and a detailed **Event Reference** guide, providing deeper
+  insights into workflow design and event-driven patterns.
+- ⚙️ Added **Default Tenant Settings** and **User Signup Settings** for precise control over initial tenant setup and
+  user role assignments.
+
+### Changed
+
+- 🔄 **Refactored Authentication Stack**: The `IdentityProvider` abstraction has been removed, simplifying `AuthHandler`
+  implementations and consolidating identity resolution logic directly within the authentication handlers.
+- 🛡️ **Enhanced Two-Stage Access Control**: The `AccessChecker` now implements a critical two-stage authorization
+  process where a tenant's access rules act as a strict upper bound for all user permissions within that tenant.
+- ⚡️ **Tenant-Aware API Endpoints and Services**: All relevant API routes (e.g., roles, threads, users) and core
+  services (e.g., `ThreadService`, `UserService`, `UsageLimits`) have been updated to enforce multi-tenant awareness,
+  ensuring data isolation and correct permission handling.
+- 👤 **Decoupled User Roles from UserEntity**: `UserEntity` no longer directly stores user roles; instead, roles are
+  dynamically fetched from `UserTenantRoleEntity` based on the user's active tenant context.
+- 🤖 **Integrated Bot Authentication**: The AI-Hub Bot's authentication process now fully utilizes the new local user and
+  tenant role management, ensuring secure and tenant-scoped bot interactions.
+- 📚 **Updated Platform Documentation**: Extensive revisions across architectural documentation (`arc42`) and user guides
+  to reflect the new multi-tenancy model, local role management, and updated authentication flows.
+- 🎨 **Minor UI Layout Adjustment**: Adjusted spacing in the default layout of the web user interface for a more refined
+  visual experience.
+
+### Fixed
+
+- 🐛 Resolved an issue where `UserEntity.profile_image` could store invalid data URLs; it now strictly enforces valid
+  `http://` or `https://` URLs for improved data integrity.
+
+### Removed
+
+- 🗑️ Deprecated the **`IdentityProvider` Abstraction**: The `IdentityProvider` interface and all its implementations
+  (e.g., `AzureIdentityProvider`, `TokenIdentityProvider`) have been removed to streamline the authentication
+  architecture.
+- 🗑️ Eliminated **`AUTH_IDENTITY_PROVIDER` and `SUPERUSER_ENABLED`** environment variables, as their functionality has
+  been integrated into the new, more flexible authentication and tenant management system.
+- 🗑️ Removed the **`generate_api_token.py`** utility script and its corresponding `Makefile` target, as API token
+  generation is now managed through the refined API and aligned with the new authentication model.
+- 🗑️ Deleted outdated **RBAC SDK documentation** (`aihub_doc/docs/3_sdk/5_advanced_topics/5_rbac`), which has been
+  superseded by new, comprehensive multi-tenancy and access control guides.
+
+### Refactor
+
+- 🧹 **Upgraded Document Parsing Engine**: Replaced `Docling` with `MinerU` across the platform and its documentation,
+  providing enhanced capabilities for document processing.
+- 🧹 **Simplified Development Authentication**: Streamlined `DangerousDevelopmentOnlyAuthHandler` by removing its
+  dependency on `IdentityProvider`, reflecting the consolidated authentication architecture.
+- 🧹 **Consolidated User Onboarding Logic**: Centralized user creation and default tenant role assignment into
+  `UserEntity.ensure_user_exists_for_auth` for a more consistent and robust user provisioning process.
+- 🧹 **Standardized Test Fixtures**: Introduced new test fixtures (`mock_tenant_entity_autouse`,
+  `mock_user_entity_autouse`) to standardize mocking multi-tenant authentication components in tests.
+
+______________________________________________________________________
+
 ## [v0.265.3] - 2026-02-24 - Enhanced Service Health Monitoring for Docker Compose
 
 ### Added
@@ -369,7 +488,7 @@ ______________________________________________________________________
 
 ______________________________________________________________________
 
-## [v0.262.2] - YYYY-MM-DD - Introducing the LLM-Powered Whitepaper Generation System
+## [v0.262.2] - 2026-02-17 - Introducing the LLM-Powered Whitepaper Generation System
 
 ### Added
 

@@ -1,14 +1,11 @@
 import base64
 import json
-import os
-from collections.abc import Generator
 from datetime import UTC, datetime, timedelta
 from typing import Any
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import jwt
 import pytest
-from mongoengine import connect, disconnect
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2Settings import OAuth2Settings
@@ -25,21 +22,52 @@ from aihub_lib.testing.auth_utils.oauth2_utils.oauth2_test_utils import (
 scenarios("features/oauth2_auth_handler.feature")
 
 
-# --- MongoDB Connection Fixture ---
+# --- Database Mocking Fixture ---
 
 
 @pytest.fixture(autouse=True)
-def mongo_connection() -> Generator[None]:
-    """Set up a MongoDB connection for testing and disconnect after."""
-    mongo_uri = os.environ.get("MONGO_CONNECTION_STRING", "mongodb://admin:admin@localhost:27017/aihub_test")
-    connect(db="aihub_test", host=mongo_uri)
-    yield
-    # Clean up test user
-    try:
-        UserEntity.objects(id="test-oid").delete()
-    except Exception:
-        pass
-    disconnect()
+def mock_database_operations(monkeypatch: pytest.MonkeyPatch):
+    """Mock all database operations required by the auth handler."""
+    from aihub_lib.auth.identity.TenantIdentity import TenantIdentity
+
+    # Mock UserEntity.ensure_user_exists_for_auth
+    def mock_ensure_user_exists(oid: str, name: str, email: str, profile_image: str | None = None) -> MagicMock:
+        """Return a mock UserEntity with get_roles method."""
+        user = MagicMock(spec=UserEntity)
+        user.id = oid
+        user.name = name
+        user.email = email
+        user.profile_image = profile_image
+        user.last_updated = datetime(2025, 7, 4, 12, 14, 45, 185140, tzinfo=UTC)
+
+        # Mock get_roles to return roles from token
+        def mock_get_roles(_tenant_id: str) -> list[str]:
+            # Roles are extracted from token and stored in UserEntity
+            return getattr(user, "_roles", [])
+
+        user.get_roles = mock_get_roles
+        return user
+
+    # Mock resolve_tenant_for_user to return a mock tenant identity
+    def mock_resolve_tenant(_self, _request, _user_id: str) -> TenantIdentity:
+        """Return a mock tenant identity."""
+        return TenantIdentity(id="default-tenant-id", name="Default Tenant", access_rules=[])
+
+    # Mock get_default_tenant_for_user (different signature - no request param)
+    def mock_get_default_tenant(_self, _user_id: str) -> TenantIdentity:
+        """Return a mock tenant identity for default tenant."""
+        return TenantIdentity(id="default-tenant-id", name="Default Tenant", access_rules=[])
+
+    # Apply monkeypatches
+    monkeypatch.setattr(
+        "aihub_lib.persistence.user.UserEntity.UserEntity.ensure_user_exists_for_auth", mock_ensure_user_exists
+    )
+    monkeypatch.setattr(
+        "aihub_lib.auth.dependencies.AuthHandler.AuthHandler.resolve_tenant_for_user", mock_resolve_tenant
+    )
+    monkeypatch.setattr(
+        "aihub_lib.auth.dependencies.AuthHandler.AuthHandler.get_default_tenant_for_user", mock_get_default_tenant
+    )
 
 
 # --- Fixtures ---
@@ -208,9 +236,9 @@ async def invoke_oauth2_handler(
     token = oauth2_context.get("token")
     if token is None:
         pytest.fail("No token found in context")
-    token_bytes = token if isinstance(token, bytes) else token.encode("utf-8")
+    token_str = token if isinstance(token, str) else token.decode("utf-8") if isinstance(token, bytes) else str(token)
     handler = OAuth2AuthHandler()
-    user = await handler(token_bytes)
+    user = await handler.authenticate_token(token_str, None)
     oauth2_context["user"] = user
 
 
@@ -228,10 +256,10 @@ async def invoke_oauth2_handler_expect_error(
     token = oauth2_context.get("token")
     if token is None:
         pytest.fail("No token found in context")
-    token_bytes = token if isinstance(token, bytes) else token.encode("utf-8")
+    token_str = token if isinstance(token, str) else token.decode("utf-8") if isinstance(token, bytes) else str(token)
     handler = OAuth2AuthHandler()
     try:
-        await handler(token_bytes)
+        await handler.authenticate_token(token_str, None)
         pytest.fail("OAuth2AuthHandler did not raise an exception")
     except Exception as e:
         oauth2_context["error"] = str(e)
