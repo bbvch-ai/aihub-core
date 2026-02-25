@@ -314,7 +314,9 @@ class KnowledgeController(Controller):
             """Generates a presigned URL for downloading a document's source file."""
             if database in ["admin", "local", "config"]:
                 raise HTTPException(status_code=403, detail="Not authorized to view this database")
-            url = KnowledgeService.get_document_url(db=database, document_id=document_id, s3_service=s3_service)
+            url = KnowledgeService.get_document_url(
+                db=database, namespace=namespace, document_id=document_id, s3_service=s3_service
+            )
             return SignedUrlDto(url=url)
 
         return self

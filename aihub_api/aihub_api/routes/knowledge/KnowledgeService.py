@@ -432,10 +432,13 @@ class KnowledgeService:
 
     @staticmethod
     @trace_fn
-    def get_document_url(db: str, document_id: str, s3_service: S3AnonymousFileAccessService) -> str:
+    def get_document_url(db: str, namespace: str, document_id: str, s3_service: S3AnonymousFileAccessService) -> str:
         """Generates a presigned S3 URL for a document's source file."""
         KnowledgeService._ensure_db_exists(db)
-        ref_doc = RefDoc.by_id(db_alias=db, doc_id=document_id)
+        try:
+            ref_doc = RefDoc.by_id_and_namespace(db_alias=db, doc_id=document_id, namespace=namespace)
+        except DoesNotExist:
+            raise HTTPException(status_code=404, detail="Document not found")
         source = ref_doc.data.metadata.source
         source = source.removeprefix("s3://")
         parts = source.split("/", 1)
