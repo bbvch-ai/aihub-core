@@ -37,26 +37,9 @@ class FileController(Controller):
             _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
             s3_service: Annotated[S3AnonymousFileAccessService, Depends(use_s3_service)],
         ) -> SignedUrlDto:
-            """
-            Generates a short-lived secure link to the blob resource, and returns the URL.
-            """
+            """Generates a short-lived secure link to the blob resource, and returns the URL."""
             sas_url = s3_service.generate_sas_url(container, file_path)
             return SignedUrlDto(url=sas_url)
-
-        return self
-
-    def get_file_redirect(self, route: str = "/logged-in/redirect/{container}/{file_path:path}") -> Self:
-        @self.router.get(route, tags=self.tags, summary="Access file as logged-in user")
-        async def get_file_redirect(
-            container: str,
-            file_path: str,
-            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.user.?>"))],
-            s3_service: Annotated[S3AnonymousFileAccessService, Depends(use_s3_service)],
-        ):
-            """
-            Generates a short-lived secure link to the blob resource, and redirects the user to it.
-            """
-            return FileService.get_authenticated_file_redirect(container, file_path, s3_service)
 
         return self
 

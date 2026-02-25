@@ -77,7 +77,7 @@
           size="small"
           variant="outlined"
           icon="pi pi-download"
-          @click="() => downloadFile(data.source)"
+          @click="() => downloadFile(data.id)"
         />
         <span
           v-else
@@ -130,8 +130,10 @@ const handleSort = (event: DataTableSortEvent) => {
   emit('sort', field, order)
 }
 
-const downloadFile = async (src: string) => {
-  const url = await getDocumentSourceUrl(src)
+const downloadFile = async (documentId: string) => {
+  const database = route.params.db as string
+  const namespace = route.params.namespace as string
+  const url = await getDocumentSourceUrl(database, namespace, documentId)
   window.open(url, '_blank')
 }
 </script>

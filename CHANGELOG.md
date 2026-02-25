@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.267.0] - 2026-02-25 - Secure Document Access and API Simplification
+
+### Added
+
+- ✨ **Introduced API for secure document source URLs:** A new endpoint
+  (`GET /databases/{database}/namespaces/{namespace}/documents/{document_id}/url`) allows authenticated users to obtain
+  a short-lived, secure URL for downloading a document's original source file, enhancing security and control over data
+  access.
+- 🦾 **Enhanced document lookup by namespace:** Added a new method (`RefDoc.by_id_and_namespace`) to efficiently retrieve
+  document references using both document ID and namespace, improving data retrieval for knowledge base operations.
+
+### Changed
+
+- 🔄 **Updated document download mechanism in frontend:** The web application now utilizes the new backend API endpoint
+  to fetch secure, presigned URLs for document downloads. This change centralizes file access through the backend,
+  improving consistency and security.
+
+### Removed
+
+- 🗑️ **Removed direct file redirection for logged-in users:** The `/logged-in/redirect` endpoint and its associated
+  backend logic for file redirection have been removed, streamlining the API and consolidating file access patterns.
+
+______________________________________________________________________
+
 ## [v0.266.5] - 2026-02-25 - Milvus Compatibility Update
 
 ### Fixed
