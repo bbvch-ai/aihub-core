@@ -1,5 +1,6 @@
 ---
 name: Build and Release Pipelines
+run-name: Build Pipelines - ${{ github.event.client_payload.release_version || github.event.inputs.release_version || 'manual' }}
 on:
   repository_dispatch:
     types: [release-ready]

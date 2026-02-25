@@ -5,6 +5,43 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.267.1] - 2026-02-25 - Streamlined Deployment with Self-Contained Release Bundles
+
+### Added
+
+- ✨ **New GitHub Release Workflow**: A comprehensive GitHub Actions workflow (`create-release.yml`) was introduced to
+  fully automate the creation and publishing of self-contained release bundles to GitHub. This includes generating,
+  verifying, archiving, and uploading CPU and GPU deployment packages.
+- 🔐 **Automated Environment Setup Script**: A new `setup-env.sh` script now automatically generates secure `.env` files
+  for production deployments, filling in unique, cryptographically strong secrets for database passwords, API keys, and
+  other sensitive values from a template.
+- 📦 **`generate-release` Makefile Target**: A new `Makefile` target has been added to facilitate the creation of
+  version-pinned Docker Compose and configuration bundles for official releases, integrating seamlessly with the
+  automated release workflow.
+
+### Changed
+
+- 🚀 **Fundamental Deployment Strategy**: The recommended production deployment method has transitioned to downloading
+  self-contained CPU and GPU release bundles directly from GitHub Releases, simplifying initial setup and updates
+  significantly.
+- 📄 **Deployment & Update Documentation**: The "One-Command Deployment Guide" and "Updates and Maintenance"
+  documentation have been completely revised to reflect the new bundle-based deployment, automated environment
+  configuration, and streamlined update processes.
+- ⚙️ **Docker Compose Generation**: The underlying `generate_compose.py` script has been substantially upgraded to
+  support a new "release mode" for creating deployable bundles with version-pinned image tags and simplified
+  configuration filenames.
+- 🛠️ **Local Development Setup**: Local setup instructions are now streamlined to encourage `git clone` of the
+  repository and the use of a new `make local-cert` command for easier certificate generation.
+
+### Refactor
+
+- 🧹 **CI/CD Workflow Run Naming**: Standardized `run-name` configurations across all build and deploy GitHub Actions
+  workflows for clearer identification and tracking of CI/CD pipeline executions.
+- 🔄 **Docker Compose Template Flexibility**: Refactored Docker Compose templates to introduce a `config_file_suffix`
+  variable, allowing for cleaner filenames without stage or hardware specific suffixes in generated release bundles.
+
+______________________________________________________________________
+
 ## [v0.267.0] - 2026-02-25 - Secure Document Access and API Simplification
 
 ### Added

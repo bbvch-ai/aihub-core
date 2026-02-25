@@ -327,6 +327,10 @@ jobs:
           git config --global url."git@github.com:".insteadOf "https://github.com/"
       - name: Update lockfile
         run: uv lock
+      - name: Generate and lint Docker Compose files
+        run: |
+          make generate-compose
+          make format-yaml
       - name: Commit Changelog, License Report, Version Update and Finalize Tag
         run: |
           VERSION="${{ needs.compute-and-initial-tag.outputs.version }}"
