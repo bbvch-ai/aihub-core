@@ -48,6 +48,8 @@
       "Bash(git ls-tree *)",
       "Bash(git blame *)",
       "Bash(git cherry-pick *)",
+      "Bash(git push *)",
+      "Bash(git push)",
       "Bash(git merge-base *)",
       "Bash(git grep *)",
       "Bash(git mv *)",
@@ -251,8 +253,6 @@
       "Read(~/.npmrc)"
     ],
     "ask": [
-      "Bash(git push *)",
-      "Bash(git push)",
       "Bash(git merge *)",
       "Bash(git rebase *)",
       "Bash(git tag *)",
