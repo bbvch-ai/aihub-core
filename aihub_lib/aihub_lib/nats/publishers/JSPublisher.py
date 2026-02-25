@@ -54,19 +54,6 @@ class JSPublisher(AbstractPublisher[TEvent]):
         event routing conventions.
         """
         tracer = get_tracer(__name__)
-
-        self._detect_and_log_subject_mismatch(event, subject)
-
-        logger.debug(f"{self.name} publishing event {event.event_name} to {subject}")
-        serialized_event = event.model_dump_json(serialize_as_any=True)
-        logger.debug(f"{self.name} serialized event: {event.event_name}")
-
-        # Build headers BEFORE the publish span so they carry the step span's
-        # context directly.  The publish span gets filtered by the OTEL
-        # collector; if it were the parent, Langfuse would see orphaned children.
-        message_id = str(uuid.uuid4())
-        headers = NATSMessageHeaders().with_trace_context().with_header("Nats-Msg-Id", message_id).to_dict()
-
         with tracer.start_as_current_span(
             f"{self.name}.publish {event.__class__.__name__}",
             attributes={
@@ -80,6 +67,14 @@ class JSPublisher(AbstractPublisher[TEvent]):
             },
         ) as span:
             try:
+                self._detect_and_log_subject_mismatch(event, subject)
+
+                logger.debug(f"{self.name} publishing event {event.event_name} to {subject}")
+                serialized_event = event.model_dump_json(serialize_as_any=True)
+                logger.debug(f"{self.name} serialized event: {event.event_name}")
+
+                message_id = str(uuid.uuid4())
+                headers = NATSMessageHeaders().with_trace_context().with_header("Nats-Msg-Id", message_id).to_dict()
 
                 for attempt in range(retries):
                     try:

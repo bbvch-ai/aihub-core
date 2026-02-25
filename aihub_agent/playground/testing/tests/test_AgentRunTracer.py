@@ -1,6 +1,6 @@
 """Tests for AgentRunTracer — OTEL + Langfuse span enrichment for agent runs."""
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from aihub_lib.nats.events import StartEvent
@@ -70,8 +70,7 @@ class TestTraceRunStart:
         event.user = MagicMock()
         event.user.id = "user-42"
 
-        with patch("aihub_agent.tracing.AgentRunTracer.get_step_parent_context", return_value=None):
-            await tracer.trace_run_start(topic, event)
+        await tracer.trace_run_start(topic, event)
 
         # Verify Redis was called for input and user_id
         assert mock_redis.set.call_count >= 2
@@ -83,8 +82,7 @@ class TestTraceRunStart:
         event = MagicMock(spec=StartEvent)
         event.is_user_message_event = False
 
-        with patch("aihub_agent.tracing.AgentRunTracer.get_step_parent_context", return_value=None):
-            await tracer.trace_run_start(topic, event)
+        await tracer.trace_run_start(topic, event)
 
         assert mock_redis.set.call_count >= 2
 
@@ -150,8 +148,7 @@ class TestTraceStepStop:
         event.user = MagicMock()
         event.user.id = "user-42"
 
-        with patch("aihub_agent.tracing.AgentRunTracer.get_step_parent_context", return_value=None):
-            await tracer.trace_run_start(topic, event)
+        await tracer.trace_run_start(topic, event)
 
         mock_span = MagicMock()
 
@@ -171,8 +168,7 @@ class TestTraceStepStop:
         # Store empty input/user via trace_run_start
         event = MagicMock(spec=StartEvent)
         event.is_user_message_event = False
-        with patch("aihub_agent.tracing.AgentRunTracer.get_step_parent_context", return_value=None):
-            await tracer.trace_run_start(topic, event)
+        await tracer.trace_run_start(topic, event)
 
         # Simulate a semantic event that caches output
         semantic_event = MagicMock()

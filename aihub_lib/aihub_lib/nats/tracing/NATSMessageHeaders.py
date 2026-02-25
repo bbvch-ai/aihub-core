@@ -1,9 +1,5 @@
 from typing import Self
 
-from aihub_lib.infrastructure.opentelemetry.tracing.openinference_context import (
-    OPENINFERENCE_ACTIVE_HEADER,
-    is_openinference_trace_active,
-)
 from aihub_lib.nats.tracing.NATSTraceContextPropagator import NATSTraceContextPropagator
 
 
@@ -16,8 +12,6 @@ class NATSMessageHeaders:
     def with_trace_context(self) -> Self:
         """Add current trace context to headers."""
         self.headers = NATSTraceContextPropagator.inject_trace_context(self.headers)
-        if is_openinference_trace_active():
-            self.headers[OPENINFERENCE_ACTIVE_HEADER] = "true"
         return self
 
     def with_header(self, key: str, value: str) -> Self:

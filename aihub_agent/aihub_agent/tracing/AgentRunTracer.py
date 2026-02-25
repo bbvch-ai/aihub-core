@@ -7,7 +7,6 @@ from typing import Annotated, Any
 from aihub_lib.context.BaseContext import BaseContext
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.infrastructure.opentelemetry.tracing.openinference_context import (
-    get_step_parent_context,
     openinference_trace_context,
 )
 from aihub_lib.infrastructure.opentelemetry.tracing.SmartTracer import get_tracer
@@ -15,7 +14,7 @@ from aihub_lib.nats.events import BaseEvent, StartEvent
 from aihub_lib.nats.topics.agents.AgentInstanceTopic import AgentInstanceTopic
 from aihub_lib.nats.workflow.annotations.custom_types.ListOfSize import ListOfSize
 from openinference.semconv.trace import OpenInferenceMimeTypeValues, OpenInferenceSpanKindValues, SpanAttributes
-from opentelemetry import context, propagate, trace
+from opentelemetry import context, trace
 from opentelemetry.trace import Span, StatusCode, set_span_in_context
 from pydantic import BaseModel
 from redis.asyncio import Redis
@@ -27,7 +26,6 @@ logger = logging.getLogger(__name__)
 _TRACE_INPUT_KEY = "_trace_input"
 _TRACE_USER_ID_KEY = "_trace_user_id"
 _TRACE_OUTPUT_KEY = "_trace_output"
-_TRACE_STEP_PARENT_KEY = "_trace_step_parent"
 
 
 class AgentRunTracer:
@@ -38,10 +36,9 @@ class AgentRunTracer:
     (name, session, user, input/output) set via span attributes. Langfuse
     groups these spans into traces automatically.
 
-    Run metadata (user input, user ID, step parent context, LLM output) is
-    stored in Redis via RunContext for cross-runner access in distributed
-    environments. Cleanup is handled by RunContext.delete_all() in the
-    dispatcher on run completion.
+    Run metadata (user input, user ID, LLM output) is stored in Redis via
+    RunContext for cross-runner access in distributed environments. Cleanup
+    is handled by RunContext.delete_all() in the dispatcher on run completion.
 
     The ``langfuse.*`` span attributes used throughout this class are the
     documented way to enrich standard OTEL spans for Langfuse's OTEL ingestion
@@ -59,10 +56,7 @@ class AgentRunTracer:
         return RunContext.for_topic(self.redis, topic)
 
     async def trace_run_start(self, topic: AgentInstanceTopic, event: StartEvent):
-        """
-        Stores the user input, user ID, and initial step parent context for the
-        run in Redis for cross-runner access.
-        """
+        """Stores the user input and user ID for the run in Redis for cross-runner access."""
         user_input = event.user_query if event.is_user_message_event else ""
         user_id = event.user.id if event.is_user_message_event else ""
         logger.debug(f"Storing run metadata for {topic.run_id}")
@@ -70,21 +64,6 @@ class AgentRunTracer:
         run_context = self._run_context_for(topic)
         await run_context.set(_TRACE_INPUT_KEY, user_input)
         await run_context.set(_TRACE_USER_ID_KEY, user_id)
-
-        step_parent = get_step_parent_context() or context.get_current()
-        headers: dict[str, str] = {}
-        propagate.inject(headers, context=step_parent)
-        await run_context.set(_TRACE_STEP_PARENT_KEY, headers)
-
-    async def _get_step_parent(self, topic: AgentInstanceTopic) -> context.Context | None:
-        """Retrieve the original step parent context from Redis."""
-        run_context = self._run_context_for(topic)
-        headers = await run_context.get(_TRACE_STEP_PARENT_KEY)
-
-        if headers is not None and isinstance(headers, dict):
-            return propagate.extract(headers)
-
-        return None
 
     @asynccontextmanager
     async def trace_step_start(
@@ -132,14 +111,11 @@ class AgentRunTracer:
             SpanAttributes.TAG_TAGS: [topic.thread_id, topic.display_id, topic.run_id],
         }
 
-        step_parent = await self._get_step_parent(topic)
-
         # Start span without making it current yet
         span = self.tracer.start_span(
             name=span_name,
             kind=trace.SpanKind.CONSUMER,
             attributes=attributes,
-            context=step_parent,
         )
 
         # Create a new context with this span as the current span
