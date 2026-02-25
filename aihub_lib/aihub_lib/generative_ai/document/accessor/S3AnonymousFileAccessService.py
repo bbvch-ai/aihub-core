@@ -148,20 +148,6 @@ class S3AnonymousFileAccessService:
             logger.error(f"Failed to verify file existence {container}/{file_path}: {e}")
             raise Exception(f"Failed to verify file existence: {e}")
 
-    @trace_fn
-    def download_file(self, container: str, file_path: str) -> bytes:
-        """Download a file's content from S3/MinIO storage."""
-        if not container or not container.strip():
-            raise ValueError("Container name cannot be empty")
-        if not file_path or not file_path.strip():
-            raise ValueError("File path cannot be empty")
-
-        try:
-            response = self._s3_client.get_object(Bucket=container, Key=file_path)
-            return response["Body"].read()
-        except ClientError as e:
-            raise Exception(f"Failed to download file {container}/{file_path}: {e}")
-
     def list_files(self, container: str, prefix: str = "") -> list[dict]:
         """
         List files in S3/MinIO storage with optional prefix filtering.

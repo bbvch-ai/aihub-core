@@ -5,6 +5,8 @@ from aihub_lib.auth.access.AccessLevel import AccessLevel
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.infrastructure.s3.AgentFileUploadService import AgentFileUploadService
+from aihub_lib.infrastructure.s3.use_s3 import use_agent_file_upload_service
 from aihub_lib.routes.Controller import Controller
 from fastapi import Depends, HTTPException, Query, Security
 
@@ -14,6 +16,10 @@ from aihub_api.pagination.type.PageNumber import PageNumber
 from aihub_api.pagination.type.PageSize import PageSize
 from aihub_api.routes.agent.AgentService import AgentService
 from aihub_api.routes.agent.dto.AgentClassDTO import AgentClassDTO
+from aihub_api.routes.agent.dto.AgentFileUploadRequest import AgentFileUploadRequest
+from aihub_api.routes.agent.dto.AgentFileUploadResponse import AgentFileUploadResponse
+from aihub_api.routes.agent.dto.AgentFileValidationRequest import AgentFileValidationRequest
+from aihub_api.routes.agent.dto.AgentFileValidationResponse import AgentFileValidationResponse
 from aihub_api.routes.agent.dto.CreateAgentInstanceRequest import CreateAgentInstanceRequest
 from aihub_api.routes.agent.dto.FullAgentInstanceDTO import FullAgentInstanceDTO
 from aihub_api.routes.agent.dto.UpdateAgentInstanceDTO import UpdateAgentInstanceDTO
@@ -225,5 +231,60 @@ class AgentController(Controller):
                 for agent in agents
                 if AccessChecker.from_user(user).has_access_to_agent(agent.agent_class, agent.agent_id)
             ]
+
+        return self
+
+    def initiate_file_upload(
+        self, route: str = "/classes/{agent_class}/instances/{agent_id}/files/upload/initiate"
+    ) -> Self:
+        @self.router.post(route, tags=self.tags)
+        async def initiate_file_upload(
+            agent_class: str,
+            agent_id: str,
+            request: AgentFileUploadRequest,
+            _: Annotated[
+                UserIdentity,
+                Security(self.user_with_permission("aihub.user.agent.{agent_class}.{agent_id}")),
+            ],
+            upload_service: Annotated[AgentFileUploadService, Depends(use_agent_file_upload_service)],
+        ) -> AgentFileUploadResponse:
+            """Initiate a file upload by generating a presigned PUT URL for the agent's dedicated bucket."""
+            presigned_url, file_id = upload_service.generate_upload_url(
+                agent_class=agent_class,
+                agent_id=agent_id,
+                content_type=request.content_type,
+            )
+            return AgentFileUploadResponse(
+                upload_url=presigned_url,
+                file_id=file_id,
+                expires_in=AgentFileUploadService.UPLOAD_URL_LIFETIME_SECONDS,
+            )
+
+        return self
+
+    def validate_file_upload(
+        self, route: str = "/classes/{agent_class}/instances/{agent_id}/files/upload/validate"
+    ) -> Self:
+        @self.router.post(route, tags=self.tags)
+        async def validate_file_upload(
+            agent_class: str,
+            agent_id: str,
+            request: AgentFileValidationRequest,
+            _: Annotated[
+                UserIdentity,
+                Security(self.user_with_permission("aihub.user.agent.{agent_class}.{agent_id}")),
+            ],
+            upload_service: Annotated[AgentFileUploadService, Depends(use_agent_file_upload_service)],
+        ) -> AgentFileValidationResponse:
+            """Validate that a file was successfully uploaded to the agent's dedicated bucket."""
+            exists = upload_service.verify_file_exists(
+                agent_class=agent_class,
+                agent_id=agent_id,
+                file_id=request.file_id,
+            )
+            return AgentFileValidationResponse(
+                file_id=request.file_id,
+                exists=exists,
+            )
 
         return self

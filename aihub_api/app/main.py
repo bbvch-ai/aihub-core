@@ -60,7 +60,9 @@ runner.mount(
     .update_agent_instance()
     .delete_agent_instance()
     .get_agent_instance_threads()
-    .get_all_agent_instances(),
+    .get_all_agent_instances()
+    .initiate_file_upload()
+    .validate_file_upload(),
     ProcessController(auth=auth)
     .get_process_classes()
     .get_process_class()

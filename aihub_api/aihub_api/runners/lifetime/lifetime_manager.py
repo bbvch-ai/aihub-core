@@ -9,6 +9,7 @@ from aihub_lib.infrastructure.milvus.MilvusSettings import MilvusSettings
 from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.infrastructure.nats.NatsSettings import NatsSettings
 from aihub_lib.infrastructure.redis.RedisSettings import RedisSettings
+from aihub_lib.infrastructure.s3.AgentFileUploadService import AgentFileUploadService
 from aihub_lib.infrastructure.s3.S3StorageSettings import S3StorageSettings
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from aihub_lib.nats.distributor.ExternalProcessEventDistributor import ExternalProcessEventDistributor
@@ -168,6 +169,11 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         app.state.s3_client = s3_client
         app.state.s3_public_client = s3_public_client
         app.state.s3_settings = s3_settings
+        app.state.agent_file_upload_service = AgentFileUploadService(
+            s3_client=s3_client,
+            s3_public_client=s3_public_client,
+            s3_settings=s3_settings,
+        )
         app.state.ws_manager = ws_manager
         app.state.ws_sender = ws_sender
         app.state.external_agent_event_distributor = external_agent_event_distributor
