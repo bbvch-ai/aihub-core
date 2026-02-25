@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.266.2] - 2026-02-25 - Streamlined Workflow Configuration
+
+### Changed
+
+- 🔄 **Streamlined GitHub Actions YAML:** Updated the `additional_permissions` configuration in `claude.yml` to use a
+  more concise single-line scalar format, improving the readability of workflow definitions.
+
+### Refactor
+
+- 🧹 **Cleaned Workflow Configurations:** Removed unnecessary blank lines and commented-out placeholders from both
+  `claude-code-review.yml` and `claude.yml`, enhancing file clarity and reducing clutter within the workflow
+  definitions.
+
+______________________________________________________________________
+
 ## [v0.266.1] - 2026-02-24 - Changelog Precision Update
 
 ### Fixed
