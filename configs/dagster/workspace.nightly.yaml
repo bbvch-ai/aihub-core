@@ -1,3 +1,4 @@
+---
 load_from:
   - grpc_server:
       host: default_rag_pipeline

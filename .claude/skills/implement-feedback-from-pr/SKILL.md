@@ -1,0 +1,86 @@
+---
+name: implement-feedback-from-pr
+description: Implement review feedback from a pull request. Fetches PR comments, distinguishes human from bot feedback, prioritizes and implements changes, then validates. Use when user says 'implement PR feedback', 'address review comments', 'fix PR review', 'apply PR suggestions', 'handle reviewer feedback', or 'implement changes from review'. Takes a PR number as argument. Do NOT use for pre-PR code review (use /review-diff) or PR creation (use /create-pr).
+allowed-tools: Bash, Read, Edit, Grep, Glob
+---
+
+# Implement PR Feedback - Turn Reviews into Improvements
+
+Implement review feedback from PR \$ARGUMENTS in the `bbvch-ai/aihub-core` monorepo.
+
+## Step 1: Fetch All Feedback
+
+Use the GitHub MCP server (`mcp__github__pull_request_read`) to gather structured PR data:
+
+1. **PR overview**: `method: "get"` — title, description, author, base/head branches
+2. **Inline review comments**: `method: "get_review_comments"` — threaded code comments with `isResolved`/`isOutdated`
+   metadata. Skip resolved and outdated threads.
+3. **Conversation comments**: `method: "get_comments"` — general discussion comments
+4. **CI status**: `method: "get_status"` — build and check results
+5. **Changed files**: `method: "get_files"` — list of modified files for scope detection
+
+All calls use `owner: "bbvch-ai"`, `repo: "aihub-core"`, `pullNumber: $PR_NUMBER`.
+
+## Step 2: Triage Feedback
+
+### Human Comments (TOP PRIORITY)
+
+Implement all human reviewer feedback first. Read the referenced file before making changes.
+
+### Bot Feedback (EVALUATE CRITICALLY)
+
+This repo's CI pipeline (`.github/workflows/analyze-test-pr.yml`) runs three bot checks:
+
+- **`test-modules`** — pytest across scopes. Failures here are real — fix the code.
+
+- **`pytest-coverage-comment`** — coverage delta. Add tests only if the uncovered code is meaningful.
+
+- **`sonarcloud-scan`** — scans three SonarCloud projects:
+
+  - `aihub-core_lib-core` (aihub_lib)
+  - `aihub-core_api-core` (aihub_api)
+  - `aihub-core_agents-core` (aihub_agent)
+
+  SonarCloud bugs and vulnerabilities: almost always fix. Code smells: fix if straightforward. Security hotspots:
+  evaluate case-by-case.
+
+## Step 3: Identify Affected Scopes
+
+Use the file list from Step 1 (`get_files`) to determine which monorepo scopes need testing. Map changed file paths to
+scopes: `aihub_lib/` → aihub_lib, `aihub_api/` → aihub_api, `aihub_agent/` → aihub_agent, `aihub_pipeline/` →
+aihub_pipeline, `aihub_process/` → aihub_process, `aihub_bot/` → aihub_bot, `aihub_web/` → aihub_web.
+
+## Step 4: Implement Changes
+
+For each comment, read the referenced file, make the change, and move to the next. Work through human comments first,
+then bot findings.
+
+## Step 5: Validate
+
+After all changes are implemented:
+
+```bash
+# Lint all affected scopes
+make -C /home/joelbarmettler/projects/aihub/aihub-core pr-ready
+
+# Run tests in affected scopes (or delegate to /test-scope)
+make -C aihub_lib test    # if aihub_lib was affected
+make -C aihub_api test    # if aihub_api was affected
+```
+
+## Troubleshooting
+
+| Problem                             | Solution                                                              |
+| ----------------------------------- | --------------------------------------------------------------------- |
+| MCP `get` returns no PR             | Verify PR number: `gh pr list`                                        |
+| Inline comments not visible         | Use `get_review_comments` method (not `get_comments`)                 |
+| SonarCloud findings unclear         | Check the SonarCloud link in the bot comment for detailed explanation |
+| `make pr-ready` fails after changes | Fix lint errors introduced by your fixes, re-run                      |
+| Tests fail in unrelated scope       | Check if `aihub_lib` changes broke a downstream scope                 |
+
+## Done When
+
+- Every human comment addressed or responded to
+- All critical SonarCloud and test-module findings resolved
+- `make pr-ready` runs clean from repo root
+- `make test` passes in all affected scopes

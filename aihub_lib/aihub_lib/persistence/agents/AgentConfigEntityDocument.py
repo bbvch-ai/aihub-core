@@ -16,7 +16,10 @@ class AgentConfigEntityDocument(AgentConfigEntity, Document):
 
     meta = {
         "collection": "agent_configs",
-        "indexes": [{"fields": ("agent_class", "agent_id"), "unique": True}],
+        "indexes": [
+            {"fields": ("agent_class", "agent_id"), "unique": True},
+            {"fields": ["agent_class"]},
+        ],
     }
 
     created_at = DateTimeField(default=lambda: datetime.now(UTC))

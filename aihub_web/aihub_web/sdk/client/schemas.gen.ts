@@ -99,7 +99,7 @@ export const AddMemoryToChatHistoryEventSchema = {
         },
         extended_history: {
             items: {
-                $ref: '#/components/schemas/ChatMessage-Output'
+                $ref: '#/components/schemas/ChatMessage'
             },
             type: 'array',
             title: 'Extended History',
@@ -167,7 +167,7 @@ export const AddOrganizationMemoryToChatHistoryEventSchema = {
         },
         extended_history: {
             items: {
-                $ref: '#/components/schemas/ChatMessage-Output'
+                $ref: '#/components/schemas/ChatMessage'
             },
             type: 'array',
             title: 'Extended History',
@@ -235,7 +235,7 @@ export const AddUserMemoryToChatHistoryEventSchema = {
         },
         extended_history: {
             items: {
-                $ref: '#/components/schemas/ChatMessage-Output'
+                $ref: '#/components/schemas/ChatMessage'
             },
             type: 'array',
             title: 'Extended History',
@@ -1661,8 +1661,7 @@ export const AnnotationSchema = {
         'type',
         'url_citation'
     ],
-    title: 'Annotation',
-    description: 'A URL citation when using web search.'
+    title: 'Annotation'
 } as const;
 
 export const AnnotationURLCitationSchema = {
@@ -1692,8 +1691,7 @@ export const AnnotationURLCitationSchema = {
         'title',
         'url'
     ],
-    title: 'AnnotationURLCitation',
-    description: 'A URL citation when using web search.'
+    title: 'AnnotationURLCitation'
 } as const;
 
 export const ApiHealthChecksSchema = {
@@ -1748,76 +1746,10 @@ export const AudioSchema = {
     required: [
         'id'
     ],
-    title: 'Audio',
-    description: 'Data about a previous audio response from the model.\n[Learn more](https://platform.openai.com/docs/guides/audio).'
+    title: 'Audio'
 } as const;
 
-export const AudioBlock_InputSchema = {
-    properties: {
-        block_type: {
-            type: 'string',
-            const: 'audio',
-            title: 'Block Type',
-            default: 'audio'
-        },
-        audio: {
-            anyOf: [
-                {
-                    type: 'string',
-                    format: 'binary'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Audio'
-        },
-        path: {
-            anyOf: [
-                {
-                    type: 'string',
-                    format: 'file-path'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Path'
-        },
-        url: {
-            anyOf: [
-                {
-                    type: 'string',
-                    minLength: 1,
-                    format: 'uri'
-                },
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Url'
-        },
-        format: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Format'
-        }
-    },
-    type: 'object',
-    title: 'AudioBlock',
-    description: 'A representation of audio data to directly pass to/from the LLM.'
-} as const;
-
-export const AudioBlock_OutputSchema = {
+export const AudioBlockSchema = {
     properties: {
         block_type: {
             type: 'string',
@@ -2189,28 +2121,6 @@ export const Body_create_transcription_openai_audio_transcriptions_postSchema = 
         'model'
     ],
     title: 'Body_create_transcription_openai_audio_transcriptions_post'
-} as const;
-
-export const BucketNamespacePairSchema = {
-    properties: {
-        bucket_name: {
-            type: 'string',
-            title: 'Bucket Name',
-            description: 'The name of the bucket'
-        },
-        namespace_name: {
-            type: 'string',
-            title: 'Namespace Name',
-            description: 'The name of the selected namespace in the bucket'
-        }
-    },
-    type: 'object',
-    required: [
-        'bucket_name',
-        'namespace_name'
-    ],
-    title: 'BucketNamespacePair',
-    description: 'A bucket-namespace selection pair for RAG retrieval filtering.'
 } as const;
 
 export const BulkUpdateNotificationRequestSchema = {
@@ -2679,8 +2589,7 @@ export const ChatCompletionSchema = {
         'model',
         'object'
     ],
-    title: 'ChatCompletion',
-    description: 'Represents a chat completion response returned by model, based on the provided input.'
+    title: 'ChatCompletion'
 } as const;
 
 export const ChatCompletionAllowedToolChoiceParamSchema = {
@@ -2700,8 +2609,7 @@ export const ChatCompletionAllowedToolChoiceParamSchema = {
         'allowed_tools',
         'type'
     ],
-    title: 'ChatCompletionAllowedToolChoiceParam',
-    description: 'Constrains the tools available to the model to a pre-defined set.'
+    title: 'ChatCompletionAllowedToolChoiceParam'
 } as const;
 
 export const ChatCompletionAllowedToolsParamSchema = {
@@ -2729,8 +2637,7 @@ export const ChatCompletionAllowedToolsParamSchema = {
         'mode',
         'tools'
     ],
-    title: 'ChatCompletionAllowedToolsParam',
-    description: 'Constrains the tools available to the model to a pre-defined set.'
+    title: 'ChatCompletionAllowedToolsParam'
 } as const;
 
 export const ChatCompletionAssistantMessageParamSchema = {
@@ -2819,8 +2726,7 @@ export const ChatCompletionAssistantMessageParamSchema = {
     required: [
         'role'
     ],
-    title: 'ChatCompletionAssistantMessageParam',
-    description: 'Messages sent by the model in response to user messages.'
+    title: 'ChatCompletionAssistantMessageParam'
 } as const;
 
 export const ChatCompletionAudioSchema = {
@@ -2850,8 +2756,7 @@ export const ChatCompletionAudioSchema = {
         'expires_at',
         'transcript'
     ],
-    title: 'ChatCompletionAudio',
-    description: 'If the audio output modality is requested, this object contains data\nabout the audio response from the model. [Learn more](https://platform.openai.com/docs/guides/audio).'
+    title: 'ChatCompletionAudio'
 } as const;
 
 export const ChatCompletionAudioParamSchema = {
@@ -2898,8 +2803,7 @@ export const ChatCompletionAudioParamSchema = {
         'format',
         'voice'
     ],
-    title: 'ChatCompletionAudioParam',
-    description: 'Parameters for audio output.\n\nRequired when audio output is requested with\n`modalities: ["audio"]`. [Learn more](https://platform.openai.com/docs/guides/audio).'
+    title: 'ChatCompletionAudioParam'
 } as const;
 
 export const ChatCompletionContentPartImageParamSchema = {
@@ -2919,8 +2823,7 @@ export const ChatCompletionContentPartImageParamSchema = {
         'image_url',
         'type'
     ],
-    title: 'ChatCompletionContentPartImageParam',
-    description: 'Learn about [image inputs](https://platform.openai.com/docs/guides/vision).'
+    title: 'ChatCompletionContentPartImageParam'
 } as const;
 
 export const ChatCompletionContentPartInputAudioParamSchema = {
@@ -2940,8 +2843,7 @@ export const ChatCompletionContentPartInputAudioParamSchema = {
         'input_audio',
         'type'
     ],
-    title: 'ChatCompletionContentPartInputAudioParam',
-    description: 'Learn about [audio inputs](https://platform.openai.com/docs/guides/audio).'
+    title: 'ChatCompletionContentPartInputAudioParam'
 } as const;
 
 export const ChatCompletionContentPartRefusalParamSchema = {
@@ -2983,8 +2885,7 @@ export const ChatCompletionContentPartTextParamSchema = {
         'text',
         'type'
     ],
-    title: 'ChatCompletionContentPartTextParam',
-    description: 'Learn about [text inputs](https://platform.openai.com/docs/guides/text-generation).'
+    title: 'ChatCompletionContentPartTextParam'
 } as const;
 
 export const ChatCompletionDeveloperMessageParamSchema = {
@@ -3019,8 +2920,7 @@ export const ChatCompletionDeveloperMessageParamSchema = {
         'content',
         'role'
     ],
-    title: 'ChatCompletionDeveloperMessageParam',
-    description: 'Developer-provided instructions that the model should follow, regardless of\nmessages sent by the user. With o1 models and newer, `developer` messages\nreplace the previous `system` messages.'
+    title: 'ChatCompletionDeveloperMessageParam'
 } as const;
 
 export const ChatCompletionFunctionCallOptionParamSchema = {
@@ -3035,8 +2935,7 @@ export const ChatCompletionFunctionCallOptionParamSchema = {
     required: [
         'name'
     ],
-    title: 'ChatCompletionFunctionCallOptionParam',
-    description: 'Specifying a particular function via `{"name": "my_function"}` forces the model to call that function.'
+    title: 'ChatCompletionFunctionCallOptionParam'
 } as const;
 
 export const ChatCompletionFunctionMessageParamSchema = {
@@ -3089,8 +2988,7 @@ export const ChatCompletionFunctionToolParamSchema = {
         'function',
         'type'
     ],
-    title: 'ChatCompletionFunctionToolParam',
-    description: 'A function tool that can be used to generate a response.'
+    title: 'ChatCompletionFunctionToolParam'
 } as const;
 
 export const ChatCompletionMessageSchema = {
@@ -3183,8 +3081,7 @@ export const ChatCompletionMessageSchema = {
     required: [
         'role'
     ],
-    title: 'ChatCompletionMessage',
-    description: 'A chat completion message generated by the model.'
+    title: 'ChatCompletionMessage'
 } as const;
 
 export const ChatCompletionMessageCustomToolCallSchema = {
@@ -3209,8 +3106,7 @@ export const ChatCompletionMessageCustomToolCallSchema = {
         'custom',
         'type'
     ],
-    title: 'ChatCompletionMessageCustomToolCall',
-    description: 'A call to a custom tool created by the model.'
+    title: 'ChatCompletionMessageCustomToolCall'
 } as const;
 
 export const ChatCompletionMessageCustomToolCallParamSchema = {
@@ -3235,8 +3131,7 @@ export const ChatCompletionMessageCustomToolCallParamSchema = {
         'custom',
         'type'
     ],
-    title: 'ChatCompletionMessageCustomToolCallParam',
-    description: 'A call to a custom tool created by the model.'
+    title: 'ChatCompletionMessageCustomToolCallParam'
 } as const;
 
 export const ChatCompletionMessageFunctionToolCallSchema = {
@@ -3261,8 +3156,7 @@ export const ChatCompletionMessageFunctionToolCallSchema = {
         'function',
         'type'
     ],
-    title: 'ChatCompletionMessageFunctionToolCall',
-    description: 'A call to a function tool created by the model.'
+    title: 'ChatCompletionMessageFunctionToolCall'
 } as const;
 
 export const ChatCompletionMessageFunctionToolCallParamSchema = {
@@ -3287,8 +3181,7 @@ export const ChatCompletionMessageFunctionToolCallParamSchema = {
         'function',
         'type'
     ],
-    title: 'ChatCompletionMessageFunctionToolCallParam',
-    description: 'A call to a function tool created by the model.'
+    title: 'ChatCompletionMessageFunctionToolCallParam'
 } as const;
 
 export const ChatCompletionNamedToolChoiceCustomParamSchema = {
@@ -3308,8 +3201,7 @@ export const ChatCompletionNamedToolChoiceCustomParamSchema = {
         'custom',
         'type'
     ],
-    title: 'ChatCompletionNamedToolChoiceCustomParam',
-    description: 'Specifies a tool the model should use.\n\nUse to force the model to call a specific custom tool.'
+    title: 'ChatCompletionNamedToolChoiceCustomParam'
 } as const;
 
 export const ChatCompletionNamedToolChoiceParamSchema = {
@@ -3329,8 +3221,7 @@ export const ChatCompletionNamedToolChoiceParamSchema = {
         'function',
         'type'
     ],
-    title: 'ChatCompletionNamedToolChoiceParam',
-    description: 'Specifies a tool the model should use.\n\nUse to force the model to call a specific function.'
+    title: 'ChatCompletionNamedToolChoiceParam'
 } as const;
 
 export const ChatCompletionPredictionContentParamSchema = {
@@ -3361,8 +3252,7 @@ export const ChatCompletionPredictionContentParamSchema = {
         'content',
         'type'
     ],
-    title: 'ChatCompletionPredictionContentParam',
-    description: 'Static predicted output content, such as the content of a text file that is\nbeing regenerated.'
+    title: 'ChatCompletionPredictionContentParam'
 } as const;
 
 export const ChatCompletionRequestSchema = {
@@ -3409,16 +3299,6 @@ export const ChatCompletionRequestSchema = {
                 {
                     type: 'string',
                     enum: [
-                        'gpt-5.2',
-                        'gpt-5.2-2025-12-11',
-                        'gpt-5.2-chat-latest',
-                        'gpt-5.2-pro',
-                        'gpt-5.2-pro-2025-12-11',
-                        'gpt-5.1',
-                        'gpt-5.1-2025-11-13',
-                        'gpt-5.1-codex',
-                        'gpt-5.1-mini',
-                        'gpt-5.1-chat-latest',
                         'gpt-5',
                         'gpt-5-mini',
                         'gpt-5-nano',
@@ -3680,12 +3560,10 @@ export const ChatCompletionRequestSchema = {
                 {
                     type: 'string',
                     enum: [
-                        'none',
                         'minimal',
                         'low',
                         'medium',
-                        'high',
-                        'xhigh'
+                        'high'
                     ]
                 },
                 {
@@ -3870,8 +3748,7 @@ export const ChatCompletionStreamOptionsParamSchema = {
     },
     additionalProperties: true,
     type: 'object',
-    title: 'ChatCompletionStreamOptionsParam',
-    description: 'Options for streaming response. Only set this when you set `stream: true`.'
+    title: 'ChatCompletionStreamOptionsParam'
 } as const;
 
 export const ChatCompletionSystemMessageParamSchema = {
@@ -3906,8 +3783,7 @@ export const ChatCompletionSystemMessageParamSchema = {
         'content',
         'role'
     ],
-    title: 'ChatCompletionSystemMessageParam',
-    description: 'Developer-provided instructions that the model should follow, regardless of\nmessages sent by the user. With o1 models and newer, use `developer` messages\nfor this purpose instead.'
+    title: 'ChatCompletionSystemMessageParam'
 } as const;
 
 export const ChatCompletionTokenLogprobSchema = {
@@ -4033,11 +3909,10 @@ export const ChatCompletionUserMessageParamSchema = {
         'content',
         'role'
     ],
-    title: 'ChatCompletionUserMessageParam',
-    description: 'Messages sent by an end user, containing prompts or additional context\ninformation.'
+    title: 'ChatCompletionUserMessageParam'
 } as const;
 
-export const ChatMessage_OutputSchema = {
+export const ChatMessageSchema = {
     properties: {
         role: {
             $ref: '#/components/schemas/MessageRole',
@@ -4053,46 +3928,46 @@ export const ChatMessage_OutputSchema = {
                         $ref: '#/components/schemas/TextBlock'
                     },
                     {
-                        $ref: '#/components/schemas/ImageBlock-Output'
+                        $ref: '#/components/schemas/ImageBlock'
                     },
                     {
-                        $ref: '#/components/schemas/AudioBlock-Output'
+                        $ref: '#/components/schemas/AudioBlock'
                     },
                     {
-                        $ref: '#/components/schemas/VideoBlock-Output'
+                        $ref: '#/components/schemas/VideoBlock'
                     },
                     {
-                        $ref: '#/components/schemas/DocumentBlock-Output'
+                        $ref: '#/components/schemas/DocumentBlock'
                     },
                     {
                         $ref: '#/components/schemas/CachePoint'
                     },
                     {
-                        $ref: '#/components/schemas/CitableBlock-Output'
+                        $ref: '#/components/schemas/CitableBlock'
                     },
                     {
-                        $ref: '#/components/schemas/CitationBlock-Output'
+                        $ref: '#/components/schemas/CitationBlock'
                     },
                     {
-                        $ref: '#/components/schemas/ThinkingBlock-Output'
+                        $ref: '#/components/schemas/ThinkingBlock'
                     },
                     {
-                        $ref: '#/components/schemas/ToolCallBlock-Output'
+                        $ref: '#/components/schemas/ToolCallBlock'
                     }
                 ],
                 discriminator: {
                     propertyName: 'block_type',
                     mapping: {
-                        audio: '#/components/schemas/AudioBlock-Output',
+                        audio: '#/components/schemas/AudioBlock',
                         cache: '#/components/schemas/CachePoint',
-                        citable: '#/components/schemas/CitableBlock-Output',
-                        citation: '#/components/schemas/CitationBlock-Output',
-                        document: '#/components/schemas/DocumentBlock-Output',
-                        image: '#/components/schemas/ImageBlock-Output',
+                        citable: '#/components/schemas/CitableBlock',
+                        citation: '#/components/schemas/CitationBlock',
+                        document: '#/components/schemas/DocumentBlock',
+                        image: '#/components/schemas/ImageBlock',
                         text: '#/components/schemas/TextBlock',
-                        thinking: '#/components/schemas/ThinkingBlock-Output',
-                        tool_call: '#/components/schemas/ToolCallBlock-Output',
-                        video: '#/components/schemas/VideoBlock-Output'
+                        thinking: '#/components/schemas/ThinkingBlock',
+                        tool_call: '#/components/schemas/ToolCallBlock',
+                        video: '#/components/schemas/VideoBlock'
                     }
                 }
             },
@@ -4418,8 +4293,7 @@ export const ChoiceLogprobsSchema = {
     },
     additionalProperties: true,
     type: 'object',
-    title: 'ChoiceLogprobs',
-    description: 'Log probability information for the choice.'
+    title: 'ChoiceLogprobs'
 } as const;
 
 export const ChunkEventSchema = {
@@ -4493,7 +4367,7 @@ export const ChunkEventSchema = {
     description: 'An event representing a portion of output or generated content (a "chunk") that is\nstreamed or delivered in segments—common in incremental output scenarios like LLM\ntoken streaming.\n\n### Why ChunkEvent?\nIn conversational or streaming AI outputs, the model might emit content in pieces rather\nthan all at once. `ChunkEvent` allows the frontend or other consumers to display partial\nresponses as they are generated, improving user experience by not forcing them to wait\nfor the entire answer.'
 } as const;
 
-export const CitableBlock_InputSchema = {
+export const CitableBlockSchema = {
     properties: {
         block_type: {
             type: 'string',
@@ -4516,17 +4390,17 @@ export const CitableBlock_InputSchema = {
                         $ref: '#/components/schemas/TextBlock'
                     },
                     {
-                        $ref: '#/components/schemas/ImageBlock-Input'
+                        $ref: '#/components/schemas/ImageBlock'
                     },
                     {
-                        $ref: '#/components/schemas/DocumentBlock-Input'
+                        $ref: '#/components/schemas/DocumentBlock'
                     }
                 ],
                 discriminator: {
                     propertyName: 'block_type',
                     mapping: {
-                        document: '#/components/schemas/DocumentBlock-Input',
-                        image: '#/components/schemas/ImageBlock-Input',
+                        document: '#/components/schemas/DocumentBlock',
+                        image: '#/components/schemas/ImageBlock',
                         text: '#/components/schemas/TextBlock'
                     }
                 }
@@ -4545,59 +4419,7 @@ export const CitableBlock_InputSchema = {
     description: 'Supports providing citable content to LLMs that have built-in citation support.'
 } as const;
 
-export const CitableBlock_OutputSchema = {
-    properties: {
-        block_type: {
-            type: 'string',
-            const: 'citable',
-            title: 'Block Type',
-            default: 'citable'
-        },
-        title: {
-            type: 'string',
-            title: 'Title'
-        },
-        source: {
-            type: 'string',
-            title: 'Source'
-        },
-        content: {
-            items: {
-                oneOf: [
-                    {
-                        $ref: '#/components/schemas/TextBlock'
-                    },
-                    {
-                        $ref: '#/components/schemas/ImageBlock-Output'
-                    },
-                    {
-                        $ref: '#/components/schemas/DocumentBlock-Output'
-                    }
-                ],
-                discriminator: {
-                    propertyName: 'block_type',
-                    mapping: {
-                        document: '#/components/schemas/DocumentBlock-Output',
-                        image: '#/components/schemas/ImageBlock-Output',
-                        text: '#/components/schemas/TextBlock'
-                    }
-                }
-            },
-            type: 'array',
-            title: 'Content'
-        }
-    },
-    type: 'object',
-    required: [
-        'title',
-        'source',
-        'content'
-    ],
-    title: 'CitableBlock',
-    description: 'Supports providing citable content to LLMs that have built-in citation support.'
-} as const;
-
-export const CitationBlock_InputSchema = {
+export const CitationBlockSchema = {
     properties: {
         block_type: {
             type: 'string',
@@ -4611,64 +4433,14 @@ export const CitationBlock_InputSchema = {
                     $ref: '#/components/schemas/TextBlock'
                 },
                 {
-                    $ref: '#/components/schemas/ImageBlock-Input'
+                    $ref: '#/components/schemas/ImageBlock'
                 }
             ],
             title: 'Cited Content',
             discriminator: {
                 propertyName: 'block_type',
                 mapping: {
-                    image: '#/components/schemas/ImageBlock-Input',
-                    text: '#/components/schemas/TextBlock'
-                }
-            }
-        },
-        source: {
-            type: 'string',
-            title: 'Source'
-        },
-        title: {
-            type: 'string',
-            title: 'Title'
-        },
-        additional_location_info: {
-            $ref: '#/components/schemas/additional_location_info',
-            title: 'Additional Location Info'
-        }
-    },
-    type: 'object',
-    required: [
-        'cited_content',
-        'source',
-        'title',
-        'additional_location_info'
-    ],
-    title: 'CitationBlock',
-    description: 'A representation of cited content from past messages.'
-} as const;
-
-export const CitationBlock_OutputSchema = {
-    properties: {
-        block_type: {
-            type: 'string',
-            const: 'citation',
-            title: 'Block Type',
-            default: 'citation'
-        },
-        cited_content: {
-            oneOf: [
-                {
-                    $ref: '#/components/schemas/TextBlock'
-                },
-                {
-                    $ref: '#/components/schemas/ImageBlock-Output'
-                }
-            ],
-            title: 'Cited Content',
-            discriminator: {
-                propertyName: 'block_type',
-                mapping: {
-                    image: '#/components/schemas/ImageBlock-Output',
+                    image: '#/components/schemas/ImageBlock',
                     text: '#/components/schemas/TextBlock'
                 }
             }
@@ -4926,8 +4698,7 @@ export const CompletionTokensDetailsSchema = {
     },
     additionalProperties: true,
     type: 'object',
-    title: 'CompletionTokensDetails',
-    description: 'Breakdown of tokens used in a completion.'
+    title: 'CompletionTokensDetails'
 } as const;
 
 export const CompletionUsageSchema = {
@@ -4972,8 +4743,7 @@ export const CompletionUsageSchema = {
         'prompt_tokens',
         'total_tokens'
     ],
-    title: 'CompletionUsage',
-    description: 'Usage statistics for the completion request.'
+    title: 'CompletionUsage'
 } as const;
 
 export const ContextInsufficientRejectEventSchema = {
@@ -5609,8 +5379,7 @@ export const Custom_OutputSchema = {
         'input',
         'name'
     ],
-    title: 'Custom',
-    description: 'The custom tool that the model called.'
+    title: 'Custom'
 } as const;
 
 export const DashboardDTOSchema = {
@@ -6439,81 +6208,7 @@ export const DisplayStatisticsSchema = {
     description: 'Statistics for a display, including its runs, intended for API response.'
 } as const;
 
-export const DocumentBlock_InputSchema = {
-    properties: {
-        block_type: {
-            type: 'string',
-            const: 'document',
-            title: 'Block Type',
-            default: 'document'
-        },
-        data: {
-            anyOf: [
-                {
-                    type: 'string',
-                    format: 'binary'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Data'
-        },
-        path: {
-            anyOf: [
-                {
-                    type: 'string',
-                    format: 'file-path'
-                },
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Path'
-        },
-        url: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Url'
-        },
-        title: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Title'
-        },
-        document_mimetype: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Document Mimetype'
-        }
-    },
-    type: 'object',
-    title: 'DocumentBlock',
-    description: 'A representation of a document to directly pass to the LLM.'
-} as const;
-
-export const DocumentBlock_OutputSchema = {
+export const DocumentBlockSchema = {
     properties: {
         block_type: {
             type: 'string',
@@ -7631,8 +7326,7 @@ export const FileSchema = {
         'file',
         'type'
     ],
-    title: 'File',
-    description: 'Learn about [file inputs](https://platform.openai.com/docs/guides/text) for text generation.'
+    title: 'File'
 } as const;
 
 export const FileFileSchema = {
@@ -7940,8 +7634,7 @@ export const Function_OutputSchema = {
         'arguments',
         'name'
     ],
-    title: 'Function',
-    description: 'The function that the model called.'
+    title: 'Function'
 } as const;
 
 export const FunctionCallSchema = {
@@ -7961,8 +7654,7 @@ export const FunctionCallSchema = {
         'arguments',
         'name'
     ],
-    title: 'FunctionCall',
-    description: 'Deprecated and replaced by `tool_calls`.\n\nThe name and arguments of a function that should be called, as generated by the model.'
+    title: 'FunctionCall'
 } as const;
 
 export const FunctionDefinitionSchema = {
@@ -9487,87 +9179,10 @@ export const ImageSchema = {
     },
     additionalProperties: true,
     type: 'object',
-    title: 'Image',
-    description: 'Represents the content or the URL of an image generated by the OpenAI API.'
+    title: 'Image'
 } as const;
 
-export const ImageBlock_InputSchema = {
-    properties: {
-        block_type: {
-            type: 'string',
-            const: 'image',
-            title: 'Block Type',
-            default: 'image'
-        },
-        image: {
-            anyOf: [
-                {
-                    type: 'string',
-                    format: 'binary'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Image'
-        },
-        path: {
-            anyOf: [
-                {
-                    type: 'string',
-                    format: 'file-path'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Path'
-        },
-        url: {
-            anyOf: [
-                {
-                    type: 'string',
-                    minLength: 1,
-                    format: 'uri'
-                },
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Url'
-        },
-        image_mimetype: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Image Mimetype'
-        },
-        detail: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Detail'
-        }
-    },
-    type: 'object',
-    title: 'ImageBlock',
-    description: 'A representation of image data to directly pass to/from the LLM.'
-} as const;
-
-export const ImageBlock_OutputSchema = {
+export const ImageBlockSchema = {
     properties: {
         block_type: {
             type: 'string',
@@ -9907,8 +9522,7 @@ export const ImagesResponseSchema = {
     required: [
         'created'
     ],
-    title: 'ImagesResponse',
-    description: 'The response from the image generation endpoint.'
+    title: 'ImagesResponse'
 } as const;
 
 export const IngestedNodeSchema = {
@@ -11308,8 +10922,7 @@ export const JSONSchemaSchema = {
     required: [
         'name'
     ],
-    title: 'JSONSchema',
-    description: 'Structured Outputs configuration options, including a JSON Schema.'
+    title: 'JSONSchema'
 } as const;
 
 export const KnobSchema = {
@@ -12345,7 +11958,7 @@ export const LimitChatHistoryEventSchema = {
         },
         limited_history: {
             items: {
-                $ref: '#/components/schemas/ChatMessage-Output'
+                $ref: '#/components/schemas/ChatMessage'
             },
             type: 'array',
             title: 'Limited History',
@@ -13628,7 +13241,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1771920583
+            default: 1771581051
         },
         owned_by: {
             type: 'string',
@@ -14578,47 +14191,6 @@ export const MultiSelectSchema = {
     ],
     title: 'MultiSelect',
     description: 'https://formkit-primevue.netlify.app/inputs/MultiSelect'
-} as const;
-
-export const NamespaceAwareUserMessageEventInputSchema = {
-    properties: {
-        messages: {
-            items: {
-                $ref: '#/components/schemas/jambo__parser__object_type_parser__ChatMessage__1'
-            },
-            type: 'array',
-            title: 'Messages',
-            description: 'A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.'
-        },
-        files: {
-            anyOf: [
-                {
-                    items: {
-                        $ref: '#/components/schemas/UserUploadedFile'
-                    },
-                    type: 'array'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Files',
-            description: 'A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.'
-        },
-        selected_namespaces: {
-            items: {
-                $ref: '#/components/schemas/BucketNamespacePair'
-            },
-            type: 'array',
-            title: 'Selected Namespaces',
-            description: 'List of bucket-namespace pairs for RAG retrieval filtering.'
-        }
-    },
-    type: 'object',
-    required: [
-        'selected_namespaces'
-    ],
-    title: 'NamespaceAwareUserMessageEventInput'
 } as const;
 
 export const NamespaceDTOSchema = {
@@ -16254,8 +15826,7 @@ export const PromptTokensDetailsSchema = {
     },
     additionalProperties: true,
     type: 'object',
-    title: 'PromptTokensDetails',
-    description: 'Breakdown of tokens used in the prompt.'
+    title: 'PromptTokensDetails'
 } as const;
 
 export const RadioButtonSchema = {
@@ -17091,8 +16662,7 @@ export const ResponseFormatJSONObjectSchema = {
     required: [
         'type'
     ],
-    title: 'ResponseFormatJSONObject',
-    description: 'JSON object response format.\n\nAn older method of generating JSON responses.\nUsing `json_schema` is recommended for models that support it. Note that the\nmodel will not generate JSON without a system or user message instructing it\nto do so.'
+    title: 'ResponseFormatJSONObject'
 } as const;
 
 export const ResponseFormatJSONSchemaSchema = {
@@ -17112,8 +16682,7 @@ export const ResponseFormatJSONSchemaSchema = {
         'json_schema',
         'type'
     ],
-    title: 'ResponseFormatJSONSchema',
-    description: 'JSON Schema response format.\n\nUsed to generate structured JSON responses.\nLearn more about [Structured Outputs](https://platform.openai.com/docs/guides/structured-outputs).'
+    title: 'ResponseFormatJSONSchema'
 } as const;
 
 export const ResponseFormatTextSchema = {
@@ -17129,8 +16698,7 @@ export const ResponseFormatTextSchema = {
     required: [
         'type'
     ],
-    title: 'ResponseFormatText',
-    description: 'Default response format. Used to generate text responses.'
+    title: 'ResponseFormatText'
 } as const;
 
 export const RetrieveOrganizationMemoryEventSchema = {
@@ -17409,6 +16977,23 @@ export const RoleResponseSchema = {
             title: 'Usage Limits',
             description: 'Pattern-based usage limit rules.',
             default: []
+        },
+        tenant_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Tenant Id',
+            description: 'Tenant ID this role belongs to, or None for system roles.'
+        },
+        is_system_role: {
+            type: 'boolean',
+            title: 'Is System Role',
+            description: 'Whether this is a system-wide role.'
         }
     },
     type: 'object',
@@ -17416,7 +17001,9 @@ export const RoleResponseSchema = {
         'id',
         'name',
         'description',
-        'access_rules'
+        'access_rules',
+        'tenant_id',
+        'is_system_role'
     ],
     title: 'RoleResponse',
     description: 'Response model representing a role.'
@@ -18712,7 +18299,7 @@ export const StandaloneQuestionCondenserEventSchema = {
             description: 'Display description for the event'
         },
         condensed_chat_message: {
-            $ref: '#/components/schemas/ChatMessage-Output',
+            $ref: '#/components/schemas/ChatMessage',
             description: 'Single chat message containing the condensed user question.'
         },
         _event_name: {
@@ -18858,37 +18445,6 @@ export const StopEventSchema = {
     ],
     title: 'StopEvent',
     description: 'An event signaling the conclusion of a run within a thread, acting both as a control signal\nand a user-facing message.\n\n### Why StopEvent?\nIn many workflows, reaching a terminal state (e.g., producing a final result or hitting an\nend-of-workflow condition) must:\n- Influence the system’s control flow, ensuring no further steps are executed.\n- Provide a visible indicator to the end-user or UI that the process has completed.\n\nBy inheriting from both `ControlEvent` and `DisplayEvent`:\n- As a `ControlEvent`, it instructs the workflow engine to stop processing subsequent steps.\n- As a `DisplayEvent`, it can be shown to users or captured by dashboards, indicating that\n  the run is over and providing any final output or status messages.\n\n### Use Cases\n- Signaling that a response is ready, and no more actions are needed.\n- Informing the user interface that the conversation or task has concluded.'
-} as const;
-
-export const StopEventOutputSchema = {
-    properties: {
-        display_name: {
-            anyOf: [
-                {
-                    $ref: '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Display Name',
-            description: 'Display name for the event'
-        },
-        display_description: {
-            anyOf: [
-                {
-                    $ref: '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Display Description',
-            description: 'Display description for the event'
-        }
-    },
-    type: 'object',
-    title: 'StopEventOutput'
 } as const;
 
 export const StoreOrganizationMemoryEventSchema = {
@@ -19175,6 +18731,37 @@ export const TemplateDataSchema = {
     ],
     title: 'TemplateData',
     description: 'Typed container for template data extracted from Form.to_template_data().\n\nEach agent/process type has different configurable fields, so extra fields\nare allowed and preserved through serialization.'
+} as const;
+
+export const TenantIdentitySchema = {
+    properties: {
+        id: {
+            type: 'string',
+            title: 'Id',
+            description: 'Unique tenant identifier'
+        },
+        name: {
+            type: 'string',
+            title: 'Name',
+            description: 'Tenant display name'
+        },
+        access_rules: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Access Rules',
+            description: 'Access rules granted to this tenant'
+        }
+    },
+    type: 'object',
+    required: [
+        'id',
+        'name',
+        'access_rules'
+    ],
+    title: 'TenantIdentity',
+    description: 'Represents a tenant\'s identity in the multi-tenant system.'
 } as const;
 
 export const TextBlockSchema = {
@@ -19493,49 +19080,7 @@ export const TextareaSchema = {
     description: 'https://formkit-primevue.netlify.app/inputs/Textarea'
 } as const;
 
-export const ThinkingBlock_InputSchema = {
-    properties: {
-        block_type: {
-            type: 'string',
-            const: 'thinking',
-            title: 'Block Type',
-            default: 'thinking'
-        },
-        content: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Content',
-            description: 'Content of the reasoning/thinking process, if available'
-        },
-        num_tokens: {
-            anyOf: [
-                {
-                    type: 'integer'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Num Tokens',
-            description: 'Number of token used for reasoning/thinking, if available'
-        },
-        additional_information: {
-            $ref: '#/components/schemas/additional_information',
-            title: 'Additional Information'
-        }
-    },
-    type: 'object',
-    title: 'ThinkingBlock',
-    description: 'A representation of the content streamed from reasoning/thinking processes by LLMs'
-} as const;
-
-export const ThinkingBlock_OutputSchema = {
+export const ThinkingBlockSchema = {
     properties: {
         block_type: {
             type: 'string',
@@ -20377,52 +19922,7 @@ export const TokenResponseSchema = {
     title: 'TokenResponse'
 } as const;
 
-export const ToolCallBlock_InputSchema = {
-    properties: {
-        block_type: {
-            type: 'string',
-            const: 'tool_call',
-            title: 'Block Type',
-            default: 'tool_call'
-        },
-        tool_call_id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Tool Call Id',
-            description: 'ID of the tool call, if provided'
-        },
-        tool_name: {
-            type: 'string',
-            title: 'Tool Name',
-            description: 'Name of the called tool'
-        },
-        tool_kwargs: {
-            anyOf: [
-                {
-                    $ref: '#/components/schemas/sub0'
-                },
-                {
-                    type: 'string'
-                }
-            ],
-            title: 'Tool Kwargs',
-            description: 'Arguments provided to the tool, if available'
-        }
-    },
-    type: 'object',
-    required: [
-        'tool_name'
-    ],
-    title: 'ToolCallBlock'
-} as const;
-
-export const ToolCallBlock_OutputSchema = {
+export const ToolCallBlockSchema = {
     properties: {
         block_type: {
             type: 'string',
@@ -20650,8 +20150,7 @@ export const TranscriptionSchema = {
     required: [
         'text'
     ],
-    title: 'Transcription',
-    description: 'Represents a transcription response returned by model, based on the provided input.'
+    title: 'Transcription'
 } as const;
 
 export const TranscriptionSegmentSchema = {
@@ -20748,7 +20247,7 @@ export const TranscriptionVerboseSchema = {
         usage: {
             anyOf: [
                 {
-                    $ref: '#/components/schemas/openai__types__audio__transcription_verbose__Usage'
+                    $ref: '#/components/schemas/Usage'
                 },
                 {
                     type: 'null'
@@ -20777,8 +20276,7 @@ export const TranscriptionVerboseSchema = {
         'language',
         'text'
     ],
-    title: 'TranscriptionVerbose',
-    description: 'Represents a verbose json transcription response returned by model, based on the provided input.'
+    title: 'TranscriptionVerbose'
 } as const;
 
 export const TranscriptionWordSchema = {
@@ -21057,6 +20555,27 @@ export const UpdateRoleRequestSchema = {
     description: 'Request model for updating an existing role. All fields are optional.'
 } as const;
 
+export const UsageSchema = {
+    properties: {
+        seconds: {
+            type: 'number',
+            title: 'Seconds'
+        },
+        type: {
+            type: 'string',
+            const: 'duration',
+            title: 'Type'
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: [
+        'seconds',
+        'type'
+    ],
+    title: 'Usage'
+} as const;
+
 export const UsageDurationSchema = {
     properties: {
         seconds: {
@@ -21075,8 +20594,7 @@ export const UsageDurationSchema = {
         'seconds',
         'type'
     ],
-    title: 'UsageDuration',
-    description: 'Usage statistics for models billed by audio input duration.'
+    title: 'UsageDuration'
 } as const;
 
 export const UsageInputTokensDetailsSchema = {
@@ -21096,8 +20614,7 @@ export const UsageInputTokensDetailsSchema = {
         'image_tokens',
         'text_tokens'
     ],
-    title: 'UsageInputTokensDetails',
-    description: 'The input tokens detailed information for the image generation.'
+    title: 'UsageInputTokensDetails'
 } as const;
 
 export const UsageLimitDTOSchema = {
@@ -21152,27 +20669,6 @@ export const UsageLimitPeriodSchema = {
     description: 'Supported usage limit periods.'
 } as const;
 
-export const UsageOutputTokensDetailsSchema = {
-    properties: {
-        image_tokens: {
-            type: 'integer',
-            title: 'Image Tokens'
-        },
-        text_tokens: {
-            type: 'integer',
-            title: 'Text Tokens'
-        }
-    },
-    additionalProperties: true,
-    type: 'object',
-    required: [
-        'image_tokens',
-        'text_tokens'
-    ],
-    title: 'UsageOutputTokensDetails',
-    description: 'The output token details for the image generation.'
-} as const;
-
 export const UsageTokensSchema = {
     properties: {
         input_tokens: {
@@ -21211,8 +20707,7 @@ export const UsageTokensSchema = {
         'total_tokens',
         'type'
     ],
-    title: 'UsageTokens',
-    description: 'Usage statistics for models billed by token usage.'
+    title: 'UsageTokens'
 } as const;
 
 export const UsageTokensInputTokenDetailsSchema = {
@@ -21242,8 +20737,7 @@ export const UsageTokensInputTokenDetailsSchema = {
     },
     additionalProperties: true,
     type: 'object',
-    title: 'UsageTokensInputTokenDetails',
-    description: 'Details about the input tokens billed for this request.'
+    title: 'UsageTokensInputTokenDetails'
 } as const;
 
 export const UserAccessSchema = {
@@ -21301,15 +20795,6 @@ export const UserDTOSchema = {
             title: 'Last Accessed',
             description: 'Last time the user was updated'
         },
-        roles: {
-            items: {
-                type: 'string'
-            },
-            type: 'array',
-            title: 'Roles',
-            description: 'List of roles assigned to the user',
-            default: []
-        },
         favorite_modules: {
             items: {
                 type: 'string'
@@ -21364,19 +20849,11 @@ export const UserIdentitySchema = {
             },
             type: 'array',
             title: 'Roles',
-            description: 'The roles assigned to the user.'
+            description: 'The roles assigned to the user within the acting tenant.'
         },
-        profile_image: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Profile Image',
-            description: 'Data URL (base64) representation of profile image'
+        acting_within_tenant: {
+            $ref: '#/components/schemas/TenantIdentity',
+            description: 'The tenant context the user is operating within.'
         }
     },
     type: 'object',
@@ -21384,9 +20861,11 @@ export const UserIdentitySchema = {
         'id',
         'name',
         'email',
-        'roles'
+        'roles',
+        'acting_within_tenant'
     ],
-    title: 'UserIdentity'
+    title: 'UserIdentity',
+    description: 'Lightweight identity object for authenticated users.'
 } as const;
 
 export const UserMessageEventSchema = {
@@ -21434,7 +20913,7 @@ export const UserMessageEventSchema = {
         },
         messages: {
             items: {
-                $ref: '#/components/schemas/ChatMessage-Output'
+                $ref: '#/components/schemas/ChatMessage'
             },
             type: 'array',
             title: 'Messages',
@@ -21483,42 +20962,17 @@ export const UserMessageEventSchema = {
     description: 'A start event triggered directly by a user\'s message, bridging both display and control functionalities.\n\n### Why UserMessageEvent?\nWhile `StartEvent` influences the workflow’s starting point and `DisplayEvent` represents user-facing\noutput, a `UserMessageEvent` marks a ChatMessage workflow start initiated by a user\'s input. This is common in chat\ninterfaces, voice assistants, or interactive dashboards, where a user’s message serves as both:\n- A display event (since it may appear in the UI history).\n- A control event triggering workflow execution from a particular starting step.\n\nBy inheriting from `DisplayEvent` and `StartEvent`:\n- It ensures the event is visible in the user interface, displaying the user’s message.\n- It also sets the workflow in motion, deciding how and where the system responds or which step\n  of the workflow to begin with.\n\n### Use Case\nIn an agent workflow, you might have:\n- **UserMessageEvent**: Initiates the workflow at a certain step due to user input.\n- Another start event from an agent or a system event: Initiates the workflow at a different step\n  or with different initial conditions.\n\nThis flexible design allows mixing and matching start events to adapt how and when workflows\nare triggered, depending on the source of the event.'
 } as const;
 
-export const UserMessageEventInputSchema = {
-    properties: {
-        messages: {
-            items: {
-                $ref: '#/components/schemas/jambo__parser__object_type_parser__ChatMessage__2'
-            },
-            type: 'array',
-            title: 'Messages',
-            description: 'A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.'
-        },
-        files: {
-            anyOf: [
-                {
-                    items: {
-                        $ref: '#/components/schemas/UserUploadedFile'
-                    },
-                    type: 'array'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Files',
-            description: 'A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.'
-        }
-    },
-    type: 'object',
-    title: 'UserMessageEventInput'
-} as const;
-
 export const UserUploadedFileSchema = {
     properties: {
         filename: {
             type: 'string',
             title: 'Filename',
             description: 'The name of the uploaded file, including the extension.'
+        },
+        file_data: {
+            type: 'string',
+            title: 'File Data',
+            description: 'Base64 encoded content of the uploaded file.'
         },
         file_type: {
             type: 'string',
@@ -21528,24 +20982,13 @@ export const UserUploadedFileSchema = {
                 'image/png',
                 'application/pdf'
             ]
-        },
-        s3_bucket: {
-            type: 'string',
-            title: 'S3 Bucket',
-            description: 'The S3 bucket where the file is stored.'
-        },
-        s3_key: {
-            type: 'string',
-            title: 'S3 Key',
-            description: 'The S3 object key for the file.'
         }
     },
     type: 'object',
     required: [
         'filename',
-        'file_type',
-        's3_bucket',
-        's3_key'
+        'file_data',
+        'file_type'
     ],
     title: 'UserUploadedFile'
 } as const;
@@ -21585,15 +21028,6 @@ export const UserWithAccessDTOSchema = {
             title: 'Last Accessed',
             description: 'Last time the user was updated'
         },
-        roles: {
-            items: {
-                type: 'string'
-            },
-            type: 'array',
-            title: 'Roles',
-            description: 'List of roles assigned to the user',
-            default: []
-        },
         favorite_modules: {
             items: {
                 type: 'string'
@@ -21613,6 +21047,15 @@ export const UserWithAccessDTOSchema = {
                 }
             ],
             description: 'User dashboard configuration for index page'
+        },
+        roles: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Roles',
+            description: 'List of roles assigned to the user in the current tenant',
+            default: []
         },
         access: {
             $ref: '#/components/schemas/Access',
@@ -21653,13 +21096,6 @@ export const ValidationErrorSchema = {
         type: {
             type: 'string',
             title: 'Error Type'
-        },
-        input: {
-            title: 'Input'
-        },
-        ctx: {
-            type: 'object',
-            title: 'Context'
         }
     },
     type: 'object',
@@ -21854,94 +21290,7 @@ export const VectorStoreInputSchema = {
     description: '    A FormKit element for selecting a vector store collection and namespaces.\n\n    This element renders as a cascading selection:\n    1. Database dropdown (loads from /api/v1/knowledge/databases)\n    2. Namespace multi-select (populated based on selected database)\n\n    The output is a structured object containing both the collection name and\n    the selected namespaces, matching the MilvusVectorStoreConfig fields:\n    {"collection_name": str, "index_namespaces": list[str]}\n\n    ### Form Duality\n    When used with MilvusVectorStoreConfig, the form submission is validated\n    directly into MilvusVectorStoreConfig (connection settings are read from\n    MilvusSettings at runtime).\n\n    ### Example Usage\n    ```python\n    from aihub_lib.nats.events.form.elements.VectorStoreInput import VectorStoreInput\n    from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig\n\n    class MyRetrieverConfig(Form):\n        vector_store: Annotated[\n            MilvusVectorStoreConfig | VectorStoreInput,\n            Field(description="The vector store configuration"),\n        ]\nreranking_model\n    # Form mode - for rendering:\n    config = MyRetrieverConfig(\n        vector_store=VectorStoreInput(\n            label=LocaleString(en="Vector Store", de="Vektorspeicher"),\n        ),\n    )\n\n    # Data mode - from submission (Pydantic validates into MilvusVectorStoreConfig):\n    config = MyRetrieverConfig(\n        vector_store=MilvusVectorStoreConfig(\n            collection_name="my-database",\n            index_namespaces=["namespace1", "namespace2"],\n        ),\n    )\n    ```'
 } as const;
 
-export const VideoBlock_InputSchema = {
-    properties: {
-        block_type: {
-            type: 'string',
-            const: 'video',
-            title: 'Block Type',
-            default: 'video'
-        },
-        video: {
-            anyOf: [
-                {
-                    type: 'string',
-                    format: 'binary'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Video'
-        },
-        path: {
-            anyOf: [
-                {
-                    type: 'string',
-                    format: 'file-path'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Path'
-        },
-        url: {
-            anyOf: [
-                {
-                    type: 'string',
-                    minLength: 1,
-                    format: 'uri'
-                },
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Url'
-        },
-        video_mimetype: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Video Mimetype'
-        },
-        detail: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Detail'
-        },
-        fps: {
-            anyOf: [
-                {
-                    type: 'integer'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Fps'
-        }
-    },
-    type: 'object',
-    title: 'VideoBlock',
-    description: 'A representation of video data to directly pass to/from the LLM.'
-} as const;
-
-export const VideoBlock_OutputSchema = {
+export const VideoBlockSchema = {
     properties: {
         block_type: {
             type: 'string',
@@ -22075,182 +21424,6 @@ export const WorkflowGraphSchema = {
     description: 'Complete workflow graph representation.'
 } as const;
 
-export const additional_informationSchema = {
-    type: 'object',
-    title: 'ThinkingBlock.additional_information',
-    description: 'Additional information related to the thinking/reasoning process, if available'
-} as const;
-
-export const additional_kwargsSchema = {
-    type: 'object',
-    title: 'ChatMessage.additional_kwargs'
-} as const;
-
-export const additional_location_infoSchema = {
-    type: 'object',
-    title: 'CitationBlock.additional_location_info'
-} as const;
-
-export const jambo__parser__object_type_parser__ChatMessage__1Schema = {
-    properties: {
-        role: {
-            $ref: '#/components/schemas/MessageRole',
-            default: 'user'
-        },
-        additional_kwargs: {
-            $ref: '#/components/schemas/additional_kwargs',
-            title: 'Additional Kwargs'
-        },
-        blocks: {
-            items: {
-                oneOf: [
-                    {
-                        $ref: '#/components/schemas/TextBlock'
-                    },
-                    {
-                        $ref: '#/components/schemas/ImageBlock-Input'
-                    },
-                    {
-                        $ref: '#/components/schemas/AudioBlock-Input'
-                    },
-                    {
-                        $ref: '#/components/schemas/VideoBlock-Input'
-                    },
-                    {
-                        $ref: '#/components/schemas/DocumentBlock-Input'
-                    },
-                    {
-                        $ref: '#/components/schemas/CachePoint'
-                    },
-                    {
-                        $ref: '#/components/schemas/CitableBlock-Input'
-                    },
-                    {
-                        $ref: '#/components/schemas/CitationBlock-Input'
-                    },
-                    {
-                        $ref: '#/components/schemas/ThinkingBlock-Input'
-                    },
-                    {
-                        $ref: '#/components/schemas/ToolCallBlock-Input'
-                    }
-                ],
-                discriminator: {
-                    propertyName: 'block_type',
-                    mapping: {
-                        audio: '#/components/schemas/AudioBlock-Input',
-                        cache: '#/components/schemas/CachePoint',
-                        citable: '#/components/schemas/CitableBlock-Input',
-                        citation: '#/components/schemas/CitationBlock-Input',
-                        document: '#/components/schemas/DocumentBlock-Input',
-                        image: '#/components/schemas/ImageBlock-Input',
-                        text: '#/components/schemas/TextBlock',
-                        thinking: '#/components/schemas/ThinkingBlock-Input',
-                        tool_call: '#/components/schemas/ToolCallBlock-Input',
-                        video: '#/components/schemas/VideoBlock-Input'
-                    }
-                }
-            },
-            type: 'array',
-            title: 'Blocks'
-        }
-    },
-    type: 'object',
-    title: 'ChatMessage',
-    description: 'Chat message.'
-} as const;
-
-export const jambo__parser__object_type_parser__ChatMessage__2Schema = {
-    properties: {
-        role: {
-            $ref: '#/components/schemas/MessageRole',
-            default: 'user'
-        },
-        additional_kwargs: {
-            $ref: '#/components/schemas/additional_kwargs',
-            title: 'Additional Kwargs'
-        },
-        blocks: {
-            items: {
-                oneOf: [
-                    {
-                        $ref: '#/components/schemas/TextBlock'
-                    },
-                    {
-                        $ref: '#/components/schemas/ImageBlock-Input'
-                    },
-                    {
-                        $ref: '#/components/schemas/AudioBlock-Input'
-                    },
-                    {
-                        $ref: '#/components/schemas/VideoBlock-Input'
-                    },
-                    {
-                        $ref: '#/components/schemas/DocumentBlock-Input'
-                    },
-                    {
-                        $ref: '#/components/schemas/CachePoint'
-                    },
-                    {
-                        $ref: '#/components/schemas/CitableBlock-Input'
-                    },
-                    {
-                        $ref: '#/components/schemas/CitationBlock-Input'
-                    },
-                    {
-                        $ref: '#/components/schemas/ThinkingBlock-Input'
-                    },
-                    {
-                        $ref: '#/components/schemas/ToolCallBlock-Input'
-                    }
-                ],
-                discriminator: {
-                    propertyName: 'block_type',
-                    mapping: {
-                        audio: '#/components/schemas/AudioBlock-Input',
-                        cache: '#/components/schemas/CachePoint',
-                        citable: '#/components/schemas/CitableBlock-Input',
-                        citation: '#/components/schemas/CitationBlock-Input',
-                        document: '#/components/schemas/DocumentBlock-Input',
-                        image: '#/components/schemas/ImageBlock-Input',
-                        text: '#/components/schemas/TextBlock',
-                        thinking: '#/components/schemas/ThinkingBlock-Input',
-                        tool_call: '#/components/schemas/ToolCallBlock-Input',
-                        video: '#/components/schemas/VideoBlock-Input'
-                    }
-                }
-            },
-            type: 'array',
-            title: 'Blocks'
-        }
-    },
-    type: 'object',
-    title: 'ChatMessage',
-    description: 'Chat message.'
-} as const;
-
-export const openai__types__audio__transcription_verbose__UsageSchema = {
-    properties: {
-        seconds: {
-            type: 'number',
-            title: 'Seconds'
-        },
-        type: {
-            type: 'string',
-            const: 'duration',
-            title: 'Type'
-        }
-    },
-    additionalProperties: true,
-    type: 'object',
-    required: [
-        'seconds',
-        'type'
-    ],
-    title: 'Usage',
-    description: 'Usage statistics for models billed by audio input duration.'
-} as const;
-
 export const openai__types__chat__chat_completion_message_custom_tool_call_param__CustomSchema = {
     properties: {
         input: {
@@ -22268,8 +21441,7 @@ export const openai__types__chat__chat_completion_message_custom_tool_call_param
         'input',
         'name'
     ],
-    title: 'Custom',
-    description: 'The custom tool that the model called.'
+    title: 'Custom'
 } as const;
 
 export const openai__types__chat__chat_completion_message_function_tool_call_param__FunctionSchema = {
@@ -22289,8 +21461,7 @@ export const openai__types__chat__chat_completion_message_function_tool_call_par
         'arguments',
         'name'
     ],
-    title: 'Function',
-    description: 'The function that the model called.'
+    title: 'Function'
 } as const;
 
 export const openai__types__chat__chat_completion_named_tool_choice_custom_param__CustomSchema = {
@@ -22363,16 +21534,6 @@ export const openai__types__images_response__UsageSchema = {
         total_tokens: {
             type: 'integer',
             title: 'Total Tokens'
-        },
-        output_tokens_details: {
-            anyOf: [
-                {
-                    $ref: '#/components/schemas/UsageOutputTokensDetails'
-                },
-                {
-                    type: 'null'
-                }
-            ]
         }
     },
     additionalProperties: true,
@@ -22383,13 +21544,7 @@ export const openai__types__images_response__UsageSchema = {
         'output_tokens',
         'total_tokens'
     ],
-    title: 'Usage',
-    description: 'For `gpt-image-1` only, the token usage information for the image generation.'
-} as const;
-
-export const sub0Schema = {
-    type: 'object',
-    title: 'ToolCallBlock.tool_kwargs.sub0'
+    title: 'Usage'
 } as const;
 
 export const AddMemoryToChatHistoryEventWritableSchema = {
@@ -22427,7 +21582,7 @@ export const AddMemoryToChatHistoryEventWritableSchema = {
         },
         extended_history: {
             items: {
-                $ref: '#/components/schemas/ChatMessage-Output'
+                $ref: '#/components/schemas/ChatMessage'
             },
             type: 'array',
             title: 'Extended History',
@@ -22478,7 +21633,7 @@ export const AddOrganizationMemoryToChatHistoryEventWritableSchema = {
         },
         extended_history: {
             items: {
-                $ref: '#/components/schemas/ChatMessage-Output'
+                $ref: '#/components/schemas/ChatMessage'
             },
             type: 'array',
             title: 'Extended History',
@@ -22529,7 +21684,7 @@ export const AddUserMemoryToChatHistoryEventWritableSchema = {
         },
         extended_history: {
             items: {
-                $ref: '#/components/schemas/ChatMessage-Output'
+                $ref: '#/components/schemas/ChatMessage'
             },
             type: 'array',
             title: 'Extended History',
@@ -28616,7 +27771,7 @@ export const LimitChatHistoryEventWritableSchema = {
         },
         limited_history: {
             items: {
-                $ref: '#/components/schemas/ChatMessage-Output'
+                $ref: '#/components/schemas/ChatMessage'
             },
             type: 'array',
             title: 'Limited History',
@@ -32326,7 +31481,7 @@ export const StandaloneQuestionCondenserEventWritableSchema = {
             description: 'Display description for the event'
         },
         condensed_chat_message: {
-            $ref: '#/components/schemas/ChatMessage-Output',
+            $ref: '#/components/schemas/ChatMessage',
             description: 'Single chat message containing the condensed user question.'
         }
     },
@@ -33611,7 +32766,7 @@ export const UserMessageEventWritableSchema = {
         },
         messages: {
             items: {
-                $ref: '#/components/schemas/ChatMessage-Output'
+                $ref: '#/components/schemas/ChatMessage'
             },
             type: 'array',
             title: 'Messages',
@@ -33818,25 +32973,4 @@ export const VectorStoreInputWritableSchema = {
     ],
     title: 'VectorStoreInput',
     description: '    A FormKit element for selecting a vector store collection and namespaces.\n\n    This element renders as a cascading selection:\n    1. Database dropdown (loads from /api/v1/knowledge/databases)\n    2. Namespace multi-select (populated based on selected database)\n\n    The output is a structured object containing both the collection name and\n    the selected namespaces, matching the MilvusVectorStoreConfig fields:\n    {"collection_name": str, "index_namespaces": list[str]}\n\n    ### Form Duality\n    When used with MilvusVectorStoreConfig, the form submission is validated\n    directly into MilvusVectorStoreConfig (connection settings are read from\n    MilvusSettings at runtime).\n\n    ### Example Usage\n    ```python\n    from aihub_lib.nats.events.form.elements.VectorStoreInput import VectorStoreInput\n    from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig\n\n    class MyRetrieverConfig(Form):\n        vector_store: Annotated[\n            MilvusVectorStoreConfig | VectorStoreInput,\n            Field(description="The vector store configuration"),\n        ]\nreranking_model\n    # Form mode - for rendering:\n    config = MyRetrieverConfig(\n        vector_store=VectorStoreInput(\n            label=LocaleString(en="Vector Store", de="Vektorspeicher"),\n        ),\n    )\n\n    # Data mode - from submission (Pydantic validates into MilvusVectorStoreConfig):\n    config = MyRetrieverConfig(\n        vector_store=MilvusVectorStoreConfig(\n            collection_name="my-database",\n            index_namespaces=["namespace1", "namespace2"],\n        ),\n    )\n    ```'
-} as const;
-
-export const additional_informationWritableSchema = {
-    type: 'object',
-    title: 'ThinkingBlock.additional_information',
-    description: 'Additional information related to the thinking/reasoning process, if available'
-} as const;
-
-export const additional_kwargsWritableSchema = {
-    type: 'object',
-    title: 'ChatMessage.additional_kwargs'
-} as const;
-
-export const additional_location_infoWritableSchema = {
-    type: 'object',
-    title: 'CitationBlock.additional_location_info'
-} as const;
-
-export const sub0WritableSchema = {
-    type: 'object',
-    title: 'ToolCallBlock.tool_kwargs.sub0'
 } as const;

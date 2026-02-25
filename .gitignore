@@ -16,5 +16,12 @@ aihub_doc/aihub
 *.log
 .mypy_cache/
 .venv
-.claude/mcp/bin/
+
+# Claude Code local overrides (personal preferences, not shared)
+CLAUDE.local.md
+.claude/settings.local.json
+.claude/mcp.local.json
+.claude/mcp/bin/*
+.claude/.deps-fingerprint
 .claude/statusline.sh
+.claude/worktrees/*

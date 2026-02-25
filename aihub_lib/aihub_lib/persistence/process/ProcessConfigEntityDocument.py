@@ -16,7 +16,10 @@ class ProcessConfigEntityDocument(ProcessConfigEntity, Document):
 
     meta = {
         "collection": "process_configs",
-        "indexes": [{"fields": ("process_class", "process_id"), "unique": True}],
+        "indexes": [
+            {"fields": ("process_class", "process_id"), "unique": True},
+            {"fields": ["process_class"]},
+        ],
     }
 
     created_at = DateTimeField(default=lambda: datetime.now(UTC))

@@ -1,51 +1,45 @@
+---
 name: Lint Backend Code
 description: Run linter on python backend
-
 inputs:
   github_token:
-    description: 'GitHub token for authentication'
+    description: GitHub token for authentication
     required: true
   working_directory:
-    description: 'Working directory for the linter'
+    description: Working directory for the linter
     required: true
   python_version:
-    description: 'Python version to install'
+    description: Python version to install
     required: false
     default: '3.13'
-
 runs:
-  using: "composite"
+  using: composite
   steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
-
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: ${{ inputs.python_version }}
-
     - name: Set up uv
       uses: astral-sh/setup-uv@v7
       with:
         enable-cache: true
-
     - name: Configure Git to Use `GITHUB_TOKEN`
       shell: bash
-      run: git config --global url."https://${{ inputs.github_token }}@github.com/".insteadOf "https://github.com/"
-
+      run: git config --global url."https://${{ inputs.github_token }}@github.com/".insteadOf
+        "https://github.com/"
     - name: Install dependencies
       shell: bash
       run: uv sync --all-packages --dev --frozen
-
     - name: Install reviewdog
       uses: reviewdog/action-setup@v1
       with:
         reviewdog_version: v0.21.0
-
-    - name: Lint with Black
+    - name: Lint with Ruff Format
       shell: bash
       env:
         REVIEWDOG_GITHUB_API_TOKEN: ${{ inputs.github_token }}
-      run: |
-        uv run black --diff --quiet --check "${{ inputs.working_directory }}" |
-          reviewdog -f=diff -f.diff.strip=0 -name=black-format -reporter=github-pr-review
+      run: |-
+        uv run ruff format --diff --quiet --check "${{ inputs.working_directory }}" |
+          reviewdog -f=diff -f.diff.strip=0 -name=ruff-format -reporter=github-pr-review

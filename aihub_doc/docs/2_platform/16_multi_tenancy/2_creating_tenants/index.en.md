@@ -175,9 +175,9 @@ When someone logs in for the first time, they automatically join the default ten
 this behavior with environment variables:
 
 ```bash
-USER_SIGNUP_DEFAULT_TENANT="default"
-USER_SIGNUP_DEFAULT_ROLES="AIHubUser"
-FIRST_USER_SIGNUP_DEFAULT_ROLES="AIHubAdmin"
+AIHUB_USER_SIGNUP_DEFAULT_TENANT="default"
+AIHUB_USER_SIGNUP_DEFAULT_ROLES="AIHubUser"
+FIRST_AIHUB_USER_SIGNUP_DEFAULT_ROLES="AIHubAdmin"
 ```
 
 The first person to sign in receives admin roles, ensuring someone can administer the platform immediately. Subsequent

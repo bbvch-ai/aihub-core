@@ -1,8 +1,9 @@
-label: "Vektorspeicher"
-help: "Wissensdatenbank und Namensräume für die Suche auswählen"
+---
+label: Vektorspeicher
+help: Wissensdatenbank und Namensräume für die Suche auswählen
 database:
-  label: "Datenbank"
+  label: Datenbank
 namespaces:
-  label: "Namensräume"
-  placeholder: "Namensräume auswählen (leer = alle)"
-  help: "Leer lassen, um alle Namensräume zu durchsuchen"
+  label: Namensräume
+  placeholder: Namensräume auswählen (leer = alle)
+  help: Leer lassen, um alle Namensräume zu durchsuchen

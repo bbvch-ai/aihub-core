@@ -310,8 +310,7 @@ without requiring external services.
    ```python
    # playground/testing/tests/test_my_bot.py
    import pytest
-   from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler import DangerousDevelopmentOnlyAuthHandler
-   from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider import DangerousDevelopmentOnlyIdentityProvider
+   from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import DangerousDevelopmentOnlyAuthHandler
    from fastapi.testclient import TestClient
    from aihub_bot.runners.BotTestRunner import BotTestRunner
    from aihub_bot.routes.my_bot.MyBotController import MyBotController
@@ -319,9 +318,7 @@ without requiring external services.
    @pytest.fixture
    def bot_client():
        """Fixture to create a test client for the bot."""
-       auth = DangerousDevelopmentOnlyAuthHandler(
-           identity_provider=DangerousDevelopmentOnlyIdentityProvider()
-       )
+       auth = DangerousDevelopmentOnlyAuthHandler()
        runner = BotTestRunner()
        runner.mount(MyBotController(auth=auth, custom_config=test_config).chat_completion())
        return TestClient(runner.create_app())
@@ -380,9 +377,7 @@ test your bot implementation interactively.
 
    async def main():
        runner = BotTestRunner()
-       auth = DangerousDevelopmentOnlyAuthHandler(
-           identity_provider=DangerousDevelopmentOnlyIdentityProvider()
-       )
+       auth = DangerousDevelopmentOnlyAuthHandler()
        
        runner.mount(
            # ... existing controllers ...
@@ -807,30 +802,3 @@ For local development that integrates with Azure Bot Service:
    ```
 
 4. **Test in Teams/Slack**: Your local bot now receives messages from Azure Bot Service
-
-### 📖 Glossary of Bot-Specific Terms
-
-This glossary defines terms, concepts, and technologies that have specific meaning within the `aihub_bot` scope,
-building upon the core AI-Hub terminology.
-
-| Term                                | Definition                                                                                                                     |
-| :---------------------------------- | :----------------------------------------------------------------------------------------------------------------------------- |
-| **Activity**                        | Bot Framework concept representing any communication between bot and user (messages, typing indicators, conversation updates). |
-| **Activity Handler**                | Base class from Bot Framework that processes different types of activities. All bots extend this class.                        |
-| **Agent Chat Bot**                  | Bot implementation that connects to AI-Hub agents, forwarding user messages to agents and streaming responses back.            |
-| **Bot Framework**                   | Microsoft's framework for building conversational AI applications, supporting multiple channels like Teams, Slack, etc.        |
-| **Bot-in-the-Loop**                 | Pattern where a bot pauses an agent workflow to request human input via Slack, then resumes with the response.                 |
-| **Channel**                         | Communication platform where the bot operates (e.g., Microsoft Teams, Slack, Web Chat).                                        |
-| **Chat Completion**                 | Process of generating AI responses to user messages, supporting both streaming and non-streaming modes.                        |
-| **Completion Handler**              | Abstract interface for processing chat completions, implemented differently for agents and OpenAI models.                      |
-| **Content Extractor**               | Utility for extracting text and attachments from bot activities across different channels.                                     |
-| **Conversation Entity**             | Database model tracking conversation state, messages, and metadata with configurable TTL.                                      |
-| **Conversation Tracker**            | Service for persisting and managing conversation history across bot restarts.                                                  |
-| **OpenAI Chat Bot**                 | Bot implementation that directly uses OpenAI-compatible models without agent orchestration.                                    |
-| **Path Entity**                     | Database model storing conversation paths and routing information for multi-bot scenarios.                                     |
-| **Routes Service**                  | Centralized service managing bot endpoint registration and channel configuration.                                              |
-| **Simulated Agent Bot Test Runner** | Testing infrastructure that mocks agent responses for development without real agents.                                         |
-| **Slack Utils**                     | Utilities for handling Slack-specific formatting, threading, and user mentions.                                                |
-| **Stream Chat Bot**                 | Base class for bots that stream responses incrementally, providing real-time typing indicators.                                |
-| **Turn Context**                    | Bot Framework object containing all information about the current conversation turn.                                           |
-| **Typing Indicator**                | Visual feedback showing the bot is processing, with configurable timeout protection.                                           |

@@ -1,3 +1,4 @@
+---
 metadata:
   name: Assistant Enseignable
   description: Assistant IA qui apprend des exemples que vous fournissez pour comprendre
@@ -8,20 +9,24 @@ config:
     help: Nombre maximum de tokens autorisés dans le contexte d'entrée
 steps:
   limit_chat_history:
-    name: "Limiter l'historique du chat"
-    description: "Tronque les messages du chat entrants pour respecter la limite de jetons configurée."
+    name: Limiter l'historique du chat
+    description: Tronque les messages du chat entrants pour respecter la limite de
+      jetons configurée.
   agent_suitability_guard:
-    name: "Vérification de l'adéquation de l'agent"
-    description: "Vérifie si l'agent est adapté pour traiter la demande de l'utilisateur."
+    name: Vérification de l'adéquation de l'agent
+    description: Vérifie si l'agent est adapté pour traiter la demande de l'utilisateur.
   condense_standalone_question:
-    name: "Condenser la question autonome"
-    description: "Condense l'historique du chat et la requête de l'utilisateur en une question autonome."
+    name: Condenser la question autonome
+    description: Condense l'historique du chat et la requête de l'utilisateur en une
+      question autonome.
   create_few_shot_examples:
-    name: "Créer des exemples Few-Shot"
-    description: "Prépare les exemples Few-Shot et crée le contexte complet pour le LLM."
+    name: Créer des exemples Few-Shot
+    description: Prépare les exemples Few-Shot et crée le contexte complet pour le
+      LLM.
   respond_with_llm:
-    name: "Répondre avec LLM"
-    description: "Génère une réponse en utilisant le LLM basé sur des exemples Few-Shot."
+    name: Répondre avec LLM
+    description: Génère une réponse en utilisant le LLM basé sur des exemples Few-Shot.
   stop:
-    name: "Arrêter"
-    description: "Arrête l'agent lorsque la demande est rejetée par la vérification d'adéquation."
+    name: Arrêter
+    description: Arrête l'agent lorsque la demande est rejetée par la vérification
+      d'adéquation.

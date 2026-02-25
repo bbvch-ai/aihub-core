@@ -1,21 +1,20 @@
+---
 work_request_event:
-  name: "Evento di richiesta di lavoro"
-  description: "Richiede un lavoro a qualcuno all'interno del processo"
-
+  name: Evento di richiesta di lavoro
+  description: Richiede un lavoro a qualcuno all'interno del processo
 work_event:
-  name: "Evento di lavoro"
-  description: "Segnala il lavoro svolto da un'entità coinvolta nel processo"
-
+  name: Evento di lavoro
+  description: Segnala il lavoro svolto da un'entità coinvolta nel processo
 config:
   name:
-    label: "Nome del processo"
+    label: Nome del processo
   description:
-    label: "Descrizione"
+    label: Descrizione
   icon:
-    label: "Icona"
-    help: "Identificatore icona (es. 'carbon:ibm-event-processing')"
+    label: Icona
+    help: Identificatore icona (es. 'carbon:ibm-event-processing')
   process_class:
-    label: "Classe processo"
+    label: Classe processo
   process_id:
-    label: "ID processo"
-    help: "Identificatore univoco (minuscole, numeri, trattini, underscore)"
+    label: ID processo
+    help: Identificatore univoco (minuscole, numeri, trattini, underscore)

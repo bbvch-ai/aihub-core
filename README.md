@@ -427,42 +427,27 @@ MCP integration provides AI coding assistants with:
 
 #### :gear: MCP Configuration
 
-The MCP integration is configured through the `.mcp.json` file in the project root. This file defines two key MCP
-servers:
+The MCP integration is configured through the `.mcp.json` file in the project root. It defines 12 MCP servers (11
+enabled by default), each with a wrapper script in `.claude/mcp/`:
 
-1. **MongoDB MCP Server**: Enables database queries and monitoring (read-only)
-2. **AI-Hub API MCP Server**: Exposes AI-Hub API functionality to AI assistants
+**Platform Servers** (require running Docker dev stack):
 
-::: details :wrench: MCP Server Configuration
-The `.mcp.json` file contains the following configuration:
+1. **Langfuse MCP**: LLM observability — prompt management, tracing, cost tracking, evaluations
+2. **MongoDB MCP**: Read-only database access to the FerretDB/MongoDB data layer
+3. **AI-Hub API MCP**: Test API endpoints directly through MCP
+4. **PostgreSQL MCP**: Read-only access to infrastructure databases (Langfuse, Dagster, LiteLLM, OpenWebUI)
+5. **Milvus MCP**: Vector database operations — manage collections, run similarity searches, inspect indexes
+6. **NATS MCP**: Messaging system integration — inspect subjects, view messages, monitor JetStream streams
+7. **Dagster MCP**: Pipeline orchestration — explore pipelines, monitor runs, manage data assets
 
-```json
-{
-  "mcpServers": {
-    "mongodb": {
-      "command": "docker",
-      "args": [
-        "run",
-        "--rm",
-        "-i",
-        "--network=host",
-        "-e",
-        "MDB_MCP_CONNECTION_STRING=mongodb://admin:admin@localhost:27017/aihub",
-        "-e",
-        "MDB_MCP_READ_ONLY=true",
-        "mongodb/mongodb-mcp-server:latest"
-      ]
-    },
-    "aihub_api": {
-      "type": "http",
-      "url": "http://localhost:8000/mcp",
-      "disabled": false,
-      "autoApprove": []
-    }
-  }
-}
-```
-:::
+**Development Servers** (work independently):
+
+08. **Context7 MCP**: Up-to-date library documentation for LlamaIndex, FastAPI, Pydantic, and other dependencies
+09. **PrimeVue MCP**: Official component library — props, events, slots, theming, Pass Through, design tokens
+10. **Nuxt MCP**: Official framework docs, API references, and deployment guides (remote at nuxt.com/mcp)
+11. **Playwright MCP**: Browser automation and UI debugging — visual inspection, screenshots, DOM/CSS analysis
+12. **GitHub MCP**: Issues, PRs, code search, CI status — disabled by default, requires `GITHUB_PERSONAL_ACCESS_TOKEN`
+    in `.env` (create at https://github.com/settings/tokens with `repo, read:org, read:project` scopes)
 
 #### :rocket: Using MCP Integration
 
@@ -479,21 +464,154 @@ Ensure your AI coding assistant (Claude Code, Gemini CLI, etc.) is configured to
 AI assistants will automatically detect and use this configuration when present in the project root.
 :::
 
-### :hammer_and_wrench: Development Tools & Slash Commands
+### :hammer_and_wrench: Claude Code Integration
 
-The AI-Hub includes several slash commands (located in `.claude/commands/`) that streamline common development
-workflows:
+The AI-Hub includes comprehensive Claude Code enablement with skills, custom subagents, automated hooks, and MCP
+servers. Full details are in `.claude/README.md`.
 
-- **`/create-pr`**: Pre-pull request validation and preparation
-- **`/update-doc`**: Documentation synchronization and updates
-- **`/document-decisions`**: ADR creation and management
-- **`/document-feature`**: Create documentation for a described feature
-- **`/explain`**: Explains and documents a specific part of the codebase
-- **`/implement-feedback-from-pr`**: Systematic PR feedback implementation
+#### Skills (43 total — invoke via `/skill-name`)
+
+**Workflow**:
+
+- **`/review-diff`**: Pre-PR code review — analyze diff as a senior developer
+- **`/create-pr`**: Pre-PR validation, formatting, linting, type checking, and tests across affected scopes
+- **`/implement-feedback-from-pr`**: Fetch PR comments and implement reviewer feedback
+- **`/plan-issue`**: Fetch GitHub issue and create detailed implementation plan
+- **`/reflect`**: Session retrospective — identify mistakes, improve CLAUDE.md and skills
+- **`/release-prep`**: Comprehensive pre-release validation across all scopes
+- **`/test-scope`**: Smart scoped test runner — detects affected scopes from git diff
+
+**Documentation**:
+
+- **`/update-doc`**: Sync docs, CLAUDE.md, and skills with code changes
+- **`/explain`**: Analyze and explain code structure, identify gaps
+- **`/document-decision`**: Create Architecture Decision Records (ADRs)
+- **`/document-feature`**: Create user-facing VitePress feature documentation
+- **`/document-solution`**: Edit solution concept docs for procurement evaluators
+
+**Scaffolding**:
+
+- **`/scaffold-agent`**: Generate AI agent boilerplate (class, events, config, tests)
+- **`/scaffold-pipeline`**: Generate Dagster pipeline boilerplate (asset factory, I/O manager, resources)
+- **`/scaffold-process`**: Generate process orchestration boilerplate (entity delegation, work events)
+- **`/scaffold-api-endpoint`**: Generate REST API controller (endpoints, DTOs, registration)
+- **`/scaffold-api-service`**: Generate API service layer (business logic, validation)
+- **`/scaffold-api-repository`**: Generate MongoEngine entity (schema, indexes, methods)
+- **`/scaffold-frontend-page`**: Generate Nuxt page boilerplate (composables, pages, components)
+- **`/scaffold-bot-handler`**: Generate bot conversation handler boilerplate (ChatBot subclass)
+
+**Developer Experience**:
+
+- **`/docker-dev`**: Manage Docker dev environment (up, down, health, logs, restart, ports, status)
+- **`/check-i18n`**: Validate all 4 locale files have matching keys, report missing translations
+- **`/generate-sdk`**: Regenerate frontend API SDK from OpenAPI specification
+- **`/dependency-audit`**: Audit dependencies for outdated packages, vulnerabilities, version drift
+- **`/validate-events`**: Validate event hierarchy, registration, and subscriber matching
+- **`/debug-agent`**: Debug agent event flow, NATS subscriptions, and Langfuse traces
+- **`/debug-pipeline`**: Debug Dagster pipeline failures, sensor issues, resource config
+
+**Frontend**:
+
+- **`/scaffold-composable`**: Generate Pinia-Colada composable (query + mutation)
+- **`/scaffold-event-display`**: Generate event timeline component
+- **`/scaffold-dashboard-widget`**: Generate dashboard widget (ApexCharts, GridStack)
+- **`/scaffold-frontend-subpage`**: Generate detail page with tab subpages
+- **`/scaffold-frontend-component`**: Generate Vue component (card, modal, list, form)
+- **`/debug-frontend`**: Visual UI debugging with Playwright
+- **`/audit-frontend`**: Frontend code audit (SDK, i18n, accessibility, patterns)
+- **`/primevue-lookup`**: PrimeVue component docs lookup
+- **`/design-system`**: Design system reference guide
+
+**API & Pipeline**:
+
+- **`/api-auth-guide`**: Auth, identity, permissions reference
+- **`/nats-events`**: NATS, JetStream, events, pub/sub, RPC reference
+- **`/dagster-pipelines`**: Dagster assets, resources, IO managers, partitions reference
+- **`/rclone-guide`**: Rclone cloud storage integration reference
+
+**Bot**:
+
+- **`/setup-bot-connection`**: Bot connection setup (Azure, Teams, Slack)
+- **`/debug-bot`**: Bot troubleshooting and debugging
+- **`/bot-reference`**: Bot architecture and patterns reference
+
+#### Custom Subagents (7 — used automatically for specialized tasks)
+
+- **`codebase-expert`**: Deep monorepo knowledge, cross-scope tracing, architectural questions (with memory)
+- **`code-reviewer`**: Quality, security, and standards review against CLAUDE.md conventions
+- **`event-flow-analyzer`**: Traces Swiss AI Agent Protocol event flows end-to-end (with memory)
+- **`docker-ops`**: Docker infrastructure expert for 30+ services, networks, and health checks
+- **`test-analyzer`**: Test coverage analysis, gap identification, pytest-bdd and custom test runners
+- **`frontend-analyzer`**: Nuxt 3 composables, Pinia-Colada queries, PrimeVue, SDK generation pipeline
+- **`documentation-keeper`**: Documentation freshness tracking against code changes (with memory)
+
+#### Automated Hooks (6 — run automatically, no invocation needed)
+
+- **`auto-format-python.sh`** (PostToolUse): Ruff format + check on Python file edits
+- **`auto-format-frontend.sh`** (PostToolUse): ESLint fix on TypeScript/Vue file edits
+- **`protect-sensitive-files.sh`** (PreToolUse): Blocks access to .env, .pem, .key, credentials, certs, tokens
+- **`scope-boundary-check.sh`** (PreToolUse): Warns about cross-scope import violations
+- **`stop-hook-git-check.sh`** (Stop): Checks uncommitted changes at session end
+- **`session-start.sh`** (SessionStart): Installs dependencies, checks environment, warns about main branch
+
+#### Plugins (5 — community plugins from `claude-plugins-official`)
+
+These plugins extend Claude Code with additional slash commands and automated behaviors. They are configured in
+`.claude/settings.json` under `plugins`.
+
+**`code-review`** — Automated PR review with multi-agent architecture
+
+- **`/code-review [--comment]`**: Launches four independent review agents in parallel, each focusing on a different
+  aspect: two check CLAUDE.md compliance, one detects bugs, one analyzes git history context. Every issue is scored
+  0–100 for confidence; only issues scoring 80+ are surfaced. Trivial, draft, and already-reviewed PRs are automatically
+  skipped. Use `--comment` to post the review directly as a PR comment on GitHub.
+
+**`ralph-loop`** — Iterative self-correcting development loop
+
+- **`/ralph-loop "<prompt>" --max-iterations <n> --completion-promise "<text>"`**: Runs Claude Code in a loop,
+  re-injecting the same prompt after each iteration until the completion promise string is output or the iteration limit
+  is reached. Useful for TDD workflows (write failing test, implement, validate, repeat) and well-defined problems with
+  automatically verifiable success criteria. Not suited for subjective design tasks or ambiguous goals.
+- **`/cancel-ralph`**: Terminates an active Ralph loop.
+
+**`commit-commands`** — Git commit, push, and PR automation
+
+- **`/commit`**: Analyzes staged and unstaged changes, matches the repository's existing commit style, generates a
+  conventional commit message, and creates the commit. Skips sensitive files (`.env`, credentials). Attributed to Claude
+  Code.
+- **`/commit-push-pr`**: Full workflow — creates a feature branch if needed, commits changes, pushes to origin, and
+  opens a PR via `gh` with summary and test plan sections.
+- **`/clean_gone`**: Removes local branches marked as `[gone]` (remote-deleted) including their associated worktrees.
+
+**`hookify`** — Custom behavioral rules via markdown files
+
+- **`/hookify [description]`**: Creates behavioral rules from explicit instructions or by analyzing the current
+  conversation for unwanted patterns. Rules are stored as markdown files with YAML frontmatter.
+- **`/hookify:list`**: Lists all configured rules and their enabled/disabled state.
+- **`/hookify:configure`**: Interactive enable/disable management for existing rules.
+- **`/hookify:help`**: Documentation and usage guidance.
+- **Rule anatomy**: Each rule specifies an `event` (bash, file, stop, prompt, or all), an `action` (warn or block), and
+  a `pattern` (Python regex). Conditions support operators like `regex_match`, `contains`, `not_contains`, `equals`,
+  `starts_with`, and `ends_with`. Rules take effect immediately without restart.
+
+**`security-guidance`** — Automatic security pattern scanner (no slash commands — hook only)
+
+- **Trigger**: PreToolUse hook on every `Edit`, `Write`, and `MultiEdit` operation. Runs automatically before file
+  changes are applied.
+- **What it detects**: Scans file paths and content for known vulnerability patterns:
+  - **Command injection**: `child_process.exec()`, `execSync()`, `os.system()`, GitHub Actions workflow injection via
+    untrusted inputs (`issue.title`, `pull_request.body` in `.github/workflows/`)
+  - **Code injection**: `eval()`, `new Function()`, `pickle` deserialization
+  - **XSS**: `dangerouslySetInnerHTML`, `document.write`, `.innerHTML =`
+- **Behavior**: When a pattern is matched, the hook prints a detailed warning explaining the vulnerability and
+  suggesting safer alternatives, then blocks the edit (exit code 2). Warnings are deduplicated per session — the same
+  file/rule combination is only flagged once. Session state is stored in `~/.claude/` and auto-cleaned after 30 days.
+- **Disable**: Set `ENABLE_SECURITY_REMINDER=0` in your environment to turn off.
 
 ::: info AI Assistant Context Files
-Each scope contains `CLAUDE.md` and `GEMINI.md` files that reference the respective README files. These provide AI
-assistants with proper context about each component's purpose and architecture.
+Each scope contains `CLAUDE.md` files with scope-specific architecture, patterns, and examples. These provide AI
+assistants with proper context about each component's purpose and architecture. Local overrides (gitignored):
+`CLAUDE.local.md`, `.claude/settings.local.json`, `.claude/mcp.local.json`.
 :::
 
 ## 4. :clipboard: Project Governance & Work Management

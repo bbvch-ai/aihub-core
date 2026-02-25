@@ -8,7 +8,7 @@
     "docs:dev": "vitepress dev",
     "docs:sync": "bash sync-docs.sh",
     "docs:translate": "bash translate-docs.sh",
-    "docs:build": "bash sync-docs.sh && node generate-llm-files.mjs && bash translate-docs.sh && vitepress build",
+    "docs:build": "bash sync-docs.sh && bash translate-docs.sh && node generate-llm-files.mjs && vitepress build",
     "docs:build:ci": "bash sync-docs.sh && node generate-llm-files.mjs && vitepress build",
     "docs:preview": "vitepress preview"
   },

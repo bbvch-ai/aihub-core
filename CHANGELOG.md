@@ -5,6 +5,187 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.266.1] - 2026-02-24 - Changelog Precision Update
+
+### Fixed
+
+- 🐛 **Updated changelog entry date:** Corrected the placeholder date for the `v0.262.2` release from `YYYY-MM-DD` to
+  `2026-02-17` to ensure historical accuracy.
+
+______________________________________________________________________
+
+## [v0.266.0] - 2026-02-24 - Major Overhaul: Multi-Tenant Access Control and Core System Refinements
+
+### Added
+
+- ✨ Introduced **Multi-Tenant Architecture**: Core entities such as `TenantEntity` and `UserTenantRoleEntity` enable
+  robust organizational isolation and tenant-scoped user management.
+- 🔑 New **Local Role Management**: Roles are now managed directly within the platform's database, supporting both
+  system-wide and tenant-specific roles, which reduces external dependencies for role synchronization.
+- 🚀 Enabled **Automatic Default Tenant Initialization**: A default tenant is now automatically created and configured
+  during the initial startup, ensuring immediate multi-tenant functionality.
+- 👥 Implemented **Configurable User Signup Roles**: Roles are now automatically assigned to the first administrator and
+  subsequent regular users upon their initial login, streamlining user onboarding.
+- 📄 New SDK documentation for the **Agent Execution Model** and a detailed **Event Reference** guide, providing deeper
+  insights into workflow design and event-driven patterns.
+- ⚙️ Added **Default Tenant Settings** and **User Signup Settings** for precise control over initial tenant setup and
+  user role assignments.
+
+### Changed
+
+- 🔄 **Refactored Authentication Stack**: The `IdentityProvider` abstraction has been removed, simplifying `AuthHandler`
+  implementations and consolidating identity resolution logic directly within the authentication handlers.
+- 🛡️ **Enhanced Two-Stage Access Control**: The `AccessChecker` now implements a critical two-stage authorization
+  process where a tenant's access rules act as a strict upper bound for all user permissions within that tenant.
+- ⚡️ **Tenant-Aware API Endpoints and Services**: All relevant API routes (e.g., roles, threads, users) and core
+  services (e.g., `ThreadService`, `UserService`, `UsageLimits`) have been updated to enforce multi-tenant awareness,
+  ensuring data isolation and correct permission handling.
+- 👤 **Decoupled User Roles from UserEntity**: `UserEntity` no longer directly stores user roles; instead, roles are
+  dynamically fetched from `UserTenantRoleEntity` based on the user's active tenant context.
+- 🤖 **Integrated Bot Authentication**: The AI-Hub Bot's authentication process now fully utilizes the new local user and
+  tenant role management, ensuring secure and tenant-scoped bot interactions.
+- 📚 **Updated Platform Documentation**: Extensive revisions across architectural documentation (`arc42`) and user guides
+  to reflect the new multi-tenancy model, local role management, and updated authentication flows.
+- 🎨 **Minor UI Layout Adjustment**: Adjusted spacing in the default layout of the web user interface for a more refined
+  visual experience.
+
+### Fixed
+
+- 🐛 Resolved an issue where `UserEntity.profile_image` could store invalid data URLs; it now strictly enforces valid
+  `http://` or `https://` URLs for improved data integrity.
+
+### Removed
+
+- 🗑️ Deprecated the **`IdentityProvider` Abstraction**: The `IdentityProvider` interface and all its implementations
+  (e.g., `AzureIdentityProvider`, `TokenIdentityProvider`) have been removed to streamline the authentication
+  architecture.
+- 🗑️ Eliminated **`AUTH_IDENTITY_PROVIDER` and `SUPERUSER_ENABLED`** environment variables, as their functionality has
+  been integrated into the new, more flexible authentication and tenant management system.
+- 🗑️ Removed the **`generate_api_token.py`** utility script and its corresponding `Makefile` target, as API token
+  generation is now managed through the refined API and aligned with the new authentication model.
+- 🗑️ Deleted outdated **RBAC SDK documentation** (`aihub_doc/docs/3_sdk/5_advanced_topics/5_rbac`), which has been
+  superseded by new, comprehensive multi-tenancy and access control guides.
+
+### Refactor
+
+- 🧹 **Upgraded Document Parsing Engine**: Replaced `Docling` with `MinerU` across the platform and its documentation,
+  providing enhanced capabilities for document processing.
+- 🧹 **Simplified Development Authentication**: Streamlined `DangerousDevelopmentOnlyAuthHandler` by removing its
+  dependency on `IdentityProvider`, reflecting the consolidated authentication architecture.
+- 🧹 **Consolidated User Onboarding Logic**: Centralized user creation and default tenant role assignment into
+  `UserEntity.ensure_user_exists_for_auth` for a more consistent and robust user provisioning process.
+- 🧹 **Standardized Test Fixtures**: Introduced new test fixtures (`mock_tenant_entity_autouse`,
+  `mock_user_entity_autouse`) to standardize mocking multi-tenant authentication components in tests.
+
+______________________________________________________________________
+
+## [v0.265.3] - 2026-02-24 - Enhanced Service Health Monitoring for Docker Compose
+
+### Added
+
+- ✨ **Implemented standardized HTTP health check labels** for various core services, including **SeaweedFS Volume**,
+  **Ferretdb**, **NATS Server**, **Presidio Analyzer**, **Presidio Anonymizer**, and **Langfuse Server**. These labels
+  provide explicit metadata (protocol, port, path) for external monitoring and orchestration tools to determine service
+  readiness and liveness.
+- 🚀 **Configured native Docker health checks** for the **Jupyter Notebook** service, introducing robust internal
+  validation of its operational status with defined intervals, timeouts, and retries.
+- 🔄 **Explicitly set Docker's internal health check to `NONE`** for **Ferretdb** and **Langfuse Server** services. This
+  clarifies the monitoring strategy, indicating that external systems should rely on the newly added health check labels
+  for status checks rather than Docker's default internal mechanism.
+
+______________________________________________________________________
+
+## [v0.265.2] - 2026-02-24 - Comprehensive Architecture Documentation and AI-Powered Management
+
+### Added
+
+- ✨ **Arc42 Skill**: Introduced a new Claude skill designed to write, edit, and review architecture documentation
+  chapters following the official `arc42` framework. This enhances the ability to generate structured, high-quality
+  architectural documentation.
+- 📖 **Complete Arc42 Documentation Set**: Added all 12 chapters of the `arc42` architecture documentation (Introduction,
+  Constraints, Context, Solution Strategy, Building Blocks, Runtime, Deployment, Crosscutting Concepts, Architecture
+  Decisions, Quality Requirements, Risks, and Glossary). This provides a foundational and detailed understanding of the
+  platform's design, operational aspects, quality goals, risks, and deployment views.
+
+### Refactor
+
+- 📚 **Centralized Glossary**: Consolidated all project-specific terminology from individual component `README.md` files
+  into a single, comprehensive `arc42` glossary (Chapter 12). This significantly improves documentation consistency and
+  ease of reference across all stakeholders.
+
+### Removed
+
+- 🗑️ **Redundant Component Glossaries**: Eliminated duplicate glossary sections from component-specific `README.md`
+  files (e.g., `aihub_agent`, `aihub_api`, `aihub_bot`, `aihub_lib`, `aihub_pipeline`, `aihub_process`, `aihub_web`),
+  streamlining documentation and reducing information fragmentation.
+
+______________________________________________________________________
+
+## [v0.265.1] - 2026-02-23 - Revolutionizing AI-Assisted Development with Comprehensive Claude Code Integration
+
+### Added
+
+- 🦾 **Extended Claude Code Integration**: Introduced a comprehensive suite of new capabilities for AI-assisted
+  development, including 7 specialized **Custom Subagents** (e.g., `architect`, `codebase-expert`, `test-analyzer`), 8
+  **Automated Hooks** for enforcing code quality, security, and environment setup, and 39 detailed **Skills** to
+  streamline workflows from scaffolding to debugging across all project scopes.
+- 🔗 **New MCP Server Integrations**: Integrated 11 additional **Model Context Protocol (MCP) servers**, providing
+  enhanced, real-time access to documentation and runtime insights for key technologies such as **Langfuse**, **Context7
+  (general library docs)**, **Playwright**, **PostgreSQL**, **PrimeVue**, **Nuxt**, **Milvus**, and **NATS**.
+- 🛠️ **Developer Tooling**: Added new **pre-commit hooks** for automated Python (Ruff), YAML, and Markdown formatting,
+  along with checks for common issues, ensuring code consistency before commits.
+- 📄 **Critical Documentation**: Introduced new, in-depth documentation pages for **Agent Execution Model** and **Events
+  Reference**, providing foundational knowledge for building robust AI agents.
+- ✍️ **Claude Code Context Files**: Created dedicated `CLAUDE.md` context files for `aihub_action`, `aihub_api`,
+  `aihub_bot`, `aihub_doc`, `aihub_lib`, `aihub_process`, `aihub_web`, and `deployment` scopes, offering AI assistants
+  precise, scope-specific guidance.
+- ✨ **Developer Convenience**: Added new `Makefile` targets in `aihub_web` for streamlined frontend development tasks
+  like formatting, linting, and SDK generation.
+
+### Changed
+
+- ⚙️ **Claude Code Configuration Overhaul**: Rewrote the core `.claude/settings.json` to enable granular tool
+  permissions, define available AI models, integrate automated hooks, and activate advanced Claude Code plugins,
+  significantly enhancing AI assistant capabilities and security.
+- 🚀 **Main `CLAUDE.md` and `README.md`**: Updated the primary project documentation to reflect the extensive new Claude
+  Code features, revised architectural overview, and updated tooling ecosystem.
+- 📝 **Agent Documentation Enhancements**: Expanded existing documentation for agent fundamentals, Human-in-the-Loop
+  (HITL), and memory integration to cover new patterns like **Bot-in-the-Loop (BITL)**, dynamic HITL type selection, and
+  config-driven memory management.
+- 🔄 **Backend Linting Action**: Switched the `lint_backend` GitHub Action from using `black` to `ruff format` for Python
+  code formatting, aligning CI with local development tooling.
+- 🏗️ **Process Endpoint Configuration**: Modified the `ProcessEndpointsDiscoveryService` to now expect explicit `name`
+  and `description` fields for process configurations, removing previous conditional defaults.
+
+### Fixed
+
+- 🐛 **Dagster UI Port Correction**: Updated the documented Dagster UI access port from `3000` to `3002` in
+  `aihub_pipeline/README.md` for accuracy.
+
+### Removed
+
+- 🗑️ **Legacy Claude Code Commands**: Replaced the outdated `.claude/commands/` directory with the new, more powerful
+  and structured **Claude Code Skills** system.
+- 🧹 **Old Gemini CLI Integration**: Removed the `AGENTS.md` context file and `.gemini/settings.json`, standardizing AI
+  assistant context management exclusively through the `.claude/` directory.
+- 🌐 **Obsolete Frontend Testing Files**: Removed old placeholder frontend testing assets (`index.html`, `logo.png`,
+  `script.js`) from the `aihub_api` playground.
+
+### Refactor
+
+- 🧹 **YAML File Consistency**: Standardized YAML file formatting across the repository by adding the `---` document
+  start indicator to numerous configuration and i18n files.
+- 🔧 **Docker Compose Restart Syntax**: Updated `restart: no` to `restart: "no"` in Docker Compose templates and
+  generated files for improved YAML parser compatibility and consistency.
+- 📄 **Makefile Formatting Tasks**: Streamlined code formatting workflows by integrating `format-md` and a new
+  `format-yaml` target into the main `pr-ready` Makefile command.
+- 🩹 **MCP Script Robustness**: Improved the `.claude/mcp/mcp-aihub-api.sh` and `mcp-mongodb.sh` scripts with more
+  robust, conditional sourcing of environment variables.
+- 📝 **Gitignore Updates**: Expanded `.gitignore` to include new Claude Code local override files, ensuring a cleaner and
+  more focused repository.
+
+______________________________________________________________________
+
 ## [v0.265.0] - 2026-02-23 - Major Infrastructure Upgrade: Embracing uv for Superior Python Dependency Management
 
 ### Added
@@ -262,7 +443,7 @@ ______________________________________________________________________
 
 ______________________________________________________________________
 
-## [v0.262.2] - YYYY-MM-DD - Introducing the LLM-Powered Whitepaper Generation System
+## [v0.262.2] - 2026-02-17 - Introducing the LLM-Powered Whitepaper Generation System
 
 ### Added
 

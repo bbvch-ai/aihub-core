@@ -50,6 +50,10 @@ format-md:
 	@echo "Formatting markdown files..."
 	@uv run mdformat --number $$(git ls-files '*.md' | grep -v 'aihub_doc/whitepaper/chapters/')
 
+format-yaml:
+	@echo "Formatting YAML files..."
+	@uv run yamlfix $$(git ls-files '*.yaml' '*.yml' | grep -v 'pnpm-lock.yaml')
+
 format-md-win:
 	@echo "Formatting markdown files..."
 	@powershell -Command "git ls-files *.md | ForEach-Object { uv run mdformat --number $$_ }"
@@ -74,11 +78,12 @@ pr-ready:
 	@(cd aihub_api &&  make pr-ready)
 	@(cd aihub_bot &&  make pr-ready)
 	@(cd aihub_web && make pr-ready)
-	@uv run mdformat --number $$(git ls-files '*.md' | grep -v 'aihub_doc/whitepaper/chapters/')
+	@$(MAKE) format-md
+	@$(MAKE) format-yaml
 	@$(MAKE) generate-compose
 	@$(MAKE) license-check
 
-TAG ?= v0.265.0
+TAG ?= v0.266.1
 
 changelog:
 	@echo "Generating changelog"
@@ -108,10 +113,6 @@ up-dev:
 	@echo "Starting development environment with Docker Compose..."
 	docker compose -f docker-compose.dev.yml --env-file .env up -d --build
 
-generate-api-token:
-	@echo "Generating API token..."
-	cd aihub_api && uv run python generate_api_token.py
-
 # Bump version across all packages (VERSION=0.264.0)
 VERSION ?= 0.263.0
 version-bump:
@@ -121,3 +122,4 @@ version-bump:
 	done
 	@uv lock
 	@echo "Version bumped to $(VERSION)"
+

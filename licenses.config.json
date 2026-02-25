@@ -143,6 +143,12 @@
       "license": "MIT",
       "status": "✅",
       "notes": "MIT license per GitHub repo; npm reports Unknown due to missing license field."
+    },
+    {
+      "name": "yamlfix",
+      "license": "GPL-3.0",
+      "status": "✅",
+      "notes": "Dev-only YAML formatting tool; not distributed in production builds."
     }
   ],
   "docker_licenses": [
