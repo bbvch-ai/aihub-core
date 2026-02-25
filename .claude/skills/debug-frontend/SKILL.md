@@ -10,7 +10,7 @@ Debug the Nuxt 3 admin interface visually. Issue description or page URL via `$A
 
 ## Prerequisites
 
-The admin UI must be running at http://localhost:3000. If not running:
+The admin UI must be running at http://localhost:3333. If not running:
 
 ```bash
 cd aihub_web/aihub_web && pnpm dev
@@ -20,13 +20,13 @@ cd aihub_web/aihub_web && pnpm dev
 
 Use the Playwright MCP `browser_navigate` tool to open the page. Common entry points:
 
-- **Dashboard**: `http://localhost:3000/en`
-- **Agents**: `http://localhost:3000/en/service/agents`
-- **Processes**: `http://localhost:3000/en/service/processes`
-- **Threads**: `http://localhost:3000/en/service/threads`
-- **Knowledge**: `http://localhost:3000/en/service/databases`
-- **Users**: `http://localhost:3000/en/service/users`
-- **Roles**: `http://localhost:3000/en/service/roles`
+- **Dashboard**: `http://localhost:3333/en`
+- **Agents**: `http://localhost:3333/en/service/agents`
+- **Processes**: `http://localhost:3333/en/service/processes`
+- **Threads**: `http://localhost:3333/en/service/threads`
+- **Knowledge**: `http://localhost:3333/en/service/databases`
+- **Users**: `http://localhost:3333/en/service/users`
+- **Roles**: `http://localhost:3333/en/service/roles`
 
 ## Step 2: Capture Page State
 
