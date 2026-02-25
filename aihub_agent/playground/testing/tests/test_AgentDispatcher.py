@@ -171,6 +171,7 @@ def locale_handler():
 def agent_topic():
     """Create a test agent topic."""
     return AgentInstanceTopic(
+        agent_class="MockAgent",
         agent_id="test_agent",
         thread_id=str(ObjectId()),
         run_id=str(ObjectId()),
