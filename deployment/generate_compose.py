@@ -49,7 +49,7 @@ CONFIG_SPECS = [
 # (source relative to ROOT_DIR, destination relative to variant_dir)
 RELEASE_STATIC_FILES = [
     (".env.prod", ".env.template"),
-    ("setup-env.py", "setup-env.py"),
+    ("setup-env.sh", "setup-env.sh"),
 ]
 
 
@@ -93,10 +93,13 @@ def _pin_image_tags_to_version(config_data, version):
     (GPU services, TLS, auth) work correctly. This function replaces the 'latest'
     image tag with the release version so the rendered compose files reference
     the correct versioned images.
+
+    Only pins images that have a 'build' key, which marks them as our own images
+    (as opposed to third-party images that use flat strings or dicts without 'build').
     """
     image_tags = config_data.get("image_tags", {})
     for service, tag_value in image_tags.items():
-        if isinstance(tag_value, dict) and "latest" in tag_value:
+        if isinstance(tag_value, dict) and "build" in tag_value and "latest" in tag_value:
             tag_value["latest"] = f"{service}:{version}"
 
 
@@ -184,7 +187,7 @@ def _copy_release_static_files(variant_dir):
         shutil.copy2(f, dst)
         copied += 1
 
-    # Copy non-config release files (.env.template, setup-env.py)
+    # Copy non-config release files (.env.template, setup-env.sh)
     for src_rel, dst_rel in RELEASE_STATIC_FILES:
         src = ROOT_DIR / src_rel
         if not src.exists():

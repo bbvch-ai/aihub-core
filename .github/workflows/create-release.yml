@@ -17,9 +17,6 @@ jobs:
   create-release:
     name: Create GitHub Release with Deployment Bundles
     runs-on: ubuntu-latest
-    if: >
-      github.event_name == 'workflow_dispatch' ||
-      github.event_name == 'repository_dispatch'
     steps:
       - name: Extract version
         id: version
@@ -35,25 +32,26 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Checkout at release tag
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ steps.version.outputs.version }}
           fetch-depth: 0
 
       - name: Setup Python 3.13
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.13'
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
       - name: Install dependencies
-        run: pip install jinja2 pyyaml yamlfix
+        run: uv sync --dev --frozen
 
       - name: Generate release compose files
-        run: |
-          python deployment/generate_compose.py \
-            --release \
-            --tag "${{ steps.version.outputs.version }}" \
-            --output-dir dist/release
+        run: make generate-release TAG="${{ steps.version.outputs.version }}"
 
       - name: Verify release bundles
         run: |
@@ -63,7 +61,7 @@ jobs:
             echo "Checking ${variant}..."
             test -f "${DEST}/docker-compose.yml"
             test -f "${DEST}/.env.template"
-            test -f "${DEST}/setup-env.py"
+            test -f "${DEST}/setup-env.sh"
             echo "  OK"
           done
 
@@ -73,7 +71,7 @@ jobs:
           for variant in "swissaihub-${VERSION}" "swissaihub-${VERSION}-gpu"; do
             DEST="dist/release/${variant}"
             echo "Formatting YAML files in ${variant}..."
-            find "${DEST}" -name '*.yml' -o -name '*.yaml' | xargs yamlfix
+            find "${DEST}" -name '*.yml' -o -name '*.yaml' | xargs uv run yamlfix
             echo "  OK"
           done
 

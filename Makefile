@@ -101,6 +101,12 @@ generate-compose:
 	@echo "Generating Docker Compose files..."
 	@uv run python deployment/generate_compose.py
 
+# Generate release bundles with version-pinned images (TAG=v0.266.0, OUTPUT_DIR=dist/release)
+OUTPUT_DIR ?= dist/release
+generate-release:
+	@echo "Generating release bundles for $(TAG)..."
+	@uv run python deployment/generate_compose.py --release --tag "$(TAG)" --output-dir "$(OUTPUT_DIR)"
+
 local-cert:
 	@echo "Generating mkcert certificates for localhost and nip.io..."
 	mkdir -p configs/traefik/certs
