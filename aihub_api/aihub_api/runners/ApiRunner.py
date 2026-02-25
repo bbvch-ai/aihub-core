@@ -140,6 +140,9 @@ class ApiRunner(Runner):
         """
         Mounts one or more controllers (each subclass of Controller) onto the API application.
         This attaches the controller's routes under the prefix defined in the controller itself.
+
+        Also sets the controller references on _api_app.state so they're available for
+        discovery services before create_app() is called.
         """
         super().mount(*controllers)
 

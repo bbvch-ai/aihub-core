@@ -14,13 +14,19 @@ def context():
 
 @pytest.fixture
 def access_rules():
-    """A dictionary to hold state between BDD steps."""
+    """Holds user access rules between BDD steps."""
+    return []
+
+
+@pytest.fixture
+def tenant_access_rules():
+    """Holds tenant access rules between BDD steps."""
     return []
 
 
 @given(parsers.parse("no access rules"))
 def given_no_access_rules(access_rule: str, access_rules: list[str]):
-    """Adds an access rule to the user's list of access roles."""
+    """Clears all user access rules."""
     access_rules.clear()
 
 
@@ -30,11 +36,19 @@ def given_access_rules(access_rule: str, access_rules: list[str]):
     access_rules.append(access_rule)
 
 
+@given(parsers.parse('the tenant access rule "{tenant_access_rule}"'))
+def given_tenant_access_rules(tenant_access_rule: str, tenant_access_rules: list[str]):
+    """Adds an access rule to the tenant's list of access rules."""
+    tenant_access_rules.append(tenant_access_rule)
+
+
 @when(parsers.parse('the access checker checks for the permission "{permission_template}"'))
-def check_permission(context, access_rules: list[str], permission_template: str):
+def check_permission(context, access_rules: list[str], tenant_access_rules: list[str], permission_template: str):
     """Initializes AccessChecker and stores the result or any exception."""
     try:
-        checker = AccessChecker(access_rules)
+        # Use tenant access rules if provided, otherwise default to full access for backward compatibility
+        tenant_rules = tenant_access_rules if tenant_access_rules else ["aihub.admin.>"]
+        checker = AccessChecker(access_rules, tenant_access_rules=tenant_rules)
         result = checker.access_level(permission_template)
         context["result"] = result
         context["exception"] = None
@@ -44,9 +58,11 @@ def check_permission(context, access_rules: list[str], permission_template: str)
 
 
 @when(parsers.parse('the access checker checks for the permission "{user_permission_template}"'))
-def check_user_level_permission(context, access_rules: list[str], user_permission_template: str):
+def check_user_level_permission(
+    context, access_rules: list[str], tenant_access_rules: list[str], user_permission_template: str
+):
     """Alias for the main 'when' step for clarity in admin scenarios."""
-    check_permission(context, access_rules, user_permission_template)
+    check_permission(context, access_rules, tenant_access_rules, user_permission_template)
 
 
 @then(parsers.parse("the result should be {expected_level}"))

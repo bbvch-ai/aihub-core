@@ -164,7 +164,7 @@ investigation, documentation, and response.
 - [GDPR Full Text](https://gdpr-info.eu/)
 - [EDPB Guidelines](https://edpb.europa.eu/)
 
----
+______________________________________________________________________
 
 :::info Legal disclaimer
 This is technical documentation, not legal advice. Consult your data protection officer or legal counsel.

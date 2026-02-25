@@ -102,7 +102,7 @@ export type AddMemoryToChatHistoryEvent = {
      *
      * Chat history extended with user memories.
      */
-    extended_history: Array<ChatMessageOutput>;
+    extended_history: Array<ChatMessage>;
     /**
      * Event Name
      *
@@ -116,7 +116,7 @@ export type AddMemoryToChatHistoryEvent = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessageOutput> | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessage> | Array<string> | undefined;
 };
 
 /**
@@ -151,7 +151,7 @@ export type AddOrganizationMemoryToChatHistoryEvent = {
      *
      * Chat history extended with user memories.
      */
-    extended_history: Array<ChatMessageOutput>;
+    extended_history: Array<ChatMessage>;
     /**
      * Event Name
      *
@@ -165,7 +165,7 @@ export type AddOrganizationMemoryToChatHistoryEvent = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessageOutput> | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessage> | Array<string> | undefined;
 };
 
 /**
@@ -200,7 +200,7 @@ export type AddUserMemoryToChatHistoryEvent = {
      *
      * Chat history extended with user memories.
      */
-    extended_history: Array<ChatMessageOutput>;
+    extended_history: Array<ChatMessage>;
     /**
      * Event Name
      *
@@ -214,7 +214,7 @@ export type AddUserMemoryToChatHistoryEvent = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessageOutput> | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessage> | Array<string> | undefined;
 };
 
 /**
@@ -307,6 +307,12 @@ export type AgentClassDto = {
      * Indicates whether the agent class is online and reachable.
      */
     is_online?: boolean | null;
+    /**
+     * Templates
+     *
+     * List of profile templates for quick profile creation.
+     */
+    templates?: Array<TemplateData>;
 };
 
 /**
@@ -1261,35 +1267,7 @@ export type Audio = {
  *
  * A representation of audio data to directly pass to/from the LLM.
  */
-export type AudioBlockInput = {
-    /**
-     * Block Type
-     */
-    block_type?: 'audio';
-    /**
-     * Audio
-     */
-    audio?: Blob | File | null;
-    /**
-     * Path
-     */
-    path?: string | null;
-    /**
-     * Url
-     */
-    url?: string | string | null;
-    /**
-     * Format
-     */
-    format?: string | null;
-};
-
-/**
- * AudioBlock
- *
- * A representation of audio data to directly pass to/from the LLM.
- */
-export type AudioBlockOutput = {
+export type AudioBlock = {
     /**
      * Block Type
      */
@@ -1530,26 +1508,6 @@ export type BodyCreateTranscriptionOpenaiAudioTranscriptionsPost = {
      * Timestamp granularities (e.g. 'word' or 'segment'); only used with verbose_json response_format
      */
     timestamp_granularities?: Array<'word' | 'segment'> | null;
-};
-
-/**
- * BucketNamespacePair
- *
- * A bucket-namespace selection pair for RAG retrieval filtering.
- */
-export type BucketNamespacePair = {
-    /**
-     * Bucket Name
-     *
-     * The name of the bucket
-     */
-    bucket_name: string;
-    /**
-     * Namespace Name
-     *
-     * The name of the selected namespace in the bucket
-     */
-    namespace_name: string;
 };
 
 /**
@@ -2392,7 +2350,7 @@ export type ChatCompletionUserMessageParam = {
  *
  * Chat message.
  */
-export type ChatMessageOutput = {
+export type ChatMessage = {
     role?: MessageRole;
     /**
      * Additional Kwargs
@@ -2405,30 +2363,23 @@ export type ChatMessageOutput = {
         block_type: 'text';
     } & TextBlock) | ({
         block_type: 'image';
-    } & ImageBlockOutput) | ({
+    } & ImageBlock) | ({
         block_type: 'audio';
-    } & AudioBlockOutput) | ({
+    } & AudioBlock) | ({
         block_type: 'video';
-    } & VideoBlockOutput) | ({
+    } & VideoBlock) | ({
         block_type: 'document';
-    } & DocumentBlockOutput) | ({
+    } & DocumentBlock) | ({
         block_type: 'cache';
     } & CachePoint) | ({
         block_type: 'citable';
-    } & CitableBlockOutput) | ({
+    } & CitableBlock) | ({
         block_type: 'citation';
-    } & CitationBlockOutput) | ({
+    } & CitationBlock) | ({
         block_type: 'thinking';
-    } & ThinkingBlockOutput) | ({
+    } & ThinkingBlock) | ({
         block_type: 'tool_call';
-    } & ToolCallBlockOutput)>;
-};
-
-/**
- * ChatMessage.additional_kwargs
- */
-export type ChatMessageAdditionalKwargs = {
-    [key: string]: unknown;
+    } & ToolCallBlock)>;
 };
 
 /**
@@ -2653,7 +2604,7 @@ export type ChunkEvent = {
  *
  * Supports providing citable content to LLMs that have built-in citation support.
  */
-export type CitableBlockInput = {
+export type CitableBlock = {
     /**
      * Block Type
      */
@@ -2673,39 +2624,9 @@ export type CitableBlockInput = {
         block_type: 'text';
     } & TextBlock) | ({
         block_type: 'image';
-    } & ImageBlockInput) | ({
+    } & ImageBlock) | ({
         block_type: 'document';
-    } & DocumentBlockInput)>;
-};
-
-/**
- * CitableBlock
- *
- * Supports providing citable content to LLMs that have built-in citation support.
- */
-export type CitableBlockOutput = {
-    /**
-     * Block Type
-     */
-    block_type?: 'citable';
-    /**
-     * Title
-     */
-    title: string;
-    /**
-     * Source
-     */
-    source: string;
-    /**
-     * Content
-     */
-    content: Array<({
-        block_type: 'text';
-    } & TextBlock) | ({
-        block_type: 'image';
-    } & ImageBlockOutput) | ({
-        block_type: 'document';
-    } & DocumentBlockOutput)>;
+    } & DocumentBlock)>;
 };
 
 /**
@@ -2713,7 +2634,7 @@ export type CitableBlockOutput = {
  *
  * A representation of cited content from past messages.
  */
-export type CitationBlockInput = {
+export type CitationBlock = {
     /**
      * Block Type
      */
@@ -2725,39 +2646,7 @@ export type CitationBlockInput = {
         block_type: 'text';
     } & TextBlock) | ({
         block_type: 'image';
-    } & ImageBlockInput);
-    /**
-     * Source
-     */
-    source: string;
-    /**
-     * Title
-     */
-    title: string;
-    /**
-     * Additional Location Info
-     */
-    additional_location_info: CitationBlockAdditionalLocationInfo;
-};
-
-/**
- * CitationBlock
- *
- * A representation of cited content from past messages.
- */
-export type CitationBlockOutput = {
-    /**
-     * Block Type
-     */
-    block_type?: 'citation';
-    /**
-     * Cited Content
-     */
-    cited_content: ({
-        block_type: 'text';
-    } & TextBlock) | ({
-        block_type: 'image';
-    } & ImageBlockOutput);
+    } & ImageBlock);
     /**
      * Source
      */
@@ -2772,13 +2661,6 @@ export type CitationBlockOutput = {
     additional_location_info: {
         [key: string]: number;
     };
-};
-
-/**
- * CitationBlock.additional_location_info
- */
-export type CitationBlockAdditionalLocationInfo = {
-    [key: string]: unknown;
 };
 
 /**
@@ -3908,39 +3790,7 @@ export type DisplayStatistics = {
  *
  * A representation of a document to directly pass to the LLM.
  */
-export type DocumentBlockInput = {
-    /**
-     * Block Type
-     */
-    block_type?: 'document';
-    /**
-     * Data
-     */
-    data?: Blob | File | null;
-    /**
-     * Path
-     */
-    path?: string | null;
-    /**
-     * Url
-     */
-    url?: string | null;
-    /**
-     * Title
-     */
-    title?: string | null;
-    /**
-     * Document Mimetype
-     */
-    document_mimetype?: string | null;
-};
-
-/**
- * DocumentBlock
- *
- * A representation of a document to directly pass to the LLM.
- */
-export type DocumentBlockOutput = {
+export type DocumentBlock = {
     /**
      * Block Type
      */
@@ -5853,39 +5703,7 @@ export type Image = {
  *
  * A representation of image data to directly pass to/from the LLM.
  */
-export type ImageBlockInput = {
-    /**
-     * Block Type
-     */
-    block_type?: 'image';
-    /**
-     * Image
-     */
-    image?: Blob | File | null;
-    /**
-     * Path
-     */
-    path?: string | null;
-    /**
-     * Url
-     */
-    url?: string | string | null;
-    /**
-     * Image Mimetype
-     */
-    image_mimetype?: string | null;
-    /**
-     * Detail
-     */
-    detail?: string | null;
-};
-
-/**
- * ImageBlock
- *
- * A representation of image data to directly pass to/from the LLM.
- */
-export type ImageBlockOutput = {
+export type ImageBlock = {
     /**
      * Block Type
      */
@@ -6758,17 +6576,23 @@ export type InputText = {
      */
     readonly?: boolean;
     /**
+     * Placeholder
+     *
      * Placeholder text
      */
-    placeholder?: LocaleString | null;
+    placeholder?: LocaleString | string | null;
     /**
+     * Prefix
+     *
      * Prefix text
      */
-    prefix?: LocaleString | null;
+    prefix?: LocaleString | string | null;
     /**
+     * Suffix
+     *
      * Suffix text
      */
-    suffix?: LocaleString | null;
+    suffix?: LocaleString | string | null;
     /**
      * Iconprefix
      *
@@ -6787,7 +6611,7 @@ export type InputText = {
     readonly validation: string;
     [key: string]: unknown | true | string | null | string | null | 'primeInputText' | string | null | LocaleString | string | LocaleString | string | null | string | number | number | boolean | Array<string> | {
         [key: string]: string;
-    } | null | boolean | string | null | LocaleString | null | LocaleString | null | LocaleString | null | string | null | string | null | string | undefined;
+    } | null | boolean | string | null | LocaleString | string | null | LocaleString | string | null | LocaleString | string | null | string | null | string | null | string | undefined;
 };
 
 /**
@@ -7455,7 +7279,7 @@ export type LimitChatHistoryEvent = {
      *
      * Limited chat history based on number of input tokens.
      */
-    limited_history: Array<ChatMessageOutput>;
+    limited_history: Array<ChatMessage>;
     /**
      * Event Name
      *
@@ -7469,7 +7293,7 @@ export type LimitChatHistoryEvent = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessageOutput> | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessage> | Array<string> | undefined;
 };
 
 /**
@@ -7714,16 +7538,18 @@ export type LocaleInput = {
      */
     rows?: number;
     /**
+     * Placeholder
+     *
      * Placeholder text for each language
      */
-    placeholder?: LocaleString | null;
+    placeholder?: LocaleString | string | null;
     /**
      * Validation
      */
     readonly validation: string;
     [key: string]: unknown | true | string | null | string | null | 'localeInput' | string | null | LocaleString | string | LocaleString | string | null | string | number | number | boolean | Array<string> | {
         [key: string]: string;
-    } | null | boolean | string | null | 'text' | 'textarea' | number | LocaleString | null | string | undefined;
+    } | null | boolean | string | null | 'text' | 'textarea' | number | LocaleString | string | null | string | undefined;
 };
 
 /**
@@ -8915,30 +8741,6 @@ export type MultiSelect = {
 };
 
 /**
- * NamespaceAwareUserMessageEventInput
- */
-export type NamespaceAwareUserMessageEventInput = {
-    /**
-     * Messages
-     *
-     * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
-     */
-    messages?: Array<JamboParserObjectTypeParserChatMessage1>;
-    /**
-     * Files
-     *
-     * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
-     */
-    files?: Array<UserUploadedFile> | null;
-    /**
-     * Selected Namespaces
-     *
-     * List of bucket-namespace pairs for RAG retrieval filtering.
-     */
-    selected_namespaces: Array<BucketNamespacePair>;
-};
-
-/**
  * NamespaceDTO
  */
 export type NamespaceDto = {
@@ -9682,62 +9484,11 @@ export type ProcessClassDto = {
      */
     is_online?: boolean | null;
     /**
-     * The default process configuration for this process class. This is the configuration that will be used if no specific configuration is provided.
-     */
-    default_process_config: ProcessConfig;
-};
-
-/**
- * ProcessConfig
- *
- * Each process instance can be configured with its own parameters.
- *
- * The process config follows the same duality pattern as AgentConfig:
- * - **Form mode** (via `as_form()`): Fields contain FormKit elements for UI rendering.
- * - **Data mode**: Fields contain actual primitive values for runtime use.
- *
- * This ensures the form schema and the data model can never de-sync.
- *
- * Subclasses can add domain-specific config fields for process-level settings.
- */
-export type ProcessConfig = {
-    /**
-     * Process Class
+     * Templates
      *
-     * The class name of the process, used for identification.
+     * List of profile templates for quick profile creation.
      */
-    process_class: string | InputText;
-    /**
-     * Process Id
-     *
-     * Used to uniquely identify this process instance.
-     */
-    process_id: string | InputText;
-    /**
-     * Name
-     *
-     * The name of the process.
-     */
-    name: LocaleString | LocaleInput;
-    /**
-     * Description
-     *
-     * The description of the process.
-     */
-    description: LocaleString | LocaleInput;
-    /**
-     * Icon
-     *
-     * The icon representing the process.
-     */
-    icon?: string | IconSelector;
-    /**
-     * Form Name
-     *
-     * The form type name, used for polymorphic deserialization.
-     */
-    readonly _form_name: string;
-    [key: string]: unknown | string | InputText | string | InputText | LocaleString | LocaleInput | LocaleString | LocaleInput | string | IconSelector | string | undefined;
+    templates?: Array<TemplateData>;
 };
 
 /**
@@ -10784,6 +10535,18 @@ export type RoleResponse = {
      * Pattern-based usage limit rules.
      */
     usage_limits?: Array<UsageLimitDto>;
+    /**
+     * Tenant Id
+     *
+     * Tenant ID this role belongs to, or None for system roles.
+     */
+    tenant_id: string | null;
+    /**
+     * Is System Role
+     *
+     * Whether this is a system-wide role.
+     */
+    is_system_role: boolean;
 };
 
 /**
@@ -11627,7 +11390,7 @@ export type StandaloneQuestionCondenserEvent = {
     /**
      * Single chat message containing the condensed user question.
      */
-    condensed_chat_message: ChatMessageOutput;
+    condensed_chat_message: ChatMessage;
     /**
      * Event Name
      *
@@ -11641,7 +11404,7 @@ export type StandaloneQuestionCondenserEvent = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | ChatMessageOutput | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | ChatMessage | Array<string> | undefined;
 };
 
 /**
@@ -11752,24 +11515,6 @@ export type StopEvent = {
      */
     readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<string> | undefined;
-};
-
-/**
- * StopEventOutput
- */
-export type StopEventOutput = {
-    /**
-     * Display Name
-     *
-     * Display name for the event
-     */
-    display_name?: LocaleString | null;
-    /**
-     * Display Description
-     *
-     * Display description for the event
-     */
-    display_description?: LocaleString | null;
 };
 
 /**
@@ -11957,6 +11702,58 @@ export type SuiteDto = {
 };
 
 /**
+ * TemplateData
+ *
+ * Typed container for template data extracted from Form.to_template_data().
+ *
+ * Each agent/process type has different configurable fields, so extra fields
+ * are allowed and preserved through serialization.
+ */
+export type TemplateData = {
+    /**
+     * Localized display name of the template
+     */
+    name: LocaleString;
+    /**
+     * Localized description of the template
+     */
+    description: LocaleString;
+    /**
+     * Icon
+     *
+     * Icon identifier for the template
+     */
+    icon?: string | null;
+    [key: string]: unknown | LocaleString | string | null | undefined;
+};
+
+/**
+ * TenantIdentity
+ *
+ * Represents a tenant's identity in the multi-tenant system.
+ */
+export type TenantIdentity = {
+    /**
+     * Id
+     *
+     * Unique tenant identifier
+     */
+    id: string;
+    /**
+     * Name
+     *
+     * Tenant display name
+     */
+    name: string;
+    /**
+     * Access Rules
+     *
+     * Access rules granted to this tenant
+     */
+    access_rules: Array<string>;
+};
+
+/**
  * TextBlock
  *
  * A representation of text data to directly pass to/from the LLM.
@@ -12139,35 +11936,7 @@ export type Textarea = {
  *
  * A representation of the content streamed from reasoning/thinking processes by LLMs
  */
-export type ThinkingBlockInput = {
-    /**
-     * Block Type
-     */
-    block_type?: 'thinking';
-    /**
-     * Content
-     *
-     * Content of the reasoning/thinking process, if available
-     */
-    content?: string | null;
-    /**
-     * Num Tokens
-     *
-     * Number of token used for reasoning/thinking, if available
-     */
-    num_tokens?: number | null;
-    /**
-     * Additional Information
-     */
-    additional_information?: ThinkingBlockAdditionalInformation;
-};
-
-/**
- * ThinkingBlock
- *
- * A representation of the content streamed from reasoning/thinking processes by LLMs
- */
-export type ThinkingBlockOutput = {
+export type ThinkingBlock = {
     /**
      * Block Type
      */
@@ -12192,15 +11961,6 @@ export type ThinkingBlockOutput = {
     additional_information?: {
         [key: string]: unknown;
     };
-};
-
-/**
- * ThinkingBlock.additional_information
- *
- * Additional information related to the thinking/reasoning process, if available
- */
-export type ThinkingBlockAdditionalInformation = {
-    [key: string]: unknown;
 };
 
 /**
@@ -12702,35 +12462,7 @@ export type TokenResponse = {
 /**
  * ToolCallBlock
  */
-export type ToolCallBlockInput = {
-    /**
-     * Block Type
-     */
-    block_type?: 'tool_call';
-    /**
-     * Tool Call Id
-     *
-     * ID of the tool call, if provided
-     */
-    tool_call_id?: string | null;
-    /**
-     * Tool Name
-     *
-     * Name of the called tool
-     */
-    tool_name: string;
-    /**
-     * Tool Kwargs
-     *
-     * Arguments provided to the tool, if available
-     */
-    tool_kwargs?: ToolCallBlockToolKwargsSub0 | string;
-};
-
-/**
- * ToolCallBlock
- */
-export type ToolCallBlockOutput = {
+export type ToolCallBlock = {
     /**
      * Block Type
      */
@@ -12755,13 +12487,6 @@ export type ToolCallBlockOutput = {
     tool_kwargs?: {
         [key: string]: unknown;
     } | string;
-};
-
-/**
- * ToolCallBlock.tool_kwargs.sub0
- */
-export type ToolCallBlockToolKwargsSub0 = {
-    [key: string]: unknown;
 };
 
 /**
@@ -13322,12 +13047,6 @@ export type UserDto = {
      */
     last_accessed: Date;
     /**
-     * Roles
-     *
-     * List of roles assigned to the user
-     */
-    roles?: Array<string>;
-    /**
      * Favorite Modules
      *
      * List of favorite modules from aihub suite
@@ -13341,6 +13060,8 @@ export type UserDto = {
 
 /**
  * UserIdentity
+ *
+ * Lightweight identity object for authenticated users.
  */
 export type UserIdentity = {
     /**
@@ -13364,15 +13085,13 @@ export type UserIdentity = {
     /**
      * Roles
      *
-     * The roles assigned to the user.
+     * The roles assigned to the user within the acting tenant.
      */
     roles: Array<string>;
     /**
-     * Profile Image
-     *
-     * Data URL (base64) representation of profile image
+     * The tenant context the user is operating within.
      */
-    profile_image?: string | null;
+    acting_within_tenant: TenantIdentity;
 };
 
 /**
@@ -13435,7 +13154,7 @@ export type UserMessageEvent = {
      *
      * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
      */
-    messages?: Array<ChatMessageOutput>;
+    messages?: Array<ChatMessage>;
     /**
      * Files
      *
@@ -13455,25 +13174,7 @@ export type UserMessageEvent = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | UserIdentity | Array<ChatMessageOutput> | Array<UserUploadedFile> | null | Array<string> | undefined;
-};
-
-/**
- * UserMessageEventInput
- */
-export type UserMessageEventInput = {
-    /**
-     * Messages
-     *
-     * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
-     */
-    messages?: Array<JamboParserObjectTypeParserChatMessage2>;
-    /**
-     * Files
-     *
-     * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
-     */
-    files?: Array<UserUploadedFile> | null;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | UserIdentity | Array<ChatMessage> | Array<UserUploadedFile> | null | Array<string> | undefined;
 };
 
 /**
@@ -13535,12 +13236,6 @@ export type UserWithAccessDto = {
      */
     last_accessed: Date;
     /**
-     * Roles
-     *
-     * List of roles assigned to the user
-     */
-    roles?: Array<string>;
-    /**
      * Favorite Modules
      *
      * List of favorite modules from aihub suite
@@ -13550,6 +13245,12 @@ export type UserWithAccessDto = {
      * User dashboard configuration for index page
      */
     dashboard?: DashboardDto | null;
+    /**
+     * Roles
+     *
+     * List of roles assigned to the user in the current tenant
+     */
+    roles?: Array<string>;
     /**
      * User access levels
      */
@@ -13714,43 +13415,7 @@ export type VectorStoreInput = {
  *
  * A representation of video data to directly pass to/from the LLM.
  */
-export type VideoBlockInput = {
-    /**
-     * Block Type
-     */
-    block_type?: 'video';
-    /**
-     * Video
-     */
-    video?: Blob | File | null;
-    /**
-     * Path
-     */
-    path?: string | null;
-    /**
-     * Url
-     */
-    url?: string | string | null;
-    /**
-     * Video Mimetype
-     */
-    video_mimetype?: string | null;
-    /**
-     * Detail
-     */
-    detail?: string | null;
-    /**
-     * Fps
-     */
-    fps?: number | null;
-};
-
-/**
- * VideoBlock
- *
- * A representation of video data to directly pass to/from the LLM.
- */
-export type VideoBlockOutput = {
+export type VideoBlock = {
     /**
      * Block Type
      */
@@ -13819,80 +13484,6 @@ export type WorkflowGraph = {
      * List of edges in the graph
      */
     links: Array<EdgeData>;
-};
-
-/**
- * ChatMessage
- *
- * Chat message.
- */
-export type JamboParserObjectTypeParserChatMessage1 = {
-    role?: MessageRole;
-    /**
-     * Additional Kwargs
-     */
-    additional_kwargs?: ChatMessageAdditionalKwargs;
-    /**
-     * Blocks
-     */
-    blocks?: Array<({
-        block_type: 'text';
-    } & TextBlock) | ({
-        block_type: 'image';
-    } & ImageBlockInput) | ({
-        block_type: 'audio';
-    } & AudioBlockInput) | ({
-        block_type: 'video';
-    } & VideoBlockInput) | ({
-        block_type: 'document';
-    } & DocumentBlockInput) | ({
-        block_type: 'cache';
-    } & CachePoint) | ({
-        block_type: 'citable';
-    } & CitableBlockInput) | ({
-        block_type: 'citation';
-    } & CitationBlockInput) | ({
-        block_type: 'thinking';
-    } & ThinkingBlockInput) | ({
-        block_type: 'tool_call';
-    } & ToolCallBlockInput)>;
-};
-
-/**
- * ChatMessage
- *
- * Chat message.
- */
-export type JamboParserObjectTypeParserChatMessage2 = {
-    role?: MessageRole;
-    /**
-     * Additional Kwargs
-     */
-    additional_kwargs?: ChatMessageAdditionalKwargs;
-    /**
-     * Blocks
-     */
-    blocks?: Array<({
-        block_type: 'text';
-    } & TextBlock) | ({
-        block_type: 'image';
-    } & ImageBlockInput) | ({
-        block_type: 'audio';
-    } & AudioBlockInput) | ({
-        block_type: 'video';
-    } & VideoBlockInput) | ({
-        block_type: 'document';
-    } & DocumentBlockInput) | ({
-        block_type: 'cache';
-    } & CachePoint) | ({
-        block_type: 'citable';
-    } & CitableBlockInput) | ({
-        block_type: 'citation';
-    } & CitationBlockInput) | ({
-        block_type: 'thinking';
-    } & ThinkingBlockInput) | ({
-        block_type: 'tool_call';
-    } & ToolCallBlockInput)>;
 };
 
 /**
@@ -14032,8 +13623,8 @@ export type AddMemoryToChatHistoryEventWritable = {
      *
      * Chat history extended with user memories.
      */
-    extended_history: Array<ChatMessageOutput>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessageOutput> | undefined;
+    extended_history: Array<ChatMessage>;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessage> | undefined;
 };
 
 /**
@@ -14068,8 +13659,8 @@ export type AddOrganizationMemoryToChatHistoryEventWritable = {
      *
      * Chat history extended with user memories.
      */
-    extended_history: Array<ChatMessageOutput>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessageOutput> | undefined;
+    extended_history: Array<ChatMessage>;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessage> | undefined;
 };
 
 /**
@@ -14104,8 +13695,8 @@ export type AddUserMemoryToChatHistoryEventWritable = {
      *
      * Chat history extended with user memories.
      */
-    extended_history: Array<ChatMessageOutput>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessageOutput> | undefined;
+    extended_history: Array<ChatMessage>;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessage> | undefined;
 };
 
 /**
@@ -14188,6 +13779,12 @@ export type AgentClassDtoWritable = {
      * Indicates whether the agent class is online and reachable.
      */
     is_online?: boolean | null;
+    /**
+     * Templates
+     *
+     * List of profile templates for quick profile creation.
+     */
+    templates?: Array<TemplateData>;
 };
 
 /**
@@ -15105,13 +14702,6 @@ export type ChainEventWritable = {
 };
 
 /**
- * ChatMessage.additional_kwargs
- */
-export type ChatMessageAdditionalKwargsWritable = {
-    [key: string]: unknown;
-};
-
-/**
  * Checkbox
  *
  * https://formkit-primevue.netlify.app/inputs/Checkbox
@@ -15277,13 +14867,6 @@ export type ChunkEventWritable = {
      */
     model_name?: string;
     [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | undefined;
-};
-
-/**
- * CitationBlock.additional_location_info
- */
-export type CitationBlockAdditionalLocationInfoWritable = {
-    [key: string]: unknown;
 };
 
 /**
@@ -17110,17 +16693,23 @@ export type InputTextWritable = {
      */
     readonly?: boolean;
     /**
+     * Placeholder
+     *
      * Placeholder text
      */
-    placeholder?: LocaleString | null;
+    placeholder?: LocaleString | string | null;
     /**
+     * Prefix
+     *
      * Prefix text
      */
-    prefix?: LocaleString | null;
+    prefix?: LocaleString | string | null;
     /**
+     * Suffix
+     *
      * Suffix text
      */
-    suffix?: LocaleString | null;
+    suffix?: LocaleString | string | null;
     /**
      * Iconprefix
      *
@@ -17135,7 +16724,7 @@ export type InputTextWritable = {
     iconSuffix?: string | null;
     [key: string]: unknown | true | string | null | string | null | 'primeInputText' | string | null | LocaleString | string | LocaleString | string | null | string | number | number | boolean | Array<string> | {
         [key: string]: string;
-    } | null | boolean | string | null | LocaleString | null | LocaleString | null | LocaleString | null | string | null | string | null | undefined;
+    } | null | boolean | string | null | LocaleString | string | null | LocaleString | string | null | LocaleString | string | null | string | null | string | null | undefined;
 };
 
 /**
@@ -17729,8 +17318,8 @@ export type LimitChatHistoryEventWritable = {
      *
      * Limited chat history based on number of input tokens.
      */
-    limited_history: Array<ChatMessageOutput>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessageOutput> | undefined;
+    limited_history: Array<ChatMessage>;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessage> | undefined;
 };
 
 /**
@@ -17971,12 +17560,14 @@ export type LocaleInputWritable = {
      */
     rows?: number;
     /**
+     * Placeholder
+     *
      * Placeholder text for each language
      */
-    placeholder?: LocaleString | null;
+    placeholder?: LocaleString | string | null;
     [key: string]: unknown | true | string | null | string | null | 'localeInput' | string | null | LocaleString | string | LocaleString | string | null | string | number | number | boolean | Array<string> | {
         [key: string]: string;
-    } | null | boolean | string | null | 'text' | 'textarea' | number | LocaleString | null | undefined;
+    } | null | boolean | string | null | 'text' | 'textarea' | number | LocaleString | string | null | undefined;
 };
 
 /**
@@ -18644,56 +18235,11 @@ export type ProcessClassDtoWritable = {
      */
     is_online?: boolean | null;
     /**
-     * The default process configuration for this process class. This is the configuration that will be used if no specific configuration is provided.
-     */
-    default_process_config: ProcessConfigWritable;
-};
-
-/**
- * ProcessConfig
- *
- * Each process instance can be configured with its own parameters.
- *
- * The process config follows the same duality pattern as AgentConfig:
- * - **Form mode** (via `as_form()`): Fields contain FormKit elements for UI rendering.
- * - **Data mode**: Fields contain actual primitive values for runtime use.
- *
- * This ensures the form schema and the data model can never de-sync.
- *
- * Subclasses can add domain-specific config fields for process-level settings.
- */
-export type ProcessConfigWritable = {
-    /**
-     * Process Class
+     * Templates
      *
-     * The class name of the process, used for identification.
+     * List of profile templates for quick profile creation.
      */
-    process_class: string | InputTextWritable;
-    /**
-     * Process Id
-     *
-     * Used to uniquely identify this process instance.
-     */
-    process_id: string | InputTextWritable;
-    /**
-     * Name
-     *
-     * The name of the process.
-     */
-    name: LocaleString | LocaleInputWritable;
-    /**
-     * Description
-     *
-     * The description of the process.
-     */
-    description: LocaleString | LocaleInputWritable;
-    /**
-     * Icon
-     *
-     * The icon representing the process.
-     */
-    icon?: string | IconSelectorWritable;
-    [key: string]: unknown | string | InputTextWritable | string | InputTextWritable | LocaleString | LocaleInputWritable | LocaleString | LocaleInputWritable | string | IconSelectorWritable | undefined;
+    templates?: Array<TemplateData>;
 };
 
 /**
@@ -20005,8 +19551,8 @@ export type StandaloneQuestionCondenserEventWritable = {
     /**
      * Single chat message containing the condensed user question.
      */
-    condensed_chat_message: ChatMessageOutput;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | ChatMessageOutput | undefined;
+    condensed_chat_message: ChatMessage;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | ChatMessage | undefined;
 };
 
 /**
@@ -20316,15 +19862,6 @@ export type TextareaWritable = {
     [key: string]: unknown | true | string | null | string | null | 'primeTextarea' | string | null | LocaleString | string | LocaleString | string | null | string | number | number | boolean | Array<string> | {
         [key: string]: string;
     } | null | boolean | string | null | LocaleString | string | null | number | null | undefined;
-};
-
-/**
- * ThinkingBlock.additional_information
- *
- * Additional information related to the thinking/reasoning process, if available
- */
-export type ThinkingBlockAdditionalInformationWritable = {
-    [key: string]: unknown;
 };
 
 /**
@@ -20744,13 +20281,6 @@ export type ToggleSwitchWritable = {
 };
 
 /**
- * ToolCallBlock.tool_kwargs.sub0
- */
-export type ToolCallBlockToolKwargsSub0Writable = {
-    [key: string]: unknown;
-};
-
-/**
  * ToolEvent
  */
 export type ToolEventWritable = {
@@ -20867,14 +20397,14 @@ export type UserMessageEventWritable = {
      *
      * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
      */
-    messages?: Array<ChatMessageOutput>;
+    messages?: Array<ChatMessage>;
     /**
      * Files
      *
      * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
      */
     files?: Array<UserUploadedFile> | null;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | UserIdentity | Array<ChatMessageOutput> | Array<UserUploadedFile> | null | undefined;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | UserIdentity | Array<ChatMessage> | Array<UserUploadedFile> | null | undefined;
 };
 
 /**
@@ -23918,163 +23448,3 @@ export type TranslateTextResponses = {
 };
 
 export type TranslateTextResponse = TranslateTextResponses[keyof TranslateTextResponses];
-
-export type SendNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventPostData = {
-    body: NamespaceAwareUserMessageEventInput;
-    path: {
-        /**
-         * Agent ID
-         *
-         * The specific agent instance ID
-         */
-        agent_id: string;
-    };
-    query?: {
-        /**
-         * Thread Id
-         */
-        thread_id?: string;
-        /**
-         * Display Id
-         */
-        display_id?: string;
-    };
-    url: '/agents/classes/RAGAgent/instances/{agent_id}/NamespaceAwareUserMessageEvent';
-};
-
-export type SendNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventPostErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type SendNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventPostError = SendNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventPostErrors[keyof SendNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventPostErrors];
-
-export type SendNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventPostResponses = {
-    /**
-     * Successful Response
-     */
-    200: StopEventOutput;
-};
-
-export type SendNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventPostResponse = SendNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventPostResponses[keyof SendNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventPostResponses];
-
-export type StreamNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventStreamPostData = {
-    body: NamespaceAwareUserMessageEventInput;
-    path: {
-        /**
-         * Agent ID
-         *
-         * The specific agent instance ID
-         */
-        agent_id: string;
-    };
-    query?: {
-        /**
-         * Thread Id
-         */
-        thread_id?: string;
-        /**
-         * Display Id
-         */
-        display_id?: string;
-    };
-    url: '/agents/classes/RAGAgent/instances/{agent_id}/NamespaceAwareUserMessageEvent/stream';
-};
-
-export type StreamNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventStreamPostErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type StreamNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventStreamPostError = StreamNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventStreamPostErrors[keyof StreamNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventStreamPostErrors];
-
-export type StreamNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventStreamPostResponses = {
-    /**
-     * Successful Response
-     */
-    200: unknown;
-};
-
-export type SendUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostData = {
-    body: UserMessageEventInput;
-    path: {
-        /**
-         * Agent ID
-         *
-         * The specific agent instance ID
-         */
-        agent_id: string;
-    };
-    query?: {
-        /**
-         * Thread Id
-         */
-        thread_id?: string;
-        /**
-         * Display Id
-         */
-        display_id?: string;
-    };
-    url: '/agents/classes/RAGAgent/instances/{agent_id}/UserMessageEvent';
-};
-
-export type SendUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type SendUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostError = SendUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostErrors[keyof SendUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostErrors];
-
-export type SendUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostResponses = {
-    /**
-     * Successful Response
-     */
-    200: StopEventOutput;
-};
-
-export type SendUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostResponse = SendUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostResponses[keyof SendUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostResponses];
-
-export type StreamUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventStreamPostData = {
-    body: UserMessageEventInput;
-    path: {
-        /**
-         * Agent ID
-         *
-         * The specific agent instance ID
-         */
-        agent_id: string;
-    };
-    query?: {
-        /**
-         * Thread Id
-         */
-        thread_id?: string;
-        /**
-         * Display Id
-         */
-        display_id?: string;
-    };
-    url: '/agents/classes/RAGAgent/instances/{agent_id}/UserMessageEvent/stream';
-};
-
-export type StreamUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventStreamPostErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type StreamUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventStreamPostError = StreamUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventStreamPostErrors[keyof StreamUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventStreamPostErrors];
-
-export type StreamUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventStreamPostResponses = {
-    /**
-     * Successful Response
-     */
-    200: unknown;
-};

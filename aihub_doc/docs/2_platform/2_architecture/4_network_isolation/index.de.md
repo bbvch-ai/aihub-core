@@ -1,57 +1,62 @@
 ---
-title: Docker-Netzwerkisolation
-source_sha: "38efec0d96aee1a4529469d6c990a16fc6152e1d29e60930a05c28cceeeb8416"
+title: Docker-Netzwerk-Isolation
+source_sha: 3a09e22d768aff2fc4cdafe10367b61bc82161064320ef0410d6d7ec4d99361e
 ---
 
-# Docker-Netzwerkisolation
+# Docker-Netzwerk-Isolation
 
-Die AI-Hub Plattform implementiert Netzwerksegmentierung, um Sicherheitsgrenzen zwischen Services durchzusetzen. Dieser Defense-in-Depth-Ansatz begrenzt den "Blast Radius" potenzieller Sicherheitsverletzungen und erzwingt das Prinzip der geringsten Rechte auf der Netzwerkebene.
+Die AI-Hub Plattform implementiert Netzwerksegmentierung, um Sicherheitsgrenzen zwischen Services durchzusetzen. Dieser
+Defense-in-Depth-Ansatz begrenzt den "Blast Radius" potenzieller Sicherheitsverletzungen und erzwingt das Prinzip der
+geringsten Rechte auf der Netzwerkebene.
 
 ## Netzwerkzonen
 
 Die Plattform verwendet fünf isolierte Docker-Netzwerke:
 
-| Netzwerk  | Zweck                             | Externer Zugriff | ICC aktiviert |
-| --------- | --------------------------------- | ---------------- | ------------- |
-| `proxy`   | Externer Traffic über Traefik     | Ingress + Egress | Ja            |
-| `backend` | Interne Anwendungs-Services       | Nein             | Ja            |
-| `data`    | Datenbanken und Message Broker    | Nein             | Ja            |
-| `storage` | SeaweedFS Objekt-Speicher         | Nein             | Ja            |
-| `egress`  | Nur ausgehender Internetzugriff   | Egress only      | Nein          |
+| Netzwerk  | Zweck                           | Externer Zugriff | ICC aktiviert |
+| --------- | ------------------------------- | ---------------- | ------------- |
+| `proxy`   | Externer Traffic über Traefik   | Ingress + Egress | Ja            |
+| `backend` | Interne Anwendungsservices      | Nein             | Ja            |
+| `data`    | Datenbanken und Message Broker  | Nein             | Ja            |
+| `storage` | SeaweedFS Objektspeicher        | Nein             | Ja            |
+| `egress`  | Nur ausgehender Internetzugriff | Nur Egress       | Nein          |
 
-Das `egress`-Netzwerk ist für Services konzipiert, die das Internet erreichen müssen (ausgehend), aber nicht aus dem Internet erreichbar sein sollen (kein Ingress). Die Inter-Container-Kommunikation (ICC) ist in diesem Netzwerk deaktiviert, was bedeutet, dass Container über dieses Netzwerk nicht miteinander kommunizieren können – sie können es nur für den ausgehenden Internetzugriff nutzen.
+Das `egress`-Netzwerk ist für Services konzipiert, die das Internet erreichen müssen (ausgehend), aber nicht vom
+Internet erreichbar sein sollen (kein Ingress). Inter-Container Communication (ICC) ist in diesem Netzwerk deaktiviert,
+was bedeutet, dass Container über dieses Netzwerk nicht miteinander kommunizieren können – sie können es nur für den
+ausgehenden Internetzugriff nutzen.
 
-## Service-Netzwerkzuweisungen
+## Netzwerkzuweisungen für Services
 
-Jeder Service wird nur den Netzwerken zugewiesen, die er für den Betrieb benötigt:
+Jeder Service wird nur den Netzwerken zugewiesen, die er für seinen Betrieb benötigt:
 
 ### Proxy-Netzwerk-Services
 
 Services, die von außerhalb des Docker-Netzwerks zugänglich sind:
 
-- **traefik**: Reverse Proxy und API-Gateway
-- **api**: REST-API- und WebSocket-Endpunkte
+- **traefik**: Reverse-Proxy und API-Gateway
+- **api**: REST-API und WebSocket-Endpunkte
 - **web**: Admin-UI-Frontend
-- **open-webui**: Chat-Interface
+- **open-webui**: Chat-Oberfläche
 - **bot**: MS Teams/Slack-Integration
-- **seaweedfs-s3**: S3-kompatible Speicher-API
+- **seaweedfs-s3**: S3-kompatible Storage API
 - **oauth2proxy-**\*: Authentifizierungs-Proxys
 
 ### Backend-Netzwerk-Services
 
 Interne Anwendungs- und Verarbeitungs-Services:
 
-- **litellm**: LLM-Gateway und Anfrage-Routing
+- **litellm**: LLM-Gateway und Request-Routing
 - **mineru-api**: Dokumenten-Parsing und -Extraktion
-- **presidio-analyzer/anonymizer**: PII-Erkennung und -Anonymisierung
+- **presidio-analyzer/anonymizer**: PII-Erkennung und Anonymisierung
 - **llama-cpp-**\*: Lokale LLM-Inferenz (Chat, Embedding, Reranking)
-- **speaches**: Speech-to-Text und Text-to-Speech
+- **speaches**: Sprache-zu-Text und Text-zu-Sprache
 - **jupyter**: Code-Ausführungsumgebung
-- **playwright**: Web-Scraping und Automatisierung (auch im `egress`-Netzwerk für Internetzugriff)
+- **playwright**: Web-Scraping und -Automatisierung (auch im `egress`-Netzwerk für Internetzugriff)
 - **agents**: Alle Agent-Worker (RAG, Expert, Wrapping)
 - **pipelines**: Datenverarbeitungs-Pipelines
 - **dagster-**\*: Pipeline-Orchestrierung
-- **phoenix**: KI-Observability
+- **langfuse**: AI Observability
 - **otel-collector**: Telemetrie-Aggregation
 
 ### Daten-Netzwerk-Services
@@ -59,22 +64,22 @@ Interne Anwendungs- und Verarbeitungs-Services:
 Persistenz- und Messaging-Infrastruktur:
 
 - **postgres**: Primäre PostgreSQL-Datenbank
-- **pgbouncer**: Connection Pooler für Dagster
+- **pgbouncer**: Verbindungs-Pooler für Dagster
 - **postgres-ferretdb**: PostgreSQL-Backend für FerretDB
-- **ferretdb**: MongoDB-kompatibler Dokumentenspeicher
+- **ferretdb**: MongoDB-kompatibler Dokumenten-Store
 - **neo4j**: Graphdatenbank für Mem0-Speicher
 - **milvus-standalone**: Vektordatenbank
-- **etcd**: Verteiltes Schlüssel-Wert-Speicher (Milvus-Metadaten)
+- **etcd**: Verteilter Key-Value-Store (Milvus-Metadaten)
 - **valkey**: Redis-kompatibler In-Memory-Cache
 - **nats**: Message Broker für ereignisgesteuerte Kommunikation
 
-### Speicher-Netzwerk-Services
+### Storage-Netzwerk-Services
 
-Verteilter Objekt-Speicher-Cluster:
+Verteilter Objektspeicher-Cluster:
 
 - **seaweedfs-master**: Cluster-Koordinator
-- **seaweedfs-volume**: Daten-Speicherknoten
-- **seaweedfs-filer**: Dateisystem-Interface
+- **seaweedfs-volume**: Datenspeicher-Nodes
+- **seaweedfs-filer**: Dateisystem-Schnittstelle
 - **seaweedfs-s3**: S3-API-Gateway
 - **etcd**: Filer-Metadaten-Backend
 
@@ -84,7 +89,9 @@ Services, die ausgehenden Internetzugriff, aber keinen eingehenden Zugriff benö
 
 - **playwright**: Web-Scraping und Browser-Automatisierung (muss Webseiten abrufen)
 
-Dieses Netzwerk hat ICC (Inter-Container-Kommunikation) deaktiviert, wodurch die horizontale Bewegung zwischen Containern in diesem Netzwerk verhindert wird. Services nutzen `egress` ausschließlich für den ausgehenden Internetzugriff und müssen andere Netzwerke (z.B. `backend`) für die Inter-Service-Kommunikation verwenden.
+Dieses Netzwerk hat ICC (Inter-Container Communication) deaktiviert, wodurch die laterale Bewegung zwischen Containern
+in diesem Netzwerk verhindert wird. Services nutzen `egress` ausschließlich für den ausgehenden Internetzugriff und
+müssen andere Netzwerke (z.B. `backend`) für die Inter-Service-Kommunikation verwenden.
 
 ## Netzwerktopologie
 
@@ -114,7 +121,7 @@ flowchart TB
         playwright[playwright]
         dagster[dagster-*]
         pipelines[pipelines]
-        phoenix[phoenix]
+        langfuse[langfuse]
         otel[otel-collector]
     end
 
@@ -154,7 +161,7 @@ flowchart TB
     agents --> neo4j
     pipelines --> nats
     dagster --> postgres
-    phoenix --> postgres
+    langfuse --> postgres
     litellm --> postgres
 
     milvus --> etcd
@@ -169,19 +176,19 @@ flowchart TB
 
 ## Sicherheitsaspekte
 
-### Was jede Netzwerkgrenze schützt
+### Was jede Netzwerkbegrenzung schützt
 
-**Proxy → Backend-Grenze**
+#### Proxy → Backend-Grenze
 
 - Externe Benutzer können nicht direkt auf interne Verarbeitungs-Services zugreifen
 - Ein kompromittierter Traefik kann Datenbanken nicht erreichen, ohne die API zu durchlaufen
 
-**Backend → Daten-Grenze**
+#### Backend → Daten-Grenze
 
 - Verarbeitungs-Services greifen über definierte Schnittstellen auf Datenbanken zu
 - Ein kompromittierter KI-Service kann andere Datenbanken nicht direkt manipulieren
 
-**Daten → Speicher-Grenze**
+#### Daten → Storage-Grenze
 
 - Die interne Cluster-Kommunikation von SeaweedFS ist isoliert
 - Datenbank-Services können Speicheroperationen nicht beeinträchtigen
@@ -201,26 +208,28 @@ flowchart TB
 
 ## Betriebliche Überlegungen
 
-### Neue Services hinzufügen
+### Hinzufügen neuer Services
 
-Beim Hinzufügen eines neuen Services legen Sie fest, welche Netzwerke er benötigt:
+Wenn Sie einen neuen Service hinzufügen, legen Sie fest, welche Netzwerke er benötigt:
 
 1. **Benötigt externen Zugriff (Ingress)?** → Zum `proxy`-Netzwerk hinzufügen
 2. **Ist es ein Anwendungs-Service?** → Zum `backend`-Netzwerk hinzufügen
 3. **Benötigt Datenbankzugriff?** → Zum `data`-Netzwerk hinzufügen
-4. **Benötigt Objekt-Speicher?** → Zum `storage`-Netzwerk hinzufügen
+4. **Benötigt Objektspeicher?** → Zum `storage`-Netzwerk hinzufügen
 5. **Benötigt nur ausgehenden Internetzugriff (kein Ingress)?** → Zum `egress`-Netzwerk hinzufügen
 
-Hinweis: Das `egress`-Netzwerk ist speziell für Services gedacht, die externe Websites/APIs erreichen müssen, aber nicht von außen erreichbar sein sollen. Es hat ICC deaktiviert, sodass Services im `egress`-Netzwerk nicht miteinander kommunizieren können – verwenden Sie `backend` für die Inter-Service-Kommunikation.
+Hinweis: Das `egress`-Netzwerk ist speziell für Services gedacht, die externe Websites/APIs erreichen müssen, aber nicht
+von außen erreichbar sein sollen. Es hat ICC deaktiviert, sodass Services im `egress`-Netzwerk nicht miteinander
+kommunizieren können – verwenden Sie `backend` für die Inter-Service-Kommunikation.
 
 ### Fehlerbehebung bei Netzwerkproblemen
 
 Wenn ein Service einen anderen Service nicht erreichen kann:
 
-1. Verifizieren Sie, dass beide Services in einem gemeinsamen Netzwerk sind
+1. Überprüfen Sie, ob beide Services sich in einem gemeinsamen Netzwerk befinden
 2. Prüfen Sie, ob das Zielnetzwerk als `internal: true` markiert ist
 3. Verwenden Sie `docker network inspect <network>`, um verbundene Container anzuzeigen
-4. Prüfen Sie, ob die Service-Namen den DNS-Erwartungen entsprechen (container_name)
+4. Überprüfen Sie, ob die Service-Namen den DNS-Erwartungen (container_name) entsprechen
 
 ### Befehle zur Netzwerkprüfung
 

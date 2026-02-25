@@ -8,6 +8,7 @@ from aihub_lib.nats.events import BaseEvent
 from aihub_lib.nats.events.discovery.agent.AgentConfigSpecs import AgentConfigSpecs
 from aihub_lib.nats.events.discovery.EventSpecs import EventSpecs
 from aihub_lib.nats.events.form import ALL_FORM_OPTIONS
+from aihub_lib.nats.events.form.TemplateData import TemplateData
 
 
 class AgentClassDiscoveryResponseEvent(BaseEvent):
@@ -80,3 +81,7 @@ class AgentClassDiscoveryResponseEvent(BaseEvent):
             description="A network graph of the agent, showing how different components are connected and interact.",
         ),
     ]
+    templates: Annotated[
+        list[TemplateData],
+        Field(description="List of profile templates for quick profile creation in the Admin UI."),
+    ] = []

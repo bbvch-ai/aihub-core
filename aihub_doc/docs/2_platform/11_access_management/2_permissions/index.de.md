@@ -1,95 +1,96 @@
 ---
-title: Berechtigungen und Zugriffssteuerung
-source_sha: bd361125cef4f0771898aac3f0377aa388f9e18b432715c88170d0d772f60c21
+title: Berechtigungs- und Zugriffsverwaltung
+source_sha: 2879915908da11490d98e8af9a9ceddc76a6c4a2f6ba9b6f5cfec587b02f7a79
 ---
 
-# Berechtigungen und Zugriffssteuerung
+# Berechtigungs- und Zugriffsverwaltung
 
-Die Benutzeroberfläche der Swiss AI Hub Suite implementiert eine ausgeklügelte berechtigungsbasierte Zugriffssteuerung,
-die das Benutzererlebnis dynamisch an das Autorisierungslevel jedes Einzelnen anpasst. Dieser Ansatz stellt sicher, dass
-Benutzer nur relevante Funktionen sehen, während gleichzeitig Sicherheits- und Compliance-Anforderungen eingehalten
+Die Benutzeroberfläche der Swiss AI Hub Suite implementiert eine ausgeklügelte berechtigungsbasierte Zugriffsverwaltung,
+die die Benutzererfahrung dynamisch an das Autorisierungsniveau jedes Einzelnen anpasst. Dieser Ansatz stellt sicher,
+dass Benutzer nur relevante Funktionen sehen und gleichzeitig Sicherheits- und Compliance-Anforderungen eingehalten
 werden.
 
-## Dynamische Dienstsichtbarkeit
+## Dynamische Service-Sichtbarkeit
 
-Traditionelle Anwendungsoberflächen präsentieren oft alle Funktionen allen Benutzern und verlassen sich auf
-Authentifizierungsprüfungen, um unautorisierten Zugriff zu blockieren. Dies führt zu überladenen Benutzeroberflächen mit
-deaktivierten Schaltflächen und Funktionen, die Benutzer nicht nutzen können, was zu Verwirrung und Supportaufwand
-führt. Der Swiss AI Hub denkt diesen Ansatz durch dynamische Dienstsichtbarkeit grundlegend neu.
+Herkömmliche Anwendungsoberflächen präsentieren oft alle Funktionen allen Benutzern und verlassen sich auf
+Authentifizierungsprüfungen, um unbefugten Zugriff zu blockieren. Dies führt zu überladenen Benutzeroberflächen voller
+deaktivierter Schaltflächen und Funktionen, die Benutzer nicht nutzen können, was Verwirrung und Supportaufwand
+verursacht. Der Swiss AI Hub überdenkt diesen Ansatz grundlegend durch dynamische Service-Sichtbarkeit.
 
-**Berechtigungsgefilterter Dienstkatalog**: Wenn die Suite geladen wird, fragt sie das Backend nach dem autorisierten
-Dienstkatalog des Benutzers ab. Das Backend bewertet die Berechtigungen des Benutzers anhand der Anforderungen jedes
-registrierten Dienstes und gibt nur Dienste zurück, auf die der Benutzer zugreifen kann. Die Benutzeroberfläche rendert
-Navigationselemente ausschließlich für autorisierte Dienste – Benutzer sehen einfach niemals Funktionen, die sie nicht
-nutzen können.
+**Berechtigungsgefilterter Service-Katalog**: Wenn die Suite geladen wird, fragt sie das Backend nach dem autorisierten
+Service-Katalog des Benutzers ab. Das Backend bewertet die Berechtigungen des Benutzers anhand der Anforderungen jedes
+registrierten Service und gibt nur die Services zurück, auf die der Benutzer zugreifen kann. Die Benutzeroberfläche
+rendert Navigationselemente ausschließlich für autorisierte Services – Benutzer sehen einfach nie Funktionen, die sie
+nicht nutzen können.
 
-**Saubere, fokussierte Benutzeroberfläche**: Dieser Ansatz schafft im Vergleich zu traditionellen Anwendungen dramatisch
-einfachere Benutzeroberflächen. Ein Data Scientist sieht prominent präsentierte Evaluierungs- und Experimentierdienste.
-Ein Business Analyst sieht Konversationsverläufe und Wissenserkundungstools. Ein Administrator sieht Benutzerverwaltung
-und Systemkonfigurationsoptionen. Die Benutzeroberfläche jedes Benutzers spiegelt seine tatsächlichen Fähigkeiten wider,
-nicht einen universellen Funktionssatz, der mit unzugänglichen Optionen überladen ist.
+**Saubere, fokussierte Benutzeroberfläche**: Dieser Ansatz schafft dramatisch einfachere Benutzeroberflächen im
+Vergleich zu traditionellen Anwendungen. Ein Data Scientist sieht Bewertungs- und Experimentierdienste prominent
+dargestellt. Ein Business Analyst sieht Konversationsverläufe und Tools zur Wissenserforschung. Ein Administrator sieht
+Optionen zur Benutzerverwaltung und Systemkonfiguration. Die Benutzeroberfläche jedes Benutzers spiegelt seine
+tatsächlichen Fähigkeiten wider, nicht einen universellen Funktionsumfang, der mit unzugänglichen Optionen überladen
+ist.
 
-**Automatische Berechtigungsaktualisierungen**: Wenn ein Administrator die Rollenzuweisungen oder Berechtigungsvergaben
-eines Benutzers ändert, spiegeln sich diese Änderungen bei der nächsten Sitzung des Benutzers automatisch in dessen
-Benutzeroberfläche wider. Es ist keine Cache-Invalidierung, manuelle Aktualisierung oder ein Abmelde-Anmeldezyklus
-erforderlich. Die Architektur der Suite stellt sicher, dass die Benutzeroberfläche stets eine genaue Ansicht des
-aktuellen Autorisierungsstatus präsentiert.
+**Automatische Berechtigungs-Updates**: Wenn ein Administrator die Rollenzuweisungen oder Berechtigungen eines Benutzers
+ändert, spiegeln sich diese Änderungen bei der nächsten Sitzung automatisch in der Benutzeroberfläche des Benutzers
+wider. Es ist keine Cache-Invalidierung, manuelles Aktualisieren oder ein Ab-/Anmeldezyklus erforderlich. Die
+Architektur der Suite stellt sicher, dass die Benutzeroberfläche immer eine genaue Ansicht des aktuellen
+Autorisierungsstatus darstellt.
 
-**Sicherheit durch Unsichtbarkeit**: Indem die Suite keine Navigationselemente für nicht autorisierte Dienste rendert,
-eliminiert sie eine ganze Klasse von Sicherheitslücken. Benutzer können nicht versuchen, auf eingeschränkte Dienste
-durch Manipulation der Benutzeroberfläche zuzugreifen, da diese Dienste keine Schnittstellenpräsenz haben. Dieser
-Defense-in-Depth-Ansatz ergänzt die Backend-Autorisierungsdurchsetzung.
+**Sicherheit durch Unsichtbarkeit**: Indem die Suite keine Navigationselemente für unautorisierte Services rendert,
+eliminiert sie eine ganze Klasse von Sicherheitslücken. Benutzer können nicht versuchen, auf eingeschränkte Services
+durch Manipulation der Benutzeroberfläche zuzugreifen, da diese Services keine Präsenz in der Benutzeroberfläche haben.
+Dieser Defense-in-Depth-Ansatz ergänzt die Autorisierungsdurchsetzung im Backend.
 
 ## Hierarchisches Berechtigungssystem
 
-Die Suite ist in das umfassende hierarchische Berechtigungssystem des Swiss AI Hub integriert, das eine fein abgestufte
-Zugriffssteuerung durch eine strukturierte, Punkt-Notation-Berechtigungssyntax bietet.
+Die Suite integriert sich in das umfassende hierarchische Berechtigungssystem des Swiss AI Hub, das eine feingranulare
+Zugriffsverwaltung durch eine strukturierte Punktnotations-Berechtigungssyntax bietet.
 
 **Berechtigungsstruktur**: Berechtigungen folgen dem Format
-`aihub.[user|admin].<service>.<resource_type>.<resource_id>`, wodurch ein hierarchischer Namensraum geschaffen wird, der
-eine präzise Zugriffssteuerung ermöglicht. Zum Beispiel gewährt `aihub.user.agent.support_agent.instance_001` Zugriff
-auf eine bestimmte Agenteninstanz, während `aihub.admin.knowledge` administrativen Zugriff auf den gesamten
-Wissensmanagementdienst gewährt.
+`aihub.[user|admin].<service>.<resource_type>.<resource_id>`, wodurch ein hierarchischer Namespace geschaffen wird, der
+eine präzise Zugriffsverwaltung ermöglicht. Zum Beispiel gewährt `aihub.user.agent.support_agent.instance_001` Zugriff
+auf eine bestimmte Agent-Instanz, während `aihub.admin.knowledge` administrativen Zugriff auf den gesamten Knowledge
+Management Service gewährt.
 
 **Wildcard-Unterstützung**: Das Berechtigungssystem unterstützt ausgeklügelte Wildcards, die eine flexible
-Zugriffssteuerung ermöglichen, ohne dass jede Ressource explizit aufgelistet werden muss. Der `*`-Wildcard passt zu
-jedem einzelnen Pfadsegment, während der `>`-Wildcard zu allen verbleibenden Pfadsegmenten passt. Dies ermöglicht Regeln
-wie `aihub.user.agent.>`, um Zugriff auf alle Agentenressourcen in beliebiger Tiefe zu gewähren.
+Zugriffsverwaltung ermöglichen, ohne dass jede Ressource explizit aufgelistet werden muss. Das `*`-Wildcard passt zu
+jedem einzelnen Pfadsegment, während das `>`-Wildcard zu allen verbleibenden Pfadsegmenten passt. Dies ermöglicht Regeln
+wie `aihub.user.agent.>`, um Zugriff auf alle Agent-Ressourcen in beliebiger Tiefe zu gewähren.
 
 **Implizite Berechtigungen**: Benutzer mit dem impliziten Berechtigungsmuster `aihub.user.?>` erhalten Zugriff auf alle
-Dienste auf Benutzerebene, ohne dass explizite Genehmigungen für jeden Dienst erforderlich sind. Dies vereinfacht die
-Berechtigungsverwaltung für Standardbenutzer, während eine fein abgestufte Kontrolle für spezialisierte Zugriffsmuster
-beibehalten wird.
+Services auf Benutzerebene, ohne explizite Berechtigungen für jeden Service zu benötigen. Dies vereinfacht die
+Berechtigungsverwaltung für Standardbenutzer und behält gleichzeitig eine feingranulare Kontrolle für spezielle
+Zugriffsmuster bei.
 
-**Zugriffssteuerung auf Dienstebene**: Jeder Dienst-Controller deklariert minimale Berechtigungsanforderungen für den
-Zugriff. Der Suite-Endpunkt bewertet, ob der Benutzer diese minimalen Berechtigungen besitzt, wenn der Dienstkatalog
-erstellt wird. Dienste, die Berechtigungen erfordern, die der Benutzer nicht besitzt, erscheinen einfach nicht in der
+**Service-Level-Zugriffsverwaltung**: Jeder Service Controller deklariert minimale Berechtigungsanforderungen für den
+Zugriff. Der Suite-Endpunkt bewertet, ob der Benutzer diese Mindestberechtigungen besitzt, wenn der Servicekatalog
+erstellt wird. Services, die Berechtigungen erfordern, die dem Benutzer fehlen, erscheinen einfach nicht in der
 Katalogantwort.
 
-## Rollenbasierte Oberflächenanpassung
+## Rollenbasierte Benutzeroberflächenanpassung
 
-Über die einfache Anzeige-/Ausblendlogik hinaus implementiert die Suite eine rollenbewusste Oberflächenanpassung, die
-verschiedene Ansichten und Funktionen basierend auf den Benutzerautorisierungsstufen präsentiert.
+Über die einfache Anzeige-/Ausblendelogik hinaus implementiert die Suite eine rollenbewusste Oberflächenanpassung, die
+verschiedene Ansichten und Funktionen basierend auf den Autorisierungsstufen des Benutzers präsentiert.
 
 **Administrative Privilegien**: Wenn der Suite-Endpunkt Berechtigungen bewertet, stellt er nicht nur fest, ob der
-Benutzer auf einen Dienst zugreifen kann, sondern auch, ob er administrative Privilegien für diesen Dienst besitzt.
-Diese Unterscheidung wird an das Frontend kommuniziert, das zusätzliche administrative Funktionen innerhalb der
-Benutzeroberfläche dieses Dienstes präsentieren kann.
+Benutzer auf einen Service zugreifen kann, sondern auch, ob er administrative Privilegien für diesen Service besitzt.
+Diese Unterscheidung wird an das Frontend kommuniziert, das innerhalb der Benutzeroberfläche dieses Service zusätzliche
+administrative Funktionen präsentieren kann.
 
-**Kontextsensitive Navigation**: Die Suite berücksichtigt den aktuellen Autorisierungskontext des Benutzers. Beim
-Anzeigen eines Agenten kann die Benutzeroberfläche feststellen, ob der Benutzer administrativen Zugriff auf diesen
-spezifischen Agenten hat, und administrative Steuerelemente wie die Konfigurationsbearbeitung nur dann präsentieren,
-wenn er autorisiert ist. Standardbenutzer sehen schreibgeschützte Ansichten derselben Ressourcen.
+**Kontextbewusste Navigation**: Die Suite berücksichtigt den aktuellen Autorisierungskontext des Benutzers. Beim
+Anzeigen eines Agents kann die Benutzeroberfläche feststellen, ob der Benutzer administrativen Zugriff auf diesen
+spezifischen Agent hat, und zeigt administrative Steuerelemente wie die Konfigurationsbearbeitung nur bei entsprechender
+Autorisierung an. Standardbenutzer sehen schreibgeschützte Ansichten derselben Ressourcen.
 
-**Feingranulare Funktionssteuerung**: Innerhalb einzelner Dienste kann die Benutzeroberfläche die Berechtigungen des
+**Granulare Feature-Kontrolle**: Innerhalb einzelner Services kann die Benutzeroberfläche die Berechtigungen des
 Benutzers für bestimmte Ressourcen oder Operationen abfragen. Ein Benutzer könnte Lesezugriff auf Wissensdatenbanken
 haben, aber keine Upload-Berechtigungen. Die Benutzeroberfläche spiegelt dies wider, indem sie Funktionen zur
-Wissenserforschung anzeigt, während sie Steuerelemente für den Dokumentenupload ausblendet.
+Wissenserforschung anzeigt, während Steuerelemente zum Hochladen von Dokumenten ausgeblendet werden.
 
-**Multi-Tenant-Isolation**: In Bereitstellungen, die mehrere Organisationseinheiten oder Kunden-Tenants bedienen,
-gewährleistet das Berechtigungssystem eine vollständige Datenisolation. Benutzer sehen nur Dienste und Ressourcen, die
-zu ihrem organisatorischen Kontext gehören, wodurch sichere, isolierte Arbeitsbereiche innerhalb einer gemeinsam
-genutzten Plattformbereitstellung geschaffen werden.
+**Multi-Mandanten-Isolation**: Bei Deployments, die mehrere Organisationseinheiten oder Kundenmandanten bedienen,
+gewährleistet das Berechtigungssystem eine vollständige Datenisolation. Benutzer sehen nur Services und Ressourcen, die
+zu ihrem organisatorischen Kontext gehören, wodurch sichere, isolierte Arbeitsbereiche innerhalb eines gemeinsam
+genutzten Plattform-Deployments entstehen.
 
 ## Architektur der Berechtigungsbewertung
 
@@ -99,173 +100,134 @@ Frontend-Abfragen und Backend-Evaluierungslogik.
 **Backend-Berechtigungsbewertung**: Die gesamte Berechtigungsbewertung erfolgt im Backend, wodurch sichergestellt wird,
 dass die Sicherheitsdurchsetzung nicht durch clientseitige Manipulation umgangen werden kann. Der Suite-Endpunkt fragt
 das Berechtigungssystem ab, bewertet Zugriffsregeln anhand der Rollen und Berechtigungen des Benutzers und gibt einen
-vorgefilterten Dienstkatalog zurück. Das Frontend vertraut diesem Katalog, ohne eine eigene Berechtigungslogik
+vorgefilterten Service-Katalog zurück. Das Frontend vertraut diesem Katalog, ohne eine eigene Berechtigungslogik
 auszuführen.
 
-**Access Checker Integration**: Das Backend verwendet eine Access Checker Komponente, die die Logik zur
-Berechtigungsbewertung kapselt. Diese Komponente akzeptiert eine Benutzeridentität und ein Berechtigungsmuster,
+**Access-Checker-Integration**: Das Backend verwendet eine Access-Checker-Komponente, die die
+Berechtigungsbewertungslogik kapselt. Diese Komponente akzeptiert eine Benutzeridentität und ein Berechtigungsmuster,
 bewertet, ob die Zugriffsregeln des Benutzers mit dem Muster übereinstimmen, und gibt entweder boolesche
 Zugriffsentscheidungen oder eine detaillierte Aufzählung der Zugriffsebenen zurück (verweigert, Benutzerzugriff,
 administrativer Zugriff).
 
 **Effiziente Berechtigungsabfragen**: Die Berechtigungsbewertung ist durch Caching-Strategien und effiziente
-Musterabgleichs-Algorithmen auf Leistung optimiert. Wenn der Suite-Endpunkt die Dienstsichtbarkeit für einen Benutzer
-bewertet, führt er diese Bewertungen parallel statt sequenziell durch, um schnelle Ladezeiten der Benutzeroberfläche
-auch bei zahlreichen Diensten zu gewährleisten.
+Musterabgleichalgorithmen auf Leistung optimiert. Wenn der Suite-Endpunkt die Service-Sichtbarkeit für einen Benutzer
+bewertet, führt er diese Bewertungen parallel und nicht sequentiell durch, um reaktionsschnelle Ladezeiten der
+Benutzeroberfläche auch bei zahlreichen Services zu gewährleisten.
 
 **Generierung von Audit-Trails**: Jede Berechtigungsbewertung generiert Audit-Log-Einträge, die dokumentieren, welche
 Berechtigungen geprüft wurden, für welchen Benutzer und welche Entscheidung getroffen wurde. Dies schafft umfassende
-Audit-Trails zur Unterstützung der Compliance-Berichterstattung und der Sicherheitsforensik.
+Audit-Trails, die Compliance-Reporting und Sicherheitsforensik unterstützen.
 
-## Dienstspezifische Berechtigungsmuster
+## Service-spezifische Berechtigungsmuster
 
-Verschiedene Dienste implementieren unterschiedliche Berechtigungsmuster basierend auf ihren funktionalen Anforderungen,
-was die Flexibilität des hierarchischen Berechtigungssystems demonstriert.
+Verschiedene Services implementieren unterschiedliche Berechtigungsmuster basierend auf ihren funktionalen
+Anforderungen, was die Flexibilität des hierarchischen Berechtigungssystems demonstriert.
 
-**Agentendienst**: Implementiert eine Zugriffskontrolle pro Agent, bei der Benutzer möglicherweise Zugriff auf bestimmte
-Agenteninstanzen haben, aber nicht auf andere. Berechtigungen wie `aihub.user.agent.customer_support.cs_001` gewähren
-Zugriff auf einen spezifischen Agenten, während `aihub.user.agent.customer_support.*` Zugriff auf alle Instanzen dieser
-Agentenklasse gewährt.
+**Agent Service**: Implementiert eine Zugriffsverwaltung pro Agent, bei der Benutzer möglicherweise Zugriff auf
+bestimmte Agent-Instanzen haben, aber nicht auf andere. Berechtigungen wie `aihub.user.agent.customer_support.cs_001`
+gewähren Zugriff auf einen spezifischen Agent, während `aihub.user.agent.customer_support.*` Zugriff auf alle Instanzen
+dieser Agent-Klasse gewähren.
 
-**Thread-Dienst**: Steuert den Zugriff auf Konversations-Threads basierend auf Eigentums- und Freigaberegeln. Benutzer
-haben in der Regel Zugriff auf Threads, die sie erstellt oder an denen sie teilgenommen haben, wobei Administratoren
-eine breitere Sichtbarkeit für Support- und Überwachungszwecke haben.
+**Thread Service**: Steuert den Zugriff auf Konversations-Threads basierend auf Eigentums- und Freigaberegeln. Benutzer
+haben in der Regel Zugriff auf Threads, die sie erstellt oder an denen sie teilgenommen haben, wobei Administratoren für
+Support- und Überwachungszwecke eine breitere Sichtbarkeit haben.
 
-**Wissensdienst**: Implementiert eine Namespace-basierte Zugriffssteuerung, bei der Berechtigungen auf Datenbankebene
-(`aihub.user.knowledge.hr_documents`) oder Namespace-Ebene (`aihub.user.knowledge.hr_documents.policies`) vergeben
-werden können, mit hierarchischer Vererbung durch den Berechtigungsbaum.
+**Knowledge Service**: Implementiert eine Namespace-basierte Zugriffsverwaltung, bei der Berechtigungen auf
+Datenbankebene (`aihub.user.knowledge.hr_documents`) oder Namespace-Ebene (`aihub.user.knowledge.hr_documents.policies`)
+vergeben werden können, mit hierarchischer Vererbung durch den Berechtigungsbaum.
 
-**Administrative Dienste**: Erfordern explizite administrative Berechtigungen wie `aihub.admin.users` oder
-`aihub.admin.roles`. Diese Dienste erscheinen niemals für Benutzer ohne administrative Berechtigungen, wodurch eine
+**Administrative Services**: Erfordern explizite administrative Berechtigungen wie `aihub.admin.users` oder
+`aihub.admin.roles`. Diese Services erscheinen niemals für Benutzer ohne administrative Berechtigungen, wodurch eine
 klare Trennung zwischen Standard- und administrativen Benutzeroberflächen geschaffen wird.
 
 ## Vorteile für die Benutzererfahrung
 
 Die berechtigungsbewusste Suite-Architektur bietet erhebliche Vorteile für die Benutzererfahrung und den Betrieb.
 
-**Eliminierung von „Zugriff verweigert“-Fehlern**: Benutzer stoßen niemals auf „Zugriff verweigert“-Meldungen für
-sichtbare Benutzeroberflächenelemente, da nicht autorisierte Funktionen einfach nicht erscheinen. Dies eliminiert eine
-häufige Quelle von Benutzerfrustration und Support-Tickets in traditionellen Unternehmensanwendungen.
+**Eliminierung von "Zugriff verweigert"-Fehlern**: Benutzer stoßen nie auf „Zugriff verweigert“-Meldungen für sichtbare
+Benutzeroberflächenelemente, da unautorisierte Funktionen einfach nicht erscheinen. Dies eliminiert eine häufige Quelle
+für Benutzerfrustration und Support-Tickets in traditionellen Unternehmensanwendungen.
 
 **Reduzierte Benutzeroberflächenkomplexität**: Indem nur autorisierte Funktionen angezeigt werden, bleibt die
 Benutzeroberfläche übersichtlich und fokussiert. Benutzer müssen sichtbare, aber deaktivierte Funktionen nicht mental
 von verfügbaren Funktionen filtern – alles, was sie sehen, können sie nutzen.
 
-**Selbstbedienungs-Zugriffsverständnis**: Benutzer können ihre autorisierten Funktionen sofort verstehen, indem sie
+**Self-Service-Zugriffsverständnis**: Benutzer können ihre autorisierten Funktionen sofort verstehen, indem sie
 beobachten, was in der Suite-Navigation erscheint. Es ist nicht nötig, separate Dokumentationen zu konsultieren oder den
 Support zu kontaktieren, um herauszufinden, auf welche Funktionen sie zugreifen können.
 
 **Optimiertes Onboarding**: Neue Benutzer sehen nur die für ihre Rolle relevanten Funktionen, was die anfängliche
-Plattformorientierung dramatisch vereinfacht. Schulungen können sich auf relevante Funktionen konzentrieren, anstatt
-Benutzern zu erklären, worauf sie nicht zugreifen können und warum.
+Plattformorientierung drastisch vereinfacht. Schulungen können sich auf relevante Funktionen konzentrieren, anstatt den
+Benutzern zu helfen, zu verstehen, worauf sie nicht zugreifen können und warum.
 
 ## Sicherheits- und Compliance-Vorteile
 
-Die berechtigungsbewusste Architektur bietet über die Verbesserungen der Benutzererfahrung hinaus Sicherheits- und
-Compliance-Vorteile.
+Die berechtigungsbewusste Architektur bietet Sicherheits- und Compliance-Vorteile, die über die Verbesserungen der
+Benutzererfahrung hinausgehen.
 
-**Defense in Depth**: Die clientseitige Filterung nicht autorisierter Dienste ergänzt die
-Backend-Berechtigungsdurchsetzung und schafft mehrere Sicherheitsebenen. Selbst wenn ein Angreifer das Frontend
-manipuliert, verhindert die Backend-Autorisierungsdurchsetzung unautorisierte Operationen.
+**Defense in Depth**: Das clientseitige Filtern unautorisierter Services ergänzt die Backend-Berechtigungsdurchsetzung
+und schafft so mehrere Sicherheitsebenen. Selbst wenn ein Angreifer das Frontend manipuliert, verhindert die
+Backend-Autorisierungsdurchsetzung unautorisierte Operationen.
 
-**Reduzierte Angriffsfläche**: Indem keine Informationen über Dienste preisgegeben werden, auf die Benutzer nicht
-zugreifen können, enthüllt die Suite potenziellen Angreifern weniger über die Fähigkeiten der Bereitstellung. Benutzer
+**Reduzierte Angriffsfläche**: Indem keine Informationen über Services preisgegeben werden, auf die Benutzer nicht
+zugreifen können, enthüllt die Suite potenziellen Angreifern weniger über die Funktionen des Deployments. Benutzer
 können deaktivierte Funktionen nicht sondieren, um Informationen für Angriffe zu sammeln.
 
-**Compliance-Unterstützung**: Die umfassende Audit-Protokollierung von Berechtigungsbewertungen unterstützt
-regulatorische Compliance-Anforderungen für die Zugriffssteuerung, insbesondere in Sektoren mit strengen
+**Compliance-Unterstützung**: Die umfassende Audit-Protokollierung von Berechtigungsbewertungen unterstützt die
+regulatorischen Compliance-Anforderungen für die Zugriffsverwaltung, insbesondere in Sektoren mit strengen
 Datenschutzanforderungen wie Gesundheitswesen, Finanzen und öffentlicher Verwaltung.
 
-**Zero-Trust-Architektur**: Die Suite implementiert Zero-Trust-Prinzipien, bei denen jeder Dienstzugriff eine explizite
-Berechtigungsbewertung erfordert. Es gibt keine impliziten Vertrauensannahmen basierend auf dem Netzwerkstandort oder
-einer früheren Authentifizierung – jede Operation wird unabhängig autorisiert.
+**Zero-Trust-Architektur**: Die Suite implementiert Zero-Trust-Prinzipien, bei denen jeder Service-Zugriff eine
+explizite Berechtigungsbewertung erfordert. Es gibt keine impliziten Vertrauensannahmen basierend auf dem
+Netzwerkstandort oder früherer Authentifizierung – jede Operation wird unabhängig autorisiert.
 
-## Betriebliche Vorteile
+## Operationelle Vorteile
 
-Über Sicherheit und Benutzererfahrung hinaus bietet das Berechtigungssystem betriebliche Vorteile für
+Neben Sicherheit und Benutzererfahrung bietet das Berechtigungssystem operationelle Vorteile für
 Plattformadministratoren.
 
-**Zentralisierte Berechtigungsverwaltung**: Administratoren verwalten Berechtigungen über den Rollenverwaltungsdienst,
+**Zentralisierte Berechtigungsverwaltung**: Administratoren verwalten Berechtigungen über den Rollenmanagement-Service,
 wobei Änderungen automatisch in der gesamten Suite widergespiegelt werden. Es ist nicht erforderlich,
-Zugriffssteuerungen für jeden Dienst separat zu konfigurieren oder Berechtigungen über mehrere Systeme hinweg zu
+Zugriffssteuerungen separat für jeden Service zu konfigurieren oder Berechtigungen über mehrere Systeme hinweg zu
 koordinieren.
 
-**Flexible Delegation**: Das hierarchische Berechtigungssystem ermöglicht ausgeklügelte Delegationsmuster. Leitenden
-Mitarbeitern können breite Zugriffsmuster wie `aihub.user.agent.>` gewährt werden, während jüngere Mitarbeiter
+**Flexible Delegation**: Das hierarchische Berechtigungssystem ermöglicht ausgeklügelte Delegationsmuster. Älteren
+Mitarbeitern können umfassende Zugriffsmuster wie `aihub.user.agent.>` gewährt werden, während jüngere Mitarbeiter
 spezifische Berechtigungen für einzelne Ressourcen erhalten. Diese Flexibilität unterstützt Organisationsstrukturen,
 ohne komplexe Zugriffssteuerungskonfigurationen zu erfordern.
 
-**Berechtigungsvererbung**: Die hierarchische Struktur ermöglicht die Berechtigungsvererbung, wobei die Gewährung des
-Zugriffs auf eine Ressource höherer Ebene automatisch den Zugriff auf enthaltene Ressourcen ermöglicht. Dies vereinfacht
-die Berechtigungsverwaltung, während bei Bedarf eine präzise Kontrolle beibehalten wird.
+**Berechtigungsvererbung**: Die hierarchische Struktur ermöglicht die Berechtigungsvererbung, bei der das Gewähren von
+Zugriff auf eine Ressource höherer Ebene automatisch den Zugriff auf enthaltene Ressourcen ermöglicht. Dies vereinfacht
+die Berechtigungsverwaltung und behält gleichzeitig bei Bedarf eine präzise Kontrolle bei.
 
 **Rollenbasierte Administration**: Anstatt individuelle Benutzerberechtigungen zu verwalten, weisen Administratoren
-Benutzern typischerweise Rollen zu, die Standardberechtigungssätze definieren. Rollenänderungen gelten automatisch für
-alle zugewiesenen Benutzer, wodurch eine konsistente Zugriffssteuerung über Benutzerpopulationen hinweg gewährleistet
-wird.
+Benutzern in der Regel Rollen zu, die Standardberechtigungssätze definieren. Rollenänderungen werden automatisch auf
+alle zugewiesenen Benutzer angewendet, wodurch eine konsistente Zugriffsverwaltung über alle Benutzergruppen hinweg
+gewährleistet wird.
 
 Diese berechtigungsbewusste Architektur stellt sicher, dass die Swiss AI Hub Suite jedem Benutzer eine fokussierte,
-sichere Benutzeroberfläche bietet, die präzise auf dessen Autorisierungslevel und organisatorische Rolle zugeschnitten
-ist, während die betriebliche Einfachheit und die Sicherheitsstrenge, die für Unternehmens- und öffentliche
-Sektorbereitstellungen erforderlich sind, beibehalten werden.
+sichere Benutzeroberfläche bietet, die präzise auf sein Autorisierungsniveau und seine organisatorische Rolle
+zugeschnitten ist, wobei die operationelle Einfachheit und die Sicherheitsstrenge gewahrt bleiben, die für Enterprise-
+und Public-Sector-Deployments erforderlich sind.
 
-# Rollenbasierte Zugriffssteuerung (RBAC) :shield: :lock:
+# Rollenbasierte Zugriffsverwaltung (RBAC)
 
-::: info **Aktualisierung der Dokumentationsstruktur**
-Die RBAC-Dokumentation wurde neu organisiert, um verschiedenen Zielgruppen besser gerecht zu werden. Diese Seite bietet
-schnellen Zugriff auf die für Ihre Bedürfnisse passende Dokumentation.
-:::
+## Überblick
 
-## Schnellnavigation
-
-### Für Entwickler und SDK-Benutzer
-
-Wenn Sie RBAC in Ihren benutzerdefinierten Agenten, APIs oder Diensten implementieren und technische
-Implementierungsdetails benötigen:
-
-::: tip **SDK-Dokumentation**
-🛠️ **[Vollständiger SDK RBAC Implementierungsleitfaden](../../../3_sdk/5_advanced_topics/5_rbac/)**
-
-Umfasst:
-
-- Zugriffsschutz auf Controller-Ebene
-- Dynamische Berechtigungsauflösung
-- Implementierung der Zugriffssteuerung für Dienste und Agenten
-- Erweiterte Berechtigungsmuster und Wildcards
-- Benutzerdefinierte Validierungslogik
-- Testen von RBAC-Implementierungen
-- Leistungsoptimierung und Best Practices
-:::
-
-## Kurzübersicht
-
-**Rollenbasierte Zugriffssteuerung (RBAC)** ist ein Sicherheitsframework, das den Systemzugriff basierend auf
-Benutzerrollen innerhalb einer Organisation einschränkt. Der AI-Hub implementiert ein ausgeklügeltes, hierarchisches
-RBAC-System, das eine granulare Kontrolle über jeden Aspekt Ihrer KI-Plattform bietet.
-
-### Hauptvorteile
-
-**🛡️ Enterprise Security Compliance**: Erfüllen Sie strenge regulatorische Anforderungen mit umfassenden Audit-Trails
-und granularer Zugriffssteuerung.
-
-**🎯 Granulare Ressourcenkontrolle**: Steuern Sie den Zugriff auf spezifische KI-Agenten, Prozesse und Dienste mit
-Präzision.
-
-**⚡ Skalierbare Berechtigungsverwaltung**: Verwalten Sie Berechtigungen effizient in großen Organisationen mithilfe
-rollenbasierter Hierarchien.
-
-**🔗 Nahtlose Enterprise-Integration**: Native Integration mit bestehenden Unternehmens-Identitätssystemen.
-
-**🧠 Risikobewusste KI-Bereitstellung**: Stellen Sie KI-Funktionen mit Zuversicht bereit, da der Zugriff kontrolliert und
-überwacht wird.
+**Role-Based Access Control (RBAC)** ist ein Sicherheitsframework, das den Systemzugriff basierend auf Benutzerrollen
+innerhalb einer Organisation einschränkt. Der AI-Hub implementiert ein hierarchisches RBAC-System mit
+mandantenspezifischen Rollen, das eine granulare Kontrolle über jeden Aspekt der Plattform bietet.
 
 ### Kernkomponenten
 
-- **Rollen**: Benannte Sammlungen von Zugriffsregeln, die definieren, was Benutzer tun können
-- **Zugriffsregeln**: Spezifische Berechtigungen in Punkt-Notation (z. B. `aihub.admin.service.roles`)
-- **Benutzeridentität**: Integration mit bestehenden Unternehmens-Authentifizierungssystemen (Azure AD, OAuth2)
+- **Rollen**: Benannte Sammlungen von Zugriffsregeln, die definieren, was Benutzer tun können (lokal verwaltet, nicht
+  von Identitätsanbietern synchronisiert)
+- **Mandanten**: Organisationale Grenzen, die Rollenzuweisungen definieren
+- **Zugriffsregeln**: Spezifische Berechtigungen in Punktnotation (z. B. `aihub.admin.service.roles`)
+- **Benutzeridentität**: Authentifiziert über OAuth2/OIDC, wobei Rollen aus der lokalen mandantenspezifischen
+  Rollendatenbank aufgelöst werden
 - **Berechtigungsvorlagen**: Dynamische Berechtigungsprüfung mit Pfadparameter-Substitution
-- **Wildcard-Unterstützung**: Flexible Mustererkennung mit `*`, `>`, `?*` und `?>` Wildcards
+- **Wildcard-Unterstützung**: Flexibler Musterabgleich mittels `*`, `>`, `?*` und `?>` Wildcards
 
 ### Berechtigungsstruktur
 
@@ -277,14 +239,9 @@ aihub.[user|admin].[resource_type].[resource_category].[resource_identifier]
 
 **Beispiele:**
 
-- `aihub.user.agent.customer_service.chatbot_v2` - Benutzerzugriff auf spezifischen Agenten
-- `aihub.admin.service.roles` - Admin-Zugriff auf die Rollenverwaltung
-- `aihub.user.agent.?>` - Benutzerzugriff auf jeden Agenten (Wildcard)
+- `aihub.user.agent.customer_service.chatbot_v2` - Benutzerzugriff auf spezifischen Agent
+- `aihub.admin.service.roles` - Administratorzugriff auf Rollenverwaltung
+- `aihub.user.agent.?>` - Benutzerzugriff auf beliebigen Agent (Wildcard)
 
-## Wählen Sie Ihren Pfad
-
-- **Entwickler & Integratoren**: Beginnen Sie mit dem
-  [SDK Implementierungsleitfaden](../../../3_sdk/5_advanced_topics/5_rbac/)
-
-Beide Leitfäden bieten eine umfassende Abdeckung des AI-Hub RBAC-Systems, zugeschnitten auf Ihre spezifischen
-Bedürfnisse und Anwendungsfälle.
+Für Details zu Multi-Tenancy und Zugriffsverwaltung siehe die Dokumentation unter
+[Multi-Tenancy Access Control](/de/docs/16_multi_tenancy/4_access_control/).

@@ -1,16 +1,19 @@
+---
 config:
   model:
-    label: "Embedding-Modell"
-    help: "Wählen Sie das Embedding-Modell für die Generierung von Vektordarstellungen von Text."
+    label: Embedding-Modell
+    help: Wählen Sie das Embedding-Modell für die Generierung von Vektordarstellungen
+      von Text.
   max_retries:
-    label: "Maximale Wiederholungen"
-    help: "Maximale Anzahl von Wiederholungsversuchen bei fehlgeschlagenen Embedding-Anfragen."
+    label: Maximale Wiederholungen
+    help: Maximale Anzahl von Wiederholungsversuchen bei fehlgeschlagenen Embedding-Anfragen.
   timeout:
-    label: "Zeitüberschreitung (Sekunden)"
-    help: "Maximale Wartezeit auf eine Embedding-Antwort."
+    label: Zeitüberschreitung (Sekunden)
+    help: Maximale Wartezeit auf eine Embedding-Antwort.
   encoding_format:
-    label: "Kodierungsformat"
-    help: "Format der zurückgegebenen Embeddings. Float ist Standard, Base64 ist kompakter."
+    label: Kodierungsformat
+    help: Format der zurückgegebenen Embeddings. Float ist Standard, Base64 ist kompakter.
   dimensions:
-    label: "Dimensionen"
-    help: "Anzahl der Dimensionen für Ausgabe-Embeddings. Nur von bestimmten Modellen unterstützt."
+    label: Dimensionen
+    help: Anzahl der Dimensionen für Ausgabe-Embeddings. Nur von bestimmten Modellen
+      unterstützt.

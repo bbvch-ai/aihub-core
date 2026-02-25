@@ -1,8 +1,9 @@
-label: "Archivio vettoriale"
-help: "Seleziona il database di conoscenza e gli spazi dei nomi da cercare"
+---
+label: Archivio vettoriale
+help: Seleziona il database di conoscenza e gli spazi dei nomi da cercare
 database:
-  label: "Database"
+  label: Database
 namespaces:
-  label: "Spazi dei nomi"
-  placeholder: "Seleziona gli spazi dei nomi (vuoto = tutti)"
-  help: "Lascia vuoto per cercare tutti gli spazi dei nomi"
+  label: Spazi dei nomi
+  placeholder: Seleziona gli spazi dei nomi (vuoto = tutti)
+  help: Lascia vuoto per cercare tutti gli spazi dei nomi

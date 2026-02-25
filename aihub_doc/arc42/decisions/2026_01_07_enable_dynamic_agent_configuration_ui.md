@@ -61,7 +61,6 @@ class MyAgentConfig(AgentConfig):
             name=base.name,
             description=base.description,
             icon=base.icon,
-            agent_class=base.agent_class,
             temperature=InputNumber(label=LocaleString(en="Temperature"), min=0.0, max=1.0),
         )
 ```

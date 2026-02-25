@@ -1,753 +1,759 @@
-test: "Ceci est un test"
-welcome: "Bienvenue sur bbv ai-hub"
-
+---
+test: Ceci est un test
+welcome: Bienvenue sur bbv ai-hub
 common:
   actions:
-    save: "Enregistrer"
-    cancel: "Annuler"
-    create: "Créer"
-    delete: "Supprimer"
-    edit: "Modifier"
-  loading: "Chargement..."
-  selectModel: "Sélectionner un modèle"
-  selectDatabase: "Sélectionner une base de données"
-
+    save: Enregistrer
+    cancel: Annuler
+    create: Créer
+    delete: Supprimer
+    edit: Modifier
+  loading: Chargement...
+  selectModel: Sélectionner un modèle
+  selectDatabase: Sélectionner une base de données
 models:
-  title: "Modèles"
-  error: "Erreur lors du chargement des modèles"
+  title: Modèles
+  error: Erreur lors du chargement des modèles
   card:
-    tokens: "Jetons"
-    costPer1M: "Coût/1M"
+    tokens: Jetons
+    costPer1M: Coût/1M
   modelDetails:
-    overview: "Vue d'ensemble du modèle"
-    name: "Nom"
-    mode: "Mode"
-    additionalInfo: "Informations supplémentaires"
-    maxInputTokens: "Jetons d'entrée max."
-    maxOutputTokens: "Jetons de sortie max."
-    basicInputCost: "Coût d'entrée par 1M jetons"
-    basicOutputCost: "Coût de sortie par 1M jetons"
-    advancedPricing: "Tarification avancée"
-    cacheCreationCost: "Coût de création de cache"
-    cacheReadCost: "Coût de lecture de cache"
-    inputCostAbove128k: "Coût d'entrée (au-dessus de 128K)"
-    inputCostAbove200k: "Coût d'entrée (au-dessus de 200K)"
-    inputAudioCost: "Coût audio d'entrée"
-    inputBatchCost: "Coût de lot d'entrée"
-    outputBatchCost: "Coût de lot de sortie"
-    outputAudioCost: "Coût audio de sortie"
-    reasoningTokenCost: "Coût des jetons de raisonnement"
-    outputCostAbove128k: "Coût de sortie (au-dessus de 128K)"
-    outputCostAbove200k: "Coût de sortie (au-dessus de 200K)"
-    imageCost: "Coût d'image"
-    searchContextCost: "Coût du contexte de recherche"
-    rateLimits: "Limites de taux"
-    tokensPerMinute: "Jetons par minute"
-    requestsPerMinute: "Requêtes par minute"
-    capabilities: "Capacités"
-    supportsSystemMessages: "Messages système"
-    supportsResponseSchema: "Schéma de réponse"
-    supportsVision: "Vision"
-    supportsFunctionCalling: "Appel de fonction"
-    supportsToolChoice: "Choix d'outil"
-    supportsAssistantPrefill: "Préremplissage d'assistant"
-    supportsPromptCaching: "Mise en cache de prompt"
-    supportsAudioInput: "Entrée audio"
-    supportsAudioOutput: "Sortie audio"
-    supportsPdfInput: "Entrée PDF"
-    supportsNativeStreaming: "Streaming natif"
-    supportsWebSearch: "Recherche web"
-    supportsUrlContext: "Contexte URL"
-    supportsReasoning: "Raisonnement"
-    supportsComputerUse: "Utilisation d'ordinateur"
-    otherDetails: "Autres détails"
-    outputVectorSize: "Taille du vecteur de sortie"
-    supportsEmbeddingImageInput: "Entrée d'image d'embedding"
-    supportedParams: "Paramètres OpenAI supportés"
-    notSpecified: "Non spécifié"
-
+    overview: Vue d'ensemble du modèle
+    name: Nom
+    mode: Mode
+    additionalInfo: Informations supplémentaires
+    maxInputTokens: Jetons d'entrée max.
+    maxOutputTokens: Jetons de sortie max.
+    basicInputCost: Coût d'entrée par 1M jetons
+    basicOutputCost: Coût de sortie par 1M jetons
+    advancedPricing: Tarification avancée
+    cacheCreationCost: Coût de création de cache
+    cacheReadCost: Coût de lecture de cache
+    inputCostAbove128k: Coût d'entrée (au-dessus de 128K)
+    inputCostAbove200k: Coût d'entrée (au-dessus de 200K)
+    inputAudioCost: Coût audio d'entrée
+    inputBatchCost: Coût de lot d'entrée
+    outputBatchCost: Coût de lot de sortie
+    outputAudioCost: Coût audio de sortie
+    reasoningTokenCost: Coût des jetons de raisonnement
+    outputCostAbove128k: Coût de sortie (au-dessus de 128K)
+    outputCostAbove200k: Coût de sortie (au-dessus de 200K)
+    imageCost: Coût d'image
+    searchContextCost: Coût du contexte de recherche
+    rateLimits: Limites de taux
+    tokensPerMinute: Jetons par minute
+    requestsPerMinute: Requêtes par minute
+    capabilities: Capacités
+    supportsSystemMessages: Messages système
+    supportsResponseSchema: Schéma de réponse
+    supportsVision: Vision
+    supportsFunctionCalling: Appel de fonction
+    supportsToolChoice: Choix d'outil
+    supportsAssistantPrefill: Préremplissage d'assistant
+    supportsPromptCaching: Mise en cache de prompt
+    supportsAudioInput: Entrée audio
+    supportsAudioOutput: Sortie audio
+    supportsPdfInput: Entrée PDF
+    supportsNativeStreaming: Streaming natif
+    supportsWebSearch: Recherche web
+    supportsUrlContext: Contexte URL
+    supportsReasoning: Raisonnement
+    supportsComputerUse: Utilisation d'ordinateur
+    otherDetails: Autres détails
+    outputVectorSize: Taille du vecteur de sortie
+    supportsEmbeddingImageInput: Entrée d'image d'embedding
+    supportedParams: Paramètres OpenAI supportés
+    notSpecified: Non spécifié
 languages:
-  en: "Anglais"
-  de: "Allemand"
-  it: "Italien"
-  fr: "Français"
-
+  en: Anglais
+  de: Allemand
+  it: Italien
+  fr: Français
 http_error:
   code:
     # 4xx Client Errors
-    400: "Requête invalide. Veuillez vérifier l'adresse et réessayer."
-    401: "Veuillez vous connecter pour accéder à cette page."
-    403: "Vous n'avez pas la permission de voir ceci."
-    404: "Désolé, nous n'avons pas pu trouver cette page."
-    405: "Cette action n'est pas autorisée ici."
-    408: "La requête a expiré. Veuillez réessayer."
-    429: "Trop de requêtes."
+    400: Requête invalide. Veuillez vérifier l'adresse et réessayer.
+    401: Veuillez vous connecter pour accéder à cette page.
+    403: Vous n'avez pas la permission de voir ceci.
+    404: Désolé, nous n'avons pas pu trouver cette page.
+    405: Cette action n'est pas autorisée ici.
+    408: La requête a expiré. Veuillez réessayer.
+    429: Trop de requêtes.
 
     # 5xx Server Errors
-    500: "Une erreur s'est produite sur nos serveurs."
-    502: "Une erreur de serveur s'est produite. Veuillez réessayer."
-    503: "Notre service est temporairement indisponible."
-    504: "Un serveur ne répond pas. Veuillez réessayer."
-
+    500: Une erreur s'est produite sur nos serveurs.
+    502: Une erreur de serveur s'est produite. Veuillez réessayer.
+    503: Notre service est temporairement indisponible.
+    504: Un serveur ne répond pas. Veuillez réessayer.
 user:
-  title: "Utilisateurs"
-  logout: "Déconnexion"
-  language: "Langue"
+  title: Utilisateurs
+  logout: Déconnexion
+  language: Langue
   list:
-    name: "Nom"
-    email: "E-mail"
-    avatar: "Avatar"
-    roles: "Rôles"
-    last_accessed: "Dernier accès"
-
+    name: Nom
+    email: E-mail
+    avatar: Avatar
+    roles: Rôles
+    last_accessed: Dernier accès
 time_ago:
-  last_hour: "Dernière heure"
-  last_day: "Dernier jour"
-  last_week: "La semaine dernière"
-  last_month: "Le mois dernier"
-  last_year: "L''année dernière"
-  long_time_ago: "Il y a longtemps"
-
+  last_hour: Dernière heure
+  last_day: Dernier jour
+  last_week: La semaine dernière
+  last_month: Le mois dernier
+  last_year: L''année dernière
+  long_time_ago: Il y a longtemps
 thread:
-  title: "Interactions"
-  users: "Utilisateurs"
-  assistants: "Assistants"
+  title: Interactions
+  users: Utilisateurs
+  assistants: Assistants
   navigation:
-    basic: "De base"
-    hierarchy: "Hiérarchie"
-    chat: "Chat"
-    display: "Tours"
-    memories: "Mémoires"
+    basic: De base
+    hierarchy: Hiérarchie
+    chat: Chat
+    display: Tours
+    memories: Mémoires
   list:
-    name: "Nom"
-    agents: "Agents"
-    created: "Créé"
-    numTurns: "Nombre de tours"
-    numEvents: "Nombre d'événements"
-    status: "Statut"
-    pending: "En attente"
+    name: Nom
+    agents: Agents
+    created: Créé
+    numTurns: Nombre de tours
+    numEvents: Nombre d'événements
+    status: Statut
+    pending: En attente
   utils:
     pendingTypes:
-      hitl: "Humain dans la boucle"
-      aitl: "Agent dans la boucle"
-      bitl: "Bot dans la boucle"
-      unknown: "Raison inconnue"
+      hitl: Humain dans la boucle
+      aitl: Agent dans la boucle
+      bitl: Bot dans la boucle
+      unknown: Raison inconnue
   display:
-    title: "Tours d'interaction"
+    title: Tours d'interaction
     list:
-      started: "Démarré"
-      duration: "Durée"
-      events: "Événements"
-      status: "Statut"
-      pending: "En attente"
-      dateFormat: "DD.MM.YYYY HH:mm:ss"
+      started: Démarré
+      duration: Durée
+      events: Événements
+      status: Statut
+      pending: En attente
+      dateFormat: DD.MM.YYYY HH:mm:ss
   events:
-    title: "Vue de traçage des tours"
+    title: Vue de traçage des tours
   hierarchy:
-    title: "Vue hiérarchique des tours"
+    title: Vue hiérarchique des tours
   chat:
-    title: "Vue Chat"
+    title: Vue Chat
   memories:
-    title: "Mémoires du fil de discussion"
-    description: "Mémoires collectées pendant {threadName}"
+    title: Mémoires du fil de discussion
+    description: Mémoires collectées pendant {threadName}
     delete_all:
-      confirm_header: "Supprimer toutes les mémoires du fil"
-      confirm_message: "Êtes-vous sûr de vouloir supprimer toutes les mémoires de ce fil de discussion ? Cette action ne peut pas être annulée."
+      confirm_header: Supprimer toutes les mémoires du fil
+      confirm_message: Êtes-vous sûr de vouloir supprimer toutes les mémoires de ce
+        fil de discussion ? Cette action ne peut pas être annulée.
       success:
-        title: "Succès"
-        message: "Toutes les mémoires du fil ont été supprimées avec succès"
+        title: Succès
+        message: Toutes les mémoires du fil ont été supprimées avec succès
       error:
-        title: "Échec de la suppression"
-        message: "Impossible de supprimer les mémoires du fil. Veuillez réessayer."
-
+        title: Échec de la suppression
+        message: Impossible de supprimer les mémoires du fil. Veuillez réessayer.
 chat:
-  assistant: "Assistant"
-  document: "Document"
-
+  assistant: Assistant
+  document: Document
 event:
   list:
-    firstInteraction: "Première interaction:"
-    lastInteraction: "Dernière interaction:"
-    costs: "Coûts:"
-    duration: "Durée:"
-    pending: "En attente:"
-    no: "Non"
-    status: "Statut:"
-    error: "Erreur"
-    successful: "Réussi"
-    chat: "Chat"
-    agents: "Agents:"
+    firstInteraction: 'Première interaction:'
+    lastInteraction: 'Dernière interaction:'
+    costs: 'Coûts:'
+    duration: 'Durée:'
+    pending: 'En attente:'
+    no: Non
+    status: 'Statut:'
+    error: Erreur
+    successful: Réussi
+    chat: Chat
+    agents: 'Agents:'
   base:
-    view_raw_data: "Voir les données brutes de l'événement"
-    view_formatted: "Voir l'événement formaté"
-    event_data: "Données d'événement"
+    view_raw_data: Voir les données brutes de l'événement
+    view_formatted: Voir l'événement formaté
+    event_data: Données d'événement
   limitChatHistory:
-    summary: "Historique de chat limité à {count} messages"
-    assistant: "Assistant"
-    system: "Système"
-    user: "Utilisateur"
-    description: "L'historique de chat a été tronqué en fonction des limites de jetons pour rester dans les contraintes du modèle"
+    summary: Historique de chat limité à {count} messages
+    assistant: Assistant
+    system: Système
+    user: Utilisateur
+    description: L'historique de chat a été tronqué en fonction des limites de jetons
+      pour rester dans les contraintes du modèle
   reranker:
-    topDocuments: "Top {count} documents les plus pertinents:"
-    query: "Requête de recherche"
+    topDocuments: 'Top {count} documents les plus pertinents:'
+    query: Requête de recherche
   retriever:
-    foundDocuments: "{count} documents pertinents trouvés"
-    query: "Requête de recherche"
-    chunksFound: "{count} fragments trouvés"
-    documentsSpanning: "Dans {count} documents"
-    avgScore: "Pertinence moy: {score}%"
-    chunksFromDoc: "{count} fragment | {count} fragments"
-    chunk: "Fragment"
-    position: "Pos: {pos}"
-    lines: "Lignes {start}-{end}"
-    chars: "{count} caractères"
-    sourceDocument: "{count} document source | {count} documents sources"
-    contentChunk: "{count} fragment de contenu | {count} fragments de contenu"
-    noChunksFound: "Aucun fragment trouvé"
-    noChunksFoundDescription: "La recherche de récupération n'a trouvé aucun fragment de contenu pertinent."
+    foundDocuments: '{count} documents pertinents trouvés'
+    query: Requête de recherche
+    chunksFound: '{count} fragments trouvés'
+    documentsSpanning: Dans {count} documents
+    avgScore: 'Pertinence moy: {score}%'
+    chunksFromDoc: '{count} fragment | {count} fragments'
+    chunk: Fragment
+    position: 'Pos: {pos}'
+    lines: Lignes {start}-{end}
+    chars: '{count} caractères'
+    sourceDocument: '{count} document source | {count} documents sources'
+    contentChunk: '{count} fragment de contenu | {count} fragments de contenu'
+    noChunksFound: Aucun fragment trouvé
+    noChunksFoundDescription: La recherche de récupération n'a trouvé aucun fragment
+      de contenu pertinent.
   retrieveMemory:
-    title: "Mémoire récupérée"
-    memories: "Mémoires"
-    relations: "Graphe de connaissances"
-    score: "Pertinence"
-    noMemories: "Aucune mémoire récupérée"
+    title: Mémoire récupérée
+    memories: Mémoires
+    relations: Graphe de connaissances
+    score: Pertinence
+    noMemories: Aucune mémoire récupérée
   storeMemory:
-    title: "Modifications de mémoire"
-    added: "Ajouté"
-    updated: "Mis à jour"
-    deleted: "Supprimé"
-    addedRelations: "relations ajoutées"
-    deletedRelations: "relations supprimées"
-    relationChanges: "Modifications des relations"
-    noChanges: "Aucune modification"
+    title: Modifications de mémoire
+    added: Ajouté
+    updated: Mis à jour
+    deleted: Supprimé
+    addedRelations: relations ajoutées
+    deletedRelations: relations supprimées
+    relationChanges: Modifications des relations
+    noChanges: Aucune modification
   addMemoryToChatHistory:
-    summary: "{count} message de mémoire ajouté à l'historique | {count} messages de mémoire ajoutés à l'historique"
-    description: "L'historique de chat a été enrichi avec des mémoires pertinentes des interactions précédentes"
-    assistant: "Assistant"
-    system: "Système"
-    user: "Utilisateur"
+    summary: "{count} message de mémoire ajouté à l'historique | {count} messages\
+      \ de mémoire ajoutés à l'historique"
+    description: L'historique de chat a été enrichi avec des mémoires pertinentes
+      des interactions précédentes
+    assistant: Assistant
+    system: Système
+    user: Utilisateur
   standaloneQuestionCondenser:
-    summary: "Question affinée et condensée"
-    condensedQuestion: "Question Condensée"
-    user: "Utilisateur"
-    description: "La question originale a été reformulée pour être plus spécifique et contextuelle afin d'améliorer les résultats de recherche"
+    summary: Question affinée et condensée
+    condensedQuestion: Question Condensée
+    user: Utilisateur
+    description: La question originale a été reformulée pour être plus spécifique
+      et contextuelle afin d'améliorer les résultats de recherche
   statistics:
     charts:
-      agentInvocations: "Invocations d'agents"
-      agentStart: "Démarrage de l'agent"
-      endEvents: "Événements de fin"
-      success: "Succès"
-      openHumanInTheLoop: "Ouvert (Humain dans la boucle)"
-      openBotInTheLoop: "Ouvert (Bot dans la boucle)"
-      error: "Erreur"
-      delegations: "Délégations"
-      delegatedTaskAgentInTheLoop: "Tâche déléguée (Agent dans la boucle)"
-      allEvents: "Tous les événements"
-
+      agentInvocations: Invocations d'agents
+      agentStart: Démarrage de l'agent
+      endEvents: Événements de fin
+      success: Succès
+      openHumanInTheLoop: Ouvert (Humain dans la boucle)
+      openBotInTheLoop: Ouvert (Bot dans la boucle)
+      error: Erreur
+      delegations: Délégations
+      delegatedTaskAgentInTheLoop: Tâche déléguée (Agent dans la boucle)
+      allEvents: Tous les événements
 costs:
   table:
-    count: "Nombre"
-    cost: "Coût"
-    input: "Entrée"
-    output: "Sortie"
-    embedding: "Intégration"
-    total: "Total"
-    currency: "CHF"
-
+    count: Nombre
+    cost: Coût
+    input: Entrée
+    output: Sortie
+    embedding: Intégration
+    total: Total
+    currency: CHF
 service:
   selection:
-    title: "Services"
-    description: "Voici tous les services que vous avez activés"
-    search: "Rechercher"
-    button: "Rechercher"
-
+    title: Services
+    description: Voici tous les services que vous avez activés
+    search: Rechercher
+    button: Rechercher
 agent:
-  title: "Agents"
-  can_chat: "Peut chatter"
+  title: Agents
+  can_chat: Peut chatter
+  tabs:
+    myAgents: Mes agents
+    templates: Modèles
+  templates:
+    empty: Aucun modèle disponible
   navigation:
-    basic: "Aperçu"
-    workflow: "Flux de travail"
-    threads: "Fils de discussion"
-    configuration: "Configuration"
-    chat: "Chat"
-    memories: "Mémoires"
+    basic: Aperçu
+    workflow: Flux de travail
+    threads: Fils de discussion
+    configuration: Configuration
+    chat: Chat
+    memories: Mémoires
   overview:
-    startEvents: "Événements de démarrage"
-    stopEvents: "Événements d'arrêt"
-    config: "Configuration"
-    name: "Nom:"
-    class: "Classe:"
+    startEvents: Événements de démarrage
+    stopEvents: Événements d'arrêt
+    config: Configuration
+    name: 'Nom:'
+    class: 'Classe:'
     agentId: "ID de l'agent:"
-    status: "Statut:"
-    online: "En ligne"
-    offline: "Hors ligne"
+    status: 'Statut:'
+    online: En ligne
+    offline: Hors ligne
   configuration:
-    title: "Configuration de l'agent"
-    description: "Configurez le comportement d'exécution et les paramètres de cet agent"
-    runtimeSettings: "Paramètres d'exécution"
-    noConfiguration: "Aucune configuration disponible pour cet agent"
-    saveSuccess: "Configuration enregistrée avec succès"
-    saveError: "Échec de l'enregistrement de la configuration"
+    title: Configuration de l'agent
+    description: Configurez le comportement d'exécution et les paramètres de cet agent
+    runtimeSettings: Paramètres d'exécution
+    noConfiguration: Aucune configuration disponible pour cet agent
+    saveSuccess: Configuration enregistrée avec succès
+    saveError: Échec de l'enregistrement de la configuration
   chat:
-    title: "Démarrer un nouveau chat"
-    placeholder: "Tapez le message que vous souhaitez envoyer à l'agent"
-    createThreadAndSend: "Créer un fil de discussion et envoyer"
-    manuallyCreatedThread: "Fil de discussion créé manuellement"
-  availableAgents: "Agents disponibles"
+    title: Démarrer un nouveau chat
+    placeholder: Tapez le message que vous souhaitez envoyer à l'agent
+    createThreadAndSend: Créer un fil de discussion et envoyer
+    manuallyCreatedThread: Fil de discussion créé manuellement
+  availableAgents: Agents disponibles
   list:
-    name: "Nom"
-    description: "Description"
-    agent: "Agent"
-    is_conversational: "Conversationnel"
-    true: "Oui"
-    false: "Non"
-    status: "Statut"
-    online: "En ligne"
-    offline: "Hors ligne"
+    name: Nom
+    description: Description
+    agent: Agent
+    is_conversational: Conversationnel
+    true: Oui
+    false: Non
+    status: Statut
+    online: En ligne
+    offline: Hors ligne
+    clone: Cloner
   workflow:
-    title: "Flux de travail agentique"
+    title: Flux de travail agentique
   threads:
-    title: "Fils de discussion de l'agent"
+    title: Fils de discussion de l'agent
   create:
-    button: "Créer un nouvel agent"
-    title: "Créer un nouvel agent"
-    cancel: "Annuler"
-    selectClass: "Type d'agent"
-    selectClassPlaceholder: "Sélectionner un type d'agent..."
-    agentId: "ID de l'agent"
-    agentIdPlaceholder: "mon-nouvel-agent"
-    agentIdHelp: "Identifiant unique (lettres minuscules, chiffres, tirets, underscores)"
-    agentIdInvalid: "Seules les lettres minuscules, les chiffres, les tirets et les underscores sont autorisés"
-    agentIdTooLong: "L'ID de l'agent doit comporter au maximum 100 caractères"
-    configuration: "Configuration"
-    noAgentClasses: "Aucun type d'agent disponible. Assurez-vous qu'au moins un agent est en cours d'exécution."
-    submit: "Créer l'agent"
-    success: "Agent créé avec succès"
-    error: "Échec de la création de l'agent"
+    button: Créer un nouvel agent
+    title: Créer un nouvel agent
+    cancel: Annuler
+    selectClass: Type d'agent
+    selectClassPlaceholder: Sélectionner un type d'agent...
+    agentId: ID de l'agent
+    agentIdPlaceholder: mon-nouvel-agent
+    agentIdHelp: Identifiant unique (lettres minuscules, chiffres, tirets, underscores)
+    agentIdInvalid: Seules les lettres minuscules, les chiffres, les tirets et les
+      underscores sont autorisés
+    agentIdTooLong: L'ID de l'agent doit comporter au maximum 100 caractères
+    configuration: Configuration
+    noAgentClasses: Aucun type d'agent disponible. Assurez-vous qu'au moins un agent
+      est en cours d'exécution.
+    submit: Créer l'agent
+    success: Agent créé avec succès
+    error: Échec de la création de l'agent
     steps:
-      basicInfo: "Informations de base"
+      basicInfo: Informations de base
   delete:
-    button: "Supprimer"
-    title: "Supprimer l'agent"
-    confirm: "Êtes-vous sûr de vouloir supprimer cet agent ?"
-    confirmMessage: "Cette action est irréversible. La configuration de l'agent sera définitivement supprimée."
-    success: "Agent supprimé avec succès"
-    error: "Échec de la suppression de l'agent"
-    cannotDeleteDefault: "Les configurations d'agents par défaut ne peuvent pas être supprimées"
+    button: Supprimer
+    title: Supprimer l'agent
+    confirm: Êtes-vous sûr de vouloir supprimer cet agent ?
+    confirmMessage: Cette action est irréversible. La configuration de l'agent sera
+      définitivement supprimée.
+    success: Agent supprimé avec succès
+    error: Échec de la suppression de l'agent
+    cannotDeleteDefault: Les configurations d'agents par défaut ne peuvent pas être
+      supprimées
   add_instance:
-    title: "Ajouter un agent"
-    description: "Créer une nouvelle instance d'agent"
+    title: Ajouter un agent
+    description: Créer une nouvelle instance d'agent
   selector:
     class:
-      label: "Type d'agent"
-      placeholder: "Sélectionner un type d'agent..."
+      label: Type d'agent
+      placeholder: Sélectionner un type d'agent...
     id:
-      label: "Profil d'agent"
-      placeholder: "Sélectionner un profil d'agent..."
-      help: "Choisissez le profil d'agent spécifique à utiliser"
+      label: Profil d'agent
+      placeholder: Sélectionner un profil d'agent...
+      help: Choisissez le profil d'agent spécifique à utiliser
   memories:
-    title: "Mémoires de l'agent"
-    description: "Mémoires collectées par {agentName} à votre sujet"
+    title: Mémoires de l'agent
+    description: Mémoires collectées par {agentName} à votre sujet
     delete_all:
-      confirm_header: "Supprimer toutes les mémoires de l'agent"
-      confirm_message: "Êtes-vous sûr de vouloir supprimer toutes les mémoires collectées par cet agent ? Cette action ne peut pas être annulée."
+      confirm_header: Supprimer toutes les mémoires de l'agent
+      confirm_message: Êtes-vous sûr de vouloir supprimer toutes les mémoires collectées
+        par cet agent ? Cette action ne peut pas être annulée.
       success:
-        title: "Succès"
-        message: "Toutes les mémoires de l'agent ont été supprimées avec succès"
+        title: Succès
+        message: Toutes les mémoires de l'agent ont été supprimées avec succès
       error:
-        title: "Échec de la suppression"
-        message: "Échec de la suppression des mémoires de l'agent. Veuillez réessayer."
-
+        title: Échec de la suppression
+        message: Échec de la suppression des mémoires de l'agent. Veuillez réessayer.
 document:
   list:
-    title: "Titre du document"
-    created: "Créé"
-    updated_at: "Dernière mise à jour"
-    language: "Langue"
-    document_type: "Type de document"
-    number_of_pages: "Nombre de pages"
-    download: "Télécharger"
-    is_processing: "Traitement en cours"
-
+    title: Titre du document
+    created: Créé
+    updated_at: Dernière mise à jour
+    language: Langue
+    document_type: Type de document
+    number_of_pages: Nombre de pages
+    download: Télécharger
+    is_processing: Traitement en cours
 knowledge:
-  title: "Bases de connaissances"
-  created_at: "Créé le:"
-  updated_at: "Dernière mise à jour:"
+  title: Bases de connaissances
+  created_at: 'Créé le:'
+  updated_at: 'Dernière mise à jour:'
   navigation:
     document:
-      basic: "Aperçu"
-      original: "Original"
-      content: "Contenu"
-      nodes: "Morceaux"
-      summary: "Résumés"
+      basic: Aperçu
+      original: Original
+      content: Contenu
+      nodes: Morceaux
+      summary: Résumés
   original:
-    not_available: "La vue du document original est uniquement disponible pour les fichiers PDF."
-    load_error: "Échec du chargement du document original."
-    view_button: "Voir l'original"
-    open_new_tab: "Ouvrir dans un nouvel onglet"
-    click_to_view: "Cliquez sur le bouton ci-dessous pour afficher le document PDF original."
+    not_available: La vue du document original est uniquement disponible pour les
+      fichiers PDF.
+    load_error: Échec du chargement du document original.
+    view_button: Voir l'original
+    open_new_tab: Ouvrir dans un nouvel onglet
+    click_to_view: Cliquez sur le bouton ci-dessous pour afficher le document PDF
+      original.
   documents:
-    title: "Documents"
+    title: Documents
     search:
-      placeholder: "Rechercher par titre de document..."
+      placeholder: Rechercher par titre de document...
     upload:
-      title: "Télécharger des documents"
-      drag_and_drop: "Glissez les fichiers ici ou cliquez pour sélectionner des fichiers"
+      title: Télécharger des documents
+      drag_and_drop: Glissez les fichiers ici ou cliquez pour sélectionner des fichiers
       target_location:
-        label: "Emplacement cible"
-        help: "Dossier où les documents doivent être stockés"
+        label: Emplacement cible
+        help: Dossier où les documents doivent être stockés
       errors:
-        "unsupported_file_type": "Un fichier est d'un type non pris en charge. Les types pris en charge sont : {supportedTypes} | {count} fichiers sont d'un type non pris en charge. Les types pris en charge sont : {supportedTypes}"
+        unsupported_file_type: "Un fichier est d'un type non pris en charge. Les types\
+          \ pris en charge sont : {supportedTypes} | {count} fichiers sont d'un type\
+          \ non pris en charge. Les types pris en charge sont : {supportedTypes}"
       actions:
-        upload: "Télécharger"
-        cancel: "Annuler"
+        upload: Télécharger
+        cancel: Annuler
   nodes:
-    title: "Morceaux de document"
+    title: Morceaux de document
   summary:
-    title: "Résumés de document"
-    level: "Niveau"
-    no_summaries_at_level: "Aucun résumé à ce niveau"
+    title: Résumés de document
+    level: Niveau
+    no_summaries_at_level: Aucun résumé à ce niveau
   actions:
-    save: "Enregistrer"
-    create: "Créer"
-    cancel: "Annuler"
+    save: Enregistrer
+    create: Créer
+    cancel: Annuler
   add_folder:
-    title: "Ajouter une collection"
-    description: "Créer une nouvelle collection de connaissances"
-    cancel: "Annuler"
+    title: Ajouter une collection
+    description: Créer une nouvelle collection de connaissances
+    cancel: Annuler
   auto_sync:
-    title: "Synchronisé automatiquement"
-    description: "Les collections sont gérées automatiquement"
+    title: Synchronisé automatiquement
+    description: Les collections sont gérées automatiquement
   manual_management:
-    description: "Les collections peuvent être créées et gérées manuellement"
-  edit_namespace: "Modifier la collection"
-  upload_documents: "Télécharger des documents"
+    description: Les collections peuvent être créées et gérées manuellement
+  edit_namespace: Modifier la collection
+  upload_documents: Télécharger des documents
   form:
     create:
-      title: "Créer une collection"
+      title: Créer une collection
     edit:
-      title: "Modifier la collection"
+      title: Modifier la collection
     database:
-      label: "Base de connaissances"
-      placeholder: "Nom de la base de connaissances"
+      label: Base de connaissances
+      placeholder: Nom de la base de connaissances
     folder_name:
-      label: "Nom de la collection"
-      placeholder: "ma-collection"
-      help: "Seuls les caractères alphanumériques, tirets (-) et underscores (_) sont autorisés"
-      edit_help: "Nom technique de la collection"
-      validation_error: "Le nom de la collection ne peut contenir que des caractères alphanumériques, des tirets (-) et des underscores (_)"
+      label: Nom de la collection
+      placeholder: ma-collection
+      help: Seuls les caractères alphanumériques, tirets (-) et underscores (_) sont
+        autorisés
+      edit_help: Nom technique de la collection
+      validation_error: Le nom de la collection ne peut contenir que des caractères
+        alphanumériques, des tirets (-) et des underscores (_)
     display_name:
-      label: "Nom d'affichage"
-      placeholder: "Nom d'affichage"
-      help: "Nom d'affichage de la collection"
+      label: Nom d'affichage
+      placeholder: Nom d'affichage
+      help: Nom d'affichage de la collection
     description:
-      label: "Description"
-      placeholder: "Description"
-      help: "Description de la collection"
-
+      label: Description
+      placeholder: Description
+      help: Description de la collection
 auth:
   renew:
-    processing: "Traitement du renouvellement silencieux du jeton..."
+    processing: Traitement du renouvellement silencieux du jeton...
   callback:
-    processing: "Traitement du rappel d'authentification..."
-    loggingIn: "Connexion en cours..."
-    loginError: "Erreur de connexion"
-    redirectingToLogin: "Redirection vers la page de connexion..."
-    genericError: "Une erreur s'est produite lors de la connexion. Veuillez réessayer."
+    processing: Traitement du rappel d'authentification...
+    loggingIn: Connexion en cours...
+    loginError: Erreur de connexion
+    redirectingToLogin: Redirection vers la page de connexion...
+    genericError: Une erreur s'est produite lors de la connexion. Veuillez réessayer.
   login:
-    title: "Connexion"
-    description: "Veuillez vous connecter pour accéder à l'application"
-    tagline: "Découvrez l'avenir de l'intelligence artificielle"
-    welcome: "Bienvenue sur le AI Hub de {companyName}"
-    pleaseLogin: "Veuillez vous connecter"
-    loginWithMicrosoft: "Se connecter avec Microsoft"
-    customSolutions: "Solutions d'IA personnalisées pour votre entreprise"
-    logoAlt: "Logo de l'entreprise"
-
+    title: Connexion
+    description: Veuillez vous connecter pour accéder à l'application
+    tagline: Découvrez l'avenir de l'intelligence artificielle
+    welcome: Bienvenue sur le AI Hub de {companyName}
+    pleaseLogin: Veuillez vous connecter
+    loginWithMicrosoft: Se connecter avec Microsoft
+    customSolutions: Solutions d'IA personnalisées pour votre entreprise
+    logoAlt: Logo de l'entreprise
 timerange:
-  1h: "1 Heure"
-  24h: "1 Jour"
-  30d: "1 Mois"
-  365d: "1 An"
-
+  1h: 1 Heure
+  24h: 1 Jour
+  30d: 1 Mois
+  365d: 1 An
 chart:
-  no_data: "Aucune donnée disponible pour cette période."
-  trending_up: "Tendance à la hausse"
-  trending_down: "Tendance à la baisse"
-
+  no_data: Aucune donnée disponible pour cette période.
+  trending_up: Tendance à la hausse
+  trending_down: Tendance à la baisse
 dashboard:
-  all_agents: "Tous les agents"
-  users: "Utilisateurs AI-Hub"
-  unknown_agent: "Agent inconnu"
-  add_widget: "Ajouter un widget"
-  select_data_type: "Sélectionner le type de données"
-  select_agent: "Sélectionner un agent (Facultatif)"
-  create: "Créer"
-  create_widget: "Créer un nouveau widget"
+  all_agents: Tous les agents
+  users: Utilisateurs AI-Hub
+  unknown_agent: Agent inconnu
+  add_widget: Ajouter un widget
+  select_data_type: Sélectionner le type de données
+  select_agent: Sélectionner un agent (Facultatif)
+  create: Créer
+  create_widget: Créer un nouveau widget
   events:
     StartEvent:
-      label: "Exécutions d'agents démarrées"
+      label: Exécutions d'agents démarrées
     StopEvent:
-      label: "Exécutions réussies"
+      label: Exécutions réussies
     UserMessageEvent:
-      label: "Messages de chat utilisateur"
+      label: Messages de chat utilisateur
     ExceptionEvent:
-      label: "Erreurs"
+      label: Erreurs
     HumanInTheLoopRequestEvent:
-      label: "Humain dans la boucle"
+      label: Humain dans la boucle
     BotInTheLoopRequestEvent:
-      label: "Demander dans Slack/Teams"
+      label: Demander dans Slack/Teams
     AgentInTheLoopRequestEvent:
-      label: "Tâches déléguées"
-
+      label: Tâches déléguées
 evaluation:
-  langfuse_link: "Lancer des expériences"
+  langfuse_link: Lancer des expériences
   dataset:
-    title: "Jeux de données"
-    created_at: "Créé le:"
-    updated_at: "Mis à jour le:"
-    create_description: "Créez un nouveau jeu de données que vous pouvez utiliser pour évaluer les performances de vos Assistants!"
-    name: "Nom"
-    description: "Description"
-    cancel: "Annuler"
-    save: "Enregistrer"
-    create_new: "Créer un nouveau jeu de données"
-    add_at_least_one: "Ajoutez au moins 1 point de données"
-    question_header: "Question"
-    answer_header: "Réponse"
-    status: "Statut"
-    new: "Nouveau"
-    question_placeholder: "Question"
-    answer_placeholder: "Réponse"
-    add_button: "Ajouter"
-    save_button: "Enregistrer le jeu de données"
-    save_confirmation: "Enregistrer le jeu de données ? Une fois ajoutés, vous ne pourrez plus supprimer les éléments."
-    cancel_button: "Annuler"
-    save_action: "Enregistrer"
-    saved_summary: "Enregistré"
-    saved_detail: "Jeu de données enregistré"
+    title: Jeux de données
+    created_at: 'Créé le:'
+    updated_at: 'Mis à jour le:'
+    create_description: Créez un nouveau jeu de données que vous pouvez utiliser pour
+      évaluer les performances de vos Assistants!
+    name: Nom
+    description: Description
+    cancel: Annuler
+    save: Enregistrer
+    create_new: Créer un nouveau jeu de données
+    add_at_least_one: Ajoutez au moins 1 point de données
+    question_header: Question
+    answer_header: Réponse
+    status: Statut
+    new: Nouveau
+    question_placeholder: Question
+    answer_placeholder: Réponse
+    add_button: Ajouter
+    save_button: Enregistrer le jeu de données
+    save_confirmation: Enregistrer le jeu de données ? Une fois ajoutés, vous ne pourrez
+      plus supprimer les éléments.
+    cancel_button: Annuler
+    save_action: Enregistrer
+    saved_summary: Enregistré
+    saved_detail: Jeu de données enregistré
 role:
-  title: "Rôles d'accès"
-  name: "Nom"
-  description: "Description"
-  edit: "Modifier le rôle"
-  create_new: "Nouveau rôle"
-  add_access_role: "Ajouter un rôle d'accès"
-  add_button: "Ajouter"
-  is_new: "Nouveau"
-  save_button: "Enregistrer"
-  access_rules: "Règles d'accès"
-  usage_limits: "Limites d'utilisation"
-  usage_pattern: "Modèle"
-  usage_limit_value: "Limite"
-  usage_period: "Période"
-  calls_per: "appels"
-  unlimited: "Illimité"
-  no_access_rules: "Aucune règle d'accès définie"
-  access_rules_help_intro: "Les règles hiérarchiques contrôlent l'accès aux ressources :"
-  access_rules_help_all_agents: "Tous les agents"
-  access_rules_help_agent_instances: "Toutes les instances de MyAgent"
-  access_rules_help_service: "Service Knowledge"
-  access_rules_help_admin: "Accès admin à tout"
-  pattern_help_intro: "Les modèles utilisent des jokers pour les agents :"
-  pattern_help_all: "Tous les agents"
-  pattern_help_wildcard: "Toutes les instances de MyAgent"
-  pattern_help_specific: "Uniquement une instance spécifique"
+  title: Rôles d'accès
+  name: Nom
+  description: Description
+  edit: Modifier le rôle
+  create_new: Nouveau rôle
+  add_access_role: Ajouter un rôle d'accès
+  add_button: Ajouter
+  is_new: Nouveau
+  save_button: Enregistrer
+  access_rules: Règles d'accès
+  usage_limits: Limites d'utilisation
+  usage_pattern: Modèle
+  usage_limit_value: Limite
+  usage_period: Période
+  calls_per: appels
+  unlimited: Illimité
+  no_access_rules: Aucune règle d'accès définie
+  access_rules_help_intro: "Les règles hiérarchiques contrôlent l'accès aux ressources\
+    \ :"
+  access_rules_help_all_agents: Tous les agents
+  access_rules_help_agent_instances: Toutes les instances de MyAgent
+  access_rules_help_service: Service Knowledge
+  access_rules_help_admin: Accès admin à tout
+  pattern_help_intro: 'Les modèles utilisent des jokers pour les agents :'
+  pattern_help_all: Tous les agents
+  pattern_help_wildcard: Toutes les instances de MyAgent
+  pattern_help_specific: Uniquement une instance spécifique
   create_dialog:
-    description: "Créez un nouveau rôle avec des règles d'accès. Pour attribuer le nouveau rôle aux utilisateurs, veuillez utiliser votre AD."
+    description: Créez un nouveau rôle avec des règles d'accès. Pour attribuer le
+      nouveau rôle aux utilisateurs, veuillez utiliser votre AD.
   remove_dialog:
-    confirm: "Êtes-vous sûr?"
-    explanation: "Si vous supprimez ce rôle, les utilisateurs risquent de perdre l'accès à certaines fonctionnalités du hub d'IA."
-    cancel: "Annuler"
-    proceed: "Supprimer quand même"
+    confirm: Êtes-vous sûr?
+    explanation: Si vous supprimez ce rôle, les utilisateurs risquent de perdre l'accès
+      à certaines fonctionnalités du hub d'IA.
+    cancel: Annuler
+    proceed: Supprimer quand même
   role_deleted:
-    summary: "Rôle supprimé"
-    detail: "Le rôle a été supprimé. Les utilisateurs avec ce rôle peuvent avoir perdu l'accès à certaines fonctionnalités."
+    summary: Rôle supprimé
+    detail: Le rôle a été supprimé. Les utilisateurs avec ce rôle peuvent avoir perdu
+      l'accès à certaines fonctionnalités.
   role_saved:
-    summary: "Rôle enregistré"
-    detail: "Rôle enregistré avec succès, les nouvelles règles d'accès prennent effet immédiatement."
-
+    summary: Rôle enregistré
+    detail: Rôle enregistré avec succès, les nouvelles règles d'accès prennent effet
+      immédiatement.
 usage:
-  title: "Utilisation"
-  calls_remaining: "{current} / {limit} appels agent"
-  unlimited_calls: "Appels agent illimités"
-  resets_at: "Réinitialisation {time}"
-  limit_exceeded: "Limite d'appels agent atteinte"
-  limit_exceeded_detail: "Veuillez patienter jusqu'à {time} ou contacter votre administrateur"
-
+  title: Utilisation
+  calls_remaining: '{current} / {limit} appels agent'
+  unlimited_calls: Appels agent illimités
+  resets_at: Réinitialisation {time}
+  limit_exceeded: Limite d'appels agent atteinte
+  limit_exceeded_detail: Veuillez patienter jusqu'à {time} ou contacter votre administrateur
 period:
-  1h: "Par heure"
-  1d: "Par jour"
-  7d: "Par semaine"
-  1mo: "Par mois"
-
+  1h: Par heure
+  1d: Par jour
+  7d: Par semaine
+  1mo: Par mois
 notification:
-  title: "Notifications"
-  no_unread_notifications: "Aucune notification non lue"
-  no_notifications: "Aucune notification disponible"
-  no_pending_notifications: "Aucune notification en attente"
-  mark_all_as_read: "Tout marquer comme lu"
-  mark_as_read: "Marquer comme lu"
-  mark_as_done: "Marquer comme terminé"
-  view_all: "Voir toutes les notifications"
-  click_to_view: "Cliquer pour voir la notification"
-  clear_selection: "Effacer la sélection"
-  select_all: "Sélectionner toutes les notifications"
-  filter_notifications: "Filtrer les notifications"
-  select_notification: "Sélectionner la notification"
-  default_summary: "Nouvelle notification"
-  view_button: "Voir"
+  title: Notifications
+  no_unread_notifications: Aucune notification non lue
+  no_notifications: Aucune notification disponible
+  no_pending_notifications: Aucune notification en attente
+  mark_all_as_read: Tout marquer comme lu
+  mark_as_read: Marquer comme lu
+  mark_as_done: Marquer comme terminé
+  view_all: Voir toutes les notifications
+  click_to_view: Cliquer pour voir la notification
+  clear_selection: Effacer la sélection
+  select_all: Sélectionner toutes les notifications
+  filter_notifications: Filtrer les notifications
+  select_notification: Sélectionner la notification
+  default_summary: Nouvelle notification
+  view_button: Voir
   filter:
-    all: "Tous"
-    unread: "Non lus"
-    not_done: "À faire"
+    all: Tous
+    unread: Non lus
+    not_done: À faire
   types:
-    info: "Info"
-    success: "Succès"
-    warn: "Avertissement"
-    error: "Erreur"
+    info: Info
+    success: Succès
+    warn: Avertissement
+    error: Erreur
   severities:
-    low: "Faible"
-    medium: "Moyenne"
-    high: "Élevée"
-    critical: "Critique"
-
+    low: Faible
+    medium: Moyenne
+    high: Élevée
+    critical: Critique
 bar:
-  toggle_dark_mode: "Basculer le mode sombre"
-  show_notifications: "Afficher les notifications"
-
+  toggle_dark_mode: Basculer le mode sombre
+  show_notifications: Afficher les notifications
 process:
-  title: "Processus"
+  title: Processus
   overview:
-    name: "Nom"
-    class: "Classe"
-    processId: "ID du processus"
-    status: "Statut"
-    online: "En ligne"
-    offline: "Hors ligne"
+    name: Nom
+    class: Classe
+    processId: ID du processus
+    status: Statut
+    online: En ligne
+    offline: Hors ligne
   navigation:
-    overview: "Aperçu"
-    walkthroughs: "Exécutions"
-    start: "Démarrer une exécution"
-    configuration: "Configuration"
+    overview: Aperçu
+    walkthroughs: Exécutions
+    start: Démarrer une exécution
+    configuration: Configuration
   list:
-    online: "En ligne"
-    offline: "Hors ligne"
+    online: En ligne
+    offline: Hors ligne
   configuration:
-    title: "Configuration du processus"
-    description: "Configurez le comportement d'exécution de cette instance de processus."
-    runtimeSettings: "Paramètres d'exécution"
-    saveSuccess: "Configuration enregistrée avec succès"
-    saveError: "Échec de l'enregistrement de la configuration"
-    noConfiguration: "Aucune configuration disponible pour ce processus."
+    title: Configuration du processus
+    description: Configurez le comportement d'exécution de cette instance de processus.
+    runtimeSettings: Paramètres d'exécution
+    saveSuccess: Configuration enregistrée avec succès
+    saveError: Échec de l'enregistrement de la configuration
+    noConfiguration: Aucune configuration disponible pour ce processus.
   create:
-    title: "Créer un nouveau processus"
-    selectClass: "Type de processus"
-    selectClassPlaceholder: "Sélectionnez un type de processus..."
-    noProcessClasses: "Aucun type de processus disponible."
+    title: Créer un nouveau processus
+    selectClass: Type de processus
+    selectClassPlaceholder: Sélectionnez un type de processus...
+    noProcessClasses: Aucun type de processus disponible.
     steps:
-      basicInfo: "Informations de base"
-    submit: "Créer le processus"
-    cancel: "Annuler"
-    success: "Processus créé avec succès"
-    error: "Échec de la création du processus"
+      basicInfo: Informations de base
+    submit: Créer le processus
+    cancel: Annuler
+    success: Processus créé avec succès
+    error: Échec de la création du processus
   delete:
-    button: "Supprimer"
-    title: "Supprimer le processus"
-    confirmMessage: "Êtes-vous sûr de vouloir supprimer cette instance de processus ? Cette action est irréversible."
-    success: "Processus supprimé avec succès"
-    error: "Échec de la suppression du processus"
+    button: Supprimer
+    title: Supprimer le processus
+    confirmMessage: Êtes-vous sûr de vouloir supprimer cette instance de processus
+      ? Cette action est irréversible.
+    success: Processus supprimé avec succès
+    error: Échec de la suppression du processus
   add_instance:
-    title: "Ajouter un processus"
-    description: "Créer une nouvelle instance de processus"
+    title: Ajouter un processus
+    description: Créer une nouvelle instance de processus
   walkthrough:
     list:
-      created: "Créé"
-      updated: "Dernière interaction"
-      agents: "Agents"
-      users: "Utilisateurs"
-      state: "État"
-      in_progress: "En cours"
-      done: "Terminé"
-      steps: "Progression"
-
+      created: Créé
+      updated: Dernière interaction
+      agents: Agents
+      users: Utilisateurs
+      state: État
+      in_progress: En cours
+      done: Terminé
+      steps: Progression
 form:
   locale_input:
-    translate_tooltip: "Traduire dans toutes les langues"
-
+    translate_tooltip: Traduire dans toutes les langues
 lib:
   vectorStore:
-    label: "Stockage vectoriel"
-    help: "Sélectionner la base de connaissances et les espaces de noms à rechercher"
+    label: Stockage vectoriel
+    help: Sélectionner la base de connaissances et les espaces de noms à rechercher
     database:
-      label: "Base de données"
+      label: Base de données
     namespaces:
-      label: "Espaces de noms"
-      placeholder: "Sélectionner les espaces de noms (vide = tous)"
-      help: "Laisser vide pour rechercher tous les espaces de noms"
-
+      label: Espaces de noms
+      placeholder: Sélectionner les espaces de noms (vide = tous)
+      help: Laisser vide pour rechercher tous les espaces de noms
 memory:
-  title: "Souvenirs"
+  title: Souvenirs
   graph:
-    title: "Graphe de connaissances"
+    title: Graphe de connaissances
   list:
-    title: "Liste des souvenirs"
+    title: Liste des souvenirs
   detail:
-    title: "Détails du souvenir"
-    created_at: "Créé le"
-    agent_link_label: "Créé par l'agent"
-    thread_link_label: "Thread associé"
-    thread_title: "Interaction du thread"
+    title: Détails du souvenir
+    created_at: Créé le
+    agent_link_label: Créé par l'agent
+    thread_link_label: Thread associé
+    thread_title: Interaction du thread
   update:
     success:
-      title: "Succès"
-      message: "Souvenir mis à jour avec succès"
+      title: Succès
+      message: Souvenir mis à jour avec succès
     error:
-      title: "Mise à jour échouée"
-      message: "Échec de la mise à jour du souvenir. Veuillez réessayer."
+      title: Mise à jour échouée
+      message: Échec de la mise à jour du souvenir. Veuillez réessayer.
   delete:
     success:
-      title: "Succès"
-      message: "Souvenir supprimé avec succès"
+      title: Succès
+      message: Souvenir supprimé avec succès
     error:
-      title: "Suppression échouée"
-      message: "Échec de la suppression du souvenir. Veuillez réessayer."
+      title: Suppression échouée
+      message: Échec de la suppression du souvenir. Veuillez réessayer.
   edit:
-    memory_content_label: "Contenu du souvenir"
-    edit_button: "Modifier"
-    save_button: "Enregistrer"
-    cancel_button: "Annuler"
-    delete_button: "Supprimer"
-    delete_confirm_header: "Supprimer le souvenir"
-    delete_confirm_message: "Êtes-vous sûr de vouloir supprimer ce souvenir ? Cette action est irréversible."
-    validation_error: "Erreur de validation"
-    validation_empty: "Le contenu du souvenir ne peut pas être vide"
+    memory_content_label: Contenu du souvenir
+    edit_button: Modifier
+    save_button: Enregistrer
+    cancel_button: Annuler
+    delete_button: Supprimer
+    delete_confirm_header: Supprimer le souvenir
+    delete_confirm_message: Êtes-vous sûr de vouloir supprimer ce souvenir ? Cette
+      action est irréversible.
+    validation_error: Erreur de validation
+    validation_empty: Le contenu du souvenir ne peut pas être vide
   table:
-    memory: "Souvenir"
-    agent: "Agent"
-    created: "Créé"
-    score: "Score"
-    pagination: "Page {currentPage} sur {totalPages}"
+    memory: Souvenir
+    agent: Agent
+    created: Créé
+    score: Score
+    pagination: Page {currentPage} sur {totalPages}
   search:
-    button: "Rechercher"
-    placeholder: "Rechercher des souvenirs..."
-    clear: "Effacer"
+    button: Rechercher
+    placeholder: Rechercher des souvenirs...
+    clear: Effacer
   delete_all:
-    button: "Tout supprimer"
-    confirm_header: "Supprimer tous les souvenirs"
-    confirm_message: "Êtes-vous sûr de vouloir supprimer tous les souvenirs ? Cette action est irréversible."
+    button: Tout supprimer
+    confirm_header: Supprimer tous les souvenirs
+    confirm_message: Êtes-vous sûr de vouloir supprimer tous les souvenirs ? Cette
+      action est irréversible.
     success:
-      title: "Succès"
-      message: "Tous les souvenirs ont été supprimés avec succès"
+      title: Succès
+      message: Tous les souvenirs ont été supprimés avec succès
     error:
-      title: "Suppression échouée"
-      message: "Échec de la suppression de tous les souvenirs. Veuillez réessayer."
-
+      title: Suppression échouée
+      message: Échec de la suppression de tous les souvenirs. Veuillez réessayer.
 openwebui:
   memories:
-    title: "Souvenirs de l'Agent"
-    select_agent: "Sélectionner l'Agent"
-    list: "Liste"
-    graph: "Graphe"
-    user_memories: "Souvenirs de l'Utilisateur"
-    org_memories: "Souvenirs de l'Organisation"
+    title: Souvenirs de l'Agent
+    select_agent: Sélectionner l'Agent
+    list: Liste
+    graph: Graphe
+    user_memories: Souvenirs de l'Utilisateur
+    org_memories: Souvenirs de l'Organisation

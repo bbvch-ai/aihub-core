@@ -1,3 +1,7 @@
+from datetime import UTC, datetime
+from typing import Any
+from unittest.mock import MagicMock
+
 import pytest
 from fastapi import Request
 from pytest_bdd import given, parsers, scenarios, then, when
@@ -5,9 +9,7 @@ from pytest_bdd import given, parsers, scenarios, then, when
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
     DangerousDevelopmentOnlyAuthHandler,
 )
-from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
-    DangerousDevelopmentOnlyIdentityProvider,
-)
+from aihub_lib.persistence.user.UserEntity import UserEntity
 from aihub_lib.testing.asyncio_utils.bdd import async_test
 
 # --- Scenario Declaration ---
@@ -19,15 +21,76 @@ scenarios("features/dangerous_development_only_auth_handler.feature")
 # --- Fixtures ---
 
 
+@pytest.fixture(autouse=True)
+def mock_database_operations(monkeypatch: pytest.MonkeyPatch):
+    """Mock all database operations required by the auth handler."""
+    from aihub_lib.auth.identity.TenantIdentity import TenantIdentity
+
+    # Mock UserEntity.ensure_user_exists
+    def mock_ensure_user_exists(oid: str, name: str, email: str, profile_image: str | None = None) -> MagicMock:
+        """Return a mock UserEntity with get_roles method."""
+        user = MagicMock(spec=UserEntity)
+        user.id = oid
+        user.name = name
+        user.email = email
+        user.profile_image = profile_image
+        user.last_updated = datetime(2025, 7, 4, 12, 14, 45, 185140, tzinfo=UTC)
+
+        # Mock get_roles to return roles from environment
+        def mock_get_roles(_tenant_id: str) -> list[str]:
+            from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (  # noqa: E501
+                DangerousDevelopmentOnlyAuthSettings,
+            )
+
+            return DangerousDevelopmentOnlyAuthSettings().ROLES
+
+        user.get_roles = mock_get_roles
+        return user
+
+    # Mock TenantEntity.get_default_tenant
+    def mock_get_default_tenant() -> MagicMock:
+        """Return a mock default tenant."""
+        tenant = MagicMock()
+        tenant.id = "default-tenant-id"
+        tenant.name = "Default Tenant"
+        return tenant
+
+    # Mock UserTenantRoleEntity.create_or_update
+    def mock_create_or_update(**kwargs) -> MagicMock:
+        """Return a mock UserTenantRoleEntity."""
+        return MagicMock()
+
+    # Mock resolve_tenant_for_user to return a mock tenant identity
+    def mock_resolve_tenant(_self, _request, _user_id: str) -> TenantIdentity:
+        """Return a mock tenant identity."""
+        return TenantIdentity(id="default-tenant-id", name="Default Tenant", access_rules=[])
+
+    # Apply monkeypatches
+    monkeypatch.setattr("aihub_lib.persistence.user.UserEntity.UserEntity.ensure_user_exists", mock_ensure_user_exists)
+    monkeypatch.setattr(
+        "aihub_lib.persistence.access.entities.TenantEntity.TenantEntity.get_default_tenant", mock_get_default_tenant
+    )
+    monkeypatch.setattr(
+        "aihub_lib.persistence.access.entities.UserTenantRoleEntity.UserTenantRoleEntity.create_or_update",
+        mock_create_or_update,
+    )
+    monkeypatch.setattr(
+        "aihub_lib.auth.dependencies.AuthHandler.AuthHandler.resolve_tenant_for_user", mock_resolve_tenant
+    )
+    monkeypatch.setattr(
+        "aihub_lib.auth.dependencies.AuthHandler.AuthHandler.get_default_tenant_for_user", mock_resolve_tenant
+    )
+
+
 @pytest.fixture
 def dummy_request() -> Request:
     """Create and return a dummy Request object."""
-    scope = {"type": "http", "headers": [(b"host", b"testserver")], "method": "GET", "path": "/"}
+    scope: dict[str, Any] = {"type": "http", "headers": [(b"host", b"testserver")], "method": "GET", "path": "/"}
     return Request(scope)
 
 
 @pytest.fixture
-def result_user() -> dict:
+def result_user() -> dict[str, Any]:
     """Container for storing the resulting user."""
     return {}
 
@@ -36,7 +99,7 @@ def result_user() -> dict:
 
 
 @given(parsers.parse('a NoAuth configuration with name "{name}", email "{email}", oid "{oid}", and roles "{roles}"'))
-def setup_no_auth_config(monkeypatch, name, email, oid, roles):
+def setup_no_auth_config(monkeypatch: pytest.MonkeyPatch, name: str, email: str, oid: str, roles: str) -> None:
     """Set up the NoAuth configuration using environment variables."""
     monkeypatch.setenv("DANGEROUS_DEV_ONLY_AUTH_FAKE_NAME", name)
     monkeypatch.setenv("DANGEROUS_DEV_ONLY_AUTH_FAKE_EMAIL", email)
@@ -49,9 +112,9 @@ def setup_no_auth_config(monkeypatch, name, email, oid, roles):
 
 @when("I invoke the DangerousDevelopmentOnlyAuthHandler with a dummy request")
 @async_test
-async def invoke_no_auth_handler(dummy_request: Request, result_user: dict) -> None:
+async def invoke_no_auth_handler(dummy_request: Request, result_user: dict[str, Any]) -> None:
     """Invoke the DangerousDevelopmentOnlyAuthHandler and store the returned user."""
-    handler = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
+    handler = DangerousDevelopmentOnlyAuthHandler()
     user = await handler(dummy_request)
     result_user["user"] = user
 
@@ -60,7 +123,7 @@ async def invoke_no_auth_handler(dummy_request: Request, result_user: dict) -> N
 
 
 @then(parsers.parse('the returned user should have name "{expected_name}"'))
-def check_name(result_user: dict, expected_name: str) -> None:
+def check_name(result_user: dict[str, Any], expected_name: str) -> None:
     """Check that the returned user has the expected name."""
     user = result_user.get("user")
     assert user is not None, "No user returned by DangerousDevelopmentOnlyAuthHandler"
@@ -68,7 +131,7 @@ def check_name(result_user: dict, expected_name: str) -> None:
 
 
 @then(parsers.parse('the returned user should have preferred_username "{expected_email}"'))
-def check_preferred_username(result_user: dict, expected_email: str) -> None:
+def check_preferred_username(result_user: dict[str, Any], expected_email: str) -> None:
     """Check that the returned user has the expected preferred username."""
     user = result_user.get("user")
     assert user is not None, "No user returned by DangerousDevelopmentOnlyAuthHandler"
@@ -76,7 +139,7 @@ def check_preferred_username(result_user: dict, expected_email: str) -> None:
 
 
 @then(parsers.parse('the returned user should have oid "{expected_oid}"'))
-def check_oid(result_user: dict, expected_oid: str) -> None:
+def check_oid(result_user: dict[str, Any], expected_oid: str) -> None:
     """Check that the returned user has the expected oid."""
     user = result_user.get("user")
     assert user is not None, "No user returned by DangerousDevelopmentOnlyAuthHandler"
@@ -84,7 +147,7 @@ def check_oid(result_user: dict, expected_oid: str) -> None:
 
 
 @then(parsers.parse('the returned user should have roles "{role1}" and "{role2}"'))
-def check_roles(result_user: dict, role1: str, role2: str) -> None:
+def check_roles(result_user: dict[str, Any], role1: str, role2: str) -> None:
     """Check that the returned user has the expected roles."""
     user = result_user.get("user")
     assert user is not None, "No user returned by DangerousDevelopmentOnlyAuthHandler"

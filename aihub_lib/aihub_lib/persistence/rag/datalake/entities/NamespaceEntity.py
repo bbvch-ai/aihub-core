@@ -22,6 +22,7 @@ class NamespaceEntity(Document):
         "indexes": [
             {"fields": ["bucket_id", "namespace_name"], "unique": True},
             {"fields": ["bucket_id"]},
+            {"fields": ["bucket_id", "folder_name"]},
         ],
     }
     bucket_id = StringField(required=True)

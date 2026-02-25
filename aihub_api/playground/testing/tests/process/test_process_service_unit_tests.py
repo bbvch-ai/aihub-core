@@ -23,7 +23,6 @@ enable_logging()
 def sample_process_config():
     """Create a sample ProcessConfig for testing."""
     return ProcessConfig(
-        process_class="TestProcess",
         process_id="test_process_1",
         name=LocaleString(en="Test Process 1"),
         description=LocaleString(en="A test process for validation"),

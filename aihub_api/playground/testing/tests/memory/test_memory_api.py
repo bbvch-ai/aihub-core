@@ -8,10 +8,8 @@ from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDe
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
     DangerousDevelopmentOnlyAuthSettings,
 )
-from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
-    DangerousDevelopmentOnlyIdentityProvider,
-)
 from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_methods  # noqa: F401
+from aihub_lib.testing.auth_utils.tenant_mocks import mock_tenant_entity_autouse  # noqa: F401
 from aihub_lib.testing.auth_utils.user_mocks import mock_user_entity_autouse  # noqa: F401
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
@@ -35,7 +33,7 @@ ORG_MEMORIES_ENDPOINT = "/api/v1/organization-memories"
 async def user_memory_client():
     """Create a test client for the API with UserMemoryController mounted."""
     runner = ApiTestRunner()
-    auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
+    auth = DangerousDevelopmentOnlyAuthHandler()
     controller = UserMemoryController(auth=auth)
     controller.get_user_memories().search_user_memories().delete_user_memory().delete_all_user_memories().update_user_memory()
     runner.mount(controller)
@@ -49,7 +47,7 @@ async def user_memory_client():
 async def org_memory_client():
     """Create a test client for the API with OrganizationMemoryController mounted."""
     runner = ApiTestRunner()
-    auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
+    auth = DangerousDevelopmentOnlyAuthHandler()
     controller = OrganizationMemoryController(auth=auth)
     controller.get_organization_memories().search_organization_memories().delete_organization_memory().delete_all_organization_memories().update_organization_memory()
     runner.mount(controller)
@@ -665,13 +663,12 @@ class TestUserMemoryIntegration:
 
         # 1. Add memory via AgentMemory directly (simulates agent adding memory)
         agent_config = AgentConfig(
-            agent_class="TestAgent",
             agent_id="test_api_integration",
             name=LocaleString(en="Test Agent"),
             description=LocaleString(en="Test agent for API integration"),
         )
         locale_handler = LocaleHandler(locale="en")
-        agent_memory = AgentMemory(agent_config=agent_config, t=locale_handler)
+        agent_memory = AgentMemory(agent_config=agent_config, agent_class="TestAgent", t=locale_handler)
 
         # Clean up leftover memories from previous test runs to avoid deduplication
         await agent_memory.mem0service.delete_all(owner_id=user_id)
@@ -745,13 +742,12 @@ class TestUserMemoryIntegration:
 
         # Add memory for User A via AgentMemory
         agent_config = AgentConfig(
-            agent_class="TestAgent",
             agent_id="test_api_isolation",
             name=LocaleString(en="Test Agent"),
             description=LocaleString(en="Test agent for API isolation test"),
         )
         locale_handler = LocaleHandler(locale="en")
-        agent_memory = AgentMemory(agent_config=agent_config, t=locale_handler)
+        agent_memory = AgentMemory(agent_config=agent_config, agent_class="TestAgent", t=locale_handler)
 
         await agent_memory.add_user_memory(
             messages=[ChatMessage(content="User A's confidential project information", role=MessageRole.USER)],

@@ -119,11 +119,6 @@ class AgentDispatcher(BaseDispatcher):
             # Deep merge: non-configurable values (from form-mode config) + configurable values (from submission)
             agent_config_dict = Form.deep_merge(self._non_configurable_values, submitted_config)
 
-            if agent_config_dict.get("agent_class") != self.agent.__name__:
-                raise ValueError(
-                    f"Agent class '{agent_config_dict.get('agent_class')}' "
-                    f"does not match agent class '{self.agent.__name__}'"
-                )
             await run_context.set(self._AGENT_CONFIG_KEY, agent_config_dict)
 
         if agent_config_dict is None:
@@ -422,7 +417,9 @@ class AgentDispatcher(BaseDispatcher):
 
         if param.annotation == AgentMemory:
             locale = await run_context.get("locale", LocaleHandler.DEFAULT_LOCALE)
-            return AgentMemory(agent_config=agent_config, t=self.locale_handler.in_locale(locale))
+            return AgentMemory(
+                agent_config=agent_config, agent_class=self.agent.__name__, t=self.locale_handler.in_locale(locale)
+            )
 
         if param.annotation in [AgentInstanceTopic, AgentClassTopic, PartialAgentTopic]:
             return topic

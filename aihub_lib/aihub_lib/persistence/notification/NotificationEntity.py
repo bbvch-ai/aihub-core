@@ -19,7 +19,10 @@ class NotificationEntity(Document):
 
     meta = {
         "collection": "notifications",
-        "indexes": [{"fields": ["user_id"]}],
+        "indexes": [
+            {"fields": ["user_id"]},
+            {"fields": ["user_id", "-created_at"]},
+        ],
     }
 
     user_id = StringField(required=True)

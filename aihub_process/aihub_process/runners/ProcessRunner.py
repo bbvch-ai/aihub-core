@@ -15,6 +15,7 @@ from aihub_lib.nats.events.discovery.process.ProcessClassDiscoveryResponseEvent 
 )
 from aihub_lib.nats.events.discovery.process.ProcessConfigSpecs import ProcessConfigSpecs
 from aihub_lib.nats.events.discovery.process.program_in.ProgramInSpecs import ProgramInSpecs
+from aihub_lib.nats.events.form.TemplateData import TemplateData
 from aihub_lib.nats.publishers.NCPublisher import NCPublisher
 from aihub_lib.nats.subscribers.JSSubscriber import JSSubscriber
 from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
@@ -63,6 +64,7 @@ class ProcessRunner(HealthCheckProvider):
         self,
         process_type: type[AgenticProcess],
         process_config: ProcessConfig,
+        templates: list[ProcessConfig] | None = None,
         locale_paths: list[str] | None = None,
         health_port: int = 8080,
     ):
@@ -73,6 +75,7 @@ class ProcessRunner(HealthCheckProvider):
 
         self.process_type = process_type
         self.process_config = process_config
+        self.templates = templates or []
         self.process_config_type = process_config.__class__
 
         self.name = process_type.name
@@ -176,6 +179,8 @@ class ProcessRunner(HealthCheckProvider):
 
         process_config_specs = ProcessConfigSpecs.from_process_config(self.process_config, self.process_class)
 
+        templates_data: list[TemplateData] = [t.to_template_data(self.process_config) for t in self.templates]
+
         process_discovery_response_event = ProcessClassDiscoveryResponseEvent(
             process_class=self.process_class,
             name=self.name,
@@ -186,7 +191,7 @@ class ProcessRunner(HealthCheckProvider):
             human_inputs=human_inputs,
             program_inputs=program_inputs,
             agent_inputs=agent_inputs,
-            default_process_config=self.process_config,
+            templates=templates_data,
         )
         await self.nc_publisher.publish_event(process_discovery_response_event, subject)
 

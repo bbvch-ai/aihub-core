@@ -9,9 +9,6 @@ import requests
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
     DangerousDevelopmentOnlyAuthHandler,
 )
-from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
-    DangerousDevelopmentOnlyIdentityProvider,
-)
 from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.routes.health.HealthController import HealthController
@@ -100,7 +97,7 @@ async def test_runner():
     """Create a test runner with a very short TTL"""
     runner = SimulatedAgentBotTestRunner(agent_class=AGENT_CLASS, agent_id=AGENT_ID, conversation_ttl_days=TTL_DAYS)
     runner.with_simple_chunk_events()
-    auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
+    auth = DangerousDevelopmentOnlyAuthHandler()
     runner.mount(HealthController(auth=auth).get_health(), AgentChatController(auth=auth).completions_json())
     await runner.start_simulation()
     return runner
@@ -133,9 +130,9 @@ async def test_ttl_index_setup(mongodb_direct_connection):
             assert "expireAfterSeconds" in index_info, "TTL index missing expireAfterSeconds"
             # Convert our TTL_DAYS to seconds for comparison
             expected_ttl_seconds = int(TTL_DAYS * 24 * 60 * 60)
-            assert (
-                index_info["expireAfterSeconds"] == expected_ttl_seconds
-            ), "TTL index has wrong expireAfterSeconds value"
+            assert index_info["expireAfterSeconds"] == expected_ttl_seconds, (
+                "TTL index has wrong expireAfterSeconds value"
+            )
 
     assert ttl_index_found, "TTL index not found on last_activity field"
 
@@ -170,9 +167,9 @@ async def test_conversation_tracker_expired_detection(mongodb_direct_connection)
 
     # 6. Verify should_show_expiration_message returns False (explicitly deleted)
     should_show = ConversationTracker.should_show_expiration_message(conversation_id, bot_id)
-    assert (
-        should_show is False
-    ), "should_show_expiration_message should return False for explicitly deleted conversation"
+    assert should_show is False, (
+        "should_show_expiration_message should return False for explicitly deleted conversation"
+    )
 
     # Clean up
     ConversationTracker.objects(conversation_id=conversation_id).delete()
@@ -206,9 +203,9 @@ async def test_conversation_tracker_explicitly_deleted_vs_expired(mongodb_direct
     should_show_deleted = ConversationTracker.should_show_expiration_message(deleted_id, bot_id)
 
     assert should_show_expired is True, "should_show_expiration_message should return True for expired conversation"
-    assert (
-        should_show_deleted is False
-    ), "should_show_expiration_message should return False for explicitly deleted conversation"
+    assert should_show_deleted is False, (
+        "should_show_expiration_message should return False for explicitly deleted conversation"
+    )
 
     # Clean up
     ConversationTracker.objects(conversation_id=expired_id).delete()

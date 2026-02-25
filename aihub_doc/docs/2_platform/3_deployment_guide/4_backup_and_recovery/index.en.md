@@ -21,7 +21,7 @@ You can back up the AI-Hub using VM snapshots or component-level backups.
 VM snapshots capture the entire virtual machine state. You restore the whole system at once. Component-level backups
 handle individual data stores separately, so you can restore specific parts.
 
----
+______________________________________________________________________
 
 ## VM snapshots
 
@@ -34,7 +34,7 @@ individual databases. The VM needs to be stopped, or you need a snapshot-capable
 Stop AI-Hub services before creating a snapshot using `docker compose down`. Alternatively, use application-consistent
 snapshots (Azure with VM agent, VMware with quiesce). Create snapshots before major updates. Test restores regularly.
 
----
+______________________________________________________________________
 
 ## Component-level backups
 
@@ -64,11 +64,11 @@ snapshot-based backup.
 Configuration includes environment variables, SSL certificates, and Docker compose files. Encrypt backups. Store
 encryption keys separately (HSM, key management services, multiple secure locations).
 
----
+______________________________________________________________________
 
 ## Backup automation
 
 Automate backup tasks with cron or similar schedulers. Schedule backups during low-usage periods to avoid performance
 impact. Verify backup integrity regularly and alert on failures.
 
----
+______________________________________________________________________

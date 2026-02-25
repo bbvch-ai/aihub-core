@@ -6,12 +6,11 @@ from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
     DangerousDevelopmentOnlyAuthHandler,
 )
-from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
-    DangerousDevelopmentOnlyIdentityProvider,
-)
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.persistence.agents.AgentConfigEntityDocument import AgentConfigEntityDocument
-from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_admin_only  # noqa: F401
+from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_methods  # noqa: F401
+from aihub_lib.testing.auth_utils.tenant_mocks import mock_tenant_entity_autouse  # noqa: F401
+from aihub_lib.testing.auth_utils.user_mocks import mock_user_entity_autouse  # noqa: F401
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
 
@@ -27,7 +26,7 @@ COMPLETIONS_ENDPOINT = "/openai/chat/completions"
 
 @pytest_asyncio.fixture(scope="module", loop_scope="module")
 async def api_client():
-    auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
+    auth = DangerousDevelopmentOnlyAuthHandler()
     controller = (
         OpenaiController(auth=auth)
         .get_models_with_assistants()
@@ -92,9 +91,9 @@ async def test_chat_completions_stream(api_client):
         assert data.get("object") == "chat.completion.chunk", f"Unexpected object type: {data.get('object')}"
         assert data.get("choices"), "No choices returned in the response"
         delta = data.get("choices")[0].get("delta", {})
-        assert (
-            delta.get("content") == expected_content[index]
-        ), f"Expected message content '{expected_content[index]}' but got '{delta.get('content')}'"
+        assert delta.get("content") == expected_content[index], (
+            f"Expected message content '{expected_content[index]}' but got '{delta.get('content')}'"
+        )
         assert delta.get("role") == "assistant", f"Expected role 'assistant' but got '{delta.get('role')}'"
 
 
@@ -116,9 +115,9 @@ async def test_chat_completions_json(api_client):
     assert choices, "No choices returned in the response"
     message = choices[0].get("message", {})
     expected = "First chunk.\nSecond chunk"
-    assert (
-        message.get("content") == expected
-    ), f"Expected message content '{expected}' but got '{message.get('content')}'"
+    assert message.get("content") == expected, (
+        f"Expected message content '{expected}' but got '{message.get('content')}'"
+    )
 
 
 @pytest.mark.asyncio(loop_scope="module")
@@ -127,11 +126,10 @@ async def test_chat_completions_json_with_custom_agent_config(api_client):
     AgentConfigEntityDocument.delete_if_exists_for_class_and_id(agent_class=AGENT_CLASS, agent_id=AGENT_ID)
     custom_agent_config = AgentConfig(
         agent_id=AGENT_ID,
-        agent_class=AGENT_CLASS,
         name=LocaleString(en="Override Test Agent"),
         description=LocaleString(en="This is a test agent with custom config."),
     )
-    custom_agent_config_entity = AgentConfigEntityDocument.from_agent_config(custom_agent_config)
+    custom_agent_config_entity = AgentConfigEntityDocument.from_agent_config(custom_agent_config, AGENT_CLASS)
     custom_agent_config_entity.save()
     payload = {
         "model": f"{AGENT_CLASS}/{AGENT_ID}",
@@ -149,6 +147,6 @@ async def test_chat_completions_json_with_custom_agent_config(api_client):
     assert choices, "No choices returned in the response"
     message = choices[0].get("message", {})
     expected = "First chunk.\nSecond chunk"
-    assert (
-        message.get("content") == expected
-    ), f"Expected message content '{expected}' but got '{message.get('content')}'"
+    assert message.get("content") == expected, (
+        f"Expected message content '{expected}' but got '{message.get('content')}'"
+    )

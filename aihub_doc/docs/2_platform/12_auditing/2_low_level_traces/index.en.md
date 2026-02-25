@@ -91,7 +91,7 @@ revealing exactly what happened, where time was spent, and how components collab
 The Swiss AI-Hub uses OpenTelemetry for tracing with specialized support for AI operations through OpenInference
 semantic conventions.
 
----
+______________________________________________________________________
 
 ## What We Capture
 
@@ -143,7 +143,7 @@ Instrumented libraries automatically create spans for external service calls:
 **Filtering**: Health checks, metrics endpoints, and high-volume database queries are filtered from traces to reduce
 noise.
 
----
+______________________________________________________________________
 
 ## Trace Collection Architecture
 
@@ -194,7 +194,8 @@ The OpenTelemetry Collector processes traces through two specialized pipelines:
 
 - Receiver: `otlp` (gRPC port 4317, HTTP port 4318)
 - Processors: `filter/langfuse` (keeps only OpenInference spans), `transform/langfuse` (adds project metadata), `batch`
-- Exporter: `otlphttp/langfuse` (Langfuse OTEL ingestion endpoint, authenticated with `LANGFUSE_PUBLIC_KEY` / `LANGFUSE_SECRET_KEY`)
+- Exporter: `otlphttp/langfuse` (Langfuse OTEL ingestion endpoint, authenticated with `LANGFUSE_PUBLIC_KEY` /
+  `LANGFUSE_SECRET_KEY`)
 
 ### Instrumentation
 
@@ -215,7 +216,7 @@ Services automatically emit traces through OpenTelemetry instrumentation configu
 
 **Smart Tracing**: The `SmartTracer` respects `suppress_instrumentation` context, allowing selective tracing control.
 
----
+______________________________________________________________________
 
 ## Business Benefits
 
@@ -240,7 +241,7 @@ traces, input data, and the sequence of events leading to failure, dramatically 
 Traces show what information the AI considered when generating answers. Retrieved documents, token usage, and model
 selection become visible, supporting regulatory compliance and building user trust.
 
----
+______________________________________________________________________
 
 ## Accessing Trace Information
 
@@ -267,7 +268,7 @@ spans).
 Traces are exported to cloud observability platforms for long-term storage and analysis. The platform supports any
 OTLP-compatible backend through configuration changes only.
 
----
+______________________________________________________________________
 
 ## Security and Privacy
 
@@ -290,7 +291,7 @@ All traces are transmitted via encrypted channels (TLS/HTTPS) to prevent interce
 Trace access is restricted through observability platform role-based access control. Only authorized personnel can view
 detailed traces.
 
----
+______________________________________________________________________
 
 ## Integration with Platform Components
 
@@ -317,7 +318,7 @@ LlamaIndex instrumentation automatically traces:
 FastAPI services automatically trace incoming requests when instrumented. Developers can add custom attributes to spans
 for application-specific context.
 
----
+______________________________________________________________________
 
 ## Platform Flexibility
 
@@ -334,7 +335,7 @@ While Langfuse provides LLM-specific observability, the OpenTelemetry foundation
 
 Switching backends requires only collector configuration changes. No application code modifications are needed.
 
----
+______________________________________________________________________
 
 ## Future Development
 
@@ -348,7 +349,7 @@ Switching backends requires only collector configuration changes. No application
 
 **Performance Budgets**: Automatic alerts when operations exceed expected duration based on historical patterns.
 
----
+______________________________________________________________________
 
 ## Summary
 
@@ -384,7 +385,7 @@ integrate with any compatible observability backend. This architectural decision
 flexibility in choosing monitoring tools based on their infrastructure, compliance requirements, and operational
 preferences.
 
----
+______________________________________________________________________
 
 ## Why OpenTelemetry?
 
@@ -400,7 +401,7 @@ so signals correlate by default and switchable backends remain a config change, 
 - **Proven standard:** A CNCF project with broad industry support and active development, reducing technology risk.
 - **Future-ready:** Evolve platforms and policies through the OTel Collector and configuration, not application code.
 
----
+______________________________________________________________________
 
 ## OpenTelemetry Collector
 
@@ -453,7 +454,7 @@ graph TB
 
 **Extensions**: Provide auxiliary capabilities like health checks and profiling.
 
----
+______________________________________________________________________
 
 ## Receivers
 
@@ -468,7 +469,7 @@ Receivers are intake points. They pull telemetry from apps and infrastructure in
 
 Outcome: Broad coverage with minimal coupling to any single tool or runtime.
 
----
+______________________________________________________________________
 
 ## Processors
 
@@ -485,7 +486,7 @@ Processors shape telemetry in motion. They add context, reduce noise, and prepar
 
 Outcome: Clean, contextual, and analysis-ready telemetry.
 
----
+______________________________________________________________________
 
 ## Exporters
 
@@ -497,7 +498,7 @@ Exporters deliver telemetry to destinations.
 
 Outcome: Pluggable outputs with safe development workflows.
 
----
+______________________________________________________________________
 
 ## Telemetry Pipelines
 
@@ -509,7 +510,7 @@ Pipelines are end-to-end flows per signal type. Each defines which receivers, pr
 
 Concept: purpose-built lanes that keep signals consistent and linkable across the stack.
 
----
+______________________________________________________________________
 
 ## Extensions
 
@@ -521,7 +522,7 @@ Extensions add operational capabilities around the collector itself.
 
 Outcome: A manageable, inspectable observability control plane.
 
----
+______________________________________________________________________
 
 ## Integration with Platform Services
 
@@ -553,7 +554,7 @@ Non-instrumented services provide telemetry through infrastructure monitoring:
 
 **Network Observability**: Traefik proxy logs and metrics provide request routing visibility.
 
----
+______________________________________________________________________
 
 ## Multi-Platform Support
 

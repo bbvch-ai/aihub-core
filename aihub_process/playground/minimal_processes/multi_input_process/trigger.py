@@ -19,9 +19,8 @@ enable_logging()
 async def main():
     runner_a = AgentTestRunner(
         agent_type=AgentA,
-        default_agent_config=AgentConfig(
+        agent_config=AgentConfig(
             agent_id="agent_a",
-            agent_class=AgentA.__name__,
             name=LocaleString(en="..."),
             description=LocaleString(en="..."),
         ),
@@ -29,9 +28,8 @@ async def main():
 
     runner_b = AgentTestRunner(
         agent_type=AgentB,
-        default_agent_config=AgentConfig(
+        agent_config=AgentConfig(
             agent_id="agent_b",
-            agent_class=AgentB.__name__,
             name=LocaleString(en="..."),
             description=LocaleString(en="..."),
         ),
@@ -39,9 +37,8 @@ async def main():
 
     runner_c = AgentTestRunner(
         agent_type=AgentC,
-        default_agent_config=AgentConfig(
+        agent_config=AgentConfig(
             agent_id="agent_c",
-            agent_class=AgentC.__name__,
             name=LocaleString(en="..."),
             description=LocaleString(en="..."),
         ),
@@ -51,7 +48,6 @@ async def main():
         process_type=MultiInputProcess,
         process_config=ProcessConfig(
             process_id="multi_input_process",
-            process_class=MultiInputProcess.__name__,
             name=LocaleString(en="..."),
             description=LocaleString(en="..."),
         ),

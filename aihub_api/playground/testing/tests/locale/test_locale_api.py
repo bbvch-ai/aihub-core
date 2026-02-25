@@ -3,10 +3,9 @@ import pytest_asyncio
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
     DangerousDevelopmentOnlyAuthHandler,
 )
-from aihub_lib.auth.identity.DangerousDevelopmentOnlyIdentityProvider.DangerousDevelopmentOnlyIdentityProvider import (
-    DangerousDevelopmentOnlyIdentityProvider,
-)
 from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_methods  # noqa: F401
+from aihub_lib.testing.auth_utils.tenant_mocks import mock_tenant_entity_autouse  # noqa: F401
+from aihub_lib.testing.auth_utils.user_mocks import mock_user_entity_autouse  # noqa: F401
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
 
@@ -21,7 +20,7 @@ DEFAULT_LANG_KEY = "lang"
 @pytest_asyncio.fixture(scope="module")
 async def api_client():
     """Create an API client with I18nController mounted using DangerousDevelopmentOnlyAuthHandler."""
-    auth = DangerousDevelopmentOnlyAuthHandler(identity_provider=DangerousDevelopmentOnlyIdentityProvider())
+    auth = DangerousDevelopmentOnlyAuthHandler()
     controller = I18nController(auth=auth).get_my_locale()
     runner = ApiTestRunner()
     runner.mount(controller)
@@ -52,7 +51,7 @@ async def test_get_locale_parametrized(api_client, headers, params, expected_loc
     response = await api_client.get(API_ENDPOINT, headers=headers, params=params)
     assert response.status_code == 200, f"Response: {response.text}"
     data = response.json()
-    assert (
-        data.get(DEFAULT_LANG_KEY) == expected_locale
-    ), f"Expected locale '{expected_locale}', got '{data.get(DEFAULT_LANG_KEY)}'"
+    assert data.get(DEFAULT_LANG_KEY) == expected_locale, (
+        f"Expected locale '{expected_locale}', got '{data.get(DEFAULT_LANG_KEY)}'"
+    )
     assert "test" in data and data["test"]
