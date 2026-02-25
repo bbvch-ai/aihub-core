@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.266.4] - 2026-02-25 - Port Harmonization for Streamlined Local Development
+
+### Changed
+
+- ⚡️ **Standardized Local Development Ports:** Aligned the default development ports for key services to improve
+  consistency and reduce potential conflicts during local development:
+  - The **Admin UI (Frontend)** now runs on `http://localhost:3333` (previously `3000`).
+  - The **Dagster Orchestrator** now runs on `http://localhost:3000` (previously `3002`).
+- 🦾 **Improved Dagster Tool Integration:** Updated the `mcp-server-dagster` script to correctly utilize the `--url`
+  argument for specifying the Dagster instance, simplifying its configuration and removing the need for an inline Python
+  patch.
+- 📄 **Updated Documentation and Configuration:** All relevant documentation, skill prerequisites, environment variables
+  (`.env.dev`), and Docker Compose configurations have been updated to reflect the new port assignments for the Admin UI
+  and Dagster.
+
+______________________________________________________________________
+
 ## [v0.266.3] - 2026-02-25 - Enhanced Git Push Command Management
 
 ### Changed

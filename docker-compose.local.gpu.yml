@@ -1544,7 +1544,7 @@ services:
       pgbouncer:
         condition: service_healthy
     ports:
-      - "3002:3000"
+      - "3000:3000"
     entrypoint:
       - dagster-webserver
       - -h
