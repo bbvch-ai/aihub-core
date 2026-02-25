@@ -47,7 +47,7 @@ Internal application and processing services:
 - **litellm**: LLM gateway and request routing
 - **mineru-api**: Document parsing and extraction
 - **presidio-analyzer/anonymizer**: PII detection and anonymization
-- **llama-cpp-**\*: Local LLM inference (chat, embedding, reranking)
+- **vLLM**: Local LLM inference (chat, embedding, reranking) — GPU deployments only
 - **speaches**: Speech-to-text and text-to-speech
 - **jupyter**: Code execution environment
 - **playwright**: Web scraping and automation (also on `egress` for internet access)
@@ -113,7 +113,7 @@ flowchart TB
         litellm[litellm]
         mineru-api[mineru-api]
         presidio[presidio]
-        llama[llama-cpp-*]
+        vllm[vLLM]
         agents[agents]
         jupyter[jupyter]
         playwright[playwright]

@@ -68,8 +68,7 @@ changes AND the regenerated output files.
 | `nightly` | Yes     | Let's Encrypt      | `*.${DOMAIN}`        | `nightly` tag      | GPU models      | Pre-production           |
 | `latest`  | Yes     | Let's Encrypt      | `*.${DOMAIN}`        | `latest` tag       | GPU models      | Production               |
 
-Each stage has a `.gpu` variant (e.g., `docker-compose.dev.gpu.yml`) adding NVIDIA GPU support for llama-cpp, speaches,
-and vLLM.
+Each stage has a `.gpu` variant (e.g., `docker-compose.dev.gpu.yml`) adding NVIDIA GPU support for vLLM and speaches.
 
 ## compose-config.yml — The Single Source of Truth
 
@@ -101,7 +100,7 @@ runtime to dynamically discover which services to build and promote. Adding a ne
 The template conditionally includes services based on stage and GPU mode:
 
 - **Infrastructure** (postgres, milvus, nats, valkey, etcd, etc.) — always included
-- **AI inference** (llama-cpp, speaches) — `dev` stage (CPU) or `nightly`/`latest` with GPU enabled
+- **AI inference** (speaches, vLLM) — vLLM only when `gpu_enabled`, speaches in all stages
 - **1st-party services** (api, web, agents, bot, dagster, pipelines) — only when `image_tags.{service}[stage]` exists
 - **Traefik + docker-socket-proxy** — all stages except `dev`
 - **oauth2proxy sidecars** (for Attu, Dagster, SeaweedFS admin UIs) — all stages except `dev`
@@ -116,7 +115,7 @@ routes through Traefik.
 | Network   | Purpose                           | Internal | ICC | Key Services                                                  |
 | --------- | --------------------------------- | -------- | --- | ------------------------------------------------------------- |
 | `proxy`   | External ingress via Traefik      | No       | Yes | traefik, api, web, open-webui, langfuse-web                   |
-| `backend` | Application/processing services   | Yes\*    | Yes | litellm, langfuse-\*, llama-cpp, docling, jupyter, otel       |
+| `backend` | Application/processing services   | Yes\*    | Yes | litellm, langfuse-\*, mineru-api, vLLM (GPU), jupyter, otel   |
 | `data`    | Databases, caches, message broker | Yes\*    | Yes | postgres, ferretdb, milvus, neo4j, valkey, nats, click        |
 | `storage` | SeaweedFS cluster                 | Yes\*    | Yes | seaweedfs-\*, etcd                                            |
 | `egress`  | Outbound internet only            | No       | No  | playwright (ICC disabled — containers can't reach each other) |

@@ -151,7 +151,7 @@ Use the error information from Step 1 to match against these known patterns.
 
 - Read: `aihub_pipeline/aihub_pipeline/ops/data_lake/parse_document_from_data_lake.py`
 - Read: `aihub_pipeline/aihub_pipeline/resources/parser/DocumentParserResource.py`
-- Docling service not running (if using remote Docling)
+- MinerU service not running (if using remote MinerU)
 - Unsupported file type
 - Corrupted file content
 - Large file timeout

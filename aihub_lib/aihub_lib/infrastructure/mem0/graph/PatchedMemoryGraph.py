@@ -11,6 +11,8 @@ from mem0.memory.graph_memory import MemoryGraph
 from mem0.memory.utils import format_entities
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from aihub_lib.infrastructure.mem0.PatchedOpenAIEmbedding import PatchedOpenAIEmbedding
+from aihub_lib.infrastructure.mem0.PatchedOpenAILLM import PatchedOpenAILLM
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +27,8 @@ class PatchedMemoryGraph(MemoryGraph):
         if self.config.graph_store.custom_prompt:
             logger.warning("Custom prompt provided in graph store config is ignored.")
         self._t = t
+        self.llm = PatchedOpenAILLM.from_llm(self.llm)
+        self.embedding_model = PatchedOpenAIEmbedding.from_embedding(self.embedding_model)
 
     @classmethod
     def from_graph(

@@ -108,19 +108,24 @@ ACME_EMAIL="admin@your-company.com"
 ADMIN_PASSWORD_HASH=""
 
 # -----------------------------------------------------------------------------
-# API Keys (External Services) - Configure at least one LLM provider
+# API Keys (External Services)
 # -----------------------------------------------------------------------------
-AZURE_OPENAI_KEY="REPLACE_WITH_AZURE_OPENAI_KEY"
-AZURE_OPENAI_BASE_URL="REPLACE_WITH_AZURE_OPENAI_BASE_URL"
 GEMINI_API_KEY=""
 JINA_API_KEY=""
 HUGGINGFACE_API_KEY=""
 
-# Optional providers
-SWISS_LLM_CLOUD_API_BASE_URL=""
-SWISS_LLM_CLOUD_API_KEY=""
-COHERE_API_BASE=""
-COHERE_API_KEY=""
+# Swiss LLM Cloud (required for all non-GPU setups)
+# Each service type uses a separate endpoint until a unified proxy is available.
+SWISS_LLM_CLOUD_API_BASE_URL="REPLACE_WITH_SWISS_LLM_CLOUD_URL"
+SWISS_LLM_CLOUD_API_KEY="REPLACE_WITH_SWISS_LLM_CLOUD_KEY"
+SWISS_LLM_CLOUD_EMBEDDING_API_BASE_URL="REPLACE_WITH_SWISS_LLM_CLOUD_EMBEDDING_URL"
+SWISS_LLM_CLOUD_EMBEDDING_API_KEY="REPLACE_WITH_SWISS_LLM_CLOUD_EMBEDDING_KEY"
+SWISS_LLM_CLOUD_RERANKING_API_BASE_URL="REPLACE_WITH_SWISS_LLM_CLOUD_RERANKING_URL"
+SWISS_LLM_CLOUD_RERANKING_API_KEY="REPLACE_WITH_SWISS_LLM_CLOUD_RERANKING_KEY"
+SWISS_LLM_CLOUD_WHISPER_API_BASE_URL="REPLACE_WITH_SWISS_LLM_CLOUD_WHISPER_URL"
+SWISS_LLM_CLOUD_WHISPER_API_KEY="REPLACE_WITH_SWISS_LLM_CLOUD_WHISPER_KEY"
+SWISS_LLM_CLOUD_OCR_API_BASE_URL="REPLACE_WITH_SWISS_LLM_CLOUD_OCR_URL"
+SWISS_LLM_CLOUD_OCR_API_KEY="REPLACE_WITH_SWISS_LLM_CLOUD_OCR_KEY"
 
 # -----------------------------------------------------------------------------
 # OAuth2 / OIDC Configuration (REQUIRED)
@@ -198,7 +203,7 @@ MINERU_API_TIMEOUT="600"
 MINERU_VLM_NAME="text-generation/MinerU2.5-2509-1.2B"
 
 # Milvus Configuration (must match your embedding model dimensions)
-MILVUS_DIMENSION="3072"
+MILVUS_DIMENSION="1024"
 
 # -----------------------------------------------------------------------------
 # AI-Hub Application Settings
@@ -255,10 +260,11 @@ OTEL_CLOUD_HEADERS=""
    - `REPLACE_WITH_YOUR_CLIENT_SECRET` → Your Azure App Registration Client Secret
    - `REPLACE_WITH_YOUR_TENANT_ID` → Your Azure Tenant ID
 
-3. **AI Model Access** (configure at least one):
+3. **AI Model Access** (Swiss LLM Cloud — required for non-GPU deployments):
 
-   - `REPLACE_WITH_AZURE_OPENAI_BASE_URL` → Your Azure OpenAI endpoint URL
-   - `REPLACE_WITH_AZURE_OPENAI_KEY` → Your Azure OpenAI API key
+   - `REPLACE_WITH_SWISS_LLM_CLOUD_URL` → Your Swiss LLM Cloud text generation endpoint
+   - `REPLACE_WITH_SWISS_LLM_CLOUD_KEY` → Your Swiss LLM Cloud API key
+   - Configure the remaining endpoint pairs for embedding, reranking, whisper, and OCR
 
 4. **Secrets** (generate unique values for each):
 

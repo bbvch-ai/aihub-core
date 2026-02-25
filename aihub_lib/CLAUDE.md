@@ -25,13 +25,13 @@ aihub_lib/
 │   └── buffer/StreamBuffer.py       # Auto-flush on sentence boundaries or size thresholds
 ├── generative_ai/                   # AI/ML utilities
 │   ├── chat_history/                # Chat history management + memory extension
-│   ├── document/                    # Loaders (Docling, DocumentIntelligence), parsers, refinement
+│   ├── document/                    # Loaders (MinerU, DocumentIntelligence), parsers, refinement
 │   ├── evaluation/                  # LLM evaluation
 │   ├── guards/                      # Guard implementations (PII, context, confidence, few-shot)
 │   ├── memory/                      # AgentMemory (user + org scoped via mem0)
 │   ├── processors/                  # Post-processors (ParentSummary, PrevNext, ScoreScaler)
 │   ├── prompting/                   # Few-shot examples, language detection
-│   ├── rerank/                      # Cohere reranking integration
+│   ├── rerank/                      # Reranking via LiteLLM (provider-agnostic)
 │   ├── resources/                   # LLMConfig, EmbeddingModelConfig, RerankingModelConfig
 │   ├── retrieval/                   # RAG: retrieve_nodes, condense_question, combine_nodes
 │   ├── retrievers/                  # KnowledgeRetriever (Milvus), BaseRetriever
@@ -53,7 +53,7 @@ aihub_lib/
 │   ├── litellm/                     # LiteLLMProxySettings + LiteLLMService
 │   ├── opentelemetry/               # SmartTracer + trace_fn decorator
 │   ├── logging/                     # Logging setup (enable_logging())
-│   ├── docling/                     # DoclingSettings (document parsing)
+│   ├── mineru/                      # MineruSettings (document parsing)
 │   ├── rclone/                      # RcloneSettings (cloud sync)
 │   ├── mem0/                        # Long-term memory settings
 │   ├── sharepoint/                  # SharePointSettings
@@ -396,7 +396,7 @@ storage), `AgentConfigEntity` / `ProcessConfigEntity` (configs), `UserEntity` (t
 | `Neo4jSettings`        | Neo4j graph DB         | `NEO4J_`    |
 | `LangfuseSettings`     | Langfuse observability | `LANGFUSE_` |
 | `LiteLLMProxySettings` | LiteLLM gateway        | `LITELLM_`  |
-| `DoclingSettings`      | Document parsing       | `DOCLING_`  |
+| `MineruSettings`       | Document parsing       | `MINERU_`   |
 | `RcloneSettings`       | Cloud sync             | `RCLONE_`   |
 
 OpenTelemetry: `SmartTracer` for span creation, `@trace_fn` decorator for automatic function tracing.
@@ -419,11 +419,11 @@ Real-time event emission for streaming LLM output to the UI:
 | `memory/`       | Agent-scoped memory (user + org)      | `AgentMemory.add_user_memory()`, `search_user_memory()`     |
 | `retrieval/`    | RAG node retrieval                    | `retrieve_nodes()`, `condense_standalone_question()`        |
 | `retrievers/`   | Vector store abstraction              | `KnowledgeRetriever`, `BaseRetriever`                       |
-| `rerank/`       | Result reranking                      | `rerank_nodes()` (Cohere)                                   |
+| `rerank/`       | Result reranking                      | `rerank_nodes()` (via LiteLLM)                              |
 | `guards/`       | Input/output guards                   | `agent_description_guard`, `context_sufficient_guard`       |
 | `processors/`   | Retrieval post-processors             | `ParentSummaryPostProcessor`, `VectorPrevNextPostProcessor` |
 | `resources/`    | LLM/embedding model configs           | `LLMConfig`, `EmbeddingModelConfig`, `RerankingModelConfig` |
-| `document/`     | Document loading and parsing          | `DoclingLoader`, `MarkdownStructuralNodeParser`             |
+| `document/`     | Document loading and parsing          | `MineruLoader`, `MarkdownStructuralNodeParser`              |
 | `prompting/`    | Few-shot examples, language detection | `FewShotExample`, `check_language()`                        |
 | `chat_history/` | Chat context management               | `limit_chat_history()`, `extend_with_user_memory()`         |
 | `routing/`      | LLM-based event routing               | `route_to_event_using_llm()`                                |

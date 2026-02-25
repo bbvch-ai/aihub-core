@@ -34,7 +34,7 @@ modify, and self-host every component.
 The platform is structured around a tier model that reflects how organizations typically adopt AI:
 
 **Tier 1 (Secure AI access):** A web-based chat interface provides LLM access through a unified gateway that routes to
-cloud models (LLMs) or locally hosted models (llama.cpp, vLLM). An admin UI handles user management, model
+cloud models (Swiss LLM Cloud) or locally hosted models (vLLM on GPU). An admin UI handles user management, model
 configuration, and usage monitoring. All queries and responses stay within the organization's infrastructure unless
 external model access is explicitly configured.
 
