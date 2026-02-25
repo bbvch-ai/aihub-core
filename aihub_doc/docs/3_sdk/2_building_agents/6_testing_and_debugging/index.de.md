@@ -1,15 +1,17 @@
 ---
 title: Testen und Debuggen
-source_sha: "6791100e016b607540978135dbd7fcf3719d2d7a015c936fd0cc8effc8957c75"
+source_sha: 6791100e016b607540978135dbd7fcf3719d2d7a015c936fd0cc8effc8957c75
 ---
 
 # Testen und Debuggen
 
-Das Testen und Debuggen von Agents erfordert aufgrund ihrer ereignisgesteuerten, asynchronen Natur einen anderen Ansatz als herkömmliche Anwendungen.
+Das Testen und Debuggen von Agents erfordert aufgrund ihrer ereignisgesteuerten, asynchronen Natur einen anderen Ansatz
+als herkömmliche Anwendungen.
 
 ## Unit-Tests: Direkter Schrittaufruf
 
-Der einfachste Weg, einzelne Schritte zu testen, ist, den Agent zu instanziieren und Schrittmethoden direkt mit gemockten Abhängigkeiten aufzurufen:
+Der einfachste Weg, einzelne Schritte zu testen, ist, den Agent zu instanziieren und Schrittmethoden direkt mit
+gemockten Abhängigkeiten aufzurufen:
 
 ```python
 from unittest.mock import AsyncMock, Mock
@@ -26,7 +28,8 @@ async def test_retrieve_step():
     memory.search_user_memory.assert_called_once()
 ```
 
-Dieser Ansatz testet die Schrittlogik isoliert ohne den Dispatcher, NATS oder jegliche Infrastruktur. Mocken Sie injizierte Abhängigkeiten (`AgentMemory`, `EventDisplayer`, `RunContext`) und prüfen Sie das zurückgegebene Ereignis.
+Dieser Ansatz testet die Schrittlogik isoliert ohne den Dispatcher, NATS oder jegliche Infrastruktur. Mocken Sie
+injizierte Abhängigkeiten (`AgentMemory`, `EventDisplayer`, `RunContext`) und prüfen Sie das zurückgegebene Ereignis.
 
 ## Integrationstests: pytest-bdd + AgentTestRunner
 
@@ -138,9 +141,11 @@ event_count = len(runner.get_events_of_class(ProcessingEvent))
 
 ## Debugging-Strategie: Trace-basiertes Debugging
 
-Herkömmliches Debugging mit Breakpoints funktioniert bei ereignisgesteuerten Agents nicht gut. Verwenden Sie stattdessen trace-basiertes Debugging.
+Herkömmliches Debugging mit Breakpoints funktioniert bei ereignisgesteuerten Agents nicht gut. Verwenden Sie stattdessen
+trace-basiertes Debugging.
 
-> [!TIP] Ihr Debugging-Toolkit: Langfuse-Tracing (primär), umfassendes Logging, Trigger-Skripte, Ereignisfluss-Inspektion.
+> [!TIP] Ihr Debugging-Toolkit: Langfuse-Tracing (primär), umfassendes Logging, Trigger-Skripte,
+> Ereignisfluss-Inspektion.
 
 ### Essenzielles Werkzeug: trigger.py-Skripte
 
@@ -248,7 +253,8 @@ Verwenden Sie diese Checkliste beim Erstellen oder Überprüfen von Agents:
 
 ### Für jeden Schritt
 
-- [ ] Optionale Parameter (`T | None = None`) haben Vorbedingungen, die sowohl die Konfiguration als auch die Ereignispräsenz prüfen
+- [ ] Optionale Parameter (`T | None = None`) haben Vorbedingungen, die sowohl die Konfiguration als auch die
+  Ereignispräsenz prüfen
 - [ ] Die Parametertypen der Vorbedingung sind eine Untermenge der injizierbaren Typen des Schritts
 - [ ] Der Rückgabetyp zeigt korrekt terminale (`StopEvent`) vs. nicht-terminale Zustände an
 - [ ] Keine Abhängigkeit von `StopEvent` oder seinen Unterklassen als Eingabeparameter
@@ -262,6 +268,7 @@ Verwenden Sie diese Checkliste beim Erstellen oder Überprüfen von Agents:
 ### Nach der Implementierung
 
 - [ ] Langfuse/Phoenix-Trace zeigt die erwartete Ausführungsreihenfolge
-- [ ] Keine doppelten Schrittausführungen (prüfen Sie die [optionale Parameterfalle](../9_execution_model/#the-optional-parameter-trap))
+- [ ] Keine doppelten Schrittausführungen (prüfen Sie die
+  [optionale Parameterfalle](../9_execution_model/#the-optional-parameter-trap))
 - [ ] Keine Ereignisse nach `StopEvent`
 - [ ] Tests decken alle Kombinationen von Konfigurations-Flags ab

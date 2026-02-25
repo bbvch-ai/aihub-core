@@ -1,4 +1,4 @@
-```yaml
+````yaml
 ---
 title: Docker-Netzwerk-Isolation
 source_sha: "536d4d5f2fa4f10830c3cbffaf13201789cffcb7c9ad57182c9cdaa6f661ec7f"
@@ -173,7 +173,7 @@ flowchart TB
     swvolume --> swmaster
 
     playwright_egress -->|nur ausgehend| websites
-```
+````
 
 ## Sicherheitsimplikationen
 
@@ -213,24 +213,24 @@ flowchart TB
 
 Wenn Sie einen neuen Service hinzufügen, bestimmen Sie, welche Netzwerke er benötigt:
 
-1.  **Benötigt externen Zugriff (Ingress)?** → Fügen Sie es zu `proxy` hinzu
-2.  **Ist ein Applikations-Service?** → Fügen Sie es zu `backend` hinzu
-3.  **Benötigt Datenbankzugriff?** → Fügen Sie es zu `data` hinzu
-4.  **Benötigt Objekt-Storage?** → Fügen Sie es zu `storage` hinzu
-5.  **Benötigt nur ausgehenden Internetzugriff (kein Ingress)?** → Fügen Sie es zu `egress` hinzu
+1. **Benötigt externen Zugriff (Ingress)?** → Fügen Sie es zu `proxy` hinzu
+2. **Ist ein Applikations-Service?** → Fügen Sie es zu `backend` hinzu
+3. **Benötigt Datenbankzugriff?** → Fügen Sie es zu `data` hinzu
+4. **Benötigt Objekt-Storage?** → Fügen Sie es zu `storage` hinzu
+5. **Benötigt nur ausgehenden Internetzugriff (kein Ingress)?** → Fügen Sie es zu `egress` hinzu
 
-Hinweis: Das `egress`-Netzwerk ist speziell für Services gedacht, die externe Websites/APIs erreichen müssen, aber
-nicht von außen erreichbar sein sollten. Es hat ICC deaktiviert, sodass Services auf `egress` nicht miteinander
-kommunizieren können – nutzen Sie `backend` für die Inter-Service-Kommunikation.
+Hinweis: Das `egress`-Netzwerk ist speziell für Services gedacht, die externe Websites/APIs erreichen müssen, aber nicht
+von außen erreichbar sein sollten. Es hat ICC deaktiviert, sodass Services auf `egress` nicht miteinander kommunizieren
+können – nutzen Sie `backend` für die Inter-Service-Kommunikation.
 
 ### Netzwerkprobleme debuggen
 
 Wenn ein Service einen anderen Service nicht erreichen kann:
 
-1.  Verifizieren Sie, dass beide Services in einem gemeinsamen Netzwerk sind
-2.  Überprüfen Sie, ob das Zielnetzwerk als `internal: true` markiert ist
-3.  Verwenden Sie `docker network inspect <network>`, um verbundene Container zu sehen
-4.  Überprüfen Sie, ob die Service-Namen den DNS-Erwartungen entsprechen (container_name)
+1. Verifizieren Sie, dass beide Services in einem gemeinsamen Netzwerk sind
+2. Überprüfen Sie, ob das Zielnetzwerk als `internal: true` markiert ist
+3. Verwenden Sie `docker network inspect <network>`, um verbundene Container zu sehen
+4. Überprüfen Sie, ob die Service-Namen den DNS-Erwartungen entsprechen (container_name)
 
 ### Netzwerk-Inspektionsbefehle
 
