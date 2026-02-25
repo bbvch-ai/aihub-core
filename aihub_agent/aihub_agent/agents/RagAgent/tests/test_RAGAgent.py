@@ -60,34 +60,29 @@ def event_loop():
 scenarios("./features/rag_agent.feature")
 
 
-# Mark Azure-dependent scenarios
-@pytest.mark.azure
 @scenario("features/rag_agent.feature", "Test RAGAgent with multi-language system prompt")
 def test_test_ragagent_with_multilanguage_system_prompt():
-    """Test RAGAgent with multi-language system prompts (requires Azure)."""
+    """Test RAGAgent with multi-language system prompts."""
     pass
 
 
-@pytest.mark.azure
 @scenario("features/rag_agent.feature", "Test RAGAgent with valid self hosted configuration")
 def test_test_ragagent_with_valid_self_hosted_configuration():
-    """Test RAGAgent with valid self hosted configuration (requires Azure)."""
+    """Test RAGAgent with valid self hosted configuration."""
     pass
 
 
-@pytest.mark.azure
 @scenario("features/rag_agent.feature", "Test RAGAgent with reranking enabled")
 def test_test_ragagent_with_reranking_enabled():
-    """Test RAGAgent with reranking enabled (requires Azure)."""
+    """Test RAGAgent with reranking enabled."""
     pass
 
 
-@pytest.mark.azure
 @scenario(
     "features/rag_agent.feature", "Test RAGAgent retrieves organization memory alongside knowledge base documents"
 )
 def test_test_ragagent_retrieves_organization_memory_alongside_knowledge_base_documents():
-    """Test RAGAgent with organization memory (requires Azure Mem0 service)."""
+    """Test RAGAgent with organization memory."""
     pass
 
 
@@ -207,7 +202,7 @@ def memory_enabled_agent_config(test_collection):
     This configuration enables the agent to retrieve organization memories
     in addition to knowledge base documents.
     """
-    llm_config = LLMConfig(model_name="text-generation/Mistral-Small-3.2-24B-Instruct-2506")
+    llm_config = LLMConfig(model_name="text-generation/gpt-oss-120b")
     reranking_config = RerankingModelConfig(model_name="reranker/bge")
     embedding_config = EmbeddingModelConfig(model_name="embedding/bge-m3")
     vector_store: MilvusVectorStoreConfig = MilvusVectorStoreConfig(
@@ -232,7 +227,7 @@ def self_hosted_agent_config(test_collection):
     """
     Return a RAGAgentConfig that uses a self-hosted LLM and self-hosted embeddings.
     """
-    llm_config = LLMConfig(model_name="text-generation/Mistral-Small-3.2-24B-Instruct-2506")
+    llm_config = LLMConfig(model_name="text-generation/gpt-oss-120b")
     reranking_config = RerankingModelConfig(model_name="reranker/bge")
     embedding_config = EmbeddingModelConfig(model_name="embedding/bge-m3")
     vector_store: MilvusVectorStoreConfig = MilvusVectorStoreConfig(
@@ -510,7 +505,6 @@ def _(agent_runner: AgentTestRunner, model_name: str):
 # ====== Organization Memory Retrieval Step Definitions ======
 
 
-@pytest.mark.azure
 @pytest.mark.usefixtures("memory_enabled_agent_config")
 @given("a RAGAgent runner with organization memory enabled", target_fixture="agent_runner")
 def _(memory_enabled_agent_config):

@@ -289,7 +289,7 @@ Each has a `Dockerfile` (Python 3.13-slim, uv, port 4000):
 - pytest with pytest-asyncio
 - Unit test ops: `build_op_context(resources={...})` → call op → assert
 - Integration test assets: `materialize(assets=[...], resources={...}, partition_key="test")` → assert `result.success`
-- Test markers: `azure`, `self_hosted`, `slow`, `integration`, `experimental`, `flaky`
+- Test markers: `self_hosted`, `slow`, `integration`, `experimental`, `flaky`
 
 ## New Pipeline Checklist
 

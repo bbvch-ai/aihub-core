@@ -89,7 +89,7 @@ operators:
 | Before (generic)                     | After (canonical)                                                                        |
 | ------------------------------------ | ---------------------------------------------------------------------------------------- |
 | `text-generation/nano`               | `text-generation/Qwen3-VL-30B-A3B-Instruct-FP8` (GPU)                                    |
-| `text-generation/mini`               | `text-generation/Mistral-Small-3.2-24B-Instruct-2506` (cloud)                            |
+| `text-generation/mini`               | `text-generation/gpt-oss-120b` (cloud)                                                   |
 | `text-generation/large`              | Removed (multiple cloud models cover this tier)                                          |
 | `embedding/small`, `embedding/large` | `embedding/bge-m3` (single model)                                                        |
 | `reranker`                           | `reranker/bge`                                                                           |

@@ -264,8 +264,8 @@ We use Behavior-Driven Development (BDD) with `pytest-bdd` as the primary method
    ```
 3. **Run the Tests**: Execute tests from the scope directory.
    ```bash
-   # Run all tests (excluding cloud dependencies)
-   uv run pytest -k "not azure"
+   # Run all tests
+   uv run pytest
 
    # Run a specific test file
    uv run pytest tests/test_MyAgent.py

@@ -14,7 +14,7 @@ from aihub_api.runners.ApiTestRunner import ApiTestRunner
 
 BASE_URL = "http://test"
 MODELS_ENDPOINT = "/api/v1/openai/models"
-CHAT_MODEL = "text-generation/Mistral-Small-3.2-24B-Instruct-2506"
+CHAT_MODEL = "text-generation/gpt-oss-120b"
 EMBEDDING_MODEL = "embedding/bge-m3"
 
 

@@ -213,8 +213,8 @@ Before marking task complete (`make pr-ready` runs automatically via stop hook):
 
 - **Location**: `tests/` dir at same level as code
 - **Naming**: `test_*.py`
-- **Markers**: `slow`, `azure`, `integration`, `flaky`, `self_hosted`, `experimental` (per-scope `pyproject.toml`)
-- **CI excludes**: `pytest -m "not azure and not flaky"` — these markers skip in CI
+- **Markers**: `slow`, `integration`, `flaky`, `self_hosted`, `experimental` (per-scope `pyproject.toml`)
+- **CI excludes**: `pytest -m "not flaky"` — flaky tests skip in CI
 - **BDD**: Use `pytest-bdd` for agent/process workflows (Gherkin `.feature` files in `tests/features/`)
 - **Async**: pytest-bdd has limitations; use plain pytest for async tests
 

@@ -227,8 +227,8 @@ Langfuse bietet eine Schritt-für-Schritt-Visualisierung der Agent-Ausführung u
 ## Tests ausführen
 
 ```bash
-# Alle Tests ausführen (exklusive Cloud-Abhängigkeiten)
-uv run pytest -k "not azure"
+# Alle Tests ausführen
+uv run pytest
 
 # Spezifische Testdatei ausführen
 uv run pytest tests/test_my_agent.py

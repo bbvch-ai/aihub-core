@@ -37,7 +37,7 @@ NODES_KEY = AssetKey(["playground", "nodes"])
 CONTAINER_NAME = AIHubSettings().DEFAULT_BUCKET_NAME
 
 # LLM configuration for document parsing and node processing
-llm_config = LLMConfig(model_name="text-generation/Mistral-Small-3.2-24B-Instruct-2506")
+llm_config = LLMConfig(model_name="text-generation/gpt-oss-120b")
 
 # Dynamic partitions for scalable document processing
 document_partitions = DynamicPartitionsDefinition(name="document_partitions")

@@ -15,7 +15,7 @@
 {% set hardware = 'gpu' if gpu_enabled else 'cpu' -%}
 {%- set has_local_models = gpu_enabled -%}
 {%- set has_mineru_vlm = gpu_enabled -%}
-{%- set default_model = 'text-generation/Qwen3-VL-30B-A3B-Instruct-FP8' if has_local_models else 'text-generation/Mistral-Small-3.2-24B-Instruct-2506' %}
+{%- set default_model = 'text-generation/Qwen3-VL-30B-A3B-Instruct-FP8' if has_local_models else 'text-generation/gpt-oss-120b' %}
 
 model_list:
 {%- if has_local_models %}
