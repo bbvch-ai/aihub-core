@@ -463,7 +463,7 @@ pnpm install
 The frontend development server includes hot module replacement, API proxy, and live reloading.
 
 ```bash
-# Start development server (port 8182)
+# Start development server (port 3333)
 pnpm dev
 ```
 
