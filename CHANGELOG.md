@@ -5,6 +5,60 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.266.4] - 2026-02-25 - Port Harmonization for Streamlined Local Development
+
+### Changed
+
+- ⚡️ **Standardized Local Development Ports:** Aligned the default development ports for key services to improve
+  consistency and reduce potential conflicts during local development:
+  - The **Admin UI (Frontend)** now runs on `http://localhost:3333` (previously `3000`).
+  - The **Dagster Orchestrator** now runs on `http://localhost:3000` (previously `3002`).
+- 🦾 **Improved Dagster Tool Integration:** Updated the `mcp-server-dagster` script to correctly utilize the `--url`
+  argument for specifying the Dagster instance, simplifying its configuration and removing the need for an inline Python
+  patch.
+- 📄 **Updated Documentation and Configuration:** All relevant documentation, skill prerequisites, environment variables
+  (`.env.dev`), and Docker Compose configurations have been updated to reflect the new port assignments for the Admin UI
+  and Dagster.
+
+______________________________________________________________________
+
+## [v0.266.3] - 2026-02-25 - Enhanced Git Push Command Management
+
+### Changed
+
+- ✨ **Expanded `git push` Command Recognition:** The system now recognizes and handles a significantly broader range of
+  `git push` commands, including those with advanced options such as `--force-with-lease`, `--delete`, `--mirror`,
+  `--all`, and `--tags`. This enhances the system's ability to understand and process complex push operations more
+  intelligently.
+- 🚀 **Streamlined `git push` Interactions:** Generic and specific `git push` operations have been refined in their
+  handling, potentially leading to more seamless execution and fewer prompts during typical `git push` workflows.
+
+______________________________________________________________________
+
+## [v0.266.2] - 2026-02-25 - Streamlined Workflow Configuration
+
+### Changed
+
+- 🔄 **Streamlined GitHub Actions YAML:** Updated the `additional_permissions` configuration in `claude.yml` to use a
+  more concise single-line scalar format, improving the readability of workflow definitions.
+
+### Refactor
+
+- 🧹 **Cleaned Workflow Configurations:** Removed unnecessary blank lines and commented-out placeholders from both
+  `claude-code-review.yml` and `claude.yml`, enhancing file clarity and reducing clutter within the workflow
+  definitions.
+
+______________________________________________________________________
+
+## [v0.266.1] - 2026-02-24 - Changelog Precision Update
+
+### Fixed
+
+- 🐛 **Updated changelog entry date:** Corrected the placeholder date for the `v0.262.2` release from `YYYY-MM-DD` to
+  `2026-02-17` to ensure historical accuracy.
+
+______________________________________________________________________
+
 ## [v0.266.0] - 2026-02-24 - Major Overhaul: Multi-Tenant Access Control and Core System Refinements
 
 ### Added
@@ -434,7 +488,7 @@ ______________________________________________________________________
 
 ______________________________________________________________________
 
-## [v0.262.2] - YYYY-MM-DD - Introducing the LLM-Powered Whitepaper Generation System
+## [v0.262.2] - 2026-02-17 - Introducing the LLM-Powered Whitepaper Generation System
 
 ### Added
 
