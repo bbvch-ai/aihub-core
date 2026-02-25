@@ -83,7 +83,7 @@ pr-ready:
 	@$(MAKE) generate-compose
 	@$(MAKE) license-check
 
-TAG ?= v0.266.2
+TAG ?= v0.266.3
 
 changelog:
 	@echo "Generating changelog"
