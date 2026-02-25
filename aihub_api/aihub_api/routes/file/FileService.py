@@ -19,17 +19,6 @@ class FileService:
 
     @staticmethod
     @trace_fn
-    def get_authenticated_file_redirect(
-        container: str, file_path: str, s3_service: S3AnonymousFileAccessService
-    ) -> RedirectResponse:
-        """
-        For logged-in users. Generates a temporary URL and returns a redirect response.
-        """
-        sas_url = s3_service.generate_sas_url(container, file_path)
-        return RedirectResponse(url=sas_url, status_code=status.HTTP_307_TEMPORARY_REDIRECT)
-
-    @staticmethod
-    @trace_fn
     def get_anonymous_file_url(
         container: str, file_path: str, expires: int, signature: str, s3_service: S3AnonymousFileAccessService
     ) -> str:
