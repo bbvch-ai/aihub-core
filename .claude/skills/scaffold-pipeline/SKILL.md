@@ -121,13 +121,13 @@ pattern:
 
 ```makefile
 my-pipelines:
-	OTEL_ENABLED=false uv run dagster dev -m app.<pipeline_name> -p 3002
+	OTEL_ENABLED=false uv run dagster dev -m app.<pipeline_name>
 ```
 
 ### Step 6: Verify
 
-1. Start the pipeline locally: `cd aihub_pipeline && uv run dagster dev -m app.<pipeline_name> -p 3002`
-2. Open Dagster UI at http://localhost:3002
+1. Start the pipeline locally: `cd aihub_pipeline && uv run dagster dev -m app.<pipeline_name>`
+2. Open Dagster UI at http://localhost:3000
 3. Verify all assets, sensors, schedules, and jobs appear
 4. Trigger the observable source asset manually (click Observe)
 5. Confirm downstream assets auto-materialize
@@ -202,7 +202,7 @@ Every `Definitions` must include:
 ### Step 6: Test in Playground
 
 Add a playground entry in `aihub_pipeline/playground/` and run `make playground` to test interactively at
-http://localhost:3002.
+http://localhost:3000.
 
 ### Step 7: Create App Entry Point and Dockerfile
 
