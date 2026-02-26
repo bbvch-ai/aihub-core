@@ -26,6 +26,7 @@ logger = logging.getLogger(__name__)
 _TRACE_INPUT_KEY = "_trace_input"
 _TRACE_USER_ID_KEY = "_trace_user_id"
 _TRACE_OUTPUT_KEY = "_trace_output"
+_TRACE_RUN_CONTEXT_KEY = "_trace_run_context"
 _TRACE_AITL_PARENT_CONTEXT_KEY = "_trace_aitl_parent_context"
 _TRACE_AITL_TARGET_AGENT_CLASS_KEY = "_trace_aitl_target_agent_class"
 
@@ -58,12 +59,21 @@ class AgentRunTracer:
         return RunContext.for_topic(self.redis, topic)
 
     async def trace_run_start(self, topic: AgentInstanceTopic, event: StartEvent):
-        """Stores the user input and user ID for the run in Redis for cross-runner access."""
+        """Stores the user input, user ID, and current trace context for the run in Redis.
+
+        The trace context captured here anchors all step spans to the same
+        Langfuse trace, even when the workflow is interrupted by HITL/BITL
+        interactions that would otherwise introduce a new trace.
+        """
         user_input = event.user_query if event.is_user_message_event else ""
         user_id = event.user.id if event.is_user_message_event else ""
         logger.debug(f"Storing run metadata for {topic.run_id}")
 
+        carrier: dict[str, str] = {}
+        propagate.inject(carrier)
+
         run_context = self._run_context_for(topic)
+        await run_context.set(_TRACE_RUN_CONTEXT_KEY, carrier)
         await run_context.set(_TRACE_INPUT_KEY, user_input)
         await run_context.set(_TRACE_USER_ID_KEY, user_id)
 
@@ -113,8 +123,7 @@ class AgentRunTracer:
             SpanAttributes.TAG_TAGS: [topic.thread_id, topic.display_id, topic.run_id],
         }
 
-        # If this agent was delegated via AITL, re-parent under the wrapper span
-        parent_context = await self._get_aitl_parent_context(topic)
+        parent_context = await self._get_step_parent_context(topic)
 
         span = self.tracer.start_span(
             name=span_name,
@@ -257,15 +266,31 @@ class AgentRunTracer:
             span.set_status(StatusCode.ERROR, "Delegated agent failed")
         span.end()
 
+    async def _get_step_parent_context(self, topic: AgentInstanceTopic) -> trace.Context | None:
+        """Resolves the parent context for a step span.
+
+        Priority: AITL wrapper span > run-start context > None (ambient fallback).
+        By using the saved run-start context, step spans stay in the original
+        Langfuse trace even after HITL/BITL interruptions that would otherwise
+        introduce a new trace from the API/bot HTTP request.
+        """
+        aitl_context = await self._get_aitl_parent_context(topic)
+        if aitl_context is not None:
+            return aitl_context
+
+        run_context = self._run_context_for(topic)
+        carrier = await run_context.get(_TRACE_RUN_CONTEXT_KEY)
+        if carrier is not None:
+            return propagate.extract(carrier)
+
+        return None
+
     async def _get_aitl_parent_context(self, topic: AgentInstanceTopic) -> trace.Context | None:
         """Reconstructs the AITL wrapper span as parent context for re-parenting.
 
-        Uses the standard W3C TraceContext propagator to deserialize the parent
-        span context from the carrier stored in Redis.
-
-        Returns None for non-AITL agents (default OTEL context is used).
-        Checks agent_class to handle the share_run_id=True edge case where
-        both agents share a RunContext.
+        Returns None for non-AITL agents so the caller falls through to the
+        run-start context. Checks agent_class to handle the share_run_id=True
+        edge case where both agents share a RunContext.
         """
         run_context = self._run_context_for(topic)
         carrier = await run_context.get(_TRACE_AITL_PARENT_CONTEXT_KEY)

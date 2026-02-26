@@ -7,12 +7,14 @@ from aihub_lib.nats.events import StartEvent
 from aihub_lib.nats.topics.agents.AgentInstanceTopic import AgentInstanceTopic
 from bson import ObjectId
 from openinference.semconv.trace import OpenInferenceSpanKindValues, SpanAttributes
+from opentelemetry import trace
 from opentelemetry.trace import NonRecordingSpan, SpanContext, StatusCode, TraceFlags
 
 from aihub_agent.context.run.RunContext import RunContext
 from aihub_agent.tracing.AgentRunTracer import (
     _TRACE_AITL_PARENT_CONTEXT_KEY,
     _TRACE_AITL_TARGET_AGENT_CLASS_KEY,
+    _TRACE_RUN_CONTEXT_KEY,
     AgentRunTracer,
 )
 
@@ -96,6 +98,20 @@ class TestTraceRunStart:
         run_context = RunContext.for_topic(mock_redis, topic)
         assert await run_context.get("_trace_input") == ""
         assert await run_context.get("_trace_user_id") == ""
+
+    @pytest.mark.asyncio
+    async def test_stores_trace_context_carrier(
+        self, tracer: AgentRunTracer, topic: AgentInstanceTopic, mock_redis: AsyncMock
+    ) -> None:
+        event = MagicMock(spec=StartEvent)
+        event.is_user_message_event = False
+
+        await tracer.trace_run_start(topic, event)
+
+        run_context = RunContext.for_topic(mock_redis, topic)
+        carrier = await run_context.get(_TRACE_RUN_CONTEXT_KEY)
+        assert carrier is not None
+        assert isinstance(carrier, dict)
 
 
 class TestTraceStepStart:
@@ -417,3 +433,122 @@ class TestTraceStepStopAitl:
         attrs = mock_span.set_attributes.call_args[0][0]
         assert attrs["langfuse.session.id"] == topic.thread_id
         assert attrs["deployment.environment.name"] == "agent"
+
+
+class TestGetStepParentContext:
+    """Tests for _get_step_parent_context — resolves parent context with AITL > run-start > None priority."""
+
+    @pytest.mark.asyncio
+    async def test_returns_none_when_no_context_stored(self, tracer: AgentRunTracer, topic: AgentInstanceTopic) -> None:
+        result = await tracer._get_step_parent_context(topic)
+        assert result is None
+
+    @pytest.mark.asyncio
+    async def test_returns_run_context_when_no_aitl_keys(
+        self, tracer: AgentRunTracer, topic: AgentInstanceTopic, mock_redis: AsyncMock
+    ) -> None:
+        run_context = RunContext.for_topic(mock_redis, topic)
+        await run_context.set(_TRACE_RUN_CONTEXT_KEY, _FAKE_TRACEPARENT)
+
+        result = await tracer._get_step_parent_context(topic)
+
+        assert result is not None
+
+    @pytest.mark.asyncio
+    async def test_aitl_takes_precedence_over_run_context(
+        self, tracer: AgentRunTracer, topic: AgentInstanceTopic, mock_redis: AsyncMock
+    ) -> None:
+        """When both AITL and run-start contexts exist, AITL wins."""
+        run_context = RunContext.for_topic(mock_redis, topic)
+
+        aitl_carrier = {"traceparent": "00-00000000000000000000000000aaaa00-000000000000aa00-01"}
+        run_carrier = {"traceparent": "00-00000000000000000000000000bbbb00-000000000000bb00-01"}
+
+        await run_context.set(_TRACE_AITL_PARENT_CONTEXT_KEY, aitl_carrier)
+        await run_context.set(_TRACE_AITL_TARGET_AGENT_CLASS_KEY, topic.agent_class)
+        await run_context.set(_TRACE_RUN_CONTEXT_KEY, run_carrier)
+
+        result = await tracer._get_step_parent_context(topic)
+
+        assert result is not None
+        span = trace.get_current_span(result)
+        span_ctx = span.get_span_context()
+        assert span_ctx.trace_id == 0xAAAA00
+        assert span_ctx.span_id == 0xAA00
+
+    @pytest.mark.asyncio
+    async def test_falls_through_to_run_context_when_aitl_class_mismatch(
+        self, tracer: AgentRunTracer, topic: AgentInstanceTopic, mock_redis: AsyncMock
+    ) -> None:
+        """share_run_id=True: AITL keys exist but target a different agent class."""
+        run_context = RunContext.for_topic(mock_redis, topic)
+
+        aitl_carrier = {"traceparent": "00-00000000000000000000000000aaaa00-000000000000aa00-01"}
+        run_carrier = {"traceparent": "00-00000000000000000000000000bbbb00-000000000000bb00-01"}
+
+        await run_context.set(_TRACE_AITL_PARENT_CONTEXT_KEY, aitl_carrier)
+        await run_context.set(_TRACE_AITL_TARGET_AGENT_CLASS_KEY, "DifferentAgent")
+        await run_context.set(_TRACE_RUN_CONTEXT_KEY, run_carrier)
+
+        result = await tracer._get_step_parent_context(topic)
+
+        assert result is not None
+        span = trace.get_current_span(result)
+        span_ctx = span.get_span_context()
+        assert span_ctx.trace_id == 0xBBBB00
+        assert span_ctx.span_id == 0xBB00
+
+
+class TestTraceStepStartRunContext:
+    """Tests for trace_step_start using saved run context as parent."""
+
+    @pytest.mark.asyncio
+    async def test_uses_run_context_as_parent_when_available(
+        self, tracer: AgentRunTracer, topic: AgentInstanceTopic, mock_redis: AsyncMock
+    ) -> None:
+        run_context = RunContext.for_topic(mock_redis, topic)
+        await run_context.set(_TRACE_RUN_CONTEXT_KEY, _FAKE_TRACEPARENT)
+
+        mock_span = MagicMock()
+        mock_tracer = MagicMock()
+        mock_tracer.start_span.return_value = mock_span
+        tracer.tracer = mock_tracer
+
+        async def dummy_step():
+            pass
+
+        with (
+            patch("aihub_agent.tracing.AgentRunTracer.set_span_in_context"),
+            patch("aihub_agent.tracing.AgentRunTracer.context") as mock_ctx,
+        ):
+            mock_ctx.attach.return_value = "token"
+
+            async with tracer.trace_step_start(topic, dummy_step, {}) as span:
+                assert span is mock_span
+
+        call_kwargs = mock_tracer.start_span.call_args
+        assert call_kwargs.kwargs.get("context") is not None
+
+    @pytest.mark.asyncio
+    async def test_uses_none_context_when_no_run_context(
+        self, tracer: AgentRunTracer, topic: AgentInstanceTopic
+    ) -> None:
+        mock_span = MagicMock()
+        mock_tracer = MagicMock()
+        mock_tracer.start_span.return_value = mock_span
+        tracer.tracer = mock_tracer
+
+        async def dummy_step():
+            pass
+
+        with (
+            patch("aihub_agent.tracing.AgentRunTracer.set_span_in_context"),
+            patch("aihub_agent.tracing.AgentRunTracer.context") as mock_ctx,
+        ):
+            mock_ctx.attach.return_value = "token"
+
+            async with tracer.trace_step_start(topic, dummy_step, {}) as span:
+                assert span is mock_span
+
+        call_kwargs = mock_tracer.start_span.call_args
+        assert call_kwargs.kwargs.get("context") is None
