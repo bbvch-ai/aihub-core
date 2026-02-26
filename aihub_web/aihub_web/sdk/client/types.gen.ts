@@ -428,6 +428,86 @@ export type AgentEvent = {
 };
 
 /**
+ * AgentFileUploadRequest
+ *
+ * Request to initiate a file upload to an agent's dedicated bucket.
+ */
+export type AgentFileUploadRequest = {
+    /**
+     * Filename
+     *
+     * Original filename with extension.
+     */
+    filename: string;
+    /**
+     * Content Type
+     *
+     * MIME type of the file.
+     */
+    content_type: string;
+};
+
+/**
+ * AgentFileUploadResponse
+ *
+ * Response containing a presigned upload URL and the assigned file_id.
+ */
+export type AgentFileUploadResponse = {
+    /**
+     * Upload Url
+     *
+     * Presigned PUT URL for uploading the file.
+     */
+    upload_url: string;
+    /**
+     * File Id
+     *
+     * UUID4 file identifier — use this in subsequent API calls.
+     */
+    file_id: string;
+    /**
+     * Expires In
+     *
+     * Seconds until the presigned URL expires.
+     */
+    expires_in: number;
+};
+
+/**
+ * AgentFileValidationRequest
+ *
+ * Request to validate that a file was uploaded successfully.
+ */
+export type AgentFileValidationRequest = {
+    /**
+     * File Id
+     *
+     * The file_id (UUID4) returned by the initiate endpoint.
+     */
+    file_id: string;
+};
+
+/**
+ * AgentFileValidationResponse
+ *
+ * Response confirming whether a file exists in the agent's bucket.
+ */
+export type AgentFileValidationResponse = {
+    /**
+     * File Id
+     *
+     * The file_id that was checked.
+     */
+    file_id: string;
+    /**
+     * Exists
+     *
+     * True if the file was found in the agent's bucket.
+     */
+    exists: boolean;
+};
+
+/**
  * AgentHealthChecks
  *
  * Health check results for Agent service dependencies.
@@ -13298,6 +13378,11 @@ export type UserMessageEvent = {
 
 /**
  * UserUploadedFile
+ *
+ * Represents a file uploaded by a user for agent consumption.
+ *
+ * Security: Files are referenced by file_id only. The actual S3 location
+ * is derived at runtime from the agent's dedicated bucket, preventing IDOR.
  */
 export type UserUploadedFile = {
     /**
@@ -13307,17 +13392,17 @@ export type UserUploadedFile = {
      */
     filename: string;
     /**
-     * File Data
-     *
-     * Base64 encoded content of the uploaded file.
-     */
-    file_data: string;
-    /**
      * File Type
      *
      * The MIME type of the uploaded file.
      */
     file_type: string;
+    /**
+     * File Id
+     *
+     * UUID4 file identifier, used as the S3 object key within the agent's dedicated bucket.
+     */
+    file_id: string;
 };
 
 /**
@@ -21657,6 +21742,74 @@ export type GetAllAgentInstancesResponses = {
 };
 
 export type GetAllAgentInstancesResponse = GetAllAgentInstancesResponses[keyof GetAllAgentInstancesResponses];
+
+export type InitiateFileUploadData = {
+    body: AgentFileUploadRequest;
+    path: {
+        /**
+         * Agent Class
+         */
+        agent_class: string;
+        /**
+         * Agent Id
+         */
+        agent_id: string;
+    };
+    query?: never;
+    url: '/agents/classes/{agent_class}/instances/{agent_id}/files/upload/initiate';
+};
+
+export type InitiateFileUploadErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type InitiateFileUploadError = InitiateFileUploadErrors[keyof InitiateFileUploadErrors];
+
+export type InitiateFileUploadResponses = {
+    /**
+     * Successful Response
+     */
+    200: AgentFileUploadResponse;
+};
+
+export type InitiateFileUploadResponse = InitiateFileUploadResponses[keyof InitiateFileUploadResponses];
+
+export type ValidateFileUploadData = {
+    body: AgentFileValidationRequest;
+    path: {
+        /**
+         * Agent Class
+         */
+        agent_class: string;
+        /**
+         * Agent Id
+         */
+        agent_id: string;
+    };
+    query?: never;
+    url: '/agents/classes/{agent_class}/instances/{agent_id}/files/upload/validate';
+};
+
+export type ValidateFileUploadErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ValidateFileUploadError = ValidateFileUploadErrors[keyof ValidateFileUploadErrors];
+
+export type ValidateFileUploadResponses = {
+    /**
+     * Successful Response
+     */
+    200: AgentFileValidationResponse;
+};
+
+export type ValidateFileUploadResponse = ValidateFileUploadResponses[keyof ValidateFileUploadResponses];
 
 export type GetProcessClassesData = {
     body?: never;

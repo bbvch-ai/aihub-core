@@ -51,7 +51,7 @@ class AgentFileUploadService:
         return sanitized
 
     def _ensure_bucket_exists(self, bucket_name: str) -> None:
-        """Idempotent bucket creation with a 7-day expiration lifecycle rule."""
+        """Idempotent bucket creation with in-memory caching."""
         if bucket_name in self._known_buckets:
             return
 
@@ -66,29 +66,14 @@ class AgentFileUploadService:
 
         logger.info(f"Creating agent upload bucket: {bucket_name}")
         self._s3_client.create_bucket(Bucket=bucket_name)
-
-        # Best-effort TTL: SeaweedFS may not support lifecycle rules
-        try:
-            self._s3_client.put_bucket_lifecycle_configuration(
-                Bucket=bucket_name,
-                LifecycleConfiguration={
-                    "Rules": [
-                        {
-                            "ID": "auto-expire-uploads",
-                            "Status": "Enabled",
-                            "Filter": {"Prefix": ""},
-                            "Expiration": {"Days": 7},
-                        }
-                    ]
-                },
-            )
-        except Exception:
-            logger.warning(f"Could not set lifecycle rule on bucket {bucket_name} (storage may not support it)")
-
         self._known_buckets.add(bucket_name)
 
+    @staticmethod
+    def s3_key(file_id: str, filename: str) -> str:
+        return f"{file_id}/{filename}"
+
     @trace_fn
-    def generate_upload_url(self, agent_class: str, agent_id: str, content_type: str) -> tuple[str, str]:
+    def generate_upload_url(self, agent_class: str, agent_id: str, content_type: str, filename: str) -> tuple[str, str]:
         """Generate a presigned PUT URL for uploading a file to the agent's bucket.
 
         Returns (presigned_url, file_id).
@@ -97,25 +82,35 @@ class AgentFileUploadService:
         self._ensure_bucket_exists(bucket)
 
         file_id = str(uuid.uuid4())
+        key = self.s3_key(file_id, filename)
 
         presigned_url = self._s3_public_client.generate_presigned_url(
             "put_object",
-            Params={"Bucket": bucket, "Key": file_id, "ContentType": content_type},
+            Params={"Bucket": bucket, "Key": key, "ContentType": content_type},
             ExpiresIn=self.UPLOAD_URL_LIFETIME_SECONDS,
         )
 
-        logger.debug(f"Generated upload URL for {bucket}/{file_id}")
+        logger.debug(f"Generated upload URL for {bucket}/{key}")
         return presigned_url, file_id
 
     @trace_fn
-    def verify_file_exists(self, agent_class: str, agent_id: str, file_id: str) -> bool:
+    def verify_file_exists(self, agent_class: str, agent_id: str, file_id: str, filename: str) -> bool:
         """Check whether a file was successfully uploaded to the agent's bucket."""
         bucket = self.bucket_name(agent_class, agent_id)
+        key = self.s3_key(file_id, filename)
         try:
-            self._s3_client.head_object(Bucket=bucket, Key=file_id)
+            self._s3_client.head_object(Bucket=bucket, Key=key)
             return True
         except ClientError as e:
             error_code = e.response.get("Error", {}).get("Code", "")
             if error_code in ["404", "NoSuchKey"]:
                 return False
             raise
+
+    @trace_fn
+    def delete_file(self, agent_class: str, agent_id: str, file_id: str, filename: str) -> None:
+        """Delete a specific file from the agent's bucket."""
+        bucket = self.bucket_name(agent_class, agent_id)
+        key = self.s3_key(file_id, filename)
+        self._s3_client.delete_object(Bucket=bucket, Key=key)
+        logger.debug(f"Deleted {bucket}/{key}")

@@ -253,6 +253,7 @@ class AgentController(Controller):
                 agent_class=agent_class,
                 agent_id=agent_id,
                 content_type=request.content_type,
+                filename=request.filename,
             )
             return AgentFileUploadResponse(
                 upload_url=presigned_url,
@@ -281,6 +282,7 @@ class AgentController(Controller):
                 agent_class=agent_class,
                 agent_id=agent_id,
                 file_id=request.file_id,
+                filename=request.filename,
             )
             return AgentFileValidationResponse(
                 file_id=request.file_id,

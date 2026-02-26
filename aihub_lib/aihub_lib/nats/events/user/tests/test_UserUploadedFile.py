@@ -45,7 +45,7 @@ class TestUserUploadedFile:
         f = UserUploadedFile(filename="report.pdf", file_type="application/pdf", file_id=VALID_UUID4)
         bucket, key = f.resolve_s3_location("MyAgent", "inst-1")
         assert bucket == "agent-files-myagent-inst-1"
-        assert key == VALID_UUID4
+        assert key == f"{VALID_UUID4}/report.pdf"
 
     def test_serialization_roundtrip(self):
         f = UserUploadedFile(filename="image.png", file_type="image/png", file_id=VALID_UUID4)

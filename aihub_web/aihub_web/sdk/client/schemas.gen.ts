@@ -702,6 +702,100 @@ export const AgentEventSchema = {
     title: 'AgentEvent'
 } as const;
 
+export const AgentFileUploadRequestSchema = {
+    properties: {
+        filename: {
+            type: 'string',
+            maxLength: 255,
+            minLength: 1,
+            title: 'Filename',
+            description: 'Original filename with extension.'
+        },
+        content_type: {
+            type: 'string',
+            minLength: 1,
+            title: 'Content Type',
+            description: 'MIME type of the file.'
+        }
+    },
+    type: 'object',
+    required: [
+        'filename',
+        'content_type'
+    ],
+    title: 'AgentFileUploadRequest',
+    description: 'Request to initiate a file upload to an agent\'s dedicated bucket.'
+} as const;
+
+export const AgentFileUploadResponseSchema = {
+    properties: {
+        upload_url: {
+            type: 'string',
+            title: 'Upload Url',
+            description: 'Presigned PUT URL for uploading the file.'
+        },
+        file_id: {
+            type: 'string',
+            title: 'File Id',
+            description: 'UUID4 file identifier — use this in subsequent API calls.'
+        },
+        expires_in: {
+            type: 'integer',
+            title: 'Expires In',
+            description: 'Seconds until the presigned URL expires.'
+        }
+    },
+    type: 'object',
+    required: [
+        'upload_url',
+        'file_id',
+        'expires_in'
+    ],
+    title: 'AgentFileUploadResponse',
+    description: 'Response containing a presigned upload URL and the assigned file_id.'
+} as const;
+
+export const AgentFileValidationRequestSchema = {
+    properties: {
+        file_id: {
+            type: 'string',
+            maxLength: 36,
+            minLength: 36,
+            pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$',
+            title: 'File Id',
+            description: 'The file_id (UUID4) returned by the initiate endpoint.'
+        }
+    },
+    type: 'object',
+    required: [
+        'file_id'
+    ],
+    title: 'AgentFileValidationRequest',
+    description: 'Request to validate that a file was uploaded successfully.'
+} as const;
+
+export const AgentFileValidationResponseSchema = {
+    properties: {
+        file_id: {
+            type: 'string',
+            title: 'File Id',
+            description: 'The file_id that was checked.'
+        },
+        exists: {
+            type: 'boolean',
+            title: 'Exists',
+            description: 'True if the file was found in the agent\'s bucket.'
+        }
+    },
+    type: 'object',
+    required: [
+        'file_id',
+        'exists'
+    ],
+    title: 'AgentFileValidationResponse',
+    description: 'Response confirming whether a file exists in the agent\'s bucket.'
+} as const;
+
 export const AgentHealthChecksSchema = {
     properties: {
         running: {
@@ -13289,7 +13383,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1771947861
+            default: 1772092173
         },
         owned_by: {
             type: 'string',
@@ -21028,11 +21122,6 @@ export const UserUploadedFileSchema = {
             title: 'Filename',
             description: 'The name of the uploaded file, including the extension.'
         },
-        file_data: {
-            type: 'string',
-            title: 'File Data',
-            description: 'Base64 encoded content of the uploaded file.'
-        },
         file_type: {
             type: 'string',
             title: 'File Type',
@@ -21041,15 +21130,22 @@ export const UserUploadedFileSchema = {
                 'image/png',
                 'application/pdf'
             ]
+        },
+        file_id: {
+            type: 'string',
+            pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$',
+            title: 'File Id',
+            description: 'UUID4 file identifier, used as the S3 object key within the agent\'s dedicated bucket.'
         }
     },
     type: 'object',
     required: [
         'filename',
-        'file_data',
-        'file_type'
+        'file_type',
+        'file_id'
     ],
-    title: 'UserUploadedFile'
+    title: 'UserUploadedFile',
+    description: 'Represents a file uploaded by a user for agent consumption.\n\nSecurity: Files are referenced by file_id only. The actual S3 location\nis derived at runtime from the agent\'s dedicated bucket, preventing IDOR.'
 } as const;
 
 export const UserWithAccessDTOSchema = {

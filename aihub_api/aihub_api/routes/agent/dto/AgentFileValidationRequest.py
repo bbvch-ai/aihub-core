@@ -15,3 +15,4 @@ class AgentFileValidationRequest(BaseModel):
             description="The file_id (UUID4) returned by the initiate endpoint.",
         ),
     ]
+    filename: Annotated[str, Field(min_length=1, max_length=255, description="Original filename with extension.")]

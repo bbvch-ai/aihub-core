@@ -25,10 +25,11 @@ class UserUploadedFile(BaseModel):
     def resolve_s3_location(self, agent_class: str, agent_id: str) -> tuple[str, str]:
         """Derive the S3 bucket and key from the agent identity.
 
-        The bucket is deterministic per agent instance, and the key is the file_id.
-        This prevents users from specifying arbitrary S3 locations.
+        The bucket is deterministic per agent instance, and the key includes the
+        original filename so downloads preserve the file extension.
         """
         from aihub_lib.infrastructure.s3.AgentFileUploadService import AgentFileUploadService
 
         bucket = AgentFileUploadService.bucket_name(agent_class, agent_id)
-        return bucket, self.file_id
+        key = AgentFileUploadService.s3_key(self.file_id, self.filename)
+        return bucket, key

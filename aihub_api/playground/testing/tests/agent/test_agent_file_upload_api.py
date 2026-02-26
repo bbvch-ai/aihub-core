@@ -71,6 +71,7 @@ async def test_initiate_upload_calls_service_with_correct_args(client, mock_uplo
         agent_class=AGENT_CLASS,
         agent_id=AGENT_ID,
         content_type="image/png",
+        filename="image.png",
     )
 
 
@@ -87,7 +88,7 @@ async def test_initiate_upload_rejects_empty_filename(client):
 async def test_validate_upload_returns_exists_true(client):
     response = await client.post(
         f"/agents/classes/{AGENT_CLASS}/instances/{AGENT_ID}/files/upload/validate",
-        json={"file_id": VALID_FILE_ID},
+        json={"file_id": VALID_FILE_ID, "filename": "report.pdf"},
     )
     assert response.status_code == 200, response.text
     data = response.json()
@@ -102,7 +103,7 @@ async def test_validate_upload_returns_exists_false(client, mock_upload_service)
 
     response = await client.post(
         f"/agents/classes/{AGENT_CLASS}/instances/{AGENT_ID}/files/upload/validate",
-        json={"file_id": missing_file_id},
+        json={"file_id": missing_file_id, "filename": "missing.pdf"},
     )
     assert response.status_code == 200, response.text
     data = response.json()
@@ -113,7 +114,7 @@ async def test_validate_upload_returns_exists_false(client, mock_upload_service)
 async def test_validate_upload_rejects_non_uuid_file_id(client):
     response = await client.post(
         f"/agents/classes/{AGENT_CLASS}/instances/{AGENT_ID}/files/upload/validate",
-        json={"file_id": "not-a-valid-uuid-string-at-all"},
+        json={"file_id": "not-a-valid-uuid-string-at-all", "filename": "test.pdf"},
     )
     assert response.status_code == 422
 
@@ -122,6 +123,6 @@ async def test_validate_upload_rejects_non_uuid_file_id(client):
 async def test_validate_upload_rejects_empty_file_id(client):
     response = await client.post(
         f"/agents/classes/{AGENT_CLASS}/instances/{AGENT_ID}/files/upload/validate",
-        json={"file_id": ""},
+        json={"file_id": "", "filename": "test.pdf"},
     )
     assert response.status_code == 422
