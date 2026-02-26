@@ -90,6 +90,16 @@ changelog:
 	/bin/bash ./generate-changelog.sh
 	@uv run mdformat --number $$(git ls-files '*.md' | grep -v 'aihub_doc/whitepaper/chapters/')
 
+# Extract release notes for a specific version from CHANGELOG.md (TAG=v0.267.1, OUTPUT=release-notes.md)
+OUTPUT ?= release-notes.md
+extract-release-notes:
+	@awk '/^## \[$(TAG)\]/{found=1; next} found && /^## \[/{exit} found{print}' CHANGELOG.md | sed '/^_\{3,\}/d' > $(OUTPUT)
+	@if [ ! -s $(OUTPUT) ]; then \
+		echo "No changelog section found for $(TAG), using fallback"; \
+		echo "Release $(TAG)" > $(OUTPUT); \
+	fi
+	@echo "Release notes for $(TAG) written to $(OUTPUT) ($$(wc -c < $(OUTPUT)) bytes)"
+
 # Check licenses across all dependencies
 license-check:
 	@echo "Checking licenses..."

@@ -71,14 +71,7 @@ jobs:
           tar -czf "swissaihub-${VERSION}.tar.gz" -C "dist/release/swissaihub-${VERSION}" .
           tar -czf "swissaihub-${VERSION}-gpu.tar.gz" -C "dist/release/swissaihub-${VERSION}-gpu" .
       - name: Extract changelog for this version
-        run: |
-          VERSION="${{ steps.version.outputs.version }}"
-          awk '/^## \['"${VERSION}"'\]/{found=1; next} /^---$/{if(found) exit} found{print}' CHANGELOG.md > release-notes.md
-
-          # If no changelog section found, provide a fallback
-          if [ ! -s release-notes.md ]; then
-            echo "Release ${VERSION}" > release-notes.md
-          fi
+        run: make extract-release-notes TAG="${{ steps.version.outputs.version }}"
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
