@@ -16,7 +16,8 @@ class LocalFileSystemIOManager(ConfigurableIOManager):
     1. **Partitioned asset** (standard): Returns single ``SourceFile`` with full content.
        Used for: Processing files individually (parsing, uploading, transformation).
        Enables parallel execution and incremental updates.
-       The partition key is URL-encoded; decoding recovers the exact original path.
+       When ``encode_partition_keys`` is True, the partition key is URL-encoded;
+       decoding recovers the exact original path.
 
     2. **Non-partitioned asset** (cleanup only): Returns ``list[MinimalSourceFile]`` with metadata only.
        Used for: Comparing all source files vs storage to find orphans for deletion.
