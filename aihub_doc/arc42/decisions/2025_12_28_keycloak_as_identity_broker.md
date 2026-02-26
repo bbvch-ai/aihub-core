@@ -67,10 +67,11 @@ SAML, local users) as configured per deployment.
   appropriate SSL settings, client configurations, and (in dev) a pre-configured test user.
 - **Auth Handler**: `KeycloakAuthHandler` validates JWTs using Keycloak's JWKS endpoint with 6-hour caching. User data
   is extracted directly from JWT claims—no external API calls during authentication.
-- **OAuth2 Clients**: Three OIDC clients are configured:
+- **OAuth2 Clients**: Two OIDC clients are configured for user-facing applications, plus per-service OAuth2 Proxy
+  clients for admin tool protection:
   - `aihub-frontend` — public client with PKCE for the Admin UI
   - `openwebui` — confidential client for the chat interface
-  - `aihub-api` — confidential service account client for backend-to-backend communication
+  - `oauth2-proxy-dagster`, `oauth2-proxy-datalake`, `oauth2-proxy-attu` — confidential clients for admin tool OAuth2 Proxy sidecars
 - **Admin Tool Protection**: OAuth2 Proxy instances protect Dagster, Attu (Milvus), and SeaweedFS using Keycloak as the
   OIDC provider with role-based access control.
 - **Split-Horizon DNS**: Non-dev deployments configure separate internal (`http://keycloak:8080`) and external

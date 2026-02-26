@@ -89,7 +89,6 @@ class KeycloakAuthHandler:
                 algorithms=["RS256"],
                 audience="account",
                 issuer=self.config.ISSUER_URL,
-                options={"verify_aud": False},
             )
 
             logger.debug("Decoded token claims: %s", list(decoded_token.keys()))

@@ -651,7 +651,6 @@ services:
       KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
       KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN_USER}
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
-      KC_FEATURES: token-exchange,admin-fine-grained-authz
       KC_HEALTH_ENABLED: "true"
       KC_METRICS_ENABLED: "true"
       # Dev user configuration (passed to realm template)
