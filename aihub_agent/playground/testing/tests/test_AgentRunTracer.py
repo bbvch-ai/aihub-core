@@ -14,8 +14,8 @@ from aihub_agent.context.run.RunContext import RunContext
 from aihub_agent.tracing.AgentRunTracer import (
     _TRACE_AITL_PARENT_CONTEXT_KEY,
     _TRACE_AITL_TARGET_AGENT_CLASS_KEY,
-    _TRACE_RUN_CONTEXT_KEY,
     _TRACE_OUTPUT_KEY,
+    _TRACE_RUN_CONTEXT_KEY,
     AgentRunTracer,
 )
 
@@ -431,6 +431,30 @@ class TestTraceStepStopAitl:
         assert "langfuse.trace.input" not in attrs
         assert "langfuse.trace.output" not in attrs
         assert "langfuse.user.id" not in attrs
+
+    @pytest.mark.asyncio
+    async def test_does_not_suppress_for_caller_with_shared_run_id(
+        self, tracer: AgentRunTracer, topic: AgentInstanceTopic, mock_redis: AsyncMock
+    ) -> None:
+        """share_run_id=True: caller sees AITL keys but agent_class doesn't match, so trace attrs are NOT suppressed."""
+        event = MagicMock(spec=StartEvent)
+        event.is_user_message_event = True
+        event.user_query = "test"
+        event.user = MagicMock()
+        event.user.id = "user-1"
+        await tracer.trace_run_start(topic, event)
+
+        run_context = RunContext.for_topic(mock_redis, topic)
+        await run_context.set(_TRACE_AITL_PARENT_CONTEXT_KEY, _FAKE_TRACEPARENT)
+        await run_context.set(_TRACE_AITL_TARGET_AGENT_CLASS_KEY, "DifferentAgent")
+
+        mock_span = MagicMock()
+        await tracer.trace_step_stop(mock_span, None, topic)
+
+        attrs = mock_span.set_attributes.call_args[0][0]
+        assert "langfuse.trace.name" in attrs
+        assert "langfuse.trace.input" in attrs
+        assert "langfuse.user.id" in attrs
 
     @pytest.mark.asyncio
     async def test_still_sets_session_id_for_aitl_delegated(

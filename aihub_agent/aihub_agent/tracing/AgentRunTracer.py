@@ -2,7 +2,7 @@ import json
 import logging
 from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
-from typing import Annotated, Any
+from typing import Any
 
 from aihub_lib.context.BaseContext import BaseContext
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
@@ -50,7 +50,7 @@ class AgentRunTracer:
     not understand these attributes simply ignores them.
     """
 
-    def __init__(self, redis: Annotated[Redis, "Redis client for distributed storage."]):
+    def __init__(self, redis: Redis):
         self.redis = redis
         self.tracer = get_tracer(__name__)
 
@@ -167,8 +167,8 @@ class AgentRunTracer:
             if semantic_event:
                 await self._set_semantic_attributes(span, semantic_event, topic)
 
-        # AITL-delegated agents must not overwrite the caller's trace-level display
-        is_aitl_delegated = await run_context.get(_TRACE_AITL_PARENT_CONTEXT_KEY) is not None
+        # AITL-delegated agents must not overwrite the caller's trace-level display.
+        is_aitl_delegated = await self._get_aitl_parent_context(topic) is not None
 
         if is_aitl_delegated:
             trace_attrs: dict[str, Any] = {

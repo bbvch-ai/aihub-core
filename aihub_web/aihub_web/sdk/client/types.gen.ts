@@ -4938,6 +4938,56 @@ export type FileFile = {
 };
 
 /**
+ * FollowUpQuestionRequestEventOutput
+ */
+export type FollowUpQuestionRequestEventOutput = {
+    /**
+     * Display Name
+     *
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display Description
+     *
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Question
+     *
+     * The query or prompt presented to the human operator.
+     */
+    question: string;
+    /**
+     * Topic
+     *
+     * A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.
+     */
+    topic: PartialAgentTopic | AgentInstanceTopic;
+    /**
+     * Hitl Type
+     */
+    hitl_type?: 'input';
+};
+
+/**
+ * FollowUpQuestionResponseEventInput
+ */
+export type FollowUpQuestionResponseEventInput = {
+    /**
+     * Response
+     *
+     * The human operator's text input.
+     */
+    response: string;
+    /**
+     * The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.
+     */
+    request_event: HumanInTheLoopInputRequestEvent;
+};
+
+/**
  * FullAgentInstanceDTO
  *
  * A data transfer object for representing FULL agent INSTANCE information in responses.
@@ -5558,6 +5608,98 @@ export type HumanInSpecs = {
      * Formkit elements of the work event.
      */
     form?: Array<HtmlElement | AgentSelector | CascadeSelect | Checkbox | ColorPicker | DatePicker | Group | IconSelector | InputMask | InputNumber | InputOtp | InputText | KnowledgeDatabaseSelector | Knob | Listbox | LocaleInput | ModelSelect | MultiSelect | Password | RadioButton | Rating | Repeater | Select | SelectButton | Slider | Textarea | ToggleButton | ToggleSwitch | VectorStoreInput>;
+};
+
+/**
+ * HumanInTheLoopConfirmationRequestEvent
+ *
+ * Request yes/no confirmation from a human operator.
+ */
+export type HumanInTheLoopConfirmationRequestEvent = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     *
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display Name
+     *
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display Description
+     *
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Question
+     *
+     * The query or prompt presented to the human operator.
+     */
+    question: string;
+    /**
+     * Topic
+     *
+     * A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.
+     */
+    topic: PartialAgentTopic | AgentInstanceTopic;
+    /**
+     * Hitl Type
+     */
+    hitl_type?: 'confirmation';
+};
+
+/**
+ * HumanInTheLoopInputRequestEvent
+ *
+ * Request free-form text input from a human operator.
+ */
+export type HumanInTheLoopInputRequestEvent = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     *
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display Name
+     *
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display Description
+     *
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Question
+     *
+     * The query or prompt presented to the human operator.
+     */
+    question: string;
+    /**
+     * Topic
+     *
+     * A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.
+     */
+    topic: PartialAgentTopic | AgentInstanceTopic;
+    /**
+     * Hitl Type
+     */
+    hitl_type?: 'input';
 };
 
 /**
@@ -9090,27 +9232,53 @@ export type MultiSelect = {
 };
 
 /**
- * NamespaceAwareUserMessageEventInput
+ * NamespaceApprovalRequestEventOutput
  */
-export type NamespaceAwareUserMessageEventInput = {
+export type NamespaceApprovalRequestEventOutput = {
     /**
-     * Messages
+     * Display Name
      *
-     * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
+     * Display name for the event
      */
-    messages?: Array<JamboParserObjectTypeParserChatMessage2>;
+    display_name?: LocaleString | null;
     /**
-     * Files
+     * Display Description
      *
-     * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
+     * Display description for the event
      */
-    files?: Array<JamboParserObjectTypeParserUserUploadedFile2> | null;
+    display_description?: LocaleString | null;
     /**
-     * Selected Namespaces
+     * Question
      *
-     * List of bucket-namespace pairs for RAG retrieval filtering.
+     * The query or prompt presented to the human operator.
      */
-    selected_namespaces: Array<BucketNamespacePair>;
+    question: string;
+    /**
+     * Topic
+     *
+     * A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.
+     */
+    topic: PartialAgentTopic | AgentInstanceTopic;
+    /**
+     * Hitl Type
+     */
+    hitl_type?: 'confirmation';
+};
+
+/**
+ * NamespaceApprovalResponseEventInput
+ */
+export type NamespaceApprovalResponseEventInput = {
+    /**
+     * Response
+     *
+     * The human operator's confirmation (True for yes, False for no).
+     */
+    response: boolean;
+    /**
+     * The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.
+     */
+    request_event: HumanInTheLoopConfirmationRequestEvent;
 };
 
 /**
@@ -14038,6 +14206,54 @@ export type AdditionalLocationInfo = {
 };
 
 /**
+ * NamespaceAwareUserMessageEventInput
+ */
+export type AihubApiServicesModelCreationServiceNamespaceAwareUserMessageEventInput1 = {
+    /**
+     * Messages
+     *
+     * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
+     */
+    messages?: Array<JamboParserObjectTypeParserChatMessage2>;
+    /**
+     * Files
+     *
+     * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
+     */
+    files?: Array<JamboParserObjectTypeParserUserUploadedFile2> | null;
+    /**
+     * Selected Namespaces
+     *
+     * List of bucket-namespace pairs for RAG retrieval filtering.
+     */
+    selected_namespaces: Array<BucketNamespacePair>;
+};
+
+/**
+ * NamespaceAwareUserMessageEventInput
+ */
+export type AihubApiServicesModelCreationServiceNamespaceAwareUserMessageEventInput2 = {
+    /**
+     * Messages
+     *
+     * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
+     */
+    messages?: Array<JamboParserObjectTypeParserChatMessage4>;
+    /**
+     * Files
+     *
+     * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
+     */
+    files?: Array<JamboParserObjectTypeParserUserUploadedFile4> | null;
+    /**
+     * Selected Namespaces
+     *
+     * List of bucket-namespace pairs for RAG retrieval filtering.
+     */
+    selected_namespaces: Array<BucketNamespacePair>;
+};
+
+/**
  * UserMessageEventInput
  */
 export type AihubApiServicesModelCreationServiceUserMessageEventInput1 = {
@@ -14071,6 +14287,24 @@ export type AihubApiServicesModelCreationServiceUserMessageEventInput2 = {
      * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
      */
     files?: Array<JamboParserObjectTypeParserUserUploadedFile3> | null;
+};
+
+/**
+ * UserMessageEventInput
+ */
+export type AihubApiServicesModelCreationServiceUserMessageEventInput3 = {
+    /**
+     * Messages
+     *
+     * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
+     */
+    messages?: Array<JamboParserObjectTypeParserChatMessage5>;
+    /**
+     * Files
+     *
+     * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
+     */
+    files?: Array<JamboParserObjectTypeParserUserUploadedFile5> | null;
 };
 
 /**
@@ -14214,12 +14448,81 @@ export type JamboParserObjectTypeParserChatMessage3 = {
 };
 
 /**
+ * ChatMessage
+ *
+ * Chat message.
+ */
+export type JamboParserObjectTypeParserChatMessage4 = {
+    role?: MessageRole;
+    /**
+     * Additional Kwargs
+     */
+    additional_kwargs?: AdditionalKwargs;
+    /**
+     * Blocks
+     */
+    blocks?: Array<({
+        block_type: 'text';
+    } & TextBlock) | ({
+        block_type: 'image';
+    } & ImageBlockInput) | ({
+        block_type: 'audio';
+    } & AudioBlockInput) | ({
+        block_type: 'video';
+    } & VideoBlockInput) | ({
+        block_type: 'document';
+    } & DocumentBlockInput) | ({
+        block_type: 'cache';
+    } & CachePoint) | ({
+        block_type: 'citable';
+    } & CitableBlockInput) | ({
+        block_type: 'citation';
+    } & CitationBlockInput) | ({
+        block_type: 'thinking';
+    } & ThinkingBlockInput) | ({
+        block_type: 'tool_call';
+    } & ToolCallBlockInput)>;
+};
+
+/**
+ * ChatMessage
+ *
+ * Chat message.
+ */
+export type JamboParserObjectTypeParserChatMessage5 = {
+    role?: MessageRole;
+    /**
+     * Additional Kwargs
+     */
+    additional_kwargs?: AdditionalKwargs;
+    /**
+     * Blocks
+     */
+    blocks?: Array<({
+        block_type: 'text';
+    } & TextBlock) | ({
+        block_type: 'image';
+    } & ImageBlockInput) | ({
+        block_type: 'audio';
+    } & AudioBlockInput) | ({
+        block_type: 'video';
+    } & VideoBlockInput) | ({
+        block_type: 'document';
+    } & DocumentBlockInput) | ({
+        block_type: 'cache';
+    } & CachePoint) | ({
+        block_type: 'citable';
+    } & CitableBlockInput) | ({
+        block_type: 'citation';
+    } & CitationBlockInput) | ({
+        block_type: 'thinking';
+    } & ThinkingBlockInput) | ({
+        block_type: 'tool_call';
+    } & ToolCallBlockInput)>;
+};
+
+/**
  * UserUploadedFile
- *
- * Represents a file uploaded by a user for agent consumption.
- *
- * Security: Files are referenced by file_id only. The actual S3 location
- * is derived at runtime from the agent's dedicated bucket, preventing IDOR.
  */
 export type JamboParserObjectTypeParserUserUploadedFile1 = {
     /**
@@ -14229,26 +14532,21 @@ export type JamboParserObjectTypeParserUserUploadedFile1 = {
      */
     filename: string;
     /**
+     * File Data
+     *
+     * Base64 encoded content of the uploaded file.
+     */
+    file_data: string;
+    /**
      * File Type
      *
      * The MIME type of the uploaded file.
      */
     file_type: string;
-    /**
-     * File Id
-     *
-     * UUID4 file identifier, used as the S3 object key within the agent's dedicated bucket.
-     */
-    file_id: string;
 };
 
 /**
  * UserUploadedFile
- *
- * Represents a file uploaded by a user for agent consumption.
- *
- * Security: Files are referenced by file_id only. The actual S3 location
- * is derived at runtime from the agent's dedicated bucket, preventing IDOR.
  */
 export type JamboParserObjectTypeParserUserUploadedFile2 = {
     /**
@@ -14258,17 +14556,65 @@ export type JamboParserObjectTypeParserUserUploadedFile2 = {
      */
     filename: string;
     /**
+     * File Data
+     *
+     * Base64 encoded content of the uploaded file.
+     */
+    file_data: string;
+    /**
      * File Type
      *
      * The MIME type of the uploaded file.
      */
     file_type: string;
+};
+
+/**
+ * UserUploadedFile
+ */
+export type JamboParserObjectTypeParserUserUploadedFile3 = {
     /**
-     * File Id
+     * Filename
      *
-     * UUID4 file identifier, used as the S3 object key within the agent's dedicated bucket.
+     * The name of the uploaded file, including the extension.
      */
-    file_id: string;
+    filename: string;
+    /**
+     * File Data
+     *
+     * Base64 encoded content of the uploaded file.
+     */
+    file_data: string;
+    /**
+     * File Type
+     *
+     * The MIME type of the uploaded file.
+     */
+    file_type: string;
+};
+
+/**
+ * UserUploadedFile
+ */
+export type JamboParserObjectTypeParserUserUploadedFile4 = {
+    /**
+     * Filename
+     *
+     * The name of the uploaded file, including the extension.
+     */
+    filename: string;
+    /**
+     * File Data
+     *
+     * Base64 encoded content of the uploaded file.
+     */
+    file_data: string;
+    /**
+     * File Type
+     *
+     * The MIME type of the uploaded file.
+     */
+    file_type: string;
 };
 
 /**
@@ -14279,7 +14625,7 @@ export type JamboParserObjectTypeParserUserUploadedFile2 = {
  * Security: Files are referenced by file_id only. The actual S3 location
  * is derived at runtime from the agent's dedicated bucket, preventing IDOR.
  */
-export type JamboParserObjectTypeParserUserUploadedFile3 = {
+export type JamboParserObjectTypeParserUserUploadedFile5 = {
     /**
      * Filename
      *
@@ -24442,8 +24788,328 @@ export type TranslateTextResponses = {
 
 export type TranslateTextResponse = TranslateTextResponses[keyof TranslateTextResponses];
 
-export type SendUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostData = {
+export type SendUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdUserMessageEventPostData = {
     body: AihubApiServicesModelCreationServiceUserMessageEventInput1;
+    path: {
+        /**
+         * Agent ID
+         *
+         * The specific agent instance ID
+         */
+        agent_id: string;
+    };
+    query?: {
+        /**
+         * Thread Id
+         */
+        thread_id?: string;
+        /**
+         * Display Id
+         */
+        display_id?: string;
+    };
+    url: '/agents/classes/NamespaceSelectionAgent/instances/{agent_id}/UserMessageEvent';
+};
+
+export type SendUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdUserMessageEventPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SendUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdUserMessageEventPostError = SendUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdUserMessageEventPostErrors[keyof SendUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdUserMessageEventPostErrors];
+
+export type SendUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdUserMessageEventPostResponses = {
+    /**
+     * Response Send User Message Event To Namespace Selection Agent Agents Classes Namespaceselectionagent Instances  Agent Id  Usermessageevent Post
+     *
+     * Successful Response
+     */
+    200: StopEventOutput | FollowUpQuestionRequestEventOutput | NamespaceApprovalRequestEventOutput;
+};
+
+export type SendUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdUserMessageEventPostResponse = SendUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdUserMessageEventPostResponses[keyof SendUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdUserMessageEventPostResponses];
+
+export type StreamUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdUserMessageEventStreamPostData = {
+    body: AihubApiServicesModelCreationServiceUserMessageEventInput1;
+    path: {
+        /**
+         * Agent ID
+         *
+         * The specific agent instance ID
+         */
+        agent_id: string;
+    };
+    query?: {
+        /**
+         * Thread Id
+         */
+        thread_id?: string;
+        /**
+         * Display Id
+         */
+        display_id?: string;
+    };
+    url: '/agents/classes/NamespaceSelectionAgent/instances/{agent_id}/UserMessageEvent/stream';
+};
+
+export type StreamUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdUserMessageEventStreamPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type StreamUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdUserMessageEventStreamPostError = StreamUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdUserMessageEventStreamPostErrors[keyof StreamUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdUserMessageEventStreamPostErrors];
+
+export type StreamUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdUserMessageEventStreamPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type SendNamespaceAwareUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceAwareUserMessageEventPostData = {
+    body: AihubApiServicesModelCreationServiceNamespaceAwareUserMessageEventInput1;
+    path: {
+        /**
+         * Agent ID
+         *
+         * The specific agent instance ID
+         */
+        agent_id: string;
+    };
+    query?: {
+        /**
+         * Thread Id
+         */
+        thread_id?: string;
+        /**
+         * Display Id
+         */
+        display_id?: string;
+    };
+    url: '/agents/classes/NamespaceSelectionAgent/instances/{agent_id}/NamespaceAwareUserMessageEvent';
+};
+
+export type SendNamespaceAwareUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceAwareUserMessageEventPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SendNamespaceAwareUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceAwareUserMessageEventPostError = SendNamespaceAwareUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceAwareUserMessageEventPostErrors[keyof SendNamespaceAwareUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceAwareUserMessageEventPostErrors];
+
+export type SendNamespaceAwareUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceAwareUserMessageEventPostResponses = {
+    /**
+     * Response Send Namespace Aware User Message Event To Namespace Selection Agent Agents Classes Namespaceselectionagent Instances  Agent Id  Namespaceawareusermessageevent Post
+     *
+     * Successful Response
+     */
+    200: StopEventOutput | FollowUpQuestionRequestEventOutput | NamespaceApprovalRequestEventOutput;
+};
+
+export type SendNamespaceAwareUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceAwareUserMessageEventPostResponse = SendNamespaceAwareUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceAwareUserMessageEventPostResponses[keyof SendNamespaceAwareUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceAwareUserMessageEventPostResponses];
+
+export type StreamNamespaceAwareUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceAwareUserMessageEventStreamPostData = {
+    body: AihubApiServicesModelCreationServiceNamespaceAwareUserMessageEventInput1;
+    path: {
+        /**
+         * Agent ID
+         *
+         * The specific agent instance ID
+         */
+        agent_id: string;
+    };
+    query?: {
+        /**
+         * Thread Id
+         */
+        thread_id?: string;
+        /**
+         * Display Id
+         */
+        display_id?: string;
+    };
+    url: '/agents/classes/NamespaceSelectionAgent/instances/{agent_id}/NamespaceAwareUserMessageEvent/stream';
+};
+
+export type StreamNamespaceAwareUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceAwareUserMessageEventStreamPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type StreamNamespaceAwareUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceAwareUserMessageEventStreamPostError = StreamNamespaceAwareUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceAwareUserMessageEventStreamPostErrors[keyof StreamNamespaceAwareUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceAwareUserMessageEventStreamPostErrors];
+
+export type StreamNamespaceAwareUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceAwareUserMessageEventStreamPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type SendFollowUpQuestionResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdFollowUpQuestionResponseEventPostData = {
+    body: FollowUpQuestionResponseEventInput;
+    path: {
+        /**
+         * Agent ID
+         *
+         * The specific agent instance ID
+         */
+        agent_id: string;
+    };
+    query?: {
+        /**
+         * Thread Id
+         */
+        thread_id?: string;
+        /**
+         * Display Id
+         */
+        display_id?: string;
+    };
+    url: '/agents/classes/NamespaceSelectionAgent/instances/{agent_id}/FollowUpQuestionResponseEvent';
+};
+
+export type SendFollowUpQuestionResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdFollowUpQuestionResponseEventPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SendFollowUpQuestionResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdFollowUpQuestionResponseEventPostError = SendFollowUpQuestionResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdFollowUpQuestionResponseEventPostErrors[keyof SendFollowUpQuestionResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdFollowUpQuestionResponseEventPostErrors];
+
+export type SendFollowUpQuestionResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdFollowUpQuestionResponseEventPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type StreamFollowUpQuestionResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdFollowUpQuestionResponseEventStreamPostData = {
+    body: FollowUpQuestionResponseEventInput;
+    path: {
+        /**
+         * Agent ID
+         *
+         * The specific agent instance ID
+         */
+        agent_id: string;
+    };
+    query?: {
+        /**
+         * Thread Id
+         */
+        thread_id?: string;
+        /**
+         * Display Id
+         */
+        display_id?: string;
+    };
+    url: '/agents/classes/NamespaceSelectionAgent/instances/{agent_id}/FollowUpQuestionResponseEvent/stream';
+};
+
+export type StreamFollowUpQuestionResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdFollowUpQuestionResponseEventStreamPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type StreamFollowUpQuestionResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdFollowUpQuestionResponseEventStreamPostError = StreamFollowUpQuestionResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdFollowUpQuestionResponseEventStreamPostErrors[keyof StreamFollowUpQuestionResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdFollowUpQuestionResponseEventStreamPostErrors];
+
+export type StreamFollowUpQuestionResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdFollowUpQuestionResponseEventStreamPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type SendNamespaceApprovalResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceApprovalResponseEventPostData = {
+    body: NamespaceApprovalResponseEventInput;
+    path: {
+        /**
+         * Agent ID
+         *
+         * The specific agent instance ID
+         */
+        agent_id: string;
+    };
+    query?: {
+        /**
+         * Thread Id
+         */
+        thread_id?: string;
+        /**
+         * Display Id
+         */
+        display_id?: string;
+    };
+    url: '/agents/classes/NamespaceSelectionAgent/instances/{agent_id}/NamespaceApprovalResponseEvent';
+};
+
+export type SendNamespaceApprovalResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceApprovalResponseEventPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SendNamespaceApprovalResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceApprovalResponseEventPostError = SendNamespaceApprovalResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceApprovalResponseEventPostErrors[keyof SendNamespaceApprovalResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceApprovalResponseEventPostErrors];
+
+export type SendNamespaceApprovalResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceApprovalResponseEventPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type StreamNamespaceApprovalResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceApprovalResponseEventStreamPostData = {
+    body: NamespaceApprovalResponseEventInput;
+    path: {
+        /**
+         * Agent ID
+         *
+         * The specific agent instance ID
+         */
+        agent_id: string;
+    };
+    query?: {
+        /**
+         * Thread Id
+         */
+        thread_id?: string;
+        /**
+         * Display Id
+         */
+        display_id?: string;
+    };
+    url: '/agents/classes/NamespaceSelectionAgent/instances/{agent_id}/NamespaceApprovalResponseEvent/stream';
+};
+
+export type StreamNamespaceApprovalResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceApprovalResponseEventStreamPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type StreamNamespaceApprovalResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceApprovalResponseEventStreamPostError = StreamNamespaceApprovalResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceApprovalResponseEventStreamPostErrors[keyof StreamNamespaceApprovalResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceApprovalResponseEventStreamPostErrors];
+
+export type StreamNamespaceApprovalResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceApprovalResponseEventStreamPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type SendUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostData = {
+    body: AihubApiServicesModelCreationServiceUserMessageEventInput2;
     path: {
         /**
          * Agent ID
@@ -24484,7 +25150,7 @@ export type SendUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdU
 export type SendUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostResponse = SendUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostResponses[keyof SendUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostResponses];
 
 export type StreamUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventStreamPostData = {
-    body: AihubApiServicesModelCreationServiceUserMessageEventInput1;
+    body: AihubApiServicesModelCreationServiceUserMessageEventInput2;
     path: {
         /**
          * Agent ID
@@ -24523,7 +25189,7 @@ export type StreamUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentI
 };
 
 export type SendNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventPostData = {
-    body: NamespaceAwareUserMessageEventInput;
+    body: AihubApiServicesModelCreationServiceNamespaceAwareUserMessageEventInput2;
     path: {
         /**
          * Agent ID
@@ -24564,7 +25230,7 @@ export type SendNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentIns
 export type SendNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventPostResponse = SendNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventPostResponses[keyof SendNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventPostResponses];
 
 export type StreamNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventStreamPostData = {
-    body: NamespaceAwareUserMessageEventInput;
+    body: AihubApiServicesModelCreationServiceNamespaceAwareUserMessageEventInput2;
     path: {
         /**
          * Agent ID
@@ -24603,7 +25269,7 @@ export type StreamNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentI
 };
 
 export type SendUserMessageEventToFileInfoAgentAgentsClassesFileInfoAgentInstancesAgentIdUserMessageEventPostData = {
-    body: AihubApiServicesModelCreationServiceUserMessageEventInput2;
+    body: AihubApiServicesModelCreationServiceUserMessageEventInput3;
     path: {
         /**
          * Agent ID
@@ -24644,7 +25310,7 @@ export type SendUserMessageEventToFileInfoAgentAgentsClassesFileInfoAgentInstanc
 export type SendUserMessageEventToFileInfoAgentAgentsClassesFileInfoAgentInstancesAgentIdUserMessageEventPostResponse = SendUserMessageEventToFileInfoAgentAgentsClassesFileInfoAgentInstancesAgentIdUserMessageEventPostResponses[keyof SendUserMessageEventToFileInfoAgentAgentsClassesFileInfoAgentInstancesAgentIdUserMessageEventPostResponses];
 
 export type StreamUserMessageEventToFileInfoAgentAgentsClassesFileInfoAgentInstancesAgentIdUserMessageEventStreamPostData = {
-    body: AihubApiServicesModelCreationServiceUserMessageEventInput2;
+    body: AihubApiServicesModelCreationServiceUserMessageEventInput3;
     path: {
         /**
          * Agent ID
