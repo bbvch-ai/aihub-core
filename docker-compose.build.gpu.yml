@@ -271,7 +271,7 @@ services:
       OAUTH2_PROXY_CLIENT_ID: oauth2-proxy-datalake
       OAUTH2_PROXY_PROVIDER: oidc
       OAUTH2_PROXY_PROVIDER_DISPLAY_NAME: ${OAUTH_PROVIDER_NAME}
-      OAUTH2_PROXY_SKIP_OIDC_DISCOVERY: "true"
+      OAUTH2_PROXY_SKIP_OIDC_DISCOVERY: 'true'
       OAUTH2_PROXY_OIDC_ISSUER_URL: https://auth.${DOMAIN}/realms/aihub
       OAUTH2_PROXY_LOGIN_URL: https://auth.${DOMAIN}/realms/aihub/protocol/openid-connect/auth
       OAUTH2_PROXY_REDEEM_URL: http://keycloak:8080/realms/aihub/protocol/openid-connect/token
@@ -438,7 +438,7 @@ services:
       OAUTH2_PROXY_CLIENT_ID: oauth2-proxy-attu
       OAUTH2_PROXY_PROVIDER: oidc
       OAUTH2_PROXY_PROVIDER_DISPLAY_NAME: ${OAUTH_PROVIDER_NAME}
-      OAUTH2_PROXY_SKIP_OIDC_DISCOVERY: "true"
+      OAUTH2_PROXY_SKIP_OIDC_DISCOVERY: 'true'
       OAUTH2_PROXY_OIDC_ISSUER_URL: https://auth.${DOMAIN}/realms/aihub
       OAUTH2_PROXY_LOGIN_URL: https://auth.${DOMAIN}/realms/aihub/protocol/openid-connect/auth
       OAUTH2_PROXY_REDEEM_URL: http://keycloak:8080/realms/aihub/protocol/openid-connect/token
@@ -820,7 +820,6 @@ services:
   # In dev: Local users for development and E2E testing.
   # In prod: Identity broker for Azure AD and other providers.
   # ===================================================================
-
   keycloak:
     container_name: keycloak
     image: quay.io/keycloak/keycloak:26.5.4
@@ -875,8 +874,8 @@ services:
       KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
       KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN_USER}
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
-      KC_HEALTH_ENABLED: "true"
-      KC_METRICS_ENABLED: "true"
+      KC_HEALTH_ENABLED: 'true'
+      KC_METRICS_ENABLED: 'true'
       DOMAIN: ${DOMAIN}
       # Dev user configuration (passed to realm template)
       KEYCLOAK_DEV_USER_USERNAME: ${KEYCLOAK_DEV_USER_USERNAME}
@@ -899,7 +898,10 @@ services:
       - ./configs/keycloak/aihub-realm.build.gpu.json:/opt/keycloak/data/import-templates/aihub-realm.json:ro
       - ./configs/keycloak/identity-providers.build.gpu.json:/opt/keycloak/data/import-templates/identity-providers.json:ro
     healthcheck:
-      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/9000;echo -e 'GET /health/ready HTTP/1.1\r\nhost: localhost\r\nConnection: close\r\n\r\n' >&3;grep -q '200 OK' <&3"]
+      test:
+        - CMD-SHELL
+        - "exec 3<>/dev/tcp/127.0.0.1/9000;echo -e 'GET /health/ready HTTP/1.1\r\n\
+          host: localhost\r\nConnection: close\r\n\r\n' >&3;grep -q '200 OK' <&3"
       interval: 10s
       timeout: 5s
       retries: 5
@@ -913,26 +915,26 @@ services:
         max-size: 10m
         max-file: 2
     labels:
-      - "traefik.enable=true"
-      - "traefik.docker.network=proxy"
-      - "traefik.http.routers.keycloak.rule=Host(`auth.${DOMAIN}`)"
-      - "traefik.http.routers.keycloak.entrypoints=websecure"
-      - "traefik.http.routers.keycloak.tls=true"
-      - "traefik.http.routers.keycloak.priority=7000"
-      - "traefik.http.routers.keycloak.middlewares=keycloak-security-headers"
-      - "traefik.http.services.keycloak.loadbalancer.server.port=8080"
+      - traefik.enable=true
+      - traefik.docker.network=proxy
+      - traefik.http.routers.keycloak.rule=Host(`auth.${DOMAIN}`)
+      - traefik.http.routers.keycloak.entrypoints=websecure
+      - traefik.http.routers.keycloak.tls=true
+      - traefik.http.routers.keycloak.priority=7000
+      - traefik.http.routers.keycloak.middlewares=keycloak-security-headers
+      - traefik.http.services.keycloak.loadbalancer.server.port=8080
       # Keycloak manages its own X-Frame-Options per realm (master: SAMEORIGIN
       # for admin console session iframes, aihub: empty for parent app embedding).
       # We only add non-frame security headers here to avoid overriding Keycloak's
       # native per-realm frame policy — DENY breaks the admin console.
-      - "traefik.http.middlewares.keycloak-security-headers.headers.sslRedirect=false"
-      - "traefik.http.middlewares.keycloak-security-headers.headers.stsSeconds=31536000"
-      - "traefik.http.middlewares.keycloak-security-headers.headers.stsIncludeSubdomains=true"
-      - "traefik.http.middlewares.keycloak-security-headers.headers.contentTypeNosniff=true"
-      - "traefik.http.middlewares.keycloak-security-headers.headers.browserXssFilter=true"
-      - "traefik.http.middlewares.keycloak-security-headers.headers.referrerPolicy=strict-origin-when-cross-origin"
+      - traefik.http.middlewares.keycloak-security-headers.headers.sslRedirect=false
+      - traefik.http.middlewares.keycloak-security-headers.headers.stsSeconds=31536000
+      - traefik.http.middlewares.keycloak-security-headers.headers.stsIncludeSubdomains=true
+      - traefik.http.middlewares.keycloak-security-headers.headers.contentTypeNosniff=true
+      - traefik.http.middlewares.keycloak-security-headers.headers.browserXssFilter=true
+      - traefik.http.middlewares.keycloak-security-headers.headers.referrerPolicy=strict-origin-when-cross-origin
     networks:
-      - data   # PostgreSQL access for Keycloak database
+      - data  # PostgreSQL access for Keycloak database
       - proxy  # Traefik routing for auth.${DOMAIN}
 
   # ===================================================================
@@ -1344,8 +1346,8 @@ services:
       OAUTH_MERGE_ACCOUNTS_BY_EMAIL: true
       ENABLE_API_KEY: false
       WEBUI_SESSION_COOKIE_SAME_SITE: lax
-      WEBUI_SESSION_COOKIE_SECURE: True
-      ENABLE_OAUTH_SIGNUP: True
+      WEBUI_SESSION_COOKIE_SECURE: true
+      ENABLE_OAUTH_SIGNUP: true
       OAUTH_PROVIDER_NAME: ${OAUTH_PROVIDER_NAME}
       OAUTH_CLIENT_ID: openwebui
       OAUTH_CLIENT_SECRET: ${KEYCLOAK_OPENWEBUI_CLIENT_SECRET}
@@ -1421,7 +1423,7 @@ services:
       WEBSOCKET_MANAGER: redis
       WEBSOCKET_REDIS_URL: redis://default:${REDIS_TOKEN}@valkey:6379/11
       THREAD_POOL_SIZE: 32
-      CORS_ALLOW_ORIGIN: 'https://openwebui.${DOMAIN},https://${DOMAIN}'
+      CORS_ALLOW_ORIGIN: https://openwebui.${DOMAIN},https://${DOMAIN}
 
       # --- Admin ---
       ENABLE_ADMIN_EXPORT: true
@@ -1603,7 +1605,7 @@ services:
       OAUTH2_PROXY_CLIENT_ID: oauth2-proxy-dagster
       OAUTH2_PROXY_PROVIDER: oidc
       OAUTH2_PROXY_PROVIDER_DISPLAY_NAME: ${OAUTH_PROVIDER_NAME}
-      OAUTH2_PROXY_SKIP_OIDC_DISCOVERY: "true"
+      OAUTH2_PROXY_SKIP_OIDC_DISCOVERY: 'true'
       OAUTH2_PROXY_OIDC_ISSUER_URL: https://auth.${DOMAIN}/realms/aihub
       OAUTH2_PROXY_LOGIN_URL: https://auth.${DOMAIN}/realms/aihub/protocol/openid-connect/auth
       OAUTH2_PROXY_REDEEM_URL: http://keycloak:8080/realms/aihub/protocol/openid-connect/token

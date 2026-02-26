@@ -40,13 +40,8 @@ SAML, local users) as configured per deployment.
 
 2. **Keycloak Owns Access Gating, Not AI-Hub Roles**: Keycloak manages realm-level roles that determine *whether*
    a user may access the platform at all:
-   - `AIHubAdmin` — administrative access
-   - `AIHubUser` — standard access
-   - `AIHubDeveloper` — developer tools access
-   - `AIHubSysAdmin` — system administrator access to infrastructure tools (Dagster, SeaweedFS, Attu)
-
-   These roles are mapped from the upstream IdP's claims (e.g., Azure AD app role assignments → Keycloak realm roles via
-   identity provider mappers). The upstream IdP only needs to provide the role claims required to grant platform access.
+   - `AIHubAccess` — required Role in IdP for User to be accepted in Keycloak
+   - `AIHubSysAdmin` — system administrator access to infrastructure tools (Dagster, SeaweedFS, Attu) (must be set in Keycloak, or passed from IdP)
 
 3. **AI-Hub Manages Its Own Roles Locally**: All fine-grained, domain-specific role management (tenant assignments,
    agent permissions, data access controls, workflow authorizations) is handled by the platform's local role management

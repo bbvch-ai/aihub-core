@@ -84,63 +84,13 @@ different behaviors for different access levels, and validating permissions befo
 
 Internal admin services (Dagster, Attu, SeaweedFS) are protected by [OAuth2 Proxy](https://oauth2-proxy.github.io/)
 instances that sit in front of each service. OAuth2 Proxy handles the full OIDC login flow against Keycloak before
-forwarding authenticated requests to the upstream service.
+forwarding authenticated requests to the upstream service. Only users with the `AIHubSysAdmin` role can access these
+services.
 
-### Split Internal/External URL Configuration
-
-In a Docker Compose deployment, Keycloak is reachable by other containers via its internal Docker hostname
-(`http://keycloak:8080`), while browsers access it through Traefik at the external URL
-(`https://auth.<domain>`). This creates a split-horizon problem: OAuth2 Proxy needs the internal URL for
-server-to-server communication, but must redirect browsers to the external URL for login.
-
-When OAuth2 Proxy performs OIDC discovery against the internal URL, Keycloak's discovery document returns endpoints
-using its configured hostname but with the internal scheme and port (e.g., `http://auth.<domain>:8080/...`).
-These URLs are unreachable from both browsers (wrong scheme/port) and containers (the domain resolves to `127.0.0.1`
-in local environments using `nip.io`).
-
-### Why OIDC Discovery Is Skipped
-
-To resolve this, OIDC discovery is disabled (`OAUTH2_PROXY_SKIP_OIDC_DISCOVERY=true`) and all endpoints are configured
-explicitly:
-
-| Endpoint | URL Used | Reason |
-|---|---|---|
-| Authorization (login redirect) | External HTTPS (`https://auth.<domain>/...`) | Browser-facing, must be reachable by the user's browser |
-| Token exchange (redeem) | Internal HTTP (`http://keycloak:8080/...`) | Server-to-server, stays within Docker network |
-| JWKS (token verification) | Internal HTTP (`http://keycloak:8080/...`) | Server-to-server, stays within Docker network |
-| Issuer (token `iss` claim) | External HTTPS (`https://auth.<domain>/...`) | Must match the `iss` claim in tokens issued by Keycloak |
-
-### Consequences and Risk Assessment
-
-**What is lost by skipping discovery:**
-
-- **No automatic endpoint rotation.** If Keycloak's OIDC endpoints change (e.g., during a major Keycloak upgrade that
-  alters URL paths), the hardcoded URLs in `docker-compose.yml.j2` must be updated manually. In practice, Keycloak's
-  OIDC endpoint paths have been stable across major versions and follow the OIDC standard.
-- **No automatic key algorithm detection.** Discovery normally advertises supported signing algorithms. With discovery
-  skipped, OAuth2 Proxy falls back to its defaults (RS256), which matches Keycloak's default configuration.
-
-**What is NOT affected (security remains intact):**
-
-- **JWT signature verification is fully preserved.** Tokens are still validated against Keycloak's JWKS endpoint using
-  RSA public keys. This is the primary security mechanism — a forged or tampered token will be rejected.
-- **Token expiration and claims validation still applies.** OAuth2 Proxy validates `exp`, `iss`, and other standard
-  claims.
-- **The OIDC authorization code flow with PKCE is unchanged.** The login flow is identical — only the source of the
-  endpoint URLs differs (explicit config vs. discovery document).
-- **TLS is enforced on all browser-facing communication.** The authorization URL uses HTTPS. Internal container-to-container
-  traffic uses HTTP over the isolated Docker network, which is standard practice.
-
-**Why this trade-off is acceptable:**
-
-1. Keycloak's OIDC endpoints follow a well-defined, stable URL convention
-   (`/realms/{realm}/protocol/openid-connect/{auth|token|certs}`). These paths are part of the OIDC specification and
-   unlikely to change.
-2. The endpoints are generated from Jinja2 template variables (`KEYCLOAK_INTERNAL_URL`, `KEYCLOAK_REALM`), so they
-   remain consistent with the rest of the deployment configuration.
-3. The alternative — having Keycloak return correct split-horizon URLs in its discovery document — would require complex
-   hostname configuration in Keycloak that behaves differently depending on whether the request comes from inside or
-   outside the Docker network.
+Due to the split-horizon networking in Docker deployments (containers use internal hostnames, browsers use external
+URLs), OIDC discovery is skipped and endpoints are configured explicitly. See
+[ADR: Skip OIDC Discovery for OAuth2 Proxy](../../../../arc42/decisions/2026_02_26_skip_oidc_discovery_for_oauth2_proxy.md)
+for the technical rationale.
 
 ## Hardening: Keycloak Admin Console Access
 

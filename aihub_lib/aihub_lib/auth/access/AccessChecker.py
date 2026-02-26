@@ -51,30 +51,25 @@ class AccessChecker:
         return self.user_valid_access_rules
 
     @classmethod
-    def from_user(cls, user: UserIdentity, tenant_id: str | None = None):
+    def from_user(cls, user: UserIdentity):
         """
-        Creates an AccessChecker from a user's roles.
+        Creates an AccessChecker from a UserIdentity.
 
-        In single-tenant mode (tenant_id is None), uses the roles from user.roles
-        which are cached from the default tenant. In multi-tenant mode, pass the
-        tenant_id to resolve roles with tenant-specific access rules.
+        Extracts both user roles and tenant access rules from the UserIdentity,
+        which already contains the tenant context via acting_within_tenant.
+
+        The user's roles are already resolved for the tenant they're acting within,
+        and the tenant's access rules are embedded in the TenantIdentity.
+
+        IMPORTANT: Enforces tenant-level restrictions - tenant access rules act as a ceiling.
         """
-        user_access_rules = RoleEntity.get_access_rules_for_roles(user.roles, tenant_id=tenant_id)
-        return cls(user_access_rules=list(user_access_rules))
+        # User roles are already resolved for the acting tenant
+        user_access_rules = RoleEntity.get_access_rules_for_roles(user.roles, tenant_id=user.acting_within_tenant.id)
 
-    @classmethod
-    def from_user_in_tenant(cls, user_id: str, tenant_id: str):
-        """
-        Creates an AccessChecker for a user in a specific tenant.
+        # Tenant access rules come from the embedded TenantIdentity
+        tenant_access_rules = user.acting_within_tenant.access_rules
 
-        This resolves roles directly from the UserTenantRoleEntity, ensuring
-        accurate role information for multi-tenant scenarios.
-        """
-        from aihub_lib.persistence.access.entities.UserTenantRoleEntity import UserTenantRoleEntity
-
-        roles = UserTenantRoleEntity.get_roles_for_user_in_tenant(user_id, tenant_id)
-        user_access_rules = RoleEntity.get_access_rules_for_roles(roles, tenant_id=tenant_id)
-        return cls(user_access_rules=list(user_access_rules))
+        return cls(user_access_rules=list(user_access_rules), tenant_access_rules=tenant_access_rules)
 
     @staticmethod
     def validate_user_access_rule(access_rule: str) -> bool:

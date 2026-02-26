@@ -21,13 +21,6 @@ class DangerousDevelopmentOnlyAuthHandler:
     WARNING: Never use in production!
     """
 
-    """
-    A FastAPI dependency for development/testing only.
-
-    Bypasses all authentication and returns a fake user identity from configuration.
-    WARNING: Never use in production!
-    """
-
     def __init__(self) -> None:
         self.config = DangerousDevelopmentOnlyAuthSettings()
 

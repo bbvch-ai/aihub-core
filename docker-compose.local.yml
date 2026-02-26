@@ -267,13 +267,17 @@ services:
       OAUTH2_PROXY_UPSTREAMS: http://seaweedfs-filer:8888
       OAUTH2_PROXY_ALLOWED_GROUPS: ${OAUTH_ALLOWED_GROUPS_SEAWEEDFS}
       OAUTH2_PROXY_OIDC_GROUPS_CLAIM: roles
-      OAUTH2_PROXY_SCOPE: openid email profile
-      OAUTH2_PROXY_CLIENT_ID: ${OAUTH_CLIENT_ID}
+      OAUTH2_PROXY_SCOPE: openid email profile roles
+      OAUTH2_PROXY_CLIENT_ID: oauth2-proxy-datalake
       OAUTH2_PROXY_PROVIDER: oidc
       OAUTH2_PROXY_PROVIDER_DISPLAY_NAME: ${OAUTH_PROVIDER_NAME}
-      OAUTH2_PROXY_OIDC_ISSUER_URL: ${OAUTH_AUTHORITY_URL}/v2.0
+      OAUTH2_PROXY_SKIP_OIDC_DISCOVERY: 'true'
+      OAUTH2_PROXY_OIDC_ISSUER_URL: https://auth.${DOMAIN}/realms/aihub
+      OAUTH2_PROXY_LOGIN_URL: https://auth.${DOMAIN}/realms/aihub/protocol/openid-connect/auth
+      OAUTH2_PROXY_REDEEM_URL: http://keycloak:8080/realms/aihub/protocol/openid-connect/token
+      OAUTH2_PROXY_OIDC_JWKS_URL: http://keycloak:8080/realms/aihub/protocol/openid-connect/certs
       OAUTH2_PROXY_COOKIE_SECRET: ${OAUTH_COOKIE_SECRET_SEAWEEDFS}
-      OAUTH2_PROXY_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
+      OAUTH2_PROXY_CLIENT_SECRET: ${KEYCLOAK_OAUTH2_PROXY_DATALAKE_SECRET}
       OAUTH2_PROXY_EMAIL_DOMAINS: '*'
       OAUTH2_PROXY_CUSTOM_SIGN_IN_LOGO: ${OAUTH_CUSTOM_SIGN_IN_LOGO}
       OAUTH2_PROXY_REVERSE_PROXY: true
@@ -430,15 +434,19 @@ services:
       OAUTH2_PROXY_UPSTREAMS: http://attu:3000
       OAUTH2_PROXY_ALLOWED_GROUPS: ${OAUTH_ALLOWED_GROUPS_ATTU}
       OAUTH2_PROXY_OIDC_GROUPS_CLAIM: roles
-      OAUTH2_PROXY_SCOPE: openid email profile
-      OAUTH2_PROXY_CLIENT_ID: ${OAUTH_CLIENT_ID}
+      OAUTH2_PROXY_SCOPE: openid email profile roles
+      OAUTH2_PROXY_CLIENT_ID: oauth2-proxy-attu
       OAUTH2_PROXY_PROVIDER: oidc
       OAUTH2_PROXY_PROVIDER_DISPLAY_NAME: ${OAUTH_PROVIDER_NAME}
-      OAUTH2_PROXY_OIDC_ISSUER_URL: ${OAUTH_AUTHORITY_URL}/v2.0
+      OAUTH2_PROXY_SKIP_OIDC_DISCOVERY: 'true'
+      OAUTH2_PROXY_OIDC_ISSUER_URL: https://auth.${DOMAIN}/realms/aihub
+      OAUTH2_PROXY_LOGIN_URL: https://auth.${DOMAIN}/realms/aihub/protocol/openid-connect/auth
+      OAUTH2_PROXY_REDEEM_URL: http://keycloak:8080/realms/aihub/protocol/openid-connect/token
+      OAUTH2_PROXY_OIDC_JWKS_URL: http://keycloak:8080/realms/aihub/protocol/openid-connect/certs
       OAUTH2_PROXY_COOKIE_SECRET: ${OAUTH_COOKIE_SECRET_ATTU}
-      OAUTH2_PROXY_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
+      OAUTH2_PROXY_CLIENT_SECRET: ${KEYCLOAK_OAUTH2_PROXY_ATTU_SECRET}
       OAUTH2_PROXY_EMAIL_DOMAINS: '*'
-      OAUTH2_PROXY_CUSTOM_SIGN_IN_LOGO: https://aiagentsstpublicblobs.blob.core.windows.net/logos/Bbv-Logo_farbig.png
+      OAUTH2_PROXY_CUSTOM_SIGN_IN_LOGO: ${OAUTH_CUSTOM_SIGN_IN_LOGO}
       OAUTH2_PROXY_REVERSE_PROXY: true
       OAUTH2_PROXY_REDIRECT_URL: https://attu.${DOMAIN}
     depends_on: [attu]
@@ -472,7 +480,7 @@ services:
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_MULTIPLE_DATABASES: openwebui,langfuse,dagster,litellm
+      POSTGRES_MULTIPLE_DATABASES: openwebui,langfuse,dagster,litellm,keycloak
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/postgres-data:/var/lib/postgresql/data
       - ./configs/postgres/init-multiple-dbs.sh:/docker-entrypoint-initdb.d/init-multiple-dbs.sh:ro
@@ -804,6 +812,130 @@ services:
       - data  # For PostgreSQL access
       - storage  # For SeaweedFS S3 access
       - proxy  # For Traefik access
+
+  # ===================================================================
+  # Keycloak Stack (Identity and Access Management)
+  # ===================================================================
+  # Keycloak provides OIDC/OAuth2 authentication for all services.
+  # In dev: Local users for development and E2E testing.
+  # In prod: Identity broker for Azure AD and other providers.
+  # ===================================================================
+  keycloak:
+    container_name: keycloak
+    image: quay.io/keycloak/keycloak:26.5.4
+    restart: unless-stopped
+    # Shell wrapper to substitute ${DOMAIN} in realm JSON before import.
+    # Keycloak's --import-realm does not support env var substitution natively,
+    # so we pre-process the template files with sed before starting.
+    #
+    # Import strategy:
+    # - aihub-realm.json: Imported via --import-realm (creates realm on first start only)
+    # - identity-providers.json: Applied via partialImport API after startup (every start,
+    #   with OVERWRITE so config changes are picked up). This keeps the files separate
+    #   and avoids --import-realm's OVERWRITE_EXISTING destroying the realm.
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        mkdir -p /opt/keycloak/data/import
+        # Substitute all environment variables in template files.
+        # Keycloak's --import-realm does not support env var substitution, so we
+        # use a pure-bash envsubst (the Keycloak image has no envsubst/perl/awk).
+        bash_envsubst() {
+          local content
+          content=$$(cat "$$1")
+          while IFS= read -r var; do
+            content=$${content//"\$${$$var}"/"$${!var}"}
+          done < <(compgen -v)
+          echo "$$content"
+        }
+        for f in /opt/keycloak/data/import-templates/*.json; do
+          bash_envsubst "$$f" > "/tmp/$$(basename $$f)"
+        done
+        # Only the realm file goes to --import-realm (first-start creation)
+        cp /tmp/aihub-realm.json /opt/keycloak/data/import/
+        # Apply identity providers via partialImport after Keycloak is ready
+        if [ -f /tmp/identity-providers.json ]; then
+          (
+            echo "Waiting for Keycloak to be ready before applying identity providers..."
+            until /opt/keycloak/bin/kcadm.sh config credentials --server http://localhost:8080 --realm master --user "$$KC_BOOTSTRAP_ADMIN_USERNAME" --password "$$KC_BOOTSTRAP_ADMIN_PASSWORD" > /dev/null 2>&1; do sleep 3; done
+            /opt/keycloak/bin/kcadm.sh create partialImport -r aihub \
+              -s ifResourceExists=OVERWRITE \
+              -f /tmp/identity-providers.json \
+              && echo "Identity providers applied successfully." \
+              || echo "ERROR: Failed to apply identity providers."
+          ) &
+        fi
+        exec /opt/keycloak/bin/kc.sh start --import-realm --hostname=https://auth.$$DOMAIN --hostname-backchannel-dynamic=true --proxy-headers=xforwarded --http-enabled=true
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+      KC_DB_USERNAME: ${POSTGRES_USER}
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN_USER}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      KC_HEALTH_ENABLED: 'true'
+      KC_METRICS_ENABLED: 'true'
+      DOMAIN: ${DOMAIN}
+      # Dev user configuration (passed to realm template)
+      KEYCLOAK_DEV_USER_USERNAME: ${KEYCLOAK_DEV_USER_USERNAME}
+      KEYCLOAK_DEV_USER_PASSWORD: ${KEYCLOAK_DEV_USER_PASSWORD}
+      KEYCLOAK_DEV_USER_EMAIL: ${KEYCLOAK_DEV_USER_EMAIL}
+      KEYCLOAK_DEV_USER_FIRSTNAME: ${KEYCLOAK_DEV_USER_FIRSTNAME}
+      KEYCLOAK_DEV_USER_LASTNAME: ${KEYCLOAK_DEV_USER_LASTNAME}
+      KEYCLOAK_DEV_USER_ROLES_JSON: ${KEYCLOAK_DEV_USER_ROLES_JSON}
+      # Client secrets (used by bash_envsubst in realm template)
+      KEYCLOAK_OPENWEBUI_CLIENT_SECRET: ${KEYCLOAK_OPENWEBUI_CLIENT_SECRET}
+      KEYCLOAK_OAUTH2_PROXY_DAGSTER_SECRET: ${KEYCLOAK_OAUTH2_PROXY_DAGSTER_SECRET}
+      KEYCLOAK_OAUTH2_PROXY_DATALAKE_SECRET: ${KEYCLOAK_OAUTH2_PROXY_DATALAKE_SECRET}
+      KEYCLOAK_OAUTH2_PROXY_ATTU_SECRET: ${KEYCLOAK_OAUTH2_PROXY_ATTU_SECRET}
+      # Azure Entra ID configuration (for identity provider federation)
+      KEYCLOAK_AZURE_CLIENT_ID: ${KEYCLOAK_AZURE_CLIENT_ID}
+      KEYCLOAK_AZURE_CLIENT_SECRET: ${KEYCLOAK_AZURE_CLIENT_SECRET}
+      KEYCLOAK_AZURE_TENANT_ID: ${KEYCLOAK_AZURE_TENANT_ID}
+    volumes:
+      # Non-dev stages: mount as templates, sed-processed before import
+      - ./configs/keycloak/aihub-realm.local.json:/opt/keycloak/data/import-templates/aihub-realm.json:ro
+      - ./configs/keycloak/identity-providers.local.json:/opt/keycloak/data/import-templates/identity-providers.json:ro
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - "exec 3<>/dev/tcp/127.0.0.1/9000;echo -e 'GET /health/ready HTTP/1.1\r\n\
+          host: localhost\r\nConnection: close\r\n\r\n' >&3;grep -q '200 OK' <&3"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    depends_on:
+      postgres:
+        condition: service_healthy
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=proxy
+      - traefik.http.routers.keycloak.rule=Host(`auth.${DOMAIN}`)
+      - traefik.http.routers.keycloak.entrypoints=websecure
+      - traefik.http.routers.keycloak.tls=true
+      - traefik.http.routers.keycloak.priority=7000
+      - traefik.http.routers.keycloak.middlewares=keycloak-security-headers
+      - traefik.http.services.keycloak.loadbalancer.server.port=8080
+      # Keycloak manages its own X-Frame-Options per realm (master: SAMEORIGIN
+      # for admin console session iframes, aihub: empty for parent app embedding).
+      # We only add non-frame security headers here to avoid overriding Keycloak's
+      # native per-realm frame policy — DENY breaks the admin console.
+      - traefik.http.middlewares.keycloak-security-headers.headers.sslRedirect=false
+      - traefik.http.middlewares.keycloak-security-headers.headers.stsSeconds=31536000
+      - traefik.http.middlewares.keycloak-security-headers.headers.stsIncludeSubdomains=true
+      - traefik.http.middlewares.keycloak-security-headers.headers.contentTypeNosniff=true
+      - traefik.http.middlewares.keycloak-security-headers.headers.browserXssFilter=true
+      - traefik.http.middlewares.keycloak-security-headers.headers.referrerPolicy=strict-origin-when-cross-origin
+    networks:
+      - data  # PostgreSQL access for Keycloak database
+      - proxy  # Traefik routing for auth.${DOMAIN}
 
   # ===================================================================
   # Nats & Valkey Stack (Messaging and Caching)
@@ -1149,6 +1281,8 @@ services:
         condition: service_healthy
       playwright:
         condition: service_healthy
+      keycloak:
+        condition: service_healthy
       api:
         condition: service_healthy
     environment:
@@ -1176,27 +1310,28 @@ services:
       OTEL_EXPORTER_OTLP_INSECURE: true
       OTEL_SERVICE_NAME: open-webui
 
-      # --- Auth & OIDC ---
+      # --- Auth & OIDC (Keycloak) ---
+      WEBUI_SECRET_KEY: ${WEBUI_SECRET_KEY}
       WEBUI_AUTH: true
       DEFAULT_USER_ROLE: user
       OAUTH_MERGE_ACCOUNTS_BY_EMAIL: true
       ENABLE_API_KEY: false
       WEBUI_SESSION_COOKIE_SAME_SITE: lax
-      WEBUI_SESSION_COOKIE_SECURE: false
+      WEBUI_SESSION_COOKIE_SECURE: true
       ENABLE_OAUTH_SIGNUP: true
       OAUTH_PROVIDER_NAME: ${OAUTH_PROVIDER_NAME}
-      OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
-      OAUTH_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
-      OPENID_PROVIDER_URL: ${OAUTH_AUTHORITY_URL}/v2.0/.well-known/openid-configuration
+      OAUTH_CLIENT_ID: openwebui
+      OAUTH_CLIENT_SECRET: ${KEYCLOAK_OPENWEBUI_CLIENT_SECRET}
+      OPENID_PROVIDER_URL: http://keycloak:8080/realms/aihub/.well-known/openid-configuration
       OPENID_REDIRECT_URI: https://openwebui.${DOMAIN}/oauth/oidc/callback
       OAUTH_ALLOWED_DOMAINS: '*'
       OAUTH_SCOPES: openid email profile
       OAUTH_TIMEOUT: 60
       OAUTH_CODE_CHALLENGE_METHOD: S256
-      OAUTH_USERNAME_CLAIM: name
+      OAUTH_USERNAME_CLAIM: preferred_username
       OAUTH_PICTURE_CLAIM: picture
       OAUTH_EMAIL_CLAIM: email
-      OAUTH_GROUP_CLAIM: email
+      OAUTH_GROUP_CLAIM: roles
 
       # --- Data Storage (S3) ---
       STORAGE_PROVIDER: s3
@@ -1259,7 +1394,7 @@ services:
       WEBSOCKET_MANAGER: redis
       WEBSOCKET_REDIS_URL: redis://default:${REDIS_TOKEN}@valkey:6379/11
       THREAD_POOL_SIZE: 32
-      CORS_ALLOW_ORIGIN: '*' # TODO: Make this more secure
+      CORS_ALLOW_ORIGIN: https://openwebui.${DOMAIN},https://${DOMAIN}
 
       # --- Admin ---
       ENABLE_ADMIN_EXPORT: true
@@ -1438,16 +1573,20 @@ services:
       OAUTH2_PROXY_COOKIE_SECURE: false
       OAUTH2_PROXY_CODE_CHALLENGE_METHOD: S256
       OAUTH2_PROXY_UPSTREAMS: http://dagster-webserver:3000
-      OAUTH2_PROXY_CLIENT_ID: ${OAUTH_CLIENT_ID}
+      OAUTH2_PROXY_CLIENT_ID: oauth2-proxy-dagster
       OAUTH2_PROXY_PROVIDER: oidc
       OAUTH2_PROXY_PROVIDER_DISPLAY_NAME: ${OAUTH_PROVIDER_NAME}
-      OAUTH2_PROXY_OIDC_ISSUER_URL: ${OAUTH_AUTHORITY_URL}/v2.0
+      OAUTH2_PROXY_SKIP_OIDC_DISCOVERY: 'true'
+      OAUTH2_PROXY_OIDC_ISSUER_URL: https://auth.${DOMAIN}/realms/aihub
+      OAUTH2_PROXY_LOGIN_URL: https://auth.${DOMAIN}/realms/aihub/protocol/openid-connect/auth
+      OAUTH2_PROXY_REDEEM_URL: http://keycloak:8080/realms/aihub/protocol/openid-connect/token
+      OAUTH2_PROXY_OIDC_JWKS_URL: http://keycloak:8080/realms/aihub/protocol/openid-connect/certs
       OAUTH2_PROXY_COOKIE_SECRET: ${OAUTH_COOKIE_SECRET_DAGSTER}
-      OAUTH2_PROXY_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
+      OAUTH2_PROXY_CLIENT_SECRET: ${KEYCLOAK_OAUTH2_PROXY_DAGSTER_SECRET}
       OAUTH2_PROXY_EMAIL_DOMAINS: '*'
       OAUTH2_PROXY_REVERSE_PROXY: true
       OAUTH2_PROXY_REDIRECT_URL: https://dagster.${DOMAIN}
-      OAUTH2_PROXY_SCOPE: openid email profile
+      OAUTH2_PROXY_SCOPE: openid email profile roles
       OAUTH2_PROXY_ALLOWED_GROUPS: ${OAUTH_ALLOWED_GROUPS_DAGSTER}
       OAUTH2_PROXY_OIDC_GROUPS_CLAIM: roles
       OAUTH2_PROXY_CUSTOM_SIGN_IN_LOGO: ${OAUTH_CUSTOM_SIGN_IN_LOGO}
@@ -1659,6 +1798,11 @@ services:
       AUTH_ENABLE_API_ACCESS: true
       AUTH_OPEN_WEBUI_SIGNING_SECRET: ${AUTH_OPEN_WEBUI_SIGNING_SECRET}
 
+      # Keycloak OIDC config
+      KEYCLOAK_URL: http://keycloak:8080
+      KEYCLOAK_EXTERNAL_URL: https://auth.${DOMAIN}
+      KEYCLOAK_REALM: aihub
+
       # Oauth2 config
       OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
       OAUTH_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
@@ -1793,6 +1937,7 @@ services:
       OAUTH_AUTHORITY_URL: ${OAUTH_AUTHORITY_URL}
       WEBUI_URL: https://openwebui.${DOMAIN}
       WS_ENDPOINT: wss://${DOMAIN}/api/v1/events/ws
+      IDENTITY_PROVIDERS: ${IDENTITY_PROVIDERS}
     healthcheck:
       test: [CMD, curl, -f, http://127.0.0.1/]
       interval: 30s

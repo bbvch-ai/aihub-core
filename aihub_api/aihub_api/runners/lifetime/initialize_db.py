@@ -148,16 +148,6 @@ async def initialize_system_role(name: str, description: str, access_rules: list
         raise
 
 
-async def initialize_role(name: str, description: str, access_rules: list[str]) -> None:
-    """
-    Initialize a single role in the database if it doesn't already exist.
-
-    Deprecated: Use initialize_system_role for system roles.
-    This function is kept for backwards compatibility.
-    """
-    await initialize_system_role(name, description, access_rules)
-
-
 async def initialize_superuser() -> None:
     """
     Initialize the superuser in the database if superuser auth is enabled.

@@ -114,6 +114,7 @@ license-check:
 generate-compose:
 	@echo "Generating Docker Compose files..."
 	@uv run python deployment/generate_compose.py
+	@$(MAKE) format-yaml
 
 # Generate release bundles with version-pinned images (TAG=v0.266.0, OUTPUT_DIR=dist/release)
 OUTPUT_DIR ?= dist/release
