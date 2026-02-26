@@ -99,8 +99,9 @@ runner.mount(
     .get_summary_nodes_for_document()
     .initiate_document_upload()
     .validate_document_upload()
-    .get_supported_file_types(),
-    FileController(auth=auth).get_file_url().get_file_redirect().get_anonymous_file_url().get_anonymous_file_redirect(),
+    .get_supported_file_types()
+    .get_document_url(),
+    FileController(auth=auth).get_file_url().get_anonymous_file_url().get_anonymous_file_redirect(),
     NotificationController(auth=auth).get_notifications().update_notifications().update_notification(),
     UserMemoryController(auth=auth)
     .get_user_memories()

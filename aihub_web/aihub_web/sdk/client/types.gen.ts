@@ -22982,6 +22982,44 @@ export type GetSupportedFileTypesResponses = {
 
 export type GetSupportedFileTypesResponse = GetSupportedFileTypesResponses[keyof GetSupportedFileTypesResponses];
 
+export type GetDocumentUrlData = {
+    body?: never;
+    path: {
+        /**
+         * Database name
+         */
+        database: string;
+        /**
+         * Namespace
+         */
+        namespace: string;
+        /**
+         * Document ID
+         */
+        document_id: string;
+    };
+    query?: never;
+    url: '/knowledge/databases/{database}/namespaces/{namespace}/documents/{document_id}/url';
+};
+
+export type GetDocumentUrlErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetDocumentUrlError = GetDocumentUrlErrors[keyof GetDocumentUrlErrors];
+
+export type GetDocumentUrlResponses = {
+    /**
+     * Successful Response
+     */
+    200: SignedUrlDto;
+};
+
+export type GetDocumentUrlResponse = GetDocumentUrlResponses[keyof GetDocumentUrlResponses];
+
 export type GetFileUrlData = {
     body?: never;
     path: {
@@ -23015,38 +23053,6 @@ export type GetFileUrlResponses = {
 };
 
 export type GetFileUrlResponse = GetFileUrlResponses[keyof GetFileUrlResponses];
-
-export type GetFileRedirectData = {
-    body?: never;
-    path: {
-        /**
-         * Container
-         */
-        container: string;
-        /**
-         * File Path
-         */
-        file_path: string;
-    };
-    query?: never;
-    url: '/files/logged-in/redirect/{container}/{file_path}';
-};
-
-export type GetFileRedirectErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type GetFileRedirectError = GetFileRedirectErrors[keyof GetFileRedirectErrors];
-
-export type GetFileRedirectResponses = {
-    /**
-     * Successful Response
-     */
-    200: unknown;
-};
 
 export type GetAnonymousFileUrlData = {
     body?: never;
