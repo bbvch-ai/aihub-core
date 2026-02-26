@@ -20,6 +20,7 @@ Architecture:
 - SSE streaming to /api/v1/agents/classes/{class}/instances/{id}/{event}/stream endpoints
 """
 
+import asyncio
 import hashlib
 import hmac
 import html
@@ -1387,7 +1388,6 @@ class FileProcessingService:
     def __init__(self, base_url: str, s3_endpoint: str, s3_access_key: str, s3_secret_key: str) -> None:
         self._base_url = base_url
         self._owui_s3_client = self._create_s3_client(s3_endpoint, s3_access_key, s3_secret_key)
-        self._upload_cache: dict[str, dict[str, str]] = {}
 
     @staticmethod
     def _create_s3_client(endpoint: str, access_key: str, secret_key: str) -> Any:
@@ -1418,18 +1418,9 @@ class FileProcessingService:
         prepared_files: list[dict[str, str]] = []
 
         for file in files:
-            owui_id = file.get("id", "")
-            cache_key = f"{owui_id}:{agent_class}:{agent_id}"
-
-            if cache_key in self._upload_cache:
-                logger.debug(f"Using cached upload for file {file.get('name', '')} (owui_id={owui_id})")
-                prepared_files.append(self._upload_cache[cache_key])
-                continue
-
             try:
                 prepared_file = await self._process_single_file(file, agent_class, agent_id, headers)
                 if prepared_file:
-                    self._upload_cache[cache_key] = prepared_file
                     prepared_files.append(prepared_file)
             except Exception as e:
                 logger.exception(f"Error processing file {file.get('name', '')}: {e}")
@@ -1457,8 +1448,8 @@ class FileProcessingService:
         filename = file_meta.get("name", "unnamed_file")
         content_type = file_meta.get("content_type", "application/octet-stream")
 
-        # Read file content from OpenWebUI's S3 storage
-        file_content = self._read_file_content(file_obj)
+        # Read file content from OpenWebUI's S3 storage (blocking I/O offloaded to thread)
+        file_content = await asyncio.to_thread(self._read_file_content, file_obj)
 
         async with httpx.AsyncClient(timeout=30.0) as client:
             # Step 1: Initiate upload — get presigned URL + file_id

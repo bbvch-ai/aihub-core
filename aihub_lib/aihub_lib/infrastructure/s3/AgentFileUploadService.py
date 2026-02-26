@@ -66,8 +66,9 @@ class AgentFileUploadService:
     def s3_key(agent_class: str, agent_id: str, file_id: str, filename: str) -> str:
         safe_class = AgentFileUploadService._sanitize_path_segment(agent_class)
         safe_id = AgentFileUploadService._sanitize_path_segment(agent_id)
+        safe_file_id = AgentFileUploadService._sanitize_path_segment(file_id)
         safe_name = AgentFileUploadService._sanitize_path_segment(filename)
-        return f"{safe_class}/{safe_id}/{file_id}/{safe_name}"
+        return f"{safe_class}/{safe_id}/{safe_file_id}/{safe_name}"
 
     @trace_fn
     def generate_upload_url(self, agent_class: str, agent_id: str, content_type: str, filename: str) -> tuple[str, str]:

@@ -15,4 +15,12 @@ class AgentFileUploadRequest(BaseModel):
             description="Original filename with extension. Must not contain path separators.",
         ),
     ]
-    content_type: Annotated[str, Field(min_length=1, description="MIME type of the file.")]
+    content_type: Annotated[
+        str,
+        Field(
+            min_length=1,
+            max_length=255,
+            pattern=r"^[a-zA-Z0-9][a-zA-Z0-9!#$&\-^_]+/[a-zA-Z0-9][a-zA-Z0-9!#$&\-^_.+]*$",
+            description="MIME type of the file (e.g. application/pdf, image/png).",
+        ),
+    ]

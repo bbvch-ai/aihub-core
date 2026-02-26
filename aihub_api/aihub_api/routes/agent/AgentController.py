@@ -1,3 +1,4 @@
+import asyncio
 from typing import Annotated, Self
 
 from aihub_lib.auth.access.AccessChecker import AccessChecker
@@ -249,7 +250,8 @@ class AgentController(Controller):
             upload_service: Annotated[AgentFileUploadService, Depends(use_agent_file_upload_service)],
         ) -> AgentFileUploadResponse:
             """Initiate a file upload by generating a presigned PUT URL for the agent's dedicated bucket."""
-            presigned_url, file_id = upload_service.generate_upload_url(
+            presigned_url, file_id = await asyncio.to_thread(
+                upload_service.generate_upload_url,
                 agent_class=agent_class,
                 agent_id=agent_id,
                 content_type=request.content_type,
@@ -278,7 +280,8 @@ class AgentController(Controller):
             upload_service: Annotated[AgentFileUploadService, Depends(use_agent_file_upload_service)],
         ) -> AgentFileValidationResponse:
             """Validate that a file was successfully uploaded to the agent's dedicated bucket."""
-            exists = upload_service.verify_file_exists(
+            exists = await asyncio.to_thread(
+                upload_service.verify_file_exists,
                 agent_class=agent_class,
                 agent_id=agent_id,
                 file_id=request.file_id,
