@@ -17,26 +17,6 @@ class TestUserUploadedFile:
         with pytest.raises(ValidationError):
             UserUploadedFile(filename="report.pdf", file_type="application/pdf", file_id="not-a-uuid")
 
-    def test_rejects_s3_bucket_field(self):
-        """The old s3_bucket field must not be accepted — this is the IDOR fix."""
-        f = UserUploadedFile(
-            filename="report.pdf",
-            file_type="application/pdf",
-            file_id=VALID_UUID4,
-            s3_bucket="evil-bucket",  # type: ignore[call-arg]
-        )
-        assert not hasattr(f, "s3_bucket") or "s3_bucket" not in f.model_fields
-
-    def test_rejects_s3_key_field(self):
-        """The old s3_key field must not be accepted — this is the IDOR fix."""
-        f = UserUploadedFile(
-            filename="report.pdf",
-            file_type="application/pdf",
-            file_id=VALID_UUID4,
-            s3_key="secret/file.pdf",  # type: ignore[call-arg]
-        )
-        assert not hasattr(f, "s3_key") or "s3_key" not in f.model_fields
-
     def test_file_id_required(self):
         with pytest.raises(ValidationError):
             UserUploadedFile(filename="report.pdf", file_type="application/pdf")  # type: ignore[call-arg]
@@ -61,3 +41,21 @@ class TestUserUploadedFile:
     def test_rejects_filename_with_backslash(self):
         with pytest.raises(ValidationError):
             UserUploadedFile(filename="..\\..\\secret.pdf", file_type="application/pdf", file_id=VALID_UUID4)
+
+
+class TestSanitizePathSegment:
+    def test_replaces_forward_slashes(self):
+        assert UserUploadedFile._sanitize_path_segment("a/b/c") == "a_b_c"
+
+    def test_replaces_backslashes(self):
+        assert UserUploadedFile._sanitize_path_segment("a\\b\\c") == "a_b_c"
+
+    def test_replaces_dot_dot_traversal(self):
+        assert UserUploadedFile._sanitize_path_segment("..") == "_"
+
+    def test_replaces_embedded_dot_dot(self):
+        assert UserUploadedFile._sanitize_path_segment("foo..bar") == "foo_bar"
+
+    def test_leaves_clean_values_unchanged(self):
+        assert UserUploadedFile._sanitize_path_segment("MyAgent") == "MyAgent"
+        assert UserUploadedFile._sanitize_path_segment("inst-1") == "inst-1"

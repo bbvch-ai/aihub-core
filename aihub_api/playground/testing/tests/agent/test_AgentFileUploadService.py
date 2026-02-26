@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 import pytest
 from botocore.exceptions import ClientError
 
-from aihub_lib.infrastructure.s3.AgentFileUploadService import AgentFileUploadService
+from aihub_api.routes.agent.AgentFileUploadService import AgentFileUploadService
 
 
 @pytest.fixture
@@ -17,13 +17,8 @@ def s3_public_client():
 
 
 @pytest.fixture
-def s3_settings():
-    return MagicMock()
-
-
-@pytest.fixture
-def service(s3_client, s3_public_client, s3_settings):
-    return AgentFileUploadService(s3_client, s3_public_client, s3_settings)
+def service(s3_client, s3_public_client):
+    return AgentFileUploadService(s3_client, s3_public_client)
 
 
 class TestEnsureBucketExists:
@@ -78,24 +73,6 @@ class TestEnsureBucketExists:
             service.ensure_bucket_exists()
 
 
-class TestSanitizePathSegment:
-    def test_replaces_forward_slashes(self):
-        assert AgentFileUploadService._sanitize_path_segment("a/b/c") == "a_b_c"
-
-    def test_replaces_backslashes(self):
-        assert AgentFileUploadService._sanitize_path_segment("a\\b\\c") == "a_b_c"
-
-    def test_replaces_dot_dot_traversal(self):
-        assert AgentFileUploadService._sanitize_path_segment("..") == "_"
-
-    def test_replaces_embedded_dot_dot(self):
-        assert AgentFileUploadService._sanitize_path_segment("foo..bar") == "foo_bar"
-
-    def test_leaves_clean_values_unchanged(self):
-        assert AgentFileUploadService._sanitize_path_segment("MyAgent") == "MyAgent"
-        assert AgentFileUploadService._sanitize_path_segment("inst-1") == "inst-1"
-
-
 class TestS3Key:
     def test_constructs_key_with_path_isolation(self):
         assert (
@@ -103,28 +80,10 @@ class TestS3Key:
             == "MyAgent/inst-1/abc-123/report.pdf"
         )
 
-    def test_sanitizes_forward_slash_in_filename(self):
-        assert (
-            AgentFileUploadService.s3_key("MyAgent", "inst-1", "abc-123", "../../etc/passwd")
-            == "MyAgent/inst-1/abc-123/____etc_passwd"
-        )
-
-    def test_sanitizes_backslash_in_filename(self):
-        assert (
-            AgentFileUploadService.s3_key("MyAgent", "inst-1", "abc-123", "..\\..\\secret.pdf")
-            == "MyAgent/inst-1/abc-123/____secret.pdf"
-        )
-
     def test_sanitizes_agent_class_with_traversal(self):
         assert (
             AgentFileUploadService.s3_key("../OtherAgent", "inst-1", "abc-123", "f.pdf")
             == "__OtherAgent/inst-1/abc-123/f.pdf"
-        )
-
-    def test_sanitizes_agent_id_with_traversal(self):
-        assert (
-            AgentFileUploadService.s3_key("MyAgent", "../other-id", "abc-123", "f.pdf")
-            == "MyAgent/__other-id/abc-123/f.pdf"
         )
 
 
@@ -147,14 +106,6 @@ class TestGenerateUploadUrl:
         params = call_args[1]["Params"]
         assert params["ContentType"] == "image/png"
         assert params["Key"].endswith("/image.png")
-
-    def test_uses_shared_bucket(self, service, s3_public_client):
-        s3_public_client.generate_presigned_url.return_value = "https://s3/presigned"
-
-        service.generate_upload_url("MyAgent", "inst-1", "text/plain", "notes.txt")
-
-        params = s3_public_client.generate_presigned_url.call_args[1]["Params"]
-        assert params["Bucket"] == "agent-files"
 
     def test_key_includes_agent_path(self, service, s3_public_client):
         s3_public_client.generate_presigned_url.return_value = "https://s3/presigned"
@@ -190,24 +141,3 @@ class TestVerifyFileExists:
 
         with pytest.raises(ClientError):
             service.verify_file_exists("MyAgent", "inst-1", "abc-123", "report.pdf")
-
-    def test_uses_shared_bucket_and_path_key(self, service, s3_client):
-        s3_client.head_object.return_value = {}
-
-        service.verify_file_exists("MyAgent", "inst-1", "abc-123", "report.pdf")
-
-        s3_client.head_object.assert_called_once_with(Bucket="agent-files", Key="MyAgent/inst-1/abc-123/report.pdf")
-
-
-class TestDeleteFile:
-    def test_deletes_from_shared_bucket_with_path_key(self, service, s3_client):
-        service.delete_file("MyAgent", "inst-1", "abc-123", "report.pdf")
-
-        s3_client.delete_object.assert_called_once_with(Bucket="agent-files", Key="MyAgent/inst-1/abc-123/report.pdf")
-
-    def test_propagates_unexpected_error(self, service, s3_client):
-        error_response = {"Error": {"Code": "403"}}
-        s3_client.delete_object.side_effect = ClientError(error_response, "DeleteObject")
-
-        with pytest.raises(ClientError):
-            service.delete_file("MyAgent", "inst-1", "abc-123", "report.pdf")

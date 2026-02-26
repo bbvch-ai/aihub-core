@@ -5,7 +5,6 @@ from fastapi import Request
 from mypy_boto3_s3 import S3Client
 
 from aihub_lib.generative_ai.document.accessor.S3AnonymousFileAccessService import S3AnonymousFileAccessService
-from aihub_lib.infrastructure.s3.AgentFileUploadService import AgentFileUploadService
 from aihub_lib.infrastructure.s3.S3StorageSettings import S3StorageSettings
 
 
@@ -17,11 +16,6 @@ def use_s3(request: Request) -> S3Client:
 def use_s3_public(request: Request) -> S3Client:
     """FastAPI dependency that provides the public S3 client for presigned URLs."""
     return request.app.state.s3_public_client
-
-
-def use_agent_file_upload_service(request: Request) -> AgentFileUploadService:
-    """FastAPI dependency that provides the singleton agent file upload service."""
-    return request.app.state.agent_file_upload_service
 
 
 def use_s3_service(request: Request) -> S3AnonymousFileAccessService:

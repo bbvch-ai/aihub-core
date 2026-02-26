@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, ClassVar
 
 from pydantic import BaseModel, Field
 
@@ -28,10 +28,17 @@ class UserUploadedFile(BaseModel):
         ),
     ]
 
+    AGENT_FILES_BUCKET: ClassVar[str] = "agent-files"
+
+    @staticmethod
+    def _sanitize_path_segment(value: str) -> str:
+        return value.replace("/", "_").replace("\\", "_").replace("..", "_")
+
     def resolve_s3_location(self, agent_class: str, agent_id: str) -> tuple[str, str]:
         """Derive the S3 bucket and key from the agent identity."""
-        from aihub_lib.infrastructure.s3.AgentFileUploadService import AgentFileUploadService
-
-        bucket = AgentFileUploadService.BUCKET_NAME
-        key = AgentFileUploadService.s3_key(agent_class, agent_id, self.file_id, self.filename)
-        return bucket, key
+        safe_class = self._sanitize_path_segment(agent_class)
+        safe_id = self._sanitize_path_segment(agent_id)
+        safe_file_id = self._sanitize_path_segment(self.file_id)
+        safe_name = self._sanitize_path_segment(self.filename)
+        key = f"{safe_class}/{safe_id}/{safe_file_id}/{safe_name}"
+        return self.AGENT_FILES_BUCKET, key

@@ -6,8 +6,6 @@ from aihub_lib.auth.access.AccessLevel import AccessLevel
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.infrastructure.s3.AgentFileUploadService import AgentFileUploadService
-from aihub_lib.infrastructure.s3.use_s3 import use_agent_file_upload_service
 from aihub_lib.routes.Controller import Controller
 from fastapi import Depends, HTTPException, Query, Security
 
@@ -15,7 +13,9 @@ from aihub_api.i18n.ApiLocaleString import ApiLocaleString
 from aihub_api.i18n.dependencies.use_locale import use_locale
 from aihub_api.pagination.type.PageNumber import PageNumber
 from aihub_api.pagination.type.PageSize import PageSize
+from aihub_api.routes.agent.AgentFileUploadService import AgentFileUploadService
 from aihub_api.routes.agent.AgentService import AgentService
+from aihub_api.routes.agent.dependencies.use_agent_file_upload import use_agent_file_upload_service
 from aihub_api.routes.agent.dto.AgentClassDTO import AgentClassDTO
 from aihub_api.routes.agent.dto.AgentFileUploadRequest import AgentFileUploadRequest
 from aihub_api.routes.agent.dto.AgentFileUploadResponse import AgentFileUploadResponse

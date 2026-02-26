@@ -5,12 +5,12 @@ import pytest_asyncio
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
     DangerousDevelopmentOnlyAuthHandler,
 )
-from aihub_lib.infrastructure.s3.AgentFileUploadService import AgentFileUploadService
 from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_methods  # noqa: F401
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
 
 from aihub_api.routes.agent.AgentController import AgentController
+from aihub_api.routes.agent.AgentFileUploadService import AgentFileUploadService
 from aihub_api.runners.ApiTestRunner import ApiTestRunner
 
 AGENT_CLASS = "TestAgent"
@@ -37,7 +37,7 @@ async def client(mock_upload_service):
     runner = ApiTestRunner()
     runner.mount(controller)
 
-    from aihub_lib.infrastructure.s3.use_s3 import use_agent_file_upload_service
+    from aihub_api.routes.agent.dependencies.use_agent_file_upload import use_agent_file_upload_service
 
     runner._api_app.dependency_overrides[use_agent_file_upload_service] = lambda: mock_upload_service
 
