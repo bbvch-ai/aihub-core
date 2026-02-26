@@ -13,6 +13,7 @@ from aihub_agent.context.run.RunContext import RunContext
 from aihub_agent.tracing.AgentRunTracer import (
     _TRACE_AITL_PARENT_CONTEXT_KEY,
     _TRACE_AITL_TARGET_AGENT_CLASS_KEY,
+    _TRACE_OUTPUT_KEY,
     AgentRunTracer,
 )
 
@@ -244,18 +245,21 @@ class TestAitlWrapperSpan:
         mock_tracer.start_span.return_value = mock_span
         tracer.tracer = mock_tracer
 
+        start_event = StartEvent()
         span = await tracer.start_aitl_wrapper_span(
             caller_topic=caller_topic,
             target_agent_class="WorkerAgent",
             target_agent_id="worker-1",
             target_run_id=str(ObjectId()),
             target_thread_id=caller_topic.thread_id,
+            start_event=start_event,
         )
 
         assert span is mock_span
         call_kwargs = mock_tracer.start_span.call_args
         attrs = call_kwargs.kwargs["attributes"]
         assert attrs[SpanAttributes.OPENINFERENCE_SPAN_KIND] == OpenInferenceSpanKindValues.AGENT.value
+        assert attrs[SpanAttributes.INPUT_VALUE] == ""
         assert "AITL -> WorkerAgent/worker-1" == call_kwargs.kwargs["name"]
 
     @pytest.mark.asyncio
@@ -279,6 +283,7 @@ class TestAitlWrapperSpan:
             target_agent_id="worker-1",
             target_run_id=target_run_id,
             target_thread_id=target_thread_id,
+            start_event=StartEvent(),
         )
 
         target_topic = AgentInstanceTopic(
@@ -297,17 +302,29 @@ class TestAitlWrapperSpan:
         assert "traceparent" in carrier
         assert await target_ctx.get(_TRACE_AITL_TARGET_AGENT_CLASS_KEY) == "WorkerAgent"
 
-    def test_end_sets_ok_status(self, tracer: AgentRunTracer) -> None:
+    @pytest.mark.asyncio
+    async def test_end_sets_ok_status(self, tracer: AgentRunTracer, caller_topic: AgentInstanceTopic) -> None:
         mock_span = MagicMock()
-        tracer.end_aitl_wrapper_span(mock_span, success=True)
+        await tracer.end_aitl_wrapper_span(mock_span, success=True, target_topic=caller_topic)
         mock_span.set_status.assert_called_once_with(StatusCode.OK)
         mock_span.end.assert_called_once()
 
-    def test_end_sets_error_status(self, tracer: AgentRunTracer) -> None:
+    @pytest.mark.asyncio
+    async def test_end_sets_error_status(self, tracer: AgentRunTracer, caller_topic: AgentInstanceTopic) -> None:
         mock_span = MagicMock()
-        tracer.end_aitl_wrapper_span(mock_span, success=False)
+        await tracer.end_aitl_wrapper_span(mock_span, success=False, target_topic=caller_topic)
         mock_span.set_status.assert_called_once_with(StatusCode.ERROR, "Delegated agent failed")
         mock_span.end.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_end_sets_output_from_cached_llm_answer(
+        self, tracer: AgentRunTracer, caller_topic: AgentInstanceTopic, mock_redis: AsyncMock
+    ) -> None:
+        mock_span = MagicMock()
+        target_ctx = RunContext.for_topic(mock_redis, caller_topic)
+        await target_ctx.set(_TRACE_OUTPUT_KEY, "The delegated agent's answer")
+        await tracer.end_aitl_wrapper_span(mock_span, success=True, target_topic=caller_topic)
+        mock_span.set_attribute.assert_called_once_with(SpanAttributes.OUTPUT_VALUE, "The delegated agent's answer")
 
 
 class TestAitlParentContext:
