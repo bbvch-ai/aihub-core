@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.267.2] - 2026-02-26 - Streamlined Release Note Extraction
+
+### Added
+
+- ✨ **New `extract-release-notes` Makefile Target:** Introduced a dedicated `Makefile` target to standardize and
+  centralize the process of extracting version-specific release notes from `CHANGELOG.md`, improving reusability and
+  maintainability.
+
+### Changed
+
+- 🔄 **Updated Release Workflow:** The GitHub Actions release creation process now utilizes the new
+  `extract-release-notes` Makefile target for generating changelog entries, simplifying the workflow configuration and
+  reducing redundancy.
+
+### Refactor
+
+- 🧹 **Enhanced Release Note Extraction Logic:** Refactored the underlying logic for extracting release notes to include
+  robust input validation for version tags and improved fallback handling when a specific changelog section is not
+  found.
+
+______________________________________________________________________
+
 ## [v0.267.1] - 2026-02-25 - Streamlined Deployment with Self-Contained Release Bundles
 
 ### Added
