@@ -17,6 +17,7 @@ def observable_rclone_factory(
     key: AssetKey,
     partitions: DynamicPartitionsDefinition,
     max_partitions: int,
+    encode_partition_keys: bool = False,
 ) -> observable_source_asset:
     """
     Observable source asset for cloud storage (OneDrive, Dropbox, Google Drive, etc.).
@@ -46,6 +47,7 @@ def observable_rclone_factory(
             partition=partitions,
             rclone_files=rclone_files,
             max_partitions=max_partitions,
+            encode_partition_keys=encode_partition_keys,
         )
 
     return observable_rclone

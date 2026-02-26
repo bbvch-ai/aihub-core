@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.267.4] - 2026-02-26 - Pipeline Robustness: Enhanced Partition Key Encoding
+
+### Added
+
+- ✨ **New Partition Key Encoding Utilities:** Introduced `encode_partition_key` and `decode_partition_key` functions to
+  safely URL-encode and decode file paths, ensuring compatibility when used as Dagster partition keys.
+- 🚀 **`encode_partition_keys` Configuration:** Added a new `encode_partition_keys` parameter to
+  `observable_data_lake_factory`, `observable_local_file_system_factory`, and `observable_rclone_factory`, allowing
+  pipelines to opt-in to URL-encoded partition keys.
+- ⚙️ **IO Manager Encoding Support:** `LocalFileSystemIOManager`, `RcloneIOManager`, and `S3DataLakeIOManager` now
+  include an `encode_partition_keys` configuration, enabling automatic decoding of partition keys for accurate file
+  retrieval.
+- 🛡️ **Robust Data Versioning:** Data versioning ops for data lake, local file system, and rclone sources
+  (`data_version_by_partition_for_data_lake_files_no_op`, `data_version_by_partition_for_local_files`,
+  `data_version_by_partition_for_rclone_files`) now support generating URL-encoded partition keys when
+  `encode_partition_keys` is enabled.
+- ✅ **Comprehensive Test Coverage:** Added extensive unit tests for partition key encoding/decoding utilities and their
+  integration within IO managers and ops to ensure robustness and correct behavior.
+
+### Changed
+
+- 🔄 **Pipeline Definition Factories Updated:** `default_definitions`,
+  `default_local_filesystem_to_datalake_definitions`, and `default_rclone_to_datalake_definitions` now accept an
+  `encode_partition_keys` parameter, providing a centralized control point for this new functionality.
+- ⚠️ **Deprecation Warning for `encode_partition_keys` Default:** When `encode_partition_keys` is not explicitly set in
+  pipeline definition factories, a deprecation warning is now emitted, indicating that the default behavior will change
+  from `False` to `True` in a future release.
+
+______________________________________________________________________
+
 ## [v0.267.3] - 2026-02-26 - Enhanced User Experience with Dedicated Account Management
 
 ### Added

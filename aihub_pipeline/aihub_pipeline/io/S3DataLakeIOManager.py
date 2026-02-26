@@ -1,6 +1,7 @@
 from urllib.parse import quote, unquote
 
 import s3fs
+from aihub_lib.generative_ai.utils.path_utils import decode_partition_key
 from dagster import ConfigurableIOManager, InputContext, OutputContext, ResourceDependency
 
 from aihub_pipeline.resources.data_lake.s3.S3DataLakeClient import S3DataLakeClient
@@ -83,6 +84,7 @@ class S3DataLakeIOManager(ConfigurableIOManager):
 
     data_lake_client: ResourceDependency[S3DataLakeClient]
     data_lake_file_system: ResourceDependency[s3fs.S3FileSystem]
+    encode_partition_keys: bool = False
 
     def handle_output(self, context: OutputContext, obj: DataLakeFile | list[DataLakeFile]) -> None:
         if isinstance(obj, DataLakeFile):
@@ -130,37 +132,34 @@ class S3DataLakeIOManager(ConfigurableIOManager):
 
     def load_input(self, context: InputContext) -> DataLakeFile | list[DataLakeFile]:
         if context.has_partition_key:
-            # If the context has a partition key, proceed as usual
-            document_uri = context.partition_key
-            return self._load_data_lake_file_from_uri(context, document_uri)
+            partition_key = context.partition_key
+            uri = decode_partition_key(partition_key) if self.encode_partition_keys else partition_key
+            return self._load_data_lake_file_from_uri(context, uri)
         else:
-            # No partition key, load all partitions
             upstream_output = context.upstream_output
             partitions_def = upstream_output.asset_partitions_def
-
             if partitions_def is not None:
-                # Pass the instance's dynamic partitions store
                 all_partition_keys = partitions_def.get_partition_keys(dynamic_partitions_store=context.instance)
                 data_lake_files = []
                 for partition_key in all_partition_keys:
-                    data_lake_file = self._load_data_lake_file_from_uri(context, partition_key)
+                    uri = decode_partition_key(partition_key) if self.encode_partition_keys else partition_key
+                    data_lake_file = self._load_data_lake_file_from_uri(context, uri)
                     data_lake_files.append(data_lake_file)
-                return data_lake_files  # Return the list or process it as needed
+                return data_lake_files
             else:
                 context.log.error("No partition definition found for the upstream asset.")
                 raise ValueError("Cannot load data without partition information.")
 
-    def _load_data_lake_file_from_uri(self, context: InputContext, document_uri: str) -> DataLakeFile:
-        context.log.info(f"Loading DataLakeFile from uri: {document_uri}")
+    def _load_data_lake_file_from_uri(self, context: InputContext, uri: str) -> DataLakeFile:
+        """Load a DataLakeFile directly using the partition key as an S3 URI."""
+        context.log.info(f"Loading DataLakeFile from URI: {uri}")
 
-        # If not a full S3 URI, construct it using the client's container name
-        if not document_uri.startswith("s3://"):
-            document_uri = self.data_lake_client.build_uri(document_uri)
-            context.log.info(f"Constructed full S3 URI: {document_uri}")
+        if not uri.startswith("s3://"):
+            uri = self.data_lake_client.build_uri(uri)
+            context.log.info(f"Constructed full S3 URI: {uri}")
 
-        data_lake_file = self.data_lake_client.create_data_lake_file_from_uri(document_uri)
+        data_lake_file = self.data_lake_client.create_data_lake_file_from_uri(uri)
 
-        # Decode metadata after retrieval
         decoded_metadata = self._decode_metadata(data_lake_file.metadata)
         data_lake_file.metadata = decoded_metadata
 
