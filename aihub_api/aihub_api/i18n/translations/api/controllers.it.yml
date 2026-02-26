@@ -47,9 +47,12 @@ token:
 translation:
   name: Traduzione
   description: Traduci il testo in tutte le lingue supportate
-user:
+my_account:
   name: Il mio account
-  description: Gestisci le impostazioni del tuo account
+  description: Gestisci le impostazioni dell'account
+user:
+  name: Gestione utenti
+  description: Gestisci gli utenti e i loro accessi
 user_memory:
   name: Memorie utente
   description: Visualizza e gestisci le tue memorie personali da mem0

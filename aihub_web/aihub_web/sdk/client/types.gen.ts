@@ -20868,21 +20868,64 @@ export type GetSuiteResponses = {
 
 export type GetSuiteResponse = GetSuiteResponses[keyof GetSuiteResponses];
 
-export type GetMyUserData = {
+export type GetMyAccountData = {
     body?: never;
     path?: never;
     query?: never;
-    url: '/users/me';
+    url: '/my-account/';
 };
 
-export type GetMyUserResponses = {
+export type GetMyAccountResponses = {
     /**
      * Successful Response
      */
     200: UserWithAccessDto;
 };
 
-export type GetMyUserResponse = GetMyUserResponses[keyof GetMyUserResponses];
+export type GetMyAccountResponse = GetMyAccountResponses[keyof GetMyAccountResponses];
+
+export type GetMyDashboardData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/my-account/dashboard';
+};
+
+export type GetMyDashboardResponses = {
+    /**
+     * Response Get My Dashboard My Account Dashboard Get
+     *
+     * Successful Response
+     */
+    200: DashboardDto | null;
+};
+
+export type GetMyDashboardResponse = GetMyDashboardResponses[keyof GetMyDashboardResponses];
+
+export type UpdateMyDashboardData = {
+    body: DashboardDto;
+    path?: never;
+    query?: never;
+    url: '/my-account/dashboard';
+};
+
+export type UpdateMyDashboardErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UpdateMyDashboardError = UpdateMyDashboardErrors[keyof UpdateMyDashboardErrors];
+
+export type UpdateMyDashboardResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type UpdateMyDashboardResponse = UpdateMyDashboardResponses[keyof UpdateMyDashboardResponses];
 
 export type GetUserData = {
     body?: never;
@@ -20953,49 +20996,6 @@ export type GetUsersResponses = {
 };
 
 export type GetUsersResponse = GetUsersResponses[keyof GetUsersResponses];
-
-export type GetMyDashboardData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/users/me/dashboard';
-};
-
-export type GetMyDashboardResponses = {
-    /**
-     * Response Get My Dashboard Users Me Dashboard Get
-     *
-     * Successful Response
-     */
-    200: DashboardDto | null;
-};
-
-export type GetMyDashboardResponse = GetMyDashboardResponses[keyof GetMyDashboardResponses];
-
-export type UpdateMyDashboardData = {
-    body: DashboardDto;
-    path?: never;
-    query?: never;
-    url: '/users/me/dashboard';
-};
-
-export type UpdateMyDashboardErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type UpdateMyDashboardError = UpdateMyDashboardErrors[keyof UpdateMyDashboardErrors];
-
-export type UpdateMyDashboardResponses = {
-    /**
-     * Successful Response
-     */
-    204: void;
-};
-
-export type UpdateMyDashboardResponse = UpdateMyDashboardResponses[keyof UpdateMyDashboardResponses];
 
 export type GetLocaleData = {
     body?: never;
