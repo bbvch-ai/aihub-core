@@ -431,5 +431,21 @@ class KnowledgeService:
         return DocumentUploadValidationResponse(exists=exists, file_path=object_key, container=container)
 
     @staticmethod
+    @trace_fn
+    def get_document_url(db: str, namespace: str, document_id: str, s3_service: S3AnonymousFileAccessService) -> str:
+        """Generates a presigned S3 URL for a document's source file."""
+        KnowledgeService._ensure_db_exists(db)
+        try:
+            ref_doc = RefDoc.by_id_and_namespace(db_alias=db, doc_id=document_id, namespace=namespace)
+        except DoesNotExist:
+            raise HTTPException(status_code=404, detail="Document not found")
+        source = ref_doc.data.metadata.source
+        source = source.removeprefix("s3://")
+        parts = source.split("/", 1)
+        container = parts[0]
+        file_path = parts[1] if len(parts) > 1 else ""
+        return s3_service.generate_sas_url(container, file_path)
+
+    @staticmethod
     def get_supported_file_types() -> list[str]:
         return FileTypeConfig().get_unique_extensions()

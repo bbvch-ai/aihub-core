@@ -489,7 +489,7 @@ ______________________________________________________________________
 
 After applying design system tokens to a component, verify the result visually using Playwright MCP:
 
-1. Navigate to the page: `mcp__playwright__browser_navigate` to `http://localhost:3000/service/{page}`
+1. Navigate to the page: `mcp__playwright__browser_navigate` to `http://localhost:3333/service/{page}`
 2. Take a screenshot: `mcp__playwright__browser_take_screenshot` to capture the rendered UI
 3. Inspect the DOM: `mcp__playwright__browser_snapshot` to verify Tailwind classes are applied correctly
 4. Check dark mode: toggle `.dark` class on `<html>` element and screenshot again to verify dark mode variants

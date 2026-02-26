@@ -2,8 +2,8 @@
 
 import { type Client, type Composable, formDataBodySerializer, type Options as Options2, type TDataShape } from './client';
 import { client } from './client.gen';
-import { createDatasetResponseTransformer, createTokenEndpointResponseTransformer, getAgentEventTimeseriesResponseTransformer, getDatasetResponseTransformer, getDatasetsResponseTransformer, getMyAccountResponseTransformer, getNotificationsResponseTransformer, getUserResponseTransformer, getUsersResponseTransformer, listTokensEndpointResponseTransformer, updateDatasetResponseTransformer, updateNotificationResponseTransformer, updateNotificationsBulkResponseTransformer } from './transformers.gen';
-import type { AddAgentToThreadData, AddAgentToThreadError, AddAgentToThreadResponse, AddUserToThreadData, AddUserToThreadError, AddUserToThreadResponse, ChatCompletionWithAssistantsData, ChatCompletionWithAssistantsError, ChatCompletionWithAssistantsResponse, CreateAgentInstanceData, CreateAgentInstanceError, CreateAgentInstanceResponse, CreateDatasetData, CreateDatasetError, CreateDatasetResponse, CreateNamespaceData, CreateNamespaceError, CreateNamespaceResponse, CreateProcessInstanceData, CreateProcessInstanceError, CreateProcessInstanceResponse, CreateRoleData, CreateRoleError, CreateRoleResponse, CreateSpeechData, CreateSpeechError, CreateThreadData, CreateThreadError, CreateThreadResponse, CreateTokenEndpointData, CreateTokenEndpointError, CreateTokenEndpointResponse, CreateTranscriptionData, CreateTranscriptionError, CreateTranscriptionResponse, DeleteAgentInstanceData, DeleteAgentInstanceError, DeleteAgentInstanceResponse, DeleteAllOrganizationMemoriesData, DeleteAllOrganizationMemoriesResponse, DeleteAllUserMemoriesData, DeleteAllUserMemoriesResponse, DeleteOrganizationMemoryData, DeleteOrganizationMemoryError, DeleteOrganizationMemoryResponse, DeleteProcessInstanceData, DeleteProcessInstanceError, DeleteProcessInstanceResponse, DeleteRoleData, DeleteRoleError, DeleteRoleResponse2, DeleteUserMemoryData, DeleteUserMemoryError, DeleteUserMemoryResponse, GenerateImageData, GenerateImageError, GenerateImageResponse, GetAgentClassData, GetAgentClassError, GetAgentClassesData, GetAgentClassesError, GetAgentClassesResponse, GetAgentClassInstancesData, GetAgentClassInstancesError, GetAgentClassInstancesResponse, GetAgentClassResponse, GetAgentEventsInThreadData, GetAgentEventsInThreadError, GetAgentEventsInThreadResponse, GetAgentEventTimeseriesData, GetAgentEventTimeseriesError, GetAgentEventTimeseriesResponse, GetAgentInstanceData, GetAgentInstanceError, GetAgentInstanceResponse, GetAgentInstanceThreadsData, GetAgentInstanceThreadsError, GetAgentInstanceThreadsResponse, GetAllAgentInstancesData, GetAllAgentInstancesError, GetAllAgentInstancesResponse, GetAllProcessInstancesData, GetAllProcessInstancesError, GetAllProcessInstancesResponse, GetAnonymousFileRedirectData, GetAnonymousFileRedirectError, GetAnonymousFileUrlData, GetAnonymousFileUrlError, GetDatabasesData, GetDatabasesResponse, GetDatasetData, GetDatasetError, GetDatasetResponse, GetDatasetsData, GetDatasetsResponse, GetDocumentByIdData, GetDocumentByIdError, GetDocumentByIdResponse, GetDocumentsForNamespaceData, GetDocumentsForNamespaceError, GetDocumentsForNamespaceResponse, GetEmbeddingsData, GetEmbeddingsError, GetEmbeddingsResponse, GetFileRedirectData, GetFileRedirectError, GetFileUrlData, GetFileUrlError, GetFileUrlResponse, GetHealthData, GetHealthResponse, GetLitellmModelData, GetLitellmModelError, GetLitellmModelResponse, GetLitellmModelsByModeData, GetLitellmModelsByModeError, GetLitellmModelsByModeResponse, GetLitellmModelsData, GetLitellmModelsResponse, GetLocaleData, GetLocaleResponse, GetModelsData, GetModelsResponse, GetModelWithAssistantsData, GetModelWithAssistantsError, GetModelWithAssistantsResponse, GetMyAccountData, GetMyAccountResponse, GetMyDashboardData, GetMyDashboardResponse, GetNodesForDocumentData, GetNodesForDocumentError, GetNodesForDocumentResponse, GetNotificationsData, GetNotificationsError, GetNotificationsResponse, GetOpenChatHitlData, GetOpenChatHitlError, GetOpenChatHitlResponse, GetOrganizationMemoriesData, GetOrganizationMemoriesError, GetOrganizationMemoriesResponse, GetProcessClassData, GetProcessClassError, GetProcessClassesData, GetProcessClassesError, GetProcessClassesResponse, GetProcessClassInstancesData, GetProcessClassInstancesError, GetProcessClassInstancesResponse, GetProcessClassResponse, GetProcessInstanceData, GetProcessInstanceError, GetProcessInstanceResponse, GetProcessOpenFormsData, GetProcessOpenFormsError, GetProcessOpenFormsResponse, GetProcessStartFormsData, GetProcessStartFormsError, GetProcessStartFormsResponse, GetProcessWalkthroughsData, GetProcessWalkthroughsError, GetProcessWalkthroughsResponse, GetReadyData, GetReadyResponse, GetRoleData, GetRoleError, GetRoleResponse, GetRolesData, GetRolesResponse, GetSuiteData, GetSuiteResponse, GetSummaryNodesForDocumentData, GetSummaryNodesForDocumentError, GetSummaryNodesForDocumentResponse, GetSupportedFileTypesData, GetSupportedFileTypesResponse, GetThreadData, GetThreadError, GetThreadResponse, GetUserData, GetUserError, GetUserMemoriesData, GetUserMemoriesError, GetUserMemoriesResponse, GetUserResponse, GetUsersData, GetUsersError, GetUsersResponse, GetUserThreadsData, GetUserThreadsError, GetUserThreadsResponse, InitiateDocumentUploadData, InitiateDocumentUploadError, InitiateDocumentUploadResponse, ListTokensEndpointData, ListTokensEndpointResponse, ProcessDocumentData, ProcessDocumentError, ProcessDocumentResponse, RemoveAgentFromThreadData, RemoveAgentFromThreadError, RemoveAgentFromThreadResponse, RemoveUserFromThreadData, RemoveUserFromThreadError, RemoveUserFromThreadResponse, RevokeTokenEndpointData, RevokeTokenEndpointError, RevokeTokenEndpointResponse, SearchOrganizationMemoriesData, SearchOrganizationMemoriesError, SearchOrganizationMemoriesResponse, SearchUserMemoriesData, SearchUserMemoriesError, SearchUserMemoriesResponse, SendFollowUpQuestionResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdFollowUpQuestionResponseEventPostData, SendFollowUpQuestionResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdFollowUpQuestionResponseEventPostError, SendNamespaceApprovalResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceApprovalResponseEventPostData, SendNamespaceApprovalResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceApprovalResponseEventPostError, SendNamespaceAwareUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceAwareUserMessageEventPostData, SendNamespaceAwareUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceAwareUserMessageEventPostError, SendNamespaceAwareUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceAwareUserMessageEventPostResponse, SendNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventPostData, SendNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventPostError, SendNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventPostResponse, SendProcessOpenFormData, SendProcessOpenFormError, SendProcessOpenFormResponse, SendProcessStartFormData, SendProcessStartFormError, SendProcessStartFormResponse, SendUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdUserMessageEventPostData, SendUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdUserMessageEventPostError, SendUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdUserMessageEventPostResponse, SendUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostData, SendUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostError, SendUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostResponse, StreamFollowUpQuestionResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdFollowUpQuestionResponseEventStreamPostData, StreamFollowUpQuestionResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdFollowUpQuestionResponseEventStreamPostError, StreamNamespaceApprovalResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceApprovalResponseEventStreamPostData, StreamNamespaceApprovalResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceApprovalResponseEventStreamPostError, StreamNamespaceAwareUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceAwareUserMessageEventStreamPostData, StreamNamespaceAwareUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceAwareUserMessageEventStreamPostError, StreamNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventStreamPostData, StreamNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventStreamPostError, StreamUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdUserMessageEventStreamPostData, StreamUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdUserMessageEventStreamPostError, StreamUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventStreamPostData, StreamUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventStreamPostError, TranslateTextData, TranslateTextError, TranslateTextResponse, UpdateAgentInstanceData, UpdateAgentInstanceError, UpdateAgentInstanceResponse, UpdateDatasetData, UpdateDatasetError, UpdateDatasetResponse, UpdateMyDashboardData, UpdateMyDashboardError, UpdateMyDashboardResponse, UpdateNamespaceData, UpdateNamespaceError, UpdateNamespaceResponse, UpdateNotificationData, UpdateNotificationError, UpdateNotificationResponse, UpdateNotificationsBulkData, UpdateNotificationsBulkError, UpdateNotificationsBulkResponse, UpdateOrganizationMemoryData, UpdateOrganizationMemoryError, UpdateOrganizationMemoryResponse, UpdateProcessInstanceData, UpdateProcessInstanceError, UpdateProcessInstanceResponse, UpdateRoleData, UpdateRoleError, UpdateRoleResponse, UpdateUserMemoryData, UpdateUserMemoryError, UpdateUserMemoryResponse, ValidateDocumentUploadData, ValidateDocumentUploadError, ValidateDocumentUploadResponse } from './types.gen';
+import { createDatasetResponseTransformer, createTokenEndpointResponseTransformer, getAgentEventTimeseriesResponseTransformer, getDatasetResponseTransformer, getDatasetsResponseTransformer, getMyUserResponseTransformer, getNotificationsResponseTransformer, getUserResponseTransformer, getUsersResponseTransformer, listTokensEndpointResponseTransformer, updateDatasetResponseTransformer, updateNotificationResponseTransformer, updateNotificationsBulkResponseTransformer } from './transformers.gen';
+import type { AddAgentToThreadData, AddAgentToThreadError, AddAgentToThreadResponse, AddUserToThreadData, AddUserToThreadError, AddUserToThreadResponse, ChatCompletionWithAssistantsData, ChatCompletionWithAssistantsError, ChatCompletionWithAssistantsResponse, CreateAgentInstanceData, CreateAgentInstanceError, CreateAgentInstanceResponse, CreateDatasetData, CreateDatasetError, CreateDatasetResponse, CreateNamespaceData, CreateNamespaceError, CreateNamespaceResponse, CreateProcessInstanceData, CreateProcessInstanceError, CreateProcessInstanceResponse, CreateRoleData, CreateRoleError, CreateRoleResponse, CreateSpeechData, CreateSpeechError, CreateThreadData, CreateThreadError, CreateThreadResponse, CreateTokenEndpointData, CreateTokenEndpointError, CreateTokenEndpointResponse, CreateTranscriptionData, CreateTranscriptionError, CreateTranscriptionResponse, DeleteAgentInstanceData, DeleteAgentInstanceError, DeleteAgentInstanceResponse, DeleteAllOrganizationMemoriesData, DeleteAllOrganizationMemoriesResponse, DeleteAllUserMemoriesData, DeleteAllUserMemoriesResponse, DeleteOrganizationMemoryData, DeleteOrganizationMemoryError, DeleteOrganizationMemoryResponse, DeleteProcessInstanceData, DeleteProcessInstanceError, DeleteProcessInstanceResponse, DeleteRoleData, DeleteRoleError, DeleteRoleResponse2, DeleteUserMemoryData, DeleteUserMemoryError, DeleteUserMemoryResponse, GenerateImageData, GenerateImageError, GenerateImageResponse, GetAgentClassData, GetAgentClassError, GetAgentClassesData, GetAgentClassesError, GetAgentClassesResponse, GetAgentClassInstancesData, GetAgentClassInstancesError, GetAgentClassInstancesResponse, GetAgentClassResponse, GetAgentEventsInThreadData, GetAgentEventsInThreadError, GetAgentEventsInThreadResponse, GetAgentEventTimeseriesData, GetAgentEventTimeseriesError, GetAgentEventTimeseriesResponse, GetAgentInstanceData, GetAgentInstanceError, GetAgentInstanceResponse, GetAgentInstanceThreadsData, GetAgentInstanceThreadsError, GetAgentInstanceThreadsResponse, GetAllAgentInstancesData, GetAllAgentInstancesError, GetAllAgentInstancesResponse, GetAllProcessInstancesData, GetAllProcessInstancesError, GetAllProcessInstancesResponse, GetAnonymousFileRedirectData, GetAnonymousFileRedirectError, GetAnonymousFileUrlData, GetAnonymousFileUrlError, GetDatabasesData, GetDatabasesResponse, GetDatasetData, GetDatasetError, GetDatasetResponse, GetDatasetsData, GetDatasetsResponse, GetDocumentByIdData, GetDocumentByIdError, GetDocumentByIdResponse, GetDocumentsForNamespaceData, GetDocumentsForNamespaceError, GetDocumentsForNamespaceResponse, GetDocumentUrlData, GetDocumentUrlError, GetDocumentUrlResponse, GetEmbeddingsData, GetEmbeddingsError, GetEmbeddingsResponse, GetFileUrlData, GetFileUrlError, GetFileUrlResponse, GetHealthData, GetHealthResponse, GetLitellmModelData, GetLitellmModelError, GetLitellmModelResponse, GetLitellmModelsByModeData, GetLitellmModelsByModeError, GetLitellmModelsByModeResponse, GetLitellmModelsData, GetLitellmModelsResponse, GetLocaleData, GetLocaleResponse, GetModelsData, GetModelsResponse, GetModelWithAssistantsData, GetModelWithAssistantsError, GetModelWithAssistantsResponse, GetMyDashboardData, GetMyDashboardResponse, GetMyUserData, GetMyUserResponse, GetNodesForDocumentData, GetNodesForDocumentError, GetNodesForDocumentResponse, GetNotificationsData, GetNotificationsError, GetNotificationsResponse, GetOpenChatHitlData, GetOpenChatHitlError, GetOpenChatHitlResponse, GetOrganizationMemoriesData, GetOrganizationMemoriesError, GetOrganizationMemoriesResponse, GetProcessClassData, GetProcessClassError, GetProcessClassesData, GetProcessClassesError, GetProcessClassesResponse, GetProcessClassInstancesData, GetProcessClassInstancesError, GetProcessClassInstancesResponse, GetProcessClassResponse, GetProcessInstanceData, GetProcessInstanceError, GetProcessInstanceResponse, GetProcessOpenFormsData, GetProcessOpenFormsError, GetProcessOpenFormsResponse, GetProcessStartFormsData, GetProcessStartFormsError, GetProcessStartFormsResponse, GetProcessWalkthroughsData, GetProcessWalkthroughsError, GetProcessWalkthroughsResponse, GetReadyData, GetReadyResponse, GetRoleData, GetRoleError, GetRoleResponse, GetRolesData, GetRolesResponse, GetSuiteData, GetSuiteResponse, GetSummaryNodesForDocumentData, GetSummaryNodesForDocumentError, GetSummaryNodesForDocumentResponse, GetSupportedFileTypesData, GetSupportedFileTypesResponse, GetThreadData, GetThreadError, GetThreadResponse, GetUserData, GetUserError, GetUserMemoriesData, GetUserMemoriesError, GetUserMemoriesResponse, GetUserResponse, GetUsersData, GetUsersError, GetUsersResponse, GetUserThreadsData, GetUserThreadsError, GetUserThreadsResponse, InitiateDocumentUploadData, InitiateDocumentUploadError, InitiateDocumentUploadResponse, ListTokensEndpointData, ListTokensEndpointResponse, ProcessDocumentData, ProcessDocumentError, ProcessDocumentResponse, RemoveAgentFromThreadData, RemoveAgentFromThreadError, RemoveAgentFromThreadResponse, RemoveUserFromThreadData, RemoveUserFromThreadError, RemoveUserFromThreadResponse, RevokeTokenEndpointData, RevokeTokenEndpointError, RevokeTokenEndpointResponse, SearchOrganizationMemoriesData, SearchOrganizationMemoriesError, SearchOrganizationMemoriesResponse, SearchUserMemoriesData, SearchUserMemoriesError, SearchUserMemoriesResponse, SendProcessOpenFormData, SendProcessOpenFormError, SendProcessOpenFormResponse, SendProcessStartFormData, SendProcessStartFormError, SendProcessStartFormResponse, TranslateTextData, TranslateTextError, TranslateTextResponse, UpdateAgentInstanceData, UpdateAgentInstanceError, UpdateAgentInstanceResponse, UpdateDatasetData, UpdateDatasetError, UpdateDatasetResponse, UpdateMyDashboardData, UpdateMyDashboardError, UpdateMyDashboardResponse, UpdateNamespaceData, UpdateNamespaceError, UpdateNamespaceResponse, UpdateNotificationData, UpdateNotificationError, UpdateNotificationResponse, UpdateNotificationsBulkData, UpdateNotificationsBulkError, UpdateNotificationsBulkResponse, UpdateOrganizationMemoryData, UpdateOrganizationMemoryError, UpdateOrganizationMemoryResponse, UpdateProcessInstanceData, UpdateProcessInstanceError, UpdateProcessInstanceResponse, UpdateRoleData, UpdateRoleError, UpdateRoleResponse, UpdateUserMemoryData, UpdateUserMemoryError, UpdateUserMemoryResponse, ValidateDocumentUploadData, ValidateDocumentUploadError, ValidateDocumentUploadResponse } from './types.gen';
 
 export type Options<TComposable extends Composable = '$fetch', TData extends TDataShape = TDataShape, ResT = unknown, DefaultT = undefined> = Options2<TComposable, TData, ResT, DefaultT> & {
     /**
@@ -45,41 +45,15 @@ export const getSuite = <TComposable extends Composable = '$fetch', DefaultT ext
 });
 
 /**
- * Get My Account
+ * Get My User
  *
- * Returns the currently logged-in user's profile.
+ * Returns a `MinimalUserDTO` representing the currently logged-in user.
  */
-export const getMyAccount = <TComposable extends Composable = '$fetch', DefaultT extends GetMyAccountResponse = GetMyAccountResponse>(options: Options<TComposable, GetMyAccountData, GetMyAccountResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetMyAccountResponse | DefaultT, unknown, DefaultT>({
-    responseTransformer: getMyAccountResponseTransformer,
+export const getMyUser = <TComposable extends Composable = '$fetch', DefaultT extends GetMyUserResponse = GetMyUserResponse>(options: Options<TComposable, GetMyUserData, GetMyUserResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetMyUserResponse | DefaultT, unknown, DefaultT>({
+    responseTransformer: getMyUserResponseTransformer,
     security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/my-account/',
+    url: '/users/me',
     ...options
-});
-
-/**
- * Get My Dashboard
- *
- * Returns the user's dashboard settings, or null if none exist.
- */
-export const getMyDashboard = <TComposable extends Composable = '$fetch', DefaultT extends GetMyDashboardResponse = GetMyDashboardResponse>(options: Options<TComposable, GetMyDashboardData, GetMyDashboardResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetMyDashboardResponse | DefaultT, unknown, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/my-account/dashboard',
-    ...options
-});
-
-/**
- * Update My Dashboard
- *
- * Updates the user's dashboard settings.
- */
-export const updateMyDashboard = <TComposable extends Composable = '$fetch', DefaultT extends UpdateMyDashboardResponse = UpdateMyDashboardResponse>(options: Options<TComposable, UpdateMyDashboardData, UpdateMyDashboardResponse, DefaultT>) => (options.client ?? client).put<TComposable, UpdateMyDashboardResponse | DefaultT, UpdateMyDashboardError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/my-account/dashboard',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
 });
 
 /**
@@ -104,6 +78,33 @@ export const getUsers = <TComposable extends Composable = '$fetch', DefaultT ext
     security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
     url: '/users/',
     ...options
+});
+
+/**
+ * Get My Dashboard
+ *
+ * Returns a `DashboardDTO` representing the user's dashboard settings, or null if none exist.
+ */
+export const getMyDashboard = <TComposable extends Composable = '$fetch', DefaultT extends GetMyDashboardResponse = GetMyDashboardResponse>(options: Options<TComposable, GetMyDashboardData, GetMyDashboardResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetMyDashboardResponse | DefaultT, unknown, DefaultT>({
+    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
+    url: '/users/me/dashboard',
+    ...options
+});
+
+/**
+ * Update My Dashboard
+ *
+ * Updates the user's dashboard settings.
+ * Accepts a `DashboardDTO` in the request body.
+ */
+export const updateMyDashboard = <TComposable extends Composable = '$fetch', DefaultT extends UpdateMyDashboardResponse = UpdateMyDashboardResponse>(options: Options<TComposable, UpdateMyDashboardData, UpdateMyDashboardResponse, DefaultT>) => (options.client ?? client).put<TComposable, UpdateMyDashboardResponse | DefaultT, UpdateMyDashboardError, DefaultT>({
+    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
+    url: '/users/me/dashboard',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
 });
 
 /**
@@ -947,6 +948,17 @@ export const getSupportedFileTypes = <TComposable extends Composable = '$fetch',
 });
 
 /**
+ * Get signed document URL
+ *
+ * Generates a presigned URL for downloading a document's source file.
+ */
+export const getDocumentUrl = <TComposable extends Composable = '$fetch', DefaultT extends GetDocumentUrlResponse = GetDocumentUrlResponse>(options: Options<TComposable, GetDocumentUrlData, GetDocumentUrlResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetDocumentUrlResponse | DefaultT, GetDocumentUrlError, DefaultT>({
+    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
+    url: '/knowledge/databases/{database}/namespaces/{namespace}/documents/{document_id}/url',
+    ...options
+});
+
+/**
  * Get signed file URL
  *
  * Generates a short-lived secure link to the blob resource, and returns the URL.
@@ -954,17 +966,6 @@ export const getSupportedFileTypes = <TComposable extends Composable = '$fetch',
 export const getFileUrl = <TComposable extends Composable = '$fetch', DefaultT extends GetFileUrlResponse = GetFileUrlResponse>(options: Options<TComposable, GetFileUrlData, GetFileUrlResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetFileUrlResponse | DefaultT, GetFileUrlError, DefaultT>({
     security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
     url: '/files/logged-in/url/{container}/{file_path}',
-    ...options
-});
-
-/**
- * Access file as logged-in user
- *
- * Generates a short-lived secure link to the blob resource, and redirects the user to it.
- */
-export const getFileRedirect = <TComposable extends Composable = '$fetch', DefaultT = undefined>(options: Options<TComposable, GetFileRedirectData, unknown, DefaultT>) => (options.client ?? client).get<TComposable, unknown | DefaultT, GetFileRedirectError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/files/logged-in/redirect/{container}/{file_path}',
     ...options
 });
 
@@ -1146,186 +1147,6 @@ export const processDocument = <TComposable extends Composable = '$fetch', Defau
 export const translateText = <TComposable extends Composable = '$fetch', DefaultT extends TranslateTextResponse = TranslateTextResponse>(options: Options<TComposable, TranslateTextData, TranslateTextResponse, DefaultT>) => (options.client ?? client).post<TComposable, TranslateTextResponse | DefaultT, TranslateTextError, DefaultT>({
     security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
     url: '/translation/',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Send Namespace Aware User Message Event To Namespace Selection Agent
- *
- * Send a specific event type to a specific agent. Returns either a stop event or HITL request event.
- */
-export const sendNamespaceAwareUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceAwareUserMessageEventPost = <TComposable extends Composable = '$fetch', DefaultT extends SendNamespaceAwareUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceAwareUserMessageEventPostResponse = SendNamespaceAwareUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceAwareUserMessageEventPostResponse>(options: Options<TComposable, SendNamespaceAwareUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceAwareUserMessageEventPostData, SendNamespaceAwareUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceAwareUserMessageEventPostResponse, DefaultT>) => (options.client ?? client).post<TComposable, SendNamespaceAwareUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceAwareUserMessageEventPostResponse | DefaultT, SendNamespaceAwareUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceAwareUserMessageEventPostError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/agents/classes/NamespaceSelectionAgent/instances/{agent_id}/NamespaceAwareUserMessageEvent',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Stream Namespace Aware User Message Event To Namespace Selection Agent
- *
- * Send a specific event type to a specific agent and stream all events as SSE.
- */
-export const streamNamespaceAwareUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceAwareUserMessageEventStreamPost = <TComposable extends Composable = '$fetch', DefaultT = undefined>(options: Options<TComposable, StreamNamespaceAwareUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceAwareUserMessageEventStreamPostData, unknown, DefaultT>) => (options.client ?? client).post<TComposable, unknown | DefaultT, StreamNamespaceAwareUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceAwareUserMessageEventStreamPostError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/agents/classes/NamespaceSelectionAgent/instances/{agent_id}/NamespaceAwareUserMessageEvent/stream',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Send User Message Event To Namespace Selection Agent
- *
- * Send a specific event type to a specific agent. Returns either a stop event or HITL request event.
- */
-export const sendUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdUserMessageEventPost = <TComposable extends Composable = '$fetch', DefaultT extends SendUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdUserMessageEventPostResponse = SendUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdUserMessageEventPostResponse>(options: Options<TComposable, SendUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdUserMessageEventPostData, SendUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdUserMessageEventPostResponse, DefaultT>) => (options.client ?? client).post<TComposable, SendUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdUserMessageEventPostResponse | DefaultT, SendUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdUserMessageEventPostError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/agents/classes/NamespaceSelectionAgent/instances/{agent_id}/UserMessageEvent',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Stream User Message Event To Namespace Selection Agent
- *
- * Send a specific event type to a specific agent and stream all events as SSE.
- */
-export const streamUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdUserMessageEventStreamPost = <TComposable extends Composable = '$fetch', DefaultT = undefined>(options: Options<TComposable, StreamUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdUserMessageEventStreamPostData, unknown, DefaultT>) => (options.client ?? client).post<TComposable, unknown | DefaultT, StreamUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdUserMessageEventStreamPostError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/agents/classes/NamespaceSelectionAgent/instances/{agent_id}/UserMessageEvent/stream',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Send Namespace Approval Response Event To Namespace Selection Agent
- *
- * Send a specific event type to a specific agent. Returns either a stop event or HITL request event.
- */
-export const sendNamespaceApprovalResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceApprovalResponseEventPost = <TComposable extends Composable = '$fetch', DefaultT = undefined>(options: Options<TComposable, SendNamespaceApprovalResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceApprovalResponseEventPostData, unknown, DefaultT>) => (options.client ?? client).post<TComposable, unknown | DefaultT, SendNamespaceApprovalResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceApprovalResponseEventPostError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/agents/classes/NamespaceSelectionAgent/instances/{agent_id}/NamespaceApprovalResponseEvent',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Stream Namespace Approval Response Event To Namespace Selection Agent
- *
- * Send a specific event type to a specific agent and stream all events as SSE.
- */
-export const streamNamespaceApprovalResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceApprovalResponseEventStreamPost = <TComposable extends Composable = '$fetch', DefaultT = undefined>(options: Options<TComposable, StreamNamespaceApprovalResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceApprovalResponseEventStreamPostData, unknown, DefaultT>) => (options.client ?? client).post<TComposable, unknown | DefaultT, StreamNamespaceApprovalResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceApprovalResponseEventStreamPostError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/agents/classes/NamespaceSelectionAgent/instances/{agent_id}/NamespaceApprovalResponseEvent/stream',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Send Follow Up Question Response Event To Namespace Selection Agent
- *
- * Send a specific event type to a specific agent. Returns either a stop event or HITL request event.
- */
-export const sendFollowUpQuestionResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdFollowUpQuestionResponseEventPost = <TComposable extends Composable = '$fetch', DefaultT = undefined>(options: Options<TComposable, SendFollowUpQuestionResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdFollowUpQuestionResponseEventPostData, unknown, DefaultT>) => (options.client ?? client).post<TComposable, unknown | DefaultT, SendFollowUpQuestionResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdFollowUpQuestionResponseEventPostError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/agents/classes/NamespaceSelectionAgent/instances/{agent_id}/FollowUpQuestionResponseEvent',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Stream Follow Up Question Response Event To Namespace Selection Agent
- *
- * Send a specific event type to a specific agent and stream all events as SSE.
- */
-export const streamFollowUpQuestionResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdFollowUpQuestionResponseEventStreamPost = <TComposable extends Composable = '$fetch', DefaultT = undefined>(options: Options<TComposable, StreamFollowUpQuestionResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdFollowUpQuestionResponseEventStreamPostData, unknown, DefaultT>) => (options.client ?? client).post<TComposable, unknown | DefaultT, StreamFollowUpQuestionResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdFollowUpQuestionResponseEventStreamPostError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/agents/classes/NamespaceSelectionAgent/instances/{agent_id}/FollowUpQuestionResponseEvent/stream',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Send User Message Event To R A G Agent
- *
- * Send a specific event type to a specific agent. Returns either a stop event or HITL request event.
- */
-export const sendUserMessageEventToRAGAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventPost = <TComposable extends Composable = '$fetch', DefaultT extends SendUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostResponse = SendUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostResponse>(options: Options<TComposable, SendUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostData, SendUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostResponse, DefaultT>) => (options.client ?? client).post<TComposable, SendUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostResponse | DefaultT, SendUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/agents/classes/RAGAgent/instances/{agent_id}/UserMessageEvent',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Stream User Message Event To R A G Agent
- *
- * Send a specific event type to a specific agent and stream all events as SSE.
- */
-export const streamUserMessageEventToRAGAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventStreamPost = <TComposable extends Composable = '$fetch', DefaultT = undefined>(options: Options<TComposable, StreamUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventStreamPostData, unknown, DefaultT>) => (options.client ?? client).post<TComposable, unknown | DefaultT, StreamUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventStreamPostError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/agents/classes/RAGAgent/instances/{agent_id}/UserMessageEvent/stream',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Send Namespace Aware User Message Event To R A G Agent
- *
- * Send a specific event type to a specific agent. Returns either a stop event or HITL request event.
- */
-export const sendNamespaceAwareUserMessageEventToRAGAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventPost = <TComposable extends Composable = '$fetch', DefaultT extends SendNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventPostResponse = SendNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventPostResponse>(options: Options<TComposable, SendNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventPostData, SendNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventPostResponse, DefaultT>) => (options.client ?? client).post<TComposable, SendNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventPostResponse | DefaultT, SendNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventPostError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/agents/classes/RAGAgent/instances/{agent_id}/NamespaceAwareUserMessageEvent',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Stream Namespace Aware User Message Event To R A G Agent
- *
- * Send a specific event type to a specific agent and stream all events as SSE.
- */
-export const streamNamespaceAwareUserMessageEventToRAGAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventStreamPost = <TComposable extends Composable = '$fetch', DefaultT = undefined>(options: Options<TComposable, StreamNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventStreamPostData, unknown, DefaultT>) => (options.client ?? client).post<TComposable, unknown | DefaultT, StreamNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventStreamPostError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/agents/classes/RAGAgent/instances/{agent_id}/NamespaceAwareUserMessageEvent/stream',
     ...options,
     headers: {
         'Content-Type': 'application/json',
