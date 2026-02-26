@@ -96,6 +96,11 @@ user:
     avatar: Profilbild
     roles: Rollen
     last_accessed: Zuletzt zugegriffen
+my_account:
+  title: Mein Konto
+  services: Dienste
+  agents: Assistenten
+  processes: Prozesse
 time_ago:
   last_hour: Letzte Stunde
   last_day: Letzter Tag

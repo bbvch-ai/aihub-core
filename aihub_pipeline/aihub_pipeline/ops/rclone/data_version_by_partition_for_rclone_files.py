@@ -1,3 +1,4 @@
+from aihub_lib.generative_ai.utils.path_utils import encode_partition_key
 from dagster import (
     AssetKey,
     AssetMaterialization,
@@ -17,10 +18,14 @@ def data_version_by_partition_for_rclone_files(
     partition: DynamicPartitionsDefinition,
     rclone_files: list[MinimalRcloneFile],
     max_partitions: int,
+    encode_partition_keys: bool = False,
 ) -> DataVersionsByPartition:
     """
     Generates a dynamic partition key for each file from the rclone remote,
     reports the materialization and returns a DataVersion for each partition key.
+
+    When ``encode_partition_keys`` is True, partition keys are URL-encoded to avoid
+    issues with special characters in Dagster. Decoding recovers the exact original path.
 
     **Change Detection Strategy**:
     - Primary: Content hash (MD5/SHA1) from backend if available (Dropbox, OneDrive, S3, etc.)
@@ -28,13 +33,15 @@ def data_version_by_partition_for_rclone_files(
 
     Hash-based detection is superior: detects ANY content change with zero false positives.
     """
-    partition_keys = [file.path for file in rclone_files]
+    make_key = encode_partition_key if encode_partition_keys else lambda v: v
+    key_by_path = {file.path: make_key(file.path) for file in rclone_files}
+    partition_keys = list(key_by_path.values())
 
     replace_partition_keys(
         context,
         partition.name,
         partition_keys,
-        max_partitions,
+        max_partitions=max_partitions,
     )
 
     context.log.info(f"Found {len(rclone_files)} files in rclone remote")
@@ -46,7 +53,7 @@ def data_version_by_partition_for_rclone_files(
         context.instance.report_runless_asset_event(
             AssetMaterialization(
                 asset_key=asset_key,
-                partition=sorted_files[-1].path,
+                partition=key_by_path[sorted_files[-1].path],
                 metadata={
                     "Number of Files": len(rclone_files),
                     "Total File Size (MB)": sum([file.size for file in rclone_files]) / 1e6,
@@ -66,4 +73,7 @@ def data_version_by_partition_for_rclone_files(
         # Fallback to mtime+size if no hash available
         return f"mtime:{file.modified}-{file.size}"
 
-    return DataVersionsByPartition({file.path: get_data_version(file) for file in rclone_files})
+    existing_partitions = set(context.instance.get_dynamic_partitions(partition.name))
+    files_with_partitions = [file for file in rclone_files if key_by_path[file.path] in existing_partitions]
+
+    return DataVersionsByPartition({key_by_path[file.path]: get_data_version(file) for file in files_with_partitions})

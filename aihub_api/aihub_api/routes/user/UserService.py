@@ -1,14 +1,12 @@
 from typing import TYPE_CHECKING
 
 from aihub_lib.auth.identity.TenantIdentity import TenantIdentity
-from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.persistence.access.entities.UserTenantRoleEntity import UserTenantRoleEntity
-from aihub_lib.persistence.user.UserEntity import Dashboard, DashboardItem, UserEntity
+from aihub_lib.persistence.user.UserEntity import UserEntity
 from mongoengine import DoesNotExist
 from nats.aio.client import Client as NATS
 
-from aihub_api.routes.user.dto.Dashboard.DashboardDTO import DashboardDTO
 from aihub_api.routes.user.dto.UserDTO import UserDTO
 from aihub_api.routes.user.dto.UserWithAccessDTO import UserWithAccessDTO
 
@@ -17,23 +15,7 @@ if TYPE_CHECKING:
 
 
 class UserService:
-    """
-    A service layer that encapsulates user-related logic:
-    - Converting an authenticated user object to a UserDTO.
-    - Retrieving user information from the local database.
-
-    Converts `UserIdentity` objects into `UserDTO`s for consistent responses.
-    """
-
-    @staticmethod
-    async def get_logged_in_user(user: UserIdentity, runner: "Runner", nc: NATS, t: LocaleHandler) -> UserWithAccessDTO:
-        """
-        Convert the `UserIdentity` (provided by the auth layer) into a UserDTO,
-        including information from the UserEntity like dashboard settings, favorite modules, and roles.
-        """
-        # Tenant membership already verified by auth handler during token resolution
-        user_entity = UserEntity.by_oid(user.id)
-        return await UserWithAccessDTO.from_user_entity(user_entity, user.acting_within_tenant, runner, nc, t)
+    """Admin-level user management: listing and retrieving users within a tenant."""
 
     @staticmethod
     async def get_user_by_oid(user_oid: str) -> UserDTO:
@@ -58,9 +40,7 @@ class UserService:
 
     @staticmethod
     async def get_paginated_users(tenant_id: str, page: int = 1, page_size: int = 20) -> tuple[int, list[UserDTO]]:
-        """
-        Retrieves a paginated list of users belonging to the given tenant.
-        """
+        """Retrieves a paginated list of users belonging to the given tenant."""
         tenant_user_ids = UserTenantRoleEntity.get_user_ids_in_tenant(tenant_id)
         skip = (page - 1) * page_size
         total = UserEntity.count_users(user_ids=tenant_user_ids)
@@ -69,35 +49,3 @@ class UserService:
         user_dtos = [UserDTO.from_user_entity(user) for user in user_entities]
 
         return total, user_dtos
-
-    @staticmethod
-    def get_user_dashboard(user: UserIdentity) -> DashboardDTO | None:
-        """
-        Retrieves the dashboard settings for the given authenticated user.
-        """
-        try:
-            user_entity = UserEntity.by_oid(user.id)
-        except DoesNotExist:
-            return None
-
-        if user_entity.dashboard:
-            dashboard_data = user_entity.dashboard.to_mongo()
-            return DashboardDTO(**dashboard_data)
-        return None
-
-    @staticmethod
-    async def update_user_dashboard(user: UserIdentity, dashboard_dto: DashboardDTO) -> None:
-        """
-        Updates or creates the dashboard settings for the given authenticated user.
-        """
-        user_entity = UserEntity.by_oid(user.id)
-        dashboard_data_dict = dashboard_dto.model_dump()
-
-        children_data = dashboard_data_dict.pop("children", [])
-        dashboard_items = []
-        if children_data:
-            for item_data in children_data:
-                dashboard_items.append(DashboardItem(**item_data))
-
-        user_entity.dashboard = Dashboard(children=dashboard_items, **dashboard_data_dict)
-        user_entity.save()

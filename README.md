@@ -416,9 +416,18 @@ These credentials can be customized via environment variables (`KEYCLOAK_DEV_USE
 
 ### :key: Configure Environment Variables
 
-::: warning
-The project requires environment variables for configuration. You will need to request the `.env` files from the team
-and place them in the root directories of the relevant backend and frontend projects.
+For local development, copy the provided template:
+
+```bash
+cp .env.dev .env
+```
+
+::: tip :package: Production Deployment
+For production deployment, download a release bundle from
+[GitHub Releases](https://github.com/bbvch-ai/aihub-core/releases) and use the included `setup-env.sh` script to
+generate a `.env` file with auto-generated secrets. See the
+[One-Command Deployment Guide](https://bbvch-ai.github.io/aihub-core/docs/2_platform/1_quick_start/2_one_command_deployment/)
+for full instructions.
 :::
 
 ### :robot: AI Coding Assistant Integration (MCP)

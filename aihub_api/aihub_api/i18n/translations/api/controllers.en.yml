@@ -47,9 +47,12 @@ token:
 translation:
   name: Translation
   description: Translate text to all supported languages
-user:
+my_account:
   name: My Account
   description: Manage your account settings
+user:
+  name: User Management
+  description: Manage users and their access
 user_memory:
   name: User Memories
   description: View and manage your personal memories from mem0

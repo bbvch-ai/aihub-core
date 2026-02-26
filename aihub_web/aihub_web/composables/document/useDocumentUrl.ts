@@ -1,16 +1,13 @@
-import { getFileUrl } from '@core/sdk/client'
+import { getDocumentUrl } from '@core/sdk/client'
 
 export const useDocumentUrl = () => {
-  const getDocumentSourceUrl = async (sourcePath: string): Promise<string> => {
-    const parts = sourcePath.split('/')
-    const [container, ...pathParts] = parts
-    const filePath = pathParts.join('/')
-
-    const { url } = await getFileUrl({
+  const getDocumentSourceUrl = async (database: string, namespace: string, documentId: string): Promise<string> => {
+    const { url } = await getDocumentUrl({
       composable: '$fetch',
       path: {
-        container,
-        file_path: filePath,
+        database,
+        namespace,
+        document_id: documentId,
       },
     })
     return url

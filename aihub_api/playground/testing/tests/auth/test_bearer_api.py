@@ -17,11 +17,11 @@ from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
 from mongoengine import connect, disconnect
 
-from aihub_api.routes.user.UserController import UserController
+from aihub_api.routes.my_account.MyAccountController import MyAccountController
 from aihub_api.runners.ApiTestRunner import ApiTestRunner
 
 BASE_URL = "http://test"
-USER_ENDPOINT = "/api/v1/users/me"
+USER_ENDPOINT = "/api/v1/my-account"
 EXPECTED_USER_FIELDS = ["id", "name", "email", "roles", "profile_image", "favorite_modules"]
 
 
@@ -82,10 +82,10 @@ def expected_user_data():
 
 @pytest_asyncio.fixture(scope="module")
 async def token_api_client():
-    """Create a TestClient with UserController mounted using TokenAuthHandler."""
+    """Create a TestClient with MyAccountController mounted using TokenAuthHandler."""
     runner = ApiTestRunner()
     auth = TokenAuthHandler()
-    runner.mount(UserController(auth=auth).get_my_user())
+    runner.mount(MyAccountController(auth=auth).get_my_account())
     app = runner.create_app()
     async with LifespanManager(app) as lifespan:
         async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url=BASE_URL) as client:
@@ -94,7 +94,7 @@ async def token_api_client():
 
 @pytest.mark.asyncio
 async def test_get_user_with_valid_token(token_api_client, valid_token, expected_user_data):
-    """Test GET /user/me with a valid token returns expected user data."""
+    """Test GET /my-account with a valid token returns expected user data."""
     headers = {
         "Authorization": f"Bearer {valid_token}",
         "Content-Type": "application/json",
@@ -114,7 +114,7 @@ async def test_get_user_with_valid_token(token_api_client, valid_token, expected
 
 @pytest.mark.asyncio
 async def test_get_user_with_invalid_token(token_api_client):
-    """Test GET /user/me with an invalid token returns 401 or 403."""
+    """Test GET /my-account with an invalid token returns 401 or 403."""
     headers = {
         "Authorization": "Bearer invalid.token.value",
         "Content-Type": "application/json",

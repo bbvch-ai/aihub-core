@@ -1,3 +1,4 @@
+import asyncio
 from typing import Annotated
 
 from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreFactory import (
@@ -89,11 +90,34 @@ class MilvusVectorStoreResource(ConfigurableResource[MilvusVectorStore]):
 
     def create_resource(self, context: InitResourceContext) -> MilvusVectorStore:
         client = MilvusClient(uri=self.uri, token=self.token)
-        return create_milvus_vector_store(
-            client=client,
-            collection_name=self.collection_name,
-            embedding_vector_dimension=self.embedding_vector_dimension,
-            index_type=self.index_type,
-            uri=self.uri,
-            token=self.token,
-        )
+
+        # pymilvus 2.6+ creates an AsyncMilvusClient during MilvusVectorStore init,
+        # which calls asyncio.get_running_loop(). Dagster's resource init is synchronous,
+        # so we ensure a running loop exists to satisfy that requirement.
+        try:
+            asyncio.get_running_loop()
+            return create_milvus_vector_store(
+                client=client,
+                collection_name=self.collection_name,
+                embedding_vector_dimension=self.embedding_vector_dimension,
+                index_type=self.index_type,
+                uri=self.uri,
+                token=self.token,
+            )
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
+            async def _init() -> MilvusVectorStore:
+                return create_milvus_vector_store(
+                    client=client,
+                    collection_name=self.collection_name,
+                    embedding_vector_dimension=self.embedding_vector_dimension,
+                    index_type=self.index_type,
+                    uri=self.uri,
+                    token=self.token,
+                )
+
+            # Loop left open intentionally — pymilvus retains a reference to it
+            # via AsyncMilvusClient for the lifetime of the vector store.
+            return loop.run_until_complete(_init())

@@ -86,7 +86,7 @@ http_error:
     503: Our service is temporarily unavailable.
     504: A server is not responding. Please try again.
 user:
-  title: User
+  title: Users
   logout: Logout
   language: Language
   list:
@@ -95,6 +95,11 @@ user:
     avatar: Profile image
     roles: Roles
     last_accessed: Last active
+my_account:
+  title: My Account
+  services: Services
+  agents: Agents
+  processes: Processes
 time_ago:
   last_hour: Last hour
   last_day: Last day

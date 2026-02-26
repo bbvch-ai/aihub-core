@@ -16,6 +16,7 @@ from aihub_api.routes.i18n.I18nController import I18nController
 from aihub_api.routes.knowledge.KnowledgeController import KnowledgeController
 from aihub_api.routes.memory import OrganizationMemoryController, UserMemoryController
 from aihub_api.routes.model.ModelController import ModelController
+from aihub_api.routes.my_account.MyAccountController import MyAccountController
 from aihub_api.routes.notification.NotificationController import NotificationController
 from aihub_api.routes.openai.OpenaiController import OpenaiController
 from aihub_api.routes.parsing.ParsingController import ParsingController
@@ -38,7 +39,8 @@ auth = TokenAndOauth2Handler.from_auth_settings()
 runner.mount(
     ApiHealthController(auth=auth).get_health().get_ready(),
     SuiteController(auth=auth).get_suite(),
-    UserController(auth=auth).get_my_user().get_user().get_users().get_my_dashboard().update_my_dashboard(),
+    MyAccountController(auth=auth).get_my_account().get_my_dashboard().update_my_dashboard(),
+    UserController(auth=auth).get_user().get_users(),
     I18nController(auth=auth).get_my_locale(),
     EventController(auth=auth).ws().get_agent_events_in_thread().get_agent_event_timeseries(),
     ModelController(auth=auth).get_litellm_models().get_litellm_models_by_mode().get_litellm_model(),
@@ -99,8 +101,9 @@ runner.mount(
     .get_summary_nodes_for_document()
     .initiate_document_upload()
     .validate_document_upload()
-    .get_supported_file_types(),
-    FileController(auth=auth).get_file_url().get_file_redirect().get_anonymous_file_url().get_anonymous_file_redirect(),
+    .get_supported_file_types()
+    .get_document_url(),
+    FileController(auth=auth).get_file_url().get_anonymous_file_url().get_anonymous_file_redirect(),
     NotificationController(auth=auth).get_notifications().update_notifications().update_notification(),
     UserMemoryController(auth=auth)
     .get_user_memories()

@@ -1,3 +1,4 @@
+from aihub_lib.generative_ai.utils.path_utils import decode_partition_key
 from dagster import ConfigurableIOManager, InputContext, OutputContext, ResourceDependency
 
 from aihub_pipeline.resources.rclone.RcloneResource import RcloneResource
@@ -19,13 +20,18 @@ class RcloneIOManager(ConfigurableIOManager):
     """
 
     rclone_client: ResourceDependency[RcloneResource]
+    encode_partition_keys: bool = False
 
     def handle_output(self, context: OutputContext, obj: bytes | RcloneFile):
         raise NotImplementedError("Writing to rclone remotes not supported (read-only)")
 
     def load_input(self, context: InputContext) -> RcloneFile | list[MinimalRcloneFile]:
         if context.has_partition_key:
-            return self.rclone_client.download_file(context.partition_key)
+            if self.encode_partition_keys:
+                path = decode_partition_key(context.partition_key)
+            else:
+                path = context.partition_key
+            return self.rclone_client.download_file(path)
 
         upstream_output = context.upstream_output
         partitions_def = upstream_output.asset_partitions_def
@@ -35,5 +41,9 @@ class RcloneIOManager(ConfigurableIOManager):
 
         all_partition_keys = partitions_def.get_partition_keys(dynamic_partitions_store=context.instance)
         all_files = self.rclone_client.fetch_minimal_files()
-        partition_set = set(all_partition_keys)
-        return [f for f in all_files if f.path in partition_set]
+
+        if self.encode_partition_keys:
+            known_paths = {decode_partition_key(k) for k in all_partition_keys}
+        else:
+            known_paths = set(all_partition_keys)
+        return [f for f in all_files if f.path in known_paths]

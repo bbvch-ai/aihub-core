@@ -23,7 +23,8 @@ from aihub_pipeline.resources.vector_store.MilvusVectorStoreResource import Milv
 
 
 def azure_data_lake_resources(
-    container_name: str, directory_name: str | None = None
+    container_name: str,
+    directory_name: str | None = None,
 ) -> dict[str, ConfigurableResourceFactory]:
     """Factory function for Azure Data Lake resources."""
     data_lake_client = AzureDataLakeClientResource(container_name=container_name)
@@ -32,7 +33,10 @@ def azure_data_lake_resources(
         data_lake_client=data_lake_client,
         data_lake_file_system=data_lake_file_system,
     )
-    data_lake_resource = DataLakeResource(container_name=container_name, directory_name=directory_name)
+    data_lake_resource = DataLakeResource(
+        container_name=container_name,
+        directory_name=directory_name,
+    )
     return {
         "data_lake_client": data_lake_client,
         "data_lake_file_system": data_lake_file_system,
@@ -42,7 +46,9 @@ def azure_data_lake_resources(
 
 
 def s3_data_lake_resources(
-    container_name: str, directory_name: str | None = None
+    container_name: str,
+    directory_name: str | None = None,
+    encode_partition_keys: bool = False,
 ) -> dict[str, ConfigurableResourceFactory]:
     """Factory function for S3 Data Lake resources (MinIO)."""
     data_lake_client = S3DataLakeClientResource(container_name=container_name)
@@ -50,8 +56,12 @@ def s3_data_lake_resources(
     data_lake_io_manager = S3DataLakeIOManager(
         data_lake_client=data_lake_client,
         data_lake_file_system=data_lake_file_system,
+        encode_partition_keys=encode_partition_keys,
     )
-    data_lake_resource = DataLakeResource(container_name=container_name, directory_name=directory_name)
+    data_lake_resource = DataLakeResource(
+        container_name=container_name,
+        directory_name=directory_name,
+    )
     return {
         "data_lake_client": data_lake_client,
         "data_lake_file_system": data_lake_file_system,

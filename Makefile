@@ -83,12 +83,26 @@ pr-ready:
 	@$(MAKE) generate-compose
 	@$(MAKE) license-check
 
-TAG ?= v0.266.4
+TAG ?= v0.267.4
 
 changelog:
 	@echo "Generating changelog"
 	/bin/bash ./generate-changelog.sh
 	@uv run mdformat --number $$(git ls-files '*.md' | grep -v 'aihub_doc/whitepaper/chapters/')
+
+# Extract release notes for a specific version from CHANGELOG.md (TAG=v0.267.1, OUTPUT=release-notes.md)
+OUTPUT ?= release-notes.md
+extract-release-notes:
+	@if ! echo "$(TAG)" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+$$'; then \
+		echo "ERROR: Invalid TAG format '$(TAG)'. Expected vMAJOR.MINOR.PATCH (e.g. v0.267.1)"; \
+		exit 1; \
+	fi
+	@awk -v ver="$(TAG)" 'index($$0, "## [" ver "]") == 1 {found=1; next} found && /^## \[/{exit} found{print}' CHANGELOG.md | sed '/^_\{3,\}/d' > $(OUTPUT)
+	@if [ ! -s $(OUTPUT) ]; then \
+		echo "No changelog section found for $(TAG), using fallback"; \
+		echo "Release $(TAG)" > $(OUTPUT); \
+	fi
+	@echo "Release notes for $(TAG) written to $(OUTPUT) ($$(wc -c < $(OUTPUT)) bytes)"
 
 # Check licenses across all dependencies
 license-check:
@@ -100,6 +114,12 @@ license-check:
 generate-compose:
 	@echo "Generating Docker Compose files..."
 	@uv run python deployment/generate_compose.py
+
+# Generate release bundles with version-pinned images (TAG=v0.266.0, OUTPUT_DIR=dist/release)
+OUTPUT_DIR ?= dist/release
+generate-release:
+	@echo "Generating release bundles for $(TAG)..."
+	@uv run python deployment/generate_compose.py --release --tag "$(TAG)" --output-dir "$(OUTPUT_DIR)"
 
 local-cert:
 	@echo "Generating mkcert certificates for localhost and nip.io..."

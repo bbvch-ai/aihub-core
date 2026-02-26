@@ -42,9 +42,18 @@ Customer code uses its own independent version numbers.
 
 ### Release process
 
-When a PR merges to `main` with a version label (`major`, `minor`, or `patch`), CI/CD computes the new version and
-creates a Git tag. This triggers component builds for affected services. Docker images are published to
-`ghcr.io/bbvch-ai/aihub-core/*` with the version tag. A changelog is generated automatically.
+When a PR merges to `main` with a version label (`major`, `minor`, or `patch`), CI/CD computes the new version, creates
+a Git tag, and builds all affected services. Docker images are published to `ghcr.io/bbvch-ai/aihub-core/*` with the
+version tag. A changelog is generated automatically.
+
+Each release also publishes self-contained deployment bundles as GitHub Release assets:
+
+- `swissaihub-<version>.tar.gz` — CPU-only deployment bundle
+- `swissaihub-<version>-gpu.tar.gz` — GPU-enabled deployment bundle
+
+These bundles contain everything needed to deploy: `docker-compose.yml` with version-pinned image tags, all service
+configuration files, an `.env.template` with placeholder secrets, and a `setup-env.sh` script that generates a `.env`
+file with cryptographically secure random values for all passwords, tokens, and signing keys.
 
 Example core images:
 
@@ -61,14 +70,41 @@ ghcr.io/bbvch-ai/aihub-<customer>/agent:v1.2.3
 ghcr.io/bbvch-ai/aihub-<customer>/pipeline:v1.2.3
 ```
 
+Browse all releases at
+[github.com/bbvch-ai/aihub-core/releases](https://github.com/bbvch-ai/aihub-core/releases).
+
 ______________________________________________________________________
 
 ## Updates
 
 ### Core platform updates
 
-Backward-compatible core updates (patch and minor versions) can be deployed by updating image tags in
-`docker-compose.yml`, pulling new images, and restarting services. Customer code continues running unchanged.
+Download the new release bundle from
+[GitHub Releases](https://github.com/bbvch-ai/aihub-core/releases) and extract it alongside your current deployment:
+
+```bash
+# Download the new version
+VERSION="v1.3.0"
+curl -L "https://github.com/bbvch-ai/aihub-core/releases/download/${VERSION}/swissaihub-${VERSION}.tar.gz" \
+  | tar -xz -C /tmp/swissaihub-update
+
+# Copy your existing .env into the new bundle
+cp .env /tmp/swissaihub-update/.env
+
+# Review any new environment variables added in the release
+diff <(grep -oP '^[A-Z_]+=' .env.template) <(grep -oP '^[A-Z_]+=' /tmp/swissaihub-update/.env.template)
+
+# Replace the deployment files
+cp -r /tmp/swissaihub-update/* .
+
+# Pull new images and restart
+docker compose pull
+docker compose up -d
+```
+
+Backward-compatible updates (patch and minor versions) only require pulling new images and restarting. The release
+bundle's `docker-compose.yml` already references the correct version-pinned image tags. Customer code continues running
+unchanged.
 
 Major core updates with breaking changes require coordinated updates. Customer code must be updated to work with the new
 core version. Both core and customer code are updated together during a maintenance window.
@@ -92,8 +128,23 @@ all services to their previous state at once.
 
 ### Version tags
 
-If data remains compatible with the previous version, rollback by reverting image tags in `docker-compose.yml` to the
-previous versions, pulling those images, and restarting services.
+If data remains compatible with the previous version, rollback by downloading the previous release bundle, restoring
+your `.env` file, and restarting:
+
+```bash
+# Download the previous version's bundle
+PREVIOUS="v1.2.3"
+curl -L "https://github.com/bbvch-ai/aihub-core/releases/download/${PREVIOUS}/swissaihub-${PREVIOUS}.tar.gz" \
+  | tar -xz -C /tmp/swissaihub-rollback
+
+# Restore previous compose and configs, keep your .env
+cp .env /tmp/swissaihub-rollback/.env
+cp -r /tmp/swissaihub-rollback/* .
+
+# Roll back
+docker compose pull
+docker compose up -d
+```
 
 Core and customer code can be rolled back independently if they were updated separately. If both were updated together,
 roll back core first, then customer code.
