@@ -1661,7 +1661,8 @@ export const AnnotationSchema = {
         'type',
         'url_citation'
     ],
-    title: 'Annotation'
+    title: 'Annotation',
+    description: 'A URL citation when using web search.'
 } as const;
 
 export const AnnotationURLCitationSchema = {
@@ -1691,7 +1692,8 @@ export const AnnotationURLCitationSchema = {
         'title',
         'url'
     ],
-    title: 'AnnotationURLCitation'
+    title: 'AnnotationURLCitation',
+    description: 'A URL citation when using web search.'
 } as const;
 
 export const ApiHealthChecksSchema = {
@@ -1746,7 +1748,8 @@ export const AudioSchema = {
     required: [
         'id'
     ],
-    title: 'Audio'
+    title: 'Audio',
+    description: 'Data about a previous audio response from the model.\n[Learn more](https://platform.openai.com/docs/guides/audio).'
 } as const;
 
 export const AudioBlockSchema = {
@@ -2589,7 +2592,8 @@ export const ChatCompletionSchema = {
         'model',
         'object'
     ],
-    title: 'ChatCompletion'
+    title: 'ChatCompletion',
+    description: 'Represents a chat completion response returned by model, based on the provided input.'
 } as const;
 
 export const ChatCompletionAllowedToolChoiceParamSchema = {
@@ -2609,7 +2613,8 @@ export const ChatCompletionAllowedToolChoiceParamSchema = {
         'allowed_tools',
         'type'
     ],
-    title: 'ChatCompletionAllowedToolChoiceParam'
+    title: 'ChatCompletionAllowedToolChoiceParam',
+    description: 'Constrains the tools available to the model to a pre-defined set.'
 } as const;
 
 export const ChatCompletionAllowedToolsParamSchema = {
@@ -2637,7 +2642,8 @@ export const ChatCompletionAllowedToolsParamSchema = {
         'mode',
         'tools'
     ],
-    title: 'ChatCompletionAllowedToolsParam'
+    title: 'ChatCompletionAllowedToolsParam',
+    description: 'Constrains the tools available to the model to a pre-defined set.'
 } as const;
 
 export const ChatCompletionAssistantMessageParamSchema = {
@@ -2726,7 +2732,8 @@ export const ChatCompletionAssistantMessageParamSchema = {
     required: [
         'role'
     ],
-    title: 'ChatCompletionAssistantMessageParam'
+    title: 'ChatCompletionAssistantMessageParam',
+    description: 'Messages sent by the model in response to user messages.'
 } as const;
 
 export const ChatCompletionAudioSchema = {
@@ -2756,7 +2763,8 @@ export const ChatCompletionAudioSchema = {
         'expires_at',
         'transcript'
     ],
-    title: 'ChatCompletionAudio'
+    title: 'ChatCompletionAudio',
+    description: 'If the audio output modality is requested, this object contains data\nabout the audio response from the model. [Learn more](https://platform.openai.com/docs/guides/audio).'
 } as const;
 
 export const ChatCompletionAudioParamSchema = {
@@ -2803,7 +2811,8 @@ export const ChatCompletionAudioParamSchema = {
         'format',
         'voice'
     ],
-    title: 'ChatCompletionAudioParam'
+    title: 'ChatCompletionAudioParam',
+    description: 'Parameters for audio output.\n\nRequired when audio output is requested with\n`modalities: ["audio"]`. [Learn more](https://platform.openai.com/docs/guides/audio).'
 } as const;
 
 export const ChatCompletionContentPartImageParamSchema = {
@@ -2823,7 +2832,8 @@ export const ChatCompletionContentPartImageParamSchema = {
         'image_url',
         'type'
     ],
-    title: 'ChatCompletionContentPartImageParam'
+    title: 'ChatCompletionContentPartImageParam',
+    description: 'Learn about [image inputs](https://platform.openai.com/docs/guides/vision).'
 } as const;
 
 export const ChatCompletionContentPartInputAudioParamSchema = {
@@ -2843,7 +2853,8 @@ export const ChatCompletionContentPartInputAudioParamSchema = {
         'input_audio',
         'type'
     ],
-    title: 'ChatCompletionContentPartInputAudioParam'
+    title: 'ChatCompletionContentPartInputAudioParam',
+    description: 'Learn about [audio inputs](https://platform.openai.com/docs/guides/audio).'
 } as const;
 
 export const ChatCompletionContentPartRefusalParamSchema = {
@@ -2885,7 +2896,8 @@ export const ChatCompletionContentPartTextParamSchema = {
         'text',
         'type'
     ],
-    title: 'ChatCompletionContentPartTextParam'
+    title: 'ChatCompletionContentPartTextParam',
+    description: 'Learn about [text inputs](https://platform.openai.com/docs/guides/text-generation).'
 } as const;
 
 export const ChatCompletionDeveloperMessageParamSchema = {
@@ -2920,7 +2932,8 @@ export const ChatCompletionDeveloperMessageParamSchema = {
         'content',
         'role'
     ],
-    title: 'ChatCompletionDeveloperMessageParam'
+    title: 'ChatCompletionDeveloperMessageParam',
+    description: 'Developer-provided instructions that the model should follow, regardless of\nmessages sent by the user. With o1 models and newer, `developer` messages\nreplace the previous `system` messages.'
 } as const;
 
 export const ChatCompletionFunctionCallOptionParamSchema = {
@@ -2935,7 +2948,8 @@ export const ChatCompletionFunctionCallOptionParamSchema = {
     required: [
         'name'
     ],
-    title: 'ChatCompletionFunctionCallOptionParam'
+    title: 'ChatCompletionFunctionCallOptionParam',
+    description: 'Specifying a particular function via `{"name": "my_function"}` forces the model to call that function.'
 } as const;
 
 export const ChatCompletionFunctionMessageParamSchema = {
@@ -2988,7 +3002,8 @@ export const ChatCompletionFunctionToolParamSchema = {
         'function',
         'type'
     ],
-    title: 'ChatCompletionFunctionToolParam'
+    title: 'ChatCompletionFunctionToolParam',
+    description: 'A function tool that can be used to generate a response.'
 } as const;
 
 export const ChatCompletionMessageSchema = {
@@ -3081,7 +3096,8 @@ export const ChatCompletionMessageSchema = {
     required: [
         'role'
     ],
-    title: 'ChatCompletionMessage'
+    title: 'ChatCompletionMessage',
+    description: 'A chat completion message generated by the model.'
 } as const;
 
 export const ChatCompletionMessageCustomToolCallSchema = {
@@ -3106,7 +3122,8 @@ export const ChatCompletionMessageCustomToolCallSchema = {
         'custom',
         'type'
     ],
-    title: 'ChatCompletionMessageCustomToolCall'
+    title: 'ChatCompletionMessageCustomToolCall',
+    description: 'A call to a custom tool created by the model.'
 } as const;
 
 export const ChatCompletionMessageCustomToolCallParamSchema = {
@@ -3131,7 +3148,8 @@ export const ChatCompletionMessageCustomToolCallParamSchema = {
         'custom',
         'type'
     ],
-    title: 'ChatCompletionMessageCustomToolCallParam'
+    title: 'ChatCompletionMessageCustomToolCallParam',
+    description: 'A call to a custom tool created by the model.'
 } as const;
 
 export const ChatCompletionMessageFunctionToolCallSchema = {
@@ -3156,7 +3174,8 @@ export const ChatCompletionMessageFunctionToolCallSchema = {
         'function',
         'type'
     ],
-    title: 'ChatCompletionMessageFunctionToolCall'
+    title: 'ChatCompletionMessageFunctionToolCall',
+    description: 'A call to a function tool created by the model.'
 } as const;
 
 export const ChatCompletionMessageFunctionToolCallParamSchema = {
@@ -3181,7 +3200,8 @@ export const ChatCompletionMessageFunctionToolCallParamSchema = {
         'function',
         'type'
     ],
-    title: 'ChatCompletionMessageFunctionToolCallParam'
+    title: 'ChatCompletionMessageFunctionToolCallParam',
+    description: 'A call to a function tool created by the model.'
 } as const;
 
 export const ChatCompletionNamedToolChoiceCustomParamSchema = {
@@ -3201,7 +3221,8 @@ export const ChatCompletionNamedToolChoiceCustomParamSchema = {
         'custom',
         'type'
     ],
-    title: 'ChatCompletionNamedToolChoiceCustomParam'
+    title: 'ChatCompletionNamedToolChoiceCustomParam',
+    description: 'Specifies a tool the model should use.\n\nUse to force the model to call a specific custom tool.'
 } as const;
 
 export const ChatCompletionNamedToolChoiceParamSchema = {
@@ -3221,7 +3242,8 @@ export const ChatCompletionNamedToolChoiceParamSchema = {
         'function',
         'type'
     ],
-    title: 'ChatCompletionNamedToolChoiceParam'
+    title: 'ChatCompletionNamedToolChoiceParam',
+    description: 'Specifies a tool the model should use.\n\nUse to force the model to call a specific function.'
 } as const;
 
 export const ChatCompletionPredictionContentParamSchema = {
@@ -3252,7 +3274,8 @@ export const ChatCompletionPredictionContentParamSchema = {
         'content',
         'type'
     ],
-    title: 'ChatCompletionPredictionContentParam'
+    title: 'ChatCompletionPredictionContentParam',
+    description: 'Static predicted output content, such as the content of a text file that is\nbeing regenerated.'
 } as const;
 
 export const ChatCompletionRequestSchema = {
@@ -3299,6 +3322,16 @@ export const ChatCompletionRequestSchema = {
                 {
                     type: 'string',
                     enum: [
+                        'gpt-5.2',
+                        'gpt-5.2-2025-12-11',
+                        'gpt-5.2-chat-latest',
+                        'gpt-5.2-pro',
+                        'gpt-5.2-pro-2025-12-11',
+                        'gpt-5.1',
+                        'gpt-5.1-2025-11-13',
+                        'gpt-5.1-codex',
+                        'gpt-5.1-mini',
+                        'gpt-5.1-chat-latest',
                         'gpt-5',
                         'gpt-5-mini',
                         'gpt-5-nano',
@@ -3560,10 +3593,12 @@ export const ChatCompletionRequestSchema = {
                 {
                     type: 'string',
                     enum: [
+                        'none',
                         'minimal',
                         'low',
                         'medium',
-                        'high'
+                        'high',
+                        'xhigh'
                     ]
                 },
                 {
@@ -3748,7 +3783,8 @@ export const ChatCompletionStreamOptionsParamSchema = {
     },
     additionalProperties: true,
     type: 'object',
-    title: 'ChatCompletionStreamOptionsParam'
+    title: 'ChatCompletionStreamOptionsParam',
+    description: 'Options for streaming response. Only set this when you set `stream: true`.'
 } as const;
 
 export const ChatCompletionSystemMessageParamSchema = {
@@ -3783,7 +3819,8 @@ export const ChatCompletionSystemMessageParamSchema = {
         'content',
         'role'
     ],
-    title: 'ChatCompletionSystemMessageParam'
+    title: 'ChatCompletionSystemMessageParam',
+    description: 'Developer-provided instructions that the model should follow, regardless of\nmessages sent by the user. With o1 models and newer, use `developer` messages\nfor this purpose instead.'
 } as const;
 
 export const ChatCompletionTokenLogprobSchema = {
@@ -3909,7 +3946,8 @@ export const ChatCompletionUserMessageParamSchema = {
         'content',
         'role'
     ],
-    title: 'ChatCompletionUserMessageParam'
+    title: 'ChatCompletionUserMessageParam',
+    description: 'Messages sent by an end user, containing prompts or additional context\ninformation.'
 } as const;
 
 export const ChatMessageSchema = {
@@ -4293,7 +4331,8 @@ export const ChoiceLogprobsSchema = {
     },
     additionalProperties: true,
     type: 'object',
-    title: 'ChoiceLogprobs'
+    title: 'ChoiceLogprobs',
+    description: 'Log probability information for the choice.'
 } as const;
 
 export const ChunkEventSchema = {
@@ -4698,7 +4737,8 @@ export const CompletionTokensDetailsSchema = {
     },
     additionalProperties: true,
     type: 'object',
-    title: 'CompletionTokensDetails'
+    title: 'CompletionTokensDetails',
+    description: 'Breakdown of tokens used in a completion.'
 } as const;
 
 export const CompletionUsageSchema = {
@@ -4743,7 +4783,8 @@ export const CompletionUsageSchema = {
         'prompt_tokens',
         'total_tokens'
     ],
-    title: 'CompletionUsage'
+    title: 'CompletionUsage',
+    description: 'Usage statistics for the completion request.'
 } as const;
 
 export const ContextInsufficientRejectEventSchema = {
@@ -5379,7 +5420,8 @@ export const Custom_OutputSchema = {
         'input',
         'name'
     ],
-    title: 'Custom'
+    title: 'Custom',
+    description: 'The custom tool that the model called.'
 } as const;
 
 export const DashboardDTOSchema = {
@@ -7326,7 +7368,8 @@ export const FileSchema = {
         'file',
         'type'
     ],
-    title: 'File'
+    title: 'File',
+    description: 'Learn about [file inputs](https://platform.openai.com/docs/guides/text) for text generation.'
 } as const;
 
 export const FileFileSchema = {
@@ -7634,7 +7677,8 @@ export const Function_OutputSchema = {
         'arguments',
         'name'
     ],
-    title: 'Function'
+    title: 'Function',
+    description: 'The function that the model called.'
 } as const;
 
 export const FunctionCallSchema = {
@@ -7654,7 +7698,8 @@ export const FunctionCallSchema = {
         'arguments',
         'name'
     ],
-    title: 'FunctionCall'
+    title: 'FunctionCall',
+    description: 'Deprecated and replaced by `tool_calls`.\n\nThe name and arguments of a function that should be called, as generated by the model.'
 } as const;
 
 export const FunctionDefinitionSchema = {
@@ -9179,7 +9224,8 @@ export const ImageSchema = {
     },
     additionalProperties: true,
     type: 'object',
-    title: 'Image'
+    title: 'Image',
+    description: 'Represents the content or the URL of an image generated by the OpenAI API.'
 } as const;
 
 export const ImageBlockSchema = {
@@ -9522,7 +9568,8 @@ export const ImagesResponseSchema = {
     required: [
         'created'
     ],
-    title: 'ImagesResponse'
+    title: 'ImagesResponse',
+    description: 'The response from the image generation endpoint.'
 } as const;
 
 export const IngestedNodeSchema = {
@@ -10922,7 +10969,8 @@ export const JSONSchemaSchema = {
     required: [
         'name'
     ],
-    title: 'JSONSchema'
+    title: 'JSONSchema',
+    description: 'Structured Outputs configuration options, including a JSON Schema.'
 } as const;
 
 export const KnobSchema = {
@@ -13241,7 +13289,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1771581051
+            default: 1772090501
         },
         owned_by: {
             type: 'string',
@@ -15826,7 +15874,8 @@ export const PromptTokensDetailsSchema = {
     },
     additionalProperties: true,
     type: 'object',
-    title: 'PromptTokensDetails'
+    title: 'PromptTokensDetails',
+    description: 'Breakdown of tokens used in the prompt.'
 } as const;
 
 export const RadioButtonSchema = {
@@ -16662,7 +16711,8 @@ export const ResponseFormatJSONObjectSchema = {
     required: [
         'type'
     ],
-    title: 'ResponseFormatJSONObject'
+    title: 'ResponseFormatJSONObject',
+    description: 'JSON object response format.\n\nAn older method of generating JSON responses.\nUsing `json_schema` is recommended for models that support it. Note that the\nmodel will not generate JSON without a system or user message instructing it\nto do so.'
 } as const;
 
 export const ResponseFormatJSONSchemaSchema = {
@@ -16682,7 +16732,8 @@ export const ResponseFormatJSONSchemaSchema = {
         'json_schema',
         'type'
     ],
-    title: 'ResponseFormatJSONSchema'
+    title: 'ResponseFormatJSONSchema',
+    description: 'JSON Schema response format.\n\nUsed to generate structured JSON responses.\nLearn more about [Structured Outputs](https://platform.openai.com/docs/guides/structured-outputs).'
 } as const;
 
 export const ResponseFormatTextSchema = {
@@ -16698,7 +16749,8 @@ export const ResponseFormatTextSchema = {
     required: [
         'type'
     ],
-    title: 'ResponseFormatText'
+    title: 'ResponseFormatText',
+    description: 'Default response format. Used to generate text responses.'
 } as const;
 
 export const RetrieveOrganizationMemoryEventSchema = {
@@ -16993,7 +17045,8 @@ export const RoleResponseSchema = {
         is_system_role: {
             type: 'boolean',
             title: 'Is System Role',
-            description: 'Whether this is a system-wide role.'
+            description: 'Whether this is a system-wide role (no tenant_id means system role).',
+            readOnly: true
         }
     },
     type: 'object',
@@ -20150,7 +20203,8 @@ export const TranscriptionSchema = {
     required: [
         'text'
     ],
-    title: 'Transcription'
+    title: 'Transcription',
+    description: 'Represents a transcription response returned by model, based on the provided input.'
 } as const;
 
 export const TranscriptionSegmentSchema = {
@@ -20247,7 +20301,7 @@ export const TranscriptionVerboseSchema = {
         usage: {
             anyOf: [
                 {
-                    $ref: '#/components/schemas/Usage'
+                    $ref: '#/components/schemas/openai__types__audio__transcription_verbose__Usage'
                 },
                 {
                     type: 'null'
@@ -20276,7 +20330,8 @@ export const TranscriptionVerboseSchema = {
         'language',
         'text'
     ],
-    title: 'TranscriptionVerbose'
+    title: 'TranscriptionVerbose',
+    description: 'Represents a verbose json transcription response returned by model, based on the provided input.'
 } as const;
 
 export const TranscriptionWordSchema = {
@@ -20555,27 +20610,6 @@ export const UpdateRoleRequestSchema = {
     description: 'Request model for updating an existing role. All fields are optional.'
 } as const;
 
-export const UsageSchema = {
-    properties: {
-        seconds: {
-            type: 'number',
-            title: 'Seconds'
-        },
-        type: {
-            type: 'string',
-            const: 'duration',
-            title: 'Type'
-        }
-    },
-    additionalProperties: true,
-    type: 'object',
-    required: [
-        'seconds',
-        'type'
-    ],
-    title: 'Usage'
-} as const;
-
 export const UsageDurationSchema = {
     properties: {
         seconds: {
@@ -20594,7 +20628,8 @@ export const UsageDurationSchema = {
         'seconds',
         'type'
     ],
-    title: 'UsageDuration'
+    title: 'UsageDuration',
+    description: 'Usage statistics for models billed by audio input duration.'
 } as const;
 
 export const UsageInputTokensDetailsSchema = {
@@ -20614,7 +20649,8 @@ export const UsageInputTokensDetailsSchema = {
         'image_tokens',
         'text_tokens'
     ],
-    title: 'UsageInputTokensDetails'
+    title: 'UsageInputTokensDetails',
+    description: 'The input tokens detailed information for the image generation.'
 } as const;
 
 export const UsageLimitDTOSchema = {
@@ -20669,6 +20705,27 @@ export const UsageLimitPeriodSchema = {
     description: 'Supported usage limit periods.'
 } as const;
 
+export const UsageOutputTokensDetailsSchema = {
+    properties: {
+        image_tokens: {
+            type: 'integer',
+            title: 'Image Tokens'
+        },
+        text_tokens: {
+            type: 'integer',
+            title: 'Text Tokens'
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: [
+        'image_tokens',
+        'text_tokens'
+    ],
+    title: 'UsageOutputTokensDetails',
+    description: 'The output token details for the image generation.'
+} as const;
+
 export const UsageTokensSchema = {
     properties: {
         input_tokens: {
@@ -20707,7 +20764,8 @@ export const UsageTokensSchema = {
         'total_tokens',
         'type'
     ],
-    title: 'UsageTokens'
+    title: 'UsageTokens',
+    description: 'Usage statistics for models billed by token usage.'
 } as const;
 
 export const UsageTokensInputTokenDetailsSchema = {
@@ -20737,7 +20795,8 @@ export const UsageTokensInputTokenDetailsSchema = {
     },
     additionalProperties: true,
     type: 'object',
-    title: 'UsageTokensInputTokenDetails'
+    title: 'UsageTokensInputTokenDetails',
+    description: 'Details about the input tokens billed for this request.'
 } as const;
 
 export const UserAccessSchema = {
@@ -21096,6 +21155,13 @@ export const ValidationErrorSchema = {
         type: {
             type: 'string',
             title: 'Error Type'
+        },
+        input: {
+            title: 'Input'
+        },
+        ctx: {
+            type: 'object',
+            title: 'Context'
         }
     },
     type: 'object',
@@ -21424,6 +21490,28 @@ export const WorkflowGraphSchema = {
     description: 'Complete workflow graph representation.'
 } as const;
 
+export const openai__types__audio__transcription_verbose__UsageSchema = {
+    properties: {
+        seconds: {
+            type: 'number',
+            title: 'Seconds'
+        },
+        type: {
+            type: 'string',
+            const: 'duration',
+            title: 'Type'
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: [
+        'seconds',
+        'type'
+    ],
+    title: 'Usage',
+    description: 'Usage statistics for models billed by audio input duration.'
+} as const;
+
 export const openai__types__chat__chat_completion_message_custom_tool_call_param__CustomSchema = {
     properties: {
         input: {
@@ -21441,7 +21529,8 @@ export const openai__types__chat__chat_completion_message_custom_tool_call_param
         'input',
         'name'
     ],
-    title: 'Custom'
+    title: 'Custom',
+    description: 'The custom tool that the model called.'
 } as const;
 
 export const openai__types__chat__chat_completion_message_function_tool_call_param__FunctionSchema = {
@@ -21461,7 +21550,8 @@ export const openai__types__chat__chat_completion_message_function_tool_call_par
         'arguments',
         'name'
     ],
-    title: 'Function'
+    title: 'Function',
+    description: 'The function that the model called.'
 } as const;
 
 export const openai__types__chat__chat_completion_named_tool_choice_custom_param__CustomSchema = {
@@ -21534,6 +21624,16 @@ export const openai__types__images_response__UsageSchema = {
         total_tokens: {
             type: 'integer',
             title: 'Total Tokens'
+        },
+        output_tokens_details: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/UsageOutputTokensDetails'
+                },
+                {
+                    type: 'null'
+                }
+            ]
         }
     },
     additionalProperties: true,
@@ -21544,7 +21644,8 @@ export const openai__types__images_response__UsageSchema = {
         'output_tokens',
         'total_tokens'
     ],
-    title: 'Usage'
+    title: 'Usage',
+    description: 'For `gpt-image-1` only, the token usage information for the image generation.'
 } as const;
 
 export const AddMemoryToChatHistoryEventWritableSchema = {
@@ -30348,6 +30449,65 @@ export const RetrieverEventWritableSchema = {
     additionalProperties: true,
     type: 'object',
     title: 'RetrieverEvent'
+} as const;
+
+export const RoleResponseWritableSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            title: 'Id',
+            description: 'The unique identifier of the role.'
+        },
+        name: {
+            type: 'string',
+            title: 'Name',
+            description: 'The name of the role.'
+        },
+        description: {
+            type: 'string',
+            title: 'Description',
+            description: 'The description of the role.'
+        },
+        access_rules: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Access Rules',
+            description: 'The list of access rules for the role.'
+        },
+        usage_limits: {
+            items: {
+                $ref: '#/components/schemas/UsageLimitDTO'
+            },
+            type: 'array',
+            title: 'Usage Limits',
+            description: 'Pattern-based usage limit rules.',
+            default: []
+        },
+        tenant_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Tenant Id',
+            description: 'Tenant ID this role belongs to, or None for system roles.'
+        }
+    },
+    type: 'object',
+    required: [
+        'id',
+        'name',
+        'description',
+        'access_rules',
+        'tenant_id'
+    ],
+    title: 'RoleResponse',
+    description: 'Response model representing a role.'
 } as const;
 
 export const RouteOptionsWritableSchema = {

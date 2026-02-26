@@ -95,6 +95,11 @@ user:
     avatar: Avatar
     roles: Rôles
     last_accessed: Dernier accès
+my_account:
+  title: Mon compte
+  services: Services
+  agents: Agents
+  processes: Processus
 time_ago:
   last_hour: Dernière heure
   last_day: Dernier jour

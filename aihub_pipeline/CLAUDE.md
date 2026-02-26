@@ -262,7 +262,7 @@ Three triggering mechanisms work together:
 - `playground/quick_start/simple_pipeline.py` — Hello-world: 2 basic assets, no external deps
 - `playground/quick_start/my_document_pipeline.py` — Complete pipeline with all factories, resources, sensors
 
-Start: `make playground` or `uv run dagster dev -m playground` Access: http://localhost:3002 (Dagster UI)
+Start: `make playground` or `uv run dagster dev -m playground` Access: http://localhost:3000 (Dagster UI)
 
 ## Templates
 
@@ -297,7 +297,7 @@ Each has a `Dockerfile` (Python 3.13-slim, uv, port 4000):
 2. For new source: create observable factory + source I/O manager + source resource in `resources/`
 3. For custom processing: create ops in `ops/`, compose into `@graph_asset` factory in `assets/factories/`
 4. Wire into `Definitions` with resources, sensors, jobs, schedules
-5. Test in playground: `make playground` → materialize in Dagster UI at http://localhost:3002
+5. Test in playground: `make playground` → materialize in Dagster UI at http://localhost:3000
 6. Deploy: create `app/{pipeline_name}/` with `__init__.py` + `Dockerfile`
 7. Run `make test`
 

@@ -46,7 +46,7 @@ docker compose -f docker-compose.dev.yml down
    - OpenWebUI: http://localhost:8080
    - Langfuse: http://localhost:6006
    - LiteLLM: http://localhost:4000
-   - Dagster: http://localhost:3002
+   - Dagster: http://localhost:3000
    - SeaweedFS: http://localhost:8889
    - NATS: http://localhost:8222
 
@@ -75,8 +75,8 @@ docker stats --no-stream --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}"
 | -------------- | ------ | ------------------------------- |
 | API            | :8000  | REST API + WebSocket (local)    |
 | OpenWebUI      | :8080  | Chat interface                  |
-| Admin UI       | :3000  | Nuxt management UI (local)      |
-| Dagster        | :3002  | Pipeline orchestrator (local)   |
+| Admin UI       | :3333  | Nuxt management UI (local)      |
+| Dagster        | :3000  | Pipeline orchestrator (local)   |
 | LiteLLM        | :4000  | LLM proxy                       |
 | Langfuse       | :6006  | LLM observability               |
 | MinerU         | :5001  | Document parsing                |
@@ -94,7 +94,7 @@ docker stats --no-stream --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}"
 | Attu           | :3003  | Milvus admin UI                 |
 | OTEL Collector | :4317  | gRPC receiver, :4318 (HTTP)     |
 
-Note: API (:8000), Admin UI (:3000), and Dagster (:3002) run **locally outside Docker** in dev — they're not in
+Note: API (:8000), Admin UI (:3333), and Dagster (:3000) run **locally outside Docker** in dev — they're not in
 `docker-compose.dev.yml`.
 
 ### `generate` — Regenerate compose files from templates

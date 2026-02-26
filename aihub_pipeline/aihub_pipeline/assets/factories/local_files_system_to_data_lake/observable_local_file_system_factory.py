@@ -17,6 +17,7 @@ def observable_local_file_system_factory(
     key: AssetKey,
     partitions: DynamicPartitionsDefinition,
     max_partitions: int,
+    encode_partition_keys: bool = False,
 ) -> observable_source_asset:
     """
     Factory to create an observable source asset for local filesystem monitoring.
@@ -44,6 +45,7 @@ def observable_local_file_system_factory(
             partition=partitions,
             local_files=local_files,
             max_partitions=max_partitions,
+            encode_partition_keys=encode_partition_keys,
         )
 
     return observable_local_file_system

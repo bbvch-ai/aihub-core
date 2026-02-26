@@ -64,7 +64,7 @@ request to LLM response.
 
 The `docker-compose.dev.yml` runs ~30 containers. Key services by role:
 
-**User-Facing**: OpenWebUI (chat UI, :8080), Admin UI and Process UI (Nuxt, :3000, run locally outside Docker)
+**User-Facing**: OpenWebUI (chat UI, :8080), Admin UI and Process UI (Nuxt, :3333, run locally outside Docker)
 
 **API & Gateway**: FastAPI REST + WebSocket (:8000, run locally), LiteLLM universal LLM proxy (:4000), Traefik reverse
 proxy (production only)
@@ -79,7 +79,7 @@ MongoDB-compatible over its own PostgreSQL), Milvus vector DB (:19530), Neo4j gr
 **Storage**: SeaweedFS cluster (master + volume + filer + S3 gateway at :9000, filer UI at :8889), Rclone cloud sync
 (:5572)
 
-**Pipelines**: Dagster orchestrator (:3002, run locally), pipeline workers (run locally)
+**Pipelines**: Dagster orchestrator (:3000, run locally), pipeline workers (run locally)
 
 **Document Processing**: MinerU OCR + parsing (:5001)
 
@@ -258,9 +258,9 @@ Local overrides (gitignored): `CLAUDE.local.md`, `.claude/settings.local.json`, 
 | Service   | URL                   |
 | --------- | --------------------- |
 | OpenWebUI | http://localhost:8080 |
-| Admin UI  | http://localhost:3000 |
+| Admin UI  | http://localhost:3333 |
 | API       | http://localhost:8000 |
-| Dagster   | http://localhost:3002 |
+| Dagster   | http://localhost:3000 |
 | Langfuse  | http://localhost:6006 |
 | SeaweedFS | http://localhost:8889 |
 

@@ -23,10 +23,10 @@ async def development_auth_api_client(controller_mount_func):
         @pytest.mark.asyncio
         async def test_something(development_auth_api_client):
             def mount_controller(auth):
-                return UserController(auth=auth).get_my_user()
+                return MyAccountController(auth=auth).get_my_account()
 
             client = await development_auth_api_client(mount_controller)
-            response = await client.get("/api/v1/users/me")
+            response = await client.get("/api/v1/my-account")
     """
     runner = ApiTestRunner()
     auth = DangerousDevelopmentOnlyAuthHandler()
@@ -64,16 +64,16 @@ async def oauth2_auth_api_client(controller_mount_func):
             yield client
 
 
-def create_user_controller_mount():
+def create_my_account_controller_mount():
     """
-    Helper function to create a controller mount function for UserController.
+    Helper function to create a controller mount function for MyAccountController.
     Use this as the controller_mount_func parameter for the client fixtures.
     """
 
     def mount_func(auth):
-        from aihub_api.routes.user.UserController import UserController
+        from aihub_api.routes.my_account.MyAccountController import MyAccountController
 
-        return UserController(auth=auth).get_my_user()
+        return MyAccountController(auth=auth).get_my_account()
 
     return mount_func
 

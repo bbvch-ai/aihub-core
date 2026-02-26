@@ -1,0 +1,84 @@
+---
+name: Create GitHub Release
+run-name: Create Release - ${{ github.event.client_payload.release_version || github.event.inputs.release_version || 'manual' }}
+on:
+  repository_dispatch:
+    types: [release-ready]
+  workflow_dispatch:
+    inputs:
+      release_version:
+        description: Release version (e.g., v0.264.0)
+        required: true
+permissions:
+  contents: write
+jobs:
+  create-release:
+    name: Create GitHub Release with Deployment Bundles
+    runs-on: ubuntu-latest
+    steps:
+      - name: Extract version
+        id: version
+        run: |
+          if [ -n "${{ github.event.inputs.release_version }}" ]; then
+            VERSION="${{ github.event.inputs.release_version }}"
+          elif [ -n "${{ github.event.client_payload.release_version }}" ]; then
+            VERSION="${{ github.event.client_payload.release_version }}"
+          else
+            echo "No release_version provided. Failing."
+            exit 1
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+      - name: Checkout at release tag
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ steps.version.outputs.version }}
+          fetch-depth: 0
+      - name: Setup Python 3.13
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+      - name: Install dependencies
+        run: uv sync --dev --frozen
+      - name: Generate release compose files
+        run: make generate-release TAG="${{ steps.version.outputs.version }}"
+      - name: Verify release bundles
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          for variant in "swissaihub-${VERSION}" "swissaihub-${VERSION}-gpu"; do
+            DEST="dist/release/${variant}"
+            echo "Checking ${variant}..."
+            test -f "${DEST}/docker-compose.yml"
+            test -f "${DEST}/.env.template"
+            test -f "${DEST}/setup-env.sh"
+            echo "  OK"
+          done
+      - name: Format release YAML files
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          for variant in "swissaihub-${VERSION}" "swissaihub-${VERSION}-gpu"; do
+            DEST="dist/release/${variant}"
+            echo "Formatting YAML files in ${variant}..."
+            find "${DEST}" -name '*.yml' -o -name '*.yaml' | xargs uv run yamlfix
+            echo "  OK"
+          done
+      - name: Create tar.gz archives
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          tar -czf "swissaihub-${VERSION}.tar.gz" -C "dist/release/swissaihub-${VERSION}" .
+          tar -czf "swissaihub-${VERSION}-gpu.tar.gz" -C "dist/release/swissaihub-${VERSION}-gpu" .
+      - name: Extract changelog for this version
+        run: make extract-release-notes TAG="${{ steps.version.outputs.version }}"
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |-
+          VERSION="${{ steps.version.outputs.version }}"
+          gh release create "${VERSION}" \
+            --title "Swiss AI Hub ${VERSION}" \
+            --notes-file release-notes.md \
+            "swissaihub-${VERSION}.tar.gz" \
+            "swissaihub-${VERSION}-gpu.tar.gz"
