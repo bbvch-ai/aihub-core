@@ -477,6 +477,8 @@ services:
         condition: service_started
       clickhouse:
         condition: service_healthy
+      langfuse-web:
+        condition: service_healthy
     ports: [127.0.0.1:3030:3030]
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/langfuse
@@ -528,8 +530,6 @@ services:
         condition: service_started
       clickhouse:
         condition: service_healthy
-      langfuse-worker:
-        condition: service_started
     ports: [6006:3000]
     environment:
       HOSTNAME: 0.0.0.0
@@ -1330,15 +1330,10 @@ services:
   # ===================================================================
 
 
-  
 
-  
 
-  
 
-  
 
-  
 
   
 
