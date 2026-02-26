@@ -221,6 +221,7 @@ class AgentRunTracer:
         target_agent_id: str,
         target_run_id: str,
         target_thread_id: str,
+        start_event: StartEvent,
     ) -> Span:
         """Creates a wrapper span bridging the caller's step to the delegated agent's steps.
 
@@ -229,12 +230,14 @@ class AgentRunTracer:
         stored in the target's RunContext so the delegated agent can re-parent
         its step spans under this wrapper.
         """
+        input_value = start_event.user_query if start_event.is_user_message_event else ""
         span = self.tracer.start_span(
             name=f"AITL -> {target_agent_class}/{target_agent_id}",
             kind=trace.SpanKind.INTERNAL,
             attributes={
                 SpanAttributes.OPENINFERENCE_SPAN_KIND: OpenInferenceSpanKindValues.AGENT.value,
                 SpanAttributes.SESSION_ID: caller_topic.thread_id,
+                SpanAttributes.INPUT_VALUE: input_value,
             },
         )
 
@@ -258,8 +261,12 @@ class AgentRunTracer:
 
         return span
 
-    def end_aitl_wrapper_span(self, span: Span, *, success: bool):
-        """Ends the AITL wrapper span with the appropriate status."""
+    async def end_aitl_wrapper_span(self, span: Span, *, success: bool, target_topic: AgentInstanceTopic):
+        """Ends the AITL wrapper span with the delegated agent's cached LLM output."""
+        target_run_context = self._run_context_for(target_topic)
+        output = await target_run_context.get(_TRACE_OUTPUT_KEY, "")
+        if output:
+            span.set_attribute(SpanAttributes.OUTPUT_VALUE, output)
         if success:
             span.set_status(StatusCode.OK)
         else:
