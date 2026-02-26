@@ -23,6 +23,7 @@ from pymilvus import MilvusClient
 
 from aihub_api.i18n.ApiLocaleHandler import ApiLocaleHandler
 from aihub_api.persistance.events.EventPersister import EventPersister
+from aihub_api.routes.agent.AgentFileUploadService import AgentFileUploadService
 from aihub_api.rpc.AgentConfigResponder import AgentConfigResponder
 from aihub_api.rpc.ProcessConfigResponder import ProcessConfigResponder
 from aihub_api.runners.lifetime.initialize_db import (
@@ -168,6 +169,12 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         app.state.s3_client = s3_client
         app.state.s3_public_client = s3_public_client
         app.state.s3_settings = s3_settings
+        agent_file_upload_service = AgentFileUploadService(
+            s3_client=s3_client,
+            s3_public_client=s3_public_client,
+        )
+        agent_file_upload_service.ensure_bucket_exists()
+        app.state.agent_file_upload_service = agent_file_upload_service
         app.state.ws_manager = ws_manager
         app.state.ws_sender = ws_sender
         app.state.external_agent_event_distributor = external_agent_event_distributor

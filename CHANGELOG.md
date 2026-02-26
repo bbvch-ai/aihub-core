@@ -5,6 +5,136 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.268.0] - 2026-02-26 - Introducing Secure Agent File Uploads and Streamlined Integrations
+
+### Added
+
+- ✨ **New Secure File Upload API for Agents:** Introduced dedicated API endpoints to securely initiate and validate file
+  uploads to agent instances, providing presigned URLs for direct bucket interaction.
+- 🚀 **Dedicated Agent File Storage:** Implemented a new shared S3 bucket (`agent-files`) for all agent-related user
+  uploads. This bucket is automatically created and configured with a 7-day lifecycle policy to expire files, ensuring
+  efficient storage management.
+- 🦾 **File ID Reference System:** Enhanced the `UserUploadedFile` NATS event model to include a unique `file_id`,
+  enabling agents to reference uploaded files by identifier instead of directly embedding large file data.
+- 🧪 **Comprehensive Test Coverage:** Added extensive unit and integration tests to ensure the reliability and security
+  of the new file upload service and API endpoints.
+
+### Changed
+
+- 🔄 **OpenWebUI File Upload Workflow:** The OpenWebUI integration pipeline has been updated to utilize the new secure
+  agent file upload API. Files are now fetched from OpenWebUI's S3, uploaded to the agent's dedicated bucket via
+  presigned URLs, and validated, streamlining the data flow.
+- 🔒 **Granular File Access Control:** Agent instance permissions are now tied to file upload capabilities, ensuring that
+  only authorized users can upload files to specific agent instances.
+
+### Removed
+
+- 🗑️ **Deprecated `file_data` in NATS Event:** The `file_data` field (base64-encoded content) has been removed from the
+  `UserUploadedFile` NATS event, shifting to a more scalable file reference mechanism.
+- 🧹 **Internal S3 Storage Adapter from OpenWebUI Pipeline:** The internal `S3StorageAdapter` and `FileStorageAdapter`
+  protocol have been removed from the OpenWebUI integration, as file interaction is now handled by the new AI-Hub API.
+
+### Security
+
+- 🔑 **Path Traversal Prevention:** Introduced stringent validation for filenames and path segments in file upload
+  requests and the `UserUploadedFile` model to actively prevent path traversal attacks.
+- 🛡️ **Presigned URL Security Model:** Leveraged presigned URLs for file uploads, significantly enhancing security by
+  providing temporary, single-use access to S3 resources, eliminating the need for persistent credentials on the client
+  side.
+
+______________________________________________________________________
+
+## [v0.267.4] - 2026-02-26 - Pipeline Robustness: Enhanced Partition Key Encoding
+
+### Added
+
+- ✨ **New Partition Key Encoding Utilities:** Introduced `encode_partition_key` and `decode_partition_key` functions to
+  safely URL-encode and decode file paths, ensuring compatibility when used as Dagster partition keys.
+- 🚀 **`encode_partition_keys` Configuration:** Added a new `encode_partition_keys` parameter to
+  `observable_data_lake_factory`, `observable_local_file_system_factory`, and `observable_rclone_factory`, allowing
+  pipelines to opt-in to URL-encoded partition keys.
+- ⚙️ **IO Manager Encoding Support:** `LocalFileSystemIOManager`, `RcloneIOManager`, and `S3DataLakeIOManager` now
+  include an `encode_partition_keys` configuration, enabling automatic decoding of partition keys for accurate file
+  retrieval.
+- 🛡️ **Robust Data Versioning:** Data versioning ops for data lake, local file system, and rclone sources
+  (`data_version_by_partition_for_data_lake_files_no_op`, `data_version_by_partition_for_local_files`,
+  `data_version_by_partition_for_rclone_files`) now support generating URL-encoded partition keys when
+  `encode_partition_keys` is enabled.
+- ✅ **Comprehensive Test Coverage:** Added extensive unit tests for partition key encoding/decoding utilities and their
+  integration within IO managers and ops to ensure robustness and correct behavior.
+
+### Changed
+
+- 🔄 **Pipeline Definition Factories Updated:** `default_definitions`,
+  `default_local_filesystem_to_datalake_definitions`, and `default_rclone_to_datalake_definitions` now accept an
+  `encode_partition_keys` parameter, providing a centralized control point for this new functionality.
+- ⚠️ **Deprecation Warning for `encode_partition_keys` Default:** When `encode_partition_keys` is not explicitly set in
+  pipeline definition factories, a deprecation warning is now emitted, indicating that the default behavior will change
+  from `False` to `True` in a future release.
+
+______________________________________________________________________
+
+## [v0.267.3] - 2026-02-26 - Enhanced User Experience with Dedicated Account Management
+
+### Added
+
+- 🚀 **Introduced 'My Account' API Endpoint:** A new dedicated API endpoint `/my-account` allows users to retrieve and
+  manage their personal profile and dashboard settings, separate from administrative user management.
+- ✨ **Created MyAccountController and Service:** Implemented new backend components (`MyAccountController` and
+  `MyAccountService`) to handle personal user account data, including profile details and dashboard configurations.
+- 📄 **Added 'My Account' Frontend Page:** A new `my-account.vue` page provides a centralized view for users to inspect
+  their profile, roles, last access time, and granular access permissions across services, agents, and processes.
+- 🌐 **Expanded Internationalization for Account Management:** Added new translations across all supported languages for
+  "My Account," "Services," "Agents," and "Processes" to support the new user profile section.
+
+### Changed
+
+- 🔄 **Refocused UserController for Administrative Tasks:** The existing `UserController` has been narrowed in scope to
+  exclusively manage administrative user operations within a tenant, such as listing all users or retrieving specific
+  user details by OID.
+- 🧹 **Updated UserService to Admin-Level Operations:** The `UserService` now focuses solely on backend logic for
+  administrative user management, with personal account-related functions moved to the new `MyAccountService`.
+- 🖼️ **Revised RoleController Icon:** The icon for the `RoleController` has been updated from `mage:users` to
+  `mage:security-shield` to better reflect its function of managing security roles.
+- ⚡️ **Adjusted Default Landing Page for Users:** Non-admin users are now automatically redirected to the
+  `/service/openai` page upon login, improving the initial user experience by guiding them directly to functional areas.
+- 📝 **Clarified User Management Titles:** Updated the "User" title in internationalization files to "Users" (English)
+  and corresponding terms in other languages, to distinguish between individual user accounts and the administrative
+  list of users.
+
+### Refactor
+
+- 🏗️ **Architectural Separation of User Account and User Management:** Significant architectural refactoring to cleanly
+  separate endpoints and services for a user's *personal account settings* (now `/my-account`) from *administrative user
+  management* (still `/users`), enhancing modularity and security.
+- 🧹 **Migrated Personal Dashboard Endpoints:** Dashboard retrieval and update endpoints previously under
+  `/users/me/dashboard` have been migrated to the new `/my-account/dashboard` route, aligning with the new account
+  management structure.
+
+______________________________________________________________________
+
+## [v0.267.2] - 2026-02-26 - Streamlined Release Note Extraction
+
+### Added
+
+- ✨ **New `extract-release-notes` Makefile Target:** Introduced a dedicated `Makefile` target to standardize and
+  centralize the process of extracting version-specific release notes from `CHANGELOG.md`, improving reusability and
+  maintainability.
+
+### Changed
+
+- 🔄 **Updated Release Workflow:** The GitHub Actions release creation process now utilizes the new
+  `extract-release-notes` Makefile target for generating changelog entries, simplifying the workflow configuration and
+  reducing redundancy.
+
+### Refactor
+
+- 🧹 **Enhanced Release Note Extraction Logic:** Refactored the underlying logic for extracting release notes to include
+  robust input validation for version tags and improved fallback handling when a specific changelog section is not
+  found.
+
+______________________________________________________________________
+
 ## [v0.267.1] - 2026-02-25 - Streamlined Deployment with Self-Contained Release Bundles
 
 ### Added
