@@ -10,7 +10,6 @@ from contextlib import contextmanager
 from opentelemetry import context
 
 _OPENINFERENCE_TRACE_KEY = "openinference_trace_active"
-OPENINFERENCE_ACTIVE_HEADER = "X-Openinference-Active"
 
 
 @contextmanager
@@ -27,8 +26,3 @@ def openinference_trace_context():
 def is_openinference_trace_active() -> bool:
     """Check if the current execution is within an OpenInference trace."""
     return context.get_value(_OPENINFERENCE_TRACE_KEY) is True
-
-
-def set_openinference_active_in_context(ctx: context.Context) -> context.Context:
-    """Return a new context with the OpenInference trace flag set."""
-    return context.set_value(_OPENINFERENCE_TRACE_KEY, True, ctx)

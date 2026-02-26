@@ -8,6 +8,7 @@ from aihub_lib.nats.topics.agents.AgentInstanceTopic import AgentInstanceTopic
 from bson import ObjectId
 from opentelemetry.trace import StatusCode
 
+from aihub_agent.context.run.RunContext import RunContext
 from aihub_agent.tracing.AgentRunTracer import AgentRunTracer
 
 
@@ -72,8 +73,9 @@ class TestTraceRunStart:
 
         await tracer.trace_run_start(topic, event)
 
-        # Verify Redis was called for input and user_id
-        assert mock_redis.set.call_count >= 2
+        run_context = RunContext.for_topic(mock_redis, topic)
+        assert await run_context.get("_trace_input") == "Hello world"
+        assert await run_context.get("_trace_user_id") == "user-42"
 
     @pytest.mark.asyncio
     async def test_stores_empty_for_non_user_message(
@@ -84,7 +86,9 @@ class TestTraceRunStart:
 
         await tracer.trace_run_start(topic, event)
 
-        assert mock_redis.set.call_count >= 2
+        run_context = RunContext.for_topic(mock_redis, topic)
+        assert await run_context.get("_trace_input") == ""
+        assert await run_context.get("_trace_user_id") == ""
 
 
 class TestTraceStepStart:
