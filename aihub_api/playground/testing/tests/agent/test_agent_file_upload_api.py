@@ -126,3 +126,39 @@ async def test_validate_upload_rejects_empty_file_id(client):
         json={"file_id": "", "filename": "test.pdf"},
     )
     assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_initiate_upload_rejects_path_traversal_forward_slash(client):
+    response = await client.post(
+        f"/agents/classes/{AGENT_CLASS}/instances/{AGENT_ID}/files/upload/initiate",
+        json={"filename": "../../etc/passwd", "content_type": "application/octet-stream"},
+    )
+    assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_initiate_upload_rejects_path_traversal_backslash(client):
+    response = await client.post(
+        f"/agents/classes/{AGENT_CLASS}/instances/{AGENT_ID}/files/upload/initiate",
+        json={"filename": "..\\..\\secret.pdf", "content_type": "application/pdf"},
+    )
+    assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_validate_upload_rejects_path_traversal_forward_slash(client):
+    response = await client.post(
+        f"/agents/classes/{AGENT_CLASS}/instances/{AGENT_ID}/files/upload/validate",
+        json={"file_id": VALID_FILE_ID, "filename": "../other-id/secret.pdf"},
+    )
+    assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_validate_upload_rejects_path_traversal_backslash(client):
+    response = await client.post(
+        f"/agents/classes/{AGENT_CLASS}/instances/{AGENT_ID}/files/upload/validate",
+        json={"file_id": VALID_FILE_ID, "filename": "..\\..\\secret.pdf"},
+    )
+    assert response.status_code == 422

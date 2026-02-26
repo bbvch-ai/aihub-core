@@ -1,5 +1,4 @@
 import logging
-import re
 import uuid
 
 from botocore.exceptions import ClientError
@@ -12,13 +11,16 @@ logger = logging.getLogger(__name__)
 
 
 class AgentFileUploadService:
-    """Manages file uploads to per-agent S3 buckets.
+    """Manages file uploads to a single shared S3 bucket with path-based isolation.
 
-    Each agent instance gets a dedicated bucket so users can only upload
-    files to the agent they have access to — no cross-agent IDOR possible.
+    All agent files live in one bucket (``agent-files``). Each file is stored
+    under ``{agent_class}/{agent_id}/{file_id}/{filename}`` — access control
+    is enforced at the API layer via permissions.
     """
 
+    BUCKET_NAME = "agent-files"
     UPLOAD_URL_LIFETIME_SECONDS = 3600  # 1 hour
+    FILE_EXPIRATION_DAYS = 7
 
     def __init__(
         self,
@@ -29,77 +31,68 @@ class AgentFileUploadService:
         self._s3_client = s3_client
         self._s3_public_client = s3_public_client
         self._s3_settings = s3_settings
-        self._known_buckets: set[str] = set()
 
-    @staticmethod
-    def bucket_name(agent_class: str, agent_id: str) -> str:
-        """Deterministic, S3-safe bucket name for an agent instance's file uploads.
-
-        Convention: ``agent-files-{agent_class}-{agent_id}`` — lowercased, with
-        only alphanumerics and hyphens. S3 bucket names must be 3-63 characters,
-        lowercase, no underscores.
-        """
-        raw = f"agent-files-{agent_class}-{agent_id}"
-        sanitized = re.sub(r"[^a-z0-9-]", "-", raw.lower())
-        sanitized = re.sub(r"-{2,}", "-", sanitized).strip("-")
-
-        if len(sanitized) < 3:
-            sanitized = sanitized.ljust(3, "0")
-        if len(sanitized) > 63:
-            sanitized = sanitized[:63].rstrip("-")
-
-        return sanitized
-
-    def _ensure_bucket_exists(self, bucket_name: str) -> None:
-        """Idempotent bucket creation with in-memory caching."""
-        if bucket_name in self._known_buckets:
-            return
-
+    def ensure_bucket_exists(self) -> None:
+        """Idempotent creation of the shared agent-files bucket. Call once at API startup."""
         try:
-            self._s3_client.head_bucket(Bucket=bucket_name)
-            self._known_buckets.add(bucket_name)
+            self._s3_client.head_bucket(Bucket=self.BUCKET_NAME)
             return
         except ClientError as e:
             error_code = e.response.get("Error", {}).get("Code", "")
             if error_code not in ["404", "NoSuchBucket"]:
                 raise
 
-        logger.info(f"Creating agent upload bucket: {bucket_name}")
-        self._s3_client.create_bucket(Bucket=bucket_name)
-        self._known_buckets.add(bucket_name)
+        logger.info(f"Creating agent upload bucket: {self.BUCKET_NAME}")
+        self._s3_client.create_bucket(Bucket=self.BUCKET_NAME)
+        self._s3_client.put_bucket_lifecycle_configuration(
+            Bucket=self.BUCKET_NAME,
+            LifecycleConfiguration={
+                "Rules": [
+                    {
+                        "ID": "auto-expire-agent-files",
+                        "Status": "Enabled",
+                        "Expiration": {"Days": self.FILE_EXPIRATION_DAYS},
+                    }
+                ]
+            },
+        )
 
     @staticmethod
-    def s3_key(file_id: str, filename: str) -> str:
-        return f"{file_id}/{filename}"
+    def _sanitize_path_segment(value: str) -> str:
+        """Remove path separators and traversal characters from a single path segment."""
+        return value.replace("/", "_").replace("\\", "_").replace("..", "_")
+
+    @staticmethod
+    def s3_key(agent_class: str, agent_id: str, file_id: str, filename: str) -> str:
+        safe_class = AgentFileUploadService._sanitize_path_segment(agent_class)
+        safe_id = AgentFileUploadService._sanitize_path_segment(agent_id)
+        safe_name = AgentFileUploadService._sanitize_path_segment(filename)
+        return f"{safe_class}/{safe_id}/{file_id}/{safe_name}"
 
     @trace_fn
     def generate_upload_url(self, agent_class: str, agent_id: str, content_type: str, filename: str) -> tuple[str, str]:
-        """Generate a presigned PUT URL for uploading a file to the agent's bucket.
+        """Generate a presigned PUT URL for uploading a file.
 
         Returns (presigned_url, file_id).
         """
-        bucket = self.bucket_name(agent_class, agent_id)
-        self._ensure_bucket_exists(bucket)
-
         file_id = str(uuid.uuid4())
-        key = self.s3_key(file_id, filename)
+        key = self.s3_key(agent_class, agent_id, file_id, filename)
 
         presigned_url = self._s3_public_client.generate_presigned_url(
             "put_object",
-            Params={"Bucket": bucket, "Key": key, "ContentType": content_type},
+            Params={"Bucket": self.BUCKET_NAME, "Key": key, "ContentType": content_type},
             ExpiresIn=self.UPLOAD_URL_LIFETIME_SECONDS,
         )
 
-        logger.debug(f"Generated upload URL for {bucket}/{key}")
+        logger.debug(f"Generated upload URL for {self.BUCKET_NAME}/{key}")
         return presigned_url, file_id
 
     @trace_fn
     def verify_file_exists(self, agent_class: str, agent_id: str, file_id: str, filename: str) -> bool:
-        """Check whether a file was successfully uploaded to the agent's bucket."""
-        bucket = self.bucket_name(agent_class, agent_id)
-        key = self.s3_key(file_id, filename)
+        """Check whether a file was successfully uploaded."""
+        key = self.s3_key(agent_class, agent_id, file_id, filename)
         try:
-            self._s3_client.head_object(Bucket=bucket, Key=key)
+            self._s3_client.head_object(Bucket=self.BUCKET_NAME, Key=key)
             return True
         except ClientError as e:
             error_code = e.response.get("Error", {}).get("Code", "")
@@ -109,8 +102,7 @@ class AgentFileUploadService:
 
     @trace_fn
     def delete_file(self, agent_class: str, agent_id: str, file_id: str, filename: str) -> None:
-        """Delete a specific file from the agent's bucket."""
-        bucket = self.bucket_name(agent_class, agent_id)
-        key = self.s3_key(file_id, filename)
-        self._s3_client.delete_object(Bucket=bucket, Key=key)
-        logger.debug(f"Deleted {bucket}/{key}")
+        """Delete a specific file."""
+        key = self.s3_key(agent_class, agent_id, file_id, filename)
+        self._s3_client.delete_object(Bucket=self.BUCKET_NAME, Key=key)
+        logger.debug(f"Deleted {self.BUCKET_NAME}/{key}")

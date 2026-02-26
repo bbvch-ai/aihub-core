@@ -30,46 +30,102 @@ class TestEnsureBucketExists:
     def test_bucket_already_exists(self, service, s3_client):
         s3_client.head_bucket.return_value = {}
 
-        service._ensure_bucket_exists("my-bucket")
+        service.ensure_bucket_exists()
 
-        s3_client.head_bucket.assert_called_once_with(Bucket="my-bucket")
+        s3_client.head_bucket.assert_called_once_with(Bucket="agent-files")
         s3_client.create_bucket.assert_not_called()
 
     def test_creates_bucket_when_not_found(self, service, s3_client):
         error_response = {"Error": {"Code": "404"}}
         s3_client.head_bucket.side_effect = ClientError(error_response, "HeadBucket")
 
-        service._ensure_bucket_exists("my-bucket")
+        service.ensure_bucket_exists()
 
-        s3_client.create_bucket.assert_called_once_with(Bucket="my-bucket")
+        s3_client.create_bucket.assert_called_once_with(Bucket="agent-files")
+
+    def test_sets_lifecycle_on_new_bucket(self, service, s3_client):
+        error_response = {"Error": {"Code": "404"}}
+        s3_client.head_bucket.side_effect = ClientError(error_response, "HeadBucket")
+
+        service.ensure_bucket_exists()
+
+        s3_client.put_bucket_lifecycle_configuration.assert_called_once()
+        lifecycle = s3_client.put_bucket_lifecycle_configuration.call_args[1]["LifecycleConfiguration"]
+        rule = lifecycle["Rules"][0]
+        assert rule["Status"] == "Enabled"
+        assert rule["Expiration"]["Days"] == 7
+
+    def test_skips_lifecycle_when_bucket_exists(self, service, s3_client):
+        s3_client.head_bucket.return_value = {}
+
+        service.ensure_bucket_exists()
+
+        s3_client.put_bucket_lifecycle_configuration.assert_not_called()
 
     def test_creates_bucket_nosuchbucket(self, service, s3_client):
         error_response = {"Error": {"Code": "NoSuchBucket"}}
         s3_client.head_bucket.side_effect = ClientError(error_response, "HeadBucket")
 
-        service._ensure_bucket_exists("my-bucket")
+        service.ensure_bucket_exists()
 
-        s3_client.create_bucket.assert_called_once_with(Bucket="my-bucket")
+        s3_client.create_bucket.assert_called_once_with(Bucket="agent-files")
 
     def test_propagates_unexpected_error(self, service, s3_client):
         error_response = {"Error": {"Code": "403"}}
         s3_client.head_bucket.side_effect = ClientError(error_response, "HeadBucket")
 
         with pytest.raises(ClientError):
-            service._ensure_bucket_exists("my-bucket")
+            service.ensure_bucket_exists()
 
-    def test_caches_known_buckets(self, service, s3_client):
-        s3_client.head_bucket.return_value = {}
 
-        service._ensure_bucket_exists("my-bucket")
-        service._ensure_bucket_exists("my-bucket")
+class TestSanitizePathSegment:
+    def test_replaces_forward_slashes(self):
+        assert AgentFileUploadService._sanitize_path_segment("a/b/c") == "a_b_c"
 
-        s3_client.head_bucket.assert_called_once()
+    def test_replaces_backslashes(self):
+        assert AgentFileUploadService._sanitize_path_segment("a\\b\\c") == "a_b_c"
+
+    def test_replaces_dot_dot_traversal(self):
+        assert AgentFileUploadService._sanitize_path_segment("..") == "_"
+
+    def test_replaces_embedded_dot_dot(self):
+        assert AgentFileUploadService._sanitize_path_segment("foo..bar") == "foo_bar"
+
+    def test_leaves_clean_values_unchanged(self):
+        assert AgentFileUploadService._sanitize_path_segment("MyAgent") == "MyAgent"
+        assert AgentFileUploadService._sanitize_path_segment("inst-1") == "inst-1"
 
 
 class TestS3Key:
-    def test_constructs_key_with_filename(self):
-        assert AgentFileUploadService.s3_key("abc-123", "report.pdf") == "abc-123/report.pdf"
+    def test_constructs_key_with_path_isolation(self):
+        assert (
+            AgentFileUploadService.s3_key("MyAgent", "inst-1", "abc-123", "report.pdf")
+            == "MyAgent/inst-1/abc-123/report.pdf"
+        )
+
+    def test_sanitizes_forward_slash_in_filename(self):
+        assert (
+            AgentFileUploadService.s3_key("MyAgent", "inst-1", "abc-123", "../../etc/passwd")
+            == "MyAgent/inst-1/abc-123/____etc_passwd"
+        )
+
+    def test_sanitizes_backslash_in_filename(self):
+        assert (
+            AgentFileUploadService.s3_key("MyAgent", "inst-1", "abc-123", "..\\..\\secret.pdf")
+            == "MyAgent/inst-1/abc-123/____secret.pdf"
+        )
+
+    def test_sanitizes_agent_class_with_traversal(self):
+        assert (
+            AgentFileUploadService.s3_key("../OtherAgent", "inst-1", "abc-123", "f.pdf")
+            == "__OtherAgent/inst-1/abc-123/f.pdf"
+        )
+
+    def test_sanitizes_agent_id_with_traversal(self):
+        assert (
+            AgentFileUploadService.s3_key("MyAgent", "../other-id", "abc-123", "f.pdf")
+            == "MyAgent/__other-id/abc-123/f.pdf"
+        )
 
 
 class TestGenerateUploadUrl:
@@ -92,14 +148,22 @@ class TestGenerateUploadUrl:
         assert params["ContentType"] == "image/png"
         assert params["Key"].endswith("/image.png")
 
-    def test_uses_correct_bucket(self, service, s3_public_client, s3_client):
-        s3_client.head_bucket.return_value = {}
+    def test_uses_shared_bucket(self, service, s3_public_client):
         s3_public_client.generate_presigned_url.return_value = "https://s3/presigned"
 
         service.generate_upload_url("MyAgent", "inst-1", "text/plain", "notes.txt")
 
         params = s3_public_client.generate_presigned_url.call_args[1]["Params"]
-        assert params["Bucket"] == "agent-files-myagent-inst-1"
+        assert params["Bucket"] == "agent-files"
+
+    def test_key_includes_agent_path(self, service, s3_public_client):
+        s3_public_client.generate_presigned_url.return_value = "https://s3/presigned"
+
+        service.generate_upload_url("MyAgent", "inst-1", "text/plain", "notes.txt")
+
+        params = s3_public_client.generate_presigned_url.call_args[1]["Params"]
+        assert params["Key"].startswith("MyAgent/inst-1/")
+        assert params["Key"].endswith("/notes.txt")
 
 
 class TestVerifyFileExists:
@@ -127,19 +191,19 @@ class TestVerifyFileExists:
         with pytest.raises(ClientError):
             service.verify_file_exists("MyAgent", "inst-1", "abc-123", "report.pdf")
 
-    def test_uses_key_with_filename(self, service, s3_client):
+    def test_uses_shared_bucket_and_path_key(self, service, s3_client):
         s3_client.head_object.return_value = {}
 
         service.verify_file_exists("MyAgent", "inst-1", "abc-123", "report.pdf")
 
-        s3_client.head_object.assert_called_once_with(Bucket="agent-files-myagent-inst-1", Key="abc-123/report.pdf")
+        s3_client.head_object.assert_called_once_with(Bucket="agent-files", Key="MyAgent/inst-1/abc-123/report.pdf")
 
 
 class TestDeleteFile:
-    def test_deletes_object_from_correct_bucket_and_key(self, service, s3_client):
+    def test_deletes_from_shared_bucket_with_path_key(self, service, s3_client):
         service.delete_file("MyAgent", "inst-1", "abc-123", "report.pdf")
 
-        s3_client.delete_object.assert_called_once_with(Bucket="agent-files-myagent-inst-1", Key="abc-123/report.pdf")
+        s3_client.delete_object.assert_called_once_with(Bucket="agent-files", Key="MyAgent/inst-1/abc-123/report.pdf")
 
     def test_propagates_unexpected_error(self, service, s3_client):
         error_response = {"Error": {"Code": "403"}}
