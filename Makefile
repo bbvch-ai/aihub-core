@@ -78,10 +78,10 @@ pr-ready:
 	@(cd aihub_api &&  make pr-ready)
 	@(cd aihub_bot &&  make pr-ready)
 	@(cd aihub_web && make pr-ready)
-	@$(MAKE) format-md
-	@$(MAKE) format-yaml
 	@$(MAKE) generate-compose
 	@$(MAKE) license-check
+	@$(MAKE) format-md
+	@$(MAKE) format-yaml
 
 TAG ?= v0.267.4
 
