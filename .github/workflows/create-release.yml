@@ -68,8 +68,8 @@ jobs:
       - name: Create tar.gz archives
         run: |
           VERSION="${{ steps.version.outputs.version }}"
-          tar -czf "swissaihub-${VERSION}.tar.gz" -C "dist/release/swissaihub-${VERSION}" .
-          tar -czf "swissaihub-${VERSION}-gpu.tar.gz" -C "dist/release/swissaihub-${VERSION}-gpu" .
+          tar -czf "swissaihub-${VERSION}.tar.gz" -C "dist/release" "swissaihub-${VERSION}"
+          tar -czf "swissaihub-${VERSION}-gpu.tar.gz" -C "dist/release" "swissaihub-${VERSION}-gpu"
       - name: Extract changelog for this version
         run: make extract-release-notes TAG="${{ steps.version.outputs.version }}"
       - name: Create GitHub Release
