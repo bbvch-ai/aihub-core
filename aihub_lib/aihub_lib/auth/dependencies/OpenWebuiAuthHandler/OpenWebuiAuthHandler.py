@@ -1,8 +1,6 @@
 import hashlib
 import hmac
 import logging
-import uuid
-
 from fastapi import HTTPException, Request, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from mongoengine import DoesNotExist
