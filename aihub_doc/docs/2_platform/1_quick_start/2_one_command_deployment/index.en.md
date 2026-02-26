@@ -35,8 +35,8 @@ ______________________________________________________________________
 
 **For Production:**
 
-Download the latest release bundle from
-[GitHub Releases](https://github.com/bbvch-ai/aihub-core/releases). Each release provides two self-contained bundles:
+Download the latest release bundle from [GitHub Releases](https://github.com/bbvch-ai/aihub-core/releases). Each release
+provides two self-contained bundles:
 
 - `swissaihub-<version>.tar.gz` — CPU-only deployment
 - `swissaihub-<version>-gpu.tar.gz` — GPU-enabled deployment (includes vLLM, GPU-accelerated inference)
@@ -83,8 +83,8 @@ ______________________________________________________________________
 
 **For Production (release bundle):**
 
-The release bundle includes a `setup-env.sh` script that generates a `.env` file from the included `.env.template`.
-It automatically creates unique secrets for all database passwords, tokens, and signing keys:
+The release bundle includes a `setup-env.sh` script that generates a `.env` file from the included `.env.template`. It
+automatically creates unique secrets for all database passwords, tokens, and signing keys:
 
 ```bash
 # Generate .env with auto-generated secrets
@@ -102,7 +102,6 @@ dependencies needed.
 ./setup-env.sh -t custom.template -o out.env  # Custom paths
 ./setup-env.sh --force                      # Overwrite existing .env
 ```
-
 :::
 
 **For Local Deployment:**
@@ -167,7 +166,6 @@ Deploy the complete platform with one command:
 ```bash
 docker compose up -d
 ```
-
 
 This command will:
 

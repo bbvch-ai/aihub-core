@@ -6,10 +6,17 @@ import pytest
 from aihub_lib.nats.events import StartEvent
 from aihub_lib.nats.topics.agents.AgentInstanceTopic import AgentInstanceTopic
 from bson import ObjectId
-from opentelemetry.trace import StatusCode
+from openinference.semconv.trace import OpenInferenceSpanKindValues, SpanAttributes
+from opentelemetry.trace import NonRecordingSpan, SpanContext, StatusCode, TraceFlags
 
 from aihub_agent.context.run.RunContext import RunContext
-from aihub_agent.tracing.AgentRunTracer import AgentRunTracer
+from aihub_agent.tracing.AgentRunTracer import (
+    _TRACE_AITL_PARENT_CONTEXT_KEY,
+    _TRACE_AITL_TARGET_AGENT_CLASS_KEY,
+    AgentRunTracer,
+)
+
+_FAKE_TRACEPARENT = {"traceparent": "00-0000000000000000000000000000dead-000000000000beef-01"}
 
 
 @pytest.fixture
@@ -211,3 +218,202 @@ class TestTraceStepError:
         tracer.trace_step_error(mock_span, error)
 
         mock_span.set_status.assert_called_once_with(StatusCode.ERROR, "something broke")
+
+
+class TestAitlWrapperSpan:
+    """Tests for start_aitl_wrapper_span / end_aitl_wrapper_span — AITL bridge spans."""
+
+    @pytest.fixture
+    def caller_topic(self) -> AgentInstanceTopic:
+        return AgentInstanceTopic(
+            agent_class="OrchestratorAgent",
+            agent_id="orch-1",
+            thread_id=str(ObjectId()),
+            run_id=str(ObjectId()),
+            display_id=str(ObjectId()),
+            event_id=str(ObjectId()),
+            event_type="control_event",
+            event_name="StartEvent",
+        )
+
+    @pytest.mark.asyncio
+    async def test_creates_span_with_agent_kind(self, tracer: AgentRunTracer, caller_topic: AgentInstanceTopic) -> None:
+        mock_span = MagicMock()
+        mock_span.get_span_context.return_value = MagicMock(trace_id=1, span_id=2)
+        mock_tracer = MagicMock()
+        mock_tracer.start_span.return_value = mock_span
+        tracer.tracer = mock_tracer
+
+        span = await tracer.start_aitl_wrapper_span(
+            caller_topic=caller_topic,
+            target_agent_class="WorkerAgent",
+            target_agent_id="worker-1",
+            target_run_id=str(ObjectId()),
+            target_thread_id=caller_topic.thread_id,
+        )
+
+        assert span is mock_span
+        call_kwargs = mock_tracer.start_span.call_args
+        attrs = call_kwargs.kwargs["attributes"]
+        assert attrs[SpanAttributes.OPENINFERENCE_SPAN_KIND] == OpenInferenceSpanKindValues.AGENT.value
+        assert "AITL -> WorkerAgent/worker-1" == call_kwargs.kwargs["name"]
+
+    @pytest.mark.asyncio
+    async def test_stores_trace_context_in_redis(
+        self, tracer: AgentRunTracer, caller_topic: AgentInstanceTopic, mock_redis: AsyncMock
+    ) -> None:
+        real_span_context = SpanContext(
+            trace_id=0xABCD, span_id=0x1234, is_remote=False, trace_flags=TraceFlags(TraceFlags.SAMPLED)
+        )
+        real_span = NonRecordingSpan(real_span_context)
+        mock_tracer = MagicMock()
+        mock_tracer.start_span.return_value = real_span
+        tracer.tracer = mock_tracer
+
+        target_run_id = str(ObjectId())
+        target_thread_id = caller_topic.thread_id
+
+        await tracer.start_aitl_wrapper_span(
+            caller_topic=caller_topic,
+            target_agent_class="WorkerAgent",
+            target_agent_id="worker-1",
+            target_run_id=target_run_id,
+            target_thread_id=target_thread_id,
+        )
+
+        target_topic = AgentInstanceTopic(
+            agent_class="WorkerAgent",
+            agent_id="worker-1",
+            thread_id=target_thread_id,
+            run_id=target_run_id,
+            display_id=caller_topic.display_id,
+            event_id=caller_topic.event_id,
+            event_type="control_event",
+            event_name="StartEvent",
+        )
+        target_ctx = RunContext.for_topic(mock_redis, target_topic)
+        carrier = await target_ctx.get(_TRACE_AITL_PARENT_CONTEXT_KEY)
+        assert carrier is not None
+        assert "traceparent" in carrier
+        assert await target_ctx.get(_TRACE_AITL_TARGET_AGENT_CLASS_KEY) == "WorkerAgent"
+
+    def test_end_sets_ok_status(self, tracer: AgentRunTracer) -> None:
+        mock_span = MagicMock()
+        tracer.end_aitl_wrapper_span(mock_span, success=True)
+        mock_span.set_status.assert_called_once_with(StatusCode.OK)
+        mock_span.end.assert_called_once()
+
+    def test_end_sets_error_status(self, tracer: AgentRunTracer) -> None:
+        mock_span = MagicMock()
+        tracer.end_aitl_wrapper_span(mock_span, success=False)
+        mock_span.set_status.assert_called_once_with(StatusCode.ERROR, "Delegated agent failed")
+        mock_span.end.assert_called_once()
+
+
+class TestAitlParentContext:
+    """Tests for _get_aitl_parent_context — reconstructs parent span for AITL delegation."""
+
+    @pytest.mark.asyncio
+    async def test_returns_none_when_no_aitl_keys(self, tracer: AgentRunTracer, topic: AgentInstanceTopic) -> None:
+        result = await tracer._get_aitl_parent_context(topic)
+        assert result is None
+
+    @pytest.mark.asyncio
+    async def test_returns_context_when_aitl_keys_exist(
+        self, tracer: AgentRunTracer, topic: AgentInstanceTopic, mock_redis: AsyncMock
+    ) -> None:
+        run_context = RunContext.for_topic(mock_redis, topic)
+        await run_context.set(_TRACE_AITL_PARENT_CONTEXT_KEY, _FAKE_TRACEPARENT)
+        await run_context.set(_TRACE_AITL_TARGET_AGENT_CLASS_KEY, topic.agent_class)
+
+        result = await tracer._get_aitl_parent_context(topic)
+
+        assert result is not None
+
+    @pytest.mark.asyncio
+    async def test_returns_none_when_agent_class_mismatch(
+        self, tracer: AgentRunTracer, topic: AgentInstanceTopic, mock_redis: AsyncMock
+    ) -> None:
+        """Handles share_run_id=True where both agents share a RunContext."""
+        run_context = RunContext.for_topic(mock_redis, topic)
+        await run_context.set(_TRACE_AITL_PARENT_CONTEXT_KEY, _FAKE_TRACEPARENT)
+        await run_context.set(_TRACE_AITL_TARGET_AGENT_CLASS_KEY, "DifferentAgent")
+
+        result = await tracer._get_aitl_parent_context(topic)
+        assert result is None
+
+
+class TestTraceStepStartAitl:
+    """Tests for trace_step_start with AITL parent context."""
+
+    @pytest.mark.asyncio
+    async def test_uses_aitl_parent_context_when_available(
+        self, tracer: AgentRunTracer, topic: AgentInstanceTopic, mock_redis: AsyncMock
+    ) -> None:
+        run_context = RunContext.for_topic(mock_redis, topic)
+        await run_context.set(_TRACE_AITL_PARENT_CONTEXT_KEY, _FAKE_TRACEPARENT)
+        await run_context.set(_TRACE_AITL_TARGET_AGENT_CLASS_KEY, topic.agent_class)
+
+        mock_span = MagicMock()
+        mock_tracer = MagicMock()
+        mock_tracer.start_span.return_value = mock_span
+        tracer.tracer = mock_tracer
+
+        async def dummy_step():
+            pass
+
+        with (
+            patch("aihub_agent.tracing.AgentRunTracer.set_span_in_context"),
+            patch("aihub_agent.tracing.AgentRunTracer.context") as mock_ctx,
+        ):
+            mock_ctx.attach.return_value = "token"
+
+            async with tracer.trace_step_start(topic, dummy_step, {}) as span:
+                assert span is mock_span
+
+        call_kwargs = mock_tracer.start_span.call_args
+        assert call_kwargs.kwargs.get("context") is not None
+
+
+class TestTraceStepStopAitl:
+    """Tests for trace_step_stop with AITL delegation."""
+
+    @pytest.mark.asyncio
+    async def test_suppresses_langfuse_trace_attrs_for_aitl_delegated(
+        self, tracer: AgentRunTracer, topic: AgentInstanceTopic, mock_redis: AsyncMock
+    ) -> None:
+        event = MagicMock(spec=StartEvent)
+        event.is_user_message_event = False
+        await tracer.trace_run_start(topic, event)
+
+        run_context = RunContext.for_topic(mock_redis, topic)
+        await run_context.set(_TRACE_AITL_PARENT_CONTEXT_KEY, _FAKE_TRACEPARENT)
+        await run_context.set(_TRACE_AITL_TARGET_AGENT_CLASS_KEY, topic.agent_class)
+
+        mock_span = MagicMock()
+        await tracer.trace_step_stop(mock_span, None, topic)
+
+        attrs = mock_span.set_attributes.call_args[0][0]
+        assert "langfuse.trace.name" not in attrs
+        assert "langfuse.trace.input" not in attrs
+        assert "langfuse.trace.output" not in attrs
+        assert "langfuse.user.id" not in attrs
+
+    @pytest.mark.asyncio
+    async def test_still_sets_session_id_for_aitl_delegated(
+        self, tracer: AgentRunTracer, topic: AgentInstanceTopic, mock_redis: AsyncMock
+    ) -> None:
+        event = MagicMock(spec=StartEvent)
+        event.is_user_message_event = False
+        await tracer.trace_run_start(topic, event)
+
+        run_context = RunContext.for_topic(mock_redis, topic)
+        await run_context.set(_TRACE_AITL_PARENT_CONTEXT_KEY, _FAKE_TRACEPARENT)
+        await run_context.set(_TRACE_AITL_TARGET_AGENT_CLASS_KEY, topic.agent_class)
+
+        mock_span = MagicMock()
+        await tracer.trace_step_stop(mock_span, None, topic)
+
+        attrs = mock_span.set_attributes.call_args[0][0]
+        assert attrs["langfuse.session.id"] == topic.thread_id
+        assert attrs["deployment.environment.name"] == "agent"

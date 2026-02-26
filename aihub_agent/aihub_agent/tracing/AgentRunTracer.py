@@ -14,7 +14,7 @@ from aihub_lib.nats.events import BaseEvent, StartEvent
 from aihub_lib.nats.topics.agents.AgentInstanceTopic import AgentInstanceTopic
 from aihub_lib.nats.workflow.annotations.custom_types.ListOfSize import ListOfSize
 from openinference.semconv.trace import OpenInferenceMimeTypeValues, OpenInferenceSpanKindValues, SpanAttributes
-from opentelemetry import context, trace
+from opentelemetry import context, propagate, trace
 from opentelemetry.trace import Span, StatusCode, set_span_in_context
 from pydantic import BaseModel
 from redis.asyncio import Redis
@@ -26,6 +26,8 @@ logger = logging.getLogger(__name__)
 _TRACE_INPUT_KEY = "_trace_input"
 _TRACE_USER_ID_KEY = "_trace_user_id"
 _TRACE_OUTPUT_KEY = "_trace_output"
+_TRACE_AITL_PARENT_CONTEXT_KEY = "_trace_aitl_parent_context"
+_TRACE_AITL_TARGET_AGENT_CLASS_KEY = "_trace_aitl_target_agent_class"
 
 
 class AgentRunTracer:
@@ -111,9 +113,12 @@ class AgentRunTracer:
             SpanAttributes.TAG_TAGS: [topic.thread_id, topic.display_id, topic.run_id],
         }
 
-        # Start span without making it current yet
+        # If this agent was delegated via AITL, re-parent under the wrapper span
+        parent_context = await self._get_aitl_parent_context(topic)
+
         span = self.tracer.start_span(
             name=span_name,
+            context=parent_context,
             kind=trace.SpanKind.CONSUMER,
             attributes=attributes,
         )
@@ -153,21 +158,29 @@ class AgentRunTracer:
             if semantic_event:
                 await self._set_semantic_attributes(span, semantic_event, topic)
 
-        # Set Langfuse trace-level display attributes
-        trace_attrs: dict[str, Any] = {
-            "langfuse.trace.name": f"🤖 {topic.agent_class}/{topic.agent_id}",
-            "langfuse.trace.input": user_input,
-            "langfuse.trace.tags": [topic.agent_class, topic.agent_id],
-            "langfuse.trace.metadata.agent_class": topic.agent_class,
-            "langfuse.trace.metadata.agent_id": topic.agent_id,
-            "langfuse.trace.metadata.run_id": topic.run_id,
-            "langfuse.trace.metadata.display_id": topic.display_id,
-            "langfuse.user.id": user_id,
-            "langfuse.session.id": topic.thread_id,
-            "deployment.environment.name": "agent",
-        }
-        if is_final_step:
-            trace_attrs["langfuse.trace.output"] = await run_context.get(_TRACE_OUTPUT_KEY, "")
+        # AITL-delegated agents must not overwrite the caller's trace-level display
+        is_aitl_delegated = await run_context.get(_TRACE_AITL_PARENT_CONTEXT_KEY) is not None
+
+        if is_aitl_delegated:
+            trace_attrs: dict[str, Any] = {
+                "langfuse.session.id": topic.thread_id,
+                "deployment.environment.name": "agent",
+            }
+        else:
+            trace_attrs: dict[str, Any] = {
+                "langfuse.trace.name": f"🤖 {topic.agent_class}/{topic.agent_id}",
+                "langfuse.trace.input": user_input,
+                "langfuse.trace.tags": [topic.agent_class, topic.agent_id],
+                "langfuse.trace.metadata.agent_class": topic.agent_class,
+                "langfuse.trace.metadata.agent_id": topic.agent_id,
+                "langfuse.trace.metadata.run_id": topic.run_id,
+                "langfuse.trace.metadata.display_id": topic.display_id,
+                "langfuse.user.id": user_id,
+                "langfuse.session.id": topic.thread_id,
+                "deployment.environment.name": "agent",
+            }
+            if is_final_step:
+                trace_attrs["langfuse.trace.output"] = await run_context.get(_TRACE_OUTPUT_KEY, "")
         span.set_attributes(trace_attrs)
 
         span.set_status(StatusCode.OK)
@@ -192,9 +205,79 @@ class AgentRunTracer:
             if hasattr(semantic_event, "chat_model_name") and semantic_event.chat_model_name:
                 span.set_attribute("langfuse.observation.model", semantic_event.chat_model_name)
 
+    async def start_aitl_wrapper_span(
+        self,
+        caller_topic: AgentInstanceTopic,
+        target_agent_class: str,
+        target_agent_id: str,
+        target_run_id: str,
+        target_thread_id: str,
+    ) -> Span:
+        """Creates a wrapper span bridging the caller's step to the delegated agent's steps.
+
+        The span uses openinference.span.kind=AGENT so it survives the OTEL
+        Collector filter and appears in Langfuse. Its trace_id + span_id are
+        stored in the target's RunContext so the delegated agent can re-parent
+        its step spans under this wrapper.
+        """
+        span = self.tracer.start_span(
+            name=f"AITL -> {target_agent_class}/{target_agent_id}",
+            kind=trace.SpanKind.INTERNAL,
+            attributes={
+                SpanAttributes.OPENINFERENCE_SPAN_KIND: OpenInferenceSpanKindValues.AGENT.value,
+                SpanAttributes.SESSION_ID: caller_topic.thread_id,
+            },
+        )
+
+        carrier: dict[str, str] = {}
+        ctx = set_span_in_context(span)
+        propagate.inject(carrier, context=ctx)
+
+        target_topic = AgentInstanceTopic(
+            agent_class=target_agent_class,
+            agent_id=target_agent_id,
+            thread_id=target_thread_id,
+            run_id=target_run_id,
+            display_id=caller_topic.display_id,
+            event_id=caller_topic.event_id,
+            event_type="control_event",
+            event_name="StartEvent",
+        )
+        target_run_context = self._run_context_for(target_topic)
+        await target_run_context.set(_TRACE_AITL_PARENT_CONTEXT_KEY, carrier)
+        await target_run_context.set(_TRACE_AITL_TARGET_AGENT_CLASS_KEY, target_agent_class)
+
+        return span
+
+    def end_aitl_wrapper_span(self, span: Span, *, success: bool):
+        """Ends the AITL wrapper span with the appropriate status."""
+        if success:
+            span.set_status(StatusCode.OK)
+        else:
+            span.set_status(StatusCode.ERROR, "Delegated agent failed")
+        span.end()
+
+    async def _get_aitl_parent_context(self, topic: AgentInstanceTopic) -> trace.Context | None:
+        """Reconstructs the AITL wrapper span as parent context for re-parenting.
+
+        Uses the standard W3C TraceContext propagator to deserialize the parent
+        span context from the carrier stored in Redis.
+
+        Returns None for non-AITL agents (default OTEL context is used).
+        Checks agent_class to handle the share_run_id=True edge case where
+        both agents share a RunContext.
+        """
+        run_context = self._run_context_for(topic)
+        carrier = await run_context.get(_TRACE_AITL_PARENT_CONTEXT_KEY)
+        if carrier is None:
+            return None
+
+        target_class = await run_context.get(_TRACE_AITL_TARGET_AGENT_CLASS_KEY)
+        if target_class != topic.agent_class:
+            return None
+
+        return propagate.extract(carrier)
+
     def trace_step_error(self, span: Span, error: Exception):
-        """
-        Marks the step span as errored. The span is ended by the context manager.
-        """
+        """Marks the step span as errored. The span is ended by the context manager."""
         span.set_status(StatusCode.ERROR, str(error))
-        # Don't call span.end() - the context manager handles that
