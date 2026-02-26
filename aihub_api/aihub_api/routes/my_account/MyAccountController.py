@@ -27,7 +27,7 @@ class MyAccountController(Controller):
     ):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
 
-    def get_my_account(self, route: str = "/") -> Self:
+    def get_my_account(self, route: str = "") -> Self:
         @self.router.get(route, tags=self.tags)
         async def get_my_account(
             nc: Annotated[NATS, Depends(use_nats)],
