@@ -91,6 +91,12 @@ class RefDoc(Document):
 
     @classmethod
     @trace_fn
+    def by_id_and_namespace(cls, db_alias: str, doc_id: str, namespace: str) -> Self:
+        with switch_db(cls, db_alias) as SwitchedRefDoc:
+            return SwitchedRefDoc.objects.get(id=doc_id, data__metadata__namespace=namespace)
+
+    @classmethod
+    @trace_fn
     def by_namespace(
         cls,
         db_alias: str,

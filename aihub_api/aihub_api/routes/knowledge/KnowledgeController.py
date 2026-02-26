@@ -22,6 +22,7 @@ from aihub_api.i18n.ApiLocaleString import ApiLocaleString
 from aihub_api.i18n.dependencies.use_locale import use_locale
 from aihub_api.pagination.type.PageNumber import PageNumber
 from aihub_api.pagination.type.PageSize import PageSize
+from aihub_api.routes.file.dto.SignedUrlDto import SignedUrlDto
 from aihub_api.routes.knowledge.dto.CreateNamespaceRequest import CreateNamespaceRequest
 from aihub_api.routes.knowledge.dto.DatabaseDTO import DatabaseDTO
 from aihub_api.routes.knowledge.dto.DocumentDTO import DocumentDTO
@@ -294,6 +295,29 @@ class KnowledgeController(Controller):
             a SourceUpdatedEvent to NATS to trigger downstream pipeline processing.
             """
             return await KnowledgeService.validate_document_upload(nc, database, namespace, request, s3_service)
+
+        return self
+
+    def get_document_url(
+        self, route: str = "/databases/{database}/namespaces/{namespace}/documents/{document_id}/url"
+    ) -> Self:
+        @self.router.get(route, tags=self.tags, summary="Get signed document URL")
+        async def get_document_url(
+            database: Annotated[str, Path(title="Database name", pattern=r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*$")],
+            namespace: Annotated[str, Path(title="Namespace", pattern=r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*$")],
+            document_id: Annotated[str, Path(title="Document ID")],
+            _: Annotated[
+                UserIdentity, Security(self.user_with_permission("aihub.user.knowledge.{database}.{namespace}"))
+            ],
+            s3_service: Annotated[S3AnonymousFileAccessService, Depends(use_s3_service)],
+        ) -> SignedUrlDto:
+            """Generates a presigned URL for downloading a document's source file."""
+            if database in ["admin", "local", "config"]:
+                raise HTTPException(status_code=403, detail="Not authorized to view this database")
+            url = KnowledgeService.get_document_url(
+                db=database, namespace=namespace, document_id=document_id, s3_service=s3_service
+            )
+            return SignedUrlDto(url=url)
 
         return self
 

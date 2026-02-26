@@ -463,13 +463,13 @@ pnpm install
 The frontend development server includes hot module replacement, API proxy, and live reloading.
 
 ```bash
-# Start development server (port 8182)
+# Start development server (port 3333)
 pnpm dev
 ```
 
 **Access Points:**
 
-- **Frontend Application**: `http://localhost:3000`
+- **Frontend Application**: `http://localhost:3333`
 - **API Proxy**: Automatically routes `/api/v1` to `http://localhost:8000`
 - **Hot Reload**: Automatic reloading on file changes
 

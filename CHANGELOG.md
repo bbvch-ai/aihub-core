@@ -5,6 +5,123 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.267.1] - 2026-02-25 - Streamlined Deployment with Self-Contained Release Bundles
+
+### Added
+
+- ✨ **New GitHub Release Workflow**: A comprehensive GitHub Actions workflow (`create-release.yml`) was introduced to
+  fully automate the creation and publishing of self-contained release bundles to GitHub. This includes generating,
+  verifying, archiving, and uploading CPU and GPU deployment packages.
+- 🔐 **Automated Environment Setup Script**: A new `setup-env.sh` script now automatically generates secure `.env` files
+  for production deployments, filling in unique, cryptographically strong secrets for database passwords, API keys, and
+  other sensitive values from a template.
+- 📦 **`generate-release` Makefile Target**: A new `Makefile` target has been added to facilitate the creation of
+  version-pinned Docker Compose and configuration bundles for official releases, integrating seamlessly with the
+  automated release workflow.
+
+### Changed
+
+- 🚀 **Fundamental Deployment Strategy**: The recommended production deployment method has transitioned to downloading
+  self-contained CPU and GPU release bundles directly from GitHub Releases, simplifying initial setup and updates
+  significantly.
+- 📄 **Deployment & Update Documentation**: The "One-Command Deployment Guide" and "Updates and Maintenance"
+  documentation have been completely revised to reflect the new bundle-based deployment, automated environment
+  configuration, and streamlined update processes.
+- ⚙️ **Docker Compose Generation**: The underlying `generate_compose.py` script has been substantially upgraded to
+  support a new "release mode" for creating deployable bundles with version-pinned image tags and simplified
+  configuration filenames.
+- 🛠️ **Local Development Setup**: Local setup instructions are now streamlined to encourage `git clone` of the
+  repository and the use of a new `make local-cert` command for easier certificate generation.
+
+### Refactor
+
+- 🧹 **CI/CD Workflow Run Naming**: Standardized `run-name` configurations across all build and deploy GitHub Actions
+  workflows for clearer identification and tracking of CI/CD pipeline executions.
+- 🔄 **Docker Compose Template Flexibility**: Refactored Docker Compose templates to introduce a `config_file_suffix`
+  variable, allowing for cleaner filenames without stage or hardware specific suffixes in generated release bundles.
+
+______________________________________________________________________
+
+## [v0.267.0] - 2026-02-25 - Secure Document Access and API Simplification
+
+### Added
+
+- ✨ **Introduced API for secure document source URLs:** A new endpoint
+  (`GET /databases/{database}/namespaces/{namespace}/documents/{document_id}/url`) allows authenticated users to obtain
+  a short-lived, secure URL for downloading a document's original source file, enhancing security and control over data
+  access.
+- 🦾 **Enhanced document lookup by namespace:** Added a new method (`RefDoc.by_id_and_namespace`) to efficiently retrieve
+  document references using both document ID and namespace, improving data retrieval for knowledge base operations.
+
+### Changed
+
+- 🔄 **Updated document download mechanism in frontend:** The web application now utilizes the new backend API endpoint
+  to fetch secure, presigned URLs for document downloads. This change centralizes file access through the backend,
+  improving consistency and security.
+
+### Removed
+
+- 🗑️ **Removed direct file redirection for logged-in users:** The `/logged-in/redirect` endpoint and its associated
+  backend logic for file redirection have been removed, streamlining the API and consolidating file access patterns.
+
+______________________________________________________________________
+
+## [v0.266.5] - 2026-02-25 - Milvus Compatibility Update
+
+### Fixed
+
+- 🐛 **Resolved Milvus Resource Initialization:** Addressed an issue where the **MilvusVectorStoreResource** could fail
+  to initialize in synchronous environments (e.g., Dagster resource creation) when using `pymilvus 2.6+`. This was due
+  to `pymilvus`'s internal reliance on an `asyncio` event loop during initialization, and the fix ensures a loop is
+  present to allow for seamless and robust resource setup.
+
+______________________________________________________________________
+
+## [v0.266.4] - 2026-02-25 - Port Harmonization for Streamlined Local Development
+
+### Changed
+
+- ⚡️ **Standardized Local Development Ports:** Aligned the default development ports for key services to improve
+  consistency and reduce potential conflicts during local development:
+  - The **Admin UI (Frontend)** now runs on `http://localhost:3333` (previously `3000`).
+  - The **Dagster Orchestrator** now runs on `http://localhost:3000` (previously `3002`).
+- 🦾 **Improved Dagster Tool Integration:** Updated the `mcp-server-dagster` script to correctly utilize the `--url`
+  argument for specifying the Dagster instance, simplifying its configuration and removing the need for an inline Python
+  patch.
+- 📄 **Updated Documentation and Configuration:** All relevant documentation, skill prerequisites, environment variables
+  (`.env.dev`), and Docker Compose configurations have been updated to reflect the new port assignments for the Admin UI
+  and Dagster.
+
+______________________________________________________________________
+
+## [v0.266.3] - 2026-02-25 - Enhanced Git Push Command Management
+
+### Changed
+
+- ✨ **Expanded `git push` Command Recognition:** The system now recognizes and handles a significantly broader range of
+  `git push` commands, including those with advanced options such as `--force-with-lease`, `--delete`, `--mirror`,
+  `--all`, and `--tags`. This enhances the system's ability to understand and process complex push operations more
+  intelligently.
+- 🚀 **Streamlined `git push` Interactions:** Generic and specific `git push` operations have been refined in their
+  handling, potentially leading to more seamless execution and fewer prompts during typical `git push` workflows.
+
+______________________________________________________________________
+
+## [v0.266.2] - 2026-02-25 - Streamlined Workflow Configuration
+
+### Changed
+
+- 🔄 **Streamlined GitHub Actions YAML:** Updated the `additional_permissions` configuration in `claude.yml` to use a
+  more concise single-line scalar format, improving the readability of workflow definitions.
+
+### Refactor
+
+- 🧹 **Cleaned Workflow Configurations:** Removed unnecessary blank lines and commented-out placeholders from both
+  `claude-code-review.yml` and `claude.yml`, enhancing file clarity and reducing clutter within the workflow
+  definitions.
+
+______________________________________________________________________
+
 ## [v0.266.1] - 2026-02-24 - Changelog Precision Update
 
 ### Fixed
