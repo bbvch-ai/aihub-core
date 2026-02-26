@@ -10,6 +10,7 @@ from aihub_lib.infrastructure.opentelemetry.tracing.openinference_context import
     openinference_trace_context,
 )
 from aihub_lib.infrastructure.opentelemetry.tracing.SmartTracer import get_tracer
+from aihub_lib.nats.dispatcher.stores.trace.TraceStore import TraceStore
 from aihub_lib.nats.events import BaseEvent, StartEvent
 from aihub_lib.nats.topics.agents.AgentInstanceTopic import AgentInstanceTopic
 from aihub_lib.nats.workflow.annotations.custom_types.ListOfSize import ListOfSize
@@ -17,18 +18,8 @@ from openinference.semconv.trace import OpenInferenceMimeTypeValues, OpenInferen
 from opentelemetry import context, propagate, trace
 from opentelemetry.trace import Span, StatusCode, set_span_in_context
 from pydantic import BaseModel
-from redis.asyncio import Redis
-
-from aihub_agent.context.run.RunContext import RunContext
 
 logger = logging.getLogger(__name__)
-
-_TRACE_INPUT_KEY = "_trace_input"
-_TRACE_USER_ID_KEY = "_trace_user_id"
-_TRACE_OUTPUT_KEY = "_trace_output"
-_TRACE_RUN_CONTEXT_KEY = "_trace_run_context"
-_TRACE_AITL_PARENT_CONTEXT_KEY = "_trace_aitl_parent_context"
-_TRACE_AITL_TARGET_AGENT_CLASS_KEY = "_trace_aitl_target_agent_class"
 
 
 class AgentRunTracer:
@@ -39,9 +30,9 @@ class AgentRunTracer:
     (name, session, user, input/output) set via span attributes. Langfuse
     groups these spans into traces automatically.
 
-    Run metadata (user input, user ID, LLM output) is stored in Redis via
-    RunContext for cross-runner access in distributed environments. Cleanup
-    is handled by RunContext.delete_all() in the dispatcher on run completion.
+    Run metadata (user input, user ID, LLM output) is stored in a dedicated
+    TraceStore for cross-runner access in distributed environments. Cleanup
+    is handled by TraceStore.delete_all() in the dispatcher on run completion.
 
     The ``langfuse.*`` span attributes used throughout this class are the
     documented way to enrich standard OTEL spans for Langfuse's OTEL ingestion
@@ -50,16 +41,12 @@ class AgentRunTracer:
     not understand these attributes simply ignores them.
     """
 
-    def __init__(self, redis: Redis):
-        self.redis = redis
+    def __init__(self, trace_store: TraceStore):
+        self.trace_store = trace_store
         self.tracer = get_tracer(__name__)
 
-    def _run_context_for(self, topic: AgentInstanceTopic) -> RunContext:
-        """Create a RunContext scoped to the given topic for trace metadata storage."""
-        return RunContext.for_topic(self.redis, topic)
-
     async def trace_run_start(self, topic: AgentInstanceTopic, event: StartEvent):
-        """Stores the user input, user ID, and current trace context for the run in Redis.
+        """Stores the user input, user ID, and current trace context for the run.
 
         The trace context captured here anchors all step spans to the same
         Langfuse trace, even when the workflow is interrupted by HITL/BITL
@@ -72,10 +59,10 @@ class AgentRunTracer:
         carrier: dict[str, str] = {}
         propagate.inject(carrier)
 
-        run_context = self._run_context_for(topic)
-        await run_context.set(_TRACE_RUN_CONTEXT_KEY, carrier)
-        await run_context.set(_TRACE_INPUT_KEY, user_input)
-        await run_context.set(_TRACE_USER_ID_KEY, user_id)
+        eci = topic.execution_context_id
+        await self.trace_store.store_run_context_carrier(eci, carrier)
+        await self.trace_store.store_user_input(eci, user_input)
+        await self.trace_store.store_user_id(eci, user_id)
 
     @asynccontextmanager
     async def trace_step_start(
@@ -150,9 +137,9 @@ class AgentRunTracer:
         """
         Ends the step span with a success status and sets Langfuse trace-level display.
         """
-        run_context = self._run_context_for(topic)
-        user_input = await run_context.get(_TRACE_INPUT_KEY, "")
-        user_id = await run_context.get(_TRACE_USER_ID_KEY, "")
+        eci = topic.execution_context_id
+        user_input = await self.trace_store.get_user_input(eci)
+        user_id = await self.trace_store.get_user_id(eci)
 
         is_final_step = False
         if output_events:
@@ -189,7 +176,7 @@ class AgentRunTracer:
                 "deployment.environment.name": "agent",
             }
             if is_final_step:
-                trace_attrs["langfuse.trace.output"] = await run_context.get(_TRACE_OUTPUT_KEY, "")
+                trace_attrs["langfuse.trace.output"] = await self.trace_store.get_output(eci)
         span.set_attributes(trace_attrs)
 
         span.set_status(StatusCode.OK)
@@ -200,8 +187,7 @@ class AgentRunTracer:
 
         if hasattr(semantic_event, "output_messages") and semantic_event.output_messages:
             output = semantic_event.output_messages[-1].content or ""
-            run_context = self._run_context_for(topic)
-            await run_context.set(_TRACE_OUTPUT_KEY, output)
+            await self.trace_store.store_output(topic.execution_context_id, output)
 
         if hasattr(semantic_event, "token_count_prompt") and hasattr(semantic_event, "token_count_completion"):
             usage_details = {
@@ -227,7 +213,7 @@ class AgentRunTracer:
 
         The span uses openinference.span.kind=AGENT so it survives the OTEL
         Collector filter and appears in Langfuse. Its trace_id + span_id are
-        stored in the target's RunContext so the delegated agent can re-parent
+        stored in the target's TraceStore so the delegated agent can re-parent
         its step spans under this wrapper.
         """
         input_value = start_event.user_query if start_event.is_user_message_event else ""
@@ -255,16 +241,13 @@ class AgentRunTracer:
             event_type="control_event",
             event_name="StartEvent",
         )
-        target_run_context = self._run_context_for(target_topic)
-        await target_run_context.set(_TRACE_AITL_PARENT_CONTEXT_KEY, carrier)
-        await target_run_context.set(_TRACE_AITL_TARGET_AGENT_CLASS_KEY, target_agent_class)
+        await self.trace_store.store_aitl_parent_context(target_topic.execution_context_id, carrier, target_agent_class)
 
         return span
 
     async def end_aitl_wrapper_span(self, span: Span, *, success: bool, target_topic: AgentInstanceTopic):
         """Ends the AITL wrapper span with the delegated agent's cached LLM output."""
-        target_run_context = self._run_context_for(target_topic)
-        output = await target_run_context.get(_TRACE_OUTPUT_KEY, "")
+        output = await self.trace_store.get_output(target_topic.execution_context_id)
         if output:
             span.set_attribute(SpanAttributes.OUTPUT_VALUE, output)
         if success:
@@ -285,8 +268,7 @@ class AgentRunTracer:
         if aitl_context is not None:
             return aitl_context
 
-        run_context = self._run_context_for(topic)
-        carrier = await run_context.get(_TRACE_RUN_CONTEXT_KEY)
+        carrier = await self.trace_store.get_run_context_carrier(topic.execution_context_id)
         if carrier is not None:
             return propagate.extract(carrier)
 
@@ -297,14 +279,14 @@ class AgentRunTracer:
 
         Returns None for non-AITL agents so the caller falls through to the
         run-start context. Checks agent_class to handle the share_run_id=True
-        edge case where both agents share a RunContext.
+        edge case where both agents share a TraceStore namespace.
         """
-        run_context = self._run_context_for(topic)
-        carrier = await run_context.get(_TRACE_AITL_PARENT_CONTEXT_KEY)
+        eci = topic.execution_context_id
+        carrier = await self.trace_store.get_aitl_parent_context(eci)
         if carrier is None:
             return None
 
-        target_class = await run_context.get(_TRACE_AITL_TARGET_AGENT_CLASS_KEY)
+        target_class = await self.trace_store.get_aitl_target_agent_class(eci)
         if target_class != topic.agent_class:
             return None
 
