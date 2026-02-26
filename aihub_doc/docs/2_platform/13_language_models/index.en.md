@@ -9,15 +9,14 @@ tracking, and security. Agents access models through this proxy layer without ne
 
 ## Supported models
 
-LiteLLM supports 100+ LLM providers including OpenAI, Azure OpenAI, Anthropic, Google, AWS Bedrock, and others. The
-platform can integrate with any provider LiteLLM supports.
+LiteLLM supports 100+ LLM providers. The platform can integrate with any provider LiteLLM supports.
 
-Currently configured providers:
+The platform uses a dual-mode inference model:
 
-- Azure OpenAI models
-- Google Gemini models
-- Self-hosted models via llama.cpp or Hugging Face Text Embedding Inference
-- Any OpenAI-compatible API endpoint
+- **Non-GPU deployments**: Swiss LLM Cloud (Swiss-hosted provider) for text generation, embedding, reranking,
+  transcription, and OCR
+- **GPU deployments**: Local vLLM on an NVIDIA RTX 6000 Pro (96 GB VRAM) for fully air-gapped operation
+- Any additional OpenAI-compatible API endpoint can be added via LiteLLM configuration
 
 Models are configured in LiteLLM with metadata about capabilities (chat, embedding, vision, function calling), token
 limits, and costs. Agents specify which model to use in their configuration. Adding new providers requires updating the

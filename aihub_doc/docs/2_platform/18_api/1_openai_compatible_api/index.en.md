@@ -29,11 +29,11 @@ deployment timelines.
 
 ### Vendor-Neutral Model Access
 
-The API abstracts underlying model providers, supporting multiple LLM sources including Azure OpenAI, self-hosted
-models, and other OpenAI-compatible services. This vendor neutrality provides several business advantages: organizations
-can switch between model providers transparently without application changes, implement cost optimization strategies by
-routing requests to different vendors based on workload characteristics, maintain data sovereignty through self-hosted
-model options, and leverage hybrid deployment models combining cloud and on-premise resources.
+The API abstracts underlying model providers, supporting multiple LLM sources including Swiss LLM Cloud, self-hosted
+vLLM models, and other OpenAI-compatible services. This vendor neutrality provides several business advantages:
+organizations can switch between model providers transparently without application changes, implement cost optimization
+strategies by routing requests to different vendors based on workload characteristics, maintain data sovereignty through
+self-hosted model options, and leverage hybrid deployment models combining cloud and on-premise resources.
 
 Model selection and routing occur transparently at the platform level, allowing centralized governance and optimization
 without requiring coordination across application teams.

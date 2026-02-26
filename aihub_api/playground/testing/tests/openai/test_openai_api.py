@@ -14,8 +14,8 @@ from aihub_api.runners.ApiTestRunner import ApiTestRunner
 
 BASE_URL = "http://test"
 MODELS_ENDPOINT = "/api/v1/openai/models"
-CHAT_MODEL = "text-generation/mini"
-EMBEDDING_MODEL = "embedding/large"
+CHAT_MODEL = "text-generation/gpt-oss-120b"
+EMBEDDING_MODEL = "embedding/bge-m3"
 
 
 @pytest_asyncio.fixture(scope="module", loop_scope="module")

@@ -66,7 +66,7 @@ that are easy to miss in diffs:
 - Tests are specific (not just "no exception") with meaningful assertions
 - External services properly mocked (NATS, MongoDB, S3, LLM calls)
 - BDD (pytest-bdd with `.feature` files) for complex agent/process workflows
-- Test markers applied correctly (`slow`, `azure`, `integration`, `flaky`)
+- Test markers applied correctly (`slow`, `integration`, `flaky`)
 
 ## Step 4: Produce the Review
 

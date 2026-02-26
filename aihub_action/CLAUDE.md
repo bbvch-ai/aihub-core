@@ -12,7 +12,6 @@ aihub_action/
 ├── lint_backend/              # Python linting (Ruff format via reviewdog)
 ├── lint_frontend/             # Nuxt linting (ESLint via reviewdog)
 ├── pytest_coverage_comment/   # PR coverage comment (downloads test_backend artifacts)
-├── review_pr/                 # AI-assisted PR review (qodo-ai/pr-agent, Azure OpenAI)
 ├── sonarcloud_scan/           # SonarCloud quality analysis (downloads test_backend artifacts)
 └── test_backend/              # Python tests with coverage + artifact upload
 ```
@@ -63,9 +62,9 @@ cache key. Runs `nuxi prepare` before linting to generate Nuxt type stubs.
 **test_backend**: Most complex action. Key inputs:
 
 - `docker_compose_services`: space-separated list of Docker services to start (empty = no Docker)
-- `use_local_core`: when `true`, runs `uv sync --all-packages` (used in CI to test against monorepo's local `aihub_lib`)
 - `install_ffmpeg`: installs FFmpeg via `make install-ffmpeg`
 - `huggingface_api_key`: added to `.env.dev` for model downloads
+- `swiss_llm_cloud_*`: Swiss LLM Cloud secrets (API, embedding, reranking, whisper, OCR) added to `.env.dev`
 - `regenerate_compose`: runs `make generate-compose` before starting Docker services
 - Health check polling: waits up to 10 minutes for Docker services to become healthy
 
@@ -76,9 +75,6 @@ artifacts from `test_backend`, posts formatted coverage report as PR comment via
 **sonarcloud_scan**: Downloads `{working_directory}-coverage-report` artifact when `report_coverage: true`. Runs
 `SonarSource/sonarqube-scan-action@v5`. Requires `sonar_token` and `sonar_project_key` inputs. Default organization:
 `bbv-ai`.
-
-**review_pr**: Wraps `qodo-ai/pr-agent@main` with Azure OpenAI configuration. Model defaults to `gpt-4o`. Requires
-`azure_openai_key` and `azure_openai_api_base` inputs.
 
 ## Local vs Remote References
 
@@ -94,12 +90,11 @@ versions).
 
 ## Caching Layers (test_backend / lint_frontend)
 
-| Cache              | Path                            | Key Strategy                                   |
-| ------------------ | ------------------------------- | ---------------------------------------------- |
-| uv installation    | `~/.local`                      | `{os}-uv-{version}`                            |
-| uv cache           | `~/.cache/uv`                   | `{os}-uv-cache-{uv.lock hash}`                 |
-| pnpm store         | `$(pnpm store path)`            | `{os}-pnpm-{lockfile hash}`                    |
-| HuggingFace models | `.docker-volumes/llamacpp-data` | `{os}-hf-models-{docker-compose.dev.yml hash}` |
+| Cache           | Path                 | Key Strategy                   |
+| --------------- | -------------------- | ------------------------------ |
+| uv installation | `~/.local`           | `{os}-uv-{version}`            |
+| uv cache        | `~/.cache/uv`        | `{os}-uv-cache-{uv.lock hash}` |
+| pnpm store      | `$(pnpm store path)` | `{os}-pnpm-{lockfile hash}`    |
 
 ## Testing Actions
 
@@ -115,4 +110,3 @@ No unit tests for actions. Changes are tested by:
 - Main CI consumer: `.github/workflows/analyze-test-pr.yml` (test + coverage + sonar)
 - Build consumer: `.github/workflows/build-agents.yml`
 - Lint consumer: `.github/workflows/lint-pr.yml`
-- Review consumer: `.github/workflows/review-pr.yml`

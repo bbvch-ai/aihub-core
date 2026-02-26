@@ -5,6 +5,76 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.269.0] - 2026-02-26 - Revamped AI Model Strategy: Embracing Swiss Sovereignty with Dual-Mode Inference & Standardized Models
+
+### Added
+
+- ✨ **Introduced Swiss LLM Cloud Integration**: Full support for Swiss LLM Cloud across various AI tasks (text
+  generation, embedding, reranking, whisper, OCR) to ensure data sovereignty and provide a diverse range of models for
+  non-GPU deployments.
+- 🦾 **Integrated Local vLLM for GPU Deployments**: Replaced `llama.cpp` with `vLLM` for high-performance local GPU
+  inference, supporting text generation, embeddings, and reranking on NVIDIA RTX 6000 Pro with explicit VRAM budgets.
+- 📄 **New Architectural Decision Record (ADR)**: Added a comprehensive ADR outlining the rationale and details of the
+  Swiss LLM Cloud and local vLLM dual-mode inference strategy.
+- 💡 **New AI Toolkit Settings**: Added `.idea/ai_toolkit.xml` for improved AI-assisted development experience in IDEs.
+- ⬆️ **New Environment Variables for Swiss LLM Cloud**: Added specific environment variables for different Swiss LLM
+  Cloud API endpoints (embedding, reranking, whisper, OCR) for fine-grained configuration.
+
+### Changed
+
+- 🔄 **Centralized AI Model Strategy**: Migrated the platform's core AI model inference from Azure OpenAI and Cohere to a
+  dual-mode strategy utilizing Swiss LLM Cloud for non-GPU deployments and local `vLLM` for GPU-enabled setups.
+- ⚙️ **Standardized Model Naming Convention**: Replaced abstract model tier names (e.g., `text-generation/nano`,
+  `embedding/large`) with canonical, descriptive model names (e.g., `text-generation/gpt-oss-120b`, `embedding/bge-m3`)
+  across LiteLLM configurations, agent templates, and pipeline definitions for clarity and consistency.
+- 📝 **Updated Documentation for Model Strategy**: Extensively updated architecture, quick start, deployment guide, and
+  security documentation to reflect the new AI model inference strategy, including details on Swiss LLM Cloud and vLLM
+  integration.
+- 🚀 **Enhanced Document Parsing with MinerU**: Transitioned the primary document parsing service from Docling to MinerU,
+  updating related configurations, resource definitions, and documentation in Dagster pipelines and API routes.
+- ⚡️ **Improved Mem0 Compatibility**: Integrated patches for Mem0's OpenAI LLM and embedding components to ensure
+  seamless compatibility with Swiss LLM Cloud's API behavior, particularly concerning `dimensions` and
+  `response_format`.
+- 🔢 **Adjusted Milvus Embedding Dimensions**: Updated the default Milvus embedding dimension from 3072 to 1024, aligning
+  with the BGE-M3 embedding model used in the new model strategy.
+- 🗣️ **Refined Expert Escalation Prompt**: Modified the `expert_answer_sufficient` prompt template to focus on the
+  *latest* expert answer in the conversation history, improving the accuracy of agent-driven expert interaction
+  assessments.
+- 🛠️ **Updated GitHub Actions for CI**: Modified the `analyze-test-pr.yml` workflow to remove `llama.cpp` services,
+  inject new Swiss LLM Cloud secrets, and no longer skip `azure`-marked tests, streamlining the CI pipeline.
+- 🧹 **Updated IDE Test Configurations**: Removed the `-k "not azure"` flag from PyCharm/IntelliJ run configurations for
+  API, Agent, Bot, Lib, and Process tests, enabling all tests to run without Azure-specific exclusions.
+
+### Fixed
+
+- 🐛 **Ensured Idempotent Logging Configuration**: Implemented a fix in `aihub_lib`'s logging setup and OpenTelemetry
+  integration to prevent duplicate log handlers from being added when `enable_logging` is called multiple times.
+
+### Removed
+
+- 🗑️ **Deprecated `llama.cpp` Inference Services**: Eliminated `llama.cpp` containers for chat, embeddings, and
+  reranking from Docker Compose files, in favor of `vLLM` for GPU deployments or Swiss LLM Cloud for non-GPU.
+- 🗑️ **Removed Azure OpenAI and Cohere Integrations**: Azure OpenAI base URLs and keys, as well as Cohere API base and
+  keys, were removed from environment configurations and LiteLLM settings, consolidating cloud inference to Swiss LLM
+  Cloud.
+- 🚫 **Dropped Image Generation and Text-to-Speech (TTS) Capabilities**: Removed DALL-E 3 and Kokoro/TTS model
+  configurations due to the lack of Swiss-sovereign alternatives in the new model strategy.
+- 🧹 **Eliminated Azure-Specific Test Markers**: The `@pytest.mark.azure` marker and related exclusions were removed from
+  Python test files and `pyproject.toml` configurations, simplifying test management.
+- ❌ **Removed AI Code Review GitHub Action**: The `review-pr.yml` workflow and its associated action definition were
+  removed from the repository.
+
+### Refactor
+
+- 🧹 **Streamlined Agent Configuration**: Removed the redundant `agent_class` field from `AgentConfig` and its subclasses
+  across various agent definitions in `aihub_agent` for cleaner configuration.
+- 🔄 **Standardized License Generation Output**: Modified the `generate-license.sh` script to sort Python packages and
+  Docker images alphabetically in the output, ensuring deterministic and consistent license reports.
+- ⚙️ **Reordered `pr-ready` Makefile Targets**: Adjusted the execution order of `format-md` and `format-yaml` in the
+  `pr-ready` Makefile target for logical consistency.
+
+______________________________________________________________________
+
 ## [v0.268.0] - 2026-02-26 - Introducing Secure Agent File Uploads and Streamlined Integrations
 
 ### Added

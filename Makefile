@@ -78,12 +78,12 @@ pr-ready:
 	@(cd aihub_api &&  make pr-ready)
 	@(cd aihub_bot &&  make pr-ready)
 	@(cd aihub_web && make pr-ready)
-	@$(MAKE) format-md
 	@$(MAKE) generate-compose
-	@$(MAKE) format-yaml
 	@$(MAKE) license-check
+	@$(MAKE) format-md
+	@$(MAKE) format-yaml
 
-TAG ?= v0.268.0
+TAG ?= v0.269.0
 
 changelog:
 	@echo "Generating changelog"

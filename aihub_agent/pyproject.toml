@@ -1,6 +1,6 @@
 [project]
 name = "aihub-agent"
-version = "0.268.0"
+version = "0.269.0"
 description = "agents core"
 requires-python = ">=3.13, <3.14"
 authors = [
@@ -58,7 +58,6 @@ extend-exclude = '''
 
 [tool.pytest.ini_options]
 markers = [
-    "azure: mark tests that use Azure services",
     "self_hosted: mark tests that use self hosted services",
     "slow: mark a test as slow",
     "integration: mark a test as an integration test",

@@ -22,7 +22,6 @@ async def main():
         agent_type=ConfiguredAgent,
         agent_config=ConfiguredAgentConfig(
             agent_id="configured_agent",
-            agent_class=ConfiguredAgent.__name__,
             name=LocaleString(en="Configured Agent"),
             description=LocaleString(en="This is a configured agent"),
             some_agent_value="Value on agent config",

@@ -3,6 +3,8 @@ from mem0.configs.base import MemoryConfig
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.infrastructure.mem0.graph.PatchedMemoryGraph import PatchedMemoryGraph
 from aihub_lib.infrastructure.mem0.PatchedAsyncMemory import PatchedAsyncMemory
+from aihub_lib.infrastructure.mem0.PatchedOpenAIEmbedding import PatchedOpenAIEmbedding
+from aihub_lib.infrastructure.mem0.PatchedOpenAILLM import PatchedOpenAILLM
 from aihub_lib.infrastructure.mem0.types.Memory import Memory
 from aihub_lib.infrastructure.mem0.types.MemoryAdded import MemoryAdded
 from aihub_lib.infrastructure.mem0.types.MemorySearchResult import MemorySearchResult
@@ -17,6 +19,8 @@ class Mem0Service:
     ):
         self._config = config
         self._memory = PatchedAsyncMemory(config=config)
+        self._memory.llm = PatchedOpenAILLM.from_llm(self._memory.llm)
+        self._memory.embedding_model = PatchedOpenAIEmbedding.from_embedding(self._memory.embedding_model)
         self._memory.graph = PatchedMemoryGraph.from_graph(self._memory.graph, t=t)
 
     @property

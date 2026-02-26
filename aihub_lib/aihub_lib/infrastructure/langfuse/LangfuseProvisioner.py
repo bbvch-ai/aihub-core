@@ -106,8 +106,9 @@ class LangfuseProvisioner:
     async def _register_model_definitions(
         self, client: httpx.AsyncClient, litellm_models: list[dict[str, Any]]
     ) -> None:
-        """Langfuse can't auto-calculate costs for custom model names (e.g. 'text-generation/nano')
-        since they don't match its built-in pricing database. We register per-token prices from LiteLLM.
+        """Langfuse can't auto-calculate costs for custom model names.
+
+        We register per-token prices from LiteLLM since custom names don't match the built-in pricing database.
         """
         registered = 0
 

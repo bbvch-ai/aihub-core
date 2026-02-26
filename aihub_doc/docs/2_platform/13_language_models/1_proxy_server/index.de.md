@@ -1,6 +1,6 @@
 ---
 title: Proxy-Server
-source_sha: de3d79f6698370a529f2caad007d3b034c387de6b1abe5a2fd765d7af7210c8f
+source_sha: 037993d1bb4c858e4249c90fa91c76df2a05d6752c21bd68faa8b80b8e66a4b2
 ---
 
 # LLM-Proxy
@@ -17,53 +17,54 @@ API-Endpunkt, die Authentifizierung und die Fähigkeiten.
 ::: details Beispiel-Modellkonfiguration:
 ```yaml
 model_list:
-  - model_name: azure/gpt-4o-mini
+  # Cloud model (Swiss LLM Cloud)
+  - model_name: text-generation/gpt-oss-120b
     litellm_params:
-      model: azure/gpt-4o-mini
-      api_base: https://your-resource.openai.azure.com/
-      api_key: os.environ/AZURE_OPENAI_KEY
-      api_version: "2024-12-01-preview"
+      model: openai/openai/gpt-oss-120b
+      api_base: os.environ/SWISS_LLM_CLOUD_API_BASE_URL
+      api_key: os.environ/SWISS_LLM_CLOUD_API_KEY
+      drop_params: true
     model_info:
       mode: chat
+      supports_function_calling: true
+      input_cost_per_token: 0.00000003
+      output_cost_per_token: 0.0000003
 
-  - model_name: google/gemini-2.5-flash
+  # Local GPU model (vLLM)
+  - model_name: text-generation/Qwen3-VL-30B-A3B-Instruct-FP8
     litellm_params:
-      model: gemini/gemini-2.5-flash
-      api_key: os.environ/GEMINI_API_KEY
-    model_info:
-      mode: chat
-
-  - model_name: local/qwen-2.5-multimodal-small
-    litellm_params:
-      model: openai/Qwen2.5-VL-3B-Instruct
-      api_base: http://llama-cpp:8182/v1
-      api_key: None
+      model: openai/qwen3-vl-30b
+      api_base: http://vllm:8000/v1
+      api_key: os.environ/LOCAL_LLM_TOKEN
+      drop_params: true
     model_info:
       mode: chat
       supports_function_calling: true
       supports_vision: true
+      input_cost_per_token: 0
+      output_cost_per_token: 0
 ```
 
-Der `model_name` identifiziert das Modell in den Agentenkonfigurationen. Der Abschnitt `litellm_params` enthält
-anbieterspezifische Verbindungsdetails. Der Abschnitt `model_info` spezifiziert Funktionen wie Chat, Embedding, Vision
-oder Function Calling.
+Der `model_name` identifiziert das Modell in Agent-Konfigurationen unter Verwendung des echten kanonischen Modellnamens.
+Der Abschnitt `litellm_params` enthält anbieterspezifische Verbindungsdetails. Der Abschnitt `model_info` spezifiziert
+Funktionen und Preisgestaltung pro Token für die Kostenverfolgung durch Langfuse.
 :::
 
 ## Kernfunktionen
 
-Vereinheitlichte Schnittstelle: LiteLLM bietet eine OpenAI-kompatible API, die mit OpenAI, Google, Anthropic, Azure
-OpenAI und selbst gehosteten Modellen funktioniert. Der Plattformcode verwendet dieselbe Schnittstelle, unabhängig
-davon, welches Modell die Anfrage verarbeitet.
+Vereinheitlichte Schnittstelle: LiteLLM bietet eine OpenAI-kompatible API, die mit der Swiss LLM Cloud, lokal gehosteten
+vLLM-Modellen und anderen Anbietern funktioniert. Plattformcode verwendet dieselbe Schnittstelle, unabhängig davon,
+welches Modell die Anfrage verarbeitet.
 
 Anfrage-Routing: Der Proxy leitet Anfragen basierend auf der konfigurierten Strategie weiter. Die aktuelle Konfiguration
-verwendet "usage-based-routing-v2", das die Last auf die verfügbaren Modelle verteilt.
+verwendet „usage-based-routing-v2“, welches die Last auf die verfügbaren Modelle verteilt.
 
 Kostenverfolgung: Die Nutzungsverfolgung erfasst den Token-Verbrauch pro Anfrage. Die Kosten pro Token werden für jedes
-Modell konfiguriert, wodurch die Plattform die Kosten pro Konversation berechnen und anzeigen kann. Weitere
-Informationen zur Kostenverfolgung und -optimierung finden Sie unter [Kostenkontrolle](../../14_cost_control/).
+Modell konfiguriert, wodurch die Plattform die Kosten pro Konversation berechnen und anzeigen kann. Weitere Details zur
+Kostenverfolgung und -optimierung finden Sie unter [Kostenkontrolle](../../14_cost_control/).
 
 PII-Schutz: Die Presidio-Integration (sofern aktiviert) scannt Anfragen nach persönlich identifizierbaren Informationen,
-bevor sie an externe Anbieter gesendet werden. Weitere Informationen finden Sie unter
+bevor diese an externe Anbieter gesendet werden. Weitere Details finden Sie unter
 [Datenanonymisierung](../2_anonymization/).
 
 Wiederholungsrichtlinien: Die Konfiguration spezifiziert die Anzahl der Wiederholungsversuche für Timeout-Fehler,

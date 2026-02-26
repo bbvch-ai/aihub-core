@@ -15,41 +15,43 @@ authentication, and capabilities.
 ::: details Example model configuration:
 ```yaml
 model_list:
-  - model_name: azure/gpt-4o-mini
+  # Cloud model (Swiss LLM Cloud)
+  - model_name: text-generation/gpt-oss-120b
     litellm_params:
-      model: azure/gpt-4o-mini
-      api_base: https://your-resource.openai.azure.com/
-      api_key: os.environ/AZURE_OPENAI_KEY
-      api_version: "2024-12-01-preview"
+      model: openai/openai/gpt-oss-120b
+      api_base: os.environ/SWISS_LLM_CLOUD_API_BASE_URL
+      api_key: os.environ/SWISS_LLM_CLOUD_API_KEY
+      drop_params: true
     model_info:
       mode: chat
+      supports_function_calling: true
+      input_cost_per_token: 0.00000003
+      output_cost_per_token: 0.0000003
 
-  - model_name: google/gemini-2.5-flash
+  # Local GPU model (vLLM)
+  - model_name: text-generation/Qwen3-VL-30B-A3B-Instruct-FP8
     litellm_params:
-      model: gemini/gemini-2.5-flash
-      api_key: os.environ/GEMINI_API_KEY
-    model_info:
-      mode: chat
-
-  - model_name: local/qwen-2.5-multimodal-small
-    litellm_params:
-      model: openai/Qwen2.5-VL-3B-Instruct
-      api_base: http://llama-cpp:8182/v1
-      api_key: None
+      model: openai/qwen3-vl-30b
+      api_base: http://vllm:8000/v1
+      api_key: os.environ/LOCAL_LLM_TOKEN
+      drop_params: true
     model_info:
       mode: chat
       supports_function_calling: true
       supports_vision: true
+      input_cost_per_token: 0
+      output_cost_per_token: 0
 ```
 
-The `model_name` identifies the model in agent configurations. The `litellm_params` section contains provider-specific
-connection details. The `model_info` section specifies capabilities like chat, embedding, vision, or function calling.
+The `model_name` identifies the model in agent configurations using the real canonical model name. The `litellm_params`
+section contains provider-specific connection details. The `model_info` section specifies capabilities and per-token
+pricing for cost tracking through Langfuse.
 :::
 
 ## Core functions
 
-Unified interface: LiteLLM provides an OpenAI-compatible API that works with OpenAI, Google, Anthropic, Azure OpenAI,
-and self-hosted models. Platform code uses the same interface regardless of which model handles the request.
+Unified interface: LiteLLM provides an OpenAI-compatible API that works with Swiss LLM Cloud, locally hosted vLLM
+models, and other providers. Platform code uses the same interface regardless of which model handles the request.
 
 Request routing: The proxy routes requests based on configured strategy. Current configuration uses
 "usage-based-routing-v2" which distributes load across available models.

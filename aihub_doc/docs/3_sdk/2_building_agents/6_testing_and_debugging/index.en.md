@@ -226,8 +226,8 @@ Langfuse provides step-by-step visualization of agent execution at `http://local
 ## Running tests
 
 ```bash
-# Run all tests (excluding cloud dependencies)
-uv run pytest -k "not azure"
+# Run all tests
+uv run pytest
 
 # Run specific test file
 uv run pytest tests/test_my_agent.py

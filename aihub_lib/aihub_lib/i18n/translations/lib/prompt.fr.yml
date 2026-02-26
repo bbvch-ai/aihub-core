@@ -100,9 +100,17 @@ router:
       Analyze the user query carefully in relation to the chat history. Determine whether the query can be fulfilled based on the criteria above. Provide a clear yes/no decision with detailed reasoning.
     expert_answer_sufficient: |
       La réponse de l'expert répond-elle à la question de l'utilisateur ?
-      <expert_response>
+      <conversation_history>
       {% for message in chat_history %}
-      {% if message.role.value == 'user' %}
+      {% if message.role.value == 'assistant' %}
+      [Question de l'agent] :
+      {% for block in message.blocks %}
+      {% if block.block_type == 'text' %}
+      {{ block.text }}
+      {% endif %}
+      {% endfor %}
+      {% elif message.role.value == 'user' %}
+      [Réponse de l'expert] :
       {% for block in message.blocks %}
       {% if block.block_type == 'text' %}
       {{ block.text }}
@@ -110,15 +118,16 @@ router:
       {% endfor %}
       {% endif %}
       {% endfor %}
-      </expert_response>
+      </conversation_history>
       <user_question>
       {{ query }}
       </user_question>
-      La question EST répondue si l'expert a fourni des informations qui répondent directement à TOUTES les parties de ce qui a été demandé.
+      Concentrez-vous sur la DERNIÈRE réponse de l'expert dans l'historique de conversation ci-dessus.
+      La question EST répondue si la dernière réponse de l'expert fournit des informations qui répondent directement à TOUTES les parties de ce qui a été demandé.
       La question n'est PAS répondue si :
-      - L'expert dit explicitement qu'il ne sait pas ou refuse de répondre
-      - La question comporte plusieurs parties et seules certaines ont été répondues
-      Analysez soigneusement l'historique du chat par rapport à la question de l'utilisateur. Déterminez si l'expert a déjà suffisamment répondu à la question selon les critères ci-dessus. Fournissez une décision claire avec un raisonnement détaillé.
+      - La dernière réponse de l'expert dit explicitement qu'il ne sait pas ou refuse de répondre
+      - La question comporte plusieurs parties et la dernière réponse n'en couvre que certaines
+      Analysez soigneusement l'historique de conversation en portant une attention particulière à la dernière réponse de l'expert. Déterminez si la question a été suffisamment répondue. Fournissez une décision claire avec un raisonnement détaillé.
 memory:
   user_memory_system_message: |
     <user_context>

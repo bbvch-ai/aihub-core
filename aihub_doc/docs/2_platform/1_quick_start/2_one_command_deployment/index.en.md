@@ -35,8 +35,8 @@ ______________________________________________________________________
 
 **For Production:**
 
-Download the latest release bundle from
-[GitHub Releases](https://github.com/bbvch-ai/aihub-core/releases). Each release provides two self-contained bundles:
+Download the latest release bundle from [GitHub Releases](https://github.com/bbvch-ai/aihub-core/releases). Each release
+provides two self-contained bundles:
 
 - `swissaihub-<version>.tar.gz` — CPU-only deployment
 - `swissaihub-<version>-gpu.tar.gz` — GPU-enabled deployment (includes vLLM, GPU-accelerated inference)
@@ -83,8 +83,8 @@ ______________________________________________________________________
 
 **For Production (release bundle):**
 
-The release bundle includes a `setup-env.sh` script that generates a `.env` file from the included `.env.template`.
-It automatically creates unique secrets for all database passwords, tokens, and signing keys:
+The release bundle includes a `setup-env.sh` script that generates a `.env` file from the included `.env.template`. It
+automatically creates unique secrets for all database passwords, tokens, and signing keys:
 
 ```bash
 # Generate .env with auto-generated secrets
@@ -102,7 +102,6 @@ dependencies needed.
 ./setup-env.sh -t custom.template -o out.env  # Custom paths
 ./setup-env.sh --force                      # Overwrite existing .env
 ```
-
 :::
 
 **For Local Deployment:**
@@ -126,10 +125,11 @@ After generating your `.env` file, review it and fill in the values that require
    - `REPLACE_WITH_YOUR_CLIENT_SECRET` → Your Azure App Registration Client Secret
    - `REPLACE_WITH_YOUR_TENANT_ID` → Your Azure Tenant ID
 
-3. **AI Model Access** (configure at least one):
+3. **AI Model Access** (Swiss LLM Cloud — required for non-GPU deployments):
 
-   - `REPLACE_WITH_AZURE_OPENAI_BASE_URL` → Your Azure OpenAI endpoint URL
-   - `REPLACE_WITH_AZURE_OPENAI_KEY` → Your Azure OpenAI API key
+   - `REPLACE_WITH_SWISS_LLM_CLOUD_URL` → Your Swiss LLM Cloud text generation endpoint
+   - `REPLACE_WITH_SWISS_LLM_CLOUD_KEY` → Your Swiss LLM Cloud API key
+   - Configure the remaining endpoint pairs for embedding, reranking, whisper, and OCR
 
 4. **Expert Escalation** (optional — for expert-in-the-loop features):
 
@@ -167,7 +167,6 @@ Deploy the complete platform with one command:
 ```bash
 docker compose up -d
 ```
-
 
 This command will:
 

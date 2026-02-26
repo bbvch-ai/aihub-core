@@ -50,18 +50,15 @@ enable_logging()
 scenarios("./features/expert_rag_agent.feature")
 
 
-# Mark expert escalation scenarios as requiring Azure (uses Mem0 service)
-@pytest.mark.azure
 @scenario("features/expert_rag_agent.feature", "Test ExpertRAGAgent handles user declining expert escalation")
 def test_test_expertragagent_handles_user_declining_expert_escalation():
-    """Test ExpertRAGAgent with user declining expert escalation (requires Azure)."""
+    """Test ExpertRAGAgent with user declining expert escalation."""
     pass
 
 
-@pytest.mark.azure
 @scenario("features/expert_rag_agent.feature", "Test ExpertRAGAgent expert escalation user accepts")
 def test_test_expertragagent_expert_escalation_user_accepts():
-    """Test ExpertRAGAgent with user accepting expert escalation (requires Azure)."""
+    """Test ExpertRAGAgent with user accepting expert escalation."""
     pass
 
 
@@ -83,7 +80,7 @@ def test_collection(event_loop):
     """Set up and tear down the test collection for all tests."""
     asyncio.set_event_loop(event_loop)
 
-    embedding_config = EmbeddingModelConfig(model_name="embedding/large")
+    embedding_config = EmbeddingModelConfig(model_name="embedding/bge-m3")
     vector_store: MilvusVectorStoreConfig = MilvusVectorStoreConfig(
         uri="http://localhost",
         collection_name="development",
@@ -119,9 +116,9 @@ def mongo_connection(event_loop):
 @pytest.fixture(scope="session")
 def expert_rag_agent_config(test_collection):
     """Return an ExpertRAGAgentConfig with expert escalation enabled."""
-    llm_config = LLMConfig(model_name="text-generation/mini")
-    reranking_config = RerankingModelConfig(model_name="reranker")
-    embedding_config = EmbeddingModelConfig(model_name="embedding/large")
+    llm_config = LLMConfig(model_name="text-generation/gpt-oss-120b")
+    reranking_config = RerankingModelConfig(model_name="reranker/bge")
+    embedding_config = EmbeddingModelConfig(model_name="embedding/bge-m3")
     vector_store: MilvusVectorStoreConfig = MilvusVectorStoreConfig(
         uri="http://localhost",
         collection_name="development",
@@ -161,7 +158,6 @@ def expert_rag_agent_config(test_collection):
     )
 
 
-@pytest.mark.azure
 @pytest.mark.usefixtures("expert_rag_agent_config")
 @given("an ExpertRAGAgent runner with expert escalation enabled", target_fixture="expert_rag_agent_runner")
 def _(expert_rag_agent_config):

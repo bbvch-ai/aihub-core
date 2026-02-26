@@ -23,6 +23,46 @@ inputs:
     description: HuggingFace API key for model downloads
     required: false
     default: ''
+  swiss_llm_cloud_api_base_url:
+    description: Swiss LLM Cloud API base URL (text generation)
+    required: false
+    default: ''
+  swiss_llm_cloud_api_key:
+    description: Swiss LLM Cloud API key (text generation)
+    required: false
+    default: ''
+  swiss_llm_cloud_embedding_api_base_url:
+    description: Swiss LLM Cloud embedding API base URL
+    required: false
+    default: ''
+  swiss_llm_cloud_embedding_api_key:
+    description: Swiss LLM Cloud embedding API key
+    required: false
+    default: ''
+  swiss_llm_cloud_reranking_api_base_url:
+    description: Swiss LLM Cloud reranking API base URL
+    required: false
+    default: ''
+  swiss_llm_cloud_reranking_api_key:
+    description: Swiss LLM Cloud reranking API key
+    required: false
+    default: ''
+  swiss_llm_cloud_whisper_api_base_url:
+    description: Swiss LLM Cloud whisper API base URL
+    required: false
+    default: ''
+  swiss_llm_cloud_whisper_api_key:
+    description: Swiss LLM Cloud whisper API key
+    required: false
+    default: ''
+  swiss_llm_cloud_ocr_api_base_url:
+    description: Swiss LLM Cloud OCR API base URL
+    required: false
+    default: ''
+  swiss_llm_cloud_ocr_api_key:
+    description: Swiss LLM Cloud OCR API key
+    required: false
+    default: ''
   regenerate_compose:
     description: Regenerate Docker Compose files
     required: false
@@ -40,39 +80,6 @@ runs:
       uses: astral-sh/setup-uv@v7
       with:
         enable-cache: true
-
-    # Cache HuggingFace models with dynamic key based on docker-compose content
-    - name: Cache HuggingFace Models
-      if: inputs.docker_compose_services != ''
-      id: model-cache
-      uses: actions/cache@v4
-      with:
-        path: |
-          ./.docker-volumes/llamacpp-data
-        key: ${{ runner.os }}-hf-models-${{ hashFiles('docker-compose.dev.yml') }}
-        restore-keys: |
-          ${{ runner.os }}-hf-models-
-
-    # Report cache status
-    - name: Report Model Cache Status
-      if: inputs.docker_compose_services != ''
-      shell: bash
-      run: |
-        if [ "${{ steps.model-cache.outputs.cache-hit }}" == "true" ]; then
-          echo "HuggingFace models restored from cache!"
-          echo "CACHE_HIT=true" >> $GITHUB_ENV
-        else
-          echo "HuggingFace models will be downloaded (first run or docker-compose changed)"
-          echo "CACHE_HIT=false" >> $GITHUB_ENV
-        fi
-
-    # Ensure volume directories exist with correct permissions
-    - name: Prepare Volume Directories
-      if: inputs.docker_compose_services != ''
-      shell: bash
-      run: |
-        mkdir -p ./.docker-volumes/llamacpp-data
-        chmod 777 ./.docker-volumes/llamacpp-data
     - name: Configure Git Authentication
       shell: bash
       run: git config --global url."git@github.com:".insteadOf "https://github.com/"
@@ -92,11 +99,54 @@ runs:
         # Pre-pull images in parallel to use cache effectively
         echo "Pre-pulling Docker images for faster startup..."
         docker compose -f docker-compose.dev.yml --env-file .env.dev pull --quiet ${{ inputs.docker_compose_services }} || true
-    - name: Add HuggingFace token to environment variables
-      if: inputs.huggingface_api_key != ''
+    - name: Add secrets to environment variables
       shell: bash
       run: |
-        echo "HUGGINGFACE_API_KEY=${{ inputs.huggingface_api_key }}" >> .env.dev
+        if [ -n "$HUGGINGFACE_API_KEY" ]; then
+          echo "HUGGINGFACE_API_KEY=$HUGGINGFACE_API_KEY" >> .env.dev
+        fi
+        if [ -n "$SWISS_LLM_CLOUD_API_BASE_URL" ]; then
+          echo "SWISS_LLM_CLOUD_API_BASE_URL=$SWISS_LLM_CLOUD_API_BASE_URL" >> .env.dev
+        fi
+        if [ -n "$SWISS_LLM_CLOUD_API_KEY" ]; then
+          echo "SWISS_LLM_CLOUD_API_KEY=$SWISS_LLM_CLOUD_API_KEY" >> .env.dev
+        fi
+        if [ -n "$SWISS_LLM_CLOUD_EMBEDDING_API_BASE_URL" ]; then
+          echo "SWISS_LLM_CLOUD_EMBEDDING_API_BASE_URL=$SWISS_LLM_CLOUD_EMBEDDING_API_BASE_URL" >> .env.dev
+        fi
+        if [ -n "$SWISS_LLM_CLOUD_EMBEDDING_API_KEY" ]; then
+          echo "SWISS_LLM_CLOUD_EMBEDDING_API_KEY=$SWISS_LLM_CLOUD_EMBEDDING_API_KEY" >> .env.dev
+        fi
+        if [ -n "$SWISS_LLM_CLOUD_RERANKING_API_BASE_URL" ]; then
+          echo "SWISS_LLM_CLOUD_RERANKING_API_BASE_URL=$SWISS_LLM_CLOUD_RERANKING_API_BASE_URL" >> .env.dev
+        fi
+        if [ -n "$SWISS_LLM_CLOUD_RERANKING_API_KEY" ]; then
+          echo "SWISS_LLM_CLOUD_RERANKING_API_KEY=$SWISS_LLM_CLOUD_RERANKING_API_KEY" >> .env.dev
+        fi
+        if [ -n "$SWISS_LLM_CLOUD_WHISPER_API_BASE_URL" ]; then
+          echo "SWISS_LLM_CLOUD_WHISPER_API_BASE_URL=$SWISS_LLM_CLOUD_WHISPER_API_BASE_URL" >> .env.dev
+        fi
+        if [ -n "$SWISS_LLM_CLOUD_WHISPER_API_KEY" ]; then
+          echo "SWISS_LLM_CLOUD_WHISPER_API_KEY=$SWISS_LLM_CLOUD_WHISPER_API_KEY" >> .env.dev
+        fi
+        if [ -n "$SWISS_LLM_CLOUD_OCR_API_BASE_URL" ]; then
+          echo "SWISS_LLM_CLOUD_OCR_API_BASE_URL=$SWISS_LLM_CLOUD_OCR_API_BASE_URL" >> .env.dev
+        fi
+        if [ -n "$SWISS_LLM_CLOUD_OCR_API_KEY" ]; then
+          echo "SWISS_LLM_CLOUD_OCR_API_KEY=$SWISS_LLM_CLOUD_OCR_API_KEY" >> .env.dev
+        fi
+      env:
+        HUGGINGFACE_API_KEY: ${{ inputs.huggingface_api_key }}
+        SWISS_LLM_CLOUD_API_BASE_URL: ${{ inputs.swiss_llm_cloud_api_base_url }}
+        SWISS_LLM_CLOUD_API_KEY: ${{ inputs.swiss_llm_cloud_api_key }}
+        SWISS_LLM_CLOUD_EMBEDDING_API_BASE_URL: ${{ inputs.swiss_llm_cloud_embedding_api_base_url }}
+        SWISS_LLM_CLOUD_EMBEDDING_API_KEY: ${{ inputs.swiss_llm_cloud_embedding_api_key }}
+        SWISS_LLM_CLOUD_RERANKING_API_BASE_URL: ${{ inputs.swiss_llm_cloud_reranking_api_base_url }}
+        SWISS_LLM_CLOUD_RERANKING_API_KEY: ${{ inputs.swiss_llm_cloud_reranking_api_key }}
+        SWISS_LLM_CLOUD_WHISPER_API_BASE_URL: ${{ inputs.swiss_llm_cloud_whisper_api_base_url }}
+        SWISS_LLM_CLOUD_WHISPER_API_KEY: ${{ inputs.swiss_llm_cloud_whisper_api_key }}
+        SWISS_LLM_CLOUD_OCR_API_BASE_URL: ${{ inputs.swiss_llm_cloud_ocr_api_base_url }}
+        SWISS_LLM_CLOUD_OCR_API_KEY: ${{ inputs.swiss_llm_cloud_ocr_api_key }}
     - name: Start Docker services (if needed)
       if: inputs.docker_compose_services != ''
       shell: bash
@@ -163,7 +213,7 @@ runs:
       working-directory: ${{ inputs.working_directory }}
       run: |
         pytest_exit_code=0
-        uv run pytest -m "not azure and not flaky" --cov=. \
+        uv run pytest -m "not flaky" --cov=. \
                          --cov-report=xml:coverage.xml \
                          --cov-report=term-missing \
                          --junitxml=pytest.xml || pytest_exit_code=$?

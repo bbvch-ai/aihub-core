@@ -20,7 +20,6 @@ def _():
         agent_type=DisplayingAgent,
         agent_config=DisplayingAgentConfig(
             agent_id="displaying_agent",
-            agent_class=DisplayingAgent.__name__,
             name=LocaleString(en="Displaying Agent"),
             description=LocaleString(en="This is an agent that displays events"),
         ),

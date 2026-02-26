@@ -50,7 +50,6 @@ class MockAgent(Agent):
 def mock_agent_config():
     """Create a mock agent configuration."""
     return AgentConfig(
-        agent_class="MockAgent",
         agent_id="test_agent",
         name=LocaleString(en="Test Agent"),
         description=LocaleString(en="Test agent for dispatcher testing"),
@@ -238,7 +237,6 @@ class TestAgentDispatcherHandleEvent:
         )
 
         custom_config = AgentConfig(
-            agent_class="MockAgent",
             agent_id="custom_agent",
             name=LocaleString(en="Custom Agent"),
             description=LocaleString(en="Custom test agent"),
@@ -625,7 +623,6 @@ class TestAgentDispatcherIntegration:
         """Test the complete flow from event receipt to step execution with minimal mocking."""
         # Arrange
         custom_config = AgentConfig(
-            agent_class="MockAgent",
             agent_id="integration_test_agent",
             name=LocaleString(en="Integration Test Agent"),
             description=LocaleString(en="Agent for testing complete flow"),

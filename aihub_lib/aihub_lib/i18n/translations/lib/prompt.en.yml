@@ -100,9 +100,17 @@ router:
       Analyze the user query carefully in relation to the chat history. Determine whether the query can be fulfilled based on the criteria above. Provide a clear yes/no decision with detailed reasoning.
     expert_answer_sufficient: |
       Does the expert's response answer the user's question?
-      <expert_response>
+      <conversation_history>
       {% for message in chat_history %}
-      {% if message.role.value == 'user' %}
+      {% if message.role.value == 'assistant' %}
+      [Agent question]:
+      {% for block in message.blocks %}
+      {% if block.block_type == 'text' %}
+      {{ block.text }}
+      {% endif %}
+      {% endfor %}
+      {% elif message.role.value == 'user' %}
+      [Expert answer]:
       {% for block in message.blocks %}
       {% if block.block_type == 'text' %}
       {{ block.text }}
@@ -110,15 +118,16 @@ router:
       {% endfor %}
       {% endif %}
       {% endfor %}
-      </expert_response>
+      </conversation_history>
       <user_question>
       {{ query }}
       </user_question>
-      The question IS answered if the expert provided information that directly responds to ALL parts of what was asked.
+      Focus on the LATEST expert answer in the conversation history above.
+      The question IS answered if the expert's latest response provides information that directly responds to ALL parts of what was asked.
       The question is NOT answered if:
-      - The expert explicitly says they don't know or refuses to answer
-      - The question has multiple parts and only some were answered
-      Analyze the chat history carefully in relation to the user's question. Determine whether the expert has already sufficiently answered the question based on the criteria above. Provide a clear decision with detailed reasoning.
+      - The expert's latest response explicitly says they don't know or refuses to answer
+      - The question has multiple parts and the latest response only addresses some of them
+      Analyze the conversation history carefully, paying special attention to the most recent expert answer. Determine whether the question has been sufficiently answered. Provide a clear decision with detailed reasoning.
 summarizer:
   summarize: |
     Task: Summarize the following text as a TL;DR:

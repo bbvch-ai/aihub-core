@@ -71,8 +71,8 @@ headers enables end-to-end distributed tracing across asynchronous boundaries wi
 ### LiteLLM for model routing
 
 Every LLM request in the platform, whether from an agent, the chat UI, or a bot integration, routes through LiteLLM.
-LiteLLM provides an OpenAI-compatible HTTP API that abstracts away provider differences. Switching from Azure OpenAI to
-Google Gemini or to a locally hosted llama.cpp model requires a configuration change in LiteLLM, not a code change in
+LiteLLM provides an OpenAI-compatible HTTP API that abstracts away provider differences. Switching from one cloud
+provider to another or to a locally hosted vLLM model requires a configuration change in LiteLLM, not a code change in
 any agent or service.
 
 This gateway pattern directly addresses vendor independence. It also centralizes cost tracking (LiteLLM records token
@@ -80,17 +80,21 @@ consumption per request), PII filtering (Presidio intercepts requests before the
 control (API key management and per-user budgets). Without a unified gateway, each of these concerns would need to be
 implemented separately in every service that calls an LLM.
 
-### llama.cpp for local inference
+### Dual-mode inference: Swiss LLM Cloud and local vLLM
 
-The platform includes three llama.cpp containers for local model inference: one for chat (Gemma-3-4B in development,
-Gemma-3-12B in production), one for embeddings (Qwen3-0.6B), and one for reranking (Qwen3-Reranker-0.6B). A fourth
-container runs Speaches for speech-to-text (Whisper) and text-to-speech (Kokoro-82M). All four are registered as models
-in LiteLLM and are indistinguishable from cloud providers from the perspective of calling code.
+The platform supports two inference modes. Non-GPU deployments route all inference through **Swiss LLM Cloud**, a
+Swiss-hosted provider that keeps data within Swiss infrastructure. GPU deployments run all inference locally via
+**vLLM** on a dedicated NVIDIA RTX 6000 Pro (96 GB VRAM). The two modes never mix: non-GPU compose files contain no
+local model containers, and GPU compose files reference no cloud endpoints.
 
-Local inference exists to support air-gapped deployments where no data may leave the organization's infrastructure. It
-also reduces per-token costs for high-volume workloads and eliminates dependency on external provider availability. The
-models are deliberately small so they can run on CPU-only hardware, though GPU acceleration is supported for production
-deployments.
+Embedding, reranking, OCR, and transcription use the same model families in both modes (BGE-M3, BGE-Reranker-v2-m3,
+MinerU, Whisper Large v3), so switching between deployment modes requires no re-embedding. Text generation models
+differ: the GPU runs a single multimodal model (Qwen3-VL-30B), while the cloud offers multiple models at different
+capability and cost tiers.
+
+All models are registered in LiteLLM and are indistinguishable from cloud providers from the perspective of calling
+code. Local inference exists to support air-gapped deployments where no data may leave the organization's
+infrastructure. See the ADR `2026_02_24_swiss_sovereign_dual_mode_inference.md` for the full rationale.
 
 ### FerretDB for document storage
 

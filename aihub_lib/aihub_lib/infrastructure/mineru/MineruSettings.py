@@ -23,7 +23,9 @@ class MineruSettings(EnvironmentSettings):
 
     VLM_SERVER_URL: Annotated[str, Field(description="LiteLLM proxy URL for VLM routing")] = "http://litellm:4000"
     VLM_SERVER_API_KEY: Annotated[SecretStr, Field(description="LiteLLM API key for VLM requests")] = SecretStr("")
-    VLM_NAME: Annotated[str, Field(description="LiteLLM model alias for MinerU VLM")] = "text-generation/ocr"
+    VLM_NAME: Annotated[str, Field(description="LiteLLM model alias for MinerU VLM")] = (
+        "text-generation/MinerU2.5-2509-1.2B"
+    )
 
     FORMULA_ENABLE: Annotated[bool, Field(description="Enable formula/equation parsing")] = True
     TABLE_ENABLE: Annotated[bool, Field(description="Enable table detection and parsing")] = True

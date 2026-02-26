@@ -133,7 +133,6 @@ async def run_system_test(process_count: int, n_events: int, payload_kb: int) ->
     agent_type = PerformanceTestingAgent
     agent_config = PerformanceTestingAgentConfig(
         agent_id=agent_id,
-        agent_class=agent_type.__name__,
         name=LocaleString(en="Performance Testing Agent"),
         description=LocaleString(en=""),
         number_of_events=n_events,

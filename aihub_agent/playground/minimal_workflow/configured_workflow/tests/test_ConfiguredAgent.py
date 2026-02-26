@@ -23,7 +23,6 @@ def _(start_step_value: str, agent_value: str):
         agent_type=ConfiguredAgent,
         agent_config=ConfiguredAgentConfig(
             agent_id="configured_agent",
-            agent_class=ConfiguredAgent.__name__,
             name=LocaleString(en="Configured Agent"),
             description=LocaleString(en="This is a very configured agent"),
             some_agent_value=agent_value,

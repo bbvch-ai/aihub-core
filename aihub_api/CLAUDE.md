@@ -33,8 +33,7 @@ aihub_api/
 │   │   ├── suite/              # Suite management
 │   │   ├── health/             # Health & readiness checks
 │   │   ├── i18n/               # Locale endpoints
-│   │   ├── docling/            # Document parsing
-│   │   └── parsing/            # Document parsing
+│   │   └── parsing/            # Document parsing (MinerU)
 │   ├── services/               # Dynamic endpoint discovery (NATS-based)
 │   ├── events/                 # EventModelCreationService (Jambo)
 │   ├── rpc/                    # NATS RPC responders (agent/process config)

@@ -16,7 +16,6 @@ async def main():
         agent_type=PerformanceTestingAgent,
         agent_config=PerformanceTestingAgentConfig(
             agent_id="performance_testing_agent",
-            agent_class=PerformanceTestingAgent.__name__,
             name=LocaleString(en="Performance Testing Agent"),
             description=LocaleString(en=""),
             number_of_events=10,

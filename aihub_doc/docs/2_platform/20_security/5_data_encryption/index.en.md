@@ -77,10 +77,9 @@ Traefik applies security-hardened HTTP headers to all responses:
 
 All connections from the platform to external services utilize encrypted transport:
 
-- **Azure OpenAI Services**: HTTPS connections to `*.openai.azure.com` and `*.cognitiveservices.azure.com`
+- **Swiss LLM Cloud**: HTTPS connections to the configured Swiss LLM Cloud endpoints
 - **OAuth/OIDC Providers**: TLS-secured authentication flows
 - **LLM Providers**: Encrypted API connections through the LiteLLM proxy layer
-- **Azure AI Services**: HTTPS for Document Intelligence, Speech Services, and Cognitive Search
 
 ### Certificate Validation
 

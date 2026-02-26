@@ -141,7 +141,7 @@ check_python_workspace() {
     echo "| Status | Package | Version | License | Notes |" >> "$OUTPUT_FILE_ABS"
     echo "|--------|---------|---------|---------|-------|" >> "$OUTPUT_FILE_ABS"
 
-    echo "$license_data" | jq -c '.[]' | sort | while IFS= read -r line; do
+    echo "$license_data" | jq -c 'sort_by(.Name | ascii_downcase) | .[]' | while IFS= read -r line; do
         local name=$(echo "$line" | jq -r '.Name')
         # Skip internal packages
         if [[ -v IGNORE_PACKAGES[$name] ]]; then continue; fi
@@ -347,7 +347,7 @@ check_docker_images() {
     echo "|--------|---------|-------|---------|-------|" >> "$OUTPUT_FILE_ABS"
 
     local unknown_images=()
-    for image in "${!seen_images[@]}"; do
+    for image in $(printf '%s\n' "${!seen_images[@]}" | sort); do
         local service_name="${image_to_service[$image]}"; local extracted_name=$(extract_service_name "$image")
         if is_own_image "$extracted_name"; then
             echo -e "${GREEN}Skipping own image: $extracted_name${NC}"; continue
@@ -379,7 +379,7 @@ check_docker_images() {
     echo "" >> "$OUTPUT_FILE_ABS"
     echo "The following are our own services and inherit the license we choose:" >> "$OUTPUT_FILE_ABS"
     echo "" >> "$OUTPUT_FILE_ABS"
-    for image in "${!seen_images[@]}"; do
+    for image in $(printf '%s\n' "${!seen_images[@]}" | sort); do
         local service_name="${image_to_service[$image]}"; local extracted_name=$(extract_service_name "$image")
         if is_own_image "$extracted_name"; then
             echo "- $service_name (\`$image\`)" >> "$OUTPUT_FILE_ABS"

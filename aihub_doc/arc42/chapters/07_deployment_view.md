@@ -29,11 +29,11 @@ graph TB
 
         subgraph backend["backend  · application services"]
             LiteLLM["LiteLLM :4000"]
-            Chat["llama.cpp chat :8182"]
-            Embed["llama.cpp embed :8183"]
-            Rerank["llama.cpp rerank :8184"]
-            Speech["Speaches :8185"]
-            MinerU2["MinerU :8002"]
+            vLLM["vLLM :8182 (GPU only)"]
+            vLLMEmbed["vLLM BGE-M3 :8183 (GPU only)"]
+            vLLMRerank["vLLM BGE-Reranker :8184 (GPU only)"]
+            Speech["Speaches :8185 (GPU only)"]
+            MinerU2["MinerU :8002 (GPU only)"]
             Pres["Presidio :3001"]
             OTELc["OTEL Collector"]
             Jupy["Jupyter :8888"]
@@ -83,9 +83,9 @@ graph TB
     PipeC --- LiteLLM
     PipeC --- Milv
 
-    LiteLLM --- Chat
-    LiteLLM --- Embed
-    LiteLLM --- Rerank
+    LiteLLM --- vLLM
+    LiteLLM --- vLLMEmbed
+    LiteLLM --- vLLMRerank
     LiteLLM --- Speech
     LiteLLM --- Pres
 
@@ -116,8 +116,9 @@ routes requests to backend services. Services that need to be directly reachable
 web UI, SeaweedFS S3 gateway) attach to this network.
 
 The **backend** network connects application services that process requests but should not be directly reachable from
-outside. LiteLLM, the llama.cpp inference servers, Speaches, Presidio, MinerU, OTEL Collector, Jupyter, and all agents
-and pipeline workers communicate over this network. Traefik also attaches to backend so it can forward proxied requests.
+outside. LiteLLM, the vLLM inference servers (GPU only), Speaches, Presidio, MinerU, OTEL Collector, Jupyter, and all
+agents and pipeline workers communicate over this network. Traefik also attaches to backend so it can forward proxied
+requests.
 
 The **data** network connects databases, caches, and the message broker: PostgreSQL (both instances), FerretDB, Milvus,
 Neo4j, ClickHouse, NATS, Valkey, and etcd. Services that need database access (API, Langfuse, Dagster, LiteLLM) attach
@@ -156,13 +157,14 @@ that Let's Encrypt validation requests on port 80 reach Traefik before the HTTP-
 
 ### GPU support
 
-Each deployment stage has a GPU variant (e.g., `docker-compose.nightly.gpu.yml`) that adds NVIDIA GPU access to
-inference services. GPU support uses Docker's `deploy.resources.reservations.devices` with the NVIDIA driver and GPU
-capability.
+Each deployment stage has a GPU variant (e.g., `docker-compose.nightly.gpu.yml`). The GPU variant is the only mode that
+runs local inference — non-GPU compose files contain no local model containers and route all inference through Swiss LLM
+Cloud instead.
 
-In the production stages, the GPU variant switches llama.cpp to CUDA images, upgrades the chat model from Gemma-3-4B to
-Gemma-3-12B with full GPU offloading (`-ngl -1`), enables partial GPU offloading for the reranker (`-ngl 10`), switches
-Speaches to a CUDA image, and adds MinerU VLM.
+The target hardware is an **NVIDIA RTX 6000 Pro with 96 GB VRAM**. The GPU variant deploys five inference containers,
+each with an explicit `--gpu-memory-utilization` budget: vLLM with Qwen3-VL-30B for text generation and vision (85%),
+vLLM with BGE-M3 for embeddings (3%), vLLM with BGE-Reranker-v2-m3 for reranking (3%), Speaches with Whisper Large v3
+for transcription (~4%), and MinerU VLM for document OCR (~5%). Total allocation is ~95% of the 96 GB budget.
 
 All GPU services are pinned to device 0 (`device_ids: ['0']`). Multi-GPU deployments require manual configuration
 changes to distribute services across devices.

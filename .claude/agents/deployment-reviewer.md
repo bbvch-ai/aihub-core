@@ -46,7 +46,7 @@ configs/{service}/*.{stage}{.gpu}.*    → ~80 generated config files
 | Network   | Purpose                 | ICC    | What goes here                                              |
 | --------- | ----------------------- | ------ | ----------------------------------------------------------- |
 | `proxy`   | External ingress        | Yes    | traefik, api, web, open-webui, langfuse-web                 |
-| `backend` | Application services    | Yes    | litellm, langfuse-\*, llama-cpp, docling, jupyter, otel     |
+| `backend` | Application services    | Yes    | litellm, langfuse-\*, mineru-api, vLLM (GPU), jupyter, otel |
 | `data`    | Databases and messaging | Yes    | postgres, ferretdb, milvus, neo4j, valkey, nats, clickhouse |
 | `storage` | SeaweedFS cluster       | Yes    | seaweedfs-\*, etcd                                          |
 | `egress`  | Outbound internet only  | **No** | playwright (containers can't reach each other)              |

@@ -5,7 +5,8 @@
     <scripts>
       <script value="dev" />
     </scripts>
-    <node-interpreter value="project" />
+    <node-interpreter value="$USER_HOME$/.nvm/versions/node/v22.16.0/bin/node" />
+    <package-manager value="$USER_HOME$/.local/share/pnpm/pnpm" />
     <envs />
     <EXTENSION ID="com.intellij.javascript.debugger.execution.StartBrowserRunConfigurationExtension">
       <browser with-js-debugger="true" />

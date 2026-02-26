@@ -92,7 +92,6 @@ class TestAgentMemory:
 
     @pytest.mark.asyncio
     @pytest.mark.slow
-    @pytest.mark.azure
     async def test_add_user_memory_with_metadata(self, agent_memory):
         """Should preserve thread_id, display_id, run_id metadata."""
         messages = [
@@ -124,7 +123,6 @@ class TestAgentMemory:
 
     @pytest.mark.asyncio
     @pytest.mark.slow
-    @pytest.mark.azure
     async def test_search_user_memory_returns_relevant_results(self, agent_memory):
         """Semantic search should return relevant memories."""
         # Add memory
@@ -154,7 +152,6 @@ class TestAgentMemory:
 
     @pytest.mark.asyncio
     @pytest.mark.slow
-    @pytest.mark.azure
     async def test_search_preserves_metadata(self, agent_memory):
         """Search should return memories with preserved metadata."""
         # Add memory with specific metadata
@@ -184,7 +181,6 @@ class TestAgentMemory:
 
     @pytest.mark.asyncio
     @pytest.mark.slow
-    @pytest.mark.azure
     async def test_add_organization_memory_scoping(self, agent_memory):
         """Organization memories should be scoped to org namespace."""
         memory_added = await agent_memory.add_organization_memory(
@@ -211,7 +207,6 @@ class TestAgentMemory:
 
     @pytest.mark.asyncio
     @pytest.mark.slow
-    @pytest.mark.azure
     async def test_search_organization_memory(self, agent_memory):
         """Should search organization memories correctly."""
         # Add org memory
@@ -238,7 +233,6 @@ class TestAgentMemory:
 
     @pytest.mark.asyncio
     @pytest.mark.slow
-    @pytest.mark.azure
     async def test_user_memory_isolation(self, agent_memory):
         """User A should not see User B's memories."""
         # Add memory for user A

@@ -31,8 +31,7 @@ Internet
     └── Background Workers
          ↓
     (Outbound to External Services)
-         ├── LLM Providers (Azure OpenAI, Google Gemini, OpenAI)
-         ├── Azure Cognitive Services (AI Search, Document Intelligence, Speech)
+         ├── LLM Providers (Swiss LLM Cloud, or local vLLM for GPU deployments)
          ├── Authentication (Microsoft Entra ID, Azure AD)
          ├── Jina AI (Web Search & Embeddings)
          └── Customer APIs (SharePoint, Confluence, Custom REST APIs)
