@@ -5,6 +5,45 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.268.0] - 2026-02-26 - Introducing Secure Agent File Uploads and Streamlined Integrations
+
+### Added
+
+- ✨ **New Secure File Upload API for Agents:** Introduced dedicated API endpoints to securely initiate and validate file
+  uploads to agent instances, providing presigned URLs for direct bucket interaction.
+- 🚀 **Dedicated Agent File Storage:** Implemented a new shared S3 bucket (`agent-files`) for all agent-related user
+  uploads. This bucket is automatically created and configured with a 7-day lifecycle policy to expire files, ensuring
+  efficient storage management.
+- 🦾 **File ID Reference System:** Enhanced the `UserUploadedFile` NATS event model to include a unique `file_id`,
+  enabling agents to reference uploaded files by identifier instead of directly embedding large file data.
+- 🧪 **Comprehensive Test Coverage:** Added extensive unit and integration tests to ensure the reliability and security
+  of the new file upload service and API endpoints.
+
+### Changed
+
+- 🔄 **OpenWebUI File Upload Workflow:** The OpenWebUI integration pipeline has been updated to utilize the new secure
+  agent file upload API. Files are now fetched from OpenWebUI's S3, uploaded to the agent's dedicated bucket via
+  presigned URLs, and validated, streamlining the data flow.
+- 🔒 **Granular File Access Control:** Agent instance permissions are now tied to file upload capabilities, ensuring that
+  only authorized users can upload files to specific agent instances.
+
+### Removed
+
+- 🗑️ **Deprecated `file_data` in NATS Event:** The `file_data` field (base64-encoded content) has been removed from the
+  `UserUploadedFile` NATS event, shifting to a more scalable file reference mechanism.
+- 🧹 **Internal S3 Storage Adapter from OpenWebUI Pipeline:** The internal `S3StorageAdapter` and `FileStorageAdapter`
+  protocol have been removed from the OpenWebUI integration, as file interaction is now handled by the new AI-Hub API.
+
+### Security
+
+- 🔑 **Path Traversal Prevention:** Introduced stringent validation for filenames and path segments in file upload
+  requests and the `UserUploadedFile` model to actively prevent path traversal attacks.
+- 🛡️ **Presigned URL Security Model:** Leveraged presigned URLs for file uploads, significantly enhancing security by
+  providing temporary, single-use access to S3 resources, eliminating the need for persistent credentials on the client
+  side.
+
+______________________________________________________________________
+
 ## [v0.267.4] - 2026-02-26 - Pipeline Robustness: Enhanced Partition Key Encoding
 
 ### Added
