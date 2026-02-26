@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 class RoleController(Controller):
     name = ApiLocaleString.from_i18n_path("api.controllers.role.name")
     description = ApiLocaleString.from_i18n_path("api.controllers.role.description")
-    icon = "mage:users"
+    icon = "mage:security-shield"
 
     def __init__(
         self, *, auth: AuthHandler, route: str = "/roles", additionally_required_permission: str | None = None

@@ -1,6 +1,6 @@
 [project]
 name = "aihub-bot"
-version = "0.267.2"
+version = "0.267.3"
 description = "bots core"
 requires-python = ">=3.13, <3.14"
 authors = [
