@@ -116,6 +116,12 @@ class S3AnonymousFileAccessService:
         except ClientError as e:
             raise Exception(f"Failed to generate presigned upload URL: {e}")
 
+    @trace_fn
+    def download_file(self, container: str, file_path: str) -> bytes:
+        """Raw byte download for in-memory processing (e.g. zip extraction, parsing)."""
+        response = self._s3_client.get_object(Bucket=container, Key=file_path)
+        return response["Body"].read()
+
     def verify_file_exists(self, container: str, file_path: str) -> bool:
         """
         Verify that a file exists in S3/MinIO storage.

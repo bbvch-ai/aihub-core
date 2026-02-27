@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import boto3
 import s3fs
 from botocore.config import Config
@@ -6,6 +8,7 @@ from mypy_boto3_s3 import S3Client
 
 from aihub_lib.generative_ai.document.accessor.S3AnonymousFileAccessService import S3AnonymousFileAccessService
 from aihub_lib.infrastructure.s3.S3StorageSettings import S3StorageSettings
+from aihub_lib.nats.events.user.UserUploadedFile import UserUploadedFile
 
 
 def use_s3(request: Request) -> S3Client:
@@ -56,6 +59,12 @@ def create_s3_service() -> S3AnonymousFileAccessService:
         s3_public_client=s3_public_client,
         s3_settings=settings,
     )
+
+
+def download_user_file(agent_class: str, agent_id: str, file: UserUploadedFile) -> bytes:
+    """Download a user-uploaded file from S3 using the agent's identity to resolve the path."""
+    bucket, key = file.resolve_s3_location(agent_class, agent_id)
+    return create_s3_service().download_file(bucket, key)
 
 
 def create_s3_filesystem() -> s3fs.S3FileSystem:
