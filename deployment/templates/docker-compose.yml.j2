@@ -976,7 +976,7 @@ services:
 
   keycloak:
     container_name: keycloak
-    image: quay.io/keycloak/{{ image_tags.keycloak }}
+    image: {{ global.registry_prefix }}/{{ image_tags.keycloak }}
     restart: unless-stopped
     {%- if stage == 'dev' %}
     ports:
