@@ -208,11 +208,13 @@ class LangfuseProvisioner:
         if response.status_code in (200, 201):
             logger.info(f"Langfuse model definition created: {model_name}")
             return True
-        elif response.status_code == 409:
+        elif response.status_code == 409 or (response.status_code == 400 and "already exists" in response.text.lower()):
             logger.debug(f"Langfuse model definition already exists: {model_name}")
             return False
         else:
-            logger.warning(f"Langfuse model definition failed for '{model_name}': {response.status_code}")
+            logger.warning(
+                f"Langfuse model definition failed for '{model_name}': {response.status_code} — {response.text}"
+            )
             return False
 
     async def _create_prompt(

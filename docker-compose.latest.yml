@@ -656,6 +656,8 @@ services:
         condition: service_started
       clickhouse:
         condition: service_healthy
+      langfuse-web:
+        condition: service_healthy
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/langfuse
       SALT: ${LANGFUSE_SALT}
@@ -706,8 +708,6 @@ services:
         condition: service_started
       clickhouse:
         condition: service_healthy
-      langfuse-worker:
-        condition: service_started
     environment:
       HOSTNAME: 0.0.0.0
       NEXTAUTH_URL: ${LANGFUSE_NEXTAUTH_URL}
