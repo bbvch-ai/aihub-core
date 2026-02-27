@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.269.2] - 2026-02-27 - Release Packaging Refinement
+
+### Fixed
+
+- 📦 **Improved Release Archive Structure:** Corrected the packaging process for `.tar.gz` release artifacts to ensure
+  they now extract into a proper, versioned top-level directory, enhancing consistency and user experience upon
+  extraction.
+
+______________________________________________________________________
+
 ## [v0.269.1] - 2026-02-27 - Enhanced Distributed Tracing and Agent-in-the-Loop Observability
 
 ### Added
