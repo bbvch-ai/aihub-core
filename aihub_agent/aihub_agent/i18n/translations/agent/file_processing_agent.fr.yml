@@ -1,0 +1,24 @@
+---
+metadata:
+  name: Agent de Traitement de Fichier
+  description: Agent de chat LLM pouvant optionnellement traiter les fichiers téléchargés
+    par l'utilisateur
+config:
+  system_prompt:
+    label: Prompt Système
+    help: Instructions pour le LLM sur la manière de répondre et traiter les fichiers
+  number_of_input_tokens:
+    label: Tokens d'entrée max.
+    help: Nombre maximum de tokens en entrée pour gérer la taille du contexte ou le
+      coût
+steps:
+  extract_files:
+    name: Extraire les fichiers
+    description: Télécharge les fichiers joints et extrait leur contenu textuel
+  prepare_messages:
+    name: Préparer les messages
+    description: Assemble l'historique de chat avec le prompt système et le contexte
+      des fichiers pour le LLM
+  process:
+    name: Traiter le message
+    description: Envoie les messages préparés au LLM et diffuse la réponse

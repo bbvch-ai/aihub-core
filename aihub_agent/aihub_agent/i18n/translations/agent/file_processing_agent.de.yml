@@ -1,0 +1,22 @@
+---
+metadata:
+  name: Dateiverarbeitungs-Agent
+  description: LLM-Chat-Agent, der optional vom Benutzer hochgeladene Dateien verarbeiten
+    kann
+config:
+  system_prompt:
+    label: Systemaufforderung
+    help: Anweisungen für das LLM zur Beantwortung und Dateiverarbeitung
+  number_of_input_tokens:
+    label: Max. Eingabe-Tokens
+    help: Maximale Tokens in der Eingabe zur Steuerung von Kontextgrösse oder Kosten
+steps:
+  extract_files:
+    name: Dateien extrahieren
+    description: Lädt angehängte Dateien herunter und extrahiert deren Textinhalt
+  prepare_messages:
+    name: Nachrichten vorbereiten
+    description: Erstellt den Chatverlauf mit Systemprompt und Dateikontext für das LLM
+  process:
+    name: Nachricht verarbeiten
+    description: Sendet die vorbereiteten Nachrichten an das LLM und streamt die Antwort
