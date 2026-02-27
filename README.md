@@ -20,7 +20,7 @@ The open AI platform you own and control.
 ______________________________________________________________________
 
 <p align="center" width="100%">
-<video src="https://github.com/user-attachments/assets/2e512252-a5f4-4eca-9550-40ee5a29010a" width="80%" controls></video>
+<video src="https://github.com/user-attachments/assets/2e512252-a5f4-4eca-9550-40ee5a29010a" width="80%" autoplay loop muted></video>
 </p>
 
 ______________________________________________________________________
@@ -101,7 +101,7 @@ LLM Cloud, Azure OpenAI, or any other provider by changing configuration, not co
 team, and model. Presidio intercepts requests for PII detection and anonymization before they reach external providers.
 
 <p align="center" width="100%">
-<video src="https://github.com/user-attachments/assets/7d282ed1-2c23-4283-93b1-dcb26d9f45bb" width="80%" controls></video>
+<video src="https://github.com/user-attachments/assets/7d282ed1-2c23-4283-93b1-dcb26d9f45bb" width="80%" autoplay loop muted></video>
 </p>
 
 ### Knowledge and RAG
@@ -111,7 +111,7 @@ MinerU handles OCR and structural extraction from PDFs, Office files, and images
 stored in Milvus for semantic search. Seven pre-configured source templates get you from zero to working RAG in minutes.
 
 <p align="center" width="100%">
-<video src="https://github.com/user-attachments/assets/243c2949-a034-47ae-a65f-f988e1c438ac" width="80%" controls></video>
+<video src="https://github.com/user-attachments/assets/243c2949-a034-47ae-a65f-f988e1c438ac" width="80%" autoplay loop muted></video>
 </p>
 
 ### Agent runtime
@@ -150,7 +150,7 @@ individual agents and knowledge bases. API token management for programmatic acc
 reverse proxy.
 
 <p align="center" width="100%">
-<video src="https://github.com/user-attachments/assets/9ef17c7e-2fc7-4ca7-8299-fa52fe0f6157" width="80%" controls></video>
+<video src="https://github.com/user-attachments/assets/9ef17c7e-2fc7-4ca7-8299-fa52fe0f6157" width="80%" autoplay loop muted></video>
 </p>
 
 ## Build with the SDK
@@ -229,7 +229,7 @@ Source connectors for SharePoint, OneDrive, Google Drive, S3, Azure Blob, SFTP, 
 with ready-to-use configuration files. Dagster provides the orchestration UI, lineage tracking, and scheduling.
 
 <p align="center" width="100%">
-<video src="https://github.com/user-attachments/assets/b43e613e-6b23-41e6-99f7-cb9bdd821685" width="80%" controls></video>
+<video src="https://github.com/user-attachments/assets/b43e613e-6b23-41e6-99f7-cb9bdd821685" width="80%" autoplay loop muted></video>
 </p>
 
 ### Processes
