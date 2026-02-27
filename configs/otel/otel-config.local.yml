@@ -80,7 +80,7 @@ service:
     # Send OpenInference traces to the stack-local Langfuse instance
     traces/langfuse:
       receivers: [otlp]
-      processors: [filter/langfuse, batch]
+      processors: [filter/noise, filter/langfuse, batch]
       exporters: [otlphttp/langfuse]
     # Send traces to cloud backend
     traces/cloud:

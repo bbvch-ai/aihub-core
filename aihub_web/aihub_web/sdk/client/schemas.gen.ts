@@ -7761,6 +7761,84 @@ export const FileFileSchema = {
     title: 'FileFile'
 } as const;
 
+export const FollowUpQuestionRequestEventOutputSchema = {
+    properties: {
+        display_name: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Display Name',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Display Description',
+            description: 'Display description for the event'
+        },
+        question: {
+            type: 'string',
+            title: 'Question',
+            description: 'The query or prompt presented to the human operator.'
+        },
+        topic: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/PartialAgentTopic'
+                },
+                {
+                    $ref: '#/components/schemas/AgentInstanceTopic'
+                }
+            ],
+            title: 'Topic',
+            description: 'A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.'
+        },
+        hitl_type: {
+            type: 'string',
+            const: 'input',
+            title: 'Hitl Type',
+            default: 'input'
+        }
+    },
+    type: 'object',
+    required: [
+        'question',
+        'topic'
+    ],
+    title: 'FollowUpQuestionRequestEventOutput'
+} as const;
+
+export const FollowUpQuestionResponseEventInputSchema = {
+    properties: {
+        response: {
+            type: 'string',
+            title: 'Response',
+            description: 'The human operator\'s text input.'
+        },
+        request_event: {
+            $ref: '#/components/schemas/HumanInTheLoopInputRequestEvent',
+            description: 'The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.'
+        }
+    },
+    type: 'object',
+    required: [
+        'response',
+        'request_event'
+    ],
+    title: 'FollowUpQuestionResponseEventInput'
+} as const;
+
 export const FullAgentInstanceDTOSchema = {
     properties: {
         agent_class: {
@@ -8886,6 +8964,142 @@ export const HumanInSpecsSchema = {
     ],
     title: 'HumanInSpecs',
     description: 'Defines a piece of work that can be submitted by a human.\nIt holds information about the form that the user must fill in in order to generate the exact\ndata structure defined in the event specs of the work event.\nIt also holds the route and http method that must be used to finally post that work event data\nto the API, which will forward it to the appropriate process.'
+} as const;
+
+export const HumanInTheLoopConfirmationRequestEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Display Name',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Display Description',
+            description: 'Display description for the event'
+        },
+        question: {
+            type: 'string',
+            title: 'Question',
+            description: 'The query or prompt presented to the human operator.'
+        },
+        topic: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/PartialAgentTopic'
+                },
+                {
+                    $ref: '#/components/schemas/AgentInstanceTopic'
+                }
+            ],
+            title: 'Topic',
+            description: 'A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.'
+        },
+        hitl_type: {
+            type: 'string',
+            const: 'confirmation',
+            title: 'Hitl Type',
+            default: 'confirmation'
+        }
+    },
+    type: 'object',
+    required: [
+        'question',
+        'topic'
+    ],
+    title: 'HumanInTheLoopConfirmationRequestEvent',
+    description: 'Request yes/no confirmation from a human operator.'
+} as const;
+
+export const HumanInTheLoopInputRequestEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Display Name',
+            description: 'Display name for the event'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Display Description',
+            description: 'Display description for the event'
+        },
+        question: {
+            type: 'string',
+            title: 'Question',
+            description: 'The query or prompt presented to the human operator.'
+        },
+        topic: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/PartialAgentTopic'
+                },
+                {
+                    $ref: '#/components/schemas/AgentInstanceTopic'
+                }
+            ],
+            title: 'Topic',
+            description: 'A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.'
+        },
+        hitl_type: {
+            type: 'string',
+            const: 'input',
+            title: 'Hitl Type',
+            default: 'input'
+        }
+    },
+    type: 'object',
+    required: [
+        'question',
+        'topic'
+    ],
+    title: 'HumanInTheLoopInputRequestEvent',
+    description: 'Request free-form text input from a human operator.'
 } as const;
 
 export const HumanInTheLoopRequestEventSchema = {
@@ -13734,7 +13948,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1772111273
+            default: 1772118927
         },
         owned_by: {
             type: 'string',
@@ -14686,45 +14900,82 @@ export const MultiSelectSchema = {
     description: 'https://formkit-primevue.netlify.app/inputs/MultiSelect'
 } as const;
 
-export const NamespaceAwareUserMessageEventInputSchema = {
+export const NamespaceApprovalRequestEventOutputSchema = {
     properties: {
-        messages: {
-            items: {
-                $ref: '#/components/schemas/jambo__parser__object_type_parser__ChatMessage__2'
-            },
-            type: 'array',
-            title: 'Messages',
-            description: 'A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.'
-        },
-        files: {
+        display_name: {
             anyOf: [
                 {
-                    items: {
-                        $ref: '#/components/schemas/jambo__parser__object_type_parser__UserUploadedFile__2'
-                    },
-                    type: 'array'
+                    $ref: '#/components/schemas/LocaleString'
                 },
                 {
                     type: 'null'
                 }
             ],
-            title: 'Files',
-            description: 'A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.'
+            title: 'Display Name',
+            description: 'Display name for the event'
         },
-        selected_namespaces: {
-            items: {
-                $ref: '#/components/schemas/BucketNamespacePair'
-            },
-            type: 'array',
-            title: 'Selected Namespaces',
-            description: 'List of bucket-namespace pairs for RAG retrieval filtering.'
+        display_description: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Display Description',
+            description: 'Display description for the event'
+        },
+        question: {
+            type: 'string',
+            title: 'Question',
+            description: 'The query or prompt presented to the human operator.'
+        },
+        topic: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/PartialAgentTopic'
+                },
+                {
+                    $ref: '#/components/schemas/AgentInstanceTopic'
+                }
+            ],
+            title: 'Topic',
+            description: 'A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.'
+        },
+        hitl_type: {
+            type: 'string',
+            const: 'confirmation',
+            title: 'Hitl Type',
+            default: 'confirmation'
         }
     },
     type: 'object',
     required: [
-        'selected_namespaces'
+        'question',
+        'topic'
     ],
-    title: 'NamespaceAwareUserMessageEventInput'
+    title: 'NamespaceApprovalRequestEventOutput'
+} as const;
+
+export const NamespaceApprovalResponseEventInputSchema = {
+    properties: {
+        response: {
+            type: 'boolean',
+            title: 'Response',
+            description: 'The human operator\'s confirmation (True for yes, False for no).'
+        },
+        request_event: {
+            $ref: '#/components/schemas/HumanInTheLoopConfirmationRequestEvent',
+            description: 'The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.'
+        }
+    },
+    type: 'object',
+    required: [
+        'response',
+        'request_event'
+    ],
+    title: 'NamespaceApprovalResponseEventInput'
 } as const;
 
 export const NamespaceDTOSchema = {
@@ -22200,6 +22451,88 @@ export const additional_location_infoSchema = {
     title: 'CitationBlock.additional_location_info'
 } as const;
 
+export const aihub_api__services__ModelCreationService__NamespaceAwareUserMessageEventInput__1Schema = {
+    properties: {
+        messages: {
+            items: {
+                $ref: '#/components/schemas/jambo__parser__object_type_parser__ChatMessage__2'
+            },
+            type: 'array',
+            title: 'Messages',
+            description: 'A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.'
+        },
+        files: {
+            anyOf: [
+                {
+                    items: {
+                        $ref: '#/components/schemas/jambo__parser__object_type_parser__UserUploadedFile__2'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Files',
+            description: 'A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.'
+        },
+        selected_namespaces: {
+            items: {
+                $ref: '#/components/schemas/BucketNamespacePair'
+            },
+            type: 'array',
+            title: 'Selected Namespaces',
+            description: 'List of bucket-namespace pairs for RAG retrieval filtering.'
+        }
+    },
+    type: 'object',
+    required: [
+        'selected_namespaces'
+    ],
+    title: 'NamespaceAwareUserMessageEventInput'
+} as const;
+
+export const aihub_api__services__ModelCreationService__NamespaceAwareUserMessageEventInput__2Schema = {
+    properties: {
+        messages: {
+            items: {
+                $ref: '#/components/schemas/jambo__parser__object_type_parser__ChatMessage__4'
+            },
+            type: 'array',
+            title: 'Messages',
+            description: 'A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.'
+        },
+        files: {
+            anyOf: [
+                {
+                    items: {
+                        $ref: '#/components/schemas/jambo__parser__object_type_parser__UserUploadedFile__4'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Files',
+            description: 'A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.'
+        },
+        selected_namespaces: {
+            items: {
+                $ref: '#/components/schemas/BucketNamespacePair'
+            },
+            type: 'array',
+            title: 'Selected Namespaces',
+            description: 'List of bucket-namespace pairs for RAG retrieval filtering.'
+        }
+    },
+    type: 'object',
+    required: [
+        'selected_namespaces'
+    ],
+    title: 'NamespaceAwareUserMessageEventInput'
+} as const;
+
 export const aihub_api__services__ModelCreationService__UserMessageEventInput__1Schema = {
     properties: {
         messages: {
@@ -22245,6 +22578,36 @@ export const aihub_api__services__ModelCreationService__UserMessageEventInput__2
                 {
                     items: {
                         $ref: '#/components/schemas/jambo__parser__object_type_parser__UserUploadedFile__3'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Files',
+            description: 'A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.'
+        }
+    },
+    type: 'object',
+    title: 'UserMessageEventInput'
+} as const;
+
+export const aihub_api__services__ModelCreationService__UserMessageEventInput__3Schema = {
+    properties: {
+        messages: {
+            items: {
+                $ref: '#/components/schemas/jambo__parser__object_type_parser__ChatMessage__5'
+            },
+            type: 'array',
+            title: 'Messages',
+            description: 'A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.'
+        },
+        files: {
+            anyOf: [
+                {
+                    items: {
+                        $ref: '#/components/schemas/jambo__parser__object_type_parser__UserUploadedFile__5'
                     },
                     type: 'array'
                 },
@@ -22501,12 +22864,155 @@ export const jambo__parser__object_type_parser__ChatMessage__3Schema = {
     description: 'Chat message.'
 } as const;
 
+export const jambo__parser__object_type_parser__ChatMessage__4Schema = {
+    properties: {
+        role: {
+            $ref: '#/components/schemas/MessageRole',
+            default: 'user'
+        },
+        additional_kwargs: {
+            $ref: '#/components/schemas/additional_kwargs',
+            title: 'Additional Kwargs'
+        },
+        blocks: {
+            items: {
+                oneOf: [
+                    {
+                        $ref: '#/components/schemas/TextBlock'
+                    },
+                    {
+                        $ref: '#/components/schemas/ImageBlock-Input'
+                    },
+                    {
+                        $ref: '#/components/schemas/AudioBlock-Input'
+                    },
+                    {
+                        $ref: '#/components/schemas/VideoBlock-Input'
+                    },
+                    {
+                        $ref: '#/components/schemas/DocumentBlock-Input'
+                    },
+                    {
+                        $ref: '#/components/schemas/CachePoint'
+                    },
+                    {
+                        $ref: '#/components/schemas/CitableBlock-Input'
+                    },
+                    {
+                        $ref: '#/components/schemas/CitationBlock-Input'
+                    },
+                    {
+                        $ref: '#/components/schemas/ThinkingBlock-Input'
+                    },
+                    {
+                        $ref: '#/components/schemas/ToolCallBlock-Input'
+                    }
+                ],
+                discriminator: {
+                    propertyName: 'block_type',
+                    mapping: {
+                        audio: '#/components/schemas/AudioBlock-Input',
+                        cache: '#/components/schemas/CachePoint',
+                        citable: '#/components/schemas/CitableBlock-Input',
+                        citation: '#/components/schemas/CitationBlock-Input',
+                        document: '#/components/schemas/DocumentBlock-Input',
+                        image: '#/components/schemas/ImageBlock-Input',
+                        text: '#/components/schemas/TextBlock',
+                        thinking: '#/components/schemas/ThinkingBlock-Input',
+                        tool_call: '#/components/schemas/ToolCallBlock-Input',
+                        video: '#/components/schemas/VideoBlock-Input'
+                    }
+                }
+            },
+            type: 'array',
+            title: 'Blocks'
+        }
+    },
+    type: 'object',
+    title: 'ChatMessage',
+    description: 'Chat message.'
+} as const;
+
+export const jambo__parser__object_type_parser__ChatMessage__5Schema = {
+    properties: {
+        role: {
+            $ref: '#/components/schemas/MessageRole',
+            default: 'user'
+        },
+        additional_kwargs: {
+            $ref: '#/components/schemas/additional_kwargs',
+            title: 'Additional Kwargs'
+        },
+        blocks: {
+            items: {
+                oneOf: [
+                    {
+                        $ref: '#/components/schemas/TextBlock'
+                    },
+                    {
+                        $ref: '#/components/schemas/ImageBlock-Input'
+                    },
+                    {
+                        $ref: '#/components/schemas/AudioBlock-Input'
+                    },
+                    {
+                        $ref: '#/components/schemas/VideoBlock-Input'
+                    },
+                    {
+                        $ref: '#/components/schemas/DocumentBlock-Input'
+                    },
+                    {
+                        $ref: '#/components/schemas/CachePoint'
+                    },
+                    {
+                        $ref: '#/components/schemas/CitableBlock-Input'
+                    },
+                    {
+                        $ref: '#/components/schemas/CitationBlock-Input'
+                    },
+                    {
+                        $ref: '#/components/schemas/ThinkingBlock-Input'
+                    },
+                    {
+                        $ref: '#/components/schemas/ToolCallBlock-Input'
+                    }
+                ],
+                discriminator: {
+                    propertyName: 'block_type',
+                    mapping: {
+                        audio: '#/components/schemas/AudioBlock-Input',
+                        cache: '#/components/schemas/CachePoint',
+                        citable: '#/components/schemas/CitableBlock-Input',
+                        citation: '#/components/schemas/CitationBlock-Input',
+                        document: '#/components/schemas/DocumentBlock-Input',
+                        image: '#/components/schemas/ImageBlock-Input',
+                        text: '#/components/schemas/TextBlock',
+                        thinking: '#/components/schemas/ThinkingBlock-Input',
+                        tool_call: '#/components/schemas/ToolCallBlock-Input',
+                        video: '#/components/schemas/VideoBlock-Input'
+                    }
+                }
+            },
+            type: 'array',
+            title: 'Blocks'
+        }
+    },
+    type: 'object',
+    title: 'ChatMessage',
+    description: 'Chat message.'
+} as const;
+
 export const jambo__parser__object_type_parser__UserUploadedFile__1Schema = {
     properties: {
         filename: {
             type: 'string',
             title: 'Filename',
             description: 'The name of the uploaded file, including the extension.'
+        },
+        file_data: {
+            type: 'string',
+            title: 'File Data',
+            description: 'Base64 encoded content of the uploaded file.'
         },
         file_type: {
             type: 'string',
@@ -22516,22 +23022,15 @@ export const jambo__parser__object_type_parser__UserUploadedFile__1Schema = {
                 'image/png',
                 'application/pdf'
             ]
-        },
-        file_id: {
-            type: 'string',
-            pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$',
-            title: 'File Id',
-            description: 'UUID4 file identifier, used as the S3 object key within the agent\'s dedicated bucket.'
         }
     },
     type: 'object',
     required: [
         'filename',
-        'file_type',
-        'file_id'
+        'file_data',
+        'file_type'
     ],
-    title: 'UserUploadedFile',
-    description: 'Represents a file uploaded by a user for agent consumption.\n\nSecurity: Files are referenced by file_id only. The actual S3 location\nis derived at runtime from the agent\'s dedicated bucket, preventing IDOR.'
+    title: 'UserUploadedFile'
 } as const;
 
 export const jambo__parser__object_type_parser__UserUploadedFile__2Schema = {
@@ -22541,6 +23040,11 @@ export const jambo__parser__object_type_parser__UserUploadedFile__2Schema = {
             title: 'Filename',
             description: 'The name of the uploaded file, including the extension.'
         },
+        file_data: {
+            type: 'string',
+            title: 'File Data',
+            description: 'Base64 encoded content of the uploaded file.'
+        },
         file_type: {
             type: 'string',
             title: 'File Type',
@@ -22549,25 +23053,80 @@ export const jambo__parser__object_type_parser__UserUploadedFile__2Schema = {
                 'image/png',
                 'application/pdf'
             ]
-        },
-        file_id: {
-            type: 'string',
-            pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$',
-            title: 'File Id',
-            description: 'UUID4 file identifier, used as the S3 object key within the agent\'s dedicated bucket.'
         }
     },
     type: 'object',
     required: [
         'filename',
-        'file_type',
-        'file_id'
+        'file_data',
+        'file_type'
     ],
-    title: 'UserUploadedFile',
-    description: 'Represents a file uploaded by a user for agent consumption.\n\nSecurity: Files are referenced by file_id only. The actual S3 location\nis derived at runtime from the agent\'s dedicated bucket, preventing IDOR.'
+    title: 'UserUploadedFile'
 } as const;
 
 export const jambo__parser__object_type_parser__UserUploadedFile__3Schema = {
+    properties: {
+        filename: {
+            type: 'string',
+            title: 'Filename',
+            description: 'The name of the uploaded file, including the extension.'
+        },
+        file_data: {
+            type: 'string',
+            title: 'File Data',
+            description: 'Base64 encoded content of the uploaded file.'
+        },
+        file_type: {
+            type: 'string',
+            title: 'File Type',
+            description: 'The MIME type of the uploaded file.',
+            examples: [
+                'image/png',
+                'application/pdf'
+            ]
+        }
+    },
+    type: 'object',
+    required: [
+        'filename',
+        'file_data',
+        'file_type'
+    ],
+    title: 'UserUploadedFile'
+} as const;
+
+export const jambo__parser__object_type_parser__UserUploadedFile__4Schema = {
+    properties: {
+        filename: {
+            type: 'string',
+            title: 'Filename',
+            description: 'The name of the uploaded file, including the extension.'
+        },
+        file_data: {
+            type: 'string',
+            title: 'File Data',
+            description: 'Base64 encoded content of the uploaded file.'
+        },
+        file_type: {
+            type: 'string',
+            title: 'File Type',
+            description: 'The MIME type of the uploaded file.',
+            examples: [
+                'image/png',
+                'application/pdf'
+            ]
+        }
+    },
+    type: 'object',
+    required: [
+        'filename',
+        'file_data',
+        'file_type'
+    ],
+    title: 'UserUploadedFile'
+} as const;
+
+export const jambo__parser__object_type_parser__UserUploadedFile__5Schema = {
     properties: {
         filename: {
             type: 'string',

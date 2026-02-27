@@ -28,7 +28,7 @@ case "$scope" in
   aihub_lib|aihub_agent|aihub_api|aihub_bot|aihub_pipeline|aihub_process)
     cd "$REPO_ROOT" 2>/dev/null || exit 0
     uv run ruff format "$file_path" 2>/dev/null
-    uv run ruff check --fix "$file_path" 2>/dev/null
+    uv run ruff check --fix --ignore F401 "$file_path" 2>/dev/null
     ;;
 esac
 

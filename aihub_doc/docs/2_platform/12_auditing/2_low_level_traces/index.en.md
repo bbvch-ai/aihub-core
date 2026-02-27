@@ -112,8 +112,15 @@ Agent runs are traced with hierarchical span structures showing the complete wor
 - OpenInference span kinds (AGENT, CHAIN, TOOL, LLM, RETRIEVER)
 - Tags for filtering (thread_id, display_id, run_id)
 
-**Implementation**: The `AgentRunTracer` creates a two-span approach with an initial AGENT span as parent and a final
-CHAIN span capturing total duration.
+**Implementation**: The `AgentRunTracer` creates a CHAIN span for each workflow step, capturing inputs, outputs,
+processing time, and semantic events. Langfuse trace-level attributes (name, session, user, input/output) are set via
+span attributes so Langfuse groups all step spans into a single trace per run.
+
+**Agent-in-the-Loop (AITL) Delegation**: When Agent A delegates to Agent B via AITL, the tracer creates a long-lived
+AGENT wrapper span under Agent A's step. The wrapper span's context is propagated via Redis (using W3C TraceContext) so
+Agent B's step spans re-parent under it. Agent B suppresses `langfuse.trace.*` attributes to avoid overwriting Agent A's
+trace-level display. This produces a nested hierarchy in Langfuse where the delegated agent's steps appear under the
+delegating agent's trace.
 
 ### AI Model Operations (Operational)
 
@@ -210,9 +217,9 @@ Services automatically emit traces through OpenTelemetry instrumentation configu
 
 **Custom Tracing** (via `AgentRunTracer`):
 
-- Agent workflow execution with step-level detail
-- Hierarchical span structures for complex workflows
-- Context propagation across distributed agent operations
+- Agent workflow execution with per-step CHAIN spans
+- AITL delegation tracing with AGENT wrapper spans and Redis-based W3C context propagation
+- Langfuse trace enrichment (name, session, user, input/output, token usage, model)
 
 **Smart Tracing**: The `SmartTracer` respects `suppress_instrumentation` context, allowing selective tracing control.
 
@@ -299,10 +306,19 @@ ______________________________________________________________________
 
 The `AgentRunTracer` creates a structured tracing hierarchy for agent executions:
 
-1. Initial AGENT span marks the workflow start
-2. Individual STEP spans show each workflow step with inputs and outputs
-3. Final CHAIN span captures the complete run duration
-4. Semantic events from AI operations enrich traces with domain-specific metadata
+1. Each workflow step gets a CHAIN span with inputs, outputs, and semantic event metadata
+2. Langfuse trace-level attributes (name, session, user, tags) are set on step spans for grouping
+3. Semantic events from AI operations enrich traces with token usage, model names, and LLM output
+4. For AITL delegation, an AGENT wrapper span bridges Agent A's step to Agent B's step spans:
+
+```
+Trace: "AgentA/profile-1"
+  AgentA.start_step           (CHAIN)
+    AITL -> AgentB/profile-2  (AGENT, wrapper span)
+      AgentB.compute_step     (CHAIN, re-parented via Redis)
+      AgentB.stop_step        (CHAIN, re-parented via Redis)
+  AgentA.end_step             (CHAIN)
+```
 
 ### LLM Operations
 

@@ -5,6 +5,56 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.269.1] - 2026-02-27 - Enhanced Distributed Tracing and Agent-in-the-Loop Observability
+
+### Added
+
+- 🚀 **Introduced `TraceStore`:** A new Redis-backed store designed to persist tracing metadata, which is crucial for
+  enabling distributed tracing across agent runs and Agent-in-the-Loop (AITL) delegations.
+- ✨ **Added OpenInference Trace Context Propagation:** Implemented a new context management system
+  (`openinference_trace_context`) that propagates OpenInference trace state. This ensures that `CHAIN` span kinds are
+  automatically applied to traced functions, maintaining consistent observability across workflows.
+- 🦾 **Implemented AITL Wrapper Spans:** New tracing logic creates dedicated `AGENT` wrapper spans for Agent-in-the-Loop
+  (AITL) delegations. These spans bridge the caller's trace to the delegated agent's steps, enabling clear nested
+  visibility in observability tools like Langfuse.
+
+### Changed
+
+- 🔄 **Refactored Agent Tracing Architecture:** The `AgentRunTracer` was significantly refactored to utilize the new
+  `TraceStore` for all run metadata, including user input, user ID, and LLM output. This change replaces previous
+  in-memory caches and enables cross-service trace continuity.
+- 📝 **Updated Tracing Documentation:** The platform's documentation on low-level traces has been thoroughly updated to
+  reflect the new distributed tracing architecture, AITL delegation, and enhanced Langfuse integration details.
+- ⚙️ **Improved OpenTelemetry Collector Configuration:** Modified OpenTelemetry collector configurations to include a
+  `filter/noise` processor in the Langfuse trace pipeline. This helps reduce unwanted telemetry noise and improves the
+  quality of ingested traces.
+- ⚡️ **Enhanced Docker Compose Dependencies:** Adjusted `docker-compose` configurations to improve service startup
+  reliability by ensuring that the `langfuse-server` service now explicitly waits for `langfuse-web` to be in a healthy
+  state.
+
+### Fixed
+
+- 🐛 **Corrected Retriever Namespace Filtering:** Addressed an issue in `filter_retrievers_by_namespace` where retriever
+  namespaces were being updated incorrectly. The fix ensures proper filtering based on the `vector_store`'s
+  `index_namespaces`.
+- 🛡️ **Improved Langfuse Model Provisioning Robustness:** Enhanced the `LangfuseProvisioner` to gracefully handle `400`
+  errors containing "already exists" messages during model definition creation, treating them as conflicts similar to
+  `409` status codes to prevent failures.
+
+### Refactor
+
+- 🧹 **Streamlined `AgentDispatcher` Cleanup:** Simplified the run completion cleanup logic within the `AgentDispatcher`.
+  The explicit `clear_run` call for tracing metadata is now removed, as cleanup is automatically handled by the
+  `TraceStore`.
+- 🧪 **Overhauled Agent Tracing Test Suite:** The entire test suite for `AgentRunTracer` has been updated to align with
+  the new Redis-backed `TraceStore` and the distributed tracing functionalities, removing outdated cache tests and
+  adding comprehensive coverage for AITL scenarios.
+- ⚙️ **Refined Python Auto-Formatting Hook:** Adjusted the `.claude/hooks/auto-format-python.sh` script to ignore the
+  `F401` (unused import) ruff check during the `--fix` step, providing more flexibility for specific code patterns
+  without causing formatting conflicts.
+
+______________________________________________________________________
+
 ## [v0.269.0] - 2026-02-26 - Revamped AI Model Strategy: Embracing Swiss Sovereignty with Dual-Mode Inference & Standardized Models
 
 ### Added
