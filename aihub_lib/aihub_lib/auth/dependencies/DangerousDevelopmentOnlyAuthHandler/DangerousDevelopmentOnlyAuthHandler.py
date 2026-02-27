@@ -2,6 +2,7 @@ import logging
 
 from fastapi import Request
 
+from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
     DangerousDevelopmentOnlyAuthSettings,
 )
@@ -13,7 +14,7 @@ from aihub_lib.persistence.user.UserEntity import UserEntity
 logger = logging.getLogger(__name__)
 
 
-class DangerousDevelopmentOnlyAuthHandler:
+class DangerousDevelopmentOnlyAuthHandler(AuthHandler):
     """
     A FastAPI dependency for development/testing only.
 
