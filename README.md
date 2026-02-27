@@ -4,43 +4,81 @@
 
 # Swiss AI-Hub
 
+**The open AI platform you own and control.**
+
+Deploy production AI on your own infrastructure with one command.\
+Full data sovereignty. No SaaS dependency. No cloud lock-in.
+
 [![GitHub Release](https://img.shields.io/github/v/release/bbvch-ai/aihub-core?style=flat-square)](https://github.com/bbvch-ai/aihub-core/releases)
-[![License](https://img.shields.io/badge/platform-Apache%202.0-blue?style=flat-square)](LICENSE)
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue?style=flat-square)](LICENSE)
 [![Python 3.13+](https://img.shields.io/badge/python-3.13%2B-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
 [![Docker](https://img.shields.io/badge/docker-compose-2496ED?style=flat-square&logo=docker&logoColor=white)](https://docs.docker.com/compose/)
 [![Docs](https://img.shields.io/badge/docs-online-green?style=flat-square)](https://bbvch-ai.github.io/aihub-core/)
+[![Discord](https://img.shields.io/badge/discord-community-5865F2?style=flat-square&logo=discord&logoColor=white)](https://discord.gg/wArT8zDB)
 
-The open AI platform you own and control.
-
-[Read the docs](https://bbvch-ai.github.io/aihub-core/) · [Releases](https://github.com/bbvch-ai/aihub-core/releases) ·
-[Report a bug](https://github.com/bbvch-ai/aihub-core/issues)
+[Get started](#quick-start) · [Documentation](https://bbvch-ai.github.io/aihub-core/) ·
+[Discord](https://discord.gg/wArT8zDB) · [Releases](https://github.com/bbvch-ai/aihub-core/releases)
 
 </div>
 
 ______________________________________________________________________
 
 <p align="center" width="100%">
+<em>A RAG agent answering questions from company documents, with full observability in Langfuse</em><br><br>
 <video src="https://github.com/user-attachments/assets/2e512252-a5f4-4eca-9550-40ee5a29010a" width="80%" autoplay loop muted></video>
 </p>
 
 ______________________________________________________________________
 
-## What is Swiss AI-Hub
+## Who is this for?
 
-Complete infrastructure for production AI. Deploy in your data center, build agents and pipelines with the SDK, keep
-your data where it belongs. Not a SaaS subscription, not a code library. Authentication, monitoring, databases, UIs, LLM
-routing, vector search, data pipelines, document parsing, cost tracking, and observability -- all included, all yours.
+Swiss AI-Hub is built for **teams that need AI in production but cannot send data to the cloud** -- regulated
+industries, government, healthcare, finance, defense, or any organization with strict data residency requirements.
 
-One command deploys everything. On a single NVIDIA RTX 6000 Pro (48GB VRAM), the platform runs chat, embeddings,
-reranking, OCR, and speech-to-text locally. No API keys needed, no egress traffic, no cloud bills. When cloud access is
-available, Swiss LLM Cloud or any OpenAI-compatible provider scales you further without code changes.
+If you need authentication, cost control, observability, LLM routing, vector search, and document parsing as commodity
+infrastructure -- and you need it on your own machines -- this is for you.
 
-The SDK provides Python packages for building agents, data pipelines, and multi-step processes that plug into the
-running platform. Agents you build automatically appear in the chat UI, get traced in Langfuse, stream responses over
-WebSocket, and inherit the platform's authentication and access control. You write business logic. The platform handles
-everything else.
+## What you get
+
+<table>
+<tr>
+<td width="50%">
+
+**Platform (ships ready to run)**
+
+- 7 pre-built AI agents (RAG, expert escalation, few-shot, ...)
+- 7 data source connectors (SharePoint, OneDrive, S3, SFTP, ...)
+- Chat UI, Admin UI, and Process UI
+- MS Teams and Slack bots
+- SSO + role-based access control
+- Full observability via Langfuse + OpenTelemetry
+- PII detection and anonymization
+- GPU or CPU-only deployment
+
+</td>
+<td width="50%">
+
+**SDK (build on top)**
+
+- Agent framework with decorated workflow steps
+- Dagster data pipelines with source templates
+- Process orchestration (agents + humans + external systems)
+- Event-driven protocol over NATS
+- OpenAI-compatible API
+- Configuration as code with admin UI forms
+- Automatic tracing, cost tracking, and streaming
+
+</td>
+</tr>
+</table>
+
+On a single NVIDIA RTX 6000 Pro (48GB VRAM), the platform runs chat, embeddings, reranking, OCR, and speech-to-text
+locally. No API keys needed, no egress traffic, no cloud bills. When cloud access is available, Swiss LLM Cloud or any
+OpenAI-compatible provider scales you further without code changes.
 
 ## Quick start
+
+> Check the [latest release](https://github.com/bbvch-ai/aihub-core/releases/latest) for the current version number.
 
 ### GPU deployment
 
@@ -48,7 +86,7 @@ Runs the full platform with local inference on a single NVIDIA GPU (48GB VRAM).
 
 ```bash
 # Download the latest GPU release bundle
-VERSION="v0.269.0"  # Check https://github.com/bbvch-ai/aihub-core/releases
+VERSION="v0.269.2"  # Replace with latest from https://github.com/bbvch-ai/aihub-core/releases
 mkdir swiss-ai-hub && cd swiss-ai-hub
 curl -L "https://github.com/bbvch-ai/aihub-core/releases/download/${VERSION}/swissaihub-${VERSION}-gpu.tar.gz" \
   | tar -xz
@@ -71,7 +109,7 @@ Presidio, MinerU, vLLM (Qwen3-VL-30B, BGE-M3, BGE-Reranker), Whisper, and more.
 Routes all inference to Swiss LLM Cloud (or any OpenAI-compatible endpoint). Same platform, no GPU required.
 
 ```bash
-VERSION="v0.269.0"
+VERSION="v0.269.2"
 mkdir swiss-ai-hub && cd swiss-ai-hub
 curl -L "https://github.com/bbvch-ai/aihub-core/releases/download/${VERSION}/swissaihub-${VERSION}.tar.gz" \
   | tar -xz
@@ -101,6 +139,7 @@ LLM Cloud, Azure OpenAI, or any other provider by changing configuration, not co
 team, and model. Presidio intercepts requests for PII detection and anonymization before they reach external providers.
 
 <p align="center" width="100%">
+<em>Configuring LLM models and monitoring costs through the admin interface</em><br><br>
 <video src="https://github.com/user-attachments/assets/7d282ed1-2c23-4283-93b1-dcb26d9f45bb" width="80%" autoplay loop muted></video>
 </p>
 
@@ -111,6 +150,7 @@ MinerU handles OCR and structural extraction from PDFs, Office files, and images
 stored in Milvus for semantic search. Seven pre-configured source templates get you from zero to working RAG in minutes.
 
 <p align="center" width="100%">
+<em>Creating a knowledge base and ingesting documents through the pipeline</em><br><br>
 <video src="https://github.com/user-attachments/assets/243c2949-a034-47ae-a65f-f988e1c438ac" width="80%" autoplay loop muted></video>
 </p>
 
@@ -150,6 +190,7 @@ individual agents and knowledge bases. API token management for programmatic acc
 reverse proxy.
 
 <p align="center" width="100%">
+<em>Managing users, roles, and permissions in the admin interface</em><br><br>
 <video src="https://github.com/user-attachments/assets/9ef17c7e-2fc7-4ca7-8299-fa52fe0f6157" width="80%" autoplay loop muted></video>
 </p>
 
@@ -229,6 +270,7 @@ Source connectors for SharePoint, OneDrive, Google Drive, S3, Azure Blob, SFTP, 
 with ready-to-use configuration files. Dagster provides the orchestration UI, lineage tracking, and scheduling.
 
 <p align="center" width="100%">
+<em>Monitoring pipeline runs and asset materializations in Dagster</em><br><br>
 <video src="https://github.com/user-attachments/assets/b43e613e-6b23-41e6-99f7-cb9bdd821685" width="80%" autoplay loop muted></video>
 </p>
 
@@ -365,12 +407,15 @@ runs.
 
 |                        | Data sovereignty  | Cost control  | Observability | Time to value | Vendor independence | Production ready |
 | ---------------------- | :---------------: | :-----------: | :-----------: | :-----------: | :-----------------: | :--------------: |
-| **Swiss AI-Hub**       |       Full        |     Full      |     Full      |   Moderate    |        Full         |       Full       |
+| **Swiss AI-Hub**       |       Full        |     Full      |     Full      |  Moderate\*   |        Full         |       Full       |
 | LangChain / LlamaIndex |   Self-managed    | None built-in | None built-in |     Slow      |        Full         |       DIY        |
 | Azure AI Foundry       | Region-selectable |    Partial    |    Partial    |   Moderate    |        None         |       Full       |
 | Dify                   |   Self-hostable   |     Full      |    Partial    |     Fast      |        Full         |     Partial      |
 | n8n                    |   Self-hostable   |     Full      |     None      |     Fast      |        Full         |     Partial      |
 | OpenAI Assistants      |       None        |    Partial    |    Partial    |     Fast      |        None         |       Full       |
+
+\* You are deploying real infrastructure, not signing up for a SaaS -- but `docker compose up` gets you running in under
+10 minutes.
 
 Libraries like LangChain give you flexibility but no infrastructure. Cloud platforms like Azure AI Foundry give you
 infrastructure but no ownership. Visual tools like Dify are fast to start but limited in production depth. Swiss AI-Hub
@@ -412,11 +457,13 @@ Each package has its own README with detailed documentation. The SDK packages (`
 
 ## Contributing
 
-Swiss AI-Hub is developed by [bbv Software Services](https://www.bbv.ch) and open to contributions.
+Swiss AI-Hub is developed by [bbv Software Services](https://www.bbv.ch) and open to contributions. See
+[CONTRIBUTING.md](CONTRIBUTING.md) for the full guide, or jump straight in:
 
-- [Open an issue](https://github.com/bbvch-ai/aihub-core/issues) for bugs and feature requests
-- See the package-level READMEs for development setup in each scope
-- Read the [architecture decisions](https://bbvch-ai.github.io/aihub-core/arc42/) before proposing structural changes
+- [Join the Discord](https://discord.gg/wArT8zDB) -- ask questions, share what you've built, get help
+- [Open an issue](https://github.com/bbvch-ai/aihub-core/issues) -- report bugs and request features
+- [Read the ADRs](https://bbvch-ai.github.io/aihub-core/arc42/) -- understand key decisions before proposing structural
+  changes
 
 ## License
 
@@ -426,6 +473,6 @@ ______________________________________________________________________
 
 <div align="center">
 
-Built in Switzerland by [bbv Software Services](https://www.bbv.ch)
+Built in Switzerland by [bbv Software Services](https://www.bbv.ch). Runs anywhere.
 
 </div>
