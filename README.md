@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="aihub_doc/media/logo.png" alt="Swiss AI-Hub" width="120">
+
 # Swiss AI-Hub
 
 [![GitHub Release](https://img.shields.io/github/v/release/bbvch-ai/aihub-core?style=flat-square)](https://github.com/bbvch-ai/aihub-core/releases)
@@ -18,7 +20,7 @@ The open AI platform you own and control.
 ______________________________________________________________________
 
 <p align="center" width="100%">
-<video src="aihub_doc/media/demos/aihub-agent-interaction-demo.mp4" width="80%" controls></video>
+<video src="https://github.com/bbvch-ai/aihub-core/raw/refs/heads/feat/README/aihub_doc/media/demos/aihub-agent-interaction-demo.mp4" width="80%" controls></video>
 </p>
 
 ______________________________________________________________________
@@ -99,7 +101,7 @@ LLM Cloud, Azure OpenAI, or any other provider by changing configuration, not co
 team, and model. Presidio intercepts requests for PII detection and anonymization before they reach external providers.
 
 <p align="center" width="100%">
-<video src="aihub_doc/media/demos/aihub-litellm-demo.mp4" width="80%" controls></video>
+<video src="https://github.com/bbvch-ai/aihub-core/raw/refs/heads/feat/README/aihub_doc/media/demos/aihub-litellm-demo.mp4" width="80%" controls></video>
 </p>
 
 ### Knowledge and RAG
@@ -109,7 +111,7 @@ MinerU handles OCR and structural extraction from PDFs, Office files, and images
 stored in Milvus for semantic search. Seven pre-configured source templates get you from zero to working RAG in minutes.
 
 <p align="center" width="100%">
-<video src="aihub_doc/media/demos/aihub-knowledge-demo.mp4" width="80%" controls></video>
+<video src="https://github.com/bbvch-ai/aihub-core/raw/refs/heads/feat/README/aihub_doc/media/demos/aihub-knowledge-demo.mp4" width="80%" controls></video>
 </p>
 
 ### Agent runtime
@@ -148,7 +150,7 @@ individual agents and knowledge bases. API token management for programmatic acc
 reverse proxy.
 
 <p align="center" width="100%">
-<video src="aihub_doc/media/demos/aihub-create-agent-demo.mp4" width="80%" controls></video>
+<video src="https://github.com/bbvch-ai/aihub-core/raw/refs/heads/feat/README/aihub_doc/media/demos/aihub-create-agent-demo.mp4" width="80%" controls></video>
 </p>
 
 ## Build with the SDK
@@ -227,7 +229,7 @@ Source connectors for SharePoint, OneDrive, Google Drive, S3, Azure Blob, SFTP, 
 with ready-to-use configuration files. Dagster provides the orchestration UI, lineage tracking, and scheduling.
 
 <p align="center" width="100%">
-<video src="aihub_doc/media/demos/aihub-dagster-demo.mp4" width="80%" controls></video>
+<video src="https://github.com/bbvch-ai/aihub-core/raw/refs/heads/feat/README/aihub_doc/media/demos/aihub-dagster-demo.mp4" width="80%" controls></video>
 </p>
 
 ### Processes
