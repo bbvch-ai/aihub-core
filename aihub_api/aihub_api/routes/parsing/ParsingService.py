@@ -9,6 +9,7 @@ from aihub_lib.generative_ai.document.loaders.MarkItDownLoader import MarkItDown
 from aihub_lib.generative_ai.document.loaders.MineruLoader import MineruLoader
 from aihub_lib.generative_ai.utils.image_processor import replace_s3_paths_with_signed_urls
 from aihub_lib.infrastructure.mineru.MineruSettings import MineruSettings
+from aihub_lib.infrastructure.parsing.ParsingSettings import ParsingSettings
 from aihub_lib.infrastructure.s3.use_s3 import create_s3_filesystem
 from fastapi import HTTPException
 
@@ -103,6 +104,12 @@ class ParsingService:
         elif extension in markitdown_extensions:
             loader = MarkItDownLoader()
             logger.debug(f"Using MarkItDownLoader for {filename}")
+        elif extension in ParsingSettings().PASSTHROUGH_EXTENSIONS:
+            logger.info(f"Passthrough extension .{extension}, returning empty content: {filename}")
+            return DocumentParsingResponse(
+                page_content="",
+                metadata=DocumentParsingMetadata(filename=filename),
+            )
         else:
             raise HTTPException(
                 status_code=400,
