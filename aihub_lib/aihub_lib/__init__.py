@@ -11,5 +11,5 @@ def swiss_ai_hub_ascii(package: str) -> str:
 ███████║╚███╔███╔╝██║███████║███████║    ██║  ██║██║    ██║  ██║╚██████╔╝██████╔╝
 ╚══════╝ ╚══╝╚══╝ ╚═╝╚══════╝╚══════╝    ╚═╝  ╚═╝╚═╝    ╚═╝  ╚═╝ ╚═════╝ ╚═════╝ 
 
-The open-source AI infrastructure stack for swiss enterprises - {package} v{AIHubSettings().VERSION}
+The open-source AI infrastructure stack for Swiss enterprises - {package} v{AIHubSettings().VERSION}
 """
