@@ -21,8 +21,8 @@ default behavior is manual tenant assignment through the Keycloak admin console.
 ## How it works
 
 Tenant memberships in Keycloak are stored as **group memberships**. Each tenant has a corresponding group under the
-`/tenants/` parent group in Keycloak. When a user belongs to `/tenants/company-a`, the platform knows they're a member of
-the Company A.
+`/tenants/` parent group in Keycloak. When a user belongs to `/tenants/company-a`, the platform knows they're a member
+of the Company A.
 
 ```mermaid
 graph TD
@@ -118,16 +118,16 @@ Add a **Hardcoded Group** IDP mapper to the identity provider:
 }
 ```
 
-This mapper runs every time a user authenticates through `azure-ad-company-a`. It adds the user to
-`/tenants/company-a` without removing any existing group memberships.
+This mapper runs every time a user authenticates through `azure-ad-company-a`. It adds the user to `/tenants/company-a`
+without removing any existing group memberships.
 
 ::: tip Why Groups Instead of Attributes?
 Keycloak's attribute IDP mappers **overwrite** values on each login. If a user logs in via IDP-A and gets
 `tenant = company-a`, then logs in via IDP-B, the attribute changes to `tenant = company-b` — the first assignment is
 lost.
 
-Group memberships are **additive**. The Hardcoded Group mapper adds the user to a group without removing them from
-other groups. This is why tenant assignment uses groups, not user attributes.
+Group memberships are **additive**. The Hardcoded Group mapper adds the user to a group without removing them from other
+groups. This is why tenant assignment uses groups, not user attributes.
 :::
 
 ::: warning Mapper Provider ID
@@ -139,8 +139,8 @@ prefix). Using `hardcoded-group-idp-mapper` (without prefix) will cause a `NullP
 
 When you have three Azure AD app registrations (one per customer), configure each with its own Hardcoded Group mapper:
 
-| Identity Provider | Hardcoded Group Mapper | Tenant Group |
-|---|---|---|
+| Identity Provider    | Hardcoded Group Mapper    | Tenant Group         |
+| -------------------- | ------------------------- | -------------------- |
 | `azure-ad-company-a` | `tenant-mapper-company-a` | `/tenants/company-a` |
 | `azure-ad-company-b` | `tenant-mapper-company-b` | `/tenants/company-b` |
 | `azure-ad-company-c` | `tenant-mapper-company-c` | `/tenants/company-c` |
@@ -150,8 +150,8 @@ first broker login flow) and accumulate all three tenant memberships plus the de
 
 ### Option 2: Claim-based group mapping (groups from the IDP determine the tenant)
 
-Sometimes you don't want a blanket mapping of "everyone from this IDP joins this tenant." Instead, you want to map
-based on a claim from the identity provider — for example, Azure AD group memberships.
+Sometimes you don't want a blanket mapping of "everyone from this IDP joins this tenant." Instead, you want to map based
+on a claim from the identity provider — for example, Azure AD group memberships.
 
 Use an **Advanced Claim to Group** IDP mapper to map a specific claim value to a tenant group:
 
@@ -241,8 +241,8 @@ tenant.
 When the same person authenticates through multiple identity providers (e.g., the same email across different Azure AD
 app registrations), Keycloak merges them into a single user account through the **first broker login flow**.
 
-On first login via a new IDP, Keycloak detects that a user with the same email already exists and links the new
-identity to the existing account. The user now has multiple linked identities but a single Keycloak account.
+On first login via a new IDP, Keycloak detects that a user with the same email already exists and links the new identity
+to the existing account. The user now has multiple linked identities but a single Keycloak account.
 
 Each IDP's mappers run independently when the user authenticates through that IDP. Because group membership is additive,
 a user who logs in through Company A's IDP gets `/tenants/company-a`, and later logging in through Company B's IDP adds
@@ -250,17 +250,17 @@ a user who logs in through Company A's IDP gets `/tenants/company-a`, and later 
 
 ::: warning Trust Your Identity Providers
 Automatic account linking trusts that external identity providers have verified the user's email. Only enable this for
-trusted IDPs. An attacker controlling an IDP that doesn't verify emails could link to any existing account by claiming
-a matching email address.
+trusted IDPs. An attacker controlling an IDP that doesn't verify emails could link to any existing account by claiming a
+matching email address.
 :::
 
 ## Choosing the right approach
 
-| Scenario                                                     | Recommended Approach |
-|--------------------------------------------------------------|---|
-| Each customer/tenant has their own Azure AD app registration | **Hardcoded Group** per IDP |
-| Single Azure AD, tenants based on AD group membership        | **Advanced Claim to Group** on `groups` claim |
-| Single Azure AD, tenants based on app roles                  | **Advanced Claim to Group** on `roles` claim |
+| Scenario                                                     | Recommended Approach                            |
+| ------------------------------------------------------------ | ----------------------------------------------- |
+| Each customer/tenant has their own Azure AD app registration | **Hardcoded Group** per IDP                     |
+| Single Azure AD, tenants based on AD group membership        | **Advanced Claim to Group** on `groups` claim   |
+| Single Azure AD, tenants based on app roles                  | **Advanced Claim to Group** on `roles` claim    |
 | Small deployment, few tenants                                | **Manual assignment** in Keycloak admin console |
 
 You can combine approaches. Use Hardcoded Group mappers for some IDPs and Advanced Claim to Group mappers for others.
@@ -278,6 +278,6 @@ responsibility of the AI-Hub application.
 documentation), but the installation team must configure it per deployment. Out of the box, tenant assignment is manual.
 
 **The platform does not synchronize backwards** — if you remove a user from a tenant group in Keycloak, the AI-Hub
-application's local role assignments (`UserTenantRoleEntity`) for that user in that tenant are not automatically
-cleaned up. Both systems should be kept in sync by administrators.
+application's local role assignments (`UserTenantRoleEntity`) for that user in that tenant are not automatically cleaned
+up. Both systems should be kept in sync by administrators.
 :::

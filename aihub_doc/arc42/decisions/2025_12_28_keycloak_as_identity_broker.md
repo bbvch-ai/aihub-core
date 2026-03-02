@@ -23,14 +23,14 @@ independent from any external identity provider.
 - **Development and Testing**: Local development and E2E testing must work without external IdP dependencies, using
   reproducible, configurable credentials.
 - **Separation of Access Control and Role Management**: The identity provider handles *who may access the platform*
-  (authentication + coarse access roles). The platform itself handles *what users may do within it* (fine-grained
-  AI-Hub roles and permissions).
+  (authentication + coarse access roles). The platform itself handles *what users may do within it* (fine-grained AI-Hub
+  roles and permissions).
 
 ## Decision
 
 **Keycloak is the sole OAuth2/OIDC identity provider for Swiss AI-Hub.** All platform services authenticate exclusively
-against Keycloak. Keycloak acts as an identity broker, federating authentication to upstream providers (Azure AD, Google,
-SAML, local users) as configured per deployment.
+against Keycloak. Keycloak acts as an identity broker, federating authentication to upstream providers (Azure AD,
+Google, SAML, local users) as configured per deployment.
 
 ### Key Principles
 
@@ -38,21 +38,25 @@ SAML, local users) as configured per deployment.
    Keycloak's OIDC endpoints. There is no `IDENTITY_PROVIDER` switch or provider-specific auth handler in the
    application code—only `KeycloakAuthHandler`.
 
-2. **Keycloak Owns Access Gating, Not AI-Hub Roles**: Keycloak manages realm-level roles that determine *whether*
-   a user may access the platform at all:
+2. **Keycloak Owns Access Gating, Not AI-Hub Roles**: Keycloak manages realm-level roles that determine *whether* a user
+   may access the platform at all:
+
    - `AIHubAccess` — required Role in IdP for User to be accepted in Keycloak
-   - `AIHubSysAdmin` — system administrator access to infrastructure tools (Dagster, SeaweedFS, Attu) (must be set in Keycloak, or passed from IdP)
+   - `AIHubSysAdmin` — system administrator access to infrastructure tools (Dagster, SeaweedFS, Attu) (must be set in
+     Keycloak, or passed from IdP)
 
 3. **AI-Hub Manages Its Own Roles Locally**: All fine-grained, domain-specific role management (tenant assignments,
    agent permissions, data access controls, workflow authorizations) is handled by the platform's local role management
    system (see ADR `2025_12_25_local_role_management.md`). Keycloak has no knowledge of these roles. This separation
    ensures that:
+
    - Onboarding a new IdP only requires configuring role mapping for the access roles
    - AI-Hub's permission model is portable across any identity provider
    - Role changes within the platform do not require IdP administrator involvement
 
 4. **Identity Broker Pattern**: Keycloak federates to upstream providers. The platform never communicates with Azure AD,
-   Google, or any other IdP directly. Adding a new upstream provider is a Keycloak configuration task, not a code change.
+   Google, or any other IdP directly. Adding a new upstream provider is a Keycloak configuration task, not a code
+   change.
 
 ### Implementation
 
@@ -66,8 +70,10 @@ SAML, local users) as configured per deployment.
   per-service OAuth2 Proxy clients for admin tool protection:
   - `aihub-frontend` — public client with PKCE for the Admin UI
   - `openwebui` — confidential client for the chat interface
-  - `aihub-api-service` — confidential client with service account for API backend (least-privilege: `view-identity-providers` only)
-  - `oauth2-proxy-dagster`, `oauth2-proxy-datalake`, `oauth2-proxy-attu` — confidential clients for admin tool OAuth2 Proxy sidecars
+  - `aihub-api-service` — confidential client with service account for API backend (least-privilege:
+    `view-identity-providers` only)
+  - `oauth2-proxy-dagster`, `oauth2-proxy-datalake`, `oauth2-proxy-attu` — confidential clients for admin tool OAuth2
+    Proxy sidecars
 - **Admin Tool Protection**: OAuth2 Proxy instances protect Dagster, Attu (Milvus), and SeaweedFS using Keycloak as the
   OIDC provider with role-based access control.
 - **Split-Horizon DNS**: Non-dev deployments configure separate internal (`http://keycloak:8080`) and external
@@ -97,5 +103,5 @@ SAML, local users) as configured per deployment.
   independently from any identity provider
 - `2025_08_11_global_superuser_authentication.md` — Superuser token auth remains as a parallel bearer-based
   authentication path for Docker Compose deployments without a browser
-- `2026_02_27_dynamic_identity_provider_loading.md` — Extends this decision by using Keycloak as the source of truth
-  for which identity providers to display on the login page
+- `2026_02_27_dynamic_identity_provider_loading.md` — Extends this decision by using Keycloak as the source of truth for
+  which identity providers to display on the login page

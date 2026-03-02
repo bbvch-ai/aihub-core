@@ -359,8 +359,8 @@ docker compose -f docker-compose.latest.yml ps --format "table {{.Name}}\t{{.Sta
 
 ### Auf die Plattform zugreifen
 
-1. **Stellen Sie sicher, dass Ihrem Benutzer, mit dem Sie testen, die Rollen "AIHubAdmin" und "AIHubSysAdmin" in der Azure Enterprise
-   Application zugewiesen sind.**
+1. **Stellen Sie sicher, dass Ihrem Benutzer, mit dem Sie testen, die Rollen "AIHubAdmin" und "AIHubSysAdmin" in der
+   Azure Enterprise Application zugewiesen sind.**
 
 2. **Web-Interface:**
 

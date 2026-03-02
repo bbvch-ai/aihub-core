@@ -23,8 +23,8 @@ standard HTTP requests and `authenticate_token` for WebSocket connections where 
 payload rather than in HTTP headers. Concrete handlers extract and validate credentials, then delegate to an
 `IdentityProvider` to resolve the full `UserIdentity` (ID, name, email, roles, profile image).
 
-`KeycloakAuthHandler` validates Keycloak JWT tokens by fetching JWKS keys (cached 6 hours), verifying the RS256 signature,
-and checking audience and issuer claims. `TokenAuthHandler` validates API access tokens (format:
+`KeycloakAuthHandler` validates Keycloak JWT tokens by fetching JWKS keys (cached 6 hours), verifying the RS256
+signature, and checking audience and issuer claims. `TokenAuthHandler` validates API access tokens (format:
 `{ObjectId}.{128-char-random}`) against MongoDB with constant-time comparison and expiry checking.
 `OpenWebuiAuthHandler` verifies HMAC-SHA256 signatures on OpenWebUI's custom headers (`X-OpenWebUI-User-Name`,
 `X-OpenWebUI-User-Email`, `X-OpenWebUI-Signature`) before delegating to a wrapped inner handler. `SuperuserAuthHandler`

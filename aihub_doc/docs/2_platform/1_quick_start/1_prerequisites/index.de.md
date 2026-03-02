@@ -188,10 +188,9 @@ Erstellen Sie vier App-Rollen nach diesem Prozess:
 - **Beschreibung**: `Systemadministrator-Zugriff auf Infrastruktur-Tools (Dagster, SeaweedFS, Attu)`
 
 ::: tip
-Die Rolle `AIHubSysAdmin` ist erforderlich, um auf das Dagster Pipeline Orchestrierungs-Dashboard, die SeaweedFS
-Data Lake Konsole unter `datalake.${DOMAIN}` und die Attu Milvus Admin-UI zuzugreifen. Benutzer ohne diese Rolle können
-weiterhin die Haupt-AI-Hub
-Oberfläche und OpenWebUI nutzen.
+Die Rolle `AIHubSysAdmin` ist erforderlich, um auf das Dagster Pipeline Orchestrierungs-Dashboard, die SeaweedFS Data
+Lake Konsole unter `datalake.${DOMAIN}` und die Attu Milvus Admin-UI zuzugreifen. Benutzer ohne diese Rolle können
+weiterhin die Haupt-AI-Hub Oberfläche und OpenWebUI nutzen.
 :::
 
 **Schritt 6: SPA-Umleitungs-URIs konfigurieren**

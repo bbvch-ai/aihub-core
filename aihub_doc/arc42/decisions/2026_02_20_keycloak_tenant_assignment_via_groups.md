@@ -21,15 +21,15 @@ with all tenant memberships preserved.
 
 - **Additive IDP Mapping**:\
   When a user logs in via different identity providers, their tenant assignment must accumulate, not overwrite.
-  Keycloak's `Hardcoded Attribute` IDP mapper overwrites user attributes on each login (`syncMode: FORCE`), making
-  user attributes unsuitable for multi-valued, multi-IDP tenant assignment. The `Hardcoded Group` IDP mapper, by
-  contrast, adds group memberships additively.
+  Keycloak's `Hardcoded Attribute` IDP mapper overwrites user attributes on each login (`syncMode: FORCE`), making user
+  attributes unsuitable for multi-valued, multi-IDP tenant assignment. The `Hardcoded Group` IDP mapper, by contrast,
+  adds group memberships additively.
 - **Token Accessibility**:\
-  The application must be able to read tenant memberships from the OIDC token without additional API calls.
-  Keycloak's `Group Membership` protocol mapper produces a JSON array claim with all group memberships.
+  The application must be able to read tenant memberships from the OIDC token without additional API calls. Keycloak's
+  `Group Membership` protocol mapper produces a JSON array claim with all group memberships.
 - **Default Tenant for All Users**:\
-  Keycloak natively supports "default groups" that are automatically assigned to every new user, providing the
-  mechanism for automatic default tenant membership.
+  Keycloak natively supports "default groups" that are automatically assigned to every new user, providing the mechanism
+  for automatic default tenant membership.
 - **Admin UI Manageability**:\
   Groups are first-class citizens in Keycloak's admin console, allowing administrators to manually assign or remove
   tenant memberships without custom tooling.
@@ -60,28 +60,27 @@ exposes these memberships as a `tenants` claim in the OIDC token.
    Keycloak admin console (adding/removing users from `/tenants/*` groups). No automatic IDP-to-tenant mapping is
    configured out of the box.
 
-5. **IDP-to-tenant mapping is an optional capability**: The platform supports automatic tenant assignment based on
-   which identity provider (Azure AD app registration) a user authenticates through. This is achieved via Keycloak's
+5. **IDP-to-tenant mapping is an optional capability**: The platform supports automatic tenant assignment based on which
+   identity provider (Azure AD app registration) a user authenticates through. This is achieved via Keycloak's
    `Hardcoded Group` IDP mapper, which adds the user to a specific tenant group on every login via that IDP. This
-   capability is **not a default feature** — it must be configured by the installation team per deployment. The
-   platform documents how to set it up.
+   capability is **not a default feature** — it must be configured by the installation team per deployment. The platform
+   documents how to set it up.
 
 ### Implementation
 
-- **Group hierarchy**: A parent group `tenants` contains sub-groups for each tenant (e.g., `default`). The parent
-  group is an organizational container — users are members of the sub-groups, not the parent.
+- **Group hierarchy**: A parent group `tenants` contains sub-groups for each tenant (e.g., `default`). The parent group
+  is an organizational container — users are members of the sub-groups, not the parent.
 - **Default group**: `/tenants/default` is set as a Keycloak default group via the realm's `defaultGroups` setting.
-- **Protocol mapper**: A `tenants` client scope contains a `Group Membership` protocol mapper (`oidc-group-membership-mapper`)
-  with `full.path = true` and `multivalued = true`. This produces a token claim like:
+- **Protocol mapper**: A `tenants` client scope contains a `Group Membership` protocol mapper
+  (`oidc-group-membership-mapper`) with `full.path = true` and `multivalued = true`. This produces a token claim like:
   ```json
   { "tenants": ["/tenants/default", "/tenants/customer-a"] }
   ```
-- **Client scope assignment**: The `tenants` scope is added to the `aihub-frontend` client's default scopes so the
-  Admin UI receives tenant information in the token.
-- **IDP-to-tenant mapping** (when configured): A `Hardcoded Group` IDP mapper
-  (`oidc-hardcoded-group-idp-mapper`) on each identity provider assigns users from that IDP to the corresponding
-  tenant group. Since group membership is additive, a user logging in via multiple IDPs accumulates all tenant
-  memberships.
+- **Client scope assignment**: The `tenants` scope is added to the `aihub-frontend` client's default scopes so the Admin
+  UI receives tenant information in the token.
+- **IDP-to-tenant mapping** (when configured): A `Hardcoded Group` IDP mapper (`oidc-hardcoded-group-idp-mapper`) on
+  each identity provider assigns users from that IDP to the corresponding tenant group. Since group membership is
+  additive, a user logging in via multiple IDPs accumulates all tenant memberships.
 
 ### IDP-to-Tenant Mapping Setup (for Installation Teams)
 
@@ -99,11 +98,12 @@ To map an Azure AD app registration to a tenant:
 
 - **User Attributes**: Simple but IDP mappers overwrite (not append) multi-valued attributes. Custom SPI needed for
   merge logic. Rejected due to overwrite limitation.
-- **Realm/Client Roles**: Semantic mismatch — roles represent permissions, not tenancy. Does not scale well with
-  many tenants. Rejected.
+- **Realm/Client Roles**: Semantic mismatch — roles represent permissions, not tenancy. Does not scale well with many
+  tenants. Rejected.
 - **Keycloak Organizations** (v25+): Purpose-built but has known bugs with multi-organization token claims
   (keycloak/keycloak#33556, keycloak/keycloak#39402) and lacks organization-scoped roles. From a Viewpoint of the AI-Hub
-  there is only one User-Tenant. the Multitenancy is with tenant inside the AI Hub. Might be re-evaluated when the feature matures.
+  there is only one User-Tenant. the Multitenancy is with tenant inside the AI Hub. Might be re-evaluated when the
+  feature matures.
 
 ## Consequences
 
@@ -120,8 +120,8 @@ To map an Azure AD app registration to a tenant:
 
 - The `tenants` token claim includes full group paths (e.g., `/tenants/default`), requiring the application to parse
   paths rather than using simple tenant names
-- The `Group Membership` protocol mapper includes ALL group memberships unless the claim is filtered by the
-  application — tenant groups must be distinguished by the `/tenants/` path prefix
+- The `Group Membership` protocol mapper includes ALL group memberships unless the claim is filtered by the application
+  — tenant groups must be distinguished by the `/tenants/` path prefix
 - Keycloak becomes a dependency for tenant assignment data, adding to the platform's reliance on Keycloak availability
 - The `defaultGroups` mechanism applies to all new users, including those who may later be denied access (no
   `AIHubAccess` role) — these orphaned group memberships are harmless but not cleaned up automatically

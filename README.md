@@ -399,6 +399,7 @@ Once running, access the AI-Hub services at:
 
 ::: tip :key: Default Development Credentials
 The dev environment includes a pre-configured Keycloak user for development and testing:
+
 - **Username**: `admin`
 - **Password**: `admin`
 - **Role**: `AIHubAdmin`

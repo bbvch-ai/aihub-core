@@ -16,8 +16,8 @@ When a user logs out of an embedded service (e.g., OpenWebUI's logout button), t
    next page refresh.
 
 OpenWebUI does not provide an environment variable to disable the OIDC RP-initiated logout (the `end_session_endpoint`
-call is triggered automatically when `ENABLE_OAUTH_SIGNUP=True`). We cannot prevent embedded services from destroying the
-SSO session without forking their source code.
+call is triggered automatically when `ENABLE_OAUTH_SIGNUP=True`). We cannot prevent embedded services from destroying
+the SSO session without forking their source code.
 
 The question is: should the parent application react to an iframe service logout by logging itself out, or should it
 preserve its own session and redirect the user to a safe landing page?
@@ -27,7 +27,8 @@ preserve its own session and redirect the user to a safe landing page?
 - **User intent**: Logging out of a chat interface (OpenWebUI) does not imply intent to leave the entire platform. Users
   expect the parent application to remain functional.
 - **Session independence**: The parent application holds its own JWT in localStorage with a finite lifetime
-  (`accessTokenLifespan` configured in Keycloak). This JWT remains valid regardless of the SSO session state at Keycloak.
+  (`accessTokenLifespan` configured in Keycloak). This JWT remains valid regardless of the SSO session state at
+  Keycloak.
 - **Seamless re-entry**: When the user navigates back to the embedded service, the iframe loads the OIDC login endpoint
   (`/oauth/oidc/login`). If the parent application is still authenticated, Keycloak will prompt for credentials (or
   silently re-authenticate via an upstream IdP like Azure AD), creating a new SSO session. The embedded service
@@ -36,8 +37,8 @@ preserve its own session and redirect the user to a safe landing page?
 
 ## Decision
 
-**The parent application (`aihub_web`) is solely responsible for the user's authentication state.** Logout actions within
-iframe-embedded services do not propagate to the parent application. Instead:
+**The parent application (`aihub_web`) is solely responsible for the user's authentication state.** Logout actions
+within iframe-embedded services do not propagate to the parent application. Instead:
 
 1. **No session monitoring**: `oidc-client-ts` session monitoring (`monitorSession`) is explicitly disabled. The parent
    application does not poll Keycloak's `check_session_iframe` endpoint and does not react to SSO session invalidation
@@ -47,8 +48,8 @@ iframe-embedded services do not propagate to the parent application. Instead:
    Keycloak logout redirect). After the initial load, any subsequent `load` event triggers a redirect to the parent
    application's home page.
 
-3. **Parent session preserved**: The redirect to home does **not** call `removeUser()` or clear the local JWT. The parent
-   application remains fully functional with its existing access token.
+3. **Parent session preserved**: The redirect to home does **not** call `removeUser()` or clear the local JWT. The
+   parent application remains fully functional with its existing access token.
 
 4. **Natural token expiry**: When the access token approaches expiry, `automaticSilentRenew` attempts a silent renewal
    against Keycloak. If the SSO session no longer exists (destroyed by the iframe logout), renewal fails. The
@@ -56,8 +57,8 @@ iframe-embedded services do not propagate to the parent application. Instead:
    the parent application.
 
 5. **Auto-login on re-entry**: When the user navigates back to the embedded service page, the iframe reloads the OIDC
-   login endpoint. Keycloak either silently authenticates (if an upstream IdP session exists) or prompts for credentials.
-   A new SSO session is established, and the embedded service loads without additional interaction.
+   login endpoint. Keycloak either silently authenticates (if an upstream IdP session exists) or prompts for
+   credentials. A new SSO session is established, and the embedded service loads without additional interaction.
 
 ### Implementation
 
@@ -90,7 +91,8 @@ subsequent loads.
 
 - After an iframe logout, the parent application's local JWT remains valid but the Keycloak SSO session is gone. The
   parent app works normally until the token expires, at which point the user must re-authenticate. This window
-  (determined by `accessTokenLifespan`) is acceptable because the user is still within a valid, locally-verified session.
+  (determined by `accessTokenLifespan`) is acceptable because the user is still within a valid, locally-verified
+  session.
 - The `@load` event detection assumes embedded services are SPAs that do not trigger full page navigations during normal
   use. If an embedded service performs server-side redirects during regular operation, false positives could occur.
   OpenWebUI is a SPA and does not exhibit this behavior.

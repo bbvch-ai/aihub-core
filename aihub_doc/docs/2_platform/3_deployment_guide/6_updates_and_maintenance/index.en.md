@@ -70,8 +70,7 @@ ghcr.io/bbvch-ai/aihub-<customer>/agent:v1.2.3
 ghcr.io/bbvch-ai/aihub-<customer>/pipeline:v1.2.3
 ```
 
-Browse all releases at
-[github.com/bbvch-ai/aihub-core/releases](https://github.com/bbvch-ai/aihub-core/releases).
+Browse all releases at [github.com/bbvch-ai/aihub-core/releases](https://github.com/bbvch-ai/aihub-core/releases).
 
 ______________________________________________________________________
 
@@ -79,8 +78,8 @@ ______________________________________________________________________
 
 ### Core platform updates
 
-Download the new release bundle from
-[GitHub Releases](https://github.com/bbvch-ai/aihub-core/releases) and extract it alongside your current deployment:
+Download the new release bundle from [GitHub Releases](https://github.com/bbvch-ai/aihub-core/releases) and extract it
+alongside your current deployment:
 
 ```bash
 # Download the new version

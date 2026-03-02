@@ -1,10 +1,10 @@
+---
 # ===================================================================
 # Dagster Configuration - Stage: nightly
 # ===================================================================
 # Generated from template. Do not edit directly.
 # Uses PgBouncer (pgbouncer:6432) for connection pooling to prevent exhaustion.
 # ===================================================================
-
 run_storage:
   module: dagster_postgres.run_storage
   class: PostgresRunStorage
@@ -17,7 +17,6 @@ run_storage:
         env: POSTGRES_PASSWORD
       db_name: dagster
       port: 6432
-
 event_log_storage:
   module: dagster_postgres.event_log
   class: PostgresEventLogStorage
@@ -30,7 +29,6 @@ event_log_storage:
         env: POSTGRES_PASSWORD
       db_name: dagster
       port: 6432
-
 schedule_storage:
   module: dagster_postgres.schedule_storage
   class: PostgresScheduleStorage
@@ -43,27 +41,22 @@ schedule_storage:
         env: POSTGRES_PASSWORD
       db_name: dagster
       port: 6432
-
 compute_logs:
   module: dagster.core.storage.noop_compute_log_manager
   class: NoOpComputeLogManager
-
 run_launcher:
   module: dagster.core.launcher
   class: DefaultRunLauncher
-
 run_coordinator:
   module: dagster.core.run_coordinator
   class: QueuedRunCoordinator
   config:
     max_concurrent_runs: 3
-
 telemetry:
   enabled: false
-
 run_monitoring:
   enabled: true
-  max_runtime_seconds: 7200      # Cancel runs exceeding 2 hours
-  start_timeout_seconds: 300     # Fail if worker doesn't start in 5 min
-  cancel_timeout_seconds: 180    # Force-cancel stuck CANCELING runs after 3 min
-  poll_interval_seconds: 120     # Check run status every 2 min
+  max_runtime_seconds: 7200  # Cancel runs exceeding 2 hours
+  start_timeout_seconds: 300  # Fail if worker doesn't start in 5 min
+  cancel_timeout_seconds: 180  # Force-cancel stuck CANCELING runs after 3 min
+  poll_interval_seconds: 120  # Check run status every 2 min

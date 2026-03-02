@@ -92,8 +92,8 @@ icon. Results are cached for 5 minutes. The frontend renders a branded login but
 initiates the OIDC Authorization Code Flow with `kc_idp_hint` set to the provider's alias, redirecting the user directly
 to the upstream identity provider without showing Keycloak's login theme.
 
-This approach eliminates any frontend configuration for identity providers — adding or removing an IdP is a Keycloak-only
-change. See
+This approach eliminates any frontend configuration for identity providers — adding or removing an IdP is a
+Keycloak-only change. See
 [ADR: Dynamic Identity Provider Loading](../../../../arc42/decisions/2026_02_27_dynamic_identity_provider_loading.md)
 for the full rationale and implementation details.
 
@@ -103,8 +103,7 @@ Each identity provider can have a custom icon displayed on its login button. Ico
 Keycloak identity provider's `config` map as the `icon` field using PrimeIcon CSS classes (e.g., `pi-microsoft`,
 `pi-google`). Providers without an icon configured fall back to `pi-sign-in`.
 
-To set an icon, add the `icon` field to the identity provider's configuration in
-`keycloak-identity-providers.json.j2`:
+To set an icon, add the `icon` field to the identity provider's configuration in `keycloak-identity-providers.json.j2`:
 
 ```json
 "config": {
@@ -152,8 +151,8 @@ Keycloak admin paths while keeping the OIDC login endpoints publicly accessible 
    KEYCLOAK_ADMIN_ALLOWED_IPS="203.0.113.0/24,198.51.100.10/32"
    ```
 
-2. In `docker-compose.yml`, add a second Traefik router for admin paths on the `keycloak`
-   service labels (alongside the existing `keycloak` router):
+2. In `docker-compose.yml`, add a second Traefik router for admin paths on the `keycloak` service labels (alongside the
+   existing `keycloak` router):
 
    ```yaml
    # Admin-only router with IP restriction (higher priority than public router)
@@ -182,16 +181,17 @@ Keycloak manages realm-level roles that determine whether a user may access the 
 gates — fine-grained permissions are managed locally by the platform (see
 [Permissions](../../11_access_management/2_permissions/)).
 
-| Role | Purpose |
-|---|---|
-| `AIHubAccess` | Required for platform login. Users without this role are denied at the Keycloak login flow. |
-| `AIHubAdmin` | Full administrative access |
-| `AIHubUser` | Standard user access |
-| `AIHubDeveloper` | Developer tools access (Dagster, Attu, etc.) |
-| `AIHubSysAdmin` | System administrator access to infrastructure tools |
+| Role             | Purpose                                                                                     |
+| ---------------- | ------------------------------------------------------------------------------------------- |
+| `AIHubAccess`    | Required for platform login. Users without this role are denied at the Keycloak login flow. |
+| `AIHubAdmin`     | Full administrative access                                                                  |
+| `AIHubUser`      | Standard user access                                                                        |
+| `AIHubDeveloper` | Developer tools access (Dagster, Attu, etc.)                                                |
+| `AIHubSysAdmin`  | System administrator access to infrastructure tools                                         |
 
-By default, no roles are automatically assigned to new users. This ensures that users federated from an external identity
-provider only receive the roles explicitly mapped from their IdP claims, following the principle of least privilege.
+By default, no roles are automatically assigned to new users. This ensures that users federated from an external
+identity provider only receive the roles explicitly mapped from their IdP claims, following the principle of least
+privilege.
 
 ### Configuring Automatic Role Assignment
 
@@ -201,8 +201,7 @@ Keycloak:
 **Option 1: Realm default roles (applies to all new users)**
 
 In the Keycloak admin console, navigate to **Realm Settings > User Registration > Default Roles** and add the desired
-roles. Alternatively, set the `defaultRoles` array in the realm configuration template
-(`keycloak-realm.json.j2`):
+roles. Alternatively, set the `defaultRoles` array in the realm configuration template (`keycloak-realm.json.j2`):
 
 ```json
 "defaultRoles": ["AIHubUser"]
@@ -214,11 +213,11 @@ For more granular control, configure role mappers on individual identity provide
 users from different organizations. In the Keycloak admin console, navigate to **Identity Providers > [your IdP] >
 Mappers** and add a **Hardcoded Role** mapper:
 
-| Field | Value |
-|---|---|
-| Name | `default-user-role` |
-| Mapper Type | Hardcoded Role |
-| Role | `AIHubUser` |
+| Field       | Value               |
+| ----------- | ------------------- |
+| Name        | `default-user-role` |
+| Mapper Type | Hardcoded Role      |
+| Role        | `AIHubUser`         |
 
 This assigns the role only to users authenticating through that specific identity provider.
 
