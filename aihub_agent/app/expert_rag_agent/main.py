@@ -5,7 +5,7 @@ AihubInstrumentor().instrument()
 
 import asyncio
 
-from aihub_lib import swiss_ai_hub_ascii
+from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.infrastructure.logging.logger import enable_logging
 
 from aihub_agent.agents.ExpertRagAgent.configs.ExpertRAGAgentConfig import ExpertRAGAgentConfig
@@ -13,7 +13,7 @@ from aihub_agent.agents.ExpertRagAgent.ExpertRAGAgent import ExpertRAGAgent
 from aihub_agent.runners.AgentRunner import AgentRunner
 
 enable_logging()
-print(swiss_ai_hub_ascii("ExpertRAGAgent"))
+print(AIHubSettings().startup_banner)
 
 
 async def main():

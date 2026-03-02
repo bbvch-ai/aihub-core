@@ -1,11 +1,10 @@
-from aihub_lib import swiss_ai_hub_ascii
 from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.infrastructure.logging import enable_logging
 
 from aihub_pipeline.util.definitions_util import default_definitions
 
 enable_logging()
-print(swiss_ai_hub_ascii("SharedRAGPipeline"))
+print(AIHubSettings().startup_banner)
 
 defs = default_definitions(
     datalake_container_name=AIHubSettings().SHARED_BUCKET_NAME,

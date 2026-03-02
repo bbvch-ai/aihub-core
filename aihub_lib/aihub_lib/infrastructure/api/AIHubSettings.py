@@ -1,3 +1,4 @@
+from importlib.metadata import version
 from typing import Annotated
 
 from pydantic import Field
@@ -9,7 +10,7 @@ class AIHubSettings(EnvironmentSettings):
     model_config = EnvironmentSettings.create_settings_config("AIHUB_")
 
     API_DEBUG_MODE: Annotated[bool, Field(description="Debug mode for development")] = False
-    VERSION: Annotated[str, Field(description="Version of the app")]
+    VERSION: Annotated[str, Field(description="Version of the app")] = version("aihub-core")
 
     CREATE_DEFAULT_ROLES: Annotated[
         bool, Field(description="Creates default roles like AI-Hub Admin and AI-Hub User")
@@ -36,6 +37,21 @@ class AIHubSettings(EnvironmentSettings):
     ] = "http://api:8000/api/v1/openai"
 
     FRONTEND_ORIGIN: Annotated[str, Field(description="Comma separated list of origins to allow CORS")]
+
+    _STARTUP_BANNER = """\
+███████╗██╗    ██╗██╗███████╗███████╗     █████╗ ██╗    ██╗  ██╗██╗   ██╗██████╗
+██╔════╝██║    ██║██║██╔════╝██╔════╝    ██╔══██╗██║    ██║  ██║██║   ██║██╔══██╗
+███████╗██║ █╗ ██║██║███████╗███████╗    ███████║██║    ███████║██║   ██║██████╔╝
+╚════██║██║███╗██║██║╚════██║╚════██║    ██╔══██║██║    ██╔══██║██║   ██║██╔══██╗
+███████║╚███╔███╔╝██║███████║███████║    ██║  ██║██║    ██║  ██║╚██████╔╝██████╔╝
+╚══════╝ ╚══╝╚══╝ ╚═╝╚══════╝╚══════╝    ╚═╝  ╚═╝╚═╝    ╚═╝  ╚═╝ ╚═════╝ ╚═════╝"""
+
+    @property
+    def startup_banner(self) -> str:
+        return (
+            f"\n{self._STARTUP_BANNER}\n"
+            f"The open-source AI infrastructure stack for Swiss enterprises - v{self.VERSION}\n"
+        )
 
     MONGO_MAIN_DB_NAME: Annotated[
         str,

@@ -1,7 +1,7 @@
-from aihub_lib import swiss_ai_hub_ascii
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
     DangerousDevelopmentOnlyAuthHandler,
 )
+from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_lib.routes.health.HealthController import HealthController
 
@@ -27,6 +27,6 @@ runner.mount(
     BotInTheLoopController(auth=auth).bot_in_the_loop_response(),
 )
 
-print(swiss_ai_hub_ascii("Bot"))
+print(AIHubSettings().startup_banner)
 
 app = runner.create_app()
