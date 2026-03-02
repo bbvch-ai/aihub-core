@@ -38,6 +38,21 @@ def _get_extension(filename: str, content_type: str = "") -> str:
     )
 
 
+PLAINTEXT_EXTENSIONS: list[str] = [
+    "txt",
+    "md",
+    "csv",
+    "json",
+    "xml",
+    "yml",
+    "yaml",
+    "log",
+    "ini",
+    "cfg",
+    "toml",
+]
+
+
 class ParsingService:
     """Service for converting documents to markdown using MinerU or MarkItDown."""
 
@@ -74,6 +89,13 @@ class ParsingService:
 
         mineru_extensions = MineruSettings().EXTENSIONS
         markitdown_extensions = MarkItDownLoader.SUPPORTED_EXTENSIONS
+
+        if extension in PLAINTEXT_EXTENSIONS:
+            logger.debug(f"Plaintext file detected: {filename}")
+            return DocumentParsingResponse(
+                page_content=content.decode("utf-8", errors="replace"),
+                metadata=DocumentParsingMetadata(filename=filename),
+            )
 
         if extension in mineru_extensions:
             loader = MineruLoader()
