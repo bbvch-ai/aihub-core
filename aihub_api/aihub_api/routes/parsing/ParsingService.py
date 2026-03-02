@@ -2,6 +2,7 @@ import asyncio
 import logging
 import mimetypes
 import urllib.parse
+from typing import ClassVar
 
 from aihub_lib.generative_ai.document.accessor.S3AnonymousFileAccessService import S3AnonymousFileAccessService
 from aihub_lib.generative_ai.document.loaders.MarkItDownLoader import MarkItDownLoader
@@ -38,23 +39,22 @@ def _get_extension(filename: str, content_type: str = "") -> str:
     )
 
 
-PLAINTEXT_EXTENSIONS: list[str] = [
-    "txt",
-    "md",
-    "csv",
-    "json",
-    "xml",
-    "yml",
-    "yaml",
-    "log",
-    "ini",
-    "cfg",
-    "toml",
-]
-
-
 class ParsingService:
     """Service for converting documents to markdown using MinerU or MarkItDown."""
+
+    PLAINTEXT_EXTENSIONS: ClassVar[list[str]] = [
+        "txt",
+        "md",
+        "csv",
+        "json",
+        "xml",
+        "yml",
+        "yaml",
+        "log",
+        "ini",
+        "cfg",
+        "toml",
+    ]
 
     @staticmethod
     async def convert_from_bytes(
@@ -90,7 +90,7 @@ class ParsingService:
         mineru_extensions = MineruSettings().EXTENSIONS
         markitdown_extensions = MarkItDownLoader.SUPPORTED_EXTENSIONS
 
-        if extension in PLAINTEXT_EXTENSIONS:
+        if extension in ParsingService.PLAINTEXT_EXTENSIONS:
             logger.debug(f"Plaintext file detected: {filename}")
             return DocumentParsingResponse(
                 page_content=content.decode("utf-8", errors="replace"),
