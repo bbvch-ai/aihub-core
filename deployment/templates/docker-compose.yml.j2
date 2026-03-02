@@ -12,6 +12,7 @@
 {%- set stage_postfix = stage + ".gpu" if gpu_enabled else stage %}
 {%- set config_variant_suffix = config_file_suffix if config_file_suffix is defined else "." + stage_postfix %}
 {%- set hardware = 'gpu' if gpu_enabled else 'cpu' %}
+{%- set default_model = 'text-generation/Qwen3-VL-30B-A3B-Instruct-FP8' if gpu_enabled else 'text-generation/gpt-oss-120b' %}
 
 {#- ===================================================================
     Internal Service Endpoints (Identical Across All Stages)
@@ -815,6 +816,8 @@ services:
         condition: service_started
       clickhouse:
         condition: service_healthy
+      langfuse-web:
+        condition: service_healthy
     {%- if stage in ['dev', 'local', 'build'] %}
     ports:
       - "127.0.0.1:3030:3030"
@@ -870,8 +873,6 @@ services:
         condition: service_started
       clickhouse:
         condition: service_healthy
-      langfuse-worker:
-        condition: service_started
     {%- if stage in ['dev', 'local', 'build'] %}
     ports:
       - "6006:3000"
@@ -1221,46 +1222,93 @@ services:
         max-size: 10m
         max-file: 2
 
-  {%- if (gpu_enabled and stage in ['nightly', 'latest']) or stage == 'dev' %}
+  {%- if gpu_enabled %}
   # ===================================================================
-  # AI Model Serving (Local Inference)
+  # AI Model Serving (Local GPU Inference via vLLM)
   # ===================================================================
-  # GPU variants are only used for 'nightly' and 'latest' stages when
-  # GPU is enabled. All other configurations use CPU variants.
+  # All local model serving requires GPU. CPU setups route through
+  # Swiss LLM Cloud instead. Models match the Swiss LLM Cloud stack
+  # for a unified experience.
   # ===================================================================
 
-  {%- set llama_cpp_use_gpu = gpu_enabled and stage in ['nightly', 'latest'] %}
-  llama-cpp:
-    container_name: llama-cpp
+  vllm:
+    container_name: vllm
     platform: "linux/amd64"
-    image: {{ global.registry_prefix }}{{ image_tags.llama_cpp_gpu if llama_cpp_use_gpu else image_tags.llama_cpp_cpu }}
+    image: {{ global.registry_prefix }}{{ image_tags.vllm }}
     restart: always
+    ipc: host
     {%- if stage in ['dev', 'local', 'build'] %}
     ports:
-      - "8182:8182"
+      - "8182:8000"
     {%- endif %}
     volumes:
-      - {{ global.volume_root }}/llamacpp-data:/data
       - {{ global.volume_root }}/huggingface:/root/.cache/huggingface
-      - {{ global.volume_root }}/llamacpp-cache:/root/.cache/llama.cpp
+      - {{ global.volume_root }}/vllm-cache:/root/.cache/vllm
     environment:
       HF_HOME: /root/.cache/huggingface
-      LLAMA_API_KEY: ${LOCAL_LLM_TOKEN}
+      HUGGING_FACE_HUB_TOKEN: ${HUGGINGFACE_API_KEY}
+      VLLM_API_KEY: ${LOCAL_LLM_TOKEN}
     command: >
-      {%- if llama_cpp_use_gpu %}
-      -hf google/gemma-3-12b-it-qat-q4_0-gguf
-      --alias gemma-3-12b
-      -ngl -1
-      {%- else %}
-      -hf google/gemma-3-4b-it-qat-q4_0-gguf
-      --alias gemma-3-4b
-      {%- endif %}
-      --port 8182
-      --hf-token ${HUGGINGFACE_API_KEY}
+      --model Qwen/Qwen3-VL-30B-A3B-Instruct-FP8
+      --served-model-name qwen3-vl-30b
+      --port 8000
       --host 0.0.0.0
-      -c 8196
+      --gpu-memory-utilization 0.85
+      --max-model-len 131072
+      --max-num-seqs 16
+      --max-num-batched-tokens 4096
+      --enable-chunked-prefill
+      --limit-mm-per-prompt '{"image": 8, "video": 0}'
+      --async-scheduling
+      --dtype auto
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
+      timeout: 10s
+      interval: 30s
+      retries: 3
+      start_period: 600s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: [ '0' ]
+              capabilities: [ gpu ]
+    networks:
+      - backend
+
+  vllm-bge-m3:
+    container_name: vllm-bge-m3
+    platform: "linux/amd64"
+    image: {{ global.registry_prefix }}{{ image_tags.vllm }}
+    restart: always
+    ipc: host
+    {%- if stage in ['dev', 'local', 'build'] %}
+    ports:
+      - "8183:8000"
+    {%- endif %}
+    volumes:
+      - {{ global.volume_root }}/huggingface:/root/.cache/huggingface
+      - {{ global.volume_root }}/vllm-cache:/root/.cache/vllm
+    environment:
+      HF_HOME: /root/.cache/huggingface
+      HUGGING_FACE_HUB_TOKEN: ${HUGGINGFACE_API_KEY}
+      VLLM_API_KEY: ${LOCAL_LLM_TOKEN}
+    command: >
+      --model BAAI/bge-m3
+      --served-model-name bge-m3
+      --runner pooling
+      --convert embed
+      --port 8000
+      --host 0.0.0.0
+      --gpu-memory-utilization 0.03
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
       timeout: 10s
       interval: 30s
       retries: 3
@@ -1270,7 +1318,6 @@ services:
       options:
         max-size: 10m
         max-file: 2
-    {%- if llama_cpp_use_gpu %}
     deploy:
       resources:
         reservations:
@@ -1278,50 +1325,44 @@ services:
             - driver: nvidia
               device_ids: [ '0' ]
               capabilities: [ gpu ]
-    {%- endif %}
     networks:
       - backend
 
-  llama-cpp-embedding:
-    container_name: llama-cpp-embedding
+  vllm-bge-reranker:
+    container_name: vllm-bge-reranker
     platform: "linux/amd64"
-    image: {{ global.registry_prefix }}{{ image_tags.llama_cpp_gpu if llama_cpp_use_gpu else image_tags.llama_cpp_cpu }}
+    image: {{ global.registry_prefix }}{{ image_tags.vllm }}
     restart: always
+    ipc: host
     {%- if stage in ['dev', 'local', 'build'] %}
     ports:
-      - "8183:8182"
+      - "8184:8000"
     {%- endif %}
     volumes:
-      - {{ global.volume_root }}/llamacpp-data:/data
       - {{ global.volume_root }}/huggingface:/root/.cache/huggingface
-      - {{ global.volume_root }}/llamacpp-cache:/root/.cache/llama.cpp
+      - {{ global.volume_root }}/vllm-cache:/root/.cache/vllm
     environment:
       HF_HOME: /root/.cache/huggingface
-      LLAMA_API_KEY: ${LOCAL_LLM_TOKEN}
+      HUGGING_FACE_HUB_TOKEN: ${HUGGINGFACE_API_KEY}
+      VLLM_API_KEY: ${LOCAL_LLM_TOKEN}
     command: >
-      -hf Qwen/Qwen3-Embedding-0.6B-GGUF
-      --hf-token ${HUGGINGFACE_API_KEY}
-      --alias qwen-3-embedding
-      --port 8182
+      --model BAAI/bge-reranker-v2-m3
+      --served-model-name bge-reranker
+      --runner pooling
+      --port 8000
       --host 0.0.0.0
-      --embedding
-      --pooling last
-      -ub 8192
-      {%- if llama_cpp_use_gpu %}
-      -ngl -1
-      {%- endif %}
+      --gpu-memory-utilization 0.03
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
       timeout: 10s
       interval: 30s
       retries: 3
-      start_period: 60s
+      start_period: 120s
     logging:
       driver: json-file
       options:
         max-size: 10m
         max-file: 2
-    {%- if llama_cpp_use_gpu %}
     deploy:
       resources:
         reservations:
@@ -1329,91 +1370,41 @@ services:
             - driver: nvidia
               device_ids: [ '0' ]
               capabilities: [ gpu ]
-    {%- endif %}
-    networks:
-      - backend
-
-  llama-cpp-reranker:
-    container_name: llama-cpp-reranker
-    platform: "linux/amd64"
-    image: {{ global.registry_prefix }}{{ image_tags.llama_cpp_gpu if llama_cpp_use_gpu else image_tags.llama_cpp_cpu }}
-    restart: always
-    {%- if stage in ['dev', 'local', 'build'] %}
-    ports:
-      - "8184:8182"
-    {%- endif %}
-    volumes:
-      - {{ global.volume_root }}/llamacpp-data:/data
-      - {{ global.volume_root }}/huggingface:/root/.cache/huggingface
-      - {{ global.volume_root }}/llamacpp-cache:/root/.cache/llama.cpp
-    environment:
-      HF_HOME: /root/.cache/huggingface
-      LLAMA_API_KEY: ${LOCAL_LLM_TOKEN}
-    command: >
-      -hf ggml-org/Qwen3-Reranker-0.6B-Q8_0-GGUF
-      --hf-token ${HUGGINGFACE_API_KEY}
-      --alias qwen-3-reranking
-      --port 8182
-      --host 0.0.0.0
-      -c 8192
-      --reranking
-      --no-context-shift
-      {%- if llama_cpp_use_gpu %}
-      -ngl 10
-      {%- endif %}
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8182/health" ]
-      timeout: 10s
-      interval: 30s
-      retries: 3
-      start_period: 60s
-    logging:
-      driver: json-file
-      options:
-        max-size: 10m
-        max-file: 2
-    {%- if llama_cpp_use_gpu %}
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              device_ids: [ '0' ]
-              capabilities: [ gpu ]
-    {%- endif %}
     networks:
       - backend
 
   # ===================================================================
-  # Audio Model Serving (SST/TTS)
+  # Audio Model Serving (STT via Speaches)
   # ===================================================================
-  # We are using speaches to serve audio models in an openai
-  # compatible format. GPU variants are only used for 'nightly' and
-  # 'latest' stages when GPU is enabled.
+  # OpenAI-compatible transcription API. GPU only.
+  # CPU setups route through Swiss LLM Cloud.
+  # https://github.com/speaches-ai/speaches
   # ===================================================================
 
-  {%- set speaches_use_gpu = gpu_enabled and stage in ['nightly', 'latest'] %}
   speaches:
     container_name: speaches
-    image: {{ global.registry_prefix }}{{ image_tags.speaches_gpu if speaches_use_gpu else image_tags.speaches_cpu }}
+    image: {{ image_tags.speaches }}
     restart: unless-stopped
     {%- if stage in ['dev', 'local', 'build'] %}
     ports:
       - "8185:8000"
     {%- endif %}
     volumes:
-      - {{ global.volume_root }}/huggingface:/root/.cache/huggingface
+      - {{ global.volume_root }}/speaches-models:/home/ubuntu/.cache/huggingface/hub
     environment:
-      HF_HOME: /root/.cache/huggingface
-      HF_TOKEN: ${HUGGINGFACE_API_KEY}
-      ENABLE_UI: False
+      WHISPER__INFERENCE_DEVICE: cuda
+      PRELOAD_MODELS: Systran/faster-whisper-large-v3
     healthcheck:
       test: [ "CMD", "curl", "--fail", "http://0.0.0.0:8000/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 5s
-    {%- if speaches_use_gpu %}
+      start_period: 120s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
     deploy:
       resources:
         reservations:
@@ -1421,7 +1412,6 @@ services:
             - driver: nvidia
               device_ids: [ '0' ]
               capabilities: [ gpu ]
-    {%- endif %}
     networks:
       - backend
   {%- endif %}
@@ -1482,12 +1472,16 @@ services:
       UI_PASSWORD: ${LITELLM_UI_PASSWORD}
       LOCAL_LLM_TOKEN: ${LOCAL_LLM_TOKEN}
       REDIS_TOKEN: ${REDIS_TOKEN}
-      AZURE_OPENAI_BASE_URL: ${AZURE_OPENAI_BASE_URL}
-      AZURE_OPENAI_KEY: ${AZURE_OPENAI_KEY}
       SWISS_LLM_CLOUD_API_BASE_URL: ${SWISS_LLM_CLOUD_API_BASE_URL}
       SWISS_LLM_CLOUD_API_KEY: ${SWISS_LLM_CLOUD_API_KEY}
-      COHERE_API_BASE: ${COHERE_API_BASE}
-      COHERE_API_KEY: ${COHERE_API_KEY}
+      SWISS_LLM_CLOUD_EMBEDDING_API_BASE_URL: ${SWISS_LLM_CLOUD_EMBEDDING_API_BASE_URL}
+      SWISS_LLM_CLOUD_EMBEDDING_API_KEY: ${SWISS_LLM_CLOUD_EMBEDDING_API_KEY}
+      SWISS_LLM_CLOUD_RERANKING_API_BASE_URL: ${SWISS_LLM_CLOUD_RERANKING_API_BASE_URL}
+      SWISS_LLM_CLOUD_RERANKING_API_KEY: ${SWISS_LLM_CLOUD_RERANKING_API_KEY}
+      SWISS_LLM_CLOUD_WHISPER_API_BASE_URL: ${SWISS_LLM_CLOUD_WHISPER_API_BASE_URL}
+      SWISS_LLM_CLOUD_WHISPER_API_KEY: ${SWISS_LLM_CLOUD_WHISPER_API_KEY}
+      SWISS_LLM_CLOUD_OCR_API_BASE_URL: ${SWISS_LLM_CLOUD_OCR_API_BASE_URL}
+      SWISS_LLM_CLOUD_OCR_API_KEY: ${SWISS_LLM_CLOUD_OCR_API_KEY}
       GEMINI_API_KEY: ${GEMINI_API_KEY}
       HUGGINGFACE_API_KEY: ${HUGGINGFACE_API_KEY}
       PRESIDIO_ANALYZER_API_BASE: {{ PRESIDIO_ANALYZER_API_BASE }}
@@ -1658,6 +1652,12 @@ services:
       - "30000:30000"
     {%- endif %}
     # No volume mount - VLM models are baked into the image for faster startup
+    command: >
+      mineru-vllm-server
+      --host 0.0.0.0
+      --port 30000
+      --served-model-name MinerU2.5-2509-1.2B
+      --gpu-memory-utilization 0.05
     environment:
       MINERU_MODEL_SOURCE: local
     healthcheck:
@@ -1827,8 +1827,8 @@ services:
       MODELS_CACHE_TTL: 60
       OPENAI_API_BASE_URL: http://{{ 'localhost' if stage == 'dev' else 'api' }}:8000/api/v1/openai
       OPENAI_API_KEY: ${SUPERUSER_TOKEN}
-      TASK_MODEL: text-generation/nano
-      TASK_MODEL_EXTERNAL: text-generation/nano
+      TASK_MODEL: {{ default_model }}
+      TASK_MODEL_EXTERNAL: {{ default_model }}
       ENABLE_OLLAMA_API: False
       ENABLE_OPENAI_API: True
 
@@ -1913,7 +1913,7 @@ services:
       EXTERNAL_DOCUMENT_LOADER_URL: http://{{ 'localhost' if stage == 'dev' else 'api' }}:8000/api/v1/parsing
       EXTERNAL_DOCUMENT_LOADER_API_KEY: ${SUPERUSER_TOKEN}
       RAG_EMBEDDING_ENGINE: openai
-      RAG_EMBEDDING_MODEL: embedding/large
+      RAG_EMBEDDING_MODEL: embedding/bge-m3
       RAG_OPENAI_API_BASE_URL: http://{{ 'localhost' if stage == 'dev' else 'api' }}:8000/api/v1/openai
       RAG_OPENAI_API_KEY: ${SUPERUSER_TOKEN}
 
@@ -2429,9 +2429,9 @@ services:
       NEO4J_PASSWORD: ${NEO4J_PASSWORD}
 
       # Mem0
-      MEM0_LLM_NAME: "text-generation/large"
-      MEM0_EMBEDDING_MODEL_NAME: "embedding/large"
-      MEM0_RERANKING_MODEL_NAME: "reranker"
+      MEM0_LLM_NAME: "{{ default_model }}"
+      MEM0_EMBEDDING_MODEL_NAME: "embedding/bge-m3"
+      MEM0_RERANKING_MODEL_NAME: "reranker/bge"
 
       # Jupyter (for open-webui code interpreter)
       JUPYTER_URL: {{ JUPYTER_URL }}
@@ -2607,9 +2607,9 @@ services:
       NEO4J_PASSWORD: ${NEO4J_PASSWORD}
 
       # Mem0
-      MEM0_LLM_NAME: "text-generation/large"
-      MEM0_EMBEDDING_MODEL_NAME: "embedding/large"
-      MEM0_RERANKING_MODEL_NAME: "reranker"
+      MEM0_LLM_NAME: "{{ default_model }}"
+      MEM0_EMBEDDING_MODEL_NAME: "embedding/bge-m3"
+      MEM0_RERANKING_MODEL_NAME: "reranker/bge"
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
@@ -2686,9 +2686,9 @@ services:
       NEO4J_PASSWORD: ${NEO4J_PASSWORD}
 
       # Mem0
-      MEM0_LLM_NAME: "text-generation/large"
-      MEM0_EMBEDDING_MODEL_NAME: "embedding/large"
-      MEM0_RERANKING_MODEL_NAME: "reranker"
+      MEM0_LLM_NAME: "{{ default_model }}"
+      MEM0_EMBEDDING_MODEL_NAME: "embedding/bge-m3"
+      MEM0_RERANKING_MODEL_NAME: "reranker/bge"
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
@@ -3152,9 +3152,9 @@ services:
       NEO4J_PASSWORD: ${NEO4J_PASSWORD}
 
       # Mem0
-      MEM0_LLM_NAME: "text-generation/large"
-      MEM0_EMBEDDING_MODEL_NAME: "embedding/large"
-      MEM0_RERANKING_MODEL_NAME: "reranker"
+      MEM0_LLM_NAME: "{{ default_model }}"
+      MEM0_EMBEDDING_MODEL_NAME: "embedding/bge-m3"
+      MEM0_RERANKING_MODEL_NAME: "reranker/bge"
     healthcheck:
       test: ["CMD", "dagster", "api", "grpc-health-check", "--host", "localhost", "--port", "4000"]
       interval: 30s
@@ -3203,9 +3203,9 @@ services:
       NEO4J_URL: bolt://neo4j:7687
       NEO4J_USERNAME: ${NEO4J_USERNAME}
       NEO4J_PASSWORD: ${NEO4J_PASSWORD}
-      MEM0_LLM_NAME: "text-generation/large"
-      MEM0_EMBEDDING_MODEL_NAME: "embedding/large"
-      MEM0_RERANKING_MODEL_NAME: "reranker"
+      MEM0_LLM_NAME: "{{ default_model }}"
+      MEM0_EMBEDDING_MODEL_NAME: "embedding/bge-m3"
+      MEM0_RERANKING_MODEL_NAME: "reranker/bge"
       LOG_LEVEL: ${LOG_LEVEL}
       NUM_WORKERS: 1
       AIHUB_API_VERSION: ${AIHUB_API_VERSION}

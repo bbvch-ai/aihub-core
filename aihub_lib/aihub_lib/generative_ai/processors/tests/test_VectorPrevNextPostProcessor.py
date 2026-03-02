@@ -55,7 +55,7 @@ def milvus_vector_store(nodes_with_relationships):
     # Drop existing collection to ensure clean schema
     drop_collection(collection_name=collection_name)
 
-    embedding_config = EmbeddingModelConfig(model_name="embedding/large")
+    embedding_config = EmbeddingModelConfig(model_name="embedding/bge-m3")
     vector_store = MilvusVectorStoreConfig(
         uri="http://localhost:19530",
         collection_name=collection_name,

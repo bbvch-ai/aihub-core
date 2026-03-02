@@ -84,8 +84,8 @@ def asset_definition_with_code_link(
 def default_definitions(
     *,
     datalake_container_name: Annotated[str, "S3 bucket/container name where raw documents are stored"],
-    embedding_model_name: Annotated[str, "LiteLLM model name for embeddings"] = "embedding/large",
-    llm_model_name: Annotated[str, "LiteLLM model name for text generation"] = "text-generation/mini",
+    embedding_model_name: Annotated[str, "LiteLLM model name for embeddings"] = "embedding/bge-m3",
+    llm_model_name: Annotated[str, "LiteLLM model name for text generation"] = "text-generation/gpt-oss-120b",
     with_summary_nodes: Annotated[bool, "Generate recursive summaries for hierarchical RAG"] = True,
     with_table_refinement: Annotated[bool, "Refine tables with LLM to detect structure and split"] = True,
     with_figure_descriptions: Annotated[bool, "Generate figure descriptions with vision LLM"] = True,

@@ -42,7 +42,7 @@ def self_hosted_llm_config():
     """
     Return an LLM config for testing with LiteLLM.
     """
-    return LLMConfig(model_name="text-generation/mini")
+    return LLMConfig(model_name="text-generation/gpt-oss-120b")
 
 
 @given("I have an empty agent config")
@@ -94,7 +94,6 @@ def _(agent_config_data, self_hosted_llm_config):
 
     config = FewShotAgentConfig(
         agent_id="few_shot_agent",
-        agent_class=FewShotAgent.__name__,
         name=LocaleString(en="FewShotAgent"),
         description=LocaleString(en=agent_config_data["description"]),
         llm=self_hosted_llm_config,

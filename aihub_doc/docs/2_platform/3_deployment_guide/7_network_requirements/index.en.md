@@ -14,12 +14,13 @@ The AI-Hub VM connects to external services depending on your configuration. All
 Which providers you need depends on your deployment configuration.
 
 ::: details AI service endpoints
-| Service       | Endpoint                            | Port | Purpose                                   |
-| ------------- | ----------------------------------- | ---- | ----------------------------------------- |
-| Azure OpenAI  | `*.openai.azure.com`                | 443  | LLM inference, embeddings, vision, audio  |
-| Google Gemini | `generativelanguage.googleapis.com` | 443  | LLM inference                             |
-| Jina AI       | `api.jina.ai`                       | 443  | Web search and embeddings                 |
-| Hugging Face  | `huggingface.co`                    | 443  | Model downloads for self-hosted inference |
+| Service         | Endpoint                                      | Port | Purpose                                             |
+| --------------- | --------------------------------------------- | ---- | --------------------------------------------------- |
+| Swiss LLM Cloud | Configured via `SWISS_LLM_CLOUD_API_BASE_URL` | 443  | Text generation, embedding, reranking, whisper, OCR |
+| Jina AI         | `api.jina.ai`                                 | 443  | Web search and embeddings                           |
+| Hugging Face    | `huggingface.co`                              | 443  | Model downloads for self-hosted inference           |
+
+GPU deployments running local vLLM do not require outbound connectivity to LLM providers.
 :::
 
 Agents and pipelines can call your existing enterprise systems.

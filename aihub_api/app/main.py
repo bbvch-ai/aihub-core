@@ -64,7 +64,9 @@ runner.mount(
     .update_agent_instance()
     .delete_agent_instance()
     .get_agent_instance_threads()
-    .get_all_agent_instances(),
+    .get_all_agent_instances()
+    .initiate_file_upload()
+    .validate_file_upload(),
     ProcessController(auth=auth)
     .get_process_classes()
     .get_process_class()
@@ -92,7 +94,7 @@ runner.mount(
     DatasetController(auth=auth).create_dataset().get_datasets().get_dataset().update_dataset(),
     KnowledgeController(
         auth=auth,
-        translation_llm_config=LLMConfig(model_name="text-generation/mini"),
+        translation_llm_config=LLMConfig(model_name="text-generation/gpt-oss-120b"),
     )
     .create_namespace()
     .update_namespace()

@@ -125,10 +125,11 @@ After generating your `.env` file, review it and fill in the values that require
    - `REPLACE_WITH_YOUR_CLIENT_SECRET` → Your Azure App Registration Client Secret
    - `REPLACE_WITH_YOUR_TENANT_ID` → Your Azure Tenant ID
 
-3. **AI Model Access** (configure at least one):
+3. **AI Model Access** (Swiss LLM Cloud — required for non-GPU deployments):
 
-   - `REPLACE_WITH_AZURE_OPENAI_BASE_URL` → Your Azure OpenAI endpoint URL
-   - `REPLACE_WITH_AZURE_OPENAI_KEY` → Your Azure OpenAI API key
+   - `REPLACE_WITH_SWISS_LLM_CLOUD_URL` → Your Swiss LLM Cloud text generation endpoint
+   - `REPLACE_WITH_SWISS_LLM_CLOUD_KEY` → Your Swiss LLM Cloud API key
+   - Configure the remaining endpoint pairs for embedding, reranking, whisper, and OCR
 
 4. **Expert Escalation** (optional — for expert-in-the-loop features):
 

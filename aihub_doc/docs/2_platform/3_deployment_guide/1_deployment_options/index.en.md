@@ -25,15 +25,16 @@ A single instance deployment runs a complete, self-contained AI-Hub instance. Th
 infrastructure: separate databases, vector stores, file storage, and application services.
 
 The instance includes the API, agents, pipelines, web interface, and bot integrations. It has its own databases
-(FerretDB/PostgreSQL), vector stores (Milvus or Azure AI Search), and file storage (SeaweedFS or Azure Data Lake).
-Monitoring runs through SigNoz and Langfuse. NATS handles event streaming. The instance has its own LiteLLM proxy for
-cost tracking and version control.
+(FerretDB/PostgreSQL), vector stores (Milvus), and file storage (SeaweedFS). Monitoring runs through Langfuse and
+OpenTelemetry. NATS handles event streaming. The instance has its own LiteLLM proxy for cost tracking and version
+control.
 
 ### LLM backend
 
-The instance connects to LLM services via its LiteLLM proxy. The proxy can connect to Azure OpenAI, Google Gemini,
-self-hosted models (vLLM, llama.cpp, HF-TEI), or a mix of these. The proxy handles model selection, budgets, rate
-limits, and versions. All prompts, responses, and user data stay within the instance.
+The instance connects to LLM services via its LiteLLM proxy. Non-GPU deployments route through Swiss LLM Cloud (a
+Swiss-hosted provider). GPU deployments run all inference locally via vLLM on an NVIDIA RTX 6000 Pro (96 GB VRAM). The
+proxy handles model selection, budgets, rate limits, and versions. All prompts, responses, and user data stay within the
+instance.
 
 ______________________________________________________________________
 
@@ -91,9 +92,9 @@ For logical separation within a shared platform, use [multi-tenancy](../../16_mu
 
 ### Shared LLM backend
 
-When deploying multiple instances, they can share backend LLM resources. Multiple instances use the same Azure OpenAI
-subscription, Google Gemini API keys, or self-hosted models. They can also share authentication infrastructure like
-Azure AD or Keycloak.
+When deploying multiple instances, they can share backend LLM resources. Multiple instances can use the same Swiss LLM
+Cloud credentials, or share a local vLLM GPU server. They can also share authentication infrastructure like Azure AD or
+Keycloak.
 
 Each instance still has their own LiteLLM proxy. The proxy handles model selection, budgets, rate limits, and versions
 per instance. LLM usage is tracked per instance. Prompts, responses, and user data stay within each instance.
@@ -149,8 +150,8 @@ AI-Hub Instance
 │
 ├── Data Layer
 │   ├── Database (FerretDB + PostgreSQL)
-│   ├── Vector Store (Milvus or Azure AI Search)
-│   ├── Document Store (SeaweedFS or Azure Data Lake)
+│   ├── Vector Store (Milvus)
+│   ├── Document Store (SeaweedFS)
 │   └── Cache (Valkey)
 │
 ├── LLM Layer
@@ -171,7 +172,7 @@ AI-Hub Instance
     └── Traefik (reverse proxy + SSL termination)
 ```
 
-The LiteLLM proxy connects to LLM services (Azure OpenAI, Google Gemini, self-hosted models).
+The LiteLLM proxy connects to LLM services (Swiss LLM Cloud for non-GPU, local vLLM for GPU deployments).
 
 ### Multi-instance infrastructure
 
@@ -180,15 +181,12 @@ resources:
 
 ```
 Shared LLM Backend Resources
-├── LLM API Subscriptions
-│   ├── Azure OpenAI subscription (shared API keys)
-│   ├── Google Gemini API keys
-│   └── Other cloud provider credentials
+├── Cloud LLM Provider
+│   ├── Swiss LLM Cloud credentials (shared API keys)
+│   └── Other cloud provider credentials (optional)
 │
-├── Self-Hosted Model Infrastructure
-│   ├── vLLM deployment (GPU cluster)
-│   ├── llama.cpp servers
-│   └── HF-TEI instances
+├── Self-Hosted Model Infrastructure (GPU)
+│   └── vLLM deployment (NVIDIA RTX 6000 Pro, 96 GB VRAM)
 │
 └── Optional Shared Services
     ├── Central Authentication (Azure AD, Keycloak)
@@ -198,7 +196,7 @@ Shared LLM Backend Resources
 Network architecture:
 
 - Each instance has their own LiteLLM proxy
-- Instance LiteLLM proxies connect to shared LLM backends (Azure OpenAI, Gemini, self-hosted models)
+- Instance LiteLLM proxies connect to shared LLM backends (Swiss LLM Cloud or local vLLM)
 - Shared LLM backends use common API credentials (configured per instance's LiteLLM)
 - No direct communication between instances
 - Optional: Shared authentication provider (Azure AD, Keycloak)
@@ -220,7 +218,7 @@ graph TB
         Stack --- Proxy
     end
 
-    Backend["LLM Backend<br/>(Azure OpenAI, Gemini, vLLM)"]
+    Backend["LLM Backend<br/>(Swiss LLM Cloud or local vLLM)"]
 
     Proxy -->|HTTPS| Backend
 
@@ -233,7 +231,7 @@ The instance connects to LLM services via its LiteLLM proxy.
 
 ```mermaid
 graph TB
-    Backend["Shared LLM Backend<br/>(Azure OpenAI, Gemini, vLLM)"]
+    Backend["Shared LLM Backend<br/>(Swiss LLM Cloud or local vLLM)"]
 
     subgraph Instance1["Instance 1"]
         I1Stack["Full Stack<br/>(API, Agents, DB, Vector Store)"]
@@ -261,8 +259,8 @@ graph TB
 ```
 
 Each instance has their own LiteLLM proxy (independent cost tracking, versioning, configuration). All instance LiteLLM
-proxies connect to shared LLM backend resources (Azure OpenAI subscriptions, self-hosted models). Prompts, responses,
-and user data stay within instance boundaries.
+proxies connect to shared LLM backend resources (Swiss LLM Cloud or local vLLM). Prompts, responses, and user data stay
+within instance boundaries.
 
 ______________________________________________________________________
 
@@ -327,17 +325,17 @@ separation within that instance).
 
 ::: details What data does the shared LLM backend see?
 Each instance has their own LiteLLM proxy, so prompts and responses stay within the instance. The shared LLM backends
-(Azure OpenAI, Gemini, self-hosted models) see API requests from multiple instance LiteLLM proxies (stateless, not
-persisted), model inference requests (prompts and completions in transit only), no instance identification or context,
-and anonymous PII data if enabled.
+(Swiss LLM Cloud or local vLLM) see API requests from multiple instance LiteLLM proxies (stateless, not persisted),
+model inference requests (prompts and completions in transit only), no instance identification or context, and anonymous
+PII data if enabled.
 
 They do not see which instance made the request, conversational history, or any stored data. All context remains in the
 instance's LiteLLM proxy and database.
 :::
 
 ::: details Can an instance use self-hosted models exclusively?
-Yes. For air-gapped or fully on-premise deployments, you can deploy self-hosted LLMs (vLLM, llama.cpp, HF-TEI),
-configure LiteLLM to route to local models, and run with no outbound internet connectivity required.
+Yes. For air-gapped or fully on-premise deployments, use the GPU variant of the docker-compose file. All inference runs
+locally via vLLM on an NVIDIA RTX 6000 Pro (96 GB VRAM) with no outbound internet connectivity required.
 :::
 
 ::: details How are costs tracked per instance?
@@ -348,9 +346,9 @@ Data is available in the LiteLLM admin UI and exportable for billing.
 :::
 
 ::: details Can instances have different LLM access?
-Yes. LiteLLM configuration allows per-instance model access. For example, Instance A might only use GPT-4o for strict
-compliance, Instance B might use GPT-4o plus Gemini 2.0 for more flexibility, and Instance C might use self-hosted
-models only for air-gapped deployment.
+Yes. LiteLLM configuration allows per-instance model access. For example, Instance A might use Swiss LLM Cloud with a
+specific set of models, Instance B might use a different model selection for flexibility, and Instance C might use local
+vLLM only for air-gapped deployment.
 :::
 
 ::: details What happens if the LLM proxy is unavailable?

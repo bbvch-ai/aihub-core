@@ -20,7 +20,7 @@ Architecture:
 - SSE streaming to /api/v1/agents/classes/{class}/instances/{id}/{event}/stream endpoints
 """
 
-import base64
+import asyncio
 import hashlib
 import hmac
 import html
@@ -37,8 +37,6 @@ from urllib.parse import urlparse
 import httpx
 from pydantic import BaseModel, Field
 from bson import ObjectId
-import boto3
-from botocore.client import Config
 from open_webui.models.files import Files
 from opentelemetry.propagate import inject
 from opentelemetry import trace
@@ -222,14 +220,6 @@ class EventCaller(Protocol):
     ) -> Annotated[dict[str, Any], "Response from event call"]: ...
 
 
-class FileStorageAdapter(Protocol):
-    """Protocol for file storage operations"""
-
-    async def fetch_file(
-        self, path: Annotated[str, "File path"]
-    ) -> Annotated[Optional[bytes], "File content or None if error"]: ...
-
-
 # ============================================================================
 # Authentication Service
 # ============================================================================
@@ -276,58 +266,6 @@ class AuthenticationService:
         if accept_language:
             headers["Accept-Language"] = accept_language
         return headers
-
-
-# ============================================================================
-# File Storage Implementation
-# ============================================================================
-
-
-class S3StorageAdapter:
-    """S3/MinIO storage adapter implementing FileStorageAdapter protocol"""
-
-    def __init__(
-        self,
-        endpoint: Annotated[str, "S3 endpoint URL"],
-        access_key: Annotated[str, "S3 access key"],
-        secret_key: Annotated[str, "S3 secret key"],
-    ):
-        self._endpoint = endpoint
-        self._access_key = access_key
-        self._secret_key = secret_key
-        self._client: Annotated[Optional[Any], "Boto3 S3 client"] = None
-
-    def _get_client(self) -> Annotated[Any, "Boto3 S3 client"]:
-        """Lazy initialization of S3 client"""
-        if not self._client:
-            self._client = boto3.client(
-                "s3",
-                endpoint_url=self._endpoint,
-                aws_access_key_id=self._access_key,
-                aws_secret_access_key=self._secret_key,
-                config=Config(signature_version="s3v4"),
-                region_name="us-east-1",
-            )
-        return self._client
-
-    async def fetch_file(
-        self, s3_path: Annotated[str, "S3 path in format s3://bucket/key"]
-    ) -> Annotated[Optional[bytes], "File content as bytes or None"]:
-        """Fetch file from S3 storage"""
-        parsed = urlparse(s3_path)
-        if parsed.scheme != "s3":
-            logger.error(f"Invalid S3 path: {s3_path}")
-            return None
-
-        bucket = parsed.netloc
-        key = parsed.path.lstrip("/")
-
-        try:
-            response = self._get_client().get_object(Bucket=bucket, Key=key)
-            return response["Body"].read()
-        except Exception as e:
-            logger.exception(f"Error fetching file from S3: {e}")
-            return None
 
 
 # ============================================================================
@@ -1443,15 +1381,39 @@ class AgentDiscoveryService:
 
 
 class FileProcessingService:
-    """Handles file processing and conversion"""
+    """Handles file processing via the agent file upload API.
 
-    def __init__(self, storage_adapter: Annotated[FileStorageAdapter, "Storage adapter instance"]):
-        self._storage_adapter = storage_adapter
+    Uploads files from OpenWebUI's S3 storage into the agent's dedicated
+    bucket using the two-step initiate/validate flow, preventing IDOR.
+    """
+
+    def __init__(self, base_url: str, s3_endpoint: str, s3_access_key: str, s3_secret_key: str) -> None:
+        self._base_url = base_url
+        self._owui_s3_client = self._create_s3_client(s3_endpoint, s3_access_key, s3_secret_key)
+
+    @staticmethod
+    def _create_s3_client(endpoint: str, access_key: str, secret_key: str) -> Any:
+        """Create a boto3 S3 client for reading files from OpenWebUI's storage."""
+        import boto3
+        from botocore.client import Config
+
+        return boto3.client(
+            "s3",
+            endpoint_url=endpoint,
+            aws_access_key_id=access_key,
+            aws_secret_access_key=secret_key,
+            config=Config(signature_version="s3v4"),
+            region_name="us-east-1",
+        )
 
     async def prepare_files_for_event(
-        self, files: Annotated[Optional[list[dict[str, Any]]], "Files from Open WebUI"]
+        self,
+        files: Annotated[Optional[list[dict[str, Any]]], "Files from Open WebUI"],
+        agent_class: Annotated[str, "Target agent class"],
+        agent_id: Annotated[str, "Target agent instance ID"],
+        headers: Annotated[dict[str, str], "Auth headers for AI-Hub API"],
     ) -> Annotated[list[dict[str, str]], "Prepared files for AI-Hub"]:
-        """Convert Open WebUI files to AI-Hub event format"""
+        """Upload Open WebUI files to the agent's bucket and return file references."""
         if not files:
             return []
 
@@ -1459,7 +1421,7 @@ class FileProcessingService:
 
         for file in files:
             try:
-                prepared_file = await self._process_single_file(file)
+                prepared_file = await self._process_single_file(file, agent_class, agent_id, headers)
                 if prepared_file:
                     prepared_files.append(prepared_file)
             except Exception as e:
@@ -1468,37 +1430,87 @@ class FileProcessingService:
         return prepared_files
 
     async def _process_single_file(
-        self, file: Annotated[dict[str, Any], "Single file to process"]
+        self,
+        file: Annotated[dict[str, Any], "Single file to process"],
+        agent_class: Annotated[str, "Target agent class"],
+        agent_id: Annotated[str, "Target agent instance ID"],
+        headers: Annotated[dict[str, str], "Auth headers"],
     ) -> Annotated[Optional[dict[str, str]], "Processed file or None"]:
-        """Process a single file"""
+        """Upload a single file to the agent's bucket via initiate → PUT → validate."""
         logger.debug(f"Processing file: {file.get('name', '')}, ID: {file.get('id', '')}")
 
-        file_id = file.get("id", "")
-        file_obj = Files.get_file_by_id(file_id)
+        owui_file_id = file.get("id", "")
+        file_obj = Files.get_file_by_id(owui_file_id)
 
         if not file_obj:
-            logger.warning(f"Could not retrieve file with ID: {file_id}")
+            logger.warning(f"Could not retrieve file with ID: {owui_file_id}")
             return None
 
         file_meta = file_obj.meta
         filename = file_meta.get("name", "unnamed_file")
         content_type = file_meta.get("content_type", "application/octet-stream")
 
-        file_content = await self._storage_adapter.fetch_file(file_obj.path)
+        # Read file content from OpenWebUI's S3 storage (blocking I/O offloaded to thread)
+        file_content = await asyncio.to_thread(self._read_file_content, file_obj)
 
-        if not file_content:
-            logger.warning(f"Could not fetch file from storage: {file_obj.path}")
-            return None
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            # Step 1: Initiate upload — get presigned URL + file_id
+            initiate_url = (
+                f"{self._base_url}/api/v1/agents/classes/{agent_class}/instances/{agent_id}/files/upload/initiate"
+            )
+            initiate_resp = await client.post(
+                initiate_url,
+                headers=headers,
+                json={"filename": filename, "content_type": content_type},
+            )
+            initiate_resp.raise_for_status()
+            initiate_data = initiate_resp.json()
 
-        base64_data = base64.b64encode(file_content).decode("utf-8")
+            upload_url = initiate_data["upload_url"]
+            agent_file_id = initiate_data["file_id"]
 
-        logger.debug(f"Successfully prepared file: {filename}")
+            # Step 2: PUT file content to presigned URL
+            put_resp = await client.put(
+                upload_url,
+                content=file_content,
+                headers={"Content-Type": content_type},
+            )
+            put_resp.raise_for_status()
+
+            # Step 3: Validate upload
+            validate_url = (
+                f"{self._base_url}/api/v1/agents/classes/{agent_class}/instances/{agent_id}/files/upload/validate"
+            )
+            validate_resp = await client.post(
+                validate_url,
+                headers=headers,
+                json={"file_id": agent_file_id, "filename": filename},
+            )
+            validate_resp.raise_for_status()
+            validate_data = validate_resp.json()
+
+            if not validate_data.get("exists"):
+                logger.warning(f"File validation failed for {filename} (file_id={agent_file_id})")
+                return None
+
+        logger.debug(f"Successfully uploaded file: {filename} -> file_id={agent_file_id}")
 
         return {
             "filename": filename,
-            "file_data": base64_data,
             "file_type": content_type,
+            "file_id": agent_file_id,
         }
+
+    def _read_file_content(self, file_obj: Any) -> bytes:
+        """Read file content from OpenWebUI's S3 storage."""
+        parsed = urlparse(file_obj.path)
+        if parsed.scheme != "s3":
+            raise ValueError(f"Unsupported storage path scheme: {file_obj.path}")
+
+        bucket = parsed.netloc
+        key = parsed.path.lstrip("/")
+        response = self._owui_s3_client.get_object(Bucket=bucket, Key=key)
+        return response["Body"].read()
 
 
 # ============================================================================
@@ -1542,7 +1554,7 @@ class Pipe:
         )
         S3_STORAGE_ENDPOINT: str = Field(
             default=os.getenv("S3_ENDPOINT_URL", ""),
-            description="S3/MinIO endpoint URL",
+            description="S3/MinIO endpoint URL for reading OpenWebUI files",
         )
         S3_STORAGE_ACCESS_KEY: str = Field(
             default=os.getenv("S3_ACCESS_KEY_ID", ""),
@@ -1564,15 +1576,13 @@ class Pipe:
             self.valves.OPEN_WEBUI_SIGNING_SECRET, self.valves.AIHUB_SUPERUSER_API_KEY
         )
 
-        # Storage
-        self._storage_adapter = S3StorageAdapter(
+        # File Processing
+        self._file_service = FileProcessingService(
+            self.valves.AIHUB_BASE_URL,
             self.valves.S3_STORAGE_ENDPOINT,
             self.valves.S3_STORAGE_ACCESS_KEY,
             self.valves.S3_STORAGE_SECRET_KEY,
         )
-
-        # File Processing
-        self._file_service = FileProcessingService(self._storage_adapter)
 
         # Message Conversion
         self._message_converter = MessageConverter()
@@ -1709,8 +1719,10 @@ class Pipe:
                 # Convert messages
                 messages = self._message_converter.convert_to_event_format(body["messages"])
 
-                # Process files
-                files = await self._file_service.prepare_files_for_event(__files__)
+                # Process files — upload to agent's dedicated bucket
+                files = await self._file_service.prepare_files_for_event(
+                    __files__, agent_class, agent_id, headers
+                )
 
                 # Check for open chat HITL - if found, send HITL response instead of UserMessageEvent
                 open_hitl = await self._check_open_chat_hitl(thread_id, headers)

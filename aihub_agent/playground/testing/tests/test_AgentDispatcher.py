@@ -50,7 +50,6 @@ class MockAgent(Agent):
 def mock_agent_config():
     """Create a mock agent configuration."""
     return AgentConfig(
-        agent_class="MockAgent",
         agent_id="test_agent",
         name=LocaleString(en="Test Agent"),
         description=LocaleString(en="Test agent for dispatcher testing"),
@@ -206,6 +205,8 @@ def agent_dispatcher(mock_agent_config, nats_client, jetstream_context, redis_cl
     dispatcher.step_store.mark_execution_context_as_crashed = AsyncMock()
     dispatcher.step_store.delete_all = AsyncMock()
     dispatcher.step_store.get_execution_count = AsyncMock(return_value=0)
+    dispatcher.trace_store = Mock()
+    dispatcher.trace_store.delete_all = AsyncMock()
     dispatcher._step_meets_basic_execution_requirements = AsyncMock(return_value=True)
 
     # Mock publisher methods to avoid actual NATS publishing during tests
@@ -238,7 +239,6 @@ class TestAgentDispatcherHandleEvent:
         )
 
         custom_config = AgentConfig(
-            agent_class="MockAgent",
             agent_id="custom_agent",
             name=LocaleString(en="Custom Agent"),
             description=LocaleString(en="Custom test agent"),
@@ -337,6 +337,7 @@ class TestAgentDispatcherHandleEvent:
             # We can verify the stores were called for cleanup
             agent_dispatcher.event_store.delete_all.assert_called_once_with(agent_topic.execution_context_id)
             agent_dispatcher.step_store.delete_all.assert_called_once_with(agent_topic.execution_context_id)
+            agent_dispatcher.trace_store.delete_all.assert_called_once_with(agent_topic.execution_context_id)
 
     @pytest.mark.asyncio
     async def test_handle_exception_event_marks_execution_context_crashed(self, agent_dispatcher, agent_topic):
@@ -625,7 +626,6 @@ class TestAgentDispatcherIntegration:
         """Test the complete flow from event receipt to step execution with minimal mocking."""
         # Arrange
         custom_config = AgentConfig(
-            agent_class="MockAgent",
             agent_id="integration_test_agent",
             name=LocaleString(en="Integration Test Agent"),
             description=LocaleString(en="Agent for testing complete flow"),

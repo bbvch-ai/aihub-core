@@ -1,12 +1,10 @@
 # ruff: noqa: E402
+import pytest
+
 from aihub_lib.infrastructure.opentelemetry.AihubInstrumentor import AihubInstrumentor  # isort: skip
 
 AihubInstrumentor().instrument()
 
-
-import pytest
-
-pytestmark = [pytest.mark.azure]
 
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
     DangerousDevelopmentOnlyAuthSettings,
@@ -51,7 +49,7 @@ def agent_config():
             en="Test agent for organization memory integration",
             de="Testagent für Organisationsspeicherintegration",
         ),
-        llm=LLMConfig(model_name="text-generation/mini"),
+        llm=LLMConfig(model_name="text-generation/gpt-oss-120b"),
         tenant_id="default_tenant",
         tenant_namespace="default_namespace",
     )

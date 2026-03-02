@@ -650,7 +650,6 @@ class TestUserMemoryIntegration:
 
     @pytest.mark.asyncio
     @pytest.mark.slow
-    @pytest.mark.azure
     async def test_add_search_update_delete_workflow(self, user_memory_client):
         """Full CRUD workflow with real infrastructure."""
         from aihub_lib.agents.AgentConfig import AgentConfig
@@ -729,7 +728,6 @@ class TestUserMemoryIntegration:
 
     @pytest.mark.asyncio
     @pytest.mark.slow
-    @pytest.mark.azure
     async def test_user_isolation(self, user_memory_client):
         """User A should not see User B's memories via API."""
         from aihub_lib.agents.AgentConfig import AgentConfig

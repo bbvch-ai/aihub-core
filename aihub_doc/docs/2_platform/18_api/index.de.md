@@ -1,165 +1,164 @@
 ---
 title: API
-source_sha: bed624a9f3afac4a0e5c68b13007d642db7210da367d07e8efe95289bbcb4f8f
+source_sha: 30be89c27c1a7ba5aeebca467ca64423148175ef99cfe067bff92d5e78c072b0
 ---
 
 # OpenAI-kompatible REST-API
 
 ## Konzept und Zweck
 
-Die OpenAI-kompatible REST-API bietet eine standardbasierte HTTP-Schnittstelle, die auf FastAPI aufbaut und der OpenAI
-API-Spezifikation exakt entspricht. Dieses Design ermöglicht es Organisationen, bestehende KI-gestützte Anwendungen auf
-die Swiss AI-Hub Plattform zu migrieren, ohne den Anwendungscode ändern zu müssen – lediglich die API-Endpunkt-URL und
-das Authentifizierungstoken müssen geändert werden.
+Die OpenAI-kompatible REST-API bietet eine standardbasierte HTTP-Schnittstelle, die auf FastAPI basiert und die OpenAI
+API-Spezifikation exakt widerspiegelt. Dieses Design ermöglicht es Organisationen, bestehende KI-gestützte Anwendungen
+ohne Änderung des Anwendungscodes auf die Swiss AI-Hub-Plattform zu migrieren – lediglich die API-Endpunkt-URL und der
+Authentifizierungstoken müssen geändert werden.
 
-Der strategische Wert dieser Kompatibilitätsschicht liegt darin, Migrationshürden zu reduzieren und bestehende
-Technologieinvestitionen zu schützen. Organisationen können die Swiss AI-Hub Infrastruktur aus Gründen der Datenhoheit,
+Der strategische Wert dieser Kompatibilitätsschicht liegt in der Reduzierung von Migrationshürden und dem Schutz
+bestehender Technologieinvestitionen. Organisationen können die Swiss AI-Hub-Infrastruktur aus Gründen der Datenhoheit,
 Kostenkontrolle oder Compliance übernehmen, während sie ihr auf OpenAI SDKs und Bibliotheken aufgebautes
-Anwendungsökosystem bewahren.
+Anwendungsökosystem beibehalten.
 
-## Wesentliche Designprinzipien
+## Zentrale Designprinzipien
 
 ### Nahtlose Migration und Integration
 
-Die API bietet vollständige Kompatibilität mit der OpenAI-Schnittstelle und unterstützt alle wichtigen Funktionen,
-einschließlich konversationaler KI (Chat Completions), semantischer Suche (Embeddings), Bilderzeugung und
-Audioverarbeitung (Sprache-zu-Text und Text-zu-Sprache). Anwendungen, die mit den Python- oder JavaScript-SDKs von
-OpenAI entwickelt wurden, funktionieren ohne Änderungen, was eine schnelle Plattformakzeptanz ermöglicht und das
+Die API implementiert vollständige Kompatibilität mit der OpenAI-Schnittstelle und unterstützt alle wichtigen
+Funktionen, einschließlich konversationeller KI (Chat Completions), semantischer Suche (Embeddings), Bilderzeugung und
+Audioverarbeitung (Speech-to-Text und Text-to-Speech). Anwendungen, die mit OpenAI's Python- oder JavaScript-SDKs
+entwickelt wurden, funktionieren ohne Änderungen, was eine schnelle Plattformakzeptanz ermöglicht und das
 Implementierungsrisiko reduziert.
 
 Diese Kompatibilität erstreckt sich auf Anfrage- und Antwortformate, Streaming-Verhalten und Fehlerbehandlungsmuster.
-Organisationen können die Plattform mithilfe bestehender Testsuiten und Migrationsskripte validieren, wodurch
-Evaluierungs- und Bereitstellungszeiten beschleunigt werden.
+Organisationen können die Plattform mit bestehenden Test-Suites und Migrationsskripten validieren, was die Evaluierungs-
+und Deployment-Zeiten beschleunigt.
 
-### Anbieterunabhängiger Modellzugriff
+### Anbieterneutraler Modellzugriff
 
-Die API abstrahiert die zugrunde liegenden Modellprovider und unterstützt mehrere LLM-Quellen, darunter Azure OpenAI,
-selbst gehostete Modelle und andere OpenAI-kompatible Dienste. Diese Anbieterneutralität bietet mehrere
-Geschäftsvorteile: Organisationen können transparent und ohne Anwendungsänderungen zwischen Modellprovidern wechseln,
-Kostenoptimierungsstrategien implementieren, indem Anfragen basierend auf Workload-Charakteristiken an verschiedene
-Anbieter weitergeleitet werden, Datenhoheit durch selbst gehostete Modelloptionen aufrechterhalten und hybride
-Bereitstellungsmodelle nutzen, die Cloud- und On-Premise-Ressourcen kombinieren.
+Die API abstrahiert zugrunde liegende Modellprovider und unterstützt mehrere LLM-Quellen, darunter Swiss LLM Cloud,
+selbst gehostete vLLM-Modelle und andere OpenAI-kompatible Services. Diese Anbieterneutralität bietet mehrere
+Geschäftsvorteile: Organisationen können transparent zwischen Modellprovidern wechseln, ohne Anwendungsänderungen
+vornehmen zu müssen; Kostenoptimierungsstrategien implementieren, indem Anfragen basierend auf Workload-Charakteristiken
+an verschiedene Anbieter weitergeleitet werden; Datenhoheit durch selbst gehostete Modelloptionen aufrechterhalten und
+hybride Deployment-Modelle nutzen, die Cloud- und On-Premise-Ressourcen kombinieren.
 
-Modellauswahl und -routing erfolgen transparent auf Plattformebene, was eine zentralisierte Governance und Optimierung
-ermöglicht, ohne eine Koordination zwischen den Anwendungsteams zu erfordern.
+Die Modellauswahl und das Routing erfolgen transparent auf Plattformebene, was eine zentralisierte Governance und
+Optimierung ermöglicht, ohne eine Koordination zwischen den Anwendungsteams zu erfordern.
 
-### Erweitertes Modellkonzept: AI-Hub Assistenten
+### Erweitertes Modellkonzept: AI-Hub Assistants
 
-Über die Standard-Sprachmodelle hinaus erweitert der Swiss AI-Hub das OpenAI-Modellkonzept um plattform-eigene
-KI-Assistenten (Agents). Diese Assistenten erscheinen als spezialisierte Modelle neben traditionellen LLMs, wodurch
-Anwendungen mit komplexen, zustandsbehafteten Agenten-Workflows über dieselbe vertraute Chat-Schnittstelle interagieren
-können.
+Über Standard-Sprachmodelle hinaus erweitert der Swiss AI-Hub das OpenAI-Modellkonzept um plattformeigene KI-Assistenten
+(Agents). Diese Assistenten erscheinen als spezialisierte Modelle neben traditionellen LLMs und ermöglichen es
+Anwendungen, mit komplexen, zustandsbehafteten Agent-Workflows über dieselbe vertraute Chat-Schnittstelle zu
+interagieren.
 
-Diese Erweiterung bietet einen Migrationspfad für Organisationen, die sich von einfachen LLM-Interaktionen hin zu
-orchestrierten Agenten-Workflows entwickeln möchten. Anwendungen können mit dem Aufruf grundlegender Sprachmodelle
-beginnen und schrittweise komplexere Agenten übernehmen, ohne architektonische Änderungen vornehmen zu müssen – dieselbe
-API-Schnittstelle dient beiden Anwendungsfällen.
+Diese Erweiterung bietet einen Migrationspfad für Organisationen, die von einfachen LLM-Interaktionen zu orchestrierten
+Agent-Workflows übergehen möchten. Anwendungen können mit dem Aufruf grundlegender Sprachmodelle beginnen und
+schrittweise anspruchsvollere Agents ohne architektonische Änderungen einführen – dieselbe API-Schnittstelle dient
+beiden Anwendungsfällen.
 
 ## Unterstützte Funktionen
 
-Die API bietet ein umfassendes Spektrum an KI-Funktionalitäten, die mit modernen LLM-Anwendungen kompatibel sind:
+Die API bietet eine umfassende KI-Funktionalität, die mit modernen LLM-Anwendungen kompatibel ist:
 
-**Konversations-KI**: Vollständige Unterstützung für Chat Completions mit synchronen und Streaming-Antwortmodi, die
-interaktive Anwendungen und progressive UI-Updates ermöglichen. Die Schnittstelle unterstützt Multi-Turn-Gespräche,
-Funktionsaufrufe und multimodale Eingaben (Text und Bilder) für sehfähige Modelle.
+**Konversationelle KI**: Volle Unterstützung für Chat Completions mit synchronen und Streaming-Antwortmodi, die
+interaktive Anwendungen und progressive UI-Updates ermöglichen. Die Schnittstelle unterstützt Multi-Turn-Konversationen,
+Function Calling und multimodale Eingaben (Text und Bilder) für visuell-fähige Modelle.
 
-**Semantische Suche**: Die Embedding-Generierung wandelt Text in Vektorrepräsentationen für semantische Suche,
-Ähnlichkeitsabgleich und Retrieval-Augmented Generation Workflows um. Diese Funktion unterstützt Batch-Verarbeitung und
+**Semantische Suche**: Die Embedding-Generierung wandelt Text in Vektorrepräsentationen für die semantische Suche,
+Ähnlichkeitsabgleiche und Retrieval-Augmented Generation Workflows um. Diese Funktion unterstützt Batch-Verarbeitung und
 mehrere Embedding-Modellkonfigurationen.
 
-**Multimodale Generierung**: Bilderzeugung aus Text-Prompts und Audioverarbeitungsfunktionen, einschließlich
-Sprache-zu-Text-Transkription (unterstützt mehrere Audioformate und Sprachen) und Text-zu-Sprache-Synthese mit
+**Multimodale Generierung**: Bilderzeugung aus Textprompts und Audioverarbeitungsfunktionen, einschließlich
+Speech-to-Text-Transkription (unterstützt mehrere Audioformate und Sprachen) und Text-to-Speech-Synthese mit
 konfigurierbaren Stimmen und Streaming-Ausgabe.
 
-**Modell-Entdeckung**: Die dynamische Modellauflistung ermöglicht Anwendungen, verfügbare LLM-Modelle und AI-Hub
-Assistenten zur Laufzeit zu entdecken, was adaptive Schnittstellen und eine zentralisierte Modell-Governance
-unterstützt.
+**Modell-Discovery**: Dynamische Modellauflistung ermöglicht es Anwendungen, verfügbare LLM-Modelle und AI-Hub
+Assistants zur Laufzeit zu entdecken, was adaptive Schnittstellen und eine zentralisierte Modell-Governance unterstützt.
 
 ## Geschäftlicher Nutzen
 
-### Reduziertes Migrationsrisiko und Kosten
+### Reduziertes Migrationsrisiko und -kosten
 
-Organisationen können die Swiss AI-Hub Plattform übernehmen, ohne Anwendungen neu schreiben zu müssen, wodurch
-Migrationsprojektkosten entfallen und das Adoptionsrisiko reduziert wird. Bestehende Entwicklungsteams nutzen weiterhin
-vertraute OpenAI SDKs und Muster, wodurch Umschulungsaufwand vermieden wird. Diese Kompatibilität schützt Investitionen
-in Anwendungscode, Testinfrastruktur und operative Runbooks.
+Organisationen können die Swiss AI-Hub-Plattform übernehmen, ohne Anwendungen neu schreiben zu müssen, wodurch
+Migrationsprojektkosten entfallen und das Adoptionsrisiko reduziert wird. Bestehende Entwicklungsteams verwenden
+weiterhin vertraute OpenAI-SDKs und -Muster, wodurch Umschulungsaufwand vermieden wird. Diese Kompatibilität bewahrt
+Investitionen in Anwendungscode, Testinfrastruktur und operative Runbooks.
 
 ### Zentralisierte Governance und Kostenkontrolle
 
-Die Kompatibilitätsschicht bietet einen zentralen Kontrollpunkt für den Modellzugriff innerhalb der Organisation.
-Plattformadministratoren können Kostenkontrollen, Nutzungskontingente und Routing-Richtlinien implementieren, ohne
-Änderungen an einzelnen Anwendungen vornehmen zu müssen. Der Wechsel des Modellproviders erfolgt transparent, was
-Kostenoptimierung ermöglicht und Anbieterbindung (Vendor Lock-in) vermeidet.
+Die Kompatibilitätsschicht bietet einen einzigen Kontrollpunkt für den Modellzugriff innerhalb der gesamten
+Organisation. Plattformadministratoren können Kostenkontrollen, Nutzungskontingente und Routing-Richtlinien
+implementieren, ohne Änderungen an einzelnen Anwendungen vornehmen zu müssen. Der Wechsel des Modellproviders erfolgt
+transparent, was Kostenoptimierung ermöglicht und Vendor Lock-in vermeidet.
 
-### Pfad zur progressiven Verbesserung
+### Pfad zur progressiven Erweiterung
 
 Die vereinheitlichte Schnittstelle zwischen grundlegenden LLM-Modellen und hochentwickelten KI-Assistenten ermöglicht es
-Organisationen, ihre KI-Fähigkeiten schrittweise zu entwickeln. Anwendungen, die für den einfachen Modellzugriff
-entwickelt wurden, können mit zunehmender organisatorischer Reife schrittweise fortschrittlichere agentenbasierte
-Workflows übernehmen, ohne eine architektonische Neugestaltung zu erfordern.
+Organisationen, ihre KI-Fähigkeiten inkrementell weiterzuentwickeln. Anwendungen, die für den einfachen Modellzugriff
+entwickelt wurden, können schrittweise fortschrittlichere agentenbasierte Workflows einführen, wenn die organisationale
+Reife zunimmt, ohne eine architektonische Neugestaltung zu erfordern.
 
 ## Implementierungsansatz
 
-Auf FastAPI aufgebaut, fungiert die API als Teil des Hauptplattformdienstes mit zustandsloser Anfragenverarbeitung, die
-horizontale Skalierung ermöglicht. Die Authentifizierung integriert sich über OAuth2 mit organisationalen
-Identitätsprovidern, und hierarchische Berechtigungen steuern den Zugriff auf LLM-Modelle und KI-Assistenten. Die
-Anfragen-Routing-Logik leitet Modell-Anfragen transparent an die LLM-Proxy-Schicht weiter, während
-Assistenten-Interaktionen in Plattformereignisse für die Agentenverarbeitung umgewandelt werden, wobei eine klare
-Trennung zwischen externem Modellzugriff und interner Agenten-Orchestrierung aufrechterhalten wird.
+Die auf FastAPI basierende API operiert als Teil des Hauptplattformdienstes mit zustandsloser Anfragenverarbeitung, die
+eine horizontale Skalierung ermöglicht. Die Authentifizierung integriert sich über OAuth2 mit organisationalen
+Identitätsprovidern, und hierarchische Berechtigungen steuern den Zugriff auf LLM-Modelle und AI-Hub Assistants. Die
+Anfragen-Routing-Logik leitet Modell-Anfragen transparent an die LLM-Proxy-Schicht weiter, während sie
+Assistant-Interaktionen in Plattformereignisse für die Agent-Verarbeitung umwandelt, wodurch eine klare Trennung
+zwischen externem Modellzugriff und interner Agent-Orchestrierung aufrechterhalten wird.
 
-## Schlüsselaufgaben
+## Hauptaufgaben
 
-**Authentifizierung und Autorisierung**: Die API-Schicht setzt Sicherheitsgrenzen durch, indem sie Benutzeridentitäten
-durch Integration mit organisationalen Identitätsprovidern (OAuth2, OIDC) validiert und rollenbasierte
-Zugriffssteuerungsrichtlinien durchsetzt.
+**Authentifizierung und Autorisierung**: Die API-Schicht setzt Sicherheitsgrenzen durch, validiert Benutzeridentitäten
+durch Integration mit organisationalen Identitätsprovidern (OAuth2, OIDC) und erzwingt rollenbasierte
+Zugriffssteuerungsrichtlinien.
 
-**Anfragen-Routing**: Eingehende Anfragen werden validiert, authentifiziert und an die entsprechenden Backend-Dienste
-weitergeleitet. Die API fungiert als Fassade, die die Komplexität der verteilten Dienstarchitektur vor den Clients
+**Anfrage-Routing**: Eingehende Anfragen werden validiert, authentifiziert und an die entsprechenden Backend-Services
+weitergeleitet. Die API fungiert als Fassade, die die Komplexität der verteilten Service-Architektur vor Clients
 abstrahiert.
 
 **Protokollübersetzung**: Die API übersetzt zwischen externen Protokollen (HTTP/REST, WebSocket) und internen
-ereignisgesteuerten Kommunikationsmustern, wodurch synchrone Client-Erwartungen mit asynchroner Backend-Verarbeitung
-überbrückt werden.
+ereignisgesteuerten Kommunikationsmustern und überbrückt so synchrone Client-Erwartungen mit asynchroner
+Backend-Verarbeitung.
 
-**Sitzungsverwaltung**: Für konversationsbasierte Schnittstellen verwaltet die API den Sitzungskontext, indem sie
-langlebige Verbindungen verwaltet und die Zustands konsistenz über mehrere Interaktionen hinweg sicherstellt.
+**Sitzungsverwaltung**: Für konversationelle Schnittstellen verwaltet die API den Sitzungskontext, indem sie langlebige
+Verbindungen verwaltet und die Zustandskonsistenz über mehrere Interaktionen hinweg sicherstellt.
 
-## API-Typen und Schnittstellen
+## API-Typen und -Schnittstellen
 
-Die Swiss AI-Hub Plattform stellt mehrere API-Typen bereit, die jeweils für spezifische Interaktionsmuster und
+Die Swiss AI-Hub-Plattform stellt mehrere API-Typen bereit, die jeweils für spezifische Interaktionsmuster und
 Anwendungsfälle optimiert sind:
 
 ### 1. OpenAI-kompatible REST-API
 
-Eine standardbasierte HTTP-API, die vollständige Kompatibilität mit der OpenAI API-Spezifikation bietet und eine
-nahtlose Migration für Anwendungen ermöglicht, die auf OpenAI SDKs basieren. Die API unterstützt Chat Completions,
-Embeddings, Bilderzeugung und Audioverarbeitung (Sprache-zu-Text und Text-zu-Sprache) mit identischen Endpunktstrukturen
-und Anfrage-/Antwortformaten. Dies dient als direkter Ersatz für OpenAI-Endpunkte, sodass bestehende Anwendungen die
-Swiss AI-Hub Infrastruktur ohne Code-Änderungen nutzen können. Die API unterstützt sowohl den direkten LLM-Modellzugriff
-als auch AI-Hub Assistenten (Agents) mit Streaming- und Nicht-Streaming-Modi für alle Funktionen.
+Eine standardbasierte HTTP-API, die volle Kompatibilität mit der OpenAI-API-Spezifikation bietet und eine nahtlose
+Migration für auf OpenAI SDKs basierende Anwendungen ermöglicht. Die API unterstützt Chat Completions, Embeddings,
+Bilderzeugung und Audioverarbeitung (Speech-to-Text und Text-to-Speech) mit identischen Endpunktstrukturen und
+Anfrage-/Antwortformaten. Dies dient als Drop-in-Ersatz für OpenAI-Endpunkte, sodass bestehende Anwendungen die Swiss
+AI-Hub-Infrastruktur ohne Codeänderungen nutzen können. Die API unterstützt sowohl den direkten LLM-Modellzugriff als
+auch AI-Hub Assistants (Agents), mit Streaming- und Nicht-Streaming-Modi für alle Funktionen.
 
 ### 2. Agenten-Interaktions-REST-API
 
 Eine native HTTP-API, die speziell für die Verwaltung und Interaktion mit KI-Agenten, Threads (Konversationen),
-Prozessen und Plattformressourcen entwickelt wurde. Diese API bietet umfassenden Zugriff auf die vollständigen
-Funktionen der Plattform, einschließlich Agenten-Entdeckung und -Konfiguration, Konversations-Lebenszyklusmanagement,
-Prozessausführung und -überwachung, Zugriff auf den Ereignisverlauf sowie Benutzer-/Rollenverwaltung. Sie ist optimiert
-für die Entwicklung nativer AI-Hub Anwendungen, die die vollständigen Agenten-Orchestrierungs- und
+Prozessen und Plattformressourcen entwickelt wurde. Diese API bietet umfassenden Zugriff auf die vollen Fähigkeiten der
+Plattform, einschließlich Agent-Discovery und -Konfiguration, Konversations-Lebenszyklusmanagement, Prozessausführung
+und -überwachung, Zugriff auf den Ereignisverlauf sowie Benutzer-/Rollenadministration. Sie ist optimiert für die
+Entwicklung nativer AI-Hub-Anwendungen, die die vollständigen Agent-Orchestrierungs- und
 Prozessautomatisierungsfunktionen der Plattform nutzen.
 
 ### 3. WebSocket-API
 
-Ein bidirektionaler, Echtzeit-Kommunikationskanal, der Live-Ereignis-Streaming und kontinuierliche Updates für
-interaktive Anwendungen ermöglicht. Die WebSocket-API liefert Agenten-Ereignisse, Statusaktualisierungen und
-Streaming-Antworten in Echtzeit mit geringer Latenz, wodurch die progressive Anzeige von Agenten-Antworten in
-Benutzeroberflächen unterstützt wird. Sie bietet verbindungsbasierte Sitzungsverwaltung mit tokenbasierter
-Authentifizierung und automatischer Trennung bei Autorisierungsfehlern. Diese API ist optimiert für
-Echtzeit-Benutzeroberflächen, die sofortiges Feedback und Live-Updates während der Agentenausführung erfordern.
+Ein bidirektionaler Echtzeit-Kommunikationskanal, der Live-Event-Streaming und kontinuierliche Updates für interaktive
+Anwendungen ermöglicht. Die WebSocket-API liefert Agent-Ereignisse, Statusaktualisierungen und Streaming-Antworten in
+Echtzeit mit geringer Latenz, was die progressive Anzeige von Agent-Antworten in Benutzeroberflächen unterstützt. Sie
+bietet verbindungsbasierte Sitzungsverwaltung mit tokenbasierter Authentifizierung und automatischer Trennung bei
+Autorisierungsfehlern. Diese API ist optimiert für Echtzeit-Benutzeroberflächen, die sofortiges Feedback und
+Live-Updates während der Agent-Ausführung erfordern.
 
 ### 4. Model Context Protocol (MCP) Server
 
-Ein HTTP-basierter MCP-Server, der AI-Hub API-Endpunkte als Ressourcen und Tools für KI-Entwicklungsassistenten und
-Automatisierungstools zugänglich macht. Dies ermöglicht es KI-Codierungsassistenten wie Claude Code und Gemini CLI, den
-Plattformstatus abzufragen, Agenten zu inspizieren und während Entwicklungssitzungen mit der AI-Hub API zu interagieren.
-Der Server bietet automatische Ressourcen- und Tool-Erkennung von API-Endpunkten, schreibgeschützten Zugriff auf
+Ein HTTP-basierter MCP-Server, der AI-Hub-API-Endpunkte als Ressourcen und Tools für KI-Entwicklungsassistenten und
+Automatisierungstools bereitstellt. Dies ermöglicht es KI-Codierungsassistenten wie Claude Code und Gemini CLI, den
+Plattformstatus abzufragen, Agents zu inspizieren und während Entwicklungssitzungen mit der AI-Hub-API zu interagieren.
+Der Server bietet automatische Ressourcen- und Tool-Discovery von API-Endpunkten, schreibgeschützten Zugriff auf
 GET-Endpunkte als MCP-Ressourcen und dynamische Schema-Generierung aus OpenAPI-Spezifikationen.

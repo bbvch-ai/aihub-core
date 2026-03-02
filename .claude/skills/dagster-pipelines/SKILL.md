@@ -59,7 +59,7 @@ defs = default_definitions(
     remove_job_minute=0,
     vector_store_dimensions=None,                 # None = use MilvusSettings default
     max_partitions=1000,                          # Max partitions per operation
-    document_parser_loader_type=LoaderType.DOCLING,  # Docling or Azure Doc Intelligence
+    document_parser_loader_type=LoaderType.MINERU,    # MinerU (default) or Azure Doc Intelligence
 )
 ```
 
@@ -250,24 +250,24 @@ ______________________________________________________________________
 
 Resources are external dependencies injected into ops. All use Dagster's `ConfigurableResource` (Pydantic-based).
 
-| Resource                               | Purpose                          | Key                        |
-| -------------------------------------- | -------------------------------- | -------------------------- |
-| `DocumentParserResource`               | Docling / Azure Doc Intelligence | `document_parser`          |
-| `MarkdownStructuralNodeParserResource` | Structural chunking              | `node_parser`              |
-| `RecursiveSummaryParserResource`       | Hierarchical summaries           | `summary_parser`           |
-| `TableRefinementResource`              | LLM table refinement             | `table_refinement`         |
-| `EmbeddingModelResource`               | LiteLLM embeddings               | `embedding_model`          |
-| `LanguageModelResource`                | LiteLLM text generation          | `language_model`           |
-| `S3DataLakeClientResource`             | S3/MinIO client                  | `data_lake_client`         |
-| `S3DataLakeFileSystemResource`         | S3 filesystem (s3fs)             | `data_lake_file_system`    |
-| `AzureDataLakeClientResource`          | Azure ADLS client                | `data_lake_client`         |
-| `MongoDocumentStoreResource`           | MongoDB doc store                | `doc_store`                |
-| `MilvusVectorStoreResource`            | Milvus vector store              | `vector_store`             |
-| `SharePointResource`                   | SharePoint connector             | `share_point_client`       |
-| `LocalFileSystemResource`              | Local/network FS                 | `local_file_system_client` |
-| `RcloneResource`                       | Universal cloud storage          | `rclone_client`            |
-| `DataLakeResource`                     | Container/directory config       | `data_lake_resource`       |
-| `DocStoreResource`                     | Doc store name config            | `doc_store_resource`       |
+| Resource                               | Purpose                         | Key                        |
+| -------------------------------------- | ------------------------------- | -------------------------- |
+| `DocumentParserResource`               | MinerU / Azure Doc Intelligence | `document_parser`          |
+| `MarkdownStructuralNodeParserResource` | Structural chunking             | `node_parser`              |
+| `RecursiveSummaryParserResource`       | Hierarchical summaries          | `summary_parser`           |
+| `TableRefinementResource`              | LLM table refinement            | `table_refinement`         |
+| `EmbeddingModelResource`               | LiteLLM embeddings              | `embedding_model`          |
+| `LanguageModelResource`                | LiteLLM text generation         | `language_model`           |
+| `S3DataLakeClientResource`             | S3/MinIO client                 | `data_lake_client`         |
+| `S3DataLakeFileSystemResource`         | S3 filesystem (s3fs)            | `data_lake_file_system`    |
+| `AzureDataLakeClientResource`          | Azure ADLS client               | `data_lake_client`         |
+| `MongoDocumentStoreResource`           | MongoDB doc store               | `doc_store`                |
+| `MilvusVectorStoreResource`            | Milvus vector store             | `vector_store`             |
+| `SharePointResource`                   | SharePoint connector            | `share_point_client`       |
+| `LocalFileSystemResource`              | Local/network FS                | `local_file_system_client` |
+| `RcloneResource`                       | Universal cloud storage         | `rclone_client`            |
+| `DataLakeResource`                     | Container/directory config      | `data_lake_resource`       |
+| `DocStoreResource`                     | Doc store name config           | `doc_store_resource`       |
 
 ### Resource Factory Pattern
 
@@ -306,7 +306,7 @@ Resources read connection details from `aihub_lib` settings (Pydantic `BaseSetti
 | `S3StorageSettings`                 | `S3_`                          | S3/MinIO connection    |
 | `MilvusSettings`                    | `MILVUS_`                      | Milvus vector DB       |
 | `RcloneSettings`                    | `RCLONE_`                      | Rclone RC API          |
-| `DoclingSettings`                   | `DOCLING_`                     | Docling parser         |
+| `MineruSettings`                    | `MINERU_`                      | MinerU parser          |
 | `AzureDocumentIntelligenceSettings` | `AZURE_DOCUMENT_INTELLIGENCE_` | Azure Doc Intelligence |
 
 ______________________________________________________________________

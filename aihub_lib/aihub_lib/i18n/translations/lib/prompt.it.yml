@@ -100,9 +100,17 @@ router:
       Analyze the user query carefully in relation to the chat history. Determine whether the query can be fulfilled based on the criteria above. Provide a clear yes/no decision with detailed reasoning.
     expert_answer_sufficient: |
       La risposta dell'esperto risponde alla domanda dell'utente?
-      <expert_response>
+      <conversation_history>
       {% for message in chat_history %}
-      {% if message.role.value == 'user' %}
+      {% if message.role.value == 'assistant' %}
+      [Domanda dell'agente]:
+      {% for block in message.blocks %}
+      {% if block.block_type == 'text' %}
+      {{ block.text }}
+      {% endif %}
+      {% endfor %}
+      {% elif message.role.value == 'user' %}
+      [Risposta dell'esperto]:
       {% for block in message.blocks %}
       {% if block.block_type == 'text' %}
       {{ block.text }}
@@ -110,15 +118,16 @@ router:
       {% endfor %}
       {% endif %}
       {% endfor %}
-      </expert_response>
+      </conversation_history>
       <user_question>
       {{ query }}
       </user_question>
-      La domanda È risposta se l'esperto ha fornito informazioni che rispondono direttamente a TUTTE le parti di ciò che è stato chiesto.
+      Concentrati sull'ULTIMA risposta dell'esperto nella cronologia della conversazione sopra.
+      La domanda È risposta se l'ultima risposta dell'esperto fornisce informazioni che rispondono direttamente a TUTTE le parti di ciò che è stato chiesto.
       La domanda NON è risposta se:
-      - L'esperto dice esplicitamente che non sa o rifiuta di rispondere
-      - La domanda ha più parti e solo alcune sono state risposte
-      Analizza attentamente la cronologia della chat in relazione alla domanda dell'utente. Determina se l'esperto ha già risposto sufficientemente alla domanda in base ai criteri sopra indicati. Fornisci una decisione chiara con un ragionamento dettagliato.
+      - L'ultima risposta dell'esperto dice esplicitamente che non sa o rifiuta di rispondere
+      - La domanda ha più parti e l'ultima risposta ne copre solo alcune
+      Analizza attentamente la cronologia della conversazione prestando particolare attenzione all'ultima risposta dell'esperto. Determina se la domanda è stata sufficientemente risposta. Fornisci una decisione chiara con un ragionamento dettagliato.
 memory:
   user_memory_system_message: |
     <user_context>

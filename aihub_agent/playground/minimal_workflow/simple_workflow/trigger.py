@@ -22,7 +22,6 @@ async def main():
         agent_type=SimpleAgent,
         agent_config=SimpleAgentConfig(
             agent_id="simple_agent",
-            agent_class=SimpleAgent.__name__,
             name=LocaleString(en="Simple Agent"),
             description=LocaleString(en="This is a very simple agent"),
         ),

@@ -112,7 +112,8 @@ backend (SigNoz, Datadog, Grafana Cloud) configured via environment variables.
 LiteLLM emits OpenInference-compatible spans for every LLM call via its built-in OTEL callback. These spans carry token
 counts, model names, and cost data, which Langfuse uses for per-user and per-agent cost attribution. The
 `LangfuseProvisioner` runs at API startup to register LLM connections, custom model pricing definitions (since model
-names like `text-generation/nano` do not match Langfuse's built-in pricing database), and default prompt templates.
+names like `text-generation/gpt-oss-120b` do not match Langfuse's built-in pricing database), and default prompt
+templates.
 
 Controllers enrich HTTP spans with authorization context: user ID, email, roles, service name, required permission,
 agent class, and thread ID. This connects the HTTP layer's observability with the downstream NATS event traces.

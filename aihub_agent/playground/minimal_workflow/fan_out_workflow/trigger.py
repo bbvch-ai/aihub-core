@@ -18,7 +18,6 @@ async def main():
         agent_type=FanOutAgent,
         agent_config=FanOutAgentConfig(
             agent_id="fan_out_agent",
-            agent_class=FanOutAgent.__name__,
             name=LocaleString(en="Fan Out Agent"),
             description=LocaleString(en="This is an agent that fans out multiple steps"),
         ),

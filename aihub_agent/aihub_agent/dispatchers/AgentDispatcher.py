@@ -9,6 +9,7 @@ from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.generative_ai.memory.AgentMemory import AgentMemory
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.nats.dispatcher.BaseDispatcher import BaseDispatcher, EventsAndKwargs
+from aihub_lib.nats.dispatcher.stores.trace.TraceStore import TraceStore
 from aihub_lib.nats.events import BaseEvent, ControlEvent, ExceptionEvent, StartEvent
 from aihub_lib.nats.events.agent_in_the_loop.request.AgentInTheLoopRequestEvent import AgentInTheLoopRequestEvent
 from aihub_lib.nats.events.form.Form import Form
@@ -83,7 +84,8 @@ class AgentDispatcher(BaseDispatcher):
         # Pre-compute non-configurable values for merging with incoming configs
         self._non_configurable_values = agent_config.get_non_configurable_values()
 
-        self.agent_run_tracer = AgentRunTracer()
+        self.trace_store = TraceStore(redis)
+        self.agent_run_tracer = AgentRunTracer(self.trace_store)
 
         # Client for fetching agent configuration via NATS RPC
         self._config_client = AgentConfigClient(nc=nc)
@@ -149,15 +151,13 @@ class AgentDispatcher(BaseDispatcher):
         if event.is_stop_event or event.is_exception_event:
             logger.debug(f"Handling final event: {event.event_name}")
 
-            try:
-                await run_context.delete_all()
-                await self.event_store.delete_all(topic.execution_context_id)
-                await self.step_store.delete_all(topic.execution_context_id)
+            await run_context.delete_all()
+            await self.event_store.delete_all(topic.execution_context_id)
+            await self.step_store.delete_all(topic.execution_context_id)
+            await self.trace_store.delete_all(topic.execution_context_id)
 
-                if event.is_exception_event:
-                    await self.step_store.mark_execution_context_as_crashed(topic.execution_context_id)
-            finally:
-                self.agent_run_tracer.clear_run(topic.run_id)
+            if event.is_exception_event:
+                await self.step_store.mark_execution_context_as_crashed(topic.execution_context_id)
             return
 
         steps = self.agent.get_steps_waiting_for_event(type(event))
@@ -461,18 +461,6 @@ class AgentDispatcher(BaseDispatcher):
 
         start_event = aitl_request_event.start_event
 
-        async def convert_event_to_agent_in_the_loop_response(aitl_event: BaseEvent, aitl_topic: Topic):
-            if aitl_event.is_stop_event:
-                aitl_response = response_event_class(stop_event=aitl_event)
-                logger.debug(f"Received Agent in the Loop StopEvent: {aitl_response}, stopping subscriber.")
-                await event_subscriber.stop()
-                await self.publish_event(aitl_response, topic)
-            if aitl_event.is_exception_event:
-                aitl_exception = exception_event_class(exception_event=aitl_event)
-                logger.debug(f"Received Agent in the Loop ExceptionEvent: {aitl_exception}, stopping subscriber.")
-                await event_subscriber.stop()
-                await self.publish_event(aitl_exception, topic)
-
         aitl_run_id = topic.run_id if aitl_request_event.share_run_id else str(ObjectId())
         aitl_thread_id = topic.thread_id if aitl_request_event.share_thread_id else str(ObjectId())
         aitl_display_id = topic.display_id if aitl_request_event.share_display_id else str(ObjectId())
@@ -483,6 +471,35 @@ class AgentDispatcher(BaseDispatcher):
             display_id=aitl_display_id,
             run_id=aitl_run_id,
         )
+
+        aitl_wrapper_span = await self.agent_run_tracer.start_aitl_wrapper_span(
+            caller_topic=topic,
+            target_agent_class=aitl_request_event.other_agent_topic.agent_class,
+            target_agent_id=aitl_request_event.other_agent_topic.agent_id,
+            target_run_id=aitl_run_id,
+            target_thread_id=aitl_thread_id,
+            start_event=start_event,
+        )
+
+        target_topic = aitl_request_event.other_agent_topic
+
+        async def convert_event_to_agent_in_the_loop_response(aitl_event: BaseEvent, aitl_topic: Topic):
+            if aitl_event.is_stop_event:
+                await self.agent_run_tracer.end_aitl_wrapper_span(
+                    aitl_wrapper_span, success=True, target_topic=target_topic
+                )
+                aitl_response = response_event_class(stop_event=aitl_event)
+                logger.debug(f"Received Agent in the Loop StopEvent: {aitl_response}, stopping subscriber.")
+                await event_subscriber.stop()
+                await self.publish_event(aitl_response, topic)
+            if aitl_event.is_exception_event:
+                await self.agent_run_tracer.end_aitl_wrapper_span(
+                    aitl_wrapper_span, success=False, target_topic=target_topic
+                )
+                aitl_exception = exception_event_class(exception_event=aitl_event)
+                logger.debug(f"Received Agent in the Loop ExceptionEvent: {aitl_exception}, stopping subscriber.")
+                await event_subscriber.stop()
+                await self.publish_event(aitl_exception, topic)
 
         logger.debug(f"Temporarily subscribing to {aitl_request_event.other_agent_topic}")
         event_subscriber = AgentNCSubscriber.for_all_thread_events(

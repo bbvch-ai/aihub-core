@@ -117,7 +117,10 @@ class OpenTelemetrySettings(EnvironmentSettings):
 
         set_logger_provider(logger_provider)
 
-        otel_handler = LoggingHandler(level=logging.NOTSET, logger_provider=logger_provider)
-        logging.getLogger().addHandler(otel_handler)
+        root_logger = logging.getLogger()
+        has_otel_handler = any(isinstance(h, LoggingHandler) for h in root_logger.handlers)
+        if not has_otel_handler:
+            otel_handler = LoggingHandler(level=logging.NOTSET, logger_provider=logger_provider)
+            root_logger.addHandler(otel_handler)
 
         return logger_provider

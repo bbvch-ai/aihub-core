@@ -104,7 +104,7 @@ Concrete Stage 1 flows (each uses `data_lake_file_factory` + a source-specific o
 processing chain regardless of origin:
 
 - `observable_data_lake_factory` → monitors S3 for new/changed files
-- `documents_factory` → parse (Docling/DocumentIntelligence) → `RefDocDocument` → MongoDB
+- `documents_factory` → parse (MinerU) → `RefDocDocument` → MongoDB
 - `nodes_factory` → chunk (MD structural) → embed → `TextNode[]` → Milvus
 - `summary_nodes_factory` (optional) → hierarchical summaries → Milvus
 - `removed_documents_factory` → cleanup orphaned documents
@@ -122,7 +122,7 @@ defs = default_definitions(
     with_summary_nodes=True,                           # Hierarchical RAG summaries
     with_table_refinement=True,                        # LLM table detection/splitting
     with_figure_descriptions=True,                     # Vision LLM for image descriptions
-    document_parser_loader_type=LoaderType.DOCLING,    # Docling (default) or DocumentIntelligence
+    document_parser_loader_type=LoaderType.MINERU,      # MinerU (default) or DocumentIntelligence
     max_partitions=1000,                               # Max partitions added/deleted per tick
 )
 ```
@@ -208,7 +208,7 @@ assets.
 
 **Document processing**:
 
-- `DocumentParserResource` — Selects parser by filetype. `LoaderType.DOCLING` (default) or `DOCUMENT_INTELLIGENCE`.
+- `DocumentParserResource` — Selects parser by filetype. `LoaderType.MINERU` (default) or `DOCUMENT_INTELLIGENCE`.
   Fallbacks: `EpubReader`, `IPYNBReader`, `RawLoader`, `RTFReader`, `ImageLoader`.
 - `MarkdownStructuralNodeParserResource` — LlamaIndex MD structural parser for chunking.
 - `RecursiveSummaryParserResource` — Hierarchical summary generation for multi-level RAG.
@@ -289,7 +289,7 @@ Each has a `Dockerfile` (Python 3.13-slim, uv, port 4000):
 - pytest with pytest-asyncio
 - Unit test ops: `build_op_context(resources={...})` → call op → assert
 - Integration test assets: `materialize(assets=[...], resources={...}, partition_key="test")` → assert `result.success`
-- Test markers: `azure`, `self_hosted`, `slow`, `integration`, `experimental`, `flaky`
+- Test markers: `self_hosted`, `slow`, `integration`, `experimental`, `flaky`
 
 ## New Pipeline Checklist
 

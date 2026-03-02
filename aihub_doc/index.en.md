@@ -24,8 +24,8 @@ features:
     details: Complete infrastructure you deploy and control. Not SaaS subscriptions, not a code library. Authentication, monitoring, databases, UIs—everything included. Azure AI-level completeness with LangChain-level ownership.
   - title: 30 minutes to production AI
     details: One command deploys everything. LLM gateway, vector search, chat interface, authentication, monitoring. Pre-built agents work immediately. No cloud provisioning, no complex setup, no infrastructure engineering.
-  - title: Strategic independence from Big Tech
-    details: Run anywhere—on-premise, Swiss data centers, your cloud. Use local models or cloud APIs. Switch providers without code changes. Your data, your infrastructure, your control. True sovereignty.
+  - title: One GPU, zero cloud dependency
+    details: Run the entire platform—chat, embeddings, reranking, OCR, speech—on a single NVIDIA RTX 6000 Pro. No API keys, no egress traffic, no cloud bills. Full AI capability in an air-gapped rack. When cloud access is available, Swiss LLM Cloud scales you further without code changes.
   - title: Transparent, not black-box AI
     details: Every agent follows explicit workflows. Every decision is traceable and auditable. Every cost is tracked. See exactly why AI gave an answer. Trust through transparency, not promises. Built for Swiss standards.
   - title: Collective strength through collaboration

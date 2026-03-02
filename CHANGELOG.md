@@ -5,6 +5,175 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.269.2] - 2026-02-27 - Release Packaging Refinement
+
+### Fixed
+
+- 📦 **Improved Release Archive Structure:** Corrected the packaging process for `.tar.gz` release artifacts to ensure
+  they now extract into a proper, versioned top-level directory, enhancing consistency and user experience upon
+  extraction.
+
+______________________________________________________________________
+
+## [v0.269.1] - 2026-02-27 - Enhanced Distributed Tracing and Agent-in-the-Loop Observability
+
+### Added
+
+- 🚀 **Introduced `TraceStore`:** A new Redis-backed store designed to persist tracing metadata, which is crucial for
+  enabling distributed tracing across agent runs and Agent-in-the-Loop (AITL) delegations.
+- ✨ **Added OpenInference Trace Context Propagation:** Implemented a new context management system
+  (`openinference_trace_context`) that propagates OpenInference trace state. This ensures that `CHAIN` span kinds are
+  automatically applied to traced functions, maintaining consistent observability across workflows.
+- 🦾 **Implemented AITL Wrapper Spans:** New tracing logic creates dedicated `AGENT` wrapper spans for Agent-in-the-Loop
+  (AITL) delegations. These spans bridge the caller's trace to the delegated agent's steps, enabling clear nested
+  visibility in observability tools like Langfuse.
+
+### Changed
+
+- 🔄 **Refactored Agent Tracing Architecture:** The `AgentRunTracer` was significantly refactored to utilize the new
+  `TraceStore` for all run metadata, including user input, user ID, and LLM output. This change replaces previous
+  in-memory caches and enables cross-service trace continuity.
+- 📝 **Updated Tracing Documentation:** The platform's documentation on low-level traces has been thoroughly updated to
+  reflect the new distributed tracing architecture, AITL delegation, and enhanced Langfuse integration details.
+- ⚙️ **Improved OpenTelemetry Collector Configuration:** Modified OpenTelemetry collector configurations to include a
+  `filter/noise` processor in the Langfuse trace pipeline. This helps reduce unwanted telemetry noise and improves the
+  quality of ingested traces.
+- ⚡️ **Enhanced Docker Compose Dependencies:** Adjusted `docker-compose` configurations to improve service startup
+  reliability by ensuring that the `langfuse-server` service now explicitly waits for `langfuse-web` to be in a healthy
+  state.
+
+### Fixed
+
+- 🐛 **Corrected Retriever Namespace Filtering:** Addressed an issue in `filter_retrievers_by_namespace` where retriever
+  namespaces were being updated incorrectly. The fix ensures proper filtering based on the `vector_store`'s
+  `index_namespaces`.
+- 🛡️ **Improved Langfuse Model Provisioning Robustness:** Enhanced the `LangfuseProvisioner` to gracefully handle `400`
+  errors containing "already exists" messages during model definition creation, treating them as conflicts similar to
+  `409` status codes to prevent failures.
+
+### Refactor
+
+- 🧹 **Streamlined `AgentDispatcher` Cleanup:** Simplified the run completion cleanup logic within the `AgentDispatcher`.
+  The explicit `clear_run` call for tracing metadata is now removed, as cleanup is automatically handled by the
+  `TraceStore`.
+- 🧪 **Overhauled Agent Tracing Test Suite:** The entire test suite for `AgentRunTracer` has been updated to align with
+  the new Redis-backed `TraceStore` and the distributed tracing functionalities, removing outdated cache tests and
+  adding comprehensive coverage for AITL scenarios.
+- ⚙️ **Refined Python Auto-Formatting Hook:** Adjusted the `.claude/hooks/auto-format-python.sh` script to ignore the
+  `F401` (unused import) ruff check during the `--fix` step, providing more flexibility for specific code patterns
+  without causing formatting conflicts.
+
+______________________________________________________________________
+
+## [v0.269.0] - 2026-02-26 - Revamped AI Model Strategy: Embracing Swiss Sovereignty with Dual-Mode Inference & Standardized Models
+
+### Added
+
+- ✨ **Introduced Swiss LLM Cloud Integration**: Full support for Swiss LLM Cloud across various AI tasks (text
+  generation, embedding, reranking, whisper, OCR) to ensure data sovereignty and provide a diverse range of models for
+  non-GPU deployments.
+- 🦾 **Integrated Local vLLM for GPU Deployments**: Replaced `llama.cpp` with `vLLM` for high-performance local GPU
+  inference, supporting text generation, embeddings, and reranking on NVIDIA RTX 6000 Pro with explicit VRAM budgets.
+- 📄 **New Architectural Decision Record (ADR)**: Added a comprehensive ADR outlining the rationale and details of the
+  Swiss LLM Cloud and local vLLM dual-mode inference strategy.
+- 💡 **New AI Toolkit Settings**: Added `.idea/ai_toolkit.xml` for improved AI-assisted development experience in IDEs.
+- ⬆️ **New Environment Variables for Swiss LLM Cloud**: Added specific environment variables for different Swiss LLM
+  Cloud API endpoints (embedding, reranking, whisper, OCR) for fine-grained configuration.
+
+### Changed
+
+- 🔄 **Centralized AI Model Strategy**: Migrated the platform's core AI model inference from Azure OpenAI and Cohere to a
+  dual-mode strategy utilizing Swiss LLM Cloud for non-GPU deployments and local `vLLM` for GPU-enabled setups.
+- ⚙️ **Standardized Model Naming Convention**: Replaced abstract model tier names (e.g., `text-generation/nano`,
+  `embedding/large`) with canonical, descriptive model names (e.g., `text-generation/gpt-oss-120b`, `embedding/bge-m3`)
+  across LiteLLM configurations, agent templates, and pipeline definitions for clarity and consistency.
+- 📝 **Updated Documentation for Model Strategy**: Extensively updated architecture, quick start, deployment guide, and
+  security documentation to reflect the new AI model inference strategy, including details on Swiss LLM Cloud and vLLM
+  integration.
+- 🚀 **Enhanced Document Parsing with MinerU**: Transitioned the primary document parsing service from Docling to MinerU,
+  updating related configurations, resource definitions, and documentation in Dagster pipelines and API routes.
+- ⚡️ **Improved Mem0 Compatibility**: Integrated patches for Mem0's OpenAI LLM and embedding components to ensure
+  seamless compatibility with Swiss LLM Cloud's API behavior, particularly concerning `dimensions` and
+  `response_format`.
+- 🔢 **Adjusted Milvus Embedding Dimensions**: Updated the default Milvus embedding dimension from 3072 to 1024, aligning
+  with the BGE-M3 embedding model used in the new model strategy.
+- 🗣️ **Refined Expert Escalation Prompt**: Modified the `expert_answer_sufficient` prompt template to focus on the
+  *latest* expert answer in the conversation history, improving the accuracy of agent-driven expert interaction
+  assessments.
+- 🛠️ **Updated GitHub Actions for CI**: Modified the `analyze-test-pr.yml` workflow to remove `llama.cpp` services,
+  inject new Swiss LLM Cloud secrets, and no longer skip `azure`-marked tests, streamlining the CI pipeline.
+- 🧹 **Updated IDE Test Configurations**: Removed the `-k "not azure"` flag from PyCharm/IntelliJ run configurations for
+  API, Agent, Bot, Lib, and Process tests, enabling all tests to run without Azure-specific exclusions.
+
+### Fixed
+
+- 🐛 **Ensured Idempotent Logging Configuration**: Implemented a fix in `aihub_lib`'s logging setup and OpenTelemetry
+  integration to prevent duplicate log handlers from being added when `enable_logging` is called multiple times.
+
+### Removed
+
+- 🗑️ **Deprecated `llama.cpp` Inference Services**: Eliminated `llama.cpp` containers for chat, embeddings, and
+  reranking from Docker Compose files, in favor of `vLLM` for GPU deployments or Swiss LLM Cloud for non-GPU.
+- 🗑️ **Removed Azure OpenAI and Cohere Integrations**: Azure OpenAI base URLs and keys, as well as Cohere API base and
+  keys, were removed from environment configurations and LiteLLM settings, consolidating cloud inference to Swiss LLM
+  Cloud.
+- 🚫 **Dropped Image Generation and Text-to-Speech (TTS) Capabilities**: Removed DALL-E 3 and Kokoro/TTS model
+  configurations due to the lack of Swiss-sovereign alternatives in the new model strategy.
+- 🧹 **Eliminated Azure-Specific Test Markers**: The `@pytest.mark.azure` marker and related exclusions were removed from
+  Python test files and `pyproject.toml` configurations, simplifying test management.
+- ❌ **Removed AI Code Review GitHub Action**: The `review-pr.yml` workflow and its associated action definition were
+  removed from the repository.
+
+### Refactor
+
+- 🧹 **Streamlined Agent Configuration**: Removed the redundant `agent_class` field from `AgentConfig` and its subclasses
+  across various agent definitions in `aihub_agent` for cleaner configuration.
+- 🔄 **Standardized License Generation Output**: Modified the `generate-license.sh` script to sort Python packages and
+  Docker images alphabetically in the output, ensuring deterministic and consistent license reports.
+- ⚙️ **Reordered `pr-ready` Makefile Targets**: Adjusted the execution order of `format-md` and `format-yaml` in the
+  `pr-ready` Makefile target for logical consistency.
+
+______________________________________________________________________
+
+## [v0.268.0] - 2026-02-26 - Introducing Secure Agent File Uploads and Streamlined Integrations
+
+### Added
+
+- ✨ **New Secure File Upload API for Agents:** Introduced dedicated API endpoints to securely initiate and validate file
+  uploads to agent instances, providing presigned URLs for direct bucket interaction.
+- 🚀 **Dedicated Agent File Storage:** Implemented a new shared S3 bucket (`agent-files`) for all agent-related user
+  uploads. This bucket is automatically created and configured with a 7-day lifecycle policy to expire files, ensuring
+  efficient storage management.
+- 🦾 **File ID Reference System:** Enhanced the `UserUploadedFile` NATS event model to include a unique `file_id`,
+  enabling agents to reference uploaded files by identifier instead of directly embedding large file data.
+- 🧪 **Comprehensive Test Coverage:** Added extensive unit and integration tests to ensure the reliability and security
+  of the new file upload service and API endpoints.
+
+### Changed
+
+- 🔄 **OpenWebUI File Upload Workflow:** The OpenWebUI integration pipeline has been updated to utilize the new secure
+  agent file upload API. Files are now fetched from OpenWebUI's S3, uploaded to the agent's dedicated bucket via
+  presigned URLs, and validated, streamlining the data flow.
+- 🔒 **Granular File Access Control:** Agent instance permissions are now tied to file upload capabilities, ensuring that
+  only authorized users can upload files to specific agent instances.
+
+### Removed
+
+- 🗑️ **Deprecated `file_data` in NATS Event:** The `file_data` field (base64-encoded content) has been removed from the
+  `UserUploadedFile` NATS event, shifting to a more scalable file reference mechanism.
+- 🧹 **Internal S3 Storage Adapter from OpenWebUI Pipeline:** The internal `S3StorageAdapter` and `FileStorageAdapter`
+  protocol have been removed from the OpenWebUI integration, as file interaction is now handled by the new AI-Hub API.
+
+### Security
+
+- 🔑 **Path Traversal Prevention:** Introduced stringent validation for filenames and path segments in file upload
+  requests and the `UserUploadedFile` model to actively prevent path traversal attacks.
+- 🛡️ **Presigned URL Security Model:** Leveraged presigned URLs for file uploads, significantly enhancing security by
+  providing temporary, single-use access to S3 resources, eliminating the need for persistent credentials on the client
+  side.
+
+______________________________________________________________________
+
 ## [v0.267.4] - 2026-02-26 - Pipeline Robustness: Enhanced Partition Key Encoding
 
 ### Added

@@ -1,6 +1,6 @@
 [project]
 name = "aihub-bot"
-version = "0.267.4"
+version = "0.269.2"
 description = "bots core"
 requires-python = ">=3.13, <3.14"
 authors = [
@@ -67,5 +67,4 @@ extend-exclude = '''
 [tool.pytest.ini_options]
 markers = [
     "flaky: Tests that are unreliable or timing-dependent (skipped in CI)",
-    "azure: Tests requiring Azure credentials",
 ]

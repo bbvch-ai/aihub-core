@@ -1,6 +1,6 @@
 [project]
 name = "aihub-process"
-version = "0.267.4"
+version = "0.269.2"
 description = "agentic process automation"
 requires-python = ">=3.13, <3.14"
 authors = [
@@ -57,7 +57,6 @@ extend-exclude = '''
 
 [tool.pytest.ini_options]
 markers = [
-    "azure: mark tests that use Azure services",
     "self_hosted: mark tests that use self hosted services",
     "slow: mark a test as slow",
     "integration: mark a test as an integration test",

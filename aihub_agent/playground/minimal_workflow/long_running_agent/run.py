@@ -15,7 +15,6 @@ async def main():
         agent_type=LongRunningAgent,
         agent_config=LongRunningAgentConfig(
             agent_id="long_running",
-            agent_class=LongRunningAgent.__name__,
             name=LocaleString(en="Long Running Agent"),
             description=LocaleString(en="This is an agent that is running looooong"),
         ),

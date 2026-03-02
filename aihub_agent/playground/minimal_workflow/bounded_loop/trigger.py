@@ -17,7 +17,6 @@ async def main():
         agent_type=BoundedLoopAgent,
         agent_config=BoundedLoopAgentConfig(
             agent_id="bounded_iterative_loop_agent",
-            agent_class=BoundedLoopAgent.__name__,
             name=LocaleString(en="Bounded Iterative Agent"),
             description=LocaleString(en="This is an agent that loops"),
             loop_max=2,

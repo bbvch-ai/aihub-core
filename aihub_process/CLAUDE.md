@@ -282,7 +282,7 @@ Per-walkthrough ephemeral state in Redis/Valkey. Equivalent of `RunContext` for 
   `has_start_event`/`has_stop_event`/`has_exception_event`/`get_events_of_class()`
 - `wait_for_event(event_class, timeout)` for async assertions
 - `has_event_of_class(event_class)`, `get_event_of_class(event_class)`, `get_topics(event_class)`
-- Test markers: `azure`, `self_hosted`, `slow`, `integration`, `experimental`, `flaky`
+- Test markers: `self_hosted`, `slow`, `integration`, `experimental`, `flaky`
 
 ## New Process Checklist
 

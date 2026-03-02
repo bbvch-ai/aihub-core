@@ -54,7 +54,6 @@ class JSPublisher(AbstractPublisher[TEvent]):
         event routing conventions.
         """
         tracer = get_tracer(__name__)
-
         with tracer.start_as_current_span(
             f"{self.name}.publish {event.__class__.__name__}",
             attributes={

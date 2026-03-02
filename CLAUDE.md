@@ -25,7 +25,7 @@ frontends and tracing systems). This separation allows the chat UI to visualize 
 interfering with workflow execution.
 
 **LLM Gateway**: All model access is mediated by LiteLLM, which provides a unified OpenAI-compatible interface to cloud
-providers (Azure OpenAI, Google, Cohere), local models (llama.cpp for chat, embedding, and reranking), and audio models
+providers (Swiss LLM Cloud), local models (vLLM for chat, embedding, and reranking on GPU deployments), and audio models
 (Speaches for STT/TTS). Presidio intercepts requests for PII detection and anonymization before they reach external
 providers. This gateway pattern decouples application code from specific providers — switching models requires only a
 configuration change in LiteLLM, not code modifications.
@@ -37,7 +37,7 @@ embeddings are indexed for semantic retrieval. This design allows agents to scal
 updated independently without affecting the rest of the platform.
 
 **Data Pipeline**: Dagster orchestrates the ingestion workflow: sources (SharePoint, OneDrive via Rclone) are monitored
-for changes, documents are downloaded to SeaweedFS, parsed by Docling (OCR + structural extraction), chunked
+for changes, documents are downloaded to SeaweedFS, parsed by MinerU (OCR + structural extraction), chunked
 semantically, embedded via configured models, and stored in Milvus. The asset-based pipeline model provides lineage from
 every vector embedding back to its source document.
 
@@ -69,8 +69,8 @@ The `docker-compose.dev.yml` runs ~30 containers. Key services by role:
 **API & Gateway**: FastAPI REST + WebSocket (:8000, run locally), LiteLLM universal LLM proxy (:4000), Traefik reverse
 proxy (production only)
 
-**AI Inference**: llama-cpp chat model (gemma-3-4b, :8182), llama-cpp embedding (Qwen3-0.6B, :8183), llama-cpp reranker
-(Qwen3-Reranker-0.6B, :8184), Speaches STT/TTS (:8185), Presidio analyzer + anonymizer (PII filtering)
+**AI Inference**: Speaches STT/TTS (:8185), Presidio analyzer + anonymizer (PII filtering). GPU deployments add vLLM for
+local chat, embedding, and reranking. Non-GPU deployments route all inference to Swiss LLM Cloud.
 
 **Databases**: PostgreSQL with pgvector (:5432, 4 DBs: openwebui/langfuse/dagster/litellm), FerretDB (:27017,
 MongoDB-compatible over its own PostgreSQL), Milvus vector DB (:19530), Neo4j graph DB (:7474/:7687), Valkey/Redis
@@ -81,7 +81,7 @@ MongoDB-compatible over its own PostgreSQL), Milvus vector DB (:19530), Neo4j gr
 
 **Pipelines**: Dagster orchestrator (:3000, run locally), pipeline workers (run locally)
 
-**Document Processing**: Docling OCR + parsing (:5001)
+**Document Processing**: MinerU OCR + parsing (:5001)
 
 **Observability**: Langfuse web (:6006) + worker, OTEL Collector (:4317/:4318)
 
@@ -213,8 +213,8 @@ Before marking task complete (`make pr-ready` runs automatically via stop hook):
 
 - **Location**: `tests/` dir at same level as code
 - **Naming**: `test_*.py`
-- **Markers**: `slow`, `azure`, `integration`, `flaky`, `self_hosted`, `experimental` (per-scope `pyproject.toml`)
-- **CI excludes**: `pytest -m "not azure and not flaky"` — these markers skip in CI
+- **Markers**: `slow`, `integration`, `flaky`, `self_hosted`, `experimental` (per-scope `pyproject.toml`)
+- **CI excludes**: `pytest -m "not flaky"` — flaky tests skip in CI
 - **BDD**: Use `pytest-bdd` for agent/process workflows (Gherkin `.feature` files in `tests/features/`)
 - **Async**: pytest-bdd has limitations; use plain pytest for async tests
 

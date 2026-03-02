@@ -20,7 +20,6 @@ async def main():
         agent_type=DisplayingAgent,
         agent_config=DisplayingAgentConfig(
             agent_id="displaying_agent",
-            agent_class=DisplayingAgent.__name__,
             name=LocaleString(en="Displaying Agent"),
             description=LocaleString(en="This is a very simple agent that displays stuff to the user"),
         ),

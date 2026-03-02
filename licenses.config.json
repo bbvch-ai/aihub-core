@@ -202,18 +202,6 @@
       "notes": "Permissive license"
     },
     {
-      "service": "llama.cpp",
-      "license": "MIT",
-      "status": "✅",
-      "notes": "Permissive license"
-    },
-    {
-      "service": "text-embeddings-inference",
-      "license": "Apache-2.0",
-      "status": "✅",
-      "notes": "Permissive license"
-    },
-    {
       "service": "vllm-openai",
       "license": "Apache-2.0",
       "status": "✅",

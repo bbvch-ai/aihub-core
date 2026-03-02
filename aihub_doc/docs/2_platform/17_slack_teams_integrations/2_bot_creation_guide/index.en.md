@@ -197,7 +197,7 @@ Add a new document to the `bot_paths` collection with the following structure:
     "APP_PASSWORD": "xxx8Q~xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
     "APP_TENANTID": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
   },
-  "system_message": "You are a helpful AI assistant powered by Azure OpenAI.",
+  "system_message": "You are a helpful AI assistant.",
   "slack_token": ""
 }
 ```
@@ -415,7 +415,7 @@ Update the bot path document in MongoDB to include the Slack OAuth token from St
     "APP_PASSWORD": "xxx~xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
     "APP_TENANTID": "yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy"
   },
-  "system_message": "You are a helpful AI assistant powered by Azure OpenAI.",
+  "system_message": "You are a helpful AI assistant.",
   "slack_token": "xoxb-xxxxxxxxxxxx-xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxx"
 }
 ```

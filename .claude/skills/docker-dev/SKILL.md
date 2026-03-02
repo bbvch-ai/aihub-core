@@ -71,31 +71,28 @@ docker stats --no-stream --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}"
 
 ### `ports` — Show all exposed service URLs
 
-| Service          | Port   | Purpose                         |
-| ---------------- | ------ | ------------------------------- |
-| API              | :8000  | REST API + WebSocket (local)    |
-| OpenWebUI        | :8080  | Chat interface                  |
-| Admin UI         | :3333  | Nuxt management UI (local)      |
-| Dagster          | :3000  | Pipeline orchestrator (local)   |
-| LiteLLM          | :4000  | LLM proxy                       |
-| Langfuse         | :6006  | LLM observability               |
-| Docling          | :5001  | Document parsing                |
-| PostgreSQL       | :5432  | Relational DB (4 databases)     |
-| FerretDB         | :27017 | MongoDB-compatible              |
-| Milvus           | :19530 | Vector DB                       |
-| Neo4j            | :7474  | Graph DB (web), :7687 (bolt)    |
-| Valkey           | :6379  | Redis-compatible cache          |
-| NATS             | :4222  | Message broker, :8222 (monitor) |
-| SeaweedFS        | :8889  | Filer UI, :9000 (S3 gateway)    |
-| Rclone           | :5572  | Cloud sync RC API               |
-| llama-cpp chat   | :8182  | Local chat model (gemma-3-4b)   |
-| llama-cpp embed  | :8183  | Local embedding model           |
-| llama-cpp rerank | :8184  | Local reranker                  |
-| Speaches         | :8185  | STT/TTS                         |
-| Jupyter          | :8888  | Code execution sandbox          |
-| Playwright       | :3036  | Browser automation              |
-| Attu             | :3003  | Milvus admin UI                 |
-| OTEL Collector   | :4317  | gRPC receiver, :4318 (HTTP)     |
+| Service        | Port   | Purpose                         |
+| -------------- | ------ | ------------------------------- |
+| API            | :8000  | REST API + WebSocket (local)    |
+| OpenWebUI      | :8080  | Chat interface                  |
+| Admin UI       | :3333  | Nuxt management UI (local)      |
+| Dagster        | :3000  | Pipeline orchestrator (local)   |
+| LiteLLM        | :4000  | LLM proxy                       |
+| Langfuse       | :6006  | LLM observability               |
+| MinerU         | :5001  | Document parsing                |
+| PostgreSQL     | :5432  | Relational DB (4 databases)     |
+| FerretDB       | :27017 | MongoDB-compatible              |
+| Milvus         | :19530 | Vector DB                       |
+| Neo4j          | :7474  | Graph DB (web), :7687 (bolt)    |
+| Valkey         | :6379  | Redis-compatible cache          |
+| NATS           | :4222  | Message broker, :8222 (monitor) |
+| SeaweedFS      | :8889  | Filer UI, :9000 (S3 gateway)    |
+| Rclone         | :5572  | Cloud sync RC API               |
+| Speaches       | :8185  | STT/TTS                         |
+| Jupyter        | :8888  | Code execution sandbox          |
+| Playwright     | :3036  | Browser automation              |
+| Attu           | :3003  | Milvus admin UI                 |
+| OTEL Collector | :4317  | gRPC receiver, :4318 (HTTP)     |
 
 Note: API (:8000), Admin UI (:3333), and Dagster (:3000) run **locally outside Docker** in dev — they're not in
 `docker-compose.dev.yml`.
@@ -146,13 +143,13 @@ Each stage has a `.gpu` variant adding NVIDIA GPU support.
 
 5 isolated Docker networks (see `aihub_doc/arc42/decisions/2025_12_22_docker_network_isolation.md`):
 
-| Network   | Purpose                      | Key Services                             |
-| --------- | ---------------------------- | ---------------------------------------- |
-| `proxy`   | External ingress via Traefik | traefik, api, web, open-webui, langfuse  |
-| `backend` | Application services         | litellm, langfuse, llama-cpp, docling    |
-| `data`    | Databases, caches, broker    | postgres, ferretdb, milvus, nats, valkey |
-| `storage` | SeaweedFS cluster            | seaweedfs-\*, etcd                       |
-| `egress`  | Outbound internet (no ICC)   | playwright                               |
+| Network   | Purpose                      | Key Services                              |
+| --------- | ---------------------------- | ----------------------------------------- |
+| `proxy`   | External ingress via Traefik | traefik, api, web, open-webui, langfuse   |
+| `backend` | Application services         | litellm, langfuse, mineru-api, vLLM (GPU) |
+| `data`    | Databases, caches, broker    | postgres, ferretdb, milvus, nats, valkey  |
+| `storage` | SeaweedFS cluster            | seaweedfs-\*, etcd                        |
+| `egress`  | Outbound internet (no ICC)   | playwright                                |
 
 Dev stage has all networks non-internal for localhost access.
 

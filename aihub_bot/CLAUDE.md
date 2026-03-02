@@ -188,7 +188,7 @@ Tests live in `playground/testing/tests/` (NOT a top-level `tests/` dir). Plain 
 - `mock_aiohttp_requests`: Patches `aiohttp.ClientSession.{post,get,put}` → captures outbound bot messages
 - `ASGIAdapter` from `aihub_lib.testing` routes Bot Framework HTTP callbacks to test app
 
-**Test markers**: `flaky` (streaming tests with polling), `azure` (requires Azure credentials)
+**Test markers**: `flaky` (streaming tests with polling)
 
 ## Playground
 

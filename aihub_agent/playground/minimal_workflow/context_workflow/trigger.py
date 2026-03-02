@@ -19,7 +19,6 @@ async def main():
         agent_type=ContextAgent,
         agent_config=ContextAgentConfig(
             agent_id="context_agent",
-            agent_class=ContextAgent.__name__,
             name=LocaleString(en="Context Agent"),
             description=LocaleString(en="This is an agent that accesses the run and thread context"),
         ),
