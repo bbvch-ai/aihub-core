@@ -272,9 +272,9 @@ requires human judgment, `BotInTheLoop` sends the question to a Teams or Slack c
 expert responds — native human-in-the-loop without building a single integration.
 
 ```bash
-pip install swissaihub-agent    # Agent development
-pip install swissaihub-pipeline # Data pipelines (Dagster)
-pip install swissaihub-process  # Process orchestration
+pip install swiss-ai-hub-agent    # Agent development
+pip install swiss-ai-hub-pipeline # Data pipelines (Dagster)
+pip install swiss-ai-hub-process  # Process orchestration
 ```
 
 ### Agents
