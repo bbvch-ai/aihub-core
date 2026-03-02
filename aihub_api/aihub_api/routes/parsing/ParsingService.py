@@ -2,11 +2,11 @@ import asyncio
 import logging
 import mimetypes
 import urllib.parse
-from typing import ClassVar
 
 from aihub_lib.generative_ai.document.accessor.S3AnonymousFileAccessService import S3AnonymousFileAccessService
 from aihub_lib.generative_ai.document.loaders.MarkItDownLoader import MarkItDownLoader
 from aihub_lib.generative_ai.document.loaders.MineruLoader import MineruLoader
+from aihub_lib.generative_ai.document.loaders.RawLoader import RawLoader
 from aihub_lib.generative_ai.utils.image_processor import replace_s3_paths_with_signed_urls
 from aihub_lib.infrastructure.mineru.MineruSettings import MineruSettings
 from aihub_lib.infrastructure.parsing.ParsingSettings import ParsingSettings
@@ -41,21 +41,7 @@ def _get_extension(filename: str, content_type: str = "") -> str:
 
 
 class ParsingService:
-    """Service for converting documents to markdown using MinerU or MarkItDown."""
-
-    PLAINTEXT_EXTENSIONS: ClassVar[list[str]] = [
-        "txt",
-        "md",
-        "csv",
-        "json",
-        "xml",
-        "yml",
-        "yaml",
-        "log",
-        "ini",
-        "cfg",
-        "toml",
-    ]
+    """Service for converting documents to markdown using MinerU, MarkItDown, or RawLoader."""
 
     @staticmethod
     async def convert_from_bytes(
@@ -69,6 +55,7 @@ class ParsingService:
         Convert a document from raw bytes to markdown.
 
         Routes to the appropriate loader based on file extension:
+        - RawLoader: Plaintext files (txt, md, csv, json, xml, yaml, etc.)
         - MinerU: PDF, images (png, jpg, etc.)
         - MarkItDown: Office documents (docx, pptx, xlsx, etc.)
         """
@@ -90,15 +77,12 @@ class ParsingService:
 
         mineru_extensions = MineruSettings().EXTENSIONS
         markitdown_extensions = MarkItDownLoader.SUPPORTED_EXTENSIONS
+        rawloader_extensions = RawLoader.SUPPORTED_EXTENSIONS
 
-        if extension in ParsingService.PLAINTEXT_EXTENSIONS:
-            logger.debug(f"Plaintext file detected: {filename}")
-            return DocumentParsingResponse(
-                page_content=content.decode("utf-8", errors="replace"),
-                metadata=DocumentParsingMetadata(filename=filename),
-            )
-
-        if extension in mineru_extensions:
+        if extension in rawloader_extensions:
+            loader = RawLoader()
+            logger.debug(f"Using RawLoader for {filename}")
+        elif extension in mineru_extensions:
             loader = MineruLoader()
             logger.debug(f"Using MineruLoader for {filename}")
         elif extension in markitdown_extensions:
@@ -114,7 +98,7 @@ class ParsingService:
             raise HTTPException(
                 status_code=400,
                 detail=f"Unsupported file type: {extension}. "
-                f"Supported types: {', '.join(mineru_extensions + markitdown_extensions)}",
+                f"Supported types: {', '.join(rawloader_extensions + mineru_extensions + markitdown_extensions)}",
             )
 
         if image_mode == ImageMode.S3:
