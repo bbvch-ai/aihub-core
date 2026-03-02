@@ -21,6 +21,9 @@ from aihub_api.routes.parsing.dto.ImageMode import ImageMode
 
 logger = logging.getLogger(__name__)
 
+_mineru_settings = MineruSettings()
+_parsing_settings = ParsingSettings()
+
 
 def _get_extension(filename: str, content_type: str = "") -> str:
     """Extract file extension from filename or infer from content type via mimetypes."""
@@ -75,7 +78,7 @@ class ParsingService:
             filename = f"{filename}.{extension}"
         logger.debug(f"Detected extension: {extension} for {filename}")
 
-        mineru_extensions = MineruSettings().EXTENSIONS
+        mineru_extensions = _mineru_settings.EXTENSIONS
         markitdown_extensions = MarkItDownLoader.SUPPORTED_EXTENSIONS
         rawloader_extensions = RawLoader.SUPPORTED_EXTENSIONS
 
@@ -88,7 +91,11 @@ class ParsingService:
         elif extension in markitdown_extensions:
             loader = MarkItDownLoader()
             logger.debug(f"Using MarkItDownLoader for {filename}")
-        elif extension in ParsingSettings().PASSTHROUGH_EXTENSIONS:
+        elif extension in _parsing_settings.PASSTHROUGH_EXTENSIONS:
+            # OpenWebUI routes ALL uploaded files through the external document loader.
+            # Files meant for agent-only processing (e.g. zip, wav) would fail with 400
+            # without this passthrough — returning empty content lets the upload succeed
+            # while agents access the raw file via S3.
             logger.info(f"Passthrough extension .{extension}, returning empty content: {filename}")
             return DocumentParsingResponse(
                 page_content="",

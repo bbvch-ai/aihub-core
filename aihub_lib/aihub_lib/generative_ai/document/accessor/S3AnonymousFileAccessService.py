@@ -119,8 +119,17 @@ class S3AnonymousFileAccessService:
     @trace_fn
     def download_file(self, container: str, file_path: str) -> bytes:
         """Raw byte download for in-memory processing (e.g. zip extraction, parsing)."""
+        if not container or not container.strip():
+            raise ValueError("Container name cannot be empty")
+        if not file_path or not file_path.strip():
+            raise ValueError("File path cannot be empty")
+
         response = self._s3_client.get_object(Bucket=container, Key=file_path)
-        return response["Body"].read()
+        body = response["Body"]
+        try:
+            return body.read()
+        finally:
+            body.close()
 
     def verify_file_exists(self, container: str, file_path: str) -> bool:
         """
