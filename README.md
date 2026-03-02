@@ -12,8 +12,8 @@ what cloud AI platforms promise, but where you own every layer.
 [![GitHub Release](https://img.shields.io/github/v/release/bbvch-ai/aihub-core?style=flat-square)](https://github.com/bbvch-ai/aihub-core/releases)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue?style=flat-square)](LICENSE)
 [![Python 3.13+](https://img.shields.io/badge/python-3.13%2B-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
-[![Docs](https://img.shields.io/badge/docs-online-green?style=flat-square)](https://bbvch-ai.github.io/aihub-core/)
-[![Discord](https://img.shields.io/badge/discord-community-5865F2?style=flat-square&logo=discord&logoColor=white)](https://discord.gg/wArT8zDB)
+[![PyPI](https://img.shields.io/pypi/v/swiss-ai-hub-core?style=flat-square&logo=pypi&logoColor=white)](https://pypi.org/project/swiss-ai-hub-core/)
+[![npm](https://img.shields.io/npm/v/@swiss-ai-hub/web?style=flat-square&logo=npm&logoColor=white)](https://www.npmjs.com/package/@swiss-ai-hub/web)
 
 [Get started](#quick-start) · [Documentation](https://bbvch-ai.github.io/aihub-core/) ·
 [Discord](https://discord.gg/wArT8zDB) · [Releases](https://github.com/bbvch-ai/aihub-core/releases)
@@ -78,8 +78,8 @@ One `docker compose up` starts ~30 containers, fully integrated. Every component
 wired together.
 
 <p align="center" width="100%">
-<em>Tier 2 architecture: every component connected, from LLM providers to data sources</em><br><br>
 <img src="aihub_doc/media/architecture/low_level/tier_2.png" width="100%" alt="Architecture overview">
+<em>Tier 2 architecture: every component connected, from LLM providers to data sources</em><br><br>
 </p>
 
 <details>
@@ -204,43 +204,53 @@ ______________________________________________________________________
 
 ## Platform tour
 
-**Upload documents to the knowledge base.** Drag files into the admin UI. The platform parses, chunks, embeds, and
-indexes them automatically. Supports PDF, DOCX, PPTX, XLSX, and plain text. For production, connect SharePoint,
-OneDrive, Google Drive, or any of 70+ providers via Rclone for continuous sync.
+Five demos showing the platform end-to-end: from ingesting documents to chatting with an agent to controlling costs.
+Each runs out of the box after `docker compose up`.
+
+### Upload documents to the knowledge base
+
+Drag files into the admin UI. The platform parses, chunks, embeds, and indexes them automatically. Supports PDF, DOCX,
+PPTX, XLSX, and plain text. For production, connect SharePoint, OneDrive, Google Drive, or any of 70+ providers via
+Rclone for continuous sync.
 
 <p align="center" width="100%">
 <img src="aihub_doc/media/demos/aihub-knowledge-demo.webp" width="80%" alt="Knowledge ingestion demo">
 </p>
 
-**Track every step of the data pipeline.** Dagster provides full lineage from source document to vector embedding: which
-files were processed, how they were chunked, when embeddings were created, what ended up in Milvus. Automatic retry and
-failure handling included.
+### Track every step of the data pipeline
+
+Dagster provides full lineage from source document to vector embedding: which files were processed, how they were
+chunked, when embeddings were created, what ended up in Milvus. Automatic retry and failure handling included.
 
 <p align="center" width="100%">
 <img src="aihub_doc/media/demos/aihub-dagster-demo.webp" width="80%" alt="Dagster pipeline demo">
 </p>
 
-**Create agents without writing code.** Developers publish agent blueprints (workflow logic, form schema, default
-config). Administrators create agent profiles through a no-code configurator: pick a blueprint, fill in the form
-(knowledge base, model, temperature, system prompt), and the agent goes live. One blueprint powers many profiles. An
-"Expert RAG Agent" blueprint becomes your HR policy agent, legal FAQ agent, and IT support agent, each with different
-knowledge bases and instructions.
+### Create agents without writing code
+
+Developers publish agent blueprints (workflow logic, form schema, default config). Administrators create agent profiles
+through a no-code configurator: pick a blueprint, fill in the form (knowledge base, model, temperature, system prompt),
+and the agent goes live. One blueprint powers many profiles. An "Expert RAG Agent" blueprint becomes your HR policy
+agent, legal FAQ agent, and IT support agent, each with different knowledge bases and instructions.
 
 <p align="center" width="100%">
 <img src="aihub_doc/media/demos/aihub-create-agent-demo.webp" width="80%" alt="Agent configurator demo">
 </p>
 
-**Ask questions grounded in your data.** Agents retrieve relevant documents, generate answers with full source
-attribution, and stream responses in real-time. Every interaction is traced end-to-end in Langfuse, from the user's
-question through retrieval, reranking, and generation.
+### Ask questions grounded in your data
+
+Agents retrieve relevant documents, generate answers with full source attribution, and stream responses in real-time.
+Every interaction is traced end-to-end in Langfuse, from the user's question through retrieval, reranking, and
+generation.
 
 <p align="center" width="100%">
 <img src="aihub_doc/media/demos/aihub-agent-interaction-demo.webp" width="80%" alt="Agent interaction demo">
 </p>
 
-**Control costs and model routing.** LiteLLM provides a unified dashboard for all LLM usage. Set spending limits per
-user, team, or model. Route requests between local and cloud models. Monitor token consumption, latency, and cost per
-request from a single pane.
+### Control costs and model routing
+
+LiteLLM provides a unified dashboard for all LLM usage. Set spending limits per user, team, or model. Route requests
+between local and cloud models. Monitor token consumption, latency, and cost per request from a single pane.
 
 <p align="center" width="100%">
 <img src="aihub_doc/media/demos/aihub-litellm-demo.webp" width="80%" alt="LiteLLM cost control demo">
@@ -250,7 +260,16 @@ ______________________________________________________________________
 
 ## Build with the SDK
 
-Install the packages you need:
+You write an agent class, start it, and the platform does the rest. On startup the agent connects to NATS, registers
+itself with the API, and becomes discoverable: it appears in the chat UI for users, gets a configuration form in the
+admin panel for administrators, and receives full distributed tracing in Langfuse. No REST endpoints to build, no
+WebSocket plumbing, no service discovery to configure.
+
+Because agents communicate through the Swiss AI Agent Protocol, every typed event you emit (retrieval results, guard
+decisions, LLM chunks) is rendered as a live, rich update in the chat UI. Users see exactly what the agent is doing:
+which documents were retrieved, whether context was sufficient, how confident the answer is. And when your workflow
+requires human judgment, `BotInTheLoop` sends the question to a Teams or Slack channel and pauses the agent until the
+expert responds — native human-in-the-loop without building a single integration.
 
 ```bash
 pip install swissaihub-agent    # Agent development
