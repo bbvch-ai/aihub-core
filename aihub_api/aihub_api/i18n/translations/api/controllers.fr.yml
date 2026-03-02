@@ -1,4 +1,7 @@
 ---
+auth_provider:
+  name: Authentification
+  description: Fournisseurs d'identité disponibles pour la connexion
 agent:
   name: Assistants IA
   description: Parcourez et interagissez avec les assistants IA

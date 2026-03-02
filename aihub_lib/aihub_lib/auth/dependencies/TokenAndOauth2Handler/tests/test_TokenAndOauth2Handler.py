@@ -5,7 +5,7 @@ from fastapi import HTTPException, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pytest_bdd import given, parsers, scenarios, then, when
 
-from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2Settings import OAuth2Settings
+from aihub_lib.auth.dependencies.KeycloakAuthHandler.KeycloakSettings import KeycloakSettings
 from aihub_lib.auth.identity.TenantIdentity import TenantIdentity
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.testing.asyncio_utils.bdd import async_test
@@ -94,14 +94,14 @@ scenarios("features/token_and_oauth2_handler.feature")
 
 
 @given(
-    parsers.parse('an OAuth2 configuration with client_id "{client_id}", and authority_url "{authority_url}"'),
-    target_fixture="oauth2_config",
+    parsers.parse('a Keycloak configuration with url "{url}" and realm "{realm}"'),
+    target_fixture="keycloak_config",
 )
-def oauth2_config(monkeypatch: pytest.MonkeyPatch, client_id: str, authority_url: str) -> OAuth2Settings:
-    """Set the OAuth2 configuration environment variables."""
-    monkeypatch.setenv("OAUTH_CLIENT_ID", client_id)
-    monkeypatch.setenv("OAUTH_AUTHORITY_URL", authority_url)
-    return OAuth2Settings()
+def keycloak_config(monkeypatch: pytest.MonkeyPatch, url: str, realm: str) -> KeycloakSettings:
+    """Set the Keycloak configuration environment variables."""
+    monkeypatch.setenv("KEYCLOAK_URL", url)
+    monkeypatch.setenv("KEYCLOAK_REALM", realm)
+    return KeycloakSettings()
 
 
 @given(parsers.parse("a multi auth handler composed of:"), target_fixture="multi_auth_instance")
@@ -137,7 +137,8 @@ async def invoke_multi_auth(
     """Invoke the multi auth handler and store the returned user."""
     try:
         bearer_security = await HTTPBearer(auto_error=False)(dummy_request)
-        oauth_security = await OAuth2Settings().OPTIONAL_SCHEMA(dummy_request)
+        keycloak_settings = KeycloakSettings()
+        oauth_security = await keycloak_settings.OPTIONAL_SCHEMA(dummy_request)
         user = await multi_auth_instance(dummy_request, bearer_security, oauth_security)
         multi_auth_result["user"] = user
     except HTTPException as e:

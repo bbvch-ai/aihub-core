@@ -7,9 +7,10 @@ import httpx
 import jwt
 from cachetools import TTLCache
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey, RSAPublicKey
-from fastapi import HTTPException, Security
+from fastapi import HTTPException, Request, Security
 from jwt.algorithms import RSAAlgorithm
 
+from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.dependencies.KeycloakAuthHandler.KeycloakSettings import KeycloakSettings
 from aihub_lib.auth.identity.UserIdentity import UserIdentity
 from aihub_lib.persistence.user.UserEntity import UserEntity
@@ -17,7 +18,7 @@ from aihub_lib.persistence.user.UserEntity import UserEntity
 logger = logging.getLogger(__name__)
 
 
-class KeycloakAuthHandler:
+class KeycloakAuthHandler(AuthHandler):
     """
     A FastAPI dependency for Keycloak OIDC authentication.
 
@@ -31,8 +32,8 @@ class KeycloakAuthHandler:
     def __init__(self) -> None:
         self.config = KeycloakSettings()
 
-    async def __call__(self, oauth_token: str = Security(KeycloakSettings().SCHEMA)) -> UserIdentity:
-        return await self.authenticate_token(oauth_token)
+    async def __call__(self, request: Request, oauth_token: str = Security(KeycloakSettings().SCHEMA)) -> UserIdentity:
+        return await self.authenticate_token(oauth_token, request)
 
     async def _get_jwks(self) -> dict[str, Any]:
         """Retrieves the JWKS from Keycloak, using caching to minimize API calls."""
@@ -67,7 +68,7 @@ class KeycloakAuthHandler:
 
         return None
 
-    async def authenticate_token(self, oauth_token: str) -> UserIdentity:
+    async def authenticate_token(self, oauth_token: str, request: Request | None = None) -> UserIdentity:
         """Authenticates a user using a Keycloak JWT token."""
         try:
             unverified_header = jwt.get_unverified_header(oauth_token)
@@ -107,7 +108,12 @@ class KeycloakAuthHandler:
                 email=email,
             )
 
-            return UserIdentity.from_user_entity(user_entity)
+            if request:
+                tenant = self.resolve_tenant_for_user(request, user_entity.id)
+            else:
+                tenant = self.get_default_tenant_for_user(user_entity.id)
+
+            return UserIdentity.from_user_entity(user_entity, tenant)
 
         except HTTPException:
             raise

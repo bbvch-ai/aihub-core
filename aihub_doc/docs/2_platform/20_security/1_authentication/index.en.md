@@ -80,6 +80,46 @@ permission evaluation uses the hierarchical permission model described in the
 to the permission evaluation system. This enables filtering result sets based on user permissions, implementing
 different behaviors for different access levels, and validating permissions before resource-intensive operations.
 
+## Dynamic Identity Provider Discovery
+
+The login page dynamically discovers available identity providers from Keycloak at runtime. When a user visits the login
+page, the frontend calls `GET /api/v1/auth-providers/` — an unauthenticated API endpoint that queries the Keycloak Admin
+API using a dedicated, least-privilege service account (`aihub-api-service`) with only the `view-identity-providers`
+permission.
+
+The API filters the provider list to only include enabled, visible providers and returns their alias, display name, and
+icon. Results are cached for 5 minutes. The frontend renders a branded login button for each provider. Clicking a button
+initiates the OIDC Authorization Code Flow with `kc_idp_hint` set to the provider's alias, redirecting the user directly
+to the upstream identity provider without showing Keycloak's login theme.
+
+This approach eliminates any frontend configuration for identity providers — adding or removing an IdP is a Keycloak-only
+change. See
+[ADR: Dynamic Identity Provider Loading](../../../../arc42/decisions/2026_02_27_dynamic_identity_provider_loading.md)
+for the full rationale and implementation details.
+
+### Configuring Provider Icons
+
+Each identity provider can have a custom icon displayed on its login button. Icons are configured directly in the
+Keycloak identity provider's `config` map as the `icon` field using PrimeIcon CSS classes (e.g., `pi-microsoft`,
+`pi-google`). Providers without an icon configured fall back to `pi-sign-in`.
+
+To set an icon, add the `icon` field to the identity provider's configuration in
+`keycloak-identity-providers.json.j2`:
+
+```json
+"config": {
+  "clientId": "...",
+  "icon": "pi-microsoft"
+}
+```
+
+### Direct Keycloak Login
+
+When `KEYCLOAK_SHOW_KEYCLOAK_LOGIN=true` (API environment variable, default: `true`), an additional "Login with
+Keycloak" button appears alongside federated provider buttons. This enables username/password login through Keycloak's
+own user store — useful for development environments or deployments where some users authenticate directly with Keycloak
+rather than through an external IdP.
+
 ## Admin Service Authentication via OAuth2 Proxy
 
 Internal admin services (Dagster, Attu, SeaweedFS) are protected by [OAuth2 Proxy](https://oauth2-proxy.github.io/)

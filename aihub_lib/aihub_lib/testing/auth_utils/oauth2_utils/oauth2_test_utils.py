@@ -4,8 +4,6 @@ import httpx
 import pytest
 from cryptography.hazmat.primitives.asymmetric import rsa
 
-from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2Settings import OAuth2Settings
-
 
 def base64url_encode(data: bytes) -> str:
     return base64.urlsafe_b64encode(data).rstrip(b"=").decode("utf-8")
@@ -48,12 +46,6 @@ class DummyResponse:
     def raise_for_status(self):
         if self.status_code >= 400:
             raise httpx.HTTPStatusError("Error", request=None, response=self)
-
-
-@pytest.fixture
-def oauth2_config(monkeypatch):
-    """Set up the OAuth2 configuration via environment variables."""
-    return OAuth2Settings()
 
 
 @pytest.fixture

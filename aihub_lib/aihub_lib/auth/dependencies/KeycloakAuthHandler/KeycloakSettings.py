@@ -1,9 +1,7 @@
-"""Keycloak identity provider settings."""
-
 from typing import Annotated
 
 from fastapi.security import OAuth2AuthorizationCodeBearer
-from pydantic import Field, computed_field
+from pydantic import Field, computed_field, field_validator
 
 from aihub_lib.settings.EnvironmentSettings import EnvironmentSettings
 
@@ -19,8 +17,33 @@ class KeycloakSettings(EnvironmentSettings):
     model_config = EnvironmentSettings.create_settings_config("KEYCLOAK_")
 
     URL: Annotated[str, Field(description="Keycloak internal URL for direct access (e.g., http://keycloak:8080)")]
-    EXTERNAL_URL: Annotated[str | None, Field(description="Keycloak external URL as seen by browsers, used for issuer validation")] = None
+    EXTERNAL_URL: Annotated[
+        str | None, Field(description="Keycloak external URL as seen by browsers, used for issuer validation")
+    ] = None
     REALM: Annotated[str, Field(description="Keycloak realm name")] = "aihub"
+    API_SERVICE_CLIENT_ID: Annotated[str, Field(description="Client ID for the API service account")] = (
+        "aihub-api-service"
+    )
+    API_SERVICE_CLIENT_SECRET: Annotated[str | None, Field(description="Client secret for the API service account")] = (
+        None
+    )
+    SHOW_KEYCLOAK_LOGIN: Annotated[
+        bool, Field(description="Show a direct Keycloak login button alongside federated IDPs")
+    ] = True
+
+    @field_validator("API_SERVICE_CLIENT_SECRET", mode="before")
+    @classmethod
+    def _empty_secret_is_none(cls, v: object) -> object:
+        if v == "":
+            return None
+        return v
+
+    @field_validator("SHOW_KEYCLOAK_LOGIN", mode="before")
+    @classmethod
+    def _empty_string_defaults_to_true(cls, v: object) -> object:
+        if v == "":
+            return True
+        return v
 
     @computed_field
     @property
@@ -59,6 +82,12 @@ class KeycloakSettings(EnvironmentSettings):
     def WELL_KNOWN_URL(self) -> str:
         """OpenID Connect discovery URL."""
         return f"{self.URL}/realms/{self.REALM}/.well-known/openid-configuration"
+
+    @computed_field
+    @property
+    def IDENTITY_PROVIDER_URL(self) -> str:
+        """Admin API endpoint for listing identity providers in the configured realm."""
+        return f"{self.URL}/admin/realms/{self.REALM}/identity-provider/instances"
 
     @computed_field
     @property

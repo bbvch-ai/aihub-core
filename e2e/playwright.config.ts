@@ -12,8 +12,8 @@ import { defineConfig, devices } from '@playwright/test'
  *
  * Environment variables:
  * - E2E_DOMAIN           Override the base domain (default: 127.0.0.1.nip.io)
- * - E2E_KEYCLOAK_USERNAME  Keycloak test user (default: admin)
- * - E2E_KEYCLOAK_PASSWORD  Keycloak test user password (default: admin)
+ * - E2E_KEYCLOAK_ADMIN_USER  Keycloak test user (default: admin)
+ * - E2E_KEYCLOAK_ADMIN_PASSWORD  Keycloak test user password (default: admin)
  *
  * Run: pnpm test
  */

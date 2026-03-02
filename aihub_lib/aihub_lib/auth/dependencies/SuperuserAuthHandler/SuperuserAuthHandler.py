@@ -3,6 +3,7 @@ import logging
 from fastapi import HTTPException, Request, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
+from aihub_lib.auth.dependencies.BearerAuthHandler import BearerAuthHandler
 from aihub_lib.auth.dependencies.SuperuserAuthHandler.SuperuserSettings import SuperuserSettings
 from aihub_lib.auth.identity.TenantIdentity import TenantIdentity
 from aihub_lib.auth.identity.UserIdentity import UserIdentity

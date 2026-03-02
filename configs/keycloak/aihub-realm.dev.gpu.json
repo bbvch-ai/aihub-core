@@ -281,6 +281,20 @@
           }
         }
       ]
+    },
+    {
+      "clientId": "aihub-api-service",
+      "name": "AI-Hub API Service Account",
+      "description": "Least-privilege service account for API backend. Only has view-identity-providers permission.",
+      "enabled": true,
+      "publicClient": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "${KEYCLOAK_API_SERVICE_CLIENT_SECRET}",
+      "protocol": "openid-connect"
     }
   ],
 
@@ -470,6 +484,7 @@
       ]
     }
   ],
+
   "users": [
     {
       "username": "${KEYCLOAK_DEV_USER_USERNAME}",
@@ -486,6 +501,14 @@
         }
       ],
       "realmRoles": ${KEYCLOAK_DEV_USER_ROLES_JSON}
+    },
+    {
+      "username": "service-account-aihub-api-service",
+      "enabled": true,
+      "serviceAccountClientId": "aihub-api-service",
+      "clientRoles": {
+        "realm-management": ["view-identity-providers"]
+      }
     }
   ],
 

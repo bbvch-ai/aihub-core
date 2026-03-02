@@ -976,7 +976,7 @@ services:
 
   keycloak:
     container_name: keycloak
-    image: {{ global.registry_prefix }}/{{ image_tags.keycloak }}
+    image: {{ global.registry_prefix }}{{ image_tags.keycloak }}
     restart: unless-stopped
     {%- if stage == 'dev' %}
     ports:
@@ -1057,6 +1057,7 @@ services:
       KEYCLOAK_AZURE_CLIENT_ID: ${KEYCLOAK_AZURE_CLIENT_ID}
       KEYCLOAK_AZURE_CLIENT_SECRET: ${KEYCLOAK_AZURE_CLIENT_SECRET}
       KEYCLOAK_AZURE_TENANT_ID: ${KEYCLOAK_AZURE_TENANT_ID}
+      KEYCLOAK_API_SERVICE_CLIENT_SECRET: ${KEYCLOAK_API_SERVICE_CLIENT_SECRET}
     volumes:
       {%- if stage == 'dev' %}
       # Dev stage: mount directly (no ${DOMAIN} substitution needed)
@@ -2355,6 +2356,8 @@ services:
       KEYCLOAK_URL: {{ KEYCLOAK_INTERNAL_URL }}
       KEYCLOAK_EXTERNAL_URL: https://auth.${DOMAIN}
       KEYCLOAK_REALM: {{ KEYCLOAK_REALM }}
+      KEYCLOAK_API_SERVICE_CLIENT_SECRET: ${KEYCLOAK_API_SERVICE_CLIENT_SECRET}
+      KEYCLOAK_SHOW_KEYCLOAK_LOGIN: ${KEYCLOAK_SHOW_KEYCLOAK_LOGIN}
 
       # Oauth2 config
       OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
@@ -2503,7 +2506,6 @@ services:
       OAUTH_AUTHORITY_URL: ${OAUTH_AUTHORITY_URL}
       WEBUI_URL: https://openwebui.${DOMAIN}
       WS_ENDPOINT: wss://${DOMAIN}/api/v1/events/ws
-      IDENTITY_PROVIDERS: ${IDENTITY_PROVIDERS}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://127.0.0.1/"]
       interval: 30s

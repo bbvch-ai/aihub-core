@@ -8,11 +8,6 @@ from aihub_lib.settings.EnvironmentSettings import EnvironmentSettings
 class TenantSettings(EnvironmentSettings):
     """
     Configuration for the multi-tenant system.
-
-    These settings control:
-    - Default tenant creation on first startup
-    - Default roles assigned to new users
-    - First user (admin) role assignment
     """
 
     model_config = EnvironmentSettings.create_settings_config("TENANT_")

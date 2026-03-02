@@ -325,7 +325,7 @@ Key methods:
 
 | Handler                               | Mechanism                     |
 | ------------------------------------- | ----------------------------- |
-| `OAuth2AuthHandler`                   | OpenID Connect (generic OIDC) |
+| `KeycloakAuthHandler`                 | Keycloak OIDC (JWT + JWKS)    |
 | `TokenAuthHandler`                    | Simple token validation       |
 | `BearerAuthHandler`                   | Bearer token header           |
 | `TokenAndOauth2Handler`               | Combined token + OAuth2       |

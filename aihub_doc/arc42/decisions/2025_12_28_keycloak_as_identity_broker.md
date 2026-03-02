@@ -62,10 +62,11 @@ SAML, local users) as configured per deployment.
   appropriate SSL settings, client configurations, and (in dev) a pre-configured test user.
 - **Auth Handler**: `KeycloakAuthHandler` validates JWTs using Keycloak's JWKS endpoint with 6-hour caching. User data
   is extracted directly from JWT claims—no external API calls during authentication.
-- **OAuth2 Clients**: Two OIDC clients are configured for user-facing applications, plus per-service OAuth2 Proxy
-  clients for admin tool protection:
+- **OAuth2 Clients**: Two OIDC clients are configured for user-facing applications, a service account for the API, plus
+  per-service OAuth2 Proxy clients for admin tool protection:
   - `aihub-frontend` — public client with PKCE for the Admin UI
   - `openwebui` — confidential client for the chat interface
+  - `aihub-api-service` — confidential client with service account for API backend (least-privilege: `view-identity-providers` only)
   - `oauth2-proxy-dagster`, `oauth2-proxy-datalake`, `oauth2-proxy-attu` — confidential clients for admin tool OAuth2 Proxy sidecars
 - **Admin Tool Protection**: OAuth2 Proxy instances protect Dagster, Attu (Milvus), and SeaweedFS using Keycloak as the
   OIDC provider with role-based access control.
@@ -96,3 +97,5 @@ SAML, local users) as configured per deployment.
   independently from any identity provider
 - `2025_08_11_global_superuser_authentication.md` — Superuser token auth remains as a parallel bearer-based
   authentication path for Docker Compose deployments without a browser
+- `2026_02_27_dynamic_identity_provider_loading.md` — Extends this decision by using Keycloak as the source of truth
+  for which identity providers to display on the login page

@@ -19,9 +19,6 @@ export default defineNuxtPlugin(async () => {
     publicConfig.oidc.authorityUrl = appConfig.OAUTH_AUTHORITY_URL
     publicConfig.webui.url = appConfig.WEBUI_URL
     publicConfig.ws.endpoint = appConfig.WS_ENDPOINT
-    publicConfig.auth.identityProviders = typeof appConfig.IDENTITY_PROVIDERS === 'string'
-      ? appConfig.IDENTITY_PROVIDERS
-      : JSON.stringify(appConfig.IDENTITY_PROVIDERS)
   }
   catch (error) {
     console.error('Could not load runtime configuration:', error)

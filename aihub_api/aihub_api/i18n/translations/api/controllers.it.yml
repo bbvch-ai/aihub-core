@@ -1,4 +1,7 @@
 ---
+auth_provider:
+  name: Autenticazione
+  description: Provider di identità disponibili per il login
 agent:
   name: Assistenti IA
   description: Esplora e interagisci con gli assistenti IA

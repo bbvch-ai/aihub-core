@@ -4,7 +4,7 @@ import pytest_asyncio
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
     DangerousDevelopmentOnlyAuthHandler,
 )
-from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2AuthHandler import OAuth2AuthHandler
+from aihub_lib.auth.dependencies.KeycloakAuthHandler.KeycloakAuthHandler import KeycloakAuthHandler
 from aihub_lib.auth.dependencies.TokenAuthHandler.TokenAuthHandler import TokenAuthHandler
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
@@ -52,10 +52,10 @@ async def token_auth_api_client(controller_mount_func):
 
 
 @pytest_asyncio.fixture
-async def oauth2_auth_api_client(controller_mount_func):
-    """Create an AsyncClient with OAuth2AuthHandler for testing."""
+async def keycloak_auth_api_client(controller_mount_func):
+    """Create an AsyncClient with KeycloakAuthHandler for testing."""
     runner = ApiTestRunner()
-    auth = OAuth2AuthHandler()
+    auth = KeycloakAuthHandler()
     runner.mount(controller_mount_func(auth))
 
     app = runner.create_app()

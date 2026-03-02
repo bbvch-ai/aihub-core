@@ -28,23 +28,26 @@
           </p>
         </div>
         <div class="flex flex-col gap-3">
-          <Button
-            v-for="idp in identityProviders"
-            :key="idp.alias"
-            :label="t('auth.login.loginWith', { provider: idp.displayName })"
-            :icon="`pi ${idp.icon}`"
-            icon-pos="right"
-            class="!bg-white !text-black"
-            @click="login(idp.alias || undefined)"
-          />
-          <Button
-            v-if="identityProviders.length === 0"
-            :label="t('auth.login.title')"
-            icon="pi pi-sign-in"
-            icon-pos="right"
-            class="!bg-white !text-black"
-            @click="login()"
-          />
+          <ProgressSpinner v-if="isLoading" class="!h-8 !w-8" />
+          <template v-else>
+            <Button
+              v-for="idp in authProviders"
+              :key="idp.alias"
+              :label="t('auth.login.loginWith', { provider: idp.display_name })"
+              :icon="`pi ${idp.icon}`"
+              icon-pos="right"
+              class="!bg-white !text-black"
+              @click="login(idp.alias || undefined)"
+            />
+            <Button
+              v-if="authProviders.length === 0"
+              :label="t('auth.login.title')"
+              icon="pi pi-sign-in"
+              icon-pos="right"
+              class="!bg-white !text-black"
+              @click="login()"
+            />
+          </template>
         </div>
       </div>
       <a
@@ -62,31 +65,17 @@
 <script setup lang="ts">
 import logo from '@core/assets/images/logo.png'
 
-interface IdentityProvider {
-  alias: string
-  displayName: string
-  icon: string
-}
-
 definePageMeta({
   layout: 'anonymous',
 })
 
 const { t } = useI18n()
 const { login } = useAuth()
+const { authProviders, isLoading, fetchAuthProviders } = useAuthProviders()
 
 const companyName = 'bbv Software Services AG'
 
-const runtimeConfig = useRuntimeConfig()
-
-const identityProviders = computed<IdentityProvider[]>(() => {
-  const raw = runtimeConfig.public.auth?.identityProviders
-  if (!raw) return []
-  try {
-    return JSON.parse(raw as string) as IdentityProvider[]
-  }
-  catch {
-    return []
-  }
+onMounted(() => {
+  fetchAuthProviders()
 })
 </script>
