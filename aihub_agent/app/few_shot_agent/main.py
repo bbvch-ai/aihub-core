@@ -5,6 +5,7 @@ AihubInstrumentor().instrument()
 
 import asyncio
 
+from aihub_lib import swiss_ai_hub_ascii
 from aihub_lib.infrastructure.logging.logger import enable_logging
 
 from aihub_agent.agents.FewShotAgent.FewShotAgent import FewShotAgent
@@ -13,6 +14,7 @@ from aihub_agent.runners.AgentRunner import AgentRunner
 from app.few_shot_agent.templates import ALL_TEMPLATES
 
 enable_logging()
+print(swiss_ai_hub_ascii("FewShotAgent"))
 
 
 async def main():

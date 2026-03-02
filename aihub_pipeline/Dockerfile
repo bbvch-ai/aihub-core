@@ -30,9 +30,12 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # Runtime stage
 FROM python:3.13-slim AS runtime
 
+ARG VERSION
+
 ENV PYTHONUNBUFFERED=1 \
     PYTHONPATH=/app \
-    PATH="/app/.venv/bin:$PATH"
+    PATH="/app/.venv/bin:$PATH" \
+    AIHUB_VERSION=${VERSION}
 
 # Setup users
 ARG USERNAME=user

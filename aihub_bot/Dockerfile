@@ -36,7 +36,7 @@ ARG VERSION
 ENV PYTHONUNBUFFERED=1 \
     PYTHONPATH=/app \
     PATH="/app/.venv/bin:$PATH" \
-    AIHUB_API_VERSION=${VERSION}
+    AIHUB_VERSION=${VERSION}
 
 # Setup users
 ARG USERNAME=user

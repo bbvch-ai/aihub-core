@@ -1,4 +1,6 @@
 # ruff: noqa: E402
+from aihub_lib import swiss_ai_hub_ascii
+
 from aihub_lib.infrastructure.opentelemetry.AihubInstrumentor import AihubInstrumentor  # isort: skip
 
 AihubInstrumentor().instrument()
@@ -123,5 +125,6 @@ runner.mount(
     TranslationController(auth=auth).translate(),
 )
 
+print(swiss_ai_hub_ascii("API"))
 
 app = runner.create_app()

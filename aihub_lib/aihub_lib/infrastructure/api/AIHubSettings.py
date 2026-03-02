@@ -9,7 +9,7 @@ class AIHubSettings(EnvironmentSettings):
     model_config = EnvironmentSettings.create_settings_config("AIHUB_")
 
     API_DEBUG_MODE: Annotated[bool, Field(description="Debug mode for development")] = False
-    API_VERSION: Annotated[str, Field(description="Version of the app")]
+    VERSION: Annotated[str, Field(description="Version of the app")]
 
     CREATE_DEFAULT_ROLES: Annotated[
         bool, Field(description="Creates default roles like AI-Hub Admin and AI-Hub User")

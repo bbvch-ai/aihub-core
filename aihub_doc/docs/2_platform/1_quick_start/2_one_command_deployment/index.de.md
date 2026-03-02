@@ -210,7 +210,7 @@ MILVUS_DIMENSION="1024"
 # -----------------------------------------------------------------------------
 # AI-Hub Application Settings
 # -----------------------------------------------------------------------------
-AIHUB_API_VERSION="latest"
+AIHUB_VERSION="latest"
 AIHUB_CREATE_DEFAULT_ROLES="True"
 
 # Admin Settings

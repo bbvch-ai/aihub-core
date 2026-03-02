@@ -1,3 +1,4 @@
+from aihub_lib import swiss_ai_hub_ascii
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
     DangerousDevelopmentOnlyAuthHandler,
 )
@@ -25,5 +26,7 @@ runner.mount(
     AgentChatController(auth=auth).completions_json().completions_stream(),
     BotInTheLoopController(auth=auth).bot_in_the_loop_response(),
 )
+
+print(swiss_ai_hub_ascii("Bot"))
 
 app = runner.create_app()
