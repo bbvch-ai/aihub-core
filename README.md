@@ -287,14 +287,14 @@ This agent retrieves documents from the knowledge base, answers with an LLM when
 human expert via Teams or Slack when it is not, pausing the workflow until the expert responds:
 
 ```python
-from swissaihub.agent import Agent, AgentConfig, AgentRunner, step
-from swissaihub.core.events import UserMessageEvent, LLMStopEvent, StopEvent
-from swissaihub.core.events.semantic import RetrieverEvent
-from swissaihub.core.events.guard import ContextSufficientEvent, ContextInsufficientEvent
-from swissaihub.core.events.botl import BotInTheLoop
-from swissaihub.core.displayers import EventDisplayer
-from swissaihub.core.retrievers import KnowledgeRetriever
-from swissaihub.core.i18n import LocaleString, LocaleHandler
+from swiss_ai_hub.agent import Agent, AgentConfig, AgentRunner, step
+from swiss_ai_hub.core.events import UserMessageEvent, LLMStopEvent, StopEvent
+from swiss_ai_hub.core.events.semantic import RetrieverEvent
+from swiss_ai_hub.core.events.guard import ContextSufficientEvent, ContextInsufficientEvent
+from swiss_ai_hub.core.events.botl import BotInTheLoop
+from swiss_ai_hub.core.displayers import EventDisplayer
+from swiss_ai_hub.core.retrievers import KnowledgeRetriever
+from swiss_ai_hub.core.i18n import LocaleString, LocaleHandler
 
 class ExpertQAAgent(Agent):
     name = LocaleString(en="Expert QA")
@@ -364,8 +364,8 @@ This pipeline connects to a legacy SFTP server, syncs documents into the data la
 indexes them for RAG — with hierarchical summaries and LLM-powered table refinement:
 
 ```python
-from swissaihub.pipeline import default_definitions, default_rclone_to_datalake_definitions
-from swissaihub.core.rclone import sftp_source
+from swiss_ai_hub.pipeline import default_definitions, default_rclone_to_datalake_definitions
+from swiss_ai_hub.core.rclone import sftp_source
 
 # Stage 1: SFTP → Data Lake
 # sftp_source() reads RCLONE_SFTP_* env vars (host, user, key file)
