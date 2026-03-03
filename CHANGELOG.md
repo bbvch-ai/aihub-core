@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.269.3] - 2026-03-03 - Expanded Document Parsing and Flexible File Handling
+
+### Added
+
+- ✨ **New RawLoader for Plaintext Files:** Introduced a dedicated loader for various plaintext formats (e.g., `txt`,
+  `md`, `csv`, `json`, `xml`, `yml`, `yaml`, `log`, `ini`, `cfg`, `toml`) to ensure accurate content parsing without
+  conversion.
+- ⚙️ **Configurable Passthrough Extensions:** Added a new setting, `ParsingSettings.PASSTHROUGH_EXTENSIONS`, allowing
+  configuration of file types (like `zip` or `wav`) that bypass markdown conversion and return empty content, enabling
+  agents to access the raw files directly from S3.
+- 📦 **Direct S3 File Download:** Implemented `S3AnonymousFileAccessService.download_file` to enable raw byte downloads
+  from S3, facilitating in-memory processing for various file types beyond standard document parsing.
+
+### Changed
+
+- 🔄 **Updated Document Parsing Service:** The `ParsingService` now intelligently routes documents to the new `RawLoader`
+  for plaintext files and incorporates the configurable passthrough mechanism for agent-centric file types,
+  significantly improving versatility and robustness.
+- 📄 **Dynamic Extension Support in Parser:** The `DocumentParserResource` now dynamically includes all supported
+  extensions from `RawLoader`, simplifying configuration and ensuring consistent parsing capabilities.
+- 🚨 **Improved Unsupported File Type Messaging:** Enhanced the error message for unsupported file types in the parsing
+  service to clearly list all currently recognized extensions, including those handled by the new `RawLoader`.
+
+### Refactor
+
+- 🧹 **Minor Import Clean-up:** Removed an unused import in the `TraceStore` module for improved code hygiene.
+
+______________________________________________________________________
+
 ## [v0.269.2] - 2026-02-27 - Release Packaging Refinement
 
 ### Fixed

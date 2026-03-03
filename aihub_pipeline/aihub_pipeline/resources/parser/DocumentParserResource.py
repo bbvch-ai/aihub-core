@@ -79,7 +79,7 @@ class DocumentParserResource(ConfigurableResource):
     _base_readers: dict[type[BaseReader], list[str]] = {
         EpubReader: ["epub"],
         IPYNBReader: ["ipynb"],
-        RawLoader: ["txt", "md"],
+        RawLoader: RawLoader.SUPPORTED_EXTENSIONS,
         RTFReader: ["rtf"],
     }
 

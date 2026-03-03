@@ -6,8 +6,10 @@ import urllib.parse
 from aihub_lib.generative_ai.document.accessor.S3AnonymousFileAccessService import S3AnonymousFileAccessService
 from aihub_lib.generative_ai.document.loaders.MarkItDownLoader import MarkItDownLoader
 from aihub_lib.generative_ai.document.loaders.MineruLoader import MineruLoader
+from aihub_lib.generative_ai.document.loaders.RawLoader import RawLoader
 from aihub_lib.generative_ai.utils.image_processor import replace_s3_paths_with_signed_urls
 from aihub_lib.infrastructure.mineru.MineruSettings import MineruSettings
+from aihub_lib.infrastructure.parsing.ParsingSettings import ParsingSettings
 from aihub_lib.infrastructure.s3.use_s3 import create_s3_filesystem
 from fastapi import HTTPException
 
@@ -18,6 +20,9 @@ from aihub_api.routes.parsing.dto.DocumentParsingResponse import (
 from aihub_api.routes.parsing.dto.ImageMode import ImageMode
 
 logger = logging.getLogger(__name__)
+
+_mineru_settings = MineruSettings()
+_parsing_settings = ParsingSettings()
 
 
 def _get_extension(filename: str, content_type: str = "") -> str:
@@ -39,7 +44,7 @@ def _get_extension(filename: str, content_type: str = "") -> str:
 
 
 class ParsingService:
-    """Service for converting documents to markdown using MinerU or MarkItDown."""
+    """Service for converting documents to markdown using MinerU, MarkItDown, or RawLoader."""
 
     @staticmethod
     async def convert_from_bytes(
@@ -53,6 +58,7 @@ class ParsingService:
         Convert a document from raw bytes to markdown.
 
         Routes to the appropriate loader based on file extension:
+        - RawLoader: Plaintext files (txt, md, csv, json, xml, yaml, etc.)
         - MinerU: PDF, images (png, jpg, etc.)
         - MarkItDown: Office documents (docx, pptx, xlsx, etc.)
         """
@@ -72,20 +78,34 @@ class ParsingService:
             filename = f"{filename}.{extension}"
         logger.debug(f"Detected extension: {extension} for {filename}")
 
-        mineru_extensions = MineruSettings().EXTENSIONS
+        mineru_extensions = _mineru_settings.EXTENSIONS
         markitdown_extensions = MarkItDownLoader.SUPPORTED_EXTENSIONS
+        rawloader_extensions = RawLoader.SUPPORTED_EXTENSIONS
 
-        if extension in mineru_extensions:
+        if extension in rawloader_extensions:
+            loader = RawLoader()
+            logger.debug(f"Using RawLoader for {filename}")
+        elif extension in mineru_extensions:
             loader = MineruLoader()
             logger.debug(f"Using MineruLoader for {filename}")
         elif extension in markitdown_extensions:
             loader = MarkItDownLoader()
             logger.debug(f"Using MarkItDownLoader for {filename}")
+        elif extension in _parsing_settings.PASSTHROUGH_EXTENSIONS:
+            # OpenWebUI routes ALL uploaded files through the external document loader.
+            # Files meant for agent-only processing (e.g. zip, wav) would fail with 400
+            # without this passthrough — returning empty content lets the upload succeed
+            # while agents access the raw file via S3.
+            logger.info(f"Passthrough extension .{extension}, returning empty content: {filename}")
+            return DocumentParsingResponse(
+                page_content="",
+                metadata=DocumentParsingMetadata(filename=filename),
+            )
         else:
             raise HTTPException(
                 status_code=400,
                 detail=f"Unsupported file type: {extension}. "
-                f"Supported types: {', '.join(mineru_extensions + markitdown_extensions)}",
+                f"Supported types: {', '.join(rawloader_extensions + mineru_extensions + markitdown_extensions)}",
             )
 
         if image_mode == ImageMode.S3:
