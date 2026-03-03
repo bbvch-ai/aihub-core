@@ -5,6 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.269.4] - 2026-03-03 - Streamlined Setup and Enhanced Observability
+
+### Added
+
+- 🚀 **One-Command Installer:** Introduced a new `install.sh` script to simplify platform setup and upgrades, featuring
+  auto-detection for GPU hardware and robust `.env` secret generation.
+- 🖼️ **Platform Tour Demos:** Added new demo videos and images to the `README.md` and documentation, visually showcasing
+  key platform features like document ingestion, agent interaction, and cost control.
+- ✨ **Standardized Startup Banner:** All core services now display a consistent startup banner with version information,
+  improving visibility and branding upon service launch.
+
+### Changed
+
+- 📄 **Revamped Main Documentation:** The `README.md` has been completely rewritten to provide a higher-level overview, a
+  more intuitive quick start guide, and a comprehensive platform tour, making it easier for new users to understand and
+  engage with the Swiss AI-Hub.
+- ⚙️ **Unified Versioning Configuration:** Renamed the `AIHUB_API_VERSION` environment variable to `AIHUB_VERSION`
+  across all `.env` files, Dockerfiles, and internal settings for greater consistency.
+- 📦 **Centralized Version Management:** The platform's version is now automatically derived from package metadata,
+  ensuring consistency across all components and deployment artifacts.
+- 🇩🇪 **Improved German Documentation:** Enhanced clarity and detail in German documentation, particularly for sections
+  on low-level traces (including AITL delegation details), quick start, and update/maintenance procedures.
+
+### Refactor
+
+- 🧹 **Consolidated Version Environment Variables:** Standardized the version environment variable name (e.g.,
+  `AIHUB_AGENT_VERSION`, `AIHUB_PIPELINE_VERSION` merged into `AIHUB_VERSION`) across all Python services and Docker
+  images for simplified configuration.
+
+______________________________________________________________________
+
 ## [v0.269.3] - 2026-03-03 - Expanded Document Parsing and Flexible File Handling
 
 ### Added

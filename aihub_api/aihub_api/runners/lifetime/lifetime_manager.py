@@ -79,6 +79,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
     When `app` starts, this manager runs and sets up everything. When `app` stops, it tears down resources.
     """
 
+    print(AIHubSettings().startup_banner)
     logging.info("Initializing NATS connection and resources")
 
     # Connect to MongoDB via Cosmos

@@ -7,6 +7,40 @@ title: One-Command Deployment
 The Swiss AI Hub platform deploys with a single Docker Compose command. This streamlined process gets your complete AI
 infrastructure running in minutes, not hours.
 
+## Quick Install
+
+Run a single command to download, extract, and set up the platform:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/bbvch-ai/aihub-core/main/install.sh | bash
+```
+
+The installer auto-detects GPU hardware, downloads the correct release bundle, and generates all secrets. Afterwards,
+edit `.env` and run `docker compose up -d`.
+
+| Flag                | Default          | Description               |
+| ------------------- | ---------------- | ------------------------- |
+| `--version VERSION` | latest           | Pin to a specific release |
+| `--gpu`             | auto-detect      | Force GPU bundle          |
+| `--cpu`             | auto-detect      | Force CPU-only bundle     |
+| `--dir PATH`        | `./swiss-ai-hub` | Installation directory    |
+| `--help`            |                  | Show usage                |
+
+**Examples:**
+
+```bash
+# Install with GPU bundle to a custom directory
+curl -fsSL https://raw.githubusercontent.com/bbvch-ai/aihub-core/main/install.sh | bash -s -- --gpu --dir /opt/aihub
+
+# Pin a specific version
+curl -fsSL https://raw.githubusercontent.com/bbvch-ai/aihub-core/main/install.sh | bash -s -- --version v0.269.2
+```
+
+**Upgrading:** Run the installer again with the same `--dir`. It detects the existing installation, backs up your
+`.env`, replaces bundle files, restores `.env`, and reports any new environment variables added in the release.
+
+______________________________________________________________________
+
 ## Deployment Overview
 
 ::: tip Two Deployment Options

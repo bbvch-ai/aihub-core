@@ -91,7 +91,7 @@ class Runner(abc.ABC):
         app = FastAPI(
             title=self.title,
             description=self.description,
-            version=AIHubSettings().API_VERSION,
+            version=AIHubSettings().VERSION,
             debug=AIHubSettings().API_DEBUG_MODE,
             redirect_slashes=True,
         )

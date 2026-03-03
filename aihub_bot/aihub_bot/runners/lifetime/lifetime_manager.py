@@ -17,6 +17,7 @@ from aihub_bot.routes.bot_in_the_loop.BotInTheLoopHandler import BotInTheLoopHan
 
 @asynccontextmanager
 async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
+    print(AIHubSettings().startup_banner)
     logging.info("Initializing NATS connection and resources")
 
     # Connect to MongoDB via Cosmos

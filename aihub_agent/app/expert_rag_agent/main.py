@@ -5,6 +5,7 @@ AihubInstrumentor().instrument()
 
 import asyncio
 
+from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.infrastructure.logging.logger import enable_logging
 
 from aihub_agent.agents.ExpertRagAgent.configs.ExpertRAGAgentConfig import ExpertRAGAgentConfig
@@ -24,4 +25,5 @@ async def main():
 
 
 if __name__ == "__main__":
+    print(AIHubSettings().startup_banner)
     asyncio.run(main())
