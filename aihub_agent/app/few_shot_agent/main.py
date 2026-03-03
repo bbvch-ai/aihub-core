@@ -14,7 +14,6 @@ from aihub_agent.runners.AgentRunner import AgentRunner
 from app.few_shot_agent.templates import ALL_TEMPLATES
 
 enable_logging()
-print(AIHubSettings().startup_banner)
 
 
 async def main():
@@ -28,4 +27,5 @@ async def main():
 
 
 if __name__ == "__main__":
+    print(AIHubSettings().startup_banner)
     asyncio.run(main())

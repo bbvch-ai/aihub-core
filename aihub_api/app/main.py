@@ -1,6 +1,4 @@
 # ruff: noqa: E402
-from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
-
 from aihub_lib.infrastructure.opentelemetry.AihubInstrumentor import AihubInstrumentor  # isort: skip
 
 AihubInstrumentor().instrument()
@@ -124,7 +122,5 @@ runner.mount(
     ParsingController(auth=auth).parse_document(),
     TranslationController(auth=auth).translate(),
 )
-
-print(AIHubSettings().startup_banner)
 
 app = runner.create_app()

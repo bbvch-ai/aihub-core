@@ -1,7 +1,6 @@
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
     DangerousDevelopmentOnlyAuthHandler,
 )
-from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.infrastructure.logging.logger import enable_logging
 from aihub_lib.routes.health.HealthController import HealthController
 
@@ -26,7 +25,5 @@ runner.mount(
     AgentChatController(auth=auth).completions_json().completions_stream(),
     BotInTheLoopController(auth=auth).bot_in_the_loop_response(),
 )
-
-print(AIHubSettings().startup_banner)
 
 app = runner.create_app()

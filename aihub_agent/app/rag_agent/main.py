@@ -13,7 +13,6 @@ from aihub_agent.agents.RagAgent.RAGAgent import RAGAgent
 from aihub_agent.runners.AgentRunner import AgentRunner
 
 enable_logging()
-print(AIHubSettings().startup_banner)
 
 
 async def main():
@@ -26,4 +25,5 @@ async def main():
 
 
 if __name__ == "__main__":
+    print(AIHubSettings().startup_banner)
     asyncio.run(main())
