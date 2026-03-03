@@ -45,6 +45,7 @@ CONFIG_SPECS = [
     ("templates/configs/pg-init-multiple-dbs.sh.j2", "configs/postgres", "init-multiple-dbs.sh"),
     ("templates/configs/openwebui-init-functions.sh.j2", "configs/openwebui", "init-functions.sh"),
     ("templates/configs/init_etcd.sh.j2", "configs/etcd", "init_etcd.sh"),
+    ("templates/configs/keycloak-entrypoint.sh.j2", "configs/keycloak", "keycloak-entrypoint.sh"),
 ]
 
 # Additional static files included only in release bundles (non-config files).

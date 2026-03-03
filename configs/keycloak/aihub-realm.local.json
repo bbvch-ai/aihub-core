@@ -283,6 +283,33 @@
       ]
     },
     {
+      "clientId": "langfuse",
+      "name": "Langfuse (LLM Observability)",
+      "description": "OIDC client for Langfuse native Keycloak SSO",
+      "enabled": true,
+      "publicClient": false,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "${KEYCLOAK_LANGFUSE_CLIENT_SECRET}",
+      "protocol": "openid-connect",
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      },
+      "rootUrl": "https://langfuse.${DOMAIN}",
+      "redirectUris": [
+        "https://langfuse.${DOMAIN}/*"
+      ],
+      "webOrigins": ["+"],
+      "defaultClientScopes": [
+        "openid",
+        "profile",
+        "email"
+      ]
+    },
+    {
       "clientId": "aihub-api-service",
       "name": "AI-Hub API Service Account",
       "description": "Least-privilege service account for API backend. Only has view-identity-providers permission.",

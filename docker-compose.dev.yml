@@ -449,7 +449,7 @@ services:
       CLICKHOUSE_USER: clickhouse
       CLICKHOUSE_PASSWORD: ${LANGFUSE_CLICKHOUSE_PASSWORD}
     volumes:
-      # Named volumes avoid Windows bind-mount issues with ClickHouse atomic renames
+      # Named volumes avoid Windows bind-mount issues with ClickHouse atomic renames TODO: remove build
       - clickhouse-data:/var/lib/clickhouse
       - clickhouse-logs:/var/log/clickhouse-server
     ports: [127.0.0.1:8123:8123, 127.0.0.1:9009:9000]
@@ -574,12 +574,12 @@ services:
       LANGFUSE_INIT_USER_EMAIL: ${LANGFUSE_INIT_USER_EMAIL}
       LANGFUSE_INIT_USER_NAME: AI-Hub Admin
       LANGFUSE_INIT_USER_PASSWORD: ${LANGFUSE_INIT_USER_PASSWORD}
-      # Azure AD SSO — dedicated app registration with "assignment required"
-      AUTH_AZURE_AD_CLIENT_ID: ${LANGFUSE_AZURE_AD_CLIENT_ID}
-      AUTH_AZURE_AD_CLIENT_SECRET: ${LANGFUSE_AZURE_AD_CLIENT_SECRET}
-      AUTH_AZURE_AD_TENANT_ID: ${LANGFUSE_AZURE_AD_TENANT_ID}
-      AUTH_AZURE_AD_ALLOW_ACCOUNT_LINKING: 'true'
-      # Auto-provisioning — assigned SSO users get MEMBER in the AI-Hub org/project
+      # Keycloak SSO — uses Keycloak as the OIDC provider for Langfuse login
+      AUTH_KEYCLOAK_CLIENT_ID: langfuse
+      AUTH_KEYCLOAK_CLIENT_SECRET: ${LANGFUSE_KEYCLOAK_CLIENT_SECRET}
+      AUTH_KEYCLOAK_ISSUER: http://keycloak:8080/realms/aihub
+      AUTH_KEYCLOAK_ALLOW_ACCOUNT_LINKING: 'true'
+      # Auto-provisioning — SSO users get MEMBER in the AI-Hub org/project
       LANGFUSE_DEFAULT_ORG_ID: aihub-org
       LANGFUSE_DEFAULT_ORG_ROLE: MEMBER
       LANGFUSE_DEFAULT_PROJECT_ID: aihub-project
@@ -640,6 +640,7 @@ services:
       KEYCLOAK_OAUTH2_PROXY_DAGSTER_SECRET: ${KEYCLOAK_OAUTH2_PROXY_DAGSTER_SECRET}
       KEYCLOAK_OAUTH2_PROXY_DATALAKE_SECRET: ${KEYCLOAK_OAUTH2_PROXY_DATALAKE_SECRET}
       KEYCLOAK_OAUTH2_PROXY_ATTU_SECRET: ${KEYCLOAK_OAUTH2_PROXY_ATTU_SECRET}
+      KEYCLOAK_LANGFUSE_CLIENT_SECRET: ${LANGFUSE_KEYCLOAK_CLIENT_SECRET}
       # Azure Entra ID configuration (for identity provider federation)
       KEYCLOAK_AZURE_CLIENT_ID: ${KEYCLOAK_AZURE_CLIENT_ID}
       KEYCLOAK_AZURE_CLIENT_SECRET: ${KEYCLOAK_AZURE_CLIENT_SECRET}

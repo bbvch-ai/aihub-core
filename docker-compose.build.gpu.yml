@@ -648,8 +648,9 @@ services:
       CLICKHOUSE_USER: clickhouse
       CLICKHOUSE_PASSWORD: ${LANGFUSE_CLICKHOUSE_PASSWORD}
     volumes:
-      - ${VOLUME_ROOT:-./.docker-volumes}/clickhouse-data:/var/lib/clickhouse
-      - ${VOLUME_ROOT:-./.docker-volumes}/clickhouse-logs:/var/log/clickhouse-server
+      # Named volumes avoid Windows bind-mount issues with ClickHouse atomic renames TODO: remove build
+      - clickhouse-data:/var/lib/clickhouse
+      - clickhouse-logs:/var/log/clickhouse-server
     ports: [127.0.0.1:8123:8123, 127.0.0.1:9009:9000]
     healthcheck:
       test: wget --no-verbose --tries=1 --spider http://localhost:8123/ping || exit
@@ -772,12 +773,12 @@ services:
       LANGFUSE_INIT_USER_EMAIL: ${LANGFUSE_INIT_USER_EMAIL}
       LANGFUSE_INIT_USER_NAME: AI-Hub Admin
       LANGFUSE_INIT_USER_PASSWORD: ${LANGFUSE_INIT_USER_PASSWORD}
-      # Azure AD SSO — dedicated app registration with "assignment required"
-      AUTH_AZURE_AD_CLIENT_ID: ${LANGFUSE_AZURE_AD_CLIENT_ID}
-      AUTH_AZURE_AD_CLIENT_SECRET: ${LANGFUSE_AZURE_AD_CLIENT_SECRET}
-      AUTH_AZURE_AD_TENANT_ID: ${LANGFUSE_AZURE_AD_TENANT_ID}
-      AUTH_AZURE_AD_ALLOW_ACCOUNT_LINKING: 'true'
-      # Auto-provisioning — assigned SSO users get MEMBER in the AI-Hub org/project
+      # Keycloak SSO — uses Keycloak as the OIDC provider for Langfuse login
+      AUTH_KEYCLOAK_CLIENT_ID: langfuse
+      AUTH_KEYCLOAK_CLIENT_SECRET: ${LANGFUSE_KEYCLOAK_CLIENT_SECRET}
+      AUTH_KEYCLOAK_ISSUER: https://auth.${DOMAIN}/realms/aihub
+      AUTH_KEYCLOAK_ALLOW_ACCOUNT_LINKING: 'true'
+      # Auto-provisioning — SSO users get MEMBER in the AI-Hub org/project
       LANGFUSE_DEFAULT_ORG_ID: aihub-org
       LANGFUSE_DEFAULT_ORG_ROLE: MEMBER
       LANGFUSE_DEFAULT_PROJECT_ID: aihub-project
@@ -824,49 +825,8 @@ services:
     container_name: keycloak
     image: ghcr.io/bbvch-ai/aihub-core/keycloak:26.5.4
     restart: unless-stopped
-    # Shell wrapper to substitute ${DOMAIN} in realm JSON before import.
-    # Keycloak's --import-realm does not support env var substitution natively,
-    # so we pre-process the template files with sed before starting.
-    #
-    # Import strategy:
-    # - aihub-realm.json: Imported via --import-realm (creates realm on first start only)
-    # - identity-providers.json: Applied via partialImport API after startup (every start,
-    #   with OVERWRITE so config changes are picked up). This keeps the files separate
-    #   and avoids --import-realm's OVERWRITE_EXISTING destroying the realm.
     entrypoint: /bin/bash
-    command:
-      - -c
-      - |
-        mkdir -p /opt/keycloak/data/import
-        # Substitute all environment variables in template files.
-        # Keycloak's --import-realm does not support env var substitution, so we
-        # use a pure-bash envsubst (the Keycloak image has no envsubst/perl/awk).
-        bash_envsubst() {
-          local content
-          content=$$(cat "$$1")
-          while IFS= read -r var; do
-            content=$${content//"\$${$$var}"/"$${!var}"}
-          done < <(compgen -v)
-          echo "$$content"
-        }
-        for f in /opt/keycloak/data/import-templates/*.json; do
-          bash_envsubst "$$f" > "/tmp/$$(basename $$f)"
-        done
-        # Only the realm file goes to --import-realm (first-start creation)
-        cp /tmp/aihub-realm.json /opt/keycloak/data/import/
-        # Apply identity providers via partialImport after Keycloak is ready
-        if [ -f /tmp/identity-providers.json ]; then
-          (
-            echo "Waiting for Keycloak to be ready before applying identity providers..."
-            until /opt/keycloak/bin/kcadm.sh config credentials --server http://localhost:8080 --realm master --user "$$KC_BOOTSTRAP_ADMIN_USERNAME" --password "$$KC_BOOTSTRAP_ADMIN_PASSWORD" > /dev/null 2>&1; do sleep 3; done
-            /opt/keycloak/bin/kcadm.sh create partialImport -r aihub \
-              -s ifResourceExists=OVERWRITE \
-              -f /tmp/identity-providers.json \
-              && echo "Identity providers applied successfully." \
-              || echo "ERROR: Failed to apply identity providers."
-          ) &
-        fi
-        exec /opt/keycloak/bin/kc.sh start --import-realm --hostname=https://auth.$$DOMAIN --hostname-backchannel-dynamic=true --proxy-headers=xforwarded --http-enabled=true
+    command: [/opt/keycloak/scripts/keycloak-entrypoint.sh]
     environment:
       KC_DB: postgres
       KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
@@ -889,13 +849,15 @@ services:
       KEYCLOAK_OAUTH2_PROXY_DAGSTER_SECRET: ${KEYCLOAK_OAUTH2_PROXY_DAGSTER_SECRET}
       KEYCLOAK_OAUTH2_PROXY_DATALAKE_SECRET: ${KEYCLOAK_OAUTH2_PROXY_DATALAKE_SECRET}
       KEYCLOAK_OAUTH2_PROXY_ATTU_SECRET: ${KEYCLOAK_OAUTH2_PROXY_ATTU_SECRET}
+      KEYCLOAK_LANGFUSE_CLIENT_SECRET: ${LANGFUSE_KEYCLOAK_CLIENT_SECRET}
       # Azure Entra ID configuration (for identity provider federation)
       KEYCLOAK_AZURE_CLIENT_ID: ${KEYCLOAK_AZURE_CLIENT_ID}
       KEYCLOAK_AZURE_CLIENT_SECRET: ${KEYCLOAK_AZURE_CLIENT_SECRET}
       KEYCLOAK_AZURE_TENANT_ID: ${KEYCLOAK_AZURE_TENANT_ID}
       KEYCLOAK_API_SERVICE_CLIENT_SECRET: ${KEYCLOAK_API_SERVICE_CLIENT_SECRET}
     volumes:
-      # Non-dev stages: mount as templates, sed-processed before import
+      # Non-dev stages: mount as templates, pre-processed by entrypoint script before import
+      - ./configs/keycloak/keycloak-entrypoint.sh:/opt/keycloak/scripts/keycloak-entrypoint.sh:ro
       - ./configs/keycloak/aihub-realm.build.gpu.json:/opt/keycloak/data/import-templates/aihub-realm.json:ro
       - ./configs/keycloak/identity-providers.build.gpu.json:/opt/keycloak/data/import-templates/identity-providers.json:ro
     healthcheck:
@@ -2848,3 +2810,13 @@ networks:
     driver: bridge
     driver_opts:
       com.docker.network.bridge.enable_icc: 'false'
+# ===================================================================
+# Named Volumes
+# ===================================================================
+# ClickHouse requires Linux filesystem semantics (atomic rename) that
+# are not supported by Windows bind mounts. Named Docker volumes run
+# inside the Docker VM where this works correctly.
+# ===================================================================
+volumes:
+  clickhouse-data:
+  clickhouse-logs:
