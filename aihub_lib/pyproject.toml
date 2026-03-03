@@ -1,6 +1,6 @@
 [project]
 name = "aihub-core"
-version = "0.269.2"
+version = "0.269.3"
 description = ""
 requires-python = ">=3.13, <3.14"
 authors = [
