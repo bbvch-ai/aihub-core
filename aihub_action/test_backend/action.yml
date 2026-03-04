@@ -213,7 +213,7 @@ runs:
       working-directory: ${{ inputs.working_directory }}
       run: |
         pytest_exit_code=0
-        uv run pytest -m "not flaky" --cov=. \
+        uv run pytest -m "not flaky and not e2e" --cov=. \
                          --cov-report=xml:coverage.xml \
                          --cov-report=term-missing \
                          --junitxml=pytest.xml || pytest_exit_code=$?

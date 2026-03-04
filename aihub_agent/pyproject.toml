@@ -58,10 +58,9 @@ extend-exclude = '''
 
 [tool.pytest.ini_options]
 markers = [
-    "self_hosted: mark tests that use self hosted services",
     "slow: mark a test as slow",
-    "integration: mark a test as an integration test",
     "experimental: mark a test as experimental",
     "flaky: mark a test as flaky (may fail intermittently)",
+    "e2e: mark a test as e2e (should not run with unit tests)",
 ]
 addopts = "--strict-markers"

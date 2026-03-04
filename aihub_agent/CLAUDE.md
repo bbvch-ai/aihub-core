@@ -332,7 +332,7 @@ tests).
   `has_start_event`/`has_stop_event`/`get_events_of_class()`
 - `wait_for_event(event_class, timeout)` for async assertions
 - `ensure_dependent_agent_stream(agent_class)` for agent-in-the-loop tests
-- Test markers: `self_hosted`, `slow`, `integration`, `experimental`, `flaky`
+- Test markers: `slow`, `experimental`, `flaky`
 
 ## New Agent Checklist
 
