@@ -28,7 +28,10 @@
           </p>
         </div>
         <div class="flex flex-col gap-3">
-          <ProgressSpinner v-if="isLoading" class="!h-8 !w-8" />
+          <ProgressSpinner
+            v-if="isLoading"
+            class="!h-8 !w-8"
+          />
           <template v-else>
             <Button
               v-for="idp in authProviders"
