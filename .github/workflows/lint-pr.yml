@@ -3,7 +3,7 @@ name: Lint Code
 on:
   pull_request:
     branches: [main, initiative/*]
-    types: [opened, edited, synchronize, reopened, ready_for_review]
+    types: [opened, synchronize, reopened, ready_for_review]
 permissions:
   checks: write
   contents: read
