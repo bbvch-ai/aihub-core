@@ -322,6 +322,8 @@ class PostgresHandler(BackupHandler):
             check=False,
             timeout=_SUBPROCESS_TIMEOUT,
         )
+        if result.returncode != 0:
+            raise RuntimeError(f"Failed to list databases on {host}: {result.stderr.strip()}")
         return [line.strip() for line in result.stdout.splitlines() if line.strip()]
 
     @staticmethod

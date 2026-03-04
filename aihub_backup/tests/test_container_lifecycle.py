@@ -56,17 +56,17 @@ def test_start_skips_nonexistent_containers(lifecycle: ContainerLifecycleManager
 
 def test_assert_no_overlapping_deps_passes_for_disjoint() -> None:
     deps = {
-        "A": ServiceDeps(("svc-1", "svc-2"), 60),
-        "B": ServiceDeps(("svc-3",), 60),
-        "C": ServiceDeps(None, 0),
+        "A": ServiceDeps(containers=("svc-1", "svc-2"), timeout=60),
+        "B": ServiceDeps(containers=("svc-3",), timeout=60),
+        "C": ServiceDeps(containers=None, timeout=0),
     }
     _assert_no_overlapping_deps(deps)
 
 
 def test_assert_no_overlapping_deps_raises_on_overlap() -> None:
     deps = {
-        "A": ServiceDeps(("shared",), 60),
-        "B": ServiceDeps(("shared",), 60),
+        "A": ServiceDeps(containers=("shared",), timeout=60),
+        "B": ServiceDeps(containers=("shared",), timeout=60),
     }
     with pytest.raises(AssertionError, match="Container 'shared' claimed by both 'A' and 'B'"):
         _assert_no_overlapping_deps(deps)

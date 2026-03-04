@@ -45,9 +45,11 @@ def test_exec_in_container_without_environment(docker_manager: DockerManager) ->
     container.exec_run.return_value = MagicMock(exit_code=0, output=b"OK")
     docker_manager._client.containers.get.return_value = container
 
-    docker_manager.exec_in_container("test-container", ["echo", "hello"])
+    exit_code, output = docker_manager.exec_in_container("test-container", ["echo", "hello"])
 
     container.exec_run.assert_called_once_with(["echo", "hello"], environment=None)
+    assert exit_code == 0
+    assert output == "OK"
 
 
 def test_exec_in_container_raises_when_not_found(docker_manager: DockerManager) -> None:

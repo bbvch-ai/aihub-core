@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import override
 
 import redis
+from docker.errors import APIError
 
 from aihub_backup.docker_client import DockerManager
 from aihub_backup.s3 import S3Manager
@@ -144,7 +145,7 @@ class ValkeyHandler(BackupHandler):
         finally:
             try:
                 self._docker.remove_container(cleanup_name)
-            except Exception:
+            except APIError:
                 logger.warning("Failed to remove temp container %s", cleanup_name, exc_info=True)
 
     def _resolve_image_and_data_mount(self, container: str) -> tuple[str, str]:

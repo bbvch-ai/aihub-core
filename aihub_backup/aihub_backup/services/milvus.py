@@ -133,11 +133,14 @@ class MilvusHandler(BackupHandler):
             uri=f"http://{self._settings.MILVUS_HOST}:{self._settings.MILVUS_PORT}",
             token=f"root:{self._settings.MILVUS_ROOT_PASSWORD.get_secret_value()}",
         )
-        collections = client.list_collections()
-        for name in collections:
-            logger.info("  Dropping collection: %s", name)
-            client.drop_collection(name)
-        logger.info("Dropped %d existing collection(s)", len(collections))
+        try:
+            collections = client.list_collections()
+            for name in collections:
+                logger.info("  Dropping collection: %s", name)
+                client.drop_collection(name)
+            logger.info("Dropped %d existing collection(s)", len(collections))
+        finally:
+            client.close()
 
     def _prepare_workdir(self, backup_root_path: str, workdir: Path) -> None:
         config_dir = workdir / "configs"

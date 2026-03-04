@@ -115,3 +115,20 @@ def test_retention_minimum_keep_partial_when_close_to_limit() -> None:
     # 4 backups, 3 expired, minimum_keep=3 -> can only delete 1
     assert s3.delete_recursive.call_count == 1
     s3.delete_recursive.assert_called_once_with("2026-01-01_02-00-00/")
+
+
+def test_retention_minimum_keep_exact_boundary_deletes_nothing() -> None:
+    """When total backups == minimum_keep and all expired, nothing is deleted."""
+    s3 = MagicMock()
+    s3.list_prefixes.return_value = [
+        "2026-01-01_02-00-00",
+        "2026-01-02_02-00-00",
+        "2026-01-03_02-00-00",
+    ]
+
+    with patch("aihub_backup.retention.datetime") as mock_dt:
+        mock_dt.now.return_value = FROZEN_NOW
+        mock_dt.side_effect = lambda *a, **kw: datetime(*a, **kw)
+        RetentionService.run(s3, retention_days=7, minimum_keep=3)
+
+    s3.delete_recursive.assert_not_called()

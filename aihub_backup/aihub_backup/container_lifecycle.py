@@ -1,6 +1,7 @@
 import logging
 from collections.abc import Sequence
-from typing import NamedTuple
+
+from pydantic import BaseModel
 
 from aihub_backup.docker_client import DockerManager
 from aihub_backup.models import BACKUP_SERVICES
@@ -10,7 +11,7 @@ logger = logging.getLogger(__name__)
 LOG_SEPARATOR = "=" * 44
 
 
-class ServiceDeps(NamedTuple):
+class ServiceDeps(BaseModel, frozen=True):
     """Containers a backup/restore handler needs running (or stopped for offline handlers)."""
 
     containers: tuple[str, ...] | None
@@ -18,12 +19,12 @@ class ServiceDeps(NamedTuple):
 
 
 SERVICE_DEPS: dict[str, ServiceDeps] = {
-    "PostgreSQL": ServiceDeps(("postgres", "postgres-ferretdb"), 60),
-    "Neo4j": ServiceDeps(None, 0),
-    "ClickHouse": ServiceDeps(("clickhouse",), 60),
-    "Valkey": ServiceDeps(("valkey",), 60),
-    "NATS": ServiceDeps(("nats",), 60),
-    "Milvus": ServiceDeps(("milvus",), 180),
+    "PostgreSQL": ServiceDeps(containers=("postgres", "postgres-ferretdb"), timeout=60),
+    "Neo4j": ServiceDeps(containers=None, timeout=0),
+    "ClickHouse": ServiceDeps(containers=("clickhouse",), timeout=60),
+    "Valkey": ServiceDeps(containers=("valkey",), timeout=60),
+    "NATS": ServiceDeps(containers=("nats",), timeout=60),
+    "Milvus": ServiceDeps(containers=("milvus",), timeout=180),
 }
 
 assert set(SERVICE_DEPS.keys()) == set(BACKUP_SERVICES), (

@@ -5,6 +5,8 @@ import uuid
 from pathlib import Path
 from typing import override
 
+from docker.errors import APIError
+
 from aihub_backup.docker_client import DockerManager
 from aihub_backup.s3 import S3Manager
 from aihub_backup.services.base import BackupHandler
@@ -69,7 +71,7 @@ class Neo4jHandler(BackupHandler):
             shutil.rmtree(tmp_dir, ignore_errors=True)
             try:
                 self._docker.remove_container(dump_container_name)
-            except Exception:
+            except APIError:
                 logger.warning("Failed to remove temp container %s during cleanup", dump_container_name, exc_info=True)
 
     @override
@@ -89,7 +91,7 @@ class Neo4jHandler(BackupHandler):
             shutil.rmtree(tmp_dir, ignore_errors=True)
             try:
                 self._docker.remove_container(restore_container_name)
-            except Exception:
+            except APIError:
                 logger.warning(
                     "Failed to remove temp container %s during cleanup", restore_container_name, exc_info=True
                 )
