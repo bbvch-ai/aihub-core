@@ -1,17 +1,13 @@
-import { useQuery } from '@pinia/colada'
 import { minutesToMilliseconds } from 'date-fns'
 
-interface AuthProvider {
-  alias: string
-  display_name: string
-  icon: string
-}
+import type { AuthProviderResponse } from '@core/sdk/client'
+import { getAuthProviders } from '@core/sdk/client'
 
 export const useAuthProviders = defineQuery(() => {
-  const { data: authProviders, isPending: isLoading } = useQuery<AuthProvider[]>({
+  const { data: authProviders, isPending: isLoading } = useQuery<AuthProviderResponse[]>({
     key: () => ['auth-providers'],
     staleTime: minutesToMilliseconds(5),
-    query: async () => await $fetch<AuthProvider[]>('/api/v1/auth-providers/'),
+    query: async () => await getAuthProviders({ composable: '$fetch' }),
   })
 
   return { authProviders, isLoading }

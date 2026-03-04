@@ -102,7 +102,7 @@ export type AddMemoryToChatHistoryEvent = {
      *
      * Chat history extended with user memories.
      */
-    extended_history: Array<ChatMessageOutput>;
+    extended_history: Array<ChatMessage>;
     /**
      * Event Name
      *
@@ -116,7 +116,7 @@ export type AddMemoryToChatHistoryEvent = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessageOutput> | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessage> | Array<string> | undefined;
 };
 
 /**
@@ -151,7 +151,7 @@ export type AddOrganizationMemoryToChatHistoryEvent = {
      *
      * Chat history extended with user memories.
      */
-    extended_history: Array<ChatMessageOutput>;
+    extended_history: Array<ChatMessage>;
     /**
      * Event Name
      *
@@ -165,7 +165,7 @@ export type AddOrganizationMemoryToChatHistoryEvent = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessageOutput> | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessage> | Array<string> | undefined;
 };
 
 /**
@@ -200,7 +200,7 @@ export type AddUserMemoryToChatHistoryEvent = {
      *
      * Chat history extended with user memories.
      */
-    extended_history: Array<ChatMessageOutput>;
+    extended_history: Array<ChatMessage>;
     /**
      * Event Name
      *
@@ -214,7 +214,7 @@ export type AddUserMemoryToChatHistoryEvent = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessageOutput> | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessage> | Array<string> | undefined;
 };
 
 /**
@@ -1360,35 +1360,7 @@ export type Audio = {
  *
  * A representation of audio data to directly pass to/from the LLM.
  */
-export type AudioBlockInput = {
-    /**
-     * Block Type
-     */
-    block_type?: 'audio';
-    /**
-     * Audio
-     */
-    audio?: Blob | File | null;
-    /**
-     * Path
-     */
-    path?: string | null;
-    /**
-     * Url
-     */
-    url?: string | string | null;
-    /**
-     * Format
-     */
-    format?: string | null;
-};
-
-/**
- * AudioBlock
- *
- * A representation of audio data to directly pass to/from the LLM.
- */
-export type AudioBlockOutput = {
+export type AudioBlock = {
     /**
      * Block Type
      */
@@ -1431,6 +1403,32 @@ export type AudioContent = {
      * Mime Type
      */
     mime_type?: string | null;
+};
+
+/**
+ * AuthProviderResponse
+ *
+ * Represents a single identity provider available for login.
+ */
+export type AuthProviderResponse = {
+    /**
+     * Alias
+     *
+     * Keycloak IDP alias used as kc_idp_hint parameter
+     */
+    alias: string;
+    /**
+     * Display Name
+     *
+     * Human-readable name for the login button
+     */
+    display_name: string;
+    /**
+     * Icon
+     *
+     * PrimeIcon CSS class (e.g., pi-microsoft, pi-lock)
+     */
+    icon: string;
 };
 
 /**
@@ -1629,26 +1627,6 @@ export type BodyCreateTranscriptionOpenaiAudioTranscriptionsPost = {
      * Timestamp granularities (e.g. 'word' or 'segment'); only used with verbose_json response_format
      */
     timestamp_granularities?: Array<'word' | 'segment'> | null;
-};
-
-/**
- * BucketNamespacePair
- *
- * A bucket-namespace selection pair for RAG retrieval filtering.
- */
-export type BucketNamespacePair = {
-    /**
-     * Bucket Name
-     *
-     * The name of the bucket
-     */
-    bucket_name: string;
-    /**
-     * Namespace Name
-     *
-     * The name of the selected namespace in the bucket
-     */
-    namespace_name: string;
 };
 
 /**
@@ -2551,7 +2529,7 @@ export type ChatCompletionUserMessageParam = {
  *
  * Chat message.
  */
-export type ChatMessageOutput = {
+export type ChatMessage = {
     role?: MessageRole;
     /**
      * Additional Kwargs
@@ -2564,23 +2542,23 @@ export type ChatMessageOutput = {
         block_type: 'text';
     } & TextBlock) | ({
         block_type: 'image';
-    } & ImageBlockOutput) | ({
+    } & ImageBlock) | ({
         block_type: 'audio';
-    } & AudioBlockOutput) | ({
+    } & AudioBlock) | ({
         block_type: 'video';
-    } & VideoBlockOutput) | ({
+    } & VideoBlock) | ({
         block_type: 'document';
-    } & DocumentBlockOutput) | ({
+    } & DocumentBlock) | ({
         block_type: 'cache';
     } & CachePoint) | ({
         block_type: 'citable';
-    } & CitableBlockOutput) | ({
+    } & CitableBlock) | ({
         block_type: 'citation';
-    } & CitationBlockOutput) | ({
+    } & CitationBlock) | ({
         block_type: 'thinking';
-    } & ThinkingBlockOutput) | ({
+    } & ThinkingBlock) | ({
         block_type: 'tool_call';
-    } & ToolCallBlockOutput)>;
+    } & ToolCallBlock)>;
 };
 
 /**
@@ -2807,7 +2785,7 @@ export type ChunkEvent = {
  *
  * Supports providing citable content to LLMs that have built-in citation support.
  */
-export type CitableBlockInput = {
+export type CitableBlock = {
     /**
      * Block Type
      */
@@ -2827,39 +2805,9 @@ export type CitableBlockInput = {
         block_type: 'text';
     } & TextBlock) | ({
         block_type: 'image';
-    } & ImageBlockInput) | ({
+    } & ImageBlock) | ({
         block_type: 'document';
-    } & DocumentBlockInput)>;
-};
-
-/**
- * CitableBlock
- *
- * Supports providing citable content to LLMs that have built-in citation support.
- */
-export type CitableBlockOutput = {
-    /**
-     * Block Type
-     */
-    block_type?: 'citable';
-    /**
-     * Title
-     */
-    title: string;
-    /**
-     * Source
-     */
-    source: string;
-    /**
-     * Content
-     */
-    content: Array<({
-        block_type: 'text';
-    } & TextBlock) | ({
-        block_type: 'image';
-    } & ImageBlockOutput) | ({
-        block_type: 'document';
-    } & DocumentBlockOutput)>;
+    } & DocumentBlock)>;
 };
 
 /**
@@ -2867,7 +2815,7 @@ export type CitableBlockOutput = {
  *
  * A representation of cited content from past messages.
  */
-export type CitationBlockInput = {
+export type CitationBlock = {
     /**
      * Block Type
      */
@@ -2879,39 +2827,7 @@ export type CitationBlockInput = {
         block_type: 'text';
     } & TextBlock) | ({
         block_type: 'image';
-    } & ImageBlockInput);
-    /**
-     * Source
-     */
-    source: string;
-    /**
-     * Title
-     */
-    title: string;
-    /**
-     * Additional Location Info
-     */
-    additional_location_info: AdditionalLocationInfo;
-};
-
-/**
- * CitationBlock
- *
- * A representation of cited content from past messages.
- */
-export type CitationBlockOutput = {
-    /**
-     * Block Type
-     */
-    block_type?: 'citation';
-    /**
-     * Cited Content
-     */
-    cited_content: ({
-        block_type: 'text';
-    } & TextBlock) | ({
-        block_type: 'image';
-    } & ImageBlockOutput);
+    } & ImageBlock);
     /**
      * Source
      */
@@ -4061,39 +3977,7 @@ export type DisplayStatistics = {
  *
  * A representation of a document to directly pass to the LLM.
  */
-export type DocumentBlockInput = {
-    /**
-     * Block Type
-     */
-    block_type?: 'document';
-    /**
-     * Data
-     */
-    data?: Blob | File | null;
-    /**
-     * Path
-     */
-    path?: string | null;
-    /**
-     * Url
-     */
-    url?: string | null;
-    /**
-     * Title
-     */
-    title?: string | null;
-    /**
-     * Document Mimetype
-     */
-    document_mimetype?: string | null;
-};
-
-/**
- * DocumentBlock
- *
- * A representation of a document to directly pass to the LLM.
- */
-export type DocumentBlockOutput = {
+export type DocumentBlock = {
     /**
      * Block Type
      */
@@ -4938,56 +4822,6 @@ export type FileFile = {
 };
 
 /**
- * FollowUpQuestionRequestEventOutput
- */
-export type FollowUpQuestionRequestEventOutput = {
-    /**
-     * Display Name
-     *
-     * Display name for the event
-     */
-    display_name?: LocaleString | null;
-    /**
-     * Display Description
-     *
-     * Display description for the event
-     */
-    display_description?: LocaleString | null;
-    /**
-     * Question
-     *
-     * The query or prompt presented to the human operator.
-     */
-    question: string;
-    /**
-     * Topic
-     *
-     * A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.
-     */
-    topic: PartialAgentTopic | AgentInstanceTopic;
-    /**
-     * Hitl Type
-     */
-    hitl_type?: 'input';
-};
-
-/**
- * FollowUpQuestionResponseEventInput
- */
-export type FollowUpQuestionResponseEventInput = {
-    /**
-     * Response
-     *
-     * The human operator's text input.
-     */
-    response: string;
-    /**
-     * The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.
-     */
-    request_event: HumanInTheLoopInputRequestEvent;
-};
-
-/**
  * FullAgentInstanceDTO
  *
  * A data transfer object for representing FULL agent INSTANCE information in responses.
@@ -5611,98 +5445,6 @@ export type HumanInSpecs = {
 };
 
 /**
- * HumanInTheLoopConfirmationRequestEvent
- *
- * Request yes/no confirmation from a human operator.
- */
-export type HumanInTheLoopConfirmationRequestEvent = {
-    /**
-     * Event Id
-     */
-    event_id?: string;
-    /**
-     * Created At
-     *
-     * The time (in ns since epoch) the event was stored in the event store
-     */
-    created_at?: number;
-    /**
-     * Display Name
-     *
-     * Display name for the event
-     */
-    display_name?: LocaleString | null;
-    /**
-     * Display Description
-     *
-     * Display description for the event
-     */
-    display_description?: LocaleString | null;
-    /**
-     * Question
-     *
-     * The query or prompt presented to the human operator.
-     */
-    question: string;
-    /**
-     * Topic
-     *
-     * A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.
-     */
-    topic: PartialAgentTopic | AgentInstanceTopic;
-    /**
-     * Hitl Type
-     */
-    hitl_type?: 'confirmation';
-};
-
-/**
- * HumanInTheLoopInputRequestEvent
- *
- * Request free-form text input from a human operator.
- */
-export type HumanInTheLoopInputRequestEvent = {
-    /**
-     * Event Id
-     */
-    event_id?: string;
-    /**
-     * Created At
-     *
-     * The time (in ns since epoch) the event was stored in the event store
-     */
-    created_at?: number;
-    /**
-     * Display Name
-     *
-     * Display name for the event
-     */
-    display_name?: LocaleString | null;
-    /**
-     * Display Description
-     *
-     * Display description for the event
-     */
-    display_description?: LocaleString | null;
-    /**
-     * Question
-     *
-     * The query or prompt presented to the human operator.
-     */
-    question: string;
-    /**
-     * Topic
-     *
-     * A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.
-     */
-    topic: PartialAgentTopic | AgentInstanceTopic;
-    /**
-     * Hitl Type
-     */
-    hitl_type?: 'input';
-};
-
-/**
  * HumanInTheLoopRequestEvent
  *
  * Base event asking a human for input, guidance, or approval at a critical juncture in a workflow.
@@ -6158,39 +5900,7 @@ export type Image = {
  *
  * A representation of image data to directly pass to/from the LLM.
  */
-export type ImageBlockInput = {
-    /**
-     * Block Type
-     */
-    block_type?: 'image';
-    /**
-     * Image
-     */
-    image?: Blob | File | null;
-    /**
-     * Path
-     */
-    path?: string | null;
-    /**
-     * Url
-     */
-    url?: string | string | null;
-    /**
-     * Image Mimetype
-     */
-    image_mimetype?: string | null;
-    /**
-     * Detail
-     */
-    detail?: string | null;
-};
-
-/**
- * ImageBlock
- *
- * A representation of image data to directly pass to/from the LLM.
- */
-export type ImageBlockOutput = {
+export type ImageBlock = {
     /**
      * Block Type
      */
@@ -7770,7 +7480,7 @@ export type LimitChatHistoryEvent = {
      *
      * Limited chat history based on number of input tokens.
      */
-    limited_history: Array<ChatMessageOutput>;
+    limited_history: Array<ChatMessage>;
     /**
      * Event Name
      *
@@ -7784,7 +7494,7 @@ export type LimitChatHistoryEvent = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessageOutput> | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessage> | Array<string> | undefined;
 };
 
 /**
@@ -8530,7 +8240,7 @@ export type Metadata = {
      *
      * List of files to attach to the request, if supported by the model.
      */
-    files?: Array<AihubLibNatsEventsUserUserUploadedFileUserUploadedFile> | null;
+    files?: Array<UserUploadedFile> | null;
 };
 
 /**
@@ -9229,56 +8939,6 @@ export type MultiSelect = {
     } | null | boolean | string | null | LocaleString | string | null | Array<{
         [key: string]: unknown;
     }> | string | null | string | null | string | undefined;
-};
-
-/**
- * NamespaceApprovalRequestEventOutput
- */
-export type NamespaceApprovalRequestEventOutput = {
-    /**
-     * Display Name
-     *
-     * Display name for the event
-     */
-    display_name?: LocaleString | null;
-    /**
-     * Display Description
-     *
-     * Display description for the event
-     */
-    display_description?: LocaleString | null;
-    /**
-     * Question
-     *
-     * The query or prompt presented to the human operator.
-     */
-    question: string;
-    /**
-     * Topic
-     *
-     * A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.
-     */
-    topic: PartialAgentTopic | AgentInstanceTopic;
-    /**
-     * Hitl Type
-     */
-    hitl_type?: 'confirmation';
-};
-
-/**
- * NamespaceApprovalResponseEventInput
- */
-export type NamespaceApprovalResponseEventInput = {
-    /**
-     * Response
-     *
-     * The human operator's confirmation (True for yes, False for no).
-     */
-    response: boolean;
-    /**
-     * The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.
-     */
-    request_event: HumanInTheLoopConfirmationRequestEvent;
 };
 
 /**
@@ -11947,7 +11607,7 @@ export type StandaloneQuestionCondenserEvent = {
     /**
      * Single chat message containing the condensed user question.
      */
-    condensed_chat_message: ChatMessageOutput;
+    condensed_chat_message: ChatMessage;
     /**
      * Event Name
      *
@@ -11961,7 +11621,7 @@ export type StandaloneQuestionCondenserEvent = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | ChatMessageOutput | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | ChatMessage | Array<string> | undefined;
 };
 
 /**
@@ -12072,24 +11732,6 @@ export type StopEvent = {
      */
     readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<string> | undefined;
-};
-
-/**
- * StopEventOutput
- */
-export type StopEventOutput = {
-    /**
-     * Display Name
-     *
-     * Display name for the event
-     */
-    display_name?: LocaleString | null;
-    /**
-     * Display Description
-     *
-     * Display description for the event
-     */
-    display_description?: LocaleString | null;
 };
 
 /**
@@ -12511,35 +12153,7 @@ export type Textarea = {
  *
  * A representation of the content streamed from reasoning/thinking processes by LLMs
  */
-export type ThinkingBlockInput = {
-    /**
-     * Block Type
-     */
-    block_type?: 'thinking';
-    /**
-     * Content
-     *
-     * Content of the reasoning/thinking process, if available
-     */
-    content?: string | null;
-    /**
-     * Num Tokens
-     *
-     * Number of token used for reasoning/thinking, if available
-     */
-    num_tokens?: number | null;
-    /**
-     * Additional Information
-     */
-    additional_information?: AdditionalInformation;
-};
-
-/**
- * ThinkingBlock
- *
- * A representation of the content streamed from reasoning/thinking processes by LLMs
- */
-export type ThinkingBlockOutput = {
+export type ThinkingBlock = {
     /**
      * Block Type
      */
@@ -13065,35 +12679,7 @@ export type TokenResponse = {
 /**
  * ToolCallBlock
  */
-export type ToolCallBlockInput = {
-    /**
-     * Block Type
-     */
-    block_type?: 'tool_call';
-    /**
-     * Tool Call Id
-     *
-     * ID of the tool call, if provided
-     */
-    tool_call_id?: string | null;
-    /**
-     * Tool Name
-     *
-     * Name of the called tool
-     */
-    tool_name: string;
-    /**
-     * Tool Kwargs
-     *
-     * Arguments provided to the tool, if available
-     */
-    tool_kwargs?: Sub0 | string;
-};
-
-/**
- * ToolCallBlock
- */
-export type ToolCallBlockOutput = {
+export type ToolCallBlock = {
     /**
      * Block Type
      */
@@ -13799,13 +13385,13 @@ export type UserMessageEvent = {
      *
      * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
      */
-    messages?: Array<ChatMessageOutput>;
+    messages?: Array<ChatMessage>;
     /**
      * Files
      *
      * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
      */
-    files?: Array<UserUploadedFileOutput> | null;
+    files?: Array<UserUploadedFile> | null;
     /**
      * Event Name
      *
@@ -13819,7 +13405,7 @@ export type UserMessageEvent = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | UserIdentity | Array<ChatMessageOutput> | Array<UserUploadedFileOutput> | null | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | UserIdentity | Array<ChatMessage> | Array<UserUploadedFile> | null | Array<string> | undefined;
 };
 
 /**
@@ -13830,7 +13416,7 @@ export type UserMessageEvent = {
  * Security: Files are referenced by file_id only. The actual S3 location
  * is derived at runtime from the agent's dedicated bucket, preventing IDOR.
  */
-export type UserUploadedFileOutput = {
+export type UserUploadedFile = {
     /**
      * Filename
      *
@@ -14075,43 +13661,7 @@ export type VectorStoreInput = {
  *
  * A representation of video data to directly pass to/from the LLM.
  */
-export type VideoBlockInput = {
-    /**
-     * Block Type
-     */
-    block_type?: 'video';
-    /**
-     * Video
-     */
-    video?: Blob | File | null;
-    /**
-     * Path
-     */
-    path?: string | null;
-    /**
-     * Url
-     */
-    url?: string | string | null;
-    /**
-     * Video Mimetype
-     */
-    video_mimetype?: string | null;
-    /**
-     * Detail
-     */
-    detail?: string | null;
-    /**
-     * Fps
-     */
-    fps?: number | null;
-};
-
-/**
- * VideoBlock
- *
- * A representation of video data to directly pass to/from the LLM.
- */
-export type VideoBlockOutput = {
+export type VideoBlock = {
     /**
      * Block Type
      */
@@ -14180,470 +13730,6 @@ export type WorkflowGraph = {
      * List of edges in the graph
      */
     links: Array<EdgeData>;
-};
-
-/**
- * ThinkingBlock.additional_information
- *
- * Additional information related to the thinking/reasoning process, if available
- */
-export type AdditionalInformation = {
-    [key: string]: unknown;
-};
-
-/**
- * ChatMessage.additional_kwargs
- */
-export type AdditionalKwargs = {
-    [key: string]: unknown;
-};
-
-/**
- * CitationBlock.additional_location_info
- */
-export type AdditionalLocationInfo = {
-    [key: string]: unknown;
-};
-
-/**
- * NamespaceAwareUserMessageEventInput
- */
-export type AihubApiServicesModelCreationServiceNamespaceAwareUserMessageEventInput1 = {
-    /**
-     * Messages
-     *
-     * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
-     */
-    messages?: Array<JamboParserObjectTypeParserChatMessage2>;
-    /**
-     * Files
-     *
-     * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
-     */
-    files?: Array<JamboParserObjectTypeParserUserUploadedFile2> | null;
-    /**
-     * Selected Namespaces
-     *
-     * List of bucket-namespace pairs for RAG retrieval filtering.
-     */
-    selected_namespaces: Array<BucketNamespacePair>;
-};
-
-/**
- * NamespaceAwareUserMessageEventInput
- */
-export type AihubApiServicesModelCreationServiceNamespaceAwareUserMessageEventInput2 = {
-    /**
-     * Messages
-     *
-     * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
-     */
-    messages?: Array<JamboParserObjectTypeParserChatMessage4>;
-    /**
-     * Files
-     *
-     * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
-     */
-    files?: Array<JamboParserObjectTypeParserUserUploadedFile4> | null;
-    /**
-     * Selected Namespaces
-     *
-     * List of bucket-namespace pairs for RAG retrieval filtering.
-     */
-    selected_namespaces: Array<BucketNamespacePair>;
-};
-
-/**
- * UserMessageEventInput
- */
-export type AihubApiServicesModelCreationServiceUserMessageEventInput1 = {
-    /**
-     * Messages
-     *
-     * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
-     */
-    messages?: Array<JamboParserObjectTypeParserChatMessage1>;
-    /**
-     * Files
-     *
-     * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
-     */
-    files?: Array<JamboParserObjectTypeParserUserUploadedFile1> | null;
-};
-
-/**
- * UserMessageEventInput
- */
-export type AihubApiServicesModelCreationServiceUserMessageEventInput2 = {
-    /**
-     * Messages
-     *
-     * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
-     */
-    messages?: Array<JamboParserObjectTypeParserChatMessage3>;
-    /**
-     * Files
-     *
-     * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
-     */
-    files?: Array<JamboParserObjectTypeParserUserUploadedFile3> | null;
-};
-
-/**
- * UserMessageEventInput
- */
-export type AihubApiServicesModelCreationServiceUserMessageEventInput3 = {
-    /**
-     * Messages
-     *
-     * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
-     */
-    messages?: Array<JamboParserObjectTypeParserChatMessage5>;
-    /**
-     * Files
-     *
-     * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
-     */
-    files?: Array<JamboParserObjectTypeParserUserUploadedFile5> | null;
-};
-
-/**
- * UserUploadedFile
- *
- * Represents a file uploaded by a user for agent consumption.
- *
- * Security: Files are referenced by file_id only. The actual S3 location
- * is derived at runtime from the agent's dedicated bucket, preventing IDOR.
- */
-export type AihubLibNatsEventsUserUserUploadedFileUserUploadedFile = {
-    /**
-     * Filename
-     *
-     * The name of the uploaded file, including the extension. Must not contain path separators.
-     */
-    filename: string;
-    /**
-     * File Type
-     *
-     * The MIME type of the uploaded file.
-     */
-    file_type: string;
-    /**
-     * File Id
-     *
-     * UUID4 file identifier, used as the S3 object key within the agent's dedicated bucket.
-     */
-    file_id: string;
-};
-
-/**
- * ChatMessage
- *
- * Chat message.
- */
-export type JamboParserObjectTypeParserChatMessage1 = {
-    role?: MessageRole;
-    /**
-     * Additional Kwargs
-     */
-    additional_kwargs?: AdditionalKwargs;
-    /**
-     * Blocks
-     */
-    blocks?: Array<({
-        block_type: 'text';
-    } & TextBlock) | ({
-        block_type: 'image';
-    } & ImageBlockInput) | ({
-        block_type: 'audio';
-    } & AudioBlockInput) | ({
-        block_type: 'video';
-    } & VideoBlockInput) | ({
-        block_type: 'document';
-    } & DocumentBlockInput) | ({
-        block_type: 'cache';
-    } & CachePoint) | ({
-        block_type: 'citable';
-    } & CitableBlockInput) | ({
-        block_type: 'citation';
-    } & CitationBlockInput) | ({
-        block_type: 'thinking';
-    } & ThinkingBlockInput) | ({
-        block_type: 'tool_call';
-    } & ToolCallBlockInput)>;
-};
-
-/**
- * ChatMessage
- *
- * Chat message.
- */
-export type JamboParserObjectTypeParserChatMessage2 = {
-    role?: MessageRole;
-    /**
-     * Additional Kwargs
-     */
-    additional_kwargs?: AdditionalKwargs;
-    /**
-     * Blocks
-     */
-    blocks?: Array<({
-        block_type: 'text';
-    } & TextBlock) | ({
-        block_type: 'image';
-    } & ImageBlockInput) | ({
-        block_type: 'audio';
-    } & AudioBlockInput) | ({
-        block_type: 'video';
-    } & VideoBlockInput) | ({
-        block_type: 'document';
-    } & DocumentBlockInput) | ({
-        block_type: 'cache';
-    } & CachePoint) | ({
-        block_type: 'citable';
-    } & CitableBlockInput) | ({
-        block_type: 'citation';
-    } & CitationBlockInput) | ({
-        block_type: 'thinking';
-    } & ThinkingBlockInput) | ({
-        block_type: 'tool_call';
-    } & ToolCallBlockInput)>;
-};
-
-/**
- * ChatMessage
- *
- * Chat message.
- */
-export type JamboParserObjectTypeParserChatMessage3 = {
-    role?: MessageRole;
-    /**
-     * Additional Kwargs
-     */
-    additional_kwargs?: AdditionalKwargs;
-    /**
-     * Blocks
-     */
-    blocks?: Array<({
-        block_type: 'text';
-    } & TextBlock) | ({
-        block_type: 'image';
-    } & ImageBlockInput) | ({
-        block_type: 'audio';
-    } & AudioBlockInput) | ({
-        block_type: 'video';
-    } & VideoBlockInput) | ({
-        block_type: 'document';
-    } & DocumentBlockInput) | ({
-        block_type: 'cache';
-    } & CachePoint) | ({
-        block_type: 'citable';
-    } & CitableBlockInput) | ({
-        block_type: 'citation';
-    } & CitationBlockInput) | ({
-        block_type: 'thinking';
-    } & ThinkingBlockInput) | ({
-        block_type: 'tool_call';
-    } & ToolCallBlockInput)>;
-};
-
-/**
- * ChatMessage
- *
- * Chat message.
- */
-export type JamboParserObjectTypeParserChatMessage4 = {
-    role?: MessageRole;
-    /**
-     * Additional Kwargs
-     */
-    additional_kwargs?: AdditionalKwargs;
-    /**
-     * Blocks
-     */
-    blocks?: Array<({
-        block_type: 'text';
-    } & TextBlock) | ({
-        block_type: 'image';
-    } & ImageBlockInput) | ({
-        block_type: 'audio';
-    } & AudioBlockInput) | ({
-        block_type: 'video';
-    } & VideoBlockInput) | ({
-        block_type: 'document';
-    } & DocumentBlockInput) | ({
-        block_type: 'cache';
-    } & CachePoint) | ({
-        block_type: 'citable';
-    } & CitableBlockInput) | ({
-        block_type: 'citation';
-    } & CitationBlockInput) | ({
-        block_type: 'thinking';
-    } & ThinkingBlockInput) | ({
-        block_type: 'tool_call';
-    } & ToolCallBlockInput)>;
-};
-
-/**
- * ChatMessage
- *
- * Chat message.
- */
-export type JamboParserObjectTypeParserChatMessage5 = {
-    role?: MessageRole;
-    /**
-     * Additional Kwargs
-     */
-    additional_kwargs?: AdditionalKwargs;
-    /**
-     * Blocks
-     */
-    blocks?: Array<({
-        block_type: 'text';
-    } & TextBlock) | ({
-        block_type: 'image';
-    } & ImageBlockInput) | ({
-        block_type: 'audio';
-    } & AudioBlockInput) | ({
-        block_type: 'video';
-    } & VideoBlockInput) | ({
-        block_type: 'document';
-    } & DocumentBlockInput) | ({
-        block_type: 'cache';
-    } & CachePoint) | ({
-        block_type: 'citable';
-    } & CitableBlockInput) | ({
-        block_type: 'citation';
-    } & CitationBlockInput) | ({
-        block_type: 'thinking';
-    } & ThinkingBlockInput) | ({
-        block_type: 'tool_call';
-    } & ToolCallBlockInput)>;
-};
-
-/**
- * UserUploadedFile
- */
-export type JamboParserObjectTypeParserUserUploadedFile1 = {
-    /**
-     * Filename
-     *
-     * The name of the uploaded file, including the extension.
-     */
-    filename: string;
-    /**
-     * File Data
-     *
-     * Base64 encoded content of the uploaded file.
-     */
-    file_data: string;
-    /**
-     * File Type
-     *
-     * The MIME type of the uploaded file.
-     */
-    file_type: string;
-};
-
-/**
- * UserUploadedFile
- */
-export type JamboParserObjectTypeParserUserUploadedFile2 = {
-    /**
-     * Filename
-     *
-     * The name of the uploaded file, including the extension.
-     */
-    filename: string;
-    /**
-     * File Data
-     *
-     * Base64 encoded content of the uploaded file.
-     */
-    file_data: string;
-    /**
-     * File Type
-     *
-     * The MIME type of the uploaded file.
-     */
-    file_type: string;
-};
-
-/**
- * UserUploadedFile
- */
-export type JamboParserObjectTypeParserUserUploadedFile3 = {
-    /**
-     * Filename
-     *
-     * The name of the uploaded file, including the extension.
-     */
-    filename: string;
-    /**
-     * File Data
-     *
-     * Base64 encoded content of the uploaded file.
-     */
-    file_data: string;
-    /**
-     * File Type
-     *
-     * The MIME type of the uploaded file.
-     */
-    file_type: string;
-};
-
-/**
- * UserUploadedFile
- */
-export type JamboParserObjectTypeParserUserUploadedFile4 = {
-    /**
-     * Filename
-     *
-     * The name of the uploaded file, including the extension.
-     */
-    filename: string;
-    /**
-     * File Data
-     *
-     * Base64 encoded content of the uploaded file.
-     */
-    file_data: string;
-    /**
-     * File Type
-     *
-     * The MIME type of the uploaded file.
-     */
-    file_type: string;
-};
-
-/**
- * UserUploadedFile
- *
- * Represents a file uploaded by a user for agent consumption.
- *
- * Security: Files are referenced by file_id only. The actual S3 location
- * is derived at runtime from the agent's dedicated bucket, preventing IDOR.
- */
-export type JamboParserObjectTypeParserUserUploadedFile5 = {
-    /**
-     * Filename
-     *
-     * The name of the uploaded file, including the extension. Must not contain path separators.
-     */
-    filename: string;
-    /**
-     * File Type
-     *
-     * The MIME type of the uploaded file.
-     */
-    file_type: string;
-    /**
-     * File Id
-     *
-     * UUID4 file identifier, used as the S3 object key within the agent's dedicated bucket.
-     */
-    file_id: string;
 };
 
 /**
@@ -14766,13 +13852,6 @@ export type OpenaiTypesImagesResponseUsage = {
 };
 
 /**
- * ToolCallBlock.tool_kwargs.sub0
- */
-export type Sub0 = {
-    [key: string]: unknown;
-};
-
-/**
  * AddMemoryToChatHistoryEvent
  *
  * A control and display event emitted when an agent extends chat history with retrieved memories.
@@ -14814,8 +13893,8 @@ export type AddMemoryToChatHistoryEventWritable = {
      *
      * Chat history extended with user memories.
      */
-    extended_history: Array<ChatMessageOutput>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessageOutput> | undefined;
+    extended_history: Array<ChatMessage>;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessage> | undefined;
 };
 
 /**
@@ -14850,8 +13929,8 @@ export type AddOrganizationMemoryToChatHistoryEventWritable = {
      *
      * Chat history extended with user memories.
      */
-    extended_history: Array<ChatMessageOutput>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessageOutput> | undefined;
+    extended_history: Array<ChatMessage>;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessage> | undefined;
 };
 
 /**
@@ -14886,8 +13965,8 @@ export type AddUserMemoryToChatHistoryEventWritable = {
      *
      * Chat history extended with user memories.
      */
-    extended_history: Array<ChatMessageOutput>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessageOutput> | undefined;
+    extended_history: Array<ChatMessage>;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessage> | undefined;
 };
 
 /**
@@ -18509,8 +17588,8 @@ export type LimitChatHistoryEventWritable = {
      *
      * Limited chat history based on number of input tokens.
      */
-    limited_history: Array<ChatMessageOutput>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessageOutput> | undefined;
+    limited_history: Array<ChatMessage>;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessage> | undefined;
 };
 
 /**
@@ -20786,8 +19865,8 @@ export type StandaloneQuestionCondenserEventWritable = {
     /**
      * Single chat message containing the condensed user question.
      */
-    condensed_chat_message: ChatMessageOutput;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | ChatMessageOutput | undefined;
+    condensed_chat_message: ChatMessage;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | ChatMessage | undefined;
 };
 
 /**
@@ -21632,14 +20711,14 @@ export type UserMessageEventWritable = {
      *
      * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
      */
-    messages?: Array<ChatMessageOutput>;
+    messages?: Array<ChatMessage>;
     /**
      * Files
      *
      * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
      */
-    files?: Array<UserUploadedFileOutput> | null;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | UserIdentity | Array<ChatMessageOutput> | Array<UserUploadedFileOutput> | null | undefined;
+    files?: Array<UserUploadedFile> | null;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | UserIdentity | Array<ChatMessage> | Array<UserUploadedFile> | null | undefined;
 };
 
 /**
@@ -21773,36 +20852,6 @@ export type VectorStoreInputWritable = {
     } | null | boolean | string | null | LocaleString | string | null | LocaleString | string | null | undefined;
 };
 
-/**
- * ThinkingBlock.additional_information
- *
- * Additional information related to the thinking/reasoning process, if available
- */
-export type AdditionalInformationWritable = {
-    [key: string]: unknown;
-};
-
-/**
- * ChatMessage.additional_kwargs
- */
-export type AdditionalKwargsWritable = {
-    [key: string]: unknown;
-};
-
-/**
- * CitationBlock.additional_location_info
- */
-export type AdditionalLocationInfoWritable = {
-    [key: string]: unknown;
-};
-
-/**
- * ToolCallBlock.tool_kwargs.sub0
- */
-export type Sub0Writable = {
-    [key: string]: unknown;
-};
-
 export type GetHealthData = {
     body?: never;
     path?: never;
@@ -21834,6 +20883,24 @@ export type GetReadyResponses = {
 };
 
 export type GetReadyResponse = GetReadyResponses[keyof GetReadyResponses];
+
+export type GetAuthProvidersData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/auth-providers/';
+};
+
+export type GetAuthProvidersResponses = {
+    /**
+     * Response Get Auth Providers Auth Providers  Get
+     *
+     * Successful Response
+     */
+    200: Array<AuthProviderResponse>;
+};
+
+export type GetAuthProvidersResponse = GetAuthProvidersResponses[keyof GetAuthProvidersResponses];
 
 export type GetSuiteData = {
     body?: never;
@@ -24787,563 +23854,3 @@ export type TranslateTextResponses = {
 };
 
 export type TranslateTextResponse = TranslateTextResponses[keyof TranslateTextResponses];
-
-export type SendUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdUserMessageEventPostData = {
-    body: AihubApiServicesModelCreationServiceUserMessageEventInput1;
-    path: {
-        /**
-         * Agent ID
-         *
-         * The specific agent instance ID
-         */
-        agent_id: string;
-    };
-    query?: {
-        /**
-         * Thread Id
-         */
-        thread_id?: string;
-        /**
-         * Display Id
-         */
-        display_id?: string;
-    };
-    url: '/agents/classes/NamespaceSelectionAgent/instances/{agent_id}/UserMessageEvent';
-};
-
-export type SendUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdUserMessageEventPostErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type SendUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdUserMessageEventPostError = SendUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdUserMessageEventPostErrors[keyof SendUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdUserMessageEventPostErrors];
-
-export type SendUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdUserMessageEventPostResponses = {
-    /**
-     * Response Send User Message Event To Namespace Selection Agent Agents Classes Namespaceselectionagent Instances  Agent Id  Usermessageevent Post
-     *
-     * Successful Response
-     */
-    200: StopEventOutput | FollowUpQuestionRequestEventOutput | NamespaceApprovalRequestEventOutput;
-};
-
-export type SendUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdUserMessageEventPostResponse = SendUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdUserMessageEventPostResponses[keyof SendUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdUserMessageEventPostResponses];
-
-export type StreamUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdUserMessageEventStreamPostData = {
-    body: AihubApiServicesModelCreationServiceUserMessageEventInput1;
-    path: {
-        /**
-         * Agent ID
-         *
-         * The specific agent instance ID
-         */
-        agent_id: string;
-    };
-    query?: {
-        /**
-         * Thread Id
-         */
-        thread_id?: string;
-        /**
-         * Display Id
-         */
-        display_id?: string;
-    };
-    url: '/agents/classes/NamespaceSelectionAgent/instances/{agent_id}/UserMessageEvent/stream';
-};
-
-export type StreamUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdUserMessageEventStreamPostErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type StreamUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdUserMessageEventStreamPostError = StreamUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdUserMessageEventStreamPostErrors[keyof StreamUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdUserMessageEventStreamPostErrors];
-
-export type StreamUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdUserMessageEventStreamPostResponses = {
-    /**
-     * Successful Response
-     */
-    200: unknown;
-};
-
-export type SendNamespaceAwareUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceAwareUserMessageEventPostData = {
-    body: AihubApiServicesModelCreationServiceNamespaceAwareUserMessageEventInput1;
-    path: {
-        /**
-         * Agent ID
-         *
-         * The specific agent instance ID
-         */
-        agent_id: string;
-    };
-    query?: {
-        /**
-         * Thread Id
-         */
-        thread_id?: string;
-        /**
-         * Display Id
-         */
-        display_id?: string;
-    };
-    url: '/agents/classes/NamespaceSelectionAgent/instances/{agent_id}/NamespaceAwareUserMessageEvent';
-};
-
-export type SendNamespaceAwareUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceAwareUserMessageEventPostErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type SendNamespaceAwareUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceAwareUserMessageEventPostError = SendNamespaceAwareUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceAwareUserMessageEventPostErrors[keyof SendNamespaceAwareUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceAwareUserMessageEventPostErrors];
-
-export type SendNamespaceAwareUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceAwareUserMessageEventPostResponses = {
-    /**
-     * Response Send Namespace Aware User Message Event To Namespace Selection Agent Agents Classes Namespaceselectionagent Instances  Agent Id  Namespaceawareusermessageevent Post
-     *
-     * Successful Response
-     */
-    200: StopEventOutput | FollowUpQuestionRequestEventOutput | NamespaceApprovalRequestEventOutput;
-};
-
-export type SendNamespaceAwareUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceAwareUserMessageEventPostResponse = SendNamespaceAwareUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceAwareUserMessageEventPostResponses[keyof SendNamespaceAwareUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceAwareUserMessageEventPostResponses];
-
-export type StreamNamespaceAwareUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceAwareUserMessageEventStreamPostData = {
-    body: AihubApiServicesModelCreationServiceNamespaceAwareUserMessageEventInput1;
-    path: {
-        /**
-         * Agent ID
-         *
-         * The specific agent instance ID
-         */
-        agent_id: string;
-    };
-    query?: {
-        /**
-         * Thread Id
-         */
-        thread_id?: string;
-        /**
-         * Display Id
-         */
-        display_id?: string;
-    };
-    url: '/agents/classes/NamespaceSelectionAgent/instances/{agent_id}/NamespaceAwareUserMessageEvent/stream';
-};
-
-export type StreamNamespaceAwareUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceAwareUserMessageEventStreamPostErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type StreamNamespaceAwareUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceAwareUserMessageEventStreamPostError = StreamNamespaceAwareUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceAwareUserMessageEventStreamPostErrors[keyof StreamNamespaceAwareUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceAwareUserMessageEventStreamPostErrors];
-
-export type StreamNamespaceAwareUserMessageEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceAwareUserMessageEventStreamPostResponses = {
-    /**
-     * Successful Response
-     */
-    200: unknown;
-};
-
-export type SendFollowUpQuestionResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdFollowUpQuestionResponseEventPostData = {
-    body: FollowUpQuestionResponseEventInput;
-    path: {
-        /**
-         * Agent ID
-         *
-         * The specific agent instance ID
-         */
-        agent_id: string;
-    };
-    query?: {
-        /**
-         * Thread Id
-         */
-        thread_id?: string;
-        /**
-         * Display Id
-         */
-        display_id?: string;
-    };
-    url: '/agents/classes/NamespaceSelectionAgent/instances/{agent_id}/FollowUpQuestionResponseEvent';
-};
-
-export type SendFollowUpQuestionResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdFollowUpQuestionResponseEventPostErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type SendFollowUpQuestionResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdFollowUpQuestionResponseEventPostError = SendFollowUpQuestionResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdFollowUpQuestionResponseEventPostErrors[keyof SendFollowUpQuestionResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdFollowUpQuestionResponseEventPostErrors];
-
-export type SendFollowUpQuestionResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdFollowUpQuestionResponseEventPostResponses = {
-    /**
-     * Successful Response
-     */
-    200: unknown;
-};
-
-export type StreamFollowUpQuestionResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdFollowUpQuestionResponseEventStreamPostData = {
-    body: FollowUpQuestionResponseEventInput;
-    path: {
-        /**
-         * Agent ID
-         *
-         * The specific agent instance ID
-         */
-        agent_id: string;
-    };
-    query?: {
-        /**
-         * Thread Id
-         */
-        thread_id?: string;
-        /**
-         * Display Id
-         */
-        display_id?: string;
-    };
-    url: '/agents/classes/NamespaceSelectionAgent/instances/{agent_id}/FollowUpQuestionResponseEvent/stream';
-};
-
-export type StreamFollowUpQuestionResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdFollowUpQuestionResponseEventStreamPostErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type StreamFollowUpQuestionResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdFollowUpQuestionResponseEventStreamPostError = StreamFollowUpQuestionResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdFollowUpQuestionResponseEventStreamPostErrors[keyof StreamFollowUpQuestionResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdFollowUpQuestionResponseEventStreamPostErrors];
-
-export type StreamFollowUpQuestionResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdFollowUpQuestionResponseEventStreamPostResponses = {
-    /**
-     * Successful Response
-     */
-    200: unknown;
-};
-
-export type SendNamespaceApprovalResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceApprovalResponseEventPostData = {
-    body: NamespaceApprovalResponseEventInput;
-    path: {
-        /**
-         * Agent ID
-         *
-         * The specific agent instance ID
-         */
-        agent_id: string;
-    };
-    query?: {
-        /**
-         * Thread Id
-         */
-        thread_id?: string;
-        /**
-         * Display Id
-         */
-        display_id?: string;
-    };
-    url: '/agents/classes/NamespaceSelectionAgent/instances/{agent_id}/NamespaceApprovalResponseEvent';
-};
-
-export type SendNamespaceApprovalResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceApprovalResponseEventPostErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type SendNamespaceApprovalResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceApprovalResponseEventPostError = SendNamespaceApprovalResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceApprovalResponseEventPostErrors[keyof SendNamespaceApprovalResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceApprovalResponseEventPostErrors];
-
-export type SendNamespaceApprovalResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceApprovalResponseEventPostResponses = {
-    /**
-     * Successful Response
-     */
-    200: unknown;
-};
-
-export type StreamNamespaceApprovalResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceApprovalResponseEventStreamPostData = {
-    body: NamespaceApprovalResponseEventInput;
-    path: {
-        /**
-         * Agent ID
-         *
-         * The specific agent instance ID
-         */
-        agent_id: string;
-    };
-    query?: {
-        /**
-         * Thread Id
-         */
-        thread_id?: string;
-        /**
-         * Display Id
-         */
-        display_id?: string;
-    };
-    url: '/agents/classes/NamespaceSelectionAgent/instances/{agent_id}/NamespaceApprovalResponseEvent/stream';
-};
-
-export type StreamNamespaceApprovalResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceApprovalResponseEventStreamPostErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type StreamNamespaceApprovalResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceApprovalResponseEventStreamPostError = StreamNamespaceApprovalResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceApprovalResponseEventStreamPostErrors[keyof StreamNamespaceApprovalResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceApprovalResponseEventStreamPostErrors];
-
-export type StreamNamespaceApprovalResponseEventToNamespaceSelectionAgentAgentsClassesNamespaceSelectionAgentInstancesAgentIdNamespaceApprovalResponseEventStreamPostResponses = {
-    /**
-     * Successful Response
-     */
-    200: unknown;
-};
-
-export type SendUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostData = {
-    body: AihubApiServicesModelCreationServiceUserMessageEventInput2;
-    path: {
-        /**
-         * Agent ID
-         *
-         * The specific agent instance ID
-         */
-        agent_id: string;
-    };
-    query?: {
-        /**
-         * Thread Id
-         */
-        thread_id?: string;
-        /**
-         * Display Id
-         */
-        display_id?: string;
-    };
-    url: '/agents/classes/RAGAgent/instances/{agent_id}/UserMessageEvent';
-};
-
-export type SendUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type SendUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostError = SendUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostErrors[keyof SendUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostErrors];
-
-export type SendUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostResponses = {
-    /**
-     * Successful Response
-     */
-    200: StopEventOutput;
-};
-
-export type SendUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostResponse = SendUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostResponses[keyof SendUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostResponses];
-
-export type StreamUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventStreamPostData = {
-    body: AihubApiServicesModelCreationServiceUserMessageEventInput2;
-    path: {
-        /**
-         * Agent ID
-         *
-         * The specific agent instance ID
-         */
-        agent_id: string;
-    };
-    query?: {
-        /**
-         * Thread Id
-         */
-        thread_id?: string;
-        /**
-         * Display Id
-         */
-        display_id?: string;
-    };
-    url: '/agents/classes/RAGAgent/instances/{agent_id}/UserMessageEvent/stream';
-};
-
-export type StreamUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventStreamPostErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type StreamUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventStreamPostError = StreamUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventStreamPostErrors[keyof StreamUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventStreamPostErrors];
-
-export type StreamUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdUserMessageEventStreamPostResponses = {
-    /**
-     * Successful Response
-     */
-    200: unknown;
-};
-
-export type SendNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventPostData = {
-    body: AihubApiServicesModelCreationServiceNamespaceAwareUserMessageEventInput2;
-    path: {
-        /**
-         * Agent ID
-         *
-         * The specific agent instance ID
-         */
-        agent_id: string;
-    };
-    query?: {
-        /**
-         * Thread Id
-         */
-        thread_id?: string;
-        /**
-         * Display Id
-         */
-        display_id?: string;
-    };
-    url: '/agents/classes/RAGAgent/instances/{agent_id}/NamespaceAwareUserMessageEvent';
-};
-
-export type SendNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventPostErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type SendNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventPostError = SendNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventPostErrors[keyof SendNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventPostErrors];
-
-export type SendNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventPostResponses = {
-    /**
-     * Successful Response
-     */
-    200: StopEventOutput;
-};
-
-export type SendNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventPostResponse = SendNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventPostResponses[keyof SendNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventPostResponses];
-
-export type StreamNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventStreamPostData = {
-    body: AihubApiServicesModelCreationServiceNamespaceAwareUserMessageEventInput2;
-    path: {
-        /**
-         * Agent ID
-         *
-         * The specific agent instance ID
-         */
-        agent_id: string;
-    };
-    query?: {
-        /**
-         * Thread Id
-         */
-        thread_id?: string;
-        /**
-         * Display Id
-         */
-        display_id?: string;
-    };
-    url: '/agents/classes/RAGAgent/instances/{agent_id}/NamespaceAwareUserMessageEvent/stream';
-};
-
-export type StreamNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventStreamPostErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type StreamNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventStreamPostError = StreamNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventStreamPostErrors[keyof StreamNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventStreamPostErrors];
-
-export type StreamNamespaceAwareUserMessageEventToRagAgentAgentsClassesRagAgentInstancesAgentIdNamespaceAwareUserMessageEventStreamPostResponses = {
-    /**
-     * Successful Response
-     */
-    200: unknown;
-};
-
-export type SendUserMessageEventToFileInfoAgentAgentsClassesFileInfoAgentInstancesAgentIdUserMessageEventPostData = {
-    body: AihubApiServicesModelCreationServiceUserMessageEventInput3;
-    path: {
-        /**
-         * Agent ID
-         *
-         * The specific agent instance ID
-         */
-        agent_id: string;
-    };
-    query?: {
-        /**
-         * Thread Id
-         */
-        thread_id?: string;
-        /**
-         * Display Id
-         */
-        display_id?: string;
-    };
-    url: '/agents/classes/FileInfoAgent/instances/{agent_id}/UserMessageEvent';
-};
-
-export type SendUserMessageEventToFileInfoAgentAgentsClassesFileInfoAgentInstancesAgentIdUserMessageEventPostErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type SendUserMessageEventToFileInfoAgentAgentsClassesFileInfoAgentInstancesAgentIdUserMessageEventPostError = SendUserMessageEventToFileInfoAgentAgentsClassesFileInfoAgentInstancesAgentIdUserMessageEventPostErrors[keyof SendUserMessageEventToFileInfoAgentAgentsClassesFileInfoAgentInstancesAgentIdUserMessageEventPostErrors];
-
-export type SendUserMessageEventToFileInfoAgentAgentsClassesFileInfoAgentInstancesAgentIdUserMessageEventPostResponses = {
-    /**
-     * Successful Response
-     */
-    200: StopEventOutput;
-};
-
-export type SendUserMessageEventToFileInfoAgentAgentsClassesFileInfoAgentInstancesAgentIdUserMessageEventPostResponse = SendUserMessageEventToFileInfoAgentAgentsClassesFileInfoAgentInstancesAgentIdUserMessageEventPostResponses[keyof SendUserMessageEventToFileInfoAgentAgentsClassesFileInfoAgentInstancesAgentIdUserMessageEventPostResponses];
-
-export type StreamUserMessageEventToFileInfoAgentAgentsClassesFileInfoAgentInstancesAgentIdUserMessageEventStreamPostData = {
-    body: AihubApiServicesModelCreationServiceUserMessageEventInput3;
-    path: {
-        /**
-         * Agent ID
-         *
-         * The specific agent instance ID
-         */
-        agent_id: string;
-    };
-    query?: {
-        /**
-         * Thread Id
-         */
-        thread_id?: string;
-        /**
-         * Display Id
-         */
-        display_id?: string;
-    };
-    url: '/agents/classes/FileInfoAgent/instances/{agent_id}/UserMessageEvent/stream';
-};
-
-export type StreamUserMessageEventToFileInfoAgentAgentsClassesFileInfoAgentInstancesAgentIdUserMessageEventStreamPostErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type StreamUserMessageEventToFileInfoAgentAgentsClassesFileInfoAgentInstancesAgentIdUserMessageEventStreamPostError = StreamUserMessageEventToFileInfoAgentAgentsClassesFileInfoAgentInstancesAgentIdUserMessageEventStreamPostErrors[keyof StreamUserMessageEventToFileInfoAgentAgentsClassesFileInfoAgentInstancesAgentIdUserMessageEventStreamPostErrors];
-
-export type StreamUserMessageEventToFileInfoAgentAgentsClassesFileInfoAgentInstancesAgentIdUserMessageEventStreamPostResponses = {
-    /**
-     * Successful Response
-     */
-    200: unknown;
-};
