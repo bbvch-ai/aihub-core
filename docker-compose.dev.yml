@@ -449,7 +449,7 @@ services:
       CLICKHOUSE_USER: clickhouse
       CLICKHOUSE_PASSWORD: ${LANGFUSE_CLICKHOUSE_PASSWORD}
     volumes:
-      # Named volumes avoid Windows bind-mount issues with ClickHouse atomic renames TODO: remove build
+      # Named volumes avoid Windows bind-mount issues with ClickHouse atomic renames
       - clickhouse-data:/var/lib/clickhouse
       - clickhouse-logs:/var/log/clickhouse-server
     ports: [127.0.0.1:8123:8123, 127.0.0.1:9009:9000]
