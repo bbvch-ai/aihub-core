@@ -10,10 +10,10 @@ from aihub_lib.auth.dependencies.TokenAuthHandler.TokenAuthHandler import TokenA
 from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.persistence.access.entities.BearerToken import BearerToken
+from aihub_lib.persistence.access.entities.RoleEntity import RoleEntity
 from aihub_lib.persistence.access.entities.TenantEntity import TenantEntity
 from aihub_lib.persistence.access.entities.UserTenantRoleEntity import UserTenantRoleEntity
 from aihub_lib.persistence.user.UserEntity import UserEntity
-from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_methods  # noqa: F401
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
 from mongoengine import connect, disconnect
@@ -48,6 +48,17 @@ def valid_token(mongo_db):
         email=os.getenv("EMAIL", config.EMAIL),
     )
 
+    # Create the test role in the DB so AccessChecker can resolve access rules
+    role = RoleEntity.objects(name=config.ROLES[0]).first()
+    created_role = False
+    if not role:
+        role = RoleEntity.create_system_role(
+            name=config.ROLES[0],
+            description="Full admin access for testing",
+            access_rules=["aihub.admin.>"],
+        )
+        created_role = True
+
     # Assign roles to user in default tenant (required for multi-tenant auth)
     default_tenant = TenantEntity.get_default_tenant()
     user_tenant_role = None
@@ -56,7 +67,7 @@ def valid_token(mongo_db):
             user_id=user.id,
             tenant_id=str(default_tenant.id),
             roles=config.ROLES,
-            validate_roles=False,  # Dev roles may not exist in DB
+            validate_roles=False,
         )
 
     expiry = datetime.now(UTC) + timedelta(hours=1)
@@ -66,6 +77,8 @@ def valid_token(mongo_db):
     token_obj.delete()
     if user_tenant_role:
         user_tenant_role.delete()
+    if created_role:
+        role.delete()
 
 
 @pytest.fixture

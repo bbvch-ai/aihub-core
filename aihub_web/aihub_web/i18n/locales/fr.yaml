@@ -474,7 +474,7 @@ auth:
     tagline: Découvrez l'avenir de l'intelligence artificielle
     welcome: Bienvenue sur le AI Hub de {companyName}
     pleaseLogin: Veuillez vous connecter
-    loginWithMicrosoft: Se connecter avec Microsoft
+    loginWith: Se connecter avec {provider}
     customSolutions: Solutions d'IA personnalisées pour votre entreprise
     logoAlt: Logo de l'entreprise
 timerange:

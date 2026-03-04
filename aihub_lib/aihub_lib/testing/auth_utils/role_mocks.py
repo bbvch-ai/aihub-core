@@ -1,5 +1,3 @@
-"""Mock fixtures for RoleEntity methods used in testing."""
-
 from unittest.mock import patch
 
 import pytest

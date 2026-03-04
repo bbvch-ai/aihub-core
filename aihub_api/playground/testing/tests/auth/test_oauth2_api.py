@@ -7,8 +7,8 @@ import pytest_asyncio
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
     DangerousDevelopmentOnlyAuthSettings,
 )
-from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2AuthHandler import OAuth2AuthHandler
-from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2Settings import OAuth2Settings
+from aihub_lib.auth.dependencies.KeycloakAuthHandler.KeycloakAuthHandler import KeycloakAuthHandler
+from aihub_lib.auth.dependencies.KeycloakAuthHandler.KeycloakSettings import KeycloakSettings
 from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.persistence.access.entities.TenantEntity import TenantEntity
@@ -48,9 +48,9 @@ def mongo_db():
 
 
 @pytest.fixture(autouse=True)
-def oauth2_config(monkeypatch):
-    """Set OAuth2 env vars and return an OAuth2Settings instance."""
-    return OAuth2Settings()
+def keycloak_config(monkeypatch):
+    """Set Keycloak env vars and return a KeycloakSettings instance."""
+    return KeycloakSettings()
 
 
 @pytest.fixture
@@ -69,33 +69,32 @@ def fake_jwks_response(rsa_keys):
 
 
 @pytest.fixture(autouse=True)
-def monkeypatch_httpx(monkeypatch, fake_jwks_response, oauth2_config):
+def monkeypatch_httpx(monkeypatch, fake_jwks_response, keycloak_config):
     """Monkeypatch httpx.AsyncClient.get to return a fake JWKS response only for JWKS URL."""
 
     original_get = httpx.AsyncClient.get
 
     async def patched_get(self, url, **kwargs):
-        # Only mock requests to the JWKS URL
-        if url == oauth2_config.JWKS_URL or url.endswith("/discovery/v2.0/keys"):
+        if url == keycloak_config.JWKS_URL or url.endswith("/protocol/openid-connect/certs"):
             return DummyResponse(fake_jwks_response, status_code=200)
-        # For all other URLs, use the original method
         return await original_get(self, url, **kwargs)
 
     monkeypatch.setattr(httpx.AsyncClient, "get", patched_get)
 
 
 @pytest.fixture
-def valid_oauth2_token(oauth2_config, rsa_keys):
-    """Generate a valid OAuth2 JWT token with test claims."""
+def valid_keycloak_token(keycloak_config, rsa_keys):
+    """Generate a valid Keycloak JWT token with test claims."""
     now = datetime.now(UTC)
     exp = now + timedelta(minutes=TOKEN_EXPIRY_MINUTES)
     payload = {
         "name": DangerousDevelopmentOnlyAuthSettings().NAME,
+        "email": DangerousDevelopmentOnlyAuthSettings().EMAIL,
         "preferred_username": DangerousDevelopmentOnlyAuthSettings().EMAIL,
         "roles": DangerousDevelopmentOnlyAuthSettings().ROLES,
-        "aud": oauth2_config.CLIENT_ID,
-        "oid": DangerousDevelopmentOnlyAuthSettings().OID,
-        "iss": f"{oauth2_config.AUTHORITY_URL}/v2.0",
+        "aud": "account",
+        "sub": DangerousDevelopmentOnlyAuthSettings().OID,
+        "iss": keycloak_config.ISSUER_URL,
         "exp": exp,
     }
     headers = {"kid": rsa_keys["kid"]}
@@ -155,10 +154,10 @@ def expected_user_data():
 
 
 @pytest_asyncio.fixture(scope="module")
-async def oauth2_api_client():
-    """Return a TestClient with OAuth2AuthHandler and MyAccountController mounted."""
+async def keycloak_api_client():
+    """Return a TestClient with KeycloakAuthHandler and MyAccountController mounted."""
     runner = ApiTestRunner()
-    auth = OAuth2AuthHandler()
+    auth = KeycloakAuthHandler()
     runner.mount(MyAccountController(auth=auth).get_my_account())
     app = runner.create_app()
     async with LifespanManager(app) as lifespan:
@@ -167,15 +166,15 @@ async def oauth2_api_client():
 
 
 @pytest.mark.asyncio
-async def test_get_user_with_valid_oauth2_token(
-    oauth2_api_client, valid_oauth2_token, expected_user_data, setup_test_user
+async def test_get_user_with_valid_keycloak_token(
+    keycloak_api_client, valid_keycloak_token, expected_user_data, setup_test_user
 ):
-    """Test GET /my-account returns expected user data with a valid OAuth2 token."""
+    """Test GET /my-account returns expected user data with a valid Keycloak token."""
     headers = {
-        "Authorization": f"Bearer {valid_oauth2_token}",
+        "Authorization": f"Bearer {valid_keycloak_token}",
         "Content-Type": "application/json",
     }
-    response = await oauth2_api_client.get(USER_ENDPOINT, headers=headers)
+    response = await keycloak_api_client.get(USER_ENDPOINT, headers=headers)
     assert response.status_code == 200, f"Expected 200 but got {response.status_code}: {response.text}"
     user_data = response.json()
 
@@ -190,13 +189,13 @@ async def test_get_user_with_valid_oauth2_token(
 
 
 @pytest.mark.asyncio
-async def test_get_user_with_invalid_oauth2_token(oauth2_api_client):
-    """Test GET /my-account returns an error for an invalid OAuth2 token."""
+async def test_get_user_with_invalid_keycloak_token(keycloak_api_client):
+    """Test GET /my-account returns an error for an invalid Keycloak token."""
     headers = {
         "Authorization": "Bearer invalid.token.value",
         "Content-Type": "application/json",
     }
-    response = await oauth2_api_client.get(USER_ENDPOINT, headers=headers)
+    response = await keycloak_api_client.get(USER_ENDPOINT, headers=headers)
     assert response.status_code in (
         401,
         403,

@@ -5,6 +5,75 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.270.0] - 2026-03-04 - Keycloak Takes the Helm: Major Authentication Overhaul with Dynamic Identity & Enhanced Security
+
+### Added
+
+- 🔐 **Keycloak Identity and Access Management (IAM) System**: Fully integrated Keycloak as the central identity broker,
+  enabling OIDC/OAuth2 authentication for all platform services. This provides multi-provider federation, improved local
+  development experience, and enhanced control over identity.
+- ✨ **Dynamic Identity Provider Discovery**: Introduced an API endpoint (`/auth-providers`) and a new frontend component
+  to dynamically fetch and display available identity providers from Keycloak. This allows for flexible, IdP-specific
+  login buttons with custom icons on the authentication page, eliminating static configuration.
+- 📄 **New Architecture Decision Records (ADRs)**: Documented key architectural decisions regarding Keycloak integration,
+  seamless OpenWebUI SSO in iframes, parent application ownership of authentication state, and multi-tenant assignment
+  via Keycloak groups.
+- 🧪 **Playwright E2E Testing Framework**: Implemented a new End-to-End (E2E) testing framework using Playwright for the
+  web UI, including an automated authentication setup to ensure reliable testing of user flows.
+- ⚙️ **Centralized Tenant Configuration**: Introduced a new `TenantSettings` class to centralize configuration for
+  multi-tenant aspects, such as default tenant name, description, access rules, and initial user signup roles.
+- ➕ **Dedicated Keycloak API Service Account**: Created a least-privilege Keycloak service account (`aihub-api-service`)
+  for the API backend to securely query identity provider information.
+
+### Changed
+
+- 🔄 **Unified OIDC Client Configuration**: Updated the platform's OIDC client to directly integrate with Keycloak,
+  ensuring consistent authentication against the new identity broker.
+- 🛠️ **Service-Wide Authentication Rework**: Reworked the authentication configuration across all Docker Compose
+  services (Admin UI, OpenWebUI, Dagster, SeaweedFS, Attu, Langfuse, API) to leverage Keycloak as the OIDC provider,
+  ensuring a consistent and centralized authentication flow.
+- 🚀 **Improved OpenWebUI SSO Experience**: Optimized the integration of OpenWebUI by directly initiating its OAuth login
+  flow within the iframe, providing a seamless Single Sign-On experience for users.
+- 🌎 **Dynamic Login Page UI**: The frontend login page now dynamically renders authentication buttons based on the
+  discovered identity providers, enhancing flexibility and user choice.
+- 📝 **Comprehensive Documentation Updates**: Updated platform documentation, including the authentication setup,
+  prerequisites, multi-tenancy guides, and quick start instructions, to reflect the new Keycloak-based identity
+  management system and associated roles.
+- 📦 **PostgreSQL Database Expansion**: Configured the PostgreSQL service to manage a new dedicated database for
+  Keycloak, ensuring proper data isolation and persistence for the IAM system.
+- 🏗️ **Automated Compose File Generation**: Enhanced the `generate-compose` Makefile target to automatically include
+  Keycloak-specific configurations and ensure proper YAML formatting.
+
+### Security
+
+- 🛡️ **Elevated Admin Tool Access Role**: Restricted access to critical infrastructure administration tools (Dagster,
+  SeaweedFS, Attu) to users with the new `AIHubSysAdmin` realm role, enhancing security for these sensitive services.
+- 🔒 **Hardened Keycloak Admin Console Access**: Documented and implemented IP allowlisting capabilities via Traefik
+  middleware to restrict access to the Keycloak admin console and metrics endpoint in production deployments.
+- 🔐 **Secure OpenWebUI CORS Policy**: Hardened the Cross-Origin Resource Sharing (CORS) policy for OpenWebUI, explicitly
+  allowing access only from trusted domains to prevent unauthorized access.
+- 👮 **Mandatory `AIHubAccess` Role Enforcement**: Configured Keycloak authentication flows to deny login to any user who
+  does not possess the `AIHubAccess` realm role, acting as a crucial access gate.
+
+### Fixed
+
+- 🐛 **Graceful Iframe Logout Handling**: Resolved an issue where logging out from embedded services (e.g., OpenWebUI)
+  could lead to a blank iframe. The parent application now detects this and redirects the user to the home page while
+  preserving the main session.
+- 🩹 **S3 Anonymous File Download Error Handling**: Corrected the error type from `IOError` to `OSError` in the S3
+  anonymous file access service, improving the robustness and accuracy of error handling during file download
+  operations.
+
+### Removed
+
+- 🗑️ **Direct Azure AD Configuration & Handlers**: Eliminated all environment variables and code paths related to direct
+  Azure AD integration, including the `OAuth2AuthHandler` and its settings, in favor of the new Keycloak-centric
+  architecture.
+- 🗑️ **Obsolete Authentication Strategy Resolver**: Eliminated an outdated utility for resolving authentication
+  strategies, simplifying the authentication codebase.
+
+______________________________________________________________________
+
 ## [v0.269.4] - 2026-03-03 - Streamlined Setup and Enhanced Observability
 
 ### Added

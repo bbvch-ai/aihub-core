@@ -1,5 +1,3 @@
-"""Common test fixtures and utilities for authentication testing."""
-
 import pytest
 from mongoengine import connect, disconnect
 

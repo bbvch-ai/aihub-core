@@ -50,6 +50,7 @@ image_tags:
   speaches: ghcr.io/speaches-ai/speaches:latest-cuda-12.6.3
   pgbouncer: pgbouncer:v1.24.1-p1
   rclone: ghcr.io/bbvch-ai/aihub-core/rclone:1.71.2
+  keycloak: keycloak:26.5.4
 
   # --- Custom Application Services ---
   api:

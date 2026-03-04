@@ -1,5 +1,3 @@
-"""Mock fixtures for UserEntity methods used in testing."""
-
 from datetime import UTC, datetime
 from unittest.mock import patch
 

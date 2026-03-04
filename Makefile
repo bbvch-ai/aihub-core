@@ -83,7 +83,7 @@ pr-ready:
 	@$(MAKE) format-md
 	@$(MAKE) format-yaml
 
-TAG ?= v0.269.4
+TAG ?= v0.270.0
 
 changelog:
 	@echo "Generating changelog"
@@ -114,6 +114,7 @@ license-check:
 generate-compose:
 	@echo "Generating Docker Compose files..."
 	@uv run python deployment/generate_compose.py
+	@$(MAKE) format-yaml
 
 # Generate release bundles with version-pinned images (TAG=v0.266.0, OUTPUT_DIR=dist/release)
 OUTPUT_DIR ?= dist/release

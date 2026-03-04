@@ -1,12 +1,12 @@
 # License Report
 
-Generated on: 03.03.2026
+Generated on: 04.03.2026
 
 This document contains license information for all dependencies across the monorepo:
 
-- Python packages (uv): **391 packages**
+- Python packages (uv): **395 packages**
 - Node.js packages (pnpm): **694 packages**
-- External Docker images: **30 images**
+- External Docker images: **31 images**
 
 ### License Compatibility
 
@@ -24,6 +24,7 @@ This document contains license information for all dependencies across the monor
 | ------ | ------------------------------------------------ | --------------------- | ------------------------------------------------------------ | -------------------------------------------------------------------- |
 | ✅     | adlfs                                            | 2026.2.0              | BSD License                                                  |                                                                      |
 | ✅     | aiobotocore                                      | 2.26.0                | Apache-2.0                                                   |                                                                      |
+| ✅     | aiofiles                                         | 25.1.0                | Apache Software License                                      |                                                                      |
 | ✅     | aiohappyeyeballs                                 | 2.6.1                 | Python Software Foundation License                           |                                                                      |
 | ✅     | aiohttp                                          | 3.13.3                | Apache-2.0 AND MIT                                           |                                                                      |
 | ✅     | aioitertools                                     | 0.13.0                | MIT                                                          |                                                                      |
@@ -93,6 +94,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | decorator                                        | 5.2.1                 | BSD License                                                  |                                                                      |
 | ✅     | defusedxml                                       | 0.7.1                 | Python Software Foundation License                           |                                                                      |
 | ✅     | Deprecated                                       | 1.3.1                 | MIT License                                                  |                                                                      |
+| ✅     | deprecation                                      | 2.1.0                 | Apache Software License                                      |                                                                      |
 | ✅     | dirtyjson                                        | 1.0.8                 | Academic Free License (AFL); MIT License                     |                                                                      |
 | ✅     | diskcache                                        | 5.6.3                 | Apache Software License                                      |                                                                      |
 | ✅     | distro                                           | 1.9.0                 | Apache Software License                                      |                                                                      |
@@ -161,6 +163,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | jsonschema                                       | 4.26.0                | MIT (override)                                               |                                                                      |
 | ✅     | jsonschema-path                                  | 0.3.4                 | Apache Software License                                      |                                                                      |
 | ✅     | jsonschema-specifications                        | 2025.9.1              | MIT (override)                                               |                                                                      |
+| ✅     | jwcrypto                                         | 1.5.6                 | LGPLv3+                                                      |                                                                      |
 | ✅     | keyring                                          | 25.7.0                | MIT                                                          |                                                                      |
 | ✅     | kiwisolver                                       | 1.4.9                 | BSD License                                                  |                                                                      |
 | ✅     | kuzu                                             | 0.11.3                | MIT                                                          |                                                                      |
@@ -335,6 +338,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | python-dotenv                                    | 1.2.1                 | BSD-3-Clause                                                 |                                                                      |
 | ✅     | python-i18n                                      | 0.3.9                 | MIT License                                                  |                                                                      |
 | ✅     | python-json-logger                               | 4.0.0                 | BSD License                                                  |                                                                      |
+| ✅     | python-keycloak                                  | 7.1.1                 | MIT License                                                  |                                                                      |
 | ✅     | python-multipart                                 | 0.0.22                | Apache-2.0                                                   |                                                                      |
 | ✅     | python-pptx                                      | 1.0.2                 | MIT License                                                  |                                                                      |
 | ✅     | pytokens                                         | 0.4.1                 | MIT License                                                  |                                                                      |
@@ -1134,6 +1138,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | dagster                         | `ghcr.io/bbvch-ai/aihub-core/dagster:nightly`                               | Apache-2.0         | Permissive license                                            |
 | ✅     | etcd                            | `ghcr.io/bbvch-ai/aihub-core/etcd:v3.5.25`                                  | Apache-2.0         | Permissive license                                            |
 | ✅     | ferretdb                        | `ghcr.io/bbvch-ai/aihub-core/ferretdb:2.5.0`                                | Apache-2.0         | Permissive license                                            |
+| ✅     | keycloak                        | `ghcr.io/bbvch-ai/aihub-core/keycloak:26.5.4`                               | Apache-2.0         | Permissive license                                            |
 | ✅     | langfuse-worker                 | `ghcr.io/bbvch-ai/aihub-core/langfuse/langfuse-worker:3`                    | MIT                | Langfuse background worker                                    |
 | ✅     | langfuse                        | `ghcr.io/bbvch-ai/aihub-core/langfuse/langfuse:3`                           | MIT                | Open-source LLM observability and evaluation platform         |
 | ✅     | litellm                         | `ghcr.io/bbvch-ai/aihub-core/litellm:v1.80.5-stable.1`                      | MIT                | Permissive license                                            |

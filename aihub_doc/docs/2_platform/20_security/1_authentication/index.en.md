@@ -80,6 +80,173 @@ permission evaluation uses the hierarchical permission model described in the
 to the permission evaluation system. This enables filtering result sets based on user permissions, implementing
 different behaviors for different access levels, and validating permissions before resource-intensive operations.
 
+## Dynamic Identity Provider Discovery
+
+The login page dynamically discovers available identity providers from Keycloak at runtime. When a user visits the login
+page, the frontend calls `GET /api/v1/auth-providers/` — an unauthenticated API endpoint that queries the Keycloak Admin
+API using a dedicated, least-privilege service account (`aihub-api-service`) with only the `view-identity-providers`
+permission.
+
+The API filters the provider list to only include enabled, visible providers and returns their alias, display name, and
+icon. Results are cached for 5 minutes. The frontend renders a branded login button for each provider. Clicking a button
+initiates the OIDC Authorization Code Flow with `kc_idp_hint` set to the provider's alias, redirecting the user directly
+to the upstream identity provider without showing Keycloak's login theme.
+
+This approach eliminates any frontend configuration for identity providers — adding or removing an IdP is a
+Keycloak-only change. See
+[ADR: Dynamic Identity Provider Loading](../../../../arc42/decisions/2026_02_27_dynamic_identity_provider_loading.md)
+for the full rationale and implementation details.
+
+### Configuring Provider Icons
+
+Each identity provider can have a custom icon displayed on its login button. Icons are configured directly in the
+Keycloak identity provider's `config` map as the `icon` field using PrimeIcon CSS classes (e.g., `pi-microsoft`,
+`pi-google`). Providers without an icon configured fall back to `pi-sign-in`.
+
+To set an icon, add the `icon` field to the identity provider's configuration in `keycloak-identity-providers.json.j2`:
+
+```json
+"config": {
+  "clientId": "...",
+  "icon": "pi-microsoft"
+}
+```
+
+### Direct Keycloak Login
+
+When `KEYCLOAK_SHOW_KEYCLOAK_LOGIN=true` (API environment variable, default: `true`), an additional "Login with
+Keycloak" button appears alongside federated provider buttons. This enables username/password login through Keycloak's
+own user store — useful for development environments or deployments where some users authenticate directly with Keycloak
+rather than through an external IdP.
+
+## Admin Service Authentication via OAuth2 Proxy
+
+Internal admin services (Dagster, Attu, SeaweedFS) are protected by [OAuth2 Proxy](https://oauth2-proxy.github.io/)
+instances that sit in front of each service. OAuth2 Proxy handles the full OIDC login flow against Keycloak before
+forwarding authenticated requests to the upstream service. Only users with the `AIHubSysAdmin` role can access these
+services.
+
+Due to the split-horizon networking in Docker deployments (containers use internal hostnames, browsers use external
+URLs), OIDC discovery is skipped and endpoints are configured explicitly. See
+[ADR: Skip OIDC Discovery for OAuth2 Proxy](../../../../arc42/decisions/2026_02_26_skip_oidc_discovery_for_oauth2_proxy.md)
+for the technical rationale.
+
+## Hardening: Keycloak Admin Console Access
+
+The Keycloak admin console (`https://auth.<domain>/admin/`) is protected by username and password but is accessible from
+any IP address by default. For production deployments, restricting access to the admin console and metrics endpoint to
+known administrator IP addresses is strongly recommended.
+
+### Recommended: IP Allowlisting via Traefik
+
+The platform uses Traefik v3 as its reverse proxy. Traefik's
+[`ipAllowList`](https://doc.traefik.io/traefik/middlewares/http/ipallowlist/) middleware can restrict access to the
+Keycloak admin paths while keeping the OIDC login endpoints publicly accessible for all users.
+
+**Implementation steps:**
+
+1. Add an environment variable to `.env` with your allowed IP ranges:
+
+   ```bash
+   KEYCLOAK_ADMIN_ALLOWED_IPS="203.0.113.0/24,198.51.100.10/32"
+   ```
+
+2. In `docker-compose.yml`, add a second Traefik router for admin paths on the `keycloak` service labels (alongside the
+   existing `keycloak` router):
+
+   ```yaml
+   # Admin-only router with IP restriction (higher priority than public router)
+   - "traefik.http.routers.keycloak-admin.rule=Host(`auth.${DOMAIN}`) && (PathPrefix(`/admin`) || PathPrefix(`/metrics`))"
+   - "traefik.http.routers.keycloak-admin.entrypoints=websecure"
+   - "traefik.http.routers.keycloak-admin.tls=true"
+   - "traefik.http.routers.keycloak-admin.priority=7500"
+   - "traefik.http.routers.keycloak-admin.middlewares=keycloak-admin-ipallowlist,keycloak-security-headers"
+   - "traefik.http.routers.keycloak-admin.service=keycloak"
+   # IP allowlist middleware
+   - "traefik.http.middlewares.keycloak-admin-ipallowlist.ipallowlist.sourcerange=${KEYCLOAK_ADMIN_ALLOWED_IPS}"
+   ```
+
+The public router (priority 7000) continues to serve OIDC endpoints (`/realms/...`) without restriction, while the admin
+router (priority 7500) intercepts `/admin` and `/metrics` requests and rejects connections from non-allowlisted IPs with
+a `403 Forbidden` response.
+
+::: tip
+The same pattern can be applied to any service exposed through Traefik. Consider also restricting access to the Traefik
+dashboard itself if it is enabled in production.
+:::
+
+## Keycloak Realm Roles and Automatic Assignment
+
+Keycloak manages realm-level roles that determine whether a user may access the platform. These roles are coarse access
+gates — fine-grained permissions are managed locally by the platform (see
+[Permissions](../../11_access_management/2_permissions/)).
+
+| Role             | Purpose                                                                                     |
+| ---------------- | ------------------------------------------------------------------------------------------- |
+| `AIHubAccess`    | Required for platform login. Users without this role are denied at the Keycloak login flow. |
+| `AIHubAdmin`     | Full administrative access                                                                  |
+| `AIHubUser`      | Standard user access                                                                        |
+| `AIHubDeveloper` | Developer tools access (Dagster, Attu, etc.)                                                |
+| `AIHubSysAdmin`  | System administrator access to infrastructure tools                                         |
+
+By default, no roles are automatically assigned to new users. This ensures that users federated from an external
+identity provider only receive the roles explicitly mapped from their IdP claims, following the principle of least
+privilege.
+
+### Configuring Automatic Role Assignment
+
+If your deployment requires that all new users receive a default role (e.g., `AIHubUser`), this can be configured in
+Keycloak:
+
+**Option 1: Realm default roles (applies to all new users)**
+
+In the Keycloak admin console, navigate to **Realm Settings > User Registration > Default Roles** and add the desired
+roles. Alternatively, set the `defaultRoles` array in the realm configuration template (`keycloak-realm.json.j2`):
+
+```json
+"defaultRoles": ["AIHubUser"]
+```
+
+**Option 2: Identity provider mappers (applies per IdP)**
+
+For more granular control, configure role mappers on individual identity providers. This allows different roles for
+users from different organizations. In the Keycloak admin console, navigate to **Identity Providers > [your IdP] >
+Mappers** and add a **Hardcoded Role** mapper:
+
+| Field       | Value               |
+| ----------- | ------------------- |
+| Name        | `default-user-role` |
+| Mapper Type | Hardcoded Role      |
+| Role        | `AIHubUser`         |
+
+This assigns the role only to users authenticating through that specific identity provider.
+
+**Option 3: Claim-based role mapping (conditional assignment)**
+
+For conditional role assignment based on IdP claims (e.g., Azure AD app roles), use the existing `oidc-role-idp-mapper`
+pattern already configured in `keycloak-identity-providers.json.j2`. Each Azure AD app role is mapped to a corresponding
+Keycloak realm role. To add a new mapping, add an entry to the `identityProviderMappers` array:
+
+```json
+{
+  "name": "role-mapper-my-role",
+  "identityProviderAlias": "azure-ad",
+  "identityProviderMapper": "oidc-role-idp-mapper",
+  "config": {
+    "syncMode": "INHERIT",
+    "claim": "roles",
+    "claim.value": "MyAzureAppRole",
+    "role": "AIHubUser"
+  }
+}
+```
+
+::: warning
+The `AIHubAccess` role is enforced at the Keycloak login flow level via the "Post Broker Login - AIHubAccess Check"
+authentication flow. Users without this role are denied access regardless of any other role assignments. Ensure that
+your role mapping strategy includes `AIHubAccess` for users who should be able to log in.
+:::
+
 ## Security Standards and Operational Capabilities
 
 ### Standards Compliance

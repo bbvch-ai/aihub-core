@@ -473,7 +473,7 @@ auth:
     tagline: Sperimenta il futuro dell'intelligenza artificiale
     welcome: Benvenuti nell'AI Hub di {companyName}
     pleaseLogin: Effettua il login
-    loginWithMicrosoft: Accedi con Microsoft
+    loginWith: Accedi con {provider}
     customSolutions: Soluzioni AI personalizzate per la tua azienda
     logoAlt: Logo dell'azienda
 timerange:

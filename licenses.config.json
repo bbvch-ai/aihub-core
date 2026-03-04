@@ -338,6 +338,12 @@
       "license": "MIT",
       "status": "✅",
       "notes": "Permissive license"
+    },
+    {
+      "service": "keycloak",
+      "license": "Apache-2.0",
+      "status": "✅",
+      "notes": "Permissive license"
     }
   ]
 }

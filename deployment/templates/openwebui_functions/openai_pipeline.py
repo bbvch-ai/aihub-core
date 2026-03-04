@@ -152,7 +152,7 @@ class Pipe:
                 return [
                     {
                         "id": model["id"],
-                        "name": f'{self.valves.AIHUB_OPENAI_PIPELINE_PREFIX}{model.get("name", model["id"])}',
+                        "name": f"{self.valves.AIHUB_OPENAI_PIPELINE_PREFIX}{model.get('name', model['id'])}",
                     }
                     for model in models_data.get("data", [])
                 ]

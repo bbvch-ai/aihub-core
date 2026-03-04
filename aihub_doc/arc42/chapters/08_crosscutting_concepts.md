@@ -23,8 +23,8 @@ standard HTTP requests and `authenticate_token` for WebSocket connections where 
 payload rather than in HTTP headers. Concrete handlers extract and validate credentials, then delegate to an
 `IdentityProvider` to resolve the full `UserIdentity` (ID, name, email, roles, profile image).
 
-`OAuth2AuthHandler` validates Azure AD JWT tokens by fetching JWKS keys (cached 6 hours), verifying the RS256 signature,
-and checking audience and issuer claims. `TokenAuthHandler` validates API access tokens (format:
+`KeycloakAuthHandler` validates Keycloak JWT tokens by fetching JWKS keys (cached 6 hours), verifying the RS256
+signature, and checking audience and issuer claims. `TokenAuthHandler` validates API access tokens (format:
 `{ObjectId}.{128-char-random}`) against MongoDB with constant-time comparison and expiry checking.
 `OpenWebuiAuthHandler` verifies HMAC-SHA256 signatures on OpenWebUI's custom headers (`X-OpenWebUI-User-Name`,
 `X-OpenWebUI-User-Email`, `X-OpenWebUI-Signature`) before delegating to a wrapped inner handler. `SuperuserAuthHandler`
@@ -35,9 +35,9 @@ The production handler, `TokenAndOauth2Handler`, composes these strategies dynam
 tries OAuth2 handlers first (for browser-based SSO), then bearer token handlers (for API tokens, OpenWebUI pipeline
 calls, and superuser access). The first handler that succeeds determines the user's identity.
 
-After token validation extracts the user's Azure AD object ID, `AzureIdentityProvider` concurrently fetches the user
-profile, app role assignments, and profile image from the Microsoft Graph API (all cached with TTL). On first login,
-`UserEntity.ensure_user_exists()` creates a local user record in MongoDB.
+After token validation extracts the user's `sub` claim from the Keycloak JWT, user data (name, email) is read directly
+from the token claims — no external API calls needed. On first login, `UserEntity.ensure_user_exists_for_auth()` creates
+a local user record in MongoDB.
 
 ## Authorization
 

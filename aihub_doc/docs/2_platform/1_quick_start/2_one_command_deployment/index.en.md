@@ -249,7 +249,8 @@ ______________________________________________________________________
 
 ### Access the Platform
 
-1. **Make sure your User that you test with have the role "AIHubAdmin" assigned in the Azure Enterprise Application**
+1. **Make sure your User that you test with has the roles "AIHubAdmin" and "AIHubSysAdmin" assigned in the Azure
+   Enterprise Application**
 
 2. **Web Interface:**
 

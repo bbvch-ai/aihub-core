@@ -31,7 +31,7 @@ def test_download_file_returns_raw_bytes():
 
 def test_download_file_closes_body_on_read_error():
     body_mock = MagicMock()
-    body_mock.read.side_effect = IOError("read failed")
+    body_mock.read.side_effect = OSError("read failed")
 
     s3_client = MagicMock()
     s3_client.get_object.return_value = {"Body": body_mock}

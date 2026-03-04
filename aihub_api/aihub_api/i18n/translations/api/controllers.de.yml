@@ -1,4 +1,7 @@
 ---
+auth_provider:
+  name: Authentifizierung
+  description: Verfügbare Identitätsanbieter für die Anmeldung
 agent:
   name: KI-Assistenten
   description: KI-Assistenten durchsuchen und nutzen

@@ -25,6 +25,9 @@ GPU_MODES = {False: "", True: ".gpu"}
 CONFIG_SPECS = [
     # Docker Compose - always required
     ("templates/docker-compose.yml.j2", ROOT_DIR, "docker-compose.{stage}{hardware}.yml"),
+    # Keycloak configs - realm (platform) and identity providers (customer)
+    ("templates/configs/keycloak-realm.json.j2", "configs/keycloak", "aihub-realm.{stage}{hardware}.json"),
+    ("templates/configs/keycloak-identity-providers.json.j2", "configs/keycloak", "identity-providers.{stage}{hardware}.json"),
     # Service configs - optional, skipped if template missing
     ("templates/configs/litellm-config.yml.j2", "configs/litellm", "litellm-config.{stage}{hardware}.yml"),
     ("templates/configs/milvus-config.yml.j2", "configs/milvus", "milvus-config.{stage}{hardware}.yml"),
@@ -42,6 +45,7 @@ CONFIG_SPECS = [
     ("templates/configs/pg-init-multiple-dbs.sh.j2", "configs/postgres", "init-multiple-dbs.sh"),
     ("templates/configs/openwebui-init-functions.sh.j2", "configs/openwebui", "init-functions.sh"),
     ("templates/configs/init_etcd.sh.j2", "configs/etcd", "init_etcd.sh"),
+    ("templates/configs/keycloak-entrypoint.sh.j2", "configs/keycloak", "keycloak-entrypoint.sh"),
 ]
 
 # Additional static files included only in release bundles (non-config files).

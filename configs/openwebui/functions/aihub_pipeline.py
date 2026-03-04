@@ -674,7 +674,9 @@ class HumanInTheLoopHandler(EventHandler):
                 }
             )
             # Extract value from input result
-            result = result.get("value", "") if isinstance(result, dict) else str(result)
+            result = (
+                result.get("value", "") if isinstance(result, dict) else str(result)
+            )
 
         if result is not None and result != "":
             response_event_name = topic.get("event_name", "HumanInTheLoopResponseEvent")

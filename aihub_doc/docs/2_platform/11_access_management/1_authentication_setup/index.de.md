@@ -24,8 +24,8 @@ Das Authentifizierungssystem besteht aus mehreren Schlüsselkomponenten:
 Auth Handlers validieren eingehende Anfragen und extrahieren Benutzerinformationen:
 
 ```python
-# OAuth2 JWT validation
-user_identity = await OAuth2AuthHandler()(request)
+# Keycloak OIDC JWT validation
+user_identity = await KeycloakAuthHandler()(request)
 
 # Token-based authentication
 user_identity = await TokenAuthHandler()(request)
@@ -33,7 +33,7 @@ user_identity = await TokenAuthHandler()(request)
 
 Unterstützte Authentifizierungsmethoden:
 
-- **OAuth2/OIDC**: JWT-Token von Azure AD oder kompatiblen Anbietern
+- **OAuth2/OIDC**: JWT-Token von Keycloak (unterstützt föderierte Identitätsanbieter wie Azure AD, Google usw.)
 - **API Tokens**: Langlebige Token für den programmatischen Zugriff
 - **OpenWebUI Integration**: Spezieller Handler für OpenWebUI-Benutzer
 - **Development Mode**: Gefährlicher, nur für die Entwicklung geeigneter Handler (niemals in der Produktion verwenden!)

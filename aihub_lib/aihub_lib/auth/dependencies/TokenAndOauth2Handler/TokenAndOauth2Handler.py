@@ -5,8 +5,8 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.auth.dependencies.AuthSettings import AuthSettings
-from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2AuthHandler import OAuth2AuthHandler
-from aihub_lib.auth.dependencies.OAuth2AuthHandler.OAuth2Settings import OAuth2Settings
+from aihub_lib.auth.dependencies.KeycloakAuthHandler.KeycloakAuthHandler import KeycloakAuthHandler
+from aihub_lib.auth.dependencies.KeycloakAuthHandler.KeycloakSettings import KeycloakSettings
 from aihub_lib.auth.dependencies.OpenWebuiAuthHandler.OpenWebuiAuthHandler import OpenWebuiAuthHandler
 from aihub_lib.auth.dependencies.SuperuserAuthHandler.SuperuserAuthHandler import SuperuserAuthHandler
 from aihub_lib.auth.dependencies.TokenAuthHandler.TokenAuthHandler import TokenAuthHandler
@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 class TokenAndOauth2Handler:
     """A composite authentication handler that sequentially attempts both OAuth2 and Bearer auth strategies."""
 
-    def __init__(self, bearer_handlers: list[AuthHandler], oauth2_handlers: list[OAuth2AuthHandler]):
+    def __init__(self, bearer_handlers: list[AuthHandler], oauth2_handlers: list[KeycloakAuthHandler]):
         self.bearer_handlers = bearer_handlers
         self.oauth2_handlers = oauth2_handlers
 
@@ -26,7 +26,7 @@ class TokenAndOauth2Handler:
         self,
         request: Request,
         bearer_token: HTTPAuthorizationCredentials | None = Security(HTTPBearer(auto_error=False)),
-        oauth_token: str | None = Security(OAuth2Settings().OPTIONAL_SCHEMA),
+        oauth_token: str | None = Security(KeycloakSettings().OPTIONAL_SCHEMA),
     ) -> UserIdentity:
         errors = []
 
@@ -72,12 +72,12 @@ class TokenAndOauth2Handler:
     @classmethod
     def from_auth_settings(cls):
         bearer_handlers: list[AuthHandler] = []
-        oauth2_handlers: list[OAuth2AuthHandler] = []
+        oauth2_handlers: list[KeycloakAuthHandler] = []
 
         config = AuthSettings()
 
-        oauth2_handler = OAuth2AuthHandler()
-        oauth2_handlers.append(oauth2_handler)
+        keycloak_handler = KeycloakAuthHandler()
+        oauth2_handlers.append(keycloak_handler)
 
         logger.info("Using superuser authentication")
         superuser_handler = SuperuserAuthHandler()
