@@ -77,6 +77,9 @@ else
     END { print desc }
   ' "$AGENT_PATH")
 
+  # Strip YAML fold/block indicators that awk may capture as part of the value
+  DESC=$(echo "$DESC" | sed 's/^[>|][+-]\{0,1\} *//')
+
   # Check for trigger phrases
   if ! echo "$DESC" | grep -qiE '(use when|use for|use proactively|invoke)'; then
     echo "WARNING: Description may be missing trigger phrases" >&2
@@ -153,7 +156,7 @@ fi
 
 TOTAL_LINES=$(wc -l < "$AGENT_PATH")
 WORD_COUNT=$(wc -w < "$AGENT_PATH")
-PATH_REFS=$(grep -cE '(`[a-zA-Z_./]+/[a-zA-Z_.]+`|apps/|packages/|src/|scripts/|\.claude/)' "$AGENT_PATH" 2>/dev/null || echo 0)
+PATH_REFS=$(grep -cE '(`[a-zA-Z_./]+/[a-zA-Z_.]+`|aihub_[a-z_]+/|apps/|packages/|src/|scripts/|\.claude/)' "$AGENT_PATH" 2>/dev/null || echo 0)
 
 echo ""
 echo "Size: $TOTAL_LINES lines, ~$WORD_COUNT words (~$(( WORD_COUNT * 13 / 10 )) tokens est.)"

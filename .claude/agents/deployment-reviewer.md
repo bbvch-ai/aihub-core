@@ -108,6 +108,9 @@ Read the changed files, then verify each applicable item:
 - [ ] If admin UI: `oauth2proxy-{service}` sidecar + Traefik labels (copy existing pattern)
 - [ ] Port exposure: direct ports only in `dev`/`local`/`build`, through Traefik in `nightly`/`latest`
 - [ ] If needs config: template in `deployment/templates/configs/`, registered in `generate_compose.py`
+- [ ] If stateful service: verify backup coverage — check `aihub_backup/aihub_backup/container_lifecycle.py`
+  (`SERVICE_DEPS`) and `aihub_backup/aihub_backup/container_discovery.py` (`_EXCLUDE_PREFIXES`), or run
+  backup-coverage-checker agent
 - [ ] `make generate-compose` run after changes (check that generated files match templates)
 
 **For network changes:**

@@ -53,6 +53,8 @@ The strongest architectural recommendation is often: "you don't need any of that
 aihub_agent, aihub_process, aihub_api, aihub_bot, aihub_pipeline, aihub_web
                               ↓
                           aihub_lib
+
+aihub_backup (standalone — no aihub_lib dependency)
 ```
 
 `aihub_lib` NEVER imports from any other package. Service packages NEVER import directly from each other — all
@@ -145,6 +147,7 @@ them or explicitly accepts the risk.
 | `aihub_pipeline` | Dagster data ingestion. Two-stage: source → S3 data lake → parse → chunk → embed → Milvus.                                                                                   | NATS sensor for `SourceUpdatedEvent`. Reads/writes S3, MongoDB, Milvus. No direct agent communication.                                                                                                       |
 | `aihub_bot`      | MS Teams/Slack integrations. `ChatBot` → `CompletionHandler` pattern.                                                                                                        | Publishes agent start events via NATS. Subscribes to display events for streaming responses to channels.                                                                                                     |
 | `aihub_doc`      | VitePress documentation + ADRs.                                                                                                                                              | None (static content).                                                                                                                                                                                       |
+| `aihub_backup`   | Centralized backup & restore. Standalone Dagster instance (no `aihub_lib` dep).                                                                                              | Docker SDK for container lifecycle, S3 for storage. No NATS.                                                                                                                                                 |
 | `deployment`     | Docker Compose templates (Jinja2), Makefile, env configs.                                                                                                                    | Defines network topology and service wiring.                                                                                                                                                                 |
 
 ### Inter-Service Communication Patterns
@@ -230,6 +233,7 @@ Is it used by 2+ services?
     ├── REST API endpoint → aihub_api
     ├── Data pipeline → aihub_pipeline
     ├── Bot integration → aihub_bot
+    ├── Backup/restore logic → aihub_backup
     └── Frontend UI → aihub_web
 ```
 

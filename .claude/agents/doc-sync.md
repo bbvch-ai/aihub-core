@@ -20,7 +20,7 @@ documentation.
 ## What You Know About This Codebase
 
 - **Monorepo structure**: Packages at root level — `aihub_lib/`, `aihub_agent/`, `aihub_api/`, `aihub_bot/`,
-  `aihub_pipeline/`, `aihub_process/`, `aihub_web/`, `aihub_action/`, `aihub_doc/`, `deployment/`
+  `aihub_pipeline/`, `aihub_process/`, `aihub_web/`, `aihub_backup/`, `aihub_action/`, `aihub_doc/`, `deployment/`
 - **Documentation lives in 5 places**:
   1. `README.md` files — per-scope and per-subdirectory (human-readable project docs)
   2. `CLAUDE.md` files — per-scope AI assistant context (root + each package + `deployment/`)

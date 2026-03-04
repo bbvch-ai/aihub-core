@@ -71,6 +71,9 @@ else
     END { print desc }
   ' "$SKILL_PATH")
 
+  # Strip YAML fold/block indicators that awk may capture as part of the value
+  DESC=$(echo "$DESC" | sed 's/^[>|][+-]\{0,1\} *//')
+
   DESC_LEN=${#DESC}
   if [ "$DESC_LEN" -gt 1024 ]; then
     echo "ERROR: Description exceeds 1024 characters ($DESC_LEN chars)" >&2
@@ -116,7 +119,7 @@ if [ "$TOTAL_LINES" -gt 500 ]; then
 fi
 
 # Count codebase-specific references (file paths, commands)
-PATH_REFS=$(grep -cE '(`[a-zA-Z_./]+/[a-zA-Z_.]+`|apps/|packages/|src/|scripts/)' "$SKILL_PATH" 2>/dev/null || echo 0)
+PATH_REFS=$(grep -cE '(`[a-zA-Z_./]+/[a-zA-Z_.]+`|aihub_[a-z_]+/|apps/|packages/|src/|scripts/)' "$SKILL_PATH" 2>/dev/null || echo 0)
 echo "Codebase-specific path references: $PATH_REFS"
 
 if [ "$PATH_REFS" -lt 3 ]; then

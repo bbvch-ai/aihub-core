@@ -95,12 +95,12 @@ For each changed class/function/field, find every import across all packages:
 ```bash
 # Find all files that import the changed class
 grep -rn "from aihub_lib.{module}.{ClassName}" \
-  aihub_agent aihub_api aihub_process aihub_pipeline aihub_bot \
+  aihub_agent aihub_api aihub_process aihub_pipeline aihub_bot aihub_backup \
   --include="*.py" | grep -v __pycache__ | grep -v .venv
 
 # Find usage of the changed method/field
 grep -rn "{method_or_field_name}" \
-  aihub_agent aihub_api aihub_process aihub_pipeline aihub_bot \
+  aihub_agent aihub_api aihub_process aihub_pipeline aihub_bot aihub_backup \
   --include="*.py" | grep -v __pycache__ | grep -v .venv
 ```
 
@@ -134,6 +134,9 @@ Don't forget:
 - **i18n files**: if LocaleString keys change, check all `*.{locale}.yml` translation files
 - **Docker Compose**: if Settings class env var names change, check `.env.dev`, `.env.prod`,
   `deployment/templates/docker-compose.yml.j2`
+- **Backup service**: if Docker Compose services are added/removed/renamed, check
+  `aihub_backup/aihub_backup/container_lifecycle.py` (`SERVICE_DEPS`) and
+  `aihub_backup/aihub_backup/container_discovery.py` (`_EXCLUDE_PREFIXES`)
 - **Tests**: any changed class likely has tests that need updating — find them with
   `find . -name "test_*.py" -path "*{domain}*"`
 

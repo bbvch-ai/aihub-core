@@ -27,7 +27,7 @@ the future, incorporate `coverage report --show-missing` into your analysis alon
 
 - **Framework**: pytest (Python), no frontend tests configured
 - **BDD**: pytest-bdd for agent/process workflows — Gherkin `.feature` files + `test_*.py` step implementations
-- **Markers**: `slow`, `azure`, `integration`, `flaky`, `self_hosted`, `experimental`
+- **Markers**: `slow`, `e2e`, `flaky`, `experimental`
 - **Test runners**: `AgentTestRunner` (agents), `ProcessTestRunner` (processes), `ApiTestRunner`/
   `SimulatedAgentApiTestRunner` (API)
 - **Command**: `make test` in each scope directory
@@ -42,6 +42,7 @@ the future, incorporate `coverage report --show-missing` into your analysis alon
 | `aihub_process`  | `aihub_process/agentic_processes/{Name}/tests/` + `playground/*/tests/` | BDD with `ProcessTestRunner`              |
 | `aihub_pipeline` | `aihub_pipeline/tests/`                                                 | pytest (currently empty)                  |
 | `aihub_bot`      | `aihub_bot/tests/`                                                      | pytest                                    |
+| `aihub_backup`   | `aihub_backup/tests/`                                                   | pytest (`e2e` marker for integration)     |
 | `aihub_web`      | None                                                                    | No test framework configured              |
 
 ### What Counts as "Testable"
@@ -105,7 +106,7 @@ grep -rn "@op" aihub_pipeline/aihub_pipeline/ops --include="*.py" | grep -v __py
 
 ```bash
 # Find all test files by scope
-for scope in aihub_lib aihub_agent aihub_api aihub_process aihub_pipeline aihub_bot; do
+for scope in aihub_lib aihub_agent aihub_api aihub_process aihub_pipeline aihub_bot aihub_backup; do
   echo "=== $scope ==="
   find "$scope" -name "test_*.py" -not -path "*/__pycache__/*" -not -path "*/.venv/*" 2>/dev/null
 done

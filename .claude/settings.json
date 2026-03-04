@@ -354,7 +354,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": ".claude/hooks/stop-hook-git-check.sh"
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/stop-hook-git-check.sh"
           }
         ]
       }
@@ -362,7 +362,7 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "bash .claude/statusline.sh",
+    "command": "bash \"$CLAUDE_PROJECT_DIR\"/.claude/statusline.sh",
     "padding": 0
   },
   "enabledPlugins": {

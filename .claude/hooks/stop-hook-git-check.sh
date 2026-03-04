@@ -1,10 +1,10 @@
 #!/bin/bash
 # Stop hook: Run make pr-ready on modified scopes and stage untracked files before ending a session.
 
-REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+REPO_ROOT="${CLAUDE_PROJECT_DIR:-$(cd "$(dirname "$0")/../.." && pwd)}"
 cd "$REPO_ROOT" || exit 0
 
-SCOPES=("aihub_lib" "aihub_agent" "aihub_process" "aihub_api" "aihub_bot" "aihub_pipeline" "aihub_web")
+SCOPES=("aihub_lib" "aihub_agent" "aihub_process" "aihub_api" "aihub_bot" "aihub_pipeline" "aihub_web" "aihub_backup")
 
 # Find scopes with modified files
 changed_files=$(git diff --name-only 2>/dev/null)
@@ -63,12 +63,11 @@ if [[ "$failed" == "true" ]]; then
   exit 2
 fi
 
-# Stage untracked files
+# Warn about untracked files (non-blocking)
 untracked=$(git ls-files --others --exclude-standard 2>/dev/null | head -20)
 if [[ -n "$untracked" ]]; then
-  echo "Untracked files detected — stage them with git add:" >&2
+  echo "Warning: untracked files detected (consider staging or .gitignore):" >&2
   echo "$untracked" | while read -r f; do echo "  - $f" >&2; done
-  exit 2
 fi
 
 exit 0

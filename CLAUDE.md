@@ -81,6 +81,8 @@ MongoDB-compatible over its own PostgreSQL), Milvus vector DB (:19530), Neo4j gr
 
 **Pipelines**: Dagster orchestrator (:3000, run locally), pipeline workers (run locally)
 
+**Backup**: Backup Dagster orchestrator (:3004, 3-container deployment in Docker)
+
 **Document Processing**: MinerU OCR + parsing (:5001)
 
 **Observability**: Langfuse web (:6006) + worker, OTEL Collector (:4317/:4318)
@@ -99,6 +101,7 @@ Code shared by 2+ services belongs in `aihub_lib`. Service-specific code stays i
 - **`aihub_api`**: REST API + WebSocket gateway (FastAPI).
 - **`aihub_web`**: Frontend UI (Nuxt 3, Vue 3, PrimeVue, Tailwind).
 - **`aihub_bot`**: Collaboration platform integrations (MS Teams, Slack).
+- **`aihub_backup`**: Centralized backup & restore orchestration (Dagster, standalone — no `aihub_lib` dependency).
 - **`aihub_action`**: Reusable GitHub Actions for CI/CD.
 - **`aihub_doc`**: arc42 documentation + ADRs (VitePress).
 
@@ -133,13 +136,23 @@ Each scope has its own `CLAUDE.md` — consult it before working in that scope.
 11. **Controller → Service → Entity**: Separation of concerns (HTTP layer → business logic → persistence).
 12. **Dependency injection**: FastAPI `Depends` and `Security` for clean parameter injection.
 13. **One class per file**: File name MUST match class name (`MyClass` → `MyClass.py`). No multi-class files.
-14. **No loose functions**: Avoid files containing standalone functions. Create service classes with `@staticmethod` or
-    `@classmethod` methods instead.
+14. **No loose functions in class files**: Pure logic belongs in dedicated `snake_case.py` modules (see rule 17). Class
+    files should not contain standalone functions — use `@staticmethod` or `@classmethod` instead.
 15. **No backwards compatibility**: Breaking changes are fine. Do not add compatibility shims, re-exports, or renamed
     aliases unless explicitly asked.
 16. **No new abstractions**: Do not introduce abstractions that do not follow existing patterns in the codebase.
+17. **Separate logic from IO**: Keep business logic in pure functions (inputs → outputs, no side effects). IO operations
+    (database, network, messaging) live in thin callers that delegate to logic functions. Each function should do one
+    thing. See `aihub_lib/aihub_lib/generative_ai/retrieval/retrieve_nodes.py` (pure logic with injected deps) and
+    `aihub_api/aihub_api/routes/agent/AgentService.py` (service orchestrates IO, delegates logic).
+18. **Static methods**: Methods that don't use `self` must be `@staticmethod` without `self` param.
+19. **Caller-above-callee ordering**: Public/caller methods appear above their private callees in each file, so reading
+    top-to-bottom goes from abstract to detail.
+20. **Explanatory naming**: Method names should communicate high-level intent (including failure behavior for
+    validation/check methods) so reading only the caller is sufficient.
 
-**Naming**: `snake_case` for files/dirs, `CamelCase` for classes, `test_*.py` for tests.
+**Naming**: `CamelCase.py` for class files, `snake_case.py` for pure-function modules, `snake_case` for dirs,
+`CamelCase` for classes, `test_*.py` for tests.
 
 **Docstrings**: Explain "why", not "what". Never use `Args:` or `Returns:` sections — use type hints and `Annotated`
 instead. Keep docstrings concise, one or two sentences max.
@@ -160,7 +173,9 @@ instead. Keep docstrings concise, one or two sentences max.
 
 **What you MUST run manually:**
 
-- **`make test`**: Run pytest in all modified scopes. No hook automates this.
+- **`make test`**: Run pytest in all modified scopes. No hook automates this. **NEVER run `pytest` directly** — always
+  use `make test` (from repo root, runs all scopes) or `cd <scope> && make test` (single scope). The per-scope Makefiles
+  handle markers, paths, and config correctly.
 
 ## Commands
 
@@ -189,7 +204,8 @@ Run from the workspace root:
 - Format: `<type>(<scope>): <Subject starting with uppercase>`
 - Scope is **mandatory**.
 - Allowed types: `fix`, `feat`, `doc`, `test`, `chore`
-- Allowed scopes: `aihub`, `iac`, `ci-cd`, `bots`, `dagster`, `deploy`, `ui`, `guards`, `rag`, `tracing`, `workflows`
+- Allowed scopes: `aihub`, `iac`, `ci-cd`, `bots`, `dagster`, `deploy`, `ui`, `guards`, `rag`, `tracing`, `workflows`,
+  `backup`
 
 **PR labels** (CI-enforced): Every PR must have exactly one version label: `major`, `minor`, or `patch`. Controls
 automatic semver bumps on merge.
@@ -213,12 +229,34 @@ Before marking task complete (`make pr-ready` runs automatically via stop hook):
 
 - **Location**: `tests/` dir at same level as code
 - **Naming**: `test_*.py`
-- **Markers**: `slow`, `integration`, `flaky`, `self_hosted`, `experimental` (per-scope `pyproject.toml`)
-- **CI excludes**: `pytest -m "not flaky"` — flaky tests skip in CI
+- **Markers**: `slow`, `e2e`, `flaky`, `experimental` (per-scope `pyproject.toml`)
+- **CI excludes**: `pytest -m "not flaky and not e2e"` — flaky and e2e tests skip in CI
 - **BDD**: Use `pytest-bdd` for agent/process workflows (Gherkin `.feature` files in `tests/features/`)
 - **Async**: pytest-bdd has limitations; use plain pytest for async tests
 
+**Running tests**: Always use `make test` from the repo root or `cd <scope> && make test` for a single scope. Never
+invoke `pytest` directly — the Makefiles handle marker exclusions, paths, and per-scope config.
+
 **Philosophy**: Pragmatic, not TDD. Write tests when straightforward. MUST run all tests before commit.
+
+**Useless Tests (flag and fix these)**:
+
+- **No assertions**: test calls code but never asserts — only proves "no exception"
+- **Trivially true assertions**: `assert True`, `assert result is not None`, `assert isinstance(x, dict)` without
+  checking contents — these pass for wrong behavior
+- **Implementation coupling**: tests that only verify mock call counts (`assert_called_once()`) without checking
+  arguments or return values. Good: `mock.command.assert_any_call("DROP TABLE ...")`. Bad: `assert mock.called` with no
+  arg verification
+- **Tautological mocks**: mock returns X, assertion checks X was returned — tests the mock framework, not the code
+
+**Edge Cases (verify these exist for new code)**:
+
+- **Error paths**: `pytest.raises(ExceptionType, match="specific message")` — always use `match=` to verify the right
+  error, not just any error of that type
+- **Empty/missing inputs**: empty lists, None values, missing keys
+- **Boundary values**: off-by-one, zero-value configs, max-length strings
+- **Invalid inputs**: injection attempts, unicode edge cases, malformed data
+- **Failure + cleanup**: when operations fail, verify cleanup still runs
 
 ## Architectural Decisions (ADRs)
 
@@ -241,6 +279,18 @@ Before marking task complete (`make pr-ready` runs automatically via stop hook):
 - **Config**: `deployment/compose-config.yml` (image tags, stage-specific values)
 - **Regenerate**: Run `make generate-compose` after modifying templates or config
 
+**Stages** (each has a `.gpu` variant adding NVIDIA GPU support):
+
+| Stage     | Traefik | SSL            | 1st-party services | Use case                              |
+| --------- | ------- | -------------- | ------------------ | ------------------------------------- |
+| `dev`     | No      | None           | Not in compose     | Development (infra only, run locally) |
+| `build`   | Yes     | mkcert (local) | Built from source  | Source development                    |
+| `local`   | Yes     | mkcert (local) | `latest` tag       | Local full-stack testing              |
+| `nightly` | Yes     | Let's Encrypt  | `nightly` tag      | Pre-production                        |
+| `latest`  | Yes     | Let's Encrypt  | `latest` tag       | Production                            |
+
+See `deployment/CLAUDE.md` for full details on the generation pipeline and service inclusion logic.
+
 ## MCP & Claude Code
 
 Skills, hooks, agents, and MCP servers are configured in `.claude/`. Claude Code discovers these automatically — see
@@ -255,14 +305,15 @@ Local overrides (gitignored): `CLAUDE.local.md`, `.claude/settings.local.json`, 
 
 **Access Points** (docker-compose.dev.yml):
 
-| Service   | URL                   |
-| --------- | --------------------- |
-| OpenWebUI | http://localhost:8080 |
-| Admin UI  | http://localhost:3333 |
-| API       | http://localhost:8000 |
-| Dagster   | http://localhost:3000 |
-| Langfuse  | http://localhost:6006 |
-| SeaweedFS | http://localhost:8889 |
+| Service        | URL                   |
+| -------------- | --------------------- |
+| OpenWebUI      | http://localhost:8080 |
+| Admin UI       | http://localhost:3333 |
+| API            | http://localhost:8000 |
+| Dagster        | http://localhost:3000 |
+| Backup Dagster | http://localhost:3004 |
+| Langfuse       | http://localhost:6006 |
+| SeaweedFS      | http://localhost:8889 |
 
 **Key Paths**:
 
