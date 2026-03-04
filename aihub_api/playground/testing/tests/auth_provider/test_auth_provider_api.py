@@ -1,3 +1,5 @@
+from unittest.mock import AsyncMock
+
 import pytest
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
     DangerousDevelopmentOnlyAuthHandler,
@@ -19,7 +21,9 @@ def api_client():
     auth = DangerousDevelopmentOnlyAuthHandler()
     runner = ApiTestRunner()
     runner.mount(AuthProviderController(auth=auth).get_auth_providers())
-    return TestClient(runner.create_app())
+    app = runner.create_app()
+    app.state.redis = AsyncMock()
+    return TestClient(app)
 
 
 def test_get_auth_providers_returns_list(api_client, monkeypatch):
