@@ -125,5 +125,4 @@ runner.mount(
     TranslationController(auth=auth).translate(),
 )
 
-
 app = runner.create_app()

@@ -28,7 +28,7 @@ cp "../CHANGELOG.md" "./changelog/index.de.md"
 # Find all 'README.md' files in the parent directory (../),
 # while excluding 'node_modules', '.pytest_cache', '.docker-volumes', and the current 'aihub_doc' directory.
 # The output of find is piped to the while loop.
-find ../ \( -path '*/node_modules' -o -path '../aihub_doc' -o -path '*/.docker-volumes' -o -path '*/.pytest_cache' -o -path '*/__pycache__' -o -path '*/.mypy_cache' \) -prune -o -type f -name "README.md" -print | while read -r source_file; do
+find ../ \( -path '*/node_modules' -o -path '../aihub_doc' -o -path '*/.docker-volumes' -o -path '*/.pytest_cache' -o -path '*/__pycache__' -o -path '*/.mypy_cache' -o -path '*/.venv' \) -prune -o -type f -name "README.md" -print | while read -r source_file; do
     # 'source_file' is the full path from find, e.g., ../aihub_api/README.md
 
     dest_file=""
@@ -66,12 +66,18 @@ find ../ \( -path '*/node_modules' -o -path '../aihub_doc' -o -path '*/.docker-v
     # Copy the original file to its new location and name.
     cp "$source_file" "$dest_file"
 
+    # Rewrite image paths for the root README (aihub_doc/media/... → ../../../media/...)
+    if [[ "$source_file" == "../README.md" ]]; then
+        sed -i 's|aihub_doc/media/|../../../media/|g' "$dest_file"
+    fi
+
     echo "  -> Copied '$source_file' to '$dest_file'"
 
     # For files in 6_code_deep_dive, also create a .de.md copy (no translation needed)
+    # Copy from the already-processed .en.md so any path rewrites are preserved
     if [[ "$dest_file" == *"6_code_deep_dive"* ]]; then
         dest_file_de="${dest_file/.en.md/.de.md}"
-        cp "$source_file" "$dest_file_de"
+        cp "$dest_file" "$dest_file_de"
         echo "  -> Duplicated to '$dest_file_de' (no translation)"
     fi
 done

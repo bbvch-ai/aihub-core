@@ -1,6 +1,6 @@
 [project]
 name = "aihub-pipeline"
-version = "0.269.2"
+version = "0.269.4"
 description = "pipeline core"
 requires-python = ">=3.13, <3.14"
 authors = [
