@@ -50,13 +50,13 @@ jobs:
       - name: Pull infrastructure images
         run: |
           docker compose -f docker-compose.build.yml --env-file .env.dev pull --quiet \
-            postgres postgres-ferretdb neo4j clickhouse valkey nats \
+            postgres postgres-ferretdb ferretdb neo4j clickhouse valkey nats \
             seaweedfs-master seaweedfs-volume seaweedfs-filer seaweedfs-s3 seaweedfs-init \
             etcd etcd-init milvus-standalone
       - name: Start services
         run: |
           docker compose -f docker-compose.build.yml --env-file .env.dev up -d \
-            backup-code backup-webserver backup-daemon postgres postgres-ferretdb neo4j clickhouse valkey nats \
+            backup-code backup-webserver backup-daemon postgres postgres-ferretdb ferretdb neo4j clickhouse valkey nats \
             seaweedfs-master seaweedfs-volume seaweedfs-filer seaweedfs-s3 seaweedfs-init \
             etcd etcd-init milvus-standalone
       - name: Wait for services to become healthy
