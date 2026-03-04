@@ -72,7 +72,7 @@ proxy (production only)
 **AI Inference**: Speaches STT/TTS (:8185), Presidio analyzer + anonymizer (PII filtering). GPU deployments add vLLM for
 local chat, embedding, and reranking. Non-GPU deployments route all inference to Swiss LLM Cloud.
 
-**Databases**: PostgreSQL with pgvector (:5432, 4 DBs: openwebui/langfuse/dagster/litellm), FerretDB (:27017,
+**Databases**: PostgreSQL with pgvector (:5432, 5 DBs: openwebui/langfuse/dagster/litellm/keycloak), FerretDB (:27017,
 MongoDB-compatible over its own PostgreSQL), Milvus vector DB (:19530), Neo4j graph DB (:7474/:7687), Valkey/Redis
 (:6379), ClickHouse (Langfuse analytics), etcd (metadata for Milvus + SeaweedFS)
 
@@ -82,6 +82,9 @@ MongoDB-compatible over its own PostgreSQL), Milvus vector DB (:19530), Neo4j gr
 **Pipelines**: Dagster orchestrator (:3000, run locally), pipeline workers (run locally)
 
 **Backup**: Backup Dagster orchestrator (:3004, 3-container deployment in Docker)
+
+**Authentication**: Keycloak identity broker (:8080 internal, `auth.${DOMAIN}` in production) — OIDC/OAuth2 IdP
+federation, SSO for all platform services
 
 **Document Processing**: MinerU OCR + parsing (:5001)
 

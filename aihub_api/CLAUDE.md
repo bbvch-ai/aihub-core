@@ -17,7 +17,9 @@ aihub_api/
 │   ├── routes/                 # Controllers + Services + DTOs (by domain)
 │   │   ├── agent/              # Agent class/instance management
 │   │   ├── thread/             # Conversation management
-│   │   ├── user/               # User profiles, dashboards
+│   │   ├── user/               # User management
+│   │   ├── my_account/         # Current user profile & dashboard
+│   │   ├── auth_provider/      # Auth provider discovery (Keycloak IdPs)
 │   │   ├── openai/             # OpenAI-compatible chat/embeddings/audio/images
 │   │   ├── event/              # Event streaming + WebSocket endpoint
 │   │   ├── process/            # Process orchestration
@@ -33,6 +35,7 @@ aihub_api/
 │   │   ├── suite/              # Suite management
 │   │   ├── health/             # Health & readiness checks
 │   │   ├── i18n/               # Locale endpoints
+│   │   ├── auth_provider/      # Identity provider discovery (unauthenticated, Keycloak Admin API, Redis cache)
 │   │   └── parsing/            # Document parsing (MinerU)
 │   ├── services/               # Dynamic endpoint discovery (NATS-based)
 │   ├── events/                 # EventModelCreationService (Jambo)
@@ -195,7 +198,7 @@ All resources stored in `app.state`, accessible via the dependencies listed abov
 **Key classes**: `ApiTestRunner` (sync tests), `SimulatedAgentApiTestRunner` (async, simulates agents via NATS —
 `.with_simple_chunk_events()`, `.create_agent_config_in_db()`, auto-responds to discovery requests).
 
-**Auth bypass**: `DangerousDevelopmentOnlyAuthHandler` with `DangerousDevelopmentOnlyIdentityProvider`.
+**Auth bypass**: `DangerousDevelopmentOnlyAuthHandler` (auto-creates a dev identity).
 
 **Interactive testing**: `cd playground/testing && python main.py` → http://localhost:8000 (frontend),
 http://localhost:8000/api/v1/docs (Swagger).

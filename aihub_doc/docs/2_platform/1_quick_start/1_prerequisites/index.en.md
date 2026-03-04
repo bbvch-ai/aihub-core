@@ -288,9 +288,10 @@ real domain name.
 
 ### DNS Configuration
 
-Configure DNS records for your domain. The platform requires **seven subdomains** pointing to your server's public IP:
+Configure DNS records for your domain. The platform requires **eight subdomains** pointing to your server's public IP:
 
 - `aihub.example.com` - main web interface
+- `auth.aihub.example.com` - Keycloak identity provider (SSO, OIDC)
 - `openwebui.aihub.example.com` - chat UI
 - `dagster.aihub.example.com` - pipeline orchestration
 - `datalake.aihub.example.com` - data lake console
@@ -298,7 +299,7 @@ Configure DNS records for your domain. The platform requires **seven subdomains*
 - `attu.aihub.example.com` - Milvus vector database UI
 - `traefik.aihub.example.com` - reverse proxy dashboard
 
-Replace `aihub.example.com` with your actual domain. Create A records or CNAMEs for all seven subdomains pointing to
+Replace `aihub.example.com` with your actual domain. Create A records or CNAMEs for all eight subdomains pointing to
 your server's IP address.
 
 ::: warning DNS Requirements for SSL

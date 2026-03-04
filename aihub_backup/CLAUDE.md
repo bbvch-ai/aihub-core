@@ -46,7 +46,7 @@ aihub_backup/
 │       ├── postgres.py          # pg_dumpall/psql (subprocess, 2 hosts)
 │       ├── milvus.py            # milvus-backup CLI (subprocess, integrity checks)
 │       ├── neo4j.py             # neo4j-admin via Docker SDK (offline, temp container)
-│       ├── clickhouse.py        # clickhouse-connect + Docker SDK
+│       ├── clickhouse.py        # clickhouse-connect (BACKUP TO S3 SQL command)
 │       ├── valkey.py            # BGSAVE + RDB copy via Docker SDK
 │       └── nats.py              # nats CLI for JetStream streams (subprocess)
 ├── tests/
@@ -127,10 +127,25 @@ container dependency (required for parallel backup and restore).
 `restore(backup_prefix)`. Three implementation styles:
 
 - **Subprocess-based**: PostgreSQL (`pg_dumpall`/`psql`), Milvus (`milvus-backup` CLI), NATS (`nats` CLI)
-- **Python client + Docker SDK**: ClickHouse (`clickhouse-connect` for SQL, Docker for file copy), Valkey (`redis`
-  client for BGSAVE/LASTSAVE, Docker for RDB file copy)
+- **Python client only**: ClickHouse (`clickhouse-connect` for `BACKUP TO S3()` SQL command)
+- **Python client + Docker SDK**: Valkey (`redis` client for BGSAVE/LASTSAVE, Docker for RDB file copy)
 - **Docker SDK only**: Neo4j (temp sibling container with shared `/data` volume, main container stopped by
   orchestration)
+
+**Milvus integrity check**: After each backup, the Milvus handler downloads `full_meta.json` and verifies every non-L0
+segment has insert logs. This catches a silent corruption bug where Milvus GC deletes segment data during backup while
+`milvus-backup` still reports success (see milvus-backup issue #541).
+
+**Handler input validation**: Every handler validates external inputs (database names, backup names, table names) via
+compiled regexes and `_validated_X_or_raise()` static methods. New handlers must validate any string interpolated into
+commands or SQL to prevent injection.
+
+**PostgreSQL extension catalog workaround**: `pg_dump` silently excludes data for extension-owned tables unless the
+extension registers them via `pg_extension_config_dump()`. The DocumentDB extension (used by postgres-ferretdb for
+FerretDB) does NOT register its catalog tables (`documentdb_api_catalog.collections`), so a plain pg_dump/pg_restore
+cycle restores the raw document data but loses the catalog mapping MongoDB collections to PostgreSQL tables — making
+FerretDB return zero results. The PostgreSQL handler works around this by separately dumping extension-owned table data
+as INSERT statements (`.ext-catalog.sql.gz`) during backup and replaying them after `pg_restore` during restore.
 
 **S3 Storage**: All backups stored in SeaweedFS under `s3://{bucket}/{timestamp}/`. Timestamp format:
 `YYYY-MM-DD_HH-MM-SS`.
@@ -161,6 +176,14 @@ startup. All AI-Hub agents already do this.
 **Neo4j requires brief downtime**: Community Edition has no online backup. Container is stopped by the orchestration
 layer, dump taken via temp sibling container with shared `/data` volume, then restarted.
 
+**DocumentDB catalog separate dump/restore**: The FerretDB PostgreSQL host uses the DocumentDB extension, which owns its
+catalog tables but never calls `pg_extension_config_dump()`. PostgreSQL restricts that function to `CREATE EXTENSION`
+scripts, so it cannot be called externally. `pg_dump` silently skips these tables' data. During backup,
+`PostgresHandler` separately dumps extension-owned table data as `ext-catalog.sql.gz` using `COPY TO STDOUT`. During
+restore, this SQL is replayed after `pg_restore`. The catalog tables and sequences are listed in
+`_DOCUMENTDB_CATALOG_TABLES` and `_DOCUMENTDB_CATALOG_SEQUENCES` in `services/postgres.py`. Without this, restores lose
+the collection-to-table mappings.
+
 **Hierarchical asset keys**: Assets use `AssetKey(["backup", "session"])` etc. Dagster converts these to op names with
 double underscores (e.g., `backup__session`). RunConfig ops keys must use this double-underscore form.
 
@@ -171,9 +194,11 @@ double underscores (e.g., `backup__session`). RunConfig ops keys must use this d
 3. Add `SERVICE_TO_ASSET_KEY` mapping in `models.py`
 4. Add handler class to `HANDLER_FACTORIES` in `dagster/assets/handler_factory.py`
 5. Add service key + factory call in `dagster/definitions.py` (both backup and restore sections)
-6. Add `SERVICE_DEPS` entry in `container_lifecycle.py` (containers needed, timeout)
-7. Add env vars in `deployment/templates/docker-compose.yml.j2` `backup-code` service block + `depends_on`
-8. Add env var defaults in `.env.dev` and `.env.prod`
+6. Add backup completeness check in `dagster/assets/restore_session_factory.py`
+   (`_validate_backup_completeness_or_raise`)
+7. Add `SERVICE_DEPS` entry in `container_lifecycle.py` (containers needed, timeout)
+8. Add env vars in `deployment/templates/docker-compose.yml.j2` `backup-code` service block + `depends_on`
+9. Add env var defaults in `.env.dev` and `.env.prod`
 
 Compile-time assertions catch mismatches: `BACKUP_SERVICES` vs `SERVICE_DEPS` keys, and overlapping container deps
 across handlers.

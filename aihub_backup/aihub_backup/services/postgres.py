@@ -16,6 +16,35 @@ logger = logging.getLogger(__name__)
 _SUBPROCESS_TIMEOUT = 300
 _SAFE_DBNAME_RE = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]*$")
 
+# pg_dump skips data for extension-owned tables, expecting CREATE EXTENSION to repopulate them.
+# The DocumentDB extension (github.com/documentdb/documentdb) owns its catalog tables but never
+# calls pg_extension_config_dump() to mark them as user-data-bearing. pg_extension_config_dump()
+# cannot be called externally (PostgreSQL restricts it to CREATE EXTENSION scripts). Without a
+# workaround, restores lose the collection-to-table mappings and index definitions while the
+# actual document data (documentdb_data.*) restores fine — FerretDB sees no collections.
+#
+# Workaround: During backup, separately dump extension catalog data using COPY TO STDOUT,
+# then replay it after pg_restore during restore.
+#
+# Tables/sequences below are defined in the DocumentDB source:
+#   pg_documentdb/sql/schema/collection_metadata--0.10-0.sql
+#   pg_documentdb/sql/schema/collection_indexes_metadata--0.10-0.sql
+#
+# To check if new extension objects need adding, run on a live postgres-ferretdb instance:
+#   SELECT c.relname, c.relkind FROM pg_class c
+#   JOIN pg_depend d ON c.oid = d.objid
+#   JOIN pg_extension e ON d.refobjid = e.oid
+#   WHERE e.extname = 'documentdb' AND c.relkind IN ('r', 'S')
+_DOCUMENTDB_CATALOG_TABLES = (
+    "documentdb_api_catalog.collections",
+    "documentdb_api_catalog.collection_indexes",
+)
+_DOCUMENTDB_CATALOG_SEQUENCES = (
+    "documentdb_api_catalog.collections_collection_id_seq",
+    "documentdb_api_catalog.collection_indexes_index_id_seq",
+)
+_EXT_CATALOG_FILENAME = "ext-catalog.sql.gz"
+
 
 class PostgresHandler(BackupHandler):
     def __init__(self, settings: BackupSettings, s3: S3Manager) -> None:
@@ -47,6 +76,14 @@ class PostgresHandler(BackupHandler):
                 s3_prefix=s3_prefix,
                 tmp_dir=tmp_dir,
             )
+            self._dump_documentdb_catalog(
+                host=self._settings.POSTGRES_FERRETDB_HOST,
+                user=self._settings.MONGO_USERNAME,
+                password=self._settings.MONGO_PASSWORD.get_secret_value(),
+                label="postgres-ferretdb",
+                s3_prefix=s3_prefix,
+                tmp_dir=tmp_dir,
+            )
         finally:
             shutil.rmtree(tmp_dir, ignore_errors=True)
 
@@ -70,13 +107,21 @@ class PostgresHandler(BackupHandler):
                 backup_prefix=backup_prefix,
                 tmp_dir=tmp_dir,
             )
+            self._restore_documentdb_catalog(
+                host=self._settings.POSTGRES_FERRETDB_HOST,
+                user=self._settings.MONGO_USERNAME,
+                password=self._settings.MONGO_PASSWORD.get_secret_value(),
+                label="postgres-ferretdb",
+                backup_prefix=backup_prefix,
+                tmp_dir=tmp_dir,
+            )
         finally:
             shutil.rmtree(tmp_dir, ignore_errors=True)
 
     def _backup_host(self, host: str, user: str, password: str, label: str, s3_prefix: str, tmp_dir: Path) -> None:
         env = self._pg_env(password)
         host_dir = tmp_dir / label
-        host_dir.mkdir()
+        host_dir.mkdir(exist_ok=True)
 
         self._dump_globals(host, user, env, label, host_dir, s3_prefix)
         databases = self._list_all_databases(host, user, env)
@@ -85,6 +130,104 @@ class PostgresHandler(BackupHandler):
             self._dump_database(host, user, env, db, label, host_dir, s3_prefix)
 
         logger.info("[%s] Backed up globals + %d databases", label, len(databases))
+
+    def _dump_documentdb_catalog(
+        self, host: str, user: str, password: str, label: str, s3_prefix: str, tmp_dir: Path
+    ) -> None:
+        """pg_dump skips extension-owned table data; COPY TO STDOUT captures DocumentDB catalog rows."""
+        env = self._pg_env(password)
+        logger.info("[%s] Dumping DocumentDB extension catalog tables", label)
+
+        sql_parts: list[str] = []
+        for table in _DOCUMENTDB_CATALOG_TABLES:
+            result = subprocess.run(
+                ["psql", "-h", host, "-U", user, "-d", "postgres", "-X", "-c", f"COPY {table} TO STDOUT"],
+                capture_output=True,
+                text=True,
+                env=env,
+                check=False,
+                timeout=_SUBPROCESS_TIMEOUT,
+            )
+            if result.returncode != 0:
+                raise RuntimeError(f"COPY {table} TO STDOUT failed: {result.stderr.strip()}")
+            data = result.stdout
+            sql_parts.append(f"TRUNCATE {table} CASCADE;")
+            sql_parts.append(f"COPY {table} FROM stdin;")
+            sql_parts.append(data + "\\.\n")
+
+        for seq in _DOCUMENTDB_CATALOG_SEQUENCES:
+            result = subprocess.run(
+                [
+                    "psql",
+                    "-h",
+                    host,
+                    "-U",
+                    user,
+                    "-d",
+                    "postgres",
+                    "-X",
+                    "--tuples-only",
+                    "--no-align",
+                    "-c",
+                    f"SELECT last_value, is_called FROM {seq}",
+                ],
+                capture_output=True,
+                text=True,
+                env=env,
+                check=False,
+                timeout=_SUBPROCESS_TIMEOUT,
+            )
+            if result.returncode != 0:
+                raise RuntimeError(f"Failed to read sequence {seq}: {result.stderr.strip()}")
+            parts = result.stdout.strip().split("|")
+            last_value, is_called = parts[0], parts[1]
+            sql_parts.append(f"SELECT setval('{seq}', {last_value}, {is_called});")
+
+        catalog_file = tmp_dir / label / _EXT_CATALOG_FILENAME
+        catalog_file.parent.mkdir(exist_ok=True)
+        with gzip.open(catalog_file, "wt") as f:
+            f.write("\n".join(sql_parts))
+        self._s3.upload_file(catalog_file, f"{s3_prefix}/{label}/{_EXT_CATALOG_FILENAME}")
+        catalog_file.unlink()
+        logger.info(
+            "[%s] DocumentDB catalog dumped (%d tables, %d sequences)",
+            label,
+            len(_DOCUMENTDB_CATALOG_TABLES),
+            len(_DOCUMENTDB_CATALOG_SEQUENCES),
+        )
+
+    def _restore_documentdb_catalog(
+        self, host: str, user: str, password: str, label: str, backup_prefix: str, tmp_dir: Path
+    ) -> None:
+        """Replay catalog data so FerretDB sees collections after restore despite document tables being intact."""
+        s3_key = f"{backup_prefix}/{label}/{_EXT_CATALOG_FILENAME}"
+        env = self._pg_env(password)
+
+        if not self._s3.file_exists(s3_key):
+            logger.info("[%s] No extension catalog backup found at %s, skipping", label, s3_key)
+            return
+
+        catalog_file = tmp_dir / label / _EXT_CATALOG_FILENAME
+        catalog_file.parent.mkdir(exist_ok=True)
+        self._s3.download_file(s3_key, catalog_file)
+
+        with gzip.open(catalog_file, "rt") as f:
+            sql = f.read()
+        catalog_file.unlink()
+
+        logger.info("[%s] Restoring DocumentDB extension catalog", label)
+        result = subprocess.run(
+            ["psql", "-h", host, "-U", user, "-d", "postgres", "-X"],
+            input=sql,
+            capture_output=True,
+            text=True,
+            env=env,
+            check=False,
+            timeout=_SUBPROCESS_TIMEOUT,
+        )
+        if result.returncode != 0:
+            raise RuntimeError(f"DocumentDB catalog restore failed on {label}: {result.stderr.strip()}")
+        logger.info("[%s] DocumentDB catalog restored", label)
 
     def _dump_globals(
         self, host: str, user: str, env: dict[str, str], label: str, host_dir: Path, s3_prefix: str
@@ -138,7 +281,7 @@ class PostgresHandler(BackupHandler):
     ) -> None:
         env = self._pg_env(password)
         host_dir = tmp_dir / label
-        host_dir.mkdir()
+        host_dir.mkdir(exist_ok=True)
 
         s3_label_prefix = f"{backup_prefix}/{label}/"
         logger.info("[%s] Listing S3 keys under %s", label, s3_label_prefix)

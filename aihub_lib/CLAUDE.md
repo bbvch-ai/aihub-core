@@ -15,7 +15,7 @@ aihub_lib/
 │   └── visualizers/types/           # Workflow graph types (NodeData, EdgeData, WorkflowGraph)
 ├── auth/                            # Authentication & authorization
 │   ├── access/AccessChecker.py      # Permission matching engine (hierarchical wildcards)
-│   ├── dependencies/                # Auth handlers (AuthHandler → OAuth2, Token, Bearer, OpenWebUI, Superuser, DevOnly)
+│   ├── dependencies/                # Auth handlers (AuthHandler → Keycloak, Token, Bearer, TokenAndOAuth2, OpenWebUI, Superuser, DevOnly)
 │   └── identity/                    # Identity models (UserIdentity, TenantIdentity)
 ├── context/                         # Context utilities
 ├── displayers/                      # Real-time event emission for UI streaming

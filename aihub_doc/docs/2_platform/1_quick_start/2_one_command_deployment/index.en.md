@@ -153,9 +153,9 @@ After generating your `.env` file, review it and fill in the values that require
 1. **Domain** — Set `DOMAIN` to your production domain (e.g., `aihub.yourcompany.com`) or `127.0.0.1.nip.io` for local
    testing
 
-2. **Authentication Values** (from Prerequisites):
+2. **Authentication Values** (from Prerequisites — configured into Keycloak as an identity provider):
 
-   - `REPLACE_WITH_YOUR_CLIENT_ID` → Your Azure App Registration Client ID
+   - `REPLACE_WITH_YOUR_CLIENT_ID` → Your Azure App Registration Client ID (for Keycloak IdP federation)
    - `REPLACE_WITH_YOUR_CLIENT_SECRET` → Your Azure App Registration Client Secret
    - `REPLACE_WITH_YOUR_TENANT_ID` → Your Azure Tenant ID
 

@@ -7,10 +7,10 @@ server + daemon + webserver) with no dependency on `aihub_lib`.
 
 | Service    | Method                                            | Data                                            |
 | ---------- | ------------------------------------------------- | ----------------------------------------------- |
-| PostgreSQL | `pg_dumpall` + `pg_dump`                          | OpenWebUI, Langfuse, Dagster, LiteLLM, FerretDB |
+| PostgreSQL | `pg_dumpall` + `pg_dump` (+ DocumentDB catalog¹)  | OpenWebUI, Langfuse, Dagster, LiteLLM, FerretDB |
 | Milvus     | `milvus-backup` (official tool)                   | Vector collections with consistent metadata     |
 | Neo4j      | `neo4j-admin` via temp container                  | Agent memory graphs                             |
-| ClickHouse | `BACKUP TO S3()` SQL command                      | Langfuse traces, observations, scores           |
+| ClickHouse | `BACKUP DATABASE TO Disk()` SQL command           | Langfuse traces, observations, scores           |
 | Valkey     | `BGSAVE` + RDB copy (+ temp container on restore) | Cache and session state                         |
 | NATS       | `nats` CLI stream backup                          | JetStream streams                               |
 
@@ -56,6 +56,18 @@ Environment variables in `.env.dev` / `.env.prod`:
 | `BACKUP_S3_BUCKET`      | `backups` | S3 bucket name for backup storage           |
 
 Database credentials are inherited from the same environment variables used by the platform services.
+
+## Implementation notes
+
+**¹ DocumentDB catalog separate dump/restore**: The FerretDB PostgreSQL host uses the DocumentDB extension, which owns
+its catalog tables (`documentdb_api_catalog.collections`, `collection_indexes`, and their sequences). PostgreSQL's
+`pg_dump` skips data for extension-owned tables by default — it expects `CREATE EXTENSION` to repopulate them. The usual
+fix (`pg_extension_config_dump()`) cannot be called externally — PostgreSQL restricts it to `CREATE EXTENSION` scripts.
+These catalogs contain user-generated metadata (collection-to-table mappings, index definitions) that the extension
+cannot reconstruct. During backup, the handler separately dumps catalog data using `COPY TO STDOUT` into an
+`ext-catalog.sql.gz` artifact. During restore, this SQL is replayed after `pg_restore` to repopulate the catalog.
+Without this step, restores would have the document data but an empty catalog — FerretDB would see no collections. See
+`_DOCUMENTDB_CATALOG_TABLES` and `_DOCUMENTDB_CATALOG_SEQUENCES` in `services/postgres.py`.
 
 ## Adding a new service
 

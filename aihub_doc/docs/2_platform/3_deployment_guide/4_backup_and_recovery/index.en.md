@@ -23,15 +23,15 @@ ______________________________________________________________________
 
 ## What gets backed up
 
-| Service               | Method                                            | Data                                              |
-| --------------------- | ------------------------------------------------- | ------------------------------------------------- |
-| PostgreSQL (main)     | `pg_dumpall` + `pg_dump`                          | OpenWebUI, Langfuse, Dagster, LiteLLM databases   |
-| PostgreSQL (FerretDB) | `pg_dumpall` + `pg_dump`                          | Agent configs, users, threads, tokens, RBAC roles |
-| Milvus                | `milvus-backup` (official tool)                   | Vector collections with consistent metadata       |
-| Neo4j                 | `neo4j-admin` via temp container                  | Agent memory graphs (Mem0)                        |
-| ClickHouse            | `BACKUP TO S3()` SQL command                      | Langfuse traces, observations, scores             |
-| Valkey                | `BGSAVE` + RDB copy (+ temp container on restore) | Cache and session state (RDB snapshot)            |
-| NATS                  | `nats` CLI stream backup                          | JetStream streams                                 |
+| Service               | Method                                                  | Data                                              |
+| --------------------- | ------------------------------------------------------- | ------------------------------------------------- |
+| PostgreSQL (main)     | `pg_dumpall` + `pg_dump`                                | OpenWebUI, Langfuse, Dagster, LiteLLM databases   |
+| PostgreSQL (FerretDB) | `pg_dumpall` + `pg_dump` + `COPY` (DocumentDB catalog¹) | Agent configs, users, threads, tokens, RBAC roles |
+| Milvus                | `milvus-backup` (official tool)                         | Vector collections with consistent metadata       |
+| Neo4j                 | `neo4j-admin` via temp container                        | Agent memory graphs (Mem0)                        |
+| ClickHouse            | `BACKUP TO S3()` SQL command                            | Langfuse traces, observations, scores             |
+| Valkey                | `BGSAVE` + RDB copy (+ temp container on restore)       | Cache and session state (RDB snapshot)            |
+| NATS                  | `nats` CLI stream backup                                | JetStream streams                                 |
 
 ### What is NOT backed up by the platform
 
@@ -77,6 +77,18 @@ the same `/data` volume (both discovered automatically from the production conta
 
 You may notice a short-lived container named `neo4j-dump-<id>` or `neo4j-restore-<id>` during backup/restore runs — this
 is expected and cleaned up automatically.
+
+### ¹ DocumentDB catalog workaround
+
+PostgreSQL's `pg_dump` silently skips data for tables owned by extensions — it assumes `CREATE EXTENSION` will
+repopulate them during restore. The DocumentDB extension (used by FerretDB's PostgreSQL backend) owns its catalog tables
+(`documentdb_api_catalog.collections` and `collection_indexes`) but does not register them for dump inclusion. The usual
+fix (`pg_extension_config_dump()`) cannot be called externally — PostgreSQL restricts it to `CREATE EXTENSION` scripts.
+
+Without a workaround, a restore would have all document data intact but an empty catalog — FerretDB would report zero
+collections. The backup service handles this automatically: during backup it separately extracts catalog rows using
+`COPY TO STDOUT` into an `ext-catalog.sql.gz` artifact, and during restore it replays this SQL after `pg_restore`. No
+operator action is required.
 
 ______________________________________________________________________
 
@@ -133,6 +145,7 @@ s3://backups/
     postgres-ferretdb/
       globals.sql.gz
       ferretdb.dump
+      ext-catalog.sql.gz
     milvus_backup_2026_02_17_02_00_00/...
     neo4j.dump
     clickhouse/

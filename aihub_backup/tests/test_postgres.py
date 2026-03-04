@@ -16,7 +16,7 @@ def postgres_handler(settings: BackupSettings) -> PostgresHandler:
 
 
 def _make_run_for_backup(databases: list[str] | None = None) -> object:
-    """Return a subprocess.run mock that handles pg_dumpall, pg_dump, and psql list-databases."""
+    """Return a subprocess.run mock that handles pg_dumpall, pg_dump, psql list-databases, and COPY TO STDOUT."""
     dbs = databases or ["openwebui", "langfuse"]
 
     def fake_run(*args: object, **kwargs: object) -> subprocess.CompletedProcess[bytes]:
@@ -32,6 +32,12 @@ def _make_run_for_backup(databases: list[str] | None = None) -> object:
                 stdout_file.write(b"\x00PGDUMP")
             return subprocess.CompletedProcess(cmd, 0, stdout=b"", stderr=b"")
 
+        if "COPY" in cmd_str and "TO STDOUT" in cmd_str:
+            return subprocess.CompletedProcess(cmd, 0, stdout=b"1\ttest_db\ttest_col\n", stderr=b"")
+
+        if "last_value" in cmd_str:
+            return subprocess.CompletedProcess(cmd, 0, stdout="1|true\n", stderr="")
+
         if "datistemplate" in cmd_str:
             return subprocess.CompletedProcess(cmd, 0, stdout="\n".join(dbs) + "\n", stderr="")
 
@@ -43,7 +49,10 @@ def _make_run_for_backup(databases: list[str] | None = None) -> object:
 def _fake_download(s3_key: str, local_path: Path) -> None:
     """Write a small file to simulate S3 download."""
     local_path.parent.mkdir(parents=True, exist_ok=True)
-    if s3_key.endswith(".sql.gz"):
+    if s3_key.endswith("ext-catalog.sql.gz"):
+        with gzip.open(local_path, "wt") as f:
+            f.write("TRUNCATE documentdb_api_catalog.collections CASCADE;\n")
+    elif s3_key.endswith(".sql.gz"):
         with gzip.open(local_path, "wb") as f:
             f.write(b"-- globals SQL")
     else:
@@ -67,8 +76,29 @@ def test_backup_uploads_globals_and_per_db_dumps(mock_run: MagicMock, postgres_h
     assert "2026-02-19_02-00-00/postgres-main/openwebui.dump" in s3_keys
     assert "2026-02-19_02-00-00/postgres-main/langfuse.dump" in s3_keys
     assert "2026-02-19_02-00-00/postgres-ferretdb/globals.sql.gz" in s3_keys
-    # 2 hosts x (1 globals + 2 databases) = 6
-    assert postgres_handler._s3.upload_file.call_count == 6
+    assert "2026-02-19_02-00-00/postgres-ferretdb/ext-catalog.sql.gz" in s3_keys
+    # 2 hosts x (1 globals + 2 databases) + 1 ext-catalog = 7
+    assert postgres_handler._s3.upload_file.call_count == 7
+
+
+@patch("aihub_backup.services.postgres.subprocess.run")
+def test_backup_dumps_documentdb_catalog_separately(mock_run: MagicMock, postgres_handler: PostgresHandler) -> None:
+    """Backup dumps DocumentDB extension catalog tables via COPY TO STDOUT and uploads as ext-catalog.sql.gz."""
+    mock_run.side_effect = _make_run_for_backup(["mydb"])
+
+    postgres_handler.backup("2026-02-19_02-00-00", "2026-02-19_02-00-00")
+
+    all_cmds = [" ".join(str(c) for c in call[0][0]) for call in mock_run.call_args_list]
+    copy_calls = [cmd for cmd in all_cmds if "COPY" in cmd and "TO STDOUT" in cmd]
+    assert len(copy_calls) == 2, "Expected 2 COPY TO STDOUT calls (collections + collection_indexes)"
+    for table in ("documentdb_api_catalog.collections", "documentdb_api_catalog.collection_indexes"):
+        assert any(table in cmd for cmd in copy_calls), f"Missing COPY TO STDOUT for {table}"
+
+    seq_calls = [cmd for cmd in all_cmds if "last_value" in cmd]
+    assert len(seq_calls) == 2, "Expected 2 sequence value reads"
+
+    s3_keys = [call[0][1] for call in postgres_handler._s3.upload_file.call_args_list]
+    assert "2026-02-19_02-00-00/postgres-ferretdb/ext-catalog.sql.gz" in s3_keys
 
 
 @patch("aihub_backup.services.postgres.subprocess.run")
@@ -175,15 +205,21 @@ def _make_run_for_restore(
     return fake_run
 
 
-def _setup_s3_for_restore(handler: PostgresHandler, databases: list[str] | None = None) -> None:
+def _setup_s3_for_restore(
+    handler: PostgresHandler, databases: list[str] | None = None, *, has_ext_catalog: bool = True
+) -> None:
     """Configure mock S3 to return keys and download files for restore."""
     dbs = databases or ["openwebui", "langfuse"]
 
     def list_keys_side_effect(prefix: str) -> list[str]:
-        return [f"{prefix}globals.sql.gz"] + [f"{prefix}{db}.dump" for db in dbs]
+        keys = [f"{prefix}globals.sql.gz"] + [f"{prefix}{db}.dump" for db in dbs]
+        if has_ext_catalog and "ferretdb" in prefix:
+            keys.append(f"{prefix}ext-catalog.sql.gz")
+        return keys
 
     handler._s3.list_keys.side_effect = list_keys_side_effect
     handler._s3.download_file.side_effect = _fake_download
+    handler._s3.file_exists.return_value = has_ext_catalog
 
 
 @patch("aihub_backup.services.postgres.subprocess.run")
@@ -337,6 +373,34 @@ def test_restore_tolerates_nonfatal_pg_restore_warnings(mock_run: MagicMock, pos
     _setup_s3_for_restore(postgres_handler)
 
     postgres_handler.restore("2026-02-19_02-00-00")
+
+
+@patch("aihub_backup.services.postgres.subprocess.run")
+def test_restore_replays_documentdb_catalog(mock_run: MagicMock, postgres_handler: PostgresHandler) -> None:
+    """Restore replays DocumentDB extension catalog SQL after pg_restore."""
+    mock_run.side_effect = _make_run_for_restore()
+    _setup_s3_for_restore(postgres_handler)
+
+    postgres_handler.restore("2026-02-19_02-00-00")
+
+    catalog_psql_calls = [
+        call for call in mock_run.call_args_list if call.kwargs.get("input") and "TRUNCATE" in str(call.kwargs["input"])
+    ]
+    assert len(catalog_psql_calls) == 1, "Expected one psql call to replay ext-catalog SQL"
+
+
+@patch("aihub_backup.services.postgres.subprocess.run")
+def test_restore_skips_catalog_when_no_ext_catalog_file(mock_run: MagicMock, postgres_handler: PostgresHandler) -> None:
+    """Restore gracefully skips DocumentDB catalog restore when backup has no ext-catalog.sql.gz."""
+    mock_run.side_effect = _make_run_for_restore()
+    _setup_s3_for_restore(postgres_handler, has_ext_catalog=False)
+
+    postgres_handler.restore("2026-02-19_02-00-00")
+
+    catalog_psql_calls = [
+        call for call in mock_run.call_args_list if call.kwargs.get("input") and "TRUNCATE" in str(call.kwargs["input"])
+    ]
+    assert len(catalog_psql_calls) == 0, "Should not replay catalog SQL when no ext-catalog backup exists"
 
 
 @patch("aihub_backup.services.postgres.subprocess.run")

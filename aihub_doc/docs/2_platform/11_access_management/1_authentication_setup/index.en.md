@@ -209,11 +209,12 @@ AIHUB_USER_SIGNUP_DEFAULT_ROLES="AIHubUser"
 AIHUB_USER_SIGNUP_REGULAR_USER_ROLES="AIHubUser"
 AIHUB_USER_SIGNUP_FIRST_ADMIN_USER_ROLES="AIHubAdmin,AIHubUser"
 
-# OAuth2 Configuration
-OAUTH2_ENABLED=true
-OAUTH2_JWKS_URL="https://login.microsoftonline.com/{tenant}/discovery/v2.0/keys"
-OAUTH2_ISSUER="https://login.microsoftonline.com/{tenant}/v2.0"
-OAUTH2_AUDIENCE="api://{app-id}"
+# Keycloak Configuration
+KEYCLOAK_URL="http://keycloak:8080"
+KEYCLOAK_EXTERNAL_URL="https://auth.{domain}"
+KEYCLOAK_REALM="aihub"
+KEYCLOAK_API_SERVICE_CLIENT_ID="aihub-api-service"
+KEYCLOAK_API_SERVICE_CLIENT_SECRET="{secret}"
 ```
 
 ### Settings Classes
