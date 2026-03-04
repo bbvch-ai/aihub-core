@@ -102,6 +102,9 @@ The template conditionally includes services based on stage and GPU mode:
 - **Infrastructure** (postgres, milvus, nats, valkey, etcd, etc.) — always included
 - **AI inference** (speaches, vLLM) — vLLM only when `gpu_enabled`, speaches in all stages
 - **1st-party services** (api, web, agents, bot, dagster, pipelines) — only when `image_tags.{service}[stage]` exists
+- **Backup** (backup-code, backup-daemon, backup-webserver) — 3-container Dagster deployment for centralized
+  backup/restore, always included. Uses SQLite (not PostgreSQL) so it remains operational even when restoring the main
+  database. UI at port 3004 in dev.
 - **Traefik + docker-socket-proxy** — all stages except `dev`
 - **oauth2proxy sidecars** (for Attu, Dagster, SeaweedFS admin UIs) — all stages except `dev`
 - **PgBouncer** — all stages except `dev` (dev connects directly to PostgreSQL)
@@ -120,7 +123,8 @@ routes through Traefik.
 | `storage` | SeaweedFS cluster                 | Yes\*    | Yes | seaweedfs-\*, etcd                                            |
 | `egress`  | Outbound internet only            | No       | No  | playwright (ICC disabled — containers can't reach each other) |
 
-\*Internal in non-dev stages. Dev has all networks non-internal for localhost access.
+\*Internal in production-facing stages (local, nightly, latest). Dev and build have non-internal networks for localhost
+access during source development.
 
 **Cross-network bridges**: Services needing multiple zones get multiple networks (e.g., `seaweedfs-s3` on
 storage+backend, `milvus-standalone` on data+storage, `api` on proxy+backend+data+storage).

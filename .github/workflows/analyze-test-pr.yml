@@ -53,6 +53,8 @@ jobs:
             docker_compose_services: postgres nats valkey postgres-ferretdb ferretdb
               litellm seaweedfs-master seaweedfs-volume seaweedfs-filer seaweedfs-s3
               seaweedfs-init etcd-init etcd milvus-standalone
+          - module: aihub_backup
+            docker_compose_services: ''
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -105,6 +107,7 @@ jobs:
           - aihub_pipeline
           - aihub_bot
           - aihub_process
+          - aihub_backup
     steps:
       - name: Coverage comment
         uses: bbvch-ai/aihub-core/aihub_action/pytest_coverage_comment@main
@@ -139,6 +142,9 @@ jobs:
             report_coverage: 'true'
           - folder: aihub_process
             sonar_project_key: aihub-core_process-core
+            report_coverage: 'true'
+          - folder: aihub_backup
+            sonar_project_key: aihub-core_backup-core
             report_coverage: 'true'
           - folder: aihub_web
             sonar_project_key: aihub-core_aihub-web

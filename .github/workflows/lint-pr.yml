@@ -23,6 +23,7 @@ jobs:
           - aihub_pipeline
           - aihub_bot
           - aihub_process
+          - aihub_backup
     steps:
       - name: Lint backend
         uses: bbvch-ai/aihub-core/aihub_action/lint_backend@main

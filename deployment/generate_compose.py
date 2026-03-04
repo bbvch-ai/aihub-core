@@ -88,6 +88,8 @@ def generate_config(template, context, output_path):
     """Render template and write to file"""
     output_path.parent.mkdir(parents=True, exist_ok=True)
     rendered = template.render(context)
+    if output_path.suffix in (".yml", ".yaml"):
+        rendered = "---\n" + rendered
     output_path.write_text(rendered, encoding="utf-8")
 
 

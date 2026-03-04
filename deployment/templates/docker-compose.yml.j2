@@ -777,6 +777,8 @@ services:
       CLICKHOUSE_DB: default
       CLICKHOUSE_USER: "clickhouse"
       CLICKHOUSE_PASSWORD: ${LANGFUSE_CLICKHOUSE_PASSWORD}
+      S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
+      S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
     volumes:
     {%- if stage in ['dev', 'build'] %}
       # Named volumes avoid Windows bind-mount issues with ClickHouse atomic renames
@@ -786,6 +788,7 @@ services:
       - {{ global.volume_root }}/clickhouse-data:/var/lib/clickhouse
       - {{ global.volume_root }}/clickhouse-logs:/var/log/clickhouse-server
     {%- endif %}
+      - ./configs/clickhouse/backup-config.xml:/etc/clickhouse-server/config.d/backup-config.xml:ro
     {%- if stage in ['dev', 'local', 'build'] %}
     ports:
       - "127.0.0.1:8123:8123"
@@ -802,8 +805,14 @@ services:
       options:
         max-size: 10m
         max-file: 2
+    depends_on:
+      seaweedfs-s3:
+        condition: service_healthy
+      seaweedfs-init:
+        condition: service_completed_successfully
     networks:
       - data
+      - storage
 
   langfuse-worker:
     container_name: langfuse-worker
@@ -1112,8 +1121,10 @@ services:
     container_name: valkey
     image: {{ global.registry_prefix }}{{ image_tags.valkey }}
     restart: always
-    # Password authentication enabled via --requirepass
-    command: valkey-server --save 30 1 --loglevel warning --requirepass ${REDIS_TOKEN}
+    # Password authentication enabled via --requirepass.
+    # --appendonly yes enables AOF persistence for durability between BGSAVE
+    # intervals, ensuring centralized backup captures the most recent state.
+    command: valkey-server --save 30 1 --loglevel warning --requirepass ${REDIS_TOKEN} --appendonly yes --appendfsync everysec
     volumes:
       - {{ global.volume_root }}/valkey-data:/data
     {%- if stage in ['dev', 'local', 'build'] %}
@@ -1179,7 +1190,195 @@ services:
         max-size: 10m
         max-file: 2
 
-  {%- if gpu_enabled %}
+  {% if image_tags.backup[stage] %}
+  # ===================================================================
+  # Backup Services (Dagster-based Automated Database Backups)
+  # ===================================================================
+  # 3-container Dagster deployment: gRPC code server, daemon, webserver.
+  # Daily-partitioned asset backups of PostgreSQL, Milvus, Neo4j, and
+  # ClickHouse to SeaweedFS S3. Dagster UI on port 3004 for monitoring,
+  # manual triggers, and parameterized restores.
+  #
+  # Docker socket: mounted on backup-code only (not via docker-socket-proxy)
+  # because backup/restore needs CONTAINERS + EXEC + POST + IMAGES
+  # (stop, start, exec, cp, create, wait, logs, remove), which is
+  # near-full Docker API access — the proxy would provide no meaningful
+  # restriction. Access is limited to the internal data network.
+  # ===================================================================
+
+  backup-code:
+    container_name: backup-code
+    {%- if image_tags.backup[stage] == 'localbuild' %}
+    build:
+      context: .
+      dockerfile: ./aihub_backup/Dockerfile
+    {%- else %}
+    image: {{ global.registry_prefix }}{{ image_tags.backup[stage] }}
+    {%- endif %}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      postgres-ferretdb:
+        condition: service_healthy
+      seaweedfs-s3:
+        condition: service_healthy
+      neo4j:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+      milvus-standalone:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+      nats:
+        condition: service_started
+    entrypoint:
+      - dagster
+      - api
+      - grpc
+      - -m
+      - aihub_backup.dagster
+      - -h
+      - 0.0.0.0
+      - -p
+      - '4266'
+    environment:
+      PYTHONUNBUFFERED: 1
+      DAGSTER_HOME: /dagster_home
+      # Retention
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS}
+      BACKUP_MINIMUM_KEEP: ${BACKUP_MINIMUM_KEEP}
+      # PostgreSQL (main)
+      POSTGRES_HOST: postgres
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      # PostgreSQL (FerretDB)
+      POSTGRES_FERRETDB_HOST: postgres-ferretdb
+      MONGO_USERNAME: ${MONGO_USERNAME}
+      MONGO_PASSWORD: ${MONGO_PASSWORD}
+      # Milvus (for milvus-backup tool)
+      MILVUS_HOST: {{ MILVUS_HOST }}
+      MILVUS_PORT: "{{ MILVUS_PORT }}"
+      MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
+      # Neo4j (container name for docker stop/start/cp)
+      NEO4J_CONTAINER: neo4j
+      # ClickHouse
+      CLICKHOUSE_HOST: clickhouse
+      CLICKHOUSE_USER: clickhouse
+      LANGFUSE_CLICKHOUSE_PASSWORD: ${LANGFUSE_CLICKHOUSE_PASSWORD}
+      # S3 (SeaweedFS)
+      S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
+      S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
+      AWS_ENDPOINT_URL: {{ S3_STORAGE_ENDPOINT }}
+      BACKUP_S3_BUCKET: ${BACKUP_S3_BUCKET}
+      # Valkey (for BGSAVE trigger via docker exec)
+      VALKEY_CONTAINER: valkey
+      REDIS_TOKEN: ${REDIS_TOKEN}
+      # NATS JetStream (for nats CLI backup)
+      NATS_URL: {{ NATS_ENDPOINT }}
+      NATS_TOKEN: ${NATS_TOKEN}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - {{ global.volume_root }}/backup-dagster-home:/dagster_home
+    healthcheck:
+      test: ["CMD", "dagster", "api", "grpc-health-check", "--host", "localhost", "--port", "4266"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks:
+      - data
+      - storage
+
+  backup-webserver:
+    container_name: backup-webserver
+    {%- if image_tags.backup[stage] == 'localbuild' %}
+    build:
+      context: .
+      dockerfile: ./aihub_backup/Dockerfile
+    {%- else %}
+    image: {{ global.registry_prefix }}{{ image_tags.backup[stage] }}
+    {%- endif %}
+    restart: unless-stopped
+    depends_on:
+      backup-code:
+        condition: service_healthy
+    {%- if stage in ['local', 'build'] %}
+    ports:
+      - "127.0.0.1:3004:3000"
+    {%- endif %}
+    entrypoint:
+      - dagster-webserver
+      - -h
+      - 0.0.0.0
+      - -p
+      - '3000'
+      - -w
+      - /etc/dagster/workspace.yaml
+    environment:
+      PYTHONUNBUFFERED: 1
+      DAGSTER_HOME: /dagster_home
+    volumes:
+      - {{ global.volume_root }}/backup-dagster-home:/dagster_home
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/server_info"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks:
+      - data
+
+  backup-daemon:
+    container_name: backup-daemon
+    {%- if image_tags.backup[stage] == 'localbuild' %}
+    build:
+      context: .
+      dockerfile: ./aihub_backup/Dockerfile
+    {%- else %}
+    image: {{ global.registry_prefix }}{{ image_tags.backup[stage] }}
+    {%- endif %}
+    restart: unless-stopped
+    depends_on:
+      backup-code:
+        condition: service_healthy
+    entrypoint:
+      - dagster-daemon
+      - run
+      - -w
+      - /etc/dagster/workspace.yaml
+    environment:
+      PYTHONUNBUFFERED: 1
+      DAGSTER_HOME: /dagster_home
+    volumes:
+      - {{ global.volume_root }}/backup-dagster-home:/dagster_home
+    healthcheck:
+      test: ["CMD", "dagster-daemon", "liveness-check"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks:
+      - data
+  {%- endif %}
+
+  {%- if (gpu_enabled and stage in ['nightly', 'latest']) or stage == 'dev' %}
   # ===================================================================
   # AI Model Serving (Local GPU Inference via vLLM)
   # ===================================================================
@@ -3223,19 +3422,19 @@ networks:
   backend:
     name: backend
     driver: bridge
-    {%- if stage != 'dev' %}
+    {%- if stage not in ('dev', 'build') %}
     internal: true
     {%- endif %}
   data:
     name: data
     driver: bridge
-    {%- if stage != 'dev' %}
+    {%- if stage not in ('dev', 'build') %}
     internal: true
     {%- endif %}
   storage:
     name: storage
     driver: bridge
-    {%- if stage != 'dev' %}
+    {%- if stage not in ('dev', 'build') %}
     internal: true
     {%- endif %}
   egress:

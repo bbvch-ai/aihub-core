@@ -448,10 +448,13 @@ services:
       CLICKHOUSE_DB: default
       CLICKHOUSE_USER: clickhouse
       CLICKHOUSE_PASSWORD: ${LANGFUSE_CLICKHOUSE_PASSWORD}
+      S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
+      S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
     volumes:
       # Named volumes avoid Windows bind-mount issues with ClickHouse atomic renames
       - clickhouse-data:/var/lib/clickhouse
       - clickhouse-logs:/var/log/clickhouse-server
+      - ./configs/clickhouse/backup-config.xml:/etc/clickhouse-server/config.d/backup-config.xml:ro
     ports: [127.0.0.1:8123:8123, 127.0.0.1:9009:9000]
     healthcheck:
       test: wget --no-verbose --tries=1 --spider http://localhost:8123/ping || exit
@@ -465,7 +468,12 @@ services:
       options:
         max-size: 10m
         max-file: 2
-    networks: [data]
+    depends_on:
+      seaweedfs-s3:
+        condition: service_healthy
+      seaweedfs-init:
+        condition: service_completed_successfully
+    networks: [data, storage]
   langfuse-worker:
     container_name: langfuse-worker
     image: ghcr.io/bbvch-ai/aihub-core/langfuse/langfuse-worker:3
@@ -708,8 +716,11 @@ services:
     container_name: valkey
     image: ghcr.io/bbvch-ai/aihub-core/valkey:8.0.5
     restart: always
-    # Password authentication enabled via --requirepass
+    # Password authentication enabled via --requirepass.
+    # --appendonly yes enables AOF persistence for durability between BGSAVE
+    # intervals, ensuring centralized backup captures the most recent state.
     command: valkey-server --save 30 1 --loglevel warning --requirepass ${REDIS_TOKEN}
+      --appendonly yes --appendfsync everysec
     volumes: ['${VOLUME_ROOT:-./.docker-volumes}/valkey-data:/data']
     ports: [6379:6379]
     healthcheck:
@@ -756,6 +767,180 @@ services:
       options:
         max-size: 10m
         max-file: 2
+
+  # ===================================================================
+  # AI Model Serving (Local GPU Inference via vLLM)
+  # ===================================================================
+  # All local model serving requires GPU. CPU setups route through
+  # Swiss LLM Cloud instead. Models match the Swiss LLM Cloud stack
+  # for a unified experience.
+  # ===================================================================
+  vllm:
+    container_name: vllm
+    platform: linux/amd64
+    image: ghcr.io/bbvch-ai/aihub-core/vllm-openai:v0.15.1
+    restart: always
+    ipc: host
+    ports: [8182:8000]
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/huggingface:/root/.cache/huggingface
+      - ${VOLUME_ROOT:-./.docker-volumes}/vllm-cache:/root/.cache/vllm
+    environment:
+      HF_HOME: /root/.cache/huggingface
+      HUGGING_FACE_HUB_TOKEN: ${HUGGINGFACE_API_KEY}
+      VLLM_API_KEY: ${LOCAL_LLM_TOKEN}
+    command: >
+      --model Qwen/Qwen3-VL-30B-A3B-Instruct-FP8
+      --served-model-name qwen3-vl-30b
+      --port 8000
+      --host 0.0.0.0
+      --gpu-memory-utilization 0.85
+      --max-model-len 131072
+      --max-num-seqs 16
+      --max-num-batched-tokens 4096
+      --enable-chunked-prefill
+      --limit-mm-per-prompt '{"image": 8, "video": 0}'
+      --async-scheduling
+      --dtype auto
+    healthcheck:
+      test: [CMD, curl, -f, http://localhost:8000/health]
+      timeout: 10s
+      interval: 30s
+      retries: 3
+      start_period: 600s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ['0']
+              capabilities: [gpu]
+    networks: [backend]
+  vllm-bge-m3:
+    container_name: vllm-bge-m3
+    platform: linux/amd64
+    image: ghcr.io/bbvch-ai/aihub-core/vllm-openai:v0.15.1
+    restart: always
+    ipc: host
+    ports: [8183:8000]
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/huggingface:/root/.cache/huggingface
+      - ${VOLUME_ROOT:-./.docker-volumes}/vllm-cache:/root/.cache/vllm
+    environment:
+      HF_HOME: /root/.cache/huggingface
+      HUGGING_FACE_HUB_TOKEN: ${HUGGINGFACE_API_KEY}
+      VLLM_API_KEY: ${LOCAL_LLM_TOKEN}
+    command: >
+      --model BAAI/bge-m3
+      --served-model-name bge-m3
+      --runner pooling
+      --convert embed
+      --port 8000
+      --host 0.0.0.0
+      --gpu-memory-utilization 0.03
+    healthcheck:
+      test: [CMD, curl, -f, http://localhost:8000/health]
+      timeout: 10s
+      interval: 30s
+      retries: 3
+      start_period: 120s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ['0']
+              capabilities: [gpu]
+    networks: [backend]
+  vllm-bge-reranker:
+    container_name: vllm-bge-reranker
+    platform: linux/amd64
+    image: ghcr.io/bbvch-ai/aihub-core/vllm-openai:v0.15.1
+    restart: always
+    ipc: host
+    ports: [8184:8000]
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/huggingface:/root/.cache/huggingface
+      - ${VOLUME_ROOT:-./.docker-volumes}/vllm-cache:/root/.cache/vllm
+    environment:
+      HF_HOME: /root/.cache/huggingface
+      HUGGING_FACE_HUB_TOKEN: ${HUGGINGFACE_API_KEY}
+      VLLM_API_KEY: ${LOCAL_LLM_TOKEN}
+    command: >
+      --model BAAI/bge-reranker-v2-m3
+      --served-model-name bge-reranker
+      --runner pooling
+      --port 8000
+      --host 0.0.0.0
+      --gpu-memory-utilization 0.03
+    healthcheck:
+      test: [CMD, curl, -f, http://localhost:8000/health]
+      timeout: 10s
+      interval: 30s
+      retries: 3
+      start_period: 120s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ['0']
+              capabilities: [gpu]
+    networks:
+      - backend
+
+  # ===================================================================
+  # Audio Model Serving (STT via Speaches)
+  # ===================================================================
+  # OpenAI-compatible transcription API. GPU only.
+  # CPU setups route through Swiss LLM Cloud.
+  # https://github.com/speaches-ai/speaches
+  # ===================================================================
+  speaches:
+    container_name: speaches
+    image: ghcr.io/speaches-ai/speaches:latest-cuda-12.6.3
+    restart: unless-stopped
+    ports: [8185:8000]
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/speaches-models:/home/ubuntu/.cache/huggingface/hub
+    environment:
+      WHISPER__INFERENCE_DEVICE: cuda
+      PRELOAD_MODELS: Systran/faster-whisper-large-v3
+    healthcheck:
+      test: [CMD, curl, --fail, http://0.0.0.0:8000/health]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ['0']
+              capabilities: [gpu]
+    networks:
+      - backend
 
   # ===================================================================
   # LiteLLM Stack (Model Proxy and Guardrails)
