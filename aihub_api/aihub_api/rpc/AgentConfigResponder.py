@@ -1,3 +1,10 @@
+"""
+NATS RPC responder for agent configuration requests.
+
+This module provides a responder that allows agents to fetch their configurations
+at runtime via NATS request-reply, decoupling config management from event payloads.
+"""
+
 import logging
 from typing import Annotated
 

@@ -341,7 +341,7 @@
     },
     {
       "service": "keycloak",
-      "license": "MIT",
+      "license": "Apache-2.0",
       "status": "✅",
       "notes": "Permissive license"
     }

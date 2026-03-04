@@ -17,6 +17,7 @@ class AuthProviderService:
     Retrieves available identity providers from Keycloak Admin API.
     Results are cached in Redis to keep the API stateless.
     """
+
     @staticmethod
     @trace_fn
     async def get_auth_providers(redis: Redis) -> list[AuthProviderResponse]:

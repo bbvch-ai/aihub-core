@@ -1,9 +1,9 @@
 from typing import Annotated, Self
 
-from fastapi import Depends
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.infrastructure.redis.use_redis import use_redis
 from aihub_lib.routes.Controller import Controller
+from fastapi import Depends
 from redis.asyncio import Redis
 
 from aihub_api.i18n.ApiLocaleString import ApiLocaleString

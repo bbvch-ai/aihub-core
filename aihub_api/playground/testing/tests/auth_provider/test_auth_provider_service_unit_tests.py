@@ -118,7 +118,17 @@ async def test_stores_result_in_redis(mock_redis):
         patch("aihub_api.routes.auth_provider.AuthProviderService.KeycloakAdmin", return_value=mock_admin),
         patch(
             "aihub_api.routes.auth_provider.AuthProviderService.KeycloakSettings",
-            return_value=type("S", (), {"URL": "http://kc:8080", "REALM": "aihub", "API_SERVICE_CLIENT_ID": "svc", "API_SERVICE_CLIENT_SECRET": "secret", "SHOW_KEYCLOAK_LOGIN": False})(),
+            return_value=type(
+                "S",
+                (),
+                {
+                    "URL": "http://kc:8080",
+                    "REALM": "aihub",
+                    "API_SERVICE_CLIENT_ID": "svc",
+                    "API_SERVICE_CLIENT_SECRET": "secret",
+                    "SHOW_KEYCLOAK_LOGIN": False,
+                },
+            )(),
         ),
     ):
         await AuthProviderService.get_auth_providers(mock_redis)
@@ -137,7 +147,17 @@ async def test_appends_keycloak_login_when_show_login_true(mock_redis):
         patch("aihub_api.routes.auth_provider.AuthProviderService.KeycloakAdmin", return_value=mock_admin),
         patch(
             "aihub_api.routes.auth_provider.AuthProviderService.KeycloakSettings",
-            return_value=type("S", (), {"URL": "http://kc:8080", "REALM": "aihub", "API_SERVICE_CLIENT_ID": "svc", "API_SERVICE_CLIENT_SECRET": "secret", "SHOW_KEYCLOAK_LOGIN": True})(),
+            return_value=type(
+                "S",
+                (),
+                {
+                    "URL": "http://kc:8080",
+                    "REALM": "aihub",
+                    "API_SERVICE_CLIENT_ID": "svc",
+                    "API_SERVICE_CLIENT_SECRET": "secret",
+                    "SHOW_KEYCLOAK_LOGIN": True,
+                },
+            )(),
         ),
     ):
         providers = await AuthProviderService.get_auth_providers(mock_redis)
@@ -157,7 +177,17 @@ async def test_does_not_append_keycloak_login_when_show_login_false(mock_redis):
         patch("aihub_api.routes.auth_provider.AuthProviderService.KeycloakAdmin", return_value=mock_admin),
         patch(
             "aihub_api.routes.auth_provider.AuthProviderService.KeycloakSettings",
-            return_value=type("S", (), {"URL": "http://kc:8080", "REALM": "aihub", "API_SERVICE_CLIENT_ID": "svc", "API_SERVICE_CLIENT_SECRET": "secret", "SHOW_KEYCLOAK_LOGIN": False})(),
+            return_value=type(
+                "S",
+                (),
+                {
+                    "URL": "http://kc:8080",
+                    "REALM": "aihub",
+                    "API_SERVICE_CLIENT_ID": "svc",
+                    "API_SERVICE_CLIENT_SECRET": "secret",
+                    "SHOW_KEYCLOAK_LOGIN": False,
+                },
+            )(),
         ),
     ):
         providers = await AuthProviderService.get_auth_providers(mock_redis)
@@ -174,7 +204,17 @@ async def test_propagates_keycloak_error(mock_redis):
         patch("aihub_api.routes.auth_provider.AuthProviderService.KeycloakAdmin", return_value=mock_admin),
         patch(
             "aihub_api.routes.auth_provider.AuthProviderService.KeycloakSettings",
-            return_value=type("S", (), {"URL": "http://kc:8080", "REALM": "aihub", "API_SERVICE_CLIENT_ID": "svc", "API_SERVICE_CLIENT_SECRET": "secret", "SHOW_KEYCLOAK_LOGIN": False})(),
+            return_value=type(
+                "S",
+                (),
+                {
+                    "URL": "http://kc:8080",
+                    "REALM": "aihub",
+                    "API_SERVICE_CLIENT_ID": "svc",
+                    "API_SERVICE_CLIENT_SECRET": "secret",
+                    "SHOW_KEYCLOAK_LOGIN": False,
+                },
+            )(),
         ),
         pytest.raises(Exception, match="connection refused"),
     ):
