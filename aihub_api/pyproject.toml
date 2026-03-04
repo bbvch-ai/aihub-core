@@ -29,6 +29,7 @@ dependencies = [
     "fastmcp>=2.11.2",
     "opentelemetry-instrumentation-fastapi>=0.60b1",
     "jambo",
+    "python-keycloak>=7.1.1",
 ]
 
 [dependency-groups]

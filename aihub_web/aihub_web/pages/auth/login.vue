@@ -71,11 +71,7 @@ definePageMeta({
 
 const { t } = useI18n()
 const { login } = useAuth()
-const { authProviders, isLoading, fetchAuthProviders } = useAuthProviders()
+const { authProviders, isLoading } = useAuthProviders()
 
 const companyName = 'bbv Software Services AG'
-
-onMounted(() => {
-  fetchAuthProviders()
-})
 </script>

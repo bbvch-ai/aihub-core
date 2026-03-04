@@ -1,9 +1,10 @@
-"""Controller for identity provider discovery (unauthenticated)."""
+from typing import Annotated, Self
 
-from typing import Self
-
+from fastapi import Depends
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
+from aihub_lib.infrastructure.redis.use_redis import use_redis
 from aihub_lib.routes.Controller import Controller
+from redis.asyncio import Redis
 
 from aihub_api.i18n.ApiLocaleString import ApiLocaleString
 from aihub_api.routes.auth_provider.AuthProviderService import AuthProviderService
@@ -11,11 +12,6 @@ from aihub_api.routes.auth_provider.dto.AuthProviderResponse import AuthProvider
 
 
 class AuthProviderController(Controller):
-    """Exposes available identity providers for the login page.
-
-    This endpoint is unauthenticated because it is called before the user logs in.
-    """
-
     name = ApiLocaleString.from_i18n_path("api.controllers.auth_provider.name")
     description = ApiLocaleString.from_i18n_path("api.controllers.auth_provider.description")
     icon = "mage:shield-check"
@@ -27,7 +23,7 @@ class AuthProviderController(Controller):
 
     def get_auth_providers(self, route: str = "/") -> Self:
         @self.router.get(route, tags=self.tags)
-        async def get_auth_providers() -> list[AuthProviderResponse]:
-            return await AuthProviderService.get_auth_providers()
+        async def get_auth_providers(redis: Annotated[Redis, Depends(use_redis)]) -> list[AuthProviderResponse]:
+            return await AuthProviderService.get_auth_providers(redis)
 
         return self

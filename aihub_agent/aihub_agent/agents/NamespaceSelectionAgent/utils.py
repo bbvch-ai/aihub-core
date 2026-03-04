@@ -1,5 +1,3 @@
-"""Utility functions for NamespaceSelectionAgent."""
-
 import logging
 
 from aihub_lib.i18n.LocaleHandler import LocaleHandler

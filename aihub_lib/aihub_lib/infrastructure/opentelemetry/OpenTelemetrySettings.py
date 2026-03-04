@@ -1,5 +1,3 @@
-"""OpenTelemetry configuration settings for SigNoz integration."""
-
 import logging
 from typing import Annotated, Literal
 

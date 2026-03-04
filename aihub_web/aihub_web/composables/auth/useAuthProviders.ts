@@ -1,30 +1,18 @@
+import { useQuery } from '@pinia/colada'
+import { minutesToMilliseconds } from 'date-fns'
+
 interface AuthProvider {
   alias: string
   display_name: string
   icon: string
 }
 
-export const useAuthProviders = () => {
-  const authProviders = ref<AuthProvider[]>([])
-  const isLoading = ref(true)
+export const useAuthProviders = defineQuery(() => {
+  const { data: authProviders, isPending: isLoading } = useQuery<AuthProvider[]>({
+    key: () => ['auth-providers'],
+    staleTime: minutesToMilliseconds(5),
+    query: async () => await $fetch<AuthProvider[]>('/api/v1/auth-providers/'),
+  })
 
-  const fetchAuthProviders = async () => {
-    isLoading.value = true
-    try {
-      authProviders.value = await $fetch<AuthProvider[]>('/api/v1/auth-providers/')
-    }
-    catch (error) {
-      console.error('Failed to fetch auth providers:', error)
-      authProviders.value = []
-    }
-    finally {
-      isLoading.value = false
-    }
-  }
-
-  return {
-    authProviders,
-    isLoading,
-    fetchAuthProviders,
-  }
-}
+  return { authProviders, isLoading }
+})

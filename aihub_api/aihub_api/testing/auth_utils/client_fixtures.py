@@ -1,5 +1,3 @@
-"""Unified test client fixture utilities for consistent test setup."""
-
 import pytest_asyncio
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
     DangerousDevelopmentOnlyAuthHandler,

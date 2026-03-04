@@ -22,15 +22,8 @@ def api_client():
     return TestClient(runner.create_app())
 
 
-@pytest.fixture(autouse=True)
-def _clear_cache():
-    AuthProviderService._cache.clear()
-    yield
-    AuthProviderService._cache.clear()
-
-
 def test_get_auth_providers_returns_list(api_client, monkeypatch):
-    async def mock_get():
+    async def mock_get(redis):
         return [
             AuthProviderResponse(alias="azure-ad", display_name="Microsoft", icon="pi-microsoft"),
             AuthProviderResponse(alias="", display_name="Keycloak", icon="pi-lock"),
@@ -49,8 +42,8 @@ def test_get_auth_providers_returns_list(api_client, monkeypatch):
     assert data[1]["display_name"] == "Keycloak"
 
 
-def test_get_auth_providers_empty_when_unavailable(api_client, monkeypatch):
-    async def mock_get():
+def test_get_auth_providers_empty(api_client, monkeypatch):
+    async def mock_get(redis):
         return []
 
     monkeypatch.setattr(AuthProviderService, "get_auth_providers", mock_get)
@@ -61,9 +54,7 @@ def test_get_auth_providers_empty_when_unavailable(api_client, monkeypatch):
 
 
 def test_get_auth_providers_unauthenticated(api_client, monkeypatch):
-    """Endpoint must not require authentication."""
-
-    async def mock_get():
+    async def mock_get(redis):
         return [AuthProviderResponse(alias="test", display_name="Test", icon="pi-lock")]
 
     monkeypatch.setattr(AuthProviderService, "get_auth_providers", mock_get)

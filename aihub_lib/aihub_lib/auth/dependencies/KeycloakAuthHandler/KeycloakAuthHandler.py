@@ -1,5 +1,3 @@
-"""Keycloak OIDC authentication handler."""
-
 import logging
 from typing import Any
 

@@ -1,5 +1,3 @@
-"""DTO for identity provider information returned to the frontend."""
-
 from typing import Annotated
 
 from pydantic import BaseModel, Field

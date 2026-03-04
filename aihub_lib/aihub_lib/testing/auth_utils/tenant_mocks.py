@@ -1,5 +1,3 @@
-"""Mock fixtures for TenantEntity and UserTenantRoleEntity methods used in testing."""
-
 from unittest.mock import MagicMock, patch
 
 import pytest
