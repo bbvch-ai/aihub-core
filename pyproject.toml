@@ -46,6 +46,7 @@ members = [
     "aihub_bot",
     "aihub_pipeline",
     "aihub_process",
+    "aihub_backup",
 ]
 
 [tool.uv.sources]

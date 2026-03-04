@@ -1,0 +1,48 @@
+---
+# Configuration for the milvus-backup tool (https://github.com/zilliztech/milvus-backup).
+# Credentials are placeholder variables substituted at runtime by MilvusHandler._prepare_workdir().
+# ${BACKUP_ROOT_PATH} is substituted at runtime to route backups into the timestamped directory.
+log:
+  level: info
+  console: true
+milvus:
+  address: milvus-standalone
+  port: 19530
+  user: root
+  password: ${MILVUS_ROOT_PASSWORD}
+  tlsMode: 0
+minio:
+  # Source: where Milvus stores its data (SeaweedFS S3)
+  storageType: minio
+  address: seaweedfs-s3
+  port: 9000
+  accessKeyID: ${AWS_ACCESS_KEY_ID}
+  secretAccessKey: ${AWS_SECRET_ACCESS_KEY}
+  useSSL: false
+  bucketName: milvus
+  rootPath: files
+
+  # Destination: where backups are stored (same SeaweedFS, different bucket)
+  backupStorageType: minio
+  backupAddress: seaweedfs-s3
+  backupPort: 9000
+  backupAccessKeyID: ${AWS_ACCESS_KEY_ID}
+  backupSecretAccessKey: ${AWS_SECRET_ACCESS_KEY}
+  backupBucketName: ${BACKUP_S3_BUCKET}
+  backupRootPath: ${BACKUP_ROOT_PATH}
+  backupUseSSL: false
+backup:
+  parallelism:
+    # Max concurrent file copies during backup/restore. Reduce on
+    # resource-constrained environments (e.g. 16 for small VMs).
+    copydata: 128
+    backupCollection: 4
+    backupSegment: 1024
+    restoreCollection: 2
+    # Max concurrent import jobs during restore. Milvus uses significant
+    # memory per job; reduce to ~128 on hosts with limited RAM.
+    importJob: 768
+  keepTempFiles: false
+  gcPause:
+    enable: true
+    address: http://milvus-standalone:9091

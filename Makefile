@@ -26,6 +26,7 @@ test:
 	@(cd aihub_process && make test)
 	@(cd aihub_api && make test)
 	@(cd aihub_bot && make test)
+	@(cd aihub_backup && make test)
 
 lint:
 	@echo "Running linter..."
@@ -35,6 +36,7 @@ lint:
 	@(cd aihub_process && make lint)
 	@(cd aihub_api && make lint)
 	@(cd aihub_bot && make lint)
+	@(cd aihub_backup && make lint)
 
 # Format code with Black
 format:
@@ -45,6 +47,7 @@ format:
 	@(cd aihub_process && make format)
 	@(cd aihub_api && make format)
 	@(cd aihub_bot && make format)
+	@(cd aihub_backup && make format)
 
 format-md:
 	@echo "Formatting markdown files..."
@@ -67,6 +70,7 @@ typecheck:
 	@(cd aihub_process && make typecheck)
 	@(cd aihub_api && make typecheck)
 	@(cd aihub_bot && make typecheck)
+	@(cd aihub_backup && make typecheck)
 
 # Run format, type-check, and test in sequence
 pr-ready:
@@ -77,8 +81,10 @@ pr-ready:
 	@(cd aihub_process &&  make pr-ready)
 	@(cd aihub_api &&  make pr-ready)
 	@(cd aihub_bot &&  make pr-ready)
+	@(cd aihub_backup && make pr-ready)
 	@(cd aihub_web && make pr-ready)
 	@$(MAKE) generate-compose
+	@$(MAKE) format-yaml
 	@$(MAKE) license-check
 	@$(MAKE) format-md
 	@$(MAKE) format-yaml
@@ -129,6 +135,15 @@ local-cert:
 		"localhost" "*.localhost" \
 		"127.0.0.1.nip.io" "*.127.0.0.1.nip.io"
 	@echo "Certificates written to configs/traefik/certs/dev-cert.pem and configs/certs/dev-key.pem"
+
+# Backup operations (via Dagster CLI inside backup container)
+backup-now:
+	@echo "Triggering online backup via Dagster..."
+	@docker exec backup dagster asset materialize -m aihub_backup.dagster --select '*' --partition $$(TZ=Europe/Zurich date +%Y-%m-%d)
+
+backup-list:
+	@echo "Listing backups from S3..."
+	@docker exec backup python -c "from aihub_backup.s3 import S3Manager; from aihub_backup.settings import BackupSettings; s3 = S3Manager(BackupSettings()); prefixes = sorted(s3.list_prefixes()); [print(p) for p in prefixes]"
 
 up-dev:
 	@echo "Starting development environment with Docker Compose..."

@@ -1,0 +1,17 @@
+<clickhouse>
+    <storage_configuration>
+        <disks>
+            <backup_s3>
+                <type>s3_plain</type>
+                <endpoint>http://seaweedfs-s3:9000/backups/</endpoint>
+                <access_key_id from_env="S3_STORAGE_ACCESS_KEY"/>
+                <secret_access_key from_env="S3_STORAGE_SECRET_KEY"/>
+                <use_path_style_url>true</use_path_style_url>
+            </backup_s3>
+        </disks>
+    </storage_configuration>
+    <backups>
+        <allowed_disk>default</allowed_disk>
+        <allowed_disk>backup_s3</allowed_disk>
+    </backups>
+</clickhouse>
