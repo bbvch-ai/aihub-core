@@ -105,7 +105,7 @@ jobs:
             return 1
           }
           wait_for_port "Dagster" "http://127.0.0.1:3004/server_info"
-          wait_for_port "Milvus REST API" "http://127.0.0.1:19530/v2/vectordb/collections/list" 180
+          wait_for_port "Milvus REST API" "http://127.0.0.1:9091/healthz" 180
           wait_for_port "S3 (SeaweedFS)" "http://127.0.0.1:9000/status"
           echo "All services reachable from host."
       - name: Copy env for tests
