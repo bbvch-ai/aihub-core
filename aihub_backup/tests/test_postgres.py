@@ -33,7 +33,7 @@ def _make_run_for_backup(databases: list[str] | None = None) -> object:
             return subprocess.CompletedProcess(cmd, 0, stdout=b"", stderr=b"")
 
         if "COPY" in cmd_str and "TO STDOUT" in cmd_str:
-            return subprocess.CompletedProcess(cmd, 0, stdout=b"1\ttest_db\ttest_col\n", stderr=b"")
+            return subprocess.CompletedProcess(cmd, 0, stdout="1\ttest_db\ttest_col\n", stderr="")
 
         if "last_value" in cmd_str:
             return subprocess.CompletedProcess(cmd, 0, stdout="1|true\n", stderr="")
