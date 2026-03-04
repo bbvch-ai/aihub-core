@@ -216,7 +216,8 @@ def test_restore_calls_pg_restore_per_database(mock_run: MagicMock, postgres_han
         assert dump_path.endswith(".dump"), f"pg_restore target should be a .dump file, got: {dump_path}"
         dbname = Path(dump_path).stem
         if dbname == "postgres":
-            assert "--clean" not in cmd, "postgres DB must NOT use --clean (database is recreated)"
+            assert "--clean" in cmd, "postgres DB must use --clean (handles template objects)"
+            assert "--if-exists" in cmd, "postgres DB must use --if-exists with --clean"
             assert "--create" not in cmd, "postgres DB must NOT use --create"
         else:
             assert "--create" in cmd, f"user DB {dbname} must use --create"

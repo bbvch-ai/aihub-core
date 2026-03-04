@@ -621,7 +621,7 @@ def _verify_nats_message_count(client: docker.DockerClient, env: dict[str, str |
 
 def _verify_mongo(mongo_client: MongoClient) -> list[dict[str, Any]]:
     """FerretDB needs time to reconnect to PostgreSQL after container restart — retry."""
-    for _ in range(12):
+    for _ in range(24):
         try:
             docs = list(mongo_client["e2e_test_db"]["e2e_collection"].find().sort("_id"))
             if docs:

@@ -264,7 +264,18 @@ class PostgresHandler(BackupHandler):
             if dbname == "postgres":
                 self._recreate_postgres_database(host, user, env, label)
                 logger.info("[%s] Restoring %s into fresh database...", label, dbname)
-                cmd = ["pg_restore", "-h", host, "-U", user, "-d", "postgres", str(dump_file)]
+                cmd = [
+                    "pg_restore",
+                    "-h",
+                    host,
+                    "-U",
+                    user,
+                    "-d",
+                    "postgres",
+                    "--clean",
+                    "--if-exists",
+                    str(dump_file),
+                ]
             else:
                 logger.info("[%s] Restoring %s (--create)...", label, dbname)
                 cmd = ["pg_restore", "-h", host, "-U", user, "--create", "-d", "postgres", str(dump_file)]
