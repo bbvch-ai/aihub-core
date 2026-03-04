@@ -46,7 +46,7 @@ jobs:
           -u ${{ github.actor }} --password-stdin
       - name: Build backup image
         run: docker compose -f docker-compose.build.yml --env-file .env.dev build
-          backup
+          backup-code
       - name: Pull infrastructure images
         run: |
           docker compose -f docker-compose.build.yml --env-file .env.dev pull --quiet \
@@ -56,7 +56,7 @@ jobs:
       - name: Start services
         run: |
           docker compose -f docker-compose.build.yml --env-file .env.dev up -d \
-            backup postgres postgres-ferretdb neo4j clickhouse valkey nats \
+            backup-code backup-webserver backup-daemon postgres postgres-ferretdb neo4j clickhouse valkey nats \
             seaweedfs-master seaweedfs-volume seaweedfs-filer seaweedfs-s3 seaweedfs-init \
             etcd etcd-init milvus-standalone
       - name: Wait for services to become healthy
@@ -66,7 +66,7 @@ jobs:
           INTERVAL=10
           ELAPSED=0
           while [ $ELAPSED -lt $MAX_WAIT ]; do
-            STATUS=$(docker inspect --format='{{.State.Health.Status}}' backup 2>/dev/null || echo "not_found")
+            STATUS=$(docker inspect --format='{{.State.Health.Status}}' backup-code 2>/dev/null || echo "not_found")
             echo "  backup container status: $STATUS ($ELAPSED/${MAX_WAIT}s)"
             if [ "$STATUS" = "healthy" ]; then
               echo "Backup container is healthy — all dependencies ready."
@@ -75,7 +75,7 @@ jobs:
             fi
             if [ "$STATUS" = "unhealthy" ]; then
               echo "Backup container is unhealthy. Logs:"
-              docker logs backup --tail=50
+              docker logs backup-code --tail=50
               exit 1
             fi
             sleep $INTERVAL
@@ -84,7 +84,7 @@ jobs:
           if [ $ELAPSED -ge $MAX_WAIT ]; then
             echo "Timed out waiting for backup container after ${MAX_WAIT}s"
             docker ps --format "table {{.Names}}\t{{.Status}}"
-            docker logs backup --tail=50
+            docker logs backup-code --tail=50
             exit 1
           fi
       - name: Verify service connectivity
