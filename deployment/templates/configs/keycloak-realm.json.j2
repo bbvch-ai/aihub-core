@@ -7,7 +7,7 @@
   "enabled": true,
   "displayName": "Swiss AI-Hub",
   "displayNameHtml": "<strong>Swiss AI-Hub</strong>",
-  "loginTheme": "keycloak",
+  "loginTheme": "aihub",
   "accountTheme": "keycloak.v2",
   "adminTheme": "keycloak.v2",
   "emailTheme": "keycloak",
@@ -74,16 +74,16 @@
       "directAccessGrantsEnabled": false,
       "serviceAccountsEnabled": false,
       "authorizationServicesEnabled": false,
-      "rootUrl": "{{ 'http://localhost:3000' if stage == 'dev' else 'https://${DOMAIN}' }}",
+      "rootUrl": "{{ 'http://localhost:3333' if stage == 'dev' else 'https://${DOMAIN}' }}",
       "baseUrl": "/",
       "redirectUris": [
-        "{{ 'http://localhost:3000/*' if stage == 'dev' else 'https://${DOMAIN}/*' }}"
+        "{{ 'http://localhost:3333/*' if stage == 'dev' else 'https://${DOMAIN}/*' }}"
       ],
       "webOrigins": ["+"],
       "protocol": "openid-connect",
       "attributes": {
         "pkce.code.challenge.method": "S256",
-        "post.logout.redirect.uris": "{{ 'http://localhost:3000/*' if stage == 'dev' else 'https://${DOMAIN}/*' }}"
+        "post.logout.redirect.uris": "{{ 'http://localhost:3333/*' if stage == 'dev' else 'https://${DOMAIN}/*' }}"
       },
       "defaultClientScopes": [
         "openid",
@@ -105,6 +105,17 @@
             "id.token.claim": "true",
             "access.token.claim": "true",
             "userinfo.token.claim": "true"
+          }
+        },
+        {
+          "name": "account-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "account",
+            "id.token.claim": "false",
+            "access.token.claim": "true"
           }
         }
       ]

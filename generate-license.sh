@@ -4,6 +4,7 @@
 # Generates a single LICENSE_REPORT.md report
 
 set -e
+export LC_ALL=C
 
 # Create temp files using mktemp
 RESTRICTIVE_FILE=$(mktemp)

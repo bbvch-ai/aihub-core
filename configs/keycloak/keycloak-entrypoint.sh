@@ -1,7 +1,11 @@
 #!/bin/bash
-# Keycloak entrypoint for non-dev stages.
+# Keycloak entrypoint for all stages.
 # Substitutes environment variables in realm JSON templates before import,
 # applies identity providers via partialImport after startup, then starts Keycloak.
+#
+# Usage: keycloak-entrypoint.sh <kc.sh args...>
+#   Dev:  keycloak-entrypoint.sh start-dev
+#   Prod: keycloak-entrypoint.sh start --hostname=... --proxy-headers=...
 #
 # Keycloak's --import-realm does not support env var substitution natively,
 # so we pre-process the template files with a pure-bash envsubst
@@ -54,9 +58,4 @@ if [ -f /tmp/identity-providers.json ]; then
   ) &
 fi
 
-exec /opt/keycloak/bin/kc.sh start \
-  --import-realm \
-  --hostname="https://auth.$DOMAIN" \
-  --hostname-backchannel-dynamic=true \
-  --proxy-headers=xforwarded \
-  --http-enabled=true
+exec /opt/keycloak/bin/kc.sh "$@" --import-realm

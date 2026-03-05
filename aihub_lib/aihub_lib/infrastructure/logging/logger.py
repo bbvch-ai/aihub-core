@@ -30,7 +30,7 @@ def enable_logging(level: int | None = None) -> logging.Logger:
         "openai",
         "botocore",
         "mem0",
-        "opentelemetry",
+        "docket",
         "asyncio",
         "httpcore",
         "opentelemetry",

@@ -983,15 +983,13 @@ services:
     container_name: keycloak
     image: {{ global.registry_prefix }}{{ image_tags.keycloak }}
     restart: unless-stopped
+    entrypoint: /bin/bash
     {%- if stage == 'dev' %}
     ports:
       - "8180:8080"
-    command:
-      - start-dev
-      - --import-realm
+    command: ["/opt/keycloak/scripts/keycloak-entrypoint.sh", "start-dev"]
     {%- else %}
-    entrypoint: /bin/bash
-    command: ["/opt/keycloak/scripts/keycloak-entrypoint.sh"]
+    command: ["/opt/keycloak/scripts/keycloak-entrypoint.sh", "start", "--hostname=https://auth.${DOMAIN}", "--hostname-backchannel-dynamic=true", "--proxy-headers=xforwarded", "--http-enabled=true"]
     {%- endif %}
     environment:
       KC_DB: postgres
@@ -1024,16 +1022,10 @@ services:
       KEYCLOAK_AZURE_TENANT_ID: ${KEYCLOAK_AZURE_TENANT_ID}
       KEYCLOAK_API_SERVICE_CLIENT_SECRET: ${KEYCLOAK_API_SERVICE_CLIENT_SECRET}
     volumes:
-      {%- if stage == 'dev' %}
-      # Dev stage: mount directly (no ${DOMAIN} substitution needed)
-      - ./configs/keycloak/aihub-realm.{{ stage_postfix }}.json:/opt/keycloak/data/import/aihub-realm.json:ro
-      - ./configs/keycloak/identity-providers.{{ stage_postfix }}.json:/opt/keycloak/data/import/identity-providers.json:ro
-      {%- else %}
-      # Non-dev stages: mount as templates, pre-processed by entrypoint script before import
       - ./configs/keycloak/keycloak-entrypoint.sh:/opt/keycloak/scripts/keycloak-entrypoint.sh:ro
       - ./configs/keycloak/aihub-realm.{{ stage_postfix }}.json:/opt/keycloak/data/import-templates/aihub-realm.json:ro
       - ./configs/keycloak/identity-providers.{{ stage_postfix }}.json:/opt/keycloak/data/import-templates/identity-providers.json:ro
-      {%- endif %}
+      - ./configs/keycloak/themes/aihub:/opt/keycloak/themes/aihub:ro
     healthcheck:
       test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/9000;echo -e 'GET /health/ready HTTP/1.1\r\nhost: localhost\r\nConnection: close\r\n\r\n' >&3;grep -q '200 OK' <&3"]
       interval: 10s
@@ -1765,10 +1757,11 @@ services:
       OAUTH_PROVIDER_NAME: ${OAUTH_PROVIDER_NAME}
       OAUTH_CLIENT_ID: openwebui
       OAUTH_CLIENT_SECRET: ${KEYCLOAK_OPENWEBUI_CLIENT_SECRET}
-      OPENID_PROVIDER_URL: {{ KEYCLOAK_INTERNAL_URL }}/realms/{{ KEYCLOAK_REALM }}/.well-known/openid-configuration
       {%- if stage == 'dev' %}
+      OPENID_PROVIDER_URL: http://localhost:8180/realms/{{ KEYCLOAK_REALM }}/.well-known/openid-configuration
       OPENID_REDIRECT_URI: http://localhost:8080/oauth/oidc/callback
       {%- else %}
+      OPENID_PROVIDER_URL: {{ KEYCLOAK_INTERNAL_URL }}/realms/{{ KEYCLOAK_REALM }}/.well-known/openid-configuration
       OPENID_REDIRECT_URI: https://openwebui.${DOMAIN}/oauth/oidc/callback
       {%- endif %}
       OAUTH_ALLOWED_DOMAINS: '*'

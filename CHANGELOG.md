@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.270.1] - 2026-03-05 - Enhanced Authentication Experience and Deployment Flexibility
+
+### Added
+
+- ✨ **Custom Keycloak Login Theme**: Introduced a new `aihub` custom login theme for Keycloak, providing a branded and
+  dark-mode compatible authentication experience.
+- 🔑 **Keycloak Account Audience Mapper**: Added an OIDC audience mapper for the `account` client within Keycloak realms,
+  ensuring proper audience claims in tokens.
+
+### Changed
+
+- 🚀 **Flexible Keycloak Entrypoint**: Updated the Keycloak entrypoint script and its Docker Compose integration to
+  support dynamic arguments for `kc.sh`, enhancing deployment flexibility across all stages.
+- ⚙️ **Standardized Keycloak Realm Imports**: All Keycloak realm configurations are now consistently processed as
+  templates by the entrypoint script before import, streamlining environment variable substitution.
+- 🌐 **Updated Development Environment URLs**: Adjusted Keycloak client `rootUrl`, `redirectUris`, and
+  `post.logout.redirect.uris` for the development environment to `http://localhost:3333`, aligning with current frontend
+  settings.
+- 🔐 **Refined OpenWebUI OIDC Configuration**: Modified the `OPENID_PROVIDER_URL` for OpenWebUI in development
+  environments to `http://localhost:8180` for improved local setup consistency.
+- 🛠️ **Enhanced Deployment Script for Static Assets**: The `generate_compose.py` script now supports copying static
+  directories and files, enabling the seamless inclusion of custom themes and other assets in deployments.
+- 📝 **Adjusted Logging Configuration**: Fine-tuned the list of modules for which logging is disabled in `aihub_lib` for
+  improved log output.
+
+### Fixed
+
+- 🐛 **License Generation Locale Compatibility**: Added `LC_ALL=C` export to the `generate-license.sh` script to ensure
+  consistent behavior across different locales.
+
+______________________________________________________________________
+
 ## [v0.270.0] - 2026-03-04 - Keycloak Takes the Helm: Major Authentication Overhaul with Dynamic Identity & Enhanced Security
 
 ### Added

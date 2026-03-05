@@ -46,6 +46,21 @@ CONFIG_SPECS = [
     ("templates/configs/openwebui-init-functions.sh.j2", "configs/openwebui", "init-functions.sh"),
     ("templates/configs/init_etcd.sh.j2", "configs/etcd", "init_etcd.sh"),
     ("templates/configs/keycloak-entrypoint.sh.j2", "configs/keycloak", "keycloak-entrypoint.sh"),
+    # Keycloak theme - static files (no stage/hardware variations)
+    ("templates/configs/keycloak-theme-properties.j2", "configs/keycloak/themes/aihub/login", "theme.properties"),
+    ("templates/configs/keycloak-theme-login.css.j2", "configs/keycloak/themes/aihub/login/resources/css", "login.css"),
+]
+
+# Static directories copied verbatim (no Jinja2 rendering).
+# (source_dir relative to DEPLOYMENT_DIR, output_dir relative to ROOT_DIR)
+STATIC_COPY_DIRS = [
+    ("templates/openwebui_functions", "configs/openwebui/functions"),
+]
+
+# Static files copied verbatim (no Jinja2 rendering).
+# (source relative to DEPLOYMENT_DIR, output_dir relative to ROOT_DIR, output_name)
+STATIC_COPY_FILES = [
+    ("templates/configs/keycloak-theme-logo.png", "configs/keycloak/themes/aihub/login/resources/img", "logo.png"),
 ]
 
 # Additional static files included only in release bundles (non-config files).
@@ -141,6 +156,23 @@ def generate_default(env, config_data):
 
             generate_config(template, context, output_path)
             stats[config_name] += 1
+
+    stats["static-copies"] = 0
+    for src_rel, output_dir in STATIC_COPY_DIRS:
+        src_dir = DEPLOYMENT_DIR / src_rel
+        dst_dir = ROOT_DIR / output_dir
+        dst_dir.mkdir(parents=True, exist_ok=True)
+        for f in src_dir.iterdir():
+            if f.is_file():
+                shutil.copy2(f, dst_dir / f.name)
+                stats["static-copies"] += 1
+
+    for src_rel, output_dir, filename in STATIC_COPY_FILES:
+        src = DEPLOYMENT_DIR / src_rel
+        dst = ROOT_DIR / output_dir / filename
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(src, dst)
+        stats["static-copies"] += 1
 
     return stats
 
@@ -263,6 +295,21 @@ def generate_release(env, config_data, version, output_dir, project):
             generate_config(template, context, output_path)
             stats[config_name] += 1
 
+        # Copy static directories and files into the release bundle
+        for src_rel, output_dir in STATIC_COPY_DIRS:
+            src_dir = DEPLOYMENT_DIR / src_rel
+            dst_dir = variant_dir / output_dir
+            dst_dir.mkdir(parents=True, exist_ok=True)
+            for f in src_dir.iterdir():
+                if f.is_file():
+                    shutil.copy2(f, dst_dir / f.name)
+
+        for src_rel, output_dir, filename in STATIC_COPY_FILES:
+            src = DEPLOYMENT_DIR / src_rel
+            dst = variant_dir / output_dir / filename
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(src, dst)
+
         # Copy static files into the release bundle
         static_count = _copy_release_static_files(variant_dir)
         if static_count > 0:
@@ -303,7 +350,7 @@ def main():
     args = parse_args()
 
     config_data = load_config()
-    env = Environment(loader=FileSystemLoader(DEPLOYMENT_DIR))
+    env = Environment(loader=FileSystemLoader(DEPLOYMENT_DIR), keep_trailing_newline=True)
 
     if args.release:
         version = args.tag
