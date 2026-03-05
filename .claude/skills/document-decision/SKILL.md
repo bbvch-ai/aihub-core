@@ -20,8 +20,7 @@ Read these files for context:
   Drivers, Decision, Consequences)
 - **Exemplar**: `aihub_doc/arc42/decisions/2026_02_10_replace_phoenix_with_langfuse.md` — a well-written ADR with
   detailed decision drivers, specific consequences split into positive and trade-offs
-- **Existing ADRs**: Browse `aihub_doc/arc42/decisions/` (14 ADRs as of Feb 2026) to check for conflicts or decisions to
-  supersede
+- **Existing ADRs**: Browse `aihub_doc/arc42/decisions/` to check for conflicts or decisions to supersede
 
 ## Step 1: Analyze Changes
 
@@ -56,6 +55,13 @@ Read any ADR that covers similar ground. If one exists, update it rather than cr
 4. **Consequences** — split into "Positive" and "Trade-offs" subsections when there are many
 
 If this decision supersedes a previous ADR, reference it explicitly in the Context section.
+
+**CRITICAL — main is the only reference state**: The ADR's Context section must treat `main` as the baseline. Never
+describe intermediate implementations from the feature branch as "the initial implementation" or "the old approach" —
+those states never existed on `main` and will confuse future readers into thinking prior code was replaced. Instead,
+frame rejected approaches as **considered alternatives** ("approach X was considered but rejected because...") and the
+chosen approach as a **design decision**, not a refactoring. Run `git diff main --name-only` to confirm what actually
+exists on `main` before writing the Context section.
 
 ## Step 4: Verify
 
