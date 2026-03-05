@@ -826,7 +826,13 @@ services:
     image: ghcr.io/bbvch-ai/aihub-core/keycloak:26.5.4
     restart: unless-stopped
     entrypoint: /bin/bash
-    command: [/opt/keycloak/scripts/keycloak-entrypoint.sh]
+    command:
+      - /opt/keycloak/scripts/keycloak-entrypoint.sh
+      - start
+      - --hostname=https://auth.${DOMAIN}
+      - --hostname-backchannel-dynamic=true
+      - --proxy-headers=xforwarded
+      - --http-enabled=true
     environment:
       KC_DB: postgres
       KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
@@ -856,7 +862,6 @@ services:
       KEYCLOAK_AZURE_TENANT_ID: ${KEYCLOAK_AZURE_TENANT_ID}
       KEYCLOAK_API_SERVICE_CLIENT_SECRET: ${KEYCLOAK_API_SERVICE_CLIENT_SECRET}
     volumes:
-      # Non-dev stages: mount as templates, pre-processed by entrypoint script before import
       - ./configs/keycloak/keycloak-entrypoint.sh:/opt/keycloak/scripts/keycloak-entrypoint.sh:ro
       - ./configs/keycloak/aihub-realm.build.gpu.json:/opt/keycloak/data/import-templates/aihub-realm.json:ro
       - ./configs/keycloak/identity-providers.build.gpu.json:/opt/keycloak/data/import-templates/identity-providers.json:ro
