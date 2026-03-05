@@ -153,7 +153,7 @@ up-dev:
 VERSION ?= 0.263.0
 version-bump:
 	@echo "Bumping version to $(VERSION) across all packages..."
-	@for f in aihub_lib/pyproject.toml aihub_agent/pyproject.toml aihub_api/pyproject.toml aihub_bot/pyproject.toml aihub_pipeline/pyproject.toml aihub_process/pyproject.toml; do \
+	@for f in aihub_lib/pyproject.toml aihub_agent/pyproject.toml aihub_api/pyproject.toml aihub_bot/pyproject.toml aihub_pipeline/pyproject.toml aihub_process/pyproject.toml aihub_backup/pyproject.toml; do \
 		sed -i 's/^version = "[^"]*"/version = "$(VERSION)"/' $$f; \
 	done
 	@uv lock

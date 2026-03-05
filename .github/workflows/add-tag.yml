@@ -314,7 +314,7 @@ jobs:
             echo "Update TAG in $1"
             sed -i 's/^TAG ?= .*/TAG ?= '"$VERSION"'/' $1
           }
-          for dir in . aihub_lib aihub_agent aihub_api aihub_bot aihub_pipeline aihub_process; do
+          for dir in . aihub_lib aihub_agent aihub_api aihub_bot aihub_pipeline aihub_process aihub_backup; do
             update_version "$dir/pyproject.toml"
           done
           update_makefile_tag Makefile
