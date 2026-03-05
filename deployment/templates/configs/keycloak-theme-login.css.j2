@@ -1,0 +1,198 @@
+/* AI-Hub Keycloak Login Theme
+ * Extends keycloak.v2 with dark design matching the AI-Hub frontend.
+ * Colors from aihub-theme.ts surface scale.
+ * Zero accent colors — all neutrals (white, gray, black). */
+
+/* ── Kill all PatternFly blue accent colors globally ── */
+:root {
+  --pf-v5-global--primary-color--100: #ffffff !important;
+  --pf-v5-global--primary-color--200: #e3e3e3 !important;
+  --pf-v5-global--link--Color: #b4b4b4 !important;
+  --pf-v5-global--link--Color--hover: #ffffff !important;
+  --pf-v5-global--link--Color--visited: #b4b4b4 !important;
+  --pf-v5-global--active-color--100: #ffffff !important;
+  --keycloak-card-top-color: transparent;
+}
+
+/* ── Background ── */
+.login-pf body {
+  background: #0d0d0d !important;
+  background-image: none !important;
+}
+
+/* ── Dark mode: always on ── */
+html.login-pf {
+  color-scheme: dark;
+}
+
+/* ── Layout: single centered column ── */
+.pf-v5-c-login__container {
+  grid-template-columns: 28rem !important;
+  grid-template-areas: "main" !important;
+}
+
+/* ── Hide the side header, show logo above card instead ── */
+.pf-v5-c-login__header {
+  display: none !important;
+}
+
+/* ── Card ── */
+.pf-v5-c-login__main {
+  background-color: #18181b !important;
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+}
+
+.pf-v5-c-login__main-header {
+  border-top: none !important;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 2rem;
+}
+
+/* ── Logo above the form ── */
+.pf-v5-c-login__main-header::before {
+  content: '';
+  display: block;
+  width: 128px;
+  height: 48px;
+  background: url('../img/logo.png') no-repeat center / contain;
+  margin-bottom: 1rem;
+}
+
+/* ── Title ── */
+.pf-v5-c-login__main-header .pf-v5-c-title {
+  font-size: 20px !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  font-weight: 600;
+  color: #ffffff !important;
+  text-align: center;
+}
+
+/* ── Realm name header (if visible) ── */
+#kc-header-wrapper {
+  font-size: 20px !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  font-weight: 600;
+  color: #ffffff !important;
+}
+
+/* ── Form labels ── */
+.pf-v5-c-form__label-text {
+  color: #cdcdcd !important;
+}
+
+/* ── Inputs ── */
+.pf-v5-c-form-control {
+  --pf-v5-c-form-control--BackgroundColor: #262626 !important;
+  --pf-v5-c-form-control--Color: #ffffff !important;
+  --pf-v5-c-form-control--BorderTopColor: #4e4e4e !important;
+  --pf-v5-c-form-control--BorderRightColor: #4e4e4e !important;
+  --pf-v5-c-form-control--BorderBottomColor: #4e4e4e !important;
+  --pf-v5-c-form-control--BorderLeftColor: #4e4e4e !important;
+  --pf-v5-c-form-control--focus-within--BorderBottomColor: #ffffff !important;
+  border-radius: 6px !important;
+}
+
+/* Input focus: white bottom border, no blue */
+.pf-v5-c-form-control::after {
+  border-bottom-color: #ffffff !important;
+}
+
+.pf-v5-c-form-control:focus-within {
+  --pf-v5-c-form-control--BorderBottomColor: #ffffff !important;
+  outline: none !important;
+}
+
+.pf-v5-c-form-control input {
+  color: #ffffff !important;
+}
+
+/* ── Primary button (Sign In) ── */
+.pf-v5-c-button.pf-m-primary {
+  background-color: #ffffff !important;
+  color: #0d0d0d !important;
+  border-radius: 6px !important;
+  font-weight: 500;
+  border: none !important;
+}
+
+.pf-v5-c-button.pf-m-primary:hover {
+  background-color: #e3e3e3 !important;
+  color: #0d0d0d !important;
+}
+
+/* ── Secondary / social buttons ── */
+.pf-v5-c-button.pf-m-secondary {
+  background-color: transparent !important;
+  color: #ffffff !important;
+  border: 1px solid #4e4e4e !important;
+  border-radius: 6px !important;
+}
+
+.pf-v5-c-button.pf-m-secondary:hover {
+  background-color: #262626 !important;
+  border-color: #9b9b9b !important;
+}
+
+/* ── Social provider SVG icons: constrain size ── */
+#kc-social-providers svg {
+  height: 1.25rem !important;
+  width: 1.25rem !important;
+  filter: invert(1) !important;
+  flex-shrink: 0;
+}
+
+#kc-social-providers .pf-v5-c-button {
+  gap: 0.5rem;
+}
+
+/* ── All links: neutral gray ── */
+a {
+  color: #b4b4b4 !important;
+  text-decoration: none;
+}
+
+a:hover {
+  color: #ffffff !important;
+}
+
+/* ── Checkbox ── */
+.pf-v5-c-check__label {
+  color: #b4b4b4 !important;
+}
+
+/* ── "Or sign in with" divider ── */
+.pf-v5-c-login__main-footer-band {
+  border-top-color: #333333 !important;
+}
+
+.pf-v5-c-login__main-footer-band-item {
+  color: #9b9b9b !important;
+}
+
+/* ── Alert styling ── */
+.pf-v5-c-alert.pf-m-inline {
+  background-color: #262626 !important;
+  border-radius: 6px;
+}
+
+/* ── Password visibility toggle ── */
+.pf-v5-c-button.pf-m-control {
+  background-color: #262626 !important;
+  color: #b4b4b4 !important;
+}
+
+/* ── Focus outlines: neutral white, no blue ── */
+.pf-v5-c-button:focus,
+.pf-v5-c-button:focus-visible {
+  outline: 2px solid #4e4e4e !important;
+  outline-offset: 1px;
+}
+
+*:focus-visible {
+  outline-color: #9b9b9b !important;
+}
