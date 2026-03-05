@@ -15,6 +15,7 @@ from aihub_lib.auth.usage import (
 )
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.infrastructure.langfuse.LangfuseProvisioner import LangfuseProvisioner
+from aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner import OpenWebuiProvisioner
 from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.nats.distributor.dependencies.use_external_agent_event_distributor import (
     use_external_agent_event_distributor,
@@ -71,12 +72,14 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
         controller: AgentController,
         locale_handler: LocaleHandler,
         langfuse_provisioner: LangfuseProvisioner | None = None,
+        openwebui_provisioner: OpenWebuiProvisioner | None = None,
         discovery_interval: int = 60,
     ):
         super().__init__(nc, api_app, controller, locale_handler, discovery_interval)
         self.controller: AgentController = controller
         self.topic_manager: AgentTopicManager = AgentTopicManager()
         self._langfuse_provisioner = langfuse_provisioner
+        self._openwebui_provisioner = openwebui_provisioner
         self._last_synced_agents: set[str] = set()
 
     @override
@@ -118,6 +121,9 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
 
         # Step 4: Sync agent instances to Langfuse so they appear in the experiment model dropdown
         await self._sync_agent_instances_to_langfuse()
+
+        # Step 5: Sync agent instances to OpenWebUI (workspace models + access grants)
+        await self._sync_agent_instances_to_openwebui()
 
     async def _broadcast_discovery(self) -> list[AgentClassDTO]:
         """
@@ -197,6 +203,19 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
                 self._last_synced_agents = agent_models
             except Exception as e:
                 logger.warning(f"Langfuse agent sync failed (non-fatal): {e}")
+
+    async def _sync_agent_instances_to_openwebui(self) -> None:
+        """Sync online agent instances to OpenWebUI as workspace models with access grants."""
+        if self._openwebui_provisioner is None:
+            return
+
+        instances = await AgentService.get_all_agent_instances(t=self.locale_handler, online=True)
+        online_agents = [(inst.agent_class, inst.agent_id, inst.name) for inst in instances if inst.is_conversational]
+
+        try:
+            await self._openwebui_provisioner.sync_agents(online_agents)
+        except Exception as e:
+            logger.warning(f"OpenWebUI agent sync failed (non-fatal): {e}")
 
     def _register_class_endpoints(
         self,

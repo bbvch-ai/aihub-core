@@ -1723,6 +1723,7 @@ services:
       # Disable model caching to ensure pipeline models (agents) are always fetched
       ENABLE_BASE_MODELS_CACHE: False
       ENABLE_COMMUNITY_SHARING: False
+      BYPASS_MODEL_ACCESS_CONTROL: "False"
       ENABLE_USER_WEBHOOKS: False
       ENABLE_LOGIN_FORM: False
       ENABLE_FORWARD_USER_INFO_HEADERS: True
@@ -2390,6 +2391,10 @@ services:
       MEM0_LLM_NAME: "{{ default_model }}"
       MEM0_EMBEDDING_MODEL_NAME: "embedding/bge-m3"
       MEM0_RERANKING_MODEL_NAME: "reranker/bge"
+
+      # OpenWebUI (agent visibility provisioning)
+      OPENWEBUI_BASE_URL: http://{{ 'localhost' if stage == 'dev' else 'open-webui' }}:8080
+      OPENWEBUI_API_KEY: ${OPENWEBUI_API_KEY}
 
       # Jupyter (for open-webui code interpreter)
       JUPYTER_URL: {{ JUPYTER_URL }}

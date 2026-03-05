@@ -8,6 +8,7 @@ from aihub_lib.infrastructure.langfuse.LangfuseProvisioner import LangfuseProvis
 from aihub_lib.infrastructure.milvus.MilvusSettings import MilvusSettings
 from aihub_lib.infrastructure.mongo.MongoSettings import MongoSettings
 from aihub_lib.infrastructure.nats.NatsSettings import NatsSettings
+from aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner import OpenWebuiProvisioner
 from aihub_lib.infrastructure.redis.RedisSettings import RedisSettings
 from aihub_lib.infrastructure.s3.S3StorageSettings import S3StorageSettings
 from aihub_lib.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
@@ -187,6 +188,12 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
 
         langfuse_provisioner = LangfuseProvisioner()
 
+        try:
+            openwebui_provisioner = OpenWebuiProvisioner()
+        except Exception:
+            logger.info("OpenWebUI provisioner not configured, skipping agent visibility sync")
+            openwebui_provisioner = None
+
         if hasattr(api_app.state, "agent_controller"):
             agent_discovery_service = AgentEndpointsDiscoveryService(
                 nc=nc,
@@ -194,6 +201,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
                 controller=api_app.state.agent_controller,
                 locale_handler=ApiLocaleHandler(),
                 langfuse_provisioner=langfuse_provisioner,
+                openwebui_provisioner=openwebui_provisioner,
                 discovery_interval=60,  # Check for new agents every 60 seconds
             )
             await agent_discovery_service.start()
@@ -220,6 +228,10 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
 
         # Provision Langfuse with AI-Hub LLM connections
         await langfuse_provisioner.provision()
+
+        # Provision OpenWebUI with groups, workspace models, and access grants
+        if openwebui_provisioner:
+            await openwebui_provisioner.provision()
 
         # Yield control back to FastAPI to start serving requests
         yield
