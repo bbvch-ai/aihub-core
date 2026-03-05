@@ -3,13 +3,17 @@
 ## Context
 
 AI-Hub requires centralized backup and restore for all stateful services: PostgreSQL (x2), Milvus, Neo4j, ClickHouse,
-Valkey, and NATS JetStream. The initial implementation used a custom stack — FastAPI REST API, APScheduler for cron
-scheduling, an in-memory job manager for async tracking, and a CLI for ad-hoc operations. While functional, this meant
-maintaining scheduling, job tracking, run history, progress monitoring, and a web-accessible interface ourselves.
+Valkey, and NATS JetStream. Building this service requires scheduling (daily backups at 2 AM Europe/Zurich), job
+tracking (run history, success/failure, duration), progress monitoring, parameterized restores, and a web-accessible
+interface for operators.
+
+A custom stack — FastAPI REST API, APScheduler for cron scheduling, an in-memory job manager for async tracking, and API
+key auth — could provide these capabilities, but would mean ~650 lines of infrastructure code unrelated to the actual
+backup logic.
 
 The platform already runs a Dagster instance for data pipelines (`aihub_pipeline`), backed by a shared PostgreSQL
-database. The question was whether the backup service should reuse that Dagster instance or run its own, and whether
-Dagster was even the right tool to replace the custom stack.
+database. The question was whether the backup service should reuse that Dagster instance, run its own, or use a
+non-Dagster approach entirely.
 
 Separately, etcd is deployed as part of the Milvus cluster (metadata store) and does not have its own explicit backup
 procedure. This was a deliberate decision that needed to be documented.
@@ -18,14 +22,14 @@ procedure. This was a deliberate decision that needed to be documented.
 
 - **Operational visibility**\
   Backups are critical operations that need run history, success/failure tracking, duration metrics, and a calendar view
-  of what was backed up when. The custom job manager stored runs in-memory — lost on restart.
+  of what was backed up when. A custom job manager would store runs in-memory — lost on restart.
 
 - **Scheduling with timezone support**\
-  Backups must run at 2 AM Europe/Zurich daily. APScheduler worked but required manual cron parsing and had no UI to
-  inspect or toggle schedules.
+  Backups must run at 2 AM Europe/Zurich daily. APScheduler can handle this but requires manual cron parsing and has no
+  UI to inspect or toggle schedules.
 
 - **Parameterized restores**\
-  Restores need user-provided config (timestamp, optional service filter). The custom API required building request
+  Restores need user-provided config (timestamp, optional service filter). A custom API would require building request
   schemas and validation; Dagster's Launchpad provides this out of the box.
 
 - **Independence from shared infrastructure**\
@@ -33,8 +37,8 @@ procedure. This was a deliberate decision that needed to be documented.
   must still be able to report status, show run history, and accept restore commands.
 
 - **Minimal maintenance burden**\
-  The custom stack (FastAPI + APScheduler + job manager + API key auth) was ~650 lines of infrastructure code unrelated
-  to the actual backup logic. Dagster replaces all of it with declarative definitions.
+  A custom stack (FastAPI + APScheduler + job manager + API key auth) would be ~650 lines of infrastructure code
+  unrelated to the actual backup logic. Dagster replaces all of it with declarative definitions.
 
 - **etcd is not application data**\
   etcd stores Milvus cluster metadata (collection schemas, indexes, partition info). The `milvus-backup` tool captures
@@ -94,7 +98,7 @@ etcd is not backed up as a separate service. This is safe because:
 - Calendar-based partition view shows daily backup coverage at a glance
 - Schedules can be toggled on/off via the UI without redeployment
 - Restores are self-service via the Launchpad — no curl/API key required
-- Removed ~650 lines of custom infrastructure code (API, scheduler, job manager, auth)
+- Avoided ~650 lines of custom infrastructure code (API, scheduler, job manager, auth)
 - Backup service starts and operates independently of all backed-up databases
 - No etcd backup complexity — `milvus-backup` already covers the Milvus metadata layer
 
@@ -102,7 +106,7 @@ etcd is not backed up as a separate service. This is safe because:
 
 - SQLite run history is lost if the container volume is not persisted. Acceptable because backup artifacts live in S3
   and run history is operational, not critical data.
-- Dagster adds ~200 MB to the container image compared to the lean FastAPI stack. Acceptable given the operational
+- Dagster adds ~200 MB to the container image compared to a lean FastAPI stack. Acceptable given the operational
   benefits.
 - The Dagster UI port (3004) is only exposed in dev/local/build stages. Production operators interact via `docker exec`
   with the Dagster CLI or access the UI through a future Traefik route.
