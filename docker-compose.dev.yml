@@ -1044,7 +1044,7 @@ services:
       OAUTH_PROVIDER_NAME: ${OAUTH_PROVIDER_NAME}
       OAUTH_CLIENT_ID: openwebui
       OAUTH_CLIENT_SECRET: ${KEYCLOAK_OPENWEBUI_CLIENT_SECRET}
-      OPENID_PROVIDER_URL: http://keycloak:8080/realms/aihub/.well-known/openid-configuration
+      OPENID_PROVIDER_URL: http://localhost:8180/realms/aihub/.well-known/openid-configuration
       OPENID_REDIRECT_URI: http://localhost:8080/oauth/oidc/callback
       OAUTH_ALLOWED_DOMAINS: '*'
       OAUTH_SCOPES: openid email profile
@@ -1241,6 +1241,7 @@ services:
 
 
 
+  
 
   
 

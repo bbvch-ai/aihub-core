@@ -1757,10 +1757,11 @@ services:
       OAUTH_PROVIDER_NAME: ${OAUTH_PROVIDER_NAME}
       OAUTH_CLIENT_ID: openwebui
       OAUTH_CLIENT_SECRET: ${KEYCLOAK_OPENWEBUI_CLIENT_SECRET}
-      OPENID_PROVIDER_URL: {{ KEYCLOAK_INTERNAL_URL }}/realms/{{ KEYCLOAK_REALM }}/.well-known/openid-configuration
       {%- if stage == 'dev' %}
+      OPENID_PROVIDER_URL: http://localhost:8180/realms/{{ KEYCLOAK_REALM }}/.well-known/openid-configuration
       OPENID_REDIRECT_URI: http://localhost:8080/oauth/oidc/callback
       {%- else %}
+      OPENID_PROVIDER_URL: {{ KEYCLOAK_INTERNAL_URL }}/realms/{{ KEYCLOAK_REALM }}/.well-known/openid-configuration
       OPENID_REDIRECT_URI: https://openwebui.${DOMAIN}/oauth/oidc/callback
       {%- endif %}
       OAUTH_ALLOWED_DOMAINS: '*'
