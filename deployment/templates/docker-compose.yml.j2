@@ -1025,6 +1025,7 @@ services:
       - ./configs/keycloak/keycloak-entrypoint.sh:/opt/keycloak/scripts/keycloak-entrypoint.sh:ro
       - ./configs/keycloak/aihub-realm.{{ stage_postfix }}.json:/opt/keycloak/data/import-templates/aihub-realm.json:ro
       - ./configs/keycloak/identity-providers.{{ stage_postfix }}.json:/opt/keycloak/data/import-templates/identity-providers.json:ro
+      - ./configs/keycloak/themes/aihub:/opt/keycloak/themes/aihub:ro
     healthcheck:
       test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/9000;echo -e 'GET /health/ready HTTP/1.1\r\nhost: localhost\r\nConnection: close\r\n\r\n' >&3;grep -q '200 OK' <&3"]
       interval: 10s
