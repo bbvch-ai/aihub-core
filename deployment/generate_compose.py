@@ -158,18 +158,18 @@ def generate_default(env, config_data):
             stats[config_name] += 1
 
     stats["static-copies"] = 0
-    for src_rel, output_dir in STATIC_COPY_DIRS:
+    for src_rel, dst_rel in STATIC_COPY_DIRS:
         src_dir = DEPLOYMENT_DIR / src_rel
-        dst_dir = ROOT_DIR / output_dir
+        dst_dir = ROOT_DIR / dst_rel
         dst_dir.mkdir(parents=True, exist_ok=True)
         for f in src_dir.iterdir():
             if f.is_file():
                 shutil.copy2(f, dst_dir / f.name)
                 stats["static-copies"] += 1
 
-    for src_rel, output_dir, filename in STATIC_COPY_FILES:
+    for src_rel, dst_rel, filename in STATIC_COPY_FILES:
         src = DEPLOYMENT_DIR / src_rel
-        dst = ROOT_DIR / output_dir / filename
+        dst = ROOT_DIR / dst_rel / filename
         dst.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(src, dst)
         stats["static-copies"] += 1
@@ -296,17 +296,17 @@ def generate_release(env, config_data, version, output_dir, project):
             stats[config_name] += 1
 
         # Copy static directories and files into the release bundle
-        for src_rel, output_dir in STATIC_COPY_DIRS:
+        for src_rel, dst_rel in STATIC_COPY_DIRS:
             src_dir = DEPLOYMENT_DIR / src_rel
-            dst_dir = variant_dir / output_dir
+            dst_dir = variant_dir / dst_rel
             dst_dir.mkdir(parents=True, exist_ok=True)
             for f in src_dir.iterdir():
                 if f.is_file():
                     shutil.copy2(f, dst_dir / f.name)
 
-        for src_rel, output_dir, filename in STATIC_COPY_FILES:
+        for src_rel, dst_rel, filename in STATIC_COPY_FILES:
             src = DEPLOYMENT_DIR / src_rel
-            dst = variant_dir / output_dir / filename
+            dst = variant_dir / dst_rel / filename
             dst.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(src, dst)
 
