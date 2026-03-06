@@ -5,8 +5,8 @@
 ## Context
 
 OpenWebUI shows ALL online agents to ALL users because its `pipes()` discovery method is called without user context
-(OpenWebUI architecture limitation). Users see agents they cannot use, get 403 errors, and agent metadata is exposed
-to unauthorized users.
+(OpenWebUI architecture limitation). Users see agents they cannot use, get 403 errors, and agent metadata is exposed to
+unauthorized users.
 
 The root cause: `AgentDiscoveryService.discover_agents()` calls `GET /api/v1/agents/instances` with a superuser token,
 bypassing per-user permission filtering. The `pipes()` method cannot receive user context.
@@ -36,10 +36,10 @@ The provisioner runs at startup (`provision()`) and on every agent discovery cyc
 
 ### Key design choices
 
-- **Server-side push** over client-side filtering: AI-Hub pushes permissions to OpenWebUI rather than filtering
-  in the pipe. This works within OpenWebUI's architecture without modifications.
-- **Group naming convention**: `aihub:` prefix identifies managed groups, preventing interference with
-  manually-created groups
+- **Server-side push** over client-side filtering: AI-Hub pushes permissions to OpenWebUI rather than filtering in the
+  pipe. This works within OpenWebUI's architecture without modifications.
+- **Group naming convention**: `aihub:` prefix identifies managed groups, preventing interference with manually-created
+  groups
 - **Model ID convention**: `aihub-agent-` prefix identifies managed workspace models
 - **`BYPASS_MODEL_ACCESS_CONTROL=False`**: Must be set on OpenWebUI to enforce access control
 

@@ -11,4 +11,4 @@ class OpenWebuiSettings(EnvironmentSettings):
     model_config = EnvironmentSettings.create_settings_config("OPENWEBUI_")
 
     BASE_URL: Annotated[str, Field(description="OpenWebUI server base URL")]
-    API_KEY: Annotated[SecretStr, Field(description="OpenWebUI admin API key")]
+    SECRET_KEY: Annotated[SecretStr, Field(description="OpenWebUI WEBUI_SECRET_KEY for JWT signing")]

@@ -1245,6 +1245,7 @@ services:
       # Disable model caching to ensure pipeline models (agents) are always fetched
       ENABLE_BASE_MODELS_CACHE: false
       ENABLE_COMMUNITY_SHARING: false
+      BYPASS_MODEL_ACCESS_CONTROL: 'False'
       ENABLE_USER_WEBHOOKS: false
       ENABLE_LOGIN_FORM: false
       ENABLE_FORWARD_USER_INFO_HEADERS: true
@@ -1831,6 +1832,10 @@ services:
       MEM0_LLM_NAME: text-generation/gpt-oss-120b
       MEM0_EMBEDDING_MODEL_NAME: embedding/bge-m3
       MEM0_RERANKING_MODEL_NAME: reranker/bge
+
+      # OpenWebUI (agent visibility provisioning)
+      OPENWEBUI_BASE_URL: http://open-webui:8080
+      OPENWEBUI_SECRET_KEY: ${WEBUI_SECRET_KEY}
 
       # Jupyter (for open-webui code interpreter)
       JUPYTER_URL: http://jupyter:8888

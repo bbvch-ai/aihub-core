@@ -4,15 +4,18 @@ from typing import Any
 
 import httpx
 
+from aihub_lib.infrastructure.openwebui.OpenWebuiTokenService import OpenWebuiTokenService
+
 
 class OpenWebuiClient:
-    def __init__(self, base_url: str, api_key: str) -> None:
+    def __init__(self, base_url: str, secret_key: str) -> None:
         self._base_url = base_url.rstrip("/")
-        self._api_key = api_key
+        self._secret_key = secret_key
 
     @property
     def _headers(self) -> dict[str, str]:
-        return {"Authorization": f"Bearer {self._api_key}"}
+        token = OpenWebuiTokenService.generate_token(self._secret_key)
+        return {"Authorization": f"Bearer {token}"}
 
     async def list_groups(self, client: httpx.AsyncClient) -> list[dict[str, Any]]:
         response = await client.get(f"{self._base_url}/api/v1/groups/", headers=self._headers)

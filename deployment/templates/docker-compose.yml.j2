@@ -2394,7 +2394,7 @@ services:
 
       # OpenWebUI (agent visibility provisioning)
       OPENWEBUI_BASE_URL: http://{{ 'localhost' if stage == 'dev' else 'open-webui' }}:8080
-      OPENWEBUI_API_KEY: ${OPENWEBUI_API_KEY}
+      OPENWEBUI_SECRET_KEY: ${WEBUI_SECRET_KEY}
 
       # Jupyter (for open-webui code interpreter)
       JUPYTER_URL: {{ JUPYTER_URL }}

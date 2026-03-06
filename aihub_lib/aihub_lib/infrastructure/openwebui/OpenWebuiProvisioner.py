@@ -25,7 +25,7 @@ class OpenWebuiProvisioner:
         self._settings = settings or OpenWebuiSettings()
         self._client = OpenWebuiClient(
             base_url=self._settings.BASE_URL,
-            api_key=self._settings.API_KEY.get_secret_value(),
+            secret_key=self._settings.SECRET_KEY.get_secret_value(),
         )
         self._last_synced_agents: set[tuple[str, str]] | None = None
 
@@ -87,9 +87,7 @@ class OpenWebuiProvisioner:
         return groups
 
     @staticmethod
-    def _build_user_id_mapping(
-        aihub_users: list[dict[str, str]], owui_users: list[dict[str, Any]]
-    ) -> dict[str, str]:
+    def _build_user_id_mapping(aihub_users: list[dict[str, str]], owui_users: list[dict[str, Any]]) -> dict[str, str]:
         """Maps AI-Hub user IDs to OpenWebUI user IDs via email."""
         owui_by_email = {u["email"]: u["id"] for u in owui_users if "email" in u and "id" in u}
         mapping: dict[str, str] = {}
@@ -279,7 +277,5 @@ class OpenWebuiProvisioner:
                     continue
                 agent_class, agent_id = suffix[:dash_idx], suffix[dash_idx + 1 :]
 
-            access_control = self._compute_access_for_model(
-                agent_class, agent_id, aihub_groups, tenants, role_rules
-            )
+            access_control = self._compute_access_for_model(agent_class, agent_id, aihub_groups, tenants, role_rules)
             await self._client.update_model_access(client, model_id, access_control)

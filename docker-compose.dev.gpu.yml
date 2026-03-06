@@ -1222,6 +1222,7 @@ services:
       # Disable model caching to ensure pipeline models (agents) are always fetched
       ENABLE_BASE_MODELS_CACHE: false
       ENABLE_COMMUNITY_SHARING: false
+      BYPASS_MODEL_ACCESS_CONTROL: 'False'
       ENABLE_USER_WEBHOOKS: false
       ENABLE_LOGIN_FORM: false
       ENABLE_FORWARD_USER_INFO_HEADERS: true

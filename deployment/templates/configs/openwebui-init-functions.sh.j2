@@ -152,6 +152,47 @@ SQLFOOTER
     fi
 }
 
+# Create a service account admin for the OpenWebUI API (used by OpenWebuiProvisioner).
+# The password is irrelevant — authentication uses JWTs signed with WEBUI_SECRET_KEY.
+create_service_account() {
+    SERVICE_ACCOUNT_ID="00000000-0000-4000-a000-000000000001"
+    SERVICE_ACCOUNT_EMAIL="aihub-service@internal"
+    SERVICE_ACCOUNT_NAME="AI-Hub Service Account"
+    # Pre-computed bcrypt hash (password: "aihub-service-account-not-for-login")
+    SERVICE_ACCOUNT_PASSWORD='$2b$12$fzEGyN5H3V3EAMHQxvFwEuKDnhVj.tE1AMergIPHoRyumvltkeP7K'
+    TIMESTAMP=$(date +%s)
+
+    log "Creating AI-Hub service account admin..."
+
+    run_sql -c "
+        INSERT INTO \"user\" (id, name, email, role, profile_image_url, created_at, updated_at, last_active_at)
+        VALUES (
+            '${SERVICE_ACCOUNT_ID}',
+            '${SERVICE_ACCOUNT_NAME}',
+            '${SERVICE_ACCOUNT_EMAIL}',
+            'admin',
+            '/user.png',
+            ${TIMESTAMP},
+            ${TIMESTAMP},
+            ${TIMESTAMP}
+        )
+        ON CONFLICT (id) DO UPDATE SET
+            name = EXCLUDED.name,
+            email = EXCLUDED.email,
+            role = EXCLUDED.role,
+            updated_at = EXCLUDED.updated_at;
+
+        INSERT INTO auth (id, email, password, active)
+        VALUES (
+            '${SERVICE_ACCOUNT_ID}',
+            '${SERVICE_ACCOUNT_EMAIL}',
+            '${SERVICE_ACCOUNT_PASSWORD}',
+            true
+        )
+        ON CONFLICT DO NOTHING;
+    " 2>&1 && log "Service account ready" || log "WARNING: Service account creation failed"
+}
+
 # Main execution
 main() {
     log "Starting OpenWebUI function registration (PostgreSQL direct insert)..."
@@ -183,7 +224,10 @@ main() {
         exit 1
     fi
 
-    log "Function table exists, proceeding with registration..."
+    log "Function table exists, proceeding..."
+
+    # Create AI-Hub service account admin for API access
+    create_service_account
 
     # Find and register all Python files
     registered=0
