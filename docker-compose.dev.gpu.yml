@@ -1256,13 +1256,16 @@ services:
       OPENID_PROVIDER_URL: http://localhost:8180/realms/aihub/.well-known/openid-configuration
       OPENID_REDIRECT_URI: http://localhost:8080/oauth/oidc/callback
       OAUTH_ALLOWED_DOMAINS: '*'
-      OAUTH_SCOPES: openid email profile
+      OAUTH_SCOPES: openid email profile roles
       OAUTH_TIMEOUT: 60
       OAUTH_CODE_CHALLENGE_METHOD: S256
       OAUTH_USERNAME_CLAIM: preferred_username
       OAUTH_PICTURE_CLAIM: picture
       OAUTH_EMAIL_CLAIM: email
       OAUTH_GROUP_CLAIM: roles
+      ENABLE_OAUTH_ROLE_MANAGEMENT: true
+      OAUTH_ROLES_CLAIM: roles
+      OAUTH_ADMIN_ROLES: ${OAUTH_ADMIN_ROLES_OPENWEBUI}
 
       # --- Data Storage (S3) ---
       STORAGE_PROVIDER: s3
