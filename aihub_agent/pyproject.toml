@@ -1,6 +1,6 @@
 [project]
 name = "aihub-agent"
-version = "0.270.1"
+version = "0.270.2"
 description = "agents core"
 requires-python = ">=3.13, <3.14"
 authors = [
