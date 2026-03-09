@@ -41,8 +41,8 @@ class OpenaiController(Controller):
 
     The OpenaiController is designed to mirror the exact API interface provided by OpenAI,
     so that customers can seamlessly switch from OpenAI's services to AI Hub without modifying their client code.
-    Every endpoint that OpenAI offers—ranging from model management, chat completions, embeddings, image generation,
-    to audio processing (both speech-to-text and text-to-speech)—is implemented here with the same
+    Every endpoint that OpenAI offers - ranging from model management, chat completions, embeddings, image generation,
+    to audio processing (both speech-to-text and text-to-speech) - is implemented here with the same
     request/response structure expected by the OpenAI Python and JavaScript SDKs.
 
     It offers:

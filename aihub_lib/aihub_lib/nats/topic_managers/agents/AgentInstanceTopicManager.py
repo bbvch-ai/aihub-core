@@ -8,7 +8,7 @@ from aihub_lib.nats.topic_managers.agents.AgentClassTopicManager import AgentCla
 class AgentInstanceTopicManager(AgentClassTopicManager):
     """
     The AgentInstanceTopicManager narrows down event subscription and publishing
-    to a specific agent instance—identified by its agent_class and agent_id.
+    to a specific agent instance - identified by its agent_class and agent_id.
     Building on top of the more general TopicManager, it provides methods to:
     - Request and receive discovery information filtered by a particular agent instance.
     - Target all events, or selectively display or control events, coming from this one agent instance.

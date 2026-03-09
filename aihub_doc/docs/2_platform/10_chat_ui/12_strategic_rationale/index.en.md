@@ -11,15 +11,15 @@ reasoning behind this approach.
 
 When developing an enterprise AI platform, teams decide which components to build from scratch and which to adopt. Chat
 interfaces for AI interactions have become commodity functionality. Dozens of open-source projects and commercial
-products provide sophisticated chat experiences. While user experience details vary, the core functionality—message
-exchange, conversation history, multi-model support—is well-understood.
+products provide sophisticated chat experiences. While user experience details vary, the core functionality - message
+exchange, conversation history, multi-model support - is well-understood.
 
-Building a production-grade chat interface requires substantial investment—user interface design, accessibility
+Building a production-grade chat interface requires substantial investment - user interface design, accessibility
 implementation, mobile responsiveness, keyboard navigation, rich text rendering, file handling, and continuous feature
 enhancement. This investment doesn't differentiate the Swiss AI Hub from alternatives.
 
 By adopting Open WebUI, the development team concentrates resources on capabilities that genuinely differentiate the
-platform—enterprise knowledge management, transparent agent workflows, process automation, multi-language support, Swiss
+platform - enterprise knowledge management, transparent agent workflows, process automation, multi-language support, Swiss
 data sovereignty compliance.
 
 Organizations evaluating the platform gain immediate access to comprehensive chat functionality without waiting for
@@ -65,10 +65,10 @@ Embedding Open WebUI into the Swiss AI Hub suite required developing iframe inte
 communication protocols, authentication coordination, and deployment orchestration. This integration effort represents
 weeks of development work.
 
-Building equivalent chat functionality from scratch would require months of full-stack development—frontend
+Building equivalent chat functionality from scratch would require months of full-stack development - frontend
 implementation, backend infrastructure, testing, accessibility compliance, mobile optimization, documentation.
 
-Custom chat interfaces require continuous maintenance—bug fixes, security patches, browser compatibility updates,
+Custom chat interfaces require continuous maintenance - bug fixes, security patches, browser compatibility updates,
 feature enhancements. Open WebUI integration shifts this maintenance burden to the community while the Swiss AI Hub team
 maintains only integration points.
 
@@ -76,8 +76,8 @@ The integration approach delivers comprehensive chat functionality for a fractio
 
 ## Extensibility without forking
 
-The Swiss AI Hub extends chat functionality through integration points—PostMessage communication for source attribution
-and trace display—rather than modifying Open WebUI code. This approach enables adopting new Open WebUI releases without
+The Swiss AI Hub extends chat functionality through integration points - PostMessage communication for source attribution
+and trace display - rather than modifying Open WebUI code. This approach enables adopting new Open WebUI releases without
 merge conflicts or custom code maintenance.
 
 Enhanced source attribution and execution tracing complement rather than replace Open WebUI features. Users gain both
@@ -103,7 +103,7 @@ bases, and analytics tools.
 By building on proven open-source foundations rather than proprietary technologies, organizations protect their AI
 platform investment against vendor discontinuation, pricing changes, or strategic pivots.
 
-The integration strategy demonstrates technical maturity—recognizing when to build, when to buy, and when to integrate
+The integration strategy demonstrates technical maturity - recognizing when to build, when to buy, and when to integrate
 open-source solutions.
 
 ## Competitive positioning
@@ -114,7 +114,7 @@ integration. This time advantage enables focus on genuinely differentiating capa
 Organizations comparing total cost of ownership find the Swiss AI Hub competitive with or superior to platforms
 requiring separate chat product licensing, custom development fees, or ongoing maintenance contracts.
 
-The integration approach demonstrates architectural flexibility—the Swiss AI Hub can adopt best-of-breed solutions when
+The integration approach demonstrates architectural flexibility - the Swiss AI Hub can adopt best-of-breed solutions when
 they provide superior value.
 
 Active participation in the open-source ecosystem through Open WebUI integration signals the Swiss AI Hub's commitment

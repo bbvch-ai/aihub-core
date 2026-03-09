@@ -22,7 +22,7 @@ The interface provides conversation categorization through tags, searchable hist
 organized libraries of interactions, finding and resuming previous conversations. Conversations can be deleted, shared
 with others, or cloned to split off in different directions.
 
-Full markdown rendering enables rich text formatting in both user messages and AI responses—headers, lists, tables, code
+Full markdown rendering enables rich text formatting in both user messages and AI responses - headers, lists, tables, code
 blocks with syntax highlighting. LaTeX support enables mathematical notation for technical and scientific applications.
 
 ## Multi-modal interaction
@@ -43,7 +43,7 @@ description, or processing.
 Users can interact with multiple AI models within the same interface, selecting models based on capability requirements,
 cost considerations, or performance characteristics.
 
-Advanced users can adjust model parameters—temperature for creativity control, token limits for response length,
+Advanced users can adjust model parameters - temperature for creativity control, token limits for response length,
 presence penalties for repetition reduction.
 
 Organizations can define their own "models" with custom system prompts added to base models, similar to GPTs in OpenAI.
@@ -69,7 +69,7 @@ interfaces.
 Users can share conversations with colleagues, enabling collaborative AI interaction. Shared conversations maintain full
 context, allowing recipients to review history and continue conversations.
 
-Users can annotate AI responses with feedback—marking responses as helpful or problematic, providing correction
+Users can annotate AI responses with feedback - marking responses as helpful or problematic, providing correction
 guidance, or adding contextual notes.
 
 For deployments enabling community interaction, users can participate in leaderboards recognizing productive usage,
@@ -84,7 +84,7 @@ Administrators define user roles with granular permissions controlling access to
 administrative functions.
 
 Administrative interfaces provide user provisioning, authentication configuration, and access revocation capabilities.
-Integration with enterprise authentication systems—OAuth, LDAP—enables centralized user management.
+Integration with enterprise authentication systems - OAuth, LDAP - enables centralized user management.
 
 For programmatic access, administrators can generate and manage API keys enabling external systems to interact with chat
 capabilities. API key permissions can be scoped to specific models or operations.
@@ -94,13 +94,13 @@ supporting compliance requirements and security monitoring.
 
 ## User experience
 
-The interface adapts to different screen sizes and devices—desktop, tablet, mobile—maintaining functionality and
+The interface adapts to different screen sizes and devices - desktop, tablet, mobile - maintaining functionality and
 usability across form factors. Users can initiate conversations on desktop and continue them on mobile seamlessly.
 
 The interface can install as a progressive web app, providing native application-like experiences including offline
 capability, push notifications, and home screen presence without requiring app store distribution.
 
-Users can select from multiple visual themes—light mode, dark mode, high-contrast options—matching interface appearance
+Users can select from multiple visual themes - light mode, dark mode, high-contrast options - matching interface appearance
 to personal preferences and environmental lighting.
 
 ## Advanced capabilities
@@ -108,7 +108,7 @@ to personal preferences and environmental lighting.
 For supported models and configurations, the interface can execute code snippets, enabling interactive programming
 assistance, computational problem solving, and algorithm prototyping within conversational contexts.
 
-Mermaid diagram support enables AI-generated visualizations—flowcharts, sequence diagrams, state machines—rendered
+Mermaid diagram support enables AI-generated visualizations - flowcharts, sequence diagrams, state machines - rendered
 directly within conversations. This supports systems design, process documentation, and visual explanation.
 
 The extensibility framework enables integration of custom processing pipelines, tools, and functions. Organizations can

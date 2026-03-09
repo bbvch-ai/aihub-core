@@ -14,8 +14,8 @@ class ExternalAgentEvent(BaseModel):
     - A `UserMessageEvent` or `HumanInTheLoopResponseEvent` that the user sent.
 
     ### Why ExternalAgentEvent?
-    Users interact with the system via some service. Their actions—like sending messages, responding
-    to prompts, or initiating runs—arrive at the server as raw data. `ExternalAgentEvent`:
+    Users interact with the system via some service. Their actions - like sending messages, responding
+    to prompts, or initiating runs - arrive at the server as raw data. `ExternalAgentEvent`:
     - Parses and validates the incoming JSON or binary data.
     - Identifies the event type and instantiates the appropriate event class.
     - Provides a consistent structure for the server to understand user intentions.

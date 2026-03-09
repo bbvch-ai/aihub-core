@@ -15,7 +15,7 @@ class AgentInstanceTopic(AgentClassTopic):
     ### Why This Class Exists
 
     In a hierarchical event topic model, PartialAgentTopic might not have all details filled out.
-    AgentTopic guarantees that every piece of the event route—from agent class to event ID—is known.
+    AgentTopic guarantees that every piece of the event route - from agent class to event ID - is known.
     This makes AgentTopic ideal for scenarios where the full path is required, such as final message
     routing or logging a complete event identifier.
 

@@ -30,7 +30,7 @@ The platform uses a multi-layered approach:
 - **Synthetic Probes**: For services without native health endpoints, the platform actively polls them to ensure they
   are available and responsive.
 
-Every health status change—from healthy to unhealthy, service starts, and stops—is captured as a structured event,
+Every health status change - from healthy to unhealthy, service starts, and stops - is captured as a structured event,
 providing a complete historical record of service availability.
 
 ### 2. Metrics: "How is it performing?"
@@ -120,7 +120,7 @@ standard for observability.
 This is a deliberate architectural choice with significant benefits:
 
 - **No Vendor Lock-in**: The platform emits data in a standard format. While SigNoz is the default, you are free to send
-  telemetry to any OTel-compatible backend—be it Grafana, Datadog, Splunk, or your existing enterprise monitoring tool.
+  telemetry to any OTel-compatible backend - be it Grafana, Datadog, Splunk, or your existing enterprise monitoring tool.
   Adding a new destination is a configuration change, not a re-instrumentation project.
 - **Unified Data**: OTel provides a consistent way to collect metrics, logs, and traces. This means all your data is
   automatically correlated, allowing you to seamlessly pivot from a performance metric spike to the exact logs and

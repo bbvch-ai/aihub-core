@@ -28,7 +28,7 @@ class StepConfig(Form):
 
     ### Why StepConfig?
     As workflow steps become more complex, certain steps may require configuration
-    parameters—time limits, thresholds, behavior toggles, etc. By deriving from
+    parameters - time limits, thresholds, behavior toggles, etc. By deriving from
     StepConfig, each step can define its own configuration model.
 
     The `AgentConfig` can then hold instances of these step configurations,

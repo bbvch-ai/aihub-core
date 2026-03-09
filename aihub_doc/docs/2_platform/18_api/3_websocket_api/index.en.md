@@ -32,7 +32,7 @@ issues occur rather than silent failures.
 ### Event-Driven Architecture Bridge
 
 The WebSocket API serves as a bridge between the platform's internal event-driven architecture and external client
-applications. All platform operations—agent execution, process orchestration, message handling—generate structured
+applications. All platform operations - agent execution, process orchestration, message handling - generate structured
 events that flow through the NATS messaging backbone. The WebSocket layer translates these internal events into
 client-consumable messages, maintaining a consistent view of platform state across all connected applications.
 
@@ -44,7 +44,7 @@ history APIs.
 ### Security and Access Control
 
 Despite providing real-time access to platform operations, the WebSocket API maintains strict security boundaries.
-Connections are read-only from the client perspective—applications receive events but cannot publish through the
+Connections are read-only from the client perspective - applications receive events but cannot publish through the
 WebSocket channel. This design ensures that all actions requiring authorization validation flow through REST APIs where
 proper security checks occur.
 
@@ -57,7 +57,7 @@ complete data isolation.
 
 The API delivers real-time visibility across three primary operation types:
 
-**Agent Execution Monitoring**: Applications receive continuous updates as agents execute tasks—reasoning steps, tool
+**Agent Execution Monitoring**: Applications receive continuous updates as agents execute tasks - reasoning steps, tool
 invocations, response generation, and completion status. Streaming response chunks enable progressive display of agent
 output, similar to typing indicators in messaging applications. This visibility helps users understand agent
 capabilities and limitations, building appropriate trust levels for different task types.
@@ -69,7 +69,7 @@ where multiple parties contribute to problem-solving.
 
 **Process State Tracking**: Complex multi-step business processes generate events as they progress through workflow
 stages. Applications can display process status, highlight current steps, indicate completion progress, and notify users
-when their input is required. This visibility enables proactive engagement rather than reactive notification—users see
+when their input is required. This visibility enables proactive engagement rather than reactive notification - users see
 processes advancing and can prepare responses before being explicitly prompted.
 
 ## Business Value
@@ -78,7 +78,7 @@ processes advancing and can prepare responses before being explicitly prompted.
 
 Real-time feedback transforms how users interact with AI systems. Rather than submitting requests and waiting with no
 indication of progress, users observe continuous activity that maintains engagement and builds confidence. This
-transparency is particularly valuable for complex agent operations that may take minutes or hours—users can monitor
+transparency is particularly valuable for complex agent operations that may take minutes or hours - users can monitor
 progress, understand what the agent is currently doing, and make informed decisions about whether to wait or pursue
 alternative approaches. Progressive response streaming in chat interfaces feels more natural and engaging than long
 pauses followed by complete responses, and process status visibility helps users understand where they are in multi-step
@@ -91,7 +91,7 @@ resources and API costs. When agents pursue incorrect reasoning paths or encount
 intervention before significant resources are consumed. This capability becomes increasingly important as organizations
 scale AI deployments across multiple teams and use cases.
 
-Administrators benefit from real-time platform monitoring—observing agent utilization patterns, identifying performance
+Administrators benefit from real-time platform monitoring - observing agent utilization patterns, identifying performance
 bottlenecks, and receiving immediate notification of system issues. This operational visibility supports proactive
 management rather than reactive troubleshooting.
 

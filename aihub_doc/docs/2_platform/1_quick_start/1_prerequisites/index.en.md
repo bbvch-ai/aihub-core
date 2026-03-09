@@ -86,7 +86,7 @@ Complete the following steps in the Azure Portal to prepare authentication:
 3. Configure the registration:
    - **Name**: `Swiss AI Hub` (or your organization's naming convention)
    - **Supported account types**: Select based on requirements
-     - `Accounts in this organizational directory only` (single tenant — recommended for most deployments)
+     - `Accounts in this organizational directory only` (single tenant - recommended for most deployments)
    - **Redirect URI**: Leave blank (will be configured in Step 5)
 4. Click **"Register"**
 

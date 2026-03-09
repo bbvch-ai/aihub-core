@@ -17,7 +17,7 @@ class StartEvent(ControlAndDisplayEvent):
     The start event - and all events inheriting from it - trigger a new workflow run. By inheriting
     from the StartEvent, initial context for the workflow can be set.
 
-    By extending `ControlEvent`, `StartEvent` influences workflow steps—only `ControlEvent` types
+    By extending `ControlEvent`, `StartEvent` influences workflow steps - only `ControlEvent` types
     drive the flow. Other event types may provide data or UI updates but do not start or control runs.
 
     ### Agent Configuration

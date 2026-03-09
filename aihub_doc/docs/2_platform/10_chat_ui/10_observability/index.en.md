@@ -25,7 +25,7 @@ how systems reached conclusions and where human oversight occurred.
 
 The platform captures detailed records of agent workflow execution.
 
-Execution traces show the complete sequence of steps the agent executed—decision points, tool invocations, knowledge
+Execution traces show the complete sequence of steps the agent executed - decision points, tool invocations, knowledge
 retrievals, intermediate calculations. Users see structured processes rather than mysterious computations.
 
 Each workflow step consumes input events and produces output events. The trace display shows how data transforms through
@@ -42,13 +42,13 @@ agents apply appropriate logic to specific scenarios.
 Trace display opens an adjacent panel within the chat interface. Users correlate chat responses with workflow steps
 without switching applications.
 
-Traces present information hierarchically—workflow overview, step execution, event data. Users drill into areas of
+Traces present information hierarchically - workflow overview, step execution, event data. Users drill into areas of
 interest without excessive detail for straightforward operations.
 
-At the most granular level, users examine complete event data—the JSON structures flowing between workflow steps. This
+At the most granular level, users examine complete event data - the JSON structures flowing between workflow steps. This
 supports sophisticated debugging and validation.
 
-From trace views, users navigate to related capabilities—knowledge documents accessed during retrieval, agent
+From trace views, users navigate to related capabilities - knowledge documents accessed during retrieval, agent
 configurations, system logs.
 
 ## Langfuse tracing integration
@@ -58,7 +58,7 @@ The platform uses Langfuse, an open-source AI observability platform.
 The implementation follows OpenInference semantic conventions. Trace data uses standardized formats compatible with
 industry observability tools.
 
-The system captures semantic events—LLM invocations, retrieval operations, embedding generations—as structured trace
+The system captures semantic events - LLM invocations, retrieval operations, embedding generations - as structured trace
 spans. These capture AI-specific concepts like token usage, retrieval relevance scores, and model selection.
 
 When workflows involve multiple agents, traces maintain correlation across interactions. Users can follow execution
@@ -103,7 +103,7 @@ practice.
 Trace visibility respects the permission system. Users can only view traces for conversations they participated in or
 are authorized to audit. Administrative access requires explicit permissions.
 
-The platform can redact sensitive information from traces—personally identifiable information, confidential data—while
+The platform can redact sensitive information from traces - personally identifiable information, confidential data - while
 preserving workflow structure.
 
 The system logs trace access, documenting who reviewed which traces and when. This supports compliance requirements and

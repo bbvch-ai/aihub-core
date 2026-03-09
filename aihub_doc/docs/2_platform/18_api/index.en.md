@@ -8,7 +8,7 @@ title: API
 
 The OpenAI-Compatible REST API provides a standards-based HTTP interface built on FastAPI that mirrors the OpenAI API
 specification exactly. This design enables organizations to migrate existing AI-powered applications to the Swiss AI-Hub
-platform without modifying application code—only the API endpoint URL and authentication token need to change.
+platform without modifying application code - only the API endpoint URL and authentication token need to change.
 
 The strategic value of this compatibility layer lies in reducing migration friction and protecting existing technology
 investments. Organizations can adopt Swiss AI-Hub infrastructure for data sovereignty, cost control, or compliance
@@ -46,7 +46,7 @@ interact with complex, stateful agent workflows using the same familiar chat int
 
 This extension provides a migration path for organizations seeking to evolve from simple LLM interactions toward
 orchestrated agent workflows. Applications can start by calling basic language models and progressively adopt more
-sophisticated agents without architectural changes—the same API interface serves both use cases.
+sophisticated agents without architectural changes - the same API interface serves both use cases.
 
 ## Supported Capabilities
 

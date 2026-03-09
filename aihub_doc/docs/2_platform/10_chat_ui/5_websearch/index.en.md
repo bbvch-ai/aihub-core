@@ -53,7 +53,7 @@ clickable citations with URLs, titles, and content previews. Users receive infor
 retrieved.
 
 Every search query, retrieved result, and user interaction is captured for audit purposes. The entire search
-process—from query validation through result filtering to presentation—is traceable through the observability
+process - from query validation through result filtering to presentation - is traceable through the observability
 infrastructure.
 
 ## Use cases

@@ -14,7 +14,7 @@ documents or a collection of vector embeddings. The code you write for an asset 
 
 - **`@asset` / `@graph_asset`**: These decorators define a function as an asset. A `graph_asset` is a special type
   composed of multiple smaller operations (`@op`) wired together.
-- **Role**: Assets define the "what" of your pipeline—the transformations that turn raw files into valuable, AI-ready
+- **Role**: Assets define the "what" of your pipeline - the transformations that turn raw files into valuable, AI-ready
   data.
 
 ## I/O Managers

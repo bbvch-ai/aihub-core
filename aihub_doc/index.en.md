@@ -39,7 +39,7 @@ features:
 ::: details How can our Swiss organization deploy AI while keeping all data on-premise?
 The Swiss AI Hub is an **open-source AI platform** that *you* deploy and control. It's specifically designed for
 **on-premise installation** within your own Swiss data center. This means you can run the entire AI
-infrastructure—including language model gateways and knowledge databases—on your servers, ensuring complete control and
+infrastructure - including language model gateways and knowledge databases - on your servers, ensuring complete control and
 data isolation. You can find more details in our
 [Deployment Options](docs/2_platform/3_deployment_guide/1_deployment_options/).
 :::

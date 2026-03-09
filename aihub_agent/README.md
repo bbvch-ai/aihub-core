@@ -27,7 +27,7 @@ have the required infrastructure running before proceeding.
 ### 📚 Introduction to `aihub_agent`
 
 You are contributing to the **aihub_agent** scope, which contains all agent logic and workflow definitions within the
-AI-Hub platform. This scope implements autonomous AI agents designed for proactive process automation—components that
+AI-Hub platform. This scope implements autonomous AI agents designed for proactive process automation - components that
 work alongside humans to execute tasks as part of redesigned business processes.
 
 ### 📁 Project Structure
@@ -72,7 +72,7 @@ class Agent(DispatchableWorkflow):
 ### 📶 The Event-Driven Architecture
 
 ::: info Event Communication
-Agents communicate through **events**—structured data objects that represent specific occurrences or states.
+Agents communicate through **events** - structured data objects that represent specific occurrences or states.
 :::
 
 - **Control Events**: Manage the workflow lifecycle (`StartEvent`, `StopEvent`, `ExceptionEvent`).

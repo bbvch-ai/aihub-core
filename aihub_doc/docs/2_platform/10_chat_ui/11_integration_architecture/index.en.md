@@ -18,7 +18,7 @@ accessible so users can switch to other services without losing their chat conte
 
 The embedding preserves Open WebUI's complete interface and feature set. Keyboard shortcuts, drag-and-drop file
 handling, and conversation management work as they do in the standalone application. The embedded interface adapts to
-different screen sizes—desktop displays provide expanded workspace while mobile devices maintain functional access.
+different screen sizes - desktop displays provide expanded workspace while mobile devices maintain functional access.
 
 ## Communication between components
 
@@ -26,8 +26,8 @@ The iframe and suite platform communicate using the browser-standard PostMessage
 messaging while maintaining security boundaries between components.
 
 The chat interface and platform exchange structured messages for user interactions, navigation requests, and state
-synchronization. When users request platform capabilities within the chat interface—like viewing knowledge sources or
-execution traces—the chat posts messages that trigger navigation and data display.
+synchronization. When users request platform capabilities within the chat interface - like viewing knowledge sources or
+execution traces - the chat posts messages that trigger navigation and data display.
 
 Messages follow defined contracts that specify intent, parameters, and behaviors. Types include source display requests,
 tracing visibility requests, and context synchronization.
@@ -51,7 +51,7 @@ content security policies to prevent cross-site scripting.
 ## Configuration and deployment
 
 Open WebUI deploys as an independent Docker container within the platform. This provides isolation while managing the
-lifecycle—starting, stopping, and updating—alongside other services.
+lifecycle - starting, stopping, and updating - alongside other services.
 
 The chat container accesses platform infrastructure like databases, object storage, and message queues through standard
 patterns. Chat data persists with other platform data, supporting unified backup and data governance.
@@ -83,13 +83,13 @@ consistency with the suite's design.
 The platform monitors Open WebUI container health through standard endpoints. Service failures trigger automatic
 recovery or administrator alerts.
 
-Usage metrics—conversation counts, response times, error rates—flow to platform observability systems. Administrators
+Usage metrics - conversation counts, response times, error rates - flow to platform observability systems. Administrators
 monitor chat service performance alongside other metrics.
 
 Chat logs aggregate with platform logs in unified infrastructure. This supports troubleshooting across multiple
 components.
 
-Resource consumption monitoring—CPU, memory, network—supports capacity planning as user populations and conversation
+Resource consumption monitoring - CPU, memory, network - supports capacity planning as user populations and conversation
 volumes grow.
 
 ## What this approach provides

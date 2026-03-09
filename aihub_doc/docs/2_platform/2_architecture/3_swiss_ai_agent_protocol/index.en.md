@@ -695,8 +695,8 @@ The two protocols are based on different architectural patterns.
   model.
 
 - **The Swiss AI Agent Protocol** uses a **publish-subscribe model** over a central message bus (NATS). Participants
-  publish events to the bus without knowledge of the subscribers. Any number of other participants—be it other agents,
-  the API Gateway, or logging services—can subscribe to these events. This is a broadcast-based, many-to-many
+  publish events to the bus without knowledge of the subscribers. Any number of other participants - be it other agents,
+  the API Gateway, or logging services - can subscribe to these events. This is a broadcast-based, many-to-many
   interaction model.
 
 ### State management

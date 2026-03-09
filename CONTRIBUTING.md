@@ -1,7 +1,7 @@
 # Contributing to the Swiss AI-Hub
 
 First off, thank you for considering contributing! We are thrilled to have you here. This project is a community-driven
-effort, and every contribution—from fixing a typo to proposing a new sovereign AI strategy—is incredibly valuable.
+effort, and every contribution - from fixing a typo to proposing a new sovereign AI strategy - is incredibly valuable.
 
 This document is your starting guide. It will help you find the best way to make an impact and direct you to the
 resources you need.
@@ -114,5 +114,4 @@ technical/non-technical audiences.
 
 ## ⚖️ License
 
-By contributing to the Swiss AI-Hub, you agree that your contributions will be licensed under the Apache 2.0 and EUPL
-1.2 License.
+By contributing to the Swiss AI-Hub, you agree that your contributions will be licensed under the Apache 2.0 License.

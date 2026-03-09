@@ -9,7 +9,7 @@ class ASGIAdapter(BaseAdapter):
     and route them directly to a provided ASGI application, bypassing actual network communication.
 
     ### Purpose
-    In testing environments—especially when using FastAPI—it is common for parts of the application
+    In testing environments - especially when using FastAPI - it is common for parts of the application
     to issue HTTP requests to endpoints that are also part of the same ASGI app. Without interception,
     these requests would attempt to resolve the hostname and make real network calls, which can lead to
     name resolution errors or unintended external dependencies. ASGIAdapter prevents these issues by

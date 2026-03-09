@@ -15,7 +15,7 @@ class LLMCostEvent(CostEvent, LLMCosts):
     ### Why LLMCostEvent?
     For teams tracking expenditures on LLM services, LLMCostEvent provides a direct, user-visible
     breakdown of the costs per run. As a display event, it can be surfaced in UIs or logs to give
-    engineers, product managers, or finance teams clear insights into where tokens—and money—are
+    engineers, product managers, or finance teams clear insights into where tokens - and money - are
     going.
     """
 

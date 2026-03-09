@@ -5,7 +5,7 @@ title: Extensibility and Customization
 # Extensibility and Customization
 
 The Swiss AI Hub suite interface is designed for extensibility, enabling organizations to add custom AI capabilities,
-integrate proprietary systems, and tailor the platform to specific business requirements—all while maintaining the
+integrate proprietary systems, and tailor the platform to specific business requirements - all while maintaining the
 unified suite experience and without modifying core platform code.
 
 ## Architectural Foundations for Extensibility
@@ -43,7 +43,7 @@ controller. This controller defines the service's API endpoints, permission requ
 implementation follows standard FastAPI patterns familiar to Python developers.
 
 **Frontend Component Development**: Services requiring custom user interfaces implement frontend components using the
-same technology stack as the native interface—Nuxt 3, Vue 3, and PrimeVue. These components access the custom
+same technology stack as the native interface - Nuxt 3, Vue 3, and PrimeVue. These components access the custom
 controller's API endpoints through automatically generated TypeScript clients, ensuring type safety across the
 frontend-backend boundary.
 
@@ -52,7 +52,7 @@ the suite's dynamic service discovery. Users with appropriate permissions see th
 navigation alongside native services. The custom service's icon, name, and description integrate seamlessly into the
 unified interface.
 
-**Shared Infrastructure Access**: Custom services automatically gain access to platform infrastructure—NATS messaging
+**Shared Infrastructure Access**: Custom services automatically gain access to platform infrastructure - NATS messaging
 for event-driven communication, MongoDB persistence for data storage, authentication/authorization for security,
 internationalization for multi-language support, and observability tooling for monitoring and tracing.
 
@@ -65,7 +65,7 @@ analysis, financial modeling, or risk assessment. These agents integrate into th
 alongside native agents with industry-specific workflows and knowledge integration.
 
 **Proprietary System Integration**: Organizations can implement services that bridge the AI Hub with proprietary
-enterprise systems—ERP systems, custom databases, legacy applications. These integration services might expose
+enterprise systems - ERP systems, custom databases, legacy applications. These integration services might expose
 specialized agents that interact with proprietary systems or provide monitoring interfaces for AI-driven automation
 within those systems.
 
@@ -74,7 +74,7 @@ dashboard services that aggregate data from agents, processes, and knowledge sys
 metrics and visualizations.
 
 **Specialized Workflows**: Process-heavy organizations might implement custom process management interfaces tailored to
-specific workflow types—document approval workflows, compliance verification processes, multi-stage review procedures.
+specific workflow types - document approval workflows, compliance verification processes, multi-stage review procedures.
 These custom interfaces leverage the platform's process automation infrastructure while presenting domain-specific
 views.
 
@@ -130,7 +130,7 @@ integrate.
 which users access custom services through the same role and permission management interfaces used for native
 capabilities.
 
-**Quality Standards**: Organizations can establish quality gates for custom service deployment—code review requirements,
+**Quality Standards**: Organizations can establish quality gates for custom service deployment - code review requirements,
 testing standards, security audits, performance benchmarks. The platform's extensibility doesn't mandate lower standards
 for custom services.
 
@@ -189,7 +189,7 @@ Organizations planning custom service development should consider several techni
 Vue.js skills for frontend development. Organizations should ensure access to developers with these capabilities or
 invest in training.
 
-**Maintenance Burden**: Custom services require ongoing maintenance—bug fixes, security updates, compatibility with
+**Maintenance Burden**: Custom services require ongoing maintenance - bug fixes, security updates, compatibility with
 platform evolution. Organizations should plan for long-term maintenance rather than treating custom services as one-time
 development projects.
 

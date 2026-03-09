@@ -5,7 +5,7 @@ title: Our solution
 # Our solution: Enterprise AI infrastructure as a product
 
 The Swiss AI Hub is a complete, open-source AI platform that you deploy, own, and control. It's not a service you
-subscribe to or a framework you build upon—it's production-ready infrastructure that becomes yours.
+subscribe to or a framework you build upon - it's production-ready infrastructure that becomes yours.
 
 ## Platform + SDK: The complete package
 
@@ -17,7 +17,7 @@ LLM gateway, vector databases, data pipelines, authentication, monitoring, and u
 
 **The SDK** is how you extend the platform. It provides the patterns, tools, and frameworks for building agents,
 pipelines, and processes that automatically integrate with the platform. When you build with our SDK, your components
-inherit all platform capabilities—they don't need custom deployment, monitoring, or user access because the platform
+inherit all platform capabilities - they don't need custom deployment, monitoring, or user access because the platform
 handles it.
 
 ## What you get out of the box
@@ -96,7 +96,7 @@ external systems.
 
 ## Why open source changes everything
 
-The Apache 2.0 license means you're not adopting a platform—you're acquiring one:
+The Apache 2.0 license means you're not adopting a platform - you're acquiring one:
 
 - **No vendor lock-in**: The code is yours. Run it anywhere, modify it as needed
 - **No licensing fees**: Pay only for the infrastructure you run it on

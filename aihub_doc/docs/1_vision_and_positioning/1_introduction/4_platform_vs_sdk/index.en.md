@@ -62,9 +62,10 @@ before deploying. No need to understand the platform's internal architecture to 
 Platform updates (new versions of Langfuse, LiteLLM, or the web UI) don't break your custom agents. SDK updates (new
 decorators or patterns) don't require platform changes. Each layer evolves independently.
 
-**Clear ownership boundaries**\
-The platform is Apache 2.0, so you own your deployment completely. The SDK has different licensing (EUPL 1.2 for
-community version), creating clear boundaries between infrastructure you own and development tools you license.
+**Clear architectural boundaries**\
+The separation creates clear interfaces between infrastructure and business logic. Platform concerns (authentication,
+storage, tracing) are completely separated from agent logic. This makes the codebase easier to understand, test, and
+maintain.
 
 ## How they work together
 
@@ -113,24 +114,11 @@ class DocumentAnalyzer(Agent):
 The SDK isn't hiding complexity, it's eliminating redundancy. The platform already knows how to stream, authenticate,
 store, trace, display, and deploy. The SDK provides the patterns to tap into these capabilities.
 
-## Licensing and business model
+## Open source and licensing
 
-The architectural split enables a sustainable business model:
-
-**Platform (Apache 2.0)**: Take it, deploy it, modify it, own it. No fees, no restrictions. This removes adoption
-barriers and vendor lock-in concerns.
-
-**SDK (Dual licensed)**:
-
-- **Community edition (EUPL 1.2)**: Free to use but modifications must be shared back
-- **Commercial edition**: Proprietary development without sharing requirements
-
-This model means:
-
-- Organizations can adopt the platform risk-free
-- Basic customization using platform features remains free
-- Advanced SDK development contributes back to the community or requires commercial licensing
-- Everyone benefits from platform improvements
+The entire Swiss AI Hub is open-source under the Apache 2.0 license - platform, SDK, agents, pipelines, and all
+components. This permissive license means you can use, modify, and distribute everything freely, even for commercial
+purposes, without any obligation to share your modifications back. You own your deployment and your code completely.
 
 ## When you need each part
 
