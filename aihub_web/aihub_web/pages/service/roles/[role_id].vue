@@ -24,7 +24,7 @@
 
 <script setup lang="ts">
 import { useUpdateRole } from '@core/composables/role/useUpdateRole'
-import cloneDeep from 'lodash.clonedeep'
+import { cloneDeep } from 'lodash-es'
 
 import type { CreateRoleRequest, RoleResponse } from '@core/sdk/client'
 

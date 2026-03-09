@@ -91,8 +91,8 @@ adoption friction. Employees begin using AI assistance simply by messaging a bot
 patterns they already know. Organizations report utilization rates 3-5x higher when AI capabilities integrate into
 existing tools compared to standalone AI applications requiring separate access and training.
 
-The embedded approach particularly benefits occasional users who need AI assistance infrequently but significantly - these
-users rarely justify learning a separate application but readily use capabilities available in familiar tools.
+The embedded approach particularly benefits occasional users who need AI assistance infrequently but significantly -
+these users rarely justify learning a separate application but readily use capabilities available in familiar tools.
 
 ### Operational Efficiency Through Human-AI Collaboration
 
@@ -117,10 +117,10 @@ additional enterprise applications creates significant burden.
 
 ### Deployment Flexibility
 
-The independent deployment model enables organizations to deploy bot capabilities selectively - enabling Teams integration
-for headquarters while using Slack for regional offices, or deploying web chat widgets for customer-facing scenarios
-while using Teams internally. Different channels can route to different agent configurations, supporting use case
-segmentation or regulatory requirements where different regions require different AI handling.
+The independent deployment model enables organizations to deploy bot capabilities selectively - enabling Teams
+integration for headquarters while using Slack for regional offices, or deploying web chat widgets for customer-facing
+scenarios while using Teams internally. Different channels can route to different agent configurations, supporting use
+case segmentation or regulatory requirements where different regions require different AI handling.
 
 ## Implementation Approach
 

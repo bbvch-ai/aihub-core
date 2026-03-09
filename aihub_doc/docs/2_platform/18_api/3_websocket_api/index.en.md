@@ -91,9 +91,9 @@ resources and API costs. When agents pursue incorrect reasoning paths or encount
 intervention before significant resources are consumed. This capability becomes increasingly important as organizations
 scale AI deployments across multiple teams and use cases.
 
-Administrators benefit from real-time platform monitoring - observing agent utilization patterns, identifying performance
-bottlenecks, and receiving immediate notification of system issues. This operational visibility supports proactive
-management rather than reactive troubleshooting.
+Administrators benefit from real-time platform monitoring - observing agent utilization patterns, identifying
+performance bottlenecks, and receiving immediate notification of system issues. This operational visibility supports
+proactive management rather than reactive troubleshooting.
 
 ### Collaborative AI Workflows
 

@@ -79,8 +79,8 @@ simultaneously through structured Slack interactions. One expert consultation ca
 knowledge is captured for organizational learning and future automation improvements.
 
 **🛡️ Risk-Aware Decision Making**: Critical decisions that require human judgment - regulatory compliance, high-stakes
-approvals, or complex interpretations - can be seamlessly integrated into otherwise automated processes. This ensures both
-speed and safety in AI-powered workflows.
+approvals, or complex interpretations - can be seamlessly integrated into otherwise automated processes. This ensures
+both speed and safety in AI-powered workflows.
 
 **📚 Organizational Knowledge Capture**: Every human response is captured with full context, creating an ever-growing
 repository of expert decisions and knowledge. This enables continuous improvement of AI systems and builds institutional

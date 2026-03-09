@@ -103,8 +103,8 @@ practice.
 Trace visibility respects the permission system. Users can only view traces for conversations they participated in or
 are authorized to audit. Administrative access requires explicit permissions.
 
-The platform can redact sensitive information from traces - personally identifiable information, confidential data - while
-preserving workflow structure.
+The platform can redact sensitive information from traces - personally identifiable information, confidential data -
+while preserving workflow structure.
 
 The system logs trace access, documenting who reviewed which traces and when. This supports compliance requirements and
 detects inappropriate access.

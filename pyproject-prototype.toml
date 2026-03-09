@@ -1,0 +1,25 @@
+[project]
+name = "swiss-ai-hub-workspace"
+version = "0.270.1"
+requires-python = ">=3.13, <3.14"
+description = "Swiss AI Hub Monorepo Workspace"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4.1",
+    "ruff>=0.8.1",
+]
+
+[tool.uv]
+package = false
+
+[tool.uv.workspace]
+members = [
+    "swiss_ai_hub/core",
+    "swiss_ai_hub/agent",
+]
+
+[tool.uv.sources]
+swiss-ai-hub-core = { workspace = true }
+swiss-ai-hub-agent = { workspace = true }

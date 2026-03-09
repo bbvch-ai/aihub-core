@@ -10,7 +10,7 @@ authors = [
     { name = "Thomas Mannhart", email = "thomas.mannhart@bbv.ch" },
     { name = "Noah Hermann", email = "noah.hermann@bbv.ch" },
 ]
-license = "LicenseRef-Proprietary"
+license = "Apache-2.0"
 readme = "README.md"
 dependencies = [
     "aihub-core",

@@ -60,8 +60,8 @@ Innovationen privat halten können, während Sie von der gemeinsamen Infrastrukt
 
 ## Warum Lizenzierung für KI-Infrastruktur wichtig ist
 
-Das Verständnis von Software-Lizenzierung ist entscheidend beim Aufbau von KI-Infrastruktur. Viele Organisationen
-machen kostspielige Fehler, indem sie annehmen, dass Code auf GitHub automatisch frei nutzbar ist - das ist er nicht.
+Das Verständnis von Software-Lizenzierung ist entscheidend beim Aufbau von KI-Infrastruktur. Viele Organisationen machen
+kostspielige Fehler, indem sie annehmen, dass Code auf GitHub automatisch frei nutzbar ist - das ist er nicht.
 
 ### Das GitHub-Missverständnis
 
@@ -77,8 +77,7 @@ entdecken dies zu spät, nachdem sie Abhängigkeiten von diesen Tools aufgebaut 
 ### Lizenzkategorien erklärt
 
 **Permissive Lizenzen** (MIT, Apache 2.0, BSD): Gewähren umfassende Freiheiten - nutzen, modifizieren, kommerziell
-verbreiten, Änderungen privat halten. Keine Bedingungen. Diese sind ideal für den Aufbau von
-Geschäftsinfrastruktur.
+verbreiten, Änderungen privat halten. Keine Bedingungen. Diese sind ideal für den Aufbau von Geschäftsinfrastruktur.
 
 **Copyleft-Lizenzen** (GPL, AGPL): Erfordern, dass alle Änderungen oder abgeleiteten Werke unter derselben Lizenz
 veröffentlicht werden. Wenn Sie auf GPL-Software aufbauen und diese verbreiten, müssen Sie Ihre gesamte Anwendung als
@@ -116,10 +115,9 @@ ausdrücklich überprüft und genehmigt wurde.
 Sie mit proprietären Systemen, bieten Sie ihn als Service an oder bauen Sie Produkte darauf auf - ohne Lizenzkonflikte,
 versteckte Einschränkungen oder zukünftige Überraschungen.
 
-**Warum speziell Apache 2.0:** Über die Permissivität hinaus beinhaltet Apache 2.0 explizite Patentgewährungen, die
-Sie vor Patentansprüchen durch Mitwirkende schützen. Sie ist von Unternehmen anerkannt, von Rechtsabteilungen gut
-verstanden und mit praktisch allen anderen Lizenzen kompatibel. Sie ist der Goldstandard für kollaborative
-Infrastruktur.
+**Warum speziell Apache 2.0:** Über die Permissivität hinaus beinhaltet Apache 2.0 explizite Patentgewährungen, die Sie
+vor Patentansprüchen durch Mitwirkende schützen. Sie ist von Unternehmen anerkannt, von Rechtsabteilungen gut verstanden
+und mit praktisch allen anderen Lizenzen kompatibel. Sie ist der Goldstandard für kollaborative Infrastruktur.
 
 Dies ist nicht nur Idealismus - es ist Pragmatismus. Permissive Lizenzierung beseitigt Adoptionsbarrieren, verhindert
 Vendor Lock-in und stellt sicher, dass Sie Ihre KI-Infrastruktur vollständig besitzen. Keine Lizenzprüfungen, keine

@@ -446,8 +446,8 @@ control, though you'll need coding skills rather than visual tools.
 ::: details LangFlow
 LangFlow is a visual interface for LangChain that accelerates prototype development through drag-and-drop workflow
 creation. While it excels at making AI accessible to non-developers, it's a development tool, not a production platform.
-It lacks built-in authentication, monitoring, cost tracking, and deployment infrastructure - you still need to figure out
-how to run, scale, and secure your flows in production.
+It lacks built-in authentication, monitoring, cost tracking, and deployment infrastructure - you still need to figure
+out how to run, scale, and secure your flows in production.
 
 **Choose LangFlow when** you want to quickly prototype LangChain-based workflows with a visual interface and have the
 resources to build production infrastructure around your prototypes. Your focus is on rapid experimentation.

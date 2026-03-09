@@ -19,9 +19,9 @@ jobs makes building agents much easier:
 2. **Event Routing**: The dispatcher acts as a central router. When one step **returns** an event, the dispatcher
    catches it and delivers it to the *next* step that is designed to **accept** that event type. This is how your steps
    are automatically chained together.
-3. **Dependency Injection**: The dispatcher automatically provides - or "injects" - necessary objects like configuration and
-   context directly into your step methods based on their type hints. You don't create these objects; you just ask for
-   them.
+3. **Dependency Injection**: The dispatcher automatically provides - or "injects" - necessary objects like configuration
+   and context directly into your step methods based on their type hints. You don't create these objects; you just ask
+   for them.
 
 With the dispatcher handling the **how** you can focus on the **what**: defining your agent's logic.
 

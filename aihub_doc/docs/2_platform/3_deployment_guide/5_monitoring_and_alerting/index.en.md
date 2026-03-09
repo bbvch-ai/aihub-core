@@ -120,8 +120,8 @@ standard for observability.
 This is a deliberate architectural choice with significant benefits:
 
 - **No Vendor Lock-in**: The platform emits data in a standard format. While SigNoz is the default, you are free to send
-  telemetry to any OTel-compatible backend - be it Grafana, Datadog, Splunk, or your existing enterprise monitoring tool.
-  Adding a new destination is a configuration change, not a re-instrumentation project.
+  telemetry to any OTel-compatible backend - be it Grafana, Datadog, Splunk, or your existing enterprise monitoring
+  tool. Adding a new destination is a configuration change, not a re-instrumentation project.
 - **Unified Data**: OTel provides a consistent way to collect metrics, logs, and traces. This means all your data is
   automatically correlated, allowing you to seamlessly pivot from a performance metric spike to the exact logs and
   traces that explain it.

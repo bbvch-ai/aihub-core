@@ -45,7 +45,7 @@ import {
   type FormElement,
   type RepeaterConfig,
 } from '@core/composables/form/useFormKitTransform'
-import merge from 'lodash/merge'
+import { merge } from 'lodash-es'
 
 import type { FormkitElement } from '@core/sdk/client'
 import type { FormKitSchemaDefinition } from '@formkit/core'

@@ -83,8 +83,8 @@ consistency with the suite's design.
 The platform monitors Open WebUI container health through standard endpoints. Service failures trigger automatic
 recovery or administrator alerts.
 
-Usage metrics - conversation counts, response times, error rates - flow to platform observability systems. Administrators
-monitor chat service performance alongside other metrics.
+Usage metrics - conversation counts, response times, error rates - flow to platform observability systems.
+Administrators monitor chat service performance alongside other metrics.
 
 Chat logs aggregate with platform logs in unified infrastructure. This supports troubleshooting across multiple
 components.

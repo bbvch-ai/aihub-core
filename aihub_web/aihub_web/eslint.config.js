@@ -2,7 +2,7 @@ import { globalIgnores } from 'eslint/config'
 import sonarPlugin from 'eslint-plugin-sonarjs'
 import tailwindPlugin from 'eslint-plugin-tailwindcss'
 
-import withNuxt from './.nuxt/eslint.config.mjs'
+import withNuxt from './.app/.nuxt/eslint.config.mjs'
 
 export default withNuxt(
   globalIgnores([

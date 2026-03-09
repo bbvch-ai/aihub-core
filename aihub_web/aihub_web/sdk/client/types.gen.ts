@@ -763,7 +763,7 @@ export type AgentInTheLoopResponseEvent = {
  * ### Why This Class Exists
  *
  * In a hierarchical event topic model, PartialAgentTopic might not have all details filled out.
- * AgentTopic guarantees that every piece of the event route—from agent class to event ID—is known.
+ * AgentTopic guarantees that every piece of the event route - from agent class to event ID - is known.
  * This makes AgentTopic ideal for scenarios where the full path is required, such as final message
  * routing or logging a complete event identifier.
  *
@@ -1368,7 +1368,7 @@ export type AudioBlock = {
     /**
      * Audio
      */
-    audio?: Blob | File | null;
+    audio?: string | null;
     /**
      * Path
      */
@@ -1590,7 +1590,7 @@ export type BodyCreateTranscriptionOpenaiAudioTranscriptionsPost = {
      *
      * The audio file to transcribe
      */
-    file: Blob | File;
+    file: string;
     /**
      * Model
      *
@@ -2310,7 +2310,7 @@ export type ChatCompletionRequest = {
      *
      * ID of the model to use for the chat completion.
      */
-    model: string | 'gpt-5.2' | 'gpt-5.2-2025-12-11' | 'gpt-5.2-chat-latest' | 'gpt-5.2-pro' | 'gpt-5.2-pro-2025-12-11' | 'gpt-5.1' | 'gpt-5.1-2025-11-13' | 'gpt-5.1-codex' | 'gpt-5.1-mini' | 'gpt-5.1-chat-latest' | 'gpt-5' | 'gpt-5-mini' | 'gpt-5-nano' | 'gpt-5-2025-08-07' | 'gpt-5-mini-2025-08-07' | 'gpt-5-nano-2025-08-07' | 'gpt-5-chat-latest' | 'gpt-4.1' | 'gpt-4.1-mini' | 'gpt-4.1-nano' | 'gpt-4.1-2025-04-14' | 'gpt-4.1-mini-2025-04-14' | 'gpt-4.1-nano-2025-04-14' | 'o4-mini' | 'o4-mini-2025-04-16' | 'o3' | 'o3-2025-04-16' | 'o3-mini' | 'o3-mini-2025-01-31' | 'o1' | 'o1-2024-12-17' | 'o1-preview' | 'o1-preview-2024-09-12' | 'o1-mini' | 'o1-mini-2024-09-12' | 'gpt-4o' | 'gpt-4o-2024-11-20' | 'gpt-4o-2024-08-06' | 'gpt-4o-2024-05-13' | 'gpt-4o-audio-preview' | 'gpt-4o-audio-preview-2024-10-01' | 'gpt-4o-audio-preview-2024-12-17' | 'gpt-4o-audio-preview-2025-06-03' | 'gpt-4o-mini-audio-preview' | 'gpt-4o-mini-audio-preview-2024-12-17' | 'gpt-4o-search-preview' | 'gpt-4o-mini-search-preview' | 'gpt-4o-search-preview-2025-03-11' | 'gpt-4o-mini-search-preview-2025-03-11' | 'chatgpt-4o-latest' | 'codex-mini-latest' | 'gpt-4o-mini' | 'gpt-4o-mini-2024-07-18' | 'gpt-4-turbo' | 'gpt-4-turbo-2024-04-09' | 'gpt-4-0125-preview' | 'gpt-4-turbo-preview' | 'gpt-4-1106-preview' | 'gpt-4-vision-preview' | 'gpt-4' | 'gpt-4-0314' | 'gpt-4-0613' | 'gpt-4-32k' | 'gpt-4-32k-0314' | 'gpt-4-32k-0613' | 'gpt-3.5-turbo' | 'gpt-3.5-turbo-16k' | 'gpt-3.5-turbo-0301' | 'gpt-3.5-turbo-0613' | 'gpt-3.5-turbo-1106' | 'gpt-3.5-turbo-0125' | 'gpt-3.5-turbo-16k-0613';
+    model: string | 'gpt-5.4' | 'gpt-5.3-chat-latest' | 'gpt-5.2' | 'gpt-5.2-2025-12-11' | 'gpt-5.2-chat-latest' | 'gpt-5.2-pro' | 'gpt-5.2-pro-2025-12-11' | 'gpt-5.1' | 'gpt-5.1-2025-11-13' | 'gpt-5.1-codex' | 'gpt-5.1-mini' | 'gpt-5.1-chat-latest' | 'gpt-5' | 'gpt-5-mini' | 'gpt-5-nano' | 'gpt-5-2025-08-07' | 'gpt-5-mini-2025-08-07' | 'gpt-5-nano-2025-08-07' | 'gpt-5-chat-latest' | 'gpt-4.1' | 'gpt-4.1-mini' | 'gpt-4.1-nano' | 'gpt-4.1-2025-04-14' | 'gpt-4.1-mini-2025-04-14' | 'gpt-4.1-nano-2025-04-14' | 'o4-mini' | 'o4-mini-2025-04-16' | 'o3' | 'o3-2025-04-16' | 'o3-mini' | 'o3-mini-2025-01-31' | 'o1' | 'o1-2024-12-17' | 'o1-preview' | 'o1-preview-2024-09-12' | 'o1-mini' | 'o1-mini-2024-09-12' | 'gpt-4o' | 'gpt-4o-2024-11-20' | 'gpt-4o-2024-08-06' | 'gpt-4o-2024-05-13' | 'gpt-4o-audio-preview' | 'gpt-4o-audio-preview-2024-10-01' | 'gpt-4o-audio-preview-2024-12-17' | 'gpt-4o-audio-preview-2025-06-03' | 'gpt-4o-mini-audio-preview' | 'gpt-4o-mini-audio-preview-2024-12-17' | 'gpt-4o-search-preview' | 'gpt-4o-mini-search-preview' | 'gpt-4o-search-preview-2025-03-11' | 'gpt-4o-mini-search-preview-2025-03-11' | 'chatgpt-4o-latest' | 'codex-mini-latest' | 'gpt-4o-mini' | 'gpt-4o-mini-2024-07-18' | 'gpt-4-turbo' | 'gpt-4-turbo-2024-04-09' | 'gpt-4-0125-preview' | 'gpt-4-turbo-preview' | 'gpt-4-1106-preview' | 'gpt-4-vision-preview' | 'gpt-4' | 'gpt-4-0314' | 'gpt-4-0613' | 'gpt-4-32k' | 'gpt-4-32k-0314' | 'gpt-4-32k-0613' | 'gpt-3.5-turbo' | 'gpt-3.5-turbo-16k' | 'gpt-3.5-turbo-0301' | 'gpt-3.5-turbo-0613' | 'gpt-3.5-turbo-1106' | 'gpt-3.5-turbo-0125' | 'gpt-3.5-turbo-16k-0613';
     /**
      * Stream
      *
@@ -2415,7 +2415,7 @@ export type ChatCompletionRequest = {
      * Top P
      */
     top_p?: number | null;
-    [key: string]: unknown | Array<ChatCompletionDeveloperMessageParam | ChatCompletionSystemMessageParam | ChatCompletionUserMessageParam | ChatCompletionAssistantMessageParam | ChatCompletionToolMessageParam | ChatCompletionFunctionMessageParam> | null | string | 'gpt-5.2' | 'gpt-5.2-2025-12-11' | 'gpt-5.2-chat-latest' | 'gpt-5.2-pro' | 'gpt-5.2-pro-2025-12-11' | 'gpt-5.1' | 'gpt-5.1-2025-11-13' | 'gpt-5.1-codex' | 'gpt-5.1-mini' | 'gpt-5.1-chat-latest' | 'gpt-5' | 'gpt-5-mini' | 'gpt-5-nano' | 'gpt-5-2025-08-07' | 'gpt-5-mini-2025-08-07' | 'gpt-5-nano-2025-08-07' | 'gpt-5-chat-latest' | 'gpt-4.1' | 'gpt-4.1-mini' | 'gpt-4.1-nano' | 'gpt-4.1-2025-04-14' | 'gpt-4.1-mini-2025-04-14' | 'gpt-4.1-nano-2025-04-14' | 'o4-mini' | 'o4-mini-2025-04-16' | 'o3' | 'o3-2025-04-16' | 'o3-mini' | 'o3-mini-2025-01-31' | 'o1' | 'o1-2024-12-17' | 'o1-preview' | 'o1-preview-2024-09-12' | 'o1-mini' | 'o1-mini-2024-09-12' | 'gpt-4o' | 'gpt-4o-2024-11-20' | 'gpt-4o-2024-08-06' | 'gpt-4o-2024-05-13' | 'gpt-4o-audio-preview' | 'gpt-4o-audio-preview-2024-10-01' | 'gpt-4o-audio-preview-2024-12-17' | 'gpt-4o-audio-preview-2025-06-03' | 'gpt-4o-mini-audio-preview' | 'gpt-4o-mini-audio-preview-2024-12-17' | 'gpt-4o-search-preview' | 'gpt-4o-mini-search-preview' | 'gpt-4o-search-preview-2025-03-11' | 'gpt-4o-mini-search-preview-2025-03-11' | 'chatgpt-4o-latest' | 'codex-mini-latest' | 'gpt-4o-mini' | 'gpt-4o-mini-2024-07-18' | 'gpt-4-turbo' | 'gpt-4-turbo-2024-04-09' | 'gpt-4-0125-preview' | 'gpt-4-turbo-preview' | 'gpt-4-1106-preview' | 'gpt-4-vision-preview' | 'gpt-4' | 'gpt-4-0314' | 'gpt-4-0613' | 'gpt-4-32k' | 'gpt-4-32k-0314' | 'gpt-4-32k-0613' | 'gpt-3.5-turbo' | 'gpt-3.5-turbo-16k' | 'gpt-3.5-turbo-0301' | 'gpt-3.5-turbo-0613' | 'gpt-3.5-turbo-1106' | 'gpt-3.5-turbo-0125' | 'gpt-3.5-turbo-16k-0613' | boolean | string | null | ChatCompletionAudioParam | null | number | null | 'none' | 'auto' | ChatCompletionFunctionCallOptionParam | null | Array<OpenaiTypesChatCompletionCreateParamsFunction> | null | {
+    [key: string]: unknown | Array<ChatCompletionDeveloperMessageParam | ChatCompletionSystemMessageParam | ChatCompletionUserMessageParam | ChatCompletionAssistantMessageParam | ChatCompletionToolMessageParam | ChatCompletionFunctionMessageParam> | null | string | 'gpt-5.4' | 'gpt-5.3-chat-latest' | 'gpt-5.2' | 'gpt-5.2-2025-12-11' | 'gpt-5.2-chat-latest' | 'gpt-5.2-pro' | 'gpt-5.2-pro-2025-12-11' | 'gpt-5.1' | 'gpt-5.1-2025-11-13' | 'gpt-5.1-codex' | 'gpt-5.1-mini' | 'gpt-5.1-chat-latest' | 'gpt-5' | 'gpt-5-mini' | 'gpt-5-nano' | 'gpt-5-2025-08-07' | 'gpt-5-mini-2025-08-07' | 'gpt-5-nano-2025-08-07' | 'gpt-5-chat-latest' | 'gpt-4.1' | 'gpt-4.1-mini' | 'gpt-4.1-nano' | 'gpt-4.1-2025-04-14' | 'gpt-4.1-mini-2025-04-14' | 'gpt-4.1-nano-2025-04-14' | 'o4-mini' | 'o4-mini-2025-04-16' | 'o3' | 'o3-2025-04-16' | 'o3-mini' | 'o3-mini-2025-01-31' | 'o1' | 'o1-2024-12-17' | 'o1-preview' | 'o1-preview-2024-09-12' | 'o1-mini' | 'o1-mini-2024-09-12' | 'gpt-4o' | 'gpt-4o-2024-11-20' | 'gpt-4o-2024-08-06' | 'gpt-4o-2024-05-13' | 'gpt-4o-audio-preview' | 'gpt-4o-audio-preview-2024-10-01' | 'gpt-4o-audio-preview-2024-12-17' | 'gpt-4o-audio-preview-2025-06-03' | 'gpt-4o-mini-audio-preview' | 'gpt-4o-mini-audio-preview-2024-12-17' | 'gpt-4o-search-preview' | 'gpt-4o-mini-search-preview' | 'gpt-4o-search-preview-2025-03-11' | 'gpt-4o-mini-search-preview-2025-03-11' | 'chatgpt-4o-latest' | 'codex-mini-latest' | 'gpt-4o-mini' | 'gpt-4o-mini-2024-07-18' | 'gpt-4-turbo' | 'gpt-4-turbo-2024-04-09' | 'gpt-4-0125-preview' | 'gpt-4-turbo-preview' | 'gpt-4-1106-preview' | 'gpt-4-vision-preview' | 'gpt-4' | 'gpt-4-0314' | 'gpt-4-0613' | 'gpt-4-32k' | 'gpt-4-32k-0314' | 'gpt-4-32k-0613' | 'gpt-3.5-turbo' | 'gpt-3.5-turbo-16k' | 'gpt-3.5-turbo-0301' | 'gpt-3.5-turbo-0613' | 'gpt-3.5-turbo-1106' | 'gpt-3.5-turbo-0125' | 'gpt-3.5-turbo-16k-0613' | boolean | string | null | ChatCompletionAudioParam | null | number | null | 'none' | 'auto' | ChatCompletionFunctionCallOptionParam | null | Array<OpenaiTypesChatCompletionCreateParamsFunction> | null | {
         [key: string]: number;
     } | null | boolean | null | number | null | number | null | Metadata | null | Array<'text' | 'audio'> | null | number | null | boolean | null | ChatCompletionPredictionContentParam | null | number | null | 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | null | ResponseFormatText | ResponseFormatJsonSchema | ResponseFormatJsonObject | null | number | null | 'auto' | 'default' | null | string | Array<string> | null | boolean | null | ChatCompletionStreamOptionsParam | null | number | null | 'none' | 'auto' | 'required' | ChatCompletionAllowedToolChoiceParam | ChatCompletionNamedToolChoiceParam | ChatCompletionNamedToolChoiceCustomParam | null | Array<ChatCompletionFunctionToolParam> | null | number | null | number | null | undefined;
 };
@@ -2724,7 +2724,7 @@ export type ChoiceLogprobs = {
  * ChunkEvent
  *
  * An event representing a portion of output or generated content (a "chunk") that is
- * streamed or delivered in segments—common in incremental output scenarios like LLM
+ * streamed or delivered in segments - common in incremental output scenarios like LLM
  * token streaming.
  *
  * ### Why ChunkEvent?
@@ -3985,7 +3985,7 @@ export type DocumentBlock = {
     /**
      * Data
      */
-    data?: Blob | File | null;
+    data?: string | null;
     /**
      * Path
      */
@@ -4637,7 +4637,7 @@ export type EventTimeseries = {
  *
  * By appearing as both a control and display event, `ExceptionEvent` ensures that the workflow
  * can stop further processing while also making the error visible in UI dashboards, logs, or
- * monitoring tools—giving operators and developers immediate insight into what went wrong.
+ * monitoring tools - giving operators and developers immediate insight into what went wrong.
  */
 export type ExceptionEvent = {
     /**
@@ -5908,7 +5908,7 @@ export type ImageBlock = {
     /**
      * Image
      */
-    image?: Blob | File | null;
+    image?: string | null;
     /**
      * Path
      */
@@ -7115,7 +7115,7 @@ export type KnowledgeDatabaseSelector = {
  * ### Why LLMCostEvent?
  * For teams tracking expenditures on LLM services, LLMCostEvent provides a direct, user-visible
  * breakdown of the costs per run. As a display event, it can be surfaced in UIs or logs to give
- * engineers, product managers, or finance teams clear insights into where tokens—and money—are
+ * engineers, product managers, or finance teams clear insights into where tokens - and money - are
  * going.
  */
 export type LlmCostEvent = {
@@ -9416,8 +9416,8 @@ export type PaginatedUsersResponse = {
  * Wildcards (represented by "*") in the subject translate into None values here.
  *
  * ### Why PartialAgentTopic?
- * Sometimes you deal with generic subscriptions to broad categories of events—like all display events
- * or all events from a particular agent class—without knowing the exact agent_id, thread_id, or event_id.
+ * Sometimes you deal with generic subscriptions to broad categories of events - like all display events
+ * or all events from a particular agent class - without knowing the exact agent_id, thread_id, or event_id.
  * PartialAgentTopic captures this scenario, making it explicit which parts of the topic are defined
  * and which remain open (None).
  *
@@ -11634,7 +11634,7 @@ export type StandaloneQuestionCondenserEvent = {
  * The start event - and all events inheriting from it - trigger a new workflow run. By inheriting
  * from the StartEvent, initial context for the workflow can be set.
  *
- * By extending `ControlEvent`, `StartEvent` influences workflow steps—only `ControlEvent` types
+ * By extending `ControlEvent`, `StartEvent` influences workflow steps - only `ControlEvent` types
  * drive the flow. Other event types may provide data or UI updates but do not start or control runs.
  *
  * ### Agent Configuration
@@ -13669,7 +13669,7 @@ export type VideoBlock = {
     /**
      * Video
      */
-    video?: Blob | File | null;
+    video?: string | null;
     /**
      * Path
      */
@@ -15096,7 +15096,7 @@ export type CheckboxWritable = {
  * ChunkEvent
  *
  * An event representing a portion of output or generated content (a "chunk") that is
- * streamed or delivered in segments—common in incremental output scenarios like LLM
+ * streamed or delivered in segments - common in incremental output scenarios like LLM
  * token streaming.
  *
  * ### Why ChunkEvent?
@@ -15733,7 +15733,7 @@ export type EmbeddingEventWritable = {
  *
  * By appearing as both a control and display event, `ExceptionEvent` ensures that the workflow
  * can stop further processing while also making the error visible in UI dashboards, logs, or
- * monitoring tools—giving operators and developers immediate insight into what went wrong.
+ * monitoring tools - giving operators and developers immediate insight into what went wrong.
  */
 export type ExceptionEventWritable = {
     /**
@@ -17262,7 +17262,7 @@ export type KnowledgeDatabaseSelectorWritable = {
  * ### Why LLMCostEvent?
  * For teams tracking expenditures on LLM services, LLMCostEvent provides a direct, user-visible
  * breakdown of the costs per run. As a display event, it can be surfaced in UIs or logs to give
- * engineers, product managers, or finance teams clear insights into where tokens—and money—are
+ * engineers, product managers, or finance teams clear insights into where tokens - and money - are
  * going.
  */
 export type LlmCostEventWritable = {
@@ -19879,7 +19879,7 @@ export type StandaloneQuestionCondenserEventWritable = {
  * The start event - and all events inheriting from it - trigger a new workflow run. By inheriting
  * from the StartEvent, initial context for the workflow can be set.
  *
- * By extending `ControlEvent`, `StartEvent` influences workflow steps—only `ControlEvent` types
+ * By extending `ControlEvent`, `StartEvent` influences workflow steps - only `ControlEvent` types
  * drive the flow. Other event types may provide data or UI updates but do not start or control runs.
  *
  * ### Agent Configuration

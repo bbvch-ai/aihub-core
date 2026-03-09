@@ -17,8 +17,8 @@ visibility.
 
 **Permission-Filtered Service Catalog**: When the suite loads, it queries the backend for the user's authorized service
 catalog. The backend evaluates the user's permissions against each registered service's requirements, returning only
-services the user can access. The interface renders navigation elements exclusively for authorized services - users simply
-never see capabilities they cannot use.
+services the user can access. The interface renders navigation elements exclusively for authorized services - users
+simply never see capabilities they cannot use.
 
 **Clean, Focused Interface**: This approach creates dramatically simpler interfaces compared to traditional
 applications. A data scientist sees evaluation and experimentation services prominently featured. A business analyst
@@ -163,8 +163,8 @@ requirements for access control, particularly in sectors with strict data protec
 finance, and public administration.
 
 **Zero-Trust Architecture**: The suite implements zero-trust principles where every service access requires explicit
-permission evaluation. There are no implicit trust assumptions based on network location or previous
-authentication - every operation is independently authorized.
+permission evaluation. There are no implicit trust assumptions based on network location or previous authentication -
+every operation is independently authorized.
 
 ## Operational Advantages
 

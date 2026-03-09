@@ -22,8 +22,9 @@ The interface provides conversation categorization through tags, searchable hist
 organized libraries of interactions, finding and resuming previous conversations. Conversations can be deleted, shared
 with others, or cloned to split off in different directions.
 
-Full markdown rendering enables rich text formatting in both user messages and AI responses - headers, lists, tables, code
-blocks with syntax highlighting. LaTeX support enables mathematical notation for technical and scientific applications.
+Full markdown rendering enables rich text formatting in both user messages and AI responses - headers, lists, tables,
+code blocks with syntax highlighting. LaTeX support enables mathematical notation for technical and scientific
+applications.
 
 ## Multi-modal interaction
 
@@ -100,8 +101,8 @@ usability across form factors. Users can initiate conversations on desktop and c
 The interface can install as a progressive web app, providing native application-like experiences including offline
 capability, push notifications, and home screen presence without requiring app store distribution.
 
-Users can select from multiple visual themes - light mode, dark mode, high-contrast options - matching interface appearance
-to personal preferences and environmental lighting.
+Users can select from multiple visual themes - light mode, dark mode, high-contrast options - matching interface
+appearance to personal preferences and environmental lighting.
 
 ## Advanced capabilities
 

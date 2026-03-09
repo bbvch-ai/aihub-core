@@ -6,8 +6,8 @@ title: Scaling Considerations
 
 The Swiss AI-Hub implements scalability as a core architectural principle, enabling organizations to grow their AI
 capabilities from pilot projects to enterprise-wide deployments without fundamental architectural changes. The
-platform's design ensures that scaling capacity requires only operational adjustments - deploying additional
-instances - rather than code modifications or architectural redesigns.
+platform's design ensures that scaling capacity requires only operational adjustments - deploying additional instances -
+rather than code modifications or architectural redesigns.
 
 ## Horizontal Scalability Through Event-Driven Architecture
 

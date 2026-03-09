@@ -19,7 +19,7 @@
 </template>
 
 <script setup lang="ts">
-import cloneDeep from 'lodash.clonedeep'
+import { cloneDeep } from 'lodash-es'
 import { useConfirm } from 'primevue/useconfirm'
 import { useToast } from 'primevue/usetoast'
 import { useI18n } from 'vue-i18n'

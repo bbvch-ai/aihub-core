@@ -317,6 +317,8 @@ jobs:
           for dir in . aihub_lib aihub_agent aihub_api aihub_bot aihub_pipeline aihub_process; do
             update_version "$dir/pyproject.toml"
           done
+          echo "Update package version in aihub_web/aihub_web/package.json"
+          sed -i 's/"version": "[^"]*"/"version": "'"$PEP_VERSION"'"/' aihub_web/aihub_web/package.json
           update_makefile_tag Makefile
       - name: Set up SSH for GitHub bypass
         run: |

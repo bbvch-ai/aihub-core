@@ -19,8 +19,8 @@ implementation, mobile responsiveness, keyboard navigation, rich text rendering,
 enhancement. This investment doesn't differentiate the Swiss AI Hub from alternatives.
 
 By adopting Open WebUI, the development team concentrates resources on capabilities that genuinely differentiate the
-platform - enterprise knowledge management, transparent agent workflows, process automation, multi-language support, Swiss
-data sovereignty compliance.
+platform - enterprise knowledge management, transparent agent workflows, process automation, multi-language support,
+Swiss data sovereignty compliance.
 
 Organizations evaluating the platform gain immediate access to comprehensive chat functionality without waiting for
 custom development cycles.
@@ -76,9 +76,9 @@ The integration approach delivers comprehensive chat functionality for a fractio
 
 ## Extensibility without forking
 
-The Swiss AI Hub extends chat functionality through integration points - PostMessage communication for source attribution
-and trace display - rather than modifying Open WebUI code. This approach enables adopting new Open WebUI releases without
-merge conflicts or custom code maintenance.
+The Swiss AI Hub extends chat functionality through integration points - PostMessage communication for source
+attribution and trace display - rather than modifying Open WebUI code. This approach enables adopting new Open WebUI
+releases without merge conflicts or custom code maintenance.
 
 Enhanced source attribution and execution tracing complement rather than replace Open WebUI features. Users gain both
 comprehensive chat functionality and enterprise transparency capabilities.
@@ -114,8 +114,8 @@ integration. This time advantage enables focus on genuinely differentiating capa
 Organizations comparing total cost of ownership find the Swiss AI Hub competitive with or superior to platforms
 requiring separate chat product licensing, custom development fees, or ongoing maintenance contracts.
 
-The integration approach demonstrates architectural flexibility - the Swiss AI Hub can adopt best-of-breed solutions when
-they provide superior value.
+The integration approach demonstrates architectural flexibility - the Swiss AI Hub can adopt best-of-breed solutions
+when they provide superior value.
 
 Active participation in the open-source ecosystem through Open WebUI integration signals the Swiss AI Hub's commitment
 to open standards, community collaboration, and sustainable technology choices.

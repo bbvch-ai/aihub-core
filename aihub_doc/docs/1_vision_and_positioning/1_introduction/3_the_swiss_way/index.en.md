@@ -61,8 +61,8 @@ rules were applied, what confidence levels were calculated. Compliance teams can
 
 **Explainable workflows**\
 Because agents follow defined workflows, you can explain their behavior to non-technical stakeholders. "The agent
-analyzes the document, extracts key information, checks it against our rules, and then requests human approval" - not "the
-AI does some processing."
+analyzes the document, extracts key information, checks it against our rules, and then requests human approval" - not
+"the AI does some processing."
 
 **Visible integrations**\
 When the platform connects to external systems, those connections are explicit and monitored. You see what data flows to

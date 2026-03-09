@@ -1161,7 +1161,7 @@ export const AgentInstanceTopicSchema = {
         'event_id'
     ],
     title: 'AgentInstanceTopic',
-    description: 'Represents a fully-defined agent event topic. Unlike PartialAgentTopic, all fields are expected\nto be present. This includes identifiers for agent_class, agent_id, and the event itself.\n\n### Why This Class Exists\n\nIn a hierarchical event topic model, PartialAgentTopic might not have all details filled out.\nAgentTopic guarantees that every piece of the event route—from agent class to event ID—is known.\nThis makes AgentTopic ideal for scenarios where the full path is required, such as final message\nrouting or logging a complete event identifier.\n\n### Example:\nIf an event subject is something like:\n"agent.myclass.myid.thread123.displayA.run45.display_event.some_event.789"\nthen this AgentTopic can represent it, providing quick field-level access and serialization.'
+    description: 'Represents a fully-defined agent event topic. Unlike PartialAgentTopic, all fields are expected\nto be present. This includes identifiers for agent_class, agent_id, and the event itself.\n\n### Why This Class Exists\n\nIn a hierarchical event topic model, PartialAgentTopic might not have all details filled out.\nAgentTopic guarantees that every piece of the event route - from agent class to event ID - is known.\nThis makes AgentTopic ideal for scenarios where the full path is required, such as final message\nrouting or logging a complete event identifier.\n\n### Example:\nIf an event subject is something like:\n"agent.myclass.myid.thread123.displayA.run45.display_event.some_event.789"\nthen this AgentTopic can represent it, providing quick field-level access and serialization.'
 } as const;
 
 export const AgentProcessStepDTOSchema = {
@@ -1870,7 +1870,7 @@ export const AudioBlockSchema = {
             anyOf: [
                 {
                     type: 'string',
-                    format: 'binary'
+                    contentMediaType: 'application/octet-stream'
                 },
                 {
                     type: 'null'
@@ -2173,7 +2173,7 @@ export const Body_create_transcription_openai_audio_transcriptions_postSchema = 
     properties: {
         file: {
             type: 'string',
-            format: 'binary',
+            contentMediaType: 'application/octet-stream',
             title: 'File',
             description: 'The audio file to transcribe'
         },
@@ -3456,6 +3456,8 @@ export const ChatCompletionRequestSchema = {
                 {
                     type: 'string',
                     enum: [
+                        'gpt-5.4',
+                        'gpt-5.3-chat-latest',
                         'gpt-5.2',
                         'gpt-5.2-2025-12-11',
                         'gpt-5.2-chat-latest',
@@ -4537,7 +4539,7 @@ export const ChunkEventSchema = {
         '_parent_event_names'
     ],
     title: 'ChunkEvent',
-    description: 'An event representing a portion of output or generated content (a "chunk") that is\nstreamed or delivered in segments—common in incremental output scenarios like LLM\ntoken streaming.\n\n### Why ChunkEvent?\nIn conversational or streaming AI outputs, the model might emit content in pieces rather\nthan all at once. `ChunkEvent` allows the frontend or other consumers to display partial\nresponses as they are generated, improving user experience by not forcing them to wait\nfor the entire answer.'
+    description: 'An event representing a portion of output or generated content (a "chunk") that is\nstreamed or delivered in segments - common in incremental output scenarios like LLM\ntoken streaming.\n\n### Why ChunkEvent?\nIn conversational or streaming AI outputs, the model might emit content in pieces rather\nthan all at once. `ChunkEvent` allows the frontend or other consumers to display partial\nresponses as they are generated, improving user experience by not forcing them to wait\nfor the entire answer.'
 } as const;
 
 export const CitableBlockSchema = {
@@ -6396,7 +6398,7 @@ export const DocumentBlockSchema = {
             anyOf: [
                 {
                     type: 'string',
-                    format: 'binary'
+                    contentMediaType: 'application/octet-stream'
                 },
                 {
                     type: 'null'
@@ -7352,7 +7354,7 @@ export const ExceptionEventSchema = {
         '_parent_event_names'
     ],
     title: 'ExceptionEvent',
-    description: 'An event signaling that an exception or error has occurred during a run.\n\n### Why ExceptionEvent?\nIn a complex, event-driven workflow, errors are inevitable. Some steps might fail due to\ninvalid inputs, external service outages, or internal logic errors. The `ExceptionEvent`\nprovides a unified way to:\n- Halt or adjust the workflow’s control flow as a `ControlEvent`.\n- Communicate the error details to end-users or logging systems as a `DisplayEvent`.\n\nBy appearing as both a control and display event, `ExceptionEvent` ensures that the workflow\ncan stop further processing while also making the error visible in UI dashboards, logs, or\nmonitoring tools—giving operators and developers immediate insight into what went wrong.'
+    description: 'An event signaling that an exception or error has occurred during a run.\n\n### Why ExceptionEvent?\nIn a complex, event-driven workflow, errors are inevitable. Some steps might fail due to\ninvalid inputs, external service outages, or internal logic errors. The `ExceptionEvent`\nprovides a unified way to:\n- Halt or adjust the workflow’s control flow as a `ControlEvent`.\n- Communicate the error details to end-users or logging systems as a `DisplayEvent`.\n\nBy appearing as both a control and display event, `ExceptionEvent` ensures that the workflow\ncan stop further processing while also making the error visible in UI dashboards, logs, or\nmonitoring tools - giving operators and developers immediate insight into what went wrong.'
 } as const;
 
 export const FewShotAcceptEventSchema = {
@@ -9374,7 +9376,7 @@ export const ImageBlockSchema = {
             anyOf: [
                 {
                     type: 'string',
-                    format: 'binary'
+                    contentMediaType: 'application/octet-stream'
                 },
                 {
                     type: 'null'
@@ -11646,7 +11648,7 @@ export const LLMCostEventSchema = {
         '_parent_event_names'
     ],
     title: 'LLMCostEvent',
-    description: 'A concrete event representing the costs associated with Large Language Model operations,\nincluding prompt, completion, and embedding token usage.\n\n### Why LLMCostEvent?\nFor teams tracking expenditures on LLM services, LLMCostEvent provides a direct, user-visible\nbreakdown of the costs per run. As a display event, it can be surfaced in UIs or logs to give\nengineers, product managers, or finance teams clear insights into where tokens—and money—are\ngoing.'
+    description: 'A concrete event representing the costs associated with Large Language Model operations,\nincluding prompt, completion, and embedding token usage.\n\n### Why LLMCostEvent?\nFor teams tracking expenditures on LLM services, LLMCostEvent provides a direct, user-visible\nbreakdown of the costs per run. As a display event, it can be surfaced in UIs or logs to give\nengineers, product managers, or finance teams clear insights into where tokens - and money - are\ngoing.'
 } as const;
 
 export const LLMEventSchema = {
@@ -13423,7 +13425,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1772615423
+            default: 1773057514
         },
         owned_by: {
             type: 'string',
@@ -15079,7 +15081,7 @@ export const PartialAgentTopicSchema = {
     },
     type: 'object',
     title: 'PartialAgentTopic',
-    description: 'Represents a partially qualified agent event topic, where some fields may be unspecified.\nWildcards (represented by "*") in the subject translate into None values here.\n\n### Why PartialAgentTopic?\nSometimes you deal with generic subscriptions to broad categories of events—like all display events\nor all events from a particular agent class—without knowing the exact agent_id, thread_id, or event_id.\nPartialAgentTopic captures this scenario, making it explicit which parts of the topic are defined\nand which remain open (None).\n\n### Use Cases\n- **Generic Monitoring:** You might subscribe to `agent.myclass.*.*.*.*.display_event.*.*` to monitor\n  all display events for a given agent class, regardless of the specific agent instance or thread.\n  The resulting PartialAgentTopic shows which filters have been fixed and which are open.\n- **Routing Decisions:** If a system receives a message on a wildcard topic, it can inspect this\n  PartialAgentTopic to decide dynamically which handler to invoke based on known fields, leaving\n  unknowns as flexible conditions.'
+    description: 'Represents a partially qualified agent event topic, where some fields may be unspecified.\nWildcards (represented by "*") in the subject translate into None values here.\n\n### Why PartialAgentTopic?\nSometimes you deal with generic subscriptions to broad categories of events - like all display events\nor all events from a particular agent class - without knowing the exact agent_id, thread_id, or event_id.\nPartialAgentTopic captures this scenario, making it explicit which parts of the topic are defined\nand which remain open (None).\n\n### Use Cases\n- **Generic Monitoring:** You might subscribe to `agent.myclass.*.*.*.*.display_event.*.*` to monitor\n  all display events for a given agent class, regardless of the specific agent instance or thread.\n  The resulting PartialAgentTopic shows which filters have been fixed and which are open.\n- **Routing Decisions:** If a system receives a message on a wildcard topic, it can inspect this\n  PartialAgentTopic to decide dynamically which handler to invoke based on known fields, leaving\n  unknowns as flexible conditions.'
 } as const;
 
 export const PasswordSchema = {
@@ -18572,7 +18574,7 @@ export const StartEventSchema = {
         '_parent_event_names'
     ],
     title: 'StartEvent',
-    description: 'An event signaling the start of a new run within a thread, providing initial context such as\nuser messages, assistant responses, and locale settings.\n\n### Why StartEvent?\nThe start event - and all events inheriting from it - trigger a new workflow run. By inheriting\nfrom the StartEvent, initial context for the workflow can be set.\n\nBy extending `ControlEvent`, `StartEvent` influences workflow steps—only `ControlEvent` types\ndrive the flow. Other event types may provide data or UI updates but do not start or control runs.\n\n### Agent Configuration\nThe agent_id is NOT on the event - it comes from the NATS subject/topic. When events are\npublished to `agent.<class>.<id>.<thread>...`, the AgentDispatcher extracts the agent_id\nfrom the topic and uses it to fetch configuration via NATS request-reply. This keeps\nStartEvent lightweight and decouples config management from event payloads.'
+    description: 'An event signaling the start of a new run within a thread, providing initial context such as\nuser messages, assistant responses, and locale settings.\n\n### Why StartEvent?\nThe start event - and all events inheriting from it - trigger a new workflow run. By inheriting\nfrom the StartEvent, initial context for the workflow can be set.\n\nBy extending `ControlEvent`, `StartEvent` influences workflow steps - only `ControlEvent` types\ndrive the flow. Other event types may provide data or UI updates but do not start or control runs.\n\n### Agent Configuration\nThe agent_id is NOT on the event - it comes from the NATS subject/topic. When events are\npublished to `agent.<class>.<id>.<thread>...`, the AgentDispatcher extracts the agent_id\nfrom the topic and uses it to fetch configuration via NATS request-reply. This keeps\nStartEvent lightweight and decouples config management from event payloads.'
 } as const;
 
 export const StopEventSchema = {
@@ -21505,7 +21507,7 @@ export const VideoBlockSchema = {
             anyOf: [
                 {
                     type: 'string',
-                    format: 'binary'
+                    contentMediaType: 'application/octet-stream'
                 },
                 {
                     type: 'null'
@@ -23774,7 +23776,7 @@ export const ChunkEventWritableSchema = {
     additionalProperties: true,
     type: 'object',
     title: 'ChunkEvent',
-    description: 'An event representing a portion of output or generated content (a "chunk") that is\nstreamed or delivered in segments—common in incremental output scenarios like LLM\ntoken streaming.\n\n### Why ChunkEvent?\nIn conversational or streaming AI outputs, the model might emit content in pieces rather\nthan all at once. `ChunkEvent` allows the frontend or other consumers to display partial\nresponses as they are generated, improving user experience by not forcing them to wait\nfor the entire answer.'
+    description: 'An event representing a portion of output or generated content (a "chunk") that is\nstreamed or delivered in segments - common in incremental output scenarios like LLM\ntoken streaming.\n\n### Why ChunkEvent?\nIn conversational or streaming AI outputs, the model might emit content in pieces rather\nthan all at once. `ChunkEvent` allows the frontend or other consumers to display partial\nresponses as they are generated, improving user experience by not forcing them to wait\nfor the entire answer.'
 } as const;
 
 export const ColorPickerWritableSchema = {
@@ -24781,7 +24783,7 @@ export const ExceptionEventWritableSchema = {
         'message'
     ],
     title: 'ExceptionEvent',
-    description: 'An event signaling that an exception or error has occurred during a run.\n\n### Why ExceptionEvent?\nIn a complex, event-driven workflow, errors are inevitable. Some steps might fail due to\ninvalid inputs, external service outages, or internal logic errors. The `ExceptionEvent`\nprovides a unified way to:\n- Halt or adjust the workflow’s control flow as a `ControlEvent`.\n- Communicate the error details to end-users or logging systems as a `DisplayEvent`.\n\nBy appearing as both a control and display event, `ExceptionEvent` ensures that the workflow\ncan stop further processing while also making the error visible in UI dashboards, logs, or\nmonitoring tools—giving operators and developers immediate insight into what went wrong.'
+    description: 'An event signaling that an exception or error has occurred during a run.\n\n### Why ExceptionEvent?\nIn a complex, event-driven workflow, errors are inevitable. Some steps might fail due to\ninvalid inputs, external service outages, or internal logic errors. The `ExceptionEvent`\nprovides a unified way to:\n- Halt or adjust the workflow’s control flow as a `ControlEvent`.\n- Communicate the error details to end-users or logging systems as a `DisplayEvent`.\n\nBy appearing as both a control and display event, `ExceptionEvent` ensures that the workflow\ncan stop further processing while also making the error visible in UI dashboards, logs, or\nmonitoring tools - giving operators and developers immediate insight into what went wrong.'
 } as const;
 
 export const FewShotAcceptEventWritableSchema = {
@@ -27553,7 +27555,7 @@ export const LLMCostEventWritableSchema = {
         'llm_name'
     ],
     title: 'LLMCostEvent',
-    description: 'A concrete event representing the costs associated with Large Language Model operations,\nincluding prompt, completion, and embedding token usage.\n\n### Why LLMCostEvent?\nFor teams tracking expenditures on LLM services, LLMCostEvent provides a direct, user-visible\nbreakdown of the costs per run. As a display event, it can be surfaced in UIs or logs to give\nengineers, product managers, or finance teams clear insights into where tokens—and money—are\ngoing.'
+    description: 'A concrete event representing the costs associated with Large Language Model operations,\nincluding prompt, completion, and embedding token usage.\n\n### Why LLMCostEvent?\nFor teams tracking expenditures on LLM services, LLMCostEvent provides a direct, user-visible\nbreakdown of the costs per run. As a display event, it can be surfaced in UIs or logs to give\nengineers, product managers, or finance teams clear insights into where tokens - and money - are\ngoing.'
 } as const;
 
 export const LLMEventWritableSchema = {
@@ -31828,7 +31830,7 @@ export const StartEventWritableSchema = {
     additionalProperties: true,
     type: 'object',
     title: 'StartEvent',
-    description: 'An event signaling the start of a new run within a thread, providing initial context such as\nuser messages, assistant responses, and locale settings.\n\n### Why StartEvent?\nThe start event - and all events inheriting from it - trigger a new workflow run. By inheriting\nfrom the StartEvent, initial context for the workflow can be set.\n\nBy extending `ControlEvent`, `StartEvent` influences workflow steps—only `ControlEvent` types\ndrive the flow. Other event types may provide data or UI updates but do not start or control runs.\n\n### Agent Configuration\nThe agent_id is NOT on the event - it comes from the NATS subject/topic. When events are\npublished to `agent.<class>.<id>.<thread>...`, the AgentDispatcher extracts the agent_id\nfrom the topic and uses it to fetch configuration via NATS request-reply. This keeps\nStartEvent lightweight and decouples config management from event payloads.'
+    description: 'An event signaling the start of a new run within a thread, providing initial context such as\nuser messages, assistant responses, and locale settings.\n\n### Why StartEvent?\nThe start event - and all events inheriting from it - trigger a new workflow run. By inheriting\nfrom the StartEvent, initial context for the workflow can be set.\n\nBy extending `ControlEvent`, `StartEvent` influences workflow steps - only `ControlEvent` types\ndrive the flow. Other event types may provide data or UI updates but do not start or control runs.\n\n### Agent Configuration\nThe agent_id is NOT on the event - it comes from the NATS subject/topic. When events are\npublished to `agent.<class>.<id>.<thread>...`, the AgentDispatcher extracts the agent_id\nfrom the topic and uses it to fetch configuration via NATS request-reply. This keeps\nStartEvent lightweight and decouples config management from event payloads.'
 } as const;
 
 export const StopEventWritableSchema = {

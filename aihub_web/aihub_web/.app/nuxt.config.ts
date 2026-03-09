@@ -20,8 +20,21 @@ export default defineNuxtConfig({
   },
   compatibilityDate: '2024-12-03',
   nitro: {
+    devProxy: {
+      '/api/v1': {
+        target: 'http://localhost:8000/api/v1',
+        changeOrigin: true,
+        secure: false,
+        ws: true,
+      },
+    },
     prerender: {
       ignore: ['/en/auth', '/de/auth', '/fr/auth', '/it/auth'],
+    },
+  },
+  eslint: {
+    config: {
+      stylistic: true,
     },
   },
   robots: {

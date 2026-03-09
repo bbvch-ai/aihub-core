@@ -63,12 +63,11 @@ if [[ "$failed" == "true" ]]; then
   exit 2
 fi
 
-# Stage untracked files
+# Warn about untracked files (non-blocking — exit 0 to avoid infinite stop-hook loops)
 untracked=$(git ls-files --others --exclude-standard 2>/dev/null | head -20)
 if [[ -n "$untracked" ]]; then
-  echo "Untracked files detected — stage them with git add:" >&2
+  echo "Untracked files detected — consider staging them with git add:" >&2
   echo "$untracked" | while read -r f; do echo "  - $f" >&2; done
-  exit 2
 fi
 
 exit 0

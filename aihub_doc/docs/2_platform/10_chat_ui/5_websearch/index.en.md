@@ -52,9 +52,8 @@ Users see clear distinctions between internal knowledge and external web sources
 clickable citations with URLs, titles, and content previews. Users receive information about why specific sources were
 retrieved.
 
-Every search query, retrieved result, and user interaction is captured for audit purposes. The entire search
-process - from query validation through result filtering to presentation - is traceable through the observability
-infrastructure.
+Every search query, retrieved result, and user interaction is captured for audit purposes. The entire search process -
+from query validation through result filtering to presentation - is traceable through the observability infrastructure.
 
 ## Use cases
 

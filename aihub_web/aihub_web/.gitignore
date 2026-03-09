@@ -21,3 +21,4 @@ dist
 .vscode/
 .app/.output
 .app/dist
+*.tgz

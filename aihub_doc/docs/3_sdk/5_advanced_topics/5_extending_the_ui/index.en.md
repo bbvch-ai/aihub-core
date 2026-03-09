@@ -130,9 +130,9 @@ integrate.
 which users access custom services through the same role and permission management interfaces used for native
 capabilities.
 
-**Quality Standards**: Organizations can establish quality gates for custom service deployment - code review requirements,
-testing standards, security audits, performance benchmarks. The platform's extensibility doesn't mandate lower standards
-for custom services.
+**Quality Standards**: Organizations can establish quality gates for custom service deployment - code review
+requirements, testing standards, security audits, performance benchmarks. The platform's extensibility doesn't mandate
+lower standards for custom services.
 
 **Service Registry**: Organizations maintain awareness of deployed custom services through the same monitoring and
 management interfaces used for native services. Custom services report health, expose metrics, and generate audit logs

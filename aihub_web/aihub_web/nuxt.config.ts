@@ -41,7 +41,6 @@ export default defineNuxtConfig({
     '@nuxtjs/robots',
     '@pinia/colada-nuxt',
     '@primevue/nuxt-module',
-    '@nuxt/eslint',
     '@nuxtjs/mdc',
     '@sfxcode/formkit-primevue-nuxt',
   ],
@@ -74,21 +73,8 @@ export default defineNuxtConfig({
 
   compatibilityDate: '2025-01-18',
 
-  nitro: {
-    devProxy: {
-      '/api/v1': {
-        target: 'http://localhost:8000/api/v1',
-        changeOrigin: true,
-        secure: false,
-        ws: true,
-      },
-    },
-  },
-
-  eslint: {
-    config: {
-      stylistic: true,
-    },
+  formkit: {
+    configFile: fileURLToPath(new URL('./formkit.config.ts', import.meta.url)),
   },
 
   formkitPrimevue: {

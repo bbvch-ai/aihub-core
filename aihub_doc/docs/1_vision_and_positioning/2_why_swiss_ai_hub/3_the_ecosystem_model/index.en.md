@@ -44,8 +44,8 @@ licensing creates natural collaboration incentives without forcing them.
 
 **Shared infrastructure benefits everyone:** When organizations improve core infrastructure, sharing makes sense because
 everyone benefits. A bank that adds better compliance logging helps every regulated industry. A healthcare provider that
-improves PII handling helps everyone with privacy concerns. These contributions flow back naturally because better shared
-infrastructure reduces everyone's costs.
+improves PII handling helps everyone with privacy concerns. These contributions flow back naturally because better
+shared infrastructure reduces everyone's costs.
 
 **Strategic differentiation stays private:** Organizations keep their competitive advantages proprietary. The
 customer-facing agent that embodies your unique business processes, your specialized data processing, your domain
@@ -59,8 +59,8 @@ assuming that code on GitHub is automatically free to use - it's not.
 
 ### The GitHub misconception
 
-**Seeing source code ≠ open source ≠ free to use.** GitHub hosts both open-source projects and proprietary software
-with restrictive licenses. Being able to *view* or *download* code doesn't mean you're legally permitted to *use* it,
+**Seeing source code ≠ open source ≠ free to use.** GitHub hosts both open-source projects and proprietary software with
+restrictive licenses. Being able to *view* or *download* code doesn't mean you're legally permitted to *use* it,
 especially in production or commercial contexts.
 
 Example: **n8n**, one of the most popular workflow automation tools on GitHub, uses the "Sustainable Use License" (not
