@@ -74,7 +74,7 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-01-18',
 
   formkit: {
-    configFile: fileURLToPath(new URL('./formkit.config.ts', import.meta.url)),
+    configFile: fileURLToPath(new URL('./formkit.config', import.meta.url)),
   },
 
   formkitPrimevue: {
