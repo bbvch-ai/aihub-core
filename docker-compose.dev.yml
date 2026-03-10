@@ -1230,9 +1230,9 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
-      - ./configs/openwebui/init-functions.sh:/init-functions.sh:ro
+      - ./configs/openwebui/init-openwebui.sh:/init-openwebui.sh:ro
       - ./configs/openwebui/functions:/functions:ro
-    entrypoint: [/bin/sh, /init-functions.sh]
+    entrypoint: [/bin/sh, /init-openwebui.sh]
     logging:
       driver: json-file
       options:
@@ -1250,7 +1250,6 @@ services:
 
 
 
-  
 
   
 

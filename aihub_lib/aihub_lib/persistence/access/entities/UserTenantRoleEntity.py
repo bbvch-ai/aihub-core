@@ -3,7 +3,6 @@ from datetime import UTC, datetime
 from typing import Self
 
 from mongoengine import DateTimeField, Document, ListField, NotUniqueError, StringField
-from mongoengine.connection import get_db
 
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 
@@ -163,11 +162,9 @@ class UserTenantRoleEntity(Document):
         if existing:
             existing.delete()
 
-            # Clear active tenant if it matches the removed tenant
-            # Direct collection access avoids circular import with UserEntity
-            get_db()["users"].update_one(
-                {"_id": user_id, "active_tenant_id": tenant_id},
-                {"$set": {"active_tenant_id": None}},
-            )
+            # Runtime import: UserTenantRoleEntity → UserEntity circular reference
+            from aihub_lib.persistence.user.UserEntity import UserEntity
+
+            UserEntity.objects(id=user_id, active_tenant_id=tenant_id).update(set__active_tenant_id=None)
             return True
         return False

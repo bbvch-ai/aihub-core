@@ -29,7 +29,7 @@ deployment/
 │       ├── s3-entrypoint.sh.j2        # SeaweedFS S3 gateway startup
 │       ├── s3-init-buckets.sh.j2      # S3 bucket creation + CORS
 │       ├── pg-init-multiple-dbs.sh.j2 # PostgreSQL multi-database init
-│       └── openwebui-init-functions.sh.j2  # OpenWebUI function registration
+│       └── openwebui-init-openwebui.sh.j2  # OpenWebUI init (functions + service account)
 └── templates/openwebui_functions/      # OpenWebUI Python functions (copied to configs/)
     ├── aihub_pipeline.py
     ├── openai_pipeline.py

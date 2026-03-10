@@ -79,7 +79,6 @@ class UserEntity(Document):
 
     @trace_fn
     def set_active_tenant(self, tenant_id: str) -> None:
-        """Persists the user's active tenant if it changed."""
         if self.active_tenant_id == tenant_id:
             return
         self.active_tenant_id = tenant_id
