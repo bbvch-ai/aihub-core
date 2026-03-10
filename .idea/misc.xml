@@ -3,7 +3,7 @@
   <component name="Black">
     <option name="enabledOnReformat" value="true" />
     <option name="enabledOnSave" value="true" />
-    <option name="sdkName" value="uv (aihub-core)" />
+    <option name="sdkName" value="uv (swiss-ai-hub)" />
   </component>
-  <component name="ProjectRootManager" version="2" project-jdk-name="uv (aihub-core)" project-jdk-type="Python SDK" />
+  <component name="ProjectRootManager" version="2" project-jdk-name="uv (swiss-ai-hub)" project-jdk-type="Python SDK" />
 </project>

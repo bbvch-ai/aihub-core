@@ -6,18 +6,18 @@ allowed-tools: Read, Bash, Grep, Glob
 
 # Frontend Code Audit
 
-Run a comprehensive audit of the Nuxt 3 admin interface at `aihub_web/aihub_web/`. Scope via `$ARGUMENTS`: `all`,
+Run a comprehensive audit of the Nuxt 3 admin interface at `packages/web/aihub_web/`. Scope via `$ARGUMENTS`: `all`,
 `composables`, `typescript`, `components`, `pages`, `sdk`, `i18n`, `tailwind`.
 
 Default scope is `all` if no argument provided.
 
-Before starting, read `aihub_web/CLAUDE.md` for the full frontend conventions reference.
+Before starting, read `packages/web/CLAUDE.md` for the full frontend conventions reference.
 
 ______________________________________________________________________
 
 ## Audit 1: Pinia-Colada Composables (scope: `composables`)
 
-Check all files in `aihub_web/aihub_web/composables/` against these rules:
+Check all files in `packages/web/aihub_web/composables/` against these rules:
 
 ### 1a. defineQuery/defineMutation wrappers (ERROR)
 
@@ -26,7 +26,7 @@ Every exported query composable must use `defineQuery()`, every mutation must us
 
 ```bash
 # Find bare useQuery not wrapped in defineQuery
-grep -rn "export.*=.*(" aihub_web/aihub_web/composables/ --include="*.ts" | grep -v defineQuery | grep -v defineMutation
+grep -rn "export.*=.*(" packages/web/aihub_web/composables/ --include="*.ts" | grep -v defineQuery | grep -v defineMutation
 ```
 
 Cross-check: if a file imports `useQuery` from `@pinia/colada` but doesn't call `defineQuery`, flag it.
@@ -38,7 +38,7 @@ ref changes.
 
 ```bash
 # Find static query keys (array literal without arrow function)
-grep -rn "key: \[" aihub_web/aihub_web/composables/ --include="*.ts"
+grep -rn "key: \[" packages/web/aihub_web/composables/ --include="*.ts"
 ```
 
 Correct: `key: () => ['agent-instances', route.params.agent_class]` Wrong:
@@ -51,7 +51,7 @@ Every `useQuery` must have `staleTime: minutesToMilliseconds(N)` (from `date-fns
 
 ```bash
 # Find useQuery calls without staleTime
-grep -rn "useQuery" aihub_web/aihub_web/composables/ --include="*.ts" -A 5 | grep -v staleTime
+grep -rn "useQuery" packages/web/aihub_web/composables/ --include="*.ts" -A 5 | grep -v staleTime
 ```
 
 Hardcoded milliseconds like `staleTime: 300000` are also wrong — use the `date-fns` helper.
@@ -63,7 +63,7 @@ Missing it causes the request to use raw `fetch` instead of Nuxt's `$fetch`, bre
 
 ```bash
 # Find SDK calls without composable: '$fetch'
-grep -rn "await \(get\|create\|update\|delete\|post\|put\|patch\)" aihub_web/aihub_web/composables/ --include="*.ts"
+grep -rn "await \(get\|create\|update\|delete\|post\|put\|patch\)" packages/web/aihub_web/composables/ --include="*.ts"
 ```
 
 Cross-check each SDK call has `composable: '$fetch'` in its options object.
@@ -73,7 +73,7 @@ Cross-check each SDK call has `composable: '$fetch'` in its options object.
 If a query uses `route.params.*`, it must have `enabled: useRouteReady('param_name')` to prevent firing before the route
 resolves. During route transitions, params can briefly be template placeholders like `'{agent_id}'`.
 
-Reference implementation: `aihub_web/aihub_web/composables/useRouteReady.ts`
+Reference implementation: `packages/web/aihub_web/composables/useRouteReady.ts`
 
 ### 1f. Mutations must invalidate query cache (WARNING)
 
@@ -88,7 +88,7 @@ lose the explicit name and rely on filename inference for auto-import.
 
 ```bash
 # Find default exports in composables
-grep -rn "export default" aihub_web/aihub_web/composables/ --include="*.ts"
+grep -rn "export default" packages/web/aihub_web/composables/ --include="*.ts"
 ```
 
 ### 1h. Query key naming conventions (WARNING)
@@ -108,7 +108,7 @@ Find callback parameters without type annotations (implicit `any`).
 
 ```bash
 # Find untyped arrow function params in .vue and .ts files
-grep -rn "=> {" aihub_web/aihub_web/pages/ aihub_web/aihub_web/components/ --include="*.vue" --include="*.ts" | grep "(event)" | grep -v ": "
+grep -rn "=> {" packages/web/aihub_web/pages/ packages/web/aihub_web/components/ --include="*.vue" --include="*.ts" | grep "(event)" | grep -v ": "
 ```
 
 Common offender: `const handleClick = (event) => {` should be `(event: MouseEvent) => {`.
@@ -120,7 +120,7 @@ imports are erased at compile time.
 
 ```bash
 # Find non-type imports of SDK types (Dto suffix = type)
-grep -rn "import {.*Dto" aihub_web/aihub_web/ --include="*.vue" --include="*.ts" | grep -v "import type"
+grep -rn "import {.*Dto" packages/web/aihub_web/ --include="*.vue" --include="*.ts" | grep -v "import type"
 ```
 
 Exception: types re-exported as values (e.g., `export type AgentClassDto = AgentClassDtoReadable`) are fine.
@@ -138,7 +138,7 @@ refs. Either name them as nouns (`emptyStateTitle`) or make them actual function
 ### 2e. console.log in production code (WARNING)
 
 ```bash
-grep -rn "console\.\(log\|debug\|info\)" aihub_web/aihub_web/ --include="*.vue" --include="*.ts" \
+grep -rn "console\.\(log\|debug\|info\)" packages/web/aihub_web/ --include="*.vue" --include="*.ts" \
   | grep -v "node_modules" | grep -v "sdk/"
 ```
 
@@ -152,10 +152,10 @@ ______________________________________________________________________
 
 ```bash
 # For each .vue file in components/, derive auto-import name and search for usage
-find aihub_web/aihub_web/components/ -name "*.vue" | while read f; do
+find packages/web/aihub_web/components/ -name "*.vue" | while read f; do
   # Agent/Card.vue → AgentCard
   NAME=$(echo "$f" | sed 's|.*/components/||; s|\.vue$||; s|/||g')
-  USAGE=$(grep -rl "$NAME" aihub_web/aihub_web/ --include="*.vue" --include="*.ts" | grep -v "$f" | wc -l)
+  USAGE=$(grep -rl "$NAME" packages/web/aihub_web/ --include="*.vue" --include="*.ts" | grep -v "$f" | wc -l)
   [ "$USAGE" -eq 0 ] && echo "UNUSED: $f ($NAME)"
 done
 ```
@@ -193,7 +193,7 @@ Every `bg-surface-*`, `text-surface-*`, `border-surface-*` class should have a `
 
 ```bash
 # Find surface classes without dark: companion on the same element
-grep -rn "bg-surface-\(50\|100\|200\)" aihub_web/aihub_web/components/ --include="*.vue" \
+grep -rn "bg-surface-\(50\|100\|200\)" packages/web/aihub_web/components/ --include="*.vue" \
   | grep -v "dark:bg-surface"
 ```
 
@@ -213,7 +213,7 @@ Check that every file directly under `pages/service/*.vue` wraps content in `Str
 detail routing.
 
 ```bash
-grep -rL "StructuralScreen" aihub_web/aihub_web/pages/service/*.vue
+grep -rL "StructuralScreen" packages/web/aihub_web/pages/service/*.vue
 ```
 
 ### 4b. localePath for all navigation (ERROR)
@@ -223,7 +223,7 @@ All `router.push()`, `navigateTo()`, and `NuxtLink :to` must use `localePath()`.
 
 ```bash
 # Find bare path navigation without localePath
-grep -rn "router\.push\|navigateTo" aihub_web/aihub_web/pages/ aihub_web/aihub_web/components/ --include="*.vue" \
+grep -rn "router\.push\|navigateTo" packages/web/aihub_web/pages/ packages/web/aihub_web/components/ --include="*.vue" \
   | grep -v localePath | grep -v "//.*router"
 ```
 
@@ -258,10 +258,10 @@ In `<script setup>`, these are auto-imported and must NOT be explicitly imported
 
 ```bash
 # Find unnecessary imports in pages and components
-grep -rn "import.*from 'vue'" aihub_web/aihub_web/pages/ aihub_web/aihub_web/components/ --include="*.vue"
-grep -rn "import.*from 'vue-router'" aihub_web/aihub_web/pages/ --include="*.vue"
-grep -rn "import.*from 'vue-i18n'" aihub_web/aihub_web/pages/ --include="*.vue"
-grep -rn "import.*from 'primevue/use" aihub_web/aihub_web/pages/ --include="*.vue"
+grep -rn "import.*from 'vue'" packages/web/aihub_web/pages/ packages/web/aihub_web/components/ --include="*.vue"
+grep -rn "import.*from 'vue-router'" packages/web/aihub_web/pages/ --include="*.vue"
+grep -rn "import.*from 'vue-i18n'" packages/web/aihub_web/pages/ --include="*.vue"
+grep -rn "import.*from 'primevue/use" packages/web/aihub_web/pages/ --include="*.vue"
 ```
 
 Exception: `useLocalePath` from `'#i18n'` DOES need explicit import.
@@ -276,15 +276,15 @@ ______________________________________________________________________
 curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/api/v1/openapi.json
 ```
 
-2. If accessible, compare OpenAPI spec endpoints with `aihub_web/aihub_web/sdk/client/sdk.gen.ts`:
+2. If accessible, compare OpenAPI spec endpoints with `packages/web/aihub_web/sdk/client/sdk.gen.ts`:
 
    - Report: new endpoints missing from SDK, removed endpoints still in SDK
 
-3. If not accessible, compare timestamps of SDK files vs latest `aihub_api/` changes:
+3. If not accessible, compare timestamps of SDK files vs latest `packages/api/` changes:
 
 ```bash
-stat -c %Y aihub_web/aihub_web/sdk/client/sdk.gen.ts
-git log -1 --format=%ct aihub_api/
+stat -c %Y packages/web/aihub_web/sdk/client/sdk.gen.ts
+git log -1 --format=%ct packages/api/
 ```
 
 4. Verify SDK is never manually edited — check git status for modifications in `sdk/client/`.
@@ -293,7 +293,7 @@ ______________________________________________________________________
 
 ## Audit 6: i18n Coverage (scope: `i18n`)
 
-1. Read all locale files: `aihub_web/aihub_web/i18n/locales/{de,en,fr,it}.yaml`
+1. Read all locale files: `packages/web/aihub_web/i18n/locales/{de,en,fr,it}.yaml`
 2. Use English as reference — find keys missing in de/fr/it
 3. Find keys in de/fr/it that don't exist in en (orphaned)
 4. Check for empty string values
@@ -313,13 +313,13 @@ ______________________________________________________________________
 
 ```bash
 # Find style blocks and count lines
-grep -rn "<style" aihub_web/aihub_web/components/ aihub_web/aihub_web/pages/ --include="*.vue"
+grep -rn "<style" packages/web/aihub_web/components/ packages/web/aihub_web/pages/ --include="*.vue"
 ```
 
 ### 7b. Inline styles (WARNING)
 
 ```bash
-grep -rn 'style="' aihub_web/aihub_web/components/ aihub_web/aihub_web/pages/ --include="*.vue" | grep -v ":style"
+grep -rn 'style="' packages/web/aihub_web/components/ packages/web/aihub_web/pages/ --include="*.vue" | grep -v ":style"
 ```
 
 Static `style=""` should be Tailwind classes. Dynamic `:style` for computed values is acceptable.
@@ -330,8 +330,8 @@ Verify that surface color tokens use PrimeVue semantic names (`surface-50` throu
 gray/slate/zinc (`gray-100`, `slate-200`). PrimeVue surface tokens respect the theme.
 
 ```bash
-grep -rn "text-\(gray\|slate\|zinc\|neutral\|stone\)-" aihub_web/aihub_web/ --include="*.vue"
-grep -rn "bg-\(gray\|slate\|zinc\|neutral\|stone\)-" aihub_web/aihub_web/ --include="*.vue"
+grep -rn "text-\(gray\|slate\|zinc\|neutral\|stone\)-" packages/web/aihub_web/ --include="*.vue"
+grep -rn "bg-\(gray\|slate\|zinc\|neutral\|stone\)-" packages/web/aihub_web/ --include="*.vue"
 ```
 
 ______________________________________________________________________

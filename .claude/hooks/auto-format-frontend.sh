@@ -17,7 +17,7 @@ if [[ "$file_path" != *.ts && "$file_path" != *.vue && "$file_path" != *.tsx ]];
 fi
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-WEB_DIR="$REPO_ROOT/aihub_web/aihub_web"
+WEB_DIR="$REPO_ROOT/packages/web/aihub_web"
 
 # Only format files within aihub_web
 if [[ "$file_path" == *aihub_web* ]]; then

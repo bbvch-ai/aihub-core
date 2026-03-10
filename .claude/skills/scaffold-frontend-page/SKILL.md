@@ -10,18 +10,18 @@ Generate a list page for a new resource. The resource name should be provided vi
 
 ## Before You Start
 
-1. Read the frontend scope guide: `aihub_web/CLAUDE.md`
+1. Read the frontend scope guide: `packages/web/CLAUDE.md`
 2. Study these reference pages:
-   - Simple list: `aihub_web/aihub_web/pages/service/roles.vue`
-   - Complex list with grouping: `aihub_web/aihub_web/pages/service/agents.vue`
-   - Knowledge list: `aihub_web/aihub_web/pages/service/knowledge.vue`
+   - Simple list: `packages/web/aihub_web/pages/service/roles.vue`
+   - Complex list with grouping: `packages/web/aihub_web/pages/service/agents.vue`
+   - Knowledge list: `packages/web/aihub_web/pages/service/knowledge.vue`
 
 ## Step 1: Check SDK Availability
 
-Search `aihub_web/aihub_web/sdk/client/` for the resource's SDK functions and DTO types. If they don't exist, warn the
-user to run `/generate-sdk` first.
+Search `packages/web/aihub_web/sdk/client/` for the resource's SDK functions and DTO types. If they don't exist, warn
+the user to run `/generate-sdk` first.
 
-Look up the actual DTO type name in `aihub_web/aihub_web/sdk/client/types.gen.ts` — types may be named
+Look up the actual DTO type name in `packages/web/aihub_web/sdk/client/types.gen.ts` — types may be named
 `{Resource}Response`, `Full{Resource}Dto`, or `{Resource}Dto` depending on the API schema.
 
 ## Step 2: Create Composables
@@ -33,7 +33,7 @@ If composables don't exist yet, create them first using the patterns from `/scaf
 
 ## Step 3: Create the List Page
 
-Create `aihub_web/aihub_web/pages/service/{resource}s.vue`:
+Create `packages/web/aihub_web/pages/service/{resource}s.vue`:
 
 ```vue
 <template>
@@ -111,7 +111,7 @@ const toDetail = (item: <Resource>Dto) => {
 
 ## Step 4: Create Card Component
 
-Create `aihub_web/aihub_web/components/{Resource}/Card.vue` following this exact pattern:
+Create `packages/web/aihub_web/components/{Resource}/Card.vue` following this exact pattern:
 
 ```vue
 <template>
@@ -176,7 +176,7 @@ const isActive = computed(() => {
 
 ## Step 5: Add i18n Keys
 
-Add translation keys in all 4 locale files (`aihub_web/aihub_web/i18n/locales/{de,en,fr,it}.yaml`):
+Add translation keys in all 4 locale files (`packages/web/aihub_web/i18n/locales/{de,en,fr,it}.yaml`):
 
 ```yaml
 {resource}:
@@ -220,10 +220,10 @@ Add translation keys in all 4 locale files (`aihub_web/aihub_web/i18n/locales/{d
 
 **Output files created**:
 
-1. `aihub_web/aihub_web/pages/service/pipelines.vue` -- List page with card grid
-2. `aihub_web/aihub_web/components/Pipeline/Card.vue` -- Resource card component
-3. `aihub_web/aihub_web/composables/pipeline/usePipelines.ts` -- List query composable
-4. `aihub_web/aihub_web/composables/pipeline/useCreatePipeline.ts` -- Create mutation composable
+1. `packages/web/aihub_web/pages/service/pipelines.vue` -- List page with card grid
+2. `packages/web/aihub_web/components/Pipeline/Card.vue` -- Resource card component
+3. `packages/web/aihub_web/composables/pipeline/usePipelines.ts` -- List query composable
+4. `packages/web/aihub_web/composables/pipeline/useCreatePipeline.ts` -- Create mutation composable
 5. i18n keys added to all 4 locale files (`de.yaml`, `en.yaml`, `fr.yaml`, `it.yaml`)
 
 **Input**: `$ARGUMENTS = "connector"`

@@ -10,13 +10,13 @@ Generate a new Vue component. Component name and type should be provided via `$A
 
 ## Before You Start
 
-1. Read the frontend scope guide: `aihub_web/CLAUDE.md`
+1. Read the frontend scope guide: `packages/web/CLAUDE.md`
 2. Study existing components for the pattern you need:
-   - **Card**: `aihub_web/aihub_web/components/Agent/Card.vue`
-   - **Empty card**: `aihub_web/aihub_web/components/Agent/EmptyCard.vue`
-   - **Modal**: `aihub_web/aihub_web/components/Agent/CreateModal.vue`
-   - **List/Table**: `aihub_web/aihub_web/components/Thread/List.vue`
-   - **Display**: `aihub_web/aihub_web/components/Event/Display/Base.vue`
+   - **Card**: `packages/web/aihub_web/components/Agent/Card.vue`
+   - **Empty card**: `packages/web/aihub_web/components/Agent/EmptyCard.vue`
+   - **Modal**: `packages/web/aihub_web/components/Agent/CreateModal.vue`
+   - **List/Table**: `packages/web/aihub_web/components/Thread/List.vue`
+   - **Display**: `packages/web/aihub_web/components/Event/Display/Base.vue`
 
 ## Step 1: Determine Component Type
 
@@ -33,7 +33,7 @@ Based on the user's description, identify the component pattern:
 
 ## Step 2: Create the Component File
 
-Place in `aihub_web/aihub_web/components/{Domain}/{ComponentName}.vue`.
+Place in `packages/web/aihub_web/components/{Domain}/{ComponentName}.vue`.
 
 Naming rules:
 
@@ -341,17 +341,17 @@ components/
 
 **Input**: `$ARGUMENTS = "Pipeline Card"`
 
-**Output**: `aihub_web/aihub_web/components/Pipeline/Card.vue` -- Pattern A card component with `PipelineDto` typed
+**Output**: `packages/web/aihub_web/components/Pipeline/Card.vue` -- Pattern A card component with `PipelineDto` typed
 props, click emit, active state from route params, icon + title + status Tag layout.
 
 **Input**: `$ARGUMENTS = "Connector CreateModal"`
 
-**Output**: `aihub_web/aihub_web/components/Connector/CreateModal.vue` -- Pattern C modal with `v-model:visible`,
+**Output**: `packages/web/aihub_web/components/Connector/CreateModal.vue` -- Pattern C modal with `v-model:visible`,
 `useCreateConnector()` mutation, cancel/submit footer buttons, and `success` emit.
 
 **Input**: `$ARGUMENTS = "Knowledge List table"`
 
-**Output**: `aihub_web/aihub_web/components/Knowledge/List.vue` -- Pattern D DataTable with `KnowledgeDto[]` prop,
+**Output**: `packages/web/aihub_web/components/Knowledge/List.vue` -- Pattern D DataTable with `KnowledgeDto[]` prop,
 single selection mode, custom column templates for status and dates.
 
 **Auto-import name resolution**: Directory + File = component name. `Pipeline/Card.vue` becomes `<PipelineCard />`,

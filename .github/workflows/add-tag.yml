@@ -238,9 +238,9 @@ jobs:
         with:
           node-version: '20'
           cache: pnpm
-          cache-dependency-path: aihub_doc/pnpm-lock.yaml
+          cache-dependency-path: docs/pnpm-lock.yaml
       - name: Install dependencies
-        working-directory: ./aihub_doc
+        working-directory: ./docs
         run: pnpm install
       - name: Install uv
         uses: astral-sh/setup-uv@v7
@@ -255,13 +255,13 @@ jobs:
           echo "Setting Gemini API key..."
           llm keys set gemini --value "$GEMINI_API_KEY"
       - name: Sync documentation
-        working-directory: ./aihub_doc
+        working-directory: ./docs
         run: pnpm run docs:sync
       - name: Upload docs artifact
         uses: actions/upload-artifact@v4
         with:
           name: docs
-          path: aihub_doc/
+          path: docs/
   finalize-release:
     name: Commit Artifacts & Finalize Tag
     needs:
@@ -291,7 +291,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: docs
-          path: aihub_doc/
+          path: docs/
         continue-on-error: true
       - name: Set up Python 3.13
         uses: actions/setup-python@v5
@@ -314,11 +314,11 @@ jobs:
             echo "Update TAG in $1"
             sed -i 's/^TAG ?= .*/TAG ?= '"$VERSION"'/' $1
           }
-          for dir in . aihub_lib aihub_agent aihub_api aihub_bot aihub_pipeline aihub_process; do
+          for dir in . packages/core packages/agent packages/api packages/bot packages/pipeline packages/process; do
             update_version "$dir/pyproject.toml"
           done
-          echo "Update package version in aihub_web/aihub_web/package.json"
-          sed -i 's/"version": "[^"]*"/"version": "'"$PEP_VERSION"'"/' aihub_web/aihub_web/package.json
+          echo "Update package version in packages/web/aihub_web/package.json"
+          sed -i 's/"version": "[^"]*"/"version": "'"$PEP_VERSION"'"/' packages/web/aihub_web/package.json
           update_makefile_tag Makefile
       - name: Set up SSH for GitHub bypass
         run: |
@@ -355,8 +355,8 @@ jobs:
               echo "License report updated."
             fi
           fi
-          if [ -n "$(git status --porcelain aihub_doc/)" ]; then
-            git add aihub_doc/
+          if [ -n "$(git status --porcelain docs/)" ]; then
+            git add docs/
             changed=true
             echo "Documentation translations updated."
           fi

@@ -1,6 +1,6 @@
 #!/bin/bash
 # PreToolUse hook: Warn about cross-scope import violations.
-# Checks if a file edit introduces direct imports between scopes that bypass aihub_lib.
+# Checks if a file edit introduces direct imports between scopes that bypass swiss_ai_hub.core.
 # Warns but does not block (exit 0 always).
 
 input=$(cat)
@@ -18,32 +18,32 @@ fi
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 relative_path="${file_path#$REPO_ROOT/}"
-source_scope=$(echo "$relative_path" | cut -d'/' -f1)
+source_scope=$(echo "$relative_path" | cut -d'/' -f1-2)
 
-# Define allowed imports per scope (everything can import aihub_lib)
-# aihub_process is allowed to import aihub_agent (documented dependency)
+# Define allowed imports per scope (everything can import swiss_ai_hub.core)
+# swiss_ai_hub.process is allowed to import swiss_ai_hub.agent (documented dependency)
 check_violation() {
   local import_scope="$1"
 
   # Same scope is always fine
   [[ "$import_scope" == "$source_scope" ]] && return 0
 
-  # aihub_lib is always allowed
-  [[ "$import_scope" == "aihub_lib" ]] && return 0
+  # swiss_ai_hub.core is always allowed
+  [[ "$import_scope" == "swiss_ai_hub.core" ]] && return 0
 
-  # aihub_process may import aihub_agent
-  [[ "$source_scope" == "aihub_process" && "$import_scope" == "aihub_agent" ]] && return 0
+  # swiss_ai_hub.process may import swiss_ai_hub.agent
+  [[ "$source_scope" == "packages/process" && "$import_scope" == "swiss_ai_hub.agent" ]] && return 0
 
   return 1
 }
 
 # Check for cross-scope imports in the new content
-scopes=("aihub_agent" "aihub_api" "aihub_bot" "aihub_pipeline" "aihub_process")
+scopes=("swiss_ai_hub.agent" "swiss_ai_hub.api" "swiss_ai_hub.bot" "swiss_ai_hub.pipeline" "swiss_ai_hub.process")
 for scope in "${scopes[@]}"; do
   if echo "$new_string" | grep -qE "from ${scope}[. ]|import ${scope}"; then
     if ! check_violation "$scope"; then
       echo "WARNING: Cross-scope import detected. '$source_scope' is importing from '$scope'." >&2
-      echo "Shared code should go through aihub_lib. See CLAUDE.md for scope boundaries." >&2
+      echo "Shared code should go through swiss_ai_hub.core. See CLAUDE.md for scope boundaries." >&2
     fi
   fi
 done

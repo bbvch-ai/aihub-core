@@ -1,8 +1,8 @@
 [project]
-name = "aihub-core-workspace"
+name = "swiss-ai-hub-workspace"
 version = "0.270.1"
 requires-python = ">=3.13, <3.14"
-description = "AI-Hub Core Monorepo Workspace"
+description = "Swiss AI Hub Monorepo Workspace"
 dependencies = [
     "tomlkit>=0.13.3",
     "pyyaml>=6.0.3",
@@ -40,17 +40,21 @@ package = false
 
 [tool.uv.workspace]
 members = [
-    "aihub_lib",
-    "aihub_agent",
-    "aihub_api",
-    "aihub_bot",
-    "aihub_pipeline",
-    "aihub_process",
+    "packages/core",
+    "packages/agent",
+    "packages/api",
+    "packages/bot",
+    "packages/pipeline",
+    "packages/process",
 ]
 
 [tool.uv.sources]
-aihub-core = { workspace = true }
-aihub-agent = { workspace = true }
+swiss-ai-hub-core = { workspace = true }
+swiss-ai-hub-agent = { workspace = true }
+swiss-ai-hub-api = { workspace = true }
+swiss-ai-hub-bot = { workspace = true }
+swiss-ai-hub-pipeline = { workspace = true }
+swiss-ai-hub-process = { workspace = true }
 
 [tool.black]
 line-length = 120
@@ -81,7 +85,7 @@ exclude = [
     ".idea",
     "venv",
     ".git",
-    "aihub_doc/whitepaper/chapters",
+    "docs/whitepaper/chapters",
 ]
 wrap = 120
 number = true

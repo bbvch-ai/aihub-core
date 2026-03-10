@@ -1,6 +1,6 @@
 ---
 name: lint
-description: Format and lint code across all aihub-core scopes. Runs make pr-ready (ruff format + ruff check --fix + mdformat + yamlfix), fixes errors, and repeats until clean. Use when user says 'lint', 'format code', 'run pr-ready', 'fix formatting', 'ruff check', 'lint all scopes', or 'format and lint'. Do NOT use for running tests (use /test-scope) or full PR preparation (use /create-pr).
+description: Format and lint code across all swiss-ai-hub scopes. Runs make pr-ready (ruff format + ruff check --fix + mdformat + yamlfix), fixes errors, and repeats until clean. Use when user says 'lint', 'format code', 'run pr-ready', 'fix formatting', 'ruff check', 'lint all scopes', or 'format and lint'. Do NOT use for running tests (use /test-scope) or full PR preparation (use /create-pr).
 allowed-tools: Bash, Read, Edit
 ---
 
@@ -16,21 +16,21 @@ need to diagnose and fix specific errors.
 
 The root `make pr-ready` runs these steps in sequence:
 
-1. **Per-scope `make pr-ready`** for each Python scope (`aihub_pipeline`, `aihub_lib`, `aihub_agent`, `aihub_process`,
-   `aihub_api`, `aihub_bot`, `aihub_web`):
+1. **Per-scope `make pr-ready`** for each Python scope (`packages/pipeline`, `packages/core`, `packages/agent`,
+   `packages/process`, `packages/api`, `packages/bot`, `packages/web`):
    - `ruff format` — auto-format Python code
    - `ruff check --fix` — lint with auto-fix (rules: E pycodestyle, F pyflakes, UP pyupgrade, I isort)
 2. **`mdformat --number`** — format all tracked Markdown files (normalize headings, lists, tables)
 3. **`yamlfix`** — format all tracked YAML files (except `pnpm-lock.yaml`)
 
-Frontend scope (`aihub_web`) runs ESLint instead of ruff.
+Frontend scope (`packages/web`) runs ESLint instead of ruff.
 
 ## Steps
 
 ### 1. Run make pr-ready from Repo Root
 
 ```bash
-make -C /home/joelbarmettler/projects/aihub/aihub-core pr-ready
+make -C /home/joelbarmettler/projects/aihub/swiss-ai-hub pr-ready
 ```
 
 ### 2. Review Output for Errors
@@ -47,7 +47,7 @@ Ruff auto-fixes most issues. Errors that remain after auto-fix require manual in
 Fix each error in the reported file. Then re-run:
 
 ```bash
-make -C /home/joelbarmettler/projects/aihub/aihub-core pr-ready
+make -C /home/joelbarmettler/projects/aihub/swiss-ai-hub pr-ready
 ```
 
 Repeat until the output shows zero errors across all scopes.
@@ -57,9 +57,9 @@ Repeat until the output shows zero errors across all scopes.
 If only one scope needs fixing, target it directly:
 
 ```bash
-make -C aihub_lib pr-ready
-make -C aihub_api pr-ready
-make -C aihub_web pr-ready
+make -C packages/core pr-ready
+make -C packages/api pr-ready
+make -C packages/web pr-ready
 ```
 
 ## Ruff Configuration
@@ -78,7 +78,7 @@ Each scope's `pyproject.toml` configures ruff. Key settings:
 | `make pr-ready` fails with ModuleNotFoundError | Run `uv sync --all-packages` from workspace root       |
 | mdformat fails on deleted file                 | Stage the deletion with `git rm` first                 |
 | yamlfix changes too much                       | Check if the YAML file follows non-standard formatting |
-| ESLint errors in aihub_web                     | Run `pnpm lint --fix` from `aihub_web/aihub_web/`      |
+| ESLint errors in packages/web                  | Run `pnpm lint --fix` from `packages/web/aihub_web/`   |
 
 ## Done When
 

@@ -14,41 +14,41 @@ setup:
 
 setup-frontend:
 	@echo "Installing frontend dependencies..."
-	cd aihub_web/aihub_web && pnpm install
+	cd packages/web/aihub_web && pnpm install
 
 setup-all: setup setup-frontend
 
 test:
 	@echo "Running tests..."
-	@(cd aihub_pipeline && make test)
-	@(cd aihub_lib && make test)
-	@(cd aihub_agent && make test)
-	@(cd aihub_process && make test)
-	@(cd aihub_api && make test)
-	@(cd aihub_bot && make test)
+	@(cd packages/pipeline && make test)
+	@(cd packages/core && make test)
+	@(cd packages/agent && make test)
+	@(cd packages/process && make test)
+	@(cd packages/api && make test)
+	@(cd packages/bot && make test)
 
 lint:
 	@echo "Running linter..."
-	@(cd aihub_pipeline && make lint)
-	@(cd aihub_lib && make lint)
-	@(cd aihub_agent && make lint)
-	@(cd aihub_process && make lint)
-	@(cd aihub_api && make lint)
-	@(cd aihub_bot && make lint)
+	@(cd packages/pipeline && make lint)
+	@(cd packages/core && make lint)
+	@(cd packages/agent && make lint)
+	@(cd packages/process && make lint)
+	@(cd packages/api && make lint)
+	@(cd packages/bot && make lint)
 
 # Format code with Black
 format:
 	@echo "Formatting code for pipelines..."
-	@(cd aihub_pipeline && make format)
-	@(cd aihub_lib && make format)
-	@(cd aihub_agent && make format)
-	@(cd aihub_process && make format)
-	@(cd aihub_api && make format)
-	@(cd aihub_bot && make format)
+	@(cd packages/pipeline && make format)
+	@(cd packages/core && make format)
+	@(cd packages/agent && make format)
+	@(cd packages/process && make format)
+	@(cd packages/api && make format)
+	@(cd packages/bot && make format)
 
 format-md:
 	@echo "Formatting markdown files..."
-	@uv run mdformat --number $$(git ls-files '*.md' | grep -v 'aihub_doc/whitepaper/chapters/')
+	@uv run mdformat --number $$(git ls-files '*.md' | grep -v 'docs/whitepaper/chapters/')
 
 format-yaml:
 	@echo "Formatting YAML files..."
@@ -61,23 +61,23 @@ format-md-win:
 # Type-check with MyPy
 typecheck:
 	@echo "Running type checks for pipelines..."
-	@(cd aihub_pipeline && make typecheck)
-	@(cd aihub_lib && make typecheck)
-	@(cd aihub_agent && make typecheck)
-	@(cd aihub_process && make typecheck)
-	@(cd aihub_api && make typecheck)
-	@(cd aihub_bot && make typecheck)
+	@(cd packages/pipeline && make typecheck)
+	@(cd packages/core && make typecheck)
+	@(cd packages/agent && make typecheck)
+	@(cd packages/process && make typecheck)
+	@(cd packages/api && make typecheck)
+	@(cd packages/bot && make typecheck)
 
 # Run format, type-check, and test in sequence
 pr-ready:
 	@echo "Running full check (format, lint)..."
-	@(cd aihub_pipeline &&  make pr-ready)
-	@(cd aihub_lib &&  make pr-ready)
-	@(cd aihub_agent &&  make pr-ready)
-	@(cd aihub_process &&  make pr-ready)
-	@(cd aihub_api &&  make pr-ready)
-	@(cd aihub_bot &&  make pr-ready)
-	@(cd aihub_web && make pr-ready)
+	@(cd packages/pipeline &&  make pr-ready)
+	@(cd packages/core &&  make pr-ready)
+	@(cd packages/agent &&  make pr-ready)
+	@(cd packages/process &&  make pr-ready)
+	@(cd packages/api &&  make pr-ready)
+	@(cd packages/bot &&  make pr-ready)
+	@(cd packages/web && make pr-ready)
 	@$(MAKE) generate-compose
 	@$(MAKE) license-check
 	@$(MAKE) format-md
@@ -88,7 +88,7 @@ TAG ?= v0.270.1
 changelog:
 	@echo "Generating changelog"
 	/bin/bash ./generate-changelog.sh
-	@uv run mdformat --number $$(git ls-files '*.md' | grep -v 'aihub_doc/whitepaper/chapters/')
+	@uv run mdformat --number $$(git ls-files '*.md' | grep -v 'docs/whitepaper/chapters/')
 
 # Extract release notes for a specific version from CHANGELOG.md (TAG=v0.267.1, OUTPUT=release-notes.md)
 OUTPUT ?= release-notes.md
@@ -108,7 +108,7 @@ extract-release-notes:
 license-check:
 	@echo "Checking licenses..."
 	/bin/bash ./generate-license.sh
-	@uv run mdformat --number $$(git ls-files '*.md' | grep -v 'aihub_doc/whitepaper/chapters/')
+	@uv run mdformat --number $$(git ls-files '*.md' | grep -v 'docs/whitepaper/chapters/')
 
 # Generate Docker Compose files from the template
 generate-compose:
@@ -138,7 +138,7 @@ up-dev:
 VERSION ?= 0.263.0
 version-bump:
 	@echo "Bumping version to $(VERSION) across all packages..."
-	@for f in aihub_lib/pyproject.toml aihub_agent/pyproject.toml aihub_api/pyproject.toml aihub_bot/pyproject.toml aihub_pipeline/pyproject.toml aihub_process/pyproject.toml; do \
+	@for f in packages/core/pyproject.toml packages/agent/pyproject.toml packages/api/pyproject.toml packages/bot/pyproject.toml packages/pipeline/pyproject.toml packages/process/pyproject.toml; do \
 		sed -i 's/^version = "[^"]*"/version = "$(VERSION)"/' $$f; \
 	done
 	@uv lock

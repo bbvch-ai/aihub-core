@@ -3,10 +3,10 @@
 # Swiss AI-Hub Installer
 #
 # One-line install:
-#   curl -fsSL https://raw.githubusercontent.com/bbvch-ai/aihub-core/main/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/bbvch-ai/swiss-ai-hub/main/install.sh | bash
 #
 # Or with options:
-#   curl -fsSL https://raw.githubusercontent.com/bbvch-ai/aihub-core/main/install.sh | bash -s -- --gpu --dir ./my-hub
+#   curl -fsSL https://raw.githubusercontent.com/bbvch-ai/swiss-ai-hub/main/install.sh | bash -s -- --gpu --dir ./my-hub
 #
 set -euo pipefail
 
@@ -16,7 +16,7 @@ VERSION=""
 VERSION_EXPLICIT=false
 HARDWARE=""
 INSTALL_DIR="./swiss-ai-hub"
-GITHUB_REPO="bbvch-ai/aihub-core"
+GITHUB_REPO="bbvch-ai/swiss-ai-hub"
 
 # ── Color / formatting ───────────────────────────────────────────────────────
 
@@ -67,13 +67,13 @@ usage() {
 
   Examples:
     # Install latest version with auto-detected hardware
-    curl -fsSL https://raw.githubusercontent.com/bbvch-ai/aihub-core/main/install.sh | bash
+    curl -fsSL https://raw.githubusercontent.com/bbvch-ai/swiss-ai-hub/main/install.sh | bash
 
     # Install specific version with GPU bundle
-    curl -fsSL https://raw.githubusercontent.com/bbvch-ai/aihub-core/main/install.sh | bash -s -- --version v0.269.2 --gpu
+    curl -fsSL https://raw.githubusercontent.com/bbvch-ai/swiss-ai-hub/main/install.sh | bash -s -- --version v0.269.2 --gpu
 
     # Install to a custom directory
-    curl -fsSL https://raw.githubusercontent.com/bbvch-ai/aihub-core/main/install.sh | bash -s -- --dir /opt/aihub
+    curl -fsSL https://raw.githubusercontent.com/bbvch-ai/swiss-ai-hub/main/install.sh | bash -s -- --dir /opt/swiss-ai-hub
 
 EOF
     exit 0
@@ -280,10 +280,10 @@ if [ "$UPGRADE" = false ]; then
     header "Next steps"
     info "1. cd ${INSTALL_DIR}"
     info "2. Edit .env — set DOMAIN, OAuth credentials, and LLM provider keys"
-    info "   ${DIM}(see: https://bbvch-ai.github.io/aihub-core/2_platform/1_quick_start/)${RESET}"
+    info "   ${DIM}(see: https://bbvch-ai.github.io/swiss-ai-hub/2_platform/1_quick_start/)${RESET}"
     info "3. docker compose up -d"
     printf "\n"
-    info "${DIM}Docs:    https://bbvch-ai.github.io/aihub-core/${RESET}"
+    info "${DIM}Docs:    https://bbvch-ai.github.io/swiss-ai-hub/${RESET}"
     info "${DIM}Discord: https://discord.gg/wArT8zDB${RESET}"
     printf "\n"
     exit 0
@@ -338,6 +338,6 @@ info "1. cd ${INSTALL_DIR}"
 info "2. Review any new environment variables listed above"
 info "3. docker compose up -d"
 printf "\n"
-info "${DIM}Docs:    https://bbvch-ai.github.io/aihub-core/${RESET}"
+info "${DIM}Docs:    https://bbvch-ai.github.io/swiss-ai-hub/${RESET}"
 info "${DIM}Discord: https://discord.gg/wArT8zDB${RESET}"
 printf "\n"

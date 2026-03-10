@@ -72,7 +72,7 @@ comm -12 <(sort /tmp/main_changes.txt) <(sort /tmp/branch_changes.txt)
 Summarize for the user:
 
 - How many commits landed on main
-- Which scopes were affected on main (aihub_lib, aihub_api, etc.)
+- Which scopes were affected on main (packages/core, packages/api, etc.)
 - Which files overlap between main and this branch (conflict risk areas)
 
 ### 4. Merge Main into Branch
@@ -138,7 +138,7 @@ uv sync --all-packages
 Run `make pr-ready` from the repo root to ensure formatting and linting pass after merge:
 
 ```bash
-make -C /home/joelbarmettler/projects/aihub/aihub-core pr-ready
+make -C /home/joelbarmettler/projects/aihub/swiss-ai-hub pr-ready
 ```
 
 If `uv.lock` was conflicted or dependencies changed on main, regenerate it:
@@ -150,7 +150,7 @@ uv lock
 If Docker Compose templates were touched on main, regenerate:
 
 ```bash
-make -C /home/joelbarmettler/projects/aihub/aihub-core generate-compose
+make -C /home/joelbarmettler/projects/aihub/swiss-ai-hub generate-compose
 ```
 
 Commit any post-merge fixups:

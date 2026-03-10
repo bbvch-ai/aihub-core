@@ -1,0 +1,26 @@
+from swiss_ai_hub.core.nats.events.human_in_the_loop.HumanInTheLoopChat import HumanInTheLoopChat
+from swiss_ai_hub.core.nats.events.human_in_the_loop.HumanInTheLoopConfirmation import HumanInTheLoopConfirmation
+from swiss_ai_hub.core.nats.events.human_in_the_loop.HumanInTheLoopInput import HumanInTheLoopInput
+from swiss_ai_hub.core.nats.events.human_in_the_loop.request import HumanInTheLoopRequestEvent
+from swiss_ai_hub.core.nats.events.human_in_the_loop.response import HumanInTheLoopResponseEvent
+
+
+class HumanInTheLoop:
+    """
+    A helper for triggering human-in-the-loop (HITL) steps within a workflow.
+
+    Use the specific helpers for type-safe interactions:
+    - `HumanInTheLoop.input` for free-form text input (popup dialog)
+    - `HumanInTheLoop.confirmation` for yes/no confirmation (popup dialog)
+    - `HumanInTheLoop.chat` for chat-style input (appears as regular message)
+
+    Or use the base classes directly via `request` and `response` attributes.
+    """
+
+    request = HumanInTheLoopRequestEvent
+    response = HumanInTheLoopResponseEvent
+
+    # Typed helpers
+    input = HumanInTheLoopInput
+    confirmation = HumanInTheLoopConfirmation
+    chat = HumanInTheLoopChat

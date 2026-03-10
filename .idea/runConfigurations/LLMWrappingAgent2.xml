@@ -5,7 +5,7 @@
         <option name="buildOnly" value="true" />
         <option name="containerName" value="" />
         <option name="contextFolderPath" value="." />
-        <option name="sourceFilePath" value="aihub_agent/app/llm_wrapping_agent/Dockerfile" />
+        <option name="sourceFilePath" value="packages/agent/app/llm_wrapping_agent/Dockerfile" />
       </settings>
     </deployment>
     <method v="2" />

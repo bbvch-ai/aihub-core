@@ -76,13 +76,13 @@ jobs:
           fi
           echo "tag=$TAG_NAME" >> $GITHUB_OUTPUT
       - name: build and release docker image
-        uses: ./aihub_action/build_image
+        uses: ./.github/actions/build_image
         with:
           release_version: ${{ inputs.release_version || steps.get_tag.outputs.tag || format('testing-{0}', github.run_number) }}
           image_name: ${{ matrix.image }}
           github_repository_owner: ${{ github.repository_owner }}
           github_event_repository_name: ${{ github.event.repository.name }}
           context: .
-          file: ./aihub_agent/app/${{ matrix.image }}/Dockerfile
+          file: ./packages/agent/app/${{ matrix.image }}/Dockerfile
           github_token: ${{ secrets.GITHUB_TOKEN }}
           secondary_tag: ${{ github.event_name == 'repository_dispatch' && 'nightly' || github.event.inputs.secondary_tag }}

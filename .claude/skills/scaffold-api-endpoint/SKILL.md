@@ -10,19 +10,19 @@ Generate a new controller with endpoints. The resource name should be provided v
 
 ## Step 1: Read Reference Materials
 
-1. Read the API scope guide: `aihub_api/CLAUDE.md`
+1. Read the API scope guide: `packages/api/CLAUDE.md`
 2. Study these reference controllers:
-   - CRUD: `aihub_api/aihub_api/routes/agent/AgentController.py`
-   - Simple: `aihub_api/aihub_api/routes/role/RoleController.py`
-   - Complex: `aihub_api/aihub_api/routes/thread/ThreadController.py`
-   - Base class: `aihub_lib/aihub_lib/routes/Controller.py`
-   - Registration: `aihub_api/app/main.py`
+   - CRUD: `packages/api/swiss_ai_hub/api/routes/agent/AgentController.py`
+   - Simple: `packages/api/swiss_ai_hub/api/routes/role/RoleController.py`
+   - Complex: `packages/api/swiss_ai_hub/api/routes/thread/ThreadController.py`
+   - Base class: `packages/core/swiss_ai_hub/core/routes/Controller.py`
+   - Registration: `packages/api/app/main.py`
 3. Extract the resource name from `$ARGUMENTS` and derive `snake_case` (dirs/files) and `CamelCase` (classes)
 
 ## Step 2: Create Directory Structure
 
 ```
-aihub_api/aihub_api/routes/<resource>/
+packages/api/swiss_ai_hub/api/routes/<resource>/
 ├── __init__.py
 ├── <Resource>Controller.py
 ├── <Resource>Service.py
@@ -36,26 +36,26 @@ aihub_api/aihub_api/routes/<resource>/
 
 ## Step 3: Create the Controller
 
-File: `aihub_api/aihub_api/routes/<resource>/<Resource>Controller.py`
+File: `packages/api/swiss_ai_hub/api/routes/<resource>/<Resource>Controller.py`
 
 ```python
 from typing import Annotated, Self
 
-from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
-from aihub_lib.auth.identity.UserIdentity import UserIdentity
-from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.routes.Controller import Controller
+from swiss_ai_hub.core.auth.dependencies.AuthHandler import AuthHandler
+from swiss_ai_hub.core.auth.identity.UserIdentity import UserIdentity
+from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
+from swiss_ai_hub.core.routes.Controller import Controller
 from fastapi import Depends, Response, Security, status
 
-from aihub_api.i18n.ApiLocaleString import ApiLocaleString
-from aihub_api.i18n.dependencies.use_locale import use_locale
-from aihub_api.pagination.type.PageNumber import PageNumber
-from aihub_api.pagination.type.PageSize import PageSize
-from aihub_api.routes.<resource>.dto.Create<Resource>Request import Create<Resource>Request
-from aihub_api.routes.<resource>.dto.<Resource>DTO import <Resource>DTO
-from aihub_api.routes.<resource>.dto.Paginated<Resource>sResponse import Paginated<Resource>sResponse
-from aihub_api.routes.<resource>.dto.Update<Resource>Request import Update<Resource>Request
-from aihub_api.routes.<resource>.<Resource>Service import <Resource>Service
+from swiss_ai_hub.api.i18n.ApiLocaleString import ApiLocaleString
+from swiss_ai_hub.api.i18n.dependencies.use_locale import use_locale
+from swiss_ai_hub.api.pagination.type.PageNumber import PageNumber
+from swiss_ai_hub.api.pagination.type.PageSize import PageSize
+from swiss_ai_hub.api.routes.<resource>.dto.Create<Resource>Request import Create<Resource>Request
+from swiss_ai_hub.api.routes.<resource>.dto.<Resource>DTO import <Resource>DTO
+from swiss_ai_hub.api.routes.<resource>.dto.Paginated<Resource>sResponse import Paginated<Resource>sResponse
+from swiss_ai_hub.api.routes.<resource>.dto.Update<Resource>Request import Update<Resource>Request
+from swiss_ai_hub.api.routes.<resource>.<Resource>Service import <Resource>Service
 
 
 class <Resource>Controller(Controller):
@@ -151,7 +151,7 @@ class <Resource>Controller(Controller):
 
 ### Controller Architecture Rules
 
-1. **Inherit from `Controller`**: Always extend `aihub_lib.routes.Controller`
+1. **Inherit from `Controller`**: Always extend `swiss_ai_hub.core.routes.Controller`
 2. **Fluent builder**: Every endpoint method returns `Self` for chaining
 3. **Metadata**: Set `name` (ApiLocaleString), `description`, `icon` (Iconify)
 4. **Named-only constructor args**: Use `*` to enforce keyword arguments
@@ -184,10 +184,10 @@ _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.<reso
 
 ## Step 4: Register in main.py
 
-Edit `aihub_api/app/main.py`:
+Edit `packages/api/app/main.py`:
 
 ```python
-from aihub_api.routes.<resource>.<Resource>Controller import <Resource>Controller
+from swiss_ai_hub.api.routes.<resource>.<Resource>Controller import <Resource>Controller
 
 runner.mount(
     # ... existing controllers ...
@@ -202,7 +202,7 @@ runner.mount(
 
 ## Step 5: Add i18n Keys
 
-Add to all 4 locale files at `aihub_api/aihub_api/i18n/translations/api/controllers.{en,de,fr,it}.yml`:
+Add to all 4 locale files at `packages/api/swiss_ai_hub/api/i18n/translations/api/controllers.{en,de,fr,it}.yml`:
 
 ```yaml
 <resource>:
@@ -215,17 +215,17 @@ file path `translations/api/controllers.{locale}.yml` — only the `<resource>.n
 
 ## Step 6: Scaffold Tests
 
-Create test directory and stub at `aihub_api/playground/testing/tests/<resource>/test_<resource>_api.py`. Follow the
+Create test directory and stub at `packages/api/playground/testing/tests/<resource>/test_<resource>_api.py`. Follow the
 patterns in `playground/testing/tests/agent/` or `playground/testing/tests/role/`.
 
 ## Step 7: Verify
 
 1. Confirm the controller is importable:
-   `cd aihub_api && uv run python -c "from aihub_api.routes.<resource>.<Resource>Controller import <Resource>Controller"`
-2. Confirm registration in `aihub_api/app/main.py` — the controller must be imported and mounted via `runner.mount()`
+   `cd packages/api && uv run python -c "from swiss_ai_hub.api.routes.<resource>.<Resource>Controller import <Resource>Controller"`
+2. Confirm registration in `packages/api/app/main.py` — the controller must be imported and mounted via `runner.mount()`
 3. Confirm i18n keys exist in all 4 locale files:
-   `aihub_api/aihub_api/i18n/translations/api/controllers.{en,de,fr,it}.yml`
-4. Run tests: `cd aihub_api && make test`
+   `packages/api/swiss_ai_hub/api/i18n/translations/api/controllers.{en,de,fr,it}.yml`
+4. Run tests: `cd packages/api && make test`
 
 ## Key Conventions
 
@@ -233,7 +233,7 @@ patterns in `playground/testing/tests/agent/` or `playground/testing/tests/role/
 - **`Annotated` for everything**: Params, dependencies, auth — all use `Annotated`
 - **Docstrings on endpoints**: Short description of what the endpoint does
 - **Locale handler**: Always inject `t: Annotated[LocaleHandler, Depends(use_locale)]`
-- **Pagination types**: Use `PageNumber` and `PageSize` type aliases from `aihub_api.pagination.type`
+- **Pagination types**: Use `PageNumber` and `PageSize` type aliases from `swiss_ai_hub.api.pagination.type`
 - **Error handling**: Let services raise `HTTPException` -- don't catch in controllers
 - **Path validation**: Use `Path(pattern=r"^[a-f0-9]{24}$")` for MongoDB ObjectId params
 
@@ -241,12 +241,13 @@ patterns in `playground/testing/tests/agent/` or `playground/testing/tests/role/
 
 **Input**: `$ARGUMENTS = "project"` **Expected output files**:
 
-- `aihub_api/aihub_api/routes/project/ProjectController.py` with `ProjectController(Controller)`
-- `aihub_api/aihub_api/routes/project/ProjectService.py` (stub -- use `/scaffold-api-service` for full service)
-- `aihub_api/aihub_api/routes/project/dto/ProjectDTO.py`, `CreateProjectRequest.py`, `UpdateProjectRequest.py`,
-  `PaginatedProjectsResponse.py`
-- Registration added to `aihub_api/app/main.py`
-- i18n keys added to `aihub_api/aihub_api/i18n/locales/{en,de,fr,it}.yaml`
+- `packages/api/swiss_ai_hub/api/routes/project/ProjectController.py` with `ProjectController(Controller)`
+- `packages/api/swiss_ai_hub/api/routes/project/ProjectService.py` (stub -- use `/scaffold-api-service` for full
+  service)
+- `packages/api/swiss_ai_hub/api/routes/project/dto/ProjectDTO.py`, `CreateProjectRequest.py`,
+  `UpdateProjectRequest.py`, `PaginatedProjectsResponse.py`
+- Registration added to `packages/api/app/main.py`
+- i18n keys added to `packages/api/swiss_ai_hub/api/i18n/locales/{en,de,fr,it}.yaml`
 
 ## Troubleshooting
 

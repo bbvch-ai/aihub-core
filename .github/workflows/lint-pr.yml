@@ -17,15 +17,15 @@ jobs:
       fail-fast: false
       matrix:
         folder:
-          - aihub_agent
-          - aihub_api
-          - aihub_lib
-          - aihub_pipeline
-          - aihub_bot
-          - aihub_process
+          - packages/agent
+          - packages/api
+          - packages/core
+          - packages/pipeline
+          - packages/bot
+          - packages/process
     steps:
       - name: Lint backend
-        uses: bbvch-ai/aihub-core/aihub_action/lint_backend@main
+        uses: bbvch-ai/swiss-ai-hu./.github/actions/lint_backend@main
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           working_directory: ${{ matrix.folder }}
@@ -34,11 +34,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Lint frontend
-        uses: bbvch-ai/aihub-core/aihub_action/lint_frontend@main
+        uses: bbvch-ai/swiss-ai-hu./.github/actions/lint_frontend@main
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          working_directory: aihub_web/aihub_web
-          lockfile: aihub_web/aihub_web/pnpm-lock.yaml
+          working_directory: packages/web/aihub_web
+          lockfile: packages/web/aihub_web/pnpm-lock.yaml
   license-check:
     name: License Check
     runs-on: ubuntu-latest

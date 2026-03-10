@@ -76,17 +76,17 @@ Use the error information from Step 1 to match against these known patterns.
 
 1. **Automation condition not triggered**: Check that upstream asset has a version change
 
-   - Read: `aihub_pipeline/aihub_pipeline/automation/all_deps_completed.py`
+   - Read: `packages/pipeline/swiss_ai_hub/pipeline/automation/all_deps_completed.py`
    - Verify asset has `AutomationCondition.eager()` or `all_deps_completed`
 
 2. **Automation sensor not running**: The sensor must be included in `Definitions`
 
-   - Read: `aihub_pipeline/aihub_pipeline/sensors/factory.py`
+   - Read: `packages/pipeline/swiss_ai_hub/pipeline/sensors/factory.py`
    - Verify `default_automation_sensor(assets)` is in the sensors list
 
 3. **Partition key mismatch**: Dynamic partitions may not have been created
 
-   - Read: `aihub_pipeline/aihub_pipeline/util/partition_utils.py`
+   - Read: `packages/pipeline/swiss_ai_hub/pipeline/util/partition_utils.py`
    - Check `max_partitions` limit -- if exceeded, some partitions are deferred
 
 4. **Resource missing**: Op can't find required resource
@@ -112,7 +112,7 @@ Use the error information from Step 1 to match against these known patterns.
 2. **Hash unchanged**: Content hash matches previous observation
 
    - Data versions are content-based -- if file content didn't change, no version change
-   - Read: `aihub_pipeline/aihub_pipeline/ops/data_lake/data_version_by_partition_for_data_lake_files.py`
+   - Read: `packages/pipeline/swiss_ai_hub/pipeline/ops/data_lake/data_version_by_partition_for_data_lake_files.py`
 
 3. **Partition limit reached**: `max_partitions` caps how many partitions are processed per run
 
@@ -123,13 +123,13 @@ Use the error information from Step 1 to match against these known patterns.
 
 **Check automation sensor**:
 
-- Read: `aihub_pipeline/aihub_pipeline/sensors/factory.py`
+- Read: `packages/pipeline/swiss_ai_hub/pipeline/sensors/factory.py`
 - Is `default_automation_sensor(assets)` in the `Definitions.sensors` list?
 - Is `minimum_interval_seconds` appropriate? (default: 60s)
 
 **Check NATS sensor**:
 
-- Read: `aihub_pipeline/aihub_pipeline/sensors/nats/nats_document_uploaded_sensor.py`
+- Read: `packages/pipeline/swiss_ai_hub/pipeline/sensors/nats/nats_document_uploaded_sensor.py`
 - Is NATS reachable? Check `NATS_ENDPOINT` env var
 - Is the JetStream stream created? (poller creates it on first run)
 - Are `SourceUpdatedEvent` messages being published?
@@ -139,7 +139,7 @@ Use the error information from Step 1 to match against these known patterns.
 
 **Symptoms**: `RetryPolicy` exhausted, `ValidationError` in embed_nodes
 
-- Read: `aihub_pipeline/aihub_pipeline/ops/nodes/embed_nodes.py`
+- Read: `packages/pipeline/swiss_ai_hub/pipeline/ops/nodes/embed_nodes.py`
 - LiteLLM endpoint unreachable
 - Token limit exceeded: document too large after chunking
 - Batch splitting: on `ValidationError`, batch is recursively split in half
@@ -149,8 +149,8 @@ Use the error information from Step 1 to match against these known patterns.
 
 **Symptoms**: `parse_document_from_data_lake` fails
 
-- Read: `aihub_pipeline/aihub_pipeline/ops/data_lake/parse_document_from_data_lake.py`
-- Read: `aihub_pipeline/aihub_pipeline/resources/parser/DocumentParserResource.py`
+- Read: `packages/pipeline/swiss_ai_hub/pipeline/ops/data_lake/parse_document_from_data_lake.py`
+- Read: `packages/pipeline/swiss_ai_hub/pipeline/resources/parser/DocumentParserResource.py`
 - MinerU service not running (if using remote MinerU)
 - Unsupported file type
 - Corrupted file content
@@ -164,7 +164,7 @@ ______________________________________________________________________
 
 **Symptoms**: `botocore.exceptions.ClientError`, `EndpointConnectionError`
 
-Settings: `aihub_lib/aihub_lib/infrastructure/s3/S3StorageSettings.py`
+Settings: `packages/core/swiss_ai_hub/core/infrastructure/s3/S3StorageSettings.py`
 
 | Env Variable    | Purpose                     |
 | --------------- | --------------------------- |
@@ -180,7 +180,7 @@ endpoint (inside Docker use `http://minio:9000`, not `localhost`).
 
 **Symptoms**: `MilvusException`, connection timeout
 
-Settings: `aihub_lib/aihub_lib/infrastructure/milvus/MilvusSettings.py`
+Settings: `packages/core/swiss_ai_hub/core/infrastructure/milvus/MilvusSettings.py`
 
 | Env Variable       | Purpose                      |
 | ------------------ | ---------------------------- |
@@ -195,17 +195,17 @@ collection not found (auto-created on first insert).
 
 **Symptoms**: `ConnectionFailure`, `OperationFailure`
 
-Settings: `aihub_lib/aihub_lib/infrastructure/mongo/MongoSettings.py`
+Settings: `packages/core/swiss_ai_hub/core/infrastructure/mongo/MongoSettings.py`
 
 Common issues: FerretDB not running, database name mismatch (derived from bucket name via
-`get_db_name_from_bucket_name()` in `aihub_pipeline/aihub_pipeline/util/bucket_utils.py`).
+`get_db_name_from_bucket_name()` in `packages/pipeline/swiss_ai_hub/pipeline/util/bucket_utils.py`).
 
 ### Rclone
 
 **Symptoms**: `ClientConnectorError`, `403 Forbidden`, remote not found
 
-Settings: `aihub_lib/aihub_lib/infrastructure/rclone/RcloneSettings.py` Client:
-`aihub_pipeline/aihub_pipeline/resources/rclone/RcloneClient.py`
+Settings: `packages/core/swiss_ai_hub/core/infrastructure/rclone/RcloneSettings.py` Client:
+`packages/pipeline/swiss_ai_hub/pipeline/resources/rclone/RcloneClient.py`
 
 | Env Variable     | Purpose         |
 | ---------------- | --------------- |
@@ -218,7 +218,7 @@ for file downloads).
 
 ### NATS
 
-Settings: `aihub_lib/aihub_lib/infrastructure/nats/NatsSettings.py`
+Settings: `packages/core/swiss_ai_hub/core/infrastructure/nats/NatsSettings.py`
 
 Common issues: NATS not running, JetStream not enabled, stream/consumer not created.
 
@@ -258,7 +258,7 @@ collection), and document ID conversion (URI to hash) is consistent.
 
 ### "Rclone remote not found"
 
-Read: `aihub_pipeline/aihub_pipeline/resources/rclone/RcloneResource.py`
+Read: `packages/pipeline/swiss_ai_hub/pipeline/resources/rclone/RcloneResource.py`
 
 Remote not configured in rclone, `rclone_config_dict` not provided or malformed, remote name doesn't match
 `source_remote` prefix.

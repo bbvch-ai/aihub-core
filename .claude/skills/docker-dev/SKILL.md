@@ -141,7 +141,7 @@ Each stage has a `.gpu` variant adding NVIDIA GPU support.
 
 ## Network Zones
 
-5 isolated Docker networks (see `aihub_doc/arc42/decisions/2025_12_22_docker_network_isolation.md`):
+5 isolated Docker networks (see `docs/arc42/decisions/2025_12_22_docker_network_isolation.md`):
 
 | Network   | Purpose                      | Key Services                              |
 | --------- | ---------------------------- | ----------------------------------------- |

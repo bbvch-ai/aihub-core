@@ -1,6 +1,6 @@
 ---
 name: i18n
-description: Comprehensive i18n reference and validation. Covers the dual i18n architecture (frontend Nuxt i18n + backend python-i18n), LocaleHandler/LocaleString class hierarchies, translation file structure and naming, scope inheritance, and when to create vs extend locale files. Also validates key consistency across locales and scans for hardcoded strings. Use when user says 'how does i18n work', 'add translations', 'create locale file', 'check translations', 'find missing i18n keys', 'validate locales', 'i18n coverage', or 'any hardcoded strings'. Do not use for frontend-only i18n config questions — see aihub_web/CLAUDE.md instead.
+description: Comprehensive i18n reference and validation. Covers the dual i18n architecture (frontend Nuxt i18n + backend python-i18n), LocaleHandler/LocaleString class hierarchies, translation file structure and naming, scope inheritance, and when to create vs extend locale files. Also validates key consistency across locales and scans for hardcoded strings. Use when user says 'how does i18n work', 'add translations', 'create locale file', 'check translations', 'find missing i18n keys', 'validate locales', 'i18n coverage', or 'any hardcoded strings'. Do not use for frontend-only i18n config questions — see packages/web/CLAUDE.md instead.
 allowed-tools: Read, Bash, Grep, Glob
 ---
 
@@ -15,8 +15,8 @@ Frontend and backend use **completely independent** i18n systems. They share no 
 
 ### Frontend (Nuxt `@nuxtjs/i18n`)
 
-- **Config**: `aihub_web/aihub_web/nuxt.config.ts` (i18n section, `strategy: 'prefix'`, `lazy: true`)
-- **Files**: `aihub_web/aihub_web/i18n/locales/{locale}.yaml` — one mega YAML per locale (`.yaml` extension)
+- **Config**: `packages/web/aihub_web/nuxt.config.ts` (i18n section, `strategy: 'prefix'`, `lazy: true`)
+- **Files**: `packages/web/aihub_web/i18n/locales/{locale}.yaml` — one mega YAML per locale (`.yaml` extension)
 - **Usage**: `$t('key.path')` in templates, `t('key.path')` in `<script setup>` via `useI18n()`
 - **Navigation**: ALL routes MUST use `localePath()` — URLs include locale prefix (`/en/service/agents`)
 - **Key structure**: Nested YAML, accessed via dot-notation: `common.actions.save` ->
@@ -33,15 +33,15 @@ Frontend and backend use **completely independent** i18n systems. They share no 
 
 ### File Locations
 
-| Package         | Translation Directory                                    | Scope Prefix |
-| --------------- | -------------------------------------------------------- | ------------ |
-| `aihub_lib`     | `aihub_lib/aihub_lib/i18n/translations/lib/`             | `lib`        |
-| `aihub_lib`     | `aihub_lib/aihub_lib/i18n/translations/bot/`             | `bot`        |
-| `aihub_api`     | `aihub_api/aihub_api/i18n/translations/api/`             | `api`        |
-| `aihub_agent`   | `aihub_agent/aihub_agent/i18n/translations/agent/`       | `agent`      |
-| `aihub_process` | `aihub_process/aihub_process/i18n/translations/process/` | `process`    |
+| Package            | Translation Directory                                              | Scope Prefix |
+| ------------------ | ------------------------------------------------------------------ | ------------ |
+| `packages/core`    | `packages/core/swiss_ai_hub/core/i18n/translations/lib/`           | `lib`        |
+| `packages/core`    | `packages/core/swiss_ai_hub/core/i18n/translations/bot/`           | `bot`        |
+| `packages/api`     | `packages/api/swiss_ai_hub/api/i18n/translations/api/`             | `api`        |
+| `packages/agent`   | `packages/agent/swiss_ai_hub/agent/i18n/translations/agent/`       | `agent`      |
+| `packages/process` | `packages/process/swiss_ai_hub/process/i18n/translations/process/` | `process`    |
 
-**Bot exception**: Bot translations live under `aihub_lib` (scope `bot/`), NOT in `aihub_bot`. Bots use the base
+**Bot exception**: Bot translations live under `packages/core` (scope `bot/`), NOT in `packages/bot`. Bots use the base
 `LocaleHandler`, not a bot-specific subclass.
 
 ### Naming Convention
@@ -114,10 +114,10 @@ Accessed as: `agent.rag_agent.metadata.name`, `agent.rag_agent.steps.retrieve_no
 `LocaleHandler` is the base class for runtime translation lookup. Each sub-package extends it to register its own
 translation directory while **inheriting lib-level translations**.
 
-### Base: `LocaleHandler` (`aihub_lib/aihub_lib/i18n/LocaleHandler.py`)
+### Base: `LocaleHandler` (`packages/core/swiss_ai_hub/core/i18n/LocaleHandler.py`)
 
 - `DEFAULT_LOCALE = "en"`, `LOCALE_WHITE_LIST = ["de", "en", "fr", "it"]`
-- `get_locale_paths()` returns `[aihub_lib/i18n/translations/]`
+- `get_locale_paths()` returns `[packages/core/i18n/translations/]`
 - `__call__(key, locale)` -> `i18n.t(key, locale=locale)` — translates a key
 - `t_object(key, locale)` -> returns raw YAML data (dict/list) instead of string
 - `extract(locale_data, locale)` -> extracts from `dict[str, Any]` or `LocaleString` objects
@@ -127,7 +127,7 @@ translation directory while **inheriting lib-level translations**.
 
 Each extends `LocaleHandler` and overrides `get_locale_paths()` to add its own translation directory:
 
-**`ApiLocaleHandler`** (`aihub_api/aihub_api/i18n/ApiLocaleHandler.py`):
+**`ApiLocaleHandler`** (`packages/api/swiss_ai_hub/api/i18n/ApiLocaleHandler.py`):
 
 ```python
 def get_locale_paths(self) -> list[str]:
@@ -136,15 +136,15 @@ def get_locale_paths(self) -> list[str]:
 
 Load paths: `[lib/translations/, api/translations/]` -> can resolve both `lib.*` and `api.*` keys.
 
-**`AgentLocaleHandler`** (`aihub_agent/aihub_agent/i18n/AgentLocaleHandler.py`): Same pattern. Load paths:
+**`AgentLocaleHandler`** (`packages/agent/swiss_ai_hub/agent/i18n/AgentLocaleHandler.py`): Same pattern. Load paths:
 `[lib/translations/, agent/translations/]`.
 
-**`ProcessLocaleHandler`** (`aihub_process/aihub_process/i18n/ProcessLocaleHandler.py`): Same pattern. Load paths:
-`[lib/translations/, process/translations/]`.
+**`ProcessLocaleHandler`** (`packages/process/swiss_ai_hub/process/i18n/ProcessLocaleHandler.py`): Same pattern. Load
+paths: `[lib/translations/, process/translations/]`.
 
-**Key insight**: All sub-package handlers call `super().get_locale_paths()`, which includes `aihub_lib` translations.
-This means agent code can reference `lib.events.start_event.name` or `lib.guards.context_guard.reason` — lib-level
-translations are always available in sub-packages.
+**Key insight**: All sub-package handlers call `super().get_locale_paths()`, which includes `packages/core`
+translations. This means agent code can reference `lib.events.start_event.name` or `lib.guards.context_guard.reason` —
+lib-level translations are always available in sub-packages.
 
 ### Runtime Usage
 
@@ -162,7 +162,7 @@ async def my_step(self, event: UserMessageEvent, t: AgentLocaleHandler) -> StopE
 `LocaleString` holds pre-resolved translations for all 4 locales in a single Pydantic model. Used at **definition time**
 (class attributes, config labels, event metadata).
 
-### Base: `LocaleString` (`aihub_lib/aihub_lib/i18n/LocaleString.py`)
+### Base: `LocaleString` (`packages/core/swiss_ai_hub/core/i18n/LocaleString.py`)
 
 Fields: `de: str | None`, `en: str | None`, `fr: str | None`, `it: str | None`
 
@@ -176,7 +176,7 @@ Key methods:
 
 Each sub-package has its own `LocaleString` subclass that uses the package-specific `LocaleHandler`:
 
-**`AgentLocaleString`** (`aihub_agent/aihub_agent/i18n/AgentLocaleString.py`):
+**`AgentLocaleString`** (`packages/agent/swiss_ai_hub/agent/i18n/AgentLocaleString.py`):
 
 ```python
 @classmethod
@@ -189,9 +189,10 @@ def from_i18n_path(cls, path: str) -> Self:
     )
 ```
 
-**`ApiLocaleString`** (`aihub_api/aihub_api/i18n/ApiLocaleString.py`): Uses `ApiLocaleHandler`.
+**`ApiLocaleString`** (`packages/api/swiss_ai_hub/api/i18n/ApiLocaleString.py`): Uses `ApiLocaleHandler`.
 
-**`ProcessLocaleString`** (`aihub_process/aihub_process/i18n/ProcessLocaleString.py`): Uses `ProcessLocaleHandler`.
+**`ProcessLocaleString`** (`packages/process/swiss_ai_hub/process/i18n/ProcessLocaleString.py`): Uses
+`ProcessLocaleHandler`.
 
 ### Definition-Time Usage
 
@@ -222,8 +223,8 @@ All 4 locales MUST be provided. This is common in event classes and form element
 
 ### Persistence: `LocaleStringEntity`
 
-`LocaleStringEntity` (`aihub_lib/aihub_lib/persistence/i18n/LocaleStringEntity.py`) is a MongoEngine `EmbeddedDocument`
-with the same 4 fields. Convert between them:
+`LocaleStringEntity` (`packages/core/swiss_ai_hub/core/persistence/i18n/LocaleStringEntity.py`) is a MongoEngine
+`EmbeddedDocument` with the same 4 fields. Convert between them:
 
 - `LocaleStringEntity.from_locale_string(locale_string)` -> for storage
 - `entity.to_locale_string()` -> for runtime
@@ -246,7 +247,7 @@ with coverage percentages. **Present the script output to the user as-is.**
 The script does not cover inline `LocaleString(...)` instances. Check manually:
 
 ```bash
-grep -rn 'LocaleString(' aihub_agent/ aihub_process/ --include='*.py'
+grep -rn 'LocaleString(' packages/agent/ packages/process/ --include='*.py'
 ```
 
 Each `LocaleString(...)` must have all 4 keyword arguments: `de=`, `en=`, `fr=`, `it=`.
@@ -268,7 +269,7 @@ without `$t()` or `t()`.
 Extract i18n keys from Vue templates and verify they exist in `en.yaml`:
 
 ```bash
-grep -rhoP "\$t\(['\"]([^'\"]+)['\"]\)" aihub_web/aihub_web/ --include='*.vue' | sort -u
+grep -rhoP "\$t\(['\"]([^'\"]+)['\"]\)" packages/web/aihub_web/ --include='*.vue' | sort -u
 ```
 
 Ignore dynamic keys like `$t(variable)`.

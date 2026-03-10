@@ -2,7 +2,7 @@
 set -e
 # GitHub MCP — direct access to issues, PRs, code search, CI/CD status, and project boards.
 # Enables searching issues, reading PR reviews, checking workflow runs, and managing
-# the aihub-core repository without leaving the coding session.
+# the swiss-ai-hub repository without leaving the coding session.
 #
 # SETUP: Add GITHUB_PERSONAL_ACCESS_TOKEN to your .env file.
 # Create a token at: https://github.com/settings/tokens

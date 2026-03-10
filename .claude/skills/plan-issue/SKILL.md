@@ -1,12 +1,12 @@
 ---
 name: plan-issue
-description: Fetch a GitHub issue from bbvch-ai/aihub-core and create an implementation plan using monorepo scope analysis, ADR checks, and scaffold skill mapping. Use when user says 'plan this issue', 'how should I implement issue #X', 'plan implementation', 'break down this issue', 'fetch issue and plan', 'what needs to change for #X', or 'implementation strategy for issue'. Takes an issue number as argument. Do NOT use for directly implementing code (use plan mode), PR feedback (use /implement-feedback-from-pr), or code review (use /review-diff).
+description: Fetch a GitHub issue from bbvch-ai/swiss-ai-hub and create an implementation plan using monorepo scope analysis, ADR checks, and scaffold skill mapping. Use when user says 'plan this issue', 'how should I implement issue #X', 'plan implementation', 'break down this issue', 'fetch issue and plan', 'what needs to change for #X', or 'implementation strategy for issue'. Takes an issue number as argument. Do NOT use for directly implementing code (use plan mode), PR feedback (use /implement-feedback-from-pr), or code review (use /review-diff).
 allowed-tools: Bash, Read, Grep, Glob
 ---
 
 # Plan Issue - GitHub Issue to Implementation Plan
 
-Fetch issue \$ARGUMENTS from `bbvch-ai/aihub-core` and produce a scoped implementation plan.
+Fetch issue \$ARGUMENTS from `bbvch-ai/swiss-ai-hub` and produce a scoped implementation plan.
 
 ## Step 1: Fetch the Issue
 
@@ -17,7 +17,7 @@ Use the GitHub MCP server to gather structured issue data:
 3. **Sub-issues**: `mcp__github__issue_read` with `method: "get_sub_issues"` — task breakdown if present
 4. **Labels**: `mcp__github__issue_read` with `method: "get_labels"` — categorization and priority
 
-All calls use `owner: "bbvch-ai"`, `repo: "aihub-core"`, `issue_number: $ISSUE_NUMBER`.
+All calls use `owner: "bbvch-ai"`, `repo: "swiss-ai-hub"`, `issue_number: $ISSUE_NUMBER`.
 
 Optionally check the project board for priority and status context:
 
@@ -32,15 +32,15 @@ Extract from the issue: **Goal** (what needs to be achieved), **Constraints** (r
 
 Map the issue requirements to monorepo scopes:
 
-| Scope            | Responsibility                                                 |
-| ---------------- | -------------------------------------------------------------- |
-| `aihub_lib`      | Shared library (events, entities, NATS, auth, config)          |
-| `aihub_api`      | REST API + WebSocket gateway (FastAPI controllers, services)   |
-| `aihub_agent`    | AI agent definitions and workflows (LlamaIndex)                |
-| `aihub_pipeline` | Data ingestion pipelines (Dagster assets, resources)           |
-| `aihub_process`  | Business process orchestration (agent + human + program steps) |
-| `aihub_bot`      | Collaboration platform integrations (MS Teams, Slack)          |
-| `aihub_web`      | Frontend admin UI (Nuxt 3, Vue 3, PrimeVue)                    |
+| Scope               | Responsibility                                                 |
+| ------------------- | -------------------------------------------------------------- |
+| `packages/core`     | Shared library (events, entities, NATS, auth, config)          |
+| `packages/api`      | REST API + WebSocket gateway (FastAPI controllers, services)   |
+| `packages/agent`    | AI agent definitions and workflows (LlamaIndex)                |
+| `packages/pipeline` | Data ingestion pipelines (Dagster assets, resources)           |
+| `packages/process`  | Business process orchestration (agent + human + program steps) |
+| `packages/bot`      | Collaboration platform integrations (MS Teams, Slack)          |
+| `packages/web`      | Frontend admin UI (Nuxt 3, Vue 3, PrimeVue)                    |
 
 For each affected scope:
 
@@ -52,7 +52,7 @@ For each affected scope:
 ## Step 3: Check Existing ADRs
 
 ```bash
-ls aihub_doc/arc42/decisions/
+ls docs/arc42/decisions/
 ```
 
 Read any ADR that covers related technology choices. Flag if the implementation approach may need a new ADR (new
@@ -82,8 +82,8 @@ Structure the plan with these sections:
    - Concrete file paths (not placeholders)
    - Existing pattern to follow (a real file in the codebase)
    - Relevant scaffold skill if applicable
-4. **Cross-Scope Impact** — if `aihub_lib` changes, list downstream scopes that need testing
-5. **Event System Impact** — new Control or Display events needed? Check `aihub_lib/aihub_lib/events/`
+4. **Cross-Scope Impact** — if `packages/core` changes, list downstream scopes that need testing
+5. **Event System Impact** — new Control or Display events needed? Check `packages/core/swiss_ai_hub/core/events/`
 6. **Testing Strategy** — which scopes need `make test`, new test files needed
 7. **ADR Needed?** — yes/no with justification
 8. **Risks** — ambiguities that need team input before starting
@@ -92,14 +92,14 @@ Structure the plan with these sections:
 
 - Every step must reference concrete files from the codebase, not placeholders
 - Follow existing patterns — read the scope's CLAUDE.md before proposing new abstractions
-- Identify step dependencies (what must happen first — typically `aihub_lib` before downstream scopes)
-- If `aihub_lib` is modified, list all downstream scopes that import from it
+- Identify step dependencies (what must happen first — typically `packages/core` before downstream scopes)
+- If `packages/core` is modified, list all downstream scopes that import from it
 
 ## Troubleshooting
 
 | Problem                       | Solution                                                       |
 | ----------------------------- | -------------------------------------------------------------- |
-| Issue not found               | Verify issue number: `gh issue list -R bbvch-ai/aihub-core`    |
+| Issue not found               | Verify issue number: `gh issue list -R bbvch-ai/swiss-ai-hub`  |
 | Issue is vague                | List what needs clarification, suggest asking the issue author |
 | Spans too many scopes         | Break into sub-tasks, suggest splitting the issue              |
 | No existing pattern to follow | Flag as risk — may need an ADR for the new pattern             |

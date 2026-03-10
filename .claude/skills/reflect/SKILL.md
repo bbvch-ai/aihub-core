@@ -1,6 +1,6 @@
 ---
 name: reflect
-description: Reflect on the current coding session to identify where Claude violated aihub-core conventions, missed patterns, or needed steering. Proposes targeted improvements to CLAUDE.md files, skills, agents, or hooks. Use when user says 'reflect on this session', 'what went wrong', 'improve the prompts', 'update CLAUDE.md based on this session', 'session retrospective', 'what should we improve', or 'learn from mistakes'. Do NOT use for full CLAUDE.md audit (use /create-or-audit-claude-md), skill review (use /create-or-audit-skill), or documentation sync (use /update-doc).
+description: Reflect on the current coding session to identify where Claude violated swiss-ai-hub conventions, missed patterns, or needed steering. Proposes targeted improvements to CLAUDE.md files, skills, agents, or hooks. Use when user says 'reflect on this session', 'what went wrong', 'improve the prompts', 'update CLAUDE.md based on this session', 'session retrospective', 'what should we improve', or 'learn from mistakes'. Do NOT use for full CLAUDE.md audit (use /create-or-audit-claude-md), skill review (use /create-or-audit-skill), or documentation sync (use /update-doc).
 allowed-tools: Read, Grep, Glob, Edit, Write
 ---
 
@@ -26,7 +26,7 @@ Review the conversation history. Check specifically for violations of these root
 Also look for:
 
 - **Architecture mistakes**: Misunderstood Controller → Service → Entity layers, NATS pub/sub, event hierarchy
-- **Scope boundary violations**: Imported directly between scopes instead of through `aihub_lib`
+- **Scope boundary violations**: Imported directly between scopes instead of through `packages/core`
 - **Stale knowledge**: Used Poetry commands (migrated to uv), referenced non-existent paths
 - **Steering moments**: Places where the user said "no", "don't do that", "instead do X"
 - **Repeated corrections**: The same issue flagged multiple times
@@ -46,14 +46,14 @@ For each issue, determine the right fix:
 
 Scope CLAUDE.md files that can be improved:
 
-- `aihub_lib/CLAUDE.md` — shared patterns, events, entities, NATS, auth
-- `aihub_api/CLAUDE.md` — route patterns, FastAPI conventions, DTOs
-- `aihub_agent/CLAUDE.md` — agent workflow, config/form duality, LlamaIndex
-- `aihub_pipeline/CLAUDE.md` — Dagster assets, resources, IO managers
-- `aihub_process/CLAUDE.md` — process orchestration, work events, forms
-- `aihub_bot/CLAUDE.md` — handler architecture, CompletionHandler pattern
-- `aihub_web/CLAUDE.md` — Nuxt/Vue/PrimeVue conventions, composables
-- `aihub_doc/CLAUDE.md` — VitePress docs, translation rules
+- `packages/core/CLAUDE.md` — shared patterns, events, entities, NATS, auth
+- `packages/api/CLAUDE.md` — route patterns, FastAPI conventions, DTOs
+- `packages/agent/CLAUDE.md` — agent workflow, config/form duality, LlamaIndex
+- `packages/pipeline/CLAUDE.md` — Dagster assets, resources, IO managers
+- `packages/process/CLAUDE.md` — process orchestration, work events, forms
+- `packages/bot/CLAUDE.md` — handler architecture, CompletionHandler pattern
+- `packages/web/CLAUDE.md` — Nuxt/Vue/PrimeVue conventions, composables
+- `docs/CLAUDE.md` — VitePress docs, translation rules
 - `deployment/CLAUDE.md` — Docker Compose, Traefik, network zones
 
 **Prefer hooks over CLAUDE.md** when the rule is deterministic (always do X after Y). Existing hooks handle formatting,
@@ -86,7 +86,7 @@ Issues that have come up before:
 
 - Using `poetry` commands instead of `uv` (project migrated to uv in Feb 2026)
 - Using `gh` CLI instead of GitHub MCP tools (`mcp__github__issue_read`, `mcp__github__pull_request_read`)
-- Creating `controller/` directories instead of `routes/` in aihub_api
+- Creating `controller/` directories instead of `routes/` in packages/api
 - Missing the double-nesting convention: `{scope}/{scope}/` for source code
 - Not reading scope CLAUDE.md before working in a scope
 - Adding backwards-compatible aliases when refactoring

@@ -11,12 +11,12 @@ Generate a detail wrapper page with tab navigation and tab content pages. The re
 
 ## Before You Start
 
-1. Read the frontend scope guide: `aihub_web/CLAUDE.md`
+1. Read the frontend scope guide: `packages/web/CLAUDE.md`
 2. Study these reference files:
-   - Detail wrapper with tabs: `aihub_web/aihub_web/pages/service/agents/[agent_class]-[agent_id].vue`
-   - Tab content page: `aihub_web/aihub_web/pages/service/agents/[agent_class]-[agent_id]/overview.vue`
-   - Another wrapper: `aihub_web/aihub_web/pages/service/threads/[thread_id].vue`
-   - NavItem type: `aihub_web/aihub_web/types/NavItem.ts`
+   - Detail wrapper with tabs: `packages/web/aihub_web/pages/service/agents/[agent_class]-[agent_id].vue`
+   - Tab content page: `packages/web/aihub_web/pages/service/agents/[agent_class]-[agent_id]/overview.vue`
+   - Another wrapper: `packages/web/aihub_web/pages/service/threads/[thread_id].vue`
+   - NavItem type: `packages/web/aihub_web/types/NavItem.ts`
 
 ## Architecture: How Nested Routing Works
 
@@ -64,7 +64,7 @@ export const use<Resource> = defineQuery(() => {
 
 ## Step 2: Create the Detail Wrapper
 
-Create `aihub_web/aihub_web/pages/service/{resource}s/[{resource}_id].vue`:
+Create `packages/web/aihub_web/pages/service/{resource}s/[{resource}_id].vue`:
 
 ```vue
 <template>
@@ -155,7 +155,7 @@ const subPath = (path: string) => {
 
 ## Step 3: Create Tab Content Pages
 
-Create tab pages in `aihub_web/aihub_web/pages/service/{resource}s/[{resource}_id]/`:
+Create tab pages in `packages/web/aihub_web/pages/service/{resource}s/[{resource}_id]/`:
 
 ### Overview Tab (`overview.vue`)
 
@@ -225,7 +225,7 @@ const { t } = useI18n()
 Final directory structure:
 
 ```
-aihub_web/aihub_web/
+packages/web/aihub_web/
 ├── pages/service/
 │   ├── {resource}s.vue                    <- List page (from /scaffold-frontend-page)
 │   └── {resource}s/
@@ -263,10 +263,10 @@ aihub_web/aihub_web/
 
 **Output files created**:
 
-1. `aihub_web/aihub_web/pages/service/pipelines/[pipeline_id].vue` -- Detail wrapper with tab bar
-2. `aihub_web/aihub_web/pages/service/pipelines/[pipeline_id]/overview.vue` -- Overview tab
-3. `aihub_web/aihub_web/pages/service/pipelines/[pipeline_id]/configuration.vue` -- Configuration tab
-4. `aihub_web/aihub_web/composables/pipeline/usePipeline.ts` -- Single-item query composable
+1. `packages/web/aihub_web/pages/service/pipelines/[pipeline_id].vue` -- Detail wrapper with tab bar
+2. `packages/web/aihub_web/pages/service/pipelines/[pipeline_id]/overview.vue` -- Overview tab
+3. `packages/web/aihub_web/pages/service/pipelines/[pipeline_id]/configuration.vue` -- Configuration tab
+4. `packages/web/aihub_web/composables/pipeline/usePipeline.ts` -- Single-item query composable
 5. i18n keys added for navigation labels and field labels in all 4 locales
 
 **Input**: `$ARGUMENTS = "connector with tabs: overview, settings, logs"`

@@ -1437,67 +1437,67 @@ The following packages have licenses that are not recognized or are proprietary.
 
 ### External Docker Service Licenses
 
-| Status | Service                         | Image                                                                       | License            | Notes                                                         |
-| ------ | ------------------------------- | --------------------------------------------------------------------------- | ------------------ | ------------------------------------------------------------- |
-| ✅     | attu                            | `ghcr.io/bbvch-ai/aihub-core/attu:v2.5.12`                                  | Apache-2.0         | Permissive license                                            |
-| ✅     | aws-cli-alpine                  | `ghcr.io/bbvch-ai/aihub-core/aws-cli-alpine:3.22.1`                         | Apache-2.0         | Permissive license                                            |
-| ✅     | clickhouse-server               | `ghcr.io/bbvch-ai/aihub-core/clickhouse/clickhouse-server:25.8`             | Apache-2.0         | Permissive license, used by Langfuse for analytics            |
-| ✅     | dagster                         | `ghcr.io/bbvch-ai/aihub-core/dagster:latest`                                | Apache-2.0         | Permissive license                                            |
-| ✅     | dagster                         | `ghcr.io/bbvch-ai/aihub-core/dagster:nightly`                               | Apache-2.0         | Permissive license                                            |
-| ✅     | etcd                            | `ghcr.io/bbvch-ai/aihub-core/etcd:v3.5.25`                                  | Apache-2.0         | Permissive license                                            |
-| ✅     | ferretdb                        | `ghcr.io/bbvch-ai/aihub-core/ferretdb:2.5.0`                                | Apache-2.0         | Permissive license                                            |
-| ✅     | keycloak                        | `ghcr.io/bbvch-ai/aihub-core/keycloak:26.5.4`                               | Apache-2.0         | Permissive license                                            |
-| ✅     | langfuse-worker                 | `ghcr.io/bbvch-ai/aihub-core/langfuse/langfuse-worker:3`                    | MIT                | Langfuse background worker                                    |
-| ✅     | langfuse                        | `ghcr.io/bbvch-ai/aihub-core/langfuse/langfuse:3`                           | MIT                | Open-source LLM observability and evaluation platform         |
-| ✅     | litellm                         | `ghcr.io/bbvch-ai/aihub-core/litellm:v1.80.5-stable.1`                      | MIT                | Permissive license                                            |
-| ✅     | milvus                          | `ghcr.io/bbvch-ai/aihub-core/milvus:v2.6.7`                                 | Apache-2.0         | Permissive license                                            |
-| ✅     | minimal-notebook                | `ghcr.io/bbvch-ai/aihub-core/minimal-notebook:notebook-7.0.6`               | BSD-3-Clause       | Jupyter base image                                            |
-| ✅     | nats                            | `ghcr.io/bbvch-ai/aihub-core/nats:2.11.4`                                   | Apache-2.0         | Permissive license                                            |
-| ✅     | neo4j                           | `ghcr.io/bbvch-ai/aihub-core/neo4j:5.26.16-community`                       | GPL                | Permissive license                                            |
-| ⚠️     | open-webui                      | `ghcr.io/bbvch-ai/aihub-core/open-webui:v0.6.41`                            | BSD-3-Clause       | Permissive with required branding retention                   |
-| ✅     | pgbouncer                       | `ghcr.io/bbvch-ai/aihub-core/pgbouncer:v1.24.1-p1`                          | ISC                | Based on edoburu/pgbouncer (MIT wrapper); permissive licenses |
-| ✅     | pgvector                        | `ghcr.io/bbvch-ai/aihub-core/pgvector:pg17`                                 | PostgreSQL License | BSD-style permissive license                                  |
-| ✅     | postgres-documentdb             | `ghcr.io/bbvch-ai/aihub-core/postgres-documentdb:17.0.106.0-ferretdb-2.5.0` | Apache-2.0         | Permissive licenses                                           |
-| ✅     | postgres                        | `ghcr.io/bbvch-ai/aihub-core/postgres:17`                                   | PostgreSQL License | BSD-style permissive license                                  |
-| ✅     | presidio-analyzer               | `ghcr.io/bbvch-ai/aihub-core/presidio-analyzer:2.2.359`                     | MIT                | Permissive license                                            |
-| ✅     | presidio-anonymizer             | `ghcr.io/bbvch-ai/aihub-core/presidio-anonymizer:2.2.359`                   | MIT                | Permissive license                                            |
-| ✅     | rclone                          | `ghcr.io/bbvch-ai/aihub-core/rclone:1.71.2`                                 | MIT                | Permissive license                                            |
-| ✅     | seaweedfs                       | `ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97`                                | Apache-2.0         | Permissive license                                            |
-| ✅     | traefik                         | `ghcr.io/bbvch-ai/aihub-core/traefik:v3.6.2`                                | Apache-2.0         | Permissive license                                            |
-| ✅     | valkey                          | `ghcr.io/bbvch-ai/aihub-core/valkey:8.0.5`                                  | BSD-3-Clause       | Redis-compatible, standard BSD-3-Clause license               |
-| ✅     | vllm-openai                     | `ghcr.io/bbvch-ai/aihub-core/vllm-openai:v0.15.1`                           | Apache-2.0         | Permissive license                                            |
-| ✅     | oauth2-proxy                    | `ghcr.io/bbvch-ai/bbvch-ai/oauth2-proxy:latest`                             | MIT                | Permissive license                                            |
-| ✅     | speaches                        | `ghcr.io/speaches-ai/speaches:latest-cuda-12.6.3`                           | MIT                | Permissive license                                            |
-| ✅     | opentelemetry-collector-contrib | `otel/opentelemetry-collector-contrib:latest`                               | Apache-2.0         | Permissive license                                            |
-| ✅     | docker-socket-proxy             | `tecnativa/docker-socket-proxy:0.3`                                         | Apache-2.0         | Permissive license                                            |
+| Status | Service                         | Image                                                                         | License            | Notes                                                         |
+| ------ | ------------------------------- | ----------------------------------------------------------------------------- | ------------------ | ------------------------------------------------------------- |
+| ✅     | attu                            | `ghcr.io/bbvch-ai/swiss-ai-hub/attu:v2.5.12`                                  | Apache-2.0         | Permissive license                                            |
+| ✅     | aws-cli-alpine                  | `ghcr.io/bbvch-ai/swiss-ai-hub/aws-cli-alpine:3.22.1`                         | Apache-2.0         | Permissive license                                            |
+| ✅     | clickhouse-server               | `ghcr.io/bbvch-ai/swiss-ai-hub/clickhouse/clickhouse-server:25.8`             | Apache-2.0         | Permissive license, used by Langfuse for analytics            |
+| ✅     | dagster                         | `ghcr.io/bbvch-ai/swiss-ai-hub/dagster:latest`                                | Apache-2.0         | Permissive license                                            |
+| ✅     | dagster                         | `ghcr.io/bbvch-ai/swiss-ai-hub/dagster:nightly`                               | Apache-2.0         | Permissive license                                            |
+| ✅     | etcd                            | `ghcr.io/bbvch-ai/swiss-ai-hub/etcd:v3.5.25`                                  | Apache-2.0         | Permissive license                                            |
+| ✅     | ferretdb                        | `ghcr.io/bbvch-ai/swiss-ai-hub/ferretdb:2.5.0`                                | Apache-2.0         | Permissive license                                            |
+| ✅     | keycloak                        | `ghcr.io/bbvch-ai/swiss-ai-hub/keycloak:26.5.4`                               | Apache-2.0         | Permissive license                                            |
+| ✅     | langfuse-worker                 | `ghcr.io/bbvch-ai/swiss-ai-hub/langfuse/langfuse-worker:3`                    | MIT                | Langfuse background worker                                    |
+| ✅     | langfuse                        | `ghcr.io/bbvch-ai/swiss-ai-hub/langfuse/langfuse:3`                           | MIT                | Open-source LLM observability and evaluation platform         |
+| ✅     | litellm                         | `ghcr.io/bbvch-ai/swiss-ai-hub/litellm:v1.80.5-stable.1`                      | MIT                | Permissive license                                            |
+| ✅     | milvus                          | `ghcr.io/bbvch-ai/swiss-ai-hub/milvus:v2.6.7`                                 | Apache-2.0         | Permissive license                                            |
+| ✅     | minimal-notebook                | `ghcr.io/bbvch-ai/swiss-ai-hub/minimal-notebook:notebook-7.0.6`               | BSD-3-Clause       | Jupyter base image                                            |
+| ✅     | nats                            | `ghcr.io/bbvch-ai/swiss-ai-hub/nats:2.11.4`                                   | Apache-2.0         | Permissive license                                            |
+| ✅     | neo4j                           | `ghcr.io/bbvch-ai/swiss-ai-hub/neo4j:5.26.16-community`                       | GPL                | Permissive license                                            |
+| ⚠️     | open-webui                      | `ghcr.io/bbvch-ai/swiss-ai-hub/open-webui:v0.6.41`                            | BSD-3-Clause       | Permissive with required branding retention                   |
+| ✅     | pgbouncer                       | `ghcr.io/bbvch-ai/swiss-ai-hub/pgbouncer:v1.24.1-p1`                          | ISC                | Based on edoburu/pgbouncer (MIT wrapper); permissive licenses |
+| ✅     | pgvector                        | `ghcr.io/bbvch-ai/swiss-ai-hub/pgvector:pg17`                                 | PostgreSQL License | BSD-style permissive license                                  |
+| ✅     | postgres-documentdb             | `ghcr.io/bbvch-ai/swiss-ai-hub/postgres-documentdb:17.0.106.0-ferretdb-2.5.0` | Apache-2.0         | Permissive licenses                                           |
+| ✅     | postgres                        | `ghcr.io/bbvch-ai/swiss-ai-hub/postgres:17`                                   | PostgreSQL License | BSD-style permissive license                                  |
+| ✅     | presidio-analyzer               | `ghcr.io/bbvch-ai/swiss-ai-hub/presidio-analyzer:2.2.359`                     | MIT                | Permissive license                                            |
+| ✅     | presidio-anonymizer             | `ghcr.io/bbvch-ai/swiss-ai-hub/presidio-anonymizer:2.2.359`                   | MIT                | Permissive license                                            |
+| ✅     | rclone                          | `ghcr.io/bbvch-ai/swiss-ai-hub/rclone:1.71.2`                                 | MIT                | Permissive license                                            |
+| ✅     | seaweedfs                       | `ghcr.io/bbvch-ai/swiss-ai-hub/seaweedfs:3.97`                                | Apache-2.0         | Permissive license                                            |
+| ✅     | traefik                         | `ghcr.io/bbvch-ai/swiss-ai-hub/traefik:v3.6.2`                                | Apache-2.0         | Permissive license                                            |
+| ✅     | valkey                          | `ghcr.io/bbvch-ai/swiss-ai-hub/valkey:8.0.5`                                  | BSD-3-Clause       | Redis-compatible, standard BSD-3-Clause license               |
+| ✅     | vllm-openai                     | `ghcr.io/bbvch-ai/swiss-ai-hub/vllm-openai:v0.15.1`                           | Apache-2.0         | Permissive license                                            |
+| ✅     | oauth2-proxy                    | `ghcr.io/bbvch-ai/bbvch-ai/oauth2-proxy:latest`                               | MIT                | Permissive license                                            |
+| ✅     | speaches                        | `ghcr.io/speaches-ai/speaches:latest-cuda-12.6.3`                             | MIT                | Permissive license                                            |
+| ✅     | opentelemetry-collector-contrib | `otel/opentelemetry-collector-contrib:latest`                                 | Apache-2.0         | Permissive license                                            |
+| ✅     | docker-socket-proxy             | `tecnativa/docker-socket-proxy:0.3`                                           | Apache-2.0         | Permissive license                                            |
 
 ### Internal Docker Images (Our Code)
 
 The following are our own services and inherit the license we choose:
 
-- api (`ghcr.io/bbvch-ai/aihub-core/api:latest`)
-- api (`ghcr.io/bbvch-ai/aihub-core/api:nightly`)
-- bot (`ghcr.io/bbvch-ai/aihub-core/bot:latest`)
-- bot (`ghcr.io/bbvch-ai/aihub-core/bot:nightly`)
-- default_rag_pipeline (`ghcr.io/bbvch-ai/aihub-core/default_rag_pipeline:latest`)
-- default_rag_pipeline (`ghcr.io/bbvch-ai/aihub-core/default_rag_pipeline:nightly`)
-- expert_asking_agent (`ghcr.io/bbvch-ai/aihub-core/expert_asking_agent:latest`)
-- expert_asking_agent (`ghcr.io/bbvch-ai/aihub-core/expert_asking_agent:nightly`)
-- expert_rag_agent (`ghcr.io/bbvch-ai/aihub-core/expert_rag_agent:latest`)
-- expert_rag_agent (`ghcr.io/bbvch-ai/aihub-core/expert_rag_agent:nightly`)
-- few_shot_agent (`ghcr.io/bbvch-ai/aihub-core/few_shot_agent:latest`)
-- few_shot_agent (`ghcr.io/bbvch-ai/aihub-core/few_shot_agent:nightly`)
-- llm_wrapping_agent (`ghcr.io/bbvch-ai/aihub-core/llm_wrapping_agent:latest`)
-- llm_wrapping_agent (`ghcr.io/bbvch-ai/aihub-core/llm_wrapping_agent:nightly`)
-- mineru-api (`ghcr.io/bbvch-ai/aihub-core/mineru-api:v2.7.5`)
-- mineru-vlm (`ghcr.io/bbvch-ai/aihub-core/mineru-vlm:v2.7.5`)
-- namespace_selection_agent (`ghcr.io/bbvch-ai/aihub-core/namespace_selection_agent:latest`)
-- namespace_selection_agent (`ghcr.io/bbvch-ai/aihub-core/namespace_selection_agent:nightly`)
-- rag_agent (`ghcr.io/bbvch-ai/aihub-core/rag_agent:latest`)
-- rag_agent (`ghcr.io/bbvch-ai/aihub-core/rag_agent:nightly`)
-- retrieval_agent (`ghcr.io/bbvch-ai/aihub-core/retrieval_agent:latest`)
-- retrieval_agent (`ghcr.io/bbvch-ai/aihub-core/retrieval_agent:nightly`)
-- shared_rag_pipeline (`ghcr.io/bbvch-ai/aihub-core/shared_rag_pipeline:latest`)
-- shared_rag_pipeline (`ghcr.io/bbvch-ai/aihub-core/shared_rag_pipeline:nightly`)
-- web (`ghcr.io/bbvch-ai/aihub-core/web:latest`)
-- web (`ghcr.io/bbvch-ai/aihub-core/web:nightly`)
+- api (`ghcr.io/bbvch-ai/swiss-ai-hub/api:latest`)
+- api (`ghcr.io/bbvch-ai/swiss-ai-hub/api:nightly`)
+- bot (`ghcr.io/bbvch-ai/swiss-ai-hub/bot:latest`)
+- bot (`ghcr.io/bbvch-ai/swiss-ai-hub/bot:nightly`)
+- default_rag_pipeline (`ghcr.io/bbvch-ai/swiss-ai-hub/default_rag_pipeline:latest`)
+- default_rag_pipeline (`ghcr.io/bbvch-ai/swiss-ai-hub/default_rag_pipeline:nightly`)
+- expert_asking_agent (`ghcr.io/bbvch-ai/swiss-ai-hub/expert_asking_agent:latest`)
+- expert_asking_agent (`ghcr.io/bbvch-ai/swiss-ai-hub/expert_asking_agent:nightly`)
+- expert_rag_agent (`ghcr.io/bbvch-ai/swiss-ai-hub/expert_rag_agent:latest`)
+- expert_rag_agent (`ghcr.io/bbvch-ai/swiss-ai-hub/expert_rag_agent:nightly`)
+- few_shot_agent (`ghcr.io/bbvch-ai/swiss-ai-hub/few_shot_agent:latest`)
+- few_shot_agent (`ghcr.io/bbvch-ai/swiss-ai-hub/few_shot_agent:nightly`)
+- llm_wrapping_agent (`ghcr.io/bbvch-ai/swiss-ai-hub/llm_wrapping_agent:latest`)
+- llm_wrapping_agent (`ghcr.io/bbvch-ai/swiss-ai-hub/llm_wrapping_agent:nightly`)
+- mineru-api (`ghcr.io/bbvch-ai/swiss-ai-hub/mineru-api:v2.7.5`)
+- mineru-vlm (`ghcr.io/bbvch-ai/swiss-ai-hub/mineru-vlm:v2.7.5`)
+- namespace_selection_agent (`ghcr.io/bbvch-ai/swiss-ai-hub/namespace_selection_agent:latest`)
+- namespace_selection_agent (`ghcr.io/bbvch-ai/swiss-ai-hub/namespace_selection_agent:nightly`)
+- rag_agent (`ghcr.io/bbvch-ai/swiss-ai-hub/rag_agent:latest`)
+- rag_agent (`ghcr.io/bbvch-ai/swiss-ai-hub/rag_agent:nightly`)
+- retrieval_agent (`ghcr.io/bbvch-ai/swiss-ai-hub/retrieval_agent:latest`)
+- retrieval_agent (`ghcr.io/bbvch-ai/swiss-ai-hub/retrieval_agent:nightly`)
+- shared_rag_pipeline (`ghcr.io/bbvch-ai/swiss-ai-hub/shared_rag_pipeline:latest`)
+- shared_rag_pipeline (`ghcr.io/bbvch-ai/swiss-ai-hub/shared_rag_pipeline:nightly`)
+- web (`ghcr.io/bbvch-ai/swiss-ai-hub/web:latest`)
+- web (`ghcr.io/bbvch-ai/swiss-ai-hub/web:nightly`)

@@ -32,24 +32,24 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - module: aihub_lib
+          - module: packages/core
             docker_compose_services: postgres nats valkey postgres-ferretdb ferretdb
               litellm seaweedfs-master seaweedfs-volume seaweedfs-filer seaweedfs-s3
               seaweedfs-init etcd-init etcd milvus-standalone neo4j
-          - module: aihub_api
+          - module: packages/api
             docker_compose_services: postgres nats valkey postgres-ferretdb ferretdb
               litellm seaweedfs-master seaweedfs-volume seaweedfs-filer seaweedfs-s3
               seaweedfs-init etcd-init etcd milvus-standalone neo4j
-          - module: aihub_pipeline
+          - module: packages/pipeline
             docker_compose_services: ''
-          - module: aihub_agent
+          - module: packages/agent
             docker_compose_services: postgres clickhouse langfuse-worker langfuse-web
               otel-collector nats valkey postgres-ferretdb ferretdb litellm seaweedfs-master
               seaweedfs-volume seaweedfs-filer seaweedfs-s3 seaweedfs-init etcd-init
               etcd milvus-standalone neo4j
-          - module: aihub_bot
+          - module: packages/bot
             docker_compose_services: nats valkey postgres-ferretdb ferretdb
-          - module: aihub_process
+          - module: packages/process
             docker_compose_services: postgres nats valkey postgres-ferretdb ferretdb
               litellm seaweedfs-master seaweedfs-volume seaweedfs-filer seaweedfs-s3
               seaweedfs-init etcd-init etcd milvus-standalone
@@ -63,12 +63,12 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan github.com >> ~/.ssh/known_hosts
       - name: Run Tests
-        uses: ./aihub_action/test_backend
+        uses: ./.github/actions/test_backend
         with:
           github_token: ${{ secrets.PAT_GITHUB_READ_PACKAGES }}
           working_directory: ${{ matrix.module }}
           docker_compose_services: ${{ matrix.docker_compose_services }}
-          install_ffmpeg: ${{ matrix.module == 'aihub_api' }}
+          install_ffmpeg: ${{ matrix.module == 'packages/api' }}
           huggingface_api_key: ${{ secrets.HUGGINGFACE_API_KEY }}
           swiss_llm_cloud_api_base_url: ${{ secrets.SWISS_LLM_CLOUD_API_BASE_URL }}
           swiss_llm_cloud_api_key: ${{ secrets.SWISS_LLM_CLOUD_API_KEY }}
@@ -99,15 +99,15 @@ jobs:
       fail-fast: false
       matrix:
         module:
-          - aihub_lib
-          - aihub_api
-          - aihub_agent
-          - aihub_pipeline
-          - aihub_bot
-          - aihub_process
+          - packages/core
+          - packages/api
+          - packages/agent
+          - packages/pipeline
+          - packages/bot
+          - packages/process
     steps:
       - name: Coverage comment
-        uses: bbvch-ai/aihub-core/aihub_action/pytest_coverage_comment@main
+        uses: bbvch-ai/swiss-ai-hu./.github/actions/pytest_coverage_comment@main
         with:
           working_directory: ${{ matrix.module }}
   sonarcloud-scan:
@@ -122,30 +122,30 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - folder: aihub_agent
-            sonar_project_key: aihub-core_agents-core
+          - folder: packages/agent
+            sonar_project_key: swiss-ai-hub_agents-core
             report_coverage: 'true'
-          - folder: aihub_api
-            sonar_project_key: aihub-core_api-core
+          - folder: packages/api
+            sonar_project_key: swiss-ai-hub_api-core
             report_coverage: 'true'
-          - folder: aihub_lib
-            sonar_project_key: aihub-core_lib-core
+          - folder: packages/core
+            sonar_project_key: swiss-ai-hub_lib-core
             report_coverage: 'true'
-          - folder: aihub_pipeline
-            sonar_project_key: aihub-core_pipelines-core
+          - folder: packages/pipeline
+            sonar_project_key: swiss-ai-hub_pipelines-core
             report_coverage: 'true'
-          - folder: aihub_bot
-            sonar_project_key: aihub-core_bot-core
+          - folder: packages/bot
+            sonar_project_key: swiss-ai-hub_bot-core
             report_coverage: 'true'
-          - folder: aihub_process
-            sonar_project_key: aihub-core_process-core
+          - folder: packages/process
+            sonar_project_key: swiss-ai-hub_process-core
             report_coverage: 'true'
-          - folder: aihub_web
-            sonar_project_key: aihub-core_aihub-web
+          - folder: packages/web
+            sonar_project_key: swiss-ai-hub_aihub-web
             report_coverage: 'false'
     steps:
       - name: SonarCloud Scan
-        uses: bbvch-ai/aihub-core/aihub_action/sonarcloud_scan@main
+        uses: bbvch-ai/swiss-ai-hu./.github/actions/sonarcloud_scan@main
         with:
           working_directory: ${{ matrix.folder }}
           sonar_project_key: ${{ matrix.sonar_project_key }}

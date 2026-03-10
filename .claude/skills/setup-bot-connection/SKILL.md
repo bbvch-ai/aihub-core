@@ -1,6 +1,6 @@
 ---
 name: setup-bot-connection
-description: End-to-end guide for setting up a new bot connection in aihub_bot. Covers Azure App Registration, Bot Channels Registration, Teams/Slack channel config, PathEntity creation in bot_paths collection, and DevTunnel for local dev. Use when user says "set up a bot", "connect bot to Teams", "connect bot to Slack", "configure bot channel", "create bot connection", "DevTunnel setup", "bot local development", or "Azure bot registration". Do NOT use for bot handler code scaffolding (use scaffold-bot-handler), bot architecture questions (use bot-framework), or agent debugging (use debug-agent).
+description: End-to-end guide for setting up a new bot connection in swiss_ai_hub.bot. Covers Azure App Registration, Bot Channels Registration, Teams/Slack channel config, PathEntity creation in bot_paths collection, and DevTunnel for local dev. Use when user says "set up a bot", "connect bot to Teams", "connect bot to Slack", "configure bot channel", "create bot connection", "DevTunnel setup", "bot local development", or "Azure bot registration". Do NOT use for bot handler code scaffolding (use scaffold-bot-handler), bot architecture questions (use bot-framework), or agent debugging (use debug-agent).
 disable-model-invocation: true
 
 allowed-tools: Read, Grep, Glob, Bash
@@ -14,7 +14,7 @@ ______________________________________________________________________
 
 ## Before You Start
 
-Read `aihub_bot/CLAUDE.md` for full architecture, routes, and essential files.
+Read `packages/bot/CLAUDE.md` for full architecture, routes, and essential files.
 
 **Key concept**: Each bot endpoint has a **PathEntity** in MongoDB (`bot_paths` collection) containing Azure AD
 credentials (APP_ID, APP_PASSWORD, APP_TENANTID), system message template, and Slack OAuth token.
@@ -33,13 +33,13 @@ ______________________________________________________________________
 
 ## Option A: Automated Setup (Recommended)
 
-**Script**: `aihub_bot/aihub_bot/setup_azure_bot.py`
+**Script**: `packages/bot/swiss_ai_hub/bot/setup_azure_bot.py`
 
 ### For Teams (Single-Tenant)
 
 ```bash
-cd aihub_bot
-uv run python aihub_bot/setup_azure_bot.py \
+cd packages/bot
+uv run python packages/bot/setup_azure_bot.py \
     --resource-group "my-resource-group" \
     --bot-name "ai-hub-bot" \
     --token-url "https://my-domain.com" \
@@ -54,8 +54,8 @@ uv run python aihub_bot/setup_azure_bot.py \
 ### For Slack (Multi-Tenant)
 
 ```bash
-cd aihub_bot
-uv run python aihub_bot/setup_azure_bot.py \
+cd packages/bot
+uv run python packages/bot/setup_azure_bot.py \
     --resource-group "my-resource-group" \
     --bot-name "ai-hub-slack-bot" \
     --token-url "https://my-domain.com" \
@@ -106,7 +106,7 @@ az bot create \
     --appid "<APP_ID>" \
     --name "ai-hub-bot" \
     --resource-group "my-resource-group" \
-    --display-name "AI Hub Bot" \
+    --display-name "Swiss AI Hub Bot" \
     --endpoint "https://your-domain.com/api/v1/agent/chat/completions/MyAgent/my_id/json" \
     --location "westeurope" \
     --sku "F0" \
@@ -123,7 +123,7 @@ export BOT_APP_ID="<APP_ID>"
 export BOT_APP_PASSWORD="<APP_PASSWORD>"
 export BOT_TENANT_ID="<APP_TENANTID>"
 export MONGO_CONNECTION_STRING="mongodb://localhost:27017"
-cd aihub_bot && uv run python aihub_bot/add_path_entity.py
+cd packages/bot && uv run python packages/bot/add_path_entity.py
 ```
 
 ```python
@@ -194,7 +194,7 @@ devtunnel host
 1. Download: https://github.com/microsoft/BotFramework-Emulator
 2. Start bot locally:
    ```bash
-   cd aihub_bot/playground/testing
+   cd packages/bot/playground/testing
    uv run python main.py
    ```
 3. Connect emulator to: `http://localhost:8000/api/v1/messages`
@@ -204,7 +204,7 @@ devtunnel host
 ### Using Playground Web Chat
 
 ```bash
-cd aihub_bot/playground/testing
+cd packages/bot/playground/testing
 uv run python main.py
 # Open http://localhost:8000 in browser
 ```

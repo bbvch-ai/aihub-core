@@ -1,13 +1,13 @@
 {
   "python_projects": [
-    "aihub_lib",
-    "aihub_api",
-    "aihub_bot",
-    "aihub_agent",
-    "aihub_process",
-    "aihub_pipeline"
+    "packages/core",
+    "packages/api",
+    "packages/bot",
+    "packages/agent",
+    "packages/process",
+    "packages/pipeline"
   ],
-  "web_project": "aihub_web/aihub_web",
+  "web_project": "packages/web/aihub_web",
   "output_file": "LICENSE_REPORT.md",
   "own_images": [
     "api",

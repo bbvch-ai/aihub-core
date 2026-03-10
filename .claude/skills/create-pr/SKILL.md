@@ -1,6 +1,6 @@
 ---
 name: create-pr
-description: Validate and prepare code for a pull request across the aihub-core monorepo. Orchestrates committing, formatting, linting, testing, code review, main sync, and documentation sync. Use when user says 'create a PR', 'prepare pull request', 'get ready for PR', 'validate my changes', 'prepare for review', 'pre-merge checks', 'is this ready to merge', or 'release validation'. Do NOT use for only running tests (use /test-scope), only reviewing code (use /review-diff), only syncing docs (use /update-doc), or only linting (use /lint).
+description: Validate and prepare code for a pull request across the swiss-ai-hub monorepo. Orchestrates committing, formatting, linting, testing, code review, main sync, and documentation sync. Use when user says 'create a PR', 'prepare pull request', 'get ready for PR', 'validate my changes', 'prepare for review', 'pre-merge checks', 'is this ready to merge', or 'release validation'. Do NOT use for only running tests (use /test-scope), only reviewing code (use /review-diff), only syncing docs (use /update-doc), or only linting (use /lint).
 allowed-tools: Bash, Read, Grep, Glob, Edit
 ---
 
@@ -42,7 +42,7 @@ across all scopes), fixes errors, and repeats until clean.
 ### 4. Run Tests via /test-scope
 
 Delegate to the `/test-scope` skill for smart scoped testing. It auto-detects affected scopes from git diff, expands
-downstream dependencies (e.g. `aihub_lib` change triggers all scopes), and runs `make test` in dependency order.
+downstream dependencies (e.g. `packages/core` change triggers all scopes), and runs `make test` in dependency order.
 
 Every test must pass. Never disable or skip tests. Fix root causes, not symptoms.
 
@@ -58,7 +58,7 @@ Fix all critical and important issues found. Re-run `/lint` and `/test-scope` fo
 Delegate to the `/update-doc` skill to sync documentation with code changes. It reviews affected READMEs, CLAUDE.md
 files, and skills for staleness.
 
-For significant architectural changes, also check whether an ADR is needed in `aihub_doc/arc42/decisions/` (see
+For significant architectural changes, also check whether an ADR is needed in `docs/arc42/decisions/` (see
 `/document-decision`).
 
 ## Critical Rules
@@ -70,12 +70,12 @@ For significant architectural changes, also check whether an ADR is needed in `a
 
 ## Troubleshooting
 
-| Problem                                  | Solution                                                                 |
-| ---------------------------------------- | ------------------------------------------------------------------------ |
-| `make pr-ready` fails with import errors | Run `uv sync --all-packages` from the workspace root                     |
-| Tests fail with missing fixtures         | Check if scope depends on aihub_lib changes -- run aihub_lib tests first |
-| Mypy strict mode errors                  | Add type annotations to all parameters, returns, and variables           |
-| Branch behind main                       | Run `/merge-main` to sync with origin/main before continuing             |
+| Problem                                  | Solution                                                                         |
+| ---------------------------------------- | -------------------------------------------------------------------------------- |
+| `make pr-ready` fails with import errors | Run `uv sync --all-packages` from the workspace root                             |
+| Tests fail with missing fixtures         | Check if scope depends on packages/core changes -- run packages/core tests first |
+| Mypy strict mode errors                  | Add type annotations to all parameters, returns, and variables                   |
+| Branch behind main                       | Run `/merge-main` to sync with origin/main before continuing                     |
 
 ## Done When
 

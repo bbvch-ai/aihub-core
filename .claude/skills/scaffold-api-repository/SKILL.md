@@ -1,6 +1,6 @@
 ---
 name: scaffold-api-repository
-description: Generate a MongoEngine Document entity that combines schema definition with repository classmethods in aihub_lib/persistence/. Follows the Entity-as-repository pattern (no separate DAO/repository classes). Use when user says "create an entity", "scaffold a repository", "add MongoDB model", "new database entity", "generate MongoEngine document", "create persistence layer", or "scaffold data model". Do NOT use for service layer business logic (use scaffold-api-service), controller/endpoint scaffolding (use scaffold-api-endpoint), or event display components (use scaffold-event-display).
+description: Generate a MongoEngine Document entity that combines schema definition with repository classmethods in packages/core/persistence/. Follows the Entity-as-repository pattern (no separate DAO/repository classes). Use when user says "create an entity", "scaffold a repository", "add MongoDB model", "new database entity", "generate MongoEngine document", "create persistence layer", or "scaffold data model". Do NOT use for service layer business logic (use scaffold-api-service), controller/endpoint scaffolding (use scaffold-api-endpoint), or event display components (use scaffold-event-display).
 allowed-tools: Read, Write, Edit, Grep, Glob
 ---
 
@@ -12,13 +12,13 @@ Generate a MongoEngine Document entity for a resource. The resource name should 
 
 Read these reference entities:
 
-- Agent class: `aihub_lib/aihub_lib/persistence/agents/AgentClassEntity.py`
-- Agent config: `aihub_lib/aihub_lib/persistence/agents/AgentConfigEntityDocument.py`
-- Thread: `aihub_lib/aihub_lib/persistence/messaging/entities/ThreadEntity.py`
-- Notification: `aihub_lib/aihub_lib/persistence/notification/NotificationEntity.py`
-- User: `aihub_lib/aihub_lib/persistence/user/UserEntity.py`
-- Role: `aihub_lib/aihub_lib/persistence/access/entities/RoleEntity.py`
-- Bearer token: `aihub_lib/aihub_lib/persistence/access/entities/BearerToken.py`
+- Agent class: `packages/core/swiss_ai_hub/core/persistence/agents/AgentClassEntity.py`
+- Agent config: `packages/core/swiss_ai_hub/core/persistence/agents/AgentConfigEntityDocument.py`
+- Thread: `packages/core/swiss_ai_hub/core/persistence/messaging/entities/ThreadEntity.py`
+- Notification: `packages/core/swiss_ai_hub/core/persistence/notification/NotificationEntity.py`
+- User: `packages/core/swiss_ai_hub/core/persistence/user/UserEntity.py`
+- Role: `packages/core/swiss_ai_hub/core/persistence/access/entities/RoleEntity.py`
+- Bearer token: `packages/core/swiss_ai_hub/core/persistence/access/entities/BearerToken.py`
 
 ## Architecture: No Separate Repository Layer
 
@@ -45,7 +45,7 @@ MongoDB (via FerretDB)
 
 ## Step 1: Create the Entity
 
-File: `aihub_lib/aihub_lib/persistence/<resource>/<Resource>Entity.py`
+File: `packages/core/swiss_ai_hub/core/persistence/<resource>/<Resource>Entity.py`
 
 ```python
 from datetime import UTC, datetime
@@ -61,8 +61,8 @@ from mongoengine import (
     StringField,
 )
 
-from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
-from aihub_lib.persistence.i18n.LocaleStringEntity import LocaleStringEntity
+from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
+from swiss_ai_hub.core.persistence.i18n.LocaleStringEntity import LocaleStringEntity
 
 
 class <Resource>Entity(Document):
@@ -305,7 +305,7 @@ class ThreadEntity(Document):
 For multilingual text, use `LocaleStringEntity`:
 
 ```python
-from aihub_lib.persistence.i18n.LocaleStringEntity import LocaleStringEntity
+from swiss_ai_hub.core.persistence.i18n.LocaleStringEntity import LocaleStringEntity
 
 class MyEntity(Document):
     name = EmbeddedDocumentField(LocaleStringEntity, required=True)
@@ -332,7 +332,7 @@ class LocaleStringEntity(EmbeddedDocument):
 ## File Placement
 
 ```
-aihub_lib/aihub_lib/persistence/
+packages/core/swiss_ai_hub/core/persistence/
 ├── access/
 │   └── entities/
 │       ├── BearerToken.py
@@ -370,15 +370,15 @@ aihub_lib/aihub_lib/persistence/
 ## Step 2: Verify
 
 1. Confirm the entity is importable:
-   `cd aihub_lib && uv run python -c "from aihub_lib.persistence.<resource>.<Resource>Entity import <Resource>Entity"`
+   `cd packages/core && uv run python -c "from swiss_ai_hub.core.persistence.<resource>.<Resource>Entity import <Resource>Entity"`
 2. Confirm the service imports the entity (if service already exists)
-3. Run tests: `cd aihub_lib && make test`
+3. Run tests: `cd packages/core && make test`
 
 ## Examples
 
 **Typical invocation**: `/scaffold-api-repository notification`
 
-**Result**: Creates `aihub_lib/aihub_lib/persistence/notification/NotificationEntity.py` with:
+**Result**: Creates `packages/core/swiss_ai_hub/core/persistence/notification/NotificationEntity.py` with:
 
 - Document class with schema fields
 - Repository classmethods (get_by_id, find_by_name, get_all, create, delete)
@@ -387,17 +387,17 @@ aihub_lib/aihub_lib/persistence/
 
 ## Troubleshooting
 
-| Problem                       | Solution                                                         |
-| ----------------------------- | ---------------------------------------------------------------- |
-| `DoesNotExist` at runtime     | Entity not found — catch in the service layer, not in the entity |
-| Duplicate key error           | Check `meta["indexes"]` — a unique constraint is being violated  |
-| `strict` mode errors          | Set `meta["strict"] = False` to allow extra fields               |
-| Missing collection in MongoDB | MongoEngine auto-creates collections on first write              |
-| Import error from other scope | Ensure entity is in `aihub_lib`, not in a scope-specific package |
+| Problem                       | Solution                                                             |
+| ----------------------------- | -------------------------------------------------------------------- |
+| `DoesNotExist` at runtime     | Entity not found — catch in the service layer, not in the entity     |
+| Duplicate key error           | Check `meta["indexes"]` — a unique constraint is being violated      |
+| `strict` mode errors          | Set `meta["strict"] = False` to allow extra fields                   |
+| Missing collection in MongoDB | MongoEngine auto-creates collections on first write                  |
+| Import error from other scope | Ensure entity is in `packages/core`, not in a scope-specific package |
 
 ## Key Conventions
 
-- **Entities go in `aihub_lib`**: They're shared across packages
+- **Entities go in `packages/core`**: They're shared across packages
 - **`meta["strict"] = False`**: Commonly used to allow extra fields — check existing entities for precedent
 - **`@classmethod` for queries**: All data access is via class methods
 - **`@trace_fn` on all methods**: OpenTelemetry tracing
