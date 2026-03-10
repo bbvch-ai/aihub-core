@@ -4,7 +4,7 @@ Generated on: 11.03.2026
 
 This document contains license information for all dependencies across the monorepo:
 
-- Python packages (uv): **395 packages**
+- Python packages (uv): **396 packages**
 - Node.js packages (pnpm): **694 packages**
 - External Docker images: **31 images**
 
@@ -61,6 +61,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | beartype                                         | 0.22.9                | MIT License                                                  |                                                                      |
 | ✅     | beautifulsoup4                                   | 4.14.3                | MIT License                                                  |                                                                      |
 | ✅     | black                                            | 26.1.0                | MIT                                                          |                                                                      |
+| ✅     | blinker                                          | 1.9.0                 | MIT License                                                  |                                                                      |
 | ✅     | boto3                                            | 1.41.5                | Apache-2.0                                                   |                                                                      |
 | ✅     | boto3-stubs                                      | 1.42.51               | MIT                                                          |                                                                      |
 | ✅     | botocore                                         | 1.41.5                | Apache-2.0                                                   |                                                                      |
