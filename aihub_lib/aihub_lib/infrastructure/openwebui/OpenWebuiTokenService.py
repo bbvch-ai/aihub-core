@@ -1,5 +1,3 @@
-"""Generates short-lived JWTs for the OpenWebUI service account."""
-
 import time
 
 import jwt
