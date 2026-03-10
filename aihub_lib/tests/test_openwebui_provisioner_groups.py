@@ -1,5 +1,3 @@
-"""Tests for OpenWebuiProvisioner — group sync logic."""
-
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
