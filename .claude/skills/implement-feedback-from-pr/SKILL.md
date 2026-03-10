@@ -10,22 +10,45 @@ Implement review feedback from PR \$ARGUMENTS in the `bbvch-ai/aihub-core` monor
 
 ## Step 1: Fetch All Feedback
 
-Use the GitHub MCP server (`mcp__github__pull_request_read`) to gather structured PR data:
+Fetch PR data using the `gh` CLI. **Only act on unresolved comments** — skip anything already resolved by the author or
+reviewer.
 
-1. **PR overview**: `method: "get"` — title, description, author, base/head branches
-2. **Inline review comments**: `method: "get_review_comments"` — threaded code comments with `isResolved`/`isOutdated`
-   metadata. Skip resolved and outdated threads.
-3. **Conversation comments**: `method: "get_comments"` — general discussion comments
-4. **CI status**: `method: "get_status"` — build and check results
-5. **Changed files**: `method: "get_files"` — list of modified files for scope detection
-
-All calls use `owner: "bbvch-ai"`, `repo: "aihub-core"`, `pullNumber: $PR_NUMBER`.
+1. **PR overview**: `gh pr view $PR_NUMBER --repo bbvch-ai/aihub-core --json title,body,author,baseRefName,headRefName`
+2. **Review threads (unresolved only)**: Use the GraphQL API to fetch review threads filtered to unresolved. Write the
+   query to a temp file first (to avoid `$` escaping issues in the Bash tool), then execute:
+   ```bash
+   cat > /tmp/pr-threads.graphql << 'GRAPHQL'
+   query($owner: String!, $repo: String!, $pr: Int!) {
+     repository(owner: $owner, name: $repo) {
+       pullRequest(number: $pr) {
+         reviewThreads(first: 100) {
+           nodes {
+             isResolved
+             isOutdated
+             comments(first: 20) {
+               nodes { author { login } body path line createdAt }
+             }
+           }
+         }
+       }
+     }
+   }
+   GRAPHQL
+   gh api graphql -f "query=$(cat /tmp/pr-threads.graphql)" \
+     -f owner=bbvch-ai -f repo=aihub-core -F pr=$PR_NUMBER \
+     | jq '[.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved == false and .isOutdated == false)]'
+   ```
+   This returns only active, unresolved review threads. Ignore all resolved and outdated threads entirely.
+3. **Conversation comments**: `gh pr view $PR_NUMBER --repo bbvch-ai/aihub-core --json comments`
+4. **CI status**: `gh pr checks $PR_NUMBER --repo bbvch-ai/aihub-core`
+5. **Changed files**: `gh pr diff $PR_NUMBER --repo bbvch-ai/aihub-core --name-only`
 
 ## Step 2: Triage Feedback
 
 ### Human Comments (TOP PRIORITY)
 
-Implement all human reviewer feedback first. Read the referenced file before making changes.
+Implement all **unresolved** human reviewer feedback first. Read the referenced file before making changes. If a review
+thread is marked as resolved, the author has already addressed it — do not re-implement.
 
 ### Bot Feedback (EVALUATE CRITICALLY)
 
@@ -61,7 +84,7 @@ After all changes are implemented:
 
 ```bash
 # Lint all affected scopes
-make -C /home/joelbarmettler/projects/aihub/aihub-core pr-ready
+make pr-ready
 
 # Run tests in affected scopes (or delegate to /test-scope)
 make -C aihub_lib test    # if aihub_lib was affected
