@@ -1,5 +1,3 @@
-"""Tests for OpenWebuiClient — thin async wrapper around OpenWebUI REST API."""
-
 from unittest.mock import AsyncMock
 
 import httpx
