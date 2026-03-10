@@ -1,5 +1,3 @@
-"""Tests for OpenWebuiProvisioner — workspace model sync logic."""
-
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
