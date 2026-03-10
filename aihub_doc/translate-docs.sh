@@ -86,7 +86,13 @@ EOF
         return 1
     fi
 
-    local processed_output=$(echo "$llm_output" | sed "s/%%SOURCE_SHA%%/$source_sha/g")
+    local stripped_output="$llm_output"
+    if echo "$stripped_output" | head -1 | grep -qE '^```'; then
+        stripped_output=$(echo "$stripped_output" | tail -n +2)
+        stripped_output=$(echo "$stripped_output" | sed '$ { /^```$/d }')
+    fi
+
+    local processed_output=$(echo "$stripped_output" | sed "s/%%SOURCE_SHA%%/$source_sha/g")
     local target_dir=$(dirname "$target_file")
     mkdir -p "$target_dir"
     echo "$processed_output" > "$target_file"

@@ -34,6 +34,8 @@ Your primary task is to translate English Markdown documentation to German. You 
   frontmatter is valid YAML. Use string quoting for strings that contain special characters.
 - **No Additions**: Do NOT add explanatory notes, comments, or any content not in the original.
 - **No Omissions**: Do NOT skip any sections, even if they seem redundant.
+- **No Code Fences Around Output**: Do NOT wrap your output in markdown code fences (e.g., ```` ```markdown ```` or
+  ```` ```yaml ````). Output the raw translated Markdown directly, starting with the `---` frontmatter delimiter.
 - **Consistency**: Use consistent translations for recurring terms throughout the document.
 - **Source SHA Placeholder**: Always add `source_sha: "%%SOURCE_SHA%%"` to the frontmatter. The script will replace
   this.

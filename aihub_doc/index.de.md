@@ -1,4 +1,3 @@
-```yaml
 ---
 # https://vitepress.dev/reference/default-theme-home-page
 layout: home
@@ -185,4 +184,3 @@ sind sofort gelöst. Dies reduziert die operative Komplexität im Vergleich zum 
 Verwaltung komplexer Cloud-Anbieterdienste erheblich. Überprüfen Sie den
 [Schnellstart](/de/docs/2_platform/1_quick_start/).
 :::
-```
