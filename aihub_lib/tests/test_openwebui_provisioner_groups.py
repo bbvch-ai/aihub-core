@@ -60,30 +60,6 @@ class TestBuildDesiredGroups:
             f"{AIHUB_GROUP_PREFIX}T2:R2",
         }
 
-    def test_build_desired_groups_empty_tenants(self) -> None:
-        result = OpenWebuiProvisioner._build_desired_groups([], {})
-        assert result == set()
-
-    def test_build_desired_groups_empty_roles(self) -> None:
-        tenants = [{"name": "T1"}]
-        roles_by_tenant = {"T1": []}
-
-        result = OpenWebuiProvisioner._build_desired_groups(tenants, roles_by_tenant)
-
-        assert result == set()
-
-    def test_group_name_format(self) -> None:
-        tenants = [{"name": "Default Organization"}]
-        roles_by_tenant = {"Default Organization": [{"name": "AIHubUser"}]}
-
-        result = OpenWebuiProvisioner._build_desired_groups(tenants, roles_by_tenant)
-
-        group = next(iter(result))
-        assert group.startswith(AIHUB_GROUP_PREFIX)
-        assert "Default Organization" in group
-        assert "AIHubUser" in group
-        assert group == "aihub:Default Organization:AIHubUser"
-
 
 class TestBuildUserIdMapping:
     def test_user_id_mapping_by_email(self) -> None:

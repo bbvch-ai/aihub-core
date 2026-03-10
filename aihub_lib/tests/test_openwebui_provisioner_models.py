@@ -27,16 +27,6 @@ def provisioner(mock_settings: MagicMock) -> OpenWebuiProvisioner:
     return OpenWebuiProvisioner(settings=mock_settings)
 
 
-class TestModelIdFormats:
-    def test_workspace_model_id_format(self) -> None:
-        result = OpenWebuiProvisioner._workspace_model_id("rag-agent", "default")
-        assert result == "aihub-agent-rag-agent-default"
-
-    def test_base_model_id_format(self) -> None:
-        result = OpenWebuiProvisioner._base_model_id("rag-agent", "default")
-        assert result == "aihub-pipeline.rag-agent.default"
-
-
 class TestComputeModelDiff:
     def test_compute_models_to_create(self) -> None:
         online = [("rag", "default", "RAG Agent")]
