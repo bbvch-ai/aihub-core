@@ -10,9 +10,13 @@ from opentelemetry import trace
 from swiss_ai_hub.core.displayers.stream.StreamProcessor import StreamProcessor
 from swiss_ai_hub.core.generative_ai.resources.costs.LLMCostTracker import LLMCostTracker
 from swiss_ai_hub.core.generative_ai.resources.models.llm.LLMConfig import LLMConfig
-from swiss_ai_hub.core.nats.events import ChunkEvent, DisplayEvent, LLMEvent, LLMStopEvent, ThoughtEvent
 from swiss_ai_hub.core.nats.events.cost.LLMCostEvent import LLMCostEvent
-from swiss_ai_hub.core.nats.events.semantic import Message
+from swiss_ai_hub.core.nats.events.display.ChunkEvent import ChunkEvent
+from swiss_ai_hub.core.nats.events.display.DisplayEvent import DisplayEvent
+from swiss_ai_hub.core.nats.events.display.ThoughtEvent import ThoughtEvent
+from swiss_ai_hub.core.nats.events.semantic.llm.LLMEvent import LLMEvent
+from swiss_ai_hub.core.nats.events.semantic.llm.LLMStopEvent import LLMStopEvent
+from swiss_ai_hub.core.nats.events.semantic.llm.Message import Message
 from swiss_ai_hub.core.nats.publishers.JSPublisher import JSPublisher
 from swiss_ai_hub.core.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 

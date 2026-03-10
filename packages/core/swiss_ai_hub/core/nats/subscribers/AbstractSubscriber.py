@@ -5,7 +5,7 @@ from typing import Annotated, Literal, TypeVar
 
 from nats.aio.client import Client as NATS
 
-from swiss_ai_hub.core.nats.events import BaseEvent
+from swiss_ai_hub.core.nats.events.BaseEvent import BaseEvent
 from swiss_ai_hub.core.nats.topics import Topic
 
 # TypeVar for backward compatibility with existing imports

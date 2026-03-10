@@ -5,7 +5,9 @@ from swiss_ai_hub.core.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.Dan
 )
 from swiss_ai_hub.core.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.nats.events import ChunkEvent, LLMEvent, UserMessageEvent
+from swiss_ai_hub.core.nats.events.display.ChunkEvent import ChunkEvent
+from swiss_ai_hub.core.nats.events.semantic.llm.LLMEvent import LLMEvent
+from swiss_ai_hub.core.nats.events.user.UserMessageEvent import UserMessageEvent
 from swiss_ai_hub.core.testing.asyncio_utils.bdd import async_test
 
 from playground.minimal_workflow.llama_index_workflow.LlamaIndexAgent import LlamaIndexAgent

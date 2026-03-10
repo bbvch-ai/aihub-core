@@ -1,17 +1,15 @@
 import functools
 from typing import ClassVar
 
-from swiss_ai_hub.core.nats.events import (
-    AgentWorkEvent,
-    AgentWorkRequestEvent,
-    HumanWorkEvent,
-    HumanWorkRequestEvent,
-    ProgramWorkEvent,
-    ProgramWorkRequestEvent,
-    WorkEvent,
-    WorkRequestEvent,
-)
+from swiss_ai_hub.core.nats.events.work.agent.AgentWorkEvent import AgentWorkEvent
+from swiss_ai_hub.core.nats.events.work.human.HumanWorkEvent import HumanWorkEvent
 from swiss_ai_hub.core.nats.events.work.process.ProcessWorkEvent import ProcessWorkEvent
+from swiss_ai_hub.core.nats.events.work.program.ProgramWorkEvent import ProgramWorkEvent
+from swiss_ai_hub.core.nats.events.work.WorkEvent import WorkEvent
+from swiss_ai_hub.core.nats.events.work_request.agent.AgentWorkRequestEvent import AgentWorkRequestEvent
+from swiss_ai_hub.core.nats.events.work_request.human.HumanWorkRequestEvent import HumanWorkRequestEvent
+from swiss_ai_hub.core.nats.events.work_request.program.ProgramWorkRequestEvent import ProgramWorkRequestEvent
+from swiss_ai_hub.core.nats.events.work_request.WorkRequestEvent import WorkRequestEvent
 from swiss_ai_hub.core.nats.workflow.DispatchableWorkflow import DispatchableWorkflow
 
 from swiss_ai_hub.process.delegators.AbstractProcessEntity import BaseProcessEntity

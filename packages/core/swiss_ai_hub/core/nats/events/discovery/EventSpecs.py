@@ -3,7 +3,7 @@ from typing import Annotated, Any
 
 from pydantic import BaseModel, Field
 
-from swiss_ai_hub.core.nats.events import BaseEvent
+from swiss_ai_hub.core.nats.events.BaseEvent import BaseEvent
 
 
 class EventSpecs(BaseModel):

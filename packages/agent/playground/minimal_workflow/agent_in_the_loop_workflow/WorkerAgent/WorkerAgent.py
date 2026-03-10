@@ -1,7 +1,7 @@
 from typing import ClassVar
 
 from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.nats.events import UserMessageEvent
+from swiss_ai_hub.core.nats.events.user.UserMessageEvent import UserMessageEvent
 
 from playground.minimal_workflow.agent_in_the_loop_workflow.WorkerAgent.Events.ExtractNumberEvent import (
     ExtractNumberEvent,

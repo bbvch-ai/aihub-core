@@ -8,7 +8,8 @@ from nats.js import JetStreamContext
 from redis.asyncio import Redis
 from swiss_ai_hub.core.i18n.LocaleString import LocaleString
 from swiss_ai_hub.core.infrastructure.logging.logger import enable_logging
-from swiss_ai_hub.core.nats.events import ProcessExceptionEvent, WorkEvent
+from swiss_ai_hub.core.nats.events.process.exception.ProcessExceptionEvent import ProcessExceptionEvent
+from swiss_ai_hub.core.nats.events.work.WorkEvent import WorkEvent
 from swiss_ai_hub.core.nats.topic_managers.process.ProcessClassTopicManager import ProcessClassTopicManager
 from swiss_ai_hub.core.nats.topics.process.ProcessInstanceTopic import ProcessInstanceTopic
 from swiss_ai_hub.core.processes.ProcessConfig import ProcessConfig

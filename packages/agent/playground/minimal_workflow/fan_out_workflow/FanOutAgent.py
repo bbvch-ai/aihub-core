@@ -1,7 +1,8 @@
 from typing import ClassVar
 
 from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.nats.events import StartEvent, StopEvent
+from swiss_ai_hub.core.nats.events.control.start.StartEvent import StartEvent
+from swiss_ai_hub.core.nats.events.control.stop.StopEvent import StopEvent
 from swiss_ai_hub.core.nats.workflow.annotations.custom_types.ListOfSize import FixedList
 
 from playground.minimal_workflow.fan_out_workflow.events.FanOutA import FanOutA

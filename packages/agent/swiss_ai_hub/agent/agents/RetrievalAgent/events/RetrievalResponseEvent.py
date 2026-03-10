@@ -2,7 +2,8 @@ from typing import Annotated
 
 from llama_index.core.base.llms.types import ChatMessage
 from pydantic import Field
-from swiss_ai_hub.core.nats.events import RetrieverEvent, StopEvent
+from swiss_ai_hub.core.nats.events.control.stop.StopEvent import StopEvent
+from swiss_ai_hub.core.nats.events.semantic.retriever.RetrieverEvent import RetrieverEvent
 
 
 class RetrievalResponseEvent(StopEvent, RetrieverEvent):

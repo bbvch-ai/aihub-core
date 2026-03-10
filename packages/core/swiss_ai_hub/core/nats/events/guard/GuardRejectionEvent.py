@@ -3,7 +3,7 @@ from typing import Annotated, ClassVar
 from pydantic import Field
 
 from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.nats.events.semantic import GuardEvent
+from swiss_ai_hub.core.nats.events.semantic.guard.GuardEvent import GuardEvent
 
 
 class GuardRejectionEvent(GuardEvent):

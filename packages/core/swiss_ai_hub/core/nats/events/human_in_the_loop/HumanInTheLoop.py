@@ -1,8 +1,12 @@
 from swiss_ai_hub.core.nats.events.human_in_the_loop.HumanInTheLoopChat import HumanInTheLoopChat
 from swiss_ai_hub.core.nats.events.human_in_the_loop.HumanInTheLoopConfirmation import HumanInTheLoopConfirmation
 from swiss_ai_hub.core.nats.events.human_in_the_loop.HumanInTheLoopInput import HumanInTheLoopInput
-from swiss_ai_hub.core.nats.events.human_in_the_loop.request import HumanInTheLoopRequestEvent
-from swiss_ai_hub.core.nats.events.human_in_the_loop.response import HumanInTheLoopResponseEvent
+from swiss_ai_hub.core.nats.events.human_in_the_loop.request.HumanInTheLoopRequestEvent import (
+    HumanInTheLoopRequestEvent,
+)
+from swiss_ai_hub.core.nats.events.human_in_the_loop.response.HumanInTheLoopResponseEvent import (
+    HumanInTheLoopResponseEvent,
+)
 
 
 class HumanInTheLoop:

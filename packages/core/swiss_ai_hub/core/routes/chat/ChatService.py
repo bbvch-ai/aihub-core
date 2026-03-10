@@ -15,17 +15,19 @@ from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from swiss_ai_hub.core.nats.distributor.events.ExternalAgentEvent import ExternalAgentEvent
 from swiss_ai_hub.core.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
-from swiss_ai_hub.core.nats.events import (
-    BaseEvent,
-    ChunkEvent,
-    DisplayEvent,
-    ExceptionEvent,
+from swiss_ai_hub.core.nats.events.BaseEvent import BaseEvent
+from swiss_ai_hub.core.nats.events.control.exception.ExceptionEvent import ExceptionEvent
+from swiss_ai_hub.core.nats.events.control.stop.StopEvent import StopEvent
+from swiss_ai_hub.core.nats.events.display.ChunkEvent import ChunkEvent
+from swiss_ai_hub.core.nats.events.display.DisplayEvent import DisplayEvent
+from swiss_ai_hub.core.nats.events.display.ThoughtEvent import ThoughtEvent
+from swiss_ai_hub.core.nats.events.human_in_the_loop.request.HumanInTheLoopRequestEvent import (
     HumanInTheLoopRequestEvent,
-    HumanInTheLoopResponseEvent,
-    StopEvent,
-    ThoughtEvent,
 )
-from swiss_ai_hub.core.nats.events.user import UserMessageEvent
+from swiss_ai_hub.core.nats.events.human_in_the_loop.response.HumanInTheLoopResponseEvent import (
+    HumanInTheLoopResponseEvent,
+)
+from swiss_ai_hub.core.nats.events.user.UserMessageEvent import UserMessageEvent
 from swiss_ai_hub.core.nats.events.user.UserUploadedFile import UserUploadedFile
 from swiss_ai_hub.core.nats.events.utils import get_parent_classes_until_base
 from swiss_ai_hub.core.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber

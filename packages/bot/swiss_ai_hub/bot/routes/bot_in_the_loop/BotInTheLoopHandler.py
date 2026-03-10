@@ -8,9 +8,12 @@ from microsoft_agents.activity import ChannelAccount, Channels, ConversationAcco
 from microsoft_agents.hosting.core import TeamsConnectorClient, TurnContext
 from microsoft_agents.hosting.core.connector.client.connector_client import ConversationsOperations
 from pydantic import BaseModel, Field
-from swiss_ai_hub.core.nats.events import BaseEvent
-from swiss_ai_hub.core.nats.events.bot_in_the_loop import BotInTheLoopRequestEvent
-from swiss_ai_hub.core.nats.events.bot_in_the_loop.request.BotInTheLoopRequestEvent import SlackConfig, TeamsConfig
+from swiss_ai_hub.core.nats.events.BaseEvent import BaseEvent
+from swiss_ai_hub.core.nats.events.bot_in_the_loop.request.BotInTheLoopRequestEvent import (
+    BotInTheLoopRequestEvent,
+    SlackConfig,
+    TeamsConfig,
+)
 from swiss_ai_hub.core.nats.topics import AgentInstanceTopic
 
 from swiss_ai_hub.bot.persistence.entities.PathEntity import PathEntity

@@ -7,8 +7,10 @@ from unittest.mock import AsyncMock, Mock
 from bson import ObjectId
 from pydantic import BaseModel
 from swiss_ai_hub.core.agents.AgentConfig import AgentConfig
-from swiss_ai_hub.core.nats.events import BaseEvent
-from swiss_ai_hub.core.nats.events.control import ExceptionEvent, StartEvent, StopEvent
+from swiss_ai_hub.core.nats.events.BaseEvent import BaseEvent
+from swiss_ai_hub.core.nats.events.control.exception.ExceptionEvent import ExceptionEvent
+from swiss_ai_hub.core.nats.events.control.start.StartEvent import StartEvent
+from swiss_ai_hub.core.nats.events.control.stop.StopEvent import StopEvent
 from swiss_ai_hub.core.nats.events.discovery.agent.AgentClassDiscoveryResponseEvent import (
     AgentClassDiscoveryResponseEvent,
 )

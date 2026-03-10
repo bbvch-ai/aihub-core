@@ -1,6 +1,6 @@
 from pytest_bdd import given, parsers, scenarios, then, when
 from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.nats.events import StartEvent
+from swiss_ai_hub.core.nats.events.control.start.StartEvent import StartEvent
 from swiss_ai_hub.core.testing.asyncio_utils.bdd import async_test
 
 from playground.minimal_workflow.fan_out_workflow.events.FanOutA import FanOutA

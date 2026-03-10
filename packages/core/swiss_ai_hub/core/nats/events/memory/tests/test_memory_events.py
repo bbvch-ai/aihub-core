@@ -9,7 +9,8 @@ from swiss_ai_hub.core.infrastructure.mem0.types.MemorySearchResult import Memor
 from swiss_ai_hub.core.infrastructure.mem0.types.MemoryType import MemoryType
 from swiss_ai_hub.core.infrastructure.mem0.types.ModifiedMemory import ModifiedMemory
 from swiss_ai_hub.core.infrastructure.mem0.types.ModifiedRelations import ModifiedRelations
-from swiss_ai_hub.core.nats.events.memory import BaseRetrieveMemoryEvent, StoreUserMemoryEvent
+from swiss_ai_hub.core.nats.events.memory.retrieve.BaseRetrieveMemoryEvent import BaseRetrieveMemoryEvent
+from swiss_ai_hub.core.nats.events.memory.store.StoreUserMemoryEvent import StoreUserMemoryEvent
 
 
 class TestStoreUserMemoryEvent:

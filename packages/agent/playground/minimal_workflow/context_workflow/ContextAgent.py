@@ -1,7 +1,7 @@
 from typing import ClassVar
 
 from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.nats.events import StopEvent
+from swiss_ai_hub.core.nats.events.control.stop.StopEvent import StopEvent
 
 from playground.minimal_workflow.context_workflow.events.ContextEvent import ContextEvent
 from playground.minimal_workflow.context_workflow.events.CustomStartEvent import (

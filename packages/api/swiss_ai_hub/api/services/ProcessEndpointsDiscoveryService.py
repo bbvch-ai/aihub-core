@@ -13,9 +13,11 @@ from swiss_ai_hub.core.nats.distributor.dependencies.use_external_process_event_
     use_external_process_event_distributor,
 )
 from swiss_ai_hub.core.nats.distributor.ExternalProcessEventDistributor import ExternalProcessEventDistributor
-from swiss_ai_hub.core.nats.events.discovery import ProcessClassDiscoveryResponseEvent
 from swiss_ai_hub.core.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
 from swiss_ai_hub.core.nats.events.discovery.process.human_in.HumanInSpecs import HumanInSpecs
+from swiss_ai_hub.core.nats.events.discovery.process.ProcessClassDiscoveryResponseEvent import (
+    ProcessClassDiscoveryResponseEvent,
+)
 from swiss_ai_hub.core.nats.events.discovery.process.program_in.ProgramInSpecs import ProgramInSpecs
 from swiss_ai_hub.core.nats.publishers.NCPublisher import NCPublisher
 from swiss_ai_hub.core.nats.subscribers.process.ProcessNCSubscriber import ProcessNCSubscriber

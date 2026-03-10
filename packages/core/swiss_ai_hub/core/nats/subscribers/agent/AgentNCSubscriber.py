@@ -2,8 +2,10 @@ from collections.abc import Awaitable, Callable
 
 from nats.aio.client import Client as NATS
 
-from swiss_ai_hub.core.nats.events import BaseEvent, ControlEvent, DisplayEvent
+from swiss_ai_hub.core.nats.events.BaseEvent import BaseEvent
+from swiss_ai_hub.core.nats.events.control.ControlEvent import ControlEvent
 from swiss_ai_hub.core.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
+from swiss_ai_hub.core.nats.events.display.DisplayEvent import DisplayEvent
 from swiss_ai_hub.core.nats.subscribers.NCSubscriber import NCSubscriber
 from swiss_ai_hub.core.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
 from swiss_ai_hub.core.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager

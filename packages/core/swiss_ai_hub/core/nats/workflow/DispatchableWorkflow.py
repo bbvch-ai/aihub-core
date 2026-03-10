@@ -3,7 +3,8 @@ import functools
 import inspect
 from collections.abc import Callable
 
-from swiss_ai_hub.core.nats.events import ControlEvent, WorkEvent
+from swiss_ai_hub.core.nats.events.control.ControlEvent import ControlEvent
+from swiss_ai_hub.core.nats.events.work.WorkEvent import WorkEvent
 
 
 class DispatchableWorkflow(abc.ABC):

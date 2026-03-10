@@ -5,8 +5,8 @@ from swiss_ai_hub.core.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.Dan
     DangerousDevelopmentOnlyAuthSettings,
 )
 from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.nats.events import UserMessageEvent
-from swiss_ai_hub.core.nats.events.human_in_the_loop import HumanInTheLoopInput
+from swiss_ai_hub.core.nats.events.human_in_the_loop.HumanInTheLoopInput import HumanInTheLoopInput
+from swiss_ai_hub.core.nats.events.user.UserMessageEvent import UserMessageEvent
 from swiss_ai_hub.core.nats.topics.agents.PartialAgentTopic import PartialAgentTopic
 
 from playground.minimal_workflow.human_in_the_loop_workflow.HumanInTheLoopAgent import (

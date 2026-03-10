@@ -6,7 +6,7 @@ from swiss_ai_hub.core.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.Dan
     DangerousDevelopmentOnlyAuthSettings,
 )
 from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.nats.events import UserMessageEvent
+from swiss_ai_hub.core.nats.events.user.UserMessageEvent import UserMessageEvent
 from swiss_ai_hub.core.testing.asyncio_utils.bdd import async_test
 
 from playground.minimal_workflow.multi_locale_workflow.events.MultiLocaleEvent import MultiLocaleEvent

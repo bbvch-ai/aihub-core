@@ -7,7 +7,7 @@ from microsoft_agents.hosting.core import ActivityHandler, TurnContext
 from nats.aio.client import Client as NATS
 from swiss_ai_hub.core.nats.distributor.events.ExternalAgentEvent import ExternalAgentEvent
 from swiss_ai_hub.core.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
-from swiss_ai_hub.core.nats.events.bot_in_the_loop import BotInTheLoop
+from swiss_ai_hub.core.nats.events.bot_in_the_loop.BotInTheLoop import BotInTheLoop
 from swiss_ai_hub.core.nats.events.bot_in_the_loop.response.BotInTheLoopResponseEvent import BotInTheLoopResponderInfo
 
 from swiss_ai_hub.bot.routes.bot_in_the_loop.BotInTheLoopHandler import BotInTheLoopHandler

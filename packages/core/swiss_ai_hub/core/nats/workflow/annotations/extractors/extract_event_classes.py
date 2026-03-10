@@ -2,7 +2,7 @@ import inspect
 from types import UnionType
 from typing import Annotated, Any, Union, get_args, get_origin
 
-from swiss_ai_hub.core.nats.events import BaseEvent
+from swiss_ai_hub.core.nats.events.BaseEvent import BaseEvent
 
 
 def extract_event_classes(

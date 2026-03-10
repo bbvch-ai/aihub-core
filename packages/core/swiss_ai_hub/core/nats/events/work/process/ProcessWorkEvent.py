@@ -3,7 +3,8 @@ from typing import Annotated, TypeVar, cast
 
 from pydantic import Field
 
-from swiss_ai_hub.core.nats.events import ProcessStartEvent, ProcessStopEvent
+from swiss_ai_hub.core.nats.events.process.start.ProcessStartEvent import ProcessStartEvent
+from swiss_ai_hub.core.nats.events.process.stop.ProcessStopEvent import ProcessStopEvent
 from swiss_ai_hub.core.nats.events.utils import get_base_type
 
 TEvent = TypeVar("TEvent", bound=ProcessStopEvent)

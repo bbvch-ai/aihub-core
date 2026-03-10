@@ -4,7 +4,7 @@ from typing import Annotated, Self
 from bson import ObjectId
 from pydantic import BaseModel, Field
 
-from swiss_ai_hub.core.nats.events import ControlEvent
+from swiss_ai_hub.core.nats.events.control.ControlEvent import ControlEvent
 
 
 class ExternalAgentEvent(BaseModel):

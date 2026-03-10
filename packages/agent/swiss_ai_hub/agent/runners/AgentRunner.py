@@ -13,7 +13,6 @@ from swiss_ai_hub.core.infrastructure.milvus.MilvusSettings import MilvusSetting
 from swiss_ai_hub.core.infrastructure.mongo.MongoSettings import MongoSettings
 from swiss_ai_hub.core.infrastructure.nats.NatsSettings import NatsSettings
 from swiss_ai_hub.core.infrastructure.redis.RedisSettings import RedisSettings
-from swiss_ai_hub.core.nats.events import UserMessageEvent
 from swiss_ai_hub.core.nats.events.discovery.agent.AgentClassDiscoveryResponseEvent import (
     AgentClassDiscoveryResponseEvent,
     AgentConfigSpecs,
@@ -21,6 +20,7 @@ from swiss_ai_hub.core.nats.events.discovery.agent.AgentClassDiscoveryResponseEv
 from swiss_ai_hub.core.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
 from swiss_ai_hub.core.nats.events.discovery.EventSpecs import EventSpecs
 from swiss_ai_hub.core.nats.events.form.TemplateData import TemplateData
+from swiss_ai_hub.core.nats.events.user.UserMessageEvent import UserMessageEvent
 from swiss_ai_hub.core.nats.publishers.NCPublisher import NCPublisher
 from swiss_ai_hub.core.nats.subscribers.agent.AgentJSSubscriber import AgentJSSubscriber
 from swiss_ai_hub.core.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber

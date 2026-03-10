@@ -8,10 +8,11 @@ from swiss_ai_hub.core.generative_ai.prompting.few_shot.FewShotExample import Fe
 from swiss_ai_hub.core.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from swiss_ai_hub.core.i18n.LocaleString import LocaleString
 from swiss_ai_hub.core.infrastructure.logging.logger import enable_logging
-from swiss_ai_hub.core.nats.events import LLMEvent, UserMessageEvent
 from swiss_ai_hub.core.nats.events.common.LimitChatHistoryEvent import LimitChatHistoryEvent
 from swiss_ai_hub.core.nats.events.guard.AgentSuitabilityAcceptEvent import AgentSuitabilityAcceptEvent
 from swiss_ai_hub.core.nats.events.guard.GuardRejectionEvent import GuardRejectionEvent
+from swiss_ai_hub.core.nats.events.semantic.llm.LLMEvent import LLMEvent
+from swiss_ai_hub.core.nats.events.user.UserMessageEvent import UserMessageEvent
 from swiss_ai_hub.core.testing.asyncio_utils.bdd import async_test
 
 from swiss_ai_hub.agent.agents.FewShotAgent.events.FewShotEvent import FewShotEvent

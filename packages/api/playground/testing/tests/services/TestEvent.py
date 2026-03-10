@@ -1,7 +1,7 @@
 from typing import Annotated
 
 from pydantic import BaseModel, Field
-from swiss_ai_hub.core.nats.events import BaseEvent
+from swiss_ai_hub.core.nats.events.BaseEvent import BaseEvent
 
 
 class Level3Model(BaseModel):

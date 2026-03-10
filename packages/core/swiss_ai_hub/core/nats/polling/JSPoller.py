@@ -6,7 +6,7 @@ from nats.js import JetStreamContext
 from nats.js.api import AckPolicy, ConsumerConfig, DeliverPolicy
 from nats.js.errors import NotFoundError
 
-from swiss_ai_hub.core.nats.events import BaseEvent
+from swiss_ai_hub.core.nats.events.BaseEvent import BaseEvent
 from swiss_ai_hub.core.nats.polling.PolledMessage import PolledMessage
 from swiss_ai_hub.core.nats.streams.StreamManager import StreamManager
 

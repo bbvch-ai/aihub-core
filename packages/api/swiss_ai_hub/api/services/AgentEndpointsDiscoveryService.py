@@ -27,16 +27,16 @@ from swiss_ai_hub.core.nats.distributor.dependencies.use_external_agent_event_di
     use_external_agent_event_distributor,
 )
 from swiss_ai_hub.core.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
-from swiss_ai_hub.core.nats.events import (
-    ExceptionEvent,
-    HumanInTheLoopResponseEvent,
-    StartEvent,
-)
+from swiss_ai_hub.core.nats.events.control.exception.ExceptionEvent import ExceptionEvent
+from swiss_ai_hub.core.nats.events.control.start.StartEvent import StartEvent
 from swiss_ai_hub.core.nats.events.discovery.agent.AgentClassDiscoveryResponseEvent import (
     AgentClassDiscoveryResponseEvent,
 )
 from swiss_ai_hub.core.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
 from swiss_ai_hub.core.nats.events.discovery.EventSpecs import EventSpecs
+from swiss_ai_hub.core.nats.events.human_in_the_loop.response.HumanInTheLoopResponseEvent import (
+    HumanInTheLoopResponseEvent,
+)
 from swiss_ai_hub.core.nats.publishers.NCPublisher import NCPublisher
 from swiss_ai_hub.core.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from swiss_ai_hub.core.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager

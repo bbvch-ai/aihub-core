@@ -3,7 +3,7 @@ from typing import Annotated, Self
 
 from pydantic import BaseModel, Field
 
-from swiss_ai_hub.core.nats.events import WorkEvent
+from swiss_ai_hub.core.nats.events.work.WorkEvent import WorkEvent
 
 
 class ExternalProcessEvent(BaseModel):

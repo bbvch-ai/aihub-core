@@ -8,7 +8,7 @@ from swiss_ai_hub.core.auth.identity.UserIdentity import UserIdentity
 from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
 from swiss_ai_hub.core.i18n.LocaleString import LocaleString
 from swiss_ai_hub.core.infrastructure.logging.logger import enable_logging
-from swiss_ai_hub.core.nats.events import UserMessageEvent
+from swiss_ai_hub.core.nats.events.user.UserMessageEvent import UserMessageEvent
 from swiss_ai_hub.core.persistence.agents.AgentClassEntity import AgentClassEntity
 from swiss_ai_hub.core.persistence.agents.AgentConfigEntityDocument import AgentConfigEntityDocument
 from swiss_ai_hub.core.persistence.messaging.entities.ThreadEntity import ThreadEntity

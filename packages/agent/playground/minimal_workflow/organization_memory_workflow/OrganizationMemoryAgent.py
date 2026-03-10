@@ -4,14 +4,16 @@ from swiss_ai_hub.core.generative_ai.chat_history.extend_chat_history_with_organ
 )
 from swiss_ai_hub.core.generative_ai.memory.AgentMemory import AgentMemory
 from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
-from swiss_ai_hub.core.nats.events import (
+from swiss_ai_hub.core.nats.events.control.stop.StopEvent import StopEvent
+from swiss_ai_hub.core.nats.events.memory.history.AddOrganizationMemoryToChatHistoryEvent import (
     AddOrganizationMemoryToChatHistoryEvent,
-    LLMEvent,
-    RetrieveOrganizationMemoryEvent,
-    StopEvent,
-    StoreOrganizationMemoryEvent,
-    UserMessageEvent,
 )
+from swiss_ai_hub.core.nats.events.memory.retrieve.RetrieveOrganizationMemoryEvent import (
+    RetrieveOrganizationMemoryEvent,
+)
+from swiss_ai_hub.core.nats.events.memory.store.StoreOrganizationMemoryEvent import StoreOrganizationMemoryEvent
+from swiss_ai_hub.core.nats.events.semantic.llm.LLMEvent import LLMEvent
+from swiss_ai_hub.core.nats.events.user.UserMessageEvent import UserMessageEvent
 from swiss_ai_hub.core.nats.topics import AgentInstanceTopic
 
 from playground.minimal_workflow.organization_memory_workflow.OrganizationMemoryAgentConfig import (

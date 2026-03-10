@@ -5,15 +5,15 @@ from contextlib import asynccontextmanager
 from typing import Annotated
 
 from openai import BaseModel
-from swiss_ai_hub.core.nats.events import (
-    BaseEvent,
-    ProcessExceptionEvent,
-    ProcessStartEvent,
-    ProcessStopEvent,
-    WorkEvent,
-)
-from swiss_ai_hub.core.nats.events.discovery import ProcessClassDiscoveryResponseEvent
+from swiss_ai_hub.core.nats.events.BaseEvent import BaseEvent
 from swiss_ai_hub.core.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
+from swiss_ai_hub.core.nats.events.discovery.process.ProcessClassDiscoveryResponseEvent import (
+    ProcessClassDiscoveryResponseEvent,
+)
+from swiss_ai_hub.core.nats.events.process.exception.ProcessExceptionEvent import ProcessExceptionEvent
+from swiss_ai_hub.core.nats.events.process.start.ProcessStartEvent import ProcessStartEvent
+from swiss_ai_hub.core.nats.events.process.stop.ProcessStopEvent import ProcessStopEvent
+from swiss_ai_hub.core.nats.events.work.WorkEvent import WorkEvent
 from swiss_ai_hub.core.nats.publishers.JSPublisher import JSPublisher
 from swiss_ai_hub.core.nats.subscribers.JSSubscriber import JSSubscriber
 from swiss_ai_hub.core.nats.subscribers.process.ProcessNCSubscriber import ProcessNCSubscriber

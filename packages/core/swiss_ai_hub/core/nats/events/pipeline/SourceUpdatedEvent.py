@@ -2,7 +2,7 @@ from typing import Annotated
 
 from pydantic import Field
 
-from swiss_ai_hub.core.nats.events import BaseEvent
+from swiss_ai_hub.core.nats.events.BaseEvent import BaseEvent
 
 
 class SourceUpdatedEvent(BaseEvent):

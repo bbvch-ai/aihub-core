@@ -2,7 +2,8 @@ import random
 from typing import ClassVar
 
 from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.nats.events import StartEvent, StopEvent
+from swiss_ai_hub.core.nats.events.control.start.StartEvent import StartEvent
+from swiss_ai_hub.core.nats.events.control.stop.StopEvent import StopEvent
 
 from playground.minimal_workflow.optional_workflow.events.EventOptionalA import EventOptionalA
 from playground.minimal_workflow.optional_workflow.events.EventOptionalB import EventOptionalB

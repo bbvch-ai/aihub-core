@@ -2,7 +2,7 @@ import asyncio
 
 from swiss_ai_hub.core.i18n.LocaleString import LocaleString
 from swiss_ai_hub.core.infrastructure.logging.logger import enable_logging
-from swiss_ai_hub.core.nats.events import StartEvent
+from swiss_ai_hub.core.nats.events.control.start.StartEvent import StartEvent
 
 from playground.performance.PerformanceTestingAgent.PerformanceTestingAgent import PerformanceTestingAgent
 from playground.performance.PerformanceTestingAgent.PerformanceTestingAgentConfig import PerformanceTestingAgentConfig

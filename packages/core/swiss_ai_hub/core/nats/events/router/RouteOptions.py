@@ -2,7 +2,8 @@ from typing import Annotated
 
 from pydantic import Field
 
-from swiss_ai_hub.core.nats.events import ControlEvent, DisplayEvent
+from swiss_ai_hub.core.nats.events.control.ControlEvent import ControlEvent
+from swiss_ai_hub.core.nats.events.display.DisplayEvent import DisplayEvent
 
 
 class RouteOptions(DisplayEvent):

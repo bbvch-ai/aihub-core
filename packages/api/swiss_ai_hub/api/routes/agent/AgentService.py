@@ -10,20 +10,22 @@ from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from swiss_ai_hub.core.nats.distributor.events.ExternalAgentEvent import ExternalAgentEvent
 from swiss_ai_hub.core.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
-from swiss_ai_hub.core.nats.events import (
-    BaseEvent,
-    DisplayEvent,
-    ExceptionEvent,
-    HumanInTheLoopResponseEvent,
-    StartEvent,
-    StopEvent,
-)
+from swiss_ai_hub.core.nats.events.BaseEvent import BaseEvent
+from swiss_ai_hub.core.nats.events.control.exception.ExceptionEvent import ExceptionEvent
+from swiss_ai_hub.core.nats.events.control.start.StartEvent import StartEvent
+from swiss_ai_hub.core.nats.events.control.stop.StopEvent import StopEvent
 from swiss_ai_hub.core.nats.events.discovery.agent.AgentConfigSpecs import AgentConfigSpecs
+from swiss_ai_hub.core.nats.events.display.DisplayEvent import DisplayEvent
 from swiss_ai_hub.core.nats.events.form.normalization import (
     normalize_empty_locale_strings,
     normalize_empty_objects_to_none,
 )
-from swiss_ai_hub.core.nats.events.human_in_the_loop.request import HumanInTheLoopRequestEvent
+from swiss_ai_hub.core.nats.events.human_in_the_loop.request.HumanInTheLoopRequestEvent import (
+    HumanInTheLoopRequestEvent,
+)
+from swiss_ai_hub.core.nats.events.human_in_the_loop.response.HumanInTheLoopResponseEvent import (
+    HumanInTheLoopResponseEvent,
+)
 from swiss_ai_hub.core.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from swiss_ai_hub.core.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 from swiss_ai_hub.core.nats.topics import AgentInstanceTopic

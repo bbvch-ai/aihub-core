@@ -3,7 +3,7 @@ from typing import Annotated
 from pydantic import Field
 
 from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.nats.events import BaseEvent
+from swiss_ai_hub.core.nats.events.BaseEvent import BaseEvent
 from swiss_ai_hub.core.nats.events.discovery.process.agent_in.AgentInSpecs import AgentInSpecs
 from swiss_ai_hub.core.nats.events.discovery.process.human_in.HumanInSpecs import HumanInSpecs
 from swiss_ai_hub.core.nats.events.discovery.process.ProcessConfigSpecs import ProcessConfigSpecs

@@ -1,6 +1,7 @@
 import json
 
-from swiss_ai_hub.core.nats.events import BaseEvent, DisplayEvent
+from swiss_ai_hub.core.nats.events.BaseEvent import BaseEvent
+from swiss_ai_hub.core.nats.events.display.DisplayEvent import DisplayEvent
 from swiss_ai_hub.core.nats.events.utils import get_inheritance_depth, get_parent_classes_until_base
 
 

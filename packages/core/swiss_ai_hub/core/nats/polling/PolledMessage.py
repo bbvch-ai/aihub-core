@@ -2,7 +2,7 @@ from typing import Annotated
 
 from nats.aio.msg import Msg
 
-from swiss_ai_hub.core.nats.events import BaseEvent
+from swiss_ai_hub.core.nats.events.BaseEvent import BaseEvent
 
 
 class PolledMessage:

@@ -4,7 +4,7 @@ import logging
 from redis.asyncio import Redis
 
 from swiss_ai_hub.core.nats.dispatcher.stores.StoreBase import StoreBase
-from swiss_ai_hub.core.nats.events import ControlEvent
+from swiss_ai_hub.core.nats.events.control.ControlEvent import ControlEvent
 
 logger = logging.getLogger(__name__)
 

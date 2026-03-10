@@ -8,7 +8,7 @@ from nats.aio.client import Client as NATS
 from swiss_ai_hub.core.auth.dependencies.AuthHandler import AuthHandler
 from swiss_ai_hub.core.auth.identity.UserIdentity import UserIdentity
 from swiss_ai_hub.core.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
-from swiss_ai_hub.core.nats.events import ExceptionEvent
+from swiss_ai_hub.core.nats.events.control.exception.ExceptionEvent import ExceptionEvent
 from swiss_ai_hub.core.persistence.user.UserEntity import UserEntity
 from swiss_ai_hub.core.routes.chat.ChatService import ChatService, JsonResources, StreamingResources
 

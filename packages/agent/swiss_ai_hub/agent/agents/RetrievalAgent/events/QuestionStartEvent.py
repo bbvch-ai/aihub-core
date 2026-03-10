@@ -1,7 +1,7 @@
 from typing import Annotated, Literal
 
 from pydantic import Field
-from swiss_ai_hub.core.nats.events.control.start import StartEvent
+from swiss_ai_hub.core.nats.events.control.start.StartEvent import StartEvent
 
 
 class QuestionStartEvent(StartEvent):

@@ -2,7 +2,6 @@ from datetime import datetime
 from typing import Annotated
 
 from pydantic import Field
-from swiss_ai_hub.core.nats.events import HumanWorkEvent, ProcessStartEvent
 from swiss_ai_hub.core.nats.events.form import (
     CascadeSelect,
     Checkbox,
@@ -14,6 +13,8 @@ from swiss_ai_hub.core.nats.events.form import (
     Slider,
     Textarea,
 )
+from swiss_ai_hub.core.nats.events.process.start.ProcessStartEvent import ProcessStartEvent
+from swiss_ai_hub.core.nats.events.work.human.HumanWorkEvent import HumanWorkEvent
 
 
 class SubmittedCV(HumanWorkEvent, ProcessStartEvent):

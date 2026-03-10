@@ -3,8 +3,10 @@ from collections.abc import Awaitable, Callable
 from typing import Annotated
 
 from bson import ObjectId
-from swiss_ai_hub.core.nats.events import ProcessStopEvent, WorkEvent, WorkRequestEvent
+from swiss_ai_hub.core.nats.events.process.stop.ProcessStopEvent import ProcessStopEvent
 from swiss_ai_hub.core.nats.events.work.process.ProcessWorkEvent import ProcessWorkEvent
+from swiss_ai_hub.core.nats.events.work.WorkEvent import WorkEvent
+from swiss_ai_hub.core.nats.events.work_request.WorkRequestEvent import WorkRequestEvent
 from swiss_ai_hub.core.nats.subscribers.process.ProcessNCSubscriber import ProcessNCSubscriber
 from swiss_ai_hub.core.nats.topic_managers.process.ProcessInstanceTopicManager import ProcessInstanceTopicManager
 from swiss_ai_hub.core.nats.topics import ProcessInstanceTopic

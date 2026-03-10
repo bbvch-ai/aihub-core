@@ -21,7 +21,7 @@ from swiss_ai_hub.core.auth.access.AccessChecker import AccessChecker
 from swiss_ai_hub.core.auth.identity.TenantIdentity import TenantIdentity
 from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
-from swiss_ai_hub.core.nats.events import BaseEvent
+from swiss_ai_hub.core.nats.events.BaseEvent import BaseEvent
 from swiss_ai_hub.core.nats.events.human_in_the_loop.request.HumanInTheLoopRequestEvent import (
     HumanInTheLoopRequestEvent,
 )

@@ -1,5 +1,9 @@
-from swiss_ai_hub.core.nats.events.human_in_the_loop.request import HumanInTheLoopConfirmationRequestEvent
-from swiss_ai_hub.core.nats.events.human_in_the_loop.response import HumanInTheLoopConfirmationResponseEvent
+from swiss_ai_hub.core.nats.events.human_in_the_loop.request.HumanInTheLoopConfirmationRequestEvent import (
+    HumanInTheLoopConfirmationRequestEvent,
+)
+from swiss_ai_hub.core.nats.events.human_in_the_loop.response.HumanInTheLoopConfirmationResponseEvent import (
+    HumanInTheLoopConfirmationResponseEvent,
+)
 from swiss_ai_hub.core.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from swiss_ai_hub.core.nats.topics.agents.PartialAgentTopic import PartialAgentTopic
 

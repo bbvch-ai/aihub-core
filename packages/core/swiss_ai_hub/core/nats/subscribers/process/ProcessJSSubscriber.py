@@ -3,7 +3,9 @@ from collections.abc import Awaitable, Callable
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 
-from swiss_ai_hub.core.nats.events import BaseEvent, WorkEvent, WorkRequestEvent
+from swiss_ai_hub.core.nats.events.BaseEvent import BaseEvent
+from swiss_ai_hub.core.nats.events.work.WorkEvent import WorkEvent
+from swiss_ai_hub.core.nats.events.work_request.WorkRequestEvent import WorkRequestEvent
 from swiss_ai_hub.core.nats.subscribers.JSSubscriber import JSSubscriber
 from swiss_ai_hub.core.nats.topic_managers.process.ProcessClassTopicManager import ProcessClassTopicManager
 from swiss_ai_hub.core.nats.topic_managers.process.ProcessInstanceTopicManager import ProcessInstanceTopicManager

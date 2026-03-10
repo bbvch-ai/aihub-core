@@ -4,7 +4,7 @@ from pydantic import Field
 
 from swiss_ai_hub.core.auth.identity.UserIdentity import UserIdentity
 from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.nats.events import ControlEvent
+from swiss_ai_hub.core.nats.events.control.ControlEvent import ControlEvent
 from swiss_ai_hub.core.nats.events.form.constraints import Pattern
 from swiss_ai_hub.core.nats.events.form.elements.InputText import InputText
 from swiss_ai_hub.core.nats.events.form.Form import Form

@@ -12,7 +12,7 @@ from redis.asyncio import Redis
 
 from swiss_ai_hub.core.nats.dispatcher.stores.event.JetStreamEventStore import JetStreamEventStore
 from swiss_ai_hub.core.nats.dispatcher.stores.step.StepStore import StepStore
-from swiss_ai_hub.core.nats.events import BaseEvent
+from swiss_ai_hub.core.nats.events.BaseEvent import BaseEvent
 from swiss_ai_hub.core.nats.publishers.JSPublisher import JSPublisher
 from swiss_ai_hub.core.nats.publishers.NCPublisher import NCPublisher
 from swiss_ai_hub.core.nats.topic_managers.AbstractStreamTopicManager import AbstractStreamTopicManager

@@ -1,4 +1,6 @@
-from swiss_ai_hub.core.nats.events.human_in_the_loop.request import HumanInTheLoopInputRequestEvent
+from swiss_ai_hub.core.nats.events.human_in_the_loop.request.HumanInTheLoopInputRequestEvent import (
+    HumanInTheLoopInputRequestEvent,
+)
 
 
 class HitlTypeSelectionRequestEvent(HumanInTheLoopInputRequestEvent):

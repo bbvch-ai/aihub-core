@@ -9,7 +9,7 @@ from nats.js import JetStreamContext
 from nats.js.api import AckPolicy, DeliverPolicy
 
 from swiss_ai_hub.core.nats.dispatcher.stores.event.ExecutionContextEventStore import ExecutionContextEventStore
-from swiss_ai_hub.core.nats.events import BaseEvent
+from swiss_ai_hub.core.nats.events.BaseEvent import BaseEvent
 from swiss_ai_hub.core.nats.polling.JSPoller import JSPoller
 from swiss_ai_hub.core.nats.streams.StreamManager import StreamManager
 from swiss_ai_hub.core.nats.topic_managers.AbstractStreamTopicManager import AbstractStreamTopicManager

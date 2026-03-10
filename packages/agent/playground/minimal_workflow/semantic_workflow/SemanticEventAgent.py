@@ -2,8 +2,11 @@ from typing import ClassVar
 
 from swiss_ai_hub.core.generative_ai.document.types.IngestedNode import IngestedNode
 from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.nats.events import LLMStopEvent, RerankerEvent, RetrieverEvent, StartEvent
-from swiss_ai_hub.core.nats.events.semantic import Message
+from swiss_ai_hub.core.nats.events.control.start.StartEvent import StartEvent
+from swiss_ai_hub.core.nats.events.semantic.llm.LLMStopEvent import LLMStopEvent
+from swiss_ai_hub.core.nats.events.semantic.llm.Message import Message
+from swiss_ai_hub.core.nats.events.semantic.reranker.RerankerEvent import RerankerEvent
+from swiss_ai_hub.core.nats.events.semantic.retriever.RetrieverEvent import RetrieverEvent
 from swiss_ai_hub.core.testing.milvus_vector_store_content import DEFAULT_DOCUMENTS
 
 from swiss_ai_hub.agent.agents.Agent import Agent

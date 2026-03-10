@@ -10,7 +10,6 @@ from redis.asyncio import Redis
 from swiss_ai_hub.core.infrastructure.mongo.MongoSettings import MongoSettings
 from swiss_ai_hub.core.infrastructure.nats.NatsSettings import NatsSettings
 from swiss_ai_hub.core.infrastructure.redis.RedisSettings import RedisSettings
-from swiss_ai_hub.core.nats.events import ProcessStartEvent
 from swiss_ai_hub.core.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
 from swiss_ai_hub.core.nats.events.discovery.EventSpecs import EventSpecs
 from swiss_ai_hub.core.nats.events.discovery.process.agent_in.AgentInSpecs import AgentInSpecs
@@ -21,6 +20,7 @@ from swiss_ai_hub.core.nats.events.discovery.process.ProcessClassDiscoveryRespon
 from swiss_ai_hub.core.nats.events.discovery.process.ProcessConfigSpecs import ProcessConfigSpecs
 from swiss_ai_hub.core.nats.events.discovery.process.program_in.ProgramInSpecs import ProgramInSpecs
 from swiss_ai_hub.core.nats.events.form.TemplateData import TemplateData
+from swiss_ai_hub.core.nats.events.process.start.ProcessStartEvent import ProcessStartEvent
 from swiss_ai_hub.core.nats.publishers.NCPublisher import NCPublisher
 from swiss_ai_hub.core.nats.subscribers.JSSubscriber import JSSubscriber
 from swiss_ai_hub.core.nats.subscribers.NCSubscriber import NCSubscriber

@@ -3,7 +3,8 @@ from typing import ClassVar
 
 from swiss_ai_hub.core.displayers.EventDisplayer import EventDisplayer
 from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.nats.events import StopEvent, UserMessageEvent
+from swiss_ai_hub.core.nats.events.control.stop.StopEvent import StopEvent
+from swiss_ai_hub.core.nats.events.user.UserMessageEvent import UserMessageEvent
 
 from swiss_ai_hub.agent.agents.Agent import Agent
 from swiss_ai_hub.agent.workflow.decorators.step import step

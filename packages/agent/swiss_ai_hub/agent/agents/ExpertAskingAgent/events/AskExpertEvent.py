@@ -3,7 +3,7 @@ from typing import Annotated
 from pydantic import Field
 from swiss_ai_hub.core.auth.identity.UserIdentity import UserIdentity
 from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
-from swiss_ai_hub.core.nats.events import ControlEvent
+from swiss_ai_hub.core.nats.events.control.ControlEvent import ControlEvent
 
 
 class AskExpertEvent(ControlEvent):

@@ -6,7 +6,7 @@ from swiss_ai_hub.core.i18n.LocaleString import LocaleString
 from swiss_ai_hub.core.infrastructure.mem0.types.Memory import Memory
 from swiss_ai_hub.core.infrastructure.mem0.types.MemoryRelation import MemoryRelation
 from swiss_ai_hub.core.infrastructure.mem0.types.MemorySearchResult import MemorySearchResult
-from swiss_ai_hub.core.nats.events import ControlAndDisplayEvent
+from swiss_ai_hub.core.nats.events.ControlAndDisplayEvent import ControlAndDisplayEvent
 
 
 class BaseRetrieveMemoryEvent(ControlAndDisplayEvent):

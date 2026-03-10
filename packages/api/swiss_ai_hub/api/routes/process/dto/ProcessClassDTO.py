@@ -2,9 +2,11 @@ from typing import TYPE_CHECKING, Annotated, Self
 
 from pydantic import BaseModel, Field
 from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.nats.events.discovery import ProcessClassDiscoveryResponseEvent
 from swiss_ai_hub.core.nats.events.discovery.process.agent_in.AgentInSpecs import AgentInSpecs
 from swiss_ai_hub.core.nats.events.discovery.process.human_in.HumanInSpecs import HumanInSpecs
+from swiss_ai_hub.core.nats.events.discovery.process.ProcessClassDiscoveryResponseEvent import (
+    ProcessClassDiscoveryResponseEvent,
+)
 from swiss_ai_hub.core.nats.events.discovery.process.ProcessConfigSpecs import ProcessConfigSpecs
 from swiss_ai_hub.core.nats.events.discovery.process.program_in.ProgramInSpecs import ProgramInSpecs
 from swiss_ai_hub.core.nats.events.form import ALL_FORM_OPTIONS

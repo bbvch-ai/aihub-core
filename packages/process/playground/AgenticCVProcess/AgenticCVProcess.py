@@ -5,7 +5,6 @@ from swiss_ai_hub.core.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.Dan
     DangerousDevelopmentOnlyAuthSettings,
 )
 from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.nats.events import UserMessageEvent
 from swiss_ai_hub.core.nats.events.form import (
     CascadeSelect,
     Checkbox,
@@ -17,6 +16,7 @@ from swiss_ai_hub.core.nats.events.form import (
     Textarea,
 )
 from swiss_ai_hub.core.nats.events.form.elements.InputText import InputText
+from swiss_ai_hub.core.nats.events.user.UserMessageEvent import UserMessageEvent
 
 from playground.AgenticCVProcess.events.agent.AnalyzeCVRequest import AnalyzeCVRequest
 from playground.AgenticCVProcess.events.human.AcceptRejectRequest import AcceptRejectRequest

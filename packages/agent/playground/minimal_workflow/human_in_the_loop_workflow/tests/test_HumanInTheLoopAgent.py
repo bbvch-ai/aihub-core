@@ -1,9 +1,13 @@
 from pytest_bdd import given, parsers, scenarios, then, when
 from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.nats.events import StartEvent
-from swiss_ai_hub.core.nats.events.human_in_the_loop import HumanInTheLoopInput
-from swiss_ai_hub.core.nats.events.human_in_the_loop.request import HumanInTheLoopInputRequestEvent
-from swiss_ai_hub.core.nats.events.human_in_the_loop.response import HumanInTheLoopInputResponseEvent
+from swiss_ai_hub.core.nats.events.control.start.StartEvent import StartEvent
+from swiss_ai_hub.core.nats.events.human_in_the_loop.HumanInTheLoopInput import HumanInTheLoopInput
+from swiss_ai_hub.core.nats.events.human_in_the_loop.request.HumanInTheLoopInputRequestEvent import (
+    HumanInTheLoopInputRequestEvent,
+)
+from swiss_ai_hub.core.nats.events.human_in_the_loop.response.HumanInTheLoopInputResponseEvent import (
+    HumanInTheLoopInputResponseEvent,
+)
 from swiss_ai_hub.core.testing.asyncio_utils.bdd import async_test
 
 from playground.minimal_workflow.human_in_the_loop_workflow.HumanInTheLoopAgent import (

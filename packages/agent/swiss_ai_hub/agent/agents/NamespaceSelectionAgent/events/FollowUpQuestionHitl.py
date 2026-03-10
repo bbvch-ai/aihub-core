@@ -1,7 +1,9 @@
 """HITL events for follow-up questions during namespace determination."""
 
-from swiss_ai_hub.core.nats.events.human_in_the_loop import (
+from swiss_ai_hub.core.nats.events.human_in_the_loop.request.HumanInTheLoopInputRequestEvent import (
     HumanInTheLoopInputRequestEvent,
+)
+from swiss_ai_hub.core.nats.events.human_in_the_loop.response.HumanInTheLoopInputResponseEvent import (
     HumanInTheLoopInputResponseEvent,
 )
 from swiss_ai_hub.core.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager

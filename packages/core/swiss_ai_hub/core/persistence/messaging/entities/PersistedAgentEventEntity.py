@@ -13,7 +13,7 @@ from swiss_ai_hub.core.nats.topic_managers.agents.AgentTopicManager import Agent
 from swiss_ai_hub.core.persistence.messaging.entities.types.EventBucket import EventBucket
 
 if TYPE_CHECKING:
-    from swiss_ai_hub.core.nats.events import BaseEvent
+    from swiss_ai_hub.core.nats.events.BaseEvent import BaseEvent
     from swiss_ai_hub.core.nats.topics import AgentInstanceTopic
 
 logger = logging.getLogger(__name__)

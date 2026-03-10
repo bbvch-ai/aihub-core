@@ -9,7 +9,11 @@ from redis.asyncio import Redis
 from swiss_ai_hub.core.agents.AgentConfig import AgentConfig
 from swiss_ai_hub.core.i18n.LocaleString import LocaleString
 from swiss_ai_hub.core.infrastructure.logging.logger import enable_logging
-from swiss_ai_hub.core.nats.events import BaseEvent, ControlEvent, ExceptionEvent, StartEvent, StopEvent
+from swiss_ai_hub.core.nats.events.BaseEvent import BaseEvent
+from swiss_ai_hub.core.nats.events.control.ControlEvent import ControlEvent
+from swiss_ai_hub.core.nats.events.control.exception.ExceptionEvent import ExceptionEvent
+from swiss_ai_hub.core.nats.events.control.start.StartEvent import StartEvent
+from swiss_ai_hub.core.nats.events.control.stop.StopEvent import StopEvent
 from swiss_ai_hub.core.nats.events.form.normalization import transform_formkit_arrays
 from swiss_ai_hub.core.nats.topic_managers.agents.AgentClassTopicManager import AgentClassTopicManager
 from swiss_ai_hub.core.nats.topics.agents.AgentInstanceTopic import AgentInstanceTopic

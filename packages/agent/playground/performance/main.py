@@ -14,7 +14,9 @@ from nats.js.api import StreamConfig
 # For NATS JS benchmarking
 from swiss_ai_hub.core.i18n.LocaleString import LocaleString
 from swiss_ai_hub.core.infrastructure.nats.NatsSettings import NatsSettings
-from swiss_ai_hub.core.nats.events import BaseEvent, StartEvent, StopEvent
+from swiss_ai_hub.core.nats.events.BaseEvent import BaseEvent
+from swiss_ai_hub.core.nats.events.control.start.StartEvent import StartEvent
+from swiss_ai_hub.core.nats.events.control.stop.StopEvent import StopEvent
 from swiss_ai_hub.core.nats.publishers.JSPublisher import JSPublisher
 from swiss_ai_hub.core.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from swiss_ai_hub.core.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager

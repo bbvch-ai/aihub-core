@@ -2,7 +2,8 @@ import copy
 
 from jambo import SchemaConverter
 from pydantic import BaseModel, ConfigDict, create_model
-from swiss_ai_hub.core.nats.events.discovery.agent.AgentClassDiscoveryResponseEvent import AgentConfigSpecs, EventSpecs
+from swiss_ai_hub.core.nats.events.discovery.agent.AgentConfigSpecs import AgentConfigSpecs
+from swiss_ai_hub.core.nats.events.discovery.EventSpecs import EventSpecs
 from swiss_ai_hub.core.nats.events.discovery.process.ProcessConfigSpecs import ProcessConfigSpecs
 
 

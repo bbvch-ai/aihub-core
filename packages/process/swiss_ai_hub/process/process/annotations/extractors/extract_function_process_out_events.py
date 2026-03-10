@@ -1,7 +1,8 @@
 import inspect
 from typing import Annotated, get_args, get_origin
 
-from swiss_ai_hub.core.nats.events import ProcessStopEvent, WorkRequestEvent
+from swiss_ai_hub.core.nats.events.process.stop.ProcessStopEvent import ProcessStopEvent
+from swiss_ai_hub.core.nats.events.work_request.WorkRequestEvent import WorkRequestEvent
 
 from swiss_ai_hub.process.delegators.AbstractProcessEntity import BaseProcessEntity
 

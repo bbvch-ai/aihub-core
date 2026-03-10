@@ -4,7 +4,7 @@ from pydantic import Field
 
 from swiss_ai_hub.core.agents.visualizers.types.WorkflowGraph import WorkflowGraph
 from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.nats.events import BaseEvent
+from swiss_ai_hub.core.nats.events.BaseEvent import BaseEvent
 from swiss_ai_hub.core.nats.events.discovery.agent.AgentConfigSpecs import AgentConfigSpecs
 from swiss_ai_hub.core.nats.events.discovery.EventSpecs import EventSpecs
 from swiss_ai_hub.core.nats.events.form import ALL_FORM_OPTIONS

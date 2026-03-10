@@ -7,14 +7,12 @@ from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 from swiss_ai_hub.core.nats.distributor.events.ExternalAgentEvent import ExternalAgentEvent
 from swiss_ai_hub.core.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
-from swiss_ai_hub.core.nats.events import (
-    AgentWorkEvent,
-    AgentWorkRequestEvent,
-    ControlEvent,
-    ProcessStartEvent,
-    WorkEvent,
-    WorkRequestEvent,
-)
+from swiss_ai_hub.core.nats.events.control.ControlEvent import ControlEvent
+from swiss_ai_hub.core.nats.events.process.start.ProcessStartEvent import ProcessStartEvent
+from swiss_ai_hub.core.nats.events.work.agent.AgentWorkEvent import AgentWorkEvent
+from swiss_ai_hub.core.nats.events.work.WorkEvent import WorkEvent
+from swiss_ai_hub.core.nats.events.work_request.agent.AgentWorkRequestEvent import AgentWorkRequestEvent
+from swiss_ai_hub.core.nats.events.work_request.WorkRequestEvent import WorkRequestEvent
 from swiss_ai_hub.core.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from swiss_ai_hub.core.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
 from swiss_ai_hub.core.nats.topic_managers.process.ProcessClassTopicManager import ProcessClassTopicManager

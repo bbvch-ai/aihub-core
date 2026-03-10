@@ -15,7 +15,6 @@ from swiss_ai_hub.core.generative_ai.resources.models.llm.LLMConfig import LLMCo
 from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
 from swiss_ai_hub.core.i18n.LocaleString import LocaleString
 from swiss_ai_hub.core.infrastructure.logging.logger import enable_logging
-from swiss_ai_hub.core.nats.events import LLMEvent, UserMessageEvent
 from swiss_ai_hub.core.nats.events.memory.history.AddOrganizationMemoryToChatHistoryEvent import (
     AddOrganizationMemoryToChatHistoryEvent,
 )
@@ -23,6 +22,8 @@ from swiss_ai_hub.core.nats.events.memory.retrieve.RetrieveOrganizationMemoryEve
     RetrieveOrganizationMemoryEvent,
 )
 from swiss_ai_hub.core.nats.events.memory.store.StoreOrganizationMemoryEvent import StoreOrganizationMemoryEvent
+from swiss_ai_hub.core.nats.events.semantic.llm.LLMEvent import LLMEvent
+from swiss_ai_hub.core.nats.events.user.UserMessageEvent import UserMessageEvent
 from swiss_ai_hub.core.testing.asyncio_utils.bdd import async_test
 
 from playground.minimal_workflow.organization_memory_workflow.OrganizationMemoryAgent import (

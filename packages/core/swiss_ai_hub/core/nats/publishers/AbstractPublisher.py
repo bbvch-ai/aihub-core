@@ -2,7 +2,7 @@ import abc
 import logging
 from typing import Annotated, Literal, TypeVar
 
-from swiss_ai_hub.core.nats.events import BaseEvent
+from swiss_ai_hub.core.nats.events.BaseEvent import BaseEvent
 from swiss_ai_hub.core.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from swiss_ai_hub.core.nats.topic_managers.process.ProcessTopicManager import ProcessTopicManager
 

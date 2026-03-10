@@ -14,10 +14,13 @@ from swiss_ai_hub.core.generative_ai.memory.AgentMemory import AgentMemory
 from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
 from swiss_ai_hub.core.nats.dispatcher.BaseDispatcher import BaseDispatcher, EventsAndKwargs
 from swiss_ai_hub.core.nats.dispatcher.stores.trace.TraceStore import TraceStore
-from swiss_ai_hub.core.nats.events import BaseEvent, ControlEvent, ExceptionEvent, StartEvent
 from swiss_ai_hub.core.nats.events.agent_in_the_loop.request.AgentInTheLoopRequestEvent import (
     AgentInTheLoopRequestEvent,
 )
+from swiss_ai_hub.core.nats.events.BaseEvent import BaseEvent
+from swiss_ai_hub.core.nats.events.control.ControlEvent import ControlEvent
+from swiss_ai_hub.core.nats.events.control.exception.ExceptionEvent import ExceptionEvent
+from swiss_ai_hub.core.nats.events.control.start.StartEvent import StartEvent
 from swiss_ai_hub.core.nats.events.form.Form import Form
 from swiss_ai_hub.core.nats.events.form.normalization import transform_formkit_arrays
 from swiss_ai_hub.core.nats.rpc.AgentConfigClient import AgentConfigClient

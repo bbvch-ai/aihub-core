@@ -5,7 +5,7 @@ from swiss_ai_hub.core.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.Dan
 )
 from swiss_ai_hub.core.generative_ai.resources.models.llm.LLMConfig import LLMConfig, LLMParameter
 from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.nats.events import UserMessageEvent
+from swiss_ai_hub.core.nats.events.user.UserMessageEvent import UserMessageEvent
 
 from playground.minimal_workflow.organization_memory_workflow.OrganizationMemoryAgent import OrganizationMemoryAgent
 from playground.minimal_workflow.organization_memory_workflow.OrganizationMemoryAgentConfig import (

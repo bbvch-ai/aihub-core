@@ -3,7 +3,7 @@ from typing import Annotated, TypeVar, cast
 
 from pydantic import Field
 
-from swiss_ai_hub.core.nats.events import StopEvent
+from swiss_ai_hub.core.nats.events.control.stop.StopEvent import StopEvent
 from swiss_ai_hub.core.nats.events.utils import get_base_type
 from swiss_ai_hub.core.nats.events.work.WorkEvent import WorkEvent
 from swiss_ai_hub.core.nats.topics.agents import AgentInstanceTopic, PartialAgentTopic

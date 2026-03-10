@@ -1,5 +1,9 @@
-from swiss_ai_hub.core.nats.events.human_in_the_loop.request import HumanInTheLoopChatRequestEvent
-from swiss_ai_hub.core.nats.events.human_in_the_loop.response import HumanInTheLoopChatResponseEvent
+from swiss_ai_hub.core.nats.events.human_in_the_loop.request.HumanInTheLoopChatRequestEvent import (
+    HumanInTheLoopChatRequestEvent,
+)
+from swiss_ai_hub.core.nats.events.human_in_the_loop.response.HumanInTheLoopChatResponseEvent import (
+    HumanInTheLoopChatResponseEvent,
+)
 from swiss_ai_hub.core.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from swiss_ai_hub.core.nats.topics.agents.PartialAgentTopic import PartialAgentTopic
 

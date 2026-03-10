@@ -2,7 +2,7 @@ from typing import Annotated, TypeVar
 
 from pydantic import Field
 
-from swiss_ai_hub.core.nats.events import StartEvent
+from swiss_ai_hub.core.nats.events.control.start.StartEvent import StartEvent
 from swiss_ai_hub.core.nats.events.work_request.WorkRequestEvent import WorkRequestEvent
 
 TEvent = TypeVar("TEvent", bound=StartEvent)

@@ -13,10 +13,12 @@ from swiss_ai_hub.core.nats.events.agent_in_the_loop.response.AgentInTheLoopResp
     AgentInTheLoopResponseEvent,
 )
 from swiss_ai_hub.core.nats.events.BaseEvent import BaseEvent
-from swiss_ai_hub.core.nats.events.control import ExceptionEvent, StartEvent, StopEvent
-from swiss_ai_hub.core.nats.events.display import DisplayEvent
-from swiss_ai_hub.core.nats.events.semantic import LLMStopEvent
-from swiss_ai_hub.core.nats.events.user import UserMessageEvent
+from swiss_ai_hub.core.nats.events.control.exception.ExceptionEvent import ExceptionEvent
+from swiss_ai_hub.core.nats.events.control.start.StartEvent import StartEvent
+from swiss_ai_hub.core.nats.events.control.stop.StopEvent import StopEvent
+from swiss_ai_hub.core.nats.events.display.DisplayEvent import DisplayEvent
+from swiss_ai_hub.core.nats.events.semantic.llm.LLMStopEvent import LLMStopEvent
+from swiss_ai_hub.core.nats.events.user.UserMessageEvent import UserMessageEvent
 from swiss_ai_hub.core.nats.topics import PartialAgentTopic
 from swiss_ai_hub.core.testing.auth_utils.fake_user import fake_user
 

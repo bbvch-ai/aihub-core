@@ -11,7 +11,7 @@ from swiss_ai_hub.core.generative_ai.resources.models.llm.EmbeddingModelConfig i
 from swiss_ai_hub.core.generative_ai.retrievers.KnowledgeRetrieverConfig import KnowledgeRetrieverConfig
 from swiss_ai_hub.core.i18n.LocaleString import LocaleString
 from swiss_ai_hub.core.infrastructure.logging.logger import enable_logging
-from swiss_ai_hub.core.nats.events.semantic.retriever import RetrieverEvent
+from swiss_ai_hub.core.nats.events.semantic.retriever.RetrieverEvent import RetrieverEvent
 from swiss_ai_hub.core.persistence.rag.documents.stores.docstore import create_mongo_document_store
 from swiss_ai_hub.core.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
 from swiss_ai_hub.core.testing.asyncio_utils.bdd import async_test

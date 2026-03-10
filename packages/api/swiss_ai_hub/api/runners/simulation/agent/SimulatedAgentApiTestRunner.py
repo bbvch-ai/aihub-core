@@ -7,15 +7,10 @@ from swiss_ai_hub.core.agents.AgentConfig import AgentConfig
 from swiss_ai_hub.core.agents.visualizers.types.WorkflowGraph import WorkflowGraph
 from swiss_ai_hub.core.i18n.LocaleString import LocaleString
 from swiss_ai_hub.core.infrastructure.nats.NatsSettings import NatsSettings
-from swiss_ai_hub.core.nats.events import (
-    BaseEvent,
-    ChunkEvent,
-    ControlEvent,
-    LLMStopEvent,
-    StartEvent,
-    StopEvent,
-    UserMessageEvent,
-)
+from swiss_ai_hub.core.nats.events.BaseEvent import BaseEvent
+from swiss_ai_hub.core.nats.events.control.ControlEvent import ControlEvent
+from swiss_ai_hub.core.nats.events.control.start.StartEvent import StartEvent
+from swiss_ai_hub.core.nats.events.control.stop.StopEvent import StopEvent
 from swiss_ai_hub.core.nats.events.cost.LLMCostEvent import LLMCostEvent
 from swiss_ai_hub.core.nats.events.discovery.agent.AgentClassDiscoveryResponseEvent import (
     AgentClassDiscoveryResponseEvent,
@@ -23,7 +18,10 @@ from swiss_ai_hub.core.nats.events.discovery.agent.AgentClassDiscoveryResponseEv
     EventSpecs,
 )
 from swiss_ai_hub.core.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
-from swiss_ai_hub.core.nats.events.semantic import Message
+from swiss_ai_hub.core.nats.events.display.ChunkEvent import ChunkEvent
+from swiss_ai_hub.core.nats.events.semantic.llm.LLMStopEvent import LLMStopEvent
+from swiss_ai_hub.core.nats.events.semantic.llm.Message import Message
+from swiss_ai_hub.core.nats.events.user.UserMessageEvent import UserMessageEvent
 from swiss_ai_hub.core.nats.publishers.JSPublisher import JSPublisher
 from swiss_ai_hub.core.nats.publishers.NCPublisher import NCPublisher
 from swiss_ai_hub.core.nats.subscribers.agent.AgentJSSubscriber import AgentJSSubscriber

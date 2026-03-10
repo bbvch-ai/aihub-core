@@ -1,4 +1,4 @@
-from swiss_ai_hub.core.nats.events import ProcessStopEvent
+from swiss_ai_hub.core.nats.events.process.stop.ProcessStopEvent import ProcessStopEvent
 
 
 class CustomProcessStopEvent(ProcessStopEvent):

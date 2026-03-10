@@ -15,7 +15,10 @@ from swiss_ai_hub.core.agents.visualizers.types.NodeData import NodeData
 from swiss_ai_hub.core.agents.visualizers.types.WorkflowGraph import WorkflowGraph
 from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
 from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.nats.events import BaseEvent, ControlEvent, StartEvent, StopEvent
+from swiss_ai_hub.core.nats.events.BaseEvent import BaseEvent
+from swiss_ai_hub.core.nats.events.control.ControlEvent import ControlEvent
+from swiss_ai_hub.core.nats.events.control.start.StartEvent import StartEvent
+from swiss_ai_hub.core.nats.events.control.stop.StopEvent import StopEvent
 from swiss_ai_hub.core.nats.workflow.annotations.extractors.extract_return_events import extract_return_events
 
 logger = logging.getLogger(__name__)

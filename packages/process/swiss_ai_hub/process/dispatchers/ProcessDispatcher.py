@@ -8,17 +8,15 @@ from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 from redis.asyncio import Redis
 from swiss_ai_hub.core.nats.dispatcher.BaseDispatcher import BaseDispatcher, EventsAndKwargs
-from swiss_ai_hub.core.nats.events import (
-    AgentWorkRequestEvent,
-    HumanWorkRequestEvent,
-    ProcessEvent,
-    ProcessExceptionEvent,
-    ProcessStopEvent,
-    ProgramWorkRequestEvent,
-    WorkEvent,
-)
 from swiss_ai_hub.core.nats.events.form.Form import Form
 from swiss_ai_hub.core.nats.events.form.normalization import transform_formkit_arrays
+from swiss_ai_hub.core.nats.events.process.exception.ProcessExceptionEvent import ProcessExceptionEvent
+from swiss_ai_hub.core.nats.events.process.ProcessEvent import ProcessEvent
+from swiss_ai_hub.core.nats.events.process.stop.ProcessStopEvent import ProcessStopEvent
+from swiss_ai_hub.core.nats.events.work.WorkEvent import WorkEvent
+from swiss_ai_hub.core.nats.events.work_request.agent.AgentWorkRequestEvent import AgentWorkRequestEvent
+from swiss_ai_hub.core.nats.events.work_request.human.HumanWorkRequestEvent import HumanWorkRequestEvent
+from swiss_ai_hub.core.nats.events.work_request.program.ProgramWorkRequestEvent import ProgramWorkRequestEvent
 from swiss_ai_hub.core.nats.rpc.ProcessConfigClient import ProcessConfigClient
 from swiss_ai_hub.core.nats.topic_managers.process.ProcessClassTopicManager import ProcessClassTopicManager
 from swiss_ai_hub.core.nats.topic_managers.process.ProcessWalkthroughTopicManager import ProcessWalkthroughTopicManager

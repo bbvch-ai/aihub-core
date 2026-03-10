@@ -8,12 +8,13 @@ from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from swiss_ai_hub.core.nats.distributor.events.ExternalProcessEvent import ExternalProcessEvent
 from swiss_ai_hub.core.nats.distributor.ExternalProcessEventDistributor import ExternalProcessEventDistributor
-from swiss_ai_hub.core.nats.events import ProcessStartEvent, WorkEvent
 from swiss_ai_hub.core.nats.events.discovery.process.ProcessConfigSpecs import ProcessConfigSpecs
 from swiss_ai_hub.core.nats.events.form.normalization import (
     normalize_empty_locale_strings,
     normalize_empty_objects_to_none,
 )
+from swiss_ai_hub.core.nats.events.process.start.ProcessStartEvent import ProcessStartEvent
+from swiss_ai_hub.core.nats.events.work.WorkEvent import WorkEvent
 from swiss_ai_hub.core.persistence.messaging.entities.PersistedProcessEventEntity import PersistedProcessEventEntity
 from swiss_ai_hub.core.persistence.process.ProcessClassEntity import ProcessClassEntity
 from swiss_ai_hub.core.persistence.process.ProcessConfigEntityDocument import ProcessConfigEntityDocument

@@ -5,23 +5,23 @@ from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 from swiss_ai_hub.core.i18n.LocaleString import LocaleString
 from swiss_ai_hub.core.infrastructure.nats.NatsSettings import NatsSettings
-from swiss_ai_hub.core.nats.events import (
-    BaseEvent,
-    HumanWorkEvent,
-    ProcessStartEvent,
-    ProgramWorkEvent,
-    WorkEvent,
-    WorkRequestEvent,
-)
-from swiss_ai_hub.core.nats.events.discovery import ProcessClassDiscoveryResponseEvent
+from swiss_ai_hub.core.nats.events.BaseEvent import BaseEvent
 from swiss_ai_hub.core.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
 from swiss_ai_hub.core.nats.events.discovery.EventSpecs import EventSpecs
 from swiss_ai_hub.core.nats.events.discovery.process.agent_in.AgentInSpecs import AgentInSpecs
 from swiss_ai_hub.core.nats.events.discovery.process.human_in.HumanInSpecs import HumanInSpecs
+from swiss_ai_hub.core.nats.events.discovery.process.ProcessClassDiscoveryResponseEvent import (
+    ProcessClassDiscoveryResponseEvent,
+)
 from swiss_ai_hub.core.nats.events.discovery.process.ProcessConfigSpecs import ProcessConfigSpecs
 from swiss_ai_hub.core.nats.events.discovery.process.program_in.ProgramInSpecs import ProgramInSpecs
 from swiss_ai_hub.core.nats.events.form import InputText
 from swiss_ai_hub.core.nats.events.process.ProcessEvent import ProcessEvent
+from swiss_ai_hub.core.nats.events.process.start.ProcessStartEvent import ProcessStartEvent
+from swiss_ai_hub.core.nats.events.work.human.HumanWorkEvent import HumanWorkEvent
+from swiss_ai_hub.core.nats.events.work.program.ProgramWorkEvent import ProgramWorkEvent
+from swiss_ai_hub.core.nats.events.work.WorkEvent import WorkEvent
+from swiss_ai_hub.core.nats.events.work_request.WorkRequestEvent import WorkRequestEvent
 from swiss_ai_hub.core.nats.publishers.JSPublisher import JSPublisher
 from swiss_ai_hub.core.nats.publishers.NCPublisher import NCPublisher
 from swiss_ai_hub.core.nats.subscribers.JSSubscriber import JSSubscriber

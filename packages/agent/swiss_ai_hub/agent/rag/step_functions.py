@@ -16,17 +16,17 @@ from swiss_ai_hub.core.generative_ai.retrieval.retrieve_from_all_sources import 
 from swiss_ai_hub.core.generative_ai.retrievers.KnowledgeRetrieverConfig import KnowledgeRetrieverConfig
 from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
 from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.nats.events import LimitChatHistoryEvent, StandaloneQuestionCondenserEvent
-from swiss_ai_hub.core.nats.events.guard import (
-    ContextInsufficientRejectEvent,
-    ContextSufficientAcceptEvent,
-    ExpertRejectEvent,
-    FewShotAcceptEvent,
-    FewShotRejectEvent,
-)
-from swiss_ai_hub.core.nats.events.semantic.llm import LLMEvent, LLMStopEvent
-from swiss_ai_hub.core.nats.events.semantic.reranker import RerankerEvent
-from swiss_ai_hub.core.nats.events.semantic.retriever import RetrieverEvent
+from swiss_ai_hub.core.nats.events.common.LimitChatHistoryEvent import LimitChatHistoryEvent
+from swiss_ai_hub.core.nats.events.common.StandaloneQuestionCondenserEvent import StandaloneQuestionCondenserEvent
+from swiss_ai_hub.core.nats.events.guard.ContextInsufficientRejectEvent import ContextInsufficientRejectEvent
+from swiss_ai_hub.core.nats.events.guard.ContextSufficientAcceptEvent import ContextSufficientAcceptEvent
+from swiss_ai_hub.core.nats.events.guard.ExpertRejectEvent import ExpertRejectEvent
+from swiss_ai_hub.core.nats.events.guard.FewShotAcceptEvent import FewShotAcceptEvent
+from swiss_ai_hub.core.nats.events.guard.FewShotRejectEvent import FewShotRejectEvent
+from swiss_ai_hub.core.nats.events.semantic.llm.LLMEvent import LLMEvent
+from swiss_ai_hub.core.nats.events.semantic.llm.LLMStopEvent import LLMStopEvent
+from swiss_ai_hub.core.nats.events.semantic.reranker.RerankerEvent import RerankerEvent
+from swiss_ai_hub.core.nats.events.semantic.retriever.RetrieverEvent import RetrieverEvent
 
 from swiss_ai_hub.agent.agents.RagAgent.configs.RerankingConfig import RerankingConfig
 from swiss_ai_hub.agent.agents.RagAgent.events.ContextInsufficientWithQueryEvent import (

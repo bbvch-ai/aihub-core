@@ -2,7 +2,7 @@ from typing import Annotated, ClassVar
 
 from pydantic import Field
 from swiss_ai_hub.core.generative_ai.retrievers.BucketNamespacePair import BucketNamespacePair
-from swiss_ai_hub.core.nats.events.user import UserMessageEvent
+from swiss_ai_hub.core.nats.events.user.UserMessageEvent import UserMessageEvent
 
 from swiss_ai_hub.agent.i18n.AgentLocaleString import AgentLocaleString
 

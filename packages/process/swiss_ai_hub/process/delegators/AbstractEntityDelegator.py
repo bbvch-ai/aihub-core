@@ -5,7 +5,9 @@ from typing import Annotated, cast
 
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
-from swiss_ai_hub.core.nats.events import BaseEvent, WorkEvent, WorkRequestEvent
+from swiss_ai_hub.core.nats.events.BaseEvent import BaseEvent
+from swiss_ai_hub.core.nats.events.work.WorkEvent import WorkEvent
+from swiss_ai_hub.core.nats.events.work_request.WorkRequestEvent import WorkRequestEvent
 from swiss_ai_hub.core.nats.publishers.JSPublisher import JSPublisher
 from swiss_ai_hub.core.nats.subscribers.process.ProcessJSSubscriber import ProcessJSSubscriber
 from swiss_ai_hub.core.nats.subscribers.process.ProcessNCSubscriber import ProcessNCSubscriber
