@@ -28,6 +28,7 @@ from aihub_api.routes.thread.ThreadController import ThreadController
 from aihub_api.routes.token.TokenController import TokenController
 from aihub_api.routes.translation.TranslationController import TranslationController
 from aihub_api.routes.user.UserController import UserController
+from aihub_api.routes.webhook.WebhookController import WebhookController
 from aihub_api.runners.ApiRunner import ApiRunner
 
 enable_logging()
@@ -123,6 +124,7 @@ runner.mount(
     .update_organization_memory(),
     ParsingController(auth=auth).parse_document(),
     TranslationController(auth=auth).translate(),
+    WebhookController(auth=auth).openwebui(),
 )
 
 app = runner.create_app()

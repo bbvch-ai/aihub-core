@@ -28,7 +28,6 @@ class OpenWebuiProvisioner:
             secret_key=self._settings.SECRET_KEY.get_secret_value(),
             scim_token=self._settings.SCIM_TOKEN.get_secret_value(),
         )
-        self._last_synced_agents: set[tuple[str, str]] | None = None
 
     async def provision(self) -> None:
         """Full sync at startup — groups, workspace models, access grants."""
@@ -42,16 +41,11 @@ class OpenWebuiProvisioner:
         logger.info("OpenWebUI provisioning completed")
 
     async def sync_agents(self, online_agents: list[tuple[str, str, str]]) -> None:
-        """Called when agent discovery detects changes. Args: [(agent_class, agent_id, display_name)]."""
-        current_set = {(ac, ai) for ac, ai, _ in online_agents}
-        if current_set == self._last_synced_agents:
-            return
-
+        """Syncs workspace models and access grants for the given online agents."""
         async with httpx.AsyncClient(timeout=30.0) as client:
             await self._sync_workspace_models(client, online_agents)
             await self._sync_access_grants(client)
 
-        self._last_synced_agents = current_set
         logger.info(f"OpenWebUI sync: Updated {len(online_agents)} agent workspace models")
 
     async def sync_access(self) -> None:
