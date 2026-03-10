@@ -60,6 +60,7 @@ class UserEntity(Document):
     name = StringField(required=True)
     email = StringField(required=True)
     profile_image = StringField(null=True)
+    active_tenant_id = StringField(null=True)
     last_updated = DateTimeField(required=True)
     favorite_modules = ListField(StringField(), default=list)
     dashboard = EmbeddedDocumentField(Dashboard)
@@ -75,6 +76,15 @@ class UserEntity(Document):
                 "Profile image must be a valid http:// or https:// URL. "
                 "Data URLs and base64-encoded images are not allowed."
             )
+
+    @trace_fn
+    def set_active_tenant(self, tenant_id: str) -> None:
+        """Persists the user's active tenant if it changed."""
+        if self.active_tenant_id == tenant_id:
+            return
+        self.active_tenant_id = tenant_id
+        self.last_updated = datetime.now(UTC)
+        self.save()
 
     @staticmethod
     @trace_fn
@@ -266,6 +276,9 @@ class UserEntity(Document):
             tenant_id=str(default_tenant.id),
             roles=roles_to_assign,
         )
+
+        user.active_tenant_id = str(default_tenant.id)
+        user.save()
 
         logger.info(f"Created new user {email} in tenant {default_tenant.name} with roles: {roles_to_assign}")
         return user
