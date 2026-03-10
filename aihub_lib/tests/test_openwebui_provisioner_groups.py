@@ -121,12 +121,8 @@ class TestSyncGroupsOrchestration:
 
             mock_user.objects.side_effect = user_objects_router
 
-            # First call returns no existing groups, second call returns the created group
-            mock_list_groups.side_effect = [
-                [],
-                [{"displayName": "aihub:T1:R1", "id": "grp-1"}],
-            ]
-            mock_create.return_value = {"id": "grp-1"}
+            mock_list_groups.return_value = []
+            mock_create.return_value = {"displayName": "aihub:T1:R1", "id": "grp-1"}
 
             await provisioner._sync_groups(mock_client)
 
@@ -153,10 +149,7 @@ class TestSyncGroupsOrchestration:
             mock_user.objects.return_value = []
 
             orphaned_group = {"displayName": "aihub:OldTenant:OldRole", "id": "grp-orphan"}
-            mock_list_groups.side_effect = [
-                [orphaned_group],
-                [],
-            ]
+            mock_list_groups.return_value = [orphaned_group]
 
             await provisioner._sync_groups(mock_client)
 
@@ -183,10 +176,7 @@ class TestSyncGroupsOrchestration:
             mock_user.objects.return_value = []
 
             non_aihub = {"displayName": "custom-group", "id": "grp-custom"}
-            mock_list_groups.side_effect = [
-                [non_aihub],
-                [non_aihub],
-            ]
+            mock_list_groups.return_value = [non_aihub]
 
             await provisioner._sync_groups(mock_client)
 
@@ -243,7 +233,7 @@ class TestSyncGroupsOrchestration:
             mock_utr.objects.return_value = [utr]
 
             group = {"displayName": "aihub:T1:R1", "id": "grp-1"}
-            mock_list_groups.side_effect = [[group], [group]]
+            mock_list_groups.return_value = [group]
 
             mock_list_users.return_value = [{"id": "owui-1", "userName": "alice@example.com"}]
 
@@ -302,7 +292,7 @@ class TestSyncGroupsOrchestration:
             mock_utr.objects.return_value = [utr]
 
             group = {"displayName": "aihub:T1:R1", "id": "grp-1"}
-            mock_list_groups.side_effect = [[group], [group]]
+            mock_list_groups.return_value = [group]
 
             mock_list_users.return_value = [{"id": "owui-1", "userName": "alice@example.com"}]
 
@@ -367,7 +357,7 @@ class TestSyncGroupsOrchestration:
             mock_utr.objects.return_value = [utr]
 
             group = {"displayName": "aihub:DefaultOrg:R1", "id": "grp-1"}
-            mock_list_groups.side_effect = [[group], [group]]
+            mock_list_groups.return_value = [group]
 
             mock_list_users.return_value = [{"id": "owui-1", "userName": "alice@example.com"}]
 
@@ -418,7 +408,7 @@ class TestSyncGroupsOrchestration:
             mock_utr.objects.return_value = []
 
             existing_group = {"displayName": "aihub:T1:R1", "id": "grp-1"}
-            mock_list_groups.side_effect = [[existing_group], [existing_group]]
+            mock_list_groups.return_value = [existing_group]
 
             await provisioner._sync_groups(mock_client)
 
