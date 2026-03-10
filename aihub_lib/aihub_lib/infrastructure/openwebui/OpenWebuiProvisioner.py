@@ -124,14 +124,27 @@ class OpenWebuiProvisioner:
             g["displayName"]: g for g in all_groups if g.get("displayName", "").startswith(AIHUB_GROUP_PREFIX)
         }
 
-        # Sync membership
+        # Sync membership — only include users whose active tenant matches
         owui_users = await self._client.list_users(client)
         aihub_user_entities = list(UserEntity.objects())
         aihub_users = [{"id": u.id, "email": u.email} for u in aihub_user_entities]
         user_id_mapping = self._build_user_id_mapping(aihub_users, owui_users)
 
+        default_tenant = TenantEntity.get_default_tenant()
+        default_tenant_id = str(default_tenant.id) if default_tenant else None
+
         for tenant in tenants:
             tenant_id = tenant["id"]
+
+            # Build set of user IDs whose active tenant is this tenant
+            if tenant_id == default_tenant_id:
+                active_users = UserEntity.objects(
+                    __raw__={"$or": [{"active_tenant_id": tenant_id}, {"active_tenant_id": None}]}
+                ).only("id")
+            else:
+                active_users = UserEntity.objects(active_tenant_id=tenant_id).only("id")
+            active_user_ids = {u.id for u in active_users}
+
             for role_data in roles_by_tenant.get(tenant["name"], []):
                 group_name = f"{AIHUB_GROUP_PREFIX}{tenant['name']}:{role_data['name']}"
                 if group_name not in aihub_groups:
@@ -139,9 +152,9 @@ class OpenWebuiProvisioner:
 
                 group_id = aihub_groups[group_name]["id"]
 
-                # Find users with this role in this tenant
+                # Find users with this role in this tenant AND active in this tenant
                 all_utr = UserTenantRoleEntity.objects(tenant_id=tenant_id, roles=role_data["name"])
-                aihub_user_ids = [utr.user_id for utr in all_utr]
+                aihub_user_ids = [utr.user_id for utr in all_utr if utr.user_id in active_user_ids]
 
                 owui_member_ids = [user_id_mapping[uid] for uid in aihub_user_ids if uid in user_id_mapping]
 

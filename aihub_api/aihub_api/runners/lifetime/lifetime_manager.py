@@ -1,8 +1,10 @@
+import asyncio
 import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
 import boto3
+from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
 from aihub_lib.infrastructure.langfuse.LangfuseProvisioner import LangfuseProvisioner
 from aihub_lib.infrastructure.milvus.MilvusSettings import MilvusSettings
@@ -221,6 +223,12 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
 
         # Provision OpenWebUI with groups, workspace models, and access grants
         await OpenWebuiProvisioner().provision()
+
+        # Re-sync OpenWebUI groups when a user switches active tenant
+        def _on_tenant_switch() -> None:
+            asyncio.create_task(OpenWebuiProvisioner().sync_access())
+
+        AuthHandler.register_active_tenant_hook(_on_tenant_switch)
 
         # Yield control back to FastAPI to start serving requests
         yield

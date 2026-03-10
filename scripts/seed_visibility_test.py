@@ -66,8 +66,24 @@ SEED_USERS = [
 ]
 
 SEED_TENANTS = [
-    {"name": "visibility-test-tenant-1", "description": "Visibility test tenant 1 — sees agent1 only", "access_rules": [f"aihub.user.agent.{AGENT_CLASS}.agent1"]},
-    {"name": "visibility-test-tenant-2", "description": "Visibility test tenant 2 — sees agent2 only", "access_rules": [f"aihub.user.agent.{AGENT_CLASS}.agent2"]},
+    {
+        "name": "visibility-test-tenant-1",
+        "description": "Visibility test tenant 1 — sees agent1 only",
+        "access_rules": [
+            "aihub.user.service.>",
+            "aihub.user.thread.>",
+            f"aihub.user.agent.{AGENT_CLASS}.agent1",
+        ],
+    },
+    {
+        "name": "visibility-test-tenant-2",
+        "description": "Visibility test tenant 2 — sees agent2 only",
+        "access_rules": [
+            "aihub.user.service.>",
+            "aihub.user.thread.>",
+            f"aihub.user.agent.{AGENT_CLASS}.agent2",
+        ],
+    },
 ]
 
 
@@ -215,7 +231,7 @@ def seed_tenants() -> list[str]:
 
 
 def seed_user_tenant_roles(keycloak_user_ids: list[str], tenant_ids: list[str]) -> None:
-    """Assigns users to their tenants with AIHubUser role and removes from default tenant."""
+    """Assigns users to their tenants with AIHubUser role, sets active tenant, and removes from default tenant."""
     default_tenant = TenantEntity.get_default_tenant()
 
     for i, user_id in enumerate(keycloak_user_ids):
@@ -225,6 +241,11 @@ def seed_user_tenant_roles(keycloak_user_ids: list[str], tenant_ids: list[str]) 
             roles=["AIHubUser"],
         )
         logger.info(f"MongoDB: assigned user {user_id} to tenant '{SEED_TENANTS[i]['name']}' with AIHubUser role")
+
+        user = UserEntity.objects(id=user_id).first()
+        if user:
+            user.set_active_tenant(tenant_ids[i])
+            logger.info(f"MongoDB: set active tenant for user {user_id} to '{SEED_TENANTS[i]['name']}'")
 
         if default_tenant:
             removed = UserTenantRoleEntity.remove_user_from_tenant(user_id, str(default_tenant.id))

@@ -128,13 +128,22 @@ class TestSyncGroupsOrchestration:
             tenant.id = "tid-1"
             tenant.access_rules = []
             mock_tenant.objects.return_value = [tenant]
+            mock_tenant.get_default_tenant.return_value = tenant
 
             role = MagicMock()
             role.name = "R1"
             role.access_rules = []
             mock_role.get_roles_for_tenant.return_value = [role]
 
-            mock_user.objects.return_value = []
+            active_queryset = MagicMock()
+            active_queryset.only.return_value = []
+
+            def user_objects_router(*args, **kwargs):
+                if "__raw__" in kwargs or "active_tenant_id" in kwargs:
+                    return active_queryset
+                return []
+
+            mock_user.objects.side_effect = user_objects_router
 
             # First call returns no existing groups, second call returns the created group
             mock_list_groups.side_effect = [
@@ -163,6 +172,7 @@ class TestSyncGroupsOrchestration:
             patch.object(provisioner._client, "update_group_members"),
         ):
             mock_tenant.objects.return_value = []
+            mock_tenant.get_default_tenant.return_value = None
             mock_role.get_roles_for_tenant.return_value = []
             mock_user.objects.return_value = []
 
@@ -192,6 +202,7 @@ class TestSyncGroupsOrchestration:
             patch.object(provisioner._client, "update_group_members"),
         ):
             mock_tenant.objects.return_value = []
+            mock_tenant.get_default_tenant.return_value = None
             mock_role.get_roles_for_tenant.return_value = []
             mock_user.objects.return_value = []
 
@@ -226,6 +237,10 @@ class TestSyncGroupsOrchestration:
             tenant.access_rules = []
             mock_tenant.objects.return_value = [tenant]
 
+            default_tenant = MagicMock()
+            default_tenant.id = "tid-1"
+            mock_tenant.get_default_tenant.return_value = default_tenant
+
             role = MagicMock()
             role.name = "R1"
             role.access_rules = []
@@ -234,7 +249,18 @@ class TestSyncGroupsOrchestration:
             user_entity = MagicMock()
             user_entity.id = "ah-user-1"
             user_entity.email = "alice@example.com"
-            mock_user.objects.return_value = [user_entity]
+
+            active_user = MagicMock()
+            active_user.id = "ah-user-1"
+            active_queryset = MagicMock()
+            active_queryset.only.return_value = [active_user]
+
+            def user_objects_router(*args, **kwargs):
+                if "__raw__" in kwargs or "active_tenant_id" in kwargs:
+                    return active_queryset
+                return [user_entity]
+
+            mock_user.objects.side_effect = user_objects_router
 
             utr = MagicMock()
             utr.user_id = "ah-user-1"
@@ -248,6 +274,134 @@ class TestSyncGroupsOrchestration:
             await provisioner._sync_groups(mock_client)
 
             mock_update_members.assert_called_once_with(mock_client, "grp-1", ["owui-1"])
+
+    @pytest.mark.asyncio
+    async def test_sync_excludes_user_with_different_active_tenant(self, provisioner: OpenWebuiProvisioner) -> None:
+        """User has role in tenant but active_tenant_id points to a different tenant — excluded from group."""
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+
+        with (
+            patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.TenantEntity") as mock_tenant,
+            patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.RoleEntity") as mock_role,
+            patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.UserTenantRoleEntity") as mock_utr,
+            patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.UserEntity") as mock_user,
+            patch.object(provisioner._client, "list_groups") as mock_list_groups,
+            patch.object(provisioner._client, "create_group"),
+            patch.object(provisioner._client, "delete_group"),
+            patch.object(provisioner._client, "list_users") as mock_list_users,
+            patch.object(provisioner._client, "update_group_members") as mock_update_members,
+        ):
+            tenant = MagicMock()
+            tenant.name = "T1"
+            tenant.id = "tid-1"
+            tenant.access_rules = []
+            mock_tenant.objects.return_value = [tenant]
+
+            default_tenant = MagicMock()
+            default_tenant.id = "tid-1"
+            mock_tenant.get_default_tenant.return_value = default_tenant
+
+            role = MagicMock()
+            role.name = "R1"
+            role.access_rules = []
+            mock_role.get_roles_for_tenant.return_value = [role]
+
+            user_entity = MagicMock()
+            user_entity.id = "ah-user-1"
+            user_entity.email = "alice@example.com"
+
+            # User's active tenant is tid-2, not tid-1 — empty active set for tid-1
+            active_queryset = MagicMock()
+            active_queryset.only.return_value = []
+
+            def user_objects_router(*args, **kwargs):
+                if "__raw__" in kwargs or "active_tenant_id" in kwargs:
+                    return active_queryset
+                return [user_entity]
+
+            mock_user.objects.side_effect = user_objects_router
+
+            utr = MagicMock()
+            utr.user_id = "ah-user-1"
+            mock_utr.objects.return_value = [utr]
+
+            group = {"displayName": "aihub:T1:R1", "id": "grp-1"}
+            mock_list_groups.side_effect = [[group], [group]]
+
+            mock_list_users.return_value = [{"id": "owui-1", "userName": "alice@example.com"}]
+
+            await provisioner._sync_groups(mock_client)
+
+            mock_update_members.assert_called_once_with(mock_client, "grp-1", [])
+
+    @pytest.mark.asyncio
+    async def test_sync_includes_null_active_tenant_in_default_tenant_group(
+        self, provisioner: OpenWebuiProvisioner
+    ) -> None:
+        """User with null active_tenant_id is included in the default tenant's group."""
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+
+        with (
+            patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.TenantEntity") as mock_tenant,
+            patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.RoleEntity") as mock_role,
+            patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.UserTenantRoleEntity") as mock_utr,
+            patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.UserEntity") as mock_user,
+            patch.object(provisioner._client, "list_groups") as mock_list_groups,
+            patch.object(provisioner._client, "create_group"),
+            patch.object(provisioner._client, "delete_group"),
+            patch.object(provisioner._client, "list_users") as mock_list_users,
+            patch.object(provisioner._client, "update_group_members") as mock_update_members,
+        ):
+            tenant = MagicMock()
+            tenant.name = "DefaultOrg"
+            tenant.id = "tid-default"
+            tenant.access_rules = []
+            mock_tenant.objects.return_value = [tenant]
+
+            default_tenant = MagicMock()
+            default_tenant.id = "tid-default"
+            mock_tenant.get_default_tenant.return_value = default_tenant
+
+            role = MagicMock()
+            role.name = "R1"
+            role.access_rules = []
+            mock_role.get_roles_for_tenant.return_value = [role]
+
+            user_entity = MagicMock()
+            user_entity.id = "ah-user-1"
+            user_entity.email = "alice@example.com"
+
+            # User with null active_tenant_id matches __raw__ $or query for default tenant
+            active_user = MagicMock()
+            active_user.id = "ah-user-1"
+            active_queryset = MagicMock()
+            active_queryset.only.return_value = [active_user]
+
+            def user_objects_router(*args, **kwargs):
+                if "__raw__" in kwargs:
+                    return active_queryset
+                if "active_tenant_id" in kwargs:
+                    return active_queryset
+                return [user_entity]
+
+            mock_user.objects.side_effect = user_objects_router
+
+            utr = MagicMock()
+            utr.user_id = "ah-user-1"
+            mock_utr.objects.return_value = [utr]
+
+            group = {"displayName": "aihub:DefaultOrg:R1", "id": "grp-1"}
+            mock_list_groups.side_effect = [[group], [group]]
+
+            mock_list_users.return_value = [{"id": "owui-1", "userName": "alice@example.com"}]
+
+            await provisioner._sync_groups(mock_client)
+
+            # User should be included because __raw__ $or matches null active_tenant_id
+            mock_update_members.assert_called_once_with(mock_client, "grp-1", ["owui-1"])
+            # Verify the __raw__ query was used (default tenant uses $or)
+            raw_calls = [c for c in mock_user.objects.call_args_list if "__raw__" in (c.kwargs or {})]
+            assert len(raw_calls) == 1
 
     @pytest.mark.asyncio
     async def test_sync_idempotent(self, provisioner: OpenWebuiProvisioner) -> None:
@@ -269,13 +423,22 @@ class TestSyncGroupsOrchestration:
             tenant.id = "tid-1"
             tenant.access_rules = []
             mock_tenant.objects.return_value = [tenant]
+            mock_tenant.get_default_tenant.return_value = tenant
 
             role = MagicMock()
             role.name = "R1"
             role.access_rules = []
             mock_role.get_roles_for_tenant.return_value = [role]
 
-            mock_user.objects.return_value = []
+            active_queryset = MagicMock()
+            active_queryset.only.return_value = []
+
+            def user_objects_router(*args, **kwargs):
+                if "__raw__" in kwargs or "active_tenant_id" in kwargs:
+                    return active_queryset
+                return []
+
+            mock_user.objects.side_effect = user_objects_router
             mock_utr.objects.return_value = []
 
             existing_group = {"displayName": "aihub:T1:R1", "id": "grp-1"}

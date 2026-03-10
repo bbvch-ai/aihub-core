@@ -1,5 +1,7 @@
 import logging
 from abc import ABC, abstractmethod
+from collections.abc import Callable
+from typing import ClassVar
 
 from fastapi import HTTPException, Request
 
@@ -18,6 +20,17 @@ class AuthHandler(ABC):
 
     Authentication handlers validate credentials and return user identities.
     """
+
+    _on_active_tenant_changed: ClassVar[Callable[[], None] | None] = None
+
+    @classmethod
+    def register_active_tenant_hook(cls, hook: Callable[[], None]) -> None:
+        cls._on_active_tenant_changed = hook
+
+    @staticmethod
+    def _notify_active_tenant_changed() -> None:
+        if AuthHandler._on_active_tenant_changed:
+            AuthHandler._on_active_tenant_changed()
 
     @abstractmethod
     async def __call__(self, request: Request) -> UserIdentity:
@@ -70,7 +83,12 @@ class AuthHandler(ABC):
             logger.warning(f"User {user_id} does not have access to default tenant")
             raise HTTPException(status_code=403, detail="Access denied")
 
-        UserEntity.objects(id=user_id).update(set__active_tenant_id=str(default_tenant.id))
+        default_tenant_id = str(default_tenant.id)
+        user = UserEntity.objects(id=user_id).only("active_tenant_id").first()
+        previous_tenant_id = user.active_tenant_id if user else None
+        UserEntity.objects(id=user_id).update(set__active_tenant_id=default_tenant_id)
+        if previous_tenant_id != default_tenant_id:
+            AuthHandler._notify_active_tenant_changed()
         return default_tenant
 
     @staticmethod
@@ -100,7 +118,11 @@ class AuthHandler(ABC):
             logger.warning(f"User {user_id} attempted to access tenant {tenant_id_str} without membership")
             raise HTTPException(status_code=403, detail="Access denied")
 
+        user = UserEntity.objects(id=user_id).only("active_tenant_id").first()
+        previous_tenant_id = user.active_tenant_id if user else None
         UserEntity.objects(id=user_id).update_one(set__active_tenant_id=tenant_id_str)
+        if previous_tenant_id != tenant_id_str:
+            AuthHandler._notify_active_tenant_changed()
 
         return TenantIdentity.from_tenant_entity(tenant_entity)
 
