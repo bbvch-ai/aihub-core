@@ -9,6 +9,10 @@ from aihub_lib.infrastructure.openwebui.OpenWebuiTokenService import OpenWebuiTo
 SCIM_SCHEMAS_GROUP = ["urn:ietf:params:scim:schemas:core:2.0:Group"]
 SCIM_PAGE_SIZE = 100
 
+SCIM_GROUPS_ENDPOINT = "/api/v1/scim/v2/Groups"
+SCIM_USERS_ENDPOINT = "/api/v1/scim/v2/Users"
+MODELS_ENDPOINT = "/api/v1/models"
+
 
 class OpenWebuiClient:
     def __init__(self, base_url: str, secret_key: str, scim_token: str) -> None:
@@ -53,11 +57,11 @@ class OpenWebuiClient:
     # ------------------------------------------------------------------
 
     async def list_groups(self, client: httpx.AsyncClient) -> list[dict[str, Any]]:
-        return await self._list_scim_resources(client, "/api/v1/scim/v2/Groups")
+        return await self._list_scim_resources(client, SCIM_GROUPS_ENDPOINT)
 
     async def create_group(self, client: httpx.AsyncClient, name: str, description: str) -> dict[str, Any]:
         response = await client.post(
-            f"{self._base_url}/api/v1/scim/v2/Groups",
+            f"{self._base_url}{SCIM_GROUPS_ENDPOINT}",
             headers=self._scim_headers,
             json={"schemas": SCIM_SCHEMAS_GROUP, "displayName": name},
         )
@@ -66,14 +70,14 @@ class OpenWebuiClient:
 
     async def delete_group(self, client: httpx.AsyncClient, group_id: str) -> None:
         response = await client.delete(
-            f"{self._base_url}/api/v1/scim/v2/Groups/{group_id}",
+            f"{self._base_url}{SCIM_GROUPS_ENDPOINT}/{group_id}",
             headers=self._scim_headers,
         )
         response.raise_for_status()
 
     async def get_group(self, client: httpx.AsyncClient, group_id: str) -> dict[str, Any]:
         response = await client.get(
-            f"{self._base_url}/api/v1/scim/v2/Groups/{group_id}",
+            f"{self._base_url}{SCIM_GROUPS_ENDPOINT}/{group_id}",
             headers=self._scim_headers,
         )
         response.raise_for_status()
@@ -83,7 +87,7 @@ class OpenWebuiClient:
         group = await self.get_group(client, group_id)
         members = [{"value": uid} for uid in user_ids]
         response = await client.put(
-            f"{self._base_url}/api/v1/scim/v2/Groups/{group_id}",
+            f"{self._base_url}{SCIM_GROUPS_ENDPOINT}/{group_id}",
             headers=self._scim_headers,
             json={
                 "schemas": SCIM_SCHEMAS_GROUP,
@@ -98,14 +102,14 @@ class OpenWebuiClient:
     # ------------------------------------------------------------------
 
     async def list_users(self, client: httpx.AsyncClient) -> list[dict[str, Any]]:
-        return await self._list_scim_resources(client, "/api/v1/scim/v2/Users")
+        return await self._list_scim_resources(client, SCIM_USERS_ENDPOINT)
 
     # ------------------------------------------------------------------
     # Model methods (proprietary API + JWT auth)
     # ------------------------------------------------------------------
 
     async def list_models(self, client: httpx.AsyncClient) -> list[dict[str, Any]]:
-        response = await client.get(f"{self._base_url}/api/v1/models/list", headers=self._jwt_headers)
+        response = await client.get(f"{self._base_url}{MODELS_ENDPOINT}/list", headers=self._jwt_headers)
         response.raise_for_status()
         data = response.json()
         return data.get("items", []) if isinstance(data, dict) else data
@@ -113,7 +117,7 @@ class OpenWebuiClient:
     async def create_model(self, client: httpx.AsyncClient, model_data: dict[str, Any]) -> dict[str, Any]:
         model_data.setdefault("params", {})
         response = await client.post(
-            f"{self._base_url}/api/v1/models/create",
+            f"{self._base_url}{MODELS_ENDPOINT}/create",
             headers=self._jwt_headers,
             json=model_data,
         )
@@ -122,7 +126,7 @@ class OpenWebuiClient:
 
     async def delete_model(self, client: httpx.AsyncClient, model_id: str) -> None:
         response = await client.post(
-            f"{self._base_url}/api/v1/models/model/delete",
+            f"{self._base_url}{MODELS_ENDPOINT}/model/delete",
             headers=self._jwt_headers,
             json={"id": model_id},
         )
@@ -130,7 +134,7 @@ class OpenWebuiClient:
 
     async def get_model(self, client: httpx.AsyncClient, model_id: str) -> dict[str, Any]:
         response = await client.get(
-            f"{self._base_url}/api/v1/models/model",
+            f"{self._base_url}{MODELS_ENDPOINT}/model",
             headers=self._jwt_headers,
             params={"id": model_id},
         )
@@ -151,7 +155,7 @@ class OpenWebuiClient:
         if model.get("base_model_id"):
             form["base_model_id"] = model["base_model_id"]
         response = await client.post(
-            f"{self._base_url}/api/v1/models/model/update",
+            f"{self._base_url}{MODELS_ENDPOINT}/model/update",
             headers=self._jwt_headers,
             json=form,
         )
