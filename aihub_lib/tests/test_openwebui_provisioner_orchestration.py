@@ -1,5 +1,3 @@
-"""Tests for OpenWebuiProvisioner — top-level orchestration."""
-
 from unittest.mock import MagicMock, patch
 
 import pytest
