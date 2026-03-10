@@ -137,7 +137,8 @@ based on what's available on NATS.
 **`AgentEndpointsDiscoveryService`**: Every 60 seconds, broadcasts `ClassDiscoveryRequestEvent` via NATS. Online agents
 respond with metadata (start/stop/HITL event specs, config schema, form definition). The service creates FastAPI
 endpoints for each agent class's events — both regular and streaming variants. When agents go offline, their endpoints
-are removed and the OpenAPI schema is invalidated.
+are removed and the OpenAPI schema is invalidated. When the set of online agent instances changes, syncs workspace
+models and access grants to external provisioners (Langfuse and OpenWebUI).
 
 **`ProcessEndpointsDiscoveryService`**: Same pattern for processes. Registers form GET/POST endpoints for human input
 steps and data POST endpoints for programmatic input.
@@ -179,8 +180,9 @@ without needing it baked into event payloads.
 infrastructure → event distributors → RPC responders → discovery services → DB initialization (default roles, knowledge
 buckets, Langfuse provisioning, OpenWebUI provisioning).
 
-Registers a tenant-switch hook (`AuthHandler.register_active_tenant_hook`) that triggers
-`OpenWebuiProvisioner.sync_access()` when users change their active tenant.
+Registers two hooks for OpenWebUI sync: `AuthHandler.register_active_tenant_hook` triggers on tenant switch,
+`AccessChangeHook.connect()` wires MongoEngine signals on role/tenant/assignment mutations to call
+`OpenWebuiProvisioner.sync_access()`.
 
 All resources stored in `app.state`, accessible via the dependencies listed above.
 

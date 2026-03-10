@@ -34,12 +34,15 @@ following the same provisioner pattern used for Langfuse (`LangfuseProvisioner`)
 3. **Access grants**: For each workspace model, AI-Hub computes which groups have access using `AccessChecker` with
    tenant ceiling enforcement, then sets `access_control` on the model.
 
-The provisioner runs on four triggers:
+The provisioner runs on five triggers — all changes propagate immediately:
 
 - **Startup** (`provision()`): full sync of groups, workspace models, and access grants
-- **Agent discovery cycle** (`sync_agents()`): every 60 seconds, syncs workspace models and access grants
-- **Tenant switch** (`sync_access()`): re-syncs groups and access grants when a user changes active tenant
-- **OpenWebUI signup webhook** (`sync_access()`): triggered via `WebhookController` when a new user signs up
+- **Agent discovery cycle** (`sync_agents()`): when the set of online agent instances changes (checked every 60
+  seconds), syncs workspace models and access grants
+- **Tenant switch** (`sync_access()`): when a user changes active tenant (via `AuthHandler` hook)
+- **OpenWebUI signup webhook** (`sync_access()`): when a new user signs up (via `WebhookController`)
+- **Access entity changes** (`sync_access()`): when roles, tenants, or user-role assignments are created, updated, or
+  deleted (via `AccessChangeHook` MongoEngine signals)
 
 ### Key design choices
 
@@ -49,6 +52,9 @@ The provisioner runs on four triggers:
   authenticated proprietary endpoints.
 - **Active tenant scoping**: Users only belong to groups matching their active tenant, not all tenants they have roles
   in. This prevents cross-tenant visibility leakage.
+- **`AccessChangeHook` pattern**: MongoEngine `post_save`/`post_delete` signals on RoleEntity, TenantEntity, and
+  UserTenantRoleEntity automatically trigger `sync_access()`. Signals are connected by the API lifetime manager, so
+  they're only active in production — not during unit tests. No manual notification calls in entity code.
 - **Group naming convention**: `aihub:` prefix identifies managed groups, preventing interference with manually-created
   groups.
 - **Model ID convention**: `aihub-agent-` prefix identifies managed workspace models.
@@ -63,16 +69,17 @@ The provisioner runs on four triggers:
 - Follows existing provisioner pattern (consistent with Langfuse integration)
 - Tenant ceiling enforcement preserved (tenant rules act as upper bound)
 - Idempotent syncing with change detection
+- All access changes propagate immediately (no stale visibility windows)
 
 ### Negative
 
 - Adds dependency on OpenWebUI SCIM token and JWT secret key configuration (`OPENWEBUI_SCIM_TOKEN`,
   `OPENWEBUI_SECRET_KEY`)
-- Agent visibility changes from role/tenant modifications propagate within 60 seconds (discovery cycle); tenant switches
-  and signups trigger immediate sync
 - Email-based user mapping requires users to have logged into both systems
 
 ### Risks
 
 - OpenWebUI SCIM or model API changes in future versions may require provisioner updates
 - High number of tenant-role combinations creates many groups (scales as tenants x roles)
+- Bulk admin operations (e.g. assigning 50 users to a role) fire one `sync_access()` per save signal — may need
+  debouncing if concurrent OpenWebUI API calls become a bottleneck

@@ -78,17 +78,16 @@ class TestSyncAgents:
             mock_models.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_sync_agents_skips_on_no_change(self, provisioner: OpenWebuiProvisioner) -> None:
+    async def test_sync_agents_always_syncs(self, provisioner: OpenWebuiProvisioner) -> None:
+        """Change detection is handled by AgentEndpointsDiscoveryService, not the provisioner."""
         with (
             patch.object(provisioner, "_sync_workspace_models") as mock_models,
             patch.object(provisioner, "_sync_access_grants"),
         ):
             await provisioner.sync_agents([("rag", "default", "RAG Agent")])
-            mock_models.reset_mock()
-
             await provisioner.sync_agents([("rag", "default", "RAG Agent")])
 
-            mock_models.assert_not_called()
+            assert mock_models.call_count == 2
 
 
 class TestSyncAccess:

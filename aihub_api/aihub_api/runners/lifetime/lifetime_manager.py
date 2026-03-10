@@ -19,6 +19,7 @@ from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
 from aihub_lib.nats.subscribers.process.ProcessNCSubscriber import ProcessNCSubscriber
 from aihub_lib.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from aihub_lib.nats.topic_managers.process.ProcessTopicManager import ProcessTopicManager
+from aihub_lib.persistence.access.AccessChangeHook import AccessChangeHook
 from botocore.config import Config
 from fastapi import FastAPI
 from mongoengine import connect, disconnect
@@ -229,6 +230,9 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
             asyncio.create_task(OpenWebuiProvisioner().sync_access())
 
         AuthHandler.register_active_tenant_hook(_on_tenant_switch)
+
+        # Re-sync OpenWebUI when roles, tenants, or user-role assignments change
+        AccessChangeHook.connect()
 
         # Yield control back to FastAPI to start serving requests
         yield

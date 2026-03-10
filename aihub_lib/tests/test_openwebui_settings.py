@@ -23,7 +23,7 @@ class TestOpenWebuiSettings:
         monkeypatch.delenv("OPENWEBUI_SCIM_TOKEN", raising=False)
 
         with pytest.raises(ValidationError):
-            OpenWebuiSettings()
+            OpenWebuiSettings(_env_file=None)
 
     def test_secret_key_is_secret(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setenv("OPENWEBUI_BASE_URL", "http://open-webui:8080")

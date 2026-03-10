@@ -62,8 +62,9 @@ context, AI-Hub pushes permission state into Open WebUI rather than filtering at
 3. **Access grants**: For each workspace model, AI-Hub computes which groups have access using the platform's permission
    system (with tenant ceiling enforcement), then sets `access_control` on the model
 
-The provisioner runs at API startup, on every agent discovery cycle (60-second interval), when users switch tenants, and
-when new users sign up via an Open WebUI webhook. This ensures access state stays synchronized with minimal delay.
+The provisioner runs at API startup, when the set of online agents changes (checked every 60 seconds), when users switch
+tenants, when new users sign up via an Open WebUI webhook, and when roles, tenants, or user-role assignments are
+modified. All access changes propagate immediately.
 
 `BYPASS_MODEL_ACCESS_CONTROL=False` must be set on Open WebUI to enforce these access controls.
 
