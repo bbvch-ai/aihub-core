@@ -7,7 +7,7 @@
 # This ensures architecture compatibility (AMD64/ARM64) and eliminates runtime downloads
 
 # 1. Use our existing etcd image as the source for the binary
-FROM ghcr.io/bbvch-ai/swiss-ai-hub/etcd:v3.5.25 AS source
+FROM ghcr.io/bbvch-ai/aihub-core/etcd:v3.5.25 AS source
 
 # 2. Use Alpine to get a shell environment
 FROM alpine:3.19

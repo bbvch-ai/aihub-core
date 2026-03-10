@@ -113,14 +113,14 @@ license-check:
 # Generate Docker Compose files from the template
 generate-compose:
 	@echo "Generating Docker Compose files..."
-	@uv run python deployment/generate_compose.py
+	@uv run python infra/deployment/generate_compose.py
 	@$(MAKE) format-yaml
 
 # Generate release bundles with version-pinned images (TAG=v0.266.0, OUTPUT_DIR=dist/release)
 OUTPUT_DIR ?= dist/release
 generate-release:
 	@echo "Generating release bundles for $(TAG)..."
-	@uv run python deployment/generate_compose.py --release --tag "$(TAG)" --output-dir "$(OUTPUT_DIR)"
+	@uv run python infra/deployment/generate_compose.py --release --tag "$(TAG)" --output-dir "$(OUTPUT_DIR)"
 
 local-cert:
 	@echo "Generating mkcert certificates for localhost and nip.io..."
@@ -132,7 +132,7 @@ local-cert:
 
 up-dev:
 	@echo "Starting development environment with Docker Compose..."
-	docker compose -f docker-compose.dev.yml --env-file .env up -d --build
+	docker compose -f infra/docker-compose.dev.yml --env-file .env up -d --build
 
 # Bump version across all packages (VERSION=0.264.0)
 VERSION ?= 0.263.0
