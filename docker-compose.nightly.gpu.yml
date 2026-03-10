@@ -2209,7 +2209,7 @@ services:
       OTEL_RESOURCE_SERVICE_VERSION: nightly
       OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
     healthcheck:
-      test: [CMD, curl, -f, http://localhost:8080/health]
+      test: [CMD, curl, -f, http://localhost:8090/health]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -2277,7 +2277,7 @@ services:
       OTEL_RESOURCE_SERVICE_VERSION: nightly
       OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
     healthcheck:
-      test: [CMD, curl, -f, http://localhost:8080/health]
+      test: [CMD, curl, -f, http://localhost:8090/health]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -2330,7 +2330,7 @@ services:
       OTEL_RESOURCE_SERVICE_VERSION: nightly
       OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
     healthcheck:
-      test: [CMD, curl, -f, http://localhost:8080/health]
+      test: [CMD, curl, -f, http://localhost:8090/health]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -2383,7 +2383,7 @@ services:
       OTEL_RESOURCE_SERVICE_VERSION: nightly
       OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
     healthcheck:
-      test: [CMD, curl, -f, http://localhost:8080/health]
+      test: [CMD, curl, -f, http://localhost:8090/health]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -2436,7 +2436,7 @@ services:
       OTEL_RESOURCE_SERVICE_VERSION: nightly
       OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
     healthcheck:
-      test: [CMD, curl, -f, http://localhost:8080/health]
+      test: [CMD, curl, -f, http://localhost:8090/health]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -2481,7 +2481,7 @@ services:
       OTEL_RESOURCE_SERVICE_VERSION: nightly
       OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
     healthcheck:
-      test: [CMD, curl, -f, http://localhost:8080/health]
+      test: [CMD, curl, -f, http://localhost:8090/health]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -2526,7 +2526,7 @@ services:
       OTEL_RESOURCE_SERVICE_VERSION: nightly
       OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
     healthcheck:
-      test: [CMD, curl, -f, http://localhost:8080/health]
+      test: [CMD, curl, -f, http://localhost:8090/health]
       interval: 30s
       timeout: 10s
       retries: 3
