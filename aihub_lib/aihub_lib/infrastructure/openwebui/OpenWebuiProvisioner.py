@@ -206,9 +206,9 @@ class OpenWebuiProvisioner:
         groups: list[dict[str, Any]],
         tenant_rules: dict[str, list[str]],
         role_rules: dict[str, list[str]],
-    ) -> dict[str, Any]:
+    ) -> list[dict[str, str]]:
         """Computes which groups should have read access to a given agent workspace model."""
-        granted_group_ids: list[str] = []
+        grants: list[dict[str, str]] = []
 
         for group in groups:
             group_name = group["displayName"]
@@ -225,12 +225,9 @@ class OpenWebuiProvisioner:
 
             checker = AccessChecker(user_access_rules=r_rules, tenant_access_rules=t_rules)
             if checker.has_access_to_agent(agent_class, agent_id):
-                granted_group_ids.append(group["id"])
+                grants.append({"principal_type": "group", "principal_id": group["id"], "permission": "read"})
 
-        if not granted_group_ids:
-            return {}
-
-        return {"read": {"group_ids": granted_group_ids}}
+        return grants
 
     async def _sync_access_grants(self, client: httpx.AsyncClient) -> None:
         existing_models = await self._client.list_models(client)

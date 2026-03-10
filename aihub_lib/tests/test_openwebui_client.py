@@ -177,16 +177,19 @@ class TestUpdateModelAccess:
         model_data = {"id": "aihub-agent-rag-default", "name": "RAG Agent", "meta": {}, "params": {}}
         mock_client.get.return_value = _ok_response(json_data=model_data)
         mock_client.post.return_value = _ok_response()
-        access_control = {"read": {"group_ids": ["grp-1", "grp-2"]}}
+        access_grants = [
+            {"principal_type": "group", "principal_id": "grp-1", "permission": "read"},
+            {"principal_type": "group", "principal_id": "grp-2", "permission": "read"},
+        ]
 
-        await owui_client.update_model_access(mock_client, "aihub-agent-rag-default", access_control)
+        await owui_client.update_model_access(mock_client, "aihub-agent-rag-default", access_grants)
 
         mock_client.get.assert_called_once()
         assert "/api/v1/models/model" in mock_client.get.call_args[0][0]
         mock_client.post.assert_called_once()
         call_args = mock_client.post.call_args
         assert "/api/v1/models/model/update" in call_args[0][0]
-        assert call_args[1]["json"]["access_control"] == access_control
+        assert call_args[1]["json"]["access_grants"] == access_grants
         assert call_args[1]["json"]["id"] == "aihub-agent-rag-default"
 
 
@@ -213,7 +216,7 @@ class TestAuthHeaders:
 
         await owui_client.list_models(mock_client)
         await owui_client.create_model(mock_client, {})
-        await owui_client.update_model_access(mock_client, "m", {})
+        await owui_client.update_model_access(mock_client, "m", [])
 
         for call in mock_client.get.call_args_list:
             assert call[1]["headers"]["Authorization"].startswith("Bearer ey")

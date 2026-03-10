@@ -35,7 +35,7 @@ class TestComputeAccessForModel:
 
         result = OpenWebuiProvisioner._compute_access_for_model("rag", "default", groups, tenant_rules, role_rules)
 
-        assert result == {"read": {"group_ids": ["grp-1"]}}
+        assert result == [{"principal_type": "group", "principal_id": "grp-1", "permission": "read"}]
 
     def test_group_without_matching_rules_denied(self) -> None:
         groups = [{"displayName": "aihub:T1:R1", "id": "grp-1"}]
@@ -44,7 +44,7 @@ class TestComputeAccessForModel:
 
         result = OpenWebuiProvisioner._compute_access_for_model("rag", "default", groups, tenant_rules, role_rules)
 
-        assert result == {}
+        assert result == []
 
     def test_tenant_ceiling_blocks_role_access(self) -> None:
         groups = [{"displayName": "aihub:T1:R1", "id": "grp-1"}]
@@ -53,7 +53,7 @@ class TestComputeAccessForModel:
 
         result = OpenWebuiProvisioner._compute_access_for_model("rag", "default", groups, tenant_rules, role_rules)
 
-        assert result == {}
+        assert result == []
 
     def test_wildcard_rules_grant_broad_access(self) -> None:
         groups = [{"displayName": "aihub:T1:R1", "id": "grp-1"}]
@@ -62,7 +62,7 @@ class TestComputeAccessForModel:
 
         result = OpenWebuiProvisioner._compute_access_for_model("rag", "default", groups, tenant_rules, role_rules)
 
-        assert result == {"read": {"group_ids": ["grp-1"]}}
+        assert result == [{"principal_type": "group", "principal_id": "grp-1", "permission": "read"}]
 
     def test_empty_tenant_rules_deny_all(self) -> None:
         groups = [{"displayName": "aihub:T1:R1", "id": "grp-1"}]
@@ -71,7 +71,7 @@ class TestComputeAccessForModel:
 
         result = OpenWebuiProvisioner._compute_access_for_model("rag", "default", groups, tenant_rules, role_rules)
 
-        assert result == {}
+        assert result == []
 
     def test_multiple_groups_different_visibility(self) -> None:
         groups = [
@@ -87,8 +87,8 @@ class TestComputeAccessForModel:
         result_rag = OpenWebuiProvisioner._compute_access_for_model("rag", "default", groups, tenant_rules, role_rules)
         result_llm = OpenWebuiProvisioner._compute_access_for_model("llm", "default", groups, tenant_rules, role_rules)
 
-        assert result_rag == {"read": {"group_ids": ["grp-1"]}}
-        assert result_llm == {"read": {"group_ids": ["grp-2"]}}
+        assert result_rag == [{"principal_type": "group", "principal_id": "grp-1", "permission": "read"}]
+        assert result_llm == [{"principal_type": "group", "principal_id": "grp-2", "permission": "read"}]
 
 
 class TestSyncAccessGrants:
@@ -128,7 +128,8 @@ class TestSyncAccessGrants:
             mock_update.assert_called_once()
             call_args = mock_update.call_args
             assert call_args[0][1] == f"{AIHUB_MODEL_PREFIX}rag-default"
-            assert "grp-1" in call_args[0][2]["read"]["group_ids"]
+            grants = call_args[0][2]
+            assert {"principal_type": "group", "principal_id": "grp-1", "permission": "read"} in grants
 
     @pytest.mark.asyncio
     async def test_model_with_no_groups_gets_empty_grants(self, provisioner: OpenWebuiProvisioner) -> None:
@@ -194,5 +195,6 @@ class TestSyncAccessGrants:
             await provisioner._sync_access_grants(mock_client)
 
             mock_update.assert_called_once()
-            access_control = mock_update.call_args[0][2]
-            assert set(access_control["read"]["group_ids"]) == {"grp-1", "grp-2"}
+            grants = mock_update.call_args[0][2]
+            granted_ids = {g["principal_id"] for g in grants}
+            assert granted_ids == {"grp-1", "grp-2"}

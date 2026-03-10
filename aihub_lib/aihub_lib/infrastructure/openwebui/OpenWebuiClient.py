@@ -138,7 +138,7 @@ class OpenWebuiClient:
         return response.json()
 
     async def update_model_access(
-        self, client: httpx.AsyncClient, model_id: str, access_control: dict[str, Any]
+        self, client: httpx.AsyncClient, model_id: str, access_grants: list[dict[str, str]]
     ) -> dict[str, Any]:
         model = await self.get_model(client, model_id)
         form = {
@@ -146,7 +146,7 @@ class OpenWebuiClient:
             "name": model["name"],
             "meta": model.get("meta", {}),
             "params": model.get("params", {}),
-            "access_control": access_control or None,
+            "access_grants": access_grants or None,
         }
         if model.get("base_model_id"):
             form["base_model_id"] = model["base_model_id"]
