@@ -15,8 +15,6 @@ logger = logging.getLogger(__name__)
 
 
 class OpenWebuiWebhookPayload(BaseModel):
-    """Matches OpenWebUI's default webhook payload: {action, message, user}."""
-
     action: str
     message: str = ""
     user: dict = {}
@@ -46,7 +44,6 @@ class WebhookController(Controller):
     def openwebui(self) -> Self:
         @self.router.post("/openwebui", tags=self.tags)
         async def receive_openwebui_webhook(payload: OpenWebuiWebhookPayload) -> dict[str, str]:
-            """Receives OpenWebUI webhooks. On signup, triggers provisioner group sync."""
             if payload.action != "signup":
                 return {"status": "ignored"}
 

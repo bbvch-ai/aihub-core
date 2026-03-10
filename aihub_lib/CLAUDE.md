@@ -51,6 +51,7 @@ aihub_lib/
 │   ├── neo4j/                       # Neo4jSettings (graph DB)
 │   ├── langfuse/                    # LangfuseSettings + LangfuseProvisioner
 │   ├── litellm/                     # LiteLLMProxySettings + LiteLLMService
+│   ├── openwebui/                   # OpenWebuiSettings, Client, Provisioner, TokenService
 │   ├── opentelemetry/               # SmartTracer + trace_fn decorator
 │   ├── logging/                     # Logging setup (enable_logging())
 │   ├── mineru/                      # MineruSettings (document parsing)
@@ -385,19 +386,20 @@ storage), `AgentConfigEntity` / `ProcessConfigEntity` (configs), `UserEntity` (t
 
 ~20 Pydantic `BaseSettings` classes for external service connections. Auto-load from environment variables.
 
-| Settings Class         | Service                | Env Prefix  |
-| ---------------------- | ---------------------- | ----------- |
-| `AIHubSettings`        | Core API config        | (various)   |
-| `NatsSettings`         | NATS broker            | `NATS_`     |
-| `MongoSettings`        | MongoDB/FerretDB       | `MONGO_`    |
-| `RedisSettings`        | Valkey/Redis           | `REDIS_`    |
-| `MilvusSettings`       | Milvus vector DB       | `MILVUS_`   |
-| `S3StorageSettings`    | SeaweedFS/S3           | `S3_`       |
-| `Neo4jSettings`        | Neo4j graph DB         | `NEO4J_`    |
-| `LangfuseSettings`     | Langfuse observability | `LANGFUSE_` |
-| `LiteLLMProxySettings` | LiteLLM gateway        | `LITELLM_`  |
-| `MineruSettings`       | Document parsing       | `MINERU_`   |
-| `RcloneSettings`       | Cloud sync             | `RCLONE_`   |
+| Settings Class         | Service                | Env Prefix   |
+| ---------------------- | ---------------------- | ------------ |
+| `AIHubSettings`        | Core API config        | (various)    |
+| `NatsSettings`         | NATS broker            | `NATS_`      |
+| `MongoSettings`        | MongoDB/FerretDB       | `MONGO_`     |
+| `RedisSettings`        | Valkey/Redis           | `REDIS_`     |
+| `MilvusSettings`       | Milvus vector DB       | `MILVUS_`    |
+| `S3StorageSettings`    | SeaweedFS/S3           | `S3_`        |
+| `Neo4jSettings`        | Neo4j graph DB         | `NEO4J_`     |
+| `LangfuseSettings`     | Langfuse observability | `LANGFUSE_`  |
+| `LiteLLMProxySettings` | LiteLLM gateway        | `LITELLM_`   |
+| `OpenWebuiSettings`    | OpenWebUI integration  | `OPENWEBUI_` |
+| `MineruSettings`       | Document parsing       | `MINERU_`    |
+| `RcloneSettings`       | Cloud sync             | `RCLONE_`    |
 
 OpenTelemetry: `SmartTracer` for span creation, `@trace_fn` decorator for automatic function tracing.
 

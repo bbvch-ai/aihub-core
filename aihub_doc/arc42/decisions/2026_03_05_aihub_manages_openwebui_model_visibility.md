@@ -16,6 +16,7 @@ bypassing per-user permission filtering. The `pipes()` method cannot receive use
 - OpenWebUI's pipe discovery architecture cannot be extended with per-user filtering
 - AI-Hub already has a mature permission system (AccessChecker with tenant/role hierarchies)
 - OpenWebUI supports workspace models with group-based access control via its REST API
+- OpenWebUI exposes a SCIM 2.0 API for group and user management
 - The solution must not require OpenWebUI code changes
 
 ## Decision
@@ -25,23 +26,33 @@ following the same provisioner pattern used for Langfuse (`LangfuseProvisioner`)
 
 ### How it works
 
-1. **Groups**: AI-Hub creates OpenWebUI groups for each tenant-role combination (`aihub:{tenant}:{role}`), with
-   memberships synced via email-based user ID mapping
-2. **Workspace Models**: For each online agent, AI-Hub creates a workspace model that delegates to the pipe function
-   (`base_model_id = "aihub-pipeline.{agent_class}.{agent_id}"`)
-3. **Access Grants**: For each workspace model, AI-Hub computes which groups have access using `AccessChecker` with
-   tenant ceiling enforcement, then sets `access_control` on the model
+1. **Groups** (via SCIM 2.0): AI-Hub creates OpenWebUI groups for each tenant-role combination
+   (`aihub:{tenant}:{role}`). Memberships are synced via email-based user ID mapping, scoped to each user's active
+   tenant — users only appear in groups matching their currently active tenant.
+2. **Workspace models** (via JWT-authenticated REST API): For each online agent, AI-Hub creates a workspace model that
+   delegates to the pipe function (`base_model_id = "aihub-pipeline.{agent_class}.{agent_id}"`).
+3. **Access grants**: For each workspace model, AI-Hub computes which groups have access using `AccessChecker` with
+   tenant ceiling enforcement, then sets `access_control` on the model.
 
-The provisioner runs at startup (`provision()`) and on every agent discovery cycle (`sync_agents()`).
+The provisioner runs on four triggers:
+
+- **Startup** (`provision()`): full sync of groups, workspace models, and access grants
+- **Agent discovery cycle** (`sync_agents()`): every 60 seconds, syncs workspace models and access grants
+- **Tenant switch** (`sync_access()`): re-syncs groups and access grants when a user changes active tenant
+- **OpenWebUI signup webhook** (`sync_access()`): triggered via `WebhookController` when a new user signs up
 
 ### Key design choices
 
 - **Server-side push** over client-side filtering: AI-Hub pushes permissions to OpenWebUI rather than filtering in the
   pipe. This works within OpenWebUI's architecture without modifications.
+- **SCIM 2.0 for identity**: Groups and users are managed via the standard SCIM API, workspace models via JWT-
+  authenticated proprietary endpoints.
+- **Active tenant scoping**: Users only belong to groups matching their active tenant, not all tenants they have roles
+  in. This prevents cross-tenant visibility leakage.
 - **Group naming convention**: `aihub:` prefix identifies managed groups, preventing interference with manually-created
-  groups
-- **Model ID convention**: `aihub-agent-` prefix identifies managed workspace models
-- **`BYPASS_MODEL_ACCESS_CONTROL=False`**: Must be set on OpenWebUI to enforce access control
+  groups.
+- **Model ID convention**: `aihub-agent-` prefix identifies managed workspace models.
+- **`BYPASS_MODEL_ACCESS_CONTROL=False`**: Must be set on OpenWebUI to enforce access control.
 
 ## Consequences
 
@@ -55,11 +66,13 @@ The provisioner runs at startup (`provision()`) and on every agent discovery cyc
 
 ### Negative
 
-- Adds dependency on OpenWebUI admin API key configuration
-- Access changes have up to 60-second propagation delay (agent discovery cycle)
+- Adds dependency on OpenWebUI SCIM token and JWT secret key configuration (`OPENWEBUI_SCIM_TOKEN`,
+  `OPENWEBUI_SECRET_KEY`)
+- Agent visibility changes from role/tenant modifications propagate within 60 seconds (discovery cycle); tenant switches
+  and signups trigger immediate sync
 - Email-based user mapping requires users to have logged into both systems
 
 ### Risks
 
-- OpenWebUI API changes in future versions may require provisioner updates
+- OpenWebUI SCIM or model API changes in future versions may require provisioner updates
 - High number of tenant-role combinations creates many groups (scales as tenants x roles)

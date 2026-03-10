@@ -48,6 +48,25 @@ and renewals coordinate across both components.
 Communication uses secure channels with encryption and validation. The iframe integration includes security headers and
 content security policies to prevent cross-site scripting.
 
+## Model visibility and access control
+
+The platform manages which agents each user can see in Open WebUI. Since Open WebUI's pipe discovery runs without user
+context, AI-Hub pushes permission state into Open WebUI rather than filtering at the pipe level.
+
+**How it works:**
+
+1. **Groups**: AI-Hub creates Open WebUI groups for each tenant-role combination (named `aihub:{tenant}:{role}`), with
+   memberships synced based on email matching between both systems
+2. **Workspace models**: For each online agent, AI-Hub creates a workspace model that delegates to the corresponding
+   pipe function
+3. **Access grants**: For each workspace model, AI-Hub computes which groups have access using the platform's permission
+   system (with tenant ceiling enforcement), then sets `access_control` on the model
+
+The provisioner runs at API startup, on every agent discovery cycle (60-second interval), when users switch tenants, and
+when new users sign up via an Open WebUI webhook. This ensures access state stays synchronized with minimal delay.
+
+`BYPASS_MODEL_ACCESS_CONTROL=False` must be set on Open WebUI to enforce these access controls.
+
 ## Configuration and deployment
 
 Open WebUI deploys as an independent Docker container within the platform. This provides isolation while managing the

@@ -31,6 +31,7 @@ aihub_api/
 │   │   ├── token/              # API token management
 │   │   ├── translation/        # Translation service
 │   │   ├── suite/              # Suite management
+│   │   ├── webhook/            # Webhook receivers (OpenWebUI signup events)
 │   │   ├── health/             # Health & readiness checks
 │   │   ├── i18n/               # Locale endpoints
 │   │   └── parsing/            # Document parsing (MinerU)
@@ -44,7 +45,7 @@ aihub_api/
 │   ├── persistance/            # Event persistence to MongoDB
 │   ├── audio/                  # Audio chunking service
 │   └── testing/                # Auth bypass utilities for tests
-├── playground/testing/          # Interactive test server + test suite
+├── playground/testing/         # Interactive test server + test suite
 │   ├── main.py                 # Dev server entry point
 │   └── tests/                  # All API tests (by domain)
 ├── Makefile                    # run-dev, run-prod, test, pr-ready
@@ -176,7 +177,10 @@ without needing it baked into event payloads.
 
 **Startup order**: MongoDB → Redis/Milvus/S3 → NATS + JetStream → event persistence subscribers → WebSocket
 infrastructure → event distributors → RPC responders → discovery services → DB initialization (default roles, knowledge
-buckets, Langfuse provisioning).
+buckets, Langfuse provisioning, OpenWebUI provisioning).
+
+Registers a tenant-switch hook (`AuthHandler.register_active_tenant_hook`) that triggers
+`OpenWebuiProvisioner.sync_access()` when users change their active tenant.
 
 All resources stored in `app.state`, accessible via the dependencies listed above.
 

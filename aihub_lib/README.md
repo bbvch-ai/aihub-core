@@ -64,7 +64,8 @@ aihub_lib/
 │   ├── infrastructure/        # Cloud service configurations
 │   │   ├── azure/             # Azure service integrations
 │   │   ├── google/            # Google Cloud service configs
-│   │   └── langfuse/          # Langfuse observability configuration
+│   │   ├── langfuse/          # Langfuse observability configuration
+│   │   └── openwebui/         # OpenWebUI group/model visibility provisioning
 │   ├── persistence/           # Database and storage abstractions
 │   │   ├── agents/            # Agent entity management
 │   │   ├── messaging/         # Message persistence
