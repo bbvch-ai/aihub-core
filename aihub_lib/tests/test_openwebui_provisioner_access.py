@@ -1,5 +1,3 @@
-"""Tests for OpenWebuiProvisioner — access grant computation."""
-
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
