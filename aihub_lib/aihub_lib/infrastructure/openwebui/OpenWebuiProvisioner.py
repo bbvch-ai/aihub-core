@@ -1,5 +1,3 @@
-"""Provisions OpenWebUI with groups, workspace models, and access grants based on AI-Hub permissions."""
-
 import logging
 from typing import Any
 
