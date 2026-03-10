@@ -15,8 +15,10 @@ from aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner import (
 def mock_settings() -> MagicMock:
     settings = MagicMock()
     settings.BASE_URL = "http://open-webui:8080"
-    settings.API_KEY = MagicMock()
-    settings.API_KEY.get_secret_value.return_value = "sk-test"
+    settings.SECRET_KEY = MagicMock()
+    settings.SECRET_KEY.get_secret_value.return_value = "sk-test"
+    settings.SCIM_TOKEN = MagicMock()
+    settings.SCIM_TOKEN.get_secret_value.return_value = "scim-test"
     return settings
 
 
@@ -27,7 +29,7 @@ def provisioner(mock_settings: MagicMock) -> OpenWebuiProvisioner:
 
 class TestComputeAccessForModel:
     def test_group_with_matching_rules_gets_access(self) -> None:
-        groups = [{"name": "aihub:T1:R1", "id": "grp-1"}]
+        groups = [{"displayName": "aihub:T1:R1", "id": "grp-1"}]
         tenant_rules = {"T1": ["aihub.user.agent.rag.*"]}
         role_rules = {"R1": ["aihub.user.agent.rag.*"]}
 
@@ -36,7 +38,7 @@ class TestComputeAccessForModel:
         assert result == {"read": {"group_ids": ["grp-1"]}}
 
     def test_group_without_matching_rules_denied(self) -> None:
-        groups = [{"name": "aihub:T1:R1", "id": "grp-1"}]
+        groups = [{"displayName": "aihub:T1:R1", "id": "grp-1"}]
         tenant_rules = {"T1": ["aihub.user.agent.rag.*"]}
         role_rules = {"R1": ["aihub.user.agent.other.*"]}
 
@@ -45,7 +47,7 @@ class TestComputeAccessForModel:
         assert result == {}
 
     def test_tenant_ceiling_blocks_role_access(self) -> None:
-        groups = [{"name": "aihub:T1:R1", "id": "grp-1"}]
+        groups = [{"displayName": "aihub:T1:R1", "id": "grp-1"}]
         tenant_rules = {"T1": ["aihub.user.agent.other.*"]}
         role_rules = {"R1": ["aihub.user.agent.rag.*"]}
 
@@ -54,7 +56,7 @@ class TestComputeAccessForModel:
         assert result == {}
 
     def test_wildcard_rules_grant_broad_access(self) -> None:
-        groups = [{"name": "aihub:T1:R1", "id": "grp-1"}]
+        groups = [{"displayName": "aihub:T1:R1", "id": "grp-1"}]
         tenant_rules = {"T1": ["aihub.user.agent.>"]}
         role_rules = {"R1": ["aihub.user.agent.>"]}
 
@@ -63,7 +65,7 @@ class TestComputeAccessForModel:
         assert result == {"read": {"group_ids": ["grp-1"]}}
 
     def test_empty_tenant_rules_deny_all(self) -> None:
-        groups = [{"name": "aihub:T1:R1", "id": "grp-1"}]
+        groups = [{"displayName": "aihub:T1:R1", "id": "grp-1"}]
         tenant_rules = {"T1": []}
         role_rules = {"R1": ["aihub.user.agent.rag.*"]}
 
@@ -73,8 +75,8 @@ class TestComputeAccessForModel:
 
     def test_multiple_groups_different_visibility(self) -> None:
         groups = [
-            {"name": "aihub:T1:R1", "id": "grp-1"},
-            {"name": "aihub:T1:R2", "id": "grp-2"},
+            {"displayName": "aihub:T1:R1", "id": "grp-1"},
+            {"displayName": "aihub:T1:R2", "id": "grp-2"},
         ]
         tenant_rules = {"T1": ["aihub.user.agent.>"]}
         role_rules = {
@@ -105,7 +107,7 @@ class TestSyncAccessGrants:
             patch.object(
                 provisioner._client,
                 "list_groups",
-                return_value=[{"name": "aihub:T1:R1", "id": "grp-1"}],
+                return_value=[{"displayName": "aihub:T1:R1", "id": "grp-1"}],
             ),
             patch.object(provisioner._client, "update_model_access") as mock_update,
             patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.TenantEntity") as mock_tenant,
@@ -168,8 +170,8 @@ class TestSyncAccessGrants:
                 provisioner._client,
                 "list_groups",
                 return_value=[
-                    {"name": "aihub:T1:R1", "id": "grp-1"},
-                    {"name": "aihub:T1:R2", "id": "grp-2"},
+                    {"displayName": "aihub:T1:R1", "id": "grp-1"},
+                    {"displayName": "aihub:T1:R2", "id": "grp-2"},
                 ],
             ),
             patch.object(provisioner._client, "update_model_access") as mock_update,

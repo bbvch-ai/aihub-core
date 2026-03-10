@@ -15,8 +15,10 @@ from aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner import (
 def mock_settings() -> MagicMock:
     settings = MagicMock()
     settings.BASE_URL = "http://open-webui:8080"
-    settings.API_KEY = MagicMock()
-    settings.API_KEY.get_secret_value.return_value = "sk-test"
+    settings.SECRET_KEY = MagicMock()
+    settings.SECRET_KEY.get_secret_value.return_value = "sk-test"
+    settings.SCIM_TOKEN = MagicMock()
+    settings.SCIM_TOKEN.get_secret_value.return_value = "scim-test"
     return settings
 
 
@@ -86,7 +88,7 @@ class TestBuildDesiredGroups:
 class TestBuildUserIdMapping:
     def test_user_id_mapping_by_email(self) -> None:
         aihub_users = [{"id": "ah-1", "email": "alice@example.com"}]
-        owui_users = [{"id": "owui-1", "email": "alice@example.com"}]
+        owui_users = [{"id": "owui-1", "userName": "alice@example.com"}]
 
         result = OpenWebuiProvisioner._build_user_id_mapping(aihub_users, owui_users)
 
@@ -97,7 +99,7 @@ class TestBuildUserIdMapping:
             {"id": "ah-1", "email": "alice@example.com"},
             {"id": "ah-2", "email": "bob@example.com"},
         ]
-        owui_users = [{"id": "owui-1", "email": "alice@example.com"}]
+        owui_users = [{"id": "owui-1", "userName": "alice@example.com"}]
 
         result = OpenWebuiProvisioner._build_user_id_mapping(aihub_users, owui_users)
 
@@ -137,7 +139,7 @@ class TestSyncGroupsOrchestration:
             # First call returns no existing groups, second call returns the created group
             mock_list_groups.side_effect = [
                 [],
-                [{"name": "aihub:T1:R1", "id": "grp-1"}],
+                [{"displayName": "aihub:T1:R1", "id": "grp-1"}],
             ]
             mock_create.return_value = {"id": "grp-1"}
 
@@ -164,7 +166,7 @@ class TestSyncGroupsOrchestration:
             mock_role.get_roles_for_tenant.return_value = []
             mock_user.objects.return_value = []
 
-            orphaned_group = {"name": "aihub:OldTenant:OldRole", "id": "grp-orphan"}
+            orphaned_group = {"displayName": "aihub:OldTenant:OldRole", "id": "grp-orphan"}
             mock_list_groups.side_effect = [
                 [orphaned_group],
                 [],
@@ -193,7 +195,7 @@ class TestSyncGroupsOrchestration:
             mock_role.get_roles_for_tenant.return_value = []
             mock_user.objects.return_value = []
 
-            non_aihub = {"name": "custom-group", "id": "grp-custom"}
+            non_aihub = {"displayName": "custom-group", "id": "grp-custom"}
             mock_list_groups.side_effect = [
                 [non_aihub],
                 [non_aihub],
@@ -238,10 +240,10 @@ class TestSyncGroupsOrchestration:
             utr.user_id = "ah-user-1"
             mock_utr.objects.return_value = [utr]
 
-            group = {"name": "aihub:T1:R1", "id": "grp-1"}
+            group = {"displayName": "aihub:T1:R1", "id": "grp-1"}
             mock_list_groups.side_effect = [[group], [group]]
 
-            mock_list_users.return_value = [{"id": "owui-1", "email": "alice@example.com"}]
+            mock_list_users.return_value = [{"id": "owui-1", "userName": "alice@example.com"}]
 
             await provisioner._sync_groups(mock_client)
 
@@ -276,7 +278,7 @@ class TestSyncGroupsOrchestration:
             mock_user.objects.return_value = []
             mock_utr.objects.return_value = []
 
-            existing_group = {"name": "aihub:T1:R1", "id": "grp-1"}
+            existing_group = {"displayName": "aihub:T1:R1", "id": "grp-1"}
             mock_list_groups.side_effect = [[existing_group], [existing_group]]
 
             await provisioner._sync_groups(mock_client)

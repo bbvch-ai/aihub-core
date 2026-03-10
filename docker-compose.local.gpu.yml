@@ -1492,7 +1492,7 @@ services:
       OTEL_SERVICE_NAME: open-webui
 
       # --- Auth & OIDC (Keycloak) ---
-      WEBUI_SECRET_KEY: ${WEBUI_SECRET_KEY}
+      WEBUI_SECRET_KEY: ${OPENWEBUI_SECRET_KEY}
       WEBUI_AUTH: true
       DEFAULT_USER_ROLE: user
       OAUTH_MERGE_ACCOUNTS_BY_EMAIL: true
@@ -1516,6 +1516,10 @@ services:
       ENABLE_OAUTH_ROLE_MANAGEMENT: true
       OAUTH_ROLES_CLAIM: roles
       OAUTH_ADMIN_ROLES: ${OAUTH_ADMIN_ROLES_OPENWEBUI}
+
+      # --- SCIM 2.0 Provisioning ---
+      SCIM_ENABLED: 'true'
+      SCIM_TOKEN: ${OPENWEBUI_SCIM_TOKEN}
 
       # --- Data Storage (S3) ---
       STORAGE_PROVIDER: s3
@@ -2064,7 +2068,8 @@ services:
 
       # OpenWebUI (agent visibility provisioning)
       OPENWEBUI_BASE_URL: http://open-webui:8080
-      OPENWEBUI_SECRET_KEY: ${WEBUI_SECRET_KEY}
+      OPENWEBUI_SECRET_KEY: ${OPENWEBUI_SECRET_KEY}
+      OPENWEBUI_SCIM_TOKEN: ${OPENWEBUI_SCIM_TOKEN}
 
       # Jupyter (for open-webui code interpreter)
       JUPYTER_URL: http://jupyter:8888

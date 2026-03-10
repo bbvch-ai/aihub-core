@@ -12,3 +12,4 @@ class OpenWebuiSettings(EnvironmentSettings):
 
     BASE_URL: Annotated[str, Field(description="OpenWebUI server base URL")]
     SECRET_KEY: Annotated[SecretStr, Field(description="OpenWebUI WEBUI_SECRET_KEY for JWT signing")]
+    SCIM_TOKEN: Annotated[SecretStr, Field(description="SCIM 2.0 bearer token for group and user provisioning")]

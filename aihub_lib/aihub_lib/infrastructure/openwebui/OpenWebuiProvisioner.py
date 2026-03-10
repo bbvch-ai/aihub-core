@@ -26,6 +26,7 @@ class OpenWebuiProvisioner:
         self._client = OpenWebuiClient(
             base_url=self._settings.BASE_URL,
             secret_key=self._settings.SECRET_KEY.get_secret_value(),
+            scim_token=self._settings.SCIM_TOKEN.get_secret_value(),
         )
         self._last_synced_agents: set[tuple[str, str]] | None = None
 
@@ -89,7 +90,7 @@ class OpenWebuiProvisioner:
     @staticmethod
     def _build_user_id_mapping(aihub_users: list[dict[str, str]], owui_users: list[dict[str, Any]]) -> dict[str, str]:
         """Maps AI-Hub user IDs to OpenWebUI user IDs via email."""
-        owui_by_email = {u["email"]: u["id"] for u in owui_users if "email" in u and "id" in u}
+        owui_by_email = {u["userName"]: u["id"] for u in owui_users if "userName" in u and "id" in u}
         mapping: dict[str, str] = {}
         for user in aihub_users:
             owui_id = owui_by_email.get(user["email"])
@@ -108,7 +109,9 @@ class OpenWebuiProvisioner:
         desired = self._build_desired_groups(tenants, roles_by_tenant)
 
         existing_groups = await self._client.list_groups(client)
-        aihub_groups = {g["name"]: g for g in existing_groups if g.get("name", "").startswith(AIHUB_GROUP_PREFIX)}
+        aihub_groups = {
+            g["displayName"]: g for g in existing_groups if g.get("displayName", "").startswith(AIHUB_GROUP_PREFIX)
+        }
 
         existing_names = set(aihub_groups.keys())
 
@@ -123,7 +126,9 @@ class OpenWebuiProvisioner:
 
         # Refresh groups after create/delete
         all_groups = await self._client.list_groups(client)
-        aihub_groups = {g["name"]: g for g in all_groups if g.get("name", "").startswith(AIHUB_GROUP_PREFIX)}
+        aihub_groups = {
+            g["displayName"]: g for g in all_groups if g.get("displayName", "").startswith(AIHUB_GROUP_PREFIX)
+        }
 
         # Sync membership
         owui_users = await self._client.list_users(client)
@@ -212,7 +217,7 @@ class OpenWebuiProvisioner:
         granted_group_ids: list[str] = []
 
         for group in groups:
-            group_name = group["name"]
+            group_name = group["displayName"]
             if not group_name.startswith(AIHUB_GROUP_PREFIX):
                 continue
 
@@ -241,7 +246,7 @@ class OpenWebuiProvisioner:
             return
 
         all_groups = await self._client.list_groups(client)
-        aihub_groups = [g for g in all_groups if g.get("name", "").startswith(AIHUB_GROUP_PREFIX)]
+        aihub_groups = [g for g in all_groups if g.get("displayName", "").startswith(AIHUB_GROUP_PREFIX)]
 
         if not aihub_groups:
             return
