@@ -1,5 +1,3 @@
-"""Thin async wrapper around the OpenWebUI REST API."""
-
 from typing import Any
 
 import httpx
