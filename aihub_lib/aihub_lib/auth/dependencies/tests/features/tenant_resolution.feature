@@ -36,13 +36,13 @@ Feature: Tenant Resolution in Auth Handler
     When the auth handler resolves tenant for user "user-1" expecting error
     Then a 500 error should be raised with message "No default tenant configured"
 
-  Scenario: Get default tenant for user works without request
-    When the auth handler gets default tenant for user "user-1"
+  Scenario: Get active tenant for user works without request
+    When the auth handler gets active tenant for user "user-1"
     Then the resolved tenant should be "Default Org"
 
-  Scenario: Get default tenant for user without membership returns 403 error
+  Scenario: Get active tenant for user without membership returns 403 error
     Given user "user-no-default" is a member of the second tenant only with roles "AIHubUser"
-    When the auth handler gets default tenant for user "user-no-default" expecting error
+    When the auth handler gets active tenant for user "user-no-default" expecting error
     Then a 403 error should be raised with message "Access denied"
 
   Scenario: Non-existent tenant ID returns generic 403 without leaking information
@@ -54,3 +54,35 @@ Feature: Tenant Resolution in Auth Handler
     Given a request with x-tenant-id header set to "__superuser_tenant__"
     When the auth handler resolves tenant for user "user-1" expecting error
     Then a 403 error should be raised with message "Access denied"
+
+  Scenario: Active tenant is used when no header provided
+    Given user "user-1" has active tenant set to the second tenant
+    And a request without x-tenant-id header
+    When the auth handler resolves tenant for user "user-1"
+    Then the resolved tenant should be "Acme Corp"
+
+  Scenario: Explicit header updates active tenant
+    Given user "user-1" has active tenant set to the default tenant
+    And a request with x-tenant-id header set to the second tenant
+    When the auth handler resolves tenant for user "user-1"
+    Then the resolved tenant should be "Acme Corp"
+    And user "user-1" should have active tenant set to the second tenant
+
+  Scenario: Stale active tenant falls back to default
+    Given user "user-1" has active tenant set to "000000000000000000000000"
+    And a request without x-tenant-id header
+    When the auth handler resolves tenant for user "user-1"
+    Then the resolved tenant should be "Default Org"
+    And user "user-1" should have active tenant set to the default tenant
+
+  Scenario: Active tenant without membership falls back to default
+    Given user "user-2" has active tenant set to the second tenant
+    And a request without x-tenant-id header
+    When the auth handler resolves tenant for user "user-2"
+    Then the resolved tenant should be "Default Org"
+    And user "user-2" should have active tenant set to the default tenant
+
+  Scenario: WebSocket context uses active tenant
+    Given user "user-1" has active tenant set to the second tenant
+    When the auth handler gets active tenant for user "user-1"
+    Then the resolved tenant should be "Acme Corp"

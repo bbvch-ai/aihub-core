@@ -78,7 +78,7 @@ def mock_database_operations(monkeypatch: pytest.MonkeyPatch):
         "aihub_lib.auth.dependencies.AuthHandler.AuthHandler.resolve_tenant_for_user", mock_resolve_tenant
     )
     monkeypatch.setattr(
-        "aihub_lib.auth.dependencies.AuthHandler.AuthHandler.get_default_tenant_for_user", mock_resolve_tenant
+        "aihub_lib.auth.dependencies.AuthHandler.AuthHandler.get_active_tenant_for_user", mock_resolve_tenant
     )
 
 

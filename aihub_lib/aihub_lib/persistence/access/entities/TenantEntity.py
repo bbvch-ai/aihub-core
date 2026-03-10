@@ -3,6 +3,7 @@ from typing import Self
 
 from bson import ObjectId
 from mongoengine import BooleanField, DateTimeField, Document, ListField, NotUniqueError, StringField
+from mongoengine.connection import get_db
 
 from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 
@@ -155,6 +156,13 @@ class TenantEntity(Document):
         # Cascade: remove all user-tenant-role associations and tenant-scoped roles
         UserTenantRoleEntity.objects(tenant_id=tenant_id).delete()
         RoleEntity.objects(tenant_id=tenant_id).delete()
+
+        # Clear active tenant for users who had this as their active tenant
+        # Direct collection access avoids circular import with UserEntity
+        get_db()["users"].update_many(
+            {"active_tenant_id": tenant_id},
+            {"$set": {"active_tenant_id": None}},
+        )
 
         tenant.delete()
         return True

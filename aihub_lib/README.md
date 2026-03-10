@@ -186,7 +186,7 @@ defaults to the default tenant).
                raise HTTPException(status_code=401, detail="Invalid token")
 
            user_entity = UserEntity.ensure_user_exists(oid=user_data["oid"], ...)
-           tenant = self.resolve_tenant_for_user(request, user_entity.id) if request else self.get_default_tenant_for_user(user_entity.id)
+           tenant = self.resolve_tenant_for_user(request, user_entity.id) if request else self.get_active_tenant_for_user(user_entity.id)
 
            return UserIdentity.from_user_entity(user_entity, tenant)
    ```

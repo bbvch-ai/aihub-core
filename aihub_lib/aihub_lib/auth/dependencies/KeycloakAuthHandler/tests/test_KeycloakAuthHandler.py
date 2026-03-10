@@ -73,7 +73,7 @@ def mock_database_operations(monkeypatch: pytest.MonkeyPatch):
         "aihub_lib.persistence.user.UserEntity.UserEntity.ensure_user_exists_for_auth", mock_ensure_user_exists
     )
     monkeypatch.setattr("aihub_lib.auth.identity.UserIdentity.UserIdentity.from_user_entity", mock_from_user_entity)
-    monkeypatch.setattr(AuthHandler, "get_default_tenant_for_user", staticmethod(mock_get_default_tenant))
+    monkeypatch.setattr(AuthHandler, "get_active_tenant_for_user", staticmethod(mock_get_default_tenant))
 
 
 # --- Fixtures ---
