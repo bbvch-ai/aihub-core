@@ -3,6 +3,7 @@ import logging
 from fastapi import Request
 from microsoft_agents.authentication.msal import MsalConnectionManager
 from microsoft_agents.hosting.aiohttp import CloudAdapter
+from microsoft_agents.hosting.core import AgentAuthConfiguration
 from microsoft_agents.hosting.core.authorization import AuthTypes
 from swiss_ai_hub.core.routes import ChatService
 
@@ -52,10 +53,9 @@ class RoutesService(ChatService):
         credentials = RoutesService.get_credentials(path)
         if credentials is None:
             raise ValueError(f"No credentials found for path: {path}")
-        auth_config_dict = RoutesService._create_auth_configuration_dict(credentials)
+        auth_config = AgentAuthConfiguration(**RoutesService._create_auth_configuration_dict(credentials))
 
-        # MsalConnectionManager expects a dict that it will use to create AgentAuthConfiguration
-        connection_manager = MsalConnectionManager(connections_configurations={"SERVICE_CONNECTION": auth_config_dict})
+        connection_manager = MsalConnectionManager(connections_configurations={"SERVICE_CONNECTION": auth_config})
 
         adapter = CloudAdapter(connection_manager=connection_manager)
         RoutesService._adapter_cache[path] = adapter
