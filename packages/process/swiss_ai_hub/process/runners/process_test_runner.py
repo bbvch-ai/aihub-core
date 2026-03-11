@@ -5,20 +5,22 @@ from contextlib import asynccontextmanager
 from typing import Annotated
 
 from openai import BaseModel
-from swiss_ai_hub.core.events import BaseEvent
-from swiss_ai_hub.core.events import ClassDiscoveryRequestEvent
-from swiss_ai_hub.core.events.process import ProcessClassDiscoveryResponseEvent
-from swiss_ai_hub.core.events.process import ProcessExceptionEvent
-from swiss_ai_hub.core.events.process import ProcessStartEvent
-from swiss_ai_hub.core.events.process import ProcessStopEvent
-from swiss_ai_hub.core.events.process import WorkEvent
+from swiss_ai_hub.core.events import BaseEvent, ClassDiscoveryRequestEvent
+from swiss_ai_hub.core.events.process import (
+    ProcessClassDiscoveryResponseEvent,
+    ProcessExceptionEvent,
+    ProcessStartEvent,
+    ProcessStopEvent,
+    WorkEvent,
+)
 from swiss_ai_hub.core.processes import ProcessConfig
 from swiss_ai_hub.core.publishers import JSPublisher
-from swiss_ai_hub.core.subscribers import JSSubscriber
-from swiss_ai_hub.core.subscribers import ProcessNCSubscriber
-from swiss_ai_hub.core.topic_managers import ProcessInstanceTopicManager
-from swiss_ai_hub.core.topic_managers import ProcessTopicManager
-from swiss_ai_hub.core.topic_managers import ProcessWalkthroughTopicManager
+from swiss_ai_hub.core.subscribers import JSSubscriber, ProcessNCSubscriber
+from swiss_ai_hub.core.topic_managers import (
+    ProcessInstanceTopicManager,
+    ProcessTopicManager,
+    ProcessWalkthroughTopicManager,
+)
 from swiss_ai_hub.core.topics import Topic
 from swiss_ai_hub.core.topics.process import ProcessInstanceTopic
 

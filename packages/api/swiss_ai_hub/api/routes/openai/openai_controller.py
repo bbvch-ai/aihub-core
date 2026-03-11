@@ -13,8 +13,7 @@ from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.auth.usage import UsageLimits, use_usage_limits
 from swiss_ai_hub.core.dependencies import use_nats
-from swiss_ai_hub.core.distributor import use_external_agent_event_distributor
-from swiss_ai_hub.core.distributor import ExternalAgentEventDistributor
+from swiss_ai_hub.core.distributor import ExternalAgentEventDistributor, use_external_agent_event_distributor
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.routes import Controller
 

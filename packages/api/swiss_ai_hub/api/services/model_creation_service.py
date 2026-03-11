@@ -2,8 +2,8 @@ import copy
 
 from jambo import SchemaConverter
 from pydantic import BaseModel, ConfigDict, create_model
-from swiss_ai_hub.core.events.agent import AgentConfigSpecs
 from swiss_ai_hub.core.events import EventSpecs
+from swiss_ai_hub.core.events.agent import AgentConfigSpecs
 from swiss_ai_hub.core.events.process import ProcessConfigSpecs
 
 

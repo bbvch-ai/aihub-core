@@ -3,11 +3,9 @@ from typing import Union, get_args, get_origin
 
 import pytest
 from pydantic import BaseModel
-from swiss_ai_hub.core.agents import AgentConfig
-from swiss_ai_hub.core.agents import WorkflowGraph
-from swiss_ai_hub.core.events import EventSpecs
+from swiss_ai_hub.core.agents import AgentConfig, WorkflowGraph
+from swiss_ai_hub.core.events import BaseEvent, EventSpecs
 from swiss_ai_hub.core.events.agent import AgentClassDiscoveryResponseEvent, AgentConfigSpecs
-from swiss_ai_hub.core.events import BaseEvent
 from swiss_ai_hub.core.i18n import LocaleString
 
 from playground.testing.tests.services.TestEvent import Level2Model, Level3Model, NestedTestModel, TestEvent

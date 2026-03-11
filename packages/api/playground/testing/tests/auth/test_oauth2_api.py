@@ -10,16 +10,16 @@ from mongoengine import connect, disconnect
 from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_settings import (
     DangerousDevelopmentOnlyAuthSettings,
 )
-from swiss_ai_hub.core.auth.dependencies.keycloak_auth_handler import KeycloakAuthHandler
-from swiss_ai_hub.core.auth.dependencies.keycloak_auth_handler import KeycloakSettings
-from swiss_ai_hub.core.infrastructure import AIHubSettings
-from swiss_ai_hub.core.infrastructure import MongoSettings
+from swiss_ai_hub.core.auth.dependencies.keycloak_auth_handler import KeycloakAuthHandler, KeycloakSettings
+from swiss_ai_hub.core.infrastructure import AIHubSettings, MongoSettings
 from swiss_ai_hub.core.persistence.access.entities.tenant_entity import TenantEntity
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 from swiss_ai_hub.core.persistence.user.user_entity import UserEntity
-from swiss_ai_hub.core.testing import DummyResponse, generate_rsa_keypair, public_key_to_jwk
-from swiss_ai_hub.core.testing import mock_role_entity_methods
-from swiss_ai_hub.core.testing import mock_user_entity_autouse
+from swiss_ai_hub.core.testing import (
+    DummyResponse,
+    generate_rsa_keypair,
+    public_key_to_jwk,
+)
 
 from swiss_ai_hub.api.routes.my_account.my_account_controller import MyAccountController
 from swiss_ai_hub.api.runners.api_test_runner import ApiTestRunner

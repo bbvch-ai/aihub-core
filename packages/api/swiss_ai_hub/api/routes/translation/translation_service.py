@@ -2,10 +2,8 @@ import logging
 
 from llama_index.core import PromptTemplate
 from swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config import LLMConfig
-from swiss_ai_hub.core.i18n import LocaleHandler
-from swiss_ai_hub.core.i18n import LocaleString
-from swiss_ai_hub.core.infrastructure import LiteLLMProxySettings
-from swiss_ai_hub.core.infrastructure import trace_fn
+from swiss_ai_hub.core.i18n import LocaleHandler, LocaleString
+from swiss_ai_hub.core.infrastructure import LiteLLMProxySettings, trace_fn
 
 from swiss_ai_hub.api.routes.translation.dto.translation_request import TranslationRequest
 from swiss_ai_hub.api.routes.translation.dto.translation_response import TranslationResponse

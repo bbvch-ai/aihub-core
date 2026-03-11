@@ -1,10 +1,7 @@
 from typing import TYPE_CHECKING, Annotated, Any, Self
 
 from pydantic import Field
-from swiss_ai_hub.core.events.process import AgentInSpecs
-from swiss_ai_hub.core.events.process import HumanInSpecs
-from swiss_ai_hub.core.events.process import ProcessConfigSpecs
-from swiss_ai_hub.core.events.process import ProgramInSpecs
+from swiss_ai_hub.core.events.process import AgentInSpecs, HumanInSpecs, ProcessConfigSpecs, ProgramInSpecs
 from swiss_ai_hub.core.form import ALL_FORM_OPTIONS
 from swiss_ai_hub.core.i18n import LocaleHandler
 

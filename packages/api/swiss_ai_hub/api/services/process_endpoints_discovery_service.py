@@ -8,12 +8,9 @@ from nats.aio.client import Client as NATS
 from pydantic import BaseModel
 from stringcase import snakecase
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
-from swiss_ai_hub.core.distributor import use_external_process_event_distributor
-from swiss_ai_hub.core.distributor import ExternalProcessEventDistributor
+from swiss_ai_hub.core.distributor import ExternalProcessEventDistributor, use_external_process_event_distributor
 from swiss_ai_hub.core.events import ClassDiscoveryRequestEvent
-from swiss_ai_hub.core.events.process import HumanInSpecs
-from swiss_ai_hub.core.events.process import ProcessClassDiscoveryResponseEvent
-from swiss_ai_hub.core.events.process import ProgramInSpecs
+from swiss_ai_hub.core.events.process import HumanInSpecs, ProcessClassDiscoveryResponseEvent, ProgramInSpecs
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.persistence.process import ProcessClassEntity
 from swiss_ai_hub.core.persistence.process.process_config_entity_document import ProcessConfigEntityDocument

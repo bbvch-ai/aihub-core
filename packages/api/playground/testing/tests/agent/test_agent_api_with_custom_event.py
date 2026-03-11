@@ -7,7 +7,6 @@ from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler
 )
 from swiss_ai_hub.core.events import EventSpecs
 from swiss_ai_hub.core.infrastructure import enable_logging
-from swiss_ai_hub.core.testing import mock_role_entity_methods, mock_tenant_entity_autouse, mock_user_entity_autouse
 
 from playground.testing.tests.agent.events.TestStartEvent import TestStartEvent
 from playground.testing.tests.agent.events.TestStopEvent import TestStopEvent

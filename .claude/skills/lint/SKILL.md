@@ -30,7 +30,7 @@ Frontend scope (`packages/web`) runs ESLint instead of ruff.
 ### 1. Run make pr-ready from Repo Root
 
 ```bash
-make -C /home/joelbarmettler/projects/aihub/swiss-ai-hub pr-ready
+make -C /home/joelbarmettler/projects/aihub/aihub-core pr-ready
 ```
 
 ### 2. Review Output for Errors
@@ -47,7 +47,7 @@ Ruff auto-fixes most issues. Errors that remain after auto-fix require manual in
 Fix each error in the reported file. Then re-run:
 
 ```bash
-make -C /home/joelbarmettler/projects/aihub/swiss-ai-hub pr-ready
+make -C /home/joelbarmettler/projects/aihub/aihub-core pr-ready
 ```
 
 Repeat until the output shows zero errors across all scopes.

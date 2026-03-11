@@ -11,9 +11,7 @@ from swiss_ai_hub.core.generative_ai.document.loaders.mark_it_down_loader import
 from swiss_ai_hub.core.generative_ai.document.loaders.mineru_loader import MineruLoader
 from swiss_ai_hub.core.generative_ai.document.loaders.raw_loader import RawLoader
 from swiss_ai_hub.core.generative_ai.utils.image_processor import replace_s3_paths_with_signed_urls
-from swiss_ai_hub.core.infrastructure import MineruSettings
-from swiss_ai_hub.core.infrastructure import ParsingSettings
-from swiss_ai_hub.core.infrastructure import create_s3_filesystem
+from swiss_ai_hub.core.infrastructure import MineruSettings, ParsingSettings, create_s3_filesystem
 
 from swiss_ai_hub.api.routes.parsing.dto.document_parsing_response import (
     DocumentParsingMetadata,

@@ -10,8 +10,7 @@ from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler
     DangerousDevelopmentOnlyAuthSettings,
 )
 from swiss_ai_hub.core.auth.dependencies.token_auth_handler.token_auth_handler import TokenAuthHandler
-from swiss_ai_hub.core.infrastructure import AIHubSettings
-from swiss_ai_hub.core.infrastructure import MongoSettings
+from swiss_ai_hub.core.infrastructure import AIHubSettings, MongoSettings
 from swiss_ai_hub.core.persistence.access.entities.bearer_token import BearerToken
 from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
 from swiss_ai_hub.core.persistence.access.entities.tenant_entity import TenantEntity

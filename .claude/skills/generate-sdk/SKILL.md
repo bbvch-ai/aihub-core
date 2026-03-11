@@ -26,7 +26,7 @@ curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/api/v1/docs
 Run from `packages/web/aihub_web/`:
 
 ```bash
-cd packages/web/packages/web && pnpm generate-sdk
+cd packages/web/aihub_web && pnpm generate-sdk
 ```
 
 This uses the config at `packages/web/aihub_web/openapi-ts.config.ts` to fetch the OpenAPI spec from
@@ -36,7 +36,7 @@ This uses the config at `packages/web/aihub_web/openapi-ts.config.ts` to fetch t
 ## Step 3: Lint Generated Code
 
 ```bash
-cd packages/web/packages/web && pnpm lint --fix
+cd packages/web/aihub_web && pnpm lint --fix
 ```
 
 This auto-fixes formatting issues in the generated TypeScript files.
@@ -52,7 +52,7 @@ ls -la packages/web/aihub_web/sdk/client/types.gen.ts packages/web/aihub_web/sdk
 2. Check for TypeScript compilation errors in the generated output:
 
 ```bash
-cd packages/web/packages/web && pnpm nuxi typecheck 2>&1 | head -30
+cd packages/web/aihub_web && pnpm nuxi typecheck 2>&1 | head -30
 ```
 
 3. Report what changed:

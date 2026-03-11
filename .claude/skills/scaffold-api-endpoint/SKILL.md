@@ -12,10 +12,10 @@ Generate a new controller with endpoints. The resource name should be provided v
 
 1. Read the API scope guide: `packages/api/CLAUDE.md`
 2. Study these reference controllers:
-   - CRUD: `packages/api/swiss_ai_hub/api/routes/agent/AgentController.py`
-   - Simple: `packages/api/swiss_ai_hub/api/routes/role/RoleController.py`
-   - Complex: `packages/api/swiss_ai_hub/api/routes/thread/ThreadController.py`
-   - Base class: `packages/core/swiss_ai_hub/core/routes/Controller.py`
+   - CRUD: `packages/api/swiss_ai_hub/api/routes/agent/agent_controller.py`
+   - Simple: `packages/api/swiss_ai_hub/api/routes/role/role_controller.py`
+   - Complex: `packages/api/swiss_ai_hub/api/routes/thread/thread_controller.py`
+   - Base class: `packages/core/swiss_ai_hub/core/routes/controller.py`
    - Registration: `packages/api/app/main.py`
 3. Extract the resource name from `$ARGUMENTS` and derive `snake_case` (dirs/files) and `CamelCase` (classes)
 
@@ -24,38 +24,38 @@ Generate a new controller with endpoints. The resource name should be provided v
 ```
 packages/api/swiss_ai_hub/api/routes/<resource>/
 ├── __init__.py
-├── <Resource>Controller.py
-├── <Resource>Service.py
+├── <resource>_controller.py
+├── <resource>_service.py
 └── dto/
     ├── __init__.py
-    ├── <Resource>DTO.py
-    ├── Create<Resource>Request.py
-    ├── Update<Resource>Request.py
-    └── Paginated<Resource>sResponse.py
+    ├── <resource>_dto.py
+    ├── create_<resource>_request.py
+    ├── update_<resource>_request.py
+    └── paginated_<resource>s_response.py
 ```
 
 ## Step 3: Create the Controller
 
-File: `packages/api/swiss_ai_hub/api/routes/<resource>/<Resource>Controller.py`
+File: `packages/api/swiss_ai_hub/api/routes/<resource>/<resource>_controller.py`
 
 ```python
 from typing import Annotated, Self
 
-from swiss_ai_hub.core.auth.dependencies.AuthHandler import AuthHandler
-from swiss_ai_hub.core.auth.identity.UserIdentity import UserIdentity
-from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
-from swiss_ai_hub.core.routes.Controller import Controller
+from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
+from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
+from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
+from swiss_ai_hub.core.routes.controller import Controller
 from fastapi import Depends, Response, Security, status
 
-from swiss_ai_hub.api.i18n.ApiLocaleString import ApiLocaleString
+from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
 from swiss_ai_hub.api.i18n.dependencies.use_locale import use_locale
-from swiss_ai_hub.api.pagination.type.PageNumber import PageNumber
-from swiss_ai_hub.api.pagination.type.PageSize import PageSize
-from swiss_ai_hub.api.routes.<resource>.dto.Create<Resource>Request import Create<Resource>Request
-from swiss_ai_hub.api.routes.<resource>.dto.<Resource>DTO import <Resource>DTO
-from swiss_ai_hub.api.routes.<resource>.dto.Paginated<Resource>sResponse import Paginated<Resource>sResponse
-from swiss_ai_hub.api.routes.<resource>.dto.Update<Resource>Request import Update<Resource>Request
-from swiss_ai_hub.api.routes.<resource>.<Resource>Service import <Resource>Service
+from swiss_ai_hub.api.pagination.type.page_number import PageNumber
+from swiss_ai_hub.api.pagination.type.page_size import PageSize
+from swiss_ai_hub.api.routes.<resource>.dto.create_<resource>_request import Create<Resource>Request
+from swiss_ai_hub.api.routes.<resource>.dto.<resource>_dto import <Resource>DTO
+from swiss_ai_hub.api.routes.<resource>.dto.paginated_<resource>s_response import Paginated<Resource>sResponse
+from swiss_ai_hub.api.routes.<resource>.dto.update_<resource>_request import Update<Resource>Request
+from swiss_ai_hub.api.routes.<resource>.<resource>_service import <Resource>Service
 
 
 class <Resource>Controller(Controller):
@@ -151,7 +151,7 @@ class <Resource>Controller(Controller):
 
 ### Controller Architecture Rules
 
-1. **Inherit from `Controller`**: Always extend `swiss_ai_hub.core.routes.Controller`
+1. **Inherit from `Controller`**: Always extend `swiss_ai_hub.core.routes.controller`
 2. **Fluent builder**: Every endpoint method returns `Self` for chaining
 3. **Metadata**: Set `name` (ApiLocaleString), `description`, `icon` (Iconify)
 4. **Named-only constructor args**: Use `*` to enforce keyword arguments
@@ -187,7 +187,7 @@ _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.<reso
 Edit `packages/api/app/main.py`:
 
 ```python
-from swiss_ai_hub.api.routes.<resource>.<Resource>Controller import <Resource>Controller
+from swiss_ai_hub.api.routes.<resource>.<resource>_controller import <Resource>Controller
 
 runner.mount(
     # ... existing controllers ...
@@ -221,7 +221,7 @@ patterns in `playground/testing/tests/agent/` or `playground/testing/tests/role/
 ## Step 7: Verify
 
 1. Confirm the controller is importable:
-   `cd packages/api && uv run python -c "from swiss_ai_hub.api.routes.<resource>.<Resource>Controller import <Resource>Controller"`
+   `cd packages/api && uv run python -c "from swiss_ai_hub.api.routes.<resource>.<resource>_controller import <Resource>Controller"`
 2. Confirm registration in `packages/api/app/main.py` — the controller must be imported and mounted via `runner.mount()`
 3. Confirm i18n keys exist in all 4 locale files:
    `packages/api/swiss_ai_hub/api/i18n/translations/api/controllers.{en,de,fr,it}.yml`
@@ -241,13 +241,13 @@ patterns in `playground/testing/tests/agent/` or `playground/testing/tests/role/
 
 **Input**: `$ARGUMENTS = "project"` **Expected output files**:
 
-- `packages/api/swiss_ai_hub/api/routes/project/ProjectController.py` with `ProjectController(Controller)`
-- `packages/api/swiss_ai_hub/api/routes/project/ProjectService.py` (stub -- use `/scaffold-api-service` for full
+- `packages/api/swiss_ai_hub/api/routes/project/project_controller.py` with `ProjectController(Controller)`
+- `packages/api/swiss_ai_hub/api/routes/project/project_service.py` (stub -- use `/scaffold-api-service` for full
   service)
-- `packages/api/swiss_ai_hub/api/routes/project/dto/ProjectDTO.py`, `CreateProjectRequest.py`,
-  `UpdateProjectRequest.py`, `PaginatedProjectsResponse.py`
+- `packages/api/swiss_ai_hub/api/routes/project/dto/project_dto.py`, `create_project_request.py`,
+  `update_project_request.py`, `paginated_projects_response.py`
 - Registration added to `packages/api/app/main.py`
-- i18n keys added to `packages/api/swiss_ai_hub/api/i18n/locales/{en,de,fr,it}.yaml`
+- i18n keys added to `packages/api/swiss_ai_hub/api/i18n/translations/api/controllers.{en,de,fr,it}.yml`
 
 ## Troubleshooting
 

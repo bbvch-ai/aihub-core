@@ -1,7 +1,6 @@
 from typing import ClassVar
 
-from swiss_ai_hub.core.events.process import AgentWorkEvent
-from swiss_ai_hub.core.events.process import AgentWorkRequestEvent
+from swiss_ai_hub.core.events.process import AgentWorkEvent, AgentWorkRequestEvent
 
 from playground.agents.AgentC.events.AgentCStartEvent import AgentCStartEvent
 from playground.events.AgentCWork import AgentCWork

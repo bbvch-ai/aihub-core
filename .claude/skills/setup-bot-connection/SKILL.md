@@ -39,7 +39,7 @@ ______________________________________________________________________
 
 ```bash
 cd packages/bot
-uv run python packages/bot/setup_azure_bot.py \
+uv run python swiss_ai_hub/bot/setup_azure_bot.py \
     --resource-group "my-resource-group" \
     --bot-name "ai-hub-bot" \
     --token-url "https://my-domain.com" \
@@ -55,7 +55,7 @@ uv run python packages/bot/setup_azure_bot.py \
 
 ```bash
 cd packages/bot
-uv run python packages/bot/setup_azure_bot.py \
+uv run python swiss_ai_hub/bot/setup_azure_bot.py \
     --resource-group "my-resource-group" \
     --bot-name "ai-hub-slack-bot" \
     --token-url "https://my-domain.com" \
@@ -123,7 +123,7 @@ export BOT_APP_ID="<APP_ID>"
 export BOT_APP_PASSWORD="<APP_PASSWORD>"
 export BOT_TENANT_ID="<APP_TENANTID>"
 export MONGO_CONNECTION_STRING="mongodb://localhost:27017"
-cd packages/bot && uv run python packages/bot/add_path_entity.py
+cd packages/bot && uv run python swiss_ai_hub/bot/add_path_entity.py
 ```
 
 ```python

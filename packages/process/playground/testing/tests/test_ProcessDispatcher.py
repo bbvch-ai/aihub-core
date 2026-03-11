@@ -6,8 +6,7 @@ import pytest
 from bson import ObjectId
 from nats.js import JetStreamContext
 from redis.asyncio import Redis
-from swiss_ai_hub.core.events.process import ProcessExceptionEvent
-from swiss_ai_hub.core.events.process import WorkEvent
+from swiss_ai_hub.core.events.process import ProcessExceptionEvent, WorkEvent
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.infrastructure import enable_logging
 from swiss_ai_hub.core.processes import ProcessConfig

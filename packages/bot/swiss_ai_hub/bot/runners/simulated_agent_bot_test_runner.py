@@ -3,31 +3,24 @@ from typing import Self
 
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
-from swiss_ai_hub.core.agents import AgentConfig
-from swiss_ai_hub.core.agents import WorkflowGraph
-from swiss_ai_hub.core.events.agent import ControlEvent
-from swiss_ai_hub.core.events.agent import StartEvent
-from swiss_ai_hub.core.events.agent import StopEvent
-from swiss_ai_hub.core.events.agent import LLMCostEvent
-from swiss_ai_hub.core.events.agent import AgentClassDiscoveryResponseEvent
-from swiss_ai_hub.core.events.agent import AgentConfigSpecs
-from swiss_ai_hub.core.events.agent import ChunkEvent
-from swiss_ai_hub.core.events import BaseEvent
-from swiss_ai_hub.core.events import ClassDiscoveryRequestEvent
-from swiss_ai_hub.core.events import EventSpecs
+from swiss_ai_hub.core.agents import AgentConfig, WorkflowGraph
+from swiss_ai_hub.core.events import BaseEvent, ClassDiscoveryRequestEvent, EventSpecs
+from swiss_ai_hub.core.events.agent import (
+    AgentClassDiscoveryResponseEvent,
+    AgentConfigSpecs,
+    ChunkEvent,
+    ControlEvent,
+    LLMCostEvent,
+    StartEvent,
+    StopEvent,
+)
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.infrastructure import NatsSettings
-from swiss_ai_hub.core.publishers import JSPublisher
-from swiss_ai_hub.core.publishers import NCPublisher
-from swiss_ai_hub.core.subscribers import AgentJSSubscriber
-from swiss_ai_hub.core.subscribers import AgentNCSubscriber
-from swiss_ai_hub.core.subscribers import JSSubscriber
-from swiss_ai_hub.core.subscribers import NCSubscriber
-from swiss_ai_hub.core.topic_managers import AgentInstanceTopicManager
-from swiss_ai_hub.core.topic_managers import AgentThreadTopicManager
-from swiss_ai_hub.core.topic_managers import AgentTopicManager
-from swiss_ai_hub.core.topics.agents import AgentInstanceTopic
+from swiss_ai_hub.core.publishers import JSPublisher, NCPublisher
+from swiss_ai_hub.core.subscribers import AgentJSSubscriber, AgentNCSubscriber, JSSubscriber, NCSubscriber
+from swiss_ai_hub.core.topic_managers import AgentInstanceTopicManager, AgentThreadTopicManager, AgentTopicManager
 from swiss_ai_hub.core.topics import AgentClassDiscoveryTopic
+from swiss_ai_hub.core.topics.agents import AgentInstanceTopic
 
 from swiss_ai_hub.bot.runners.bot_test_runner import BotTestRunner
 

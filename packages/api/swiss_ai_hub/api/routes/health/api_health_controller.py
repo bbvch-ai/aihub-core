@@ -8,18 +8,17 @@ from redis.asyncio import Redis
 from starlette.status import HTTP_200_OK, HTTP_503_SERVICE_UNAVAILABLE
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.dependencies import use_nats
-from swiss_ai_hub.core.infrastructure import use_milvus
-from swiss_ai_hub.core.infrastructure import use_redis
-from swiss_ai_hub.core.infrastructure import use_s3
-from swiss_ai_hub.core.routes import ApiHealthChecks, HealthResponse
+from swiss_ai_hub.core.infrastructure import use_milvus, use_redis, use_s3
 from swiss_ai_hub.core.routes import (
+    ApiHealthChecks,
+    HealthController,
+    HealthResponse,
     check_milvus,
     check_mongodb,
     check_nats,
     check_redis,
     check_s3,
 )
-from swiss_ai_hub.core.routes import HealthController
 
 
 class ApiHealthController(HealthController):

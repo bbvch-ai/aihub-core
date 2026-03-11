@@ -54,7 +54,7 @@ Scope CLAUDE.md files that can be improved:
 - `packages/bot/CLAUDE.md` — handler architecture, CompletionHandler pattern
 - `packages/web/CLAUDE.md` — Nuxt/Vue/PrimeVue conventions, composables
 - `docs/CLAUDE.md` — VitePress docs, translation rules
-- `deployment/CLAUDE.md` — Docker Compose, Traefik, network zones
+- `infra/deployment/CLAUDE.md` — Docker Compose, Traefik, network zones
 
 **Prefer hooks over CLAUDE.md** when the rule is deterministic (always do X after Y). Existing hooks handle formatting,
 linting, scope boundary checks, and sensitive file protection — check `.claude/settings.json` before adding a CLAUDE.md

@@ -5,7 +5,6 @@ from dotenv import find_dotenv, load_dotenv
 
 load_dotenv(find_dotenv(usecwd=True))
 from aiohttp import ClientResponse
-from swiss_ai_hub.core.testing import mock_role_entity_methods, mock_tenant_entity_autouse, mock_user_entity_autouse
 
 
 @pytest.fixture(autouse=True)

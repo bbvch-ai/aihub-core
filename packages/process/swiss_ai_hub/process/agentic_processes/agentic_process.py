@@ -1,15 +1,17 @@
 import functools
 from typing import ClassVar
 
-from swiss_ai_hub.core.events.process import AgentWorkEvent
-from swiss_ai_hub.core.events.process import HumanWorkEvent
-from swiss_ai_hub.core.events.process import ProcessWorkEvent
-from swiss_ai_hub.core.events.process import ProgramWorkEvent
-from swiss_ai_hub.core.events.process import WorkEvent
-from swiss_ai_hub.core.events.process import AgentWorkRequestEvent
-from swiss_ai_hub.core.events.process import HumanWorkRequestEvent
-from swiss_ai_hub.core.events.process import ProgramWorkRequestEvent
-from swiss_ai_hub.core.events.process import WorkRequestEvent
+from swiss_ai_hub.core.events.process import (
+    AgentWorkEvent,
+    AgentWorkRequestEvent,
+    HumanWorkEvent,
+    HumanWorkRequestEvent,
+    ProcessWorkEvent,
+    ProgramWorkEvent,
+    ProgramWorkRequestEvent,
+    WorkEvent,
+    WorkRequestEvent,
+)
 from swiss_ai_hub.core.workflow import DispatchableWorkflow
 
 from swiss_ai_hub.process.delegators.abstract_process_entity import BaseProcessEntity

@@ -12,13 +12,13 @@ Generate a MongoEngine Document entity for a resource. The resource name should 
 
 Read these reference entities:
 
-- Agent class: `packages/core/swiss_ai_hub/core/persistence/agents/AgentClassEntity.py`
-- Agent config: `packages/core/swiss_ai_hub/core/persistence/agents/AgentConfigEntityDocument.py`
-- Thread: `packages/core/swiss_ai_hub/core/persistence/messaging/entities/ThreadEntity.py`
-- Notification: `packages/core/swiss_ai_hub/core/persistence/notification/NotificationEntity.py`
-- User: `packages/core/swiss_ai_hub/core/persistence/user/UserEntity.py`
-- Role: `packages/core/swiss_ai_hub/core/persistence/access/entities/RoleEntity.py`
-- Bearer token: `packages/core/swiss_ai_hub/core/persistence/access/entities/BearerToken.py`
+- Agent class: `packages/core/swiss_ai_hub/core/persistence/agents/agent_class_entity.py`
+- Agent config: `packages/core/swiss_ai_hub/core/persistence/agents/agent_config_entity_document.py`
+- Thread: `packages/core/swiss_ai_hub/core/persistence/messaging/entities/thread_entity.py`
+- Notification: `packages/core/swiss_ai_hub/core/persistence/notification/notification_entity.py`
+- User: `packages/core/swiss_ai_hub/core/persistence/user/user_entity.py`
+- Role: `packages/core/swiss_ai_hub/core/persistence/access/entities/role_entity.py`
+- Bearer token: `packages/core/swiss_ai_hub/core/persistence/access/entities/bearer_token.py`
 
 ## Architecture: No Separate Repository Layer
 
@@ -45,7 +45,7 @@ MongoDB (via FerretDB)
 
 ## Step 1: Create the Entity
 
-File: `packages/core/swiss_ai_hub/core/persistence/<resource>/<Resource>Entity.py`
+File: `packages/core/swiss_ai_hub/core/persistence/<resource>/<resource>_entity.py`
 
 ```python
 from datetime import UTC, datetime
@@ -62,7 +62,7 @@ from mongoengine import (
 )
 
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
-from swiss_ai_hub.core.persistence.i18n.LocaleStringEntity import LocaleStringEntity
+from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
 
 
 class <Resource>Entity(Document):
@@ -305,7 +305,7 @@ class ThreadEntity(Document):
 For multilingual text, use `LocaleStringEntity`:
 
 ```python
-from swiss_ai_hub.core.persistence.i18n.LocaleStringEntity import LocaleStringEntity
+from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
 
 class MyEntity(Document):
     name = EmbeddedDocumentField(LocaleStringEntity, required=True)
@@ -335,42 +335,42 @@ class LocaleStringEntity(EmbeddedDocument):
 packages/core/swiss_ai_hub/core/persistence/
 ├── access/
 │   └── entities/
-│       ├── BearerToken.py
-│       └── RoleEntity.py
+│       ├── bearer_token.py
+│       └── role_entity.py
 ├── agents/
-│   ├── AgentClassEntity.py
-│   ├── AgentConfigEntity.py
-│   ├── AgentConfigEntityDocument.py
-│   └── AgentConfigEntityEmbeddedDocument.py
+│   ├── agent_class_entity.py
+│   ├── agent_config_entity.py
+│   ├── agent_config_entity_document.py
+│   └── agent_config_entity_embedded_document.py
 ├── i18n/
-│   └── LocaleStringEntity.py
+│   └── locale_string_entity.py
 ├── messaging/
 │   └── entities/
-│       ├── ThreadEntity.py
-│       ├── PersistedAgentEventEntity.py
-│       └── PersistedProcessEventEntity.py
+│       ├── thread_entity.py
+│       ├── persisted_agent_event_entity.py
+│       └── persisted_process_event_entity.py
 ├── notification/
-│   └── NotificationEntity.py
+│   └── notification_entity.py
 ├── process/
-│   ├── ProcessClassEntity.py
-│   ├── ProcessConfigEntity.py
-│   ├── ProcessConfigEntityDocument.py
-│   └── ProcessConfigEntityEmbeddedDocument.py
+│   ├── process_class_entity.py
+│   ├── process_config_entity.py
+│   ├── process_config_entity_document.py
+│   └── process_config_entity_embedded_document.py
 ├── rag/
 │   └── datalake/
 │       └── entities/
-│           ├── BucketEntity.py
-│           └── NamespaceEntity.py
+│           ├── bucket_entity.py
+│           └── namespace_entity.py
 ├── user/
-│   └── UserEntity.py
+│   └── user_entity.py
 └── <resource>/                  <-- NEW
-    └── <Resource>Entity.py
+    └── <resource>_entity.py
 ```
 
 ## Step 2: Verify
 
 1. Confirm the entity is importable:
-   `cd packages/core && uv run python -c "from swiss_ai_hub.core.persistence.<resource>.<Resource>Entity import <Resource>Entity"`
+   `cd packages/core && uv run python -c "from swiss_ai_hub.core.persistence.<resource>.<resource>_entity import <Resource>Entity"`
 2. Confirm the service imports the entity (if service already exists)
 3. Run tests: `cd packages/core && make test`
 
@@ -402,6 +402,6 @@ packages/core/swiss_ai_hub/core/persistence/
 - **`@classmethod` for queries**: All data access is via class methods
 - **`@trace_fn` on all methods**: OpenTelemetry tracing
 - **`DoesNotExist` exceptions**: MongoEngine throws these — catch in services, not in entities
-- **`save()` override**: Only for entities with `updated_at` — see `AgentConfigEntityDocument` for the pattern
+- **`save()` override**: Only for entities with `updated_at` — see `agent_config_entity_document.py` for the pattern
 - **Indexes**: Always index fields used in queries
 - **No repository abstraction**: The Entity IS the repository

@@ -6,12 +6,8 @@ from mongoengine import connect, disconnect
 from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler import (
     DangerousDevelopmentOnlyAuthHandler,
 )
-from swiss_ai_hub.core.infrastructure import AIHubSettings
-from swiss_ai_hub.core.infrastructure import MongoSettings
+from swiss_ai_hub.core.infrastructure import AIHubSettings, MongoSettings
 from swiss_ai_hub.core.persistence.access.entities.bearer_token import BearerToken
-from swiss_ai_hub.core.testing import mock_role_entity_methods
-from swiss_ai_hub.core.testing import mock_tenant_entity_autouse
-from swiss_ai_hub.core.testing import mock_user_entity_autouse
 
 from swiss_ai_hub.api.routes.token.token_controller import TokenController
 from swiss_ai_hub.api.runners.api_test_runner import ApiTestRunner

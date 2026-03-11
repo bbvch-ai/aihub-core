@@ -5,8 +5,7 @@ from fastapi.params import Query
 from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
-from swiss_ai_hub.core.distributor import use_external_process_event_distributor
-from swiss_ai_hub.core.distributor import ExternalProcessEventDistributor
+from swiss_ai_hub.core.distributor import ExternalProcessEventDistributor, use_external_process_event_distributor
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.persistence.process import ProcessClassEntity
 from swiss_ai_hub.core.persistence.process.process_config_entity_document import ProcessConfigEntityDocument

@@ -40,7 +40,8 @@ Events. The dispatcher (not the developer) decides execution order based on data
 2. **Evaluation:** Upon receiving event *e*, identifies all steps *S* where *e* ∈ *input_types(S)*
 3. **Trigger:** Invokes step *S* if and only if all required inputs are present in the `EventStore`
 
-Source: `packages/core/nats/dispatcher/BaseDispatcher.py`, `packages/agent/dispatchers/AgentDispatcher.py`
+Source: `packages/core/swiss_ai_hub/core/dispatcher/base_dispatcher.py`,
+`packages/agent/swiss_ai_hub/agent/dispatchers/agent_dispatcher.py`
 
 ______________________________________________________________________
 
@@ -99,7 +100,8 @@ Understanding these rules is essential for diagnosing most agent bugs.
 | R5   | Precondition Override    | `@precondition` re-evaluates on each new event arrival AFTER R1 — deadlock if never satisfied       |
 | R6   | Event Persistence        | Every `ControlEvent` persisted in JetStream, replayed on dispatcher restart                         |
 
-Source: `packages/core/nats/dispatcher/BaseDispatcher._step_meets_basic_execution_requirements()`
+Source: `packages/core/swiss_ai_hub/core/dispatcher/base_dispatcher.py`
+(`BaseDispatcher._step_meets_basic_execution_requirements()`)
 
 ### Parameter Types and Their Execution Behavior
 
@@ -112,7 +114,7 @@ Source: `packages/core/nats/dispatcher/BaseDispatcher._step_meets_basic_executio
 
 \*`list[T]` is treated as optional — an empty list doesn't block execution.
 
-Source: `packages/core/nats/dispatcher/BaseDispatcher._get_event_value()`
+Source: `packages/core/swiss_ai_hub/core/dispatcher/base_dispatcher.py` (`BaseDispatcher._get_event_value()`)
 
 ### Race Condition Problem
 
@@ -136,8 +138,8 @@ B.
 | Make param required (remove `\| None`) | Always needed                 | `event: B` instead of `event: B \| None`               |
 | `max_executions_per_run=1`             | Run once regardless           | `@step(max_executions_per_run=1)` — idempotency guard  |
 
-Source: `packages/agent/workflow/decorators/precondition.py`,
-`packages/core/nats/workflow/annotations/custom_types/ListOfSize.py`
+Source: `packages/agent/swiss_ai_hub/agent/workflow/decorators/precondition.py`,
+`packages/core/swiss_ai_hub/core/workflow/annotations/custom_types/list_of_size.py`
 
 ### List Parameter Behavior
 
@@ -176,7 +178,7 @@ When binding events to step parameters:
 The dispatcher tracks which events were used as input for each step execution. If a step is triggered again with the
 exact same set of input events (by event ID), the execution is silently skipped.
 
-Source: `StepStore.was_called_with_events()` in `packages/core/nats/dispatcher/stores/step/StepStore.py`
+Source: `StepStore.was_called_with_events()` in `packages/core/swiss_ai_hub/core/dispatcher/stores/step/step_store.py`
 
 ______________________________________________________________________
 
@@ -371,7 +373,7 @@ fires) or throw TypeError.
 | `AgentMemory`                          | User and organization memory access   |
 | `AgentInstanceTopic`                   | NATS topic info for this event        |
 
-Source: `AgentDispatcher._get_parameter_value()` in `packages/agent/dispatchers/AgentDispatcher.py`
+Source: `AgentDispatcher._get_parameter_value()` in `packages/agent/swiss_ai_hub/agent/dispatchers/agent_dispatcher.py`
 
 ______________________________________________________________________
 

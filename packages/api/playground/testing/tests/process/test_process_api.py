@@ -9,12 +9,9 @@ from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler
     DangerousDevelopmentOnlyAuthHandler,
 )
 from swiss_ai_hub.core.i18n import LocaleString
-from swiss_ai_hub.core.persistence.process.process_class_entity import HumanInSpecsEntity
 from swiss_ai_hub.core.persistence.process import ProcessClassEntity
+from swiss_ai_hub.core.persistence.process.process_class_entity import HumanInSpecsEntity
 from swiss_ai_hub.core.persistence.process.process_config_entity_document import ProcessConfigEntityDocument
-from swiss_ai_hub.core.testing import mock_role_entity_methods
-from swiss_ai_hub.core.testing import mock_tenant_entity_autouse
-from swiss_ai_hub.core.testing import mock_user_entity_autouse
 
 from swiss_ai_hub.api.routes.process.process_controller import ProcessController
 from swiss_ai_hub.api.runners.simulation.process.simulated_process_api_test_runner import SimulatedProcessApiTestRunner

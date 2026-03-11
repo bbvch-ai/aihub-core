@@ -13,7 +13,7 @@ Debug the Nuxt 3 admin interface visually. Issue description or page URL via `$A
 The admin UI must be running at http://localhost:3333. If not running:
 
 ```bash
-cd packages/web/packages/web && pnpm dev
+cd packages/web/aihub_web && pnpm dev
 ```
 
 ## Step 1: Navigate to the Page

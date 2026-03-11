@@ -6,16 +6,15 @@ from typing import Annotated, cast
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 from swiss_ai_hub.core.events import BaseEvent
-from swiss_ai_hub.core.events.process import WorkEvent
-from swiss_ai_hub.core.events.process import WorkRequestEvent
+from swiss_ai_hub.core.events.process import WorkEvent, WorkRequestEvent
 from swiss_ai_hub.core.publishers import JSPublisher
-from swiss_ai_hub.core.subscribers import ProcessJSSubscriber
-from swiss_ai_hub.core.subscribers import ProcessNCSubscriber
-from swiss_ai_hub.core.topic_managers import ProcessClassTopicManager
-from swiss_ai_hub.core.topic_managers import ProcessInstanceTopicManager
-from swiss_ai_hub.core.topic_managers import ProcessWalkthroughTopicManager
-from swiss_ai_hub.core.topics import Topic
-from swiss_ai_hub.core.topics import ProcessClassTopic
+from swiss_ai_hub.core.subscribers import ProcessJSSubscriber, ProcessNCSubscriber
+from swiss_ai_hub.core.topic_managers import (
+    ProcessClassTopicManager,
+    ProcessInstanceTopicManager,
+    ProcessWalkthroughTopicManager,
+)
+from swiss_ai_hub.core.topics import ProcessClassTopic, Topic
 
 from swiss_ai_hub.process.agentic_processes.agentic_process import AgenticProcess
 

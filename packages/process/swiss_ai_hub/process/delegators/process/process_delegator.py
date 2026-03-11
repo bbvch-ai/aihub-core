@@ -3,14 +3,11 @@ from collections.abc import Awaitable, Callable
 from typing import Annotated
 
 from bson import ObjectId
-from swiss_ai_hub.core.events.process import ProcessStopEvent
-from swiss_ai_hub.core.events.process import ProcessWorkEvent
-from swiss_ai_hub.core.events.process import WorkEvent
-from swiss_ai_hub.core.events.process import WorkRequestEvent
+from swiss_ai_hub.core.events.process import ProcessStopEvent, ProcessWorkEvent, WorkEvent, WorkRequestEvent
 from swiss_ai_hub.core.subscribers import ProcessNCSubscriber
 from swiss_ai_hub.core.topic_managers import ProcessInstanceTopicManager
-from swiss_ai_hub.core.topics.process import ProcessInstanceTopic
 from swiss_ai_hub.core.topics import ProcessClassTopic
+from swiss_ai_hub.core.topics.process import ProcessInstanceTopic
 
 from swiss_ai_hub.process.delegators.abstract_entity_delegator import AbstractEntityDelegator
 

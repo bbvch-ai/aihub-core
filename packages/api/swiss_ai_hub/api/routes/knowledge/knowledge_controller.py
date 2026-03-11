@@ -14,9 +14,7 @@ from swiss_ai_hub.core.generative_ai.document.accessor.s3_anonymous_file_access_
 from swiss_ai_hub.core.generative_ai.document.types.ingested_node import IngestedNode
 from swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config import LLMConfig
 from swiss_ai_hub.core.i18n import LocaleHandler
-from swiss_ai_hub.core.infrastructure import use_vector_store_factory
-from swiss_ai_hub.core.infrastructure import MongoSettings
-from swiss_ai_hub.core.infrastructure import use_s3_service
+from swiss_ai_hub.core.infrastructure import MongoSettings, use_s3_service, use_vector_store_factory
 from swiss_ai_hub.core.persistence.rag.vectors import VectorStoreFactory
 from swiss_ai_hub.core.routes import Controller
 

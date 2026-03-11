@@ -8,9 +8,6 @@ from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler
     DangerousDevelopmentOnlyAuthHandler,
 )
 from swiss_ai_hub.core.auth.usage import RoleUsageLimitStatus, UsageLimitPeriod, UsageStatus
-from swiss_ai_hub.core.testing import mock_role_entity_methods
-from swiss_ai_hub.core.testing import mock_tenant_entity_autouse
-from swiss_ai_hub.core.testing import mock_user_entity_autouse
 
 from swiss_ai_hub.api.routes.openai.openai_controller import OpenaiController
 from swiss_ai_hub.api.runners.api_test_runner import ApiTestRunner

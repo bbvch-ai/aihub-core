@@ -6,13 +6,11 @@ from fastapi import HTTPException
 from swiss_ai_hub.core.agents import AgentConfig
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.events.agent import UserMessageEvent
-from swiss_ai_hub.core.i18n import LocaleHandler
-from swiss_ai_hub.core.i18n import LocaleString
+from swiss_ai_hub.core.i18n import LocaleHandler, LocaleString
 from swiss_ai_hub.core.infrastructure import enable_logging
 from swiss_ai_hub.core.persistence.agents import AgentClassEntity
 from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import AgentConfigEntityDocument
 from swiss_ai_hub.core.persistence.messaging.entities.thread_entity import ThreadEntity
-from swiss_ai_hub.core.testing import mock_role_entity_methods
 
 from swiss_ai_hub.api.routes.agent.agent_service import AgentService
 from swiss_ai_hub.api.routes.agent.dto.full_agent_instance_dto import FullAgentInstanceDTO

@@ -7,19 +7,18 @@ from botocore.config import Config
 from fastapi import FastAPI
 from mongoengine import connect, disconnect
 from pymilvus import MilvusClient
-from swiss_ai_hub.core.distributor import ExternalAgentEventDistributor
-from swiss_ai_hub.core.distributor import ExternalProcessEventDistributor
-from swiss_ai_hub.core.infrastructure import AIHubSettings
-from swiss_ai_hub.core.infrastructure import LangfuseProvisioner
-from swiss_ai_hub.core.infrastructure import MilvusSettings
-from swiss_ai_hub.core.infrastructure import MongoSettings
-from swiss_ai_hub.core.infrastructure import NatsSettings
-from swiss_ai_hub.core.infrastructure import RedisSettings
-from swiss_ai_hub.core.infrastructure import S3StorageSettings
-from swiss_ai_hub.core.subscribers import AgentNCSubscriber
-from swiss_ai_hub.core.subscribers import ProcessNCSubscriber
-from swiss_ai_hub.core.topic_managers import AgentTopicManager
-from swiss_ai_hub.core.topic_managers import ProcessTopicManager
+from swiss_ai_hub.core.distributor import ExternalAgentEventDistributor, ExternalProcessEventDistributor
+from swiss_ai_hub.core.infrastructure import (
+    AIHubSettings,
+    LangfuseProvisioner,
+    MilvusSettings,
+    MongoSettings,
+    NatsSettings,
+    RedisSettings,
+    S3StorageSettings,
+)
+from swiss_ai_hub.core.subscribers import AgentNCSubscriber, ProcessNCSubscriber
+from swiss_ai_hub.core.topic_managers import AgentTopicManager, ProcessTopicManager
 
 from swiss_ai_hub.api.i18n.api_locale_handler import ApiLocaleHandler
 from swiss_ai_hub.api.persistance.events.event_persister import EventPersister

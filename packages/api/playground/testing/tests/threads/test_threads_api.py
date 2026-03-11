@@ -11,13 +11,8 @@ from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler
 from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_settings import (
     DangerousDevelopmentOnlyAuthSettings,
 )
-from swiss_ai_hub.core.infrastructure import AIHubSettings
-from swiss_ai_hub.core.infrastructure import enable_logging
-from swiss_ai_hub.core.infrastructure import MongoSettings
+from swiss_ai_hub.core.infrastructure import AIHubSettings, MongoSettings, enable_logging
 from swiss_ai_hub.core.persistence.messaging.entities.thread_entity import ThreadEntity
-from swiss_ai_hub.core.testing import mock_role_entity_methods
-from swiss_ai_hub.core.testing import mock_tenant_entity_autouse
-from swiss_ai_hub.core.testing import mock_user_entity_autouse
 
 from swiss_ai_hub.api.routes.thread.thread_controller import ThreadController
 from swiss_ai_hub.api.runners.simulation.agent.simulated_agent_api_test_runner import SimulatedAgentApiTestRunner

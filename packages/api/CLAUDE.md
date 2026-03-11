@@ -86,18 +86,18 @@ runner.mount(MyController(auth=auth).create_resource().get_resource().delete_res
 
 Custom dependencies injected via `Depends()` and `Security()` — use these in every endpoint:
 
-| Dependency                                        | Provides                          | Source                                 |
-| ------------------------------------------------- | --------------------------------- | -------------------------------------- |
-| `Security(self.user_with_permission(template))`   | `UserIdentity` + permission check | `Controller` base class                |
-| `Depends(use_locale)` / `use_locale_ws`           | `ApiLocaleHandler` (i18n)         | `packages/api/i18n/dependencies/`      |
-| `Depends(use_nats)` / `use_nats_ws`               | NATS client                       | `packages/core/nats/dependencies/`     |
-| `Depends(use_external_agent_event_distributor)`   | Publish events to agents          | `packages/core/nats/distributor/`      |
-| `Depends(use_external_process_event_distributor)` | Publish events to processes       | `packages/core/nats/distributor/`      |
-| `Depends(use_s3)` / `use_s3_public`               | S3 client (internal / presigned)  | `packages/core/infrastructure/s3/`     |
-| `Depends(use_milvus)`                             | Milvus vector DB client           | `packages/core/infrastructure/milvus/` |
-| `Depends(use_redis)`                              | Redis/Valkey client               | `packages/core/infrastructure/redis/`  |
-| `Depends(use_vector_store_factory)`               | Vector store creation             | `packages/core/infrastructure/milvus/` |
-| `Depends(use_ws_manager)` / `use_ws_manager_ws`   | WebSocket connection manager      | `packages/api/sockets/`                |
+| Dependency                                        | Provides                          | Source                                          |
+| ------------------------------------------------- | --------------------------------- | ----------------------------------------------- |
+| `Security(self.user_with_permission(template))`   | `UserIdentity` + permission check | `Controller` base class                         |
+| `Depends(use_locale)` / `use_locale_ws`           | `ApiLocaleHandler` (i18n)         | `packages/api/i18n/dependencies/`               |
+| `Depends(use_nats)` / `use_nats_ws`               | NATS client                       | `packages/core/swiss_ai_hub/core/dependencies/` |
+| `Depends(use_external_agent_event_distributor)`   | Publish events to agents          | `packages/core/swiss_ai_hub/core/distributor/`  |
+| `Depends(use_external_process_event_distributor)` | Publish events to processes       | `packages/core/swiss_ai_hub/core/distributor/`  |
+| `Depends(use_s3)` / `use_s3_public`               | S3 client (internal / presigned)  | `packages/core/infrastructure/s3/`              |
+| `Depends(use_milvus)`                             | Milvus vector DB client           | `packages/core/infrastructure/milvus/`          |
+| `Depends(use_redis)`                              | Redis/Valkey client               | `packages/core/infrastructure/redis/`           |
+| `Depends(use_vector_store_factory)`               | Vector store creation             | `packages/core/infrastructure/milvus/`          |
+| `Depends(use_ws_manager)` / `use_ws_manager_ws`   | WebSocket connection manager      | `packages/api/sockets/`                         |
 
 All infrastructure clients are initialized in `runners/lifetime/lifetime_manager.py` and stored in `app.state`.
 

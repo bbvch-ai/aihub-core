@@ -10,12 +10,12 @@ from swiss_ai_hub.core.form import (
     Checkbox,
     DatePicker,
     InputNumber,
+    InputText,
     Select,
     SelectButton,
     Slider,
     Textarea,
 )
-from swiss_ai_hub.core.form import InputText
 from swiss_ai_hub.core.i18n import LocaleString
 
 from playground.AgenticCVProcess.events.agent.AnalyzeCVRequest import AnalyzeCVRequest

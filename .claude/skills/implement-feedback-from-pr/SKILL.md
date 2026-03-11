@@ -62,7 +62,7 @@ After all changes are implemented:
 
 ```bash
 # Lint all affected scopes
-make -C /home/joelbarmettler/projects/aihub/swiss-ai-hub pr-ready
+make -C /home/joelbarmettler/projects/aihub/aihub-core pr-ready
 
 # Run tests in affected scopes (or delegate to /test-scope)
 make -C packages/core test    # if packages/core was affected

@@ -9,11 +9,7 @@ from mongoengine import connect, disconnect
 from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler import (
     DangerousDevelopmentOnlyAuthHandler,
 )
-from swiss_ai_hub.core.infrastructure import AIHubSettings
-from swiss_ai_hub.core.infrastructure import MongoSettings
-from swiss_ai_hub.core.testing import mock_role_entity_methods
-from swiss_ai_hub.core.testing import mock_tenant_entity_autouse
-from swiss_ai_hub.core.testing import mock_user_entity_autouse
+from swiss_ai_hub.core.infrastructure import AIHubSettings, MongoSettings
 
 from swiss_ai_hub.api.routes.notification.dto.notification_dto import NotificationDTO
 from swiss_ai_hub.api.routes.notification.dto.paginated_notifications_response import PaginatedNotificationsResponse

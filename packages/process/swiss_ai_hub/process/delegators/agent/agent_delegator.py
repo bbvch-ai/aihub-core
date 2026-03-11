@@ -5,20 +5,20 @@ from typing import Annotated
 from bson import ObjectId
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
-from swiss_ai_hub.core.distributor import ExternalAgentEvent
-from swiss_ai_hub.core.distributor import ExternalAgentEventDistributor
+from swiss_ai_hub.core.distributor import ExternalAgentEvent, ExternalAgentEventDistributor
 from swiss_ai_hub.core.events.agent import ControlEvent
-from swiss_ai_hub.core.events.process import ProcessStartEvent
-from swiss_ai_hub.core.events.process import AgentWorkEvent
-from swiss_ai_hub.core.events.process import WorkEvent
-from swiss_ai_hub.core.events.process import AgentWorkRequestEvent
-from swiss_ai_hub.core.events.process import WorkRequestEvent
+from swiss_ai_hub.core.events.process import (
+    AgentWorkEvent,
+    AgentWorkRequestEvent,
+    ProcessStartEvent,
+    WorkEvent,
+    WorkRequestEvent,
+)
 from swiss_ai_hub.core.persistence.messaging.entities.thread_entity import AgentInstanceRef, ThreadEntity
 from swiss_ai_hub.core.subscribers import AgentNCSubscriber
-from swiss_ai_hub.core.topic_managers import AgentInstanceTopicManager
-from swiss_ai_hub.core.topic_managers import ProcessClassTopicManager
-from swiss_ai_hub.core.topics.agents import AgentInstanceTopic
+from swiss_ai_hub.core.topic_managers import AgentInstanceTopicManager, ProcessClassTopicManager
 from swiss_ai_hub.core.topics import ProcessClassTopic
+from swiss_ai_hub.core.topics.agents import AgentInstanceTopic
 
 from swiss_ai_hub.process.agentic_processes.agentic_process import AgenticProcess
 from swiss_ai_hub.process.delegators.abstract_entity_delegator import AbstractEntityDelegator

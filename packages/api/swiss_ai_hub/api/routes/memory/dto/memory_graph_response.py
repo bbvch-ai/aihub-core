@@ -1,8 +1,7 @@
 from typing import Annotated, Any
 
 from pydantic import BaseModel, Field
-from swiss_ai_hub.core.agents import EdgeData
-from swiss_ai_hub.core.agents import NodeData
+from swiss_ai_hub.core.agents import EdgeData, NodeData
 
 
 class MemoryGraphResponse(BaseModel):

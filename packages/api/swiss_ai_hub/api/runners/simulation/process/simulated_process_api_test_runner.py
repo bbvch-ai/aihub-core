@@ -3,33 +3,31 @@ from typing import Self
 
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
-from swiss_ai_hub.core.events import BaseEvent
-from swiss_ai_hub.core.events import ClassDiscoveryRequestEvent
-from swiss_ai_hub.core.events import EventSpecs
-from swiss_ai_hub.core.events.process import AgentInSpecs
-from swiss_ai_hub.core.events.process import HumanInSpecs
-from swiss_ai_hub.core.events.process import ProcessClassDiscoveryResponseEvent
-from swiss_ai_hub.core.events.process import ProcessConfigSpecs
-from swiss_ai_hub.core.events.process import ProgramInSpecs
-from swiss_ai_hub.core.events.process import ProcessEvent
-from swiss_ai_hub.core.events.process import ProcessStartEvent
-from swiss_ai_hub.core.events.process import HumanWorkEvent
-from swiss_ai_hub.core.events.process import ProgramWorkEvent
-from swiss_ai_hub.core.events.process import WorkEvent
-from swiss_ai_hub.core.events.process import WorkRequestEvent
+from swiss_ai_hub.core.events import BaseEvent, ClassDiscoveryRequestEvent, EventSpecs
+from swiss_ai_hub.core.events.process import (
+    AgentInSpecs,
+    HumanInSpecs,
+    HumanWorkEvent,
+    ProcessClassDiscoveryResponseEvent,
+    ProcessConfigSpecs,
+    ProcessEvent,
+    ProcessStartEvent,
+    ProgramInSpecs,
+    ProgramWorkEvent,
+    WorkEvent,
+    WorkRequestEvent,
+)
 from swiss_ai_hub.core.form import InputText
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.infrastructure import NatsSettings
 from swiss_ai_hub.core.processes import ProcessConfig
-from swiss_ai_hub.core.publishers import JSPublisher
-from swiss_ai_hub.core.publishers import NCPublisher
-from swiss_ai_hub.core.subscribers import JSSubscriber
-from swiss_ai_hub.core.subscribers import NCSubscriber
-from swiss_ai_hub.core.subscribers import ProcessJSSubscriber
-from swiss_ai_hub.core.subscribers import ProcessNCSubscriber
-from swiss_ai_hub.core.topic_managers import ProcessInstanceTopicManager
-from swiss_ai_hub.core.topic_managers import ProcessTopicManager
-from swiss_ai_hub.core.topic_managers import ProcessWalkthroughTopicManager
+from swiss_ai_hub.core.publishers import JSPublisher, NCPublisher
+from swiss_ai_hub.core.subscribers import JSSubscriber, NCSubscriber, ProcessJSSubscriber, ProcessNCSubscriber
+from swiss_ai_hub.core.topic_managers import (
+    ProcessInstanceTopicManager,
+    ProcessTopicManager,
+    ProcessWalkthroughTopicManager,
+)
 from swiss_ai_hub.core.topics.discovery.process import ProcessClassDiscoveryTopic
 from swiss_ai_hub.core.topics.process import ProcessInstanceTopic
 

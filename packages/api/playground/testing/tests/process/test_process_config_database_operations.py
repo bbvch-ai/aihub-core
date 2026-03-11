@@ -5,7 +5,6 @@ from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.infrastructure import enable_logging
 from swiss_ai_hub.core.persistence.process.process_config_entity_document import ProcessConfigEntityDocument
 from swiss_ai_hub.core.processes import ProcessConfig
-from swiss_ai_hub.core.testing import mock_role_entity_methods
 
 enable_logging()
 

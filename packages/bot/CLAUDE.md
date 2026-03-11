@@ -264,8 +264,8 @@ No `BotLocaleString` — all locale resolution via `swiss_ai_hub.core.i18n.Local
 
 **From packages/core**:
 
-- Event distributor: `packages/core/swiss_ai_hub/core/nats/distributor/external_agent_event_distributor.py`
+- Event distributor: `packages/core/swiss_ai_hub/core/distributor/external_agent_event_distributor.py`
 - Chat service: `packages/core/swiss_ai_hub/core/routes/chat/chat_service.py`
-- BITL request event: `packages/core/swiss_ai_hub/core/nats/events/bot_in_the_loop/request/bot_in_the_loop_request_event.py`
-- BITL response event: `packages/core/swiss_ai_hub/core/nats/events/bot_in_the_loop/response/bot_in_the_loop_response_event.py`
-- Agent NC subscriber: `packages/core/swiss_ai_hub/core/nats/subscribers/agent/agent_nc_subscriber.py`
+- BITL request event: `packages/core/swiss_ai_hub/core/events/agent/bitl/request/bot_in_the_loop_request_event.py`
+- BITL response event: `packages/core/swiss_ai_hub/core/events/agent/bitl/response/bot_in_the_loop_response_event.py`
+- Agent NC subscriber: `packages/core/swiss_ai_hub/core/subscribers/agent/agent_nc_subscriber.py`

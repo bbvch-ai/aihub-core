@@ -5,9 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from mongoengine import connect, disconnect
 from swiss_ai_hub.core.distributor import ExternalAgentEventDistributor
-from swiss_ai_hub.core.infrastructure import AIHubSettings
-from swiss_ai_hub.core.infrastructure import MongoSettings
-from swiss_ai_hub.core.infrastructure import NatsSettings
+from swiss_ai_hub.core.infrastructure import AIHubSettings, MongoSettings, NatsSettings
 from swiss_ai_hub.core.subscribers import AgentNCSubscriber
 from swiss_ai_hub.core.topic_managers import AgentTopicManager
 

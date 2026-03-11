@@ -15,13 +15,10 @@ from swiss_ai_hub.core.generative_ai.document.accessor.s3_anonymous_file_access_
 from swiss_ai_hub.core.generative_ai.document.types.file_type_config import FileTypeConfig
 from swiss_ai_hub.core.generative_ai.document.types.ingested_node import IngestedNode
 from swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config import LLMConfig
-from swiss_ai_hub.core.i18n import LocaleHandler
-from swiss_ai_hub.core.i18n import LocaleString
-from swiss_ai_hub.core.infrastructure import MongoSettings
-from swiss_ai_hub.core.infrastructure import trace_fn
+from swiss_ai_hub.core.i18n import LocaleHandler, LocaleString
+from swiss_ai_hub.core.infrastructure import MongoSettings, trace_fn
 from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
-from swiss_ai_hub.core.persistence.rag.datalake.entities import BucketEntity
-from swiss_ai_hub.core.persistence.rag.datalake.entities import NamespaceEntity
+from swiss_ai_hub.core.persistence.rag.datalake.entities import BucketEntity, NamespaceEntity
 from swiss_ai_hub.core.persistence.rag.documents.entities.ref_doc import RefDoc
 from swiss_ai_hub.core.persistence.rag.vectors import VectorStoreFactory
 from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import (

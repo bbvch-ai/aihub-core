@@ -408,11 +408,11 @@ ttm.get_subject_for_display_event_in_thread(event_name="ChunkEvent", event_id="e
 
 **File locations**:
 
-- `packages/core/swiss_ai_hub/core/nats/topic_managers/TopicManager.py`
-- `packages/core/swiss_ai_hub/core/nats/topic_managers/agents/AgentTopicManager.py`
-- `packages/core/swiss_ai_hub/core/nats/topic_managers/agents/AgentClassTopicManager.py`
-- `packages/core/swiss_ai_hub/core/nats/topic_managers/agents/AgentInstanceTopicManager.py`
-- `packages/core/swiss_ai_hub/core/nats/topic_managers/agents/AgentThreadTopicManager.py`
+- `packages/core/swiss_ai_hub/core/topic_managers/topic_manager.py`
+- `packages/core/swiss_ai_hub/core/topic_managers/agents/agent_topic_manager.py`
+- `packages/core/swiss_ai_hub/core/topic_managers/agents/agent_class_topic_manager.py`
+- `packages/core/swiss_ai_hub/core/topic_managers/agents/agent_instance_topic_manager.py`
+- `packages/core/swiss_ai_hub/core/topic_managers/agents/agent_thread_topic_manager.py`
 
 ______________________________________________________________________
 
@@ -616,7 +616,7 @@ config = await client.fetch_config(agent_class="RAGAgent", agent_id="wiki")
 ### RPC Models
 
 ```python
-# packages/core/swiss_ai_hub/core/nats/rpc/models.py
+# packages/core/swiss_ai_hub/core/rpc/models.py
 class FetchAgentConfigRequest(BaseModel):
     agent_class: str
     agent_id: str
@@ -784,7 +784,7 @@ class NatsSettings(EnvironmentSettings):
 ### FastAPI Dependency Injection
 
 ```python
-# packages/core/swiss_ai_hub/core/nats/dependencies/use_nats.py
+# packages/core/swiss_ai_hub/core/dependencies/use_nats.py
 from fastapi import Request, WebSocket
 
 def use_nats(request: Request) -> NATS:
@@ -889,10 +889,10 @@ ______________________________________________________________________
 ### Step 1: Define the Event Class
 
 ```python
-# packages/core/swiss_ai_hub/core/nats/events/my_feature/MyEvent.py
-from swiss_ai_hub.core.nats.events.control.ControlEvent import ControlEvent
-from swiss_ai_hub.core.nats.events.display.DisplayEvent import DisplayEvent
-from swiss_ai_hub.core.nats.events.ControlAndDisplayEvent import ControlAndDisplayEvent
+# packages/core/swiss_ai_hub/core/events/agent/my_feature/my_event.py
+from swiss_ai_hub.core.events.agent.control.control_event import ControlEvent
+from swiss_ai_hub.core.events.agent.display.display_event import DisplayEvent
+from swiss_ai_hub.core.events.agent.control_and_display_event import ControlAndDisplayEvent
 
 # Choose ONE base:
 # - ControlEvent: workflow-driving only
@@ -985,90 +985,90 @@ ______________________________________________________________________
 
 ### Core Infrastructure
 
-| File                                                                  | Purpose                |
-| --------------------------------------------------------------------- | ---------------------- |
-| `packages/core/swiss_ai_hub/core/infrastructure/nats/NatsSettings.py` | NATS connection config |
-| `packages/core/swiss_ai_hub/core/nats/dependencies/use_nats.py`       | FastAPI DI             |
+| File                                                                   | Purpose                |
+| ---------------------------------------------------------------------- | ---------------------- |
+| `packages/core/swiss_ai_hub/core/infrastructure/nats/nats_settings.py` | NATS connection config |
+| `packages/core/swiss_ai_hub/core/dependencies/use_nats.py`             | FastAPI DI             |
 
 ### Publishers
 
-| File                                                                   | Purpose              |
-| ---------------------------------------------------------------------- | -------------------- |
-| `packages/core/swiss_ai_hub/core/nats/publishers/AbstractPublisher.py` | Publisher base class |
-| `packages/core/swiss_ai_hub/core/nats/publishers/NCPublisher.py`       | NATS Core publisher  |
-| `packages/core/swiss_ai_hub/core/nats/publishers/JSPublisher.py`       | JetStream publisher  |
+| File                                                               | Purpose              |
+| ------------------------------------------------------------------ | -------------------- |
+| `packages/core/swiss_ai_hub/core/publishers/abstract_publisher.py` | Publisher base class |
+| `packages/core/swiss_ai_hub/core/publishers/nc_publisher.py`       | NATS Core publisher  |
+| `packages/core/swiss_ai_hub/core/publishers/js_publisher.py`       | JetStream publisher  |
 
 ### Subscribers
 
-| File                                                                          | Purpose                       |
-| ----------------------------------------------------------------------------- | ----------------------------- |
-| `packages/core/swiss_ai_hub/core/nats/subscribers/AbstractSubscriber.py`      | Subscriber base class         |
-| `packages/core/swiss_ai_hub/core/nats/subscribers/NCSubscriber.py`            | NATS Core subscriber          |
-| `packages/core/swiss_ai_hub/core/nats/subscribers/JSSubscriber.py`            | JetStream subscriber          |
-| `packages/core/swiss_ai_hub/core/nats/subscribers/agent/AgentNCSubscriber.py` | Agent NC subscriber factories |
-| `packages/core/swiss_ai_hub/core/nats/subscribers/agent/AgentJSSubscriber.py` | Agent JS subscriber factories |
+| File                                                                       | Purpose                       |
+| -------------------------------------------------------------------------- | ----------------------------- |
+| `packages/core/swiss_ai_hub/core/subscribers/abstract_subscriber.py`       | Subscriber base class         |
+| `packages/core/swiss_ai_hub/core/subscribers/nc_subscriber.py`             | NATS Core subscriber          |
+| `packages/core/swiss_ai_hub/core/subscribers/js_subscriber.py`             | JetStream subscriber          |
+| `packages/core/swiss_ai_hub/core/subscribers/agent/agent_nc_subscriber.py` | Agent NC subscriber factories |
+| `packages/core/swiss_ai_hub/core/subscribers/agent/agent_js_subscriber.py` | Agent JS subscriber factories |
 
 ### RPC
 
-| File                                                            | Purpose                     |
-| --------------------------------------------------------------- | --------------------------- |
-| `packages/core/swiss_ai_hub/core/nats/requester/NCRequester.py` | RPC client                  |
-| `packages/core/swiss_ai_hub/core/nats/responder/NCResponder.py` | RPC server                  |
-| `packages/core/swiss_ai_hub/core/nats/rpc/AgentConfigClient.py` | Agent config RPC client     |
-| `packages/core/swiss_ai_hub/core/nats/rpc/models.py`            | RPC request/response models |
-| `packages/api/swiss_ai_hub/api/rpc/AgentConfigResponder.py`     | Agent config RPC server     |
+| File                                                          | Purpose                     |
+| ------------------------------------------------------------- | --------------------------- |
+| `packages/core/swiss_ai_hub/core/requester/nc_requester.py`   | RPC client                  |
+| `packages/core/swiss_ai_hub/core/responder/nc_responder.py`   | RPC server                  |
+| `packages/core/swiss_ai_hub/core/rpc/agent_config_client.py`  | Agent config RPC client     |
+| `packages/core/swiss_ai_hub/core/rpc/models.py`               | RPC request/response models |
+| `packages/api/swiss_ai_hub/api/rpc/agent_config_responder.py` | Agent config RPC server     |
 
 ### Events
 
-| File                                                                              | Purpose                                 |
-| --------------------------------------------------------------------------------- | --------------------------------------- |
-| `packages/core/swiss_ai_hub/core/nats/events/BaseEvent.py`                        | Event base + registry + deserialization |
-| `packages/core/swiss_ai_hub/core/nats/events/control/ControlEvent.py`             | Workflow event base                     |
-| `packages/core/swiss_ai_hub/core/nats/events/display/DisplayEvent.py`             | UI event base                           |
-| `packages/core/swiss_ai_hub/core/nats/events/ControlAndDisplayEvent.py`           | Hybrid event base                       |
-| `packages/core/swiss_ai_hub/core/nats/events/control/start/StartEvent.py`         | Run start                               |
-| `packages/core/swiss_ai_hub/core/nats/events/control/stop/StopEvent.py`           | Run stop                                |
-| `packages/core/swiss_ai_hub/core/nats/events/control/exception/ExceptionEvent.py` | Error                                   |
-| `packages/core/swiss_ai_hub/core/nats/events/display/ChunkEvent.py`               | Streaming text                          |
-| `packages/core/swiss_ai_hub/core/nats/events/display/ThoughtEvent.py`             | Agent reasoning                         |
-| `packages/core/swiss_ai_hub/core/nats/events/user/UserMessageEvent.py`            | User chat message                       |
+| File                                                                                | Purpose                                 |
+| ----------------------------------------------------------------------------------- | --------------------------------------- |
+| `packages/core/swiss_ai_hub/core/events/base_event.py`                              | Event base + registry + deserialization |
+| `packages/core/swiss_ai_hub/core/events/agent/control/control_event.py`             | Workflow event base                     |
+| `packages/core/swiss_ai_hub/core/events/agent/display/display_event.py`             | UI event base                           |
+| `packages/core/swiss_ai_hub/core/events/agent/control_and_display_event.py`         | Hybrid event base                       |
+| `packages/core/swiss_ai_hub/core/events/agent/control/start/start_event.py`         | Run start                               |
+| `packages/core/swiss_ai_hub/core/events/agent/control/stop/stop_event.py`           | Run stop                                |
+| `packages/core/swiss_ai_hub/core/events/agent/control/exception/exception_event.py` | Error                                   |
+| `packages/core/swiss_ai_hub/core/events/agent/display/chunk_event.py`               | Streaming text                          |
+| `packages/core/swiss_ai_hub/core/events/agent/display/thought_event.py`             | Agent reasoning                         |
+| `packages/core/swiss_ai_hub/core/events/agent/user/`                                | User chat message events                |
 
 ### Topics & Streams
 
-| File                                                                              | Purpose               |
-| --------------------------------------------------------------------------------- | --------------------- |
-| `packages/core/swiss_ai_hub/core/nats/topics/Topic.py`                            | Topic base + registry |
-| `packages/core/swiss_ai_hub/core/nats/topics/agents/AgentInstanceTopic.py`        | Full agent topic      |
-| `packages/core/swiss_ai_hub/core/nats/topic_managers/TopicManager.py`             | Subject builder base  |
-| `packages/core/swiss_ai_hub/core/nats/topic_managers/agents/AgentTopicManager.py` | Agent subjects        |
-| `packages/core/swiss_ai_hub/core/nats/streams/StreamManager.py`                   | Stream creation       |
+| File                                                                           | Purpose               |
+| ------------------------------------------------------------------------------ | --------------------- |
+| `packages/core/swiss_ai_hub/core/topics/topic.py`                              | Topic base + registry |
+| `packages/core/swiss_ai_hub/core/topics/agents/agent_instance_topic.py`        | Full agent topic      |
+| `packages/core/swiss_ai_hub/core/topic_managers/topic_manager.py`              | Subject builder base  |
+| `packages/core/swiss_ai_hub/core/topic_managers/agents/agent_topic_manager.py` | Agent subjects        |
+| `packages/core/swiss_ai_hub/core/streams/stream_manager.py`                    | Stream creation       |
 
 ### Dispatcher & Event Store
 
-| File                                                                                  | Purpose            |
-| ------------------------------------------------------------------------------------- | ------------------ |
-| `packages/core/swiss_ai_hub/core/nats/dispatcher/BaseDispatcher.py`                   | Dispatcher base    |
-| `packages/core/swiss_ai_hub/core/nats/dispatcher/stores/event/JetStreamEventStore.py` | Event store        |
-| `packages/core/swiss_ai_hub/core/nats/polling/JSPoller.py`                            | Pull consumer      |
-| `packages/agent/swiss_ai_hub/agent/dispatchers/AgentDispatcher.py`                    | Agent dispatcher   |
-| `packages/process/swiss_ai_hub/process/dispatchers/ProcessDispatcher.py`              | Process dispatcher |
+| File                                                                                | Purpose            |
+| ----------------------------------------------------------------------------------- | ------------------ |
+| `packages/core/swiss_ai_hub/core/dispatcher/base_dispatcher.py`                     | Dispatcher base    |
+| `packages/core/swiss_ai_hub/core/dispatcher/stores/event/jet_stream_event_store.py` | Event store        |
+| `packages/core/swiss_ai_hub/core/polling/js_poller.py`                              | Pull consumer      |
+| `packages/agent/swiss_ai_hub/agent/dispatchers/agent_dispatcher.py`                 | Agent dispatcher   |
+| `packages/process/swiss_ai_hub/process/dispatchers/process_dispatcher.py`           | Process dispatcher |
 
 ### Tracing
 
-| File                                                                         | Purpose               |
-| ---------------------------------------------------------------------------- | --------------------- |
-| `packages/core/swiss_ai_hub/core/nats/tracing/NATSMessageHeaders.py`         | Header builder        |
-| `packages/core/swiss_ai_hub/core/nats/tracing/NATSTraceContextPropagator.py` | W3C trace propagation |
+| File                                                                       | Purpose               |
+| -------------------------------------------------------------------------- | --------------------- |
+| `packages/core/swiss_ai_hub/core/tracing/nats_message_headers.py`          | Header builder        |
+| `packages/core/swiss_ai_hub/core/tracing/nats_trace_context_propagator.py` | W3C trace propagation |
 
 ### Lifetime & Integration
 
-| File                                                                                | Purpose                 |
-| ----------------------------------------------------------------------------------- | ----------------------- |
-| `packages/api/swiss_ai_hub/api/runners/lifetime/lifetime_manager.py`                | API startup/shutdown    |
-| `packages/api/swiss_ai_hub/api/sockets/sender/WebSocketSender.py`                   | NATS → WebSocket bridge |
-| `packages/api/swiss_ai_hub/api/sockets/manager/WebSocketManager.py`                 | WebSocket connections   |
-| `packages/core/swiss_ai_hub/core/nats/distributor/ExternalAgentEventDistributor.py` | API → NATS bridge       |
-| `packages/agent/swiss_ai_hub/agent/runners/AgentRunner.py`                          | Agent NATS bootstrap    |
+| File                                                                              | Purpose                 |
+| --------------------------------------------------------------------------------- | ----------------------- |
+| `packages/api/swiss_ai_hub/api/runners/lifetime/lifetime_manager.py`              | API startup/shutdown    |
+| `packages/api/swiss_ai_hub/api/sockets/sender/web_socket_sender.py`               | NATS → WebSocket bridge |
+| `packages/api/swiss_ai_hub/api/sockets/manager/web_socket_manager.py`             | WebSocket connections   |
+| `packages/core/swiss_ai_hub/core/distributor/external_agent_event_distributor.py` | API → NATS bridge       |
+| `packages/agent/swiss_ai_hub/agent/runners/agent_runner.py`                       | Agent NATS bootstrap    |
 
 ### Documentation
 
@@ -1137,7 +1137,8 @@ A workflow *W* is valid iff:
 3. **No Stop Dependencies:** ∀s ∈ S, StopEvent ∉ R(s)
 4. **Acyclicity:** The event dependency graph is acyclic (bounded loops via RunContext are valid)
 
-Source: `packages/core/nats/dispatcher/BaseDispatcher.py`, `packages/agent/dispatchers/AgentDispatcher.py`
+Source: `packages/core/swiss_ai_hub/core/dispatcher/base_dispatcher.py`,
+`packages/agent/swiss_ai_hub/agent/dispatchers/agent_dispatcher.py`
 
 ______________________________________________________________________
 

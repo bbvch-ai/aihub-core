@@ -10,9 +10,6 @@ from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler
 from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_settings import (
     DangerousDevelopmentOnlyAuthSettings,
 )
-from swiss_ai_hub.core.testing import mock_role_entity_methods
-from swiss_ai_hub.core.testing import mock_tenant_entity_autouse
-from swiss_ai_hub.core.testing import mock_user_entity_autouse
 
 from swiss_ai_hub.api.routes.memory.dto.delete_memory_response import DeleteAllMemoriesResponse, DeleteMemoryResponse
 from swiss_ai_hub.api.routes.memory.dto.memories_response import MemoriesResponse
@@ -681,8 +678,7 @@ class TestUserMemoryIntegration:
         from llama_index.core.base.llms.types import ChatMessage, MessageRole
         from swiss_ai_hub.core.agents import AgentConfig
         from swiss_ai_hub.core.generative_ai.memory.agent_memory import AgentMemory
-        from swiss_ai_hub.core.i18n import LocaleHandler
-        from swiss_ai_hub.core.i18n import LocaleString
+        from swiss_ai_hub.core.i18n import LocaleHandler, LocaleString
 
         user_id = DangerousDevelopmentOnlyAuthSettings().OID
 

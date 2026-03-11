@@ -20,8 +20,8 @@ Read the agent scope guide: `packages/agent/CLAUDE.md`
 
 Study existing agents for reference patterns:
 
-- **Minimal reference**: `packages/agent/playground/minimal_workflow/simple_workflow/SimpleWorkflow.py`
-- **Production reference**: `packages/agent/swiss_ai_hub/agent/agents/RagAgent/RAGAgent.py`
+- **Minimal reference**: `packages/agent/playground/minimal_workflow/simple_workflow/SimpleAgent.py`
+- **Production reference**: `packages/agent/swiss_ai_hub/agent/agents/rag_agent/rag_agent.py`
 - **Pattern index**: `packages/agent/playground/minimal_workflow/` (20 self-contained examples)
 
 ______________________________________________________________________
@@ -104,8 +104,8 @@ async def respond(
 **Design approach**: Sketch top-down to understand logical flow, then refine bottom-up to identify true data
 dependencies. For each step ask: *What is the minimal set of data this step requires?*
 
-Source: `packages/core/swiss_ai_hub/core/nats/workflow/DispatchableWorkflow.py`,
-`packages/agent/swiss_ai_hub/agent/agents/Agent.py`
+Source: `packages/core/swiss_ai_hub/core/workflow/dispatchable_workflow.py`,
+`packages/agent/swiss_ai_hub/agent/agents/agent.py`
 
 ______________________________________________________________________
 
@@ -236,7 +236,7 @@ async def end_step(self, event: HumanInTheLoopInput.response) -> StopEvent:
     return StopEvent()
 ```
 
-Source: `packages/core/swiss_ai_hub/core/nats/events/human_in_the_loop/`
+Source: `packages/core/swiss_ai_hub/core/events/agent/hitl/`
 
 #### Multiple HITL Interactions
 
@@ -709,7 +709,7 @@ The dispatcher resolves parameters by type annotation. Declare what you need:
 | `AgentMemory`                          | User and organization memory access              |
 | `AgentInstanceTopic`                   | NATS topic info for this event                   |
 
-Source: `AgentDispatcher._get_parameter_value()` in `packages/agent/dispatchers/AgentDispatcher.py`
+Source: `AgentDispatcher._get_parameter_value()` in `packages/agent/swiss_ai_hub/agent/dispatchers/agent_dispatcher.py`
 
 ### Event Resolution Strategy
 
@@ -747,12 +747,12 @@ from typing import Annotated, Self
 
 from pydantic import Field
 
-from swiss_ai_hub.core.agents.AgentConfig import AgentConfig
-from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.nats.events.form.constraints import Ge, Le
-from swiss_ai_hub.core.nats.events.form.elements.InputNumber import InputNumber
-from swiss_ai_hub.core.nats.events.form.elements.InputText import InputText
-from swiss_ai_hub.core.nats.events.form.elements.ModelSelect import ModelSelect
+from swiss_ai_hub.core.agents.agent_config import AgentConfig
+from swiss_ai_hub.core.i18n.locale_string import LocaleString
+from swiss_ai_hub.core.form.constraints import Ge, Le
+from swiss_ai_hub.core.form import InputNumber
+from swiss_ai_hub.core.form import InputText
+from swiss_ai_hub.core.form import ModelSelect
 
 
 class {AgentName}Config(AgentConfig):
@@ -782,7 +782,7 @@ class {AgentName}Config(AgentConfig):
 
 - **Field types**: Always `primitive_type | FormkitElement` union (e.g., `str | InputText`)
 - **Constraints**: Use `Ge()`, `Le()`, `Gt()`, `Lt()`, `MinLen()`, `MaxLen()`, `Pattern()` from
-  `swiss_ai_hub.core.nats.events.form.constraints` — NOT Pydantic's `ge=`, `le=`
+  `swiss_ai_hub.core.form.constraints` — NOT Pydantic's `ge=`, `le=`
 - **Configurable fields**: Set to a FormkitElement in `as_form()` → editable in Admin UI
 - **Non-configurable fields**: Set to a primitive in `as_form()` → deployment-fixed, baked in
 - **Labels**: All labels must be `LocaleString` with de, en, fr, it
@@ -805,7 +805,7 @@ The dispatcher auto-extracts `StepConfig` fields and injects them into steps tha
 
 ### FormKit Elements Reference
 
-From `packages/core/nats/events/form/elements/`:
+From `packages/core/swiss_ai_hub/core/form/elements/`:
 
 - **Input**: `InputText`, `InputNumber`, `Textarea`, `Password`, `InputMask`, `InputOtp`
 - **Selection**: `Select`, `MultiSelect`, `CascadeSelect`, `Checkbox`, `ToggleSwitch`, `ToggleButton`, `RadioButton`,
@@ -814,8 +814,7 @@ From `packages/core/nats/events/form/elements/`:
   `IconSelector`, `LocaleInput` (multi-language), `ColorPicker`, `DatePicker`, `Knob`, `Rating`, `Slider`
 - **Layout**: `Group` (auto-created from nested `Form`), `Repeater` (auto-created from `list[Form]`)
 
-Source: `packages/core/swiss_ai_hub/core/agents/AgentConfig.py`,
-`packages/core/swiss_ai_hub/core/nats/events/form/Form.py`
+Source: `packages/core/swiss_ai_hub/core/agents/agent_config.py`, `packages/core/swiss_ai_hub/core/form/form.py`
 
 ______________________________________________________________________
 
@@ -825,9 +824,9 @@ ______________________________________________________________________
 # packages/agent/app/{agent_name}/main.py
 import asyncio
 
-from swiss_ai_hub.agent.agents.{AgentName}.{AgentName} import {AgentName}
-from swiss_ai_hub.agent.agents.{AgentName}.configs.{AgentName}Config import {AgentName}Config
-from swiss_ai_hub.agent.runners.AgentRunner import AgentRunner
+from swiss_ai_hub.agent.agents.{agent_name}.{agent_name} import {AgentName}
+from swiss_ai_hub.agent.agents.{agent_name}.configs.{agent_name}_config import {AgentName}Config
+from swiss_ai_hub.agent.runners.agent_runner import AgentRunner
 
 
 async def main():
@@ -839,7 +838,7 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-Source: `packages/agent/swiss_ai_hub/agent/runners/AgentRunner.py`
+Source: `packages/agent/swiss_ai_hub/agent/runners/agent_runner.py`
 
 ______________________________________________________________________
 
@@ -880,7 +879,8 @@ async def my_step(self, event: MyEvent, t: LocaleHandler) -> StopEvent:
     return StopEvent()
 ```
 
-Source: `packages/agent/i18n/AgentLocaleString.py`, `packages/agent/i18n/translations/agent/`
+Source: `packages/agent/swiss_ai_hub/agent/i18n/agent_locale_string.py`,
+`packages/agent/swiss_ai_hub/agent/i18n/translations/agent/`
 
 ______________________________________________________________________
 
@@ -889,8 +889,8 @@ ______________________________________________________________________
 Use `EventDisplayer` for streaming LLM output to the frontend:
 
 ```python
-from swiss_ai_hub.core.displayers.EventDisplayer import EventDisplayer
-from swiss_ai_hub.core.nats.events.semantic.LLMEvent import LLMEvent
+from swiss_ai_hub.core.displayers import EventDisplayer
+from swiss_ai_hub.core.events.agent import LLMStopEvent
 
 @step()
 async def llm_step(
@@ -930,7 +930,8 @@ automatically. `display_llm_costs()` emits `LLMCostEvent` for billing.
 | `display_chunk(text, model_name)` | Stream output incrementally              |
 | `display_llm_stream(...)`         | Complete LLM response with cost tracking |
 
-Source: `packages/core/displayers/EventDisplayer.py`, `packages/core/displayers/stream/StreamProcessor.py`
+Source: `packages/core/swiss_ai_hub/core/displayers/event_displayer.py`,
+`packages/core/swiss_ai_hub/core/displayers/stream/stream_processor.py`
 
 ______________________________________________________________________
 
@@ -939,7 +940,7 @@ ______________________________________________________________________
 For agents that need to remember across conversations:
 
 ```python
-from swiss_ai_hub.core.generative_ai.memory.AgentMemory import AgentMemory
+from swiss_ai_hub.core.generative_ai import AgentMemory
 
 @step()
 async def retrieve_memory(self, event: UserMessageEvent, memory: AgentMemory) -> MemoryEvent:
@@ -983,7 +984,7 @@ event, and the stop step consumes it.
 **Playground**: `playground/minimal_workflow/user_memory_workflow/`,
 `playground/minimal_workflow/organization_memory_workflow/`
 
-Source: `packages/core/generative_ai/memory/AgentMemory.py`
+Source: `packages/core/swiss_ai_hub/core/generative_ai/memory/agent_memory.py`
 
 ### Complete Memory Pattern with Preconditions
 
@@ -1095,13 +1096,13 @@ Feature: {Agent Display Name}
 import pytest
 from pytest_bdd import given, scenario, then, when
 
-from swiss_ai_hub.core.nats.events.control.stop.StopEvent import StopEvent
-from swiss_ai_hub.core.nats.events.user.UserMessageEvent import UserMessageEvent
+from swiss_ai_hub.core.events.agent.control.stop.stop_event import StopEvent
+from swiss_ai_hub.core.events.agent.user.user_message_event import UserMessageEvent
 from swiss_ai_hub.core.testing.asyncio_utils.bdd import async_test
 
-from swiss_ai_hub.agent.agents.{AgentName}.{AgentName} import {AgentName}
-from swiss_ai_hub.agent.agents.{AgentName}.configs.{AgentName}Config import {AgentName}Config
-from swiss_ai_hub.agent.runners.AgentTestRunner import AgentTestRunner
+from swiss_ai_hub.agent.agents.{agent_name}.{agent_name} import {AgentName}
+from swiss_ai_hub.agent.agents.{agent_name}.configs.{agent_name}_config import {AgentName}Config
+from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner
 
 
 @scenario("features/{agent_name}.feature", "Happy path")
@@ -1170,7 +1171,7 @@ async def test_retrieve_step():
 ### Integration Testing (Full Workflow)
 
 ```python
-from swiss_ai_hub.agent.runners.AgentTestRunner import AgentTestRunner
+from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner
 
 async def test_full_workflow():
     runner = AgentTestRunner(MyAgent, MyAgentConfig())
@@ -1184,7 +1185,7 @@ async def test_full_workflow():
         assert len(events) == 1
 ```
 
-Source: `packages/agent/runners/AgentTestRunner.py`
+Source: `packages/agent/swiss_ai_hub/agent/runners/agent_test_runner.py`
 
 ______________________________________________________________________
 
@@ -1238,24 +1239,24 @@ ______________________________________________________________________
 
 ### Framework Files
 
-| File                                                                                   | Purpose                               |
-| -------------------------------------------------------------------------------------- | ------------------------------------- |
-| `packages/agent/swiss_ai_hub/agent/agents/Agent.py`                                    | Agent base class                      |
-| `packages/agent/swiss_ai_hub/agent/workflow/decorators/step.py`                        | `@step()` decorator                   |
-| `packages/agent/swiss_ai_hub/agent/workflow/decorators/precondition.py`                | `@precondition()` decorator           |
-| `packages/agent/swiss_ai_hub/agent/dispatchers/AgentDispatcher.py`                     | Core workflow executor (DI, dispatch) |
-| `packages/agent/swiss_ai_hub/agent/runners/AgentRunner.py`                             | Production runner                     |
-| `packages/agent/swiss_ai_hub/agent/runners/AgentTestRunner.py`                         | Test runner                           |
-| `packages/agent/swiss_ai_hub/agent/context/run/RunContext.py`                          | Per-run ephemeral state               |
-| `packages/agent/swiss_ai_hub/agent/context/thread/ThreadContext.py`                    | Per-thread persistent state           |
-| `packages/agent/swiss_ai_hub/agent/i18n/AgentLocaleString.py`                          | Agent i18n strings                    |
-| `packages/core/swiss_ai_hub/core/agents/AgentConfig.py`                                | Config base with form duality         |
-| `packages/core/swiss_ai_hub/core/nats/events/form/Form.py`                             | Form system                           |
-| `packages/core/swiss_ai_hub/core/nats/events/form/elements/`                           | FormKit elements (28 types)           |
-| `packages/core/swiss_ai_hub/core/nats/events/form/constraints.py`                      | Form-aware validators                 |
-| `packages/core/swiss_ai_hub/core/displayers/EventDisplayer.py`                         | LLM streaming + display events        |
-| `packages/core/swiss_ai_hub/core/generative_ai/memory/AgentMemory.py`                  | User + org memory                     |
-| `packages/core/swiss_ai_hub/core/nats/workflow/annotations/custom_types/ListOfSize.py` | FixedList for fan-in                  |
+| File                                                                                | Purpose                               |
+| ----------------------------------------------------------------------------------- | ------------------------------------- |
+| `packages/agent/swiss_ai_hub/agent/agents/agent.py`                                 | Agent base class                      |
+| `packages/agent/swiss_ai_hub/agent/workflow/decorators/step.py`                     | `@step()` decorator                   |
+| `packages/agent/swiss_ai_hub/agent/workflow/decorators/precondition.py`             | `@precondition()` decorator           |
+| `packages/agent/swiss_ai_hub/agent/dispatchers/agent_dispatcher.py`                 | Core workflow executor (DI, dispatch) |
+| `packages/agent/swiss_ai_hub/agent/runners/agent_runner.py`                         | Production runner                     |
+| `packages/agent/swiss_ai_hub/agent/runners/agent_test_runner.py`                    | Test runner                           |
+| `packages/agent/swiss_ai_hub/agent/context/run/run_context.py`                      | Per-run ephemeral state               |
+| `packages/agent/swiss_ai_hub/agent/context/thread/thread_context.py`                | Per-thread persistent state           |
+| `packages/agent/swiss_ai_hub/agent/i18n/agent_locale_string.py`                     | Agent i18n strings                    |
+| `packages/core/swiss_ai_hub/core/agents/agent_config.py`                            | Config base with form duality         |
+| `packages/core/swiss_ai_hub/core/form/form.py`                                      | Form system                           |
+| `packages/core/swiss_ai_hub/core/form/elements/`                                    | FormKit elements (28 types)           |
+| `packages/core/swiss_ai_hub/core/form/constraints.py`                               | Form-aware validators                 |
+| `packages/core/swiss_ai_hub/core/displayers/event_displayer.py`                     | LLM streaming + display events        |
+| `packages/core/swiss_ai_hub/core/generative_ai/memory/agent_memory.py`              | User + org memory                     |
+| `packages/core/swiss_ai_hub/core/workflow/annotations/custom_types/list_of_size.py` | FixedList for fan-in                  |
 
 ### Playground Patterns Index
 

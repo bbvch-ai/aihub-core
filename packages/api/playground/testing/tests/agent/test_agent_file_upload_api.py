@@ -7,7 +7,6 @@ from httpx import ASGITransport, AsyncClient
 from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler import (
     DangerousDevelopmentOnlyAuthHandler,
 )
-from swiss_ai_hub.core.testing import mock_role_entity_methods
 
 from swiss_ai_hub.api.routes.agent.agent_controller import AgentController
 from swiss_ai_hub.api.routes.agent.agent_file_upload_service import AgentFileUploadService

@@ -177,7 +177,7 @@ class MyAgentConfig(AgentConfig):
 
 ### FormKit Elements
 
-From `swiss_ai_hub.core.nats.events.form.elements`:
+From `swiss_ai_hub.core.form.elements`:
 
 - **Input**: `InputText`, `InputNumber`, `Textarea`, `Password`, `InputMask`, `InputOtp`
 - **Selection**: `Select`, `MultiSelect`, `CascadeSelect`, `Checkbox`, `ToggleSwitch`, `ToggleButton`, `RadioButton`,
@@ -190,7 +190,7 @@ From `swiss_ai_hub.core.nats.events.form.elements`:
 
 ### Form Constraints
 
-Use form-aware constraints from `swiss_ai_hub.core.nats.events.form.constraints` — NOT Pydantic's `ge=`, `le=`:
+Use form-aware constraints from `swiss_ai_hub.core.form.constraints` — NOT Pydantic's `ge=`, `le=`:
 
 - `Ge()`, `Le()`, `Gt()`, `Lt()` — numeric bounds
 - `MinLen()`, `MaxLen()` — string/list length
@@ -267,7 +267,7 @@ Topic classes form a narrowing hierarchy:
 | `AgentInstanceTopic` | Tight       | Fully specified including `agent_id`             |
 
 Topic managers mirror the hierarchy (`AgentTopicManager` → `AgentClassTopicManager` → `AgentInstanceTopicManager`),
-constructing NATS subjects at each specificity level. See `packages/core/swiss_ai_hub/core/nats/topic_managers/agents/`.
+constructing NATS subjects at each specificity level. See `packages/core/swiss_ai_hub/core/topic_managers/agents/`.
 
 ## Context Management
 
@@ -363,18 +363,18 @@ tests).
 
 **From packages/core** (config & form system):
 
-- DispatchableWorkflow: `packages/core/swiss_ai_hub/core/nats/workflow/dispatchable_workflow.py`
+- DispatchableWorkflow: `packages/core/swiss_ai_hub/core/workflow/dispatchable_workflow.py`
 - AgentConfig: `packages/core/swiss_ai_hub/core/agents/agent_config.py`
-- Form base: `packages/core/swiss_ai_hub/core/nats/events/form/form.py`
-- FormKit elements: `packages/core/swiss_ai_hub/core/nats/events/form/elements/`
-- Form constraints: `packages/core/swiss_ai_hub/core/nats/events/form/constraints.py`
-- AgentConfigSpecs: `packages/core/swiss_ai_hub/core/nats/events/discovery/agent/agent_config_specs.py`
-- AgentConfigClient (RPC): `packages/core/swiss_ai_hub/core/nats/rpc/agent_config_client.py`
+- Form base: `packages/core/swiss_ai_hub/core/form/form.py`
+- FormKit elements: `packages/core/swiss_ai_hub/core/form/elements/`
+- Form constraints: `packages/core/swiss_ai_hub/core/form/constraints.py`
+- AgentConfigSpecs: `packages/core/swiss_ai_hub/core/events/agent/discovery/agent_config_specs.py`
+- AgentConfigClient (RPC): `packages/core/swiss_ai_hub/core/rpc/agent_config_client.py`
 - AgentConfigEntityDocument: `packages/core/swiss_ai_hub/core/persistence/agents/agent_config_entity_document.py`
 - EventDisplayer: `packages/core/swiss_ai_hub/core/displayers/event_displayer.py`
 - AgentMemory: `packages/core/swiss_ai_hub/core/generative_ai/memory/agent_memory.py`
-- Topics: `packages/core/swiss_ai_hub/core/nats/topics/agents/`
-- Topic managers: `packages/core/swiss_ai_hub/core/nats/topic_managers/agents/`
+- Topics: `packages/core/swiss_ai_hub/core/topics/agents/`
+- Topic managers: `packages/core/swiss_ai_hub/core/topic_managers/agents/`
 
 **From packages/api** (config responder):
 

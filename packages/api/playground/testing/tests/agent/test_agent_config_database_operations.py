@@ -5,7 +5,6 @@ from swiss_ai_hub.core.agents import AgentConfig
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.infrastructure import enable_logging
 from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import AgentConfigEntityDocument
-from swiss_ai_hub.core.testing import mock_role_entity_methods
 
 enable_logging()
 

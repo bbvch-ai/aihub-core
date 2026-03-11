@@ -4,8 +4,7 @@ from typing import Annotated, Any
 
 from fastapi import Depends, HTTPException
 from langfuse import Langfuse
-from swiss_ai_hub.core.infrastructure import LangfuseSettings
-from swiss_ai_hub.core.infrastructure import trace_fn
+from swiss_ai_hub.core.infrastructure import LangfuseSettings, trace_fn
 
 from swiss_ai_hub.api.routes.evaluation.dto.dataset.dataset import Dataset
 from swiss_ai_hub.api.routes.evaluation.dto.dataset.dataset_create import DatasetCreate

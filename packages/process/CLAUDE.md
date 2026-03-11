@@ -245,7 +245,7 @@ Topic classes form a narrowing hierarchy:
 | `ProcessInstanceTopic` | Tight       | Fully specified including `process_id`               |
 
 Topic managers mirror the hierarchy: `ProcessTopicManager` → `ProcessClassTopicManager` → `ProcessInstanceTopicManager`
-→ `ProcessWalkthroughTopicManager`. See `packages/core/nats/topic_managers/process/`.
+→ `ProcessWalkthroughTopicManager`. See `packages/core/swiss_ai_hub/core/topic_managers/process/`.
 
 ## WalkthroughContext
 
@@ -320,18 +320,18 @@ Per-walkthrough ephemeral state in Redis/Valkey. Equivalent of `RunContext` for 
 
 **From packages/core** (config, events & topics):
 
-- DispatchableWorkflow: `packages/core/swiss_ai_hub/core/nats/workflow/dispatchable_workflow.py`
+- DispatchableWorkflow: `packages/core/swiss_ai_hub/core/workflow/dispatchable_workflow.py`
 - ProcessConfig: `packages/core/swiss_ai_hub/core/processes/process_config.py`
-- Form base: `packages/core/swiss_ai_hub/core/nats/events/form/form.py`
-- ProcessConfigSpecs: `packages/core/swiss_ai_hub/core/nats/events/discovery/process/process_config_specs.py`
-- ProcessConfigClient (RPC): `packages/core/swiss_ai_hub/core/nats/rpc/process_config_client.py`
+- Form base: `packages/core/swiss_ai_hub/core/form/form.py`
+- ProcessConfigSpecs: `packages/core/swiss_ai_hub/core/events/process/discovery/process_config_specs.py`
+- ProcessConfigClient (RPC): `packages/core/swiss_ai_hub/core/rpc/process_config_client.py`
 - ProcessConfigEntityDocument: `packages/core/swiss_ai_hub/core/persistence/process/process_config_entity_document.py`
-- WorkEvent: `packages/core/swiss_ai_hub/core/nats/events/work/work_event.py`
-- WorkRequestEvent: `packages/core/swiss_ai_hub/core/nats/events/work_request/work_request_event.py`
-- AgentWorkEvent: `packages/core/swiss_ai_hub/core/nats/events/work/agent/agent_work_event.py`
-- HumanWorkEvent: `packages/core/swiss_ai_hub/core/nats/events/work/human/human_work_event.py`
-- Topics: `packages/core/swiss_ai_hub/core/nats/topics/process/`
-- Topic managers: `packages/core/swiss_ai_hub/core/nats/topic_managers/process/`
+- WorkEvent: `packages/core/swiss_ai_hub/core/events/process/work/work_event.py`
+- WorkRequestEvent: `packages/core/swiss_ai_hub/core/events/process/work_request/work_request_event.py`
+- AgentWorkEvent: `packages/core/swiss_ai_hub/core/events/process/work/agent/agent_work_event.py`
+- HumanWorkEvent: `packages/core/swiss_ai_hub/core/events/process/work/human/human_work_event.py`
+- Topics: `packages/core/swiss_ai_hub/core/topics/process/`
+- Topic managers: `packages/core/swiss_ai_hub/core/topic_managers/process/`
 
 **From packages/api** (config responder):
 

@@ -6,16 +6,17 @@ from bson import ObjectId
 from fastapi import HTTPException
 from nats.aio.client import Client as NATS
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
-from swiss_ai_hub.core.distributor import ExternalAgentEvent
-from swiss_ai_hub.core.distributor import ExternalAgentEventDistributor
-from swiss_ai_hub.core.events.agent import ExceptionEvent
-from swiss_ai_hub.core.events.agent import StartEvent
-from swiss_ai_hub.core.events.agent import StopEvent
-from swiss_ai_hub.core.events.agent import AgentConfigSpecs
-from swiss_ai_hub.core.events.agent import DisplayEvent
-from swiss_ai_hub.core.events.agent import HumanInTheLoopRequestEvent
-from swiss_ai_hub.core.events.agent import HumanInTheLoopResponseEvent
+from swiss_ai_hub.core.distributor import ExternalAgentEvent, ExternalAgentEventDistributor
 from swiss_ai_hub.core.events import BaseEvent
+from swiss_ai_hub.core.events.agent import (
+    AgentConfigSpecs,
+    DisplayEvent,
+    ExceptionEvent,
+    HumanInTheLoopRequestEvent,
+    HumanInTheLoopResponseEvent,
+    StartEvent,
+    StopEvent,
+)
 from swiss_ai_hub.core.form import normalize_empty_locale_strings, normalize_empty_objects_to_none
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.infrastructure import trace_fn

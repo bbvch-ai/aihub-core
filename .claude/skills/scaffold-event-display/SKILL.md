@@ -23,7 +23,7 @@ Check the event component resolver: `packages/web/aihub_web/composables/event/us
 
 ## Step 1: Identify the Event Type
 
-Check the backend event definition in `packages/core/swiss_ai_hub/core/nats/events/` to understand:
+Check the backend event definition in `packages/core/swiss_ai_hub/core/events/` to understand:
 
 - Event class name (e.g., `MyNewEvent`)
 - Fields available on the event

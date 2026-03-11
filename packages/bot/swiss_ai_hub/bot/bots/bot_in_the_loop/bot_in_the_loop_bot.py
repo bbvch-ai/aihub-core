@@ -5,10 +5,8 @@ from typing import override
 from microsoft_agents.activity import Channels
 from microsoft_agents.hosting.core import ActivityHandler, TurnContext
 from nats.aio.client import Client as NATS
-from swiss_ai_hub.core.distributor import ExternalAgentEvent
-from swiss_ai_hub.core.distributor import ExternalAgentEventDistributor
-from swiss_ai_hub.core.events.agent import BotInTheLoop
-from swiss_ai_hub.core.events.agent import BotInTheLoopResponderInfo
+from swiss_ai_hub.core.distributor import ExternalAgentEvent, ExternalAgentEventDistributor
+from swiss_ai_hub.core.events.agent import BotInTheLoop, BotInTheLoopResponderInfo
 
 from swiss_ai_hub.bot.routes.bot_in_the_loop.bot_in_the_loop_handler import BotInTheLoopHandler
 

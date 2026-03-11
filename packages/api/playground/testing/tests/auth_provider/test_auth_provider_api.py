@@ -5,8 +5,6 @@ from fastapi.testclient import TestClient
 from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler import (
     DangerousDevelopmentOnlyAuthHandler,
 )
-from swiss_ai_hub.core.testing import mock_tenant_entity_autouse
-from swiss_ai_hub.core.testing import mock_user_entity_autouse
 
 from swiss_ai_hub.api.routes.auth_provider.auth_provider_controller import AuthProviderController
 from swiss_ai_hub.api.routes.auth_provider.auth_provider_service import AuthProviderService

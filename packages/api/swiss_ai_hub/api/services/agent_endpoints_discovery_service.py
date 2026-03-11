@@ -21,14 +21,14 @@ from swiss_ai_hub.core.auth.usage import (
     use_usage_limits,
 )
 from swiss_ai_hub.core.dependencies import use_nats
-from swiss_ai_hub.core.distributor import use_external_agent_event_distributor
-from swiss_ai_hub.core.distributor import ExternalAgentEventDistributor
-from swiss_ai_hub.core.events.agent import ExceptionEvent
-from swiss_ai_hub.core.events.agent import StartEvent
-from swiss_ai_hub.core.events.agent import AgentClassDiscoveryResponseEvent
-from swiss_ai_hub.core.events.agent import HumanInTheLoopResponseEvent
-from swiss_ai_hub.core.events import ClassDiscoveryRequestEvent
-from swiss_ai_hub.core.events import EventSpecs
+from swiss_ai_hub.core.distributor import ExternalAgentEventDistributor, use_external_agent_event_distributor
+from swiss_ai_hub.core.events import ClassDiscoveryRequestEvent, EventSpecs
+from swiss_ai_hub.core.events.agent import (
+    AgentClassDiscoveryResponseEvent,
+    ExceptionEvent,
+    HumanInTheLoopResponseEvent,
+    StartEvent,
+)
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.infrastructure import LangfuseProvisioner
 from swiss_ai_hub.core.persistence.agents import AgentClassEntity

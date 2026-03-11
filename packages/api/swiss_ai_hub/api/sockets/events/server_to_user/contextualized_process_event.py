@@ -2,9 +2,7 @@ import json
 from typing import Annotated, Any, Self, override
 
 from pydantic import BaseModel, Discriminator, Field, Tag
-from swiss_ai_hub.core.events.process import ProcessEvent
-from swiss_ai_hub.core.events.process import WorkEvent
-from swiss_ai_hub.core.events.process import WorkRequestEvent
+from swiss_ai_hub.core.events.process import ProcessEvent, WorkEvent, WorkRequestEvent
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.persistence.messaging.entities.persisted_process_event_entity import PersistedProcessEventEntity
 

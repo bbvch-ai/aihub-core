@@ -3,13 +3,11 @@ from unittest.mock import AsyncMock, Mock, patch
 import pytest
 from fastapi import HTTPException
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
-from swiss_ai_hub.core.i18n import LocaleHandler
-from swiss_ai_hub.core.i18n import LocaleString
+from swiss_ai_hub.core.i18n import LocaleHandler, LocaleString
 from swiss_ai_hub.core.infrastructure import enable_logging
 from swiss_ai_hub.core.persistence.process import ProcessClassEntity
 from swiss_ai_hub.core.persistence.process.process_config_entity_document import ProcessConfigEntityDocument
 from swiss_ai_hub.core.processes import ProcessConfig
-from swiss_ai_hub.core.testing import mock_role_entity_methods
 
 from swiss_ai_hub.api.routes.process.dto.full_process_instance_dto import FullProcessInstanceDTO
 from swiss_ai_hub.api.routes.process.dto.process_class_dto import ProcessClassDTO

@@ -2,51 +2,53 @@ import json
 from typing import Annotated, Any, Self, override
 
 from pydantic import BaseModel, Discriminator, Field, Tag
-from swiss_ai_hub.core.events.agent import AgentInTheLoopExceptionEvent
-from swiss_ai_hub.core.events.agent import AgentInTheLoopRequestEvent
-from swiss_ai_hub.core.events.agent import AgentInTheLoopResponseEvent
-from swiss_ai_hub.core.events.agent import LimitChatHistoryEvent
-from swiss_ai_hub.core.events.agent import StandaloneQuestionCondenserEvent
-from swiss_ai_hub.core.events.agent import ExceptionEvent
-from swiss_ai_hub.core.events.agent import StartEvent
-from swiss_ai_hub.core.events.agent import StopEvent
-from swiss_ai_hub.core.events.agent import LLMCostEvent
-from swiss_ai_hub.core.events.agent import ChunkEvent
-from swiss_ai_hub.core.events.agent import DisplayEvent
-from swiss_ai_hub.core.events.agent import ThoughtEvent
-from swiss_ai_hub.core.events.agent import AgentSuitabilityAcceptEvent
-from swiss_ai_hub.core.events.agent import AgentSuitabilityRejectEvent
-from swiss_ai_hub.core.events.agent import ContextInsufficientRejectEvent
-from swiss_ai_hub.core.events.agent import ContextSufficientAcceptEvent
-from swiss_ai_hub.core.events.agent import FewShotAcceptEvent
-from swiss_ai_hub.core.events.agent import FewShotRejectEvent
-from swiss_ai_hub.core.events.agent import GuardAcceptEvent
-from swiss_ai_hub.core.events.agent import GuardRejectionEvent
-from swiss_ai_hub.core.events.agent import SensitiveInfoAcceptEvent
-from swiss_ai_hub.core.events.agent import SensitiveInfoRejectEvent
-from swiss_ai_hub.core.events.agent import HumanInTheLoopRequestEvent
-from swiss_ai_hub.core.events.agent import HumanInTheLoopResponseEvent
-from swiss_ai_hub.core.events.agent import AddMemoryToChatHistoryEvent
-from swiss_ai_hub.core.events.agent import AddOrganizationMemoryToChatHistoryEvent
-from swiss_ai_hub.core.events.agent import AddUserMemoryToChatHistoryEvent
-from swiss_ai_hub.core.events.agent import BaseRetrieveMemoryEvent
-from swiss_ai_hub.core.events.agent import RetrieveOrganizationMemoryEvent
-from swiss_ai_hub.core.events.agent import RetrieveUserMemoryEvent
-from swiss_ai_hub.core.events.agent import BaseStoreMemoryEvent
-from swiss_ai_hub.core.events.agent import StoreOrganizationMemoryEvent
-from swiss_ai_hub.core.events.agent import StoreUserMemoryEvent
-from swiss_ai_hub.core.events.agent import RouterEvent
-from swiss_ai_hub.core.events.agent import AgentEvent
-from swiss_ai_hub.core.events.agent import ChainEvent
-from swiss_ai_hub.core.events.agent import EmbeddingEvent
-from swiss_ai_hub.core.events.agent import GuardEvent
-from swiss_ai_hub.core.events.agent import LLMEvent
-from swiss_ai_hub.core.events.agent import LLMStopEvent
-from swiss_ai_hub.core.events.agent import RerankerEvent
-from swiss_ai_hub.core.events.agent import RetrieverEvent
-from swiss_ai_hub.core.events.agent import SemanticEvent
-from swiss_ai_hub.core.events.agent import ToolEvent
-from swiss_ai_hub.core.events.agent import UserMessageEvent
+from swiss_ai_hub.core.events.agent import (
+    AddMemoryToChatHistoryEvent,
+    AddOrganizationMemoryToChatHistoryEvent,
+    AddUserMemoryToChatHistoryEvent,
+    AgentEvent,
+    AgentInTheLoopExceptionEvent,
+    AgentInTheLoopRequestEvent,
+    AgentInTheLoopResponseEvent,
+    AgentSuitabilityAcceptEvent,
+    AgentSuitabilityRejectEvent,
+    BaseRetrieveMemoryEvent,
+    BaseStoreMemoryEvent,
+    ChainEvent,
+    ChunkEvent,
+    ContextInsufficientRejectEvent,
+    ContextSufficientAcceptEvent,
+    DisplayEvent,
+    EmbeddingEvent,
+    ExceptionEvent,
+    FewShotAcceptEvent,
+    FewShotRejectEvent,
+    GuardAcceptEvent,
+    GuardEvent,
+    GuardRejectionEvent,
+    HumanInTheLoopRequestEvent,
+    HumanInTheLoopResponseEvent,
+    LimitChatHistoryEvent,
+    LLMCostEvent,
+    LLMEvent,
+    LLMStopEvent,
+    RerankerEvent,
+    RetrieveOrganizationMemoryEvent,
+    RetrieverEvent,
+    RetrieveUserMemoryEvent,
+    RouterEvent,
+    SemanticEvent,
+    SensitiveInfoAcceptEvent,
+    SensitiveInfoRejectEvent,
+    StandaloneQuestionCondenserEvent,
+    StartEvent,
+    StopEvent,
+    StoreOrganizationMemoryEvent,
+    StoreUserMemoryEvent,
+    ThoughtEvent,
+    ToolEvent,
+    UserMessageEvent,
+)
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.persistence.messaging.entities.persisted_agent_event_entity import PersistedAgentEventEntity
 

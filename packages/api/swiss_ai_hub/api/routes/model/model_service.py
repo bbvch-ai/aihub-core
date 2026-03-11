@@ -1,8 +1,7 @@
 from fastapi import HTTPException
 from httpx import Client
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
-from swiss_ai_hub.core.infrastructure import LiteLLMService
-from swiss_ai_hub.core.infrastructure import trace_fn
+from swiss_ai_hub.core.infrastructure import LiteLLMService, trace_fn
 
 from swiss_ai_hub.api.routes.model.dto.model_dto import ModelDTO, ModelTypeGroupDTO
 

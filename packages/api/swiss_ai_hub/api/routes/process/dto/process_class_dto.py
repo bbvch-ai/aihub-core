@@ -1,13 +1,14 @@
 from typing import TYPE_CHECKING, Annotated, Self
 
 from pydantic import BaseModel, Field
-from swiss_ai_hub.core.events.process import AgentInSpecs
-from swiss_ai_hub.core.events.process import HumanInSpecs
-from swiss_ai_hub.core.events.process import ProcessClassDiscoveryResponseEvent
-from swiss_ai_hub.core.events.process import ProcessConfigSpecs
-from swiss_ai_hub.core.events.process import ProgramInSpecs
-from swiss_ai_hub.core.form import ALL_FORM_OPTIONS
-from swiss_ai_hub.core.form import TemplateData
+from swiss_ai_hub.core.events.process import (
+    AgentInSpecs,
+    HumanInSpecs,
+    ProcessClassDiscoveryResponseEvent,
+    ProcessConfigSpecs,
+    ProgramInSpecs,
+)
+from swiss_ai_hub.core.form import ALL_FORM_OPTIONS, TemplateData
 from swiss_ai_hub.core.i18n import LocaleString
 
 if TYPE_CHECKING:

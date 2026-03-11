@@ -4,11 +4,8 @@ from typing import Any
 from bson import ObjectId
 from fastapi import HTTPException
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
-from swiss_ai_hub.core.distributor import ExternalProcessEvent
-from swiss_ai_hub.core.distributor import ExternalProcessEventDistributor
-from swiss_ai_hub.core.events.process import ProcessConfigSpecs
-from swiss_ai_hub.core.events.process import ProcessStartEvent
-from swiss_ai_hub.core.events.process import WorkEvent
+from swiss_ai_hub.core.distributor import ExternalProcessEvent, ExternalProcessEventDistributor
+from swiss_ai_hub.core.events.process import ProcessConfigSpecs, ProcessStartEvent, WorkEvent
 from swiss_ai_hub.core.form import normalize_empty_locale_strings, normalize_empty_objects_to_none
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.infrastructure import trace_fn

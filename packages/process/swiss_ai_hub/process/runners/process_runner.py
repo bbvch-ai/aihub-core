@@ -7,29 +7,28 @@ from mongoengine.connection import get_connection
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 from redis.asyncio import Redis
-from swiss_ai_hub.core.events import ClassDiscoveryRequestEvent
-from swiss_ai_hub.core.events import EventSpecs
-from swiss_ai_hub.core.events.process import AgentInSpecs
-from swiss_ai_hub.core.events.process import HumanInSpecs
-from swiss_ai_hub.core.events.process import ProcessClassDiscoveryResponseEvent
-from swiss_ai_hub.core.events.process import ProcessConfigSpecs
-from swiss_ai_hub.core.events.process import ProgramInSpecs
-from swiss_ai_hub.core.events.process import ProcessStartEvent
+from swiss_ai_hub.core.events import ClassDiscoveryRequestEvent, EventSpecs
+from swiss_ai_hub.core.events.process import (
+    AgentInSpecs,
+    HumanInSpecs,
+    ProcessClassDiscoveryResponseEvent,
+    ProcessConfigSpecs,
+    ProcessStartEvent,
+    ProgramInSpecs,
+)
 from swiss_ai_hub.core.form import TemplateData
-from swiss_ai_hub.core.infrastructure import MongoSettings
-from swiss_ai_hub.core.infrastructure import NatsSettings
-from swiss_ai_hub.core.infrastructure import RedisSettings
+from swiss_ai_hub.core.infrastructure import MongoSettings, NatsSettings, RedisSettings
 from swiss_ai_hub.core.processes import ProcessConfig
 from swiss_ai_hub.core.publishers import NCPublisher
-from swiss_ai_hub.core.routes import ProcessHealthChecks
-from swiss_ai_hub.core.routes import check_nats_sync, check_redis_sync
-from swiss_ai_hub.core.routes import HealthCheckProvider, HealthServer
-from swiss_ai_hub.core.subscribers import JSSubscriber
-from swiss_ai_hub.core.subscribers import NCSubscriber
-from swiss_ai_hub.core.subscribers import ProcessJSSubscriber
-from swiss_ai_hub.core.subscribers import ProcessNCSubscriber
-from swiss_ai_hub.core.topic_managers import ProcessClassTopicManager
-from swiss_ai_hub.core.topic_managers import ProcessTopicManager
+from swiss_ai_hub.core.routes import (
+    HealthCheckProvider,
+    HealthServer,
+    ProcessHealthChecks,
+    check_nats_sync,
+    check_redis_sync,
+)
+from swiss_ai_hub.core.subscribers import JSSubscriber, NCSubscriber, ProcessJSSubscriber, ProcessNCSubscriber
+from swiss_ai_hub.core.topic_managers import ProcessClassTopicManager, ProcessTopicManager
 from swiss_ai_hub.core.topics.discovery.process import ProcessClassDiscoveryTopic
 
 from swiss_ai_hub.process.agentic_processes.agentic_process import AgenticProcess
