@@ -1,7 +1,9 @@
 import logging
-from typing import Any
+from typing import Any, ClassVar
 
 import httpx
+from redis.asyncio import Redis
+from redis.asyncio.lock import Lock
 
 from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.infrastructure.openwebui.OpenWebuiClient import OpenWebuiClient
@@ -16,8 +18,12 @@ logger = logging.getLogger(__name__)
 AIHUB_GROUP_PREFIX = "aihub:"
 AIHUB_MODEL_PREFIX = "aihub-agent-"
 
+_LOCK_TIMEOUT = 60
+
 
 class OpenWebuiProvisioner:
+    _redis: ClassVar[Redis | None] = None
+
     def __init__(self, settings: OpenWebuiSettings | None = None) -> None:
         self._settings = settings or OpenWebuiSettings()
         self._client = OpenWebuiClient(
@@ -26,27 +32,57 @@ class OpenWebuiProvisioner:
             scim_token=self._settings.SCIM_TOKEN.get_secret_value(),
         )
 
+    @classmethod
+    def initialize(cls, redis: Redis) -> None:
+        cls._redis = redis
+
+    def _lock(self, key: str) -> Lock:
+        if self._redis is None:
+            raise RuntimeError("OpenWebuiProvisioner not initialized")
+        return self._redis.lock(key, timeout=_LOCK_TIMEOUT)
+
     async def provision(self) -> None:
-        logger.info("Starting OpenWebUI provisioning...")
+        lock = self._lock("openwebui:sync:provision")
+        if not await lock.acquire(blocking=False):
+            logger.debug("OpenWebUI provision skipped: another instance is syncing")
+            return
+        try:
+            logger.info("Starting OpenWebUI provisioning...")
 
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            await self._sync_groups(client)
-            await self._sync_workspace_models(client, [])
-            await self._sync_access_grants(client)
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                await self._sync_groups(client)
+                await self._sync_workspace_models(client, [])
+                await self._sync_access_grants(client)
 
-        logger.info("OpenWebUI provisioning completed")
+            logger.info("OpenWebUI provisioning completed")
+        finally:
+            await lock.release()
 
     async def sync_agents(self, online_agents: list[tuple[str, str, str]]) -> None:
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            await self._sync_workspace_models(client, online_agents)
-            await self._sync_access_grants(client)
+        lock = self._lock("openwebui:sync:agents")
+        if not await lock.acquire(blocking=False):
+            logger.debug("OpenWebUI sync_agents skipped: another instance is syncing")
+            return
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                await self._sync_workspace_models(client, online_agents)
+                await self._sync_access_grants(client)
 
-        logger.info(f"OpenWebUI sync: Updated {len(online_agents)} agent workspace models")
+            logger.info(f"OpenWebUI sync: Updated {len(online_agents)} agent workspace models")
+        finally:
+            await lock.release()
 
     async def sync_access(self) -> None:
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            await self._sync_groups(client)
-            await self._sync_access_grants(client)
+        lock = self._lock("openwebui:sync:access")
+        if not await lock.acquire(blocking=False):
+            logger.debug("OpenWebUI sync_access skipped: another instance is syncing")
+            return
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                await self._sync_groups(client)
+                await self._sync_access_grants(client)
+        finally:
+            await lock.release()
 
     # ------------------------------------------------------------------
     # Group sync

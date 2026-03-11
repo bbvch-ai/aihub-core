@@ -1,4 +1,6 @@
-from unittest.mock import MagicMock, patch
+"""Tests for OpenWebuiProvisioner — top-level orchestration."""
+
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -21,18 +23,26 @@ def provisioner(mock_settings: MagicMock) -> OpenWebuiProvisioner:
     return OpenWebuiProvisioner(settings=mock_settings)
 
 
+@pytest.fixture(autouse=True)
+def _init_redis() -> None:
+    mock_redis = MagicMock()
+    mock_lock = MagicMock()
+    mock_lock.acquire = AsyncMock(return_value=True)
+    mock_lock.release = AsyncMock()
+    mock_redis.lock.return_value = mock_lock
+    OpenWebuiProvisioner.initialize(mock_redis)
+    yield
+    OpenWebuiProvisioner._redis = None  # type: ignore[assignment]
+
+
 class TestProvision:
     @pytest.mark.asyncio
-    async def test_provision_continues_after_step_failure(self, provisioner: OpenWebuiProvisioner) -> None:
+    async def test_provision_raises_on_step_failure(self, provisioner: OpenWebuiProvisioner) -> None:
         with (
             patch.object(provisioner, "_sync_groups", side_effect=RuntimeError("boom")),
-            patch.object(provisioner, "_sync_workspace_models") as mock_models,
-            patch.object(provisioner, "_sync_access_grants") as mock_access,
+            pytest.raises(RuntimeError, match="boom"),
         ):
             await provisioner.provision()
-
-            mock_models.assert_called_once()
-            mock_access.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_provision_passes_empty_agents_for_clean_slate(self, provisioner: OpenWebuiProvisioner) -> None:

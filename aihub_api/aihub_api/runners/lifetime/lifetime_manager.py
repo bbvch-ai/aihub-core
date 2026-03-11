@@ -223,6 +223,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         await LangfuseProvisioner().provision()
 
         # Provision OpenWebUI with groups, workspace models, and access grants
+        OpenWebuiProvisioner.initialize(redis)
         await OpenWebuiProvisioner().provision()
 
         # Re-sync OpenWebUI groups when a user switches active tenant
