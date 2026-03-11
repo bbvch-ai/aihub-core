@@ -13,6 +13,8 @@ aihub_doc/aihub
 /configs/traefik/certs/dev-cert.pem
 /configs/traefik/certs/dev-key.pem
 .idea/copilot*
+.idea/misc.xml
+aihub_*/.idea/
 *.log
 .mypy_cache/
 .venv
