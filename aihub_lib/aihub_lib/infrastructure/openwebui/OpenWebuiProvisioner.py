@@ -1,9 +1,10 @@
 import logging
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from typing import Any, ClassVar
 
 import httpx
 from redis.asyncio import Redis
-from redis.asyncio.lock import Lock
 
 from aihub_lib.auth.access.AccessChecker import AccessChecker
 from aihub_lib.infrastructure.openwebui.OpenWebuiClient import OpenWebuiClient
@@ -21,12 +22,27 @@ AIHUB_MODEL_PREFIX = "aihub-agent-"
 _LOCK_TIMEOUT = 60
 
 
+@asynccontextmanager
+async def _sync_lock(redis: Redis | None, key: str) -> AsyncIterator[bool]:
+    if redis is None:
+        raise RuntimeError("OpenWebuiProvisioner not initialized")
+    lock = redis.lock(key, timeout=_LOCK_TIMEOUT)
+    if not await lock.acquire(blocking=False):
+        logger.debug("OpenWebUI %s skipped: another instance is syncing", key.rsplit(":", 1)[-1])
+        yield False
+        return
+    try:
+        yield True
+    finally:
+        await lock.release()
+
+
 class OpenWebuiProvisioner:
     _redis: ClassVar[Redis | None] = None
 
     def __init__(self, settings: OpenWebuiSettings | None = None) -> None:
         self._settings = settings or OpenWebuiSettings()
-        self._client = OpenWebuiClient(
+        self._openwebui = OpenWebuiClient(
             base_url=self._settings.BASE_URL,
             secret_key=self._settings.SECRET_KEY.get_secret_value(),
             scim_token=self._settings.SCIM_TOKEN.get_secret_value(),
@@ -36,53 +52,36 @@ class OpenWebuiProvisioner:
     def initialize(cls, redis: Redis) -> None:
         cls._redis = redis
 
-    def _lock(self, key: str) -> Lock:
-        if self._redis is None:
-            raise RuntimeError("OpenWebuiProvisioner not initialized")
-        return self._redis.lock(key, timeout=_LOCK_TIMEOUT)
-
     async def provision(self) -> None:
-        lock = self._lock("openwebui:sync:provision")
-        if not await lock.acquire(blocking=False):
-            logger.debug("OpenWebUI provision skipped: another instance is syncing")
-            return
-        try:
+        async with _sync_lock(self._redis, "openwebui:sync:provision") as acquired:
+            if not acquired:
+                return
             logger.info("Starting OpenWebUI provisioning...")
 
-            async with httpx.AsyncClient(timeout=30.0) as client:
-                await self._sync_groups(client)
-                await self._sync_workspace_models(client, [])
-                await self._sync_access_grants(client)
+            async with httpx.AsyncClient(timeout=30.0) as http:
+                await self._sync_groups(http)
+                await self._sync_workspace_models(http, [])
+                await self._sync_access_grants(http)
 
             logger.info("OpenWebUI provisioning completed")
-        finally:
-            await lock.release()
 
     async def sync_agents(self, online_agents: list[tuple[str, str, str]]) -> None:
-        lock = self._lock("openwebui:sync:agents")
-        if not await lock.acquire(blocking=False):
-            logger.debug("OpenWebUI sync_agents skipped: another instance is syncing")
-            return
-        try:
-            async with httpx.AsyncClient(timeout=30.0) as client:
-                await self._sync_workspace_models(client, online_agents)
-                await self._sync_access_grants(client)
+        async with _sync_lock(self._redis, "openwebui:sync:agents") as acquired:
+            if not acquired:
+                return
+            async with httpx.AsyncClient(timeout=30.0) as http:
+                await self._sync_workspace_models(http, online_agents)
+                await self._sync_access_grants(http)
 
             logger.info(f"OpenWebUI sync: Updated {len(online_agents)} agent workspace models")
-        finally:
-            await lock.release()
 
     async def sync_access(self) -> None:
-        lock = self._lock("openwebui:sync:access")
-        if not await lock.acquire(blocking=False):
-            logger.debug("OpenWebUI sync_access skipped: another instance is syncing")
-            return
-        try:
-            async with httpx.AsyncClient(timeout=30.0) as client:
-                await self._sync_groups(client)
-                await self._sync_access_grants(client)
-        finally:
-            await lock.release()
+        async with _sync_lock(self._redis, "openwebui:sync:access") as acquired:
+            if not acquired:
+                return
+            async with httpx.AsyncClient(timeout=30.0) as http:
+                await self._sync_groups(http)
+                await self._sync_access_grants(http)
 
     # ------------------------------------------------------------------
     # Group sync
@@ -122,7 +121,7 @@ class OpenWebuiProvisioner:
 
     async def _sync_group_memberships(
         self,
-        client: httpx.AsyncClient,
+        http: httpx.AsyncClient,
         tenants: list[dict[str, Any]],
         roles_by_tenant: dict[str, list[dict[str, Any]]],
         aihub_groups: dict[str, dict[str, Any]],
@@ -144,9 +143,9 @@ class OpenWebuiProvisioner:
                 aihub_user_ids = [utr.user_id for utr in all_utr if utr.user_id in active_user_ids]
                 owui_member_ids = [user_id_mapping[uid] for uid in aihub_user_ids if uid in user_id_mapping]
 
-                await self._client.update_group_members(client, aihub_groups[group_name]["id"], owui_member_ids)
+                await self._openwebui.update_group_members(http, aihub_groups[group_name]["id"], owui_member_ids)
 
-    async def _sync_groups(self, client: httpx.AsyncClient) -> None:
+    async def _sync_groups(self, http: httpx.AsyncClient) -> None:
         tenants = [{"name": t.name, "id": str(t.id), "access_rules": t.access_rules} for t in TenantEntity.objects()]
 
         roles_by_tenant: dict[str, list[dict[str, Any]]] = {}
@@ -156,25 +155,25 @@ class OpenWebuiProvisioner:
 
         desired = self._build_desired_groups(tenants, roles_by_tenant)
 
-        existing_groups = await self._client.list_groups(client)
+        existing_groups = await self._openwebui.list_groups(http)
         aihub_groups = {
             g["displayName"]: g for g in existing_groups if g.get("displayName", "").startswith(AIHUB_GROUP_PREFIX)
         }
 
         for name in desired - set(aihub_groups.keys()):
-            created = await self._client.create_group(client, name, f"AI-Hub managed group: {name}")
+            created = await self._openwebui.create_group(http, name, f"AI-Hub managed group: {name}")
             aihub_groups[name] = created
             logger.info(f"OpenWebUI: Created group '{name}'")
 
         for name in set(aihub_groups.keys()) - desired:
-            await self._client.delete_group(client, aihub_groups.pop(name)["id"])
+            await self._openwebui.delete_group(http, aihub_groups.pop(name)["id"])
             logger.info(f"OpenWebUI: Deleted orphaned group '{name}'")
 
-        owui_users = await self._client.list_users(client)
+        owui_users = await self._openwebui.list_users(http)
         aihub_users = [{"id": u.id, "email": u.email} for u in UserEntity.objects()]
         user_id_mapping = self._build_user_id_mapping(aihub_users, owui_users)
 
-        await self._sync_group_memberships(client, tenants, roles_by_tenant, aihub_groups, user_id_mapping)
+        await self._sync_group_memberships(http, tenants, roles_by_tenant, aihub_groups, user_id_mapping)
 
     # ------------------------------------------------------------------
     # Workspace model sync
@@ -202,10 +201,8 @@ class OpenWebuiProvisioner:
         to_delete = existing_model_ids - desired_ids
         return to_create, to_delete
 
-    async def _sync_workspace_models(
-        self, client: httpx.AsyncClient, online_agents: list[tuple[str, str, str]]
-    ) -> None:
-        existing_models = await self._client.list_models(client)
+    async def _sync_workspace_models(self, http: httpx.AsyncClient, online_agents: list[tuple[str, str, str]]) -> None:
+        existing_models = await self._openwebui.list_models(http)
         existing_aihub = {m["id"] for m in existing_models if m.get("id", "").startswith(AIHUB_MODEL_PREFIX)}
 
         to_create, to_delete = self._compute_model_diff(online_agents, existing_aihub)
@@ -217,11 +214,11 @@ class OpenWebuiProvisioner:
                 "base_model_id": self._base_model_id(agent_class, agent_id),
                 "meta": {"description": f"AI-Hub agent: {agent_class}/{agent_id}"},
             }
-            await self._client.create_model(client, model_data)
+            await self._openwebui.create_model(http, model_data)
             logger.info(f"OpenWebUI: Created workspace model '{model_data['id']}'")
 
         for model_id in to_delete:
-            await self._client.delete_model(client, model_id)
+            await self._openwebui.delete_model(http, model_id)
             logger.info(f"OpenWebUI: Deleted workspace model '{model_id}'")
 
     # ------------------------------------------------------------------
@@ -280,14 +277,14 @@ class OpenWebuiProvisioner:
                 role_rules[role.name] = list(set(role_rules[role.name]) | set(role.access_rules))
         return role_rules
 
-    async def _sync_access_grants(self, client: httpx.AsyncClient) -> None:
-        existing_models = await self._client.list_models(client)
+    async def _sync_access_grants(self, http: httpx.AsyncClient) -> None:
+        existing_models = await self._openwebui.list_models(http)
         aihub_models = [m for m in existing_models if m.get("id", "").startswith(AIHUB_MODEL_PREFIX)]
 
         if not aihub_models:
             return
 
-        all_groups = await self._client.list_groups(client)
+        all_groups = await self._openwebui.list_groups(http)
         aihub_groups = [g for g in all_groups if g.get("displayName", "").startswith(AIHUB_GROUP_PREFIX)]
 
         if not aihub_groups:
@@ -305,4 +302,4 @@ class OpenWebuiProvisioner:
             access_control = self._compute_access_for_model(
                 agent_class, agent_id, aihub_groups, tenant_rules, role_rules
             )
-            await self._client.update_model_access(client, model["id"], access_control)
+            await self._openwebui.update_model_access(http, model["id"], access_control)

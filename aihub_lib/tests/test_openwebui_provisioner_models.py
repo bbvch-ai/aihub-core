@@ -61,9 +61,9 @@ class TestSyncWorkspaceModels:
         mock_client = AsyncMock(spec=httpx.AsyncClient)
 
         with (
-            patch.object(provisioner._client, "list_models", return_value=[]) as mock_list,
-            patch.object(provisioner._client, "create_model") as mock_create,
-            patch.object(provisioner._client, "delete_model") as mock_delete,
+            patch.object(provisioner._openwebui, "list_models", return_value=[]) as mock_list,
+            patch.object(provisioner._openwebui, "create_model") as mock_create,
+            patch.object(provisioner._openwebui, "delete_model") as mock_delete,
         ):
             await provisioner._sync_workspace_models(mock_client, [("rag", "default", "RAG Agent")])
 
@@ -81,12 +81,12 @@ class TestSyncWorkspaceModels:
 
         with (
             patch.object(
-                provisioner._client,
+                provisioner._openwebui,
                 "list_models",
                 return_value=[{"id": "aihub-agent-rag-default"}],
             ),
-            patch.object(provisioner._client, "create_model") as mock_create,
-            patch.object(provisioner._client, "delete_model") as mock_delete,
+            patch.object(provisioner._openwebui, "create_model") as mock_create,
+            patch.object(provisioner._openwebui, "delete_model") as mock_delete,
         ):
             await provisioner._sync_workspace_models(mock_client, [])
 
@@ -99,12 +99,12 @@ class TestSyncWorkspaceModels:
 
         with (
             patch.object(
-                provisioner._client,
+                provisioner._openwebui,
                 "list_models",
                 return_value=[{"id": "aihub-agent-rag-default"}],
             ),
-            patch.object(provisioner._client, "create_model") as mock_create,
-            patch.object(provisioner._client, "delete_model") as mock_delete,
+            patch.object(provisioner._openwebui, "create_model") as mock_create,
+            patch.object(provisioner._openwebui, "delete_model") as mock_delete,
         ):
             await provisioner._sync_workspace_models(mock_client, [("rag", "default", "RAG Agent")])
 
@@ -117,12 +117,12 @@ class TestSyncWorkspaceModels:
 
         with (
             patch.object(
-                provisioner._client,
+                provisioner._openwebui,
                 "list_models",
                 return_value=[{"id": "custom-model-123"}],
             ),
-            patch.object(provisioner._client, "create_model") as mock_create,
-            patch.object(provisioner._client, "delete_model") as mock_delete,
+            patch.object(provisioner._openwebui, "create_model") as mock_create,
+            patch.object(provisioner._openwebui, "delete_model") as mock_delete,
         ):
             await provisioner._sync_workspace_models(mock_client, [])
 

@@ -91,11 +91,11 @@ class TestSyncGroupsOrchestration:
             patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.RoleEntity") as mock_role,
             patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.UserTenantRoleEntity"),
             patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.UserEntity") as mock_user,
-            patch.object(provisioner._client, "list_groups") as mock_list_groups,
-            patch.object(provisioner._client, "create_group") as mock_create,
-            patch.object(provisioner._client, "delete_group"),
-            patch.object(provisioner._client, "list_users", return_value=[]),
-            patch.object(provisioner._client, "update_group_members"),
+            patch.object(provisioner._openwebui, "list_groups") as mock_list_groups,
+            patch.object(provisioner._openwebui, "create_group") as mock_create,
+            patch.object(provisioner._openwebui, "delete_group"),
+            patch.object(provisioner._openwebui, "list_users", return_value=[]),
+            patch.object(provisioner._openwebui, "update_group_members"),
         ):
             tenant = MagicMock()
             tenant.name = "T1"
@@ -135,11 +135,11 @@ class TestSyncGroupsOrchestration:
             patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.RoleEntity") as mock_role,
             patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.UserTenantRoleEntity"),
             patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.UserEntity") as mock_user,
-            patch.object(provisioner._client, "list_groups") as mock_list_groups,
-            patch.object(provisioner._client, "create_group"),
-            patch.object(provisioner._client, "delete_group") as mock_delete,
-            patch.object(provisioner._client, "list_users", return_value=[]),
-            patch.object(provisioner._client, "update_group_members"),
+            patch.object(provisioner._openwebui, "list_groups") as mock_list_groups,
+            patch.object(provisioner._openwebui, "create_group"),
+            patch.object(provisioner._openwebui, "delete_group") as mock_delete,
+            patch.object(provisioner._openwebui, "list_users", return_value=[]),
+            patch.object(provisioner._openwebui, "update_group_members"),
         ):
             mock_tenant.objects.return_value = []
             mock_tenant.get_default_tenant.return_value = None
@@ -162,11 +162,11 @@ class TestSyncGroupsOrchestration:
             patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.RoleEntity") as mock_role,
             patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.UserTenantRoleEntity"),
             patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.UserEntity") as mock_user,
-            patch.object(provisioner._client, "list_groups") as mock_list_groups,
-            patch.object(provisioner._client, "create_group"),
-            patch.object(provisioner._client, "delete_group") as mock_delete,
-            patch.object(provisioner._client, "list_users", return_value=[]),
-            patch.object(provisioner._client, "update_group_members"),
+            patch.object(provisioner._openwebui, "list_groups") as mock_list_groups,
+            patch.object(provisioner._openwebui, "create_group"),
+            patch.object(provisioner._openwebui, "delete_group") as mock_delete,
+            patch.object(provisioner._openwebui, "list_users", return_value=[]),
+            patch.object(provisioner._openwebui, "update_group_members"),
         ):
             mock_tenant.objects.return_value = []
             mock_tenant.get_default_tenant.return_value = None
@@ -189,11 +189,11 @@ class TestSyncGroupsOrchestration:
             patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.RoleEntity") as mock_role,
             patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.UserTenantRoleEntity") as mock_utr,
             patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.UserEntity") as mock_user,
-            patch.object(provisioner._client, "list_groups") as mock_list_groups,
-            patch.object(provisioner._client, "create_group"),
-            patch.object(provisioner._client, "delete_group"),
-            patch.object(provisioner._client, "list_users") as mock_list_users,
-            patch.object(provisioner._client, "update_group_members") as mock_update_members,
+            patch.object(provisioner._openwebui, "list_groups") as mock_list_groups,
+            patch.object(provisioner._openwebui, "create_group"),
+            patch.object(provisioner._openwebui, "delete_group"),
+            patch.object(provisioner._openwebui, "list_users") as mock_list_users,
+            patch.object(provisioner._openwebui, "update_group_members") as mock_update_members,
         ):
             tenant = MagicMock()
             tenant.name = "T1"
@@ -249,11 +249,11 @@ class TestSyncGroupsOrchestration:
             patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.RoleEntity") as mock_role,
             patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.UserTenantRoleEntity") as mock_utr,
             patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.UserEntity") as mock_user,
-            patch.object(provisioner._client, "list_groups") as mock_list_groups,
-            patch.object(provisioner._client, "create_group"),
-            patch.object(provisioner._client, "delete_group"),
-            patch.object(provisioner._client, "list_users") as mock_list_users,
-            patch.object(provisioner._client, "update_group_members") as mock_update_members,
+            patch.object(provisioner._openwebui, "list_groups") as mock_list_groups,
+            patch.object(provisioner._openwebui, "create_group"),
+            patch.object(provisioner._openwebui, "delete_group"),
+            patch.object(provisioner._openwebui, "list_users") as mock_list_users,
+            patch.object(provisioner._openwebui, "update_group_members") as mock_update_members,
         ):
             tenant = MagicMock()
             tenant.name = "T1"
@@ -310,11 +310,11 @@ class TestSyncGroupsOrchestration:
             patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.RoleEntity") as mock_role,
             patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.UserTenantRoleEntity") as mock_utr,
             patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.UserEntity") as mock_user,
-            patch.object(provisioner._client, "list_groups") as mock_list_groups,
-            patch.object(provisioner._client, "create_group"),
-            patch.object(provisioner._client, "delete_group"),
-            patch.object(provisioner._client, "list_users") as mock_list_users,
-            patch.object(provisioner._client, "update_group_members") as mock_update_members,
+            patch.object(provisioner._openwebui, "list_groups") as mock_list_groups,
+            patch.object(provisioner._openwebui, "create_group"),
+            patch.object(provisioner._openwebui, "delete_group"),
+            patch.object(provisioner._openwebui, "list_users") as mock_list_users,
+            patch.object(provisioner._openwebui, "update_group_members") as mock_update_members,
         ):
             tenant = MagicMock()
             tenant.name = "DefaultOrg"
@@ -376,11 +376,11 @@ class TestSyncGroupsOrchestration:
             patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.RoleEntity") as mock_role,
             patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.UserTenantRoleEntity") as mock_utr,
             patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.UserEntity") as mock_user,
-            patch.object(provisioner._client, "list_groups") as mock_list_groups,
-            patch.object(provisioner._client, "create_group") as mock_create,
-            patch.object(provisioner._client, "delete_group") as mock_delete,
-            patch.object(provisioner._client, "list_users", return_value=[]),
-            patch.object(provisioner._client, "update_group_members"),
+            patch.object(provisioner._openwebui, "list_groups") as mock_list_groups,
+            patch.object(provisioner._openwebui, "create_group") as mock_create,
+            patch.object(provisioner._openwebui, "delete_group") as mock_delete,
+            patch.object(provisioner._openwebui, "list_users", return_value=[]),
+            patch.object(provisioner._openwebui, "update_group_members"),
         ):
             tenant = MagicMock()
             tenant.name = "T1"

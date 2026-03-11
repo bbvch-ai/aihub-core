@@ -111,18 +111,18 @@ class TestSyncAccessGrants:
 
         with (
             patch.object(
-                provisioner._client,
+                provisioner._openwebui,
                 "list_models",
                 return_value=[
                     {"id": f"{AIHUB_MODEL_PREFIX}rag-default", "base_model_id": "aihub-pipeline.rag.default"}
                 ],
             ),
             patch.object(
-                provisioner._client,
+                provisioner._openwebui,
                 "list_groups",
                 return_value=[{"displayName": "aihub:T1:R1", "id": "grp-1"}],
             ),
-            patch.object(provisioner._client, "update_model_access") as mock_update,
+            patch.object(provisioner._openwebui, "update_model_access") as mock_update,
             patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.TenantEntity") as mock_tenant,
             patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.RoleEntity") as mock_role,
         ):
@@ -151,18 +151,18 @@ class TestSyncAccessGrants:
 
         with (
             patch.object(
-                provisioner._client,
+                provisioner._openwebui,
                 "list_models",
                 return_value=[
                     {"id": f"{AIHUB_MODEL_PREFIX}my-rag-default", "base_model_id": "aihub-pipeline.my-rag.default"}
                 ],
             ),
             patch.object(
-                provisioner._client,
+                provisioner._openwebui,
                 "list_groups",
                 return_value=[{"displayName": "aihub:T1:R1", "id": "grp-1"}],
             ),
-            patch.object(provisioner._client, "update_model_access") as mock_update,
+            patch.object(provisioner._openwebui, "update_model_access") as mock_update,
             patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.TenantEntity") as mock_tenant,
             patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.RoleEntity") as mock_role,
         ):
@@ -191,16 +191,16 @@ class TestSyncAccessGrants:
 
         with (
             patch.object(
-                provisioner._client,
+                provisioner._openwebui,
                 "list_models",
                 return_value=[{"id": f"{AIHUB_MODEL_PREFIX}rag-default"}],
             ),
             patch.object(
-                provisioner._client,
+                provisioner._openwebui,
                 "list_groups",
                 return_value=[{"displayName": "aihub:T1:R1", "id": "grp-1"}],
             ),
-            patch.object(provisioner._client, "update_model_access") as mock_update,
+            patch.object(provisioner._openwebui, "update_model_access") as mock_update,
             patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.TenantEntity") as mock_tenant,
             patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.RoleEntity") as mock_role,
         ):
@@ -227,16 +227,16 @@ class TestSyncAccessGrants:
 
         with (
             patch.object(
-                provisioner._client,
+                provisioner._openwebui,
                 "list_models",
                 return_value=[{"id": f"{AIHUB_MODEL_PREFIX}broken", "base_model_id": "aihub-pipeline.nodot"}],
             ),
             patch.object(
-                provisioner._client,
+                provisioner._openwebui,
                 "list_groups",
                 return_value=[{"displayName": "aihub:T1:R1", "id": "grp-1"}],
             ),
-            patch.object(provisioner._client, "update_model_access") as mock_update,
+            patch.object(provisioner._openwebui, "update_model_access") as mock_update,
             patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.TenantEntity") as mock_tenant,
             patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.RoleEntity") as mock_role,
         ):
@@ -260,14 +260,14 @@ class TestSyncAccessGrants:
 
         with (
             patch.object(
-                provisioner._client,
+                provisioner._openwebui,
                 "list_models",
                 return_value=[
                     {"id": f"{AIHUB_MODEL_PREFIX}rag-default", "base_model_id": "aihub-pipeline.rag.default"}
                 ],
             ),
-            patch.object(provisioner._client, "list_groups", return_value=[]),
-            patch.object(provisioner._client, "update_model_access") as mock_update,
+            patch.object(provisioner._openwebui, "list_groups", return_value=[]),
+            patch.object(provisioner._openwebui, "update_model_access") as mock_update,
             patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.TenantEntity") as mock_tenant,
             patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.RoleEntity") as mock_role,
         ):
@@ -284,21 +284,21 @@ class TestSyncAccessGrants:
 
         with (
             patch.object(
-                provisioner._client,
+                provisioner._openwebui,
                 "list_models",
                 return_value=[
                     {"id": f"{AIHUB_MODEL_PREFIX}rag-default", "base_model_id": "aihub-pipeline.rag.default"}
                 ],
             ),
             patch.object(
-                provisioner._client,
+                provisioner._openwebui,
                 "list_groups",
                 return_value=[
                     {"displayName": "aihub:T1:R1", "id": "grp-1"},
                     {"displayName": "aihub:T1:R2", "id": "grp-2"},
                 ],
             ),
-            patch.object(provisioner._client, "update_model_access") as mock_update,
+            patch.object(provisioner._openwebui, "update_model_access") as mock_update,
             patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.TenantEntity") as mock_tenant,
             patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.RoleEntity") as mock_role,
         ):
