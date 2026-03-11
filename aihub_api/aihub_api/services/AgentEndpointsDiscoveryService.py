@@ -1,4 +1,5 @@
 import asyncio
+import hashlib
 import logging
 from asyncio import sleep
 from functools import reduce
@@ -40,6 +41,7 @@ from fastapi import Body, Depends, FastAPI, HTTPException, Path, Query, Security
 from mongoengine import DoesNotExist
 from nats.aio.client import Client as NATS
 from pydantic import BaseModel
+from redis.asyncio import Redis
 from starlette.responses import StreamingResponse
 from stringcase import snakecase
 
@@ -71,12 +73,13 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
         api_app: FastAPI,
         controller: AgentController,
         locale_handler: LocaleHandler,
+        redis: Redis,
         discovery_interval: int = 60,
     ):
         super().__init__(nc, api_app, controller, locale_handler, discovery_interval)
         self.controller: AgentController = controller
         self.topic_manager: AgentTopicManager = AgentTopicManager()
-        self._last_synced_agents: set[tuple[str, str]] = set()
+        self._redis = redis
 
     @override
     async def _discover_and_register(self):
@@ -123,12 +126,28 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
         instances = await AgentService.get_all_agent_instances(t=self.locale_handler, online=True)
 
         current_set = {(inst.agent_class, inst.agent_id) for inst in instances}
-        if current_set == self._last_synced_agents:
+        current_hash = self._compute_agents_hash(current_set)
+
+        if await self._agents_hash_unchanged(current_hash):
             return
 
         await self._sync_agent_instances_to_langfuse(instances)
         await self._sync_agent_instances_to_openwebui(instances)
-        self._last_synced_agents = current_set
+        await self._store_agents_hash(current_hash)
+
+    @staticmethod
+    def _compute_agents_hash(agent_set: set[tuple[str, str]]) -> str:
+        normalized = sorted(f"{ac}:{ai}" for ac, ai in agent_set)
+        return hashlib.sha256(",".join(normalized).encode()).hexdigest()
+
+    async def _agents_hash_unchanged(self, current_hash: str) -> bool:
+        stored_hash = await self._redis.get("openwebui:agents:hash")
+        if stored_hash and stored_hash.decode() == current_hash:
+            return True
+        return False
+
+    async def _store_agents_hash(self, agents_hash: str) -> None:
+        await self._redis.set("openwebui:agents:hash", agents_hash, ex=3600)
 
     async def _broadcast_discovery(self) -> list[AgentClassDTO]:
         """
