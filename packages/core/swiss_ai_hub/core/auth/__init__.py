@@ -5,15 +5,15 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.auth.access.access_level import AccessLevel
     from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
     from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler import (
-    from swiss_ai_hub.core.auth.dependencies.token_and_oauth2_handler.token_and_oauth2_handler import TokenAndOauth2Handler
-    from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler import DangerousDevelopmentOnlyAuthHandler
-    from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_settings import DangerousDevelopmentOnlyAuthSettings
         DangerousDevelopmentOnlyAuthHandler,
     )
     from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_settings import (
         DangerousDevelopmentOnlyAuthSettings,
     )
     from swiss_ai_hub.core.auth.dependencies.superuser_auth_handler.superuser_settings import SuperuserSettings
+    from swiss_ai_hub.core.auth.dependencies.token_and_oauth2_handler.token_and_oauth2_handler import (
+        TokenAndOauth2Handler,
+    )
     from swiss_ai_hub.core.auth.dependencies.token_auth_handler.token_auth_handler import TokenAuthHandler
     from swiss_ai_hub.core.auth.identity.tenant_identity import TenantIdentity
     from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
