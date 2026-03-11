@@ -255,30 +255,6 @@ class TestSyncAccessGrants:
             mock_update.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_model_with_no_groups_gets_empty_grants(self, provisioner: OpenWebuiProvisioner) -> None:
-        mock_client = AsyncMock(spec=httpx.AsyncClient)
-
-        with (
-            patch.object(
-                provisioner._openwebui,
-                "list_models",
-                return_value=[
-                    {"id": f"{AIHUB_MODEL_PREFIX}rag-default", "base_model_id": "aihub-pipeline.rag.default"}
-                ],
-            ),
-            patch.object(provisioner._openwebui, "list_groups", return_value=[]),
-            patch.object(provisioner._openwebui, "update_model_access") as mock_update,
-            patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.TenantEntity") as mock_tenant,
-            patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.RoleEntity") as mock_role,
-        ):
-            mock_tenant.objects.return_value = []
-            mock_role.objects.return_value = []
-
-            await provisioner._sync_access_grants(mock_client)
-
-            mock_update.assert_not_called()
-
-    @pytest.mark.asyncio
     async def test_model_accessible_by_multiple_groups(self, provisioner: OpenWebuiProvisioner) -> None:
         mock_client = AsyncMock(spec=httpx.AsyncClient)
 

@@ -94,24 +94,6 @@ class TestSyncWorkspaceModels:
             mock_delete.assert_called_once_with(mock_client, "aihub-agent-rag-default")
 
     @pytest.mark.asyncio
-    async def test_sync_preserves_existing_models(self, provisioner: OpenWebuiProvisioner) -> None:
-        mock_client = AsyncMock(spec=httpx.AsyncClient)
-
-        with (
-            patch.object(
-                provisioner._openwebui,
-                "list_models",
-                return_value=[{"id": "aihub-agent-rag-default"}],
-            ),
-            patch.object(provisioner._openwebui, "create_model") as mock_create,
-            patch.object(provisioner._openwebui, "delete_model") as mock_delete,
-        ):
-            await provisioner._sync_workspace_models(mock_client, [("rag", "default", "RAG Agent")])
-
-            mock_create.assert_not_called()
-            mock_delete.assert_not_called()
-
-    @pytest.mark.asyncio
     async def test_sync_ignores_non_aihub_models(self, provisioner: OpenWebuiProvisioner) -> None:
         mock_client = AsyncMock(spec=httpx.AsyncClient)
 

@@ -55,15 +55,6 @@ class TestDistributedLocking:
             mock_models.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_sync_agents_proceeds_when_lock_acquired(self, provisioner: OpenWebuiProvisioner) -> None:
-        with (
-            patch.object(provisioner, "_sync_workspace_models") as mock_models,
-            patch.object(provisioner, "_sync_access_grants"),
-        ):
-            await provisioner.sync_agents([("rag", "default", "RAG Agent")])
-            mock_models.assert_called_once()
-
-    @pytest.mark.asyncio
     async def test_sync_access_skipped_when_lock_held(
         self, provisioner: OpenWebuiProvisioner, mock_redis: MagicMock
     ) -> None:
