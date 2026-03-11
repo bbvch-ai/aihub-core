@@ -1,6 +1,6 @@
 from fastapi import Request, WebSocket
 
-from swiss_ai_hub.core.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
+from swiss_ai_hub.core.distributor.external_agent_event_distributor import ExternalAgentEventDistributor
 
 
 def use_external_agent_event_distributor(request: Request) -> ExternalAgentEventDistributor:

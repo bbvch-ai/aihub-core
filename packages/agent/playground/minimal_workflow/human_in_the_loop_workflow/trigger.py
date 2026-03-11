@@ -1,13 +1,10 @@
 import asyncio
 from asyncio import sleep
 
-from swiss_ai_hub.core.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
-    DangerousDevelopmentOnlyAuthSettings,
-)
-from swiss_ai_hub.core.events.agent.hitl.HumanInTheLoopInput import HumanInTheLoopInput
-from swiss_ai_hub.core.events.agent.user.UserMessageEvent import UserMessageEvent
-from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.topics.agents.PartialAgentTopic import PartialAgentTopic
+from swiss_ai_hub.core.auth import DangerousDevelopmentOnlyAuthSettings
+from swiss_ai_hub.core.events.agent import HumanInTheLoopInput, UserMessageEvent
+from swiss_ai_hub.core.i18n import LocaleString
+from swiss_ai_hub.core.topics import PartialAgentTopic
 
 from playground.minimal_workflow.human_in_the_loop_workflow.HumanInTheLoopAgent import (
     HumanInTheLoopAgent,
@@ -15,7 +12,7 @@ from playground.minimal_workflow.human_in_the_loop_workflow.HumanInTheLoopAgent 
 from playground.minimal_workflow.human_in_the_loop_workflow.HumanInTheLoopAgentConfig import (
     HumanInTheLoopAgentConfig,
 )
-from swiss_ai_hub.agent.runners.AgentTestRunner import AgentTestRunner
+from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner
 
 
 async def main():

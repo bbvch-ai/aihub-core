@@ -7,7 +7,7 @@ from swiss_ai_hub.core.generative_ai.utils.path_utils import encode_partition_ke
 from swiss_ai_hub.pipeline.ops.data_lake.data_version_by_partition_for_data_lake_files import (
     data_version_by_partition_for_data_lake_files_no_op,
 )
-from swiss_ai_hub.pipeline.types.DataLakeFile import DataLakeFile
+from swiss_ai_hub.pipeline.types.data_lake_file import DataLakeFile
 
 _NOW = int(datetime.now(tz=UTC).timestamp())
 

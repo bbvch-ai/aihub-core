@@ -7,7 +7,7 @@ from dagster import (
 )
 from swiss_ai_hub.core.generative_ai.utils.path_utils import encode_partition_key
 
-from swiss_ai_hub.pipeline.types.RcloneFile import MinimalRcloneFile
+from swiss_ai_hub.pipeline.types.rclone_file import MinimalRcloneFile
 from swiss_ai_hub.pipeline.util.meta_utils import rclone_file_metadata_table
 from swiss_ai_hub.pipeline.util.partition_utils import replace_partition_keys
 

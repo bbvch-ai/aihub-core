@@ -1,30 +1,25 @@
 # ruff: noqa: E402
 import pytest
 
-from swiss_ai_hub.core.infrastructure.opentelemetry.AihubInstrumentor import AihubInstrumentor  # isort: skip
+from swiss_ai_hub.core.infrastructure import AihubInstrumentor  # isort: skip
 
 AihubInstrumentor().instrument()
 
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from pytest_bdd import given, parsers, scenarios, then, when
-from swiss_ai_hub.core.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
-    DangerousDevelopmentOnlyAuthSettings,
-)
-from swiss_ai_hub.core.events.agent.memory.history.AddOrganizationMemoryToChatHistoryEvent import (
+from swiss_ai_hub.core.auth import DangerousDevelopmentOnlyAuthSettings
+from swiss_ai_hub.core.events.agent import (
     AddOrganizationMemoryToChatHistoryEvent,
-)
-from swiss_ai_hub.core.events.agent.memory.retrieve.RetrieveOrganizationMemoryEvent import (
+    LLMEvent,
     RetrieveOrganizationMemoryEvent,
+    StoreOrganizationMemoryEvent,
+    UserMessageEvent,
 )
-from swiss_ai_hub.core.events.agent.memory.store.StoreOrganizationMemoryEvent import StoreOrganizationMemoryEvent
-from swiss_ai_hub.core.events.agent.semantic.llm.LLMEvent import LLMEvent
-from swiss_ai_hub.core.events.agent.user.UserMessageEvent import UserMessageEvent
-from swiss_ai_hub.core.generative_ai.resources.models.llm.LLMConfig import LLMConfig
-from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
-from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.infrastructure.logging.logger import enable_logging
-from swiss_ai_hub.core.testing.asyncio_utils.bdd import async_test
+from swiss_ai_hub.core.generative_ai import LLMConfig
+from swiss_ai_hub.core.i18n import LocaleHandler, LocaleString
+from swiss_ai_hub.core.infrastructure import enable_logging
+from swiss_ai_hub.core.testing import async_test
 
 from playground.minimal_workflow.organization_memory_workflow.OrganizationMemoryAgent import (
     OrganizationMemoryAgent,
@@ -32,7 +27,7 @@ from playground.minimal_workflow.organization_memory_workflow.OrganizationMemory
 from playground.minimal_workflow.organization_memory_workflow.OrganizationMemoryAgentConfig import (
     OrganizationMemoryAgentConfig,
 )
-from swiss_ai_hub.agent.runners.AgentTestRunner import AgentTestRunner
+from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner
 
 enable_logging()
 
@@ -78,7 +73,7 @@ def _(agent_config, namespace: str):
 @async_test
 async def _(memory_text: str, agent_runner: AgentTestRunner):
     """Pre-seed an organization memory for testing via AgentMemory."""
-    from swiss_ai_hub.core.generative_ai.memory.AgentMemory import AgentMemory
+    from swiss_ai_hub.core.generative_ai import AgentMemory
 
     # Get test user from auth settings
     test_user = DangerousDevelopmentOnlyAuthSettings().get_user_identity()
@@ -105,7 +100,7 @@ async def _(memory_text: str, agent_runner: AgentTestRunner):
 @async_test
 async def _(memory_text: str, namespace: str, agent_runner: AgentTestRunner):
     """Pre-seed a tenant memory in specific namespace for testing."""
-    from swiss_ai_hub.core.generative_ai.memory.AgentMemory import AgentMemory
+    from swiss_ai_hub.core.generative_ai import AgentMemory
 
     # Get test user from auth settings
     test_user = DangerousDevelopmentOnlyAuthSettings().get_user_identity()

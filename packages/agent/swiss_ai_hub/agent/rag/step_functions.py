@@ -1,40 +1,45 @@
 from collections.abc import Callable
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from swiss_ai_hub.core.displayers.EventDisplayer import EventDisplayer
-from swiss_ai_hub.core.events.agent.common.LimitChatHistoryEvent import LimitChatHistoryEvent
-from swiss_ai_hub.core.events.agent.common.StandaloneQuestionCondenserEvent import StandaloneQuestionCondenserEvent
-from swiss_ai_hub.core.events.agent.guard.ContextInsufficientRejectEvent import ContextInsufficientRejectEvent
-from swiss_ai_hub.core.events.agent.guard.ContextSufficientAcceptEvent import ContextSufficientAcceptEvent
-from swiss_ai_hub.core.events.agent.guard.ExpertRejectEvent import ExpertRejectEvent
-from swiss_ai_hub.core.events.agent.guard.FewShotAcceptEvent import FewShotAcceptEvent
-from swiss_ai_hub.core.events.agent.guard.FewShotRejectEvent import FewShotRejectEvent
-from swiss_ai_hub.core.events.agent.semantic.llm.LLMEvent import LLMEvent
-from swiss_ai_hub.core.events.agent.semantic.llm.LLMStopEvent import LLMStopEvent
-from swiss_ai_hub.core.events.agent.semantic.reranker.RerankerEvent import RerankerEvent
-from swiss_ai_hub.core.events.agent.semantic.retriever.RetrieverEvent import RetrieverEvent
-from swiss_ai_hub.core.generative_ai.chat_history.limit_chat_history import limit_chat_history
-from swiss_ai_hub.core.generative_ai.chat_history.limit_chat_history_with_context import limit_chat_history_with_context
-from swiss_ai_hub.core.generative_ai.document.types.IngestedNode import IngestedNode
-from swiss_ai_hub.core.generative_ai.guards.context_sufficient_guard import context_sufficient_guard
-from swiss_ai_hub.core.generative_ai.guards.few_shot_guard import few_shot_guard
-from swiss_ai_hub.core.generative_ai.rerank.rerank_nodes import rerank_nodes
-from swiss_ai_hub.core.generative_ai.resources.models.llm.LLMConfig import LLMConfig
-from swiss_ai_hub.core.generative_ai.resources.models.llm.message_preprocessor import merge_consecutive_messages
-from swiss_ai_hub.core.generative_ai.retrieval.combine_nodes_in_order import combine_nodes_in_order
-from swiss_ai_hub.core.generative_ai.retrieval.condense_standalone_question import condense_standalone_question
-from swiss_ai_hub.core.generative_ai.retrieval.retrieve_from_all_sources import retrieve_from_all_sources
-from swiss_ai_hub.core.generative_ai.retrievers.KnowledgeRetrieverConfig import KnowledgeRetrieverConfig
-from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
-from swiss_ai_hub.core.i18n.LocaleString import LocaleString
+from swiss_ai_hub.core.displayers import EventDisplayer
+from swiss_ai_hub.core.events.agent import (
+    ContextInsufficientRejectEvent,
+    ContextSufficientAcceptEvent,
+    ExpertRejectEvent,
+    FewShotAcceptEvent,
+    FewShotRejectEvent,
+    LimitChatHistoryEvent,
+    LLMEvent,
+    LLMStopEvent,
+    RerankerEvent,
+    RetrieverEvent,
+    StandaloneQuestionCondenserEvent,
+)
+from swiss_ai_hub.core.generative_ai import (
+    IngestedNode,
+    KnowledgeRetrieverConfig,
+    LLMConfig,
+    combine_nodes_in_order,
+    condense_standalone_question,
+    context_sufficient_guard,
+    few_shot_guard,
+    limit_chat_history,
+    limit_chat_history_with_context,
+    merge_consecutive_messages,
+    rerank_nodes,
+    retrieve_from_all_sources,
+)
+from swiss_ai_hub.core.i18n import LocaleHandler, LocaleString
 
-from swiss_ai_hub.agent.agents.RagAgent.configs.RerankingConfig import RerankingConfig
-from swiss_ai_hub.agent.agents.RagAgent.events.ContextInsufficientWithQueryEvent import (
+from swiss_ai_hub.agent.agents.rag_agent.configs.reranking_config import RerankingConfig
+from swiss_ai_hub.agent.agents.rag_agent.events.context_insufficient_with_query_event import (
     ContextInsufficientWithQueryEvent,
 )
-from swiss_ai_hub.agent.agents.RagAgent.events.InOrderNodeCombinerEvent import InOrderNodeCombinerEvent
-from swiss_ai_hub.agent.agents.RagAgent.events.LimitChatHistoryWithContextEvent import LimitChatHistoryWithContextEvent
-from swiss_ai_hub.agent.context.run.RunContext import RunContext
+from swiss_ai_hub.agent.agents.rag_agent.events.in_order_node_combiner_event import InOrderNodeCombinerEvent
+from swiss_ai_hub.agent.agents.rag_agent.events.limit_chat_history_with_context_event import (
+    LimitChatHistoryWithContextEvent,
+)
+from swiss_ai_hub.agent.context.run.run_context import RunContext
 
 
 def do_limit_chat_history(

@@ -1,7 +1,7 @@
 from typing import Annotated
 
 from pydantic import Field
-from swiss_ai_hub.core.events.agent.control.ControlEvent import ControlEvent
+from swiss_ai_hub.core.events.agent import ControlEvent
 
 
 class ExtractNumberEvent(ControlEvent):

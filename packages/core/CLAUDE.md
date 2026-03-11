@@ -146,13 +146,13 @@ from swiss_ai_hub.core.events.process import WorkEvent, ProcessStartEvent
 from swiss_ai_hub.core.publishers import JSPublisher
 ```
 
-Each top-level directory has a lazy `__init__.py` with `TYPE_CHECKING` + `__getattr__` that provides convenience
-imports without eager loading. Direct imports are preferred in production code.
+Each top-level directory has a lazy `__init__.py` with `TYPE_CHECKING` + `__getattr__` that provides convenience imports
+without eager loading. Direct imports are preferred in production code.
 
 ## Event System (CRITICAL)
 
-The heart of swiss_ai_hub.core. All inter-service communication uses events from this hierarchy. Understanding
-Control vs Display separation is essential for working with any service.
+The heart of swiss_ai_hub.core. All inter-service communication uses events from this hierarchy. Understanding Control
+vs Display separation is essential for working with any service.
 
 ### Auto-Registration
 
@@ -206,12 +206,12 @@ BaseEvent (root — auto-registry, sequence numbering, trace dict)  [events/Base
 
 Events are organized by which system they belong to:
 
-| Scope               | Directory                | What belongs here                                         |
-| -------------------- | ------------------------ | --------------------------------------------------------- |
-| Agent events         | `events/agent/`          | All agent workflow events (control, display, HITL, etc.)  |
-| Process events       | `events/process/`        | Process orchestration, work delegation, process discovery |
-| Pipeline events      | `events/pipeline/`       | Data pipeline events (SourceUpdatedEvent)                 |
-| Shared base classes  | `events/`                | BaseEvent, shared discovery (ClassDiscoveryRequestEvent)  |
+| Scope               | Directory          | What belongs here                                         |
+| ------------------- | ------------------ | --------------------------------------------------------- |
+| Agent events        | `events/agent/`    | All agent workflow events (control, display, HITL, etc.)  |
+| Process events      | `events/process/`  | Process orchestration, work delegation, process discovery |
+| Pipeline events     | `events/pipeline/` | Data pipeline events (SourceUpdatedEvent)                 |
+| Shared base classes | `events/`          | BaseEvent, shared discovery (ClassDiscoveryRequestEvent)  |
 
 ### Creating a New Event
 

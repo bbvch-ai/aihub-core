@@ -3,10 +3,10 @@ from unittest.mock import patch
 
 import pytest
 
-from swiss_ai_hub.core.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (  # noqa: E501
+from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_settings import (  # noqa: E501
     DangerousDevelopmentOnlyAuthSettings,
 )
-from swiss_ai_hub.core.persistence.user.UserEntity import UserEntity
+from swiss_ai_hub.core.persistence.user.user_entity import UserEntity
 
 MOCK_USER_LAST_UPDATED = datetime(2025, 7, 4, 12, 14, 45, 185140, tzinfo=UTC)
 

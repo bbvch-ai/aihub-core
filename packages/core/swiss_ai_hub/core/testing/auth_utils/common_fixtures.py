@@ -1,8 +1,8 @@
 import pytest
 from mongoengine import connect, disconnect
 
-from swiss_ai_hub.core.infrastructure.api.AIHubSettings import AIHubSettings
-from swiss_ai_hub.core.infrastructure.mongo.MongoSettings import MongoSettings
+from swiss_ai_hub.core.infrastructure.api.ai_hub_settings import AIHubSettings
+from swiss_ai_hub.core.infrastructure.mongo.mongo_settings import MongoSettings
 
 
 @pytest.fixture(scope="module")

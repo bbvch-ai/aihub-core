@@ -1,6 +1,6 @@
 from fastapi import Request, WebSocket
 
-from swiss_ai_hub.api.sockets.sender.WebSocketSender import WebSocketSender
+from swiss_ai_hub.api.sockets.sender.web_socket_sender import WebSocketSender
 
 
 def use_ws_sender(request: Request) -> WebSocketSender:

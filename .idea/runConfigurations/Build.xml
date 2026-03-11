@@ -3,7 +3,7 @@
     <deployment type="docker-compose.yml">
       <settings>
         <option name="commandLineOptions" value="--build" />
-        <option name="sourceFilePath" value="docker-compose.build.yml" />
+        <option name="sourceFilePath" value="infra/docker-compose.build.yml" />
       </settings>
     </deployment>
     <method v="2" />

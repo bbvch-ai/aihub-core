@@ -1,6 +1,4 @@
-from swiss_ai_hub.core.events.agent.hitl.response.HumanInTheLoopInputResponseEvent import (
-    HumanInTheLoopInputResponseEvent,
-)
+from swiss_ai_hub.core.events.agent import HumanInTheLoopInputResponseEvent
 
 
 class HitlTypeSelectionResponseEvent(HumanInTheLoopInputResponseEvent):

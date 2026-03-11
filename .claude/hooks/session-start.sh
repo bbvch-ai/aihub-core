@@ -16,7 +16,7 @@ fi
 
 # Check Docker status (quick check)
 if command -v docker &>/dev/null; then
-  running=$(docker compose -f docker-compose.dev.yml ps --format json 2>/dev/null | head -1)
+  running=$(docker compose -f infra/docker-compose.dev.yml ps --format json 2>/dev/null | head -1)
   if [[ -z "$running" ]]; then
     echo "Docker dev stack is not running. Start with: make up-dev" >&2
   fi

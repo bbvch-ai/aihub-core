@@ -1,13 +1,12 @@
 from typing import ClassVar
 
-from swiss_ai_hub.core.events.agent.control.start.StartEvent import StartEvent
-from swiss_ai_hub.core.events.agent.control.stop.StopEvent import StopEvent
-from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.workflow.annotations.custom_types.ListOfSize import FixedList
+from swiss_ai_hub.core.events.agent import StartEvent, StopEvent
+from swiss_ai_hub.core.i18n import LocaleString
+from swiss_ai_hub.core.workflow.annotations.custom_types.list_of_size import FixedList
 
 from playground.minimal_workflow.fan_out_workflow.events.FanOutA import FanOutA
 from playground.minimal_workflow.fan_out_workflow.events.FanOutB import FanOutB
-from swiss_ai_hub.agent.agents.Agent import Agent
+from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.workflow.decorators.step import step
 
 N = 5

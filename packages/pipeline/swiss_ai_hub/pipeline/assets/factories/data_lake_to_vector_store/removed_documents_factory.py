@@ -4,8 +4,8 @@ from swiss_ai_hub.pipeline.ops.document.add_metadata_to_ref_docs import add_meta
 from swiss_ai_hub.pipeline.ops.document.delete_removed_ref_docs_from_docstore import (
     delete_removed_ref_docs_from_docstore,
 )
-from swiss_ai_hub.pipeline.types.DataLakeFile import DataLakeFile
-from swiss_ai_hub.pipeline.types.RefDocDocument import RefDocDocument
+from swiss_ai_hub.pipeline.types.data_lake_file import DataLakeFile
+from swiss_ai_hub.pipeline.types.ref_doc_document import RefDocDocument
 from swiss_ai_hub.pipeline.util.key_utils import group_name_from_asset_key
 
 

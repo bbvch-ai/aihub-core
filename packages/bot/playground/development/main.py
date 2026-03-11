@@ -1,15 +1,15 @@
 import asyncio
 
-from swiss_ai_hub.core.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
+from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler import (
     DangerousDevelopmentOnlyAuthHandler,
 )
-from swiss_ai_hub.core.infrastructure.logging.logger import enable_logging
-from swiss_ai_hub.core.routes.health.HealthController import HealthController
+from swiss_ai_hub.core.infrastructure import enable_logging
+from swiss_ai_hub.core.routes import HealthController
 
-from swiss_ai_hub.bot.routes.agent.AgentChatController import AgentChatController
-from swiss_ai_hub.bot.routes.bot_in_the_loop.BotInTheLoopController import BotInTheLoopController
-from swiss_ai_hub.bot.routes.openai.OpenaiChatController import OpenaiChatController
-from swiss_ai_hub.bot.runners.BotTestRunner import BotTestRunner
+from swiss_ai_hub.bot.routes.agent.agent_chat_controller import AgentChatController
+from swiss_ai_hub.bot.routes.bot_in_the_loop.bot_in_the_loop_controller import BotInTheLoopController
+from swiss_ai_hub.bot.routes.openai.openai_chat_controller import OpenaiChatController
+from swiss_ai_hub.bot.runners.bot_test_runner import BotTestRunner
 
 enable_logging()
 

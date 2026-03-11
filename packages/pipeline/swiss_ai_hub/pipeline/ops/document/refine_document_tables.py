@@ -1,7 +1,7 @@
 from dagster import OpExecutionContext, Output, op
 
-from swiss_ai_hub.pipeline.resources.parser.TableRefinementResource import TableRefinementResource
-from swiss_ai_hub.pipeline.types.RefDocDocument import RefDocDocument
+from swiss_ai_hub.pipeline.resources.parser.table_refinement_resource import TableRefinementResource
+from swiss_ai_hub.pipeline.types.ref_doc_document import RefDocDocument
 
 
 @op(code_version="v1")

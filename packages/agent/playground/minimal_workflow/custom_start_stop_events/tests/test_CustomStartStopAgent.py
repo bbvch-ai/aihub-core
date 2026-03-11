@@ -1,6 +1,6 @@
 from pytest_bdd import given, parsers, scenarios, then, when
-from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.testing.asyncio_utils.bdd import async_test
+from swiss_ai_hub.core.i18n import LocaleString
+from swiss_ai_hub.core.testing import async_test
 
 from playground.minimal_workflow.custom_start_stop_events.CustomStartStopEventAgent import CustomStartStopEventAgent
 from playground.minimal_workflow.custom_start_stop_events.CustomStartStopEventAgentConfig import (
@@ -11,7 +11,7 @@ from playground.minimal_workflow.custom_start_stop_events.events.MyCustomStartEv
     PydanticPayload,
 )
 from playground.minimal_workflow.custom_start_stop_events.events.MyCustomStopEvent import MyCustomStopEvent
-from swiss_ai_hub.agent.runners.AgentTestRunner import AgentTestRunner
+from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner
 
 scenarios("./features/custom_start_stop_agent.feature")
 

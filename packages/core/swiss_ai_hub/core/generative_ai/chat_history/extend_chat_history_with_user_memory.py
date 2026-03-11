@@ -1,10 +1,10 @@
 from jinja2 import Template
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
-from swiss_ai_hub.core.auth.identity.UserIdentity import UserIdentity
-from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
-from swiss_ai_hub.core.infrastructure.mem0.types.Memory import Memory
-from swiss_ai_hub.core.infrastructure.mem0.types.MemoryRelation import MemoryRelation
+from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
+from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
+from swiss_ai_hub.core.infrastructure.mem0.types.memory import Memory
+from swiss_ai_hub.core.infrastructure.mem0.types.memory_relation import MemoryRelation
 
 
 def extend_chat_history_with_user_memory(

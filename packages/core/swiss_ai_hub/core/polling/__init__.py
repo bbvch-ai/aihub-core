@@ -3,8 +3,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from swiss_ai_hub.core.polling.JSPoller import JSPoller
-    from swiss_ai_hub.core.polling.PolledMessage import PolledMessage
+    from swiss_ai_hub.core.polling.js_poller import JSPoller
+    from swiss_ai_hub.core.polling.polled_message import PolledMessage
 
 __all__ = [
     "JSPoller",
@@ -12,8 +12,8 @@ __all__ = [
 ]
 
 _LAZY_IMPORTS: dict[str, str] = {
-    "JSPoller": "swiss_ai_hub.core.polling.JSPoller",
-    "PolledMessage": "swiss_ai_hub.core.polling.PolledMessage",
+    "JSPoller": "swiss_ai_hub.core.polling.js_poller",
+    "PolledMessage": "swiss_ai_hub.core.polling.polled_message",
 }
 
 
@@ -22,6 +22,8 @@ def __getattr__(name: str) -> object:
         import importlib
 
         module = importlib.import_module(_LAZY_IMPORTS[name])
-        return getattr(module, name)
+        value = getattr(module, name)
+        globals()[name] = value
+        return value
     msg = f"module {__name__!r} has no attribute {name!r}"
     raise AttributeError(msg)

@@ -6,19 +6,19 @@ import pytest_asyncio
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
 from mongoengine import connect, disconnect
-from swiss_ai_hub.core.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
+from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler import (
     DangerousDevelopmentOnlyAuthHandler,
 )
-from swiss_ai_hub.core.infrastructure.api.AIHubSettings import AIHubSettings
-from swiss_ai_hub.core.infrastructure.mongo.MongoSettings import MongoSettings
-from swiss_ai_hub.core.testing.auth_utils.role_mocks import mock_role_entity_methods  # noqa: F401
-from swiss_ai_hub.core.testing.auth_utils.tenant_mocks import mock_tenant_entity_autouse  # noqa: F401
-from swiss_ai_hub.core.testing.auth_utils.user_mocks import mock_user_entity_autouse  # noqa: F401
+from swiss_ai_hub.core.infrastructure import AIHubSettings
+from swiss_ai_hub.core.infrastructure import MongoSettings
+from swiss_ai_hub.core.testing import mock_role_entity_methods
+from swiss_ai_hub.core.testing import mock_tenant_entity_autouse
+from swiss_ai_hub.core.testing import mock_user_entity_autouse
 
-from swiss_ai_hub.api.routes.notification.dto.NotificationDTO import NotificationDTO
-from swiss_ai_hub.api.routes.notification.dto.PaginatedNotificationsResponse import PaginatedNotificationsResponse
-from swiss_ai_hub.api.routes.notification.NotificationController import NotificationController
-from swiss_ai_hub.api.runners.ApiTestRunner import ApiTestRunner
+from swiss_ai_hub.api.routes.notification.dto.notification_dto import NotificationDTO
+from swiss_ai_hub.api.routes.notification.dto.paginated_notifications_response import PaginatedNotificationsResponse
+from swiss_ai_hub.api.routes.notification.notification_controller import NotificationController
+from swiss_ai_hub.api.runners.api_test_runner import ApiTestRunner
 
 BASE_URL = "http://test"
 NOTIFICATIONS_ENDPOINT = "/api/v1/notifications"
@@ -87,7 +87,7 @@ class TestGetNotifications:
     async def test_get_notifications_success(self, api_client, mock_paginated_response):
         """Test successful retrieval of notifications."""
         with patch(
-            "swiss_ai_hub.api.routes.notification.NotificationService.NotificationService.get_notifications_for_user"
+            "swiss_ai_hub.api.routes.notification.notification_service.NotificationService.get_notifications_for_user"
         ) as mock_service:
             mock_service.return_value = mock_paginated_response
 
@@ -106,7 +106,7 @@ class TestGetNotifications:
     async def test_get_notifications_with_pagination(self, api_client, mock_paginated_response):
         """Test notifications endpoint with pagination parameters."""
         with patch(
-            "swiss_ai_hub.api.routes.notification.NotificationService.NotificationService.get_notifications_for_user"
+            "swiss_ai_hub.api.routes.notification.notification_service.NotificationService.get_notifications_for_user"
         ) as mock_service:
             mock_service.return_value = mock_paginated_response
 
@@ -132,7 +132,7 @@ class TestGetNotifications:
     async def test_get_notifications_with_filters(self, api_client, mock_paginated_response, filters, expected_filters):
         """Test notifications endpoint with various filters."""
         with patch(
-            "swiss_ai_hub.api.routes.notification.NotificationService.NotificationService.get_notifications_for_user"
+            "swiss_ai_hub.api.routes.notification.notification_service.NotificationService.get_notifications_for_user"
         ) as mock_service:
             mock_service.return_value = mock_paginated_response
 
@@ -167,7 +167,7 @@ class TestUpdateNotification:
     async def test_update_notification_success(self, api_client, mock_notification_dto):
         """Test successful update of a single notification."""
         with patch(
-            "swiss_ai_hub.api.routes.notification.NotificationService.NotificationService.update_one"
+            "swiss_ai_hub.api.routes.notification.notification_service.NotificationService.update_one"
         ) as mock_service:
             mock_service.return_value = mock_notification_dto
 
@@ -185,7 +185,7 @@ class TestUpdateNotification:
         from mongoengine import DoesNotExist
 
         with patch(
-            "swiss_ai_hub.api.routes.notification.NotificationService.NotificationService.update_one"
+            "swiss_ai_hub.api.routes.notification.notification_service.NotificationService.update_one"
         ) as mock_service:
             mock_service.side_effect = DoesNotExist()
 
@@ -209,7 +209,7 @@ class TestUpdateNotification:
     async def test_update_notification_valid_fields(self, api_client, mock_notification_dto, update_data):
         """Test updating notification with valid field combinations."""
         with patch(
-            "swiss_ai_hub.api.routes.notification.NotificationService.NotificationService.update_one"
+            "swiss_ai_hub.api.routes.notification.notification_service.NotificationService.update_one"
         ) as mock_service:
             mock_service.return_value = mock_notification_dto
 
@@ -222,7 +222,7 @@ class TestUpdateNotification:
     async def test_update_notification_invalid_data(self, api_client):
         """Test update notification with invalid data (fields are ignored by Pydantic)."""
         with patch(
-            "swiss_ai_hub.api.routes.notification.NotificationService.NotificationService.update_one"
+            "swiss_ai_hub.api.routes.notification.notification_service.NotificationService.update_one"
         ) as mock_service:
             from mongoengine import DoesNotExist
 
@@ -238,7 +238,7 @@ class TestUpdateNotification:
     async def test_update_notification_empty_body(self, api_client):
         """Test update notification with empty request body."""
         with patch(
-            "swiss_ai_hub.api.routes.notification.NotificationService.NotificationService.update_one"
+            "swiss_ai_hub.api.routes.notification.notification_service.NotificationService.update_one"
         ) as mock_service:
             from mongoengine import DoesNotExist
 
@@ -257,7 +257,7 @@ class TestBulkUpdateNotifications:
     async def test_bulk_update_notifications_success(self, api_client, mock_notification_dto):
         """Test successful bulk update of notifications."""
         with patch(
-            "swiss_ai_hub.api.routes.notification.NotificationService.NotificationService.update_many"
+            "swiss_ai_hub.api.routes.notification.notification_service.NotificationService.update_many"
         ) as mock_service:
             mock_service.return_value = [mock_notification_dto]
 
@@ -277,7 +277,7 @@ class TestBulkUpdateNotifications:
     async def test_bulk_update_notifications_empty_ids(self, api_client):
         """Test bulk update with empty notification IDs list."""
         with patch(
-            "swiss_ai_hub.api.routes.notification.NotificationService.NotificationService.update_many"
+            "swiss_ai_hub.api.routes.notification.notification_service.NotificationService.update_many"
         ) as mock_service:
             mock_service.return_value = []
 
@@ -293,7 +293,7 @@ class TestBulkUpdateNotifications:
     async def test_bulk_update_notifications_invalid_updates(self, api_client, mock_notification_dto):
         """Test bulk update with invalid update fields (ignored by Pydantic)."""
         with patch(
-            "swiss_ai_hub.api.routes.notification.NotificationService.NotificationService.update_many"
+            "swiss_ai_hub.api.routes.notification.notification_service.NotificationService.update_many"
         ) as mock_service:
             mock_service.return_value = [mock_notification_dto]
 
@@ -327,7 +327,7 @@ class TestNotificationControllerIntegration:
     async def test_notification_dto_structure(self, api_client, mock_notification_dto):
         """Test that notification DTO has the expected structure."""
         with patch(
-            "swiss_ai_hub.api.routes.notification.NotificationService.NotificationService.update_one"
+            "swiss_ai_hub.api.routes.notification.notification_service.NotificationService.update_one"
         ) as mock_service:
             mock_service.return_value = mock_notification_dto
 
@@ -364,7 +364,7 @@ class TestNotificationControllerIntegration:
     async def test_localization_handling(self, api_client, mock_paginated_response):
         """Test that endpoints handle localization correctly."""
         with patch(
-            "swiss_ai_hub.api.routes.notification.NotificationService.NotificationService.get_notifications_for_user"
+            "swiss_ai_hub.api.routes.notification.notification_service.NotificationService.get_notifications_for_user"
         ) as mock_service:
             mock_service.return_value = mock_paginated_response
 

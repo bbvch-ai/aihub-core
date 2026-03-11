@@ -134,7 +134,7 @@ Don't forget:
 - **Frontend SDK**: if events or DTOs change, `pnpm generate-sdk` is needed → check `packages/web/aihub_web/sdk/client/`
 - **i18n files**: if LocaleString keys change, check all `*.{locale}.yml` translation files
 - **Docker Compose**: if Settings class env var names change, check `.env.dev`, `.env.prod`,
-  `deployment/templates/docker-compose.yml.j2`
+  `infra/deployment/templates/docker-compose.yml.j2`
 - **Tests**: any changed class likely has tests that need updating — find them with
   `find . -name "test_*.py" -path "*{domain}*"`
 

@@ -1,4 +1,4 @@
-from swiss_ai_hub.api.routes.parsing.dto.DocumentParsingResponse import (
+from swiss_ai_hub.api.routes.parsing.dto.document_parsing_response import (
     DocumentParsingMetadata,
     DocumentParsingResponse,
 )

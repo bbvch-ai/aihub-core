@@ -1,8 +1,7 @@
 from typing import Annotated
 
 from pydantic import Field
-from swiss_ai_hub.core.events.agent.bitl.request.BotInTheLoopRequestEvent import SlackConfig, TeamsConfig
-from swiss_ai_hub.core.events.agent.user.UserMessageEvent import UserMessageEvent
+from swiss_ai_hub.core.events.agent import SlackConfig, TeamsConfig, UserMessageEvent
 
 
 class BotInTheLoopAgentStartEvent(UserMessageEvent):

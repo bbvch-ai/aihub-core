@@ -6,13 +6,13 @@ from fastapi import HTTPException, Request
 from mongoengine import connect, disconnect
 from pytest_bdd import given, parsers, scenarios, then, when
 
-from swiss_ai_hub.core.auth.dependencies.AuthHandler import AuthHandler
-from swiss_ai_hub.core.auth.identity.UserIdentity import UserIdentity
-from swiss_ai_hub.core.infrastructure.api.AIHubSettings import AIHubSettings
-from swiss_ai_hub.core.infrastructure.mongo.MongoSettings import MongoSettings
-from swiss_ai_hub.core.persistence.access.entities.RoleEntity import RoleEntity
-from swiss_ai_hub.core.persistence.access.entities.TenantEntity import TenantEntity
-from swiss_ai_hub.core.persistence.access.entities.UserTenantRoleEntity import UserTenantRoleEntity
+from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
+from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
+from swiss_ai_hub.core.infrastructure.api.ai_hub_settings import AIHubSettings
+from swiss_ai_hub.core.infrastructure.mongo.mongo_settings import MongoSettings
+from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
+from swiss_ai_hub.core.persistence.access.entities.tenant_entity import TenantEntity
+from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 
 scenarios("features/tenant_resolution.feature")
 

@@ -1,4 +1,4 @@
-from swiss_ai_hub.agent.agents.Agent import Agent
+from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.workflow.decorators.step import step
 
 from playground.agents.AgentB.events.AgentBStartEvent import AgentBStartEvent

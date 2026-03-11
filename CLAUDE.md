@@ -62,7 +62,7 @@ request to LLM response.
 
 ## Dev Stack Services
 
-The `docker-compose.dev.yml` runs ~30 containers. Key services by role:
+The `infra/docker-compose.dev.yml` runs ~30 containers. Key services by role:
 
 **User-Facing**: OpenWebUI (chat UI, :8080), Admin UI and Process UI (Nuxt, :3333, run locally outside Docker)
 
@@ -238,8 +238,8 @@ Before marking task complete (`make pr-ready` runs automatically via stop hook):
 
 - **No default values in env var assignments**: Never use `${VAR:-default}` syntax in docker-compose templates. Define
   all default values in `.env.dev` and `.env.prod` files instead.
-- **Template**: `deployment/templates/docker-compose.yml.j2` (Jinja2)
-- **Config**: `deployment/compose-config.yml` (image tags, stage-specific values)
+- **Template**: `infra/deployment/templates/docker-compose.yml.j2` (Jinja2)
+- **Config**: `infra/deployment/compose-config.yml` (image tags, stage-specific values)
 - **Regenerate**: Run `make generate-compose` after modifying templates or config
 
 ## MCP & Claude Code
@@ -254,7 +254,7 @@ Local overrides (gitignored): `CLAUDE.local.md`, `.claude/settings.local.json`, 
 
 ## Quick Reference
 
-**Access Points** (docker-compose.dev.yml):
+**Access Points** (infra/docker-compose.dev.yml):
 
 | Service   | URL                   |
 | --------- | --------------------- |
@@ -269,7 +269,7 @@ Local overrides (gitignored): `CLAUDE.local.md`, `.claude/settings.local.json`, 
 
 - ADRs: `docs/arc42/decisions/`
 - Architecture docs: `docs/docs/2_platform/2_architecture/`
-- Docker Compose (dev): `docker-compose.dev.yml`
+- Docker Compose (dev): `infra/docker-compose.dev.yml`
 - Env config: `.env` (copy from `.env.dev`)
 
 **Work Management**: `gh issue list -R "bbvch-ai/swiss-ai-hub" -a "@me"` | `gh project view 13 --owner bbvch-ai`

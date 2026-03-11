@@ -5,9 +5,9 @@ from llama_index.core import PromptTemplate
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from swiss_ai_hub.core.generative_ai.guards.few_shot_guard import GuardResult, few_shot_guard
-from swiss_ai_hub.core.generative_ai.prompting.few_shot.FewShotGuardExample import FewShotGuardExample
-from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
-from swiss_ai_hub.core.i18n.LocaleString import LocaleString
+from swiss_ai_hub.core.generative_ai.prompting.few_shot.few_shot_guard_example import FewShotGuardExample
+from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
+from swiss_ai_hub.core.i18n.locale_string import LocaleString
 from swiss_ai_hub.core.testing.asyncio_utils.bdd import async_test
 
 scenarios("./features/few_shot_guard.feature")

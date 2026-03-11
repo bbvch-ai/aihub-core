@@ -21,16 +21,16 @@ This section covers the foundational architecture, patterns, and terminology you
 ingestion and processing pipelines.
 
 ::: info 
-This documentation assumes you have completed the general Swiss AI Hub setup as described in the main README.md. Make sure you
-have the required infrastructure running before proceeding.
+This documentation assumes you have completed the general Swiss AI Hub setup as described in the main README.md. Make
+sure you have the required infrastructure running before proceeding.
 :::
 
 ### 📚 Introduction to `aihub_pipeline`
 
 You are contributing to the **aihub_pipeline** scope, which contains definitions for data ingestion and processing
-pipelines within the Swiss AI Hub platform. This scope implements robust, scalable data processing workflows using Dagster,
-handling the complete lifecycle from document ingestion to vector embedding generation for RAG (Retrieval-Augmented
-Generation) systems.
+pipelines within the Swiss AI Hub platform. This scope implements robust, scalable data processing workflows using
+Dagster, handling the complete lifecycle from document ingestion to vector embedding generation for RAG
+(Retrieval-Augmented Generation) systems.
 
 ### 📁 Project Structure
 
@@ -74,8 +74,8 @@ aihub_pipeline/
 ### 🏗️ The Data Processing Pipeline Architecture
 
 ::: info Pipeline Purpose
-The Swiss AI Hub pipeline follows a structured approach to document processing and knowledge extraction. Before agents can
-reason intelligently about a domain, the underlying data must be readily available in a structured, searchable form.
+The Swiss AI Hub pipeline follows a structured approach to document processing and knowledge extraction. Before agents
+can reason intelligently about a domain, the underlying data must be readily available in a structured, searchable form.
 Pipelines handle this critical preparatory stage by ingesting raw data from various sources, parsing and transforming
 it, and storing it in a format that agents can easily consume.
 :::
@@ -99,9 +99,9 @@ document. If a document changes, its DataVersion changes, prompting re-ingestion
 ### 👁️ Observable Assets and Automation Policies
 
 ::: tip Observable Assets
-**Observable Assets** are a core feature of the Swiss AI Hub pipeline architecture. Instead of running pipelines blindly on a
-fixed schedule, the system can observe whether new documents have appeared in the data lake or if existing content has
-changed.
+**Observable Assets** are a core feature of the Swiss AI Hub pipeline architecture. Instead of running pipelines blindly
+on a fixed schedule, the system can observe whether new documents have appeared in the data lake or if existing content
+has changed.
 :::
 
 ```python
@@ -382,8 +382,8 @@ ______________________________________________________________________
 
 ::: info
 While the Swiss AI Hub pipelines provide a robust foundation for data ingestion, each client project may have unique
-requirements. The Swiss AI Hub's architecture for customization and reuse ensures that developers can adapt pipelines to meet
-varying needs without reinventing the wheel.
+requirements. The Swiss AI Hub's architecture for customization and reuse ensures that developers can adapt pipelines to
+meet varying needs without reinventing the wheel.
 :::
 
 ### 🧩 Common Pipeline Assets

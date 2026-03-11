@@ -21,8 +21,8 @@ This section covers the foundational architecture, patterns, and terminology you
 endpoints.
 
 ::: info
-This documentation assumes you have completed the general Swiss AI Hub setup as described in the main README.md. Make sure you
-have the required infrastructure running before proceeding.
+This documentation assumes you have completed the general Swiss AI Hub setup as described in the main README.md. Make
+sure you have the required infrastructure running before proceeding.
 :::
 
 ### 📚 Introduction to `aihub_api`
@@ -559,8 +559,8 @@ class ListController(Controller):
 ### 🚨 Error Handling Patterns
 
 ::: warning Error Handling Philosophy
-The Swiss AI Hub API follows a "fail fast" philosophy - we don't wrap everything in try-except blocks but rather let errors
-propagate naturally. Controllers and Services always raise `HTTPException` for client errors and let unexpected
+The Swiss AI Hub API follows a "fail fast" philosophy - we don't wrap everything in try-except blocks but rather let
+errors propagate naturally. Controllers and Services always raise `HTTPException` for client errors and let unexpected
 exceptions bubble up to FastAPI's error handling middleware.
 :::
 

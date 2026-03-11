@@ -2,7 +2,7 @@ from dagster import OpExecutionContext, ResourceParam, op
 from llama_index.core.llms import LLM
 from llama_index.core.schema import TextNode
 
-from swiss_ai_hub.pipeline.resources.parser.RecursiveSummaryParserResource import RecursiveSummaryParserResource
+from swiss_ai_hub.pipeline.resources.parser.recursive_summary_parser_resource import RecursiveSummaryParserResource
 
 
 @op(code_version="v1")

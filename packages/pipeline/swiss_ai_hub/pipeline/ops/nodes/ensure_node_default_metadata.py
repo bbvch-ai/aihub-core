@@ -1,6 +1,6 @@
 from dagster import Output, op
 from llama_index.core.schema import TextNode
-from swiss_ai_hub.core.generative_ai.document.types.IngestedNode import IngestedNode
+from swiss_ai_hub.core.generative_ai.document.types.ingested_node import IngestedNode
 
 
 @op(code_version="v1")

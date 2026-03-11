@@ -20,15 +20,15 @@ index: 3
 This section covers the foundational architecture, patterns, and terminology you need to know before building an agent.
 
 ::: info
-This documentation assumes you have completed the general Swiss AI Hub setup as described in the main README.md. Make sure you
-have the required infrastructure running before proceeding.
+This documentation assumes you have completed the general Swiss AI Hub setup as described in the main README.md. Make
+sure you have the required infrastructure running before proceeding.
 :::
 
 ### 📚 Introduction to `aihub_agent`
 
 You are contributing to the **aihub_agent** scope, which contains all agent logic and workflow definitions within the
-Swiss AI Hub platform. This scope implements autonomous AI agents designed for proactive process automation—components that
-work alongside humans to execute tasks as part of redesigned business processes.
+Swiss AI Hub platform. This scope implements autonomous AI agents designed for proactive process automation—components
+that work alongside humans to execute tasks as part of redesigned business processes.
 
 ### 📁 Project Structure
 

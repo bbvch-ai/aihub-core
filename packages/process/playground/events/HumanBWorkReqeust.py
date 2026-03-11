@@ -1,6 +1,6 @@
 from typing import ClassVar
 
-from swiss_ai_hub.core.events.process.work_request.human.HumanWorkRequestEvent import HumanWorkRequestEvent
+from swiss_ai_hub.core.events.process import HumanWorkRequestEvent
 
 from playground.events.HumanBWork import HumanBWork
 

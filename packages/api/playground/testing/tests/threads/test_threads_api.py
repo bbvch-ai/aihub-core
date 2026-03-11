@@ -5,22 +5,22 @@ import pytest_asyncio
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
 from mongoengine import connect, disconnect
-from swiss_ai_hub.core.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
+from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler import (
     DangerousDevelopmentOnlyAuthHandler,
 )
-from swiss_ai_hub.core.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
+from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_settings import (
     DangerousDevelopmentOnlyAuthSettings,
 )
-from swiss_ai_hub.core.infrastructure.api.AIHubSettings import AIHubSettings
-from swiss_ai_hub.core.infrastructure.logging.logger import enable_logging
-from swiss_ai_hub.core.infrastructure.mongo.MongoSettings import MongoSettings
-from swiss_ai_hub.core.persistence.messaging.entities.ThreadEntity import ThreadEntity
-from swiss_ai_hub.core.testing.auth_utils.role_mocks import mock_role_entity_methods  # noqa: F401
-from swiss_ai_hub.core.testing.auth_utils.tenant_mocks import mock_tenant_entity_autouse  # noqa: F401
-from swiss_ai_hub.core.testing.auth_utils.user_mocks import mock_user_entity_autouse  # noqa: F401
+from swiss_ai_hub.core.infrastructure import AIHubSettings
+from swiss_ai_hub.core.infrastructure import enable_logging
+from swiss_ai_hub.core.infrastructure import MongoSettings
+from swiss_ai_hub.core.persistence.messaging.entities.thread_entity import ThreadEntity
+from swiss_ai_hub.core.testing import mock_role_entity_methods
+from swiss_ai_hub.core.testing import mock_tenant_entity_autouse
+from swiss_ai_hub.core.testing import mock_user_entity_autouse
 
-from swiss_ai_hub.api.routes.thread.ThreadController import ThreadController
-from swiss_ai_hub.api.runners.simulation.agent.SimulatedAgentApiTestRunner import SimulatedAgentApiTestRunner
+from swiss_ai_hub.api.routes.thread.thread_controller import ThreadController
+from swiss_ai_hub.api.runners.simulation.agent.simulated_agent_api_test_runner import SimulatedAgentApiTestRunner
 
 enable_logging()
 

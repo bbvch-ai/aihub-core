@@ -9,7 +9,7 @@ from swiss_ai_hub.core.generative_ai.document.refinement.models import (
     TableRefinementResult,
     TableRefinementStats,
 )
-from swiss_ai_hub.core.generative_ai.document.refinement.TableAnalyzer import TableAnalyzer
+from swiss_ai_hub.core.generative_ai.document.refinement.table_analyzer import TableAnalyzer
 from swiss_ai_hub.core.generative_ai.document.tables.markdown_table import (
     apply_header_rows,
     format_for_llm,
@@ -18,7 +18,7 @@ from swiss_ai_hub.core.generative_ai.document.tables.markdown_table import (
 )
 
 if TYPE_CHECKING:
-    from swiss_ai_hub.core.generative_ai.resources.models.llm.LLMConfig import LLMConfig
+    from swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config import LLMConfig
 
 logger = logging.getLogger(__name__)
 

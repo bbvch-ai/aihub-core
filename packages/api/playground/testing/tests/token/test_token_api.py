@@ -3,18 +3,18 @@ from datetime import UTC, datetime, timedelta
 import pytest
 from fastapi.testclient import TestClient
 from mongoengine import connect, disconnect
-from swiss_ai_hub.core.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
+from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler import (
     DangerousDevelopmentOnlyAuthHandler,
 )
-from swiss_ai_hub.core.infrastructure.api.AIHubSettings import AIHubSettings
-from swiss_ai_hub.core.infrastructure.mongo.MongoSettings import MongoSettings
-from swiss_ai_hub.core.persistence.access.entities.BearerToken import BearerToken
-from swiss_ai_hub.core.testing.auth_utils.role_mocks import mock_role_entity_methods  # noqa: F401
-from swiss_ai_hub.core.testing.auth_utils.tenant_mocks import mock_tenant_entity_autouse  # noqa: F401
-from swiss_ai_hub.core.testing.auth_utils.user_mocks import mock_user_entity_autouse  # noqa: F401
+from swiss_ai_hub.core.infrastructure import AIHubSettings
+from swiss_ai_hub.core.infrastructure import MongoSettings
+from swiss_ai_hub.core.persistence.access.entities.bearer_token import BearerToken
+from swiss_ai_hub.core.testing import mock_role_entity_methods
+from swiss_ai_hub.core.testing import mock_tenant_entity_autouse
+from swiss_ai_hub.core.testing import mock_user_entity_autouse
 
-from swiss_ai_hub.api.routes.token.TokenController import TokenController
-from swiss_ai_hub.api.runners.ApiTestRunner import ApiTestRunner
+from swiss_ai_hub.api.routes.token.token_controller import TokenController
+from swiss_ai_hub.api.runners.api_test_runner import ApiTestRunner
 
 TOKEN_BASE = "/api/v1/tokens"
 DEFAULT_USER_ID = "1234567890"

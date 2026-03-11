@@ -1,8 +1,8 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
-    from swiss_ai_hub.core.i18n.LocaleString import LocaleString
+    from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
+    from swiss_ai_hub.core.i18n.locale_string import LocaleString
 
 __all__ = [
     "LocaleHandler",
@@ -10,8 +10,8 @@ __all__ = [
 ]
 
 _LAZY_IMPORTS = {
-    "LocaleHandler": "swiss_ai_hub.core.i18n.LocaleHandler",
-    "LocaleString": "swiss_ai_hub.core.i18n.LocaleString",
+    "LocaleHandler": "swiss_ai_hub.core.i18n.locale_handler",
+    "LocaleString": "swiss_ai_hub.core.i18n.locale_string",
 }
 
 
@@ -19,6 +19,8 @@ def __getattr__(name: str):
     if name in _LAZY_IMPORTS:
         from importlib import import_module
 
-        return getattr(import_module(_LAZY_IMPORTS[name]), name)
+        value = getattr(import_module(_LAZY_IMPORTS[name]), name)
+        globals()[name] = value
+        return value
     msg = f"module {__name__!r} has no attribute {name!r}"
     raise AttributeError(msg)

@@ -1,8 +1,8 @@
 from dagster import AssetIn, AssetKey, AutomationCondition, DynamicPartitionsDefinition, Output, graph_asset
 
 from swiss_ai_hub.pipeline.ops.document.create_placeholder_refdoc import create_placeholder_refdoc_from_data_lake_file
-from swiss_ai_hub.pipeline.types.DataLakeFile import DataLakeFile
-from swiss_ai_hub.pipeline.types.RefDocDocument import RefDocDocument
+from swiss_ai_hub.pipeline.types.data_lake_file import DataLakeFile
+from swiss_ai_hub.pipeline.types.ref_doc_document import RefDocDocument
 from swiss_ai_hub.pipeline.util.key_utils import group_name_from_asset_key
 
 

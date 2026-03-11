@@ -1,5 +1,5 @@
-from swiss_ai_hub.core.generative_ai.retrievers.BucketNamespacePair import BucketNamespacePair
-from swiss_ai_hub.core.generative_ai.retrievers.KnowledgeRetrieverConfig import KnowledgeRetrieverConfig
+from swiss_ai_hub.core.generative_ai.retrievers.bucket_namespace_pair import BucketNamespacePair
+from swiss_ai_hub.core.generative_ai.retrievers.knowledge_retriever_config import KnowledgeRetrieverConfig
 
 
 def filter_retrievers_by_namespace(

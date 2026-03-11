@@ -7,7 +7,7 @@ from dagster import (
 )
 from swiss_ai_hub.core.generative_ai.utils.path_utils import encode_partition_key
 
-from swiss_ai_hub.pipeline.types.SourceFile import MinimalSourceFile
+from swiss_ai_hub.pipeline.types.source_file import MinimalSourceFile
 from swiss_ai_hub.pipeline.util.meta_utils import local_file_metadata_table
 from swiss_ai_hub.pipeline.util.partition_utils import replace_partition_keys
 

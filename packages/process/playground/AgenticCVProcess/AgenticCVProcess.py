@@ -1,10 +1,10 @@
 from typing import Annotated
 
 from llama_index.core.base.llms.types import ChatMessage
-from swiss_ai_hub.core.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
+from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_settings import (
     DangerousDevelopmentOnlyAuthSettings,
 )
-from swiss_ai_hub.core.events.agent.user.UserMessageEvent import UserMessageEvent
+from swiss_ai_hub.core.events.agent import UserMessageEvent
 from swiss_ai_hub.core.form import (
     CascadeSelect,
     Checkbox,
@@ -15,17 +15,17 @@ from swiss_ai_hub.core.form import (
     Slider,
     Textarea,
 )
-from swiss_ai_hub.core.form.elements.InputText import InputText
-from swiss_ai_hub.core.i18n.LocaleString import LocaleString
+from swiss_ai_hub.core.form import InputText
+from swiss_ai_hub.core.i18n import LocaleString
 
 from playground.AgenticCVProcess.events.agent.AnalyzeCVRequest import AnalyzeCVRequest
 from playground.AgenticCVProcess.events.human.AcceptRejectRequest import AcceptRejectRequest
 from playground.AgenticCVProcess.events.human.SubmittedCV import SubmittedCV
 from playground.AgenticCVProcess.events.program.SaveDecisionRequest import SaveDecisionRequest
-from swiss_ai_hub.process.agentic_processes.AgenticProcess import AgenticProcess
-from swiss_ai_hub.process.delegators.agent.Agent import Agent
-from swiss_ai_hub.process.delegators.human.Human import Human
-from swiss_ai_hub.process.delegators.program.Program import Program
+from swiss_ai_hub.process.agentic_processes.agentic_process import AgenticProcess
+from swiss_ai_hub.process.delegators.agent.agent import Agent
+from swiss_ai_hub.process.delegators.human.human import Human
+from swiss_ai_hub.process.delegators.program.program import Program
 from swiss_ai_hub.process.process.decorators.process_step import process_step
 
 

@@ -1,7 +1,7 @@
 from dagster import Output, op
-from swiss_ai_hub.core.generative_ai.document.types.IngestedDocument import IngestedDocument
+from swiss_ai_hub.core.generative_ai.document.types.ingested_document import IngestedDocument
 
-from swiss_ai_hub.pipeline.types.RefDocDocument import RefDocDocument
+from swiss_ai_hub.pipeline.types.ref_doc_document import RefDocDocument
 
 
 @op(code_version="v1")

@@ -2,8 +2,8 @@ from typing import Annotated
 
 from playground.events.CustomProcessStopEvent import CustomProcessStopEvent
 from playground.events.InitialProcessWorkEvent import InitialProcessWorkEvent
-from swiss_ai_hub.process.agentic_processes.AgenticProcess import AgenticProcess
-from swiss_ai_hub.process.delegators.process.Process import Process
+from swiss_ai_hub.process.agentic_processes.agentic_process import AgenticProcess
+from swiss_ai_hub.process.delegators.process.process import Process
 from swiss_ai_hub.process.process.decorators.process_step import process_step
 
 

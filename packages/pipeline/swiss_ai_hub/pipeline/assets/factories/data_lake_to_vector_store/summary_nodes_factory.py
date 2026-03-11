@@ -7,7 +7,7 @@ from swiss_ai_hub.pipeline.ops.nodes.extend_nodes_with_summary_nodes_using_recur
     extend_nodes_with_summary_nodes_using_recursive_summary_parser,
 )
 from swiss_ai_hub.pipeline.ops.nodes.insert_nodes_into_vector_store import insert_nodes_into_vector_store
-from swiss_ai_hub.pipeline.types.RefDocDocument import RefDocDocument
+from swiss_ai_hub.pipeline.types.ref_doc_document import RefDocDocument
 from swiss_ai_hub.pipeline.util.key_utils import group_name_from_asset_key
 
 

@@ -6,20 +6,20 @@ import pytest_asyncio
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
 from mongoengine import connect, disconnect
-from swiss_ai_hub.core.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
+from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_settings import (
     DangerousDevelopmentOnlyAuthSettings,
 )
-from swiss_ai_hub.core.auth.dependencies.TokenAuthHandler.TokenAuthHandler import TokenAuthHandler
-from swiss_ai_hub.core.infrastructure.api.AIHubSettings import AIHubSettings
-from swiss_ai_hub.core.infrastructure.mongo.MongoSettings import MongoSettings
-from swiss_ai_hub.core.persistence.access.entities.BearerToken import BearerToken
-from swiss_ai_hub.core.persistence.access.entities.RoleEntity import RoleEntity
-from swiss_ai_hub.core.persistence.access.entities.TenantEntity import TenantEntity
-from swiss_ai_hub.core.persistence.access.entities.UserTenantRoleEntity import UserTenantRoleEntity
-from swiss_ai_hub.core.persistence.user.UserEntity import UserEntity
+from swiss_ai_hub.core.auth.dependencies.token_auth_handler.token_auth_handler import TokenAuthHandler
+from swiss_ai_hub.core.infrastructure import AIHubSettings
+from swiss_ai_hub.core.infrastructure import MongoSettings
+from swiss_ai_hub.core.persistence.access.entities.bearer_token import BearerToken
+from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
+from swiss_ai_hub.core.persistence.access.entities.tenant_entity import TenantEntity
+from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
+from swiss_ai_hub.core.persistence.user.user_entity import UserEntity
 
-from swiss_ai_hub.api.routes.my_account.MyAccountController import MyAccountController
-from swiss_ai_hub.api.runners.ApiTestRunner import ApiTestRunner
+from swiss_ai_hub.api.routes.my_account.my_account_controller import MyAccountController
+from swiss_ai_hub.api.runners.api_test_runner import ApiTestRunner
 
 BASE_URL = "http://test"
 USER_ENDPOINT = "/api/v1/my-account"

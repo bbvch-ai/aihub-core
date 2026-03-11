@@ -9,8 +9,8 @@ from llama_index.core.vector_stores.types import (
     VectorStoreQueryMode,
 )
 
-from swiss_ai_hub.core.generative_ai.processors.MinMaxScoreNormalizer import MinMaxScoreNormalizer
-from swiss_ai_hub.core.generative_ai.processors.ScoreScalerPostProcessor import ScoreScalerPostProcessor
+from swiss_ai_hub.core.generative_ai.processors.min_max_score_normalizer import MinMaxScoreNormalizer
+from swiss_ai_hub.core.generative_ai.processors.score_scaler_post_processor import ScoreScalerPostProcessor
 from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import NAMESPACE, TYPE
 
 

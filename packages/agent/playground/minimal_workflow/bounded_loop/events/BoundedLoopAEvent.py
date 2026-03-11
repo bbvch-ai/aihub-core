@@ -1,4 +1,4 @@
-from swiss_ai_hub.core.events.agent.control.ControlEvent import ControlEvent
+from swiss_ai_hub.core.events.agent import ControlEvent
 
 
 class BoundedLoopAEvent(ControlEvent):

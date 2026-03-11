@@ -15,9 +15,9 @@ index: 8
 
 [![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=swiss-ai-hub_aihub-web&metric=ncloc&token=2544c19db5da47510d04d7ee0694f364127a21e0)](https://sonarcloud.io/summary/new_code?id=swiss-ai-hub_aihub-web)
 
-You are contributing to the **aihub_web** scope, which contains the main web frontend application within the Swiss AI Hub
-platform. This scope implements the user interface that connects users to AI agents, processes, and system management
-capabilities through an intuitive, modern web application built with Nuxt 3.
+You are contributing to the **aihub_web** scope, which contains the main web frontend application within the Swiss AI
+Hub platform. This scope implements the user interface that connects users to AI agents, processes, and system
+management capabilities through an intuitive, modern web application built with Nuxt 3.
 
 ## The Stack
 

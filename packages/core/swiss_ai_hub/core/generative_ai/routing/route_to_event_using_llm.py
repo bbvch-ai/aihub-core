@@ -4,9 +4,9 @@ from llama_index.core.llms import LLM
 from llama_index.core.prompts.rich import RichPromptTemplate
 from pydantic import BaseModel, Field
 
-from swiss_ai_hub.core.events.agent.router.RouteOptions import RouteOptions
-from swiss_ai_hub.core.events.agent.router.RouterEvent import RouterEvent
-from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
+from swiss_ai_hub.core.events.agent.router.route_options import RouteOptions
+from swiss_ai_hub.core.events.agent.router.router_event import RouterEvent
+from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 
 
 async def route_to_event_using_llm(

@@ -1,9 +1,9 @@
 from dagster import ResourceParam, op
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
 from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import NAMESPACE
-from swiss_ai_hub.core.persistence.rag.vectors.stores.MilvusPartitionManager import get_partition_name_for_namespace
+from swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_partition_manager import get_partition_name_for_namespace
 
-from swiss_ai_hub.pipeline.types.RefDocDocument import RefDocDocument
+from swiss_ai_hub.pipeline.types.ref_doc_document import RefDocDocument
 
 
 @op(code_version="v1")

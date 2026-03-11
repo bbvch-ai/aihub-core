@@ -1,8 +1,8 @@
 from typing import Annotated
 
 from pydantic import Field
-from swiss_ai_hub.core.agents.AgentConfig import AgentConfig
-from swiss_ai_hub.core.generative_ai.resources.models.llm.LLMConfig import LLMConfig
+from swiss_ai_hub.core.agents import AgentConfig
+from swiss_ai_hub.core.generative_ai import LLMConfig
 
 
 class OrganizationMemoryAgentConfig(AgentConfig):

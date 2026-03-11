@@ -4,25 +4,25 @@ import pytest
 import pytest_asyncio
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
-from swiss_ai_hub.core.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
+from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler import (
     DangerousDevelopmentOnlyAuthHandler,
 )
-from swiss_ai_hub.core.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
+from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_settings import (
     DangerousDevelopmentOnlyAuthSettings,
 )
-from swiss_ai_hub.core.testing.auth_utils.role_mocks import mock_role_entity_methods  # noqa: F401
-from swiss_ai_hub.core.testing.auth_utils.tenant_mocks import mock_tenant_entity_autouse  # noqa: F401
-from swiss_ai_hub.core.testing.auth_utils.user_mocks import mock_user_entity_autouse  # noqa: F401
+from swiss_ai_hub.core.testing import mock_role_entity_methods
+from swiss_ai_hub.core.testing import mock_tenant_entity_autouse
+from swiss_ai_hub.core.testing import mock_user_entity_autouse
 
-from swiss_ai_hub.api.routes.memory.dto.DeleteMemoryResponse import DeleteAllMemoriesResponse, DeleteMemoryResponse
-from swiss_ai_hub.api.routes.memory.dto.MemoriesResponse import MemoriesResponse
-from swiss_ai_hub.api.routes.memory.dto.MemoryDTO import MemoryDTO
-from swiss_ai_hub.api.routes.memory.dto.MemoryRelationDTO import MemoryRelationDTO
-from swiss_ai_hub.api.routes.memory.dto.MemorySearchResponse import MemorySearchResponse
-from swiss_ai_hub.api.routes.memory.dto.UpdateMemoryResponse import UpdateMemoryResponse
-from swiss_ai_hub.api.routes.memory.OrganizationMemoryController import OrganizationMemoryController
-from swiss_ai_hub.api.routes.memory.UserMemoryController import UserMemoryController
-from swiss_ai_hub.api.runners.ApiTestRunner import ApiTestRunner
+from swiss_ai_hub.api.routes.memory.dto.delete_memory_response import DeleteAllMemoriesResponse, DeleteMemoryResponse
+from swiss_ai_hub.api.routes.memory.dto.memories_response import MemoriesResponse
+from swiss_ai_hub.api.routes.memory.dto.memory_dto import MemoryDTO
+from swiss_ai_hub.api.routes.memory.dto.memory_relation_dto import MemoryRelationDTO
+from swiss_ai_hub.api.routes.memory.dto.memory_search_response import MemorySearchResponse
+from swiss_ai_hub.api.routes.memory.dto.update_memory_response import UpdateMemoryResponse
+from swiss_ai_hub.api.routes.memory.organization_memory_controller import OrganizationMemoryController
+from swiss_ai_hub.api.routes.memory.user_memory_controller import UserMemoryController
+from swiss_ai_hub.api.runners.api_test_runner import ApiTestRunner
 
 BASE_URL = "http://test"
 USER_MEMORIES_ENDPOINT = "/api/v1/user-memories"
@@ -149,7 +149,7 @@ class TestGetUserMemories:
     async def test_get_user_memories_success(self, user_memory_client, mock_user_memories_response):
         """Test successful retrieval of user memories."""
         with patch(
-            "swiss_ai_hub.api.routes.memory.UserMemoryService.UserMemoryService.get_memories_for_user"
+            "swiss_ai_hub.api.routes.memory.user_memory_service.UserMemoryService.get_memories_for_user"
         ) as mock_service:
             mock_service.return_value = mock_user_memories_response
 
@@ -168,7 +168,7 @@ class TestGetUserMemories:
     async def test_get_user_memories_with_limit(self, user_memory_client, mock_user_memories_response):
         """Test user memories endpoint with limit parameter."""
         with patch(
-            "swiss_ai_hub.api.routes.memory.UserMemoryService.UserMemoryService.get_memories_for_user"
+            "swiss_ai_hub.api.routes.memory.user_memory_service.UserMemoryService.get_memories_for_user"
         ) as mock_service:
             mock_service.return_value = mock_user_memories_response
 
@@ -198,7 +198,7 @@ class TestSearchUserMemories:
     async def test_search_user_memories_success(self, user_memory_client, mock_user_search_response):
         """Test successful user memory search."""
         with patch(
-            "swiss_ai_hub.api.routes.memory.UserMemoryService.UserMemoryService.search_memories"
+            "swiss_ai_hub.api.routes.memory.user_memory_service.UserMemoryService.search_memories"
         ) as mock_service:
             mock_service.return_value = mock_user_search_response
 
@@ -223,7 +223,7 @@ class TestSearchUserMemories:
     async def test_search_user_memories_with_filters(self, user_memory_client, mock_user_search_response):
         """Test search with filters."""
         with patch(
-            "swiss_ai_hub.api.routes.memory.UserMemoryService.UserMemoryService.search_memories"
+            "swiss_ai_hub.api.routes.memory.user_memory_service.UserMemoryService.search_memories"
         ) as mock_service:
             mock_service.return_value = mock_user_search_response
 
@@ -249,7 +249,7 @@ class TestSearchUserMemories:
             relations=[],
         )
         with patch(
-            "swiss_ai_hub.api.routes.memory.UserMemoryService.UserMemoryService.search_memories"
+            "swiss_ai_hub.api.routes.memory.user_memory_service.UserMemoryService.search_memories"
         ) as mock_service:
             mock_service.return_value = empty_response
 
@@ -268,7 +268,9 @@ class TestDeleteUserMemory:
     @pytest.mark.asyncio
     async def test_delete_user_memory_success(self, user_memory_client):
         """Test successful deletion of a single user memory."""
-        with patch("swiss_ai_hub.api.routes.memory.UserMemoryService.UserMemoryService.delete_memory") as mock_service:
+        with patch(
+            "swiss_ai_hub.api.routes.memory.user_memory_service.UserMemoryService.delete_memory"
+        ) as mock_service:
             mock_service.return_value = DeleteMemoryResponse(status="deleted", memory_id="mem123")
 
             response = await user_memory_client.delete(f"{USER_MEMORIES_ENDPOINT}/mem123")
@@ -282,7 +284,9 @@ class TestDeleteUserMemory:
     @pytest.mark.asyncio
     async def test_delete_user_memory_calls_service(self, user_memory_client):
         """Test that delete_memory calls service with correct parameters."""
-        with patch("swiss_ai_hub.api.routes.memory.UserMemoryService.UserMemoryService.delete_memory") as mock_service:
+        with patch(
+            "swiss_ai_hub.api.routes.memory.user_memory_service.UserMemoryService.delete_memory"
+        ) as mock_service:
             mock_service.return_value = DeleteMemoryResponse(status="deleted", memory_id="mem456")
 
             response = await user_memory_client.delete(f"{USER_MEMORIES_ENDPOINT}/mem456")
@@ -300,7 +304,7 @@ class TestDeleteAllUserMemories:
     async def test_delete_all_user_memories_success(self, user_memory_client):
         """Test successful deletion of all user memories."""
         with patch(
-            "swiss_ai_hub.api.routes.memory.UserMemoryService.UserMemoryService.delete_all_memories"
+            "swiss_ai_hub.api.routes.memory.user_memory_service.UserMemoryService.delete_all_memories"
         ) as mock_service:
             mock_service.return_value = DeleteAllMemoriesResponse(status="deleted")
 
@@ -318,7 +322,9 @@ class TestUpdateUserMemory:
     @pytest.mark.asyncio
     async def test_update_user_memory_success(self, user_memory_client):
         """Test successful update of a user memory."""
-        with patch("swiss_ai_hub.api.routes.memory.UserMemoryService.UserMemoryService.update_memory") as mock_service:
+        with patch(
+            "swiss_ai_hub.api.routes.memory.user_memory_service.UserMemoryService.update_memory"
+        ) as mock_service:
             mock_service.return_value = UpdateMemoryResponse(status="updated", memory_id="mem123")
 
             update_data = {"data": "User prefers Python over JavaScript"}
@@ -333,7 +339,9 @@ class TestUpdateUserMemory:
     @pytest.mark.asyncio
     async def test_update_user_memory_calls_service(self, user_memory_client):
         """Test that update_memory calls service with correct parameters."""
-        with patch("swiss_ai_hub.api.routes.memory.UserMemoryService.UserMemoryService.update_memory") as mock_service:
+        with patch(
+            "swiss_ai_hub.api.routes.memory.user_memory_service.UserMemoryService.update_memory"
+        ) as mock_service:
             mock_service.return_value = UpdateMemoryResponse(status="updated", memory_id="mem456")
 
             update_data = {"data": "New memory content"}
@@ -364,7 +372,7 @@ class TestGetOrganizationMemories:
     async def test_get_organization_memories_success(self, org_memory_client, mock_org_memories_response):
         """Test successful retrieval of organization memories."""
         with patch(
-            "swiss_ai_hub.api.routes.memory.OrganizationMemoryService.OrganizationMemoryService.get_memories"
+            "swiss_ai_hub.api.routes.memory.organization_memory_service.OrganizationMemoryService.get_memories"
         ) as mock_service:
             mock_service.return_value = mock_org_memories_response
 
@@ -383,7 +391,7 @@ class TestGetOrganizationMemories:
     async def test_get_organization_memories_with_limit(self, org_memory_client, mock_org_memories_response):
         """Test organization memories endpoint with limit parameter."""
         with patch(
-            "swiss_ai_hub.api.routes.memory.OrganizationMemoryService.OrganizationMemoryService.get_memories"
+            "swiss_ai_hub.api.routes.memory.organization_memory_service.OrganizationMemoryService.get_memories"
         ) as mock_service:
             mock_service.return_value = mock_org_memories_response
 
@@ -413,7 +421,7 @@ class TestSearchOrganizationMemories:
     async def test_search_organization_memories_success(self, org_memory_client, mock_org_search_response):
         """Test successful organization memory search."""
         with patch(
-            "swiss_ai_hub.api.routes.memory.OrganizationMemoryService.OrganizationMemoryService.search_memories"
+            "swiss_ai_hub.api.routes.memory.organization_memory_service.OrganizationMemoryService.search_memories"
         ) as mock_service:
             mock_service.return_value = mock_org_search_response
 
@@ -438,7 +446,7 @@ class TestSearchOrganizationMemories:
     async def test_search_organization_memories_with_filters(self, org_memory_client, mock_org_search_response):
         """Test search with filters."""
         with patch(
-            "swiss_ai_hub.api.routes.memory.OrganizationMemoryService.OrganizationMemoryService.search_memories"
+            "swiss_ai_hub.api.routes.memory.organization_memory_service.OrganizationMemoryService.search_memories"
         ) as mock_service:
             mock_service.return_value = mock_org_search_response
 
@@ -464,7 +472,7 @@ class TestSearchOrganizationMemories:
             relations=[],
         )
         with patch(
-            "swiss_ai_hub.api.routes.memory.OrganizationMemoryService.OrganizationMemoryService.search_memories"
+            "swiss_ai_hub.api.routes.memory.organization_memory_service.OrganizationMemoryService.search_memories"
         ) as mock_service:
             mock_service.return_value = empty_response
 
@@ -484,7 +492,7 @@ class TestDeleteOrganizationMemory:
     async def test_delete_organization_memory_success(self, org_memory_client):
         """Test successful deletion of a single organization memory."""
         with patch(
-            "swiss_ai_hub.api.routes.memory.OrganizationMemoryService.OrganizationMemoryService.delete_memory"
+            "swiss_ai_hub.api.routes.memory.organization_memory_service.OrganizationMemoryService.delete_memory"
         ) as mock_service:
             mock_service.return_value = DeleteMemoryResponse(status="deleted", memory_id="org_mem456")
 
@@ -500,7 +508,7 @@ class TestDeleteOrganizationMemory:
     async def test_delete_organization_memory_calls_service(self, org_memory_client):
         """Test that delete_memory calls service with correct parameters."""
         with patch(
-            "swiss_ai_hub.api.routes.memory.OrganizationMemoryService.OrganizationMemoryService.delete_memory"
+            "swiss_ai_hub.api.routes.memory.organization_memory_service.OrganizationMemoryService.delete_memory"
         ) as mock_service:
             mock_service.return_value = DeleteMemoryResponse(status="deleted", memory_id="org_mem789")
 
@@ -519,7 +527,7 @@ class TestDeleteAllOrganizationMemories:
     async def test_delete_all_organization_memories_success(self, org_memory_client):
         """Test successful deletion of all organization memories."""
         with patch(
-            "swiss_ai_hub.api.routes.memory.OrganizationMemoryService.OrganizationMemoryService.delete_all_memories"
+            "swiss_ai_hub.api.routes.memory.organization_memory_service.OrganizationMemoryService.delete_all_memories"
         ) as mock_service:
             mock_service.return_value = DeleteAllMemoriesResponse(status="deleted")
 
@@ -538,7 +546,7 @@ class TestUpdateOrganizationMemory:
     async def test_update_organization_memory_success(self, org_memory_client):
         """Test successful update of an organization memory."""
         with patch(
-            "swiss_ai_hub.api.routes.memory.OrganizationMemoryService.OrganizationMemoryService.update_memory"
+            "swiss_ai_hub.api.routes.memory.organization_memory_service.OrganizationMemoryService.update_memory"
         ) as mock_service:
             mock_service.return_value = UpdateMemoryResponse(status="updated", memory_id="org_mem456")
 
@@ -555,7 +563,7 @@ class TestUpdateOrganizationMemory:
     async def test_update_organization_memory_calls_service(self, org_memory_client):
         """Test that update_memory calls service with correct parameters."""
         with patch(
-            "swiss_ai_hub.api.routes.memory.OrganizationMemoryService.OrganizationMemoryService.update_memory"
+            "swiss_ai_hub.api.routes.memory.organization_memory_service.OrganizationMemoryService.update_memory"
         ) as mock_service:
             mock_service.return_value = UpdateMemoryResponse(status="updated", memory_id="org_mem789")
 
@@ -587,7 +595,7 @@ class TestMemoryDTOStructure:
     async def test_user_memory_dto_structure(self, user_memory_client, mock_user_memories_response):
         """Test that user MemoryDTO has the expected structure."""
         with patch(
-            "swiss_ai_hub.api.routes.memory.UserMemoryService.UserMemoryService.get_memories_for_user"
+            "swiss_ai_hub.api.routes.memory.user_memory_service.UserMemoryService.get_memories_for_user"
         ) as mock_service:
             mock_service.return_value = mock_user_memories_response
 
@@ -605,7 +613,7 @@ class TestMemoryDTOStructure:
     async def test_organization_memory_dto_structure(self, org_memory_client, mock_org_memories_response):
         """Test that organization MemoryDTO has the expected structure."""
         with patch(
-            "swiss_ai_hub.api.routes.memory.OrganizationMemoryService.OrganizationMemoryService.get_memories"
+            "swiss_ai_hub.api.routes.memory.organization_memory_service.OrganizationMemoryService.get_memories"
         ) as mock_service:
             mock_service.return_value = mock_org_memories_response
 
@@ -622,7 +630,7 @@ class TestMemoryDTOStructure:
     async def test_relation_dto_structure(self, user_memory_client, mock_user_memories_response):
         """Test that MemoryRelationDTO has the expected structure."""
         with patch(
-            "swiss_ai_hub.api.routes.memory.UserMemoryService.UserMemoryService.get_memories_for_user"
+            "swiss_ai_hub.api.routes.memory.user_memory_service.UserMemoryService.get_memories_for_user"
         ) as mock_service:
             mock_service.return_value = mock_user_memories_response
 
@@ -639,7 +647,7 @@ class TestMemoryDTOStructure:
     async def test_search_response_structure(self, user_memory_client, mock_user_search_response):
         """Test that MemorySearchResponse has the expected structure."""
         with patch(
-            "swiss_ai_hub.api.routes.memory.UserMemoryService.UserMemoryService.search_memories"
+            "swiss_ai_hub.api.routes.memory.user_memory_service.UserMemoryService.search_memories"
         ) as mock_service:
             mock_service.return_value = mock_user_search_response
 
@@ -671,10 +679,10 @@ class TestUserMemoryIntegration:
     async def test_add_search_update_delete_workflow(self, user_memory_client):
         """Full CRUD workflow with real infrastructure."""
         from llama_index.core.base.llms.types import ChatMessage, MessageRole
-        from swiss_ai_hub.core.agents.AgentConfig import AgentConfig
-        from swiss_ai_hub.core.generative_ai.memory.AgentMemory import AgentMemory
-        from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
-        from swiss_ai_hub.core.i18n.LocaleString import LocaleString
+        from swiss_ai_hub.core.agents import AgentConfig
+        from swiss_ai_hub.core.generative_ai.memory.agent_memory import AgentMemory
+        from swiss_ai_hub.core.i18n import LocaleHandler
+        from swiss_ai_hub.core.i18n import LocaleString
 
         user_id = DangerousDevelopmentOnlyAuthSettings().OID
 
@@ -749,10 +757,10 @@ class TestUserMemoryIntegration:
     async def test_user_isolation(self, user_memory_client):
         """User A should not see User B's memories via API."""
         from llama_index.core.base.llms.types import ChatMessage, MessageRole
-        from swiss_ai_hub.core.agents.AgentConfig import AgentConfig
-        from swiss_ai_hub.core.generative_ai.memory.AgentMemory import AgentMemory
-        from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
-        from swiss_ai_hub.core.i18n.LocaleString import LocaleString
+        from swiss_ai_hub.core.agents.agent_config import AgentConfig
+        from swiss_ai_hub.core.generative_ai.memory.agent_memory import AgentMemory
+        from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
+        from swiss_ai_hub.core.i18n.locale_string import LocaleString
 
         user_a_id = "user_a_api_isolation"
 

@@ -1,16 +1,15 @@
 # ruff: noqa: E402
-from swiss_ai_hub.core.infrastructure.opentelemetry.AihubInstrumentor import AihubInstrumentor  # isort: skip
+from swiss_ai_hub.core.infrastructure import AihubInstrumentor  # isort: skip
 
 AihubInstrumentor().instrument()
 
 import asyncio
 
-from swiss_ai_hub.core.infrastructure.api.AIHubSettings import AIHubSettings
-from swiss_ai_hub.core.infrastructure.logging.logger import enable_logging
+from swiss_ai_hub.core.infrastructure import AIHubSettings, enable_logging
 
-from swiss_ai_hub.agent.agents.ExpertAskingAgent.ExpertAskingAgent import ExpertAskingAgent
-from swiss_ai_hub.agent.agents.ExpertAskingAgent.ExpertAskingAgentConfig import ExpertAskingAgentConfig
-from swiss_ai_hub.agent.runners.AgentRunner import AgentRunner
+from swiss_ai_hub.agent.agents.expert_asking_agent.expert_asking_agent import ExpertAskingAgent
+from swiss_ai_hub.agent.agents.expert_asking_agent.expert_asking_agent_config import ExpertAskingAgentConfig
+from swiss_ai_hub.agent.runners.agent_runner import AgentRunner
 
 enable_logging()
 

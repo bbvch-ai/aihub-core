@@ -1,10 +1,10 @@
 import inspect
 from typing import Annotated, get_args, get_origin
 
-from swiss_ai_hub.core.events.process.work.WorkEvent import WorkEvent
-from swiss_ai_hub.core.workflow.annotations.extractors.extract_event_classes import extract_event_classes
+from swiss_ai_hub.core.events.process import WorkEvent
+from swiss_ai_hub.core.workflow import extract_event_classes
 
-from swiss_ai_hub.process.delegators.AbstractProcessEntity import BaseProcessEntity
+from swiss_ai_hub.process.delegators.abstract_process_entity import BaseProcessEntity
 
 
 def extract_function_process_in_events(func) -> list[tuple[type[WorkEvent], BaseProcessEntity.In]]:

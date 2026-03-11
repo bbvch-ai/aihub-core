@@ -14,8 +14,8 @@ from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import (
     UPDATED_AT,
 )
 
-from swiss_ai_hub.pipeline.types.DataLakeFile import DataLakeFile
-from swiss_ai_hub.pipeline.types.RefDocDocument import RefDocDocument
+from swiss_ai_hub.pipeline.types.data_lake_file import DataLakeFile
+from swiss_ai_hub.pipeline.types.ref_doc_document import RefDocDocument
 
 
 @op(out=Out(io_manager_key="doc_store_io_manager"))

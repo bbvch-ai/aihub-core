@@ -1,15 +1,14 @@
 import random
 from typing import ClassVar
 
-from swiss_ai_hub.core.events.agent.control.start.StartEvent import StartEvent
-from swiss_ai_hub.core.events.agent.control.stop.StopEvent import StopEvent
-from swiss_ai_hub.core.i18n.LocaleString import LocaleString
+from swiss_ai_hub.core.events.agent import StartEvent, StopEvent
+from swiss_ai_hub.core.i18n import LocaleString
 
 from playground.minimal_workflow.optional_workflow.events.EventOptionalA import EventOptionalA
 from playground.minimal_workflow.optional_workflow.events.EventOptionalB import EventOptionalB
 from playground.minimal_workflow.optional_workflow.events.EventOptionalC import EventOptionalC
 from playground.minimal_workflow.optional_workflow.events.EventOptionalD import EventOptionalD
-from swiss_ai_hub.agent.agents.Agent import Agent
+from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.workflow.decorators.step import step
 
 

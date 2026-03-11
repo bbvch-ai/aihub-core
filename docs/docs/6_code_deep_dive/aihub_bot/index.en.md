@@ -20,16 +20,16 @@ index: 6
 This section covers the foundational architecture, patterns, and terminology you need to know before building a bot.
 
 ::: info
-This documentation assumes you have completed the general Swiss AI Hub setup as described in the main README.md. Make sure you
-have the required infrastructure running before proceeding.
+This documentation assumes you have completed the general Swiss AI Hub setup as described in the main README.md. Make
+sure you have the required infrastructure running before proceeding.
 :::
 
 ### 📚 Introduction to `aihub_bot`
 
 You are contributing to the **aihub_bot** scope, which provides the core logic for building and integrating chatbots
 with platforms like Microsoft Teams and Slack within the Swiss AI Hub platform. This scope implements conversational
-interfaces that connect users to Swiss AI Hub services through familiar collaboration tools, enabling seamless AI interactions
-without context switching.
+interfaces that connect users to Swiss AI Hub services through familiar collaboration tools, enabling seamless AI
+interactions without context switching.
 
 ### 📁 Project Structure
 
@@ -86,8 +86,8 @@ class StreamAgentChatBot(AgentChatBot):
 
 ### 🔗 Bot Framework Integration
 
-The Swiss AI Hub uses Microsoft Bot Framework for channel connectivity, leveraging Azure Bot Service for multi-channel support
-and standardized message processing.
+The Swiss AI Hub uses Microsoft Bot Framework for channel connectivity, leveraging Azure Bot Service for multi-channel
+support and standardized message processing.
 
 **Azure Bot Service Architecture:**
 

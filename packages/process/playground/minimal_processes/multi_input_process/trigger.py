@@ -1,17 +1,17 @@
 import asyncio
 
-from swiss_ai_hub.agent.runners.AgentTestRunner import AgentTestRunner
-from swiss_ai_hub.core.agents.AgentConfig import AgentConfig
-from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.infrastructure.logging.logger import enable_logging
-from swiss_ai_hub.core.processes.ProcessConfig import ProcessConfig
+from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner
+from swiss_ai_hub.core.agents import AgentConfig
+from swiss_ai_hub.core.i18n import LocaleString
+from swiss_ai_hub.core.infrastructure import enable_logging
+from swiss_ai_hub.core.processes import ProcessConfig
 
 from playground.agents.AgentA.AgentA import AgentA
 from playground.agents.AgentA.events.AgentAStartEvent import AgentAStartEvent
 from playground.agents.AgentB.AgentB import AgentB
 from playground.agents.AgentC.AgentC import AgentC
 from playground.minimal_processes.multi_input_process.MultiInputProcess import MultiInputProcess
-from swiss_ai_hub.process.runners.ProcessTestRunner import ProcessTestRunner
+from swiss_ai_hub.process.runners.process_test_runner import ProcessTestRunner
 
 enable_logging()
 

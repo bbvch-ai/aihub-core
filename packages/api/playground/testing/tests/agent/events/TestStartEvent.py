@@ -1,7 +1,7 @@
 from typing import Annotated
 
 from pydantic import Field
-from swiss_ai_hub.core.events.agent.control.start.StartEvent import StartEvent
+from swiss_ai_hub.core.events.agent import StartEvent
 
 
 class TestStartEvent(StartEvent):

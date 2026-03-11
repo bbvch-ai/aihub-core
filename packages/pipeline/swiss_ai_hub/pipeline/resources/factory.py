@@ -1,27 +1,27 @@
 from dagster._config.pythonic_config import ConfigurableResourceFactory
 from dagster_aws.s3 import S3PickleIOManager, S3Resource
-from swiss_ai_hub.core.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
-from swiss_ai_hub.core.generative_ai.resources.models.llm.LLMConfig import LLMConfig
-from swiss_ai_hub.core.infrastructure.milvus.MilvusSettings import MilvusSettings
-from swiss_ai_hub.core.infrastructure.s3.S3StorageSettings import S3StorageSettings
-from swiss_ai_hub.core.persistence.rag.vectors.stores.MilvusVectorStoreFactory import MilvusIndexType
+from swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_model_config import EmbeddingModelConfig
+from swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config import LLMConfig
+from swiss_ai_hub.core.infrastructure import MilvusSettings
+from swiss_ai_hub.core.infrastructure import S3StorageSettings
+from swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_vector_store_factory import MilvusIndexType
 
-from swiss_ai_hub.pipeline.io.AzureDataLakeIOManager import AzureDataLakeIOManager
-from swiss_ai_hub.pipeline.io.DocStoreIOManager import DocStoreIOManager
-from swiss_ai_hub.pipeline.io.S3DataLakeIOManager import S3DataLakeIOManager
-from swiss_ai_hub.pipeline.io.VectorStoreIOManager import VectorStoreIOManager
-from swiss_ai_hub.pipeline.resources.data_lake.azure.AzureDataLakeClientResource import AzureDataLakeClientResource
-from swiss_ai_hub.pipeline.resources.data_lake.azure.AzureDataLakeFileSystemResource import (
+from swiss_ai_hub.pipeline.io.azure_data_lake_io_manager import AzureDataLakeIOManager
+from swiss_ai_hub.pipeline.io.doc_store_io_manager import DocStoreIOManager
+from swiss_ai_hub.pipeline.io.s3_data_lake_io_manager import S3DataLakeIOManager
+from swiss_ai_hub.pipeline.io.vector_store_io_manager import VectorStoreIOManager
+from swiss_ai_hub.pipeline.resources.data_lake.azure.azure_data_lake_client_resource import AzureDataLakeClientResource
+from swiss_ai_hub.pipeline.resources.data_lake.azure.azure_data_lake_file_system_resource import (
     AzureDataLakeFileSystemResource,
 )
-from swiss_ai_hub.pipeline.resources.data_lake.DataLakeResource import DataLakeResource
-from swiss_ai_hub.pipeline.resources.data_lake.s3.S3DataLakeClientResource import S3DataLakeClientResource
-from swiss_ai_hub.pipeline.resources.data_lake.s3.S3DataLakeFileSystemResource import S3DataLakeFileSystemResource
-from swiss_ai_hub.pipeline.resources.doc_store.DocStoreResource import DocStoreResource
-from swiss_ai_hub.pipeline.resources.doc_store.MongoDocumentStoreResource import MongoDocumentStoreResource
-from swiss_ai_hub.pipeline.resources.llm.EmbeddingModelResource import EmbeddingModelResource
-from swiss_ai_hub.pipeline.resources.llm.LanguageModelResource import LanguageModelResource
-from swiss_ai_hub.pipeline.resources.vector_store.MilvusVectorStoreResource import MilvusVectorStoreResource
+from swiss_ai_hub.pipeline.resources.data_lake.data_lake_resource import DataLakeResource
+from swiss_ai_hub.pipeline.resources.data_lake.s3.s3_data_lake_client_resource import S3DataLakeClientResource
+from swiss_ai_hub.pipeline.resources.data_lake.s3.s3_data_lake_file_system_resource import S3DataLakeFileSystemResource
+from swiss_ai_hub.pipeline.resources.doc_store.doc_store_resource import DocStoreResource
+from swiss_ai_hub.pipeline.resources.doc_store.mongo_document_store_resource import MongoDocumentStoreResource
+from swiss_ai_hub.pipeline.resources.llm.embedding_model_resource import EmbeddingModelResource
+from swiss_ai_hub.pipeline.resources.llm.language_model_resource import LanguageModelResource
+from swiss_ai_hub.pipeline.resources.vector_store.milvus_vector_store_resource import MilvusVectorStoreResource
 
 
 def azure_data_lake_resources(

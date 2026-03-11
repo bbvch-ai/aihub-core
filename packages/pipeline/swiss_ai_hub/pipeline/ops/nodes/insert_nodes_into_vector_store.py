@@ -1,7 +1,7 @@
 from dagster import DataVersion, MetadataValue, Out, Output, op
 from llama_index.core.schema import TextNode
 
-from swiss_ai_hub.pipeline.types.RefDocDocument import RefDocDocument
+from swiss_ai_hub.pipeline.types.ref_doc_document import RefDocDocument
 from swiss_ai_hub.pipeline.util.meta_utils import nodes_metadata_table, ref_doc_metadata
 
 

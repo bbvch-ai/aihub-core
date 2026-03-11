@@ -1,18 +1,14 @@
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from pytest_bdd import given, parsers, scenarios, then, when
-from swiss_ai_hub.core.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
-    DangerousDevelopmentOnlyAuthSettings,
-)
-from swiss_ai_hub.core.events.agent.display.ChunkEvent import ChunkEvent
-from swiss_ai_hub.core.events.agent.semantic.llm.LLMEvent import LLMEvent
-from swiss_ai_hub.core.events.agent.user.UserMessageEvent import UserMessageEvent
-from swiss_ai_hub.core.generative_ai.resources.models.llm.LLMConfig import LLMConfig
-from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.testing.asyncio_utils.bdd import async_test
+from swiss_ai_hub.core.auth import DangerousDevelopmentOnlyAuthSettings
+from swiss_ai_hub.core.events.agent import ChunkEvent, LLMEvent, UserMessageEvent
+from swiss_ai_hub.core.generative_ai import LLMConfig
+from swiss_ai_hub.core.i18n import LocaleString
+from swiss_ai_hub.core.testing import async_test
 
 from playground.minimal_workflow.llama_index_workflow.LlamaIndexAgent import LlamaIndexAgent
 from playground.minimal_workflow.llama_index_workflow.LlamaIndexAgentConfig import LlamaIndexAgentConfig
-from swiss_ai_hub.agent.runners.AgentTestRunner import AgentTestRunner
+from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner
 
 scenarios("./features/llama_index_agent.feature")
 

@@ -1,9 +1,9 @@
 from fastapi import Request
 from pymilvus import MilvusClient
 
-from swiss_ai_hub.core.infrastructure.milvus.MilvusSettings import MilvusSettings
+from swiss_ai_hub.core.infrastructure.milvus.milvus_settings import MilvusSettings
 from swiss_ai_hub.core.persistence.rag.vectors import VectorStoreFactory
-from swiss_ai_hub.core.persistence.rag.vectors.stores.MilvusVectorStoreFactory import create_milvus_vector_store
+from swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_vector_store_factory import create_milvus_vector_store
 
 
 def use_vector_store_factory(request: Request) -> VectorStoreFactory:

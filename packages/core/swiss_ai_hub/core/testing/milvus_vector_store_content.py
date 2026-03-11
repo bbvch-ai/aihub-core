@@ -8,8 +8,8 @@ from llama_index.core.schema import TextNode
 from llama_index.storage.docstore.mongodb import MongoDocumentStore
 from pymilvus import MilvusClient
 
-from swiss_ai_hub.core.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
-from swiss_ai_hub.core.infrastructure.milvus.MilvusSettings import MilvusSettings
+from swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_model_config import EmbeddingModelConfig
+from swiss_ai_hub.core.infrastructure.milvus.milvus_settings import MilvusSettings
 from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import (
     CREATED_AT,
     DOCUMENT_ID,
@@ -21,7 +21,7 @@ from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import (
     TYPE,
     UPDATED_AT,
 )
-from swiss_ai_hub.core.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
+from swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_vector_store_config import MilvusVectorStoreConfig
 
 T = TypeVar("T")
 

@@ -1,15 +1,15 @@
 from typing import ClassVar
 
-from swiss_ai_hub.core.events.agent.control.stop.StopEvent import StopEvent
-from swiss_ai_hub.core.i18n.LocaleString import LocaleString
+from swiss_ai_hub.core.events.agent import StopEvent
+from swiss_ai_hub.core.i18n import LocaleString
 
 from playground.minimal_workflow.context_workflow.events.ContextEvent import ContextEvent
 from playground.minimal_workflow.context_workflow.events.CustomStartEvent import (
     CustomStartEvent,
 )
-from swiss_ai_hub.agent.agents.Agent import Agent
-from swiss_ai_hub.agent.context.run.RunContext import RunContext
-from swiss_ai_hub.agent.context.thread.ThreadContext import ThreadContext
+from swiss_ai_hub.agent.agents.agent import Agent
+from swiss_ai_hub.agent.context.run.run_context import RunContext
+from swiss_ai_hub.agent.context.thread.thread_context import ThreadContext
 from swiss_ai_hub.agent.workflow.decorators.step import step
 
 

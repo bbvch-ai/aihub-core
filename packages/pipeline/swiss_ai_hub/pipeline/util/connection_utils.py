@@ -1,5 +1,5 @@
 from mongoengine import connect
-from swiss_ai_hub.core.infrastructure.mongo.MongoSettings import MongoSettings
+from swiss_ai_hub.core.infrastructure import MongoSettings
 
 
 def connect_to_mongo_db(database_name: str | None = None):

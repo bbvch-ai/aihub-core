@@ -1,25 +1,20 @@
-from swiss_ai_hub.core.displayers.EventDisplayer import EventDisplayer
-from swiss_ai_hub.core.events.agent.control.stop.StopEvent import StopEvent
-from swiss_ai_hub.core.events.agent.memory.history.AddOrganizationMemoryToChatHistoryEvent import (
+from swiss_ai_hub.core.displayers import EventDisplayer
+from swiss_ai_hub.core.events.agent import (
     AddOrganizationMemoryToChatHistoryEvent,
-)
-from swiss_ai_hub.core.events.agent.memory.retrieve.RetrieveOrganizationMemoryEvent import (
+    LLMEvent,
     RetrieveOrganizationMemoryEvent,
+    StopEvent,
+    StoreOrganizationMemoryEvent,
+    UserMessageEvent,
 )
-from swiss_ai_hub.core.events.agent.memory.store.StoreOrganizationMemoryEvent import StoreOrganizationMemoryEvent
-from swiss_ai_hub.core.events.agent.semantic.llm.LLMEvent import LLMEvent
-from swiss_ai_hub.core.events.agent.user.UserMessageEvent import UserMessageEvent
-from swiss_ai_hub.core.generative_ai.chat_history.extend_chat_history_with_organization_memory import (
-    extend_chat_history_with_organization_memory,
-)
-from swiss_ai_hub.core.generative_ai.memory.AgentMemory import AgentMemory
-from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
+from swiss_ai_hub.core.generative_ai import AgentMemory, extend_chat_history_with_organization_memory
+from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.topics import AgentInstanceTopic
 
 from playground.minimal_workflow.organization_memory_workflow.OrganizationMemoryAgentConfig import (
     OrganizationMemoryAgentConfig,
 )
-from swiss_ai_hub.agent.agents.Agent import Agent
+from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.workflow.decorators.step import step
 
 

@@ -1,7 +1,7 @@
 from llama_index.core.schema import NodeWithScore
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
 
-from swiss_ai_hub.core.generative_ai.processors.VectorPrevNextPostProcessor import (
+from swiss_ai_hub.core.generative_ai.processors.vector_prev_next_post_processor import (
     ModeOptions,
     VectorPrevNextPostProcessor,
 )

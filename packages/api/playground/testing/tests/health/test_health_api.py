@@ -1,13 +1,13 @@
 import pytest
 from fastapi.testclient import TestClient
-from swiss_ai_hub.core.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
+from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler import (
     DangerousDevelopmentOnlyAuthHandler,
 )
-from swiss_ai_hub.core.routes.health.HealthController import HealthController
-from swiss_ai_hub.core.testing.auth_utils.tenant_mocks import mock_tenant_entity_autouse  # noqa: F401
-from swiss_ai_hub.core.testing.auth_utils.user_mocks import mock_user_entity_autouse  # noqa: F401
+from swiss_ai_hub.core.routes import HealthController
+from swiss_ai_hub.core.testing import mock_tenant_entity_autouse
+from swiss_ai_hub.core.testing import mock_user_entity_autouse
 
-from swiss_ai_hub.api.runners.ApiTestRunner import ApiTestRunner
+from swiss_ai_hub.api.runners.api_test_runner import ApiTestRunner
 
 BASE_ENDPOINT = "/api/v1/health"
 EXPECTED_STATUS = "ok"

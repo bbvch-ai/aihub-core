@@ -1,3 +1,3 @@
-from swiss_ai_hub.api.routes.parsing.ParsingController import ParsingController
+from swiss_ai_hub.api.routes.parsing.parsing_controller import ParsingController
 
 __all__ = ["ParsingController"]

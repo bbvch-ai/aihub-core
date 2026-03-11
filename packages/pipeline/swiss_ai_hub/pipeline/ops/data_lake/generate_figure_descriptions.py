@@ -8,10 +8,10 @@ from llama_index.core.base.llms.types import ImageBlock, TextBlock
 from llama_index.core.llms import LLM
 from llama_index.core.prompts import RichPromptTemplate
 from openai import BadRequestError
-from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
+from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import NODE_CONTENT_TYPE_FIGURE
 
-from swiss_ai_hub.pipeline.types.RefDocDocument import RefDocDocument
+from swiss_ai_hub.pipeline.types.ref_doc_document import RefDocDocument
 
 
 @op(code_version="v1")

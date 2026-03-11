@@ -3,21 +3,21 @@ from unittest.mock import AsyncMock, Mock, patch
 import pytest
 from bson import ObjectId
 from fastapi import HTTPException
-from swiss_ai_hub.core.agents.AgentConfig import AgentConfig
-from swiss_ai_hub.core.auth.identity.UserIdentity import UserIdentity
-from swiss_ai_hub.core.events.agent.user.UserMessageEvent import UserMessageEvent
-from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
-from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.infrastructure.logging.logger import enable_logging
-from swiss_ai_hub.core.persistence.agents.AgentClassEntity import AgentClassEntity
-from swiss_ai_hub.core.persistence.agents.AgentConfigEntityDocument import AgentConfigEntityDocument
-from swiss_ai_hub.core.persistence.messaging.entities.ThreadEntity import ThreadEntity
-from swiss_ai_hub.core.testing.auth_utils.role_mocks import mock_role_entity_methods  # noqa: F401
+from swiss_ai_hub.core.agents import AgentConfig
+from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
+from swiss_ai_hub.core.events.agent import UserMessageEvent
+from swiss_ai_hub.core.i18n import LocaleHandler
+from swiss_ai_hub.core.i18n import LocaleString
+from swiss_ai_hub.core.infrastructure import enable_logging
+from swiss_ai_hub.core.persistence.agents import AgentClassEntity
+from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import AgentConfigEntityDocument
+from swiss_ai_hub.core.persistence.messaging.entities.thread_entity import ThreadEntity
+from swiss_ai_hub.core.testing import mock_role_entity_methods
 
-from swiss_ai_hub.api.routes.agent.AgentService import AgentService
-from swiss_ai_hub.api.routes.agent.dto.FullAgentInstanceDTO import FullAgentInstanceDTO
-from swiss_ai_hub.api.routes.agent.dto.MinimalAgentInstanceDTO import MinimalAgentInstanceDTO
-from swiss_ai_hub.api.routes.thread.ThreadService import ThreadService
+from swiss_ai_hub.api.routes.agent.agent_service import AgentService
+from swiss_ai_hub.api.routes.agent.dto.full_agent_instance_dto import FullAgentInstanceDTO
+from swiss_ai_hub.api.routes.agent.dto.minimal_agent_instance_dto import MinimalAgentInstanceDTO
+from swiss_ai_hub.api.routes.thread.thread_service import ThreadService
 
 enable_logging()
 
@@ -255,7 +255,7 @@ class TestAgentServiceUnit:
         with patch.object(ThreadEntity, "get_thread_by_id") as mock_get_thread:
             mock_get_thread.return_value = mock_thread
 
-            with patch("swiss_ai_hub.api.routes.agent.AgentService.ChatService") as mock_chat_service:
+            with patch("swiss_ai_hub.api.routes.agent.agent_service.ChatService") as mock_chat_service:
                 mock_resources = Mock()
                 mock_resources.stop_signal = Mock()
                 mock_resources.stop_signal.wait = AsyncMock()
@@ -295,7 +295,7 @@ class TestAgentServiceUnit:
         with patch.object(ThreadEntity, "create_thread") as mock_create_thread:
             mock_create_thread.return_value = mock_thread
 
-            with patch("swiss_ai_hub.api.routes.agent.AgentService.ChatService") as mock_chat_service:
+            with patch("swiss_ai_hub.api.routes.agent.agent_service.ChatService") as mock_chat_service:
                 mock_resources = Mock()
                 mock_resources.stop_signal = Mock()
                 mock_resources.stop_signal.wait = AsyncMock()

@@ -1,7 +1,7 @@
 from fastapi import Request, WebSocket
 
-from swiss_ai_hub.api.i18n.ApiLocaleHandler import ApiLocaleHandler
-from swiss_ai_hub.api.i18n.middleware.I18nMiddleware import I18nMiddleware
+from swiss_ai_hub.api.i18n.api_locale_handler import ApiLocaleHandler
+from swiss_ai_hub.api.i18n.middleware.i18n_middleware import I18nMiddleware
 
 
 async def use_locale(request: Request) -> ApiLocaleHandler:

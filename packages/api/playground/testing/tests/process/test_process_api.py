@@ -5,18 +5,19 @@ import pytest
 import pytest_asyncio
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
-from swiss_ai_hub.core.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
+from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler import (
     DangerousDevelopmentOnlyAuthHandler,
 )
-from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.persistence.process.ProcessClassEntity import HumanInSpecsEntity, ProcessClassEntity
-from swiss_ai_hub.core.persistence.process.ProcessConfigEntityDocument import ProcessConfigEntityDocument
-from swiss_ai_hub.core.testing.auth_utils.role_mocks import mock_role_entity_methods  # noqa: F401
-from swiss_ai_hub.core.testing.auth_utils.tenant_mocks import mock_tenant_entity_autouse  # noqa: F401
-from swiss_ai_hub.core.testing.auth_utils.user_mocks import mock_user_entity_autouse  # noqa: F401
+from swiss_ai_hub.core.i18n import LocaleString
+from swiss_ai_hub.core.persistence.process.process_class_entity import HumanInSpecsEntity
+from swiss_ai_hub.core.persistence.process import ProcessClassEntity
+from swiss_ai_hub.core.persistence.process.process_config_entity_document import ProcessConfigEntityDocument
+from swiss_ai_hub.core.testing import mock_role_entity_methods
+from swiss_ai_hub.core.testing import mock_tenant_entity_autouse
+from swiss_ai_hub.core.testing import mock_user_entity_autouse
 
-from swiss_ai_hub.api.routes.process.ProcessController import ProcessController
-from swiss_ai_hub.api.runners.simulation.process.SimulatedProcessApiTestRunner import SimulatedProcessApiTestRunner
+from swiss_ai_hub.api.routes.process.process_controller import ProcessController
+from swiss_ai_hub.api.runners.simulation.process.simulated_process_api_test_runner import SimulatedProcessApiTestRunner
 
 PROCESS_CLASS = "test_process"
 PROCESS_ID = "test_process_1"

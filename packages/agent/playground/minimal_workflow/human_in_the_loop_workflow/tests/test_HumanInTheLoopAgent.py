@@ -1,14 +1,12 @@
 from pytest_bdd import given, parsers, scenarios, then, when
-from swiss_ai_hub.core.events.agent.control.start.StartEvent import StartEvent
-from swiss_ai_hub.core.events.agent.hitl.HumanInTheLoopInput import HumanInTheLoopInput
-from swiss_ai_hub.core.events.agent.hitl.request.HumanInTheLoopInputRequestEvent import (
+from swiss_ai_hub.core.events.agent import (
+    HumanInTheLoopInput,
     HumanInTheLoopInputRequestEvent,
-)
-from swiss_ai_hub.core.events.agent.hitl.response.HumanInTheLoopInputResponseEvent import (
     HumanInTheLoopInputResponseEvent,
+    StartEvent,
 )
-from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.testing.asyncio_utils.bdd import async_test
+from swiss_ai_hub.core.i18n import LocaleString
+from swiss_ai_hub.core.testing import async_test
 
 from playground.minimal_workflow.human_in_the_loop_workflow.HumanInTheLoopAgent import (
     HumanInTheLoopAgent,
@@ -16,7 +14,7 @@ from playground.minimal_workflow.human_in_the_loop_workflow.HumanInTheLoopAgent 
 from playground.minimal_workflow.human_in_the_loop_workflow.HumanInTheLoopAgentConfig import (
     HumanInTheLoopAgentConfig,
 )
-from swiss_ai_hub.agent.runners.AgentTestRunner import AgentTestRunner
+from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner
 
 # Link this test file to your .feature file:
 scenarios("./features/human_in_the_loop_agent.feature")

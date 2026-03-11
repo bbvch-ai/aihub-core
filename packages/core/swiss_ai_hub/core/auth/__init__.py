@@ -1,27 +1,31 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from swiss_ai_hub.core.auth.access.AccessChecker import AccessChecker
-    from swiss_ai_hub.core.auth.access.AccessLevel import AccessLevel
-    from swiss_ai_hub.core.auth.dependencies.AuthHandler import AuthHandler
-    from swiss_ai_hub.core.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
+    from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
+    from swiss_ai_hub.core.auth.access.access_level import AccessLevel
+    from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
+    from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler import (
+    from swiss_ai_hub.core.auth.dependencies.token_and_oauth2_handler.token_and_oauth2_handler import TokenAndOauth2Handler
+    from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler import DangerousDevelopmentOnlyAuthHandler
+    from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_settings import DangerousDevelopmentOnlyAuthSettings
         DangerousDevelopmentOnlyAuthHandler,
     )
-    from swiss_ai_hub.core.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
+    from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_settings import (
         DangerousDevelopmentOnlyAuthSettings,
     )
-    from swiss_ai_hub.core.auth.dependencies.SuperuserAuthHandler.SuperuserSettings import SuperuserSettings
-    from swiss_ai_hub.core.auth.dependencies.TokenAuthHandler.TokenAuthHandler import TokenAuthHandler
-    from swiss_ai_hub.core.auth.identity.TenantIdentity import TenantIdentity
-    from swiss_ai_hub.core.auth.identity.UserIdentity import UserIdentity
+    from swiss_ai_hub.core.auth.dependencies.superuser_auth_handler.superuser_settings import SuperuserSettings
+    from swiss_ai_hub.core.auth.dependencies.token_auth_handler.token_auth_handler import TokenAuthHandler
+    from swiss_ai_hub.core.auth.identity.tenant_identity import TenantIdentity
+    from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 
 # KeycloakAuthHandler and TokenAndOauth2Handler are excluded because KeycloakAuthHandler
 # instantiates KeycloakSettings() at class definition time, requiring KEYCLOAK_URL to be set.
 # Import them directly:
-#   from swiss_ai_hub.core.auth.dependencies.KeycloakAuthHandler.KeycloakAuthHandler import KeycloakAuthHandler
-#   from swiss_ai_hub.core.auth.dependencies.TokenAndOauth2Handler.TokenAndOauth2Handler import TokenAndOauth2Handler
+#   from swiss_ai_hub.core.auth.dependencies.keycloak_auth_handler.keycloak_auth_handler import KeycloakAuthHandler
+#   from swiss_ai_hub.core.auth.dependencies.token_and_oauth2_handler.token_and_oauth2_handler import TokenAndOauth2Handler
 
 __all__ = [
+    "TokenAndOauth2Handler",
     "AccessChecker",
     "AccessLevel",
     "AuthHandler",
@@ -34,15 +38,16 @@ __all__ = [
 ]
 
 _LAZY_IMPORTS = {
-    "AccessChecker": "swiss_ai_hub.core.auth.access.AccessChecker",
-    "AccessLevel": "swiss_ai_hub.core.auth.access.AccessLevel",
-    "AuthHandler": "swiss_ai_hub.core.auth.dependencies.AuthHandler",
-    "DangerousDevelopmentOnlyAuthHandler": "swiss_ai_hub.core.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler",
-    "DangerousDevelopmentOnlyAuthSettings": "swiss_ai_hub.core.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings",
-    "SuperuserSettings": "swiss_ai_hub.core.auth.dependencies.SuperuserAuthHandler.SuperuserSettings",
-    "TenantIdentity": "swiss_ai_hub.core.auth.identity.TenantIdentity",
-    "TokenAuthHandler": "swiss_ai_hub.core.auth.dependencies.TokenAuthHandler.TokenAuthHandler",
-    "UserIdentity": "swiss_ai_hub.core.auth.identity.UserIdentity",
+    "TokenAndOauth2Handler": "swiss_ai_hub.core.auth.dependencies.token_and_oauth2_handler.token_and_oauth2_handler",
+    "AccessChecker": "swiss_ai_hub.core.auth.access.access_checker",
+    "AccessLevel": "swiss_ai_hub.core.auth.access.access_level",
+    "AuthHandler": "swiss_ai_hub.core.auth.dependencies.auth_handler",
+    "DangerousDevelopmentOnlyAuthHandler": "swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler",
+    "DangerousDevelopmentOnlyAuthSettings": "swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_settings",
+    "SuperuserSettings": "swiss_ai_hub.core.auth.dependencies.superuser_auth_handler.superuser_settings",
+    "TenantIdentity": "swiss_ai_hub.core.auth.identity.tenant_identity",
+    "TokenAuthHandler": "swiss_ai_hub.core.auth.dependencies.token_auth_handler.token_auth_handler",
+    "UserIdentity": "swiss_ai_hub.core.auth.identity.user_identity",
 }
 
 
@@ -50,6 +55,8 @@ def __getattr__(name: str):
     if name in _LAZY_IMPORTS:
         from importlib import import_module
 
-        return getattr(import_module(_LAZY_IMPORTS[name]), name)
+        value = getattr(import_module(_LAZY_IMPORTS[name]), name)
+        globals()[name] = value
+        return value
     msg = f"module {__name__!r} has no attribute {name!r}"
     raise AttributeError(msg)

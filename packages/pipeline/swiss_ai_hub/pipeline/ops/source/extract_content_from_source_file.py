@@ -1,6 +1,6 @@
 from dagster import op
 
-from swiss_ai_hub.pipeline.types.SourceFile import SourceFile
+from swiss_ai_hub.pipeline.types.source_file import SourceFile
 
 
 @op(code_version="v1")

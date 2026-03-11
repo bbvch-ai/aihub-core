@@ -1,16 +1,16 @@
 # ruff: noqa: E402
-from swiss_ai_hub.core.infrastructure.opentelemetry.AihubInstrumentor import AihubInstrumentor  # isort: skip
+from swiss_ai_hub.core.infrastructure import AihubInstrumentor  # isort: skip
 
 AihubInstrumentor().instrument()
 
 import asyncio
 
-from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.infrastructure.logging.logger import enable_logging
+from swiss_ai_hub.core.i18n import LocaleString
+from swiss_ai_hub.core.infrastructure import enable_logging
 
 from playground.agent.HitlDemoAgent.HitlDemoAgent import HitlDemoAgent
 from playground.agent.HitlDemoAgent.HitlDemoAgentConfig import HitlDemoAgentConfig
-from swiss_ai_hub.agent.runners.AgentTestRunner import AgentTestRunner
+from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner
 
 enable_logging()
 

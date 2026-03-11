@@ -1,10 +1,10 @@
 import asyncio
 
-from swiss_ai_hub.core.infrastructure.logging.logger import enable_logging
+from swiss_ai_hub.core.infrastructure import enable_logging
 
 from playground.AgenticCVProcess.AgenticCVProcess import AgenticCVProcess
 from playground.AgenticCVProcess.AgenticCVProcessConfig import AgenticCVProcessConfig
-from swiss_ai_hub.process.runners.ProcessTestRunner import ProcessTestRunner
+from swiss_ai_hub.process.runners.process_test_runner import ProcessTestRunner
 
 enable_logging()
 

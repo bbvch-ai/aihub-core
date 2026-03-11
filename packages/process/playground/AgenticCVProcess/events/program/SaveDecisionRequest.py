@@ -1,4 +1,4 @@
-from swiss_ai_hub.core.events.process.work_request.program.ProgramWorkRequestEvent import ProgramWorkRequestEvent
+from swiss_ai_hub.core.events.process import ProgramWorkRequestEvent
 
 
 class SaveDecisionRequest(ProgramWorkRequestEvent):

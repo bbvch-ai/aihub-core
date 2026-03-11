@@ -1,6 +1,6 @@
 import asyncio
 
-from swiss_ai_hub.core.i18n.LocaleString import LocaleString
+from swiss_ai_hub.core.i18n import LocaleString
 
 from playground.minimal_workflow.context_workflow.ContextAgent import ContextAgent
 from playground.minimal_workflow.context_workflow.ContextAgentConfig import (
@@ -9,7 +9,7 @@ from playground.minimal_workflow.context_workflow.ContextAgentConfig import (
 from playground.minimal_workflow.context_workflow.events.CustomStartEvent import (
     CustomStartEvent,
 )
-from swiss_ai_hub.agent.runners.AgentTestRunner import AgentTestRunner
+from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner
 
 THREAD_ID = "6756ddb05c399b888009a559"
 

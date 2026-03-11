@@ -8,7 +8,7 @@ from swiss_ai_hub.pipeline.ops.nodes.delete_nodes_for_ref_doc import delete_node
 from swiss_ai_hub.pipeline.ops.nodes.embed_nodes import embed_nodes
 from swiss_ai_hub.pipeline.ops.nodes.ensure_node_default_metadata import ensure_node_default_metadata
 from swiss_ai_hub.pipeline.ops.nodes.insert_nodes_into_vector_store import insert_nodes_into_vector_store
-from swiss_ai_hub.pipeline.types.RefDocDocument import RefDocDocument
+from swiss_ai_hub.pipeline.types.ref_doc_document import RefDocDocument
 from swiss_ai_hub.pipeline.util.key_utils import group_name_from_asset_key
 
 

@@ -1,10 +1,10 @@
 from functools import cache
 from typing import TYPE_CHECKING, Annotated, Union, get_args, get_origin
 
-from swiss_ai_hub.core.workflow.annotations.custom_types.ListOfSize import ListOfSize
+from swiss_ai_hub.core.workflow.annotations.custom_types.list_of_size import ListOfSize
 
 if TYPE_CHECKING:
-    from swiss_ai_hub.core.events.BaseEvent import BaseEvent
+    from swiss_ai_hub.core.events.base_event import BaseEvent
 
 
 def get_parent_classes_until_base(cls: type, base_class: type):

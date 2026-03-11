@@ -7,7 +7,7 @@ Azure Blob Storage Pipeline
 4. Open http://localhost:3000
 """
 
-from swiss_ai_hub.core.infrastructure.rclone.RcloneSourceFactory import azure_blob_source
+from swiss_ai_hub.core.infrastructure import azure_blob_source
 
 from swiss_ai_hub.pipeline.util.definitions_util import default_rclone_to_datalake_definitions
 

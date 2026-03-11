@@ -2,7 +2,7 @@ from unittest.mock import patch
 
 import pytest
 
-from swiss_ai_hub.core.persistence.access.entities.RoleEntity import RoleEntity
+from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
 
 
 @pytest.fixture(autouse=True)

@@ -7,34 +7,34 @@ from botocore.config import Config
 from fastapi import FastAPI
 from mongoengine import connect, disconnect
 from pymilvus import MilvusClient
-from swiss_ai_hub.core.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
-from swiss_ai_hub.core.distributor.ExternalProcessEventDistributor import ExternalProcessEventDistributor
-from swiss_ai_hub.core.infrastructure.api.AIHubSettings import AIHubSettings
-from swiss_ai_hub.core.infrastructure.langfuse.LangfuseProvisioner import LangfuseProvisioner
-from swiss_ai_hub.core.infrastructure.milvus.MilvusSettings import MilvusSettings
-from swiss_ai_hub.core.infrastructure.mongo.MongoSettings import MongoSettings
-from swiss_ai_hub.core.infrastructure.nats.NatsSettings import NatsSettings
-from swiss_ai_hub.core.infrastructure.redis.RedisSettings import RedisSettings
-from swiss_ai_hub.core.infrastructure.s3.S3StorageSettings import S3StorageSettings
-from swiss_ai_hub.core.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
-from swiss_ai_hub.core.subscribers.process.ProcessNCSubscriber import ProcessNCSubscriber
-from swiss_ai_hub.core.topic_managers.agents.AgentTopicManager import AgentTopicManager
-from swiss_ai_hub.core.topic_managers.process.ProcessTopicManager import ProcessTopicManager
+from swiss_ai_hub.core.distributor import ExternalAgentEventDistributor
+from swiss_ai_hub.core.distributor import ExternalProcessEventDistributor
+from swiss_ai_hub.core.infrastructure import AIHubSettings
+from swiss_ai_hub.core.infrastructure import LangfuseProvisioner
+from swiss_ai_hub.core.infrastructure import MilvusSettings
+from swiss_ai_hub.core.infrastructure import MongoSettings
+from swiss_ai_hub.core.infrastructure import NatsSettings
+from swiss_ai_hub.core.infrastructure import RedisSettings
+from swiss_ai_hub.core.infrastructure import S3StorageSettings
+from swiss_ai_hub.core.subscribers import AgentNCSubscriber
+from swiss_ai_hub.core.subscribers import ProcessNCSubscriber
+from swiss_ai_hub.core.topic_managers import AgentTopicManager
+from swiss_ai_hub.core.topic_managers import ProcessTopicManager
 
-from swiss_ai_hub.api.i18n.ApiLocaleHandler import ApiLocaleHandler
-from swiss_ai_hub.api.persistance.events.EventPersister import EventPersister
-from swiss_ai_hub.api.routes.agent.AgentFileUploadService import AgentFileUploadService
-from swiss_ai_hub.api.rpc.AgentConfigResponder import AgentConfigResponder
-from swiss_ai_hub.api.rpc.ProcessConfigResponder import ProcessConfigResponder
+from swiss_ai_hub.api.i18n.api_locale_handler import ApiLocaleHandler
+from swiss_ai_hub.api.persistance.events.event_persister import EventPersister
+from swiss_ai_hub.api.routes.agent.agent_file_upload_service import AgentFileUploadService
+from swiss_ai_hub.api.rpc.agent_config_responder import AgentConfigResponder
+from swiss_ai_hub.api.rpc.process_config_responder import ProcessConfigResponder
 from swiss_ai_hub.api.runners.lifetime.initialize_db import (
     initialize_default_tenant,
     initialize_knowledge_buckets,
     initialize_roles,
 )
-from swiss_ai_hub.api.services.AgentEndpointsDiscoveryService import AgentEndpointsDiscoveryService
-from swiss_ai_hub.api.services.ProcessEndpointsDiscoveryService import ProcessEndpointsDiscoveryService
-from swiss_ai_hub.api.sockets.manager.WebSocketManager import WebSocketManager
-from swiss_ai_hub.api.sockets.sender.WebSocketSender import WebSocketSender
+from swiss_ai_hub.api.services.agent_endpoints_discovery_service import AgentEndpointsDiscoveryService
+from swiss_ai_hub.api.services.process_endpoints_discovery_service import ProcessEndpointsDiscoveryService
+from swiss_ai_hub.api.sockets.manager.web_socket_manager import WebSocketManager
+from swiss_ai_hub.api.sockets.sender.web_socket_sender import WebSocketSender
 
 logger = logging.getLogger(__name__)
 

@@ -2,11 +2,8 @@ from typing import Any, NamedTuple, TypeVar
 
 from fastapi import HTTPException
 from pydantic import BaseModel, ValidationError
-from swiss_ai_hub.core.form.normalization import (
-    normalize_empty_locale_strings,
-    normalize_empty_objects_to_none,
-)
-from swiss_ai_hub.core.persistence.i18n.LocaleStringEntity import LocaleStringEntity
+from swiss_ai_hub.core.form import normalize_empty_locale_strings, normalize_empty_objects_to_none
+from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
 
 
 class ConfigMetadata(NamedTuple):

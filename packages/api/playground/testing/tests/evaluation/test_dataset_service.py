@@ -6,9 +6,9 @@ from unittest.mock import MagicMock, patch
 import pytest
 from fastapi import HTTPException
 
-from swiss_ai_hub.api.routes.evaluation.DatasetService import DatasetService
-from swiss_ai_hub.api.routes.evaluation.dto.dataset.DatasetCreate import DatasetCreate
-from swiss_ai_hub.api.routes.evaluation.dto.dataset.DatasetItemCreate import DatasetItemCreate
+from swiss_ai_hub.api.routes.evaluation.dataset_service import DatasetService
+from swiss_ai_hub.api.routes.evaluation.dto.dataset.dataset_create import DatasetCreate
+from swiss_ai_hub.api.routes.evaluation.dto.dataset.dataset_item_create import DatasetItemCreate
 
 
 def _mock_langfuse_dataset(
@@ -130,7 +130,7 @@ class TestCreateDataset:
             items=[DatasetItemCreate(question="Q?", answer="A!")],
         )
 
-        with patch("swiss_ai_hub.api.routes.evaluation.DatasetService.trace_fn", lambda fn: fn):
+        with patch("swiss_ai_hub.api.routes.evaluation.dataset_service.trace_fn", lambda fn: fn):
             result = await service.create_dataset(dto)
 
         assert result.id == "ds-new"
@@ -148,7 +148,7 @@ class TestCreateDataset:
 
         dto = DatasetCreate(dataset_name="empty-ds", items=[])
 
-        with patch("swiss_ai_hub.api.routes.evaluation.DatasetService.trace_fn", lambda fn: fn):
+        with patch("swiss_ai_hub.api.routes.evaluation.dataset_service.trace_fn", lambda fn: fn):
             result = await service.create_dataset(dto)
 
         assert result.id == "ds-empty"

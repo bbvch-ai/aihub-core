@@ -4,8 +4,8 @@ from swiss_ai_hub.pipeline.ops.source.extract_content_from_source_file import ex
 from swiss_ai_hub.pipeline.ops.source.extract_metadata_from_source_file import extract_metadata_from_source_file
 from swiss_ai_hub.pipeline.ops.source.extract_uri_from_source_file import extract_uri_from_source_file
 from swiss_ai_hub.pipeline.ops.source.transform_to_data_lake_file import transform_to_data_lake_file
-from swiss_ai_hub.pipeline.types.DataLakeFile import DataLakeFile
-from swiss_ai_hub.pipeline.types.SourceFile import SourceFile
+from swiss_ai_hub.pipeline.types.data_lake_file import DataLakeFile
+from swiss_ai_hub.pipeline.types.source_file import SourceFile
 from swiss_ai_hub.pipeline.util.key_utils import group_name_from_asset_key
 
 

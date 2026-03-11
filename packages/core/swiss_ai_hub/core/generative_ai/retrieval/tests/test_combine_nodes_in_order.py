@@ -3,10 +3,10 @@ from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.schema import NodeWithScore, TextNode
 from pytest_bdd import given, scenarios, then, when
 
-from swiss_ai_hub.core.generative_ai.document.types.IngestedNode import IngestedNode
+from swiss_ai_hub.core.generative_ai.document.types.ingested_node import IngestedNode
 from swiss_ai_hub.core.generative_ai.retrieval.combine_nodes_in_order import combine_nodes_in_order
-from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
-from swiss_ai_hub.core.i18n.LocaleString import LocaleString
+from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
+from swiss_ai_hub.core.i18n.locale_string import LocaleString
 from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import (
     CREATED_AT,
     DOCUMENT_ID,

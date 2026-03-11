@@ -10,17 +10,15 @@ from typing import Any
 from bson import ObjectId
 from nats.aio.client import Client as NATS
 from nats.js.api import StreamConfig
-from swiss_ai_hub.core.events.BaseEvent import BaseEvent
-from swiss_ai_hub.core.events.agent.control.start.StartEvent import StartEvent
-from swiss_ai_hub.core.events.agent.control.stop.StopEvent import StopEvent
+from swiss_ai_hub.core.events import BaseEvent
+from swiss_ai_hub.core.events.agent import StartEvent, StopEvent
 
 # For NATS JS benchmarking
-from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.infrastructure.nats.NatsSettings import NatsSettings
-from swiss_ai_hub.core.publishers.JSPublisher import JSPublisher
-from swiss_ai_hub.core.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
-from swiss_ai_hub.core.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
-from swiss_ai_hub.core.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
+from swiss_ai_hub.core.i18n import LocaleString
+from swiss_ai_hub.core.infrastructure import NatsSettings
+from swiss_ai_hub.core.publishers import JSPublisher
+from swiss_ai_hub.core.subscribers import AgentNCSubscriber
+from swiss_ai_hub.core.topic_managers import AgentInstanceTopicManager, AgentThreadTopicManager
 from swiss_ai_hub.core.topics import Topic
 from tabulate import tabulate
 from tqdm import tqdm
@@ -30,7 +28,7 @@ from playground.performance.PerformanceTestingAgent.PerformanceTestingAgent impo
 from playground.performance.PerformanceTestingAgent.PerformanceTestingAgentConfig import (
     PerformanceTestingAgentConfig,
 )
-from swiss_ai_hub.agent.runners.MultiprocessAgentRunner import MultiprocessAgentRunner
+from swiss_ai_hub.agent.runners.multiprocess_agent_runner import MultiprocessAgentRunner
 
 
 # ====== NATS JetStream Benchmark ======

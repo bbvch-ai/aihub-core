@@ -1,14 +1,14 @@
 import asyncio
 
-from swiss_ai_hub.core.events.agent.control.start.StartEvent import StartEvent
-from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.infrastructure.logging.logger import enable_logging
+from swiss_ai_hub.core.events.agent import StartEvent
+from swiss_ai_hub.core.i18n import LocaleString
+from swiss_ai_hub.core.infrastructure import enable_logging
 
 from playground.minimal_workflow.fan_out_workflow.FanOutAgent import FanOutAgent
 from playground.minimal_workflow.fan_out_workflow.FanOutAgentConfig import (
     FanOutAgentConfig,
 )
-from swiss_ai_hub.agent.runners.AgentTestRunner import AgentTestRunner
+from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner
 
 enable_logging()
 

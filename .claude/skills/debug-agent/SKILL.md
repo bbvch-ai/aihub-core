@@ -398,7 +398,7 @@ ______________________________________________________________________
 1. **Check NATS server**: Use `mcp__nats__server_info`
 
    - Look for: Server running, connections active
-   - If this fails: Docker dev stack isn't running (`docker compose -f docker-compose.dev.yml up -d`)
+   - If this fails: Docker dev stack isn't running (`docker compose -f infra/docker-compose.dev.yml up -d`)
 
 2. **Check streams exist**: Use `mcp__nats__stream_list`
 

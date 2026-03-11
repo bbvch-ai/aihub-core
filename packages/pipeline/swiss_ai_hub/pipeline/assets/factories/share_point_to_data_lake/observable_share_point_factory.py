@@ -10,8 +10,8 @@ from dagster import (
 from swiss_ai_hub.pipeline.ops.share_point.data_version_by_partition_for_share_point_files_no_op import (
     data_version_by_partition_for_share_point_files_no_op,
 )
-from swiss_ai_hub.pipeline.resources.share_point.SharePointResource import SharePointResource
-from swiss_ai_hub.pipeline.types.SharePointFile import MinimalSharePointFile
+from swiss_ai_hub.pipeline.resources.share_point.share_point_resource import SharePointResource
+from swiss_ai_hub.pipeline.types.share_point_file import MinimalSharePointFile
 from swiss_ai_hub.pipeline.util.key_utils import group_name_from_asset_key
 
 

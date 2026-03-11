@@ -2,11 +2,11 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from swiss_ai_hub.core.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (  # noqa: E501
+from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_settings import (  # noqa: E501
     DangerousDevelopmentOnlyAuthSettings,
 )
-from swiss_ai_hub.core.persistence.access.entities.TenantEntity import TenantEntity
-from swiss_ai_hub.core.persistence.access.entities.UserTenantRoleEntity import UserTenantRoleEntity
+from swiss_ai_hub.core.persistence.access.entities.tenant_entity import TenantEntity
+from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 
 TEST_TENANT_ID = "__test_default_tenant__"
 TEST_TENANT_NAME = "Test Default Tenant"

@@ -1,16 +1,16 @@
 from bson import ObjectId
 from pytest_bdd import given, parsers, scenarios, then, when
-from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.infrastructure.logging.logger import enable_logging
-from swiss_ai_hub.core.processes.ProcessConfig import ProcessConfig
-from swiss_ai_hub.core.testing.asyncio_utils.bdd import async_test
+from swiss_ai_hub.core.i18n import LocaleString
+from swiss_ai_hub.core.infrastructure import enable_logging
+from swiss_ai_hub.core.processes import ProcessConfig
+from swiss_ai_hub.core.testing import async_test
 
 from playground.events.CustomProcessStopEvent import CustomProcessStopEvent
 from playground.events.HumanAWork import HumanAWork
 from playground.events.HumanBWork import HumanBWork
 from playground.events.HumanBWorkReqeust import HumanBWorkRequest
 from playground.minimal_processes.human_only_process.HumanOnlyProcess import HumanOnlyProcess
-from swiss_ai_hub.process.runners.ProcessTestRunner import ProcessTestRunner
+from swiss_ai_hub.process.runners.process_test_runner import ProcessTestRunner
 
 scenarios("./features/human_only_process.feature")
 

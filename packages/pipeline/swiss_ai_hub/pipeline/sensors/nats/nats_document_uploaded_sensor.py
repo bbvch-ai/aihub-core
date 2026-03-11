@@ -4,10 +4,10 @@ from typing import Annotated
 
 from dagster import DefaultSensorStatus, RunRequest, SensorEvaluationContext, sensor
 from dagster._core.definitions.target import ExecutableDefinition
-from swiss_ai_hub.core.events.pipeline.SourceUpdatedEvent import SourceUpdatedEvent
-from swiss_ai_hub.core.infrastructure.nats.NatsSettings import NatsSettings
-from swiss_ai_hub.core.polling.JSPoller import JSPoller
-from swiss_ai_hub.core.topic_managers.pipeline.PipelineInstanceTopicManager import PipelineInstanceTopicManager
+from swiss_ai_hub.core.events.pipeline import SourceUpdatedEvent
+from swiss_ai_hub.core.infrastructure import NatsSettings
+from swiss_ai_hub.core.polling import JSPoller
+from swiss_ai_hub.core.topic_managers import PipelineInstanceTopicManager
 
 logger = logging.getLogger(__name__)
 

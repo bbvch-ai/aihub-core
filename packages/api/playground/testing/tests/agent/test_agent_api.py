@@ -3,18 +3,18 @@ import pytest_asyncio
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
 from llama_index.core.base.llms.types import ChatMessage
-from swiss_ai_hub.core.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
+from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler import (
     DangerousDevelopmentOnlyAuthHandler,
 )
-from swiss_ai_hub.core.events.agent.user.UserMessageEvent import UserMessageEvent
-from swiss_ai_hub.core.infrastructure.logging.logger import enable_logging
-from swiss_ai_hub.core.testing.auth_utils.role_mocks import mock_role_entity_methods  # noqa: F401
-from swiss_ai_hub.core.testing.auth_utils.tenant_mocks import mock_tenant_entity_autouse  # noqa: F401
-from swiss_ai_hub.core.testing.auth_utils.user_mocks import mock_user_entity_autouse  # noqa: F401
+from swiss_ai_hub.core.events.agent import UserMessageEvent
+from swiss_ai_hub.core.infrastructure import enable_logging
+from swiss_ai_hub.core.testing import mock_role_entity_methods
+from swiss_ai_hub.core.testing import mock_tenant_entity_autouse
+from swiss_ai_hub.core.testing import mock_user_entity_autouse
 
-from swiss_ai_hub.api.routes.agent.AgentController import AgentController
-from swiss_ai_hub.api.runners.simulation.agent.SimulatedAgentApiTestRunner import SimulatedAgentApiTestRunner
-from swiss_ai_hub.api.services.ModelCreationService import ModelCreationService
+from swiss_ai_hub.api.routes.agent.agent_controller import AgentController
+from swiss_ai_hub.api.runners.simulation.agent.simulated_agent_api_test_runner import SimulatedAgentApiTestRunner
+from swiss_ai_hub.api.services.model_creation_service import ModelCreationService
 
 AGENT_CLASS = "TestAgent"
 AGENT_ID = "test_agent_1"

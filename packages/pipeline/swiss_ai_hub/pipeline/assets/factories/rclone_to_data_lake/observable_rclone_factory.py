@@ -9,7 +9,7 @@ from dagster import (
 from swiss_ai_hub.pipeline.ops.rclone.data_version_by_partition_for_rclone_files import (
     data_version_by_partition_for_rclone_files,
 )
-from swiss_ai_hub.pipeline.resources.rclone.RcloneResource import RcloneResource
+from swiss_ai_hub.pipeline.resources.rclone.rclone_resource import RcloneResource
 from swiss_ai_hub.pipeline.util.key_utils import group_name_from_asset_key
 
 

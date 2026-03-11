@@ -6,9 +6,9 @@ from playground.events.AgentAWork import AgentAWork
 from playground.events.AgentBWorkRequest import AgentBWorkRequest
 from playground.events.AgentCWorkRequest import AgentCWorkRequest
 from playground.events.CustomProcessStopEvent import CustomProcessStopEvent
-from swiss_ai_hub.process.agentic_processes.AgenticProcess import AgenticProcess
-from swiss_ai_hub.process.delegators.agent.Agent import Agent
-from swiss_ai_hub.process.delegators.process.Process import Process
+from swiss_ai_hub.process.agentic_processes.agentic_process import AgenticProcess
+from swiss_ai_hub.process.delegators.agent.agent import Agent
+from swiss_ai_hub.process.delegators.process.process import Process
 from swiss_ai_hub.process.process.decorators.process_step import process_step
 
 

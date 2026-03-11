@@ -1,9 +1,9 @@
 from unittest.mock import patch
 
 from pytest_bdd import given, parsers, scenarios, then, when
-from swiss_ai_hub.core.events.agent.control.start.StartEvent import StartEvent
-from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.testing.asyncio_utils.bdd import async_test
+from swiss_ai_hub.core.events.agent import StartEvent
+from swiss_ai_hub.core.i18n import LocaleString
+from swiss_ai_hub.core.testing import async_test
 
 from playground.minimal_workflow.conditional_workflow.ConditionalAgent import (
     ConditionalAgent,
@@ -13,7 +13,7 @@ from playground.minimal_workflow.conditional_workflow.ConditionalAgentConfig imp
 )
 from playground.minimal_workflow.conditional_workflow.events.AboveThresholdEvent import AboveThresholdEvent
 from playground.minimal_workflow.conditional_workflow.events.BelowThresholdEvent import BelowThresholdEvent
-from swiss_ai_hub.agent.runners.AgentTestRunner import AgentTestRunner
+from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner
 
 scenarios("features/conditional_agent.feature")
 

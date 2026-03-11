@@ -2,7 +2,7 @@ from functools import cache
 
 from llama_index.storage.docstore.mongodb import MongoDocumentStore
 
-from swiss_ai_hub.core.infrastructure.mongo.MongoSettings import MongoSettings
+from swiss_ai_hub.core.infrastructure.mongo.mongo_settings import MongoSettings
 
 
 @cache

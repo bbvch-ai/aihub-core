@@ -4,9 +4,9 @@ from collections import defaultdict
 from llama_index.core.base.llms.types import ChatMessage, ImageBlock, TextBlock
 from llama_index.core.prompts import RichPromptTemplate
 
-from swiss_ai_hub.core.generative_ai.document.types.IngestedNode import IngestedNode
-from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
-from swiss_ai_hub.core.i18n.LocaleString import LocaleString
+from swiss_ai_hub.core.generative_ai.document.types.ingested_node import IngestedNode
+from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
+from swiss_ai_hub.core.i18n.locale_string import LocaleString
 from swiss_ai_hub.core.infrastructure.s3.use_s3 import create_s3_service
 from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import (
     CREATED_AT,

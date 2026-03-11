@@ -8,16 +8,16 @@ including tenants, roles, permissions, and other essential entities needed for t
 import logging
 
 from mongoengine import DoesNotExist
-from swiss_ai_hub.core.auth.dependencies.SuperuserAuthHandler.SuperuserSettings import SuperuserSettings
-from swiss_ai_hub.core.infrastructure.api.AIHubSettings import AIHubSettings
-from swiss_ai_hub.core.infrastructure.api.DefaultTenantSettings import DefaultTenantSettings
-from swiss_ai_hub.core.infrastructure.api.UserSignupSettings import UserSignupSettings
-from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.no_trace import no_trace
-from swiss_ai_hub.core.persistence.access.entities.RoleEntity import RoleEntity
-from swiss_ai_hub.core.persistence.access.entities.TenantEntity import TenantEntity
-from swiss_ai_hub.core.persistence.rag.datalake.entities.BucketEntity import BucketEntity
-from swiss_ai_hub.core.persistence.rag.datalake.entities.NamespaceEntity import NamespaceEntity
-from swiss_ai_hub.core.persistence.user.UserEntity import UserEntity
+from swiss_ai_hub.core.auth.dependencies.superuser_auth_handler.superuser_settings import SuperuserSettings
+from swiss_ai_hub.core.infrastructure import AIHubSettings
+from swiss_ai_hub.core.infrastructure import DefaultTenantSettings
+from swiss_ai_hub.core.infrastructure import UserSignupSettings
+from swiss_ai_hub.core.infrastructure import no_trace
+from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
+from swiss_ai_hub.core.persistence.access.entities.tenant_entity import TenantEntity
+from swiss_ai_hub.core.persistence.rag.datalake.entities import BucketEntity
+from swiss_ai_hub.core.persistence.rag.datalake.entities import NamespaceEntity
+from swiss_ai_hub.core.persistence.user.user_entity import UserEntity
 
 logger = logging.getLogger(__name__)
 

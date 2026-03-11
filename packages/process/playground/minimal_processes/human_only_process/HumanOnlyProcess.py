@@ -1,15 +1,15 @@
 from typing import Annotated
 
-from swiss_ai_hub.core.form.elements.InputText import InputText
-from swiss_ai_hub.core.i18n.LocaleString import LocaleString
+from swiss_ai_hub.core.form import InputText
+from swiss_ai_hub.core.i18n import LocaleString
 
 from playground.events.CustomProcessStopEvent import CustomProcessStopEvent
 from playground.events.HumanAWork import HumanAWork
 from playground.events.HumanBWork import HumanBWork
 from playground.events.HumanBWorkReqeust import HumanBWorkRequest
-from swiss_ai_hub.process.agentic_processes.AgenticProcess import AgenticProcess
-from swiss_ai_hub.process.delegators.human.Human import Human
-from swiss_ai_hub.process.delegators.process.Process import Process
+from swiss_ai_hub.process.agentic_processes.agentic_process import AgenticProcess
+from swiss_ai_hub.process.delegators.human.human import Human
+from swiss_ai_hub.process.delegators.process.process import Process
 from swiss_ai_hub.process.process.decorators.process_step import process_step
 
 

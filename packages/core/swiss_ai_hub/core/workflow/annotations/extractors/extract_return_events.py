@@ -2,7 +2,7 @@ import inspect
 from collections.abc import Callable
 from typing import Annotated
 
-from swiss_ai_hub.core.events.BaseEvent import BaseEvent
+from swiss_ai_hub.core.events.base_event import BaseEvent
 from swiss_ai_hub.core.workflow.annotations.extractors.extract_event_classes import extract_event_classes
 
 

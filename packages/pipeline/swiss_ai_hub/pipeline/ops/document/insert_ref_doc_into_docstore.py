@@ -1,6 +1,6 @@
 from dagster import DataVersion, Out, Output, op
 
-from swiss_ai_hub.pipeline.types.RefDocDocument import RefDocDocument
+from swiss_ai_hub.pipeline.types.ref_doc_document import RefDocDocument
 from swiss_ai_hub.pipeline.util.meta_utils import ref_doc_metadata
 
 

@@ -1,7 +1,7 @@
 from dagster import OpExecutionContext, ResourceParam, op
 from llama_index.core.storage.docstore.keyval_docstore import KVDocumentStore
 
-from swiss_ai_hub.pipeline.types.RefDocDocument import RefDocDocument
+from swiss_ai_hub.pipeline.types.ref_doc_document import RefDocDocument
 
 
 @op(code_version="v1")

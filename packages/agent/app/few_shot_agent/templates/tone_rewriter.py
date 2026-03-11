@@ -1,9 +1,8 @@
-from swiss_ai_hub.core.generative_ai.prompting.few_shot.FewShotExample import FewShotExample
-from swiss_ai_hub.core.generative_ai.resources.models.llm.LLMConfig import LLMConfig, LLMParameter
-from swiss_ai_hub.core.i18n.LocaleString import LocaleString
+from swiss_ai_hub.core.generative_ai import FewShotExample, LLMConfig, LLMParameter
+from swiss_ai_hub.core.i18n import LocaleString
 
-from swiss_ai_hub.agent.agents.FewShotAgent.FewShotAgentConfig import FewShotAgentConfig
-from swiss_ai_hub.agent.steps.prompting.few_shot_step.FewShotStepConfig import FewShotStepConfig
+from swiss_ai_hub.agent.agents.few_shot_agent.few_shot_agent_config import FewShotAgentConfig
+from swiss_ai_hub.agent.steps.prompting.few_shot_step.few_shot_step_config import FewShotStepConfig
 
 TEMPLATE = FewShotAgentConfig(
     agent_id="tone-rewriter",

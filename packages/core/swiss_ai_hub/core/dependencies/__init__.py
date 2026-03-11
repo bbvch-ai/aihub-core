@@ -19,6 +19,8 @@ def __getattr__(name: str) -> object:
         import importlib
 
         module = importlib.import_module(_LAZY_IMPORTS[name])
-        return getattr(module, name)
+        value = getattr(module, name)
+        globals()[name] = value
+        return value
     msg = f"module {__name__!r} has no attribute {name!r}"
     raise AttributeError(msg)

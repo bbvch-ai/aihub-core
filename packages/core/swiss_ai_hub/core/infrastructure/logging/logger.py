@@ -2,7 +2,7 @@ import logging
 
 import colorlog
 
-from swiss_ai_hub.core.infrastructure.logging.LogSettings import LogSettings
+from swiss_ai_hub.core.infrastructure.logging.log_settings import LogSettings
 
 _logging_configured = False
 

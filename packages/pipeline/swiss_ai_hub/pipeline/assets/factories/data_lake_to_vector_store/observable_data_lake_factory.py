@@ -11,8 +11,8 @@ from swiss_ai_hub.pipeline.ops.data_lake.data_version_by_partition_for_data_lake
     data_version_by_partition_for_data_lake_files_no_op,
 )
 from swiss_ai_hub.pipeline.ops.data_lake.fetch_all_files_in_data_lake import fetch_all_files_in_data_lake_no_op
-from swiss_ai_hub.pipeline.resources.data_lake.base.AbstractDataLakeClient import AbstractDataLakeClient
-from swiss_ai_hub.pipeline.types.DataLakeFile import DataLakeFile
+from swiss_ai_hub.pipeline.resources.data_lake.base.abstract_data_lake_client import AbstractDataLakeClient
+from swiss_ai_hub.pipeline.types.data_lake_file import DataLakeFile
 from swiss_ai_hub.pipeline.util.key_utils import group_name_from_asset_key
 
 

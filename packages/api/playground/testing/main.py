@@ -1,20 +1,20 @@
 import asyncio
 from os.path import abspath, dirname, join
 
-from swiss_ai_hub.core.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
+from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler import (
     DangerousDevelopmentOnlyAuthHandler,
 )
-from swiss_ai_hub.core.infrastructure.logging.logger import enable_logging
-from swiss_ai_hub.core.routes.health.HealthController import HealthController
+from swiss_ai_hub.core.infrastructure import enable_logging
+from swiss_ai_hub.core.routes import HealthController
 
-from swiss_ai_hub.api.routes.agent.AgentController import AgentController
-from swiss_ai_hub.api.routes.event.EventController import EventController
-from swiss_ai_hub.api.routes.i18n.I18nController import I18nController
-from swiss_ai_hub.api.routes.my_account.MyAccountController import MyAccountController
-from swiss_ai_hub.api.routes.openai.OpenaiController import OpenaiController
-from swiss_ai_hub.api.routes.thread.ThreadController import ThreadController
-from swiss_ai_hub.api.routes.translation.TranslationController import TranslationController
-from swiss_ai_hub.api.runners.simulation.agent.SimulatedAgentApiTestRunner import SimulatedAgentApiTestRunner
+from swiss_ai_hub.api.routes.agent.agent_controller import AgentController
+from swiss_ai_hub.api.routes.event.event_controller import EventController
+from swiss_ai_hub.api.routes.i18n.i18n_controller import I18nController
+from swiss_ai_hub.api.routes.my_account.my_account_controller import MyAccountController
+from swiss_ai_hub.api.routes.openai.openai_controller import OpenaiController
+from swiss_ai_hub.api.routes.thread.thread_controller import ThreadController
+from swiss_ai_hub.api.routes.translation.translation_controller import TranslationController
+from swiss_ai_hub.api.runners.simulation.agent.simulated_agent_api_test_runner import SimulatedAgentApiTestRunner
 
 enable_logging()
 

@@ -4,8 +4,10 @@ from botocore.config import Config
 from fastapi import Request
 from mypy_boto3_s3 import S3Client
 
-from swiss_ai_hub.core.generative_ai.document.accessor.S3AnonymousFileAccessService import S3AnonymousFileAccessService
-from swiss_ai_hub.core.infrastructure.s3.S3StorageSettings import S3StorageSettings
+from swiss_ai_hub.core.generative_ai.document.accessor.s3_anonymous_file_access_service import (
+    S3AnonymousFileAccessService,
+)
+from swiss_ai_hub.core.infrastructure.s3.s3_storage_settings import S3StorageSettings
 
 
 def use_s3(request: Request) -> S3Client:

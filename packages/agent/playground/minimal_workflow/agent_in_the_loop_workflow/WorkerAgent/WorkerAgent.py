@@ -1,13 +1,13 @@
 from typing import ClassVar
 
-from swiss_ai_hub.core.events.agent.user.UserMessageEvent import UserMessageEvent
-from swiss_ai_hub.core.i18n.LocaleString import LocaleString
+from swiss_ai_hub.core.events.agent import UserMessageEvent
+from swiss_ai_hub.core.i18n import LocaleString
 
 from playground.minimal_workflow.agent_in_the_loop_workflow.WorkerAgent.Events.ExtractNumberEvent import (
     ExtractNumberEvent,
 )
 from playground.minimal_workflow.agent_in_the_loop_workflow.WorkerAgent.Events.WorkerStopEvent import WorkerStopEvent
-from swiss_ai_hub.agent.agents.Agent import Agent
+from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.workflow.decorators.step import step
 
 

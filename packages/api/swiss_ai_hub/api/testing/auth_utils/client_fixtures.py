@@ -1,13 +1,13 @@
 import pytest_asyncio
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
-from swiss_ai_hub.core.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
+from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler import (
     DangerousDevelopmentOnlyAuthHandler,
 )
-from swiss_ai_hub.core.auth.dependencies.KeycloakAuthHandler.KeycloakAuthHandler import KeycloakAuthHandler
-from swiss_ai_hub.core.auth.dependencies.TokenAuthHandler.TokenAuthHandler import TokenAuthHandler
+from swiss_ai_hub.core.auth.dependencies.keycloak_auth_handler import KeycloakAuthHandler
+from swiss_ai_hub.core.auth.dependencies.token_auth_handler.token_auth_handler import TokenAuthHandler
 
-from swiss_ai_hub.api.runners.ApiTestRunner import ApiTestRunner
+from swiss_ai_hub.api.runners.api_test_runner import ApiTestRunner
 
 BASE_URL = "http://test"
 
@@ -69,7 +69,7 @@ def create_my_account_controller_mount():
     """
 
     def mount_func(auth):
-        from swiss_ai_hub.api.routes.my_account.MyAccountController import MyAccountController
+        from swiss_ai_hub.api.routes.my_account.my_account_controller import MyAccountController
 
         return MyAccountController(auth=auth).get_my_account()
 
@@ -83,7 +83,7 @@ def create_token_controller_mount():
     """
 
     def mount_func(auth):
-        from swiss_ai_hub.api.routes.token.TokenController import TokenController
+        from swiss_ai_hub.api.routes.token.token_controller import TokenController
 
         return TokenController(auth=auth)
 
@@ -97,7 +97,7 @@ def create_thread_controller_mount():
     """
 
     def mount_func(auth):
-        from swiss_ai_hub.api.routes.thread.ThreadController import ThreadController
+        from swiss_ai_hub.api.routes.thread.thread_controller import ThreadController
 
         return ThreadController(auth=auth)
 

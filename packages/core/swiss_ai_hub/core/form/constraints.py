@@ -44,7 +44,7 @@ from typing import Any
 
 from pydantic import AfterValidator
 
-from swiss_ai_hub.core.form.base.FormkitElement import FormkitElement
+from swiss_ai_hub.core.form.base.formkit_element import FormkitElement
 
 
 def _is_form_element(v: Any) -> bool:

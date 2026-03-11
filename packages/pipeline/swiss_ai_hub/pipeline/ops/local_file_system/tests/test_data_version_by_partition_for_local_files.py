@@ -6,7 +6,7 @@ from swiss_ai_hub.core.generative_ai.utils.path_utils import encode_partition_ke
 from swiss_ai_hub.pipeline.ops.local_file_system.data_version_by_partition_for_local_files import (
     data_version_by_partition_for_local_files,
 )
-from swiss_ai_hub.pipeline.types.SourceFile import MinimalSourceFile
+from swiss_ai_hub.pipeline.types.source_file import MinimalSourceFile
 
 
 def _make_file(path: str, modified: int = 100, size: int = 1024) -> MinimalSourceFile:

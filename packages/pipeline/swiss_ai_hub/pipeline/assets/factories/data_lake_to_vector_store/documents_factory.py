@@ -5,8 +5,8 @@ from swiss_ai_hub.pipeline.ops.data_lake.parse_document_from_data_lake import pa
 from swiss_ai_hub.pipeline.ops.document.ensure_refdoc_default_metadata import ensure_refdoc_default_metadata
 from swiss_ai_hub.pipeline.ops.document.insert_ref_doc_into_docstore import insert_ref_doc_into_docstore
 from swiss_ai_hub.pipeline.ops.document.refine_document_tables import refine_document_tables
-from swiss_ai_hub.pipeline.types.DataLakeFile import DataLakeFile
-from swiss_ai_hub.pipeline.types.RefDocDocument import RefDocDocument
+from swiss_ai_hub.pipeline.types.data_lake_file import DataLakeFile
+from swiss_ai_hub.pipeline.types.ref_doc_document import RefDocDocument
 from swiss_ai_hub.pipeline.util.key_utils import group_name_from_asset_key
 
 

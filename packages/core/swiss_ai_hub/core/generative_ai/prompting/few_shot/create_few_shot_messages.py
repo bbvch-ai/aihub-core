@@ -1,6 +1,6 @@
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
-from swiss_ai_hub.core.generative_ai.prompting.few_shot.FewShotExample import FewShotExample
+from swiss_ai_hub.core.generative_ai.prompting.few_shot.few_shot_example import FewShotExample
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 
 

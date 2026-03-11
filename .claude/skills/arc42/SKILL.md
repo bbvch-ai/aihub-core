@@ -60,7 +60,7 @@ cat CLAUDE.md
 find . -name "CLAUDE.md" -not -path "./.claude/*" -not -path "*/node_modules/*"
 
 # Docker services and network topology
-cat docker-compose.dev.yml | head -200
+cat infra/docker-compose.dev.yml | head -200
 
 # ADRs for architectural decisions
 ls docs/arc42/decisions/
@@ -240,8 +240,8 @@ ______________________________________________________________________
 - **Infrastructure Level 2**: Detailed views of selected infrastructure elements (e.g., the PostgreSQL cluster serving 4
   databases, the SeaweedFS cluster topology).
 
-**Source material**: `docker-compose.dev.yml` defines all containers, networks, ports, and dependencies.
-`deployment/templates/docker-compose.yml.j2` has production configuration.
+**Source material**: `infra/docker-compose.dev.yml` defines all containers, networks, ports, and dependencies.
+`infra/deployment/templates/docker-compose.yml.j2` has production configuration.
 
 **Multiple environments**: Document dev (Docker Compose), production (Kubernetes/Docker Swarm), and any staging
 environments separately when they differ.
@@ -360,8 +360,8 @@ Follow these rules (consistent with `docs/CLAUDE.md` writing guidelines):
 - **No marketing language**: Skip "powerful", "seamless", "robust", "cutting-edge"
 - **No meta-commentary**: Never write "In this section, we will discuss..."
 - **Paragraphs over bullet lists**: Unless a list is genuinely the clearest format
-- **Verify against codebase**: Every claim about the system must be verifiable in source code, `docker-compose.dev.yml`,
-  or package `CLAUDE.md` files
+- **Verify against codebase**: Every claim about the system must be verifiable in source code,
+  `infra/docker-compose.dev.yml`, or package `CLAUDE.md` files
 - **Mermaid diagrams**: Use for architecture diagrams, sequence diagrams, deployment views
 - **Tables**: Use for stakeholders, constraints, quality goals, glossary entries
 - **Cross-reference between sections**: Link related content (e.g., "See Section 10 for detailed quality scenarios")
@@ -406,7 +406,7 @@ subsections.
 | Required subsections present | `grep '^## ' "docs/arc42/chapters/NN_chapter_name.md"`                        |
 | Concrete, not vague          | No "high performance" without measurable scenario                             |
 | Cross-references             | Links to related sections where content connects                              |
-| Codebase accuracy            | Claims match actual `docker-compose.dev.yml`, `CLAUDE.md`, source code        |
+| Codebase accuracy            | Claims match actual `infra/docker-compose.dev.yml`, `CLAUDE.md`, source code  |
 | Diagrams where needed        | Context diagrams (S3), building block diagrams (S5), deployment diagrams (S7) |
 | No marketing language        | No "powerful", "seamless", "robust", "cutting-edge"                           |
 | Tables for structured data   | Stakeholders, constraints, quality goals use tables not prose                 |

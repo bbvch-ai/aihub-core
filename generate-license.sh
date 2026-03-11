@@ -309,11 +309,11 @@ check_web_project() {
 check_docker_images() {
     echo -e "${BLUE}Checking Docker images...${NC}"
 
-    local compose_files=(docker-compose*.yml docker-compose*.yaml)
+    local compose_files=(infra/docker-compose*.yml infra/docker-compose*.yaml)
     compose_files=($(ls ${compose_files[@]} 2>/dev/null || true))
 
     if [ ${#compose_files[@]} -eq 0 ]; then
-        echo -e "${YELLOW}No docker-compose files found${NC}"
+        echo -e "${YELLOW}No docker-compose files found in infra/${NC}"
         return
     fi
     echo "Found docker-compose files: ${compose_files[*]}"

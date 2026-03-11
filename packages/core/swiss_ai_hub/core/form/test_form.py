@@ -14,17 +14,17 @@ from typing import Annotated
 
 from pydantic import BaseModel, Field
 
-from swiss_ai_hub.core.agents.AgentConfig import AgentConfig
-from swiss_ai_hub.core.form.elements.Checkbox import Checkbox
-from swiss_ai_hub.core.form.elements.Group import Group
-from swiss_ai_hub.core.form.elements.InputNumber import InputNumber
-from swiss_ai_hub.core.form.elements.InputText import InputText
-from swiss_ai_hub.core.form.elements.LocaleInput import LocaleInput
-from swiss_ai_hub.core.form.elements.Repeater import Repeater
-from swiss_ai_hub.core.form.Form import Form
-from swiss_ai_hub.core.form.TemplateData import TemplateData
-from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.processes.ProcessConfig import ProcessConfig
+from swiss_ai_hub.core.agents.agent_config import AgentConfig
+from swiss_ai_hub.core.form.elements.checkbox import Checkbox
+from swiss_ai_hub.core.form.elements.group import Group
+from swiss_ai_hub.core.form.elements.input_number import InputNumber
+from swiss_ai_hub.core.form.elements.input_text import InputText
+from swiss_ai_hub.core.form.elements.locale_input import LocaleInput
+from swiss_ai_hub.core.form.elements.repeater import Repeater
+from swiss_ai_hub.core.form.form import Form
+from swiss_ai_hub.core.form.template_data import TemplateData
+from swiss_ai_hub.core.i18n.locale_string import LocaleString
+from swiss_ai_hub.core.processes.process_config import ProcessConfig
 
 # =============================================================================
 # Test Form Classes
@@ -461,7 +461,7 @@ class TestLocaleStringDuality:
 
     def test_locale_string_as_form_returns_locale_input(self) -> None:
         """Test that LocaleString.as_form() returns a LocaleInput element."""
-        from swiss_ai_hub.core.form.elements.LocaleInput import LocaleInput
+        from swiss_ai_hub.core.form.elements.locale_input import LocaleInput
 
         locale_input = LocaleString.as_form(
             label=LocaleString(en="Name", de="Name"),
@@ -497,7 +497,7 @@ class TestLocaleStringDuality:
 
     def test_locale_input_in_form_produces_element(self) -> None:
         """Test that LocaleInput in a Form produces a single LocaleInput element."""
-        from swiss_ai_hub.core.form.elements.LocaleInput import LocaleInput
+        from swiss_ai_hub.core.form.elements.locale_input import LocaleInput
 
         class FormWithLocaleInput(Form):
             title: Annotated[str | InputText, Field(description="Title")]
@@ -526,7 +526,7 @@ class TestLocaleStringDuality:
 
     def test_locale_input_textarea_mode(self) -> None:
         """Test that LocaleInput with textarea mode has correct properties."""
-        from swiss_ai_hub.core.form.elements.LocaleInput import LocaleInput
+        from swiss_ai_hub.core.form.elements.locale_input import LocaleInput
 
         locale_input = LocaleString.as_form(
             input_type="textarea",
@@ -539,7 +539,7 @@ class TestLocaleStringDuality:
 
     def test_locale_string_data_mode_in_form_skipped(self) -> None:
         """Test that LocaleString with string values in a Form doesn't produce elements."""
-        from swiss_ai_hub.core.form.elements.LocaleInput import LocaleInput
+        from swiss_ai_hub.core.form.elements.locale_input import LocaleInput
 
         class FormWithLocaleInput(Form):
             title: Annotated[str | InputText, Field(description="Title")]

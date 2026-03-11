@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 import pytest
 from botocore.exceptions import ClientError
 
-from swiss_ai_hub.api.routes.agent.AgentFileUploadService import AgentFileUploadService
+from swiss_ai_hub.api.routes.agent.agent_file_upload_service import AgentFileUploadService
 
 
 @pytest.fixture

@@ -2,7 +2,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from swiss_ai_hub.api.routes.auth_provider.AuthProviderService import (
+from swiss_ai_hub.api.routes.auth_provider.auth_provider_service import (
     CACHE_KEY,
     DEFAULT_ICON,
     AuthProviderService,
@@ -115,9 +115,9 @@ async def test_stores_result_in_redis(mock_redis):
     mock_admin.a_get_idps.return_value = [_build_idp(alias="azure-ad")]
 
     with (
-        patch("swiss_ai_hub.api.routes.auth_provider.AuthProviderService.KeycloakAdmin", return_value=mock_admin),
+        patch("swiss_ai_hub.api.routes.auth_provider.auth_provider_service.KeycloakAdmin", return_value=mock_admin),
         patch(
-            "swiss_ai_hub.api.routes.auth_provider.AuthProviderService.KeycloakSettings",
+            "swiss_ai_hub.api.routes.auth_provider.auth_provider_service.KeycloakSettings",
             return_value=type(
                 "S",
                 (),
@@ -144,9 +144,9 @@ async def test_appends_keycloak_login_when_show_login_true(mock_redis):
     mock_admin.a_get_idps.return_value = []
 
     with (
-        patch("swiss_ai_hub.api.routes.auth_provider.AuthProviderService.KeycloakAdmin", return_value=mock_admin),
+        patch("swiss_ai_hub.api.routes.auth_provider.auth_provider_service.KeycloakAdmin", return_value=mock_admin),
         patch(
-            "swiss_ai_hub.api.routes.auth_provider.AuthProviderService.KeycloakSettings",
+            "swiss_ai_hub.api.routes.auth_provider.auth_provider_service.KeycloakSettings",
             return_value=type(
                 "S",
                 (),
@@ -174,9 +174,9 @@ async def test_does_not_append_keycloak_login_when_show_login_false(mock_redis):
     mock_admin.a_get_idps.return_value = []
 
     with (
-        patch("swiss_ai_hub.api.routes.auth_provider.AuthProviderService.KeycloakAdmin", return_value=mock_admin),
+        patch("swiss_ai_hub.api.routes.auth_provider.auth_provider_service.KeycloakAdmin", return_value=mock_admin),
         patch(
-            "swiss_ai_hub.api.routes.auth_provider.AuthProviderService.KeycloakSettings",
+            "swiss_ai_hub.api.routes.auth_provider.auth_provider_service.KeycloakSettings",
             return_value=type(
                 "S",
                 (),
@@ -201,9 +201,9 @@ async def test_propagates_keycloak_error(mock_redis):
     mock_admin.a_get_idps.side_effect = Exception("connection refused")
 
     with (
-        patch("swiss_ai_hub.api.routes.auth_provider.AuthProviderService.KeycloakAdmin", return_value=mock_admin),
+        patch("swiss_ai_hub.api.routes.auth_provider.auth_provider_service.KeycloakAdmin", return_value=mock_admin),
         patch(
-            "swiss_ai_hub.api.routes.auth_provider.AuthProviderService.KeycloakSettings",
+            "swiss_ai_hub.api.routes.auth_provider.auth_provider_service.KeycloakSettings",
             return_value=type(
                 "S",
                 (),

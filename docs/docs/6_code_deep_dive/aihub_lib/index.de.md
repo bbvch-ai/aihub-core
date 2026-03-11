@@ -21,8 +21,8 @@ This section covers the foundational architecture, patterns, and terminology you
 shared library.
 
 ::: info
-This documentation assumes you have completed the general Swiss AI Hub setup as described in the main README.md. Make sure you
-have the required infrastructure running before proceeding.
+This documentation assumes you have completed the general Swiss AI Hub setup as described in the main README.md. Make
+sure you have the required infrastructure running before proceeding.
 :::
 
 ### 📚 Introduction to `aihub_lib`
@@ -194,8 +194,9 @@ defaults to the default tenant).
 #### 📶 Event System Extensions
 
 ::: info Event System Architecture
-The Swiss AI Hub event system is a sophisticated event-driven architecture that powers all communication between components.
-Understanding the event hierarchy and when to create new event types is crucial for extending the system effectively.
+The Swiss AI Hub event system is a sophisticated event-driven architecture that powers all communication between
+components. Understanding the event hierarchy and when to create new event types is crucial for extending the system
+effectively.
 :::
 
 **Event Directory Structure:**
@@ -485,9 +486,9 @@ class ResourceEntity(Document):
 #### 🌍 Multi-Language Support
 
 ::: warning Multi-Language Requirement
-The Swiss AI Hub provides comprehensive internationalization (i18n) support with a **mandatory minimum of four languages**:
-English (en), German (de), French (fr), and Italian (it). German serves as the default locale, reflecting the primary
-development region. All user-facing content must support these four languages at minimum.
+The Swiss AI Hub provides comprehensive internationalization (i18n) support with a **mandatory minimum of four
+languages**: English (en), German (de), French (fr), and Italian (it). German serves as the default locale, reflecting
+the primary development region. All user-facing content must support these four languages at minimum.
 :::
 
 **Key Characteristics:**

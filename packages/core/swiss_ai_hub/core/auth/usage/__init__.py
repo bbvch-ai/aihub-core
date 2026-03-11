@@ -1,7 +1,8 @@
-from swiss_ai_hub.core.auth.usage.AccessRuleDescriber import AccessRuleDescriber
-from swiss_ai_hub.core.auth.usage.models.ExceededDetail import ExceededDetail
-from swiss_ai_hub.core.auth.usage.models.LimitDetail import LimitDetail
-from swiss_ai_hub.core.auth.usage.RateLimitStore import CounterState, RateLimitStore
+from swiss_ai_hub.core.auth.usage.access_rule_describer import AccessRuleDescriber
+from swiss_ai_hub.core.auth.usage.models.exceeded_detail import ExceededDetail
+from swiss_ai_hub.core.auth.usage.models.limit_detail import LimitDetail
+from swiss_ai_hub.core.auth.usage.rate_limit_store import CounterState, RateLimitStore
+from swiss_ai_hub.core.auth.usage.usage_limit_messages import UsageLimitMessages
 from swiss_ai_hub.core.auth.usage.usage_limit_models import (
     USER_SCOPE,
     ResourceType,
@@ -10,9 +11,8 @@ from swiss_ai_hub.core.auth.usage.usage_limit_models import (
     UsageLimitPeriod,
     UsageStatus,
 )
-from swiss_ai_hub.core.auth.usage.UsageLimitMessages import UsageLimitMessages
-from swiss_ai_hub.core.auth.usage.UsageLimits import UsageLimits
-from swiss_ai_hub.core.auth.usage.UsageLimitSettings import UsageLimitSettings
+from swiss_ai_hub.core.auth.usage.usage_limit_settings import UsageLimitSettings
+from swiss_ai_hub.core.auth.usage.usage_limits import UsageLimits
 from swiss_ai_hub.core.auth.usage.use_usage_limits import use_usage_limits
 
 __all__ = [

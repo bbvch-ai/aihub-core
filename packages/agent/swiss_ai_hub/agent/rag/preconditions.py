@@ -1,19 +1,19 @@
-from swiss_ai_hub.core.events.agent.aitl.AgentInTheLoop import AgentInTheLoop
-from swiss_ai_hub.core.events.agent.guard.ContextSufficientAcceptEvent import ContextSufficientAcceptEvent
-from swiss_ai_hub.core.events.agent.memory.history.AddMemoryToChatHistoryEvent import AddMemoryToChatHistoryEvent
-from swiss_ai_hub.core.events.agent.memory.retrieve.RetrieveOrganizationMemoryEvent import (
+from swiss_ai_hub.core.events.agent import (
+    AddMemoryToChatHistoryEvent,
+    AgentInTheLoop,
+    ContextSufficientAcceptEvent,
+    RerankerEvent,
     RetrieveOrganizationMemoryEvent,
+    RetrieverEvent,
+    RetrieveUserMemoryEvent,
+    StoreUserMemoryEvent,
 )
-from swiss_ai_hub.core.events.agent.memory.retrieve.RetrieveUserMemoryEvent import RetrieveUserMemoryEvent
-from swiss_ai_hub.core.events.agent.memory.store.StoreUserMemoryEvent import StoreUserMemoryEvent
-from swiss_ai_hub.core.events.agent.semantic.reranker.RerankerEvent import RerankerEvent
-from swiss_ai_hub.core.events.agent.semantic.retriever.RetrieverEvent import RetrieverEvent
 
-from swiss_ai_hub.agent.agents.ExpertAskingAgent.events.AnswerStopEvent import AnswerStopEvent
-from swiss_ai_hub.agent.agents.ExpertAskingAgent.events.NoAnswerStopEvent import NoAnswerStopEvent
-from swiss_ai_hub.agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig
-from swiss_ai_hub.agent.agents.RagAgent.events.ExpertAnswerContextEvent import ExpertAnswerContextEvent
-from swiss_ai_hub.agent.agents.RagAgent.events.InOrderNodeCombinerEvent import InOrderNodeCombinerEvent
+from swiss_ai_hub.agent.agents.expert_asking_agent.events.answer_stop_event import AnswerStopEvent
+from swiss_ai_hub.agent.agents.expert_asking_agent.events.no_answer_stop_event import NoAnswerStopEvent
+from swiss_ai_hub.agent.agents.rag_agent.configs.rag_agent_config import RAGAgentConfig
+from swiss_ai_hub.agent.agents.rag_agent.events.expert_answer_context_event import ExpertAnswerContextEvent
+from swiss_ai_hub.agent.agents.rag_agent.events.in_order_node_combiner_event import InOrderNodeCombinerEvent
 
 
 def check_reranking_enabled(event: RetrieverEvent, reranking_enabled: bool) -> bool:

@@ -1,9 +1,9 @@
 from dagster import OpExecutionContext, ResourceParam, op
 
-from swiss_ai_hub.pipeline.resources.data_lake.base.AbstractDataLakeClient import AbstractDataLakeClient
-from swiss_ai_hub.pipeline.resources.data_lake.DataLakeResource import DataLakeResource
-from swiss_ai_hub.pipeline.types.DataLakeFile import DataLakeFile
-from swiss_ai_hub.pipeline.types.SourceFile import MinimalSourceFile
+from swiss_ai_hub.pipeline.resources.data_lake.base.abstract_data_lake_client import AbstractDataLakeClient
+from swiss_ai_hub.pipeline.resources.data_lake.data_lake_resource import DataLakeResource
+from swiss_ai_hub.pipeline.types.data_lake_file import DataLakeFile
+from swiss_ai_hub.pipeline.types.source_file import MinimalSourceFile
 
 
 @op(code_version="v1")

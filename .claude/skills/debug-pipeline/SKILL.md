@@ -173,8 +173,8 @@ Settings: `packages/core/swiss_ai_hub/core/infrastructure/s3/S3StorageSettings.p
 | `S3_SECRET_KEY` | Secret key                  |
 | `S3_REGION`     | Region (default: us-east-1) |
 
-Common issues: MinIO not running (`docker compose -f docker-compose.dev.yml ps minio`), bucket doesn't exist, wrong
-endpoint (inside Docker use `http://minio:9000`, not `localhost`).
+Common issues: MinIO not running (`docker compose -f infra/docker-compose.dev.yml ps minio`), bucket doesn't exist,
+wrong endpoint (inside Docker use `http://minio:9000`, not `localhost`).
 
 ### Milvus
 
@@ -226,10 +226,10 @@ Common issues: NATS not running, JetStream not enabled, stream/consumer not crea
 
 ```bash
 # Check which services are running
-docker compose -f docker-compose.dev.yml ps
+docker compose -f infra/docker-compose.dev.yml ps
 
 # Check specific service logs
-docker compose -f docker-compose.dev.yml logs <service> --tail=50
+docker compose -f infra/docker-compose.dev.yml logs <service> --tail=50
 ```
 
 ______________________________________________________________________

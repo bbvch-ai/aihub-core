@@ -6,24 +6,21 @@ import pytest
 from bson import ObjectId
 from nats.js import JetStreamContext
 from redis.asyncio import Redis
-from swiss_ai_hub.core.agents.AgentConfig import AgentConfig
-from swiss_ai_hub.core.events.BaseEvent import BaseEvent
-from swiss_ai_hub.core.events.agent.control.ControlEvent import ControlEvent
-from swiss_ai_hub.core.events.agent.control.exception.ExceptionEvent import ExceptionEvent
-from swiss_ai_hub.core.events.agent.control.start.StartEvent import StartEvent
-from swiss_ai_hub.core.events.agent.control.stop.StopEvent import StopEvent
+from swiss_ai_hub.core.agents import AgentConfig
+from swiss_ai_hub.core.events import BaseEvent
+from swiss_ai_hub.core.events.agent import ControlEvent, ExceptionEvent, StartEvent, StopEvent
 from swiss_ai_hub.core.form.normalization import transform_formkit_arrays
-from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.infrastructure.logging.logger import enable_logging
-from swiss_ai_hub.core.topic_managers.agents.AgentClassTopicManager import AgentClassTopicManager
-from swiss_ai_hub.core.topics.agents.AgentInstanceTopic import AgentInstanceTopic
+from swiss_ai_hub.core.i18n import LocaleString
+from swiss_ai_hub.core.infrastructure import enable_logging
+from swiss_ai_hub.core.topic_managers import AgentClassTopicManager
+from swiss_ai_hub.core.topics import AgentInstanceTopic
 
-from swiss_ai_hub.agent.agents.Agent import Agent
-from swiss_ai_hub.agent.context.run.RunContext import RunContext
-from swiss_ai_hub.agent.context.thread.ThreadContext import ThreadContext
-from swiss_ai_hub.agent.dispatchers.AgentDispatcher import AgentDispatcher
-from swiss_ai_hub.agent.i18n.AgentLocaleHandler import AgentLocaleHandler
-from swiss_ai_hub.agent.tracing.AgentRunTracer import AgentRunTracer
+from swiss_ai_hub.agent.agents.agent import Agent
+from swiss_ai_hub.agent.context.run.run_context import RunContext
+from swiss_ai_hub.agent.context.thread.thread_context import ThreadContext
+from swiss_ai_hub.agent.dispatchers.agent_dispatcher import AgentDispatcher
+from swiss_ai_hub.agent.i18n.agent_locale_handler import AgentLocaleHandler
+from swiss_ai_hub.agent.tracing.agent_run_tracer import AgentRunTracer
 from swiss_ai_hub.agent.workflow.decorators.precondition import precondition
 from swiss_ai_hub.agent.workflow.decorators.step import step
 
@@ -262,7 +259,7 @@ class TestAgentDispatcherHandleEvent:
 
         with (
             patch.object(agent_dispatcher, "is_step_ready", return_value=False),
-            patch("swiss_ai_hub.core.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle,
+            patch("swiss_ai_hub.core.dispatcher.base_dispatcher.BaseDispatcher.handle_event") as mock_base_handle,
         ):
             mock_base_handle.return_value = None
 
@@ -296,7 +293,7 @@ class TestAgentDispatcherHandleEvent:
 
         with (
             patch.object(agent_dispatcher, "is_step_ready", return_value=False),
-            patch("swiss_ai_hub.core.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle,
+            patch("swiss_ai_hub.core.dispatcher.base_dispatcher.BaseDispatcher.handle_event") as mock_base_handle,
         ):
             mock_base_handle.return_value = None
 
@@ -329,7 +326,7 @@ class TestAgentDispatcherHandleEvent:
         agent_dispatcher.agent_run_tracer = mock_tracer
 
         with (
-            patch("swiss_ai_hub.core.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle,
+            patch("swiss_ai_hub.core.dispatcher.base_dispatcher.BaseDispatcher.handle_event") as mock_base_handle,
         ):
             mock_base_handle.return_value = None
 
@@ -360,13 +357,15 @@ class TestAgentDispatcherHandleEvent:
         agent_dispatcher.agent_run_tracer = mock_tracer
 
         with (
-            patch("swiss_ai_hub.agent.dispatchers.AgentDispatcher.RunContext.for_topic", return_value=mock_run_context),
             patch(
-                "swiss_ai_hub.agent.dispatchers.AgentDispatcher.ThreadContext.for_topic",
+                "swiss_ai_hub.agent.dispatchers.agent_dispatcher.RunContext.for_topic", return_value=mock_run_context
+            ),
+            patch(
+                "swiss_ai_hub.agent.dispatchers.agent_dispatcher.ThreadContext.for_topic",
                 return_value=mock_thread_context,
             ),
         ):
-            with patch("swiss_ai_hub.core.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle:
+            with patch("swiss_ai_hub.core.dispatcher.base_dispatcher.BaseDispatcher.handle_event") as mock_base_handle:
                 mock_base_handle.return_value = None
 
                 # Act
@@ -401,15 +400,17 @@ class TestAgentDispatcherHandleEvent:
         agent_dispatcher.agent_run_tracer = mock_tracer
 
         with (
-            patch("swiss_ai_hub.agent.dispatchers.AgentDispatcher.RunContext.for_topic", return_value=mock_run_context),
             patch(
-                "swiss_ai_hub.agent.dispatchers.AgentDispatcher.ThreadContext.for_topic",
+                "swiss_ai_hub.agent.dispatchers.agent_dispatcher.RunContext.for_topic", return_value=mock_run_context
+            ),
+            patch(
+                "swiss_ai_hub.agent.dispatchers.agent_dispatcher.ThreadContext.for_topic",
                 return_value=mock_thread_context,
             ),
             patch.object(agent_dispatcher, "is_step_ready", return_value=True) as mock_is_ready,
             patch.object(agent_dispatcher, "execute_step"),
         ):
-            with patch("swiss_ai_hub.core.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle:
+            with patch("swiss_ai_hub.core.dispatcher.base_dispatcher.BaseDispatcher.handle_event") as mock_base_handle:
                 mock_base_handle.return_value = None
 
                 # Mock asyncio task creation
@@ -441,7 +442,7 @@ class TestAgentDispatcherHandleEvent:
         agent_dispatcher.agent.get_steps_waiting_for_event = Mock(return_value=[])
 
         with (
-            patch("swiss_ai_hub.core.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle,
+            patch("swiss_ai_hub.core.dispatcher.base_dispatcher.BaseDispatcher.handle_event") as mock_base_handle,
         ):
             mock_base_handle.return_value = None
 
@@ -464,7 +465,7 @@ class TestAgentDispatcherHandleEvent:
         run_context = RunContext.for_topic(agent_dispatcher.redis, agent_topic)
         await run_context.delete("_agent_config")  # Make sure no config exists
 
-        with patch("swiss_ai_hub.core.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle:
+        with patch("swiss_ai_hub.core.dispatcher.base_dispatcher.BaseDispatcher.handle_event") as mock_base_handle:
             mock_base_handle.return_value = None
 
             # Act & Assert - The real context should return None, causing the ValueError
@@ -484,7 +485,7 @@ class TestAgentDispatcherHandleEvent:
         agent_dispatcher.agent_run_tracer = mock_tracer
 
         with (
-            patch("swiss_ai_hub.core.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle,
+            patch("swiss_ai_hub.core.dispatcher.base_dispatcher.BaseDispatcher.handle_event") as mock_base_handle,
         ):
             mock_base_handle.return_value = None
 
@@ -523,7 +524,7 @@ class TestAgentDispatcherStepExecution:
         agent_dispatcher.agent_run_tracer = mock_tracer
 
         with (
-            patch("swiss_ai_hub.core.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle,
+            patch("swiss_ai_hub.core.dispatcher.base_dispatcher.BaseDispatcher.handle_event") as mock_base_handle,
         ):
             mock_base_handle.return_value = None
 
@@ -547,7 +548,7 @@ class TestAgentDispatcherStepExecution:
         agent_dispatcher.agent.get_steps_waiting_for_event = Mock(return_value=[mock_step_method])
 
         # Mock _build_method_kwargs to return proper EventsAndKwargs
-        from swiss_ai_hub.core.dispatcher.BaseDispatcher import EventsAndKwargs
+        from swiss_ai_hub.core.dispatcher import EventsAndKwargs
 
         mock_events_and_kwargs = EventsAndKwargs(events=[start_event], kwargs={"start_event": start_event})
         agent_dispatcher._build_method_kwargs = AsyncMock(return_value=mock_events_and_kwargs)
@@ -560,7 +561,7 @@ class TestAgentDispatcherStepExecution:
         with (
             patch.object(agent_dispatcher, "is_step_ready", return_value=True),
             patch.object(agent_dispatcher, "execute_step"),
-            patch("swiss_ai_hub.core.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle,
+            patch("swiss_ai_hub.core.dispatcher.base_dispatcher.BaseDispatcher.handle_event") as mock_base_handle,
         ):
             mock_base_handle.return_value = None
 
@@ -593,8 +594,10 @@ class TestAgentDispatcherErrorHandling:
         mock_run_context.set = AsyncMock()
 
         with (
-            patch("swiss_ai_hub.agent.dispatchers.AgentDispatcher.RunContext.for_topic", return_value=mock_run_context),
-            patch("swiss_ai_hub.core.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle,
+            patch(
+                "swiss_ai_hub.agent.dispatchers.agent_dispatcher.RunContext.for_topic", return_value=mock_run_context
+            ),
+            patch("swiss_ai_hub.core.dispatcher.base_dispatcher.BaseDispatcher.handle_event") as mock_base_handle,
         ):
             mock_base_handle.return_value = None
 
@@ -618,8 +621,10 @@ class TestAgentDispatcherErrorHandling:
         agent_dispatcher.agent_run_tracer = mock_tracer
 
         with (
-            patch("swiss_ai_hub.agent.dispatchers.AgentDispatcher.RunContext.for_topic", return_value=mock_run_context),
-            patch("swiss_ai_hub.core.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle,
+            patch(
+                "swiss_ai_hub.agent.dispatchers.agent_dispatcher.RunContext.for_topic", return_value=mock_run_context
+            ),
+            patch("swiss_ai_hub.core.dispatcher.base_dispatcher.BaseDispatcher.handle_event") as mock_base_handle,
         ):
             mock_base_handle.return_value = None
 
@@ -653,7 +658,7 @@ class TestAgentDispatcherIntegration:
         agent_dispatcher.agent.get_steps_waiting_for_event = Mock(return_value=[mock_step_method])
 
         # Mock only the truly external dependencies
-        from swiss_ai_hub.core.dispatcher.BaseDispatcher import EventsAndKwargs
+        from swiss_ai_hub.core.dispatcher import EventsAndKwargs
 
         mock_events_and_kwargs = EventsAndKwargs(events=[start_event], kwargs={"start_event": start_event})
         agent_dispatcher._build_method_kwargs = AsyncMock(return_value=mock_events_and_kwargs)
@@ -665,7 +670,7 @@ class TestAgentDispatcherIntegration:
 
         with (
             patch.object(agent_dispatcher, "is_step_ready", return_value=True),
-            patch("swiss_ai_hub.core.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle,
+            patch("swiss_ai_hub.core.dispatcher.base_dispatcher.BaseDispatcher.handle_event") as mock_base_handle,
             patch("asyncio.create_task") as mock_create_task,
         ):
             mock_base_handle.return_value = None

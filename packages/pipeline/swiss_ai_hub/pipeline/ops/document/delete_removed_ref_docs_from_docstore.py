@@ -4,8 +4,8 @@ from swiss_ai_hub.pipeline.ops.data_lake.fetch_ref_docs_to_remove import fetch_r
 from swiss_ai_hub.pipeline.ops.document.delete_figures_for_many_ref_doc import delete_figures_for_many_ref_doc
 from swiss_ai_hub.pipeline.ops.document.delete_many_ref_doc_from_docstore import delete_many_ref_doc_from_docstore
 from swiss_ai_hub.pipeline.ops.nodes.delete_many_nodes_from_vector_store import delete_many_nodes_from_vector_store
-from swiss_ai_hub.pipeline.types.DataLakeFile import DataLakeFile
-from swiss_ai_hub.pipeline.types.RefDocDocument import RefDocDocument
+from swiss_ai_hub.pipeline.types.data_lake_file import DataLakeFile
+from swiss_ai_hub.pipeline.types.ref_doc_document import RefDocDocument
 
 
 @graph

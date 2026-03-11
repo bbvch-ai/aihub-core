@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import httpx
 import pytest
 
-from swiss_ai_hub.core.infrastructure.langfuse.LangfuseProvisioner import (
+from swiss_ai_hub.core.infrastructure.langfuse.langfuse_provisioner import (
     LangfuseProvisioner,
 )
 

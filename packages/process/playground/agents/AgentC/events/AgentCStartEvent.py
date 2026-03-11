@@ -1,4 +1,4 @@
-from swiss_ai_hub.core.events.agent.control.start.StartEvent import StartEvent
+from swiss_ai_hub.core.events.agent import StartEvent
 
 
 class AgentCStartEvent(StartEvent):

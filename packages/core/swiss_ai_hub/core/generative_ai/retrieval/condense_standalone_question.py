@@ -2,7 +2,7 @@ from llama_index.core import PromptTemplate
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.llms import LLM
 
-from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
+from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 
 
 def _messages_to_history_str(messages: list[ChatMessage]) -> str:

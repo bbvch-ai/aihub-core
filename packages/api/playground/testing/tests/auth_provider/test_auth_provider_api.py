@@ -2,16 +2,16 @@ from unittest.mock import AsyncMock
 
 import pytest
 from fastapi.testclient import TestClient
-from swiss_ai_hub.core.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
+from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler import (
     DangerousDevelopmentOnlyAuthHandler,
 )
-from swiss_ai_hub.core.testing.auth_utils.tenant_mocks import mock_tenant_entity_autouse  # noqa: F401
-from swiss_ai_hub.core.testing.auth_utils.user_mocks import mock_user_entity_autouse  # noqa: F401
+from swiss_ai_hub.core.testing import mock_tenant_entity_autouse
+from swiss_ai_hub.core.testing import mock_user_entity_autouse
 
-from swiss_ai_hub.api.routes.auth_provider.AuthProviderController import AuthProviderController
-from swiss_ai_hub.api.routes.auth_provider.AuthProviderService import AuthProviderService
-from swiss_ai_hub.api.routes.auth_provider.dto.AuthProviderResponse import AuthProviderResponse
-from swiss_ai_hub.api.runners.ApiTestRunner import ApiTestRunner
+from swiss_ai_hub.api.routes.auth_provider.auth_provider_controller import AuthProviderController
+from swiss_ai_hub.api.routes.auth_provider.auth_provider_service import AuthProviderService
+from swiss_ai_hub.api.routes.auth_provider.dto.auth_provider_response import AuthProviderResponse
+from swiss_ai_hub.api.runners.api_test_runner import ApiTestRunner
 
 BASE_ENDPOINT = "/api/v1/auth-providers"
 

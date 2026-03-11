@@ -7,11 +7,11 @@ from bson import ObjectId
 from openinference.semconv.trace import OpenInferenceSpanKindValues, SpanAttributes
 from opentelemetry import trace
 from opentelemetry.trace import NonRecordingSpan, SpanContext, StatusCode, TraceFlags
-from swiss_ai_hub.core.dispatcher.stores.trace.TraceStore import TraceStore
-from swiss_ai_hub.core.events.agent.control.start.StartEvent import StartEvent
-from swiss_ai_hub.core.topics.agents.AgentInstanceTopic import AgentInstanceTopic
+from swiss_ai_hub.core.dispatcher import TraceStore
+from swiss_ai_hub.core.events.agent import StartEvent
+from swiss_ai_hub.core.topics import AgentInstanceTopic
 
-from swiss_ai_hub.agent.tracing.AgentRunTracer import AgentRunTracer
+from swiss_ai_hub.agent.tracing.agent_run_tracer import AgentRunTracer
 
 _FAKE_TRACEPARENT = {"traceparent": "00-0000000000000000000000000000dead-000000000000beef-01"}
 
@@ -127,8 +127,8 @@ class TestTraceStepStart:
             pass
 
         with (
-            patch("swiss_ai_hub.agent.tracing.AgentRunTracer.set_span_in_context"),
-            patch("swiss_ai_hub.agent.tracing.AgentRunTracer.context") as mock_ctx,
+            patch("swiss_ai_hub.agent.tracing.agent_run_tracer.set_span_in_context"),
+            patch("swiss_ai_hub.agent.tracing.agent_run_tracer.context") as mock_ctx,
         ):
             mock_ctx.attach.return_value = "token"
 
@@ -149,8 +149,8 @@ class TestTraceStepStart:
             pass
 
         with (
-            patch("swiss_ai_hub.agent.tracing.AgentRunTracer.set_span_in_context"),
-            patch("swiss_ai_hub.agent.tracing.AgentRunTracer.context") as mock_ctx,
+            patch("swiss_ai_hub.agent.tracing.agent_run_tracer.set_span_in_context"),
+            patch("swiss_ai_hub.agent.tracing.agent_run_tracer.context") as mock_ctx,
         ):
             mock_ctx.attach.return_value = "token"
 
@@ -379,8 +379,8 @@ class TestTraceStepStartAitl:
             pass
 
         with (
-            patch("swiss_ai_hub.agent.tracing.AgentRunTracer.set_span_in_context"),
-            patch("swiss_ai_hub.agent.tracing.AgentRunTracer.context") as mock_ctx,
+            patch("swiss_ai_hub.agent.tracing.agent_run_tracer.set_span_in_context"),
+            patch("swiss_ai_hub.agent.tracing.agent_run_tracer.context") as mock_ctx,
         ):
             mock_ctx.attach.return_value = "token"
 
@@ -535,8 +535,8 @@ class TestTraceStepStartRunContext:
             pass
 
         with (
-            patch("swiss_ai_hub.agent.tracing.AgentRunTracer.set_span_in_context"),
-            patch("swiss_ai_hub.agent.tracing.AgentRunTracer.context") as mock_ctx,
+            patch("swiss_ai_hub.agent.tracing.agent_run_tracer.set_span_in_context"),
+            patch("swiss_ai_hub.agent.tracing.agent_run_tracer.context") as mock_ctx,
         ):
             mock_ctx.attach.return_value = "token"
 
@@ -559,8 +559,8 @@ class TestTraceStepStartRunContext:
             pass
 
         with (
-            patch("swiss_ai_hub.agent.tracing.AgentRunTracer.set_span_in_context"),
-            patch("swiss_ai_hub.agent.tracing.AgentRunTracer.context") as mock_ctx,
+            patch("swiss_ai_hub.agent.tracing.agent_run_tracer.set_span_in_context"),
+            patch("swiss_ai_hub.agent.tracing.agent_run_tracer.context") as mock_ctx,
         ):
             mock_ctx.attach.return_value = "token"
 

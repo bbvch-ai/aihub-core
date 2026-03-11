@@ -2,19 +2,19 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 from fastapi import HTTPException
-from swiss_ai_hub.core.auth.identity.UserIdentity import UserIdentity
-from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
-from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.infrastructure.logging.logger import enable_logging
-from swiss_ai_hub.core.persistence.process.ProcessClassEntity import ProcessClassEntity
-from swiss_ai_hub.core.persistence.process.ProcessConfigEntityDocument import ProcessConfigEntityDocument
-from swiss_ai_hub.core.processes.ProcessConfig import ProcessConfig
-from swiss_ai_hub.core.testing.auth_utils.role_mocks import mock_role_entity_methods  # noqa: F401
+from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
+from swiss_ai_hub.core.i18n import LocaleHandler
+from swiss_ai_hub.core.i18n import LocaleString
+from swiss_ai_hub.core.infrastructure import enable_logging
+from swiss_ai_hub.core.persistence.process import ProcessClassEntity
+from swiss_ai_hub.core.persistence.process.process_config_entity_document import ProcessConfigEntityDocument
+from swiss_ai_hub.core.processes import ProcessConfig
+from swiss_ai_hub.core.testing import mock_role_entity_methods
 
-from swiss_ai_hub.api.routes.process.dto.FullProcessInstanceDTO import FullProcessInstanceDTO
-from swiss_ai_hub.api.routes.process.dto.ProcessClassDTO import ProcessClassDTO
-from swiss_ai_hub.api.routes.process.ProcessService import ProcessService
-from swiss_ai_hub.api.runners.simulation.process.events.HumanStartWork import HumanStartEvent
+from swiss_ai_hub.api.routes.process.dto.full_process_instance_dto import FullProcessInstanceDTO
+from swiss_ai_hub.api.routes.process.dto.process_class_dto import ProcessClassDTO
+from swiss_ai_hub.api.routes.process.process_service import ProcessService
+from swiss_ai_hub.api.runners.simulation.process.events.human_start_work import HumanStartEvent
 
 enable_logging()
 

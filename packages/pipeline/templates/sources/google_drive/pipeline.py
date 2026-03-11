@@ -7,7 +7,7 @@ Google Drive Pipeline - Simple Version
 4. Open http://localhost:3000
 """
 
-from swiss_ai_hub.core.infrastructure.rclone.RcloneSourceFactory import google_drive_source
+from swiss_ai_hub.core.infrastructure import google_drive_source
 
 from swiss_ai_hub.pipeline.util.definitions_util import default_rclone_to_datalake_definitions
 

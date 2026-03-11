@@ -5,9 +5,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from pydantic import BaseModel
 
-from swiss_ai_hub.core.requester.NCRequester import NCRequester
-from swiss_ai_hub.core.responder.NCResponder import NCResponder
-from swiss_ai_hub.core.rpc.AgentConfigClient import AgentConfigClient
+from swiss_ai_hub.core.requester.nc_requester import NCRequester
+from swiss_ai_hub.core.responder.nc_responder import NCResponder
+from swiss_ai_hub.core.rpc.agent_config_client import AgentConfigClient
 from swiss_ai_hub.core.rpc.models import (
     FetchAgentConfigRequest,
     FetchAgentConfigResponse,
@@ -76,7 +76,7 @@ class TestNCRequester:
         mock_nc.request.return_value = mock_msg
 
         # Make request
-        with patch("swiss_ai_hub.core.requester.NCRequester.get_tracer") as mock_tracer:
+        with patch("swiss_ai_hub.core.requester.nc_requester.get_tracer") as mock_tracer:
             mock_span = MagicMock()
             mock_span.__enter__ = MagicMock(return_value=mock_span)
             mock_span.__exit__ = MagicMock(return_value=None)
@@ -100,7 +100,7 @@ class TestNCRequester:
 
         mock_nc.request.side_effect = NatsTimeoutError()
 
-        with patch("swiss_ai_hub.core.requester.NCRequester.get_tracer") as mock_tracer:
+        with patch("swiss_ai_hub.core.requester.nc_requester.get_tracer") as mock_tracer:
             mock_span = MagicMock()
             mock_span.__enter__ = MagicMock(return_value=mock_span)
             mock_span.__exit__ = MagicMock(return_value=None)
@@ -121,7 +121,7 @@ class TestNCRequester:
         mock_msg.data = b'{"result": "ok", "success": true}'
         mock_nc.request.return_value = mock_msg
 
-        with patch("swiss_ai_hub.core.requester.NCRequester.get_tracer") as mock_tracer:
+        with patch("swiss_ai_hub.core.requester.nc_requester.get_tracer") as mock_tracer:
             mock_span = MagicMock()
             mock_span.__enter__ = MagicMock(return_value=mock_span)
             mock_span.__exit__ = MagicMock(return_value=None)
@@ -216,7 +216,7 @@ class TestNCResponder:
         mock_msg.headers = {}
         mock_msg.respond = AsyncMock()
 
-        with patch("swiss_ai_hub.core.responder.NCResponder.get_tracer") as mock_tracer:
+        with patch("swiss_ai_hub.core.responder.nc_responder.get_tracer") as mock_tracer:
             mock_span = MagicMock()
             mock_span.__enter__ = MagicMock(return_value=mock_span)
             mock_span.__exit__ = MagicMock(return_value=None)
@@ -263,7 +263,7 @@ class TestAgentConfigClient:
         mock_msg.data = response.model_dump_json().encode()
         mock_nc.request.return_value = mock_msg
 
-        with patch("swiss_ai_hub.core.requester.NCRequester.get_tracer") as mock_tracer:
+        with patch("swiss_ai_hub.core.requester.nc_requester.get_tracer") as mock_tracer:
             mock_span = MagicMock()
             mock_span.__enter__ = MagicMock(return_value=mock_span)
             mock_span.__exit__ = MagicMock(return_value=None)
@@ -291,7 +291,7 @@ class TestAgentConfigClient:
         mock_msg.data = response.model_dump_json().encode()
         mock_nc.request.return_value = mock_msg
 
-        with patch("swiss_ai_hub.core.requester.NCRequester.get_tracer") as mock_tracer:
+        with patch("swiss_ai_hub.core.requester.nc_requester.get_tracer") as mock_tracer:
             mock_span = MagicMock()
             mock_span.__enter__ = MagicMock(return_value=mock_span)
             mock_span.__exit__ = MagicMock(return_value=None)

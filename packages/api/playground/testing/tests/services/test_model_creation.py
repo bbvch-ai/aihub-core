@@ -3,18 +3,15 @@ from typing import Union, get_args, get_origin
 
 import pytest
 from pydantic import BaseModel
-from swiss_ai_hub.core.agents.AgentConfig import AgentConfig
-from swiss_ai_hub.core.agents.visualizers.types.WorkflowGraph import WorkflowGraph
-from swiss_ai_hub.core.events.BaseEvent import BaseEvent
-from swiss_ai_hub.core.events.agent.discovery.AgentClassDiscoveryResponseEvent import (
-    AgentClassDiscoveryResponseEvent,
-    AgentConfigSpecs,
-    EventSpecs,
-)
-from swiss_ai_hub.core.i18n.LocaleString import LocaleString
+from swiss_ai_hub.core.agents import AgentConfig
+from swiss_ai_hub.core.agents import WorkflowGraph
+from swiss_ai_hub.core.events import EventSpecs
+from swiss_ai_hub.core.events.agent import AgentClassDiscoveryResponseEvent, AgentConfigSpecs
+from swiss_ai_hub.core.events import BaseEvent
+from swiss_ai_hub.core.i18n import LocaleString
 
 from playground.testing.tests.services.TestEvent import Level2Model, Level3Model, NestedTestModel, TestEvent
-from swiss_ai_hub.api.services.ModelCreationService import ModelCreationService
+from swiss_ai_hub.api.services.model_creation_service import ModelCreationService
 
 
 def is_union_type(origin) -> bool:

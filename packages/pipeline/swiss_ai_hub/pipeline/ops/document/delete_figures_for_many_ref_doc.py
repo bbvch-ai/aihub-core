@@ -1,8 +1,8 @@
 from dagster import OpExecutionContext, ResourceParam, op
 from swiss_ai_hub.core.generative_ai.utils.path_utils import create_figures_folder_name
 
-from swiss_ai_hub.pipeline.resources.data_lake.base.AbstractDataLakeClient import AbstractDataLakeClient
-from swiss_ai_hub.pipeline.types.RefDocDocument import RefDocDocument
+from swiss_ai_hub.pipeline.resources.data_lake.base.abstract_data_lake_client import AbstractDataLakeClient
+from swiss_ai_hub.pipeline.types.ref_doc_document import RefDocDocument
 
 
 @op(code_version="v1")

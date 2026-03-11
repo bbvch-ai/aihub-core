@@ -1,9 +1,9 @@
 from dagster import OpExecutionContext, ResourceParam, op
 from fsspec import AbstractFileSystem
 
-from swiss_ai_hub.pipeline.resources.parser.DocumentParserResource import DocumentParserResource
-from swiss_ai_hub.pipeline.types.DataLakeFile import DataLakeFile
-from swiss_ai_hub.pipeline.types.RefDocDocument import RefDocDocument
+from swiss_ai_hub.pipeline.resources.parser.document_parser_resource import DocumentParserResource
+from swiss_ai_hub.pipeline.types.data_lake_file import DataLakeFile
+from swiss_ai_hub.pipeline.types.ref_doc_document import RefDocDocument
 
 
 @op(code_version="v1")

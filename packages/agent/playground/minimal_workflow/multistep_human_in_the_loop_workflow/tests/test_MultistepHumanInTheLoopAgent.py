@@ -1,8 +1,7 @@
 import pytest
 import pytest_asyncio
-from swiss_ai_hub.core.events.agent.control.start.StartEvent import StartEvent
-from swiss_ai_hub.core.events.agent.control.stop.StopEvent import StopEvent
-from swiss_ai_hub.core.i18n.LocaleString import LocaleString
+from swiss_ai_hub.core.events.agent import StartEvent, StopEvent
+from swiss_ai_hub.core.i18n import LocaleString
 
 from playground.minimal_workflow.multistep_human_in_the_loop_workflow.events.FirstStepHumanInTheLoop import (
     FirstStepHumanInTheLoopRequestEvent,
@@ -18,7 +17,7 @@ from playground.minimal_workflow.multistep_human_in_the_loop_workflow.MultistepH
 from playground.minimal_workflow.multistep_human_in_the_loop_workflow.MultistepHumanInTheLoopAgentConfig import (
     MultistepHumanInTheLoopAgentConfig,
 )
-from swiss_ai_hub.agent.runners.AgentTestRunner import AgentTestRunner
+from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner
 
 
 @pytest_asyncio.fixture

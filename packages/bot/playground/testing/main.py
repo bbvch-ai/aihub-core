@@ -1,15 +1,15 @@
 import asyncio
 from os.path import abspath, dirname, join
 
-from swiss_ai_hub.core.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
+from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler import (
     DangerousDevelopmentOnlyAuthHandler,
 )
-from swiss_ai_hub.core.infrastructure.logging.logger import enable_logging
-from swiss_ai_hub.core.routes.health.HealthController import HealthController
+from swiss_ai_hub.core.infrastructure import enable_logging
+from swiss_ai_hub.core.routes import HealthController
 
-from swiss_ai_hub.bot.routes.agent.AgentChatController import AgentChatController
-from swiss_ai_hub.bot.routes.openai.OpenaiChatController import OpenaiChatController
-from swiss_ai_hub.bot.runners.SimulatedAgentBotTestRunner import SimulatedAgentBotTestRunner
+from swiss_ai_hub.bot.routes.agent.agent_chat_controller import AgentChatController
+from swiss_ai_hub.bot.routes.openai.openai_chat_controller import OpenaiChatController
+from swiss_ai_hub.bot.runners.simulated_agent_bot_test_runner import SimulatedAgentBotTestRunner
 
 enable_logging()
 

@@ -21,16 +21,16 @@ This section covers the foundational architecture, patterns, and terminology you
 processes.
 
 ::: info
-This documentation assumes you have completed the general Swiss AI Hub setup as described in the main README.md. Make sure you
-have the required infrastructure running before proceeding.
+This documentation assumes you have completed the general Swiss AI Hub setup as described in the main README.md. Make
+sure you have the required infrastructure running before proceeding.
 :::
 
 ### 📚 Introduction to `aihub_process`
 
 You are contributing to the **aihub_process** scope, which orchestrates high-level business processes that involve
-collaboration between agents, humans, and programs within the Swiss AI Hub platform. This scope implements the highest tier of
-Swiss AI Hub's evolution—**Agentic Process Automation**—where workflows are redesigned as dynamic collaborations between
-different actors.
+collaboration between agents, humans, and programs within the Swiss AI Hub platform. This scope implements the highest
+tier of Swiss AI Hub's evolution—**Agentic Process Automation**—where workflows are redesigned as dynamic collaborations
+between different actors.
 
 ### 📁 Project Structure
 

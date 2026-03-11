@@ -19,7 +19,7 @@ curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/api/v1/docs
   > API server not running at http://localhost:8000. Start it with:
   >
   > - `make run-dev` in `packages/api/`, OR
-  > - `docker compose -f docker-compose.dev.yml up aihub-api -d`
+  > - `docker compose -f infra/docker-compose.dev.yml up aihub-api -d`
 
 ## Step 2: Generate the SDK
 
@@ -69,8 +69,8 @@ Summarize: new endpoints added, modified request/response types, removed endpoin
 
 ## Troubleshooting
 
-- **API not running**: Start it with `docker compose -f docker-compose.dev.yml up aihub-api -d` or `make run-dev` in
-  `packages/api/`
+- **API not running**: Start it with `docker compose -f infra/docker-compose.dev.yml up aihub-api -d` or `make run-dev`
+  in `packages/api/`
 - **pnpm not found**: Run `corepack enable` or install pnpm globally
 - **Generation produces no changes**: The API spec may not have changed. Verify your API changes are deployed to the
   running server.

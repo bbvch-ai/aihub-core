@@ -4,11 +4,11 @@ import pytest
 from fastapi import UploadFile
 from pydub import AudioSegment
 from pydub.generators import Sine
-from swiss_ai_hub.core.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
+from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_settings import (
     DangerousDevelopmentOnlyAuthSettings,
 )
 
-from swiss_ai_hub.api.audio.AudioChunkingService import AudioChunkingService
+from swiss_ai_hub.api.audio.audio_chunking_service import AudioChunkingService
 
 
 @pytest.fixture
@@ -129,10 +129,10 @@ async def test_full_stt_with_chunking(create_test_audio, monkeypatch):
         return ["transcription/whisper-large-v3"]
 
     # Test the service
-    from swiss_ai_hub.api.routes.openai.OpenaiService import OpenaiService
+    from swiss_ai_hub.api.routes.openai.openai_service import OpenaiService
 
     with patch(
-        "swiss_ai_hub.api.routes.openai.OpenaiService.LiteLLMService.openai_aclient_for_user"
+        "swiss_ai_hub.api.routes.openai.openai_service.LiteLLMService.openai_aclient_for_user"
     ) as mock_litellm_client:
         mock_litellm_client.return_value = mock_client
 

@@ -6,8 +6,8 @@ from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from swiss_ai_hub.core.generative_ai.guards.agent_description_guard import GuardResult, agent_description_guard
-from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
-from swiss_ai_hub.core.i18n.LocaleString import LocaleString
+from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
+from swiss_ai_hub.core.i18n.locale_string import LocaleString
 from swiss_ai_hub.core.testing.asyncio_utils.bdd import async_test
 
 scenarios("./features/agent_description_guard.feature")

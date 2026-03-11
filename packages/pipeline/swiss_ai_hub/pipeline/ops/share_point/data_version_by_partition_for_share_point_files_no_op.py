@@ -6,7 +6,7 @@ from dagster import (
     OpExecutionContext,
 )
 
-from swiss_ai_hub.pipeline.types.SharePointFile import MinimalSharePointFile
+from swiss_ai_hub.pipeline.types.share_point_file import MinimalSharePointFile
 from swiss_ai_hub.pipeline.util.meta_utils import share_point_metadata_table
 from swiss_ai_hub.pipeline.util.partition_utils import replace_partition_keys
 

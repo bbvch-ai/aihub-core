@@ -1,4 +1,4 @@
-from swiss_ai_hub.core.agents.AgentConfig import AgentConfig
+from swiss_ai_hub.core.agents import AgentConfig
 
 
 class CustomStartStopEventAgentConfig(AgentConfig):

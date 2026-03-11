@@ -1,16 +1,16 @@
 import pytest
 
-from swiss_ai_hub.core.events.agent.memory.retrieve.BaseRetrieveMemoryEvent import BaseRetrieveMemoryEvent
-from swiss_ai_hub.core.events.agent.memory.store.StoreUserMemoryEvent import StoreUserMemoryEvent
-from swiss_ai_hub.core.infrastructure.mem0.types.Memory import Memory
-from swiss_ai_hub.core.infrastructure.mem0.types.MemoryAdded import MemoryAdded
-from swiss_ai_hub.core.infrastructure.mem0.types.MemoryEventType import MemoryEventType
-from swiss_ai_hub.core.infrastructure.mem0.types.MemoryMetadata import MemoryMetadata
-from swiss_ai_hub.core.infrastructure.mem0.types.MemoryRelation import MemoryRelation
-from swiss_ai_hub.core.infrastructure.mem0.types.MemorySearchResult import MemorySearchResult
-from swiss_ai_hub.core.infrastructure.mem0.types.MemoryType import MemoryType
-from swiss_ai_hub.core.infrastructure.mem0.types.ModifiedMemory import ModifiedMemory
-from swiss_ai_hub.core.infrastructure.mem0.types.ModifiedRelations import ModifiedRelations
+from swiss_ai_hub.core.events.agent.memory.retrieve.base_retrieve_memory_event import BaseRetrieveMemoryEvent
+from swiss_ai_hub.core.events.agent.memory.store.store_user_memory_event import StoreUserMemoryEvent
+from swiss_ai_hub.core.infrastructure.mem0.types.memory import Memory
+from swiss_ai_hub.core.infrastructure.mem0.types.memory_added import MemoryAdded
+from swiss_ai_hub.core.infrastructure.mem0.types.memory_event_type import MemoryEventType
+from swiss_ai_hub.core.infrastructure.mem0.types.memory_metadata import MemoryMetadata
+from swiss_ai_hub.core.infrastructure.mem0.types.memory_relation import MemoryRelation
+from swiss_ai_hub.core.infrastructure.mem0.types.memory_search_result import MemorySearchResult
+from swiss_ai_hub.core.infrastructure.mem0.types.memory_type import MemoryType
+from swiss_ai_hub.core.infrastructure.mem0.types.modified_memory import ModifiedMemory
+from swiss_ai_hub.core.infrastructure.mem0.types.modified_relations import ModifiedRelations
 
 
 class TestStoreUserMemoryEvent:

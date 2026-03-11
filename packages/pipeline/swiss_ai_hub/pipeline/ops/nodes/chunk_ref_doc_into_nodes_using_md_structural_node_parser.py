@@ -1,11 +1,11 @@
 from dagster import OpExecutionContext, Output, op
 from llama_index.core.schema import TextNode
 
-from swiss_ai_hub.pipeline.resources.doc_store.DocStoreResource import DocStoreResource
-from swiss_ai_hub.pipeline.resources.parser.MarkdownStructuralNodeParserResource import (
+from swiss_ai_hub.pipeline.resources.doc_store.doc_store_resource import DocStoreResource
+from swiss_ai_hub.pipeline.resources.parser.markdown_structural_node_parser_resource import (
     MarkdownStructuralNodeParserResource,
 )
-from swiss_ai_hub.pipeline.types.RefDocDocument import RefDocDocument
+from swiss_ai_hub.pipeline.types.ref_doc_document import RefDocDocument
 
 
 @op(code_version="v1")

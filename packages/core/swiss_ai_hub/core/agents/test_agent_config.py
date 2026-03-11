@@ -1,10 +1,10 @@
 import pytest
 from pydantic import Field, ValidationError
 
-from swiss_ai_hub.core.agents.AgentConfig import AgentConfig, StepConfig
-from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.persistence.agents.AgentConfigEntityEmbeddedDocument import AgentConfigEntityEmbeddedDocument
-from swiss_ai_hub.core.persistence.i18n.LocaleStringEntity import LocaleStringEntity
+from swiss_ai_hub.core.agents.agent_config import AgentConfig, StepConfig
+from swiss_ai_hub.core.i18n.locale_string import LocaleString
+from swiss_ai_hub.core.persistence.agents.agent_config_entity_embedded_document import AgentConfigEntityEmbeddedDocument
+from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
 
 
 @pytest.fixture

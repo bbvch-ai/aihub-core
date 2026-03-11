@@ -3,12 +3,12 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from swiss_ai_hub.core.dispatcher.BaseDispatcher import BaseDispatcher, EventsAndKwargs
-    from swiss_ai_hub.core.dispatcher.stores.event.ExecutionContextEventStore import ExecutionContextEventStore
-    from swiss_ai_hub.core.dispatcher.stores.event.JetStreamEventStore import JetStreamEventStore
-    from swiss_ai_hub.core.dispatcher.stores.step.StepStore import StepStore
-    from swiss_ai_hub.core.dispatcher.stores.StoreBase import StoreBase
-    from swiss_ai_hub.core.dispatcher.stores.trace.TraceStore import TraceStore
+    from swiss_ai_hub.core.dispatcher.base_dispatcher import BaseDispatcher, EventsAndKwargs
+    from swiss_ai_hub.core.dispatcher.stores.event.execution_context_event_store import ExecutionContextEventStore
+    from swiss_ai_hub.core.dispatcher.stores.event.jet_stream_event_store import JetStreamEventStore
+    from swiss_ai_hub.core.dispatcher.stores.step.step_store import StepStore
+    from swiss_ai_hub.core.dispatcher.stores.store_base import StoreBase
+    from swiss_ai_hub.core.dispatcher.stores.trace.trace_store import TraceStore
 
 __all__ = [
     "BaseDispatcher",
@@ -21,13 +21,13 @@ __all__ = [
 ]
 
 _LAZY_IMPORTS: dict[str, str] = {
-    "BaseDispatcher": "swiss_ai_hub.core.dispatcher.BaseDispatcher",
-    "EventsAndKwargs": "swiss_ai_hub.core.dispatcher.BaseDispatcher",
-    "ExecutionContextEventStore": "swiss_ai_hub.core.dispatcher.stores.event.ExecutionContextEventStore",
-    "JetStreamEventStore": "swiss_ai_hub.core.dispatcher.stores.event.JetStreamEventStore",
-    "StepStore": "swiss_ai_hub.core.dispatcher.stores.step.StepStore",
-    "StoreBase": "swiss_ai_hub.core.dispatcher.stores.StoreBase",
-    "TraceStore": "swiss_ai_hub.core.dispatcher.stores.trace.TraceStore",
+    "BaseDispatcher": "swiss_ai_hub.core.dispatcher.base_dispatcher",
+    "EventsAndKwargs": "swiss_ai_hub.core.dispatcher.base_dispatcher",
+    "ExecutionContextEventStore": "swiss_ai_hub.core.dispatcher.stores.event.execution_context_event_store",
+    "JetStreamEventStore": "swiss_ai_hub.core.dispatcher.stores.event.jet_stream_event_store",
+    "StepStore": "swiss_ai_hub.core.dispatcher.stores.step.step_store",
+    "StoreBase": "swiss_ai_hub.core.dispatcher.stores.store_base",
+    "TraceStore": "swiss_ai_hub.core.dispatcher.stores.trace.trace_store",
 }
 
 
@@ -36,6 +36,8 @@ def __getattr__(name: str) -> object:
         import importlib
 
         module = importlib.import_module(_LAZY_IMPORTS[name])
-        return getattr(module, name)
+        value = getattr(module, name)
+        globals()[name] = value
+        return value
     msg = f"module {__name__!r} has no attribute {name!r}"
     raise AttributeError(msg)

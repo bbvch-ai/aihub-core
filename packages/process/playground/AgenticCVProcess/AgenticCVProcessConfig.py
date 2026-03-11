@@ -1,10 +1,10 @@
 from typing import Annotated, Self
 
 from pydantic import Field
-from swiss_ai_hub.core.agents.AgentRef import AgentRef
-from swiss_ai_hub.core.form.elements.AgentSelector import AgentSelector
-from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.processes.ProcessConfig import ProcessConfig
+from swiss_ai_hub.core.agents import AgentRef
+from swiss_ai_hub.core.form import AgentSelector
+from swiss_ai_hub.core.i18n import LocaleString
+from swiss_ai_hub.core.processes import ProcessConfig
 
 
 class AgenticCVProcessConfig(ProcessConfig):

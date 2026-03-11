@@ -27,11 +27,11 @@ from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import (
     VERSION,
 )
 
-from swiss_ai_hub.pipeline.types.DataLakeFile import DataLakeFile
-from swiss_ai_hub.pipeline.types.RcloneFile import MinimalRcloneFile
-from swiss_ai_hub.pipeline.types.RefDocDocument import RefDocDocument
-from swiss_ai_hub.pipeline.types.SharePointFile import MinimalSharePointFile
-from swiss_ai_hub.pipeline.types.SourceFile import MinimalSourceFile
+from swiss_ai_hub.pipeline.types.data_lake_file import DataLakeFile
+from swiss_ai_hub.pipeline.types.rclone_file import MinimalRcloneFile
+from swiss_ai_hub.pipeline.types.ref_doc_document import RefDocDocument
+from swiss_ai_hub.pipeline.types.share_point_file import MinimalSharePointFile
+from swiss_ai_hub.pipeline.types.source_file import MinimalSourceFile
 
 
 def readable_date(timestamp: int):

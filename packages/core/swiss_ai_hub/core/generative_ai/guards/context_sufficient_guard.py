@@ -5,8 +5,8 @@ from llama_index.core.llms import LLM
 from openai import NOT_GIVEN
 from pydantic import Field
 
-from swiss_ai_hub.core.generative_ai.guards.GuardResult import GuardResult
-from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
+from swiss_ai_hub.core.generative_ai.guards.guard_result import GuardResult
+from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 
 
 class ContextGuardResult(GuardResult):

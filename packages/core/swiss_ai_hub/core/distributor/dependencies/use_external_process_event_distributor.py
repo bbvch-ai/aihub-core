@@ -1,6 +1,6 @@
 from fastapi import Request, WebSocket
 
-from swiss_ai_hub.core.distributor.ExternalProcessEventDistributor import ExternalProcessEventDistributor
+from swiss_ai_hub.core.distributor.external_process_event_distributor import ExternalProcessEventDistributor
 
 
 def use_external_process_event_distributor(request: Request) -> ExternalProcessEventDistributor:

@@ -1,6 +1,6 @@
 from dagster import Out, Output, op
 
-from swiss_ai_hub.pipeline.types.DataLakeFile import DataLakeFile
+from swiss_ai_hub.pipeline.types.data_lake_file import DataLakeFile
 from swiss_ai_hub.pipeline.util.meta_utils import data_lake_file_metadata
 
 

@@ -1,7 +1,7 @@
 from llama_index.core.schema import NodeWithScore
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
 
-from swiss_ai_hub.core.generative_ai.processors.ParentSummaryPostProcessor import ParentSummaryPostProcessor
+from swiss_ai_hub.core.generative_ai.processors.parent_summary_post_processor import ParentSummaryPostProcessor
 
 
 def retrieve_parent_summary_nodes(

@@ -98,7 +98,7 @@ runs:
 
         # Pre-pull images in parallel to use cache effectively
         echo "Pre-pulling Docker images for faster startup..."
-        docker compose -f docker-compose.dev.yml --env-file .env.dev pull --quiet ${{ inputs.docker_compose_services }} || true
+        docker compose -f infra/docker-compose.dev.yml --env-file .env.dev pull --quiet ${{ inputs.docker_compose_services }} || true
     - name: Add secrets to environment variables
       shell: bash
       run: |
@@ -151,7 +151,7 @@ runs:
       if: inputs.docker_compose_services != ''
       shell: bash
       run: |
-        docker compose -f docker-compose.dev.yml --env-file .env.dev up -d ${{ inputs.docker_compose_services }}
+        docker compose -f infra/docker-compose.dev.yml --env-file .env.dev up -d ${{ inputs.docker_compose_services }}
     - name: Install FFmpeg
       if: inputs.install_ffmpeg == 'true'
       shell: bash
@@ -229,7 +229,7 @@ runs:
       if: inputs.docker_compose_services != ''
       shell: bash
       run: |
-        docker compose -f docker-compose.dev.yml down --remove-orphans
+        docker compose -f infra/docker-compose.dev.yml down --remove-orphans
     - name: Upload Coverage Report
       uses: actions/upload-artifact@v4
       with:

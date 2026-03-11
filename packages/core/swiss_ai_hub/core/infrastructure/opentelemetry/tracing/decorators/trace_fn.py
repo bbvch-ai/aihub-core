@@ -10,7 +10,7 @@ from typing import Any, ParamSpec, TypeVar
 from openinference.semconv.trace import OpenInferenceSpanKindValues, SpanAttributes
 
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.openinference_context import is_openinference_trace_active
-from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.SmartTracer import get_tracer
+from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.smart_tracer import get_tracer
 
 P = ParamSpec("P")
 T = TypeVar("T")

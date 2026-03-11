@@ -1,4 +1,4 @@
-from swiss_ai_hub.core.responder.AbstractResponder import AbstractResponder
-from swiss_ai_hub.core.responder.NCResponder import NCResponder
+from swiss_ai_hub.core.responder.abstract_responder import AbstractResponder
+from swiss_ai_hub.core.responder.nc_responder import NCResponder
 
 __all__ = ["AbstractResponder", "NCResponder"]

@@ -9,23 +9,23 @@ import requests
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
 from mongoengine import connect, disconnect
-from swiss_ai_hub.core.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
+from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler import (
     DangerousDevelopmentOnlyAuthHandler,
 )
-from swiss_ai_hub.core.infrastructure.api.AIHubSettings import AIHubSettings
-from swiss_ai_hub.core.infrastructure.mongo.MongoSettings import MongoSettings
-from swiss_ai_hub.core.routes.health.HealthController import HealthController
-from swiss_ai_hub.core.testing.route_adapter.ASGIAdapter import ASGIAdapter
+from swiss_ai_hub.core.infrastructure import AIHubSettings
+from swiss_ai_hub.core.infrastructure import MongoSettings
+from swiss_ai_hub.core.routes import HealthController
+from swiss_ai_hub.core.testing import ASGIAdapter
 
-from swiss_ai_hub.bot.persistence.entities.ConversationEntity import (
+from swiss_ai_hub.bot.persistence.entities.conversation_entity import (
     Content,
     ConversationEntity,
     ConversationTracker,
     Message,
 )
-from swiss_ai_hub.bot.persistence.entities.PathEntity import Credentials, PathEntity
-from swiss_ai_hub.bot.routes.agent.AgentChatController import AgentChatController
-from swiss_ai_hub.bot.runners.SimulatedAgentBotTestRunner import SimulatedAgentBotTestRunner
+from swiss_ai_hub.bot.persistence.entities.path_entity import Credentials, PathEntity
+from swiss_ai_hub.bot.routes.agent.agent_chat_controller import AgentChatController
+from swiss_ai_hub.bot.runners.simulated_agent_bot_test_runner import SimulatedAgentBotTestRunner
 
 # Constants
 BASE_URL = "http://test/api/v1"

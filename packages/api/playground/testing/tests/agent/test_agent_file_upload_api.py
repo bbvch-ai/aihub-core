@@ -4,14 +4,14 @@ import pytest
 import pytest_asyncio
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
-from swiss_ai_hub.core.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
+from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler import (
     DangerousDevelopmentOnlyAuthHandler,
 )
-from swiss_ai_hub.core.testing.auth_utils.role_mocks import mock_role_entity_methods  # noqa: F401
+from swiss_ai_hub.core.testing import mock_role_entity_methods
 
-from swiss_ai_hub.api.routes.agent.AgentController import AgentController
-from swiss_ai_hub.api.routes.agent.AgentFileUploadService import AgentFileUploadService
-from swiss_ai_hub.api.runners.ApiTestRunner import ApiTestRunner
+from swiss_ai_hub.api.routes.agent.agent_controller import AgentController
+from swiss_ai_hub.api.routes.agent.agent_file_upload_service import AgentFileUploadService
+from swiss_ai_hub.api.runners.api_test_runner import ApiTestRunner
 
 AGENT_CLASS = "TestAgent"
 AGENT_ID = "test_1"

@@ -1,19 +1,18 @@
-from swiss_ai_hub.core.displayers.EventDisplayer import EventDisplayer
-from swiss_ai_hub.core.events.agent.control.stop.StopEvent import StopEvent
-from swiss_ai_hub.core.events.agent.memory.history.AddUserMemoryToChatHistoryEvent import AddUserMemoryToChatHistoryEvent
-from swiss_ai_hub.core.events.agent.memory.retrieve.RetrieveUserMemoryEvent import RetrieveUserMemoryEvent
-from swiss_ai_hub.core.events.agent.memory.store.StoreUserMemoryEvent import StoreUserMemoryEvent
-from swiss_ai_hub.core.events.agent.semantic.llm.LLMEvent import LLMEvent
-from swiss_ai_hub.core.events.agent.user.UserMessageEvent import UserMessageEvent
-from swiss_ai_hub.core.generative_ai.chat_history.extend_chat_history_with_user_memory import (
-    extend_chat_history_with_user_memory,
+from swiss_ai_hub.core.displayers import EventDisplayer
+from swiss_ai_hub.core.events.agent import (
+    AddUserMemoryToChatHistoryEvent,
+    LLMEvent,
+    RetrieveUserMemoryEvent,
+    StopEvent,
+    StoreUserMemoryEvent,
+    UserMessageEvent,
 )
-from swiss_ai_hub.core.generative_ai.memory.AgentMemory import AgentMemory
-from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
+from swiss_ai_hub.core.generative_ai import AgentMemory, extend_chat_history_with_user_memory
+from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.topics import AgentInstanceTopic
 
 from playground.minimal_workflow.user_memory_workflow.UserMemoryAgentConfig import UserMemoryAgentConfig
-from swiss_ai_hub.agent.agents.Agent import Agent
+from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.workflow.decorators.step import step
 
 

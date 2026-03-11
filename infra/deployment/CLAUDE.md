@@ -38,11 +38,11 @@ deployment/
     └── tracing_action.py
 ```
 
-**Generated outputs** (at repo root — NEVER edit directly):
+**Generated outputs** (under `infra/` — NEVER edit directly):
 
-- `docker-compose.{stage}{.gpu}.yml` — 10 compose files
-- `configs/{service}/{config}.{stage}{.gpu}.{ext}` — ~70 stage-variant config files
-- `configs/{service}/{static-scripts}` — ~6 stage-independent scripts (etcd, seaweedfs, postgres, openwebui)
+- `infra/docker-compose.{stage}{.gpu}.yml` — 10 compose files
+- `infra/configs/{service}/{config}.{stage}{.gpu}.{ext}` — ~70 stage-variant config files
+- `infra/configs/{service}/{static-scripts}` — ~6 stage-independent scripts (etcd, seaweedfs, postgres, openwebui)
 
 ## Generation Pipeline
 
@@ -191,8 +191,8 @@ Streamlined workflow — CI auto-discovers from `compose-config.yml`:
 - **Generator**: `deployment/generate_compose.py`
 - **Main template**: `deployment/templates/docker-compose.yml.j2`
 - **Config templates**: `deployment/templates/configs/`
-- **Generated compose files**: `docker-compose.{stage}{.gpu}.yml` (repo root)
-- **Generated service configs**: `configs/` (repo root)
+- **Generated compose files**: `infra/docker-compose.{stage}{.gpu}.yml`
+- **Generated service configs**: `infra/configs/`
 - **Env templates**: `.env.dev`, `.env.prod`
 - **ADR (network isolation)**: `docs/arc42/decisions/2025_12_22_docker_network_isolation.md`
 - **ADR (deployment architecture)**: `docs/arc42/decisions/2025_08_11_containerized_deployment_architecture.md`

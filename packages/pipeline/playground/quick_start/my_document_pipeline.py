@@ -1,8 +1,8 @@
 from dagster import AssetKey, Definitions, DynamicPartitionsDefinition
-from swiss_ai_hub.core.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
-from swiss_ai_hub.core.generative_ai.resources.models.llm.LLMConfig import LLMConfig
-from swiss_ai_hub.core.infrastructure.api.AIHubSettings import AIHubSettings
-from swiss_ai_hub.core.topic_managers.pipeline.PipelineInstanceTopicManager import PipelineInstanceTopicManager
+from swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_model_config import EmbeddingModelConfig
+from swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config import LLMConfig
+from swiss_ai_hub.core.infrastructure import AIHubSettings
+from swiss_ai_hub.core.topic_managers import PipelineInstanceTopicManager
 
 # Import AI-Hub pipeline factories
 from swiss_ai_hub.pipeline.assets.factories.data_lake_to_vector_store.documents_factory import documents_factory
@@ -19,13 +19,13 @@ from swiss_ai_hub.pipeline.resources.factory import (
     local_mongo_milvus_storage_context_resource,
     s3_data_lake_resources,
 )
-from swiss_ai_hub.pipeline.resources.llm.EmbeddingModelResource import EmbeddingModelResource
-from swiss_ai_hub.pipeline.resources.llm.LanguageModelResource import LanguageModelResource
-from swiss_ai_hub.pipeline.resources.parser.DocumentParserResource import DocumentParserResource, LoaderType
-from swiss_ai_hub.pipeline.resources.parser.MarkdownStructuralNodeParserResource import (
+from swiss_ai_hub.pipeline.resources.llm.embedding_model_resource import EmbeddingModelResource
+from swiss_ai_hub.pipeline.resources.llm.language_model_resource import LanguageModelResource
+from swiss_ai_hub.pipeline.resources.parser.document_parser_resource import DocumentParserResource, LoaderType
+from swiss_ai_hub.pipeline.resources.parser.markdown_structural_node_parser_resource import (
     MarkdownStructuralNodeParserResource,
 )
-from swiss_ai_hub.pipeline.resources.parser.RecursiveSummaryParserResource import RecursiveSummaryParserResource
+from swiss_ai_hub.pipeline.resources.parser.recursive_summary_parser_resource import RecursiveSummaryParserResource
 from swiss_ai_hub.pipeline.schedules.factory import daily_schedule_at
 from swiss_ai_hub.pipeline.sensors.factory import default_automation_sensor
 from swiss_ai_hub.pipeline.sensors.nats.nats_document_uploaded_sensor import nats_document_uploaded_sensor

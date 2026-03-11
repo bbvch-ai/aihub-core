@@ -13,7 +13,9 @@ import os
 import re
 from typing import TYPE_CHECKING
 
-from swiss_ai_hub.core.generative_ai.document.accessor.S3AnonymousFileAccessService import S3AnonymousFileAccessService
+from swiss_ai_hub.core.generative_ai.document.accessor.s3_anonymous_file_access_service import (
+    S3AnonymousFileAccessService,
+)
 from swiss_ai_hub.core.generative_ai.utils.path_utils import create_figures_folder_name
 from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import NODE_CONTENT_TYPE_FIGURE
 

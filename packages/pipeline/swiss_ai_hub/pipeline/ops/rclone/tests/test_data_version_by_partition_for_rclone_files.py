@@ -6,7 +6,7 @@ from swiss_ai_hub.core.generative_ai.utils.path_utils import encode_partition_ke
 from swiss_ai_hub.pipeline.ops.rclone.data_version_by_partition_for_rclone_files import (
     data_version_by_partition_for_rclone_files,
 )
-from swiss_ai_hub.pipeline.types.RcloneFile import MinimalRcloneFile
+from swiss_ai_hub.pipeline.types.rclone_file import MinimalRcloneFile
 
 
 def _make_file(

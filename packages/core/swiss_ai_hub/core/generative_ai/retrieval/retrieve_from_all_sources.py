@@ -1,10 +1,10 @@
 import asyncio
 import logging
 
-from swiss_ai_hub.core.generative_ai.document.types.IngestedNode import IngestedNode
-from swiss_ai_hub.core.generative_ai.retrievers.KnowledgeRetriever import KnowledgeRetriever
-from swiss_ai_hub.core.generative_ai.retrievers.KnowledgeRetrieverConfig import KnowledgeRetrieverConfig
-from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
+from swiss_ai_hub.core.generative_ai.document.types.ingested_node import IngestedNode
+from swiss_ai_hub.core.generative_ai.retrievers.knowledge_retriever import KnowledgeRetriever
+from swiss_ai_hub.core.generative_ai.retrievers.knowledge_retriever_config import KnowledgeRetrieverConfig
+from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 
 logger = logging.getLogger(__name__)
 

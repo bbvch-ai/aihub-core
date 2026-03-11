@@ -1,15 +1,14 @@
 from typing import ClassVar
 
-from swiss_ai_hub.core.events.agent.control.stop.StopEvent import StopEvent
-from swiss_ai_hub.core.events.agent.user.UserMessageEvent import UserMessageEvent
-from swiss_ai_hub.core.i18n.LocaleString import LocaleString
+from swiss_ai_hub.core.events.agent import StopEvent, UserMessageEvent
+from swiss_ai_hub.core.i18n import LocaleString
 
 from playground.minimal_workflow.bounded_loop.BoundedLoopAgentConfig import BoundedLoopAgentConfig
 from playground.minimal_workflow.bounded_loop.events.BeginEvent import BeginEvent
 from playground.minimal_workflow.bounded_loop.events.BoundedLoopAEvent import BoundedLoopAEvent
 from playground.minimal_workflow.bounded_loop.events.DecisionEvent import DecisionEvent
-from swiss_ai_hub.agent.agents.Agent import Agent
-from swiss_ai_hub.agent.context.run.RunContext import RunContext
+from swiss_ai_hub.agent.agents.agent import Agent
+from swiss_ai_hub.agent.context.run.run_context import RunContext
 from swiss_ai_hub.agent.workflow.decorators.step import step
 
 

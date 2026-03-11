@@ -1,5 +1,5 @@
-from swiss_ai_hub.core.generative_ai.document.types.IngestedNode import IngestedNode
-from swiss_ai_hub.core.generative_ai.resources.models.llm.RerankingModelConfig import RerankingModelConfig
+from swiss_ai_hub.core.generative_ai.document.types.ingested_node import IngestedNode
+from swiss_ai_hub.core.generative_ai.resources.models.llm.reranking_model_config import RerankingModelConfig
 
 
 async def rerank_nodes(

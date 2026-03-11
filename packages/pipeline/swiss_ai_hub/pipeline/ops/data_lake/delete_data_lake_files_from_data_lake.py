@@ -2,8 +2,8 @@ from dagster import OpExecutionContext, Output, ResourceParam, op
 from llama_index.core.storage.docstore.keyval_docstore import KVDocumentStore
 from swiss_ai_hub.core.generative_ai.utils.path_utils import create_figures_folder_name
 
-from swiss_ai_hub.pipeline.resources.data_lake.base.AbstractDataLakeClient import AbstractDataLakeClient
-from swiss_ai_hub.pipeline.types.DataLakeFile import DataLakeFile
+from swiss_ai_hub.pipeline.resources.data_lake.base.abstract_data_lake_client import AbstractDataLakeClient
+from swiss_ai_hub.pipeline.types.data_lake_file import DataLakeFile
 from swiss_ai_hub.pipeline.util.id_utils import uri_to_id
 
 

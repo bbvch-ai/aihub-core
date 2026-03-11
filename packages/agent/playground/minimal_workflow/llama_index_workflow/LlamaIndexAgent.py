@@ -1,15 +1,13 @@
 from typing import ClassVar
 
-from swiss_ai_hub.core.displayers.EventDisplayer import EventDisplayer
-from swiss_ai_hub.core.events.agent.control.stop.StopEvent import StopEvent
-from swiss_ai_hub.core.events.agent.semantic.llm.LLMEvent import LLMEvent
-from swiss_ai_hub.core.events.agent.user.UserMessageEvent import UserMessageEvent
-from swiss_ai_hub.core.i18n.LocaleString import LocaleString
+from swiss_ai_hub.core.displayers import EventDisplayer
+from swiss_ai_hub.core.events.agent import LLMEvent, StopEvent, UserMessageEvent
+from swiss_ai_hub.core.i18n import LocaleString
 
 from playground.minimal_workflow.llama_index_workflow.LlamaIndexAgentConfig import (
     LlamaIndexAgentConfig,
 )
-from swiss_ai_hub.agent.agents.Agent import Agent
+from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.workflow.decorators.step import step
 
 

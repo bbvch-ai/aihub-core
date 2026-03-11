@@ -9,10 +9,10 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.distributor.dependencies.use_external_process_event_distributor import (
         use_external_process_event_distributor,
     )
-    from swiss_ai_hub.core.distributor.events.ExternalAgentEvent import ExternalAgentEvent
-    from swiss_ai_hub.core.distributor.events.ExternalProcessEvent import ExternalProcessEvent
-    from swiss_ai_hub.core.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
-    from swiss_ai_hub.core.distributor.ExternalProcessEventDistributor import ExternalProcessEventDistributor
+    from swiss_ai_hub.core.distributor.events.external_agent_event import ExternalAgentEvent
+    from swiss_ai_hub.core.distributor.events.external_process_event import ExternalProcessEvent
+    from swiss_ai_hub.core.distributor.external_agent_event_distributor import ExternalAgentEventDistributor
+    from swiss_ai_hub.core.distributor.external_process_event_distributor import ExternalProcessEventDistributor
 
 __all__ = [
     "ExternalAgentEvent",
@@ -24,10 +24,10 @@ __all__ = [
 ]
 
 _LAZY_IMPORTS: dict[str, str] = {
-    "ExternalAgentEvent": "swiss_ai_hub.core.distributor.events.ExternalAgentEvent",
-    "ExternalAgentEventDistributor": "swiss_ai_hub.core.distributor.ExternalAgentEventDistributor",
-    "ExternalProcessEvent": "swiss_ai_hub.core.distributor.events.ExternalProcessEvent",
-    "ExternalProcessEventDistributor": "swiss_ai_hub.core.distributor.ExternalProcessEventDistributor",
+    "ExternalAgentEvent": "swiss_ai_hub.core.distributor.events.external_agent_event",
+    "ExternalAgentEventDistributor": "swiss_ai_hub.core.distributor.external_agent_event_distributor",
+    "ExternalProcessEvent": "swiss_ai_hub.core.distributor.events.external_process_event",
+    "ExternalProcessEventDistributor": "swiss_ai_hub.core.distributor.external_process_event_distributor",
     "use_external_agent_event_distributor": "swiss_ai_hub.core.distributor.dependencies.use_external_agent_event_distributor",
     "use_external_process_event_distributor": "swiss_ai_hub.core.distributor.dependencies.use_external_process_event_distributor",
 }
@@ -38,6 +38,8 @@ def __getattr__(name: str) -> object:
         import importlib
 
         module = importlib.import_module(_LAZY_IMPORTS[name])
-        return getattr(module, name)
+        value = getattr(module, name)
+        globals()[name] = value
+        return value
     msg = f"module {__name__!r} has no attribute {name!r}"
     raise AttributeError(msg)

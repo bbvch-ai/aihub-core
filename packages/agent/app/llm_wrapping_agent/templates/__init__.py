@@ -1,4 +1,4 @@
-from swiss_ai_hub.agent.agents.LLMWrappingAgent.LLMWrappingAgentConfig import LLMWrappingAgentConfig
+from swiss_ai_hub.agent.agents.llm_wrapping_agent.llm_wrapping_agent_config import LLMWrappingAgentConfig
 
 from .code_explainer import TEMPLATE as CODE_EXPLAINER
 from .email_drafter import TEMPLATE as EMAIL_DRAFTER
