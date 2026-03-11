@@ -4,7 +4,10 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
+from aihub_lib.infrastructure.openwebui.OnlineAgent import OnlineAgent
 from aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner import OpenWebuiProvisioner
+
+_RAG_AGENT = OnlineAgent(agent_class="rag", agent_id="default", display_name="RAG Agent")
 
 
 @pytest.fixture(autouse=True)
@@ -50,7 +53,7 @@ class TestSyncAgents:
             patch.object(provisioner, "_sync_workspace_models") as mock_models,
             patch.object(provisioner, "_sync_access_grants"),
         ):
-            await provisioner.sync_agents([("rag", "default", "RAG Agent")])
-            await provisioner.sync_agents([("rag", "default", "RAG Agent")])
+            await provisioner.sync_agents([_RAG_AGENT])
+            await provisioner.sync_agents([_RAG_AGENT])
 
             assert mock_models.call_count == 2

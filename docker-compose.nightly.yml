@@ -1508,6 +1508,7 @@ services:
       POSTGRES_DB: openwebui
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      OPENWEBUI_SERVICE_ACCOUNT_ID: ${OPENWEBUI_SERVICE_ACCOUNT_ID}
     volumes:
       - ./configs/openwebui/init-openwebui.sh:/init-openwebui.sh:ro
       - ./configs/openwebui/functions:/functions:ro
@@ -1845,6 +1846,8 @@ services:
       OPENWEBUI_BASE_URL: http://open-webui:8080
       OPENWEBUI_SECRET_KEY: ${OPENWEBUI_SECRET_KEY}
       OPENWEBUI_SCIM_TOKEN: ${OPENWEBUI_SCIM_TOKEN}
+      OPENWEBUI_WEBHOOK_SECRET: ${OPENWEBUI_WEBHOOK_SECRET}
+      OPENWEBUI_SERVICE_ACCOUNT_ID: ${OPENWEBUI_SERVICE_ACCOUNT_ID}
 
       # Jupyter (for open-webui code interpreter)
       JUPYTER_URL: http://jupyter:8888

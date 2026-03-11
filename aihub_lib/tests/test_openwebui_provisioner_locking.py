@@ -4,7 +4,10 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
+from aihub_lib.infrastructure.openwebui.OnlineAgent import OnlineAgent
 from aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner import OpenWebuiProvisioner
+
+_RAG_AGENT = OnlineAgent(agent_class="rag", agent_id="default", display_name="RAG Agent")
 
 
 def _make_lock(*, acquired: bool) -> MagicMock:
@@ -35,7 +38,7 @@ class TestDistributedLocking:
         mock_redis.lock.return_value = _make_lock(acquired=False)
 
         with patch.object(provisioner, "_sync_workspace_models") as mock_models:
-            await provisioner.sync_agents([("rag", "default", "RAG Agent")])
+            await provisioner.sync_agents([_RAG_AGENT])
             mock_models.assert_not_called()
 
     @pytest.mark.asyncio
@@ -67,7 +70,7 @@ class TestDistributedLocking:
             patch.object(provisioner, "_sync_workspace_models"),
             patch.object(provisioner, "_sync_access_grants"),
         ):
-            await provisioner.sync_agents([("rag", "default", "RAG Agent")])
+            await provisioner.sync_agents([_RAG_AGENT])
             mock_lock.release.assert_awaited_once()
 
     @pytest.mark.asyncio
@@ -79,7 +82,7 @@ class TestDistributedLocking:
             patch.object(provisioner, "_sync_workspace_models", side_effect=RuntimeError("boom")),
             pytest.raises(RuntimeError, match="boom"),
         ):
-            await provisioner.sync_agents([("rag", "default", "RAG Agent")])
+            await provisioner.sync_agents([_RAG_AGENT])
 
         mock_lock.release.assert_awaited_once()
 
@@ -96,7 +99,7 @@ class TestDistributedLocking:
             patch.object(provisioner, "_sync_access_grants"),
             patch.object(provisioner, "_sync_groups"),
         ):
-            await provisioner.sync_agents([("rag", "default", "RAG Agent")])
+            await provisioner.sync_agents([_RAG_AGENT])
             await provisioner.sync_access()
 
         assert len(lock_keys) == 2

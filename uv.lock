@@ -222,6 +222,7 @@ dependencies = [
     { name = "pyyaml" },
     { name = "redis" },
     { name = "s3fs" },
+    { name = "scim2-client" },
     { name = "tabulate" },
     { name = "transformers" },
 ]
@@ -289,6 +290,7 @@ requires-dist = [
     { name = "pyyaml", specifier = ">=6.0.2" },
     { name = "redis", specifier = ">=5.2.1" },
     { name = "s3fs", specifier = ">=2024.10.0,<2025.0.0" },
+    { name = "scim2-client", specifier = ">=0.7.3" },
     { name = "tabulate", specifier = ">=0.9.0" },
     { name = "transformers", specifier = ">=4.57.3" },
 ]
@@ -5499,6 +5501,30 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/4a/d8/0c8a7dc9b41dcac53c4cbf9df2b9c83e0e0097203de8b37a712b345c0be5/safetensors-0.7.0-cp38-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:b0f6d66c1c538d5a94a73aa9ddca8ccc4227e6c9ff555322ea40bdd142391dd4", size = 677368, upload-time = "2025-11-19T15:18:41.627Z" },
     { url = "https://files.pythonhosted.org/packages/05/e5/cb4b713c8a93469e3c5be7c3f8d77d307e65fe89673e731f5c2bfd0a9237/safetensors-0.7.0-cp38-abi3-win32.whl", hash = "sha256:c74af94bf3ac15ac4d0f2a7c7b4663a15f8c2ab15ed0fc7531ca61d0835eccba", size = 326423, upload-time = "2025-11-19T15:18:45.74Z" },
     { url = "https://files.pythonhosted.org/packages/5d/e6/ec8471c8072382cb91233ba7267fd931219753bb43814cbc71757bfd4dab/safetensors-0.7.0-cp38-abi3-win_amd64.whl", hash = "sha256:d1239932053f56f3456f32eb9625590cc7582e905021f94636202a864d470755", size = 341380, upload-time = "2025-11-19T15:18:44.427Z" },
+]
+
+[[package]]
+name = "scim2-client"
+version = "0.7.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "scim2-models" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/d0/18/d096d3fe21041f8f695edaca35cfb0f1ae839c15b9b02e9b2fa8164f72a2/scim2_client-0.7.3.tar.gz", hash = "sha256:3c74b8f84124ed7bccb7251cc4f8848882bf14d90f1f6a4213b749d6a01fec10", size = 18037, upload-time = "2026-02-04T14:56:04.046Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/98/da/ad45ba3225c2a9bead54ac43291bb98e6c4cbec768e354ec33e227cba809/scim2_client-0.7.3-py3-none-any.whl", hash = "sha256:52f59bbe046b364a329da427904d884faaf5f73a6190a69017f9822c3aadb834", size = 19937, upload-time = "2026-02-04T14:56:02.954Z" },
+]
+
+[[package]]
+name = "scim2-models"
+version = "0.6.5"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pydantic", extra = ["email"] },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/36/62/b439b5c7b8cfe4de5bdf7a7829972bea3f00bdb419a6e1a23ab0c8d7e41f/scim2_models-0.6.5.tar.gz", hash = "sha256:23ac1b7a0ba0d6fb78c7235f45baa628248fa0ec6ef47dd27d9164e79092142d", size = 45791, upload-time = "2026-03-10T08:29:30.392Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/36/62/a4a0245e0ccc4aa000b598442af1bfec7cbd760b5c49e6648080791f42e6/scim2_models-0.6.5-py3-none-any.whl", hash = "sha256:7e293a506f6639cf9ad4ac9b0f8e29f04fdc3052fc09021ca3ee0b526055f7bf", size = 57201, upload-time = "2026-03-10T08:29:28.887Z" },
 ]
 
 [[package]]

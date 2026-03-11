@@ -2,25 +2,33 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
 import pytest
+from scim2_models import Group
 
+from aihub_lib.infrastructure.openwebui.AccessGrant import AccessGrant
 from aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner import (
     AIHUB_MODEL_PREFIX,
     OpenWebuiProvisioner,
 )
 
 
+def _group(display_name: str, group_id: str) -> Group:
+    g = Group(display_name=display_name)
+    g.id = group_id
+    return g
+
+
 class TestComputeAccessForModel:
     def test_group_with_matching_rules_gets_access(self) -> None:
-        groups = [{"displayName": "aihub:T1:R1", "id": "grp-1"}]
+        groups = [_group("aihub:T1:R1", "grp-1")]
         tenant_rules = {"T1": ["aihub.user.agent.rag.*"]}
         role_rules = {"R1": ["aihub.user.agent.rag.*"]}
 
         result = OpenWebuiProvisioner._compute_access_for_model("rag", "default", groups, tenant_rules, role_rules)
 
-        assert result == [{"principal_type": "group", "principal_id": "grp-1", "permission": "read"}]
+        assert result == [AccessGrant(principal_type="group", principal_id="grp-1", permission="read")]
 
     def test_group_without_matching_rules_denied(self) -> None:
-        groups = [{"displayName": "aihub:T1:R1", "id": "grp-1"}]
+        groups = [_group("aihub:T1:R1", "grp-1")]
         tenant_rules = {"T1": ["aihub.user.agent.rag.*"]}
         role_rules = {"R1": ["aihub.user.agent.other.*"]}
 
@@ -29,7 +37,7 @@ class TestComputeAccessForModel:
         assert result == []
 
     def test_tenant_ceiling_blocks_role_access(self) -> None:
-        groups = [{"displayName": "aihub:T1:R1", "id": "grp-1"}]
+        groups = [_group("aihub:T1:R1", "grp-1")]
         tenant_rules = {"T1": ["aihub.user.agent.other.*"]}
         role_rules = {"R1": ["aihub.user.agent.rag.*"]}
 
@@ -38,16 +46,16 @@ class TestComputeAccessForModel:
         assert result == []
 
     def test_wildcard_rules_grant_broad_access(self) -> None:
-        groups = [{"displayName": "aihub:T1:R1", "id": "grp-1"}]
+        groups = [_group("aihub:T1:R1", "grp-1")]
         tenant_rules = {"T1": ["aihub.user.agent.>"]}
         role_rules = {"R1": ["aihub.user.agent.>"]}
 
         result = OpenWebuiProvisioner._compute_access_for_model("rag", "default", groups, tenant_rules, role_rules)
 
-        assert result == [{"principal_type": "group", "principal_id": "grp-1", "permission": "read"}]
+        assert result == [AccessGrant(principal_type="group", principal_id="grp-1", permission="read")]
 
     def test_empty_tenant_rules_deny_all(self) -> None:
-        groups = [{"displayName": "aihub:T1:R1", "id": "grp-1"}]
+        groups = [_group("aihub:T1:R1", "grp-1")]
         tenant_rules = {"T1": []}
         role_rules = {"R1": ["aihub.user.agent.rag.*"]}
 
@@ -57,8 +65,8 @@ class TestComputeAccessForModel:
 
     def test_multiple_groups_different_visibility(self) -> None:
         groups = [
-            {"displayName": "aihub:T1:R1", "id": "grp-1"},
-            {"displayName": "aihub:T1:R2", "id": "grp-2"},
+            _group("aihub:T1:R1", "grp-1"),
+            _group("aihub:T1:R2", "grp-2"),
         ]
         tenant_rules = {"T1": ["aihub.user.agent.>"]}
         role_rules = {
@@ -69,15 +77,15 @@ class TestComputeAccessForModel:
         result_rag = OpenWebuiProvisioner._compute_access_for_model("rag", "default", groups, tenant_rules, role_rules)
         result_llm = OpenWebuiProvisioner._compute_access_for_model("llm", "default", groups, tenant_rules, role_rules)
 
-        assert result_rag == [{"principal_type": "group", "principal_id": "grp-1", "permission": "read"}]
-        assert result_llm == [{"principal_type": "group", "principal_id": "grp-2", "permission": "read"}]
+        assert result_rag == [AccessGrant(principal_type="group", principal_id="grp-1", permission="read")]
+        assert result_llm == [AccessGrant(principal_type="group", principal_id="grp-2", permission="read")]
 
     def test_non_aihub_and_malformed_groups_are_skipped(self) -> None:
         """Groups without 'aihub:' prefix or with malformed names must not appear in grants."""
         groups = [
-            {"displayName": "custom-group", "id": "grp-custom"},
-            {"displayName": "aihub:only-one-part", "id": "grp-bad"},
-            {"displayName": "aihub:T1:R1", "id": "grp-good"},
+            _group("custom-group", "grp-custom"),
+            _group("aihub:only-one-part", "grp-bad"),
+            _group("aihub:T1:R1", "grp-good"),
         ]
         tenant_rules = {"T1": ["aihub.user.agent.>"]}
         role_rules = {"R1": ["aihub.user.agent.>"]}
@@ -85,7 +93,7 @@ class TestComputeAccessForModel:
         result = OpenWebuiProvisioner._compute_access_for_model("rag", "default", groups, tenant_rules, role_rules)
 
         assert len(result) == 1
-        assert result[0]["principal_id"] == "grp-good"
+        assert result[0].principal_id == "grp-good"
 
 
 class TestSyncAccessGrants:
@@ -104,7 +112,7 @@ class TestSyncAccessGrants:
             patch.object(
                 provisioner._openwebui,
                 "list_groups",
-                return_value=[{"displayName": "aihub:T1:R1", "id": "grp-1"}],
+                return_value=[_group("aihub:T1:R1", "grp-1")],
             ),
             patch.object(provisioner._openwebui, "update_model_access") as mock_update,
             patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.TenantEntity") as mock_tenant,
@@ -126,7 +134,7 @@ class TestSyncAccessGrants:
             call_args = mock_update.call_args
             assert call_args[0][1] == f"{AIHUB_MODEL_PREFIX}rag-default"
             grants = call_args[0][2]
-            assert {"principal_type": "group", "principal_id": "grp-1", "permission": "read"} in grants
+            assert AccessGrant(principal_type="group", principal_id="grp-1", permission="read") in grants
 
     @pytest.mark.asyncio
     async def test_sync_parses_agent_from_base_model_id(self, provisioner: OpenWebuiProvisioner) -> None:
@@ -144,7 +152,7 @@ class TestSyncAccessGrants:
             patch.object(
                 provisioner._openwebui,
                 "list_groups",
-                return_value=[{"displayName": "aihub:T1:R1", "id": "grp-1"}],
+                return_value=[_group("aihub:T1:R1", "grp-1")],
             ),
             patch.object(provisioner._openwebui, "update_model_access") as mock_update,
             patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.TenantEntity") as mock_tenant,
@@ -182,7 +190,7 @@ class TestSyncAccessGrants:
             patch.object(
                 provisioner._openwebui,
                 "list_groups",
-                return_value=[{"displayName": "aihub:T1:R1", "id": "grp-1"}],
+                return_value=[_group("aihub:T1:R1", "grp-1")],
             ),
             patch.object(provisioner._openwebui, "update_model_access") as mock_update,
             patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.TenantEntity") as mock_tenant,
@@ -218,7 +226,7 @@ class TestSyncAccessGrants:
             patch.object(
                 provisioner._openwebui,
                 "list_groups",
-                return_value=[{"displayName": "aihub:T1:R1", "id": "grp-1"}],
+                return_value=[_group("aihub:T1:R1", "grp-1")],
             ),
             patch.object(provisioner._openwebui, "update_model_access") as mock_update,
             patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.TenantEntity") as mock_tenant,
@@ -254,8 +262,8 @@ class TestSyncAccessGrants:
                 provisioner._openwebui,
                 "list_groups",
                 return_value=[
-                    {"displayName": "aihub:T1:R1", "id": "grp-1"},
-                    {"displayName": "aihub:T1:R2", "id": "grp-2"},
+                    _group("aihub:T1:R1", "grp-1"),
+                    _group("aihub:T1:R2", "grp-2"),
                 ],
             ),
             patch.object(provisioner._openwebui, "update_model_access") as mock_update,
@@ -279,5 +287,5 @@ class TestSyncAccessGrants:
 
             mock_update.assert_called_once()
             grants = mock_update.call_args[0][2]
-            granted_ids = {g["principal_id"] for g in grants}
+            granted_ids = {g.principal_id for g in grants}
             assert granted_ids == {"grp-1", "grp-2"}

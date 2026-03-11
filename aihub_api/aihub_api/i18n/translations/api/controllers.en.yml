@@ -62,3 +62,6 @@ user_memory:
 organization_memory:
   name: Organization Memories
   description: View and manage organization-wide memories from mem0
+webhook:
+  name: Webhooks
+  description: Webhook receivers for external services

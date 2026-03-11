@@ -1,7 +1,7 @@
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
-import httpx
 import pytest
+from scim2_models import Group, User
 
 from aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner import (
     AIHUB_GROUP_PREFIX,
@@ -9,12 +9,16 @@ from aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner import (
 )
 
 
-def _ok_response(status_code: int = 200, json_data: dict | list | None = None) -> httpx.Response:
-    return httpx.Response(
-        status_code=status_code,
-        json=json_data if json_data is not None else {},
-        request=httpx.Request("GET", "http://test"),
-    )
+def _group(display_name: str, group_id: str) -> Group:
+    g = Group(display_name=display_name)
+    g.id = group_id
+    return g
+
+
+def _user(user_name: str, user_id: str) -> User:
+    u = User(user_name=user_name)
+    u.id = user_id
+    return u
 
 
 class TestBuildDesiredGroups:
@@ -46,7 +50,7 @@ class TestBuildDesiredGroups:
 class TestBuildUserIdMapping:
     def test_user_id_mapping_by_email(self) -> None:
         aihub_users = [{"id": "ah-1", "email": "alice@example.com"}]
-        owui_users = [{"id": "owui-1", "userName": "alice@example.com"}]
+        owui_users = [_user("alice@example.com", "owui-1")]
 
         result = OpenWebuiProvisioner._build_user_id_mapping(aihub_users, owui_users)
 
@@ -57,7 +61,7 @@ class TestBuildUserIdMapping:
             {"id": "ah-1", "email": "alice@example.com"},
             {"id": "ah-2", "email": "bob@example.com"},
         ]
-        owui_users = [{"id": "owui-1", "userName": "alice@example.com"}]
+        owui_users = [_user("alice@example.com", "owui-1")]
 
         result = OpenWebuiProvisioner._build_user_id_mapping(aihub_users, owui_users)
 
@@ -68,8 +72,6 @@ class TestBuildUserIdMapping:
 class TestSyncGroupsOrchestration:
     @pytest.mark.asyncio
     async def test_sync_creates_missing_groups(self, provisioner: OpenWebuiProvisioner) -> None:
-        mock_client = AsyncMock(spec=httpx.AsyncClient)
-
         with (
             patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.TenantEntity") as mock_tenant,
             patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.RoleEntity") as mock_role,
@@ -104,16 +106,14 @@ class TestSyncGroupsOrchestration:
             mock_user.objects.side_effect = user_objects_router
 
             mock_list_groups.return_value = []
-            mock_create.return_value = {"displayName": "aihub:T1:R1", "id": "grp-1"}
+            mock_create.return_value = _group("aihub:T1:R1", "grp-1")
 
-            await provisioner._sync_groups(mock_client)
+            await provisioner._sync_groups()
 
-            mock_create.assert_called_once_with(mock_client, "aihub:T1:R1")
+            mock_create.assert_called_once_with("aihub:T1:R1")
 
     @pytest.mark.asyncio
     async def test_sync_deletes_orphaned_groups(self, provisioner: OpenWebuiProvisioner) -> None:
-        mock_client = AsyncMock(spec=httpx.AsyncClient)
-
         with (
             patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.TenantEntity") as mock_tenant,
             patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.RoleEntity") as mock_role,
@@ -130,17 +130,14 @@ class TestSyncGroupsOrchestration:
             mock_role.get_roles_for_tenant.return_value = []
             mock_user.objects.return_value = []
 
-            orphaned_group = {"displayName": "aihub:OldTenant:OldRole", "id": "grp-orphan"}
-            mock_list_groups.return_value = [orphaned_group]
+            mock_list_groups.return_value = [_group("aihub:OldTenant:OldRole", "grp-orphan")]
 
-            await provisioner._sync_groups(mock_client)
+            await provisioner._sync_groups()
 
-            mock_delete.assert_called_once_with(mock_client, "grp-orphan")
+            mock_delete.assert_called_once_with("grp-orphan")
 
     @pytest.mark.asyncio
     async def test_sync_ignores_non_aihub_groups(self, provisioner: OpenWebuiProvisioner) -> None:
-        mock_client = AsyncMock(spec=httpx.AsyncClient)
-
         with (
             patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.TenantEntity") as mock_tenant,
             patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.RoleEntity") as mock_role,
@@ -157,17 +154,14 @@ class TestSyncGroupsOrchestration:
             mock_role.get_roles_for_tenant.return_value = []
             mock_user.objects.return_value = []
 
-            non_aihub = {"displayName": "custom-group", "id": "grp-custom"}
-            mock_list_groups.return_value = [non_aihub]
+            mock_list_groups.return_value = [_group("custom-group", "grp-custom")]
 
-            await provisioner._sync_groups(mock_client)
+            await provisioner._sync_groups()
 
             mock_delete.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_sync_updates_group_membership(self, provisioner: OpenWebuiProvisioner) -> None:
-        mock_client = AsyncMock(spec=httpx.AsyncClient)
-
         with (
             patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.TenantEntity") as mock_tenant,
             patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.RoleEntity") as mock_role,
@@ -214,20 +208,16 @@ class TestSyncGroupsOrchestration:
             utr.user_id = "ah-user-1"
             mock_utr.objects.return_value = [utr]
 
-            group = {"displayName": "aihub:T1:R1", "id": "grp-1"}
-            mock_list_groups.return_value = [group]
+            mock_list_groups.return_value = [_group("aihub:T1:R1", "grp-1")]
+            mock_list_users.return_value = [_user("alice@example.com", "owui-1")]
 
-            mock_list_users.return_value = [{"id": "owui-1", "userName": "alice@example.com"}]
+            await provisioner._sync_groups()
 
-            await provisioner._sync_groups(mock_client)
-
-            mock_update_members.assert_called_once_with(mock_client, "grp-1", ["owui-1"])
+            mock_update_members.assert_called_once_with("grp-1", ["owui-1"])
 
     @pytest.mark.asyncio
     async def test_sync_excludes_user_with_different_active_tenant(self, provisioner: OpenWebuiProvisioner) -> None:
         """User has role in tenant but active_tenant_id points to a different tenant — excluded from group."""
-        mock_client = AsyncMock(spec=httpx.AsyncClient)
-
         with (
             patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.TenantEntity") as mock_tenant,
             patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.RoleEntity") as mock_role,
@@ -273,22 +263,18 @@ class TestSyncGroupsOrchestration:
             utr.user_id = "ah-user-1"
             mock_utr.objects.return_value = [utr]
 
-            group = {"displayName": "aihub:T1:R1", "id": "grp-1"}
-            mock_list_groups.return_value = [group]
+            mock_list_groups.return_value = [_group("aihub:T1:R1", "grp-1")]
+            mock_list_users.return_value = [_user("alice@example.com", "owui-1")]
 
-            mock_list_users.return_value = [{"id": "owui-1", "userName": "alice@example.com"}]
+            await provisioner._sync_groups()
 
-            await provisioner._sync_groups(mock_client)
-
-            mock_update_members.assert_called_once_with(mock_client, "grp-1", [])
+            mock_update_members.assert_called_once_with("grp-1", [])
 
     @pytest.mark.asyncio
     async def test_sync_includes_null_active_tenant_in_default_tenant_group(
         self, provisioner: OpenWebuiProvisioner
     ) -> None:
         """User with null active_tenant_id is included in the default tenant's group."""
-        mock_client = AsyncMock(spec=httpx.AsyncClient)
-
         with (
             patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.TenantEntity") as mock_tenant,
             patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.RoleEntity") as mock_role,
@@ -338,23 +324,19 @@ class TestSyncGroupsOrchestration:
             utr.user_id = "ah-user-1"
             mock_utr.objects.return_value = [utr]
 
-            group = {"displayName": "aihub:DefaultOrg:R1", "id": "grp-1"}
-            mock_list_groups.return_value = [group]
+            mock_list_groups.return_value = [_group("aihub:DefaultOrg:R1", "grp-1")]
+            mock_list_users.return_value = [_user("alice@example.com", "owui-1")]
 
-            mock_list_users.return_value = [{"id": "owui-1", "userName": "alice@example.com"}]
-
-            await provisioner._sync_groups(mock_client)
+            await provisioner._sync_groups()
 
             # User should be included because __raw__ $or matches null active_tenant_id
-            mock_update_members.assert_called_once_with(mock_client, "grp-1", ["owui-1"])
+            mock_update_members.assert_called_once_with("grp-1", ["owui-1"])
             # Verify the __raw__ query was used (default tenant uses $or)
             raw_calls = [c for c in mock_user.objects.call_args_list if "__raw__" in (c.kwargs or {})]
             assert len(raw_calls) == 1
 
     @pytest.mark.asyncio
     async def test_sync_idempotent(self, provisioner: OpenWebuiProvisioner) -> None:
-        mock_client = AsyncMock(spec=httpx.AsyncClient)
-
         with (
             patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.TenantEntity") as mock_tenant,
             patch("aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner.RoleEntity") as mock_role,
@@ -389,10 +371,9 @@ class TestSyncGroupsOrchestration:
             mock_user.objects.side_effect = user_objects_router
             mock_utr.objects.return_value = []
 
-            existing_group = {"displayName": "aihub:T1:R1", "id": "grp-1"}
-            mock_list_groups.return_value = [existing_group]
+            mock_list_groups.return_value = [_group("aihub:T1:R1", "grp-1")]
 
-            await provisioner._sync_groups(mock_client)
+            await provisioner._sync_groups()
 
             mock_create.assert_not_called()
             mock_delete.assert_not_called()

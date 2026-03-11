@@ -4,7 +4,7 @@ Generated on: 11.03.2026
 
 This document contains license information for all dependencies across the monorepo:
 
-- Python packages (uv): **396 packages**
+- Python packages (uv): **398 packages**
 - Node.js packages (pnpm): **694 packages**
 - External Docker images: **31 images**
 
@@ -362,6 +362,8 @@ This document contains license information for all dependencies across the monor
 | ✅     | s3fs                                             | 2024.12.0             | BSD License                                                  |                                                                      |
 | ✅     | s3transfer                                       | 0.15.0                | Apache Software License                                      |                                                                      |
 | ✅     | safetensors                                      | 0.7.0                 | Apache Software License                                      |                                                                      |
+| ✅     | scim2-client                                     | 0.7.3                 | Apache Software License                                      |                                                                      |
+| ✅     | scim2-models                                     | 0.6.5                 | Apache Software License                                      |                                                                      |
 | ✅     | scipy                                            | 1.17.0                | BSD License                                                  |                                                                      |
 | ✅     | seaborn                                          | 0.13.2                | BSD License                                                  |                                                                      |
 | ✅     | SecretStorage                                    | 3.5.0                 | BSD-3-Clause                                                 |                                                                      |

@@ -4,6 +4,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 
 import pytest
+from aihub_lib.infrastructure.openwebui.OnlineAgent import OnlineAgent
 
 from aihub_api.services.AgentEndpointsDiscoveryService import AgentEndpointsDiscoveryService
 
@@ -29,8 +30,8 @@ class TestOpenwebuiAgentFilter:
 
             mock_provisioner.sync_agents.assert_awaited_once()
             synced_agents = mock_provisioner.sync_agents.call_args[0][0]
-            assert ("rag", "default", "RAG Agent") in synced_agents
-            assert ("chat", "main", "Chat Agent") in synced_agents
+            assert OnlineAgent(agent_class="rag", agent_id="default", display_name="RAG Agent") in synced_agents
+            assert OnlineAgent(agent_class="chat", agent_id="main", display_name="Chat Agent") in synced_agents
             assert len(synced_agents) == 2
 
     @pytest.mark.asyncio

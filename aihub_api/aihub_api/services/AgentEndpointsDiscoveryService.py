@@ -16,6 +16,7 @@ from aihub_lib.auth.usage import (
 )
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
 from aihub_lib.infrastructure.langfuse.LangfuseProvisioner import LangfuseProvisioner
+from aihub_lib.infrastructure.openwebui.OnlineAgent import OnlineAgent
 from aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner import OpenWebuiProvisioner
 from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.nats.distributor.dependencies.use_external_agent_event_distributor import (
@@ -141,13 +142,13 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
         return hashlib.sha256(",".join(normalized).encode()).hexdigest()
 
     async def _agents_hash_unchanged(self, current_hash: str) -> bool:
-        stored_hash = await self._redis.get("openwebui:agents:hash")
+        stored_hash = await self._redis.get("discovery:agents:hash")
         if stored_hash and stored_hash.decode() == current_hash:
             return True
         return False
 
     async def _store_agents_hash(self, agents_hash: str) -> None:
-        await self._redis.set("openwebui:agents:hash", agents_hash, ex=3600)
+        await self._redis.set("discovery:agents:hash", agents_hash, ex=3600)
 
     async def _broadcast_discovery(self) -> list[AgentClassDTO]:
         """
@@ -223,7 +224,9 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
         """Sync agent instances to OpenWebUI as workspace models with access grants."""
         try:
             online_agents = [
-                (inst.agent_class, inst.agent_id, inst.name) for inst in instances if inst.is_conversational
+                OnlineAgent(agent_class=inst.agent_class, agent_id=inst.agent_id, display_name=inst.name)
+                for inst in instances
+                if inst.is_conversational
             ]
             await OpenWebuiProvisioner().sync_agents(online_agents)
         except Exception as e:

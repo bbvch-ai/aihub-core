@@ -9,12 +9,12 @@
 
 set -e
 
-POSTGRES_HOST="${POSTGRES_HOST:-postgres}"
-POSTGRES_PORT="${POSTGRES_PORT:-5432}"
-POSTGRES_DB="${POSTGRES_DB:-openwebui}"
-POSTGRES_USER="${POSTGRES_USER:-admin}"
+POSTGRES_HOST="${POSTGRES_HOST}"
+POSTGRES_PORT="${POSTGRES_PORT}"
+POSTGRES_DB="${POSTGRES_DB}"
+POSTGRES_USER="${POSTGRES_USER}"
 POSTGRES_PASSWORD="${POSTGRES_PASSWORD}"
-FUNCTIONS_DIR="${FUNCTIONS_DIR:-/functions}"
+FUNCTIONS_DIR="${FUNCTIONS_DIR}"
 
 export PGPASSWORD="$POSTGRES_PASSWORD"
 
@@ -154,11 +154,11 @@ SQLFOOTER
 # Create a service account admin for the OpenWebUI API (used by OpenWebuiProvisioner).
 # The password is irrelevant — authentication uses JWTs signed with WEBUI_SECRET_KEY.
 create_service_account() {
-    SERVICE_ACCOUNT_ID="00000000-0000-4000-a000-000000000001"
+    SERVICE_ACCOUNT_ID="${OPENWEBUI_SERVICE_ACCOUNT_ID}"
     SERVICE_ACCOUNT_EMAIL="aihub-service@internal"
     SERVICE_ACCOUNT_NAME="AI-Hub Service Account"
-    # Pre-computed bcrypt hash (password: "aihub-service-account-not-for-login")
-    SERVICE_ACCOUNT_PASSWORD='$2b$12$fzEGyN5H3V3EAMHQxvFwEuKDnhVj.tE1AMergIPHoRyumvltkeP7K'
+    # Generate a random hash — the service account authenticates via JWT, never password
+    SERVICE_ACCOUNT_PASSWORD=$(openssl passwd -6 "$(openssl rand -hex 32)")
     TIMESTAMP=$(date +%s)
 
     log "Creating AI-Hub service account admin..."

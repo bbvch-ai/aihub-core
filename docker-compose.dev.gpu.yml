@@ -1437,6 +1437,7 @@ services:
       POSTGRES_DB: openwebui
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      OPENWEBUI_SERVICE_ACCOUNT_ID: ${OPENWEBUI_SERVICE_ACCOUNT_ID}
     volumes:
       - ./configs/openwebui/init-openwebui.sh:/init-openwebui.sh:ro
       - ./configs/openwebui/functions:/functions:ro

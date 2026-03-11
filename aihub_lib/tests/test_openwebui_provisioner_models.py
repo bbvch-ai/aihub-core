@@ -3,25 +3,28 @@ from unittest.mock import AsyncMock, patch
 import httpx
 import pytest
 
+from aihub_lib.infrastructure.openwebui.OnlineAgent import OnlineAgent
 from aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner import (
     AIHUB_MODEL_PREFIX,
     OpenWebuiProvisioner,
 )
 
+_RAG_AGENT = OnlineAgent(agent_class="rag", agent_id="default", display_name="RAG Agent")
+
 
 class TestComputeModelDiff:
     def test_compute_models_to_create(self) -> None:
-        online = [("rag", "default", "RAG Agent")]
+        online = [_RAG_AGENT]
         existing: set[str] = set()
 
         to_create, to_delete = OpenWebuiProvisioner._compute_model_diff(online, existing)
 
         assert len(to_create) == 1
-        assert to_create[0] == ("rag", "default", "RAG Agent")
+        assert to_create[0] == _RAG_AGENT
         assert to_delete == set()
 
     def test_compute_models_to_delete(self) -> None:
-        online: list[tuple[str, str, str]] = []
+        online: list[OnlineAgent] = []
         existing = {f"{AIHUB_MODEL_PREFIX}rag-default"}
 
         to_create, to_delete = OpenWebuiProvisioner._compute_model_diff(online, existing)
@@ -30,7 +33,7 @@ class TestComputeModelDiff:
         assert to_delete == {f"{AIHUB_MODEL_PREFIX}rag-default"}
 
     def test_compute_models_unchanged(self) -> None:
-        online = [("rag", "default", "RAG Agent")]
+        online = [_RAG_AGENT]
         existing = {f"{AIHUB_MODEL_PREFIX}rag-default"}
 
         to_create, to_delete = OpenWebuiProvisioner._compute_model_diff(online, existing)
@@ -49,7 +52,7 @@ class TestSyncWorkspaceModels:
             patch.object(provisioner._openwebui, "create_model") as mock_create,
             patch.object(provisioner._openwebui, "delete_model") as mock_delete,
         ):
-            await provisioner._sync_workspace_models(mock_client, [("rag", "default", "RAG Agent")])
+            await provisioner._sync_workspace_models(mock_client, [_RAG_AGENT])
 
             mock_list.assert_called_once()
             mock_create.assert_called_once()

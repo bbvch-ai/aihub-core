@@ -62,3 +62,6 @@ user_memory:
 organization_memory:
   name: Memorie organizzative
   description: Visualizza e gestisci le memorie a livello organizzativo da mem0
+webhook:
+  name: Webhooks
+  description: Ricevitori webhook per servizi esterni

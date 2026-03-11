@@ -6,8 +6,11 @@ from typing import Any, ClassVar
 
 import httpx
 from redis.asyncio import Redis
+from scim2_models import Group, User
 
 from aihub_lib.auth.access.AccessChecker import AccessChecker
+from aihub_lib.infrastructure.openwebui.AccessGrant import AccessGrant
+from aihub_lib.infrastructure.openwebui.OnlineAgent import OnlineAgent
 from aihub_lib.infrastructure.openwebui.OpenWebuiClient import OpenWebuiClient
 from aihub_lib.infrastructure.openwebui.OpenWebuiSettings import OpenWebuiSettings
 from aihub_lib.persistence.access.entities.RoleEntity import RoleEntity
@@ -21,6 +24,15 @@ AIHUB_GROUP_PREFIX = "aihub:"
 AIHUB_MODEL_PREFIX = "aihub-agent-"
 
 _LOCK_TIMEOUT = 60
+
+type AiHubToOwuiUserIdMapping = dict[str, str]
+"""Maps AI-Hub user IDs (keys) to OpenWebUI user IDs (values), matched by email."""
+
+type TenantAccessRules = dict[str, list[str]]
+"""Maps tenant name to its access rule strings."""
+
+type RoleAccessRules = dict[str, list[str]]
+"""Maps role name to its access rule strings."""
 
 
 @asynccontextmanager
@@ -47,6 +59,7 @@ class OpenWebuiProvisioner:
             base_url=self._settings.BASE_URL,
             secret_key=self._settings.SECRET_KEY.get_secret_value(),
             scim_token=self._settings.SCIM_TOKEN.get_secret_value(),
+            service_account_id=self._settings.SERVICE_ACCOUNT_ID,
         )
 
     @classmethod
@@ -60,13 +73,13 @@ class OpenWebuiProvisioner:
             logger.info("Starting OpenWebUI provisioning...")
 
             async with httpx.AsyncClient(timeout=30.0) as http:
-                await self._sync_groups(http)
+                await self._sync_groups()
                 await self._sync_workspace_models(http, [])
                 await self._sync_access_grants(http)
 
             logger.info("OpenWebUI provisioning completed")
 
-    async def sync_agents(self, online_agents: list[tuple[str, str, str]]) -> None:
+    async def sync_agents(self, online_agents: list[OnlineAgent]) -> None:
         async with _sync_lock(self._redis, "openwebui:sync:agents") as acquired:
             if not acquired:
                 return
@@ -81,7 +94,7 @@ class OpenWebuiProvisioner:
             if not acquired:
                 return
             async with httpx.AsyncClient(timeout=30.0) as http:
-                await self._sync_groups(http)
+                await self._sync_groups()
                 await self._sync_access_grants(http)
 
     # ------------------------------------------------------------------
@@ -100,10 +113,10 @@ class OpenWebuiProvisioner:
         return groups
 
     @staticmethod
-    def _build_user_id_mapping(aihub_users: list[dict[str, str]], owui_users: list[dict[str, Any]]) -> dict[str, str]:
+    def _build_user_id_mapping(aihub_users: list[dict[str, str]], owui_users: list[User]) -> AiHubToOwuiUserIdMapping:
         """Maps AI-Hub user IDs to OpenWebUI user IDs via email."""
-        owui_by_email = {u["userName"]: u["id"] for u in owui_users if "userName" in u and "id" in u}
-        mapping: dict[str, str] = {}
+        owui_by_email = {u.user_name: u.id for u in owui_users if u.user_name and u.id}
+        mapping: AiHubToOwuiUserIdMapping = {}
         for user in aihub_users:
             owui_id = owui_by_email.get(user["email"])
             if owui_id:
@@ -122,11 +135,10 @@ class OpenWebuiProvisioner:
 
     async def _sync_group_memberships(
         self,
-        http: httpx.AsyncClient,
         tenants: list[dict[str, Any]],
         roles_by_tenant: dict[str, list[dict[str, Any]]],
-        aihub_groups: dict[str, dict[str, Any]],
-        user_id_mapping: dict[str, str],
+        aihub_groups: dict[str, Group],
+        user_id_mapping: AiHubToOwuiUserIdMapping,
     ) -> None:
         default_tenant = TenantEntity.get_default_tenant()
         default_tenant_id = str(default_tenant.id) if default_tenant else None
@@ -144,9 +156,9 @@ class OpenWebuiProvisioner:
                 aihub_user_ids = [utr.user_id for utr in all_utr if utr.user_id in active_user_ids]
                 owui_member_ids = [user_id_mapping[uid] for uid in aihub_user_ids if uid in user_id_mapping]
 
-                await self._openwebui.update_group_members(http, aihub_groups[group_name]["id"], owui_member_ids)
+                await self._openwebui.update_group_members(aihub_groups[group_name].id, owui_member_ids)
 
-    async def _sync_groups(self, http: httpx.AsyncClient) -> None:
+    async def _sync_groups(self) -> None:
         tenants = [{"name": t.name, "id": str(t.id), "access_rules": t.access_rules} for t in TenantEntity.objects()]
 
         roles_by_tenant: dict[str, list[dict[str, Any]]] = {}
@@ -156,25 +168,25 @@ class OpenWebuiProvisioner:
 
         desired = self._build_desired_groups(tenants, roles_by_tenant)
 
-        existing_groups = await self._openwebui.list_groups(http)
-        aihub_groups = {
-            g["displayName"]: g for g in existing_groups if g.get("displayName", "").startswith(AIHUB_GROUP_PREFIX)
+        existing_groups = await self._openwebui.list_groups()
+        aihub_groups: dict[str, Group] = {
+            g.display_name: g for g in existing_groups if (g.display_name or "").startswith(AIHUB_GROUP_PREFIX)
         }
 
         for name in desired - set(aihub_groups.keys()):
-            created = await self._openwebui.create_group(http, name)
+            created = await self._openwebui.create_group(name)
             aihub_groups[name] = created
             logger.info(f"OpenWebUI: Created group '{name}'")
 
         for name in set(aihub_groups.keys()) - desired:
-            await self._openwebui.delete_group(http, aihub_groups.pop(name)["id"])
+            await self._openwebui.delete_group(aihub_groups.pop(name).id)
             logger.info(f"OpenWebUI: Deleted orphaned group '{name}'")
 
-        owui_users = await self._openwebui.list_users(http)
+        owui_users = await self._openwebui.list_users()
         aihub_users = [{"id": u.id, "email": u.email} for u in UserEntity.objects()]
         user_id_mapping = self._build_user_id_mapping(aihub_users, owui_users)
 
-        await self._sync_group_memberships(http, tenants, roles_by_tenant, aihub_groups, user_id_mapping)
+        await self._sync_group_memberships(tenants, roles_by_tenant, aihub_groups, user_id_mapping)
 
     # ------------------------------------------------------------------
     # Workspace model sync
@@ -190,30 +202,30 @@ class OpenWebuiProvisioner:
 
     @staticmethod
     def _compute_model_diff(
-        online_agents: list[tuple[str, str, str]], existing_model_ids: set[str]
-    ) -> tuple[list[tuple[str, str, str]], set[str]]:
+        online_agents: list[OnlineAgent], existing_model_ids: set[str]
+    ) -> tuple[list[OnlineAgent], set[str]]:
         """Returns (models_to_create, model_ids_to_delete)."""
-        desired_ids = {f"{AIHUB_MODEL_PREFIX}{ac}-{ai}" for ac, ai, _ in online_agents}
+        desired_ids = {f"{AIHUB_MODEL_PREFIX}{agent.agent_class}-{agent.agent_id}" for agent in online_agents}
         to_create = [
-            (ac, ai, name)
-            for ac, ai, name in online_agents
-            if f"{AIHUB_MODEL_PREFIX}{ac}-{ai}" not in existing_model_ids
+            agent
+            for agent in online_agents
+            if f"{AIHUB_MODEL_PREFIX}{agent.agent_class}-{agent.agent_id}" not in existing_model_ids
         ]
         to_delete = existing_model_ids - desired_ids
         return to_create, to_delete
 
-    async def _sync_workspace_models(self, http: httpx.AsyncClient, online_agents: list[tuple[str, str, str]]) -> None:
+    async def _sync_workspace_models(self, http: httpx.AsyncClient, online_agents: list[OnlineAgent]) -> None:
         existing_models = await self._openwebui.list_models(http)
         existing_aihub = {m["id"] for m in existing_models if m.get("id", "").startswith(AIHUB_MODEL_PREFIX)}
 
         to_create, to_delete = self._compute_model_diff(online_agents, existing_aihub)
 
-        for agent_class, agent_id, display_name in to_create:
+        for agent in to_create:
             model_data = {
-                "id": self._workspace_model_id(agent_class, agent_id),
-                "name": display_name,
-                "base_model_id": self._base_model_id(agent_class, agent_id),
-                "meta": {"description": f"AI-Hub agent: {agent_class}/{agent_id}"},
+                "id": self._workspace_model_id(agent.agent_class, agent.agent_id),
+                "name": agent.display_name,
+                "base_model_id": self._base_model_id(agent.agent_class, agent.agent_id),
+                "meta": {"description": f"AI-Hub agent: {agent.agent_class}/{agent.agent_id}"},
             }
             await self._openwebui.create_model(http, model_data)
             logger.info(f"OpenWebUI: Created workspace model '{model_data['id']}'")
@@ -230,15 +242,15 @@ class OpenWebuiProvisioner:
     def _compute_access_for_model(
         agent_class: str,
         agent_id: str,
-        groups: list[dict[str, Any]],
-        tenant_rules: dict[str, list[str]],
-        role_rules: dict[str, list[str]],
-    ) -> list[dict[str, str]]:
+        groups: list[Group],
+        tenant_rules: TenantAccessRules,
+        role_rules: RoleAccessRules,
+    ) -> list[AccessGrant]:
         """Computes which groups should have read access to a given agent workspace model."""
-        grants: list[dict[str, str]] = []
+        grants: list[AccessGrant] = []
 
         for group in groups:
-            group_name = group["displayName"]
+            group_name = group.display_name or ""
             if not group_name.startswith(AIHUB_GROUP_PREFIX):
                 continue
 
@@ -252,7 +264,7 @@ class OpenWebuiProvisioner:
 
             checker = AccessChecker(user_access_rules=r_rules, tenant_access_rules=t_rules)
             if checker.has_access_to_agent(agent_class, agent_id):
-                grants.append({"principal_type": "group", "principal_id": group["id"], "permission": "read"})
+                grants.append(AccessGrant(principal_type="group", principal_id=group.id, permission="read"))
 
         return grants
 
@@ -271,7 +283,7 @@ class OpenWebuiProvisioner:
         return (suffix[:dash_idx], suffix[dash_idx + 1 :]) if dash_idx > 0 else None
 
     @staticmethod
-    def _build_role_rules() -> dict[str, list[str]]:
+    def _build_role_rules() -> RoleAccessRules:
         return {role.name: list(role.access_rules) for role in RoleEntity.objects()}
 
     async def _sync_access_grants(self, http: httpx.AsyncClient) -> None:
@@ -281,13 +293,13 @@ class OpenWebuiProvisioner:
         if not aihub_models:
             return
 
-        all_groups = await self._openwebui.list_groups(http)
-        aihub_groups = [g for g in all_groups if g.get("displayName", "").startswith(AIHUB_GROUP_PREFIX)]
+        all_groups = await self._openwebui.list_groups()
+        aihub_groups = [g for g in all_groups if (g.display_name or "").startswith(AIHUB_GROUP_PREFIX)]
 
         if not aihub_groups:
             return
 
-        tenant_rules = {t.name: t.access_rules for t in TenantEntity.objects()}
+        tenant_rules: TenantAccessRules = {t.name: t.access_rules for t in TenantEntity.objects()}
         role_rules = self._build_role_rules()
 
         semaphore = asyncio.Semaphore(5)

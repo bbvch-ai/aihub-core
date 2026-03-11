@@ -13,6 +13,7 @@ def mock_settings() -> MagicMock:
     settings.SECRET_KEY.get_secret_value.return_value = "sk-test"
     settings.SCIM_TOKEN = MagicMock()
     settings.SCIM_TOKEN.get_secret_value.return_value = "scim-test"
+    settings.SERVICE_ACCOUNT_ID = "00000000-0000-4000-a000-000000000001"
     return settings
 
 
