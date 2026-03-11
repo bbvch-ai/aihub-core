@@ -46,12 +46,12 @@ risk, because those events never influence workflow decisions even if they are l
 The platform provides runtime infrastructure: authentication, LLM routing, vector storage, document parsing, event
 streaming, and observability. The SDK provides the building blocks for custom logic: agent base classes, pipeline
 factories, process definitions, and event types. The two layers communicate exclusively through NATS events and the
-shared library aihub_lib.
+shared library swiss_ai_hub.core.
 
 SDK code never makes direct database queries, never calls platform REST endpoints for workflow purposes, and never
-implements its own authentication logic. It uses aihub_lib abstractions for all infrastructure access. This boundary
-exists so that platform updates do not break SDK-built agents and SDK changes do not require platform redeployment. Each
-layer has its own release cycle.
+implements its own authentication logic. It uses swiss_ai_hub.core abstractions for all infrastructure access. This
+boundary exists so that platform updates do not break SDK-built agents and SDK changes do not require platform
+redeployment. Each layer has its own release cycle.
 
 ## Technology decisions
 
@@ -193,7 +193,7 @@ running agents respond with their event schemas, configuration schemas, and work
 generates REST endpoints for each discovered agent. Deploying a new agent means starting a container that connects to
 NATS and publishes a discovery response. No platform code changes, no endpoint registration, no redeployment of the API
 gateway. The agent inherits authentication, tracing, cost tracking, and event streaming from the SDK base classes and
-aihub_lib abstractions.
+swiss_ai_hub.core abstractions.
 
 ## Architectural patterns
 

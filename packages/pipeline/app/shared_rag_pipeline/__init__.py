@@ -1,5 +1,4 @@
-from swiss_ai_hub.core.infrastructure import AIHubSettings
-from swiss_ai_hub.core.infrastructure import enable_logging
+from swiss_ai_hub.core.infrastructure import AIHubSettings, enable_logging
 
 from swiss_ai_hub.pipeline.util.definitions_util import default_definitions
 

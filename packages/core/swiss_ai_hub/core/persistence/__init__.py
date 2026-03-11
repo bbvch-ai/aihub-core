@@ -16,7 +16,9 @@ if TYPE_CHECKING:
         Resolution,
         TimeRange,
     )
-    from swiss_ai_hub.core.persistence.messaging.entities.persisted_process_event_entity import PersistedProcessEventEntity
+    from swiss_ai_hub.core.persistence.messaging.entities.persisted_process_event_entity import (
+        PersistedProcessEventEntity,
+    )
     from swiss_ai_hub.core.persistence.messaging.entities.thread_entity import (
         AgentInstanceRef,
         ThreadEntity,
@@ -70,7 +72,9 @@ if TYPE_CHECKING:
         UPDATED_AT,
         VERSION,
     )
-    from swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_partition_manager import get_partition_name_for_namespace
+    from swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_partition_manager import (
+        get_partition_name_for_namespace,
+    )
     from swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_vector_store_config import MilvusVectorStoreConfig
     from swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_vector_store_factory import (
         MilvusIndexType,

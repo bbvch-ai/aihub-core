@@ -2,8 +2,9 @@
 
 ## Context
 
-Swiss AI Hub embeds third-party services (e.g., OpenWebUI) in iframes within the Admin UI (`aihub_web`). Both the parent
-application and embedded services authenticate against the same Keycloak realm (`aihub`), sharing a single SSO session.
+Swiss AI Hub embeds third-party services (e.g., OpenWebUI) in iframes within the Admin UI (`packages/web`). Both the
+parent application and embedded services authenticate against the same Keycloak realm (`aihub`), sharing a single SSO
+session.
 
 When a user logs out of an embedded service (e.g., OpenWebUI's logout button), the service calls Keycloak's
 `end_session_endpoint`, which destroys the **shared SSO session**. This has two visible consequences:
@@ -37,7 +38,7 @@ preserve its own session and redirect the user to a safe landing page?
 
 ## Decision
 
-**The parent application (`aihub_web`) is solely responsible for the user's authentication state.** Logout actions
+**The parent application (`packages/web`) is solely responsible for the user's authentication state.** Logout actions
 within iframe-embedded services do not propagate to the parent application. Instead:
 
 1. **No session monitoring**: `oidc-client-ts` session monitoring (`monitorSession`) is explicitly disabled. The parent

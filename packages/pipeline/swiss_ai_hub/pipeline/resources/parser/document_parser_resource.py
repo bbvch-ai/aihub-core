@@ -10,8 +10,7 @@ from swiss_ai_hub.core.generative_ai.document.loaders.image_loader import ImageL
 from swiss_ai_hub.core.generative_ai.document.loaders.mark_it_down_loader import MarkItDownLoader
 from swiss_ai_hub.core.generative_ai.document.loaders.mineru_loader import MineruLoader
 from swiss_ai_hub.core.generative_ai.document.loaders.raw_loader import RawLoader
-from swiss_ai_hub.core.infrastructure import AzureDocumentIntelligenceSettings
-from swiss_ai_hub.core.infrastructure import MineruSettings
+from swiss_ai_hub.core.infrastructure import AzureDocumentIntelligenceSettings, MineruSettings
 
 
 class LoaderType(StrEnum):

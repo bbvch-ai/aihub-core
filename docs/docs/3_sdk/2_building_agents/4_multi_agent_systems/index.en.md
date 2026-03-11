@@ -43,7 +43,7 @@ This example shows an `OrchestratorAgent` that asks a `WorkerAgent` to perform a
 
 ::: code-group
 ```python [OrchestratorAgent.py]
-from aihub_lib.nats.events.agent_in_the_loop.AgentInTheLoop import AgentInTheLoop
+from swiss_ai_hub.core.events.agent.aitl.agent_in_the_loop import AgentInTheLoop
 
 class OrchestratorAgent(Agent):
     @step()

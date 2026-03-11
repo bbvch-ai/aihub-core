@@ -128,8 +128,8 @@ Each scope has its own `CLAUDE.md` — consult it before working in that scope.
     `snake_case`, constants: `UPPER_SNAKE_CASE`.
 10. **Modern Python**: Use `|` unions, `@property`, `@override`, `match/case`. Return `Self` (from `typing`) instead of
     `"ClassName"` for methods returning own type. Use PEP 695 generic syntax `class Foo[T: Bound]:` and
-    `def bar[T](x: T)` instead of `TypeVar`. See
-    `packages/core/swiss_ai_hub/core/nats/subscribers/AbstractSubscriber.py` for the pattern.
+    `def bar[T](x: T)` instead of `TypeVar`. See `packages/core/swiss_ai_hub/core/subscribers/abstract_subscriber.py`
+    for the pattern.
 11. **Controller → Service → Entity**: Separation of concerns (HTTP layer → business logic → persistence).
 12. **Dependency injection**: FastAPI `Depends` and `Security` for clean parameter injection.
 13. **One class per file**: File name MUST match class name (`MyClass` → `MyClass.py`). No multi-class files.

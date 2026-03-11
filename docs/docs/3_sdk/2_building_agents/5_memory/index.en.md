@@ -84,23 +84,21 @@ See [The dangling stop violation](../9_execution_model/#the-dangling-stop-violat
 
 ::: code-group
 ```python [UserMemoryAgent.py]
-from aihub_agent.agents.Agent import Agent
-from aihub_agent.workflow.decorators.step import step
-from aihub_lib.generative_ai.memory.AgentMemory import AgentMemory
-from aihub_lib.generative_ai.chat_history.extend_chat_history_with_user_memory import (
+from swiss_ai_hub.agent.agents.agent import Agent
+from swiss_ai_hub.agent.workflow.decorators.step import step
+from swiss_ai_hub.core.generative_ai.memory.agent_memory import AgentMemory
+from swiss_ai_hub.core.generative_ai.chat_history.extend_chat_history_with_user_memory import (
     extend_chat_history_with_user_memory,
 )
-from aihub_lib.nats.events import (
-    UserMessageEvent,
-    LLMEvent,
-    StopEvent,
-)
-from aihub_lib.nats.events.memory.retrieve.RetrieveUserMemoryEvent import RetrieveUserMemoryEvent
-from aihub_lib.nats.events.memory.history.AddUserMemoryToChatHistoryEvent import AddUserMemoryToChatHistoryEvent
-from aihub_lib.nats.events.memory.store.StoreUserMemoryEvent import StoreUserMemoryEvent
-from aihub_lib.nats.topics import AgentInstanceTopic
-from aihub_lib.displayers.EventDisplayer import EventDisplayer
-from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from swiss_ai_hub.core.events.agent.user.user_message_event import UserMessageEvent
+from swiss_ai_hub.core.events.agent.semantic.llm.llm_event import LLMEvent
+from swiss_ai_hub.core.events.agent.control.stop.stop_event import StopEvent
+from swiss_ai_hub.core.events.agent.memory.retrieve.retrieve_user_memory_event import RetrieveUserMemoryEvent
+from swiss_ai_hub.core.events.agent.memory.history.add_user_memory_to_chat_history_event import AddUserMemoryToChatHistoryEvent
+from swiss_ai_hub.core.events.agent.memory.store.store_user_memory_event import StoreUserMemoryEvent
+from swiss_ai_hub.core.topics.agents.agent_instance_topic import AgentInstanceTopic
+from swiss_ai_hub.core.displayers.event_displayer import EventDisplayer
+from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 
 class UserMemoryAgent(Agent):
     """
@@ -185,8 +183,8 @@ class UserMemoryAgent(Agent):
 ```
 
 ```python [UserMemoryAgentConfig.py]
-from aihub_lib.agents.AgentConfig import AgentConfig
-from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
+from swiss_ai_hub.core.agents.agent_config import AgentConfig
+from swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config import LLMConfig
 
 class UserMemoryAgentConfig(AgentConfig):
     llm: LLMConfig
@@ -269,22 +267,20 @@ Reference implementation: `playground/minimal_workflow/organization_memory_workf
 
 ::: code-group
 ```python [OrganizationMemoryAgent.py]
-from aihub_agent.agents.Agent import Agent
-from aihub_agent.workflow.decorators.step import step
-from aihub_lib.generative_ai.memory.AgentMemory import AgentMemory
-from aihub_lib.generative_ai.chat_history.extend_chat_history_with_organization_memory import (
+from swiss_ai_hub.agent.agents.agent import Agent
+from swiss_ai_hub.agent.workflow.decorators.step import step
+from swiss_ai_hub.core.generative_ai.memory.agent_memory import AgentMemory
+from swiss_ai_hub.core.generative_ai.chat_history.extend_chat_history_with_organization_memory import (
     extend_chat_history_with_organization_memory,
 )
-from aihub_lib.nats.events import (
-    UserMessageEvent,
-    LLMStopEvent,
-    StoreOrganizationMemoryEvent,
-    RetrieveOrganizationMemoryEvent,
-    AddOrganizationMemoryToChatHistoryEvent,
-)
-from aihub_lib.nats.topics import AgentInstanceTopic
-from aihub_lib.displayers.EventDisplayer import EventDisplayer
-from aihub_lib.i18n.LocaleHandler import LocaleHandler
+from swiss_ai_hub.core.events.agent.user.user_message_event import UserMessageEvent
+from swiss_ai_hub.core.events.agent.semantic.llm.llm_stop_event import LLMStopEvent
+from swiss_ai_hub.core.events.agent.memory.store.store_organization_memory_event import StoreOrganizationMemoryEvent
+from swiss_ai_hub.core.events.agent.memory.retrieve.retrieve_organization_memory_event import RetrieveOrganizationMemoryEvent
+from swiss_ai_hub.core.events.agent.memory.history.add_organization_memory_to_chat_history_event import AddOrganizationMemoryToChatHistoryEvent
+from swiss_ai_hub.core.topics.agents.agent_instance_topic import AgentInstanceTopic
+from swiss_ai_hub.core.displayers.event_displayer import EventDisplayer
+from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 
 class OrganizationMemoryAgent(Agent):
     """
@@ -371,8 +367,8 @@ class OrganizationMemoryAgent(Agent):
 ```
 
 ```python [OrganizationMemoryAgentConfig.py]
-from aihub_lib.agents.AgentConfig import AgentConfig
-from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
+from swiss_ai_hub.core.agents.agent_config import AgentConfig
+from swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config import LLMConfig
 
 class OrganizationMemoryAgentConfig(AgentConfig):
     """Configuration for OrganizationMemoryAgent.
@@ -546,7 +542,7 @@ Production agents often make memory features optional via configuration flags. U
 based on config, preventing race conditions with optional events:
 
 ```python
-from aihub_agent.workflow.decorators.precondition import precondition
+from swiss_ai_hub.agent.workflow.decorators.precondition import precondition
 
 @precondition()
 def check_memory_ready(

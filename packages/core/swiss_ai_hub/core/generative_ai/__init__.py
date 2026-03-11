@@ -1,18 +1,28 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from swiss_ai_hub.core.generative_ai.chat_history.extend_chat_history_with_organization_memory import extend_chat_history_with_organization_memory
-    from swiss_ai_hub.core.generative_ai.chat_history.extend_chat_history_with_user_memory import extend_chat_history_with_user_memory
+    from swiss_ai_hub.core.generative_ai.chat_history.extend_chat_history_with_organization_memory import (
+        extend_chat_history_with_organization_memory,
+    )
+    from swiss_ai_hub.core.generative_ai.chat_history.extend_chat_history_with_user_memory import (
+        extend_chat_history_with_user_memory,
+    )
     from swiss_ai_hub.core.generative_ai.chat_history.format_expert_conversation import format_expert_conversation
     from swiss_ai_hub.core.generative_ai.chat_history.limit_chat_history import limit_chat_history
-    from swiss_ai_hub.core.generative_ai.chat_history.limit_chat_history_with_context import limit_chat_history_with_context
-    from swiss_ai_hub.core.generative_ai.document.accessor.s3_anonymous_file_access_service import S3AnonymousFileAccessService
+    from swiss_ai_hub.core.generative_ai.chat_history.limit_chat_history_with_context import (
+        limit_chat_history_with_context,
+    )
+    from swiss_ai_hub.core.generative_ai.document.accessor.s3_anonymous_file_access_service import (
+        S3AnonymousFileAccessService,
+    )
     from swiss_ai_hub.core.generative_ai.document.loaders.document_intelligence_loader import DocumentIntelligenceLoader
     from swiss_ai_hub.core.generative_ai.document.loaders.image_loader import ImageLoader
     from swiss_ai_hub.core.generative_ai.document.loaders.mark_it_down_loader import MarkItDownLoader
     from swiss_ai_hub.core.generative_ai.document.loaders.mineru_loader import MineruLoader
     from swiss_ai_hub.core.generative_ai.document.loaders.raw_loader import RawLoader
-    from swiss_ai_hub.core.generative_ai.document.parsers.markdown_structural_node_parser import MarkdownStructuralNodeParser
+    from swiss_ai_hub.core.generative_ai.document.parsers.markdown_structural_node_parser import (
+        MarkdownStructuralNodeParser,
+    )
     from swiss_ai_hub.core.generative_ai.document.parsers.recursive_summary_parser import RecursiveNodeSummarizer
     from swiss_ai_hub.core.generative_ai.document.refinement import refine_document_tables_with_metadata
     from swiss_ai_hub.core.generative_ai.document.types.file_type_config import FileTypeConfig

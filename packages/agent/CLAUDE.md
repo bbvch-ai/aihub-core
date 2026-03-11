@@ -8,34 +8,35 @@ pre-built agents (`agents/` + `app/`), and playground examples (`playground/`). 
 
 ```
 packages/agent/                       # SDK framework
-├── agents/                        # Agent base class + production agent implementations
-│   ├── agent.py                   # Base class (extends DispatchableWorkflow)
-│   ├── rag_agent/                 # Knowledge QA with retrieval, reranking, memory
-│   ├── llm_wrapping_agent/        # Simple LLM chat passthrough
-│   ├── expert_asking_agent/       # Human expert escalation via Teams/Slack
-│   ├── expert_rag_agent/          # RAG with expert fallback
-│   ├── few_shot_agent/            # Pattern-matching with examples
-│   ├── namespace_selection_agent/ # LLM-driven knowledge routing
-│   └── retrieval_agent/           # Pure document retrieval (no LLM)
-├── context/
-│   ├── run/run_context.py          # Per-run ephemeral state (Redis, 30d TTL)
-│   └── thread/thread_context.py    # Per-thread persistent state (Redis, 30d TTL)
-├── dispatchers/
-│   └── agent_dispatcher.py         # Core workflow executor (DI, config fetch, step dispatch)
-├── i18n/
-│   ├── agent_locale_string.py      # Multi-locale string resolution for agents
-│   └── translations/agent/         # Translation files: {name}.{de|en|fr|it}.yml
-├── rag/                            # Shared RAG step functions and preconditions
-├── runners/
-│   ├── agent_runner.py             # Production runner (NATS, Redis, Milvus, discovery)
-│   └── agent_test_runner.py        # Test runner (sandboxed, event capture, mock config)
-├── steps/                          # Shared step configs (e.g., FewShotStepConfig)
-├── tracing/
-│   └── agent_run_tracer.py         # OpenTelemetry + Langfuse trace integration
-└── workflow/
-    └── decorators/
-        ├── step.py                 # @step() decorator — defines workflow building blocks
-        └── precondition.py         # @precondition() decorator — step readiness checks
+├── swiss_ai_hub/agent/
+│   ├── agents/                        # Agent base class + production agent implementations
+│   │   ├── agent.py                   # Base class (extends DispatchableWorkflow)
+│   │   ├── rag_agent/                 # Knowledge QA with retrieval, reranking, memory
+│   │   ├── llm_wrapping_agent/        # Simple LLM chat passthrough
+│   │   ├── expert_asking_agent/       # Human expert escalation via Teams/Slack
+│   │   ├── expert_rag_agent/          # RAG with expert fallback
+│   │   ├── few_shot_agent/            # Pattern-matching with examples
+│   │   ├── namespace_selection_agent/ # LLM-driven knowledge routing
+│   │   └── retrieval_agent/           # Pure document retrieval (no LLM)
+│   ├── context/
+│   │   ├── run/run_context.py          # Per-run ephemeral state (Redis, 30d TTL)
+│   │   └── thread/thread_context.py    # Per-thread persistent state (Redis, 30d TTL)
+│   ├── dispatchers/
+│   │   └── agent_dispatcher.py         # Core workflow executor (DI, config fetch, step dispatch)
+│   ├── i18n/
+│   │   ├── agent_locale_string.py      # Multi-locale string resolution for agents
+│   │   └── translations/agent/         # Translation files: {name}.{de|en|fr|it}.yml
+│   ├── rag/                            # Shared RAG step functions and preconditions
+│   ├── runners/
+│   │   ├── agent_runner.py             # Production runner (NATS, Redis, Milvus, discovery)
+│   │   └── agent_test_runner.py        # Test runner (sandboxed, event capture, mock config)
+│   ├── steps/                          # Shared step configs (e.g., FewShotStepConfig)
+│   ├── tracing/
+│   │   └── agent_run_tracer.py         # OpenTelemetry + Langfuse trace integration
+│   └── workflow/
+│       └── decorators/
+│           ├── step.py                 # @step() decorator — defines workflow building blocks
+│           └── precondition.py         # @precondition() decorator — step readiness checks
 
 app/                               # Entry points (one per agent, each with main.py + Dockerfile)
 ├── rag_agent/main.py

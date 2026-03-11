@@ -75,7 +75,7 @@ bundles all the necessary assets, resources, jobs, and schedules.
 Create a file named `my_pipeline.py`:
 
 ```python
-from aihub_pipeline.util.definitions_util import default_definitions
+from swiss_ai_hub.pipeline.util.definitions_util import default_definitions
 
 # This single function call creates a complete, production-ready pipeline
 # that watches an S3 bucket and processes its contents into a local vector store.

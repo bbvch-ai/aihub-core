@@ -101,8 +101,7 @@ packages/core/swiss_ai_hub/core/
 │   ├── user/                        # UserEntity (tenant-associated)
 │   ├── i18n/                        # LocaleStringEntity
 │   ├── rag/                         # RAG document persistence
-│   ├── notification/                # NotificationEntity
-│   └── insight/, migrations/        # Analytics, schema migrations
+│   └── notification/                # NotificationEntity
 ├── polling/                         # JSPoller (JetStream batch consumption)
 ├── processes/                       # Process config base (process_config.py)
 ├── publishers/                      # JSPublisher (JetStream, durable) + NCPublisher (NATS Core, ephemeral)
@@ -437,19 +436,19 @@ Real-time event emission for streaming LLM output to the UI:
 
 ## Generative AI Utilities
 
-| Module          | Purpose                               | Key Entry Points                                            |
-| --------------- | ------------------------------------- | ----------------------------------------------------------- |
-| `memory/`       | Agent-scoped memory (user + org)      | `AgentMemory.add_user_memory()`, `search_user_memory()`     |
-| `retrieval/`    | RAG node retrieval                    | `retrieve_nodes()`, `condense_standalone_question()`        |
-| `retrievers/`   | Vector store abstraction              | `KnowledgeRetriever`, `BaseRetriever`                       |
-| `rerank/`       | Result reranking                      | `rerank_nodes()` (via LiteLLM)                              |
-| `guards/`       | Input/output guards                   | `agent_description_guard`, `context_sufficient_guard`       |
-| `processors/`   | Retrieval post-processors             | `ParentSummaryPostProcessor`, `VectorPrevNextPostProcessor` |
-| `resources/`    | LLM/embedding model configs           | `LLMConfig`, `EmbeddingModelConfig`, `RerankingModelConfig` |
-| `document/`     | Document loading and parsing          | `MineruLoader`, `MarkdownStructuralNodeParser`              |
-| `prompting/`    | Few-shot examples, language detection | `FewShotExample`, `check_language()`                        |
-| `chat_history/` | Chat context management               | `limit_chat_history()`, `extend_with_user_memory()`         |
-| `routing/`      | LLM-based event routing               | `route_to_event_using_llm()`                                |
+| Module          | Purpose                               | Key Entry Points                                                                                                   |
+| --------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `memory/`       | Agent-scoped memory (user + org)      | `AgentMemory.add_user_memory()`, `search_user_memory()`                                                            |
+| `retrieval/`    | RAG node retrieval                    | `retrieve_nodes()`, `condense_standalone_question()`                                                               |
+| `retrievers/`   | Vector store abstraction              | `KnowledgeRetriever`, `BaseRetriever`                                                                              |
+| `rerank/`       | Result reranking                      | `rerank_nodes()` (via LiteLLM)                                                                                     |
+| `guards/`       | Input/output guards                   | `agent_description_guard`, `context_sufficient_guard`                                                              |
+| `processors/`   | Retrieval post-processors             | `ParentSummaryPostProcessor`, `VectorPrevNextPostProcessor`, `ScoreScalerPostProcessor`                            |
+| `resources/`    | LLM/embedding model configs           | `LLMConfig`, `EmbeddingModelConfig`, `RerankingModelConfig`                                                        |
+| `document/`     | Document loading and parsing          | `MineruLoader`, `MarkdownStructuralNodeParser`                                                                     |
+| `prompting/`    | Few-shot examples, language detection | `FewShotExample`, `check_language()`                                                                               |
+| `chat_history/` | Chat context management               | `limit_chat_history()`, `extend_chat_history_with_user_memory()`, `extend_chat_history_with_organization_memory()` |
+| `routing/`      | LLM-based event routing               | `route_to_event_using_llm()`                                                                                       |
 
 ## FastAPI Controllers
 

@@ -118,7 +118,7 @@ knowledge that survives personnel changes.
 1. **Import Bot-in-the-Loop Helper**: Add to your agent imports
 
    ```python
-   from aihub_lib.nats.events.bot_in_the_loop import BotInTheLoop
+   from swiss_ai_hub.core.events.agent.bitl import BotInTheLoop
    ```
 
 2. **Configure Slack Channel IDs**: Identify your Slack channel IDs (format: `C08MCK6LEBY`)

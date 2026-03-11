@@ -29,7 +29,7 @@ A single pipeline approach would either oversimplify agent capabilities or overc
 
 ## Decision
 
-We implement two separate OpenWebUI pipelines in `aihub_integration`:
+We implement two separate OpenWebUI pipelines in `infra/configs/openwebui/functions/`:
 
 1. **Event-Based Agent Pipeline** (`aihub_pipeline.py`): Complex event processing to showcase Swiss AI Hub agent
    capabilities with full OpenWebUI feature utilization

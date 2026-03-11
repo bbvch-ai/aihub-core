@@ -31,7 +31,7 @@ impossible to intercept at the infrastructure level.
 **The Admin UI iframe loads OpenWebUI's OAuth login endpoint directly** (`/oauth/oidc/login`) instead of the root URL
 (`/`).
 
-In `aihub_web/aihub_web/pages/service/openai.vue`, the iframe `src` is set to:
+In `packages/web/aihub_web/pages/service/openai.vue`, the iframe `src` is set to:
 
 ```vue
 <iframe :src="`${runtimeConfig.public.webui.url}/oauth/oidc/login`" ... />

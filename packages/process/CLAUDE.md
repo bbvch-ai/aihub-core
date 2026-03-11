@@ -11,29 +11,30 @@ production-ready.
 
 ```
 packages/process/                         # SDK framework
-├── agentic_processes/
-│   └── agentic_process.py              # Base class (extends DispatchableWorkflow)
-├── context/
-│   └── walkthrough/walkthrough_context.py  # Per-walkthrough ephemeral state (Redis, 30d TTL)
-├── delegators/                        # Entity delegation system (core differentiator)
-│   ├── abstract_process_entity.py     # BaseProcessEntity with In/Out inner classes
-│   ├── abstract_entity_delegator.py   # Base delegator (subscription management)
-│   ├── agent/                         # Agent.In, Agent.Out, AgentDelegator
-│   ├── human/                         # Human.In, Human.Out (no delegator — handled by API)
-│   ├── process/                       # Process.In, Process.Out, ProcessDelegator
-│   └── program/                       # Program.In, Program.Out (WIP, no delegator — handled by API)
-├── dispatchers/
-│   └── process_dispatcher.py           # Core workflow executor (config fetch, step dispatch, output routing)
-├── i18n/
-│   ├── process_locale_string.py       # Multi-locale string resolution for processes
-│   ├── process_locale_handler.py      # Locale handler with process translation paths
-│   └── translations/process/          # Translation files: {name}.{de|en|fr|it}.yml
-├── process/
-│   ├── decorators/process_step.py     # @process_step() decorator — defines delegation points
-│   └── annotations/extractors/        # Extract In/Out annotations from step signatures
-└── runners/
-    ├── process_runner.py               # Production runner (NATS, Redis, MongoDB, discovery)
-    └── process_test_runner.py         # Test runner (sandboxed, event capture, mock config)
+├── swiss_ai_hub/process/
+│   ├── agentic_processes/
+│   │   └── agentic_process.py              # Base class (extends DispatchableWorkflow)
+│   ├── context/
+│   │   └── walkthrough/walkthrough_context.py  # Per-walkthrough ephemeral state (Redis, 30d TTL)
+│   ├── delegators/                        # Entity delegation system (core differentiator)
+│   │   ├── abstract_process_entity.py     # BaseProcessEntity with In/Out inner classes
+│   │   ├── abstract_entity_delegator.py   # Base delegator (subscription management)
+│   │   ├── agent/                         # Agent.In, Agent.Out, AgentDelegator
+│   │   ├── human/                         # Human.In, Human.Out (no delegator — handled by API)
+│   │   ├── process/                       # Process.In, Process.Out, ProcessDelegator
+│   │   └── program/                       # Program.In, Program.Out (WIP, no delegator — handled by API)
+│   ├── dispatchers/
+│   │   └── process_dispatcher.py           # Core workflow executor (config fetch, step dispatch, output routing)
+│   ├── i18n/
+│   │   ├── process_locale_string.py       # Multi-locale string resolution for processes
+│   │   ├── process_locale_handler.py      # Locale handler with process translation paths
+│   │   └── translations/process/          # Translation files: {name}.{de|en|fr|it}.yml
+│   ├── process/
+│   │   ├── decorators/process_step.py     # @process_step() decorator — defines delegation points
+│   │   └── annotations/extractors/        # Extract In/Out annotations from step signatures
+│   └── runners/
+│       ├── process_runner.py               # Production runner (NATS, Redis, MongoDB, discovery)
+│       └── process_test_runner.py         # Test runner (sandboxed, event capture, mock config)
 
 playground/                            # Examples and testing
 ├── AgenticCVProcess/                  # Complex reference: CV submit → agent analyze → human review → program save

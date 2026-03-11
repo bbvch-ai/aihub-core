@@ -145,27 +145,27 @@ meaning, the definition here reflects the platform-specific usage.
 
 ## Web frontend terms
 
-| Term                     | Definition                                                                                                                                                                |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Composable               | Vue 3 composition functions that encapsulate and reuse stateful logic. In aihub_web, composables manage API calls, state, and business logic using Pinia-Colada patterns. |
-| Pinia-Colada             | Advanced state management library that provides reactive queries, mutations, and caching for Vue applications. Used extensively for API state management in aihub_web.    |
-| PrimeVue                 | Comprehensive UI component library providing rich, accessible components. Forms the foundation of aihub_web's user interface with custom theming.                         |
-| Nuxt layer               | Nuxt 3 architectural pattern that allows sharing configuration, components, and composables. aihub_web is structured as a reusable layer.                                 |
-| SPA mode                 | Single Page Application mode where the entire app runs client-side with no server-side rendering. Enables rich interactivity and real-time updates.                       |
-| API proxy                | Development-time proxy configuration that routes API calls from the frontend to the backend service, enabling seamless local development.                                 |
-| Socket.io integration    | Real-time bidirectional communication system that enables live updates for chat, agent events, and system notifications.                                                  |
-| Vue Flow                 | Workflow visualization library used for displaying agent workflows and process diagrams with interactive node-based interfaces.                                           |
-| ApexCharts               | Charting library integration for displaying analytics, cost tracking, and performance metrics in dashboard components.                                                    |
-| File-based routing       | Nuxt 3 feature that automatically generates routes based on the file structure in the `pages/` directory.                                                                 |
-| Auto-imports             | Nuxt 3 feature that automatically imports composables, components, and utilities without explicit import statements.                                                      |
-| Middleware               | Functions that run before rendering pages, used for authentication, authorization, and route protection.                                                                  |
-| Generated SDK            | TypeScript client automatically generated from the API's OpenAPI specification, providing type-safe API interactions.                                                     |
-| Theme system             | Custom PrimeVue theme configuration that provides consistent styling and dark mode support across the application.                                                        |
-| Event display components | Specialized components for rendering different types of Swiss AI Hub events (LLM events, chunk events, exception events) with rich formatting.                            |
-| Agent dashboard          | Administrative interface for monitoring agent performance, managing configurations, and viewing agent-specific analytics.                                                 |
-| Process visualization    | Interactive workflow diagrams that show the flow of agentic processes with real-time status updates.                                                                      |
-| Evaluation interface     | User interface for managing datasets, experiments, and AI model evaluations with results visualization.                                                                   |
-| Cost tracking            | Dashboard components for monitoring and analyzing AI model usage costs with detailed breakdowns and trends.                                                               |
+| Term                     | Definition                                                                                                                                                                   |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Composable               | Vue 3 composition functions that encapsulate and reuse stateful logic. In packages/web, composables manage API calls, state, and business logic using Pinia-Colada patterns. |
+| Pinia-Colada             | Advanced state management library that provides reactive queries, mutations, and caching for Vue applications. Used extensively for API state management in packages/web.    |
+| PrimeVue                 | Comprehensive UI component library providing rich, accessible components. Forms the foundation of packages/web's user interface with custom theming.                         |
+| Nuxt layer               | Nuxt 3 architectural pattern that allows sharing configuration, components, and composables. packages/web is structured as a reusable layer.                                 |
+| SPA mode                 | Single Page Application mode where the entire app runs client-side with no server-side rendering. Enables rich interactivity and real-time updates.                          |
+| API proxy                | Development-time proxy configuration that routes API calls from the frontend to the backend service, enabling seamless local development.                                    |
+| Socket.io integration    | Real-time bidirectional communication system that enables live updates for chat, agent events, and system notifications.                                                     |
+| Vue Flow                 | Workflow visualization library used for displaying agent workflows and process diagrams with interactive node-based interfaces.                                              |
+| ApexCharts               | Charting library integration for displaying analytics, cost tracking, and performance metrics in dashboard components.                                                       |
+| File-based routing       | Nuxt 3 feature that automatically generates routes based on the file structure in the `pages/` directory.                                                                    |
+| Auto-imports             | Nuxt 3 feature that automatically imports composables, components, and utilities without explicit import statements.                                                         |
+| Middleware               | Functions that run before rendering pages, used for authentication, authorization, and route protection.                                                                     |
+| Generated SDK            | TypeScript client automatically generated from the API's OpenAPI specification, providing type-safe API interactions.                                                        |
+| Theme system             | Custom PrimeVue theme configuration that provides consistent styling and dark mode support across the application.                                                           |
+| Event display components | Specialized components for rendering different types of Swiss AI Hub events (LLM events, chunk events, exception events) with rich formatting.                               |
+| Agent dashboard          | Administrative interface for monitoring agent performance, managing configurations, and viewing agent-specific analytics.                                                    |
+| Process visualization    | Interactive workflow diagrams that show the flow of agentic processes with real-time status updates.                                                                         |
+| Evaluation interface     | User interface for managing datasets, experiments, and AI model evaluations with results visualization.                                                                      |
+| Cost tracking            | Dashboard components for monitoring and analyzing AI model usage costs with detailed breakdowns and trends.                                                                  |
 
 ## Library and foundation terms
 

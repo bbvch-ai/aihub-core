@@ -105,4 +105,4 @@ def partitioned_processing(context: AssetExecutionContext) -> ProcessingResult:
 
 ## Next steps
 
-- Explore `aihub_pipeline/playground/` for complete observable pipeline examples
+- Explore `packages/pipeline/playground/` for complete observable pipeline examples

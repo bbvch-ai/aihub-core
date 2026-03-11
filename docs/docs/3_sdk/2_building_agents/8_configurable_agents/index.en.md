@@ -24,10 +24,10 @@ This pattern ensures the form schema and data model cannot become desynchronized
 from typing import Annotated
 from pydantic import Field
 
-from aihub_lib.agents.AgentConfig import AgentConfig
-from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events.form.constraints import Ge, Le
-from aihub_lib.nats.events.form.elements import InputNumber, InputText
+from swiss_ai_hub.core.agents.agent_config import AgentConfig
+from swiss_ai_hub.core.i18n.locale_string import LocaleString
+from swiss_ai_hub.core.form.constraints import Ge, Le
+from swiss_ai_hub.core.form.elements import InputNumber, InputText
 
 
 class MyAgentConfig(AgentConfig):
@@ -73,7 +73,7 @@ class MyAgentConfig(AgentConfig):
 ### Registering with AgentRunner
 
 ```python
-from aihub_agent.runners.AgentRunner import AgentRunner
+from swiss_ai_hub.agent.runners.agent_runner import AgentRunner
 
 from .MyAgent import MyAgent
 from .MyAgentConfig import MyAgentConfig
@@ -95,7 +95,7 @@ extracted and stored. Administrators can then create profiles through the Admin 
 ### Text Input
 
 ```python
-from aihub_lib.nats.events.form.elements import InputText
+from swiss_ai_hub.core.form.elements import InputText
 
 system_prompt: Annotated[str | InputText, Field()] = "You are a helpful assistant."
 
@@ -110,8 +110,8 @@ system_prompt=InputText(
 ### Numeric Input
 
 ```python
-from aihub_lib.nats.events.form.elements import InputNumber
-from aihub_lib.nats.events.form.constraints import Ge, Le
+from swiss_ai_hub.core.form.elements import InputNumber
+from swiss_ai_hub.core.form.constraints import Ge, Le
 
 max_tokens: Annotated[int | InputNumber, Field(), Ge(1), Le(4096)] = 1024
 
@@ -127,7 +127,7 @@ max_tokens=InputNumber(
 ### Boolean Toggle
 
 ```python
-from aihub_lib.nats.events.form.elements import ToggleSwitch
+from swiss_ai_hub.core.form.elements import ToggleSwitch
 
 enable_citations: Annotated[bool | ToggleSwitch, Field()] = True
 
@@ -141,7 +141,7 @@ enable_citations=ToggleSwitch(
 ### Dropdown Selection
 
 ```python
-from aihub_lib.nats.events.form.elements import Select
+from swiss_ai_hub.core.form.elements import Select
 
 response_format: Annotated[str | Select, Field()] = "text"
 
@@ -159,8 +159,8 @@ response_format=Select(
 ### Multi-Language Input
 
 ```python
-from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events.form.elements import LocaleInput
+from swiss_ai_hub.core.i18n.locale_string import LocaleString
+from swiss_ai_hub.core.form.elements import LocaleInput
 
 greeting: Annotated[LocaleString | LocaleInput, Field()]
 
@@ -174,7 +174,7 @@ greeting=LocaleInput(
 ### Model Selector
 
 ```python
-from aihub_lib.nats.events.form.elements import ModelSelect
+from swiss_ai_hub.core.form.elements import ModelSelect
 
 llm_model: Annotated[str | ModelSelect, Field()] = "gpt-4"
 
@@ -193,7 +193,7 @@ Standard Pydantic constraints (`Field(ge=0, le=1)`) don't work with the duality 
 FormkitElement types. Use SDK-provided constraints instead:
 
 ```python
-from aihub_lib.nats.events.form.constraints import Ge, Le, Gt, Lt, MinLen, MaxLen, Pattern
+from swiss_ai_hub.core.form.constraints import Ge, Le, Gt, Lt, MinLen, MaxLen, Pattern
 
 # Numeric constraints
 temperature: Annotated[float | InputNumber, Ge(0.0), Le(1.0)] = 0.7
@@ -240,8 +240,8 @@ fields.
 Forms can contain other forms using the `Group` element:
 
 ```python
-from aihub_lib.nats.events.form.Form import Form
-from aihub_lib.nats.events.form.elements import InputNumber, ModelSelect
+from swiss_ai_hub.core.form.form import Form
+from swiss_ai_hub.core.form.elements import InputNumber, ModelSelect
 
 
 class LLMConfig(Form):

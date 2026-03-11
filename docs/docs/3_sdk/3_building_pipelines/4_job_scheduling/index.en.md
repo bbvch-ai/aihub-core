@@ -35,9 +35,9 @@ Here is how the components are assembled within a `Definitions` object:
 
 ```python
 # This pattern is automatically configured by the SDK's default factories.
-from aihub_pipeline.jobs.factory import observe_source_job
-from aihub_pipeline.schedules.factory import daily_schedule_at
-from aihub_pipeline.sensors.factory import default_automation_sensor
+from swiss_ai_hub.pipeline.jobs.factory import observe_source_job
+from swiss_ai_hub.pipeline.schedules.factory import daily_schedule_at
+from swiss_ai_hub.pipeline.sensors.factory import default_automation_sensor
 
 # A. A job is created specifically to run the observation asset.
 # This is a lightweight, fast-running job.

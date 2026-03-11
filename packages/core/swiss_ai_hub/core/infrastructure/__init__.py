@@ -25,7 +25,9 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.infrastructure.s3.s3_storage_settings import S3StorageSettings
     from swiss_ai_hub.core.infrastructure.s3.use_s3 import create_s3_filesystem, use_s3, use_s3_service
     from swiss_ai_hub.core.infrastructure.azure_data_lake.azure_data_lake_settings import AzureDataLakeSettings
-    from swiss_ai_hub.core.infrastructure.azure_cognitive_services.azure_document_intelligence_settings import AzureDocumentIntelligenceSettings
+    from swiss_ai_hub.core.infrastructure.azure_cognitive_services.azure_document_intelligence_settings import (
+        AzureDocumentIntelligenceSettings,
+    )
     from swiss_ai_hub.core.infrastructure.mem0.types.memory import Memory
     from swiss_ai_hub.core.infrastructure.mem0.types.memory_relation import MemoryRelation
     from swiss_ai_hub.core.infrastructure.opentelemetry.open_telemetry_settings import OpenTelemetrySettings

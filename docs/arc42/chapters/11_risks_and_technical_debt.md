@@ -158,7 +158,7 @@ based on the detected language of each prompt (using the existing locale context
 
 ### Missing observability in the bot scope
 
-The bot integration (`aihub_bot`) is not instrumented with OpenTelemetry. Traces that originate from a Teams or Slack
+The bot integration (`packages/bot`) is not instrumented with OpenTelemetry. Traces that originate from a Teams or Slack
 message do not connect to the downstream NATS and agent spans, creating a gap in the distributed trace. Diagnosing
 issues reported through bot channels requires correlating bot-side logs with agent-side traces manually. Adding OTEL
 instrumentation to the bot is tracked as a P2 item. **Planned mitigation**: Add `@trace_fn` decorators to `BaseChatBot`,

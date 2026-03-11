@@ -31,11 +31,9 @@ The framework provides three interaction types, each rendered differently in the
 | **Chat**         | `HumanInTheLoopChat`         | Message in chat stream (fallback for UIs without popup support) | `str`         |
 
 ```python
-from aihub_lib.nats.events.human_in_the_loop import (
-    HumanInTheLoopInput,
-    HumanInTheLoopConfirmation,
-    HumanInTheLoopChat,
-)
+from swiss_ai_hub.core.events.agent.hitl.human_in_the_loop_input import HumanInTheLoopInput
+from swiss_ai_hub.core.events.agent.hitl.human_in_the_loop_confirmation import HumanInTheLoopConfirmation
+from swiss_ai_hub.core.events.agent.hitl.human_in_the_loop_chat import HumanInTheLoopChat
 
 # Popup with text input field
 HumanInTheLoopInput.invoke(question="What is your preferred language?")
@@ -62,7 +60,7 @@ This example shows a simple workflow where the agent asks for a single confirmat
 **Reference**: `playground/minimal_workflow/human_in_the_loop_workflow/`
 
 ```python
-from aihub_lib.nats.events.human_in_the_loop import HumanInTheLoopInput
+from swiss_ai_hub.core.events.agent.hitl.human_in_the_loop_input import HumanInTheLoopInput
 
 class ApprovalAgent(Agent):
     @step()
@@ -88,9 +86,9 @@ Each HITL interaction point needs its own request/response event pair and a wrap
 
 ::: code-group
 ```python [events/FirstStepHumanInTheLoop.py]
-from aihub_lib.nats.events.human_in_the_loop import HumanInTheLoopInput
-from aihub_lib.nats.events.human_in_the_loop.request import HumanInTheLoopInputRequestEvent
-from aihub_lib.nats.events.human_in_the_loop.response import HumanInTheLoopInputResponseEvent
+from swiss_ai_hub.core.events.agent.hitl.human_in_the_loop_input import HumanInTheLoopInput
+from swiss_ai_hub.core.events.agent.hitl.request.human_in_the_loop_input_request_event import HumanInTheLoopInputRequestEvent
+from swiss_ai_hub.core.events.agent.hitl.response.human_in_the_loop_input_response_event import HumanInTheLoopInputResponseEvent
 
 
 class FirstStepHumanInTheLoopRequestEvent(HumanInTheLoopInputRequestEvent):
@@ -107,9 +105,9 @@ class FirstStepHumanInTheLoop(HumanInTheLoopInput):
 ```
 
 ```python [events/SecondStepHumanInTheLoop.py]
-from aihub_lib.nats.events.human_in_the_loop import HumanInTheLoopInput
-from aihub_lib.nats.events.human_in_the_loop.request import HumanInTheLoopInputRequestEvent
-from aihub_lib.nats.events.human_in_the_loop.response import HumanInTheLoopInputResponseEvent
+from swiss_ai_hub.core.events.agent.hitl.human_in_the_loop_input import HumanInTheLoopInput
+from swiss_ai_hub.core.events.agent.hitl.request.human_in_the_loop_input_request_event import HumanInTheLoopInputRequestEvent
+from swiss_ai_hub.core.events.agent.hitl.response.human_in_the_loop_input_response_event import HumanInTheLoopInputResponseEvent
 
 
 class SecondStepHumanInTheLoopRequestEvent(HumanInTheLoopInputRequestEvent):
@@ -129,9 +127,10 @@ class SecondStepHumanInTheLoop(HumanInTheLoopInput):
 ### Step 2: Use distinct types in the workflow
 
 ```python
-from aihub_lib.nats.events import StartEvent, StopEvent
-from aihub_agent.agents.Agent import Agent
-from aihub_agent.workflow.decorators.step import step
+from swiss_ai_hub.core.events.agent.control.start.start_event import StartEvent
+from swiss_ai_hub.core.events.agent.control.stop.stop_event import StopEvent
+from swiss_ai_hub.agent.agents.agent import Agent
+from swiss_ai_hub.agent.workflow.decorators.step import step
 
 from .events.FirstStepHumanInTheLoop import FirstStepHumanInTheLoop
 from .events.SecondStepHumanInTheLoop import SecondStepHumanInTheLoop
@@ -160,15 +159,14 @@ class MultistepHumanInTheLoopAgent(Agent):
 When the HITL type depends on runtime conditions, use union return types:
 
 ```python
-from aihub_lib.nats.events import StopEvent, UserMessageEvent
-from aihub_lib.nats.events.human_in_the_loop import (
-    HumanInTheLoopChat,
-    HumanInTheLoopConfirmation,
-    HumanInTheLoopInput,
-)
+from swiss_ai_hub.core.events.agent.control.stop.stop_event import StopEvent
+from swiss_ai_hub.core.events.agent.user.user_message_event import UserMessageEvent
+from swiss_ai_hub.core.events.agent.hitl.human_in_the_loop_chat import HumanInTheLoopChat
+from swiss_ai_hub.core.events.agent.hitl.human_in_the_loop_confirmation import HumanInTheLoopConfirmation
+from swiss_ai_hub.core.events.agent.hitl.human_in_the_loop_input import HumanInTheLoopInput
 
-from aihub_agent.agents.Agent import Agent
-from aihub_agent.workflow.decorators.step import step
+from swiss_ai_hub.agent.agents.agent import Agent
+from swiss_ai_hub.agent.workflow.decorators.step import step
 
 
 class HitlDemoAgent(Agent):
@@ -209,7 +207,7 @@ BITL requires platform-specific configuration:
 
 ::: code-group
 ```python [Microsoft Teams]
-from aihub_lib.nats.events.bot_in_the_loop.request.BotInTheLoopRequestEvent import TeamsConfig
+from swiss_ai_hub.core.events.agent.bitl.request.bot_in_the_loop_request_event import TeamsConfig
 
 teams_config = TeamsConfig(
     channel_id="19:abc123@thread.tacv2",  # Teams channel ID
@@ -219,7 +217,7 @@ teams_config = TeamsConfig(
 ```
 
 ```python [Slack]
-from aihub_lib.nats.events.bot_in_the_loop.request.BotInTheLoopRequestEvent import SlackConfig
+from swiss_ai_hub.core.events.agent.bitl.request.bot_in_the_loop_request_event import SlackConfig
 
 slack_config = SlackConfig(
     channel_id="C0123456789",  # Slack channel ID (starts with 'C')
@@ -231,11 +229,11 @@ slack_config = SlackConfig(
 ### Basic usage
 
 ```python
-from aihub_lib.nats.events import StopEvent
-from aihub_lib.nats.events.bot_in_the_loop.BotInTheLoop import BotInTheLoop
+from swiss_ai_hub.core.events.agent.control.stop.stop_event import StopEvent
+from swiss_ai_hub.core.events.agent.bitl.bot_in_the_loop import BotInTheLoop
 
-from aihub_agent.agents.Agent import Agent
-from aihub_agent.workflow.decorators.step import step
+from swiss_ai_hub.agent.agents.agent import Agent
+from swiss_ai_hub.agent.workflow.decorators.step import step
 
 
 class BotInTheLoopAgent(Agent):

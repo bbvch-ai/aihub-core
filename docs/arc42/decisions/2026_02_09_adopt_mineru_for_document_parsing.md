@@ -50,7 +50,7 @@ effects:
 
 - MinerU code runs only in dedicated Docker containers (`mineru-api`, `mineru-vlm`)
 - Communication exclusively via REST API (HTTP network boundary)
-- No direct library imports into proprietary `aihub_lib` or other packages
+- No direct library imports into proprietary `swiss_ai_hub.core` or other packages
 - Containers added to license exclusion list (`licenses.config.json`)
 
 **API Strategy Change**:

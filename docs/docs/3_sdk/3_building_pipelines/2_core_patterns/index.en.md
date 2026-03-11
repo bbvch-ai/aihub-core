@@ -6,7 +6,7 @@ title: Core Patterns
 
 This page provides practical code examples for the concepts introduced in
 [Pipeline Fundamentals](../1_pipeline_fundamentals/). These are the patterns you will use to build, customize, and
-extend document processing pipelines with the `aihub_pipeline` SDK.
+extend document processing pipelines with the `swiss_ai_hub.pipeline` SDK.
 
 ## Change Detection with Observable Assets
 

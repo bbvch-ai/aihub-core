@@ -441,10 +441,10 @@ graph TD
 ```
 
 ```python
-from aihub_lib.nats.events import UserMessageEvent
-from aihub_lib.displayers.EventDisplayer import EventDisplayer
-from aihub_agent.agents.Agent import Agent
-from aihub_agent.workflow.decorators.step import step
+from swiss_ai_hub.core.events.agent.user.user_message_event import UserMessageEvent
+from swiss_ai_hub.core.displayers.event_displayer import EventDisplayer
+from swiss_ai_hub.agent.agents.agent import Agent
+from swiss_ai_hub.agent.workflow.decorators.step import step
 
 # Define your guard events
 class AcceptEvent(Event):

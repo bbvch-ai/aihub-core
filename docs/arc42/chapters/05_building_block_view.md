@@ -4,9 +4,9 @@
 
 ## Level 2:
 
-### aihub_lib
+### swiss_ai_hub.core (packages/core)
 
-aihub_lib is the foundation that all other packages build on. It is decomposed into the following subsystems.
+`packages/core` is the foundation that all other packages build on. It is decomposed into the following subsystems.
 
 #### Event system
 
@@ -107,10 +107,10 @@ Controller is the abstract base for all API endpoint groups. It provides authent
 permission injection via FastAPI's `Security()` mechanism, automatic OpenTelemetry span enrichment, and a fluent builder
 API where each endpoint method returns `Self` for chaining.
 
-### aihub_agent
+### swiss_ai_hub.agent (packages/agent)
 
-aihub_agent provides the SDK for building workflow-based agents. It depends on aihub_lib for the workflow engine, event
-types, and infrastructure abstractions.
+`packages/agent` provides the SDK for building workflow-based agents. It depends on `packages/core` for the workflow
+engine, event types, and infrastructure abstractions.
 
 #### Agent base class
 
@@ -150,10 +150,10 @@ results, and accumulated context. ThreadContext provides per-conversation state,
 persisting across multiple runs within the same thread. Use cases include conversation history, namespace selections,
 and user preferences.
 
-### aihub_api
+### swiss_ai_hub.api (packages/api)
 
-aihub_api is the platform's HTTP gateway. It translates between the synchronous request-response world of web clients
-and the asynchronous event-driven world of NATS.
+`packages/api` is the platform's HTTP gateway. It translates between the synchronous request-response world of web
+clients and the asynchronous event-driven world of NATS.
 
 #### Discovery services
 
@@ -193,10 +193,10 @@ infrastructure, event distributors (for publishing start events and in-the-loop 
 discovery services. All resources are stored in FastAPI's `app.state` and made available to controllers through
 `Depends()` functions.
 
-### aihub_process
+### swiss_ai_hub.process (packages/process)
 
-aihub_process provides the SDK for orchestrating multi-entity workflows. Unlike agents, which execute work themselves,
-processes delegate work to other entities: agents, humans, external programs, or other processes.
+`packages/process` provides the SDK for orchestrating multi-entity workflows. Unlike agents, which execute work
+themselves, processes delegate work to other entities: agents, humans, external programs, or other processes.
 
 #### AgenticProcess base class
 
@@ -229,9 +229,9 @@ walkthrough, it fetches configuration via NATS RPC and stores it in WalkthroughC
 fields (agent class, agent ID, user IDs, endpoint URLs) from the Out configuration into outgoing WorkRequestEvents, so
 process step methods do not need to handle routing details.
 
-### aihub_pipeline
+### swiss_ai_hub.pipeline (packages/pipeline)
 
-aihub_pipeline implements the document ingestion system as Dagster software-defined assets.
+`packages/pipeline` implements the document ingestion system as Dagster software-defined assets.
 
 #### Two-stage architecture
 
@@ -268,9 +268,9 @@ KVDocumentStore. VectorStoreIOManager upserts TextNode objects to Milvus with re
 Source-specific I/O managers (SharePointIOManager, RcloneIOManager, LocalFileSystemIOManager) provide read-only access
 to external sources.
 
-### aihub_bot
+### swiss_ai_hub.bot (packages/bot)
 
-aihub_bot bridges collaboration platforms to the platform's agent system via the Microsoft Bot Framework.
+`packages/bot` bridges collaboration platforms to the platform's agent system via the Microsoft Bot Framework.
 
 #### Three-layer architecture
 
@@ -299,9 +299,9 @@ handler sends the question proactively to a configured Slack channel or Teams co
 BotInTheLoopBot matches the reply to the original thread, extracts the response, and publishes a
 BotInTheLoopResponseEvent back to NATS, resuming the agent's workflow.
 
-### aihub_web
+### packages/web
 
-aihub_web is the Nuxt 3 frontend application that provides the admin UI and process UI.
+`packages/web` is the Nuxt 3 frontend application that provides the admin UI and process UI.
 
 #### FormKit
 

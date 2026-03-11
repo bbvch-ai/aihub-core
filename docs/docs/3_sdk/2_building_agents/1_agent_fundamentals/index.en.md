@@ -56,7 +56,7 @@ You'll create custom `ControlEvent`s to pass data between your steps. Simply inh
 Pydantic fields. The most common starting event for a conversational agent is the built-in `UserMessageEvent`.
 
 ```python
-from aihub_agent.events.ControlEvent import ControlEvent
+from swiss_ai_hub.core.events.agent.control.control_event import ControlEvent
 
 # A custom event to carry data from one step to another
 class DocumentProcessedEvent(ControlEvent):
@@ -71,8 +71,8 @@ A step is an `async` method that performs a single, logical operation. The `@ste
 dispatcher and configures its behavior.
 
 ```python
-from aihub_agent.workflow.decorators.step import step
-from aihub_lib.i18n.LocaleString import LocaleString
+from swiss_ai_hub.agent.workflow.decorators.step import step
+from swiss_ai_hub.core.i18n.locale_string import LocaleString
 
 @step(
     name=LocaleString(en="Process Document"),
@@ -104,7 +104,7 @@ Multiple steps for the same run may execute in parallel on different instances. 
 Use `LocaleString` for step names and descriptions that appear in the UI:
 
 ```python
-from aihub_lib.i18n.LocaleString import LocaleString
+from swiss_ai_hub.core.i18n.locale_string import LocaleString
 
 @step(
     name=LocaleString(
@@ -120,8 +120,8 @@ async def search(self, event: UserMessageEvent, t: LocaleHandler) -> SearchEvent
     ...
 ```
 
-Translation files live in `aihub_agent/i18n/translations/agent/<agent_name>/` with one YAML file per locale (`en.yml`,
-`de.yml`, etc.). Lookup order: Local agent translations, agent scope, library, English fallback.
+Translation files live in `packages/agent/swiss_ai_hub/agent/i18n/translations/agent/<agent_name>/` with one YAML file
+per locale (`en.yml`, `de.yml`, etc.). Lookup order: Local agent translations, agent scope, library, English fallback.
 
 ## Configuration: Making Agents Reusable
 
@@ -140,7 +140,7 @@ Define a class that inherits from `AgentConfig` for settings that apply to the e
 into any step.
 
 ```python
-from aihub_lib.agents.AgentConfig import AgentConfig
+from swiss_ai_hub.core.agents.agent_config import AgentConfig
 from pydantic import Field
 from typing import Annotated
 

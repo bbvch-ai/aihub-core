@@ -2,8 +2,7 @@ from dagster._config.pythonic_config import ConfigurableResourceFactory
 from dagster_aws.s3 import S3PickleIOManager, S3Resource
 from swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_model_config import EmbeddingModelConfig
 from swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config import LLMConfig
-from swiss_ai_hub.core.infrastructure import MilvusSettings
-from swiss_ai_hub.core.infrastructure import S3StorageSettings
+from swiss_ai_hub.core.infrastructure import MilvusSettings, S3StorageSettings
 from swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_vector_store_factory import MilvusIndexType
 
 from swiss_ai_hub.pipeline.io.azure_data_lake_io_manager import AzureDataLakeIOManager

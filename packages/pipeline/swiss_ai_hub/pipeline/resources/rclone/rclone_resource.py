@@ -3,8 +3,7 @@ from typing import Annotated, Any
 
 from dagster import ConfigurableResource
 from pydantic import Field, PrivateAttr
-from swiss_ai_hub.core.infrastructure.rclone import RcloneSettings
-from swiss_ai_hub.core.infrastructure.rclone import RcloneSourceConfig
+from swiss_ai_hub.core.infrastructure.rclone import RcloneSettings, RcloneSourceConfig
 
 from swiss_ai_hub.pipeline.resources.rclone.rclone_client import RcloneClient
 from swiss_ai_hub.pipeline.types.rclone_file import MinimalRcloneFile, RcloneFile

@@ -55,9 +55,9 @@ Feature: Iterative Processing Agent
 
 ::: code-group
 ```python [Test setup]
-from aihub_lib.testing.asyncio_utils.bdd import async_test
+from swiss_ai_hub.core.testing.asyncio_utils.bdd import async_test
 from pytest_bdd import given, parsers, scenarios, then, when
-from aihub_agent.runners.AgentTestRunner import AgentTestRunner
+from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner
 
 scenarios("./features/iterative_agent.feature")
 
@@ -152,8 +152,8 @@ Create `trigger.py` scripts to test specific scenarios:
 ```python
 # my_agent/trigger.py
 import asyncio
-from aihub_lib.infrastructure.logging.logger import enable_logging
-from aihub_agent.runners.AgentTestRunner import AgentTestRunner
+from swiss_ai_hub.core.infrastructure.logging.logger import enable_logging
+from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner
 
 # ALWAYS enable logging for debugging
 enable_logging()
@@ -186,8 +186,8 @@ For agents that need to run continuously:
 ```python
 # my_agent/run.py
 import asyncio
-from aihub_lib.infrastructure.logging.logger import enable_logging
-from aihub_agent.runners.AgentTestRunner import AgentTestRunner
+from swiss_ai_hub.core.infrastructure.logging.logger import enable_logging
+from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner
 
 enable_logging()
 
@@ -236,7 +236,7 @@ uv run pytest tests/test_my_agent.py
 uv run pytest -v tests/
 
 # Run with coverage
-uv run pytest --cov=aihub_agent tests/
+uv run pytest --cov=swiss_ai_hub tests/
 ```
 
 ## Implementation checklist
@@ -247,7 +247,7 @@ Use this checklist when building or reviewing agents:
 
 - [ ] Understand the [execution model](../9_execution_model/) — steps are a dependency graph, not a sequence
 - [ ] Review the [memory lifecycle](../5_memory/) if your agent uses memory
-- [ ] Study production agents: `aihub_agent/agents/RagAgent/`, `ExpertRagAgent/`
+- [ ] Study production agents: `packages/agent/swiss_ai_hub/agent/agents/rag_agent/`, `expert_rag_agent/`
 
 ### For each step
 

@@ -4,7 +4,7 @@ title: Your First Pipeline
 
 # Your First Pipeline
 
-Build your first data processing pipeline using the Swiss AI Hub Pipeline (`aihub_pipeline`) SDK - a complete data
+Build your first data processing pipeline using the Swiss AI Hub Pipeline (`swiss_ai_hub.pipeline`) SDK - a complete data
 transformation pipeline with multiple connected assets.
 
 ## What you'll learn
@@ -108,7 +108,7 @@ Click **"Materialize all"** to run the pipeline and see the data flow!
 
 ## Build a real Swiss AI Hub pipeline
 
-Now let's create a realistic pipeline using the `aihub_pipeline` SDK that demonstrates document processing patterns.
+Now let's create a realistic pipeline using the `swiss_ai_hub.pipeline` SDK that demonstrates document processing patterns.
 We'll break this down step by step to understand each component.
 
 ### 1. Understanding Swiss AI Hub Pipeline Structure
@@ -124,25 +124,25 @@ Swiss AI Hub pipelines follow these key patterns:
 Start by creating the basic configuration and imports (`my_document_pipeline.py`):
 
 ```python
-from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
+from swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_model_config import EmbeddingModelConfig
 from dagster import AssetKey, AssetSelection, Definitions, DynamicPartitionsDefinition
 
 # Import Swiss AI Hub pipeline factories
-from aihub_pipeline.assets.factories.data_lake_to_vector_store.documents_factory import documents_factory
-from aihub_pipeline.assets.factories.data_lake_to_vector_store.nodes_factory import nodes_factory
-from aihub_pipeline.assets.factories.data_lake_to_vector_store.observable_data_lake_factory import (
+from swiss_ai_hub.pipeline.assets.factories.data_lake_to_vector_store.documents_factory import documents_factory
+from swiss_ai_hub.pipeline.assets.factories.data_lake_to_vector_store.nodes_factory import nodes_factory
+from swiss_ai_hub.pipeline.assets.factories.data_lake_to_vector_store.observable_data_lake_factory import (
     observable_data_lake_factory,
 )
 
 # Import Swiss AI Hub resources and utilities
-from aihub_pipeline.resources.factory import (
+from swiss_ai_hub.pipeline.resources.factory import (
     default_io_manager_s3_datalake_resources,
     local_mongo_milvus_storage_context_resource,
     s3_data_lake_resources,
 )
-from aihub_pipeline.resources.llm.EmbeddingModelResource import EmbeddingModelResource
-from aihub_pipeline.resources.parser.DocumentParserResource import DocumentParserResource, LoaderType
-from aihub_pipeline.resources.parser.MarkdownStructuralNodeParserResource import MarkdownStructuralNodeParserResource
+from swiss_ai_hub.pipeline.resources.llm.embedding_model_resource import EmbeddingModelResource
+from swiss_ai_hub.pipeline.resources.parser.document_parser_resource import DocumentParserResource, LoaderType
+from swiss_ai_hub.pipeline.resources.parser.markdown_structural_node_parser_resource import MarkdownStructuralNodeParserResource
 
 # Pipeline configuration - defines where data flows between assets
 DATA_LAKE_KEY = AssetKey(["playground", "data_lake"])      # Raw file storage 
@@ -274,23 +274,23 @@ defs = Definitions(
 Here's the complete file with all components together:
 
 ```python
-from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
+from swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_model_config import EmbeddingModelConfig
 from dagster import AssetKey, Definitions, DynamicPartitionsDefinition
 
-from aihub_pipeline.assets.factories.data_lake_to_vector_store.documents_factory import documents_factory
-from aihub_pipeline.assets.factories.data_lake_to_vector_store.nodes_factory import nodes_factory
-from aihub_pipeline.assets.factories.data_lake_to_vector_store.observable_data_lake_factory import (
+from swiss_ai_hub.pipeline.assets.factories.data_lake_to_vector_store.documents_factory import documents_factory
+from swiss_ai_hub.pipeline.assets.factories.data_lake_to_vector_store.nodes_factory import nodes_factory
+from swiss_ai_hub.pipeline.assets.factories.data_lake_to_vector_store.observable_data_lake_factory import (
     observable_data_lake_factory,
 )
 
-from aihub_pipeline.resources.factory import (
+from swiss_ai_hub.pipeline.resources.factory import (
     default_io_manager_s3_datalake_resources,
     local_mongo_milvus_storage_context_resource,
     s3_data_lake_resources,
 )
-from aihub_pipeline.resources.llm.EmbeddingModelResource import EmbeddingModelResource
-from aihub_pipeline.resources.parser.DocumentParserResource import DocumentParserResource, LoaderType
-from aihub_pipeline.resources.parser.MarkdownStructuralNodeParserResource import MarkdownStructuralNodeParserResource
+from swiss_ai_hub.pipeline.resources.llm.embedding_model_resource import EmbeddingModelResource
+from swiss_ai_hub.pipeline.resources.parser.document_parser_resource import DocumentParserResource, LoaderType
+from swiss_ai_hub.pipeline.resources.parser.markdown_structural_node_parser_resource import MarkdownStructuralNodeParserResource
 
 # Configuration
 DATA_LAKE_KEY = AssetKey(["playground", "data_lake"])
@@ -353,9 +353,9 @@ For production pipelines, you'll want to add jobs and scheduling. Let's extend t
 
 ```python
 # Add these imports to my_document_pipeline.py
-from aihub_pipeline.jobs.factory import observe_source_job
-from aihub_pipeline.schedules.factory import daily_schedule_at
-from aihub_pipeline.sensors.factory import default_automation_sensor
+from swiss_ai_hub.pipeline.jobs.factory import observe_source_job
+from swiss_ai_hub.pipeline.schedules.factory import daily_schedule_at
+from swiss_ai_hub.pipeline.sensors.factory import default_automation_sensor
 
 # Create jobs for different operations
 observe_job = observe_source_job(
@@ -416,7 +416,7 @@ Your Swiss AI Hub pipeline demonstrates key patterns:
 
 ## What you learned
 
-- **Swiss AI Hub SDK Usage**: Using factories, resources, and typed data objects from `aihub_pipeline`
+- **Swiss AI Hub SDK Usage**: Using factories, resources, and typed data objects from `swiss_ai_hub.pipeline`
 - **Document Processing Pipeline**: Complete flow from raw files to searchable embeddings
 - **Asset Factory Usage**: Using existing factories like `documents_factory` and `nodes_factory`
 - **Resource Configuration**: Setting up parsers, LLMs, and storage systems

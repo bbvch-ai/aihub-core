@@ -4,8 +4,8 @@ title: Your First Agent
 
 # Your First Agent
 
-Build your first agent using the Swiss AI Hub Agent (`aihub_agent`) SDK - a simple message processing agent with a
-2-step workflow.
+Build your first agent using the Swiss AI Hub Agent (`swiss_ai_hub.agent`) SDK - a simple message processing agent with
+a 2-step workflow.
 
 ## What you'll learn
 
@@ -36,10 +36,10 @@ Let's look at the default agent created in the setup of the development environm
 ```python
 import logging
 
-from aihub_agent.agents.Agent import Agent
-from aihub_lib.nats.events.user import UserMessageEvent
-from aihub_lib.nats.events import StopEvent
-from aihub_agent.workflow.decorators.step import step
+from swiss_ai_hub.agent.agents.agent import Agent
+from swiss_ai_hub.core.events.agent.user import UserMessageEvent
+from swiss_ai_hub.core.events.agent.control import StopEvent
+from swiss_ai_hub.agent.workflow.decorators.step import step
 
 logger = logging.getLogger(__name__)
 
@@ -73,11 +73,11 @@ code the chunk for now let's just use the ClassName of the Agent as source.
 ```python
 import logging
 
-from aihub_agent.agents.Agent import Agent
-from aihub_lib.nats.events.user import UserMessageEvent
-from aihub_lib.nats.events import StopEvent
-from aihub_agent.workflow.decorators.step import step
-from aihub_lib.displayers.EventDisplayer import EventDisplayer # [!code ++]
+from swiss_ai_hub.agent.agents.agent import Agent
+from swiss_ai_hub.core.events.agent.user import UserMessageEvent
+from swiss_ai_hub.core.events.agent.control import StopEvent
+from swiss_ai_hub.agent.workflow.decorators.step import step
+from swiss_ai_hub.core.displayers.event_displayer import EventDisplayer # [!code ++]
 
 logger = logging.getLogger(__name__)
 
@@ -111,11 +111,11 @@ the user some part of the response as quickly as possible. let's demonstrate:
 import logging
 import asyncio # [!code ++]
 
-from aihub_agent.agents.Agent import Agent
-from aihub_lib.nats.events.user import UserMessageEvent
-from aihub_lib.nats.events import StopEvent
-from aihub_agent.workflow.decorators.step import step
-from aihub_lib.displayers.EventDisplayer import EventDisplayer
+from swiss_ai_hub.agent.agents.agent import Agent
+from swiss_ai_hub.core.events.agent.user import UserMessageEvent
+from swiss_ai_hub.core.events.agent.control import StopEvent
+from swiss_ai_hub.agent.workflow.decorators.step import step
+from swiss_ai_hub.core.displayers.event_displayer import EventDisplayer
 
 logger = logging.getLogger(__name__)
 
@@ -152,11 +152,11 @@ the `display_thought` method.
 import logging
 import asyncio
 
-from aihub_agent.agents.Agent import Agent
-from aihub_lib.nats.events.user import UserMessageEvent
-from aihub_lib.nats.events import StopEvent
-from aihub_agent.workflow.decorators.step import step
-from aihub_lib.displayers.EventDisplayer import EventDisplayer
+from swiss_ai_hub.agent.agents.agent import Agent
+from swiss_ai_hub.core.events.agent.user import UserMessageEvent
+from swiss_ai_hub.core.events.agent.control import StopEvent
+from swiss_ai_hub.agent.workflow.decorators.step import step
+from swiss_ai_hub.core.displayers.event_displayer import EventDisplayer
 
 logger = logging.getLogger(__name__)
 
@@ -193,7 +193,7 @@ First, create an event to pass data between steps:
 ```python
 from typing import Annotated
 
-from aihub_lib.nats.events import ControlEvent
+from swiss_ai_hub.core.events.agent.control import ControlEvent
 from pydantic import Field
 
 
@@ -208,11 +208,11 @@ class MyCustomAgentEvent(ControlEvent):
 import logging
 import asyncio
 
-from aihub_agent.agents.Agent import Agent
-from aihub_lib.nats.events.user import UserMessageEvent
-from aihub_lib.nats.events import StopEvent
-from aihub_agent.workflow.decorators.step import step
-from aihub_lib.displayers.EventDisplayer import EventDisplayer
+from swiss_ai_hub.agent.agents.agent import Agent
+from swiss_ai_hub.core.events.agent.user import UserMessageEvent
+from swiss_ai_hub.core.events.agent.control import StopEvent
+from swiss_ai_hub.agent.workflow.decorators.step import step
+from swiss_ai_hub.core.displayers.event_displayer import EventDisplayer
 
 from .events.MyCustomAgentEvent import MyCustomAgentEvent # [!code ++]
 
@@ -269,7 +269,7 @@ set up your agent using the CLI then a basic Configuration File has already been
 from typing import Annotated
 
 from pydantic import Field
-from aihub_lib.agents.AgentConfig import AgentConfig
+from swiss_ai_hub.core.agents.agent_config import AgentConfig
 
 
 class MyCustomAgentConfig(AgentConfig):
@@ -289,11 +289,11 @@ config to configure some logic in your steps, either with system-prompts or conf
 import logging
 import asyncio
 
-from aihub_agent.agents.Agent import Agent
-from aihub_lib.nats.events.user import UserMessageEvent
-from aihub_lib.nats.events import StopEvent
-from aihub_agent.workflow.decorators.step import step
-from aihub_lib.displayers.EventDisplayer import EventDisplayer
+from swiss_ai_hub.agent.agents.agent import Agent
+from swiss_ai_hub.core.events.agent.user import UserMessageEvent
+from swiss_ai_hub.core.events.agent.control import StopEvent
+from swiss_ai_hub.agent.workflow.decorators.step import step
+from swiss_ai_hub.core.displayers.event_displayer import EventDisplayer
 
 from .events.MyCustomAgentEvent import MyCustomAgentEvent
 from .MyCustomAgentConfig import MyCustomAgentConfig  # [!code ++]
@@ -367,11 +367,10 @@ way you can test the agent without any UI.
 
 ```python [trigger.py]
 import asyncio
-from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events import UserMessageEvent
-from aihub_lib.testing.auth_utils.fake_user import fake_user
-from aihub_lib.infrastructure.logging.logger import enable_logging
-from aihub_agent.runners.AgentTestRunner import AgentTestRunner
+from swiss_ai_hub.core.i18n.locale_string import LocaleString
+from swiss_ai_hub.core.events.agent.user import UserMessageEvent
+from swiss_ai_hub.core.testing.auth_utils import fake_user
+from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
 from MyAgent import MyAgent

@@ -1,9 +1,7 @@
 import mongoengine
 from mongoengine import DoesNotExist, register_connection
-from swiss_ai_hub.core.infrastructure import AIHubSettings
-from swiss_ai_hub.core.infrastructure import MongoSettings
-from swiss_ai_hub.core.persistence.rag.datalake.entities import BucketEntity
-from swiss_ai_hub.core.persistence.rag.datalake.entities import NamespaceEntity
+from swiss_ai_hub.core.infrastructure import AIHubSettings, MongoSettings
+from swiss_ai_hub.core.persistence.rag.datalake.entities import BucketEntity, NamespaceEntity
 
 # Default alias for the main database connection
 _DB_ALIAS = "default"

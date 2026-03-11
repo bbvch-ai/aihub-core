@@ -13,7 +13,7 @@ protocol conversion (NATS events ↔ REST/WebSocket/SSE/OpenAI). NOT business lo
 ```
 packages/api/
 ├── app/main.py                 # Production entry — registers all controllers
-├── packages/api/
+├── swiss_ai_hub/api/
 │   ├── routes/                 # Controllers + Services + DTOs (by domain)
 │   │   ├── agent/              # Agent class/instance management
 │   │   ├── thread/             # Conversation management

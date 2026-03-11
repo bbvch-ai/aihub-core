@@ -9,58 +9,59 @@ directly. Pre-configured source templates in `templates/` for quick onboarding.
 
 ```
 packages/pipeline/                        # SDK framework
-├── assets/factories/                  # Asset factory functions (core building blocks)
-│   ├── data_lake_to_vector_store/     # Stage 2: documents, nodes, summary_nodes, removed_documents
-│   ├── source_to_data_lake/           # Stage 1 generic: data_lake_file, placeholder_refdocs, removed_data_lake_files
-│   ├── share_point_to_data_lake/      # Stage 1: observable_share_point
-│   ├── rclone_to_data_lake/           # Stage 1: observable_rclone
-│   └── local_files_system_to_data_lake/  # Stage 1: observable_local_file_system
-├── io/                                # I/O managers (storage handlers)
-│   ├── s3_data_lake_io_manager.py      # S3/MinIO/SeaweedFS
-│   ├── azure_data_lake_io_manager.py   # Azure Data Lake Storage
-│   ├── doc_store_io_manager.py         # MongoDB document store
-│   ├── vector_store_io_manager.py      # Milvus vector store
-│   ├── share_point_io_manager.py       # SharePoint (read-only)
-│   ├── rclone_io_manager.py            # Rclone 70+ backends (read-only)
-│   └── local_file_system_io_manager.py # Local/network filesystem (read-only)
-├── ops/                               # Operations (@op processing steps)
-│   ├── data_lake/                     # Parsing, versioning, figure descriptions, table refinement
-│   ├── document/                      # RefDoc insertion, cleanup, metadata, placeholders
-│   └── nodes/                         # Chunking, embedding, vector insertion, summaries
-├── resources/                         # External dependencies (ConfigurableResource subclasses)
-│   ├── data_lake/base/                # AbstractDataLakeClient, AbstractDataLakeClientResource
-│   ├── data_lake/s3/                  # S3DataLakeClient, S3DataLakeFileSystemResource
-│   ├── data_lake/azure/               # AzureDataLakeClient, AzureDataLakeFileSystemResource
-│   ├── parser/                        # DocumentParserResource, MarkdownStructuralNodeParserResource, etc.
-│   ├── vector_store/                  # MilvusVectorStoreResource
-│   ├── doc_store/                     # MongoDocumentStoreResource
-│   ├── llm/                           # EmbeddingModelResource, LanguageModelResource
-│   ├── share_point/                   # SharePointResource (MS Graph API)
-│   ├── rclone/                        # RcloneResource, RcloneClient (RC API)
-│   ├── local_file_system/             # LocalFileSystemResource
-│   └── factory.py                     # Resource factory functions (assembles resource dicts)
-├── sensors/
-│   ├── factory.py                     # default_automation_sensor (auto-materialization)
-│   └── nats/nats_document_uploaded_sensor.py  # NATS event-driven triggers
-├── schedules/factory.py               # daily_schedule_at, default_daily_materialize_schedule
-├── jobs/factory.py                    # observe_source_job, materialize_asset_job, materialize_all_job
-├── executors/factory.py               # default_process_executor (in-process)
-├── automation/all_deps_completed.py   # AutomationCondition for all-deps-ready
-├── types/                             # Domain types (Pydantic models)
-│   ├── data_lake_file.py              # File in cloud storage (S3 bucket)
-│   ├── ref_doc_document.py            # Parsed document (extends LlamaIndex Document)
-│   ├── source_file.py                 # Generic source file interface + MinimalSourceFile
-│   ├── share_point_file.py            # SharePoint-specific file
-│   ├── rclone_file.py                 # Rclone-specific file (70+ cloud backends)
-│   └── figure_metadata.py             # Image/figure metadata
-├── util/                              # Utilities
-│   ├── definitions_util.py            # default_definitions() + source-specific builders (CRITICAL)
-│   ├── id_utils.py                    # uri_to_id() — URI to document ID (MD5 hash)
-│   ├── partition_utils.py             # replace_partition_keys() — dynamic partition management
-│   ├── bucket_utils.py                # get_db_name_from_bucket_name() — S3 bucket → MongoDB name
-│   ├── key_utils.py                   # group_name_from_asset_key() — asset group derivation
-│   └── meta_utils.py                  # data_lake_metadata_table() — Dagster UI formatting
-└── const/pipeline_names.py            # INTERNAL_DATALAKE, INTERNAL_KNOWLEDGE_DB
+├── swiss_ai_hub/pipeline/
+│   ├── assets/factories/                  # Asset factory functions (core building blocks)
+│   │   ├── data_lake_to_vector_store/     # Stage 2: documents, nodes, summary_nodes, removed_documents
+│   │   ├── source_to_data_lake/           # Stage 1 generic: data_lake_file, placeholder_refdocs, removed_data_lake_files
+│   │   ├── share_point_to_data_lake/      # Stage 1: observable_share_point
+│   │   ├── rclone_to_data_lake/           # Stage 1: observable_rclone
+│   │   └── local_files_system_to_data_lake/  # Stage 1: observable_local_file_system
+│   ├── io/                                # I/O managers (storage handlers)
+│   │   ├── s3_data_lake_io_manager.py      # S3/MinIO/SeaweedFS
+│   │   ├── azure_data_lake_io_manager.py   # Azure Data Lake Storage
+│   │   ├── doc_store_io_manager.py         # MongoDB document store
+│   │   ├── vector_store_io_manager.py      # Milvus vector store
+│   │   ├── share_point_io_manager.py       # SharePoint (read-only)
+│   │   ├── rclone_io_manager.py            # Rclone 70+ backends (read-only)
+│   │   └── local_file_system_io_manager.py # Local/network filesystem (read-only)
+│   ├── ops/                               # Operations (@op processing steps)
+│   │   ├── data_lake/                     # Parsing, versioning, figure descriptions, table refinement
+│   │   ├── document/                      # RefDoc insertion, cleanup, metadata, placeholders
+│   │   └── nodes/                         # Chunking, embedding, vector insertion, summaries
+│   ├── resources/                         # External dependencies (ConfigurableResource subclasses)
+│   │   ├── data_lake/base/                # AbstractDataLakeClient, AbstractDataLakeClientResource
+│   │   ├── data_lake/s3/                  # S3DataLakeClient, S3DataLakeFileSystemResource
+│   │   ├── data_lake/azure/               # AzureDataLakeClient, AzureDataLakeFileSystemResource
+│   │   ├── parser/                        # DocumentParserResource, MarkdownStructuralNodeParserResource, etc.
+│   │   ├── vector_store/                  # MilvusVectorStoreResource
+│   │   ├── doc_store/                     # MongoDocumentStoreResource
+│   │   ├── llm/                           # EmbeddingModelResource, LanguageModelResource
+│   │   ├── share_point/                   # SharePointResource (MS Graph API)
+│   │   ├── rclone/                        # RcloneResource, RcloneClient (RC API)
+│   │   ├── local_file_system/             # LocalFileSystemResource
+│   │   └── factory.py                     # Resource factory functions (assembles resource dicts)
+│   ├── sensors/
+│   │   ├── factory.py                     # default_automation_sensor (auto-materialization)
+│   │   └── nats/nats_document_uploaded_sensor.py  # NATS event-driven triggers
+│   ├── schedules/factory.py               # daily_schedule_at, default_daily_materialize_schedule
+│   ├── jobs/factory.py                    # observe_source_job, materialize_asset_job, materialize_all_job
+│   ├── executors/factory.py               # default_process_executor (in-process)
+│   ├── automation/all_deps_completed.py   # AutomationCondition for all-deps-ready
+│   ├── types/                             # Domain types (Pydantic models)
+│   │   ├── data_lake_file.py              # File in cloud storage (S3 bucket)
+│   │   ├── ref_doc_document.py            # Parsed document (extends LlamaIndex Document)
+│   │   ├── source_file.py                 # Generic source file interface + MinimalSourceFile
+│   │   ├── share_point_file.py            # SharePoint-specific file
+│   │   ├── rclone_file.py                 # Rclone-specific file (70+ cloud backends)
+│   │   └── figure_metadata.py             # Image/figure metadata
+│   ├── util/                              # Utilities
+│   │   ├── definitions_util.py            # default_definitions() + source-specific builders (CRITICAL)
+│   │   ├── id_utils.py                    # uri_to_id() — URI to document ID (MD5 hash)
+│   │   ├── partition_utils.py             # replace_partition_keys() — dynamic partition management
+│   │   ├── bucket_utils.py                # get_db_name_from_bucket_name() — S3 bucket → MongoDB name
+│   │   ├── key_utils.py                   # group_name_from_asset_key() — asset group derivation
+│   │   └── meta_utils.py                  # data_lake_metadata_table() — Dagster UI formatting
+│   └── const/pipeline_names.py            # INTERNAL_DATALAKE, INTERNAL_KNOWLEDGE_DB
 
 app/                                   # Deployable pipelines (Dagster gRPC code locations)
 ├── default_rag_pipeline/              # Per-tenant bucket pipeline
@@ -305,28 +306,30 @@ Each has a `Dockerfile` (Python 3.13-slim, uv, port 4000):
 
 **Core Entry Points**:
 
-- Definition builders: `packages/pipeline/util/definitions_util.py`
-- Resource factories: `packages/pipeline/resources/factory.py`
+- Definition builders: `packages/pipeline/swiss_ai_hub/pipeline/util/definitions_util.py`
+- Resource factories: `packages/pipeline/swiss_ai_hub/pipeline/resources/factory.py`
 
 **Asset Factories**:
 
-- Stage 2: `packages/pipeline/assets/factories/data_lake_to_vector_store/`
-- Stage 1 generic: `packages/pipeline/assets/factories/source_to_data_lake/`
-- SharePoint: `packages/pipeline/assets/factories/share_point_to_data_lake/`
-- Rclone: `packages/pipeline/assets/factories/rclone_to_data_lake/`
-- Local FS: `packages/pipeline/assets/factories/local_files_system_to_data_lake/`
+- Stage 2: `packages/pipeline/swiss_ai_hub/pipeline/assets/factories/data_lake_to_vector_store/`
+- Stage 1 generic: `packages/pipeline/swiss_ai_hub/pipeline/assets/factories/source_to_data_lake/`
+- SharePoint: `packages/pipeline/swiss_ai_hub/pipeline/assets/factories/share_point_to_data_lake/`
+- Rclone: `packages/pipeline/swiss_ai_hub/pipeline/assets/factories/rclone_to_data_lake/`
+- Local FS: `packages/pipeline/swiss_ai_hub/pipeline/assets/factories/local_files_system_to_data_lake/`
 
-**I/O Managers**: `packages/pipeline/io/` — S3DataLakeIOManager, AzureDataLakeIOManager, DocStoreIOManager,
-VectorStoreIOManager, SharePointIOManager, RcloneIOManager, LocalFileSystemIOManager
+**I/O Managers**: `packages/pipeline/swiss_ai_hub/pipeline/io/` — S3DataLakeIOManager, AzureDataLakeIOManager,
+DocStoreIOManager, VectorStoreIOManager, SharePointIOManager, RcloneIOManager, LocalFileSystemIOManager
 
-**Domain Types**: `packages/pipeline/types/` — DataLakeFile, RefDocDocument, SourceFile, SharePointFile, RcloneFile
+**Domain Types**: `packages/pipeline/swiss_ai_hub/pipeline/types/` — DataLakeFile, RefDocDocument, SourceFile,
+SharePointFile, RcloneFile
 
-**Resources**: `packages/pipeline/resources/` — data_lake/ (base, s3, azure), parser/, vector_store/, doc_store/, llm/,
-share_point/, rclone/, local_file_system/
+**Resources**: `packages/pipeline/swiss_ai_hub/pipeline/resources/` — data_lake/ (base, s3, azure), parser/,
+vector_store/, doc_store/, llm/, share_point/, rclone/, local_file_system/
 
-**Sensors**: `packages/pipeline/sensors/nats/nats_document_uploaded_sensor.py`
+**Sensors**: `packages/pipeline/swiss_ai_hub/pipeline/sensors/nats/nats_document_uploaded_sensor.py`
 
-**Utilities**: `packages/pipeline/util/` — definitions_util, id_utils, partition_utils, bucket_utils, key_utils
+**Utilities**: `packages/pipeline/swiss_ai_hub/pipeline/util/` — definitions_util, id_utils, partition_utils,
+bucket_utils, key_utils
 
 **App**: `app/default_rag_pipeline/__init__.py`, `app/shared_rag_pipeline/__init__.py`
 

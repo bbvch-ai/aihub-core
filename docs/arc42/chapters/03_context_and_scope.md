@@ -69,8 +69,8 @@ according to the Swiss AI Agent Protocol. The API gateway discovers running agen
 ClassDiscoveryRequestEvent on NATS every 60 seconds; agents respond with their event schemas and configuration. No HTTP
 registration endpoint exists.
 
-The second is the shared library aihub_lib, which provides base classes, event definitions, and infrastructure clients
-(Milvus, MongoDB, Valkey, LiteLLM) that SDK-built code uses to interact with platform services. SDK code never connects
-to platform databases directly; it goes through aihub_lib abstractions.
+The second is the shared library swiss_ai_hub.core, which provides base classes, event definitions, and infrastructure
+clients (Milvus, MongoDB, Valkey, LiteLLM) that SDK-built code uses to interact with platform services. SDK code never
+connects to platform databases directly; it goes through swiss_ai_hub.core abstractions.
 
 ## Technical context

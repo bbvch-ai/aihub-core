@@ -9,39 +9,40 @@
 
 ```
 packages/bot/                              # SDK framework
-├── bots/
-│   ├── chat/
-│   │   ├── base_chat_bot.py              # Core base: conversation lifecycle, routing, error handling
-│   │   ├── completion_handler.py        # Strategy base + shared static utilities (channel handling, streaming, CRUD)
-│   │   ├── content_extractor.py         # Multi-channel file/text extraction (Slack, Teams, generic)
-│   │   ├── agent/
-│   │   │   ├── agent_chat_bot.py         # NATS-based agent chat (non-streaming)
-│   │   │   ├── agent_completion_handler.py  # Agent completion via ChatService + NATS events
-│   │   │   └── stream_agent_chat_bot.py   # Streaming variant (disabled for webchat)
-│   │   └── openai/
-│   │       ├── openai_chat_bot.py        # Direct LLM chat via LiteLLM (non-streaming)
-│   │       ├── openai_completion_handler.py  # OpenAI completion via LiteLLMService
-│   │       └── stream_openai_chat_bot.py  # Streaming variant (disabled for webchat)
-│   └── bot_in_the_loop/
-│       └── bot_in_the_loop_bot.py          # Inbound handler: human replies from Slack/Teams threads
-├── persistence/entities/
-│   ├── conversation_entity.py           # MongoDB: conversation history + TTL + ConversationTracker
-│   └── path_entity.py                   # MongoDB: per-endpoint credentials + system message + Slack token
-├── routes/
-│   ├── routes_service.py                # CloudAdapter factory (cached), path resolution, credential lookup
-│   ├── agent/agent_chat_controller.py    # POST /completions/{class}/{id}/{json|stream}
-│   ├── openai/openai_chat_controller.py  # POST /completions/{json|stream}?model_name=
-│   └── bot_in_the_loop/
-│       ├── bot_in_the_loop_controller.py   # POST /bot_in_the_loop/response
-│       ├── bot_in_the_loop_handler.py      # Outbound: sends agent questions to Slack/Teams channels
-│       └── slack_utils.py              # Slack auth.test API wrapper (cached 30d)
-├── runners/
-│   ├── bot_runner.py                    # Production ASGI runner (Gunicorn/uvicorn)
-│   ├── bot_test_runner.py               # Test runner with /service catch-all for response capture
-│   ├── simulated_agent_bot_test_runner.py  # Test runner with fake NATS agent (discovery + events)
-│   └── lifetime/lifetime_manager.py    # FastAPI lifespan: MongoDB + NATS + BITL subscription
-├── add_path_entity.py                  # CLI script to seed PathEntity to MongoDB
-└── setup_azure_bot.py                  # Azure AD app registration + Bot resource creation
+├── swiss_ai_hub/bot/
+│   ├── bots/
+│   │   ├── chat/
+│   │   │   ├── base_chat_bot.py              # Core base: conversation lifecycle, routing, error handling
+│   │   │   ├── completion_handler.py        # Strategy base + shared static utilities (channel handling, streaming, CRUD)
+│   │   │   ├── content_extractor.py         # Multi-channel file/text extraction (Slack, Teams, generic)
+│   │   │   ├── agent/
+│   │   │   │   ├── agent_chat_bot.py         # NATS-based agent chat (non-streaming)
+│   │   │   │   ├── agent_completion_handler.py  # Agent completion via ChatService + NATS events
+│   │   │   │   └── stream_agent_chat_bot.py   # Streaming variant (disabled for webchat)
+│   │   │   └── openai/
+│   │   │       ├── openai_chat_bot.py        # Direct LLM chat via LiteLLM (non-streaming)
+│   │   │       ├── openai_completion_handler.py  # OpenAI completion via LiteLLMService
+│   │   │       └── stream_openai_chat_bot.py  # Streaming variant (disabled for webchat)
+│   │   └── bot_in_the_loop/
+│   │       └── bot_in_the_loop_bot.py          # Inbound handler: human replies from Slack/Teams threads
+│   ├── persistence/entities/
+│   │   ├── conversation_entity.py           # MongoDB: conversation history + TTL + ConversationTracker
+│   │   └── path_entity.py                   # MongoDB: per-endpoint credentials + system message + Slack token
+│   ├── routes/
+│   │   ├── routes_service.py                # CloudAdapter factory (cached), path resolution, credential lookup
+│   │   ├── agent/agent_chat_controller.py    # POST /completions/{class}/{id}/{json|stream}
+│   │   ├── openai/openai_chat_controller.py  # POST /completions/{json|stream}?model_name=
+│   │   └── bot_in_the_loop/
+│   │       ├── bot_in_the_loop_controller.py   # POST /bot_in_the_loop/response
+│   │       ├── bot_in_the_loop_handler.py      # Outbound: sends agent questions to Slack/Teams channels
+│   │       └── slack_utils.py              # Slack auth.test API wrapper (cached 30d)
+│   ├── runners/
+│   │   ├── bot_runner.py                    # Production ASGI runner (Gunicorn/uvicorn)
+│   │   ├── bot_test_runner.py               # Test runner with /service catch-all for response capture
+│   │   ├── simulated_agent_bot_test_runner.py  # Test runner with fake NATS agent (discovery + events)
+│   │   └── lifetime/lifetime_manager.py    # FastAPI lifespan: MongoDB + NATS + BITL subscription
+│   ├── add_path_entity.py                  # CLI script to seed PathEntity to MongoDB
+│   └── setup_azure_bot.py                  # Azure AD app registration + Bot resource creation
 
 app/main.py                             # Production entry point (Gunicorn: app.main:app)
 
@@ -224,37 +225,37 @@ No `BotLocaleString` — all locale resolution via `swiss_ai_hub.core.i18n.Local
 
 **Bot layer**:
 
-- Base bot: `packages/bot/bots/chat/base_chat_bot.py`
-- Completion handler: `packages/bot/bots/chat/completion_handler.py`
-- Content extractor: `packages/bot/bots/chat/content_extractor.py`
-- Agent bot: `packages/bot/bots/chat/agent/agent_chat_bot.py`
-- Agent completion: `packages/bot/bots/chat/agent/agent_completion_handler.py`
-- Stream agent bot: `packages/bot/bots/chat/agent/stream_agent_chat_bot.py`
-- OpenAI bot: `packages/bot/bots/chat/openai/openai_chat_bot.py`
-- OpenAI completion: `packages/bot/bots/chat/openai/openai_completion_handler.py`
-- Stream OpenAI bot: `packages/bot/bots/chat/openai/stream_openai_chat_bot.py`
-- BITL bot: `packages/bot/bots/bot_in_the_loop/bot_in_the_loop_bot.py`
+- Base bot: `packages/bot/swiss_ai_hub/bot/bots/chat/base_chat_bot.py`
+- Completion handler: `packages/bot/swiss_ai_hub/bot/bots/chat/completion_handler.py`
+- Content extractor: `packages/bot/swiss_ai_hub/bot/bots/chat/content_extractor.py`
+- Agent bot: `packages/bot/swiss_ai_hub/bot/bots/chat/agent/agent_chat_bot.py`
+- Agent completion: `packages/bot/swiss_ai_hub/bot/bots/chat/agent/agent_completion_handler.py`
+- Stream agent bot: `packages/bot/swiss_ai_hub/bot/bots/chat/agent/stream_agent_chat_bot.py`
+- OpenAI bot: `packages/bot/swiss_ai_hub/bot/bots/chat/openai/openai_chat_bot.py`
+- OpenAI completion: `packages/bot/swiss_ai_hub/bot/bots/chat/openai/openai_completion_handler.py`
+- Stream OpenAI bot: `packages/bot/swiss_ai_hub/bot/bots/chat/openai/stream_openai_chat_bot.py`
+- BITL bot: `packages/bot/swiss_ai_hub/bot/bots/bot_in_the_loop/bot_in_the_loop_bot.py`
 
 **Routes**:
 
-- Routes service: `packages/bot/routes/routes_service.py`
-- Agent controller: `packages/bot/routes/agent/agent_chat_controller.py`
-- OpenAI controller: `packages/bot/routes/openai/openai_chat_controller.py`
-- BITL controller: `packages/bot/routes/bot_in_the_loop/bot_in_the_loop_controller.py`
-- BITL handler: `packages/bot/routes/bot_in_the_loop/bot_in_the_loop_handler.py`
-- Slack utils: `packages/bot/routes/bot_in_the_loop/slack_utils.py`
+- Routes service: `packages/bot/swiss_ai_hub/bot/routes/routes_service.py`
+- Agent controller: `packages/bot/swiss_ai_hub/bot/routes/agent/agent_chat_controller.py`
+- OpenAI controller: `packages/bot/swiss_ai_hub/bot/routes/openai/openai_chat_controller.py`
+- BITL controller: `packages/bot/swiss_ai_hub/bot/routes/bot_in_the_loop/bot_in_the_loop_controller.py`
+- BITL handler: `packages/bot/swiss_ai_hub/bot/routes/bot_in_the_loop/bot_in_the_loop_handler.py`
+- Slack utils: `packages/bot/swiss_ai_hub/bot/routes/bot_in_the_loop/slack_utils.py`
 
 **Persistence**:
 
-- Conversation entity: `packages/bot/persistence/entities/conversation_entity.py`
-- Path entity: `packages/bot/persistence/entities/path_entity.py`
+- Conversation entity: `packages/bot/swiss_ai_hub/bot/persistence/entities/conversation_entity.py`
+- Path entity: `packages/bot/swiss_ai_hub/bot/persistence/entities/path_entity.py`
 
 **Runners**:
 
-- Bot runner: `packages/bot/runners/bot_runner.py`
-- Test runner: `packages/bot/runners/bot_test_runner.py`
-- Simulated agent runner: `packages/bot/runners/simulated_agent_bot_test_runner.py`
-- Lifetime manager: `packages/bot/runners/lifetime/lifetime_manager.py`
+- Bot runner: `packages/bot/swiss_ai_hub/bot/runners/bot_runner.py`
+- Test runner: `packages/bot/swiss_ai_hub/bot/runners/bot_test_runner.py`
+- Simulated agent runner: `packages/bot/swiss_ai_hub/bot/runners/simulated_agent_bot_test_runner.py`
+- Lifetime manager: `packages/bot/swiss_ai_hub/bot/runners/lifetime/lifetime_manager.py`
 
 **Entry points**:
 

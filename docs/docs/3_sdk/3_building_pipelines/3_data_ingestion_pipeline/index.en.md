@@ -86,7 +86,7 @@ variables, pipeline code, and setup instructions.
 | **SFTP**         | Legacy systems, secure file transfers   | `RCLONE_SFTP_*`       |
 | **Local FS**     | Mounted network shares (NFS, SMB)       | Direct path           |
 
-Templates are located in `aihub_pipeline/templates/sources/`.
+Templates are located in `packages/pipeline/templates/sources/`.
 
 ### Usage Example: SharePoint
 
@@ -105,8 +105,8 @@ RCLONE_SHAREPOINT_DRIVE_TYPE=documentLibrary
 **2. Create your pipeline**:
 
 ```python
-from aihub_lib.infrastructure.rclone.RcloneSourceFactory import sharepoint_source
-from aihub_pipeline.util.definitions_util import default_rclone_to_datalake_definitions
+from swiss_ai_hub.core.infrastructure.rclone.rclone_source_factory import sharepoint_source
+from swiss_ai_hub.pipeline.util.definitions_util import default_rclone_to_datalake_definitions
 
 # Load config from SHAREPOINT_* environment variables
 sharepoint = sharepoint_source()
@@ -124,8 +124,8 @@ defs = default_rclone_to_datalake_definitions(
 ### Usage Example: Google Drive
 
 ```python
-from aihub_lib.infrastructure.rclone.RcloneSourceFactory import google_drive_source
-from aihub_pipeline.util.definitions_util import default_rclone_to_datalake_definitions
+from swiss_ai_hub.core.infrastructure.rclone.rclone_source_factory import google_drive_source
+from swiss_ai_hub.pipeline.util.definitions_util import default_rclone_to_datalake_definitions
 
 gdrive = google_drive_source()
 
@@ -141,7 +141,7 @@ defs = default_rclone_to_datalake_definitions(
 For local paths or mounted network shares (NFS, SMB, Azure Files), no rclone config is needed:
 
 ```python
-from aihub_pipeline.util.definitions_util import default_rclone_to_datalake_definitions
+from swiss_ai_hub.pipeline.util.definitions_util import default_rclone_to_datalake_definitions
 
 defs = default_rclone_to_datalake_definitions(
     datalake_container_name="local-docs",
@@ -154,7 +154,7 @@ defs = default_rclone_to_datalake_definitions(
 The `RcloneSourceFactory` provides convenience functions that read from environment variables:
 
 ```python
-from aihub_lib.infrastructure.rclone.RcloneSourceFactory import (
+from swiss_ai_hub.core.infrastructure.rclone.rclone_source_factory import (
     sharepoint_source,    # Reads RCLONE_SHAREPOINT_* env vars
     onedrive_source,      # Reads RCLONE_ONEDRIVE_* env vars
     google_drive_source,  # Reads RCLONE_GDRIVE_* env vars
@@ -213,7 +213,7 @@ vector store.
 ### Usage Example
 
 ```python
-from aihub_pipeline.util.definitions_util import default_definitions
+from swiss_ai_hub.pipeline.util.definitions_util import default_definitions
 
 defs = default_definitions(
     datalake_container_name="my-company-docs",
