@@ -1725,7 +1725,7 @@ services:
       ENABLE_COMMUNITY_SHARING: False
       BYPASS_MODEL_ACCESS_CONTROL: "False"
       ENABLE_USER_WEBHOOKS: True
-      WEBHOOK_URL: http://{{ 'localhost' if stage == 'dev' else 'api' }}:8000/api/v1/webhook/openwebui
+      WEBHOOK_URL: http://{{ 'localhost' if stage == 'dev' else 'api' }}:8000/api/v1/webhook/openwebui?token=${OPENWEBUI_WEBHOOK_SECRET}
       ENABLE_LOGIN_FORM: False
       ENABLE_FORWARD_USER_INFO_HEADERS: True
       ENABLE_VERSION_UPDATE_CHECK: False

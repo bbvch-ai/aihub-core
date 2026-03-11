@@ -9,22 +9,6 @@ from aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner import (
 )
 
 
-@pytest.fixture
-def mock_settings() -> MagicMock:
-    settings = MagicMock()
-    settings.BASE_URL = "http://open-webui:8080"
-    settings.SECRET_KEY = MagicMock()
-    settings.SECRET_KEY.get_secret_value.return_value = "sk-test"
-    settings.SCIM_TOKEN = MagicMock()
-    settings.SCIM_TOKEN.get_secret_value.return_value = "scim-test"
-    return settings
-
-
-@pytest.fixture
-def provisioner(mock_settings: MagicMock) -> OpenWebuiProvisioner:
-    return OpenWebuiProvisioner(settings=mock_settings)
-
-
 def _ok_response(status_code: int = 200, json_data: dict | list | None = None) -> httpx.Response:
     return httpx.Response(
         status_code=status_code,
@@ -124,7 +108,7 @@ class TestSyncGroupsOrchestration:
 
             await provisioner._sync_groups(mock_client)
 
-            mock_create.assert_called_once_with(mock_client, "aihub:T1:R1", "AI-Hub managed group: aihub:T1:R1")
+            mock_create.assert_called_once_with(mock_client, "aihub:T1:R1")
 
     @pytest.mark.asyncio
     async def test_sync_deletes_orphaned_groups(self, provisioner: OpenWebuiProvisioner) -> None:

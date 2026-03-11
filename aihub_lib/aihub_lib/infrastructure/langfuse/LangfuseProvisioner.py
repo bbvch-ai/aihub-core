@@ -2,7 +2,6 @@
 
 import logging
 import re
-from collections.abc import Coroutine
 from typing import Any
 
 import httpx
@@ -19,8 +18,9 @@ LITELLM_CONNECTION_NAME = "AI-Hub LLM (Evaluators)"
 
 
 class LangfuseProvisioner:
-    def __init__(self, langfuse_settings: LangfuseSettings | None = None) -> None:
-        self.langfuse_settings = langfuse_settings or LangfuseSettings()
+    def __init__(self) -> None:
+        self.langfuse_settings = LangfuseSettings()
+        self.litellm_settings = LiteLLMProxySettings()
         self._base_url = self.langfuse_settings.BASE_URL.rstrip("/")
 
     @property
@@ -31,15 +31,14 @@ class LangfuseProvisioner:
         )
 
     async def provision(self) -> None:
-        """Each step is independent — a failure in one does not prevent subsequent steps."""
         logger.info("Starting Langfuse provisioning...")
 
         async with httpx.AsyncClient(timeout=30.0) as client:
-            litellm_models = await self._run_step("LiteLLM model discovery", self._fetch_litellm_models(client)) or []
-            await self._run_step("AI-Hub connection", self._register_aihub_connection(client))
-            await self._run_step("LiteLLM connection", self._register_litellm_connection(client, litellm_models))
-            await self._run_step("model definitions", self._register_model_definitions(client, litellm_models))
-            await self._run_step("default prompt", self._create_default_prompt(client))
+            litellm_models = await self._fetch_litellm_models(client)
+            await self._register_aihub_connection(client)
+            await self._register_litellm_connection(client, litellm_models)
+            await self._register_model_definitions(client, litellm_models)
+            await self._create_default_prompt(client)
 
         logger.info("Langfuse provisioning completed")
 
@@ -59,14 +58,6 @@ class LangfuseProvisioner:
     # Provisioning steps
     # ------------------------------------------------------------------
 
-    @staticmethod
-    async def _run_step(name: str, coro: Coroutine[Any, Any, Any]) -> Any:
-        try:
-            return await coro
-        except Exception as e:
-            logger.warning(f"Langfuse provisioning: '{name}' failed — {e}")
-            return None
-
     async def _register_aihub_connection(self, client: httpx.AsyncClient) -> None:
         connection_data = self._build_aihub_connection_data(custom_models=[])
         await self._upsert_llm_connection(client, connection_data, AIHUB_CONNECTION_NAME)
@@ -74,13 +65,7 @@ class LangfuseProvisioner:
     async def _register_litellm_connection(
         self, client: httpx.AsyncClient, litellm_models: list[dict[str, Any]]
     ) -> None:
-        try:
-            litellm_settings = LiteLLMProxySettings()
-        except Exception:
-            logger.info("Langfuse provisioning: Skipping LiteLLM connection (not configured)")
-            return
-
-        if not litellm_settings.API_KEY:
+        if not self.litellm_settings.API_KEY:
             logger.info("Langfuse provisioning: Skipping LiteLLM connection (no API key)")
             return
 
@@ -93,8 +78,8 @@ class LangfuseProvisioner:
         connection_data = {
             "provider": "ai-hub-litellm",
             "adapter": "openai",
-            "secretKey": litellm_settings.API_KEY.get_secret_value(),
-            "baseURL": litellm_settings.BASE_URL,
+            "secretKey": self.litellm_settings.API_KEY.get_secret_value(),
+            "baseURL": self.litellm_settings.BASE_URL,
             "customModels": chat_models,
             "withDefaultModels": False,
             "extraHeaders": {},
@@ -140,16 +125,9 @@ class LangfuseProvisioner:
     # LiteLLM model discovery
     # ------------------------------------------------------------------
 
-    @staticmethod
-    async def _fetch_litellm_models(client: httpx.AsyncClient) -> list[dict[str, Any]]:
-        try:
-            litellm_settings = LiteLLMProxySettings()
-        except Exception:
-            logger.info("Langfuse provisioning: LiteLLM not configured, skipping model discovery")
-            return []
-
-        url = f"{litellm_settings.BASE_URL}/v1/model/info"
-        api_key = litellm_settings.API_KEY.get_secret_value() if litellm_settings.API_KEY else ""
+    async def _fetch_litellm_models(self, client: httpx.AsyncClient) -> list[dict[str, Any]]:
+        url = f"{self.litellm_settings.BASE_URL}/v1/model/info"
+        api_key = self.litellm_settings.API_KEY.get_secret_value() if self.litellm_settings.API_KEY else ""
         headers = {"Authorization": f"Bearer {api_key}"}
 
         try:

@@ -1,15 +1,18 @@
 """Receives webhooks from OpenWebUI and triggers provisioner sync."""
 
 import asyncio
+import hmac
 import json
 import logging
-from typing import Self
+from typing import Annotated, Self
 
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner import OpenWebuiProvisioner
+from aihub_lib.infrastructure.openwebui.OpenWebuiSettings import OpenWebuiSettings
 from aihub_lib.routes.Controller import Controller
-from pydantic import BaseModel, field_validator
+from fastapi import HTTPException, Query
+from pydantic import BaseModel, Field, field_validator
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +20,7 @@ logger = logging.getLogger(__name__)
 class OpenWebuiWebhookPayload(BaseModel):
     action: str
     message: str = ""
-    user: dict = {}
+    user: Annotated[dict, Field(default_factory=dict)]
 
     @field_validator("user", mode="before")
     @classmethod
@@ -42,8 +45,16 @@ class WebhookController(Controller):
         super().__init__(auth=auth, route=route)
 
     def openwebui(self) -> Self:
+        expected_secret = OpenWebuiSettings().WEBHOOK_SECRET.get_secret_value()
+
         @self.router.post("/openwebui", tags=self.tags)
-        async def receive_openwebui_webhook(payload: OpenWebuiWebhookPayload) -> dict[str, str]:
+        async def receive_openwebui_webhook(
+            payload: OpenWebuiWebhookPayload,
+            token: Annotated[str, Query(description="Webhook authentication token")],
+        ) -> dict[str, str]:
+            if not hmac.compare_digest(token, expected_secret):
+                raise HTTPException(status_code=401, detail="Invalid webhook token")
+
             if payload.action != "signup":
                 return {"status": "ignored"}
 

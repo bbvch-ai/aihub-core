@@ -57,7 +57,7 @@ class OpenWebuiClient:
     async def list_groups(self, client: httpx.AsyncClient) -> list[dict[str, Any]]:
         return await self._list_scim_resources(client, SCIM_GROUPS_ENDPOINT)
 
-    async def create_group(self, client: httpx.AsyncClient, name: str, description: str) -> dict[str, Any]:
+    async def create_group(self, client: httpx.AsyncClient, name: str) -> dict[str, Any]:
         response = await client.post(
             f"{self._base_url}{SCIM_GROUPS_ENDPOINT}",
             headers=self._scim_headers,

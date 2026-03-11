@@ -22,7 +22,14 @@ def mock_langfuse_settings() -> MagicMock:
 
 @pytest.fixture
 def provisioner(mock_langfuse_settings: MagicMock) -> LangfuseProvisioner:
-    return LangfuseProvisioner(langfuse_settings=mock_langfuse_settings)
+    with (
+        patch(
+            "aihub_lib.infrastructure.langfuse.LangfuseProvisioner.LangfuseSettings",
+            return_value=mock_langfuse_settings,
+        ),
+        patch("aihub_lib.infrastructure.langfuse.LangfuseProvisioner.LiteLLMProxySettings"),
+    ):
+        return LangfuseProvisioner()
 
 
 def _ok_response(status_code: int = 200, json_data: dict | None = None) -> httpx.Response:
@@ -52,22 +59,12 @@ class TestProvision:
             mock_prompt.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_provision_continues_after_step_failure(self, provisioner: LangfuseProvisioner) -> None:
-        """A failing step should not abort subsequent steps."""
+    async def test_provision_raises_on_step_failure(self, provisioner: LangfuseProvisioner) -> None:
         with (
             patch.object(provisioner, "_fetch_litellm_models", side_effect=RuntimeError("boom")),
-            patch.object(provisioner, "_register_aihub_connection") as mock_aihub,
-            patch.object(provisioner, "_register_litellm_connection") as mock_litellm,
-            patch.object(provisioner, "_register_model_definitions") as mock_models,
-            patch.object(provisioner, "_create_default_prompt") as mock_prompt,
+            pytest.raises(RuntimeError, match="boom"),
         ):
             await provisioner.provision()
-
-            # All subsequent steps should still be called
-            mock_aihub.assert_called_once()
-            mock_litellm.assert_called_once()
-            mock_models.assert_called_once()
-            mock_prompt.assert_called_once()
 
 
 class TestSyncAgents:

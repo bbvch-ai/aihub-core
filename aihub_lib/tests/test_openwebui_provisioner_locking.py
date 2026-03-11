@@ -7,17 +7,6 @@ import pytest
 from aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner import OpenWebuiProvisioner
 
 
-@pytest.fixture
-def mock_settings() -> MagicMock:
-    settings = MagicMock()
-    settings.BASE_URL = "http://open-webui:8080"
-    settings.SECRET_KEY = MagicMock()
-    settings.SECRET_KEY.get_secret_value.return_value = "sk-test"
-    settings.SCIM_TOKEN = MagicMock()
-    settings.SCIM_TOKEN.get_secret_value.return_value = "scim-test"
-    return settings
-
-
 def _make_lock(*, acquired: bool) -> MagicMock:
     lock = MagicMock()
     lock.acquire = AsyncMock(return_value=acquired)
@@ -36,11 +25,6 @@ def _init_redis(mock_redis: MagicMock) -> None:
     OpenWebuiProvisioner.initialize(mock_redis)
     yield
     OpenWebuiProvisioner._redis = None  # type: ignore[assignment]
-
-
-@pytest.fixture
-def provisioner(mock_settings: MagicMock) -> OpenWebuiProvisioner:
-    return OpenWebuiProvisioner(settings=mock_settings)
 
 
 class TestDistributedLocking:

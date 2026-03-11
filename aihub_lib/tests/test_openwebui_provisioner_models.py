@@ -1,4 +1,4 @@
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import httpx
 import pytest
@@ -7,22 +7,6 @@ from aihub_lib.infrastructure.openwebui.OpenWebuiProvisioner import (
     AIHUB_MODEL_PREFIX,
     OpenWebuiProvisioner,
 )
-
-
-@pytest.fixture
-def mock_settings() -> MagicMock:
-    settings = MagicMock()
-    settings.BASE_URL = "http://open-webui:8080"
-    settings.SECRET_KEY = MagicMock()
-    settings.SECRET_KEY.get_secret_value.return_value = "sk-test"
-    settings.SCIM_TOKEN = MagicMock()
-    settings.SCIM_TOKEN.get_secret_value.return_value = "scim-test"
-    return settings
-
-
-@pytest.fixture
-def provisioner(mock_settings: MagicMock) -> OpenWebuiProvisioner:
-    return OpenWebuiProvisioner(settings=mock_settings)
 
 
 class TestComputeModelDiff:

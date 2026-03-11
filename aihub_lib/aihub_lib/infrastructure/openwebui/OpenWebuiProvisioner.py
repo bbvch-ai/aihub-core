@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -40,8 +41,8 @@ async def _sync_lock(redis: Redis | None, key: str) -> AsyncIterator[bool]:
 class OpenWebuiProvisioner:
     _redis: ClassVar[Redis | None] = None
 
-    def __init__(self, settings: OpenWebuiSettings | None = None) -> None:
-        self._settings = settings or OpenWebuiSettings()
+    def __init__(self) -> None:
+        self._settings = OpenWebuiSettings()
         self._openwebui = OpenWebuiClient(
             base_url=self._settings.BASE_URL,
             secret_key=self._settings.SECRET_KEY.get_secret_value(),
@@ -161,7 +162,7 @@ class OpenWebuiProvisioner:
         }
 
         for name in desired - set(aihub_groups.keys()):
-            created = await self._openwebui.create_group(http, name, f"AI-Hub managed group: {name}")
+            created = await self._openwebui.create_group(http, name)
             aihub_groups[name] = created
             logger.info(f"OpenWebUI: Created group '{name}'")
 
@@ -263,19 +264,15 @@ class OpenWebuiProvisioner:
             parts = base_model_id[len("aihub-pipeline.") :].split(".", 1)
             return (parts[0], parts[1]) if len(parts) == 2 else None
 
+        # Best-effort fallback for models without base_model_id (e.g. manually created).
+        # Splits on the last hyphen — ambiguous if both agent_class and agent_id contain hyphens.
         suffix = model["id"][len(AIHUB_MODEL_PREFIX) :]
         dash_idx = suffix.rfind("-")
         return (suffix[:dash_idx], suffix[dash_idx + 1 :]) if dash_idx > 0 else None
 
     @staticmethod
     def _build_role_rules() -> dict[str, list[str]]:
-        role_rules: dict[str, list[str]] = {}
-        for role in RoleEntity.objects():
-            if role.name not in role_rules:
-                role_rules[role.name] = list(role.access_rules)
-            else:
-                role_rules[role.name] = list(set(role_rules[role.name]) | set(role.access_rules))
-        return role_rules
+        return {role.name: list(role.access_rules) for role in RoleEntity.objects()}
 
     async def _sync_access_grants(self, http: httpx.AsyncClient) -> None:
         existing_models = await self._openwebui.list_models(http)
@@ -293,13 +290,17 @@ class OpenWebuiProvisioner:
         tenant_rules = {t.name: t.access_rules for t in TenantEntity.objects()}
         role_rules = self._build_role_rules()
 
-        for model in aihub_models:
-            parsed = self._parse_agent_from_model(model)
-            if not parsed:
-                continue
+        semaphore = asyncio.Semaphore(5)
 
-            agent_class, agent_id = parsed
-            access_control = self._compute_access_for_model(
-                agent_class, agent_id, aihub_groups, tenant_rules, role_rules
-            )
-            await self._openwebui.update_model_access(http, model["id"], access_control)
+        async def update_single(model: dict[str, Any]) -> None:
+            async with semaphore:
+                parsed = self._parse_agent_from_model(model)
+                if not parsed:
+                    return
+                agent_class, agent_id = parsed
+                access_control = self._compute_access_for_model(
+                    agent_class, agent_id, aihub_groups, tenant_rules, role_rules
+                )
+                await self._openwebui.update_model_access(http, model["id"], access_control)
+
+        await asyncio.gather(*[update_single(m) for m in aihub_models])
