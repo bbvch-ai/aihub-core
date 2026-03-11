@@ -36,9 +36,9 @@ reviewer.
    GRAPHQL
    gh api graphql -f "query=$(cat /tmp/pr-threads.graphql)" \
      -f owner=bbvch-ai -f repo=aihub-core -F pr=$PR_NUMBER \
-     | jq '[.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved == false and .isOutdated == false)]'
+     | jq '[.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved == false)]'
    ```
-   This returns only active, unresolved review threads. Ignore all resolved and outdated threads entirely.
+   This returns all unresolved review threads.
 3. **Conversation comments**: `gh pr view $PR_NUMBER --repo bbvch-ai/aihub-core --json comments`
 4. **CI status**: `gh pr checks $PR_NUMBER --repo bbvch-ai/aihub-core`
 5. **Changed files**: `gh pr diff $PR_NUMBER --repo bbvch-ai/aihub-core --name-only`
