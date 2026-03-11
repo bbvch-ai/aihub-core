@@ -11,34 +11,34 @@
 packages/bot/                              # SDK framework
 ├── bots/
 │   ├── chat/
-│   │   ├── BaseChatBot.py              # Core base: conversation lifecycle, routing, error handling
-│   │   ├── CompletionHandler.py        # Strategy base + shared static utilities (channel handling, streaming, CRUD)
-│   │   ├── ContentExtractor.py         # Multi-channel file/text extraction (Slack, Teams, generic)
+│   │   ├── base_chat_bot.py              # Core base: conversation lifecycle, routing, error handling
+│   │   ├── completion_handler.py        # Strategy base + shared static utilities (channel handling, streaming, CRUD)
+│   │   ├── content_extractor.py         # Multi-channel file/text extraction (Slack, Teams, generic)
 │   │   ├── agent/
-│   │   │   ├── AgentChatBot.py         # NATS-based agent chat (non-streaming)
-│   │   │   ├── AgentCompletionHandler.py  # Agent completion via ChatService + NATS events
-│   │   │   └── StreamAgentChatBot.py   # Streaming variant (disabled for webchat)
+│   │   │   ├── agent_chat_bot.py         # NATS-based agent chat (non-streaming)
+│   │   │   ├── agent_completion_handler.py  # Agent completion via ChatService + NATS events
+│   │   │   └── stream_agent_chat_bot.py   # Streaming variant (disabled for webchat)
 │   │   └── openai/
-│   │       ├── OpenaiChatBot.py        # Direct LLM chat via LiteLLM (non-streaming)
-│   │       ├── OpenaiCompletionHandler.py  # OpenAI completion via LiteLLMService
-│   │       └── StreamOpenaiChatBot.py  # Streaming variant (disabled for webchat)
+│   │       ├── openai_chat_bot.py        # Direct LLM chat via LiteLLM (non-streaming)
+│   │       ├── openai_completion_handler.py  # OpenAI completion via LiteLLMService
+│   │       └── stream_openai_chat_bot.py  # Streaming variant (disabled for webchat)
 │   └── bot_in_the_loop/
-│       └── BotInTheLoopBot.py          # Inbound handler: human replies from Slack/Teams threads
+│       └── bot_in_the_loop_bot.py          # Inbound handler: human replies from Slack/Teams threads
 ├── persistence/entities/
-│   ├── ConversationEntity.py           # MongoDB: conversation history + TTL + ConversationTracker
-│   └── PathEntity.py                   # MongoDB: per-endpoint credentials + system message + Slack token
+│   ├── conversation_entity.py           # MongoDB: conversation history + TTL + ConversationTracker
+│   └── path_entity.py                   # MongoDB: per-endpoint credentials + system message + Slack token
 ├── routes/
-│   ├── RoutesService.py                # CloudAdapter factory (cached), path resolution, credential lookup
-│   ├── agent/AgentChatController.py    # POST /completions/{class}/{id}/{json|stream}
-│   ├── openai/OpenaiChatController.py  # POST /completions/{json|stream}?model_name=
+│   ├── routes_service.py                # CloudAdapter factory (cached), path resolution, credential lookup
+│   ├── agent/agent_chat_controller.py    # POST /completions/{class}/{id}/{json|stream}
+│   ├── openai/openai_chat_controller.py  # POST /completions/{json|stream}?model_name=
 │   └── bot_in_the_loop/
-│       ├── BotInTheLoopController.py   # POST /bot_in_the_loop/response
-│       ├── BotInTheLoopHandler.py      # Outbound: sends agent questions to Slack/Teams channels
-│       └── SlackUtils.py              # Slack auth.test API wrapper (cached 30d)
+│       ├── bot_in_the_loop_controller.py   # POST /bot_in_the_loop/response
+│       ├── bot_in_the_loop_handler.py      # Outbound: sends agent questions to Slack/Teams channels
+│       └── slack_utils.py              # Slack auth.test API wrapper (cached 30d)
 ├── runners/
-│   ├── BotRunner.py                    # Production ASGI runner (Gunicorn/uvicorn)
-│   ├── BotTestRunner.py               # Test runner with /service catch-all for response capture
-│   ├── SimulatedAgentBotTestRunner.py  # Test runner with fake NATS agent (discovery + events)
+│   ├── bot_runner.py                    # Production ASGI runner (Gunicorn/uvicorn)
+│   ├── bot_test_runner.py               # Test runner with /service catch-all for response capture
+│   ├── simulated_agent_bot_test_runner.py  # Test runner with fake NATS agent (discovery + events)
 │   └── lifetime/lifetime_manager.py    # FastAPI lifespan: MongoDB + NATS + BITL subscription
 ├── add_path_entity.py                  # CLI script to seed PathEntity to MongoDB
 └── setup_azure_bot.py                  # Azure AD app registration + Bot resource creation
@@ -224,36 +224,36 @@ No `BotLocaleString` — all locale resolution via `swiss_ai_hub.core.i18n.Local
 
 **Bot layer**:
 
-- Base bot: `packages/bot/bots/chat/BaseChatBot.py`
-- Completion handler: `packages/bot/bots/chat/CompletionHandler.py`
-- Content extractor: `packages/bot/bots/chat/ContentExtractor.py`
-- Agent bot: `packages/bot/bots/chat/agent/AgentChatBot.py`
-- Agent completion: `packages/bot/bots/chat/agent/AgentCompletionHandler.py`
-- Stream agent bot: `packages/bot/bots/chat/agent/StreamAgentChatBot.py`
-- OpenAI bot: `packages/bot/bots/chat/openai/OpenaiChatBot.py`
-- OpenAI completion: `packages/bot/bots/chat/openai/OpenaiCompletionHandler.py`
-- Stream OpenAI bot: `packages/bot/bots/chat/openai/StreamOpenaiChatBot.py`
-- BITL bot: `packages/bot/bots/bot_in_the_loop/BotInTheLoopBot.py`
+- Base bot: `packages/bot/bots/chat/base_chat_bot.py`
+- Completion handler: `packages/bot/bots/chat/completion_handler.py`
+- Content extractor: `packages/bot/bots/chat/content_extractor.py`
+- Agent bot: `packages/bot/bots/chat/agent/agent_chat_bot.py`
+- Agent completion: `packages/bot/bots/chat/agent/agent_completion_handler.py`
+- Stream agent bot: `packages/bot/bots/chat/agent/stream_agent_chat_bot.py`
+- OpenAI bot: `packages/bot/bots/chat/openai/openai_chat_bot.py`
+- OpenAI completion: `packages/bot/bots/chat/openai/openai_completion_handler.py`
+- Stream OpenAI bot: `packages/bot/bots/chat/openai/stream_openai_chat_bot.py`
+- BITL bot: `packages/bot/bots/bot_in_the_loop/bot_in_the_loop_bot.py`
 
 **Routes**:
 
-- Routes service: `packages/bot/routes/RoutesService.py`
-- Agent controller: `packages/bot/routes/agent/AgentChatController.py`
-- OpenAI controller: `packages/bot/routes/openai/OpenaiChatController.py`
-- BITL controller: `packages/bot/routes/bot_in_the_loop/BotInTheLoopController.py`
-- BITL handler: `packages/bot/routes/bot_in_the_loop/BotInTheLoopHandler.py`
-- Slack utils: `packages/bot/routes/bot_in_the_loop/SlackUtils.py`
+- Routes service: `packages/bot/routes/routes_service.py`
+- Agent controller: `packages/bot/routes/agent/agent_chat_controller.py`
+- OpenAI controller: `packages/bot/routes/openai/openai_chat_controller.py`
+- BITL controller: `packages/bot/routes/bot_in_the_loop/bot_in_the_loop_controller.py`
+- BITL handler: `packages/bot/routes/bot_in_the_loop/bot_in_the_loop_handler.py`
+- Slack utils: `packages/bot/routes/bot_in_the_loop/slack_utils.py`
 
 **Persistence**:
 
-- Conversation entity: `packages/bot/persistence/entities/ConversationEntity.py`
-- Path entity: `packages/bot/persistence/entities/PathEntity.py`
+- Conversation entity: `packages/bot/persistence/entities/conversation_entity.py`
+- Path entity: `packages/bot/persistence/entities/path_entity.py`
 
 **Runners**:
 
-- Bot runner: `packages/bot/runners/BotRunner.py`
-- Test runner: `packages/bot/runners/BotTestRunner.py`
-- Simulated agent runner: `packages/bot/runners/SimulatedAgentBotTestRunner.py`
+- Bot runner: `packages/bot/runners/bot_runner.py`
+- Test runner: `packages/bot/runners/bot_test_runner.py`
+- Simulated agent runner: `packages/bot/runners/simulated_agent_bot_test_runner.py`
 - Lifetime manager: `packages/bot/runners/lifetime/lifetime_manager.py`
 
 **Entry points**:
@@ -264,8 +264,8 @@ No `BotLocaleString` — all locale resolution via `swiss_ai_hub.core.i18n.Local
 
 **From packages/core**:
 
-- Event distributor: `packages/core/nats/distributor/ExternalAgentEventDistributor.py`
-- Chat service: `packages/core/routes/chat/ChatService.py`
-- BITL request event: `packages/core/nats/events/bot_in_the_loop/request/BotInTheLoopRequestEvent.py`
-- BITL response event: `packages/core/nats/events/bot_in_the_loop/response/BotInTheLoopResponseEvent.py`
-- Agent NC subscriber: `packages/core/nats/subscribers/agent/AgentNCSubscriber.py`
+- Event distributor: `packages/core/swiss_ai_hub/core/nats/distributor/external_agent_event_distributor.py`
+- Chat service: `packages/core/swiss_ai_hub/core/routes/chat/chat_service.py`
+- BITL request event: `packages/core/swiss_ai_hub/core/nats/events/bot_in_the_loop/request/bot_in_the_loop_request_event.py`
+- BITL response event: `packages/core/swiss_ai_hub/core/nats/events/bot_in_the_loop/response/bot_in_the_loop_response_event.py`
+- Agent NC subscriber: `packages/core/swiss_ai_hub/core/nats/subscribers/agent/agent_nc_subscriber.py`

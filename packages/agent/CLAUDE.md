@@ -9,29 +9,29 @@ pre-built agents (`agents/` + `app/`), and playground examples (`playground/`). 
 ```
 packages/agent/                       # SDK framework
 ├── agents/                        # Agent base class + production agent implementations
-│   ├── Agent.py                   # Base class (extends DispatchableWorkflow)
-│   ├── RagAgent/                  # Knowledge QA with retrieval, reranking, memory
-│   ├── LLMWrappingAgent/          # Simple LLM chat passthrough
-│   ├── ExpertAskingAgent/         # Human expert escalation via Teams/Slack
-│   ├── ExpertRagAgent/            # RAG with expert fallback
-│   ├── FewShotAgent/              # Pattern-matching with examples
-│   ├── NamespaceSelectionAgent/   # LLM-driven knowledge routing
-│   └── RetrievalAgent/            # Pure document retrieval (no LLM)
+│   ├── agent.py                   # Base class (extends DispatchableWorkflow)
+│   ├── rag_agent/                 # Knowledge QA with retrieval, reranking, memory
+│   ├── llm_wrapping_agent/        # Simple LLM chat passthrough
+│   ├── expert_asking_agent/       # Human expert escalation via Teams/Slack
+│   ├── expert_rag_agent/          # RAG with expert fallback
+│   ├── few_shot_agent/            # Pattern-matching with examples
+│   ├── namespace_selection_agent/ # LLM-driven knowledge routing
+│   └── retrieval_agent/           # Pure document retrieval (no LLM)
 ├── context/
-│   ├── run/RunContext.py           # Per-run ephemeral state (Redis, 30d TTL)
-│   └── thread/ThreadContext.py     # Per-thread persistent state (Redis, 30d TTL)
+│   ├── run/run_context.py          # Per-run ephemeral state (Redis, 30d TTL)
+│   └── thread/thread_context.py    # Per-thread persistent state (Redis, 30d TTL)
 ├── dispatchers/
-│   └── AgentDispatcher.py          # Core workflow executor (DI, config fetch, step dispatch)
+│   └── agent_dispatcher.py         # Core workflow executor (DI, config fetch, step dispatch)
 ├── i18n/
-│   ├── AgentLocaleString.py        # Multi-locale string resolution for agents
+│   ├── agent_locale_string.py      # Multi-locale string resolution for agents
 │   └── translations/agent/         # Translation files: {name}.{de|en|fr|it}.yml
 ├── rag/                            # Shared RAG step functions and preconditions
 ├── runners/
-│   ├── AgentRunner.py              # Production runner (NATS, Redis, Milvus, discovery)
-│   └── AgentTestRunner.py          # Test runner (sandboxed, event capture, mock config)
+│   ├── agent_runner.py             # Production runner (NATS, Redis, Milvus, discovery)
+│   └── agent_test_runner.py        # Test runner (sandboxed, event capture, mock config)
 ├── steps/                          # Shared step configs (e.g., FewShotStepConfig)
 ├── tracing/
-│   └── AgentRunTracer.py           # OpenTelemetry + Langfuse trace integration
+│   └── agent_run_tracer.py         # OpenTelemetry + Langfuse trace integration
 └── workflow/
     └── decorators/
         ├── step.py                 # @step() decorator — defines workflow building blocks
@@ -147,7 +147,7 @@ The dispatcher resolves `@step()` parameters by type annotation. Declare what yo
 | `AgentClassTopic`                       | NATS topic info (class level)                   |
 | `PartialAgentTopic`                     | NATS topic info (partial/wildcard)              |
 
-Source: `AgentDispatcher._get_parameter_value()` in `dispatchers/AgentDispatcher.py`.
+Source: `AgentDispatcher._get_parameter_value()` in `dispatchers/agent_dispatcher.py`.
 
 ## AgentConfig, Form Duality & Config Lifecycle
 
@@ -350,39 +350,39 @@ tests).
 
 **SDK Framework**:
 
-- Agent base: `packages/agent/swiss_ai_hub/agent/agents/Agent.py`
+- Agent base: `packages/agent/swiss_ai_hub/agent/agents/agent.py`
 - Step decorator: `packages/agent/swiss_ai_hub/agent/workflow/decorators/step.py`
 - Precondition decorator: `packages/agent/swiss_ai_hub/agent/workflow/decorators/precondition.py`
-- AgentDispatcher: `packages/agent/swiss_ai_hub/agent/dispatchers/AgentDispatcher.py`
-- AgentRunner: `packages/agent/swiss_ai_hub/agent/runners/AgentRunner.py`
-- AgentTestRunner: `packages/agent/swiss_ai_hub/agent/runners/AgentTestRunner.py`
-- RunContext: `packages/agent/swiss_ai_hub/agent/context/run/RunContext.py`
-- ThreadContext: `packages/agent/swiss_ai_hub/agent/context/thread/ThreadContext.py`
-- AgentLocaleString: `packages/agent/swiss_ai_hub/agent/i18n/AgentLocaleString.py`
-- AgentRunTracer: `packages/agent/swiss_ai_hub/agent/tracing/AgentRunTracer.py`
+- AgentDispatcher: `packages/agent/swiss_ai_hub/agent/dispatchers/agent_dispatcher.py`
+- AgentRunner: `packages/agent/swiss_ai_hub/agent/runners/agent_runner.py`
+- AgentTestRunner: `packages/agent/swiss_ai_hub/agent/runners/agent_test_runner.py`
+- RunContext: `packages/agent/swiss_ai_hub/agent/context/run/run_context.py`
+- ThreadContext: `packages/agent/swiss_ai_hub/agent/context/thread/thread_context.py`
+- AgentLocaleString: `packages/agent/swiss_ai_hub/agent/i18n/agent_locale_string.py`
+- AgentRunTracer: `packages/agent/swiss_ai_hub/agent/tracing/agent_run_tracer.py`
 
 **From packages/core** (config & form system):
 
-- DispatchableWorkflow: `packages/core/nats/workflow/DispatchableWorkflow.py`
-- AgentConfig: `packages/core/agents/AgentConfig.py`
-- Form base: `packages/core/nats/events/form/Form.py`
-- FormKit elements: `packages/core/nats/events/form/elements/`
-- Form constraints: `packages/core/nats/events/form/constraints.py`
-- AgentConfigSpecs: `packages/core/nats/events/discovery/agent/AgentConfigSpecs.py`
-- AgentConfigClient (RPC): `packages/core/nats/rpc/AgentConfigClient.py`
-- AgentConfigEntityDocument: `packages/core/persistence/agents/AgentConfigEntityDocument.py`
-- EventDisplayer: `packages/core/displayers/EventDisplayer.py`
-- AgentMemory: `packages/core/generative_ai/memory/AgentMemory.py`
-- Topics: `packages/core/nats/topics/agents/`
-- Topic managers: `packages/core/nats/topic_managers/agents/`
+- DispatchableWorkflow: `packages/core/swiss_ai_hub/core/nats/workflow/dispatchable_workflow.py`
+- AgentConfig: `packages/core/swiss_ai_hub/core/agents/agent_config.py`
+- Form base: `packages/core/swiss_ai_hub/core/nats/events/form/form.py`
+- FormKit elements: `packages/core/swiss_ai_hub/core/nats/events/form/elements/`
+- Form constraints: `packages/core/swiss_ai_hub/core/nats/events/form/constraints.py`
+- AgentConfigSpecs: `packages/core/swiss_ai_hub/core/nats/events/discovery/agent/agent_config_specs.py`
+- AgentConfigClient (RPC): `packages/core/swiss_ai_hub/core/nats/rpc/agent_config_client.py`
+- AgentConfigEntityDocument: `packages/core/swiss_ai_hub/core/persistence/agents/agent_config_entity_document.py`
+- EventDisplayer: `packages/core/swiss_ai_hub/core/displayers/event_displayer.py`
+- AgentMemory: `packages/core/swiss_ai_hub/core/generative_ai/memory/agent_memory.py`
+- Topics: `packages/core/swiss_ai_hub/core/nats/topics/agents/`
+- Topic managers: `packages/core/swiss_ai_hub/core/nats/topic_managers/agents/`
 
 **From packages/api** (config responder):
 
-- AgentConfigResponder: `packages/api/rpc/AgentConfigResponder.py`
+- AgentConfigResponder: `packages/api/swiss_ai_hub/api/rpc/agent_config_responder.py`
 
 **Reference implementation**:
 
-- RAGAgent: `packages/agent/swiss_ai_hub/agent/agents/RagAgent/RAGAgent.py`
-- RAGAgentConfig: `packages/agent/swiss_ai_hub/agent/agents/RagAgent/configs/RAGAgentConfig.py`
+- RAGAgent: `packages/agent/swiss_ai_hub/agent/agents/rag_agent/rag_agent.py`
+- RAGAgentConfig: `packages/agent/swiss_ai_hub/agent/agents/rag_agent/configs/rag_agent_config.py`
 
 **Playground patterns**: `playground/minimal_workflow/`

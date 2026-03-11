@@ -10,30 +10,30 @@ utilities. NOT for service-specific business logic — that belongs in `packages
 ```
 packages/core/swiss_ai_hub/core/
 ├── agents/                          # Agent config base + workflow visualization
-│   ├── AgentConfig.py               # Base config class (Form duality pattern)
-│   ├── AgentRef.py                  # Agent instance reference
+│   ├── agent_config.py               # Base config class (Form duality pattern)
+│   ├── agent_ref.py                  # Agent instance reference
 │   └── visualizers/types/           # Workflow graph types (NodeData, EdgeData, WorkflowGraph)
 ├── auth/                            # Authentication & authorization
-│   ├── access/AccessChecker.py      # Permission matching engine (hierarchical wildcards)
+│   ├── access/access_checker.py      # Permission matching engine (hierarchical wildcards)
 │   ├── dependencies/                # Auth handlers (AuthHandler → OAuth2, Token, Bearer, OpenWebUI, Superuser, DevOnly)
 │   └── identity/                    # Identity models (UserIdentity, TenantIdentity)
 ├── context/                         # Context utilities
 ├── dependencies/                    # NATS client dependency injection (use_nats)
 ├── dispatcher/                      # Workflow orchestration
-│   ├── BaseDispatcher.py            # Abstract: event routing, step execution, state management
+│   ├── base_dispatcher.py            # Abstract: event routing, step execution, state management
 │   └── stores/                      # JetStreamEventStore (event replay), StepStore (Redis)
 ├── displayers/                      # Real-time event emission for UI streaming
-│   ├── EventDisplayer.py            # Core: display_chunk(), display_thought(), display_llm_stream()
-│   ├── stream/StreamProcessor.py    # Buffers output by ContentType (REGULAR/THINKING)
-│   ├── parser/TagParser.py          # Parses <think>...</think> tags from LLM output
-│   └── buffer/StreamBuffer.py       # Auto-flush on sentence boundaries or size thresholds
+│   ├── event_displayer.py            # Core: display_chunk(), display_thought(), display_llm_stream()
+│   ├── stream/stream_processor.py    # Buffers output by ContentType (REGULAR/THINKING)
+│   ├── parser/tag_parser.py          # Parses <think>...</think> tags from LLM output
+│   └── buffer/stream_buffer.py       # Auto-flush on sentence boundaries or size thresholds
 ├── distributor/                     # External event distributors (agent + process)
 ├── events/                          # Event type hierarchy (~100 event types)
-│   ├── BaseEvent.py                 # Root: auto-registry, polymorphic deserialization
+│   ├── base_event.py                 # Root: auto-registry, polymorphic deserialization
 │   ├── utils.py                     # Event utility functions
 │   ├── discovery/                   # Shared discovery (ClassDiscoveryRequestEvent, EventSpecs)
 │   ├── agent/                       # Agent-scoped events
-│   │   ├── ControlAndDisplayEvent.py
+│   │   ├── control_and_display_event.py
 │   │   ├── aitl/                    # Agent-in-the-loop delegation events
 │   │   ├── bitl/                    # Bot-in-the-loop integration events
 │   │   ├── common/                  # Common agent events (LimitChatHistory, StandaloneQuestionCondenser)
@@ -48,14 +48,14 @@ packages/core/swiss_ai_hub/core/
 │   │   ├── semantic/                # SemanticEvent + OpenInference tracing subtypes
 │   │   └── user/                    # UserMessageEvent
 │   ├── process/                     # Process-scoped events
-│   │   ├── ProcessEvent.py          # Process orchestration base
+│   │   ├── process_event.py          # Process orchestration base
 │   │   ├── start/, stop/, exception/ # Process lifecycle events
 │   │   ├── work/                    # WorkEvent: Agent, Human, Process, Program
 │   │   ├── work_request/            # WorkRequestEvent: Agent, Human, Program
 │   │   └── discovery/               # Process discovery events
 │   └── pipeline/                    # Pipeline events (SourceUpdatedEvent)
 ├── form/                            # Form system (Form duality, FormkitElement, PrimeVueElement, 28 elements)
-│   ├── Form.py                      # Form base class with duality pattern
+│   ├── form.py                      # Form base class with duality pattern
 │   ├── base/                        # FormkitElement, PrimeVueElement bases
 │   └── elements/                    # 28 concrete form elements
 ├── generative_ai/                   # AI/ML utilities
@@ -73,8 +73,8 @@ packages/core/swiss_ai_hub/core/
 │   ├── routing/                     # LLM-based event routing
 │   └── utils/                       # Shared AI utilities
 ├── i18n/                            # Internationalization
-│   ├── LocaleString.py              # Multi-language container (de, en, fr, it)
-│   ├── LocaleHandler.py             # Runtime locale resolution with fallback chains
+│   ├── locale_string.py              # Multi-language container (de, en, fr, it)
+│   ├── locale_handler.py             # Runtime locale resolution with fallback chains
 │   └── translations/                # YAML files: {scope}/{name}.{locale}.yml
 ├── infrastructure/                  # External service settings (Pydantic BaseSettings)
 │   ├── api/                         # AIHubSettings (buckets, CORS, OpenAI endpoint)
@@ -104,13 +104,13 @@ packages/core/swiss_ai_hub/core/
 │   ├── notification/                # NotificationEntity
 │   └── insight/, migrations/        # Analytics, schema migrations
 ├── polling/                         # JSPoller (JetStream batch consumption)
-├── processes/                       # Process config base (ProcessConfig.py)
+├── processes/                       # Process config base (process_config.py)
 ├── publishers/                      # JSPublisher (JetStream, durable) + NCPublisher (NATS Core, ephemeral)
 ├── records/                         # Record types
 ├── requester/                       # RPC request side (AbstractRequester, NCRequester)
 ├── responder/                       # RPC response side (AbstractResponder, NCResponder)
 ├── routes/                          # FastAPI base controllers
-│   ├── Controller.py                # Abstract: base_route, auth DI, permission templates, OTEL spans
+│   ├── controller.py                # Abstract: base_route, auth DI, permission templates, OTEL spans
 │   └── health/                      # HealthController, HealthServer, health checks
 ├── rpc/                             # AgentConfigClient, ProcessConfigClient (request-reply)
 ├── runners/                         # Execution runners
@@ -120,12 +120,12 @@ packages/core/swiss_ai_hub/core/
 ├── testing/                         # Testing utilities
 │   ├── asyncio_utils/bdd.py         # @async_test decorator for async pytest-bdd
 │   ├── auth_utils/                  # fake_user(), user_mocks, role_mocks, OAuth2 test utils
-│   └── route_adapter/ASGIAdapter.py # ASGI adapter for testing FastAPI routes
+│   └── route_adapter/asgi_adapter.py # ASGI adapter for testing FastAPI routes
 ├── topic_managers/                  # Subject string builders (Agent, Process, Pipeline)
 ├── topics/                          # NATS subject structures (auto-registry, polymorphic parsing)
 ├── tracing/                         # NATSMessageHeaders (OTEL trace context propagation)
 └── workflow/                        # Dispatchable workflow system
-    ├── DispatchableWorkflow.py      # Base class for agents/processes (@step annotations)
+    ├── dispatchable_workflow.py      # Base class for agents/processes (@step annotations)
     └── annotations/                 # Step annotation extractors
 ```
 
@@ -135,10 +135,10 @@ All imports use fully qualified direct paths. No barrel re-exports from `__init_
 
 ```python
 # Direct imports (canonical pattern)
-from swiss_ai_hub.core.events.agent.control.start.StartEvent import StartEvent
-from swiss_ai_hub.core.events.process.work.agent.AgentWorkEvent import AgentWorkEvent
-from swiss_ai_hub.core.form.Form import Form
-from swiss_ai_hub.core.publishers.JSPublisher import JSPublisher
+from swiss_ai_hub.core.events.agent.control.start.start_event import StartEvent
+from swiss_ai_hub.core.events.process.work.agent.agent_work_event import AgentWorkEvent
+from swiss_ai_hub.core.form.form import Form
+from swiss_ai_hub.core.publishers.js_publisher import JSPublisher
 
 # Lazy convenience imports via __init__.py (for interactive use / top-level access)
 from swiss_ai_hub.core.events.agent import StartEvent, ChunkEvent
@@ -168,7 +168,7 @@ duplicate registration errors via `__pydantic_init_subclass__`. Use the lazy `__
 ### Event Hierarchy
 
 ```
-BaseEvent (root — auto-registry, sequence numbering, trace dict)  [events/BaseEvent.py]
+BaseEvent (root — auto-registry, sequence numbering, trace dict)  [events/base_event.py]
 │
 ├── ControlEvent (drives workflow execution)                       [events/agent/control/]
 │   └── ProcessEvent (process orchestration)                       [events/process/]
@@ -186,7 +186,7 @@ BaseEvent (root — auto-registry, sequence numbering, trace dict)  [events/Base
 │   ├── ChunkEvent (streaming LLM output)
 │   └── ThoughtEvent (reasoning transparency)
 │
-├── ControlAndDisplayEvent (dual purpose)                          [events/agent/ControlAndDisplayEvent.py]
+├── ControlAndDisplayEvent (dual purpose)                          [events/agent/control_and_display_event.py]
 │   ├── StartEvent, StopEvent (workflow lifecycle)                 [events/agent/control/]
 │   ├── HumanInTheLoopRequest/Response (HITL)                     [events/agent/hitl/]
 │   ├── AgentInTheLoopRequest/Response (AITL)                     [events/agent/aitl/]
@@ -465,7 +465,7 @@ Real-time event emission for streaming LLM output to the UI:
 
 ## Testing
 
-**Location**: Tests are colocated with the source code they test (e.g., `events/test_Events.py`,
+**Location**: Tests are colocated with the source code they test (e.g., `events/test_events.py`,
 `auth/dependencies/TokenAuthHandler/test/`). No separate top-level `tests/` directory.
 
 **Utilities**:
@@ -496,42 +496,42 @@ Real-time event emission for streaming LLM output to the UI:
 
 **Event system**:
 
-- `core/events/BaseEvent.py` — event foundation (auto-registry, deserialization)
-- `core/events/agent/control/ControlEvent.py` — workflow control base
-- `core/events/agent/display/DisplayEvent.py` — UI observability base
-- `core/events/agent/ControlAndDisplayEvent.py` — dual-purpose base
-- `core/events/agent/semantic/SemanticEvent.py` — OpenInference tracing base
-- `core/events/process/ProcessEvent.py` — process orchestration base
+- `core/events/base_event.py` — event foundation (auto-registry, deserialization)
+- `core/events/agent/control/control_event.py` — workflow control base
+- `core/events/agent/display/display_event.py` — UI observability base
+- `core/events/agent/control_and_display_event.py` — dual-purpose base
+- `core/events/agent/semantic/semantic_event.py` — OpenInference tracing base
+- `core/events/process/process_event.py` — process orchestration base
 
 **Form system**:
 
-- `core/form/Form.py` — form duality system
-- `core/form/base/PrimeVueElement.py` — form element base
+- `core/form/form.py` — form duality system
+- `core/form/base/prime_vue_element.py` — form element base
 - `core/form/elements/` — 28 form elements
 
 **Workflow engine**:
 
-- `core/workflow/DispatchableWorkflow.py` — workflow base class
-- `core/dispatcher/BaseDispatcher.py` — event orchestration
-- `core/topics/Topic.py` — NATS subject parsing
-- `core/topic_managers/agents/AgentTopicManager.py` — subject builders
-- `core/publishers/JSPublisher.py` — durable event publishing
-- `core/rpc/AgentConfigClient.py` — config RPC
+- `core/workflow/dispatchable_workflow.py` — workflow base class
+- `core/dispatcher/base_dispatcher.py` — event orchestration
+- `core/topics/topic.py` — NATS subject parsing
+- `core/topic_managers/agents/agent_topic_manager.py` — subject builders
+- `core/publishers/js_publisher.py` — durable event publishing
+- `core/rpc/agent_config_client.py` — config RPC
 
 **Auth and identity**:
 
-- `core/auth/access/AccessChecker.py` — permission engine
-- `core/auth/dependencies/AuthHandler.py` — auth handler base
-- `core/auth/identity/UserIdentity.py` — user identity model
+- `core/auth/access/access_checker.py` — permission engine
+- `core/auth/dependencies/auth_handler.py` — auth handler base
+- `core/auth/identity/user_identity.py` — user identity model
 
 **Config and i18n**:
 
-- `core/agents/AgentConfig.py` — agent config with form duality
-- `core/processes/ProcessConfig.py` — process config with form duality
-- `core/i18n/LocaleString.py` — multi-language strings
+- `core/agents/agent_config.py` — agent config with form duality
+- `core/processes/process_config.py` — process config with form duality
+- `core/i18n/locale_string.py` — multi-language strings
 
 **Infrastructure**:
 
-- `core/infrastructure/api/AIHubSettings.py` — core settings
-- `core/infrastructure/opentelemetry/tracing/SmartTracer.py` — tracing
-- `core/displayers/EventDisplayer.py` — UI event emission
+- `core/infrastructure/api/ai_hub_settings.py` — core settings
+- `core/infrastructure/opentelemetry/tracing/smart_tracer.py` — tracing
+- `core/displayers/event_displayer.py` — UI event emission

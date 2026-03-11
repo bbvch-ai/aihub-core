@@ -16,13 +16,13 @@ packages/pipeline/                        # SDK framework
 │   ├── rclone_to_data_lake/           # Stage 1: observable_rclone
 │   └── local_files_system_to_data_lake/  # Stage 1: observable_local_file_system
 ├── io/                                # I/O managers (storage handlers)
-│   ├── S3DataLakeIOManager.py         # S3/MinIO/SeaweedFS
-│   ├── AzureDataLakeIOManager.py      # Azure Data Lake Storage
-│   ├── DocStoreIOManager.py           # MongoDB document store
-│   ├── VectorStoreIOManager.py        # Milvus vector store
-│   ├── SharePointIOManager.py         # SharePoint (read-only)
-│   ├── RcloneIOManager.py             # Rclone 70+ backends (read-only)
-│   └── LocalFileSystemIOManager.py    # Local/network filesystem (read-only)
+│   ├── s3_data_lake_io_manager.py      # S3/MinIO/SeaweedFS
+│   ├── azure_data_lake_io_manager.py   # Azure Data Lake Storage
+│   ├── doc_store_io_manager.py         # MongoDB document store
+│   ├── vector_store_io_manager.py      # Milvus vector store
+│   ├── share_point_io_manager.py       # SharePoint (read-only)
+│   ├── rclone_io_manager.py            # Rclone 70+ backends (read-only)
+│   └── local_file_system_io_manager.py # Local/network filesystem (read-only)
 ├── ops/                               # Operations (@op processing steps)
 │   ├── data_lake/                     # Parsing, versioning, figure descriptions, table refinement
 │   ├── document/                      # RefDoc insertion, cleanup, metadata, placeholders
@@ -47,12 +47,12 @@ packages/pipeline/                        # SDK framework
 ├── executors/factory.py               # default_process_executor (in-process)
 ├── automation/all_deps_completed.py   # AutomationCondition for all-deps-ready
 ├── types/                             # Domain types (Pydantic models)
-│   ├── DataLakeFile.py                # File in cloud storage (S3 bucket)
-│   ├── RefDocDocument.py              # Parsed document (extends LlamaIndex Document)
-│   ├── SourceFile.py                  # Generic source file interface + MinimalSourceFile
-│   ├── SharePointFile.py              # SharePoint-specific file
-│   ├── RcloneFile.py                  # Rclone-specific file (70+ cloud backends)
-│   └── FigureMetadata.py              # Image/figure metadata
+│   ├── data_lake_file.py              # File in cloud storage (S3 bucket)
+│   ├── ref_doc_document.py            # Parsed document (extends LlamaIndex Document)
+│   ├── source_file.py                 # Generic source file interface + MinimalSourceFile
+│   ├── share_point_file.py            # SharePoint-specific file
+│   ├── rclone_file.py                 # Rclone-specific file (70+ cloud backends)
+│   └── figure_metadata.py             # Image/figure metadata
 ├── util/                              # Utilities
 │   ├── definitions_util.py            # default_definitions() + source-specific builders (CRITICAL)
 │   ├── id_utils.py                    # uri_to_id() — URI to document ID (MD5 hash)

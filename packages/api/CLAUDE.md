@@ -74,7 +74,7 @@ with `@staticmethod` + `@trace_fn`. Stateless. Calls entities for persistence. *
 MongoEngine documents with repository classmethods (lives in `packages/core/persistence/`).
 
 Controllers must define class attributes: `name` and `description` via `ApiLocaleString.from_i18n_path()`, plus `icon`
-(Iconify identifier). See `routes/agent/AgentController.py` for the reference implementation.
+(Iconify identifier). See `routes/agent/agent_controller.py` for the reference implementation.
 
 Registration in `app/main.py`:
 
@@ -206,8 +206,8 @@ http://localhost:8000/api/v1/docs (Swagger).
 ## New Endpoint Workflow
 
 1. Create DTOs in `routes/my_domain/dto/` (Pydantic v2, `from_entity()` factory, `in_locale(t)` if localized)
-2. Create Service in `routes/my_domain/MyService.py` (`@staticmethod` + `@trace_fn`, call entities for persistence)
-3. Create Controller in `routes/my_domain/MyController.py` (extend `Controller`, set `name`/`description` via
+2. Create Service in `routes/my_domain/my_service.py` (`@staticmethod` + `@trace_fn`, call entities for persistence)
+3. Create Controller in `routes/my_domain/my_controller.py` (extend `Controller`, set `name`/`description` via
    `ApiLocaleString.from_i18n_path()`, `icon`, fluent methods returning `Self`)
 4. Add translations in `i18n/translations/api/controllers.{de,en,fr,it}.yml`
 5. Register in `app/main.py`: `runner.mount(MyController(auth=auth).method_a().method_b())`
@@ -217,15 +217,15 @@ http://localhost:8000/api/v1/docs (Swagger).
 ## Essential Files
 
 - Production entry: `packages/api/app/main.py`
-- Controller base class: `packages/core/swiss_ai_hub/core/routes/Controller.py`
-- Example controller: `packages/api/swiss_ai_hub/api/routes/agent/AgentController.py`
-- Example service: `packages/api/swiss_ai_hub/api/routes/agent/AgentService.py`
+- Controller base class: `packages/core/swiss_ai_hub/core/routes/controller.py`
+- Example controller: `packages/api/swiss_ai_hub/api/routes/agent/agent_controller.py`
+- Example service: `packages/api/swiss_ai_hub/api/routes/agent/agent_service.py`
 - Lifetime manager: `packages/api/swiss_ai_hub/api/runners/lifetime/lifetime_manager.py`
-- Agent discovery: `packages/api/swiss_ai_hub/api/services/AgentEndpointsDiscoveryService.py`
-- Model creation: `packages/api/swiss_ai_hub/api/services/ModelCreationService.py`
-- Event models: `packages/api/swiss_ai_hub/api/events/EventModelCreationService.py`
-- RPC responders: `packages/api/swiss_ai_hub/api/rpc/AgentConfigResponder.py`
-- WebSocket manager: `packages/api/swiss_ai_hub/api/sockets/manager/WebSocketManager.py`
-- i18n: `packages/api/swiss_ai_hub/api/i18n/ApiLocaleString.py`, `ApiLocaleHandler.py`
-- Test runner: `packages/api/swiss_ai_hub/api/runners/simulation/agent/SimulatedAgentApiTestRunner.py`
+- Agent discovery: `packages/api/swiss_ai_hub/api/services/agent_endpoints_discovery_service.py`
+- Model creation: `packages/api/swiss_ai_hub/api/services/model_creation_service.py`
+- Event models: `packages/api/swiss_ai_hub/api/events/event_model_creation_service.py`
+- RPC responders: `packages/api/swiss_ai_hub/api/rpc/agent_config_responder.py`
+- WebSocket manager: `packages/api/swiss_ai_hub/api/sockets/manager/web_socket_manager.py`
+- i18n: `packages/api/swiss_ai_hub/api/i18n/api_locale_string.py`, `api_locale_handler.py`
+- Test runner: `packages/api/swiss_ai_hub/api/runners/simulation/agent/simulated_agent_api_test_runner.py`
 - Playground: `packages/api/playground/testing/main.py`

@@ -12,28 +12,28 @@ production-ready.
 ```
 packages/process/                         # SDK framework
 ├── agentic_processes/
-│   └── AgenticProcess.py              # Base class (extends DispatchableWorkflow)
+│   └── agentic_process.py              # Base class (extends DispatchableWorkflow)
 ├── context/
-│   └── walkthrough/WalkthroughContext.py  # Per-walkthrough ephemeral state (Redis, 30d TTL)
+│   └── walkthrough/walkthrough_context.py  # Per-walkthrough ephemeral state (Redis, 30d TTL)
 ├── delegators/                        # Entity delegation system (core differentiator)
-│   ├── AbstractProcessEntity.py       # BaseProcessEntity with In/Out inner classes
-│   ├── AbstractEntityDelegator.py     # Base delegator (subscription management)
+│   ├── abstract_process_entity.py     # BaseProcessEntity with In/Out inner classes
+│   ├── abstract_entity_delegator.py   # Base delegator (subscription management)
 │   ├── agent/                         # Agent.In, Agent.Out, AgentDelegator
 │   ├── human/                         # Human.In, Human.Out (no delegator — handled by API)
 │   ├── process/                       # Process.In, Process.Out, ProcessDelegator
 │   └── program/                       # Program.In, Program.Out (WIP, no delegator — handled by API)
 ├── dispatchers/
-│   └── ProcessDispatcher.py           # Core workflow executor (config fetch, step dispatch, output routing)
+│   └── process_dispatcher.py           # Core workflow executor (config fetch, step dispatch, output routing)
 ├── i18n/
-│   ├── ProcessLocaleString.py         # Multi-locale string resolution for processes
-│   ├── ProcessLocaleHandler.py        # Locale handler with process translation paths
+│   ├── process_locale_string.py       # Multi-locale string resolution for processes
+│   ├── process_locale_handler.py      # Locale handler with process translation paths
 │   └── translations/process/          # Translation files: {name}.{de|en|fr|it}.yml
 ├── process/
 │   ├── decorators/process_step.py     # @process_step() decorator — defines delegation points
 │   └── annotations/extractors/        # Extract In/Out annotations from step signatures
 └── runners/
-    ├── ProcessRunner.py               # Production runner (NATS, Redis, MongoDB, discovery)
-    └── ProcessTestRunner.py           # Test runner (sandboxed, event capture, mock config)
+    ├── process_runner.py               # Production runner (NATS, Redis, MongoDB, discovery)
+    └── process_test_runner.py         # Test runner (sandboxed, event capture, mock config)
 
 playground/                            # Examples and testing
 ├── AgenticCVProcess/                  # Complex reference: CV submit → agent analyze → human review → program save
@@ -146,7 +146,7 @@ The dispatcher resolves `@process_step()` parameters by type annotation. Simpler
 | `WorkEvent` subclass     | Matched from event history by type     |
 | `ProcessConfig` subclass | The merged runtime config for this run |
 
-Source: `ProcessDispatcher._build_method_kwargs()` in `dispatchers/ProcessDispatcher.py`.
+Source: `ProcessDispatcher._build_method_kwargs()` in `dispatchers/process_dispatcher.py`.
 
 ## Work Events & Work Request Events
 
@@ -299,42 +299,42 @@ Per-walkthrough ephemeral state in Redis/Valkey. Equivalent of `RunContext` for 
 
 **SDK Framework**:
 
-- AgenticProcess base: `packages/process/swiss_ai_hub/process/agentic_processes/AgenticProcess.py`
+- AgenticProcess base: `packages/process/swiss_ai_hub/process/agentic_processes/agentic_process.py`
 - Step decorator: `packages/process/swiss_ai_hub/process/process/decorators/process_step.py`
-- ProcessDispatcher: `packages/process/swiss_ai_hub/process/dispatchers/ProcessDispatcher.py`
-- ProcessRunner: `packages/process/swiss_ai_hub/process/runners/ProcessRunner.py`
-- ProcessTestRunner: `packages/process/swiss_ai_hub/process/runners/ProcessTestRunner.py`
-- WalkthroughContext: `packages/process/swiss_ai_hub/process/context/walkthrough/WalkthroughContext.py`
-- ProcessLocaleString: `packages/process/swiss_ai_hub/process/i18n/ProcessLocaleString.py`
+- ProcessDispatcher: `packages/process/swiss_ai_hub/process/dispatchers/process_dispatcher.py`
+- ProcessRunner: `packages/process/swiss_ai_hub/process/runners/process_runner.py`
+- ProcessTestRunner: `packages/process/swiss_ai_hub/process/runners/process_test_runner.py`
+- WalkthroughContext: `packages/process/swiss_ai_hub/process/context/walkthrough/walkthrough_context.py`
+- ProcessLocaleString: `packages/process/swiss_ai_hub/process/i18n/process_locale_string.py`
 
 **Entity Delegation**:
 
-- BaseProcessEntity: `packages/process/swiss_ai_hub/process/delegators/AbstractProcessEntity.py`
-- AbstractEntityDelegator: `packages/process/swiss_ai_hub/process/delegators/AbstractEntityDelegator.py`
-- Agent (In/Out): `packages/process/swiss_ai_hub/process/delegators/agent/Agent.py`
-- AgentDelegator: `packages/process/swiss_ai_hub/process/delegators/agent/AgentDelegator.py`
-- Human (In/Out): `packages/process/swiss_ai_hub/process/delegators/human/Human.py`
-- Program (In/Out): `packages/process/swiss_ai_hub/process/delegators/program/Program.py`
-- Process (In/Out): `packages/process/swiss_ai_hub/process/delegators/process/Process.py`
-- ProcessDelegator: `packages/process/swiss_ai_hub/process/delegators/process/ProcessDelegator.py`
+- BaseProcessEntity: `packages/process/swiss_ai_hub/process/delegators/abstract_process_entity.py`
+- AbstractEntityDelegator: `packages/process/swiss_ai_hub/process/delegators/abstract_entity_delegator.py`
+- Agent (In/Out): `packages/process/swiss_ai_hub/process/delegators/agent/agent.py`
+- AgentDelegator: `packages/process/swiss_ai_hub/process/delegators/agent/agent_delegator.py`
+- Human (In/Out): `packages/process/swiss_ai_hub/process/delegators/human/human.py`
+- Program (In/Out): `packages/process/swiss_ai_hub/process/delegators/program/program.py`
+- Process (In/Out): `packages/process/swiss_ai_hub/process/delegators/process/process.py`
+- ProcessDelegator: `packages/process/swiss_ai_hub/process/delegators/process/process_delegator.py`
 
 **From packages/core** (config, events & topics):
 
-- DispatchableWorkflow: `packages/core/nats/workflow/DispatchableWorkflow.py`
-- ProcessConfig: `packages/core/processes/ProcessConfig.py`
-- Form base: `packages/core/nats/events/form/Form.py`
-- ProcessConfigSpecs: `packages/core/nats/events/discovery/process/ProcessConfigSpecs.py`
-- ProcessConfigClient (RPC): `packages/core/nats/rpc/ProcessConfigClient.py`
-- ProcessConfigEntityDocument: `packages/core/persistence/process/ProcessConfigEntityDocument.py`
-- WorkEvent: `packages/core/nats/events/work/WorkEvent.py`
-- WorkRequestEvent: `packages/core/nats/events/work_request/WorkRequestEvent.py`
-- AgentWorkEvent: `packages/core/nats/events/work/agent/AgentWorkEvent.py`
-- HumanWorkEvent: `packages/core/nats/events/work/human/HumanWorkEvent.py`
-- Topics: `packages/core/nats/topics/process/`
-- Topic managers: `packages/core/nats/topic_managers/process/`
+- DispatchableWorkflow: `packages/core/swiss_ai_hub/core/nats/workflow/dispatchable_workflow.py`
+- ProcessConfig: `packages/core/swiss_ai_hub/core/processes/process_config.py`
+- Form base: `packages/core/swiss_ai_hub/core/nats/events/form/form.py`
+- ProcessConfigSpecs: `packages/core/swiss_ai_hub/core/nats/events/discovery/process/process_config_specs.py`
+- ProcessConfigClient (RPC): `packages/core/swiss_ai_hub/core/nats/rpc/process_config_client.py`
+- ProcessConfigEntityDocument: `packages/core/swiss_ai_hub/core/persistence/process/process_config_entity_document.py`
+- WorkEvent: `packages/core/swiss_ai_hub/core/nats/events/work/work_event.py`
+- WorkRequestEvent: `packages/core/swiss_ai_hub/core/nats/events/work_request/work_request_event.py`
+- AgentWorkEvent: `packages/core/swiss_ai_hub/core/nats/events/work/agent/agent_work_event.py`
+- HumanWorkEvent: `packages/core/swiss_ai_hub/core/nats/events/work/human/human_work_event.py`
+- Topics: `packages/core/swiss_ai_hub/core/nats/topics/process/`
+- Topic managers: `packages/core/swiss_ai_hub/core/nats/topic_managers/process/`
 
 **From packages/api** (config responder):
 
-- ProcessConfigResponder: `packages/api/rpc/ProcessConfigResponder.py`
+- ProcessConfigResponder: `packages/api/swiss_ai_hub/api/rpc/process_config_responder.py`
 
 **Playground patterns**: `playground/minimal_processes/`
