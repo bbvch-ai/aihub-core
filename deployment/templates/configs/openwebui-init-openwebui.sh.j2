@@ -155,7 +155,7 @@ SQLFOOTER
 # The password is irrelevant — authentication uses JWTs signed with WEBUI_SECRET_KEY.
 create_service_account() {
     SERVICE_ACCOUNT_ID="${OPENWEBUI_SERVICE_ACCOUNT_ID}"
-    SERVICE_ACCOUNT_EMAIL="aihub-service@internal"
+    SERVICE_ACCOUNT_EMAIL="aihub-service@aihub.internal"
     SERVICE_ACCOUNT_NAME="AI-Hub Service Account"
     # Generate a random hash — the service account authenticates via JWT, never password
     SERVICE_ACCOUNT_PASSWORD=$(openssl passwd -6 "$(openssl rand -hex 32)")

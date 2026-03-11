@@ -30,8 +30,8 @@ class OpenWebuiClient:
             scim = AsyncSCIMClient(
                 http,
                 resource_models=[Group, User],
-                check_response_payload=False,
-                check_response_content_type=False,
+                check_response_payload=True,
+                check_response_content_type=True,
             )
             scim.register_naive_resource_types()
             yield scim

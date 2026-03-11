@@ -163,7 +163,7 @@ def ensure_user_entity(cleanup_documents: list[Any], user_id: str) -> UserEntity
     """Ensure a UserEntity exists for the given user_id."""
     user = UserEntity.objects(id=user_id).first()
     if not user:
-        user = UserEntity.create_user(oid=user_id, name=f"Test User {user_id}", email=f"{user_id}@test.local")
+        user = UserEntity.create_user(oid=user_id, name=f"Test User {user_id}", email=f"{user_id}@ai-hub.bbv.ch")
         cleanup_documents.append(user)
     return user
 
