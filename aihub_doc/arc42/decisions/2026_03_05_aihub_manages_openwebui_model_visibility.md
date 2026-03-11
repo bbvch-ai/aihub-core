@@ -54,7 +54,14 @@ The provisioner runs on five triggers — all changes propagate immediately:
   in. This prevents cross-tenant visibility leakage.
 - **`AccessChangeHook` pattern**: MongoEngine `post_save`/`post_delete` signals on RoleEntity, TenantEntity, and
   UserTenantRoleEntity automatically trigger `sync_access()`. Signals are connected by the API lifetime manager, so
-  they're only active in production — not during unit tests. No manual notification calls in entity code.
+  they're only active in production — not during unit tests. No manual notification calls in entity code. Rapid
+  mutations are debounced with a 2-second quiet window so bulk operations (e.g. assigning 50 users) collapse into a
+  single sync call.
+- **Distributed locking**: Each sync method (`provision`, `sync_agents`, `sync_access`) acquires a non-blocking Redis
+  lock before executing. Concurrent calls across API replicas skip gracefully instead of racing. Locks use separate keys
+  per sync type so agent sync and access sync don't block each other.
+- **Redis-backed agent change detection**: The discovery service stores a SHA-256 hash of the online agent set in Redis
+  (with 1-hour TTL) instead of an in-memory set. This survives API restarts and works correctly across replicas.
 - **Group naming convention**: `aihub:` prefix identifies managed groups, preventing interference with manually-created
   groups.
 - **Model ID convention**: `aihub-agent-` prefix identifies managed workspace models.
@@ -68,8 +75,10 @@ The provisioner runs on five triggers — all changes propagate immediately:
 - No OpenWebUI code changes required
 - Follows existing provisioner pattern (consistent with Langfuse integration)
 - Tenant ceiling enforcement preserved (tenant rules act as upper bound)
-- Idempotent syncing with change detection
+- Idempotent syncing with change detection (Redis-backed hash comparison)
 - All access changes propagate immediately (no stale visibility windows)
+- Distributed locking prevents race conditions across API replicas
+- Debouncing collapses bulk admin operations into single sync calls
 
 ### Negative
 
@@ -81,5 +90,5 @@ The provisioner runs on five triggers — all changes propagate immediately:
 
 - OpenWebUI SCIM or model API changes in future versions may require provisioner updates
 - High number of tenant-role combinations creates many groups (scales as tenants x roles)
-- Bulk admin operations (e.g. assigning 50 users to a role) fire one `sync_access()` per save signal — may need
-  debouncing if concurrent OpenWebUI API calls become a bottleneck
+- High-frequency admin operations are mitigated by debouncing but the 2-second quiet window adds latency to visibility
+  updates during bulk changes

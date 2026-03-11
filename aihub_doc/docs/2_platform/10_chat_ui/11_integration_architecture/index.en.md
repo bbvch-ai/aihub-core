@@ -66,6 +66,15 @@ The provisioner runs at API startup, when the set of online agents changes (chec
 tenants, when new users sign up via an Open WebUI webhook, and when roles, tenants, or user-role assignments are
 modified. All access changes propagate immediately.
 
+**Reliability in multi-replica deployments:**
+
+- **Debouncing**: Rapid access entity mutations (e.g. bulk user assignments) are collapsed into a single sync call using
+  a 2-second quiet window
+- **Distributed locking**: Each sync operation acquires a non-blocking Redis lock, so concurrent API replicas skip
+  rather than race
+- **Change detection**: The discovery service stores a SHA-256 hash of the online agent set in Redis, surviving restarts
+  and working correctly across replicas
+
 `BYPASS_MODEL_ACCESS_CONTROL=False` must be set on Open WebUI to enforce these access controls.
 
 ## Configuration and deployment
