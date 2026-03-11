@@ -9,9 +9,9 @@ import logging
 from typing import Annotated
 
 from nats.aio.client import Client as NATS
-from swiss_ai_hub.core.nats.responder.NCResponder import NCResponder
-from swiss_ai_hub.core.nats.rpc.models import FetchAgentConfigRequest, FetchAgentConfigResponse
-from swiss_ai_hub.core.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
+from swiss_ai_hub.core.responder.NCResponder import NCResponder
+from swiss_ai_hub.core.rpc.models import FetchAgentConfigRequest, FetchAgentConfigResponse
+from swiss_ai_hub.core.topic_managers.agents.AgentTopicManager import AgentTopicManager
 
 from swiss_ai_hub.api.routes.agent.AgentService import AgentService
 

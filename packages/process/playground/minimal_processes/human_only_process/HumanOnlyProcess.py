@@ -1,7 +1,7 @@
 from typing import Annotated
 
+from swiss_ai_hub.core.form.elements.InputText import InputText
 from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.nats.events.form.elements.InputText import InputText
 
 from playground.events.CustomProcessStopEvent import CustomProcessStopEvent
 from playground.events.HumanAWork import HumanAWork

@@ -15,7 +15,7 @@ from openai.types.chat import (
     completion_create_params,
 )
 from pydantic import BaseModel, ConfigDict, Field
-from swiss_ai_hub.core.nats.events.user.UserUploadedFile import UserUploadedFile
+from swiss_ai_hub.core.events.agent.user.UserUploadedFile import UserUploadedFile
 
 
 def resolve_message_content(message: dict[str, Any]) -> dict[str, Any]:

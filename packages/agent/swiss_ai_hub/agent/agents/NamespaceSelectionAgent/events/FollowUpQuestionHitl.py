@@ -1,13 +1,13 @@
 """HITL events for follow-up questions during namespace determination."""
 
-from swiss_ai_hub.core.nats.events.human_in_the_loop.request.HumanInTheLoopInputRequestEvent import (
+from swiss_ai_hub.core.events.agent.hitl.request.HumanInTheLoopInputRequestEvent import (
     HumanInTheLoopInputRequestEvent,
 )
-from swiss_ai_hub.core.nats.events.human_in_the_loop.response.HumanInTheLoopInputResponseEvent import (
+from swiss_ai_hub.core.events.agent.hitl.response.HumanInTheLoopInputResponseEvent import (
     HumanInTheLoopInputResponseEvent,
 )
-from swiss_ai_hub.core.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
-from swiss_ai_hub.core.nats.topics.agents.PartialAgentTopic import PartialAgentTopic
+from swiss_ai_hub.core.topic_managers.agents.AgentTopicManager import AgentTopicManager
+from swiss_ai_hub.core.topics.agents.PartialAgentTopic import PartialAgentTopic
 
 
 class FollowUpQuestionRequestEvent(HumanInTheLoopInputRequestEvent):

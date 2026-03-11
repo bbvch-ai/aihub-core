@@ -1,4 +1,4 @@
-from swiss_ai_hub.core.nats.events.human_in_the_loop.response.HumanInTheLoopInputResponseEvent import (
+from swiss_ai_hub.core.events.agent.hitl.response.HumanInTheLoopInputResponseEvent import (
     HumanInTheLoopInputResponseEvent,
 )
 

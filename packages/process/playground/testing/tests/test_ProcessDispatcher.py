@@ -6,13 +6,13 @@ import pytest
 from bson import ObjectId
 from nats.js import JetStreamContext
 from redis.asyncio import Redis
+from swiss_ai_hub.core.events.process.exception.ProcessExceptionEvent import ProcessExceptionEvent
+from swiss_ai_hub.core.events.process.work.WorkEvent import WorkEvent
 from swiss_ai_hub.core.i18n.LocaleString import LocaleString
 from swiss_ai_hub.core.infrastructure.logging.logger import enable_logging
-from swiss_ai_hub.core.nats.events.process.exception.ProcessExceptionEvent import ProcessExceptionEvent
-from swiss_ai_hub.core.nats.events.work.WorkEvent import WorkEvent
-from swiss_ai_hub.core.nats.topic_managers.process.ProcessClassTopicManager import ProcessClassTopicManager
-from swiss_ai_hub.core.nats.topics.process.ProcessInstanceTopic import ProcessInstanceTopic
 from swiss_ai_hub.core.processes.ProcessConfig import ProcessConfig
+from swiss_ai_hub.core.topic_managers.process.ProcessClassTopicManager import ProcessClassTopicManager
+from swiss_ai_hub.core.topics.process.ProcessInstanceTopic import ProcessInstanceTopic
 
 from playground.events.CustomProcessStopEvent import CustomProcessStopEvent
 from playground.events.InitialProcessWorkEvent import InitialProcessWorkEvent
@@ -247,7 +247,7 @@ class TestProcessDispatcherHandleEvent:
         # Mock only the external dependencies and tracing
         with (
             patch.object(process_dispatcher, "is_step_ready", return_value=False),
-            patch("swiss_ai_hub.core.nats.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle,
+            patch("swiss_ai_hub.core.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle,
         ):
             mock_base_handle.return_value = None
 
@@ -273,7 +273,7 @@ class TestProcessDispatcherHandleEvent:
 
         with (
             patch.object(process_dispatcher, "is_step_ready", return_value=False),
-            patch("swiss_ai_hub.core.nats.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle,
+            patch("swiss_ai_hub.core.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle,
         ):
             mock_base_handle.return_value = None
 
@@ -296,7 +296,7 @@ class TestProcessDispatcherHandleEvent:
         await walkthrough_context.set("test_data", "test_value")
 
         with (
-            patch("swiss_ai_hub.core.nats.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle,
+            patch("swiss_ai_hub.core.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle,
         ):
             mock_base_handle.return_value = None
 
@@ -324,9 +324,7 @@ class TestProcessDispatcherHandleEvent:
                 return_value=mock_walkthrough_context,
             ),
         ):
-            with patch(
-                "swiss_ai_hub.core.nats.dispatcher.BaseDispatcher.BaseDispatcher.handle_event"
-            ) as mock_base_handle:
+            with patch("swiss_ai_hub.core.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle:
                 mock_base_handle.return_value = None
 
                 # Act
@@ -363,9 +361,7 @@ class TestProcessDispatcherHandleEvent:
             patch.object(process_dispatcher, "is_step_ready", return_value=True) as mock_is_ready,
             patch.object(process_dispatcher, "execute_step"),
         ):
-            with patch(
-                "swiss_ai_hub.core.nats.dispatcher.BaseDispatcher.BaseDispatcher.handle_event"
-            ) as mock_base_handle:
+            with patch("swiss_ai_hub.core.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle:
                 mock_base_handle.return_value = None
 
                 # Mock asyncio task creation
@@ -397,7 +393,7 @@ class TestProcessDispatcherHandleEvent:
         process_dispatcher.process.get_steps_waiting_for_event = Mock(return_value=[])
 
         with (
-            patch("swiss_ai_hub.core.nats.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle,
+            patch("swiss_ai_hub.core.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle,
         ):
             mock_base_handle.return_value = None
 
@@ -420,7 +416,7 @@ class TestProcessDispatcherHandleEvent:
         walkthrough_context = WalkthroughContext(process_dispatcher.redis, process_topic.process_walkthrough_id)
         await walkthrough_context.delete("_process_config")  # Make sure no config exists
 
-        with patch("swiss_ai_hub.core.nats.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle:
+        with patch("swiss_ai_hub.core.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle:
             mock_base_handle.return_value = None
 
             # Act & Assert - The real context should return None, causing the ValueError
@@ -447,7 +443,7 @@ class TestProcessDispatcherErrorHandling:
         )
 
         with (
-            patch("swiss_ai_hub.core.nats.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle,
+            patch("swiss_ai_hub.core.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle,
         ):
             mock_base_handle.return_value = None
 
@@ -475,7 +471,7 @@ class TestProcessDispatcherErrorHandling:
                 "swiss_ai_hub.process.dispatchers.ProcessDispatcher.WalkthroughContext",
                 return_value=mock_walkthrough_context,
             ),
-            patch("swiss_ai_hub.core.nats.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle,
+            patch("swiss_ai_hub.core.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle,
         ):
             mock_base_handle.return_value = None
 
@@ -507,14 +503,14 @@ class TestProcessDispatcherIntegration:
         process_dispatcher.process.get_steps_waiting_for_event = Mock(return_value=[mock_step_method])
 
         # Mock only the truly external dependencies
-        from swiss_ai_hub.core.nats.dispatcher.BaseDispatcher import EventsAndKwargs
+        from swiss_ai_hub.core.dispatcher.BaseDispatcher import EventsAndKwargs
 
         mock_events_and_kwargs = EventsAndKwargs(events=[start_event], kwargs={"start_event": start_event})
         process_dispatcher._build_method_kwargs = AsyncMock(return_value=mock_events_and_kwargs)
 
         with (
             patch.object(process_dispatcher, "is_step_ready", return_value=True),
-            patch("swiss_ai_hub.core.nats.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle,
+            patch("swiss_ai_hub.core.dispatcher.BaseDispatcher.BaseDispatcher.handle_event") as mock_base_handle,
             patch("asyncio.create_task") as mock_create_task,
         ):
             mock_base_handle.return_value = None

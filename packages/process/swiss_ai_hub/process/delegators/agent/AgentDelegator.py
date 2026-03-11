@@ -5,20 +5,20 @@ from typing import Annotated
 from bson import ObjectId
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
-from swiss_ai_hub.core.nats.distributor.events.ExternalAgentEvent import ExternalAgentEvent
-from swiss_ai_hub.core.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
-from swiss_ai_hub.core.nats.events.control.ControlEvent import ControlEvent
-from swiss_ai_hub.core.nats.events.process.start.ProcessStartEvent import ProcessStartEvent
-from swiss_ai_hub.core.nats.events.work.agent.AgentWorkEvent import AgentWorkEvent
-from swiss_ai_hub.core.nats.events.work.WorkEvent import WorkEvent
-from swiss_ai_hub.core.nats.events.work_request.agent.AgentWorkRequestEvent import AgentWorkRequestEvent
-from swiss_ai_hub.core.nats.events.work_request.WorkRequestEvent import WorkRequestEvent
-from swiss_ai_hub.core.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
-from swiss_ai_hub.core.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
-from swiss_ai_hub.core.nats.topic_managers.process.ProcessClassTopicManager import ProcessClassTopicManager
-from swiss_ai_hub.core.nats.topics import AgentInstanceTopic
-from swiss_ai_hub.core.nats.topics.process.ProcessClassTopic import ProcessClassTopic
+from swiss_ai_hub.core.distributor.events.ExternalAgentEvent import ExternalAgentEvent
+from swiss_ai_hub.core.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
+from swiss_ai_hub.core.events.agent.control.ControlEvent import ControlEvent
+from swiss_ai_hub.core.events.process.start.ProcessStartEvent import ProcessStartEvent
+from swiss_ai_hub.core.events.process.work.agent.AgentWorkEvent import AgentWorkEvent
+from swiss_ai_hub.core.events.process.work.WorkEvent import WorkEvent
+from swiss_ai_hub.core.events.process.work_request.agent.AgentWorkRequestEvent import AgentWorkRequestEvent
+from swiss_ai_hub.core.events.process.work_request.WorkRequestEvent import WorkRequestEvent
 from swiss_ai_hub.core.persistence.messaging.entities.ThreadEntity import AgentInstanceRef, ThreadEntity
+from swiss_ai_hub.core.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
+from swiss_ai_hub.core.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
+from swiss_ai_hub.core.topic_managers.process.ProcessClassTopicManager import ProcessClassTopicManager
+from swiss_ai_hub.core.topics import AgentInstanceTopic
+from swiss_ai_hub.core.topics.process.ProcessClassTopic import ProcessClassTopic
 
 from swiss_ai_hub.process.agentic_processes.AgenticProcess import AgenticProcess
 from swiss_ai_hub.process.delegators.AbstractEntityDelegator import AbstractEntityDelegator

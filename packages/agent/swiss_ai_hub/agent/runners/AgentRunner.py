@@ -8,31 +8,31 @@ from nats.js import JetStreamContext
 from pymilvus import MilvusClient
 from redis.asyncio import Redis
 from swiss_ai_hub.core.agents.AgentConfig import AgentConfig
+from swiss_ai_hub.core.events.agent.discovery.AgentClassDiscoveryResponseEvent import (
+    AgentClassDiscoveryResponseEvent,
+    AgentConfigSpecs,
+)
+from swiss_ai_hub.core.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
+from swiss_ai_hub.core.events.discovery.EventSpecs import EventSpecs
+from swiss_ai_hub.core.events.agent.user.UserMessageEvent import UserMessageEvent
+from swiss_ai_hub.core.form.TemplateData import TemplateData
 from swiss_ai_hub.core.infrastructure.api.AIHubSettings import AIHubSettings
 from swiss_ai_hub.core.infrastructure.milvus.MilvusSettings import MilvusSettings
 from swiss_ai_hub.core.infrastructure.mongo.MongoSettings import MongoSettings
 from swiss_ai_hub.core.infrastructure.nats.NatsSettings import NatsSettings
 from swiss_ai_hub.core.infrastructure.redis.RedisSettings import RedisSettings
-from swiss_ai_hub.core.nats.events.discovery.agent.AgentClassDiscoveryResponseEvent import (
-    AgentClassDiscoveryResponseEvent,
-    AgentConfigSpecs,
-)
-from swiss_ai_hub.core.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
-from swiss_ai_hub.core.nats.events.discovery.EventSpecs import EventSpecs
-from swiss_ai_hub.core.nats.events.form.TemplateData import TemplateData
-from swiss_ai_hub.core.nats.events.user.UserMessageEvent import UserMessageEvent
-from swiss_ai_hub.core.nats.publishers.NCPublisher import NCPublisher
-from swiss_ai_hub.core.nats.subscribers.agent.AgentJSSubscriber import AgentJSSubscriber
-from swiss_ai_hub.core.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
-from swiss_ai_hub.core.nats.subscribers.JSSubscriber import JSSubscriber
-from swiss_ai_hub.core.nats.subscribers.NCSubscriber import NCSubscriber
-from swiss_ai_hub.core.nats.topic_managers.agents.AgentClassTopicManager import AgentClassTopicManager
-from swiss_ai_hub.core.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
-from swiss_ai_hub.core.nats.topics.discovery.agent.AgentClassDiscoveryTopic import AgentClassDiscoveryTopic
-from swiss_ai_hub.core.nats.workflow.visualizers.WorkflowVisualizer import WorkflowVisualizer
+from swiss_ai_hub.core.publishers.NCPublisher import NCPublisher
 from swiss_ai_hub.core.routes.health.dto.HealthResponse import AgentHealthChecks
 from swiss_ai_hub.core.routes.health.health_checks import check_milvus, check_nats_sync, check_redis_sync
 from swiss_ai_hub.core.routes.health.HealthServer import HealthCheckProvider, HealthServer
+from swiss_ai_hub.core.subscribers.agent.AgentJSSubscriber import AgentJSSubscriber
+from swiss_ai_hub.core.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
+from swiss_ai_hub.core.subscribers.JSSubscriber import JSSubscriber
+from swiss_ai_hub.core.subscribers.NCSubscriber import NCSubscriber
+from swiss_ai_hub.core.topic_managers.agents.AgentClassTopicManager import AgentClassTopicManager
+from swiss_ai_hub.core.topic_managers.agents.AgentTopicManager import AgentTopicManager
+from swiss_ai_hub.core.topics.discovery.agent.AgentClassDiscoveryTopic import AgentClassDiscoveryTopic
+from swiss_ai_hub.core.workflow.visualizers.WorkflowVisualizer import WorkflowVisualizer
 
 from swiss_ai_hub.agent.agents.Agent import Agent
 from swiss_ai_hub.agent.dispatchers.AgentDispatcher import AgentDispatcher

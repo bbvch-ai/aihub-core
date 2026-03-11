@@ -2,11 +2,11 @@ from typing import Annotated, Self
 
 from pydantic import Field
 
+from swiss_ai_hub.core.form.elements.InputNumber import InputNumber
+from swiss_ai_hub.core.form.elements.Select import Select
+from swiss_ai_hub.core.form.Form import Form
 from swiss_ai_hub.core.generative_ai.processors.VectorPrevNextPostProcessor import ModeOptions
 from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.nats.events.form.elements.InputNumber import InputNumber
-from swiss_ai_hub.core.nats.events.form.elements.Select import Select
-from swiss_ai_hub.core.nats.events.form.Form import Form
 
 
 class RetrievePrevNextConfig(Form):

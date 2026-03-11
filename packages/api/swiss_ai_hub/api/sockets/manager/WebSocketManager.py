@@ -1,9 +1,9 @@
 import logging
 
 from fastapi import WebSocket
+from swiss_ai_hub.core.events.agent.display.DisplayEvent import DisplayEvent
 from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
-from swiss_ai_hub.core.nats.events.display.DisplayEvent import DisplayEvent
-from swiss_ai_hub.core.nats.topics import AgentInstanceTopic
+from swiss_ai_hub.core.topics import AgentInstanceTopic
 
 from swiss_ai_hub.api.sockets.events.server_to_user.ContextualizedAgentEvent import ContextualizedAgentEvent
 

@@ -2,14 +2,14 @@ from typing import Annotated, Literal, Self
 
 from pydantic import Field
 from swiss_ai_hub.core.agents.AgentConfig import AgentConfig
+from swiss_ai_hub.core.events.agent.bitl.request.BotInTheLoopRequestEvent import SlackConfig, TeamsConfig
+from swiss_ai_hub.core.form.constraints import Gt
+from swiss_ai_hub.core.form.elements.InputNumber import InputNumber
+from swiss_ai_hub.core.form.elements.InputText import InputText
+from swiss_ai_hub.core.form.elements.Select import Select
+from swiss_ai_hub.core.form.Form import Form
 from swiss_ai_hub.core.generative_ai.memory.MemorySettings import MemorySettings
 from swiss_ai_hub.core.generative_ai.resources.models.llm.LLMConfig import LLMConfig
-from swiss_ai_hub.core.nats.events.bot_in_the_loop.request.BotInTheLoopRequestEvent import SlackConfig, TeamsConfig
-from swiss_ai_hub.core.nats.events.form.constraints import Gt
-from swiss_ai_hub.core.nats.events.form.elements.InputNumber import InputNumber
-from swiss_ai_hub.core.nats.events.form.elements.InputText import InputText
-from swiss_ai_hub.core.nats.events.form.elements.Select import Select
-from swiss_ai_hub.core.nats.events.form.Form import Form
 
 from swiss_ai_hub.agent.i18n.AgentLocaleString import AgentLocaleString
 

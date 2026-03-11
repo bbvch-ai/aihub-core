@@ -3,37 +3,37 @@ from typing import Self
 
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
-from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.infrastructure.nats.NatsSettings import NatsSettings
-from swiss_ai_hub.core.nats.events.BaseEvent import BaseEvent
-from swiss_ai_hub.core.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
-from swiss_ai_hub.core.nats.events.discovery.EventSpecs import EventSpecs
-from swiss_ai_hub.core.nats.events.discovery.process.agent_in.AgentInSpecs import AgentInSpecs
-from swiss_ai_hub.core.nats.events.discovery.process.human_in.HumanInSpecs import HumanInSpecs
-from swiss_ai_hub.core.nats.events.discovery.process.ProcessClassDiscoveryResponseEvent import (
+from swiss_ai_hub.core.events.BaseEvent import BaseEvent
+from swiss_ai_hub.core.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
+from swiss_ai_hub.core.events.discovery.EventSpecs import EventSpecs
+from swiss_ai_hub.core.events.process.discovery.agent_in.AgentInSpecs import AgentInSpecs
+from swiss_ai_hub.core.events.process.discovery.human_in.HumanInSpecs import HumanInSpecs
+from swiss_ai_hub.core.events.process.discovery.ProcessClassDiscoveryResponseEvent import (
     ProcessClassDiscoveryResponseEvent,
 )
-from swiss_ai_hub.core.nats.events.discovery.process.ProcessConfigSpecs import ProcessConfigSpecs
-from swiss_ai_hub.core.nats.events.discovery.process.program_in.ProgramInSpecs import ProgramInSpecs
-from swiss_ai_hub.core.nats.events.form import InputText
-from swiss_ai_hub.core.nats.events.process.ProcessEvent import ProcessEvent
-from swiss_ai_hub.core.nats.events.process.start.ProcessStartEvent import ProcessStartEvent
-from swiss_ai_hub.core.nats.events.work.human.HumanWorkEvent import HumanWorkEvent
-from swiss_ai_hub.core.nats.events.work.program.ProgramWorkEvent import ProgramWorkEvent
-from swiss_ai_hub.core.nats.events.work.WorkEvent import WorkEvent
-from swiss_ai_hub.core.nats.events.work_request.WorkRequestEvent import WorkRequestEvent
-from swiss_ai_hub.core.nats.publishers.JSPublisher import JSPublisher
-from swiss_ai_hub.core.nats.publishers.NCPublisher import NCPublisher
-from swiss_ai_hub.core.nats.subscribers.JSSubscriber import JSSubscriber
-from swiss_ai_hub.core.nats.subscribers.NCSubscriber import NCSubscriber
-from swiss_ai_hub.core.nats.subscribers.process.ProcessJSSubscriber import ProcessJSSubscriber
-from swiss_ai_hub.core.nats.subscribers.process.ProcessNCSubscriber import ProcessNCSubscriber
-from swiss_ai_hub.core.nats.topic_managers.process.ProcessInstanceTopicManager import ProcessInstanceTopicManager
-from swiss_ai_hub.core.nats.topic_managers.process.ProcessTopicManager import ProcessTopicManager
-from swiss_ai_hub.core.nats.topic_managers.process.ProcessWalkthroughTopicManager import ProcessWalkthroughTopicManager
-from swiss_ai_hub.core.nats.topics.discovery.process.ProcessClassDiscoveryTopic import ProcessClassDiscoveryTopic
-from swiss_ai_hub.core.nats.topics.process.ProcessInstanceTopic import ProcessInstanceTopic
+from swiss_ai_hub.core.events.process.discovery.ProcessConfigSpecs import ProcessConfigSpecs
+from swiss_ai_hub.core.events.process.discovery.program_in.ProgramInSpecs import ProgramInSpecs
+from swiss_ai_hub.core.events.process.ProcessEvent import ProcessEvent
+from swiss_ai_hub.core.events.process.start.ProcessStartEvent import ProcessStartEvent
+from swiss_ai_hub.core.events.process.work.human.HumanWorkEvent import HumanWorkEvent
+from swiss_ai_hub.core.events.process.work.program.ProgramWorkEvent import ProgramWorkEvent
+from swiss_ai_hub.core.events.process.work.WorkEvent import WorkEvent
+from swiss_ai_hub.core.events.process.work_request.WorkRequestEvent import WorkRequestEvent
+from swiss_ai_hub.core.form import InputText
+from swiss_ai_hub.core.i18n.LocaleString import LocaleString
+from swiss_ai_hub.core.infrastructure.nats.NatsSettings import NatsSettings
 from swiss_ai_hub.core.processes.ProcessConfig import ProcessConfig
+from swiss_ai_hub.core.publishers.JSPublisher import JSPublisher
+from swiss_ai_hub.core.publishers.NCPublisher import NCPublisher
+from swiss_ai_hub.core.subscribers.JSSubscriber import JSSubscriber
+from swiss_ai_hub.core.subscribers.NCSubscriber import NCSubscriber
+from swiss_ai_hub.core.subscribers.process.ProcessJSSubscriber import ProcessJSSubscriber
+from swiss_ai_hub.core.subscribers.process.ProcessNCSubscriber import ProcessNCSubscriber
+from swiss_ai_hub.core.topic_managers.process.ProcessInstanceTopicManager import ProcessInstanceTopicManager
+from swiss_ai_hub.core.topic_managers.process.ProcessTopicManager import ProcessTopicManager
+from swiss_ai_hub.core.topic_managers.process.ProcessWalkthroughTopicManager import ProcessWalkthroughTopicManager
+from swiss_ai_hub.core.topics.discovery.process.ProcessClassDiscoveryTopic import ProcessClassDiscoveryTopic
+from swiss_ai_hub.core.topics.process.ProcessInstanceTopic import ProcessInstanceTopic
 
 from swiss_ai_hub.api.i18n.ApiLocaleHandler import ApiLocaleHandler
 from swiss_ai_hub.api.routes.process.dto.ProcessClassDTO import ProcessClassDTO

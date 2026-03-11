@@ -1,8 +1,8 @@
 from typing import ClassVar
 
+from swiss_ai_hub.core.events.agent.bitl.BotInTheLoop import BotInTheLoop
+from swiss_ai_hub.core.events.agent.control.stop.StopEvent import StopEvent
 from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.nats.events.bot_in_the_loop.BotInTheLoop import BotInTheLoop
-from swiss_ai_hub.core.nats.events.control.stop.StopEvent import StopEvent
 
 from playground.agent.BotInTheLoopAgent.events.BotInTheLoopAgentStartEvent import BotInTheLoopAgentStartEvent
 from swiss_ai_hub.agent.agents.Agent import Agent

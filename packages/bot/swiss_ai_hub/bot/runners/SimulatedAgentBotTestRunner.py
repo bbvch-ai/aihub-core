@@ -5,31 +5,31 @@ from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 from swiss_ai_hub.core.agents.AgentConfig import AgentConfig
 from swiss_ai_hub.core.agents.visualizers.types.WorkflowGraph import WorkflowGraph
-from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.infrastructure.nats.NatsSettings import NatsSettings
-from swiss_ai_hub.core.nats.events.BaseEvent import BaseEvent
-from swiss_ai_hub.core.nats.events.control.ControlEvent import ControlEvent
-from swiss_ai_hub.core.nats.events.control.start.StartEvent import StartEvent
-from swiss_ai_hub.core.nats.events.control.stop.StopEvent import StopEvent
-from swiss_ai_hub.core.nats.events.cost.LLMCostEvent import LLMCostEvent
-from swiss_ai_hub.core.nats.events.discovery.agent.AgentClassDiscoveryResponseEvent import (
+from swiss_ai_hub.core.events.BaseEvent import BaseEvent
+from swiss_ai_hub.core.events.agent.control.ControlEvent import ControlEvent
+from swiss_ai_hub.core.events.agent.control.start.StartEvent import StartEvent
+from swiss_ai_hub.core.events.agent.control.stop.StopEvent import StopEvent
+from swiss_ai_hub.core.events.agent.cost.LLMCostEvent import LLMCostEvent
+from swiss_ai_hub.core.events.agent.discovery.AgentClassDiscoveryResponseEvent import (
     AgentClassDiscoveryResponseEvent,
 )
-from swiss_ai_hub.core.nats.events.discovery.agent.AgentConfigSpecs import AgentConfigSpecs
-from swiss_ai_hub.core.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
-from swiss_ai_hub.core.nats.events.discovery.EventSpecs import EventSpecs
-from swiss_ai_hub.core.nats.events.display.ChunkEvent import ChunkEvent
-from swiss_ai_hub.core.nats.publishers.JSPublisher import JSPublisher
-from swiss_ai_hub.core.nats.publishers.NCPublisher import NCPublisher
-from swiss_ai_hub.core.nats.subscribers.agent.AgentJSSubscriber import AgentJSSubscriber
-from swiss_ai_hub.core.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
-from swiss_ai_hub.core.nats.subscribers.JSSubscriber import JSSubscriber
-from swiss_ai_hub.core.nats.subscribers.NCSubscriber import NCSubscriber
-from swiss_ai_hub.core.nats.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
-from swiss_ai_hub.core.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
-from swiss_ai_hub.core.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
-from swiss_ai_hub.core.nats.topics.agents.AgentInstanceTopic import AgentInstanceTopic
-from swiss_ai_hub.core.nats.topics.discovery.agent.AgentClassDiscoveryTopic import AgentClassDiscoveryTopic
+from swiss_ai_hub.core.events.agent.discovery.AgentConfigSpecs import AgentConfigSpecs
+from swiss_ai_hub.core.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
+from swiss_ai_hub.core.events.discovery.EventSpecs import EventSpecs
+from swiss_ai_hub.core.events.agent.display.ChunkEvent import ChunkEvent
+from swiss_ai_hub.core.i18n.LocaleString import LocaleString
+from swiss_ai_hub.core.infrastructure.nats.NatsSettings import NatsSettings
+from swiss_ai_hub.core.publishers.JSPublisher import JSPublisher
+from swiss_ai_hub.core.publishers.NCPublisher import NCPublisher
+from swiss_ai_hub.core.subscribers.agent.AgentJSSubscriber import AgentJSSubscriber
+from swiss_ai_hub.core.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
+from swiss_ai_hub.core.subscribers.JSSubscriber import JSSubscriber
+from swiss_ai_hub.core.subscribers.NCSubscriber import NCSubscriber
+from swiss_ai_hub.core.topic_managers.agents.AgentInstanceTopicManager import AgentInstanceTopicManager
+from swiss_ai_hub.core.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
+from swiss_ai_hub.core.topic_managers.agents.AgentTopicManager import AgentTopicManager
+from swiss_ai_hub.core.topics.agents.AgentInstanceTopic import AgentInstanceTopic
+from swiss_ai_hub.core.topics.discovery.agent.AgentClassDiscoveryTopic import AgentClassDiscoveryTopic
 
 from swiss_ai_hub.bot.runners.BotTestRunner import BotTestRunner
 

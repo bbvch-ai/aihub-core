@@ -20,29 +20,29 @@ from swiss_ai_hub.core.auth.usage import (
     UsageLimits,
     use_usage_limits,
 )
-from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
-from swiss_ai_hub.core.infrastructure.langfuse.LangfuseProvisioner import LangfuseProvisioner
-from swiss_ai_hub.core.nats.dependencies.use_nats import use_nats
-from swiss_ai_hub.core.nats.distributor.dependencies.use_external_agent_event_distributor import (
+from swiss_ai_hub.core.dependencies.use_nats import use_nats
+from swiss_ai_hub.core.distributor.dependencies.use_external_agent_event_distributor import (
     use_external_agent_event_distributor,
 )
-from swiss_ai_hub.core.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
-from swiss_ai_hub.core.nats.events.control.exception.ExceptionEvent import ExceptionEvent
-from swiss_ai_hub.core.nats.events.control.start.StartEvent import StartEvent
-from swiss_ai_hub.core.nats.events.discovery.agent.AgentClassDiscoveryResponseEvent import (
+from swiss_ai_hub.core.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
+from swiss_ai_hub.core.events.agent.control.exception.ExceptionEvent import ExceptionEvent
+from swiss_ai_hub.core.events.agent.control.start.StartEvent import StartEvent
+from swiss_ai_hub.core.events.agent.discovery.AgentClassDiscoveryResponseEvent import (
     AgentClassDiscoveryResponseEvent,
 )
-from swiss_ai_hub.core.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
-from swiss_ai_hub.core.nats.events.discovery.EventSpecs import EventSpecs
-from swiss_ai_hub.core.nats.events.human_in_the_loop.response.HumanInTheLoopResponseEvent import (
+from swiss_ai_hub.core.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
+from swiss_ai_hub.core.events.discovery.EventSpecs import EventSpecs
+from swiss_ai_hub.core.events.agent.hitl.response.HumanInTheLoopResponseEvent import (
     HumanInTheLoopResponseEvent,
 )
-from swiss_ai_hub.core.nats.publishers.NCPublisher import NCPublisher
-from swiss_ai_hub.core.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
-from swiss_ai_hub.core.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
+from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
+from swiss_ai_hub.core.infrastructure.langfuse.LangfuseProvisioner import LangfuseProvisioner
 from swiss_ai_hub.core.persistence.agents.AgentClassEntity import AgentClassEntity
 from swiss_ai_hub.core.persistence.agents.AgentConfigEntityDocument import AgentConfigEntityDocument
 from swiss_ai_hub.core.persistence.messaging.entities.ThreadEntity import AgentInstanceRef, ThreadEntity, User
+from swiss_ai_hub.core.publishers.NCPublisher import NCPublisher
+from swiss_ai_hub.core.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
+from swiss_ai_hub.core.topic_managers.agents.AgentTopicManager import AgentTopicManager
 
 from swiss_ai_hub.api.i18n.ApiLocaleString import ApiLocaleString
 from swiss_ai_hub.api.i18n.dependencies.use_locale import use_locale

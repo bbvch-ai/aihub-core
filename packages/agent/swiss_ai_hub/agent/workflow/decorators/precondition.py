@@ -1,6 +1,6 @@
 import inspect
 
-from swiss_ai_hub.core.nats.workflow.annotations.extractors.extract_function_events import extract_function_events
+from swiss_ai_hub.core.workflow.annotations.extractors.extract_function_events import extract_function_events
 
 
 def precondition():

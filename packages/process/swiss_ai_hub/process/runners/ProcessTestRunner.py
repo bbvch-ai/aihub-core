@@ -5,23 +5,23 @@ from contextlib import asynccontextmanager
 from typing import Annotated
 
 from openai import BaseModel
-from swiss_ai_hub.core.nats.events.BaseEvent import BaseEvent
-from swiss_ai_hub.core.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
-from swiss_ai_hub.core.nats.events.discovery.process.ProcessClassDiscoveryResponseEvent import (
+from swiss_ai_hub.core.events.BaseEvent import BaseEvent
+from swiss_ai_hub.core.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
+from swiss_ai_hub.core.events.process.discovery.ProcessClassDiscoveryResponseEvent import (
     ProcessClassDiscoveryResponseEvent,
 )
-from swiss_ai_hub.core.nats.events.process.exception.ProcessExceptionEvent import ProcessExceptionEvent
-from swiss_ai_hub.core.nats.events.process.start.ProcessStartEvent import ProcessStartEvent
-from swiss_ai_hub.core.nats.events.process.stop.ProcessStopEvent import ProcessStopEvent
-from swiss_ai_hub.core.nats.events.work.WorkEvent import WorkEvent
-from swiss_ai_hub.core.nats.publishers.JSPublisher import JSPublisher
-from swiss_ai_hub.core.nats.subscribers.JSSubscriber import JSSubscriber
-from swiss_ai_hub.core.nats.subscribers.process.ProcessNCSubscriber import ProcessNCSubscriber
-from swiss_ai_hub.core.nats.topic_managers.process.ProcessInstanceTopicManager import ProcessInstanceTopicManager
-from swiss_ai_hub.core.nats.topic_managers.process.ProcessTopicManager import ProcessTopicManager
-from swiss_ai_hub.core.nats.topic_managers.process.ProcessWalkthroughTopicManager import ProcessWalkthroughTopicManager
-from swiss_ai_hub.core.nats.topics import ProcessInstanceTopic, Topic
+from swiss_ai_hub.core.events.process.exception.ProcessExceptionEvent import ProcessExceptionEvent
+from swiss_ai_hub.core.events.process.start.ProcessStartEvent import ProcessStartEvent
+from swiss_ai_hub.core.events.process.stop.ProcessStopEvent import ProcessStopEvent
+from swiss_ai_hub.core.events.process.work.WorkEvent import WorkEvent
 from swiss_ai_hub.core.processes.ProcessConfig import ProcessConfig
+from swiss_ai_hub.core.publishers.JSPublisher import JSPublisher
+from swiss_ai_hub.core.subscribers.JSSubscriber import JSSubscriber
+from swiss_ai_hub.core.subscribers.process.ProcessNCSubscriber import ProcessNCSubscriber
+from swiss_ai_hub.core.topic_managers.process.ProcessInstanceTopicManager import ProcessInstanceTopicManager
+from swiss_ai_hub.core.topic_managers.process.ProcessTopicManager import ProcessTopicManager
+from swiss_ai_hub.core.topic_managers.process.ProcessWalkthroughTopicManager import ProcessWalkthroughTopicManager
+from swiss_ai_hub.core.topics import ProcessInstanceTopic, Topic
 
 from swiss_ai_hub.process.agentic_processes.AgenticProcess import AgenticProcess
 from swiss_ai_hub.process.runners.ProcessRunner import ProcessRunner

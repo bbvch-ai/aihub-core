@@ -4,8 +4,8 @@ from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from swiss_ai_hub.core.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
     DangerousDevelopmentOnlyAuthSettings,
 )
+from swiss_ai_hub.core.events.agent.user.UserMessageEvent import UserMessageEvent
 from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.nats.events.user.UserMessageEvent import UserMessageEvent
 
 from playground.minimal_workflow.bounded_loop.BoundedLoopAgent import BoundedLoopAgent
 from playground.minimal_workflow.bounded_loop.BoundedLoopAgentConfig import BoundedLoopAgentConfig

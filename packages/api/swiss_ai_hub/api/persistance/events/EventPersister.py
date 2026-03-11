@@ -1,8 +1,8 @@
-from swiss_ai_hub.core.nats.events.BaseEvent import BaseEvent
-from swiss_ai_hub.core.nats.topics import ProcessInstanceTopic
-from swiss_ai_hub.core.nats.topics.agents.AgentInstanceTopic import AgentInstanceTopic
+from swiss_ai_hub.core.events.BaseEvent import BaseEvent
 from swiss_ai_hub.core.persistence.messaging.entities.PersistedAgentEventEntity import PersistedAgentEventEntity
 from swiss_ai_hub.core.persistence.messaging.entities.PersistedProcessEventEntity import PersistedProcessEventEntity
+from swiss_ai_hub.core.topics import ProcessInstanceTopic
+from swiss_ai_hub.core.topics.agents.AgentInstanceTopic import AgentInstanceTopic
 
 
 class EventPersister:

@@ -1,12 +1,12 @@
 from typing import ClassVar
 
 from swiss_ai_hub.core.displayers.EventDisplayer import EventDisplayer
+from swiss_ai_hub.core.events.agent.control.stop.StopEvent import StopEvent
+from swiss_ai_hub.core.events.agent.hitl.HumanInTheLoopChat import HumanInTheLoopChat
+from swiss_ai_hub.core.events.agent.hitl.HumanInTheLoopConfirmation import HumanInTheLoopConfirmation
+from swiss_ai_hub.core.events.agent.hitl.HumanInTheLoopInput import HumanInTheLoopInput
+from swiss_ai_hub.core.events.agent.user.UserMessageEvent import UserMessageEvent
 from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.nats.events.control.stop.StopEvent import StopEvent
-from swiss_ai_hub.core.nats.events.human_in_the_loop.HumanInTheLoopChat import HumanInTheLoopChat
-from swiss_ai_hub.core.nats.events.human_in_the_loop.HumanInTheLoopConfirmation import HumanInTheLoopConfirmation
-from swiss_ai_hub.core.nats.events.human_in_the_loop.HumanInTheLoopInput import HumanInTheLoopInput
-from swiss_ai_hub.core.nats.events.user.UserMessageEvent import UserMessageEvent
 
 from playground.agent.HitlDemoAgent.events import HitlTypeSelection
 from swiss_ai_hub.agent.agents.Agent import Agent

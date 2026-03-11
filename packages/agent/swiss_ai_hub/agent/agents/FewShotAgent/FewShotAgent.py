@@ -2,17 +2,17 @@ from typing import ClassVar
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from swiss_ai_hub.core.displayers.EventDisplayer import EventDisplayer
+from swiss_ai_hub.core.events.agent.common.LimitChatHistoryEvent import LimitChatHistoryEvent
+from swiss_ai_hub.core.events.agent.control.stop.StopEvent import StopEvent
+from swiss_ai_hub.core.events.agent.guard.AgentSuitabilityAcceptEvent import AgentSuitabilityAcceptEvent
+from swiss_ai_hub.core.events.agent.guard.AgentSuitabilityRejectEvent import AgentSuitabilityRejectEvent
+from swiss_ai_hub.core.events.agent.semantic.llm.LLMStopEvent import LLMStopEvent
+from swiss_ai_hub.core.events.agent.user.UserMessageEvent import UserMessageEvent
 from swiss_ai_hub.core.generative_ai.chat_history.limit_chat_history import limit_chat_history
 from swiss_ai_hub.core.generative_ai.guards.agent_description_guard import agent_description_guard
 from swiss_ai_hub.core.generative_ai.prompting.few_shot.create_few_shot_messages import create_few_shot_messages
 from swiss_ai_hub.core.generative_ai.retrieval.condense_standalone_question import condense_standalone_question
 from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
-from swiss_ai_hub.core.nats.events.common.LimitChatHistoryEvent import LimitChatHistoryEvent
-from swiss_ai_hub.core.nats.events.control.stop.StopEvent import StopEvent
-from swiss_ai_hub.core.nats.events.guard.AgentSuitabilityAcceptEvent import AgentSuitabilityAcceptEvent
-from swiss_ai_hub.core.nats.events.guard.AgentSuitabilityRejectEvent import AgentSuitabilityRejectEvent
-from swiss_ai_hub.core.nats.events.semantic.llm.LLMStopEvent import LLMStopEvent
-from swiss_ai_hub.core.nats.events.user.UserMessageEvent import UserMessageEvent
 
 from swiss_ai_hub.agent.agents.Agent import Agent
 from swiss_ai_hub.agent.agents.FewShotAgent.events.FewShotEvent import FewShotEvent

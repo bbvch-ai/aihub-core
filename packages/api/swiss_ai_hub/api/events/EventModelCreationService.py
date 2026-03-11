@@ -2,7 +2,7 @@ import copy
 
 from jambo import SchemaConverter
 from pydantic import BaseModel, ConfigDict, create_model
-from swiss_ai_hub.core.nats.events.discovery.EventSpecs import EventSpecs
+from swiss_ai_hub.core.events.discovery.EventSpecs import EventSpecs
 
 
 class EventModelCreationService:

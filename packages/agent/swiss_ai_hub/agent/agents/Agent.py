@@ -1,15 +1,15 @@
 import functools
 from typing import ClassVar
 
-from swiss_ai_hub.core.nats.events.control.start.StartEvent import StartEvent
-from swiss_ai_hub.core.nats.events.control.stop.StopEvent import StopEvent
-from swiss_ai_hub.core.nats.events.human_in_the_loop.request.HumanInTheLoopRequestEvent import (
+from swiss_ai_hub.core.events.agent.control.start.StartEvent import StartEvent
+from swiss_ai_hub.core.events.agent.control.stop.StopEvent import StopEvent
+from swiss_ai_hub.core.events.agent.hitl.request.HumanInTheLoopRequestEvent import (
     HumanInTheLoopRequestEvent,
 )
-from swiss_ai_hub.core.nats.events.human_in_the_loop.response.HumanInTheLoopResponseEvent import (
+from swiss_ai_hub.core.events.agent.hitl.response.HumanInTheLoopResponseEvent import (
     HumanInTheLoopResponseEvent,
 )
-from swiss_ai_hub.core.nats.workflow.DispatchableWorkflow import DispatchableWorkflow
+from swiss_ai_hub.core.workflow.DispatchableWorkflow import DispatchableWorkflow
 
 from swiss_ai_hub.agent.i18n.AgentLocaleString import AgentLocaleString
 

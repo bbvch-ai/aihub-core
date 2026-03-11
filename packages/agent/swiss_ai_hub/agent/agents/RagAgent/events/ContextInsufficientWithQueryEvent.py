@@ -1,7 +1,7 @@
 from typing import Annotated
 
 from pydantic import Field
-from swiss_ai_hub.core.nats.events.guard.ContextInsufficientRejectEvent import ContextInsufficientRejectEvent
+from swiss_ai_hub.core.events.agent.guard.ContextInsufficientRejectEvent import ContextInsufficientRejectEvent
 
 
 class ContextInsufficientWithQueryEvent(ContextInsufficientRejectEvent):

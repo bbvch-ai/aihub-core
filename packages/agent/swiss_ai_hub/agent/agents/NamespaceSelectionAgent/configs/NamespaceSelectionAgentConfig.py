@@ -2,12 +2,12 @@ from typing import Annotated, Self
 
 from pydantic import Field
 from swiss_ai_hub.core.agents.AgentConfig import AgentConfig
+from swiss_ai_hub.core.form.constraints import Ge, MinLen
+from swiss_ai_hub.core.form.elements.InputNumber import InputNumber
+from swiss_ai_hub.core.form.elements.KnowledgeDatabaseSelector import KnowledgeDatabaseSelector
+from swiss_ai_hub.core.form.elements.LocaleInput import LocaleInput
 from swiss_ai_hub.core.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.nats.events.form.constraints import Ge, MinLen
-from swiss_ai_hub.core.nats.events.form.elements.InputNumber import InputNumber
-from swiss_ai_hub.core.nats.events.form.elements.KnowledgeDatabaseSelector import KnowledgeDatabaseSelector
-from swiss_ai_hub.core.nats.events.form.elements.LocaleInput import LocaleInput
 
 from swiss_ai_hub.agent.agents.NamespaceSelectionAgent.configs.RAGDelegationConfig import RAGDelegationConfig
 from swiss_ai_hub.agent.i18n.AgentLocaleString import AgentLocaleString

@@ -2,7 +2,7 @@ from dagster import AssetKey, Definitions, DynamicPartitionsDefinition
 from swiss_ai_hub.core.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
 from swiss_ai_hub.core.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from swiss_ai_hub.core.infrastructure.api.AIHubSettings import AIHubSettings
-from swiss_ai_hub.core.nats.topic_managers.pipeline.PipelineInstanceTopicManager import PipelineInstanceTopicManager
+from swiss_ai_hub.core.topic_managers.pipeline.PipelineInstanceTopicManager import PipelineInstanceTopicManager
 
 # Import AI-Hub pipeline factories
 from swiss_ai_hub.pipeline.assets.factories.data_lake_to_vector_store.documents_factory import documents_factory

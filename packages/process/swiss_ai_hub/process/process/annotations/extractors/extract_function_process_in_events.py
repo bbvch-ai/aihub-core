@@ -1,8 +1,8 @@
 import inspect
 from typing import Annotated, get_args, get_origin
 
-from swiss_ai_hub.core.nats.events.work.WorkEvent import WorkEvent
-from swiss_ai_hub.core.nats.workflow.annotations.extractors.extract_event_classes import extract_event_classes
+from swiss_ai_hub.core.events.process.work.WorkEvent import WorkEvent
+from swiss_ai_hub.core.workflow.annotations.extractors.extract_event_classes import extract_event_classes
 
 from swiss_ai_hub.process.delegators.AbstractProcessEntity import BaseProcessEntity
 

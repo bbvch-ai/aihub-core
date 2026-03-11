@@ -1,7 +1,7 @@
 from typing import Annotated
 
 from pydantic import BaseModel, Field
-from swiss_ai_hub.core.nats.events.human_in_the_loop.request.HumanInTheLoopRequestEvent import (
+from swiss_ai_hub.core.events.agent.hitl.request.HumanInTheLoopRequestEvent import (
     HumanInTheLoopRequestEvent,
 )
 

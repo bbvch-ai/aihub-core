@@ -7,32 +7,32 @@ from mongoengine.connection import get_connection
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 from redis.asyncio import Redis
+from swiss_ai_hub.core.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
+from swiss_ai_hub.core.events.discovery.EventSpecs import EventSpecs
+from swiss_ai_hub.core.events.process.discovery.agent_in.AgentInSpecs import AgentInSpecs
+from swiss_ai_hub.core.events.process.discovery.human_in.HumanInSpecs import HumanInSpecs
+from swiss_ai_hub.core.events.process.discovery.ProcessClassDiscoveryResponseEvent import (
+    ProcessClassDiscoveryResponseEvent,
+)
+from swiss_ai_hub.core.events.process.discovery.ProcessConfigSpecs import ProcessConfigSpecs
+from swiss_ai_hub.core.events.process.discovery.program_in.ProgramInSpecs import ProgramInSpecs
+from swiss_ai_hub.core.events.process.start.ProcessStartEvent import ProcessStartEvent
+from swiss_ai_hub.core.form.TemplateData import TemplateData
 from swiss_ai_hub.core.infrastructure.mongo.MongoSettings import MongoSettings
 from swiss_ai_hub.core.infrastructure.nats.NatsSettings import NatsSettings
 from swiss_ai_hub.core.infrastructure.redis.RedisSettings import RedisSettings
-from swiss_ai_hub.core.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
-from swiss_ai_hub.core.nats.events.discovery.EventSpecs import EventSpecs
-from swiss_ai_hub.core.nats.events.discovery.process.agent_in.AgentInSpecs import AgentInSpecs
-from swiss_ai_hub.core.nats.events.discovery.process.human_in.HumanInSpecs import HumanInSpecs
-from swiss_ai_hub.core.nats.events.discovery.process.ProcessClassDiscoveryResponseEvent import (
-    ProcessClassDiscoveryResponseEvent,
-)
-from swiss_ai_hub.core.nats.events.discovery.process.ProcessConfigSpecs import ProcessConfigSpecs
-from swiss_ai_hub.core.nats.events.discovery.process.program_in.ProgramInSpecs import ProgramInSpecs
-from swiss_ai_hub.core.nats.events.form.TemplateData import TemplateData
-from swiss_ai_hub.core.nats.events.process.start.ProcessStartEvent import ProcessStartEvent
-from swiss_ai_hub.core.nats.publishers.NCPublisher import NCPublisher
-from swiss_ai_hub.core.nats.subscribers.JSSubscriber import JSSubscriber
-from swiss_ai_hub.core.nats.subscribers.NCSubscriber import NCSubscriber
-from swiss_ai_hub.core.nats.subscribers.process.ProcessJSSubscriber import ProcessJSSubscriber
-from swiss_ai_hub.core.nats.subscribers.process.ProcessNCSubscriber import ProcessNCSubscriber
-from swiss_ai_hub.core.nats.topic_managers.process.ProcessClassTopicManager import ProcessClassTopicManager
-from swiss_ai_hub.core.nats.topic_managers.process.ProcessTopicManager import ProcessTopicManager
-from swiss_ai_hub.core.nats.topics.discovery.process.ProcessClassDiscoveryTopic import ProcessClassDiscoveryTopic
 from swiss_ai_hub.core.processes.ProcessConfig import ProcessConfig
+from swiss_ai_hub.core.publishers.NCPublisher import NCPublisher
 from swiss_ai_hub.core.routes.health.dto.HealthResponse import ProcessHealthChecks
 from swiss_ai_hub.core.routes.health.health_checks import check_nats_sync, check_redis_sync
 from swiss_ai_hub.core.routes.health.HealthServer import HealthCheckProvider, HealthServer
+from swiss_ai_hub.core.subscribers.JSSubscriber import JSSubscriber
+from swiss_ai_hub.core.subscribers.NCSubscriber import NCSubscriber
+from swiss_ai_hub.core.subscribers.process.ProcessJSSubscriber import ProcessJSSubscriber
+from swiss_ai_hub.core.subscribers.process.ProcessNCSubscriber import ProcessNCSubscriber
+from swiss_ai_hub.core.topic_managers.process.ProcessClassTopicManager import ProcessClassTopicManager
+from swiss_ai_hub.core.topic_managers.process.ProcessTopicManager import ProcessTopicManager
+from swiss_ai_hub.core.topics.discovery.process.ProcessClassDiscoveryTopic import ProcessClassDiscoveryTopic
 
 from swiss_ai_hub.process.agentic_processes.AgenticProcess import AgenticProcess
 from swiss_ai_hub.process.delegators.agent.AgentDelegator import AgentDelegator

@@ -5,15 +5,15 @@ from llama_index.embeddings.openai_like import OpenAILikeEmbedding
 from opentelemetry.propagate import inject
 from pydantic import Field
 
+from swiss_ai_hub.core.form.constraints import Ge
+from swiss_ai_hub.core.form.elements.InputNumber import InputNumber
+from swiss_ai_hub.core.form.elements.ModelSelect import ModelSelect
+from swiss_ai_hub.core.form.elements.Select import Select
+from swiss_ai_hub.core.form.Form import Form
 from swiss_ai_hub.core.generative_ai.resources.costs.LLMCostTracker import LLMCostTracker
 from swiss_ai_hub.core.generative_ai.resources.models.llm.LiteLLMBase import LiteLLMBase
 from swiss_ai_hub.core.i18n.LocaleString import LocaleString
 from swiss_ai_hub.core.infrastructure.litellm.LiteLLMProxySettings import LiteLLMProxySettings
-from swiss_ai_hub.core.nats.events.form.constraints import Ge
-from swiss_ai_hub.core.nats.events.form.elements.InputNumber import InputNumber
-from swiss_ai_hub.core.nats.events.form.elements.ModelSelect import ModelSelect
-from swiss_ai_hub.core.nats.events.form.elements.Select import Select
-from swiss_ai_hub.core.nats.events.form.Form import Form
 
 
 class EmbeddingLLMParameter(Form):

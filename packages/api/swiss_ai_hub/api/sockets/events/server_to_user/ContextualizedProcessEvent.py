@@ -2,10 +2,10 @@ import json
 from typing import Annotated, Any, Self, override
 
 from pydantic import BaseModel, Discriminator, Field, Tag
+from swiss_ai_hub.core.events.process.ProcessEvent import ProcessEvent
+from swiss_ai_hub.core.events.process.work.WorkEvent import WorkEvent
+from swiss_ai_hub.core.events.process.work_request.WorkRequestEvent import WorkRequestEvent
 from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
-from swiss_ai_hub.core.nats.events.process.ProcessEvent import ProcessEvent
-from swiss_ai_hub.core.nats.events.work.WorkEvent import WorkEvent
-from swiss_ai_hub.core.nats.events.work_request.WorkRequestEvent import WorkRequestEvent
 from swiss_ai_hub.core.persistence.messaging.entities.PersistedProcessEventEntity import PersistedProcessEventEntity
 
 # Import all events here that the frontend should be able to display

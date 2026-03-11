@@ -1,8 +1,8 @@
 import pytest
 import pytest_asyncio
+from swiss_ai_hub.core.events.agent.control.start.StartEvent import StartEvent
+from swiss_ai_hub.core.events.agent.control.stop.StopEvent import StopEvent
 from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.nats.events.control.start.StartEvent import StartEvent
-from swiss_ai_hub.core.nats.events.control.stop.StopEvent import StopEvent
 
 from playground.minimal_workflow.multistep_human_in_the_loop_workflow.events.FirstStepHumanInTheLoop import (
     FirstStepHumanInTheLoopRequestEvent,

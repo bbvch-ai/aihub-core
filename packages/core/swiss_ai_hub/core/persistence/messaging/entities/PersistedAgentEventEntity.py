@@ -9,12 +9,12 @@ from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from mongoengine import DictField, Document, ListField, StringField
 
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
-from swiss_ai_hub.core.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from swiss_ai_hub.core.persistence.messaging.entities.types.EventBucket import EventBucket
+from swiss_ai_hub.core.topic_managers.agents.AgentTopicManager import AgentTopicManager
 
 if TYPE_CHECKING:
-    from swiss_ai_hub.core.nats.events.BaseEvent import BaseEvent
-    from swiss_ai_hub.core.nats.topics import AgentInstanceTopic
+    from swiss_ai_hub.core.events.BaseEvent import BaseEvent
+    from swiss_ai_hub.core.topics import AgentInstanceTopic
 
 logger = logging.getLogger(__name__)
 

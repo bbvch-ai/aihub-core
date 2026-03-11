@@ -2,15 +2,15 @@ from typing import TYPE_CHECKING, Annotated, Self
 
 from pydantic import BaseModel, Field
 from swiss_ai_hub.core.agents.visualizers.types.WorkflowGraph import WorkflowGraph
-from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
-from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.nats.events.discovery.agent.AgentClassDiscoveryResponseEvent import (
+from swiss_ai_hub.core.events.agent.discovery.AgentClassDiscoveryResponseEvent import (
     AgentClassDiscoveryResponseEvent,
     AgentConfigSpecs,
 )
-from swiss_ai_hub.core.nats.events.discovery.EventSpecs import EventSpecs
-from swiss_ai_hub.core.nats.events.form import ALL_FORM_OPTIONS
-from swiss_ai_hub.core.nats.events.form.TemplateData import TemplateData
+from swiss_ai_hub.core.events.discovery.EventSpecs import EventSpecs
+from swiss_ai_hub.core.form import ALL_FORM_OPTIONS
+from swiss_ai_hub.core.form.TemplateData import TemplateData
+from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
+from swiss_ai_hub.core.i18n.LocaleString import LocaleString
 
 if TYPE_CHECKING:
     from swiss_ai_hub.core.persistence.agents.AgentClassEntity import AgentClassEntity

@@ -1,7 +1,7 @@
 from typing import Annotated, Literal
 
 from pydantic import Field, model_validator
-from swiss_ai_hub.core.nats.events.work.human.HumanWorkEvent import HumanWorkEvent
+from swiss_ai_hub.core.events.process.work.human.HumanWorkEvent import HumanWorkEvent
 
 from swiss_ai_hub.process.delegators.AbstractProcessEntity import BaseProcessEntity
 

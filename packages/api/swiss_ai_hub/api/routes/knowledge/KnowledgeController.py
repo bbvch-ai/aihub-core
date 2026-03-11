@@ -7,6 +7,7 @@ from pymongo import MongoClient
 from swiss_ai_hub.core.auth.access.AccessChecker import AccessChecker
 from swiss_ai_hub.core.auth.dependencies.AuthHandler import AuthHandler
 from swiss_ai_hub.core.auth.identity.UserIdentity import UserIdentity
+from swiss_ai_hub.core.dependencies.use_nats import use_nats
 from swiss_ai_hub.core.generative_ai.document.accessor.S3AnonymousFileAccessService import S3AnonymousFileAccessService
 from swiss_ai_hub.core.generative_ai.document.types.IngestedNode import IngestedNode
 from swiss_ai_hub.core.generative_ai.resources.models.llm.LLMConfig import LLMConfig
@@ -14,7 +15,6 @@ from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
 from swiss_ai_hub.core.infrastructure.milvus.use_vector_store_factory import use_vector_store_factory
 from swiss_ai_hub.core.infrastructure.mongo.MongoSettings import MongoSettings
 from swiss_ai_hub.core.infrastructure.s3.use_s3 import use_s3_service
-from swiss_ai_hub.core.nats.dependencies.use_nats import use_nats
 from swiss_ai_hub.core.persistence.rag.vectors import VectorStoreFactory
 from swiss_ai_hub.core.routes.Controller import Controller
 

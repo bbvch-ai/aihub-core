@@ -1,13 +1,13 @@
-from swiss_ai_hub.core.nats.events.agent_in_the_loop.AgentInTheLoop import AgentInTheLoop
-from swiss_ai_hub.core.nats.events.guard.ContextSufficientAcceptEvent import ContextSufficientAcceptEvent
-from swiss_ai_hub.core.nats.events.memory.history.AddMemoryToChatHistoryEvent import AddMemoryToChatHistoryEvent
-from swiss_ai_hub.core.nats.events.memory.retrieve.RetrieveOrganizationMemoryEvent import (
+from swiss_ai_hub.core.events.agent.aitl.AgentInTheLoop import AgentInTheLoop
+from swiss_ai_hub.core.events.agent.guard.ContextSufficientAcceptEvent import ContextSufficientAcceptEvent
+from swiss_ai_hub.core.events.agent.memory.history.AddMemoryToChatHistoryEvent import AddMemoryToChatHistoryEvent
+from swiss_ai_hub.core.events.agent.memory.retrieve.RetrieveOrganizationMemoryEvent import (
     RetrieveOrganizationMemoryEvent,
 )
-from swiss_ai_hub.core.nats.events.memory.retrieve.RetrieveUserMemoryEvent import RetrieveUserMemoryEvent
-from swiss_ai_hub.core.nats.events.memory.store.StoreUserMemoryEvent import StoreUserMemoryEvent
-from swiss_ai_hub.core.nats.events.semantic.reranker.RerankerEvent import RerankerEvent
-from swiss_ai_hub.core.nats.events.semantic.retriever.RetrieverEvent import RetrieverEvent
+from swiss_ai_hub.core.events.agent.memory.retrieve.RetrieveUserMemoryEvent import RetrieveUserMemoryEvent
+from swiss_ai_hub.core.events.agent.memory.store.StoreUserMemoryEvent import StoreUserMemoryEvent
+from swiss_ai_hub.core.events.agent.semantic.reranker.RerankerEvent import RerankerEvent
+from swiss_ai_hub.core.events.agent.semantic.retriever.RetrieverEvent import RetrieverEvent
 
 from swiss_ai_hub.agent.agents.ExpertAskingAgent.events.AnswerStopEvent import AnswerStopEvent
 from swiss_ai_hub.agent.agents.ExpertAskingAgent.events.NoAnswerStopEvent import NoAnswerStopEvent

@@ -1,11 +1,11 @@
 from typing import Annotated, Any, Self
 
 from pydantic import Field, field_validator, model_validator
+from swiss_ai_hub.core.form.elements.Checkbox import Checkbox
+from swiss_ai_hub.core.form.Form import Form
 from swiss_ai_hub.core.generative_ai.resources.models.llm.RerankingModelConfig import (
     RerankingModelConfig,
 )
-from swiss_ai_hub.core.nats.events.form.elements.Checkbox import Checkbox
-from swiss_ai_hub.core.nats.events.form.Form import Form
 
 from swiss_ai_hub.agent.i18n.AgentLocaleString import AgentLocaleString
 

@@ -4,8 +4,8 @@ from llama_index.core.base.llms.types import ChatMessage
 from swiss_ai_hub.core.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
     DangerousDevelopmentOnlyAuthSettings,
 )
-from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.nats.events.form import (
+from swiss_ai_hub.core.events.agent.user.UserMessageEvent import UserMessageEvent
+from swiss_ai_hub.core.form import (
     CascadeSelect,
     Checkbox,
     DatePicker,
@@ -15,8 +15,8 @@ from swiss_ai_hub.core.nats.events.form import (
     Slider,
     Textarea,
 )
-from swiss_ai_hub.core.nats.events.form.elements.InputText import InputText
-from swiss_ai_hub.core.nats.events.user.UserMessageEvent import UserMessageEvent
+from swiss_ai_hub.core.form.elements.InputText import InputText
+from swiss_ai_hub.core.i18n.LocaleString import LocaleString
 
 from playground.AgenticCVProcess.events.agent.AnalyzeCVRequest import AnalyzeCVRequest
 from playground.AgenticCVProcess.events.human.AcceptRejectRequest import AcceptRejectRequest

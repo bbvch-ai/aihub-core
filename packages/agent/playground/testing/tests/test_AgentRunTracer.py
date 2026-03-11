@@ -7,9 +7,9 @@ from bson import ObjectId
 from openinference.semconv.trace import OpenInferenceSpanKindValues, SpanAttributes
 from opentelemetry import trace
 from opentelemetry.trace import NonRecordingSpan, SpanContext, StatusCode, TraceFlags
-from swiss_ai_hub.core.nats.dispatcher.stores.trace.TraceStore import TraceStore
-from swiss_ai_hub.core.nats.events.control.start.StartEvent import StartEvent
-from swiss_ai_hub.core.nats.topics.agents.AgentInstanceTopic import AgentInstanceTopic
+from swiss_ai_hub.core.dispatcher.stores.trace.TraceStore import TraceStore
+from swiss_ai_hub.core.events.agent.control.start.StartEvent import StartEvent
+from swiss_ai_hub.core.topics.agents.AgentInstanceTopic import AgentInstanceTopic
 
 from swiss_ai_hub.agent.tracing.AgentRunTracer import AgentRunTracer
 

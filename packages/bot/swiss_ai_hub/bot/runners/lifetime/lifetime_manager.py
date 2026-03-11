@@ -4,12 +4,12 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from mongoengine import connect, disconnect
+from swiss_ai_hub.core.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from swiss_ai_hub.core.infrastructure.api.AIHubSettings import AIHubSettings
 from swiss_ai_hub.core.infrastructure.mongo.MongoSettings import MongoSettings
 from swiss_ai_hub.core.infrastructure.nats.NatsSettings import NatsSettings
-from swiss_ai_hub.core.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
-from swiss_ai_hub.core.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
-from swiss_ai_hub.core.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
+from swiss_ai_hub.core.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
+from swiss_ai_hub.core.topic_managers.agents.AgentTopicManager import AgentTopicManager
 
 from swiss_ai_hub.bot.persistence.entities.ConversationEntity import ConversationEntity
 from swiss_ai_hub.bot.routes.bot_in_the_loop.BotInTheLoopHandler import BotInTheLoopHandler

@@ -6,18 +6,18 @@ from pytest_bdd import given, parsers, scenarios, then, when
 from swiss_ai_hub.core.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
     DangerousDevelopmentOnlyAuthSettings,
 )
-from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.nats.events.agent_in_the_loop.exception.AgentInTheLoopExceptionEvent import (
+from swiss_ai_hub.core.events.agent.aitl.exception.AgentInTheLoopExceptionEvent import (
     AgentInTheLoopExceptionEvent,
 )
-from swiss_ai_hub.core.nats.events.agent_in_the_loop.request.AgentInTheLoopRequestEvent import (
+from swiss_ai_hub.core.events.agent.aitl.request.AgentInTheLoopRequestEvent import (
     AgentInTheLoopRequestEvent,
 )
-from swiss_ai_hub.core.nats.events.agent_in_the_loop.response.AgentInTheLoopResponseEvent import (
+from swiss_ai_hub.core.events.agent.aitl.response.AgentInTheLoopResponseEvent import (
     AgentInTheLoopResponseEvent,
 )
-from swiss_ai_hub.core.nats.events.BaseEvent import BaseEvent
-from swiss_ai_hub.core.nats.events.user.UserMessageEvent import UserMessageEvent
+from swiss_ai_hub.core.events.BaseEvent import BaseEvent
+from swiss_ai_hub.core.events.agent.user.UserMessageEvent import UserMessageEvent
+from swiss_ai_hub.core.i18n.LocaleString import LocaleString
 from swiss_ai_hub.core.testing.asyncio_utils.bdd import async_test
 
 from playground.minimal_workflow.agent_in_the_loop_workflow.OrchestratorAgent.Events.OrchestrationResultEvent import (

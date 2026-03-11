@@ -1,4 +1,4 @@
-from swiss_ai_hub.core.nats.distributor.dependencies.use_external_agent_event_distributor import (
+from swiss_ai_hub.core.distributor.dependencies.use_external_agent_event_distributor import (
     use_external_agent_event_distributor,
 )
 

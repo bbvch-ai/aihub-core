@@ -8,23 +8,23 @@ from nats.aio.client import Client as NATS
 from pydantic import BaseModel
 from stringcase import snakecase
 from swiss_ai_hub.core.auth.identity.UserIdentity import UserIdentity
-from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
-from swiss_ai_hub.core.nats.distributor.dependencies.use_external_process_event_distributor import (
+from swiss_ai_hub.core.distributor.dependencies.use_external_process_event_distributor import (
     use_external_process_event_distributor,
 )
-from swiss_ai_hub.core.nats.distributor.ExternalProcessEventDistributor import ExternalProcessEventDistributor
-from swiss_ai_hub.core.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
-from swiss_ai_hub.core.nats.events.discovery.process.human_in.HumanInSpecs import HumanInSpecs
-from swiss_ai_hub.core.nats.events.discovery.process.ProcessClassDiscoveryResponseEvent import (
+from swiss_ai_hub.core.distributor.ExternalProcessEventDistributor import ExternalProcessEventDistributor
+from swiss_ai_hub.core.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
+from swiss_ai_hub.core.events.process.discovery.human_in.HumanInSpecs import HumanInSpecs
+from swiss_ai_hub.core.events.process.discovery.ProcessClassDiscoveryResponseEvent import (
     ProcessClassDiscoveryResponseEvent,
 )
-from swiss_ai_hub.core.nats.events.discovery.process.program_in.ProgramInSpecs import ProgramInSpecs
-from swiss_ai_hub.core.nats.publishers.NCPublisher import NCPublisher
-from swiss_ai_hub.core.nats.subscribers.process.ProcessNCSubscriber import ProcessNCSubscriber
-from swiss_ai_hub.core.nats.topic_managers.process.ProcessTopicManager import ProcessTopicManager
+from swiss_ai_hub.core.events.process.discovery.program_in.ProgramInSpecs import ProgramInSpecs
+from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
 from swiss_ai_hub.core.persistence.process.ProcessClassEntity import ProcessClassEntity
 from swiss_ai_hub.core.persistence.process.ProcessConfigEntityDocument import ProcessConfigEntityDocument
 from swiss_ai_hub.core.processes.ProcessConfig import ProcessConfig
+from swiss_ai_hub.core.publishers.NCPublisher import NCPublisher
+from swiss_ai_hub.core.subscribers.process.ProcessNCSubscriber import ProcessNCSubscriber
+from swiss_ai_hub.core.topic_managers.process.ProcessTopicManager import ProcessTopicManager
 
 from swiss_ai_hub.api.events.EventModelCreationService import EventModelCreationService
 from swiss_ai_hub.api.i18n.dependencies.use_locale import use_locale

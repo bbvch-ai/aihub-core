@@ -2,7 +2,7 @@
 
 from typing import ClassVar
 
-from swiss_ai_hub.core.nats.events.control.ControlEvent import ControlEvent
+from swiss_ai_hub.core.events.agent.control.ControlEvent import ControlEvent
 
 from swiss_ai_hub.agent.i18n.AgentLocaleString import AgentLocaleString
 

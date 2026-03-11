@@ -11,15 +11,15 @@ from pytest_bdd import given, parsers, scenarios, then, when
 from swiss_ai_hub.core.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
     DangerousDevelopmentOnlyAuthSettings,
 )
+from swiss_ai_hub.core.events.agent.memory.history.AddUserMemoryToChatHistoryEvent import AddUserMemoryToChatHistoryEvent
+from swiss_ai_hub.core.events.agent.memory.retrieve.RetrieveUserMemoryEvent import RetrieveUserMemoryEvent
+from swiss_ai_hub.core.events.agent.memory.store.StoreUserMemoryEvent import StoreUserMemoryEvent
+from swiss_ai_hub.core.events.agent.semantic.llm.LLMEvent import LLMEvent
+from swiss_ai_hub.core.events.agent.user.UserMessageEvent import UserMessageEvent
 from swiss_ai_hub.core.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
 from swiss_ai_hub.core.i18n.LocaleString import LocaleString
 from swiss_ai_hub.core.infrastructure.logging.logger import enable_logging
-from swiss_ai_hub.core.nats.events.memory.history.AddUserMemoryToChatHistoryEvent import AddUserMemoryToChatHistoryEvent
-from swiss_ai_hub.core.nats.events.memory.retrieve.RetrieveUserMemoryEvent import RetrieveUserMemoryEvent
-from swiss_ai_hub.core.nats.events.memory.store.StoreUserMemoryEvent import StoreUserMemoryEvent
-from swiss_ai_hub.core.nats.events.semantic.llm.LLMEvent import LLMEvent
-from swiss_ai_hub.core.nats.events.user.UserMessageEvent import UserMessageEvent
 from swiss_ai_hub.core.testing.asyncio_utils.bdd import async_test
 
 from playground.minimal_workflow.user_memory_workflow.UserMemoryAgent import UserMemoryAgent

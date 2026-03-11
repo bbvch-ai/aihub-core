@@ -1,6 +1,6 @@
-from swiss_ai_hub.core.nats.events.human_in_the_loop.HumanInTheLoopInput import HumanInTheLoopInput
-from swiss_ai_hub.core.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
-from swiss_ai_hub.core.nats.topics.agents.PartialAgentTopic import PartialAgentTopic
+from swiss_ai_hub.core.events.agent.hitl.HumanInTheLoopInput import HumanInTheLoopInput
+from swiss_ai_hub.core.topic_managers.agents.AgentTopicManager import AgentTopicManager
+from swiss_ai_hub.core.topics.agents.PartialAgentTopic import PartialAgentTopic
 
 from playground.agent.HitlDemoAgent.events.HitlTypeSelectionRequestEvent import HitlTypeSelectionRequestEvent
 from playground.agent.HitlDemoAgent.events.HitlTypeSelectionResponseEvent import HitlTypeSelectionResponseEvent

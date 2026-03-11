@@ -3,12 +3,12 @@ from typing import TYPE_CHECKING, Annotated, Self
 
 from pydantic import ConfigDict, Field, model_validator
 
+from swiss_ai_hub.core.form.constraints import Pattern
+from swiss_ai_hub.core.form.elements.IconSelector import IconSelector
+from swiss_ai_hub.core.form.elements.InputText import InputText
+from swiss_ai_hub.core.form.elements.LocaleInput import LocaleInput
+from swiss_ai_hub.core.form.Form import Form
 from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.nats.events.form.constraints import Pattern
-from swiss_ai_hub.core.nats.events.form.elements.IconSelector import IconSelector
-from swiss_ai_hub.core.nats.events.form.elements.InputText import InputText
-from swiss_ai_hub.core.nats.events.form.elements.LocaleInput import LocaleInput
-from swiss_ai_hub.core.nats.events.form.Form import Form
 
 if TYPE_CHECKING:
     from swiss_ai_hub.core.persistence.process import ProcessConfigEntity

@@ -3,16 +3,16 @@ from typing import Annotated, Literal, Self
 from llama_index.core.vector_stores.types import VectorStoreQueryMode
 from pydantic import Field
 
+from swiss_ai_hub.core.form.constraints import Ge, MinLen
+from swiss_ai_hub.core.form.elements.InputNumber import InputNumber
+from swiss_ai_hub.core.form.elements.MultiSelect import MultiSelect
+from swiss_ai_hub.core.form.elements.Select import Select
+from swiss_ai_hub.core.form.elements.VectorStoreInput import VectorStoreInput
 from swiss_ai_hub.core.generative_ai.processors.models.RetrievePrevNextConfig import RetrievePrevNextConfig
 from swiss_ai_hub.core.generative_ai.processors.models.RetrieveSummariesConfig import RetrieveSummariesConfig
 from swiss_ai_hub.core.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
 from swiss_ai_hub.core.generative_ai.retrievers.BaseRetrieverConfig import BaseRetrieverConfig
 from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.nats.events.form.constraints import Ge, MinLen
-from swiss_ai_hub.core.nats.events.form.elements.InputNumber import InputNumber
-from swiss_ai_hub.core.nats.events.form.elements.MultiSelect import MultiSelect
-from swiss_ai_hub.core.nats.events.form.elements.Select import Select
-from swiss_ai_hub.core.nats.events.form.elements.VectorStoreInput import VectorStoreInput
 from swiss_ai_hub.core.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
 
 

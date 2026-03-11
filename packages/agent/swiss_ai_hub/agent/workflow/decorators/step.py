@@ -4,7 +4,7 @@ from collections.abc import Awaitable, Callable
 from typing import Annotated
 
 from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.nats.workflow.annotations.extractors.extract_function_events import extract_function_events
+from swiss_ai_hub.core.workflow.annotations.extractors.extract_function_events import extract_function_events
 
 from swiss_ai_hub.agent.agents.Agent import Agent
 

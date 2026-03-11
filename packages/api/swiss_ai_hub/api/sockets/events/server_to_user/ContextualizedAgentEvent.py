@@ -2,66 +2,66 @@ import json
 from typing import Annotated, Any, Self, override
 
 from pydantic import BaseModel, Discriminator, Field, Tag
-from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
-from swiss_ai_hub.core.nats.events.agent_in_the_loop.exception.AgentInTheLoopExceptionEvent import (
+from swiss_ai_hub.core.events.agent.aitl.exception.AgentInTheLoopExceptionEvent import (
     AgentInTheLoopExceptionEvent,
 )
-from swiss_ai_hub.core.nats.events.agent_in_the_loop.request.AgentInTheLoopRequestEvent import (
+from swiss_ai_hub.core.events.agent.aitl.request.AgentInTheLoopRequestEvent import (
     AgentInTheLoopRequestEvent,
 )
-from swiss_ai_hub.core.nats.events.agent_in_the_loop.response.AgentInTheLoopResponseEvent import (
+from swiss_ai_hub.core.events.agent.aitl.response.AgentInTheLoopResponseEvent import (
     AgentInTheLoopResponseEvent,
 )
-from swiss_ai_hub.core.nats.events.common.LimitChatHistoryEvent import LimitChatHistoryEvent
-from swiss_ai_hub.core.nats.events.common.StandaloneQuestionCondenserEvent import StandaloneQuestionCondenserEvent
-from swiss_ai_hub.core.nats.events.control.exception.ExceptionEvent import ExceptionEvent
-from swiss_ai_hub.core.nats.events.control.start.StartEvent import StartEvent
-from swiss_ai_hub.core.nats.events.control.stop.StopEvent import StopEvent
-from swiss_ai_hub.core.nats.events.cost.LLMCostEvent import LLMCostEvent
-from swiss_ai_hub.core.nats.events.display.ChunkEvent import ChunkEvent
-from swiss_ai_hub.core.nats.events.display.DisplayEvent import DisplayEvent
-from swiss_ai_hub.core.nats.events.display.ThoughtEvent import ThoughtEvent
-from swiss_ai_hub.core.nats.events.guard.AgentSuitabilityAcceptEvent import AgentSuitabilityAcceptEvent
-from swiss_ai_hub.core.nats.events.guard.AgentSuitabilityRejectEvent import AgentSuitabilityRejectEvent
-from swiss_ai_hub.core.nats.events.guard.ContextInsufficientRejectEvent import ContextInsufficientRejectEvent
-from swiss_ai_hub.core.nats.events.guard.ContextSufficientAcceptEvent import ContextSufficientAcceptEvent
-from swiss_ai_hub.core.nats.events.guard.FewShotAcceptEvent import FewShotAcceptEvent
-from swiss_ai_hub.core.nats.events.guard.FewShotRejectEvent import FewShotRejectEvent
-from swiss_ai_hub.core.nats.events.guard.GuardAcceptEvent import GuardAcceptEvent
-from swiss_ai_hub.core.nats.events.guard.GuardRejectionEvent import GuardRejectionEvent
-from swiss_ai_hub.core.nats.events.guard.SensitiveInfoAcceptEvent import SensitiveInfoAcceptEvent
-from swiss_ai_hub.core.nats.events.guard.SensitiveInfoRejectEvent import SensitiveInfoRejectEvent
-from swiss_ai_hub.core.nats.events.human_in_the_loop.request.HumanInTheLoopRequestEvent import (
+from swiss_ai_hub.core.events.agent.common.LimitChatHistoryEvent import LimitChatHistoryEvent
+from swiss_ai_hub.core.events.agent.common.StandaloneQuestionCondenserEvent import StandaloneQuestionCondenserEvent
+from swiss_ai_hub.core.events.agent.control.exception.ExceptionEvent import ExceptionEvent
+from swiss_ai_hub.core.events.agent.control.start.StartEvent import StartEvent
+from swiss_ai_hub.core.events.agent.control.stop.StopEvent import StopEvent
+from swiss_ai_hub.core.events.agent.cost.LLMCostEvent import LLMCostEvent
+from swiss_ai_hub.core.events.agent.display.ChunkEvent import ChunkEvent
+from swiss_ai_hub.core.events.agent.display.DisplayEvent import DisplayEvent
+from swiss_ai_hub.core.events.agent.display.ThoughtEvent import ThoughtEvent
+from swiss_ai_hub.core.events.agent.guard.AgentSuitabilityAcceptEvent import AgentSuitabilityAcceptEvent
+from swiss_ai_hub.core.events.agent.guard.AgentSuitabilityRejectEvent import AgentSuitabilityRejectEvent
+from swiss_ai_hub.core.events.agent.guard.ContextInsufficientRejectEvent import ContextInsufficientRejectEvent
+from swiss_ai_hub.core.events.agent.guard.ContextSufficientAcceptEvent import ContextSufficientAcceptEvent
+from swiss_ai_hub.core.events.agent.guard.FewShotAcceptEvent import FewShotAcceptEvent
+from swiss_ai_hub.core.events.agent.guard.FewShotRejectEvent import FewShotRejectEvent
+from swiss_ai_hub.core.events.agent.guard.GuardAcceptEvent import GuardAcceptEvent
+from swiss_ai_hub.core.events.agent.guard.GuardRejectionEvent import GuardRejectionEvent
+from swiss_ai_hub.core.events.agent.guard.SensitiveInfoAcceptEvent import SensitiveInfoAcceptEvent
+from swiss_ai_hub.core.events.agent.guard.SensitiveInfoRejectEvent import SensitiveInfoRejectEvent
+from swiss_ai_hub.core.events.agent.hitl.request.HumanInTheLoopRequestEvent import (
     HumanInTheLoopRequestEvent,
 )
-from swiss_ai_hub.core.nats.events.human_in_the_loop.response.HumanInTheLoopResponseEvent import (
+from swiss_ai_hub.core.events.agent.hitl.response.HumanInTheLoopResponseEvent import (
     HumanInTheLoopResponseEvent,
 )
-from swiss_ai_hub.core.nats.events.memory.history.AddMemoryToChatHistoryEvent import AddMemoryToChatHistoryEvent
-from swiss_ai_hub.core.nats.events.memory.history.AddOrganizationMemoryToChatHistoryEvent import (
+from swiss_ai_hub.core.events.agent.memory.history.AddMemoryToChatHistoryEvent import AddMemoryToChatHistoryEvent
+from swiss_ai_hub.core.events.agent.memory.history.AddOrganizationMemoryToChatHistoryEvent import (
     AddOrganizationMemoryToChatHistoryEvent,
 )
-from swiss_ai_hub.core.nats.events.memory.history.AddUserMemoryToChatHistoryEvent import AddUserMemoryToChatHistoryEvent
-from swiss_ai_hub.core.nats.events.memory.retrieve.BaseRetrieveMemoryEvent import BaseRetrieveMemoryEvent
-from swiss_ai_hub.core.nats.events.memory.retrieve.RetrieveOrganizationMemoryEvent import (
+from swiss_ai_hub.core.events.agent.memory.history.AddUserMemoryToChatHistoryEvent import AddUserMemoryToChatHistoryEvent
+from swiss_ai_hub.core.events.agent.memory.retrieve.BaseRetrieveMemoryEvent import BaseRetrieveMemoryEvent
+from swiss_ai_hub.core.events.agent.memory.retrieve.RetrieveOrganizationMemoryEvent import (
     RetrieveOrganizationMemoryEvent,
 )
-from swiss_ai_hub.core.nats.events.memory.retrieve.RetrieveUserMemoryEvent import RetrieveUserMemoryEvent
-from swiss_ai_hub.core.nats.events.memory.store.BaseStoreMemoryEvent import BaseStoreMemoryEvent
-from swiss_ai_hub.core.nats.events.memory.store.StoreOrganizationMemoryEvent import StoreOrganizationMemoryEvent
-from swiss_ai_hub.core.nats.events.memory.store.StoreUserMemoryEvent import StoreUserMemoryEvent
-from swiss_ai_hub.core.nats.events.router.RouterEvent import RouterEvent
-from swiss_ai_hub.core.nats.events.semantic.agent.AgentEvent import AgentEvent
-from swiss_ai_hub.core.nats.events.semantic.chain.ChainEvent import ChainEvent
-from swiss_ai_hub.core.nats.events.semantic.embedding.EmbeddingEvent import EmbeddingEvent
-from swiss_ai_hub.core.nats.events.semantic.guard.GuardEvent import GuardEvent
-from swiss_ai_hub.core.nats.events.semantic.llm.LLMEvent import LLMEvent
-from swiss_ai_hub.core.nats.events.semantic.llm.LLMStopEvent import LLMStopEvent
-from swiss_ai_hub.core.nats.events.semantic.reranker.RerankerEvent import RerankerEvent
-from swiss_ai_hub.core.nats.events.semantic.retriever.RetrieverEvent import RetrieverEvent
-from swiss_ai_hub.core.nats.events.semantic.SemanticEvent import SemanticEvent
-from swiss_ai_hub.core.nats.events.semantic.tool.ToolEvent import ToolEvent
-from swiss_ai_hub.core.nats.events.user.UserMessageEvent import UserMessageEvent
+from swiss_ai_hub.core.events.agent.memory.retrieve.RetrieveUserMemoryEvent import RetrieveUserMemoryEvent
+from swiss_ai_hub.core.events.agent.memory.store.BaseStoreMemoryEvent import BaseStoreMemoryEvent
+from swiss_ai_hub.core.events.agent.memory.store.StoreOrganizationMemoryEvent import StoreOrganizationMemoryEvent
+from swiss_ai_hub.core.events.agent.memory.store.StoreUserMemoryEvent import StoreUserMemoryEvent
+from swiss_ai_hub.core.events.agent.router.RouterEvent import RouterEvent
+from swiss_ai_hub.core.events.agent.semantic.agent.AgentEvent import AgentEvent
+from swiss_ai_hub.core.events.agent.semantic.chain.ChainEvent import ChainEvent
+from swiss_ai_hub.core.events.agent.semantic.embedding.EmbeddingEvent import EmbeddingEvent
+from swiss_ai_hub.core.events.agent.semantic.guard.GuardEvent import GuardEvent
+from swiss_ai_hub.core.events.agent.semantic.llm.LLMEvent import LLMEvent
+from swiss_ai_hub.core.events.agent.semantic.llm.LLMStopEvent import LLMStopEvent
+from swiss_ai_hub.core.events.agent.semantic.reranker.RerankerEvent import RerankerEvent
+from swiss_ai_hub.core.events.agent.semantic.retriever.RetrieverEvent import RetrieverEvent
+from swiss_ai_hub.core.events.agent.semantic.SemanticEvent import SemanticEvent
+from swiss_ai_hub.core.events.agent.semantic.tool.ToolEvent import ToolEvent
+from swiss_ai_hub.core.events.agent.user.UserMessageEvent import UserMessageEvent
+from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
 from swiss_ai_hub.core.persistence.messaging.entities.PersistedAgentEventEntity import PersistedAgentEventEntity
 
 # Import all events here that the frontend should be able to display

@@ -1,5 +1,5 @@
 from nats.aio.client import Client as NATS
-from swiss_ai_hub.core.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
+from swiss_ai_hub.core.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 
 from swiss_ai_hub.bot.bots.chat.agent.AgentCompletionHandler import AgentCompletionHandler
 from swiss_ai_hub.bot.bots.chat.BaseChatBot import BaseChatBot

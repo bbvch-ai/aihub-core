@@ -10,32 +10,32 @@ from llama_index.core.base.llms.types import ChatMessage
 from nats.aio.client import Client as NATS
 
 from swiss_ai_hub.core.auth.identity.UserIdentity import UserIdentity
+from swiss_ai_hub.core.distributor.events.ExternalAgentEvent import ExternalAgentEvent
+from swiss_ai_hub.core.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
+from swiss_ai_hub.core.events.agent.control.exception.ExceptionEvent import ExceptionEvent
+from swiss_ai_hub.core.events.agent.control.stop.StopEvent import StopEvent
+from swiss_ai_hub.core.events.agent.display.ChunkEvent import ChunkEvent
+from swiss_ai_hub.core.events.agent.display.DisplayEvent import DisplayEvent
+from swiss_ai_hub.core.events.agent.display.ThoughtEvent import ThoughtEvent
+from swiss_ai_hub.core.events.agent.hitl.request.HumanInTheLoopRequestEvent import (
+    HumanInTheLoopRequestEvent,
+)
+from swiss_ai_hub.core.events.agent.hitl.response.HumanInTheLoopResponseEvent import (
+    HumanInTheLoopResponseEvent,
+)
+from swiss_ai_hub.core.events.agent.user.UserMessageEvent import UserMessageEvent
+from swiss_ai_hub.core.events.agent.user.UserUploadedFile import UserUploadedFile
+from swiss_ai_hub.core.events.BaseEvent import BaseEvent
+from swiss_ai_hub.core.events.utils import get_parent_classes_until_base
 from swiss_ai_hub.core.generative_ai.resources.costs.LLMCosts import LLMCosts
 from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
-from swiss_ai_hub.core.nats.distributor.events.ExternalAgentEvent import ExternalAgentEvent
-from swiss_ai_hub.core.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
-from swiss_ai_hub.core.nats.events.BaseEvent import BaseEvent
-from swiss_ai_hub.core.nats.events.control.exception.ExceptionEvent import ExceptionEvent
-from swiss_ai_hub.core.nats.events.control.stop.StopEvent import StopEvent
-from swiss_ai_hub.core.nats.events.display.ChunkEvent import ChunkEvent
-from swiss_ai_hub.core.nats.events.display.DisplayEvent import DisplayEvent
-from swiss_ai_hub.core.nats.events.display.ThoughtEvent import ThoughtEvent
-from swiss_ai_hub.core.nats.events.human_in_the_loop.request.HumanInTheLoopRequestEvent import (
-    HumanInTheLoopRequestEvent,
-)
-from swiss_ai_hub.core.nats.events.human_in_the_loop.response.HumanInTheLoopResponseEvent import (
-    HumanInTheLoopResponseEvent,
-)
-from swiss_ai_hub.core.nats.events.user.UserMessageEvent import UserMessageEvent
-from swiss_ai_hub.core.nats.events.user.UserUploadedFile import UserUploadedFile
-from swiss_ai_hub.core.nats.events.utils import get_parent_classes_until_base
-from swiss_ai_hub.core.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
-from swiss_ai_hub.core.nats.subscribers.NCSubscriber import NCSubscriber
-from swiss_ai_hub.core.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
-from swiss_ai_hub.core.nats.topics.agents.AgentInstanceTopic import AgentInstanceTopic
 from swiss_ai_hub.core.persistence.messaging.entities.PersistedAgentEventEntity import PersistedAgentEventEntity
 from swiss_ai_hub.core.persistence.messaging.entities.ThreadEntity import AgentInstanceRef, ThreadEntity, User
+from swiss_ai_hub.core.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
+from swiss_ai_hub.core.subscribers.NCSubscriber import NCSubscriber
+from swiss_ai_hub.core.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
+from swiss_ai_hub.core.topics.agents.AgentInstanceTopic import AgentInstanceTopic
 
 logger = logging.getLogger(__name__)
 

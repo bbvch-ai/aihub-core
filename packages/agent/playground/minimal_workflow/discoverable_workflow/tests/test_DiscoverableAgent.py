@@ -1,10 +1,10 @@
 from bson import ObjectId
 from pytest_bdd import given, parsers, scenarios, then, when
+from swiss_ai_hub.core.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
 from swiss_ai_hub.core.i18n.LocaleString import LocaleString
 from swiss_ai_hub.core.infrastructure.logging.logger import enable_logging
-from swiss_ai_hub.core.nats.events.discovery.ClassDiscoveryRequestEvent import ClassDiscoveryRequestEvent
-from swiss_ai_hub.core.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
 from swiss_ai_hub.core.testing.asyncio_utils.bdd import async_test
+from swiss_ai_hub.core.topic_managers.agents.AgentTopicManager import AgentTopicManager
 
 from playground.minimal_workflow.discoverable_workflow.DiscoverableAgent import DiscoverableAgent
 from playground.minimal_workflow.discoverable_workflow.DiscoverableAgentConfig import (

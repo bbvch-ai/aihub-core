@@ -2,7 +2,7 @@ from typing import Any, NamedTuple, TypeVar
 
 from fastapi import HTTPException
 from pydantic import BaseModel, ValidationError
-from swiss_ai_hub.core.nats.events.form.normalization import (
+from swiss_ai_hub.core.form.normalization import (
     normalize_empty_locale_strings,
     normalize_empty_objects_to_none,
 )

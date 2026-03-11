@@ -1,9 +1,9 @@
 import logging
 
 from cachetools import TTLCache, cached
-from swiss_ai_hub.core.nats.events.display.DisplayEvent import DisplayEvent
-from swiss_ai_hub.core.nats.topics.agents.AgentInstanceTopic import AgentInstanceTopic
+from swiss_ai_hub.core.events.agent.display.DisplayEvent import DisplayEvent
 from swiss_ai_hub.core.persistence.messaging.entities.ThreadEntity import ThreadEntity
+from swiss_ai_hub.core.topics.agents.AgentInstanceTopic import AgentInstanceTopic
 
 from swiss_ai_hub.api.sockets.manager.WebSocketManager import WebSocketManager
 

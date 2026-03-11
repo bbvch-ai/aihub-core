@@ -6,33 +6,33 @@ from bson import ObjectId
 from fastapi import HTTPException
 from nats.aio.client import Client as NATS
 from swiss_ai_hub.core.auth.identity.UserIdentity import UserIdentity
-from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
-from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
-from swiss_ai_hub.core.nats.distributor.events.ExternalAgentEvent import ExternalAgentEvent
-from swiss_ai_hub.core.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
-from swiss_ai_hub.core.nats.events.BaseEvent import BaseEvent
-from swiss_ai_hub.core.nats.events.control.exception.ExceptionEvent import ExceptionEvent
-from swiss_ai_hub.core.nats.events.control.start.StartEvent import StartEvent
-from swiss_ai_hub.core.nats.events.control.stop.StopEvent import StopEvent
-from swiss_ai_hub.core.nats.events.discovery.agent.AgentConfigSpecs import AgentConfigSpecs
-from swiss_ai_hub.core.nats.events.display.DisplayEvent import DisplayEvent
-from swiss_ai_hub.core.nats.events.form.normalization import (
+from swiss_ai_hub.core.distributor.events.ExternalAgentEvent import ExternalAgentEvent
+from swiss_ai_hub.core.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
+from swiss_ai_hub.core.events.BaseEvent import BaseEvent
+from swiss_ai_hub.core.events.agent.control.exception.ExceptionEvent import ExceptionEvent
+from swiss_ai_hub.core.events.agent.control.start.StartEvent import StartEvent
+from swiss_ai_hub.core.events.agent.control.stop.StopEvent import StopEvent
+from swiss_ai_hub.core.events.agent.discovery.AgentConfigSpecs import AgentConfigSpecs
+from swiss_ai_hub.core.events.agent.display.DisplayEvent import DisplayEvent
+from swiss_ai_hub.core.events.agent.hitl.request.HumanInTheLoopRequestEvent import (
+    HumanInTheLoopRequestEvent,
+)
+from swiss_ai_hub.core.events.agent.hitl.response.HumanInTheLoopResponseEvent import (
+    HumanInTheLoopResponseEvent,
+)
+from swiss_ai_hub.core.form.normalization import (
     normalize_empty_locale_strings,
     normalize_empty_objects_to_none,
 )
-from swiss_ai_hub.core.nats.events.human_in_the_loop.request.HumanInTheLoopRequestEvent import (
-    HumanInTheLoopRequestEvent,
-)
-from swiss_ai_hub.core.nats.events.human_in_the_loop.response.HumanInTheLoopResponseEvent import (
-    HumanInTheLoopResponseEvent,
-)
-from swiss_ai_hub.core.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
-from swiss_ai_hub.core.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
-from swiss_ai_hub.core.nats.topics import AgentInstanceTopic
+from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
+from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from swiss_ai_hub.core.persistence.agents.AgentClassEntity import AgentClassEntity
 from swiss_ai_hub.core.persistence.agents.AgentConfigEntityDocument import AgentConfigEntityDocument
 from swiss_ai_hub.core.persistence.messaging.entities.ThreadEntity import AgentInstanceRef, ThreadEntity, User
 from swiss_ai_hub.core.routes.chat.ChatService import ChatService, JsonResources, StreamingResources
+from swiss_ai_hub.core.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
+from swiss_ai_hub.core.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
+from swiss_ai_hub.core.topics import AgentInstanceTopic
 
 from swiss_ai_hub.api.routes.agent.dto.AgentClassDTO import AgentClassDTO
 from swiss_ai_hub.api.routes.agent.dto.CreateAgentInstanceRequest import CreateAgentInstanceRequest

@@ -21,11 +21,11 @@ from pydub import AudioSegment
 from starlette.responses import StreamingResponse
 from swiss_ai_hub.core.auth.identity.UserIdentity import UserIdentity
 from swiss_ai_hub.core.auth.usage import ResourceType, UsageLimits
+from swiss_ai_hub.core.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
 from swiss_ai_hub.core.infrastructure.litellm.LiteLLMProxySettings import LiteLLMProxySettings
 from swiss_ai_hub.core.infrastructure.litellm.LiteLLMService import LiteLLMService
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
-from swiss_ai_hub.core.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
 from swiss_ai_hub.core.persistence.utils import str_to_object_id
 from swiss_ai_hub.core.routes.chat.ChatService import ChatService, JsonResources, StreamingResources
 

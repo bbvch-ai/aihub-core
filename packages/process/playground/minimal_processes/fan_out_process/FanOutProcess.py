@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from swiss_ai_hub.core.nats.workflow.annotations.custom_types.ListOfSize import FixedList
+from swiss_ai_hub.core.workflow.annotations.custom_types.ListOfSize import FixedList
 
 from playground.agents.AgentB.events.AgentBStartEvent import AgentBStartEvent
 

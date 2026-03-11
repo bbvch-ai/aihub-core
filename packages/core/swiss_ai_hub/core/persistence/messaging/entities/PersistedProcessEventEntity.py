@@ -6,8 +6,8 @@ from mongoengine import DictField, Document, ListField, StringField
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 
 if TYPE_CHECKING:
-    from swiss_ai_hub.core.nats.events.BaseEvent import BaseEvent
-    from swiss_ai_hub.core.nats.topics import ProcessInstanceTopic
+    from swiss_ai_hub.core.events.BaseEvent import BaseEvent
+    from swiss_ai_hub.core.topics import ProcessInstanceTopic
 
 
 class PersistedProcessEventEntity(Document):

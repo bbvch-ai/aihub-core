@@ -3,14 +3,14 @@ from collections.abc import Awaitable, Callable
 from typing import Annotated
 
 from bson import ObjectId
-from swiss_ai_hub.core.nats.events.process.stop.ProcessStopEvent import ProcessStopEvent
-from swiss_ai_hub.core.nats.events.work.process.ProcessWorkEvent import ProcessWorkEvent
-from swiss_ai_hub.core.nats.events.work.WorkEvent import WorkEvent
-from swiss_ai_hub.core.nats.events.work_request.WorkRequestEvent import WorkRequestEvent
-from swiss_ai_hub.core.nats.subscribers.process.ProcessNCSubscriber import ProcessNCSubscriber
-from swiss_ai_hub.core.nats.topic_managers.process.ProcessInstanceTopicManager import ProcessInstanceTopicManager
-from swiss_ai_hub.core.nats.topics import ProcessInstanceTopic
-from swiss_ai_hub.core.nats.topics.process.ProcessClassTopic import ProcessClassTopic
+from swiss_ai_hub.core.events.process.stop.ProcessStopEvent import ProcessStopEvent
+from swiss_ai_hub.core.events.process.work.process.ProcessWorkEvent import ProcessWorkEvent
+from swiss_ai_hub.core.events.process.work.WorkEvent import WorkEvent
+from swiss_ai_hub.core.events.process.work_request.WorkRequestEvent import WorkRequestEvent
+from swiss_ai_hub.core.subscribers.process.ProcessNCSubscriber import ProcessNCSubscriber
+from swiss_ai_hub.core.topic_managers.process.ProcessInstanceTopicManager import ProcessInstanceTopicManager
+from swiss_ai_hub.core.topics import ProcessInstanceTopic
+from swiss_ai_hub.core.topics.process.ProcessClassTopic import ProcessClassTopic
 
 from swiss_ai_hub.process.delegators.AbstractEntityDelegator import AbstractEntityDelegator
 

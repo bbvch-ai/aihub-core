@@ -8,17 +8,17 @@ from llama_index.core.llms import LLM
 from opentelemetry import trace
 
 from swiss_ai_hub.core.displayers.stream.StreamProcessor import StreamProcessor
+from swiss_ai_hub.core.events.agent.cost.LLMCostEvent import LLMCostEvent
+from swiss_ai_hub.core.events.agent.display.ChunkEvent import ChunkEvent
+from swiss_ai_hub.core.events.agent.display.DisplayEvent import DisplayEvent
+from swiss_ai_hub.core.events.agent.display.ThoughtEvent import ThoughtEvent
+from swiss_ai_hub.core.events.agent.semantic.llm.LLMEvent import LLMEvent
+from swiss_ai_hub.core.events.agent.semantic.llm.LLMStopEvent import LLMStopEvent
+from swiss_ai_hub.core.events.agent.semantic.llm.Message import Message
 from swiss_ai_hub.core.generative_ai.resources.costs.LLMCostTracker import LLMCostTracker
 from swiss_ai_hub.core.generative_ai.resources.models.llm.LLMConfig import LLMConfig
-from swiss_ai_hub.core.nats.events.cost.LLMCostEvent import LLMCostEvent
-from swiss_ai_hub.core.nats.events.display.ChunkEvent import ChunkEvent
-from swiss_ai_hub.core.nats.events.display.DisplayEvent import DisplayEvent
-from swiss_ai_hub.core.nats.events.display.ThoughtEvent import ThoughtEvent
-from swiss_ai_hub.core.nats.events.semantic.llm.LLMEvent import LLMEvent
-from swiss_ai_hub.core.nats.events.semantic.llm.LLMStopEvent import LLMStopEvent
-from swiss_ai_hub.core.nats.events.semantic.llm.Message import Message
-from swiss_ai_hub.core.nats.publishers.JSPublisher import JSPublisher
-from swiss_ai_hub.core.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
+from swiss_ai_hub.core.publishers.JSPublisher import JSPublisher
+from swiss_ai_hub.core.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
 
 logger = logging.getLogger(__name__)
 

@@ -18,6 +18,19 @@ from swiss_ai_hub.core.agents.AgentRef import AgentRef
 from swiss_ai_hub.core.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
     DangerousDevelopmentOnlyAuthSettings,
 )
+from swiss_ai_hub.core.events.agent.aitl.request.AgentInTheLoopRequestEvent import (
+    AgentInTheLoopRequestEvent,
+)
+from swiss_ai_hub.core.events.agent.aitl.response.AgentInTheLoopResponseEvent import (
+    AgentInTheLoopResponseEvent,
+)
+from swiss_ai_hub.core.events.agent.guard.ExpertRejectEvent import ExpertRejectEvent
+from swiss_ai_hub.core.events.agent.hitl.HumanInTheLoopConfirmation import HumanInTheLoopConfirmation
+from swiss_ai_hub.core.events.agent.hitl.request.HumanInTheLoopConfirmationRequestEvent import (
+    HumanInTheLoopConfirmationRequestEvent,
+)
+from swiss_ai_hub.core.events.agent.semantic.llm.LLMEvent import LLMEvent
+from swiss_ai_hub.core.events.agent.user.UserMessageEvent import UserMessageEvent
 from swiss_ai_hub.core.generative_ai.processors.models.RetrievePrevNextConfig import RetrievePrevNextConfig
 from swiss_ai_hub.core.generative_ai.processors.VectorPrevNextPostProcessor import ModeOptions
 from swiss_ai_hub.core.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
@@ -27,19 +40,6 @@ from swiss_ai_hub.core.i18n.LocaleString import LocaleString
 from swiss_ai_hub.core.infrastructure.api.AIHubSettings import AIHubSettings
 from swiss_ai_hub.core.infrastructure.logging.logger import enable_logging
 from swiss_ai_hub.core.infrastructure.mongo.MongoSettings import MongoSettings
-from swiss_ai_hub.core.nats.events.agent_in_the_loop.request.AgentInTheLoopRequestEvent import (
-    AgentInTheLoopRequestEvent,
-)
-from swiss_ai_hub.core.nats.events.agent_in_the_loop.response.AgentInTheLoopResponseEvent import (
-    AgentInTheLoopResponseEvent,
-)
-from swiss_ai_hub.core.nats.events.guard.ExpertRejectEvent import ExpertRejectEvent
-from swiss_ai_hub.core.nats.events.human_in_the_loop.HumanInTheLoopConfirmation import HumanInTheLoopConfirmation
-from swiss_ai_hub.core.nats.events.human_in_the_loop.request.HumanInTheLoopConfirmationRequestEvent import (
-    HumanInTheLoopConfirmationRequestEvent,
-)
-from swiss_ai_hub.core.nats.events.semantic.llm.LLMEvent import LLMEvent
-from swiss_ai_hub.core.nats.events.user.UserMessageEvent import UserMessageEvent
 from swiss_ai_hub.core.persistence.rag.documents.stores.docstore import create_mongo_document_store
 from swiss_ai_hub.core.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
 from swiss_ai_hub.core.testing.asyncio_utils.bdd import async_test

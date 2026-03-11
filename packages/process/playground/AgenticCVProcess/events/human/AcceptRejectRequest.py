@@ -1,6 +1,6 @@
 from typing import ClassVar
 
-from swiss_ai_hub.core.nats.events.work_request.human.HumanWorkRequestEvent import HumanWorkRequestEvent
+from swiss_ai_hub.core.events.process.work_request.human.HumanWorkRequestEvent import HumanWorkRequestEvent
 
 from playground.AgenticCVProcess.events.human.AcceptCV import AcceptCV
 from playground.AgenticCVProcess.events.human.RejectCV import RejectCV

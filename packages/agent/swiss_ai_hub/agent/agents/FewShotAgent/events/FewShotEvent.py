@@ -1,5 +1,5 @@
 from llama_index.core.base.llms.types import ChatMessage
-from swiss_ai_hub.core.nats.events.control.ControlEvent import ControlEvent
+from swiss_ai_hub.core.events.agent.control.ControlEvent import ControlEvent
 
 
 class FewShotEvent(ControlEvent):

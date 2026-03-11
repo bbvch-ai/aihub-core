@@ -9,27 +9,27 @@ from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 from redis.asyncio import Redis
 from swiss_ai_hub.core.agents.AgentConfig import AgentConfig, StepConfig
+from swiss_ai_hub.core.dispatcher.BaseDispatcher import BaseDispatcher, EventsAndKwargs
+from swiss_ai_hub.core.dispatcher.stores.trace.TraceStore import TraceStore
 from swiss_ai_hub.core.displayers.EventDisplayer import EventDisplayer
-from swiss_ai_hub.core.generative_ai.memory.AgentMemory import AgentMemory
-from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
-from swiss_ai_hub.core.nats.dispatcher.BaseDispatcher import BaseDispatcher, EventsAndKwargs
-from swiss_ai_hub.core.nats.dispatcher.stores.trace.TraceStore import TraceStore
-from swiss_ai_hub.core.nats.events.agent_in_the_loop.request.AgentInTheLoopRequestEvent import (
+from swiss_ai_hub.core.events.agent.aitl.request.AgentInTheLoopRequestEvent import (
     AgentInTheLoopRequestEvent,
 )
-from swiss_ai_hub.core.nats.events.BaseEvent import BaseEvent
-from swiss_ai_hub.core.nats.events.control.ControlEvent import ControlEvent
-from swiss_ai_hub.core.nats.events.control.exception.ExceptionEvent import ExceptionEvent
-from swiss_ai_hub.core.nats.events.control.start.StartEvent import StartEvent
-from swiss_ai_hub.core.nats.events.form.Form import Form
-from swiss_ai_hub.core.nats.events.form.normalization import transform_formkit_arrays
-from swiss_ai_hub.core.nats.rpc.AgentConfigClient import AgentConfigClient
-from swiss_ai_hub.core.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
-from swiss_ai_hub.core.nats.topic_managers.agents.AgentClassTopicManager import AgentClassTopicManager
-from swiss_ai_hub.core.nats.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
-from swiss_ai_hub.core.nats.topics import PartialAgentTopic, Topic
-from swiss_ai_hub.core.nats.topics.agents.AgentClassTopic import AgentClassTopic
-from swiss_ai_hub.core.nats.topics.agents.AgentInstanceTopic import AgentInstanceTopic
+from swiss_ai_hub.core.events.BaseEvent import BaseEvent
+from swiss_ai_hub.core.events.agent.control.ControlEvent import ControlEvent
+from swiss_ai_hub.core.events.agent.control.exception.ExceptionEvent import ExceptionEvent
+from swiss_ai_hub.core.events.agent.control.start.StartEvent import StartEvent
+from swiss_ai_hub.core.form.Form import Form
+from swiss_ai_hub.core.form.normalization import transform_formkit_arrays
+from swiss_ai_hub.core.generative_ai.memory.AgentMemory import AgentMemory
+from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
+from swiss_ai_hub.core.rpc.AgentConfigClient import AgentConfigClient
+from swiss_ai_hub.core.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
+from swiss_ai_hub.core.topic_managers.agents.AgentClassTopicManager import AgentClassTopicManager
+from swiss_ai_hub.core.topic_managers.agents.AgentThreadTopicManager import AgentThreadTopicManager
+from swiss_ai_hub.core.topics import PartialAgentTopic, Topic
+from swiss_ai_hub.core.topics.agents.AgentClassTopic import AgentClassTopic
+from swiss_ai_hub.core.topics.agents.AgentInstanceTopic import AgentInstanceTopic
 
 from swiss_ai_hub.agent.agents.Agent import Agent
 from swiss_ai_hub.agent.context.run.RunContext import RunContext

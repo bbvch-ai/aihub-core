@@ -3,8 +3,8 @@
 from unittest.mock import patch
 
 from pytest_bdd import given, scenarios, then, when
+from swiss_ai_hub.core.events.agent.control.start.StartEvent import StartEvent
 from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.nats.events.control.start.StartEvent import StartEvent
 from swiss_ai_hub.core.testing.asyncio_utils.bdd import async_test
 
 from playground.minimal_workflow.optional_workflow.events.EventOptionalA import EventOptionalA

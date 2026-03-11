@@ -3,13 +3,13 @@ from typing import ClassVar
 from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageRole
 from llama_index.core.prompts import RichPromptTemplate
 from swiss_ai_hub.core.displayers.EventDisplayer import EventDisplayer
+from swiss_ai_hub.core.events.agent.bitl.BotInTheLoop import BotInTheLoop
+from swiss_ai_hub.core.events.agent.memory.store.StoreOrganizationMemoryEvent import StoreOrganizationMemoryEvent
+from swiss_ai_hub.core.events.agent.router.RouteOptions import RouteOptions
+from swiss_ai_hub.core.events.agent.router.RouterEvent import RouterEvent
 from swiss_ai_hub.core.generative_ai.memory.AgentMemory import AgentMemory
 from swiss_ai_hub.core.generative_ai.routing.route_to_event_using_llm import route_to_event_using_llm
-from swiss_ai_hub.core.nats.events.bot_in_the_loop.BotInTheLoop import BotInTheLoop
-from swiss_ai_hub.core.nats.events.memory.store.StoreOrganizationMemoryEvent import StoreOrganizationMemoryEvent
-from swiss_ai_hub.core.nats.events.router.RouteOptions import RouteOptions
-from swiss_ai_hub.core.nats.events.router.RouterEvent import RouterEvent
-from swiss_ai_hub.core.nats.topics.agents.AgentInstanceTopic import AgentInstanceTopic
+from swiss_ai_hub.core.topics.agents.AgentInstanceTopic import AgentInstanceTopic
 
 from swiss_ai_hub.agent.agents.Agent import Agent
 from swiss_ai_hub.agent.agents.ExpertAskingAgent.events.AnswerStopEvent import AnswerStopEvent

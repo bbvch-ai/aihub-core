@@ -2,10 +2,10 @@ from typing import ClassVar
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from swiss_ai_hub.core.displayers.EventDisplayer import EventDisplayer
+from swiss_ai_hub.core.events.agent.common.LimitChatHistoryEvent import LimitChatHistoryEvent
+from swiss_ai_hub.core.events.agent.semantic.llm.LLMStopEvent import LLMStopEvent
+from swiss_ai_hub.core.events.agent.user.UserMessageEvent import UserMessageEvent
 from swiss_ai_hub.core.generative_ai.chat_history.limit_chat_history import limit_chat_history
-from swiss_ai_hub.core.nats.events.common.LimitChatHistoryEvent import LimitChatHistoryEvent
-from swiss_ai_hub.core.nats.events.semantic.llm.LLMStopEvent import LLMStopEvent
-from swiss_ai_hub.core.nats.events.user.UserMessageEvent import UserMessageEvent
 
 from swiss_ai_hub.agent.agents.Agent import Agent
 from swiss_ai_hub.agent.agents.LLMWrappingAgent.LLMWrappingAgentConfig import LLMWrappingAgentConfig

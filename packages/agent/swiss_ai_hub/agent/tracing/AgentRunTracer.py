@@ -9,16 +9,16 @@ from opentelemetry import context, propagate, trace
 from opentelemetry.trace import Span, StatusCode, set_span_in_context
 from pydantic import BaseModel
 from swiss_ai_hub.core.context.BaseContext import BaseContext
+from swiss_ai_hub.core.dispatcher.stores.trace.TraceStore import TraceStore
 from swiss_ai_hub.core.displayers.EventDisplayer import EventDisplayer
+from swiss_ai_hub.core.events.BaseEvent import BaseEvent
+from swiss_ai_hub.core.events.agent.control.start.StartEvent import StartEvent
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.openinference_context import (
     openinference_trace_context,
 )
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.SmartTracer import get_tracer
-from swiss_ai_hub.core.nats.dispatcher.stores.trace.TraceStore import TraceStore
-from swiss_ai_hub.core.nats.events.BaseEvent import BaseEvent
-from swiss_ai_hub.core.nats.events.control.start.StartEvent import StartEvent
-from swiss_ai_hub.core.nats.topics.agents.AgentInstanceTopic import AgentInstanceTopic
-from swiss_ai_hub.core.nats.workflow.annotations.custom_types.ListOfSize import ListOfSize
+from swiss_ai_hub.core.topics.agents.AgentInstanceTopic import AgentInstanceTopic
+from swiss_ai_hub.core.workflow.annotations.custom_types.ListOfSize import ListOfSize
 
 logger = logging.getLogger(__name__)
 

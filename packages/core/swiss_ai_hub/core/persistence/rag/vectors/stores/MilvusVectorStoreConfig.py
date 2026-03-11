@@ -4,8 +4,8 @@ from llama_index.vector_stores.milvus import MilvusVectorStore
 from pydantic import Field
 from pymilvus import MilvusClient
 
+from swiss_ai_hub.core.form.elements.InputNumber import InputNumber
 from swiss_ai_hub.core.infrastructure.milvus.MilvusSettings import MilvusSettings
-from swiss_ai_hub.core.nats.events.form.elements.InputNumber import InputNumber
 from swiss_ai_hub.core.persistence.rag.vectors.stores import MilvusVectorStoreFactory
 from swiss_ai_hub.core.persistence.rag.vectors.stores.BasePydanticVectorStoreConfig import BasePydanticVectorStoreConfig
 

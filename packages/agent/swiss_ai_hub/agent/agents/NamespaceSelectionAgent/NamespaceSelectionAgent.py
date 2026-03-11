@@ -5,11 +5,11 @@ from typing import ClassVar
 from llama_index.core.prompts import RichPromptTemplate
 from mongoengine import DoesNotExist
 from swiss_ai_hub.core.displayers.EventDisplayer import EventDisplayer
+from swiss_ai_hub.core.events.agent.aitl.AgentInTheLoop import AgentInTheLoop
+from swiss_ai_hub.core.events.agent.control.stop.StopEvent import StopEvent
+from swiss_ai_hub.core.events.agent.user.UserMessageEvent import UserMessageEvent
 from swiss_ai_hub.core.generative_ai.retrievers.BucketNamespacePair import BucketNamespacePair
 from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
-from swiss_ai_hub.core.nats.events.agent_in_the_loop.AgentInTheLoop import AgentInTheLoop
-from swiss_ai_hub.core.nats.events.control.stop.StopEvent import StopEvent
-from swiss_ai_hub.core.nats.events.user.UserMessageEvent import UserMessageEvent
 from swiss_ai_hub.core.persistence.rag.datalake.entities.BucketEntity import BucketEntity
 from swiss_ai_hub.core.persistence.rag.datalake.entities.NamespaceEntity import NamespaceEntity
 

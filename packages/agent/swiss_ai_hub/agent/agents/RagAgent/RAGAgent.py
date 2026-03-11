@@ -1,6 +1,23 @@
 from typing import ClassVar
 
 from swiss_ai_hub.core.displayers.EventDisplayer import EventDisplayer
+from swiss_ai_hub.core.events.agent.common.LimitChatHistoryEvent import LimitChatHistoryEvent
+from swiss_ai_hub.core.events.agent.common.StandaloneQuestionCondenserEvent import StandaloneQuestionCondenserEvent
+from swiss_ai_hub.core.events.agent.control.stop.StopEvent import StopEvent
+from swiss_ai_hub.core.events.agent.guard.ContextInsufficientRejectEvent import ContextInsufficientRejectEvent
+from swiss_ai_hub.core.events.agent.guard.ContextSufficientAcceptEvent import ContextSufficientAcceptEvent
+from swiss_ai_hub.core.events.agent.guard.FewShotAcceptEvent import FewShotAcceptEvent
+from swiss_ai_hub.core.events.agent.guard.FewShotRejectEvent import FewShotRejectEvent
+from swiss_ai_hub.core.events.agent.memory.history.AddMemoryToChatHistoryEvent import AddMemoryToChatHistoryEvent
+from swiss_ai_hub.core.events.agent.memory.retrieve.RetrieveOrganizationMemoryEvent import (
+    RetrieveOrganizationMemoryEvent,
+)
+from swiss_ai_hub.core.events.agent.memory.retrieve.RetrieveUserMemoryEvent import RetrieveUserMemoryEvent
+from swiss_ai_hub.core.events.agent.memory.store.StoreUserMemoryEvent import StoreUserMemoryEvent
+from swiss_ai_hub.core.events.agent.semantic.llm.LLMEvent import LLMEvent
+from swiss_ai_hub.core.events.agent.semantic.reranker.RerankerEvent import RerankerEvent
+from swiss_ai_hub.core.events.agent.semantic.retriever.RetrieverEvent import RetrieverEvent
+from swiss_ai_hub.core.events.agent.user.UserMessageEvent import UserMessageEvent
 from swiss_ai_hub.core.generative_ai.chat_history.extend_chat_history_with_organization_memory import (
     extend_chat_history_with_organization_memory,
 )
@@ -10,24 +27,7 @@ from swiss_ai_hub.core.generative_ai.chat_history.extend_chat_history_with_user_
 from swiss_ai_hub.core.generative_ai.memory.AgentMemory import AgentMemory
 from swiss_ai_hub.core.generative_ai.utils.filter_retrievers_by_namespace import filter_retrievers_by_namespace
 from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
-from swiss_ai_hub.core.nats.events.common.LimitChatHistoryEvent import LimitChatHistoryEvent
-from swiss_ai_hub.core.nats.events.common.StandaloneQuestionCondenserEvent import StandaloneQuestionCondenserEvent
-from swiss_ai_hub.core.nats.events.control.stop.StopEvent import StopEvent
-from swiss_ai_hub.core.nats.events.guard.ContextInsufficientRejectEvent import ContextInsufficientRejectEvent
-from swiss_ai_hub.core.nats.events.guard.ContextSufficientAcceptEvent import ContextSufficientAcceptEvent
-from swiss_ai_hub.core.nats.events.guard.FewShotAcceptEvent import FewShotAcceptEvent
-from swiss_ai_hub.core.nats.events.guard.FewShotRejectEvent import FewShotRejectEvent
-from swiss_ai_hub.core.nats.events.memory.history.AddMemoryToChatHistoryEvent import AddMemoryToChatHistoryEvent
-from swiss_ai_hub.core.nats.events.memory.retrieve.RetrieveOrganizationMemoryEvent import (
-    RetrieveOrganizationMemoryEvent,
-)
-from swiss_ai_hub.core.nats.events.memory.retrieve.RetrieveUserMemoryEvent import RetrieveUserMemoryEvent
-from swiss_ai_hub.core.nats.events.memory.store.StoreUserMemoryEvent import StoreUserMemoryEvent
-from swiss_ai_hub.core.nats.events.semantic.llm.LLMEvent import LLMEvent
-from swiss_ai_hub.core.nats.events.semantic.reranker.RerankerEvent import RerankerEvent
-from swiss_ai_hub.core.nats.events.semantic.retriever.RetrieverEvent import RetrieverEvent
-from swiss_ai_hub.core.nats.events.user.UserMessageEvent import UserMessageEvent
-from swiss_ai_hub.core.nats.topics import AgentInstanceTopic
+from swiss_ai_hub.core.topics import AgentInstanceTopic
 
 from swiss_ai_hub.agent.agents.Agent import Agent
 from swiss_ai_hub.agent.agents.RagAgent.configs.RAGAgentConfig import RAGAgentConfig

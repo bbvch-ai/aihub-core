@@ -7,6 +7,8 @@ from botocore.config import Config
 from fastapi import FastAPI
 from mongoengine import connect, disconnect
 from pymilvus import MilvusClient
+from swiss_ai_hub.core.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
+from swiss_ai_hub.core.distributor.ExternalProcessEventDistributor import ExternalProcessEventDistributor
 from swiss_ai_hub.core.infrastructure.api.AIHubSettings import AIHubSettings
 from swiss_ai_hub.core.infrastructure.langfuse.LangfuseProvisioner import LangfuseProvisioner
 from swiss_ai_hub.core.infrastructure.milvus.MilvusSettings import MilvusSettings
@@ -14,12 +16,10 @@ from swiss_ai_hub.core.infrastructure.mongo.MongoSettings import MongoSettings
 from swiss_ai_hub.core.infrastructure.nats.NatsSettings import NatsSettings
 from swiss_ai_hub.core.infrastructure.redis.RedisSettings import RedisSettings
 from swiss_ai_hub.core.infrastructure.s3.S3StorageSettings import S3StorageSettings
-from swiss_ai_hub.core.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
-from swiss_ai_hub.core.nats.distributor.ExternalProcessEventDistributor import ExternalProcessEventDistributor
-from swiss_ai_hub.core.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
-from swiss_ai_hub.core.nats.subscribers.process.ProcessNCSubscriber import ProcessNCSubscriber
-from swiss_ai_hub.core.nats.topic_managers.agents.AgentTopicManager import AgentTopicManager
-from swiss_ai_hub.core.nats.topic_managers.process.ProcessTopicManager import ProcessTopicManager
+from swiss_ai_hub.core.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
+from swiss_ai_hub.core.subscribers.process.ProcessNCSubscriber import ProcessNCSubscriber
+from swiss_ai_hub.core.topic_managers.agents.AgentTopicManager import AgentTopicManager
+from swiss_ai_hub.core.topic_managers.process.ProcessTopicManager import ProcessTopicManager
 
 from swiss_ai_hub.api.i18n.ApiLocaleHandler import ApiLocaleHandler
 from swiss_ai_hub.api.persistance.events.EventPersister import EventPersister

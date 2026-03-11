@@ -2,8 +2,8 @@ from typing import Annotated, Self
 
 from pydantic import Field
 from swiss_ai_hub.core.agents.AgentRef import AgentRef
-from swiss_ai_hub.core.nats.events.form.elements.AgentSelector import AgentSelector
-from swiss_ai_hub.core.nats.events.form.Form import Form
+from swiss_ai_hub.core.form.elements.AgentSelector import AgentSelector
+from swiss_ai_hub.core.form.Form import Form
 
 from swiss_ai_hub.agent.agents.ExpertAskingAgent.events.AskExpertStartEvent import AskExpertStartEvent
 from swiss_ai_hub.agent.i18n.AgentLocaleString import AgentLocaleString

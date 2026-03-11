@@ -3,8 +3,8 @@ import uuid
 
 from botocore.exceptions import ClientError
 from mypy_boto3_s3 import S3Client
+from swiss_ai_hub.core.events.agent.user.UserUploadedFile import UserUploadedFile
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
-from swiss_ai_hub.core.nats.events.user.UserUploadedFile import UserUploadedFile
 
 logger = logging.getLogger(__name__)
 

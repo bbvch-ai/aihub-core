@@ -1,9 +1,9 @@
 from typing import Annotated, Self
 
 from pydantic import BaseModel, Field
+from swiss_ai_hub.core.events.discovery.EventSpecs import EventSpecs
+from swiss_ai_hub.core.events.process.discovery.agent_in.AgentInSpecs import AgentInSpecs
 from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
-from swiss_ai_hub.core.nats.events.discovery.EventSpecs import EventSpecs
-from swiss_ai_hub.core.nats.events.discovery.process.agent_in.AgentInSpecs import AgentInSpecs
 from swiss_ai_hub.core.persistence.process.ProcessClassEntity import AgentInSpecsEntity
 
 

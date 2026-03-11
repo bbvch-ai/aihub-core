@@ -2,9 +2,9 @@ from typing import Annotated, Self
 
 from pydantic import Field
 
+from swiss_ai_hub.core.form.elements.LocaleInput import LocaleInput
+from swiss_ai_hub.core.form.Form import Form
 from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.nats.events.form.elements.LocaleInput import LocaleInput
-from swiss_ai_hub.core.nats.events.form.Form import Form
 
 
 class FewShotExample(Form):

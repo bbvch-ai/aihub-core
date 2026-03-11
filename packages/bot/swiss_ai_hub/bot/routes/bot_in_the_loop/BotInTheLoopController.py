@@ -5,12 +5,12 @@ from microsoft_agents.activity import Activity
 from microsoft_agents.hosting.aiohttp import CloudAdapter
 from nats.aio.client import Client as NATS
 from swiss_ai_hub.core.auth.dependencies.AuthHandler import AuthHandler
-from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.nats.dependencies.use_nats import use_nats
-from swiss_ai_hub.core.nats.distributor.dependencies.use_external_agent_event_distributor import (
+from swiss_ai_hub.core.dependencies.use_nats import use_nats
+from swiss_ai_hub.core.distributor.dependencies.use_external_agent_event_distributor import (
     use_external_agent_event_distributor,
 )
-from swiss_ai_hub.core.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
+from swiss_ai_hub.core.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
+from swiss_ai_hub.core.i18n.LocaleString import LocaleString
 from swiss_ai_hub.core.routes.Controller import Controller
 
 from swiss_ai_hub.bot.bots.bot_in_the_loop.BotInTheLoopBot import BotInTheLoopBot

@@ -8,6 +8,7 @@ from llama_index.core.vector_stores import MetadataFilter, MetadataFilters
 from mongoengine import DoesNotExist, register_connection
 from nats.aio.client import Client as NATS
 from pydantic import Field
+from swiss_ai_hub.core.events.pipeline.SourceUpdatedEvent import SourceUpdatedEvent
 from swiss_ai_hub.core.generative_ai.document.accessor.S3AnonymousFileAccessService import S3AnonymousFileAccessService
 from swiss_ai_hub.core.generative_ai.document.types.FileTypeConfig import FileTypeConfig
 from swiss_ai_hub.core.generative_ai.document.types.IngestedNode import IngestedNode
@@ -16,9 +17,6 @@ from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
 from swiss_ai_hub.core.i18n.LocaleString import LocaleString
 from swiss_ai_hub.core.infrastructure.mongo.MongoSettings import MongoSettings
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
-from swiss_ai_hub.core.nats.events.pipeline.SourceUpdatedEvent import SourceUpdatedEvent
-from swiss_ai_hub.core.nats.publishers.NCPublisher import NCPublisher
-from swiss_ai_hub.core.nats.topic_managers.pipeline.PipelineInstanceTopicManager import PipelineInstanceTopicManager
 from swiss_ai_hub.core.persistence.i18n.LocaleStringEntity import LocaleStringEntity
 from swiss_ai_hub.core.persistence.rag.datalake.entities.BucketEntity import BucketEntity
 from swiss_ai_hub.core.persistence.rag.datalake.entities.NamespaceEntity import NamespaceEntity
@@ -32,6 +30,8 @@ from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import (
     TYPE,
     NodeTypeValue,
 )
+from swiss_ai_hub.core.publishers.NCPublisher import NCPublisher
+from swiss_ai_hub.core.topic_managers.pipeline.PipelineInstanceTopicManager import PipelineInstanceTopicManager
 
 from swiss_ai_hub.api.routes.knowledge.dto.CreateNamespaceRequest import CreateNamespaceRequest
 from swiss_ai_hub.api.routes.knowledge.dto.DatabaseDTO import DatabaseDTO

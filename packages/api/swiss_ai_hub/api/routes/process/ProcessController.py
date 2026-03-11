@@ -5,11 +5,11 @@ from fastapi.params import Query
 from swiss_ai_hub.core.auth.access.AccessChecker import AccessChecker
 from swiss_ai_hub.core.auth.dependencies.AuthHandler import AuthHandler
 from swiss_ai_hub.core.auth.identity.UserIdentity import UserIdentity
-from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
-from swiss_ai_hub.core.nats.distributor.dependencies.use_external_process_event_distributor import (
+from swiss_ai_hub.core.distributor.dependencies.use_external_process_event_distributor import (
     use_external_process_event_distributor,
 )
-from swiss_ai_hub.core.nats.distributor.ExternalProcessEventDistributor import ExternalProcessEventDistributor
+from swiss_ai_hub.core.distributor.ExternalProcessEventDistributor import ExternalProcessEventDistributor
+from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
 from swiss_ai_hub.core.persistence.process.ProcessClassEntity import ProcessClassEntity
 from swiss_ai_hub.core.persistence.process.ProcessConfigEntityDocument import ProcessConfigEntityDocument
 from swiss_ai_hub.core.processes.ProcessConfig import ProcessConfig

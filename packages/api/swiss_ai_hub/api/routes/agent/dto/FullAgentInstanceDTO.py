@@ -2,8 +2,8 @@ from typing import TYPE_CHECKING, Annotated, Any, Self
 
 from pydantic import Field
 from swiss_ai_hub.core.agents.visualizers.types.WorkflowGraph import WorkflowGraph
+from swiss_ai_hub.core.events.discovery.EventSpecs import EventSpecs
 from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
-from swiss_ai_hub.core.nats.events.discovery.EventSpecs import EventSpecs
 from swiss_ai_hub.core.persistence.agents.AgentClassEntity import AgentClassEntity
 
 from swiss_ai_hub.api.routes.agent.dto.AgentConfigDTO import AgentConfigDTO

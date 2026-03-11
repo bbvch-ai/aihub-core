@@ -5,17 +5,17 @@ from typing import Annotated, cast
 
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
-from swiss_ai_hub.core.nats.events.BaseEvent import BaseEvent
-from swiss_ai_hub.core.nats.events.work.WorkEvent import WorkEvent
-from swiss_ai_hub.core.nats.events.work_request.WorkRequestEvent import WorkRequestEvent
-from swiss_ai_hub.core.nats.publishers.JSPublisher import JSPublisher
-from swiss_ai_hub.core.nats.subscribers.process.ProcessJSSubscriber import ProcessJSSubscriber
-from swiss_ai_hub.core.nats.subscribers.process.ProcessNCSubscriber import ProcessNCSubscriber
-from swiss_ai_hub.core.nats.topic_managers.process.ProcessClassTopicManager import ProcessClassTopicManager
-from swiss_ai_hub.core.nats.topic_managers.process.ProcessInstanceTopicManager import ProcessInstanceTopicManager
-from swiss_ai_hub.core.nats.topic_managers.process.ProcessWalkthroughTopicManager import ProcessWalkthroughTopicManager
-from swiss_ai_hub.core.nats.topics import Topic
-from swiss_ai_hub.core.nats.topics.process.ProcessClassTopic import ProcessClassTopic
+from swiss_ai_hub.core.events.BaseEvent import BaseEvent
+from swiss_ai_hub.core.events.process.work.WorkEvent import WorkEvent
+from swiss_ai_hub.core.events.process.work_request.WorkRequestEvent import WorkRequestEvent
+from swiss_ai_hub.core.publishers.JSPublisher import JSPublisher
+from swiss_ai_hub.core.subscribers.process.ProcessJSSubscriber import ProcessJSSubscriber
+from swiss_ai_hub.core.subscribers.process.ProcessNCSubscriber import ProcessNCSubscriber
+from swiss_ai_hub.core.topic_managers.process.ProcessClassTopicManager import ProcessClassTopicManager
+from swiss_ai_hub.core.topic_managers.process.ProcessInstanceTopicManager import ProcessInstanceTopicManager
+from swiss_ai_hub.core.topic_managers.process.ProcessWalkthroughTopicManager import ProcessWalkthroughTopicManager
+from swiss_ai_hub.core.topics import Topic
+from swiss_ai_hub.core.topics.process.ProcessClassTopic import ProcessClassTopic
 
 from swiss_ai_hub.process.agentic_processes.AgenticProcess import AgenticProcess
 

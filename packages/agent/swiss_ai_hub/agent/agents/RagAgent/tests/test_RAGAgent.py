@@ -16,6 +16,18 @@ from pytest_bdd import given, parsers, scenario, scenarios, then, when
 from swiss_ai_hub.core.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
     DangerousDevelopmentOnlyAuthSettings,
 )
+from swiss_ai_hub.core.events.agent.common.LimitChatHistoryEvent import LimitChatHistoryEvent
+from swiss_ai_hub.core.events.agent.common.StandaloneQuestionCondenserEvent import StandaloneQuestionCondenserEvent
+from swiss_ai_hub.core.events.agent.guard.FewShotAcceptEvent import FewShotAcceptEvent
+from swiss_ai_hub.core.events.agent.guard.FewShotRejectEvent import FewShotRejectEvent
+from swiss_ai_hub.core.events.agent.memory.history.AddMemoryToChatHistoryEvent import AddMemoryToChatHistoryEvent
+from swiss_ai_hub.core.events.agent.memory.retrieve.RetrieveOrganizationMemoryEvent import (
+    RetrieveOrganizationMemoryEvent,
+)
+from swiss_ai_hub.core.events.agent.semantic.llm.LLMEvent import LLMEvent
+from swiss_ai_hub.core.events.agent.semantic.reranker.RerankerEvent import RerankerEvent
+from swiss_ai_hub.core.events.agent.semantic.retriever.RetrieverEvent import RetrieverEvent
+from swiss_ai_hub.core.events.agent.user.UserMessageEvent import UserMessageEvent
 from swiss_ai_hub.core.generative_ai.processors.models.RetrievePrevNextConfig import RetrievePrevNextConfig
 from swiss_ai_hub.core.generative_ai.processors.VectorPrevNextPostProcessor import ModeOptions
 from swiss_ai_hub.core.generative_ai.prompting.few_shot.FewShotGuardExample import FewShotGuardExample
@@ -24,18 +36,6 @@ from swiss_ai_hub.core.generative_ai.resources.models.llm.LLMConfig import LLMCo
 from swiss_ai_hub.core.generative_ai.resources.models.llm.RerankingModelConfig import RerankingModelConfig
 from swiss_ai_hub.core.i18n.LocaleString import LocaleString
 from swiss_ai_hub.core.infrastructure.logging.logger import enable_logging
-from swiss_ai_hub.core.nats.events.common.LimitChatHistoryEvent import LimitChatHistoryEvent
-from swiss_ai_hub.core.nats.events.common.StandaloneQuestionCondenserEvent import StandaloneQuestionCondenserEvent
-from swiss_ai_hub.core.nats.events.guard.FewShotAcceptEvent import FewShotAcceptEvent
-from swiss_ai_hub.core.nats.events.guard.FewShotRejectEvent import FewShotRejectEvent
-from swiss_ai_hub.core.nats.events.memory.history.AddMemoryToChatHistoryEvent import AddMemoryToChatHistoryEvent
-from swiss_ai_hub.core.nats.events.memory.retrieve.RetrieveOrganizationMemoryEvent import (
-    RetrieveOrganizationMemoryEvent,
-)
-from swiss_ai_hub.core.nats.events.semantic.llm.LLMEvent import LLMEvent
-from swiss_ai_hub.core.nats.events.semantic.reranker.RerankerEvent import RerankerEvent
-from swiss_ai_hub.core.nats.events.semantic.retriever.RetrieverEvent import RetrieverEvent
-from swiss_ai_hub.core.nats.events.user.UserMessageEvent import UserMessageEvent
 from swiss_ai_hub.core.persistence.rag.documents.stores.docstore import create_mongo_document_store
 from swiss_ai_hub.core.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
 from swiss_ai_hub.core.testing.asyncio_utils.bdd import async_test

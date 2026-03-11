@@ -2,7 +2,7 @@ import logging
 
 from redis.asyncio import Redis
 from swiss_ai_hub.core.context.BaseContext import BaseContext
-from swiss_ai_hub.core.nats.topics.agents.AgentClassTopic import AgentClassTopic
+from swiss_ai_hub.core.topics.agents.AgentClassTopic import AgentClassTopic
 
 logger = logging.getLogger(__name__)
 

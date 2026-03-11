@@ -1,11 +1,11 @@
 from typing import ClassVar
 
 from swiss_ai_hub.core.displayers.EventDisplayer import EventDisplayer
+from swiss_ai_hub.core.events.agent.semantic.retriever.RetrieverEvent import RetrieverEvent
 from swiss_ai_hub.core.generative_ai.retrieval.combine_nodes_in_order import combine_nodes_in_order
 from swiss_ai_hub.core.generative_ai.retrieval.retrieve_nodes import retrieve_nodes
 from swiss_ai_hub.core.generative_ai.retrieval.retrieve_prev_next_nodes import retrieve_prev_next_nodes
 from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
-from swiss_ai_hub.core.nats.events.semantic.retriever.RetrieverEvent import RetrieverEvent
 
 from swiss_ai_hub.agent.agents.Agent import Agent
 from swiss_ai_hub.agent.agents.RagAgent.events.InOrderNodeCombinerEvent import InOrderNodeCombinerEvent

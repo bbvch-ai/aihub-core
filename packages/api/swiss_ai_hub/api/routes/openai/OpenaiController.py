@@ -12,12 +12,12 @@ from swiss_ai_hub.core.auth.access.AccessChecker import AccessChecker
 from swiss_ai_hub.core.auth.dependencies.AuthHandler import AuthHandler
 from swiss_ai_hub.core.auth.identity.UserIdentity import UserIdentity
 from swiss_ai_hub.core.auth.usage import UsageLimits, use_usage_limits
-from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
-from swiss_ai_hub.core.nats.dependencies.use_nats import use_nats
-from swiss_ai_hub.core.nats.distributor.dependencies.use_external_agent_event_distributor import (
+from swiss_ai_hub.core.dependencies.use_nats import use_nats
+from swiss_ai_hub.core.distributor.dependencies.use_external_agent_event_distributor import (
     use_external_agent_event_distributor,
 )
-from swiss_ai_hub.core.nats.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
+from swiss_ai_hub.core.distributor.ExternalAgentEventDistributor import ExternalAgentEventDistributor
+from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
 from swiss_ai_hub.core.routes.Controller import Controller
 
 from swiss_ai_hub.api.i18n.ApiLocaleString import ApiLocaleString

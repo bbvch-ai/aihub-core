@@ -2,16 +2,16 @@ from typing import Annotated, Self
 
 from pydantic import Field
 from swiss_ai_hub.core.agents.AgentConfig import AgentConfig
+from swiss_ai_hub.core.form.constraints import Ge
+from swiss_ai_hub.core.form.elements.Checkbox import Checkbox
+from swiss_ai_hub.core.form.elements.InputNumber import InputNumber
+from swiss_ai_hub.core.form.elements.InputText import InputText
+from swiss_ai_hub.core.form.elements.LocaleInput import LocaleInput
 from swiss_ai_hub.core.generative_ai.memory.MemorySettings import MemorySettings
 from swiss_ai_hub.core.generative_ai.prompting.few_shot.FewShotGuardExample import FewShotGuardExample
 from swiss_ai_hub.core.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from swiss_ai_hub.core.generative_ai.retrievers.KnowledgeRetrieverConfig import KnowledgeRetrieverConfig
 from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.nats.events.form.constraints import Ge
-from swiss_ai_hub.core.nats.events.form.elements.Checkbox import Checkbox
-from swiss_ai_hub.core.nats.events.form.elements.InputNumber import InputNumber
-from swiss_ai_hub.core.nats.events.form.elements.InputText import InputText
-from swiss_ai_hub.core.nats.events.form.elements.LocaleInput import LocaleInput
 
 from swiss_ai_hub.agent.agents.RagAgent.configs.RerankingConfig import RerankingConfig
 from swiss_ai_hub.agent.i18n.AgentLocaleString import AgentLocaleString

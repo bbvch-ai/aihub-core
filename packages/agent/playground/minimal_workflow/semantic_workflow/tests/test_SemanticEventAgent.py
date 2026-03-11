@@ -1,9 +1,9 @@
 from pytest_bdd import given, parsers, scenarios, then, when
+from swiss_ai_hub.core.events.agent.control.start.StartEvent import StartEvent
+from swiss_ai_hub.core.events.agent.semantic.llm.LLMStopEvent import LLMStopEvent
+from swiss_ai_hub.core.events.agent.semantic.reranker.RerankerEvent import RerankerEvent
+from swiss_ai_hub.core.events.agent.semantic.retriever.RetrieverEvent import RetrieverEvent
 from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.nats.events.control.start.StartEvent import StartEvent
-from swiss_ai_hub.core.nats.events.semantic.llm.LLMStopEvent import LLMStopEvent
-from swiss_ai_hub.core.nats.events.semantic.reranker.RerankerEvent import RerankerEvent
-from swiss_ai_hub.core.nats.events.semantic.retriever.RetrieverEvent import RetrieverEvent
 from swiss_ai_hub.core.testing.asyncio_utils.bdd import async_test
 
 from playground.minimal_workflow.semantic_workflow.SemanticEventAgent import SemanticEventAgent

@@ -1,4 +1,4 @@
-from swiss_ai_hub.core.nats.events.form.Form import Form
+from swiss_ai_hub.core.form.Form import Form
 
 
 class BaseRetrieverConfig(Form):

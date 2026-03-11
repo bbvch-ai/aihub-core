@@ -1,8 +1,8 @@
 from typing import ClassVar
 
+from swiss_ai_hub.core.events.agent.aitl.AgentInTheLoop import AgentInTheLoop
+from swiss_ai_hub.core.events.agent.user.UserMessageEvent import UserMessageEvent
 from swiss_ai_hub.core.i18n.LocaleString import LocaleString
-from swiss_ai_hub.core.nats.events.agent_in_the_loop.AgentInTheLoop import AgentInTheLoop
-from swiss_ai_hub.core.nats.events.user.UserMessageEvent import UserMessageEvent
 
 from playground.minimal_workflow.agent_in_the_loop_workflow.OrchestratorAgent.Events.OrchestrationResultEvent import (
     OrchestrationResultEvent,

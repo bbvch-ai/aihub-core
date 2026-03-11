@@ -1,10 +1,10 @@
 from typing import Annotated, Self
 
 from pydantic import BaseModel, Field
+from swiss_ai_hub.core.events.discovery.EventSpecs import EventSpecs
+from swiss_ai_hub.core.events.process.discovery.human_in.HumanInSpecs import HumanInSpecs
+from swiss_ai_hub.core.form import ALL_FORM_OPTIONS
 from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
-from swiss_ai_hub.core.nats.events.discovery.EventSpecs import EventSpecs
-from swiss_ai_hub.core.nats.events.discovery.process.human_in.HumanInSpecs import HumanInSpecs
-from swiss_ai_hub.core.nats.events.form import ALL_FORM_OPTIONS
 from swiss_ai_hub.core.persistence.process.ProcessClassEntity import HumanInSpecsEntity
 
 

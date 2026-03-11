@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Annotated, Literal
 from pydantic import BaseModel, Field
 
 if TYPE_CHECKING:
-    from swiss_ai_hub.core.nats.events.form.elements.LocaleInput import LocaleInput
+    from swiss_ai_hub.core.form.elements.LocaleInput import LocaleInput
 
 
 class LocaleString(BaseModel):
@@ -91,7 +91,7 @@ class LocaleString(BaseModel):
         values. The returned LocaleInput element renders as a text input with
         language switching capability in the frontend.
         """
-        from swiss_ai_hub.core.nats.events.form.elements.LocaleInput import LocaleInput
+        from swiss_ai_hub.core.form.elements.LocaleInput import LocaleInput
 
         return LocaleInput(
             label=label or LocaleString(en="Value", de="Wert", fr="Valeur", it="Valore"),

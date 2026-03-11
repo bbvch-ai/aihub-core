@@ -18,16 +18,16 @@ from mongoengine import (
 from pydantic import TypeAdapter
 
 from swiss_ai_hub.core.agents.visualizers.types.WorkflowGraph import WorkflowGraph
+from swiss_ai_hub.core.events.agent.discovery.AgentConfigSpecs import AgentConfigSpecs
+from swiss_ai_hub.core.events.agent.discovery.AgentConfigSpecsEntity import AgentConfigSpecsEntity
+from swiss_ai_hub.core.events.discovery.EventSpecs import EventSpecs
+from swiss_ai_hub.core.form import ALL_FORM_OPTIONS
 from swiss_ai_hub.core.i18n.LocaleString import LocaleString
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
-from swiss_ai_hub.core.nats.events.discovery.agent.AgentConfigSpecs import AgentConfigSpecs
-from swiss_ai_hub.core.nats.events.discovery.agent.AgentConfigSpecsEntity import AgentConfigSpecsEntity
-from swiss_ai_hub.core.nats.events.discovery.EventSpecs import EventSpecs
-from swiss_ai_hub.core.nats.events.form import ALL_FORM_OPTIONS
 from swiss_ai_hub.core.persistence.i18n.LocaleStringEntity import LocaleStringEntity
 
 if TYPE_CHECKING:
-    from swiss_ai_hub.core.nats.events.form.base.FormkitElement import FormkitElement
+    from swiss_ai_hub.core.form.base.FormkitElement import FormkitElement
 
 logger = logging.getLogger(__name__)
 

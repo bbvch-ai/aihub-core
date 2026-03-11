@@ -13,19 +13,19 @@ from pytest_bdd import given, scenarios, then, when
 from swiss_ai_hub.core.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
     DangerousDevelopmentOnlyAuthSettings,
 )
+from swiss_ai_hub.core.events.agent.bitl.request.BotInTheLoopRequestEvent import (
+    BotInTheLoopRequestEvent,
+    TeamsConfig,
+)
+from swiss_ai_hub.core.events.agent.bitl.response.BotInTheLoopResponseEvent import (
+    BotInTheLoopResponderInfo,
+    BotInTheLoopResponseEvent,
+)
 from swiss_ai_hub.core.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from swiss_ai_hub.core.i18n.LocaleString import LocaleString
 from swiss_ai_hub.core.infrastructure.api.AIHubSettings import AIHubSettings
 from swiss_ai_hub.core.infrastructure.logging.logger import enable_logging
 from swiss_ai_hub.core.infrastructure.mongo.MongoSettings import MongoSettings
-from swiss_ai_hub.core.nats.events.bot_in_the_loop.request.BotInTheLoopRequestEvent import (
-    BotInTheLoopRequestEvent,
-    TeamsConfig,
-)
-from swiss_ai_hub.core.nats.events.bot_in_the_loop.response.BotInTheLoopResponseEvent import (
-    BotInTheLoopResponderInfo,
-    BotInTheLoopResponseEvent,
-)
 from swiss_ai_hub.core.testing.asyncio_utils.bdd import async_test
 
 from swiss_ai_hub.agent.agents.ExpertAskingAgent.events.AnswerStopEvent import AnswerStopEvent

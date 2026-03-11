@@ -1,8 +1,8 @@
 from typing import Annotated, Self
 
 from pydantic import BaseModel, Field
-from swiss_ai_hub.core.nats.events.discovery.EventSpecs import EventSpecs
-from swiss_ai_hub.core.nats.events.discovery.process.program_in.ProgramInSpecs import ProgramInSpecs
+from swiss_ai_hub.core.events.discovery.EventSpecs import EventSpecs
+from swiss_ai_hub.core.events.process.discovery.program_in.ProgramInSpecs import ProgramInSpecs
 from swiss_ai_hub.core.persistence.process.ProcessClassEntity import ProgramInSpecsEntity
 
 

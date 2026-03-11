@@ -7,11 +7,11 @@ from typing import TYPE_CHECKING, Annotated, Any
 from llama_index.core.utils import Tokenizer
 from pydantic import Field
 
+from swiss_ai_hub.core.form.elements.ModelSelect import ModelSelect
+from swiss_ai_hub.core.form.elements.Select import Select
+from swiss_ai_hub.core.form.Form import Form
 from swiss_ai_hub.core.generative_ai.resources.costs.LLMCostTracker import LLMCostTracker
 from swiss_ai_hub.core.infrastructure.litellm.LiteLLMProxySettings import LiteLLMProxySettings
-from swiss_ai_hub.core.nats.events.form.elements.ModelSelect import ModelSelect
-from swiss_ai_hub.core.nats.events.form.elements.Select import Select
-from swiss_ai_hub.core.nats.events.form.Form import Form
 
 if TYPE_CHECKING:
     from swiss_ai_hub.core.displayers.EventDisplayer import EventDisplayer

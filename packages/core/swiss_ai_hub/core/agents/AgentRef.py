@@ -17,7 +17,7 @@ class AgentRef(BaseModel):
 
     ```python
     from swiss_ai_hub.core.agents.AgentRef import AgentRef
-    from swiss_ai_hub.core.nats.events.form.elements.AgentSelector import AgentSelector
+    from swiss_ai_hub.core.form.elements.AgentSelector import AgentSelector
 
     class MyConfig(Form):
         target_agent: Annotated[

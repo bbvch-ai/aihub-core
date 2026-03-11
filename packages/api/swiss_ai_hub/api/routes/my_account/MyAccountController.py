@@ -4,8 +4,8 @@ from fastapi import Body, Depends, Security
 from nats.aio.client import Client as NATS
 from swiss_ai_hub.core.auth.dependencies.AuthHandler import AuthHandler
 from swiss_ai_hub.core.auth.identity.UserIdentity import UserIdentity
+from swiss_ai_hub.core.dependencies.use_nats import use_nats
 from swiss_ai_hub.core.i18n.LocaleHandler import LocaleHandler
-from swiss_ai_hub.core.nats.dependencies.use_nats import use_nats
 from swiss_ai_hub.core.routes.Controller import Controller
 
 from swiss_ai_hub.api.i18n.ApiLocaleString import ApiLocaleString
