@@ -7,8 +7,8 @@ format:
 	uv run ruff format
 
 typecheck:
-	@echo "Running type checks for pipelines..."
-	uv run mypy .
+	@echo "Running type checks..."
+	uv run ty check
 
 pr-ready: format lint
 	@echo "Running full check (format, lint)..."

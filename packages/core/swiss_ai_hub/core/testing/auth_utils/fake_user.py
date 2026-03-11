@@ -1,4 +1,4 @@
-from swiss_ai_hub.core.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
+from swiss_ai_hub.core.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (  # noqa: E501
     DangerousDevelopmentOnlyAuthSettings,
 )
 from swiss_ai_hub.core.auth.identity.UserIdentity import UserIdentity

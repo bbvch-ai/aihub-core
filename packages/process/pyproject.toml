@@ -48,7 +48,7 @@ extend-exclude = '''
   \.eggs
   | \.git
   | \.hg
-  | \.mypy_cache
+  | \.ty
   | \.tox
   | \.venv
   | build

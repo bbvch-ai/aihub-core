@@ -7,10 +7,10 @@ format:
 	@echo "Formatting code..."
 	uv run ruff format
 
-# Type-check with MyPy
+# Type-check with ty
 typecheck:
 	@echo "Running type checks..."
-	uv run mypy swiss_ai_hub/process
+	uv run ty check
 
 test-cov:
 	@echo "Running tests in swiss_ai_hub.process with coverage..."

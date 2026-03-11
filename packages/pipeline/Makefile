@@ -7,10 +7,10 @@ format:
 	@echo "Formatting code for pipelines..."
 	uv run ruff format
 
-# Type-check with MyPy
+# Type-check with ty
 typecheck:
-	@echo "Running type checks for pipelines..."
-	uv run mypy .
+	@echo "Running type checks..."
+	uv run ty check
 
 # Run format, type-check, and test in sequence
 pr-ready: format lint

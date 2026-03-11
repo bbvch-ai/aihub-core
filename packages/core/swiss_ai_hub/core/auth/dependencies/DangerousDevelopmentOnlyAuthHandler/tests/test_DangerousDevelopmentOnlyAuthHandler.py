@@ -6,7 +6,7 @@ import pytest
 from fastapi import Request
 from pytest_bdd import given, parsers, scenarios, then, when
 
-from swiss_ai_hub.core.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
+from swiss_ai_hub.core.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (  # noqa: E501
     DangerousDevelopmentOnlyAuthHandler,
 )
 from swiss_ai_hub.core.persistence.user.UserEntity import UserEntity

@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 import pytest
 
-from swiss_ai_hub.core.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
+from swiss_ai_hub.core.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (  # noqa: E501
     DangerousDevelopmentOnlyAuthSettings,
 )
 from swiss_ai_hub.core.persistence.user.UserEntity import UserEntity

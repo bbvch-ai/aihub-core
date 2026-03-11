@@ -7,7 +7,7 @@ from opentelemetry import trace
 
 from swiss_ai_hub.core.auth.access.AccessChecker import AccessChecker
 from swiss_ai_hub.core.auth.dependencies.AuthHandler import AuthHandler
-from swiss_ai_hub.core.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (
+from swiss_ai_hub.core.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthHandler import (  # noqa: E501
     DangerousDevelopmentOnlyAuthHandler,
 )
 from swiss_ai_hub.core.auth.identity.UserIdentity import UserIdentity

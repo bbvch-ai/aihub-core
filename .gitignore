@@ -15,6 +15,7 @@ docs/swiss-ai-hub
 .idea/copilot*
 *.log
 .mypy_cache/
+.ty/
 .venv
 
 # Claude Code local overrides (personal preferences, not shared)

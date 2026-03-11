@@ -7,10 +7,10 @@ format:
 	@echo "Formatting code..."
 	uv run ruff format
 
-# Type-check with MyPy
+# Type-check with ty
 typecheck:
 	@echo "Running type checks..."
-	uv run mypy swiss_ai_hub/agent
+	uv run ty check
 
 clean-jupyter:
 	@echo "Cleaning up notebooks..."
