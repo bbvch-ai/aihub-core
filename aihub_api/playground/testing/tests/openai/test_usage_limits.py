@@ -1,4 +1,3 @@
-from contextlib import asynccontextmanager
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -18,11 +17,6 @@ from aihub_api.runners.ApiTestRunner import ApiTestRunner
 
 BASE_URL = "http://test"
 CHAT_ENDPOINT = "/api/v1/openai/chat/completions"
-
-
-@asynccontextmanager
-async def _noop_lifetime_manager(_app):
-    yield
 
 
 def _exceeded_status(*, limit: int = 100, current_count: int = 101, period: str = "1d") -> UsageStatus:
@@ -53,7 +47,6 @@ class TestUsageLimitEnforcement:
     """Tests for usage limit enforcement in OpenAI chat completions."""
 
     @pytest.mark.asyncio
-    @patch("aihub_api.runners.ApiRunner.lifetime_manager", _noop_lifetime_manager)
     @patch("aihub_api.routes.openai.OpenaiService.AgentService.get_agent_instance", new_callable=AsyncMock)
     @patch("aihub_api.routes.openai.OpenaiService.UsageLimits.check_and_raise", new_callable=AsyncMock)
     async def test_returns_429_when_limit_exceeded(self, mock_check_usage: AsyncMock, mock_get_agent: AsyncMock):
@@ -90,7 +83,6 @@ class TestUsageLimitEnforcement:
                 assert data["detail"]["period"] == UsageLimitPeriod.ONE_DAY
 
     @pytest.mark.asyncio
-    @patch("aihub_api.runners.ApiRunner.lifetime_manager", _noop_lifetime_manager)
     @patch("aihub_api.routes.openai.OpenaiService.UsageLimits.check_and_raise", new_callable=AsyncMock)
     async def test_direct_model_calls_not_counted(self, mock_check_usage: AsyncMock):
         """Test that direct model calls (not agent calls) are not counted."""
