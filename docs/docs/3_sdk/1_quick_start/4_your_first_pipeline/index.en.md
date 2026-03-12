@@ -4,8 +4,8 @@ title: Your First Pipeline
 
 # Your First Pipeline
 
-Build your first data processing pipeline using the Swiss AI Hub Pipeline (`swiss_ai_hub.pipeline`) SDK - a complete data
-transformation pipeline with multiple connected assets.
+Build your first data processing pipeline using the Swiss AI Hub Pipeline (`swiss_ai_hub.pipeline`) SDK - a complete
+data transformation pipeline with multiple connected assets.
 
 ## What you'll learn
 
@@ -108,8 +108,8 @@ Click **"Materialize all"** to run the pipeline and see the data flow!
 
 ## Build a real Swiss AI Hub pipeline
 
-Now let's create a realistic pipeline using the `swiss_ai_hub.pipeline` SDK that demonstrates document processing patterns.
-We'll break this down step by step to understand each component.
+Now let's create a realistic pipeline using the `swiss_ai_hub.pipeline` SDK that demonstrates document processing
+patterns. We'll break this down step by step to understand each component.
 
 ### 1. Understanding Swiss AI Hub Pipeline Structure
 

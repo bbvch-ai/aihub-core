@@ -3,32 +3,35 @@ from swiss_ai_hub.core.infrastructure import AihubInstrumentor
 
 AihubInstrumentor().instrument()
 
-from swiss_ai_hub.core.auth.dependencies.token_and_oauth2_handler.token_and_oauth2_handler import TokenAndOauth2Handler
-from swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config import LLMConfig
+from swiss_ai_hub.core.auth import TokenAndOauth2Handler
+from swiss_ai_hub.core.generative_ai import LLMConfig
 from swiss_ai_hub.core.infrastructure import enable_logging
 
-from swiss_ai_hub.api.routes.agent.agent_controller import AgentController
-from swiss_ai_hub.api.routes.auth_provider.auth_provider_controller import AuthProviderController
-from swiss_ai_hub.api.routes.evaluation.dataset_controller import DatasetController
-from swiss_ai_hub.api.routes.event.event_controller import EventController
-from swiss_ai_hub.api.routes.file.file_controller import FileController
-from swiss_ai_hub.api.routes.health.api_health_controller import ApiHealthController
-from swiss_ai_hub.api.routes.i18n.i18n_controller import I18nController
-from swiss_ai_hub.api.routes.knowledge.knowledge_controller import KnowledgeController
-from swiss_ai_hub.api.routes.memory import OrganizationMemoryController, UserMemoryController
-from swiss_ai_hub.api.routes.model.model_controller import ModelController
-from swiss_ai_hub.api.routes.my_account.my_account_controller import MyAccountController
-from swiss_ai_hub.api.routes.notification.notification_controller import NotificationController
-from swiss_ai_hub.api.routes.openai.openai_controller import OpenaiController
-from swiss_ai_hub.api.routes.parsing.parsing_controller import ParsingController
-from swiss_ai_hub.api.routes.process.process_controller import ProcessController
-from swiss_ai_hub.api.routes.role.role_controller import RoleController
-from swiss_ai_hub.api.routes.suite.suite_controller import SuiteController
-from swiss_ai_hub.api.routes.thread.thread_controller import ThreadController
-from swiss_ai_hub.api.routes.token.token_controller import TokenController
-from swiss_ai_hub.api.routes.translation.translation_controller import TranslationController
-from swiss_ai_hub.api.routes.user.user_controller import UserController
-from swiss_ai_hub.api.runners.api_runner import ApiRunner
+from swiss_ai_hub.api.routes import (
+    AgentController,
+    ApiHealthController,
+    AuthProviderController,
+    DatasetController,
+    EventController,
+    FileController,
+    I18nController,
+    KnowledgeController,
+    ModelController,
+    MyAccountController,
+    NotificationController,
+    OpenaiController,
+    OrganizationMemoryController,
+    ParsingController,
+    ProcessController,
+    RoleController,
+    SuiteController,
+    ThreadController,
+    TokenController,
+    TranslationController,
+    UserController,
+    UserMemoryController,
+)
+from swiss_ai_hub.api.runners import ApiRunner
 
 enable_logging()
 

@@ -1,3 +1,7 @@
+from dotenv import find_dotenv, load_dotenv
+
+load_dotenv(find_dotenv(usecwd=True))
+
 import asyncio
 
 from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler import (

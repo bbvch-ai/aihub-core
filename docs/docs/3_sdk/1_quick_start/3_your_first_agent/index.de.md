@@ -36,10 +36,10 @@ Betrachten wir den Standard-Agent, der bei der Einrichtung der Entwicklungsumgeb
 ```python
 import logging
 
-from aihub_agent.agents.Agent import Agent
-from aihub_lib.nats.events.user import UserMessageEvent
-from aihub_lib.nats.events import StopEvent
-from aihub_agent.workflow.decorators.step import step
+from swiss_ai_hub.agent.agents.agent import Agent
+from swiss_ai_hub.core.events.user import UserMessageEvent
+from swiss_ai_hub.core.events import StopEvent
+from swiss_ai_hub.agent.workflow.decorators.step import step
 
 logger = logging.getLogger(__name__)
 
@@ -75,11 +75,11 @@ codieren, verwenden wir einfach den ClassName des Agents als Quelle.
 ```python
 import logging
 
-from aihub_agent.agents.Agent import Agent
-from aihub_lib.nats.events.user import UserMessageEvent
-from aihub_lib.nats.events import StopEvent
-from aihub_agent.workflow.decorators.step import step
-from aihub_lib.displayers.EventDisplayer import EventDisplayer # [!code ++]
+from swiss_ai_hub.agent.agents.agent import Agent
+from swiss_ai_hub.core.events.user import UserMessageEvent
+from swiss_ai_hub.core.events import StopEvent
+from swiss_ai_hub.agent.workflow.decorators.step import step
+from swiss_ai_hub.core.displayers.event_displayer import EventDisplayer # [!code ++]
 
 logger = logging.getLogger(__name__)
 
@@ -113,11 +113,11 @@ uns ermöglicht, dem Benutzer so schnell wie möglich Teile der Antwort zu präs
 import logging
 import asyncio # [!code ++]
 
-from aihub_agent.agents.Agent import Agent
-from aihub_lib.nats.events.user import UserMessageEvent
-from aihub_lib.nats.events import StopEvent
-from aihub_agent.workflow.decorators.step import step
-from aihub_lib.displayers.EventDisplayer import EventDisplayer
+from swiss_ai_hub.agent.agents.agent import Agent
+from swiss_ai_hub.core.events.user import UserMessageEvent
+from swiss_ai_hub.core.events import StopEvent
+from swiss_ai_hub.agent.workflow.decorators.step import step
+from swiss_ai_hub.core.displayers.event_displayer import EventDisplayer
 
 logger = logging.getLogger(__name__)
 
@@ -154,11 +154,11 @@ zu informieren, was im Agent vor sich geht. Dazu können Sie `ThoughtEvent`s anz
 import logging
 import asyncio
 
-from aihub_agent.agents.Agent import Agent
-from aihub_lib.nats.events.user import UserMessageEvent
-from aihub_lib.nats.events import StopEvent
-from aihub_agent.workflow.decorators.step import step
-from aihub_lib.displayers.EventDisplayer import EventDisplayer
+from swiss_ai_hub.agent.agents.agent import Agent
+from swiss_ai_hub.core.events.user import UserMessageEvent
+from swiss_ai_hub.core.events import StopEvent
+from swiss_ai_hub.agent.workflow.decorators.step import step
+from swiss_ai_hub.core.displayers.event_displayer import EventDisplayer
 
 logger = logging.getLogger(__name__)
 
@@ -195,7 +195,7 @@ Erstellen Sie zunächst ein Event, um Daten zwischen den Schritten zu übergeben
 ```python
 from typing import Annotated
 
-from aihub_lib.nats.events import ControlEvent
+from swiss_ai_hub.core.events import ControlEvent
 from pydantic import Field
 
 
@@ -210,11 +210,11 @@ class MyCustomAgentEvent(ControlEvent):
 import logging
 import asyncio
 
-from aihub_agent.agents.Agent import Agent
-from aihub_lib.nats.events.user import UserMessageEvent
-from aihub_lib.nats.events import StopEvent
-from aihub_agent.workflow.decorators.step import step
-from aihub_lib.displayers.EventDisplayer import EventDisplayer
+from swiss_ai_hub.agent.agents.agent import Agent
+from swiss_ai_hub.core.events.user import UserMessageEvent
+from swiss_ai_hub.core.events import StopEvent
+from swiss_ai_hub.agent.workflow.decorators.step import step
+from swiss_ai_hub.core.displayers.event_displayer import EventDisplayer
 
 from .events.MyCustomAgentEvent import MyCustomAgentEvent # [!code ++]
 
@@ -273,7 +273,7 @@ folgt aussieht:
 from typing import Annotated
 
 from pydantic import Field
-from aihub_lib.agents.AgentConfig import AgentConfig
+from swiss_ai_hub.core.agents.agent_config import AgentConfig
 
 
 class MyCustomAgentConfig(AgentConfig):
@@ -294,11 +294,11 @@ entweder mit System-Prompts oder Konfigurationen für bestimmte Methoden.
 import logging
 import asyncio
 
-from aihub_agent.agents.Agent import Agent
-from aihub_lib.nats.events.user import UserMessageEvent
-from aihub_lib.nats.events import StopEvent
-from aihub_agent.workflow.decorators.step import step
-from aihub_lib.displayers.EventDisplayer import EventDisplayer
+from swiss_ai_hub.agent.agents.agent import Agent
+from swiss_ai_hub.core.events.user import UserMessageEvent
+from swiss_ai_hub.core.events import StopEvent
+from swiss_ai_hub.agent.workflow.decorators.step import step
+from swiss_ai_hub.core.displayers.event_displayer import EventDisplayer
 
 from .events.MyCustomAgentEvent import MyCustomAgentEvent
 from .MyCustomAgentConfig import MyCustomAgentConfig  # [!code ++]
@@ -372,11 +372,11 @@ Um Ihren Agent schnell zu testen, können Sie ein `trigger.py`-Skript schreiben,
 
 ```python [trigger.py]
 import asyncio
-from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events import UserMessageEvent
-from aihub_lib.testing.auth_utils.fake_user import fake_user
-from aihub_lib.infrastructure.logging.logger import enable_logging
-from aihub_agent.runners.AgentTestRunner import AgentTestRunner
+from swiss_ai_hub.core.i18n.locale_string import LocaleString
+from swiss_ai_hub.core.events import UserMessageEvent
+from swiss_ai_hub.core.testing.auth_utils.fake_user import fake_user
+from swiss_ai_hub.core.infrastructure.logging.logger import enable_logging
+from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
 from MyAgent import MyAgent

@@ -1,3 +1,7 @@
+from dotenv import find_dotenv, load_dotenv
+
+load_dotenv(find_dotenv(usecwd=True))
+
 import asyncio
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
@@ -7,10 +11,10 @@ from swiss_ai_hub.core.generative_ai import LLMConfig
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.infrastructure import enable_logging
 
-from playground.minimal_workflow.llama_index_workflow.LlamaIndexAgent import (
+from playground.minimal_workflow.llama_index_workflow.llama_index_agent import (
     LlamaIndexAgent,
 )
-from playground.minimal_workflow.llama_index_workflow.LlamaIndexAgentConfig import (
+from playground.minimal_workflow.llama_index_workflow.llama_index_agent_config import (
     LlamaIndexAgentConfig,
 )
 from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner

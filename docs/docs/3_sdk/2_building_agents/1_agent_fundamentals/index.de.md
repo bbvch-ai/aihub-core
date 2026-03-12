@@ -63,7 +63,7 @@ einfach von `ControlEvent` und fügen Sie Ihre Pydantic-Felder hinzu. Das gebrä
 konversationellen Agent ist das integrierte `UserMessageEvent`.
 
 ```python
-from aihub_agent.events.ControlEvent import ControlEvent
+from swiss_ai_hub.core.events.control_event import ControlEvent
 
 # A custom event to carry data from one step to another
 class DocumentProcessedEvent(ControlEvent):
@@ -78,8 +78,8 @@ Ein Schritt ist eine `async`-Methode, die eine einzelne, logische Operation ausf
 sie beim Dispatcher und konfiguriert ihr Verhalten.
 
 ```python
-from aihub_agent.workflow.decorators.step import step
-from aihub_lib.i18n.LocaleString import LocaleString
+from swiss_ai_hub.agent.workflow.decorators.step import step
+from swiss_ai_hub.core.i18n.locale_string import LocaleString
 
 @step(
     name=LocaleString(en="Process Document"),
@@ -112,7 +112,7 @@ Verwenden Sie Events, um Daten zwischen Schritten zu übergeben.
 Verwenden Sie `LocaleString` für Schrittnamen und Beschreibungen, die in der Benutzeroberfläche erscheinen:
 
 ```python
-from aihub_lib.i18n.LocaleString import LocaleString
+from swiss_ai_hub.core.i18n.locale_string import LocaleString
 
 @step(
     name=LocaleString(
@@ -149,7 +149,7 @@ Definieren Sie eine Klasse, die von `AgentConfig` erbt, für Einstellungen, die 
 Objekt kann in jeden Schritt injiziert werden.
 
 ```python
-from aihub_lib.agents.AgentConfig import AgentConfig
+from swiss_ai_hub.core.agents.agent_config import AgentConfig
 from pydantic import Field
 from typing import Annotated
 

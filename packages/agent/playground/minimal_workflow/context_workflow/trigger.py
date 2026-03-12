@@ -1,12 +1,16 @@
+from dotenv import find_dotenv, load_dotenv
+
+load_dotenv(find_dotenv(usecwd=True))
+
 import asyncio
 
 from swiss_ai_hub.core.i18n import LocaleString
 
-from playground.minimal_workflow.context_workflow.ContextAgent import ContextAgent
-from playground.minimal_workflow.context_workflow.ContextAgentConfig import (
+from playground.minimal_workflow.context_workflow.context_agent import ContextAgent
+from playground.minimal_workflow.context_workflow.context_agent_config import (
     ContextAgentConfig,
 )
-from playground.minimal_workflow.context_workflow.events.CustomStartEvent import (
+from playground.minimal_workflow.context_workflow.events.custom_start_event import (
     CustomStartEvent,
 )
 from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner

@@ -1,10 +1,14 @@
+from dotenv import find_dotenv, load_dotenv
+
+load_dotenv(find_dotenv(usecwd=True))
+
 import asyncio
 
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.infrastructure import enable_logging
 
-from playground.minimal_workflow.long_running_agent.LongRunningAgent import LongRunningAgent
-from playground.minimal_workflow.long_running_agent.LongRunningAgentConfig import LongRunningAgentConfig
+from playground.minimal_workflow.long_running_agent.long_running_agent import LongRunningAgent
+from playground.minimal_workflow.long_running_agent.long_running_agent_config import LongRunningAgentConfig
 from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner
 
 enable_logging()

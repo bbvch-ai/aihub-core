@@ -121,25 +121,25 @@ Swiss AI Hub Pipelines folgen diesen Schlüsselmustern:
 Beginnen Sie mit der Erstellung der grundlegenden Konfiguration und Importe (`my_document_pipeline.py`):
 
 ```python
-from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
+from swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_model_config import EmbeddingModelConfig
 from dagster import AssetKey, AssetSelection, Definitions, DynamicPartitionsDefinition
 
 # Import Swiss AI Hub pipeline factories
-from aihub_pipeline.assets.factories.data_lake_to_vector_store.documents_factory import documents_factory
-from aihub_pipeline.assets.factories.data_lake_to_vector_store.nodes_factory import nodes_factory
-from aihub_pipeline.assets.factories.data_lake_to_vector_store.observable_data_lake_factory import (
+from swiss_ai_hub.pipeline.assets.factories.data_lake_to_vector_store.documents_factory import documents_factory
+from swiss_ai_hub.pipeline.assets.factories.data_lake_to_vector_store.nodes_factory import nodes_factory
+from swiss_ai_hub.pipeline.assets.factories.data_lake_to_vector_store.observable_data_lake_factory import (
     observable_data_lake_factory,
 )
 
 # Import Swiss AI Hub resources and utilities
-from aihub_pipeline.resources.factory import (
+from swiss_ai_hub.pipeline.resources.factory import (
     default_io_manager_s3_datalake_resources,
     local_mongo_milvus_storage_context_resource,
     s3_data_lake_resources,
 )
-from aihub_pipeline.resources.llm.EmbeddingModelResource import EmbeddingModelResource
-from aihub_pipeline.resources.parser.DocumentParserResource import DocumentParserResource, LoaderType
-from aihub_pipeline.resources.parser.MarkdownStructuralNodeParserResource import MarkdownStructuralNodeParserResource
+from swiss_ai_hub.pipeline.resources.llm.embedding_model_resource import EmbeddingModelResource
+from swiss_ai_hub.pipeline.resources.parser.document_parser_resource import DocumentParserResource, LoaderType
+from swiss_ai_hub.pipeline.resources.parser.markdown_structural_node_parser_resource import MarkdownStructuralNodeParserResource
 
 # Pipeline configuration - defines where data flows between assets
 DATA_LAKE_KEY = AssetKey(["playground", "data_lake"])      # Raw file storage 
@@ -271,23 +271,23 @@ defs = Definitions(
 Hier ist die vollständige Datei mit allen Komponenten zusammen:
 
 ```python
-from aihub_lib.generative_ai.resources.models.llm.EmbeddingModelConfig import EmbeddingModelConfig
+from swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_model_config import EmbeddingModelConfig
 from dagster import AssetKey, Definitions, DynamicPartitionsDefinition
 
-from aihub_pipeline.assets.factories.data_lake_to_vector_store.documents_factory import documents_factory
-from aihub_pipeline.assets.factories.data_lake_to_vector_store.nodes_factory import nodes_factory
-from aihub_pipeline.assets.factories.data_lake_to_vector_store.observable_data_lake_factory import (
+from swiss_ai_hub.pipeline.assets.factories.data_lake_to_vector_store.documents_factory import documents_factory
+from swiss_ai_hub.pipeline.assets.factories.data_lake_to_vector_store.nodes_factory import nodes_factory
+from swiss_ai_hub.pipeline.assets.factories.data_lake_to_vector_store.observable_data_lake_factory import (
     observable_data_lake_factory,
 )
 
-from aihub_pipeline.resources.factory import (
+from swiss_ai_hub.pipeline.resources.factory import (
     default_io_manager_s3_datalake_resources,
     local_mongo_milvus_storage_context_resource,
     s3_data_lake_resources,
 )
-from aihub_pipeline.resources.llm.EmbeddingModelResource import EmbeddingModelResource
-from aihub_pipeline.resources.parser.DocumentParserResource import DocumentParserResource, LoaderType
-from aihub_pipeline.resources.parser.MarkdownStructuralNodeParserResource import MarkdownStructuralNodeParserResource
+from swiss_ai_hub.pipeline.resources.llm.embedding_model_resource import EmbeddingModelResource
+from swiss_ai_hub.pipeline.resources.parser.document_parser_resource import DocumentParserResource, LoaderType
+from swiss_ai_hub.pipeline.resources.parser.markdown_structural_node_parser_resource import MarkdownStructuralNodeParserResource
 
 # Configuration
 DATA_LAKE_KEY = AssetKey(["playground", "data_lake"])
@@ -350,9 +350,9 @@ Für Produktions-Pipelines sollten Sie Jobs und Scheduling hinzufügen. Erweiter
 
 ```python
 # Add these imports to my_document_pipeline.py
-from aihub_pipeline.jobs.factory import observe_source_job
-from aihub_pipeline.schedules.factory import daily_schedule_at
-from aihub_pipeline.sensors.factory import default_automation_sensor
+from swiss_ai_hub.pipeline.jobs.factory import observe_source_job
+from swiss_ai_hub.pipeline.schedules.factory import daily_schedule_at
+from swiss_ai_hub.pipeline.sensors.factory import default_automation_sensor
 
 # Create jobs for different operations
 observe_job = observe_source_job(

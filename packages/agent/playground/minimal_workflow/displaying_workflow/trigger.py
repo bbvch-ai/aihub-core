@@ -1,13 +1,17 @@
+from dotenv import find_dotenv, load_dotenv
+
+load_dotenv(find_dotenv(usecwd=True))
+
 import asyncio
 
 from swiss_ai_hub.core.auth import DangerousDevelopmentOnlyAuthSettings
 from swiss_ai_hub.core.events.agent import UserMessageEvent
 from swiss_ai_hub.core.i18n import LocaleString
 
-from playground.minimal_workflow.displaying_workflow.DisplayingAgent import (
+from playground.minimal_workflow.displaying_workflow.displaying_agent import (
     DisplayingAgent,
 )
-from playground.minimal_workflow.displaying_workflow.DisplayingAgentConfig import (
+from playground.minimal_workflow.displaying_workflow.displaying_agent_config import (
     DisplayingAgentConfig,
 )
 from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner

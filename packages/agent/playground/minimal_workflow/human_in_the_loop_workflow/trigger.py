@@ -1,3 +1,7 @@
+from dotenv import find_dotenv, load_dotenv
+
+load_dotenv(find_dotenv(usecwd=True))
+
 import asyncio
 from asyncio import sleep
 
@@ -6,10 +10,10 @@ from swiss_ai_hub.core.events.agent import HumanInTheLoopInput, UserMessageEvent
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.topics import PartialAgentTopic
 
-from playground.minimal_workflow.human_in_the_loop_workflow.HumanInTheLoopAgent import (
+from playground.minimal_workflow.human_in_the_loop_workflow.human_in_the_loop_agent import (
     HumanInTheLoopAgent,
 )
-from playground.minimal_workflow.human_in_the_loop_workflow.HumanInTheLoopAgentConfig import (
+from playground.minimal_workflow.human_in_the_loop_workflow.human_in_the_loop_agent_config import (
     HumanInTheLoopAgentConfig,
 )
 from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner

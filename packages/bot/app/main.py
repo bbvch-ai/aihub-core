@@ -1,13 +1,9 @@
-from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler import (
-    DangerousDevelopmentOnlyAuthHandler,
-)
+from swiss_ai_hub.core.auth import DangerousDevelopmentOnlyAuthHandler
 from swiss_ai_hub.core.infrastructure import enable_logging
 from swiss_ai_hub.core.routes import HealthController
 
-from swiss_ai_hub.bot.routes.agent.agent_chat_controller import AgentChatController
-from swiss_ai_hub.bot.routes.bot_in_the_loop.bot_in_the_loop_controller import BotInTheLoopController
-from swiss_ai_hub.bot.routes.openai.openai_chat_controller import OpenaiChatController
-from swiss_ai_hub.bot.runners.bot_runner import BotRunner
+from swiss_ai_hub.bot.routes import AgentChatController, BotInTheLoopController, OpenaiChatController
+from swiss_ai_hub.bot.runners import BotRunner
 
 enable_logging()
 

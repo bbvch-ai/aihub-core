@@ -1,3 +1,7 @@
+from dotenv import find_dotenv, load_dotenv
+
+load_dotenv(find_dotenv(usecwd=True))
+
 import asyncio
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
@@ -6,12 +10,14 @@ from swiss_ai_hub.core.events.agent import UserMessageEvent
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.infrastructure import enable_logging
 
-from playground.minimal_workflow.agent_in_the_loop_workflow.OrchestratorAgent.OrchestratorAgent import OrchestratorAgent
-from playground.minimal_workflow.agent_in_the_loop_workflow.OrchestratorAgent.OrchestratorAgentConfig import (
+from playground.minimal_workflow.agent_in_the_loop_workflow.orchestrator_agent.orchestrator_agent import (
+    OrchestratorAgent,
+)
+from playground.minimal_workflow.agent_in_the_loop_workflow.orchestrator_agent.orchestrator_agent_config import (
     OrchestratorAgentConfig,
 )
-from playground.minimal_workflow.agent_in_the_loop_workflow.WorkerAgent.WorkerAgent import WorkerAgent
-from playground.minimal_workflow.agent_in_the_loop_workflow.WorkerAgent.WorkerAgentConfig import WorkerAgentConfig
+from playground.minimal_workflow.agent_in_the_loop_workflow.worker_agent.worker_agent import WorkerAgent
+from playground.minimal_workflow.agent_in_the_loop_workflow.worker_agent.worker_agent_config import WorkerAgentConfig
 from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner
 
 enable_logging()

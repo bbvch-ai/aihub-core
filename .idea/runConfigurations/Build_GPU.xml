@@ -2,6 +2,7 @@
   <configuration default="false" name="Build GPU" type="docker-deploy" factoryName="docker-compose.yml" folderName="Docker Compose" server-name="Docker">
     <deployment type="docker-compose.yml">
       <settings>
+        <option name="envFilePath" value=".env" />
         <option name="sourceFilePath" value="infra/docker-compose.build.gpu.yml" />
       </settings>
     </deployment>

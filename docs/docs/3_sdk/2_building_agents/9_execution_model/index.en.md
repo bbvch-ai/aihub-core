@@ -173,7 +173,7 @@ A precondition is a gatekeeper function that executes before step logic.
 are irrelevant; dependency injection resolves by type.
 
 ```python
-from aihub_agent.workflow.decorators.precondition import precondition
+from swiss_ai_hub.agent.workflow.decorators.precondition import precondition
 
 @precondition()
 async def check_ready(
@@ -222,7 +222,7 @@ Events in the list are ordered by arrival time.
 When you know the exact number of events at definition time, use `FixedList` to block until all events are available:
 
 ```python
-from aihub_lib.nats.workflow.annotations.custom_types.ListOfSize import FixedList
+from swiss_ai_hub.core.workflow.annotations.custom_types.list_of_size import FixedList
 
 N = 5
 
@@ -432,7 +432,7 @@ irrelevant; only types must match.
 
 - [ ] Understand execution semantics (this page)
 - [ ] Review the [memory lifecycle](../5_memory/) if using memory
-- [ ] Study production agents in `aihub_agent/agents/RagAgent/` and `ExpertRagAgent/`
+- [ ] Study production agents in `packages/agent/swiss_ai_hub/agent/agents/rag_agent/` and `expert_rag_agent/`
 
 ### For each step
 

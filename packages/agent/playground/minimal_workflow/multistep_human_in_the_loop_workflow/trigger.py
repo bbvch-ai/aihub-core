@@ -1,3 +1,7 @@
+from dotenv import find_dotenv, load_dotenv
+
+load_dotenv(find_dotenv(usecwd=True))
+
 import asyncio
 from asyncio import sleep
 
@@ -6,16 +10,16 @@ from swiss_ai_hub.core.events.agent import UserMessageEvent
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.topics import PartialAgentTopic
 
-from playground.minimal_workflow.multistep_human_in_the_loop_workflow.events.FirstStepHumanInTheLoop import (
+from playground.minimal_workflow.multistep_human_in_the_loop_workflow.events.first_step_human_in_the_loop import (
     FirstStepHumanInTheLoop,
 )
-from playground.minimal_workflow.multistep_human_in_the_loop_workflow.events.SecondStepHumanInTheLoop import (
+from playground.minimal_workflow.multistep_human_in_the_loop_workflow.events.second_step_human_in_the_loop import (
     SecondStepHumanInTheLoop,
 )
-from playground.minimal_workflow.multistep_human_in_the_loop_workflow.MultistepHumanInTheLoopAgent import (
+from playground.minimal_workflow.multistep_human_in_the_loop_workflow.multistep_human_in_the_loop_agent import (
     MultistepHumanInTheLoopAgent,
 )
-from playground.minimal_workflow.multistep_human_in_the_loop_workflow.MultistepHumanInTheLoopAgentConfig import (
+from playground.minimal_workflow.multistep_human_in_the_loop_workflow.multistep_human_in_the_loop_agent_config import (
     MultistepHumanInTheLoopAgentConfig,
 )
 from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner

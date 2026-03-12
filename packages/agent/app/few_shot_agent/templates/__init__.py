@@ -1,4 +1,4 @@
-from swiss_ai_hub.agent.agents.few_shot_agent.few_shot_agent_config import FewShotAgentConfig
+from swiss_ai_hub.agent.agents.few_shot_agent import FewShotAgentConfig
 
 from .structured_data_extractor import TEMPLATE as STRUCTURED_DATA_EXTRACTOR
 from .support_ticket_classifier import TEMPLATE as SUPPORT_TICKET_CLASSIFIER

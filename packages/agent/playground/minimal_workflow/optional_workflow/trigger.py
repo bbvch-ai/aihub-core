@@ -1,11 +1,15 @@
+from dotenv import find_dotenv, load_dotenv
+
+load_dotenv(find_dotenv(usecwd=True))
+
 import asyncio
 
 from swiss_ai_hub.core.events.agent import StartEvent
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.infrastructure import enable_logging
 
-from playground.minimal_workflow.optional_workflow.OptionalAgent import OptionalAgent
-from playground.minimal_workflow.optional_workflow.OptionalAgentConfig import (
+from playground.minimal_workflow.optional_workflow.optional_agent import OptionalAgent
+from playground.minimal_workflow.optional_workflow.optional_agent_config import (
     OptionalAgentConfig,
 )
 from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner

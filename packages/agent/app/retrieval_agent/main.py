@@ -7,9 +7,8 @@ import asyncio
 
 from swiss_ai_hub.core.infrastructure import AIHubSettings, enable_logging
 
-from swiss_ai_hub.agent.agents.retrieval_agent.configs.retrieval_agent_config import RetrievalAgentConfig
-from swiss_ai_hub.agent.agents.retrieval_agent.retrieval_agent import RetrievalAgent
-from swiss_ai_hub.agent.runners.agent_runner import AgentRunner
+from swiss_ai_hub.agent.agents.retrieval_agent import RetrievalAgent, RetrievalAgentConfig
+from swiss_ai_hub.agent.runners import AgentRunner
 
 enable_logging()
 

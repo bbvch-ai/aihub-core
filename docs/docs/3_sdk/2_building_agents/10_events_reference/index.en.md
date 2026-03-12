@@ -29,9 +29,9 @@ making these control events would cause unnecessary dispatcher overhead.
 (`LLMEvent`, `RetrieverEvent`, etc.) inherit from `ControlAndDisplayEvent`.
 
 ```python
-from aihub_lib.nats.events.control.ControlEvent import ControlEvent
-from aihub_lib.nats.events.display.DisplayEvent import DisplayEvent
-from aihub_lib.nats.events.ControlAndDisplayEvent import ControlAndDisplayEvent
+from swiss_ai_hub.core.events.control.control_event import ControlEvent
+from swiss_ai_hub.core.events.display.display_event import DisplayEvent
+from swiss_ai_hub.core.events.control_and_display_event import ControlAndDisplayEvent
 
 # Control event: triggers dispatcher, can satisfy step dependencies
 class AnalysisCompleteEvent(ControlEvent):
@@ -164,7 +164,7 @@ When creating a custom event, inherit from the most specific applicable base cla
 - **Any OpenTelemetry-compatible system:** Standard span attributes
 
 ```python
-from aihub_lib.nats.events.semantic import RetrieverEvent
+from swiss_ai_hub.core.events.semantic import RetrieverEvent
 
 # RetrieverEvent automatically exports OpenInference attributes:
 # - openinference.span.kind: "RETRIEVER"
@@ -180,7 +180,7 @@ When building agents that require observability, prefer semantic events over gen
 
 ```python
 # Preferred: semantic event for observability
-from aihub_lib.nats.events.semantic import RetrieverEvent
+from swiss_ai_hub.core.events.semantic import RetrieverEvent
 
 @step()
 async def retrieve(self, event: UserMessageEvent) -> RetrieverEvent:
@@ -291,7 +291,7 @@ class MyRetrieveEvent(ControlAndDisplayEvent):
 Custom events are Pydantic models. All fields require type annotations:
 
 ```python
-from aihub_lib.nats.events.control.ControlEvent import ControlEvent
+from swiss_ai_hub.core.events.control.control_event import ControlEvent
 
 class AnalysisCompleteEvent(ControlEvent):
     summary: str

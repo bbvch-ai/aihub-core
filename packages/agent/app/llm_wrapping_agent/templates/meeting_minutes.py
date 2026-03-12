@@ -1,7 +1,7 @@
 from swiss_ai_hub.core.generative_ai import LLMConfig, LLMParameter
 from swiss_ai_hub.core.i18n import LocaleString
 
-from swiss_ai_hub.agent.agents.llm_wrapping_agent.llm_wrapping_agent_config import LLMWrappingAgentConfig
+from swiss_ai_hub.agent.agents.llm_wrapping_agent import LLMWrappingAgentConfig
 
 TEMPLATE = LLMWrappingAgentConfig(
     agent_id="meeting-minutes",

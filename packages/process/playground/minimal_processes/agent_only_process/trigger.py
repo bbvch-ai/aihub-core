@@ -1,3 +1,7 @@
+from dotenv import find_dotenv, load_dotenv
+
+load_dotenv(find_dotenv(usecwd=True))
+
 import asyncio
 
 from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner
@@ -6,10 +10,10 @@ from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.infrastructure import enable_logging
 from swiss_ai_hub.core.processes import ProcessConfig
 
-from playground.agents.AgentA.AgentA import AgentA
-from playground.agents.AgentA.events.AgentAStartEvent import AgentAStartEvent
-from playground.agents.AgentB.AgentB import AgentB
-from playground.minimal_processes.agent_only_process.AgentOnlyProcess import AgentOnlyProcess
+from playground.agents.agent_a.agent_a import AgentA
+from playground.agents.agent_a.events.agent_a_start_event import AgentAStartEvent
+from playground.agents.agent_b.agent_b import AgentB
+from playground.minimal_processes.agent_only_process.agent_only_process import AgentOnlyProcess
 from swiss_ai_hub.process.runners.process_test_runner import ProcessTestRunner
 
 enable_logging()

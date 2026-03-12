@@ -1,5 +1,5 @@
-from playground.minimal_workflow.organization_memory_workflow.OrganizationMemoryAgent import OrganizationMemoryAgent
-from playground.minimal_workflow.organization_memory_workflow.OrganizationMemoryAgentConfig import (
+from playground.minimal_workflow.organization_memory_workflow.organization_memory_agent import OrganizationMemoryAgent
+from playground.minimal_workflow.organization_memory_workflow.organization_memory_agent_config import (
     OrganizationMemoryAgentConfig,
 )
 

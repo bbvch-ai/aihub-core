@@ -318,7 +318,7 @@ Lists of forms render as `Repeater` elements, allowing users to add/remove items
 The dispatcher injects the validated configuration into step methods via type annotation:
 
 ```python
-from aihub_agent.workflow.decorators.step import step
+from swiss_ai_hub.agent.workflow.decorators.step import step
 
 
 class MyAgent(Agent):
@@ -367,15 +367,15 @@ from typing import Annotated
 
 from pydantic import Field
 
-from aihub_agent.agents.Agent import Agent
-from aihub_agent.runners.AgentRunner import AgentRunner
-from aihub_agent.workflow.decorators.step import step
-from aihub_lib.agents.AgentConfig import AgentConfig
-from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events.control.StopEvent import StopEvent
-from aihub_lib.nats.events.control.UserMessageEvent import UserMessageEvent
-from aihub_lib.nats.events.form.constraints import Ge, Le
-from aihub_lib.nats.events.form.elements import InputNumber, InputText, ModelSelect, ToggleSwitch
+from swiss_ai_hub.agent.agents.agent import Agent
+from swiss_ai_hub.agent.runners.agent_runner import AgentRunner
+from swiss_ai_hub.agent.workflow.decorators.step import step
+from swiss_ai_hub.core.agents.agent_config import AgentConfig
+from swiss_ai_hub.core.i18n.locale_string import LocaleString
+from swiss_ai_hub.core.events.control.stop_event import StopEvent
+from swiss_ai_hub.core.events.control.user_message_event import UserMessageEvent
+from swiss_ai_hub.core.form.constraints import Ge, Le
+from swiss_ai_hub.core.form.elements import InputNumber, InputText, ModelSelect, ToggleSwitch
 
 
 class QAAgentConfig(AgentConfig):

@@ -8,9 +8,8 @@ import asyncio
 from swiss_ai_hub.core.infrastructure import AIHubSettings, enable_logging
 
 from app.few_shot_agent.templates import ALL_TEMPLATES
-from swiss_ai_hub.agent.agents.few_shot_agent.few_shot_agent import FewShotAgent
-from swiss_ai_hub.agent.agents.few_shot_agent.few_shot_agent_config import FewShotAgentConfig
-from swiss_ai_hub.agent.runners.agent_runner import AgentRunner
+from swiss_ai_hub.agent.agents.few_shot_agent import FewShotAgent, FewShotAgentConfig
+from swiss_ai_hub.agent.runners import AgentRunner
 
 enable_logging()
 

@@ -1,3 +1,6 @@
+-include ../../.env
+export
+
 lint:
 	@echo "Running linter..."
 	uv run ruff check --fix
@@ -12,10 +15,6 @@ typecheck:
 	@echo "Running type checks..."
 	uv run ty check
 
-clean-jupyter:
-	@echo "Cleaning up notebooks..."
-	jupyter nbconvert --ClearOutputPreprocessor.enabled=True --clear-output --inplace **/*.ipynb
-
 test-cov:
 	@echo "Running tests in swiss_ai_hub.agent with coverage..."
 	uv run pytest --cov=. \
@@ -29,3 +28,24 @@ test:
 
 pr-ready: format lint
 	@echo "Running full check (format, sort)..."
+
+run-rag-agent:
+	uv run python app/rag_agent/main.py
+
+run-expert-asking-agent:
+	uv run python app/expert_asking_agent/main.py
+
+run-expert-rag-agent:
+	uv run python app/expert_rag_agent/main.py
+
+run-few-shot-agent:
+	uv run python app/few_shot_agent/main.py
+
+run-llm-wrapping-agent:
+	uv run python app/llm_wrapping_agent/main.py
+
+run-namespace-selection-agent:
+	uv run python app/namespace_selection_agent/main.py
+
+run-retrieval-agent:
+	uv run python app/retrieval_agent/main.py

@@ -1,3 +1,6 @@
+-include ../../.env
+export
+
 NUM_WORKERS = $(shell echo $${NUM_WORKERS:-$$(( $$(nproc) * 1 ))})
 
 lint:
@@ -14,10 +17,6 @@ typecheck:
 	@echo "Running type checks..."
 	uv run ty check
 
-clean-jupyter:
-	@echo "Cleaning up notebooks..."
-	jupyter nbconvert --ClearOutputPreprocessor.enabled=True --clear-output --inplace **/*.ipynb
-
 test-cov:
 	@echo "Running tests in swiss_ai_hub.api with coverage..."
 	uv run pytest --cov=. \
@@ -32,7 +31,6 @@ test:
 
 pr-ready: format lint
 	@echo "Running full check (format, lint)..."
-
 
 install-ffmpeg:
 	@echo "Installing ffmpeg..."

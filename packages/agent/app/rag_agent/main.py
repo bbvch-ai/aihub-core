@@ -7,9 +7,8 @@ import asyncio
 
 from swiss_ai_hub.core.infrastructure import AIHubSettings, enable_logging
 
-from swiss_ai_hub.agent.agents.rag_agent.configs.rag_agent_config import RAGAgentConfig
-from swiss_ai_hub.agent.agents.rag_agent.rag_agent import RAGAgent
-from swiss_ai_hub.agent.runners.agent_runner import AgentRunner
+from swiss_ai_hub.agent.agents.rag_agent import RAGAgent, RAGAgentConfig
+from swiss_ai_hub.agent.runners import AgentRunner
 
 enable_logging()
 

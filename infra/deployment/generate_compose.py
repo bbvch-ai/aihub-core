@@ -14,6 +14,7 @@ import yaml
 from jinja2 import Environment, FileSystemLoader
 
 # Paths
+REPO_ROOT = Path(__file__).parent.parent.parent.resolve()
 ROOT_DIR = Path(__file__).parent.parent.resolve()
 DEPLOYMENT_DIR = Path(__file__).parent.resolve()
 
@@ -65,7 +66,7 @@ STATIC_COPY_FILES = [
 
 # Additional static files included only in release bundles (non-config files).
 # Config files are copied automatically from ROOT_DIR/configs/.
-# (source relative to ROOT_DIR, destination relative to variant_dir)
+# (source relative to REPO_ROOT, destination relative to variant_dir)
 RELEASE_STATIC_FILES = [
     (".env.prod", ".env.template"),
     ("setup-env.sh", "setup-env.sh"),
@@ -225,7 +226,7 @@ def _copy_release_static_files(variant_dir):
 
     # Copy non-config release files (.env.template, setup-env.sh)
     for src_rel, dst_rel in RELEASE_STATIC_FILES:
-        src = ROOT_DIR / src_rel
+        src = REPO_ROOT / src_rel
         if not src.exists():
             continue
         dst = variant_dir / dst_rel

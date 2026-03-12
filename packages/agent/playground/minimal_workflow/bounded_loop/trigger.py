@@ -1,3 +1,7 @@
+from dotenv import find_dotenv, load_dotenv
+
+load_dotenv(find_dotenv(usecwd=True))
+
 import asyncio
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
@@ -5,8 +9,8 @@ from swiss_ai_hub.core.auth import DangerousDevelopmentOnlyAuthSettings
 from swiss_ai_hub.core.events.agent import UserMessageEvent
 from swiss_ai_hub.core.i18n import LocaleString
 
-from playground.minimal_workflow.bounded_loop.BoundedLoopAgent import BoundedLoopAgent
-from playground.minimal_workflow.bounded_loop.BoundedLoopAgentConfig import BoundedLoopAgentConfig
+from playground.minimal_workflow.bounded_loop.bounded_loop_agent import BoundedLoopAgent
+from playground.minimal_workflow.bounded_loop.bounded_loop_agent_config import BoundedLoopAgentConfig
 from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner
 
 

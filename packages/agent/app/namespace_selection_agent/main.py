@@ -9,7 +9,7 @@ from swiss_ai_hub.core.infrastructure import AIHubSettings, enable_logging
 
 from swiss_ai_hub.agent.agents.namespace_selection_agent import NamespaceSelectionAgent
 from swiss_ai_hub.agent.agents.namespace_selection_agent.configs import NamespaceSelectionAgentConfig
-from swiss_ai_hub.agent.runners.agent_runner import AgentRunner
+from swiss_ai_hub.agent.runners import AgentRunner
 
 enable_logging()
 

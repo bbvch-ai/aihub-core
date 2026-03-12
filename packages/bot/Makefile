@@ -1,5 +1,7 @@
--include .env
+-include ../../.env
 export
+
+NUM_WORKERS = $(shell echo $${NUM_WORKERS:-$$(( $$(nproc) * 1 ))})
 
 lint:
 	@echo "Running linter..."
@@ -15,10 +17,6 @@ typecheck:
 	@echo "Running type checks..."
 	uv run ty check
 
-clean-jupyter:
-	@echo "Cleaning up notebooks..."
-	jupyter nbconvert --ClearOutputPreprocessor.enabled=True --clear-output --inplace **/*.ipynb
-
 test-cov:
 	@echo "Running tests in swiss_ai_hub.bot with coverage..."
 	uv run pytest --cov=. \
@@ -33,6 +31,10 @@ test:
 
 pr-ready: format lint
 	@echo "Running full check (format, lint)..."
+
+run-dev:
+	@echo "Starting development server with hot reload..."
+	uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8001
 
 run-prod:
 	@echo "Starting server with Gunicorn using ${NUM_WORKERS} workers..."

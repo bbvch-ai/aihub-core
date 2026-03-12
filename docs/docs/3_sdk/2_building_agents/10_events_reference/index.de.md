@@ -33,9 +33,9 @@ Dispatcher-Overhead verursachen.
 meisten semantischen Events (`LLMEvent`, `RetrieverEvent` usw.) erben von `ControlAndDisplayEvent`.
 
 ```python
-from aihub_lib.nats.events.control.ControlEvent import ControlEvent
-from aihub_lib.nats.events.display.DisplayEvent import DisplayEvent
-from aihub_lib.nats.events.ControlAndDisplayEvent import ControlAndDisplayEvent
+from swiss_ai_hub.core.events.control.control_event import ControlEvent
+from swiss_ai_hub.core.events.display.display_event import DisplayEvent
+from swiss_ai_hub.core.events.control_and_display_event import ControlAndDisplayEvent
 
 # Control event: triggers dispatcher, can satisfy step dependencies
 class AnalysisCompleteEvent(ControlEvent):
@@ -170,7 +170,7 @@ Integration mit:
 - **Jedem OpenTelemetry-kompatiblen System:** Standard-Span-Attribute
 
 ```python
-from aihub_lib.nats.events.semantic import RetrieverEvent
+from swiss_ai_hub.core.events.semantic import RetrieverEvent
 
 # RetrieverEvent exportiert automatisch OpenInference-Attribute:
 # - openinference.span.kind: "RETRIEVER"
@@ -187,7 +187,7 @@ Beim Erstellen von Agents, die Observability benötigen, bevorzugen Sie semantis
 
 ```python
 # Bevorzugt: semantisches Event für Observability
-from aihub_lib.nats.events.semantic import RetrieverEvent
+from swiss_ai_hub.core.events.semantic import RetrieverEvent
 
 @step()
 async def retrieve(self, event: UserMessageEvent) -> RetrieverEvent:
@@ -298,7 +298,7 @@ class MyRetrieveEvent(ControlAndDisplayEvent):
 Benutzerdefinierte Events sind Pydantic-Modelle. Alle Felder erfordern Typ-Annotationen:
 
 ```python
-from aihub_lib.nats.events.control.ControlEvent import ControlEvent
+from swiss_ai_hub.core.events.control.control_event import ControlEvent
 
 class AnalysisCompleteEvent(ControlEvent):
     summary: str

@@ -1,7 +1,7 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Run Bots" type="PythonConfigurationType" factoryName="Python" folderName="Run Services">
     <module name="packages/bot" />
-    <option name="ENV_FILES" value="" />
+    <option name="ENV_FILES" value="$PROJECT_DIR$/.env" />
     <option name="INTERPRETER_OPTIONS" value="" />
     <option name="PARENT_ENVS" value="true" />
     <envs>

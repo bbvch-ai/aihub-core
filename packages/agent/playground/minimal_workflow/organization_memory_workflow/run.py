@@ -1,7 +1,11 @@
 # ruff: noqa: E402
+from dotenv import find_dotenv, load_dotenv
+
+load_dotenv(find_dotenv(usecwd=True))
+
 from swiss_ai_hub.core.infrastructure import AihubInstrumentor  # isort: skip
-from playground.minimal_workflow.organization_memory_workflow.OrganizationMemoryAgent import OrganizationMemoryAgent
-from playground.minimal_workflow.organization_memory_workflow.OrganizationMemoryAgentConfig import (
+from playground.minimal_workflow.organization_memory_workflow.organization_memory_agent import OrganizationMemoryAgent
+from playground.minimal_workflow.organization_memory_workflow.organization_memory_agent_config import (
     OrganizationMemoryAgentConfig,
 )
 

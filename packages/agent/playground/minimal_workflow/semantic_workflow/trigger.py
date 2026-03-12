@@ -1,3 +1,7 @@
+from dotenv import find_dotenv, load_dotenv
+
+load_dotenv(find_dotenv(usecwd=True))
+
 import asyncio
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
@@ -5,10 +9,10 @@ from swiss_ai_hub.core.auth import DangerousDevelopmentOnlyAuthSettings
 from swiss_ai_hub.core.events.agent import UserMessageEvent
 from swiss_ai_hub.core.i18n import LocaleString
 
-from playground.minimal_workflow.semantic_workflow.SemanticEventAgent import (
+from playground.minimal_workflow.semantic_workflow.semantic_event_agent import (
     SemanticEventAgent,
 )
-from playground.minimal_workflow.semantic_workflow.SemanticEventAgentConfig import (
+from playground.minimal_workflow.semantic_workflow.semantic_event_agent_config import (
     SemanticEventAgentConfig,
 )
 from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner

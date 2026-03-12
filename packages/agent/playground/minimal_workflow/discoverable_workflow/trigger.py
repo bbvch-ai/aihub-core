@@ -1,3 +1,7 @@
+from dotenv import find_dotenv, load_dotenv
+
+load_dotenv(find_dotenv(usecwd=True))
+
 import asyncio
 
 from bson import ObjectId
@@ -6,10 +10,10 @@ from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.infrastructure import enable_logging
 from swiss_ai_hub.core.topic_managers import AgentTopicManager
 
-from playground.minimal_workflow.discoverable_workflow.DiscoverableAgent import (
+from playground.minimal_workflow.discoverable_workflow.discoverable_agent import (
     DiscoverableAgent,
 )
-from playground.minimal_workflow.discoverable_workflow.DiscoverableAgentConfig import (
+from playground.minimal_workflow.discoverable_workflow.discoverable_agent_config import (
     DiscoverableAgentConfig,
 )
 from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner

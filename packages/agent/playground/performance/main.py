@@ -1,4 +1,8 @@
 # ruff: noqa: E501
+from dotenv import find_dotenv, load_dotenv
+
+load_dotenv(find_dotenv(usecwd=True))
+
 import asyncio
 import gc
 import json
@@ -23,9 +27,9 @@ from swiss_ai_hub.core.topics import Topic
 from tabulate import tabulate
 from tqdm import tqdm
 
-from playground.performance.PerformanceTestingAgent.events.ParallelEvent import ParallelEvent
-from playground.performance.PerformanceTestingAgent.PerformanceTestingAgent import PerformanceTestingAgent
-from playground.performance.PerformanceTestingAgent.PerformanceTestingAgentConfig import (
+from playground.performance.performance_testing_agent.events.parallel_event import ParallelEvent
+from playground.performance.performance_testing_agent.performance_testing_agent import PerformanceTestingAgent
+from playground.performance.performance_testing_agent.performance_testing_agent_config import (
     PerformanceTestingAgentConfig,
 )
 from swiss_ai_hub.agent.runners.multiprocess_agent_runner import MultiprocessAgentRunner

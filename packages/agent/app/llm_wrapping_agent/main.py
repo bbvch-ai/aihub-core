@@ -8,9 +8,8 @@ import asyncio
 from swiss_ai_hub.core.infrastructure import AIHubSettings, enable_logging
 
 from app.llm_wrapping_agent.templates import ALL_TEMPLATES
-from swiss_ai_hub.agent.agents.llm_wrapping_agent.llm_wrapping_agent import LLMWrappingAgent
-from swiss_ai_hub.agent.agents.llm_wrapping_agent.llm_wrapping_agent_config import LLMWrappingAgentConfig
-from swiss_ai_hub.agent.runners.agent_runner import AgentRunner
+from swiss_ai_hub.agent.agents.llm_wrapping_agent import LLMWrappingAgent, LLMWrappingAgentConfig
+from swiss_ai_hub.agent.runners import AgentRunner
 
 enable_logging()
 

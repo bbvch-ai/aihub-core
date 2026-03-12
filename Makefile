@@ -134,6 +134,26 @@ up-dev:
 	@echo "Starting development environment with Docker Compose..."
 	docker compose -f infra/docker-compose.dev.yml --env-file .env up -d --build
 
+up-dev-gpu:
+	@echo "Starting development GPU environment with Docker Compose..."
+	docker compose -f infra/docker-compose.dev.gpu.yml --env-file .env up -d --build
+
+up-build: local-cert
+	@echo "Starting build environment with Docker Compose..."
+	docker compose -f infra/docker-compose.build.yml --env-file .env up -d --build
+
+up-build-gpu: local-cert
+	@echo "Starting build GPU environment with Docker Compose..."
+	docker compose -f infra/docker-compose.build.gpu.yml --env-file .env up -d --build
+
+up-local: local-cert
+	@echo "Starting local environment with Docker Compose..."
+	docker compose -f infra/docker-compose.local.yml --env-file .env up -d
+
+up-local-gpu: local-cert
+	@echo "Starting local GPU environment with Docker Compose..."
+	docker compose -f infra/docker-compose.local.gpu.yml --env-file .env up -d
+
 # Bump version across all packages (VERSION=0.264.0)
 VERSION ?= 0.263.0
 version-bump:

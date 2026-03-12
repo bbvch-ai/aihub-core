@@ -13,6 +13,7 @@ from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler
 )
 from swiss_ai_hub.core.infrastructure import AIHubSettings, MongoSettings, enable_logging
 from swiss_ai_hub.core.persistence.messaging.entities.thread_entity import ThreadEntity
+from swiss_ai_hub.core.persistence.user.user_entity import UserEntity
 from swiss_ai_hub.core.persistence.utils import str_to_object_id
 from swiss_ai_hub.core.routes import HealthController
 from swiss_ai_hub.core.testing import ASGIAdapter
@@ -36,6 +37,7 @@ SERVICE_ENDPOINT = f"{BASE_URL}/service"
 CONVERSATION_ID = "test_conversation_id"
 BOT_ID = "test_bot_id"
 USER_ID = "test_user_id"
+USER_EMAIL = "test@example.com"
 ACTIVITY_ID = "test_activity_id"
 
 
@@ -66,12 +68,17 @@ def setup_test_credentials():
     PathEntity(path=json_path, credentials=test_credentials, system_message="Test system message").save()
     PathEntity(path=stream_path, credentials=test_credentials, system_message="Test system message").save()
 
+    # Create test user (looked up via from_property.name in AgentCompletionHandler)
+    UserEntity.objects(email=USER_EMAIL).delete()
+    UserEntity.create_user(oid="test_user_oid", name="Test User", email=USER_EMAIL)
+
     yield
 
     # Clean up test data
     try:
         PathEntity.objects(path=json_path).delete()
         PathEntity.objects(path=stream_path).delete()
+        UserEntity.objects(email=USER_EMAIL).delete()
     except Exception:
         # Connection may already be closed, ignore cleanup errors
         pass
@@ -147,6 +154,7 @@ async def test_send_message(
     payload["serviceUrl"] = SERVICE_ENDPOINT
     payload["conversation"]["id"] = CONVERSATION_ID
     payload["from"]["id"] = USER_ID
+    payload["from"]["name"] = USER_EMAIL
     payload["recipient"]["id"] = BOT_ID
     payload["id"] = ACTIVITY_ID
     payload["channelId"] = "emulator"  # Required by Bot Framework
@@ -176,6 +184,7 @@ async def test_stream_response(
     payload["serviceUrl"] = SERVICE_ENDPOINT
     payload["conversation"]["id"] = CONVERSATION_ID
     payload["from"]["id"] = USER_ID
+    payload["from"]["name"] = USER_EMAIL
     payload["recipient"]["id"] = BOT_ID
     payload["id"] = ACTIVITY_ID
     payload["channelId"] = "emulator"  # Required by Bot Framework
