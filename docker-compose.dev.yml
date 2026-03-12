@@ -1000,7 +1000,7 @@ services:
       seaweedfs-s3:
         condition: service_healthy
       litellm:
-        condition: service_started
+        condition: service_healthy
       jupyter:
         condition: service_healthy
       playwright:
@@ -1252,8 +1252,11 @@ services:
 
 
 
+  
 
+  
 
+  
 
   
 
