@@ -15,7 +15,7 @@ from aihub_api.routes.openai.OpenaiController import OpenaiController
 from aihub_api.runners.ApiTestRunner import ApiTestRunner
 
 BASE_URL = "http://test"
-CHAT_ENDPOINT = "/api/v1/openai/chat/completions"
+CHAT_ENDPOINT = "/openai/chat/completions"
 
 
 def _exceeded_status(*, limit: int = 100, current_count: int = 101, period: str = "1d") -> UsageStatus:
