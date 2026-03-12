@@ -232,12 +232,15 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
         self.js_publisher = JSPublisher(f"Simulated{self.agent_class}ApiTestRunner", self.js)
 
         if hasattr(self._api_app.state, "agent_controller"):
+            # redis is not used by _register_class_endpoints, but required by __init__.
+            # Use getattr with fallback since start_simulation() runs before lifetime_manager.
+            redis = getattr(self._api_app.state, "redis", None)
             AgentEndpointsDiscoveryService(
                 nc=self.nc,
                 api_app=self._api_app,
                 controller=self._api_app.state.agent_controller,
                 locale_handler=ApiLocaleHandler(),
-                redis=self._api_app.state.redis,
+                redis=redis,
                 discovery_interval=60,
             )._register_class_endpoints(
                 agent_class=self.agent_class,
