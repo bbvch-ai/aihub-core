@@ -7,7 +7,7 @@ LANGFUSE_PROVISIONER = "aihub_lib.infrastructure.langfuse.LangfuseProvisioner.La
 ACCESS_CHANGE_HOOK = "aihub_lib.persistence.access.AccessChangeHook.AccessChangeHook"
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture(autouse=True, scope="session")
 def _skip_external_provisioning():
     """Skip OpenWebUI and Langfuse provisioning during tests (not available in CI)."""
     with (
