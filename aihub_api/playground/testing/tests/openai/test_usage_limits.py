@@ -8,7 +8,6 @@ from aihub_lib.auth.usage import RoleUsageLimitStatus, UsageLimitPeriod, UsageSt
 from aihub_lib.testing.auth_utils.role_mocks import mock_role_entity_methods  # noqa: F401
 from aihub_lib.testing.auth_utils.tenant_mocks import mock_tenant_entity_autouse  # noqa: F401
 from aihub_lib.testing.auth_utils.user_mocks import mock_user_entity_autouse  # noqa: F401
-from asgi_lifespan import LifespanManager
 from fastapi import HTTPException
 from httpx import ASGITransport, AsyncClient
 
@@ -43,6 +42,14 @@ def _mock_agent_dto() -> MagicMock:
     return dto
 
 
+def _create_app():
+    auth = DangerousDevelopmentOnlyAuthHandler()
+    controller = OpenaiController(auth=auth).chat_completion_with_assistants()
+    runner = ApiTestRunner()
+    runner.mount(controller)
+    return runner._api_app
+
+
 class TestUsageLimitEnforcement:
     """Tests for usage limit enforcement in OpenAI chat completions."""
 
@@ -61,45 +68,35 @@ class TestUsageLimitEnforcement:
             status_code=429, detail=build_exceeded_detail(exceeded, locale="en").model_dump()
         )
 
-        auth = DangerousDevelopmentOnlyAuthHandler()
-        controller = OpenaiController(auth=auth).chat_completion_with_assistants()
-        runner = ApiTestRunner()
-        runner.mount(controller)
-        app = runner.create_app()
+        app = _create_app()
 
-        async with LifespanManager(app) as lifespan:
-            async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url=BASE_URL) as client:
-                payload = {
-                    "model": "TestAgent/test_id",
-                    "messages": [{"role": "user", "content": "Hello"}],
-                    "stream": False,
-                }
-                response = await client.post(CHAT_ENDPOINT, json=payload)
+        async with AsyncClient(transport=ASGITransport(app=app), base_url=BASE_URL) as client:
+            payload = {
+                "model": "TestAgent/test_id",
+                "messages": [{"role": "user", "content": "Hello"}],
+                "stream": False,
+            }
+            response = await client.post(CHAT_ENDPOINT, json=payload)
 
-                assert response.status_code == 429, f"Expected 429, got {response.status_code}: {response.text}"
-                data = response.json()
-                assert data["detail"]["error"] == "usage_limit_exceeded"
-                assert data["detail"]["limit"] == 100
-                assert data["detail"]["period"] == UsageLimitPeriod.ONE_DAY
+            assert response.status_code == 429, f"Expected 429, got {response.status_code}: {response.text}"
+            data = response.json()
+            assert data["detail"]["error"] == "usage_limit_exceeded"
+            assert data["detail"]["limit"] == 100
+            assert data["detail"]["period"] == UsageLimitPeriod.ONE_DAY
 
     @pytest.mark.asyncio
     @patch("aihub_api.routes.openai.OpenaiService.UsageLimits.check_and_raise", new_callable=AsyncMock)
     async def test_direct_model_calls_not_counted(self, mock_check_usage: AsyncMock):
         """Test that direct model calls (not agent calls) are not counted."""
-        auth = DangerousDevelopmentOnlyAuthHandler()
-        controller = OpenaiController(auth=auth).chat_completion_with_assistants()
-        runner = ApiTestRunner()
-        runner.mount(controller)
-        app = runner.create_app()
+        app = _create_app()
 
-        async with LifespanManager(app) as lifespan:
-            async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url=BASE_URL) as client:
-                payload = {
-                    "model": "text-generation/gpt-oss-120b",
-                    "messages": [{"role": "user", "content": "Hello"}],
-                    "stream": False,
-                }
-                await client.post(CHAT_ENDPOINT, json=payload)
+        async with AsyncClient(transport=ASGITransport(app=app), base_url=BASE_URL) as client:
+            payload = {
+                "model": "text-generation/gpt-oss-120b",
+                "messages": [{"role": "user", "content": "Hello"}],
+                "stream": False,
+            }
+            await client.post(CHAT_ENDPOINT, json=payload)
 
-                # Direct model calls don't go through ChatService, so check_and_raise should not be called
-                mock_check_usage.assert_not_called()
+            # Direct model calls don't go through ChatService, so check_and_raise should not be called
+            mock_check_usage.assert_not_called()
