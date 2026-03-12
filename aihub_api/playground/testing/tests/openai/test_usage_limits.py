@@ -53,6 +53,7 @@ class TestUsageLimitEnforcement:
     """Tests for usage limit enforcement in OpenAI chat completions."""
 
     @pytest.mark.asyncio
+    @patch("aihub_api.runners.ApiRunner.lifetime_manager", _noop_lifetime_manager)
     @patch("aihub_api.routes.openai.OpenaiService.AgentService.get_agent_instance", new_callable=AsyncMock)
     @patch("aihub_api.routes.openai.OpenaiService.UsageLimits.check_and_raise", new_callable=AsyncMock)
     async def test_returns_429_when_limit_exceeded(self, mock_check_usage: AsyncMock, mock_get_agent: AsyncMock):
@@ -71,11 +72,7 @@ class TestUsageLimitEnforcement:
         controller = OpenaiController(auth=auth).chat_completion_with_assistants()
         runner = ApiTestRunner()
         runner.mount(controller)
-
-        with patch.object(
-            type(runner), "lifetime_manager", new_callable=lambda: property(lambda self: _noop_lifetime_manager)
-        ):
-            app = runner.create_app()
+        app = runner.create_app()
 
         async with LifespanManager(app) as lifespan:
             async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url=BASE_URL) as client:
@@ -93,6 +90,7 @@ class TestUsageLimitEnforcement:
                 assert data["detail"]["period"] == UsageLimitPeriod.ONE_DAY
 
     @pytest.mark.asyncio
+    @patch("aihub_api.runners.ApiRunner.lifetime_manager", _noop_lifetime_manager)
     @patch("aihub_api.routes.openai.OpenaiService.UsageLimits.check_and_raise", new_callable=AsyncMock)
     async def test_direct_model_calls_not_counted(self, mock_check_usage: AsyncMock):
         """Test that direct model calls (not agent calls) are not counted."""
@@ -100,11 +98,7 @@ class TestUsageLimitEnforcement:
         controller = OpenaiController(auth=auth).chat_completion_with_assistants()
         runner = ApiTestRunner()
         runner.mount(controller)
-
-        with patch.object(
-            type(runner), "lifetime_manager", new_callable=lambda: property(lambda self: _noop_lifetime_manager)
-        ):
-            app = runner.create_app()
+        app = runner.create_app()
 
         async with LifespanManager(app) as lifespan:
             async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url=BASE_URL) as client:
