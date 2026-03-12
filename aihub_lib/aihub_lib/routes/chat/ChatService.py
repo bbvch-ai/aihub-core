@@ -84,6 +84,7 @@ class ChatService:
             bool, "Receive all events in thread, not just the ones from the specified agents"
         ] = False,
         locale: str | None = None,
+        mcp_tokens: dict[str, str] | None = None,
     ) -> tuple[ExternalAgentEvent, AgentThreadTopicManager]:
         """
         Common initialization steps for both streaming and JSON interactions.
@@ -138,6 +139,7 @@ class ChatService:
                 user=user,
                 locale=locale or LocaleHandler.DEFAULT_LOCALE,
                 files=files,
+                mcp_tokens=mcp_tokens,
             )
 
         event = ExternalAgentEvent(
@@ -169,6 +171,7 @@ class ChatService:
         display_id: ObjectId | None = None,
         files: list[UserUploadedFile] | None = None,
         locale: str | None = None,
+        mcp_tokens: dict[str, str] | None = None,
     ) -> StreamingResources:
         """
         Starts a streaming chat interaction and returns the resources for SSE streaming.
@@ -183,6 +186,7 @@ class ChatService:
             files=files,
             subscribe_to_thread=True,
             locale=locale,
+            mcp_tokens=mcp_tokens,
         )
 
         stop_signal = asyncio.Event()
@@ -244,6 +248,7 @@ class ChatService:
         display_id: ObjectId | None = None,
         files: list[UserUploadedFile] | None = None,
         locale: str | None = None,
+        mcp_tokens: dict[str, str] | None = None,
     ) -> JsonResources:
         """
         Starts a JSON-based chat interaction, waiting for all events before returning.
@@ -258,6 +263,7 @@ class ChatService:
             files=files,
             subscribe_to_thread=True,
             locale=locale,
+            mcp_tokens=mcp_tokens,
         )
         return await ChatService.start_json_event_interaction(
             user, agent_class, agent_id, external_event, topic_manager, nc, external_agent_event_distributor

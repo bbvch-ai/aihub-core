@@ -63,6 +63,13 @@ class UserMessageEvent(StartEvent):
             "additional context or information for the agent.",
         ),
     ] = None
+    mcp_tokens: Annotated[
+        dict[str, str] | None,
+        Field(
+            description="Per-user JWT tokens for MCP servers, keyed by MCP server name. "
+            "Enables MCP servers to authenticate as the requesting user.",
+        ),
+    ] = None
 
     @property
     def user_query(self) -> str:

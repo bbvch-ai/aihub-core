@@ -299,6 +299,7 @@ class OpenaiService:
                 chat_completion_request, thread_id
             )
         files = OpenaiService._extract_files(chat_completion_request)
+        mcp_tokens = OpenaiService._extract_mcp_tokens(chat_completion_request)
 
         await usage_limits.check_and_raise(user, ResourceType.AGENT, agent_class, agent_id, locale=locale)
 
@@ -313,6 +314,7 @@ class OpenaiService:
             display_id=str_to_object_id(display_id),
             files=files,
             locale=locale,
+            mcp_tokens=mcp_tokens,
         )
         # Wait until all events are processed
         await resources.stop_signal.wait()
@@ -364,6 +366,7 @@ class OpenaiService:
                 chat_completion_request, thread_id
             )
         files = OpenaiService._extract_files(chat_completion_request)
+        mcp_tokens = OpenaiService._extract_mcp_tokens(chat_completion_request)
 
         await usage_limits.check_and_raise(user, ResourceType.AGENT, agent_class, agent_id, locale=locale)
 
@@ -378,6 +381,7 @@ class OpenaiService:
             display_id=str_to_object_id(display_id),
             files=files,
             locale=locale,
+            mcp_tokens=mcp_tokens,
         )
 
         async def sse_event_generator():
@@ -559,6 +563,12 @@ class OpenaiService:
         chat_completion_request: ChatCompletionRequest,
     ) -> list[UserUploadedFile] | None:
         return chat_completion_request.metadata.files if chat_completion_request.metadata else None
+
+    @staticmethod
+    def _extract_mcp_tokens(
+        chat_completion_request: ChatCompletionRequest,
+    ) -> dict[str, str] | None:
+        return chat_completion_request.metadata.mcp_tokens if chat_completion_request.metadata else None
 
     @staticmethod
     async def _reconstruct_history(

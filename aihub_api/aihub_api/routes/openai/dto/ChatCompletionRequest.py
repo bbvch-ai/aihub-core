@@ -106,6 +106,13 @@ class Metadata(BaseModel):
         list[UserUploadedFile] | None,
         Field(description="List of files to attach to the request, if supported by the model."),
     ] = None
+    mcp_tokens: Annotated[
+        dict[str, str] | None,
+        Field(
+            description="Per-user JWT tokens for MCP servers, keyed by MCP server name. "
+            "Enables MCP servers to authenticate as the requesting user.",
+        ),
+    ] = None
 
 
 class ChatCompletionRequest(BaseModel):
