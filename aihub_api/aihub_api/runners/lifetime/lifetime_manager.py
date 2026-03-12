@@ -225,10 +225,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
 
         # Provision OpenWebUI with groups, workspace models, and access grants
         OpenWebuiProvisioner.initialize(redis)
-        try:
-            await OpenWebuiProvisioner().provision()
-        except Exception:
-            logger.warning("OpenWebUI provisioning failed — will retry on next discovery cycle")
+        await OpenWebuiProvisioner().provision()
 
         # Re-sync OpenWebUI groups when a user switches active tenant
         def _on_tenant_switch() -> None:
