@@ -237,6 +237,7 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
                 api_app=self._api_app,
                 controller=self._api_app.state.agent_controller,
                 locale_handler=ApiLocaleHandler(),
+                redis=self._api_app.state.redis,
                 discovery_interval=60,
             )._register_class_endpoints(
                 agent_class=self.agent_class,
