@@ -3,7 +3,7 @@
     <deployment type="docker-compose.yml">
       <settings>
         <option name="commandLineOptions" value="--build" />
-        <option name="envFilePath" value=".env" />
+        <option name="envFilePath" value="$PROJECT_DIR$/.env" />
         <option name="sourceFilePath" value="infra/docker-compose.build.yml" />
       </settings>
     </deployment>
