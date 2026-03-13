@@ -27,6 +27,7 @@ from aihub_lib.persistence.rag.vectors.node_metadata import (
     TYPE,
     NodeTypeValue,
 )
+from aihub_lib.persistence.rag.vectors.stores.MilvusPartitionManager import get_partition_name_for_namespace
 from fastapi import HTTPException
 from llama_index.core.vector_stores import MetadataFilter, MetadataFilters
 from mongoengine import DoesNotExist, register_connection
@@ -445,6 +446,37 @@ class KnowledgeService:
         container = parts[0]
         file_path = parts[1] if len(parts) > 1 else ""
         return s3_service.generate_sas_url(container, file_path)
+
+    @staticmethod
+    @trace_fn
+    def delete_document(
+        db: str,
+        namespace: str,
+        document_id: str,
+        vector_store_factory: VectorStoreFactory,
+        s3_service: S3AnonymousFileAccessService,
+    ) -> None:
+        """Deletes a document from MongoDB, Milvus vector store, and S3 storage."""
+        KnowledgeService._ensure_db_exists(db)
+
+        try:
+            ref_doc = RefDoc.by_id_and_namespace(db_alias=db, doc_id=document_id, namespace=namespace)
+        except DoesNotExist:
+            raise HTTPException(status_code=404, detail="Document not found")
+
+        source = ref_doc.data.metadata.source
+
+        vector_store = vector_store_factory(db)
+        partition_name = get_partition_name_for_namespace(namespace)
+        vector_store.delete(ref_doc_id=document_id, partition_name=partition_name)
+
+        RefDoc.delete_by_id(db_alias=db, doc_id=document_id)
+
+        source_path = source.removeprefix("s3://")
+        parts = source_path.split("/", 1)
+        if len(parts) == 2:
+            container, file_path = parts
+            s3_service.delete_file(container=container, file_path=file_path)
 
     @staticmethod
     def get_supported_file_types() -> list[str]:

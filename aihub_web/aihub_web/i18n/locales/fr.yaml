@@ -414,6 +414,18 @@ knowledge:
       actions:
         upload: Télécharger
         cancel: Annuler
+    delete:
+      title: Supprimer le document
+      confirm_message: Êtes-vous sûr de vouloir supprimer ce document ? Cela supprimera
+        le document, tous ses morceaux et le fichier original. Cette action est irréversible.
+      button: Supprimer
+      cancel: Annuler
+      success:
+        title: Document supprimé
+        message: Le document a été supprimé avec succès.
+      error:
+        title: Échec de la suppression
+        message: La suppression du document a échoué. Veuillez réessayer.
   nodes:
     title: Morceaux de document
   summary:

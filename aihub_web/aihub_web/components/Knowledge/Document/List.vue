@@ -77,12 +77,26 @@
           size="small"
           variant="outlined"
           icon="pi pi-download"
-          @click="() => downloadFile(data.id)"
+          @click.stop="() => downloadFile(data.id)"
         />
         <span
           v-else
           class="text-sm text-surface-400"
         >-</span>
+      </template>
+    </Column>
+    <Column
+      v-if="showDelete"
+    >
+      <template #body="{ data }">
+        <Button
+          icon="pi pi-trash"
+          severity="danger"
+          text
+          rounded
+          size="small"
+          @click.stop="() => emit('delete', data)"
+        />
       </template>
     </Column>
   </DataTable>
@@ -96,15 +110,19 @@ const route = useRoute()
 const { t } = useI18n()
 const { getDocumentSourceUrl } = useDocumentUrl()
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   documents: DocumentDto[]
   sortField: string | null
   sortOrder: 1 | -1
-}>()
+  showDelete?: boolean
+}>(), {
+  showDelete: false,
+})
 
 const emit = defineEmits<{
   selected: [document: DocumentDto]
   sort: [field: string | null, order: 1 | -1]
+  delete: [document: DocumentDto]
 }>()
 
 const formatted = (datestr: string) => useDateFormat(new Date(datestr), 'DD.MM.YYYY')

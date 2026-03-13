@@ -410,6 +410,19 @@ knowledge:
       actions:
         upload: Upload
         cancel: Cancel
+    delete:
+      title: Delete Document
+      confirm_message: Are you sure you want to delete this document? This will remove
+        the document, all its chunks, and the original file. This action cannot be
+        undone.
+      button: Delete
+      cancel: Cancel
+      success:
+        title: Document Deleted
+        message: The document has been successfully deleted.
+      error:
+        title: Delete Failed
+        message: Failed to delete the document. Please try again.
   nodes:
     title: Document Chunks
   summary:

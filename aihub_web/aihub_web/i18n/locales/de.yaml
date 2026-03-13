@@ -415,6 +415,20 @@ knowledge:
       actions:
         upload: Hochladen
         cancel: Abbrechen
+    delete:
+      title: Dokument löschen
+      confirm_message: Sind Sie sicher, dass Sie dieses Dokument löschen möchten?
+        Dies entfernt das Dokument, alle zugehörigen Chunks und die Originaldatei.
+        Diese Aktion kann nicht rückgängig gemacht werden.
+      button: Löschen
+      cancel: Abbrechen
+      success:
+        title: Dokument gelöscht
+        message: Das Dokument wurde erfolgreich gelöscht.
+      error:
+        title: Löschen fehlgeschlagen
+        message: Das Dokument konnte nicht gelöscht werden. Bitte versuchen Sie es
+          erneut.
   nodes:
     title: Dokument-Chunks
   summary:

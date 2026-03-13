@@ -22981,6 +22981,44 @@ export type GetDocumentsForNamespaceResponses = {
 
 export type GetDocumentsForNamespaceResponse = GetDocumentsForNamespaceResponses[keyof GetDocumentsForNamespaceResponses];
 
+export type DeleteDocumentData = {
+    body?: never;
+    path: {
+        /**
+         * Database name
+         */
+        database: string;
+        /**
+         * Namespace
+         */
+        namespace: string;
+        /**
+         * Document ID
+         */
+        document_id: string;
+    };
+    query?: never;
+    url: '/knowledge/databases/{database}/namespaces/{namespace}/documents/{document_id}';
+};
+
+export type DeleteDocumentErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type DeleteDocumentError = DeleteDocumentErrors[keyof DeleteDocumentErrors];
+
+export type DeleteDocumentResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type DeleteDocumentResponse = DeleteDocumentResponses[keyof DeleteDocumentResponses];
+
 export type GetDocumentByIdData = {
     body?: never;
     path: {

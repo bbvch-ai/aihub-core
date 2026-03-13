@@ -413,6 +413,19 @@ knowledge:
       actions:
         upload: Carica
         cancel: Annulla
+    delete:
+      title: Elimina documento
+      confirm_message: Sei sicuro di voler eliminare questo documento? Verranno rimossi
+        il documento, tutti i suoi chunk e il file originale. Questa azione non può
+        essere annullata.
+      button: Elimina
+      cancel: Annulla
+      success:
+        title: Documento eliminato
+        message: Il documento è stato eliminato con successo.
+      error:
+        title: Eliminazione fallita
+        message: Impossibile eliminare il documento. Riprova.
   nodes:
     title: Chunk di documento
   summary:

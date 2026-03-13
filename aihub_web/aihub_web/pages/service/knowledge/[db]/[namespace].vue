@@ -30,8 +30,10 @@
       :documents="documents"
       :sort-field="sortState.field"
       :sort-order="sortState.order"
+      :show-delete="!currentDatabase?.auto_sync"
       @selected="toDocument"
       @sort="handleSort"
+      @delete="confirmDeleteDocument"
     />
 
     <div class="mt-4">
@@ -68,8 +70,11 @@ const route = useRoute()
 const router = useRouter()
 const localePath = useLocalePath()
 const { t } = useI18n()
+const toast = useToast()
+const confirm = useConfirm()
 
 const { databases } = useDatabases()
+const { deleteDocument } = useDeleteDocument()
 
 const {
   documents,
@@ -142,5 +147,52 @@ const openUploadModal = () => {
 
 const handleUpload = () => {
   refetch()
+}
+
+function confirmDeleteDocument(document: DocumentDto) {
+  confirm.require({
+    message: t('knowledge.documents.delete.confirm_message'),
+    header: t('knowledge.documents.delete.title'),
+    icon: 'pi pi-exclamation-triangle',
+    rejectProps: {
+      label: t('knowledge.documents.delete.cancel'),
+      severity: 'secondary',
+      outlined: true,
+    },
+    acceptProps: {
+      label: t('knowledge.documents.delete.button'),
+      severity: 'danger',
+    },
+    accept: () => handleDeleteDocument(document),
+  })
+}
+
+async function handleDeleteDocument(document: DocumentDto) {
+  try {
+    if (route.params.document_id === document.id) {
+      await router.push(localePath(`/service/knowledge/${route.params.db}/${route.params.namespace}`))
+    }
+
+    await deleteDocument({
+      database: route.params.db as string,
+      namespace: route.params.namespace as string,
+      documentId: document.id,
+    })
+
+    toast.add({
+      severity: 'success',
+      summary: t('knowledge.documents.delete.success.title'),
+      detail: t('knowledge.documents.delete.success.message'),
+      life: 3000,
+    })
+  }
+  catch {
+    toast.add({
+      severity: 'error',
+      summary: t('knowledge.documents.delete.error.title'),
+      detail: t('knowledge.documents.delete.error.message'),
+      life: 5000,
+    })
+  }
 }
 </script>

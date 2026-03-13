@@ -2,7 +2,7 @@
   <NuxtLayout>
     <NuxtPage />
     <Toast />
-    <ConfirmDialog />
+    <ConfirmDialog :style="{ maxWidth: '50rem' }" />
   </NuxtLayout>
 </template>
 

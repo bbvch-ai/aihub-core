@@ -384,6 +384,16 @@ class RefDoc(Document):
 
     @classmethod
     @trace_fn
+    def delete_by_id(cls, db_alias: str, doc_id: str) -> str:
+        """Delete a RefDoc by its ID and return the source path for S3 cleanup."""
+        with switch_db(cls, db_alias) as SwitchedRefDoc:
+            ref_doc = SwitchedRefDoc.objects.get(id=doc_id)
+            source = ref_doc.data.metadata.source
+            ref_doc.delete()
+            return source
+
+    @classmethod
+    @trace_fn
     def delete_by_source(cls, db_alias: str, source: str) -> bool:
         """Delete a RefDoc by its source path."""
         doc_id = source_to_doc_id(source)

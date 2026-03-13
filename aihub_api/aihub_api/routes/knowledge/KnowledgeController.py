@@ -13,7 +13,7 @@ from aihub_lib.infrastructure.s3.use_s3 import use_s3_service
 from aihub_lib.nats.dependencies.use_nats import use_nats
 from aihub_lib.persistence.rag.vectors import VectorStoreFactory
 from aihub_lib.routes.Controller import Controller
-from fastapi import Depends, HTTPException, Path, Query, Security
+from fastapi import Depends, HTTPException, Path, Query, Response, Security
 from mongoengine import connect
 from nats.aio.client import Client as NATS
 from pymongo import MongoClient
@@ -318,6 +318,34 @@ class KnowledgeController(Controller):
                 db=database, namespace=namespace, document_id=document_id, s3_service=s3_service
             )
             return SignedUrlDto(url=url)
+
+        return self
+
+    def delete_document(
+        self, route: str = "/databases/{database}/namespaces/{namespace}/documents/{document_id}"
+    ) -> Self:
+        @self.router.delete(route, tags=self.tags, status_code=204)
+        async def delete_document(
+            database: Annotated[str, Path(title="Database name", pattern=r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*$")],
+            namespace: Annotated[str, Path(title="Namespace", pattern=r"^[a-zA-Z0-9][a-zA-Z0-9 _\-]*$")],
+            document_id: Annotated[str, Path(title="Document ID")],
+            _: Annotated[
+                UserIdentity, Security(self.user_with_permission("aihub.admin.knowledge.{database}.{namespace}"))
+            ],
+            vector_store_factory: Annotated[VectorStoreFactory, Depends(use_vector_store_factory)],
+            s3_service: Annotated[S3AnonymousFileAccessService, Depends(use_s3_service)],
+        ) -> Response:
+            """Deletes a document and all its associated data (vectors, source file)."""
+            if database in ["admin", "local", "config"]:
+                raise HTTPException(status_code=403, detail="Not authorized to view this database")
+            KnowledgeService.delete_document(
+                db=database,
+                namespace=namespace,
+                document_id=document_id,
+                vector_store_factory=vector_store_factory,
+                s3_service=s3_service,
+            )
+            return Response(status_code=204)
 
         return self
 
