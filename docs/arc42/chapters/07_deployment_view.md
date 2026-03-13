@@ -157,9 +157,9 @@ that Let's Encrypt validation requests on port 80 reach Traefik before the HTTP-
 
 ### GPU support
 
-Each deployment stage has a GPU variant (e.g., `docker-compose.nightly.gpu.yml`). The GPU variant is the only mode that
-runs local inference — non-GPU compose files contain no local model containers and route all inference through Swiss LLM
-Cloud instead.
+Each deployment stage has a GPU variant (e.g., `infra/docker-compose.nightly.gpu.yml`). The GPU variant is the only mode
+that runs local inference — non-GPU compose files contain no local model containers and route all inference through
+Swiss LLM Cloud instead.
 
 The target hardware is an **NVIDIA RTX 6000 Pro with 96 GB VRAM**. The GPU variant deploys five inference containers,
 each with an explicit `--gpu-memory-utilization` budget: vLLM with Qwen3-VL-30B for text generation and vision (85%),

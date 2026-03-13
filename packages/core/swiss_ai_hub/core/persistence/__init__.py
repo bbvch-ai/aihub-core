@@ -60,7 +60,6 @@ if TYPE_CHECKING:
         NODE_CONTENT_TYPE_TEXT,
         NODE_TYPE_CONTENT,
         NODE_TYPE_SUMMARY,
-        NodeTypeValue,
         PAGE,
         REFERENCE_NAME,
         REFERENCE_URL,
@@ -71,6 +70,7 @@ if TYPE_CHECKING:
         TYPE,
         UPDATED_AT,
         VERSION,
+        NodeTypeValue,
     )
     from swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_partition_manager import (
         get_partition_name_for_namespace,

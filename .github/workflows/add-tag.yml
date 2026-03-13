@@ -301,25 +301,6 @@ jobs:
         uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
-      - name: Increment version in project files
-        run: |
-          VERSION="${{ needs.compute-and-initial-tag.outputs.version }}"
-          # Strip v prefix for pyproject.toml (PEP 440)
-          PEP_VERSION="${VERSION#v}"
-          update_version() {
-            echo "Update package version in $1"
-            sed -i '/^\[project\]/,/^version =/ s/version = "[^"]*"/version = "'"$PEP_VERSION"'"/' $1
-          }
-          update_makefile_tag() {
-            echo "Update TAG in $1"
-            sed -i 's/^TAG ?= .*/TAG ?= '"$VERSION"'/' $1
-          }
-          for dir in . packages/core packages/agent packages/api packages/bot packages/pipeline packages/process; do
-            update_version "$dir/pyproject.toml"
-          done
-          echo "Update package version in packages/web/aihub_web/package.json"
-          sed -i 's/"version": "[^"]*"/"version": "'"$PEP_VERSION"'"/' packages/web/aihub_web/package.json
-          update_makefile_tag Makefile
       - name: Set up SSH for GitHub bypass
         run: |
           mkdir -p ~/.ssh
@@ -327,8 +308,12 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan github.com >> ~/.ssh/known_hosts
           git config --global url."git@github.com:".insteadOf "https://github.com/"
-      - name: Update lockfile
-        run: uv lock
+      - name: Increment version in project files
+        env:
+          VERSION: ${{ needs.compute-and-initial-tag.outputs.version }}
+        run: |
+          PEP_VERSION="${VERSION#v}"
+          make version-bump VERSION="$PEP_VERSION"
       - name: Generate and lint Docker Compose files
         run: |
           make generate-compose

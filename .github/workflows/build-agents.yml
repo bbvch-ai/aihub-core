@@ -38,7 +38,7 @@ jobs:
           # Extract image names where build == "localbuild" and name ends with "_agent"
           images=$(python3 -c "
           import yaml, json
-          with open('deployment/compose-config.yml') as f:
+          with open('infra/deployment/compose-config.yml') as f:
               config = yaml.safe_load(f)
           images = [k for k, v in config['image_tags'].items() if isinstance(v, dict) and v.get('build') == 'localbuild' and k.endswith('_agent')]
           print(json.dumps(images))

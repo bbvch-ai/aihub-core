@@ -27,7 +27,7 @@ RCLONE_GDRIVE_TYPE=drive
 RCLONE_GDRIVE_SERVICE_ACCOUNT_FILE=/secrets/gdrive-service-account.json
 ```
 
-**Mount key file in docker-compose.dev.yml:**
+**Mount key file in infra/docker-compose.dev.yml:**
 
 ```yaml
 rclone:

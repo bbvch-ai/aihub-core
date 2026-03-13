@@ -4,10 +4,10 @@
 
 Swiss AI Hub's inference setup had grown inconsistent across deployment modes:
 
-- **CPU-based local models in `docker-compose.dev.yml`**: The non-GPU dev compose ran llama.cpp on the CPU (Gemma-3 4B
-  for chat, Qwen-3 0.6B for embedding/reranking). These models were slow and unreliable, causing flaky tests and poor
-  developer experience. This violated the platform's deployment principle: non-GPU setups should use cloud inference,
-  not struggle with CPU-bound local models.
+- **CPU-based local models in `infra/docker-compose.dev.yml`**: The non-GPU dev compose ran llama.cpp on the CPU
+  (Gemma-3 4B for chat, Qwen-3 0.6B for embedding/reranking). These models were slow and unreliable, causing flaky tests
+  and poor developer experience. This violated the platform's deployment principle: non-GPU setups should use cloud
+  inference, not struggle with CPU-bound local models.
 - **Azure dependency with hidden test gaps**: Cloud inference routed through Azure OpenAI (GPT-5, GPT-4o-mini,
   text-embedding-3-small/large, DALL-E 3, transcription, TTS) and Cohere (reranking). Many tests were marked with
   `@pytest.mark.azure` and excluded from CI, silently hiding failures behind a marker instead of running against real
@@ -25,8 +25,8 @@ Swiss AI Hub's inference setup had grown inconsistent across deployment modes:
 - **Enforce the deployment principle**: Non-GPU setups use cloud inference only, GPU setups use local inference only. No
   more CPU-bound local models as a compromise.
 - **Swiss data sovereignty**: All cloud inference must stay within Swiss infrastructure.
-- **CI reliability**: The CI pipeline (which uses `docker-compose.dev.yml`) must run against real, fast models — not
-  flaky CPU-bound local inference.
+- **CI reliability**: The CI pipeline (which uses `infra/docker-compose.dev.yml`) must run against real, fast models —
+  not flaky CPU-bound local inference.
 - **Explicit GPU target**: GPU compose files must target a specific card with explicit VRAM budgets per model so
   operators know exactly what hardware they need.
 - **Model parity for embedding/reranking**: The same model families for embedding, reranking, OCR, and transcription in
@@ -96,9 +96,9 @@ while the cloud offers multiple models at different capability/cost tiers.
 
 ### CI Pipeline Impact
 
-The `docker-compose.dev.yml` (used in CI) no longer starts any local inference containers. CI tests run against Swiss
-LLM Cloud models, which are fast and reliable. The `@pytest.mark.azure` test marker is removed from all scopes — those
-tests now run normally against the cloud models instead of being silently excluded.
+The `infra/docker-compose.dev.yml` (used in CI) no longer starts any local inference containers. CI tests run against
+Swiss LLM Cloud models, which are fast and reliable. The `@pytest.mark.azure` test marker is removed from all scopes —
+those tests now run normally against the cloud models instead of being silently excluded.
 
 This required adding Swiss LLM Cloud secrets to GitHub Actions CI configuration.
 

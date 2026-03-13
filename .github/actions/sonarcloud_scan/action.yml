@@ -57,4 +57,4 @@ runs:
         args: >-
           -Dsonar.projectKey=${{ inputs.sonar_project_key }}
           -Dsonar.organization=${{ inputs.sonar_organization }}
-          -Dsonar.python.coverage.reportPaths=${{ inputs.working_directory }}/coverage.xml
+          -Dsonar.python.coverage.reportPaths=coverage.xml

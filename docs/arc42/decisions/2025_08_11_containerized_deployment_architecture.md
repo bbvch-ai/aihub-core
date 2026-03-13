@@ -33,13 +33,13 @@ We will implement a comprehensive containerized deployment architecture with the
 
 Create separate Docker Compose files for different deployment scenarios:
 
-1. **Local Development with Pre-built Images** (`docker-compose.local.yml`): For local development/testing using
+1. **Local Development with Pre-built Images** (`infra/docker-compose.local.yml`): For local development/testing using
    registry images with local SSL certificates
-2. **Local Development from Source** (`docker-compose.build.yml`): For active development building from source with
-   local SSL certificates
-3. **Nightly Builds** (`docker-compose.nightly.yml`): For testing latest development builds
-4. **Production-Ready** (`docker-compose.latest.yml`): For stable production deployments with Let's Encrypt SSL
-5. **GPU-Enabled Deployments** (`docker-compose-gpu.*.yml`): For environments requiring GPU acceleration
+2. **Local Development from Source** (`infra/docker-compose.build.yml`): For active development building from source
+   with local SSL certificates
+3. **Nightly Builds** (`infra/docker-compose.nightly.yml`): For testing latest development builds
+4. **Production-Ready** (`infra/docker-compose.latest.yml`): For stable production deployments with Let's Encrypt SSL
+5. **GPU-Enabled Deployments** (`infra/docker-compose.*.gpu.yml`): For environments requiring GPU acceleration
 
 ### Decision 2: Containerized Application Architecture
 

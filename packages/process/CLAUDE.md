@@ -37,8 +37,8 @@ packages/process/                         # SDK framework
 │       └── process_test_runner.py         # Test runner (sandboxed, event capture, mock config)
 
 playground/                            # Examples and testing
-├── AgenticCVProcess/                  # Complex reference: CV submit → agent analyze → human review → program save
-├── agents/                            # Test agents (AgentA, AgentB, AgentC) used by playground processes
+├── agentic_cv_process/                # Complex reference: CV submit → agent analyze → human review → program save
+├── agents/                            # Test agents (agent_a, agent_b, agent_c) used by playground processes
 ├── events/                            # Shared work events for playground processes
 ├── minimal_processes/                 # 7 self-contained pattern showcases (START HERE)
 │   ├── agent_only_process/            # Sequential agent chain
@@ -267,7 +267,7 @@ Per-walkthrough ephemeral state in Redis/Valkey. Equivalent of `RunContext` for 
 
 ## Playground
 
-- `playground/AgenticCVProcess/` — Complex reference: human CV submission → agent analysis → human accept/reject →
+- `playground/agentic_cv_process/` — Complex reference: human CV submission → agent analysis → human accept/reject →
   program save
 - `playground/minimal_processes/` — **START HERE**. 7 self-contained pattern examples: `agent_only_process`,
   `human_only_process`, `agent_to_human_process`, `human_to_agent_process`, `fan_out_process`, `multi_input_process`,

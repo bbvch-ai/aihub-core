@@ -3,13 +3,12 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from swiss_ai_hub.core.workflow.annotations.custom_types.list_of_size import ListOfSize
+    from swiss_ai_hub.core.workflow.annotations.custom_types.list_of_size import FixedList, ListOfSize
     from swiss_ai_hub.core.workflow.annotations.extractors.extract_event_classes import extract_event_classes
     from swiss_ai_hub.core.workflow.annotations.extractors.extract_function_events import extract_function_events
     from swiss_ai_hub.core.workflow.annotations.extractors.extract_return_events import extract_return_events
     from swiss_ai_hub.core.workflow.dispatchable_workflow import DispatchableWorkflow
     from swiss_ai_hub.core.workflow.visualizers.workflow_visualizer import WorkflowVisualizer
-    from swiss_ai_hub.core.workflow.annotations.custom_types.list_of_size import FixedList
 
 __all__ = [
     "FixedList",

@@ -48,9 +48,9 @@ app/                               # Entry points (one per agent, each with main
 └── retrieval_agent/main.py
 
 playground/                        # Examples and testing
-├── agent/                         # Production-like agents (BotInTheLoopAgent, HitlDemoAgent)
+├── agent/                         # Production-like agents (bot_in_the_loop_agent, hitl_demo_agent)
 ├── minimal_workflow/              # 20 self-contained pattern showcases (START HERE)
-├── performance/                   # Load testing with PerformanceTestingAgent
+├── performance/                   # Load testing with performance_testing_agent
 └── testing/                       # SDK integration tests
 ```
 
@@ -310,12 +310,12 @@ constructing NATS subjects at each specificity level. See `packages/core/swiss_a
 | **NamespaceSelectionAgent** | LLM-driven knowledge routing     | HITL namespace approval + ThreadContext + RAG delegate |
 | **RetrievalAgent**          | Pure document retrieval (no LLM) | Retrieval-only, returns structured context             |
 
-Each agent has: `agents/{Name}/` (implementation), `app/{snake_name}/main.py` (entry point), `agents/{Name}/tests/` (BDD
-tests).
+Each agent has: `agents/{snake_name}/` (implementation), `app/{snake_name}/main.py` (entry point),
+`agents/{snake_name}/tests/` (BDD tests).
 
 ## Playground
 
-- `playground/agent/` — Production-like agents (BotInTheLoopAgent, HitlDemoAgent)
+- `playground/agent/` — Production-like agents (bot_in_the_loop_agent, hitl_demo_agent)
 - `playground/minimal_workflow/` — **START HERE**. Self-contained pattern examples: `simple_workflow`,
   `conditional_workflow`, `human_in_the_loop_workflow`, `agent_in_the_loop_workflow`, `fan_out_workflow`,
   `precondition_workflow`, `bounded_loop`, `context_workflow`, `configured_workflow`, `custom_start_stop_events`,

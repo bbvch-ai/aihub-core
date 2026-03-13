@@ -1,22 +1,20 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from swiss_ai_hub.core.routes.chat.chat_service import ChatService
+    from swiss_ai_hub.core.routes.chat.chat_service import ChatService, JsonResources, StreamingResources
     from swiss_ai_hub.core.routes.controller import Controller
+    from swiss_ai_hub.core.routes.health.dto.health_response import ApiHealthChecks, HealthResponse, ProcessHealthChecks
+    from swiss_ai_hub.core.routes.health.health_checks import (
+        check_milvus,
+        check_mongodb,
+        check_nats,
+        check_nats_sync,
+        check_redis,
+        check_redis_sync,
+        check_s3,
+    )
     from swiss_ai_hub.core.routes.health.health_controller import HealthController
     from swiss_ai_hub.core.routes.health.health_server import HealthCheckProvider, HealthServer
-    from swiss_ai_hub.core.routes.health.dto.health_response import ApiHealthChecks
-    from swiss_ai_hub.core.routes.health.dto.health_response import HealthResponse
-    from swiss_ai_hub.core.routes.chat.chat_service import JsonResources
-    from swiss_ai_hub.core.routes.health.dto.health_response import ProcessHealthChecks
-    from swiss_ai_hub.core.routes.chat.chat_service import StreamingResources
-    from swiss_ai_hub.core.routes.health.health_checks import check_milvus
-    from swiss_ai_hub.core.routes.health.health_checks import check_mongodb
-    from swiss_ai_hub.core.routes.health.health_checks import check_nats
-    from swiss_ai_hub.core.routes.health.health_checks import check_nats_sync
-    from swiss_ai_hub.core.routes.health.health_checks import check_redis
-    from swiss_ai_hub.core.routes.health.health_checks import check_redis_sync
-    from swiss_ai_hub.core.routes.health.health_checks import check_s3
 
 __all__ = [
     "check_s3",

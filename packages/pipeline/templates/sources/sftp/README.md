@@ -50,7 +50,7 @@ RCLONE_SFTP_KEY_FILE=/secrets/ssh_key
 # Remove RCLONE_SFTP_PASS
 ```
 
-Mount key file in docker-compose.dev.yml:
+Mount key file in infra/docker-compose.dev.yml:
 
 ```yaml
 rclone:

@@ -76,7 +76,7 @@ Generate the environment configuration:
 uv run swiss-ai-hub generate-env
 ```
 
-This creates `.env.core` with sensible defaults. You'll see placeholder values for OAuth2 configuration - we'll use
+This creates `.env` with sensible defaults. You'll see placeholder values for OAuth2 configuration - we'll use
 development mode for now, so you can leave these as-is for initial testing.
 
 ## Start the Platform: 5 Minutes
@@ -84,7 +84,7 @@ development mode for now, so you can leave these as-is for initial testing.
 Launch the complete Swiss AI Hub platform:
 
 ```bash
-docker compose -f docker-compose-platform.dev.yml --env-file .env.core up -d
+docker compose -f infra/docker-compose.dev.yml --env-file .env up -d
 ```
 
 Wait for all services to start (watch the logs with `docker compose logs -f` if you want to see the startup process).
@@ -152,9 +152,8 @@ Start everything together:
 
 ```bash
 docker compose \
-  -f docker-compose-platform.dev.yml \
+  -f infra/docker-compose.dev.yml \
   -f docker-compose-agents.dev.yml \
-  --env-file .env.core \
   --env-file .env \
   up -d
 ```

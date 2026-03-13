@@ -55,7 +55,7 @@ deployment type:
 
 - **Local Deployment**: Run on your local machine for development/testing
 
-  - Uses `docker-compose.local.yml` from the repository
+  - Uses `infra/docker-compose.local.yml` from the repository
   - Uses self-signed SSL certificates (mkcert)
   - Uses `127.0.0.1.nip.io` domain (automatically resolves to localhost)
 

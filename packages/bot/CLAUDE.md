@@ -206,7 +206,7 @@ No `BotLocaleString` — all locale resolution via `swiss_ai_hub.core.i18n.Local
 
 ## Deployment
 
-- Bot runs **locally outside Docker** (not in `docker-compose.dev.yml`)
+- Bot runs **locally outside Docker** (not in `infra/docker-compose.dev.yml`)
 - Production: `make run-prod` → Gunicorn on port 8001 (`app.main:app`)
 - Azure DevTunnel exposes local bot → Azure Bot Service for real channel testing
 - Azure setup: `setup_azure_bot.py` creates AD app registration + Bot resource + stores credentials in MongoDB

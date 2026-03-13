@@ -158,9 +158,11 @@ up-local-gpu: local-cert
 VERSION ?= 0.263.0
 version-bump:
 	@echo "Bumping version to $(VERSION) across all packages..."
-	@for f in packages/core/pyproject.toml packages/agent/pyproject.toml packages/api/pyproject.toml packages/bot/pyproject.toml packages/pipeline/pyproject.toml packages/process/pyproject.toml; do \
-		sed -i 's/^version = "[^"]*"/version = "$(VERSION)"/' $$f; \
+	@for f in pyproject.toml packages/core/pyproject.toml packages/agent/pyproject.toml packages/api/pyproject.toml packages/bot/pyproject.toml packages/pipeline/pyproject.toml packages/process/pyproject.toml; do \
+		sed -i '/^\[project\]/,/^version =/ s/version = "[^"]*"/version = "$(VERSION)"/' $$f; \
 	done
+	@sed -i 's/"version": "[^"]*"/"version": "$(VERSION)"/' packages/web/aihub_web/package.json
+	@sed -i 's/^TAG ?= .*/TAG ?= v$(VERSION)/' Makefile
 	@uv lock
 	@echo "Version bumped to $(VERSION)"
 

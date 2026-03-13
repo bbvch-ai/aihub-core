@@ -1238,23 +1238,6 @@ services:
   # These are the background workers and data processing pipelines
   # that power the platform's AI capabilities.
   # ===================================================================
-
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
 # ===================================================================
 # Network Configuration
 # ===================================================================

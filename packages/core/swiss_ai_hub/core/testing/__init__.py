@@ -1,15 +1,16 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from swiss_ai_hub.core.testing.auth_utils.oauth2_utils.oauth2_test_utils import DummyResponse
-    from swiss_ai_hub.core.testing.auth_utils.oauth2_utils.oauth2_test_utils import generate_rsa_keypair
-    from swiss_ai_hub.core.testing.auth_utils.user_mocks import get_expected_user_data
+    from swiss_ai_hub.core.testing.asyncio_utils.bdd import async_test
+    from swiss_ai_hub.core.testing.auth_utils.oauth2_utils.oauth2_test_utils import (
+        DummyResponse,
+        generate_rsa_keypair,
+        public_key_to_jwk,
+    )
     from swiss_ai_hub.core.testing.auth_utils.role_mocks import mock_role_entity_methods
     from swiss_ai_hub.core.testing.auth_utils.tenant_mocks import mock_tenant_entity_autouse
-    from swiss_ai_hub.core.testing.auth_utils.user_mocks import mock_user_entity_autouse
-    from swiss_ai_hub.core.testing.auth_utils.oauth2_utils.oauth2_test_utils import public_key_to_jwk
+    from swiss_ai_hub.core.testing.auth_utils.user_mocks import get_expected_user_data, mock_user_entity_autouse
     from swiss_ai_hub.core.testing.route_adapter.asgi_adapter import ASGIAdapter
-    from swiss_ai_hub.core.testing.asyncio_utils.bdd import async_test
 
 __all__ = [
     "async_test",

@@ -119,7 +119,7 @@ Replace the generated `nuxt.config.ts` with:
 export default defineNuxtConfig({
   extends: ['@swiss-ai-hub/web'],
 
-  // These defaults match docker-compose.dev.yml + `make run-api`.
+  // These defaults match infra/docker-compose.dev.yml + `make run-api`.
   // In production, override via NUXT_PUBLIC_* environment variables.
   runtimeConfig: {
     public: {

@@ -132,12 +132,21 @@ Each scope has its own `CLAUDE.md` — consult it before working in that scope.
     for the pattern.
 11. **Controller → Service → Entity**: Separation of concerns (HTTP layer → business logic → persistence).
 12. **Dependency injection**: FastAPI `Depends` and `Security` for clean parameter injection.
-13. **One class per file**: File name MUST match class name (`MyClass` → `MyClass.py`). No multi-class files.
+13. **One class per file**: Each file should contain a single primary class. File names are always `snake_case`
+    (`my_class.py`), class names are always `CamelCase` (`MyClass`).
 14. **No loose functions**: Avoid files containing standalone functions. Create service classes with `@staticmethod` or
     `@classmethod` methods instead.
 15. **No backwards compatibility**: Breaking changes are fine. Do not add compatibility shims, re-exports, or renamed
     aliases unless explicitly asked.
 16. **No new abstractions**: Do not introduce abstractions that do not follow existing patterns in the codebase.
+17. **`__init__.py` exports**: Each top-level folder within a package should have an `__init__.py` that lazily exports
+    the public interface (using `TYPE_CHECKING` + `__getattr__`). Deeper nested folders rarely need `__init__.py`.
+18. **Import rules — within a package**: Always import via the full module path to the source file, never through
+    `__init__.py` re-exports. E.g., `from swiss_ai_hub.core.events.agent.control.start.start_event import StartEvent`.
+19. **Import rules — across packages**: Always import through the target package's public interface (`__init__.py`),
+    never access internal modules directly. E.g., `from swiss_ai_hub.core.events.agent import StartEvent`.
+20. **Environment variables**: Pydantic `BaseSettings` classes do NOT auto-load from environment variables. Environment
+    variables must be loaded explicitly when constructing settings instances.
 
 **Naming**: `snake_case` for files/dirs, `CamelCase` for classes, `test_*.py` for tests.
 

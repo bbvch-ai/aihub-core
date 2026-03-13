@@ -130,23 +130,27 @@ packages/core/swiss_ai_hub/core/
 
 ## Import Convention
 
-All imports use fully qualified direct paths. No barrel re-exports from `__init__.py` for event classes.
+Two rules govern imports, depending on where the import happens:
+
+**Within `packages/core`** — always use fully qualified direct paths to the source file:
 
 ```python
-# Direct imports (canonical pattern)
 from swiss_ai_hub.core.events.agent.control.start.start_event import StartEvent
 from swiss_ai_hub.core.events.process.work.agent.agent_work_event import AgentWorkEvent
 from swiss_ai_hub.core.form.form import Form
 from swiss_ai_hub.core.publishers.js_publisher import JSPublisher
+```
 
-# Lazy convenience imports via __init__.py (for interactive use / top-level access)
+**From other packages** (`packages/agent`, `packages/api`, etc.) — always import through `__init__.py` public interface:
+
+```python
 from swiss_ai_hub.core.events.agent import StartEvent, ChunkEvent
 from swiss_ai_hub.core.events.process import WorkEvent, ProcessStartEvent
 from swiss_ai_hub.core.publishers import JSPublisher
 ```
 
-Each top-level directory has a lazy `__init__.py` with `TYPE_CHECKING` + `__getattr__` that provides convenience imports
-without eager loading. Direct imports are preferred in production code.
+Each top-level directory has a lazy `__init__.py` with `TYPE_CHECKING` + `__getattr__` that provides the public
+interface without eager loading.
 
 ## Event System (CRITICAL)
 
@@ -405,7 +409,8 @@ storage), `AgentConfigEntity` / `ProcessConfigEntity` (configs), `UserEntity` (t
 
 ## Infrastructure Settings
 
-~20 Pydantic `BaseSettings` classes for external service connections. Auto-load from environment variables.
+~20 Pydantic `BaseSettings` classes for external service connections. Environment variables are NOT auto-loaded — they
+must be loaded explicitly when constructing settings instances.
 
 | Settings Class         | Service                | Env Prefix  |
 | ---------------------- | ---------------------- | ----------- |

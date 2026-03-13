@@ -22,12 +22,6 @@ jobs:
       checks: write
       pull-requests: write
       packages: read
-    outputs:
-      test_report_passed: ${{ steps.test_report.outputs.passed }}
-      test_report_failed: ${{ steps.test_report.outputs.failed }}
-      test_report_skipped: ${{ steps.test_report.outputs.skipped }}
-      test_report_time: ${{ steps.test_report.outputs.time }}
-      test_report_url_html: ${{ steps.test_report.outputs.url_html }}
     strategy:
       fail-fast: false
       matrix:
@@ -55,7 +49,7 @@ jobs:
               seaweedfs-init etcd-init etcd milvus-standalone
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
