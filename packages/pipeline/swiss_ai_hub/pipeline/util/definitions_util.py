@@ -1,17 +1,11 @@
 import warnings
-from collections.abc import Sequence
-from pathlib import Path
 from typing import Annotated
 
 from dagster import (
-    AnchorBasedFilePathMapping,
     AssetKey,
-    AssetsDefinition,
     AssetSelection,
     Definitions,
     DynamicPartitionsDefinition,
-    link_code_references_to_git,
-    with_source_code_references,
 )
 from swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_model_config import EmbeddingModelConfig
 from swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config import LLMConfig
@@ -73,20 +67,6 @@ from swiss_ai_hub.pipeline.schedules.factory import daily_schedule_at
 from swiss_ai_hub.pipeline.sensors.factory import default_automation_sensor
 from swiss_ai_hub.pipeline.sensors.nats.nats_document_uploaded_sensor import nats_document_uploaded_sensor
 from swiss_ai_hub.pipeline.util.bucket_utils import get_db_name_from_bucket_name
-
-
-def asset_definition_with_code_link(
-    assets: Sequence[AssetsDefinition], customer_name: str, datalake_container_name: str
-) -> Sequence[AssetsDefinition]:
-    return link_code_references_to_git(
-        assets_defs=with_source_code_references(assets),
-        git_url=f"https://github.com/bbvch-ai/aihub-{customer_name}",
-        git_branch="main",
-        file_path_mapping=AnchorBasedFilePathMapping(
-            local_file_anchor=Path(__file__),
-            file_anchor_path_in_repository=f"pipelines/{datalake_container_name}/__init__.py",
-        ),
-    )
 
 
 def default_definitions(

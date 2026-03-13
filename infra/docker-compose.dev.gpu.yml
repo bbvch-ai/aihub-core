@@ -13,7 +13,7 @@ services:
   # ===================================================================
   seaweedfs-master:
     container_name: seaweedfs-master
-    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
+    image: ghcr.io/bbvch-ai/swiss-ai-hub/seaweedfs:3.97
     restart: always
     expose:
       - '9333'   # Master HTTP port
@@ -48,7 +48,7 @@ services:
     networks: [storage]
   seaweedfs-volume:
     container_name: seaweedfs-volume
-    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
+    image: ghcr.io/bbvch-ai/swiss-ai-hub/seaweedfs:3.97
     restart: always
     expose: ['8080', '18080']
     command: >
@@ -77,7 +77,7 @@ services:
     networks: [storage]
   seaweedfs-filer:
     container_name: seaweedfs-filer
-    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
+    image: ghcr.io/bbvch-ai/swiss-ai-hub/seaweedfs:3.97
     restart: always
     ports: [8889:8888, '18888']
     command: >
@@ -127,7 +127,7 @@ services:
       - data  # For etcd access
   seaweedfs-s3:
     container_name: seaweedfs-s3
-    image: ghcr.io/bbvch-ai/aihub-core/seaweedfs:3.97
+    image: ghcr.io/bbvch-ai/swiss-ai-hub/seaweedfs:3.97
     restart: always
     ports: [9000:9000]
     volumes:
@@ -171,7 +171,7 @@ services:
       - backend  # Internal access from application services
   seaweedfs-init:
     container_name: seaweedfs-init
-    image: ghcr.io/bbvch-ai/aihub-core/aws-cli-alpine:3.22.1
+    image: ghcr.io/bbvch-ai/swiss-ai-hub/aws-cli-alpine:3.22.1
     restart: 'no'
     depends_on:
       seaweedfs-s3:
@@ -202,7 +202,7 @@ services:
   # ===================================================================
   etcd:
     container_name: etcd
-    image: ghcr.io/bbvch-ai/aihub-core/etcd:v3.5.25
+    image: ghcr.io/bbvch-ai/swiss-ai-hub/etcd:v3.5.25
     restart: always
     command:
       - etcd
@@ -260,7 +260,7 @@ services:
       - storage  # Used by SeaweedFS filer for metadata
   milvus-standalone:
     container_name: milvus
-    image: ghcr.io/bbvch-ai/aihub-core/milvus:v2.6.7
+    image: ghcr.io/bbvch-ai/swiss-ai-hub/milvus:v2.6.7
     restart: always
     command: [milvus, run, standalone]
     security_opt: [seccomp:unconfined]
@@ -298,7 +298,7 @@ services:
       - storage  # For S3 access to SeaweedFS
   attu:
     container_name: attu
-    image: ghcr.io/bbvch-ai/aihub-core/attu:v2.5.12
+    image: ghcr.io/bbvch-ai/swiss-ai-hub/attu:v2.5.12
     restart: always
     depends_on: [milvus-standalone]
     ports: [3003:3000]
@@ -324,7 +324,7 @@ services:
   # ===================================================================
   postgres:
     container_name: postgres
-    image: ghcr.io/bbvch-ai/aihub-core/pgvector:pg17
+    image: ghcr.io/bbvch-ai/swiss-ai-hub/pgvector:pg17
     restart: always
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
@@ -352,7 +352,7 @@ services:
   # ===================================================================
   postgres-ferretdb:
     container_name: postgres-ferretdb
-    image: ghcr.io/bbvch-ai/aihub-core/postgres-documentdb:17.0.106.0-ferretdb-2.5.0
+    image: ghcr.io/bbvch-ai/swiss-ai-hub/postgres-documentdb:17.0.106.0-ferretdb-2.5.0
     restart: always
     environment:
       POSTGRES_USER: ${MONGO_USERNAME}
@@ -373,7 +373,7 @@ services:
     networks: [data]
   ferretdb:
     container_name: ferretdb
-    image: ghcr.io/bbvch-ai/aihub-core/ferretdb:2.5.0
+    image: ghcr.io/bbvch-ai/swiss-ai-hub/ferretdb:2.5.0
     restart: always
     ports: [27017:27017]
     environment:
@@ -404,7 +404,7 @@ services:
   # ===================================================================
   neo4j:
     container_name: neo4j
-    image: ghcr.io/bbvch-ai/aihub-core/neo4j:5.26.16-community
+    image: ghcr.io/bbvch-ai/swiss-ai-hub/neo4j:5.26.16-community
     restart: always
     ports: [7474:7474, 7687:7687]
     volumes:
@@ -442,7 +442,7 @@ services:
   # ===================================================================
   clickhouse:
     container_name: clickhouse
-    image: ghcr.io/bbvch-ai/aihub-core/clickhouse/clickhouse-server:25.8
+    image: ghcr.io/bbvch-ai/swiss-ai-hub/clickhouse/clickhouse-server:25.8
     restart: always
     environment:
       CLICKHOUSE_DB: default
@@ -468,7 +468,7 @@ services:
     networks: [data]
   langfuse-worker:
     container_name: langfuse-worker
-    image: ghcr.io/bbvch-ai/aihub-core/langfuse/langfuse-worker:3
+    image: ghcr.io/bbvch-ai/swiss-ai-hub/langfuse/langfuse-worker:3
     restart: always
     depends_on:
       postgres:
@@ -521,7 +521,7 @@ services:
       - storage  # For SeaweedFS S3 access
   langfuse-web:
     container_name: langfuse-web
-    image: ghcr.io/bbvch-ai/aihub-core/langfuse/langfuse:3
+    image: ghcr.io/bbvch-ai/swiss-ai-hub/langfuse/langfuse:3
     restart: always
     depends_on:
       postgres:
@@ -615,7 +615,7 @@ services:
   # ===================================================================
   keycloak:
     container_name: keycloak
-    image: ghcr.io/bbvch-ai/aihub-core/keycloak:26.5.4
+    image: ghcr.io/bbvch-ai/swiss-ai-hub/keycloak:26.5.4
     restart: unless-stopped
     entrypoint: /bin/bash
     ports: [8180:8080]
@@ -680,7 +680,7 @@ services:
   # ===================================================================
   nats:
     container_name: nats
-    image: ghcr.io/bbvch-ai/aihub-core/nats:2.11.4
+    image: ghcr.io/bbvch-ai/swiss-ai-hub/nats:2.11.4
     restart: always
     command: -c /etc/nats/nats-server.conf
     environment:
@@ -706,7 +706,7 @@ services:
       - data  # Message broker is part of data infrastructure
   valkey:
     container_name: valkey
-    image: ghcr.io/bbvch-ai/aihub-core/valkey:8.0.5
+    image: ghcr.io/bbvch-ai/swiss-ai-hub/valkey:8.0.5
     restart: always
     # Password authentication enabled via --requirepass
     command: valkey-server --save 30 1 --loglevel warning --requirepass ${REDIS_TOKEN}
@@ -734,7 +734,7 @@ services:
   # ===================================================================
   rclone:
     container_name: rclone
-    image: ghcr.io/bbvch-ai/aihub-core/rclone:1.71.2
+    image: ghcr.io/bbvch-ai/swiss-ai-hub/rclone:1.71.2
     restart: unless-stopped
     command:
       - rcd
@@ -766,7 +766,7 @@ services:
   vllm:
     container_name: vllm
     platform: linux/amd64
-    image: ghcr.io/bbvch-ai/aihub-core/vllm-openai:v0.15.1
+    image: ghcr.io/bbvch-ai/swiss-ai-hub/vllm-openai:v0.15.1
     restart: always
     ipc: host
     ports: [8182:8000]
@@ -812,7 +812,7 @@ services:
   vllm-bge-m3:
     container_name: vllm-bge-m3
     platform: linux/amd64
-    image: ghcr.io/bbvch-ai/aihub-core/vllm-openai:v0.15.1
+    image: ghcr.io/bbvch-ai/swiss-ai-hub/vllm-openai:v0.15.1
     restart: always
     ipc: host
     ports: [8183:8000]
@@ -853,7 +853,7 @@ services:
   vllm-bge-reranker:
     container_name: vllm-bge-reranker
     platform: linux/amd64
-    image: ghcr.io/bbvch-ai/aihub-core/vllm-openai:v0.15.1
+    image: ghcr.io/bbvch-ai/swiss-ai-hub/vllm-openai:v0.15.1
     restart: always
     ipc: host
     ports: [8184:8000]
@@ -938,7 +938,7 @@ services:
   # ===================================================================
   presidio-analyzer:
     container_name: presidio-analyzer
-    image: ghcr.io/bbvch-ai/aihub-core/presidio-analyzer:2.2.359
+    image: ghcr.io/bbvch-ai/swiss-ai-hub/presidio-analyzer:2.2.359
     restart: always
     labels:
       healthcheck.enabled: 'true'
@@ -953,7 +953,7 @@ services:
     networks: [backend]
   presidio-anonymizer:
     container_name: presidio-anonymizer
-    image: ghcr.io/bbvch-ai/aihub-core/presidio-anonymizer:2.2.359
+    image: ghcr.io/bbvch-ai/swiss-ai-hub/presidio-anonymizer:2.2.359
     restart: always
     labels:
       healthcheck.enabled: 'true'
@@ -968,7 +968,7 @@ services:
     networks: [backend]
   litellm:
     container_name: litellm
-    image: ghcr.io/bbvch-ai/aihub-core/litellm:v1.80.5-stable.1
+    image: ghcr.io/bbvch-ai/swiss-ai-hub/litellm:v1.80.5-stable.1
     restart: always
     ports: [4000:4000]
     environment:
@@ -1031,7 +1031,7 @@ services:
   # ===================================================================
   jupyter:
     container_name: jupyter-lab
-    image: ghcr.io/bbvch-ai/aihub-core/minimal-notebook:notebook-7.0.6
+    image: ghcr.io/bbvch-ai/swiss-ai-hub/minimal-notebook:notebook-7.0.6
     restart: always
     ports: [8888:8888]
     volumes:
@@ -1084,7 +1084,7 @@ services:
   # ===================================================================
   mineru-api:
     container_name: mineru-api
-    image: ghcr.io/bbvch-ai/aihub-core/mineru-api:v2.7.5
+    image: ghcr.io/bbvch-ai/swiss-ai-hub/mineru-api:v2.7.5
     restart: always
     ports: [8002:8000]
     environment:
@@ -1121,7 +1121,7 @@ services:
   mineru-vlm:
     container_name: mineru-vlm
     platform: linux/amd64
-    image: ghcr.io/bbvch-ai/aihub-core/mineru-vlm:v2.7.5
+    image: ghcr.io/bbvch-ai/swiss-ai-hub/mineru-vlm:v2.7.5
     restart: always
     ports:
       - 30000:30000
@@ -1198,7 +1198,7 @@ services:
   # ===================================================================
   open-webui:
     container_name: open-webui
-    image: ghcr.io/bbvch-ai/aihub-core/open-webui:v0.6.41
+    image: ghcr.io/bbvch-ai/swiss-ai-hub/open-webui:v0.6.41
     restart: always
     network_mode: host
     volumes: ['${VOLUME_ROOT:-./.docker-volumes}/open-webui:/app/backend/data']
@@ -1417,7 +1417,7 @@ services:
         max-file: 2
   openwebui-init:
     container_name: openwebui-init
-    image: ghcr.io/bbvch-ai/aihub-core/postgres:17
+    image: ghcr.io/bbvch-ai/swiss-ai-hub/postgres:17
     restart: 'no'
     depends_on:
       open-webui:
@@ -1449,7 +1449,9 @@ services:
 
 
 
+  
 
+  
 
   
 

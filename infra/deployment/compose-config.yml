@@ -12,7 +12,7 @@
 # 2. To build a service from source, use the special tag 'localbuild'.
 # ===================================================================
 global:
-  registry_prefix: ghcr.io/bbvch-ai/aihub-core/
+  registry_prefix: ghcr.io/bbvch-ai/swiss-ai-hub/
   volume_root: ${VOLUME_ROOT:-./.docker-volumes}
 # -------------------------------------------------------------------
 # Centralized Image Tag Management
@@ -49,7 +49,7 @@ image_tags:
   vllm: vllm-openai:v0.15.1
   speaches: ghcr.io/speaches-ai/speaches:latest-cuda-12.6.3
   pgbouncer: pgbouncer:v1.24.1-p1
-  rclone: ghcr.io/bbvch-ai/aihub-core/rclone:1.71.2
+  rclone: ghcr.io/bbvch-ai/swiss-ai-hub/rclone:1.71.2
   keycloak: keycloak:26.5.4
 
   # --- Custom Application Services ---

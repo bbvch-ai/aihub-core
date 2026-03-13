@@ -41,7 +41,7 @@ ______________________________________________________________________
 # docker-compose.yml
 services:
   admin-ui:
-    image: ghcr.io/bbvch-ai/aihub-web:latest
+    image: ghcr.io/bbvch-ai/swiss-ai-hub/web:latest
     ports:
       - "3333:80"
 ```

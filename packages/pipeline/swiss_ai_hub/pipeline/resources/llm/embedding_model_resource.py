@@ -28,13 +28,7 @@ class EmbeddingModelResource(ConfigurableResource[BaseEmbedding]):
             assets=[asset1],
             resources={
                 "embedding_model": EmbeddingModelResource(
-                    embedding_config=AzureOpenAIEmbeddingConfig(
-                        name="text-embedding-ada-002",
-                        base_url="https://aihub-dev-openai-che.openai.azure.com/",
-                        api_version="2024-12-01-preview",
-                        embedding_tokens_costs_per_thousand=0.0,
-                        default_parameter=EmbeddingModelConfig(model_name="azure/text-embedding-3-large"),
-                    )
+                    embedding_config=EmbeddingModelConfig(model_name="embedding/bge-m3"),
                 )
             }
         )
