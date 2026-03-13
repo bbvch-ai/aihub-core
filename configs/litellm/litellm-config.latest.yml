@@ -88,7 +88,7 @@ model_list:
   # ===================================================================
   - model_name: text-generation/MinerU2.5-2509-1.2B
     litellm_params:
-      model: openai/mineru
+      model: openai/MinerU2.5-2509-1.2B
       api_base: os.environ/SWISS_LLM_CLOUD_OCR_API_BASE_URL
       api_key: os.environ/SWISS_LLM_CLOUD_OCR_API_KEY
       drop_params: true
