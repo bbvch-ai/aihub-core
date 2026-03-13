@@ -35,7 +35,7 @@ wheels = [
 
 [[package]]
 name = "aihub-agent"
-version = "0.270.1"
+version = "0.270.3"
 source = { editable = "aihub_agent" }
 dependencies = [
     { name = "aihub-core" },
@@ -66,7 +66,7 @@ dev = [
 
 [[package]]
 name = "aihub-api"
-version = "0.270.1"
+version = "0.270.3"
 source = { editable = "aihub_api" }
 dependencies = [
     { name = "aihub-core" },
@@ -121,7 +121,7 @@ dev = [{ name = "asgi-lifespan", specifier = ">=2.1.0" }]
 
 [[package]]
 name = "aihub-bot"
-version = "0.270.1"
+version = "0.270.3"
 source = { editable = "aihub_bot" }
 dependencies = [
     { name = "aihub-core" },
@@ -166,7 +166,7 @@ dev = [{ name = "asgi-lifespan", specifier = ">=2.1.0" }]
 
 [[package]]
 name = "aihub-core"
-version = "0.270.1"
+version = "0.270.3"
 source = { editable = "aihub_lib" }
 dependencies = [
     { name = "adlfs" },
@@ -299,7 +299,7 @@ dev = [
 
 [[package]]
 name = "aihub-core-workspace"
-version = "0.270.1"
+version = "0.270.3"
 source = { virtual = "." }
 dependencies = [
     { name = "jinja2" },
@@ -362,7 +362,7 @@ dev = [
 
 [[package]]
 name = "aihub-pipeline"
-version = "0.270.1"
+version = "0.270.3"
 source = { editable = "aihub_pipeline" }
 dependencies = [
     { name = "aihub-core" },
@@ -388,7 +388,7 @@ dev = []
 
 [[package]]
 name = "aihub-process"
-version = "0.270.1"
+version = "0.270.3"
 source = { editable = "aihub_process" }
 dependencies = [
     { name = "aihub-core" },

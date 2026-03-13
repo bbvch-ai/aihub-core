@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.270.3] - 2026-03-11 - Repository Cleanup: Streamlining Project Configuration
+
+### Removed
+
+- 🗑️ **IDE Configuration Files:** Deleted all `.idea/` directories and their associated configuration files (e.g.,
+  `misc.xml`, `modules.xml`, `inspectionProfiles/`) from the main project and various sub-projects (`aihub_agent`,
+  `aihub_api`, `aihub_bot`, `aihub_lib`, `aihub_pipeline`, `aihub_process`) to clean up the repository and remove
+  environment-specific configurations.
+
+### Changed
+
+- 🧹 **Updated Git Ignore Rules:** Modified the root `.gitignore` file to explicitly exclude `.idea/misc.xml` and all
+  `aihub_*/.idea/` directories, preventing IDE-specific files from being committed in the future and maintaining a
+  cleaner codebase.
+
+______________________________________________________________________
+
+## [v0.270.2] - 2026-03-09 - Deployment Script Readability Enhancements
+
+### Refactor
+
+- 🧹 **Enhanced Deployment Script Clarity:** Renamed internal variables for destination paths (`output_dir` to `dst_rel`)
+  within the deployment generation scripts to improve code readability and maintainability.
+
+______________________________________________________________________
+
 ## [v0.270.1] - 2026-03-05 - Enhanced Authentication Experience and Deployment Flexibility
 
 ### Added
