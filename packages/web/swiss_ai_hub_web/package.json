@@ -32,7 +32,7 @@
     "types/"
   ],
   "scripts": {
-    "dev": "nuxi prepare && nuxi dev .app --port 3333 --dotenv ../../../.env",
+    "dev": "nuxi prepare && nuxi dev .app --port 3333 --dotenv ../../../../.env",
     "dev:prepare": "nuxi prepare && nuxt prepare .app",
     "build": "nuxt generate .app",
     "preview": "nuxt preview .app",
