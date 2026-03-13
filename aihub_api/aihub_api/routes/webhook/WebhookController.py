@@ -15,6 +15,8 @@ from aihub_api.routes.webhook.dto.WebhookResponse import WebhookResponse
 
 logger = logging.getLogger(__name__)
 
+_background_tasks: set[asyncio.Task] = set()
+
 
 class WebhookController(Controller):
     name = ApiLocaleString.from_i18n_path("api.controllers.webhook.name")
@@ -39,7 +41,9 @@ class WebhookController(Controller):
                 return WebhookResponse(status="ignored")
 
             logger.info(f"OpenWebUI webhook: new user '{payload.user.email}' — triggering provisioner sync")
-            asyncio.create_task(OpenWebuiProvisioner().sync_access())
+            task = asyncio.create_task(OpenWebuiProvisioner().sync_access())
+            _background_tasks.add(task)
+            task.add_done_callback(_background_tasks.discard)
 
             return WebhookResponse(status="ok")
 

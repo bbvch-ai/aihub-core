@@ -3,6 +3,8 @@ import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
+_background_tasks: set[asyncio.Task] = set()
+
 import boto3
 from aihub_lib.auth.dependencies.AuthHandler import AuthHandler
 from aihub_lib.infrastructure.api.AIHubSettings import AIHubSettings
@@ -229,7 +231,9 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
 
         # Re-sync OpenWebUI groups when a user switches active tenant
         def _on_tenant_switch() -> None:
-            asyncio.create_task(OpenWebuiProvisioner().sync_access())
+            task = asyncio.create_task(OpenWebuiProvisioner().sync_access())
+            _background_tasks.add(task)
+            task.add_done_callback(_background_tasks.discard)
 
         AuthHandler.register_active_tenant_hook(_on_tenant_switch)
 
