@@ -44,4 +44,5 @@ class McpReactAgent(Agent):
                     config.llm.model_name,
                     config.max_iterations,
                 )
+                print(f"Answer: {content}")
         return StopEvent()
