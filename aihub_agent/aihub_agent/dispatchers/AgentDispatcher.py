@@ -2,14 +2,12 @@ import asyncio
 import inspect
 import logging
 from collections.abc import Awaitable, Callable
-from contextlib import AsyncExitStack
 from typing import Annotated, Any, cast, override
 
 from aihub_lib.agents.AgentConfig import AgentConfig, StepConfig
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.generative_ai.memory.AgentMemory import AgentMemory
 from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.mcp.McpClientConfig import McpClientConfig
 from aihub_lib.nats.dispatcher.BaseDispatcher import BaseDispatcher, EventsAndKwargs
 from aihub_lib.nats.dispatcher.stores.trace.TraceStore import TraceStore
 from aihub_lib.nats.events import BaseEvent, ControlEvent, ExceptionEvent, StartEvent
@@ -24,9 +22,6 @@ from aihub_lib.nats.topics import PartialAgentTopic, Topic
 from aihub_lib.nats.topics.agents.AgentClassTopic import AgentClassTopic
 from aihub_lib.nats.topics.agents.AgentInstanceTopic import AgentInstanceTopic
 from bson import ObjectId
-from fastmcp import Client as McpClient
-from fastmcp.client.auth import BearerAuth
-from fastmcp.client.transports import StreamableHttpTransport
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
 from redis.asyncio import Redis
@@ -95,10 +90,6 @@ class AgentDispatcher(BaseDispatcher):
         # Client for fetching agent configuration via NATS RPC
         self._config_client = AgentConfigClient(nc=nc)
 
-        # MCP clients keyed by run's execution_context_id
-        self._mcp_clients: dict[str, McpClient] = {}
-        self._mcp_exit_stacks: dict[str, AsyncExitStack] = {}
-
     @override
     async def handle_event(
         self,
@@ -160,7 +151,6 @@ class AgentDispatcher(BaseDispatcher):
         if event.is_stop_event or event.is_exception_event:
             logger.debug(f"Handling final event: {event.event_name}")
 
-            await self._stop_mcp_client(topic)
             await run_context.delete_all()
             await self.event_store.delete_all(topic.execution_context_id)
             await self.step_store.delete_all(topic.execution_context_id)
@@ -437,9 +427,6 @@ class AgentDispatcher(BaseDispatcher):
         if param.annotation in [AgentInstanceTopic, AgentClassTopic, PartialAgentTopic]:
             return topic
 
-        if inspect.isclass(param.annotation) and issubclass(param.annotation, McpClient):
-            return await self._get_or_create_mcp_client(topic, agent_config)
-
         return None
 
     def get_topic_manager_for_thread(
@@ -526,39 +513,3 @@ class AgentDispatcher(BaseDispatcher):
         subject = aitl_request_event.other_agent_topic.to_subject()
         logger.debug(f"Publishing to Agent in the Loop to subject {subject}")
         await self.js_publisher.publish_event(start_event, subject)
-
-    async def _get_or_create_mcp_client(self, topic: AgentInstanceTopic, agent_config: AgentConfig) -> McpClient:
-        """Lazily create and connect a FastMCP Client for a run."""
-        existing = self._mcp_clients.get(topic.execution_context_id)
-        if existing is not None:
-            return existing
-
-        step_configs = agent_config.get_step_configs()
-        mcp_config = step_configs.get(McpClientConfig)
-        if not mcp_config:
-            raise ValueError(
-                "McpClient requested but no McpClientConfig found. "
-                "Add a 'mcp: McpClientConfig' field to your AgentConfig."
-            )
-
-        auth = BearerAuth(mcp_config.api_key.get_secret_value()) if mcp_config.api_key else None
-
-        if mcp_config.headers:
-            transport = StreamableHttpTransport(url=mcp_config.url, headers=dict(mcp_config.headers), auth=auth)
-            client = McpClient(transport, name=mcp_config.name, timeout=mcp_config.timeout)
-        else:
-            client = McpClient(mcp_config.url, name=mcp_config.name, timeout=mcp_config.timeout, auth=auth)
-
-        exit_stack = AsyncExitStack()
-        await exit_stack.enter_async_context(client)
-
-        self._mcp_clients[topic.execution_context_id] = client
-        self._mcp_exit_stacks[topic.execution_context_id] = exit_stack
-        return client
-
-    async def _stop_mcp_client(self, topic: AgentInstanceTopic) -> None:
-        """Close MCP client for a completed run."""
-        self._mcp_clients.pop(topic.execution_context_id, None)
-        exit_stack = self._mcp_exit_stacks.pop(topic.execution_context_id, None)
-        if exit_stack:
-            await exit_stack.aclose()

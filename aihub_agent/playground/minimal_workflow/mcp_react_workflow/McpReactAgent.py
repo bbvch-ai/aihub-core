@@ -2,11 +2,12 @@ from typing import ClassVar
 
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.mcp.McpReactService import McpReactService
+from aihub_lib.mcp.McpClientConfig import McpClientConfig
 from aihub_lib.nats.events import StopEvent, UserMessageEvent
-from fastmcp import Client
 
 from aihub_agent.agents.Agent import Agent
+from aihub_agent.mcp.McpClientFactory import McpClientFactory
+from aihub_agent.mcp.McpReactService import McpReactService
 from aihub_agent.workflow.decorators.step import step
 from playground.minimal_workflow.mcp_react_workflow.McpReactAgentConfig import McpReactAgentConfig
 
@@ -29,18 +30,19 @@ class McpReactAgent(Agent):
     async def react_step(
         self,
         event: UserMessageEvent,
-        mcp_client: Client,
+        mcp_config: McpClientConfig,
         config: McpReactAgentConfig,
         displayer: EventDisplayer,
     ) -> StopEvent:
-        async with config.llm.cost_reporting_llm(displayer) as llm:
-            content = await McpReactService.react_loop(
-                mcp_client,
-                list(event.messages),
-                llm,
-                displayer,
-                config.llm.model_name,
-                config.max_iterations,
-            )
-            print(f"Answer: {content}")
+        async with McpClientFactory.create(mcp_config) as mcp_client:
+            async with config.llm.cost_reporting_llm(displayer) as llm:
+                content = await McpReactService.react_loop(
+                    mcp_client,
+                    list(event.messages),
+                    llm,
+                    displayer,
+                    config.llm.model_name,
+                    config.max_iterations,
+                )
+                print(f"Answer: {content}")
         return StopEvent()
