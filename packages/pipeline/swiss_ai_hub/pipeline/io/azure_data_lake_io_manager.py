@@ -48,9 +48,12 @@ class AzureDataLakeIOManager(ConfigurableIOManager):
     .. code-block:: python
 
         from swiss_ai_hub.pipeline.io.azure_data_lake_io_manager import AzureDataLakeIOManager
-        from swiss_ai_hub.pipeline.resources.data_lake.azure.azure_data_lake_client_resource import AzureDataLakeClientResource
-        from swiss_ai_hub.pipeline.resources.data_lake.azure.azure_data_lake_file_system_resource
-        import AzureDataLakeFileSystemResource
+        from swiss_ai_hub.pipeline.resources.data_lake.azure.azure_data_lake_client_resource import (
+            AzureDataLakeClientResource,
+        )
+        from swiss_ai_hub.pipeline.resources.data_lake.azure.azure_data_lake_file_system_resource import (
+            AzureDataLakeFileSystemResource,
+        )
 
         from dagster import Definitions, asset
 

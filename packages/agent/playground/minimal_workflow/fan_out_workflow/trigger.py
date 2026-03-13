@@ -2,17 +2,17 @@ from dotenv import find_dotenv, load_dotenv
 
 load_dotenv(find_dotenv(usecwd=True))
 
-import asyncio
+import asyncio  # noqa: E402
 
-from swiss_ai_hub.core.events.agent import StartEvent
-from swiss_ai_hub.core.i18n import LocaleString
-from swiss_ai_hub.core.infrastructure import enable_logging
+from swiss_ai_hub.core.events.agent import StartEvent  # noqa: E402
+from swiss_ai_hub.core.i18n import LocaleString  # noqa: E402
+from swiss_ai_hub.core.infrastructure import enable_logging  # noqa: E402
 
-from playground.minimal_workflow.fan_out_workflow.fan_out_agent import FanOutAgent
-from playground.minimal_workflow.fan_out_workflow.fan_out_agent_config import (
+from playground.minimal_workflow.fan_out_workflow.fan_out_agent import FanOutAgent  # noqa: E402
+from playground.minimal_workflow.fan_out_workflow.fan_out_agent_config import (  # noqa: E402
     FanOutAgentConfig,
 )
-from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner
+from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner  # noqa: E402
 
 enable_logging()
 

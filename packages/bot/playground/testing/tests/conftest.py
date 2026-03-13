@@ -4,7 +4,7 @@ import pytest
 from dotenv import find_dotenv, load_dotenv
 
 load_dotenv(find_dotenv(usecwd=True))
-from aiohttp import ClientResponse
+from aiohttp import ClientResponse  # noqa: E402
 
 
 @pytest.fixture(autouse=True)

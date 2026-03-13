@@ -1,7 +1,7 @@
 from typing import Annotated
 
 from llama_index.core.base.llms.types import ChatMessage
-from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_settings import (
+from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_settings import (  # noqa: E501
     DangerousDevelopmentOnlyAuthSettings,
 )
 from swiss_ai_hub.core.events.agent import UserMessageEvent

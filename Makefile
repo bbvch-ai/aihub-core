@@ -130,6 +130,10 @@ local-cert:
 		"127.0.0.1.nip.io" "*.127.0.0.1.nip.io"
 	@echo "Certificates written to infra/configs/traefik/certs/"
 
+install-ffmpeg:
+	@echo "Installing ffmpeg..."
+	sudo apt-get update; sudo apt-get install -y ffmpeg
+
 up-dev:
 	@echo "Starting development environment with Docker Compose..."
 	docker compose -f infra/docker-compose.dev.yml --env-file .env up -d --build

@@ -3,36 +3,38 @@ from dotenv import find_dotenv, load_dotenv
 
 load_dotenv(find_dotenv(usecwd=True))
 
-import asyncio
-import gc
-import json
-import random
-import time
-import uuid
-from typing import Any
+import asyncio  # noqa: E402
+import gc  # noqa: E402
+import json  # noqa: E402
+import random  # noqa: E402
+import time  # noqa: E402
+import uuid  # noqa: E402
+from typing import Any  # noqa: E402
 
-from bson import ObjectId
-from nats.aio.client import Client as NATS
-from nats.js.api import StreamConfig
-from swiss_ai_hub.core.events import BaseEvent
-from swiss_ai_hub.core.events.agent import StartEvent, StopEvent
+from bson import ObjectId  # noqa: E402
+from nats.aio.client import Client as NATS  # noqa: E402
+from nats.js.api import StreamConfig  # noqa: E402
+from swiss_ai_hub.core.events import BaseEvent  # noqa: E402
+from swiss_ai_hub.core.events.agent import StartEvent, StopEvent  # noqa: E402
 
 # For NATS JS benchmarking
-from swiss_ai_hub.core.i18n import LocaleString
-from swiss_ai_hub.core.infrastructure import NatsSettings
-from swiss_ai_hub.core.publishers import JSPublisher
-from swiss_ai_hub.core.subscribers import AgentNCSubscriber
-from swiss_ai_hub.core.topic_managers import AgentInstanceTopicManager, AgentThreadTopicManager
-from swiss_ai_hub.core.topics import Topic
-from tabulate import tabulate
-from tqdm import tqdm
+from swiss_ai_hub.core.i18n import LocaleString  # noqa: E402
+from swiss_ai_hub.core.infrastructure import NatsSettings  # noqa: E402
+from swiss_ai_hub.core.publishers import JSPublisher  # noqa: E402
+from swiss_ai_hub.core.subscribers import AgentNCSubscriber  # noqa: E402
+from swiss_ai_hub.core.topic_managers import AgentInstanceTopicManager, AgentThreadTopicManager  # noqa: E402
+from swiss_ai_hub.core.topics import Topic  # noqa: E402
+from tabulate import tabulate  # noqa: E402
+from tqdm import tqdm  # noqa: E402
 
-from playground.performance.performance_testing_agent.events.parallel_event import ParallelEvent
-from playground.performance.performance_testing_agent.performance_testing_agent import PerformanceTestingAgent
-from playground.performance.performance_testing_agent.performance_testing_agent_config import (
+from playground.performance.performance_testing_agent.events.parallel_event import ParallelEvent  # noqa: E402
+from playground.performance.performance_testing_agent.performance_testing_agent import (  # noqa: E402
+    PerformanceTestingAgent,
+)
+from playground.performance.performance_testing_agent.performance_testing_agent_config import (  # noqa: E402
     PerformanceTestingAgentConfig,
 )
-from swiss_ai_hub.agent.runners.multiprocess_agent_runner import MultiprocessAgentRunner
+from swiss_ai_hub.agent.runners.multiprocess_agent_runner import MultiprocessAgentRunner  # noqa: E402
 
 
 # ====== NATS JetStream Benchmark ======
@@ -716,7 +718,7 @@ async def main():
     +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
     |          10 |   100000 |            100 | N/A            | N/A                  | N/A                | N/A                | N/A                 | N/A               | N/A               | ✗         |
     +-------------+----------+----------------+----------------+----------------------+--------------------+--------------------+---------------------+-------------------+-------------------+-----------+
-    
+
     Theoretical Limit Summary
     ========================
     +----------+----------------+----------------+----------------------+---------------+---------------------+

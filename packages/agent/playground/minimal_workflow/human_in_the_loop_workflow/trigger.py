@@ -2,21 +2,21 @@ from dotenv import find_dotenv, load_dotenv
 
 load_dotenv(find_dotenv(usecwd=True))
 
-import asyncio
-from asyncio import sleep
+import asyncio  # noqa: E402
+from asyncio import sleep  # noqa: E402
 
-from swiss_ai_hub.core.auth import DangerousDevelopmentOnlyAuthSettings
-from swiss_ai_hub.core.events.agent import HumanInTheLoopInput, UserMessageEvent
-from swiss_ai_hub.core.i18n import LocaleString
-from swiss_ai_hub.core.topics import PartialAgentTopic
+from swiss_ai_hub.core.auth import DangerousDevelopmentOnlyAuthSettings  # noqa: E402
+from swiss_ai_hub.core.events.agent import HumanInTheLoopInput, UserMessageEvent  # noqa: E402
+from swiss_ai_hub.core.i18n import LocaleString  # noqa: E402
+from swiss_ai_hub.core.topics import PartialAgentTopic  # noqa: E402
 
-from playground.minimal_workflow.human_in_the_loop_workflow.human_in_the_loop_agent import (
+from playground.minimal_workflow.human_in_the_loop_workflow.human_in_the_loop_agent import (  # noqa: E402
     HumanInTheLoopAgent,
 )
-from playground.minimal_workflow.human_in_the_loop_workflow.human_in_the_loop_agent_config import (
+from playground.minimal_workflow.human_in_the_loop_workflow.human_in_the_loop_agent_config import (  # noqa: E402
     HumanInTheLoopAgentConfig,
 )
-from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner
+from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner  # noqa: E402
 
 
 async def main():

@@ -343,8 +343,8 @@ my-project/
 ```
 
 This works for any component in the layer. You can inspect the layer's component directory structure in the
-[source repository](https://github.com/bbvch-ai/swiss-ai-hub/tree/main/swiss_ai_hub_web/swiss_ai_hub_web/components) to find the exact
-names and paths.
+[source repository](https://github.com/bbvch-ai/swiss-ai-hub/tree/main/swiss_ai_hub_web/swiss_ai_hub_web/components) to
+find the exact names and paths.
 
 ______________________________________________________________________
 

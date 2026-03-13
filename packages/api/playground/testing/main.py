@@ -2,23 +2,25 @@ from dotenv import find_dotenv, load_dotenv
 
 load_dotenv(find_dotenv(usecwd=True))
 
-import asyncio
-from os.path import abspath, dirname, join
+import asyncio  # noqa: E402
+from os.path import abspath, dirname, join  # noqa: E402
 
-from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler import (
+from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler import (  # noqa: E402, E501
     DangerousDevelopmentOnlyAuthHandler,
 )
-from swiss_ai_hub.core.infrastructure import enable_logging
-from swiss_ai_hub.core.routes import HealthController
+from swiss_ai_hub.core.infrastructure import enable_logging  # noqa: E402
+from swiss_ai_hub.core.routes import HealthController  # noqa: E402
 
-from swiss_ai_hub.api.routes.agent.agent_controller import AgentController
-from swiss_ai_hub.api.routes.event.event_controller import EventController
-from swiss_ai_hub.api.routes.i18n.i18n_controller import I18nController
-from swiss_ai_hub.api.routes.my_account.my_account_controller import MyAccountController
-from swiss_ai_hub.api.routes.openai.openai_controller import OpenaiController
-from swiss_ai_hub.api.routes.thread.thread_controller import ThreadController
-from swiss_ai_hub.api.routes.translation.translation_controller import TranslationController
-from swiss_ai_hub.api.runners.simulation.agent.simulated_agent_api_test_runner import SimulatedAgentApiTestRunner
+from swiss_ai_hub.api.routes.agent.agent_controller import AgentController  # noqa: E402
+from swiss_ai_hub.api.routes.event.event_controller import EventController  # noqa: E402
+from swiss_ai_hub.api.routes.i18n.i18n_controller import I18nController  # noqa: E402
+from swiss_ai_hub.api.routes.my_account.my_account_controller import MyAccountController  # noqa: E402
+from swiss_ai_hub.api.routes.openai.openai_controller import OpenaiController  # noqa: E402
+from swiss_ai_hub.api.routes.thread.thread_controller import ThreadController  # noqa: E402
+from swiss_ai_hub.api.routes.translation.translation_controller import TranslationController  # noqa: E402
+from swiss_ai_hub.api.runners.simulation.agent.simulated_agent_api_test_runner import (  # noqa: E402
+    SimulatedAgentApiTestRunner,
+)
 
 enable_logging()
 

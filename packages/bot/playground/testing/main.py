@@ -2,18 +2,18 @@ from dotenv import find_dotenv, load_dotenv
 
 load_dotenv(find_dotenv(usecwd=True))
 
-import asyncio
-from os.path import abspath, dirname, join
+import asyncio  # noqa: E402
+from os.path import abspath, dirname, join  # noqa: E402
 
-from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler import (
+from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler import (  # noqa: E402, E501
     DangerousDevelopmentOnlyAuthHandler,
 )
-from swiss_ai_hub.core.infrastructure import enable_logging
-from swiss_ai_hub.core.routes import HealthController
+from swiss_ai_hub.core.infrastructure import enable_logging  # noqa: E402
+from swiss_ai_hub.core.routes import HealthController  # noqa: E402
 
-from swiss_ai_hub.bot.routes.agent.agent_chat_controller import AgentChatController
-from swiss_ai_hub.bot.routes.openai.openai_chat_controller import OpenaiChatController
-from swiss_ai_hub.bot.runners.simulated_agent_bot_test_runner import SimulatedAgentBotTestRunner
+from swiss_ai_hub.bot.routes.agent.agent_chat_controller import AgentChatController  # noqa: E402
+from swiss_ai_hub.bot.routes.openai.openai_chat_controller import OpenaiChatController  # noqa: E402
+from swiss_ai_hub.bot.runners.simulated_agent_bot_test_runner import SimulatedAgentBotTestRunner  # noqa: E402
 
 enable_logging()
 

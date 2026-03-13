@@ -2,21 +2,21 @@ from dotenv import find_dotenv, load_dotenv
 
 load_dotenv(find_dotenv(usecwd=True))
 
-import asyncio
+import asyncio  # noqa: E402
 
-from bson import ObjectId
-from swiss_ai_hub.core.events import ClassDiscoveryRequestEvent
-from swiss_ai_hub.core.i18n import LocaleString
-from swiss_ai_hub.core.infrastructure import enable_logging
-from swiss_ai_hub.core.topic_managers import AgentTopicManager
+from bson import ObjectId  # noqa: E402
+from swiss_ai_hub.core.events import ClassDiscoveryRequestEvent  # noqa: E402
+from swiss_ai_hub.core.i18n import LocaleString  # noqa: E402
+from swiss_ai_hub.core.infrastructure import enable_logging  # noqa: E402
+from swiss_ai_hub.core.topic_managers import AgentTopicManager  # noqa: E402
 
-from playground.minimal_workflow.discoverable_workflow.discoverable_agent import (
+from playground.minimal_workflow.discoverable_workflow.discoverable_agent import (  # noqa: E402
     DiscoverableAgent,
 )
-from playground.minimal_workflow.discoverable_workflow.discoverable_agent_config import (
+from playground.minimal_workflow.discoverable_workflow.discoverable_agent_config import (  # noqa: E402
     DiscoverableAgentConfig,
 )
-from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner
+from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner  # noqa: E402
 
 enable_logging()
 

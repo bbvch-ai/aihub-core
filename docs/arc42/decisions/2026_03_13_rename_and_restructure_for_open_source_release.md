@@ -68,18 +68,18 @@ We restructure the repository layout, rename all packages, and normalize file na
 
 Top-level directories are reorganized by purpose:
 
-| Before            | After                | Rationale                                            |
-| ----------------- | -------------------- | ---------------------------------------------------- |
-| `aihub_lib/`      | `packages/core/`     | Source packages grouped under `packages/`            |
-| `aihub_agent/`    | `packages/agent/`    |                                                      |
-| `aihub_api/`      | `packages/api/`      |                                                      |
-| `aihub_bot/`      | `packages/bot/`      |                                                      |
-| `aihub_pipeline/` | `packages/pipeline/` |                                                      |
-| `aihub_process/`  | `packages/process/`  |                                                      |
-| `swiss_ai_hub_web/`      | `packages/web/`      |                                                      |
-| `aihub_doc/`      | `docs/`              | Standard documentation directory                     |
-| `aihub_action/`   | `.github/actions/`   | GitHub's conventional location for composite actions |
-| `deployment/`     | `infra/`             | Infrastructure and deployment config                 |
+| Before              | After                | Rationale                                            |
+| ------------------- | -------------------- | ---------------------------------------------------- |
+| `aihub_lib/`        | `packages/core/`     | Source packages grouped under `packages/`            |
+| `aihub_agent/`      | `packages/agent/`    |                                                      |
+| `aihub_api/`        | `packages/api/`      |                                                      |
+| `aihub_bot/`        | `packages/bot/`      |                                                      |
+| `aihub_pipeline/`   | `packages/pipeline/` |                                                      |
+| `aihub_process/`    | `packages/process/`  |                                                      |
+| `swiss_ai_hub_web/` | `packages/web/`      |                                                      |
+| `aihub_doc/`        | `docs/`              | Standard documentation directory                     |
+| `aihub_action/`     | `.github/actions/`   | GitHub's conventional location for composite actions |
+| `deployment/`       | `infra/`             | Infrastructure and deployment config                 |
 
 ### Package naming and namespace structure
 

@@ -1,6 +1,6 @@
 import pytest
 from fastapi.testclient import TestClient
-from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler import (
+from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler import (  # noqa: E501
     DangerousDevelopmentOnlyAuthHandler,
 )
 from swiss_ai_hub.core.routes import HealthController

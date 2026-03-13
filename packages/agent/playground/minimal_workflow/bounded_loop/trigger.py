@@ -2,16 +2,16 @@ from dotenv import find_dotenv, load_dotenv
 
 load_dotenv(find_dotenv(usecwd=True))
 
-import asyncio
+import asyncio  # noqa: E402
 
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from swiss_ai_hub.core.auth import DangerousDevelopmentOnlyAuthSettings
-from swiss_ai_hub.core.events.agent import UserMessageEvent
-from swiss_ai_hub.core.i18n import LocaleString
+from llama_index.core.base.llms.types import ChatMessage, MessageRole  # noqa: E402
+from swiss_ai_hub.core.auth import DangerousDevelopmentOnlyAuthSettings  # noqa: E402
+from swiss_ai_hub.core.events.agent import UserMessageEvent  # noqa: E402
+from swiss_ai_hub.core.i18n import LocaleString  # noqa: E402
 
-from playground.minimal_workflow.bounded_loop.bounded_loop_agent import BoundedLoopAgent
-from playground.minimal_workflow.bounded_loop.bounded_loop_agent_config import BoundedLoopAgentConfig
-from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner
+from playground.minimal_workflow.bounded_loop.bounded_loop_agent import BoundedLoopAgent  # noqa: E402
+from playground.minimal_workflow.bounded_loop.bounded_loop_agent_config import BoundedLoopAgentConfig  # noqa: E402
+from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner  # noqa: E402
 
 
 async def main():

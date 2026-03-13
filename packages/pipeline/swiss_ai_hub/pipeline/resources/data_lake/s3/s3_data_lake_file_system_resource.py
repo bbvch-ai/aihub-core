@@ -26,7 +26,9 @@ class S3DataLakeFileSystemResource(AbstractDataLakeFileSystemResource[s3fs.S3Fil
     1. Directly interact with the S3 file system:
 
     .. code-block:: python
-        from swiss_ai_hub.pipeline.resources.data_lake.s3.s3_data_lake_file_system_resource import S3DataLakeFileSystemResource
+        from swiss_ai_hub.pipeline.resources.data_lake.s3.s3_data_lake_file_system_resource import (
+            S3DataLakeFileSystemResource,
+        )
 
         from dagster import Definitions, asset
 
@@ -46,8 +48,12 @@ class S3DataLakeFileSystemResource(AbstractDataLakeFileSystemResource[s3fs.S3Fil
     .. code-block:: python
 
         from swiss_ai_hub.pipeline.io.s3_data_lake_io_manager import S3DataLakeIOManager
-        from swiss_ai_hub.pipeline.resources.data_lake.s3.s3_data_lake_client_resource import S3DataLakeClientResource
-        from swiss_ai_hub.pipeline.resources.data_lake.s3.s3_data_lake_file_system_resource import S3DataLakeFileSystemResource
+        from swiss_ai_hub.pipeline.resources.data_lake.s3.s3_data_lake_client_resource import (
+            S3DataLakeClientResource,
+        )
+        from swiss_ai_hub.pipeline.resources.data_lake.s3.s3_data_lake_file_system_resource import (
+            S3DataLakeFileSystemResource,
+        )
 
         from dagster import Definitions, asset
 

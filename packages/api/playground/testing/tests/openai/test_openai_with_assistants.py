@@ -5,7 +5,7 @@ import pytest_asyncio
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
 from swiss_ai_hub.core.agents import AgentConfig
-from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler import (
+from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler import (  # noqa: E501
     DangerousDevelopmentOnlyAuthHandler,
 )
 from swiss_ai_hub.core.i18n import LocaleString

@@ -27,8 +27,10 @@ from swiss_ai_hub.pipeline.assets.factories.data_lake_to_vector_store.observable
 from swiss_ai_hub.pipeline.assets.factories.data_lake_to_vector_store.removed_documents_factory import (
     removed_documents_factory,
 )
-from swiss_ai_hub.pipeline.assets.factories.data_lake_to_vector_store.summary_nodes_factory import summary_nodes_factory
-from swiss_ai_hub.pipeline.assets.factories.local_files_system_to_data_lake.observable_local_file_system_factory import (
+from swiss_ai_hub.pipeline.assets.factories.data_lake_to_vector_store.summary_nodes_factory import (
+    summary_nodes_factory,
+)
+from swiss_ai_hub.pipeline.assets.factories.local_files_system_to_data_lake.observable_local_file_system_factory import (  # noqa: E501
     observable_local_file_system_factory,
 )
 from swiss_ai_hub.pipeline.assets.factories.rclone_to_data_lake.observable_rclone_factory import (

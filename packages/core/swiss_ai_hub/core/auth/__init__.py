@@ -4,10 +4,10 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
     from swiss_ai_hub.core.auth.access.access_level import AccessLevel
     from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
-    from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler import (
+    from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler import (  # noqa: E501
         DangerousDevelopmentOnlyAuthHandler,
     )
-    from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_settings import (
+    from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_settings import (  # noqa: E501
         DangerousDevelopmentOnlyAuthSettings,
     )
     from swiss_ai_hub.core.auth.dependencies.superuser_auth_handler.superuser_settings import SuperuserSettings
@@ -42,8 +42,8 @@ _LAZY_IMPORTS = {
     "AccessChecker": "swiss_ai_hub.core.auth.access.access_checker",
     "AccessLevel": "swiss_ai_hub.core.auth.access.access_level",
     "AuthHandler": "swiss_ai_hub.core.auth.dependencies.auth_handler",
-    "DangerousDevelopmentOnlyAuthHandler": "swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler",
-    "DangerousDevelopmentOnlyAuthSettings": "swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_settings",
+    "DangerousDevelopmentOnlyAuthHandler": "swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler",  # noqa: E501
+    "DangerousDevelopmentOnlyAuthSettings": "swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_settings",  # noqa: E501
     "SuperuserSettings": "swiss_ai_hub.core.auth.dependencies.superuser_auth_handler.superuser_settings",
     "TenantIdentity": "swiss_ai_hub.core.auth.identity.tenant_identity",
     "TokenAuthHandler": "swiss_ai_hub.core.auth.dependencies.token_auth_handler.token_auth_handler",

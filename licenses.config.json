@@ -149,6 +149,18 @@
       "license": "GPL-3.0",
       "status": "✅",
       "notes": "Dev-only YAML formatting tool; not distributed in production builds."
+    },
+    {
+      "name": "only",
+      "license": "MIT",
+      "status": "✅",
+      "notes": "MIT license per npm/GitHub (TJ Holowaychuk); npm reports Unknown due to missing SPDX field in package.json."
+    },
+    {
+      "name": "tosource",
+      "license": "zlib",
+      "status": "✅",
+      "notes": "zlib/libpng license per LICENSE file; npm reports Unknown due to null license field in package.json."
     }
   ],
   "docker_licenses": [

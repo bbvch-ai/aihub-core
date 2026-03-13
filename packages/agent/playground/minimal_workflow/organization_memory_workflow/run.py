@@ -3,21 +3,23 @@ from dotenv import find_dotenv, load_dotenv
 
 load_dotenv(find_dotenv(usecwd=True))
 
-from swiss_ai_hub.core.infrastructure import AihubInstrumentor  # isort: skip
-from playground.minimal_workflow.organization_memory_workflow.organization_memory_agent import OrganizationMemoryAgent
-from playground.minimal_workflow.organization_memory_workflow.organization_memory_agent_config import (
+from swiss_ai_hub.core.infrastructure import AihubInstrumentor  # isort: skip  # noqa: E402
+from playground.minimal_workflow.organization_memory_workflow.organization_memory_agent import (  # noqa: E402
+    OrganizationMemoryAgent,
+)
+from playground.minimal_workflow.organization_memory_workflow.organization_memory_agent_config import (  # noqa: E402
     OrganizationMemoryAgentConfig,
 )
 
 AihubInstrumentor().instrument()
 
-import asyncio
+import asyncio  # noqa: E402
 
-from swiss_ai_hub.core.generative_ai import LLMConfig, LLMParameter
-from swiss_ai_hub.core.i18n import LocaleString
-from swiss_ai_hub.core.infrastructure import enable_logging
+from swiss_ai_hub.core.generative_ai import LLMConfig, LLMParameter  # noqa: E402
+from swiss_ai_hub.core.i18n import LocaleString  # noqa: E402
+from swiss_ai_hub.core.infrastructure import enable_logging  # noqa: E402
 
-from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner
+from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner  # noqa: E402
 
 enable_logging()
 

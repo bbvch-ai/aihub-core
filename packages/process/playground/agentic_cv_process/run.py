@@ -2,13 +2,13 @@ from dotenv import find_dotenv, load_dotenv
 
 load_dotenv(find_dotenv(usecwd=True))
 
-import asyncio
+import asyncio  # noqa: E402
 
-from swiss_ai_hub.core.infrastructure import enable_logging
+from swiss_ai_hub.core.infrastructure import enable_logging  # noqa: E402
 
-from playground.agentic_cv_process.agentic_cv_process import AgenticCVProcess
-from playground.agentic_cv_process.agentic_cv_process_config import AgenticCVProcessConfig
-from swiss_ai_hub.process.runners.process_test_runner import ProcessTestRunner
+from playground.agentic_cv_process.agentic_cv_process import AgenticCVProcess  # noqa: E402
+from playground.agentic_cv_process.agentic_cv_process_config import AgenticCVProcessConfig  # noqa: E402
+from swiss_ai_hub.process.runners.process_test_runner import ProcessTestRunner  # noqa: E402
 
 enable_logging()
 

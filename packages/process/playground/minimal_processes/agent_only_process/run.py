@@ -2,18 +2,18 @@ from dotenv import find_dotenv, load_dotenv
 
 load_dotenv(find_dotenv(usecwd=True))
 
-import asyncio
+import asyncio  # noqa: E402
 
-from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner
-from swiss_ai_hub.core.agents import AgentConfig
-from swiss_ai_hub.core.i18n import LocaleString
-from swiss_ai_hub.core.infrastructure import enable_logging
-from swiss_ai_hub.core.processes import ProcessConfig
+from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner  # noqa: E402
+from swiss_ai_hub.core.agents import AgentConfig  # noqa: E402
+from swiss_ai_hub.core.i18n import LocaleString  # noqa: E402
+from swiss_ai_hub.core.infrastructure import enable_logging  # noqa: E402
+from swiss_ai_hub.core.processes import ProcessConfig  # noqa: E402
 
-from playground.agents.agent_a.agent_a import AgentA
-from playground.agents.agent_b.agent_b import AgentB
-from playground.minimal_processes.agent_only_process.agent_only_process import AgentOnlyProcess
-from swiss_ai_hub.process.runners.process_test_runner import ProcessTestRunner
+from playground.agents.agent_a.agent_a import AgentA  # noqa: E402
+from playground.agents.agent_b.agent_b import AgentB  # noqa: E402
+from playground.minimal_processes.agent_only_process.agent_only_process import AgentOnlyProcess  # noqa: E402
+from swiss_ai_hub.process.runners.process_test_runner import ProcessTestRunner  # noqa: E402
 
 enable_logging()
 

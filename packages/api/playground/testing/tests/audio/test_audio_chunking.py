@@ -4,7 +4,7 @@ import pytest
 from fastapi import UploadFile
 from pydub import AudioSegment
 from pydub.generators import Sine
-from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_settings import (
+from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_settings import (  # noqa: E501
     DangerousDevelopmentOnlyAuthSettings,
 )
 

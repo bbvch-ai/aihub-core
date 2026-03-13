@@ -14,7 +14,7 @@ from swiss_ai_hub.core.events.agent import (
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.testing import async_test
 
-from playground.minimal_workflow.agent_in_the_loop_workflow.orchestrator_agent.events.orchestration_result_event import (
+from playground.minimal_workflow.agent_in_the_loop_workflow.orchestrator_agent.events.orchestration_result_event import (  # noqa: E501
     OrchestrationResultEvent,
 )
 from playground.minimal_workflow.agent_in_the_loop_workflow.orchestrator_agent.orchestrator_agent import (

@@ -3,7 +3,7 @@ from typing import ClassVar
 from swiss_ai_hub.core.events.agent import AgentInTheLoop, UserMessageEvent
 from swiss_ai_hub.core.i18n import LocaleString
 
-from playground.minimal_workflow.agent_in_the_loop_workflow.orchestrator_agent.events.orchestration_result_event import (
+from playground.minimal_workflow.agent_in_the_loop_workflow.orchestrator_agent.events.orchestration_result_event import (  # noqa: E501
     OrchestrationResultEvent,
 )
 from swiss_ai_hub.agent.agents.agent import Agent

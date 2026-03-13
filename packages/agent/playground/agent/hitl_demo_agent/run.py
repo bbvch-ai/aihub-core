@@ -3,18 +3,18 @@ from dotenv import find_dotenv, load_dotenv
 
 load_dotenv(find_dotenv(usecwd=True))
 
-from swiss_ai_hub.core.infrastructure import AihubInstrumentor  # isort: skip
+from swiss_ai_hub.core.infrastructure import AihubInstrumentor  # isort: skip  # noqa: E402
 
 AihubInstrumentor().instrument()
 
-import asyncio
+import asyncio  # noqa: E402
 
-from swiss_ai_hub.core.i18n import LocaleString
-from swiss_ai_hub.core.infrastructure import enable_logging
+from swiss_ai_hub.core.i18n import LocaleString  # noqa: E402
+from swiss_ai_hub.core.infrastructure import enable_logging  # noqa: E402
 
-from playground.agent.hitl_demo_agent.hitl_demo_agent import HitlDemoAgent
-from playground.agent.hitl_demo_agent.hitl_demo_agent_config import HitlDemoAgentConfig
-from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner
+from playground.agent.hitl_demo_agent.hitl_demo_agent import HitlDemoAgent  # noqa: E402
+from playground.agent.hitl_demo_agent.hitl_demo_agent_config import HitlDemoAgentConfig  # noqa: E402
+from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner  # noqa: E402
 
 enable_logging()
 

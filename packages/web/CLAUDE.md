@@ -42,8 +42,8 @@ swiss_ai_hub_web/
 ## Nuxt Layer Architecture
 
 The `.app/` directory is the actual entry point — it extends the parent via `extends: ['..']` in its `nuxt.config.ts`.
-`pnpm dev` runs `nuxi dev .app`. The parent `swiss_ai_hub_web/` provides components, composables, pages, and config. `.app/`
-adds `runtimeConfig` (OIDC, WebSocket endpoint, env vars) and `formkit.config.ts` (custom input registration).
+`pnpm dev` runs `nuxi dev .app`. The parent `swiss_ai_hub_web/` provides components, composables, pages, and config.
+`.app/` adds `runtimeConfig` (OIDC, WebSocket endpoint, env vars) and `formkit.config.ts` (custom input registration).
 
 ## Page Composition Pattern
 

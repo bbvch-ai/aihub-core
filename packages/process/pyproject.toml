@@ -11,6 +11,7 @@ authors = [
     { name = "Noah Hermann", email = "noah.hermann@bbv.ch" },
 ]
 license = "Apache-2.0"
+readme = "README.md"
 dependencies = [
     "swiss-ai-hub-core",
     "uvicorn[standard]>=0.34.0",

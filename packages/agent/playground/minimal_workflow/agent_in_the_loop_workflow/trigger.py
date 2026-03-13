@@ -2,23 +2,25 @@ from dotenv import find_dotenv, load_dotenv
 
 load_dotenv(find_dotenv(usecwd=True))
 
-import asyncio
+import asyncio  # noqa: E402
 
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from swiss_ai_hub.core.auth import DangerousDevelopmentOnlyAuthSettings
-from swiss_ai_hub.core.events.agent import UserMessageEvent
-from swiss_ai_hub.core.i18n import LocaleString
-from swiss_ai_hub.core.infrastructure import enable_logging
+from llama_index.core.base.llms.types import ChatMessage, MessageRole  # noqa: E402
+from swiss_ai_hub.core.auth import DangerousDevelopmentOnlyAuthSettings  # noqa: E402
+from swiss_ai_hub.core.events.agent import UserMessageEvent  # noqa: E402
+from swiss_ai_hub.core.i18n import LocaleString  # noqa: E402
+from swiss_ai_hub.core.infrastructure import enable_logging  # noqa: E402
 
-from playground.minimal_workflow.agent_in_the_loop_workflow.orchestrator_agent.orchestrator_agent import (
+from playground.minimal_workflow.agent_in_the_loop_workflow.orchestrator_agent.orchestrator_agent import (  # noqa: E402
     OrchestratorAgent,
 )
-from playground.minimal_workflow.agent_in_the_loop_workflow.orchestrator_agent.orchestrator_agent_config import (
+from playground.minimal_workflow.agent_in_the_loop_workflow.orchestrator_agent.orchestrator_agent_config import (  # noqa: E402
     OrchestratorAgentConfig,
 )
-from playground.minimal_workflow.agent_in_the_loop_workflow.worker_agent.worker_agent import WorkerAgent
-from playground.minimal_workflow.agent_in_the_loop_workflow.worker_agent.worker_agent_config import WorkerAgentConfig
-from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner
+from playground.minimal_workflow.agent_in_the_loop_workflow.worker_agent.worker_agent import WorkerAgent  # noqa: E402
+from playground.minimal_workflow.agent_in_the_loop_workflow.worker_agent.worker_agent_config import (  # noqa: E402
+    WorkerAgentConfig,
+)
+from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner  # noqa: E402
 
 enable_logging()
 
