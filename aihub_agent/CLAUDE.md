@@ -25,6 +25,7 @@ aihub_agent/                       # SDK framework
 ├── i18n/
 │   ├── AgentLocaleString.py        # Multi-locale string resolution for agents
 │   └── translations/agent/         # Translation files: {name}.{de|en|fr|it}.yml
+├── mcp/                            # MCP tool integration (McpClientFactory, McpReactService)
 ├── rag/                            # Shared RAG step functions and preconditions
 ├── runners/
 │   ├── AgentRunner.py              # Production runner (NATS, Redis, Milvus, discovery)
@@ -319,7 +320,7 @@ tests).
   `precondition_workflow`, `bounded_loop`, `context_workflow`, `configured_workflow`, `custom_start_stop_events`,
   `discoverable_workflow`, `displaying_workflow`, `multi_locale_workflow`, `optional_workflow`,
   `organization_memory_workflow`, `semantic_workflow`, `user_memory_workflow`, `multistep_human_in_the_loop_workflow`,
-  `long_running_agent`, `llama_index_workflow`
+  `long_running_agent`, `llama_index_workflow`, `mcp_react_workflow`
 - `playground/performance/` — Load testing with PerformanceTestingAgent
 
 ## Testing
