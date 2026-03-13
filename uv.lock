@@ -39,6 +39,7 @@ version = "0.270.2"
 source = { editable = "aihub_agent" }
 dependencies = [
     { name = "aihub-core" },
+    { name = "fastmcp" },
     { name = "llama-index-llms-azure-openai" },
     { name = "llama-index-llms-openai" },
     { name = "stringcase" },
@@ -53,6 +54,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "aihub-core", editable = "aihub_lib" },
+    { name = "fastmcp", specifier = ">=2.11.2" },
     { name = "llama-index-llms-azure-openai", specifier = ">=0.4.2" },
     { name = "llama-index-llms-openai", specifier = ">=0.6.12" },
     { name = "stringcase", specifier = ">=1.2.0" },

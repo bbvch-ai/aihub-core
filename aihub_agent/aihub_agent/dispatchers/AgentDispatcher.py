@@ -537,7 +537,8 @@ class AgentDispatcher(BaseDispatcher):
         mcp_config = step_configs.get(McpClientConfig)
         if not mcp_config:
             raise ValueError(
-                "McpClient requested but no McpClientConfig found. Add a 'mcp: McpClientConfig' field to your AgentConfig."
+                "McpClient requested but no McpClientConfig found. "
+                "Add a 'mcp: McpClientConfig' field to your AgentConfig."
             )
 
         auth = BearerAuth(mcp_config.api_key.get_secret_value()) if mcp_config.api_key else None

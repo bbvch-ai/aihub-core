@@ -53,14 +53,22 @@ Direct `fastmcp.Client` injection with per-run lifecycle:
 3. **Auth**: Uses `BearerAuth` from `fastmcp.client.auth` when `api_key` is set
 4. **Lifecycle cleanup**: On `StopEvent` or `ExceptionEvent`, `aclose()` the exit stack
 
+### `aihub_lib/aihub_lib/mcp/react.py` — Reusable MCP Step Functions
+
+Shared functions in `aihub_lib` (usable by agents, processes, bots — any package):
+
+- `to_openai_tool_schemas(tools)` — converts `list[mcp.types.Tool]` to OpenAI function-calling format
+- `extract_result_text(result)` — extracts text from `CallToolResult.content` blocks
+- `react_loop(mcp_client, messages, llm, displayer, model_name, max_iterations)` — full ReAct loop
+
 ### `playground/minimal_workflow/mcp_react_workflow/` — ReAct Agent Example
 
-| File                          | Purpose                                                              |
-| ----------------------------- | -------------------------------------------------------------------- |
-| `McpReactAgent.py`            | Full ReAct loop: LLM reasons → calls tools → feeds back → repeats    |
+| File                          | Purpose                                                                |
+| ----------------------------- | ---------------------------------------------------------------------- |
+| `McpReactAgent.py`            | Minimal agent — delegates to `McpReactService.react_loop()`            |
 | `McpReactAgentConfig.py`      | Config with `mcp: McpClientConfig`, `llm: LLMConfig`, `max_iterations` |
-| `trigger.py`                  | Manual test runner                                                   |
-| `tests/test_McpReactAgent.py` | BDD test with mocked MCP server and LLM                              |
+| `trigger.py`                  | Manual test runner                                                     |
+| `tests/test_McpReactAgent.py` | BDD test with mocked MCP server and LLM                                |
 
 ### How to Add MCP to Any Agent
 
@@ -75,7 +83,22 @@ Direct `fastmcp.Client` injection with per-run lifecycle:
 
    ```python
    from fastmcp import Client
+   from aihub_lib.mcp.react import react_loop
 
+   @step()
+   async def my_step(self, event: UserMessageEvent, mcp_client: Client,
+                     config: MyAgentConfig, displayer: EventDisplayer) -> StopEvent:
+       async with config.llm.cost_reporting_llm(displayer) as llm:
+           await react_loop(
+               mcp_client, list(event.messages), llm, displayer,
+               config.llm.model_name, config.max_iterations,
+           )
+       return StopEvent()
+   ```
+
+   Or use `Client` directly for custom tool logic:
+
+   ```python
    @step()
    async def my_step(self, event: UserMessageEvent, mcp_client: Client) -> StopEvent:
        tools = await mcp_client.list_tools()
@@ -98,8 +121,8 @@ The implementation uses FastMCP exactly as documented:
 | `Client(url)` auto-infer | Default path when no custom headers                     |
 | `Client(transport)`      | Only when `headers` or `api_key` are configured         |
 | `async with` lifecycle   | Via `AsyncExitStack.enter_async_context(client)`        |
-| `name=` param            | Passed from `McpClientConfig.name`                        |
-| `timeout=` param         | Passed from `McpClientConfig.timeout`                     |
+| `name=` param            | Passed from `McpClientConfig.name`                      |
+| `timeout=` param         | Passed from `McpClientConfig.timeout`                   |
 | `auth=BearerAuth(...)`   | When `api_key` is set                                   |
 | `client.list_tools()`    | Returns `list[mcp.types.Tool]`                          |
 | `client.call_tool()`     | Returns `fastmcp.client.client.CallToolResult`          |
@@ -202,8 +225,9 @@ Lower priority — extend as needed:
 
 | File                                                          | Change                                          |
 | ------------------------------------------------------------- | ----------------------------------------------- |
-| `aihub_lib/aihub_lib/mcp/McpClientConfig.py`                    | New — MCP connection config as StepConfig       |
+| `aihub_lib/aihub_lib/mcp/McpClientConfig.py`                  | New — MCP connection config as StepConfig       |
 | `aihub_lib/aihub_lib/mcp/__init__.py`                         | New — public export                             |
 | `aihub_agent/aihub_agent/dispatchers/AgentDispatcher.py`      | Modified — Client DI + AsyncExitStack lifecycle |
+| `aihub_lib/aihub_lib/mcp/react.py`                            | New — reusable ReAct loop + MCP tool helpers    |
 | `aihub_agent/pyproject.toml`                                  | Modified — added `fastmcp>=2.11.2`              |
 | `aihub_agent/playground/minimal_workflow/mcp_react_workflow/` | New — ReAct agent example + BDD test            |

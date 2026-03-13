@@ -24,16 +24,16 @@ async def main():
             agent_id="mcp_react_agent",
             name=LocaleString(en="MCP React Agent"),
             description=LocaleString(en="Agent that calls external MCP tools"),
-            mcp=McpClientConfig(name="aihub-api", url="http://localhost:8000/mcp"),
-            llm=LLMConfig(model_name="gpt-4o"),
+            mcp=McpClientConfig(name="test-tools", url="http://127.0.0.1:9090/mcp"),
+            llm=LLMConfig(model_name="text-generation/Qwen3-VL-235B-A22B-Instruct"),
         ),
     )
 
-    async with runner.test_run() as topic:
+    async with runner.test_run(delay_before_stop=60) as topic:
         await runner.send_event_from_topic(
             topic=topic,
             start_event=UserMessageEvent(
-                messages=[ChatMessage(content="Hello, call a tool for me", role=MessageRole.USER)],
+                messages=[ChatMessage(content="What is 17 + 25? Use the add tool.", role=MessageRole.USER)],
                 user=DangerousDevelopmentOnlyAuthSettings().get_user_identity(),
             ),
         )
