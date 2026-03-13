@@ -1,8 +1,11 @@
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
     DangerousDevelopmentOnlyAuthSettings,
 )
+from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.mcp.McpClientConfig import McpClientConfig
 from aihub_lib.nats.events import UserMessageEvent
@@ -52,20 +55,6 @@ def _make_mock_llm() -> AsyncMock:
     return mock_llm
 
 
-def _make_mock_llm_config() -> MagicMock:
-    """Create a mock LLMConfig whose cost_reporting_llm yields our mock LLM."""
-    mock_llm = _make_mock_llm()
-    mock_config = MagicMock()
-    mock_config.model_name = "test-model"
-
-    ctx = AsyncMock()
-    ctx.__aenter__ = AsyncMock(return_value=mock_llm)
-    ctx.__aexit__ = AsyncMock(return_value=False)
-    mock_config.cost_reporting_llm = MagicMock(return_value=ctx)
-
-    return mock_config
-
-
 @given("a McpReactAgent runner with a mocked MCP server and LLM", target_fixture="agent_runner")
 def _():
     return AgentTestRunner(
@@ -75,7 +64,7 @@ def _():
             name=LocaleString(en="MCP React Agent"),
             description=LocaleString(en="Test agent"),
             mcp=McpClientConfig(name="mock", url="http://mock-server/mcp"),
-            llm=_make_mock_llm_config(),
+            llm=LLMConfig(model_name="text-generation/gpt-oss-120b"),
             max_iterations=5,
         ),
     )
@@ -84,13 +73,24 @@ def _():
 @when("the start event is sent")
 @async_test
 async def _(agent_runner: AgentTestRunner):
-    mock_client = AsyncMock()
-    mock_client.list_tools = AsyncMock(return_value=[MOCK_TOOL])
-    mock_client.call_tool = AsyncMock(return_value=MagicMock(content=[TextContent(type="text", text="hello")]))
-    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
-    mock_client.__aexit__ = AsyncMock(return_value=False)
+    mock_mcp_client = AsyncMock()
+    mock_mcp_client.list_tools = AsyncMock(return_value=[MOCK_TOOL])
+    mock_mcp_client.call_tool = AsyncMock(return_value=MagicMock(content=[TextContent(type="text", text="hello")]))
 
-    with patch("aihub_agent.dispatchers.AgentDispatcher.McpClient", return_value=mock_client):
+    @asynccontextmanager
+    async def fake_mcp_create(_config: McpClientConfig) -> AsyncIterator[AsyncMock]:
+        yield mock_mcp_client
+
+    mock_llm = _make_mock_llm()
+
+    @asynccontextmanager
+    async def fake_cost_reporting_llm(self, displayer) -> AsyncIterator[AsyncMock]:  # noqa: ARG001
+        yield mock_llm
+
+    with (
+        patch("aihub_agent.mcp.McpClientFactory.McpClientFactory.create", side_effect=fake_mcp_create),
+        patch.object(LLMConfig, "cost_reporting_llm", fake_cost_reporting_llm),
+    ):
         async with agent_runner.test_run() as topic:
             await agent_runner.send_event_from_topic(
                 start_event=UserMessageEvent(
