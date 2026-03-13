@@ -106,7 +106,8 @@ runner.mount(
     .initiate_document_upload()
     .validate_document_upload()
     .get_supported_file_types()
-    .get_document_url(),
+    .get_document_url()
+    .delete_document(),
     FileController(auth=auth).get_file_url().get_anonymous_file_url().get_anonymous_file_redirect(),
     NotificationController(auth=auth).get_notifications().update_notifications().update_notification(),
     UserMemoryController(auth=auth)
