@@ -2454,7 +2454,7 @@ services:
     restart: always
     {%- if image_tags.web[stage] == 'localbuild' %}
     build:
-      context: ./aihub_web/aihub_web
+      context: ./swiss_ai_hub_web/swiss_ai_hub_web
       dockerfile: ./Dockerfile
     {%- else %}
     image: {{ global.registry_prefix }}{{ image_tags.web[stage] }}

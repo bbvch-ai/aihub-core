@@ -19,7 +19,7 @@ documentation using MCP servers and return a concise summary tailored to the cal
 
 ## What You Know About This Project's Tech Stack
 
-**Frontend** (`packages/web/aihub_web/`): Nuxt 3, Vue 3, PrimeVue 4.x, Tailwind CSS 3, Pinia + @pinia/colada,
+**Frontend** (`packages/web/swiss_ai_hub_web/`): Nuxt 3, Vue 3, PrimeVue 4.x, Tailwind CSS 3, Pinia + @pinia/colada,
 @vueuse/nuxt, @formkit/nuxt with @sfxcode/formkit-primevue-nuxt, @nuxtjs/i18n, @vue-flow/core, apexcharts, gridstack,
 date-fns, vee-validate
 

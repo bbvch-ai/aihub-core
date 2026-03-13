@@ -59,7 +59,7 @@ These are the most-imported modules. Changes here have the widest blast radius:
 
 - `Form.to_formkit_form()` → admin UI form rendering for all agents and processes
 - `Form.deep_merge()` → config lifecycle (discovery → storage → runtime fetch → merge → injection)
-- `FormkitElement` subclasses → frontend FormKit rendering in `packages/web/aihub_web/composables/form/`
+- `FormkitElement` subclasses → frontend FormKit rendering in `packages/web/swiss_ai_hub_web/composables/form/`
 
 **Auth changes** (`AuthHandler`, `UserIdentity`, `AccessChecker`):
 
@@ -110,7 +110,7 @@ grep -rn "{method_or_field_name}" \
 Some changes ripple through chains:
 
 - **Event field change** → check `EventPersister` (MongoDB storage) → check `WebSocketSender` (frontend delivery) →
-  check `packages/web/aihub_web/composables/event/` (frontend consumption)
+  check `packages/web/swiss_ai_hub_web/composables/event/` (frontend consumption)
 - **AgentConfig change** → check `AgentConfigClient` (RPC fetch) → check `AgentConfigResponder` (API side) → check
   `AgentEndpointsDiscoveryService` (dynamic endpoints) → check SDK types
 - **Entity field change** → check all Services that query this entity → check DTOs that expose it → check frontend
@@ -131,7 +131,8 @@ For each affected file, classify the impact:
 
 Don't forget:
 
-- **Frontend SDK**: if events or DTOs change, `pnpm generate-sdk` is needed → check `packages/web/aihub_web/sdk/client/`
+- **Frontend SDK**: if events or DTOs change, `pnpm generate-sdk` is needed → check
+  `packages/web/swiss_ai_hub_web/sdk/client/`
 - **i18n files**: if LocaleString keys change, check all `*.{locale}.yml` translation files
 - **Docker Compose**: if Settings class env var names change, check `.env.dev`, `.env.prod`,
   `infra/deployment/templates/docker-compose.yml.j2`

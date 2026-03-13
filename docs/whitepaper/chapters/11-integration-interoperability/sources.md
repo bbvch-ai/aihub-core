@@ -35,7 +35,7 @@
 
 2_platform/10_chat_ui/index.en.md 2_platform/10_chat_ui/11_integration_architecture/index.en.md
 2_platform/10_chat_ui/12_strategic_rationale/index.en.md 2_platform/4_user_interface/index.en.md
-3_sdk/5_advanced_topics/6_extending_the_ui/index.en.md 6_code_deep_dive/aihub_web/index.en.md
+3_sdk/5_advanced_topics/6_extending_the_ui/index.en.md 6_code_deep_dive/swiss_ai_hub_web/index.en.md
 
 # Architecture Context
 

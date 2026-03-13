@@ -1913,7 +1913,7 @@ services:
     container_name: web
     restart: always
     build:
-      context: ./aihub_web/aihub_web
+      context: ./swiss_ai_hub_web/swiss_ai_hub_web
       dockerfile: ./Dockerfile
     environment:
       OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}

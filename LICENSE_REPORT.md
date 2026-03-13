@@ -24,8 +24,8 @@ configuration. Please review and resolve the items below:
 The following packages have licenses that are not recognized or are proprietary. Please add them to the
 'reviewed_packages' list in the config if they are approved for use.
 
-- **only** in aihub_web (node) has *Unknown*
-- **tosource** in aihub_web (node) has *Unknown*
+- **only** in swiss_ai_hub_web (node) has *Unknown*
+- **tosource** in swiss_ai_hub_web (node) has *Unknown*
 
 ## Python Dependencies
 
@@ -420,7 +420,7 @@ The following packages have licenses that are not recognized or are proprietary.
 
 ## JavaScript/TypeScript Dependencies
 
-### aihub_web (Node.js)
+### swiss_ai_hub_web (Node.js)
 
 | Status | Package                                            | Version       | License                                       | Notes                                                                                  |
 | ------ | -------------------------------------------------- | ------------- | --------------------------------------------- | -------------------------------------------------------------------------------------- |

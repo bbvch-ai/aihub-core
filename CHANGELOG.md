@@ -654,8 +654,8 @@ ______________________________________________________________________
 ### Removed
 
 - 🗑️ **Redundant Component Glossaries**: Eliminated duplicate glossary sections from component-specific `README.md`
-  files (e.g., `aihub_agent`, `aihub_api`, `aihub_bot`, `aihub_lib`, `aihub_pipeline`, `aihub_process`, `aihub_web`),
-  streamlining documentation and reducing information fragmentation.
+  files (e.g., `aihub_agent`, `aihub_api`, `aihub_bot`, `aihub_lib`, `aihub_pipeline`, `aihub_process`,
+  `swiss_ai_hub_web`), streamlining documentation and reducing information fragmentation.
 
 ______________________________________________________________________
 
@@ -675,10 +675,10 @@ ______________________________________________________________________
 - 📄 **Critical Documentation**: Introduced new, in-depth documentation pages for **Agent Execution Model** and **Events
   Reference**, providing foundational knowledge for building robust AI agents.
 - ✍️ **Claude Code Context Files**: Created dedicated `CLAUDE.md` context files for `aihub_action`, `aihub_api`,
-  `aihub_bot`, `aihub_doc`, `aihub_lib`, `aihub_process`, `aihub_web`, and `deployment` scopes, offering AI assistants
-  precise, scope-specific guidance.
-- ✨ **Developer Convenience**: Added new `Makefile` targets in `aihub_web` for streamlined frontend development tasks
-  like formatting, linting, and SDK generation.
+  `aihub_bot`, `aihub_doc`, `aihub_lib`, `aihub_process`, `swiss_ai_hub_web`, and `deployment` scopes, offering AI
+  assistants precise, scope-specific guidance.
+- ✨ **Developer Convenience**: Added new `Makefile` targets in `swiss_ai_hub_web` for streamlined frontend development
+  tasks like formatting, linting, and SDK generation.
 
 ### Changed
 
@@ -753,8 +753,8 @@ ______________________________________________________________________
   `LICENSES.md` for clearer identification and consistency.
 - 🎨 **IDE Configuration Alignment:** Updated PyCharm/IntelliJ IDEA project and run configurations to seamlessly
   recognize and utilize the `uv` virtual environment and workspace structure.
-- 💻 **Enhanced Frontend Linting Script:** The `lint` script in `aihub_web/aihub_web/package.json` has been made more
-  robust, ensuring `nuxi prepare` only runs when necessary.
+- 💻 **Enhanced Frontend Linting Script:** The `lint` script in `swiss_ai_hub_web/swiss_ai_hub_web/package.json` has been
+  made more robust, ensuring `nuxi prepare` only runs when necessary.
 
 ### Fixed
 
@@ -1209,7 +1209,7 @@ ______________________________________________________________________
   expose class-level metadata for discovery.
 - 🔄 **Refined `StartEvent` Structure**: Removed the `agent_config` field from `StartEvent` and `UserMessageEvent`,
   streamlining event payloads as configuration is now fetched dynamically by the receiving agent/process.
-- 🔄 **Dependency Updates**: Updated numerous dependencies in `aihub_web` to their latest versions, including
+- 🔄 **Dependency Updates**: Updated numerous dependencies in `swiss_ai_hub_web` to their latest versions, including
   `@pinia/colada`, `@vueuse`, `gridstack`, `oidc-client-ts`, and `socket.io-client`, improving performance and
   stability.
 - 🔄 **Improved UI/UX Icons**: Updated various icons across the web frontend (e.g., chat, file, search, agent status) for
@@ -5183,8 +5183,8 @@ ______________________________________________________________________
   (GPU) for simplified local infrastructure setup, including services like LiteLLM, llama.cpp, HuggingFace TEI, and
   improved health checks.
 - 📦 **Enhanced Frontend Build and Deployment**: Introduced a multi-stage Dockerfile, `nginx.conf`,
-  `config.template.json`, and `plugins/config-loader.client.ts` for `aihub_web`, enabling production-ready Nginx-based
-  serving with runtime environment variable injection.
+  `config.template.json`, and `plugins/config-loader.client.ts` for `swiss_ai_hub_web`, enabling production-ready
+  Nginx-based serving with runtime environment variable injection.
 - ⚙️ **Windows Image Mirroring Utility**: Added `mirror-image-win` target to `aihub_iac/Makefile` for convenient Docker
   image mirroring on Windows environments.
 - 🧪 **Standardized Local Docker Run Configurations**: New `.idea/runConfigurations` XML files were added to streamline
@@ -5231,8 +5231,8 @@ ______________________________________________________________________
   streamlined system (`LLMConfig`, `EmbeddingModelConfig`) that leverages **LiteLLM** as a central proxy. This greatly
   simplifies model management, enables dynamic model routing, and reduces hardcoded dependencies on specific AI
   providers within the codebase.
-- 🧹 **Streamlined Frontend Scripts and Paths**: Updated `aihub_web/package.json` scripts and `.gitignore` to reflect the
-  new `.app` directory structure, ensuring a cleaner and more organized frontend project.
+- 🧹 **Streamlined Frontend Scripts and Paths**: Updated `swiss_ai_hub_web/package.json` scripts and `.gitignore` to
+  reflect the new `.app` directory structure, ensuring a cleaner and more organized frontend project.
 - 🧽 **Cleaned Up `aihub_lib` Structure**: Removed various redundant or now obsolete model and infrastructure
   configuration files and their corresponding `__init__.py` files, significantly reducing complexity and improving code
   clarity in the core library.
@@ -5436,7 +5436,7 @@ ______________________________________________________________________
 - 🧪 **IntelliJ/PyCharm Test Runner Updates**: Updated various IntelliJ/PyCharm run configurations for Python tests,
   aligning them with `pytest` and modern Poetry virtual environment practices.
 - 📝 **Documentation Python Version**: Updated `README.md` to reflect the new Python 3.13 requirement.
-- 🌐 **Web Project Name**: Renamed the `aihub_web` project in `package.json` for consistency.
+- 🌐 **Web Project Name**: Renamed the `swiss_ai_hub_web` project in `package.json` for consistency.
 
 ### Removed
 
@@ -5473,8 +5473,8 @@ ______________________________________________________________________
     storage and management of all user notifications.
 - 🌍 **Expanded Internationalization for RAG Agent:** Added German, French, and Italian translations for the RAG Agent's
   name and description, broadening language support for core functionalities.
-- ✅ **Enhanced Web Application Readiness Checks:** Incorporated `pnpm lint` into the `aihub_web` Makefile's `pr-ready`
-  target, strengthening automated code quality and consistency checks for web changes.
+- ✅ **Enhanced Web Application Readiness Checks:** Incorporated `pnpm lint` into the `swiss_ai_hub_web` Makefile's
+  `pr-ready` target, strengthening automated code quality and consistency checks for web changes.
 
 ### Changed
 
@@ -6840,8 +6840,8 @@ ______________________________________________________________________
 
 - 🗑️ **Storybook Integration**: Completely removed Storybook development tooling and all related configurations from the
   web UI project, streamlining the frontend development environment.
-- 🗑️ **Deprecated `shad` Makefile Command**: Removed the `shad` command from the `aihub_web` Makefile, simplifying build
-  scripts.
+- 🗑️ **Deprecated `shad` Makefile Command**: Removed the `shad` command from the `swiss_ai_hub_web` Makefile,
+  simplifying build scripts.
 
 ______________________________________________________________________
 
@@ -8048,8 +8048,8 @@ ______________________________________________________________________
 
 ### Removed
 
-- 🗑️ **Deprecated Open WebUI Page:** Removed the previous `aihub_web/pages/module/webui/index.vue` page, replaced by the
-  new, more robust integration.
+- 🗑️ **Deprecated Open WebUI Page:** Removed the previous `swiss_ai_hub_web/pages/module/webui/index.vue` page, replaced
+  by the new, more robust integration.
 - 🗑️ **Redundant `ThreadEntity.to_thread_id`:** Eliminated the now-obsolete `to_thread_id` method from `ThreadEntity`
   following the introduction of a centralized ID conversion utility.
 - 🗑️ **Consolidated `ExternalEvent` Export:** Removed a redundant `__init__.py` file related to `ExternalEvent` as its
@@ -8226,7 +8226,7 @@ ______________________________________________________________________
 - 🚀 **OIDC Authentication Flow**: Improved OIDC silent renewal and error handling in the web application for a more
   robust and seamless authentication experience.
 - 📦 **Dependency Updates**: Updated numerous dependencies across `aihub_agent`, `aihub_api`, `aihub_bot`, and
-  `aihub_web` for improved performance, security, and stability.
+  `swiss_ai_hub_web` for improved performance, security, and stability.
 
 ### Fixed
 
@@ -10465,8 +10465,8 @@ ______________________________________________________________________
 - 🔄 **Centralized CI/CD Workflows:** The existing `.github/workflows` have been extensively refactored to leverage the
   newly introduced reusable GitHub Actions. This significantly reduces redundancy, improves maintainability, and
   standardizes CI/CD practices across the repository.
-- 🧹 **Unified SonarCloud Scans:** The SonarCloud scanning process has been unified, integrating the `aihub_web` scan
-  into the primary `sonarcloud-scan` job for a more cohesive analysis pipeline.
+- 🧹 **Unified SonarCloud Scans:** The SonarCloud scanning process has been unified, integrating the `swiss_ai_hub_web`
+  scan into the primary `sonarcloud-scan` job for a more cohesive analysis pipeline.
 
 ______________________________________________________________________
 
@@ -10656,8 +10656,8 @@ ______________________________________________________________________
   results as comments on pull requests, providing immediate feedback on test status.
 - 🔎 **Generalized SonarCloud Scans**: Refactored SonarCloud analysis workflows to use a matrix strategy for all Python
   modules, streamlining code quality checks across the entire codebase.
-- 🌐 **Frontend Linting Workflow**: Introduced a dedicated GitHub Actions workflow for linting the `aihub_web` (frontend)
-  code using ESLint, ensuring consistent code style and quality.
+- 🌐 **Frontend Linting Workflow**: Introduced a dedicated GitHub Actions workflow for linting the `swiss_ai_hub_web`
+  (frontend) code using ESLint, ensuring consistent code style and quality.
 - 📚 **Package Management Documentation**: Added a comprehensive "Package Management" section to the `README.md`,
   detailing the multi-package structure, versioning, and internal dependency referencing.
 - ✨ **Agent Discovery Test Enhancements**: Expanded `AgentTestRunner` with new properties and a `wait_for_event` method
@@ -10682,8 +10682,8 @@ ______________________________________________________________________
 
 ### Fixed
 
-- 🐛 **Storybook Path Correction**: Corrected relative paths in `aihub_web/.storybook/main.ts` from `..\stories` to
-  `../stories`, resolving potential issues with Storybook loading.
+- 🐛 **Storybook Path Correction**: Corrected relative paths in `swiss_ai_hub_web/.storybook/main.ts` from `..\stories`
+  to `../stories`, resolving potential issues with Storybook loading.
 
 ### Refactor
 

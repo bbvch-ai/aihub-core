@@ -158,7 +158,7 @@ instead. Keep docstrings concise, one or two sentences max.
 **What hooks handle automatically — do NOT run these manually:**
 
 - **Formatting** (PostToolUse hooks on every file edit): Ruff format for Python, ESLint --fix for TS/Vue, mdformat for
-  Markdown, yamlfix for YAML. Config: per-scope `pyproject.toml`, `packages/web/aihub_web/eslint.config.js`.
+  Markdown, yamlfix for YAML. Config: per-scope `pyproject.toml`, `packages/web/swiss_ai_hub_web/eslint.config.js`.
 - **Linting** (PostToolUse hook): Ruff check --fix (rules: E pycodestyle, F pyflakes, UP pyupgrade, I isort).
 - **`make pr-ready`** (stop hook at session end): Automatically runs on all dirty scopes before session closes.
   Hard-blocks if it fails. Do not run manually mid-session — it runs at the end.

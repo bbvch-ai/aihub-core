@@ -15,7 +15,7 @@ index: 8
 
 [![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=swiss-ai-hub_aihub-web&metric=ncloc&token=2544c19db5da47510d04d7ee0694f364127a21e0)](https://sonarcloud.io/summary/new_code?id=swiss-ai-hub_aihub-web)
 
-You are contributing to the **aihub_web** scope, which contains the main web frontend application within the Swiss AI
+You are contributing to the **swiss_ai_hub_web** scope, which contains the main web frontend application within the Swiss AI
 Hub platform. This scope implements the user interface that connects users to AI agents, processes, and system
 management capabilities through an intuitive, modern web application built with Nuxt 3.
 
@@ -68,11 +68,11 @@ frameworks, libraries, and tools we use.
 
 ## Project Structure
 
-The `aihub_web` scope is organized as follows:
+The `swiss_ai_hub_web` scope is organized as follows:
 
 ```
-aihub_web/
-├── aihub_web/                 # Main application source
+swiss_ai_hub_web/
+├── swiss_ai_hub_web/                 # Main application source
 │   ├── components/            # Vue components organized by domain
 │   │   ├── Agent/             # Agent-related components
 │   │   ├── Chat/              # Chat interface components
@@ -450,11 +450,11 @@ Before you begin, ensure you have completed the infrastructure setup from the ro
 docker compose -f docker-compose.yml -f milvus-standalone-docker-compose.yml -f docker-compose-webui.yml up -d
 ```
 
-**Critical: Navigate to the aihub_web directory and install dependencies.** The frontend uses pnpm as the package
+**Critical: Navigate to the swiss_ai_hub_web directory and install dependencies.** The frontend uses pnpm as the package
 manager.
 
 ```bash
-cd aihub_web/aihub_web
+cd swiss_ai_hub_web/swiss_ai_hub_web
 pnpm install
 ```
 

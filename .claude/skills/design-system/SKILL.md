@@ -25,7 +25,7 @@ ______________________________________________________________________
 
 ## Color Palette
 
-**Theme file**: `packages/web/aihub_web/themes/aihub-theme.ts`
+**Theme file**: `packages/web/swiss_ai_hub_web/themes/aihub-theme.ts`
 
 ### Surface Scale (identical in light and dark mode)
 
@@ -84,7 +84,7 @@ ______________________________________________________________________
 
 ## Typography (from real components)
 
-**Base**: 14px (`packages/web/aihub_web/assets/css/main.css`), system font stack.
+**Base**: 14px (`packages/web/swiss_ai_hub_web/assets/css/main.css`), system font stack.
 
 ### Hierarchy as Actually Used
 
@@ -476,12 +476,12 @@ ______________________________________________________________________
 
 ## Design Configuration Files
 
-| File                                           | Purpose                                    |
-| ---------------------------------------------- | ------------------------------------------ |
-| `packages/web/aihub_web/themes/aihub-theme.ts` | PrimeVue theme preset (surface scale)      |
-| `packages/web/aihub_web/tailwind.config.mjs`   | Tailwind extensions (surface-850, plugins) |
-| `packages/web/aihub_web/assets/css/main.css`   | Base font size (14px) and font stack       |
-| `packages/web/aihub_web/nuxt.config.ts`        | PrimeVue module config, auto-imports       |
+| File                                                  | Purpose                                    |
+| ----------------------------------------------------- | ------------------------------------------ |
+| `packages/web/swiss_ai_hub_web/themes/aihub-theme.ts` | PrimeVue theme preset (surface scale)      |
+| `packages/web/swiss_ai_hub_web/tailwind.config.mjs`   | Tailwind extensions (surface-850, plugins) |
+| `packages/web/swiss_ai_hub_web/assets/css/main.css`   | Base font size (14px) and font stack       |
+| `packages/web/swiss_ai_hub_web/nuxt.config.ts`        | PrimeVue module config, auto-imports       |
 
 ______________________________________________________________________
 

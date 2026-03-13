@@ -37,8 +37,8 @@ jobs:
         uses: bbvch-ai/swiss-ai-hu./.github/actions/lint_frontend@main
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          working_directory: packages/web/aihub_web
-          lockfile: packages/web/aihub_web/pnpm-lock.yaml
+          working_directory: packages/web/swiss_ai_hub_web
+          lockfile: packages/web/swiss_ai_hub_web/pnpm-lock.yaml
   license-check:
     name: License Check
     runs-on: ubuntu-latest

@@ -27,14 +27,14 @@ Look up PrimeVue component documentation and generate project-specific usage exa
 
 Search the codebase for existing usage of the component:
 
-1. Search in `packages/web/aihub_web/components/` and `packages/web/aihub_web/pages/` for the component tag name (e.g.,
-   `<DataTable`, `<Dialog`)
+1. Search in `packages/web/swiss_ai_hub_web/components/` and `packages/web/swiss_ai_hub_web/pages/` for the component
+   tag name (e.g., `<DataTable`, `<Dialog`)
 2. Note how the project currently uses the component (which props, events, styling patterns)
 3. Check if the component is excluded from auto-import in `nuxt.config.ts` (some are wrapped by FormKit)
 
 ## Step 3: Check PrimeVue Theme Integration
 
-Read the project theme: `packages/web/aihub_web/themes/aihub-theme.ts`
+Read the project theme: `packages/web/swiss_ai_hub_web/themes/aihub-theme.ts`
 
 Note any custom design tokens or component-specific overrides that affect styling.
 
@@ -86,7 +86,7 @@ Provide the following in a structured format:
 
 1. Confirm the component exists: `mcp__primevue__get_component` should return data
 2. If FormKit-wrapped, verify the example does NOT use a direct PrimeVue import
-3. Check that i18n keys used in the example exist in `packages/web/aihub_web/i18n/locales/en.yaml`
+3. Check that i18n keys used in the example exist in `packages/web/swiss_ai_hub_web/i18n/locales/en.yaml`
 4. If referencing existing usage, confirm the file paths are current
 
 ## Examples

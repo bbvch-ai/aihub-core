@@ -23,20 +23,21 @@ curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/api/v1/docs
 
 ## Step 2: Generate the SDK
 
-Run from `packages/web/aihub_web/`:
+Run from `packages/web/swiss_ai_hub_web/`:
 
 ```bash
-cd packages/web/aihub_web && pnpm generate-sdk
+cd packages/web/swiss_ai_hub_web && pnpm generate-sdk
 ```
 
-This uses the config at `packages/web/aihub_web/openapi-ts.config.ts` to fetch the OpenAPI spec from
-`http://localhost:8000/api/v1/openapi.json` and regenerate TypeScript files into `packages/web/aihub_web/sdk/client/`
-(`types.gen.ts`, `sdk.gen.ts`, `schemas.gen.ts`, `client.gen.ts`, `transformers.gen.ts`).
+This uses the config at `packages/web/swiss_ai_hub_web/openapi-ts.config.ts` to fetch the OpenAPI spec from
+`http://localhost:8000/api/v1/openapi.json` and regenerate TypeScript files into
+`packages/web/swiss_ai_hub_web/sdk/client/` (`types.gen.ts`, `sdk.gen.ts`, `schemas.gen.ts`, `client.gen.ts`,
+`transformers.gen.ts`).
 
 ## Step 3: Lint Generated Code
 
 ```bash
-cd packages/web/aihub_web && pnpm lint --fix
+cd packages/web/swiss_ai_hub_web && pnpm lint --fix
 ```
 
 This auto-fixes formatting issues in the generated TypeScript files.
@@ -46,19 +47,19 @@ This auto-fixes formatting issues in the generated TypeScript files.
 1. Confirm generated files exist and are non-empty:
 
 ```bash
-ls -la packages/web/aihub_web/sdk/client/types.gen.ts packages/web/aihub_web/sdk/client/sdk.gen.ts
+ls -la packages/web/swiss_ai_hub_web/sdk/client/types.gen.ts packages/web/swiss_ai_hub_web/sdk/client/sdk.gen.ts
 ```
 
 2. Check for TypeScript compilation errors in the generated output:
 
 ```bash
-cd packages/web/aihub_web && pnpm nuxi typecheck 2>&1 | head -30
+cd packages/web/swiss_ai_hub_web && pnpm nuxi typecheck 2>&1 | head -30
 ```
 
 3. Report what changed:
 
 ```bash
-git diff --stat -- packages/web/aihub_web/sdk/client/
+git diff --stat -- packages/web/swiss_ai_hub_web/sdk/client/
 ```
 
 Summarize: new endpoints added, modified request/response types, removed endpoints, number of files changed.

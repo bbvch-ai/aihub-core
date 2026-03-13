@@ -16,7 +16,7 @@ EXCLUDE_PATTERNS=(
     ':(exclude)*lock.json'
     ':(exclude)*-lock.yaml'
     ':(exclude)pnpm-lock.yaml'
-    ':(exclude)packages/web/aihub_web/sdk/**'
+    ':(exclude)packages/web/swiss_ai_hub_web/sdk/**'
     ':(exclude)LICENSE_REPORT.md'
     ':(exclude)licenses.config.json'
     ':(exclude)*.drawio'

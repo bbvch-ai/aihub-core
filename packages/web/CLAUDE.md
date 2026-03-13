@@ -7,7 +7,7 @@ dashboards, and chat. Vue 3 Composition API, TypeScript strict, PrimeVue, Tailwi
 ## Folder Structure
 
 ```
-aihub_web/
+swiss_ai_hub_web/
 ├── .app/                    # Nuxt layer entry point (extends parent, runtimeConfig, FormKit config)
 ├── assets/css/              # Global CSS (main.css)
 ├── components/              # Domain-organized Vue components (~170 files)
@@ -42,7 +42,7 @@ aihub_web/
 ## Nuxt Layer Architecture
 
 The `.app/` directory is the actual entry point — it extends the parent via `extends: ['..']` in its `nuxt.config.ts`.
-`pnpm dev` runs `nuxi dev .app`. The parent `aihub_web/` provides components, composables, pages, and config. `.app/`
+`pnpm dev` runs `nuxi dev .app`. The parent `swiss_ai_hub_web/` provides components, composables, pages, and config. `.app/`
 adds `runtimeConfig` (OIDC, WebSocket endpoint, env vars) and `formkit.config.ts` (custom input registration).
 
 ## Page Composition Pattern
@@ -129,7 +129,7 @@ export const useDeleteAgentInstance = defineMutation(() => {
 - **Output**: `sdk/client/` — NEVER edit, fully generated
 - **Import types**: `import type { AgentDto } from '@core/sdk/client'`
 - **Import endpoints**: `import { getAgent } from '@core/sdk/client'`
-- **`@core` alias** = app root (`packages/web/aihub_web/`), defined in `nuxt.config.ts`
+- **`@core` alias** = app root (`packages/web/swiss_ai_hub_web/`), defined in `nuxt.config.ts`
 
 SDK client initialized in `app.vue` with global auth token injection and error handling.
 

@@ -7,7 +7,7 @@
     "packages/process",
     "packages/pipeline"
   ],
-  "web_project": "packages/web/aihub_web",
+  "web_project": "packages/web/swiss_ai_hub_web",
   "output_file": "LICENSE_REPORT.md",
   "own_images": [
     "api",
