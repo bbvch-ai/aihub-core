@@ -3,6 +3,7 @@ from typing import Annotated
 from pydantic import Field, SecretStr
 
 from aihub_lib.agents.AgentConfig import StepConfig
+from aihub_lib.nats.events.form.constraints import Gt
 
 
 class McpClientConfig(StepConfig):
@@ -20,5 +21,6 @@ class McpClientConfig(StepConfig):
     ]
     timeout: Annotated[
         float,
-        Field(default=30.0, gt=0, description="Client timeout in seconds."),
+        Field(default=30.0, description="Client timeout in seconds."),
+        Gt(0),
     ]

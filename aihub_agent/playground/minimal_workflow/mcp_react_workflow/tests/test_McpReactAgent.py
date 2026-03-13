@@ -45,6 +45,27 @@ def _make_text_response() -> ChatResponse:
     )
 
 
+def _make_mock_llm() -> AsyncMock:
+    """Create a mock LLM that first requests a tool call, then returns a text answer."""
+    mock_llm = AsyncMock()
+    mock_llm.achat = AsyncMock(side_effect=[_make_tool_call_response(), _make_text_response()])
+    return mock_llm
+
+
+def _make_mock_llm_config() -> MagicMock:
+    """Create a mock LLMConfig whose cost_reporting_llm yields our mock LLM."""
+    mock_llm = _make_mock_llm()
+    mock_config = MagicMock()
+    mock_config.model_name = "test-model"
+
+    ctx = AsyncMock()
+    ctx.__aenter__ = AsyncMock(return_value=mock_llm)
+    ctx.__aexit__ = AsyncMock(return_value=False)
+    mock_config.cost_reporting_llm = MagicMock(return_value=ctx)
+
+    return mock_config
+
+
 @given("a McpReactAgent runner with a mocked MCP server and LLM", target_fixture="agent_runner")
 def _():
     return AgentTestRunner(
@@ -54,7 +75,7 @@ def _():
             name=LocaleString(en="MCP React Agent"),
             description=LocaleString(en="Test agent"),
             mcp=McpClientConfig(name="mock", url="http://mock-server/mcp"),
-            llm=MagicMock(),
+            llm=_make_mock_llm_config(),
             max_iterations=5,
         ),
     )

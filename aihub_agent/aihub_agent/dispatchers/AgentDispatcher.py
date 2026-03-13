@@ -437,7 +437,7 @@ class AgentDispatcher(BaseDispatcher):
         if param.annotation in [AgentInstanceTopic, AgentClassTopic, PartialAgentTopic]:
             return topic
 
-        if param.annotation == McpClient:
+        if inspect.isclass(param.annotation) and issubclass(param.annotation, McpClient):
             return await self._get_or_create_mcp_client(topic, agent_config)
 
         return None

@@ -2,7 +2,7 @@ from typing import ClassVar
 
 from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.mcp.react import react_loop
+from aihub_lib.mcp.McpReactService import McpReactService
 from aihub_lib.nats.events import StopEvent, UserMessageEvent
 from fastmcp import Client
 
@@ -34,7 +34,7 @@ class McpReactAgent(Agent):
         displayer: EventDisplayer,
     ) -> StopEvent:
         async with config.llm.cost_reporting_llm(displayer) as llm:
-            content = await react_loop(
+            content = await McpReactService.react_loop(
                 mcp_client,
                 list(event.messages),
                 llm,
