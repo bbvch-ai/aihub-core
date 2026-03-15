@@ -15,6 +15,8 @@ from mcp.types import TextContent, Tool
 from pytest_bdd import given, scenarios, then, when
 
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
+from playground.minimal_workflow.mcp_react_workflow.events.McpReasoningEvent import McpReasoningEvent
+from playground.minimal_workflow.mcp_react_workflow.events.McpToolCallEvent import McpToolCallEvent
 from playground.minimal_workflow.mcp_react_workflow.McpReactAgent import McpReactAgent
 from playground.minimal_workflow.mcp_react_workflow.McpReactAgentConfig import McpReactAgentConfig
 
@@ -24,7 +26,6 @@ MOCK_TOOL = Tool(name="echo", description="Echoes input", inputSchema={"type": "
 
 
 def _make_tool_call_response() -> ChatResponse:
-    """Simulate an LLM response requesting a tool call."""
     tool_call = MagicMock()
     tool_call.id = "call_1"
     tool_call.function.name = "echo"
@@ -39,7 +40,6 @@ def _make_tool_call_response() -> ChatResponse:
 
 
 def _make_text_response() -> ChatResponse:
-    """Simulate an LLM response with a final text answer."""
     return ChatResponse(
         message=ChatMessage(
             role=MessageRole.ASSISTANT,
@@ -49,7 +49,6 @@ def _make_text_response() -> ChatResponse:
 
 
 def _make_mock_llm() -> AsyncMock:
-    """Create a mock LLM that first requests a tool call, then returns a text answer."""
     mock_llm = AsyncMock()
     mock_llm.achat = AsyncMock(side_effect=[_make_tool_call_response(), _make_text_response()])
     return mock_llm
@@ -65,7 +64,6 @@ def _():
             description=LocaleString(en="Test agent"),
             mcp=McpClientConfig(name="mock", url="http://mock-server/mcp"),
             llm=LLMConfig(model_name="text-generation/gpt-oss-120b"),
-            max_iterations=5,
         ),
     )
 
@@ -104,3 +102,15 @@ async def _(agent_runner: AgentTestRunner):
 @then("a StopEvent is present")
 def _(agent_runner: AgentTestRunner):
     assert agent_runner.has_stop_event, "Agent did not complete"
+
+
+@then("a McpToolCallEvent was emitted")
+def _(agent_runner: AgentTestRunner):
+    events = agent_runner.get_events_of_class(McpToolCallEvent)
+    assert len(events) == 1, f"Expected exactly 1 McpToolCallEvent, got {len(events)}"
+
+
+@then("a McpReasoningEvent was emitted")
+def _(agent_runner: AgentTestRunner):
+    events = agent_runner.get_events_of_class(McpReasoningEvent)
+    assert len(events) == 2, f"Expected exactly 2 McpReasoningEvents (init + tool execution), got {len(events)}"

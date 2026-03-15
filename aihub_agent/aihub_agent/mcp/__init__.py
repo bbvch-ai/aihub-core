@@ -1,7 +1,7 @@
 from aihub_agent.mcp.McpClientFactory import McpClientFactory
-from aihub_agent.mcp.McpReactService import McpReactService
+from aihub_agent.mcp.McpToolService import McpToolService
 
 __all__ = [
     "McpClientFactory",
-    "McpReactService",
+    "McpToolService",
 ]

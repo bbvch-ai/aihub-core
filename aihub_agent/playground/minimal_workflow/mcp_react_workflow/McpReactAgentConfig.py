@@ -3,7 +3,6 @@ from typing import Annotated
 from aihub_lib.agents.AgentConfig import AgentConfig
 from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
 from aihub_lib.mcp.McpClientConfig import McpClientConfig
-from aihub_lib.nats.events.form.constraints import Ge, Le
 from pydantic import Field
 
 
@@ -16,9 +15,3 @@ class McpReactAgentConfig(AgentConfig):
         LLMConfig,
         Field(description="LLM used for reasoning and tool selection."),
     ]
-    max_iterations: Annotated[
-        int,
-        Field(default=10, description="Maximum tool-calling loop iterations before forcing a text response."),
-        Ge(1),
-        Le(50),
-    ] = 10
