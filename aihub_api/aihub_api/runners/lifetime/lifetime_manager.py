@@ -41,6 +41,7 @@ from aihub_api.sockets.manager.WebSocketManager import WebSocketManager
 from aihub_api.sockets.sender.WebSocketSender import WebSocketSender
 
 logger = logging.getLogger(__name__)
+_background_tasks: set[asyncio.Task] = set()
 
 
 @asynccontextmanager
@@ -228,12 +229,10 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         await OpenWebuiProvisioner().provision()
 
         # Re-sync OpenWebUI groups when a user switches active tenant
-        background_tasks: set[asyncio.Task] = set()
-
         def _on_tenant_switch() -> None:
             task = asyncio.create_task(OpenWebuiProvisioner().sync_access())
-            background_tasks.add(task)
-            task.add_done_callback(background_tasks.discard)
+            _background_tasks.add(task)
+            task.add_done_callback(_background_tasks.discard)
 
         AuthHandler.register_active_tenant_hook(_on_tenant_switch)
 

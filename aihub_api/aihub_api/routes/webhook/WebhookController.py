@@ -24,9 +24,10 @@ class WebhookController(Controller):
     def __init__(self, *, auth: AuthHandler, route: str = "/webhook"):
         super().__init__(auth=auth, route=route)
 
+    _background_tasks: set[asyncio.Task] = set()
+
     def openwebui(self) -> Self:
         expected_secret = OpenWebuiSettings().WEBHOOK_SECRET.get_secret_value()
-        background_tasks: set[asyncio.Task] = set()
 
         @self.router.post("/openwebui", tags=self.tags)
         async def receive_openwebui_webhook(
@@ -41,8 +42,8 @@ class WebhookController(Controller):
 
             logger.info(f"OpenWebUI webhook: new user '{payload.user.email}' — triggering provisioner sync")
             task = asyncio.create_task(OpenWebuiProvisioner().sync_access())
-            background_tasks.add(task)
-            task.add_done_callback(background_tasks.discard)
+            self._background_tasks.add(task)
+            task.add_done_callback(self._background_tasks.discard)
 
             return WebhookResponse(status="ok")
 
