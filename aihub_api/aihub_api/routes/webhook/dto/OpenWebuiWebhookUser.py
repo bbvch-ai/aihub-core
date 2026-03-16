@@ -5,7 +5,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 class OpenWebuiWebhookUser(BaseModel):
     model_config = ConfigDict(extra="allow")
-    id: Annotated[str, Field(default="")]
-    email: Annotated[str, Field(default="")]
-    name: Annotated[str, Field(default="")]
-    role: Annotated[str, Field(default="")]
+    id: Annotated[str, Field(description="OpenWebUI user ID")] = ""
+    email: Annotated[str, Field(description="User email address")] = ""
+    name: Annotated[str, Field(description="User display name")] = ""
+    role: Annotated[str, Field(description="OpenWebUI role")] = ""
