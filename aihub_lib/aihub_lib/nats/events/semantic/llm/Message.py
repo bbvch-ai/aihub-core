@@ -72,7 +72,7 @@ class Message(BaseModel):
     @property
     def content(self) -> str:
         content = ""
-        for block in self.contents:
+        for block in self.contents or []:
             if isinstance(block, TextContent):
                 content += block.text
         return content
