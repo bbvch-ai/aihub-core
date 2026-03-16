@@ -1,7 +1,7 @@
+from aihub_agent.mcp.mcp_tool_schemas import to_openai_tool_schemas
 from aihub_agent.mcp.McpClientFactory import McpClientFactory
-from aihub_agent.mcp.McpToolService import McpToolService
 
 __all__ = [
     "McpClientFactory",
-    "McpToolService",
+    "to_openai_tool_schemas",
 ]

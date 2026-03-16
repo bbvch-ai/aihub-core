@@ -6,12 +6,13 @@ from aihub_lib.displayers.EventDisplayer import EventDisplayer
 from aihub_lib.i18n.LocaleString import LocaleString
 from aihub_lib.mcp.McpClientConfig import McpClientConfig
 from aihub_lib.nats.events import StopEvent, UserMessageEvent
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from aihub_lib.nats.events.semantic.llm.Message import Message, TextContent
+from mcp.types import TextContent as McpTextContent
 
 from aihub_agent.agents.Agent import Agent
 from aihub_agent.context.run.RunContext import RunContext
+from aihub_agent.mcp.mcp_tool_schemas import to_openai_tool_schemas
 from aihub_agent.mcp.McpClientFactory import McpClientFactory
-from aihub_agent.mcp.McpToolService import McpToolService
 from aihub_agent.workflow.decorators.step import step
 from playground.minimal_workflow.mcp_react_workflow.events.McpReasoningEvent import McpReasoningEvent
 from playground.minimal_workflow.mcp_react_workflow.events.McpToolCallEvent import McpToolCallEvent
@@ -48,11 +49,10 @@ class McpReactAgent(Agent):
         async with McpClientFactory.create(mcp_config) as mcp_client:
             tools = await mcp_client.list_tools()
 
-        tool_schemas = McpToolService.to_openai_tool_schemas(tools)
-        await run_context.set(TOOL_SCHEMAS_KEY, tool_schemas)
+        await run_context.set(TOOL_SCHEMAS_KEY, to_openai_tool_schemas(tools))
 
         return McpReasoningEvent(
-            messages=[McpToolService.serialize_message(msg) for msg in event.messages],
+            messages=[Message.from_llama_index(msg) for msg in event.messages],
         )
 
     @step(max_executions_per_run=50)
@@ -69,24 +69,22 @@ class McpReactAgent(Agent):
         this step and the run terminates without a StopEvent.
         """
         print("[McpReactAgent.reasoning_step]")
-        messages = [McpToolService.deserialize_message(m) for m in event.messages]
+        chat_messages = [m.to_llama_index() for m in event.messages]
         tool_schemas = await run_context.get(TOOL_SCHEMAS_KEY)
 
         async with config.llm.cost_reporting_llm(displayer) as llm:
-            response = await llm.achat(messages, tools=tool_schemas)
+            response = await llm.achat(chat_messages, tools=tool_schemas)
 
-        assistant_msg = response.message
-        tool_calls = assistant_msg.additional_kwargs.get("tool_calls", [])
+        assistant = Message.from_llama_index(response.message)
 
-        if not tool_calls:
-            await displayer.display_chunk(str(assistant_msg.content), config.llm.model_name)
-            print(response.message.content)
+        if not assistant.tool_calls:
+            await displayer.display_chunk(assistant.content, config.llm.model_name)
+            print(assistant.content)
             return StopEvent()
-        messages.append(assistant_msg)
 
         return McpToolCallEvent(
-            tool_calls=[McpToolService.extract_tool_call_payload(tc) for tc in tool_calls],
-            messages=[McpToolService.serialize_message(msg) for msg in messages],
+            tool_calls=assistant.tool_calls,
+            messages=[*event.messages, assistant],
         )
 
     @step(max_executions_per_run=50)
@@ -98,24 +96,29 @@ class McpReactAgent(Agent):
     ) -> McpReasoningEvent:
         """Execute the requested tool calls and feed results back into the conversation."""
         print("[McpReactAgent.tool_execution_step]")
-        messages = [McpToolService.deserialize_message(m) for m in event.messages]
+        new_messages: list[Message] = []
 
         async with McpClientFactory.create(mcp_config) as mcp_client:
-            for tc in event.tool_calls:
-                tool_name = tc["name"]
-                arguments = tc["arguments"]
+            for tool_call in event.tool_calls:
+                function = tool_call["function"]
+                tool_name = function["name"]
+                arguments = (
+                    json.loads(function["arguments"])
+                    if isinstance(function["arguments"], str)
+                    else function["arguments"]
+                )
 
                 await displayer.display_thought(f"Calling tool: {tool_name}({json.dumps(arguments)})")
                 result = await mcp_client.call_tool(tool_name, arguments)
+                result_text = " ".join(block.text for block in result.content if isinstance(block, McpTextContent))
 
-                messages.append(
-                    ChatMessage(
-                        role=MessageRole.TOOL,
-                        content=McpToolService.extract_result_text(result),
-                        additional_kwargs={"tool_call_id": tc["id"], "name": tool_name},
+                new_messages.append(
+                    Message(
+                        role="tool",
+                        tool_call_id=tool_call["id"],
+                        name=tool_name,
+                        contents=[TextContent(text=result_text)],
                     )
                 )
 
-        return McpReasoningEvent(
-            messages=[McpToolService.serialize_message(msg) for msg in messages],
-        )
+        return McpReasoningEvent(messages=[*event.messages, *new_messages])
