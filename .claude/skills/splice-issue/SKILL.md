@@ -86,6 +86,14 @@ EOF
 - Copy `--assignee` from parent
 - Body starts with `Parent: #$ISSUE_NUMBER`
 
+**Acceptance criteria rules:**
+
+- AC describes *what* should work, not *how* it's implemented
+- No endpoint paths, class names, specific validation mechanisms, or other implementation details that could change
+- Use behavior-oriented language ("users can switch tenants") not implementation-specific language ("composable exists
+  for managing selected tenant with localStorage persistence")
+- Implementation details belong in a separate "Implementation Proposal" section in the body
+
 ## Step 4: Link as Sub-Issues
 
 Get the parent issue node ID and each child's node ID, then link them:
@@ -104,9 +112,32 @@ CHILD_ID=$(gh api graphql -F number=$CHILD_NUMBER -f query='
 gh api graphql -f query="mutation { addSubIssue(input: { issueId: \"$PARENT_ID\", subIssueId: \"$CHILD_ID\" }) { issue { id } } }"
 ```
 
-## Step 5: Set Blocked-By Dependencies
+## Step 5: Inherit Relationships from Parent
 
-For issues that depend on each other, use the `addBlockedBy` mutation:
+The parent's blocked-by and blocking relationships must transfer to the children. Fetch both:
+
+```bash
+gh api graphql -F number=$ISSUE_NUMBER -f query='
+  query($number: Int!) {
+    repository(owner: "bbvch-ai", name: "aihub-core") {
+      issue(number: $number) {
+        blockedBy(first: 10) { nodes { number id } }
+        blocking(first: 10) { nodes { number id } }
+      }
+    }
+  }'
+```
+
+- **blocked-by**: If parent is blocked by X, each child must also be blocked by X (the children can't start until X is
+  done).
+- **blocking**: If Y is blocked by parent, Y must now be blocked by each child (Y can't start until all children are
+  done).
+
+Apply the no-redundancy rule: skip if already covered transitively.
+
+## Step 6: Set Blocked-By Dependencies Between Children
+
+For children that depend on each other, use the `addBlockedBy` mutation:
 
 ```bash
 ISSUE_ID=$(gh api graphql -F number=$BLOCKED_ISSUE -f query='
@@ -125,7 +156,66 @@ gh api graphql -f query="mutation { addBlockedBy(input: { issueId: \"$ISSUE_ID\"
 **Do NOT use `addSubIssue` for dependency relationships.** Sub-issue = part of the work. Blocked-by = must be done
 first.
 
-## Step 6: Clean Up the Parent Issue
+**No redundant blocked-by relationships.** Before adding a blocked-by link, check the existing blocked-by chain. If the
+blocking issue is already reachable transitively (e.g., A blocked by B, B blocked by C — don't also add A blocked by C),
+skip it. Check with:
+
+```bash
+gh api graphql -F number=$ISSUE_NUMBER -f query='
+  query($number: Int!) {
+    repository(owner: "bbvch-ai", name: "aihub-core") {
+      issue(number: $number) {
+        blockedBy(first: 10) {
+          nodes { number title blockedBy(first: 10) { nodes { number title } } }
+        }
+      }
+    }
+  }'
+```
+
+## Step 7: Copy Project Board Priorities to Children
+
+Fetch the parent's project board field values (Priority, etc.) and copy them to each child issue. The parent may be on
+multiple project boards — copy priorities from all of them.
+
+```bash
+# Get parent's project items with priority values
+gh api graphql -f query='
+{
+  node(id: "PARENT_NODE_ID") {
+    ... on Issue {
+      projectItems(first: 10) {
+        nodes {
+          id
+          project { number title id }
+          fieldValues(first: 20) {
+            nodes {
+              ... on ProjectV2ItemFieldSingleSelectValue {
+                field { ... on ProjectV2SingleSelectField { name id } }
+                name
+                optionId
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}'
+
+# For each child, get its project item IDs and set the same Priority values
+gh api graphql -f query="
+mutation {
+  updateProjectV2ItemFieldValue(input: {
+    projectId: \"PROJECT_ID\"
+    itemId: \"CHILD_ITEM_ID\"
+    fieldId: \"PRIORITY_FIELD_ID\"
+    value: { singleSelectOptionId: \"PRIORITY_OPTION_ID\" }
+  }) { projectV2Item { id } }
+}"
+```
+
+## Step 8: Clean Up the Parent Issue
 
 After all sub-issues are created and linked:
 
@@ -134,7 +224,7 @@ After all sub-issues are created and linked:
    anyone working on the sub-issues.
 3. **Do NOT create separate documentation sub-issues.** Documentation is part of the Definition of Done for every issue.
 
-## Step 7: Present Summary
+## Step 9: Present Summary
 
 Show the user the final structure with dependency graph:
 
@@ -148,48 +238,17 @@ Show the user the final structure with dependency graph:
 └── #963 Leaf issue (blocked by #956)
 ```
 
-Wait for the user to explicitly confirm that all sub-issues are correct and complete before proceeding. Do NOT set the
-EPIC priority until the user says they are happy with the breakdown.
+Wait for the user to explicitly confirm that all sub-issues are correct and complete before proceeding. Do NOT close the
+parent until the user says they are happy with the breakdown.
 
-## Step 8: Mark Parent as EPIC in Project Board
+## Step 10: Close the Parent Issue
 
-Only after the user has confirmed all sub-issues are correct, set the parent issue's Priority to "EPIC" in
-[project 37](https://github.com/orgs/bbvch-ai/projects/37) so it no longer appears in the backlog.
+Only after the user has confirmed all sub-issues are correct, close the parent issue. The work now lives in the children
+— the parent is just a container.
 
 ```bash
-# Get the issue's project item ID
-ISSUE_ID=$(gh api graphql -F number=$ISSUE_NUMBER -f query='
-  query($number: Int!) {
-    repository(owner: "bbvch-ai", name: "aihub-core") { issue(number: $number) { id } }
-  }' -q '.data.repository.issue.id')
-
-ITEM_ID=$(gh api graphql -f query="
-{
-  node(id: \"$ISSUE_ID\") {
-    ... on Issue {
-      projectItems(first: 10) {
-        nodes { id project { number } }
-      }
-    }
-  }
-}" -q '.data.node.projectItems.nodes[] | select(.project.number == 37) | .id')
-
-# Set Priority to EPIC (project ID, field ID, and option ID are stable for project 37)
-gh api graphql -f query="
-mutation {
-  updateProjectV2ItemFieldValue(input: {
-    projectId: \"PVT_kwDOCmtSJM4BRjLz\"
-    itemId: \"$ITEM_ID\"
-    fieldId: \"PVTSSF_lADOCmtSJM4BRjLzzg_kxEg\"
-    value: { singleSelectOptionId: \"188cd7bc\" }
-  }) {
-    projectV2Item { id }
-  }
-}"
+gh issue close $ISSUE_NUMBER -R bbvch-ai/aihub-core -r "not planned" -c "Spliced into sub-issues. Work continues in child issues."
 ```
-
-Note: Requires the `project` scope on the GitHub token. If this fails with INSUFFICIENT_SCOPES, ask the user to set it
-manually.
 
 ## Common Mistakes
 
@@ -201,3 +260,11 @@ manually.
 4. **Forgetting to inherit metadata.** Every sub-issue must have the same label (major/minor/patch), milestone, and
    assignee as the parent.
 5. **Creating issues before getting user confirmation.** Always present the proposed breakdown and wait for approval.
+6. **Adding redundant blocked-by relationships.** If A is blocked by B, and B is blocked by C, do NOT also add A blocked
+   by C. Check the transitive chain first.
+7. **Not copying project board priorities.** Every sub-issue must inherit the parent's Priority field values from all
+   project boards.
+8. **Putting implementation details in acceptance criteria.** AC describes behavior, not implementation. Put
+   implementation details in a separate "Implementation Proposal" section.
+9. **Not inheriting blocked-by/blocking relationships.** Children must inherit the parent's blocked-by (prerequisites)
+   and blocking (dependents) relationships. Otherwise the dependency graph breaks when the parent is closed.
