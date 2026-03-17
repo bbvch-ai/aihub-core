@@ -1,17 +1,16 @@
 ---
 name: splice-issue
 description: "Break a large GitHub issue from bbvch-ai/aihub-core into self-contained, independently mergeable sub-issues with blocked-by dependency relationships. Use when user says 'splice this issue', 'split issue into sub-issues', 'break down issue #X', 'create sub-issues for #X', 'slice this issue', or 'decompose this issue'. Takes an issue number or URL as argument. Do NOT use for implementation planning within a single issue (use /plan-issue), creating PRs (use /create-pr), or fetching issue details without splicing (use gh issue view)."
-allowed-tools: Bash, Read, Grep, Glob, Agent
+allowed-tools: Bash, Read, Grep, Glob
 ---
 
 # Splice Issue — Break Parent Issues into Sub-Issues
 
 Break a parent issue into self-contained, independently mergeable sub-issues on GitHub.
 
-## Before You Start
+Parse the issue number from `$ARGUMENTS` (accepts `#123`, `123`, or a full GitHub URL).
 
-Read the memory file for issue structure conventions:
-`/home/thomas/.claude/projects/-home-thomas-Projects-aihub-core/memory/feedback_issue_structure.md`
+## Before You Start
 
 Review existing spliced issues for structure patterns:
 
@@ -28,7 +27,12 @@ gh issue view $ISSUE_NUMBER -R bbvch-ai/aihub-core --json title,body,labels,mile
 Also fetch any existing sub-issues — the user may have started splicing already:
 
 ```bash
-gh api graphql -f query='{ repository(owner: "bbvch-ai", name: "aihub-core") { issue(number: $ISSUE_NUMBER) { id subIssues(first: 50) { nodes { number title state } } } } }'
+gh api graphql -F number=$ISSUE_NUMBER -f query='
+  query($number: Int!) {
+    repository(owner: "bbvch-ai", name: "aihub-core") {
+      issue(number: $number) { id subIssues(first: 50) { nodes { number title state } } }
+    }
+  }'
 ```
 
 Also fetch discussion comments for additional context and decisions:
@@ -87,9 +91,15 @@ EOF
 Get the parent issue node ID and each child's node ID, then link them:
 
 ```bash
-PARENT_ID=$(gh api graphql -f query='{ repository(owner: "bbvch-ai", name: "aihub-core") { issue(number: $ISSUE_NUMBER) { id } } }' -q '.data.repository.issue.id')
+PARENT_ID=$(gh api graphql -F number=$ISSUE_NUMBER -f query='
+  query($number: Int!) {
+    repository(owner: "bbvch-ai", name: "aihub-core") { issue(number: $number) { id } }
+  }' -q '.data.repository.issue.id')
 
-CHILD_ID=$(gh api graphql -f query='{ repository(owner: "bbvch-ai", name: "aihub-core") { issue(number: $CHILD_NUMBER) { id } } }' -q '.data.repository.issue.id')
+CHILD_ID=$(gh api graphql -F number=$CHILD_NUMBER -f query='
+  query($number: Int!) {
+    repository(owner: "bbvch-ai", name: "aihub-core") { issue(number: $number) { id } }
+  }' -q '.data.repository.issue.id')
 
 gh api graphql -f query="mutation { addSubIssue(input: { issueId: \"$PARENT_ID\", subIssueId: \"$CHILD_ID\" }) { issue { id } } }"
 ```
@@ -99,8 +109,15 @@ gh api graphql -f query="mutation { addSubIssue(input: { issueId: \"$PARENT_ID\"
 For issues that depend on each other, use the `addBlockedBy` mutation:
 
 ```bash
-ISSUE_ID=$(gh api graphql -f query='{ repository(owner: "bbvch-ai", name: "aihub-core") { issue(number: $BLOCKED_ISSUE) { id } } }' -q '.data.repository.issue.id')
-BLOCKING_ID=$(gh api graphql -f query='{ repository(owner: "bbvch-ai", name: "aihub-core") { issue(number: $BLOCKING_ISSUE) { id } } }' -q '.data.repository.issue.id')
+ISSUE_ID=$(gh api graphql -F number=$BLOCKED_ISSUE -f query='
+  query($number: Int!) {
+    repository(owner: "bbvch-ai", name: "aihub-core") { issue(number: $number) { id } }
+  }' -q '.data.repository.issue.id')
+
+BLOCKING_ID=$(gh api graphql -F number=$BLOCKING_ISSUE -f query='
+  query($number: Int!) {
+    repository(owner: "bbvch-ai", name: "aihub-core") { issue(number: $number) { id } }
+  }' -q '.data.repository.issue.id')
 
 gh api graphql -f query="mutation { addBlockedBy(input: { issueId: \"$ISSUE_ID\", blockingIssueId: \"$BLOCKING_ID\" }) { issue { id } } }"
 ```
@@ -141,7 +158,10 @@ Only after the user has confirmed all sub-issues are correct, set the parent iss
 
 ```bash
 # Get the issue's project item ID
-ISSUE_ID=$(gh api graphql -f query='{ repository(owner: "bbvch-ai", name: "aihub-core") { issue(number: $ISSUE_NUMBER) { id } } }' -q '.data.repository.issue.id')
+ISSUE_ID=$(gh api graphql -F number=$ISSUE_NUMBER -f query='
+  query($number: Int!) {
+    repository(owner: "bbvch-ai", name: "aihub-core") { issue(number: $number) { id } }
+  }' -q '.data.repository.issue.id')
 
 ITEM_ID=$(gh api graphql -f query="
 {
