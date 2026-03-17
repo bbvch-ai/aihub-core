@@ -131,11 +131,12 @@ Show the user the final structure with dependency graph:
 └── #963 Leaf issue (blocked by #956)
 ```
 
-Wait for the user to confirm the breakdown is complete before proceeding.
+Wait for the user to explicitly confirm that all sub-issues are correct and complete before proceeding. Do NOT set the
+EPIC priority until the user says they are happy with the breakdown.
 
 ## Step 8: Mark Parent as EPIC in Project Board
 
-After the user confirms, set the parent issue's Priority to "EPIC" in
+Only after the user has confirmed all sub-issues are correct, set the parent issue's Priority to "EPIC" in
 [project 37](https://github.com/orgs/bbvch-ai/projects/37) so it no longer appears in the backlog.
 
 ```bash
