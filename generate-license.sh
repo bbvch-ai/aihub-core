@@ -495,6 +495,14 @@ main() {
         echo -e "${RED}Error: uv is required but not installed.${NC}"; exit 1;
     fi
 
+    # Save the old date and content (excluding date) for comparison
+    local OLD_DATE=""
+    local OLD_CONTENT_FILE=$(mktemp)
+    if [ -f "$OUTPUT_FILE_ABS" ]; then
+        OLD_DATE=$(grep '^Generated on:' "$OUTPUT_FILE_ABS" | head -1)
+        grep -v '^Generated on:' "$OUTPUT_FILE_ABS" > "$OLD_CONTENT_FILE"
+    fi
+
     init_report
     add_section "Python Dependencies"
     check_python_workspace || true
@@ -504,6 +512,19 @@ main() {
     add_section "Docker Images"
     check_docker_images || true
     generate_summary
+
+    # If content (excluding date) is unchanged, restore the original date
+    local NEW_CONTENT_FILE=$(mktemp)
+    grep -v '^Generated on:' "$OUTPUT_FILE_ABS" > "$NEW_CONTENT_FILE"
+    # Normalize markdown table formatting (column padding and separator widths) for comparison
+    normalize_report() { sed 's/ *| */|/g; s/|-\{1,\}/|---/g; /^$/d' "$1"; }
+    if [ -n "$OLD_DATE" ] && diff -q <(normalize_report "$OLD_CONTENT_FILE") <(normalize_report "$NEW_CONTENT_FILE") > /dev/null 2>&1; then
+        sed -i "s/^Generated on:.*/$OLD_DATE/" "$OUTPUT_FILE_ABS"
+        echo -e "${GREEN}No license changes detected — keeping existing date.${NC}"
+    else
+        echo -e "${GREEN}License report updated with new date.${NC}"
+    fi
+    rm -f "$OLD_CONTENT_FILE" "$NEW_CONTENT_FILE"
 
     local restrictive_count=0; local review_count=0; local unknown_count=0
     [ -f "$RESTRICTIVE_FILE" ] && restrictive_count=$(wc -l < "$RESTRICTIVE_FILE")
