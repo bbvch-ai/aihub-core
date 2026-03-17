@@ -117,9 +117,25 @@ After all sub-issues are created and linked:
    anyone working on the sub-issues.
 3. **Do NOT create separate documentation sub-issues.** Documentation is part of the Definition of Done for every issue.
 
-## Step 7: Mark Parent as EPIC in Project Board
+## Step 7: Present Summary
 
-Once the user confirms the breakdown is complete, set the parent issue's Priority to "EPIC" in
+Show the user the final structure with dependency graph:
+
+```
+#919 Parent Issue (no AC, context only)
+├── #954 Foundational issue (no deps)
+│   ↓ blocks
+├── #956 Mid-layer issue
+│   ↓ blocks
+├── #955 Leaf issue (blocked by #956)
+└── #963 Leaf issue (blocked by #956)
+```
+
+Wait for the user to confirm the breakdown is complete before proceeding.
+
+## Step 8: Mark Parent as EPIC in Project Board
+
+After the user confirms, set the parent issue's Priority to "EPIC" in
 [project 37](https://github.com/orgs/bbvch-ai/projects/37) so it no longer appears in the backlog.
 
 ```bash
@@ -153,20 +169,6 @@ mutation {
 
 Note: Requires the `project` scope on the GitHub token. If this fails with INSUFFICIENT_SCOPES, ask the user to set it
 manually.
-
-## Step 8: Present Summary
-
-Show the user the final structure with dependency graph:
-
-```
-#919 Parent Issue (no AC, context only)
-├── #954 Foundational issue (no deps)
-│   ↓ blocks
-├── #956 Mid-layer issue
-│   ↓ blocks
-├── #955 Leaf issue (blocked by #956)
-└── #963 Leaf issue (blocked by #956)
-```
 
 ## Common Mistakes
 
