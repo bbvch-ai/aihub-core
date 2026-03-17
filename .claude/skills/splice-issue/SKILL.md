@@ -117,7 +117,44 @@ After all sub-issues are created and linked:
    anyone working on the sub-issues.
 3. **Do NOT create separate documentation sub-issues.** Documentation is part of the Definition of Done for every issue.
 
-## Step 7: Present Summary
+## Step 7: Mark Parent as EPIC in Project Board
+
+Once the user confirms the breakdown is complete, set the parent issue's Priority to "EPIC" in
+[project 37](https://github.com/orgs/bbvch-ai/projects/37) so it no longer appears in the backlog.
+
+```bash
+# Get the issue's project item ID
+ISSUE_ID=$(gh api graphql -f query='{ repository(owner: "bbvch-ai", name: "aihub-core") { issue(number: $ISSUE_NUMBER) { id } } }' -q '.data.repository.issue.id')
+
+ITEM_ID=$(gh api graphql -f query="
+{
+  node(id: \"$ISSUE_ID\") {
+    ... on Issue {
+      projectItems(first: 10) {
+        nodes { id project { number } }
+      }
+    }
+  }
+}" -q '.data.node.projectItems.nodes[] | select(.project.number == 37) | .id')
+
+# Set Priority to EPIC (project ID, field ID, and option ID are stable for project 37)
+gh api graphql -f query="
+mutation {
+  updateProjectV2ItemFieldValue(input: {
+    projectId: \"PVT_kwDOCmtSJM4BRjLz\"
+    itemId: \"$ITEM_ID\"
+    fieldId: \"PVTSSF_lADOCmtSJM4BRjLzzg_kxEg\"
+    value: { singleSelectOptionId: \"188cd7bc\" }
+  }) {
+    projectV2Item { id }
+  }
+}"
+```
+
+Note: Requires the `project` scope on the GitHub token. If this fails with INSUFFICIENT_SCOPES, ask the user to set it
+manually.
+
+## Step 8: Present Summary
 
 Show the user the final structure with dependency graph:
 
