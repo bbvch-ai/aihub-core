@@ -70,13 +70,13 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
     - name: Sanitize artifact name
       id: sanitize
       shell: bash
       run: echo "artifact_prefix=$(echo '${{ inputs.working_directory }}' | tr '/'
         '-')" >> "$GITHUB_OUTPUT"
-    - name: Checkout Repository
-      uses: actions/checkout@v4
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
