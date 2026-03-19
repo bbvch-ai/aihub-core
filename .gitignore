@@ -13,6 +13,8 @@ docs/swiss-ai-hub
 /infra/configs/traefik/certs/dev-cert.pem
 /infra/configs/traefik/certs/dev-key.pem
 .idea/copilot*
+.idea/misc.xml
+aihub_*/.idea/
 *.log
 .mypy_cache/
 .ty/
