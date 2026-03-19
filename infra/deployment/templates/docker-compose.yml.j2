@@ -1834,7 +1834,11 @@ services:
       WEBSOCKET_MANAGER: redis
       WEBSOCKET_REDIS_URL: redis://default:${REDIS_TOKEN}@{{ 'localhost' if stage == 'dev' else 'valkey' }}:6379/11
       THREAD_POOL_SIZE: {{ '8' if stage == 'dev' else '32' }}
+      {%- if stage == 'dev' %}
+      CORS_ALLOW_ORIGIN: "http://localhost:8080"
+      {%- else %}
       CORS_ALLOW_ORIGIN: "https://openwebui.${DOMAIN},https://${DOMAIN}"
+      {%- endif %}
 
       # --- Admin ---
       ENABLE_ADMIN_EXPORT: True
@@ -1883,7 +1887,7 @@ services:
       WEB_SEARCH_CONCURRENT_REQUESTS: 6
       BYPASS_WEB_SEARCH_EMBEDDING_AND_RETRIEVAL: True
       WEB_LOADER_ENGINE: playwright
-      PLAYWRIGHT_WS_URL: {{ PLAYWRIGHT_WS_URL }}
+      PLAYWRIGHT_WS_URL: {{ 'ws://localhost:3036' if stage == 'dev' else PLAYWRIGHT_WS_URL }}
       FILE_IMAGE_COMPRESSION_WIDTH: 796
       FILE_IMAGE_COMPRESSION_HEIGHT: 796
 

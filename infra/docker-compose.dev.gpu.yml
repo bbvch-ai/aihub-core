@@ -1324,7 +1324,7 @@ services:
       WEBSOCKET_MANAGER: redis
       WEBSOCKET_REDIS_URL: redis://default:${REDIS_TOKEN}@localhost:6379/11
       THREAD_POOL_SIZE: 8
-      CORS_ALLOW_ORIGIN: https://openwebui.${DOMAIN},https://${DOMAIN}
+      CORS_ALLOW_ORIGIN: http://localhost:8080
 
       # --- Admin ---
       ENABLE_ADMIN_EXPORT: true
@@ -1373,7 +1373,7 @@ services:
       WEB_SEARCH_CONCURRENT_REQUESTS: 6
       BYPASS_WEB_SEARCH_EMBEDDING_AND_RETRIEVAL: true
       WEB_LOADER_ENGINE: playwright
-      PLAYWRIGHT_WS_URL: ws://playwright:3000
+      PLAYWRIGHT_WS_URL: ws://localhost:3036
       FILE_IMAGE_COMPRESSION_WIDTH: 796
       FILE_IMAGE_COMPRESSION_HEIGHT: 796
 
@@ -1448,6 +1448,7 @@ services:
   # ===================================================================
 
 
+  
 
   
 
