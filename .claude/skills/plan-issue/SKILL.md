@@ -99,7 +99,7 @@ Structure the plan with these sections:
 
 | Problem                       | Solution                                                       |
 | ----------------------------- | -------------------------------------------------------------- |
-| Issue not found               | Verify issue number: `gh issue list -R bbvch-ai/aihub-core`  |
+| Issue not found               | Verify issue number: `gh issue list -R bbvch-ai/aihub-core`    |
 | Issue is vague                | List what needs clarification, suggest asking the issue author |
 | Spans too many scopes         | Break into sub-tasks, suggest splitting the issue              |
 | No existing pattern to follow | Flag as risk — may need an ADR for the new pattern             |

@@ -82,8 +82,8 @@ Actions can be referenced two ways:
 
 - **Local** (same checkout): `uses: ./.github/actions/test_backend` — used in `analyze-test-pr.yml` where the action
   needs to run within the same checkout (e.g., `use_local_core: true`)
-- **Remote** (cross-job/external): `uses: bbvch-ai/aihub-core/.github/actions/pytest_coverage_comment@main` — used
-  when the action runs in a separate job or from external repos
+- **Remote** (cross-job/external): `uses: bbvch-ai/aihub-core/.github/actions/pytest_coverage_comment@main` — used when
+  the action runs in a separate job or from external repos
 
 External repos always use remote refs: `uses: bbvch-ai/aihub-core/.github/actions/<action>@main` (or `@v1.0.0` for
 pinned versions).

@@ -69,8 +69,8 @@ ______________________________________________________________________
 
 **For Production:**
 
-Download the latest release bundle from [GitHub Releases](https://github.com/bbvch-ai/aihub-core/releases). Each
-release provides two self-contained bundles:
+Download the latest release bundle from [GitHub Releases](https://github.com/bbvch-ai/aihub-core/releases). Each release
+provides two self-contained bundles:
 
 - `swissaihub-<version>.tar.gz` — CPU-only deployment
 - `swissaihub-<version>-gpu.tar.gz` — GPU-enabled deployment (includes vLLM, GPU-accelerated inference)
