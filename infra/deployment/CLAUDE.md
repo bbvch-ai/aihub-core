@@ -74,7 +74,7 @@ Each stage has a `.gpu` variant (e.g., `docker-compose.dev.gpu.yml`) adding NVID
 
 This file drives everything: template rendering, CI/CD service discovery, and image promotion.
 
-- `global.registry_prefix` — container registry path (`ghcr.io/bbvch-ai/swiss-ai-hub/`)
+- `global.registry_prefix` — container registry path (`ghcr.io/bbvch-ai/aihub-core/`)
 - `global.volume_root` — bind mount base (`${VOLUME_ROOT:-./.docker-volumes}`)
 - `image_tags` — **flat string** for infrastructure (same across all stages), **dict** for custom services (per-stage):
 

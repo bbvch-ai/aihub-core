@@ -2,11 +2,11 @@
 
 # @swiss-ai-hub/web
 
-**The admin and management UI for [Swiss AI Hub](https://github.com/bbvch-ai/swiss-ai-hub), published as a
+**The admin and management UI for [Swiss AI Hub](https://github.com/bbvch-ai/aihub-core), published as a
 [Nuxt 3 layer](https://nuxt.com/docs/getting-started/layers).**
 
 [![npm](https://img.shields.io/npm/v/@swiss-ai-hub/web?style=flat-square&logo=npm&logoColor=white)](https://www.npmjs.com/package/@swiss-ai-hub/web)
-[![License](https://img.shields.io/badge/license-Apache%202.0-blue?style=flat-square)](https://github.com/bbvch-ai/swiss-ai-hub/blob/main/LICENSE)
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue?style=flat-square)](https://github.com/bbvch-ai/aihub-core/blob/main/LICENSE)
 
 </div>
 
@@ -14,7 +14,7 @@ ______________________________________________________________________
 
 ## What is Swiss AI Hub?
 
-[Swiss AI Hub](https://github.com/bbvch-ai/swiss-ai-hub) is an open-source, self-hosted AI platform for enterprises. One
+[Swiss AI Hub](https://github.com/bbvch-ai/aihub-core) is an open-source, self-hosted AI platform for enterprises. One
 `docker compose up` starts ~30 integrated containers: an LLM gateway (LiteLLM), vector search (Milvus), data pipelines
 (Dagster), document parsing (MinerU), SSO (Keycloak), observability (Langfuse + OpenTelemetry), a chat UI (Open-WebUI),
 and more. You build custom agents, pipelines, and processes using the Python SDK; the platform provides the runtime.
@@ -41,7 +41,7 @@ ______________________________________________________________________
 # docker-compose.yml
 services:
   admin-ui:
-    image: ghcr.io/bbvch-ai/swiss-ai-hub/web:latest
+    image: ghcr.io/bbvch-ai/aihub-core/web:latest
     ports:
       - "3333:80"
 ```
@@ -343,7 +343,7 @@ my-project/
 ```
 
 This works for any component in the layer. You can inspect the layer's component directory structure in the
-[source repository](https://github.com/bbvch-ai/swiss-ai-hub/tree/main/swiss_ai_hub_web/swiss_ai_hub_web/components) to
+[source repository](https://github.com/bbvch-ai/aihub-core/tree/main/swiss_ai_hub_web/swiss_ai_hub_web/components) to
 find the exact names and paths.
 
 ______________________________________________________________________
@@ -408,13 +408,13 @@ environment variables -- Nuxt automatically maps `NUXT_PUBLIC_*` variables to th
 
 ## License
 
-Apache 2.0 -- see [LICENSE](https://github.com/bbvch-ai/swiss-ai-hub/blob/main/LICENSE).
+Apache 2.0 -- see [LICENSE](https://github.com/bbvch-ai/aihub-core/blob/main/LICENSE).
 
 ______________________________________________________________________
 
 <div align="center">
 
-Part of [Swiss AI Hub](https://github.com/bbvch-ai/swiss-ai-hub). Built in Switzerland by
+Part of [Swiss AI Hub](https://github.com/bbvch-ai/aihub-core). Built in Switzerland by
 [bbv Software Services](https://www.bbv.ch).
 
 </div>

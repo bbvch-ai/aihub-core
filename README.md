@@ -446,7 +446,7 @@ Swiss AI-Hub is developed by [bbv Software Services](https://www.bbv.ch) and ope
 |                                                                  |                                                              |
 | ---------------------------------------------------------------- | ------------------------------------------------------------ |
 | [Join the Discord](https://discord.gg/wArT8zDB)                  | Ask questions, share what you have built, get help           |
-| [Open an issue](https://github.com/bbvch-ai/swiss-ai-hub/issues) | Report bugs and request features                             |
+| [Open an issue](https://github.com/bbvch-ai/aihub-core/issues) | Report bugs and request features                             |
 | [Read the ADRs](https://bbvch-ai.github.io/swiss-ai-hub/arc42/)  | Understand key decisions before proposing structural changes |
 
 ## License

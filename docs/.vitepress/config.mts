@@ -51,7 +51,7 @@ export default withMermaid({
           '/': formatSidebarForConfig(generateSidebar('en'))
         },
         socialLinks: [
-          { icon: 'github', link: 'https://github.com/bbvch-ai/swiss-ai-hub' }
+          { icon: 'github', link: 'https://github.com/bbvch-ai/aihub-core' }
         ]
       }
     },
@@ -76,7 +76,7 @@ export default withMermaid({
           '/de/': formatSidebarForConfig(generateSidebar('de'))
         },
         socialLinks: [
-          { icon: 'github', link: 'https://github.com/bbvch-ai/swiss-ai-hub' }
+          { icon: 'github', link: 'https://github.com/bbvch-ai/aihub-core' }
         ]
       }
     }

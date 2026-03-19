@@ -403,4 +403,4 @@ Then update `scripts/generate-whitepaper.py` to pass the new variables to `templ
 
 - **LLM CLI**: https://github.com/simonw/llm
 - **Jinja2 Docs**: https://jinja.palletsprojects.com/
-- **Project Repo**: https://github.com/bbvch-ai/swiss-ai-hub
+- **Project Repo**: https://github.com/bbvch-ai/aihub-core

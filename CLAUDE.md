@@ -281,4 +281,4 @@ Local overrides (gitignored): `CLAUDE.local.md`, `.claude/settings.local.json`, 
 - Docker Compose (dev): `infra/docker-compose.dev.yml`
 - Env config: `.env` (copy from `.env.dev`)
 
-**Work Management**: `gh issue list -R "bbvch-ai/swiss-ai-hub" -a "@me"` | `gh project view 13 --owner bbvch-ai`
+**Work Management**: `gh issue list -R "bbvch-ai/aihub-core" -a "@me"` | `gh project view 13 --owner bbvch-ai`

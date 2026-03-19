@@ -14,7 +14,7 @@ Customer code pins to a specific core version through `pyproject.toml`:
 
 ```toml
 [project.dependencies]
-swiss-ai-hub = { git = "https://github.com/bbvch-ai/swiss-ai-hub.git", tag = "v1.2.3" }
+swiss-ai-hub = { git = "https://github.com/bbvch-ai/aihub-core.git", tag = "v1.2.3" }
 ```
 
 This means core updates don't automatically affect customer deployments. Customers control when they adopt new core
@@ -43,7 +43,7 @@ Customer code uses its own independent version numbers.
 ### Release process
 
 When a PR merges to `main` with a version label (`major`, `minor`, or `patch`), CI/CD computes the new version, creates
-a Git tag, and builds all affected services. Docker images are published to `ghcr.io/bbvch-ai/swiss-ai-hub/*` with the
+a Git tag, and builds all affected services. Docker images are published to `ghcr.io/bbvch-ai/aihub-core/*` with the
 version tag. A changelog is generated automatically.
 
 Each release also publishes self-contained deployment bundles as GitHub Release assets:
@@ -58,19 +58,19 @@ file with cryptographically secure random values for all passwords, tokens, and 
 Example core images:
 
 ```
-ghcr.io/bbvch-ai/swiss-ai-hub/api:v1.2.3
-ghcr.io/bbvch-ai/swiss-ai-hub/dagster:v1.2.3
-ghcr.io/bbvch-ai/swiss-ai-hub/web:v1.2.3
+ghcr.io/bbvch-ai/aihub-core/api:v1.2.3
+ghcr.io/bbvch-ai/aihub-core/dagster:v1.2.3
+ghcr.io/bbvch-ai/aihub-core/web:v1.2.3
 ```
 
 Customer code follows the same CI/CD pattern:
 
 ```
-ghcr.io/bbvch-ai/swiss-ai-hub-<customer>/agent:v1.2.3
-ghcr.io/bbvch-ai/swiss-ai-hub-<customer>/pipeline:v1.2.3
+ghcr.io/bbvch-ai/aihub-core-<customer>/agent:v1.2.3
+ghcr.io/bbvch-ai/aihub-core-<customer>/pipeline:v1.2.3
 ```
 
-Browse all releases at [github.com/bbvch-ai/swiss-ai-hub/releases](https://github.com/bbvch-ai/swiss-ai-hub/releases).
+Browse all releases at [github.com/bbvch-ai/aihub-core/releases](https://github.com/bbvch-ai/aihub-core/releases).
 
 ______________________________________________________________________
 
@@ -78,13 +78,13 @@ ______________________________________________________________________
 
 ### Core platform updates
 
-Download the new release bundle from [GitHub Releases](https://github.com/bbvch-ai/swiss-ai-hub/releases) and extract it
+Download the new release bundle from [GitHub Releases](https://github.com/bbvch-ai/aihub-core/releases) and extract it
 alongside your current deployment:
 
 ```bash
 # Download the new version
 VERSION="v1.3.0"
-curl -L "https://github.com/bbvch-ai/swiss-ai-hub/releases/download/${VERSION}/swissaihub-${VERSION}.tar.gz" \
+curl -L "https://github.com/bbvch-ai/aihub-core/releases/download/${VERSION}/swissaihub-${VERSION}.tar.gz" \
   | tar -xz -C /tmp/swissaihub-update
 
 # Copy your existing .env into the new bundle
@@ -133,7 +133,7 @@ your `.env` file, and restarting:
 ```bash
 # Download the previous version's bundle
 PREVIOUS="v1.2.3"
-curl -L "https://github.com/bbvch-ai/swiss-ai-hub/releases/download/${PREVIOUS}/swissaihub-${PREVIOUS}.tar.gz" \
+curl -L "https://github.com/bbvch-ai/aihub-core/releases/download/${PREVIOUS}/swissaihub-${PREVIOUS}.tar.gz" \
   | tar -xz -C /tmp/swissaihub-rollback
 
 # Restore previous compose and configs, keep your .env

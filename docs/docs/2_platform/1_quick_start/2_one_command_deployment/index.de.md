@@ -29,10 +29,10 @@ Der Installer erkennt automatisch GPU-Hardware, lädt das korrekte Release-Bundl
 
 ```bash
 # Install with GPU bundle to a custom directory
-curl -fsSL https://raw.githubusercontent.com/bbvch-ai/swiss-ai-hub/main/install.sh | bash -s -- --gpu --dir /opt/swiss-ai-hub
+curl -fsSL https://raw.githubusercontent.com/bbvch-ai/aihub-core/main/install.sh | bash -s -- --gpu --dir /opt/swiss-ai-hub
 
 # Pin a specific version
-curl -fsSL https://raw.githubusercontent.com/bbvch-ai/swiss-ai-hub/main/install.sh | bash -s -- --version v0.269.2
+curl -fsSL https://raw.githubusercontent.com/bbvch-ai/aihub-core/main/install.sh | bash -s -- --version v0.269.2
 ```
 
 **Upgrade durchführen:** Führen Sie den Installer erneut mit demselben `--dir` aus. Er erkennt die bestehende Installation, sichert Ihre `.env`-Datei, ersetzt Bundle-Dateien, stellt `.env` wieder her und berichtet über alle neuen Umgebungsvariablen, die im Release hinzugefügt wurden.
@@ -65,7 +65,7 @@ ______________________________________________________________________
 
 **Für die Produktion:**
 
-Laden Sie das neueste Release-Bundle von [GitHub Releases](https://github.com/bbvch-ai/swiss-ai-hub/releases) herunter. Jedes Release bietet zwei eigenständige Bundles:
+Laden Sie das neueste Release-Bundle von [GitHub Releases](https://github.com/bbvch-ai/aihub-core/releases) herunter. Jedes Release bietet zwei eigenständige Bundles:
 
 -   `swissaihub-<version>.tar.gz` – Nur-CPU-Deployment
 -   `swissaihub-<version>-gpu.tar.gz` – GPU-fähiges Deployment (inklusive vLLM, GPU-beschleunigte Inferenz)
@@ -76,11 +76,11 @@ VERSION="v0.266.0"  # Replace with the desired version
 
 # Download and extract the release bundle (CPU example)
 mkdir swiss-ai-hub && cd swiss-ai-hub
-curl -L "https://github.com/bbvch-ai/swiss-ai-hub/releases/download/${VERSION}/swissaihub-${VERSION}.tar.gz" \
+curl -L "https://github.com/bbvch-ai/aihub-core/releases/download/${VERSION}/swissaihub-${VERSION}.tar.gz" \
   | tar -xz
 
 # For GPU-enabled deployment, use this instead:
-# curl -L "https://github.com/bbvch-ai/swiss-ai-hub/releases/download/${VERSION}/swissaihub-${VERSION}-gpu.tar.gz" \
+# curl -L "https://github.com/bbvch-ai/aihub-core/releases/download/${VERSION}/swissaihub-${VERSION}-gpu.tar.gz" \
 #   | tar -xz
 ```
 
@@ -90,7 +90,7 @@ Das Release-Bundle enthält alles Notwendige für das Deployment: `docker-compos
 
 ```bash
 # Clone the repository
-git clone https://github.com/bbvch-ai/swiss-ai-hub.git
+git clone https://github.com/bbvch-ai/aihub-core.git
 cd swiss-ai-hub
 
 # Generate SSL certificates with mkcert

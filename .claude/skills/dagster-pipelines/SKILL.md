@@ -548,7 +548,7 @@ from dagster import link_code_references_to_git, with_source_code_references
 
 assets = link_code_references_to_git(
     assets_defs=with_source_code_references(assets),
-    git_url="https://github.com/bbvch-ai/swiss-ai-hub",
+    git_url="https://github.com/bbvch-ai/aihub-core",
     git_branch="main",
 )
 ```

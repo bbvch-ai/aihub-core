@@ -67,13 +67,13 @@ usage() {
 
   Examples:
     # Install latest version with auto-detected hardware
-    curl -fsSL https://raw.githubusercontent.com/bbvch-ai/swiss-ai-hub/main/install.sh | bash
+    curl -fsSL https://raw.githubusercontent.com/bbvch-ai/aihub-core/main/install.sh | bash
 
     # Install specific version with GPU bundle
-    curl -fsSL https://raw.githubusercontent.com/bbvch-ai/swiss-ai-hub/main/install.sh | bash -s -- --version v0.269.2 --gpu
+    curl -fsSL https://raw.githubusercontent.com/bbvch-ai/aihub-core/main/install.sh | bash -s -- --version v0.269.2 --gpu
 
     # Install to a custom directory
-    curl -fsSL https://raw.githubusercontent.com/bbvch-ai/swiss-ai-hub/main/install.sh | bash -s -- --dir /opt/swiss-ai-hub
+    curl -fsSL https://raw.githubusercontent.com/bbvch-ai/aihub-core/main/install.sh | bash -s -- --dir /opt/swiss-ai-hub
 
 EOF
     exit 0

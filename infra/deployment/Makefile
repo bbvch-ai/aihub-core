@@ -2,7 +2,7 @@
 
 # Mirror an image from source to target
 # Usage: make mirror-image SOURCE=source/image:tag TARGET=target/image:tag
-# Example: make mirror-image SOURCE=ghcr.io/open-webui/open-webui:v0.6.10 TARGET=ghcr.io/bbvch-ai/swiss-ai-hub/open-webui:v0.6.10
+# Example: make mirror-image SOURCE=ghcr.io/open-webui/open-webui:v0.6.10 TARGET=ghcr.io/bbvch-ai/aihub-core/open-webui:v0.6.10
 mirror-image:
 	@if [ -z "$(SOURCE)" ] || [ -z "$(TARGET)" ]; then \
 		echo "Error: SOURCE and TARGET parameters are required"; \

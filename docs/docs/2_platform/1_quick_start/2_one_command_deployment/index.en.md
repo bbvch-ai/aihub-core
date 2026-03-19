@@ -30,10 +30,10 @@ edit `.env` and run `docker compose up -d`.
 
 ```bash
 # Install with GPU bundle to a custom directory
-curl -fsSL https://raw.githubusercontent.com/bbvch-ai/swiss-ai-hub/main/install.sh | bash -s -- --gpu --dir /opt/swiss-ai-hub
+curl -fsSL https://raw.githubusercontent.com/bbvch-ai/aihub-core/main/install.sh | bash -s -- --gpu --dir /opt/swiss-ai-hub
 
 # Pin a specific version
-curl -fsSL https://raw.githubusercontent.com/bbvch-ai/swiss-ai-hub/main/install.sh | bash -s -- --version v0.269.2
+curl -fsSL https://raw.githubusercontent.com/bbvch-ai/aihub-core/main/install.sh | bash -s -- --version v0.269.2
 ```
 
 **Upgrading:** Run the installer again with the same `--dir`. It detects the existing installation, backs up your
@@ -69,7 +69,7 @@ ______________________________________________________________________
 
 **For Production:**
 
-Download the latest release bundle from [GitHub Releases](https://github.com/bbvch-ai/swiss-ai-hub/releases). Each
+Download the latest release bundle from [GitHub Releases](https://github.com/bbvch-ai/aihub-core/releases). Each
 release provides two self-contained bundles:
 
 - `swissaihub-<version>.tar.gz` — CPU-only deployment
@@ -81,11 +81,11 @@ VERSION="v0.266.0"  # Replace with the desired version
 
 # Download and extract the release bundle (CPU example)
 mkdir swiss-ai-hub && cd swiss-ai-hub
-curl -L "https://github.com/bbvch-ai/swiss-ai-hub/releases/download/${VERSION}/swissaihub-${VERSION}.tar.gz" \
+curl -L "https://github.com/bbvch-ai/aihub-core/releases/download/${VERSION}/swissaihub-${VERSION}.tar.gz" \
   | tar -xz
 
 # For GPU-enabled deployment, use this instead:
-# curl -L "https://github.com/bbvch-ai/swiss-ai-hub/releases/download/${VERSION}/swissaihub-${VERSION}-gpu.tar.gz" \
+# curl -L "https://github.com/bbvch-ai/aihub-core/releases/download/${VERSION}/swissaihub-${VERSION}-gpu.tar.gz" \
 #   | tar -xz
 ```
 
@@ -96,7 +96,7 @@ The release bundle contains everything needed to deploy: `docker-compose.yml`, a
 
 ```bash
 # Clone the repository
-git clone https://github.com/bbvch-ai/swiss-ai-hub.git
+git clone https://github.com/bbvch-ai/aihub-core.git
 cd swiss-ai-hub
 
 # Generate SSL certificates with mkcert
