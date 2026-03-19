@@ -1,14 +1,14 @@
 from typing import Annotated, Self
 
-from aihub_lib.agents.AgentConfig import AgentConfig
-from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
-from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.mcp.McpClientConfig import McpClientConfig
-from aihub_lib.nats.events.form import InputNumber, LocaleInput
-from aihub_lib.nats.events.form.constraints import Gt
 from pydantic import Field
+from swiss_ai_hub.core.agents import AgentConfig
+from swiss_ai_hub.core.form import InputNumber, LocaleInput
+from swiss_ai_hub.core.form.constraints import Gt
+from swiss_ai_hub.core.generative_ai import LLMConfig
+from swiss_ai_hub.core.i18n import LocaleString
+from swiss_ai_hub.core.mcp.mcp_client_config import McpClientConfig
 
-from aihub_agent.i18n.AgentLocaleString import AgentLocaleString
+from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 
 
 class McpReactAgentConfig(AgentConfig):

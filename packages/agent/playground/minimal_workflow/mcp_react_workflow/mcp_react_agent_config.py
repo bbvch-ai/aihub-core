@@ -1,10 +1,10 @@
 from typing import Annotated
 
-from aihub_lib.agents.AgentConfig import AgentConfig
-from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
-from aihub_lib.mcp.McpClientConfig import McpClientConfig
-from aihub_lib.nats.events.form.constraints import Gt
 from pydantic import Field
+from swiss_ai_hub.core.agents import AgentConfig
+from swiss_ai_hub.core.form.constraints import Gt
+from swiss_ai_hub.core.generative_ai import LLMConfig
+from swiss_ai_hub.core.mcp.mcp_client_config import McpClientConfig
 
 
 class McpReactAgentConfig(AgentConfig):

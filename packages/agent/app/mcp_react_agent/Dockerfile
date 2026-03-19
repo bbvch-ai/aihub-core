@@ -22,14 +22,14 @@ WORKDIR /app
 
 # Copy workspace config + relevant packages
 COPY pyproject.toml uv.lock ./
-COPY aihub_agent/app/${AGENT} ./aihub_agent/app/${AGENT}
-COPY aihub_agent/aihub_agent ./aihub_agent/aihub_agent
-COPY aihub_agent/pyproject.toml ./aihub_agent/pyproject.toml
-COPY aihub_lib ./aihub_lib
+COPY packages/agent/app/${AGENT} ./packages/agent/app/${AGENT}
+COPY packages/agent/swiss_ai_hub ./packages/agent/swiss_ai_hub
+COPY packages/agent/pyproject.toml ./packages/agent/pyproject.toml
+COPY packages/core ./packages/core
 
 # Install dependencies with cache mount
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev --package aihub-agent
+    uv sync --frozen --no-dev --package swiss-ai-hub-agent
 
 
 # Runtime stage
@@ -67,6 +67,6 @@ COPY --from=builder --chown="$USERNAME:$USERNAME" /app /app
 # Switch to non-root user
 USER $USERNAME
 
-WORKDIR /app/aihub_agent
+WORKDIR /app/packages/agent
 
 ENTRYPOINT ["sh", "-c", "exec python -m \"app.${AGENT_NAME}.main\""]

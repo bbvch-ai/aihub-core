@@ -2,10 +2,10 @@ import json
 import logging
 from typing import Any
 
-from aihub_lib.nats.events.semantic.llm.Message import Message, TextContent
 from fastmcp import Client
 from mcp.types import TextContent as McpTextContent
 from mcp.types import Tool
+from swiss_ai_hub.core.events.agent.semantic.llm.message import Message, TextContent
 
 logger = logging.getLogger(__name__)
 

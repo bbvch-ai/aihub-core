@@ -2,24 +2,21 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
-    DangerousDevelopmentOnlyAuthSettings,
-)
-from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
-from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.mcp.McpClientConfig import McpClientConfig
-from aihub_lib.nats.events import UserMessageEvent
-from aihub_lib.nats.events.BaseEvent import BaseEvent
-from aihub_lib.nats.events.semantic.tool.ToolEvent import ToolEvent
-from aihub_lib.testing.asyncio_utils.bdd import async_test
 from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageRole
 from mcp.types import TextContent, Tool
 from pytest_bdd import given, scenarios, then, when
+from swiss_ai_hub.core.auth import DangerousDevelopmentOnlyAuthSettings
+from swiss_ai_hub.core.events import BaseEvent
+from swiss_ai_hub.core.events.agent import ToolEvent, UserMessageEvent
+from swiss_ai_hub.core.generative_ai import LLMConfig
+from swiss_ai_hub.core.i18n import LocaleString
+from swiss_ai_hub.core.mcp.mcp_client_config import McpClientConfig
+from swiss_ai_hub.core.testing import async_test
 
-from aihub_agent.runners.AgentTestRunner import AgentTestRunner
-from playground.minimal_workflow.mcp_react_workflow.events.McpReasoningEvent import McpReasoningEvent
-from playground.minimal_workflow.mcp_react_workflow.McpReactAgent import McpReactAgent
-from playground.minimal_workflow.mcp_react_workflow.McpReactAgentConfig import McpReactAgentConfig
+from playground.minimal_workflow.mcp_react_workflow.events.mcp_reasoning_event import McpReasoningEvent
+from playground.minimal_workflow.mcp_react_workflow.mcp_react_agent import McpReactAgent
+from playground.minimal_workflow.mcp_react_workflow.mcp_react_agent_config import McpReactAgentConfig
+from swiss_ai_hub.agent.runners import AgentTestRunner
 
 scenarios("./features/mcp_react_agent.feature")
 
@@ -75,7 +72,7 @@ async def _(agent_runner: AgentTestRunner):
     mock_mcp_client = AsyncMock()
     mock_mcp_client.list_tools = AsyncMock(return_value=[MOCK_TOOL])
     mock_mcp_client.call_tool = AsyncMock(
-        return_value=MagicMock(content=[TextContent(type="text", text="hello")], isError=False)
+        return_value=MagicMock(content=[TextContent(type="text", text="hello")], is_error=False)
     )
 
     @asynccontextmanager
@@ -89,7 +86,7 @@ async def _(agent_runner: AgentTestRunner):
         yield mock_llm
 
     with (
-        patch("aihub_agent.mcp.McpClientFactory.McpClientFactory.create", side_effect=fake_mcp_create),
+        patch("swiss_ai_hub.agent.mcp.mcp_client_factory.McpClientFactory.create", side_effect=fake_mcp_create),
         patch.object(LLMConfig, "cost_reporting_llm", fake_cost_reporting_llm),
     ):
         async with agent_runner.test_run() as topic:

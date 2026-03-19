@@ -5179,6 +5179,7 @@ name = "swiss-ai-hub-agent"
 version = "0.271.0"
 source = { editable = "packages/agent" }
 dependencies = [
+    { name = "fastmcp" },
     { name = "llama-index-llms-azure-openai" },
     { name = "llama-index-llms-openai" },
     { name = "stringcase" },
@@ -5193,6 +5194,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "fastmcp", specifier = ">=3.0.0" },
     { name = "llama-index-llms-azure-openai", specifier = ">=0.4.2" },
     { name = "llama-index-llms-openai", specifier = ">=0.6.12" },
     { name = "stringcase", specifier = ">=1.2.0" },

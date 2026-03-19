@@ -1,21 +1,21 @@
 import json
 from typing import ClassVar
 
-from aihub_lib.displayers.EventDisplayer import EventDisplayer
-from aihub_lib.mcp.McpClientConfig import McpClientConfig
-from aihub_lib.nats.events import StopEvent, UserMessageEvent
-from aihub_lib.nats.events.semantic.llm.Message import Message
-from aihub_lib.nats.events.semantic.tool.ToolEvent import ToolEvent
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from swiss_ai_hub.core.displayers import EventDisplayer
+from swiss_ai_hub.core.events.agent import Message, StopEvent, ToolEvent, UserMessageEvent
+from swiss_ai_hub.core.generative_ai import limit_chat_history
+from swiss_ai_hub.core.mcp.mcp_client_config import McpClientConfig
 
-from aihub_agent.agents.Agent import Agent
-from aihub_agent.context.run.RunContext import RunContext
-from aihub_agent.i18n.AgentLocaleString import AgentLocaleString
-from aihub_agent.mcp.mcp_tool_schemas import execute_tool_calls, to_openai_tool_schemas
-from aihub_agent.mcp.McpClientFactory import McpClientFactory
-from aihub_agent.workflow.decorators.precondition import precondition
-from aihub_agent.workflow.decorators.step import step
-from playground.minimal_workflow.mcp_react_workflow.events.McpReasoningEvent import McpReasoningEvent
-from playground.minimal_workflow.mcp_react_workflow.McpReactAgentConfig import McpReactAgentConfig
+from swiss_ai_hub.agent.agents.agent import Agent
+from swiss_ai_hub.agent.agents.mcp_react_agent.configs.mcp_react_agent_config import McpReactAgentConfig
+from swiss_ai_hub.agent.agents.mcp_react_agent.events.mcp_reasoning_event import McpReasoningEvent
+from swiss_ai_hub.agent.context.run.run_context import RunContext
+from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
+from swiss_ai_hub.agent.mcp.mcp_client_factory import McpClientFactory
+from swiss_ai_hub.agent.mcp.mcp_tool_schemas import execute_tool_calls, to_openai_tool_schemas
+from swiss_ai_hub.agent.workflow.decorators.precondition import precondition
+from swiss_ai_hub.agent.workflow.decorators.step import step
 
 TOOL_SCHEMAS_KEY = "mcp_tool_schemas"
 PENDING_TOOL_CALLS_KEY = "pending_tool_calls"
@@ -33,38 +33,54 @@ async def exceeded_max_iterations(reasoning_events: list[McpReasoningEvent], con
 
 
 class McpReactAgent(Agent):
-    """ReAct agent — reasoning, tool execution, and loop decision are separate observable steps."""
+    """ReAct agent that discovers and calls tools on an external MCP server."""
 
-    name: ClassVar[AgentLocaleString] = AgentLocaleString(
-        en="MCP React Agent", de="MCP React Agent", fr="Agent MCP React", it="Agente MCP React"
-    )
-    description: ClassVar[AgentLocaleString] = AgentLocaleString(
-        en="Calls tools on external MCP servers",
-        de="Ruft Tools auf externen MCP-Servern auf",
-        fr="Appelle des outils sur des serveurs MCP externes",
-        it="Chiama strumenti su server MCP esterni",
+    name: ClassVar[AgentLocaleString] = AgentLocaleString.from_i18n_path("agent.mcp_react_agent.metadata.name")
+    description: ClassVar[AgentLocaleString] = AgentLocaleString.from_i18n_path(
+        "agent.mcp_react_agent.metadata.description"
     )
     icon: ClassVar[str] = "mage:plug"
 
-    @step()
+    @step(
+        name=AgentLocaleString.from_i18n_path("agent.mcp_react_agent.steps.init.name"),
+        description=AgentLocaleString.from_i18n_path("agent.mcp_react_agent.steps.init.description"),
+        icon="mage:search",
+    )
     async def init_step(
         self,
         event: UserMessageEvent,
         mcp_config: McpClientConfig,
+        config: McpReactAgentConfig,
         run_context: RunContext,
     ) -> McpReasoningEvent:
-        """List MCP tools, seed conversation, trigger first reasoning iteration."""
-        print(f"[McpReactAgent.init_step] Discovering tools on {mcp_config.url}")
+        """Discover MCP tools, seed conversation with system prompt, trigger first reasoning iteration."""
         async with McpClientFactory.create(mcp_config) as mcp_client:
             tools = await mcp_client.list_tools()
 
         await run_context.set(TOOL_SCHEMAS_KEY, to_openai_tool_schemas(tools))
 
-        return McpReasoningEvent(
-            input_messages=[Message.from_llama_index(msg) for msg in event.messages],
+        messages: list[ChatMessage] = []
+        if config.system_prompt:
+            locale = event.locale
+            messages.append(ChatMessage(role=MessageRole.SYSTEM, content=config.system_prompt.in_locale(locale)))
+
+        messages.extend(msg for msg in event.messages if msg.role != MessageRole.SYSTEM)
+
+        limited = limit_chat_history(
+            chat_history=messages,
+            number_of_input_tokens=config.number_of_input_tokens,
         )
 
-    @step(precondition=within_max_iterations)
+        return McpReasoningEvent(
+            input_messages=[Message.from_llama_index(msg) for msg in limited],
+        )
+
+    @step(
+        name=AgentLocaleString.from_i18n_path("agent.mcp_react_agent.steps.reasoning.name"),
+        description=AgentLocaleString.from_i18n_path("agent.mcp_react_agent.steps.reasoning.description"),
+        icon="mage:light-bulb",
+        precondition=within_max_iterations,
+    )
     async def reasoning_step(
         self,
         event: McpReasoningEvent,
@@ -72,8 +88,7 @@ class McpReactAgent(Agent):
         displayer: EventDisplayer,
         run_context: RunContext,
     ) -> ToolEvent | StopEvent:
-        """Ask the LLM what to do next. Returns ToolEvent to continue or StopEvent to finish."""
-        print("[McpReactAgent.reasoning_step]")
+        """Ask the LLM what to do next — call a tool or respond to the user."""
         chat_messages = [m.to_llama_index() for m in event.input_messages]
         tool_schemas = await run_context.get(TOOL_SCHEMAS_KEY)
 
@@ -84,7 +99,6 @@ class McpReactAgent(Agent):
 
         if not assistant.tool_calls:
             await displayer.display_chunk(assistant.content, config.llm.model_name)
-            print(assistant.content)
             return StopEvent()
 
         await run_context.set(CONVERSATION_KEY, [m.model_dump() for m in [*event.input_messages, assistant]])
@@ -108,7 +122,12 @@ class McpReactAgent(Agent):
             parameters=arguments,
         )
 
-    @step(precondition=exceeded_max_iterations)
+    @step(
+        name=AgentLocaleString.from_i18n_path("agent.mcp_react_agent.steps.max_iterations_reached.name"),
+        description=AgentLocaleString.from_i18n_path("agent.mcp_react_agent.steps.max_iterations_reached.description"),
+        icon="mage:stop-sign",
+        precondition=exceeded_max_iterations,
+    )
     async def max_iterations_reached_step(
         self,
         _: McpReasoningEvent,
@@ -118,15 +137,18 @@ class McpReactAgent(Agent):
         await displayer.display_thought("Maximum reasoning iterations reached — stopping.")
         return StopEvent()
 
-    @step()
+    @step(
+        name=AgentLocaleString.from_i18n_path("agent.mcp_react_agent.steps.tool_execution.name"),
+        description=AgentLocaleString.from_i18n_path("agent.mcp_react_agent.steps.tool_execution.description"),
+        icon="mage:wand",
+    )
     async def tool_execution_step(
         self,
         _: ToolEvent,
         mcp_config: McpClientConfig,
         run_context: RunContext,
     ) -> McpReasoningEvent:
-        """Execute the requested tool calls and feed results back into the conversation."""
-        print("[McpReactAgent.tool_execution_step]")
+        """Execute the requested tool calls on the MCP server and feed results back into the conversation."""
         tool_calls = await run_context.get(PENDING_TOOL_CALLS_KEY)
         conversation = [Message.model_validate(m) for m in await run_context.get(CONVERSATION_KEY)]
 

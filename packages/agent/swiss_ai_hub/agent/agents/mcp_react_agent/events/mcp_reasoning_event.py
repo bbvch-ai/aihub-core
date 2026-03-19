@@ -1,4 +1,4 @@
-from aihub_lib.nats.events.semantic.llm.LLMEvent import LLMEvent
+from swiss_ai_hub.core.events.agent import LLMEvent
 
 
 class McpReasoningEvent(LLMEvent):

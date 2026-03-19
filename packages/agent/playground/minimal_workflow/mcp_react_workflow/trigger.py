@@ -1,18 +1,16 @@
 import asyncio
 
-from aihub_lib.auth.dependencies.DangerousDevelopmentOnlyAuthHandler.DangerousDevelopmentOnlyAuthSettings import (
-    DangerousDevelopmentOnlyAuthSettings,
-)
-from aihub_lib.generative_ai.resources.models.llm.LLMConfig import LLMConfig
-from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.infrastructure.logging.logger import enable_logging
-from aihub_lib.mcp.McpClientConfig import McpClientConfig
-from aihub_lib.nats.events import UserMessageEvent
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from swiss_ai_hub.core.auth import DangerousDevelopmentOnlyAuthSettings
+from swiss_ai_hub.core.events.agent import UserMessageEvent
+from swiss_ai_hub.core.generative_ai import LLMConfig
+from swiss_ai_hub.core.i18n import LocaleString
+from swiss_ai_hub.core.infrastructure import enable_logging
+from swiss_ai_hub.core.mcp.mcp_client_config import McpClientConfig
 
-from aihub_agent.runners.AgentTestRunner import AgentTestRunner
-from playground.minimal_workflow.mcp_react_workflow.McpReactAgent import McpReactAgent
-from playground.minimal_workflow.mcp_react_workflow.McpReactAgentConfig import McpReactAgentConfig
+from playground.minimal_workflow.mcp_react_workflow.mcp_react_agent import McpReactAgent
+from playground.minimal_workflow.mcp_react_workflow.mcp_react_agent_config import McpReactAgentConfig
+from swiss_ai_hub.agent.runners import AgentTestRunner
 
 enable_logging()
 

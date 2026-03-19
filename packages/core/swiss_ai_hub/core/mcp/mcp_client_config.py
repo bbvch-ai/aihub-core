@@ -2,10 +2,12 @@ from typing import Annotated, Self
 
 from pydantic import Field
 
-from aihub_lib.agents.AgentConfig import StepConfig
-from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events.form import InputNumber, InputText, Password
-from aihub_lib.nats.events.form.constraints import Gt
+from swiss_ai_hub.core.agents.agent_config import StepConfig
+from swiss_ai_hub.core.form.constraints import Gt
+from swiss_ai_hub.core.form.elements.input_number import InputNumber
+from swiss_ai_hub.core.form.elements.input_text import InputText
+from swiss_ai_hub.core.form.elements.password import Password
+from swiss_ai_hub.core.i18n.locale_string import LocaleString
 
 
 class McpClientConfig(StepConfig):

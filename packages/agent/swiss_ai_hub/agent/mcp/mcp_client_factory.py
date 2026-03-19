@@ -1,10 +1,10 @@
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
-from aihub_lib.mcp.McpClientConfig import McpClientConfig
 from fastmcp import Client
 from fastmcp.client.auth import BearerAuth
 from fastmcp.client.transports import StreamableHttpTransport
+from swiss_ai_hub.core.mcp.mcp_client_config import McpClientConfig
 
 
 class McpClientFactory:
