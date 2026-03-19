@@ -24,7 +24,7 @@ The best way to report a vulnerability is privately through GitHub's security ad
 
 1. Go to the **"Security"** tab of the `swiss-ai-hub` repository.
 2. Click on **"Report a vulnerability"** (or go directly to
-   [https://github.com/bbvch-ai/swiss-ai-hub/security/advisories/new](https://github.com/bbvch-ai/swiss-ai-hub/security/advisories/new)).
+   [https://github.com/bbvch-ai/aihub-core/security/advisories/new](https://github.com/bbvch-ai/aihub-core/security/advisories/new)).
 3. Fill out the form with as much detail as possible.
 
 ### 2. Discord (Alternative Method)
@@ -56,7 +56,7 @@ To help us validate and fix the issue quickly, please provide:
 
 This security policy is **not** for:
 
-- General bug reports (please use **[GitHub Issues](https://github.com/bbvch-ai/swiss-ai-hub/issues)**)
+- General bug reports (please use **[GitHub Issues](https://github.com/bbvch-ai/aihub-core/issues)**)
 - Support questions or "how-to" guides (please join our **[Discord Server](https://discord.gg/wArT8zDB)**)
 - Help with configuring or deploying the platform (please join our **[Discord Server](https://discord.gg/wArT8zDB)**)
 

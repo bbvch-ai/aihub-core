@@ -16,7 +16,7 @@ and incorporate the results into their outputs.
 
 This works well for simple, single-operation API calls within agent workflows. An agent might retrieve customer data
 from a CRM during conversation, submit form data to an external portal after user approval, or query a ticketing system
-to answer questions. The [Agent Developer README](https://github.com/bbvch-ai/swiss-ai-hub/tree/main/aihub_agent) has
+to answer questions. The [Agent Developer README](https://github.com/bbvch-ai/aihub-core/tree/main/aihub_agent) has
 implementation patterns and examples.
 
 ### 2. Platform API integration (external systems calling in)
@@ -82,7 +82,7 @@ through OAuth 2.0, SAML, or Azure AD. Configure proper firewall rules for inboun
 
 ## Related documentation
 
-- Agents: [Agent Developer Guide](https://github.com/bbvch-ai/swiss-ai-hub/tree/main/aihub_agent) - Implementing direct
+- Agents: [Agent Developer Guide](https://github.com/bbvch-ai/aihub-core/tree/main/aihub_agent) - Implementing direct
   API calls
 - API: [Agent Interaction REST API](../18_api/2_agent_interaction_api/) - Platform HTTP interface
 - Pipelines: [Data Pipelines](../6_pipelines/) - Automated data synchronization

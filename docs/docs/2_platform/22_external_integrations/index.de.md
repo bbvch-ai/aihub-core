@@ -18,7 +18,7 @@ Logik, verarbeiten Antworten und integrieren die Ergebnisse in ihre Ausgaben.
 Dies funktioniert gut für einfache API-Aufrufe mit Einzeloperationen innerhalb von Agenten-Workflows. Ein Agent könnte
 während eines Gesprächs Kundendaten aus einem CRM abrufen, Formulardaten nach Benutzergenehmigung an ein externes Portal
 übermitteln oder ein Ticketsystem abfragen, um Fragen zu beantworten. Das
-[Agent Developer README](https://github.com/bbvch-ai/swiss-ai-hub/tree/main/aihub_agent) enthält Implementierungsmuster
+[Agent Developer README](https://github.com/bbvch-ai/aihub-core/tree/main/aihub_agent) enthält Implementierungsmuster
 und Beispiele.
 
 ### 2. Plattform-API-Integration (externe Systeme rufen auf)

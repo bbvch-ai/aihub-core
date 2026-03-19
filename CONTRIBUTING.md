@@ -55,10 +55,10 @@ these steps.
 **We strongly discourage "floating" Pull Requests** (PRs that are not connected to an existing issue or discussion). All
 work should be tracked.
 
-- **To Fix a Bug:** First, **[create a new GitHub issue](https://github.com/bbvch-ai/swiss-ai-hub/issues/new)** to
+- **To Fix a Bug:** First, **[create a new GitHub issue](https://github.com/bbvch-ai/aihub-core/issues/new)** to
   describe the bug.
 - **To Propose a Feature:** First,
-  **[start a new GitHub Discussion](https://github.com/bbvch-ai/swiss-ai-hub/discussions)** to outline your idea.
+  **[start a new GitHub Discussion](https://github.com/bbvch-ai/aihub-core/discussions)** to outline your idea.
 - **To Find Work:** The best way is to go to our
   **[GitHub Project Roadmap](https://github.com/orgs/bbvch-ai/projects/13)**. Look for small (XSS, XS or S) features in
   future months that are not yet assigned.

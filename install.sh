@@ -3,10 +3,10 @@
 # Swiss AI-Hub Installer
 #
 # One-line install:
-#   curl -fsSL https://raw.githubusercontent.com/bbvch-ai/swiss-ai-hub/main/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/bbvch-ai/aihub-core/main/install.sh | bash
 #
 # Or with options:
-#   curl -fsSL https://raw.githubusercontent.com/bbvch-ai/swiss-ai-hub/main/install.sh | bash -s -- --gpu --dir ./my-hub
+#   curl -fsSL https://raw.githubusercontent.com/bbvch-ai/aihub-core/main/install.sh | bash -s -- --gpu --dir ./my-hub
 #
 set -euo pipefail
 
@@ -16,7 +16,7 @@ VERSION=""
 VERSION_EXPLICIT=false
 HARDWARE=""
 INSTALL_DIR="./swiss-ai-hub"
-GITHUB_REPO="bbvch-ai/swiss-ai-hub"
+GITHUB_REPO="bbvch-ai/aihub-core"
 
 # ── Color / formatting ───────────────────────────────────────────────────────
 

@@ -13,7 +13,7 @@ komplette KI-Infrastruktur in Minutenschnelle, nicht stundenweise, zum Laufen.
 Führen Sie einen einzigen Befehl aus, um die Plattform herunterzuladen, zu extrahieren und einzurichten:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/bbvch-ai/swiss-ai-hub/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/bbvch-ai/aihub-core/main/install.sh | bash
 ```
 
 Der Installer erkennt automatisch GPU-Hardware, lädt das korrekte Release-Bundle herunter und generiert alle Secrets.

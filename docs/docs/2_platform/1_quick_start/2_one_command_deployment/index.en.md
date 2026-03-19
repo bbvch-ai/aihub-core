@@ -12,7 +12,7 @@ infrastructure running in minutes, not hours.
 Run a single command to download, extract, and set up the platform:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/bbvch-ai/swiss-ai-hub/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/bbvch-ai/aihub-core/main/install.sh | bash
 ```
 
 The installer auto-detects GPU hardware, downloads the correct release bundle, and generates all secrets. Afterwards,

@@ -6,7 +6,7 @@ allowed-tools: Bash, Read, Edit, Grep, Glob
 
 # Implement PR Feedback - Turn Reviews into Improvements
 
-Implement review feedback from PR \$ARGUMENTS in the `bbvch-ai/swiss-ai-hub` monorepo.
+Implement review feedback from PR \$ARGUMENTS in the `bbvch-ai/aihub-core` monorepo.
 
 ## Step 1: Fetch All Feedback
 

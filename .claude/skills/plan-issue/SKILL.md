@@ -1,12 +1,12 @@
 ---
 name: plan-issue
-description: Fetch a GitHub issue from bbvch-ai/swiss-ai-hub and create an implementation plan using monorepo scope analysis, ADR checks, and scaffold skill mapping. Use when user says 'plan this issue', 'how should I implement issue #X', 'plan implementation', 'break down this issue', 'fetch issue and plan', 'what needs to change for #X', or 'implementation strategy for issue'. Takes an issue number as argument. Do NOT use for directly implementing code (use plan mode), PR feedback (use /implement-feedback-from-pr), or code review (use /review-diff).
+description: Fetch a GitHub issue from bbvch-ai/aihub-core and create an implementation plan using monorepo scope analysis, ADR checks, and scaffold skill mapping. Use when user says 'plan this issue', 'how should I implement issue #X', 'plan implementation', 'break down this issue', 'fetch issue and plan', 'what needs to change for #X', or 'implementation strategy for issue'. Takes an issue number as argument. Do NOT use for directly implementing code (use plan mode), PR feedback (use /implement-feedback-from-pr), or code review (use /review-diff).
 allowed-tools: Bash, Read, Grep, Glob
 ---
 
 # Plan Issue - GitHub Issue to Implementation Plan
 
-Fetch issue \$ARGUMENTS from `bbvch-ai/swiss-ai-hub` and produce a scoped implementation plan.
+Fetch issue \$ARGUMENTS from `bbvch-ai/aihub-core` and produce a scoped implementation plan.
 
 ## Step 1: Fetch the Issue
 
@@ -99,7 +99,7 @@ Structure the plan with these sections:
 
 | Problem                       | Solution                                                       |
 | ----------------------------- | -------------------------------------------------------------- |
-| Issue not found               | Verify issue number: `gh issue list -R bbvch-ai/swiss-ai-hub`  |
+| Issue not found               | Verify issue number: `gh issue list -R bbvch-ai/aihub-core`  |
 | Issue is vague                | List what needs clarification, suggest asking the issue author |
 | Spans too many scopes         | Break into sub-tasks, suggest splitting the issue              |
 | No existing pattern to follow | Flag as risk — may need an ADR for the new pattern             |
