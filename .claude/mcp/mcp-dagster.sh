@@ -2,7 +2,7 @@
 set -e
 # Dagster MCP — MCP server for Dagster data pipeline orchestration.
 # Explore pipelines, monitor runs, manage assets, and inspect jobs via natural language.
-# Dagster powers the aihub_pipeline data ingestion and processing workflows.
+# Dagster powers the packages/pipeline data ingestion and processing workflows.
 #
 # Connects to the local Dagster instance. For local dev, runs on port 3000.
 # Dagster does not require authentication in dev mode.

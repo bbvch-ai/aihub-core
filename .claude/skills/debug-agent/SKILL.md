@@ -17,7 +17,7 @@ Debug an AI agent. Agent name or issue description via `$ARGUMENTS`.
 
 ## Before You Start
 
-Read the agent scope guide: `aihub_agent/CLAUDE.md`
+Read the agent scope guide: `packages/agent/CLAUDE.md`
 
 ## Debugging Mental Model
 
@@ -40,13 +40,14 @@ Events. The dispatcher (not the developer) decides execution order based on data
 2. **Evaluation:** Upon receiving event *e*, identifies all steps *S* where *e* ∈ *input_types(S)*
 3. **Trigger:** Invokes step *S* if and only if all required inputs are present in the `EventStore`
 
-Source: `aihub_lib/nats/dispatcher/BaseDispatcher.py`, `aihub_agent/dispatchers/AgentDispatcher.py`
+Source: `packages/core/swiss_ai_hub/core/dispatcher/base_dispatcher.py`,
+`packages/agent/swiss_ai_hub/agent/dispatchers/agent_dispatcher.py`
 
 ______________________________________________________________________
 
 ## Step 1: Locate & Map the Agent
 
-1. Search `aihub_agent/aihub_agent/agents/` and `aihub_agent/playground/` for the agent class
+1. Search `packages/agent/swiss_ai_hub/agent/agents/` and `packages/agent/playground/` for the agent class
 2. Extract all `@step` methods with their signatures:
 
 ```python
@@ -58,7 +59,7 @@ ______________________________________________________________________
 
 3. Map the event DAG: `StartEvent → step_1() → EventA → step_2() → ... → StopEvent`
 4. Find the `AgentConfig` subclass and its `as_form()` method
-5. Find the entry point in `aihub_agent/app/*/main.py`
+5. Find the entry point in `packages/agent/app/*/main.py`
 
 **Output**: Complete step/event chain with parameter types and decorator options.
 
@@ -99,7 +100,8 @@ Understanding these rules is essential for diagnosing most agent bugs.
 | R5   | Precondition Override    | `@precondition` re-evaluates on each new event arrival AFTER R1 — deadlock if never satisfied       |
 | R6   | Event Persistence        | Every `ControlEvent` persisted in JetStream, replayed on dispatcher restart                         |
 
-Source: `aihub_lib/nats/dispatcher/BaseDispatcher._step_meets_basic_execution_requirements()`
+Source: `packages/core/swiss_ai_hub/core/dispatcher/base_dispatcher.py`
+(`BaseDispatcher._step_meets_basic_execution_requirements()`)
 
 ### Parameter Types and Their Execution Behavior
 
@@ -112,7 +114,7 @@ Source: `aihub_lib/nats/dispatcher/BaseDispatcher._step_meets_basic_execution_re
 
 \*`list[T]` is treated as optional — an empty list doesn't block execution.
 
-Source: `aihub_lib/nats/dispatcher/BaseDispatcher._get_event_value()`
+Source: `packages/core/swiss_ai_hub/core/dispatcher/base_dispatcher.py` (`BaseDispatcher._get_event_value()`)
 
 ### Race Condition Problem
 
@@ -136,8 +138,8 @@ B.
 | Make param required (remove `\| None`) | Always needed                 | `event: B` instead of `event: B \| None`               |
 | `max_executions_per_run=1`             | Run once regardless           | `@step(max_executions_per_run=1)` — idempotency guard  |
 
-Source: `aihub_agent/workflow/decorators/precondition.py`,
-`aihub_lib/nats/workflow/annotations/custom_types/ListOfSize.py`
+Source: `packages/agent/swiss_ai_hub/agent/workflow/decorators/precondition.py`,
+`packages/core/swiss_ai_hub/core/workflow/annotations/custom_types/list_of_size.py`
 
 ### List Parameter Behavior
 
@@ -176,7 +178,7 @@ When binding events to step parameters:
 The dispatcher tracks which events were used as input for each step execution. If a step is triggered again with the
 exact same set of input events (by event ID), the execution is silently skipped.
 
-Source: `StepStore.was_called_with_events()` in `aihub_lib/nats/dispatcher/stores/step/StepStore.py`
+Source: `StepStore.was_called_with_events()` in `packages/core/swiss_ai_hub/core/dispatcher/stores/step/step_store.py`
 
 ______________________________________________________________________
 
@@ -371,7 +373,7 @@ fires) or throw TypeError.
 | `AgentMemory`                          | User and organization memory access   |
 | `AgentInstanceTopic`                   | NATS topic info for this event        |
 
-Source: `AgentDispatcher._get_parameter_value()` in `aihub_agent/dispatchers/AgentDispatcher.py`
+Source: `AgentDispatcher._get_parameter_value()` in `packages/agent/swiss_ai_hub/agent/dispatchers/agent_dispatcher.py`
 
 ______________________________________________________________________
 
@@ -398,7 +400,7 @@ ______________________________________________________________________
 1. **Check NATS server**: Use `mcp__nats__server_info`
 
    - Look for: Server running, connections active
-   - If this fails: Docker dev stack isn't running (`docker compose -f docker-compose.dev.yml up -d`)
+   - If this fails: Docker dev stack isn't running (`docker compose -f infra/docker-compose.dev.yml up -d`)
 
 2. **Check streams exist**: Use `mcp__nats__stream_list`
 
@@ -782,13 +784,13 @@ After identifying and fixing the issue, verify with tests.
 ### Running Tests
 
 ```bash
-cd aihub_agent && uv run pytest tests/ -k "<agent_name>" -v
+cd packages/agent && uv run pytest tests/ -k "<agent_name>" -v
 ```
 
 ### AgentTestRunner Assertions
 
 ```python
-from aihub_agent.runners.AgentTestRunner import AgentTestRunner
+from swiss_ai_hub.agent.runners.AgentTestRunner import AgentTestRunner
 
 async with AgentTestRunner(agent_type=MyAgent, agent_config=MyConfig.as_form()).test_run() as runner:
     await runner.send_event_from_topic(UserMessageEvent(message="test"))
@@ -817,7 +819,7 @@ Feature: My Agent
     And the agent does not produce an "ExceptionEvent"
 ```
 
-Source: `aihub_agent/runners/AgentTestRunner.py`, `aihub_lib/testing/asyncio_utils/bdd.py`
+Source: `packages/agent/runners/AgentTestRunner.py`, `packages/core/testing/asyncio_utils/bdd.py`
 
 ______________________________________________________________________
 

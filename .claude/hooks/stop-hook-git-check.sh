@@ -4,7 +4,7 @@
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$REPO_ROOT" || exit 0
 
-SCOPES=("aihub_lib" "aihub_agent" "aihub_process" "aihub_api" "aihub_bot" "aihub_pipeline" "aihub_web")
+SCOPES=("packages/core" "packages/agent" "packages/process" "packages/api" "packages/bot" "packages/pipeline" "packages/web")
 
 # Find scopes with modified files
 changed_files=$(git diff --name-only 2>/dev/null)
@@ -63,12 +63,11 @@ if [[ "$failed" == "true" ]]; then
   exit 2
 fi
 
-# Stage untracked files
+# Warn about untracked files (non-blocking — exit 0 to avoid infinite stop-hook loops)
 untracked=$(git ls-files --others --exclude-standard 2>/dev/null | head -20)
 if [[ -n "$untracked" ]]; then
-  echo "Untracked files detected — stage them with git add:" >&2
+  echo "Untracked files detected — consider staging them with git add:" >&2
   echo "$untracked" | while read -r f; do echo "  - $f" >&2; done
-  exit 2
 fi
 
 exit 0

@@ -16,7 +16,7 @@ fi
 
 # Check Docker status (quick check)
 if command -v docker &>/dev/null; then
-  running=$(docker compose -f docker-compose.dev.yml ps --format json 2>/dev/null | head -1)
+  running=$(docker compose -f infra/docker-compose.dev.yml ps --format json 2>/dev/null | head -1)
   if [[ -z "$running" ]]; then
     echo "Docker dev stack is not running. Start with: make up-dev" >&2
   fi
@@ -28,8 +28,8 @@ if [[ -z "$CLAUDE_CODE_REMOTE" ]]; then
   uv sync --all-packages 2>&1 | tail -3 >&2
 
   # Install frontend dependencies
-  if [[ -d "$REPO_ROOT/aihub_web/aihub_web" && -f "$REPO_ROOT/aihub_web/aihub_web/package.json" ]]; then
-    (cd "$REPO_ROOT/aihub_web/aihub_web" && pnpm install --frozen-lockfile 2>&1 | tail -1) >&2
+  if [[ -d "$REPO_ROOT/packages/web/swiss_ai_hub_web" && -f "$REPO_ROOT/packages/web/swiss_ai_hub_web/package.json" ]]; then
+    (cd "$REPO_ROOT/packages/web/swiss_ai_hub_web" && pnpm install --frozen-lockfile 2>&1 | tail -1) >&2
   fi
 else
   # Web session: install from scratch
@@ -51,8 +51,8 @@ else
   uv sync --all-packages 2>&1 | tail -3 >&2
 
   # Install frontend dependencies
-  if [[ -d "$REPO_ROOT/aihub_web/aihub_web" && -f "$REPO_ROOT/aihub_web/aihub_web/package.json" ]]; then
-    (cd "$REPO_ROOT/aihub_web/aihub_web" && pnpm install --frozen-lockfile 2>&1 | tail -1) >&2
+  if [[ -d "$REPO_ROOT/packages/web/swiss_ai_hub_web" && -f "$REPO_ROOT/packages/web/swiss_ai_hub_web/package.json" ]]; then
+    (cd "$REPO_ROOT/packages/web/swiss_ai_hub_web" && pnpm install --frozen-lockfile 2>&1 | tail -1) >&2
   fi
 
   echo "Dependency installation complete." >&2

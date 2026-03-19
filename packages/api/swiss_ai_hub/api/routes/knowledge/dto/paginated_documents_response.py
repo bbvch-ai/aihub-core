@@ -1,0 +1,13 @@
+from typing import Annotated
+
+from pydantic import Field
+
+from swiss_ai_hub.api.pagination.page_dto import PageDTO
+from swiss_ai_hub.api.routes.knowledge.dto.document_dto import DocumentDTO
+
+
+class PaginatedDocumentsResponse(PageDTO):
+    documents: Annotated[
+        list[DocumentDTO],
+        Field(description="List of Document DTOs objects for the current page"),
+    ]

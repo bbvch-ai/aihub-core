@@ -1,6 +1,6 @@
 #!/bin/bash
 # PostToolUse hook: Auto-format frontend files after Edit/Write operations.
-# Runs ESLint fix on TypeScript and Vue files within aihub_web.
+# Runs ESLint fix on TypeScript and Vue files within swiss_ai_hub_web.
 
 input=$(cat)
 tool_name=$(echo "$input" | jq -r '.tool_name // empty')
@@ -17,10 +17,10 @@ if [[ "$file_path" != *.ts && "$file_path" != *.vue && "$file_path" != *.tsx ]];
 fi
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-WEB_DIR="$REPO_ROOT/aihub_web/aihub_web"
+WEB_DIR="$REPO_ROOT/packages/web/swiss_ai_hub_web"
 
-# Only format files within aihub_web
-if [[ "$file_path" == *aihub_web* ]]; then
+# Only format files within swiss_ai_hub_web
+if [[ "$file_path" == *swiss_ai_hub_web* ]]; then
   cd "$WEB_DIR" 2>/dev/null || exit 0
   npx eslint --fix "$file_path" 2>/dev/null
 fi

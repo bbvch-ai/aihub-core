@@ -1,44 +1,44 @@
 ---
 name: document-feature
-description: Create user-facing feature documentation for the aihub_doc VitePress docs site. Analyzes the codebase and produces an index.en.md in the correct docs directory. Use when user says 'document this feature', 'write feature docs', 'create docs for X', 'add feature to docs site', or 'user-facing documentation for'. Takes feature name as argument. Do NOT use for ADRs (use /document-decision) or syncing existing docs (use /update-doc).
+description: Create user-facing feature documentation for the docs VitePress docs site. Analyzes the codebase and produces an index.en.md in the correct docs directory. Use when user says 'document this feature', 'write feature docs', 'create docs for X', 'add feature to docs site', or 'user-facing documentation for'. Takes feature name as argument. Do NOT use for ADRs (use /document-decision) or syncing existing docs (use /update-doc).
 allowed-tools: Read, Grep, Glob, Write
 ---
 
 # Document Feature - Create User-Facing VitePress Documentation
 
-Create user-facing documentation for feature "\$ARGUMENTS" on the AI-Hub VitePress docs site. Analyzes the codebase,
-then produces an `index.en.md` file for end users.
+Create user-facing documentation for feature "\$ARGUMENTS" on the Swiss AI Hub VitePress docs site. Analyzes the
+codebase, then produces an `index.en.md` file for end users.
 
 ## Before You Start
 
 Read these existing feature docs to understand the tone and structure:
 
-- **MCP**: `aihub_doc/docs/2_platform/19_mcp/index.en.md` — standards-based integration doc with capabilities breakdown
-- **Memory**: `aihub_doc/docs/2_platform/15_memory/index.en.md` — conversational style with "why it matters", "how it
-  works", "two types" sections
-- **Cost Control**: `aihub_doc/docs/2_platform/14_cost_control/index.en.md` — uses `::: details` containers organically,
+- **MCP**: `docs/docs/2_platform/19_mcp/index.en.md` — standards-based integration doc with capabilities breakdown
+- **Memory**: `docs/docs/2_platform/15_memory/index.en.md` — conversational style with "why it matters", "how it works",
+  "two types" sections
+- **Cost Control**: `docs/docs/2_platform/14_cost_control/index.en.md` — uses `::: details` containers organically,
   includes comparison tables
 
 Real docs use natural, conversational section headers — NOT a rigid template. Match the style you see.
 
 ## Step 1: Research the Feature
 
-Search for the feature across scopes (`aihub_lib`, `aihub_agent`, `aihub_api`, `aihub_pipeline`, `aihub_process`,
-`aihub_web`). Understand what it does, how users interact with it, and what makes it valuable.
+Search for the feature across scopes (`packages/core`, `packages/agent`, `packages/api`, `packages/pipeline`,
+`packages/process`, `packages/web`). Understand what it does, how users interact with it, and what makes it valuable.
 
 ## Step 2: Choose the Docs Location
 
-Feature docs live under `aihub_doc/docs/`. Determine where based on audience:
+Feature docs live under `docs/docs/`. Determine where based on audience:
 
-- **Platform features** (user-facing: UI, chat, admin): `aihub_doc/docs/2_platform/{N}_{topic}/index.en.md`
-- **SDK features** (developer-facing: building agents, pipelines, processes): `aihub_doc/docs/3_sdk/6_feature_overview/`
+- **Platform features** (user-facing: UI, chat, admin): `docs/docs/2_platform/{N}_{topic}/index.en.md`
+- **SDK features** (developer-facing: building agents, pipelines, processes): `docs/docs/3_sdk/6_feature_overview/`
 
 Directory naming uses a **numeric prefix** for sidebar ordering (e.g., `19_mcp/`, `15_memory/`). Check existing
 directories to pick the next available number:
 
 ```bash
-ls -d aihub_doc/docs/2_platform/*/
-ls -d aihub_doc/docs/3_sdk/*/
+ls -d docs/docs/2_platform/*/
+ls -d docs/docs/3_sdk/*/
 ```
 
 ## Step 3: Create the Documentation File
@@ -53,7 +53,7 @@ title: Feature Title
 ---
 ```
 
-**Writing conventions** (from `aihub_doc/CLAUDE.md`):
+**Writing conventions** (from `docs/CLAUDE.md`):
 
 - User-facing perspective, present tense, jargon-free language
 - VitePress containers: `::: info`, `::: warning`, `::: details` — use organically, not as rigid template
@@ -72,13 +72,13 @@ After creating the English file:
 
 ```bash
 # File exists at the right location
-ls aihub_doc/docs/2_platform/*_{topic}/index.en.md
+ls docs/docs/2_platform/*_{topic}/index.en.md
 
 # Front matter has title
-head -5 aihub_doc/docs/2_platform/*_{topic}/index.en.md
+head -5 docs/docs/2_platform/*_{topic}/index.en.md
 
 # Preview (if dev server is available)
-cd aihub_doc && pnpm run docs:dev
+cd docs && pnpm run docs:dev
 ```
 
 Compare your doc with the exemplars from "Before You Start" — it should match their tone and depth.
@@ -94,7 +94,7 @@ Compare your doc with the exemplars from "Before You Start" — it should match 
 
 ## Done When
 
-- `index.en.md` created in the correct `aihub_doc/docs/` subdirectory
+- `index.en.md` created in the correct `docs/docs/` subdirectory
 - Front matter has `title` field
 - Style matches existing feature docs (MCP, Memory, Cost Control)
 - No `index.de.md` created manually (translation pipeline handles this)

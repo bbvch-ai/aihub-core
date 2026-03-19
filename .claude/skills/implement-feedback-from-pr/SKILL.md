@@ -19,7 +19,7 @@ Use the GitHub MCP server (`mcp__github__pull_request_read`) to gather structure
 4. **CI status**: `method: "get_status"` — build and check results
 5. **Changed files**: `method: "get_files"` — list of modified files for scope detection
 
-All calls use `owner: "bbvch-ai"`, `repo: "aihub-core"`, `pullNumber: $PR_NUMBER`.
+All calls use `owner: "bbvch-ai"`, `repo: "swiss-ai-hub"`, `pullNumber: $PR_NUMBER`.
 
 ## Step 2: Triage Feedback
 
@@ -37,9 +37,9 @@ This repo's CI pipeline (`.github/workflows/analyze-test-pr.yml`) runs three bot
 
 - **`sonarcloud-scan`** — scans three SonarCloud projects:
 
-  - `aihub-core_lib-core` (aihub_lib)
-  - `aihub-core_api-core` (aihub_api)
-  - `aihub-core_agents-core` (aihub_agent)
+  - `swiss-ai-hub_lib-core` (packages/core)
+  - `swiss-ai-hub_api-core` (packages/api)
+  - `swiss-ai-hub_agents-core` (packages/agent)
 
   SonarCloud bugs and vulnerabilities: almost always fix. Code smells: fix if straightforward. Security hotspots:
   evaluate case-by-case.
@@ -47,8 +47,9 @@ This repo's CI pipeline (`.github/workflows/analyze-test-pr.yml`) runs three bot
 ## Step 3: Identify Affected Scopes
 
 Use the file list from Step 1 (`get_files`) to determine which monorepo scopes need testing. Map changed file paths to
-scopes: `aihub_lib/` → aihub_lib, `aihub_api/` → aihub_api, `aihub_agent/` → aihub_agent, `aihub_pipeline/` →
-aihub_pipeline, `aihub_process/` → aihub_process, `aihub_bot/` → aihub_bot, `aihub_web/` → aihub_web.
+scopes: `packages/core/` → packages/core, `packages/api/` → packages/api, `packages/agent/` → packages/agent,
+`packages/pipeline/` → packages/pipeline, `packages/process/` → packages/process, `packages/bot/` → packages/bot,
+`packages/web/` → packages/web.
 
 ## Step 4: Implement Changes
 
@@ -64,8 +65,8 @@ After all changes are implemented:
 make -C /home/joelbarmettler/projects/aihub/aihub-core pr-ready
 
 # Run tests in affected scopes (or delegate to /test-scope)
-make -C aihub_lib test    # if aihub_lib was affected
-make -C aihub_api test    # if aihub_api was affected
+make -C packages/core test    # if packages/core was affected
+make -C packages/api test    # if packages/api was affected
 ```
 
 ## Troubleshooting
@@ -76,7 +77,7 @@ make -C aihub_api test    # if aihub_api was affected
 | Inline comments not visible         | Use `get_review_comments` method (not `get_comments`)                 |
 | SonarCloud findings unclear         | Check the SonarCloud link in the bot comment for detailed explanation |
 | `make pr-ready` fails after changes | Fix lint errors introduced by your fixes, re-run                      |
-| Tests fail in unrelated scope       | Check if `aihub_lib` changes broke a downstream scope                 |
+| Tests fail in unrelated scope       | Check if `packages/core` changes broke a downstream scope             |
 
 ## Done When
 

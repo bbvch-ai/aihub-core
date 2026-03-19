@@ -11,8 +11,8 @@ allowed-tools: Read, Grep, Glob
 
 Look up Dagster pipeline information. Topic or question via `$ARGUMENTS`.
 
-For architecture overview, folder structure, and domain types, see `aihub_pipeline/CLAUDE.md` (loaded automatically when
-working in the pipeline scope).
+For architecture overview, folder structure, and domain types, see `packages/pipeline/CLAUDE.md` (loaded automatically
+when working in the pipeline scope).
 
 ______________________________________________________________________
 
@@ -37,13 +37,13 @@ ______________________________________________________________________
 
 ## Definitions Factory Pattern
 
-The `aihub_pipeline/aihub_pipeline/util/definitions_util.py` provides factory functions that assemble complete
+The `packages/pipeline/swiss_ai_hub/pipeline/util/definitions_util.py` provides factory functions that assemble complete
 `Definitions` objects with all assets, resources, sensors, jobs, and schedules wired together.
 
 ### `default_definitions()` — Stage 2 (DataLake to Vector Store)
 
 ```python
-from aihub_pipeline.util.definitions_util import default_definitions
+from swiss_ai_hub.pipeline.util.definitions_util import default_definitions
 
 defs = default_definitions(
     datalake_container_name="my-bucket",          # S3 bucket name
@@ -66,7 +66,7 @@ defs = default_definitions(
 ### `default_sharepoint_to_datalake_definitions()` — Stage 1 (SharePoint to S3)
 
 ```python
-from aihub_pipeline.util.definitions_util import default_sharepoint_to_datalake_definitions
+from swiss_ai_hub.pipeline.util.definitions_util import default_sharepoint_to_datalake_definitions
 
 defs = default_sharepoint_to_datalake_definitions(
     datalake_container_name="sharepoint-docs",
@@ -81,7 +81,7 @@ defs = default_sharepoint_to_datalake_definitions(
 ### `default_local_filesystem_to_datalake_definitions()` — Stage 1 (Local FS to S3)
 
 ```python
-from aihub_pipeline.util.definitions_util import default_local_filesystem_to_datalake_definitions
+from swiss_ai_hub.pipeline.util.definitions_util import default_local_filesystem_to_datalake_definitions
 
 defs = default_local_filesystem_to_datalake_definitions(
     datalake_container_name="local-docs",
@@ -96,7 +96,7 @@ defs = default_local_filesystem_to_datalake_definitions(
 ### `default_rclone_to_datalake_definitions()` — Stage 1 (Rclone to S3)
 
 ```python
-from aihub_pipeline.util.definitions_util import default_rclone_to_datalake_definitions
+from swiss_ai_hub.pipeline.util.definitions_util import default_rclone_to_datalake_definitions
 
 defs = default_rclone_to_datalake_definitions(
     datalake_container_name="onedrive-docs",
@@ -113,7 +113,7 @@ ______________________________________________________________________
 ## Asset Factory Pattern
 
 All assets are created via **factory functions** that return parameterized `@graph_asset` or `@observable_source_asset`
-definitions. Factories live in `aihub_pipeline/aihub_pipeline/assets/factories/`.
+definitions. Factories live in `packages/pipeline/swiss_ai_hub/pipeline/assets/factories/`.
 
 ### Graph Asset Factory
 
@@ -272,7 +272,7 @@ Resources are external dependencies injected into ops. All use Dagster's `Config
 ### Resource Factory Pattern
 
 ```python
-# aihub_pipeline/aihub_pipeline/resources/factory.py
+# packages/pipeline/swiss_ai_hub/pipeline/resources/factory.py
 
 def s3_data_lake_resources(container_name, directory_name=None) -> dict:
     data_lake_client = S3DataLakeClientResource(container_name=container_name)
@@ -299,7 +299,7 @@ def local_mongo_milvus_storage_context_resource(vector_store_uri, store_name, di
 
 ### Settings Integration
 
-Resources read connection details from `aihub_lib` settings (Pydantic `BaseSettings`):
+Resources read connection details from `packages/core` settings (Pydantic `BaseSettings`):
 
 | Settings Class                      | Env Prefix                     | Purpose                |
 | ----------------------------------- | ------------------------------ | ---------------------- |
@@ -314,7 +314,7 @@ ______________________________________________________________________
 ## IO Managers
 
 IO managers control how assets are stored and retrieved. Each storage system has a dedicated IO manager in
-`aihub_pipeline/aihub_pipeline/io/`.
+`packages/pipeline/swiss_ai_hub/pipeline/io/`.
 
 | IO Manager                 | Key                            | Storage      | Direction     | Partition Behavior              |
 | -------------------------- | ------------------------------ | ------------ | ------------- | ------------------------------- |
@@ -374,7 +374,7 @@ document_partitions = DynamicPartitionsDefinition(
 ### Partition Management
 
 ```python
-# aihub_pipeline/aihub_pipeline/util/partition_utils.py
+# packages/pipeline/swiss_ai_hub/pipeline/util/partition_utils.py
 
 def replace_partition_keys(context, partition_name, keys, max_partitions):
     existing = set(context.instance.get_dynamic_partitions(partition_name))
@@ -427,7 +427,7 @@ def my_asset(...):
 ### Custom: All Dependencies Completed
 
 ```python
-# aihub_pipeline/aihub_pipeline/automation/all_deps_completed.py
+# packages/pipeline/swiss_ai_hub/pipeline/automation/all_deps_completed.py
 from dagster import AutomationCondition
 
 all_deps_completed = (
@@ -461,7 +461,7 @@ ______________________________________________________________________
 Polls NATS JetStream for `SourceUpdatedEvent` to trigger pipeline runs:
 
 ```python
-from aihub_pipeline.sensors.nats.nats_document_uploaded_sensor import nats_document_uploaded_sensor
+from swiss_ai_hub.pipeline.sensors.nats.nats_document_uploaded_sensor import nats_document_uploaded_sensor
 
 sensor = nats_document_uploaded_sensor(
     job=observe_job,
@@ -482,7 +482,7 @@ detects new partition. Downstream assets with `AutomationCondition.eager()` auto
 Time-based triggers (use sparingly — prefer observable assets + automation conditions):
 
 ```python
-from aihub_pipeline.schedules.factory import daily_schedule_at
+from swiss_ai_hub.pipeline.schedules.factory import daily_schedule_at
 
 schedules=[
     daily_schedule_at(observe_job, hour=2, minute=0),   # Observe at 2 AM
@@ -497,7 +497,7 @@ Timezone: `Europe/Berlin`. Default status: `RUNNING`.
 Jobs wrap asset selections for triggering via sensors/schedules:
 
 ```python
-from aihub_pipeline.jobs.factory import observe_source_job, materialize_asset_job
+from swiss_ai_hub.pipeline.jobs.factory import observe_source_job, materialize_asset_job
 
 # Observation job (discovers new/changed partitions)
 observe_job = observe_source_job(

@@ -10,21 +10,21 @@ Generate Pinia-Colada composables for a backend API resource. The resource name 
 
 ## Before You Start
 
-Read the frontend scope guide: `aihub_web/CLAUDE.md`
+Read the frontend scope guide: `packages/web/CLAUDE.md`
 
 If unsure about Pinia-Colada API (`defineQuery`, `defineMutation`, `useQueryCache`, `staleTime`, etc.), use
 `mcp__context7__query-docs` with library ID `/posva/pinia-colada` to look up current documentation.
 
 Study an existing composable directory for reference:
 
-- Simple query: `aihub_web/aihub_web/composables/agent/useAgentInstances.ts`
-- Query with route params: `aihub_web/aihub_web/composables/agent/useAgentInstance.ts`
-- Mutation with cache invalidation: `aihub_web/aihub_web/composables/agent/useCreateAgentInstance.ts`
-- Delete mutation: `aihub_web/aihub_web/composables/agent/useDeleteAgentInstance.ts`
+- Simple query: `packages/web/swiss_ai_hub_web/composables/agent/useAgentInstances.ts`
+- Query with route params: `packages/web/swiss_ai_hub_web/composables/agent/useAgentInstance.ts`
+- Mutation with cache invalidation: `packages/web/swiss_ai_hub_web/composables/agent/useCreateAgentInstance.ts`
+- Delete mutation: `packages/web/swiss_ai_hub_web/composables/agent/useDeleteAgentInstance.ts`
 
 ## Step 1: Check SDK Availability
 
-Find the SDK functions and types for the resource in `aihub_web/aihub_web/sdk/client/`. Identify:
+Find the SDK functions and types for the resource in `packages/web/swiss_ai_hub_web/sdk/client/`. Identify:
 
 - **GET list**: e.g., `getAll{Resource}s`
 - **GET single**: e.g., `get{Resource}`
@@ -38,7 +38,7 @@ If SDK functions don't exist yet, warn the user to run `/generate-sdk` first.
 ## Step 2: Create Composable Directory
 
 ```
-aihub_web/aihub_web/composables/{resource}/
+packages/web/swiss_ai_hub_web/composables/{resource}/
 ├── use{Resource}s.ts              # List query (GET all)
 ├── use{Resource}.ts               # Single item query (GET by ID)
 ├── useCreate{Resource}.ts         # Create mutation (POST)
@@ -132,7 +132,7 @@ export const useCreate<Resource> = defineMutation(() => {
 
 ## Step 6: Verify
 
-1. Ensure composable files are in `aihub_web/aihub_web/composables/{resource}/` for Nuxt auto-import
+1. Ensure composable files are in `packages/web/swiss_ai_hub_web/composables/{resource}/` for Nuxt auto-import
 2. Verify every SDK call includes `composable: '$fetch'`
 3. Verify query keys use arrow functions: `key: () => [...]`, not static arrays
 4. Verify mutations call `queryCache.invalidateQueries()` with the correct list key
@@ -142,7 +142,7 @@ export const useCreate<Resource> = defineMutation(() => {
 
 **Typical invocation**: `/scaffold-composable pipeline`
 
-**Result**: Creates composable files in `aihub_web/aihub_web/composables/pipeline/`:
+**Result**: Creates composable files in `packages/web/swiss_ai_hub_web/composables/pipeline/`:
 
 - `usePipelines.ts` — list query
 - `usePipeline.ts` — single item query with route params
@@ -165,7 +165,7 @@ export const useCreate<Resource> = defineMutation(() => {
 - **Query keys**: Hierarchical arrays `['{resource}s']`, `['{resource}s', id]`
 - **`staleTime`**: Use `minutesToMilliseconds(5)` for standard resources
 - **`enabled`**: Use `useRouteReady()` when query depends on route params (defined at
-  `aihub_web/aihub_web/composables/useRouteReady.ts`)
+  `packages/web/swiss_ai_hub_web/composables/useRouteReady.ts`)
 - **Cache invalidation**: Call `queryCache.invalidateQueries({ key: ['{resource}s'] })` after mutations
 - **Naming**: `use{Resource}s` (plural list), `use{Resource}` (single), `useCreate{Resource}` (mutation)
 - **Exports**: Always wrap in `defineQuery()` or `defineMutation()` (Pinia-Colada composable factories)

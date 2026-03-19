@@ -72,7 +72,7 @@ comm -12 <(sort /tmp/main_changes.txt) <(sort /tmp/branch_changes.txt)
 Summarize for the user:
 
 - How many commits landed on main
-- Which scopes were affected on main (aihub_lib, aihub_api, etc.)
+- Which scopes were affected on main (packages/core, packages/api, etc.)
 - Which files overlap between main and this branch (conflict risk areas)
 
 ### 4. Merge Main into Branch
@@ -157,7 +157,7 @@ Commit any post-merge fixups:
 
 ```bash
 git add <fixed-files>
-git commit -m "chore(aihub): Post-merge fixups after syncing with main"
+git commit -m "chore(swiss-ai-hub): Post-merge fixups after syncing with main"
 ```
 
 ### 7. Verify with /review-diff

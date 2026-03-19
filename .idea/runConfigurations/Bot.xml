@@ -4,7 +4,7 @@
       <settings>
         <option name="buildOnly" value="true" />
         <option name="contextFolderPath" value="." />
-        <option name="sourceFilePath" value="aihub_bot/Dockerfile" />
+        <option name="sourceFilePath" value="packages/bot/Dockerfile" />
       </settings>
     </deployment>
     <method v="2" />
