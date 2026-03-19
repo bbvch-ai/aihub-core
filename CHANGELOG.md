@@ -5,6 +5,46 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.271.0] - 2026-03-19 - Grand Renaming and Open-Source Restructure
+
+### Changed
+
+- 🏗️ **Repository Layout**: Reorganized all source packages under `packages/` directory — `aihub_lib` → `packages/core`,
+  `aihub_agent` → `packages/agent`, `aihub_api` → `packages/api`, `aihub_bot` → `packages/bot`, `aihub_pipeline` →
+  `packages/pipeline`, `aihub_process` → `packages/process`, `swiss_ai_hub_web` → `packages/web`. Non-code directories
+  moved to conventional locations: `aihub_doc` → `docs`, `aihub_action` → `.github/actions`, `deployment` →
+  `infra/deployment`.
+- 📦 **Python Namespace Packages**: All packages renamed to use `swiss_ai_hub` namespace via `uv_build` — import paths
+  are now `swiss_ai_hub.core`, `swiss_ai_hub.agent`, etc. PyPI names follow as `swiss-ai-hub-core`,
+  `swiss-ai-hub-agent`, etc.
+- 🐍 **snake_case Everywhere**: Renamed all CamelCase Python source files and directories to `snake_case` (e.g.,
+  `ExpertAskingAgent/ExpertAskingAgent.py` → `expert_asking_agent/expert_asking_agent.py`), resolving import ambiguity
+  that previously prevented proper `__init__.py` usage.
+- 📤 **Public Interface via `__init__.py`**: Added lazy `__init__.py` exports (using `TYPE_CHECKING` + `__getattr__`) to
+  all top-level package folders, establishing clear public interfaces. Cross-package imports now go through
+  `__init__.py`; intra-package imports use full module paths.
+- 🔄 **Import Rewrite**: Updated all imports across the entire codebase to follow the new namespace structure and import
+  conventions.
+- 📝 **License Change**: Moved from `LicenseRef-Proprietary` to `Apache-2.0` across all packages.
+- 📚 **Documentation Updates**: Updated all references from old naming conventions (`aihub_doc`, `aihub-core`, etc.) to
+  new names across docs, READMEs, CLAUDE.md files, whitepapers, and configuration files.
+- ⚙️ **Docker & CI Updates**: Updated all Docker Compose files, Dockerfiles, GitHub Actions workflows, and run
+  configurations to reference the new directory structure and package names.
+
+### Added
+
+- 📄 **Architecture Decision Record**: Added ADR documenting the rename and restructure rationale
+  (`docs/arc42/decisions/2026_03_13_rename_and_restructure_for_open_source_release.md`).
+- 🏗️ **`docker-compose.build.yml`**: Added comprehensive build-stage Docker Compose for multi-stack orchestration.
+
+### Removed
+
+- 🗑️ **Old Directory Structure**: Removed all `aihub_*` top-level directories, replaced by `packages/` layout.
+- 🗑️ **Deprecated Test Suites**: Removed outdated test suites for `AgentConfig` and `Form` classes.
+- 🗑️ **Outdated READMEs**: Removed stale README files that were superseded by the restructure.
+
+______________________________________________________________________
+
 ## [v0.270.4] - 2026-03-19 - Enhanced Configuration and Dev Environment Streamlining
 
 ### Changed

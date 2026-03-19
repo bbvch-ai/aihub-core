@@ -8,17 +8,22 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Sanitize artifact name
+      id: sanitize
+      shell: bash
+      run: echo "artifact_prefix=$(echo '${{ inputs.working_directory }}' | tr '/'
+        '-')" >> "$GITHUB_OUTPUT"
     - name: Checkout repository
       uses: actions/checkout@v4
     - name: Download pytest reports
       uses: actions/download-artifact@v4
       with:
-        name: ${{ inputs.working_directory }}-pytest-report
+        name: ${{ steps.sanitize.outputs.artifact_prefix }}-pytest-report
         path: ${{ inputs.working_directory }}
     - name: Download coverage reports
       uses: actions/download-artifact@v4
       with:
-        name: ${{ inputs.working_directory }}-coverage-report
+        name: ${{ steps.sanitize.outputs.artifact_prefix }}-coverage-report
         path: ${{ inputs.working_directory }}
     - name: Pytest coverage comment
       uses: MishaKav/pytest-coverage-comment@main

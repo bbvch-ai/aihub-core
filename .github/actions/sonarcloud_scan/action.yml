@@ -25,6 +25,11 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Sanitize artifact name
+      id: sanitize
+      shell: bash
+      run: echo "artifact_prefix=$(echo '${{ inputs.working_directory }}' | tr '/'
+        '-')" >> "$GITHUB_OUTPUT"
     - name: Checkout
       uses: actions/checkout@v4
       with:
@@ -33,7 +38,7 @@ runs:
       uses: actions/download-artifact@v4
       if: inputs.report_coverage == 'true'
       with:
-        name: ${{ inputs.working_directory }}-coverage-report
+        name: ${{ steps.sanitize.outputs.artifact_prefix }}-coverage-report
         path: ${{ inputs.working_directory }}
     - name: Run SonarCloud Without Coverage
       if: inputs.report_coverage == 'false'
