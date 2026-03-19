@@ -9,14 +9,14 @@
 Connect, orchestrate, and monitor best-in-class open-source tools to deliver\
 what cloud AI platforms promise, but where you own every layer.
 
-[![GitHub Release](https://img.shields.io/github/v/release/bbvch-ai/swiss-ai-hub?style=flat-square)](https://github.com/bbvch-ai/swiss-ai-hub/releases)
+[![GitHub Release](https://img.shields.io/github/v/release/bbvch-ai/aihub-core?style=flat-square)](https://github.com/bbvch-ai/aihub-core/releases)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue?style=flat-square)](LICENSE)
 [![Python 3.13+](https://img.shields.io/badge/python-3.13%2B-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
 [![PyPI](https://img.shields.io/pypi/v/swiss-ai-hub-core?style=flat-square&logo=pypi&logoColor=white)](https://pypi.org/project/swiss-ai-hub-core/)
 [![npm](https://img.shields.io/npm/v/@swiss-ai-hub/web?style=flat-square&logo=npm&logoColor=white)](https://www.npmjs.com/package/@swiss-ai-hub/web)
 
 [Get started](#quick-start) · [Documentation](https://bbvch-ai.github.io/swiss-ai-hub/) ·
-[Discord](https://discord.gg/wArT8zDB) · [Releases](https://github.com/bbvch-ai/swiss-ai-hub/releases)
+[Discord](https://discord.gg/wArT8zDB) · [Releases](https://github.com/bbvch-ai/aihub-core/releases)
 
 </div>
 
@@ -58,7 +58,7 @@ ______________________________________________________________________
 ## Quick start
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/bbvch-ai/swiss-ai-hub/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/bbvch-ai/aihub-core/main/install.sh | bash
 cd swiss-ai-hub
 # Edit .env: set DOMAIN, OAuth credentials, and LLM provider keys
 docker compose up -d

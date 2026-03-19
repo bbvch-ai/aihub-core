@@ -100,7 +100,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Lint Backend Code
-        uses: bbvch-ai/swiss-ai-hub/.github/actions/lint_backend/action.yml@main
+        uses: bbvch-ai/aihub-core/.github/actions/lint_backend/action.yml@main
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           working_directory: "agents"
