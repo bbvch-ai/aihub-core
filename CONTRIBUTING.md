@@ -37,7 +37,7 @@ There are many ways to support the Swiss AI-Hub, and many of them don't require 
 
 - **[Contribute Code](#-contributing-code-the-workflow)**: Help us build the next generation of the platform.
 - **[Improve Documentation](#-other-ways-to-contribute)**: Fix typos, clarify complex topics, or write new guides in the
-  `aihub_docs` folder.
+  `docs` folder.
 - **[Help the Community](#-join-our-community-the-first-step)**: Join our Discord, answer questions, and help us build a
   vibrant and supportive environment.
 - **[Improve Branding & Marketing](#-other-ways-to-contribute)**: Help us refine our message on our website or in our
@@ -97,7 +97,7 @@ Here is the short version:
 
 ### Documentation
 
-Our documentation in the `aihub_doc` folder is always a work in progress. If you find a typo, an unclear explanation, or
+Our documentation in the `docs` folder is always a work in progress. If you find a typo, an unclear explanation, or
 a missing guide, a PR to improve it is one of the most valuable contributions you can make.
 
 ### Marketing & Branding

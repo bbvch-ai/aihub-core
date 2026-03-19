@@ -140,7 +140,7 @@ python scripts/generate-sources.py --model claude-3-5-sonnet-20241022
 
 The script:
 
-1. Scans all `*.en.md` files in `aihub_doc/docs/`
+1. Scans all `*.en.md` files in `docs/docs/`
 2. Extracts title and summary from each file
 3. Sends chapter prompt + doc manifest to LLM
 4. LLM returns relevant file paths
@@ -288,7 +288,7 @@ Alternatively, create `chapters/XX-chapter-name/sources.md` manually:
 
 ```
 # Source Documentation for Chapter X
-# Paths relative to aihub_doc/docs/
+# Paths relative to docs/docs/
 
 2_platform/8_knowledges/index.en.md
 2_platform/5_agents/2_rag_agent/index.en.md

@@ -1,55 +1,48 @@
 ---
 title: Eingabevalidierung
-source_sha: 4d97de8c18c8e8f2ceb6b2fd511b94dd93ae42a31a91766606d6a1d78285937e
+source_sha: "f7259ebb3f6ff9bb418a9a1a65f9de4371ed5214fcb349c6b489b37d834d2aff"
 ---
 
 # Eingabevalidierung
 
-Der Swiss AI Hub implementiert eine Eingabevalidierung, um vor gängigen Angriffsvektoren wie Path Traversal,
-MIME-Typ-Verwechslung und fehlerhaften Daten zu schützen.
+Der Swiss AI Hub implementiert eine Eingabevalidierung, um vor gängigen Angriffsvektoren wie Pfad-Traversal, MIME-Typ-Verwechslung und fehlerhaften Daten zu schützen.
 
 ## Validierung von Datei-Uploads
 
-### Whitelist für Dateitypen
+### Dateityp-Whitelist
 
-Die Plattform beschränkt Uploads auf etwa 40 genehmigte Dateierweiterungen aus mehreren Kategorien: Dokumentformate
-(PDF, Office, Text, Markdown), Bildformate (JPEG, PNG, TIFF, WebP), Audioformate (WAV, MP3) und strukturierte Daten
-(JSON, XML).
+Die Plattform beschränkt Uploads auf etwa 40 zugelassene Dateierweiterungen in verschiedenen Kategorien: Dokumentformate (PDF, Office, Text, Markdown), Bildformate (JPEG, PNG, TIFF, WebP), Audioformate (WAV, MP3) und strukturierte Daten (JSON, XML).
 
-### Validierung des MIME-Typs
+### MIME-Typ-Validierung
 
-Die Plattform validiert, dass der bereitgestellte Content-Typ dem erwarteten MIME-Typ für die Dateierweiterung
-entspricht. Dies verhindert Angriffe durch MIME-Typ-Verwechslung, bei denen bösartige Dateien sich mit falschen
-MIME-Typen tarnen.
+Die Plattform validiert, dass der bereitgestellte Content-Typ mit dem erwarteten MIME-Typ für die Dateierweiterung übereinstimmt. Dies verhindert MIME-Typ-Verwechslungsangriffe, bei denen sich bösartige Dateien mit inkorrekten MIME-Typen tarnen.
 
-### Validierung von Dateinamen
+### Dateinamenvalidierung
 
-Dateinamen müssen mit alphanumerischen Zeichen beginnen und werden validiert, um folgendes zu blockieren:
+Dateinamen müssen mit alphanumerischen Zeichen beginnen und werden validiert, um Folgendes zu blockieren:
 
-- Path Traversal-Versuche (`..`, `/`, `\`, Null-Bytes)
-- Erweiterungs-Spoofing (maximal 3 durch Punkte getrennte Teile, 10-Zeichen-Begrenzung für Erweiterungen)
+- Pfad-Traversal-Versuche (`..`, `/`, `\`, Null-Bytes)
+- Erweiterungs-Spoofing (maximal 3 durch Punkte getrennte Teile, 10-Zeichen-Erweiterungsbegrenzung)
 
-### Validierung der Dateigröße
+### Dateigrössenvalidierung
 
-Dateien müssen größer als 0 Bytes sein. Leere Dateien werden abgelehnt. Maximale Größenbeschränkungen werden auf
-Anwendungs- oder Reverse Proxy-Ebene durchgesetzt.
+Dateien müssen grösser als 0 Bytes sein. Leere Dateien werden abgelehnt. Maximale Grössenbeschränkungen werden auf Anwendungs- oder Reverse-Proxy-Ebene erzwungen.
 
 ## Validierung von Namespace- und Datenbanknamen
 
-Datenbank- und Namespace-Namen folgen ähnlichen Validierungsregeln, um Path Traversal in logischen Speicherpfaden zu
-verhindern.
+Datenbank- und Namespace-Namen folgen ähnlichen Validierungsregeln, um Pfad-Traversal in logischen Speicherpfaden zu verhindern.
 
 ## Wovor die Eingabevalidierung schützt
 
-- Path Traversal-Angriffe
+- Pfad-Traversal-Angriffe
 - MIME-Typ-Verwechslung
 - Erweiterungs-Spoofing
 - Null-Byte-Injection
 - Uploads ausführbarer Dateien
-- Ressourcenerschöpfung (mittels Größenbeschränkungen)
+- Ressourcenerschöpfung (mittels Grössenbegrenzungen)
 
 ## Verwandte Dokumentation
 
-- [Authentifizierung & Autorisierung](../1_authentication/) – Benutzeridentität und Zugriffssteuerung
-- [Container-Sicherheit](../3_container_security/) – Isolierte Dateiverarbeitung
-- [RBAC](../../11_access_management/2_permissions/) – Berechtigungsbasierte Upload-Beschränkungen
+- [Authentifizierung & Autorisierung](../1_authentication/) - Benutzeridentität und Zugriffssteuerung
+- [Container-Sicherheit](../3_container_security/) - Isolierte Dateiverarbeitung
+- [RBAC](../../11_access_management/2_permissions/) - Berechtigungsbasierte Upload-Beschränkungen

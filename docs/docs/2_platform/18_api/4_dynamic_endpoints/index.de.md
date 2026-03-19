@@ -1,75 +1,55 @@
+```markdown
 ---
 title: Dynamische Agenten- und Prozess-Endpunkte
-source_sha: 7076975953fb61f1eae377f279cb574dc478241ba999dbfd01b2130574533ac4
+source_sha: "714f9ce43c8e9548622c524801384203ce305ccac59589e99df79aad2caa0153"
 ---
 
 # Dynamische Agenten- und Prozess-Endpunkte :rocket: :100:
 
-::: info **TL;DR - Was sind dynamische Endpunkte?**
-Der Swiss AI Hub erstellt automatisch REST-API-Endpunkte on-the-fly basierend auf den Agenten und Prozessen, die in
-Ihrem System verfügbar sind. Wenn ein neuer Agent oder Prozess online geht, generiert das API-Gateway sofort
-maßgeschneiderte Endpunkte, die auf die Fähigkeiten dieser spezifischen Komponente zugeschnitten sind, wodurch die
-Notwendigkeit einer manuellen API-Entwicklung entfällt und sichergestellt wird, dass Ihr System perfekt synchronisiert
-bleibt.
+::: info **Kurz gesagt – Was sind dynamische Endpunkte?**
+Der Swiss AI Hub erstellt automatisch REST API-Endpunkte on-the-fly, basierend auf den im System verfügbaren Agenten und Prozessen. Wenn ein neuer Agent oder Prozess online geht, generiert das API-Gateway sofort benutzerdefinierte Endpunkte, die auf die Fähigkeiten dieser spezifischen Komponente zugeschnitten sind. Dies eliminiert die Notwendigkeit einer manuellen API-Entwicklung und stellt sicher, dass Ihr System perfekt synchronisiert bleibt.
 :::
 
 ## Was sind dynamische Endpunkte und wie funktionieren sie? :brain:
 
-Dynamische Agenten- und Prozess-Endpunkte stellen einen revolutionären Ansatz zur API-Generierung in verteilten
-KI-Systemen dar. Anstatt statische API-Routen vorab zu definieren, nutzt der Swiss AI Hub **intelligente
-Endpunkt-Discovery-Dienste**, die:
+Dynamische Agenten- und Prozess-Endpunkte stellen einen revolutionären Ansatz zur API-Generierung in verteilten KI-Systemen dar. Anstatt statische API-Routen vorzudefinieren, setzt der Swiss AI Hub auf **intelligente Endpunkt-Discovery-Services**, die:
 
-- **Kontinuierlich** den NATS-Message-Bus nach verfügbaren Agenten und Prozessen **scannen**
-- **Automatisch** REST-Endpunkte basierend auf den Ereignisspezifikationen jeder Komponente **generieren**
-- Diese Endpunkte zur Laufzeit **dynamisch** bei der FastAPI-Anwendung **registrieren**
-- Die **Synchronisation** zwischen Ihren laufenden Diensten und verfügbaren API-Endpunkten **aufrechterhalten**
+- **Kontinuierlich** den NATS Message Bus nach verfügbaren Agenten und Prozessen scannen
+- **Automatisch** REST-Endpunkte basierend auf den Ereignisspezifikationen jeder Komponente generieren
+- Diese Endpunkte zur Laufzeit **dynamisch** bei der FastAPI-Anwendung registrieren
+- Die **Synchronisation** zwischen Ihren laufenden Services und den verfügbaren API-Endpunkten aufrechterhalten
 
-Dieses System nutzt zwei zentrale Discovery-Dienste:
+Dieses System nutzt zwei zentrale Discovery Services:
 
-- **`AgentEndpointsDiscoveryService`**: Erstellt Endpunkte wie `/agents/{agent_class}/{agent_id}/{event_name}` zum
-  Senden von Ereignissen an spezifische Agenten
-- **`ProcessEndpointsDiscoveryService`**: Generiert Endpunkte wie `/processes/{process_class}/{process_id}/{route}` für
-  die menschliche und programmatische Interaktion mit Prozessen
+- **`AgentEndpointsDiscoveryService`**: Erstellt Endpunkte wie `/agents/{agent_class}/{agent_id}/{event_name}` zum Senden von Ereignissen an bestimmte Agenten
+- **`ProcessEndpointsDiscoveryService`**: Generiert Endpunkte wie `/processes/{process_class}/{process_id}/{route}` für die Interaktion von Menschen und Programmen mit Prozessen
 
-Der Discovery-Prozess verwendet eine **NATS-basierte Dienstentdeckung**, um laufende Komponenten nach ihren Fähigkeiten
-abzufragen, und nutzt dann den **Jambo SchemaConverter**, um Ereignisschemata in Pydantic-Modelle umzuwandeln, die
-vollständig typisierte, dokumentierte API-Endpunkte antreiben.
+Der Discovery-Prozess verwendet die **NATS-basierte Service Discovery**, um laufende Komponenten nach ihren Fähigkeiten abzufragen, und nutzt dann den **Jambo SchemaConverter**, um Ereignisschemata in Pydantic-Modelle umzuwandeln, die vollständig typisierte, dokumentierte API-Endpunkte antreiben.
 
-## Warum dies ein Wendepunkt für Ihre KI-Strategie ist :trophy:
+## Warum dies Ihre KI-Strategie grundlegend verändert :trophy:
 
-Diese Funktion beseitigt eine der größten Hürden beim Skalieren von KI-Systemen – **Engpässe bei der API-Entwicklung**:
+Diese Funktion beseitigt eine der größten Hürden für die Skalierung von KI-Systemen – die **API-Entwicklungsengpässe**:
 
-**🔗 API-Generierung ohne Konfiguration**: Neue Agenten und Prozesse machen ihre Fähigkeiten automatisch über REST-APIs
-ohne manuelle Entwicklung verfügbar. Stellen Sie einen neuen Agenten bereit, und seine Endpunkte erscheinen sofort in
-Ihrer API-Dokumentation.
+**🔗 Zero-Configuration API-Generierung**: Neue Agenten und Prozesse legen ihre Fähigkeiten automatisch über REST APIs offen, ohne manuelle Entwicklung. Deployen Sie einen neuen Agenten, und seine Endpunkte erscheinen sofort in Ihrer API-Dokumentation.
 
-**🧠 Typensichere dynamische Integration**: Jeder dynamische Endpunkt ist mit Pydantic-Modellen, die aus Ereignisschemata
-generiert werden, vollständig typisiert und bietet automatische Validierung, Serialisierung und eine umfassende
-OpenAPI-Dokumentation.
+**🧠 Typsichere dynamische Integration**: Jeder dynamische Endpunkt ist vollständig mit Pydantic-Modellen typisiert, die aus Ereignisschemata generiert werden, und bietet automatische Validierung, Serialisierung und umfassende OpenAPI-Dokumentation.
 
-**🛡️ Unternehmenssicherheit**: Dynamische Endpunkte erben alle Sicherheitsfunktionen, einschließlich rollenbasierter
-Zugriffskontrolle, Authentifizierung und detaillierter Berechtigungen, wodurch neue Funktionen standardmäßig sicher
-sind.
+**🛡️ Enterprise-Grade Security**: Dynamische Endpunkte erben alle Sicherheitsfunktionen, einschließlich rollenbasierter Zugriffskontrolle, Authentifizierung und detaillierter Berechtigungen, wodurch neue Funktionen standardmäßig sicher sind.
 
-**⚡ Echtzeit-Systemanpassung**: Ihre API passt sich automatisch an Systemänderungen an – wenn Agenten hoch- oder
-herunterskalieren, erscheinen oder verschwinden ihre Endpunkte entsprechend, wodurch Ihre Integrationsschicht perfekt
-synchronisiert bleibt.
+**⚡ Echtzeit-Systemanpassung**: Ihre API passt sich automatisch an Systemänderungen an – wenn Agenten hoch- oder herunterskaliert werden, erscheinen oder verschwinden ihre Endpunkte entsprechend, wodurch Ihre Integrationsschicht perfekt synchronisiert bleibt.
 
-**🌐 Nahtlose externe Integration**: Externe Systeme und Webhooks können über vorhersagbare REST-Endpunkte mit jedem
-Agenten oder Prozess interagieren, was leistungsstarke Integrationen mit Drittanbieterdiensten und Geschäftssystemen
-ermöglicht.
+**🌐 Nahtlose externe Integration**: Externe Systeme und Webhooks können über vorhersagbare REST-Endpunkte mit jedem Agenten oder Prozess interagieren, was leistungsstarke Integrationen mit Drittanbieter-Services und Geschäftssystemen ermöglicht.
 
-::: details **Einrichten und Verwenden dynamischer Endpunkte**
+::: details **Einrichtung und Nutzung dynamischer Endpunkte**
 ## Konfigurationsanforderungen
 
-Dynamische Endpunkte werden automatisch aktiviert, wenn Sie den Swiss AI Hub mit dem vollständigen Infrastruktur-Stack
-starten:
+Dynamische Endpunkte werden automatisch aktiviert, wenn Sie den Swiss AI Hub mit dem vollständigen Infrastruktur-Stack starten:
 
-1. **NATS Message Bus**: Erforderlich für die Dienstentdeckungs-Kommunikation
-2. **API Gateway**: Der `aihub_api`-Dienst mit aktiviertem `lifetime_manager`
-3. **Discovery Services**: Automatisch vom Lifetime Manager gestartet
+1.  **NATS Message Bus**: Erforderlich für die Service-Discovery-Kommunikation
+2.  **API Gateway**: Der `aihub_api`-Service mit aktiviertem `lifetime_manager`
+3.  **Discovery Services**: Werden automatisch vom Lifetime Manager gestartet
 
-## Agenten-Endpunkt-Generierung
+## Generierung von Agenten-Endpunkten
 
 Für jeden entdeckten Agenten erstellt das System Endpunkte nach diesem Muster:
 
@@ -77,63 +57,55 @@ Für jeden entdeckten Agenten erstellt das System Endpunkte nach diesem Muster:
 POST /api/v1/agents/{agent_class}/{agent_id}/{event_name}
 ```
 
-**Beispiel**: Ein Agent mit der Klasse `rag_agent` und der ID `customer_support`, der `UserMessageEvent` akzeptiert,
-würde erhalten:
+**Beispiel**: Ein Agent mit der Klasse `rag_agent` und der ID `customer_support`, der `UserMessageEvent` akzeptiert, würde erhalten:
 
 ```
 POST /api/v1/agents/rag_agent/customer_support/user_message_event
 ```
 
-## Prozess-Endpunkt-Generierung
+## Generierung von Prozess-Endpunkten
 
 Für jeden entdeckten Prozess erstellt das System Endpunkte basierend auf der Prozessdefinition:
 
 ```
-GET  /api/v1/processes/{process_class}/{process_id}/{route}         # Get form
-POST /api/v1/processes/{process_class}/{process_id}/{route}         # Submit form
-GET  /api/v1/processes/{process_class}/{process_id}/{walkthrough_id}/{route}  # Continue process
-POST /api/v1/processes/{process_class}/{process_id}/{walkthrough_id}/{route}  # Submit continuation
+GET  /api/v1/processes/{process_class}/{process_id}/{route}         # Formular abrufen
+POST /api/v1/processes/{process_class}/{process_id}/{route}         # Formular absenden
+GET  /api/v1/processes/{process_class}/{process_id}/{walkthrough_id}/{route}  # Prozess fortsetzen
+POST /api/v1/processes/{process_class}/{process_id}/{walkthrough_id}/{route}  # Fortsetzung absenden
 ```
 
 ## Verfügbare Funktionen
 
 Dynamische Endpunkte bieten:
 
-- **Vollständige OpenAPI-Dokumentation**: Jeder Endpunkt erscheint in `/docs` mit vollständigen
-  Anforderungs-/Antwort-Schemata
-- **Typvalidierung**: Automatische Anforderungsvalidierung basierend auf Ereignisspezifikationen
-- **Authentifizierung**: Vom Basissicherheitsmodell des Controllers geerbt
-- **Fehlerbehandlung**: Standardisierte Fehlerantworten und HTTP-Statuscodes
-- **Caching**: Integriertes Antwort-Caching für Discovery-bezogene Operationen
+-   **Vollständige OpenAPI-Dokumentation**: Jeder Endpunkt erscheint in `/docs` mit vollständigen Anforderungs-/Antwortschemata
+-   **Typ-Validierung**: Automatische Anforderungsvalidierung basierend auf Ereignisspezifikationen
+-   **Authentifizierung**: Wird vom Basis-Controller-Sicherheitsmodell geerbt
+-   **Fehlerbehandlung**: Standardisierte Fehlerantworten und HTTP-Statuscodes
+-   **Caching**: Integriertes Response-Caching für Discovery-bezogene Operationen
 
 ## Sicherheit und Best Practices
 
 **Zugriffskontrolle**:
 
-- Agenten-Endpunkte erfordern die Berechtigung `aihub.user.agent.{agent_class}.{agent_id}`
-- Prozess-Endpunkte erfordern die Berechtigung `aihub.user.process.{process_class}.{process_id}`
+-   Agenten-Endpunkte erfordern die Berechtigung `aihub.user.agent.{agent_class}.{agent_id}`
+-   Prozess-Endpunkte erfordern die Berechtigung `aihub.user.process.{process_class}.{process_id}`
 
-**Ratenbegrenzung**: Discovery-Dienste laufen in konfigurierbaren Intervallen (Standard: 60 Sekunden), um die
-Reaktionsfähigkeit mit der Systemlast in Einklang zu bringen
+**Ratenbegrenzung**: Discovery Services laufen in konfigurierbaren Intervallen (Standard: 60 Sekunden), um die Reaktionsfähigkeit mit der Systemlast in Einklang zu bringen
 
-**Überwachung**: Die Nutzung aller dynamischen Endpunkte wird über die Standard-Swiss AI Hub-Observability-Tools
-protokolliert und verfolgt
+**Monitoring**: Die Nutzung aller dynamischen Endpunkte wird über die Standard-Swiss AI Hub Observability Tools protokolliert und nachverfolgt
 
-**Performance**: Dynamische Endpunkte werden zwischengespeichert und nur neu generiert, wenn sich die Systemtopologie
-ändert
+**Performance**: Dynamische Endpunkte werden zwischengespeichert und nur neu generiert, wenn sich die Systemtopologie ändert
 :::
 
 ## Erste Schritte
 
 Um dynamische Endpunkte in Ihrem Swiss AI Hub zu nutzen:
 
-1. **Infrastruktur starten**: Stellen Sie sicher, dass NATS und das API-Gateway mit dem Standard-Docker Compose Setup
-   laufen
-2. **Agenten/Prozesse bereitstellen**: Jeder Agent oder Prozess, der sich mit NATS verbindet, erhält automatisch
-   Endpunkte
-3. **Endpunkte entdecken**: Überprüfen Sie `/api/v1/docs`, um alle dynamisch generierten Endpunkte zu sehen
-4. **Integrieren**: Verwenden Sie die Standard-REST-Endpunkte, um externe Systeme zu integrieren oder benutzerdefinierte
-   Frontends zu erstellen
+1.  **Infrastruktur starten**: Stellen Sie sicher, dass NATS und das API-Gateway mit dem Standard-Docker Compose Setup laufen
+2.  **Agenten/Prozesse deployen**: Jeder Agent oder Prozess, der sich mit NATS verbindet, erhält automatisch Endpunkte
+3.  **Endpunkte entdecken**: Überprüfen Sie `/api/v1/docs`, um alle dynamisch generierten Endpunkte zu sehen
+4.  **Integrieren**: Nutzen Sie die Standard-REST-Endpunkte, um externe Systeme zu integrieren oder benutzerdefinierte Frontends zu erstellen
 
-Das dynamische Endpunktsystem verwandelt den Swiss AI Hub von einer statischen API in eine lebendige, adaptive
-Integrationsschicht, die mit Ihren KI-Fähigkeiten wächst.
+Das dynamische Endpunkt-System verwandelt den Swiss AI Hub von einer statischen API in eine lebendige, adaptive Integrationsschicht, die mit Ihren KI-Fähigkeiten wächst.
+```

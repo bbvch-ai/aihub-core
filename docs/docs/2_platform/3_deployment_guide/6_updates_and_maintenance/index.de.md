@@ -1,64 +1,62 @@
 ---
 title: Updates & Wartung
-source_sha: f9e25c228559bcc945fefdda92dc81bb72e70951fdcddc6803bf83bfb0047d59
+source_sha: "4c9c2715d35722080da9fe3ab465405fd5728ae5dbaea8631baa861b4ee342b3"
 ---
 
 # Updates und Wartung
 
 ## Architektur
 
-Der Swiss AI Hub trennt Kernkomponenten der Plattform von kundenspezifischem Code. Die Kernplattform (dieses Repository)
-enthält gemeinsame Basiskomponenten wie API, Web, Dagster und Bot. Kunden-Repositories enthalten kundenspezifische
-Agents, Pipelines und Prozesse. Beide verwenden eine unabhängige semantische Versionierung und können separat
-aktualisiert werden.
+Der Swiss AI Hub trennt die Kernplattform-Komponenten vom kundenspezifischen Code. Die Kernplattform (dieses Repository)
+enthält gemeinsame Basiskomponenten wie API, Web, Dagster und Bot. Kunden-Repositories enthalten benutzerdefinierte Agents,
+Pipelines und Prozesse. Beide verwenden eine unabhängige semantische Versionierung und können separat aktualisiert werden.
 
-Kundenspezifischer Code verweist über `pyproject.toml` auf eine bestimmte Core-Version:
+Kunden-Code bindet an eine spezifische Kernversion über `pyproject.toml`:
 
 ```toml
 [project.dependencies]
 swiss-ai-hub = { git = "https://github.com/bbvch-ai/swiss-ai-hub.git", tag = "v1.2.3" }
 ```
 
-Das bedeutet, Core-Updates wirken sich nicht automatisch auf Kunden-Deployments aus. Kunden steuern, wann sie neue
-Core-Versionen übernehmen.
+Dies bedeutet, dass Kern-Updates Kunden-Deployments nicht automatisch beeinflussen. Kunden steuern, wann sie neue Kernversionen
+übernehmen.
 
 ______________________________________________________________________
 
 ## Versionierung
 
-Die Core-Plattform verwendet semantische Versionierung:
+Die Kernplattform verwendet semantische Versionierung:
 
 - Major (X.0.0): Breaking Changes und architektonische Updates
 - Minor (0.X.0): Neue Features, abwärtskompatible Änderungen
 - Patch (0.0.X): Bugfixes und Sicherheitspatches
 
-Drei Versionstags sind verfügbar:
+Drei Versions-Tags sind verfügbar:
 
-| Tag       | Beschreibung                   | Stabilität |
-| --------- | ------------------------------ | ---------- |
-| `latest`  | Aktuellste stabile Version     | Hoch       |
-| `nightly` | Aktuellster Entwicklungs-Build | Mittel     |
-| `v1.2.3`  | Spezifischer Versionstag       | Höchst     |
+| Tag       | Beschreibung                | Stabilität |
+| --------- | --------------------------- | ---------- |
+| `latest`  | Neueste stabile Version     | Hoch       |
+| `nightly` | Neuester Entwicklungs-Build | Mittel     |
+| `v1.2.3`  | Spezifischer Versions-Tag   | Höchste    |
 
-Kundenspezifischer Code verwendet eigene, unabhängige Versionsnummern.
+Kunden-Code verwendet eigene unabhängige Versionsnummern.
 
 ### Release-Prozess
 
-Wenn ein PR mit einem Versionslabel (`major`, `minor` oder `patch`) in `main` gemergt wird, berechnet CI/CD die neue
-Version, erstellt einen Git-Tag und baut alle betroffenen Services. Docker-Images werden mit dem Versionstag nach
-`ghcr.io/bbvch-ai/swiss-ai-hub/*` veröffentlicht. Ein Changelog wird automatisch generiert.
+Wenn ein PR mit einem Versions-Label (`major`, `minor` oder `patch`) in `main` zusammengeführt wird, berechnet CI/CD die
+neue Version, erstellt einen Git-Tag und erstellt alle betroffenen Services. Docker-Images werden mit dem Versions-Tag
+auf `ghcr.io/bbvch-ai/swiss-ai-hub/*` veröffentlicht. Ein Changelog wird automatisch generiert.
 
-Jeder Release veröffentlicht außerdem eigenständige Deployment-Bundles als GitHub Release Assets:
+Jede Version veröffentlicht auch eigenständige Deployment-Bundles als GitHub Release Assets:
 
-- `swissaihub-<version>.tar.gz` — Nur-CPU-Deployment-Bundle
-- `swissaihub-<version>-gpu.tar.gz` — GPU-fähiges Deployment-Bundle
+- `swissaihub-<version>.tar.gz` — Deployment-Bundle nur für CPU
+- `swissaihub-<version>-gpu.tar.gz` — Deployment-Bundle mit GPU-Unterstützung
 
-Diese Bundles enthalten alles, was für das Deployment benötigt wird: `docker-compose.yml` mit versionsgebundenen
-Image-Tags, alle Service-Konfigurationsdateien, eine `.env.template` mit Platzhalter-Secrets und ein
-`setup-env.sh`-Skript, das eine `.env`-Datei mit kryptografisch sicheren Zufallswerten für alle Passwörter, Tokens und
-Signierschlüssel generiert.
+Diese Bundles enthalten alles, was für das Deployment benötigt wird: `docker-compose.yml` mit versionsgebundenen Image-Tags,
+alle Service-Konfigurationsdateien, eine `.env.template` mit Platzhalter-Secrets und ein `setup-env.sh`-Skript, das eine `.env`-Datei
+mit kryptografisch sicheren Zufallswerten für alle Passwörter, Tokens und Signierschlüssel generiert.
 
-Beispiel Core-Images:
+Beispiel Kern-Images:
 
 ```
 ghcr.io/bbvch-ai/swiss-ai-hub/api:v1.2.3
@@ -66,24 +64,23 @@ ghcr.io/bbvch-ai/swiss-ai-hub/dagster:v1.2.3
 ghcr.io/bbvch-ai/swiss-ai-hub/web:v1.2.3
 ```
 
-Kundenspezifischer Code folgt dem gleichen CI/CD-Muster:
+Kunden-Code folgt dem gleichen CI/CD-Muster:
 
 ```
 ghcr.io/bbvch-ai/swiss-ai-hub-<customer>/agent:v1.2.3
 ghcr.io/bbvch-ai/swiss-ai-hub-<customer>/pipeline:v1.2.3
 ```
 
-Alle Releases durchsuchen unter
-[github.com/bbvch-ai/swiss-ai-hub/releases](https://github.com/bbvch-ai/swiss-ai-hub/releases).
+Alle Releases durchsuchen unter [github.com/bbvch-ai/swiss-ai-hub/releases](https://github.com/bbvch-ai/swiss-ai-hub/releases).
 
 ______________________________________________________________________
 
 ## Updates
 
-### Core-Plattform-Updates
+### Kernplattform-Updates
 
-Laden Sie das neue Release-Bundle von [GitHub Releases](https://github.com/bbvch-ai/swiss-ai-hub/releases) herunter und
-entpacken Sie es neben Ihrem aktuellen Deployment:
+Laden Sie das neue Release-Bundle von [GitHub Releases](https://github.com/bbvch-ai/swiss-ai-hub/releases) herunter
+und entpacken Sie es neben Ihrem aktuellen Deployment:
 
 ```bash
 # Download the new version
@@ -106,21 +103,20 @@ docker compose up -d
 ```
 
 Abwärtskompatible Updates (Patch- und Minor-Versionen) erfordern lediglich das Pulling neuer Images und einen Neustart.
-Die `docker-compose.yml` des Release-Bundles verweist bereits auf die korrekten versionsgebundenen Image-Tags.
-Kundenspezifischer Code läuft unverändert weiter.
+Das `docker-compose.yml` des Release-Bundles verweist bereits auf die korrekten versionsgebundenen Image-Tags.
+Kunden-Code läuft unverändert weiter.
 
-Major Core-Updates mit Breaking Changes erfordern koordinierte Updates. Kundenspezifischer Code muss aktualisiert
-werden, um mit der neuen Core-Version zu funktionieren. Sowohl Core- als auch Kundencode werden gemeinsam während eines
-Wartungsfensters aktualisiert.
+Große Kern-Updates mit Breaking Changes erfordern koordinierte Updates. Der Kunden-Code muss aktualisiert werden,
+um mit der neuen Kernversion zu funktionieren. Sowohl der Kern- als auch der Kunden-Code werden gemeinsam während
+eines Wartungsfensters aktualisiert.
 
-### Updates für kundenspezifischen Code
+### Kunden-Code-Updates
 
-Kundenspezifischer Code kann unabhängig aktualisiert werden, solange die Core-Versionsbindung unverändert bleibt.
-Aktualisieren Sie die Kunden-Image-Tags in `docker-compose.yml`, pullen Sie die neuen Images und starten Sie die
-Kunden-Services neu.
+Kunden-Code kann unabhängig aktualisiert werden, wenn der Kernversions-Pin unverändert bleibt. Aktualisieren Sie die
+Kunden-Image-Tags in `docker-compose.yml`, ziehen Sie die neuen Images und starten Sie die Kunden-Services neu.
 
-Wenn kundenspezifischer Code eine neue Core-Version übernimmt, aktualisieren Sie die Core-Versionsbindung in
-`pyproject.toml`, bauen Sie die Kunden-Images neu und deployen Sie dann Core- und Kunden-Updates gemeinsam.
+Wenn Kunden-Code eine neue Kernversion übernimmt, aktualisieren Sie den Kernversions-Pin in `pyproject.toml`, erstellen
+Sie die Kunden-Images neu und deployen Sie dann sowohl Kern- als auch Kunden-Updates zusammen.
 
 ______________________________________________________________________
 
@@ -131,7 +127,7 @@ ______________________________________________________________________
 VM-Snapshots erfassen den gesamten Systemzustand. Ein Rollback stellt die komplette VM von einem Pre-Update-Snapshot
 wieder her und versetzt alle Services gleichzeitig in ihren vorherigen Zustand zurück.
 
-### Versionstags
+### Versions-Tags
 
 Wenn Daten mit der vorherigen Version kompatibel bleiben, führen Sie ein Rollback durch, indem Sie das vorherige
 Release-Bundle herunterladen, Ihre `.env`-Datei wiederherstellen und neu starten:
@@ -151,39 +147,39 @@ docker compose pull
 docker compose up -d
 ```
 
-Core- und Kundencode können unabhängig zurückgerollt werden, wenn sie separat aktualisiert wurden. Wenn beide gemeinsam
-aktualisiert wurden, rollen Sie zuerst den Core und dann den Kundencode zurück.
+Kern- und Kunden-Code können unabhängig zurückgerollt werden, wenn sie separat aktualisiert wurden. Wenn beide zusammen
+aktualisiert wurden, rollen Sie zuerst den Kern, dann den Kunden-Code zurück.
 
 ______________________________________________________________________
 
 ## Kompatibilität
 
-Kundenspezifischer Code ist an bestimmte Core-Versionen gebunden, um Stabilität zu gewährleisten. Eine
-Kompatibilitätsmatrix verfolgt, welche Kundenversionen mit welchen Core-Versionen funktionieren:
+Kunden-Code bindet an spezifische Kernversionen, um die Stabilität zu gewährleisten. Eine Kompatibilitätsmatrix
+verfolgt, welche Kundenversionen mit welchen Kernversionen funktionieren:
 
-| Kundenversion | Core-Version | Status      | Anmerkungen            |
-| ------------- | ------------ | ----------- | ---------------------- |
-| v1.0.0        | v0.1.2       | Legacy      | Ende des Supports      |
-| v1.1.0        | v1.2.3       | Unterstützt | Aktuelle Produktion    |
-| v1.2.0        | v1.2.3       | Unterstützt | Neueste Features       |
-| v2.0.0        | v2.3.4       | Testphase   | Nächster Major-Release |
+| Kundenversion | Kernversion | Status      | Anmerkungen           |
+| ------------- | ----------- | ----------- | --------------------- |
+| v1.0.0        | v0.1.2      | Legacy      | End of Life           |
+| v1.1.0        | v1.2.3      | Unterstützt | Aktuelle Produktion   |
+| v1.2.0        | v1.2.3      | Unterstützt | Neueste Features      |
+| v2.0.0        | v2.3.4      | Testen      | Nächste Major Release |
 
-Staging-Umgebungen sollten der Produktionsinfrastruktur entsprechen und repräsentative Datensätze verwenden, um die
-Kompatibilität vor Produktions-Updates zu testen.
+Staging-Umgebungen sollten der Produktionsinfrastruktur entsprechen und repräsentative Datensätze für die
+Kompatibilitätstests vor Produktions-Updates verwenden.
 
 ______________________________________________________________________
 
 ## Monitoring
 
 Der Observability Stack umfasst Langfuse für KI-spezifisches Tracing, OpenTelemetry für verteiltes Tracing und optional
-SigNoz Cloud für externe Metriken und Logs. Überwachen Sie Core-Services (API, Web, Dagster) und Kunden-Services
+SigNoz Cloud für externe Metriken und Logs. Überwachen Sie Kern-Services (API, Web, Dagster) und Kunden-Services
 (Agents, Pipelines, Prozesse) während und nach Updates.
 
 ______________________________________________________________________
 
-## Zugehörige Dokumentation
+## Verwandte Dokumentation
 
-- [Deployment-Optionen](../1_deployment_options/) - Per-Instanz-Architektur
-- [Multi-Tenancy](../../16_multi_tenancy/) - Logische Trennung innerhalb von Instanzen
-- [Backup und Wiederherstellung](../4_backup_and_recovery/) - Backup-Strategien
-- [Core-Komponenten](../../2_architecture/1_core_components/) - Komponentenabhängigkeiten
+- [Deployment-Optionen](../1_deployment_options/) – Architektur pro Instanz
+- [Multi-Tenancy](../../16_multi_tenancy/) – Logische Trennung innerhalb von Instanzen
+- [Backup und Wiederherstellung](../4_backup_and_recovery/) – Backup-Strategien
+- [Kernkomponenten](../../2_architecture/1_core_components/) – Komponentenabhängigkeiten

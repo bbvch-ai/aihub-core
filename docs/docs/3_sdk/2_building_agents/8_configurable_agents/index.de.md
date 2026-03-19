@@ -1,19 +1,18 @@
-````markdown
 ---
 title: Konfigurierbare Agentenformulare
-source_sha: "26826340f61f5add37c57394ce94e9f56625aeb51f99b9d3043f43da82f6f59f"
+source_sha: "dea97b0c7cdd335029ac01267a55446be0916c7917b4a9f4203f1d243a988883"
 ---
 
 # Konfigurierbare Agentenformulare
 
-Dieser Leitfaden erklärt, wie Agentenkonfigurationsformulare definiert werden, die Administratoren das Erstellen und Anpassen von Agentenprofilen ohne Codeänderungen ermöglichen.
+Dieser Leitfaden erklärt, wie Sie Agenten-Konfigurationsformulare definieren, die es Administratoren ermöglichen, Agentenprofile ohne Codeänderungen zu erstellen und anzupassen.
 
 ## Überblick
 
 Das SDK verwendet das **Formular-Dualitätsmuster**, bei dem ein einziges Pydantic-Modell zwei Zwecken dient:
 
 1.  **Formularmodus**: Felder enthalten `FormkitElement`-Instanzen, die das UI-Formular definieren
-2.  **Datenmodus**: Felder enthalten primitive Werte, die die validierte Konfiguration halten
+2.  **Datenmodus**: Felder enthalten primitive Werte, die die validierte Konfiguration speichern
 
 Dieses Muster stellt sicher, dass das Formularschema und das Datenmodell nicht desynchronisiert werden können.
 
@@ -25,10 +24,10 @@ Dieses Muster stellt sicher, dass das Formularschema und das Datenmodell nicht d
 from typing import Annotated
 from pydantic import Field
 
-from aihub_lib.agents.AgentConfig import AgentConfig
-from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events.form.constraints import Ge, Le
-from aihub_lib.nats.events.form.elements import InputNumber, InputText
+from swiss_ai_hub.core.agents.agent_config import AgentConfig
+from swiss_ai_hub.core.i18n.locale_string import LocaleString
+from swiss_ai_hub.core.form.constraints import Ge, Le
+from swiss_ai_hub.core.form.elements import InputNumber, InputText
 
 
 class MyAgentConfig(AgentConfig):
@@ -69,12 +68,12 @@ class MyAgentConfig(AgentConfig):
                 step=0.1,
             ),
         )
-````
+```
 
-### Registrieren mit AgentRunner
+### Registrierung beim AgentRunner
 
 ```python
-from aihub_agent.runners.AgentRunner import AgentRunner
+from swiss_ai_hub.agent.runners.agent_runner import AgentRunner
 
 from .MyAgent import MyAgent
 from .MyAgentConfig import MyAgentConfig
@@ -88,16 +87,14 @@ async def main():
     await runner.run_forever()
 ```
 
-Der Aufruf `as_form()` erstellt eine Konfigurationsinstanz im Formularmodus. Wenn der Agent sich über Discovery
-registriert, wird das Formularschema extrahiert und gespeichert. Administratoren können dann Profile über die
-Admin-Benutzeroberfläche erstellen.
+Der Aufruf von `as_form()` erstellt eine Konfigurationsinstanz im Formularmodus. Wenn der Agent sich über Discovery registriert, wird das Formularschema extrahiert und gespeichert. Administratoren können dann Profile über die Admin-Benutzeroberfläche erstellen.
 
 ## Verfügbare FormKit-Elemente
 
 ### Texteingabe
 
 ```python
-from aihub_lib.nats.events.form.elements import InputText
+from swiss_ai_hub.core.form.elements import InputText
 
 system_prompt: Annotated[str | InputText, Field()] = "You are a helpful assistant."
 
@@ -112,8 +109,8 @@ system_prompt=InputText(
 ### Numerische Eingabe
 
 ```python
-from aihub_lib.nats.events.form.elements import InputNumber
-from aihub_lib.nats.events.form.constraints import Ge, Le
+from swiss_ai_hub.core.form.elements import InputNumber
+from swiss_ai_hub.core.form.constraints import Ge, Le
 
 max_tokens: Annotated[int | InputNumber, Field(), Ge(1), Le(4096)] = 1024
 
@@ -126,10 +123,10 @@ max_tokens=InputNumber(
 )
 ```
 
-### Boolescher Schalter
+### Boolescher Umschalter
 
 ```python
-from aihub_lib.nats.events.form.elements import ToggleSwitch
+from swiss_ai_hub.core.form.elements import ToggleSwitch
 
 enable_citations: Annotated[bool | ToggleSwitch, Field()] = True
 
@@ -143,7 +140,7 @@ enable_citations=ToggleSwitch(
 ### Dropdown-Auswahl
 
 ```python
-from aihub_lib.nats.events.form.elements import Select
+from swiss_ai_hub.core.form.elements import Select
 
 response_format: Annotated[str | Select, Field()] = "text"
 
@@ -161,8 +158,8 @@ response_format=Select(
 ### Mehrsprachige Eingabe
 
 ```python
-from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events.form.elements import LocaleInput
+from swiss_ai_hub.core.i18n.locale_string import LocaleString
+from swiss_ai_hub.core.form.elements import LocaleInput
 
 greeting: Annotated[LocaleString | LocaleInput, Field()]
 
@@ -173,10 +170,10 @@ greeting=LocaleInput(
 )
 ```
 
-### Modellauswahl
+### Modell-Auswahl
 
 ```python
-from aihub_lib.nats.events.form.elements import ModelSelect
+from swiss_ai_hub.core.form.elements import ModelSelect
 
 llm_model: Annotated[str | ModelSelect, Field()] = "gpt-4"
 
@@ -191,11 +188,10 @@ Das `ModelSelect`-Element wird zur Laufzeit automatisch aus dem LiteLLM-Modellre
 
 ## Formularsichere Constraints
 
-Standard-Pydantic-Constraints (`Field(ge=0, le=1)`) funktionieren nicht mit dem Dualitätsmuster, da sie
-`FormkitElement`-Typen nicht validieren können. Verwenden Sie stattdessen die vom SDK bereitgestellten Constraints:
+Standard-Pydantic-Constraints (`Field(ge=0, le=1)`) funktionieren nicht mit dem Dualitätsmuster, da sie `FormkitElement`-Typen nicht validieren können. Verwenden Sie stattdessen die vom SDK bereitgestellten Constraints:
 
 ```python
-from aihub_lib.nats.events.form.constraints import Ge, Le, Gt, Lt, MinLen, MaxLen, Pattern
+from swiss_ai_hub.core.form.constraints import Ge, Le, Gt, Lt, MinLen, MaxLen, Pattern
 
 # Numeric constraints
 temperature: Annotated[float | InputNumber, Ge(0.0), Le(1.0)] = 0.7
@@ -206,13 +202,11 @@ api_key: Annotated[str | InputText, MinLen(10), MaxLen(100)] = ""
 agent_id: Annotated[str | InputText, Pattern(r"^[a-z0-9_-]+$")] = ""
 ```
 
-Diese Constraints überspringen die Validierung, wenn das Feld ein `FormkitElement` enthält, wodurch die
-Pydantic-Validierung in beiden Modi funktioniert.
+Diese Constraints überspringen die Validierung, wenn das Feld ein `FormkitElement` enthält, wodurch die Pydantic-Validierung in beiden Modi funktioniert.
 
 ## Nicht-konfigurierbare Felder
 
-Einige Felder sollten nicht im Formular erscheinen (bereitstellungsspezifische Konfiguration). Lassen Sie die
-FormKit-Element-Alternative weg:
+Einige Felder sollten nicht im Formular erscheinen (bereitstellungsspezifische Konfiguration). Lassen Sie die FormKit-Element-Alternative weg:
 
 ```python
 class MyAgentConfig(AgentConfig):
@@ -235,16 +229,15 @@ class MyAgentConfig(AgentConfig):
         )
 ```
 
-Nicht-konfigurierbare Felder werden zur Laufzeit mit der vom Benutzer übermittelten Konfiguration zusammengeführt. Das
-Formular zeigt nur konfigurierbare Felder an.
+Nicht-konfigurierbare Felder werden zur Laufzeit mit der vom Benutzer übermittelten Konfiguration zusammengeführt. Das Formular zeigt nur konfigurierbare Felder an.
 
 ## Verschachtelte Formulare
 
-Formulare können andere Formulare mithilfe des `Group`-Elements enthalten:
+Formulare können andere Formulare unter Verwendung des `Group`-Elements enthalten:
 
 ```python
-from aihub_lib.nats.events.form.Form import Form
-from aihub_lib.nats.events.form.elements import InputNumber, ModelSelect
+from swiss_ai_hub.core.form.form import Form
+from swiss_ai_hub.core.form.elements import InputNumber, ModelSelect
 
 
 class LLMConfig(Form):
@@ -314,15 +307,14 @@ class MyAgentConfig(AgentConfig):
         )
 ```
 
-Listen von Formularen werden als `Repeater`-Elemente gerendert, wodurch Benutzer Elemente dynamisch hinzufügen/entfernen
-können.
+Listen von Formularen werden als `Repeater`-Elemente gerendert, die es Benutzern ermöglichen, Elemente dynamisch hinzuzufügen/zu entfernen.
 
-## Zugriff auf die Konfiguration in Schritten
+## Zugriff auf Konfiguration in Schritten
 
-Der Dispatcher injiziert die validierte Konfiguration über Typannotation in die Schrittmethoden:
+Der Dispatcher injiziert die validierte Konfiguration über Typannotationen in Schrittmethoden:
 
 ```python
-from aihub_agent.workflow.decorators.step import step
+from swiss_ai_hub.agent.workflow.decorators.step import step
 
 
 class MyAgent(Agent):
@@ -342,12 +334,11 @@ class MyAgent(Agent):
         # ...
 ```
 
-Die Konfiguration wird via RPC abgerufen, wenn der Agent ein `StartEvent` erhält, gegen das Pydantic-Modell validiert
-und für die Dauer des Laufs zwischengespeichert.
+Die Konfiguration wird über RPC abgerufen, wenn der Agent ein `StartEvent` erhält, gegen das Pydantic-Modell validiert und für die Dauer des Laufs zwischengespeichert.
 
 ## Bedingte Feldsichtbarkeit
 
-Felder basierend auf Werten anderer Felder anzeigen oder ausblenden:
+Felder basierend auf den Werten anderer Felder anzeigen oder verbergen:
 
 ```python
 use_custom_prompt: Annotated[bool | ToggleSwitch, Field()] = False
@@ -361,8 +352,7 @@ custom_prompt=InputText(
 )
 ```
 
-Der Parameter `condition_if` verwendet die Ausdruckssyntax von FormKit. Das Feld erscheint nur, wenn die Bedingung als
-wahr ausgewertet wird.
+Der Parameter `condition_if` verwendet die Ausdruckssyntax von FormKit. Das Feld wird nur angezeigt, wenn die Bedingung als wahr ausgewertet wird.
 
 ## Vollständiges Beispiel
 
@@ -371,15 +361,15 @@ from typing import Annotated
 
 from pydantic import Field
 
-from aihub_agent.agents.Agent import Agent
-from aihub_agent.runners.AgentRunner import AgentRunner
-from aihub_agent.workflow.decorators.step import step
-from aihub_lib.agents.AgentConfig import AgentConfig
-from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events.control.StopEvent import StopEvent
-from aihub_lib.nats.events.control.UserMessageEvent import UserMessageEvent
-from aihub_lib.nats.events.form.constraints import Ge, Le
-from aihub_lib.nats.events.form.elements import InputNumber, InputText, ModelSelect, ToggleSwitch
+from swiss_ai_hub.agent.agents.agent import Agent
+from swiss_ai_hub.agent.runners.agent_runner import AgentRunner
+from swiss_ai_hub.agent.workflow.decorators.step import step
+from swiss_ai_hub.core.agents.agent_config import AgentConfig
+from swiss_ai_hub.core.i18n.locale_string import LocaleString
+from swiss_ai_hub.core.events.control.stop_event import StopEvent
+from swiss_ai_hub.core.events.control.user_message_event import UserMessageEvent
+from swiss_ai_hub.core.form.constraints import Ge, Le
+from swiss_ai_hub.core.form.elements import InputNumber, InputText, ModelSelect, ToggleSwitch
 
 
 class QAAgentConfig(AgentConfig):
@@ -445,29 +435,26 @@ async def main():
     await runner.run_forever()
 ```
 
-## Bewährte Verfahren
+## Best Practices
 
-### Feldnamen
+### Feld-Benennung
 
-- Verwenden Sie beschreibende Feldnamen, die für Administratoren sinnvoll sind
+- Verwenden Sie beschreibende Feldnamen, die für Administratoren verständlich sind
 - Stellen Sie `help`-Text bereit, der erklärt, was jede Einstellung bewirkt
 - Fügen Sie sinnvolle Standardwerte hinzu
 
 ### Validierung
 
 - Verwenden Sie immer Constraints (`Ge`, `Le`, `Pattern`) für numerische Felder und String-Felder
-- Validieren Sie frühzeitig, um das Speichern ungültiger Konfigurationen zu verhindern
+- Validieren Sie frühzeitig, um zu verhindern, dass ungültige Konfigurationen gespeichert werden
 
 ### Lokalisierung
 
-- Verwenden Sie `LocaleString` für alle benutzeroberflächenrelevanten Texte (Labels, Hilfe, Beschreibungen)
+- Verwenden Sie `LocaleString` für alle benutzerspezifischen Texte (Labels, Hilfe, Beschreibungen)
 - Unterstützen Sie mindestens Deutsch und Englisch (`de`, `en`)
 
 ### Testen
 
 - Testen Sie sowohl den Formularmodus (`as_form()`) als auch den Datenmodus (mit tatsächlichen Werten)
 - Überprüfen Sie die Generierung des Formularschemas mit `config.to_formkit_form()`
-- Testen Sie die Konfigurationsinjektion in den Schrittmethoden
-
-```
-```
+- Testen Sie die Konfigurationsinjektion in Schrittmethoden

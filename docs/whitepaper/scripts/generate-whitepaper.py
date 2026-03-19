@@ -570,7 +570,7 @@ Examples:
     # Setup configuration - scripts/ is inside whitepaper/
     script_dir = Path(__file__).parent.resolve()
     whitepaper_dir = script_dir.parent
-    project_root = whitepaper_dir.parent.parent  # whitepaper -> aihub_doc -> swiss-ai-hub
+    project_root = whitepaper_dir.parent.parent  # whitepaper -> docs -> swiss-ai-hub
 
     config = GeneratorConfig(
         whitepaper_dir=whitepaper_dir,

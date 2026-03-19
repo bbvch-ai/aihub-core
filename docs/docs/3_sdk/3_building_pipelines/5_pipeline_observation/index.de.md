@@ -1,29 +1,25 @@
-```yaml
 ---
-title: Pipeline-Observability
-source_sha: "64fee6e1120ef2a5f6e9ce41bb7f52f7cb6dd70b3215eca2dea89a2f57377d04"
+title: Pipeline-Beobachtung
+source_sha: "db8e0d8b16f92143231a326612a950e9447542b3e724a8233f71e4a323f048d8"
 ---
-```
 
-# Pipeline-Observability
+# Pipeline-Beobachtung
 
-Effektives Monitoring und Debugging sind essenziell, um zuverlässige Datenverarbeitungs-Pipelines aufrechtzuerhalten.
-Swiss AI Hub bietet umfassende Observability-Tools, um die Pipeline-Ausführung zu verfolgen, Probleme zu diagnostizieren
-und die Leistung zu optimieren.
+Effektives Monitoring und Debugging sind entscheidend für die Aufrechterhaltung zuverlässiger Datenverarbeitungspipelines. Swiss AI Hub bietet umfassende Observability-Tools, um die Pipeline-Ausführung zu verfolgen, Probleme zu diagnostizieren und die Leistung zu optimieren.
 
 ## Was Sie lernen werden
 
-Dieser Leitfaden behandelt die Pipeline-Observability:
+Dieser Leitfaden behandelt die Pipeline-Beobachtung:
 
-- **Monitoring**: Verfolgen Sie die Pipeline-Ausführung und Leistungsmetriken
-- **Debugging**: Diagnostizieren und beheben Sie Pipeline-Fehler
-- **Tracing**: Verstehen Sie Datenherkunft und Verarbeitungshistorie
+- **Monitoring**: Verfolgung der Pipeline-Ausführung und Leistungskennzahlen
+- **Debugging**: Diagnose und Behebung von Pipeline-Fehlern
+- **Tracing**: Verständnis der Datenherkunft und des Verarbeitungsverlaufs
 
 ## Dagster UI-Monitoring
 
-### Asset-Abstammung und -Abhängigkeiten
+### Asset-Herkunft und Abhängigkeiten
 
-Die Dagster UI bietet eine visuelle Verfolgung der Asset-Abstammung:
+Die Dagster UI bietet eine visuelle Verfolgung der Asset-Herkunft:
 
 ```python
 # View asset dependencies and execution status
@@ -39,7 +35,7 @@ def documents(data_lake_file: DataLakeFile) -> RefDocDocument:
 
 ### Asset-Materialisierungs-Metadaten
 
-Fügen Sie umfassende Metadaten hinzu, um Verarbeitungsdetails zu verfolgen:
+Fügen Sie umfangreiche Metadaten hinzu, um Verarbeitungsdetails zu verfolgen:
 
 ```python
 @op
@@ -80,7 +76,7 @@ def parse_document_with_metadata(
     return document
 ```
 
-### Partition-Level-Monitoring
+### Monitoring auf Partitionsebene
 
 Verfolgen Sie den Verarbeitungsstatus über dynamische Partitionen hinweg:
 
@@ -109,4 +105,4 @@ def partitioned_processing(context: AssetExecutionContext) -> ProcessingResult:
 
 ## Nächste Schritte
 
-- Erkunden Sie `aihub_pipeline/playground/` für vollständige Beispiele beobachtbarer Pipelines
+- Erkunden Sie `packages/pipeline/playground/` für vollständige Beispiele beobachtbarer Pipelines

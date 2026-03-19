@@ -1,20 +1,17 @@
 ---
 title: Was ist passiert?
-source_sha: f316cc9d2a3546df829951e88f3704de3aa7b1b4636eeeb97ed96566248b0919
+source_sha: "ff746a9fcc571c1a313414a256b8c123d6bef336207c0edd64e2f00892fc0d5d"
 ---
 
 # Was ist passiert?
 
-Die Schweizer Swiss AI Hub Plattform ist einfach einzurichten und zu betreiben. Diese Einführung behandelt die
-Grundlagen, aber die Plattform bietet noch viele weitere Funktionen. Sie können sie sofort ohne Änderungen verwenden
-oder andere Themen ausführlicher erkunden. Die Plattform ist voll funktionsfähig und einsatzbereit.
+Die Swiss AI Hub Plattform ist einfach einzurichten und zu betreiben. Diese Einführung behandelt die Grundlagen, aber die Plattform bietet noch viele weitere Funktionen. Sie können sie ohne Änderungen direkt nutzen oder andere Themen ausführlicher erkunden. Die Plattform ist voll funktionsfähig und einsatzbereit.
 
-Sollten Teile dieser Einführung unklar sein, können Sie diese in Ihrem eigenen Tempo nochmals durchgehen. Die folgenden
-Kapitel behandeln weitere Funktionen und Möglichkeiten detailliert.
+Falls Teile dieser Einführung unklar sind, können Sie diese in Ihrem eigenen Tempo erneut durchgehen. Die folgenden Kapitel behandeln weitere Funktionen und Möglichkeiten im Detail.
 
-## Wohin als Nächstes?
+## Wie geht es weiter?
 
-Hier sind einige Optionen, wohin Sie als Nächstes gehen können, je nachdem, was Sie interessiert.
+Hier sind einige Optionen, wie Sie fortfahren können, je nachdem, was Sie interessiert.
 
 <script setup>
 import NavigationBoxes from '../../../../.vitepress/components/NavigationBoxes.vue'
@@ -22,7 +19,7 @@ import NavigationBoxes from '../../../../.vitepress/components/NavigationBoxes.v
 const navigationItems = [
   {
     title: 'Architektur',
-    description: 'Entdecken Sie die Architektur hinter der Plattform.',
+    description: 'Erkunden Sie die Architektur hinter der Plattform.',
     href: '../../2_architecture/'
   },
   {

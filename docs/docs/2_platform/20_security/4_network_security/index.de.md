@@ -1,19 +1,15 @@
 ---
 title: Netzwerksicherheit
-source_sha: 8718c031f06d37bc10bf2aa0c905175f054e7ad5034186a09d4e960d2f06035a
+source_sha: "b6245eac2546bac589eda41544ceb38cae501ba8a56e2b2e9a1669aa993e6c2e"
 ---
 
 # Netzwerksicherheit
 
-Der Swiss AI Hub nutzt eine gestaffelte Netzwerksicherheit (Defense-in-Depth). Mehrere unabhängige Schichten schützen
-die Plattform, ihre Daten und ihre Benutzer.
+Der Swiss AI Hub verwendet eine gestaffelte Netzwerksicherheit (Defense-in-Depth). Mehrere unabhängige Schichten schützen die Plattform, ihre Daten und ihre Benutzer.
 
-Alle internen Services (Swiss AI Hub API, Web UI, LiteLLM Proxy, Datenbanken) laufen in isolierten Docker-Containern in
-privaten Netzwerken. Der Traefik Reverse Proxy ist die einzige Komponente, die aus dem Internet zugänglich ist und
-öffentlichen Traffic auf den Ports 80 und 443 akzeptiert.
+Alle internen Services (Swiss AI Hub API, Web UI, LiteLLM Proxy, Datenbanken) laufen in isolierten Docker-Containern auf privaten Netzwerken. Der Traefik Reverse Proxy ist die einzige Komponente, die aus dem Internet zugänglich ist und öffentlichen Traffic auf den Ports 80 und 443 akzeptiert.
 
-Traefik leitet Anfragen an den korrekten internen Service weiter. Backend-Services bleiben isoliert und werden niemals
-direkt dem öffentlichen Internet ausgesetzt.
+Traefik leitet Anfragen an den korrekten internen Service weiter. Backend Services bleiben isoliert und werden niemals direkt dem öffentlichen Internet ausgesetzt.
 
 ```
 Internet
@@ -38,55 +34,39 @@ Internet
          └── Customer APIs (SharePoint, Confluence, Custom REST APIs)
 ```
 
-## Sicherheitsschichten
+## Sicherheitsebenen
 
 Sicherheit gilt in jeder Phase einer Anfrage, vom Netzwerkrand bis zur Anwendungslogik.
 
 ### Netzwerk-Firewall (NSG)
 
-Die Network Security Group (NSG) oder Firewall erzwingt eine standardmäßige Ablehnungsrichtlinie (Default-Deny-Policy).
-Nur die Ports 80 (HTTP) und 443 (HTTPS) sind aus dem öffentlichen Internet zugänglich. Alle anderen Ports sind
-blockiert. Sie können den administrativen Zugriff wie SSH auf bestimmte vertrauenswürdige IP-Bereiche beschränken.
+Die Network Security Group (NSG) oder Firewall erzwingt eine standardmäßige Ablehnungsrichtlinie (default deny policy). Nur die Ports 80 (HTTP) und 443 (HTTPS) sind aus dem öffentlichen Internet zugänglich. Alle anderen Ports sind blockiert. Sie können administrativen Zugriff wie SSH auf bestimmte vertrauenswürdige IP-Bereiche beschränken.
 
 ### Reverse Proxy (Traefik)
 
-Traefik dient als einziger Entry Point und sichert alle eingehenden Verbindungen. Es terminiert TLS (erfordert HTTPS mit
-TLS 1.2+), provisioniert und erneuert automatisch Zertifikate über Let's Encrypt und fügt Sicherheits-Header wie HSTS
-und X-Frame-Options ein. Rate Limiting schützt Backend-Services vor Brute-Force- und einfachen DoS-Angriffen.
+Traefik dient als einziger Entry Point und sichert alle eingehenden Verbindungen. Er terminiert TLS (erfordert HTTPS mit TLS 1.2+), provisioniert und erneuert Zertifikate automatisch über Let's Encrypt und fügt Sicherheits-Header wie HSTS und X-Frame-Options ein. Rate Limiting schützt Backend Services vor Brute-Force- und einfachen DoS-Angriffen.
 
 ### Authentifizierung (IAM)
 
-Azure AD OAuth2 handhabt die Benutzerauthentifizierung und integriert sich mit der Unternehmensidentität. Dies
-ermöglicht die rollenbasierte Zugriffskontrolle (RBAC) für fein abgestufte Berechtigungen. API-Keys authentifizieren die
-Service-zu-Service-Kommunikation. Das Session Management mit konfigurierbaren Timeouts schützt Benutzersessions.
+Azure AD OAuth2 übernimmt die Benutzerauthentifizierung und integriert sich in die Unternehmensidentität. Dies ermöglicht Role-Based Access Control (RBAC) für fein granulierte Berechtigungen. API-Schlüssel authentifizieren die Service-zu-Service-Kommunikation. Das Session Management mit konfigurierbaren Timeouts schützt Benutzersessions.
 
 ### Container-Isolation
 
-Anwendungs-Services laufen als Nicht-Root-Benutzer in isolierten Docker-Containern mit minimalen Privilegien.
-Container-Netzwerkregeln verhindern die direkte Kommunikation zwischen nicht zusammengehörigen Services.
-Ressourcenlimits mindern Angriffe durch Ressourcenauslastung. Images werden regelmäßig mit Sicherheitspatches
-aktualisiert.
+Anwendungs-Services laufen als Nicht-Root-Benutzer in isolierten Docker-Containern mit minimalen Privilegien. Container-Netzwerkregeln verhindern die direkte Kommunikation zwischen nicht verwandten Services. Ressourcenlimits mindern Angriffe durch Ressourcenerschöpfung. Images werden regelmäßig mit Sicherheitspatches aktualisiert.
 
 ### Netzwerksegmentierung
 
-Die Plattform verwendet fünf isolierte Docker-Netzwerke (`proxy`, `backend`, `data`, `storage`, `egress`), um das
-Prinzip der geringsten Rechte auf der Netzwerkschicht durchzusetzen. Services werden nur den Netzwerken zugewiesen, die
-sie benötigen:
+Die Plattform verwendet fünf isolierte Docker-Netzwerke (`proxy`, `backend`, `data`, `storage`, `egress`), um das Prinzip der geringsten Rechte auf der Netzwerkschicht durchzusetzen. Services werden nur den Netzwerken zugewiesen, die sie benötigen:
 
 - **Interne Netzwerke** (`backend`, `data`, `storage`) haben keinen externen Internetzugang
-- **Egress-Netzwerk** ermöglicht nur ausgehenden Internetzugang, wobei die Inter-Container Communication (ICC)
-  deaktiviert ist
-- Services, die externe Websites durchsuchen müssen (z.B. Playwright), nutzen das `egress`-Netzwerk, ohne Ingress
-  preiszugeben
+- **Egress-Netzwerk** erlaubt nur ausgehenden Internetzugang, wobei die Inter-Container Communication (ICC) deaktiviert ist
+- Services, die externe Websites durchsuchen müssen (z.B. Playwright), verwenden das `egress`-Netzwerk, ohne Ingress preiszugeben
 
-Siehe [Netzwerk-Isolation](../../2_architecture/4_network_isolation/) für detaillierte Netzwerktopologie und
-Service-Zuweisungen.
+Siehe [Netzwerk-Isolation](../../2_architecture/4_network_isolation/) für detaillierte Netzwerktopologie und Service-Zuweisungen.
 
 ### Datenschutz
 
-Presidio erkennt und anonymisiert automatisch persönlich identifizierbare Informationen (PII) in LLM-Anfragen.
-KI-gestützte Schutzmechanismen für sensible Informationen scannen Antworten vor der Zustellung an Benutzer. Ein
-Audit-Trail protokolliert alle Datenzugriffe und -verarbeitungen.
+Presidio erkennt und anonymisiert automatisch persönlich identifizierbare Informationen (PII) in LLM-Anfragen. KI-gestützte Schutzvorrichtungen für sensible Informationen scannen Antworten, bevor sie an Benutzer geliefert werden. Ein Audit-Trail protokolliert alle Datenzugriffe und -verarbeitungen.
 
 ## Verwandte Dokumentation
 
@@ -96,4 +76,4 @@ Audit-Trail protokolliert alle Datenzugriffe und -verarbeitungen.
 - [Container-Sicherheit](../3_container_security/) - Container-Isolation und -Härtung
 - [Authentifizierung](../1_authentication/) - Authentifizierungsmechanismen
 - [Eingabevalidierung](../2_input_validation/) - Eingabebereinigung und -validierung
-- [Infrastruktur-Schichten](../../2_architecture/2_infrastructure_layers/) - Übersicht der Infrastrukturkomponenten
+- [Infrastruktur-Ebenen](../../2_architecture/2_infrastructure_layers/) - Übersicht der Infrastrukturkomponenten

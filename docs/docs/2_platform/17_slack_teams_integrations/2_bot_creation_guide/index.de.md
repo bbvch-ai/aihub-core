@@ -1,20 +1,18 @@
 ---
 title: Manuelle Einrichtungsanleitung für Bot-Erstellung
-source_sha: 8568bb06df1e0394d4e4e50b0067c2a07e49bfea49cb50d6e0009476025523bd
+source_sha: "ed66a86634148988baa8f04af9227d9dcb72d28689d3ba36b15416c08373b830"
 ---
 
 # Manuelle Einrichtungsanleitung für Bot-Erstellung :robot: :wrench:
 
-::: info **TL;DR – Was ist dieser Leitfaden?**
-Dieses umfassende Handbuch bietet **Schritt-für-Schritt-Anleitungen zur manuellen Erstellung und Konfiguration von
-Bots** mit Microsoft Teams- und Slack-Integration. Verwenden Sie diesen Leitfaden, wenn Sie neue Bots von Grund auf neu
-erstellen, Azure Bot Framework-Kanäle konfigurieren oder bestehende Bot-Deployments beheben müssen. Er deckt alles ab,
-von der Einrichtung des Teams Developer Portals bis zur MongoDB-Konfiguration und Slack OAuth-Integration.
+::: info **Kurz gesagt – Wozu dient diese Anleitung?**
+Dieses umfassende Handbuch bietet **Schritt-für-Schritt-Anleitungen zur manuellen Erstellung und Konfiguration von Bots** mit
+Microsoft Teams- und Slack-Integration. Nutzen Sie diese Anleitung, wenn Sie neue Bots von Grund auf erstellen, Azure Bot
+Framework-Kanäle konfigurieren oder bestehende Bot-Deployments beheben müssen. Sie deckt alles ab, von der Einrichtung des Teams Developer Portal über die MongoDB-Konfiguration bis hin zur Slack OAuth-Integration.
 :::
 
 ::: tip Automatisierte Einrichtung verfügbar
-Bevor Sie mit der manuellen Einrichtung fortfahren, sollten Sie das **automatisierte Einrichtungsskript** verwenden, das
-die meisten dieser Schritte für Sie erledigt:
+Bevor Sie mit der manuellen Einrichtung fortfahren, ziehen Sie das **automatisierte Setup-Skript** in Betracht, das die meisten dieser Schritte für Sie erledigt:
 
 ```bash
 python aihub_bot/setup_azure_bot.py \
@@ -25,72 +23,70 @@ python aihub_bot/setup_azure_bot.py \
     --mongo-connection-string "mongodb://localhost:27017"
 ```
 
-**Wann Sie das automatisierte Skript verwenden sollten:**
+**Wann das automatisierte Skript verwendet werden sollte:**
 
-- Erstellung neuer Bots für das Produktions-Deployment
-- Standard-Single-Bot- oder Multi-Bot-Konfigurationen
-- Schnelle Einrichtung ohne Anpassung
+- Erstellung neuer Bots für das Production-Deployment
+- Standard-Einzel-Bot- oder Multi-Bot-Konfigurationen
+- Schnelleinrichtung ohne Anpassung
 
-**Wann Sie diesen manuellen Leitfaden verwenden sollten:**
+**Wann diese manuelle Anleitung verwendet werden sollte:**
 
 - Behebung von Fehlern bei der automatisierten Einrichtung
 - Detailliertes Verständnis der Bot-Konfiguration
-- Erstellung benutzerdefinierter oder nicht-standardmäßiger Konfigurationen
-- Erlernen der Funktionsweise der Bot-Integration
+- Erstellung benutzerdefinierter oder nicht standardmäßiger Konfigurationen
+- Verständnis der Bot-Integration
 
-Details zur automatisierten Einrichtung finden Sie im [Anleitung zur Azure Bot Service-Integration](../1_setup/).
+Details zur automatisierten Einrichtung finden Sie in der [Anleitung zur Azure Bot Service-Integration](../1_setup/).
 :::
 
-## Verwandte Dokumentation :books:
+## Zugehörige Dokumentation :books:
 
-- **[Übersicht über Slack- & Teams-Integrationen](../)** – Konzepte und geschäftlicher Nutzen auf hoher Ebene
+- **[Übersicht über Slack- und Teams-Integrationen](../)** – High-Level-Konzepte und geschäftlicher Nutzen
 - **[Azure Bot Service-Integration](../1_setup/)** – Anleitung zur automatisierten Einrichtung
-- **[Swiss AI Hub Bot Entwicklerhandbuch](../../../6_code_deep_dive/aihub_bot/)** – Technische Implementierungsdetails
-- **[Bot-in-the-Loop Dokumentation](../../../3_sdk/6_feature_overview/bot-in-the-loop/)** –
-  Human-AI-Kollaborations-Workflows
+- **[Entwicklerhandbuch für Swiss AI Hub Bot](../../../6_code_deep_dive/aihub_bot/)** – Technische Implementierungsdetails
+- **[Bot-in-the-Loop-Dokumentation](../../../3_sdk/6_feature_overview/bot-in-the-loop/)** – Mensch-KI-Kollaborations-Workflows
 
 ## Wichtige Terminologie :book:
 
 Das Verständnis dieser Begriffe ist entscheidend für eine erfolgreiche Bot-Konfiguration:
 
-| Term                                 | Definition                                                                                                                                                                                                                                         |
-| :----------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Bot Framework Messaging Endpoint** | Die einzige öffentliche URL, an die der Azure Bot Service ALLE Bot-Nachrichten sendet. Immer `/api/v1/messages`. Konfiguriert im Teams Developer Portal (Schritt 3).                                                                               |
-| **MongoDB `path`-Feld**              | Interner Routing-Pfad, der bestimmt, welche Bot-Implementierung eine Konversation behandelt. Beispiele: `/api/v1/agent/chat/completions/...` oder `/api/v1/openai/chat/completions`. Konfiguriert in der MongoDB-Sammlung `bot_paths` (Schritt 7). |
-| **App ID / Client ID**               | Azure AD Anwendungsbezeichner (UUID-Format). Derselbe Wert wird als Bot ID und in MongoDB `credentials.APP_ID` verwendet.                                                                                                                          |
-| **Client Secret / App Password**     | Azure AD Anwendungs-Secret. Wird in MongoDB als `credentials.APP_PASSWORD` gespeichert. Läuft ab und muss rotiert werden.                                                                                                                          |
-| **Tenant ID**                        | Microsoft 365 Tenant-Bezeichner. Erforderlich für SingleTenant-Bots, gespeichert als `credentials.APP_TENANTID`.                                                                                                                                   |
-| **Bot-in-the-Loop**                  | Muster, bei dem AI Agents während der Workflow-Ausführung über Slack-Kanäle menschliche Eingaben anfordern.                                                                                                                                        |
-| **Slack Bot OAuth Token**            | Token für die Slack-Integration (Format: `xoxb-...`). Wird in MongoDB als `slack_token` gespeichert.                                                                                                                                               |
+| Begriff                            | Definition                                                                                                                                                                                                                            |
+| :--------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Bot Framework Messaging Endpoint** | Die einzelne öffentliche URL, an die der Azure Bot Service ALLE Bot-Nachrichten sendet. Immer `/api/v1/messages`. Konfiguriert im Teams Developer Portal (Schritt 3).                                                                   |
+| **MongoDB `path`-Feld**            | Interner Routing-Pfad, der bestimmt, welche Bot-Implementierung eine Konversation verarbeitet. Beispiele: `/api/v1/agent/chat/completions/...` oder `/api/v1/openai/chat/completions`. Konfiguriert in der MongoDB-Sammlung `bot_paths` (Schritt 7). |
+| **App ID / Client ID**               | Azure AD Anwendungsbezeichner (UUID-Format). Derselbe Wert wird als Bot ID und in MongoDB `credentials.APP_ID` verwendet.                                                                                                            |
+| **Client Secret / App Password**   | Azure AD Anwendungsgeheimnis. In MongoDB als `credentials.APP_PASSWORD` gespeichert. Läuft ab und muss rotiert werden.                                                                                                                |
+| **Tenant ID**                      | Microsoft 365 Tenant-Bezeichner. Erforderlich für SingleTenant-Bots, gespeichert als `credentials.APP_TENANTID`.                                                                                                                      |
+| **Bot-in-the-Loop**                | Muster, bei dem KI-Agents während der Workflow-Ausführung menschliche Eingaben über Slack-Kanäle anfordern.                                                                                                                          |
+| **Slack Bot OAuth Token**          | Token für die Slack-Integration (Format: `xoxb-...`). In MongoDB als `slack_token` gespeichert.                                                                                                                                       |
 
 ::: warning Wichtiger Unterschied
-**Bot Framework Messaging Endpoint** (`/api/v1/messages`) ≠ **MongoDB `path`-Feld** (z.B.
+**Bot Framework Messaging Endpoint** (`/api/v1/messages`) ≠ **MongoDB `path`-Feld** (z. B.
 `/api/v1/agent/chat/completions/...`)
 
-Dies sind zwei verschiedene Konzepte, die unterschiedlichen Zwecken dienen. Der Messaging Endpoint ist der Ort, an den
-der Azure Bot Service Nachrichten sendet. Das `path`-Feld bestimmt, wie diese Nachrichten intern verarbeitet werden.
+Dies sind zwei verschiedene Konzepte, die unterschiedlichen Zwecken dienen. Der Messaging Endpoint ist der Ort, an den der Azure Bot Service Nachrichten sendet. Das `path`-Feld bestimmt, wie diese Nachrichten intern verarbeitet werden.
 :::
 
 ## Voraussetzungen :clipboard:
 
-Stellen Sie vor dem Start sicher, dass Sie Zugang zu Folgendem haben:
+Bevor Sie beginnen, stellen Sie sicher, dass Sie Zugang zu folgendem haben:
 
-- **Microsoft Teams Developer Portal** – Zum Erstellen von Teams-Apps und Bots
+- **Microsoft Teams Developer Portal** – Für die Erstellung von Teams-Apps und Bots
 - **MongoDB-Datenbank** mit `bot_paths`-Sammlung – Zum Speichern der Bot-Konfiguration
 - **Azure Bot Framework** – Für die Multi-Channel-Bot-Verwaltung
-- **Slack Workspace** mit Administratorberechtigungen – Für die Slack-Integration
+- **Slack Workspace** mit Admin-Berechtigungen – Für die Slack-Integration
 
 ______________________________________________________________________
 
-## Teil 1: Einrichtung im Teams Developer Portal :microsoft:
+## Teil 1: Einrichtung des Teams Developer Portal :microsoft:
 
 ### Schritt 1: App mit grundlegenden Informationen erstellen
 
 1. Navigieren Sie zum [Teams Developer Portal](https://dev.teams.microsoft.com/)
 2. Klicken Sie auf **„Apps“** → **„Neue App“**
-3. Geben Sie die grundlegenden Informationen ein:
+3. Füllen Sie die grundlegenden Informationen aus:
    - App-Name
-   - Kurze Beschreibung
+   - Kurzbeschreibung
    - Vollständige Beschreibung
    - Entwicklerinformationen
    - App-URLs
@@ -98,11 +94,11 @@ ______________________________________________________________________
 
 ### Schritt 2: Berechtigungen konfigurieren
 
-1. Gehen Sie zu **„App-Funktionen“** → **„Bot“**
+1. Gehen Sie zu **„App-Features“** → **„Bot“**
 2. Legen Sie die erforderlichen Berechtigungen fest:
    - **Nachricht lesen** in Chat/Team
    - **Nachricht senden** in Chat/Team
-3. Speichern Sie die Berechtigungsänderungen
+3. Berechtigungsänderungen speichern
 
 ### Schritt 3: Neuen Bot erstellen
 
@@ -110,25 +106,22 @@ ______________________________________________________________________
 2. Klicken Sie auf **„Einrichten“** oder **„Neuen Bot erstellen“**
 3. Geben Sie die **Bot Framework Messaging Endpoint URL** ein:
    - Format: `https://your-domain.com/api/v1/messages`
-   - Dies ist der Standard-Endpoint des Azure Bot Service
+   - Dies ist der Standard-Endpunkt des Azure Bot Service
    - Muss öffentlich über das Internet zugänglich sein
    - Für die lokale Entwicklung verwenden Sie Azure DevTunnel oder ngrok
-4. **Notieren Sie sich die Bot ID** zur späteren Verwendung
+4. **Notieren Sie die Bot ID** für die spätere Verwendung
 
 ::: warning Bot Framework Endpoint vs. MongoDB-Pfad
 **WICHTIGER UNTERSCHIED:**
 
-- **Bot Framework Messaging Endpoint** (`/api/v1/messages`): Der einzige Einstiegspunkt, an den der Azure Bot Service
-  ALLE Bot-Nachrichten sendet. Dieser wird hier im Teams Developer Portal konfiguriert.
+- **Bot Framework Messaging Endpoint** (`/api/v1/messages`): Der einzige Einstiegspunkt, an den der Azure Bot Service ALLE Bot-Nachrichten sendet. Dies wird hier im Teams Developer Portal konfiguriert.
 
-- **MongoDB `path`-Feld** (z.B. `/api/v1/agent/chat/completions/LLMWrappingAgent/dev_agent/json`): Interner
-  Routing-Pfad, der bestimmt, welche Bot-Implementierung die Konversation verarbeitet. Dieser wird in MongoDB
-  konfiguriert (Schritt 7) und ermöglicht das Koexistieren mehrerer Bots.
+- **MongoDB `path`-Feld** (z. B. `/api/v1/agent/chat/completions/LLMWrappingAgent/dev_agent/json`): Interner Routing-Pfad, der bestimmt, welche Bot-Implementierung die Konversation verarbeitet. Dies wird in MongoDB (Schritt 7) konfiguriert und ermöglicht die Koexistenz mehrerer Bots.
 
-**Funktionsweise:**
+**So funktioniert es:**
 
-1. Azure Bot Service sendet eine Nachricht an `/api/v1/messages`
-2. Swiss AI Hub sucht den `path` der Konversation in der MongoDB `bot_paths`-Sammlung
+1. Der Azure Bot Service sendet Nachrichten an `/api/v1/messages`
+2. Der Swiss AI Hub sucht den `path` der Konversation in der MongoDB-Sammlung `bot_paths`
 3. Die Anfrage wird an die spezifische Bot-Implementierung weitergeleitet
 
 **Beispiel:**
@@ -141,46 +134,44 @@ Diese müssen NICHT übereinstimmen! Der Messaging Endpoint ist immer `/api/v1/m
 :::
 
 ::: tip Lokale Entwicklung
-Für die lokale Entwicklung stellen Sie Ihren Bot-Server mit Azure DevTunnel bereit:
+Für die lokale Entwicklung stellen Sie Ihren Bot-Server über Azure DevTunnel bereit:
 
 ```bash
 devtunnel create --allow-anonymous
 devtunnel port create -p 8000
 devtunnel host
-# Verwenden Sie die https-URL (z.B. https://abc123-8000.devtunnels.ms/api/v1/messages)
+# Use the https URL (e.g., https://abc123-8000.devtunnels.ms/api/v1/messages)
 ```
 
-Detaillierte Anweisungen zur lokalen Entwicklung finden Sie im
-[Entwicklerhandbuch](../../../6_code_deep_dive/aihub_bot/).
+Ein detailliertes Setup für die lokale Entwicklung finden Sie im [Entwicklerhandbuch](../../../6_code_deep_dive/aihub_bot/).
 :::
 
 ### Schritt 4: Client Secret erstellen
 
-1. Suchen Sie in der Bot-Konfiguration **„Client Secrets“**
+1. Suchen Sie in der Bot-Konfiguration nach **„Client Secrets“**
 2. Klicken Sie auf **„Client Secret hinzufügen“**
 3. **WICHTIG**: Kopieren und speichern Sie das Client Secret sofort sicher
    - Secret-Format: `xxx~xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`
-   - Sie können es später nicht mehr anzeigen
+   - Sie werden es danach nicht wieder anzeigen können
 4. Notieren Sie das Ablaufdatum des Secrets
 
-::: danger Sicherheitshinweis
-Client Secrets werden nur einmal bei der Erstellung angezeigt. Speichern Sie sie sofort sicher in einem Passwort-Manager
-oder Secrets Vault. Bei Verlust müssen Sie ein neues Secret generieren und Ihre MongoDB-Konfiguration aktualisieren.
+::: danger Sicherheitswarnung
+Client Secrets werden nur einmal zum Zeitpunkt der Erstellung angezeigt. Speichern Sie sie sofort sicher in einem Passwort-Manager oder einem Secrets Vault. Gehen sie verloren, müssen Sie ein neues Secret generieren und Ihre MongoDB-Konfiguration aktualisieren.
 :::
 
 ### Schritt 5: Bot zur App hinzufügen
 
 1. Navigieren Sie zurück zur App-Übersicht
-2. Bestätigen Sie, dass der Bot unter **„App-Funktionen“** aufgeführt ist
-3. Überprüfen Sie, ob die Bot ID mit der in Schritt 3 erstellten übereinstimmt
+2. Bestätigen Sie, dass der Bot unter **„App-Features“** aufgeführt ist
+3. Überprüfen Sie, ob die Bot-ID mit der in Schritt 3 erstellten übereinstimmt
 
 ### Schritt 6: App in der Organisation veröffentlichen
 
 1. Gehen Sie zu **„Veröffentlichen“** → **„In Organisation veröffentlichen“**
 2. Überprüfen Sie alle Konfigurationen
 3. Klicken Sie auf **„Veröffentlichen“**
-4. Warten Sie auf die Administratorgenehmigung (falls erforderlich)
-5. Notieren Sie sich nach Genehmigung die **App/Client ID** und **Tenant ID**
+4. Warten Sie auf die Admin-Genehmigung (falls erforderlich)
+5. Sobald genehmigt, notieren Sie die **App-/Client-ID** und die **Tenant ID**
 
 ______________________________________________________________________
 
@@ -188,7 +179,7 @@ ______________________________________________________________________
 
 ### Schritt 7: Bot-Pfad-Eintrag hinzufügen
 
-Fügen Sie ein neues Dokument in die `bot_paths`-Sammlung mit der folgenden Struktur ein:
+Fügen Sie der `bot_paths`-Sammlung ein neues Dokument mit der folgenden Struktur hinzu:
 
 ```json
 {
@@ -208,24 +199,23 @@ Fügen Sie ein neues Dokument in die `bot_paths`-Sammlung mit der folgenden Stru
 
 - `path`: Der **interne Routing-Pfad** für diese spezifische Bot-Implementierung
   - **Dies ist NICHT der Bot Framework Messaging Endpoint** (der immer `/api/v1/messages` ist)
-  - Dieser bestimmt, welcher Bot-Handler Konversationen verarbeitet
+  - Dies bestimmt, welcher Bot-Handler Konversationen verarbeitet
   - Beispiele:
-    - `/api/v1/agent/chat/completions/LLMWrappingAgent/dev_agent/json` – Agentenbasierter Bot
+    - `/api/v1/agent/chat/completions/LLMWrappingAgent/dev_agent/json` – Agent-basierter Bot
     - `/api/v1/openai/chat/completions` – Direkter OpenAI-Bot
     - `/api/v1/bitl/chat/completions` – Bot-in-the-Loop-Bot
 - `credentials`: Objekt mit Azure Bot-Authentifizierung
-  - `APP_TYPE`: Authentifizierungstyp (`"SingleTenant"` oder `"MultiTenant"`)
-  - `APP_ID`: Teams App Client ID aus Schritt 6
+  - `APP_TYPE`: Authentifizierungstyp (`„SingleTenant“` oder `„MultiTenant“`)
+  - `APP_ID`: Teams App Client-ID aus Schritt 6
   - `APP_PASSWORD`: Client Secret aus Schritt 4
-  - `APP_TENANTID`: Microsoft 365 Tenant ID aus Schritt 6 (für SingleTenant erforderlich)
+  - `APP_TENANTID`: Microsoft 365 Tenant ID aus Schritt 6 (erforderlich für SingleTenant)
 - `system_message`: Standard-Systemnachricht/Anweisungen für den Bot
-- `slack_token`: Anfangs leerer String (wird in Schritt 14 für die Slack-Integration ausgefüllt)
+- `slack_token`: Zunächst leerer String (wird in Schritt 14 für die Slack-Integration befüllt)
 
 ::: tip Multi-Bot-Konfiguration
-Sie können **mehrere Bot-Implementierungen** mit unterschiedlichen `path`-Werten haben, die alle denselben Bot Framework
-Messaging Endpoint (`/api/v1/messages`) verwenden:
+Sie können **mehrere Bot-Implementierungen** mit unterschiedlichen `path`-Werten haben, die alle denselben Bot Framework Messaging Endpoint (`/api/v1/messages`) nutzen:
 
-**Agentenbasierter Bot für den Kundensupport:**
+**Agent-basierter Bot für den Kundensupport:**
 
 ```json
 {
@@ -249,166 +239,152 @@ Jede Konversation ist einem `path` zugeordnet, der ihre Bot-Implementierung und 
 :::
 
 ::: tip Konfigurationstipp
-Verwenden Sie aussagekräftige Pfadnamen, die den Agenten oder die Funktionalität anzeigen, um die Verwaltung mehrerer
-Bots zu erleichtern. Zum Beispiel identifiziert `/api/v1/agent/chat/completions/CustomerSupportAgent/production/json`
-den Zweck des Bots deutlich.
+Verwenden Sie beschreibende Pfadnamen, die den Agent oder die Funktionalität angeben, um die Verwaltung mehrerer Bots zu erleichtern. Zum Beispiel identifiziert `/api/v1/agent/chat/completions/CustomerSupportAgent/production/json` den Zweck des Bots eindeutig.
 :::
 
 ______________________________________________________________________
 
-## Teil 3: Bot Framework- und Slack-Integration :slack:
+## Teil 3: Bot Framework & Slack-Integration :slack:
 
-### Schritt 8: Slack App erstellen
+### Schritt 8: Slack-App erstellen
 
 1. Navigieren Sie zu [Slack API Apps](https://api.slack.com/apps)
 2. Klicken Sie auf **„Neue App erstellen“**
-3. Wählen Sie **„Von Grund auf“**
-4. Geben Sie Ihrer App einen Namen (z.B. „Mein Bot-Name“)
+3. Wählen Sie **„Von Grund auf neu“**
+4. Geben Sie Ihrer App einen Namen (z. B. „Mein Bot-Name“)
 5. Wählen Sie den Workspace aus, in dem Sie die App entwickeln möchten
 6. Klicken Sie auf **„App erstellen“**
 
 ### Schritt 8.5: App Home-Einstellungen konfigurieren
 
-1. Gehen Sie zu den App Home-Einstellungen Ihrer Slack App:
+1. Gehen Sie zu den App Home-Einstellungen Ihrer Slack-App:
    - URL-Format: `https://api.slack.com/apps/{SLACK_APP_ID}/app-home`
    - Ersetzen Sie `{SLACK_APP_ID}` durch Ihre Slack App ID
    - Beispiel: `https://api.slack.com/apps/A09QARZNF45/app-home`
-2. Unter dem Abschnitt **„Tabs anzeigen“**:
+2. Im Abschnitt **„Tabs anzeigen“**:
    - Schalten Sie **„Meinen Bot immer als online anzeigen“** auf **EIN**
    - Schalten Sie **„Home Tab“** auf **EIN**
-3. Unter dem Abschnitt **„Nachrichten Tab“**:
-   - **Lassen Sie „Nachrichten Tab“ deaktiviert** – Der Bot wird stattdessen über Kanäle und Direktnachrichten
-     interagieren
+3. Im Abschnitt **„Nachrichten-Tab“**:
+   - **Lassen Sie den „Nachrichten-Tab“ deaktiviert** – Der Bot interagiert stattdessen über Kanäle und Direktnachrichten
    - Deaktivieren Sie „Benutzern erlauben, Slash-Befehle und Nachrichten vom Nachrichten-Tab zu senden“ (falls sichtbar)
-4. Klicken Sie auf **„Änderungen speichern“**, wenn Sie dazu aufgefordert werden
+4. Klicken Sie auf **„Änderungen speichern“**, falls dazu aufgefordert
 
-::: info Konfiguration des Nachrichten-Tabs
-Der Nachrichten Tab ist typischerweise deaktiviert, wenn das Bot Framework verwendet wird, da der Bot über Kanäle,
-Gruppenchats und Direktnachrichten kommuniziert und nicht über den Nachrichten Tab der App.
+::: info Nachrichten-Tab-Konfiguration
+Der Nachrichten-Tab ist in der Regel deaktiviert, wenn das Bot Framework verwendet wird, da der Bot über Kanäle, Gruppenchats und Direktnachrichten kommuniziert und nicht über den Nachrichten-Tab der App.
 :::
 
-### Schritt 9: Slack-Kanal des Bot Framework konfigurieren
+### Schritt 9: Bot Framework Slack-Kanal konfigurieren
 
 1. Navigieren Sie zum [Bot Framework Portal](https://dev.botframework.com/)
 2. Gehen Sie zur Kanalseite Ihres Bots:
    - URL-Format: `https://dev.botframework.com/bots/channels?id={APP_ID}&channelId=slack`
    - Ersetzen Sie `{APP_ID}` durch Ihre Teams App ID (aus Schritt 6)
    - Beispiel: `https://dev.botframework.com/bots/channels?id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx&channelId=slack`
-3. Klicken Sie auf den Kanal **„Slack“** oder auf **„Konfigurieren“**, falls bereits hinzugefügt
-4. Kopieren Sie die App-Anmeldeinformationen aus Ihrer Slack App (aus Schritt 8):
-   - **Client ID** (aus den Slack App-Anmeldeinformationen)
-   - **Client Secret** (aus den Slack App-Anmeldeinformationen)
-5. Fügen Sie diese in die Slack-Kanal-Konfiguration des Bot Framework ein
+3. Klicken Sie auf den **„Slack“**-Kanal oder auf **„Konfigurieren“**, falls bereits hinzugefügt
+4. Kopieren Sie die App-Anmeldeinformationen aus Ihrer Slack-App (aus Schritt 8):
+   - **Client-ID** (aus Slack App Credentials)
+   - **Client Secret** (aus Slack App Credentials)
+5. Fügen Sie diese in die Konfiguration des Bot Framework Slack-Kanals ein
 6. Kopieren Sie die folgenden URLs zur späteren Verwendung:
    - **Redirect URL** (für Schritt 10 erforderlich)
    - **Event Subscription URL** (für Schritt 11 erforderlich)
 7. Klicken Sie auf **„Speichern“**
-8. **WICHTIG:** Nach dem Speichern werden Sie automatisch zu Slack weitergeleitet, um die Anwendung zu installieren/neu
-   zu installieren
-   - Dies schließt den OAuth-Flow ab
-   - Folgen Sie den Anweisungen, um die App zu autorisieren
-   - Dies kann die Anforderungen für Event Subscriptions automatisch erfüllen
+8. **WICHTIG:** Nach dem Speichern werden Sie automatisch zu Slack weitergeleitet, um die Anwendung zu installieren/neu zu installieren
+   - Dies schliesst den OAuth-Flow ab
+   - Befolgen Sie die Anweisungen zur Autorisierung der App
+   - Dies kann die Anforderungen an Event Subscriptions automatisch erfüllen
 
 ::: tip Automatische Konfiguration
-Das Bot Framework konfiguriert viele Slack-Einstellungen oft automatisch während des OAuth-Flows. Überprüfen Sie nach
-Abschluss von Schritt 9 die Schritte 10-12, um die Einstellungen zu bestätigen, anstatt alles manuell zu konfigurieren.
+Das Bot Framework konfiguriert viele Slack-Einstellungen oft automatisch während des OAuth-Flows. Überprüfen Sie nach Abschluss von Schritt 9 die Schritte 10-12, um die Einstellungen zu bestätigen, anstatt alles manuell zu konfigurieren.
 :::
 
 ### Schritt 10: Slack OAuth konfigurieren
 
-1. Gehen Sie zu den OAuth-Einstellungen Ihrer Slack App:
+1. Gehen Sie zu den OAuth-Einstellungen Ihrer Slack-App:
    - URL-Format: `https://api.slack.com/apps/{SLACK_APP_ID}/oauth`
    - Ersetzen Sie `{SLACK_APP_ID}` durch Ihre Slack App ID
    - Beispiel: `https://api.slack.com/apps/A09QARZNF45/oauth`
 2. Scrollen Sie zum Abschnitt **„Scopes“**
-3. Unter **„Bot Token Scopes“** klicken Sie auf **„Einen OAuth Scope hinzufügen“**
+3. Klicken Sie unter **„Bot Token Scopes“** auf **„OAuth Scope hinzufügen“**
 4. Fügen Sie die folgenden Scopes hinzu:
-   - `chat:write` – Ermöglicht dem Bot das Senden von Nachrichten
-   - `assistant:write` – Ermöglicht dem Bot die Interaktion mit App Agents/Assistants
-5. Unter **„Redirect URLs“** klicken Sie auf **„Neue Redirect URL hinzufügen“**
-6. Fügen Sie die **Redirect URL** aus dem Bot Framework ein (Schritt 9)
+   - `chat:write` – Ermöglicht dem Bot, Nachrichten zu senden
+   - `assistant:write` – Ermöglicht dem Bot, mit App Agents/Assistants zu interagieren
+5. Klicken Sie unter **„Redirect URLs“** auf **„Neue Redirect URL hinzufügen“**
+6. Fügen Sie die **Redirect URL** vom Bot Framework (Schritt 9) ein
 7. Klicken Sie auf **„URLs speichern“**
 
 ::: info Automatische Scopes
-Andere erforderliche Scopes (channels:history, groups:history, im:history, mpim:history) können automatisch hinzugefügt
-werden, wenn Sie Bot-Ereignisse in Schritt 12 abonnieren oder wenn Sie den Bot Framework OAuth-Flow abschließen.
+Andere erforderliche Scopes (channels:history, groups:history, im:history, mpim:history) können automatisch hinzugefügt werden, wenn Sie in Schritt 12 Bot-Events abonnieren oder wenn Sie den Bot Framework OAuth-Flow abschliessen.
 :::
 
 ### Schritt 11: Slack Event Subscriptions konfigurieren
 
-1. Gehen Sie zu den Event Subscriptions Ihrer Slack App:
+1. Gehen Sie zu den Event Subscriptions Ihrer Slack-App:
    - URL-Format: `https://api.slack.com/apps/{SLACK_APP_ID}/event-subscriptions`
    - Ersetzen Sie `{SLACK_APP_ID}` durch Ihre Slack App ID
    - Beispiel: `https://api.slack.com/apps/A09QARZNF45/event-subscriptions`
-2. Schalten Sie **„Ereignisse aktivieren“** auf EIN
-3. In **„Request URL“** fügen Sie die **Event Subscription URL** aus dem Bot Framework ein (Schritt 9)
-4. Warten Sie auf die URL-Verifizierung (sollte „Verifiziert ✓“ anzeigen)
+2. Schalten Sie **„Events aktivieren“** auf EIN
+3. Fügen Sie in **„Request URL“** die **Event Subscription URL** vom Bot Framework (Schritt 9) ein
+4. Warten Sie auf die URL-Verifizierung (es sollte „Verified ✓“ angezeigt werden)
 
 ::: tip Bereits konfiguriert?
-Wenn Sie während Schritt 9 zu Slack weitergeleitet wurden und die Installation abgeschlossen haben, sind die Event
-Subscriptions möglicherweise bereits automatisch vom Bot Framework konfiguriert worden. Überprüfen Sie diese Seite zur
-Bestätigung.
+Wenn Sie während Schritt 9 zu Slack weitergeleitet wurden und die Installation abgeschlossen haben, sind die Event Subscriptions möglicherweise bereits automatisch vom Bot Framework konfiguriert worden. Überprüfen Sie diese Seite zur Bestätigung.
 :::
 
-### Schritt 12: Bot-Ereignisse abonnieren (falls erforderlich)
+### Schritt 12: Bot-Events abonnieren (falls erforderlich)
 
 ::: warning Optionaler Schritt
-Diese Event Subscriptions sind möglicherweise nicht erforderlich, wenn der Bot Framework Slack-Kanal sie automatisch
-behandelt. Prüfen Sie, ob Ereignisse bereits konfiguriert sind, bevor Sie sie manuell hinzufügen.
+Diese Event Subscriptions sind möglicherweise nicht erforderlich, wenn der Bot Framework Slack-Kanal sie automatisch verarbeitet. Überprüfen Sie, ob Events bereits konfiguriert sind, bevor Sie sie manuell hinzufügen.
 :::
 
-Wenn Ereignisse nicht automatisch konfiguriert werden, scrollen Sie auf der Event Subscriptions-Seite nach unten zu
-**„Bot-Ereignisse abonnieren“** und fügen Sie die folgenden hinzu:
+Wenn Events nicht automatisch konfiguriert sind, scrollen Sie auf der Seite Event Subscriptions nach unten zu **„Bot-Events abonnieren“** und fügen Sie Folgendes hinzu:
 
-| Ereignisname                       | Beschreibung                                                              | Erforderlicher Scope |
-| :--------------------------------- | :------------------------------------------------------------------------ | :------------------- |
-| `message.channels`                 | Eine Nachricht wurde an einen Kanal gesendet                              | `channels:history`   |
-| `message.groups`                   | Eine Nachricht wurde an einen privaten Kanal gesendet                     | `groups:history`     |
-| `message.im`                       | Eine Nachricht wurde in einem Direktnachrichten-Kanal gesendet            | `im:history`         |
-| `message.mpim`                     | Eine Nachricht wurde in einem Multiparty-Direktnachrichten-Kanal gesendet | `mpim:history`       |
-| `assistant_thread_started`         | Ein App Agent Thread wurde gestartet                                      | keiner               |
-| `assistant_thread_context_changed` | Der Kontext änderte sich, während ein App Agent Thread sichtbar war       | keiner               |
+| Event-Name                         | Beschreibung                                              | Erforderlicher Scope     |
+| :--------------------------------- | :-------------------------------------------------------- | :----------------------- |
+| `message.channels`                 | Eine Nachricht wurde an einen Kanal gesendet              | `channels:history`       |
+| `message.groups`                   | Eine Nachricht wurde an einen privaten Kanal gesendet     | `groups:history`         |
+| `message.im`                       | Eine Nachricht wurde in einem Direktnachrichtenkanal gesendet | `im:history`             |
+| `message.mpim`                     | Eine Nachricht wurde in einem Multiparty-Direktnachrichtenkanal gesendet | `mpim:history`           |
+| `assistant_thread_started`         | Ein App Agent-Thread wurde gestartet                      | keine                    |
+| `assistant_thread_context_changed` | Der Kontext hat sich geändert, während ein App Agent-Thread sichtbar war | keine                    |
 
 ::: info Automatische Scope-Ergänzung
-Wenn Sie diese Ereignisse hinzufügen, fügt Slack automatisch die erforderlichen OAuth-Scopes zu Ihrer App-Konfiguration
-hinzu.
+Wenn Sie diese Events hinzufügen, fügt Slack die notwendigen OAuth-Scopes automatisch Ihrer App-Konfiguration hinzu.
 :::
 
 Klicken Sie auf **„Änderungen speichern“**
 
-### Schritt 13: Slack App im Workspace installieren
+### Schritt 13: Slack-App im Workspace installieren
 
 ::: tip Möglicherweise bereits abgeschlossen
-Wenn Sie während Schritt 9 zu Slack weitergeleitet wurden und die Installation abgeschlossen haben, ist dieser Schritt
-möglicherweise bereits abgeschlossen. Sie können dies überprüfen, indem Sie prüfen, ob der Bot bereits in Ihrem Slack
-Workspace erscheint.
+Wenn Sie während Schritt 9 zu Slack weitergeleitet wurden und die Installation abgeschlossen haben, ist dieser Schritt möglicherweise bereits abgeschlossen. Sie können dies überprüfen, indem Sie prüfen, ob der Bot bereits in Ihrem Slack Workspace erscheint.
 :::
 
 Falls noch nicht installiert:
 
-1. Gehen Sie zur Installationsseite Ihrer Slack App:
+1. Gehen Sie zur Installationsseite Ihrer Slack-App:
    - URL-Format: `https://api.slack.com/apps/{SLACK_APP_ID}/install-on-team`
    - Ersetzen Sie `{SLACK_APP_ID}` durch Ihre Slack App ID
    - Beispiel: `https://api.slack.com/apps/A09QARZNF45/install-on-team`
-2. Klicken Sie auf **„Im Workspace installieren“** (oder **„Im Workspace neu installieren“**, wenn Sie aktualisieren)
+2. Klicken Sie auf **„Im Workspace installieren“** (oder **„Im Workspace neu installieren“**, falls Sie aktualisieren)
 3. Überprüfen Sie die angeforderten Berechtigungen
 4. Klicken Sie auf **„Zulassen“**
-5. **WICHTIG:** Kopieren Sie den angezeigten **Bot User OAuth Token**
+5. **WICHTIG:** Kopieren Sie das angezeigte **Bot User OAuth Token**
    - Format: `xoxb-xxxxxxxxxxxx-xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxx`
-   - Dies ist das Token, das Sie im nächsten Schritt zu MongoDB hinzufügen
-6. **Alternative:** Wenn bereits installiert, rufen Sie Ihr Token ab unter:
-   - **OAuth & Permissions**-Seite: `https://api.slack.com/apps/{SLACK_APP_ID}/oauth`
-   - Suchen Sie nach **„Bot User OAuth Token“** unter „OAuth Tokens für Ihren Workspace“
+   - Dies ist das Token, das Sie im nächsten Schritt zu MongoDB hinzufügen werden
+
+**Alternative:** Falls bereits installiert, rufen Sie Ihr Token ab von:
+
+- **OAuth & Berechtigungen**-Seite: `https://api.slack.com/apps/{SLACK_APP_ID}/oauth`
+- Suchen Sie nach **„Bot User OAuth Token“** unter „OAuth Tokens for Your Workspace“
 
 ::: danger Token-Sicherheit
-Der Slack Bot OAuth Token bietet vollen Zugriff auf die Funktionen Ihres Bots. Speichern Sie ihn sicher und committen
-Sie ihn niemals in die Versionskontrolle. Behandeln Sie ihn mit der gleichen Sicherheit wie Passwörter und
-API-Schlüssel.
+Das Slack Bot OAuth Token bietet vollen Zugriff auf die Funktionen Ihres Bots. Speichern Sie es sicher und committen Sie es niemals in die Versionskontrolle. Behandeln Sie es mit der gleichen Sicherheit wie Passwörter und API-Schlüssel.
 :::
 
 ### Schritt 14: Slack OAuth Token zu MongoDB hinzufügen
 
-Aktualisieren Sie das Bot-Pfad-Dokument in MongoDB, um den Slack OAuth Token aus Schritt 13 aufzunehmen:
+Aktualisieren Sie das Bot-Pfad-Dokument in MongoDB, um das Slack OAuth Token aus Schritt 13 einzufügen:
 
 ```json
 {
@@ -427,14 +403,14 @@ Aktualisieren Sie das Bot-Pfad-Dokument in MongoDB, um den Slack OAuth Token aus
 }
 ```
 
-**Details zum Slack OAuth Token:**
+**Slack OAuth Token Details:**
 
 - Format: `xoxb-` gefolgt von Zahlen und Bindestrichen
-- Erhalten aus Schritt 13 während der Installation der Slack App
+- Aus Schritt 13 während der Slack App-Installation erhalten
 - Ersetzen Sie den leeren String `""` durch das tatsächliche Token
-- Bewahren Sie dieses Token sicher auf und committen Sie es niemals in die Versionskontrolle
+- Halten Sie dieses Token sicher und committen Sie es niemals in die Versionskontrolle
 
-**Bestehendes Dokument aktualisieren:**
+**So aktualisieren Sie ein bestehendes Dokument:**
 
 ```javascript
 db.bot_paths.updateOne(
@@ -443,7 +419,7 @@ db.bot_paths.updateOne(
 )
 ```
 
-**Alternative: Aktualisierung per \_id:**
+**Alternative: Update per \_id:**
 
 ```javascript
 db.bot_paths.updateOne(
@@ -454,10 +430,9 @@ db.bot_paths.updateOne(
 
 ______________________________________________________________________
 
-## App Manifest-Beispiele :page_facing_up:
+## App-Manifest-Beispiele :page_facing_up:
 
-Diese Manifeste zeigen die vollständige Konfiguration für Slack- und Teams-Apps. Sie können diese als Referenz verwenden
-oder Apps programmatisch erstellen.
+Diese Manifeste zeigen die vollständige Konfiguration für Slack- und Teams-Apps. Sie können diese als Referenz verwenden oder Apps programmatisch erstellen.
 
 ### Slack App Manifest
 
@@ -513,17 +488,15 @@ oder Apps programmatisch erstellen.
 
 **Wichtige Konfigurationspunkte:**
 
-- **app_home**: Konfiguration für die Start- und Nachrichten-Tabs der App
-  - **home_tab_enabled**: Auf `true` gesetzt, um den Home Tab zu aktivieren
-  - **messages_tab_enabled**: Auf `false` gesetzt (Interaktion erfolgt über Kanäle/DMs, nicht über den Nachrichten Tab)
-  - **messages_tab_read_only_enabled**: Auf `false` gesetzt
-- **always_online**: Auf `true` gesetzt, um den Bot immer als online anzuzeigen
+- **app_home**: Konfiguration für die Home- und Nachrichten-Tabs der App
+  - **home_tab_enabled**: Auf `true` setzen, um den Home Tab zu aktivieren
+  - **messages_tab_enabled**: Auf `false` setzen (Interaktion erfolgt über Kanäle/DMs, nicht über den Nachrichten-Tab)
+  - **messages_tab_read_only_enabled**: Auf `false` setzen
+- **always_online**: Auf `true` setzen, um den Bot immer als online anzuzeigen
 - **redirect_urls**: Immer `https://slack.botframework.com` für die Bot Framework-Integration
-- **request_url**: Das Format ist `https://slack.botframework.com/api/Events/{APP_ID}`, wobei `{APP_ID}` Ihre Teams App
-  Client ID ist
-- **bot scopes**: Alle 6 Scopes sind für die volle Funktionalität erforderlich (einschließlich `chat:write` und
-  `assistant:write`)
-- **bot_events**: Alle 6 Ereignisse ermöglichen es dem Bot, Nachrichten über alle Konversationstypen hinweg zu empfangen
+- **request_url**: Das Format ist `https://slack.botframework.com/api/Events/{APP_ID}`, wobei `{APP_ID}` Ihre Teams App Client ID ist
+- **Bot-Scopes**: Alle 6 Scopes sind für die volle Funktionalität erforderlich (einschliesslich `chat:write` und `assistant:write`)
+- **bot_events**: Alle 6 Events ermöglichen es dem Bot, Nachrichten über alle Konversationstypen hinweg zu empfangen
 
 ### Teams App Manifest
 
@@ -598,21 +571,21 @@ oder Apps programmatisch erstellen.
 **Wichtige Konfigurationspunkte:**
 
 - **id** und **webApplicationInfo.id**: Ihre Teams App Client ID (APP_ID)
-- **botId**: Dieselbe wie Ihre App Client ID
-- **scopes**: Aktiviert den Bot in persönlichen Chats, Teams und Gruppenchats
-- **supportsFiles**: Auf `true` gesetzt, um Dateiuploads zu ermöglichen
+- **botId**: Identisch mit Ihrer App Client ID
+- **scopes**: Bot in persönlichen Chats, Teams und Gruppenchats aktivieren
+- **supportsFiles**: Auf `true` setzen, um Datei-Uploads zu erlauben
 - **Ressourcenspezifische Berechtigungen**:
   - `ChannelMessage.Read.Group` – Nachrichten in Kanälen lesen
   - `ChannelMessage.Send.Group` – Nachrichten in Kanälen senden
   - `ChatMessage.Read.Chat` – Nachrichten in Chats lesen
   - `ChatMessage.Send.Chat` – Nachrichten in Chats senden
 
-### Manifeste zur App-Erstellung verwenden
+### Verwendung von Manifesten für die App-Erstellung
 
 **Slack:**
 
 1. Gehen Sie zu [Slack API Apps](https://api.slack.com/apps)
-2. Klicken Sie auf **„Neue App erstellen“** → **„Aus einem App Manifest“**
+2. Klicken Sie auf **„Neue App erstellen“** → **„Aus einem App-Manifest“**
 3. Wählen Sie Ihren Workspace aus
 4. Fügen Sie das Slack Manifest JSON ein
 5. Überprüfen und erstellen
@@ -620,16 +593,16 @@ oder Apps programmatisch erstellen.
 **Teams:**
 
 1. Laden Sie das Manifest als `manifest.json` herunter
-2. Fügen Sie die Icon-Dateien (`outline.png` und `color.png`) in dasselbe Verzeichnis ein
+2. Fügen Sie Icon-Dateien (`outline.png` und `color.png`) zum selben Verzeichnis hinzu
 3. Zippen Sie alle drei Dateien zusammen
 4. Klicken Sie im Teams Developer Portal auf **„App importieren“**
-5. Laden Sie die ZIP-Datei hoch
+5. Laden Sie die Zip-Datei hoch
 
 ______________________________________________________________________
 
-## Prüfliste zur Verifizierung :white_check_mark:
+## Verifizierungs-Checkliste :white_check_mark:
 
-Überprüfen Sie nach Abschluss aller Schritte Folgendes:
+Nach Abschluss aller Schritte überprüfen Sie:
 
 **Teams-Konfiguration:**
 
@@ -641,28 +614,27 @@ ______________________________________________________________________
 
 **MongoDB-Konfiguration:**
 
-- [ ] `bot_paths`-Eintrag existiert mit allen erforderlichen Feldern
+- [ ] `bot_paths`-Eintrag mit allen erforderlichen Feldern existiert
 - [ ] `credentials`-Objekt enthält APP_TYPE, APP_ID, APP_PASSWORD und APP_TENANTID (für SingleTenant)
-- [ ] `path`-Feld enthält den internen Routing-Pfad (z.B. `/api/v1/agent/chat/completions/...`)
-- [ ] `path`-Feld ist ANDERS als der Bot Framework Messaging Endpoint (`/api/v1/messages`)
-- [ ] `system_message` ist passend für den Zweck des Bots konfiguriert
+- [ ] `path`-Feld enthält internen Routing-Pfad (z. B. `/api/v1/agent/chat/completions/...`)
+- [ ] `path`-Feld unterscheidet sich vom Bot Framework Messaging Endpoint (`/api/v1/messages`)
+- [ ] `system_message` ist dem Zweck des Bots entsprechend konfiguriert
 - [ ] Client Secret (APP_PASSWORD) ist sicher gespeichert und nicht abgelaufen
 
 **Slack-Konfiguration:**
 
-- [ ] Slack App wurde mit korrektem Namen erstellt
-- [ ] App Home konfiguriert: „Meinen Bot immer als online anzeigen“-Schalter ist EIN
-- [ ] App Home konfiguriert: „Home Tab“-Schalter ist EIN
-- [ ] App Home konfiguriert: „Nachrichten Tab“ ist deaktiviert (Bot interagiert über Kanäle/DMs)
+- [ ] Slack-App ist mit korrektem Namen erstellt
+- [ ] App Home konfiguriert: „Meinen Bot immer als online anzeigen“ auf EIN
+- [ ] App Home konfiguriert: „Home Tab“ auf EIN
+- [ ] App Home konfiguriert: „Nachrichten-Tab“ ist deaktiviert (Bot interagiert über Kanäle/DMs)
 - [ ] Bot Token Scopes `chat:write` und `assistant:write` sind in den Slack OAuth-Einstellungen hinzugefügt
-- [ ] Bot Framework Slack-Kanal ist mit Client ID und Client Secret konfiguriert
-- [ ] Bot Framework-Konfiguration gespeichert und OAuth-Redirect zu Slack abgeschlossen
+- [ ] Bot Framework-Konfiguration gespeichert und OAuth-Weiterleitung zu Slack abgeschlossen
 - [ ] Redirect URL ist in den Slack OAuth-Einstellungen hinzugefügt
 - [ ] Event Subscription URL ist verifiziert (kann automatisch erfolgen)
-- [ ] Bot-Ereignisse sind abonniert (kann automatisch über Bot Framework erfolgen)
-- [ ] Slack App ist im Workspace installiert (kann während des Redirects in Schritt 9 erfolgt sein)
-- [ ] `slack_token` wurde von der Slack OAuth & Permissions-Seite erhalten
-- [ ] `slack_token` wurde zu MongoDB hinzugefügt
+- [ ] Bot-Events sind abonniert (kann automatisch über Bot Framework erfolgen)
+- [ ] Slack-App ist im Workspace installiert (kann während der Weiterleitung in Schritt 9 erfolgt sein)
+- [ ] `slack_token` wird von der Slack OAuth & Berechtigungen-Seite abgerufen
+- [ ] `slack_token` ist zu MongoDB hinzugefügt
 - [ ] Bot antwortet auf Nachrichten in Slack-Kanälen
 - [ ] Bot antwortet auf Direktnachrichten in Slack
 
@@ -670,61 +642,60 @@ ______________________________________________________________________
 
 ## Fehlerbehebung :wrench:
 
-### Bot reagiert nicht in Teams
+### Bot antwortet nicht in Teams
 
 - **Probleme mit dem Messaging Endpoint:**
   - Überprüfen Sie, ob der Bot Framework Messaging Endpoint im Teams Developer Portal auf `/api/v1/messages` gesetzt ist
-  - Stellen Sie sicher, dass die Endpoint URL öffentlich zugänglich ist (mit curl oder Browser testen)
+  - Stellen Sie sicher, dass die Endpoint-URL öffentlich zugänglich ist (mit curl oder Browser testen)
   - Für die lokale Entwicklung bestätigen Sie, dass Azure DevTunnel oder ngrok läuft
 - **Authentifizierungsprobleme:**
-  - Überprüfen Sie, ob `APP_PASSWORD` (Client Secret) korrekt ist und nicht abgelaufen
+  - Überprüfen Sie, ob `APP_PASSWORD` (Client Secret) korrekt ist und nicht abgelaufen ist
   - Bestätigen Sie, dass `APP_TENANTID` und `APP_ID` mit den Werten aus Schritt 6 übereinstimmen
-  - Verifizieren Sie, dass `APP_TYPE` korrekt gesetzt ist (`SingleTenant` oder `MultiTenant`)
+  - Überprüfen Sie, ob `APP_TYPE` korrekt gesetzt ist (`SingleTenant` oder `MultiTenant`)
 - **Konfigurationsprobleme:**
   - Überprüfen Sie die App-Berechtigungen im Teams Developer Portal (Nachricht lesen/senden in Chat/Team)
   - Überprüfen Sie, ob der MongoDB `bot_paths`-Eintrag mit den korrekten Anmeldeinformationen existiert
-  - Stellen Sie sicher, dass das `path`-Feld in MongoDB einen gültigen internen Routing-Pfad enthält
+  - Überprüfen Sie, ob das `path`-Feld in MongoDB einen gültigen internen Routing-Pfad enthält
   - Stellen Sie sicher, dass die Konversation mit dem korrekten `path`-Wert erstellt wurde
 
-### Slack-Integrationsprobleme
+### Probleme mit der Slack-Integration
 
-- Verifizieren Sie, dass `slack_token` gültig ist (beginnt mit `xoxb-`)
-- Überprüfen Sie, ob die Slack App die erforderlichen Bot Token Scopes besitzt:
-  - `chat:write` (zum Senden von Nachrichten erforderlich)
-  - `assistant:write` (für App Agent-Interaktionen erforderlich)
-  - `channels:history`, `groups:history`, `im:history`, `mpim:history` (für Nachrichtenereignisse)
+- Überprüfen Sie, ob `slack_token` gültig ist (beginnt mit `xoxb-`)
+- Überprüfen Sie, ob die Slack-App die notwendigen Bot-Token Scopes hat:
+  - `chat:write` (erforderlich zum Senden von Nachrichten)
+  - `assistant:write` (erforderlich für App Agent-Interaktionen)
+  - `channels:history`, `groups:history`, `im:history`, `mpim:history` (für Nachrichten-Events)
 - Überprüfen Sie, ob die App Home-Einstellungen konfiguriert sind:
-  - „Meinen Bot immer als online anzeigen“ sollte EIN sein
-  - „Home Tab“ sollte EIN sein
+  - „Meinen Bot immer als online anzeigen“ sollte auf EIN stehen
+  - „Home Tab“ sollte auf EIN stehen
   - „Benutzern erlauben, Slash-Befehle und Nachrichten vom Nachrichten-Tab zu senden“ sollte aktiviert sein
-- Bestätigen Sie, dass der Bot zu den gewünschten Slack-Kanälen hinzugefügt wurde (Bot mit @Botnamen einladen)
-- Stellen Sie sicher, dass alle 6 Bot-Ereignisse in den Event Subscriptions abonniert sind
-- Überprüfen Sie, ob die Event Subscription URL „Verifiziert ✓“ anzeigt
-- Prüfen Sie, ob die Redirect URL in den Slack OAuth-Einstellungen korrekt hinzugefügt wurde
-- Stellen Sie sicher, dass das Feld `slack_token` in MongoDB kein leerer String ist
+- Bestätigen Sie, dass der Bot zu den gewünschten Slack-Kanälen hinzugefügt wurde (Bot mit @botname einladen)
+- Stellen Sie sicher, dass alle 6 Bot-Events in den Event Subscriptions abonniert sind
+- Überprüfen Sie, ob die Event Subscription URL „Verified ✓“ anzeigt
+- Überprüfen Sie, ob die Redirect URL in den Slack OAuth-Einstellungen korrekt hinzugefügt wurde
+- Stellen Sie sicher, dass das `slack_token`-Feld in MongoDB kein leerer String ist
 - Überprüfen Sie die Bot Framework Slack-Kanal-Konfiguration
-- Installieren Sie die Slack App neu, wenn Scopes nach der Erstinstallation geändert wurden (erforderlich, damit
-  Scope-Änderungen wirksam werden)
+- Installieren Sie die Slack-App neu, wenn Scopes nach der Erstinstallation geändert wurden (erforderlich, damit Scope-Änderungen wirksam werden)
 
-### MongoDB-Verbindungsprobleme
+### Probleme mit der MongoDB-Verbindung
 
 - Überprüfen Sie, ob der Sammlungsname `bot_paths` ist
 - Überprüfen Sie, ob die Dokumentstruktur den obigen Beispielen entspricht
 - Stellen Sie sicher, dass alle erforderlichen Felder im `credentials`-Objekt vorhanden sind
-- Validieren Sie, dass `APP_ID` und `APP_TENANTID` im korrekten UUID-Format vorliegen
+- Überprüfen Sie, ob `APP_ID` und `APP_TENANTID` im korrekten UUID-Format vorliegen
 - Bestätigen Sie, dass das `path`-Feld mit `/api/` beginnt
 
 ______________________________________________________________________
 
 ## Best Practices für Sicherheit :shield:
 
-1. **Committen Sie niemals Secrets in die Versionskontrolle**
-2. **Rotieren Sie Client Secrets vor Ablauf**
-3. **Verwenden Sie Umgebungsvariablen für sensible Daten**
-4. **Beschränken Sie den MongoDB-Zugriff mit geeigneter Authentifizierung**
-5. **Überwachen Sie die Nutzung von OAuth-Tokens auf Anomalien**
-6. **Führen Sie Audit-Logs für Bot-Pfad-Modifikationen**
-7. **Verwenden Sie HTTPS für alle Messaging Endpoints**
+1. **Niemals Secrets in die Versionskontrolle committen**
+2. **Client Secrets vor Ablauf rotieren**
+3. **Umgebungsvariablen für sensible Daten verwenden**
+4. **MongoDB-Zugriff mit geeigneter Authentifizierung einschränken**
+5. **OAuth-Token-Nutzung auf Anomalien überwachen**
+6. **Audit-Logs von Bot-Pfad-Modifikationen führen**
+7. **HTTPS für alle Messaging Endpoints verwenden**
 
 ______________________________________________________________________
 
@@ -733,9 +704,9 @@ ______________________________________________________________________
 Bei Problemen oder Fragen:
 
 - **Teams Developer Portal**:
-  [Microsoft Teams Dokumentation](https://learn.microsoft.com/en-us/microsoftteams/platform/)
-- **Bot Framework**: [Azure Bot Service Dokumentation](https://learn.microsoft.com/en-us/azure/bot-service/)
-- **Slack API**: [Slack API Dokumentation](https://api.slack.com/)
+  [Microsoft Teams-Dokumentation](https://learn.microsoft.com/en-us/microsoftteams/platform/)
+- **Bot Framework**: [Azure Bot Service-Dokumentation](https://learn.microsoft.com/en-us/azure/bot-service/)
+- **Slack API**: [Slack API-Dokumentation](https://api.slack.com/)
 
 ______________________________________________________________________
 
@@ -743,15 +714,11 @@ ______________________________________________________________________
 
 Nach Abschluss der manuellen Bot-Einrichtung:
 
-1. **Testen Sie Ihren Bot**: Senden Sie eine Nachricht in Teams oder Slack, um zu überprüfen, ob der Bot korrekt
-   antwortet
-2. **Protokolle überprüfen**: Suchen Sie in den Anwendungsprotokollen nach Fehlern oder Warnungen während der
-   Bot-Interaktionen
-3. **Zusätzliche Funktionen konfigurieren**: Erkunden Sie
-   [Bot-in-the-Loop](../../../3_sdk/6_feature_overview/bot-in-the-loop/) für Human-AI-Kollaboration
-4. **Benutzerdefinierte Logik implementieren**: Details zu benutzerdefinierten Bot-Implementierungen finden Sie im
-   [Entwicklerhandbuch](../../../6_code_deep_dive/aihub_bot/)
-5. **Performance überwachen**: Richten Sie Observability und Monitoring für Produktions-Deployments ein
+1. **Testen Sie Ihren Bot**: Senden Sie eine Nachricht in Teams oder Slack, um zu überprüfen, ob der Bot korrekt antwortet
+2. **Logs überprüfen**: Überprüfen Sie die Anwendungsprotokolle auf Fehler oder Warnungen während der Bot-Interaktionen
+3. **Zusätzliche Funktionen konfigurieren**: Erkunden Sie [Bot-in-the-Loop](../../../3_sdk/6_feature_overview/bot-in-the-loop/) für die Zusammenarbeit zwischen Mensch und KI
+4. **Benutzerdefinierte Logik implementieren**: Im [Entwicklerhandbuch](../../../6_code_deep_dive/aihub_bot/) finden Sie Informationen zu benutzerdefinierten Bot-Implementierungen
+5. **Leistung überwachen**: Richten Sie Observability und Monitoring für Production-Deployments ein
 
 ______________________________________________________________________
 

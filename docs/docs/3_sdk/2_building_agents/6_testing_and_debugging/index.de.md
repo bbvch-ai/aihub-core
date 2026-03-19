@@ -1,17 +1,15 @@
 ---
 title: Testen und Debuggen
-source_sha: 6791100e016b607540978135dbd7fcf3719d2d7a015c936fd0cc8effc8957c75
+source_sha: "36891fa31d9b24716150d2d6a60ef4bd47d8f1bccec96ac73f0b7725b8ca634b"
 ---
 
 # Testen und Debuggen
 
-Das Testen und Debuggen von Agents erfordert aufgrund ihrer ereignisgesteuerten, asynchronen Natur einen anderen Ansatz
-als herkömmliche Anwendungen.
+Das Testen und Debuggen von Agents erfordert einen anderen Ansatz als bei traditionellen Anwendungen, aufgrund ihrer ereignisgesteuerten, asynchronen Natur.
 
-## Unit-Tests: Direkter Schrittaufruf
+## Unit-Tests: Direkte Schritt-Aufrufe
 
-Der einfachste Weg, einzelne Schritte zu testen, ist, den Agent zu instanziieren und Schrittmethoden direkt mit
-gemockten Abhängigkeiten aufzurufen:
+Der einfachste Weg, einzelne Schritte zu testen, besteht darin, den Agenten zu instanziieren und Schrittmethoden direkt mit gemockten Abhängigkeiten aufzurufen:
 
 ```python
 from unittest.mock import AsyncMock, Mock
@@ -28,12 +26,11 @@ async def test_retrieve_step():
     memory.search_user_memory.assert_called_once()
 ```
 
-Dieser Ansatz testet die Schrittlogik isoliert ohne den Dispatcher, NATS oder jegliche Infrastruktur. Mocken Sie
-injizierte Abhängigkeiten (`AgentMemory`, `EventDisplayer`, `RunContext`) und prüfen Sie das zurückgegebene Ereignis.
+Dieser Ansatz testet die Schrittlogik isoliert ohne den Dispatcher, NATS oder jegliche Infrastruktur. Mocken Sie injizierte Abhängigkeiten (`AgentMemory`, `EventDisplayer`, `RunContext`) und prüfen Sie das zurückgegebene Ereignis.
 
 ## Integrationstests: pytest-bdd + AgentTestRunner
 
-Verwenden Sie Behavior-Driven Development (BDD) mit `pytest-bdd` zum Testen vollständiger Agent-Workflows.
+Verwenden Sie Behavior-Driven Development (BDD) mit `pytest-bdd` zum Testen kompletter Agent-Workflows.
 
 ### Grundlegende Teststruktur
 
@@ -52,13 +49,13 @@ Feature: Iterative Processing Agent
     And the processing should be successful
 ```
 
-2. **Testimplementierung** – Verbinden Sie Gherkin mit Code
+2. **Test-Implementierung** – Verbinden Sie Gherkin mit Code
 
 ::: code-group
 ```python [Test-Setup]
-from aihub_lib.testing.asyncio_utils.bdd import async_test
+from swiss_ai_hub.core.testing.asyncio_utils.bdd import async_test
 from pytest_bdd import given, parsers, scenarios, then, when
-from aihub_agent.runners.AgentTestRunner import AgentTestRunner
+from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner
 
 scenarios("./features/iterative_agent.feature")
 
@@ -118,7 +115,7 @@ async def test_simple_agent():
     assert "expected content" in stop_event.final_message
 ```
 
-### Methoden zur Ereignisprüfung
+### Methoden zur Ereignisinspektion
 
 ::: details Verfügbare Methoden
 ```python
@@ -139,25 +136,23 @@ event_count = len(runner.get_events_of_class(ProcessingEvent))
 ```
 :::
 
-## Debugging-Strategie: Trace-basiertes Debugging
+## Debugging-Strategie: Trace-gesteuerte Entwicklung
 
-Herkömmliches Debugging mit Breakpoints funktioniert bei ereignisgesteuerten Agents nicht gut. Verwenden Sie stattdessen
-trace-basiertes Debugging.
+Traditionelles Debugging mit Breakpoints funktioniert bei ereignisgesteuerten Agents nicht gut. Verwenden Sie stattdessen Trace-gesteuertes Debugging.
 
-> [!TIP] Ihr Debugging-Toolkit: Langfuse-Tracing (primär), umfassendes Logging, Trigger-Skripte,
-> Ereignisfluss-Inspektion.
+> [!TIPP] Ihr Debugging-Toolkit: Langfuse-Tracing (primär), umfassende Protokollierung, Trigger-Skripte, Ereignisflussinspektion.
 
-### Essenzielles Werkzeug: trigger.py-Skripte
+### Wesentliches Werkzeug: trigger.py-Skripte
 
-Erstellen Sie `trigger.py`-Skripte, um bestimmte Szenarien zu testen:
+Erstellen Sie `trigger.py`-Skripte, um spezifische Szenarien zu testen:
 
 ```python
 # my_agent/trigger.py
 import asyncio
-from aihub_lib.infrastructure.logging.logger import enable_logging
-from aihub_agent.runners.AgentTestRunner import AgentTestRunner
+from swiss_ai_hub.core.infrastructure.logging.logger import enable_logging
+from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner
 
-# Logging für Debugging IMMER aktivieren
+# ALWAYS enable logging for debugging
 enable_logging()
 
 async def main():
@@ -188,8 +183,8 @@ Für Agents, die kontinuierlich laufen müssen:
 ```python
 # my_agent/run.py
 import asyncio
-from aihub_lib.infrastructure.logging.logger import enable_logging
-from aihub_agent.runners.AgentTestRunner import AgentTestRunner
+from swiss_ai_hub.core.infrastructure.logging.logger import enable_logging
+from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner
 
 enable_logging()
 
@@ -199,21 +194,21 @@ async def main():
         agent_config=MyAgentConfig(agent_id="interactive_agent")
     )
 
-    # Hält den Agent für interaktives Testen am Laufen
+    # Keeps agent running for interactive testing
     await runner.run_forever()
 
 if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-## Langfuse-Tracing: Visuelles Debugging
+## Langfuse-Tracing: visuelles Debugging
 
 Langfuse bietet eine Schritt-für-Schritt-Visualisierung der Agent-Ausführung unter `http://localhost:6006`.
 
-**Schlüsselfunktionen:**
+**Hauptmerkmale:**
 
-- **Trace-Ansicht** – Zeigen Sie die vollständige Workflow-Ausführung an
-- **Schrittdetails** – Klicken Sie auf Schritte, um Eingaben/Ausgaben zu prüfen
+- **Trace-Ansicht** – Zeigt die komplette Workflow-Ausführung
+- **Schrittdetails** – Klicken Sie auf Schritte, um Ein- und Ausgaben zu prüfen
 - **Timing-Analyse** – Identifizieren Sie Leistungsengpässe
 - **Fehlerverfolgung** – Lokalisieren Sie, wo Fehler auftreten
 
@@ -222,23 +217,23 @@ Langfuse bietet eine Schritt-für-Schritt-Visualisierung der Agent-Ausführung u
 1. Führen Sie Ihr `trigger.py`-Skript aus
 2. Öffnen Sie die Langfuse UI unter `localhost:6006`
 3. Finden Sie den Ausführungs-Trace Ihres Agents
-4. Klicken Sie sich durch die Schritte, um den Ereignisfluss zu prüfen
-5. Identifizieren Sie, wo etwas schiefläuft
+4. Klicken Sie durch die Schritte, um den Ereignisfluss zu prüfen
+5. Identifizieren Sie, wo Fehler auftreten
 
 ## Tests ausführen
 
 ```bash
-# Alle Tests ausführen
+# Run all tests
 uv run pytest
 
-# Spezifische Testdatei ausführen
+# Run specific test file
 uv run pytest tests/test_my_agent.py
 
-# Mit ausführlicher Ausgabe ausführen
+# Run with verbose output
 uv run pytest -v tests/
 
-# Mit Coverage ausführen
-uv run pytest --cov=aihub_agent tests/
+# Run with coverage
+uv run pytest --cov=swiss_ai_hub tests/
 ```
 
 ## Implementierungs-Checkliste
@@ -248,27 +243,25 @@ Verwenden Sie diese Checkliste beim Erstellen oder Überprüfen von Agents:
 ### Vor der Implementierung
 
 - [ ] Verstehen Sie das [Ausführungsmodell](../9_execution_model/) – Schritte sind ein Abhängigkeitsgraph, keine Sequenz
-- [ ] Überprüfen Sie den [Speicherlebenszyklus](../5_memory/), wenn Ihr Agent Speicher verwendet
-- [ ] Studieren Sie Produktions-Agents: `aihub_agent/agents/RagAgent/`, `ExpertRagAgent/`
+- [ ] Überprüfen Sie den [Speicher-Lebenszyklus](../5_memory/), wenn Ihr Agent Speicher verwendet
+- [ ] Studieren Sie Produktions-Agents: `packages/agent/swiss_ai_hub/agent/agents/rag_agent/`, `expert_rag_agent/`
 
 ### Für jeden Schritt
 
-- [ ] Optionale Parameter (`T | None = None`) haben Vorbedingungen, die sowohl die Konfiguration als auch die
-  Ereignispräsenz prüfen
-- [ ] Die Parametertypen der Vorbedingung sind eine Untermenge der injizierbaren Typen des Schritts
-- [ ] Der Rückgabetyp zeigt korrekt terminale (`StopEvent`) vs. nicht-terminale Zustände an
+- [ ] Optionale Parameter (`T | None = None`) haben Vorbedingungen, die sowohl die Konfigurations- als auch die Ereignispräsenz überprüfen
+- [ ] Vorbedingungs-Parametertypen sind eine Untermenge der injizierbaren Typen des Schritts
+- [ ] Der Rückgabetyp zeigt korrekt terminal (`StopEvent`) vs. nicht-terminal an
 - [ ] Keine Abhängigkeit von `StopEvent` oder seinen Unterklassen als Eingabeparameter
 
 ### Für die Speicherintegration
 
-- [ ] Der LLM-Schritt verwendet `as_stop_step=False` (gibt `LLMEvent` zurück, nicht `LLMStopEvent`)
-- [ ] Der Speicherschritt hängt von `LLMEvent` ab
+- [ ] LLM-Schritt verwendet `as_stop_step=False` (gibt `LLMEvent` zurück, nicht `LLMStopEvent`)
+- [ ] Speicherschritt hängt von `LLMEvent` ab
 - [ ] Der letzte Schritt hat eine Vorbedingung, die auf den Abschluss der Speicherung wartet
 
 ### Nach der Implementierung
 
 - [ ] Langfuse/Phoenix-Trace zeigt die erwartete Ausführungsreihenfolge
-- [ ] Keine doppelten Schrittausführungen (prüfen Sie die
-  [optionale Parameterfalle](../9_execution_model/#the-optional-parameter-trap))
+- [ ] Keine doppelten Schrittausführungen (überprüfen Sie die [Falle optionaler Parameter](../9_execution_model/#the-optional-parameter-trap))
 - [ ] Keine Ereignisse nach `StopEvent`
-- [ ] Tests decken alle Kombinationen von Konfigurations-Flags ab
+- [ ] Tests decken alle Konfigurationsflag-Kombinationen ab

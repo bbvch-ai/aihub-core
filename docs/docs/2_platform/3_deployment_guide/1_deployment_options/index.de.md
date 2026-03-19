@@ -1,42 +1,43 @@
+```markdown
 ---
 title: Deployment-Optionen
-source_sha: e4b220d258f9560ddc0af94837701f111c7fff74e006bd9f157243ce11b080b1
+source_sha: "a6f4ab4c22b099e1dbcf4fe1432cad2d020c03e5c5ed2064d49a500804230a5f"
 ---
 
 # Deployment-Optionen
 
-## Übersicht
+## Überblick
 
-Der Swiss AI Hub kann als eine einzelne isolierte Instanz für eine Organisation oder als mehrere isolierte Instanzen,
-die optional Backend-LLM-Ressourcen gemeinsam nutzen, bereitgestellt werden.
+Der Swiss AI Hub kann als einzelne, isolierte Instanz für eine Organisation oder als mehrere isolierte Instanzen
+bereitgestellt (deployed) werden, die optional Backend-LLM-Ressourcen gemeinsam nutzen.
 
 ::: info Multi-Tenancy vs. Multi-Instancing
 Dieses Kapitel beschreibt **Multi-Instancing** (mehrere isolierte Swiss AI Hub-Instanzen). Für **Multi-Tenancy**
 (mehrere organisatorische Grenzen innerhalb einer einzelnen Instanz) siehe [Multi-Tenancy](/de/docs/16_multi_tenancy/).
 
-Beide Bereitstellungsmodelle sind gültig und dienen unterschiedlichen Zwecken. Multi-Instancing bietet eine strikte
-Isolation zwischen Organisationen, während Multi-Tenancy eine logische Trennung innerhalb einer gemeinsam genutzten
-Plattforminstanz bietet.
+Beide Deployment-Modelle sind gültig und dienen unterschiedlichen Zwecken. Multi-Instancing bietet eine harte Isolation zwischen
+Organisationen, während Multi-Tenancy eine logische Trennung innerhalb einer gemeinsam genutzten Plattform-Instanz
+ermöglicht.
 :::
 
 ## Einzelinstanz-Deployment
 
 ### Isolierte Instanz
 
-Ein Einzelinstanz-Deployment betreibt eine vollständige, eigenständige Swiss AI Hub-Instanz. Die Organisation erhält
-eine dedizierte Infrastruktur: separate Datenbanken, Vektor-Stores, Dateispeicher und Anwendungs-Services.
+Ein Einzelinstanz-Deployment betreibt eine vollständige, eigenständige Swiss AI Hub-Instanz. Die Organisation erhält eine
+dedizierte Infrastruktur: separate Datenbanken, Vektor-Stores, Dateispeicher und Applikations-Services.
 
-Die Instanz umfasst die API, Agents, Pipelines, die Weboberfläche und Bot-Integrationen. Sie verfügt über eigene
-Datenbanken (FerretDB/PostgreSQL), Vektor-Stores (Milvus) und Dateispeicher (SeaweedFS). Das Monitoring erfolgt über
-Langfuse und OpenTelemetry. NATS übernimmt das Event-Streaming. Die Instanz besitzt einen eigenen LiteLLM-Proxy für
-Kostenverfolgung und Versionskontrolle.
+Die Instanz umfasst die API, Agents, Pipelines, Weboberfläche und Bot-Integrationen. Sie verfügt über eigene Datenbanken
+(FerretDB/PostgreSQL), Vektor-Stores (Milvus) und Dateispeicher (SeaweedFS). Das Monitoring erfolgt über Langfuse und
+OpenTelemetry. NATS übernimmt das Event-Streaming. Die Instanz besitzt einen eigenen LiteLLM-Proxy für Kostenverfolgung und
+Versionskontrolle.
 
 ### LLM-Backend
 
-Die Instanz verbindet sich über ihren LiteLLM-Proxy mit LLM-Services. Nicht-GPU-Deployments werden über die Swiss LLM
-Cloud (ein in der Schweiz gehosteter Anbieter) geleitet. GPU-Deployments führen alle Inferenzen lokal über vLLM auf
-einer NVIDIA RTX 6000 Pro (96 GB VRAM) aus. Der Proxy verwaltet die Modellauswahl, Budgets, Ratenbegrenzungen und
-Versionen. Alle Prompts, Antworten und Benutzerdaten verbleiben innerhalb der Instanz.
+Die Instanz verbindet sich über ihren LiteLLM-Proxy mit LLM-Services. Nicht-GPU-Deployments werden über die Swiss LLM Cloud
+(ein in der Schweiz gehosteter Anbieter) geleitet. GPU-Deployments führen alle Inferenzen lokal über vLLM auf einer
+NVIDIA RTX 6000 Pro (96 GB VRAM) aus. Der Proxy verwaltet die Modellauswahl, Budgets, Rate Limits und Versionen. Alle
+Prompts, Antworten und Benutzerdaten verbleiben innerhalb der Instanz.
 
 ______________________________________________________________________
 
@@ -44,97 +45,96 @@ ______________________________________________________________________
 
 Der Swiss AI Hub kann je nach organisatorischen Anforderungen auf drei Arten gehostet werden.
 
-### On-Premise (eigener Server)
+### On-Premise (Betrieb auf eigenen Servern)
 
 Sie betreiben den Swiss AI Hub auf Ihren eigenen Servern in Ihrem Rechenzentrum.
 
-Sie benötigen x86_64-Server mit CPU, RAM und Speicherplatz. NVIDIA-GPUs eignen sich für selbst gehostete LLM-Inferenz.
-Für den Netzwerkzugriff ist entweder ausgehendes HTTPS für Cloud-basierte LLM-Services erforderlich oder eine
-Air-Gapped-Umgebung mit lokalen Modellen.
+Sie benötigen x86_64-Server mit CPU, RAM und Speicher. NVIDIA-GPUs eignen sich für selbst gehostete LLM-Inferenzen. Für den
+Netzwerkzugriff ist entweder ausgehendes HTTPS für Cloud-basierte LLM-Services oder ein Air-Gap mit lokalen Modellen
+erforderlich.
 
-Die Infrastruktur liegt unter Ihrer Kontrolle. Keine Cloud-Abhängigkeiten. Funktioniert in Air-Gapped-Umgebungen mit
+Die Infrastruktur liegt in Ihrer Kontrolle. Keine Cloud-Abhängigkeiten. Funktioniert in Air-Gap-Umgebungen mit
 selbst gehosteten LLMs.
 
 ______________________________________________________________________
 
-### Private Cloud (eigene Cloud)
+### Private Cloud (Betrieb in eigener Cloud)
 
 Sie betreiben den Swiss AI Hub in Ihrer eigenen Cloud-Umgebung (Schweizer Cloud-Anbieter, Azure, AWS, GCP).
 
-Die Daten verbleiben in Ihrem Cloud-Konto unter Ihrer Kontrolle. Sie wählen die Region (z.B. Schweiz für Datenresidenz).
-Sie verwalten die Cloud-Ressourcen und -Kosten.
+Die Daten verbleiben in Ihrem Cloud-Konto unter Ihrer Kontrolle. Sie wählen die Region (z.B. Schweiz für die
+Datenresidenz). Sie verwalten die Cloud-Ressourcen und -Kosten.
 
-Cloud-Anbieter verfügen typischerweise über Sicherheits- und Compliance-Zertifizierungen. Sie benötigen
-Internetverbindung für den LLM-Proxy-Zugriff (HTTPS), optional VPN für administrativen Zugriff und privates Netzwerk
+Cloud-Anbieter verfügen typischerweise über Sicherheits- und Compliance-Zertifizierungen. Sie benötigen eine
+Internetverbindung für den LLM-Proxy-Zugriff (HTTPS), optional VPN für administrativen Zugriff und private Netzwerke
 zwischen Services (internes DNS).
 
 ______________________________________________________________________
 
 ### SaaS (Schweizer Cloud-Hosting)
 
-bbv hostet und verwaltet den Swiss AI Hub für Sie auf einer Schweizer Cloud-Infrastruktur.
+bbv hostet und verwaltet den Swiss AI Hub für Sie auf Schweizer Cloud-Infrastruktur.
 
-bbv übernimmt die Infrastrukturprovisionierung, Updates, Backups, Monitoring und operative Aufgaben. Daten verbleiben in
-der Schweiz unter Schweizer Rechtshoheit. Sicherheits- und Compliance-Zertifizierungen vom Cloud-Anbieter.
+bbv übernimmt die Infrastruktur-Bereitstellung, Updates, Backups, Monitoring und operativen Aufgaben. Daten
+verbleiben in der Schweiz unter Schweizer Rechtsprechung. Sicherheits- und Compliance-Zertifizierungen des Cloud-Anbieters.
 
-Sie greifen über eine Weboberfläche und APIs auf den Swiss AI Hub zu. bbv bietet SLAs für Verfügbarkeit und Support.
-Weniger operativer Aufwand für Ihr Team.
+Sie greifen über eine Weboberfläche und APIs auf den Swiss AI Hub zu. bbv bietet SLAs für Uptime und Support. Weniger
+operativer Aufwand für Ihr Team.
 
 ______________________________________________________________________
 
 ## Multi-Instanz-Deployment
 
-::: tip Wann Multi-Instancing verwenden
-Nutzen Sie mehrere isolierte Instanzen, wenn Sie eine **strikt getrennte Isolation** zwischen Organisationen mit einer
-0%igen Wahrscheinlichkeit von Datenlecks benötigen. Zum Beispiel eine Krankenversicherung mit einer medizinischen
-Gutachterkommission, die streng vertrauliche Daten verarbeitet, die eine absolute Isolation von der
-Hauptversicherungsabteilung erfordern.
+::: tip Wann Multi-Instancing verwenden?
+Verwenden Sie mehrere isolierte Instanzen, wenn Sie eine **harte Trennung** zwischen Organisationen mit einer 0%igen
+Wahrscheinlichkeit von Datenlecks benötigen. Zum Beispiel eine Krankenversicherung mit einer medizinischen
+Prüfungskommission, die streng geheime Daten verarbeitet und eine absolute Isolation von der Hauptversicherungsabteilung
+erfordert.
 
 Selbst eine Fehlkonfiguration des Swiss AI Hubs kann keine Datenlecks zwischen Instanzen verursachen. Admins einer
-Instanz können eine andere Instanz ohne separaten Login weder konfigurieren noch auf diese zugreifen.
+Instanz können eine andere Instanz ohne separaten Login weder konfigurieren noch darauf zugreifen.
 
-Für logische Trennung innerhalb einer gemeinsam genutzten Plattform verwenden Sie stattdessen
-[Multi-Tenancy](/de/docs/16_multi_tenancy/).
+Für eine logische Trennung innerhalb einer gemeinsam genutzten Plattform verwenden Sie stattdessen [Multi-Tenancy](/de/docs/16_multi_tenancy/).
 :::
 
-### Gemeinsames LLM-Backend
+### Geteiltes LLM-Backend
 
 Beim Deployment mehrerer Instanzen können diese Backend-LLM-Ressourcen gemeinsam nutzen. Mehrere Instanzen können
 dieselben Swiss LLM Cloud-Zugangsdaten verwenden oder einen lokalen vLLM-GPU-Server gemeinsam nutzen. Sie können auch
-Authentifizierungsinfrastrukturen wie Azure AD oder Keycloak gemeinsam nutzen.
+die Authentifizierungsinfrastruktur wie Azure AD oder Keycloak gemeinsam nutzen.
 
-Jede Instanz verfügt weiterhin über einen eigenen LiteLLM-Proxy. Der Proxy verwaltet die Modellauswahl, Budgets,
-Ratenbegrenzungen und Versionen pro Instanz. Die LLM-Nutzung wird pro Instanz verfolgt. Prompts, Antworten und
-Benutzerdaten verbleiben innerhalb jeder Instanz.
+Jede Instanz verfügt weiterhin über einen eigenen LiteLLM-Proxy. Der Proxy verwaltet die Modellauswahl, Budgets, Rate Limits
+und Versionen pro Instanz. Die LLM-Nutzung wird pro Instanz erfasst. Prompts, Antworten und Benutzerdaten verbleiben
+innerhalb jeder Instanz.
 
-Die gemeinsam genutzten LLM-Backends sind zustandslos. Sie persistieren weder Prompts noch Antworten.
-Konversationskontext und -historie verbleiben in der eigenen Infrastruktur jeder Instanz.
+Die geteilten LLM-Backends sind zustandslos. Sie speichern keine Prompts oder Antworten. Konversationeller Kontext und
+Historie verbleiben in der eigenen Infrastruktur jeder Instanz.
 
-## Merkmale
+## Eigenschaften
 
 ### Datenisolation
 
-Die Daten jeder Instanz bleiben isoliert. Es gibt keine gemeinsame Datenbank oder Vektor-Store. Daten können nicht
-zwischen Organisationen gelangen. Das Setup erfüllt das Schweizer Datenschutzgesetz (revDSG), die GDPR-Anforderungen an
-die Datenisolation und die Sicherheitsstandards des Schweizer öffentlichen Sektors.
+Die Daten jeder Instanz bleiben isoliert. Es gibt keine gemeinsame Datenbank oder keinen gemeinsamen Vektor-Store.
+Daten können nicht zwischen Organisationen austreten. Das Setup erfüllt das Schweizer Datenschutzgesetz (revDSG), die
+GDPR-Anforderungen an die Datenisolation und die Schweizer Sicherheitsstandards für den öffentlichen Sektor.
 
 ::: info Multi-Tenancy innerhalb von Instanzen
-Jede Instanz kann auch [Multi-Tenancy](/de/docs/16_multi_tenancy/) verwenden, um logische Grenzen für Abteilungen,
-Kunden oder Projekte innerhalb dieser Instanz zu schaffen. Multi-Tenancy bietet flexible Zugriffssteuerung bei
-gleichzeitiger strikter Isolation zwischen Instanzen.
+Jede Instanz kann auch [Multi-Tenancy](/de/docs/16_multi_tenancy/) nutzen, um logische Grenzen für Abteilungen, Kunden
+oder Projekte innerhalb dieser Instanz zu schaffen. Multi-Tenancy bietet flexible Zugriffskontrolle bei gleichzeitiger
+Aufrechterhaltung einer harten Isolation zwischen den Instanzen.
 :::
 
 ### Konfiguration
 
 Jede Instanz kann unabhängig konfiguriert werden. Organisationen können benutzerdefinierte Agents, spezialisierte
-Pipelines für ihre Datenquellen, eigene Zugriffssteuerung (RBAC, OIDC mit lokalem IdP), benutzerdefinierte
-Wissensdatenbanken und dedizierte Authentifizierungsanbieter wie Azure AD oder Keycloak deployen.
+Pipelines für ihre Datenquellen, eigene Zugriffskontrolle (RBAC, OIDC mit lokalem IdP), benutzerdefinierte Wissensbasen
+und dedizierte Authentifizierungsanbieter wie Azure AD oder Keycloak deployen.
 
 ### Skalierung und Updates
 
-Die Ressourcenzuweisung erfolgt pro Instanz. Sie skalieren Rechenleistung, Speicher und Storage basierend auf der
+Die Ressourcenzuweisung erfolgt pro Instanz. Sie skalieren Compute, Arbeitsspeicher und Speicherplatz basierend auf der
 tatsächlichen Nutzung. Jede Instanz kann Updates nach eigenem Zeitplan anwenden. Das Testen neuer Funktionen in einer
-Instanz hat keine Auswirkungen auf andere. SLAs variieren je nach Vertrag.
+Instanz beeinträchtigt andere nicht. SLAs variieren je nach Vertrag.
 
 ### Compliance und Auditing
 
@@ -186,8 +186,8 @@ Der LiteLLM-Proxy verbindet sich mit LLM-Services (Swiss LLM Cloud für Nicht-GP
 
 ### Multi-Instanz-Infrastruktur
 
-Beim Deployment mehrerer Instanzen erhält jede Instanz dieselbe oben gezeigte Infrastruktur. Sie können
-Backend-LLM-Ressourcen gemeinsam nutzen:
+Beim Deployment mehrerer Instanzen erhält jede Instanz die oben gezeigte Infrastruktur. Sie können Backend-LLM-Ressourcen
+gemeinsam nutzen:
 
 ```
 Shared LLM Backend Resources
@@ -206,12 +206,12 @@ Shared LLM Backend Resources
 Netzwerkarchitektur:
 
 - Jede Instanz verfügt über einen eigenen LiteLLM-Proxy
-- Instanz-LiteLLM-Proxies verbinden sich mit gemeinsam genutzten LLM-Backends (Swiss LLM Cloud oder lokales vLLM)
-- Gemeinsam genutzte LLM-Backends verwenden gemeinsame API-Zugangsdaten (konfiguriert pro Instanz-LiteLLM)
+- Instanz-LiteLLM-Proxys verbinden sich mit geteilten LLM-Backends (Swiss LLM Cloud oder lokales vLLM)
+- Geteilte LLM-Backends verwenden gemeinsame API-Zugangsdaten (konfiguriert pro Instanz-LiteLLM)
 - Keine direkte Kommunikation zwischen Instanzen
-- Optional: Gemeinsamer Authentifizierungsanbieter (Azure AD, Keycloak)
+- Optional: Geteilter Authentifizierungsanbieter (Azure AD, Keycloak)
 
-Datenisolation und Souveränität. Unabhängige Skalierung und Ressourcenzuweisung. Benutzerdefinierte Konfigurationen pro
+Datenisolation und -souveränität. Unabhängige Skalierung und Ressourcenzuweisung. Benutzerdefinierte Konfigurationen pro
 Instanz. Flexible Update-Zeitpläne. Klare Compliance-Grenzen.
 
 ______________________________________________________________________
@@ -237,7 +237,7 @@ graph TB
 
 Die Instanz verbindet sich über ihren LiteLLM-Proxy mit LLM-Services.
 
-### Multi-Instanz-Deployment mit gemeinsamem LLM-Backend
+### Multi-Instanz-Deployment mit geteiltem LLM-Backend
 
 ```mermaid
 graph TB
@@ -268,9 +268,9 @@ graph TB
     classDef default font-size:16px,padding:20px
 ```
 
-Jede Instanz verfügt über einen eigenen LiteLLM-Proxy (unabhängige Kostenverfolgung, Versionierung, Konfiguration). Alle
-Instanz-LiteLLM-Proxies verbinden sich mit gemeinsam genutzten LLM-Backend-Ressourcen (Swiss LLM Cloud oder lokales
-vLLM). Prompts, Antworten und Benutzerdaten verbleiben innerhalb der Instanzgrenzen.
+Jede Instanz verfügt über einen eigenen LiteLLM-Proxy (unabhängige Kostenverfolgung, Versionierung, Konfiguration).
+Alle Instanz-LiteLLM-Proxys verbinden sich mit geteilten LLM-Backend-Ressourcen (Swiss LLM Cloud oder lokales vLLM).
+Prompts, Antworten und Benutzerdaten verbleiben innerhalb der Instanzgrenzen.
 
 ______________________________________________________________________
 
@@ -279,112 +279,111 @@ ______________________________________________________________________
 ### Instanzisolation
 
 Instanzen kommunizieren nicht miteinander. Jede Instanz verfügt über separate Datenbanken, Vektor-Stores und
-Dateispeicher. Jede Instanz verbindet sich mit einem eigenen IdP (Azure AD, Keycloak) oder kann einen gemeinsamen IdP
-mit separater Namespace-Isolation nutzen. LiteLLM erzwingt API-Schlüssel und Quotas pro Instanz.
+Dateispeicher. Jede Instanz verbindet sich mit ihrem eigenen IdP (Azure AD, Keycloak) oder kann einen gemeinsamen IdP
+mit separater Namespace-Isolation nutzen. LiteLLM erzwingt API-Schlüssel und Quoten pro Instanz.
 
 ### LLM-Proxy-Sicherheit
 
-LiteLLM persistiert keine Prompts oder Antworten (zustandsloser Betrieb). Das API-Schlüsselmanagement umfasst sichere
-Schlüsselgenerierung, -rotation und -widerruf. Pro-Instanz-Anfragebegrenzungen verhindern Missbrauch. Alle LLM-Anfragen
-werden mit Instanz-ID, aber ohne Prompt-Inhalt protokolliert. Die Presidio-Integration ist optional für die Erkennung
-und Redaktion von PII (personenbezogene identifizierbare Informationen).
+LiteLLM speichert keine Prompts oder Antworten persistent (zustandsloser Betrieb). Die API-Schlüsselverwaltung umfasst
+sichere Schlüsselgenerierung, -rotation und -widerruf. Anfragelimits pro Instanz verhindern Missbrauch. Alle LLM-Anfragen
+werden mit Instanz-ID, aber ohne Prompt-Inhalt protokolliert. Die Presidio-Integration ist optional für die PII-Erkennung
+und -Redaktion.
 
 ### Daten während der Übertragung
 
-Die gesamte Kommunikation ist mit TLS verschlüsselt (Instanz zu LLM-Proxy). Das Zertifikatsmanagement verwendet Let's
-Encrypt für die Produktion und mkcert für die Entwicklung. Die API-Authentifizierung verwendet Bearer-Tokens (OAuth 2.0,
-JWT).
+Die gesamte Kommunikation ist mit TLS verschlüsselt (Instanz zum LLM-Proxy). Das Zertifikatsmanagement verwendet
+Let's Encrypt für die Produktion und mkcert für die Entwicklung. Die API-Authentifizierung nutzt Bearer-Tokens
+(OAuth 2.0, JWT).
 
-### Ruhende Daten
+### Daten im Ruhezustand
 
-PostgreSQL verwendet transparente Datenverschlüsselung (TDE). Persistente Volumes werden verschlüsselt (LUKS, Azure Disk
+PostgreSQL verwendet transparente Datenverschlüsselung (TDE). Persistente Volumes sind verschlüsselt (LUKS, Azure Disk
 Encryption). Secrets werden über Umgebungsvariablen, Azure Key Vault oder Docker Secrets verwaltet.
 
 ______________________________________________________________________
 
 ## Nächste Schritte
 
-- [Multi-Tenancy](/de/docs/16_multi_tenancy/) - Logische Trennung innerhalb einer einzelnen Instanz
-- [Produktionskonfiguration](/de/docs/2_production_configuration/) - Konfigurationsanleitung für Produktions-Deployments
-- [Überlegungen zur Skalierung](/de/docs/3_scaling_considerations/) - Skalierung von Instanzen
-- [Backup und Wiederherstellung](/de/docs/4_backup_and_recovery/) - Backup-Strategien für die Pro-Instanz-Architektur
-- [Updates und Wartung](/de/docs/6_updates_and_maintenance/) - Verwaltung von Updates über mehrere Instanzen hinweg
+- [Multi-Tenancy](/de/docs/16_multi_tenancy/) – Logische Trennung innerhalb einer einzelnen Instanz
+- [Produktionskonfiguration](/de/docs/deployments/2_production_configuration/) – Konfigurationsanleitung für Produktions-Deployments
+- [Skalierungsüberlegungen](/de/docs/deployments/3_scaling_considerations/) – Skalierung von Instanzen
+- [Backup und Wiederherstellung](/de/docs/deployments/4_backup_and_recovery/) – Backup-Strategien für die Pro-Instanz-Architektur
+- [Updates und Wartung](/de/docs/deployments/6_updates_and_maintenance/) – Verwaltung von Updates über mehrere Instanzen
 
 ______________________________________________________________________
 
 ## FAQ
 
 ::: details Können Instanzen Agents oder Pipelines teilen?
-Nein. Jede Instanz verfügt über einen eigenen isolierten Satz von Agents und Pipelines. Dieselben Agent-Definitionen
-(Code) können jedoch über mehrere Instanzen hinweg deployed werden. Anpassungen sind instanzspezifisch.
+Nein. Jede Instanz verfügt über einen eigenen, isolierten Satz von Agents und Pipelines. Dieselben Agent-Definitionen (Code)
+können jedoch über mehrere Instanzen hinweg deployed werden. Anpassungen sind instanzspezifisch.
 
-Für die gemeinsame Nutzung von Agents innerhalb einer Organisation verwenden Sie
-[Multi-Tenancy](/de/docs/16_multi_tenancy/), um logische Grenzen innerhalb einer einzelnen Instanz zu schaffen.
+Um Agents innerhalb einer Organisation zu teilen, verwenden Sie [Multi-Tenancy](/de/docs/16_multi_tenancy/), um logische
+Grenzen innerhalb einer einzelnen Instanz zu schaffen.
 :::
 
 ::: details Was ist der Unterschied zwischen Multi-Instancing und Multi-Tenancy?
-**Multi-Instancing** (dieses Kapitel) bedeutet, mehrere vollständig isolierte Swiss AI Hub-Installationen zu betreiben.
-Jede verfügt über separate Datenbanken, Vektor-Stores und Anwendungsserver. Selbst eine Fehlkonfiguration kann keine
+**Multi-Instancing** (dieses Kapitel) bedeutet den Betrieb mehrerer vollständig isolierter Swiss AI Hub-Installationen.
+Jede verfügt über separate Datenbanken, Vektor-Stores und Applikationsserver. Selbst eine Fehlkonfiguration kann keine
 Datenlecks zwischen Instanzen verursachen. Verwenden Sie dies, wenn Sie absolute Isolation benötigen (z.B. verschiedene
 juristische Einheiten, hochsensible Abteilungen).
 
-**Multi-Tenancy** ([Kapitel 15](/de/docs/16_multi_tenancy/)) bedeutet, organisatorische Grenzen innerhalb einer
-einzelnen Swiss AI Hub-Instanz zu schaffen. Mehrere Mandanten teilen sich die Infrastruktur, haben aber eine logische
-Trennung durch Zugriffssteuerung. Verwenden Sie dies für Abteilungen, Projekte oder Kunden innerhalb derselben
-Organisation.
+**Multi-Tenancy** ([Kapitel 15](/de/docs/16_multi_tenancy/)) bedeutet die Schaffung organisatorischer Grenzen innerhalb
+einer einzelnen Swiss AI Hub-Instanz. Mehrere Mandanten teilen sich die Infrastruktur, verfügen aber über eine logische
+Trennung durch Zugriffskontrolle. Verwenden Sie dies für Abteilungen, Projekte oder Kunden innerhalb derselben Organisation.
 
-Sie können beides kombinieren: Betreiben Sie mehrere Instanzen (strikte Isolation), wobei jede Instanz Multi-Tenancy
-(flexible Trennung innerhalb dieser Instanz) verwendet.
+Sie können beides kombinieren: Betreiben Sie mehrere Instanzen (harte Isolation), wobei jede Instanz Multi-Tenancy
+(flexible Trennung innerhalb dieser Instanz) nutzt.
 :::
 
-::: details Welche Daten sieht das gemeinsame LLM-Backend?
+::: details Welche Daten sieht das geteilte LLM-Backend?
 Jede Instanz verfügt über einen eigenen LiteLLM-Proxy, sodass Prompts und Antworten innerhalb der Instanz verbleiben.
-Die gemeinsam genutzten LLM-Backends (Swiss LLM Cloud oder lokales vLLM) sehen API-Anfragen von mehreren
-Instanz-LiteLLM-Proxies (zustandslos, nicht persistent), Modellanfragen (Prompts und Completions nur während der
-Übertragung), keine Instanzidentifikation oder Kontext und anonymisierte PII-Daten, falls aktiviert.
+Die geteilten LLM-Backends (Swiss LLM Cloud oder lokales vLLM) sehen API-Anfragen von mehreren Instanz-LiteLLM-Proxys
+(zustandslos, nicht persistent gespeichert), Modellinferenzanfragen (Prompts und Completions nur während der Übertragung),
+keine Instanzidentifikation oder Kontext und anonyme PII-Daten, falls aktiviert.
 
 Sie sehen nicht, welche Instanz die Anfrage gestellt hat, die Konversationshistorie oder gespeicherte Daten. Der gesamte
-Kontext verbleibt im LiteLLM-Proxy und in der Datenbank der Instanz.
+Kontext verbleibt im LiteLLM-Proxy und der Datenbank der Instanz.
 :::
 
 ::: details Kann eine Instanz ausschliesslich selbst gehostete Modelle verwenden?
-Ja. Für Air-Gapped- oder vollständige On-Premise-Deployments verwenden Sie die GPU-Variante der docker-compose-Datei.
-Alle Inferenzen werden lokal über vLLM auf einer NVIDIA RTX 6000 Pro (96 GB VRAM) ausgeführt, ohne dass eine ausgehende
+Ja. Für Air-Gap- oder vollständig On-Premise-Deployments verwenden Sie die GPU-Variante der docker-compose-Datei. Alle
+Inferenzen laufen lokal über vLLM auf einer NVIDIA RTX 6000 Pro (96 GB VRAM), ohne dass eine ausgehende
 Internetverbindung erforderlich ist.
 :::
 
 ::: details Wie werden Kosten pro Instanz verfolgt?
-LiteLLM verfolgt die API-Nutzung pro Instanz und Benutzer: Token-Anzahl (Input/Output), Modellnutzung (GPT-4, Gemini
-usw.), Kostenberechnungen basierend auf Modellpreisen und monatliche Budgetdurchsetzung.
+LiteLLM verfolgt die API-Nutzung pro Instanz und Benutzer: Token-Zähler (Input/Output), Modellnutzung (GPT-4, Gemini
+etc.), Kostenberechnungen basierend auf Modellpreisen und die Durchsetzung monatlicher Budgets.
 
-Die Daten sind in der LiteLLM-Admin-UI verfügbar und für die Abrechnung exportierbar.
+Die Daten sind in der LiteLLM Admin UI verfügbar und für die Abrechnung exportierbar.
 :::
 
 ::: details Können Instanzen unterschiedlichen LLM-Zugriff haben?
-Ja. Die LiteLLM-Konfiguration erlaubt den Modellzugriff pro Instanz. Zum Beispiel könnte Instanz A die Swiss LLM Cloud
-mit einer bestimmten Auswahl an Modellen verwenden, Instanz B eine andere Modellauswahl für Flexibilität, und Instanz C
-könnte ausschliesslich lokales vLLM für ein Air-Gapped-Deployment verwenden.
+Ja. Die LiteLLM-Konfiguration erlaubt den modellbasierten Zugriff pro Instanz. Zum Beispiel könnte Instanz A die Swiss
+LLM Cloud mit einem spezifischen Satz von Modellen verwenden, Instanz B eine andere Modellauswahl für Flexibilität
+nutzen und Instanz C ausschliesslich lokales vLLM für ein Air-Gap-Deployment einsetzen.
 :::
 
 ::: details Was passiert, wenn der LLM-Proxy nicht verfügbar ist?
-Instanzen werden eine Beeinträchtigung LLM-abhängiger Funktionen erfahren. RAG-Agents können keine Antworten generieren.
-Embeddings können nicht für neue Dokumente erstellt werden. Vorhandene Daten und die Benutzeroberfläche bleiben jedoch
-zugänglich, und Nicht-LLM-Funktionen (Dokumentenupload, RBAC, Observability) funktionieren weiterhin.
+Instanzen werden eine Verschlechterung LLM-abhängiger Funktionen erfahren. RAG-Agents können keine Antworten generieren.
+Embeddings können nicht für neue Dokumente erstellt werden. Vorhandene Daten und die UI bleiben jedoch zugänglich, und
+nicht-LLM-Funktionen (Dokumentenupload, RBAC, Observability) funktionieren weiterhin.
 
-Abhilfemassnahme: Deployen Sie LiteLLM mit hoher Verfügbarkeit (mehrere Replikate, Lastverteilung).
+Mitigation: Deployen Sie LiteLLM mit hoher Verfügbarkeit (mehrere Replicas, Load Balancing).
 :::
 
 ::: details Wie verwalten Sie Updates über viele Instanzen hinweg?
-Siehe [Updates und Wartung](/de/docs/6_updates_and_maintenance/) für Strategien wie gestaffelte Rollouts (Pilot zu
-Produktion), Blue-Green-Deployments, automatisierte Update-Orchestrierung (Ansible, Kubernetes-Operatoren) und
-Update-Zeitpläne pro Instanz.
+Siehe [Updates und Wartung](/de/docs/deployments/6_updates_and_maintenance/) für Strategien wie gestaffelte Rollouts (Pilot bis Produktion),
+Blue-Green Deployments, automatisierte Update-Orchestrierung (Ansible, Kubernetes Operators) und instanzspezifische
+Update-Zeitpläne.
 :::
 
-## Zugehörige Dokumentation
+## Verwandte Dokumentation
 
-- [Multi-Tenancy](/de/docs/16_multi_tenancy/) - Schaffung organisatorischer Grenzen innerhalb einer Instanz
-- [Kernkomponenten](/de/docs/2_architecture/1_core_components/) - Swiss AI Hub-Architektur
-- [Authentifizierung & Autorisierung](/de/docs/11_access_management/1_authentication_setup/) -
-  Authentifizierungskonfiguration
-- [Monitoring und Alerting](/de/docs/5_monitoring_and_alerting/) - Observability für Multi-Instanz-Deployments
-- [Schweizer Datenschutz](/de/docs/21_compliance/3_dsg/) - revDSG-Compliance für den öffentlichen Sektor
+- [Multi-Tenancy](/de/docs/16_multi_tenancy/) – Schaffung organisatorischer Grenzen innerhalb einer Instanz
+- [Kernkomponenten](/de/docs/2_architecture/1_core_components/) – Swiss AI Hub Architektur
+- [Authentifizierung & Autorisierung](/de/docs/11_access_management/1_authentication_setup/) – Authentifizierungskonfiguration
+- [Monitoring und Alerting](/de/docs/deployments/5_monitoring_and_alerting/) – Observability für Multi-Instanz-Deployments
+- [Schweizer Datenschutz](/de/docs/21_compliance/3_dsg/) – revDSG-Compliance für den öffentlichen Sektor
+```

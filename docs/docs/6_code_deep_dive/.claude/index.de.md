@@ -69,7 +69,7 @@ This directory contains all Claude Code configuration for the swiss-ai-hub monor
 │   └── session-start.sh         # SessionStart: Install deps, check env
 └── mcp/                   # Model Context Protocol server scripts (12 total)
     ├── mcp-mongodb.sh     # Read-only database access (FerretDB/MongoDB)
-    ├── mcp-aihub-api.sh   # API endpoint testing
+    ├── mcp-swiss-ai-hub-api.sh   # API endpoint testing
     ├── mcp-langfuse.sh    # LLM observability (prompts, tracing, evaluations)
     ├── mcp-context7.sh    # Up-to-date library documentation lookup
     ├── mcp-playwright.sh  # Browser automation and UI debugging

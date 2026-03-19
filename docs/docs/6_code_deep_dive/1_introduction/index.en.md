@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="../../../media/logo.png" alt="Swiss AI Hub" width="120">
+<img src="../../../media/logo.png" alt="Swiss AI-Hub" width="120">
 
-# Swiss AI Hub
+# Swiss AI-Hub
 
 **The open-source AI infrastructure stack for Swiss enterprises.**
 
@@ -47,7 +47,7 @@ it, because every out-of-the-box platform eventually limits you.
 > [!IMPORTANT]\
 > **Why this matters in Switzerland.** Professionals bound by Art. 321 StGB and organizations subject to the nDSG cannot
 > send client data to US-headquartered cloud providers without confronting the CLOUD Act. "Region Switzerland" hosting
-> from hyperscalers does not resolve this; operational access often originates outside Switzerland. Swiss AI Hub
+> from hyperscalers does not resolve this; operational access often originates outside Switzerland. Swiss AI-Hub
 > eliminates the risk: deploy on your own servers, run local models, keep every byte under Swiss jurisdiction.
 
 **Where competition belongs:** your domain expertise, your specialized agents, your proprietary data. Not authentication
@@ -189,7 +189,7 @@ wired together.
 
 ### SDKs
 
-Every turnkey platform eventually limits you. Swiss AI Hub ships SDKs so you are never blocked:
+Every turnkey platform eventually limits you. Swiss AI-Hub ships SDKs so you are never blocked:
 
 | SDK              | Purpose                                                                                                                                               |
 | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -440,7 +440,7 @@ ______________________________________________________________________
 
 ## Contributing
 
-Swiss AI Hub is developed by [bbv Software Services](https://www.bbv.ch) and open to contributions. See
+Swiss AI-Hub is developed by [bbv Software Services](https://www.bbv.ch) and open to contributions. See
 [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide, or jump in:
 
 |                                                                  |                                                              |

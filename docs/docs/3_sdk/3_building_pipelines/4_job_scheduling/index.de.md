@@ -1,47 +1,38 @@
+```markdown
 ---
-title: Job-Planung
-source_sha: 02c7cd9e9caa8f896f2ad41e6c890212c6709adfb5d8713956e910c8fcdec14e
+title: 'Job-Planung'
+source_sha: "085d8d66333a050f14ec9c7aea5cf3937d89b80a478eee6cb0565b2ac361d100"
 ---
 
 # Job-Planung
 
-Sobald Ihre Pipeline definiert ist, besteht der nächste Schritt darin, ihre Ausführung zu automatisieren.
+Sobald Ihre Pipeline definiert ist, ist der nächste Schritt, ihre Ausführung zu automatisieren.
 
 ## Die hybride Automatisierungsstrategie
 
-Anstatt die gesamte ressourcenintensive Pipeline nach einem festen Zeitplan auszuführen, trennen wir die "Überprüfung"
-von der "Verarbeitung".
+Anstatt die gesamte ressourcenintensive Pipeline nach einem festen Schedule auszuführen, trennen wir das „Prüfen“ vom „Verarbeiten“.
 
-### 1. Zeitgesteuerte Überwachung
+### 1. Geplante Beobachtung
 
-Ein schlanker **Job** läuft nach einem festen Zeitplan (z.B. täglich um 2 Uhr morgens). Sein einziger Zweck ist es, das
-**beobachtbare Quell-Asset** (z.B. `observable_data_lake`) auszuführen. Dieser Job verarbeitet keine Dokumente; er
-überprüft lediglich das Quellsystem (wie S3 oder SharePoint) auf neue oder geänderte Dateien und protokolliert deren
-Versionen. Dies ist der "Puls" Ihrer Pipeline.
+Ein leichter **Job** läuft nach einem festen Schedule (z. B. täglich um 2 Uhr morgens). Sein einziger Zweck ist es, das **beobachtbare Quell-Asset** (z. B. `observable_data_lake`) auszuführen. Dieser Job verarbeitet keine Dokumente; er prüft lediglich das Quellsystem (wie S3 oder SharePoint) auf neue oder geänderte Dateien und erfasst deren Versionen. Dies ist der „Puls“ Ihrer Pipeline.
 
 ### 2. Änderungsgesteuerte Verarbeitung
 
-Ein **Sensor** (`default_automation_sensor`) oder eine `AutomationCondition` auf einem Asset überwacht ständig den
-Zustand Ihrer Pipeline. Wenn er feststellt, dass das beobachtbare Asset eine neue Datenversion erzeugt hat (weil der
-geplante Job eine Änderung gefunden hat), löst er automatisch die nachgelagerten Verarbeitungs-Assets (wie `documents`
-und `nodes`) aus.
+Ein **Sensor** (`default_automation_sensor`) oder eine `AutomationCondition` auf einem Asset überwacht ständig den Zustand Ihrer Pipeline. Wenn er erkennt, dass das beobachtbare Asset eine neue Datenversion produziert hat (weil der geplante Job eine Änderung gefunden hat), triggert er automatisch die nachgeschalteten Verarbeitungs-Assets (wie `documents` und `nodes`).
 
-Dieser Ansatz ist äußerst effizient, da die ressourcenintensive Dokumentenverarbeitung nur dann ausgeführt wird, wenn
-tatsächlich Datenänderungen vorliegen.
+Dieser Ansatz ist äußerst effizient, da die ressourcenintensive Dokumentenverarbeitung nur dann ausgeführt wird, wenn tatsächlich Datenänderungen vorliegen.
 
 ## Implementierung mit SDK-Factories
 
-Die `default_definitions`- und `default_sharepoint_to_datalake_definitions`-Factories konfigurieren diese gesamte
-Automatisierungseinrichtung automatisch für Sie. Sie erstellen die notwendigen Jobs, Zeitpläne und Sensoren, um die
-hybride Strategie zu implementieren.
+Die `default_definitions`- und `default_sharepoint_to_datalake_definitions`-Factories konfigurieren diese gesamte Automatisierungseinrichtung automatisch für Sie. Sie erstellen die notwendigen Jobs, Schedules und Sensoren, um die hybride Strategie zu implementieren.
 
 So werden die Komponenten innerhalb eines `Definitions`-Objekts zusammengestellt:
 
 ```python
 # This pattern is automatically configured by the SDK's default factories.
-from aihub_pipeline.jobs.factory import observe_source_job
-from aihub_pipeline.schedules.factory import daily_schedule_at
-from aihub_pipeline.sensors.factory import default_automation_sensor
+from swiss_ai_hub.pipeline.jobs.factory import observe_source_job
+from swiss_ai_hub.pipeline.schedules.factory import daily_schedule_at
+from swiss_ai_hub.pipeline.sensors.factory import default_automation_sensor
 
 # A. A job is created specifically to run the observation asset.
 # This is a lightweight, fast-running job.
@@ -72,8 +63,7 @@ defs = Definitions(
 )
 ```
 
-Die nachgelagerten Assets selbst verwenden `AutomationCondition.eager()`, um sicherzustellen, dass sie ausgeführt
-werden, sobald eine vorgelagerte Änderung vom Sensor erkannt wird.
+Die nachgeschalteten Assets selbst verwenden `AutomationCondition.eager()`, um sicherzustellen, dass sie ausgeführt werden, sobald eine vorgelagerte Änderung vom Sensor erkannt wird.
 
 ```python
 @graph_asset(
@@ -89,5 +79,5 @@ def production_documents(data_lake_file: DataLakeFile) -> RefDocDocument:
 
 ## Nächste Schritte
 
-- [Pipeline-Überwachung](../5_pipeline_observation/) zur Überwachung der Gesundheit und Leistung Ihrer automatisierten
-  Pipelines.
+- [Pipeline-Beobachtung](../5_pipeline_observation/) zum Überwachen der Integrität und Leistung Ihrer automatisierten Pipelines.
+```

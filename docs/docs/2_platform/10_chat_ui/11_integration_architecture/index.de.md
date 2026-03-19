@@ -1,115 +1,78 @@
 ---
 title: Integrationsarchitektur
-source_sha: 4ccd11d5655ea3ae14efd9bcb67a04bc1583c7fe5bb9d744861e9bb99ef21081
+source_sha: "03bcd84fd2be561f8a251a79d23d0c9924453eccc50536beca6bf3ebc38ba663"
 ---
 
 # Integrationsarchitektur
 
-Der Swiss AI Hub bettet **Open WebUI** direkt in seine Oberfläche ein, anstatt auf eine separate Bereitstellung zu
-verweisen. Dies sorgt für eine einheitliche Benutzererfahrung, während die Open-Source-Komponente von der
-Plattforminfrastruktur getrennt bleibt.
+Der Swiss AI Hub bettet **Open WebUI** direkt in seine Oberfläche ein, anstatt auf ein separates Deployment zu verlinken. Dies gewährleistet eine einheitliche Benutzererfahrung, wobei die Open-Source-Komponente von der Plattform-Infrastruktur getrennt bleibt.
 
-## Wie die Einbettung funktioniert
+## Funktionsweise der Einbettung
 
-Die Plattform verwendet ein iframe, um die vollständige Open WebUI-Oberfläche innerhalb des Dienstbereichs der Suite
-darzustellen. Benutzer sehen eine einzige integrierte Anwendung. Die Architektur wahrt die Trennung zwischen der
-Open-Source-Komponente und der Plattforminfrastruktur.
+Die Plattform verwendet einen Iframe, um die komplette Open WebUI-Oberfläche innerhalb des Servicebereichs der Suite zu rendern. Benutzer sehen eine einzige integrierte Anwendung. Die Architektur wahrt die Trennung zwischen der Open-Source-Komponente und der Plattform-Infrastruktur.
 
-Wenn Benutzer zum Chat-Dienst navigieren, nimmt Open WebUI den gesamten Dienstbereich ein. Die Navigationsleiste der
-Suite bleibt zugänglich, sodass Benutzer zu anderen Diensten wechseln können, ohne ihren Chat-Kontext zu verlieren.
+Wenn Benutzer zum Chat-Service navigieren, nimmt Open WebUI den gesamten Servicebereich ein. Die Navigationsleiste der Suite bleibt zugänglich, sodass Benutzer zu anderen Services wechseln können, ohne ihren Chat-Kontext zu verlieren.
 
-Die Einbettung bewahrt die vollständige Oberfläche und den Funktionsumfang von Open WebUI. Tastenkombinationen,
-Drag-and-Drop-Dateiverwaltung und Konversationsmanagement funktionieren wie in der Standalone-Anwendung. Die
-eingebettete Oberfläche passt sich an verschiedene Bildschirmgrößen an – Desktop-Displays bieten einen erweiterten
-Arbeitsbereich, während mobile Geräte den funktionalen Zugriff beibehalten.
+Die Einbettung bewahrt Open WebUI's komplette Oberfläche und den vollen Funktionsumfang. Tastenkombinationen, Drag-and-Drop-Dateiverwaltung und Konversationsmanagement funktionieren wie in der eigenständigen Anwendung. Die eingebettete Oberfläche passt sich an verschiedene Bildschirmgrößen an – Desktop-Bildschirme bieten einen erweiterten Arbeitsbereich, während mobile Geräte den funktionalen Zugriff erhalten.
 
 ## Kommunikation zwischen Komponenten
 
-Das iframe und die Suite-Plattform kommunizieren über die browserübergreifende PostMessage API. Dies ermöglicht sichere
-Cross-Origin-Nachrichtenübermittlung unter Wahrung der Sicherheitsgrenzen zwischen den Komponenten.
+Der Iframe und die Suite-Plattform kommunizieren über die Browser-Standard-PostMessage-API. Dies ermöglicht sicheres Cross-Origin-Messaging, wobei die Sicherheitsgrenzen zwischen den Komponenten gewahrt bleiben.
 
-Die Chat-Oberfläche und die Plattform tauschen strukturierte Nachrichten für Benutzerinteraktionen, Navigationsanfragen
-und Zustandsynchronisation aus. Wenn Benutzer Plattformfunktionen innerhalb der Chat-Oberfläche anfordern – wie das
-Anzeigen von Wissensquellen oder Ausführungs-Traces – sendet der Chat Nachrichten, die die Navigation und Datenanzeige
-auslösen.
+Die Chatschnittstelle und die Plattform tauschen strukturierte Nachrichten für Benutzerinteraktionen, Navigationsanfragen und Zustandsynchronisation aus. Wenn Benutzer innerhalb der Chatschnittstelle Plattformfunktionen anfordern – wie das Anzeigen von Wissensquellen oder Ausführungs-Traces –, sendet der Chat Nachrichten, die die Navigation und Datenanzeige auslösen.
 
-Nachrichten folgen definierten Verträgen, die Absicht, Parameter und Verhaltensweisen festlegen. Zu den Typen gehören
-Anfragen zur Quellenanzeige, Anfragen zur Sichtbarkeit von Traces und Kontextsynchronisation.
+Nachrichten folgen definierten Verträgen, die Absicht, Parameter und Verhalten festlegen. Typen umfassen Anforderungen zur Quellenanzeige, Anforderungen zur Trace-Sichtbarkeit und Kontextsynchronisation.
 
-Falls die Nachrichtenübermittlung fehlschlägt oder die Plattform Anfragen nicht erfüllen kann, erhalten Benutzer
-Feedback anstelle stillschweigender Fehler.
+Wenn die Nachrichtenübermittlung fehlschlägt oder die Plattform Anfragen nicht erfüllen kann, erhalten Benutzer Feedback statt stiller Fehler.
 
 ## Authentifizierung und Sicherheit
 
-Die Plattform und Open WebUI teilen die Authentifizierung über OAuth. Benutzer authentifizieren sich einmal an der Swiss
-Swiss AI Hub Suite, und diese Authentifizierung wird an die eingebettete Instanz weitergegeben.
+Die Plattform und Open WebUI teilen sich die Authentifizierung über OAuth. Benutzer authentifizieren sich einmal bei der Swiss AI Hub Suite, und diese Authentifizierung wird an die eingebettete Instanz weitergegeben.
 
-Die Plattform setzt Berechtigungsgrenzen für KI-Modelle, Wissensdatenbanken und Agentenfähigkeiten durch. Benutzer
-können über die Chat-Oberfläche nicht auf Inhalte zugreifen, auf die sie über andere Dienste ebenfalls keinen Zugriff
-haben.
+Die Plattform setzt Berechtigungsgrenzen für KI-Modelle, Wissensdatenbanken und Agent-Fähigkeiten durch. Benutzer können über die Chatschnittstelle nicht auf das zugreifen, worauf sie über andere Services nicht zugreifen können.
 
-Sitzungen bleiben zwischen Plattform und Chat synchronisiert. Das Abmelden von der Suite beendet die Chat-Sitzung.
-Timeouts und Erneuerungen werden über beide Komponenten hinweg koordiniert.
+Sitzungen bleiben zwischen Plattform und Chat synchronisiert. Das Abmelden von der Suite beendet die Chatsitzung. Timeouts und Verlängerungen werden über beide Komponenten hinweg koordiniert.
 
-Die Kommunikation verwendet sichere Kanäle mit Verschlüsselung und Validierung. Die iframe-Integration umfasst
-Sicherheits-Header und Content-Security-Policies, um Cross-Site Scripting zu verhindern.
+Die Kommunikation erfolgt über sichere Kanäle mit Verschlüsselung und Validierung. Die Iframe-Integration umfasst Sicherheits-Header und Content Security Policies, um Cross-Site-Scripting zu verhindern.
 
-## Konfiguration und Bereitstellung
+## Konfiguration und Deployment
 
-Open WebUI wird als unabhängiger Docker-Container innerhalb der Plattform bereitgestellt. Dies bietet Isolation, während
-der Lebenszyklus – Starten, Stoppen und Aktualisieren – zusammen mit anderen Diensten verwaltet wird.
+Open WebUI wird als unabhängiger Docker-Container innerhalb der Plattform deployt. Dies bietet Isolation, während der Lebenszyklus – Starten, Stoppen und Aktualisieren – zusammen mit anderen Services verwaltet wird.
 
-Der Chat-Container greift über Standardmuster auf die Plattforminfrastruktur wie Datenbanken, Objektspeicher und
-Nachrichtenwarteschlangen zu. Chat-Daten bleiben zusammen mit anderen Plattformdaten bestehen und unterstützen eine
-einheitliche Sicherung und Datenverwaltung.
+Der Chat-Container greift über Standardmuster auf die Plattform-Infrastruktur wie Datenbanken, Objektspeicher und Nachrichtenwarteschlangen zu. Chat-Daten bleiben mit anderen Plattformdaten erhalten, was eine einheitliche Sicherung und Daten-Governance unterstützt.
 
-Konfigurationsparameter werden über Umgebungsvariablen und Konfigurationsdateien weitergegeben.
-Authentifizierungsendpunkte, Modellzugriffs-URLs und Funktionsschalter bleiben in Entwicklungs-, Test- und
-Produktionsumgebungen konsistent.
+Konfigurationsparameter werden über Umgebungsvariablen und Konfigurationsdateien weitergegeben. Authentifizierungsendpunkte, Modellzugriffs-URLs und Feature-Toggles bleiben über Entwicklungs-, Test- und Produktionsumgebungen hinweg konsistent.
 
-Die Plattform testet neue Open WebUI-Releases in isolierten Umgebungen vor der Produktionseinführung. Dies schützt vor
-abwärtsinkompatiblen Änderungen und ermöglicht gleichzeitig den Zugriff auf Verbesserungen.
+Die Plattform testet neue Open WebUI Releases in isolierten Umgebungen vor dem Produktions-Deployment. Dies schützt vor Breaking Changes und ermöglicht gleichzeitig den Zugang zu Verbesserungen.
 
 ## Erweiterungspunkte
 
 Die Integration bewahrt die Kernfunktionalität von Open WebUI, fügt aber plattformspezifische Erweiterungen hinzu.
 
-Das PostMessage-Protokoll erweitert die Chat-Fähigkeiten über native Funktionen hinaus. Benutzerdefinierte
-Nachrichtentypen lösen Plattform-Workflows oder Datenanzeigen aus, ohne die Open-Source-Codebasis zu ändern.
+Das PostMessage-Protokoll erweitert die Chat-Fähigkeiten über native Funktionen hinaus. Benutzerdefinierte Nachrichtentypen lösen Plattform-Workflows oder Datenanzeigen aus, ohne die Open-Source-Codebasis zu ändern.
 
-Die Plattform kann UI-Elemente wie Benachrichtigungsabzeichen oder Schnellaktionsschaltflächen überlagern, ohne Open
-WebUI zu modifizieren. Dies verbessert die Funktionalität und vereinfacht gleichzeitig Aktualisierungen.
+Die Plattform kann UI-Elemente wie Benachrichtigungsabzeichen oder Schnellaktionsschaltflächen überlagern, ohne Open WebUI zu modifizieren. Diese verbessern die Funktionalität und halten Updates einfach.
 
-API-Aufrufe zwischen der Chat-Oberfläche und Backend-Diensten können abgefangen werden, um Kontext hinzuzufügen,
-Antworten anzureichern oder die Governance durchzusetzen.
+API-Aufrufe zwischen der Chatschnittstelle und Backend-Services können abgefangen werden, um Kontext hinzuzufügen, Antworten anzureichern oder Governance durchzusetzen.
 
-Plattform-Theme-Einstellungen werden durch CSS-Anpassung und nicht durch Quellcodeänderung angewendet. Dies
-gewährleistet visuelle Konsistenz mit dem Design der Suite.
+Plattform-Theme-Einstellungen werden durch CSS-Anpassung und nicht durch Quellcode-Modifikation angewendet. Dies gewährleistet visuelle Konsistenz mit dem Design der Suite.
 
-## Überwachung
+## Monitoring
 
-Die Plattform überwacht die Container-Gesundheit von Open WebUI über Standard-Endpunkte. Dienstausfälle lösen
-automatische Wiederherstellungen oder Administratoralarme aus.
+Die Plattform überwacht die Container-Gesundheit von Open WebUI über Standard-Endpunkte. Service-Fehler lösen automatische Wiederherstellung oder Administrator-Benachrichtigungen aus.
 
-Nutzungsmetriken – Konversationszähler, Antwortzeiten, Fehlerraten – fließen in die Observability-Systeme der Plattform.
-Administratoren überwachen die Leistung des Chat-Dienstes zusammen mit anderen Metriken.
+Nutzungsmetriken – Konversationsanzahlen, Antwortzeiten, Fehlerraten – fließen in die Plattform-Observability-Systeme. Administratoren überwachen die Performance des Chat-Services zusammen mit anderen Metriken.
 
-Chat-Protokolle werden mit Plattform-Protokollen in einer einheitlichen Infrastruktur zusammengeführt. Dies unterstützt
-die Fehlerbehebung über mehrere Komponenten hinweg.
+Chat-Logs aggregieren mit Plattform-Logs in einer einheitlichen Infrastruktur. Dies unterstützt die Fehlerbehebung über mehrere Komponenten hinweg.
 
-Die Überwachung des Ressourcenverbrauchs – CPU, Arbeitsspeicher, Netzwerk – unterstützt die Kapazitätsplanung, wenn die
-Benutzerpopulationen und Konversationsvolumen wachsen.
+Die Überwachung des Ressourcenverbrauchs – CPU, Speicher, Netzwerk – unterstützt die Kapazitätsplanung, wenn die Benutzerzahlen und Konversationsvolumina wachsen.
 
-## Was dieser Ansatz bietet
+## Vorteile dieses Ansatzes
 
-Open WebUI und die Plattform entwickeln sich unabhängig voneinander. Neue Releases werden durch Standardprozesse
-integriert, ohne Änderungen am Plattformcode. Plattformverbesserungen erfordern keine Änderungen an der Chat-Oberfläche.
+Open WebUI und die Plattform entwickeln sich unabhängig voneinander. Neue Releases werden über Standardprozesse ohne Änderungen am Plattform-Code integriert. Plattform-Erweiterungen erfordern keine Änderungen an der Chat-Schnittstelle.
 
-Verantwortlichkeiten bleiben klar. Open WebUI verwaltet Chat-Interaktionen. Die Plattform bietet Authentifizierung,
-Autorisierung, Wissensmanagement und Agenten-Orchestrierung. Diese Trennung vereinfacht Tests und Wartung.
+Verantwortlichkeiten bleiben klar. Open WebUI kümmert sich um Chat-Interaktionen. Die Plattform bietet Authentifizierung, Autorisierung, Wissensmanagement und Agent-Orchestrierung. Diese Trennung vereinfacht das Testen und die Wartung.
 
-Einbetten statt Forken bewahrt die Vorteile von Open Source. Die Plattform erhält Beiträge der Community,
-Sicherheitspatches und Funktionen, ohne eine benutzerdefinierte Variante pflegen zu müssen.
+Die Einbettung statt eines Forking bewahrt die Vorteile von Open Source. Die Plattform erhält Community-Beiträge, Sicherheitspatches und Funktionen, ohne eine kundenspezifische Variante pflegen zu müssen.
 
-Organisationen können Open WebUI durch alternative Chat-Oberflächen ersetzen, indem sie die gleichen Einbettungs- und
-Nachrichtenmuster verwenden. Dies vermeidet eine Bindung an eine bestimmte Chat-Technologie.
+Organisationen können Open WebUI durch alternative Chatschnittstellen ersetzen, indem sie dieselben Einbettungs- und Messaging-Muster verwenden. Dies vermeidet eine Abhängigkeit von einer bestimmten Chat-Technologie.

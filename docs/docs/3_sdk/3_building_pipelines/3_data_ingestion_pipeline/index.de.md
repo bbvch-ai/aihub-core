@@ -1,23 +1,18 @@
 ---
-title: Daten-Ingestion-Pipeline
-source_sha: a54e30f19946d6dec1c48b9a1003447990b82597f166dee37bb71f524a7bdbb6
+title: Datenaufnahme-Pipeline
+source_sha: "10a19882b20e760462998d8c57529586ec4b290c135d9f34775a90240bb44f0a"
 ---
 
-# Daten-Ingestion-Pipeline
+# Datenaufnahme-Pipeline
 
-Das Swiss AI Hub Pipeline SDK bietet vorgefertigte, produktionsreife Pipeline-Definitionen, die Sie mit minimaler
-Konfiguration verwenden können. Diese **Factories** kapseln Best Practices für die Aufnahme von Dokumenten und deren
-Vorbereitung für RAG-Anwendungen.
+Das Swiss AI Hub Pipeline SDK bietet vorgefertigte, produktionsreife Pipeline-Definitionen, die Sie mit minimaler Konfiguration verwenden können. Diese **Factories** kapseln Best Practices für die Aufnahme von Dokumenten und deren Vorbereitung für RAG-Anwendungen.
 
-## Die zweistufige Ingestion-Architektur
+## Die zweistufige Aufnahme-Architektur
 
-Unser Ingestion-Prozess ist in zwei separate Stufen unterteilt, wobei jede von ihrer eigenen
-Pipeline-Definitions-Factory behandelt wird. Dies fördert Modularität und Wiederverwendbarkeit.
+Unser Aufnahme-Prozess ist in zwei separate Stufen unterteilt, die jeweils von einer eigenen Pipeline-Definitions-Factory behandelt werden. Dies fördert Modularität und Wiederverwendbarkeit.
 
-1. **Stufe 1: Quelle zum Data Lake** (Optional): Diese Pipeline verbindet sich mit einer externen Quelle (wie
-   SharePoint) und synchronisiert deren Dateien mit einem zentralen S3 Data Lake.
-2. **Stufe 2: Data Lake zum Vector Store**: Diese Pipeline überwacht den S3 Data Lake, verarbeitet die Dokumente und
-   speichert die resultierenden Embeddings in einem Vector Store.
+1.  **Stufe 1: Quelle zu Data Lake** (Optional): Diese Pipeline verbindet sich mit einer externen Quelle (wie SharePoint) und synchronisiert deren Dateien mit einem zentralen S3 Data Lake.
+2.  **Stufe 2: Data Lake zu Vector Store**: Diese Pipeline überwacht den S3 Data Lake, verarbeitet die Dokumente und speichert die resultierenden Embeddings in einem Vector Store.
 
 ```mermaid
 graph TD
@@ -60,38 +55,33 @@ graph TD
     style K fill:#299764
 ```
 
-## 1. Die Rclone Universal-Quelle-zum-Data-Lake-Pipeline
+## 1. Die Rclone Universal Source zu Data Lake Pipeline
 
-Verwenden Sie die `default_rclone_to_datalake_definitions` Factory, um Dokumente von **jedem Cloud-Speicheranbieter**
-mit Ihrem S3 Data Lake zu synchronisieren. Dies ist der empfohlene Ansatz für die meisten Anwendungsfälle, da er über 70
-Speicher-Backends mit einer einzigen, vereinheitlichten Implementierung unterstützt.
+Verwenden Sie die `default_rclone_to_datalake_definitions`-Factory, um Dokumente von **jedem Cloud-Speicheranbieter** mit Ihrem S3 Data Lake zu synchronisieren. Dies ist der empfohlene Ansatz für die meisten Anwendungsfälle, da er über 70 Speicher-Backends mit einer einzigen, vereinheitlichten Implementierung unterstützt.
 
-- **Was es tut**: Überwacht jedes von Rclone unterstützte Remote, lädt neue oder aktualisierte Dateien herunter und
-  bereinigt Dateien im Data Lake, die aus der Quelle gelöscht wurden.
-- **Wichtige Assets**: `observable_rclone`, `data_lake_files`, `removed_data_lake_files`.
-- **Unterstützte Quellen**: SharePoint, OneDrive, Google Drive, AWS S3, Azure Blob, SFTP, lokales Dateisystem und
-  [über 70 weitere](https://rclone.org/overview/).
+-   **Was sie tut**: Überwacht jedes von Rclone unterstützte Remote, lädt neue oder aktualisierte Dateien herunter und bereinigt Dateien im Data Lake, die aus der Quelle gelöscht wurden.
+-   **Wichtige Assets**: `observable_rclone`, `data_lake_files`, `removed_data_lake_files`.
+-   **Unterstützte Quellen**: SharePoint, OneDrive, Google Drive, AWS S3, Azure Blob, SFTP, lokales Dateisystem und [70+ weitere](https://rclone.org/overview/).
 
 ### Schnellstart mit Templates
 
-Swiss AI Hub bietet vorkonfigurierte Templates für häufige Unternehmensquellen. Jedes Template enthält
-Umgebungsvariablen, Pipeline-Code und Setup-Anweisungen.
+Swiss AI Hub bietet vorkonfigurierte Templates für gängige Unternehmensquellen. Jedes Template enthält Umgebungsvariablen, Pipeline-Code und Einrichtungsanweisungen.
 
-| Template         | Anwendungsfall                                     | Umgebungspräfix       |
-| :--------------- | :------------------------------------------------- | :-------------------- |
-| **SharePoint**   | Microsoft 365 Dokumentbibliotheken                 | `RCLONE_SHAREPOINT_*` |
-| **OneDrive**     | Microsoft 365 persönlicher/geschäftlicher Speicher | `RCLONE_ONEDRIVE_*`   |
-| **Google Drive** | Google Workspace Organisationen                    | `RCLONE_GDRIVE_*`     |
-| **S3**           | AWS S3, MinIO, S3-kompatibler Speicher             | `RCLONE_S3_*`         |
-| **Azure Blob**   | Azure Blob Storage                                 | `RCLONE_AZUREBLOB_*`  |
-| **SFTP**         | Altsysteme, sichere Dateiübertragungen             | `RCLONE_SFTP_*`       |
-| **Local FS**     | Gemountete Netzwerkfreigaben (NFS, SMB)            | Direkter Pfad         |
+| Template         | Anwendungsfall                                | Umgebungsvariablen-Präfix    |
+| ---------------- | --------------------------------------- | --------------------- |
+| **SharePoint**   | Microsoft 365 Dokumentbibliotheken        | `RCLONE_SHAREPOINT_*` |
+| **OneDrive**     | Microsoft 365 privater/geschäftlicher Speicher | `RCLONE_ONEDRIVE_*`   |
+| **Google Drive** | Google Workspace Organisationen          | `RCLONE_GDRIVE_*`     |
+| **S3**           | AWS S3, MinIO, S3-kompatibler Speicher    | `RCLONE_S3_*`         |
+| **Azure Blob**   | Azure Blob Storage                      | `RCLONE_AZUREBLOB_*`  |
+| **SFTP**         | Legacy-Systeme, sichere Dateiübertragungen   | `RCLONE_SFTP_*`       |
+| **Local FS**     | Gemountete Netzwerkfreigaben (NFS, SMB)       | Direkter Pfad           |
 
-Templates befinden sich in `aihub_pipeline/templates/sources/`.
+Templates befinden sich unter `packages/pipeline/templates/sources/`.
 
 ### Anwendungsbeispiel: SharePoint
 
-**1. Umgebungsvariablen konfigurieren** (kopieren Sie aus `templates/sources/sharepoint/.env.template`):
+**1. Umgebungsvariablen konfigurieren** (aus `templates/sources/sharepoint/.env.template` kopieren):
 
 ```bash
 RCLONE_SHAREPOINT_NAME=sharepoint
@@ -106,8 +96,8 @@ RCLONE_SHAREPOINT_DRIVE_TYPE=documentLibrary
 **2. Erstellen Sie Ihre Pipeline**:
 
 ```python
-from aihub_lib.infrastructure.rclone.RcloneSourceFactory import sharepoint_source
-from aihub_pipeline.util.definitions_util import default_rclone_to_datalake_definitions
+from swiss_ai_hub.core.infrastructure.rclone.rclone_source_factory import sharepoint_source
+from swiss_ai_hub.pipeline.util.definitions_util import default_rclone_to_datalake_definitions
 
 # Load config from SHAREPOINT_* environment variables
 sharepoint = sharepoint_source()
@@ -125,8 +115,8 @@ defs = default_rclone_to_datalake_definitions(
 ### Anwendungsbeispiel: Google Drive
 
 ```python
-from aihub_lib.infrastructure.rclone.RcloneSourceFactory import google_drive_source
-from aihub_pipeline.util.definitions_util import default_rclone_to_datalake_definitions
+from swiss_ai_hub.core.infrastructure.rclone.rclone_source_factory import google_drive_source
+from swiss_ai_hub.pipeline.util.definitions_util import default_rclone_to_datalake_definitions
 
 gdrive = google_drive_source()
 
@@ -142,7 +132,7 @@ defs = default_rclone_to_datalake_definitions(
 Für lokale Pfade oder gemountete Netzwerkfreigaben (NFS, SMB, Azure Files) ist keine Rclone-Konfiguration erforderlich:
 
 ```python
-from aihub_pipeline.util.definitions_util import default_rclone_to_datalake_definitions
+from swiss_ai_hub.pipeline.util.definitions_util import default_rclone_to_datalake_definitions
 
 defs = default_rclone_to_datalake_definitions(
     datalake_container_name="local-docs",
@@ -150,12 +140,12 @@ defs = default_rclone_to_datalake_definitions(
 )
 ```
 
-### Verfügbare Quell-Helper-Funktionen
+### Verfügbare Quell-Helferfunktionen
 
 Die `RcloneSourceFactory` bietet Komfortfunktionen, die aus Umgebungsvariablen lesen:
 
 ```python
-from aihub_lib.infrastructure.rclone.RcloneSourceFactory import (
+from swiss_ai_hub.core.infrastructure.rclone.rclone_source_factory import (
     sharepoint_source,    # Reads RCLONE_SHAREPOINT_* env vars
     onedrive_source,      # Reads RCLONE_ONEDRIVE_* env vars
     google_drive_source,  # Reads RCLONE_GDRIVE_* env vars
@@ -166,7 +156,7 @@ from aihub_lib.infrastructure.rclone.RcloneSourceFactory import (
 )
 ```
 
-### Muster für Umgebungsvariablen
+### Umgebungsvariablen-Muster
 
 Alle Quellkonfigurationen folgen einem konsistenten Muster mit dem Präfix `RCLONE_`:
 
@@ -190,12 +180,9 @@ RCLONE_SFTP_PORT=22
 
 ### Rclone Service-Authentifizierung
 
-In Produktionsumgebungen erfordert der Rclone-Service eine Authentifizierung über die Umgebungsvariablen
-`RCLONE_RC_USER` und `RCLONE_RC_PASS`.
+In Produktionsumgebungen erfordert der Rclone Service eine Authentifizierung über die Umgebungsvariablen `RCLONE_RC_USER` und `RCLONE_RC_PASS`.
 
-> **Sicherheitshinweis**: Die Standardanmeldeinformationen (`admin`/`changeme`) sind nur für die Entwicklung vorgesehen.
-> **Ändern Sie diese Anmeldeinformationen immer bei Produktions-Deployments**, um unbefugten Zugriff auf Ihre
-> Datenquellen zu verhindern.
+> **Sicherheitswarnung**: Die Standard-Zugangsdaten (`admin`/`changeme`) sind nur für Entwicklungszwecke vorgesehen. **Ändern Sie diese Zugangsdaten in Produktions-Deployments immer**, um unbefugten Zugriff auf Ihre Datenquellen zu verhindern.
 
 ```bash
 # Production environment - set strong, unique credentials
@@ -203,19 +190,17 @@ RCLONE_RC_USER=your-secure-username
 RCLONE_RC_PASS=your-strong-password
 ```
 
-## 2. Die Data-Lake-zum-Vector-Store-Pipeline
+## 2. Die Data Lake zu Vector Store Pipeline
 
-Dies ist die Kern-RAG-Pipeline. Verwenden Sie die `default_definitions` Factory, um Dokumente aus Ihrem S3 Data Lake in
-einem Vector Store zu verarbeiten.
+Dies ist die Kern-RAG-Pipeline. Verwenden Sie die `default_definitions`-Factory, um Dokumente aus Ihrem S3 Data Lake in einen Vector Store zu verarbeiten.
 
-- **Was es tut**: Überwacht einen S3-Bucket, analysiert Dokumente, segmentiert sie in Nodes, erstellt optional
-  Zusammenfassungs-Nodes und speichert die Embeddings in Milvus. Es verarbeitet auch Dokumentlöschungen.
-- **Wichtige Assets**: `observable_data_lake`, `documents`, `nodes`, `summary_nodes`, `removed_documents`.
+-   **Was sie tut**: Überwacht einen S3-Bucket, parst Dokumente, zerlegt sie in Nodes, erstellt optional Summary-Nodes und speichert die Embeddings in Milvus. Sie handhabt auch das Löschen von Dokumenten.
+-   **Wichtige Assets**: `observable_data_lake`, `documents`, `nodes`, `summary_nodes`, `removed_documents`.
 
 ### Anwendungsbeispiel
 
 ```python
-from aihub_pipeline.util.definitions_util import default_definitions
+from swiss_ai_hub.pipeline.util.definitions_util import default_definitions
 
 defs = default_definitions(
     datalake_container_name="my-company-docs",
@@ -227,35 +212,30 @@ defs = default_definitions(
 
 ## Standard-Datenmapping
 
-Das SDK verwendet eine konsistente Namenskonvention, um Ihre Data-Lake-Struktur den zugrunde liegenden Speicher-Backends
-(Document Store und Vector Store) zuzuordnen.
+Das SDK verwendet eine konsistente Namenskonvention, um Ihre Data Lake-Struktur den zugrunde liegenden Speicher-Backends (Document Store und Vector Store) zuzuordnen.
 
 ### Container/Bucket → Datenbank/Collection
 
-Der Top-Level-S3-Bucket-Name wird als primärer Bezeichner für Ihre Speicherressourcen verwendet und bietet eine starke
-Datenisolation.
+Der Name des Top-Level S3-Buckets wird als primärer Identifier für Ihre Speicherressourcen verwendet und bietet eine starke Datenisolation.
 
 **Beispiel:**
 
-- **Data Lake Bucket**: `s3://hr-documents/`
-- **Document Store DB**: `hr-documents`
-- **Vector Store Collection**: `hr-documents`
+-   **Data Lake Bucket**: `s3://hr-documents/`
+-   **Document Store DB**: `hr-documents`
+-   **Vector Store Collection**: `hr-documents`
 
 ### Verzeichnis → Namespace
 
-Innerhalb eines Buckets können Sie Verzeichnisse verwenden, um logische Trennungen zu schaffen, die **Namespaces**
-innerhalb des Vector Stores zugeordnet werden. Dies ermöglicht Multi-Tenancy oder logische Gruppierungen innerhalb einer
-einzigen Collection.
+Innerhalb eines Buckets können Sie Verzeichnisse verwenden, um logische Trennungen zu erstellen, die auf **Namespaces** innerhalb des Vector Store abgebildet werden. Dies ermöglicht Multi-Tenancy oder eine logische Gruppierung innerhalb einer einzigen Collection.
 
 **Beispiel:**
 
-- **Data Lake Path**: `s3://hr-documents/onboarding/`
-- **Vector Store Namespace**: `onboarding`
+-   **Data Lake-Pfad**: `s3://hr-documents/onboarding/`
+-   **Vector Store Namespace**: `onboarding`
 
-## Pipelines ausführen und kombinieren
+## Ausführen und Kombinieren von Pipelines
 
-Um eine Pipeline auszuführen, speichern Sie Ihren Definitions-Code (z.B. `my_pipeline.py`) und verwenden Sie die Dagster
-CLI.
+Um eine Pipeline auszuführen, speichern Sie Ihren Definitions-Code (z.B. `my_pipeline.py`) und verwenden Sie die Dagster CLI.
 
 ```bash
 # Start the Dagster UI and development server

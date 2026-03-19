@@ -1,10 +1,10 @@
-# Swiss AI Hub Deployment Configurations
+# AI-Hub Deployment Configurations
 
-This directory contains the generated Docker Compose configurations for deploying the Swiss AI Hub platform in various
+This directory contains the generated Docker Compose configurations for deploying the AI-Hub platform in various
 environments. The platform supports multiple deployment scenarios, each optimized for specific use cases ranging from
 local development to production deployment.
 
-Swiss AI Hub provides **5 deployment configurations**, each available in both **CPU** and **GPU** variants:
+AI-Hub provides **5 deployment configurations**, each available in both **CPU** and **GPU** variants:
 
 | Configuration | Use Case                | 1st Party Services | Traefik       | Port Exposure       |
 | ------------- | ----------------------- | ------------------ | ------------- | ------------------- |

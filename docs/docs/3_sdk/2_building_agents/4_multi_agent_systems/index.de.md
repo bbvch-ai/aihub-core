@@ -1,53 +1,40 @@
 ---
-title: Multi-Agenten-Systeme
-source_sha: 587629f6979d56af49624027a5fd53761b232109704e5748afd72ba7e7b1780c
+title: Multi-Agent-Systeme
+source_sha: "be9dc0d866f7059a8bfdaf8fe413829491598acad71ff91b78f6d2d261ebfd17"
 ---
 
-# Multi-Agenten-Systeme
+# Multi-Agent-Systeme
 
-Komplexe Probleme lassen sich oft am besten lösen, indem man sie in kleinere, überschaubare Teile zerlegt. Das **Agent
-in the Loop (AITL)**-Muster ermöglicht es Ihnen, Multi-Agenten-Systeme zu erstellen, bei denen ein primärer
-**Orchestrator**-Agent spezifische Aufgaben an einen oder mehrere spezialisierte **Worker**-Agents delegieren kann.
+Komplexe Probleme lassen sich oft am besten lösen, indem man sie in kleinere, überschaubare Teile zerlegt. Das **Agent in the Loop (AITL)**-Muster ermöglicht es Ihnen, Multi-Agent-Systeme zu erstellen, bei dem ein primärer **Orchestrator**-Agent spezifische Aufgaben an einen oder mehrere spezialisierte **Worker**-Agents delegieren kann.
 
-**Wann es zu verwenden ist**:
+**Wann einsetzen**:
 
-- Um modulare, wiederverwendbare Komponenten zu erstellen (z.B. einen Agent, der nur Dokumente zusammenfasst).
-- Um Belange zu trennen (z.B. ein Agent für die Datenbeschaffung, ein anderer für die Analyse).
-- Um komplexe Ketten oder parallele Workflows zu erstellen, die die Stärken mehrerer Agents kombinieren.
+- Um modulare, wiederverwendbare Komponenten zu erstellen (z.B. einen Agenten, der nur Dokumente zusammenfasst).
+- Um Zuständigkeiten zu trennen (z.B. einen Agenten für die Datenbeschaffung, einen anderen für die Analyse).
+- Um komplexe Ketten oder parallele Workflows aufzubauen, die die Stärken mehrerer Agents kombinieren.
 
 ## Funktionsweise
 
-Das AITL-Muster wird durch ein Trio von Events verwaltet, die die Delegation, Ausführung und Antwort zwischen Agents
-orchestrieren.
+Das AITL-Muster wird durch ein Trio von Events verwaltet, die die Delegation, Ausführung und Antwort zwischen Agents orchestrieren.
 
-1. **Orchestrator sendet eine Anfrage**: Der Orchestrator-Agent gibt ein `AgentInTheLoop.request`-Event zurück. Dieses
-   Event fungiert als Paket, das das `start_event` für den Worker und die Routing-Informationen für die Antwort enthält.
-   Dies pausiert den Workflow des Orchestrators.
-2. **Worker führt seine Aufgabe aus**: Der Dispatcher liefert das `start_event` an den angegebenen Worker-Agent. Der
-   Worker führt seinen eigenen, in sich geschlossenen Workflow aus, völlig ohne zu wissen, dass er von einem anderen
-   Agent aufgerufen wurde.
-3. **Worker schließt ab und antwortet**: Wenn der Worker fertig ist, gibt er ein `StopEvent` (oder ein `ExceptionEvent`,
-   falls er fehlschlägt) zurück. Das System verpackt dieses abschließende Event automatisch entweder in ein
-   `AgentInTheLoop.response` oder `AgentInTheLoop.exception`-Event.
-4. **Orchestrator nimmt die Arbeit wieder auf**: Der Dispatcher leitet das Antwort- oder Ausnahme-Event zurück an den
-   Orchestrator, der seinen Workflow in einem separaten Schritt fortsetzt, der zur Behandlung des Ergebnisses konzipiert
-   ist.
+1.  **Orchestrator sendet eine Anfrage**: Der Orchestrator-Agent gibt ein `AgentInTheLoop.request`-Event zurück. Dieses Event fungiert als Paket, das das `start_event` für den Worker und die Routing-Informationen für die Antwort enthält. Dies pausiert den Workflow des Orchestrators.
+2.  **Worker führt seine Aufgabe aus**: Der Dispatcher liefert das `start_event` an den angegebenen Worker-Agent. Der Worker führt seinen eigenen, selbstständigen Workflow aus, ohne zu wissen, dass er von einem anderen Agenten aufgerufen wurde.
+3.  **Worker schliesst ab und antwortet**: Wenn der Worker seine Aufgabe beendet, gibt er ein `StopEvent` zurück (oder ein `ExceptionEvent`, falls er fehlschlägt). Das System verpackt dieses abschliessende Event automatisch entweder in ein `AgentInTheLoop.response`- oder ein `AgentInTheLoop.exception`-Event.
+4.  **Orchestrator setzt fort**: Der Dispatcher leitet das Antwort- oder Exception-Event zurück an den Orchestrator, der seinen Workflow in einem separaten Schritt fortsetzt, der dazu dient, das Ergebnis zu verarbeiten.
 
-Die `AgentInTheLoop`-Helferklasse vereinfacht diesen Prozess, indem sie eine praktische `invoke`-Methode zur Erstellung
-des Request-Events bereitstellt.
+Die `AgentInTheLoop`-Helferklasse vereinfacht diesen Prozess, indem sie eine praktische `invoke`-Methode zur Erstellung des Request-Events bereitstellt.
 
 ______________________________________________________________________
 
 ## Kernmuster: Orchestrator und Worker
 
-Dieses Beispiel zeigt einen `OrchestratorAgent`, der einen `WorkerAgent` bittet, eine einfache Berechnung durchzuführen.
-Beachten Sie, dass der `WorkerAgent` lediglich ein standardmäßiger, in sich geschlossener Agent ist.
+Dieses Beispiel zeigt einen `OrchestratorAgent`, der einen `WorkerAgent` bittet, eine einfache Berechnung durchzuführen. Beachten Sie, dass der `WorkerAgent` lediglich ein standardmässiger, selbstständiger Agent ist.
 
 **Referenz**: `playground/minimal_workflow/agent_in_the_loop_workflow/`
 
 ::: code-group
 ```python [OrchestratorAgent.py]
-from swiss_ai_hub.core.events.agent_in_the_loop.agent_in_the_loop import AgentInTheLoop
+from swiss_ai_hub.core.events.agent.aitl.agent_in_the_loop import AgentInTheLoop
 
 class OrchestratorAgent(Agent):
     @step()
@@ -87,34 +74,30 @@ class WorkerAgent(Agent):
 ```
 :::
 
-## Kontext-Sharing
+## Kontextfreigabe
 
-Sie können steuern, welche Kontexte vom Orchestrator an den Worker weitergegeben werden. Dies ist nützlich, um eine
-konsistente Konversation oder UI-Erfahrung aufrechtzuerhalten.
+Sie können steuern, welche Kontexte vom Orchestrator an den Worker weitergegeben werden. Dies ist nützlich, um eine konsistente Konversation oder Benutzeroberflächen-Erlebnis zu gewährleisten.
 
-- `share_thread_id=True` (Standard): Der Worker teilt sich denselben Konversationsspeicher (`ThreadContext`) wie der
-  Orchestrator.
-- `share_display_id=True` (Standard): Die `DisplayEvent`s des Workers erscheinen im selben UI-Stream wie die des
-  Orchestrators.
-- `share_run_id=False` (Standard): Der Worker wird in einem eigenen, unabhängigen Run ausgeführt.
+- `share_thread_id=True` (Standard): Der Worker teilt sich den gleichen Konversationsspeicher (`ThreadContext`) wie der Orchestrator.
+- `share_display_id=True` (Standard): Die `DisplayEvent`s des Workers erscheinen im gleichen UI-Stream wie die des Orchestrators.
+- `share_run_id=False` (Standard): Der Worker führt in seinem eigenen, unabhängigen Run aus.
 
 ```python
 AgentInTheLoop.invoke(
     agent_id="specialized_agent",
     agent_class="SpecializedAgent",
     start_event=event,
-    share_thread_id=True,      # Share conversation memory
-    share_display_id=True,     # Share UI context
-    share_run_id=False         # Recommended: Keep runs separate
+    share_thread_id=True,      # Konversationsspeicher teilen
+    share_display_id=True,     # UI-Kontext teilen
+    share_run_id=False         # Empfohlen: Runs getrennt halten
 )
 ```
 
 ::: warning
-Das Teilen der `run_id` ist eine fortgeschrittene Funktion und kann zu unerwartetem Verhalten führen, da beide Agents in
-denselben ephemeren `RunContext` schreiben würden. Es ist fast immer besser, sie auf `False` zu belassen.
+Das Teilen der `run_id` ist eine fortgeschrittene Funktion und kann zu unerwartetem Verhalten führen, da beide Agents in denselben ephemeren `RunContext` schreiben würden. Es ist fast immer besser, es auf `False` zu belassen.
 :::
 
-## Gängige Multi-Agenten-Muster
+## Gängige Multi-Agent-Muster
 
 ### Spezialisierte Verarbeitung (Router)
 
@@ -125,42 +108,41 @@ class DocumentRouterAgent(Agent):
     @step()
     async def route_document(self, event: DocumentEvent) -> AgentInTheLoop.request:
         if event.document_type == "financial":
-            # Delegate to the financial analysis agent
+            # An den Finanzanalyse-Agenten delegieren
             return AgentInTheLoop.invoke(agent_id="financial_analyzer", ...)
         elif event.document_type == "legal":
-            # Delegate to the legal analysis agent
+            # An den Rechtsanalyse-Agenten delegieren
             return AgentInTheLoop.invoke(agent_id="legal_analyzer", ...)
 ```
 
-### Sequentielle Agent-Kette
+### Sequenzielle Agentenkette
 
-Ein Workflow, bei dem die Ausgabe eines Worker-Agents zur Eingabe für den nächsten wird und so eine
-Verarbeitungspipeline entsteht.
+Ein Workflow, bei dem die Ausgabe eines Worker-Agenten zur Eingabe für den nächsten wird und so eine Verarbeitungspipeline entsteht.
 
 ```python
 class ProcessingChainAgent(Agent):
     @step()
     async def extract_data(self, event: UserMessageEvent) -> AgentInTheLoop.request:
-        # First agent in the chain
+        # Erster Agent in der Kette
         return AgentInTheLoop.invoke(agent_id="data_extractor", ...)
 
     @step()
     async def validate_data(self, response: AgentInTheLoop.response) -> AgentInTheLoop.request:
-        # The result from the first agent is used to start the second
+        # Das Ergebnis des ersten Agenten wird verwendet, um den zweiten zu starten
         extracted_data = response.stop_event.result
         validation_event = ProcessingEvent(data=extracted_data)
         return AgentInTheLoop.invoke(agent_id="data_validator", start_event=validation_event)
 ```
 
-### Parallele Agenten-Ausführung (Fan-Out)
+### Parallele Agentenausführung (Fan-Out)
 
-Ein Orchestrator delegiert dieselbe Aufgabe gleichzeitig an mehrere Agents und aggregiert anschließend deren Antworten.
+Ein Orchestrator delegiert dieselbe Aufgabe gleichzeitig an mehrere Agents und aggregiert dann deren Antworten.
 
 ```python
 class ParallelProcessorAgent(Agent):
     @step()
     async def fan_out(self, event: UserMessageEvent) -> list[AgentInTheLoop.request]:
-        # Return a list of requests to trigger parallel execution
+        # Eine Liste von Anfragen zurückgeben, um die parallele Ausführung auszulösen
         return [
             AgentInTheLoop.invoke(agent_id="processor_a", ...),
             AgentInTheLoop.invoke(agent_id="processor_b", ...)
@@ -168,7 +150,7 @@ class ParallelProcessorAgent(Agent):
 
     @step()
     async def combine_results(self, responses: list[AgentInTheLoop.response]) -> StopEvent:
-        # This step waits for all responses before running
+        # Dieser Schritt wartet auf alle Antworten, bevor er ausgeführt wird
         results = [r.stop_event.result for r in responses]
-        return StopEvent(final_message=f"Combined results: {results}")
+        return StopEvent(final_message=f"Kombinierte Ergebnisse: {results}")
 ```

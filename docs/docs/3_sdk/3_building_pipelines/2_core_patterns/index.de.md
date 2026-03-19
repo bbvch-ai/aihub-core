@@ -1,20 +1,15 @@
 ---
 title: Kernmuster
-source_sha: 41b3ce618d5654cb1d0d31c6a88eb6e93b4849f4afda7969a644cec3223728fc
+source_sha: "ac28b8232bb5926aed13b2258a0065ead68f0a42eab2f8aeef82027f77221dfe"
 ---
 
 # Kern-Pipeline-Muster
 
-Diese Seite bietet praktische Codebeispiele für die in [Pipeline-Grundlagen](../1_pipeline_fundamentals/) eingeführten
-Konzepte. Dies sind die Muster, die Sie verwenden werden, um Dokumentenverarbeitungs-Pipelines mit dem `aihub_pipeline`
-SDK zu erstellen, anzupassen und zu erweitern.
+Diese Seite bietet praktische Codebeispiele für die Konzepte, die in [Pipeline-Grundlagen](../1_pipeline_fundamentals/) vorgestellt wurden. Dies sind die Muster, die Sie verwenden werden, um Dokumentverarbeitungs-Pipelines mit dem `swiss_ai_hub.pipeline` SDK zu erstellen, anzupassen und zu erweitern.
 
-## Änderungserkennung mit Observable Assets
+## Änderungserkennung mit beobachtbaren Assets
 
-Dieses Muster ist der Auslöser für unsere automatisierten Pipelines. Ein `observable_source_asset` überwacht eine
-externe Datenquelle und liefert für jede Datei eine neue Datenversion, typischerweise durch die Kombination ihres
-Zeitstempels und ihres Inhaltshashs. Dagster materialisiert nachgelagerte Assets nur, wenn sich diese Version geändert
-hat.
+Dieses Muster ist der Auslöser für unsere automatisierten Pipelines. Ein `observable_source_asset` überwacht eine externe Datenquelle und erzeugt für jede Datei eine neue Datenversion, typischerweise durch Kombination ihres Zeitstempels und ihres Inhaltshashs. Dagster materialisiert nachgelagerte Assets nur, wenn sich diese Version geändert hat.
 
 ```python
 # From observable_data_lake_factory.py
@@ -34,15 +29,12 @@ def observable_data_lake(context: OpExecutionContext) -> DataVersionsByPartition
     })
 ```
 
-## Dokumentenweise Verarbeitung mit dynamischen Partitionen
+## Dokumentweise Verarbeitung mit dynamischen Partitionen
 
-Jedem vom Observable Asset entdeckten Dokument wird eine eigene Partition zugewiesen, was eine isolierte und parallele
-Verarbeitung ermöglicht.
+Jedes von einem beobachtbaren Asset entdeckte Dokument erhält seine eigene Partition, was eine isolierte und parallele Verarbeitung ermöglicht.
 
-- **`DynamicPartitionsDefinition`**: Definiert eine Menge von Partitionen, die im Laufe der Zeit wachsen können.
-- **`automation_condition=AutomationCondition.eager()`**: Dies weist Dagster an, dieses Asset automatisch für eine
-  Partition auszuführen, sobald seine Upstream-Abhängigkeit (das Observable Asset) eine neue Version für diese Partition
-  hat.
+- **`DynamicPartitionsDefinition`**: Definiert einen Satz von Partitionen, die im Laufe der Zeit wachsen können.
+- **`automation_condition=AutomationCondition.eager()`**: Dies weist Dagster an, dieses Asset für eine Partition automatisch auszuführen, sobald dessen Upstream-Abhängigkeit (das beobachtbare Asset) eine neue Version für diese Partition hat.
 
 ```python
 # Define a set of partitions that will be populated with document URIs
@@ -59,10 +51,9 @@ def documents(data_lake_file: DataLakeFile) -> RefDocDocument:
     return process_single_document(data_lake_file)
 ```
 
-## Abstrahieren der Speicherung mit I/O-Managern
+## Abstraktion der Speicherung mit I/O-Managern
 
-I/O-Manager verbinden Assets, indem sie die Datenpersistenz handhaben. Sie werden als Ressourcen konfiguriert und Assets
-zugewiesen.
+I/O-Manager verbinden Assets, indem sie die Datenpersistenz handhaben. Sie werden als Ressourcen konfiguriert und Assets zugewiesen.
 
 ```python
 # From DocStoreIOManager.py
@@ -90,11 +81,9 @@ defs = Definitions(
 )
 ```
 
-## Logik komponieren mit Graph Assets
+## Logikkomposition mit Graph-Assets
 
-Ein `graph_asset` ist ein Asset, das aus mehreren kleineren Funktionen, sogenannten **Ops** (`@op`), besteht. Dies
-ermöglicht Ihnen, komplexe Transformationen zu erstellen, während jede Logikkomponente einfach und wiederverwendbar
-bleibt.
+Ein `graph_asset` ist ein Asset, das aus mehreren kleineren Funktionen, sogenannten **Ops** (`@op`), besteht. Dies ermöglicht es Ihnen, komplexe Transformationen zu erstellen, während jeder Logikbaustein einfach und wiederverwendbar bleibt.
 
 ```python
 # From documents_factory.py
@@ -114,15 +103,11 @@ def document(data_lake_file: DataLakeFile) -> Output[RefDocDocument]:
 
 ## Wiederverwendbare Pipelines mit Factories erstellen
 
-Factories sind die höchste Abstraktionsebene im SDK. Es sind Funktionen, die vollständig konfigurierte Assets und
-Ressourcen generieren, sodass Sie eine gesamte Pipeline mit nur wenigen Codezeilen definieren können.
+Factories sind die höchste Abstraktionsebene im SDK. Es sind Funktionen, die vollständig konfigurierte Assets und Ressourcen generieren, sodass Sie eine gesamte Pipeline mit nur wenigen Codezeilen definieren können.
 
-- **Asset Factories (`*_factory.py`)**: Funktionen, die individuelle, konfigurierte Assets erstellen (wie
-  `documents_factory`).
-- **Resource Factories (`definitions_util.py`)**: Funktionen, die einen vollständigen Satz von Ressourcen für eine
-  Pipeline zusammenstellen (wie `local_mongo_milvus_storage_context_resource`).
-- **Definitions Factories (`definitions_util.py`)**: Die Top-Level-Factory (`default_definitions`), die alle anderen
-  Factories verwendet, um ein vollständiges, ausführbares `Definitions`-Objekt zu erstellen.
+- **Asset Factories (`*_factory.py`)**: Funktionen, die individuelle, konfigurierte Assets erstellen (wie `documents_factory`).
+- **Resource Factories (`definitions_util.py`)**: Funktionen, die einen vollständigen Satz von Ressourcen für eine Pipeline zusammenstellen (wie `local_mongo_milvus_storage_context_resource`).
+- **Definitions Factories (`definitions_util.py`)**: Die Top-Level-Factory (`default_definitions`), die alle anderen Factories verwendet, um ein vollständiges, ausführbares `Definitions`-Objekt zu erstellen.
 
 ```python
 # From definitions_util.py

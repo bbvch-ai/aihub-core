@@ -3,7 +3,7 @@ title: Github Actions
 index: 7
 ---
 
-# 🚀 Swiss AI Hub Actions - Reusable Actions for CI/CD (GitHub workflows)
+# Swiss AI Hub Actions - Reusable Actions for CI/CD (GitHub workflows)
 
 ::: info
 These actions are a collection of modular GitHub Actions designed to automate and standardize CI/CD workflows across
@@ -16,7 +16,7 @@ posting coverage comments, and more.
 The repository is organized as follows:
 
 ```
-aihub_action/
+.github/actions/
 │
 ├── build_image/
 │   └── action.yml             # Builds and pushes Docker images
@@ -100,14 +100,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Lint Backend Code
-        uses: bbvch-ai/swiss-ai-hub/aihub_action/lint_backend/action.yml@main
+        uses: bbvch-ai/swiss-ai-hub/.github/actions/lint_backend/action.yml@main
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           working_directory: "agents"
 ```
 
 ::: tip Key Points
-1. The reusable action is stored in `aihub_action/lint_backend/action.yml`.
+1. The reusable action is stored in `.github/actions/lint_backend/action.yml`.
 2. The workflow file references this action using the `uses` keyword.
 3. Inputs like `github_token` and `working_directory` are passed to the action.
 :::
