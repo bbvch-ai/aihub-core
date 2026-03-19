@@ -101,7 +101,7 @@ jobs:
           - packages/process
     steps:
       - name: Coverage comment
-        uses: bbvch-ai/swiss-ai-hu./.github/actions/pytest_coverage_comment@main
+        uses: bbvch-ai/aihub-core/.github/actions/pytest_coverage_comment@main
         with:
           working_directory: ${{ matrix.module }}
   sonarcloud-scan:
@@ -139,7 +139,7 @@ jobs:
             report_coverage: 'false'
     steps:
       - name: SonarCloud Scan
-        uses: bbvch-ai/swiss-ai-hu./.github/actions/sonarcloud_scan@main
+        uses: bbvch-ai/aihub-core/.github/actions/sonarcloud_scan@main
         with:
           working_directory: ${{ matrix.folder }}
           sonar_project_key: ${{ matrix.sonar_project_key }}
