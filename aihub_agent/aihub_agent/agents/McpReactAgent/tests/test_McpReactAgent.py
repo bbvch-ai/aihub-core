@@ -16,10 +16,10 @@ from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageR
 from mcp.types import TextContent, Tool
 from pytest_bdd import given, scenarios, then, when
 
+from aihub_agent.agents.McpReactAgent.configs.McpReactAgentConfig import McpReactAgentConfig
+from aihub_agent.agents.McpReactAgent.events.McpReasoningEvent import McpReasoningEvent
+from aihub_agent.agents.McpReactAgent.McpReactAgent import McpReactAgent
 from aihub_agent.runners.AgentTestRunner import AgentTestRunner
-from playground.minimal_workflow.mcp_react_workflow.events.McpReasoningEvent import McpReasoningEvent
-from playground.minimal_workflow.mcp_react_workflow.McpReactAgent import McpReactAgent
-from playground.minimal_workflow.mcp_react_workflow.McpReactAgentConfig import McpReactAgentConfig
 
 scenarios("./features/mcp_react_agent.feature")
 
@@ -49,10 +49,19 @@ def _make_text_response() -> ChatResponse:
     )
 
 
-def _make_mock_llm() -> AsyncMock:
-    mock_llm = AsyncMock()
-    mock_llm.achat = AsyncMock(side_effect=[_make_tool_call_response(), _make_text_response()])
-    return mock_llm
+def _deduplicate(events: list[BaseEvent]) -> list[BaseEvent]:
+    """ControlAndDisplayEvents are observed twice (JetStream + NATS Core) — deduplicate by event_id."""
+    return list({e.event_id: e for e in events}.values())
+
+
+@asynccontextmanager
+async def _fake_mcp_create(_config: McpClientConfig) -> AsyncIterator[AsyncMock]:
+    mock_mcp_client = AsyncMock()
+    mock_mcp_client.list_tools = AsyncMock(return_value=[MOCK_TOOL])
+    mock_mcp_client.call_tool = AsyncMock(
+        return_value=MagicMock(content=[TextContent(type="text", text="hello")], is_error=False)
+    )
+    yield mock_mcp_client
 
 
 @given("a McpReactAgent runner with a mocked MCP server and LLM", target_fixture="agent_runner")
@@ -72,24 +81,15 @@ def _():
 @when("the start event is sent")
 @async_test
 async def _(agent_runner: AgentTestRunner):
-    mock_mcp_client = AsyncMock()
-    mock_mcp_client.list_tools = AsyncMock(return_value=[MOCK_TOOL])
-    mock_mcp_client.call_tool = AsyncMock(
-        return_value=MagicMock(content=[TextContent(type="text", text="hello")], isError=False)
-    )
-
-    @asynccontextmanager
-    async def fake_mcp_create(_config: McpClientConfig) -> AsyncIterator[AsyncMock]:
-        yield mock_mcp_client
-
-    mock_llm = _make_mock_llm()
+    mock_llm = AsyncMock()
+    mock_llm.achat = AsyncMock(side_effect=[_make_tool_call_response(), _make_text_response()])
 
     @asynccontextmanager
     async def fake_cost_reporting_llm(self, displayer) -> AsyncIterator[AsyncMock]:  # noqa: ARG001
         yield mock_llm
 
     with (
-        patch("aihub_agent.mcp.McpClientFactory.McpClientFactory.create", side_effect=fake_mcp_create),
+        patch("aihub_agent.mcp.McpClientFactory.McpClientFactory.create", side_effect=_fake_mcp_create),
         patch.object(LLMConfig, "cost_reporting_llm", fake_cost_reporting_llm),
     ):
         async with agent_runner.test_run() as topic:
@@ -105,11 +105,6 @@ async def _(agent_runner: AgentTestRunner):
 @then("a StopEvent is present")
 def _(agent_runner: AgentTestRunner):
     assert agent_runner.has_stop_event, "Agent did not complete"
-
-
-def _deduplicate(events: list[BaseEvent]) -> list[BaseEvent]:
-    """ControlAndDisplayEvents are observed twice (JetStream + NATS Core) — deduplicate by event_id."""
-    return list({e.event_id: e for e in events}.values())
 
 
 @then("a ToolEvent was emitted")

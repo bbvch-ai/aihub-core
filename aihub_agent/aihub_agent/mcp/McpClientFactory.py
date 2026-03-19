@@ -14,7 +14,7 @@ class McpClientFactory:
     @asynccontextmanager
     async def create(config: McpClientConfig) -> AsyncIterator[Client]:
         """Create and connect a FastMCP Client, yielding it for use within an async with block."""
-        auth = BearerAuth(config.api_key.get_secret_value()) if config.api_key else None
+        auth = BearerAuth(config.api_key) if config.api_key else None
 
         if config.headers:
             transport = StreamableHttpTransport(url=config.url, headers=dict(config.headers), auth=auth)

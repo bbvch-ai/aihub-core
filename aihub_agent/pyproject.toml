@@ -13,7 +13,7 @@ authors = [
 license = "LicenseRef-Proprietary"
 dependencies = [
     "aihub-core",
-    "fastmcp>=2.11.2",
+    "fastmcp>=3.0.0",
     "llama-index-llms-openai>=0.6.12",
     "llama-index-llms-azure-openai>=0.4.2",
     "stringcase>=1.2.0",

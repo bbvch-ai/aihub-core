@@ -1,0 +1,28 @@
+---
+metadata:
+  name: Agente MCP Tool
+  description: Agente IA che scopre e chiama strumenti su server MCP esterni utilizzando
+    il ragionamento ReAct
+config:
+  system_prompt:
+    label: Prompt di sistema
+    help: Istruzioni che definiscono il comportamento dell'agente durante il ragionamento
+      sull'uso degli strumenti.
+  max_iterations:
+    label: Iterazioni massime
+    help: Numero massimo di cicli ragionamento-azione prima che l'agente si fermi.
+steps:
+  init:
+    name: Scopri strumenti
+    description: Si connette al server MCP configurato e scopre gli strumenti disponibili.
+  reasoning:
+    name: Ragionamento
+    description: Chiede al LLM di decidere se chiamare uno strumento o rispondere
+      all'utente.
+  tool_execution:
+    name: Esegui strumento
+    description: Chiama lo strumento selezionato sul server MCP e restituisce i risultati.
+  max_iterations_reached:
+    name: Iterazioni massime raggiunte
+    description: Termina l'agente quando il limite del ciclo di ragionamento viene
+      superato.

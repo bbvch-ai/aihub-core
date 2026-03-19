@@ -1,0 +1,29 @@
+---
+metadata:
+  name: MCP-Tool-Agent
+  description: KI-Agent, der Tools auf externen MCP-Servern entdeckt und aufruft mittels
+    ReAct-Reasoning
+config:
+  system_prompt:
+    label: Systemaufforderung
+    help: Anweisungen, die das Verhalten des Agenten beim Reasoning definieren.
+  max_iterations:
+    label: Maximale Iterationen
+    help: Maximale Anzahl von Reasoning-Aktions-Schleifen bevor der Agent stoppt.
+steps:
+  init:
+    name: Tools entdecken
+    description: Verbindet sich mit dem konfigurierten MCP-Server und entdeckt verfügbare
+      Tools.
+  reasoning:
+    name: Reasoning
+    description: Fragt das LLM, ob ein Tool aufgerufen oder dem Benutzer geantwortet
+      werden soll.
+  tool_execution:
+    name: Tool ausführen
+    description: Ruft das ausgewählte Tool auf dem MCP-Server auf und gibt Ergebnisse
+      zurück.
+  max_iterations_reached:
+    name: Maximale Iterationen erreicht
+    description: Beendet den Agenten, wenn das Limit der Reasoning-Schleife überschritten
+      wird.

@@ -146,6 +146,38 @@ class Message(BaseModel):
             message_dict["contents"] = contents
         return cls(**{k: v for k, v in message_dict.items() if v is not None})
 
+    def to_openai_dict(self) -> dict[str, Any]:
+        """Convert to an OpenAI API-compatible message dict."""
+        message_dict: dict[str, Any] = {"role": self.role}
+
+        if self.role == "tool":
+            message_dict["content"] = self.content
+            if self.tool_call_id:
+                message_dict["tool_call_id"] = self.tool_call_id
+            return message_dict
+
+        if self.role == "assistant" and self.tool_calls:
+            message_dict["content"] = self.content or None
+            message_dict["tool_calls"] = self.tool_calls
+        else:
+            message_dict["content"] = self.content
+
+        if self.name:
+            message_dict["name"] = self.name
+
+        return message_dict
+
+    @classmethod
+    def from_openai_response(cls, message: Any) -> Self:
+        """Parse an OpenAI ChatCompletionMessage into a Message."""
+        tool_calls = [cls._normalize_tool_call(tc) for tc in message.tool_calls] if message.tool_calls else None
+        contents = [TextContent(text=message.content)] if message.content else None
+        return cls(
+            role=message.role,
+            contents=contents,
+            tool_calls=tool_calls,
+        )
+
     def to_llama_index(self) -> ChatMessage:
         """Converts a message to llama index, restoring additional_kwargs for tool call round-tripping."""
         blocks: list[LlamaIndexContentBlock] = []
@@ -153,22 +185,7 @@ class Message(BaseModel):
             cb = self._process_block_backwards(block)
             if cb:
                 blocks.append(cb)
-
-        additional_kwargs: dict[str, Any] = {}
-        if self.tool_calls:
-            additional_kwargs["tool_calls"] = self.tool_calls
-        if self.tool_call_id:
-            additional_kwargs["tool_call_id"] = self.tool_call_id
-        if self.name:
-            additional_kwargs["name"] = self.name
-        if self.function_call_name or self.function_call_arguments_json:
-            additional_kwargs["function_call"] = {
-                k: v
-                for k, v in [("name", self.function_call_name), ("arguments", self.function_call_arguments_json)]
-                if v is not None
-            }
-
-        return ChatMessage(role=self.role, blocks=blocks, additional_kwargs=additional_kwargs)
+        return ChatMessage(role=self.role, blocks=blocks)
 
     @staticmethod
     def _process_block(block: Any) -> ContentBlock | None:

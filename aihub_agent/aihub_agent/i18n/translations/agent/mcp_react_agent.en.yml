@@ -1,0 +1,25 @@
+---
+metadata:
+  name: MCP Tool Agent
+  description: AI agent that discovers and calls tools on external MCP servers using
+    ReAct reasoning
+config:
+  system_prompt:
+    label: System Prompt
+    help: Instructions defining the agent's behavior when reasoning about tool use.
+  max_iterations:
+    label: Max Iterations
+    help: Maximum number of reasoning-action loops before the agent stops.
+steps:
+  init:
+    name: Discover Tools
+    description: Connects to the configured MCP server and discovers available tools.
+  reasoning:
+    name: Reason
+    description: Asks the LLM to decide whether to call a tool or respond to the user.
+  tool_execution:
+    name: Execute Tool
+    description: Calls the selected tool on the MCP server and feeds results back.
+  max_iterations_reached:
+    name: Max Iterations Reached
+    description: Gracefully terminates when the reasoning loop limit is exceeded.
