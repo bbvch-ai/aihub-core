@@ -339,5 +339,4 @@ Previous versions fetched roles from Azure AD via Microsoft Graph API. The new s
 - ❌ **No automatic role sync** from identity provider
 - ❌ **No automatic profile image fetching** from identity provider
 
-See [ADR: Local Multi-Tenant Role Management](/arc42/decisions/2025_12_25_local_role_management.md) for
-details.
+See [ADR: Local Multi-Tenant Role Management](/arc42/decisions/2025_12_25_local_role_management.md) for details.

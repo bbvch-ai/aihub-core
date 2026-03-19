@@ -1,4 +1,4 @@
-```markdown
+````markdown
 ---
 title: Voraussetzungen
 source_sha: "55caeb3d26d68ae52b19ffa3819707747f2d590c9a2ab5532e477c401d1ec20d"
@@ -67,13 +67,15 @@ Testen Sie Ihre Docker-Installation:
 docker --version
 docker compose --version
 docker run hello-world
-```
+````
 
 Alle Befehle müssen erfolgreich abgeschlossen werden.
 
 ### Einrichtung des Authentifizierungs-Providers
 
-Die Plattform erfordert einen OAuth2/OpenID Connect-Identitätsprovider für Produktions- und lokale Deployments. Dieser Leitfaden dokumentiert die Einrichtung von Azure Entra ID. Andere Provider (Google, Okta, Auth0) können nach ähnlichen Mustern konfiguriert werden.
+Die Plattform erfordert einen OAuth2/OpenID Connect-Identitätsprovider für Produktions- und lokale Deployments. Dieser
+Leitfaden dokumentiert die Einrichtung von Azure Entra ID. Andere Provider (Google, Okta, Auth0) können nach ähnlichen
+Mustern konfiguriert werden.
 
 #### Einrichtung von Azure Entra ID
 
@@ -103,7 +105,8 @@ Die Plattform erfordert Zugriffs-Token-Version 2 für eine ordnungsgemäße Auth
 4. Klicken Sie oben im Manifest-Editor auf **"Speichern"**
 
 ::: warning
-Zugriffs-Token-Version 2 ist erforderlich, damit die Plattform ordnungsgemäß funktioniert. Version 1-Token werden nicht unterstützt und führen zu Authentifizierungsfehlern.
+Zugriffs-Token-Version 2 ist erforderlich, damit die Plattform ordnungsgemäß funktioniert. Version 1-Token werden nicht
+unterstützt und führen zu Authentifizierungsfehlern.
 :::
 
 **Schritt 3: API-Berechtigungen konfigurieren**
@@ -120,8 +123,9 @@ Zugriffs-Token-Version 2 ist erforderlich, damit die Plattform ordnungsgemäß f
 5. Vergewissern Sie sich, dass alle Berechtigungen den Status **"Erteilt für [Ihre Organisation]"** anzeigen
 
 ::: tip
-Die Plattform verwaltet Rollen und Benutzerprofile lokal – es sind keine Microsoft Graph API Anwendungsberechtigungen (wie
-`User.ReadBasic.All`, `Directory.Read.All` oder `ProfilePhoto.Read.All`) erforderlich. Für die Authentifizierung werden nur standardmäßige OIDC delegierte Berechtigungen benötigt.
+Die Plattform verwaltet Rollen und Benutzerprofile lokal – es sind keine Microsoft Graph API Anwendungsberechtigungen
+(wie `User.ReadBasic.All`, `Directory.Read.All` oder `ProfilePhoto.Read.All`) erforderlich. Für die Authentifizierung
+werden nur standardmäßige OIDC delegierte Berechtigungen benötigt.
 :::
 
 **Schritt 4: Client-Secret erstellen**
@@ -135,13 +139,17 @@ Die Plattform verwaltet Rollen und Benutzerprofile lokal – es sind keine Micro
 5. Notieren Sie diesen Wert als `[CLIENT_SECRET]` für die Deployment-Konfiguration
 
 ::: danger
-Der Client-Secret-Wert wird nur einmal direkt nach der Erstellung angezeigt. Geht der Wert verloren, muss ein neues Geheimnis erstellt werden. Speichern Sie ihn in einem Passwort-Manager oder einem sicheren Tresor.
+Der Client-Secret-Wert wird nur einmal direkt nach der Erstellung angezeigt. Geht der Wert verloren, muss ein neues
+Geheimnis erstellt werden. Speichern Sie ihn in einem Passwort-Manager oder einem sicheren Tresor.
 :::
 
 **Schritt 5: App-Rollen konfigurieren (optional)**
 
 ::: tip
-App-Rollen in Azure Entra ID sind für die Swiss AI Hub Plattform **optional**. Plattformrollen (AIHubAdmin, AIHubUser) werden lokal über die Admin-Oberfläche verwaltet und nicht vom Identitätsprovider synchronisiert. Diese Azure-App-Rollen werden nur benötigt, wenn Sie den Zugriff auf integrierte Services (Dagster, SeaweedFS, Attu) steuern möchten, die ihre eigenen OAuth2-Flows verwenden.
+App-Rollen in Azure Entra ID sind für die Swiss AI Hub Plattform **optional**. Plattformrollen (AIHubAdmin, AIHubUser)
+werden lokal über die Admin-Oberfläche verwaltet und nicht vom Identitätsprovider synchronisiert. Diese Azure-App-Rollen
+werden nur benötigt, wenn Sie den Zugriff auf integrierte Services (Dagster, SeaweedFS, Attu) steuern möchten, die ihre
+eigenen OAuth2-Flows verwenden.
 :::
 
 Erstellen Sie vier App-Rollen nach diesem Prozess:
@@ -178,12 +186,15 @@ Erstellen Sie vier App-Rollen nach diesem Prozess:
 - **Beschreibung**: `Systemadministratorzugriff auf Infrastruktur-Tools (Dagster, SeaweedFS, Attu)`
 
 ::: tip
-Die `AIHubSysAdmin`-Rolle ist erforderlich, um auf das Dagster Pipeline-Orchestrierungs-Dashboard, die SeaweedFS Data Lake-Konsole unter `datalake.${DOMAIN}` und die Attu Milvus Admin-Benutzeroberfläche zuzugreifen. Benutzer ohne diese Rolle können weiterhin die Haupt-Swiss AI Hub-Oberfläche und OpenWebUI verwenden.
+Die `AIHubSysAdmin`-Rolle ist erforderlich, um auf das Dagster Pipeline-Orchestrierungs-Dashboard, die SeaweedFS Data
+Lake-Konsole unter `datalake.${DOMAIN}` und die Attu Milvus Admin-Benutzeroberfläche zuzugreifen. Benutzer ohne diese
+Rolle können weiterhin die Haupt-Swiss AI Hub-Oberfläche und OpenWebUI verwenden.
 :::
 
 **Schritt 6: SPA-Umleitungs-URIs konfigurieren**
 
-Single-Page Application (SPA) Umleitungs-URIs sind für die Haupt-Web-Oberfläche mit mehrsprachiger Unterstützung erforderlich.
+Single-Page Application (SPA) Umleitungs-URIs sind für die Haupt-Web-Oberfläche mit mehrsprachiger Unterstützung
+erforderlich.
 
 1. Navigieren Sie zu **"Authentifizierung"** → **"Plattform hinzufügen"** → **"Einzelseitenanwendung"**
 
@@ -251,10 +262,14 @@ Umleitungs-URIs für Webanwendungen sind für integrierte Services (OpenWebUI, D
 ::: warning Unterscheidung des Plattformtyps
 Die Plattformtypkonfiguration (SPA vs. Web) ist entscheidend für die Auswahl des OAuth2-Flows:
 
-- **SPA-Plattform**: Sprachspezifische Callbacks (`/de/`, `/en/`, `/fr/`, `/it/`) verwenden den PKCE-Flow ohne Client-Secret
-- **Web-Plattform**: Service-Callbacks (`openwebui`, `dagster`, `datalake`, `attu`) verwenden den Autorisierungscode-Flow mit Client-Secret
+- **SPA-Plattform**: Sprachspezifische Callbacks (`/de/`, `/en/`, `/fr/`, `/it/`) verwenden den PKCE-Flow ohne
+  Client-Secret
+- **Web-Plattform**: Service-Callbacks (`openwebui`, `dagster`, `datalake`, `attu`) verwenden den
+  Autorisierungscode-Flow mit Client-Secret
 
-Fehlkonfigurierte Plattformtypen führen zum Authentifizierungsfehler `AADSTS9002326: Cross-origin token redemption is permitted only for the 'Single-Page Application' client-type`. Stellen Sie sicher, dass die Umleitungs-URIs unter dem korrekten Plattformtyp registriert sind.
+Fehlkonfigurierte Plattformtypen führen zum Authentifizierungsfehler
+`AADSTS9002326: Cross-origin token redemption is permitted only for the 'Single-Page Application' client-type`. Stellen
+Sie sicher, dass die Umleitungs-URIs unter dem korrekten Plattformtyp registriert sind.
 :::
 
 **Erforderliche Authentifizierungsinformationen**
@@ -272,12 +287,14 @@ ______________________________________________________________________
 ## Voraussetzungen für das Produktions-Deployment
 
 ::: danger Nur für Produktions-Deployments
-**Überspringen Sie diesen gesamten Abschnitt, wenn Sie lokal testen.** Diese Schritte sind nur erforderlich, wenn Sie auf einem Server mit einem echten Domainnamen deployen.
+**Überspringen Sie diesen gesamten Abschnitt, wenn Sie lokal testen.** Diese Schritte sind nur erforderlich, wenn Sie
+auf einem Server mit einem echten Domainnamen deployen.
 :::
 
 ### DNS-Konfiguration
 
-Konfigurieren Sie DNS-Einträge für Ihre Domain. Die Plattform erfordert **sieben Subdomains**, die auf die öffentliche IP-Adresse Ihres Servers zeigen:
+Konfigurieren Sie DNS-Einträge für Ihre Domain. Die Plattform erfordert **sieben Subdomains**, die auf die öffentliche
+IP-Adresse Ihres Servers zeigen:
 
 - `swiss-ai-hub.example.com` - Haupt-Web-Oberfläche
 - `openwebui.swiss-ai-hub.example.com` - Chat-Benutzeroberfläche
@@ -287,14 +304,16 @@ Konfigurieren Sie DNS-Einträge für Ihre Domain. Die Plattform erfordert **sieb
 - `attu.swiss-ai-hub.example.com` - Milvus Vektordatenbank-Benutzeroberfläche
 - `traefik.swiss-ai-hub.example.com` - Reverse-Proxy-Dashboard
 
-Ersetzen Sie `swiss-ai-hub.example.com` durch Ihre tatsächliche Domain. Erstellen Sie A-Einträge oder CNAMEs für alle sieben Subdomains, die auf die IP-Adresse Ihres Servers zeigen.
+Ersetzen Sie `swiss-ai-hub.example.com` durch Ihre tatsächliche Domain. Erstellen Sie A-Einträge oder CNAMEs für alle
+sieben Subdomains, die auf die IP-Adresse Ihres Servers zeigen.
 
 ::: warning DNS-Anforderungen für SSL
 - DNS-Einträge müssen für die Bereitstellung von Let's Encrypt SSL-Zertifikaten global zugänglich sein
 - Die VM muss ihre eigenen Domainnamen auflösen können (interne DNS-Auflösung)
 - Konfigurieren Sie die Nameserver korrekt, um OAuth-Authentifizierungs-Timeouts zu vermeiden
 
-Siehe [Netzwerkanforderungen](/de/docs/3_deployment_guide/7_network_requirements) für detaillierte DNS-Konfiguration und Fehlerbehebung.
+Siehe [Netzwerkanforderungen](/de/docs/3_deployment_guide/7_network_requirements) für detaillierte DNS-Konfiguration und
+Fehlerbehebung.
 :::
 
 ______________________________________________________________________
@@ -302,15 +321,18 @@ ______________________________________________________________________
 ## Voraussetzungen für lokales Deployment
 
 ::: danger Nur für lokales Deployment
-**Überspringen Sie diesen gesamten Abschnitt, wenn Sie in Produktion deployen.** Diese Schritte sind nur erforderlich, wenn Sie die Plattform auf Ihrem lokalen Rechner deployen.
+**Überspringen Sie diesen gesamten Abschnitt, wenn Sie in Produktion deployen.** Diese Schritte sind nur erforderlich,
+wenn Sie die Plattform auf Ihrem lokalen Rechner deployen.
 :::
 
 ### mkcert installieren
 
-Für lokales Deployment mit HTTPS-Unterstützung müssen Sie **mkcert** installieren, um selbstsignierte SSL-Zertifikate zu generieren, denen Ihr Browser vertraut.
+Für lokales Deployment mit HTTPS-Unterstützung müssen Sie **mkcert** installieren, um selbstsignierte SSL-Zertifikate zu
+generieren, denen Ihr Browser vertraut.
 
 ::: warning
-Verwenden Sie selbstsignierte SSL-Zertifikate nur für die lokale Entwicklung. Verwenden Sie diese niemals in Produktions- oder öffentlichen Umgebungen.
+Verwenden Sie selbstsignierte SSL-Zertifikate nur für die lokale Entwicklung. Verwenden Sie diese niemals in
+Produktions- oder öffentlichen Umgebungen.
 :::
 
 **Linux (Ubuntu/Debian):**
@@ -346,12 +368,17 @@ mkcert -version
 ```
 
 ::: tip Was ist mkcert?
-**mkcert** ist ein Tool, das lokal vertrauenswürdige SSL-Zertifikate ohne komplexe Konfiguration generiert. Es installiert automatisch eine lokale Zertifizierungsstelle (CA) in Ihrem System-Vertrauensspeicher, sodass die von ihm generierten Zertifikate von Ihrem Browser als vertrauenswürdig eingestuft werden.
+**mkcert** ist ein Tool, das lokal vertrauenswürdige SSL-Zertifikate ohne komplexe Konfiguration generiert. Es
+installiert automatisch eine lokale Zertifizierungsstelle (CA) in Ihrem System-Vertrauensspeicher, sodass die von ihm
+generierten Zertifikate von Ihrem Browser als vertrauenswürdig eingestuft werden.
 :::
 
 ______________________________________________________________________
 
 ## Nächste Schritte
 
-Fahren Sie mit dem [Ein-Befehl-Deployment](/de/docs/2_deployment_guide/2_one_command_deployment) fort, um die Plattform mit den aufgezeichneten Konfigurationswerten zu deployen.
+Fahren Sie mit dem [Ein-Befehl-Deployment](/de/docs/2_deployment_guide/2_one_command_deployment) fort, um die Plattform
+mit den aufgezeichneten Konfigurationswerten zu deployen.
+
+```
 ```

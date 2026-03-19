@@ -149,37 +149,16 @@ zugeschnitten werden.
 Ein Einzelinstanz-Deployment enthält:
 
 ```
-Swiss AI Hub Instance
-├── Application Layer
-│   ├── API Service (FastAPI + WebSocket gateway)
-│   ├── Web Interface (Nuxt.js frontend)
-│   ├── OpenWebUI (LLM chat interface)
-│   ├── Agent Services (RAG, specialized agents)
-│   ├── Pipeline Services (Dagster + custom pipelines)
-│   └── Bot Service (MS Teams, Slack integrations)
-│
-├── Data Layer
-│   ├── Database (FerretDB + PostgreSQL)
-│   ├── Vector Store (Milvus)
-│   ├── Document Store (SeaweedFS)
-│   └── Cache (Valkey)
-│
-├── LLM Layer
-│   ├── LiteLLM Proxy
-│   │   ├── Cost tracking and budgets
-│   │   ├── Model routing configuration
-│   │   ├── Rate limiting
-│   │   └── Version control
-│   └── Presidio (PII anonymization)
-│
-├── Observability Layer
-│   ├── Langfuse (LLM tracing, cost tracking, and evaluation)
-│   └── OpenTelemetry (distributed tracing)
-│
-└── Infrastructure Layer
-    ├── NATS (message bus)
-    ├── MinerU (document processing)
-    └── Traefik (reverse proxy + SSL termination)
+
+Swiss AI Hub Instance ├── Application Layer │ ├── API Service (FastAPI + WebSocket gateway) │ ├── Web Interface (Nuxt.js
+frontend) │ ├── OpenWebUI (LLM chat interface) │ ├── Agent Services (RAG, specialized agents) │ ├── Pipeline Services
+(Dagster + custom pipelines) │ └── Bot Service (MS Teams, Slack integrations) │ ├── Data Layer │ ├── Database (FerretDB
+\+ PostgreSQL) │ ├── Vector Store (Milvus) │ ├── Document Store (SeaweedFS) │ └── Cache (Valkey) │ ├── LLM Layer │ ├──
+LiteLLM Proxy │ │ ├── Cost tracking and budgets │ │ ├── Model routing configuration │ │ ├── Rate limiting │ │ └──
+Version control │ └── Presidio (PII anonymization) │ ├── Observability Layer │ ├── Langfuse (LLM tracing, cost tracking,
+and evaluation) │ └── OpenTelemetry (distributed tracing) │ └── Infrastructure Layer ├── NATS (message bus) ├── MinerU
+(document processing) └── Traefik (reverse proxy + SSL termination)
+
 ```
 
 Der LiteLLM-Proxy verbindet sich mit LLM-Services (Swiss LLM Cloud für Nicht-GPU, lokales vLLM für GPU-Deployments).
@@ -190,18 +169,13 @@ Beim Deployment mehrerer Instanzen erhält jede Instanz die oben gezeigte Infras
 gemeinsam nutzen:
 
 ```
-Shared LLM Backend Resources
-├── Cloud LLM Provider
-│   ├── Swiss LLM Cloud credentials (shared API keys)
-│   └── Other cloud provider credentials (optional)
-│
-├── Self-Hosted Model Infrastructure (GPU)
-│   └── vLLM deployment (NVIDIA RTX 6000 Pro, 96 GB VRAM)
-│
-└── Optional Shared Services
-    ├── Central Authentication (Azure AD, Keycloak)
-    └── Central Monitoring Dashboard (optional)
-```
+
+Shared LLM Backend Resources ├── Cloud LLM Provider │ ├── Swiss LLM Cloud credentials (shared API keys) │ └── Other
+cloud provider credentials (optional) │ ├── Self-Hosted Model Infrastructure (GPU) │ └── vLLM deployment (NVIDIA RTX
+6000 Pro, 96 GB VRAM) │ └── Optional Shared Services ├── Central Authentication (Azure AD, Keycloak) └── Central
+Monitoring Dashboard (optional)
+
+````
 
 Netzwerkarchitektur:
 
@@ -233,7 +207,7 @@ graph TB
     Proxy -->|HTTPS| Backend
 
     classDef default font-size:16px,padding:20px
-```
+````
 
 Die Instanz verbindet sich über ihren LiteLLM-Proxy mit LLM-Services.
 
@@ -268,9 +242,9 @@ graph TB
     classDef default font-size:16px,padding:20px
 ```
 
-Jede Instanz verfügt über einen eigenen LiteLLM-Proxy (unabhängige Kostenverfolgung, Versionierung, Konfiguration).
-Alle Instanz-LiteLLM-Proxys verbinden sich mit geteilten LLM-Backend-Ressourcen (Swiss LLM Cloud oder lokales vLLM).
-Prompts, Antworten und Benutzerdaten verbleiben innerhalb der Instanzgrenzen.
+Jede Instanz verfügt über einen eigenen LiteLLM-Proxy (unabhängige Kostenverfolgung, Versionierung, Konfiguration). Alle
+Instanz-LiteLLM-Proxys verbinden sich mit geteilten LLM-Backend-Ressourcen (Swiss LLM Cloud oder lokales vLLM). Prompts,
+Antworten und Benutzerdaten verbleiben innerhalb der Instanzgrenzen.
 
 ______________________________________________________________________
 
@@ -285,15 +259,15 @@ mit separater Namespace-Isolation nutzen. LiteLLM erzwingt API-Schlüssel und Qu
 ### LLM-Proxy-Sicherheit
 
 LiteLLM speichert keine Prompts oder Antworten persistent (zustandsloser Betrieb). Die API-Schlüsselverwaltung umfasst
-sichere Schlüsselgenerierung, -rotation und -widerruf. Anfragelimits pro Instanz verhindern Missbrauch. Alle LLM-Anfragen
-werden mit Instanz-ID, aber ohne Prompt-Inhalt protokolliert. Die Presidio-Integration ist optional für die PII-Erkennung
-und -Redaktion.
+sichere Schlüsselgenerierung, -rotation und -widerruf. Anfragelimits pro Instanz verhindern Missbrauch. Alle
+LLM-Anfragen werden mit Instanz-ID, aber ohne Prompt-Inhalt protokolliert. Die Presidio-Integration ist optional für die
+PII-Erkennung und -Redaktion.
 
 ### Daten während der Übertragung
 
-Die gesamte Kommunikation ist mit TLS verschlüsselt (Instanz zum LLM-Proxy). Das Zertifikatsmanagement verwendet
-Let's Encrypt für die Produktion und mkcert für die Entwicklung. Die API-Authentifizierung nutzt Bearer-Tokens
-(OAuth 2.0, JWT).
+Die gesamte Kommunikation ist mit TLS verschlüsselt (Instanz zum LLM-Proxy). Das Zertifikatsmanagement verwendet Let's
+Encrypt für die Produktion und mkcert für die Entwicklung. Die API-Authentifizierung nutzt Bearer-Tokens (OAuth 2.0,
+JWT).
 
 ### Daten im Ruhezustand
 
@@ -305,9 +279,11 @@ ______________________________________________________________________
 ## Nächste Schritte
 
 - [Multi-Tenancy](/de/docs/16_multi_tenancy/) – Logische Trennung innerhalb einer einzelnen Instanz
-- [Produktionskonfiguration](/de/docs/deployments/2_production_configuration/) – Konfigurationsanleitung für Produktions-Deployments
+- [Produktionskonfiguration](/de/docs/deployments/2_production_configuration/) – Konfigurationsanleitung für
+  Produktions-Deployments
 - [Skalierungsüberlegungen](/de/docs/deployments/3_scaling_considerations/) – Skalierung von Instanzen
-- [Backup und Wiederherstellung](/de/docs/deployments/4_backup_and_recovery/) – Backup-Strategien für die Pro-Instanz-Architektur
+- [Backup und Wiederherstellung](/de/docs/deployments/4_backup_and_recovery/) – Backup-Strategien für die
+  Pro-Instanz-Architektur
 - [Updates und Wartung](/de/docs/deployments/6_updates_and_maintenance/) – Verwaltung von Updates über mehrere Instanzen
 
 ______________________________________________________________________
@@ -315,8 +291,8 @@ ______________________________________________________________________
 ## FAQ
 
 ::: details Können Instanzen Agents oder Pipelines teilen?
-Nein. Jede Instanz verfügt über einen eigenen, isolierten Satz von Agents und Pipelines. Dieselben Agent-Definitionen (Code)
-können jedoch über mehrere Instanzen hinweg deployed werden. Anpassungen sind instanzspezifisch.
+Nein. Jede Instanz verfügt über einen eigenen, isolierten Satz von Agents und Pipelines. Dieselben Agent-Definitionen
+(Code) können jedoch über mehrere Instanzen hinweg deployed werden. Anpassungen sind instanzspezifisch.
 
 Um Agents innerhalb einer Organisation zu teilen, verwenden Sie [Multi-Tenancy](/de/docs/16_multi_tenancy/), um logische
 Grenzen innerhalb einer einzelnen Instanz zu schaffen.
@@ -330,7 +306,8 @@ juristische Einheiten, hochsensible Abteilungen).
 
 **Multi-Tenancy** ([Kapitel 15](/de/docs/16_multi_tenancy/)) bedeutet die Schaffung organisatorischer Grenzen innerhalb
 einer einzelnen Swiss AI Hub-Instanz. Mehrere Mandanten teilen sich die Infrastruktur, verfügen aber über eine logische
-Trennung durch Zugriffskontrolle. Verwenden Sie dies für Abteilungen, Projekte oder Kunden innerhalb derselben Organisation.
+Trennung durch Zugriffskontrolle. Verwenden Sie dies für Abteilungen, Projekte oder Kunden innerhalb derselben
+Organisation.
 
 Sie können beides kombinieren: Betreiben Sie mehrere Instanzen (harte Isolation), wobei jede Instanz Multi-Tenancy
 (flexible Trennung innerhalb dieser Instanz) nutzt.
@@ -339,8 +316,8 @@ Sie können beides kombinieren: Betreiben Sie mehrere Instanzen (harte Isolation
 ::: details Welche Daten sieht das geteilte LLM-Backend?
 Jede Instanz verfügt über einen eigenen LiteLLM-Proxy, sodass Prompts und Antworten innerhalb der Instanz verbleiben.
 Die geteilten LLM-Backends (Swiss LLM Cloud oder lokales vLLM) sehen API-Anfragen von mehreren Instanz-LiteLLM-Proxys
-(zustandslos, nicht persistent gespeichert), Modellinferenzanfragen (Prompts und Completions nur während der Übertragung),
-keine Instanzidentifikation oder Kontext und anonyme PII-Daten, falls aktiviert.
+(zustandslos, nicht persistent gespeichert), Modellinferenzanfragen (Prompts und Completions nur während der
+Übertragung), keine Instanzidentifikation oder Kontext und anonyme PII-Daten, falls aktiviert.
 
 Sie sehen nicht, welche Instanz die Anfrage gestellt hat, die Konversationshistorie oder gespeicherte Daten. Der gesamte
 Kontext verbleibt im LiteLLM-Proxy und der Datenbank der Instanz.
@@ -374,16 +351,20 @@ Mitigation: Deployen Sie LiteLLM mit hoher Verfügbarkeit (mehrere Replicas, Loa
 :::
 
 ::: details Wie verwalten Sie Updates über viele Instanzen hinweg?
-Siehe [Updates und Wartung](/de/docs/deployments/6_updates_and_maintenance/) für Strategien wie gestaffelte Rollouts (Pilot bis Produktion),
-Blue-Green Deployments, automatisierte Update-Orchestrierung (Ansible, Kubernetes Operators) und instanzspezifische
-Update-Zeitpläne.
+Siehe [Updates und Wartung](/de/docs/deployments/6_updates_and_maintenance/) für Strategien wie gestaffelte Rollouts
+(Pilot bis Produktion), Blue-Green Deployments, automatisierte Update-Orchestrierung (Ansible, Kubernetes Operators) und
+instanzspezifische Update-Zeitpläne.
 :::
 
 ## Verwandte Dokumentation
 
 - [Multi-Tenancy](/de/docs/16_multi_tenancy/) – Schaffung organisatorischer Grenzen innerhalb einer Instanz
 - [Kernkomponenten](/de/docs/2_architecture/1_core_components/) – Swiss AI Hub Architektur
-- [Authentifizierung & Autorisierung](/de/docs/11_access_management/1_authentication_setup/) – Authentifizierungskonfiguration
-- [Monitoring und Alerting](/de/docs/deployments/5_monitoring_and_alerting/) – Observability für Multi-Instanz-Deployments
+- [Authentifizierung & Autorisierung](/de/docs/11_access_management/1_authentication_setup/) –
+  Authentifizierungskonfiguration
+- [Monitoring und Alerting](/de/docs/deployments/5_monitoring_and_alerting/) – Observability für
+  Multi-Instanz-Deployments
 - [Schweizer Datenschutz](/de/docs/21_compliance/3_dsg/) – revDSG-Compliance für den öffentlichen Sektor
+
+```
 ```

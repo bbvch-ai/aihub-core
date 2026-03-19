@@ -1,17 +1,23 @@
 ---
 title: Azure Bot Service-Integration
-source_sha: "8c03583a489361246fdf3d3feac70258a41ab3bd0c97f65e58777786f2f88ecc"
+source_sha: 8c03583a489361246fdf3d3feac70258a41ab3bd0c97f65e58777786f2f88ecc
 ---
 
 # Azure Bot Service-Integration :speech_balloon: :100:
 
 ::: info **Kurz gesagt – Was ist die Azure Bot Service-Integration?**
-Die Azure Bot Service-Integration verwandelt den Swiss AI Hub in eine **mehrkanalige Konversationsplattform**, die Benutzer über bekannte Kollaborationstools wie Microsoft Teams und Slack mit KI-Agents verbindet. Diese Integration bietet Bot-Konnektivität auf Unternehmensniveau mit Streaming-Antworten, Konversationspersistenz und nahtlosen Human-in-the-Loop-Workflows, wodurch die Notwendigkeit entfällt, zwischen Anwendungen zu wechseln, um auf KI-Unterstützung zuzugreifen.
+Die Azure Bot Service-Integration verwandelt den Swiss AI Hub in eine **mehrkanalige Konversationsplattform**, die
+Benutzer über bekannte Kollaborationstools wie Microsoft Teams und Slack mit KI-Agents verbindet. Diese Integration
+bietet Bot-Konnektivität auf Unternehmensniveau mit Streaming-Antworten, Konversationspersistenz und nahtlosen
+Human-in-the-Loop-Workflows, wodurch die Notwendigkeit entfällt, zwischen Anwendungen zu wechseln, um auf
+KI-Unterstützung zuzugreifen.
 :::
 
 ## Was ist die Azure Bot Service-Integration und wie funktioniert sie? :brain:
 
-Die Azure Bot Service-Integration nutzt das **Microsoft Bot Framework**, um einheitliche Konversationserlebnisse über mehrere Kanäle hinweg bereitzustellen, wodurch die Funktionen des Swiss AI Hub überall dort zugänglich werden, wo Benutzer auf natürliche Weise arbeiten und zusammenarbeiten.
+Die Azure Bot Service-Integration nutzt das **Microsoft Bot Framework**, um einheitliche Konversationserlebnisse über
+mehrere Kanäle hinweg bereitzustellen, wodurch die Funktionen des Swiss AI Hub überall dort zugänglich werden, wo
+Benutzer auf natürliche Weise arbeiten und zusammenarbeiten.
 
 Die **Multi-Kanal-Bot-Architektur** ermöglicht konsistente KI-Interaktionen über folgende Kanäle hinweg:
 
@@ -20,7 +26,11 @@ Die **Multi-Kanal-Bot-Architektur** ermöglicht konsistente KI-Interaktionen üb
 - **Web Chat** – Browserbasierte Oberfläche für Tests und Entwicklung
 - **Erweiterbarer Kanal-Support** – Jede vom Bot Framework unterstützte Plattform
 
-Die **[Bot-in-the-Loop-Infrastruktur](../../../3_sdk/6_feature_overview/bot-in-the-loop/)** ermöglicht anspruchsvolle Mensch-KI-Kollaboration, indem sie KI-Agents befähigt, ihre Workflows zu pausieren und nahtlos menschliche Eingaben über Slack-Kanäle anzufordern. Wenn Agents Expertenwissen oder Genehmigungen benötigen, posten sie automatisch strukturierte Fragen in designierte Kanäle, erfassen die Antworten und setzen die Verarbeitung mit dem vom Menschen bereitgestellten Kontext fort.
+Die **[Bot-in-the-Loop-Infrastruktur](../../../3_sdk/6_feature_overview/bot-in-the-loop/)** ermöglicht anspruchsvolle
+Mensch-KI-Kollaboration, indem sie KI-Agents befähigt, ihre Workflows zu pausieren und nahtlos menschliche Eingaben über
+Slack-Kanäle anzufordern. Wenn Agents Expertenwissen oder Genehmigungen benötigen, posten sie automatisch strukturierte
+Fragen in designierte Kanäle, erfassen die Antworten und setzen die Verarbeitung mit dem vom Menschen bereitgestellten
+Kontext fort.
 
 **Intelligente Chatbot-Implementierungen** bieten mehrere Abschlussstrategien:
 
@@ -28,7 +38,9 @@ Die **[Bot-in-the-Loop-Infrastruktur](../../../3_sdk/6_feature_overview/bot-in-t
 - **OpenAI Chatbots** bieten direkte LLM-Integration für schnellere, einfachere Interaktionen
 - **Streaming-Support** liefert Echtzeit-Antwort-Updates mit Tippindikatoren über alle Kanäle hinweg
 
-Die **Infrastruktur auf Unternehmensniveau** umfasst die automatisierte Azure AD App-Registrierung, sichere Anmeldeinformationsverwaltung, Konversationspersistenz mit konfigurierbarer TTL und umfassende Audit-Trails für Compliance-Anforderungen.
+Die **Infrastruktur auf Unternehmensniveau** umfasst die automatisierte Azure AD App-Registrierung, sichere
+Anmeldeinformationsverwaltung, Konversationspersistenz mit konfigurierbarer TTL und umfassende Audit-Trails für
+Compliance-Anforderungen.
 
 **Schlüsseltechnologien:**
 
@@ -40,18 +52,31 @@ Die **Infrastruktur auf Unternehmensniveau** umfasst die automatisierte Azure AD
 
 ## Warum dies ein Wendepunkt für Ihre KI-Strategie ist :trophy:
 
-Die Azure Bot Service-Integration beseitigt die Reibung zwischen KI-Funktionen und Benutzerakzeptanz, indem sie Nutzer dort erreicht, wo sie bereits arbeiten:
+Die Azure Bot Service-Integration beseitigt die Reibung zwischen KI-Funktionen und Benutzerakzeptanz, indem sie Nutzer
+dort erreicht, wo sie bereits arbeiten:
 
-**🔄 Kein Kontextwechsel**: Benutzer greifen direkt in Microsoft Teams, Slack und anderen bekannten Kollaborationsplattformen auf KI-Unterstützung zu. Es ist nicht nötig, neue Oberflächen zu lernen oder etablierte Workflows zu unterbrechen – KI wird zu einem natürlichen Bestandteil der täglichen Zusammenarbeit.
+**🔄 Kein Kontextwechsel**: Benutzer greifen direkt in Microsoft Teams, Slack und anderen bekannten
+Kollaborationsplattformen auf KI-Unterstützung zu. Es ist nicht nötig, neue Oberflächen zu lernen oder etablierte
+Workflows zu unterbrechen – KI wird zu einem natürlichen Bestandteil der täglichen Zusammenarbeit.
 
-**🌐 Mehrkanal-Support auf Unternehmensebene**: Ein einziges Swiss AI Hub-Deployment bedient Benutzer über mehrere Kommunikationsplattformen hinweg gleichzeitig. Ob Teams Teams, Slack oder andere vom Bot Framework unterstützte Kanäle nutzen, jeder erhält konsistente KI-Unterstützung, die auf seine bevorzugte Kollaborationsumgebung zugeschnitten ist.
+**🌐 Mehrkanal-Support auf Unternehmensebene**: Ein einziges Swiss AI Hub-Deployment bedient Benutzer über mehrere
+Kommunikationsplattformen hinweg gleichzeitig. Ob Teams Teams, Slack oder andere vom Bot Framework unterstützte Kanäle
+nutzen, jeder erhält konsistente KI-Unterstützung, die auf seine bevorzugte Kollaborationsumgebung zugeschnitten ist.
 
-**⚡ Echtzeit-Streaming-Antworten**: Eine fortschrittliche Streaming-Implementierung bietet sofortiges Feedback mit Tippindikatoren, Teilantworten und inkrementellen Updates. Benutzer sehen, wie die KI in Echtzeit denkt und antwortet, wodurch natürliche Konversationsabläufe entstehen, die sich reaktionsschnell und ansprechend anfühlen.
+**⚡ Echtzeit-Streaming-Antworten**: Eine fortschrittliche Streaming-Implementierung bietet sofortiges Feedback mit
+Tippindikatoren, Teilantworten und inkrementellen Updates. Benutzer sehen, wie die KI in Echtzeit denkt und antwortet,
+wodurch natürliche Konversationsabläufe entstehen, die sich reaktionsschnell und ansprechend anfühlen.
 
-**🛡️ Sicherheit und Compliance auf Unternehmensebene**: Aufbauend auf Azure AD-Authentifizierung mit umfassenden Konversations-Audit-Trails, konfigurierbaren Aufbewahrungsrichtlinien und sicherer Anmeldeinformationsverwaltung. Alle Bot-Interaktionen werden protokolliert und sind nachvollziehbar, wodurch die Sicherheits- und Compliance-Anforderungen von Unternehmen erfüllt werden.
+**🛡️ Sicherheit und Compliance auf Unternehmensebene**: Aufbauend auf Azure AD-Authentifizierung mit umfassenden
+Konversations-Audit-Trails, konfigurierbaren Aufbewahrungsrichtlinien und sicherer Anmeldeinformationsverwaltung. Alle
+Bot-Interaktionen werden protokolliert und sind nachvollziehbar, wodurch die Sicherheits- und Compliance-Anforderungen
+von Unternehmen erfüllt werden.
 
-**🤝 Nahtlose Mensch-KI-Kollaboration**:
-Die [Bot-in-the-Loop-Infrastruktur](../../../3_sdk/6_feature_overview/bot-in-the-loop/) ermöglicht es KI-Agents, auf natürliche Weise an menschliche Experten über strukturierte Slack-Workflows zu eskalieren. Komplexe Entscheidungen, Genehmigungen und Wissenslücken werden reibungslos gehandhabt, ohne die Benutzererfahrung zu unterbrechen oder den Konversationskontext zu verlieren.
+**🤝 Nahtlose Mensch-KI-Kollaboration**: Die
+[Bot-in-the-Loop-Infrastruktur](../../../3_sdk/6_feature_overview/bot-in-the-loop/) ermöglicht es KI-Agents, auf
+natürliche Weise an menschliche Experten über strukturierte Slack-Workflows zu eskalieren. Komplexe Entscheidungen,
+Genehmigungen und Wissenslücken werden reibungslos gehandhabt, ohne die Benutzererfahrung zu unterbrechen oder den
+Konversationskontext zu verlieren.
 
 ::: details **Einrichtung und Nutzung der Azure Bot Service-Integration**
 ## Konfigurationsanforderungen
@@ -127,7 +152,8 @@ Die [Bot-in-the-Loop-Infrastruktur](../../../3_sdk/6_feature_overview/bot-in-the
 
 ### Slack Bot-in-the-Loop-Workflows
 
-Für detaillierte Informationen zu Bot-in-the-Loop-Workflows, einschliesslich Expertenkonsultationsprozessen, Kanal-Konfiguration und Agent-Integrationsmustern, siehe die dedizierte
+Für detaillierte Informationen zu Bot-in-the-Loop-Workflows, einschliesslich Expertenkonsultationsprozessen,
+Kanal-Konfiguration und Agent-Integrationsmustern, siehe die dedizierte
 [Bot-in-the-Loop-Dokumentation](../../../3_sdk/6_feature_overview/bot-in-the-loop/).
 
 ### Multi-Bot-Deployment
@@ -182,7 +208,8 @@ OpenaiChatBot(
 **Sicherheitsaspekte:**
 
 - **Azure AD-Authentifizierung**: Authentifizierung auf Unternehmensniveau mit rollenbasierter Zugriffskontrolle
-- **Sichere Speicherung von Anmeldeinformationen**: Bot-Anmeldeinformationen verschlüsselt in MongoDB/Cosmos DB gespeichert
+- **Sichere Speicherung von Anmeldeinformationen**: Bot-Anmeldeinformationen verschlüsselt in MongoDB/Cosmos DB
+  gespeichert
 - **Audit-Trails**: Vollständige Konversationshistorie mit Benutzerzuordnung und Zeitstempeln
 - **Netzwerksicherheit**: Unterstützung für private Endpunkte und VNet-Integration
 
@@ -206,9 +233,14 @@ OpenaiChatBot(
 
 Um die Azure Bot Service-Integration in Ihrem Swiss AI Hub-Deployment zu implementieren:
 
-1. **Azure Setup-Skript ausführen**: Nutzen Sie die bereitgestellte Automatisierung, um Azure Bot-Ressourcen zu erstellen und die Authentifizierung mit Ihrem bevorzugten Datenbank-Backend zu konfigurieren
-2. **Kanäle konfigurieren**: Richten Sie Microsoft Teams- und/oder Slack-Integrationen über die Kanal-Konfiguration im Azure-Portal ein
-3. **Bot-Implementierungen deployen**: Wählen Sie zwischen agenten-basierten Bots für komplexe Workflows oder OpenAI-basierten Bots für einfachere Interaktionen, mit Streaming-Support für eine verbesserte Benutzererfahrung
+1. **Azure Setup-Skript ausführen**: Nutzen Sie die bereitgestellte Automatisierung, um Azure Bot-Ressourcen zu
+   erstellen und die Authentifizierung mit Ihrem bevorzugten Datenbank-Backend zu konfigurieren
+2. **Kanäle konfigurieren**: Richten Sie Microsoft Teams- und/oder Slack-Integrationen über die Kanal-Konfiguration im
+   Azure-Portal ein
+3. **Bot-Implementierungen deployen**: Wählen Sie zwischen agenten-basierten Bots für komplexe Workflows oder
+   OpenAI-basierten Bots für einfachere Interaktionen, mit Streaming-Support für eine verbesserte Benutzererfahrung
 
 Für detaillierte Einrichtungsanweisungen, Fehlerbehebung und erweiterte Konfigurationsoptionen verweisen wir auf die
-[Bot-in-the-Loop-Dokumentation](../../../3_sdk/6_feature_overview/bot-in-the-loop/) für Mensch-KI-Kollaborations-Workflows, die [Expert Agents-Dokumentation](../../5_agents/3_expert_asking_agent/) für Wissenskonsultationsmuster und den Swiss AI Hub Bot Developer's Guide für Implementierungsdetails.
+[Bot-in-the-Loop-Dokumentation](../../../3_sdk/6_feature_overview/bot-in-the-loop/) für
+Mensch-KI-Kollaborations-Workflows, die [Expert Agents-Dokumentation](../../5_agents/3_expert_asking_agent/) für
+Wissenskonsultationsmuster und den Swiss AI Hub Bot Developer's Guide für Implementierungsdetails.

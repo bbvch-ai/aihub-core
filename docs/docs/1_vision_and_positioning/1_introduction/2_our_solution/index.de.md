@@ -1,19 +1,27 @@
 ---
 title: Unsere Lösung
-source_sha: "37dd4fc99b0207324ecfa918bfb1ac61a6dd6949736cf593ed8f98cbe2af5f67"
+source_sha: 37dd4fc99b0207324ecfa918bfb1ac61a6dd6949736cf593ed8f98cbe2af5f67
 ---
 
 # Unsere Lösung: KI-Infrastruktur für Unternehmen als Produkt
 
-Der Swiss AI Hub ist eine vollständige Open-Source-KI-Plattform, die Sie deployen, besitzen und kontrollieren. Es ist kein Service, den Sie abonnieren, oder ein Framework, auf dem Sie aufbauen – es ist eine produktionsreife Infrastruktur, die Ihnen gehört.
+Der Swiss AI Hub ist eine vollständige Open-Source-KI-Plattform, die Sie deployen, besitzen und kontrollieren. Es ist
+kein Service, den Sie abonnieren, oder ein Framework, auf dem Sie aufbauen – es ist eine produktionsreife Infrastruktur,
+die Ihnen gehört.
 
 ## Plattform + SDK: Das Komplettpaket
 
 Der Swiss AI Hub besteht aus zwei komplementären Teilen:
 
-**Die Plattform** ist Ihre KI-Infrastruktur. Sie ist unter Apache 2.0 lizenziert und umfasst alles, was für den Betrieb von KI in der Produktion erforderlich ist: LLM Gateway, Vektordatenbanken, Daten-Pipelines, Authentifizierung, Monitoring und Benutzeroberflächen. Deployen Sie sie mit `docker compose up` und Sie haben ein funktionierendes KI-System.
+**Die Plattform** ist Ihre KI-Infrastruktur. Sie ist unter Apache 2.0 lizenziert und umfasst alles, was für den Betrieb
+von KI in der Produktion erforderlich ist: LLM Gateway, Vektordatenbanken, Daten-Pipelines, Authentifizierung,
+Monitoring und Benutzeroberflächen. Deployen Sie sie mit `docker compose up` und Sie haben ein funktionierendes
+KI-System.
 
-**Das SDK** ist die Methode, wie Sie die Plattform erweitern. Es bietet die Muster, Tools und Frameworks zum Erstellen von Agents, Pipelines und Prozessen, die sich automatisch in die Plattform integrieren. Wenn Sie mit unserem SDK entwickeln, erben Ihre Komponenten alle Plattformfunktionen – sie benötigen kein kundenspezifisches Deployment, Monitoring oder Benutzerzugriff, da die Plattform dies übernimmt.
+**Das SDK** ist die Methode, wie Sie die Plattform erweitern. Es bietet die Muster, Tools und Frameworks zum Erstellen
+von Agents, Pipelines und Prozessen, die sich automatisch in die Plattform integrieren. Wenn Sie mit unserem SDK
+entwickeln, erben Ihre Komponenten alle Plattformfunktionen – sie benötigen kein kundenspezifisches Deployment,
+Monitoring oder Benutzerzugriff, da die Plattform dies übernimmt.
 
 ## Was Sie sofort erhalten
 
@@ -64,7 +72,8 @@ Alles läuft in Containern. Ein Befehl startet den gesamten Stack. Skalieren Sie
 :::
 
 ::: tip "Wo bleiben unsere Daten?"
-Dort, wo Sie es deployen. Betreiben Sie es On-Premise, in einem Schweizer Rechenzentrum oder in Ihrer bevorzugten Cloud. Ihre Infrastruktur, Ihre Kontrolle.
+Dort, wo Sie es deployen. Betreiben Sie es On-Premise, in einem Schweizer Rechenzentrum oder in Ihrer bevorzugten Cloud.
+Ihre Infrastruktur, Ihre Kontrolle.
 :::
 
 ::: tip "Können wir verfolgen, was die KI tut?"
@@ -72,11 +81,13 @@ Jede Agent-Aktion wird durch Langfuse getraced. Jeder API-Aufruf wird geloggt. J
 :::
 
 ::: tip "Wie kontrollieren wir die Kosten?"
-LiteLLM bietet eine einheitliche Kostenverfolgung über alle Modelle hinweg. Legen Sie Limits pro Benutzer, Team oder global fest.
+LiteLLM bietet eine einheitliche Kostenverfolgung über alle Modelle hinweg. Legen Sie Limits pro Benutzer, Team oder
+global fest.
 :::
 
 ::: tip "Was passiert, wenn es fehlschlägt?"
-Integrierte Fehlerbehandlung, automatisches Failover zwischen Modellen und anmutige Degradation zur menschlichen Überprüfung.
+Integrierte Fehlerbehandlung, automatisches Failover zwischen Modellen und anmutige Degradation zur menschlichen
+Überprüfung.
 :::
 
 ::: tip "Wie greifen Benutzer tatsächlich darauf zu?"
@@ -84,7 +95,8 @@ Integrierte Fehlerbehandlung, automatisches Failover zwischen Modellen und anmut
 :::
 
 ::: tip "Können wir es in unsere bestehenden Tools integrieren?"
-OpenAI-kompatible API für Tool-Kompatibilität. Ereignisgesteuerte Architektur für kundenspezifische Integrationen. Webhook-Endpunkte für externe Systeme.
+OpenAI-kompatible API für Tool-Kompatibilität. Ereignisgesteuerte Architektur für kundenspezifische Integrationen.
+Webhook-Endpunkte für externe Systeme.
 :::
 
 ## Warum Open Source alles verändert
@@ -99,7 +111,8 @@ Die Apache 2.0-Lizenz bedeutet, dass Sie keine Plattform adaptieren – Sie erwe
 
 ## Der SDK-Vorteil
 
-Während die Plattform die Infrastrukturprobleme löst, reduziert das SDK die Entwicklungskomplexität. Das Bauen mit unserem SDK bedeutet, dass Ihre Agents automatisch:
+Während die Plattform die Infrastrukturprobleme löst, reduziert das SDK die Entwicklungskomplexität. Das Bauen mit
+unserem SDK bedeutet, dass Ihre Agents automatisch:
 
 - Echtzeit-Updates an Benutzer über WebSocket-Verbindungen streamen
 - Im Chat-Interface ohne kundenspezifische UI-Entwicklung erscheinen
@@ -121,6 +134,7 @@ So sieht das Deployment Ihrer ersten KI-Funktion aus:
 5. **Verbinden Sie Ihre Datenquellen** über das Admin-Interface
 6. **Erstellen Sie bei Bedarf kundenspezifische Agents** mit SDK-Mustern
 
-Keine Infrastruktur-Einrichtung. Keine Service-Bereitstellung. Keine komplexen Konfigurationen. Die Plattform ist vom ersten Tag an produktionsbereit.
+Keine Infrastruktur-Einrichtung. Keine Service-Bereitstellung. Keine komplexen Konfigurationen. Die Plattform ist vom
+ersten Tag an produktionsbereit.
 
 Dies ist Infrastruktur als Produkt: vollständig, funktional und bereit für Ihre Weiterentwicklung.

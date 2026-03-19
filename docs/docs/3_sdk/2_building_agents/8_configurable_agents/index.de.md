@@ -1,18 +1,19 @@
 ---
 title: Konfigurierbare Agentenformulare
-source_sha: "dea97b0c7cdd335029ac01267a55446be0916c7917b4a9f4203f1d243a988883"
+source_sha: dea97b0c7cdd335029ac01267a55446be0916c7917b4a9f4203f1d243a988883
 ---
 
 # Konfigurierbare Agentenformulare
 
-Dieser Leitfaden erklärt, wie Sie Agenten-Konfigurationsformulare definieren, die es Administratoren ermöglichen, Agentenprofile ohne Codeänderungen zu erstellen und anzupassen.
+Dieser Leitfaden erklärt, wie Sie Agenten-Konfigurationsformulare definieren, die es Administratoren ermöglichen,
+Agentenprofile ohne Codeänderungen zu erstellen und anzupassen.
 
 ## Überblick
 
 Das SDK verwendet das **Formular-Dualitätsmuster**, bei dem ein einziges Pydantic-Modell zwei Zwecken dient:
 
-1.  **Formularmodus**: Felder enthalten `FormkitElement`-Instanzen, die das UI-Formular definieren
-2.  **Datenmodus**: Felder enthalten primitive Werte, die die validierte Konfiguration speichern
+1. **Formularmodus**: Felder enthalten `FormkitElement`-Instanzen, die das UI-Formular definieren
+2. **Datenmodus**: Felder enthalten primitive Werte, die die validierte Konfiguration speichern
 
 Dieses Muster stellt sicher, dass das Formularschema und das Datenmodell nicht desynchronisiert werden können.
 
@@ -87,7 +88,9 @@ async def main():
     await runner.run_forever()
 ```
 
-Der Aufruf von `as_form()` erstellt eine Konfigurationsinstanz im Formularmodus. Wenn der Agent sich über Discovery registriert, wird das Formularschema extrahiert und gespeichert. Administratoren können dann Profile über die Admin-Benutzeroberfläche erstellen.
+Der Aufruf von `as_form()` erstellt eine Konfigurationsinstanz im Formularmodus. Wenn der Agent sich über Discovery
+registriert, wird das Formularschema extrahiert und gespeichert. Administratoren können dann Profile über die
+Admin-Benutzeroberfläche erstellen.
 
 ## Verfügbare FormKit-Elemente
 
@@ -188,7 +191,8 @@ Das `ModelSelect`-Element wird zur Laufzeit automatisch aus dem LiteLLM-Modellre
 
 ## Formularsichere Constraints
 
-Standard-Pydantic-Constraints (`Field(ge=0, le=1)`) funktionieren nicht mit dem Dualitätsmuster, da sie `FormkitElement`-Typen nicht validieren können. Verwenden Sie stattdessen die vom SDK bereitgestellten Constraints:
+Standard-Pydantic-Constraints (`Field(ge=0, le=1)`) funktionieren nicht mit dem Dualitätsmuster, da sie
+`FormkitElement`-Typen nicht validieren können. Verwenden Sie stattdessen die vom SDK bereitgestellten Constraints:
 
 ```python
 from swiss_ai_hub.core.form.constraints import Ge, Le, Gt, Lt, MinLen, MaxLen, Pattern
@@ -202,11 +206,13 @@ api_key: Annotated[str | InputText, MinLen(10), MaxLen(100)] = ""
 agent_id: Annotated[str | InputText, Pattern(r"^[a-z0-9_-]+$")] = ""
 ```
 
-Diese Constraints überspringen die Validierung, wenn das Feld ein `FormkitElement` enthält, wodurch die Pydantic-Validierung in beiden Modi funktioniert.
+Diese Constraints überspringen die Validierung, wenn das Feld ein `FormkitElement` enthält, wodurch die
+Pydantic-Validierung in beiden Modi funktioniert.
 
 ## Nicht-konfigurierbare Felder
 
-Einige Felder sollten nicht im Formular erscheinen (bereitstellungsspezifische Konfiguration). Lassen Sie die FormKit-Element-Alternative weg:
+Einige Felder sollten nicht im Formular erscheinen (bereitstellungsspezifische Konfiguration). Lassen Sie die
+FormKit-Element-Alternative weg:
 
 ```python
 class MyAgentConfig(AgentConfig):
@@ -229,7 +235,8 @@ class MyAgentConfig(AgentConfig):
         )
 ```
 
-Nicht-konfigurierbare Felder werden zur Laufzeit mit der vom Benutzer übermittelten Konfiguration zusammengeführt. Das Formular zeigt nur konfigurierbare Felder an.
+Nicht-konfigurierbare Felder werden zur Laufzeit mit der vom Benutzer übermittelten Konfiguration zusammengeführt. Das
+Formular zeigt nur konfigurierbare Felder an.
 
 ## Verschachtelte Formulare
 
@@ -307,7 +314,8 @@ class MyAgentConfig(AgentConfig):
         )
 ```
 
-Listen von Formularen werden als `Repeater`-Elemente gerendert, die es Benutzern ermöglichen, Elemente dynamisch hinzuzufügen/zu entfernen.
+Listen von Formularen werden als `Repeater`-Elemente gerendert, die es Benutzern ermöglichen, Elemente dynamisch
+hinzuzufügen/zu entfernen.
 
 ## Zugriff auf Konfiguration in Schritten
 
@@ -334,7 +342,8 @@ class MyAgent(Agent):
         # ...
 ```
 
-Die Konfiguration wird über RPC abgerufen, wenn der Agent ein `StartEvent` erhält, gegen das Pydantic-Modell validiert und für die Dauer des Laufs zwischengespeichert.
+Die Konfiguration wird über RPC abgerufen, wenn der Agent ein `StartEvent` erhält, gegen das Pydantic-Modell validiert
+und für die Dauer des Laufs zwischengespeichert.
 
 ## Bedingte Feldsichtbarkeit
 
@@ -352,7 +361,8 @@ custom_prompt=InputText(
 )
 ```
 
-Der Parameter `condition_if` verwendet die Ausdruckssyntax von FormKit. Das Feld wird nur angezeigt, wenn die Bedingung als wahr ausgewertet wird.
+Der Parameter `condition_if` verwendet die Ausdruckssyntax von FormKit. Das Feld wird nur angezeigt, wenn die Bedingung
+als wahr ausgewertet wird.
 
 ## Vollständiges Beispiel
 

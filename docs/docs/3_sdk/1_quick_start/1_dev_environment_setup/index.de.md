@@ -1,13 +1,14 @@
 ---
 title: Einrichtung der Entwicklungsumgebung
-source_sha: "8d36d7aeab4d3bcc6d16bd8738c61c79e2ef7c121277841d25f1730b0248d2d4"
+source_sha: 8d36d7aeab4d3bcc6d16bd8738c61c79e2ef7c121277841d25f1730b0248d2d4
 ---
 
 [@mhoegger](https://github.com/mhoegger)
 
 # Einrichtung der Entwicklungsumgebung: Ihre ersten 15 Minuten mit dem SDK
 
-Der Einstieg in das Swiss AI Hub SDK ist unkompliziert. Innerhalb von 15 Minuten verfügen Sie über eine vollständige Entwicklungsumgebung, in der Ihr erster benutzerdefinierter Agent echte Anfragen verarbeitet.
+Der Einstieg in das Swiss AI Hub SDK ist unkompliziert. Innerhalb von 15 Minuten verfügen Sie über eine vollständige
+Entwicklungsumgebung, in der Ihr erster benutzerdefinierter Agent echte Anfragen verarbeitet.
 
 ## Voraussetzungsprüfung
 
@@ -65,7 +66,8 @@ Erstellen Sie den Entwicklungsinfrastruktur-Stack:
 uv run swiss-ai-hub generate-compose
 ```
 
-Dies erstellt `docker-compose.platform.dev.yml` mit allen Services, die Sie benötigen: NATS-Messaging, MongoDB, Redis, Vektordatenbanken und die Swiss AI Hub Plattformkomponenten.
+Dies erstellt `docker-compose.platform.dev.yml` mit allen Services, die Sie benötigen: NATS-Messaging, MongoDB, Redis,
+Vektordatenbanken und die Swiss AI Hub Plattformkomponenten.
 
 ### Schritt 4: Umgebung konfigurieren
 
@@ -75,7 +77,8 @@ Generieren Sie die Umgebungskonfiguration:
 uv run swiss-ai-hub generate-env
 ```
 
-Dies erstellt `.env` mit sinnvollen Standardeinstellungen. Sie sehen Platzhalterwerte für die OAuth2-Konfiguration – wir verwenden vorerst den Entwicklungsmodus, daher können Sie diese für erste Tests unverändert lassen.
+Dies erstellt `.env` mit sinnvollen Standardeinstellungen. Sie sehen Platzhalterwerte für die OAuth2-Konfiguration – wir
+verwenden vorerst den Entwicklungsmodus, daher können Sie diese für erste Tests unverändert lassen.
 
 ## Plattform starten: 5 Minuten
 
@@ -85,7 +88,8 @@ Starten Sie die vollständige Swiss AI Hub Plattform:
 docker compose -f infra/docker-compose.dev.yml --env-file .env up -d
 ```
 
-Warten Sie, bis alle Services gestartet sind (beobachten Sie die Logs mit `docker compose logs -f`, wenn Sie den Startvorgang sehen möchten).
+Warten Sie, bis alle Services gestartet sind (beobachten Sie die Logs mit `docker compose logs -f`, wenn Sie den
+Startvorgang sehen möchten).
 
 **Überprüfen Sie, ob die Plattform läuft:**
 
@@ -93,7 +97,8 @@ Warten Sie, bis alle Services gestartet sind (beobachten Sie die Logs mit `docke
 - Sie werden feststellen, dass noch keine Agents verfügbar sind – das ist zu erwarten!
 
 ::: warning Häufiges Startproblem
-Sollten Services nicht starten, überprüfen Sie, ob die Ports 8080, 27017, 6379 und 4222 nicht bereits auf Ihrem System verwendet werden.
+Sollten Services nicht starten, überprüfen Sie, ob die Ports 8080, 27017, 6379 und 4222 nicht bereits auf Ihrem System
+verwendet werden.
 :::
 
 ## Erstellen Sie Ihren ersten Agent: 5 Minuten
@@ -142,7 +147,8 @@ Generieren Sie eine Docker-Compose-Datei, die Ihren Agenten enthält:
 uv run swiss-ai-hub generate-agent-compose --with-agent my_custom_agent
 ```
 
-Dies erstellt `docker-compose-agents.dev.yml` mit Ihrem Agenten, der für die Entwicklung konfiguriert ist (Hot Reload inbegriffen).
+Dies erstellt `docker-compose-agents.dev.yml` mit Ihrem Agenten, der für die Entwicklung konfiguriert ist (Hot Reload
+inbegriffen).
 
 Erstellen Sie eine grundlegende `.env`-Datei für die Agent-Konfiguration:
 
@@ -160,22 +166,28 @@ docker compose \
 
 ### Schritt 1: Überprüfen Sie die Agent-Registrierung
 
-Überprüfen Sie die Weboberfläche unter `http://localhost:8080`. Sie sollten nun Ihren `my_custom_agent` Agenten in den Agents aufgeführt sehen, und er wird als `online` angezeigt.
+Überprüfen Sie die Weboberfläche unter `http://localhost:8080`. Sie sollten nun Ihren `my_custom_agent` Agenten in den
+Agents aufgeführt sehen, und er wird als `online` angezeigt.
 
 ### Schritt 2: Testen Sie die Agent-Interaktion
 
-Klicken Sie auf Ihren Agenten und senden Sie eine Testnachricht. Sie sollten eine Antwort erhalten, die zeigt, dass Ihr Agent die Anfrage verarbeitet hat.
+Klicken Sie auf Ihren Agenten und senden Sie eine Testnachricht. Sie sollten eine Antwort erhalten, die zeigt, dass Ihr
+Agent die Anfrage verarbeitet hat.
 
 ### Schritt 3: Beobachten Sie das Agent-Verhalten
 
-Besuchen Sie `http://localhost:6006`, um das Langfuse-Tracing zu sehen. Sie sehen detaillierte Traces der Ausführung Ihres Agenten, die jeden Schritt sowie dessen Ein- und Ausgaben zeigen.
+Besuchen Sie `http://localhost:6006`, um das Langfuse-Tracing zu sehen. Sie sehen detaillierte Traces der Ausführung
+Ihres Agenten, die jeden Schritt sowie dessen Ein- und Ausgaben zeigen.
 
 ## Was ist gerade passiert?
 
 In 15 Minuten haben Sie etwas Bemerkenswertes erreicht:
 
-**Komplette KI-Plattform:** Sie betreiben eine vollständige Enterprise-KI-Plattform mit Authentifizierung, Monitoring, Kostenverfolgung und Observability.
+**Komplette KI-Plattform:** Sie betreiben eine vollständige Enterprise-KI-Plattform mit Authentifizierung, Monitoring,
+Kostenverfolgung und Observability.
 
-**Benutzerdefinierte Agent-Integration:** Ihr benutzerdefinierter Agent erbt automatisch alle Plattformfunktionen – er erscheint in der Web-UI, verarbeitet Anfragen und verfolgt seine Ausführung ohne zusätzliche Konfiguration.
+**Benutzerdefinierte Agent-Integration:** Ihr benutzerdefinierter Agent erbt automatisch alle Plattformfunktionen – er
+erscheint in der Web-UI, verarbeitet Anfragen und verfolgt seine Ausführung ohne zusätzliche Konfiguration.
 
-**Entwicklungsbereite Umgebung:** Das Hot-Reload-Setup bedeutet, dass Sie Ihren Agent-Code ändern und Änderungen sofort sehen können, ohne Container neu erstellen zu müssen.
+**Entwicklungsbereite Umgebung:** Das Hot-Reload-Setup bedeutet, dass Sie Ihren Agent-Code ändern und Änderungen sofort
+sehen können, ohne Container neu erstellen zu müssen.

@@ -1,19 +1,28 @@
 ---
 title: Agentenspeicher
-source_sha: "7b36ac47b5673ef0fec9ce838baebc5f4a215e65a54cb46103bc10c73d5a044c"
+source_sha: 7b36ac47b5673ef0fec9ce838baebc5f4a215e65a54cb46103bc10c73d5a044c
 ---
 
 # Agentenspeicher
 
-Agentenspeicher ermöglicht langfristige Personalisierung und den Austausch von Organisationswissen, der über die Chat-Historie einer einzelnen Sitzung hinausgeht. Das SDK bietet zwei unterschiedliche Speicherbereiche: Benutzerspeicher für private, benutzerspezifische Präferenzen und Organisationsspeicher für gemeinsame, mandantenweite Fakten.
+Agentenspeicher ermöglicht langfristige Personalisierung und den Austausch von Organisationswissen, der über die
+Chat-Historie einer einzelnen Sitzung hinausgeht. Das SDK bietet zwei unterschiedliche Speicherbereiche:
+Benutzerspeicher für private, benutzerspezifische Präferenzen und Organisationsspeicher für gemeinsame, mandantenweite
+Fakten.
 
 Der Speicher wird über Dependency Injection und dedizierte Events automatisch in Agenten-Workflows integriert.
 
 ## Zwei Speicherbereiche
 
-Der Benutzerspeicher ist privat für einzelne Benutzer und wird automatisch von der LLM aus Konversationsnachrichten extrahiert. Er speichert persönliche Präferenzen, Arbeitsstile und individuellen Kontext – Dinge wie "Benutzer bevorzugt prägnante Codebeispiele in Python." Sowohl Vektor- (semantische Suche) als auch Graph-Speicher (Beziehungen) ermöglichen den Abruf.
+Der Benutzerspeicher ist privat für einzelne Benutzer und wird automatisch von der LLM aus Konversationsnachrichten
+extrahiert. Er speichert persönliche Präferenzen, Arbeitsstile und individuellen Kontext – Dinge wie "Benutzer bevorzugt
+prägnante Codebeispiele in Python." Sowohl Vektor- (semantische Suche) als auch Graph-Speicher (Beziehungen) ermöglichen
+den Abruf.
 
-Der Organisationsspeicher wird von allen Benutzern in einem Mandanten oder Namespace geteilt. Im Gegensatz zum Benutzerspeicher erfordert er eine explizite Dokumentation anstelle einer automatischen Inferenz. Er speichert Unternehmensrichtlinien, Projektdetails und Teamkonventionen – Dinge wie "Wir deployen freitags in die Produktion." Derselbe Vektor- und Graph-Speicher unterstützt den semantischen und relationalen Abruf.
+Der Organisationsspeicher wird von allen Benutzern in einem Mandanten oder Namespace geteilt. Im Gegensatz zum
+Benutzerspeicher erfordert er eine explizite Dokumentation anstelle einer automatischen Inferenz. Er speichert
+Unternehmensrichtlinien, Projektdetails und Teamkonventionen – Dinge wie "Wir deployen freitags in die Produktion."
+Derselbe Vektor- und Graph-Speicher unterstützt den semantischen und relationalen Abruf.
 
 ## Speicher-Workflow-Muster
 
@@ -32,16 +41,22 @@ graph LR
     I --> J[StopEvent]
 ```
 
-Das Muster ruft relevante Speicher ab, injiziert sie als Systemnachricht in die Chat-Historie, generiert eine speicherbewusste Antwort und speichert neue Erkenntnisse dauerhaft.
+Das Muster ruft relevante Speicher ab, injiziert sie als Systemnachricht in die Chat-Historie, generiert eine
+speicherbewusste Antwort und speichert neue Erkenntnisse dauerhaft.
 
 ## Benutzerspeicher-Muster
 
-Der Benutzerspeicher lernt persönliche Präferenzen automatisch aus Konversationen. Der Agent extrahiert Fakten über den Arbeitsstil des Benutzers, ohne explizite Dokumentation zu erfordern. Verwenden Sie dieses Muster für Konversations-Agents, die sich im Laufe der Zeit an individuelle Benutzerpräferenzen anpassen sollen – Code-Assistenten, persönliche Produktivitäts-Agents, benutzerdefinierte Assistenten.
+Der Benutzerspeicher lernt persönliche Präferenzen automatisch aus Konversationen. Der Agent extrahiert Fakten über den
+Arbeitsstil des Benutzers, ohne explizite Dokumentation zu erfordern. Verwenden Sie dieses Muster für
+Konversations-Agents, die sich im Laufe der Zeit an individuelle Benutzerpräferenzen anpassen sollen – Code-Assistenten,
+persönliche Produktivitäts-Agents, benutzerdefinierte Assistenten.
 
 Referenzimplementierung: `playground/minimal_workflow/user_memory_workflow/`
 
 ::: warning Die Beendigungskonstante
-Wenn die Speicherdauerhaftigkeit von der LLM-Ausgabe abhängt, darf der LLM-Schritt **kein** `StopEvent` zurückgeben. Wenn `as_stop_step=True` gesetzt ist, terminiert der Workflow sofort mit einem `LLMStopEvent` — der Speicherschritt wird nie ausgeführt.
+Wenn die Speicherdauerhaftigkeit von der LLM-Ausgabe abhängt, darf der LLM-Schritt **kein** `StopEvent` zurückgeben.
+Wenn `as_stop_step=True` gesetzt ist, terminiert der Workflow sofort mit einem `LLMStopEvent` — der Speicherschritt wird
+nie ausgeführt.
 
 ```python
 # INCORRECT: LLMStopEvent terminates before storage
@@ -68,7 +83,8 @@ async def stop_step(self, _: StoreUserMemoryEvent) -> StopEvent:
     return StopEvent()
 ```
 
-Siehe [Die Verletzung des "Dangling Stop"](/de/docs/9_execution_model/#the-dangling-stop-violation) für die allgemeine Regel.
+Siehe [Die Verletzung des "Dangling Stop"](/de/docs/9_execution_model/#the-dangling-stop-violation) für die allgemeine
+Regel.
 :::
 
 ### Vollständiges Beispiel
@@ -206,7 +222,9 @@ async def retrieve_memory_step(
 
 #### Speicherabruf
 
-`search_user_memory()` führt eine semantische Suche im privaten Benutzerspeicher durch. Sie nimmt die Suchanfrage (typischerweise die aktuelle Nachricht des Benutzers), die Benutzer-ID und ein optionales Limit (Standard: 100) entgegen. Sie gibt ein `MemorySearchResult` zurück, das Speicher und Beziehungen enthält.
+`search_user_memory()` führt eine semantische Suche im privaten Benutzerspeicher durch. Sie nimmt die Suchanfrage
+(typischerweise die aktuelle Nachricht des Benutzers), die Benutzer-ID und ein optionales Limit (Standard: 100)
+entgegen. Sie gibt ein `MemorySearchResult` zurück, das Speicher und Beziehungen enthält.
 
 #### Erweiterung der Chat-Historie
 
@@ -222,7 +240,9 @@ extended_chat_history = extend_chat_history_with_user_memory(
 )
 ```
 
-LLMs behandeln Systemnachrichten als maßgebliche Hintergrundinformationen, daher werden Erinnerungen als optionaler Kontext präsentiert, den die LLM je nach Relevanz verwenden kann oder nicht. Die Erinnerungen werden nach bestehenden Systemnachrichten (Agenten-Persönlichkeit/Verhalten), aber vor Benutzernachrichten eingefügt.
+LLMs behandeln Systemnachrichten als maßgebliche Hintergrundinformationen, daher werden Erinnerungen als optionaler
+Kontext präsentiert, den die LLM je nach Relevanz verwenden kann oder nicht. Die Erinnerungen werden nach bestehenden
+Systemnachrichten (Agenten-Persönlichkeit/Verhalten), aber vor Benutzernachrichten eingefügt.
 
 #### Speicherpersistenz
 
@@ -238,11 +258,15 @@ memory_added = await memory.add_user_memory(
 )
 ```
 
-Die LLM analysiert die Konversation und extrahiert Fakten wie "Benutzer bevorzugt Python gegenüber JavaScript", ohne die gesamte Konversation zu speichern.
+Die LLM analysiert die Konversation und extrahiert Fakten wie "Benutzer bevorzugt Python gegenüber JavaScript", ohne die
+gesamte Konversation zu speichern.
 
 ## Organisationsspeicher-Muster
 
-Der Organisationsspeicher speichert explizites, gemeinsames Organisationswissen. Im Gegensatz zum Benutzerspeicher (der abgeleitet wird) erfordert der Organisationsspeicher, dass Benutzer Fakten absichtlich dokumentieren. Verwenden Sie dieses Muster für Agents, die gemeinsam genutzten organisatorischen Kontext verwalten – Teamkonventionen, Projektdokumentation, Unternehmensrichtlinien oder technische Fakten, die alle Benutzer kennen sollten.
+Der Organisationsspeicher speichert explizites, gemeinsames Organisationswissen. Im Gegensatz zum Benutzerspeicher (der
+abgeleitet wird) erfordert der Organisationsspeicher, dass Benutzer Fakten absichtlich dokumentieren. Verwenden Sie
+dieses Muster für Agents, die gemeinsam genutzten organisatorischen Kontext verwalten – Teamkonventionen,
+Projektdokumentation, Unternehmensrichtlinien oder technische Fakten, die alle Benutzer kennen sollten.
 
 Referenzimplementierung: `playground/minimal_workflow/organization_memory_workflow/`
 
@@ -377,7 +401,8 @@ memory_added = await memory.add_organization_memory(
 )
 ```
 
-Organisationserinnerungen betreffen alle Benutzer, daher gewährleistet eine explizite Dokumentation Genauigkeit und Intentionalität. Dies verhindert die unbeabsichtigte Erstellung von Richtlinien aus informellen Gesprächen.
+Organisationserinnerungen betreffen alle Benutzer, daher gewährleistet eine explizite Dokumentation Genauigkeit und
+Intentionalität. Dies verhindert die unbeabsichtigte Erstellung von Richtlinien aus informellen Gesprächen.
 
 #### Mandanten-Bereichsabgrenzung
 
@@ -392,26 +417,30 @@ memory_search_result = await memory.search_organization_memory(
 )
 ```
 
-Der Namespace-Parameter grenzt Speicher auf Abteilungen ab. "Engineering" könnte technische Dokumentation und Deployment-Verfahren enthalten, "Sales" könnte Produktpreise und Kundensegmente enthalten, und `None` zeigt globales Mandantenwissen an.
+Der Namespace-Parameter grenzt Speicher auf Abteilungen ab. "Engineering" könnte technische Dokumentation und
+Deployment-Verfahren enthalten, "Sales" könnte Produktpreise und Kundensegmente enthalten, und `None` zeigt globales
+Mandantenwissen an.
 
 #### Gemeinsame Sichtbarkeit
 
-Abgerufene Speicher sind für alle Benutzer im Mandanten/Namespace sichtbar, nicht nur für den Benutzer, der sie erstellt hat.
+Abgerufene Speicher sind für alle Benutzer im Mandanten/Namespace sichtbar, nicht nur für den Benutzer, der sie erstellt
+hat.
 
 ## Speicher-Events
 
 Das Speichersystem bietet sechs spezialisierte Events für die Workflow-Steuerung:
 
-| Event-Typ                                 | Zweck                                             |
-| :---------------------------------------- | :------------------------------------------------ |
-| `RetrieveUserMemoryEvent`                 | Enthält abgerufene Benutzerspeicher               |
-| `RetrieveOrganizationMemoryEvent`         | Enthält abgerufene Organisationsspeicher          |
-| `AddUserMemoryToChatHistoryEvent`         | Enthält Chat-Historie mit injiziertem Benutzerspeicher |
+| Event-Typ                                 | Zweck                                                       |
+| :---------------------------------------- | :---------------------------------------------------------- |
+| `RetrieveUserMemoryEvent`                 | Enthält abgerufene Benutzerspeicher                         |
+| `RetrieveOrganizationMemoryEvent`         | Enthält abgerufene Organisationsspeicher                    |
+| `AddUserMemoryToChatHistoryEvent`         | Enthält Chat-Historie mit injiziertem Benutzerspeicher      |
 | `AddOrganizationMemoryToChatHistoryEvent` | Enthält Chat-Historie mit injiziertem Organisationsspeicher |
-| `StoreUserMemoryEvent`                    | Bestätigt Benutzerspeicher-Persistenz             |
-| `StoreOrganizationMemoryEvent`            | Bestätigt Organisationsspeicher-Persistenz        |
+| `StoreUserMemoryEvent`                    | Bestätigt Benutzerspeicher-Persistenz                       |
+| `StoreOrganizationMemoryEvent`            | Bestätigt Organisationsspeicher-Persistenz                  |
 
-Speicherabruf und -speicherung senden automatisch Display-Events für die Observability. Diese erscheinen im Swiss AI Agent Protocol Trace und erfordern keine spezielle Behandlung.
+Speicherabruf und -speicherung senden automatisch Display-Events für die Observability. Diese erscheinen im Swiss AI
+Agent Protocol Trace und erfordern keine spezielle Behandlung.
 
 ## Kombination von Benutzer- und Organisationsspeicher
 
@@ -465,7 +494,8 @@ class HybridMemoryAgent(Agent):
         return CombinedMemoryEvent(extended_history=chat_history)
 ```
 
-Die Reihenfolge ist wichtig: Benutzerspeicher werden zuerst hinzugefügt (allgemeinerer Kontext), dann Organisationsspeicher (spezifische Fakten).
+Die Reihenfolge ist wichtig: Benutzerspeicher werden zuerst hinzugefügt (allgemeinerer Kontext), dann
+Organisationsspeicher (spezifische Fakten).
 
 ## Erweiterte Nutzung
 
@@ -487,7 +517,9 @@ async def retrieve_memory_step(
     return RetrieveUserMemoryEvent.from_memory_search_result(result)
 ```
 
-Thread-spezifische Filterung unterstützt Anwendungsfälle wie "Erinnerung an das, was wir in dieser Konversation besprochen haben". Agenten-spezifische Filterung verhindert, dass ein Code-Assistent Erinnerungen sieht, die von einem RAG-Agenten erstellt wurden.
+Thread-spezifische Filterung unterstützt Anwendungsfälle wie "Erinnerung an das, was wir in dieser Konversation
+besprochen haben". Agenten-spezifische Filterung verhindert, dass ein Code-Assistent Erinnerungen sieht, die von einem
+RAG-Agenten erstellt wurden.
 
 ### Benutzerdefinierte Speicher-Extraktion
 
@@ -511,11 +543,13 @@ class SpecializedMemoryAgent(Agent):
         return StoreUserMemoryEvent.from_memory_added_object(memory_added)
 ```
 
-Code-Assistenten extrahieren technische Präferenzen, RAG-Agents extrahieren Domäneninteressen – alles automatisch basierend auf dem Agenten-Typ.
+Code-Assistenten extrahieren technische Präferenzen, RAG-Agents extrahieren Domäneninteressen – alles automatisch
+basierend auf dem Agenten-Typ.
 
 ### Konfigurationsgesteuerter Speicher
 
-Produktions-Agents machen Speicherfunktionen oft über Konfigurations-Flags optional. Verwenden Sie Vorbedingungen, um Speicherschritte basierend auf der Konfiguration zu steuern und Race Conditions mit optionalen Events zu verhindern:
+Produktions-Agents machen Speicherfunktionen oft über Konfigurations-Flags optional. Verwenden Sie Vorbedingungen, um
+Speicherschritte basierend auf der Konfiguration zu steuern und Race Conditions mit optionalen Events zu verhindern:
 
 ```python
 from swiss_ai_hub.agent.workflow.decorators.precondition import precondition
@@ -544,22 +578,42 @@ def check_storage_complete(
     return True
 ```
 
-Die Vorbedingung `check_memory_ready` blockiert den Schritt zur Historien-Erweiterung, bis alle aktivierten Speichertypen abgerufen wurden. Die Vorbedingung `check_storage_complete` blockiert den letzten Stop-Schritt, bis die Speicherung abgeschlossen ist (falls aktiviert). Dies verhindert die [optionale Parameterfalle](/de/docs/9_execution_model/#the-optional-parameter-trap), bei der Schritte vorzeitig mit `None`-Werten ausgeführt werden.
+Die Vorbedingung `check_memory_ready` blockiert den Schritt zur Historien-Erweiterung, bis alle aktivierten
+Speichertypen abgerufen wurden. Die Vorbedingung `check_storage_complete` blockiert den letzten Stop-Schritt, bis die
+Speicherung abgeschlossen ist (falls aktiviert). Dies verhindert die
+[optionale Parameterfalle](/de/docs/9_execution_model/#the-optional-parameter-trap), bei der Schritte vorzeitig mit
+`None`-Werten ausgeführt werden.
 
 ## Observability
 
-Alle Speicheroperationen werden automatisch im Observability Dashboard nachverfolgt. Abruf-Traces zeigen die Anfrage, zurückgegebene Speicher und Relevanzbewertungen. Speicher-Traces zeigen extrahierte Speicher, Beziehungen und Metadaten. Die Erweiterung der Chat-Historie zeigt die Systemnachricht mit dem Speicherinhalt an.
+Alle Speicheroperationen werden automatisch im Observability Dashboard nachverfolgt. Abruf-Traces zeigen die Anfrage,
+zurückgegebene Speicher und Relevanzbewertungen. Speicher-Traces zeigen extrahierte Speicher, Beziehungen und Metadaten.
+Die Erweiterung der Chat-Historie zeigt die Systemnachricht mit dem Speicherinhalt an.
 
-Alle Speicher speichern den vollständigen Swiss AI Agent Protocol-Kontext: `agent_id` (welcher Agent den Speicher erstellt hat), `thread_id` (welcher Konversations-Thread), `display_id` (UI-Anzeigekontext), `run_id` (Workflow-Ausführungs-ID) und `user_id` (wem der Speicher gehört oder wer ihn dokumentiert hat). Dies ermöglicht eine vollständige Auditierbarkeit – Sie können nachvollziehen, welche Konversation dem Agenten eine bestimmte Präferenz beigebracht hat.
+Alle Speicher speichern den vollständigen Swiss AI Agent Protocol-Kontext: `agent_id` (welcher Agent den Speicher
+erstellt hat), `thread_id` (welcher Konversations-Thread), `display_id` (UI-Anzeigekontext), `run_id`
+(Workflow-Ausführungs-ID) und `user_id` (wem der Speicher gehört oder wer ihn dokumentiert hat). Dies ermöglicht eine
+vollständige Auditierbarkeit – Sie können nachvollziehen, welche Konversation dem Agenten eine bestimmte Präferenz
+beigebracht hat.
 
 ## Bewährte Praktiken
 
-Verwenden Sie Benutzerspeicher für Präferenzen ("Benutzer bevorzugt knappe Antworten") und Organisationsspeicher für Fakten ("Wir deployen freitags"). Lassen Sie den Benutzerspeicher aus der Konversation ableiten, während der Organisationsspeicher explizit dokumentiert wird. Rufen Sie Erinnerungen immer zu Beginn des Workflows ab, damit der Speicherkontext die gesamte Antwort leitet, und speichern Sie neue Erkenntnisse am Ende des Workflows, nachdem die LLM-Antwort enthalten ist.
+Verwenden Sie Benutzerspeicher für Präferenzen ("Benutzer bevorzugt knappe Antworten") und Organisationsspeicher für
+Fakten ("Wir deployen freitags"). Lassen Sie den Benutzerspeicher aus der Konversation ableiten, während der
+Organisationsspeicher explizit dokumentiert wird. Rufen Sie Erinnerungen immer zu Beginn des Workflows ab, damit der
+Speicherkontext die gesamte Antwort leitet, und speichern Sie neue Erkenntnisse am Ende des Workflows, nachdem die
+LLM-Antwort enthalten ist.
 
-Der Speicherabruf fügt ungefähr 100ms Latenz hinzu. Verwenden Sie den `limit`-Parameter, um überwältigenden Kontext zu vermeiden, und filtern Sie bei Bedarf nach Agent oder Thread, um irrelevante Speicher zu reduzieren.
+Der Speicherabruf fügt ungefähr 100ms Latenz hinzu. Verwenden Sie den `limit`-Parameter, um überwältigenden Kontext zu
+vermeiden, und filtern Sie bei Bedarf nach Agent oder Thread, um irrelevante Speicher zu reduzieren.
 
-Der Benutzerspeicher ist DSGVO-konform – Benutzer können alle ihre Speicher einsehen, bearbeiten und löschen. Der Organisationsspeicher erfordert eine Zugriffskontrolle, da Änderungen alle Benutzer betreffen. Jeder Speicher verfolgt, wer ihn wann erstellt hat, zur Auditierbarkeit, und alle Speicherdaten verbleiben auf Schweizer Infrastruktur.
+Der Benutzerspeicher ist DSGVO-konform – Benutzer können alle ihre Speicher einsehen, bearbeiten und löschen. Der
+Organisationsspeicher erfordert eine Zugriffskontrolle, da Änderungen alle Benutzer betreffen. Jeder Speicher verfolgt,
+wer ihn wann erstellt hat, zur Auditierbarkeit, und alle Speicherdaten verbleiben auf Schweizer Infrastruktur.
 
 ::: tip Nächste Schritte
-Erkunden Sie die vollständigen Beispiele in `playground/minimal_workflow/user_memory_workflow/` und `playground/minimal_workflow/organization_memory_workflow/`. Überprüfen Sie Speicher-Events in Langfuse, nachdem Sie einen speichergestützten Agenten ausgeführt haben. Versuchen Sie, einen Hybrid-Agenten zu erstellen, der beide Speichertypen kombiniert, oder experimentieren Sie mit Namespace-Scoping für die abteilungsbezogene Isolation.
+Erkunden Sie die vollständigen Beispiele in `playground/minimal_workflow/user_memory_workflow/` und
+`playground/minimal_workflow/organization_memory_workflow/`. Überprüfen Sie Speicher-Events in Langfuse, nachdem Sie
+einen speichergestützten Agenten ausgeführt haben. Versuchen Sie, einen Hybrid-Agenten zu erstellen, der beide
+Speichertypen kombiniert, oder experimentieren Sie mit Namespace-Scoping für die abteilungsbezogene Isolation.
 :::

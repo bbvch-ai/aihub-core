@@ -1,11 +1,12 @@
 ---
 title: Ihr erster Agent
-source_sha: "fe8b130f7da34f80a71bda26e4bdc377aff03e8c0ff9d12c028a12a465f1751b"
+source_sha: fe8b130f7da34f80a71bda26e4bdc377aff03e8c0ff9d12c028a12a465f1751b
 ---
 
 # Ihr erster Agent
 
-Erstellen Sie Ihren ersten Agenten mit dem Swiss AI Hub Agent (`swiss_ai_hub.agent`) SDK – einen einfachen Nachrichtenverarbeitungs-Agenten mit einem 2-Schritte-Workflow.
+Erstellen Sie Ihren ersten Agenten mit dem Swiss AI Hub Agent (`swiss_ai_hub.agent`) SDK – einen einfachen
+Nachrichtenverarbeitungs-Agenten mit einem 2-Schritte-Workflow.
 
 ## Was Sie lernen werden
 
@@ -18,7 +19,8 @@ Dieses Quickstart behandelt die wesentlichen Bausteine:
 
 ## Voraussetzungen
 
-Sie benötigen die Swiss AI Hub Entwicklungsumgebung. Bevor Sie beginnen, stellen Sie sicher, dass Sie die Schritte zum [Einrichten der Entwicklungsumgebung](../1_dev_environment_setup/) abgeschlossen haben.
+Sie benötigen die Swiss AI Hub Entwicklungsumgebung. Bevor Sie beginnen, stellen Sie sicher, dass Sie die Schritte zum
+[Einrichten der Entwicklungsumgebung](../1_dev_environment_setup/) abgeschlossen haben.
 
 ## Wie Agents funktionieren
 
@@ -56,13 +58,20 @@ class MyCustomAgent(Agent):
         return StopEvent(final_message=hello_world_message)
 ```
 
-Wenn Sie die UI starten und versuchen, den Agenten in der OpenWebUI zu verwenden, werden Sie feststellen, dass der Agent nicht antwortet.
+Wenn Sie die UI starten und versuchen, den Agenten in der OpenWebUI zu verwenden, werden Sie feststellen, dass der Agent
+nicht antwortet.
 
 ![image](../../../../media/sdk/your_first_agent/pre_chunk_event.png)
 
 ### Chunk Events verwenden, um Live-Chat-Antworten anzuzeigen
 
-Der Grund, warum Sie keine Antwort in der Chat-Oberfläche sehen, ist, dass nur spezielle Events (`DisplayEvents`) in der UI angezeigt werden. Und bei Chat-Oberflächen setzt sich die Antwort insbesondere aus `ChunkEvent`s zusammen. Ermöglichen wir unserem Schritt also, ein solches `ChunkEvent` anzuzeigen. Dazu müssen wir den `EventDisplayer` in der Step-Funktion verwenden und die `display_chunk`-Methode mit einem ersten Argument für den anzuzeigenden Inhalt und als zweites Argument die Quelle dieses Chunks übergeben. Normalerweise ist dies der Modellname oder das Sprachmodell, das diesen Chunk erzeugt. Da wir in unserem Fall den Chunk vorerst fest codieren, verwenden wir einfach den Klassennamen des Agenten als Quelle.
+Der Grund, warum Sie keine Antwort in der Chat-Oberfläche sehen, ist, dass nur spezielle Events (`DisplayEvents`) in der
+UI angezeigt werden. Und bei Chat-Oberflächen setzt sich die Antwort insbesondere aus `ChunkEvent`s zusammen.
+Ermöglichen wir unserem Schritt also, ein solches `ChunkEvent` anzuzeigen. Dazu müssen wir den `EventDisplayer` in der
+Step-Funktion verwenden und die `display_chunk`-Methode mit einem ersten Argument für den anzuzeigenden Inhalt und als
+zweites Argument die Quelle dieses Chunks übergeben. Normalerweise ist dies der Modellname oder das Sprachmodell, das
+diesen Chunk erzeugt. Da wir in unserem Fall den Chunk vorerst fest codieren, verwenden wir einfach den Klassennamen des
+Agenten als Quelle.
 
 ```python
 import logging
@@ -97,7 +106,9 @@ So sehen wir, dass der Agent mit einer tatsächlichen Nachricht antwortet.
 
 ### Die Macht des Streamings erleben
 
-Wie Sie vielleicht von anderen KI-Tools wissen, erzeugen grosse Sprachmodelle ihre Antworten Stück für Stück. Anstatt die Antwort am Ende als Ganzes anzuzeigen, können wir die endgültige Antwort schrittweise aufbauen, was es uns ermöglicht, dem Benutzer so schnell wie möglich einen Teil der Antwort zu zeigen. Lassen Sie es uns demonstrieren:
+Wie Sie vielleicht von anderen KI-Tools wissen, erzeugen grosse Sprachmodelle ihre Antworten Stück für Stück. Anstatt
+die Antwort am Ende als Ganzes anzuzeigen, können wir die endgültige Antwort schrittweise aufbauen, was es uns
+ermöglicht, dem Benutzer so schnell wie möglich einen Teil der Antwort zu zeigen. Lassen Sie es uns demonstrieren:
 
 ```python
 import logging
@@ -130,12 +141,15 @@ class MyCustomAgent(Agent):
         return StopEvent(final_message=hello_world_message)
 ```
 
-Wir haben gerade einen zweiten Chunk hinzugefügt, der angezeigt wird. Wenn Sie den Agenten jetzt erneut ausführen, sehen Sie, dass er zuerst mit `Hello World!` antworten und nach 2 Sekunden mit `You said: Hello!` reagieren wird.
+Wir haben gerade einen zweiten Chunk hinzugefügt, der angezeigt wird. Wenn Sie den Agenten jetzt erneut ausführen, sehen
+Sie, dass er zuerst mit `Hello World!` antworten und nach 2 Sekunden mit `You said: Hello!` reagieren wird.
 <video controls="controls" src="../../../../media/sdk/your_first_agent/show_chunk_delay.mp4" type="video/mp4" />
 
 ### Denk-Schritte hinzufügen
 
-Besonders wenn der Agent länger braucht, um sein Ergebnis zu finalisieren, ist es eine gute Praxis, den Benutzer darüber zu informieren, was im Agenten vor sich geht. Um dies zu ermöglichen, können Sie `ThoughtEvent`s anzeigen. Auch hier verwenden wir den `EventDisplayer`, aber diesmal mit der `display_thought`-Methode.
+Besonders wenn der Agent länger braucht, um sein Ergebnis zu finalisieren, ist es eine gute Praxis, den Benutzer darüber
+zu informieren, was im Agenten vor sich geht. Um dies zu ermöglichen, können Sie `ThoughtEvent`s anzeigen. Auch hier
+verwenden wir den `EventDisplayer`, aber diesmal mit der `display_thought`-Methode.
 
 ```python
 import logging
@@ -169,7 +183,8 @@ class MyCustomAgent(Agent):
         return StopEvent(final_message=hello_world_message)
 ```
 
-Nun sehen Sie, dass es einen zusätzlichen Abschnitt in der Antwort namens `Thinking...` gibt. Wenn Sie diesen erweitern, können Sie unseren Gedanken sehen, der mit dem Inhalt `Drinking coffee...` erstellt wurde.
+Nun sehen Sie, dass es einen zusätzlichen Abschnitt in der Antwort namens `Thinking...` gibt. Wenn Sie diesen erweitern,
+können Sie unseren Gedanken sehen, der mit dem Inhalt `Drinking coffee...` erstellt wurde.
 ![image](../../../../media/sdk/your_first_agent/show_thought.png)
 
 ## Ihren ersten Multi-Schritt-Agenten erstellen
@@ -237,15 +252,23 @@ class MyCustomAgent(Agent):
         return StopEvent() # [!code ++]
 ```
 
-Nun haben Sie einen ersten Agenten, der in zwei Schritten agiert. Im ersten Schritt tun wir alles, was wir zuvor getan haben, aber wir zählen auch die Anzahl der Wörter in der Benutzernachricht. Diese Information wird dann an einen zweiten Schritt weitergegeben, wo wir der Antwort auch `The word count is X words` hinzufügen, wobei X die Anzahl der Wörter ist, die wir im ersten Schritt gezählt haben. Wir haben die beiden Schritte verbunden, indem wir unser neues Event `MyCustomAgentEvent` als Ausgabe des ersten Schritts und als Eingabe für den zweiten Schritt definiert haben.
+Nun haben Sie einen ersten Agenten, der in zwei Schritten agiert. Im ersten Schritt tun wir alles, was wir zuvor getan
+haben, aber wir zählen auch die Anzahl der Wörter in der Benutzernachricht. Diese Information wird dann an einen zweiten
+Schritt weitergegeben, wo wir der Antwort auch `The word count is X words` hinzufügen, wobei X die Anzahl der Wörter
+ist, die wir im ersten Schritt gezählt haben. Wir haben die beiden Schritte verbunden, indem wir unser neues Event
+`MyCustomAgentEvent` als Ausgabe des ersten Schritts und als Eingabe für den zweiten Schritt definiert haben.
 
-Wenn Sie zur Agent-Übersicht navigieren, dort Ihren Agenten auswählen und dann zu `Workflow` gehen, können Sie den Workflow und die Schritte Ihres Agenten sehen. Sie können sehen, welche Schritte definiert sind und welche Eingabe- und Ausgabe-Events diese Schritte haben.
+Wenn Sie zur Agent-Übersicht navigieren, dort Ihren Agenten auswählen und dann zu `Workflow` gehen, können Sie den
+Workflow und die Schritte Ihres Agenten sehen. Sie können sehen, welche Schritte definiert sind und welche Eingabe- und
+Ausgabe-Events diese Schritte haben.
 
 ![image](../../../../media/sdk/your_first_agent/simple_workflow.png)
 
 ### 3. Agent-Konfiguration hinzufügen (`MyCustomAgentConfig.py`):
 
-Oftmals möchten Sie, dass Ihr Agent beim Start konfigurierbar ist. Dafür können Sie die Konfigurationsklasse verwenden. Wenn Sie Ihren Agenten über die CLI eingerichtet haben, wurde bereits eine grundlegende Konfigurationsdatei für Sie erstellt, die so aussieht:
+Oftmals möchten Sie, dass Ihr Agent beim Start konfigurierbar ist. Dafür können Sie die Konfigurationsklasse verwenden.
+Wenn Sie Ihren Agenten über die CLI eingerichtet haben, wurde bereits eine grundlegende Konfigurationsdatei für Sie
+erstellt, die so aussieht:
 
 ```python
 from typing import Annotated
@@ -263,7 +286,10 @@ class MyCustomAgentConfig(AgentConfig):
     )]
 ```
 
-Wir können auf diese Konfiguration in jedem Schritt zugreifen, wenn wir es benötigen. Zum Beispiel können wir den Inhalt des Feldes `config_value` im zweiten Schritt unseres Agenten lesen und seinen String-Wert ebenfalls als Chunk posten. Normalerweise verwenden Sie die Konfiguration jedoch, um eine Logik in Ihren Schritten zu konfigurieren, entweder mit System-Prompts oder Konfigurationen für bestimmte Methoden.
+Wir können auf diese Konfiguration in jedem Schritt zugreifen, wenn wir es benötigen. Zum Beispiel können wir den Inhalt
+des Feldes `config_value` im zweiten Schritt unseres Agenten lesen und seinen String-Wert ebenfalls als Chunk posten.
+Normalerweise verwenden Sie die Konfiguration jedoch, um eine Logik in Ihren Schritten zu konfigurieren, entweder mit
+System-Prompts oder Konfigurationen für bestimmte Methoden.
 
 ```python
 import logging
@@ -340,7 +366,8 @@ if __name__ == "__main__":
 
 1. **Testskript ausführen**:
 
-Um Ihren Agenten schnell zu testen, können Sie ein `trigger.py`-Skript schreiben, das den Agenten startet und dessen StartEvent postet. Auf diese Weise können Sie den Agenten ohne UI testen.
+Um Ihren Agenten schnell zu testen, können Sie ein `trigger.py`-Skript schreiben, das den Agenten startet und dessen
+StartEvent postet. Auf diese Weise können Sie den Agenten ohne UI testen.
 
 ::: code-group
 
@@ -409,7 +436,8 @@ Agent completed: True
    - Zeit- und Leistungsmetriken
    - Details der Event-Payload
 
-3. **Protokolle überprüfen** – Der Aufruf `enable_logging()` zeigt den Event-Fluss in Echtzeit und hilft bei der Fehlersuche.
+3. **Protokolle überprüfen** – Der Aufruf `enable_logging()` zeigt den Event-Fluss in Echtzeit und hilft bei der
+   Fehlersuche.
 
 ## Den Workflow verstehen
 

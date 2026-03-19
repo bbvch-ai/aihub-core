@@ -97,8 +97,8 @@ Here is the short version:
 
 ### Documentation
 
-Our documentation in the `docs` folder is always a work in progress. If you find a typo, an unclear explanation, or
-a missing guide, a PR to improve it is one of the most valuable contributions you can make.
+Our documentation in the `docs` folder is always a work in progress. If you find a typo, an unclear explanation, or a
+missing guide, a PR to improve it is one of the most valuable contributions you can make.
 
 ### Marketing & Branding
 

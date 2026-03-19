@@ -1,31 +1,37 @@
 ---
 title: Human-in-the-Loop
-source_sha: "074ec20f7a61c1c4eae62e9beff09f7ae3d3b411ab0ce06e0e39980474d2570c"
+source_sha: 074ec20f7a61c1c4eae62e9beff09f7ae3d3b411ab0ce06e0e39980474d2570c
 ---
 
 # Human-in-the-Loop
 
-Das **Human-in-the-Loop (HITL)**-Muster ermöglicht es einem Agenten, seine Ausführung an einem kritischen Punkt anzuhalten und Eingaben, Genehmigungen oder Anweisungen von einem menschlichen Benutzer anzufordern, bevor er fortfährt.
+Das **Human-in-the-Loop (HITL)**-Muster ermöglicht es einem Agenten, seine Ausführung an einem kritischen Punkt
+anzuhalten und Eingaben, Genehmigungen oder Anweisungen von einem menschlichen Benutzer anzufordern, bevor er fortfährt.
 
 ## Funktionsweise
 
 Das HITL-Muster wird durch ein Ereignispaar orchestriert, das die Logik zum Anhalten und Fortsetzen steuert:
 
-1.  **Request**: Ein Schritt in Ihrem Agenten gibt ein `HumanInTheLoop.request`-Ereignis zurück. Dies ist ein spezielles `ControlEvent`, das auch als `DisplayEvent` fungiert, den Workflow anhält und dem Benutzer in der UI eine Frage präsentiert.
-2.  **Response**: Die Antwort des Benutzers wird als `HumanInTheLoop.response`-Ereignis an das System zurückgesendet.
-3.  **Resume**: Ein weiterer Schritt in Ihrem Agenten ist so konfiguriert, dass er dieses Antwort-Ereignis akzeptiert. Wenn das Ereignis eintrifft, leitet der Dispatcher es an den richtigen Schritt weiter, und der Workflow setzt seine Ausführung fort.
+1. **Request**: Ein Schritt in Ihrem Agenten gibt ein `HumanInTheLoop.request`-Ereignis zurück. Dies ist ein spezielles
+   `ControlEvent`, das auch als `DisplayEvent` fungiert, den Workflow anhält und dem Benutzer in der UI eine Frage
+   präsentiert.
+2. **Response**: Die Antwort des Benutzers wird als `HumanInTheLoop.response`-Ereignis an das System zurückgesendet.
+3. **Resume**: Ein weiterer Schritt in Ihrem Agenten ist so konfiguriert, dass er dieses Antwort-Ereignis akzeptiert.
+   Wenn das Ereignis eintrifft, leitet der Dispatcher es an den richtigen Schritt weiter, und der Workflow setzt seine
+   Ausführung fort.
 
-Die `HumanInTheLoop`-Hilfsklasse vereinfacht diesen Prozess, indem sie eine bequeme `invoke`-Methode bereitstellt, um das Anfrage-Ereignis mit den korrekten Routing-Informationen zu erstellen.
+Die `HumanInTheLoop`-Hilfsklasse vereinfacht diesen Prozess, indem sie eine bequeme `invoke`-Methode bereitstellt, um
+das Anfrage-Ereignis mit den korrekten Routing-Informationen zu erstellen.
 
 ## Drei HITL-Typen
 
 Das Framework bietet drei Interaktionstypen, die jeweils in der UI unterschiedlich dargestellt werden:
 
-| Typ              | Klasse                       | UI-Verhalten                                                    | Antworttyp    |
-| :--------------- | :--------------------------- | :-------------------------------------------------------------- | :------------ |
-| **Input**        | `HumanInTheLoopInput`        | Popup-Dialog für Freitext-Eingabe                              | `str`         |
-| **Confirmation** | `HumanInTheLoopConfirmation` | Ja/Nein-Schaltflächenauswahl                                    | `bool`        |
-| **Chat**         | `HumanInTheLoopChat`         | Nachricht im Chat-Stream (Fallback für UIs ohne Popup-Unterstützung) | `str`         |
+| Typ              | Klasse                       | UI-Verhalten                                                         | Antworttyp |
+| :--------------- | :--------------------------- | :------------------------------------------------------------------- | :--------- |
+| **Input**        | `HumanInTheLoopInput`        | Popup-Dialog für Freitext-Eingabe                                    | `str`      |
+| **Confirmation** | `HumanInTheLoopConfirmation` | Ja/Nein-Schaltflächenauswahl                                         | `bool`     |
+| **Chat**         | `HumanInTheLoopChat`         | Nachricht im Chat-Stream (Fallback für UIs ohne Popup-Unterstützung) | `str`      |
 
 ```python
 from swiss_ai_hub.core.events.agent.hitl.human_in_the_loop_input import HumanInTheLoopInput
@@ -44,15 +50,16 @@ HumanInTheLoopChat.invoke(question="Please provide additional context.")
 
 ### Leitfaden zur Typauswahl
 
-| Anwendungsfall             | Typ                          | Beispiel                                     |
-| :------------------------- | :--------------------------- | :------------------------------------------- |
-| Freiform-Benutzereingabe   | `HumanInTheLoopInput`        | „Suchanfrage eingeben:", „Problem beschreiben:" |
+| Anwendungsfall             | Typ                          | Beispiel                                              |
+| :------------------------- | :--------------------------- | :---------------------------------------------------- |
+| Freiform-Benutzereingabe   | `HumanInTheLoopInput`        | „Suchanfrage eingeben:", „Problem beschreiben:"       |
 | Binäre Entscheidung        | `HumanInTheLoopConfirmation` | „Diese Datei löschen?", „Mit der Zahlung fortfahren?" |
-| Konversationeller Fallback | `HumanInTheLoopChat`         | APIs oder UIs ohne Popup-Unterstützung       |
+| Konversationeller Fallback | `HumanInTheLoopChat`         | APIs oder UIs ohne Popup-Unterstützung                |
 
 ## Kernmuster: Einzelgenehmigung
 
-Dieses Beispiel zeigt einen einfachen Workflow, bei dem der Agent eine einzelne Bestätigung anfordert, bevor er fortfährt.
+Dieses Beispiel zeigt einen einfachen Workflow, bei dem der Agent eine einzelne Bestätigung anfordert, bevor er
+fortfährt.
 
 **Referenz**: `playground/minimal_workflow/human_in_the_loop_workflow/`
 
@@ -72,7 +79,9 @@ class ApprovalAgent(Agent):
 
 ## Mehrstufige Genehmigung mit benutzerdefinierten Ereignispaaren
 
-Für Workflows, die mehrere menschliche Interaktionen erfordern, erstellen Sie separate Unterklassen. Der Dispatcher unterscheidet Schritte nach Ereignistyp – die Verwendung desselben Basistyps für mehrere Interaktionen führt zu Mehrdeutigkeiten.
+Für Workflows, die mehrere menschliche Interaktionen erfordern, erstellen Sie separate Unterklassen. Der Dispatcher
+unterscheidet Schritte nach Ereignistyp – die Verwendung desselben Basistyps für mehrere Interaktionen führt zu
+Mehrdeutigkeiten.
 
 **Referenz**: `playground/minimal_workflow/multistep_human_in_the_loop_workflow/`
 
@@ -193,7 +202,9 @@ class HitlDemoAgent(Agent):
 
 ## Bot-in-the-Loop (Teams/Slack-Integration)
 
-Bot-in-the-Loop (BITL) ermöglicht Workflows die Interaktion mit externen Messaging-Plattformen über das Azure Bot Framework. Im Gegensatz zu HITL (das Benutzer innerhalb der Agent-UI auffordert), sendet BITL Nachrichten an Microsoft Teams-Kanäle oder Slack-Kanäle und erwartet Antworten von Benutzern auf diesen Plattformen.
+Bot-in-the-Loop (BITL) ermöglicht Workflows die Interaktion mit externen Messaging-Plattformen über das Azure Bot
+Framework. Im Gegensatz zu HITL (das Benutzer innerhalb der Agent-UI auffordert), sendet BITL Nachrichten an Microsoft
+Teams-Kanäle oder Slack-Kanäle und erwartet Antworten von Benutzern auf diesen Plattformen.
 
 ### Kanal-Konfiguration
 
@@ -276,11 +287,11 @@ async def handle_response(
 
 Das `BotInTheLoop.response`-Ereignis bietet:
 
-| Feld            | Typ                         | Beschreibung                          |
-| :-------------- | :-------------------------- | :------------------------------------ |
-| `response`      | `str`                       | Der Nachrichtentext des Benutzers      |
+| Feld            | Typ                         | Beschreibung                            |
+| :-------------- | :-------------------------- | :-------------------------------------- |
+| `response`      | `str`                       | Der Nachrichtentext des Benutzers       |
 | `request_event` | `BotInTheLoopRequestEvent`  | Ursprüngliche Anfrage (für den Kontext) |
-| `responder`     | `BotInTheLoopResponderInfo` | Wer geantwortet hat                   |
+| `responder`     | `BotInTheLoopResponderInfo` | Wer geantwortet hat                     |
 
 **Responder-Informationen:**
 
@@ -293,10 +304,10 @@ Das `BotInTheLoop.response`-Ereignis bietet:
 
 ### BITL vs. HITL
 
-| Aspekt               | HumanInTheLoop            | BotInTheLoop                                      |
-| :------------------- | :------------------------ | :------------------------------------------------ |
-| **Plattform**        | Agent-UI (Web/Mobil)      | Teams / Slack                                     |
-| **Benutzerkontext**  | Benutzer der gleichen Session | Externe Kanalbenutzer                             |
-| **UI-Optionen**      | Input, Confirmation, Chat | Nur Textnachricht                                 |
-| **Antwortverfolgung** | Implizit (gleicher Benutzer) | Explizit (`responder`-Feld)                      |
-| **Anwendungsfall**   | In-App-Genehmigungen      | Plattformübergreifende Benachrichtigungen, Team-Eskalationen |
+| Aspekt                | HumanInTheLoop                | BotInTheLoop                                                 |
+| :-------------------- | :---------------------------- | :----------------------------------------------------------- |
+| **Plattform**         | Agent-UI (Web/Mobil)          | Teams / Slack                                                |
+| **Benutzerkontext**   | Benutzer der gleichen Session | Externe Kanalbenutzer                                        |
+| **UI-Optionen**       | Input, Confirmation, Chat     | Nur Textnachricht                                            |
+| **Antwortverfolgung** | Implizit (gleicher Benutzer)  | Explizit (`responder`-Feld)                                  |
+| **Anwendungsfall**    | In-App-Genehmigungen          | Plattformübergreifende Benachrichtigungen, Team-Eskalationen |

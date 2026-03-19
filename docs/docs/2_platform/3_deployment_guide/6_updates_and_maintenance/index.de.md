@@ -1,6 +1,6 @@
 ---
 title: Updates & Wartung
-source_sha: "4c9c2715d35722080da9fe3ab465405fd5728ae5dbaea8631baa861b4ee342b3"
+source_sha: 4c9c2715d35722080da9fe3ab465405fd5728ae5dbaea8631baa861b4ee342b3
 ---
 
 # Updates und Wartung
@@ -8,8 +8,9 @@ source_sha: "4c9c2715d35722080da9fe3ab465405fd5728ae5dbaea8631baa861b4ee342b3"
 ## Architektur
 
 Der Swiss AI Hub trennt die Kernplattform-Komponenten vom kundenspezifischen Code. Die Kernplattform (dieses Repository)
-enthält gemeinsame Basiskomponenten wie API, Web, Dagster und Bot. Kunden-Repositories enthalten benutzerdefinierte Agents,
-Pipelines und Prozesse. Beide verwenden eine unabhängige semantische Versionierung und können separat aktualisiert werden.
+enthält gemeinsame Basiskomponenten wie API, Web, Dagster und Bot. Kunden-Repositories enthalten benutzerdefinierte
+Agents, Pipelines und Prozesse. Beide verwenden eine unabhängige semantische Versionierung und können separat
+aktualisiert werden.
 
 Kunden-Code bindet an eine spezifische Kernversion über `pyproject.toml`:
 
@@ -18,8 +19,8 @@ Kunden-Code bindet an eine spezifische Kernversion über `pyproject.toml`:
 swiss-ai-hub = { git = "https://github.com/bbvch-ai/swiss-ai-hub.git", tag = "v1.2.3" }
 ```
 
-Dies bedeutet, dass Kern-Updates Kunden-Deployments nicht automatisch beeinflussen. Kunden steuern, wann sie neue Kernversionen
-übernehmen.
+Dies bedeutet, dass Kern-Updates Kunden-Deployments nicht automatisch beeinflussen. Kunden steuern, wann sie neue
+Kernversionen übernehmen.
 
 ______________________________________________________________________
 
@@ -52,9 +53,10 @@ Jede Version veröffentlicht auch eigenständige Deployment-Bundles als GitHub R
 - `swissaihub-<version>.tar.gz` — Deployment-Bundle nur für CPU
 - `swissaihub-<version>-gpu.tar.gz` — Deployment-Bundle mit GPU-Unterstützung
 
-Diese Bundles enthalten alles, was für das Deployment benötigt wird: `docker-compose.yml` mit versionsgebundenen Image-Tags,
-alle Service-Konfigurationsdateien, eine `.env.template` mit Platzhalter-Secrets und ein `setup-env.sh`-Skript, das eine `.env`-Datei
-mit kryptografisch sicheren Zufallswerten für alle Passwörter, Tokens und Signierschlüssel generiert.
+Diese Bundles enthalten alles, was für das Deployment benötigt wird: `docker-compose.yml` mit versionsgebundenen
+Image-Tags, alle Service-Konfigurationsdateien, eine `.env.template` mit Platzhalter-Secrets und ein
+`setup-env.sh`-Skript, das eine `.env`-Datei mit kryptografisch sicheren Zufallswerten für alle Passwörter, Tokens und
+Signierschlüssel generiert.
 
 Beispiel Kern-Images:
 
@@ -71,7 +73,8 @@ ghcr.io/bbvch-ai/swiss-ai-hub-<customer>/agent:v1.2.3
 ghcr.io/bbvch-ai/swiss-ai-hub-<customer>/pipeline:v1.2.3
 ```
 
-Alle Releases durchsuchen unter [github.com/bbvch-ai/swiss-ai-hub/releases](https://github.com/bbvch-ai/swiss-ai-hub/releases).
+Alle Releases durchsuchen unter
+[github.com/bbvch-ai/swiss-ai-hub/releases](https://github.com/bbvch-ai/swiss-ai-hub/releases).
 
 ______________________________________________________________________
 
@@ -79,8 +82,8 @@ ______________________________________________________________________
 
 ### Kernplattform-Updates
 
-Laden Sie das neue Release-Bundle von [GitHub Releases](https://github.com/bbvch-ai/swiss-ai-hub/releases) herunter
-und entpacken Sie es neben Ihrem aktuellen Deployment:
+Laden Sie das neue Release-Bundle von [GitHub Releases](https://github.com/bbvch-ai/swiss-ai-hub/releases) herunter und
+entpacken Sie es neben Ihrem aktuellen Deployment:
 
 ```bash
 # Download the new version
@@ -106,9 +109,9 @@ Abwärtskompatible Updates (Patch- und Minor-Versionen) erfordern lediglich das 
 Das `docker-compose.yml` des Release-Bundles verweist bereits auf die korrekten versionsgebundenen Image-Tags.
 Kunden-Code läuft unverändert weiter.
 
-Große Kern-Updates mit Breaking Changes erfordern koordinierte Updates. Der Kunden-Code muss aktualisiert werden,
-um mit der neuen Kernversion zu funktionieren. Sowohl der Kern- als auch der Kunden-Code werden gemeinsam während
-eines Wartungsfensters aktualisiert.
+Große Kern-Updates mit Breaking Changes erfordern koordinierte Updates. Der Kunden-Code muss aktualisiert werden, um mit
+der neuen Kernversion zu funktionieren. Sowohl der Kern- als auch der Kunden-Code werden gemeinsam während eines
+Wartungsfensters aktualisiert.
 
 ### Kunden-Code-Updates
 

@@ -1,4 +1,4 @@
-```markdown
+````markdown
 ---
 title: 'Job-Planung'
 source_sha: "085d8d66333a050f14ec9c7aea5cf3937d89b80a478eee6cb0565b2ac361d100"
@@ -61,9 +61,10 @@ defs = Definitions(
     sensors=[automation_sensor],
     # ...resources and executors
 )
-```
+````
 
-Die nachgeschalteten Assets selbst verwenden `AutomationCondition.eager()`, um sicherzustellen, dass sie ausgeführt werden, sobald eine vorgelagerte Änderung vom Sensor erkannt wird.
+Die nachgeschalteten Assets selbst verwenden `AutomationCondition.eager()`, um sicherzustellen, dass sie ausgeführt
+werden, sobald eine vorgelagerte Änderung vom Sensor erkannt wird.
 
 ```python
 @graph_asset(
@@ -79,5 +80,8 @@ def production_documents(data_lake_file: DataLakeFile) -> RefDocDocument:
 
 ## Nächste Schritte
 
-- [Pipeline-Beobachtung](../5_pipeline_observation/) zum Überwachen der Integrität und Leistung Ihrer automatisierten Pipelines.
+- [Pipeline-Beobachtung](../5_pipeline_observation/) zum Überwachen der Integrität und Leistung Ihrer automatisierten
+  Pipelines.
+
+```
 ```

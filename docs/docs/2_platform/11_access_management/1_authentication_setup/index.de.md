@@ -1,6 +1,6 @@
 ---
 title: Authentifizierung einrichten
-source_sha: "beb62c6692bca92ce547ae08d30363b977e9e57614c70d0973933a2512753dd4"
+source_sha: beb62c6692bca92ce547ae08d30363b977e9e57614c70d0973933a2512753dd4
 ---
 
 # Authentifizierung einrichten
@@ -11,10 +11,11 @@ Der Swiss AI Hub verwendet ein Multi-Tenant-Authentifizierungs- und -Autorisieru
 
 Das Authentifizierungssystem besteht aus mehreren Schlüsselkomponenten:
 
--   **Auth Handlers**: Validieren Anmeldeinformationen und ermitteln die Benutzeridentität
--   **Identity Models**: `UserIdentity` und `TenantIdentity` repräsentieren authentifizierte Benutzer und deren Mandantenkontext
--   **Zugriffskontrolle**: `AccessChecker` setzt Berechtigungen basierend auf hierarchischen Zugriffsregeln durch
--   **Multi-Tenancy**: Alle Operationen erfolgen innerhalb eines Mandantenkontextes
+- **Auth Handlers**: Validieren Anmeldeinformationen und ermitteln die Benutzeridentität
+- **Identity Models**: `UserIdentity` und `TenantIdentity` repräsentieren authentifizierte Benutzer und deren
+  Mandantenkontext
+- **Zugriffskontrolle**: `AccessChecker` setzt Berechtigungen basierend auf hierarchischen Zugriffsregeln durch
+- **Multi-Tenancy**: Alle Operationen erfolgen innerhalb eines Mandantenkontextes
 
 ## Authentifizierungsablauf
 
@@ -32,10 +33,10 @@ user_identity = await TokenAuthHandler()(request)
 
 Unterstützte Authentifizierungsmethoden:
 
--   **OAuth2/OIDC**: JWT-Tokens von Keycloak (unterstützt föderierte Identitätsanbieter wie Azure AD, Google usw.)
--   **API Tokens**: Langlebige Tokens für den programmatischen Zugriff
--   **OpenWebUI-Integration**: Spezieller Handler für OpenWebUI-Benutzer
--   **Entwicklungsmodus**: Gefährlicher Handler nur für die Entwicklung (niemals in Produktion verwenden!)
+- **OAuth2/OIDC**: JWT-Tokens von Keycloak (unterstützt föderierte Identitätsanbieter wie Azure AD, Google usw.)
+- **API Tokens**: Langlebige Tokens für den programmatischen Zugriff
+- **OpenWebUI-Integration**: Spezieller Handler für OpenWebUI-Benutzer
+- **Entwicklungsmodus**: Gefährlicher Handler nur für die Entwicklung (niemals in Produktion verwenden!)
 
 ### 2. Benutzerauflösung
 
@@ -49,7 +50,8 @@ user_entity = UserEntity.ensure_user_exists_for_auth(
 )
 ```
 
-**Verhalten des ersten Benutzers**: Der erste Benutzer, der sich authentifiziert, erhält automatisch Administratorrollen. Nachfolgende Benutzer erhalten Standard-Benutzerrollen (konfigurierbar über `UserSignupSettings`).
+**Verhalten des ersten Benutzers**: Der erste Benutzer, der sich authentifiziert, erhält automatisch
+Administratorrollen. Nachfolgende Benutzer erhalten Standard-Benutzerrollen (konfigurierbar über `UserSignupSettings`).
 
 ### 3. Mandantenkontext-Auflösung
 
@@ -65,7 +67,8 @@ if not roles:
     raise HTTPException(403, "User not assigned to tenant")
 ```
 
-**Tenant Header**: Clients sollten den Header `x-tenant-id: <tenant-id>` in Anfragen aufnehmen. Wird er weggelassen, wird der Standard-Mandant verwendet.
+**Tenant Header**: Clients sollten den Header `x-tenant-id: <tenant-id>` in Anfragen aufnehmen. Wird er weggelassen,
+wird der Standard-Mandant verwendet.
 
 ### 4. Erstellung der UserIdentity
 
@@ -87,26 +90,26 @@ return UserIdentity(
 
 **TenantEntity**
 
--   Definiert organisatorische Grenzen
--   Enthält `access_rules`, die begrenzen, worauf JEDER Benutzer im Mandanten zugreifen kann
--   Beispiel: `["aihub.user.agent.>"]` gewährt Zugriff auf Benutzer-Ebene für alle Agents
+- Definiert organisatorische Grenzen
+- Enthält `access_rules`, die begrenzen, worauf JEDER Benutzer im Mandanten zugreifen kann
+- Beispiel: `["aihub.user.agent.>"]` gewährt Zugriff auf Benutzer-Ebene für alle Agents
 
 **UserTenantRoleEntity**
 
--   Ordnet Benutzer Mandanten mit spezifischen Rollen zu
--   Massgebliche Quelle für Benutzer-Mandant-Rollen-Beziehungen
--   Benutzer können in verschiedenen Mandanten unterschiedliche Rollen haben
+- Ordnet Benutzer Mandanten mit spezifischen Rollen zu
+- Massgebliche Quelle für Benutzer-Mandant-Rollen-Beziehungen
+- Benutzer können in verschiedenen Mandanten unterschiedliche Rollen haben
 
 **RoleEntity**
 
--   Definiert Rollen mit optionaler Mandanten-Einschränkung
--   Systemrollen: `tenant_id=None` (für alle Mandanten verfügbar)
--   Mandanten-spezifische Rollen: `tenant_id=<specific-tenant>` (nur für diesen Mandanten)
+- Definiert Rollen mit optionaler Mandanten-Einschränkung
+- Systemrollen: `tenant_id=None` (für alle Mandanten verfügbar)
+- Mandanten-spezifische Rollen: `tenant_id=<specific-tenant>` (nur für diesen Mandanten)
 
 **UserEntity**
 
--   Speichert Benutzerprofildaten (Name, E-Mail usw.)
--   **Speichert KEINE Rollen** - Rollen werden aus `UserTenantRoleEntity` abgerufen
+- Speichert Benutzerprofildaten (Name, E-Mail usw.)
+- **Speichert KEINE Rollen** - Rollen werden aus `UserTenantRoleEntity` abgerufen
 
 ### Zugriff auf Benutzerrollen
 
@@ -139,9 +142,9 @@ level = checker.access_level("aihub.user.agent.class-a.id-123")
 
 **KRITISCH**: Mandanten-Zugriffsregeln dienen als OBERGRENZE/BEGRENZUNG für Benutzerberechtigungen.
 
-1.  **STUFE 1**: Bestimmen Sie die Zugriffsebene des Mandanten (Admin oder Benutzer)
-2.  **STUFE 2**: Bestimmen Sie die Zugriffsebene des Benutzers (Admin oder Benutzer)
-3.  **STUFE 3**: Geben Sie das MINIMUM beider Ebenen zurück
+1. **STUFE 1**: Bestimmen Sie die Zugriffsebene des Mandanten (Admin oder Benutzer)
+2. **STUFE 2**: Bestimmen Sie die Zugriffsebene des Benutzers (Admin oder Benutzer)
+3. **STUFE 3**: Geben Sie das MINIMUM beider Ebenen zurück
 
 **Beispiel**:
 
@@ -163,8 +166,8 @@ aihub.[admin|user].<resource>.<subresource>.<id>
 
 **Platzhalter**:
 
--   `*` - Einzelstufen-Platzhalter: `aihub.user.agent.*` passt zu jedem einzelnen Agenten
--   `>` - Mehrstufen-Platzhalter: `aihub.user.agent.>` passt zu allen Agents und Unterressourcen
+- `*` - Einzelstufen-Platzhalter: `aihub.user.agent.*` passt zu jedem einzelnen Agenten
+- `>` - Mehrstufen-Platzhalter: `aihub.user.agent.>` passt zu allen Agents und Unterressourcen
 
 **Beispiele**:
 
@@ -309,7 +312,8 @@ print(tenant.access_rules)  # Überprüfen Sie, was der Mandant erlaubt
 
 ### Leere Mandanten-Zugriffsregeln = Kein Zugriff
 
-Wenn ein Mandant keine Zugriffsregeln (`[]`) hat, wird ALLEN Benutzern in diesem Mandanten der Zugriff auf alles verweigert.
+Wenn ein Mandant keine Zugriffsregeln (`[]`) hat, wird ALLEN Benutzern in diesem Mandanten der Zugriff auf alles
+verweigert.
 
 **Lösung**: Legen Sie geeignete Mandanten-Zugriffsregeln fest:
 
@@ -320,22 +324,24 @@ tenant.save()
 
 ## Sicherheitsaspekte
 
--   **Verwenden Sie niemals DangerousDevelopmentOnlyAuthHandler in der Produktion** - er umgeht alle Sicherheitsmechanismen
--   **JWTs korrekt validieren** - überprüfen Sie immer Herausgeber (Issuer), Zielgruppe (Audience) und Signatur
--   **HTTPS verwenden** - übertragen Sie Tokens niemals über unverschlüsselte Verbindungen
--   **API-Tokens regelmässig rotieren** - implementieren Sie Token-Ablauf und -Rotation
--   **Änderungen an der Zugriffskontrolle auditieren** - protokollieren Sie alle Rollen- und Berechtigungsänderungen
--   **Prinzip der geringsten Rechte** - gewähren Sie den minimal erforderlichen Zugriff
--   **Mandantenisolation** - Benutzer können nicht auf Ressourcen ausserhalb der Grenzen ihres Mandanten zugreifen
+- **Verwenden Sie niemals DangerousDevelopmentOnlyAuthHandler in der Produktion** - er umgeht alle
+  Sicherheitsmechanismen
+- **JWTs korrekt validieren** - überprüfen Sie immer Herausgeber (Issuer), Zielgruppe (Audience) und Signatur
+- **HTTPS verwenden** - übertragen Sie Tokens niemals über unverschlüsselte Verbindungen
+- **API-Tokens regelmässig rotieren** - implementieren Sie Token-Ablauf und -Rotation
+- **Änderungen an der Zugriffskontrolle auditieren** - protokollieren Sie alle Rollen- und Berechtigungsänderungen
+- **Prinzip der geringsten Rechte** - gewähren Sie den minimal erforderlichen Zugriff
+- **Mandantenisolation** - Benutzer können nicht auf Ressourcen ausserhalb der Grenzen ihres Mandanten zugreifen
 
 ## Migration vom vorherigen System
 
 Frühere Versionen haben Rollen aus Azure AD über die Microsoft Graph API abgerufen. Das neue System:
 
--   ✅ **Speichert Rollen lokal** in `UserTenantRoleEntity`
--   ✅ **Keine externen API-Aufrufe** während der Authentifizierung
--   ✅ **Mandanten-bezogene Rollen** für Multi-Tenancy
--   ❌ **Keine automatische Rollensynchronisierung** vom Identitätsanbieter
--   ❌ **Kein automatisches Abrufen von Profilbildern** vom Identitätsanbieter
+- ✅ **Speichert Rollen lokal** in `UserTenantRoleEntity`
+- ✅ **Keine externen API-Aufrufe** während der Authentifizierung
+- ✅ **Mandanten-bezogene Rollen** für Multi-Tenancy
+- ❌ **Keine automatische Rollensynchronisierung** vom Identitätsanbieter
+- ❌ **Kein automatisches Abrufen von Profilbildern** vom Identitätsanbieter
 
-Weitere Details finden Sie unter [ADR: Local Multi-Tenant Role Management](/de/arc42/decisions/2025_12_25_local_role_management.md).
+Weitere Details finden Sie unter
+[ADR: Local Multi-Tenant Role Management](/de/arc42/decisions/2025_12_25_local_role_management.md).

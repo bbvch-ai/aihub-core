@@ -1,25 +1,30 @@
 ---
 title: Docker-Netzwerkisolation
-source_sha: "886435d094ebafec0f27145bc526bcf15419bb3c9b98b0e697541e7203c63b67"
+source_sha: 886435d094ebafec0f27145bc526bcf15419bb3c9b98b0e697541e7203c63b67
 ---
 
 # Docker-Netzwerkisolation
 
-Die Swiss AI Hub-Plattform implementiert Netzwerksegmentierung, um Sicherheitsgrenzen zwischen Services durchzusetzen. Dieser Defence-in-Depth-Ansatz begrenzt den Auswirkungsbereich potenzieller Sicherheitsverletzungen und erzwingt das Prinzip der geringsten Rechte auf der Netzwerkebene.
+Die Swiss AI Hub-Plattform implementiert Netzwerksegmentierung, um Sicherheitsgrenzen zwischen Services durchzusetzen.
+Dieser Defence-in-Depth-Ansatz begrenzt den Auswirkungsbereich potenzieller Sicherheitsverletzungen und erzwingt das
+Prinzip der geringsten Rechte auf der Netzwerkebene.
 
 ## Netzwerkzonen
 
 Die Plattform verwendet fünf isolierte Docker-Netzwerke:
 
-| Netzwerk   | Zweck                            | Externer Zugriff | ICC aktiviert |
-| ---------- | -------------------------------- | ---------------- | ------------- |
-| `proxy`    | Externer Traffic über Traefik    | Ingress + Egress | Ja            |
-| `backend`  | Interne Anwendungs-Services      | Nein             | Ja            |
-| `data`     | Datenbanken und Message Broker   | Nein             | Ja            |
-| `storage`  | SeaweedFS Objekt-Speicher        | Nein             | Ja            |
-| `egress`   | Nur ausgehender Internetzugriff  | Nur Egress       | Nein          |
+| Netzwerk  | Zweck                           | Externer Zugriff | ICC aktiviert |
+| --------- | ------------------------------- | ---------------- | ------------- |
+| `proxy`   | Externer Traffic über Traefik   | Ingress + Egress | Ja            |
+| `backend` | Interne Anwendungs-Services     | Nein             | Ja            |
+| `data`    | Datenbanken und Message Broker  | Nein             | Ja            |
+| `storage` | SeaweedFS Objekt-Speicher       | Nein             | Ja            |
+| `egress`  | Nur ausgehender Internetzugriff | Nur Egress       | Nein          |
 
-Das `egress`-Netzwerk ist für Services konzipiert, die das Internet erreichen müssen (ausgehend), aber nicht aus dem Internet erreichbar sein sollten (kein Ingress). Die Inter-Container-Kommunikation (ICC) ist in diesem Netzwerk deaktiviert, was bedeutet, dass Container über dieses Netzwerk nicht miteinander kommunizieren können – sie können es nur für den ausgehenden Internetzugriff nutzen.
+Das `egress`-Netzwerk ist für Services konzipiert, die das Internet erreichen müssen (ausgehend), aber nicht aus dem
+Internet erreichbar sein sollten (kein Ingress). Die Inter-Container-Kommunikation (ICC) ist in diesem Netzwerk
+deaktiviert, was bedeutet, dass Container über dieses Netzwerk nicht miteinander kommunizieren können – sie können es
+nur für den ausgehenden Internetzugriff nutzen.
 
 ## Service-Netzwerkzuweisungen
 
@@ -84,7 +89,9 @@ Services, die ausgehenden Internetzugriff, aber keinen eingehenden Zugriff benö
 
 - **playwright**: Web-Scraping und Browser-Automatisierung (muss Webseiten abrufen)
 
-Dieses Netzwerk hat die ICC (Inter-Container Communication) deaktiviert, was die laterale Bewegung zwischen Containern in diesem Netzwerk verhindert. Services nutzen `egress` ausschließlich für den ausgehenden Internetzugriff und müssen andere Netzwerke (z.B. `backend`) für die Inter-Service-Kommunikation verwenden.
+Dieses Netzwerk hat die ICC (Inter-Container Communication) deaktiviert, was die laterale Bewegung zwischen Containern
+in diesem Netzwerk verhindert. Services nutzen `egress` ausschließlich für den ausgehenden Internetzugriff und müssen
+andere Netzwerke (z.B. `backend`) für die Inter-Service-Kommunikation verwenden.
 
 ## Netzwerk-Topologie
 
@@ -188,14 +195,14 @@ flowchart TB
 
 ### Service-Sichtbarkeitsmatrix
 
-| Von \ Nach | proxy | backend | data | storage | egress | Internet |
-| ---------- | ----- | ------- | ---- | ------- | ------ | -------- |
-| External   | ✓     | ✗       | ✗    | ✗       | ✗      | -        |
-| proxy      | ✓     | ✓       | ✗    | ✗       | ✗      | ✓        |
-| backend    | ✗     | ✓       | ✓    | ✓       | ✗      | ✗        |
-| data       | ✗     | ✗       | ✓    | ✓       | ✗      | ✗        |
-| storage    | ✗     | ✗       | ✗    | ✓       | ✗      | ✗        |
-| egress     | ✗     | ✗       | ✗    | ✗       | ✗\*    | ✓        |
+| Von \\ Nach | proxy | backend | data | storage | egress | Internet |
+| ----------- | ----- | ------- | ---- | ------- | ------ | -------- |
+| External    | ✓     | ✗       | ✗    | ✗       | ✗      | -        |
+| proxy       | ✓     | ✓       | ✗    | ✗       | ✗      | ✓        |
+| backend     | ✗     | ✓       | ✓    | ✓       | ✗      | ✗        |
+| data        | ✗     | ✗       | ✓    | ✓       | ✗      | ✗        |
+| storage     | ✗     | ✗       | ✗    | ✓       | ✗      | ✗        |
+| egress      | ✗     | ✗       | ✗    | ✗       | ✗\*    | ✓        |
 
 \*ICC im Egress-Netzwerk deaktiviert – Container können über dieses Netzwerk nicht miteinander kommunizieren.
 
@@ -211,7 +218,9 @@ Wenn Sie einen neuen Service hinzufügen, bestimmen Sie, welche Netzwerke dieser
 4. **Benötigt Objektspeicher?** → Zum `storage` hinzufügen
 5. **Benötigt nur ausgehenden Internetzugriff (kein Ingress)?** → Zum `egress` hinzufügen
 
-Hinweis: Das `egress`-Netzwerk ist speziell für Services gedacht, die externe Websites/APIs erreichen müssen, aber nicht von außen erreichbar sein sollten. Es hat ICC deaktiviert, sodass Services auf `egress` nicht miteinander kommunizieren können – verwenden Sie `backend` für die Inter-Service-Kommunikation.
+Hinweis: Das `egress`-Netzwerk ist speziell für Services gedacht, die externe Websites/APIs erreichen müssen, aber nicht
+von außen erreichbar sein sollten. Es hat ICC deaktiviert, sodass Services auf `egress` nicht miteinander kommunizieren
+können – verwenden Sie `backend` für die Inter-Service-Kommunikation.
 
 ### Netzwerkprobleme debuggen
 

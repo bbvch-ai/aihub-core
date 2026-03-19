@@ -1,11 +1,13 @@
 ---
 title: Pipeline-Beobachtung
-source_sha: "db8e0d8b16f92143231a326612a950e9447542b3e724a8233f71e4a323f048d8"
+source_sha: db8e0d8b16f92143231a326612a950e9447542b3e724a8233f71e4a323f048d8
 ---
 
 # Pipeline-Beobachtung
 
-Effektives Monitoring und Debugging sind entscheidend für die Aufrechterhaltung zuverlässiger Datenverarbeitungspipelines. Swiss AI Hub bietet umfassende Observability-Tools, um die Pipeline-Ausführung zu verfolgen, Probleme zu diagnostizieren und die Leistung zu optimieren.
+Effektives Monitoring und Debugging sind entscheidend für die Aufrechterhaltung zuverlässiger
+Datenverarbeitungspipelines. Swiss AI Hub bietet umfassende Observability-Tools, um die Pipeline-Ausführung zu
+verfolgen, Probleme zu diagnostizieren und die Leistung zu optimieren.
 
 ## Was Sie lernen werden
 

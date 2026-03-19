@@ -1,11 +1,12 @@
 ---
 title: Ihre erste Pipeline
-source_sha: "26c019615a9bd1e5a4086c7fea0e50f1b98e17a7859dc4762b683b9fa71d2925"
+source_sha: 26c019615a9bd1e5a4086c7fea0e50f1b98e17a7859dc4762b683b9fa71d2925
 ---
 
 # Ihre erste Pipeline
 
-Erstellen Sie Ihre erste Datenverarbeitungspipeline mit dem Swiss AI Hub Pipeline (`swiss_ai_hub.pipeline`) SDK – eine vollständige Datentransformationspipeline mit mehreren verbundenen Assets.
+Erstellen Sie Ihre erste Datenverarbeitungspipeline mit dem Swiss AI Hub Pipeline (`swiss_ai_hub.pipeline`) SDK – eine
+vollständige Datentransformationspipeline mit mehreren verbundenen Assets.
 
 ## Was Sie lernen werden
 
@@ -19,11 +20,13 @@ Dieser Quickstart behandelt die wesentlichen Bausteine:
 
 ## Voraussetzungen
 
-Sie benötigen eine laufende Swiss AI Hub Entwicklungsumgebung. Bevor Sie beginnen, stellen Sie sicher, dass Sie die Schritte zur [Einrichtung der Entwicklungsumgebung](../1_dev_environment_setup/) abgeschlossen haben.
+Sie benötigen eine laufende Swiss AI Hub Entwicklungsumgebung. Bevor Sie beginnen, stellen Sie sicher, dass Sie die
+Schritte zur [Einrichtung der Entwicklungsumgebung](../1_dev_environment_setup/) abgeschlossen haben.
 
 ## Wie Pipelines funktionieren
 
-Swiss AI Hub Pipelines sind **Datenverarbeitungs-Workflows**, die auf Dagster basieren und aus drei wesentlichen Teilen bestehen:
+Swiss AI Hub Pipelines sind **Datenverarbeitungs-Workflows**, die auf Dagster basieren und aus drei wesentlichen Teilen
+bestehen:
 
 - **Assets**: Funktionen, die Daten erstellen, transformieren oder konsumieren
 - **Abhängigkeiten**: Automatischer Datenfluss zwischen Assets basierend auf Funktionsparametern
@@ -104,7 +107,8 @@ Klicken Sie auf **„Materialize all“**, um die Pipeline auszuführen und den 
 
 ## Bauen Sie eine reale Swiss AI Hub Pipeline
 
-Nun erstellen wir eine realistische Pipeline mit dem `swiss_ai_hub.pipeline` SDK, die Dokumentenverarbeitungsmuster demonstriert. Wir werden dies Schritt für Schritt aufschlüsseln, um jede Komponente zu verstehen.
+Nun erstellen wir eine realistische Pipeline mit dem `swiss_ai_hub.pipeline` SDK, die Dokumentenverarbeitungsmuster
+demonstriert. Wir werden dies Schritt für Schritt aufschlüsseln, um jede Komponente zu verstehen.
 
 ### 1. Die Struktur der Swiss AI Hub Pipeline verstehen
 
@@ -338,9 +342,9 @@ data_lake (observable) → documents → nodes
 
 ### 7. Den Datenfluss verstehen:
 
-1.  **Observable Data Lake**: Überwacht neue PDF-, Word-, Markdown- usw. Dateien
-2.  **Documents**: Parst Dateien mithilfe von KI-gestützter Dokumentenintelligenz (MinerU)
-3.  **Nodes**: Zerlegt Dokumente mittels struktureller Analyse in Chunks und generiert Embeddings
+1. **Observable Data Lake**: Überwacht neue PDF-, Word-, Markdown- usw. Dateien
+2. **Documents**: Parst Dateien mithilfe von KI-gestützter Dokumentenintelligenz (MinerU)
+3. **Nodes**: Zerlegt Dokumente mittels struktureller Analyse in Chunks und generiert Embeddings
 
 ### 8. Fügen Sie Jobs und Planung zu Ihrer Pipeline hinzu
 
@@ -396,22 +400,23 @@ Ihre Pipeline unterstützt nun:
 
 ::: tip SeaweedFS Filer
 In Produktion ist die SeaweedFS Filer Web-UI unter `datalake.${DOMAIN}` zugänglich (OAuth2 geschützt, erfordert die
-Rolle AIHubDeveloper). Im Entwicklungsmodus ist sie unter `http://localhost:8889` verfügbar, um hochgeladene Dateien
-zu durchsuchen und die Speicherung zu debuggen.
+Rolle AIHubDeveloper). Im Entwicklungsmodus ist sie unter `http://localhost:8889` verfügbar, um hochgeladene Dateien zu
+durchsuchen und die Speicherung zu debuggen.
 :::
 
 ### 10. Die Swiss AI Hub Pipeline-Muster verstehen
 
 Ihre Swiss AI Hub Pipeline demonstriert Schlüsselmuster:
 
-1.  **Observable Assets**: Erkennen neue Dokumente automatisch ohne manuelles Eingreifen
-2.  **Dynamische Partitionen**: Jedes Dokument wird unabhängig verarbeitet
-3.  **Ressourcenmanagement**: Konfigurierbare Parser, Modelle und Speicher-Backends
-4.  **Automatisierungsrichtlinien**: Eifrige Verarbeitung, wenn sich Upstream-Assets ändern
+1. **Observable Assets**: Erkennen neue Dokumente automatisch ohne manuelles Eingreifen
+2. **Dynamische Partitionen**: Jedes Dokument wird unabhängig verarbeitet
+3. **Ressourcenmanagement**: Konfigurierbare Parser, Modelle und Speicher-Backends
+4. **Automatisierungsrichtlinien**: Eifrige Verarbeitung, wenn sich Upstream-Assets ändern
 
 ## Was Sie gelernt haben
 
-- **Swiss AI Hub SDK-Nutzung**: Verwendung von Fabriken, Ressourcen und typisierten Datenobjekten aus `swiss_ai_hub.pipeline`
+- **Swiss AI Hub SDK-Nutzung**: Verwendung von Fabriken, Ressourcen und typisierten Datenobjekten aus
+  `swiss_ai_hub.pipeline`
 - **Dokumentenverarbeitungspipeline**: Vollständiger Fluss von Rohdateien zu durchsuchbaren Embeddings
 - **Asset-Fabrik-Nutzung**: Verwendung bestehender Fabriken wie `documents_factory` und `nodes_factory`
 - **Ressourcenkonfiguration**: Einrichtung von Parsern, LLMs und Speichersystemen
