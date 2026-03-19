@@ -1,12 +1,12 @@
 ---
 name: update-doc
-description: Synchronize documentation with code changes across the aihub-core monorepo. Reviews READMEs, CLAUDE.md files, skills, agents, and VitePress docs for staleness. Use when user says 'update docs', 'sync documentation', 'fix README', 'docs are outdated', 'update the README', 'sync skills with code', or after any code change that affects documented behavior. Do NOT use for writing new feature docs from scratch (use /document-feature) or creating ADRs (use /document-decision).
+description: Synchronize documentation with code changes across the swiss-ai-hub monorepo. Reviews READMEs, CLAUDE.md files, skills, agents, and VitePress docs for staleness. Use when user says 'update docs', 'sync documentation', 'fix README', 'docs are outdated', 'update the README', 'sync skills with code', or after any code change that affects documented behavior. Do NOT use for writing new feature docs from scratch (use /document-feature) or creating ADRs (use /document-decision).
 allowed-tools: Read, Grep, Glob, Edit, Write, Bash
 ---
 
 # Update Documentation - Sync Docs with Code Changes
 
-Sync all documentation across the aihub-core monorepo after code changes. Code is always ground truth — when docs and
+Sync all documentation across the swiss-ai-hub monorepo after code changes. Code is always ground truth — when docs and
 code disagree, fix the docs.
 
 For thorough, multi-scope documentation reviews (e.g., before a large PR), consider launching the `doc-sync` subagent
@@ -28,8 +28,8 @@ Documentation lives in 5 locations. Check each for staleness against your change
 ### 2a. README.md Files
 
 - `README.md` — project root (setup, architecture overview)
-- `{scope}/README.md` — scope-level (e.g., `aihub_api/README.md`, `aihub_agent/README.md`)
-- Subdirectory READMEs within modified scopes (e.g., `aihub_lib/aihub_lib/auth/README.md`)
+- `{scope}/README.md` — scope-level (e.g., `packages/api/README.md`, `packages/agent/README.md`)
+- Subdirectory READMEs within modified scopes (e.g., `packages/core/swiss_ai_hub/core/auth/README.md`)
 
 ### 2b. CLAUDE.md Files
 
@@ -57,12 +57,12 @@ git diff --name-only main...HEAD | while read f; do
 done | sort -u
 ```
 
-### 2e. VitePress Docs (`aihub_doc/docs/**/index.en.md`)
+### 2e. VitePress Docs (`docs/docs/**/index.en.md`)
 
-- `aihub_doc/docs/2_platform/` — platform architecture, services, deployment
-- `aihub_doc/docs/3_sdk/` — SDK patterns, agent/pipeline/process building
-- `aihub_doc/docs/4_ecosystem/` — contributing guidelines, AI tooling
-- `aihub_doc/docs/5_references/` — API references, troubleshooting
+- `docs/docs/2_platform/` — platform architecture, services, deployment
+- `docs/docs/3_sdk/` — SDK patterns, agent/pipeline/process building
+- `docs/docs/4_ecosystem/` — contributing guidelines, AI tooling
+- `docs/docs/5_references/` — API references, troubleshooting
 
 **VitePress rules**:
 
@@ -92,10 +92,10 @@ done
 
 ## Example
 
-If you modified `aihub_api/aihub_api/routes/agent/AgentController.py`, check:
+If you modified `packages/api/swiss_ai_hub/api/routes/agent/AgentController.py`, check:
 
-- `aihub_api/README.md` — API endpoint docs
-- `aihub_api/CLAUDE.md` — route patterns, key classes
+- `packages/api/README.md` — API endpoint docs
+- `packages/api/CLAUDE.md` — route patterns, key classes
 - `.claude/skills/scaffold-api-endpoint/SKILL.md` — controller pattern template
 - `.claude/agents/architect.md` — if it references the agent route structure
 

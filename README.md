@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="aihub_doc/media/logo.png" alt="Swiss AI-Hub" width="120">
+<img src="docs/media/logo.png" alt="Swiss AI-Hub" width="120">
 
 # Swiss AI-Hub
 
@@ -15,7 +15,7 @@ what cloud AI platforms promise, but where you own every layer.
 [![PyPI](https://img.shields.io/pypi/v/swiss-ai-hub-core?style=flat-square&logo=pypi&logoColor=white)](https://pypi.org/project/swiss-ai-hub-core/)
 [![npm](https://img.shields.io/npm/v/@swiss-ai-hub/web?style=flat-square&logo=npm&logoColor=white)](https://www.npmjs.com/package/@swiss-ai-hub/web)
 
-[Get started](#quick-start) · [Documentation](https://bbvch-ai.github.io/aihub-core/) ·
+[Get started](#quick-start) · [Documentation](https://bbvch-ai.github.io/swiss-ai-hub/) ·
 [Discord](https://discord.gg/wArT8zDB) · [Releases](https://github.com/bbvch-ai/aihub-core/releases)
 
 </div>
@@ -78,7 +78,7 @@ One `docker compose up` starts ~30 containers, fully integrated. Every component
 wired together.
 
 <p align="center" width="100%">
-<img src="aihub_doc/media/architecture/low_level/tier_2.png" width="100%" alt="Architecture overview">
+<img src="docs/media/architecture/low_level/tier_2.png" width="100%" alt="Architecture overview">
 <em>Tier 2 architecture: every component connected, from LLM providers to data sources</em><br><br>
 </p>
 
@@ -214,7 +214,7 @@ PPTX, XLSX, and plain text. For production, connect SharePoint, OneDrive, Google
 Rclone for continuous sync.
 
 <p align="center" width="100%">
-<img src="aihub_doc/media/demos/aihub-knowledge-demo.webp" width="80%" alt="Knowledge ingestion demo">
+<img src="docs/media/demos/aihub-knowledge-demo.webp" width="80%" alt="Knowledge ingestion demo">
 </p>
 
 ### Track every step of the data pipeline
@@ -223,7 +223,7 @@ Dagster provides full lineage from source document to vector embedding: which fi
 chunked, when embeddings were created, what ended up in Milvus. Automatic retry and failure handling included.
 
 <p align="center" width="100%">
-<img src="aihub_doc/media/demos/aihub-dagster-demo.webp" width="80%" alt="Dagster pipeline demo">
+<img src="docs/media/demos/aihub-dagster-demo.webp" width="80%" alt="Dagster pipeline demo">
 </p>
 
 ### Create agents without writing code
@@ -234,7 +234,7 @@ and the agent goes live. One blueprint powers many profiles. An "Expert RAG Agen
 agent, legal FAQ agent, and IT support agent, each with different knowledge bases and instructions.
 
 <p align="center" width="100%">
-<img src="aihub_doc/media/demos/aihub-create-agent-demo.webp" width="80%" alt="Agent configurator demo">
+<img src="docs/media/demos/aihub-create-agent-demo.webp" width="80%" alt="Agent configurator demo">
 </p>
 
 ### Ask questions grounded in your data
@@ -244,7 +244,7 @@ Every interaction is traced end-to-end in Langfuse, from the user's question thr
 generation.
 
 <p align="center" width="100%">
-<img src="aihub_doc/media/demos/aihub-agent-interaction-demo.webp" width="80%" alt="Agent interaction demo">
+<img src="docs/media/demos/aihub-agent-interaction-demo.webp" width="80%" alt="Agent interaction demo">
 </p>
 
 ### Control costs and model routing
@@ -253,7 +253,7 @@ LiteLLM provides a unified dashboard for all LLM usage. Set spending limits per 
 between local and cloud models. Monitor token consumption, latency, and cost per request from a single pane.
 
 <p align="center" width="100%">
-<img src="aihub_doc/media/demos/aihub-litellm-demo.webp" width="80%" alt="LiteLLM cost control demo">
+<img src="docs/media/demos/aihub-litellm-demo.webp" width="80%" alt="LiteLLM cost control demo">
 </p>
 
 ______________________________________________________________________
@@ -443,11 +443,11 @@ ______________________________________________________________________
 Swiss AI-Hub is developed by [bbv Software Services](https://www.bbv.ch) and open to contributions. See
 [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide, or jump in:
 
-|                                                                |                                                              |
-| -------------------------------------------------------------- | ------------------------------------------------------------ |
-| [Join the Discord](https://discord.gg/wArT8zDB)                | Ask questions, share what you have built, get help           |
-| [Open an issue](https://github.com/bbvch-ai/aihub-core/issues) | Report bugs and request features                             |
-| [Read the ADRs](https://bbvch-ai.github.io/aihub-core/arc42/)  | Understand key decisions before proposing structural changes |
+|                                                                 |                                                              |
+| --------------------------------------------------------------- | ------------------------------------------------------------ |
+| [Join the Discord](https://discord.gg/wArT8zDB)                 | Ask questions, share what you have built, get help           |
+| [Open an issue](https://github.com/bbvch-ai/aihub-core/issues)  | Report bugs and request features                             |
+| [Read the ADRs](https://bbvch-ai.github.io/swiss-ai-hub/arc42/) | Understand key decisions before proposing structural changes |
 
 ## License
 

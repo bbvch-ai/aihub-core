@@ -4,7 +4,7 @@
       <settings>
         <option name="buildOnly" value="true" />
         <option name="contextFolderPath" value="." />
-        <option name="sourceFilePath" value="aihub_pipeline/app/default_rag_pipeline/Dockerfile" />
+        <option name="sourceFilePath" value="packages/pipeline/app/default_rag_pipeline/Dockerfile" />
       </settings>
     </deployment>
     <method v="2" />

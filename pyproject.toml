@@ -1,8 +1,8 @@
 [project]
-name = "aihub-core-workspace"
-version = "0.270.3"
+name = "swiss-ai-hub-workspace"
+version = "0.271.0"
 requires-python = ">=3.13, <3.14"
-description = "AI-Hub Core Monorepo Workspace"
+description = "Swiss AI Hub Monorepo Workspace"
 dependencies = [
     "tomlkit>=0.13.3",
     "pyyaml>=6.0.3",
@@ -19,7 +19,7 @@ dev = [
     "pytest-mock>=3.14.0",
     # Linting & formatting
     "black[jupyter]>=26.1.0",
-    "mypy>=1.13.0",
+    "ty>=0.0.1a7",
     "ruff>=0.8.1",
     "toml-sort>=0.24.2",
     # Utilities
@@ -40,17 +40,21 @@ package = false
 
 [tool.uv.workspace]
 members = [
-    "aihub_lib",
-    "aihub_agent",
-    "aihub_api",
-    "aihub_bot",
-    "aihub_pipeline",
-    "aihub_process",
+    "packages/core",
+    "packages/agent",
+    "packages/api",
+    "packages/bot",
+    "packages/pipeline",
+    "packages/process",
 ]
 
 [tool.uv.sources]
-aihub-core = { workspace = true }
-aihub-agent = { workspace = true }
+swiss-ai-hub-core = { workspace = true }
+swiss-ai-hub-agent = { workspace = true }
+swiss-ai-hub-api = { workspace = true }
+swiss-ai-hub-bot = { workspace = true }
+swiss-ai-hub-pipeline = { workspace = true }
+swiss-ai-hub-process = { workspace = true }
 
 [tool.black]
 line-length = 120
@@ -62,7 +66,7 @@ extend-exclude = '''
   \.eggs
   | \.git
   | \.hg
-  | \.mypy_cache
+  | \.ty
   | \.tox
   | \.venv
   | build
@@ -81,7 +85,7 @@ exclude = [
     ".idea",
     "venv",
     ".git",
-    "aihub_doc/whitepaper/chapters",
+    "docs/whitepaper/chapters",
 ]
 wrap = 120
 number = true

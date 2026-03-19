@@ -7,7 +7,7 @@ Your primary task is to analyze a given `git diff` and generate a high-level cha
 </task>
 
 <instructions>
-1.  **Analyze the Input**: Carefully examine the entire `git diff`. Look beyond the file paths and focus on the substance of the code changes—what functions were added, what logic was altered, what variables were renamed?
+1.  **Analyze the Input**: Carefully examine the entire `git diff`. Look beyond the file paths and focus on the substance of the code changes - what functions were added, what logic was altered, what variables were renamed?
 2.  **Infer the Intent**: From the code, comments, and function names, determine the *why* behind each change. A new file might represent a new feature. A change inside an `if` statement might be a bug fix. A large-scale move of code might be a refactor.
 3.  **Categorize Changes**: Classify each meaningful change into one of the allowed categories: `Added`, `Changed`, `Fixed`, `Removed`, `Security`, or `Refactor`.
 4.  **Draft Descriptions**: For each change, write a concise bullet point. Start with a fitting emoji, bold the key component or concept, and then describe the change and its benefit to the user or the system.

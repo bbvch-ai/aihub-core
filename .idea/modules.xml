@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/aihub-core.iml" filepath="$PROJECT_DIR$/.idea/aihub-core.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/swiss-ai-hub.iml" filepath="$PROJECT_DIR$/.idea/swiss-ai-hub.iml" />
     </modules>
   </component>
 </project>

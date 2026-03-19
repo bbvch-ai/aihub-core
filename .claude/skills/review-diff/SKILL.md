@@ -27,10 +27,10 @@ has 16 Coding Conventions — use those as the baseline for all reviews.
 
 ### Architecture & Scope Boundaries
 
-- Code is in the correct scope (shared code in `aihub_lib`, scope-specific code in its scope)
-- No cross-scope imports (only through `aihub_lib`, exception: `aihub_process` → `aihub_agent`)
-- Controller → Service → Entity separation respected (see `aihub_api/aihub_api/routes/agent/` for reference)
-- New entities use MongoEngine Documents in `aihub_lib/aihub_lib/persistence/entities/`
+- Code is in the correct scope (shared code in `packages/core`, scope-specific code in its scope)
+- No cross-scope imports (only through `packages/core`, exception: `packages/process` → `packages/agent`)
+- Controller → Service → Entity separation respected (see `packages/api/swiss_ai_hub/api/routes/agent/` for reference)
+- New entities use MongoEngine Documents in `packages/core/swiss_ai_hub/core/persistence/entities/`
 - New events follow Swiss AI Agent Protocol hierarchy (Control vs Display, see `/validate-events`)
 
 ### Coding Standards (root CLAUDE.md rules 01-16)
@@ -38,7 +38,7 @@ has 16 Coding Conventions — use those as the baseline for all reviews.
 Review against ALL 16 Coding Conventions in the root `CLAUDE.md`. Flag any violations. Pay special attention to rules
 that are easy to miss in diffs:
 
-- Cross-scope imports bypassing `aihub_lib` (rule 11 — linter won't catch this)
+- Cross-scope imports bypassing `packages/core` (rule 11 — linter won't catch this)
 - Missing `@classmethod` factories on new Pydantic models (`from_entity()`, `from_request()`)
 - `try-except` wrappers that swallow errors instead of failing fast (rule 03)
 - Dataclasses or plain dicts used instead of Pydantic models (rule 02)

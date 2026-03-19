@@ -10,12 +10,12 @@ Generate a service layer for a resource. The resource name should be provided vi
 
 ## Step 1: Read Reference Materials
 
-1. Read the API scope guide: `aihub_api/CLAUDE.md`
+1. Read the API scope guide: `packages/api/CLAUDE.md`
 2. Study these reference services:
-   - CRUD: `aihub_api/aihub_api/routes/agent/AgentService.py`
-   - Pagination: `aihub_api/aihub_api/routes/thread/ThreadService.py`
-   - Bulk ops: `aihub_api/aihub_api/routes/notification/NotificationService.py`
-   - Simple: `aihub_api/aihub_api/routes/user/UserService.py`
+   - CRUD: `packages/api/swiss_ai_hub/api/routes/agent/agent_service.py`
+   - Pagination: `packages/api/swiss_ai_hub/api/routes/thread/thread_service.py`
+   - Bulk ops: `packages/api/swiss_ai_hub/api/routes/notification/notification_service.py`
+   - Simple: `packages/api/swiss_ai_hub/api/routes/role/role_service.py`
 3. Extract the resource name from `$ARGUMENTS` and derive `CamelCase` for class names
 
 ## Architecture: Where Services Fit
@@ -43,22 +43,22 @@ Services are the **business logic layer**. They:
 
 ## Step 2: Create the Service
 
-File: `aihub_api/aihub_api/routes/<resource>/<Resource>Service.py`
+File: `packages/api/swiss_ai_hub/api/routes/<resource>/<resource>_service.py`
 
 ```python
 from fastapi import HTTPException
 from mongoengine import DoesNotExist, NotUniqueError
 
-from aihub_lib.auth.identity.UserIdentity import UserIdentity
-from aihub_lib.i18n.LocaleHandler import LocaleHandler
-from aihub_lib.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
-# Entity import path varies by domain — look up in aihub_lib/aihub_lib/persistence/
-# Examples: persistence/agents/AgentClassEntity.py, persistence/access/entities/RoleEntity.py
-from aihub_lib.persistence.<domain>.<Resource>Entity import <Resource>Entity
+from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
+from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
+from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
+# Entity import path varies by domain — look up in packages/core/swiss_ai_hub/core/persistence/
+# Examples: persistence/agents/agent_class_entity.py, persistence/access/entities/role_entity.py
+from swiss_ai_hub.core.persistence.<domain>.<resource>_entity import <Resource>Entity
 
-from aihub_api.routes.<resource>.dto.Create<Resource>Request import Create<Resource>Request
-from aihub_api.routes.<resource>.dto.<Resource>DTO import <Resource>DTO
-from aihub_api.routes.<resource>.dto.Update<Resource>Request import Update<Resource>Request
+from swiss_ai_hub.api.routes.<resource>.dto.create_<resource>_request import Create<Resource>Request
+from swiss_ai_hub.api.routes.<resource>.dto.<resource>_dto import <Resource>DTO
+from swiss_ai_hub.api.routes.<resource>.dto.update_<resource>_request import Update<Resource>Request
 
 
 class <Resource>Service:
@@ -219,7 +219,7 @@ async def get_resource_with_stats(resource_id: str, t: LocaleHandler) -> Resourc
 
 ### Pattern 5: Caching (ThreadService pattern)
 
-Only use when profiling shows repeated DB queries. See `aihub_api/aihub_api/routes/thread/ThreadService.py`.
+Only use when profiling shows repeated DB queries. See `packages/api/swiss_ai_hub/api/routes/thread/ThreadService.py`.
 
 ```python
 from cachetools import TTLCache, cached
@@ -239,7 +239,7 @@ def _fetch_cached_resource(resource_id: str) -> ResourceDTO | None:
 
 ### Response DTO
 
-File: `aihub_api/aihub_api/routes/<resource>/dto/<Resource>DTO.py`
+File: `packages/api/swiss_ai_hub/api/routes/<resource>/dto/<resource>_dto.py`
 
 ```python
 from typing import Annotated, Self
@@ -247,9 +247,9 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-from aihub_lib.i18n.LocaleHandler import LocaleHandler
-# Look up actual entity path in aihub_lib/aihub_lib/persistence/
-from aihub_lib.persistence.<domain>.<Resource>Entity import <Resource>Entity
+from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
+# Look up actual entity path in packages/core/swiss_ai_hub/core/persistence/
+from swiss_ai_hub.core.persistence.<domain>.<resource>_entity import <Resource>Entity
 
 
 class <Resource>DTO(BaseModel):
@@ -275,7 +275,7 @@ class <Resource>DTO(BaseModel):
 
 ### Request DTOs
 
-File: `aihub_api/aihub_api/routes/<resource>/dto/Create<Resource>Request.py`
+File: `packages/api/swiss_ai_hub/api/routes/<resource>/dto/create_<resource>_request.py`
 
 ```python
 from typing import Annotated
@@ -289,7 +289,7 @@ class Create<Resource>Request(BaseModel):
     description: Annotated[str | None, Field(max_length=2000, description="Optional description")] = None
 ```
 
-File: `aihub_api/aihub_api/routes/<resource>/dto/Update<Resource>Request.py`
+File: `packages/api/swiss_ai_hub/api/routes/<resource>/dto/update_<resource>_request.py`
 
 ```python
 from typing import Annotated
@@ -306,14 +306,14 @@ class Update<Resource>Request(BaseModel):
 
 ### Paginated Response
 
-File: `aihub_api/aihub_api/routes/<resource>/dto/Paginated<Resource>sResponse.py`
+File: `packages/api/swiss_ai_hub/api/routes/<resource>/dto/paginated_<resource>s_response.py`
 
 ```python
 from typing import Annotated
 from pydantic import Field
 
-from aihub_api.pagination.PageDTO import PageDTO
-from aihub_api.routes.<resource>.dto.<Resource>DTO import <Resource>DTO
+from swiss_ai_hub.api.pagination.page_dto import PageDTO
+from swiss_ai_hub.api.routes.<resource>.dto.<resource>_dto import <Resource>DTO
 
 
 class Paginated<Resource>sResponse(PageDTO):
@@ -345,13 +345,13 @@ class Paginated<Resource>sResponse(PageDTO):
 ## Step 4: Verify
 
 1. Confirm the service is importable:
-   `cd aihub_api && uv run python -c "from aihub_api.routes.<resource>.<Resource>Service import <Resource>Service"`
+   `cd packages/api && uv run python -c "from swiss_ai_hub.api.routes.<resource>.<resource>_service import <Resource>Service"`
 2. Confirm the controller imports and calls the service (if controller already exists)
-3. Run tests: `cd aihub_api && make test`
+3. Run tests: `cd packages/api && make test`
 
 ## Key Conventions
 
-- **All methods `@staticmethod`**: Services are stateless (see `RoleService`, `AgentService`)
+- **All methods `@staticmethod`**: Services are stateless (see `role_service.py`, `agent_service.py`)
 - **All methods `@trace_fn`**: OpenTelemetry tracing on every method
 - **`async` only when needed**: Use `async` for actual async I/O; sync otherwise (e.g., `RoleService` is all sync)
 - **Raise `HTTPException`**: For error cases (404, 409, 400), or let MongoEngine exceptions propagate
@@ -359,4 +359,5 @@ class Paginated<Resource>sResponse(PageDTO):
 - **Accept `LocaleHandler`**: For i18n string extraction (skip if service has no localized fields, like `RoleService`)
 - **`DoesNotExist` / `NotUniqueError`**: MongoEngine exceptions to catch or let propagate
 - **No defensive try-catch**: Let unexpected errors propagate
-- **Entity paths vary**: Look up actual path in `aihub_lib/aihub_lib/persistence/` — no consistent naming convention
+- **Entity paths vary**: Look up actual path in `packages/core/swiss_ai_hub/core/persistence/` — no consistent naming
+  convention

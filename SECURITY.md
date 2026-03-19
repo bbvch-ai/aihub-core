@@ -22,7 +22,7 @@ We follow a coordinated disclosure process to ensure the security of our users.
 
 The best way to report a vulnerability is privately through GitHub's security advisory system.
 
-1. Go to the **"Security"** tab of the `aihub-core` repository.
+1. Go to the **"Security"** tab of the `swiss-ai-hub` repository.
 2. Click on **"Report a vulnerability"** (or go directly to
    [https://github.com/bbvch-ai/aihub-core/security/advisories/new](https://github.com/bbvch-ai/aihub-core/security/advisories/new)).
 3. Fill out the form with as much detail as possible.

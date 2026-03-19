@@ -45,7 +45,7 @@ ______________________________________________________________________
 The standard way to configure rclone sources. Loads config from `RCLONE_{SOURCE}_*` environment variables.
 
 ```python
-# aihub_lib/aihub_lib/infrastructure/rclone/RcloneSourceFactory.py
+# packages/core/swiss_ai_hub/core/infrastructure/rclone/RcloneSourceFactory.py
 
 class RcloneSourceSettings(EnvironmentSettings):
     """Loads RCLONE_{SOURCE}_NAME, RCLONE_{SOURCE}_TYPE, and all other
@@ -94,8 +94,8 @@ RCLONE_ONEDRIVE_DRIVE_TYPE=business
 ### Usage in Pipeline
 
 ```python
-from aihub_lib.infrastructure.rclone.RcloneSourceFactory import onedrive_source
-from aihub_pipeline.util.definitions_util import default_rclone_to_datalake_definitions
+from swiss_ai_hub.core.infrastructure.rclone.RcloneSourceFactory import onedrive_source
+from swiss_ai_hub.pipeline.util.definitions_util import default_rclone_to_datalake_definitions
 
 source = onedrive_source()
 
@@ -107,7 +107,7 @@ defs = default_rclone_to_datalake_definitions(
 )
 ```
 
-See `aihub_pipeline/templates/sources/` for complete per-backend examples with `.env.template` files.
+See `packages/pipeline/templates/sources/` for complete per-backend examples with `.env.template` files.
 
 ______________________________________________________________________
 
@@ -116,7 +116,7 @@ ______________________________________________________________________
 Global rclone service connection settings.
 
 ```python
-# aihub_lib/aihub_lib/infrastructure/rclone/RcloneSettings.py
+# packages/core/swiss_ai_hub/core/infrastructure/rclone/RcloneSettings.py
 
 class RcloneSettings(EnvironmentSettings):
     model_config = EnvironmentSettings.create_settings_config("RCLONE_")
@@ -139,7 +139,7 @@ ______________________________________________________________________
 For cases where env-var configuration isn't suitable (dynamic config, tests, playground):
 
 ```python
-# aihub_lib/aihub_lib/infrastructure/rclone/RcloneSourceConfig.py
+# packages/core/swiss_ai_hub/core/infrastructure/rclone/RcloneSourceConfig.py
 
 class RcloneBackendType(str, Enum):
     ONEDRIVE = "onedrive"
@@ -198,7 +198,7 @@ HTTP client wrapping the rclone RC API. Uses `httpx` (sync) for config operation
 operations.
 
 ```python
-# aihub_pipeline/aihub_pipeline/resources/rclone/RcloneClient.py
+# packages/pipeline/swiss_ai_hub/pipeline/resources/rclone/RcloneClient.py
 
 class RcloneClient:
     def __init__(self, base_url: str | None = None, default_remote: str | None = None, timeout: int = 30):
@@ -249,7 +249,7 @@ ______________________________________________________________________
 Wraps `RcloneClient` as a Dagster `ConfigurableResource`. Provides sync methods that safely wrap async operations.
 
 ```python
-# aihub_pipeline/aihub_pipeline/resources/rclone/RcloneResource.py
+# packages/pipeline/swiss_ai_hub/pipeline/resources/rclone/RcloneResource.py
 
 class RcloneResource(ConfigurableResource):
     source_remote: str          # e.g., "onedrive:Documents"
@@ -276,7 +276,7 @@ ______________________________________________________________________
 Read-only IO manager for loading files from rclone remotes.
 
 ```python
-# aihub_pipeline/aihub_pipeline/io/RcloneIOManager.py
+# packages/pipeline/swiss_ai_hub/pipeline/io/RcloneIOManager.py
 
 class RcloneIOManager(ConfigurableIOManager):
     rclone_client: ResourceDependency[RcloneResource]
@@ -296,7 +296,7 @@ ______________________________________________________________________
 Monitors a rclone remote for file changes using hash-based change detection.
 
 ```python
-# aihub_pipeline/aihub_pipeline/assets/factories/rclone_to_data_lake/observable_rclone_factory.py
+# packages/pipeline/swiss_ai_hub/pipeline/assets/factories/rclone_to_data_lake/observable_rclone_factory.py
 
 def observable_rclone_factory(key, partitions, max_partitions):
     @observable_source_asset(key=key, partitions_def=partitions, io_manager_key="rclone_io_manager")
@@ -316,14 +316,14 @@ def observable_rclone_factory(key, partitions, max_partitions):
 | **Content hash** (MD5/SHA1) | Primary  | Backend supports hashes (OneDrive, S3, etc.)         |
 | **mtime + size**            | Fallback | Backend doesn't support hashes (local FS, some SFTP) |
 
-Change detection op: `aihub_pipeline/aihub_pipeline/ops/rclone/data_version_by_partition_for_rclone_files.py`.
+Change detection op: `packages/pipeline/swiss_ai_hub/pipeline/ops/rclone/data_version_by_partition_for_rclone_files.py`.
 
 ______________________________________________________________________
 
 ## RcloneFile Types
 
 ```python
-# aihub_pipeline/aihub_pipeline/types/RcloneFile.py
+# packages/pipeline/swiss_ai_hub/pipeline/types/RcloneFile.py
 
 class MinimalRcloneFile(MinimalSourceFile):
     remote: str = ""              # e.g., "onedrive:"
