@@ -1,5 +1,5 @@
 {
-  "name": "aihub-e2e",
+  "name": "swiss-ai-hub-e2e",
   "private": true,
   "scripts": {
     "test": "playwright test",

@@ -1,7 +1,7 @@
 # Contributing to the Swiss AI-Hub
 
 First off, thank you for considering contributing! We are thrilled to have you here. This project is a community-driven
-effort, and every contribution—from fixing a typo to proposing a new sovereign AI strategy—is incredibly valuable.
+effort, and every contribution - from fixing a typo to proposing a new sovereign AI strategy - is incredibly valuable.
 
 This document is your starting guide. It will help you find the best way to make an impact and direct you to the
 resources you need.
@@ -37,7 +37,7 @@ There are many ways to support the Swiss AI-Hub, and many of them don't require 
 
 - **[Contribute Code](#-contributing-code-the-workflow)**: Help us build the next generation of the platform.
 - **[Improve Documentation](#-other-ways-to-contribute)**: Fix typos, clarify complex topics, or write new guides in the
-  `aihub_docs` folder.
+  `docs` folder.
 - **[Help the Community](#-join-our-community-the-first-step)**: Join our Discord, answer questions, and help us build a
   vibrant and supportive environment.
 - **[Improve Branding & Marketing](#-other-ways-to-contribute)**: Help us refine our message on our website or in our
@@ -74,16 +74,16 @@ aligns with the project's architecture *before* you invest a lot of time.
 We do not include the full setup instructions here, as our documentation is the single source of truth.
 
 - **To Build with the SDK:** If you are building a new agent, pipeline, or process, follow the
-  **[SDK Quick Start Guide](https://bbvch-ai.github.io/aihub-core/docs/3_sdk/1_quick_start/)**.
+  **[SDK Quick Start Guide](https://bbvch-ai.github.io/swiss-ai-hub/docs/3_sdk/1_quick_start/)**.
 - **To Deploy the Platform:** If you just want to run the platform locally or on-prem to try it out, follow the
-  **[Platform Deployment Guide](https://bbvch-ai.github.io/aihub-core/docs/2_platform/3_deployment_guide/)**.
+  **[Platform Deployment Guide](https://bbvch-ai.github.io/swiss-ai-hub/docs/2_platform/3_deployment_guide/)**.
 
 ### Step 4: Develop and Create Your PR
 
 We have a detailed guide on our Git workflow, branching strategy, and code conventions. Please read it carefully.
 
 **➡️
-[Full details are in our Ecosystem Contributing Guide](https://bbvch-ai.github.io/aihub-core/docs/4_ecosystem/1_contributing/)**
+[Full details are in our Ecosystem Contributing Guide](https://bbvch-ai.github.io/swiss-ai-hub/docs/4_ecosystem/1_contributing/)**
 
 Here is the short version:
 
@@ -97,8 +97,8 @@ Here is the short version:
 
 ### Documentation
 
-Our documentation in the `aihub_doc` folder is always a work in progress. If you find a typo, an unclear explanation, or
-a missing guide, a PR to improve it is one of the most valuable contributions you can make.
+Our documentation in the `docs` folder is always a work in progress. If you find a typo, an unclear explanation, or a
+missing guide, a PR to improve it is one of the most valuable contributions you can make.
 
 ### Marketing & Branding
 
@@ -114,5 +114,4 @@ technical/non-technical audiences.
 
 ## ⚖️ License
 
-By contributing to the Swiss AI-Hub, you agree that your contributions will be licensed under the Apache 2.0 and EUPL
-1.2 License.
+By contributing to the Swiss AI-Hub, you agree that your contributions will be licensed under the Apache 2.0 License.

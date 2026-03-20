@@ -1,10 +1,10 @@
 ---
 name: design-system
-description: Reference guide for the AI-Hub design system covering colors (aihub-theme.ts surface scale), typography, spacing, component patterns, dark mode, layout (StructuralScreen/Column), borders, radius, icons, buttons, severity mapping, confirmations, toasts, forms, charts, and panels. Use when user says "what colors to use", "design system", "Tailwind classes for cards", "dark mode classes", "spacing values", "which border radius", "typography scale", "layout structure", "icon sizes", "how to style X", "button pattern", "severity mapping", "which icon set", "chart pattern", "dashboard widget", or before building any UI to ensure visual consistency. Do NOT use for PrimeVue component API lookup (use primevue-lookup), scaffolding new components (use scaffold-frontend-component), or frontend code audits (use audit-frontend). Returns exact Tailwind classes and design tokens from the actual codebase.
+description: Reference guide for the Swiss AI Hub design system covering colors (aihub-theme.ts surface scale), typography, spacing, component patterns, dark mode, layout (StructuralScreen/Column), borders, radius, icons, buttons, severity mapping, confirmations, toasts, forms, charts, and panels. Use when user says "what colors to use", "design system", "Tailwind classes for cards", "dark mode classes", "spacing values", "which border radius", "typography scale", "layout structure", "icon sizes", "how to style X", "button pattern", "severity mapping", "which icon set", "chart pattern", "dashboard widget", or before building any UI to ensure visual consistency. Do NOT use for PrimeVue component API lookup (use primevue-lookup), scaffolding new components (use scaffold-frontend-component), or frontend code audits (use audit-frontend). Returns exact Tailwind classes and design tokens from the actual codebase.
 allowed-tools: Read, Grep, Glob, mcp__context7__resolve-library-id, mcp__context7__query-docs, mcp__primevue__get_component_tokens, mcp__primevue__get_component_styles, mcp__playwright__browser_navigate, mcp__playwright__browser_take_screenshot, mcp__playwright__browser_snapshot
 ---
 
-# AI-Hub Design System Reference
+# Swiss AI Hub Design System Reference
 
 Look up design system information. Topic or question via `$ARGUMENTS` (e.g., "colors", "spacing", "card pattern", "dark
 mode", "typography", "button", "severity", "icon", "chart").
@@ -25,7 +25,7 @@ ______________________________________________________________________
 
 ## Color Palette
 
-**Theme file**: `aihub_web/aihub_web/themes/aihub-theme.ts`
+**Theme file**: `packages/web/swiss_ai_hub_web/themes/aihub-theme.ts`
 
 ### Surface Scale (identical in light and dark mode)
 
@@ -84,7 +84,7 @@ ______________________________________________________________________
 
 ## Typography (from real components)
 
-**Base**: 14px (`aihub_web/aihub_web/assets/css/main.css`), system font stack.
+**Base**: 14px (`packages/web/swiss_ai_hub_web/assets/css/main.css`), system font stack.
 
 ### Hierarchy as Actually Used
 
@@ -476,12 +476,12 @@ ______________________________________________________________________
 
 ## Design Configuration Files
 
-| File                                        | Purpose                                    |
-| ------------------------------------------- | ------------------------------------------ |
-| `aihub_web/aihub_web/themes/aihub-theme.ts` | PrimeVue theme preset (surface scale)      |
-| `aihub_web/aihub_web/tailwind.config.mjs`   | Tailwind extensions (surface-850, plugins) |
-| `aihub_web/aihub_web/assets/css/main.css`   | Base font size (14px) and font stack       |
-| `aihub_web/aihub_web/nuxt.config.ts`        | PrimeVue module config, auto-imports       |
+| File                                                  | Purpose                                    |
+| ----------------------------------------------------- | ------------------------------------------ |
+| `packages/web/swiss_ai_hub_web/themes/aihub-theme.ts` | PrimeVue theme preset (surface scale)      |
+| `packages/web/swiss_ai_hub_web/tailwind.config.mjs`   | Tailwind extensions (surface-850, plugins) |
+| `packages/web/swiss_ai_hub_web/assets/css/main.css`   | Base font size (14px) and font stack       |
+| `packages/web/swiss_ai_hub_web/nuxt.config.ts`        | PrimeVue module config, auto-imports       |
 
 ______________________________________________________________________
 

@@ -16,13 +16,13 @@ Generate all boilerplate for a new AI agent. The agent name/description should b
 
 ## Before You Start
 
-Read the agent scope guide: `aihub_agent/CLAUDE.md`
+Read the agent scope guide: `packages/agent/CLAUDE.md`
 
 Study existing agents for reference patterns:
 
-- **Minimal reference**: `aihub_agent/playground/minimal_workflow/simple_workflow/SimpleWorkflow.py`
-- **Production reference**: `aihub_agent/aihub_agent/agents/RagAgent/RAGAgent.py`
-- **Pattern index**: `aihub_agent/playground/minimal_workflow/` (20 self-contained examples)
+- **Minimal reference**: `packages/agent/playground/minimal_workflow/simple_workflow/SimpleAgent.py`
+- **Production reference**: `packages/agent/swiss_ai_hub/agent/agents/rag_agent/rag_agent.py`
+- **Pattern index**: `packages/agent/playground/minimal_workflow/` (20 self-contained examples)
 
 ______________________________________________________________________
 
@@ -104,7 +104,8 @@ async def respond(
 **Design approach**: Sketch top-down to understand logical flow, then refine bottom-up to identify true data
 dependencies. For each step ask: *What is the minimal set of data this step requires?*
 
-Source: `aihub_lib/aihub_lib/nats/workflow/DispatchableWorkflow.py`, `aihub_agent/aihub_agent/agents/Agent.py`
+Source: `packages/core/swiss_ai_hub/core/workflow/dispatchable_workflow.py`,
+`packages/agent/swiss_ai_hub/agent/agents/agent.py`
 
 ______________________________________________________________________
 
@@ -235,7 +236,7 @@ async def end_step(self, event: HumanInTheLoopInput.response) -> StopEvent:
     return StopEvent()
 ```
 
-Source: `aihub_lib/aihub_lib/nats/events/human_in_the_loop/`
+Source: `packages/core/swiss_ai_hub/core/events/agent/hitl/`
 
 #### Multiple HITL Interactions
 
@@ -246,9 +247,9 @@ event type—using the same base type for multiple interactions causes ambiguity
 
 ```python
 # events/FirstStepHumanInTheLoop.py
-from aihub_lib.nats.events.human_in_the_loop import HumanInTheLoopInput
-from aihub_lib.nats.events.human_in_the_loop.request import HumanInTheLoopInputRequestEvent
-from aihub_lib.nats.events.human_in_the_loop.response import HumanInTheLoopInputResponseEvent
+from swiss_ai_hub.core.nats.events.human_in_the_loop import HumanInTheLoopInput
+from swiss_ai_hub.core.nats.events.human_in_the_loop.request import HumanInTheLoopInputRequestEvent
+from swiss_ai_hub.core.nats.events.human_in_the_loop.response import HumanInTheLoopInputResponseEvent
 
 
 class FirstStepHumanInTheLoopRequestEvent(HumanInTheLoopInputRequestEvent):
@@ -266,9 +267,9 @@ class FirstStepHumanInTheLoop(HumanInTheLoopInput):
 
 ```python
 # events/SecondStepHumanInTheLoop.py
-from aihub_lib.nats.events.human_in_the_loop import HumanInTheLoopInput
-from aihub_lib.nats.events.human_in_the_loop.request import HumanInTheLoopInputRequestEvent
-from aihub_lib.nats.events.human_in_the_loop.response import HumanInTheLoopInputResponseEvent
+from swiss_ai_hub.core.nats.events.human_in_the_loop import HumanInTheLoopInput
+from swiss_ai_hub.core.nats.events.human_in_the_loop.request import HumanInTheLoopInputRequestEvent
+from swiss_ai_hub.core.nats.events.human_in_the_loop.response import HumanInTheLoopInputResponseEvent
 
 
 class SecondStepHumanInTheLoopRequestEvent(HumanInTheLoopInputRequestEvent):
@@ -287,9 +288,9 @@ class SecondStepHumanInTheLoop(HumanInTheLoopInput):
 **Step 2: Use distinct types in the workflow**
 
 ```python
-from aihub_lib.nats.events import StartEvent, StopEvent
-from aihub_agent.agents.Agent import Agent
-from aihub_agent.workflow.decorators.step import step
+from swiss_ai_hub.core.nats.events import StartEvent, StopEvent
+from swiss_ai_hub.agent.agents.Agent import Agent
+from swiss_ai_hub.agent.workflow.decorators.step import step
 
 from .events.FirstStepHumanInTheLoop import FirstStepHumanInTheLoop
 from .events.SecondStepHumanInTheLoop import SecondStepHumanInTheLoop
@@ -318,7 +319,7 @@ class MultistepHumanInTheLoopAgent(Agent):
 When the HITL type depends on runtime conditions, use union return types:
 
 ```python
-from aihub_lib.nats.events.human_in_the_loop import (
+from swiss_ai_hub.core.nats.events.human_in_the_loop import (
     HumanInTheLoopChat,
     HumanInTheLoopConfirmation,
     HumanInTheLoopInput,
@@ -360,7 +361,7 @@ BITL requires platform-specific configuration:
 **Microsoft Teams:**
 
 ```python
-from aihub_lib.nats.events.bot_in_the_loop.request.BotInTheLoopRequestEvent import TeamsConfig
+from swiss_ai_hub.core.nats.events.bot_in_the_loop.request.BotInTheLoopRequestEvent import TeamsConfig
 
 teams_config = TeamsConfig(
     channel_id="19:abc123@thread.tacv2",
@@ -372,7 +373,7 @@ teams_config = TeamsConfig(
 **Slack:**
 
 ```python
-from aihub_lib.nats.events.bot_in_the_loop.request.BotInTheLoopRequestEvent import SlackConfig
+from swiss_ai_hub.core.nats.events.bot_in_the_loop.request.BotInTheLoopRequestEvent import SlackConfig
 
 slack_config = SlackConfig(
     channel_id="C0123456789",
@@ -383,7 +384,7 @@ slack_config = SlackConfig(
 #### Basic Usage
 
 ```python
-from aihub_lib.nats.events.bot_in_the_loop.BotInTheLoop import BotInTheLoop
+from swiss_ai_hub.core.nats.events.bot_in_the_loop.BotInTheLoop import BotInTheLoop
 
 class BotInTheLoopAgent(Agent):
     @step()
@@ -486,7 +487,7 @@ ______________________________________________________________________
 Extract the agent name from `$ARGUMENTS`. Convert to `CamelCase` for classes, `snake_case` for directories.
 
 ```
-aihub_agent/aihub_agent/agents/{AgentName}/
+packages/agent/swiss_ai_hub/agent/agents/{AgentName}/
 ├── {AgentName}.py              # Agent class
 ├── configs/
 │   └── {AgentName}Config.py    # AgentConfig subclass with form duality
@@ -497,10 +498,10 @@ aihub_agent/aihub_agent/agents/{AgentName}/
     │   └── {agent_name}.feature  # BDD scenario
     └── test_{agent_name}.py      # Test implementation
 
-aihub_agent/app/{agent_name}/
+packages/agent/app/{agent_name}/
 └── main.py                     # Entry point with AgentRunner
 
-aihub_agent/i18n/translations/agent/
+packages/agent/i18n/translations/agent/
 ├── {agent_name}.de.yml
 ├── {agent_name}.en.yml
 ├── {agent_name}.fr.yml
@@ -589,8 +590,8 @@ async def finalize(self, cleanup: CleanupEvent) -> StopEvent:
 Create one file per event in `agents/{AgentName}/events/`:
 
 ```python
-# aihub_agent/aihub_agent/agents/{AgentName}/events/{EventName}.py
-from aihub_lib.nats.events.control.ControlEvent import ControlEvent
+# packages/agent/swiss_ai_hub/agent/agents/{AgentName}/events/{EventName}.py
+from swiss_ai_hub.core.nats.events.control.ControlEvent import ControlEvent
 
 
 class {EventName}(ControlEvent):
@@ -629,15 +630,15 @@ ______________________________________________________________________
 ## Step 4: Create Agent Class
 
 ```python
-# aihub_agent/aihub_agent/agents/{AgentName}/{AgentName}.py
+# packages/agent/swiss_ai_hub/agent/agents/{AgentName}/{AgentName}.py
 from typing import ClassVar
 
-from aihub_lib.nats.events.control.stop.StopEvent import StopEvent
-from aihub_lib.nats.events.user.UserMessageEvent import UserMessageEvent
+from swiss_ai_hub.core.nats.events.control.stop.StopEvent import StopEvent
+from swiss_ai_hub.core.nats.events.user.UserMessageEvent import UserMessageEvent
 
-from aihub_agent.agents.Agent import Agent
-from aihub_agent.i18n.AgentLocaleString import AgentLocaleString
-from aihub_agent.workflow.decorators.step import step
+from swiss_ai_hub.agent.agents.Agent import Agent
+from swiss_ai_hub.agent.i18n.AgentLocaleString import AgentLocaleString
+from swiss_ai_hub.agent.workflow.decorators.step import step
 
 from .events.{EventName} import {EventName}
 
@@ -678,7 +679,7 @@ class {AgentName}(Agent):
 | `max_executions_per_run` | `int \| None`                 | `None`  | Limits re-execution count (None = unlimited)     |
 | `stop_on_error`          | `bool`                        | `True`  | Publish ExceptionEvent on error                  |
 
-Source: `aihub_agent/aihub_agent/workflow/decorators/step.py`
+Source: `packages/agent/swiss_ai_hub/agent/workflow/decorators/step.py`
 
 ### Step Return Types
 
@@ -708,7 +709,7 @@ The dispatcher resolves parameters by type annotation. Declare what you need:
 | `AgentMemory`                          | User and organization memory access              |
 | `AgentInstanceTopic`                   | NATS topic info for this event                   |
 
-Source: `AgentDispatcher._get_parameter_value()` in `aihub_agent/dispatchers/AgentDispatcher.py`
+Source: `AgentDispatcher._get_parameter_value()` in `packages/agent/swiss_ai_hub/agent/dispatchers/agent_dispatcher.py`
 
 ### Event Resolution Strategy
 
@@ -741,17 +742,17 @@ ______________________________________________________________________
 ## Step 5: Create Config
 
 ```python
-# aihub_agent/aihub_agent/agents/{AgentName}/configs/{AgentName}Config.py
+# packages/agent/swiss_ai_hub/agent/agents/{AgentName}/configs/{AgentName}Config.py
 from typing import Annotated, Self
 
 from pydantic import Field
 
-from aihub_lib.agents.AgentConfig import AgentConfig
-from aihub_lib.i18n.LocaleString import LocaleString
-from aihub_lib.nats.events.form.constraints import Ge, Le
-from aihub_lib.nats.events.form.elements.InputNumber import InputNumber
-from aihub_lib.nats.events.form.elements.InputText import InputText
-from aihub_lib.nats.events.form.elements.ModelSelect import ModelSelect
+from swiss_ai_hub.core.agents.agent_config import AgentConfig
+from swiss_ai_hub.core.i18n.locale_string import LocaleString
+from swiss_ai_hub.core.form.constraints import Ge, Le
+from swiss_ai_hub.core.form import InputNumber
+from swiss_ai_hub.core.form import InputText
+from swiss_ai_hub.core.form import ModelSelect
 
 
 class {AgentName}Config(AgentConfig):
@@ -781,7 +782,7 @@ class {AgentName}Config(AgentConfig):
 
 - **Field types**: Always `primitive_type | FormkitElement` union (e.g., `str | InputText`)
 - **Constraints**: Use `Ge()`, `Le()`, `Gt()`, `Lt()`, `MinLen()`, `MaxLen()`, `Pattern()` from
-  `aihub_lib.nats.events.form.constraints` — NOT Pydantic's `ge=`, `le=`
+  `swiss_ai_hub.core.form.constraints` — NOT Pydantic's `ge=`, `le=`
 - **Configurable fields**: Set to a FormkitElement in `as_form()` → editable in Admin UI
 - **Non-configurable fields**: Set to a primitive in `as_form()` → deployment-fixed, baked in
 - **Labels**: All labels must be `LocaleString` with de, en, fr, it
@@ -791,7 +792,7 @@ class {AgentName}Config(AgentConfig):
 For step-specific configuration, nest a `StepConfig` subclass:
 
 ```python
-from aihub_lib.agents.AgentConfig import StepConfig
+from swiss_ai_hub.core.agents.AgentConfig import StepConfig
 
 class MyStepConfig(StepConfig):
     threshold: Annotated[float | InputNumber, Field(description="Threshold")] = 0.5
@@ -804,7 +805,7 @@ The dispatcher auto-extracts `StepConfig` fields and injects them into steps tha
 
 ### FormKit Elements Reference
 
-From `aihub_lib/nats/events/form/elements/`:
+From `packages/core/swiss_ai_hub/core/form/elements/`:
 
 - **Input**: `InputText`, `InputNumber`, `Textarea`, `Password`, `InputMask`, `InputOtp`
 - **Selection**: `Select`, `MultiSelect`, `CascadeSelect`, `Checkbox`, `ToggleSwitch`, `ToggleButton`, `RadioButton`,
@@ -813,19 +814,19 @@ From `aihub_lib/nats/events/form/elements/`:
   `IconSelector`, `LocaleInput` (multi-language), `ColorPicker`, `DatePicker`, `Knob`, `Rating`, `Slider`
 - **Layout**: `Group` (auto-created from nested `Form`), `Repeater` (auto-created from `list[Form]`)
 
-Source: `aihub_lib/aihub_lib/agents/AgentConfig.py`, `aihub_lib/aihub_lib/nats/events/form/Form.py`
+Source: `packages/core/swiss_ai_hub/core/agents/agent_config.py`, `packages/core/swiss_ai_hub/core/form/form.py`
 
 ______________________________________________________________________
 
 ## Step 6: Create Entry Point
 
 ```python
-# aihub_agent/app/{agent_name}/main.py
+# packages/agent/app/{agent_name}/main.py
 import asyncio
 
-from aihub_agent.agents.{AgentName}.{AgentName} import {AgentName}
-from aihub_agent.agents.{AgentName}.configs.{AgentName}Config import {AgentName}Config
-from aihub_agent.runners.AgentRunner import AgentRunner
+from swiss_ai_hub.agent.agents.{agent_name}.{agent_name} import {AgentName}
+from swiss_ai_hub.agent.agents.{agent_name}.configs.{agent_name}_config import {AgentName}Config
+from swiss_ai_hub.agent.runners.agent_runner import AgentRunner
 
 
 async def main():
@@ -837,13 +838,13 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-Source: `aihub_agent/aihub_agent/runners/AgentRunner.py`
+Source: `packages/agent/swiss_ai_hub/agent/runners/agent_runner.py`
 
 ______________________________________________________________________
 
 ## Step 7: Add i18n
 
-Create translation files in `aihub_agent/i18n/translations/agent/`:
+Create translation files in `packages/agent/i18n/translations/agent/`:
 
 ```yaml
 # {agent_name}.en.yml
@@ -878,7 +879,8 @@ async def my_step(self, event: MyEvent, t: LocaleHandler) -> StopEvent:
     return StopEvent()
 ```
 
-Source: `aihub_agent/i18n/AgentLocaleString.py`, `aihub_agent/i18n/translations/agent/`
+Source: `packages/agent/swiss_ai_hub/agent/i18n/agent_locale_string.py`,
+`packages/agent/swiss_ai_hub/agent/i18n/translations/agent/`
 
 ______________________________________________________________________
 
@@ -887,8 +889,8 @@ ______________________________________________________________________
 Use `EventDisplayer` for streaming LLM output to the frontend:
 
 ```python
-from aihub_lib.displayers.EventDisplayer import EventDisplayer
-from aihub_lib.nats.events.semantic.LLMEvent import LLMEvent
+from swiss_ai_hub.core.displayers import EventDisplayer
+from swiss_ai_hub.core.events.agent import LLMStopEvent
 
 @step()
 async def llm_step(
@@ -928,7 +930,8 @@ automatically. `display_llm_costs()` emits `LLMCostEvent` for billing.
 | `display_chunk(text, model_name)` | Stream output incrementally              |
 | `display_llm_stream(...)`         | Complete LLM response with cost tracking |
 
-Source: `aihub_lib/displayers/EventDisplayer.py`, `aihub_lib/displayers/stream/StreamProcessor.py`
+Source: `packages/core/swiss_ai_hub/core/displayers/event_displayer.py`,
+`packages/core/swiss_ai_hub/core/displayers/stream/stream_processor.py`
 
 ______________________________________________________________________
 
@@ -937,7 +940,7 @@ ______________________________________________________________________
 For agents that need to remember across conversations:
 
 ```python
-from aihub_lib.generative_ai.memory.AgentMemory import AgentMemory
+from swiss_ai_hub.core.generative_ai import AgentMemory
 
 @step()
 async def retrieve_memory(self, event: UserMessageEvent, memory: AgentMemory) -> MemoryEvent:
@@ -981,7 +984,7 @@ event, and the stop step consumes it.
 **Playground**: `playground/minimal_workflow/user_memory_workflow/`,
 `playground/minimal_workflow/organization_memory_workflow/`
 
-Source: `aihub_lib/generative_ai/memory/AgentMemory.py`
+Source: `packages/core/swiss_ai_hub/core/generative_ai/memory/agent_memory.py`
 
 ### Complete Memory Pattern with Preconditions
 
@@ -1076,7 +1079,7 @@ ______________________________________________________________________
 ### BDD Feature File
 
 ```gherkin
-# aihub_agent/aihub_agent/agents/{AgentName}/tests/features/{agent_name}.feature
+# packages/agent/swiss_ai_hub/agent/agents/{AgentName}/tests/features/{agent_name}.feature
 Feature: {Agent Display Name}
 
   Scenario: Happy path
@@ -1089,17 +1092,17 @@ Feature: {Agent Display Name}
 ### Test Implementation
 
 ```python
-# aihub_agent/aihub_agent/agents/{AgentName}/tests/test_{agent_name}.py
+# packages/agent/swiss_ai_hub/agent/agents/{AgentName}/tests/test_{agent_name}.py
 import pytest
 from pytest_bdd import given, scenario, then, when
 
-from aihub_lib.nats.events.control.stop.StopEvent import StopEvent
-from aihub_lib.nats.events.user.UserMessageEvent import UserMessageEvent
-from aihub_lib.testing.asyncio_utils.bdd import async_test
+from swiss_ai_hub.core.events.agent.control.stop.stop_event import StopEvent
+from swiss_ai_hub.core.events.agent.user.user_message_event import UserMessageEvent
+from swiss_ai_hub.core.testing.asyncio_utils.bdd import async_test
 
-from aihub_agent.agents.{AgentName}.{AgentName} import {AgentName}
-from aihub_agent.agents.{AgentName}.configs.{AgentName}Config import {AgentName}Config
-from aihub_agent.runners.AgentTestRunner import AgentTestRunner
+from swiss_ai_hub.agent.agents.{agent_name}.{agent_name} import {AgentName}
+from swiss_ai_hub.agent.agents.{agent_name}.configs.{agent_name}_config import {AgentName}Config
+from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner
 
 
 @scenario("features/{agent_name}.feature", "Happy path")
@@ -1168,7 +1171,7 @@ async def test_retrieve_step():
 ### Integration Testing (Full Workflow)
 
 ```python
-from aihub_agent.runners.AgentTestRunner import AgentTestRunner
+from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner
 
 async def test_full_workflow():
     runner = AgentTestRunner(MyAgent, MyAgentConfig())
@@ -1182,7 +1185,7 @@ async def test_full_workflow():
         assert len(events) == 1
 ```
 
-Source: `aihub_agent/runners/AgentTestRunner.py`
+Source: `packages/agent/swiss_ai_hub/agent/runners/agent_test_runner.py`
 
 ______________________________________________________________________
 
@@ -1194,7 +1197,7 @@ form schema, event specs, and workflow graph. No manual registration needed.
 **Verify the agent is discoverable:**
 
 ```bash
-cd aihub_agent && uv run python -c "from aihub_agent.agents.{AgentName}.{AgentName} import {AgentName}; print({AgentName}.get_steps())"
+cd packages/agent && uv run python -c "from swiss_ai_hub.agent.agents.{AgentName}.{AgentName} import {AgentName}; print({AgentName}.get_steps())"
 ```
 
 ______________________________________________________________________
@@ -1203,7 +1206,7 @@ ______________________________________________________________________
 
 ### Before Coding
 
-- [ ] Read `aihub_agent/CLAUDE.md`
+- [ ] Read `packages/agent/CLAUDE.md`
 - [ ] Identified the pattern from the catalog above
 - [ ] Studied the matching playground example
 - [ ] Sketched the event DAG on paper (events as edges, steps as nodes)
@@ -1226,8 +1229,9 @@ ______________________________________________________________________
 - [ ] Every execution path reaches `StopEvent`
 - [ ] `StopEvent` is returned alone (not in a list with other events)
 - [ ] Optional params have synchronization (precondition or max_executions_per_run)
-- [ ] BDD tests pass: `cd aihub_agent && uv run pytest tests/ -k "{agent_name}" -v`
-- [ ] Agent is importable: `uv run python -c "from aihub_agent.agents.{AgentName}.{AgentName} import {AgentName}"`
+- [ ] BDD tests pass: `cd packages/agent && uv run pytest tests/ -k "{agent_name}" -v`
+- [ ] Agent is importable:
+  `uv run python -c "from swiss_ai_hub.agent.agents.{AgentName}.{AgentName} import {AgentName}"`
 
 ______________________________________________________________________
 
@@ -1235,24 +1239,24 @@ ______________________________________________________________________
 
 ### Framework Files
 
-| File                                                                       | Purpose                               |
-| -------------------------------------------------------------------------- | ------------------------------------- |
-| `aihub_agent/aihub_agent/agents/Agent.py`                                  | Agent base class                      |
-| `aihub_agent/aihub_agent/workflow/decorators/step.py`                      | `@step()` decorator                   |
-| `aihub_agent/aihub_agent/workflow/decorators/precondition.py`              | `@precondition()` decorator           |
-| `aihub_agent/aihub_agent/dispatchers/AgentDispatcher.py`                   | Core workflow executor (DI, dispatch) |
-| `aihub_agent/aihub_agent/runners/AgentRunner.py`                           | Production runner                     |
-| `aihub_agent/aihub_agent/runners/AgentTestRunner.py`                       | Test runner                           |
-| `aihub_agent/aihub_agent/context/run/RunContext.py`                        | Per-run ephemeral state               |
-| `aihub_agent/aihub_agent/context/thread/ThreadContext.py`                  | Per-thread persistent state           |
-| `aihub_agent/aihub_agent/i18n/AgentLocaleString.py`                        | Agent i18n strings                    |
-| `aihub_lib/aihub_lib/agents/AgentConfig.py`                                | Config base with form duality         |
-| `aihub_lib/aihub_lib/nats/events/form/Form.py`                             | Form system                           |
-| `aihub_lib/aihub_lib/nats/events/form/elements/`                           | FormKit elements (28 types)           |
-| `aihub_lib/aihub_lib/nats/events/form/constraints.py`                      | Form-aware validators                 |
-| `aihub_lib/aihub_lib/displayers/EventDisplayer.py`                         | LLM streaming + display events        |
-| `aihub_lib/aihub_lib/generative_ai/memory/AgentMemory.py`                  | User + org memory                     |
-| `aihub_lib/aihub_lib/nats/workflow/annotations/custom_types/ListOfSize.py` | FixedList for fan-in                  |
+| File                                                                                | Purpose                               |
+| ----------------------------------------------------------------------------------- | ------------------------------------- |
+| `packages/agent/swiss_ai_hub/agent/agents/agent.py`                                 | Agent base class                      |
+| `packages/agent/swiss_ai_hub/agent/workflow/decorators/step.py`                     | `@step()` decorator                   |
+| `packages/agent/swiss_ai_hub/agent/workflow/decorators/precondition.py`             | `@precondition()` decorator           |
+| `packages/agent/swiss_ai_hub/agent/dispatchers/agent_dispatcher.py`                 | Core workflow executor (DI, dispatch) |
+| `packages/agent/swiss_ai_hub/agent/runners/agent_runner.py`                         | Production runner                     |
+| `packages/agent/swiss_ai_hub/agent/runners/agent_test_runner.py`                    | Test runner                           |
+| `packages/agent/swiss_ai_hub/agent/context/run/run_context.py`                      | Per-run ephemeral state               |
+| `packages/agent/swiss_ai_hub/agent/context/thread/thread_context.py`                | Per-thread persistent state           |
+| `packages/agent/swiss_ai_hub/agent/i18n/agent_locale_string.py`                     | Agent i18n strings                    |
+| `packages/core/swiss_ai_hub/core/agents/agent_config.py`                            | Config base with form duality         |
+| `packages/core/swiss_ai_hub/core/form/form.py`                                      | Form system                           |
+| `packages/core/swiss_ai_hub/core/form/elements/`                                    | FormKit elements (28 types)           |
+| `packages/core/swiss_ai_hub/core/form/constraints.py`                               | Form-aware validators                 |
+| `packages/core/swiss_ai_hub/core/displayers/event_displayer.py`                     | LLM streaming + display events        |
+| `packages/core/swiss_ai_hub/core/generative_ai/memory/agent_memory.py`              | User + org memory                     |
+| `packages/core/swiss_ai_hub/core/workflow/annotations/custom_types/list_of_size.py` | FixedList for fan-in                  |
 
 ### Playground Patterns Index
 

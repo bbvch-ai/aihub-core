@@ -3,11 +3,11 @@ import { defineConfig, devices } from '@playwright/test'
 /**
  * Playwright E2E test configuration for AI-Hub.
  *
- * Targets the docker-compose.build.yml stack which uses Traefik with
+ * Targets the infra/docker-compose.build.yml stack which uses Traefik with
  * HTTPS and domain-based routing (e.g. https://127.0.0.1.nip.io).
  *
  * Prerequisites:
- * - docker-compose.build.yml stack running
+ * - infra/docker-compose.build.yml stack running
  * - DOMAIN set in .env (defaults to 127.0.0.1.nip.io)
  *
  * Environment variables:
