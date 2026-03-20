@@ -57,6 +57,9 @@ async def _fake_mcp_create(_config: McpClientConfig) -> AsyncIterator[AsyncMock]
     mock_mcp_client.call_tool = AsyncMock(
         return_value=MagicMock(content=[TextContent(type="text", text="hello")], is_error=False)
     )
+    mock_mcp_client.list_resources = AsyncMock(return_value=[])
+    mock_mcp_client.list_resource_templates = AsyncMock(return_value=[])
+    mock_mcp_client.initialize_result = None
     yield mock_mcp_client
 
 

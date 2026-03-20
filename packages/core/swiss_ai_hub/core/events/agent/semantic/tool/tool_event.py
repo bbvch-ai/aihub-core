@@ -14,6 +14,9 @@ class ToolEvent(SemanticEvent):
         "lib.events.semantic_tool_event.description"
     )
 
+    tool_call_id: Annotated[
+        str | None, Field(description="Unique identifier linking this invocation to its result")
+    ] = None
     name: Annotated[str | None, Field(description="The name of the tool being utilized")] = None
     description: Annotated[str | None, Field(description="Description of the tool's purpose and functionality")] = None
     json_schema: Annotated[dict[str, Any] | None, Field(description="The json schema of a tool input")] = None

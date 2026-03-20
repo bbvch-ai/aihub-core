@@ -74,6 +74,7 @@ async def _(agent_runner: AgentTestRunner):
     mock_mcp_client.call_tool = AsyncMock(
         return_value=MagicMock(content=[TextContent(type="text", text="hello")], is_error=False)
     )
+    mock_mcp_client.initialize_result = None
 
     @asynccontextmanager
     async def fake_mcp_create(_config: McpClientConfig) -> AsyncIterator[AsyncMock]:
