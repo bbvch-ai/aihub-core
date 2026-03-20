@@ -1,8 +1,0 @@
-<component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="License Check" type="MAKEFILE_TARGET_RUN_CONFIGURATION" factoryName="Makefile" folderName="Make Tooling">
-    <makefile filename="$PROJECT_DIR$/Makefile" target="license-check" workingDirectory="" arguments="">
-      <envs />
-    </makefile>
-    <method v="2" />
-  </configuration>
-</component>

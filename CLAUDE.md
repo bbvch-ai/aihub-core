@@ -1,8 +1,8 @@
-# AI-Hub Developer Guide for AI Agents
+# Swiss AI Hub Developer Guide for AI Agents
 
 ## Project Overview
 
-**Swiss AI-Hub**: Open-source, self-hosted AI platform for enterprises. Organizations run it on their own infrastructure
+**Swiss AI Hub**: Open-source, self-hosted AI platform for enterprises. Organizations run it on their own infrastructure
 — no SaaS dependency, full data sovereignty. The platform handles authentication, multi-tenancy, cost control,
 observability, LLM routing, vector storage, and document parsing as commodity infrastructure. Developers focus on
 building agents, pipelines, and processes using the SDK; the platform provides the runtime.
@@ -14,7 +14,7 @@ database schemas, or auth logic needed.
 
 **Swiss AI Agent Protocol**: Event-driven protocol over NATS. Strict Control Event (workflow) vs Display Event
 (observability) separation. Hierarchical scoping (Thread → Display → Run). See
-`aihub_doc/docs/2_platform/2_architecture/3_swiss_ai_agent_protocol/index.en.md`.
+`docs/docs/2_platform/2_architecture/3_swiss_ai_agent_protocol/index.en.md`.
 
 ## Platform Architecture
 
@@ -62,7 +62,7 @@ request to LLM response.
 
 ## Dev Stack Services
 
-The `docker-compose.dev.yml` runs ~30 containers. Key services by role:
+The `infra/docker-compose.dev.yml` runs ~30 containers. Key services by role:
 
 **User-Facing**: OpenWebUI (chat UI, :8080), Admin UI and Process UI (Nuxt, :3333, run locally outside Docker)
 
@@ -90,17 +90,17 @@ admin UI)
 
 ## Package Architecture
 
-Code shared by 2+ services belongs in `aihub_lib`. Service-specific code stays in its scope.
+Code shared by 2+ services belongs in `packages/core`. Service-specific code stays in its scope.
 
-- **`aihub_lib`**: Shared library used by all other packages.
-- **`aihub_agent`**: Agent definitions and workflows (Our custom Workflow-Engine, transparent, auditable).
-- **`aihub_pipeline`**: Data ingestion/processing pipelines (Dagster).
-- **`aihub_process`**: High-level business process orchestration (agents + humans + external programs).
-- **`aihub_api`**: REST API + WebSocket gateway (FastAPI).
-- **`aihub_web`**: Frontend UI (Nuxt 3, Vue 3, PrimeVue, Tailwind).
-- **`aihub_bot`**: Collaboration platform integrations (MS Teams, Slack).
-- **`aihub_action`**: Reusable GitHub Actions for CI/CD.
-- **`aihub_doc`**: arc42 documentation + ADRs (VitePress).
+- **`packages/core`**: Shared library (Swiss AI Hub Core) used by all other packages.
+- **`packages/agent`**: Agent definitions and workflows (Our custom Workflow-Engine, transparent, auditable).
+- **`packages/pipeline`**: Data ingestion/processing pipelines (Dagster).
+- **`packages/process`**: High-level business process orchestration (agents + humans + external programs).
+- **`packages/api`**: REST API + WebSocket gateway (FastAPI).
+- **`packages/web`**: Frontend UI (Nuxt 3, Vue 3, PrimeVue, Tailwind).
+- **`packages/bot`**: Collaboration platform integrations (MS Teams, Slack).
+- **`.github/actions`**: Reusable GitHub Actions for CI/CD.
+- **`docs`**: arc42 documentation + ADRs (VitePress).
 
 Each scope has its own `CLAUDE.md` — consult it before working in that scope.
 
@@ -128,16 +128,25 @@ Each scope has its own `CLAUDE.md` — consult it before working in that scope.
     `snake_case`, constants: `UPPER_SNAKE_CASE`.
 10. **Modern Python**: Use `|` unions, `@property`, `@override`, `match/case`. Return `Self` (from `typing`) instead of
     `"ClassName"` for methods returning own type. Use PEP 695 generic syntax `class Foo[T: Bound]:` and
-    `def bar[T](x: T)` instead of `TypeVar`. See `aihub_lib/aihub_lib/nats/subscribers/AbstractSubscriber.py` for the
-    pattern.
+    `def bar[T](x: T)` instead of `TypeVar`. See `packages/core/swiss_ai_hub/core/subscribers/abstract_subscriber.py`
+    for the pattern.
 11. **Controller → Service → Entity**: Separation of concerns (HTTP layer → business logic → persistence).
 12. **Dependency injection**: FastAPI `Depends` and `Security` for clean parameter injection.
-13. **One class per file**: File name MUST match class name (`MyClass` → `MyClass.py`). No multi-class files.
+13. **One class per file**: Each file should contain a single primary class. File names are always `snake_case`
+    (`my_class.py`), class names are always `CamelCase` (`MyClass`).
 14. **No loose functions**: Avoid files containing standalone functions. Create service classes with `@staticmethod` or
     `@classmethod` methods instead.
 15. **No backwards compatibility**: Breaking changes are fine. Do not add compatibility shims, re-exports, or renamed
     aliases unless explicitly asked.
 16. **No new abstractions**: Do not introduce abstractions that do not follow existing patterns in the codebase.
+17. **`__init__.py` exports**: Each top-level folder within a package should have an `__init__.py` that lazily exports
+    the public interface (using `TYPE_CHECKING` + `__getattr__`). Deeper nested folders rarely need `__init__.py`.
+18. **Import rules — within a package**: Always import via the full module path to the source file, never through
+    `__init__.py` re-exports. E.g., `from swiss_ai_hub.core.events.agent.control.start.start_event import StartEvent`.
+19. **Import rules — across packages**: Always import through the target package's public interface (`__init__.py`),
+    never access internal modules directly. E.g., `from swiss_ai_hub.core.events.agent import StartEvent`.
+20. **Environment variables**: Pydantic `BaseSettings` classes do NOT auto-load from environment variables. Environment
+    variables must be loaded explicitly when constructing settings instances.
 
 **Naming**: `snake_case` for files/dirs, `CamelCase` for classes, `test_*.py` for tests.
 
@@ -149,13 +158,13 @@ instead. Keep docstrings concise, one or two sentences max.
 **What hooks handle automatically — do NOT run these manually:**
 
 - **Formatting** (PostToolUse hooks on every file edit): Ruff format for Python, ESLint --fix for TS/Vue, mdformat for
-  Markdown, yamlfix for YAML. Config: per-scope `pyproject.toml`, `aihub_web/aihub_web/eslint.config.js`.
+  Markdown, yamlfix for YAML. Config: per-scope `pyproject.toml`, `packages/web/swiss_ai_hub_web/eslint.config.js`.
 - **Linting** (PostToolUse hook): Ruff check --fix (rules: E pycodestyle, F pyflakes, UP pyupgrade, I isort).
 - **`make pr-ready`** (stop hook at session end): Automatically runs on all dirty scopes before session closes.
   Hard-blocks if it fails. Do not run manually mid-session — it runs at the end.
 - **`uv.lock` protection** (PreToolUse hook): Edits to `uv.lock` are hard-blocked. Use `uv add/remove`.
 - **Scope boundary checks** (PreToolUse hook): Warns if you import directly between scopes instead of through
-  `aihub_lib`.
+  `packages/core`.
 - **Dependency setup** (SessionStart hook): `uv sync --all-packages` + `pnpm install` run at session start.
 
 **What you MUST run manually:**
@@ -182,14 +191,15 @@ Run from the workspace root:
 - Claude branches: `^claude\/[a-zA-Z0-9-]+$` — e.g., `claude/fix-issue-42`
 - No uppercase, no underscores in branch names. Prefix must be all-lowercase (`feat`, `fix`, `chore`, `test`, `doc`).
 
-**Commits**: Conventional Commits: `<type>(<scope>): <subject>` (e.g., `feat(aihub): Add new agent workflow`)
+**Commits**: Conventional Commits: `<type>(<scope>): <subject>` (e.g., `feat(swiss-ai-hub): Add new agent workflow`)
 
 **PR title** (CI-enforced via `semantic-pr`):
 
 - Format: `<type>(<scope>): <Subject starting with uppercase>`
 - Scope is **mandatory**.
 - Allowed types: `fix`, `feat`, `doc`, `test`, `chore`
-- Allowed scopes: `aihub`, `iac`, `ci-cd`, `bots`, `dagster`, `deploy`, `ui`, `guards`, `rag`, `tracing`, `workflows`
+- Allowed scopes: `swiss-ai-hub`, `iac`, `ci-cd`, `bots`, `dagster`, `deploy`, `ui`, `guards`, `rag`, `tracing`,
+  `workflows`
 
 **PR labels** (CI-enforced): Every PR must have exactly one version label: `major`, `minor`, or `patch`. Controls
 automatic semver bumps on merge.
@@ -204,7 +214,7 @@ Before marking task complete (`make pr-ready` runs automatically via stop hook):
 1. Run `make test` in all modified scopes (not automated by any hook)
 2. Update docstrings for new/changed code
 3. Update scope `README.md` if changes affect architecture/usage
-4. Create ADR in `aihub_doc/arc42/decisions/` for significant architectural decisions
+4. Create ADR in `docs/arc42/decisions/` for significant architectural decisions
 5. Commit & push following Git workflow above
 
 ## Testing
@@ -222,7 +232,7 @@ Before marking task complete (`make pr-ready` runs automatically via stop hook):
 
 ## Architectural Decisions (ADRs)
 
-**CRITICAL**: Consult existing ADRs before significant changes. Located: `aihub_doc/arc42/decisions/`
+**CRITICAL**: Consult existing ADRs before significant changes. Located: `docs/arc42/decisions/`
 
 **Create ADR if**: Adding major dependencies, introducing new tools/frameworks, or altering fundamental patterns.
 
@@ -230,15 +240,15 @@ Before marking task complete (`make pr-ready` runs automatically via stop hook):
 
 ## Package Dependencies
 
-- All packages reference `aihub_lib` as a workspace dependency via `[tool.uv.sources]`.
+- All packages reference `packages/core` as a workspace dependency via `[tool.uv.sources]`.
 - Use `uv add/remove` — NEVER edit `pyproject.toml` manually.
 
 ## Docker Compose Conventions
 
 - **No default values in env var assignments**: Never use `${VAR:-default}` syntax in docker-compose templates. Define
   all default values in `.env.dev` and `.env.prod` files instead.
-- **Template**: `deployment/templates/docker-compose.yml.j2` (Jinja2)
-- **Config**: `deployment/compose-config.yml` (image tags, stage-specific values)
+- **Template**: `infra/deployment/templates/docker-compose.yml.j2` (Jinja2)
+- **Config**: `infra/deployment/compose-config.yml` (image tags, stage-specific values)
 - **Regenerate**: Run `make generate-compose` after modifying templates or config
 
 ## MCP & Claude Code
@@ -253,7 +263,7 @@ Local overrides (gitignored): `CLAUDE.local.md`, `.claude/settings.local.json`, 
 
 ## Quick Reference
 
-**Access Points** (docker-compose.dev.yml):
+**Access Points** (infra/docker-compose.dev.yml):
 
 | Service   | URL                   |
 | --------- | --------------------- |
@@ -266,9 +276,9 @@ Local overrides (gitignored): `CLAUDE.local.md`, `.claude/settings.local.json`, 
 
 **Key Paths**:
 
-- ADRs: `aihub_doc/arc42/decisions/`
-- Architecture docs: `aihub_doc/docs/2_platform/2_architecture/`
-- Docker Compose (dev): `docker-compose.dev.yml`
+- ADRs: `docs/arc42/decisions/`
+- Architecture docs: `docs/docs/2_platform/2_architecture/`
+- Docker Compose (dev): `infra/docker-compose.dev.yml`
 - Env config: `.env` (copy from `.env.dev`)
 
 **Work Management**: `gh issue list -R "bbvch-ai/aihub-core" -a "@me"` | `gh project view 13 --owner bbvch-ai`

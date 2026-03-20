@@ -1,0 +1,13 @@
+from swiss_ai_hub.agent.agents.agent import Agent
+from swiss_ai_hub.agent.workflow.decorators.step import step
+
+from playground.agents.agent_c.events.agent_c_start_event import AgentCStartEvent
+from playground.agents.agent_c.events.agent_c_stop_event import AgentCStopEvent
+
+
+class AgentC(Agent):
+    @step()
+    async def step(self, event: AgentCStartEvent) -> AgentCStopEvent:
+        print("[AgentB.step]", event)
+        processed_payload = f"{event.payload} -> AgentC processed"
+        return AgentCStopEvent(payload=processed_payload)

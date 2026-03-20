@@ -126,7 +126,7 @@ Phoenix, and any OpenTelemetry-compatible system.
 | `AgentEvent`           | `AGENT`                 | Agent invocation trace                      |
 
 ```python
-from aihub_lib.nats.events.semantic import RetrieverEvent
+from swiss_ai_hub.core.nats.events.semantic import RetrieverEvent
 
 event = RetrieverEvent.from_nodes(retrieved_nodes)
 otel_attributes = event.to_semantic_convention()
@@ -408,11 +408,11 @@ ttm.get_subject_for_display_event_in_thread(event_name="ChunkEvent", event_id="e
 
 **File locations**:
 
-- `aihub_lib/aihub_lib/nats/topic_managers/TopicManager.py`
-- `aihub_lib/aihub_lib/nats/topic_managers/agents/AgentTopicManager.py`
-- `aihub_lib/aihub_lib/nats/topic_managers/agents/AgentClassTopicManager.py`
-- `aihub_lib/aihub_lib/nats/topic_managers/agents/AgentInstanceTopicManager.py`
-- `aihub_lib/aihub_lib/nats/topic_managers/agents/AgentThreadTopicManager.py`
+- `packages/core/swiss_ai_hub/core/topic_managers/topic_manager.py`
+- `packages/core/swiss_ai_hub/core/topic_managers/agents/agent_topic_manager.py`
+- `packages/core/swiss_ai_hub/core/topic_managers/agents/agent_class_topic_manager.py`
+- `packages/core/swiss_ai_hub/core/topic_managers/agents/agent_instance_topic_manager.py`
+- `packages/core/swiss_ai_hub/core/topic_managers/agents/agent_thread_topic_manager.py`
 
 ______________________________________________________________________
 
@@ -421,7 +421,7 @@ ______________________________________________________________________
 ### NCPublisher (NATS Core — Ephemeral)
 
 ```python
-from aihub_lib.nats.publishers.NCPublisher import NCPublisher
+from swiss_ai_hub.core.nats.publishers.NCPublisher import NCPublisher
 
 publisher = NCPublisher("MyPublisher", nc)
 await publisher.publish_event(event, subject)
@@ -436,7 +436,7 @@ await publisher.publish_event(event, subject)
 ### JSPublisher (JetStream — Persistent)
 
 ```python
-from aihub_lib.nats.publishers.JSPublisher import JSPublisher
+from swiss_ai_hub.core.nats.publishers.JSPublisher import JSPublisher
 
 publisher = JSPublisher("MyPublisher", js)
 await publisher.ensure_stream_exists(stream_name, stream_subject)
@@ -466,7 +466,7 @@ if event.is_display_event:
 ### Message Headers
 
 ```python
-from aihub_lib.nats.tracing.NATSMessageHeaders import NATSMessageHeaders
+from swiss_ai_hub.core.nats.tracing.NATSMessageHeaders import NATSMessageHeaders
 
 headers = (
     NATSMessageHeaders()
@@ -483,7 +483,7 @@ ______________________________________________________________________
 ### NCSubscriber (NATS Core — Ephemeral)
 
 ```python
-from aihub_lib.nats.subscribers.NCSubscriber import NCSubscriber
+from swiss_ai_hub.core.nats.subscribers.NCSubscriber import NCSubscriber
 
 subscriber = NCSubscriber(
     name="MySubscriber",
@@ -508,7 +508,7 @@ await subscriber.stop()
 ### JSSubscriber (JetStream — Durable with Queue Groups)
 
 ```python
-from aihub_lib.nats.subscribers.JSSubscriber import JSSubscriber
+from swiss_ai_hub.core.nats.subscribers.JSSubscriber import JSSubscriber
 
 subscriber = JSSubscriber(
     name="MySubscriber",
@@ -537,8 +537,8 @@ await subscriber.start()
 Use the factory class methods instead of constructing subscribers directly:
 
 ```python
-from aihub_lib.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
-from aihub_lib.nats.subscribers.agent.AgentJSSubscriber import AgentJSSubscriber
+from swiss_ai_hub.core.nats.subscribers.agent.AgentNCSubscriber import AgentNCSubscriber
+from swiss_ai_hub.core.nats.subscribers.agent.AgentJSSubscriber import AgentJSSubscriber
 
 # All display events from all agents (NATS Core)
 sub = AgentNCSubscriber.for_all_agents_display_events(nc=nc, topic_manager=tm, handler=handler)
@@ -568,7 +568,7 @@ ______________________________________________________________________
 ### NCRequester (Client)
 
 ```python
-from aihub_lib.nats.requester.NCRequester import NCRequester
+from swiss_ai_hub.core.nats.requester.NCRequester import NCRequester
 
 requester = NCRequester(
     name="AgentConfig",
@@ -587,7 +587,7 @@ response = await requester.request(
 ### NCResponder (Server)
 
 ```python
-from aihub_lib.nats.responder.NCResponder import NCResponder
+from swiss_ai_hub.core.nats.responder.NCResponder import NCResponder
 
 responder = NCResponder(
     name="AgentConfig",
@@ -607,7 +607,7 @@ no response.
 ### High-Level RPC Client (Preferred)
 
 ```python
-from aihub_lib.nats.rpc.AgentConfigClient import AgentConfigClient
+from swiss_ai_hub.core.nats.rpc.AgentConfigClient import AgentConfigClient
 
 client = AgentConfigClient(nc=nc, timeout_ms=5000)
 config = await client.fetch_config(agent_class="RAGAgent", agent_id="wiki")
@@ -616,7 +616,7 @@ config = await client.fetch_config(agent_class="RAGAgent", agent_id="wiki")
 ### RPC Models
 
 ```python
-# aihub_lib/aihub_lib/nats/rpc/models.py
+# packages/core/swiss_ai_hub/core/rpc/models.py
 class FetchAgentConfigRequest(BaseModel):
     agent_class: str
     agent_id: str
@@ -661,7 +661,7 @@ StreamConfig(
 ### JSPoller (Pull Consumer)
 
 ```python
-from aihub_lib.nats.polling.JSPoller import JSPoller
+from swiss_ai_hub.core.nats.polling.JSPoller import JSPoller
 
 poller = JSPoller(js=js, stream_name="...", stream_subject="...", consumer_name="...")
 await poller.ensure_consumer_exists(
@@ -767,7 +767,7 @@ ______________________________________________________________________
 ### NatsSettings
 
 ```python
-# aihub_lib/aihub_lib/infrastructure/nats/NatsSettings.py
+# packages/core/swiss_ai_hub/core/infrastructure/nats/NatsSettings.py
 class NatsSettings(EnvironmentSettings):
     model_config = EnvironmentSettings.create_settings_config("NATS_")
     ENDPOINT: str                    # NATS_ENDPOINT (e.g., "nats://localhost:4222")
@@ -784,7 +784,7 @@ class NatsSettings(EnvironmentSettings):
 ### FastAPI Dependency Injection
 
 ```python
-# aihub_lib/aihub_lib/nats/dependencies/use_nats.py
+# packages/core/swiss_ai_hub/core/dependencies/use_nats.py
 from fastapi import Request, WebSocket
 
 def use_nats(request: Request) -> NATS:
@@ -796,7 +796,7 @@ def use_nats_ws(request: WebSocket) -> NATS:
 
 ### Lifetime Manager (API Startup)
 
-**File**: `aihub_api/aihub_api/runners/lifetime/lifetime_manager.py`
+**File**: `packages/api/swiss_ai_hub/api/runners/lifetime/lifetime_manager.py`
 
 Startup order:
 
@@ -889,10 +889,10 @@ ______________________________________________________________________
 ### Step 1: Define the Event Class
 
 ```python
-# aihub_lib/aihub_lib/nats/events/my_feature/MyEvent.py
-from aihub_lib.nats.events.control.ControlEvent import ControlEvent
-from aihub_lib.nats.events.display.DisplayEvent import DisplayEvent
-from aihub_lib.nats.events.ControlAndDisplayEvent import ControlAndDisplayEvent
+# packages/core/swiss_ai_hub/core/events/agent/my_feature/my_event.py
+from swiss_ai_hub.core.events.agent.control.control_event import ControlEvent
+from swiss_ai_hub.core.events.agent.display.display_event import DisplayEvent
+from swiss_ai_hub.core.events.agent.control_and_display_event import ControlAndDisplayEvent
 
 # Choose ONE base:
 # - ControlEvent: workflow-driving only
@@ -944,8 +944,8 @@ ______________________________________________________________________
 ### Custom Publisher
 
 ```python
-from aihub_lib.nats.publishers.JSPublisher import JSPublisher
-from aihub_lib.nats.publishers.NCPublisher import NCPublisher
+from swiss_ai_hub.core.nats.publishers.JSPublisher import JSPublisher
+from swiss_ai_hub.core.nats.publishers.NCPublisher import NCPublisher
 
 # For durable events:
 js_pub = JSPublisher("MyServicePublisher", js)
@@ -985,97 +985,97 @@ ______________________________________________________________________
 
 ### Core Infrastructure
 
-| File                                                      | Purpose                |
-| --------------------------------------------------------- | ---------------------- |
-| `aihub_lib/aihub_lib/infrastructure/nats/NatsSettings.py` | NATS connection config |
-| `aihub_lib/aihub_lib/nats/dependencies/use_nats.py`       | FastAPI DI             |
+| File                                                                   | Purpose                |
+| ---------------------------------------------------------------------- | ---------------------- |
+| `packages/core/swiss_ai_hub/core/infrastructure/nats/nats_settings.py` | NATS connection config |
+| `packages/core/swiss_ai_hub/core/dependencies/use_nats.py`             | FastAPI DI             |
 
 ### Publishers
 
-| File                                                       | Purpose              |
-| ---------------------------------------------------------- | -------------------- |
-| `aihub_lib/aihub_lib/nats/publishers/AbstractPublisher.py` | Publisher base class |
-| `aihub_lib/aihub_lib/nats/publishers/NCPublisher.py`       | NATS Core publisher  |
-| `aihub_lib/aihub_lib/nats/publishers/JSPublisher.py`       | JetStream publisher  |
+| File                                                               | Purpose              |
+| ------------------------------------------------------------------ | -------------------- |
+| `packages/core/swiss_ai_hub/core/publishers/abstract_publisher.py` | Publisher base class |
+| `packages/core/swiss_ai_hub/core/publishers/nc_publisher.py`       | NATS Core publisher  |
+| `packages/core/swiss_ai_hub/core/publishers/js_publisher.py`       | JetStream publisher  |
 
 ### Subscribers
 
-| File                                                              | Purpose                       |
-| ----------------------------------------------------------------- | ----------------------------- |
-| `aihub_lib/aihub_lib/nats/subscribers/AbstractSubscriber.py`      | Subscriber base class         |
-| `aihub_lib/aihub_lib/nats/subscribers/NCSubscriber.py`            | NATS Core subscriber          |
-| `aihub_lib/aihub_lib/nats/subscribers/JSSubscriber.py`            | JetStream subscriber          |
-| `aihub_lib/aihub_lib/nats/subscribers/agent/AgentNCSubscriber.py` | Agent NC subscriber factories |
-| `aihub_lib/aihub_lib/nats/subscribers/agent/AgentJSSubscriber.py` | Agent JS subscriber factories |
+| File                                                                       | Purpose                       |
+| -------------------------------------------------------------------------- | ----------------------------- |
+| `packages/core/swiss_ai_hub/core/subscribers/abstract_subscriber.py`       | Subscriber base class         |
+| `packages/core/swiss_ai_hub/core/subscribers/nc_subscriber.py`             | NATS Core subscriber          |
+| `packages/core/swiss_ai_hub/core/subscribers/js_subscriber.py`             | JetStream subscriber          |
+| `packages/core/swiss_ai_hub/core/subscribers/agent/agent_nc_subscriber.py` | Agent NC subscriber factories |
+| `packages/core/swiss_ai_hub/core/subscribers/agent/agent_js_subscriber.py` | Agent JS subscriber factories |
 
 ### RPC
 
-| File                                                | Purpose                     |
-| --------------------------------------------------- | --------------------------- |
-| `aihub_lib/aihub_lib/nats/requester/NCRequester.py` | RPC client                  |
-| `aihub_lib/aihub_lib/nats/responder/NCResponder.py` | RPC server                  |
-| `aihub_lib/aihub_lib/nats/rpc/AgentConfigClient.py` | Agent config RPC client     |
-| `aihub_lib/aihub_lib/nats/rpc/models.py`            | RPC request/response models |
-| `aihub_api/aihub_api/rpc/AgentConfigResponder.py`   | Agent config RPC server     |
+| File                                                          | Purpose                     |
+| ------------------------------------------------------------- | --------------------------- |
+| `packages/core/swiss_ai_hub/core/requester/nc_requester.py`   | RPC client                  |
+| `packages/core/swiss_ai_hub/core/responder/nc_responder.py`   | RPC server                  |
+| `packages/core/swiss_ai_hub/core/rpc/agent_config_client.py`  | Agent config RPC client     |
+| `packages/core/swiss_ai_hub/core/rpc/models.py`               | RPC request/response models |
+| `packages/api/swiss_ai_hub/api/rpc/agent_config_responder.py` | Agent config RPC server     |
 
 ### Events
 
-| File                                                                  | Purpose                                 |
-| --------------------------------------------------------------------- | --------------------------------------- |
-| `aihub_lib/aihub_lib/nats/events/BaseEvent.py`                        | Event base + registry + deserialization |
-| `aihub_lib/aihub_lib/nats/events/control/ControlEvent.py`             | Workflow event base                     |
-| `aihub_lib/aihub_lib/nats/events/display/DisplayEvent.py`             | UI event base                           |
-| `aihub_lib/aihub_lib/nats/events/ControlAndDisplayEvent.py`           | Hybrid event base                       |
-| `aihub_lib/aihub_lib/nats/events/control/start/StartEvent.py`         | Run start                               |
-| `aihub_lib/aihub_lib/nats/events/control/stop/StopEvent.py`           | Run stop                                |
-| `aihub_lib/aihub_lib/nats/events/control/exception/ExceptionEvent.py` | Error                                   |
-| `aihub_lib/aihub_lib/nats/events/display/ChunkEvent.py`               | Streaming text                          |
-| `aihub_lib/aihub_lib/nats/events/display/ThoughtEvent.py`             | Agent reasoning                         |
-| `aihub_lib/aihub_lib/nats/events/user/UserMessageEvent.py`            | User chat message                       |
+| File                                                                                | Purpose                                 |
+| ----------------------------------------------------------------------------------- | --------------------------------------- |
+| `packages/core/swiss_ai_hub/core/events/base_event.py`                              | Event base + registry + deserialization |
+| `packages/core/swiss_ai_hub/core/events/agent/control/control_event.py`             | Workflow event base                     |
+| `packages/core/swiss_ai_hub/core/events/agent/display/display_event.py`             | UI event base                           |
+| `packages/core/swiss_ai_hub/core/events/agent/control_and_display_event.py`         | Hybrid event base                       |
+| `packages/core/swiss_ai_hub/core/events/agent/control/start/start_event.py`         | Run start                               |
+| `packages/core/swiss_ai_hub/core/events/agent/control/stop/stop_event.py`           | Run stop                                |
+| `packages/core/swiss_ai_hub/core/events/agent/control/exception/exception_event.py` | Error                                   |
+| `packages/core/swiss_ai_hub/core/events/agent/display/chunk_event.py`               | Streaming text                          |
+| `packages/core/swiss_ai_hub/core/events/agent/display/thought_event.py`             | Agent reasoning                         |
+| `packages/core/swiss_ai_hub/core/events/agent/user/`                                | User chat message events                |
 
 ### Topics & Streams
 
-| File                                                                  | Purpose               |
-| --------------------------------------------------------------------- | --------------------- |
-| `aihub_lib/aihub_lib/nats/topics/Topic.py`                            | Topic base + registry |
-| `aihub_lib/aihub_lib/nats/topics/agents/AgentInstanceTopic.py`        | Full agent topic      |
-| `aihub_lib/aihub_lib/nats/topic_managers/TopicManager.py`             | Subject builder base  |
-| `aihub_lib/aihub_lib/nats/topic_managers/agents/AgentTopicManager.py` | Agent subjects        |
-| `aihub_lib/aihub_lib/nats/streams/StreamManager.py`                   | Stream creation       |
+| File                                                                           | Purpose               |
+| ------------------------------------------------------------------------------ | --------------------- |
+| `packages/core/swiss_ai_hub/core/topics/topic.py`                              | Topic base + registry |
+| `packages/core/swiss_ai_hub/core/topics/agents/agent_instance_topic.py`        | Full agent topic      |
+| `packages/core/swiss_ai_hub/core/topic_managers/topic_manager.py`              | Subject builder base  |
+| `packages/core/swiss_ai_hub/core/topic_managers/agents/agent_topic_manager.py` | Agent subjects        |
+| `packages/core/swiss_ai_hub/core/streams/stream_manager.py`                    | Stream creation       |
 
 ### Dispatcher & Event Store
 
-| File                                                                      | Purpose            |
-| ------------------------------------------------------------------------- | ------------------ |
-| `aihub_lib/aihub_lib/nats/dispatcher/BaseDispatcher.py`                   | Dispatcher base    |
-| `aihub_lib/aihub_lib/nats/dispatcher/stores/event/JetStreamEventStore.py` | Event store        |
-| `aihub_lib/aihub_lib/nats/polling/JSPoller.py`                            | Pull consumer      |
-| `aihub_agent/aihub_agent/dispatchers/AgentDispatcher.py`                  | Agent dispatcher   |
-| `aihub_process/aihub_process/dispatchers/ProcessDispatcher.py`            | Process dispatcher |
+| File                                                                                | Purpose            |
+| ----------------------------------------------------------------------------------- | ------------------ |
+| `packages/core/swiss_ai_hub/core/dispatcher/base_dispatcher.py`                     | Dispatcher base    |
+| `packages/core/swiss_ai_hub/core/dispatcher/stores/event/jet_stream_event_store.py` | Event store        |
+| `packages/core/swiss_ai_hub/core/polling/js_poller.py`                              | Pull consumer      |
+| `packages/agent/swiss_ai_hub/agent/dispatchers/agent_dispatcher.py`                 | Agent dispatcher   |
+| `packages/process/swiss_ai_hub/process/dispatchers/process_dispatcher.py`           | Process dispatcher |
 
 ### Tracing
 
-| File                                                             | Purpose               |
-| ---------------------------------------------------------------- | --------------------- |
-| `aihub_lib/aihub_lib/nats/tracing/NATSMessageHeaders.py`         | Header builder        |
-| `aihub_lib/aihub_lib/nats/tracing/NATSTraceContextPropagator.py` | W3C trace propagation |
+| File                                                                       | Purpose               |
+| -------------------------------------------------------------------------- | --------------------- |
+| `packages/core/swiss_ai_hub/core/tracing/nats_message_headers.py`          | Header builder        |
+| `packages/core/swiss_ai_hub/core/tracing/nats_trace_context_propagator.py` | W3C trace propagation |
 
 ### Lifetime & Integration
 
-| File                                                                    | Purpose                 |
-| ----------------------------------------------------------------------- | ----------------------- |
-| `aihub_api/aihub_api/runners/lifetime/lifetime_manager.py`              | API startup/shutdown    |
-| `aihub_api/aihub_api/sockets/sender/WebSocketSender.py`                 | NATS → WebSocket bridge |
-| `aihub_api/aihub_api/sockets/manager/WebSocketManager.py`               | WebSocket connections   |
-| `aihub_lib/aihub_lib/nats/distributor/ExternalAgentEventDistributor.py` | API → NATS bridge       |
-| `aihub_agent/aihub_agent/runners/AgentRunner.py`                        | Agent NATS bootstrap    |
+| File                                                                              | Purpose                 |
+| --------------------------------------------------------------------------------- | ----------------------- |
+| `packages/api/swiss_ai_hub/api/runners/lifetime/lifetime_manager.py`              | API startup/shutdown    |
+| `packages/api/swiss_ai_hub/api/sockets/sender/web_socket_sender.py`               | NATS → WebSocket bridge |
+| `packages/api/swiss_ai_hub/api/sockets/manager/web_socket_manager.py`             | WebSocket connections   |
+| `packages/core/swiss_ai_hub/core/distributor/external_agent_event_distributor.py` | API → NATS bridge       |
+| `packages/agent/swiss_ai_hub/agent/runners/agent_runner.py`                       | Agent NATS bootstrap    |
 
 ### Documentation
 
-| File                                                                             | Purpose                     |
-| -------------------------------------------------------------------------------- | --------------------------- |
-| `aihub_doc/docs/2_platform/2_architecture/3_swiss_ai_agent_protocol/index.en.md` | Protocol spec               |
-| `deployment/templates/configs/nats-config.conf.j2`                               | NATS server config template |
+| File                                                                        | Purpose                     |
+| --------------------------------------------------------------------------- | --------------------------- |
+| `docs/docs/2_platform/2_architecture/3_swiss_ai_agent_protocol/index.en.md` | Protocol spec               |
+| `deployment/templates/configs/nats-config.conf.j2`                          | NATS server config template |
 
 ______________________________________________________________________
 
@@ -1137,7 +1137,8 @@ A workflow *W* is valid iff:
 3. **No Stop Dependencies:** ∀s ∈ S, StopEvent ∉ R(s)
 4. **Acyclicity:** The event dependency graph is acyclic (bounded loops via RunContext are valid)
 
-Source: `aihub_lib/nats/dispatcher/BaseDispatcher.py`, `aihub_agent/dispatchers/AgentDispatcher.py`
+Source: `packages/core/swiss_ai_hub/core/dispatcher/base_dispatcher.py`,
+`packages/agent/swiss_ai_hub/agent/dispatchers/agent_dispatcher.py`
 
 ______________________________________________________________________
 
