@@ -17,6 +17,7 @@ from swiss_ai_hub.core.generative_ai.document.types.ingested_node import Ingeste
 from swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config import LLMConfig
 from swiss_ai_hub.core.i18n import LocaleHandler, LocaleString
 from swiss_ai_hub.core.infrastructure import MongoSettings, trace_fn
+from swiss_ai_hub.core.persistence import get_partition_name_for_namespace
 from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
 from swiss_ai_hub.core.persistence.rag.datalake.entities import BucketEntity, NamespaceEntity
 from swiss_ai_hub.core.persistence.rag.documents.entities.ref_doc import RefDoc
@@ -29,7 +30,6 @@ from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import (
     TYPE,
     NodeTypeValue,
 )
-from aihub_lib.persistence.rag.vectors.stores.MilvusPartitionManager import get_partition_name_for_namespace
 from swiss_ai_hub.core.publishers import NCPublisher
 from swiss_ai_hub.core.topic_managers import PipelineInstanceTopicManager
 
