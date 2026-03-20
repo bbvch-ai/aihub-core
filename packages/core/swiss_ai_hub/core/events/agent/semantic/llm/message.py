@@ -5,6 +5,7 @@ from llama_index.core.base.llms.types import (
     AudioBlock,
     ChatMessage,
     ImageBlock,
+    MessageRole,
     TextBlock,
 )
 from llama_index.core.base.llms.types import (
@@ -150,13 +151,13 @@ class Message(BaseModel):
         """Convert to an OpenAI API-compatible message dict."""
         message_dict: dict[str, Any] = {"role": self.role}
 
-        if self.role == "tool":
+        if self.role == MessageRole.TOOL:
             message_dict["content"] = self.content
             if self.tool_call_id:
                 message_dict["tool_call_id"] = self.tool_call_id
             return message_dict
 
-        if self.role == "assistant" and self.tool_calls:
+        if self.role == MessageRole.ASSISTANT and self.tool_calls:
             message_dict["content"] = self.content or None
             message_dict["tool_calls"] = self.tool_calls
         else:
