@@ -10,6 +10,10 @@ config:
   max_iterations:
     label: Maximale Iterationen
     help: Maximale Anzahl von Reasoning-Aktions-Schleifen bevor der Agent stoppt.
+  number_of_input_tokens:
+    label: Maximale Eingabe-Tokens
+    help: Maximale Anzahl an Tokens in der Eingabe zur Steuerung der Kontextgrösse
+      oder Kosten.
 steps:
   init:
     name: Tools entdecken

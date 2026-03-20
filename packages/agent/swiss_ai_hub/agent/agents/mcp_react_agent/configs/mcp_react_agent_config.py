@@ -61,8 +61,8 @@ class McpReactAgentConfig(AgentConfig):
                 step=1,
             ),
             number_of_input_tokens=InputNumber(
-                label=AgentLocaleString.from_i18n_path("agent.few_shot_agent.config.number_of_input_tokens.label"),
-                help=AgentLocaleString.from_i18n_path("agent.few_shot_agent.config.number_of_input_tokens.help"),
+                label=AgentLocaleString.from_i18n_path("agent.mcp_react_agent.config.number_of_input_tokens.label"),
+                help=AgentLocaleString.from_i18n_path("agent.mcp_react_agent.config.number_of_input_tokens.help"),
                 min=1000,
                 max=200000,
                 step=1000,

@@ -18,6 +18,7 @@ from swiss_ai_hub.agent.workflow.decorators.step import step
 TOOL_SCHEMAS_KEY = "mcp_tool_schemas"
 CONVERSATION_KEY = "conversation"
 TOTAL_TOOL_CALLS_KEY = "total_tool_calls"
+NEW_TOOL_CALLS_KEY = "new_tool_calls"
 
 
 @precondition()
@@ -130,6 +131,7 @@ class McpReactAgent(Agent):
 
         previous_total = await run_context.get(TOTAL_TOOL_CALLS_KEY, 0)
         await run_context.set(TOTAL_TOOL_CALLS_KEY, previous_total + len(assistant.tool_calls))
+        await run_context.set(NEW_TOOL_CALLS_KEY, len(assistant.tool_calls))
 
         return to_tool_events(assistant.tool_calls, tool_schemas)
 
@@ -153,7 +155,7 @@ class McpReactAgent(Agent):
         """Execute the requested tool calls and feed results back into the conversation."""
         print("[tool_execution_step] Executing tool calls")
         conversation = [Message.model_validate(m) for m in await run_context.get(CONVERSATION_KEY)]
-        new_count = len(conversation[-1].tool_calls)
+        new_count = await run_context.get(NEW_TOOL_CALLS_KEY)
         new_tool_events = tool_events[-new_count:]
 
         tool_messages: list[Message] = []

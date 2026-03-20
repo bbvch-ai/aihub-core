@@ -185,7 +185,16 @@ class Message(BaseModel):
             cb = self._process_block_backwards(block)
             if cb:
                 blocks.append(cb)
-        return ChatMessage(role=self.role, blocks=blocks)
+
+        additional_kwargs: dict[str, Any] = {}
+        if self.tool_calls:
+            additional_kwargs["tool_calls"] = self.tool_calls
+        if self.tool_call_id:
+            additional_kwargs["tool_call_id"] = self.tool_call_id
+        if self.name:
+            additional_kwargs["name"] = self.name
+
+        return ChatMessage(role=self.role, blocks=blocks, additional_kwargs=additional_kwargs)
 
     @staticmethod
     def _process_block(block: Any) -> ContentBlock | None:

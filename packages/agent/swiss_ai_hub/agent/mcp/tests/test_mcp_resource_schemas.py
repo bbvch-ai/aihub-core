@@ -178,10 +178,10 @@ class TestExecuteResourceRead:
         assert result == "line1\nline2"
 
     @pytest.mark.asyncio
-    async def test_returns_empty_marker_for_empty_content(self):
+    async def test_returns_empty_string_for_empty_content(self):
         client = AsyncMock()
         client.read_resource = AsyncMock(return_value=[])
 
         result = await execute_resource_read(client, "data://empty")
 
-        assert result == "(empty resource)"
+        assert result == ""

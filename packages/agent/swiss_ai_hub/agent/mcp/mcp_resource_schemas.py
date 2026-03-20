@@ -67,8 +67,7 @@ def resource_read_tool_schema(templates: list[ResourceTemplate]) -> dict[str, An
 async def execute_resource_read(mcp_client: Client, uri: str) -> str:
     """Read an MCP resource by URI and return its text content."""
     contents = await mcp_client.read_resource(uri)
-    text = _extract_text(contents)
-    return text or "(empty resource)"
+    return _extract_text(contents)
 
 
 def _extract_text(contents: list[TextResourceContents | BlobResourceContents]) -> str:
