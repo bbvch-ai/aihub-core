@@ -19,13 +19,13 @@ LOCALES = ["de", "en", "fr", "it"]
 REFERENCE_LOCALE = "en"
 PROJECT_ROOT = Path(__file__).resolve().parents[4]
 
-FRONTEND_LOCALE_DIR = PROJECT_ROOT / "aihub_web" / "aihub_web" / "i18n" / "locales"
+FRONTEND_LOCALE_DIR = PROJECT_ROOT / "packages" / "web" / "swiss_ai_hub_web" / "i18n" / "locales"
 
 BACKEND_TRANSLATION_DIRS = [
-    PROJECT_ROOT / "aihub_lib" / "aihub_lib" / "i18n" / "translations",
-    PROJECT_ROOT / "aihub_api" / "aihub_api" / "i18n" / "translations",
-    PROJECT_ROOT / "aihub_agent" / "aihub_agent" / "i18n" / "translations",
-    PROJECT_ROOT / "aihub_process" / "aihub_process" / "i18n" / "translations",
+    PROJECT_ROOT / "packages" / "core" / "swiss_ai_hub" / "core" / "i18n" / "translations",
+    PROJECT_ROOT / "packages" / "api" / "swiss_ai_hub" / "api" / "i18n" / "translations",
+    PROJECT_ROOT / "packages" / "agent" / "swiss_ai_hub" / "agent" / "i18n" / "translations",
+    PROJECT_ROOT / "packages" / "process" / "swiss_ai_hub" / "process" / "i18n" / "translations",
 ]
 
 

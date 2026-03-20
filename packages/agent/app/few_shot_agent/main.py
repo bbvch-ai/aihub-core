@@ -1,0 +1,29 @@
+# ruff: noqa: E402
+from swiss_ai_hub.core.infrastructure import AihubInstrumentor  # isort: skip
+
+AihubInstrumentor().instrument()
+
+import asyncio
+
+from swiss_ai_hub.core.infrastructure import AIHubSettings, enable_logging
+
+from app.few_shot_agent.templates import ALL_TEMPLATES
+from swiss_ai_hub.agent.agents.few_shot_agent import FewShotAgent, FewShotAgentConfig
+from swiss_ai_hub.agent.runners import AgentRunner
+
+enable_logging()
+
+
+async def main():
+    runner = AgentRunner(
+        agent_type=FewShotAgent,
+        agent_config=FewShotAgentConfig.as_form(),
+        templates=ALL_TEMPLATES,
+    )
+
+    await runner.run_forever()
+
+
+if __name__ == "__main__":
+    print(AIHubSettings().startup_banner)
+    asyncio.run(main())

@@ -27,7 +27,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           scopes: |
-            aihub
+            swiss-ai-hub
             iac
             ci-cd
             bots

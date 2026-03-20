@@ -27,19 +27,19 @@ jobs:
         with:
           node-version: '20'
           cache: pnpm
-          cache-dependency-path: aihub_doc/pnpm-lock.yaml
+          cache-dependency-path: docs/pnpm-lock.yaml
       - name: Install dependencies
-        working-directory: ./aihub_doc
+        working-directory: ./docs
         run: pnpm install
       - name: Build documentation
-        working-directory: ./aihub_doc
+        working-directory: ./docs
         run: pnpm run docs:build:ci
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./aihub_doc/.vitepress/dist
+          path: ./docs/.vitepress/dist
   deploy:
     environment:
       name: github-pages

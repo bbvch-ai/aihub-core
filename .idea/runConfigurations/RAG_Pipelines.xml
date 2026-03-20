@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="RAG Pipelines" type="MAKEFILE_TARGET_RUN_CONFIGURATION" factoryName="Makefile" folderName="Run Services">
-    <makefile filename="$PROJECT_DIR$/aihub_pipeline/Makefile" target="rag-pipelines" workingDirectory="$PROJECT_DIR$/aihub_pipeline" arguments="">
+    <makefile filename="$PROJECT_DIR$/packages/pipeline/Makefile" target="rag-pipelines" workingDirectory="$PROJECT_DIR$/packages/pipeline" arguments="">
       <envs>
         <env name="OTEL_ENABLED" value="false" />
       </envs>

@@ -13,7 +13,7 @@ import { test, expect } from '@playwright/test'
  * several seconds, so the test uses a generous timeout.
  *
  * Prerequisites:
- * - docker-compose.build.yml stack running
+ * - infra/docker-compose.build.yml stack running
  * - User authenticated via auth.setup.ts
  */
 

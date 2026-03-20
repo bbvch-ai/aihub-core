@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="ExpertRAGAgent" type="PythonConfigurationType" factoryName="Python" folderName="Run Agents">
-    <module name="aihub_agent" />
+    <module name="packages/agent" />
     <option name="ENV_FILES" value="$PROJECT_DIR$/.env" />
     <option name="INTERPRETER_OPTIONS" value="" />
     <option name="PARENT_ENVS" value="true" />
@@ -10,13 +10,13 @@
     </envs>
     <option name="SDK_HOME" value="" />
     <option name="SDK_NAME" value="uv (aihub-core)" />
-    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/aihub_agent/app/expert_rag_agent" />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/packages/agent/app/expert_rag_agent" />
     <option name="IS_MODULE_SDK" value="false" />
     <option name="ADD_CONTENT_ROOTS" value="true" />
     <option name="ADD_SOURCE_ROOTS" value="true" />
     <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
     <option name="RUN_TOOL" value="" />
-    <option name="SCRIPT_NAME" value="$PROJECT_DIR$/aihub_agent/app/expert_rag_agent/main.py" />
+    <option name="SCRIPT_NAME" value="$PROJECT_DIR$/packages/agent/app/expert_rag_agent/main.py" />
     <option name="PARAMETERS" value="" />
     <option name="SHOW_COMMAND_LINE" value="false" />
     <option name="EMULATE_TERMINAL" value="false" />

@@ -22,7 +22,7 @@ For Docker Compose or Traefik questions, use Context7 MCP to fetch up-to-date do
 ### `up` — Start the development stack
 
 ```bash
-docker compose -f docker-compose.dev.yml --env-file .env up -d --build
+docker compose -f infra/docker-compose.dev.yml --env-file .env up -d --build
 ```
 
 **Pre-check**: Verify `.env` exists at the repo root. If missing, copy from `.env.dev`:
@@ -34,12 +34,12 @@ cp .env.dev .env
 ### `down` — Stop the development stack
 
 ```bash
-docker compose -f docker-compose.dev.yml down
+docker compose -f infra/docker-compose.dev.yml down
 ```
 
 ### `health` — Check all service health statuses
 
-1. Run `docker compose -f docker-compose.dev.yml ps --format json`
+1. Run `docker compose -f infra/docker-compose.dev.yml ps --format json`
 2. For each service, report: name, status, health, exposed ports
 3. Test connectivity to key endpoints with `curl -s -o /dev/null -w "%{http_code}"`:
    - API: http://localhost:8000
@@ -53,19 +53,19 @@ docker compose -f docker-compose.dev.yml down
 ### `logs <service>` — Tail logs for a specific service
 
 ```bash
-docker compose -f docker-compose.dev.yml logs --tail 100 -f <service>
+docker compose -f infra/docker-compose.dev.yml logs --tail 100 -f <service>
 ```
 
 ### `restart <service>` — Restart a specific service
 
 ```bash
-docker compose -f docker-compose.dev.yml restart <service>
+docker compose -f infra/docker-compose.dev.yml restart <service>
 ```
 
 ### `status` — Show running containers with resource usage
 
 ```bash
-docker compose -f docker-compose.dev.yml ps
+docker compose -f infra/docker-compose.dev.yml ps
 docker stats --no-stream --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}"
 ```
 
@@ -95,7 +95,7 @@ docker stats --no-stream --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}"
 | OTEL Collector | :4317  | gRPC receiver, :4318 (HTTP)     |
 
 Note: API (:8000), Admin UI (:3333), and Dagster (:3000) run **locally outside Docker** in dev — they're not in
-`docker-compose.dev.yml`.
+`infra/docker-compose.dev.yml`.
 
 ### `generate` — Regenerate compose files from templates
 
@@ -103,22 +103,22 @@ Note: API (:8000), Admin UI (:3333), and Dagster (:3000) run **locally outside D
 make generate-compose
 ```
 
-Run this after editing any template in `deployment/templates/` or `deployment/compose-config.yml`. Commit both the
-template changes and the regenerated output files.
+Run this after editing any template in `infra/deployment/templates/` or `infra/deployment/compose-config.yml`. Commit
+both the template changes and the regenerated output files.
 
 ## Compose Generation System
 
-Read `deployment/CLAUDE.md` for full details. Quick overview:
+Read `infra/deployment/CLAUDE.md` for full details. Quick overview:
 
-**Architecture**: A single Jinja2 template (`deployment/templates/docker-compose.yml.j2`) + a single config file
-(`deployment/compose-config.yml`) produce 10 docker-compose variants (5 stages x 2 GPU modes).
+**Architecture**: A single Jinja2 template (`infra/deployment/templates/docker-compose.yml.j2`) + a single config file
+(`infra/deployment/compose-config.yml`) produce 10 docker-compose variants (5 stages x 2 GPU modes).
 
 **Key files**:
 
-- `deployment/compose-config.yml` — image tags + stage-specific values (SINGLE SOURCE OF TRUTH)
-- `deployment/generate_compose.py` — Jinja2 renderer
-- `deployment/templates/docker-compose.yml.j2` — main template (~3000 lines)
-- `deployment/templates/configs/` — 15 service config templates (NATS, LiteLLM, Traefik, Milvus, etc.)
+- `infra/deployment/compose-config.yml` — image tags + stage-specific values (SINGLE SOURCE OF TRUTH)
+- `infra/deployment/generate_compose.py` — Jinja2 renderer
+- `infra/deployment/templates/docker-compose.yml.j2` — main template (~3000 lines)
+- `infra/deployment/templates/configs/` — 15 service config templates (NATS, LiteLLM, Traefik, Milvus, etc.)
 
 **5 Stages**:
 
@@ -132,16 +132,16 @@ Read `deployment/CLAUDE.md` for full details. Quick overview:
 
 Each stage has a `.gpu` variant adding NVIDIA GPU support.
 
-**Generated outputs** (at repo root — NEVER edit directly):
+**Generated outputs** (under `infra/` — NEVER edit directly):
 
-- `docker-compose.{stage}{.gpu}.yml` — 10 compose files
-- `configs/{service}/{config}` — ~80 service config files
+- `infra/docker-compose.{stage}{.gpu}.yml` — 10 compose files
+- `infra/configs/{service}/{config}` — ~80 service config files
 
 **Workflow for template changes**: Edit template → `make generate-compose` → commit templates + generated files.
 
 ## Network Zones
 
-5 isolated Docker networks (see `aihub_doc/arc42/decisions/2025_12_22_docker_network_isolation.md`):
+5 isolated Docker networks (see `docs/arc42/decisions/2025_12_22_docker_network_isolation.md`):
 
 | Network   | Purpose                      | Key Services                              |
 | --------- | ---------------------------- | ----------------------------------------- |
@@ -166,13 +166,13 @@ Dev stage has all networks non-internal for localhost access.
 
 ## Troubleshooting
 
-| Problem                         | Solution                                                           |
-| ------------------------------- | ------------------------------------------------------------------ |
-| `.env` file not found           | Copy `.env.dev` to `.env` at the repo root                         |
-| Port already in use             | Run `lsof -i :<port>` to find the process, then stop it            |
-| Service keeps restarting        | Check logs with `/docker-dev logs <service>`                       |
-| Need Docker Compose docs        | Use Context7: library ID `/docker/compose`                         |
-| Need Traefik docs               | Use Context7: library ID `/websites/doc_traefik_io_traefik`        |
-| Template change not reflected   | Run `make generate-compose` and commit regenerated files           |
-| Edited a generated compose file | Revert — edit `deployment/templates/docker-compose.yml.j2` instead |
-| Service missing from compose    | Add image tag to `deployment/compose-config.yml` for target stage  |
+| Problem                         | Solution                                                                 |
+| ------------------------------- | ------------------------------------------------------------------------ |
+| `.env` file not found           | Copy `.env.dev` to `.env` at the repo root                               |
+| Port already in use             | Run `lsof -i :<port>` to find the process, then stop it                  |
+| Service keeps restarting        | Check logs with `/docker-dev logs <service>`                             |
+| Need Docker Compose docs        | Use Context7: library ID `/docker/compose`                               |
+| Need Traefik docs               | Use Context7: library ID `/websites/doc_traefik_io_traefik`              |
+| Template change not reflected   | Run `make generate-compose` and commit regenerated files                 |
+| Edited a generated compose file | Revert — edit `infra/deployment/templates/docker-compose.yml.j2` instead |
+| Service missing from compose    | Add image tag to `infra/deployment/compose-config.yml` for target stage  |
