@@ -4,7 +4,7 @@ Generated on: 23.03.2026
 
 This document contains license information for all dependencies across the monorepo:
 
-- Python packages (uv): **385 packages**
+- Python packages (uv): **388 packages**
 - Node.js packages (pnpm): **1001 packages**
 - External Docker images: **31 images**
 
@@ -62,6 +62,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | beartype                                         | 0.22.9                | MIT License                                                  |                                                                      |
 | ✅     | beautifulsoup4                                   | 4.14.3                | MIT License                                                  |                                                                      |
 | ✅     | black                                            | 26.3.0                | MIT                                                          |                                                                      |
+| ✅     | blinker                                          | 1.9.0                 | MIT License                                                  |                                                                      |
 | ✅     | boto3                                            | 1.41.5                | Apache-2.0                                                   |                                                                      |
 | ✅     | boto3-stubs                                      | 1.42.63               | MIT                                                          |                                                                      |
 | ✅     | botocore                                         | 1.41.5                | Apache-2.0                                                   |                                                                      |
@@ -351,6 +352,8 @@ This document contains license information for all dependencies across the monor
 | ✅     | s3fs                                             | 2024.12.0             | BSD License                                                  |                                                                      |
 | ✅     | s3transfer                                       | 0.15.0                | Apache Software License                                      |                                                                      |
 | ✅     | safetensors                                      | 0.7.0                 | Apache Software License                                      |                                                                      |
+| ✅     | scim2-client                                     | 0.7.3                 | Apache Software License                                      |                                                                      |
+| ✅     | scim2-models                                     | 0.6.6                 | Apache Software License                                      |                                                                      |
 | ✅     | scipy                                            | 1.17.1                | BSD License                                                  |                                                                      |
 | ✅     | seaborn                                          | 0.13.2                | BSD License                                                  |                                                                      |
 | ✅     | SecretStorage                                    | 3.5.0                 | BSD-3-Clause                                                 |                                                                      |
@@ -1443,7 +1446,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | minimal-notebook                | `ghcr.io/bbvch-ai/aihub-core/minimal-notebook:notebook-7.0.6`               | BSD-3-Clause       | Jupyter base image                                            |
 | ✅     | nats                            | `ghcr.io/bbvch-ai/aihub-core/nats:2.11.4`                                   | Apache-2.0         | Permissive license                                            |
 | ✅     | neo4j                           | `ghcr.io/bbvch-ai/aihub-core/neo4j:5.26.16-community`                       | GPL                | Permissive license                                            |
-| ⚠️     | open-webui                      | `ghcr.io/bbvch-ai/aihub-core/open-webui:v0.6.41`                            | BSD-3-Clause       | Permissive with required branding retention                   |
+| ⚠️     | open-webui                      | `ghcr.io/bbvch-ai/aihub-core/open-webui:v0.8.10`                            | BSD-3-Clause       | Permissive with required branding retention                   |
 | ✅     | pgbouncer                       | `ghcr.io/bbvch-ai/aihub-core/pgbouncer:v1.24.1-p1`                          | ISC                | Based on edoburu/pgbouncer (MIT wrapper); permissive licenses |
 | ✅     | pgvector                        | `ghcr.io/bbvch-ai/aihub-core/pgvector:pg17`                                 | PostgreSQL License | BSD-style permissive license                                  |
 | ✅     | postgres-documentdb             | `ghcr.io/bbvch-ai/aihub-core/postgres-documentdb:17.0.106.0-ferretdb-2.5.0` | Apache-2.0         | Permissive licenses                                           |
