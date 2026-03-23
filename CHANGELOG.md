@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.271.4] - 2026-03-23 - Enhanced AI Workflow Automation and API Resilience
+
+### Added
+
+- 🦾 **Introduced a new `splice-issue` skill** for the AI assistant, enabling it to intelligently decompose large GitHub
+  issues into smaller, independently mergeable sub-issues with appropriate dependency relationships, metadata
+  inheritance, and project board priority propagation.
+
+### Changed
+
+- 📄 **Improved license report generation** by making the `generate-license.sh` script smart enough to preserve the
+  existing "Generated on" date if the core content of the license report has not changed, reducing noise in version
+  control.
+- ⚙️ **Increased LiteLLM rate limit error retries** from 3 to 5 across all proxy configurations, enhancing the system's
+  resilience and reliability against temporary API rate limits from model providers.
+
+______________________________________________________________________
+
 ## [v0.271.3] - 2026-03-23 - Improved Agent Docker Image Documentation
 
 ### Changed
