@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.271.3] - 2026-03-23 - Improved Agent Docker Image Documentation
+
+### Changed
+
+- 📄 **Enhanced Agent Docker Images**: The `README.md` file from the `packages/agent` module is now included in the
+  Docker builds for all agent applications, ensuring better in-image documentation and context.
+
+______________________________________________________________________
+
 ## [v0.271.2] - 2026-03-23 - Enhanced Test Suite Reliability
 
 ### Changed
