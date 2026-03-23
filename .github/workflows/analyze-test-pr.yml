@@ -101,7 +101,7 @@ jobs:
           - packages/process
     steps:
       - name: Coverage comment
-        uses: bbvch-ai/swiss-ai-hu./.github/actions/pytest_coverage_comment@main
+        uses: bbvch-ai/aihub-core/.github/actions/pytest_coverage_comment@main
         with:
           working_directory: ${{ matrix.module }}
   sonarcloud-scan:
@@ -117,29 +117,29 @@ jobs:
       matrix:
         include:
           - folder: packages/agent
-            sonar_project_key: swiss-ai-hub_agents-core
+            sonar_project_key: aihub-core_agents-core
             report_coverage: 'true'
           - folder: packages/api
-            sonar_project_key: swiss-ai-hub_api-core
+            sonar_project_key: aihub-core_api-core
             report_coverage: 'true'
           - folder: packages/core
-            sonar_project_key: swiss-ai-hub_lib-core
+            sonar_project_key: aihub-core_lib-core
             report_coverage: 'true'
           - folder: packages/pipeline
-            sonar_project_key: swiss-ai-hub_pipelines-core
+            sonar_project_key: aihub-core_pipelines-core
             report_coverage: 'true'
           - folder: packages/bot
-            sonar_project_key: swiss-ai-hub_bot-core
+            sonar_project_key: aihub-core_bot-core
             report_coverage: 'true'
           - folder: packages/process
-            sonar_project_key: swiss-ai-hub_process-core
+            sonar_project_key: aihub-core_process-core
             report_coverage: 'true'
           - folder: packages/web
-            sonar_project_key: swiss-ai-hub_aihub-web
+            sonar_project_key: aihub-core_aihub-web
             report_coverage: 'false'
     steps:
       - name: SonarCloud Scan
-        uses: bbvch-ai/swiss-ai-hu./.github/actions/sonarcloud_scan@main
+        uses: bbvch-ai/aihub-core/.github/actions/sonarcloud_scan@main
         with:
           working_directory: ${{ matrix.folder }}
           sonar_project_key: ${{ matrix.sonar_project_key }}

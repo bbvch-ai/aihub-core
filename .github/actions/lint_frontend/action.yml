@@ -44,7 +44,7 @@ runs:
       working-directory: ${{ inputs.working_directory }}
     - name: Prepare Nuxt
       shell: bash
-      run: pnpm exec nuxi prepare
+      run: pnpm exec nuxi prepare && pnpm exec nuxi prepare .app
       working-directory: ${{ inputs.working_directory }}
     - name: Lint frontend
       uses: reviewdog/action-eslint@v1
