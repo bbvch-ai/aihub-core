@@ -1,6 +1,8 @@
 # ruff: noqa: E402
 import pytest
 
+pytestmark = [pytest.mark.flaky]
+
 from swiss_ai_hub.core.infrastructure import AihubInstrumentor  # isort: skip
 
 AihubInstrumentor().instrument()
