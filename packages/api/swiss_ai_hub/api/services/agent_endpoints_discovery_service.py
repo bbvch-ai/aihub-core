@@ -14,8 +14,7 @@ from pydantic import BaseModel
 from redis.asyncio import Redis
 from starlette.responses import StreamingResponse
 from stringcase import snakecase
-from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
-from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
+from swiss_ai_hub.core.auth import AccessChecker, UserIdentity
 from swiss_ai_hub.core.auth.usage import (
     ResourceType,
     UsageLimitMessages,
@@ -32,12 +31,14 @@ from swiss_ai_hub.core.events.agent import (
     StartEvent,
 )
 from swiss_ai_hub.core.i18n import LocaleHandler
-from swiss_ai_hub.core.infrastructure import LangfuseProvisioner
-from swiss_ai_hub.core.infrastructure.openwebui.online_agent import OnlineAgent
-from swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner import OpenWebuiProvisioner
-from swiss_ai_hub.core.persistence.agents import AgentClassEntity
-from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import AgentConfigEntityDocument
-from swiss_ai_hub.core.persistence.messaging.entities.thread_entity import AgentInstanceRef, ThreadEntity, User
+from swiss_ai_hub.core.infrastructure import LangfuseProvisioner, OnlineAgent, OpenWebuiProvisioner
+from swiss_ai_hub.core.persistence import (
+    AgentClassEntity,
+    AgentConfigEntityDocument,
+    AgentInstanceRef,
+    ThreadEntity,
+    User,
+)
 from swiss_ai_hub.core.publishers import NCPublisher
 from swiss_ai_hub.core.subscribers import AgentNCSubscriber
 from swiss_ai_hub.core.topic_managers import AgentTopicManager

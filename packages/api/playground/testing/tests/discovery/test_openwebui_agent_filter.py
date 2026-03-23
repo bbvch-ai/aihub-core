@@ -4,7 +4,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from swiss_ai_hub.core.infrastructure.openwebui.online_agent import OnlineAgent
+from swiss_ai_hub.core.infrastructure import OnlineAgent
 
 from swiss_ai_hub.api.services.agent_endpoints_discovery_service import AgentEndpointsDiscoveryService
 

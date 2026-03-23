@@ -8,7 +8,7 @@ from botocore.config import Config
 from fastapi import FastAPI
 from mongoengine import connect, disconnect
 from pymilvus import MilvusClient
-from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
+from swiss_ai_hub.core.auth import AuthHandler
 from swiss_ai_hub.core.distributor import ExternalAgentEventDistributor, ExternalProcessEventDistributor
 from swiss_ai_hub.core.infrastructure import (
     AIHubSettings,
@@ -16,11 +16,11 @@ from swiss_ai_hub.core.infrastructure import (
     MilvusSettings,
     MongoSettings,
     NatsSettings,
+    OpenWebuiProvisioner,
     RedisSettings,
     S3StorageSettings,
 )
-from swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner import OpenWebuiProvisioner
-from swiss_ai_hub.core.persistence.access.access_change_hook import AccessChangeHook
+from swiss_ai_hub.core.persistence import AccessChangeHook
 from swiss_ai_hub.core.subscribers import AgentNCSubscriber, ProcessNCSubscriber
 from swiss_ai_hub.core.topic_managers import AgentTopicManager, ProcessTopicManager
 

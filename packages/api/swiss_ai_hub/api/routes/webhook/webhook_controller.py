@@ -4,10 +4,9 @@ import logging
 from typing import Annotated, Self
 
 from fastapi import HTTPException, Query
-from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
-from swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner import OpenWebuiProvisioner
-from swiss_ai_hub.core.infrastructure.openwebui.openwebui_settings import OpenWebuiSettings
-from swiss_ai_hub.core.routes.controller import Controller
+from swiss_ai_hub.core.auth import AuthHandler
+from swiss_ai_hub.core.infrastructure import OpenWebuiProvisioner, OpenWebuiSettings
+from swiss_ai_hub.core.routes import Controller
 
 from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
 from swiss_ai_hub.api.routes.webhook.dto.openwebui_webhook_payload import OpenWebuiWebhookPayload

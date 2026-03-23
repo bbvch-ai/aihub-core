@@ -26,6 +26,12 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.no_trace import no_trace
     from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
     from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.smart_tracer import get_tracer
+    from swiss_ai_hub.core.infrastructure.openwebui.access_grant import AccessGrant
+    from swiss_ai_hub.core.infrastructure.openwebui.online_agent import OnlineAgent
+    from swiss_ai_hub.core.infrastructure.openwebui.openwebui_client import OpenWebuiClient
+    from swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner import OpenWebuiProvisioner
+    from swiss_ai_hub.core.infrastructure.openwebui.openwebui_settings import OpenWebuiSettings
+    from swiss_ai_hub.core.infrastructure.openwebui.openwebui_token_service import OpenWebuiTokenService
     from swiss_ai_hub.core.infrastructure.parsing.parsing_settings import ParsingSettings
     from swiss_ai_hub.core.infrastructure.rclone.rclone_source_factory import (
         azure_blob_source,
@@ -54,6 +60,7 @@ __all__ = [
     "Memory",
     "AzureDocumentIntelligenceSettings",
     "AzureDataLakeSettings",
+    "AccessGrant",
     "AIHubSettings",
     "AihubInstrumentor",
     "DefaultTenantSettings",
@@ -65,6 +72,11 @@ __all__ = [
     "MineruSettings",
     "MongoSettings",
     "NatsSettings",
+    "OnlineAgent",
+    "OpenWebuiClient",
+    "OpenWebuiProvisioner",
+    "OpenWebuiSettings",
+    "OpenWebuiTokenService",
     "ParsingSettings",
     "RedisSettings",
     "S3StorageSettings",
@@ -94,6 +106,7 @@ _LAZY_IMPORTS = {
     "Memory": "swiss_ai_hub.core.infrastructure.mem0.types.memory",
     "AzureDocumentIntelligenceSettings": "swiss_ai_hub.core.infrastructure.azure_cognitive_services.azure_document_intelligence_settings",
     "AzureDataLakeSettings": "swiss_ai_hub.core.infrastructure.azure_data_lake.azure_data_lake_settings",
+    "AccessGrant": "swiss_ai_hub.core.infrastructure.openwebui.access_grant",
     "AIHubSettings": "swiss_ai_hub.core.infrastructure.api.ai_hub_settings",
     "AihubInstrumentor": "swiss_ai_hub.core.infrastructure.opentelemetry.aihub_instrumentor",
     "DefaultTenantSettings": "swiss_ai_hub.core.infrastructure.api.default_tenant_settings",
@@ -105,6 +118,11 @@ _LAZY_IMPORTS = {
     "MineruSettings": "swiss_ai_hub.core.infrastructure.mineru.mineru_settings",
     "MongoSettings": "swiss_ai_hub.core.infrastructure.mongo.mongo_settings",
     "NatsSettings": "swiss_ai_hub.core.infrastructure.nats.nats_settings",
+    "OnlineAgent": "swiss_ai_hub.core.infrastructure.openwebui.online_agent",
+    "OpenWebuiClient": "swiss_ai_hub.core.infrastructure.openwebui.openwebui_client",
+    "OpenWebuiProvisioner": "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner",
+    "OpenWebuiSettings": "swiss_ai_hub.core.infrastructure.openwebui.openwebui_settings",
+    "OpenWebuiTokenService": "swiss_ai_hub.core.infrastructure.openwebui.openwebui_token_service",
     "ParsingSettings": "swiss_ai_hub.core.infrastructure.parsing.parsing_settings",
     "RedisSettings": "swiss_ai_hub.core.infrastructure.redis.redis_settings",
     "S3StorageSettings": "swiss_ai_hub.core.infrastructure.s3.s3_storage_settings",
