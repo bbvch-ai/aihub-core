@@ -21,6 +21,7 @@ def _skip_external_provisioning():
         patch(f"{OPENWEBUI_PROVISIONER}.initialize"),
         patch(f"{OPENWEBUI_PROVISIONER}.provision", new_callable=AsyncMock),
         patch(f"{OPENWEBUI_PROVISIONER}.sync_access", new_callable=AsyncMock),
+        patch(f"{OPENWEBUI_PROVISIONER}.sync_agents", new_callable=AsyncMock),
         patch(f"{LANGFUSE_PROVISIONER}.provision", new_callable=AsyncMock),
         patch(f"{ACCESS_CHANGE_HOOK}.connect"),
     ):

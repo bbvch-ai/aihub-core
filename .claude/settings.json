@@ -288,6 +288,7 @@
   "model": "opus[1m]",
   "availableModels": [
     "opus[1m]",
+    "sonnet[1m]",
     "opus",
     "sonnet"
   ],

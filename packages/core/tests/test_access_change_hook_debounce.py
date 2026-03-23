@@ -5,7 +5,6 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner import OpenWebuiProvisioner
 from swiss_ai_hub.core.persistence.access.access_change_hook import AccessChangeHook
 
 
@@ -17,7 +16,13 @@ def _reset_hook() -> None:
 class TestDebounce:
     @pytest.mark.asyncio
     async def test_rapid_schedule_sync_calls_result_in_single_sync(self) -> None:
-        with patch.object(OpenWebuiProvisioner, "sync_access", new_callable=AsyncMock) as mock_sync:
+        mock_sync = AsyncMock()
+        mock_provisioner = AsyncMock()
+        mock_provisioner.sync_access = mock_sync
+        with patch(
+            "swiss_ai_hub.core.persistence.access.access_change_hook.OpenWebuiProvisioner",
+            return_value=mock_provisioner,
+        ):
             AccessChangeHook._schedule_sync()
             AccessChangeHook._schedule_sync()
             AccessChangeHook._schedule_sync()
