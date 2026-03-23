@@ -127,7 +127,7 @@ check_python_workspace() {
     license_data=$(uv run pip-licenses \
         --from=mixed \
         --format=json \
-        --ignore-packages pip pip-licenses setuptools wheel tomli prettytable wcwidth aihub-core aihub-agent aihub-api aihub-bot aihub-pipeline aihub-process \
+        --ignore-packages pip pip-licenses setuptools wheel tomli prettytable wcwidth swiss-ai-hub-core swiss-ai-hub-agent swiss-ai-hub-api swiss-ai-hub-bot swiss-ai-hub-pipeline swiss-ai-hub-process \
         2>"$license_stderr") || {
         echo -e "${RED}Failed to run pip-licenses${NC}"
         echo "Error output: $(cat "$license_stderr")"
@@ -224,7 +224,7 @@ check_web_project() {
 
     if ! command -v pnpm &> /dev/null; then
         echo -e "${RED}Error: pnpm is required for this script but not found.${NC}"
-        cd ../..
+        cd ../../..
         return 1
     fi
     if [ ! -d "node_modules" ]; then
@@ -237,14 +237,14 @@ check_web_project() {
     pnpm_license_file=$(mktemp)
     pnpm licenses ls --json --prod > "$pnpm_license_file" 2>/dev/null || {
         echo -e "${RED}Failed to analyze web dependencies with pnpm.${NC}"
-        cd ../..
+        cd ../../..
         return 1
     }
 
     local web_total=$(jq '[.. | objects | select(has("name") and has("versions"))] | unique_by(.name) | length' "$pnpm_license_file")
     TOTAL_NODE_DEPS=$((TOTAL_NODE_DEPS + web_total))
 
-    echo "### aihub_web (Node.js)" >> "$OUTPUT_FILE_ABS"
+    echo "### web (Node.js)" >> "$OUTPUT_FILE_ABS"
     echo "" >> "$OUTPUT_FILE_ABS"
     echo "| Status | Package | Version | License | Notes |" >> "$OUTPUT_FILE_ABS"
     echo "|--------|---------|---------|---------|-------|" >> "$OUTPUT_FILE_ABS"
@@ -279,21 +279,21 @@ check_web_project() {
             if echo "$license" | grep -qE "$REVIEW_LICENSES"; then
                 status="⚠️"
                 echo -e "${YELLOW}⚠️  Review needed: $name uses $license${NC}"
-                echo "node:aihub_web:$name:$license" >> "$REVIEW_FILE"
+                echo "node:web:$name:$license" >> "$REVIEW_FILE"
             elif echo "$license" | grep -qE "$RESTRICTIVE_LICENSES"; then
                 status="❌"
                 echo -e "${RED}❌ RESTRICTIVE LICENSE: $name uses $license${NC}"
-                echo "node:aihub_web:$name:$license" >> "$RESTRICTIVE_FILE"
+                echo "node:web:$name:$license" >> "$RESTRICTIVE_FILE"
             elif echo "$license" | grep -qE "$PERMISSIVE_LICENSES"; then
                 status="✅"
             elif echo "$license" | grep -qiE "$UNKNOWN_LICENSES"; then
                 status="❌"
                 echo -e "${RED}❌ UNKNOWN LICENSE: $name has $license${NC}"
-                echo "node:aihub_web:$name:$license" >> "$UNKNOWN_FILE"
+                echo "node:web:$name:$license" >> "$UNKNOWN_FILE"
             else
                 status="❌"
                 echo -e "${RED}❌ UNLISTED/UNKNOWN LICENSE: $name has '$license'${NC}"
-                echo "node:aihub_web:$name:$license" >> "$UNKNOWN_FILE"
+                echo "node:web:$name:$license" >> "$UNKNOWN_FILE"
             fi
         fi
 
@@ -302,18 +302,18 @@ check_web_project() {
     rm "$pnpm_license_file"
 
     echo "" >> "$OUTPUT_FILE_ABS"
-    cd ../..
+    cd ../../..
 }
 
 # check_docker_images function
 check_docker_images() {
     echo -e "${BLUE}Checking Docker images...${NC}"
 
-    local compose_files=(docker-compose*.yml docker-compose*.yaml)
+    local compose_files=(infra/docker-compose*.yml infra/docker-compose*.yaml)
     compose_files=($(ls ${compose_files[@]} 2>/dev/null || true))
 
     if [ ${#compose_files[@]} -eq 0 ]; then
-        echo -e "${YELLOW}No docker-compose files found${NC}"
+        echo -e "${YELLOW}No docker-compose files found in infra/${NC}"
         return
     fi
     echo "Found docker-compose files: ${compose_files[*]}"

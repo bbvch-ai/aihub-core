@@ -1,6 +1,6 @@
 ---
 name: arc42
-description: Write, edit, or review arc42 architecture documentation chapters in aihub_doc/arc42/chapters/. Encodes the official arc42 framework structure, section purposes, and quality criteria for all 12 chapters. Use when user says 'write arc42 chapter', 'edit arc42 documentation', 'review arc42', 'update architecture documentation', 'arc42 section X', 'improve chapter Y', 'arc42 quality check', or 'architecture documentation'. Do NOT use for ADR creation (use /document-decision), VitePress docs site pages (use /write-doc or /document-feature), or explaining existing code (use /explain).
+description: Write, edit, or review arc42 architecture documentation chapters in docs/arc42/chapters/. Encodes the official arc42 framework structure, section purposes, and quality criteria for all 12 chapters. Use when user says 'write arc42 chapter', 'edit arc42 documentation', 'review arc42', 'update architecture documentation', 'arc42 section X', 'improve chapter Y', 'arc42 quality check', or 'architecture documentation'. Do NOT use for ADR creation (use /document-decision), VitePress docs site pages (use /write-doc or /document-feature), or explaining existing code (use /explain).
 allowed-tools: Read, Write, Edit, Grep, Glob, Bash
 ---
 
@@ -13,10 +13,10 @@ Write, edit, or review arc42 architecture documentation chapters. Takes a chapte
 
 Read these files for context:
 
-- **Platform overview**: `CLAUDE.md` — understand the AI-Hub platform architecture (NATS, Milvus, Dagster, LiteLLM,
-  Docker network zones, microservice topology)
-- **Existing chapters**: Browse `aihub_doc/arc42/chapters/` to understand what's already documented
-- **ADRs**: Scan `aihub_doc/arc42/decisions/` for architectural decisions that should be referenced from chapters
+- **Platform overview**: `CLAUDE.md` — understand the Swiss AI Hub platform architecture (NATS, Milvus, Dagster,
+  LiteLLM, Docker network zones, microservice topology)
+- **Existing chapters**: Browse `docs/arc42/chapters/` to understand what's already documented
+- **ADRs**: Scan `docs/arc42/decisions/` for architectural decisions that should be referenced from chapters
 - **Scope CLAUDE.md files**: Each package has a `CLAUDE.md` with architecture details — use these as source material
 
 ## File Structure
@@ -24,7 +24,7 @@ Read these files for context:
 Chapters live at:
 
 ```
-aihub_doc/arc42/chapters/NN_chapter_name.md
+docs/arc42/chapters/NN_chapter_name.md
 ```
 
 The 12 files and their exact names:
@@ -44,7 +44,7 @@ The 12 files and their exact names:
 | 11  | `11_risks_and_technical_debt.md` | Risks and Technical Debt |
 | 12  | `12_glossary.md`                 | Glossary                 |
 
-Images go in `aihub_doc/media/architecture/` (`.drawio` source files + `.png` exports).
+Images go in `docs/media/architecture/` (`.drawio` source files + `.png` exports).
 
 ## Mode: Write or Edit a Chapter
 
@@ -60,13 +60,13 @@ cat CLAUDE.md
 find . -name "CLAUDE.md" -not -path "./.claude/*" -not -path "*/node_modules/*"
 
 # Docker services and network topology
-cat docker-compose.dev.yml | head -200
+cat infra/docker-compose.dev.yml | head -200
 
 # ADRs for architectural decisions
-ls aihub_doc/arc42/decisions/
+ls docs/arc42/decisions/
 
 # Existing chapter to understand current state
-cat "aihub_doc/arc42/chapters/NN_chapter_name.md"
+cat "docs/arc42/chapters/NN_chapter_name.md"
 ```
 
 Cross-reference between chapters — arc42 sections are interconnected:
@@ -143,7 +143,7 @@ ______________________________________________________________________
 **Key principle**: "Show ALL external interfaces" — omissions here cascade as blind spots through the entire
 documentation. Restrict to overview level, avoid excessive detail. Explicitly note risks at external interfaces.
 
-For AI-Hub, external partners include: end users via OpenWebUI, admin users via Admin UI, cloud LLM providers via
+For Swiss AI Hub, external partners include: end users via OpenWebUI, admin users via Admin UI, cloud LLM providers via
 LiteLLM, SharePoint/OneDrive via Rclone, MS Teams/Slack via bot integrations, SSO/IdP, and GitHub for CI/CD.
 
 ______________________________________________________________________
@@ -180,7 +180,7 @@ This is MANDATORY and typically the largest section.
 
 - **Level 1**: White box of the overall system (the monorepo) containing black box descriptions of all major building
   blocks. Must be consistent with Section 3 external interfaces.
-- **Level 2**: Zoom into selected Level 1 blocks (e.g., inside `aihub_agent`, inside `aihub_pipeline`).
+- **Level 2**: Zoom into selected Level 1 blocks (e.g., inside `packages/agent`, inside `packages/pipeline`).
 - **Level 3+**: Further refinement only where architecturally relevant.
 
 **White box template** (for each decomposition level):
@@ -199,8 +199,9 @@ This is MANDATORY and typically the largest section.
 **Key principle**: "Prefer relevance over completeness" — document important, surprising, risky, complex, or volatile
 blocks. Use tables for efficient documentation. Map source code locations to building blocks.
 
-For AI-Hub Level 1 building blocks: `aihub_lib`, `aihub_agent`, `aihub_api`, `aihub_pipeline`, `aihub_process`,
-`aihub_web`, `aihub_bot`, plus infrastructure services (NATS, Milvus, PostgreSQL, SeaweedFS, LiteLLM).
+For Swiss AI Hub Level 1 building blocks: `packages/core`, `packages/agent`, `packages/api`, `packages/pipeline`,
+`packages/process`, `packages/web`, `packages/bot`, plus infrastructure services (NATS, Milvus, PostgreSQL, SeaweedFS,
+LiteLLM).
 
 ______________________________________________________________________
 
@@ -233,14 +234,14 @@ ______________________________________________________________________
 
 **Required subsections**:
 
-- **Infrastructure Level 1**: Overview diagram showing system distribution across environments. For AI-Hub: the Docker
-  Compose topology with network zones (proxy, backend, data, storage, egress). Map building blocks to containers.
+- **Infrastructure Level 1**: Overview diagram showing system distribution across environments. For Swiss AI Hub: the
+  Docker Compose topology with network zones (proxy, backend, data, storage, egress). Map building blocks to containers.
 
 - **Infrastructure Level 2**: Detailed views of selected infrastructure elements (e.g., the PostgreSQL cluster serving 4
   databases, the SeaweedFS cluster topology).
 
-**Source material**: `docker-compose.dev.yml` defines all containers, networks, ports, and dependencies.
-`deployment/templates/docker-compose.yml.j2` has production configuration.
+**Source material**: `infra/docker-compose.dev.yml` defines all containers, networks, ports, and dependencies.
+`infra/deployment/templates/docker-compose.yml.j2` has production configuration.
 
 **Multiple environments**: Document dev (Docker Compose), production (Kubernetes/Docker Swarm), and any staging
 environments separately when they differ.
@@ -275,9 +276,9 @@ ______________________________________________________________________
 
 **Purpose**: Point to the ADR directory.
 
-**Content**: Reference the ADRs in `aihub_doc/arc42/decisions/`.
+**Content**: Reference the ADRs in `docs/arc42/decisions/`.
 
-**ADR format** (documented in `aihub_doc/arc42/decisions/0000_00_00_template.md`):
+**ADR format** (documented in `docs/arc42/decisions/0000_00_00_template.md`):
 
 - Context → Decision Drivers → Decision → Consequences
 - File naming: `YYYY_MM_DD_short_decision_summary.md`
@@ -340,7 +341,7 @@ ______________________________________________________________________
 
 **Content guidelines**:
 
-- Include AI-Hub-specific terms (Agent, Pipeline, Process, Knowledge Base, Thread, Display, Run)
+- Include Swiss AI Hub-specific terms (Agent, Pipeline, Process, Knowledge Base, Thread, Display, Run)
 - Include technology terms that stakeholders may not know (NATS, Milvus, Dagster, SeaweedFS)
 - Include domain terms from the Swiss AI Agent Protocol (Control Event, Display Event, hierarchical scoping)
 - Keep definitions concise — one or two sentences max
@@ -353,14 +354,14 @@ ______________________________________________________________________
 
 ### Step 3: Apply Writing Standards
 
-Follow these rules (consistent with `aihub_doc/CLAUDE.md` writing guidelines):
+Follow these rules (consistent with `docs/CLAUDE.md` writing guidelines):
 
 - **Sentence case for headings**: "How agents work", not "How Agents Work"
 - **No marketing language**: Skip "powerful", "seamless", "robust", "cutting-edge"
 - **No meta-commentary**: Never write "In this section, we will discuss..."
 - **Paragraphs over bullet lists**: Unless a list is genuinely the clearest format
-- **Verify against codebase**: Every claim about the system must be verifiable in source code, `docker-compose.dev.yml`,
-  or package `CLAUDE.md` files
+- **Verify against codebase**: Every claim about the system must be verifiable in source code,
+  `infra/docker-compose.dev.yml`, or package `CLAUDE.md` files
 - **Mermaid diagrams**: Use for architecture diagrams, sequence diagrams, deployment views
 - **Tables**: Use for stakeholders, constraints, quality goals, glossary entries
 - **Cross-reference between sections**: Link related content (e.g., "See Section 10 for detailed quality scenarios")
@@ -371,21 +372,21 @@ After writing or editing a chapter:
 
 ```bash
 # 1. Verify the file exists at the correct path
-ls "aihub_doc/arc42/chapters/NN_chapter_name.md"
+ls "docs/arc42/chapters/NN_chapter_name.md"
 
 # 2. Check heading structure — should start with # Chapter Title
-head -5 "aihub_doc/arc42/chapters/NN_chapter_name.md"
+head -5 "docs/arc42/chapters/NN_chapter_name.md"
 
 # 3. Check that required subsections exist for the chapter
-grep '^## ' "aihub_doc/arc42/chapters/NN_chapter_name.md"
+grep '^## ' "docs/arc42/chapters/NN_chapter_name.md"
 
 # 4. Check for cross-references to other sections
-grep -c 'Section [0-9]' "aihub_doc/arc42/chapters/NN_chapter_name.md"
+grep -c 'Section [0-9]' "docs/arc42/chapters/NN_chapter_name.md"
 
 # 5. If diagrams were added, verify image files exist
-grep -oE '\!\[.*\]\(.*\)' "aihub_doc/arc42/chapters/NN_chapter_name.md" | while read img; do
+grep -oE '\!\[.*\]\(.*\)' "docs/arc42/chapters/NN_chapter_name.md" | while read img; do
   path=$(echo "$img" | sed 's/.*(\(.*\))/\1/')
-  [ ! -f "aihub_doc/arc42/chapters/$path" ] && [ ! -f "$path" ] && echo "Missing image: $path"
+  [ ! -f "docs/arc42/chapters/$path" ] && [ ! -f "$path" ] && echo "Missing image: $path"
 done
 ```
 
@@ -402,10 +403,10 @@ subsections.
 
 | Criterion                    | Check                                                                         |
 | ---------------------------- | ----------------------------------------------------------------------------- |
-| Required subsections present | `grep '^## ' "aihub_doc/arc42/chapters/NN_chapter_name.md"`                   |
+| Required subsections present | `grep '^## ' "docs/arc42/chapters/NN_chapter_name.md"`                        |
 | Concrete, not vague          | No "high performance" without measurable scenario                             |
 | Cross-references             | Links to related sections where content connects                              |
-| Codebase accuracy            | Claims match actual `docker-compose.dev.yml`, `CLAUDE.md`, source code        |
+| Codebase accuracy            | Claims match actual `infra/docker-compose.dev.yml`, `CLAUDE.md`, source code  |
 | Diagrams where needed        | Context diagrams (S3), building block diagrams (S5), deployment diagrams (S7) |
 | No marketing language        | No "powerful", "seamless", "robust", "cutting-edge"                           |
 | Tables for structured data   | Stakeholders, constraints, quality goals use tables not prose                 |
@@ -421,7 +422,7 @@ subsections.
 - **S6**: Architecturally relevant scenarios only? Building blocks mapped to activities?
 - **S7**: Software-to-infrastructure mapping? Multiple environments documented?
 - **S8**: Code examples included? Only essential concepts, not exhaustive? Hyperlinks to S5?
-- **S9**: References ADRs in `aihub_doc/arc42/decisions/`? No duplication with S4?
+- **S9**: References ADRs in `docs/arc42/decisions/`? No duplication with S4?
 - **S10**: Quality tree present? Scenarios measurable with acceptance criteria?
 - **S11**: Risks prioritized? Mitigation measures suggested?
 - **S12**: Terms concise? No trivia? Covers domain + technical terms?
@@ -450,13 +451,13 @@ subsections.
 
 ## Common Mistakes
 
-| Mistake                                              | Fix                                                        |
-| ---------------------------------------------------- | ---------------------------------------------------------- |
-| Writing vague quality goals ("high availability")    | Add measurable scenario: "99.9% uptime measured monthly"   |
-| Exhaustive Section 8 covering every possible concept | Select only concepts relevant to AI-Hub, skip the rest     |
-| Section 5 listing every class and file               | Focus on architecturally relevant blocks at 2-3 levels max |
-| Section 6 documenting every API endpoint             | Select 3-5 architecturally significant scenarios           |
-| Section 9 duplicating content from Section 4         | S4 = strategy summary, S9 = point to detailed ADRs         |
-| Missing cross-references between sections            | S1 quality goals must appear in S4 and S10                 |
-| Section 3 showing dependencies instead of data flows | Show what data crosses the boundary, not just arrows       |
-| Glossary defining common programming terms           | Only define terms stakeholders genuinely need clarified    |
+| Mistake                                              | Fix                                                          |
+| ---------------------------------------------------- | ------------------------------------------------------------ |
+| Writing vague quality goals ("high availability")    | Add measurable scenario: "99.9% uptime measured monthly"     |
+| Exhaustive Section 8 covering every possible concept | Select only concepts relevant to Swiss AI Hub, skip the rest |
+| Section 5 listing every class and file               | Focus on architecturally relevant blocks at 2-3 levels max   |
+| Section 6 documenting every API endpoint             | Select 3-5 architecturally significant scenarios             |
+| Section 9 duplicating content from Section 4         | S4 = strategy summary, S9 = point to detailed ADRs           |
+| Missing cross-references between sections            | S1 quality goals must appear in S4 and S10                   |
+| Section 3 showing dependencies instead of data flows | Show what data crosses the boundary, not just arrows         |
+| Glossary defining common programming terms           | Only define terms stakeholders genuinely need clarified      |

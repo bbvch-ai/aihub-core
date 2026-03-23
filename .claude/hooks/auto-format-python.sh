@@ -20,12 +20,12 @@ fi
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 relative_path="${file_path#$REPO_ROOT/}"
 
-# Extract the scope directory (first path component)
-scope=$(echo "$relative_path" | cut -d'/' -f1)
+# Extract the scope directory (first two path components for packages/*)
+scope=$(echo "$relative_path" | cut -d'/' -f1-2)
 
 # Only format files within known scopes
 case "$scope" in
-  aihub_lib|aihub_agent|aihub_api|aihub_bot|aihub_pipeline|aihub_process)
+  packages/core|packages/agent|packages/api|packages/bot|packages/pipeline|packages/process)
     cd "$REPO_ROOT" 2>/dev/null || exit 0
     uv run ruff format "$file_path" 2>/dev/null
     uv run ruff check --fix --ignore F401 "$file_path" 2>/dev/null

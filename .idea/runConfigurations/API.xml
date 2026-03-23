@@ -12,7 +12,7 @@
         </option>
         <option name="buildOnly" value="true" />
         <option name="contextFolderPath" value="." />
-        <option name="sourceFilePath" value="aihub_api/Dockerfile" />
+        <option name="sourceFilePath" value="packages/api/Dockerfile" />
       </settings>
     </deployment>
     <method v="2" />
