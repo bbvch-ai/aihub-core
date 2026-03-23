@@ -1,23 +1,24 @@
 __pycache__/
 *.py[cod]
-/aihub_agent/playground/minimal_workflow/bounded_loop/tests/.env
-/aihub_pipeline/.env
-/aihub_agent/playground/agent/RAGAgent/.env
+/packages/agent/playground/minimal_workflow/bounded_loop/tests/.env
+/packages/pipeline/.env
+/packages/agent/playground/agent/RAGAgent/.env
 .env
 .docker-volumes
-aihub_doc/node_modules
-aihub_doc/.vitepress/cache
-aihub_doc/.vitepress/dist
-/aihub_pipeline/.tmp*
-aihub_doc/aihub
-/configs/traefik/certs/dev-cert.pem
-/configs/traefik/certs/dev-key.pem
+docs/node_modules
+docs/.vitepress/cache
+docs/.vitepress/dist
+/packages/pipeline/.tmp*
+docs/swiss-ai-hub
+/infra/configs/traefik/certs/dev-cert.pem
+/infra/configs/traefik/certs/dev-key.pem
 .idea/copilot*
 .idea/misc.xml
 .idea/*.iml
 aihub_*/.idea/
 *.log
 .mypy_cache/
+.ty/
 .venv
 
 # Claude Code local overrides (personal preferences, not shared)
@@ -35,3 +36,9 @@ CLAUDE.local.md
 /e2e/playwright-report
 /e2e/blob-report
 /e2e/tests/.auth
+
+# Runtime artifacts
+/otel/
+/models/
+/dist/
+/data/

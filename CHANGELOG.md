@@ -5,6 +5,123 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.271.4] - 2026-03-23 - Enhanced AI Workflow Automation and API Resilience
+
+### Added
+
+- 🦾 **Introduced a new `splice-issue` skill** for the AI assistant, enabling it to intelligently decompose large GitHub
+  issues into smaller, independently mergeable sub-issues with appropriate dependency relationships, metadata
+  inheritance, and project board priority propagation.
+
+### Changed
+
+- 📄 **Improved license report generation** by making the `generate-license.sh` script smart enough to preserve the
+  existing "Generated on" date if the core content of the license report has not changed, reducing noise in version
+  control.
+- ⚙️ **Increased LiteLLM rate limit error retries** from 3 to 5 across all proxy configurations, enhancing the system's
+  resilience and reliability against temporary API rate limits from model providers.
+
+______________________________________________________________________
+
+## [v0.271.3] - 2026-03-23 - Improved Agent Docker Image Documentation
+
+### Changed
+
+- 📄 **Enhanced Agent Docker Images**: The `README.md` file from the `packages/agent` module is now included in the
+  Docker builds for all agent applications, ensuring better in-image documentation and context.
+
+______________________________________________________________________
+
+## [v0.271.2] - 2026-03-23 - Enhanced Test Suite Reliability
+
+### Changed
+
+- ⚡️ **Improved Test Suite Stability:** Marked several integration and memory-related tests as flaky, ensuring automatic
+  retries on transient failures to enhance overall CI/CD reliability and reduce false-positive test failures.
+
+______________________________________________________________________
+
+## [v0.271.1] - 2026-03-23 - Configuration & CI/CD Refinements Post-Renaming
+
+### Fixed
+
+- 🐛 **Development Configuration File:** Corrected the JSON string formatting for `OTEL_CLOUD_HEADERS` within the
+  `.env.dev` file to ensure proper parsing.
+
+### Changed
+
+- 📄 **Changelog Accuracy:** Updated the changelog entry for `v0.271.0` to fully detail the significant "Grand Renaming
+  and Open-Source Restructure" that took place in that release.
+- ⚙️ **Frontend Linting Process:** Modified the frontend linting GitHub Action to include an additional
+  `nuxi prepare .app` step, ensuring comprehensive preparation for linting in the updated project structure.
+- 🤖 **ChatBot Test Setup:** Enhanced `ChatBot` tests to provision a default tenant and assign administrative roles to
+  the test user, improving the realism and robustness of multi-tenancy and authorization test environments.
+
+### Refactor
+
+- 🧹 **CI/CD Artifact Naming:** Standardized the naming convention for build artifacts (pytest, coverage reports) across
+  GitHub Actions workflows by sanitizing working directory paths, increasing robustness and consistency in artifact
+  management.
+- 🔄 **CI/CD Workflow Paths:** Updated internal GitHub Actions workflow references from the older `swiss-ai-hub` path to
+  `aihub-core` to align with the new repository and package naming conventions.
+- 🏷️ **SonarCloud Project Identifiers:** Aligned SonarCloud project keys and names across all packages (`agent`, `api`,
+  `bot`, `core`, `pipeline`, `process`, `web`) to reflect the new `aihub-core` branding and simplified naming.
+
+______________________________________________________________________
+
+## [v0.271.0] - 2026-03-19 - Grand Renaming and Open-Source Restructure
+
+### Changed
+
+- 🏗️ **Repository Layout**: Reorganized all source packages under `packages/` directory — `aihub_lib` → `packages/core`,
+  `aihub_agent` → `packages/agent`, `aihub_api` → `packages/api`, `aihub_bot` → `packages/bot`, `aihub_pipeline` →
+  `packages/pipeline`, `aihub_process` → `packages/process`, `swiss_ai_hub_web` → `packages/web`. Non-code directories
+  moved to conventional locations: `aihub_doc` → `docs`, `aihub_action` → `.github/actions`, `deployment` →
+  `infra/deployment`.
+- 📦 **Python Namespace Packages**: All packages renamed to use `swiss_ai_hub` namespace via `uv_build` — import paths
+  are now `swiss_ai_hub.core`, `swiss_ai_hub.agent`, etc. PyPI names follow as `swiss-ai-hub-core`,
+  `swiss-ai-hub-agent`, etc.
+- 🐍 **snake_case Everywhere**: Renamed all CamelCase Python source files and directories to `snake_case` (e.g.,
+  `ExpertAskingAgent/ExpertAskingAgent.py` → `expert_asking_agent/expert_asking_agent.py`), resolving import ambiguity
+  that previously prevented proper `__init__.py` usage.
+- 📤 **Public Interface via `__init__.py`**: Added lazy `__init__.py` exports (using `TYPE_CHECKING` + `__getattr__`) to
+  all top-level package folders, establishing clear public interfaces. Cross-package imports now go through
+  `__init__.py`; intra-package imports use full module paths.
+- 🔄 **Import Rewrite**: Updated all imports across the entire codebase to follow the new namespace structure and import
+  conventions.
+- 📝 **License Change**: Moved from `LicenseRef-Proprietary` to `Apache-2.0` across all packages.
+- 📚 **Documentation Updates**: Updated all references from old naming conventions (`aihub_doc`, `aihub-core`, etc.) to
+  new names across docs, READMEs, CLAUDE.md files, whitepapers, and configuration files.
+- ⚙️ **Docker & CI Updates**: Updated all Docker Compose files, Dockerfiles, GitHub Actions workflows, and run
+  configurations to reference the new directory structure and package names.
+
+### Added
+
+- 📄 **Architecture Decision Record**: Added ADR documenting the rename and restructure rationale
+  (`docs/arc42/decisions/2026_03_13_rename_and_restructure_for_open_source_release.md`).
+- 🏗️ **`docker-compose.build.yml`**: Added comprehensive build-stage Docker Compose for multi-stack orchestration.
+
+### Removed
+
+- 🗑️ **Old Directory Structure**: Removed all `aihub_*` top-level directories, replaced by `packages/` layout.
+- 🗑️ **Deprecated Test Suites**: Removed outdated test suites for `AgentConfig` and `Form` classes.
+- 🗑️ **Outdated READMEs**: Removed stale README files that were superseded by the restructure.
+
+______________________________________________________________________
+
+## [v0.270.4] - 2026-03-19 - Enhanced Configuration and Dev Environment Streamlining
+
+### Changed
+
+- ✨ **Updated `MinerU2.5-2509-1.2B` Model Identifier:** Corrected the internal model name from `openai/mineru` to
+  `openai/MinerU2.5-2509-1.2B` across all LiteLLM configurations, ensuring accurate model referencing.
+- ⚙️ **Simplified Development CORS Configuration:** Adjusted the `CORS_ALLOW_ORIGIN` setting for development
+  environments to `http://localhost:8080`, streamlining local frontend development and testing.
+- 🌐 **Improved Development Playwright Integration:** Updated the `PLAYWRIGHT_WS_URL` for development environments to
+  `ws://localhost:3036`, making local Playwright service integration more straightforward.
+
+______________________________________________________________________
+
 ## [v0.270.3] - 2026-03-11 - Repository Cleanup: Streamlining Project Configuration
 
 ### Removed

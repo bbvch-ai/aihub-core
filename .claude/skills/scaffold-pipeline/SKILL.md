@@ -12,10 +12,10 @@ Generate boilerplate for a new data pipeline. The pipeline name/purpose should b
 
 Read these files to understand the patterns:
 
-- `aihub_pipeline/CLAUDE.md` -- scope architecture and folder structure
-- `aihub_pipeline/app/default_rag_pipeline/__init__.py` -- real app entry point (~18 lines)
-- `aihub_pipeline/templates/sources/README.md` -- source template guide with namespace explanation
-- `aihub_pipeline/playground/quick_start/my_document_pipeline.py` -- full manual wiring example
+- `packages/pipeline/CLAUDE.md` -- scope architecture and folder structure
+- `packages/pipeline/app/default_rag_pipeline/__init__.py` -- real app entry point (~18 lines)
+- `packages/pipeline/templates/sources/README.md` -- source template guide with namespace explanation
+- `packages/pipeline/playground/quick_start/my_document_pipeline.py` -- full manual wiring example
 
 Determine which path applies:
 
@@ -32,7 +32,7 @@ just need to connect a new source.
 
 ### Step 1: Choose a Source Template
 
-Check existing templates in `aihub_pipeline/templates/sources/`:
+Check existing templates in `packages/pipeline/templates/sources/`:
 
 | Template        | Source             | Factory Function                                   | RcloneSourceFactory     |
 | --------------- | ------------------ | -------------------------------------------------- | ----------------------- |
@@ -46,22 +46,22 @@ Check existing templates in `aihub_pipeline/templates/sources/`:
 
 If the source matches one of these, use the template. For any other rclone-supported backend (70+), use the rclone
 pattern with `RcloneSourceSettings.load("YOUR_SOURCE")` from
-`aihub_lib/aihub_lib/infrastructure/rclone/RcloneSourceFactory.py`.
+`packages/core/swiss_ai_hub/core/infrastructure/rclone/RcloneSourceFactory.py`.
 
 For SharePoint via native MS Graph API (not rclone), use `default_sharepoint_to_datalake_definitions` from
-`aihub_pipeline/aihub_pipeline/util/definitions_util.py`.
+`packages/pipeline/swiss_ai_hub/pipeline/util/definitions_util.py`.
 
 ### Step 2: Create the App Entry Point
 
-Create a new directory in `aihub_pipeline/app/<pipeline_name>/` with an `__init__.py`.
+Create a new directory in `packages/pipeline/app/<pipeline_name>/` with an `__init__.py`.
 
-Follow the pattern from `aihub_pipeline/app/default_rag_pipeline/__init__.py`:
+Follow the pattern from `packages/pipeline/app/default_rag_pipeline/__init__.py`:
 
 ```python
-# aihub_pipeline/app/<pipeline_name>/__init__.py
-from aihub_lib.infrastructure.logging import enable_logging
+# packages/pipeline/app/<pipeline_name>/__init__.py
+from swiss_ai_hub.core.infrastructure.logging import enable_logging
 
-from aihub_pipeline.util.definitions_util import default_definitions
+from swiss_ai_hub.pipeline.util.definitions_util import default_definitions
 
 enable_logging()
 
@@ -82,9 +82,9 @@ For a source ingestion pipeline (Stage 1), use the appropriate definition builde
 
 ```python
 # Example: rclone-based source (OneDrive, S3, Azure, etc.)
-from aihub_lib.infrastructure.rclone.RcloneSourceFactory import onedrive_source
+from swiss_ai_hub.core.infrastructure.rclone.RcloneSourceFactory import onedrive_source
 
-from aihub_pipeline.util.definitions_util import default_rclone_to_datalake_definitions
+from swiss_ai_hub.pipeline.util.definitions_util import default_rclone_to_datalake_definitions
 
 source = onedrive_source()
 
@@ -102,11 +102,12 @@ If the source needs credentials, add the required `RCLONE_` prefixed env vars to
 for which variables are needed (e.g., `templates/sources/sharepoint/README.md`).
 
 The naming convention is `RCLONE_{SOURCE}_{OPTION}` (e.g., `RCLONE_SHAREPOINT_CLIENT_ID`). These are loaded by
-`RcloneSourceSettings.load("SOURCE")` in `aihub_lib/aihub_lib/infrastructure/rclone/RcloneSourceFactory.py`.
+`RcloneSourceSettings.load("SOURCE")` in `packages/core/swiss_ai_hub/core/infrastructure/rclone/RcloneSourceFactory.py`.
 
 ### Step 4: Create the Dockerfile
 
-Copy and adapt `aihub_pipeline/app/default_rag_pipeline/Dockerfile`. The only change needed is the `PIPELINE` build arg:
+Copy and adapt `packages/pipeline/app/default_rag_pipeline/Dockerfile`. The only change needed is the `PIPELINE` build
+arg:
 
 ```dockerfile
 ARG PIPELINE=<pipeline_name>
@@ -116,7 +117,7 @@ The entrypoint uses this arg: `dagster api grpc -h 0.0.0.0 -p 4000 -m "app.${PIP
 
 ### Step 5: Register for Local Development
 
-Add the new module to the Makefile's run command. In `aihub_pipeline/Makefile`, the `rag-pipelines` target shows the
+Add the new module to the Makefile's run command. In `packages/pipeline/Makefile`, the `rag-pipelines` target shows the
 pattern:
 
 ```makefile
@@ -126,7 +127,7 @@ my-pipelines:
 
 ### Step 6: Verify
 
-1. Start the pipeline locally: `cd aihub_pipeline && uv run dagster dev -m app.<pipeline_name>`
+1. Start the pipeline locally: `cd packages/pipeline && uv run dagster dev -m app.<pipeline_name>`
 2. Open Dagster UI at http://localhost:3000
 3. Verify all assets, sensors, schedules, and jobs appear
 4. Trigger the observable source asset manually (click Observe)
@@ -141,20 +142,20 @@ transformations, new storage backends, additional enrichment steps).
 
 ### Step 1: Create New Ops
 
-Create ops in `aihub_pipeline/aihub_pipeline/ops/<category>/`. Follow the conventions:
+Create ops in `packages/pipeline/swiss_ai_hub/pipeline/ops/<category>/`. Follow the conventions:
 
 - Use `@op(code_version="v1")` for change detection
 - Use `ResourceParam[T]` for resource injection (NOT `required_resource_keys`)
 - Use `RetryPolicy(max_retries=6, delay=1, backoff=Backoff.EXPONENTIAL)` for external calls
 - Typed inputs and outputs
 
-Reference: `aihub_pipeline/aihub_pipeline/ops/nodes/embed_nodes.py` (retry pattern),
-`aihub_pipeline/aihub_pipeline/ops/data_lake/parse_document_from_data_lake.py` (basic pattern).
+Reference: `packages/pipeline/swiss_ai_hub/pipeline/ops/nodes/embed_nodes.py` (retry pattern),
+`packages/pipeline/swiss_ai_hub/pipeline/ops/data_lake/parse_document_from_data_lake.py` (basic pattern).
 
 ### Step 2: Create Asset Factory
 
-Create a factory function in `aihub_pipeline/aihub_pipeline/assets/factories/<category>/`. The factory returns a
-`@graph_asset` that composes your ops:
+Create a factory function in `packages/pipeline/swiss_ai_hub/pipeline/assets/factories/<category>/`. The factory returns
+a `@graph_asset` that composes your ops:
 
 ```python
 @graph_asset(
@@ -168,40 +169,40 @@ def my_asset(upstream: InputType) -> Output[OutputType]:
     return my_op_2(result)
 ```
 
-Reference: `aihub_pipeline/aihub_pipeline/assets/factories/data_lake_to_vector_store/documents_factory.py`.
+Reference: `packages/pipeline/swiss_ai_hub/pipeline/assets/factories/data_lake_to_vector_store/documents_factory.py`.
 
 ### Step 3: Create Resources (If Needed)
 
-Create resources in `aihub_pipeline/aihub_pipeline/resources/<category>/`. Extend `ConfigurableResource`:
+Create resources in `packages/pipeline/swiss_ai_hub/pipeline/resources/<category>/`. Extend `ConfigurableResource`:
 
-Reference: `aihub_pipeline/aihub_pipeline/resources/parser/DocumentParserResource.py`.
+Reference: `packages/pipeline/swiss_ai_hub/pipeline/resources/parser/DocumentParserResource.py`.
 
-Add the resource to the factory dict in `aihub_pipeline/aihub_pipeline/resources/factory.py`.
+Add the resource to the factory dict in `packages/pipeline/swiss_ai_hub/pipeline/resources/factory.py`.
 
 ### Step 4: Create IO Manager (If Needed)
 
-If you need a new storage backend, create an IO manager in `aihub_pipeline/aihub_pipeline/io/`. Extend
+If you need a new storage backend, create an IO manager in `packages/pipeline/swiss_ai_hub/pipeline/io/`. Extend
 `ConfigurableIOManager` with `handle_output()` and `load_input()`. Handle both partitioned and non-partitioned cases.
 
 Source connectors (read-only) should raise `NotImplementedError` in `handle_output()`.
 
-Reference: `aihub_pipeline/aihub_pipeline/io/S3DataLakeIOManager.py` (read+write),
-`aihub_pipeline/aihub_pipeline/io/RcloneIOManager.py` (read-only).
+Reference: `packages/pipeline/swiss_ai_hub/pipeline/io/S3DataLakeIOManager.py` (read+write),
+`packages/pipeline/swiss_ai_hub/pipeline/io/RcloneIOManager.py` (read-only).
 
 ### Step 5: Wire Into Definitions
 
-Either extend `aihub_pipeline/aihub_pipeline/util/definitions_util.py` with a new definition builder function, or create
-the `Definitions` object directly in your app entry point (see
-`aihub_pipeline/playground/quick_start/my_document_pipeline.py` for the manual wiring pattern).
+Either extend `packages/pipeline/swiss_ai_hub/pipeline/util/definitions_util.py` with a new definition builder function,
+or create the `Definitions` object directly in your app entry point (see
+`packages/pipeline/playground/quick_start/my_document_pipeline.py` for the manual wiring pattern).
 
 Every `Definitions` must include:
 
-- `default_automation_sensor(assets)` from `aihub_pipeline/aihub_pipeline/sensors/factory.py`
-- `default_process_executor()` from `aihub_pipeline/aihub_pipeline/executors/factory.py`
+- `default_automation_sensor(assets)` from `packages/pipeline/swiss_ai_hub/pipeline/sensors/factory.py`
+- `default_process_executor()` from `packages/pipeline/swiss_ai_hub/pipeline/executors/factory.py`
 
 ### Step 6: Test in Playground
 
-Add a playground entry in `aihub_pipeline/playground/` and run `make playground` to test interactively at
+Add a playground entry in `packages/pipeline/playground/` and run `make playground` to test interactively at
 http://localhost:3000.
 
 ### Step 7: Create App Entry Point and Dockerfile
@@ -213,14 +214,15 @@ ______________________________________________________________________
 ## Common Mistakes
 
 1. **Forgetting the automation sensor**: Without `default_automation_sensor(assets)` in `Definitions.sensors`,
-   `AutomationCondition.eager()` on assets won't trigger. Check `aihub_pipeline/aihub_pipeline/sensors/factory.py`.
+   `AutomationCondition.eager()` on assets won't trigger. Check
+   `packages/pipeline/swiss_ai_hub/pipeline/sensors/factory.py`.
 
 2. **Wrong resource keys**: The `resources` dict keys must match what ops expect via `ResourceParam[T]`. Common keys:
    `document_parser`, `node_parser`, `embedding_model`, `language_model`, `data_lake_client`, `data_lake_file_system`.
 
 3. **Missing namespace config**: When using `default_rclone_to_datalake_definitions`, omitting `datalake_directory_name`
    means source folder structure becomes namespaces. Root-level files won't be indexed. See
-   `aihub_pipeline/templates/sources/README.md` for the namespace decision guide.
+   `packages/pipeline/templates/sources/README.md` for the namespace decision guide.
 
 4. **Stale Dagster cache**: After changing asset definitions, Dagster may cache old metadata. Restart the dev server to
    pick up structural changes.

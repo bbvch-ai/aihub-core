@@ -1,0 +1,261 @@
+---
+name: Test Backend
+description: Run tests with coverage on Python backend
+inputs:
+  github_token:
+    description: GitHub token for authentication
+    required: true
+  working_directory:
+    description: Working directory for the module
+    required: true
+  docker_compose_services:
+    description: Space-separated list of Docker Compose services (empty if not needed)
+    required: false
+  install_ffmpeg:
+    description: Install ffmpeg
+    required: false
+    default: 'false'
+  python_version:
+    description: Python version to install
+    required: false
+    default: '3.13'
+  huggingface_api_key:
+    description: HuggingFace API key for model downloads
+    required: false
+    default: ''
+  swiss_llm_cloud_api_base_url:
+    description: Swiss LLM Cloud API base URL (text generation)
+    required: false
+    default: ''
+  swiss_llm_cloud_api_key:
+    description: Swiss LLM Cloud API key (text generation)
+    required: false
+    default: ''
+  swiss_llm_cloud_embedding_api_base_url:
+    description: Swiss LLM Cloud embedding API base URL
+    required: false
+    default: ''
+  swiss_llm_cloud_embedding_api_key:
+    description: Swiss LLM Cloud embedding API key
+    required: false
+    default: ''
+  swiss_llm_cloud_reranking_api_base_url:
+    description: Swiss LLM Cloud reranking API base URL
+    required: false
+    default: ''
+  swiss_llm_cloud_reranking_api_key:
+    description: Swiss LLM Cloud reranking API key
+    required: false
+    default: ''
+  swiss_llm_cloud_whisper_api_base_url:
+    description: Swiss LLM Cloud whisper API base URL
+    required: false
+    default: ''
+  swiss_llm_cloud_whisper_api_key:
+    description: Swiss LLM Cloud whisper API key
+    required: false
+    default: ''
+  swiss_llm_cloud_ocr_api_base_url:
+    description: Swiss LLM Cloud OCR API base URL
+    required: false
+    default: ''
+  swiss_llm_cloud_ocr_api_key:
+    description: Swiss LLM Cloud OCR API key
+    required: false
+    default: ''
+  regenerate_compose:
+    description: Regenerate Docker Compose files
+    required: false
+    default: 'false'
+runs:
+  using: composite
+  steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+    - name: Sanitize artifact name
+      id: sanitize
+      shell: bash
+      run: echo "artifact_prefix=$(echo '${{ inputs.working_directory }}' | tr '/'
+        '-')" >> "$GITHUB_OUTPUT"
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python_version }}
+    - name: Install uv
+      uses: astral-sh/setup-uv@v7
+      with:
+        enable-cache: true
+    - name: Configure Git Authentication
+      shell: bash
+      run: git config --global url."git@github.com:".insteadOf "https://github.com/"
+    - name: Install Dependencies
+      shell: bash
+      run: uv sync --all-packages --dev --frozen
+    - name: Generate Docker Compose files
+      if: inputs.docker_compose_services != '' && inputs.regenerate_compose == 'true'
+      shell: bash
+      run: make generate-compose
+    - name: Pre-pull Docker images (if services needed)
+      if: inputs.docker_compose_services != ''
+      shell: bash
+      run: |
+        echo "${{ inputs.github_token }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+        # Pre-pull images in parallel to use cache effectively
+        echo "Pre-pulling Docker images for faster startup..."
+        docker compose -f infra/docker-compose.dev.yml --env-file .env.dev pull --quiet ${{ inputs.docker_compose_services }} || true
+    - name: Add secrets to environment variables
+      shell: bash
+      run: |
+        if [ -n "$HUGGINGFACE_API_KEY" ]; then
+          echo "HUGGINGFACE_API_KEY=$HUGGINGFACE_API_KEY" >> .env.dev
+        fi
+        if [ -n "$SWISS_LLM_CLOUD_API_BASE_URL" ]; then
+          echo "SWISS_LLM_CLOUD_API_BASE_URL=$SWISS_LLM_CLOUD_API_BASE_URL" >> .env.dev
+        fi
+        if [ -n "$SWISS_LLM_CLOUD_API_KEY" ]; then
+          echo "SWISS_LLM_CLOUD_API_KEY=$SWISS_LLM_CLOUD_API_KEY" >> .env.dev
+        fi
+        if [ -n "$SWISS_LLM_CLOUD_EMBEDDING_API_BASE_URL" ]; then
+          echo "SWISS_LLM_CLOUD_EMBEDDING_API_BASE_URL=$SWISS_LLM_CLOUD_EMBEDDING_API_BASE_URL" >> .env.dev
+        fi
+        if [ -n "$SWISS_LLM_CLOUD_EMBEDDING_API_KEY" ]; then
+          echo "SWISS_LLM_CLOUD_EMBEDDING_API_KEY=$SWISS_LLM_CLOUD_EMBEDDING_API_KEY" >> .env.dev
+        fi
+        if [ -n "$SWISS_LLM_CLOUD_RERANKING_API_BASE_URL" ]; then
+          echo "SWISS_LLM_CLOUD_RERANKING_API_BASE_URL=$SWISS_LLM_CLOUD_RERANKING_API_BASE_URL" >> .env.dev
+        fi
+        if [ -n "$SWISS_LLM_CLOUD_RERANKING_API_KEY" ]; then
+          echo "SWISS_LLM_CLOUD_RERANKING_API_KEY=$SWISS_LLM_CLOUD_RERANKING_API_KEY" >> .env.dev
+        fi
+        if [ -n "$SWISS_LLM_CLOUD_WHISPER_API_BASE_URL" ]; then
+          echo "SWISS_LLM_CLOUD_WHISPER_API_BASE_URL=$SWISS_LLM_CLOUD_WHISPER_API_BASE_URL" >> .env.dev
+        fi
+        if [ -n "$SWISS_LLM_CLOUD_WHISPER_API_KEY" ]; then
+          echo "SWISS_LLM_CLOUD_WHISPER_API_KEY=$SWISS_LLM_CLOUD_WHISPER_API_KEY" >> .env.dev
+        fi
+        if [ -n "$SWISS_LLM_CLOUD_OCR_API_BASE_URL" ]; then
+          echo "SWISS_LLM_CLOUD_OCR_API_BASE_URL=$SWISS_LLM_CLOUD_OCR_API_BASE_URL" >> .env.dev
+        fi
+        if [ -n "$SWISS_LLM_CLOUD_OCR_API_KEY" ]; then
+          echo "SWISS_LLM_CLOUD_OCR_API_KEY=$SWISS_LLM_CLOUD_OCR_API_KEY" >> .env.dev
+        fi
+      env:
+        HUGGINGFACE_API_KEY: ${{ inputs.huggingface_api_key }}
+        SWISS_LLM_CLOUD_API_BASE_URL: ${{ inputs.swiss_llm_cloud_api_base_url }}
+        SWISS_LLM_CLOUD_API_KEY: ${{ inputs.swiss_llm_cloud_api_key }}
+        SWISS_LLM_CLOUD_EMBEDDING_API_BASE_URL: ${{ inputs.swiss_llm_cloud_embedding_api_base_url }}
+        SWISS_LLM_CLOUD_EMBEDDING_API_KEY: ${{ inputs.swiss_llm_cloud_embedding_api_key }}
+        SWISS_LLM_CLOUD_RERANKING_API_BASE_URL: ${{ inputs.swiss_llm_cloud_reranking_api_base_url }}
+        SWISS_LLM_CLOUD_RERANKING_API_KEY: ${{ inputs.swiss_llm_cloud_reranking_api_key }}
+        SWISS_LLM_CLOUD_WHISPER_API_BASE_URL: ${{ inputs.swiss_llm_cloud_whisper_api_base_url }}
+        SWISS_LLM_CLOUD_WHISPER_API_KEY: ${{ inputs.swiss_llm_cloud_whisper_api_key }}
+        SWISS_LLM_CLOUD_OCR_API_BASE_URL: ${{ inputs.swiss_llm_cloud_ocr_api_base_url }}
+        SWISS_LLM_CLOUD_OCR_API_KEY: ${{ inputs.swiss_llm_cloud_ocr_api_key }}
+    - name: Start Docker services (if needed)
+      if: inputs.docker_compose_services != ''
+      shell: bash
+      run: |
+        docker compose -f infra/docker-compose.dev.yml --env-file .env.dev up -d ${{ inputs.docker_compose_services }}
+    - name: Install FFmpeg
+      if: inputs.install_ffmpeg == 'true'
+      shell: bash
+      run: make install-ffmpeg
+      working-directory: ${{ inputs.working_directory }}
+    - name: Setup environment variables for tests
+      shell: bash
+      run: |
+        # Copy .env.dev to .env so that Pydantic BaseSettings can find it
+        cp .env.dev .env
+        echo "Copied .env.dev to .env for test environment"
+    - name: Wait for Docker services to become healthy
+      if: inputs.docker_compose_services != ''
+      shell: bash
+      run: |
+        echo "Waiting for Docker services to become healthy..."
+
+        # Check if Docker is running
+        if ! docker info > /dev/null 2>&1; then
+          echo "Error: Docker is not running or not accessible"
+          exit 1
+        fi
+
+        # Show initial state of containers
+        echo "Initial container status:"
+        docker ps
+
+        # Wait for at most 10 minutes for services to get healthy
+        MAX_WAIT=600
+        # Polling interval in seconds
+        INTERVAL=5
+        # Counter
+        ELAPSED=0
+        while [ $ELAPSED -lt $MAX_WAIT ]; do
+          # Check if any containers are unhealthy - approach with fewer assumptions about output format
+          UNHEALTHY_CONTAINERS=$(docker ps --format "{{.Names}}: {{.Status}}" | grep -i "unhealthy" || true)
+          STARTING_CONTAINERS=$(docker ps --format "{{.Names}}: {{.Status}}" | grep -i "starting" || true)
+          if [ -z "$UNHEALTHY_CONTAINERS" ] && [ -z "$STARTING_CONTAINERS" ]; then
+            echo "All Docker services are in a healthy state!"
+            docker ps
+            break
+          fi
+          echo "Some containers are still starting or unhealthy:"
+          [ -n "$UNHEALTHY_CONTAINERS" ] && echo "$UNHEALTHY_CONTAINERS"
+          [ -n "$STARTING_CONTAINERS" ] && echo "$STARTING_CONTAINERS"
+
+          # Sleep for the polling interval
+          sleep $INTERVAL
+          ELAPSED=$((ELAPSED + INTERVAL))
+          echo "Waited for $ELAPSED seconds out of $MAX_WAIT maximum..."
+        done
+        if [ $ELAPSED -ge $MAX_WAIT ]; then
+          echo "Timed out waiting for Docker services to become healthy after $MAX_WAIT seconds."
+          docker ps
+          echo "Continuing with tests anyway, but they may fail if services aren't ready."
+        fi
+    - name: Run Tests with Coverage and Generate Report
+      shell: bash
+      working-directory: ${{ inputs.working_directory }}
+      run: |
+        pytest_exit_code=0
+        uv run pytest -m "not flaky" --cov=. \
+                         --cov-report=xml:coverage.xml \
+                         --cov-report=term-missing \
+                         --junitxml=pytest.xml || pytest_exit_code=$?
+        if [[ $pytest_exit_code -eq 5 ]]; then
+          echo "No tests found! Creating an empty pytest.xml..."
+          echo '<?xml version="1.0" encoding="UTF-8"?><testsuites></testsuites>' > pytest.xml
+          echo "NO_TESTS_FOUND=true" >> $GITHUB_ENV
+        elif [[ $pytest_exit_code -ne 0 ]]; then
+          echo "Some tests failed!"
+          echo "TEST_FAIL=true" >> $GITHUB_ENV
+        fi
+    - name: Stop Docker services (if started)
+      if: inputs.docker_compose_services != ''
+      shell: bash
+      run: |
+        docker compose -f infra/docker-compose.dev.yml down --remove-orphans
+    - name: Upload Coverage Report
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ steps.sanitize.outputs.artifact_prefix }}-coverage-report
+        path: ${{ inputs.working_directory }}/coverage.xml
+    - name: Upload Pytest Report
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ steps.sanitize.outputs.artifact_prefix }}-pytest-report
+        path: ${{ inputs.working_directory }}/pytest.xml
+    - name: Publish Test Results
+      uses: EnricoMi/publish-unit-test-result-action@v2
+      if: always()
+      with:
+        files: |
+          ${{ inputs.working_directory }}/pytest.xml
+        check_name: ${{ inputs.working_directory }}
+        comment_title: Test results for ${{ inputs.working_directory }}
+    - name: Check if Tests Failed
+      if: env.TEST_FAIL == 'true'
+      shell: bash
+      run: |-
+        echo "Tests have failed!"
+        exit 1

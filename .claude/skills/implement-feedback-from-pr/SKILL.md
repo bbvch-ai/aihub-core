@@ -10,45 +10,22 @@ Implement review feedback from PR \$ARGUMENTS in the `bbvch-ai/aihub-core` monor
 
 ## Step 1: Fetch All Feedback
 
-Fetch PR data using the `gh` CLI. **Only act on unresolved comments** — skip anything already resolved by the author or
-reviewer.
+Use the GitHub MCP server (`mcp__github__pull_request_read`) to gather structured PR data:
 
-1. **PR overview**: `gh pr view $PR_NUMBER --repo bbvch-ai/aihub-core --json title,body,author,baseRefName,headRefName`
-2. **Review threads (unresolved only)**: Use the GraphQL API to fetch review threads filtered to unresolved. Write the
-   query to a temp file first (to avoid `$` escaping issues in the Bash tool), then execute:
-   ```bash
-   cat > /tmp/pr-threads.graphql << 'GRAPHQL'
-   query($owner: String!, $repo: String!, $pr: Int!) {
-     repository(owner: $owner, name: $repo) {
-       pullRequest(number: $pr) {
-         reviewThreads(first: 100) {
-           nodes {
-             isResolved
-             isOutdated
-             comments(first: 20) {
-               nodes { author { login } body path line createdAt }
-             }
-           }
-         }
-       }
-     }
-   }
-   GRAPHQL
-   gh api graphql -f "query=$(cat /tmp/pr-threads.graphql)" \
-     -f owner=bbvch-ai -f repo=aihub-core -F pr=$PR_NUMBER \
-     | jq '[.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved == false)]'
-   ```
-   This returns all unresolved review threads.
-3. **Conversation comments**: `gh pr view $PR_NUMBER --repo bbvch-ai/aihub-core --json comments`
-4. **CI status**: `gh pr checks $PR_NUMBER --repo bbvch-ai/aihub-core`
-5. **Changed files**: `gh pr diff $PR_NUMBER --repo bbvch-ai/aihub-core --name-only`
+1. **PR overview**: `method: "get"` — title, description, author, base/head branches
+2. **Inline review comments**: `method: "get_review_comments"` — threaded code comments with `isResolved`/`isOutdated`
+   metadata. Skip resolved and outdated threads.
+3. **Conversation comments**: `method: "get_comments"` — general discussion comments
+4. **CI status**: `method: "get_status"` — build and check results
+5. **Changed files**: `method: "get_files"` — list of modified files for scope detection
+
+All calls use `owner: "bbvch-ai"`, `repo: "swiss-ai-hub"`, `pullNumber: $PR_NUMBER`.
 
 ## Step 2: Triage Feedback
 
 ### Human Comments (TOP PRIORITY)
 
-Implement all **unresolved** human reviewer feedback first. Read the referenced file before making changes. If a review
-thread is marked as resolved, the author has already addressed it — do not re-implement.
+Implement all human reviewer feedback first. Read the referenced file before making changes.
 
 ### Bot Feedback (EVALUATE CRITICALLY)
 
@@ -60,9 +37,9 @@ This repo's CI pipeline (`.github/workflows/analyze-test-pr.yml`) runs three bot
 
 - **`sonarcloud-scan`** — scans three SonarCloud projects:
 
-  - `aihub-core_lib-core` (aihub_lib)
-  - `aihub-core_api-core` (aihub_api)
-  - `aihub-core_agents-core` (aihub_agent)
+  - `swiss-ai-hub_lib-core` (packages/core)
+  - `swiss-ai-hub_api-core` (packages/api)
+  - `swiss-ai-hub_agents-core` (packages/agent)
 
   SonarCloud bugs and vulnerabilities: almost always fix. Code smells: fix if straightforward. Security hotspots:
   evaluate case-by-case.
@@ -70,8 +47,9 @@ This repo's CI pipeline (`.github/workflows/analyze-test-pr.yml`) runs three bot
 ## Step 3: Identify Affected Scopes
 
 Use the file list from Step 1 (`get_files`) to determine which monorepo scopes need testing. Map changed file paths to
-scopes: `aihub_lib/` → aihub_lib, `aihub_api/` → aihub_api, `aihub_agent/` → aihub_agent, `aihub_pipeline/` →
-aihub_pipeline, `aihub_process/` → aihub_process, `aihub_bot/` → aihub_bot, `aihub_web/` → aihub_web.
+scopes: `packages/core/` → packages/core, `packages/api/` → packages/api, `packages/agent/` → packages/agent,
+`packages/pipeline/` → packages/pipeline, `packages/process/` → packages/process, `packages/bot/` → packages/bot,
+`packages/web/` → packages/web.
 
 ## Step 4: Implement Changes
 
@@ -84,11 +62,11 @@ After all changes are implemented:
 
 ```bash
 # Lint all affected scopes
-make pr-ready
+make -C /home/joelbarmettler/projects/aihub/aihub-core pr-ready
 
 # Run tests in affected scopes (or delegate to /test-scope)
-make -C aihub_lib test    # if aihub_lib was affected
-make -C aihub_api test    # if aihub_api was affected
+make -C packages/core test    # if packages/core was affected
+make -C packages/api test    # if packages/api was affected
 ```
 
 ## Troubleshooting
@@ -99,7 +77,7 @@ make -C aihub_api test    # if aihub_api was affected
 | Inline comments not visible         | Use `get_review_comments` method (not `get_comments`)                 |
 | SonarCloud findings unclear         | Check the SonarCloud link in the bot comment for detailed explanation |
 | `make pr-ready` fails after changes | Fix lint errors introduced by your fixes, re-run                      |
-| Tests fail in unrelated scope       | Check if `aihub_lib` changes broke a downstream scope                 |
+| Tests fail in unrelated scope       | Check if `packages/core` changes broke a downstream scope             |
 
 ## Done When
 

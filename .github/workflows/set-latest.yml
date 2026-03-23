@@ -13,7 +13,7 @@
 #   Example: source_tag = "v1.2.3" will tag that commit and its images as "latest"
 #
 # IMAGE SELECTION (automatically synced with compose-config.yml):
-#   Images are dynamically discovered from deployment/compose-config.yml.
+#   Images are dynamically discovered from infra/deployment/compose-config.yml.
 #   The selection identifies custom application images we build ourselves:
 #
 #   PATTERN MATCHED - entries with "build: localbuild" (images we build ourselves):
@@ -64,7 +64,7 @@ jobs:
           # Extract image names where build == "localbuild" (images we build ourselves)
           images=$(python3 -c "
           import yaml, json
-          with open('deployment/compose-config.yml') as f:
+          with open('infra/deployment/compose-config.yml') as f:
               config = yaml.safe_load(f)
           images = [k for k, v in config['image_tags'].items() if isinstance(v, dict) and v.get('build') == 'localbuild']
           print(json.dumps(images))

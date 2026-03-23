@@ -3,8 +3,8 @@
     "mongodb": {
       "command": "./.claude/mcp/mcp-mongodb.sh"
     },
-    "aihub_api": {
-      "command": "./.claude/mcp/mcp-aihub-api.sh"
+    "swiss_ai_hub_api": {
+      "command": "./.claude/mcp/mcp-swiss-ai-hub-api.sh"
     },
     "langfuse": {
       "command": "./.claude/mcp/mcp-langfuse.sh"
