@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.271.5] - 2026-03-24 - Documentation Base Path Update and Link Alignment
+
+### Changed
+
+- 📄 **Updated Documentation Base Paths:** The base path for all project documentation has been consistently updated from
+  `/swiss-ai-hub/` to `/aihub-core/` across the VitePress configuration, `README.md`, `CONTRIBUTING.md`, `CLAUDE.md`,
+  and the `install.sh` script. This ensures all documentation links and internal paths correctly point to the new
+  `aihub-core` URL structure.
+
+______________________________________________________________________
+
 ## [v0.271.4] - 2026-03-23 - Enhanced AI Workflow Automation and API Resilience
 
 ### Added
