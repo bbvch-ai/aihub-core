@@ -209,7 +209,7 @@ router_settings:
   routing_strategy: usage-based-routing-v2
   retry_policy:
     TimeoutErrorRetries: 2
-    RateLimitErrorRetries: 3
+    RateLimitErrorRetries: 5
     InternalServerErrorRetries: 2
   allowed_fails: 3
   cooldown_time: 30

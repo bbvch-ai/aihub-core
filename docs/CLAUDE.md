@@ -153,8 +153,8 @@ Images in topic-specific subdirectories under `media/`:
 
 - Automatic via GitHub Pages on release (`repository_dispatch: release-ready`)
 - Manual: `workflow_dispatch` on `.github/workflows/deploy-docs.yml`
-- Base path: `/swiss-ai-hub/`
-- Live URL: https://bbvch-ai.github.io/swiss-ai-hub/
+- Base path: `/aihub-core/`
+- Live URL: https://bbvch-ai.github.io/aihub-core/
 
 ## Essential Files
 

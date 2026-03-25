@@ -72,6 +72,11 @@ runs:
   steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
+    - name: Sanitize artifact name
+      id: sanitize
+      shell: bash
+      run: echo "artifact_prefix=$(echo '${{ inputs.working_directory }}' | tr '/'
+        '-')" >> "$GITHUB_OUTPUT"
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
@@ -233,12 +238,12 @@ runs:
     - name: Upload Coverage Report
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ inputs.working_directory }}-coverage-report
+        name: ${{ steps.sanitize.outputs.artifact_prefix }}-coverage-report
         path: ${{ inputs.working_directory }}/coverage.xml
     - name: Upload Pytest Report
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ inputs.working_directory }}-pytest-report
+        name: ${{ steps.sanitize.outputs.artifact_prefix }}-pytest-report
         path: ${{ inputs.working_directory }}/pytest.xml
     - name: Publish Test Results
       uses: EnricoMi/publish-unit-test-result-action@v2
