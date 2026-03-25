@@ -4,7 +4,7 @@ from swiss_ai_hub.core.displayers import EventDisplayer
 from swiss_ai_hub.core.events.agent import LLMStopEvent, Message, StopEvent, ToolEvent, UserMessageEvent
 from swiss_ai_hub.core.mcp.mcp_client_config import McpClientConfig
 
-from playground.minimal_workflow.mcp_react_workflow.events.mcp_reasoning_event import McpReasoningEvent
+from swiss_ai_hub.agent.agents.mcp_react_agent.events.mcp_reasoning_event import McpReasoningEvent
 from playground.minimal_workflow.mcp_react_workflow.mcp_react_agent_config import McpReactAgentConfig
 from swiss_ai_hub.agent.agents.agent import Agent
 from swiss_ai_hub.agent.context.run.run_context import RunContext
