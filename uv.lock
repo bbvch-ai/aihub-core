@@ -5179,7 +5179,7 @@ wheels = [
 
 [[package]]
 name = "swiss-ai-hub-agent"
-version = "0.271.5"
+version = "0.271.6"
 source = { editable = "packages/agent" }
 dependencies = [
     { name = "llama-index-llms-azure-openai" },
@@ -5210,7 +5210,7 @@ dev = [
 
 [[package]]
 name = "swiss-ai-hub-api"
-version = "0.271.5"
+version = "0.271.6"
 source = { editable = "packages/api" }
 dependencies = [
     { name = "audioop-lts" },
@@ -5265,7 +5265,7 @@ dev = [{ name = "asgi-lifespan", specifier = ">=2.1.0" }]
 
 [[package]]
 name = "swiss-ai-hub-bot"
-version = "0.271.5"
+version = "0.271.6"
 source = { editable = "packages/bot" }
 dependencies = [
     { name = "azure-identity" },
@@ -5310,7 +5310,7 @@ dev = [{ name = "asgi-lifespan", specifier = ">=2.1.0" }]
 
 [[package]]
 name = "swiss-ai-hub-core"
-version = "0.271.5"
+version = "0.271.6"
 source = { editable = "packages/core" }
 dependencies = [
     { name = "adlfs" },
@@ -5443,7 +5443,7 @@ dev = [
 
 [[package]]
 name = "swiss-ai-hub-pipeline"
-version = "0.271.5"
+version = "0.271.6"
 source = { editable = "packages/pipeline" }
 dependencies = [
     { name = "dagster-aws" },
@@ -5469,7 +5469,7 @@ dev = []
 
 [[package]]
 name = "swiss-ai-hub-process"
-version = "0.271.5"
+version = "0.271.6"
 source = { editable = "packages/process" }
 dependencies = [
     { name = "httpx" },
@@ -5498,7 +5498,7 @@ dev = [
 
 [[package]]
 name = "swiss-ai-hub-workspace"
-version = "0.271.5"
+version = "0.271.6"
 source = { virtual = "." }
 dependencies = [
     { name = "jinja2" },

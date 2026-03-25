@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.271.6] - 2026-03-25 - Document Processing Refinements
+
+### Changed
+
+- ⚡️ **Improved Document Intelligence Loader:** Enhanced file processing within the Document Intelligence Loader by
+  switching to direct byte content reading, leading to more robust and compatible document analysis.
+
+______________________________________________________________________
+
 ## [v0.271.5] - 2026-03-24 - Documentation Base Path Update and Link Alignment
 
 ### Changed
