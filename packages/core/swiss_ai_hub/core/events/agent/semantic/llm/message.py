@@ -5,6 +5,7 @@ from llama_index.core.base.llms.types import (
     AudioBlock,
     ChatMessage,
     ImageBlock,
+    MessageRole,
     TextBlock,
 )
 from llama_index.core.base.llms.types import (
@@ -72,7 +73,7 @@ class Message(BaseModel):
     @property
     def content(self) -> str:
         content = ""
-        for block in self.contents:
+        for block in self.contents or []:
             if isinstance(block, TextContent):
                 content += block.text
         return content
@@ -124,10 +125,12 @@ class Message(BaseModel):
     @classmethod
     def from_llama_index(cls, msg: ChatMessage) -> Self:
         function_call: dict[str, Any] = msg.additional_kwargs.get("function_call", {}) or {}
+        raw_tool_calls = msg.additional_kwargs.get("tool_calls")
+        tool_calls = [cls._normalize_tool_call(tool_call) for tool_call in raw_tool_calls] if raw_tool_calls else None
         message_dict: dict[str, Any] = {
             "role": msg.role.value,
             "name": msg.additional_kwargs.get("name"),
-            "tool_calls": msg.additional_kwargs.get("tool_calls"),
+            "tool_calls": tool_calls,
             "function_call_name": function_call.get("name"),
             "function_call_arguments_json": function_call.get("arguments"),
             "tool_call_id": msg.additional_kwargs.get("tool_call_id"),
@@ -144,14 +147,55 @@ class Message(BaseModel):
             message_dict["contents"] = contents
         return cls(**{k: v for k, v in message_dict.items() if v is not None})
 
+    def to_openai_dict(self) -> dict[str, Any]:
+        """Convert to an OpenAI API-compatible message dict."""
+        message_dict: dict[str, Any] = {"role": self.role}
+
+        if self.role == MessageRole.TOOL:
+            message_dict["content"] = self.content
+            if self.tool_call_id:
+                message_dict["tool_call_id"] = self.tool_call_id
+            return message_dict
+
+        if self.role == MessageRole.ASSISTANT and self.tool_calls:
+            message_dict["content"] = self.content or None
+            message_dict["tool_calls"] = self.tool_calls
+        else:
+            message_dict["content"] = self.content
+
+        if self.name:
+            message_dict["name"] = self.name
+
+        return message_dict
+
+    @classmethod
+    def from_openai_response(cls, message: Any) -> Self:
+        """Parse an OpenAI ChatCompletionMessage into a Message."""
+        tool_calls = [cls._normalize_tool_call(tc) for tc in message.tool_calls] if message.tool_calls else None
+        contents = [TextContent(text=message.content)] if message.content else None
+        return cls(
+            role=message.role,
+            contents=contents,
+            tool_calls=tool_calls,
+        )
+
     def to_llama_index(self) -> ChatMessage:
-        """Converts a message to llama index"""
+        """Converts a message to llama index, restoring additional_kwargs for tool call round-tripping."""
         blocks: list[LlamaIndexContentBlock] = []
         for block in self.contents or []:
             cb = self._process_block_backwards(block)
             if cb:
                 blocks.append(cb)
-        return ChatMessage(role=self.role, blocks=blocks)
+
+        additional_kwargs: dict[str, Any] = {}
+        if self.tool_calls:
+            additional_kwargs["tool_calls"] = self.tool_calls
+        if self.tool_call_id:
+            additional_kwargs["tool_call_id"] = self.tool_call_id
+        if self.name:
+            additional_kwargs["name"] = self.name
+
+        return ChatMessage(role=self.role, blocks=blocks, additional_kwargs=additional_kwargs)
 
     @staticmethod
     def _process_block(block: Any) -> ContentBlock | None:
@@ -175,3 +219,18 @@ class Message(BaseModel):
             return ImageBlock(url=block.url)
         if isinstance(block, AudioContent):
             return AudioBlock(url=block.url, format=block.mime_type.split("/")[1])
+
+    @staticmethod
+    def _normalize_tool_call(tool_call: Any) -> dict[str, Any]:
+        """Normalize an OpenAI SDK tool call object to a plain dict for Pydantic storage."""
+        if isinstance(tool_call, dict):
+            return tool_call
+        raw_arguments = tool_call.function.arguments
+        return {
+            "id": tool_call.id,
+            "type": "function",
+            "function": {
+                "name": tool_call.function.name,
+                "arguments": raw_arguments if isinstance(raw_arguments, str) else json.dumps(raw_arguments),
+            },
+        }

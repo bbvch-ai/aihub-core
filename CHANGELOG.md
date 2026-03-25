@@ -5,6 +5,46 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.272.0] - 2026-03-25 - Empowering Agents with External Tooling: Introducing the MCP React Agent
+
+### Added
+
+- 🦾 **New MCP React Agent**: A sophisticated AI agent capable of dynamically discovering and interacting with tools and
+  resources exposed by external Message Control Protocol (MCP) servers, leveraging ReAct reasoning.
+- 🚀 **MCP Integration Framework**: Core components and utilities (`McpClientFactory`, `McpClientConfig`,
+  `mcp_resource_schemas`, `mcp_tool_schemas`) for seamless and robust communication with MCP-compliant services.
+- 📄 **Architectural Decision Record (ADR)**: A detailed document outlining the strategy for agents to consume MCP
+  resources, utilizing system prompts for static data and a meta-tool for templated data.
+- 🌐 **Internationalization for MCP Agent**: Added comprehensive localization support for the MCP React Agent's metadata,
+  configuration parameters, and workflow steps in German, English, French, and Italian.
+- ✨ **Tool Call ID to `ToolEvent`**: Introduced a `tool_call_id` field within `ToolEvent` to establish a clear link
+  between a tool invocation and its corresponding result message.
+- 🐳 **Docker Deployment for MCP Agent**: Provided a Dockerfile to facilitate the easy containerization and deployment of
+  the new MCP React Agent.
+- 🧪 **Playground Workflow for MCP React Agent**: A minimal example workflow, complete with a dummy MCP server, to
+  demonstrate and test the capabilities of the MCP React Agent.
+- 📦 **`fastmcp` Dependency**: Integrated `fastmcp` as a crucial dependency to enable direct client interaction with MCP
+  servers.
+
+### Changed
+
+- 🔄 **Enhanced `Message` Tool Call Handling**: Improved the `Message` class to accurately normalize and preserve
+  `tool_calls` data during conversion to and from `llama_index`'s `ChatMessage` format, ensuring data integrity across
+  the LLM pipeline.
+- 🔗 **OpenAI API Compatibility for `Message`**: Added methods `to_openai_dict` and `from_openai_response` to the
+  `Message` class, enabling better interoperability with OpenAI API messages, especially for complex tool interactions.
+- 🛡️ **Robust Content Extraction in `Message`**: Made the `content` property of the `Message` class more resilient by
+  explicitly handling cases where message contents might be empty.
+
+### Refactor
+
+- 🧹 **Organized MCP Core Components**: Restructured the codebase by creating dedicated `packages/agent/mcp/` and
+  `packages/core/mcp/` directories, centralizing all MCP-related infrastructure and agent-specific logic.
+- ⚙️ **Standardized Line Endings**: Ensured consistent LF line endings for `.sh` files across the repository via
+  `.gitattributes` for improved cross-platform compatibility.
+
+______________________________________________________________________
+
 ## [v0.271.6] - 2026-03-25 - Document Processing Refinements
 
 ### Changed
