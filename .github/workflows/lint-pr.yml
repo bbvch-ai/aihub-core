@@ -25,7 +25,7 @@ jobs:
           - packages/process
     steps:
       - name: Lint backend
-        uses: bbvch-ai/swiss-ai-hu./.github/actions/lint_backend@main
+        uses: bbvch-ai/aihub-core/.github/actions/lint_backend@main
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           working_directory: ${{ matrix.folder }}
@@ -34,7 +34,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Lint frontend
-        uses: bbvch-ai/swiss-ai-hu./.github/actions/lint_frontend@main
+        uses: bbvch-ai/aihub-core/.github/actions/lint_frontend@main
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           working_directory: packages/web/swiss_ai_hub_web

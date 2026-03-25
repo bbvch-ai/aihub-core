@@ -12,6 +12,8 @@ from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler
     DangerousDevelopmentOnlyAuthHandler,
 )
 from swiss_ai_hub.core.infrastructure import AIHubSettings, MongoSettings, enable_logging
+from swiss_ai_hub.core.persistence.access.entities.tenant_entity import TenantEntity
+from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 from swiss_ai_hub.core.persistence.messaging.entities.thread_entity import ThreadEntity
 from swiss_ai_hub.core.persistence.user.user_entity import UserEntity
 from swiss_ai_hub.core.persistence.utils import str_to_object_id
@@ -68,9 +70,21 @@ def setup_test_credentials():
     PathEntity(path=json_path, credentials=test_credentials, system_message="Test system message").save()
     PathEntity(path=stream_path, credentials=test_credentials, system_message="Test system message").save()
 
+    # Create default tenant and assign test user
+    default_tenant = TenantEntity.ensure_default_tenant_exists(name="Test Tenant", access_rules=["aihub.admin.>"])
+    tenant_id = str(default_tenant.id)
+
     # Create test user (looked up via from_property.name in AgentCompletionHandler)
     UserEntity.objects(email=USER_EMAIL).delete()
     UserEntity.create_user(oid="test_user_oid", name="Test User", email=USER_EMAIL)
+
+    # Assign user to default tenant with admin role
+    UserTenantRoleEntity.create_or_update(
+        user_id="test_user_oid",
+        tenant_id=tenant_id,
+        roles=["admin"],
+        validate_roles=False,
+    )
 
     yield
 
@@ -79,6 +93,7 @@ def setup_test_credentials():
         PathEntity.objects(path=json_path).delete()
         PathEntity.objects(path=stream_path).delete()
         UserEntity.objects(email=USER_EMAIL).delete()
+        UserTenantRoleEntity.objects(user_id="test_user_oid").delete()
     except Exception:
         # Connection may already be closed, ignore cleanup errors
         pass
