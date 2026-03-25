@@ -2,14 +2,19 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from swiss_ai_hub.core.form.all_form_options import ALL_FORM_OPTIONS
+    from swiss_ai_hub.core.form.base.config_authorization_violation import ConfigAuthorizationViolation
+    from swiss_ai_hub.core.form.base.formkit_element import FormkitElement
     from swiss_ai_hub.core.form.elements.agent_selector import AgentSelector
     from swiss_ai_hub.core.form.elements.cascade_select import CascadeSelect
     from swiss_ai_hub.core.form.elements.checkbox import Checkbox
     from swiss_ai_hub.core.form.elements.date_picker import DatePicker
+    from swiss_ai_hub.core.form.elements.group import Group
     from swiss_ai_hub.core.form.elements.input_number import InputNumber
     from swiss_ai_hub.core.form.elements.input_text import InputText
     from swiss_ai_hub.core.form.elements.knowledge_database_selector import KnowledgeDatabaseSelector
     from swiss_ai_hub.core.form.elements.locale_input import LocaleInput
+    from swiss_ai_hub.core.form.elements.model_select import ModelSelect
+    from swiss_ai_hub.core.form.elements.repeater import Repeater
     from swiss_ai_hub.core.form.elements.select import Select
     from swiss_ai_hub.core.form.elements.select_button import SelectButton
     from swiss_ai_hub.core.form.elements.slider import Slider
@@ -27,12 +32,17 @@ __all__ = [
     "AgentSelector",
     "CascadeSelect",
     "Checkbox",
+    "ConfigAuthorizationViolation",
     "DatePicker",
     "Form",
+    "FormkitElement",
+    "Group",
     "InputNumber",
     "InputText",
     "KnowledgeDatabaseSelector",
     "LocaleInput",
+    "ModelSelect",
+    "Repeater",
     "Select",
     "SelectButton",
     "Slider",
@@ -48,12 +58,17 @@ _LAZY_IMPORTS = {
     "AgentSelector": "swiss_ai_hub.core.form.elements.agent_selector",
     "CascadeSelect": "swiss_ai_hub.core.form.elements.cascade_select",
     "Checkbox": "swiss_ai_hub.core.form.elements.checkbox",
+    "ConfigAuthorizationViolation": "swiss_ai_hub.core.form.base.config_authorization_violation",
     "DatePicker": "swiss_ai_hub.core.form.elements.date_picker",
     "Form": "swiss_ai_hub.core.form.form",
+    "FormkitElement": "swiss_ai_hub.core.form.base.formkit_element",
+    "Group": "swiss_ai_hub.core.form.elements.group",
     "InputNumber": "swiss_ai_hub.core.form.elements.input_number",
     "InputText": "swiss_ai_hub.core.form.elements.input_text",
     "KnowledgeDatabaseSelector": "swiss_ai_hub.core.form.elements.knowledge_database_selector",
     "LocaleInput": "swiss_ai_hub.core.form.elements.locale_input",
+    "ModelSelect": "swiss_ai_hub.core.form.elements.model_select",
+    "Repeater": "swiss_ai_hub.core.form.elements.repeater",
     "Select": "swiss_ai_hub.core.form.elements.select",
     "SelectButton": "swiss_ai_hub.core.form.elements.select_button",
     "Slider": "swiss_ai_hub.core.form.elements.slider",

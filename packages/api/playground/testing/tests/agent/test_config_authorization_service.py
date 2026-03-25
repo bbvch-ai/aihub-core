@@ -1,0 +1,274 @@
+from unittest.mock import Mock
+
+import pytest
+from swiss_ai_hub.core.form import (
+    AgentSelector,
+    Group,
+    InputNumber,
+    InputText,
+    KnowledgeDatabaseSelector,
+    ModelSelect,
+    Repeater,
+)
+from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
+
+from swiss_ai_hub.api.util.config_authorization_service import ConfigAuthorizationService
+
+
+def _make_access_checker(
+    knowledge_dbs: set[str] | None = None,
+    agents: set[str] | None = None,
+) -> Mock:
+    """Create a mock AccessChecker that grants access to specified resources."""
+    allowed_knowledge_dbs = knowledge_dbs or set()
+    allowed_agents = agents or set()
+
+    checker = Mock()
+
+    def has_access(permission_template: str) -> bool:
+        for db_name in allowed_knowledge_dbs:
+            if f"aihub.user.knowledge.{db_name}" in permission_template:
+                return True
+        return False
+
+    def has_access_to_agent(agent_class: str, agent_id: str) -> bool:
+        return f"{agent_class}/{agent_id}" in allowed_agents
+
+    checker.has_access = Mock(side_effect=has_access)
+    checker.has_access_to_agent = Mock(side_effect=has_access_to_agent)
+    return checker
+
+
+def _to_dicts(elements: list) -> list[dict]:
+    """Serialize typed form elements to dicts, matching how AgentClassEntity stores them."""
+    return [e.model_dump() for e in elements]
+
+
+@pytest.fixture
+def t() -> LocaleHandler:
+    return LocaleHandler(locale="en")
+
+
+class TestKnowledgeDatabaseValidation:
+    def test_access_granted(self, t: LocaleHandler):
+        form = _to_dicts([KnowledgeDatabaseSelector(label="DBs", name="knowledge_databases")])
+        config = {"knowledge_databases": ["db_a", "db_b"]}
+        checker = _make_access_checker(knowledge_dbs={"db_a", "db_b"})
+
+        ConfigAuthorizationService.validate_config_authorization_or_raise(form, config, checker, t)
+
+    def test_access_denied(self, t: LocaleHandler):
+        form = _to_dicts([KnowledgeDatabaseSelector(label="DBs", name="knowledge_databases")])
+        config = {"knowledge_databases": ["db_a", "db_secret"]}
+        checker = _make_access_checker(knowledge_dbs={"db_a"})
+
+        with pytest.raises(Exception) as exc_info:
+            ConfigAuthorizationService.validate_config_authorization_or_raise(form, config, checker, t)
+
+        assert exc_info.value.status_code == 403
+        violations = exc_info.value.detail["violations"]
+        assert len(violations) == 1
+        assert violations[0]["resource_type"] == "knowledge_database"
+        assert violations[0]["resource"] == "db_secret"
+        assert violations[0]["field"] == "knowledge_databases"
+
+    def test_access_denied_message_is_localized(self):
+        form = _to_dicts([KnowledgeDatabaseSelector(label="DBs", name="dbs")])
+        config = {"dbs": ["secret_db"]}
+        checker = _make_access_checker()
+
+        with pytest.raises(Exception) as exc_info:
+            ConfigAuthorizationService.validate_config_authorization_or_raise(
+                form, config, checker, LocaleHandler(locale="de")
+            )
+
+        violations = exc_info.value.detail["violations"]
+        assert "Wissensdatenbank" in violations[0]["message"]
+
+    def test_empty_list(self, t: LocaleHandler):
+        form = _to_dicts([KnowledgeDatabaseSelector(label="DBs", name="dbs")])
+        config = {"dbs": []}
+        checker = _make_access_checker()
+
+        ConfigAuthorizationService.validate_config_authorization_or_raise(form, config, checker, t)
+
+    def test_none_value_skipped(self, t: LocaleHandler):
+        form = _to_dicts([KnowledgeDatabaseSelector(label="DBs", name="dbs")])
+        config = {"dbs": None}
+        checker = _make_access_checker()
+
+        ConfigAuthorizationService.validate_config_authorization_or_raise(form, config, checker, t)
+
+    def test_missing_field_skipped(self, t: LocaleHandler):
+        form = _to_dicts([KnowledgeDatabaseSelector(label="DBs", name="dbs")])
+        config = {}
+        checker = _make_access_checker()
+
+        ConfigAuthorizationService.validate_config_authorization_or_raise(form, config, checker, t)
+
+
+class TestAgentSelectorValidation:
+    def test_access_granted(self, t: LocaleHandler):
+        form = _to_dicts([AgentSelector(label="Agent", name="target_agent")])
+        config = {"target_agent": {"agent_class": "MyAgent", "agent_id": "inst_1"}}
+        checker = _make_access_checker(agents={"MyAgent/inst_1"})
+
+        ConfigAuthorizationService.validate_config_authorization_or_raise(form, config, checker, t)
+
+    def test_access_denied(self, t: LocaleHandler):
+        form = _to_dicts([AgentSelector(label="Agent", name="target_agent")])
+        config = {"target_agent": {"agent_class": "SecretAgent", "agent_id": "inst_1"}}
+        checker = _make_access_checker(agents=set())
+
+        with pytest.raises(Exception) as exc_info:
+            ConfigAuthorizationService.validate_config_authorization_or_raise(form, config, checker, t)
+
+        assert exc_info.value.status_code == 403
+        violations = exc_info.value.detail["violations"]
+        assert len(violations) == 1
+        assert violations[0]["resource_type"] == "agent"
+        assert violations[0]["resource"] == "SecretAgent/inst_1"
+
+    def test_incomplete_value_skipped(self, t: LocaleHandler):
+        form = _to_dicts([AgentSelector(label="Agent", name="target_agent")])
+        config = {"target_agent": {"agent_class": "MyAgent"}}
+        checker = _make_access_checker()
+
+        ConfigAuthorizationService.validate_config_authorization_or_raise(form, config, checker, t)
+
+
+class TestModelSelectSkipped:
+    def test_model_select_not_checked(self, t: LocaleHandler):
+        form = _to_dicts([ModelSelect(label="Model", name="llm_model")])
+        config = {"llm_model": "gpt-4"}
+        checker = _make_access_checker()
+
+        ConfigAuthorizationService.validate_config_authorization_or_raise(form, config, checker, t)
+
+
+class TestNestedForms:
+    def test_group_validation(self, t: LocaleHandler):
+        form = _to_dicts(
+            [
+                Group(
+                    name="rag_config",
+                    label="RAG Config",
+                    children=[
+                        KnowledgeDatabaseSelector(label="DBs", name="knowledge_databases"),
+                        InputText(label="Prompt", name="prompt"),
+                    ],
+                )
+            ]
+        )
+        config = {"rag_config": {"knowledge_databases": ["forbidden_db"], "prompt": "hello"}}
+        checker = _make_access_checker(knowledge_dbs=set())
+
+        with pytest.raises(Exception) as exc_info:
+            ConfigAuthorizationService.validate_config_authorization_or_raise(form, config, checker, t)
+
+        violations = exc_info.value.detail["violations"]
+        assert len(violations) == 1
+        assert violations[0]["field"] == "rag_config.knowledge_databases"
+        assert violations[0]["resource"] == "forbidden_db"
+
+    def test_repeater_validates_all_items(self, t: LocaleHandler):
+        form = _to_dicts(
+            [
+                Repeater(
+                    name="steps",
+                    label="Steps",
+                    children=[AgentSelector(label="Agent", name="agent")],
+                )
+            ]
+        )
+        config = {
+            "steps": [
+                {"agent": {"agent_class": "A", "agent_id": "ok"}},
+                {"agent": {"agent_class": "B", "agent_id": "denied"}},
+                {"agent": {"agent_class": "C", "agent_id": "also_ok"}},
+            ]
+        }
+        checker = _make_access_checker(agents={"A/ok", "C/also_ok"})
+
+        with pytest.raises(Exception) as exc_info:
+            ConfigAuthorizationService.validate_config_authorization_or_raise(form, config, checker, t)
+
+        violations = exc_info.value.detail["violations"]
+        assert len(violations) == 1
+        assert violations[0]["resource"] == "B/denied"
+        assert "steps.1" in violations[0]["field"]
+
+    def test_deeply_nested_group(self, t: LocaleHandler):
+        form = _to_dicts(
+            [
+                Group(
+                    name="outer",
+                    label="Outer",
+                    children=[
+                        Group(
+                            name="inner",
+                            label="Inner",
+                            children=[AgentSelector(label="Delegate", name="delegate")],
+                        )
+                    ],
+                )
+            ]
+        )
+        config = {"outer": {"inner": {"delegate": {"agent_class": "X", "agent_id": "y"}}}}
+        checker = _make_access_checker(agents=set())
+
+        with pytest.raises(Exception) as exc_info:
+            ConfigAuthorizationService.validate_config_authorization_or_raise(form, config, checker, t)
+
+        violations = exc_info.value.detail["violations"]
+        assert violations[0]["field"] == "outer.inner.delegate"
+
+
+class TestMixedForms:
+    def test_no_resource_selectors(self, t: LocaleHandler):
+        form = _to_dicts(
+            [
+                InputText(label="Prompt", name="prompt"),
+                InputNumber(label="Max Tokens", name="max_tokens"),
+            ]
+        )
+        config = {"prompt": "Hello", "max_tokens": 100}
+        checker = _make_access_checker()
+
+        ConfigAuthorizationService.validate_config_authorization_or_raise(form, config, checker, t)
+
+    def test_multiple_violations_across_types(self, t: LocaleHandler):
+        form = _to_dicts(
+            [
+                KnowledgeDatabaseSelector(label="DBs", name="dbs"),
+                AgentSelector(label="Agent", name="agent"),
+            ]
+        )
+        config = {
+            "dbs": ["secret_db"],
+            "agent": {"agent_class": "SecretAgent", "agent_id": "x"},
+        }
+        checker = _make_access_checker()
+
+        with pytest.raises(Exception) as exc_info:
+            ConfigAuthorizationService.validate_config_authorization_or_raise(form, config, checker, t)
+
+        violations = exc_info.value.detail["violations"]
+        assert len(violations) == 2
+        resource_types = {v["resource_type"] for v in violations}
+        assert resource_types == {"knowledge_database", "agent"}
+
+    def test_no_raise_when_all_authorized(self, t: LocaleHandler):
+        form = _to_dicts(
+            [
+                KnowledgeDatabaseSelector(label="DBs", name="dbs"),
+                AgentSelector(label="Agent", name="agent"),
+            ]
+        )
+        config = {
+            "dbs": ["allowed_db"],
+            "agent": {"agent_class": "MyAgent", "agent_id": "inst_1"},
+        }
+        checker = _make_access_checker(knowledge_dbs={"allowed_db"}, agents={"MyAgent/inst_1"})
+
+        ConfigAuthorizationService.validate_config_authorization_or_raise(form, config, checker, t)
