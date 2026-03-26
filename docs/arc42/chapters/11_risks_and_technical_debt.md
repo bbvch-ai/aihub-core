@@ -17,18 +17,13 @@ but the platform's own document schemas in FerretDB have no equivalent mechanism
 **Planned mitigation**: Introduce versioned migration scripts for FerretDB document schemas, executed idempotently at
 application startup before serving requests. Schema versions would be stored in a metadata collection.
 
-### Valkey persistence gap
+### ~~Valkey persistence gap~~ (mitigated)
 
-Valkey is configured to snapshot every 30 seconds (`save 30 1`). Agent runtime state — the `StepStore` that tracks which
-steps have executed in a run, the `RunContext` and `ThreadContext` that carry ephemeral conversation data, and the rate
-limiting counters — lives exclusively in Valkey. A Valkey crash between snapshots loses up to 30 seconds of state. For
-the `StepStore`, this can cause steps to re-execute after recovery because the idempotency check
-(`was_called_with_events()`) depends on data that may have been lost. JetStream event replay can reconstruct the event
-history, but the step execution tracking cannot be rebuilt from events alone. Switching to AOF (append-only file)
-persistence would reduce the window to sub-second but has not been prioritized. This is tracked as a P0 item. **Planned
-mitigation**: Enable Valkey AOF persistence (`appendonly yes` with `appendfsync everysec`) to reduce the data loss
-window from 30 seconds to approximately 1 second. Alternatively, derive step execution state from JetStream event replay
-by recording step completion markers as NATS headers.
+Valkey now uses both RDB snapshots (`save 30 1`) and AOF persistence (`appendonly yes` with `appendfsync everysec`). The
+AOF logs every write operation and fsyncs once per second, reducing the data loss window from 30 seconds to
+approximately 1 second. Agent runtime state — the `StepStore`, `RunContext`, `ThreadContext`, and rate limiting counters
+— survives container restarts. JetStream event replay remains available as a secondary recovery mechanism for
+conversational context.
 
 ### Backup and restoration gaps
 
