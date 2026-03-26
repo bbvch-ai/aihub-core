@@ -181,16 +181,16 @@ provides them automatically based on the parameter's type hint.
 
 Here are the objects you can have injected:
 
-| Type                 | Scope  | Description                                                   |
-| -------------------- | ------ | ------------------------------------------------------------- |
-| `AgentConfig`        | Run    | Your agent's main configuration object (immutable per run)    |
-| `StepConfig`         | Step   | A specific configuration class for a single step              |
-| `RunContext`         | Run    | Redis-backed KV store, ephemeral (cleared on run completion)  |
-| `ThreadContext`      | Thread | Redis-backed KV store, persistent across runs                 |
-| `EventDisplayer`     | Step   | Helper for emitting `DisplayEvent`s to the UI                 |
-| `AgentMemory`        | Step   | Long-term memory operations (retrieve, store)                 |
-| `LocaleHandler`      | Run    | Internationalization — call `t("key")` for translated strings |
-| `AgentInstanceTopic` | Step   | Metadata: `agent_id`, `thread_id`, `run_id`, `display_id`     |
+| Type                 | Scope  | Description                                                               |
+| -------------------- | ------ | ------------------------------------------------------------------------- |
+| `AgentConfig`        | Run    | Your agent's main configuration object (immutable per run)                |
+| `StepConfig`         | Step   | A specific configuration class for a single step                          |
+| `RunContext`         | Run    | Valkey-backed KV store, cleared on run completion (30-day TTL safety net) |
+| `ThreadContext`      | Thread | Valkey-backed KV store, persistent across runs (no TTL)                   |
+| `EventDisplayer`     | Step   | Helper for emitting `DisplayEvent`s to the UI                             |
+| `AgentMemory`        | Step   | Long-term memory operations (retrieve, store)                             |
+| `LocaleHandler`      | Run    | Internationalization — call `t("key")` for translated strings             |
+| `AgentInstanceTopic` | Step   | Metadata: `agent_id`, `thread_id`, `run_id`, `display_id`                 |
 
 This powerful feature keeps your code clean and focused on business logic.
 

@@ -9,35 +9,17 @@ logger = logging.getLogger(__name__)
 
 class BaseContext:
     """
-    A base class for managing state in a JetStream key-value (KV) store.
+    Redis/Valkey-backed key-value store for workflow state.
 
-    ### Why This Class Exists
-    Certain workflows or processes may need to persist runtime state, configuration, or intermediate results
-    across restarts, between steps, or for debugging and auditing. BaseContext provides a simple API for
-    reading, writing, and deleting key-value pairs in a JetStream-backed KV store. Derived classes (like
-    ThreadContext or RunContext) add domain-specific behavior or naming conventions, but the core persistence
-    logic lives here.
-
-    ### Key Operations
-    - **set**: Store a JSON-serializable object by key.
-    - **get**: Retrieve and deserialize stored data, returning a default if not found or on error.
-    - **delete**: Remove a specific key or the entire store.
-    - **get_all**: Fetch all keys and values, useful for introspection or exporting state.
-    - **to_json**: Serialize the entire store’s data for logging, backup, or migration.
-
-    ### Reliability
-    By leveraging JetStream’s KV store, BaseContext can rely on NATS for distributed durability and
-    consistency, making the solution robust against failures and restarts.
+    Valkey is configured with AOF persistence, so data survives container restarts.
+    Subclasses control TTL: ThreadContext has no expiry, RunContext uses a 30-day safety net.
     """
 
     def __init__(
         self,
         redis: Annotated[Redis, "Redis for KV storage"],
         store_name: Annotated[str, "Unique name under which all kv-pairs will be stored"],
-        default_ttl: Annotated[int, "How long redis stores keys in this store"] = 60
-        * 60
-        * 24
-        * 30,  # 30 days in seconds
+        default_ttl: Annotated[int | None, "How long redis stores keys in this store, None for no expiry"] = None,
     ):
         self.redis = redis
         self.store_name = store_name

@@ -151,10 +151,11 @@ cache without refetching.
 
 ### Valkey for ephemeral state
 
-Valkey (a Redis-compatible fork) stores ephemeral agent state: RunContext (per-execution), ThreadContext
-(per-conversation), session data, and WebSocket connection state. All data has a 30-day TTL. Agents can reconstruct
-their conversational context from the NATS event history if Valkey data is lost, so no persistent data depends on Valkey
-availability.
+Valkey (a Redis-compatible fork) stores agent runtime state: RunContext (per-execution), ThreadContext
+(per-conversation), step execution tracking, and rate limiting counters. Valkey is configured with AOF persistence for
+durability across restarts. ThreadContext has no TTL (truly persistent); RunContext and StepStore use a 30-day TTL as a
+safety net for orphaned runs. This state cannot be reconstructed from NATS events — RunContext and ThreadContext hold
+arbitrary agent-set data (hop counts, accumulated queries, user preferences) that only exists in Valkey.
 
 Valkey was chosen over Redis because Redis changed its license to a dual-license model (RSALv2/SSPLv1) that conflicts
 with the platform's distribution as a bundled Docker Compose stack.
@@ -211,10 +212,11 @@ with the requirements of regulated organizations that need to explain how an AI 
 
 ### Stateless agents with externalized state
 
-Agent instances hold no in-memory state between workflow steps. All state is externalized to Valkey (ephemeral
-RunContext and ThreadContext with 30-day TTL) and NATS JetStream (immutable event history). Agents reconstruct their
-conversational context by replaying events from the thread's event stream. This enables horizontal scaling (any server
-instance can execute any step) and crash recovery (a step can resume on a different instance if the original fails).
+Agent instances hold no in-memory state between workflow steps. All state is externalized to Valkey (RunContext with
+30-day TTL, ThreadContext with no TTL) and NATS JetStream (immutable event history). The dispatcher replays events from
+JetStream to determine which steps to execute, while RunContext and ThreadContext provide durable key-value storage for
+arbitrary agent-set data that is not part of the event stream. This enables horizontal scaling (any server instance can
+execute any step) and crash recovery (a step can resume on a different instance if the original fails).
 
 ### Controller-service-entity separation
 

@@ -9,21 +9,11 @@ logger = logging.getLogger(__name__)
 
 class RunContext(BaseContext):
     """
-    A context dedicated to a single run within a thread, providing short-lived storage for ephemeral data.
+    Per-run state in Valkey with a 30-day TTL safety net.
 
-    ### Why RunContext?
-    While a thread might have long-lived state (e.g., user preferences or session info), individual runs within
-    that thread often hold transient data that doesn't need to persist indefinitely. For example, intermediate
-    steps or calculations within a run might only be relevant until the run completes or times out.
-
-    By giving each run its own KV store (with a short TTL), RunContext:
-    - Ensures data isolation between runs.
-    - Reduces clutter by expiring run data after 60 minutes.
-    - Simplifies cleanup, as outdated runs are automatically pruned.
-
-    ### Use Cases
-    - Storing intermediate state in complex multi-step workflows.
-    - Temporary caching of retrieval results during a run.
+    Cleaned up explicitly on StopEvent. The TTL only catches orphaned runs from crashes.
+    This data cannot be reconstructed from events — it holds intermediate computation
+    results (hop counts, accumulated queries, etc.) that only exist here.
     """
 
     def __init__(self, redis: Redis, thread_id: str, run_id: str):

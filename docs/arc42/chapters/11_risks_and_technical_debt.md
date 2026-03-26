@@ -22,8 +22,10 @@ application startup before serving requests. Schema versions would be stored in 
 Valkey now uses both RDB snapshots (`save 30 1`) and AOF persistence (`appendonly yes` with `appendfsync everysec`). The
 AOF logs every write operation and fsyncs once per second, reducing the data loss window from 30 seconds to
 approximately 1 second. Agent runtime state — the `StepStore`, `RunContext`, `ThreadContext`, and rate limiting counters
-— survives container restarts. JetStream event replay remains available as a secondary recovery mechanism for
-conversational context.
+— survives container restarts. This state cannot be reconstructed from NATS events because `RunContext` and
+`ThreadContext` hold arbitrary agent-set data (hop counts, accumulated queries, user preferences) that is not part of
+the event stream. `ThreadContext` has no TTL (truly persistent); `RunContext` and `StepStore` retain a 30-day TTL as a
+safety net for orphaned runs from crashes.
 
 ### Backup and restoration gaps
 
