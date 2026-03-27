@@ -849,8 +849,8 @@ services:
       KEYCLOAK_API_SERVICE_CLIENT_SECRET: ${KEYCLOAK_API_SERVICE_CLIENT_SECRET}
     volumes:
       - ./configs/keycloak/keycloak-entrypoint.sh:/opt/keycloak/scripts/keycloak-entrypoint.sh:ro
-      - ./configs/keycloak/aihub-realm.nightly.json:/opt/keycloak/data/import-templates/aihub-realm.json:ro
-      - ./configs/keycloak/identity-providers.nightly.json:/opt/keycloak/data/import-templates/identity-providers.json:ro
+      - ./configs/keycloak/aihub-realm.json:/opt/keycloak/data/import-templates/aihub-realm.json:ro
+      - ./configs/keycloak/identity-providers.json:/opt/keycloak/data/import-templates/identity-providers.json:ro
       - ./configs/keycloak/themes/aihub:/opt/keycloak/themes/aihub:ro
     healthcheck:
       test:
@@ -1047,6 +1047,7 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       SET_VERBOSE: false
+      STORE_MODEL_IN_DB: true
     volumes: [./configs/litellm/litellm-config.nightly.yml:/app/config.yml]
     command: --config /app/config.yml
     depends_on:
@@ -1347,7 +1348,7 @@ services:
       WEBSOCKET_MANAGER: redis
       WEBSOCKET_REDIS_URL: redis://default:${REDIS_TOKEN}@valkey:6379/11
       THREAD_POOL_SIZE: 32
-      CORS_ALLOW_ORIGIN: https://openwebui.${DOMAIN},https://${DOMAIN}
+      CORS_ALLOW_ORIGIN: https://openwebui.${DOMAIN};https://${DOMAIN}
 
       # --- Admin ---
       ENABLE_ADMIN_EXPORT: true
