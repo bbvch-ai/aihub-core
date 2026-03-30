@@ -44,7 +44,7 @@ Use these Playwright MCP tools to gather diagnostic information:
 1. Check `browser_network_requests` for failed API calls
 2. Look at the request URL and response status
 3. Cross-reference with SDK functions in `packages/web/swiss_ai_hub_web/sdk/client/`
-4. Check if the API server is running (`curl http://localhost:8000/api/v1/docs`)
+4. Check if the API server is running (`curl http://localhost:8000/api/v1/active/docs`)
 
 ### Rendering Issues
 

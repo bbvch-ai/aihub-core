@@ -11,7 +11,7 @@ Regenerate the TypeScript API client from the live OpenAPI specification.
 ## Step 1: Verify API Server Is Running
 
 ```bash
-curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/api/v1/docs
+curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/api/v1/active/docs
 ```
 
 - **200**: Proceed to Step 2
@@ -30,7 +30,7 @@ cd packages/web/swiss_ai_hub_web && pnpm generate-sdk
 ```
 
 This uses the config at `packages/web/swiss_ai_hub_web/openapi-ts.config.ts` to fetch the OpenAPI spec from
-`http://localhost:8000/api/v1/openapi.json` and regenerate TypeScript files into
+`http://localhost:8000/api/v1/active/openapi.json` and regenerate TypeScript files into
 `packages/web/swiss_ai_hub_web/sdk/client/` (`types.gen.ts`, `sdk.gen.ts`, `schemas.gen.ts`, `client.gen.ts`,
 `transformers.gen.ts`).
 

@@ -53,10 +53,12 @@ standard user roles (configurable via `UserSignupSettings`).
 
 ### 3. Tenant Context Resolution
 
-Every authenticated request must have a tenant context:
+Every authenticated request must have a tenant context. The tenant is identified via a required `{tenant_id}` path
+parameter in the URL. All API routes are mounted at `/api/v1/{tenant_id}/...`.
 
 ```python
-# Extract from x-tenant-id header or fall back to default tenant
+# Resolve tenant from {tenant_id} path parameter
+# tenant_id can be a MongoDB ObjectId or the special value "active"
 tenant = TenantIdentity.from_request_for_user(request, user_id)
 
 # Verify user has access to this tenant
@@ -65,8 +67,13 @@ if not roles:
     raise HTTPException(403, "User not assigned to tenant")
 ```
 
-**Tenant Header**: Clients should include `x-tenant-id: <tenant-id>` header in requests. If omitted, the default tenant
-is used.
+**Tenant Path Parameter**: All API requests must include the `{tenant_id}` in the URL path. Two formats are supported:
+
+- **Concrete ID**: `/api/v1/507f1f77bcf86cd799439011/agents/...` — directly specifies the tenant by MongoDB ObjectId
+- **Active slug**: `/api/v1/active/agents/...` — resolves to the user's persisted active tenant
+
+The active tenant is never automatically updated during request resolution. It can only be changed via a dedicated API
+endpoint. Health endpoints remain outside tenant scope at `/api/v1/health/`.
 
 ### 4. UserIdentity Construction
 
