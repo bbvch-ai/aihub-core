@@ -273,10 +273,11 @@ constructing NATS subjects at each specificity level. See `packages/core/swiss_a
 
 ## Context Management
 
-- **RunContext**: Per-run ephemeral state in Redis/Valkey. Scoped to `(thread_id, run_id)`. 30-day TTL. Use for: loop
-  counters, intermediate results, retrieved docs. Cleaned up on StopEvent.
-- **ThreadContext**: Per-thread persistent state in Redis/Valkey. Scoped to `thread_id`. 30-day TTL. Use for:
+- **RunContext**: Per-run state in Valkey. Scoped to `(thread_id, run_id)`. 30-day TTL (safety net for orphaned runs).
+  Cleaned up explicitly on StopEvent. Use for: loop counters, intermediate results, retrieved docs.
+- **ThreadContext**: Per-thread persistent state in Valkey. Scoped to `thread_id`. No TTL — truly persistent. Use for:
   conversation history, user preferences, namespace selections. Persists across runs.
+- Neither can be reconstructed from NATS events — they hold arbitrary agent-set data that only exists in Valkey.
 - Both use `async get(key, default)` / `async set(key, value)` / `async delete(key)` API.
 - Factory: `RunContext.for_topic(redis, topic)`, `ThreadContext.for_topic(redis, topic)`.
 

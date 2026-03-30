@@ -9,17 +9,17 @@ logger = logging.getLogger(__name__)
 
 class RunContext(BaseContext):
     """
-    A context dedicated to a single run within a thread, providing short-lived storage for ephemeral data.
+    A context dedicated to a single run within a thread, providing isolated storage for run-scoped data.
 
     ### Why RunContext?
     While a thread might have long-lived state (e.g., user preferences or session info), individual runs within
     that thread often hold transient data that doesn't need to persist indefinitely. For example, intermediate
-    steps or calculations within a run might only be relevant until the run completes or times out.
+    steps or calculations within a run might only be relevant until the run completes.
 
-    By giving each run its own KV store (with a short TTL), RunContext:
+    By giving each run its own KV store, RunContext:
     - Ensures data isolation between runs.
-    - Reduces clutter by expiring run data after 60 minutes.
-    - Simplifies cleanup, as outdated runs are automatically pruned.
+    - Is cleaned up explicitly on StopEvent.
+    - Retains a 30-day TTL as a safety net for orphaned runs from crashes.
 
     ### Use Cases
     - Storing intermediate state in complex multi-step workflows.

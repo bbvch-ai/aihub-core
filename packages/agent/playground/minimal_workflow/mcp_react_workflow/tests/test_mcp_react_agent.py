@@ -13,9 +13,9 @@ from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.mcp.mcp_client_config import McpClientConfig
 from swiss_ai_hub.core.testing import async_test
 
-from swiss_ai_hub.agent.agents.mcp_react_agent.events.mcp_reasoning_event import McpReasoningEvent
 from playground.minimal_workflow.mcp_react_workflow.mcp_react_agent import McpReactAgent
 from playground.minimal_workflow.mcp_react_workflow.mcp_react_agent_config import McpReactAgentConfig
+from swiss_ai_hub.agent.agents.mcp_react_agent.events.mcp_reasoning_event import McpReasoningEvent
 from swiss_ai_hub.agent.runners import AgentTestRunner
 
 scenarios("./features/mcp_react_agent.feature")

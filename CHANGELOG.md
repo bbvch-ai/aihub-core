@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.272.1] - 2026-03-30 - Robust Agent Context: Valkey AOF and True Thread Persistence
+
+### Fixed
+
+- ⚡️ **Enhanced Valkey Data Durability**: Addressed the previously identified "Valkey persistence gap" by enabling
+  Append-Only File (AOF) persistence across all Valkey instances. This crucial update reduces potential data loss during
+  crashes from 30 seconds to approximately 1 second, significantly improving the reliability of agent runtime state.
+
+### Changed
+
+- 💾 **Introduced Truly Persistent ThreadContext**: Modified the `ThreadContext` to be genuinely persistent by removing
+  its 30-day Time-to-Live (TTL). This change ensures that conversation history, user preferences, and other long-lived
+  agent-set data remain durable across multiple runs without automatic expiry.
+- ⚙️ **Refined RunContext Lifecycle**: Clarified the behavior of `RunContext`, which is now explicitly cleaned up upon
+  `StopEvent` completion. Its 30-day TTL now functions as a safety net for orphaned runs in case of unexpected crashes,
+  ensuring data integrity while simplifying cleanup.
+- 📄 **Updated Agent Context Documentation**: Improved documentation across `CLAUDE.md`, solution strategy, and SDK
+  guides to accurately reflect the new persistence models and durability guarantees for `RunContext` and `ThreadContext`
+  in Valkey.
+
+### Refactor
+
+- 🧹 **Improved IDE Configuration**: Streamlined the Node.js interpreter setup in `Web.xml` to use project-level
+  settings, enhancing consistency for developers.
+- 🧹 **Internal Code Cleanups**: Performed minor code reordering for imports and test configurations to improve
+  maintainability and style.
+
+______________________________________________________________________
+
 ## [v0.272.0] - 2026-03-25 - Empowering Agents with External Tooling: Introducing the MCP React Agent
 
 ### Added
