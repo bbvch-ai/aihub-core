@@ -128,5 +128,5 @@ removed entirely. Auth handlers are now standalone classes that validate tokens 
 The tenant resolution mechanism described in this ADR (resolving tenant from the `x-tenant-id` HTTP header with a
 fallback to the default tenant) has been superseded. Tenant context is now provided via a required `{tenant_id}` path
 parameter in the URL (`/api/v1/{tenant_id}/...`). The special value `"active"` resolves to the user's persisted active
-tenant. The `x-tenant-id` header is no longer supported. See
-[ADR: Tenant Path Parameter](2026_03_30_tenant_path_parameter.md) for details.
+tenant. There is no implicit fallback — if no active tenant is set, the request is rejected. The `x-tenant-id` header is
+no longer supported. See [ADR: Tenant Path Parameter](2026_03_30_tenant_path_parameter.md) for details.
