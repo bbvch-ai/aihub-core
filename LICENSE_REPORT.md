@@ -1,10 +1,10 @@
 # License Report
 
-Generated on: 23.03.2026
+Generated on: 30.03.2026
 
 This document contains license information for all dependencies across the monorepo:
 
-- Python packages (uv): **385 packages**
+- Python packages (uv): **386 packages**
 - Node.js packages (pnpm): **1001 packages**
 - External Docker images: **31 images**
 
@@ -366,6 +366,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | stringcase                                       | 1.2.0                 | MIT                                                          |                                                                      |
 | ✅     | striprtf                                         | 0.0.26                | BSD License                                                  |                                                                      |
 | ✅     | structlog                                        | 25.5.0                | MIT OR Apache-2.0                                            |                                                                      |
+| ✅     | swiss-ai-hub-backup                              | 0.272.1               | Apache-2.0                                                   |                                                                      |
 | ✅     | sympy                                            | 1.14.0                | BSD License                                                  |                                                                      |
 | ✅     | tabulate                                         | 0.10.0                | MIT                                                          |                                                                      |
 | ✅     | tenacity                                         | 9.1.4                 | Apache Software License                                      |                                                                      |
@@ -1466,6 +1467,8 @@ The following are our own services and inherit the license we choose:
 
 - api (`ghcr.io/bbvch-ai/aihub-core/api:latest`)
 - api (`ghcr.io/bbvch-ai/aihub-core/api:nightly`)
+- backup-daemon (`ghcr.io/bbvch-ai/aihub-core/backup:latest`)
+- backup-daemon (`ghcr.io/bbvch-ai/aihub-core/backup:nightly`)
 - bot (`ghcr.io/bbvch-ai/aihub-core/bot:latest`)
 - bot (`ghcr.io/bbvch-ai/aihub-core/bot:nightly`)
 - default_rag_pipeline (`ghcr.io/bbvch-ai/aihub-core/default_rag_pipeline:latest`)
