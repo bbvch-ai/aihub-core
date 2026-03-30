@@ -58,23 +58,6 @@ class AuthHandler(ABC):
         return tenant
 
     @staticmethod
-    def _fall_back_to_default_tenant(user_id: str) -> TenantIdentity:
-        """Returns the system default tenant identity without persisting it as active."""
-        default_tenant = TenantEntity.get_default_tenant()
-        if not default_tenant:
-            raise HTTPException(
-                status_code=500,
-                detail="No default tenant configured and no tenant could be resolved",
-            )
-
-        user_roles_in_tenant = UserTenantRoleEntity.get_roles_for_user_in_tenant(user_id, str(default_tenant.id))
-        if not user_roles_in_tenant:
-            logger.warning(f"User {user_id} does not have access to default tenant")
-            raise HTTPException(status_code=403, detail="Access denied")
-
-        return TenantIdentity.from_tenant_entity(default_tenant)
-
-    @staticmethod
     def _resolve_tenant_by_id(tenant_id: str, user_id: str) -> TenantIdentity:
         """Resolves a concrete tenant ID, validates existence and user membership."""
         tenant_entity = TenantEntity.get_tenant_by_id(tenant_id)
@@ -106,7 +89,10 @@ class AuthHandler(ABC):
             active_tenant = AuthHandler._resolve_active_tenant(user_id)
             if active_tenant:
                 return TenantIdentity.from_tenant_entity(active_tenant)
-            return AuthHandler._fall_back_to_default_tenant(user_id)
+            raise HTTPException(
+                status_code=400,
+                detail="No active tenant set. Please select a tenant first.",
+            )
 
         return AuthHandler._resolve_tenant_by_id(tenant_id, user_id)
 
@@ -115,10 +101,13 @@ class AuthHandler(ABC):
         """
         Get the active tenant for a user and verify membership.
 
-        Used for contexts without a request object (e.g., WebSocket connections).
-        Falls back to the system default tenant if no active tenant is set.
+        Used for contexts without a request object (e.g., WebSocket connections, bot integrations).
+        Requires an active tenant to be set — no implicit fallback.
         """
         active_tenant = AuthHandler._resolve_active_tenant(user_id)
         if active_tenant:
             return TenantIdentity.from_tenant_entity(active_tenant)
-        return AuthHandler._fall_back_to_default_tenant(user_id)
+        raise HTTPException(
+            status_code=400,
+            detail="No active tenant set. Please select a tenant first.",
+        )
