@@ -132,7 +132,7 @@ export default defineNuxtConfig({
         url: 'http://localhost:8080',
       },
       ws: {
-        endpoint: 'ws://localhost:8000/api/v1/events/ws',
+        endpoint: 'ws://localhost:8000/api/v1/active/events/ws',
       },
     },
   },
@@ -378,13 +378,13 @@ ______________________________________________________________________
 All configuration is provided through `runtimeConfig.public` in `nuxt.config.ts`. In production, override them via
 environment variables -- Nuxt automatically maps `NUXT_PUBLIC_*` variables to the corresponding config keys:
 
-| Config key          | Environment variable             | Default (dev)                          | Description                          |
-| ------------------- | -------------------------------- | -------------------------------------- | ------------------------------------ |
-| `env`               | `NUXT_PUBLIC_ENV`                | `dev`                                  | Environment identifier               |
-| `oidc.clientId`     | `NUXT_PUBLIC_OIDC_CLIENT_ID`     | `aihub-frontend`                       | OIDC client ID for Keycloak          |
-| `oidc.authorityUrl` | `NUXT_PUBLIC_OIDC_AUTHORITY_URL` | `http://localhost:8180/realms/aihub`   | Keycloak realm URL                   |
-| `webui.url`         | `NUXT_PUBLIC_WEBUI_URL`          | `http://localhost:8080`                | Open-WebUI URL (chat link)           |
-| `ws.endpoint`       | `NUXT_PUBLIC_WS_ENDPOINT`        | `ws://localhost:8000/api/v1/events/ws` | WebSocket for real-time agent events |
+| Config key          | Environment variable             | Default (dev)                                 | Description                          |
+| ------------------- | -------------------------------- | --------------------------------------------- | ------------------------------------ |
+| `env`               | `NUXT_PUBLIC_ENV`                | `dev`                                         | Environment identifier               |
+| `oidc.clientId`     | `NUXT_PUBLIC_OIDC_CLIENT_ID`     | `aihub-frontend`                              | OIDC client ID for Keycloak          |
+| `oidc.authorityUrl` | `NUXT_PUBLIC_OIDC_AUTHORITY_URL` | `http://localhost:8180/realms/aihub`          | Keycloak realm URL                   |
+| `webui.url`         | `NUXT_PUBLIC_WEBUI_URL`          | `http://localhost:8080`                       | Open-WebUI URL (chat link)           |
+| `ws.endpoint`       | `NUXT_PUBLIC_WS_ENDPOINT`        | `ws://localhost:8000/api/v1/active/events/ws` | WebSocket for real-time agent events |
 
 ## Peer dependencies
 
