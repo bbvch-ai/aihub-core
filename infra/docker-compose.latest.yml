@@ -1298,7 +1298,7 @@ services:
 
       # --- Model & AI-Hub Connection ---
       MODELS_CACHE_TTL: 60
-      OPENAI_API_BASE_URL: http://api:8000/api/v1/openai
+      OPENAI_API_BASE_URL: http://api:8000/api/v1/active/openai
       OPENAI_API_KEY: ${SUPERUSER_TOKEN}
       TASK_MODEL: text-generation/gpt-oss-120b
       TASK_MODEL_EXTERNAL: text-generation/gpt-oss-120b
@@ -1307,7 +1307,7 @@ services:
 
       # --- Image Generation ---
       IMAGE_GENERATION_MODEL: image-generation
-      IMAGES_OPENAI_API_BASE_URL: http://api:8000/api/v1/openai
+      IMAGES_OPENAI_API_BASE_URL: http://api:8000/api/v1/active/openai
       IMAGES_OPENAI_API_KEY: ${SUPERUSER_TOKEN}
       IMAGE_SIZE: 1024x1024
       ENABLE_IMAGE_GENERATION: true
@@ -1315,13 +1315,13 @@ services:
       # --- Audio STT ---
       AUDIO_STT_ENGINE: openai
       AUDIO_STT_MODEL: transcription
-      AUDIO_STT_OPENAI_API_BASE_URL: http://api:8000/api/v1/openai
+      AUDIO_STT_OPENAI_API_BASE_URL: http://api:8000/api/v1/active/openai
       AUDIO_STT_OPENAI_API_KEY: ${SUPERUSER_TOKEN}
 
       # --- Audio TTS ---
       AUDIO_TTS_ENGINE: openai
       AUDIO_TTS_MODEL: speech
-      AUDIO_TTS_OPENAI_API_BASE_URL: http://api:8000/api/v1/openai
+      AUDIO_TTS_OPENAI_API_BASE_URL: http://api:8000/api/v1/active/openai
       AUDIO_TTS_OPENAI_API_KEY: ${SUPERUSER_TOKEN}
       AUDIO_TTS_VOICE: alloy
 
@@ -1383,11 +1383,11 @@ services:
       PDF_EXTRACT_IMAGES: true
       RAG_FILE_MAX_COUNT: 4
       CONTENT_EXTRACTION_ENGINE: external
-      EXTERNAL_DOCUMENT_LOADER_URL: http://api:8000/api/v1/parsing
+      EXTERNAL_DOCUMENT_LOADER_URL: http://api:8000/api/v1/active/parsing
       EXTERNAL_DOCUMENT_LOADER_API_KEY: ${SUPERUSER_TOKEN}
       RAG_EMBEDDING_ENGINE: openai
       RAG_EMBEDDING_MODEL: embedding/bge-m3
-      RAG_OPENAI_API_BASE_URL: http://api:8000/api/v1/openai
+      RAG_OPENAI_API_BASE_URL: http://api:8000/api/v1/active/openai
       RAG_OPENAI_API_KEY: ${SUPERUSER_TOKEN}
 
       # --- Web Search ---
@@ -1814,7 +1814,7 @@ services:
       LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY}
       LANGFUSE_PUBLIC_URL: https://langfuse.${DOMAIN}
       LANGFUSE_PROJECT_ID: aihub-project
-      AIHUB_OPENAI_API_BASE_URL: http://api:8000/api/v1/openai
+      AIHUB_OPENAI_API_BASE_URL: http://api:8000/api/v1/active/openai
 
       # NATs
       NATS_ENDPOINT: nats://nats:4222
@@ -1894,7 +1894,7 @@ services:
       OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
       OAUTH_AUTHORITY_URL: ${OAUTH_AUTHORITY_URL}
       WEBUI_URL: https://openwebui.${DOMAIN}
-      WS_ENDPOINT: wss://${DOMAIN}/api/v1/events/ws
+      WS_ENDPOINT: wss://${DOMAIN}/api/v1/active/events/ws
     healthcheck:
       test: [CMD, curl, -f, http://127.0.0.1/]
       interval: 30s

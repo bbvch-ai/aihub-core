@@ -143,7 +143,7 @@ class Pipe:
                 timeout=self.valves.AIHUB_REQUEST_TIMEOUT, follow_redirects=True
             ) as client:
                 response = await client.get(
-                    f"{self.valves.AIHUB_BASE_URL}/api/v1/openai/models",
+                    f"{self.valves.AIHUB_BASE_URL}/api/v1/active/openai/models",
                     headers=headers,
                 )
                 response.raise_for_status()
@@ -221,7 +221,7 @@ class Pipe:
             # Start the streaming request
             async with client.stream(
                 "POST",
-                url=f"{self.valves.AIHUB_BASE_URL}/api/v1/openai/chat/completions",
+                url=f"{self.valves.AIHUB_BASE_URL}/api/v1/active/openai/chat/completions",
                 json=payload,
                 headers=headers,
             ) as stream_response:
@@ -309,7 +309,7 @@ class Pipe:
                 timeout=self.valves.AIHUB_REQUEST_TIMEOUT, follow_redirects=True
             ) as client:
                 response = await client.post(
-                    url=f"{self.valves.AIHUB_BASE_URL}/api/v1/openai/chat/completions",
+                    url=f"{self.valves.AIHUB_BASE_URL}/api/v1/active/openai/chat/completions",
                     json=payload,
                     headers=headers,
                 )
