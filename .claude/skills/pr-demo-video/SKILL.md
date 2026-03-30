@@ -1,7 +1,7 @@
 ---
 name: pr-demo-video
 description: Analyze a screen recording and add a demo section to the current PR on bbvch-ai/aihub-core. Extracts frames with ffmpeg, describes what the video shows using vision, updates the PR body with a Demo section and video description, and checks off matching test plan items. Use when user says 'add demo video to PR', 'add video to PR', 'describe the video', 'add screen recording to PR', or 'pr demo'. Do NOT use for creating the PR itself (use /create-pr), reviewing code (use /review-diff), or recording videos.
-allowed-tools: Bash, Read, Grep, Glob
+allowed-tools: Bash, Read, Grep, Glob, AskUserQuestion
 ---
 
 # PR Demo Video
@@ -34,17 +34,39 @@ echo "$LATEST"
 
 If no recording is found in any default location, ask the user for the path.
 
-## Step 2: Extract Metadata and Frames
+## Step 2: Ask About Key Moments
 
-Get duration and resolution, then extract one frame every 10 seconds for analysis:
+Before extracting frames, ask the user what the video demonstrates and which moments are most important. Frame
+extraction at fixed intervals is lossy — a 10-second gap can miss a crucial UI state, API response, or transition.
+
+Use AskUserQuestion to ask:
+
+> "What are the key moments or things shown in this video that I should capture in the demo description?"
+
+Provide options based on common demo patterns in this repo (e.g., "API response in Swagger", "Agent chat interaction in
+OpenWebUI", "Admin UI configuration", "Process workflow step"). Allow multi-select and free-text input.
+
+Use the user's answer to:
+
+1. Know what to look for when analyzing frames (so you don't misidentify UI elements)
+2. Ensure every key moment the user mentions appears in the final demo description
+3. Extract additional frames at higher density (fps=1/3) if the video is short, to avoid missing transitions
+
+## Step 3: Extract Metadata and Frames
+
+Get duration and resolution, then extract frames for analysis:
 
 ```bash
 ffmpeg -i "$VIDEO_PATH" 2>&1 | grep -E "Duration|Video|Stream"
 mkdir -p /tmp/video-frames
-ffmpeg -i "$VIDEO_PATH" -vf "fps=1/10" -q:v 2 /tmp/video-frames/frame_%02d.jpg -y
+# For videos under 2 minutes, extract every 3 seconds to catch transitions
+# For longer videos, extract every 10 seconds
+ffmpeg -i "$VIDEO_PATH" -vf "fps=1/3" -q:v 2 /tmp/video-frames/frame_%02d.jpg -y
 ```
 
-## Step 3: Analyze Frames
+If the video is longer than 2 minutes, use `fps=1/10` instead to keep frame count manageable.
+
+## Step 4: Analyze Frames
 
 Read each extracted frame using the Read tool (which supports images). For each frame, note:
 
@@ -53,9 +75,12 @@ Read each extracted frame using the Read tool (which supports images). For each 
 - What data is visible (API responses, network tab, console)
 - What the user is demonstrating
 
+Cross-reference against the key moments from Step 2. If any moment the user mentioned is NOT visible in the extracted
+frames, flag it — the user may need to provide a timestamp or the frame extraction interval was too coarse.
+
 Build a chronological narrative of what the video shows.
 
-## Step 4: Get Current PR
+## Step 5: Get Current PR
 
 Find the PR for the current branch:
 
@@ -63,7 +88,7 @@ Find the PR for the current branch:
 gh pr view --json number,body -R bbvch-ai/aihub-core
 ```
 
-## Step 5: Write the Demo Section
+## Step 6: Write the Demo Section
 
 Format the demo section following this repo's PR body convention:
 
@@ -85,12 +110,12 @@ Key rules:
 - Connect each item to what it PROVES about the feature (e.g., "confirming health is outside tenant scope")
 - Include the full path to the video file so the user can drag-and-drop
 
-## Step 6: Update Test Plan
+## Step 7: Update Test Plan
 
 Read the existing `## Test plan` section. For each checklist item, check if the video visually demonstrates it. If so,
 mark it as checked (`- [x]`). Do NOT uncheck already-checked items.
 
-## Step 7: Update the PR
+## Step 8: Update the PR
 
 Use `gh pr edit` to update the PR body with the new Demo section and updated Test plan:
 
@@ -101,7 +126,7 @@ EOF
 )"
 ```
 
-## Step 8: Remind About Upload
+## Step 9: Remind About Upload
 
 Tell the user to manually upload the video file by dragging it into the PR description on GitHub, since `gh` CLI cannot
 upload video attachments. Include the exact file path for convenience.
@@ -114,3 +139,5 @@ upload video attachments. Include the exact file path for convenience.
   codebase. "API requests return 200" not "added tenant path parameter".
 - **Unchecking test plan items**: Only ADD checkmarks to items the video demonstrates. Never uncheck items that were
   already checked.
+- **Skipping the key moments question**: Always ask the user what the video shows before analyzing frames.
+  Fixed-interval frame extraction misses transitions, and the user knows exactly which moments matter for the PR.
