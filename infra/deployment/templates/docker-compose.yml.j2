@@ -1180,6 +1180,135 @@ services:
         max-size: 10m
         max-file: 2
 
+  {%- if image_tags.backup[stage] %}
+  # ===================================================================
+  # Backup Services (Dagster-based Automated Database Backups)
+  # ===================================================================
+  # Independent 3-container Dagster deployment: gRPC code server, daemon,
+  # webserver. Dagster UI on port 3004 for monitoring and manual triggers.
+  # ===================================================================
+
+  backup-code:
+    container_name: backup-code
+    {%- if image_tags.backup[stage] == 'localbuild' %}
+    build:
+      context: .
+      dockerfile: ./packages/backup/Dockerfile
+    {%- else %}
+    image: {{ global.registry_prefix }}{{ image_tags.backup[stage] }}
+    {%- endif %}
+    restart: unless-stopped
+    entrypoint:
+      - dagster
+      - api
+      - grpc
+      - -m
+      - swiss_ai_hub.backup.dagster
+      - -h
+      - 0.0.0.0
+      - -p
+      - '4266'
+    environment:
+      PYTHONUNBUFFERED: 1
+      DAGSTER_HOME: /dagster_home
+    volumes:
+      - {{ global.volume_root }}/backup-dagster-home:/dagster_home
+    healthcheck:
+      test: ["CMD", "dagster", "api", "grpc-health-check", "--host", "localhost", "--port", "4266"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks:
+      - data
+
+  backup-webserver:
+    container_name: backup-webserver
+    {%- if image_tags.backup[stage] == 'localbuild' %}
+    build:
+      context: .
+      dockerfile: ./packages/backup/Dockerfile
+    {%- else %}
+    image: {{ global.registry_prefix }}{{ image_tags.backup[stage] }}
+    {%- endif %}
+    restart: unless-stopped
+    depends_on:
+      backup-code:
+        condition: service_healthy
+    {%- if stage in ['local', 'build'] %}
+    ports:
+      - "127.0.0.1:3004:3000"
+    {%- endif %}
+    entrypoint:
+      - dagster-webserver
+      - -h
+      - 0.0.0.0
+      - -p
+      - '3000'
+      - -w
+      - /etc/dagster/workspace.yaml
+    environment:
+      PYTHONUNBUFFERED: 1
+      DAGSTER_HOME: /dagster_home
+    volumes:
+      - {{ global.volume_root }}/backup-dagster-home:/dagster_home
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/server_info"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks:
+      - data
+
+  backup-daemon:
+    container_name: backup-daemon
+    {%- if image_tags.backup[stage] == 'localbuild' %}
+    build:
+      context: .
+      dockerfile: ./packages/backup/Dockerfile
+    {%- else %}
+    image: {{ global.registry_prefix }}{{ image_tags.backup[stage] }}
+    {%- endif %}
+    restart: unless-stopped
+    depends_on:
+      backup-code:
+        condition: service_healthy
+    entrypoint:
+      - dagster-daemon
+      - run
+      - -w
+      - /etc/dagster/workspace.yaml
+    environment:
+      PYTHONUNBUFFERED: 1
+      DAGSTER_HOME: /dagster_home
+    volumes:
+      - {{ global.volume_root }}/backup-dagster-home:/dagster_home
+    healthcheck:
+      test: ["CMD", "dagster-daemon", "liveness-check"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks:
+      - data
+  {%- endif %}
+
   {%- if gpu_enabled %}
   # ===================================================================
   # AI Model Serving (Local GPU Inference via vLLM)

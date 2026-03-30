@@ -1,0 +1,5 @@
+---
+load_from:
+  - grpc_server:
+      host: backup-code
+      port: 4266

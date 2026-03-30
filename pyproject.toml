@@ -46,6 +46,7 @@ members = [
     "packages/bot",
     "packages/pipeline",
     "packages/process",
+    "packages/backup",
 ]
 
 [tool.uv.sources]

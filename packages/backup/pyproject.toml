@@ -1,0 +1,43 @@
+[project]
+name = "swiss-ai-hub-backup"
+version = "0.272.1"
+description = "Backup and restore orchestration for AI-Hub data services"
+requires-python = ">=3.13, <3.14"
+authors = [
+    { name = "Joel Barmettler", email = "joel.barmettler@bbv.ch" },
+    { name = "Marius Högger", email = "marius.hoegger@bbv.ch" },
+    { name = "Michèle Fundneider", email = "michele.fundneider@bbv.ch" },
+    { name = "Thomas Mannhart", email = "thomas.mannhart@bbv.ch" },
+    { name = "Noah Hermann", email = "noah.hermann@bbv.ch" },
+]
+license = "Apache-2.0"
+readme = "README.md"
+dependencies = [
+    "dagster>=1.11.2",
+    "dagster-webserver>=1.11.2",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4.1",
+    "ruff>=0.8.1",
+]
+
+[build-system]
+requires = ["uv_build>=0.10.4,<0.11.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-root = ""
+module-name = "swiss_ai_hub.backup"
+
+[tool.ruff]
+line-length = 120
+target-version = 'py313'
+
+[tool.ruff.lint]
+select = ["E", "F", "UP", "I"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--strict-markers"

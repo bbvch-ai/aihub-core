@@ -118,3 +118,8 @@ image_tags:
     local: bot:latest
     nightly: bot:nightly
     latest: bot:latest
+  backup:
+    build: localbuild
+    local: backup:latest
+    nightly: backup:nightly
+    latest: backup:latest
