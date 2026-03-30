@@ -1080,7 +1080,7 @@ services:
       options:
         max-size: 10m
         max-file: 2
-    networks: [data]
+    networks: [proxy, data]
   backup-daemon:
     container_name: backup-daemon
     build:

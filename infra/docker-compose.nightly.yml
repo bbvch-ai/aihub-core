@@ -1060,7 +1060,7 @@ services:
       options:
         max-size: 10m
         max-file: 2
-    networks: [data]
+    networks: [proxy, data]
   backup-daemon:
     container_name: backup-daemon
     image: ghcr.io/bbvch-ai/aihub-core/backup:nightly
