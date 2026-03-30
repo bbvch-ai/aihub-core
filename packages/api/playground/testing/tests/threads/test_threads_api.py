@@ -19,7 +19,7 @@ from swiss_ai_hub.api.runners.simulation.agent.simulated_agent_api_test_runner i
 
 enable_logging()
 
-THREAD_BASE = "/api/v1/threads"
+THREAD_BASE = "/api/v1/active/threads"
 DEFAULT_USER_ID = DangerousDevelopmentOnlyAuthSettings().OID
 
 

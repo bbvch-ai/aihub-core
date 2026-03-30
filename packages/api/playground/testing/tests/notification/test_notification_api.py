@@ -17,7 +17,7 @@ from swiss_ai_hub.api.routes.notification.notification_controller import Notific
 from swiss_ai_hub.api.runners.api_test_runner import ApiTestRunner
 
 BASE_URL = "http://test"
-NOTIFICATIONS_ENDPOINT = "/api/v1/notifications"
+NOTIFICATIONS_ENDPOINT = "/api/v1/active/notifications"
 
 
 @pytest.fixture(scope="module", autouse=True)

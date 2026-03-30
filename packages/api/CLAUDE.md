@@ -199,7 +199,7 @@ All resources stored in `app.state`, accessible via the dependencies listed abov
 **Auth bypass**: `DangerousDevelopmentOnlyAuthHandler` with `DangerousDevelopmentOnlyIdentityProvider`.
 
 **Interactive testing**: `cd playground/testing && python main.py` → http://localhost:8000 (frontend),
-http://localhost:8000/api/v1/docs (Swagger).
+http://localhost:8000/api/v1/active/docs (Swagger).
 
 **Pagination**: `PageNumber` and `PageSize` types in `pagination/`. Services return `tuple[int, list[DTO]]`.
 

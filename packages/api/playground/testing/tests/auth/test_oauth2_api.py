@@ -26,7 +26,7 @@ from swiss_ai_hub.api.runners.api_test_runner import ApiTestRunner
 
 # Constants for the tests
 BASE_URL = "http://test"
-USER_ENDPOINT = "/api/v1/my-account"
+USER_ENDPOINT = "/api/v1/active/my-account"
 EXPECTED_USER_FIELDS = ["id", "name", "email"]
 TOKEN_EXPIRY_MINUTES = 10
 

@@ -12,7 +12,7 @@ from swiss_ai_hub.core.persistence.access.entities.bearer_token import BearerTok
 from swiss_ai_hub.api.routes.token.token_controller import TokenController
 from swiss_ai_hub.api.runners.api_test_runner import ApiTestRunner
 
-TOKEN_BASE = "/api/v1/tokens"
+TOKEN_BASE = "/api/v1/active/tokens"
 DEFAULT_USER_ID = "1234567890"
 
 
