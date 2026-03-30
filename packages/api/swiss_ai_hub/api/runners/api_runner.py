@@ -163,10 +163,10 @@ class ApiRunner(Runner):
 
         self._api_app.openapi_tags = [
             {
-                "name": ApiLocaleHandler().extract(controller.name),
+                "name": ApiLocaleHandler().extract(controller.name, locale="en"),
                 "description": ApiLocaleHandler().extract(controller.description),
             }
-            for controller in controllers
+            for controller in tenant_controllers
         ]
 
         # Pre-populate state with controller references so they're available
