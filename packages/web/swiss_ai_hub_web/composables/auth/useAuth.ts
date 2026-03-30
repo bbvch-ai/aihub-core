@@ -7,8 +7,8 @@ export const useAuth = () => {
 
   const logout = async () => {
     const { $auth } = useNuxtApp()
-    await $auth.removeUser()
-    navigateTo('/login')
+    const user = await $auth.getUser()
+    await $auth.signoutRedirect({ id_token_hint: user?.id_token })
   }
 
   const getUser = async () => {

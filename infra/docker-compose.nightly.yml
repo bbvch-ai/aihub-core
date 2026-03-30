@@ -849,8 +849,8 @@ services:
       KEYCLOAK_API_SERVICE_CLIENT_SECRET: ${KEYCLOAK_API_SERVICE_CLIENT_SECRET}
     volumes:
       - ./configs/keycloak/keycloak-entrypoint.sh:/opt/keycloak/scripts/keycloak-entrypoint.sh:ro
-      - ./configs/keycloak/aihub-realm.json:/opt/keycloak/data/import-templates/aihub-realm.json:ro
-      - ./configs/keycloak/identity-providers.json:/opt/keycloak/data/import-templates/identity-providers.json:ro
+      - ./configs/keycloak/aihub-realm.nightly.json:/opt/keycloak/data/import-templates/aihub-realm.json:ro
+      - ./configs/keycloak/identity-providers.nightly.json:/opt/keycloak/data/import-templates/identity-providers.json:ro
       - ./configs/keycloak/themes/aihub:/opt/keycloak/themes/aihub:ro
     healthcheck:
       test:
