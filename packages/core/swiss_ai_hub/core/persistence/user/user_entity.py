@@ -244,6 +244,10 @@ class UserEntity(Document):
                     )
                     logger.info(f"Repaired missing tenant association for user {oid} with roles: {roles_to_assign}")
 
+                if not user.active_tenant_id:
+                    user.set_active_tenant(default_tenant_id)
+                    logger.info(f"Repaired missing active tenant for user {oid}")
+
             return user
         except DoesNotExist:
             pass
