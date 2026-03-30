@@ -264,21 +264,23 @@ class UserEntity(Document):
             roles_to_assign = settings.regular_user_roles_list
             logger.info(f"Regular user signup, assigning default roles: {roles_to_assign}")
 
-        user = cls.create_user(
-            oid=oid,
+        user = cls(
+            id=oid,
             name=name,
             email=email,
             profile_image=profile_image,
+            active_tenant_id=str(default_tenant.id),
+            favorite_modules=[],
+            dashboard=cls.create_default_dashboard(),
+            last_updated=datetime.now(UTC),
         )
+        user.save()
 
         UserTenantRoleEntity.create_or_update(
             user_id=oid,
             tenant_id=str(default_tenant.id),
             roles=roles_to_assign,
         )
-
-        user.active_tenant_id = str(default_tenant.id)
-        user.save()
 
         logger.info(f"Created new user {email} in tenant {default_tenant.name} with roles: {roles_to_assign}")
         return user

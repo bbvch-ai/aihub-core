@@ -99,6 +99,8 @@ class AuthHandler(ABC):
         When set to a concrete tenant ID, validates membership.
         """
         tenant_id = request.path_params.get("tenant_id")
+        if not tenant_id:
+            raise HTTPException(status_code=400, detail="Missing tenant context")
 
         if tenant_id == AuthHandler.ACTIVE_TENANT_SLUG:
             active_tenant = AuthHandler._resolve_active_tenant(user_id)

@@ -3,7 +3,6 @@ from typing import Self
 
 from bson import ObjectId
 from mongoengine import BooleanField, DateTimeField, Document, ListField, NotUniqueError, StringField
-from mongoengine.connection import get_db
 
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 
@@ -139,10 +138,13 @@ class TenantEntity(Document):
         """
         Deletes a tenant by its ID. Returns True if deleted, False if not found.
 
-        Cascades to delete all associated UserTenantRoleEntity and tenant-scoped RoleEntity records.
+        Cascades to delete all associated UserTenantRoleEntity and tenant-scoped RoleEntity records,
+        and clears the active tenant for affected users.
         The default tenant cannot be deleted - attempting to do so will raise ValueError.
+
+        Uses deferred imports because UserEntity, RoleEntity, and UserTenantRoleEntity all import
+        TenantEntity at module level — importing them here at module level would create circular imports.
         """
-        # Runtime import: TenantEntity ↔ RoleEntity/UserTenantRoleEntity mutual reference for cascade deletes
         from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
         from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 
@@ -157,12 +159,9 @@ class TenantEntity(Document):
         UserTenantRoleEntity.objects(tenant_id=tenant_id).delete()
         RoleEntity.objects(tenant_id=tenant_id).delete()
 
-        # Clear active tenant for users who had this as their active tenant
-        # Direct collection access avoids circular import with UserEntity
-        get_db()["users"].update_many(
-            {"active_tenant_id": tenant_id},
-            {"$set": {"active_tenant_id": None}},
-        )
+        from swiss_ai_hub.core.persistence.user.user_entity import UserEntity
+
+        UserEntity.objects(active_tenant_id=tenant_id).update(set__active_tenant_id=None)
 
         tenant.delete()
         return True
