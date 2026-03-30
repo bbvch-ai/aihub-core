@@ -26,7 +26,8 @@
     "expert_asking_agent",
     "namespace_selection_agent",
     "mineru-api",
-    "mineru-vlm"
+    "mineru-vlm",
+    "backup"
   ],
   "license_categories": {
     "restrictive": [
