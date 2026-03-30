@@ -73,18 +73,21 @@ class AuthHandler(ABC):
         UserEntity.objects(id=user_id).update(set__active_tenant_id=str(default_tenant.id))
         return default_tenant
 
+    ACTIVE_TENANT_SLUG = "active"
+
     @staticmethod
     def resolve_tenant_for_user(request: Request, user_id: str) -> TenantIdentity:
         """
-        Resolve tenant context from request headers and verify user membership.
+        Resolve tenant context from the request path parameter and verify user membership.
 
-        Uses the x-tenant-id header if provided (and updates the user's active tenant).
-        Otherwise falls back to the user's persisted active tenant, then the system default.
+        The tenant_id path parameter is required on all API routes. When set to "active",
+        resolves to the user's persisted active tenant (then the system default).
+        When set to a concrete tenant ID, validates membership and updates the active tenant.
         """
-        tenant_id = request.headers.get("x-tenant-id")
+        tenant_id = request.path_params.get("tenant_id") or request.headers.get("x-tenant-id")
 
-        if not tenant_id:
-            logger.debug("No x-tenant-id header found, falling back to active tenant for user %s", user_id)
+        if not tenant_id or tenant_id == AuthHandler.ACTIVE_TENANT_SLUG:
+            logger.debug("Resolving active tenant for user %s", user_id)
             active_tenant = AuthHandler._resolve_active_tenant(user_id)
             tenant_entity = active_tenant if active_tenant else AuthHandler._fall_back_to_default_tenant(user_id)
             return TenantIdentity.from_tenant_entity(tenant_entity)

@@ -138,7 +138,9 @@ class Controller(abc.ABC):
         # Path parameters (business context)
         if request.path_params:
             for param_name, param_value in request.path_params.items():
-                if param_name in ["agent_class", "agent_id", "thread_id", "process_id", "process_class"]:
+                if param_name == "tenant_id":
+                    span.set_attribute("tenant.id", str(param_value))
+                elif param_name in ["agent_class", "agent_id", "thread_id", "process_id", "process_class"]:
                     span.set_attribute(f"{param_name.replace('_', '.')}", str(param_value))
                 else:
                     span.set_attribute(f"resource.{param_name}", str(param_value))
