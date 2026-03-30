@@ -130,15 +130,17 @@ class UserEntity(Document):
 
     @classmethod
     @trace_fn
-    def create_user(cls, oid: str, name: str, email: str, profile_image: str | None = None) -> Self:
-        default_dashboard = cls.create_default_dashboard()
+    def create_user(
+        cls, oid: str, name: str, email: str, profile_image: str | None = None, active_tenant_id: str | None = None
+    ) -> Self:
         user = cls(
             id=oid,
             name=name,
             email=email,
             profile_image=profile_image,
+            active_tenant_id=active_tenant_id,
             favorite_modules=[],
-            dashboard=default_dashboard,
+            dashboard=cls.create_default_dashboard(),
             last_updated=datetime.now(UTC),
         )
         user.save()
@@ -264,17 +266,13 @@ class UserEntity(Document):
             roles_to_assign = settings.regular_user_roles_list
             logger.info(f"Regular user signup, assigning default roles: {roles_to_assign}")
 
-        user = cls(
-            id=oid,
+        user = cls.create_user(
+            oid=oid,
             name=name,
             email=email,
             profile_image=profile_image,
             active_tenant_id=str(default_tenant.id),
-            favorite_modules=[],
-            dashboard=cls.create_default_dashboard(),
-            last_updated=datetime.now(UTC),
         )
-        user.save()
 
         UserTenantRoleEntity.create_or_update(
             user_id=oid,
