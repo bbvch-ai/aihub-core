@@ -8,7 +8,6 @@ authors = [
     { name = "Marius Högger", email = "marius.hoegger@bbv.ch" },
     { name = "Michèle Fundneider", email = "michele.fundneider@bbv.ch" },
     { name = "Thomas Mannhart", email = "thomas.mannhart@bbv.ch" },
-    { name = "Noah Hermann", email = "noah.hermann@bbv.ch" },
 ]
 license = "Apache-2.0"
 readme = "README.md"
