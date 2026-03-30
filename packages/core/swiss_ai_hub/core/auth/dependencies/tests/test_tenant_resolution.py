@@ -63,11 +63,20 @@ def auth_handler() -> ConcreteAuthHandler:
     return ConcreteAuthHandler()
 
 
-def create_mock_request(headers: dict[str, str] | None = None) -> Request:
-    """Create a mock FastAPI Request with the given headers."""
+def create_mock_request(
+    path_params: dict[str, str] | None = None,
+    headers: dict[str, str] | None = None,
+) -> Request:
+    """Create a mock FastAPI Request with the given path params and headers."""
     headers = headers or {}
     headers_list = [(k.lower().encode("utf8"), v.encode("utf8")) for k, v in headers.items()]
-    scope: dict[str, Any] = {"type": "http", "headers": headers_list, "method": "GET", "path": "/"}
+    scope: dict[str, Any] = {
+        "type": "http",
+        "headers": headers_list,
+        "method": "GET",
+        "path": "/",
+        "path_params": path_params or {},
+    }
     return Request(scope)
 
 
@@ -193,23 +202,17 @@ def set_active_tenant_to_id(cleanup_documents: list[Any], user_id: str, tenant_i
 # --- Given Steps for Request Context ---
 
 
-@given("a request with x-tenant-id header set to the second tenant")
-def request_with_second_tenant_header(context: dict[str, Any]) -> None:
-    """Create a request with x-tenant-id header pointing to the second tenant."""
+@given("a request with tenant path parameter set to the second tenant")
+def request_with_second_tenant_path_param(context: dict[str, Any]) -> None:
+    """Create a request with tenant_id path parameter pointing to the second tenant."""
     tenant = context["second_tenant"]
-    context["request"] = create_mock_request({"x-tenant-id": str(tenant.id)})
+    context["request"] = create_mock_request(path_params={"tenant_id": str(tenant.id)})
 
 
-@given(parsers.parse('a request with x-tenant-id header set to "{tenant_id}"'))
-def request_with_specific_tenant_header(context: dict[str, Any], tenant_id: str) -> None:
-    """Create a request with x-tenant-id header set to a specific value."""
-    context["request"] = create_mock_request({"x-tenant-id": tenant_id})
-
-
-@given("a request without x-tenant-id header")
-def request_without_tenant_header(context: dict[str, Any]) -> None:
-    """Create a request without x-tenant-id header."""
-    context["request"] = create_mock_request()
+@given(parsers.parse('a request with tenant path parameter set to "{tenant_id}"'))
+def request_with_specific_tenant_path_param(context: dict[str, Any], tenant_id: str) -> None:
+    """Create a request with tenant_id path parameter set to a specific value."""
+    context["request"] = create_mock_request(path_params={"tenant_id": tenant_id})
 
 
 @given("no default tenant exists")
