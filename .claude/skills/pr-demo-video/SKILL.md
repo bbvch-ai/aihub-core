@@ -10,13 +10,29 @@ Add a demo video description to the current branch's pull request on `bbvch-ai/a
 
 ## Step 1: Locate the Video
 
-If the user provides a path, use that. Otherwise find the most recent screen recording:
+If the user provides a path, use that. Otherwise, find the most recent screen recording by detecting the OS-specific
+default location:
 
 ```bash
-ls -t ~/Videos/Screencasts/*.mp4 | head -1
+# Detect OS and find screen recordings directory
+if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+  # GNOME/Ubuntu: ~/Videos/Screencasts/
+  CANDIDATES=("$HOME/Videos/Screencasts" "$HOME/Videos" "$HOME/Screencasts")
+elif [[ "$OSTYPE" == "darwin"* ]]; then
+  # macOS: ~/Desktop/ or ~/Movies/
+  CANDIDATES=("$HOME/Desktop" "$HOME/Movies")
+else
+  CANDIDATES=("$HOME/Videos" "$HOME/Desktop")
+fi
+
+for dir in "${CANDIDATES[@]}"; do
+  LATEST=$(ls -t "$dir"/*.mp4 "$dir"/*.mov "$dir"/*.webm 2>/dev/null | head -1)
+  [ -n "$LATEST" ] && break
+done
+echo "$LATEST"
 ```
 
-Screen recordings are stored at `~/Videos/Screencasts/` as `Screencast from YYYY-MM-DD HH-MM-SS.mp4`.
+If no recording is found in any default location, ask the user for the path.
 
 ## Step 2: Extract Metadata and Frames
 
