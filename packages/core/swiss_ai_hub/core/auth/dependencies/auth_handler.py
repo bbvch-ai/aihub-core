@@ -26,12 +26,14 @@ class AuthHandler(ABC):
         """
         pass
 
+    ACTIVE_TENANT_SLUG = "active"
+
     @abstractmethod
     async def authenticate_token(self, token: str, request: Request | None = None) -> UserIdentity:
         """
         Authenticates a user based on a token string.
 
-        When a request is provided, the tenant is resolved from the x-tenant-id header.
+        When a request is provided, the tenant is resolved from the tenant_id path parameter.
         Without a request (e.g., WebSocket connections), falls back to the user's active tenant.
         """
         pass
@@ -45,24 +47,24 @@ class AuthHandler(ABC):
 
         tenant = TenantEntity.get_tenant_by_id(user.active_tenant_id)
         if not tenant:
-            UserEntity.objects(id=user_id).update(set__active_tenant_id=None)
+            UserEntity.objects(id=user_id).update_one(set__active_tenant_id=None)
             return None
 
         roles = UserTenantRoleEntity.get_roles_for_user_in_tenant(user_id, str(tenant.id))
         if not roles:
-            UserEntity.objects(id=user_id).update(set__active_tenant_id=None)
+            UserEntity.objects(id=user_id).update_one(set__active_tenant_id=None)
             return None
 
         return tenant
 
     @staticmethod
-    def _fall_back_to_default_tenant(user_id: str) -> TenantEntity:
-        """Returns the system default tenant, updating the user's active tenant to match."""
+    def _fall_back_to_default_tenant(user_id: str) -> TenantIdentity:
+        """Returns the system default tenant identity without persisting it as active."""
         default_tenant = TenantEntity.get_default_tenant()
         if not default_tenant:
             raise HTTPException(
                 status_code=500,
-                detail="No default tenant configured and no x-tenant-id header provided",
+                detail="No default tenant configured and no tenant could be resolved",
             )
 
         user_roles_in_tenant = UserTenantRoleEntity.get_roles_for_user_in_tenant(user_id, str(default_tenant.id))
@@ -70,28 +72,11 @@ class AuthHandler(ABC):
             logger.warning(f"User {user_id} does not have access to default tenant")
             raise HTTPException(status_code=403, detail="Access denied")
 
-        UserEntity.objects(id=user_id).update(set__active_tenant_id=str(default_tenant.id))
-        return default_tenant
-
-    ACTIVE_TENANT_SLUG = "active"
+        return TenantIdentity.from_tenant_entity(default_tenant)
 
     @staticmethod
-    def resolve_tenant_for_user(request: Request, user_id: str) -> TenantIdentity:
-        """
-        Resolve tenant context from the request path parameter and verify user membership.
-
-        The tenant_id path parameter is required on all API routes. When set to "active",
-        resolves to the user's persisted active tenant (then the system default).
-        When set to a concrete tenant ID, validates membership and updates the active tenant.
-        """
-        tenant_id = request.path_params.get("tenant_id") or request.headers.get("x-tenant-id")
-
-        if not tenant_id or tenant_id == AuthHandler.ACTIVE_TENANT_SLUG:
-            logger.debug("Resolving active tenant for user %s", user_id)
-            active_tenant = AuthHandler._resolve_active_tenant(user_id)
-            tenant_entity = active_tenant if active_tenant else AuthHandler._fall_back_to_default_tenant(user_id)
-            return TenantIdentity.from_tenant_entity(tenant_entity)
-
+    def _resolve_tenant_by_id(tenant_id: str, user_id: str) -> TenantIdentity:
+        """Resolves a concrete tenant ID, validates existence and user membership."""
         tenant_entity = TenantEntity.get_tenant_by_id(tenant_id)
         if not tenant_entity:
             logger.warning(f"Tenant {tenant_id} not found during resolution for user {user_id}")
@@ -103,9 +88,25 @@ class AuthHandler(ABC):
             logger.warning(f"User {user_id} attempted to access tenant {tenant_id_str} without membership")
             raise HTTPException(status_code=403, detail="Access denied")
 
-        UserEntity.objects(id=user_id).update_one(set__active_tenant_id=tenant_id_str)
-
         return TenantIdentity.from_tenant_entity(tenant_entity)
+
+    @staticmethod
+    def resolve_tenant_for_user(request: Request, user_id: str) -> TenantIdentity:
+        """
+        Resolve tenant context from the required tenant_id path parameter.
+
+        When set to "active", resolves to the user's persisted active tenant.
+        When set to a concrete tenant ID, validates membership.
+        """
+        tenant_id = request.path_params.get("tenant_id")
+
+        if tenant_id == AuthHandler.ACTIVE_TENANT_SLUG:
+            active_tenant = AuthHandler._resolve_active_tenant(user_id)
+            if active_tenant:
+                return TenantIdentity.from_tenant_entity(active_tenant)
+            return AuthHandler._fall_back_to_default_tenant(user_id)
+
+        return AuthHandler._resolve_tenant_by_id(tenant_id, user_id)
 
     @staticmethod
     def get_active_tenant_for_user(user_id: str) -> TenantIdentity:
@@ -116,5 +117,6 @@ class AuthHandler(ABC):
         Falls back to the system default tenant if no active tenant is set.
         """
         active_tenant = AuthHandler._resolve_active_tenant(user_id)
-        tenant_entity = active_tenant if active_tenant else AuthHandler._fall_back_to_default_tenant(user_id)
-        return TenantIdentity.from_tenant_entity(tenant_entity)
+        if active_tenant:
+            return TenantIdentity.from_tenant_entity(active_tenant)
+        return AuthHandler._fall_back_to_default_tenant(user_id)
