@@ -40,7 +40,6 @@ class AuthHandler(ABC):
 
     @staticmethod
     def _resolve_active_tenant(user_id: str) -> TenantEntity | None:
-        """Attempts to resolve the user's persisted active tenant, returning None if invalid."""
         user = UserEntity.objects(id=user_id).only("active_tenant_id").first()
         if not user or not user.active_tenant_id:
             return None
@@ -59,7 +58,6 @@ class AuthHandler(ABC):
 
     @staticmethod
     def _resolve_tenant_by_id(tenant_id: str, user_id: str) -> TenantIdentity:
-        """Resolves a concrete tenant ID, validates existence and user membership."""
         tenant_entity = TenantEntity.get_tenant_by_id(tenant_id)
         if not tenant_entity:
             logger.warning(f"Tenant {tenant_id} not found during resolution for user {user_id}")
@@ -75,12 +73,6 @@ class AuthHandler(ABC):
 
     @staticmethod
     def resolve_tenant_for_user(request: Request, user_id: str) -> TenantIdentity:
-        """
-        Resolve tenant context from the required tenant_id path parameter.
-
-        When set to "active", resolves to the user's persisted active tenant.
-        When set to a concrete tenant ID, validates membership.
-        """
         tenant_id = request.path_params.get("tenant_id")
         if not tenant_id:
             raise HTTPException(status_code=400, detail="Missing tenant context")
@@ -98,12 +90,6 @@ class AuthHandler(ABC):
 
     @staticmethod
     def get_active_tenant_for_user(user_id: str) -> TenantIdentity:
-        """
-        Get the active tenant for a user and verify membership.
-
-        Used for contexts without a request object (e.g., WebSocket connections, bot integrations).
-        Requires an active tenant to be set — no implicit fallback.
-        """
         active_tenant = AuthHandler._resolve_active_tenant(user_id)
         if active_tenant:
             return TenantIdentity.from_tenant_entity(active_tenant)
