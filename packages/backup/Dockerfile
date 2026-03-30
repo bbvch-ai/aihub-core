@@ -13,7 +13,7 @@ RUN apt-get update && \
 WORKDIR /app
 
 COPY pyproject.toml uv.lock ./
-COPY packages/backup/pyproject.toml ./packages/backup/pyproject.toml
+COPY packages/backup/pyproject.toml packages/backup/README.md ./packages/backup/
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev --no-install-project --package swiss-ai-hub-backup
 

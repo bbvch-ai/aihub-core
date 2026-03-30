@@ -1008,7 +1008,7 @@ services:
   backup-code:
     container_name: backup-code
     build:
-      context: .
+      context: ..
       dockerfile: ./packages/backup/Dockerfile
     restart: unless-stopped
     entrypoint:
@@ -1049,7 +1049,7 @@ services:
   backup-webserver:
     container_name: backup-webserver
     build:
-      context: .
+      context: ..
       dockerfile: ./packages/backup/Dockerfile
     restart: unless-stopped
     depends_on:
@@ -1084,7 +1084,7 @@ services:
   backup-daemon:
     container_name: backup-daemon
     build:
-      context: .
+      context: ..
       dockerfile: ./packages/backup/Dockerfile
     restart: unless-stopped
     depends_on:
@@ -1693,8 +1693,8 @@ services:
     container_name: dagster-webserver
     restart: always
     build:
-      context: .
-      dockerfile: ./aihub_pipeline/Dockerfile
+      context: ..
+      dockerfile: ./packages/pipeline/Dockerfile
     depends_on:
       pgbouncer:
         condition: service_healthy
@@ -1732,8 +1732,8 @@ services:
     container_name: dagster-daemon
     restart: always
     build:
-      context: .
-      dockerfile: ./aihub_pipeline/Dockerfile
+      context: ..
+      dockerfile: ./packages/pipeline/Dockerfile
     depends_on:
       pgbouncer:
         condition: service_healthy
@@ -1864,8 +1864,8 @@ services:
     container_name: api
     restart: always
     build:
-      context: .
-      dockerfile: ./aihub_api/Dockerfile
+      context: ..
+      dockerfile: ./packages/api/Dockerfile
     depends_on:
       nats:
         condition: service_started
@@ -2025,7 +2025,7 @@ services:
     container_name: web
     restart: always
     build:
-      context: ./swiss_ai_hub_web/swiss_ai_hub_web
+      context: ../packages/web/swiss_ai_hub_web
       dockerfile: ./Dockerfile
     environment:
       OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
@@ -2086,8 +2086,8 @@ services:
     container_name: llm-wrapping-agent
     restart: always
     build:
-      context: .
-      dockerfile: ./aihub_agent/app/llm_wrapping_agent/Dockerfile
+      context: ..
+      dockerfile: ./packages/agent/app/llm_wrapping_agent/Dockerfile
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -2148,8 +2148,8 @@ services:
     container_name: rag-agent
     restart: always
     build:
-      context: .
-      dockerfile: ./aihub_agent/app/rag_agent/Dockerfile
+      context: ..
+      dockerfile: ./packages/agent/app/rag_agent/Dockerfile
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -2213,8 +2213,8 @@ services:
     container_name: expert-rag-agent
     restart: always
     build:
-      context: .
-      dockerfile: ./aihub_agent/app/expert_rag_agent/Dockerfile
+      context: ..
+      dockerfile: ./packages/agent/app/expert_rag_agent/Dockerfile
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -2268,8 +2268,8 @@ services:
     container_name: expert-asking-agent
     restart: always
     build:
-      context: .
-      dockerfile: ./aihub_agent/app/expert_asking_agent/Dockerfile
+      context: ..
+      dockerfile: ./packages/agent/app/expert_asking_agent/Dockerfile
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -2323,8 +2323,8 @@ services:
     container_name: retrieval-agent
     restart: always
     build:
-      context: .
-      dockerfile: ./aihub_agent/app/retrieval_agent/Dockerfile
+      context: ..
+      dockerfile: ./packages/agent/app/retrieval_agent/Dockerfile
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -2378,8 +2378,8 @@ services:
     container_name: few-shot-agent
     restart: always
     build:
-      context: .
-      dockerfile: ./aihub_agent/app/few_shot_agent/Dockerfile
+      context: ..
+      dockerfile: ./packages/agent/app/few_shot_agent/Dockerfile
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -2425,8 +2425,8 @@ services:
     container_name: namespace-selection-agent
     restart: always
     build:
-      context: .
-      dockerfile: ./aihub_agent/app/namespace_selection_agent/Dockerfile
+      context: ..
+      dockerfile: ./packages/agent/app/namespace_selection_agent/Dockerfile
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -2472,8 +2472,8 @@ services:
     container_name: default-rag-pipeline
     restart: always
     build:
-      context: .
-      dockerfile: ./aihub_pipeline/app/default_rag_pipeline/Dockerfile
+      context: ..
+      dockerfile: ./packages/pipeline/app/default_rag_pipeline/Dockerfile
     environment:
       PYTHONUNBUFFERED: 1
       LOG_LEVEL: ${LOG_LEVEL}
@@ -2541,8 +2541,8 @@ services:
     container_name: shared-rag-pipeline
     restart: always
     build:
-      context: .
-      dockerfile: ./aihub_pipeline/app/shared_rag_pipeline/Dockerfile
+      context: ..
+      dockerfile: ./packages/pipeline/app/shared_rag_pipeline/Dockerfile
     environment:
       PYTHONUNBUFFERED: 1
       LOG_LEVEL: ${LOG_LEVEL}
@@ -2629,8 +2629,8 @@ services:
     container_name: bot
     restart: always
     build:
-      context: .
-      dockerfile: ./aihub_bot/Dockerfile
+      context: ..
+      dockerfile: ./packages/bot/Dockerfile
     depends_on:
       ferretdb:
         condition: service_started

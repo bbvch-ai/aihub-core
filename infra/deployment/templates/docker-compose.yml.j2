@@ -1192,7 +1192,7 @@ services:
     container_name: backup-code
     {%- if image_tags.backup[stage] == 'localbuild' %}
     build:
-      context: .
+      context: ..
       dockerfile: ./packages/backup/Dockerfile
     {%- else %}
     image: {{ global.registry_prefix }}{{ image_tags.backup[stage] }}
@@ -1231,7 +1231,7 @@ services:
     container_name: backup-webserver
     {%- if image_tags.backup[stage] == 'localbuild' %}
     build:
-      context: .
+      context: ..
       dockerfile: ./packages/backup/Dockerfile
     {%- else %}
     image: {{ global.registry_prefix }}{{ image_tags.backup[stage] }}
@@ -1275,7 +1275,7 @@ services:
     container_name: backup-daemon
     {%- if image_tags.backup[stage] == 'localbuild' %}
     build:
-      context: .
+      context: ..
       dockerfile: ./packages/backup/Dockerfile
     {%- else %}
     image: {{ global.registry_prefix }}{{ image_tags.backup[stage] }}
@@ -2205,8 +2205,8 @@ services:
     restart: always
     {%- if image_tags.dagster[stage] == 'localbuild' %}
     build:
-      context: .
-      dockerfile: ./aihub_pipeline/Dockerfile
+      context: ..
+      dockerfile: ./packages/pipeline/Dockerfile
     {%- else %}
     image: {{ global.registry_prefix }}{{ image_tags.dagster[stage] }}
     {%- endif %}
@@ -2254,8 +2254,8 @@ services:
     restart: always
     {%- if image_tags.dagster[stage] == 'localbuild' %}
     build:
-      context: .
-      dockerfile: ./aihub_pipeline/Dockerfile
+      context: ..
+      dockerfile: ./packages/pipeline/Dockerfile
     {%- else %}
     image: "{{ global.registry_prefix }}{{ image_tags.dagster[stage] }}"
     {%- endif %}
@@ -2416,8 +2416,8 @@ services:
     restart: always
     {%- if image_tags.api[stage] == 'localbuild' %}
     build:
-      context: .
-      dockerfile: ./aihub_api/Dockerfile
+      context: ..
+      dockerfile: ./packages/api/Dockerfile
     {%- else %}
     image: {{ global.registry_prefix }}{{ image_tags.api[stage] }}
     {%- endif %}
@@ -2588,7 +2588,7 @@ services:
     restart: always
     {%- if image_tags.web[stage] == 'localbuild' %}
     build:
-      context: ./swiss_ai_hub_web/swiss_ai_hub_web
+      context: ../packages/web/swiss_ai_hub_web
       dockerfile: ./Dockerfile
     {%- else %}
     image: {{ global.registry_prefix }}{{ image_tags.web[stage] }}
@@ -2661,8 +2661,8 @@ services:
     restart: always
     {%- if image_tags.llm_wrapping_agent[stage] == 'localbuild' %}
     build:
-      context: .
-      dockerfile: ./aihub_agent/app/llm_wrapping_agent/Dockerfile
+      context: ..
+      dockerfile: ./packages/agent/app/llm_wrapping_agent/Dockerfile
     {%- else %}
     image: {{ global.registry_prefix }}{{ image_tags.llm_wrapping_agent[stage] }}
     {%- endif %}
@@ -2732,8 +2732,8 @@ services:
     restart: always
     {%- if image_tags.rag_agent[stage] == 'localbuild' %}
     build:
-      context: .
-      dockerfile: ./aihub_agent/app/rag_agent/Dockerfile
+      context: ..
+      dockerfile: ./packages/agent/app/rag_agent/Dockerfile
     {%- else %}
     image: {{ global.registry_prefix }}{{ image_tags.rag_agent[stage] }}
     {%- endif %}
@@ -2807,8 +2807,8 @@ services:
     restart: always
     {%- if image_tags.expert_rag_agent[stage] == 'localbuild' %}
     build:
-      context: .
-      dockerfile: ./aihub_agent/app/expert_rag_agent/Dockerfile
+      context: ..
+      dockerfile: ./packages/agent/app/expert_rag_agent/Dockerfile
     {%- else %}
     image: {{ global.registry_prefix }}{{ image_tags.expert_rag_agent[stage] }}
     {%- endif %}
@@ -2872,8 +2872,8 @@ services:
     restart: always
     {%- if image_tags.expert_asking_agent[stage] == 'localbuild' %}
     build:
-      context: .
-      dockerfile: ./aihub_agent/app/expert_asking_agent/Dockerfile
+      context: ..
+      dockerfile: ./packages/agent/app/expert_asking_agent/Dockerfile
     {%- else %}
     image: {{ global.registry_prefix }}{{ image_tags.expert_asking_agent[stage] }}
     {%- endif %}
@@ -2936,8 +2936,8 @@ services:
     restart: always
     {%- if image_tags.retrieval_agent[stage] == 'localbuild' %}
     build:
-      context: .
-      dockerfile: ./aihub_agent/app/retrieval_agent/Dockerfile
+      context: ..
+      dockerfile: ./packages/agent/app/retrieval_agent/Dockerfile
     {%- else %}
     image: {{ global.registry_prefix }}{{ image_tags.retrieval_agent[stage] }}
     {%- endif %}
@@ -3001,8 +3001,8 @@ services:
     restart: always
     {%- if image_tags.few_shot_agent[stage] == 'localbuild' %}
     build:
-      context: .
-      dockerfile: ./aihub_agent/app/few_shot_agent/Dockerfile
+      context: ..
+      dockerfile: ./packages/agent/app/few_shot_agent/Dockerfile
     {%- else %}
     image: {{ global.registry_prefix }}{{ image_tags.few_shot_agent[stage] }}
     {%- endif %}
@@ -3057,8 +3057,8 @@ services:
     restart: always
     {%- if image_tags.namespace_selection_agent[stage] == 'localbuild' %}
     build:
-      context: .
-      dockerfile: ./aihub_agent/app/namespace_selection_agent/Dockerfile
+      context: ..
+      dockerfile: ./packages/agent/app/namespace_selection_agent/Dockerfile
     {%- else %}
     image: {{ global.registry_prefix }}{{ image_tags.namespace_selection_agent[stage] }}
     {%- endif %}
@@ -3113,8 +3113,8 @@ services:
     restart: always
     {%- if image_tags.default_rag_pipeline[stage] == 'localbuild' %}
     build:
-      context: .
-      dockerfile: ./aihub_pipeline/app/default_rag_pipeline/Dockerfile
+      context: ..
+      dockerfile: ./packages/pipeline/app/default_rag_pipeline/Dockerfile
     {%- else %}
     image: {{ global.registry_prefix }}{{ image_tags.default_rag_pipeline[stage] }}
     {%- endif %}
@@ -3184,8 +3184,8 @@ services:
     restart: always
     {%- if image_tags.shared_rag_pipeline[stage] == 'localbuild' %}
     build:
-      context: .
-      dockerfile: ./aihub_pipeline/app/shared_rag_pipeline/Dockerfile
+      context: ..
+      dockerfile: ./packages/pipeline/app/shared_rag_pipeline/Dockerfile
     {%- else %}
     image: {{ global.registry_prefix }}{{ image_tags.shared_rag_pipeline[stage] }}
     {%- endif %}
@@ -3270,8 +3270,8 @@ services:
     restart: always
     {%- if image_tags.bot[stage] == 'localbuild' %}
     build:
-      context: .
-      dockerfile: ./aihub_bot/Dockerfile
+      context: ..
+      dockerfile: ./packages/bot/Dockerfile
     {%- else %}
     image: {{ global.registry_prefix }}{{ image_tags.bot[stage] }}
     {%- endif %}
