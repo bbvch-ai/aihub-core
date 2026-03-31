@@ -23,10 +23,10 @@ class BaseContext:
     - **get**: Retrieve and deserialize stored data, returning a default if not found or on error.
     - **delete**: Remove a specific key or the entire store.
     - **get_all**: Fetch all keys and values, useful for introspection or exporting state.
-    - **to_json**: Serialize the entire store’s data for logging, backup, or migration.
+    - **to_json**: Serialize the entire store's data for logging, backup, or migration.
 
     ### Reliability
-    By leveraging JetStream’s KV store, BaseContext can rely on NATS for distributed durability and
+    By leveraging JetStream's KV store, BaseContext can rely on NATS for distributed durability and
     consistency, making the solution robust against failures and restarts.
     """
 
@@ -34,10 +34,7 @@ class BaseContext:
         self,
         redis: Annotated[Redis, "Redis for KV storage"],
         store_name: Annotated[str, "Unique name under which all kv-pairs will be stored"],
-        default_ttl: Annotated[int, "How long redis stores keys in this store"] = 60
-        * 60
-        * 24
-        * 30,  # 30 days in seconds
+        default_ttl: Annotated[int | None, "How long redis stores keys in this store, None for no expiry"] = None,
     ):
         self.redis = redis
         self.store_name = store_name

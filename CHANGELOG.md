@@ -5,6 +5,95 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.272.1] - 2026-03-30 - Robust Agent Context: Valkey AOF and True Thread Persistence
+
+### Fixed
+
+- ⚡️ **Enhanced Valkey Data Durability**: Addressed the previously identified "Valkey persistence gap" by enabling
+  Append-Only File (AOF) persistence across all Valkey instances. This crucial update reduces potential data loss during
+  crashes from 30 seconds to approximately 1 second, significantly improving the reliability of agent runtime state.
+
+### Changed
+
+- 💾 **Introduced Truly Persistent ThreadContext**: Modified the `ThreadContext` to be genuinely persistent by removing
+  its 30-day Time-to-Live (TTL). This change ensures that conversation history, user preferences, and other long-lived
+  agent-set data remain durable across multiple runs without automatic expiry.
+- ⚙️ **Refined RunContext Lifecycle**: Clarified the behavior of `RunContext`, which is now explicitly cleaned up upon
+  `StopEvent` completion. Its 30-day TTL now functions as a safety net for orphaned runs in case of unexpected crashes,
+  ensuring data integrity while simplifying cleanup.
+- 📄 **Updated Agent Context Documentation**: Improved documentation across `CLAUDE.md`, solution strategy, and SDK
+  guides to accurately reflect the new persistence models and durability guarantees for `RunContext` and `ThreadContext`
+  in Valkey.
+
+### Refactor
+
+- 🧹 **Improved IDE Configuration**: Streamlined the Node.js interpreter setup in `Web.xml` to use project-level
+  settings, enhancing consistency for developers.
+- 🧹 **Internal Code Cleanups**: Performed minor code reordering for imports and test configurations to improve
+  maintainability and style.
+
+______________________________________________________________________
+
+## [v0.272.0] - 2026-03-25 - Empowering Agents with External Tooling: Introducing the MCP React Agent
+
+### Added
+
+- 🦾 **New MCP React Agent**: A sophisticated AI agent capable of dynamically discovering and interacting with tools and
+  resources exposed by external Message Control Protocol (MCP) servers, leveraging ReAct reasoning.
+- 🚀 **MCP Integration Framework**: Core components and utilities (`McpClientFactory`, `McpClientConfig`,
+  `mcp_resource_schemas`, `mcp_tool_schemas`) for seamless and robust communication with MCP-compliant services.
+- 📄 **Architectural Decision Record (ADR)**: A detailed document outlining the strategy for agents to consume MCP
+  resources, utilizing system prompts for static data and a meta-tool for templated data.
+- 🌐 **Internationalization for MCP Agent**: Added comprehensive localization support for the MCP React Agent's metadata,
+  configuration parameters, and workflow steps in German, English, French, and Italian.
+- ✨ **Tool Call ID to `ToolEvent`**: Introduced a `tool_call_id` field within `ToolEvent` to establish a clear link
+  between a tool invocation and its corresponding result message.
+- 🐳 **Docker Deployment for MCP Agent**: Provided a Dockerfile to facilitate the easy containerization and deployment of
+  the new MCP React Agent.
+- 🧪 **Playground Workflow for MCP React Agent**: A minimal example workflow, complete with a dummy MCP server, to
+  demonstrate and test the capabilities of the MCP React Agent.
+- 📦 **`fastmcp` Dependency**: Integrated `fastmcp` as a crucial dependency to enable direct client interaction with MCP
+  servers.
+
+### Changed
+
+- 🔄 **Enhanced `Message` Tool Call Handling**: Improved the `Message` class to accurately normalize and preserve
+  `tool_calls` data during conversion to and from `llama_index`'s `ChatMessage` format, ensuring data integrity across
+  the LLM pipeline.
+- 🔗 **OpenAI API Compatibility for `Message`**: Added methods `to_openai_dict` and `from_openai_response` to the
+  `Message` class, enabling better interoperability with OpenAI API messages, especially for complex tool interactions.
+- 🛡️ **Robust Content Extraction in `Message`**: Made the `content` property of the `Message` class more resilient by
+  explicitly handling cases where message contents might be empty.
+
+### Refactor
+
+- 🧹 **Organized MCP Core Components**: Restructured the codebase by creating dedicated `packages/agent/mcp/` and
+  `packages/core/mcp/` directories, centralizing all MCP-related infrastructure and agent-specific logic.
+- ⚙️ **Standardized Line Endings**: Ensured consistent LF line endings for `.sh` files across the repository via
+  `.gitattributes` for improved cross-platform compatibility.
+
+______________________________________________________________________
+
+## [v0.271.6] - 2026-03-25 - Document Processing Refinements
+
+### Changed
+
+- ⚡️ **Improved Document Intelligence Loader:** Enhanced file processing within the Document Intelligence Loader by
+  switching to direct byte content reading, leading to more robust and compatible document analysis.
+
+______________________________________________________________________
+
+## [v0.271.5] - 2026-03-24 - Documentation Base Path Update and Link Alignment
+
+### Changed
+
+- 📄 **Updated Documentation Base Paths:** The base path for all project documentation has been consistently updated from
+  `/swiss-ai-hub/` to `/aihub-core/` across the VitePress configuration, `README.md`, `CONTRIBUTING.md`, `CLAUDE.md`,
+  and the `install.sh` script. This ensures all documentation links and internal paths correctly point to the new
+  `aihub-core` URL structure.
+
+______________________________________________________________________
+
 ## [v0.271.4] - 2026-03-23 - Enhanced AI Workflow Automation and API Resilience
 
 ### Added

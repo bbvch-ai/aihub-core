@@ -928,8 +928,10 @@ services:
     container_name: valkey
     image: ghcr.io/bbvch-ai/aihub-core/valkey:8.0.5
     restart: always
-    # Password authentication enabled via --requirepass
+    # Password authentication enabled via --requirepass.
+    # --appendonly yes enables AOF persistence for durability between RDB snapshots.
     command: valkey-server --save 30 1 --loglevel warning --requirepass ${REDIS_TOKEN}
+      --appendonly yes --appendfsync everysec
     volumes: ['${VOLUME_ROOT:-./.docker-volumes}/valkey-data:/data']
     healthcheck:
       # Use REDISCLI_AUTH to authenticate for health check

@@ -1,6 +1,6 @@
 [project]
 name = "swiss-ai-hub-agent"
-version = "0.271.4"
+version = "0.272.1"
 description = "agents core"
 requires-python = ">=3.13, <3.14"
 authors = [
@@ -14,6 +14,7 @@ license = "Apache-2.0"
 readme = "README.md"
 dependencies = [
     "swiss-ai-hub-core",
+    "fastmcp>=3.0.0",
     "llama-index-llms-openai>=0.6.12",
     "llama-index-llms-azure-openai>=0.4.2",
     "stringcase>=1.2.0",
