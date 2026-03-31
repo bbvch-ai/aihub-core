@@ -2,13 +2,19 @@ export const useAuth = () => {
   const login = (idpHint?: string) => {
     const { $auth } = useNuxtApp()
     const extraQueryParams = idpHint ? { kc_idp_hint: idpHint } : {}
-    $auth.signinRedirect({ extraQueryParams })
+    $auth.signinRedirect({ prompt: 'login', extraQueryParams })
   }
 
   const logout = async () => {
-    const { $auth } = useNuxtApp()
+    const { $auth, $keycloakClient } = useNuxtApp()
     const user = await $auth.getUser()
-    await $auth.signoutRedirect({ id_token_hint: user?.id_token })
+
+    if (user?.refresh_token) {
+      await $keycloakClient.logout(user.refresh_token)
+    }
+
+    await $auth.removeUser()
+    navigateTo('/login')
   }
 
   const getUser = async () => {
