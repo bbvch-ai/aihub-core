@@ -1,7 +1,9 @@
-from typing import Annotated, Literal, Self
+from typing import Annotated, Any, Literal, Self
 
 from pydantic import Field
 
+from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
+from swiss_ai_hub.core.form.base.config_authorization_violation import ConfigAuthorizationViolation
 from swiss_ai_hub.core.form.base.prime_vue_element import PrimeVueElement
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
@@ -55,3 +57,24 @@ class KnowledgeDatabaseSelector(PrimeVueElement):
         if isinstance(self_copy.placeholder, LocaleString):
             self_copy.placeholder = t.extract(self_copy.placeholder)
         return self_copy
+
+    def validate_authorization(
+        self, field_path: str, value: Any, access_checker: AccessChecker, t: LocaleHandler
+    ) -> list[ConfigAuthorizationViolation]:
+        if not isinstance(value, list):
+            return []
+
+        violations: list[ConfigAuthorizationViolation] = []
+        for db_name in value:
+            if not isinstance(db_name, str):
+                continue
+            if not access_checker.has_access(f"aihub.user.knowledge.{db_name}.?>"):
+                violations.append(
+                    ConfigAuthorizationViolation(
+                        field=field_path,
+                        resource_type="knowledge_database",
+                        resource=db_name,
+                        message=t("lib.common.authorization.no_access_knowledge_database", name=db_name),
+                    )
+                )
+        return violations

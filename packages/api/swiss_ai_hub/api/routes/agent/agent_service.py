@@ -5,6 +5,7 @@ from typing import Annotated, Any
 from bson import ObjectId
 from fastapi import HTTPException
 from nats.aio.client import Client as NATS
+from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.distributor import ExternalAgentEvent, ExternalAgentEventDistributor
 from swiss_ai_hub.core.events import BaseEvent
@@ -35,6 +36,7 @@ from swiss_ai_hub.api.routes.agent.dto.minimal_agent_instance_dto import Minimal
 from swiss_ai_hub.api.routes.thread.dto.thread_dto import ThreadDTO
 from swiss_ai_hub.api.routes.thread.thread_service import ThreadService
 from swiss_ai_hub.api.services.model_creation_service import ModelCreationService
+from swiss_ai_hub.api.util.config_authorization_service import ConfigAuthorizationService
 from swiss_ai_hub.api.util.instance_config_helper import InstanceConfigHelper
 
 logger = logging.getLogger(__name__)
@@ -327,7 +329,9 @@ class AgentService:
 
     @staticmethod
     @trace_fn
-    async def update_agent_instance(agent_class: str, agent_id: str, configuration: dict[str, Any]) -> dict[str, Any]:
+    async def update_agent_instance(
+        agent_class: str, agent_id: str, configuration: dict[str, Any], t: LocaleHandler, *, user: UserIdentity
+    ) -> dict[str, Any]:
         """
         Update the configuration data for a specific agent instance.
         Validates the configuration against the agent's schema before saving.
@@ -349,6 +353,14 @@ class AgentService:
             )
         )
         config_instance = InstanceConfigHelper.validate_config_for_update(configuration, config_model)
+
+        ConfigAuthorizationService.validate_config_authorization_or_raise(
+            form_elements=class_entity.form,
+            config=configuration,
+            access_checker=AccessChecker.from_user(user),
+            t=t,
+        )
+
         config_entity = InstanceConfigHelper.apply_metadata_to_entity(config_instance, config_entity)
 
         config_entity.config_data = configuration
@@ -396,6 +408,8 @@ class AgentService:
         agent_class: str,
         request: CreateAgentInstanceRequest,
         t: LocaleHandler,
+        *,
+        user: UserIdentity,
     ) -> FullAgentInstanceDTO:
         """
         Creates a new agent instance from an existing agent class.
@@ -427,6 +441,14 @@ class AgentService:
             )
         )
         config_instance = InstanceConfigHelper.validate_config_for_create(config, config_model)
+
+        ConfigAuthorizationService.validate_config_authorization_or_raise(
+            form_elements=class_entity.form,
+            config=config,
+            access_checker=AccessChecker.from_user(user),
+            t=t,
+        )
+
         metadata = InstanceConfigHelper.extract_config_metadata(config_instance, class_entity.icon)
         locale = InstanceConfigHelper.build_locale_entities(
             metadata.name, metadata.description, agent_class, metadata.icon

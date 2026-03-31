@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.272.2] - 2026-03-31 - Enhanced Configuration Authorization for Secure Operations
+
+### Added
+
+- ✨ **Introduced Configuration Authorization Service:** A new service (`ConfigAuthorizationService`) has been
+  implemented to automatically validate user permissions for resources referenced within agent and process
+  configurations (e.g., knowledge databases, other agents) during their creation and update.
+- 📄 **Authorization Violation Model:** A new data model (`ConfigAuthorizationViolation`) was added to standardize the
+  reporting of configuration authorization issues, providing clear details on unauthorized resources.
+- 🌐 **Localized Authorization Messages:** New translation keys for configuration authorization messages have been added
+  across all supported languages (German, English, French, Italian), ensuring a consistent user experience.
+
+### Changed
+
+- 🔑 **Mandatory Configuration Authorization:** Agent and Process instance creation and update operations now include a
+  mandatory step to enforce authorization checks on submitted configurations, preventing users from referencing
+  resources they do not have access to.
+- 🦾 **Agent Selector Authorization:** The **Agent Selector** form element now performs real-time authorization
+  validation, ensuring users can only select and configure agents they are permitted to access.
+- 📚 **Knowledge Database Selector Authorization:** The **Knowledge Database Selector** form element now performs
+  authorization validation, ensuring users can only select knowledge databases they are permitted to access.
+- 🔄 **Model Configuration Update:** The default Claude model has been updated to `opus[1m]`, and explicit support for
+  this new model variant has been added to the list of available models.
+
+### Refactor
+
+- 🧹 **Form Module Exports:** Key form components, including `ConfigAuthorizationViolation`, `FormkitElement`, `Group`,
+  `ModelSelect`, and `Repeater`, are now explicitly exported within the core form module for improved internal
+  consistency and module organization.
+
+______________________________________________________________________
+
 ## [v0.272.1] - 2026-03-30 - Robust Agent Context: Valkey AOF and True Thread Persistence
 
 ### Fixed

@@ -285,8 +285,9 @@
     ],
     "defaultMode": "acceptEdits"
   },
-  "model": "opus",
+  "model": "opus[1m]",
   "availableModels": [
+    "opus[1m]",
     "opus",
     "sonnet"
   ],
