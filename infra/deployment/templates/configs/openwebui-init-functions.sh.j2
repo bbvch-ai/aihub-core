@@ -1,21 +1,20 @@
 #!/bin/sh
 # =============================================================================
-# OpenWebUI Function Auto-Registration Script (PostgreSQL Direct Insert)
+# OpenWebUI Initialization Script (PostgreSQL Direct Insert)
 # =============================================================================
-# This script automatically registers functions from Python files into OpenWebUI
-# by inserting them directly into the PostgreSQL database.
+# Registers functions from Python files and creates the AI-Hub service account.
 #
 # Generated from template. Do not edit directly.
 # =============================================================================
 
 set -e
 
-POSTGRES_HOST="${POSTGRES_HOST:-postgres}"
-POSTGRES_PORT="${POSTGRES_PORT:-5432}"
-POSTGRES_DB="${POSTGRES_DB:-openwebui}"
-POSTGRES_USER="${POSTGRES_USER:-admin}"
+POSTGRES_HOST="${POSTGRES_HOST}"
+POSTGRES_PORT="${POSTGRES_PORT}"
+POSTGRES_DB="${POSTGRES_DB}"
+POSTGRES_USER="${POSTGRES_USER}"
 POSTGRES_PASSWORD="${POSTGRES_PASSWORD}"
-FUNCTIONS_DIR="${FUNCTIONS_DIR:-/functions}"
+FUNCTIONS_DIR="${FUNCTIONS_DIR}"
 
 export PGPASSWORD="$POSTGRES_PASSWORD"
 
@@ -152,6 +151,45 @@ SQLFOOTER
     fi
 }
 
+# Create AI-Hub service account for API access (JWT-authenticated model management)
+create_service_account() {
+    SERVICE_ACCOUNT_ID="${OPENWEBUI_SERVICE_ACCOUNT_ID}"
+    SERVICE_ACCOUNT_EMAIL="aihub-service@aihub.internal"
+    SERVICE_ACCOUNT_NAME="AI-Hub Service Account"
+    SERVICE_ACCOUNT_PASSWORD=$(openssl passwd -6 "$(openssl rand -hex 32)")
+    TIMESTAMP=$(date +%s)
+
+    log "Creating AI-Hub service account admin..."
+
+    run_sql -c "
+        INSERT INTO \"user\" (id, name, email, role, profile_image_url, created_at, updated_at, last_active_at)
+        VALUES (
+            '${SERVICE_ACCOUNT_ID}',
+            '${SERVICE_ACCOUNT_NAME}',
+            '${SERVICE_ACCOUNT_EMAIL}',
+            'admin',
+            '/user.png',
+            ${TIMESTAMP},
+            ${TIMESTAMP},
+            ${TIMESTAMP}
+        )
+        ON CONFLICT (id) DO UPDATE SET
+            name = EXCLUDED.name,
+            email = EXCLUDED.email,
+            role = EXCLUDED.role,
+            updated_at = EXCLUDED.updated_at;
+
+        INSERT INTO auth (id, email, password, active)
+        VALUES (
+            '${SERVICE_ACCOUNT_ID}',
+            '${SERVICE_ACCOUNT_EMAIL}',
+            '${SERVICE_ACCOUNT_PASSWORD}',
+            true
+        )
+        ON CONFLICT DO NOTHING;
+    " 2>&1 && log "Service account ready" || log "WARNING: Service account creation failed"
+}
+
 # Main execution
 main() {
     log "Starting OpenWebUI function registration (PostgreSQL direct insert)..."
@@ -183,7 +221,10 @@ main() {
         exit 1
     fi
 
-    log "Function table exists, proceeding with registration..."
+    log "Function table exists, proceeding..."
+
+    # Create AI-Hub service account admin for API access
+    create_service_account
 
     # Find and register all Python files
     registered=0

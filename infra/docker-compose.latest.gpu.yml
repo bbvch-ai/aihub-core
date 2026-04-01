@@ -1852,6 +1852,8 @@ services:
       POSTGRES_DB: openwebui
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      OPENWEBUI_SERVICE_ACCOUNT_ID: ${OPENWEBUI_SERVICE_ACCOUNT_ID}
+      FUNCTIONS_DIR: /functions
     volumes:
       - ./configs/openwebui/init-functions.sh:/init-functions.sh:ro
       - ./configs/openwebui/functions:/functions:ro
@@ -2167,6 +2169,11 @@ services:
       LANGFUSE_PROJECT_ID: aihub-project
       AIHUB_OPENAI_API_BASE_URL: http://api:8000/api/v1/active/openai
 
+      # OpenWebUI (agent workspace model provisioning)
+      OPENWEBUI_BASE_URL: http://open-webui:8080
+      OPENWEBUI_SECRET_KEY: ${OPENWEBUI_SECRET_KEY}
+      OPENWEBUI_SERVICE_ACCOUNT_ID: ${OPENWEBUI_SERVICE_ACCOUNT_ID}
+
       # NATs
       NATS_ENDPOINT: nats://nats:4222
       NATS_TOKEN: ${NATS_TOKEN}
@@ -2345,7 +2352,7 @@ services:
       OTEL_RESOURCE_SERVICE_VERSION: latest
       OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
     healthcheck:
-      test: [CMD, curl, -f, http://localhost:8080/health]
+      test: [CMD, curl, -f, http://localhost:8090/health]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -2413,7 +2420,7 @@ services:
       OTEL_RESOURCE_SERVICE_VERSION: latest
       OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
     healthcheck:
-      test: [CMD, curl, -f, http://localhost:8080/health]
+      test: [CMD, curl, -f, http://localhost:8090/health]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -2466,7 +2473,7 @@ services:
       OTEL_RESOURCE_SERVICE_VERSION: latest
       OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
     healthcheck:
-      test: [CMD, curl, -f, http://localhost:8080/health]
+      test: [CMD, curl, -f, http://localhost:8090/health]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -2519,7 +2526,7 @@ services:
       OTEL_RESOURCE_SERVICE_VERSION: latest
       OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
     healthcheck:
-      test: [CMD, curl, -f, http://localhost:8080/health]
+      test: [CMD, curl, -f, http://localhost:8090/health]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -2572,7 +2579,7 @@ services:
       OTEL_RESOURCE_SERVICE_VERSION: latest
       OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
     healthcheck:
-      test: [CMD, curl, -f, http://localhost:8080/health]
+      test: [CMD, curl, -f, http://localhost:8090/health]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -2617,7 +2624,7 @@ services:
       OTEL_RESOURCE_SERVICE_VERSION: latest
       OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
     healthcheck:
-      test: [CMD, curl, -f, http://localhost:8080/health]
+      test: [CMD, curl, -f, http://localhost:8090/health]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -2662,7 +2669,7 @@ services:
       OTEL_RESOURCE_SERVICE_VERSION: latest
       OTEL_RESOURCE_SERVICE_NAMESPACE: swiss-ai-hub
     healthcheck:
-      test: [CMD, curl, -f, http://localhost:8080/health]
+      test: [CMD, curl, -f, http://localhost:8090/health]
       interval: 30s
       timeout: 10s
       retries: 3

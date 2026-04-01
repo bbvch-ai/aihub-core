@@ -63,7 +63,7 @@ class ProcessRunner(HealthCheckProvider):
         process_config: ProcessConfig,
         templates: list[ProcessConfig] | None = None,
         locale_paths: list[str] | None = None,
-        health_port: int = 8080,
+        health_port: int = 8090,
     ):
         if not isinstance(process_type, type):
             raise ValueError("process_type must be a class, not an instance or module.")
