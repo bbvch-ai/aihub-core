@@ -1000,6 +1000,156 @@ services:
         max-size: 10m
         max-file: 2
   # ===================================================================
+  # Backup Services (Dagster-based Automated Database Backups)
+  # ===================================================================
+  # Independent 3-container Dagster deployment: gRPC code server, daemon,
+  # webserver. Dagster UI on port 3004 for monitoring and manual triggers.
+  # ===================================================================
+  backup-code:
+    container_name: backup-code
+    build:
+      context: ..
+      dockerfile: ./packages/backup/Dockerfile
+    restart: unless-stopped
+    entrypoint:
+      - dagster
+      - api
+      - grpc
+      - -m
+      - swiss_ai_hub.backup.dagster
+      - -h
+      - 0.0.0.0
+      - -p
+      - '4266'
+    environment:
+      PYTHONUNBUFFERED: 1
+      DAGSTER_HOME: /dagster_home
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/backup-dagster-home:/dagster_home
+    healthcheck:
+      test:
+        - CMD
+        - dagster
+        - api
+        - grpc-health-check
+        - --host
+        - localhost
+        - --port
+        - '4266'
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks: [data]
+  oauth2proxy-backup:
+    container_name: oauth2proxy-backup
+    image: ghcr.io/bbvch-ai/bbvch-ai/oauth2-proxy:latest
+    restart: always
+    environment:
+      OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4180
+      OAUTH2_PROXY_COOKIE_SECURE: false
+      OAUTH2_PROXY_CODE_CHALLENGE_METHOD: S256
+      OAUTH2_PROXY_UPSTREAMS: http://backup-webserver:3000
+      OAUTH2_PROXY_CLIENT_ID: oauth2-proxy-backup
+      OAUTH2_PROXY_PROVIDER: oidc
+      OAUTH2_PROXY_PROVIDER_DISPLAY_NAME: ${OAUTH_PROVIDER_NAME}
+      OAUTH2_PROXY_SKIP_OIDC_DISCOVERY: 'true'
+      OAUTH2_PROXY_OIDC_ISSUER_URL: https://auth.${DOMAIN}/realms/aihub
+      OAUTH2_PROXY_LOGIN_URL: https://auth.${DOMAIN}/realms/aihub/protocol/openid-connect/auth
+      OAUTH2_PROXY_REDEEM_URL: http://keycloak:8080/realms/aihub/protocol/openid-connect/token
+      OAUTH2_PROXY_OIDC_JWKS_URL: http://keycloak:8080/realms/aihub/protocol/openid-connect/certs
+      OAUTH2_PROXY_COOKIE_SECRET: ${OAUTH_COOKIE_SECRET_BACKUP}
+      OAUTH2_PROXY_CLIENT_SECRET: ${KEYCLOAK_OAUTH2_PROXY_BACKUP_SECRET}
+      OAUTH2_PROXY_EMAIL_DOMAINS: '*'
+      OAUTH2_PROXY_REVERSE_PROXY: true
+      OAUTH2_PROXY_REDIRECT_URL: https://backup.${DOMAIN}
+      OAUTH2_PROXY_SCOPE: openid email profile roles
+      OAUTH2_PROXY_ALLOWED_GROUPS: ${OAUTH_ALLOWED_GROUPS_BACKUP}
+      OAUTH2_PROXY_OIDC_GROUPS_CLAIM: roles
+      OAUTH2_PROXY_CUSTOM_SIGN_IN_LOGO: ${OAUTH_CUSTOM_SIGN_IN_LOGO}
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=proxy
+      - traefik.http.routers.backup.rule=Host(`backup.${DOMAIN}`)
+      - traefik.http.routers.backup.entrypoints=websecure
+      - traefik.http.routers.backup.middlewares=security-headers@file
+      - traefik.http.services.backup.loadbalancer.server.port=4180
+      - traefik.http.routers.backup.tls=true
+    networks: [proxy, backend]
+  backup-webserver:
+    container_name: backup-webserver
+    build:
+      context: ..
+      dockerfile: ./packages/backup/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      backup-code:
+        condition: service_healthy
+    ports: [127.0.0.1:3004:3000]
+    entrypoint:
+      - dagster-webserver
+      - -h
+      - 0.0.0.0
+      - -p
+      - '3000'
+      - -w
+      - /etc/dagster/workspace.yaml
+    environment:
+      PYTHONUNBUFFERED: 1
+      DAGSTER_HOME: /dagster_home
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/backup-dagster-home:/dagster_home
+    healthcheck:
+      test: [CMD, curl, -f, http://localhost:3000/server_info]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks: [proxy, data]
+  backup-daemon:
+    container_name: backup-daemon
+    build:
+      context: ..
+      dockerfile: ./packages/backup/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      backup-code:
+        condition: service_healthy
+    entrypoint: [dagster-daemon, run, -w, /etc/dagster/workspace.yaml]
+    environment:
+      PYTHONUNBUFFERED: 1
+      DAGSTER_HOME: /dagster_home
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/backup-dagster-home:/dagster_home
+    healthcheck:
+      test: [CMD, dagster-daemon, liveness-check]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks:
+      - data
+  # ===================================================================
   # AI Model Serving (Local GPU Inference via vLLM)
   # ===================================================================
   # All local model serving requires GPU. CPU setups route through
@@ -1791,8 +1941,8 @@ services:
     container_name: dagster-webserver
     restart: always
     build:
-      context: .
-      dockerfile: ./aihub_pipeline/Dockerfile
+      context: ..
+      dockerfile: ./packages/pipeline/Dockerfile
     depends_on:
       pgbouncer:
         condition: service_healthy
@@ -1830,8 +1980,8 @@ services:
     container_name: dagster-daemon
     restart: always
     build:
-      context: .
-      dockerfile: ./aihub_pipeline/Dockerfile
+      context: ..
+      dockerfile: ./packages/pipeline/Dockerfile
     depends_on:
       pgbouncer:
         condition: service_healthy
@@ -1962,8 +2112,8 @@ services:
     container_name: api
     restart: always
     build:
-      context: .
-      dockerfile: ./aihub_api/Dockerfile
+      context: ..
+      dockerfile: ./packages/api/Dockerfile
     depends_on:
       nats:
         condition: service_started
@@ -2123,7 +2273,7 @@ services:
     container_name: web
     restart: always
     build:
-      context: ./swiss_ai_hub_web/swiss_ai_hub_web
+      context: ../packages/web/swiss_ai_hub_web
       dockerfile: ./Dockerfile
     environment:
       OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
@@ -2184,8 +2334,8 @@ services:
     container_name: llm-wrapping-agent
     restart: always
     build:
-      context: .
-      dockerfile: ./aihub_agent/app/llm_wrapping_agent/Dockerfile
+      context: ..
+      dockerfile: ./packages/agent/app/llm_wrapping_agent/Dockerfile
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -2246,8 +2396,8 @@ services:
     container_name: rag-agent
     restart: always
     build:
-      context: .
-      dockerfile: ./aihub_agent/app/rag_agent/Dockerfile
+      context: ..
+      dockerfile: ./packages/agent/app/rag_agent/Dockerfile
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -2311,8 +2461,8 @@ services:
     container_name: expert-rag-agent
     restart: always
     build:
-      context: .
-      dockerfile: ./aihub_agent/app/expert_rag_agent/Dockerfile
+      context: ..
+      dockerfile: ./packages/agent/app/expert_rag_agent/Dockerfile
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -2366,8 +2516,8 @@ services:
     container_name: expert-asking-agent
     restart: always
     build:
-      context: .
-      dockerfile: ./aihub_agent/app/expert_asking_agent/Dockerfile
+      context: ..
+      dockerfile: ./packages/agent/app/expert_asking_agent/Dockerfile
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -2421,8 +2571,8 @@ services:
     container_name: retrieval-agent
     restart: always
     build:
-      context: .
-      dockerfile: ./aihub_agent/app/retrieval_agent/Dockerfile
+      context: ..
+      dockerfile: ./packages/agent/app/retrieval_agent/Dockerfile
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -2476,8 +2626,8 @@ services:
     container_name: few-shot-agent
     restart: always
     build:
-      context: .
-      dockerfile: ./aihub_agent/app/few_shot_agent/Dockerfile
+      context: ..
+      dockerfile: ./packages/agent/app/few_shot_agent/Dockerfile
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -2523,8 +2673,8 @@ services:
     container_name: namespace-selection-agent
     restart: always
     build:
-      context: .
-      dockerfile: ./aihub_agent/app/namespace_selection_agent/Dockerfile
+      context: ..
+      dockerfile: ./packages/agent/app/namespace_selection_agent/Dockerfile
     environment:
       LOG_LEVEL: ${LOG_LEVEL}
 
@@ -2570,8 +2720,8 @@ services:
     container_name: default-rag-pipeline
     restart: always
     build:
-      context: .
-      dockerfile: ./aihub_pipeline/app/default_rag_pipeline/Dockerfile
+      context: ..
+      dockerfile: ./packages/pipeline/app/default_rag_pipeline/Dockerfile
     environment:
       PYTHONUNBUFFERED: 1
       LOG_LEVEL: ${LOG_LEVEL}
@@ -2639,8 +2789,8 @@ services:
     container_name: shared-rag-pipeline
     restart: always
     build:
-      context: .
-      dockerfile: ./aihub_pipeline/app/shared_rag_pipeline/Dockerfile
+      context: ..
+      dockerfile: ./packages/pipeline/app/shared_rag_pipeline/Dockerfile
     environment:
       PYTHONUNBUFFERED: 1
       LOG_LEVEL: ${LOG_LEVEL}
@@ -2727,8 +2877,8 @@ services:
     container_name: bot
     restart: always
     build:
-      context: .
-      dockerfile: ./aihub_bot/Dockerfile
+      context: ..
+      dockerfile: ./packages/bot/Dockerfile
     depends_on:
       ferretdb:
         condition: service_started

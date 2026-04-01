@@ -1,27 +1,25 @@
 [project]
-name = "swiss-ai-hub-process"
+name = "swiss-ai-hub-backup"
 version = "0.273.1"
-description = "agentic process automation"
+description = "Backup and restore orchestration for AI-Hub data services"
 requires-python = ">=3.13, <3.14"
 authors = [
     { name = "Joel Barmettler", email = "joel.barmettler@bbv.ch" },
     { name = "Marius Högger", email = "marius.hoegger@bbv.ch" },
     { name = "Michèle Fundneider", email = "michele.fundneider@bbv.ch" },
     { name = "Thomas Mannhart", email = "thomas.mannhart@bbv.ch" },
-    { name = "Noah Hermann", email = "noah.hermann@bbv.ch" },
 ]
 license = "Apache-2.0"
 readme = "README.md"
 dependencies = [
-    "swiss-ai-hub-core",
-    "uvicorn[standard]>=0.34.0",
-    "httpx>=0.28.1",
+    "dagster>=1.11.2",
+    "dagster-webserver>=1.11.2",
 ]
 
 [dependency-groups]
 dev = [
-    "swiss-ai-hub-agent",
-    "asgi-lifespan>=2.1.0",
+    "pytest>=8.4.1",
+    "ruff>=0.8.1",
 ]
 
 [build-system]
@@ -30,7 +28,7 @@ build-backend = "uv_build"
 
 [tool.uv.build-backend]
 module-root = ""
-module-name = "swiss_ai_hub.process"
+module-name = "swiss_ai_hub.backup"
 
 [tool.ruff]
 line-length = 120
@@ -39,29 +37,6 @@ target-version = 'py313'
 [tool.ruff.lint]
 select = ["E", "F", "UP", "I"]
 
-[tool.black]
-line-length = 120
-target-version = ['py313']
-include = '\.pyi?$'
-extend-exclude = '''
-/(
-  # directories
-  \.eggs
-  | \.git
-  | \.hg
-  | \.ty
-  | \.tox
-  | \.venv
-  | build
-  | dist
-)/
-'''
-
 [tool.pytest.ini_options]
-markers = [
-    "self_hosted: mark tests that use self hosted services",
-    "slow: mark a test as slow",
-    "integration: mark a test as an integration test",
-    "experimental: mark a test as experimental",
-]
+testpaths = ["tests"]
 addopts = "--strict-markers"

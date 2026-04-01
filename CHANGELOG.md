@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.273.1] - 2026-04-01 - New Automated Backup Service & Improved Build Processes
+
+### Added
+
+- ✨ **Introduced `Backup Service`:** A new Dagster-based service has been added to provide automated database backup
+  orchestration. This initial release establishes the foundational structure for future backup capabilities.
+- 🔒 **Configured Backup Service Authentication:** Integrated Keycloak OAuth2 Proxy for the new `Backup Service`,
+  ensuring secure access and management through a dedicated endpoint (e.g., `backup.<DOMAIN>`).
+- 📦 **Added Docker Image Build Workflow for Backup:** A new GitHub Actions workflow has been established to automate the
+  building and releasing of the `backup` service Docker image.
+- ⚙️ **Integrated Backup Service into Build System:** The new `backup` package is now fully integrated into the
+  project's `Makefile` for testing, linting, formatting, PR readiness checks, and consistent version bumping.
+- 🚀 **Deployed Backup Service via Docker Compose:** The `backup` service, comprising Dagster code server, webserver, and
+  daemon, along with its OAuth2 proxy, is now deployable across all environments via updated Docker Compose
+  configurations.
+- 📄 **Initial Backup Service Documentation:** A `README.md` file has been added to the `backup` package, outlining its
+  purpose as a placeholder for backup and restore orchestration.
+
+### Refactor
+
+- 🧹 **Standardized Docker Build Contexts:** Refined the Dockerfile build contexts for numerous existing services (e.g.,
+  `api`, `web`, `agents`, `pipelines`, `bot`) in the Docker Compose configurations to ensure consistent and correct
+  local image building across the monorepo structure.
+
+______________________________________________________________________
+
 ## [v0.273.0] - 2026-04-01 - Multi-Tenant API Routing & Active Tenant Experience
 
 ### Added
