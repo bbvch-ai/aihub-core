@@ -83,8 +83,8 @@ different behaviors for different access levels, and validating permissions befo
 ## Dynamic Identity Provider Discovery
 
 The login page dynamically discovers available identity providers from Keycloak at runtime. When a user visits the login
-whatpage, the frontend calls `GET /api/v1/{tenant_id}/auth-providers/` — an unauthenticated API endpoint that queries
-the Keycloak Admin API using a dedicated, least-privilege service account (`aihub-api-service`) with only the
+page, the frontend calls `GET /api/v1/{tenant_id}/auth-providers/` — an unauthenticated API endpoint that queries the
+Keycloak Admin API using a dedicated, least-privilege service account (`aihub-api-service`) with only the
 `view-identity-providers` permission.
 
 The API filters the provider list to only include enabled, visible providers and returns their alias, display name, and

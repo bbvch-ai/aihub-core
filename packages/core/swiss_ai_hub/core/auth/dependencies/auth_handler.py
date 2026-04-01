@@ -47,12 +47,18 @@ class AuthHandler(ABC):
         tenant = TenantEntity.get_tenant_by_id(user.active_tenant_id)
         if not tenant:
             UserEntity.objects(id=user_id).update_one(set__active_tenant_id=None)
-            return None
+            raise HTTPException(
+                status_code=400,
+                detail="Your active tenant is no longer accessible. Please select a new tenant.",
+            )
 
         roles = UserTenantRoleEntity.get_roles_for_user_in_tenant(user_id, str(tenant.id))
         if not roles:
             UserEntity.objects(id=user_id).update_one(set__active_tenant_id=None)
-            return None
+            raise HTTPException(
+                status_code=400,
+                detail="Your active tenant is no longer accessible. Please select a new tenant.",
+            )
 
         return tenant
 

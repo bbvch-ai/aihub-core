@@ -72,15 +72,25 @@ Feature: Tenant Resolution in Auth Handler
     Given user "user-1" has active tenant set to "000000000000000000000000"
     And a request with tenant path parameter set to "active"
     When the auth handler resolves tenant for user "user-1" expecting error
-    Then a 400 error should be raised with message "No active tenant set"
+    Then a 400 error should be raised with message "Your active tenant is no longer accessible"
 
   Scenario: Active tenant without membership returns 400 error
     Given user "user-2" has active tenant set to the second tenant
     And a request with tenant path parameter set to "active"
     When the auth handler resolves tenant for user "user-2" expecting error
-    Then a 400 error should be raised with message "No active tenant set"
+    Then a 400 error should be raised with message "Your active tenant is no longer accessible"
 
   Scenario: WebSocket context uses active tenant
     Given user "user-1" has active tenant set to the second tenant
     When the auth handler gets active tenant for user "user-1"
     Then the resolved tenant should be "Acme Corp"
+
+  Scenario: WebSocket with stale active tenant returns 400 error
+    Given user "user-1" has active tenant set to "000000000000000000000000"
+    When the auth handler gets active tenant for user "user-1" expecting error
+    Then a 400 error should be raised with message "Your active tenant is no longer accessible"
+
+  Scenario: WebSocket with revoked tenant membership returns 400 error
+    Given user "user-2" has active tenant set to the second tenant
+    When the auth handler gets active tenant for user "user-2" expecting error
+    Then a 400 error should be raised with message "Your active tenant is no longer accessible"
