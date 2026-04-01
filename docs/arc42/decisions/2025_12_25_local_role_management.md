@@ -99,8 +99,8 @@ removed entirely. Auth handlers are now standalone classes that validate tokens 
 
 ### Multi-Tenancy
 
-- **Tenant context required** - tenant is identified via `{tenant_id}` URL path parameter (see
-  [ADR: Tenant Path Parameter](2026_03_30_tenant_path_parameter.md))
+- **Tenant header optional** - `x-tenant-id` header identifies the tenant context; defaults to default tenant if not
+  provided
 - **User-tenant isolation** - users can have different roles in different tenants
 - **Tenant-scoped roles** - roles can be system-wide (`tenant_id=None`) or tenant-specific (`tenant_id` set)
 - **Tenant membership required** - users must have at least one role in a tenant to access it (enforced during auth
