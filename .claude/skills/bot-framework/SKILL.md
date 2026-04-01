@@ -41,7 +41,7 @@ back to non-streaming (`super().on_message_activity()`).
 ### Request Flow
 
 ```
-1. Azure Bot Service → POST /api/v1/agent/chat/completions/{class}/{id}/json
+1. Azure Bot Service → POST /api/v1/active/agent/chat/completions/{class}/{id}/json
 2. AgentChatController._process_agent_chat_request()
    ├─ RoutesService.get_path(request) → extract URL path
    ├─ bot = AgentChatBot(nc, distributor, agent_class, agent_id, path)

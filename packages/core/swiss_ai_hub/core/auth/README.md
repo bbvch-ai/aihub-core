@@ -28,7 +28,8 @@ The authentication system is built around these main abstractions:
 2. **Token Validation**: Handlers validate tokens against their respective authorities (OAuth2, database tokens, etc.)
 3. **User Resolution**: User data is extracted from token claims (OAuth2) or database lookup (Token auth)
 4. **User Persistence**: User is created or updated in UserEntity via `ensure_user_exists_for_auth()`
-5. **Tenant Resolution**: Tenant context is resolved from `x-tenant-id` header or defaults to default tenant
+5. **Tenant Resolution**: Tenant context is resolved from the `tenant_id` path parameter. The special value `"active"`
+   resolves to the user's persisted active tenant. If no active tenant is set, the request is rejected with a 400 error
 6. **Membership Verification**: User's membership in the tenant is verified via UserTenantRoleEntity
 7. **Identity Creation**: UserIdentity DTO is created with embedded TenantIdentity
 8. **Permission Evaluation**: AccessChecker performs two-stage authorization (tenant + user) based on locally-managed
@@ -133,7 +134,8 @@ The system supports two types of permission checks:
 - **TenantEntity**: Organization/tenant definitions with `access_rules` that define maximum permissions for all users
 - **UserTenantRoleEntity**: Authoritative source for user-tenant-role associations (replaces UserEntity.roles)
 - **RoleEntity**: Role definitions with access rules, can be system-wide (`tenant_id=None`) or tenant-scoped
-- **TenantIdentity**: Resolved from `x-tenant-id` HTTP header, or defaults to default tenant if header absent
+- **TenantIdentity**: Resolved from `tenant_id` path parameter. No implicit fallback — an active tenant must be
+  explicitly set
 - First user signup automatically gets admin roles in default tenant (configurable via UserSignupSettings)
 
 ## Key Features

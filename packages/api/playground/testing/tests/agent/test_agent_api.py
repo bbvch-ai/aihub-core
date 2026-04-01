@@ -31,7 +31,9 @@ async def agent_api_client():
     async with LifespanManager(app) as lifespan:
         runner.create_agent_config_in_db()
 
-        async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url="http://test/api/v1") as client:
+        async with AsyncClient(
+            transport=ASGITransport(app=lifespan.app), base_url="http://test/api/v1/active"
+        ) as client:
             yield client
 
 

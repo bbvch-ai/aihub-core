@@ -51,6 +51,6 @@ class TokenAuthHandler(BearerAuthHandler):
             tenant = self.resolve_tenant_for_user(request, user.id)
         else:
             # Fallback for contexts without request (e.g., WebSocket)
-            tenant = self.get_default_tenant_for_user(user.id)
+            tenant = self.get_active_tenant_for_user(user.id)
 
         return UserIdentity.from_user_entity(user, tenant)

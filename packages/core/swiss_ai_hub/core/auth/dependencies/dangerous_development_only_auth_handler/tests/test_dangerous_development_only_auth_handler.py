@@ -81,7 +81,7 @@ def mock_database_operations(monkeypatch: pytest.MonkeyPatch):
         "swiss_ai_hub.core.auth.dependencies.auth_handler.AuthHandler.resolve_tenant_for_user", mock_resolve_tenant
     )
     monkeypatch.setattr(
-        "swiss_ai_hub.core.auth.dependencies.auth_handler.AuthHandler.get_default_tenant_for_user", mock_resolve_tenant
+        "swiss_ai_hub.core.auth.dependencies.auth_handler.AuthHandler.get_active_tenant_for_user", mock_resolve_tenant
     )
 
 

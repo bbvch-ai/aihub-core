@@ -65,13 +65,13 @@ Dynamic endpoints are enabled automatically when you start the Swiss AI Hub with
 For each discovered agent, the system creates endpoints following this pattern:
 
 ```
-POST /api/v1/agents/{agent_class}/{agent_id}/{event_name}
+POST /api/v1/{tenant_id}/agents/{agent_class}/{agent_id}/{event_name}
 ```
 
 **Example**: An agent with class `rag_agent` and ID `customer_support` that accepts `UserMessageEvent` would get:
 
 ```
-POST /api/v1/agents/rag_agent/customer_support/user_message_event
+POST /api/v1/{tenant_id}/agents/rag_agent/customer_support/user_message_event
 ```
 
 ## Process Endpoint Generation
@@ -79,10 +79,10 @@ POST /api/v1/agents/rag_agent/customer_support/user_message_event
 For each discovered process, the system creates endpoints based on the process definition:
 
 ```
-GET  /api/v1/processes/{process_class}/{process_id}/{route}         # Get form
-POST /api/v1/processes/{process_class}/{process_id}/{route}         # Submit form
-GET  /api/v1/processes/{process_class}/{process_id}/{walkthrough_id}/{route}  # Continue process
-POST /api/v1/processes/{process_class}/{process_id}/{walkthrough_id}/{route}  # Submit continuation
+GET  /api/v1/{tenant_id}/processes/{process_class}/{process_id}/{route}         # Get form
+POST /api/v1/{tenant_id}/processes/{process_class}/{process_id}/{route}         # Submit form
+GET  /api/v1/{tenant_id}/processes/{process_class}/{process_id}/{walkthrough_id}/{route}  # Continue process
+POST /api/v1/{tenant_id}/processes/{process_class}/{process_id}/{walkthrough_id}/{route}  # Submit continuation
 ```
 
 ## Available Capabilities
@@ -116,7 +116,7 @@ To begin using dynamic endpoints in your Swiss AI Hub:
 
 1. **Start the Infrastructure**: Ensure NATS and the API gateway are running with the standard Docker Compose setup
 2. **Deploy Agents/Processes**: Any agent or process that connects to NATS will automatically get endpoints
-3. **Discover Endpoints**: Check `/api/v1/docs` to see all dynamically generated endpoints
+3. **Discover Endpoints**: Check `/api/v1/active/docs` to see all dynamically generated endpoints
 4. **Integrate**: Use the standard REST endpoints to integrate with external systems or build custom frontends
 
 The dynamic endpoint system transforms the Swiss AI Hub from a static API into a living, adaptive integration layer that

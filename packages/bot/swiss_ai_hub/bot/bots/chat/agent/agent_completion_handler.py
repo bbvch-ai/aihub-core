@@ -140,7 +140,7 @@ class AgentCompletionHandler(CompletionHandler):
             AgentCompletionHandler._message_to_chat_message(message) for message in persisted_messages
         ]
         user_entity = UserEntity.by_email(turn_context.activity.from_property.name)
-        tenant = AuthHandler.get_default_tenant_for_user(user_entity.id)
+        tenant = AuthHandler.get_active_tenant_for_user(user_entity.id)
         user = UserIdentity.from_user_entity(user_entity, tenant)
         if stream:
             return await ChatService.start_stream_chat_interaction(

@@ -11,7 +11,7 @@ from swiss_ai_hub.api.routes.auth_provider.auth_provider_service import AuthProv
 from swiss_ai_hub.api.routes.auth_provider.dto.auth_provider_response import AuthProviderResponse
 from swiss_ai_hub.api.runners.api_test_runner import ApiTestRunner
 
-BASE_ENDPOINT = "/api/v1/auth-providers"
+BASE_ENDPOINT = "/api/v1/active/auth-providers"
 
 
 @pytest.fixture

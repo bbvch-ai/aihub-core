@@ -77,10 +77,16 @@ def cleanup_document() -> Generator[list[Any]]:
         doc.delete()
 
 
-def create_dummy_request(headers: dict[str, str]) -> Request:
+def create_dummy_request(headers: dict[str, str], path_params: dict[str, str] | None = None) -> Request:
     """Create and return a dummy FastAPI Request with the given headers."""
     headers_list = [(k.lower().encode("utf8"), v.encode("utf8")) for k, v in headers.items()]
-    scope: dict[str, Any] = {"type": "http", "headers": headers_list, "method": "GET", "path": "/"}
+    scope: dict[str, Any] = {
+        "type": "http",
+        "headers": headers_list,
+        "method": "GET",
+        "path": "/",
+        "path_params": path_params or {},
+    }
     return Request(scope)
 
 
@@ -120,6 +126,7 @@ def insert_token_document(
             validate_roles=False,
         )
         cleanup_document.append(user_tenant_role)
+        token_context["tenant_id"] = str(default_tenant.id)
 
     expiry = datetime.now(UTC) + timedelta(hours=1)
     token_doc = BearerToken.create_new_token(
@@ -183,7 +190,8 @@ async def invoke_token_auth_handler(token_context: dict[str, Any], token_context
     """Invoke the TokenAuthHandler with the token and store the authenticated user."""
     token_str = token_context["token_str"]
     headers = {"Authorization": f"Bearer {token_str}"}
-    request = create_dummy_request(headers)
+    path_params = {"tenant_id": token_context["tenant_id"]} if "tenant_id" in token_context else None
+    request = create_dummy_request(headers, path_params=path_params)
     handler = TokenAuthHandler()
     try:
         security = await HTTPBearer()(request)

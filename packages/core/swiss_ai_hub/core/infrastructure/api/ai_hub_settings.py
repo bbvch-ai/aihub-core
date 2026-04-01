@@ -34,7 +34,7 @@ class AIHubSettings(EnvironmentSettings):
             pattern=r"^https?://.*$",
             description="Base URL of AI-Hub's OpenAI-compatible endpoint, used for Langfuse LLM connection",
         ),
-    ] = "http://api:8000/api/v1/openai"
+    ] = "http://api:8000/api/v1/active/openai"
 
     FRONTEND_ORIGIN: Annotated[str, Field(description="Comma separated list of origins to allow CORS")]
 

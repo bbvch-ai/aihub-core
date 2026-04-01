@@ -76,7 +76,7 @@ def setup_test_credentials():
 
     # Create test user (looked up via from_property.name in AgentCompletionHandler)
     UserEntity.objects(email=USER_EMAIL).delete()
-    UserEntity.create_user(oid="test_user_oid", name="Test User", email=USER_EMAIL)
+    UserEntity.create_user(oid="test_user_oid", name="Test User", email=USER_EMAIL, active_tenant_id=tenant_id)
 
     # Assign user to default tenant with admin role
     UserTenantRoleEntity.create_or_update(

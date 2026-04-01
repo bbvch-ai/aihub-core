@@ -273,7 +273,7 @@ ______________________________________________________________________
 1. Check if API is accessible:
 
 ```bash
-curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/api/v1/openapi.json
+curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/api/v1/active/openapi.json
 ```
 
 2. If accessible, compare OpenAPI spec endpoints with `packages/web/swiss_ai_hub_web/sdk/client/sdk.gen.ts`:

@@ -107,6 +107,7 @@ const breadcrumbItems = computed(() => {
 
 getHealth({
   composable: '$fetch',
+  baseURL: '/api/v1',
 })
   .then((response) => {
     online.value = response.code == 200

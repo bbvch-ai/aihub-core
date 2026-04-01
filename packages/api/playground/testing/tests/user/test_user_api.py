@@ -15,7 +15,7 @@ from swiss_ai_hub.api.routes.my_account.my_account_controller import MyAccountCo
 from swiss_ai_hub.api.runners.api_test_runner import ApiTestRunner
 
 BASE_URL = "http://test"
-USER_ENDPOINT = "/api/v1/my-account"
+USER_ENDPOINT = "/api/v1/active/my-account"
 EXPECTED_USER_FIELDS = ["id", "name", "email"]
 
 

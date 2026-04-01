@@ -17,7 +17,7 @@ Architecture:
 - EventHandler chain processes different AI-Hub event types
 - StreamingStateManager maintains content block state
 - ContentBlock hierarchy (TextBlock, ThinkingBlock, ToolBlock)
-- SSE streaming to /api/v1/agents/classes/{class}/instances/{id}/{event}/stream endpoints
+- SSE streaming to /api/v1/active/agents/classes/{class}/instances/{id}/{event}/stream endpoints
 """
 
 import asyncio
@@ -1072,7 +1072,7 @@ class StreamingService:
         display_id: Annotated[str, "Display identifier"],
     ) -> Annotated[str, "Complete streaming endpoint URL"]:
         """Build streaming endpoint URL"""
-        url = f"{self._base_url}/api/v1/agents/classes/{agent_class}/instances/{agent_id}/{event_name}/stream"
+        url = f"{self._base_url}/api/v1/active/agents/classes/{agent_class}/instances/{agent_id}/{event_name}/stream"
         url += f"?thread_id={thread_id}&display_id={display_id}"
         return url
 
@@ -1341,7 +1341,7 @@ class AgentDiscoveryService:
             }
 
             async with httpx.AsyncClient(timeout=self._timeout, follow_redirects=True) as client:
-                response = await client.get(f"{self._base_url}/api/v1/agents/instances", headers=headers)
+                response = await client.get(f"{self._base_url}/api/v1/active/agents/instances", headers=headers)
                 response.raise_for_status()
                 agents = response.json()
 
@@ -1456,7 +1456,7 @@ class FileProcessingService:
         async with httpx.AsyncClient(timeout=30.0) as client:
             # Step 1: Initiate upload — get presigned URL + file_id
             initiate_url = (
-                f"{self._base_url}/api/v1/agents/classes/{agent_class}/instances/{agent_id}/files/upload/initiate"
+                f"{self._base_url}/api/v1/active/agents/classes/{agent_class}/instances/{agent_id}/files/upload/initiate"
             )
             initiate_resp = await client.post(
                 initiate_url,
@@ -1479,7 +1479,7 @@ class FileProcessingService:
 
             # Step 3: Validate upload
             validate_url = (
-                f"{self._base_url}/api/v1/agents/classes/{agent_class}/instances/{agent_id}/files/upload/validate"
+                f"{self._base_url}/api/v1/active/agents/classes/{agent_class}/instances/{agent_id}/files/upload/validate"
             )
             validate_resp = await client.post(
                 validate_url,
@@ -1668,7 +1668,7 @@ class Pipe:
         try:
             async with httpx.AsyncClient(timeout=self.valves.AIHUB_REQUEST_TIMEOUT) as client:
                 response = await client.get(
-                    f"{self.valves.AIHUB_BASE_URL}/api/v1/threads/{thread_id}/open-chat-hitl",
+                    f"{self.valves.AIHUB_BASE_URL}/api/v1/active/threads/{thread_id}/open-chat-hitl",
                     headers=headers,
                 )
                 if response.status_code == 200:
