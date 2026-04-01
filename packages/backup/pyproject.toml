@@ -14,6 +14,8 @@ readme = "README.md"
 dependencies = [
     "dagster>=1.11.2",
     "dagster-webserver>=1.11.2",
+    "docker>=7.0",
+    "pydantic>=2.10.3",
 ]
 
 [dependency-groups]
