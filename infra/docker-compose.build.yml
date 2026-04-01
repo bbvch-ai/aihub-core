@@ -1046,6 +1046,46 @@ services:
         max-size: 10m
         max-file: 2
     networks: [data]
+  oauth2proxy-backup:
+    container_name: oauth2proxy-backup
+    image: ghcr.io/bbvch-ai/bbvch-ai/oauth2-proxy:latest
+    restart: always
+    environment:
+      OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4180
+      OAUTH2_PROXY_COOKIE_SECURE: false
+      OAUTH2_PROXY_CODE_CHALLENGE_METHOD: S256
+      OAUTH2_PROXY_UPSTREAMS: http://backup-webserver:3000
+      OAUTH2_PROXY_CLIENT_ID: oauth2-proxy-backup
+      OAUTH2_PROXY_PROVIDER: oidc
+      OAUTH2_PROXY_PROVIDER_DISPLAY_NAME: ${OAUTH_PROVIDER_NAME}
+      OAUTH2_PROXY_SKIP_OIDC_DISCOVERY: 'true'
+      OAUTH2_PROXY_OIDC_ISSUER_URL: https://auth.${DOMAIN}/realms/aihub
+      OAUTH2_PROXY_LOGIN_URL: https://auth.${DOMAIN}/realms/aihub/protocol/openid-connect/auth
+      OAUTH2_PROXY_REDEEM_URL: http://keycloak:8080/realms/aihub/protocol/openid-connect/token
+      OAUTH2_PROXY_OIDC_JWKS_URL: http://keycloak:8080/realms/aihub/protocol/openid-connect/certs
+      OAUTH2_PROXY_COOKIE_SECRET: ${OAUTH_COOKIE_SECRET_BACKUP}
+      OAUTH2_PROXY_CLIENT_SECRET: ${KEYCLOAK_OAUTH2_PROXY_BACKUP_SECRET}
+      OAUTH2_PROXY_EMAIL_DOMAINS: '*'
+      OAUTH2_PROXY_REVERSE_PROXY: true
+      OAUTH2_PROXY_REDIRECT_URL: https://backup.${DOMAIN}
+      OAUTH2_PROXY_SCOPE: openid email profile roles
+      OAUTH2_PROXY_ALLOWED_GROUPS: ${OAUTH_ALLOWED_GROUPS_BACKUP}
+      OAUTH2_PROXY_OIDC_GROUPS_CLAIM: roles
+      OAUTH2_PROXY_CUSTOM_SIGN_IN_LOGO: ${OAUTH_CUSTOM_SIGN_IN_LOGO}
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=proxy
+      - traefik.http.routers.backup.rule=Host(`backup.${DOMAIN}`)
+      - traefik.http.routers.backup.entrypoints=websecure
+      - traefik.http.routers.backup.middlewares=security-headers@file
+      - traefik.http.services.backup.loadbalancer.server.port=4180
+      - traefik.http.routers.backup.tls=true
+    networks: [proxy, backend]
   backup-webserver:
     container_name: backup-webserver
     build:
