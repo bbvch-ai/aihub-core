@@ -19,6 +19,7 @@ aihub_*/.idea/
 .mypy_cache/
 .ty/
 .venv
+.idea/*.iml
 
 # Claude Code local overrides (personal preferences, not shared)
 CLAUDE.local.md
