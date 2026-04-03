@@ -3,8 +3,7 @@ from dagster import AssetKey, Definitions
 from swiss_ai_hub.backup.dagster.assets.backup_finalize_factory import backup_finalize_factory
 from swiss_ai_hub.backup.dagster.assets.backup_session_factory import backup_session_factory
 from swiss_ai_hub.backup.dagster.jobs.factory import backup_asset_job
-from swiss_ai_hub.backup.dagster.resources.ContainerDiscoveryResource import ContainerDiscoveryResource
-from swiss_ai_hub.backup.dagster.resources.DockerManagerResource import DockerManagerResource
+from swiss_ai_hub.backup.dagster.resources.container_discovery_resource import ContainerDiscoveryResource
 
 
 def backup_definitions() -> Definitions:
@@ -18,7 +17,6 @@ def backup_definitions() -> Definitions:
     job = backup_asset_job(backup_assets)
 
     resources: dict[str, object] = {
-        "docker_manager": DockerManagerResource(),
         "container_discovery": ContainerDiscoveryResource(),
     }
 
