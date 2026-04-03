@@ -31,7 +31,7 @@ class TestDistributedLocking:
         mock_lock = _make_lock(acquired=True)
         mock_redis.lock.return_value = mock_lock
 
-        with patch.object(provisioner, "_sync_workspace_models"):
+        with patch.object(provisioner, "_sync_workspace_models", return_value=(0, 0)):
             await provisioner.sync_agents([_RAG_AGENT])
             mock_lock.release.assert_awaited_once()
 

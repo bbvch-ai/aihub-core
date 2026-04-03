@@ -237,6 +237,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
             return True
         except Exception as e:
             logger.warning("OpenWebUI agent sync failed (non-fatal): %s", e)
+            logger.debug("OpenWebUI sync error details", exc_info=True)
             return False
 
     def _register_class_endpoints(

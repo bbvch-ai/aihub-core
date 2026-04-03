@@ -44,9 +44,9 @@ class OpenWebuiProvisioner:
             if not acquired:
                 return
             async with httpx.AsyncClient(timeout=30.0) as http:
-                await self._sync_workspace_models(http, online_agents)
+                created, deleted = await self._sync_workspace_models(http, online_agents)
 
-            logger.info("OpenWebUI sync: Updated %d agent workspace models", len(online_agents))
+            logger.info("OpenWebUI sync: created %d, deleted %d workspace models", created, deleted)
 
     # ------------------------------------------------------------------
     # Workspace model sync
@@ -76,7 +76,9 @@ class OpenWebuiProvisioner:
         to_delete = existing_model_ids - desired_ids
         return to_create, to_delete
 
-    async def _sync_workspace_models(self, http: httpx.AsyncClient, online_agents: list[OnlineAgent]) -> None:
+    async def _sync_workspace_models(
+        self, http: httpx.AsyncClient, online_agents: list[OnlineAgent]
+    ) -> tuple[int, int]:
         existing_models = await self._openwebui.list_models(http)
         existing_aihub = {m["id"] for m in existing_models if m.get("id", "").startswith(AIHUB_MODEL_PREFIX)}
 
@@ -95,3 +97,5 @@ class OpenWebuiProvisioner:
         for model_id in to_delete:
             await self._openwebui.delete_model(http, model_id)
             logger.info("OpenWebUI: Deleted workspace model '%s'", model_id)
+
+        return len(to_create), len(to_delete)

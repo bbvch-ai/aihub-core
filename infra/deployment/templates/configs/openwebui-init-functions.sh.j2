@@ -165,17 +165,23 @@ create_service_account() {
 
     log "Creating AI-Hub service account admin..."
 
-    run_sql -c "
+    run_sql \
+        -v svc_id="${SERVICE_ACCOUNT_ID}" \
+        -v svc_name="${SERVICE_ACCOUNT_NAME}" \
+        -v svc_email="${SERVICE_ACCOUNT_EMAIL}" \
+        -v svc_password="${SERVICE_ACCOUNT_PASSWORD}" \
+        -v svc_timestamp="${TIMESTAMP}" \
+        -c "
         INSERT INTO \"user\" (id, name, email, role, profile_image_url, created_at, updated_at, last_active_at)
         VALUES (
-            '${SERVICE_ACCOUNT_ID}',
-            '${SERVICE_ACCOUNT_NAME}',
-            '${SERVICE_ACCOUNT_EMAIL}',
+            :'svc_id',
+            :'svc_name',
+            :'svc_email',
             'admin',
             '/user.png',
-            ${TIMESTAMP},
-            ${TIMESTAMP},
-            ${TIMESTAMP}
+            :'svc_timestamp'::bigint,
+            :'svc_timestamp'::bigint,
+            :'svc_timestamp'::bigint
         )
         ON CONFLICT (id) DO UPDATE SET
             name = EXCLUDED.name,
@@ -185,9 +191,9 @@ create_service_account() {
 
         INSERT INTO auth (id, email, password, active)
         VALUES (
-            '${SERVICE_ACCOUNT_ID}',
-            '${SERVICE_ACCOUNT_EMAIL}',
-            '${SERVICE_ACCOUNT_PASSWORD}',
+            :'svc_id',
+            :'svc_email',
+            :'svc_password',
             true
         )
         ON CONFLICT DO NOTHING;
