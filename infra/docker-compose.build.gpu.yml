@@ -1026,6 +1026,7 @@ services:
       DAGSTER_HOME: /dagster_home
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/backup-dagster-home:/dagster_home
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     healthcheck:
       test:
         - CMD

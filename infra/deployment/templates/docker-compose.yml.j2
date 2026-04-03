@@ -1214,6 +1214,7 @@ services:
       DAGSTER_HOME: /dagster_home
     volumes:
       - {{ global.volume_root }}/backup-dagster-home:/dagster_home
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     healthcheck:
       test: ["CMD", "dagster", "api", "grpc-health-check", "--host", "localhost", "--port", "4266"]
       interval: 30s
