@@ -5,4 +5,4 @@ from swiss_ai_hub.backup.container_discovery import ContainerDiscovery
 
 class ContainerDiscoveryResource(ConfigurableResource[ContainerDiscovery]):
     def create_resource(self, context: InitResourceContext) -> ContainerDiscovery:
-        return ContainerDiscovery()
+        return ContainerDiscovery(log=context.log)

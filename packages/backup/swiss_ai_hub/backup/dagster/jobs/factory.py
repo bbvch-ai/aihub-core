@@ -19,9 +19,8 @@ def restart_on_failure(context: HookContext) -> None:
     is lost. Safety-first: over-starting is harmless, leaving services down is not.
     """
     context.log.warning("Backup failed — restarting all managed containers as safety measure")
-    discovery = ContainerDiscovery()
+    discovery = ContainerDiscovery(log=context.log)
     all_managed = discovery.discover_managed_containers()
-    context.log.info("Restarting %d managed containers...", len(all_managed))
     discovery.start_all(all_managed)
     context.log.info("All containers restarted after failure recovery")
 
