@@ -1,7 +1,7 @@
 from dagster import AssetExecutionContext, AssetIn, AssetKey, AssetsDefinition, ResourceParam, asset
 
 from swiss_ai_hub.backup.container_discovery import ContainerDiscovery
-from swiss_ai_hub.backup.dagster.ops.types import BackupContext
+from swiss_ai_hub.backup.dagster.types import BackupContext
 
 
 def backup_finalize_factory(

@@ -65,7 +65,12 @@ class ContainerDiscovery:
         with ThreadPoolExecutor(max_workers=len(to_stop) or 1) as pool:
             futures = {pool.submit(_stop, name, c): name for name, c in to_stop}
             for future in as_completed(futures):
-                previously_running.append(future.result())
+                name = futures[future]
+                try:
+                    previously_running.append(future.result())
+                except Exception:
+                    logger.exception("Failed to stop container %s", name)
+                    previously_running.append(name)
 
         logger.info("Stopped %d containers", len(previously_running))
         return previously_running

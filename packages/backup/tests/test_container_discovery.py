@@ -126,6 +126,20 @@ def test_detect_project_raises_when_container_not_found() -> None:
             ContainerDiscovery()
 
 
+def test_stop_all_managed_handles_stop_failure(discovery: ContainerDiscovery) -> None:
+    healthy = _mock_container("api", status="running")
+    failing = _mock_container("web", status="running")
+    failing.stop.side_effect = RuntimeError("Docker API timeout")
+
+    discovery._client.containers.list.return_value = [healthy, failing]
+
+    previously_running = discovery.stop_all_managed()
+
+    assert sorted(previously_running) == ["api", "web"]
+    healthy.stop.assert_called_once_with(timeout=30)
+    failing.stop.assert_called_once_with(timeout=30)
+
+
 def test_is_excluded() -> None:
     assert ContainerDiscovery._is_excluded("backup-code") is True
     assert ContainerDiscovery._is_excluded("backup-daemon") is True
