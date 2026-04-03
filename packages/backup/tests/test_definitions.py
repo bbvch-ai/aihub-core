@@ -1,5 +1,3 @@
-from dagster import AssetKey
-
 from swiss_ai_hub.backup.dagster.definitions import backup_definitions
 
 

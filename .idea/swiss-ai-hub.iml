@@ -8,6 +8,7 @@
       <sourceFolder url="file://$MODULE_DIR$/packages/core" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/packages/pipeline" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/packages/process" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/packages/backup" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/packages/web/swiss_ai_hub_web/.app/.output" />
       <excludeFolder url="file://$MODULE_DIR$/packages/web/swiss_ai_hub_web/.playground/.output" />
       <excludeFolder url="file://$MODULE_DIR$/local-volumes" />
