@@ -51,6 +51,7 @@ class ContainerDiscovery:
                 continue
             if container.status == "running":
                 previously_running.append(name)
+                logger.info("Stopping: %s (timeout=30s)...", name)
                 container.stop(timeout=30)
                 logger.info("Stopped: %s", name)
 
