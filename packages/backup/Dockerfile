@@ -24,8 +24,6 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 ENV DAGSTER_HOME=/dagster_home \
     PATH="/app/.venv/bin:$PATH"
-RUN mkdir -p /dagster_home
-
-COPY packages/backup/workspace.yaml /etc/dagster/workspace.yaml
+RUN mkdir -p /dagster_home /etc/dagster
 
 EXPOSE 4266

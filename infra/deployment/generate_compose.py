@@ -35,6 +35,8 @@ CONFIG_SPECS = [
     ("templates/configs/nats-config.conf.j2", "configs/nats", "nats-config.{stage}{hardware}.conf"),
     ("templates/configs/dagster-config.yml.j2", "configs/dagster", "dagster-config.{stage}{hardware}.yml"),
     ("templates/configs/workspace.yml.j2", "configs/dagster", "workspace.{stage}{hardware}.yml"),
+    ("templates/configs/backup-dagster.yml.j2", "configs/backup", "backup-dagster.{stage}{hardware}.yml"),
+    ("templates/configs/backup-workspace.yml.j2", "configs/backup", "backup-workspace.{stage}{hardware}.yml"),
     ("templates/configs/otel-config.yml.j2", "configs/otel", "otel-config.{stage}{hardware}.yml"),
     ("templates/configs/traefik-config.yml.j2", "configs/traefik", "traefik-config.{stage}{hardware}.yml"),
     ("templates/configs/traefik-middlewares.yml.j2", "configs/traefik", "middlewares.{stage}{hardware}.yml"),

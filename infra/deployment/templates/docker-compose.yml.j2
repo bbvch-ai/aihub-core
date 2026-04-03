@@ -1214,7 +1214,7 @@ services:
       DAGSTER_HOME: /dagster_home
     volumes:
       - {{ global.volume_root }}/backup-dagster-home:/dagster_home
-      - ../packages/backup/dagster.yaml:/dagster_home/dagster.yaml:ro
+      - ./configs/backup/backup-dagster{{ config_variant_suffix }}.yml:/dagster_home/dagster.yaml:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
     healthcheck:
       test: ["CMD", "dagster", "api", "grpc-health-check", "--host", "localhost", "--port", "4266"]
@@ -1309,7 +1309,8 @@ services:
       DAGSTER_HOME: /dagster_home
     volumes:
       - {{ global.volume_root }}/backup-dagster-home:/dagster_home
-      - ../packages/backup/dagster.yaml:/dagster_home/dagster.yaml:ro
+      - ./configs/backup/backup-dagster{{ config_variant_suffix }}.yml:/dagster_home/dagster.yaml:ro
+      - ./configs/backup/backup-workspace{{ config_variant_suffix }}.yml:/etc/dagster/workspace.yaml:ro
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/server_info"]
       interval: 30s
@@ -1348,7 +1349,8 @@ services:
       DAGSTER_HOME: /dagster_home
     volumes:
       - {{ global.volume_root }}/backup-dagster-home:/dagster_home
-      - ../packages/backup/dagster.yaml:/dagster_home/dagster.yaml:ro
+      - ./configs/backup/backup-dagster{{ config_variant_suffix }}.yml:/dagster_home/dagster.yaml:ro
+      - ./configs/backup/backup-workspace{{ config_variant_suffix }}.yml:/etc/dagster/workspace.yaml:ro
     healthcheck:
       test: ["CMD", "dagster-daemon", "liveness-check"]
       interval: 30s

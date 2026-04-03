@@ -1,0 +1,10 @@
+# ===================================================================
+# Backup Dagster Configuration - Stage: nightly
+# ===================================================================
+# Generated from template. Do not edit directly.
+# ===================================================================
+
+python_logs:
+  python_log_level: INFO
+  managed_python_loggers:
+    - swiss_ai_hub

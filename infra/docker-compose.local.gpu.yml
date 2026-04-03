@@ -1023,7 +1023,7 @@ services:
       DAGSTER_HOME: /dagster_home
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/backup-dagster-home:/dagster_home
-      - ../packages/backup/dagster.yaml:/dagster_home/dagster.yaml:ro
+      - ./configs/backup/backup-dagster.local.gpu.yml:/dagster_home/dagster.yaml:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
     healthcheck:
       test:
@@ -1106,7 +1106,8 @@ services:
       DAGSTER_HOME: /dagster_home
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/backup-dagster-home:/dagster_home
-      - ../packages/backup/dagster.yaml:/dagster_home/dagster.yaml:ro
+      - ./configs/backup/backup-dagster.local.gpu.yml:/dagster_home/dagster.yaml:ro
+      - ./configs/backup/backup-workspace.local.gpu.yml:/etc/dagster/workspace.yaml:ro
     healthcheck:
       test: [CMD, curl, -f, http://localhost:3000/server_info]
       interval: 30s
@@ -1132,7 +1133,8 @@ services:
       DAGSTER_HOME: /dagster_home
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/backup-dagster-home:/dagster_home
-      - ../packages/backup/dagster.yaml:/dagster_home/dagster.yaml:ro
+      - ./configs/backup/backup-dagster.local.gpu.yml:/dagster_home/dagster.yaml:ro
+      - ./configs/backup/backup-workspace.local.gpu.yml:/etc/dagster/workspace.yaml:ro
     healthcheck:
       test: [CMD, dagster-daemon, liveness-check]
       interval: 30s
