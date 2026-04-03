@@ -1,5 +1,6 @@
 import logging
 import socket
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import docker
 from docker.errors import NotFound
@@ -39,34 +40,46 @@ class ContainerDiscovery:
         return managed
 
     def stop_all_managed(self) -> list[str]:
-        """Stop all managed containers, return names of those that were running."""
+        """Stop all managed containers in parallel, return names of those that were running."""
         containers = self._client.containers.list(
             all=True,
             filters={"label": f"{self.PROJECT_LABEL}={self._project}"},
         )
-        previously_running: list[str] = []
+        to_stop: list[tuple[str, Container]] = []
         for container in containers:
             name = container.name
             if not name or self._is_excluded(name):
                 continue
             if container.status == "running":
-                previously_running.append(name)
-                logger.info("Stopping: %s (timeout=30s)...", name)
-                container.stop(timeout=30)
-                logger.info("Stopped: %s", name)
+                to_stop.append((name, container))
+
+        logger.info("Stopping %d containers in parallel...", len(to_stop))
+
+        def _stop(name: str, container: Container) -> str:
+            logger.info("Stopping: %s (timeout=30s)...", name)
+            container.stop(timeout=30)
+            logger.info("Stopped: %s", name)
+            return name
+
+        previously_running: list[str] = []
+        with ThreadPoolExecutor(max_workers=len(to_stop) or 1) as pool:
+            futures = {pool.submit(_stop, name, c): name for name, c in to_stop}
+            for future in as_completed(futures):
+                previously_running.append(future.result())
 
         logger.info("Stopped %d containers", len(previously_running))
         return previously_running
 
-    def start_all(self, containers: list[str]) -> None:
-        """Start all named containers (best-effort, no dependency ordering).
+    def start_all(self, container_names: list[str]) -> None:
+        """Start all named containers in parallel (best-effort, no dependency ordering).
 
         Docker Compose ``restart: always/unless-stopped`` policies ensure
         services that crash on first start (because a dependency isn't ready
         yet) will be automatically restarted until they converge.
         """
-        logger.info("Restarting %d containers...", len(containers))
-        for name in containers:
+        logger.info("Starting %d containers in parallel...", len(container_names))
+
+        def _start(name: str) -> None:
             try:
                 container: Container = self._client.containers.get(name)
                 if container.status != "running":
@@ -74,7 +87,10 @@ class ContainerDiscovery:
                     container.start()
                     logger.info("Started: %s", name)
             except NotFound:
-                logger.warning("Container %s no longer exists, skipping restart", name)
+                logger.warning("Container %s no longer exists, skipping", name)
+
+        with ThreadPoolExecutor(max_workers=len(container_names) or 1) as pool:
+            list(pool.map(_start, container_names))
 
     def _detect_project(self) -> str:
         hostname = socket.gethostname()
