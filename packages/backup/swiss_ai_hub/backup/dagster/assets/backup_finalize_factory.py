@@ -19,7 +19,12 @@ def backup_finalize_factory(
         session: BackupContext,
         container_discovery: ResourceParam[ContainerDiscovery],
     ) -> None:
+        context.log.info(
+            "Restarting %d previously running containers...",
+            len(session.previously_running),
+        )
         container_discovery.start_all(session.previously_running)
+        context.log.info("All containers restarted")
 
         context.add_output_metadata(
             {"containers_restarted": len(session.previously_running)},

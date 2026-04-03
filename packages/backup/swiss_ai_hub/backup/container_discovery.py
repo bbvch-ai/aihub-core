@@ -70,6 +70,7 @@ class ContainerDiscovery:
             try:
                 container: Container = self._client.containers.get(name)
                 if container.status != "running":
+                    logger.info("Starting: %s...", name)
                     container.start()
                     logger.info("Started: %s", name)
             except NotFound:
@@ -77,6 +78,7 @@ class ContainerDiscovery:
 
     def _detect_project(self) -> str:
         hostname = socket.gethostname()
+        logger.info("Detecting compose project from hostname: %s", hostname)
         try:
             self_container: Container = self._client.containers.get(hostname)
             project: str = self_container.labels.get(self.PROJECT_LABEL, "")
