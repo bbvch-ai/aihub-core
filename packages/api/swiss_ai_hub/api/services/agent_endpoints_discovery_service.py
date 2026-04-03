@@ -64,7 +64,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
     """
 
     _AGENTS_HASH_KEY = "discovery:agents:hash"
-    _AGENTS_HASH_TTL = 3600
+    _AGENTS_HASH_TTL = 3600  # Expires after 1h to force a full re-sync as a self-healing mechanism
 
     def __init__(
         self,

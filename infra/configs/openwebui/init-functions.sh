@@ -151,7 +151,13 @@ SQLFOOTER
     fi
 }
 
-# Create AI-Hub service account for API access (JWT-authenticated model management)
+# Create AI-Hub service account for API access (JWT-authenticated model management).
+#
+# SQL injection safety:
+#   - SERVICE_ACCOUNT_ID is regex-validated to [0-9a-fA-F-] (UUID format) before use
+#   - SERVICE_ACCOUNT_NAME and SERVICE_ACCOUNT_EMAIL are hardcoded constants
+#   - SERVICE_ACCOUNT_PASSWORD is machine-generated (openssl rand), single-quote escaped via sed
+#   - psql -v variable binding was attempted but reverted (see commit 1bd48ff6)
 create_service_account() {
     SERVICE_ACCOUNT_ID="${OPENWEBUI_SERVICE_ACCOUNT_ID}"
     if ! echo "${SERVICE_ACCOUNT_ID}" | grep -qE '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'; then
@@ -165,6 +171,9 @@ create_service_account() {
 
     log "Creating AI-Hub service account admin..."
 
+    # The service account MUST be admin to manage workspace models via the OpenWebUI API.
+    # ON CONFLICT resets role to admin even if manually demoted, ensuring the sync pipeline
+    # always has sufficient privileges on every container restart.
     run_sql -c "
         INSERT INTO \"user\" (id, name, email, role, profile_image_url, created_at, updated_at, last_active_at)
         VALUES (

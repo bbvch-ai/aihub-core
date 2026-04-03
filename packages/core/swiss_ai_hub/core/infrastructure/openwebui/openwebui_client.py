@@ -1,8 +1,11 @@
+import logging
 from typing import Any
 
 import httpx
 
 from swiss_ai_hub.core.infrastructure.openwebui.openwebui_token_service import OpenWebuiTokenService
+
+logger = logging.getLogger(__name__)
 
 MODELS_ENDPOINT = "/api/v1/models"
 
@@ -22,7 +25,11 @@ class OpenWebuiClient:
         response = await http.get(f"{self._base_url}{MODELS_ENDPOINT}/list", headers=self._jwt_headers)
         response.raise_for_status()
         data = response.json()
-        return data.get("items", []) if isinstance(data, dict) else data
+        if isinstance(data, dict):
+            if "items" not in data:
+                logger.warning("OpenWebUI list_models returned dict without 'items' key: %s", list(data.keys()))
+            return data.get("items", [])
+        return data
 
     async def create_model(self, http: httpx.AsyncClient, model_data: dict[str, Any]) -> dict[str, Any]:
         model_data.setdefault("params", {})
