@@ -20,7 +20,7 @@ class ContainerDiscovery:
     PROJECT_LABEL = "com.docker.compose.project"
 
     def __init__(self) -> None:
-        self._client = docker.from_env(timeout=300)
+        self._client = docker.from_env(timeout=30)
         self._project = self._detect_project()
 
     def discover_managed_containers(self) -> list[str]:
