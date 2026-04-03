@@ -15,19 +15,6 @@ def _make_lock(*, acquired: bool) -> MagicMock:
     return lock
 
 
-@pytest.fixture
-def mock_redis() -> MagicMock:
-    return MagicMock()
-
-
-@pytest.fixture(autouse=True)
-def _init_redis(mock_redis: MagicMock) -> None:
-    mock_redis.lock.return_value = _make_lock(acquired=True)
-    OpenWebuiProvisioner.initialize(mock_redis)
-    yield
-    OpenWebuiProvisioner._redis = None
-
-
 class TestDistributedLocking:
     @pytest.mark.asyncio
     async def test_sync_agents_skipped_when_lock_held(

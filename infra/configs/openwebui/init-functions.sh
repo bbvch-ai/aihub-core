@@ -154,6 +154,10 @@ SQLFOOTER
 # Create AI-Hub service account for API access (JWT-authenticated model management)
 create_service_account() {
     SERVICE_ACCOUNT_ID="${OPENWEBUI_SERVICE_ACCOUNT_ID}"
+    if ! echo "${SERVICE_ACCOUNT_ID}" | grep -qE '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'; then
+        log "ERROR: OPENWEBUI_SERVICE_ACCOUNT_ID is not a valid UUID"
+        return 1
+    fi
     SERVICE_ACCOUNT_EMAIL="aihub-service@aihub.internal"
     SERVICE_ACCOUNT_NAME="AI-Hub Service Account"
     SERVICE_ACCOUNT_PASSWORD=$(openssl passwd -6 "$(openssl rand -hex 32)")

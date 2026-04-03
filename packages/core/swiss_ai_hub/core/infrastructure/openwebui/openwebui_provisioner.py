@@ -1,7 +1,6 @@
 import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import ClassVar
 
 import httpx
 from redis.asyncio import Redis
@@ -18,9 +17,7 @@ _LOCK_TIMEOUT = 60
 
 
 @asynccontextmanager
-async def _sync_lock(redis: Redis | None, key: str) -> AsyncIterator[bool]:
-    if redis is None:
-        raise RuntimeError("OpenWebuiProvisioner not initialized")
+async def _sync_lock(redis: Redis, key: str) -> AsyncIterator[bool]:
     lock = redis.lock(key, timeout=_LOCK_TIMEOUT)
     if not await lock.acquire(blocking=False):
         logger.debug("OpenWebUI %s skipped: another instance is syncing", key.rsplit(":", 1)[-1])
@@ -33,19 +30,14 @@ async def _sync_lock(redis: Redis | None, key: str) -> AsyncIterator[bool]:
 
 
 class OpenWebuiProvisioner:
-    _redis: ClassVar[Redis | None] = None
-
-    def __init__(self) -> None:
+    def __init__(self, redis: Redis) -> None:
+        self._redis = redis
         self._settings = OpenWebuiSettings()
         self._openwebui = OpenWebuiClient(
             base_url=self._settings.BASE_URL,
             secret_key=self._settings.SECRET_KEY.get_secret_value(),
             service_account_id=self._settings.SERVICE_ACCOUNT_ID,
         )
-
-    @classmethod
-    def initialize(cls, redis: Redis) -> None:
-        cls._redis = redis
 
     async def sync_agents(self, online_agents: list[OnlineAgent]) -> None:
         async with _sync_lock(self._redis, "openwebui:sync:agents") as acquired:
@@ -73,11 +65,13 @@ class OpenWebuiProvisioner:
         online_agents: list[OnlineAgent], existing_model_ids: set[str]
     ) -> tuple[list[OnlineAgent], set[str]]:
         """Returns (models_to_create, model_ids_to_delete)."""
-        desired_ids = {f"{AIHUB_MODEL_PREFIX}{agent.agent_class}-{agent.agent_id}" for agent in online_agents}
+        desired_ids = {
+            OpenWebuiProvisioner._workspace_model_id(agent.agent_class, agent.agent_id) for agent in online_agents
+        }
         to_create = [
             agent
             for agent in online_agents
-            if f"{AIHUB_MODEL_PREFIX}{agent.agent_class}-{agent.agent_id}" not in existing_model_ids
+            if OpenWebuiProvisioner._workspace_model_id(agent.agent_class, agent.agent_id) not in existing_model_ids
         ]
         to_delete = existing_model_ids - desired_ids
         return to_create, to_delete

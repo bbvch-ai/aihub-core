@@ -16,9 +16,14 @@ def mock_settings() -> MagicMock:
 
 
 @pytest.fixture
-def provisioner(mock_settings: MagicMock) -> OpenWebuiProvisioner:
+def mock_redis() -> MagicMock:
+    return MagicMock()
+
+
+@pytest.fixture
+def provisioner(mock_settings: MagicMock, mock_redis: MagicMock) -> OpenWebuiProvisioner:
     with patch(
         "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.OpenWebuiSettings",
         return_value=mock_settings,
     ):
-        return OpenWebuiProvisioner()
+        return OpenWebuiProvisioner(redis=mock_redis)

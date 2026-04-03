@@ -16,7 +16,6 @@ LANGFUSE_PROVISIONER = "swiss_ai_hub.core.infrastructure.langfuse.langfuse_provi
 @pytest.fixture(autouse=True, scope="session")
 def _skip_external_provisioning():
     with (
-        patch(f"{OPENWEBUI_PROVISIONER}.initialize"),
         patch(f"{OPENWEBUI_PROVISIONER}.sync_agents", new_callable=AsyncMock),
         patch(f"{LANGFUSE_PROVISIONER}.provision", new_callable=AsyncMock),
     ):

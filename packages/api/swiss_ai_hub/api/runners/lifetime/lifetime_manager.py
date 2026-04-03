@@ -186,7 +186,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         api_app = app.state.api_app
 
         langfuse_provisioner = LangfuseProvisioner()
-        OpenWebuiProvisioner.initialize(redis)
+        openwebui_provisioner = OpenWebuiProvisioner(redis=redis)
 
         if hasattr(api_app.state, "agent_controller"):
             agent_discovery_service = AgentEndpointsDiscoveryService(
@@ -196,6 +196,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
                 locale_handler=ApiLocaleHandler(),
                 redis=redis,
                 langfuse_provisioner=langfuse_provisioner,
+                openwebui_provisioner=openwebui_provisioner,
                 discovery_interval=60,  # Check for new agents every 60 seconds
             )
             await agent_discovery_service.start()
