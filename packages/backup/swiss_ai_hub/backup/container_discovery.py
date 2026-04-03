@@ -5,7 +5,7 @@ import docker
 from docker.errors import NotFound
 from docker.models.containers import Container
 
-_logger = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 _EXCLUDE_PREFIXES = ("backup-", "seaweedfs-", "etcd")
 
@@ -19,8 +19,7 @@ class ContainerDiscovery:
 
     PROJECT_LABEL = "com.docker.compose.project"
 
-    def __init__(self, log: logging.Logger | None = None) -> None:
-        self._log = log or _logger
+    def __init__(self) -> None:
         self._client = docker.from_env(timeout=30)
         self._project = self._detect_project()
 
@@ -31,7 +30,7 @@ class ContainerDiscovery:
             filters={"label": f"{self.PROJECT_LABEL}={self._project}"},
         )
         managed = [c.name for c in containers if c.name and not self._is_excluded(c.name)]
-        self._log.info(
+        logger.info(
             "Discovered %d managed containers (project=%s): %s",
             len(managed),
             self._project,
@@ -52,11 +51,11 @@ class ContainerDiscovery:
                 continue
             if container.status == "running":
                 previously_running.append(name)
-                self._log.info("Stopping: %s (timeout=30s)...", name)
+                logger.info("Stopping: %s (timeout=30s)...", name)
                 container.stop(timeout=30)
-                self._log.info("Stopped: %s", name)
+                logger.info("Stopped: %s", name)
 
-        self._log.info("Stopped %d containers", len(previously_running))
+        logger.info("Stopped %d containers", len(previously_running))
         return previously_running
 
     def start_all(self, containers: list[str]) -> None:
@@ -66,20 +65,20 @@ class ContainerDiscovery:
         services that crash on first start (because a dependency isn't ready
         yet) will be automatically restarted until they converge.
         """
-        self._log.info("Restarting %d containers...", len(containers))
+        logger.info("Restarting %d containers...", len(containers))
         for name in containers:
             try:
                 container: Container = self._client.containers.get(name)
                 if container.status != "running":
-                    self._log.info("Starting: %s...", name)
+                    logger.info("Starting: %s...", name)
                     container.start()
-                    self._log.info("Started: %s", name)
+                    logger.info("Started: %s", name)
             except NotFound:
-                self._log.warning("Container %s no longer exists, skipping restart", name)
+                logger.warning("Container %s no longer exists, skipping restart", name)
 
     def _detect_project(self) -> str:
         hostname = socket.gethostname()
-        self._log.info("Detecting compose project from hostname: %s", hostname)
+        logger.info("Detecting compose project from hostname: %s", hostname)
         try:
             self_container: Container = self._client.containers.get(hostname)
             project: str = self_container.labels.get(self.PROJECT_LABEL, "")
@@ -88,7 +87,7 @@ class ContainerDiscovery:
                     f"Container {hostname} has no {self.PROJECT_LABEL} label. "
                     "Is the backup running inside Docker Compose?"
                 )
-            self._log.info("Detected compose project: %s", project)
+            logger.info("Detected compose project: %s", project)
             return project
         except NotFound as e:
             raise RuntimeError(
