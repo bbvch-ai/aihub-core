@@ -1292,7 +1292,7 @@ services:
     depends_on:
       backup-code:
         condition: service_healthy
-    {%- if stage in ['local', 'build'] %}
+    {%- if stage in ['dev', 'local', 'build'] %}
     ports:
       - "127.0.0.1:3004:3000"
     {%- endif %}

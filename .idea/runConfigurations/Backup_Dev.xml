@@ -1,8 +1,0 @@
-<component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Backup Dev" type="MAKEFILE_TARGET_RUN_CONFIGURATION" factoryName="Makefile" folderName="Run Services">
-    <makefile filename="$PROJECT_DIR$/packages/backup/Makefile" target="dev" workingDirectory="$PROJECT_DIR$/packages/backup" arguments="">
-      <envs />
-    </makefile>
-    <method v="2" />
-  </configuration>
-</component>

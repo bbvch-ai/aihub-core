@@ -119,6 +119,7 @@ image_tags:
     nightly: bot:nightly
     latest: bot:latest
   backup:
+    dev: localbuild
     build: localbuild
     local: backup:latest
     nightly: backup:nightly

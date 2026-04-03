@@ -758,6 +758,120 @@ services:
       options:
         max-size: 10m
         max-file: 2
+  # ===================================================================
+  # Backup Services (Dagster-based Automated Database Backups)
+  # ===================================================================
+  # Independent 3-container Dagster deployment: gRPC code server, daemon,
+  # webserver. Dagster UI on port 3004 for monitoring and manual triggers.
+  # ===================================================================
+  backup-code:
+    container_name: backup-code
+    build:
+      context: ..
+      dockerfile: ./packages/backup/Dockerfile
+    restart: unless-stopped
+    entrypoint:
+      - dagster
+      - api
+      - grpc
+      - -m
+      - swiss_ai_hub.backup.dagster
+      - -h
+      - 0.0.0.0
+      - -p
+      - '4266'
+    environment:
+      PYTHONUNBUFFERED: 1
+      DAGSTER_HOME: /dagster_home
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/backup-dagster-home:/dagster_home
+      - ../packages/backup/dagster.yaml:/dagster_home/dagster.yaml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    healthcheck:
+      test:
+        - CMD
+        - dagster
+        - api
+        - grpc-health-check
+        - --host
+        - localhost
+        - --port
+        - '4266'
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks: [data]
+  backup-webserver:
+    container_name: backup-webserver
+    build:
+      context: ..
+      dockerfile: ./packages/backup/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      backup-code:
+        condition: service_healthy
+    ports: [127.0.0.1:3004:3000]
+    entrypoint:
+      - dagster-webserver
+      - -h
+      - 0.0.0.0
+      - -p
+      - '3000'
+      - -w
+      - /etc/dagster/workspace.yaml
+    environment:
+      PYTHONUNBUFFERED: 1
+      DAGSTER_HOME: /dagster_home
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/backup-dagster-home:/dagster_home
+      - ../packages/backup/dagster.yaml:/dagster_home/dagster.yaml:ro
+    healthcheck:
+      test: [CMD, curl, -f, http://localhost:3000/server_info]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks: [proxy, data]
+  backup-daemon:
+    container_name: backup-daemon
+    build:
+      context: ..
+      dockerfile: ./packages/backup/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      backup-code:
+        condition: service_healthy
+    entrypoint: [dagster-daemon, run, -w, /etc/dagster/workspace.yaml]
+    environment:
+      PYTHONUNBUFFERED: 1
+      DAGSTER_HOME: /dagster_home
+    volumes:
+      - ${VOLUME_ROOT:-./.docker-volumes}/backup-dagster-home:/dagster_home
+      - ../packages/backup/dagster.yaml:/dagster_home/dagster.yaml:ro
+    healthcheck:
+      test: [CMD, dagster-daemon, liveness-check]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks:
+      - data
 
   # ===================================================================
   # LiteLLM Stack (Model Proxy and Guardrails)
@@ -1242,6 +1356,7 @@ services:
   # ===================================================================
 
 
+  
 
   
 
