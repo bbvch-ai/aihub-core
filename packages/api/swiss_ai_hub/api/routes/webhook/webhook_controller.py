@@ -3,9 +3,10 @@ import hmac
 import logging
 from typing import Annotated, Self
 
-from fastapi import HTTPException, Query
+from fastapi import Depends, HTTPException, Query
+from redis.asyncio import Redis
 from swiss_ai_hub.core.auth import AuthHandler
-from swiss_ai_hub.core.infrastructure import OpenWebuiProvisioner, OpenWebuiSettings
+from swiss_ai_hub.core.infrastructure import OpenWebuiProvisioner, OpenWebuiSettings, use_redis
 from swiss_ai_hub.core.routes import Controller
 
 from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
@@ -29,6 +30,7 @@ class WebhookController(Controller):
         async def receive_openwebui_webhook(
             payload: OpenWebuiWebhookPayload,
             token: Annotated[str, Query(description="Webhook authentication token")],
+            redis: Annotated[Redis, Depends(use_redis)],
         ) -> WebhookResponse:
             expected_secret = OpenWebuiSettings().WEBHOOK_SECRET.get_secret_value()
             if not hmac.compare_digest(token, expected_secret):
@@ -38,7 +40,7 @@ class WebhookController(Controller):
                 return WebhookResponse(status="ignored")
 
             logger.info("OpenWebUI webhook: new user signup — triggering provisioner sync")
-            task = asyncio.create_task(OpenWebuiProvisioner().sync_access())
+            task = asyncio.create_task(OpenWebuiProvisioner(redis=redis).sync_access())
             _background_tasks.add(task)
             task.add_done_callback(_background_tasks.discard)
 

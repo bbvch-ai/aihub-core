@@ -1,5 +1,5 @@
 from contextlib import asynccontextmanager
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -26,11 +26,21 @@ def mock_settings() -> MagicMock:
 
 
 @pytest.fixture
-def provisioner(mock_settings: MagicMock) -> OpenWebuiProvisioner:
+def mock_redis() -> MagicMock:
+    redis = MagicMock()
+    lock = MagicMock()
+    lock.acquire = AsyncMock(return_value=True)
+    lock.release = AsyncMock()
+    redis.lock.return_value = lock
+    return redis
+
+
+@pytest.fixture
+def provisioner(mock_settings: MagicMock, mock_redis: MagicMock) -> OpenWebuiProvisioner:
     with patch(
         "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.OpenWebuiSettings",
         return_value=mock_settings,
     ):
-        prov = OpenWebuiProvisioner()
+        prov = OpenWebuiProvisioner(redis=mock_redis)
         prov._openwebui.scim_session = _mock_scim_session
         return prov

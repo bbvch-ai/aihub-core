@@ -1,6 +1,6 @@
 """Tests for OpenWebuiProvisioner — top-level orchestration."""
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -8,18 +8,6 @@ from swiss_ai_hub.core.infrastructure.openwebui.online_agent import OnlineAgent
 from swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner import OpenWebuiProvisioner
 
 _RAG_AGENT = OnlineAgent(agent_class="rag", agent_id="default", display_name="RAG Agent")
-
-
-@pytest.fixture(autouse=True)
-def _init_redis() -> None:
-    mock_redis = MagicMock()
-    mock_lock = MagicMock()
-    mock_lock.acquire = AsyncMock(return_value=True)
-    mock_lock.release = AsyncMock()
-    mock_redis.lock.return_value = mock_lock
-    OpenWebuiProvisioner.initialize(mock_redis)
-    yield
-    OpenWebuiProvisioner._redis = None  # type: ignore[assignment]
 
 
 class TestProvision:

@@ -2,7 +2,7 @@ import asyncio
 import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import Any, ClassVar
+from typing import Any
 
 import httpx
 from redis.asyncio import Redis
@@ -37,9 +37,7 @@ type RoleAccessRules = dict[str, list[str]]
 
 
 class OpenWebuiProvisioner:
-    _redis: ClassVar[Redis | None] = None
-
-    def __init__(self) -> None:
+    def __init__(self, *, redis: Redis) -> None:
         self._settings = OpenWebuiSettings()
         self._openwebui = OpenWebuiClient(
             base_url=self._settings.BASE_URL,
@@ -47,17 +45,11 @@ class OpenWebuiProvisioner:
             scim_token=self._settings.SCIM_TOKEN.get_secret_value(),
             service_account_id=self._settings.SERVICE_ACCOUNT_ID,
         )
+        self._redis = redis
 
-    @classmethod
-    def initialize(cls, redis: Redis) -> None:
-        cls._redis = redis
-
-    @staticmethod
     @asynccontextmanager
-    async def _sync_lock(redis: Redis | None, key: str) -> AsyncIterator[bool]:
-        if redis is None:
-            raise RuntimeError("OpenWebuiProvisioner not initialized")
-        lock = redis.lock(key, timeout=_LOCK_TIMEOUT)
+    async def _sync_lock(self, key: str) -> AsyncIterator[bool]:
+        lock = self._redis.lock(key, timeout=_LOCK_TIMEOUT)
         if not await lock.acquire(blocking=False):
             logger.debug("OpenWebUI %s skipped: another instance is syncing", key.rsplit(":", 1)[-1])
             yield False
@@ -68,7 +60,7 @@ class OpenWebuiProvisioner:
             await lock.release()
 
     async def provision(self) -> None:
-        async with self._sync_lock(self._redis, "openwebui:sync:provision") as acquired:
+        async with self._sync_lock("openwebui:sync:provision") as acquired:
             if not acquired:
                 return
             logger.info("Starting OpenWebUI provisioning...")
@@ -81,7 +73,7 @@ class OpenWebuiProvisioner:
             logger.info("OpenWebUI provisioning completed")
 
     async def sync_agents(self, online_agents: list[OnlineAgent]) -> None:
-        async with self._sync_lock(self._redis, "openwebui:sync:agents") as acquired:
+        async with self._sync_lock("openwebui:sync:agents") as acquired:
             if not acquired:
                 return
             async with httpx.AsyncClient(timeout=30.0) as http:
@@ -91,7 +83,7 @@ class OpenWebuiProvisioner:
             logger.info(f"OpenWebUI sync: Updated {len(online_agents)} agent workspace models")
 
     async def sync_access(self) -> None:
-        async with self._sync_lock(self._redis, "openwebui:sync:access") as acquired:
+        async with self._sync_lock("openwebui:sync:access") as acquired:
             if not acquired:
                 return
             async with httpx.AsyncClient(timeout=30.0) as http:

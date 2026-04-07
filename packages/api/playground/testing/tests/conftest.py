@@ -18,7 +18,6 @@ ACCESS_CHANGE_HOOK = "swiss_ai_hub.core.persistence.access.access_change_hook.Ac
 def _skip_external_provisioning():
     """Skip OpenWebUI and Langfuse provisioning during tests (not available in CI)."""
     with (
-        patch(f"{OPENWEBUI_PROVISIONER}.initialize"),
         patch(f"{OPENWEBUI_PROVISIONER}.provision", new_callable=AsyncMock),
         patch(f"{OPENWEBUI_PROVISIONER}.sync_access", new_callable=AsyncMock),
         patch(f"{OPENWEBUI_PROVISIONER}.sync_agents", new_callable=AsyncMock),

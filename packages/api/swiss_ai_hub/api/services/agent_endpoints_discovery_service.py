@@ -83,7 +83,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
         self.topic_manager: AgentTopicManager = AgentTopicManager()
         self._redis = redis
         self._langfuse_provisioner = LangfuseProvisioner()
-        self._openwebui_provisioner = OpenWebuiProvisioner()
+        self._openwebui_provisioner = OpenWebuiProvisioner(redis=redis)
 
     @override
     async def _discover_and_register(self):

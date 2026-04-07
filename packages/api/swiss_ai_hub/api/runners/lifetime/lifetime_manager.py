@@ -188,6 +188,9 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
 
         api_app = app.state.api_app
 
+        langfuse_provisioner = LangfuseProvisioner()
+        openwebui_provisioner = OpenWebuiProvisioner(redis=redis)
+
         if hasattr(api_app.state, "agent_controller"):
             agent_discovery_service = AgentEndpointsDiscoveryService(
                 nc=nc,
@@ -220,14 +223,13 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         await initialize_knowledge_buckets()
 
         # Provision Langfuse with AI-Hub LLM connections
-        await LangfuseProvisioner().provision()
+        await langfuse_provisioner.provision()
 
         # Provision OpenWebUI with groups, workspace models, and access grants
-        OpenWebuiProvisioner.initialize(redis)
-        await OpenWebuiProvisioner().provision()
+        await openwebui_provisioner.provision()
 
         # Re-sync OpenWebUI when roles, tenants, or user-role assignments change
-        AccessChangeHook.connect()
+        AccessChangeHook.connect(openwebui_provisioner)
 
         # Yield control back to FastAPI to start serving requests
         yield
