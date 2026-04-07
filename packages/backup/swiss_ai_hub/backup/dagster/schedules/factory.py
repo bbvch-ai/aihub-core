@@ -1,6 +1,12 @@
-from dagster import RunRequest, ScheduleDefinition, ScheduleEvaluationContext, schedule
-from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+from dagster import JobDefinition, RunRequest, ScheduleEvaluationContext, schedule
+
+if TYPE_CHECKING:
+    from dagster import ScheduleDefinition
+    from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 
 
 def daily_backup_schedule(backup_job: JobDefinition | UnresolvedAssetJobDefinition) -> ScheduleDefinition:

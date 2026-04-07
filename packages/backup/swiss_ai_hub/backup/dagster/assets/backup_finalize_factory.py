@@ -1,3 +1,4 @@
+from botocore.exceptions import ClientError
 from dagster import AssetExecutionContext, AssetIn, AssetKey, AssetsDefinition, ResourceParam, asset
 
 from swiss_ai_hub.backup.container_discovery import ContainerDiscovery
@@ -34,8 +35,8 @@ def backup_finalize_factory(
 
         try:
             RetentionService.run(s3_manager, backup_settings.BACKUP_RETENTION_DAYS, backup_settings.BACKUP_MINIMUM_KEEP)
-        except Exception as e:
-            context.log.warning("Retention cleanup failed: %s", e)
+        except (ClientError, RuntimeError):
+            context.log.warning("Retention cleanup failed", exc_info=True)
 
         _sync_partitions(context, s3_manager)
 
