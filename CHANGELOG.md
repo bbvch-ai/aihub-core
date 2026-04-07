@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.273.6] - 2026-04-07 - Empowering Recovery: New System Restore Workflow
+
+### Added
+
+- ✨ **Enabled Full System Restore Workflow:** Introduced a comprehensive Dagster-based workflow for performing full
+  system restores, allowing recovery from a specified backup timestamp. This new capability orchestrates service
+  shutdowns, validates backup integrity, manages individual service restorations, and restarts all services upon
+  successful completion.
+- ⚙️ **Granular Container Lifecycle Management:** Implemented a new `ContainerLifecycleManager` resource to provide
+  precise control over starting, stopping, and health-checking specific groups of containers required by individual
+  services during the restore process.
+- 🧩 **Service Dependency Mapping:** Established a centralized mapping (`SERVICE_DEPS`) that defines the container
+  dependencies for each backup service, ensuring correct sequencing and isolation during parallel backup and restore
+  operations.
+- 🛠️ **Modular Service Handler Architecture:** Introduced a new `BackupHandler` interface and a factory mechanism to
+  standardize how backup and restore logic is implemented for each service, improving modularity and extensibility for
+  future service integrations.
+- ✅ **Backup Integrity Validation:** Added a critical pre-restore validation step that checks for the presence of all
+  expected backup files in S3, preventing restore attempts on incomplete or corrupted backups.
+- 🧪 **Comprehensive Restore Test Suite:** Included extensive new unit tests covering the container lifecycle management,
+  handler factory, restore definitions, and backup validation to ensure the reliability and correctness of the new
+  restore functionality.
+
+### Fixed
+
+- 🐛 **Improved Container Stop Logging:** Enhanced the accuracy of container stop logging, so that only successfully
+  stopped containers are counted, providing a more reliable report of system state during backup preparations.
+
+______________________________________________________________________
+
 ## [v0.273.5] - 2026-04-07 - Robust Backup System with S3 Integration and Automated Operations
 
 ### Added
