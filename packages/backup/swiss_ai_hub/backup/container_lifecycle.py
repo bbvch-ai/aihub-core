@@ -27,11 +27,12 @@ SERVICE_DEPS: dict[str, ServiceDeps] = {
     "Milvus": ServiceDeps(containers=("milvus",), timeout=180),
 }
 
-assert set(SERVICE_DEPS.keys()) == set(BACKUP_SERVICES), (
-    f"SERVICE_DEPS and BACKUP_SERVICES must contain the same entries: "
-    f"only in SERVICE_DEPS={set(SERVICE_DEPS.keys()) - set(BACKUP_SERVICES)}, "
-    f"only in BACKUP_SERVICES={set(BACKUP_SERVICES) - set(SERVICE_DEPS.keys())}"
-)
+if set(SERVICE_DEPS.keys()) != set(BACKUP_SERVICES):
+    raise ValueError(
+        f"SERVICE_DEPS and BACKUP_SERVICES must contain the same entries: "
+        f"only in SERVICE_DEPS={set(SERVICE_DEPS.keys()) - set(BACKUP_SERVICES)}, "
+        f"only in BACKUP_SERVICES={set(BACKUP_SERVICES) - set(SERVICE_DEPS.keys())}"
+    )
 
 
 def _assert_no_overlapping_deps(deps: dict[str, ServiceDeps]) -> None:
@@ -42,7 +43,7 @@ def _assert_no_overlapping_deps(deps: dict[str, ServiceDeps]) -> None:
             continue
         for container in dep.containers:
             if container in seen:
-                raise AssertionError(
+                raise ValueError(
                     f"Container '{container}' claimed by both '{seen[container]}' "
                     f"and '{service}'. Parallel backup requires disjoint deps."
                 )

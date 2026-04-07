@@ -1,13 +1,9 @@
-import logging
-
 from dagster import AssetExecutionContext, AssetKey, AssetsDefinition, ResourceParam, asset
 
 from swiss_ai_hub.backup.container_discovery import ContainerDiscovery
 from swiss_ai_hub.backup.dagster.partitions import backup_partitions
 from swiss_ai_hub.backup.dagster.types import RestoreContext
 from swiss_ai_hub.backup.s3 import S3Manager
-
-logger = logging.getLogger(__name__)
 
 
 def restore_session_factory(key: AssetKey) -> AssetsDefinition:
@@ -24,7 +20,7 @@ def restore_session_factory(key: AssetKey) -> AssetsDefinition:
     ) -> RestoreContext:
         timestamp: str = context.partition_key
         resolved = s3_manager.resolve_timestamp(timestamp)
-        logger.info("Resolved timestamp: %s -> %s", timestamp, resolved)
+        context.log.info("Resolved timestamp: %s -> %s", timestamp, resolved)
 
         context.log.info("=== Phase 1: Validation ===")
         _validate_backup_completeness_or_raise(s3_manager, resolved, context)
