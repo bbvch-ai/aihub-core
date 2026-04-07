@@ -16,7 +16,3 @@ pr-ready: format lint
 test:
 	@echo "Running tests in swiss_ai_hub.backup..."
 	uv run pytest
-
-dev:
-	@echo "Starting Dagster dev server on http://localhost:3004..."
-	uv run dagster dev -m swiss_ai_hub.backup.dagster -p 3004
