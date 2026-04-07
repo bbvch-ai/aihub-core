@@ -48,7 +48,14 @@ def test_restore_service_assets_depend_on_session() -> None:
     defs = backup_definitions()
     asset_graph = defs.resolve_asset_graph()
 
-    service_keys = ["restore/postgres", "restore/milvus", "restore/neo4j", "restore/clickhouse", "restore/valkey", "restore/nats"]
+    service_keys = [
+        "restore/postgres",
+        "restore/milvus",
+        "restore/neo4j",
+        "restore/clickhouse",
+        "restore/valkey",
+        "restore/nats",
+    ]
     for key_str in service_keys:
         matching = [k for k in asset_graph.get_all_asset_keys() if k.to_user_string() == key_str]
         assert matching, f"Asset {key_str} not found"
