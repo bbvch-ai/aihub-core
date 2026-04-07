@@ -1,0 +1,11 @@
+---
+# ===================================================================
+# Backup Workspace Configuration - Stage: local
+# ===================================================================
+# Generated from template. Do not edit directly.
+# Defines the gRPC code location for the backup Dagster instance.
+# ===================================================================
+load_from:
+  - grpc_server:
+      host: backup-code
+      port: 4266

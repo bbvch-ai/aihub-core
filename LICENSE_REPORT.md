@@ -1,10 +1,10 @@
 # License Report
 
-Generated on: 30.03.2026
+Generated on: 03.04.2026
 
 This document contains license information for all dependencies across the monorepo:
 
-- Python packages (uv): **385 packages**
+- Python packages (uv): **386 packages**
 - Node.js packages (pnpm): **1001 packages**
 - External Docker images: **31 images**
 
@@ -98,6 +98,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | dirtyjson                                        | 1.0.8                 | Academic Free License (AFL); MIT License                     |                                                                      |
 | ✅     | distro                                           | 1.9.0                 | Apache Software License                                      |                                                                      |
 | ✅     | dnspython                                        | 2.8.0                 | ISC License (ISCL)                                           |                                                                      |
+| ✅     | docker                                           | 7.1.0                 | Apache-2.0                                                   |                                                                      |
 | ✅     | docstring_parser                                 | 0.17.0                | MIT License                                                  |                                                                      |
 | ✅     | docutils                                         | 0.22.4                | BSD License; GNU General Public License (GPL); Public Domain |                                                                      |
 | ✅     | email-validator                                  | 2.3.0                 | The Unlicense (Unlicense)                                    |                                                                      |

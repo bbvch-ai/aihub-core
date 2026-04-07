@@ -52,6 +52,9 @@ run_coordinator:
   class: QueuedRunCoordinator
   config:
     max_concurrent_runs: 5
+python_logs:
+  python_log_level: INFO
+  managed_python_loggers: [swiss_ai_hub]
 telemetry:
   enabled: false
 run_monitoring:

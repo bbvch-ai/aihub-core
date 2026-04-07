@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.273.2] - 2026-04-07 - Establishing the Backup Service Framework
+
+### Added
+
+- ✨ **New Automated Backup Service:** Introduced a dedicated backup service built on Dagster, designed to orchestrate
+  and manage system backups. This service runs as an independent set of Docker containers within the main project.
+- 🦾 **Container Orchestration Capabilities:** Added core functionality to discover, stop, and restart Docker Compose
+  containers using direct Docker daemon interaction, forming the basis for coordinated backup and restore operations.
+- ⚡️ **Resilient Failure Recovery:** Implemented a critical safety mechanism that automatically restarts all managed
+  containers if any part of the backup process fails, preventing prolonged service downtime.
+- 📦 **Comprehensive Infrastructure for Backup Service:** Established all necessary Docker Compose configurations,
+  Dagster definitions, and tooling for deploying and managing the new backup service across various environments (dev,
+  build, local, latest, nightly).
+- 📄 **Docker Interaction Utilities:** Provided a `DockerManager` for low-level Docker operations, enabling precise
+  control over container lifecycle, file transfers, and command execution within the backup service.
+- 🚦 **Dedicated Backup UI:** The backup Dagster instance now includes a dedicated webserver, accessible at
+  `http://localhost:3004` in `dev` and `local` environments, for monitoring and manual triggering of backup processes.
+
+### Changed
+
+- 🔄 **Main Dagster Logging Configuration:** Updated the main Dagster instances to log `swiss_ai_hub` messages at `INFO`
+  level, providing more consistent operational insights.
+- 🧹 **Streamlined Backup Service Configuration:** Moved the backup service's `dagster.yaml` and `workspace.yaml`
+  configurations into dynamically generated Docker Compose volume mounts, simplifying deployment and ensuring
+  consistency.
+
+### Removed
+
+- 🗑️ **Deprecated Backup Development Workflow:** Removed the standalone `dagster dev` command from the backup package's
+  Makefile, as development is now integrated with the Docker Compose setup.
+
+______________________________________________________________________
+
 ## [v0.273.1] - 2026-04-01 - New Automated Backup Service & Improved Build Processes
 
 ### Added

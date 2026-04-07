@@ -94,6 +94,11 @@ run_coordinator:
     max_concurrent_runs: 2
 {%- endif %}
 
+python_logs:
+  python_log_level: INFO
+  managed_python_loggers:
+    - swiss_ai_hub
+
 telemetry:
   enabled: false
 
