@@ -1221,6 +1221,7 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       SET_VERBOSE: false
+      STORE_MODEL_IN_DB: true
     volumes: [./configs/litellm/litellm-config.build.yml:/app/config.yml]
     command: --config /app/config.yml
     depends_on:
@@ -1528,7 +1529,7 @@ services:
       WEBSOCKET_MANAGER: redis
       WEBSOCKET_REDIS_URL: redis://default:${REDIS_TOKEN}@valkey:6379/11
       THREAD_POOL_SIZE: 32
-      CORS_ALLOW_ORIGIN: https://openwebui.${DOMAIN},https://${DOMAIN}
+      CORS_ALLOW_ORIGIN: https://openwebui.${DOMAIN};https://${DOMAIN}
 
       # --- Admin ---
       ENABLE_ADMIN_EXPORT: true

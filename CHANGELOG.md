@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.273.4] - 2026-04-07 - Improved Authentication and Service Configuration
+
+### Added
+
+- ✨ **Keycloak Client Plugin**: Introduced a new client plugin dedicated to Keycloak API interactions, facilitating more
+  robust authentication management flows.
+- 💾 **LiteLLM Model Persistence**: Enabled the `STORE_MODEL_IN_DB` configuration for LiteLLM services, allowing models
+  to be stored and managed within the database.
+
+### Changed
+
+- 🔐 **Enhanced Logout Security**: Improved the logout process to explicitly revoke the Keycloak session using the
+  refresh token, ensuring a more complete and secure session termination.
+- 🔄 **Forced Login Prompt**: Modified the authentication flow to include `prompt: 'login'`, which will now consistently
+  prompt users for their credentials during login.
+- ⚙️ **Flexible Keycloak Configuration**: Updated Keycloak realm and identity provider template variables to use
+  `config_variant_suffix`, enhancing configuration flexibility across different deployment stages.
+- 🌐 **Open WebUI CORS Delimiter**: Adjusted the `CORS_ALLOW_ORIGIN` configuration in Open WebUI services to use a
+  semicolon (`;`) as a delimiter for multiple origins, improving compatibility.
+- 📄 **Jupyter Lab Boolean Format**: Standardized the `JUPYTER_ENABLE_LAB` setting to use the boolean `true` format for
+  consistency with Jupyter's configuration expectations.
+
+### Removed
+
+- 🗑️ **Development Configuration Cleanup**: Cleaned up obsolete blank lines and comments in development-specific
+  `docker-compose` files, enhancing configuration readability.
+
+______________________________________________________________________
+
 ## [v0.273.3] - 2026-04-07 - OpenWebUI Integration & Agent Provisioning Enhancements
 
 ### Added

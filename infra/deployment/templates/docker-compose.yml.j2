@@ -1024,8 +1024,8 @@ services:
       KEYCLOAK_API_SERVICE_CLIENT_SECRET: ${KEYCLOAK_API_SERVICE_CLIENT_SECRET}
     volumes:
       - ./configs/keycloak/keycloak-entrypoint.sh:/opt/keycloak/scripts/keycloak-entrypoint.sh:ro
-      - ./configs/keycloak/aihub-realm.{{ stage_postfix }}.json:/opt/keycloak/data/import-templates/aihub-realm.json:ro
-      - ./configs/keycloak/identity-providers.{{ stage_postfix }}.json:/opt/keycloak/data/import-templates/identity-providers.json:ro
+      - ./configs/keycloak/aihub-realm{{ config_variant_suffix }}.json:/opt/keycloak/data/import-templates/aihub-realm.json:ro
+      - ./configs/keycloak/identity-providers{{ config_variant_suffix }}.json:/opt/keycloak/data/import-templates/identity-providers.json:ro
       - ./configs/keycloak/themes/aihub:/opt/keycloak/themes/aihub:ro
     healthcheck:
       test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/9000;echo -e 'GET /health/ready HTTP/1.1\r\nhost: localhost\r\nConnection: close\r\n\r\n' >&3;grep -q '200 OK' <&3"]
@@ -1633,6 +1633,7 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       SET_VERBOSE: False
+      STORE_MODEL_IN_DB: True
     volumes:
       - ./configs/litellm/litellm-config{{ config_variant_suffix }}.yml:/app/config.yml
     command: --config /app/config.yml
@@ -1693,7 +1694,7 @@ services:
     volumes:
       - {{ global.volume_root }}/jupyter-data:/home/jovyan/work
     environment:
-      JUPYTER_ENABLE_LAB: yes
+      JUPYTER_ENABLE_LAB: true
       JUPYTER_TOKEN: ${JUPYTER_TOKEN}
     healthcheck:
       test: ["CMD", "/etc/jupyter/docker_healthcheck.py"]
@@ -2027,7 +2028,7 @@ services:
       {%- if stage == 'dev' %}
       CORS_ALLOW_ORIGIN: "http://localhost:8080"
       {%- else %}
-      CORS_ALLOW_ORIGIN: "https://openwebui.${DOMAIN},https://${DOMAIN}"
+      CORS_ALLOW_ORIGIN: "https://openwebui.${DOMAIN};https://${DOMAIN}"
       {%- endif %}
 
       # --- Admin ---
