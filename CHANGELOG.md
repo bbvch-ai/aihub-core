@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.273.3] - 2026-04-07 - OpenWebUI Integration & Agent Provisioning Enhancements
+
+### Added
+
+- ✨ **OpenWebUI Agent Workspace Integration:** Introduced comprehensive integration with OpenWebUI, allowing dynamic
+  provisioning and management of AI-Hub agent instances as workspace models. This enables a seamless experience for
+  users interacting with AI-Hub agents directly within OpenWebUI.
+- 🔑 **Keycloak Role-Based Access for OpenWebUI:** Configured Keycloak to include user roles in OpenID Connect tokens and
+  defined specific admin roles for OpenWebUI, enhancing security and access management for the new integration.
+- ⚙️ **Automated OpenWebUI Service Account Provisioning:** Implemented an automatic creation of a dedicated AI-Hub
+  service account with administrator privileges in OpenWebUI's database, facilitating secure and programmatic model
+  management via API.
+- 🧪 **Improved Agent Provisioning with Redis Caching:** Enhanced agent discovery and synchronization to external
+  platforms (Langfuse, OpenWebUI) by implementing a Redis-backed, hash-based caching mechanism, reducing redundant sync
+  operations and improving efficiency.
+- 🔐 **New JWT Library for OpenWebUI Security:** Added `pyjwt` as a new core dependency, providing essential
+  cryptographic capabilities for secure token-based communication with OpenWebUI APIs.
+
+### Changed
+
+- 🔄 **Standardized Agent and Process Health Check Ports:** Unified the default health check port for all agent and
+  process runners to `8090` (previously `8080`), preventing potential port conflicts and ensuring consistent monitoring.
+- 🚀 **Refactored External Provisioning Orchestration:** Streamlined the agent instance synchronization logic within the
+  API service, enabling a more robust and extensible system for provisioning agents to platforms like Langfuse and
+  OpenWebUI.
+
+______________________________________________________________________
+
 ## [v0.273.2] - 2026-04-07 - Establishing the Backup Service Framework
 
 ### Added

@@ -1,6 +1,6 @@
 [project]
 name = "swiss-ai-hub-core"
-version = "0.273.2"
+version = "0.273.3"
 description = ""
 requires-python = ">=3.13, <3.14"
 authors = [
@@ -66,6 +66,7 @@ dependencies = [
     "langfuse>=3.14.1",
     "s3fs>=2024.10.0,<2025.0.0",
     "tabulate>=0.9.0",
+    "pyjwt>=2.11.0",
 ]
 
 [dependency-groups]
