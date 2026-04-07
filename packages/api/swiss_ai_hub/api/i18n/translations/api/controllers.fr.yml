@@ -66,3 +66,6 @@ organization_memory:
   name: Mémoires organisationnelles
   description: Afficher et gérer les mémoires à l'échelle de l'organisation depuis
     mem0
+webhook:
+  name: Webhooks
+  description: Récepteurs de webhooks pour services externes
