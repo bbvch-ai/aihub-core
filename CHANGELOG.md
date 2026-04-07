@@ -5,6 +5,63 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.273.4] - 2026-04-07 - Improved Authentication and Service Configuration
+
+### Added
+
+- ✨ **Keycloak Client Plugin**: Introduced a new client plugin dedicated to Keycloak API interactions, facilitating more
+  robust authentication management flows.
+- 💾 **LiteLLM Model Persistence**: Enabled the `STORE_MODEL_IN_DB` configuration for LiteLLM services, allowing models
+  to be stored and managed within the database.
+
+### Changed
+
+- 🔐 **Enhanced Logout Security**: Improved the logout process to explicitly revoke the Keycloak session using the
+  refresh token, ensuring a more complete and secure session termination.
+- 🔄 **Forced Login Prompt**: Modified the authentication flow to include `prompt: 'login'`, which will now consistently
+  prompt users for their credentials during login.
+- ⚙️ **Flexible Keycloak Configuration**: Updated Keycloak realm and identity provider template variables to use
+  `config_variant_suffix`, enhancing configuration flexibility across different deployment stages.
+- 🌐 **Open WebUI CORS Delimiter**: Adjusted the `CORS_ALLOW_ORIGIN` configuration in Open WebUI services to use a
+  semicolon (`;`) as a delimiter for multiple origins, improving compatibility.
+- 📄 **Jupyter Lab Boolean Format**: Standardized the `JUPYTER_ENABLE_LAB` setting to use the boolean `true` format for
+  consistency with Jupyter's configuration expectations.
+
+### Removed
+
+- 🗑️ **Development Configuration Cleanup**: Cleaned up obsolete blank lines and comments in development-specific
+  `docker-compose` files, enhancing configuration readability.
+
+______________________________________________________________________
+
+## [v0.273.3] - 2026-04-07 - OpenWebUI Integration & Agent Provisioning Enhancements
+
+### Added
+
+- ✨ **OpenWebUI Agent Workspace Integration:** Introduced comprehensive integration with OpenWebUI, allowing dynamic
+  provisioning and management of AI-Hub agent instances as workspace models. This enables a seamless experience for
+  users interacting with AI-Hub agents directly within OpenWebUI.
+- 🔑 **Keycloak Role-Based Access for OpenWebUI:** Configured Keycloak to include user roles in OpenID Connect tokens and
+  defined specific admin roles for OpenWebUI, enhancing security and access management for the new integration.
+- ⚙️ **Automated OpenWebUI Service Account Provisioning:** Implemented an automatic creation of a dedicated AI-Hub
+  service account with administrator privileges in OpenWebUI's database, facilitating secure and programmatic model
+  management via API.
+- 🧪 **Improved Agent Provisioning with Redis Caching:** Enhanced agent discovery and synchronization to external
+  platforms (Langfuse, OpenWebUI) by implementing a Redis-backed, hash-based caching mechanism, reducing redundant sync
+  operations and improving efficiency.
+- 🔐 **New JWT Library for OpenWebUI Security:** Added `pyjwt` as a new core dependency, providing essential
+  cryptographic capabilities for secure token-based communication with OpenWebUI APIs.
+
+### Changed
+
+- 🔄 **Standardized Agent and Process Health Check Ports:** Unified the default health check port for all agent and
+  process runners to `8090` (previously `8080`), preventing potential port conflicts and ensuring consistent monitoring.
+- 🚀 **Refactored External Provisioning Orchestration:** Streamlined the agent instance synchronization logic within the
+  API service, enabling a more robust and extensible system for provisioning agents to platforms like Langfuse and
+  OpenWebUI.
+
+______________________________________________________________________
+
 ## [v0.273.2] - 2026-04-07 - Establishing the Backup Service Framework
 
 ### Added

@@ -13,12 +13,14 @@ docs/swiss-ai-hub
 /infra/configs/traefik/certs/dev-cert.pem
 /infra/configs/traefik/certs/dev-key.pem
 .idea/copilot*
+.idea/compiler.xml
 .idea/misc.xml
 aihub_*/.idea/
 *.log
 .mypy_cache/
 .ty/
 .venv
+.idea/*.iml
 
 # Claude Code local overrides (personal preferences, not shared)
 CLAUDE.local.md
