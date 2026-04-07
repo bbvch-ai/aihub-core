@@ -54,6 +54,8 @@
 </template>
 
 <script setup lang="ts">
+import Popover from 'primevue/popover'
+
 import type { TenantMembershipDto } from '@core/sdk/client'
 
 const { t } = useI18n()
@@ -65,7 +67,7 @@ const currentTenantDisplayName = computed(() => {
   const current = tenants.value?.find(t => t.id === tenantId.value)
   return current?.name ?? tenantId.value ?? ''
 })
-const popoverRef = ref()
+const popoverRef = ref<InstanceType<typeof Popover>>()
 
 function toggle(event: Event) {
   popoverRef.value?.toggle(event)

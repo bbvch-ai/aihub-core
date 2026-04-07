@@ -12,7 +12,7 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette.routing import Mount
 from swiss_ai_hub.core.infrastructure import AIHubSettings
 from swiss_ai_hub.core.routes import Controller
-from swiss_ai_hub.core.routes.health.health_controller import HealthController
+from swiss_ai_hub.core.routes.tenant_scoped_controller import TenantScopedController
 from swiss_ai_hub.core.runners import Runner
 
 from swiss_ai_hub.api.i18n.api_locale_handler import ApiLocaleHandler
@@ -190,13 +190,13 @@ class ApiRunner(Runner):
         """
         super().mount(*controllers)
 
-        non_health = [c for c in controllers if not isinstance(c, HealthController)]
+        tenant_scoped = [c for c in controllers if isinstance(c, TenantScopedController)]
         self._api_app.openapi_tags = [
             {
                 "name": ApiLocaleHandler().extract(controller.name, locale="en"),
                 "description": ApiLocaleHandler().extract(controller.description),
             }
-            for controller in non_health
+            for controller in tenant_scoped
         ]
 
         # Pre-populate state with controller references so they're available

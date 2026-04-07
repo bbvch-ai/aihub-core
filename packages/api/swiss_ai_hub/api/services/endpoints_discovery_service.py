@@ -76,13 +76,22 @@ class EndpointsDiscoveryService(abc.ABC):
         """Register endpoints for discovered entities."""
         ...
 
+    @property
+    def _route_prefix(self) -> str:
+        """The URL prefix for this controller, including ``/{tenant_id}`` for tenant-scoped controllers."""
+        from swiss_ai_hub.core.routes.tenant_scoped_controller import TenantScopedController
+
+        if isinstance(self.controller, TenantScopedController):
+            return f"/{{tenant_id}}{self.controller.base_route}"
+        return self.controller.base_route
+
     def _get_endpoint_base_path_for_instance(self, entity_class: str, entity_id: str) -> str:
         """Returns the base path for instance-specific endpoints (used by ProcessEndpointsDiscoveryService)."""
-        return f"{self.controller.base_route}/classes/{entity_class}/instances/{entity_id}"
+        return f"{self._route_prefix}/classes/{entity_class}/instances/{entity_id}"
 
     def _get_endpoint_base_path_for_class(self, entity_class: str) -> str:
         """Returns the base path for class-level endpoints with dynamic {entity_id} path parameter."""
-        return f"{self.controller.base_route}/classes/{entity_class}/instances/{{agent_id}}"
+        return f"{self._route_prefix}/classes/{entity_class}/instances/{{agent_id}}"
 
     def _deregister_endpoints_for_instance(self, entity_class: str, entity_id: str):
         """Deregister all endpoints for a specific entity instance."""

@@ -43,14 +43,13 @@ export function createMemoryComposables(context: MemoryContext) {
   const { type, agent_class, agent_id, thread_id } = context
 
   /**
-   * Generate cache keys with proper scoping for user vs organization memory
+   * Generate cache keys with proper scoping for user vs organization memory.
+   * Includes the tenant prefix for hierarchical cache invalidation.
    */
   const getCacheKey = (operation: string, params: Record<string, unknown> = {}) => {
     const baseParams = { ...params, agent_class, agent_id, thread_id }
-    if (type === 'user') {
-      return ['memories', 'user', operation, baseParams]
-    }
-    return ['memories', 'organization', operation, baseParams]
+    const memoryType = type === 'user' ? 'user' : 'organization'
+    return ['tenant', params.tenant, 'memories', memoryType, operation, baseParams]
   }
 
   /**
@@ -67,7 +66,7 @@ export function createMemoryComposables(context: MemoryContext) {
     } = useQuery<MemoriesResponse>({
       key: () => getCacheKey('list', { tenant: tenantId.value, page: currentPage.value }),
       staleTime: minutesToMilliseconds(5),
-      enabled: computed(() => !!tenantId.value),
+      enabled: useTenantReady(),
       query: async () => {
         // Use search endpoint when filters are provided (agent_class/agent_id/thread_id)
         const hasFilters = agent_class || agent_id || thread_id
@@ -246,7 +245,7 @@ export function createMemoryComposables(context: MemoryContext) {
         }
 
         // Invalidate cache to trigger refetch
-        queryCache.invalidateQueries({ key: getCacheKey('list') })
+        queryCache.invalidateQueries({ key: getCacheKey('list', { tenant: tenantId }) })
       },
     })
 
@@ -275,7 +274,7 @@ export function createMemoryComposables(context: MemoryContext) {
         }
 
         // Invalidate cache to trigger refetch
-        queryCache.invalidateQueries({ key: getCacheKey('list') })
+        queryCache.invalidateQueries({ key: getCacheKey('list', { tenant: tenantId }) })
       },
     })
 
@@ -295,8 +294,8 @@ export function createMemoryComposables(context: MemoryContext) {
         }
 
         // Invalidate both list and search cache
-        queryCache.invalidateQueries({ key: getCacheKey('list') })
-        queryCache.invalidateQueries({ key: getCacheKey('search') })
+        queryCache.invalidateQueries({ key: getCacheKey('list', { tenant: tenantId }) })
+        queryCache.invalidateQueries({ key: getCacheKey('search', { tenant: tenantId }) })
       },
     })
 

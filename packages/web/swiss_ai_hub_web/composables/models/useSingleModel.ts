@@ -9,9 +9,9 @@ export const useSingleModel = () => {
   const modelName = computed<string>(() => decodeURIComponent(route.params?.model_name as string))
 
   const { data: model, isPending: modelIsLoading, error } = useQuery<ModelDto>({
-    key: () => ['model', tenantId.value, modelName.value],
+    key: () => ['tenant', tenantId.value, 'model', modelName.value],
     staleTime: minutesToMilliseconds(5),
-    enabled: () => !!modelName.value && !!tenantId.value,
+    enabled: useTenantReady('model_name'),
     query: async () => {
       return await getLitellmModel({
         composable: '$fetch',

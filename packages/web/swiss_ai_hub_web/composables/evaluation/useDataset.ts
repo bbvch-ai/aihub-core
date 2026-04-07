@@ -5,12 +5,11 @@ import { minutesToMilliseconds } from 'date-fns'
 export const useDataset = defineQuery(() => {
   const route = useRoute()
   const { tenantId } = useTenant()
-  const isRouteReady = useRouteReady('dataset_id')
 
   const { data: dataset, isPending: datasetIsLoading } = useQuery<Dataset>({
-    key: () => ['datasets', tenantId.value, route.params.dataset_id as string],
+    key: () => ['tenant', tenantId.value, 'datasets', route.params.dataset_id as string],
     staleTime: minutesToMilliseconds(5),
-    enabled: computed(() => isRouteReady.value && !!tenantId.value),
+    enabled: useTenantReady('dataset_id'),
     query: async () => {
       return await getDataset({
         composable: '$fetch',

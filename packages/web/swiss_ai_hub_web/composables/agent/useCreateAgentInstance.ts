@@ -19,8 +19,8 @@ export const useCreateAgentInstance = defineMutation(() => {
       })
 
       // Invalidate agent instances cache to refresh the list
-      queryCache.invalidateQueries({ key: ['agent-instances'] })
-      queryCache.invalidateQueries({ key: ['agent-class-instances', agentClass] })
+      queryCache.invalidateQueries({ key: ['tenant', tenantId, 'agent-instances'] })
+      queryCache.invalidateQueries({ key: ['tenant', tenantId, 'agent-class-instances', agentClass] })
       return result
     },
   })

@@ -8,9 +8,9 @@ export const useSuite = defineQuery(() => {
     data: suite,
     isPending: suiteIsLoading,
   } = useQuery<SuiteDto>({
-    key: () => ['suite', tenantId.value],
+    key: () => ['tenant', tenantId.value, 'suite'],
     staleTime: minutesToMilliseconds(5),
-    enabled: computed(() => !!tenantId.value),
+    enabled: useTenantReady(),
     query: async () => {
       return await getSuite({
         composable: '$fetch',

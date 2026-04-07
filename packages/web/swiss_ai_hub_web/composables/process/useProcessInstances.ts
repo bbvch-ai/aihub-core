@@ -8,9 +8,9 @@ export const useProcessInstances = defineQuery((options?: { online?: boolean }) 
   const { tenantId } = useTenant()
 
   const { data: processInstances, isPending: processInstancesAreLoading } = useQuery<FullProcessInstanceDto[]>({
-    key: () => ['process-instances', tenantId.value, options?.online],
+    key: () => ['tenant', tenantId.value, 'process-instances', options?.online],
     staleTime: minutesToMilliseconds(5),
-    enabled: computed(() => !!tenantId.value),
+    enabled: useTenantReady(),
     query: async () => {
       return await getAllProcessInstances({
         composable: '$fetch',

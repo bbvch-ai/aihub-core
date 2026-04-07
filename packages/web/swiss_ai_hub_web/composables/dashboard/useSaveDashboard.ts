@@ -12,7 +12,7 @@ export const useSaveDashboard = () => {
         path: { tenant_id: tenantId },
         body: grid,
       })
-      queryCache.invalidateQueries({ key: ['my_user'] })
+      queryCache.invalidateQueries({ key: ['tenant', tenantId, 'my_user'] })
     },
   })
   return {

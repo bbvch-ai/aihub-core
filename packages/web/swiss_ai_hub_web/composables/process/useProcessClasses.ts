@@ -8,9 +8,9 @@ export const useProcessClasses = defineQuery((options?: { online?: boolean }) =>
   const { tenantId } = useTenant()
 
   const { data: processClasses, isPending: processClassesAreLoading } = useQuery<ProcessClassDto[]>({
-    key: () => ['process-classes', tenantId.value, options?.online],
+    key: () => ['tenant', tenantId.value, 'process-classes', options?.online],
     staleTime: minutesToMilliseconds(5),
-    enabled: computed(() => !!tenantId.value),
+    enabled: useTenantReady(),
     query: async () => {
       return await getProcessClasses({
         composable: '$fetch',

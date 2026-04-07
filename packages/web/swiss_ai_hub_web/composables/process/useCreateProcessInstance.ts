@@ -18,8 +18,8 @@ export const useCreateProcessInstance = defineMutation(() => {
         body: request,
       })
 
-      queryCache.invalidateQueries({ key: ['process-instances'] })
-      queryCache.invalidateQueries({ key: ['process-class-instances', processClass] })
+      queryCache.invalidateQueries({ key: ['tenant', tenantId, 'process-instances'] })
+      queryCache.invalidateQueries({ key: ['tenant', tenantId, 'process-class-instances', processClass] })
       return result
     },
   })

@@ -8,9 +8,9 @@ export default defineQuery(() => {
     data: roles,
     isPending: rolesAreLoading,
   } = useQuery<RoleResponse[]>({
-    key: () => ['roles', tenantId.value],
+    key: () => ['tenant', tenantId.value, 'roles'],
     staleTime: minutesToMilliseconds(5),
-    enabled: computed(() => !!tenantId.value),
+    enabled: useTenantReady(),
     query: async () => {
       return await getRoles({
         composable: '$fetch',

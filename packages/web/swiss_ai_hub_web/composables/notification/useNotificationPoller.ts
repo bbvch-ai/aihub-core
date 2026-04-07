@@ -14,14 +14,14 @@ export const useNotificationPoller = (options?: {
   const knownUnreadIds = ref(new Set<string>())
 
   const { data: unreadResponse, refetch } = useQuery({
-    key: () => ['notifications_poller_data', tenantId.value],
+    key: () => ['tenant', tenantId.value, 'notifications_poller_data'],
     query: () =>
       getNotifications({
         composable: '$fetch',
         path: { tenant_id: tenantId.value! },
         query: { read: false, page_size: 100 },
       }),
-    enabled: computed(() => !!tenantId.value),
+    enabled: useTenantReady(),
   })
 
   watch(unreadResponse, (newData) => {
@@ -44,7 +44,7 @@ export const useNotificationPoller = (options?: {
     knownUnreadIds.value = new Set(newNotifications.map(n => n.id))
 
     if (hasNew) {
-      queryCache.invalidateQueries({ key: ['notifications'] })
+      queryCache.invalidateQueries({ key: ['tenant', tenantId.value, 'notifications'] })
     }
   })
 

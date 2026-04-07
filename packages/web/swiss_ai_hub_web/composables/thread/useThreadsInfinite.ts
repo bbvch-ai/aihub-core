@@ -10,7 +10,7 @@ export const useThreadsInfinite = defineQuery(() => {
     loadMore: loadMoreThreads,
     isLoading: threadsAreLoading,
   } = useInfiniteQuery({
-    key: () => ['threads', tenantId.value],
+    key: () => ['tenant', tenantId.value, 'threads'],
     query: async ({ nextPage }) => {
       if (nextPage === null) return null
 

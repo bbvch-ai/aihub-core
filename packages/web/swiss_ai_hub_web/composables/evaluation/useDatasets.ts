@@ -9,9 +9,9 @@ export const useDatasets = defineQuery(() => {
   const { tenantId } = useTenant()
 
   const { data: datasets, isPending: datasetsAreLoading } = useQuery<MinimalDataset[]>({
-    key: () => ['datasets', tenantId.value],
+    key: () => ['tenant', tenantId.value, 'datasets'],
     staleTime: minutesToMilliseconds(5),
-    enabled: computed(() => !!tenantId.value),
+    enabled: useTenantReady(),
     query: async () => {
       return await getDatasets({
         composable: '$fetch',

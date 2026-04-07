@@ -10,7 +10,7 @@ export const useCreateDataset = () => {
         path: { tenant_id: tenantId },
         body: dataset,
       })
-      queryCache.invalidateQueries({ key: ['datasets'] })
+      queryCache.invalidateQueries({ key: ['tenant', tenantId, 'datasets'] })
     },
   })
   return {

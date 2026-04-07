@@ -5,9 +5,9 @@ export const useSupportedFileTypes = defineQuery(() => {
   const { tenantId } = useTenant()
 
   const { data: supportedFileTypes } = useQuery<string[]>({
-    key: () => ['supportedFileTypes', tenantId.value],
+    key: () => ['tenant', tenantId.value, 'supportedFileTypes'],
     staleTime: minutesToMilliseconds(60),
-    enabled: computed(() => !!tenantId.value),
+    enabled: useTenantReady(),
     query: async () => {
       return await getSupportedFileTypes({
         composable: '$fetch',

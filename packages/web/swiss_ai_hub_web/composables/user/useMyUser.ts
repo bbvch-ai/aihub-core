@@ -8,9 +8,9 @@ export default defineQuery(() => {
     data: myUser,
     isPending: myUserIsLoading,
   } = useQuery<UserWithAccessDto>({
-    key: () => ['my_user', tenantId.value],
+    key: () => ['tenant', tenantId.value, 'my_user'],
     staleTime: minutesToMilliseconds(5),
-    enabled: computed(() => !!tenantId.value),
+    enabled: useTenantReady(),
     query: async () => {
       return await getMyAccount({
         composable: '$fetch',

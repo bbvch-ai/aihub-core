@@ -16,7 +16,7 @@ class MyTenantService:
     def get_my_tenants(user_id: str) -> list[TenantMembershipDTO]:
         """Returns all tenants the user belongs to."""
         tenant_ids = UserTenantRoleEntity.get_tenant_ids_for_user(user_id)
-        tenants = []
+        tenants: list[TenantMembershipDTO] = []
         for tenant_id in tenant_ids:
             entity = TenantEntity.get_tenant_by_id(tenant_id)
             if entity:

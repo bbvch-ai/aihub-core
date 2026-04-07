@@ -8,12 +8,11 @@ import { useRoute } from 'vue-router'
 export const useSummaryNodes = defineQuery(() => {
   const route = useRoute()
   const { tenantId } = useTenant()
-  const isRouteReady = useRouteReady('db', 'namespace', 'document_id')
 
   const { data: summaryNodes, isPending: summaryNodesAreLoading } = useQuery<NodeSummaryDto[]>({
-    key: () => ['knowledge', tenantId.value, 'databases', route.params.db as string, 'namespaces', route.params.namespace as string, 'documents', route.params.document_id as string, 'summaries'],
+    key: () => ['tenant', tenantId.value, 'knowledge', 'databases', route.params.db as string, 'namespaces', route.params.namespace as string, 'documents', route.params.document_id as string, 'summaries'],
     staleTime: minutesToMilliseconds(5),
-    enabled: computed(() => isRouteReady.value && !!tenantId.value),
+    enabled: useTenantReady('db', 'namespace', 'document_id'),
     query: async () => {
       return await getSummaryNodesForDocument({
         composable: '$fetch',

@@ -5,12 +5,11 @@ import { useRoute } from 'vue-router'
 export const useNodes = defineQuery(() => {
   const route = useRoute()
   const { tenantId } = useTenant()
-  const isRouteReady = useRouteReady('db', 'namespace', 'document_id')
 
   const { data: nodes, isPending: nodesAreLoading } = useQuery<IngestedNode[]>({
-    key: () => ['knowledge', tenantId.value, 'databases', route.params.db as string, 'namespaces', route.params.namespace as string, 'documents', route.params.document_id as string, 'nodes'],
+    key: () => ['tenant', tenantId.value, 'knowledge', 'databases', route.params.db as string, 'namespaces', route.params.namespace as string, 'documents', route.params.document_id as string, 'nodes'],
     staleTime: minutesToMilliseconds(5),
-    enabled: computed(() => isRouteReady.value && !!tenantId.value),
+    enabled: useTenantReady('db', 'namespace', 'document_id'),
     query: async () => {
       return await getNodesForDocument({
         composable: '$fetch',

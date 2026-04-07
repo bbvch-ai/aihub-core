@@ -10,7 +10,6 @@ class TenantMembershipDTO(BaseModel):
     id: Annotated[str, Field(description="Tenant identifier")]
     name: Annotated[str, Field(description="Tenant display name")]
     description: Annotated[str, Field(description="Tenant description")]
-    is_default: Annotated[bool, Field(description="Whether this is the default tenant")]
 
     @classmethod
     def from_entity(cls, entity: TenantEntity) -> Self:
@@ -18,5 +17,4 @@ class TenantMembershipDTO(BaseModel):
             id=str(entity.id),
             name=entity.name,
             description=entity.description or "",
-            is_default=entity.is_default or False,
         )

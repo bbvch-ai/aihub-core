@@ -6,9 +6,9 @@ export const useAgentInstances = defineQuery((options?: { online?: boolean }) =>
   const { tenantId } = useTenant()
 
   const { data: agentInstances, isPending: agentInstancesAreLoading } = useQuery<FullAgentInstanceDto[]>({
-    key: () => ['agent-instances', tenantId.value, options?.online],
+    key: () => ['tenant', tenantId.value, 'agent-instances', options?.online],
     staleTime: minutesToMilliseconds(5),
-    enabled: computed(() => !!tenantId.value),
+    enabled: useTenantReady(),
     query: async () => {
       return await getAllAgentInstances({
         composable: '$fetch',

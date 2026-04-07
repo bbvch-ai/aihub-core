@@ -16,9 +16,9 @@ export const useEventTimeseries = ({ eventName, timeRange, agentClass, agentId }
     event_name: eventName,
   }
   const { data: timeseries, isPending: timeseriesIsLoading } = useQuery<EventTimeseries>({
-    key: () => ['events', tenantId.value, 'agents', 'timeseries', timeRange.value, query],
+    key: () => ['tenant', tenantId.value, 'events', 'agents', 'timeseries', timeRange.value, query],
     staleTime: minutesToMilliseconds(5),
-    enabled: computed(() => !!tenantId.value),
+    enabled: useTenantReady(),
     query: async () => {
       return await getAgentEventTimeseries({
         composable: '$fetch',

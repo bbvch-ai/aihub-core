@@ -6,9 +6,9 @@ export const useModelsList = defineQuery(() => {
   const { tenantId } = useTenant()
 
   const { data: modelTypes, isPending: modelsAreLoading, error } = useQuery<ModelTypeGroupDto[]>({
-    key: () => ['models', tenantId.value],
+    key: () => ['tenant', tenantId.value, 'models'],
     staleTime: minutesToMilliseconds(5),
-    enabled: computed(() => !!tenantId.value),
+    enabled: useTenantReady(),
     query: async () => {
       return await getLitellmModels({
         composable: '$fetch',

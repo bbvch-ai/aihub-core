@@ -26,9 +26,9 @@ export const useUpdateAgentInstance = defineMutation(() => {
           configuration,
         },
       })
-      queryCache.invalidateQueries({ key: ['agent-instances', agentClass, agentId] })
-      queryCache.invalidateQueries({ key: ['agent-instances'] })
-      queryCache.invalidateQueries({ key: ['agent-class-instances', agentClass] })
+      queryCache.invalidateQueries({ key: ['tenant', tenantId, 'agent-instances', agentClass, agentId] })
+      queryCache.invalidateQueries({ key: ['tenant', tenantId, 'agent-instances'] })
+      queryCache.invalidateQueries({ key: ['tenant', tenantId, 'agent-class-instances', agentClass] })
       return result
     },
   })

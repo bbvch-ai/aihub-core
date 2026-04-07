@@ -6,8 +6,8 @@ export default defineQuery(() => {
   const pageSize = ref(20)
 
   const usersQuery = useQuery({
-    key: () => ['users', tenantId.value, { page: currentPage.value, size: pageSize.value }],
-    enabled: computed(() => !!tenantId.value),
+    key: () => ['tenant', tenantId.value, 'users', { page: currentPage.value, size: pageSize.value }],
+    enabled: useTenantReady(),
     query: async () => {
       const pageToFetch = Math.max(1, currentPage.value)
 

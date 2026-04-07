@@ -14,7 +14,7 @@ export const useUpdateDataset = () => {
           dataset_id: route.params.dataset_id as string,
         },
       })
-      queryCache.invalidateQueries({ key: ['datasets'] })
+      queryCache.invalidateQueries({ key: ['tenant', tenantId, 'datasets'] })
     },
   })
   return {

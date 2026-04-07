@@ -5,9 +5,9 @@ export const useDatabases = defineQuery(() => {
   const { tenantId } = useTenant()
 
   const { data: databases, isPending: databasesAreLoading } = useQuery<DatabaseDto[]>({
-    key: () => ['knowledge', tenantId.value],
+    key: () => ['tenant', tenantId.value, 'knowledge'],
     staleTime: minutesToMilliseconds(5),
-    enabled: computed(() => !!tenantId.value),
+    enabled: useTenantReady(),
     query: async () => {
       return await getDatabases({
         composable: '$fetch',

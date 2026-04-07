@@ -14,8 +14,9 @@ export const useNotifications = (options: {
   const { currentPage, pageSize, filters } = options
 
   const key = () => [
-    'notifications',
+    'tenant',
     tenantId.value,
+    'notifications',
     {
       page: currentPage.value,
       pageSize: pageSize.value,
@@ -28,7 +29,7 @@ export const useNotifications = (options: {
 
   const query = useQuery<PaginatedNotificationsResponse>({
     key,
-    enabled: computed(() => !!tenantId.value),
+    enabled: useTenantReady(),
     query: () =>
       getNotifications({
         composable: '$fetch',
