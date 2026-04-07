@@ -15,7 +15,7 @@ export const useAuth = () => {
     }
 
     await $auth.removeUser()
-    navigateTo('/login')
+    navigateTo('/auth/login')
   }
 
   const getUser = async () => {

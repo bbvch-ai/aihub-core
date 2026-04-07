@@ -100,7 +100,7 @@ import type { NotificationDto } from '@core/sdk/client'
 
 const { t } = useI18n()
 const router = useRouter()
-const { tenantPath } = useTenantPath()
+const tenantPath = useTenantPath()
 
 const selectedNotifications = ref<NotificationDto[]>([])
 const currentPage = ref(1)

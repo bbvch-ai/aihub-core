@@ -18,7 +18,7 @@ import type { NavItem } from '@core/types/NavItem'
 
 const router = useRouter()
 const route = useRoute()
-const { tenantPath } = useTenantPath()
+const tenantPath = useTenantPath()
 const { t } = useI18n()
 
 const { processInstance } = useProcessInstance()
