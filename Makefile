@@ -26,6 +26,7 @@ test:
 	@(cd packages/process && make test)
 	@(cd packages/api && make test)
 	@(cd packages/bot && make test)
+	@(cd packages/backup && make test)
 
 lint:
 	@echo "Running linter..."
@@ -35,6 +36,7 @@ lint:
 	@(cd packages/process && make lint)
 	@(cd packages/api && make lint)
 	@(cd packages/bot && make lint)
+	@(cd packages/backup && make lint)
 
 # Format code with Black
 format:
@@ -45,6 +47,7 @@ format:
 	@(cd packages/process && make format)
 	@(cd packages/api && make format)
 	@(cd packages/bot && make format)
+	@(cd packages/backup && make format)
 
 format-md:
 	@echo "Formatting markdown files..."
@@ -77,13 +80,14 @@ pr-ready:
 	@(cd packages/process &&  make pr-ready)
 	@(cd packages/api &&  make pr-ready)
 	@(cd packages/bot &&  make pr-ready)
+	@(cd packages/backup &&  make pr-ready)
 	@(cd packages/web && make pr-ready)
 	@$(MAKE) generate-compose
 	@$(MAKE) license-check
 	@$(MAKE) format-md
 	@$(MAKE) format-yaml
 
-TAG ?= v0.271.4
+TAG ?= v0.273.1
 
 changelog:
 	@echo "Generating changelog"
@@ -162,7 +166,7 @@ up-local-gpu: local-cert
 VERSION ?= 0.263.0
 version-bump:
 	@echo "Bumping version to $(VERSION) across all packages..."
-	@for f in pyproject.toml packages/core/pyproject.toml packages/agent/pyproject.toml packages/api/pyproject.toml packages/bot/pyproject.toml packages/pipeline/pyproject.toml packages/process/pyproject.toml; do \
+	@for f in pyproject.toml packages/core/pyproject.toml packages/agent/pyproject.toml packages/api/pyproject.toml packages/bot/pyproject.toml packages/pipeline/pyproject.toml packages/process/pyproject.toml packages/backup/pyproject.toml; do \
 		sed -i '/^\[project\]/,/^version =/ s/version = "[^"]*"/version = "$(VERSION)"/' $$f; \
 	done
 	@sed -i 's/"version": "[^"]*"/"version": "$(VERSION)"/' packages/web/swiss_ai_hub_web/package.json

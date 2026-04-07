@@ -1,6 +1,6 @@
 # License Report
 
-Generated on: 23.03.2026
+Generated on: 30.03.2026
 
 This document contains license information for all dependencies across the monorepo:
 
@@ -1466,6 +1466,8 @@ The following are our own services and inherit the license we choose:
 
 - api (`ghcr.io/bbvch-ai/aihub-core/api:latest`)
 - api (`ghcr.io/bbvch-ai/aihub-core/api:nightly`)
+- backup-daemon (`ghcr.io/bbvch-ai/aihub-core/backup:latest`)
+- backup-daemon (`ghcr.io/bbvch-ai/aihub-core/backup:nightly`)
 - bot (`ghcr.io/bbvch-ai/aihub-core/bot:latest`)
 - bot (`ghcr.io/bbvch-ai/aihub-core/bot:nightly`)
 - default_rag_pipeline (`ghcr.io/bbvch-ai/aihub-core/default_rag_pipeline:latest`)

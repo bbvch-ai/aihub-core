@@ -7,6 +7,8 @@ from swiss_ai_hub.core.auth.access.access_level import AccessLevel
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.i18n import LocaleHandler
+from swiss_ai_hub.core.persistence.agents import AgentClassEntity
+from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import AgentConfigEntityDocument
 from swiss_ai_hub.core.routes import Controller
 
 from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
@@ -105,13 +107,13 @@ class AgentController(Controller):
         async def create_agent_instance(
             agent_class: str,
             request: CreateAgentInstanceRequest,
-            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.agent.{agent_class}"))],
+            user: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.agent.{agent_class}"))],
             t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> FullAgentInstanceDTO:
             """
             Create a new agent instance from an existing agent class.
             """
-            return await AgentService.create_agent_instance(agent_class, request, t)
+            return await AgentService.create_agent_instance(agent_class, request, t, user=user)
 
         return self
 
@@ -138,19 +140,15 @@ class AgentController(Controller):
             agent_class: str,
             agent_id: str,
             request: UpdateAgentInstanceDTO,
-            _: Annotated[
+            user: Annotated[
                 UserIdentity, Security(self.user_with_permission("aihub.admin.agent.{agent_class}.{agent_id}"))
             ],
+            t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> FullAgentInstanceDTO:
             """
             Update the configuration for a specific agent instance.
             """
-            await AgentService.update_agent_instance(agent_class, agent_id, request.configuration)
-
-            # Return the updated instance
-            from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler as LH
-            from swiss_ai_hub.core.persistence.agents import AgentClassEntity
-            from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import AgentConfigEntityDocument
+            await AgentService.update_agent_instance(agent_class, agent_id, request.configuration, t, user=user)
 
             class_entity = AgentClassEntity.get_by_agent_class(agent_class)
             config_entity = AgentConfigEntityDocument.find_for_class_and_id(agent_class, agent_id)
@@ -158,7 +156,6 @@ class AgentController(Controller):
             if not class_entity or not config_entity:
                 raise HTTPException(status_code=404, detail=f"Agent instance {agent_class}/{agent_id} not found.")
 
-            t = LH(locale="en")
             return FullAgentInstanceDTO.from_class_and_config(class_entity, config_entity, t)
 
         return self

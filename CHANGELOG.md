@@ -5,6 +5,204 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.273.1] - 2026-04-01 - New Automated Backup Service & Improved Build Processes
+
+### Added
+
+- ✨ **Introduced `Backup Service`:** A new Dagster-based service has been added to provide automated database backup
+  orchestration. This initial release establishes the foundational structure for future backup capabilities.
+- 🔒 **Configured Backup Service Authentication:** Integrated Keycloak OAuth2 Proxy for the new `Backup Service`,
+  ensuring secure access and management through a dedicated endpoint (e.g., `backup.<DOMAIN>`).
+- 📦 **Added Docker Image Build Workflow for Backup:** A new GitHub Actions workflow has been established to automate the
+  building and releasing of the `backup` service Docker image.
+- ⚙️ **Integrated Backup Service into Build System:** The new `backup` package is now fully integrated into the
+  project's `Makefile` for testing, linting, formatting, PR readiness checks, and consistent version bumping.
+- 🚀 **Deployed Backup Service via Docker Compose:** The `backup` service, comprising Dagster code server, webserver, and
+  daemon, along with its OAuth2 proxy, is now deployable across all environments via updated Docker Compose
+  configurations.
+- 📄 **Initial Backup Service Documentation:** A `README.md` file has been added to the `backup` package, outlining its
+  purpose as a placeholder for backup and restore orchestration.
+
+### Refactor
+
+- 🧹 **Standardized Docker Build Contexts:** Refined the Dockerfile build contexts for numerous existing services (e.g.,
+  `api`, `web`, `agents`, `pipelines`, `bot`) in the Docker Compose configurations to ensure consistent and correct
+  local image building across the monorepo structure.
+
+______________________________________________________________________
+
+## [v0.273.0] - 2026-04-01 - Multi-Tenant API Routing & Active Tenant Experience
+
+### Added
+
+- 🦾 **PR Demo Video Skill**: Introduced a new skill that automates the generation of pull request demo video
+  descriptions and updates test plan checklist items based on screen recordings, streamlining the PR review process.
+- ✨ **Active Tenant Persistence**: The `UserEntity` now includes an `active_tenant_id` field, allowing the system to
+  remember a user's last selected tenant for an improved multi-tenant user experience.
+- 📄 **Tenant Path Parameter ADR**: A new Architecture Decision Record (`2026_03_30_tenant_path_parameter.md`) was added,
+  detailing the strategic shift to tenant identification via a required URL path parameter.
+
+### Changed
+
+- 🔄 **Core API Tenant Routing**: All primary API endpoints now require a `{tenant_id}` path parameter (e.g.,
+  `/api/v1/{tenant_id}/...`) for explicit tenant context. The `x-tenant-id` HTTP header is no longer supported, and
+  there is no implicit fallback to a default tenant.
+- 🚀 **"Active" Tenant Slug**: Introduced a special `"active"` slug (e.g., `/api/v1/active/...`) that resolves to the
+  authenticated user's persisted active tenant, simplifying frontend interactions.
+- 🔐 **Authentication Handlers**: Updated `AuthHandler` and its implementations (Keycloak, DangerousDevelopmentOnly,
+  Token) to resolve tenant context from the URL path parameter and use the `active_tenant_id` for contexts without a
+  request (e.g., WebSocket connections).
+- 🤖 **Bot Framework Endpoints**: Azure Bot Service and other bot connection configurations were updated to utilize the
+  new tenant-scoped API paths, primarily through the `/api/v1/active/...` slug.
+- 🌐 **Frontend API Client**: The main frontend API client's `baseURL` was updated to use `/api/v1/active`, ensuring all
+  frontend-initiated requests correctly leverage the active tenant context.
+- ⚙️ **Deployment Configurations**: Numerous environment variables across `docker-compose` files (dev, build, latest,
+  local, nightly variants) were updated to point to the new `/api/v1/active/...` API paths, ensuring consistent
+  deployments.
+- 📚 **Documentation & Skill Guides**: Extensive updates were made across all relevant documentation (ADRs, platform
+  docs, skill definitions, `CLAUDE.md`, `README.md`) to reflect the new API routing, tenant identification, and active
+  tenant behavior.
+- 🩺 **Health Endpoints**: Health check endpoints are now specifically mounted outside the tenant scope at
+  `/api/v1/health/`, allowing for unauthenticated status checks.
+
+### Fixed
+
+- 🐛 **Tenant Data Consistency on Deletion**: Enhanced the `delete_tenant_by_id` and `remove_user_from_tenant` operations
+  to automatically clear the `active_tenant_id` for affected users, preventing stale tenant references when tenants or
+  user-tenant associations are removed.
+
+### Refactor
+
+- 🧹 **API Routing Implementation**: The core `ApiRunner` logic was significantly refactored to implement the new
+  tenant-scoped routing using Starlette `Mount` for path parameter capture, and to separate health endpoints.
+- 🧪 **Test Suite Alignment**: Various API and authentication test cases, including mock request creation and tenant
+  resolution scenarios, were updated to align with the new tenant path parameter and active tenant resolution logic.
+- ⚡️ **OpenTelemetry Tracing**: Improved the OpenTelemetry span attributes in `Controller` to accurately record the
+  *resolved* tenant ID for business context, filtering out the raw `{tenant_id}` path parameter.
+
+______________________________________________________________________
+
+## [v0.272.2] - 2026-03-31 - Enhanced Configuration Authorization for Secure Operations
+
+### Added
+
+- ✨ **Introduced Configuration Authorization Service:** A new service (`ConfigAuthorizationService`) has been
+  implemented to automatically validate user permissions for resources referenced within agent and process
+  configurations (e.g., knowledge databases, other agents) during their creation and update.
+- 📄 **Authorization Violation Model:** A new data model (`ConfigAuthorizationViolation`) was added to standardize the
+  reporting of configuration authorization issues, providing clear details on unauthorized resources.
+- 🌐 **Localized Authorization Messages:** New translation keys for configuration authorization messages have been added
+  across all supported languages (German, English, French, Italian), ensuring a consistent user experience.
+
+### Changed
+
+- 🔑 **Mandatory Configuration Authorization:** Agent and Process instance creation and update operations now include a
+  mandatory step to enforce authorization checks on submitted configurations, preventing users from referencing
+  resources they do not have access to.
+- 🦾 **Agent Selector Authorization:** The **Agent Selector** form element now performs real-time authorization
+  validation, ensuring users can only select and configure agents they are permitted to access.
+- 📚 **Knowledge Database Selector Authorization:** The **Knowledge Database Selector** form element now performs
+  authorization validation, ensuring users can only select knowledge databases they are permitted to access.
+- 🔄 **Model Configuration Update:** The default Claude model has been updated to `opus[1m]`, and explicit support for
+  this new model variant has been added to the list of available models.
+
+### Refactor
+
+- 🧹 **Form Module Exports:** Key form components, including `ConfigAuthorizationViolation`, `FormkitElement`, `Group`,
+  `ModelSelect`, and `Repeater`, are now explicitly exported within the core form module for improved internal
+  consistency and module organization.
+
+______________________________________________________________________
+
+## [v0.272.1] - 2026-03-30 - Robust Agent Context: Valkey AOF and True Thread Persistence
+
+### Fixed
+
+- ⚡️ **Enhanced Valkey Data Durability**: Addressed the previously identified "Valkey persistence gap" by enabling
+  Append-Only File (AOF) persistence across all Valkey instances. This crucial update reduces potential data loss during
+  crashes from 30 seconds to approximately 1 second, significantly improving the reliability of agent runtime state.
+
+### Changed
+
+- 💾 **Introduced Truly Persistent ThreadContext**: Modified the `ThreadContext` to be genuinely persistent by removing
+  its 30-day Time-to-Live (TTL). This change ensures that conversation history, user preferences, and other long-lived
+  agent-set data remain durable across multiple runs without automatic expiry.
+- ⚙️ **Refined RunContext Lifecycle**: Clarified the behavior of `RunContext`, which is now explicitly cleaned up upon
+  `StopEvent` completion. Its 30-day TTL now functions as a safety net for orphaned runs in case of unexpected crashes,
+  ensuring data integrity while simplifying cleanup.
+- 📄 **Updated Agent Context Documentation**: Improved documentation across `CLAUDE.md`, solution strategy, and SDK
+  guides to accurately reflect the new persistence models and durability guarantees for `RunContext` and `ThreadContext`
+  in Valkey.
+
+### Refactor
+
+- 🧹 **Improved IDE Configuration**: Streamlined the Node.js interpreter setup in `Web.xml` to use project-level
+  settings, enhancing consistency for developers.
+- 🧹 **Internal Code Cleanups**: Performed minor code reordering for imports and test configurations to improve
+  maintainability and style.
+
+______________________________________________________________________
+
+## [v0.272.0] - 2026-03-25 - Empowering Agents with External Tooling: Introducing the MCP React Agent
+
+### Added
+
+- 🦾 **New MCP React Agent**: A sophisticated AI agent capable of dynamically discovering and interacting with tools and
+  resources exposed by external Message Control Protocol (MCP) servers, leveraging ReAct reasoning.
+- 🚀 **MCP Integration Framework**: Core components and utilities (`McpClientFactory`, `McpClientConfig`,
+  `mcp_resource_schemas`, `mcp_tool_schemas`) for seamless and robust communication with MCP-compliant services.
+- 📄 **Architectural Decision Record (ADR)**: A detailed document outlining the strategy for agents to consume MCP
+  resources, utilizing system prompts for static data and a meta-tool for templated data.
+- 🌐 **Internationalization for MCP Agent**: Added comprehensive localization support for the MCP React Agent's metadata,
+  configuration parameters, and workflow steps in German, English, French, and Italian.
+- ✨ **Tool Call ID to `ToolEvent`**: Introduced a `tool_call_id` field within `ToolEvent` to establish a clear link
+  between a tool invocation and its corresponding result message.
+- 🐳 **Docker Deployment for MCP Agent**: Provided a Dockerfile to facilitate the easy containerization and deployment of
+  the new MCP React Agent.
+- 🧪 **Playground Workflow for MCP React Agent**: A minimal example workflow, complete with a dummy MCP server, to
+  demonstrate and test the capabilities of the MCP React Agent.
+- 📦 **`fastmcp` Dependency**: Integrated `fastmcp` as a crucial dependency to enable direct client interaction with MCP
+  servers.
+
+### Changed
+
+- 🔄 **Enhanced `Message` Tool Call Handling**: Improved the `Message` class to accurately normalize and preserve
+  `tool_calls` data during conversion to and from `llama_index`'s `ChatMessage` format, ensuring data integrity across
+  the LLM pipeline.
+- 🔗 **OpenAI API Compatibility for `Message`**: Added methods `to_openai_dict` and `from_openai_response` to the
+  `Message` class, enabling better interoperability with OpenAI API messages, especially for complex tool interactions.
+- 🛡️ **Robust Content Extraction in `Message`**: Made the `content` property of the `Message` class more resilient by
+  explicitly handling cases where message contents might be empty.
+
+### Refactor
+
+- 🧹 **Organized MCP Core Components**: Restructured the codebase by creating dedicated `packages/agent/mcp/` and
+  `packages/core/mcp/` directories, centralizing all MCP-related infrastructure and agent-specific logic.
+- ⚙️ **Standardized Line Endings**: Ensured consistent LF line endings for `.sh` files across the repository via
+  `.gitattributes` for improved cross-platform compatibility.
+
+______________________________________________________________________
+
+## [v0.271.6] - 2026-03-25 - Document Processing Refinements
+
+### Changed
+
+- ⚡️ **Improved Document Intelligence Loader:** Enhanced file processing within the Document Intelligence Loader by
+  switching to direct byte content reading, leading to more robust and compatible document analysis.
+
+______________________________________________________________________
+
+## [v0.271.5] - 2026-03-24 - Documentation Base Path Update and Link Alignment
+
+### Changed
+
+- 📄 **Updated Documentation Base Paths:** The base path for all project documentation has been consistently updated from
+  `/swiss-ai-hub/` to `/aihub-core/` across the VitePress configuration, `README.md`, `CONTRIBUTING.md`, `CLAUDE.md`,
+  and the `install.sh` script. This ensures all documentation links and internal paths correctly point to the new
+  `aihub-core` URL structure.
+
+______________________________________________________________________
+
 ## [v0.271.4] - 2026-03-23 - Enhanced AI Workflow Automation and API Resilience
 
 ### Added

@@ -1,2 +1,8 @@
 ---
 test: Das ist ein deutscher Test
+authorization:
+  no_access_knowledge_database: Sie haben keinen Zugriff auf die Wissensdatenbank
+    '%{name}'.
+  no_access_agent: Sie haben keinen Zugriff auf den Agenten '%{agent}'.
+  config_unauthorized: Die Konfiguration referenziert Ressourcen, auf die Sie keinen
+    Zugriff haben.

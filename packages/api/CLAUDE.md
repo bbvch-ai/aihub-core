@@ -61,6 +61,11 @@ of endpoints.
 here, otherwise they won't be served. `runner.create_app()` also mounts an MCP server at `/mcp`, making the API
 available as a Claude Code MCP tool for testing.
 
+**Tenant-scoped routing**: All controllers are mounted under `/api/v1/{tenant_id}/` via a Starlette `Mount`. The
+`{tenant_id}` is either a concrete MongoDB ObjectId or `"active"` (resolves to the user's persisted active tenant).
+Health endpoints are separated at `/api/v1/health/` (outside tenant scope). The `{tenant_id}` lives at the Starlette
+level, NOT in FastAPI routes — so it does not appear in the OpenAPI spec and controllers don't need to reference it.
+
 **Commands**: `make run-dev` (uvicorn with hot reload on :8000), `make run-prod` (gunicorn multi-worker).
 
 **Docker**: `Dockerfile` builds the production image using `make run-prod` as entrypoint. End-users can also build their
@@ -165,7 +170,7 @@ without needing it baked into event payloads.
 
 ## WebSocket
 
-- Endpoint: `/api/v1/events/ws` (in `EventController`)
+- Endpoint: `/api/v1/{tenant_id}/events/ws` (in `EventController`)
 - Auth: First message must contain `{"token": "Bearer ..."}` — validated against auth handler
 - Read-only from client: inbound messages after auth are ignored (security)
 - Multi-connection per user: `WebSocketManager` tracks connections per user ID, syncs across tabs/devices
@@ -199,7 +204,7 @@ All resources stored in `app.state`, accessible via the dependencies listed abov
 **Auth bypass**: `DangerousDevelopmentOnlyAuthHandler` with `DangerousDevelopmentOnlyIdentityProvider`.
 
 **Interactive testing**: `cd playground/testing && python main.py` → http://localhost:8000 (frontend),
-http://localhost:8000/api/v1/docs (Swagger).
+http://localhost:8000/api/v1/active/docs (Swagger).
 
 **Pagination**: `PageNumber` and `PageSize` types in `pagination/`. Services return `tuple[int, list[DTO]]`.
 

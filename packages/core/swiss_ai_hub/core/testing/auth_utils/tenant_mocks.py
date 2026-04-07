@@ -2,6 +2,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_settings import (  # noqa: E501
     DangerousDevelopmentOnlyAuthSettings,
 )
@@ -30,15 +31,16 @@ def _create_mock_tenant() -> MagicMock:
 @pytest.fixture(autouse=True)
 def mock_tenant_entity_autouse():
     """
-    Mock TenantEntity and UserTenantRoleEntity methods for multi-tenant auth in tests.
+    Mock TenantEntity, UserTenantRoleEntity, and AuthHandler tenant resolution for tests.
 
-    This fixture ensures that the DangerousDevelopmentOnlyAuthHandler can resolve
-    tenant context without a real database. It mocks:
+    This fixture ensures that auth handlers can resolve tenant context without a real database.
+    It mocks:
     - TenantEntity.get_default_tenant() → returns a test tenant
     - TenantEntity.get_tenant_by_id() → returns the test tenant for any ID
     - UserTenantRoleEntity.get_roles_for_user_in_tenant() → returns dev roles
     - UserTenantRoleEntity.create_or_update() → no-op returning a mock
     - UserTenantRoleEntity.get_user_ids_in_tenant() → returns the dev user ID
+    - AuthHandler._resolve_active_tenant() → returns the test tenant
     """
     config = DangerousDevelopmentOnlyAuthSettings()
     mock_tenant = _create_mock_tenant()
@@ -56,6 +58,9 @@ def mock_tenant_entity_autouse():
     def mock_get_user_ids_in_tenant(tenant_id):
         return [config.OID]
 
+    def mock_resolve_active_tenant(user_id):
+        return mock_tenant
+
     with (
         patch.object(TenantEntity, "get_default_tenant", return_value=mock_tenant),
         patch.object(TenantEntity, "get_tenant_by_id", return_value=mock_tenant),
@@ -63,5 +68,6 @@ def mock_tenant_entity_autouse():
         patch.object(UserTenantRoleEntity, "get_roles_for_user_in_tenant", side_effect=mock_get_roles),
         patch.object(UserTenantRoleEntity, "create_or_update", side_effect=mock_create_or_update),
         patch.object(UserTenantRoleEntity, "get_user_ids_in_tenant", side_effect=mock_get_user_ids_in_tenant),
+        patch.object(AuthHandler, "_resolve_active_tenant", side_effect=mock_resolve_active_tenant),
     ):
         yield

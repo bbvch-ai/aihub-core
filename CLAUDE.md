@@ -30,11 +30,12 @@ providers (Swiss LLM Cloud), local models (vLLM for chat, embedding, and reranki
 providers. This gateway pattern decouples application code from specific providers — switching models requires only a
 configuration change in LiteLLM, not code modifications.
 
-**Agent Runtime**: Agents run as independent microservices that subscribe to NATS topics and publish events. Each agent
-reconstructs its conversational state by replaying the event history for a given thread, augmented by ephemeral state
-stored in Valkey (Redis-compatible). Agents access organizational knowledge through Milvus vector search, where document
-embeddings are indexed for semantic retrieval. This design allows agents to scale horizontally and be deployed or
-updated independently without affecting the rest of the platform.
+**Agent Runtime**: Agents run as independent microservices that subscribe to NATS topics and publish events. The
+dispatcher replays the event history from JetStream to determine which steps to execute, while durable state in Valkey
+(RunContext, ThreadContext) holds arbitrary agent-set data that cannot be reconstructed from events. Agents access
+organizational knowledge through Milvus vector search, where document embeddings are indexed for semantic retrieval.
+This design allows agents to scale horizontally and be deployed or updated independently without affecting the rest of
+the platform.
 
 **Data Pipeline**: Dagster orchestrates the ingestion workflow: sources (SharePoint, OneDrive via Rclone) are monitored
 for changes, documents are downloaded to SeaweedFS, parsed by MinerU (OCR + structural extraction), chunked

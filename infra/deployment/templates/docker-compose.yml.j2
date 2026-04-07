@@ -41,6 +41,7 @@
 {%- set PRESIDIO_ANONYMIZER_API_BASE = "http://presidio-anonymizer:3000" %}
 {%- set PLAYWRIGHT_WS_URL = "ws://playwright:3000" %}
 {%- set DAGSTER_WEBSERVER_URL = "http://dagster-webserver:3000" %}
+{%- set BACKUP_WEBSERVER_URL = "http://backup-webserver:3000" %}
 {%- set OTEL_EXPORTER_OTLP_ENDPOINT = "http://otel-collector:4317" %}
 {%- set KEYCLOAK_INTERNAL_URL = "http://keycloak:8080" %}
 {%- set KEYCLOAK_REALM = "aihub" %}
@@ -1112,8 +1113,9 @@ services:
     container_name: valkey
     image: {{ global.registry_prefix }}{{ image_tags.valkey }}
     restart: always
-    # Password authentication enabled via --requirepass
-    command: valkey-server --save 30 1 --loglevel warning --requirepass ${REDIS_TOKEN}
+    # Password authentication enabled via --requirepass.
+    # --appendonly yes enables AOF persistence for durability between RDB snapshots.
+    command: valkey-server --save 30 1 --loglevel warning --requirepass ${REDIS_TOKEN} --appendonly yes --appendfsync everysec
     volumes:
       - {{ global.volume_root }}/valkey-data:/data
     {%- if stage in ['dev', 'local', 'build'] %}
@@ -1178,6 +1180,185 @@ services:
       options:
         max-size: 10m
         max-file: 2
+
+  {%- if image_tags.backup[stage] %}
+  # ===================================================================
+  # Backup Services (Dagster-based Automated Database Backups)
+  # ===================================================================
+  # Independent 3-container Dagster deployment: gRPC code server, daemon,
+  # webserver. Dagster UI on port 3004 for monitoring and manual triggers.
+  # ===================================================================
+
+  backup-code:
+    container_name: backup-code
+    {%- if image_tags.backup[stage] == 'localbuild' %}
+    build:
+      context: ..
+      dockerfile: ./packages/backup/Dockerfile
+    {%- else %}
+    image: {{ global.registry_prefix }}{{ image_tags.backup[stage] }}
+    {%- endif %}
+    restart: unless-stopped
+    entrypoint:
+      - dagster
+      - api
+      - grpc
+      - -m
+      - swiss_ai_hub.backup.dagster
+      - -h
+      - 0.0.0.0
+      - -p
+      - '4266'
+    environment:
+      PYTHONUNBUFFERED: 1
+      DAGSTER_HOME: /dagster_home
+    volumes:
+      - {{ global.volume_root }}/backup-dagster-home:/dagster_home
+    healthcheck:
+      test: ["CMD", "dagster", "api", "grpc-health-check", "--host", "localhost", "--port", "4266"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks:
+      - data
+
+  {%- if stage != 'dev' %}
+  oauth2proxy-backup:
+    container_name: oauth2proxy-backup
+    image: {{ image_tags.oauth2proxy }}
+    restart: always
+    environment:
+      OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4180
+      OAUTH2_PROXY_COOKIE_SECURE: False
+      OAUTH2_PROXY_CODE_CHALLENGE_METHOD: S256
+      OAUTH2_PROXY_UPSTREAMS: {{ BACKUP_WEBSERVER_URL }}
+      OAUTH2_PROXY_CLIENT_ID: oauth2-proxy-backup
+      OAUTH2_PROXY_PROVIDER: oidc
+      OAUTH2_PROXY_PROVIDER_DISPLAY_NAME: ${OAUTH_PROVIDER_NAME}
+      OAUTH2_PROXY_SKIP_OIDC_DISCOVERY: "true"
+      OAUTH2_PROXY_OIDC_ISSUER_URL: https://auth.${DOMAIN}/realms/{{ KEYCLOAK_REALM }}
+      OAUTH2_PROXY_LOGIN_URL: https://auth.${DOMAIN}/realms/{{ KEYCLOAK_REALM }}/protocol/openid-connect/auth
+      OAUTH2_PROXY_REDEEM_URL: {{ KEYCLOAK_INTERNAL_URL }}/realms/{{ KEYCLOAK_REALM }}/protocol/openid-connect/token
+      OAUTH2_PROXY_OIDC_JWKS_URL: {{ KEYCLOAK_INTERNAL_URL }}/realms/{{ KEYCLOAK_REALM }}/protocol/openid-connect/certs
+      OAUTH2_PROXY_COOKIE_SECRET: ${OAUTH_COOKIE_SECRET_BACKUP}
+      OAUTH2_PROXY_CLIENT_SECRET: ${KEYCLOAK_OAUTH2_PROXY_BACKUP_SECRET}
+      OAUTH2_PROXY_EMAIL_DOMAINS: "*"
+      OAUTH2_PROXY_REVERSE_PROXY: True
+      OAUTH2_PROXY_REDIRECT_URL: https://backup.${DOMAIN}
+      OAUTH2_PROXY_SCOPE: openid email profile roles
+      OAUTH2_PROXY_ALLOWED_GROUPS: ${OAUTH_ALLOWED_GROUPS_BACKUP}
+      OAUTH2_PROXY_OIDC_GROUPS_CLAIM: roles
+      OAUTH2_PROXY_CUSTOM_SIGN_IN_LOGO: ${OAUTH_CUSTOM_SIGN_IN_LOGO}
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.backup.rule=Host(`backup.${DOMAIN}`)"
+      - "traefik.http.routers.backup.entrypoints=websecure"
+      - "traefik.http.routers.backup.middlewares=security-headers@file"
+      - "traefik.http.services.backup.loadbalancer.server.port=4180"
+      {%- if stage not in ['local', 'build'] %}
+      - "traefik.http.routers.backup.tls.certresolver=letsencrypt"
+      {%- else %}
+      - "traefik.http.routers.backup.tls=true"
+      {%- endif %}
+    networks:
+      - proxy
+      - backend
+  {%- endif %}
+
+  backup-webserver:
+    container_name: backup-webserver
+    {%- if image_tags.backup[stage] == 'localbuild' %}
+    build:
+      context: ..
+      dockerfile: ./packages/backup/Dockerfile
+    {%- else %}
+    image: {{ global.registry_prefix }}{{ image_tags.backup[stage] }}
+    {%- endif %}
+    restart: unless-stopped
+    depends_on:
+      backup-code:
+        condition: service_healthy
+    {%- if stage in ['local', 'build'] %}
+    ports:
+      - "127.0.0.1:3004:3000"
+    {%- endif %}
+    entrypoint:
+      - dagster-webserver
+      - -h
+      - 0.0.0.0
+      - -p
+      - '3000'
+      - -w
+      - /etc/dagster/workspace.yaml
+    environment:
+      PYTHONUNBUFFERED: 1
+      DAGSTER_HOME: /dagster_home
+    volumes:
+      - {{ global.volume_root }}/backup-dagster-home:/dagster_home
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/server_info"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks:
+      - proxy
+      - data
+
+  backup-daemon:
+    container_name: backup-daemon
+    {%- if image_tags.backup[stage] == 'localbuild' %}
+    build:
+      context: ..
+      dockerfile: ./packages/backup/Dockerfile
+    {%- else %}
+    image: {{ global.registry_prefix }}{{ image_tags.backup[stage] }}
+    {%- endif %}
+    restart: unless-stopped
+    depends_on:
+      backup-code:
+        condition: service_healthy
+    entrypoint:
+      - dagster-daemon
+      - run
+      - -w
+      - /etc/dagster/workspace.yaml
+    environment:
+      PYTHONUNBUFFERED: 1
+      DAGSTER_HOME: /dagster_home
+    volumes:
+      - {{ global.volume_root }}/backup-dagster-home:/dagster_home
+    healthcheck:
+      test: ["CMD", "dagster-daemon", "liveness-check"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks:
+      - data
+  {%- endif %}
 
   {%- if gpu_enabled %}
   # ===================================================================
@@ -1784,7 +1965,7 @@ services:
 
       # --- Model & AI-Hub Connection ---
       MODELS_CACHE_TTL: 60
-      OPENAI_API_BASE_URL: http://{{ 'localhost' if stage == 'dev' else 'api' }}:8000/api/v1/openai
+      OPENAI_API_BASE_URL: http://{{ 'localhost' if stage == 'dev' else 'api' }}:8000/api/v1/active/openai
       OPENAI_API_KEY: ${SUPERUSER_TOKEN}
       TASK_MODEL: {{ default_model }}
       TASK_MODEL_EXTERNAL: {{ default_model }}
@@ -1793,7 +1974,7 @@ services:
 
       # --- Image Generation ---
       IMAGE_GENERATION_MODEL: image-generation
-      IMAGES_OPENAI_API_BASE_URL: http://{{ 'localhost' if stage == 'dev' else 'api' }}:8000/api/v1/openai
+      IMAGES_OPENAI_API_BASE_URL: http://{{ 'localhost' if stage == 'dev' else 'api' }}:8000/api/v1/active/openai
       IMAGES_OPENAI_API_KEY: ${SUPERUSER_TOKEN}
       IMAGE_SIZE: 1024x1024
       ENABLE_IMAGE_GENERATION: True
@@ -1801,13 +1982,13 @@ services:
       # --- Audio STT ---
       AUDIO_STT_ENGINE: openai
       AUDIO_STT_MODEL: transcription
-      AUDIO_STT_OPENAI_API_BASE_URL: http://{{ 'localhost' if stage == 'dev' else 'api' }}:8000/api/v1/openai
+      AUDIO_STT_OPENAI_API_BASE_URL: http://{{ 'localhost' if stage == 'dev' else 'api' }}:8000/api/v1/active/openai
       AUDIO_STT_OPENAI_API_KEY: ${SUPERUSER_TOKEN}
 
       # --- Audio TTS ---
       AUDIO_TTS_ENGINE: openai
       AUDIO_TTS_MODEL: speech
-      AUDIO_TTS_OPENAI_API_BASE_URL: http://{{ 'localhost' if stage == 'dev' else 'api' }}:8000/api/v1/openai
+      AUDIO_TTS_OPENAI_API_BASE_URL: http://{{ 'localhost' if stage == 'dev' else 'api' }}:8000/api/v1/active/openai
       AUDIO_TTS_OPENAI_API_KEY: ${SUPERUSER_TOKEN}
       AUDIO_TTS_VOICE: alloy
 
@@ -1873,11 +2054,11 @@ services:
       PDF_EXTRACT_IMAGES: True
       RAG_FILE_MAX_COUNT: 4
       CONTENT_EXTRACTION_ENGINE: external
-      EXTERNAL_DOCUMENT_LOADER_URL: http://{{ 'localhost' if stage == 'dev' else 'api' }}:8000/api/v1/parsing
+      EXTERNAL_DOCUMENT_LOADER_URL: http://{{ 'localhost' if stage == 'dev' else 'api' }}:8000/api/v1/active/parsing
       EXTERNAL_DOCUMENT_LOADER_API_KEY: ${SUPERUSER_TOKEN}
       RAG_EMBEDDING_ENGINE: openai
       RAG_EMBEDDING_MODEL: embedding/bge-m3
-      RAG_OPENAI_API_BASE_URL: http://{{ 'localhost' if stage == 'dev' else 'api' }}:8000/api/v1/openai
+      RAG_OPENAI_API_BASE_URL: http://{{ 'localhost' if stage == 'dev' else 'api' }}:8000/api/v1/active/openai
       RAG_OPENAI_API_KEY: ${SUPERUSER_TOKEN}
 
       # --- Web Search ---
@@ -2375,7 +2556,7 @@ services:
       LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY}
       LANGFUSE_PUBLIC_URL: {{ 'http://localhost:6006' if stage == 'dev' else 'https://langfuse.${DOMAIN}' }}
       LANGFUSE_PROJECT_ID: "aihub-project"
-      AIHUB_OPENAI_API_BASE_URL: http://{{ 'localhost' if stage == 'dev' else 'api' }}:8000/api/v1/openai
+      AIHUB_OPENAI_API_BASE_URL: http://{{ 'localhost' if stage == 'dev' else 'api' }}:8000/api/v1/active/openai
 
 
       # NATs
@@ -2468,7 +2649,7 @@ services:
       OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
       OAUTH_AUTHORITY_URL: ${OAUTH_AUTHORITY_URL}
       WEBUI_URL: https://openwebui.${DOMAIN}
-      WS_ENDPOINT: wss://${DOMAIN}/api/v1/events/ws
+      WS_ENDPOINT: wss://${DOMAIN}/api/v1/active/events/ws
     healthcheck:
       test: ["CMD", "curl", "-f", "http://127.0.0.1/"]
       interval: 30s

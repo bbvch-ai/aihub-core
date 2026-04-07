@@ -158,10 +158,10 @@ wrapping them in `asyncio.run()`.
 ## Generated TypeScript SDK
 
 The frontend's API client is generated from the FastAPI server's OpenAPI schema using HeyAPI (`@hey-api/openapi-ts`).
-The generator reads the live schema from `http://localhost:8000/api/v1/openapi.json` and produces type definitions, SDK
-functions (one per endpoint), JSON schemas, and response transformers (for date coercion) into `sdk/client/`. The
-`@hey-api/client-nuxt` plugin configures the generated client to use Nuxt's `$fetch` composable for SSR-compatible
-cookie and header forwarding.
+The generator reads the live schema from `http://localhost:8000/api/v1/active/openapi.json` and produces type
+definitions, SDK functions (one per endpoint), JSON schemas, and response transformers (for date coercion) into
+`sdk/client/`. The `@hey-api/client-nuxt` plugin configures the generated client to use Nuxt's `$fetch` composable for
+SSR-compatible cookie and header forwarding.
 
 Because agent endpoints are registered dynamically at runtime (see chapter 6 (Runtime view), agent discovery), the
 generated SDK's type coverage extends to agent-specific request and response types. When a new agent class is discovered

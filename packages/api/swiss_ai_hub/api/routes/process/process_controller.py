@@ -99,11 +99,13 @@ class ProcessController(Controller):
         async def create_process_instance(
             process_class: str,
             request: CreateProcessInstanceRequest,
-            _: Annotated[UserIdentity, Security(self.user_with_permission("aihub.admin.process.{process_class}.?>"))],
+            user: Annotated[
+                UserIdentity, Security(self.user_with_permission("aihub.admin.process.{process_class}.?>"))
+            ],
             t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> FullProcessInstanceDTO:
             """Create a new process instance from an existing process class."""
-            return await ProcessService.create_process_instance(process_class, request, t)
+            return await ProcessService.create_process_instance(process_class, request, t, user=user)
 
         return self
 
@@ -128,13 +130,13 @@ class ProcessController(Controller):
             process_class: str,
             process_id: str,
             request: UpdateProcessInstanceDTO,
-            _: Annotated[
+            user: Annotated[
                 UserIdentity, Security(self.user_with_permission("aihub.admin.process.{process_class}.{process_id}"))
             ],
             t: Annotated[LocaleHandler, Depends(use_locale)],
         ) -> FullProcessInstanceDTO:
             """Update the configuration for a specific process instance."""
-            await ProcessService.update_process_instance(process_class, process_id, request.configuration)
+            await ProcessService.update_process_instance(process_class, process_id, request.configuration, t, user=user)
 
             class_entity = ProcessClassEntity.get_by_process_class(process_class)
             config_entity = ProcessConfigEntityDocument.find_for_class_and_id(process_class, process_id)

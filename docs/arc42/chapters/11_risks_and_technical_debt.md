@@ -17,19 +17,6 @@ but the platform's own document schemas in FerretDB have no equivalent mechanism
 **Planned mitigation**: Introduce versioned migration scripts for FerretDB document schemas, executed idempotently at
 application startup before serving requests. Schema versions would be stored in a metadata collection.
 
-### Valkey persistence gap
-
-Valkey is configured to snapshot every 30 seconds (`save 30 1`). Agent runtime state — the `StepStore` that tracks which
-steps have executed in a run, the `RunContext` and `ThreadContext` that carry ephemeral conversation data, and the rate
-limiting counters — lives exclusively in Valkey. A Valkey crash between snapshots loses up to 30 seconds of state. For
-the `StepStore`, this can cause steps to re-execute after recovery because the idempotency check
-(`was_called_with_events()`) depends on data that may have been lost. JetStream event replay can reconstruct the event
-history, but the step execution tracking cannot be rebuilt from events alone. Switching to AOF (append-only file)
-persistence would reduce the window to sub-second but has not been prioritized. This is tracked as a P0 item. **Planned
-mitigation**: Enable Valkey AOF persistence (`appendonly yes` with `appendfsync everysec`) to reduce the data loss
-window from 30 seconds to approximately 1 second. Alternatively, derive step execution state from JetStream event replay
-by recording step completion markers as NATS headers.
-
 ### Backup and restoration gaps
 
 The platform stores persistent data across seven distinct systems (PostgreSQL, FerretDB, Milvus, SeaweedFS, NATS

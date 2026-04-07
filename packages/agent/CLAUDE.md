@@ -26,7 +26,8 @@ packages/agent/                       # SDK framework
 │   ├── i18n/
 │   │   ├── agent_locale_string.py      # Multi-locale string resolution for agents
 │   │   └── translations/agent/         # Translation files: {name}.{de|en|fr|it}.yml
-│   ├── rag/                            # Shared RAG step functions and preconditions
+│   ├── mcp/                            # MCP tool integration (McpClientFactory, McpReactService)
+├── rag/                            # Shared RAG step functions and preconditions
 │   ├── runners/
 │   │   ├── agent_runner.py             # Production runner (NATS, Redis, Milvus, discovery)
 │   │   └── agent_test_runner.py        # Test runner (sandboxed, event capture, mock config)
@@ -272,10 +273,11 @@ constructing NATS subjects at each specificity level. See `packages/core/swiss_a
 
 ## Context Management
 
-- **RunContext**: Per-run ephemeral state in Redis/Valkey. Scoped to `(thread_id, run_id)`. 30-day TTL. Use for: loop
-  counters, intermediate results, retrieved docs. Cleaned up on StopEvent.
-- **ThreadContext**: Per-thread persistent state in Redis/Valkey. Scoped to `thread_id`. 30-day TTL. Use for:
+- **RunContext**: Per-run state in Valkey. Scoped to `(thread_id, run_id)`. 30-day TTL (safety net for orphaned runs).
+  Cleaned up explicitly on StopEvent. Use for: loop counters, intermediate results, retrieved docs.
+- **ThreadContext**: Per-thread persistent state in Valkey. Scoped to `thread_id`. No TTL — truly persistent. Use for:
   conversation history, user preferences, namespace selections. Persists across runs.
+- Neither can be reconstructed from NATS events — they hold arbitrary agent-set data that only exists in Valkey.
 - Both use `async get(key, default)` / `async set(key, value)` / `async delete(key)` API.
 - Factory: `RunContext.for_topic(redis, topic)`, `ThreadContext.for_topic(redis, topic)`.
 
@@ -321,7 +323,7 @@ Each agent has: `agents/{snake_name}/` (implementation), `app/{snake_name}/main.
   `precondition_workflow`, `bounded_loop`, `context_workflow`, `configured_workflow`, `custom_start_stop_events`,
   `discoverable_workflow`, `displaying_workflow`, `multi_locale_workflow`, `optional_workflow`,
   `organization_memory_workflow`, `semantic_workflow`, `user_memory_workflow`, `multistep_human_in_the_loop_workflow`,
-  `long_running_agent`, `llama_index_workflow`
+  `long_running_agent`, `llama_index_workflow`, `mcp_react_workflow`
 - `playground/performance/` — Load testing with PerformanceTestingAgent
 
 ## Testing

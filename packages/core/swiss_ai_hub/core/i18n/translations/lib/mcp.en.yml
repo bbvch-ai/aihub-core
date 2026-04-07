@@ -1,0 +1,14 @@
+---
+config:
+  name:
+    label: Server Name
+    help: A logical name to identify this MCP server connection.
+  url:
+    label: Server URL
+    help: The HTTP URL of the MCP server endpoint (e.g. https://mcp.example.com/mcp).
+  api_key:
+    label: API Key
+    help: Optional API key for authenticated MCP servers.
+  timeout:
+    label: Timeout (seconds)
+    help: Maximum time to wait for a response from the MCP server.

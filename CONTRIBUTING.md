@@ -74,16 +74,16 @@ aligns with the project's architecture *before* you invest a lot of time.
 We do not include the full setup instructions here, as our documentation is the single source of truth.
 
 - **To Build with the SDK:** If you are building a new agent, pipeline, or process, follow the
-  **[SDK Quick Start Guide](https://bbvch-ai.github.io/swiss-ai-hub/docs/3_sdk/1_quick_start/)**.
+  **[SDK Quick Start Guide](https://bbvch-ai.github.io/aihub-core/docs/3_sdk/1_quick_start/)**.
 - **To Deploy the Platform:** If you just want to run the platform locally or on-prem to try it out, follow the
-  **[Platform Deployment Guide](https://bbvch-ai.github.io/swiss-ai-hub/docs/2_platform/3_deployment_guide/)**.
+  **[Platform Deployment Guide](https://bbvch-ai.github.io/aihub-core/docs/2_platform/3_deployment_guide/)**.
 
 ### Step 4: Develop and Create Your PR
 
 We have a detailed guide on our Git workflow, branching strategy, and code conventions. Please read it carefully.
 
 **➡️
-[Full details are in our Ecosystem Contributing Guide](https://bbvch-ai.github.io/swiss-ai-hub/docs/4_ecosystem/1_contributing/)**
+[Full details are in our Ecosystem Contributing Guide](https://bbvch-ai.github.io/aihub-core/docs/4_ecosystem/1_contributing/)**
 
 Here is the short version:
 

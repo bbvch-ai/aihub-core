@@ -43,7 +43,7 @@ uv run python swiss_ai_hub/bot/setup_azure_bot.py \
     --resource-group "my-resource-group" \
     --bot-name "ai-hub-bot" \
     --token-url "https://my-domain.com" \
-    --token-path "/api/v1/agent/chat/completions/MyAgent/my_agent_id/json" \
+    --token-path "/api/v1/active/agent/chat/completions/MyAgent/my_agent_id/json" \
     --mongo-connection-string "mongodb://localhost:27017" \
     --tenant-id "your-azure-tenant-id" \
     --system-message "You are {assistant_name}. The user's name is {username}." \
@@ -59,7 +59,7 @@ uv run python swiss_ai_hub/bot/setup_azure_bot.py \
     --resource-group "my-resource-group" \
     --bot-name "ai-hub-slack-bot" \
     --token-url "https://my-domain.com" \
-    --token-path "/api/v1/agent/chat/completions/MyAgent/my_agent_id/json" \
+    --token-path "/api/v1/active/agent/chat/completions/MyAgent/my_agent_id/json" \
     --mongo-connection-string "mongodb://localhost:27017" \
     --slack-token "xoxb-your-slack-bot-token" \
     --system-message "You are {assistant_name}. The user's name is {username}."
@@ -107,7 +107,7 @@ az bot create \
     --name "ai-hub-bot" \
     --resource-group "my-resource-group" \
     --display-name "Swiss AI Hub Bot" \
-    --endpoint "https://your-domain.com/api/v1/agent/chat/completions/MyAgent/my_id/json" \
+    --endpoint "https://your-domain.com/api/v1/active/agent/chat/completions/MyAgent/my_id/json" \
     --location "westeurope" \
     --sku "F0" \
     --tenant-id "<APP_TENANTID>"
@@ -131,9 +131,9 @@ cd packages/bot && uv run python swiss_ai_hub/bot/add_path_entity.py
 from pymongo import MongoClient
 client = MongoClient("mongodb://localhost:27017")
 client["aihub"]["bot_paths"].update_one(
-    {"path": "/api/v1/agent/chat/completions/MyAgent/my_id/json"},
+    {"path": "/api/v1/active/agent/chat/completions/MyAgent/my_id/json"},
     {"$set": {
-        "path": "/api/v1/agent/chat/completions/MyAgent/my_id/json",
+        "path": "/api/v1/active/agent/chat/completions/MyAgent/my_id/json",
         "credentials": {
             "APP_TYPE": "SingleTenant",  # or "MultiTenant" for Slack
             "APP_ID": "<APP_ID>",
@@ -186,7 +186,7 @@ devtunnel port create -p 8001
 devtunnel host
 
 # Output: https://abc123-8001.devtunnels.ms
-# Use as bot endpoint: https://abc123-8001.devtunnels.ms/api/v1/agent/chat/completions/...
+# Use as bot endpoint: https://abc123-8001.devtunnels.ms/api/v1/active/agent/chat/completions/...
 ```
 
 ### Using Bot Framework Emulator (No Azure Required)
@@ -197,7 +197,7 @@ devtunnel host
    cd packages/bot/playground/testing
    uv run python main.py
    ```
-3. Connect emulator to: `http://localhost:8000/api/v1/messages`
+3. Connect emulator to: `http://localhost:8000/api/v1/active/messages`
 4. Leave App ID and Password **empty** for local testing
 5. Send messages and inspect Activity JSON
 

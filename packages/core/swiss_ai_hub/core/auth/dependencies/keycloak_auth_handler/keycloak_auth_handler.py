@@ -109,7 +109,7 @@ class KeycloakAuthHandler(AuthHandler):
             if request:
                 tenant = self.resolve_tenant_for_user(request, user_entity.id)
             else:
-                tenant = self.get_default_tenant_for_user(user_entity.id)
+                tenant = self.get_active_tenant_for_user(user_entity.id)
 
             return UserIdentity.from_user_entity(user_entity, tenant)
 

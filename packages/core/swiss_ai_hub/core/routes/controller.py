@@ -135,10 +135,15 @@ class Controller(abc.ABC):
         span.set_attribute("service.controller", self.service_name)
         span.set_attribute("auth.required_permission", required_permission)
 
+        # Tenant context (use resolved tenant, not raw path param which may be "active")
+        span.set_attribute("tenant.id", user.acting_within_tenant.id)
+
         # Path parameters (business context)
         if request.path_params:
             for param_name, param_value in request.path_params.items():
-                if param_name in ["agent_class", "agent_id", "thread_id", "process_id", "process_class"]:
+                if param_name == "tenant_id":
+                    continue
+                elif param_name in ["agent_class", "agent_id", "thread_id", "process_id", "process_class"]:
                     span.set_attribute(f"{param_name.replace('_', '.')}", str(param_value))
                 else:
                     span.set_attribute(f"resource.{param_name}", str(param_value))

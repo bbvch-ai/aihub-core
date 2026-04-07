@@ -76,6 +76,7 @@ packages/core/swiss_ai_hub/core/
 │   ├── locale_string.py              # Multi-language container (de, en, fr, it)
 │   ├── locale_handler.py             # Runtime locale resolution with fallback chains
 │   └── translations/                # YAML files: {scope}/{name}.{locale}.yml
+├── mcp/                             # MCP client configuration (McpClientConfig StepConfig)
 ├── infrastructure/                  # External service settings (Pydantic BaseSettings)
 │   ├── api/                         # AIHubSettings (buckets, CORS, OpenAI endpoint)
 │   ├── nats/                        # NatsSettings (broker connection)

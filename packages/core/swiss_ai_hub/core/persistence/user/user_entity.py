@@ -60,6 +60,7 @@ class UserEntity(Document):
     name = StringField(required=True)
     email = StringField(required=True)
     profile_image = StringField(null=True)
+    active_tenant_id = StringField(null=True)
     last_updated = DateTimeField(required=True)
     favorite_modules = ListField(StringField(), default=list)
     dashboard = EmbeddedDocumentField(Dashboard)
@@ -75,6 +76,15 @@ class UserEntity(Document):
                 "Profile image must be a valid http:// or https:// URL. "
                 "Data URLs and base64-encoded images are not allowed."
             )
+
+    @trace_fn
+    def set_active_tenant(self, tenant_id: str) -> None:
+        """Persists the user's active tenant if it changed."""
+        if self.active_tenant_id == tenant_id:
+            return
+        self.active_tenant_id = tenant_id
+        self.last_updated = datetime.now(UTC)
+        self.save()
 
     @staticmethod
     @trace_fn
@@ -120,15 +130,17 @@ class UserEntity(Document):
 
     @classmethod
     @trace_fn
-    def create_user(cls, oid: str, name: str, email: str, profile_image: str | None = None) -> Self:
-        default_dashboard = cls.create_default_dashboard()
+    def create_user(
+        cls, oid: str, name: str, email: str, profile_image: str | None = None, active_tenant_id: str | None = None
+    ) -> Self:
         user = cls(
             id=oid,
             name=name,
             email=email,
             profile_image=profile_image,
+            active_tenant_id=active_tenant_id,
             favorite_modules=[],
-            dashboard=default_dashboard,
+            dashboard=cls.create_default_dashboard(),
             last_updated=datetime.now(UTC),
         )
         user.save()
@@ -232,6 +244,10 @@ class UserEntity(Document):
                     )
                     logger.info(f"Repaired missing tenant association for user {oid} with roles: {roles_to_assign}")
 
+                if not user.active_tenant_id:
+                    user.set_active_tenant(default_tenant_id)
+                    logger.info(f"Repaired missing active tenant for user {oid}")
+
             return user
         except DoesNotExist:
             pass
@@ -259,6 +275,7 @@ class UserEntity(Document):
             name=name,
             email=email,
             profile_image=profile_image,
+            active_tenant_id=str(default_tenant.id),
         )
 
         UserTenantRoleEntity.create_or_update(
