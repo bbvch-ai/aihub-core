@@ -783,7 +783,9 @@ services:
     environment:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
+      POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      MONGO_USERNAME: ${MONGO_USERNAME}
       MONGO_PASSWORD: ${MONGO_PASSWORD}
       MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
       LANGFUSE_CLICKHOUSE_PASSWORD: ${LANGFUSE_CLICKHOUSE_PASSWORD}
@@ -814,7 +816,7 @@ services:
       options:
         max-size: 10m
         max-file: 2
-    networks: [data]
+    networks: [data, storage]
   backup-webserver:
     container_name: backup-webserver
     build:
@@ -948,6 +950,7 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       SET_VERBOSE: false
+      STORE_MODEL_IN_DB: true
     volumes: [./configs/litellm/litellm-config.dev.yml:/app/config.yml]
     command: --config /app/config.yml
     depends_on:
@@ -1371,6 +1374,7 @@ services:
   # ===================================================================
 
 
+  
 
   
 

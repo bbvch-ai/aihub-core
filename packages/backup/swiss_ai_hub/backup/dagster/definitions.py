@@ -7,6 +7,7 @@ from swiss_ai_hub.backup.dagster.assets.restore_service_factory import restore_s
 from swiss_ai_hub.backup.dagster.assets.restore_session_factory import restore_session_factory
 from swiss_ai_hub.backup.dagster.jobs.factory import backup_asset_job, restore_asset_job
 from swiss_ai_hub.backup.dagster.resources.factory import backup_resources
+from swiss_ai_hub.backup.dagster.schedules.factory import daily_backup_schedule
 
 
 def backup_definitions() -> Definitions:
@@ -38,11 +39,13 @@ def backup_definitions() -> Definitions:
 
     backup_job = backup_asset_job(backup_assets)
     restore_job = restore_asset_job(restore_assets)
+    schedule = daily_backup_schedule(backup_job)
 
     resources = backup_resources()
 
     return Definitions(
         assets=[*backup_assets, *restore_assets],
         jobs=[backup_job, restore_job],
+        schedules=[schedule],
         resources=resources,
     )
