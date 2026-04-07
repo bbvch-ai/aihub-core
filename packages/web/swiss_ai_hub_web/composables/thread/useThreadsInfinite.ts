@@ -2,6 +2,7 @@ import { getUserThreads, type ThreadDto } from '@core/sdk/client'
 import { useInfiniteQuery } from '@pinia/colada'
 
 export const useThreadsInfinite = defineQuery(() => {
+  const { tenantName } = useTenantFromRoute()
   const PAGE_SIZE = 10
 
   const {
@@ -9,12 +10,13 @@ export const useThreadsInfinite = defineQuery(() => {
     loadMore: loadMoreThreads,
     isLoading: threadsAreLoading,
   } = useInfiniteQuery({
-    key: () => ['threads'],
+    key: () => ['threads', tenantName.value],
     query: async ({ nextPage }) => {
       if (nextPage === null) return null
 
       return await getUserThreads({
         composable: '$fetch',
+        path: { tenant_id: tenantName.value! },
         query: {
           page: nextPage,
           page_size: PAGE_SIZE,

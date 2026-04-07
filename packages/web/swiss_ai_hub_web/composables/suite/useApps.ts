@@ -1,12 +1,10 @@
 import type { ServiceDto } from '@core/sdk/client'
 import type { MenuItem } from 'primevue/menuitem'
 
-import { useLocalePath } from '#i18n'
-
 export const useApps = () => {
   const { suite, suiteIsLoading } = useSuite()
   const router = useRouter()
-  const localePath = useLocalePath()
+  const tenantPath = useTenantPath()
 
   const apps = computed<MenuItem>(() => {
     const suiteApps = suite.value?.services.map((service: ServiceDto) => ({
@@ -20,7 +18,10 @@ export const useApps = () => {
     return [
       { icon: 'material-symbols:home', label: 'Home', path: '/' },
       ...suiteApps,
-    ].filter((app: MenuItem) => router.resolve(localePath(app.path)).matched.length > 0)
+    ].filter((app: MenuItem) => {
+      const resolved = app.path === '/' ? tenantPath('/') : tenantPath(app.path)
+      return router.resolve(resolved).matched.length > 0
+    })
   })
 
   return {

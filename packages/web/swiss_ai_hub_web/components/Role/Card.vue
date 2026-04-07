@@ -51,8 +51,6 @@ import { useDeleteRole } from '@core/composables/role/useDeleteRole'
 
 import type { RoleResponse } from '@core/sdk/client'
 
-import { useLocalePath } from '#i18n'
-
 const props = defineProps<{
   role: RoleResponse
 }>()
@@ -62,7 +60,7 @@ const confirm = useConfirm()
 const toast = useToast()
 const { t } = useI18n()
 const router = useRouter()
-const localePath = useLocalePath()
+const tenantPath = useTenantPath()
 
 const { deleteRole } = useDeleteRole()
 
@@ -86,7 +84,7 @@ const confirmDelete = () => {
       severity: 'danger',
     },
     accept: async () => {
-      await router.push(localePath('/service/roles'))
+      await router.push(tenantPath('/service/roles'))
       await deleteRole({ roleId: props.role.id })
       toast.add({ severity: 'success', summary: t('role.role_deleted.summary'), detail: t('role.role_deleted.detail'), life: 3000 })
     },

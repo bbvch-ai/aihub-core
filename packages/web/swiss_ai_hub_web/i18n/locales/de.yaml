@@ -765,3 +765,15 @@ openwebui:
     graph: Graph
     user_memories: Benutzererinnerungen
     org_memories: Organisationserinnerungen
+tenant:
+  select_title: Select a Tenant
+  select_description: Choose which organization you want to work in
+  no_tenant_title: No Tenant Access
+  no_tenant_description: You don't have access to any tenant. Please contact your
+    administrator.
+  switcher_label: Switch Tenant
+  current_tenant: Current Tenant
+  mismatch_warning: Tenant Mismatch
+  mismatch_description: Your active tenant was changed to {tenant} in another session.
+    The chat interface uses the active tenant for all requests.
+  mismatch_switch_action: Switch Tenant

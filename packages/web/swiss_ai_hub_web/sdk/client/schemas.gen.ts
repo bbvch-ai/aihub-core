@@ -45,6 +45,28 @@ export const AccessLevelSchema = {
     description: 'Defines the possible outcomes of a permission check.'
 } as const;
 
+export const ActiveTenantDTOSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            title: 'Id',
+            description: 'Tenant identifier'
+        },
+        name: {
+            type: 'string',
+            title: 'Name',
+            description: 'Tenant display name'
+        }
+    },
+    type: 'object',
+    required: [
+        'id',
+        'name'
+    ],
+    title: 'ActiveTenantDTO',
+    description: 'The user\'s currently active tenant.'
+} as const;
+
 export const AddAgentRequestSchema = {
     properties: {
         agent_id: {
@@ -1413,7 +1435,7 @@ export const AgentSelectorSchema = {
         'validation'
     ],
     title: 'AgentSelector',
-    description: 'A FormKit element for selecting an agent class and instance ID.\n\nThis element renders as a cascading selection:\n1. Agent class dropdown (loads from /api/v1/agents/classes)\n2. Agent ID dropdown (populated based on selected class from /api/v1/agents/classes/{class}/instances)\n\nThe output is a structured object containing both the class name and the instance ID:\n{"agent_class": str, "agent_id": str}\n\n### Optional Filtering by Start Event\n\nWhen `start_event` is specified, only agent classes that accept the given event type\nare shown. For example, `start_event="AskExpertStartEvent"` filters to only show agents\nwhose `start_events` contain an event with matching `event_name` or `event_parents`.\n\nThis is similar to ModelSelect\'s `mode` parameter for filtering by model type.\n\n### Form Duality\n\nWhen used with AgentRef, the form submission is validated directly into AgentRef:\n\n```python\nfrom aihub_lib.nats.events.form.elements.AgentSelector import AgentSelector\nfrom aihub_lib.nats.events.form.forms.AgentRef import AgentRef\n\nclass MyConfig(Form):\n    target_agent: Annotated[\n        AgentRef | AgentSelector,\n        Field(description="The target agent to invoke"),\n    ]\n\n    @classmethod\n    def as_form(cls) -> "MyConfig":\n        return cls(\n            target_agent=AgentSelector(\n                label=LocaleString(en="Target Agent", de="Ziel-Agent"),\n                start_event="SomeStartEvent",  # Optional filter\n            ),\n        )\n\n    # Data mode - from submission:\n    config = MyConfig(\n        target_agent=AgentRef(\n            agent_class="my_agent_class",\n            agent_id="my_agent_id",\n        ),\n    )\n```'
+    description: 'A FormKit element for selecting an agent class and instance ID.\n\nThis element renders as a cascading selection:\n1. Agent class dropdown (loads from /api/v1/agents/classes)\n2. Agent ID dropdown (populated based on selected class from /api/v1/agents/classes/{class}/instances)\n\nThe output is a structured object containing both the class name and the instance ID:\n{"agent_class": str, "agent_id": str}\n\n### Optional Filtering by Start Event\n\nWhen `start_event` is specified, only agent classes that accept the given event type\nare shown. For example, `start_event="AskExpertStartEvent"` filters to only show agents\nwhose `start_events` contain an event with matching `event_name` or `event_parents`.\n\nThis is similar to ModelSelect\'s `mode` parameter for filtering by model type.\n\n### Form Duality\n\nWhen used with AgentRef, the form submission is validated directly into AgentRef:\n\n```python\nfrom swiss_ai_hub.core.form.elements.agent_selector import AgentSelector\nfrom swiss_ai_hub.core.form.forms.AgentRef import AgentRef\n\nclass MyConfig(Form):\n    target_agent: Annotated[\n        AgentRef | AgentSelector,\n        Field(description="The target agent to invoke"),\n    ]\n\n    @classmethod\n    def as_form(cls) -> "MyConfig":\n        return cls(\n            target_agent=AgentSelector(\n                label=LocaleString(en="Target Agent", de="Ziel-Agent"),\n                start_event="SomeStartEvent",  # Optional filter\n            ),\n        )\n\n    # Data mode - from submission:\n    config = MyConfig(\n        target_agent=AgentRef(\n            agent_class="my_agent_class",\n            agent_id="my_agent_id",\n        ),\n    )\n```'
 } as const;
 
 export const AgentSuitabilityAcceptEventSchema = {
@@ -2169,7 +2191,7 @@ export const BaseStoreMemoryEventSchema = {
     description: 'Abstract base class for memory storage events.\n\n### Why BaseStoreMemoryEvent?\nThis event serves dual purposes in the Swiss AI Agent Protocol:\n- As a control event, it notifies downstream systems that memory state has changed\n- As a display event, it provides transparency to users about what was learned or stored\n\nAgents emit this event after persisting insights to long-term memory storage. The event captures\nboth the semantic changes (added/updated/deleted memories) and the knowledge graph updates\n(new/removed relations between entities). This transparency is crucial for user trust - they can\nsee what the agent learned and verify accuracy.\n\nThe event structure follows mem0\'s MemoryAdded response format, enabling real-time UI updates,\naudit trails, and triggering downstream workflows that depend on memory state.\n\nConcrete subclasses differentiate between user-scoped and organization-scoped memory storage.'
 } as const;
 
-export const Body_create_transcription_openai_audio_transcriptions_postSchema = {
+export const Body_create_transcription__tenant_id__openai_audio_transcriptions_postSchema = {
     properties: {
         file: {
             type: 'string',
@@ -2257,7 +2279,7 @@ export const Body_create_transcription_openai_audio_transcriptions_postSchema = 
         'file',
         'model'
     ],
-    title: 'Body_create_transcription_openai_audio_transcriptions_post'
+    title: 'Body_create_transcription__tenant_id__openai_audio_transcriptions_post'
 } as const;
 
 export const BulkUpdateNotificationRequestSchema = {
@@ -13425,7 +13447,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1773057514
+            default: 1775567444
         },
         owned_by: {
             type: 'string',
@@ -18222,6 +18244,22 @@ export const ServiceDTOSchema = {
     title: 'ServiceDTO'
 } as const;
 
+export const SetActiveTenantRequestSchema = {
+    properties: {
+        tenant_id: {
+            type: 'string',
+            title: 'Tenant Id',
+            description: 'The tenant ID to set as active'
+        }
+    },
+    type: 'object',
+    required: [
+        'tenant_id'
+    ],
+    title: 'SetActiveTenantRequest',
+    description: 'Request body for setting the active tenant.'
+} as const;
+
 export const SignedUrlDtoSchema = {
     properties: {
         url: {
@@ -18951,6 +18989,40 @@ export const TenantIdentitySchema = {
     ],
     title: 'TenantIdentity',
     description: 'Represents a tenant\'s identity in the multi-tenant system.'
+} as const;
+
+export const TenantMembershipDTOSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            title: 'Id',
+            description: 'Tenant identifier'
+        },
+        name: {
+            type: 'string',
+            title: 'Name',
+            description: 'Tenant display name'
+        },
+        description: {
+            type: 'string',
+            title: 'Description',
+            description: 'Tenant description'
+        },
+        is_default: {
+            type: 'boolean',
+            title: 'Is Default',
+            description: 'Whether this is the default tenant'
+        }
+    },
+    type: 'object',
+    required: [
+        'id',
+        'name',
+        'description',
+        'is_default'
+    ],
+    title: 'TenantMembershipDTO',
+    description: 'A tenant the current user belongs to.'
 } as const;
 
 export const TextBlockSchema = {
@@ -20190,6 +20262,18 @@ export const ToolEventSchema = {
             ],
             description: 'Display description for the event'
         },
+        tool_call_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Tool Call Id',
+            description: 'Unique identifier linking this invocation to its result'
+        },
         name: {
             anyOf: [
                 {
@@ -21047,7 +21131,14 @@ export const UserIdentitySchema = {
             description: 'The roles assigned to the user within the acting tenant.'
         },
         acting_within_tenant: {
-            $ref: '#/components/schemas/TenantIdentity',
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/TenantIdentity'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             description: 'The tenant context the user is operating within.'
         }
     },
@@ -21056,8 +21147,7 @@ export const UserIdentitySchema = {
         'id',
         'name',
         'email',
-        'roles',
-        'acting_within_tenant'
+        'roles'
     ],
     title: 'UserIdentity',
     description: 'Lightweight identity object for authenticated users.'
@@ -21492,7 +21582,7 @@ export const VectorStoreInputSchema = {
         'validation'
     ],
     title: 'VectorStoreInput',
-    description: '    A FormKit element for selecting a vector store collection and namespaces.\n\n    This element renders as a cascading selection:\n    1. Database dropdown (loads from /api/v1/knowledge/databases)\n    2. Namespace multi-select (populated based on selected database)\n\n    The output is a structured object containing both the collection name and\n    the selected namespaces, matching the MilvusVectorStoreConfig fields:\n    {"collection_name": str, "index_namespaces": list[str]}\n\n    ### Form Duality\n    When used with MilvusVectorStoreConfig, the form submission is validated\n    directly into MilvusVectorStoreConfig (connection settings are read from\n    MilvusSettings at runtime).\n\n    ### Example Usage\n    ```python\n    from aihub_lib.nats.events.form.elements.VectorStoreInput import VectorStoreInput\n    from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig\n\n    class MyRetrieverConfig(Form):\n        vector_store: Annotated[\n            MilvusVectorStoreConfig | VectorStoreInput,\n            Field(description="The vector store configuration"),\n        ]\nreranking_model\n    # Form mode - for rendering:\n    config = MyRetrieverConfig(\n        vector_store=VectorStoreInput(\n            label=LocaleString(en="Vector Store", de="Vektorspeicher"),\n        ),\n    )\n\n    # Data mode - from submission (Pydantic validates into MilvusVectorStoreConfig):\n    config = MyRetrieverConfig(\n        vector_store=MilvusVectorStoreConfig(\n            collection_name="my-database",\n            index_namespaces=["namespace1", "namespace2"],\n        ),\n    )\n    ```'
+    description: '    A FormKit element for selecting a vector store collection and namespaces.\n\n    This element renders as a cascading selection:\n    1. Database dropdown (loads from /api/v1/knowledge/databases)\n    2. Namespace multi-select (populated based on selected database)\n\n    The output is a structured object containing both the collection name and\n    the selected namespaces, matching the MilvusVectorStoreConfig fields:\n    {"collection_name": str, "index_namespaces": list[str]}\n\n    ### Form Duality\n    When used with MilvusVectorStoreConfig, the form submission is validated\n    directly into MilvusVectorStoreConfig (connection settings are read from\n    MilvusSettings at runtime).\n\n    ### Example Usage\n    ```python\n    from swiss_ai_hub.core.form.elements.vector_store_input import VectorStoreInput\n    from swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_vector_store_config import MilvusVectorStoreConfig\n\n    class MyRetrieverConfig(Form):\n        vector_store: Annotated[\n            MilvusVectorStoreConfig | VectorStoreInput,\n            Field(description="The vector store configuration"),\n        ]\nreranking_model\n    # Form mode - for rendering:\n    config = MyRetrieverConfig(\n        vector_store=VectorStoreInput(\n            label=LocaleString(en="Vector Store", de="Vektorspeicher"),\n        ),\n    )\n\n    # Data mode - from submission (Pydantic validates into MilvusVectorStoreConfig):\n    config = MyRetrieverConfig(\n        vector_store=MilvusVectorStoreConfig(\n            collection_name="my-database",\n            index_namespaces=["namespace1", "namespace2"],\n        ),\n    )\n    ```'
 } as const;
 
 export const VideoBlockSchema = {
@@ -22741,7 +22831,7 @@ export const AgentSelectorWritableSchema = {
         'label'
     ],
     title: 'AgentSelector',
-    description: 'A FormKit element for selecting an agent class and instance ID.\n\nThis element renders as a cascading selection:\n1. Agent class dropdown (loads from /api/v1/agents/classes)\n2. Agent ID dropdown (populated based on selected class from /api/v1/agents/classes/{class}/instances)\n\nThe output is a structured object containing both the class name and the instance ID:\n{"agent_class": str, "agent_id": str}\n\n### Optional Filtering by Start Event\n\nWhen `start_event` is specified, only agent classes that accept the given event type\nare shown. For example, `start_event="AskExpertStartEvent"` filters to only show agents\nwhose `start_events` contain an event with matching `event_name` or `event_parents`.\n\nThis is similar to ModelSelect\'s `mode` parameter for filtering by model type.\n\n### Form Duality\n\nWhen used with AgentRef, the form submission is validated directly into AgentRef:\n\n```python\nfrom aihub_lib.nats.events.form.elements.AgentSelector import AgentSelector\nfrom aihub_lib.nats.events.form.forms.AgentRef import AgentRef\n\nclass MyConfig(Form):\n    target_agent: Annotated[\n        AgentRef | AgentSelector,\n        Field(description="The target agent to invoke"),\n    ]\n\n    @classmethod\n    def as_form(cls) -> "MyConfig":\n        return cls(\n            target_agent=AgentSelector(\n                label=LocaleString(en="Target Agent", de="Ziel-Agent"),\n                start_event="SomeStartEvent",  # Optional filter\n            ),\n        )\n\n    # Data mode - from submission:\n    config = MyConfig(\n        target_agent=AgentRef(\n            agent_class="my_agent_class",\n            agent_id="my_agent_id",\n        ),\n    )\n```'
+    description: 'A FormKit element for selecting an agent class and instance ID.\n\nThis element renders as a cascading selection:\n1. Agent class dropdown (loads from /api/v1/agents/classes)\n2. Agent ID dropdown (populated based on selected class from /api/v1/agents/classes/{class}/instances)\n\nThe output is a structured object containing both the class name and the instance ID:\n{"agent_class": str, "agent_id": str}\n\n### Optional Filtering by Start Event\n\nWhen `start_event` is specified, only agent classes that accept the given event type\nare shown. For example, `start_event="AskExpertStartEvent"` filters to only show agents\nwhose `start_events` contain an event with matching `event_name` or `event_parents`.\n\nThis is similar to ModelSelect\'s `mode` parameter for filtering by model type.\n\n### Form Duality\n\nWhen used with AgentRef, the form submission is validated directly into AgentRef:\n\n```python\nfrom swiss_ai_hub.core.form.elements.agent_selector import AgentSelector\nfrom swiss_ai_hub.core.form.forms.AgentRef import AgentRef\n\nclass MyConfig(Form):\n    target_agent: Annotated[\n        AgentRef | AgentSelector,\n        Field(description="The target agent to invoke"),\n    ]\n\n    @classmethod\n    def as_form(cls) -> "MyConfig":\n        return cls(\n            target_agent=AgentSelector(\n                label=LocaleString(en="Target Agent", de="Ziel-Agent"),\n                start_event="SomeStartEvent",  # Optional filter\n            ),\n        )\n\n    # Data mode - from submission:\n    config = MyConfig(\n        target_agent=AgentRef(\n            agent_class="my_agent_class",\n            agent_id="my_agent_id",\n        ),\n    )\n```'
 } as const;
 
 export const AgentSuitabilityAcceptEventWritableSchema = {
@@ -32964,6 +33054,18 @@ export const ToolEventWritableSchema = {
             ],
             description: 'Display description for the event'
         },
+        tool_call_id: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Tool Call Id',
+            description: 'Unique identifier linking this invocation to its result'
+        },
         name: {
             anyOf: [
                 {
@@ -33271,5 +33373,5 @@ export const VectorStoreInputWritableSchema = {
         'label'
     ],
     title: 'VectorStoreInput',
-    description: '    A FormKit element for selecting a vector store collection and namespaces.\n\n    This element renders as a cascading selection:\n    1. Database dropdown (loads from /api/v1/knowledge/databases)\n    2. Namespace multi-select (populated based on selected database)\n\n    The output is a structured object containing both the collection name and\n    the selected namespaces, matching the MilvusVectorStoreConfig fields:\n    {"collection_name": str, "index_namespaces": list[str]}\n\n    ### Form Duality\n    When used with MilvusVectorStoreConfig, the form submission is validated\n    directly into MilvusVectorStoreConfig (connection settings are read from\n    MilvusSettings at runtime).\n\n    ### Example Usage\n    ```python\n    from aihub_lib.nats.events.form.elements.VectorStoreInput import VectorStoreInput\n    from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig\n\n    class MyRetrieverConfig(Form):\n        vector_store: Annotated[\n            MilvusVectorStoreConfig | VectorStoreInput,\n            Field(description="The vector store configuration"),\n        ]\nreranking_model\n    # Form mode - for rendering:\n    config = MyRetrieverConfig(\n        vector_store=VectorStoreInput(\n            label=LocaleString(en="Vector Store", de="Vektorspeicher"),\n        ),\n    )\n\n    # Data mode - from submission (Pydantic validates into MilvusVectorStoreConfig):\n    config = MyRetrieverConfig(\n        vector_store=MilvusVectorStoreConfig(\n            collection_name="my-database",\n            index_namespaces=["namespace1", "namespace2"],\n        ),\n    )\n    ```'
+    description: '    A FormKit element for selecting a vector store collection and namespaces.\n\n    This element renders as a cascading selection:\n    1. Database dropdown (loads from /api/v1/knowledge/databases)\n    2. Namespace multi-select (populated based on selected database)\n\n    The output is a structured object containing both the collection name and\n    the selected namespaces, matching the MilvusVectorStoreConfig fields:\n    {"collection_name": str, "index_namespaces": list[str]}\n\n    ### Form Duality\n    When used with MilvusVectorStoreConfig, the form submission is validated\n    directly into MilvusVectorStoreConfig (connection settings are read from\n    MilvusSettings at runtime).\n\n    ### Example Usage\n    ```python\n    from swiss_ai_hub.core.form.elements.vector_store_input import VectorStoreInput\n    from swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_vector_store_config import MilvusVectorStoreConfig\n\n    class MyRetrieverConfig(Form):\n        vector_store: Annotated[\n            MilvusVectorStoreConfig | VectorStoreInput,\n            Field(description="The vector store configuration"),\n        ]\nreranking_model\n    # Form mode - for rendering:\n    config = MyRetrieverConfig(\n        vector_store=VectorStoreInput(\n            label=LocaleString(en="Vector Store", de="Vektorspeicher"),\n        ),\n    )\n\n    # Data mode - from submission (Pydantic validates into MilvusVectorStoreConfig):\n    config = MyRetrieverConfig(\n        vector_store=MilvusVectorStoreConfig(\n            collection_name="my-database",\n            index_namespaces=["namespace1", "namespace2"],\n        ),\n    )\n    ```'
 } as const;

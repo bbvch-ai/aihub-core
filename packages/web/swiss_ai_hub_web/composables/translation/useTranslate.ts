@@ -5,9 +5,10 @@ export function useTranslate() {
     mutateAsync: translate,
     isLoading: isTranslating,
   } = useMutation({
-    mutation: (request: TranslationRequest) =>
+    mutation: ({ request, tenantId }: { request: TranslationRequest, tenantId: string }) =>
       translateText({
         composable: '$fetch',
+        path: { tenant_id: tenantId },
         body: request,
       }),
   })

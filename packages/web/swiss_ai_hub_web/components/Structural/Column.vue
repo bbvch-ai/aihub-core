@@ -67,8 +67,8 @@ const sizeClass = computed<string>(() => {
 })
 
 const router = useRouter()
-const localePath = useLocalePath()
+const tenantPath = useTenantPath()
 const close = () => {
-  router.push(localePath(props.closeRoute))
+  router.push(tenantPath(props.closeRoute))
 }
 </script>

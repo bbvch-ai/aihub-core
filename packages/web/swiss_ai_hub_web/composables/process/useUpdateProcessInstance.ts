@@ -7,15 +7,18 @@ export const useUpdateProcessInstance = defineMutation(() => {
     mutation: async ({
       processClass,
       processId,
+      tenantId,
       configuration,
     }: {
       processClass: string
       processId: string
+      tenantId: string
       configuration: Record<string, unknown>
     }) => {
       const result = await updateProcessInstance({
         composable: '$fetch',
         path: {
+          tenant_id: tenantId,
           process_class: processClass,
           process_id: processId,
         },

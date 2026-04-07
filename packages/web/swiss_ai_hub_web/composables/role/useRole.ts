@@ -4,19 +4,21 @@ import { useRoute } from 'vue-router'
 
 export default defineQuery(() => {
   const route = useRoute()
+  const { tenantName } = useTenantFromRoute()
   const isRouteReady = useRouteReady('role_id')
 
   const {
     data: role,
     isPending: roleIsLoading,
   } = useQuery<RoleResponse>({
-    key: () => ['roles', route.params.role_id as string],
+    key: () => ['roles', tenantName.value, route.params.role_id as string],
     staleTime: minutesToMilliseconds(5),
-    enabled: isRouteReady,
+    enabled: computed(() => isRouteReady.value && !!tenantName.value),
     query: async () => {
       return await getRole({
         composable: '$fetch',
         path: {
+          tenant_id: tenantName.value!,
           role_id: route.params.role_id as string,
         },
       })

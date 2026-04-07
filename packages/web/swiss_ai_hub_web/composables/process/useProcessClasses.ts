@@ -5,13 +5,16 @@ import { minutesToMilliseconds } from 'date-fns'
 export type ProcessClassDto = ProcessClassDtoReadable
 
 export const useProcessClasses = defineQuery((options?: { online?: boolean }) => {
+  const { tenantName } = useTenantFromRoute()
+
   const { data: processClasses, isPending: processClassesAreLoading } = useQuery<ProcessClassDto[]>({
-    key: () => ['process-classes', options?.online],
+    key: () => ['process-classes', tenantName.value, options?.online],
     staleTime: minutesToMilliseconds(5),
-    enabled: true,
+    enabled: computed(() => !!tenantName.value),
     query: async () => {
       return await getProcessClasses({
         composable: '$fetch',
+        path: { tenant_id: tenantName.value! },
         query: {
           online: options?.online,
         },

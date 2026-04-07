@@ -7,7 +7,7 @@ from swiss_ai_hub.core.generative_ai.document.accessor.s3_anonymous_file_access_
     S3AnonymousFileAccessService,
 )
 from swiss_ai_hub.core.infrastructure import use_s3_service
-from swiss_ai_hub.core.routes import Controller
+from swiss_ai_hub.core.routes import TenantScopedController
 
 from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
 from swiss_ai_hub.api.routes.parsing.dependencies.use_limited_body import use_limited_body
@@ -16,7 +16,7 @@ from swiss_ai_hub.api.routes.parsing.dto.image_mode import ImageMode
 from swiss_ai_hub.api.routes.parsing.parsing_service import ParsingService
 
 
-class ParsingController(Controller):
+class ParsingController(TenantScopedController):
     """
     Controller for document parsing endpoints.
 

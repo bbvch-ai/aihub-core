@@ -5,7 +5,7 @@ from fastapi import HTTPException, Security, status
 from mongoengine.errors import DoesNotExist, NotUniqueError
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
-from swiss_ai_hub.core.routes import Controller
+from swiss_ai_hub.core.routes import TenantScopedController
 
 from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
 
@@ -18,7 +18,7 @@ from .role_service import RoleService
 logger = logging.getLogger(__name__)
 
 
-class RoleController(Controller):
+class RoleController(TenantScopedController):
     name = ApiLocaleString.from_i18n_path("api.controllers.role.name")
     description = ApiLocaleString.from_i18n_path("api.controllers.role.description")
     icon = "mage:security-shield"

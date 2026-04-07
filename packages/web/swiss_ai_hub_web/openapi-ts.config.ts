@@ -2,7 +2,7 @@ import { defineConfig } from '@hey-api/openapi-ts'
 
 export default defineConfig({
   // Make sure you have the Backend running when generating a new SDK
-  input: 'http://localhost:8000/api/v1/active/openapi.json',
+  input: 'http://localhost:8000/api/v1/openapi.json',
   output: {
     path: 'sdk/client',
     postProcess: ['prettier', 'eslint'],

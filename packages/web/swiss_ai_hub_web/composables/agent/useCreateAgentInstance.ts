@@ -8,10 +8,11 @@ export const useCreateAgentInstance = defineMutation(() => {
     isPending: isCreating,
     error: createError,
   } = useMutation({
-    mutation: async ({ agentClass, request }: { agentClass: string, request: CreateAgentInstanceRequest }) => {
+    mutation: async ({ agentClass, request, tenantId }: { agentClass: string, request: CreateAgentInstanceRequest, tenantId: string }) => {
       const result = await createAgentInstance({
         composable: '$fetch',
         path: {
+          tenant_id: tenantId,
           agent_class: agentClass,
         },
         body: request,

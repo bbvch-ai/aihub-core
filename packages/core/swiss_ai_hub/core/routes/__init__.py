@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     )
     from swiss_ai_hub.core.routes.health.health_controller import HealthController
     from swiss_ai_hub.core.routes.health.health_server import HealthCheckProvider, HealthServer
+    from swiss_ai_hub.core.routes.tenant_scoped_controller import TenantScopedController
 
 __all__ = [
     "check_s3",
@@ -34,6 +35,7 @@ __all__ = [
     "HealthCheckProvider",
     "HealthController",
     "HealthServer",
+    "TenantScopedController",
 ]
 
 _LAZY_IMPORTS = {
@@ -54,6 +56,7 @@ _LAZY_IMPORTS = {
     "HealthCheckProvider": "swiss_ai_hub.core.routes.health.health_server",
     "HealthController": "swiss_ai_hub.core.routes.health.health_controller",
     "HealthServer": "swiss_ai_hub.core.routes.health.health_server",
+    "TenantScopedController": "swiss_ai_hub.core.routes.tenant_scoped_controller",
 }
 
 

@@ -5,11 +5,12 @@ export const useUpdateDataset = () => {
   const route = useRoute()
 
   const { mutateAsync: updateDataset } = useMutation({
-    mutation: async ({ dataset }: { dataset: DatasetUpdate }) => {
+    mutation: async ({ dataset, tenantId }: { dataset: DatasetUpdate, tenantId: string }) => {
       await updateDatasetCall({
         composable: '$fetch',
         body: dataset,
         path: {
+          tenant_id: tenantId,
           dataset_id: route.params.dataset_id as string,
         },
       })

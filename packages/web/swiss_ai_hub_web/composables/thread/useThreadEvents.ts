@@ -9,17 +9,19 @@ export const useThreadEvents = defineQuery(() => {
   const runtimeConfig = useRuntimeConfig()
 
   const route = useRoute()
+  const { tenantName } = useTenantFromRoute()
   const isRouteReady = useRouteReady('thread_id')
   const queryCache = useQueryCache()
 
   const { data: threadEvents, isPending: threadEventsAreLoading } = useQuery<ContextualizedAgentEvent[]>({
-    key: () => ['thread', route.params.thread_id as string, 'events'],
+    key: () => ['thread', tenantName.value, route.params.thread_id as string, 'events'],
     staleTime: minutesToMilliseconds(5),
-    enabled: isRouteReady,
+    enabled: computed(() => isRouteReady.value && !!tenantName.value),
     query: async () => {
       return await getAgentEventsInThread({
         composable: '$fetch',
         path: {
+          tenant_id: tenantName.value!,
           thread_id: route.params.thread_id as string,
         },
       })

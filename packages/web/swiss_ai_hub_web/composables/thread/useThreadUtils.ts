@@ -29,9 +29,10 @@ export const useThreadUtils = () => {
   }
 
   const createNewThread = useMutation({
-    mutation: ({ name, user_ids, agents }: CreateThreadRequest) =>
+    mutation: ({ name, user_ids, agents, tenantId }: CreateThreadRequest & { tenantId: string }) =>
       createThread({
         composable: '$fetch',
+        path: { tenant_id: tenantId },
         body: {
           name,
           user_ids,

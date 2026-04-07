@@ -2,13 +2,16 @@ import { getSupportedFileTypes } from '@core/sdk/client'
 import { minutesToMilliseconds } from 'date-fns'
 
 export const useSupportedFileTypes = defineQuery(() => {
+  const { tenantName } = useTenantFromRoute()
+
   const { data: supportedFileTypes } = useQuery<string[]>({
-    key: () => ['supportedFileTypes'],
+    key: () => ['supportedFileTypes', tenantName.value],
     staleTime: minutesToMilliseconds(60),
-    enabled: true,
+    enabled: computed(() => !!tenantName.value),
     query: async () => {
       return await getSupportedFileTypes({
         composable: '$fetch',
+        path: { tenant_id: tenantName.value! },
       })
     },
   })

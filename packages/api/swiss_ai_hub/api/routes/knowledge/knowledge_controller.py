@@ -16,7 +16,7 @@ from swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config import LLMC
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.infrastructure import MongoSettings, use_s3_service, use_vector_store_factory
 from swiss_ai_hub.core.persistence.rag.vectors import VectorStoreFactory
-from swiss_ai_hub.core.routes import Controller
+from swiss_ai_hub.core.routes import TenantScopedController
 
 from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
 from swiss_ai_hub.api.i18n.dependencies.use_locale import use_locale
@@ -37,7 +37,7 @@ from swiss_ai_hub.api.routes.knowledge.dto.update_namespace_request import Updat
 from swiss_ai_hub.api.routes.knowledge.knowledge_service import KnowledgeService
 
 
-class KnowledgeController(Controller):
+class KnowledgeController(TenantScopedController):
     name = ApiLocaleString.from_i18n_path("api.controllers.knowledge.name")
     description = ApiLocaleString.from_i18n_path("api.controllers.knowledge.description")
     icon = "mage:book"

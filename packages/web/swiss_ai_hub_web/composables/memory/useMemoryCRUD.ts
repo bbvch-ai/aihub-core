@@ -3,8 +3,6 @@ import { useRouter } from 'vue-router'
 
 import type { ComputedRef } from 'vue'
 
-import { useLocalePath } from '#i18n'
-
 export interface UseMemoryCRUDOptions {
   selectedMemory: ComputedRef<{ id: string } | undefined>
   updateMemory: (params: { memoryId: string, data: string }) => Promise<void>
@@ -28,7 +26,7 @@ export function useMemoryCRUD(options: UseMemoryCRUDOptions) {
   const { t } = useI18n()
   const toast = useToast()
   const router = useRouter()
-  const localePath = useLocalePath()
+  const tenantPath = useTenantPath()
 
   const handleUpdate = async (data: string) => {
     if (!options.selectedMemory.value) return
@@ -65,7 +63,7 @@ export function useMemoryCRUD(options: UseMemoryCRUDOptions) {
         life: 3000,
       })
       // Navigate back to list after successful deletion
-      router.push(localePath(options.closeRoute))
+      router.push(tenantPath(options.closeRoute))
     }
     catch (error) {
       console.error('Failed to delete memory:', error)
@@ -79,7 +77,7 @@ export function useMemoryCRUD(options: UseMemoryCRUDOptions) {
   }
 
   const handleClose = () => {
-    router.push(localePath(options.closeRoute))
+    router.push(tenantPath(options.closeRoute))
   }
 
   return {

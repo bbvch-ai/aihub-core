@@ -3,7 +3,7 @@ from typing import Annotated, Self
 from fastapi import HTTPException, Security, status
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
-from swiss_ai_hub.core.routes import Controller
+from swiss_ai_hub.core.routes import TenantScopedController
 
 from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
 from swiss_ai_hub.api.routes.token.dto.create_token_request import CreateTokenRequest
@@ -13,7 +13,7 @@ from swiss_ai_hub.api.routes.token.dto.token_response import TokenResponse
 from swiss_ai_hub.api.routes.token.token_service import TokenService
 
 
-class TokenController(Controller):
+class TokenController(TenantScopedController):
     name = ApiLocaleString.from_i18n_path("api.controllers.token.name")
     description = ApiLocaleString.from_i18n_path("api.controllers.token.description")
     icon = "mage:key"

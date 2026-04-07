@@ -7,14 +7,14 @@ from swiss_ai_hub.core.generative_ai.document.accessor.s3_anonymous_file_access_
     S3AnonymousFileAccessService,
 )
 from swiss_ai_hub.core.infrastructure import use_s3_service
-from swiss_ai_hub.core.routes import Controller
+from swiss_ai_hub.core.routes import TenantScopedController
 
 from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
 from swiss_ai_hub.api.routes.file.dto.signed_url_dto import SignedUrlDto
 from swiss_ai_hub.api.routes.file.file_service import FileService
 
 
-class FileController(Controller):
+class FileController(TenantScopedController):
     """
     A controller that manages secure access to files stored in Azure Blob Storage.
 

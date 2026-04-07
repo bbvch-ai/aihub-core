@@ -7,15 +7,18 @@ export const useUpdateAgentInstance = defineMutation(() => {
     mutation: async ({
       agentClass,
       agentId,
+      tenantId,
       configuration,
     }: {
       agentClass: string
       agentId: string
+      tenantId: string
       configuration: Record<string, unknown>
     }) => {
       const result = await updateAgentInstance({
         composable: '$fetch',
         path: {
+          tenant_id: tenantId,
           agent_class: agentClass,
           agent_id: agentId,
         },

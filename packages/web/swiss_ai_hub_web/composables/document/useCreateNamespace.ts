@@ -4,7 +4,7 @@ export const useCreateNamespace = defineMutation(() => {
   const queryCache = useQueryCache()
 
   return useMutation({
-    mutation: (request: CreateNamespaceRequest & { database: string, namespace: string }) =>
+    mutation: (request: CreateNamespaceRequest & { database: string, namespace: string, tenantId: string }) =>
       createNamespace({
         composable: '$fetch',
         body: {
@@ -13,6 +13,7 @@ export const useCreateNamespace = defineMutation(() => {
           description: request.description,
         },
         path: {
+          tenant_id: request.tenantId,
           database: request.database,
           namespace: request.namespace,
         },

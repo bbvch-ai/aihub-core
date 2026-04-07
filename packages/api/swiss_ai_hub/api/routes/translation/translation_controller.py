@@ -4,7 +4,7 @@ from fastapi import Depends, Security
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.i18n import LocaleHandler
-from swiss_ai_hub.core.routes import Controller
+from swiss_ai_hub.core.routes import TenantScopedController
 
 from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
 from swiss_ai_hub.api.i18n.dependencies.use_locale import use_locale
@@ -13,7 +13,7 @@ from swiss_ai_hub.api.routes.translation.dto.translation_response import Transla
 from swiss_ai_hub.api.routes.translation.translation_service import TranslationService
 
 
-class TranslationController(Controller):
+class TranslationController(TenantScopedController):
     """
     Controller for handling translation operations using LLM-based translation.
 

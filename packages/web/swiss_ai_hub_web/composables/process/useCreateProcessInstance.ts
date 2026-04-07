@@ -8,10 +8,11 @@ export const useCreateProcessInstance = defineMutation(() => {
     isPending: isCreating,
     error: createError,
   } = useMutation({
-    mutation: async ({ processClass, request }: { processClass: string, request: CreateProcessInstanceRequest }) => {
+    mutation: async ({ processClass, request, tenantId }: { processClass: string, request: CreateProcessInstanceRequest, tenantId: string }) => {
       const result = await createProcessInstance({
         composable: '$fetch',
         path: {
+          tenant_id: tenantId,
           process_class: processClass,
         },
         body: request,

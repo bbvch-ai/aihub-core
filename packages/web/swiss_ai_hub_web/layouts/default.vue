@@ -82,7 +82,7 @@ import { getHealth } from '@core/sdk/client'
 import type { MenuItem } from 'primevue/menuitem'
 
 const route = useRoute()
-const localePath = useLocalePath()
+const tenantPath = useTenantPath()
 
 const online = ref<boolean>(false)
 
@@ -93,16 +93,19 @@ const nonAdminApps = computed<MenuItem>(() => {
 })
 
 const appIsActive = (app: MenuItem) => {
-  const localizedPath = localePath(app.path)
+  const resolvedPath = app.path === '/' ? tenantPath('/') : tenantPath(app.path)
   if (app.path === '/') {
-    return route.path === localizedPath
+    return route.path === resolvedPath
   }
-  return route.path.startsWith(localizedPath)
+  return route.path.startsWith(resolvedPath)
 }
 
 const breadcrumbItems = computed(() => {
-  const paths = route.path.split('/').filter(Boolean).slice(1)
-  return paths.map((label: string) => ({ label }))
+  // Skip locale and tenant segments from breadcrumbs
+  const segments = route.path.split('/').filter(Boolean)
+  // segments: [locale, tenant, 'service', 'agents', ...]
+  const contentSegments = segments.slice(2)
+  return contentSegments.map((label: string) => ({ label }))
 })
 
 getHealth({

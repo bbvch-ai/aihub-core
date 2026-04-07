@@ -64,6 +64,7 @@ def mock_tenant_entity_autouse():
     with (
         patch.object(TenantEntity, "get_default_tenant", return_value=mock_tenant),
         patch.object(TenantEntity, "get_tenant_by_id", return_value=mock_tenant),
+        patch.object(TenantEntity, "get_tenant_by_name", return_value=mock_tenant),
         patch.object(TenantEntity, "ensure_default_tenant_exists", return_value=mock_tenant),
         patch.object(UserTenantRoleEntity, "get_roles_for_user_in_tenant", side_effect=mock_get_roles),
         patch.object(UserTenantRoleEntity, "create_or_update", side_effect=mock_create_or_update),

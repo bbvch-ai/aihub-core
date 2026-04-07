@@ -47,10 +47,11 @@ class TokenAuthHandler(BearerAuthHandler):
             raise HTTPException(status_code=401, detail="User not found.")
 
         # Resolve tenant context from request or use default
-        if request:
+        if request and self.has_tenant_in_request(request):
             tenant = self.resolve_tenant_for_user(request, user.id)
+            return UserIdentity.from_user_entity(user, tenant)
+        elif request:
+            return UserIdentity.from_user_entity_without_tenant(user)
         else:
-            # Fallback for contexts without request (e.g., WebSocket)
             tenant = self.get_active_tenant_for_user(user.id)
-
-        return UserIdentity.from_user_entity(user, tenant)
+            return UserIdentity.from_user_entity(user, tenant)

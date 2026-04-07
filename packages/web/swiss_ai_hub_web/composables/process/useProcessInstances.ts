@@ -5,13 +5,16 @@ import { minutesToMilliseconds } from 'date-fns'
 export type FullProcessInstanceDto = FullProcessInstanceDtoReadable
 
 export const useProcessInstances = defineQuery((options?: { online?: boolean }) => {
+  const { tenantName } = useTenantFromRoute()
+
   const { data: processInstances, isPending: processInstancesAreLoading } = useQuery<FullProcessInstanceDto[]>({
-    key: () => ['process-instances', options?.online],
+    key: () => ['process-instances', tenantName.value, options?.online],
     staleTime: minutesToMilliseconds(5),
-    enabled: true,
+    enabled: computed(() => !!tenantName.value),
     query: async () => {
       return await getAllProcessInstances({
         composable: '$fetch',
+        path: { tenant_id: tenantName.value! },
         query: {
           online: options?.online,
         },

@@ -15,7 +15,7 @@ from swiss_ai_hub.core.auth.usage import UsageLimits, use_usage_limits
 from swiss_ai_hub.core.dependencies import use_nats
 from swiss_ai_hub.core.distributor import ExternalAgentEventDistributor, use_external_agent_event_distributor
 from swiss_ai_hub.core.i18n import LocaleHandler
-from swiss_ai_hub.core.routes import Controller
+from swiss_ai_hub.core.routes import TenantScopedController
 
 from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
 from swiss_ai_hub.api.i18n.dependencies.use_locale import use_locale
@@ -31,7 +31,7 @@ from swiss_ai_hub.api.routes.openai.openai_service import OpenaiService
 logger = logging.getLogger(__name__)
 
 
-class OpenaiController(Controller):
+class OpenaiController(TenantScopedController):
     """
     A controller that fully emulates the OpenAI API, enabling AI Hub to serve as a drop-in replacement
     for OpenAI's endpoints.

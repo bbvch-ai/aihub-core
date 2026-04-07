@@ -6,16 +6,18 @@ export const useNotificationPoller = (options?: {
   pollingInterval?: number
   enabled?: boolean
 }) => {
+  const { tenantName } = useTenantFromRoute()
   const toast = useToast()
   const queryCache = useQueryCache()
 
   const knownUnreadIds = ref(new Set<string>())
 
   const { data: unreadResponse, refetch } = useQuery({
-    key: () => ['notifications_poller_data'],
+    key: () => ['notifications_poller_data', tenantName.value],
     query: () =>
       getNotifications({
         composable: '$fetch',
+        path: { tenant_id: tenantName.value! },
         query: { read: false, page_size: 100 },
       }),
     enabled: false,

@@ -62,7 +62,7 @@ const props = defineProps<{
 }>()
 
 const router = useRouter()
-const localeRoute = useLocaleRoute()
+const tenantPath = useTenantPath()
 const { pendingType } = useThreadUtils()
 
 const toNode = (node: OrganizationChartNode) => {
@@ -77,10 +77,10 @@ const toNode = (node: OrganizationChartNode) => {
     displayId = display?.display_id
   }
   if (displayId) {
-    router.push(localeRoute(`/service/threads/${props.thread.id}/display/${displayId}`))
+    router.push(tenantPath(`/service/threads/${props.thread.id}/display/${displayId}`))
   }
   else {
-    router.push(localeRoute(`/service/threads/${props.thread.id}/display`))
+    router.push(tenantPath(`/service/threads/${props.thread.id}/display`))
   }
 }
 

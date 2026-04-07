@@ -8,10 +8,11 @@ export const useDeleteAgentInstance = defineMutation(() => {
     isPending: isDeleting,
     error: deleteError,
   } = useMutation({
-    mutation: async ({ agentClass, agentId }: { agentClass: string, agentId: string }) => {
+    mutation: async ({ agentClass, agentId, tenantId }: { agentClass: string, agentId: string, tenantId: string }) => {
       await deleteAgentInstance({
         composable: '$fetch',
         path: {
+          tenant_id: tenantId,
           agent_class: agentClass,
           agent_id: agentId,
         },

@@ -7,12 +7,14 @@ export const useSendProcessStartForm = defineMutation(() => {
     mutation: async ({
       processClass,
       processId,
+      tenantId,
       submissionRoute,
       submissionMethod,
       data,
     }: {
       processClass: string
       processId: string
+      tenantId: string
       submissionRoute: string
       submissionMethod: string
       data: Record<string, unknown>
@@ -21,6 +23,7 @@ export const useSendProcessStartForm = defineMutation(() => {
       await sendProcessStartForm({
         composable: '$fetch',
         path: {
+          tenant_id: tenantId,
           process_class: processClass,
           process_id: processId,
         },

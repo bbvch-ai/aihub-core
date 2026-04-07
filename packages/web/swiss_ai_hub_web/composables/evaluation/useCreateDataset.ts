@@ -4,9 +4,10 @@ export const useCreateDataset = () => {
   const queryCache = useQueryCache()
 
   const { mutateAsync: createDataset } = useMutation({
-    mutation: async ({ dataset }: { dataset: DatasetCreate }) => {
+    mutation: async ({ dataset, tenantId }: { dataset: DatasetCreate, tenantId: string }) => {
       await createDatasetCall({
         composable: '$fetch',
+        path: { tenant_id: tenantId },
         body: dataset,
       })
       queryCache.invalidateQueries({ key: ['datasets'] })

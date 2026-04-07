@@ -16,7 +16,7 @@ const { t, locale } = useI18n()
 const toast = useToast()
 useNotificationPoller()
 client.setConfig({
-  baseURL: '/api/v1/active',
+  baseURL: '/api/v1',
   auth: async () => {
     return await getToken()
   },

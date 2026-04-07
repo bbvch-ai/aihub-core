@@ -4,16 +4,18 @@ import { useRoute } from 'vue-router'
 
 export const useThread = defineQuery(() => {
   const route = useRoute()
+  const { tenantName } = useTenantFromRoute()
   const isRouteReady = useRouteReady('thread_id')
 
   const { data: thread, isPending: threadIsLoading } = useQuery<ThreadDto>({
-    key: () => ['threads', route.params.thread_id as string],
+    key: () => ['threads', tenantName.value, route.params.thread_id as string],
     staleTime: minutesToMilliseconds(5),
-    enabled: isRouteReady,
+    enabled: computed(() => isRouteReady.value && !!tenantName.value),
     query: async () => {
       return await getThread({
         composable: '$fetch',
         path: {
+          tenant_id: tenantName.value!,
           thread_id: route.params.thread_id as string,
         },
       })

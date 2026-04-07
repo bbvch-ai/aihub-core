@@ -7,6 +7,7 @@ export interface SortState {
 
 export const useDocuments = defineQuery(() => {
   const route = useRoute()
+  const { tenantName } = useTenantFromRoute()
   const isRouteReady = useRouteReady('db', 'namespace')
 
   const currentPage = ref(1)
@@ -18,8 +19,8 @@ export const useDocuments = defineQuery(() => {
   const namespace = computed(() => route.params.namespace as string)
 
   const documentsQuery = useQuery({
-    key: () => ['knowledge', 'databases', database.value, 'namespaces', namespace.value, 'documents', { page: currentPage.value, size: pageSize.value, search: searchQuery.value, sortField: sortState.value.field, sortOrder: sortState.value.order }],
-    enabled: () => isRouteReady.value,
+    key: () => ['knowledge', tenantName.value, 'databases', database.value, 'namespaces', namespace.value, 'documents', { page: currentPage.value, size: pageSize.value, search: searchQuery.value, sortField: sortState.value.field, sortOrder: sortState.value.order }],
+    enabled: () => isRouteReady.value && !!tenantName.value,
     query: async () => {
       const db = database.value
       const ns = namespace.value
@@ -40,6 +41,7 @@ export const useDocuments = defineQuery(() => {
           sort_order: sortState.value.order,
         },
         path: {
+          tenant_id: tenantName.value!,
           database: db,
           namespace: ns,
         },
