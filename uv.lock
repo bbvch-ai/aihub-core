@@ -5285,10 +5285,13 @@ name = "swiss-ai-hub-backup"
 version = "0.273.3"
 source = { editable = "packages/backup" }
 dependencies = [
+    { name = "boto3" },
+    { name = "botocore" },
     { name = "dagster" },
     { name = "dagster-webserver" },
     { name = "docker" },
     { name = "pydantic" },
+    { name = "pydantic-settings" },
 ]
 
 [package.dev-dependencies]
@@ -5299,10 +5302,13 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "boto3", specifier = ">=1.35" },
+    { name = "botocore", specifier = ">=1.35" },
     { name = "dagster", specifier = ">=1.11.2" },
     { name = "dagster-webserver", specifier = ">=1.11.2" },
     { name = "docker", specifier = ">=7.0" },
     { name = "pydantic", specifier = ">=2.10.3" },
+    { name = "pydantic-settings", specifier = ">=2.7" },
 ]
 
 [package.metadata.requires-dev]

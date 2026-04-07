@@ -38,3 +38,12 @@ def backup_asset_job(assets: list[AssetsDefinition]) -> UnresolvedAssetJobDefini
         description="Run a full system backup (stop and restart all services).",
         hooks={restart_on_failure},
     )
+
+
+def restore_asset_job(assets: list[AssetsDefinition]) -> UnresolvedAssetJobDefinition:
+    return define_asset_job(
+        name="full_restore_job",
+        selection=assets,
+        description="Restore all services from a backup. Select a partition to choose timestamp. "
+        "On success, containers are restarted. On failure, containers stay stopped — human must investigate.",
+    )
