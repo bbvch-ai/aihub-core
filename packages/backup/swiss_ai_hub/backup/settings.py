@@ -5,8 +5,6 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class BackupSettings(BaseSettings):
-    """Field names match the platform-wide .env variable names."""
-
     model_config = SettingsConfigDict()
 
     BACKUP_RETENTION_DAYS: Annotated[int, Field(ge=0)] = 7
