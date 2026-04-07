@@ -11,6 +11,7 @@ export const useAuth = () => {
 
     if (user?.refresh_token) {
       await $keycloakClient.logout(user.refresh_token)
+        .catch((error: unknown) => console.error('Keycloak session revocation failed:', error))
     }
 
     await $auth.removeUser()
