@@ -43,7 +43,7 @@ async def client(mock_upload_service):
     app = runner.create_app()
 
     async with LifespanManager(app) as lifespan:
-        async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url="http://test/api/v1") as c:
+        async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url="http://test/api/v1/active") as c:
             yield c
 
 

@@ -16,7 +16,7 @@ from swiss_ai_hub.api.runners.simulation.agent.simulated_agent_api_test_runner i
 
 AGENT_CLASS = "test_agent"
 AGENT_ID = "test_agent_1"
-BASE_URL = "http://test/api/v1"
+BASE_URL = "http://test/api/v1/active"
 MODELS_ENDPOINT = "/openai/models"
 COMPLETIONS_ENDPOINT = "/openai/chat/completions"
 

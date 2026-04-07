@@ -10,7 +10,7 @@ from swiss_ai_hub.api.routes.openai.openai_controller import OpenaiController
 from swiss_ai_hub.api.runners.api_test_runner import ApiTestRunner
 
 BASE_URL = "http://test"
-MODELS_ENDPOINT = "/api/v1/openai/models"
+MODELS_ENDPOINT = "/api/v1/active/openai/models"
 CHAT_MODEL = "text-generation/gpt-oss-120b"
 EMBEDDING_MODEL = "embedding/bge-m3"
 
@@ -61,7 +61,7 @@ async def test_get_embeddings(api_client):
         "model": EMBEDDING_MODEL,
         "encoding_format": "float",
     }
-    response = await api_client.post("/api/v1/openai/embeddings", json=payload)
+    response = await api_client.post("/api/v1/active/openai/embeddings", json=payload)
     assert response.status_code == 200, f"Response: {response.text}"
     data = response.json()
     assert data.get("object") == "list"
@@ -90,7 +90,7 @@ async def test_chat_completion(api_client):
         "temperature": 0,
         "stream": False,
     }
-    response = await api_client.post("/api/v1/openai/chat/completions", json=payload)
+    response = await api_client.post("/api/v1/active/openai/chat/completions", json=payload)
     assert response.status_code == 200, f"Response: {response.text}"
     data = response.json()
     assert "id" in data

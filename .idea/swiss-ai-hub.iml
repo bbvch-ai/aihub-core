@@ -13,6 +13,7 @@
       <excludeFolder url="file://$MODULE_DIR$/local-volumes" />
       <excludeFolder url="file://$MODULE_DIR$/docs/.vitepress/dist" />
       <excludeFolder url="file://$MODULE_DIR$/.venv" />
+      <excludeFolder url="file://$MODULE_DIR$/.claude/worktrees" />
     </content>
     <orderEntry type="jdk" jdkName="uv (swiss-ai-hub)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />

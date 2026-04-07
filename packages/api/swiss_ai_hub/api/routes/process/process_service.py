@@ -3,6 +3,7 @@ from typing import Any
 
 from bson import ObjectId
 from fastapi import HTTPException
+from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.distributor import ExternalProcessEvent, ExternalProcessEventDistributor
 from swiss_ai_hub.core.events.process import ProcessConfigSpecs, ProcessStartEvent, WorkEvent
@@ -27,6 +28,7 @@ from swiss_ai_hub.api.routes.process.dto.process_class_dto import ProcessClassDT
 from swiss_ai_hub.api.routes.process.dto.process_walkthrough_dto import ProcessWalkthroughDTO
 from swiss_ai_hub.api.routes.process.dto.submitted_form_dto import SubmittedFormDTO
 from swiss_ai_hub.api.services.model_creation_service import ModelCreationService
+from swiss_ai_hub.api.util.config_authorization_service import ConfigAuthorizationService
 from swiss_ai_hub.api.util.instance_config_helper import InstanceConfigHelper
 
 
@@ -311,6 +313,8 @@ class ProcessService:
         process_class: str,
         request: CreateProcessInstanceRequest,
         t: LocaleHandler,
+        *,
+        user: UserIdentity,
     ) -> FullProcessInstanceDTO:
         """Creates a new process instance from an existing process class."""
         class_entity = ProcessClassEntity.get_by_process_class(process_class)
@@ -345,6 +349,14 @@ class ProcessService:
             )
         )
         config_instance = InstanceConfigHelper.validate_config_for_create(config, config_model)
+
+        ConfigAuthorizationService.validate_config_authorization_or_raise(
+            form_elements=class_entity.form,
+            config=config,
+            access_checker=AccessChecker.from_user(user),
+            t=t,
+        )
+
         metadata = InstanceConfigHelper.extract_config_metadata(config_instance, class_entity.icon)
         locale = InstanceConfigHelper.build_locale_entities(
             metadata.name, metadata.description, process_class, metadata.icon
@@ -371,7 +383,7 @@ class ProcessService:
     @staticmethod
     @trace_fn
     async def update_process_instance(
-        process_class: str, process_id: str, configuration: dict[str, Any]
+        process_class: str, process_id: str, configuration: dict[str, Any], t: LocaleHandler, *, user: UserIdentity
     ) -> dict[str, Any]:
         """Update the configuration data for a specific process instance."""
         class_entity = ProcessClassEntity.get_by_process_class(process_class)
@@ -397,6 +409,14 @@ class ProcessService:
             )
         )
         config_instance = InstanceConfigHelper.validate_config_for_update(configuration, config_model)
+
+        ConfigAuthorizationService.validate_config_authorization_or_raise(
+            form_elements=class_entity.form,
+            config=configuration,
+            access_checker=AccessChecker.from_user(user),
+            t=t,
+        )
+
         config_entity = InstanceConfigHelper.apply_metadata_to_entity(config_instance, config_entity)
 
         config_entity.config_data = configuration

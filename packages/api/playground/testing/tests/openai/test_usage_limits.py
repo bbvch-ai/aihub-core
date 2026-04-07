@@ -13,7 +13,7 @@ from swiss_ai_hub.api.routes.openai.openai_controller import OpenaiController
 from swiss_ai_hub.api.runners.api_test_runner import ApiTestRunner
 
 BASE_URL = "http://test"
-CHAT_ENDPOINT = "/api/v1/openai/chat/completions"
+CHAT_ENDPOINT = "/api/v1/active/openai/chat/completions"
 
 
 def _exceeded_status(*, limit: int = 100, current_count: int = 101, period: str = "1d") -> UsageStatus:

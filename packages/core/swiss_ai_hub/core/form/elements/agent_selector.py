@@ -1,7 +1,9 @@
-from typing import Annotated, Literal, Self
+from typing import Annotated, Any, Literal, Self
 
 from pydantic import Field
 
+from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
+from swiss_ai_hub.core.form.base.config_authorization_violation import ConfigAuthorizationViolation
 from swiss_ai_hub.core.form.base.prime_vue_element import PrimeVueElement
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
@@ -92,3 +94,26 @@ class AgentSelector(PrimeVueElement):
         if isinstance(self_copy.id_placeholder, LocaleString):
             self_copy.id_placeholder = t.extract(self_copy.id_placeholder)
         return self_copy
+
+    def validate_authorization(
+        self, field_path: str, value: Any, access_checker: AccessChecker, t: LocaleHandler
+    ) -> list[ConfigAuthorizationViolation]:
+        if not isinstance(value, dict):
+            return []
+
+        agent_class = value.get("agent_class")
+        agent_id = value.get("agent_id")
+        if not agent_class or not agent_id:
+            return []
+
+        agent_ref = f"{agent_class}/{agent_id}"
+        if not access_checker.has_access_to_agent(agent_class, agent_id):
+            return [
+                ConfigAuthorizationViolation(
+                    field=field_path,
+                    resource_type="agent",
+                    resource=agent_ref,
+                    message=t("lib.common.authorization.no_access_agent", agent=agent_ref),
+                )
+            ]
+        return []

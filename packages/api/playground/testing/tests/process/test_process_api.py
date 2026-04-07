@@ -76,7 +76,9 @@ async def process_api_client(setup_process_config_mock):
     app = runner.create_app()
 
     async with LifespanManager(app) as lifespan:
-        async with AsyncClient(transport=ASGITransport(app=lifespan.app), base_url="http://test/api/v1") as client:
+        async with AsyncClient(
+            transport=ASGITransport(app=lifespan.app), base_url="http://test/api/v1/active"
+        ) as client:
             yield client
 
     class_patcher.stop()

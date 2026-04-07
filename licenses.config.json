@@ -5,7 +5,8 @@
     "packages/bot",
     "packages/agent",
     "packages/process",
-    "packages/pipeline"
+    "packages/pipeline",
+    "packages/backup"
   ],
   "web_project": "packages/web/swiss_ai_hub_web",
   "output_file": "LICENSE_REPORT.md",
@@ -26,7 +27,8 @@
     "expert_asking_agent",
     "namespace_selection_agent",
     "mineru-api",
-    "mineru-vlm"
+    "mineru-vlm",
+    "backup"
   ],
   "license_categories": {
     "restrictive": [

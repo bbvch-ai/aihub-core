@@ -12,6 +12,7 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette.routing import Mount
 from swiss_ai_hub.core.infrastructure import AIHubSettings
 from swiss_ai_hub.core.routes import Controller
+from swiss_ai_hub.core.routes.health.health_controller import HealthController
 from swiss_ai_hub.core.runners import Runner
 
 from swiss_ai_hub.api.i18n.api_locale_handler import ApiLocaleHandler
@@ -61,6 +62,7 @@ class ApiRunner(Runner):
         origins: list[str] | None = None,
     ):
         super().__init__(api_path, title, description, origins)
+        self._health_app = FastAPI(title=f"{title} Health", redirect_slashes=True)
 
     @property
     def lifetime_manager(self) -> Callable[[FastAPI], AbstractAsyncContextManager]:
@@ -93,10 +95,15 @@ class ApiRunner(Runner):
                     yield
 
         app = Starlette(
-            routes=[Mount(self.api_path, app=self._api_app), Mount("/mcp", app=mcp_app)],
+            routes=[
+                Mount(self.api_path + "/health", app=self._health_app),
+                Mount(self.api_path + "/{tenant_id}", app=self._api_app),
+                Mount("/mcp", app=mcp_app),
+            ],
             lifespan=combined_lifespan,
         )
 
+        self._health_app.state = app.state
         app.state.api_app = self._api_app
         for controller in self.controllers:
             if isinstance(controller, AgentController):
@@ -138,20 +145,28 @@ class ApiRunner(Runner):
 
     def mount(self, *controllers: Controller) -> Self:
         """
-        Mounts one or more controllers (each subclass of Controller) onto the API application.
-        This attaches the controller's routes under the prefix defined in the controller itself.
+        Mounts one or more controllers onto the API application.
 
-        Also sets the controller references on _api_app.state so they're available for
-        discovery services before create_app() is called.
+        HealthController instances are mounted on a separate app at /api/v1/health
+        (outside the tenant-scoped path). All other controllers are mounted on the
+        main API app under /api/v1/{tenant_id}/.
         """
-        super().mount(*controllers)
+        health_controllers = [c for c in controllers if isinstance(c, HealthController)]
+        tenant_controllers = [c for c in controllers if not isinstance(c, HealthController)]
+
+        for controller in health_controllers:
+            self._health_app.include_router(controller.router)
+            controller._runner = self
+            self.controllers.add(controller)
+
+        super().mount(*tenant_controllers)
 
         self._api_app.openapi_tags = [
             {
-                "name": ApiLocaleHandler().extract(controller.name),
+                "name": ApiLocaleHandler().extract(controller.name, locale="en"),
                 "description": ApiLocaleHandler().extract(controller.description),
             }
-            for controller in controllers
+            for controller in tenant_controllers
         ]
 
         # Pre-populate state with controller references so they're available

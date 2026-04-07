@@ -75,7 +75,7 @@ def mock_database_operations(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(
         "swiss_ai_hub.core.auth.identity.user_identity.UserIdentity.from_user_entity", mock_from_user_entity
     )
-    monkeypatch.setattr(AuthHandler, "get_default_tenant_for_user", staticmethod(mock_get_default_tenant))
+    monkeypatch.setattr(AuthHandler, "get_active_tenant_for_user", staticmethod(mock_get_default_tenant))
 
 
 # --- Fixtures ---

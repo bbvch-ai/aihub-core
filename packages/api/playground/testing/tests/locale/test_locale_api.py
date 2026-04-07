@@ -10,7 +10,7 @@ from swiss_ai_hub.api.routes.i18n.i18n_controller import I18nController
 from swiss_ai_hub.api.runners.api_test_runner import ApiTestRunner
 
 BASE_URL = "http://test"
-API_ENDPOINT = "/api/v1/i18n/my-locale"
+API_ENDPOINT = "/api/v1/active/i18n/my-locale"
 DEFAULT_LANG_KEY = "lang"
 
 
@@ -44,7 +44,7 @@ async def api_client():
 )
 @pytest.mark.asyncio
 async def test_get_locale_parametrized(api_client, headers, params, expected_locale):
-    """Test /api/v1/i18n/my-locale with various header and query parameter configurations."""
+    """Test /api/v1/active/i18n/my-locale with various header and query parameter configurations."""
     response = await api_client.get(API_ENDPOINT, headers=headers, params=params)
     assert response.status_code == 200, f"Response: {response.text}"
     data = response.json()

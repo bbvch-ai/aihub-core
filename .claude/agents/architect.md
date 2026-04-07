@@ -169,7 +169,7 @@ them or explicitly accepts the risk.
 
 **WebSocket** — real-time UI:
 
-- Single endpoint: `/api/v1/events/ws`
+- Single endpoint: `/api/v1/{tenant_id}/events/ws`
 - Auth via first message, then read-only from client
 - `WebSocketManager` routes events to connected users by thread participation
 

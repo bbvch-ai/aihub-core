@@ -22,8 +22,8 @@ from swiss_ai_hub.api.routes.memory.user_memory_controller import UserMemoryCont
 from swiss_ai_hub.api.runners.api_test_runner import ApiTestRunner
 
 BASE_URL = "http://test"
-USER_MEMORIES_ENDPOINT = "/api/v1/user-memories"
-ORG_MEMORIES_ENDPOINT = "/api/v1/organization-memories"
+USER_MEMORIES_ENDPOINT = "/api/v1/active/user-memories"
+ORG_MEMORIES_ENDPOINT = "/api/v1/active/organization-memories"
 
 
 @pytest_asyncio.fixture(scope="module")
