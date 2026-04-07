@@ -7,7 +7,7 @@ import { useIntervalFn } from '@vueuse/core'
  * the iframe relies on the backend's active tenant.
  */
 export function useTenantPolling() {
-  const { tenantName } = useTenantFromRoute()
+  const { tenantName } = useTenant()
   const mismatchDetected = ref(false)
   const backendTenantName = ref<string | undefined>()
 

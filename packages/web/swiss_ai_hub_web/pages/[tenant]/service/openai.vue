@@ -40,14 +40,14 @@ const router = useRouter()
 const tenantPath = useTenantPath()
 const localePath = useLocalePath()
 const { mismatchDetected, backendTenantName } = useTenantPolling()
-const { switchTenant } = useTenantSwitch()
+const { setTenant } = useTenant()
 const { tenants } = useTenantMemberships()
 
-async function onSwitchToBackendTenant() {
+function onSwitchToBackendTenant() {
   if (!backendTenantName.value) return
   const tenant = tenants.value?.find(t => t.name === backendTenantName.value)
   if (tenant) {
-    await switchTenant(tenant.id, tenant.name)
+    setTenant(tenant.id, tenant.name)
   }
 }
 

@@ -2,7 +2,7 @@ import { getSuite, type SuiteDto } from '@core/sdk/client'
 import { minutesToMilliseconds } from 'date-fns'
 
 export const useSuite = defineQuery(() => {
-  const { tenantName } = useTenantFromRoute()
+  const { tenantName } = useTenant()
 
   const {
     data: suite,

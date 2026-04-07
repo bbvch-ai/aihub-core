@@ -53,7 +53,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
         // We need the tenant ID, but the URL has the tenant name.
         // The setMyActiveTenant endpoint accepts a tenant_id (ObjectId).
         // For now, we rely on the middleware calling the backend which will
-        // validate membership. The actual sync happens via useTenantSwitch
+        // validate membership. The actual sync happens via useTenant().setTenant()
         // or the index.vue redirect flow which has access to the tenant ID.
         // Here we just track the synced state.
         lastSyncedTenant = urlTenant

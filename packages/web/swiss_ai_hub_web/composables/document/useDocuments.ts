@@ -7,7 +7,7 @@ export interface SortState {
 
 export const useDocuments = defineQuery(() => {
   const route = useRoute()
-  const { tenantName } = useTenantFromRoute()
+  const { tenantName } = useTenant()
   const isRouteReady = useRouteReady('db', 'namespace')
 
   const currentPage = ref(1)

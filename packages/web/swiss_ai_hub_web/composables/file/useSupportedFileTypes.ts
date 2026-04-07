@@ -2,7 +2,7 @@ import { getSupportedFileTypes } from '@core/sdk/client'
 import { minutesToMilliseconds } from 'date-fns'
 
 export const useSupportedFileTypes = defineQuery(() => {
-  const { tenantName } = useTenantFromRoute()
+  const { tenantName } = useTenant()
 
   const { data: supportedFileTypes } = useQuery<string[]>({
     key: () => ['supportedFileTypes', tenantName.value],

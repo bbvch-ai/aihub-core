@@ -2,7 +2,7 @@ import { getProcessWalkthroughs, type ProcessWalkthroughDto } from '@core/sdk/cl
 
 export const useProcessWalkthroughs = defineQuery(() => {
   const route = useRoute()
-  const { tenantName } = useTenantFromRoute()
+  const { tenantName } = useTenant()
   const isRouteReady = useRouteReady('process_class', 'process_id')
 
   const currentPage = ref(1)

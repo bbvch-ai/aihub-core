@@ -4,7 +4,7 @@ import { minutesToMilliseconds } from 'date-fns'
 
 export const useSingleModel = () => {
   const route = useRoute()
-  const { tenantName } = useTenantFromRoute()
+  const { tenantName } = useTenant()
 
   const modelName = computed<string>(() => decodeURIComponent(route.params?.model_name as string))
 

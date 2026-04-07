@@ -7,7 +7,7 @@ import { useRoute } from 'vue-router'
 
 export const useEventTimeseries = ({ eventName, timeRange, agentClass, agentId }: { eventName?: string, timeRange: Ref<string>, agentClass?: string, agentId?: string }) => {
   const route = useRoute()
-  const { tenantName } = useTenantFromRoute()
+  const { tenantName } = useTenant()
 
   const query = {
     agent_class: agentClass ?? route?.params?.agent_class,

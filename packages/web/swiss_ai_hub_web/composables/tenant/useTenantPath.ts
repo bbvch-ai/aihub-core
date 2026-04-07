@@ -10,7 +10,7 @@
  */
 export function useTenantPath() {
   const localePath = useLocalePath()
-  const { tenantName } = useTenantFromRoute()
+  const { tenantName } = useTenant()
 
   return (path: string) => {
     const tenant = tenantName.value

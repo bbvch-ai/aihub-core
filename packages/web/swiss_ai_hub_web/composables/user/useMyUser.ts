@@ -2,7 +2,7 @@ import { getMyAccount, type UserWithAccessDto } from '@core/sdk/client'
 import { minutesToMilliseconds } from 'date-fns'
 
 export default defineQuery(() => {
-  const { tenantName } = useTenantFromRoute()
+  const { tenantName } = useTenant()
 
   const {
     data: myUser,

@@ -57,7 +57,7 @@ export function createMemoryComposables(context: MemoryContext) {
    * Composable for fetching and paginating memories
    */
   const useMemories = defineQuery(() => {
-    const { tenantName } = useTenantFromRoute()
+    const { tenantName } = useTenant()
     const currentPage = ref(1)
     const pageSize = ref(20)
 
@@ -162,7 +162,7 @@ export function createMemoryComposables(context: MemoryContext) {
    * Composable for semantic memory search
    */
   const useMemorySearch = defineQuery(() => {
-    const { tenantName } = useTenantFromRoute()
+    const { tenantName } = useTenant()
     const query = ref<string>('')
     const limit = ref(100)
 

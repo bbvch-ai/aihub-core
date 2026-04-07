@@ -6,7 +6,7 @@ import { useQuery } from '@pinia/colada'
 import { minutesToMilliseconds } from 'date-fns'
 
 export const useDatasets = defineQuery(() => {
-  const { tenantName } = useTenantFromRoute()
+  const { tenantName } = useTenant()
 
   const { data: datasets, isPending: datasetsAreLoading } = useQuery<MinimalDataset[]>({
     key: () => ['datasets', tenantName.value],

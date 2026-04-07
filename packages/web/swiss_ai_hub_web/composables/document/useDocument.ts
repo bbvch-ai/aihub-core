@@ -4,7 +4,7 @@ import { useRoute } from 'vue-router'
 
 export const useDocument = defineQuery(() => {
   const route = useRoute()
-  const { tenantName } = useTenantFromRoute()
+  const { tenantName } = useTenant()
   const isRouteReady = useRouteReady('db', 'namespace', 'document_id')
 
   const { data: document, isPending: documentIsLoading } = useQuery<DocumentDto>({

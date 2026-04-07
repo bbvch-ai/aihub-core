@@ -9,7 +9,7 @@ export const useThreadEvents = defineQuery(() => {
   const runtimeConfig = useRuntimeConfig()
 
   const route = useRoute()
-  const { tenantName } = useTenantFromRoute()
+  const { tenantName } = useTenant()
   const isRouteReady = useRouteReady('thread_id')
   const queryCache = useQueryCache()
 

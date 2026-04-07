@@ -3,7 +3,7 @@ import { useQuery } from '@pinia/colada'
 import { minutesToMilliseconds } from 'date-fns'
 
 export const useModelsList = defineQuery(() => {
-  const { tenantName } = useTenantFromRoute()
+  const { tenantName } = useTenant()
 
   const { data: modelTypes, isPending: modelsAreLoading, error } = useQuery<ModelTypeGroupDto[]>({
     key: () => ['models', tenantName.value],

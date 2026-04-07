@@ -4,7 +4,7 @@ import { useRoute } from 'vue-router'
 
 export const useProcessInstance = defineQuery(() => {
   const route = useRoute()
-  const { tenantName } = useTenantFromRoute()
+  const { tenantName } = useTenant()
   const isRouteReady = useRouteReady('process_id', 'process_class')
 
   const { data: processInstance, isPending: processInstanceIsLoading } = useQuery<FullProcessInstanceDtoReadable>({

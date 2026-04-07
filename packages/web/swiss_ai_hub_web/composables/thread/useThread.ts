@@ -4,7 +4,7 @@ import { useRoute } from 'vue-router'
 
 export const useThread = defineQuery(() => {
   const route = useRoute()
-  const { tenantName } = useTenantFromRoute()
+  const { tenantName } = useTenant()
   const isRouteReady = useRouteReady('thread_id')
 
   const { data: thread, isPending: threadIsLoading } = useQuery<ThreadDto>({

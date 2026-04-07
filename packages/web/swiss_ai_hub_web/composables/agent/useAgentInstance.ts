@@ -4,7 +4,7 @@ import { useRoute } from 'vue-router'
 
 export const useAgentInstance = defineQuery(() => {
   const route = useRoute()
-  const { tenantName } = useTenantFromRoute()
+  const { tenantName } = useTenant()
   const isRouteReady = useRouteReady('agent_id', 'agent_class')
 
   const { data: agentInstance, isPending: agentInstanceIsLoading } = useQuery<FullAgentInstanceDto>({

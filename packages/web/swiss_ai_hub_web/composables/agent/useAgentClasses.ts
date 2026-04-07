@@ -5,7 +5,7 @@ import { minutesToMilliseconds } from 'date-fns'
 export type AgentClassDto = AgentClassDtoReadable
 
 export const useAgentClasses = defineQuery((options?: { online?: boolean }) => {
-  const { tenantName } = useTenantFromRoute()
+  const { tenantName } = useTenant()
 
   const { data: agentClasses, isPending: agentClassesAreLoading } = useQuery<AgentClassDto[]>({
     key: () => ['agent-classes', tenantName.value, options?.online],

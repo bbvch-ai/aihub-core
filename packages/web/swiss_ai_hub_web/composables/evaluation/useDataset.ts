@@ -4,7 +4,7 @@ import { minutesToMilliseconds } from 'date-fns'
 
 export const useDataset = defineQuery(() => {
   const route = useRoute()
-  const { tenantName } = useTenantFromRoute()
+  const { tenantName } = useTenant()
   const isRouteReady = useRouteReady('dataset_id')
 
   const { data: dataset, isPending: datasetIsLoading } = useQuery<Dataset>({

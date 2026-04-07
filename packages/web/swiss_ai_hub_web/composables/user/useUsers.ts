@@ -1,7 +1,7 @@
 import { getUsers, type UserDto } from '@core/sdk/client'
 
 export default defineQuery(() => {
-  const { tenantName } = useTenantFromRoute()
+  const { tenantName } = useTenant()
   const currentPage = ref(1)
   const pageSize = ref(20)
 

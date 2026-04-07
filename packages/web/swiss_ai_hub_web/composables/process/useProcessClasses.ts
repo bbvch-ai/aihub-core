@@ -5,7 +5,7 @@ import { minutesToMilliseconds } from 'date-fns'
 export type ProcessClassDto = ProcessClassDtoReadable
 
 export const useProcessClasses = defineQuery((options?: { online?: boolean }) => {
-  const { tenantName } = useTenantFromRoute()
+  const { tenantName } = useTenant()
 
   const { data: processClasses, isPending: processClassesAreLoading } = useQuery<ProcessClassDto[]>({
     key: () => ['process-classes', tenantName.value, options?.online],

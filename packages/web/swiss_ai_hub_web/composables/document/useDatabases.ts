@@ -2,7 +2,7 @@ import { type DatabaseDto, getDatabases } from '@core/sdk/client'
 import { minutesToMilliseconds } from 'date-fns'
 
 export const useDatabases = defineQuery(() => {
-  const { tenantName } = useTenantFromRoute()
+  const { tenantName } = useTenant()
 
   const { data: databases, isPending: databasesAreLoading } = useQuery<DatabaseDto[]>({
     key: () => ['knowledge', tenantName.value],

@@ -51,9 +51,8 @@
 import type { TenantMembershipDto } from '@core/sdk/client'
 
 const { t } = useI18n()
-const { tenantName } = useTenantFromRoute()
+const { tenantName, setTenant } = useTenant()
 const { tenants, tenantsAreLoading } = useTenantMemberships()
-const { switchTenant } = useTenantSwitch()
 
 const popoverRef = ref()
 
@@ -61,10 +60,8 @@ function toggle(event: Event) {
   popoverRef.value?.toggle(event)
 }
 
-async function onSelect(tenant: TenantMembershipDto) {
+function onSelect(tenant: TenantMembershipDto) {
   popoverRef.value?.hide()
-  if (tenant.name !== tenantName.value) {
-    await switchTenant(tenant.id, tenant.name)
-  }
+  setTenant(tenant.id, tenant.name)
 }
 </script>

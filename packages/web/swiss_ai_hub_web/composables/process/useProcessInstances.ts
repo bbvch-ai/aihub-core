@@ -5,7 +5,7 @@ import { minutesToMilliseconds } from 'date-fns'
 export type FullProcessInstanceDto = FullProcessInstanceDtoReadable
 
 export const useProcessInstances = defineQuery((options?: { online?: boolean }) => {
-  const { tenantName } = useTenantFromRoute()
+  const { tenantName } = useTenant()
 
   const { data: processInstances, isPending: processInstancesAreLoading } = useQuery<FullProcessInstanceDto[]>({
     key: () => ['process-instances', tenantName.value, options?.online],

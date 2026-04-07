@@ -5,7 +5,7 @@ import { useRoute } from 'vue-router'
 
 export const useAgentInstanceThreads = defineQuery(() => {
   const route = useRoute()
-  const { tenantName } = useTenantFromRoute()
+  const { tenantName } = useTenant()
   const isRouteReady = useRouteReady('agent_id', 'agent_class')
 
   // Pagination state

@@ -6,7 +6,7 @@ export const useNotificationPoller = (options?: {
   pollingInterval?: number
   enabled?: boolean
 }) => {
-  const { tenantName } = useTenantFromRoute()
+  const { tenantName } = useTenant()
   const toast = useToast()
   const queryCache = useQueryCache()
 

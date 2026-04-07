@@ -10,7 +10,7 @@ export const useNotifications = (options: {
     severities?: Ref<string[] | undefined>
   }
 }) => {
-  const { tenantName } = useTenantFromRoute()
+  const { tenantName } = useTenant()
   const { currentPage, pageSize, filters } = options
 
   const key = () => [

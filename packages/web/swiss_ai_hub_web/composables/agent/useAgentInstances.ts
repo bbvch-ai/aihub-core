@@ -3,7 +3,7 @@ import { useQuery } from '@pinia/colada'
 import { minutesToMilliseconds } from 'date-fns'
 
 export const useAgentInstances = defineQuery((options?: { online?: boolean }) => {
-  const { tenantName } = useTenantFromRoute()
+  const { tenantName } = useTenant()
 
   const { data: agentInstances, isPending: agentInstancesAreLoading } = useQuery<FullAgentInstanceDto[]>({
     key: () => ['agent-instances', tenantName.value, options?.online],

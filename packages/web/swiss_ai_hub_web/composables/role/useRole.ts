@@ -4,7 +4,7 @@ import { useRoute } from 'vue-router'
 
 export default defineQuery(() => {
   const route = useRoute()
-  const { tenantName } = useTenantFromRoute()
+  const { tenantName } = useTenant()
   const isRouteReady = useRouteReady('role_id')
 
   const {
