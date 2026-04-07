@@ -1,4 +1,5 @@
 import { getMyActiveTenant } from '@core/sdk/client'
+import { useIntervalFn } from '@vueuse/core'
 
 /**
  * Polls the backend active tenant every 30 seconds and detects mismatches
@@ -9,8 +10,6 @@ export function useTenantPolling() {
   const { tenantName } = useTenantFromRoute()
   const mismatchDetected = ref(false)
   const backendTenantName = ref<string | undefined>()
-
-  let interval: ReturnType<typeof setInterval> | undefined
 
   async function poll() {
     try {
@@ -23,14 +22,7 @@ export function useTenantPolling() {
     }
   }
 
-  onMounted(() => {
-    poll()
-    interval = setInterval(poll, 30_000)
-  })
-
-  onUnmounted(() => {
-    if (interval) clearInterval(interval)
-  })
+  useIntervalFn(poll, 30_000, { immediateCallback: true })
 
   return { mismatchDetected, backendTenantName }
 }
