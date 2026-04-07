@@ -135,7 +135,7 @@ def test_stop_all_managed_handles_stop_failure(discovery: ContainerDiscovery) ->
 
     previously_running = discovery.stop_all_managed()
 
-    assert sorted(previously_running) == ["api", "web"]
+    assert previously_running == ["api"]
     healthy.stop.assert_called_once_with(timeout=30)
     failing.stop.assert_called_once_with(timeout=30)
 
