@@ -1,5 +1,6 @@
 import { getNotifications, type NotificationDto } from '@core/sdk/client'
 import { useQuery, useQueryCache } from '@pinia/colada'
+import { useIntervalFn } from '@vueuse/core'
 import { useToast } from 'primevue/usetoast'
 
 export const useNotificationPoller = (options?: {
@@ -20,7 +21,7 @@ export const useNotificationPoller = (options?: {
         path: { tenant_id: tenantName.value! },
         query: { read: false, page_size: 100 },
       }),
-    enabled: false,
+    enabled: computed(() => !!tenantName.value),
   })
 
   watch(unreadResponse, (newData) => {
@@ -47,18 +48,12 @@ export const useNotificationPoller = (options?: {
     }
   })
 
-  const pollingInterval = options?.pollingInterval ?? 30_000 // Default 30 seconds
+  const pollingInterval = options?.pollingInterval ?? 30_000
   const enabled = options?.enabled ?? true
 
-  onMounted(() => {
-    if (!enabled) return
-
-    const intervalId = setInterval(() => {
+  useIntervalFn(() => {
+    if (tenantName.value) {
       refetch()
-    }, pollingInterval)
-
-    onUnmounted(() => {
-      clearInterval(intervalId)
-    })
-  })
+    }
+  }, pollingInterval, { immediate: enabled })
 }
