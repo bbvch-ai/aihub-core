@@ -10,7 +10,7 @@ class KeycloakClient {
   }
 
   async logout(refreshToken: string): Promise<void> {
-    await fetch(this.logoutUrl, {
+    const response = await fetch(this.logoutUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
@@ -18,6 +18,10 @@ class KeycloakClient {
         refresh_token: refreshToken,
       }),
     })
+
+    if (!response.ok) {
+      throw new Error(`Keycloak logout failed with status ${response.status}`)
+    }
   }
 }
 
