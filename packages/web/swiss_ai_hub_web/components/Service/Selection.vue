@@ -84,7 +84,6 @@
               </p>
             </div>
           </NuxtLink>
-          </nuxtlink>
         </div>
         <div
           v-for="i in 4"

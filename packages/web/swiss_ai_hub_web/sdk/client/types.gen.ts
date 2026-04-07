@@ -20964,21 +20964,14 @@ export type GetReadyResponse = GetReadyResponses[keyof GetReadyResponses];
 
 export type GetAuthProvidersData = {
     body?: never;
-    path: {
-        /**
-         * Tenant Id
-         *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
-         */
-        tenant_id: string;
-    };
+    path?: never;
     query?: never;
-    url: '/{tenant_id}/auth-providers/';
+    url: '/auth-providers/';
 };
 
 export type GetAuthProvidersResponses = {
     /**
-     * Response Get Auth Providers  Tenant Id  Auth Providers  Get
+     * Response Get Auth Providers Auth Providers  Get
      *
      * Successful Response
      */

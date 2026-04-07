@@ -38,7 +38,7 @@ export const getReady = <TComposable extends Composable = '$fetch', DefaultT ext
 /**
  * Get Auth Providers
  */
-export const getAuthProviders = <TComposable extends Composable = '$fetch', DefaultT extends GetAuthProvidersResponse = GetAuthProvidersResponse>(options: Options<TComposable, GetAuthProvidersData, GetAuthProvidersResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetAuthProvidersResponse | DefaultT, unknown, DefaultT>({ url: '/{tenant_id}/auth-providers/', ...options });
+export const getAuthProviders = <TComposable extends Composable = '$fetch', DefaultT extends GetAuthProvidersResponse = GetAuthProvidersResponse>(options: Options<TComposable, GetAuthProvidersData, GetAuthProvidersResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetAuthProvidersResponse | DefaultT, unknown, DefaultT>({ url: '/auth-providers/', ...options });
 
 /**
  * Get Suite
