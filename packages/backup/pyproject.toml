@@ -12,10 +12,12 @@ authors = [
 license = "Apache-2.0"
 readme = "README.md"
 dependencies = [
+    "boto3>=1.41.5",
     "dagster>=1.11.2",
     "dagster-webserver>=1.11.2",
     "docker>=7.0",
     "pydantic>=2.10.3",
+    "pydantic-settings>=2.13.1",
 ]
 
 [dependency-groups]
