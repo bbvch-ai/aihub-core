@@ -8,7 +8,6 @@ from botocore.config import Config
 from fastapi import FastAPI
 from mongoengine import connect, disconnect
 from pymilvus import MilvusClient
-from swiss_ai_hub.core.auth import AuthHandler
 from swiss_ai_hub.core.distributor import ExternalAgentEventDistributor, ExternalProcessEventDistributor
 from swiss_ai_hub.core.infrastructure import (
     AIHubSettings,
@@ -226,14 +225,6 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         # Provision OpenWebUI with groups, workspace models, and access grants
         OpenWebuiProvisioner.initialize(redis)
         await OpenWebuiProvisioner().provision()
-
-        # Re-sync OpenWebUI groups when a user switches active tenant
-        def _on_tenant_switch() -> None:
-            task = asyncio.create_task(OpenWebuiProvisioner().sync_access())
-            _background_tasks.add(task)
-            task.add_done_callback(_background_tasks.discard)
-
-        AuthHandler.register_active_tenant_hook(_on_tenant_switch)
 
         # Re-sync OpenWebUI when roles, tenants, or user-role assignments change
         AccessChangeHook.connect()

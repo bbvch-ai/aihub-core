@@ -15,7 +15,6 @@ Feature: Tenant Resolution in Auth Handler
     And a request with tenant path parameter set to the second tenant
     When the auth handler resolves tenant for user "user-1"
     Then the resolved tenant should be "Acme Corp"
-    And user "user-1" should have active tenant set to the second tenant
 
   Scenario: Active tenant path parameter without active tenant falls back to default
     Given user "user-1" has active tenant set to the default tenant
@@ -69,12 +68,12 @@ Feature: Tenant Resolution in Auth Handler
     When the auth handler resolves tenant for user "user-1"
     Then the resolved tenant should be "Acme Corp"
 
-  Scenario: Explicit tenant path parameter updates active tenant
+  Scenario: Explicit tenant path parameter does not update active tenant
     Given user "user-1" has active tenant set to the default tenant
     And a request with tenant path parameter set to the second tenant
     When the auth handler resolves tenant for user "user-1"
     Then the resolved tenant should be "Acme Corp"
-    And user "user-1" should have active tenant set to the second tenant
+    And user "user-1" should have active tenant set to the default tenant
 
   Scenario: Stale active tenant falls back to default
     Given user "user-1" has active tenant set to "000000000000000000000000"

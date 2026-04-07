@@ -101,13 +101,13 @@ class TestParseAgentFromModel:
         result = OpenWebuiProvisioner._parse_agent_from_model(model)
         assert result == ("cls", "id")
 
-    def test_fallback_to_model_id(self) -> None:
+    def test_returns_none_without_base_model_id(self) -> None:
         model = {"id": f"{AIHUB_MODEL_PREFIX}cls-id", "base_model_id": ""}
         result = OpenWebuiProvisioner._parse_agent_from_model(model)
-        assert result == ("cls", "id")
+        assert result is None
 
-    def test_returns_none_for_malformed(self) -> None:
-        model = {"id": f"{AIHUB_MODEL_PREFIX}nohyphen", "base_model_id": ""}
+    def test_returns_none_for_malformed_base_model_id(self) -> None:
+        model = {"id": f"{AIHUB_MODEL_PREFIX}cls-id", "base_model_id": "aihub-pipeline.nodot"}
         result = OpenWebuiProvisioner._parse_agent_from_model(model)
         assert result is None
 
@@ -191,10 +191,8 @@ class TestSyncAccessGrants:
             assert len(grants) == 1
 
     @pytest.mark.asyncio
-    async def test_sync_falls_back_to_model_id_parsing_without_base_model_id(
-        self, provisioner: OpenWebuiProvisioner
-    ) -> None:
-        """Without base_model_id, the parser splits the model ID suffix on the last hyphen."""
+    async def test_sync_skips_model_without_base_model_id(self, provisioner: OpenWebuiProvisioner) -> None:
+        """Models without a valid base_model_id are skipped during access sync."""
         mock_client = AsyncMock(spec=httpx.AsyncClient)
 
         with (
@@ -224,9 +222,7 @@ class TestSyncAccessGrants:
 
             await provisioner._sync_access_grants(mock_client)
 
-            mock_update.assert_called_once()
-            grants = mock_update.call_args[0][2]
-            assert len(grants) == 1
+            mock_update.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_sync_skips_model_with_malformed_base_model_id(self, provisioner: OpenWebuiProvisioner) -> None:

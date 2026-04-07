@@ -36,21 +36,6 @@ type RoleAccessRules = dict[str, list[str]]
 """Maps role name to its access rule strings."""
 
 
-@asynccontextmanager
-async def _sync_lock(redis: Redis | None, key: str) -> AsyncIterator[bool]:
-    if redis is None:
-        raise RuntimeError("OpenWebuiProvisioner not initialized")
-    lock = redis.lock(key, timeout=_LOCK_TIMEOUT)
-    if not await lock.acquire(blocking=False):
-        logger.debug("OpenWebUI %s skipped: another instance is syncing", key.rsplit(":", 1)[-1])
-        yield False
-        return
-    try:
-        yield True
-    finally:
-        await lock.release()
-
-
 class OpenWebuiProvisioner:
     _redis: ClassVar[Redis | None] = None
 
@@ -67,8 +52,23 @@ class OpenWebuiProvisioner:
     def initialize(cls, redis: Redis) -> None:
         cls._redis = redis
 
+    @staticmethod
+    @asynccontextmanager
+    async def _sync_lock(redis: Redis | None, key: str) -> AsyncIterator[bool]:
+        if redis is None:
+            raise RuntimeError("OpenWebuiProvisioner not initialized")
+        lock = redis.lock(key, timeout=_LOCK_TIMEOUT)
+        if not await lock.acquire(blocking=False):
+            logger.debug("OpenWebUI %s skipped: another instance is syncing", key.rsplit(":", 1)[-1])
+            yield False
+            return
+        try:
+            yield True
+        finally:
+            await lock.release()
+
     async def provision(self) -> None:
-        async with _sync_lock(self._redis, "openwebui:sync:provision") as acquired:
+        async with self._sync_lock(self._redis, "openwebui:sync:provision") as acquired:
             if not acquired:
                 return
             logger.info("Starting OpenWebUI provisioning...")
@@ -81,7 +81,7 @@ class OpenWebuiProvisioner:
             logger.info("OpenWebUI provisioning completed")
 
     async def sync_agents(self, online_agents: list[OnlineAgent]) -> None:
-        async with _sync_lock(self._redis, "openwebui:sync:agents") as acquired:
+        async with self._sync_lock(self._redis, "openwebui:sync:agents") as acquired:
             if not acquired:
                 return
             async with httpx.AsyncClient(timeout=30.0) as http:
@@ -91,7 +91,7 @@ class OpenWebuiProvisioner:
             logger.info(f"OpenWebUI sync: Updated {len(online_agents)} agent workspace models")
 
     async def sync_access(self) -> None:
-        async with _sync_lock(self._redis, "openwebui:sync:access") as acquired:
+        async with self._sync_lock(self._redis, "openwebui:sync:access") as acquired:
             if not acquired:
                 return
             async with httpx.AsyncClient(timeout=30.0) as http:
@@ -273,17 +273,12 @@ class OpenWebuiProvisioner:
 
     @staticmethod
     def _parse_agent_from_model(model: dict[str, Any]) -> tuple[str, str] | None:
-        """Extracts (agent_class, agent_id) from a workspace model, preferring base_model_id."""
+        """Extracts (agent_class, agent_id) from a workspace model via its base_model_id."""
         base_model_id = model.get("base_model_id", "")
-        if base_model_id.startswith("aihub-pipeline."):
-            parts = base_model_id[len("aihub-pipeline.") :].split(".", 1)
-            return (parts[0], parts[1]) if len(parts) == 2 else None
-
-        # Best-effort fallback for models without base_model_id (e.g. manually created).
-        # Splits on the last hyphen — ambiguous if both agent_class and agent_id contain hyphens.
-        suffix = model["id"][len(AIHUB_MODEL_PREFIX) :]
-        dash_idx = suffix.rfind("-")
-        return (suffix[:dash_idx], suffix[dash_idx + 1 :]) if dash_idx > 0 else None
+        if not base_model_id.startswith("aihub-pipeline."):
+            return None
+        parts = base_model_id[len("aihub-pipeline.") :].split(".", 1)
+        return (parts[0], parts[1]) if len(parts) == 2 else None
 
     @staticmethod
     def _build_role_rules() -> RoleAccessRules:
@@ -306,6 +301,7 @@ class OpenWebuiProvisioner:
         tenant_rules: TenantAccessRules = {t.name: t.access_rules for t in TenantEntity.objects()}
         role_rules = self._build_role_rules()
 
+        # Limit concurrent HTTP requests to avoid overwhelming OpenWebUI
         semaphore = asyncio.Semaphore(5)
 
         async def update_single(model: dict[str, Any]) -> None:

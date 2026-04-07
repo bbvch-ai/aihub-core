@@ -82,6 +82,8 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
         self.controller: AgentController = controller
         self.topic_manager: AgentTopicManager = AgentTopicManager()
         self._redis = redis
+        self._langfuse_provisioner = LangfuseProvisioner()
+        self._openwebui_provisioner = OpenWebuiProvisioner()
 
     @override
     async def _discover_and_register(self):
@@ -213,19 +215,17 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
     async def _store_agents_hash(self, agents_hash: str) -> None:
         await self._redis.set(self._AGENTS_HASH_KEY, agents_hash, ex=self._AGENTS_HASH_TTL)
 
-    @staticmethod
-    async def _sync_agent_instances_to_langfuse(instances: list[FullAgentInstanceDTO]) -> bool:
+    async def _sync_agent_instances_to_langfuse(self, instances: list[FullAgentInstanceDTO]) -> bool:
         """Sync agent instances to Langfuse so they appear in the experiment model dropdown."""
         try:
             agent_models = sorted(f"{inst.agent_class}/{inst.agent_id}" for inst in instances)
-            await LangfuseProvisioner().sync_agents(agent_models)
+            await self._langfuse_provisioner.sync_agents(agent_models)
             return True
         except Exception as e:
             logger.warning(f"Langfuse agent sync failed (non-fatal): {e}")
             return False
 
-    @staticmethod
-    async def _sync_agent_instances_to_openwebui(instances: list[FullAgentInstanceDTO]) -> bool:
+    async def _sync_agent_instances_to_openwebui(self, instances: list[FullAgentInstanceDTO]) -> bool:
         """Sync agent instances to OpenWebUI as workspace models with access grants."""
         try:
             online_agents = [
@@ -233,7 +233,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
                 for inst in instances
                 if inst.is_conversational
             ]
-            await OpenWebuiProvisioner().sync_agents(online_agents)
+            await self._openwebui_provisioner.sync_agents(online_agents)
             return True
         except Exception as e:
             logger.warning(f"OpenWebUI agent sync failed (non-fatal): {e}")
