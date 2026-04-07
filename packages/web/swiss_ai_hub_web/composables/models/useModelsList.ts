@@ -3,16 +3,16 @@ import { useQuery } from '@pinia/colada'
 import { minutesToMilliseconds } from 'date-fns'
 
 export const useModelsList = defineQuery(() => {
-  const { tenantName } = useTenant()
+  const { tenantId } = useTenant()
 
   const { data: modelTypes, isPending: modelsAreLoading, error } = useQuery<ModelTypeGroupDto[]>({
-    key: () => ['models', tenantName.value],
+    key: () => ['models', tenantId.value],
     staleTime: minutesToMilliseconds(5),
-    enabled: computed(() => !!tenantName.value),
+    enabled: computed(() => !!tenantId.value),
     query: async () => {
       return await getLitellmModels({
         composable: '$fetch',
-        path: { tenant_id: tenantName.value! },
+        path: { tenant_id: tenantId.value! },
       })
     },
   })

@@ -57,7 +57,7 @@ export function createMemoryComposables(context: MemoryContext) {
    * Composable for fetching and paginating memories
    */
   const useMemories = defineQuery(() => {
-    const { tenantName } = useTenant()
+    const { tenantId } = useTenant()
     const currentPage = ref(1)
     const pageSize = ref(20)
 
@@ -65,9 +65,9 @@ export function createMemoryComposables(context: MemoryContext) {
       data: memoriesData,
       isPending: memoriesAreLoading,
     } = useQuery<MemoriesResponse>({
-      key: () => getCacheKey('list', { tenant: tenantName.value, page: currentPage.value }),
+      key: () => getCacheKey('list', { tenant: tenantId.value, page: currentPage.value }),
       staleTime: minutesToMilliseconds(5),
-      enabled: computed(() => !!tenantName.value),
+      enabled: computed(() => !!tenantId.value),
       query: async () => {
         // Use search endpoint when filters are provided (agent_class/agent_id/thread_id)
         const hasFilters = agent_class || agent_id || thread_id
@@ -77,7 +77,7 @@ export function createMemoryComposables(context: MemoryContext) {
             // Search endpoint supports filtering
             return await searchUserMemories({
               composable: '$fetch',
-              path: { tenant_id: tenantName.value! },
+              path: { tenant_id: tenantId.value! },
               query: {
                 query: '', // Empty query returns all memories
                 limit: 1000,
@@ -89,7 +89,7 @@ export function createMemoryComposables(context: MemoryContext) {
           }
           return await getUserMemories({
             composable: '$fetch',
-            path: { tenant_id: tenantName.value! },
+            path: { tenant_id: tenantId.value! },
             query: { limit: 1000 },
           })
         }
@@ -97,7 +97,7 @@ export function createMemoryComposables(context: MemoryContext) {
         if (hasFilters) {
           return await searchOrganizationMemories({
             composable: '$fetch',
-            path: { tenant_id: tenantName.value! },
+            path: { tenant_id: tenantId.value! },
             query: {
               query: '', // Empty query returns all memories
               limit: 1000,
@@ -109,7 +109,7 @@ export function createMemoryComposables(context: MemoryContext) {
         }
         return await getOrganizationMemories({
           composable: '$fetch',
-          path: { tenant_id: tenantName.value! },
+          path: { tenant_id: tenantId.value! },
           query: {
             limit: 1000,
           },
@@ -162,7 +162,7 @@ export function createMemoryComposables(context: MemoryContext) {
    * Composable for semantic memory search
    */
   const useMemorySearch = defineQuery(() => {
-    const { tenantName } = useTenant()
+    const { tenantId } = useTenant()
     const query = ref<string>('')
     const limit = ref(100)
 
@@ -170,14 +170,14 @@ export function createMemoryComposables(context: MemoryContext) {
       data: searchData,
       isPending: searchIsLoading,
     } = useQuery<MemorySearchResponse>({
-      key: () => getCacheKey('search', { tenant: tenantName.value, query: query.value, limit: limit.value }),
+      key: () => getCacheKey('search', { tenant: tenantId.value, query: query.value, limit: limit.value }),
       staleTime: minutesToMilliseconds(1),
-      enabled: () => !!query.value && !!tenantName.value,
+      enabled: () => !!query.value && !!tenantId.value,
       query: async () => {
         if (type === 'user') {
           return await searchUserMemories({
             composable: '$fetch',
-            path: { tenant_id: tenantName.value! },
+            path: { tenant_id: tenantId.value! },
             query: {
               query: query.value,
               limit: limit.value,
@@ -190,7 +190,7 @@ export function createMemoryComposables(context: MemoryContext) {
 
         return await searchOrganizationMemories({
           composable: '$fetch',
-          path: { tenant_id: tenantName.value! },
+          path: { tenant_id: tenantId.value! },
           query: {
             query: query.value,
             limit: limit.value,

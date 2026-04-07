@@ -1,19 +1,19 @@
 import { getUsers, type UserDto } from '@core/sdk/client'
 
 export default defineQuery(() => {
-  const { tenantName } = useTenant()
+  const { tenantId } = useTenant()
   const currentPage = ref(1)
   const pageSize = ref(20)
 
   const usersQuery = useQuery({
-    key: () => ['users', tenantName.value, { page: currentPage.value, size: pageSize.value }],
-    enabled: computed(() => !!tenantName.value),
+    key: () => ['users', tenantId.value, { page: currentPage.value, size: pageSize.value }],
+    enabled: computed(() => !!tenantId.value),
     query: async () => {
       const pageToFetch = Math.max(1, currentPage.value)
 
       return await getUsers({
         composable: '$fetch',
-        path: { tenant_id: tenantName.value! },
+        path: { tenant_id: tenantId.value! },
         query: {
           page: pageToFetch,
           page_size: pageSize.value,

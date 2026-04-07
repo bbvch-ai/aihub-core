@@ -1,19 +1,19 @@
 import { getUserThreads, type ThreadDto } from '@core/sdk/client'
 
 export const useThreads = defineQuery(() => {
-  const { tenantName } = useTenant()
+  const { tenantId } = useTenant()
   const currentPage = ref(1)
   const pageSize = ref(10)
 
   const threadsQuery = useQuery({
-    key: () => ['threads', tenantName.value, { page: currentPage.value, size: pageSize.value }],
-    enabled: computed(() => !!tenantName.value),
+    key: () => ['threads', tenantId.value, { page: currentPage.value, size: pageSize.value }],
+    enabled: computed(() => !!tenantId.value),
     query: async () => {
       const pageToFetch = Math.max(1, currentPage.value)
 
       return await getUserThreads({
         composable: '$fetch',
-        path: { tenant_id: tenantName.value! },
+        path: { tenant_id: tenantId.value! },
         query: {
           page: pageToFetch,
           page_size: pageSize.value,

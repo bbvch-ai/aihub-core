@@ -2,19 +2,19 @@ import { getRoles, type RoleResponse } from '@core/sdk/client'
 import { minutesToMilliseconds } from 'date-fns'
 
 export default defineQuery(() => {
-  const { tenantName } = useTenant()
+  const { tenantId } = useTenant()
 
   const {
     data: roles,
     isPending: rolesAreLoading,
   } = useQuery<RoleResponse[]>({
-    key: () => ['roles', tenantName.value],
+    key: () => ['roles', tenantId.value],
     staleTime: minutesToMilliseconds(5),
-    enabled: computed(() => !!tenantName.value),
+    enabled: computed(() => !!tenantId.value),
     query: async () => {
       return await getRoles({
         composable: '$fetch',
-        path: { tenant_id: tenantName.value! },
+        path: { tenant_id: tenantId.value! },
       })
     },
   })

@@ -7,7 +7,7 @@ import { useRoute } from 'vue-router'
 
 export const useEventTimeseries = ({ eventName, timeRange, agentClass, agentId }: { eventName?: string, timeRange: Ref<string>, agentClass?: string, agentId?: string }) => {
   const route = useRoute()
-  const { tenantName } = useTenant()
+  const { tenantId } = useTenant()
 
   const query = {
     agent_class: agentClass ?? route?.params?.agent_class,
@@ -16,14 +16,14 @@ export const useEventTimeseries = ({ eventName, timeRange, agentClass, agentId }
     event_name: eventName,
   }
   const { data: timeseries, isPending: timeseriesIsLoading } = useQuery<EventTimeseries>({
-    key: () => ['events', tenantName.value, 'agents', 'timeseries', timeRange.value, query],
+    key: () => ['events', tenantId.value, 'agents', 'timeseries', timeRange.value, query],
     staleTime: minutesToMilliseconds(5),
-    enabled: computed(() => !!tenantName.value),
+    enabled: computed(() => !!tenantId.value),
     query: async () => {
       return await getAgentEventTimeseries({
         composable: '$fetch',
         path: {
-          tenant_id: tenantName.value!,
+          tenant_id: tenantId.value!,
           time_range: timeRange.value,
         },
         query,

@@ -7,15 +7,17 @@ import { useIntervalFn } from '@vueuse/core'
  * the iframe relies on the backend's active tenant.
  */
 export function useTenantPolling() {
-  const { tenantName } = useTenant()
+  const { tenantId } = useTenant()
   const mismatchDetected = ref(false)
+  const backendTenantId = ref<string | undefined>()
   const backendTenantName = ref<string | undefined>()
 
   async function poll() {
     try {
       const activeTenant = await getMyActiveTenant({ composable: '$fetch' })
+      backendTenantId.value = activeTenant?.id
       backendTenantName.value = activeTenant?.name
-      mismatchDetected.value = !!(tenantName.value && activeTenant?.name && tenantName.value !== activeTenant.name)
+      mismatchDetected.value = !!(tenantId.value && activeTenant?.id && tenantId.value !== activeTenant.id)
     }
     catch {
       // Ignore polling errors
@@ -24,5 +26,5 @@ export function useTenantPolling() {
 
   useIntervalFn(poll, 30_000, { immediateCallback: true })
 
-  return { mismatchDetected, backendTenantName }
+  return { mismatchDetected, backendTenantId, backendTenantName }
 }

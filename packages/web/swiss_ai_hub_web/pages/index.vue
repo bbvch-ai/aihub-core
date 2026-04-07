@@ -50,7 +50,7 @@ onMounted(async () => {
     // Single tenant: auto-select and go
     if (tenantsResponse.length === 1) {
       const tenant = tenantsResponse[0]
-      await navigateTo(localePath(`/${tenant.name}/service/openai`), { replace: true })
+      await navigateTo(localePath(`/${tenant.id}/service/openai`), { replace: true })
       return
     }
 

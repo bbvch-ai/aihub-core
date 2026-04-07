@@ -47,6 +47,6 @@ const { tenants, tenantsAreLoading } = useTenantMemberships()
 
 async function selectTenant(tenant: TenantMembershipDto) {
   await setMyActiveTenant({ composable: '$fetch', body: { tenant_id: tenant.id } })
-  await navigateTo(localePath(`/${tenant.name}/service/openai`), { replace: true })
+  await navigateTo(localePath(`/${tenant.id}/service/openai`), { replace: true })
 }
 </script>

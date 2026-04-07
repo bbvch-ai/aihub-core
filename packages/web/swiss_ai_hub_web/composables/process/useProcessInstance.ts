@@ -4,18 +4,18 @@ import { useRoute } from 'vue-router'
 
 export const useProcessInstance = defineQuery(() => {
   const route = useRoute()
-  const { tenantName } = useTenant()
+  const { tenantId } = useTenant()
   const isRouteReady = useRouteReady('process_id', 'process_class')
 
   const { data: processInstance, isPending: processInstanceIsLoading } = useQuery<FullProcessInstanceDtoReadable>({
-    key: () => ['process-instances', tenantName.value, route.params.process_class as string, route.params.process_id as string],
+    key: () => ['process-instances', tenantId.value, route.params.process_class as string, route.params.process_id as string],
     staleTime: minutesToMilliseconds(5),
-    enabled: computed(() => isRouteReady.value && !!tenantName.value),
+    enabled: computed(() => isRouteReady.value && !!tenantId.value),
     query: async () => {
       return await getProcessInstance({
         composable: '$fetch',
         path: {
-          tenant_id: tenantName.value!,
+          tenant_id: tenantId.value!,
           process_id: route.params.process_id as string,
           process_class: route.params.process_class as string,
         },

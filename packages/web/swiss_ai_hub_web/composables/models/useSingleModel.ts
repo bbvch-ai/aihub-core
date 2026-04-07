@@ -4,19 +4,19 @@ import { minutesToMilliseconds } from 'date-fns'
 
 export const useSingleModel = () => {
   const route = useRoute()
-  const { tenantName } = useTenant()
+  const { tenantId } = useTenant()
 
   const modelName = computed<string>(() => decodeURIComponent(route.params?.model_name as string))
 
   const { data: model, isPending: modelIsLoading, error } = useQuery<ModelDto>({
-    key: () => ['model', tenantName.value, modelName.value],
+    key: () => ['model', tenantId.value, modelName.value],
     staleTime: minutesToMilliseconds(5),
-    enabled: () => !!modelName.value && !!tenantName.value,
+    enabled: () => !!modelName.value && !!tenantId.value,
     query: async () => {
       return await getLitellmModel({
         composable: '$fetch',
         path: {
-          tenant_id: tenantName.value!,
+          tenant_id: tenantId.value!,
           model_name: modelName.value,
         },
       })

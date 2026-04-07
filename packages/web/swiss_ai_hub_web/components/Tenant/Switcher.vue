@@ -9,7 +9,7 @@
       @click="toggle"
     >
       <i class="pi pi-building shrink-0 text-xs" />
-      <span class="truncate">{{ tenantName }}</span>
+      <span class="truncate">{{ currentTenantDisplayName }}</span>
       <i
         v-if="hasMultipleTenants"
         class="pi pi-chevron-down shrink-0 text-xs opacity-60"
@@ -25,7 +25,7 @@
           v-for="tenant in tenants"
           :key="tenant.id"
           class="cursor-pointer rounded-md px-3 py-2 transition-colors hover:bg-surface-100 dark:hover:bg-surface-700"
-          :class="{ 'bg-primary/10 font-semibold': tenant.name === tenantName }"
+          :class="{ 'bg-primary/10 font-semibold': tenant.id === tenantId }"
           @click="onSelect(tenant)"
         >
           <p class="text-sm">
@@ -57,10 +57,14 @@
 import type { TenantMembershipDto } from '@core/sdk/client'
 
 const { t } = useI18n()
-const { tenantName, setTenant } = useTenant()
+const { tenantId, setTenant } = useTenant()
 const { tenants, tenantsAreLoading } = useTenantMemberships()
 
 const hasMultipleTenants = computed(() => (tenants.value?.length ?? 0) > 1)
+const currentTenantDisplayName = computed(() => {
+  const current = tenants.value?.find(t => t.id === tenantId.value)
+  return current?.name ?? tenantId.value ?? ''
+})
 const popoverRef = ref()
 
 function toggle(event: Event) {
@@ -69,6 +73,6 @@ function toggle(event: Event) {
 
 function onSelect(tenant: TenantMembershipDto) {
   popoverRef.value?.hide()
-  setTenant(tenant.id, tenant.name)
+  setTenant(tenant.id)
 }
 </script>

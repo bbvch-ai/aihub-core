@@ -7,21 +7,21 @@ export const useNotificationPoller = (options?: {
   pollingInterval?: number
   enabled?: boolean
 }) => {
-  const { tenantName } = useTenant()
+  const { tenantId } = useTenant()
   const toast = useToast()
   const queryCache = useQueryCache()
 
   const knownUnreadIds = ref(new Set<string>())
 
   const { data: unreadResponse, refetch } = useQuery({
-    key: () => ['notifications_poller_data', tenantName.value],
+    key: () => ['notifications_poller_data', tenantId.value],
     query: () =>
       getNotifications({
         composable: '$fetch',
-        path: { tenant_id: tenantName.value! },
+        path: { tenant_id: tenantId.value! },
         query: { read: false, page_size: 100 },
       }),
-    enabled: computed(() => !!tenantName.value),
+    enabled: computed(() => !!tenantId.value),
   })
 
   watch(unreadResponse, (newData) => {
@@ -52,7 +52,7 @@ export const useNotificationPoller = (options?: {
   const enabled = options?.enabled ?? true
 
   useIntervalFn(() => {
-    if (tenantName.value) {
+    if (tenantId.value) {
       refetch()
     }
   }, pollingInterval, { immediate: enabled })

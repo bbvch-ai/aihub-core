@@ -1,20 +1,20 @@
 /**
- * Wraps ``useLocalePath()`` to auto-inject the current tenant from the route.
+ * Wraps ``useLocalePath()`` to auto-inject the current tenant ID from the route.
  *
  * Usage:
  * ```ts
  * const tenantPath = useTenantPath()
  * router.push(tenantPath('/service/agents'))
- * // → /{locale}/{tenant}/service/agents
+ * // → /{locale}/{tenantId}/service/agents
  * ```
  */
 export function useTenantPath() {
   const localePath = useLocalePath()
-  const { tenantName } = useTenant()
+  const { tenantId } = useTenant()
 
   return (path: string) => {
-    const tenant = tenantName.value
-    if (!tenant) return localePath(path)
-    return localePath(`/${tenant}${path}`)
+    const id = tenantId.value
+    if (!id) return localePath(path)
+    return localePath(`/${id}${path}`)
   }
 }

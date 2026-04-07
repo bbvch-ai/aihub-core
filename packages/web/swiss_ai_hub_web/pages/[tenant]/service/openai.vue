@@ -39,16 +39,12 @@ const route = useRoute()
 const router = useRouter()
 const tenantPath = useTenantPath()
 const localePath = useLocalePath()
-const { mismatchDetected, backendTenantName } = useTenantPolling()
+const { mismatchDetected, backendTenantId, backendTenantName } = useTenantPolling()
 const { setTenant } = useTenant()
-const { tenants } = useTenantMemberships()
 
 function onSwitchToBackendTenant() {
-  if (!backendTenantName.value) return
-  const tenant = tenants.value?.find(t => t.name === backendTenantName.value)
-  if (tenant) {
-    setTenant(tenant.id, tenant.name)
-  }
+  if (!backendTenantId.value) return
+  setTenant(backendTenantId.value)
 }
 
 let initialLoadDone = false
