@@ -1,10 +1,10 @@
-import { setMyActiveTenant } from '@core/sdk/client'
-
 /**
  * Tracks the last tenant synced with the backend to avoid redundant PUT calls
  * on every navigation within the same tenant.
  */
 let lastSyncedTenant: string | null = null
+
+const REDIRECT_KEY = 'aihub_redirect_after_login'
 
 export default defineNuxtRouteMiddleware(async (to) => {
   const { $auth, $i18n } = useNuxtApp()
@@ -24,44 +24,32 @@ export default defineNuxtRouteMiddleware(async (to) => {
   }
 
   try {
-    // Check if we have a user
     const user = await $auth.getUser()
 
     if (!user) {
-      console.log('No authenticated user found, redirecting to login')
+      // Store the intended destination so we can redirect after login
+      if (import.meta.client && to.fullPath !== '/') {
+        sessionStorage.setItem(REDIRECT_KEY, to.fullPath)
+      }
       return navigateTo(`/${locale}/auth/login`)
     }
 
-    // Check if token is expired
     if (user.expired) {
-      console.log('User token is expired, attempting silent renewal')
       try {
         await $auth.signinSilent()
-        console.log('Silent renewal successful')
       }
-      catch (error) {
-        console.error('Silent renewal failed:', error)
+      catch {
+        if (import.meta.client && to.fullPath !== '/') {
+          sessionStorage.setItem(REDIRECT_KEY, to.fullPath)
+        }
         return navigateTo(`/${locale}/auth/login`)
       }
     }
 
-    // Tenant sync: if navigating to a tenant-scoped route, ensure the backend
-    // active tenant matches the URL tenant (blocking — awaits before continuing).
+    // Tenant sync: track which tenant the frontend is operating in
     const urlTenant = to.params.tenant as string | undefined
     if (urlTenant && urlTenant !== lastSyncedTenant) {
-      try {
-        // We need the tenant ID, but the URL has the tenant name.
-        // The setMyActiveTenant endpoint accepts a tenant_id (ObjectId).
-        // For now, we rely on the middleware calling the backend which will
-        // validate membership. The actual sync happens via useTenant().setTenant()
-        // or the index.vue redirect flow which has access to the tenant ID.
-        // Here we just track the synced state.
-        lastSyncedTenant = urlTenant
-      }
-      catch (error) {
-        console.error('Failed to sync tenant with backend:', error)
-        return navigateTo(`/${locale}/select-tenant`)
-      }
+      lastSyncedTenant = urlTenant
     }
 
     return
