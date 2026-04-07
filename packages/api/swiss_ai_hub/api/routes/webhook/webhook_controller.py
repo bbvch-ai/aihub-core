@@ -13,6 +13,7 @@ from swiss_ai_hub.api.routes.webhook.dto.openwebui_webhook_payload import OpenWe
 from swiss_ai_hub.api.routes.webhook.dto.webhook_response import WebhookResponse
 
 logger = logging.getLogger(__name__)
+_background_tasks: set[asyncio.Task] = set()
 
 
 class WebhookController(Controller):
@@ -23,26 +24,23 @@ class WebhookController(Controller):
     def __init__(self, *, auth: AuthHandler, route: str = "/webhook"):
         super().__init__(auth=auth, route=route)
 
-    _background_tasks: set[asyncio.Task] = set()
-
     def openwebui(self) -> Self:
-        expected_secret = OpenWebuiSettings().WEBHOOK_SECRET.get_secret_value()
-
         @self.router.post("/openwebui", tags=self.tags)
         async def receive_openwebui_webhook(
             payload: OpenWebuiWebhookPayload,
             token: Annotated[str, Query(description="Webhook authentication token")],
         ) -> WebhookResponse:
+            expected_secret = OpenWebuiSettings().WEBHOOK_SECRET.get_secret_value()
             if not hmac.compare_digest(token, expected_secret):
                 raise HTTPException(status_code=401, detail="Invalid webhook token")
 
             if payload.action != "signup":
                 return WebhookResponse(status="ignored")
 
-            logger.info(f"OpenWebUI webhook: new user '{payload.user.email}' — triggering provisioner sync")
+            logger.info("OpenWebUI webhook: new user signup — triggering provisioner sync")
             task = asyncio.create_task(OpenWebuiProvisioner().sync_access())
-            self._background_tasks.add(task)
-            task.add_done_callback(self._background_tasks.discard)
+            _background_tasks.add(task)
+            task.add_done_callback(_background_tasks.discard)
 
             return WebhookResponse(status="ok")
 

@@ -1,8 +1,16 @@
+from contextlib import asynccontextmanager
 from unittest.mock import MagicMock, patch
 
 import pytest
 
 from swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner import OpenWebuiProvisioner
+
+_MOCK_SCIM = MagicMock(name="mock_scim_client")
+
+
+@asynccontextmanager
+async def _mock_scim_session():
+    yield _MOCK_SCIM
 
 
 @pytest.fixture
@@ -23,4 +31,6 @@ def provisioner(mock_settings: MagicMock) -> OpenWebuiProvisioner:
         "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.OpenWebuiSettings",
         return_value=mock_settings,
     ):
-        return OpenWebuiProvisioner()
+        prov = OpenWebuiProvisioner()
+        prov._openwebui.scim_session = _mock_scim_session
+        return prov

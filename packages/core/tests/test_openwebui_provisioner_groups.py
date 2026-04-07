@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import ANY, MagicMock, patch
 
 import pytest
 from scim2_models import Group, User
@@ -124,7 +124,7 @@ class TestSyncGroupsOrchestration:
 
             await provisioner._sync_groups()
 
-            mock_create.assert_called_once_with("aihub:T1:R1")
+            mock_create.assert_called_once_with("aihub:T1:R1", scim=ANY)
 
     @pytest.mark.asyncio
     async def test_sync_deletes_orphaned_groups(self, provisioner: OpenWebuiProvisioner) -> None:
@@ -148,7 +148,7 @@ class TestSyncGroupsOrchestration:
 
             await provisioner._sync_groups()
 
-            mock_delete.assert_called_once_with("grp-orphan")
+            mock_delete.assert_called_once_with("grp-orphan", scim=ANY)
 
     @pytest.mark.asyncio
     async def test_sync_ignores_non_aihub_groups(self, provisioner: OpenWebuiProvisioner) -> None:
@@ -227,7 +227,7 @@ class TestSyncGroupsOrchestration:
 
             await provisioner._sync_groups()
 
-            mock_update_members.assert_called_once_with("grp-1", ["owui-1"])
+            mock_update_members.assert_called_once_with("grp-1", ["owui-1"], scim=ANY)
 
     @pytest.mark.asyncio
     async def test_sync_excludes_user_with_different_active_tenant(self, provisioner: OpenWebuiProvisioner) -> None:
@@ -281,7 +281,7 @@ class TestSyncGroupsOrchestration:
 
             await provisioner._sync_groups()
 
-            mock_update_members.assert_called_once_with("grp-1", [])
+            mock_update_members.assert_called_once_with("grp-1", [], scim=ANY)
 
     @pytest.mark.asyncio
     async def test_sync_includes_null_active_tenant_in_default_tenant_group(
@@ -341,7 +341,7 @@ class TestSyncGroupsOrchestration:
 
             await provisioner._sync_groups()
 
-            mock_update_members.assert_called_once_with("grp-1", ["owui-1"])
+            mock_update_members.assert_called_once_with("grp-1", ["owui-1"], scim=ANY)
             raw_calls = [c for c in mock_user.objects.call_args_list if "__raw__" in (c.kwargs or {})]
             assert len(raw_calls) == 1
 

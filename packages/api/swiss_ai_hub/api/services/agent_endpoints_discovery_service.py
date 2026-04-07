@@ -48,6 +48,7 @@ from swiss_ai_hub.api.i18n.dependencies.use_locale import use_locale
 from swiss_ai_hub.api.routes.agent.agent_controller import AgentController
 from swiss_ai_hub.api.routes.agent.agent_service import AgentService
 from swiss_ai_hub.api.routes.agent.dto.agent_class_dto import AgentClassDTO
+from swiss_ai_hub.api.routes.agent.dto.full_agent_instance_dto import FullAgentInstanceDTO
 from swiss_ai_hub.api.routes.thread.thread_service import ThreadService
 from swiss_ai_hub.api.services.endpoints_discovery_service import EndpointsDiscoveryService
 from swiss_ai_hub.api.services.model_creation_service import ModelCreationService
@@ -65,6 +66,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
     2. Registers/deregisters dynamic API endpoints for agent events
     """
 
+    _AGENTS_HASH_KEY = "discovery:agents:hash"
     _AGENTS_HASH_TTL = 3600
 
     def __init__(
@@ -203,16 +205,16 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
         return hashlib.sha256(",".join(normalized).encode()).hexdigest()
 
     async def _agents_hash_unchanged(self, current_hash: str) -> bool:
-        stored_hash = await self._redis.get("discovery:agents:hash")
+        stored_hash = await self._redis.get(self._AGENTS_HASH_KEY)
         if stored_hash and stored_hash.decode() == current_hash:
             return True
         return False
 
     async def _store_agents_hash(self, agents_hash: str) -> None:
-        await self._redis.set("discovery:agents:hash", agents_hash, ex=self._AGENTS_HASH_TTL)
+        await self._redis.set(self._AGENTS_HASH_KEY, agents_hash, ex=self._AGENTS_HASH_TTL)
 
     @staticmethod
-    async def _sync_agent_instances_to_langfuse(instances: list) -> bool:
+    async def _sync_agent_instances_to_langfuse(instances: list[FullAgentInstanceDTO]) -> bool:
         """Sync agent instances to Langfuse so they appear in the experiment model dropdown."""
         try:
             agent_models = sorted(f"{inst.agent_class}/{inst.agent_id}" for inst in instances)
@@ -223,7 +225,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
             return False
 
     @staticmethod
-    async def _sync_agent_instances_to_openwebui(instances: list) -> bool:
+    async def _sync_agent_instances_to_openwebui(instances: list[FullAgentInstanceDTO]) -> bool:
         """Sync agent instances to OpenWebUI as workspace models with access grants."""
         try:
             online_agents = [

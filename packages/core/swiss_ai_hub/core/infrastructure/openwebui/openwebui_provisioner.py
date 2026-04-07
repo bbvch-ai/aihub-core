@@ -6,6 +6,7 @@ from typing import Any, ClassVar
 
 import httpx
 from redis.asyncio import Redis
+from scim2_client.engines.httpx import AsyncSCIMClient
 from scim2_models import Group, User
 
 from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
@@ -139,6 +140,7 @@ class OpenWebuiProvisioner:
         roles_by_tenant: dict[str, list[dict[str, Any]]],
         aihub_groups: dict[str, Group],
         user_id_mapping: AiHubToOwuiUserIdMapping,
+        scim: AsyncSCIMClient | None = None,
     ) -> None:
         default_tenant = TenantEntity.get_default_tenant()
         default_tenant_id = str(default_tenant.id) if default_tenant else None
@@ -156,7 +158,7 @@ class OpenWebuiProvisioner:
                 aihub_user_ids = [utr.user_id for utr in all_utr if utr.user_id in active_user_ids]
                 owui_member_ids = [user_id_mapping[uid] for uid in aihub_user_ids if uid in user_id_mapping]
 
-                await self._openwebui.update_group_members(aihub_groups[group_name].id, owui_member_ids)
+                await self._openwebui.update_group_members(aihub_groups[group_name].id, owui_member_ids, scim=scim)
 
     async def _sync_groups(self) -> None:
         tenants = [{"name": t.name, "id": str(t.id), "access_rules": t.access_rules} for t in TenantEntity.objects()]
@@ -168,25 +170,26 @@ class OpenWebuiProvisioner:
 
         desired = self._build_desired_groups(tenants, roles_by_tenant)
 
-        existing_groups = await self._openwebui.list_groups()
-        aihub_groups: dict[str, Group] = {
-            g.display_name: g for g in existing_groups if (g.display_name or "").startswith(AIHUB_GROUP_PREFIX)
-        }
+        async with self._openwebui.scim_session() as scim:
+            existing_groups = await self._openwebui.list_groups(scim=scim)
+            aihub_groups: dict[str, Group] = {
+                g.display_name: g for g in existing_groups if (g.display_name or "").startswith(AIHUB_GROUP_PREFIX)
+            }
 
-        for name in desired - set(aihub_groups.keys()):
-            created = await self._openwebui.create_group(name)
-            aihub_groups[name] = created
-            logger.info(f"OpenWebUI: Created group '{name}'")
+            for name in desired - set(aihub_groups.keys()):
+                created = await self._openwebui.create_group(name, scim=scim)
+                aihub_groups[name] = created
+                logger.info(f"OpenWebUI: Created group '{name}'")
 
-        for name in set(aihub_groups.keys()) - desired:
-            await self._openwebui.delete_group(aihub_groups.pop(name).id)
-            logger.info(f"OpenWebUI: Deleted orphaned group '{name}'")
+            for name in set(aihub_groups.keys()) - desired:
+                await self._openwebui.delete_group(aihub_groups.pop(name).id, scim=scim)
+                logger.info(f"OpenWebUI: Deleted orphaned group '{name}'")
 
-        owui_users = await self._openwebui.list_users()
-        aihub_users = [{"id": u.id, "email": u.email} for u in UserEntity.objects()]
-        user_id_mapping = self._build_user_id_mapping(aihub_users, owui_users)
+            owui_users = await self._openwebui.list_users(scim=scim)
+            aihub_users = [{"id": u.id, "email": u.email} for u in UserEntity.objects()]
+            user_id_mapping = self._build_user_id_mapping(aihub_users, owui_users)
 
-        await self._sync_group_memberships(tenants, roles_by_tenant, aihub_groups, user_id_mapping)
+            await self._sync_group_memberships(tenants, roles_by_tenant, aihub_groups, user_id_mapping, scim=scim)
 
     # ------------------------------------------------------------------
     # Workspace model sync
@@ -293,7 +296,8 @@ class OpenWebuiProvisioner:
         if not aihub_models:
             return
 
-        all_groups = await self._openwebui.list_groups()
+        async with self._openwebui.scim_session() as scim:
+            all_groups = await self._openwebui.list_groups(scim=scim)
         aihub_groups = [g for g in all_groups if (g.display_name or "").startswith(AIHUB_GROUP_PREFIX)]
 
         if not aihub_groups:
