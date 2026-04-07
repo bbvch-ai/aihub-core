@@ -17,7 +17,7 @@
         <Card
           v-for="tenant in tenants"
           :key="tenant.id"
-          class="cursor-pointer transition-shadow hover:shadow-lg"
+          class="cursor-pointer border border-transparent transition-all hover:border-primary-500 hover:bg-surface-100 dark:hover:bg-surface-800"
           @click="selectTenant(tenant)"
         >
           <template #title>
