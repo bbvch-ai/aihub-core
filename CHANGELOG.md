@@ -5,6 +5,55 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.273.5] - 2026-04-07 - Robust Backup System with S3 Integration and Automated Operations
+
+### Added
+
+- ✨ **Introduced a comprehensive backup system:** The previously placeholder backup service is now fully functional,
+  providing robust data protection.
+- 🚀 **Integrated S3 storage for backups:** Backups are now securely stored on S3-compatible object storage, configurable
+  via environment variables.
+- 🗓️ **Implemented automated daily backups:** A new Dagster schedule runs daily at 1 AM (Zurich time) to perform
+  system-wide backups.
+- 🧹 **Added intelligent backup retention policies:** Old backups are automatically pruned based on configurable
+  retention days, while ensuring a minimum number of backups are always kept.
+- 🗄️ **Enabled service-aware backup for core components:** Explicit support for backing up critical services including
+  PostgreSQL, Milvus, Neo4j, ClickHouse, Valkey, and NATS.
+- ⚙️ **Streamlined configuration management for backup:** Sensitive credentials and backup settings are now securely
+  managed using `pydantic-settings` and exposed via Docker environment variables.
+- 🔄 **Dynamic partitioning for easier restore selection:** Dagster now dynamically partitions backups by timestamp,
+  simplifying the selection of a specific backup for restoration.
+- 🌐 **Dedicated 'storage' network for backup service:** The backup service now connects to a specific `storage` network
+  in Docker Compose, improving network isolation and access control.
+
+### Changed
+
+- 🛠️ **Enhanced backup session robustness:** The backup process now automatically purges any pre-existing, incomplete
+  backup artifacts for the current timestamp on S3 before starting a new session.
+- 📄 **Improved backup logging clarity:** Backup session logs now explicitly include the S3 bucket and prefix for easier
+  monitoring and debugging.
+
+### Fixed
+
+- 🐛 **Prevented Traefik service interruption during backup:** The backup process now correctly excludes `traefik`
+  containers from being stopped and restarted, ensuring continuous inbound traffic handling.
+
+### Removed
+
+- 🗑️ **Removed placeholder status from backup README:** The `README` for the backup package no longer states it's a
+  skeleton, reflecting its new, fully operational status.
+
+### Refactor
+
+- 🚰 **Streamlined Dagster resource injection for backup:** Refactored backup-related resources into a unified factory
+  for improved modularity and dependency management.
+- 🧱 **Centralized service mapping for backup assets:** Defined a clear mapping between backup service names and their
+  corresponding Dagster asset keys, enhancing code organization.
+- 📦 **Updated backup package dependencies:** Added `boto3` for S3 interaction and `pydantic-settings` for robust
+  configuration.
+
+______________________________________________________________________
+
 ## [v0.273.4] - 2026-04-07 - Improved Authentication and Service Configuration
 
 ### Added

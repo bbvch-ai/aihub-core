@@ -7,5 +7,3 @@ Requires the Docker socket (`/var/run/docker.sock`) to discover and manage platf
 `com.docker.compose.project` label.
 
 Dagster UI: <http://localhost:3004>
-
-Currently a placeholder skeleton. The full backup implementation will be added in a follow-up issue.
