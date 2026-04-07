@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
@@ -18,6 +19,8 @@ from swiss_ai_hub.core.infrastructure import (
     RedisSettings,
     S3StorageSettings,
 )
+from swiss_ai_hub.core.persistence import AccessChangeHook
+from swiss_ai_hub.core.persistence.user.user_entity import UserEntity
 from swiss_ai_hub.core.subscribers import AgentNCSubscriber, ProcessNCSubscriber
 from swiss_ai_hub.core.topic_managers import AgentTopicManager, ProcessTopicManager
 
@@ -37,6 +40,7 @@ from swiss_ai_hub.api.sockets.manager.web_socket_manager import WebSocketManager
 from swiss_ai_hub.api.sockets.sender.web_socket_sender import WebSocketSender
 
 logger = logging.getLogger(__name__)
+_background_tasks: set[asyncio.Task] = set()
 
 
 @asynccontextmanager
@@ -185,9 +189,6 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
 
         api_app = app.state.api_app
 
-        langfuse_provisioner = LangfuseProvisioner()
-        openwebui_provisioner = OpenWebuiProvisioner(redis=redis)
-
         if hasattr(api_app.state, "agent_controller"):
             agent_discovery_service = AgentEndpointsDiscoveryService(
                 nc=nc,
@@ -195,8 +196,6 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
                 controller=api_app.state.agent_controller,
                 locale_handler=ApiLocaleHandler(),
                 redis=redis,
-                langfuse_provisioner=langfuse_provisioner,
-                openwebui_provisioner=openwebui_provisioner,
                 discovery_interval=60,  # Check for new agents every 60 seconds
             )
             await agent_discovery_service.start()
@@ -222,7 +221,22 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         await initialize_knowledge_buckets()
 
         # Provision Langfuse with AI-Hub LLM connections
-        await langfuse_provisioner.provision()
+        await LangfuseProvisioner().provision()
+
+        # Provision OpenWebUI with groups, workspace models, and access grants
+        OpenWebuiProvisioner.initialize(redis)
+        await OpenWebuiProvisioner().provision()
+
+        # Re-sync OpenWebUI groups when a user switches active tenant
+        def _on_tenant_switch() -> None:
+            task = asyncio.create_task(OpenWebuiProvisioner().sync_access())
+            _background_tasks.add(task)
+            task.add_done_callback(_background_tasks.discard)
+
+        UserEntity._on_active_tenant_changed = _on_tenant_switch
+
+        # Re-sync OpenWebUI when roles, tenants, or user-role assignments change
+        AccessChangeHook.connect()
 
         # Yield control back to FastAPI to start serving requests
         yield

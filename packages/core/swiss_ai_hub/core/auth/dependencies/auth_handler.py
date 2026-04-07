@@ -1,5 +1,7 @@
 import logging
 from abc import ABC, abstractmethod
+from collections.abc import Callable
+from typing import ClassVar
 
 from fastapi import HTTPException, Request
 
@@ -18,6 +20,17 @@ class AuthHandler(ABC):
 
     Authentication handlers validate credentials and return user identities.
     """
+
+    _on_active_tenant_changed: ClassVar[Callable[[], None] | None] = None
+
+    @classmethod
+    def register_active_tenant_hook(cls, hook: Callable[[], None]) -> None:
+        cls._on_active_tenant_changed = hook
+
+    @staticmethod
+    def _notify_active_tenant_changed() -> None:
+        if AuthHandler._on_active_tenant_changed:
+            AuthHandler._on_active_tenant_changed()
 
     @abstractmethod
     async def __call__(self, request: Request) -> UserIdentity:
