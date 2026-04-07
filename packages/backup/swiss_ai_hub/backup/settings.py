@@ -1,12 +1,10 @@
 from typing import Annotated
 
 from pydantic import Field, SecretStr
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings
 
 
 class BackupSettings(BaseSettings):
-    model_config = SettingsConfigDict()
-
     BACKUP_RETENTION_DAYS: Annotated[int, Field(ge=0)] = 7
     BACKUP_MINIMUM_KEEP: Annotated[int, Field(ge=1)] = 3
 

@@ -95,7 +95,7 @@ class S3Manager:
             count += page.get("KeyCount", 0)
         return count
 
-    def delete_recursive(self, prefix: str) -> None:
+    def delete_prefix(self, prefix: str) -> None:
         paginator = self._client.get_paginator("list_objects_v2")
         for page in paginator.paginate(Bucket=self._bucket, Prefix=prefix):
             objects: list[dict[str, str]] = [{"Key": obj["Key"]} for obj in page.get("Contents", [])]
