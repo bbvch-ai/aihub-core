@@ -5,10 +5,10 @@
         <ServiceSelection />
       </div>
       <div class="flex flex-col justify-center gap-2">
-        <nuxt-link-locale
+        <NuxtLink
           v-for="app in nonAdminApps"
           :key="app.path"
-          :to="app.path"
+          :to="app.path === '/' ? tenantPath('/') : tenantPath(app.path)"
           class="flex h-[50px] w-full items-center justify-center"
         >
           <Button
@@ -23,7 +23,7 @@
               class="h-[1.7rem] w-[1.2rem]"
             />
           </Button>
-        </nuxt-link-locale>
+        </NuxtLink>
       </div>
       <div>
         <UserSettings />
@@ -37,17 +37,7 @@
           :model="breadcrumbItems"
         >
           <template #item="{ item }">
-            <a
-              class="cursor-pointer"
-              :href="item.url"
-            >
-              <nuxt-link-locale
-                :to="item.path"
-                class="flex h-[50px] items-center justify-center"
-              >
-                <span>{{ item.label }}</span>
-              </nuxt-link-locale>
-            </a>
+            <span>{{ item.label }}</span>
           </template>
         </Breadcrumb>
         <img

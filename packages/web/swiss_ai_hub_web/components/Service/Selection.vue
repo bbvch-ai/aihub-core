@@ -65,8 +65,8 @@
               : 'bg-surface-100 dark:bg-surface-900',
           ]"
         >
-          <nuxt-link-locale
-            :to="app.path"
+          <NuxtLink
+            :to="app.path === '/' ? tenantPath('/') : tenantPath(app.path)"
             class="flex h-[50px] items-center justify-center"
             @click="toggle"
           >
@@ -83,7 +83,8 @@
                 {{ app.label }}
               </p>
             </div>
-          </nuxt-link-locale>
+          </NuxtLink>
+          </nuxtlink>
         </div>
         <div
           v-for="i in 4"
