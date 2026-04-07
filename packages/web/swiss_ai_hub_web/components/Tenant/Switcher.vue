@@ -1,20 +1,20 @@
 <template>
   <div class="flex items-center gap-2">
-    <Button
+    <button
       v-tooltip.bottom="{ value: t('tenant.switcher_label') }"
-      icon="pi pi-building"
-      variant="text"
-      size="small"
-      :aria-label="t('tenant.switcher_label')"
+      class="flex max-w-48 items-center gap-1.5 rounded px-2 py-1 text-sm text-surface-600 transition-colors dark:text-surface-300"
+      :class="hasMultipleTenants ? 'cursor-pointer hover:bg-surface-100 dark:hover:bg-surface-800' : 'cursor-default'"
       :disabled="!hasMultipleTenants"
+      :aria-label="t('tenant.switcher_label')"
       @click="toggle"
     >
-      {{ tenantName }}
+      <i class="pi pi-building shrink-0 text-xs" />
+      <span class="truncate">{{ tenantName }}</span>
       <i
         v-if="hasMultipleTenants"
-        class="pi pi-chevron-down ml-1 text-xs"
+        class="pi pi-chevron-down shrink-0 text-xs opacity-60"
       />
-    </Button>
+    </button>
 
     <Popover ref="popoverRef">
       <div class="flex w-64 flex-col gap-2 p-2">
