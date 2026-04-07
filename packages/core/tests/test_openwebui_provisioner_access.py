@@ -1,119 +1,319 @@
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import httpx
 import pytest
 from scim2_models import Group
 
-from swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner import OpenWebuiProvisioner
+from swiss_ai_hub.core.infrastructure.openwebui.access_grant import AccessGrant
+from swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner import (
+    AIHUB_MODEL_PREFIX,
+    OpenWebuiProvisioner,
+)
 
 
-def _make_group(group_id: str, name: str) -> Group:
-    return Group(id=group_id, display_name=name)
+def _group(display_name: str, group_id: str) -> Group:
+    g = Group(display_name=display_name)
+    g.id = group_id
+    return g
 
 
 class TestComputeAccessForModel:
-    def test_grants_access_when_rules_match(self):
-        groups = [_make_group("g1", "aihub:Tenant1:Admin")]
-        tenant_rules = {"Tenant1": ["aihub.user.agent.>"]}
-        role_rules = {"Admin": ["aihub.user.agent.>"]}
+    def test_group_with_matching_rules_gets_access(self) -> None:
+        groups = [_group("aihub:T1:R1", "grp-1")]
+        tenant_rules = {"T1": ["aihub.user.agent.rag.*"]}
+        role_rules = {"R1": ["aihub.user.agent.rag.*"]}
 
-        grants = OpenWebuiProvisioner._compute_access_for_model("myagent", "inst1", groups, tenant_rules, role_rules)
+        result = OpenWebuiProvisioner._compute_access_for_model("rag", "default", groups, tenant_rules, role_rules)
 
-        assert len(grants) == 1
-        assert grants[0].principal_id == "g1"
-        assert grants[0].permission == "read"
+        assert result == [AccessGrant(principal_type="group", principal_id="grp-1", permission="read")]
 
-    def test_no_access_when_tenant_blocks(self):
-        groups = [_make_group("g1", "aihub:Tenant1:Admin")]
-        tenant_rules = {"Tenant1": []}
-        role_rules = {"Admin": ["aihub.user.agent.>"]}
+    def test_group_without_matching_rules_denied(self) -> None:
+        groups = [_group("aihub:T1:R1", "grp-1")]
+        tenant_rules = {"T1": ["aihub.user.agent.rag.*"]}
+        role_rules = {"R1": ["aihub.user.agent.other.*"]}
 
-        grants = OpenWebuiProvisioner._compute_access_for_model("myagent", "inst1", groups, tenant_rules, role_rules)
-        assert len(grants) == 0
+        result = OpenWebuiProvisioner._compute_access_for_model("rag", "default", groups, tenant_rules, role_rules)
 
-    def test_ignores_non_aihub_groups(self):
-        groups = [_make_group("g1", "other-group")]
-        grants = OpenWebuiProvisioner._compute_access_for_model("myagent", "inst1", groups, {}, {})
-        assert len(grants) == 0
+        assert result == []
 
-    def test_ignores_malformed_group_names(self):
-        groups = [_make_group("g1", "aihub:malformed")]
-        grants = OpenWebuiProvisioner._compute_access_for_model("myagent", "inst1", groups, {}, {})
-        assert len(grants) == 0
+    def test_tenant_ceiling_blocks_role_access(self) -> None:
+        groups = [_group("aihub:T1:R1", "grp-1")]
+        tenant_rules = {"T1": ["aihub.user.agent.other.*"]}
+        role_rules = {"R1": ["aihub.user.agent.rag.*"]}
 
-    def test_multiple_groups_different_visibility(self):
+        result = OpenWebuiProvisioner._compute_access_for_model("rag", "default", groups, tenant_rules, role_rules)
+
+        assert result == []
+
+    def test_wildcard_rules_grant_broad_access(self) -> None:
+        groups = [_group("aihub:T1:R1", "grp-1")]
+        tenant_rules = {"T1": ["aihub.user.agent.>"]}
+        role_rules = {"R1": ["aihub.user.agent.>"]}
+
+        result = OpenWebuiProvisioner._compute_access_for_model("rag", "default", groups, tenant_rules, role_rules)
+
+        assert result == [AccessGrant(principal_type="group", principal_id="grp-1", permission="read")]
+
+    def test_empty_tenant_rules_deny_all(self) -> None:
+        groups = [_group("aihub:T1:R1", "grp-1")]
+        tenant_rules = {"T1": []}
+        role_rules = {"R1": ["aihub.user.agent.rag.*"]}
+
+        result = OpenWebuiProvisioner._compute_access_for_model("rag", "default", groups, tenant_rules, role_rules)
+
+        assert result == []
+
+    def test_multiple_groups_different_visibility(self) -> None:
         groups = [
-            _make_group("g1", "aihub:T1:Admin"),
-            _make_group("g2", "aihub:T1:User"),
+            _group("aihub:T1:R1", "grp-1"),
+            _group("aihub:T1:R2", "grp-2"),
         ]
         tenant_rules = {"T1": ["aihub.user.agent.>"]}
         role_rules = {
-            "Admin": ["aihub.user.agent.>"],
-            "User": ["aihub.user.agent.other.>"],
+            "R1": ["aihub.user.agent.rag.*"],
+            "R2": ["aihub.user.agent.llm.*"],
         }
 
-        grants = OpenWebuiProvisioner._compute_access_for_model("myagent", "inst1", groups, tenant_rules, role_rules)
-        assert len(grants) == 1
-        assert grants[0].principal_id == "g1"
+        result_rag = OpenWebuiProvisioner._compute_access_for_model("rag", "default", groups, tenant_rules, role_rules)
+        result_llm = OpenWebuiProvisioner._compute_access_for_model("llm", "default", groups, tenant_rules, role_rules)
+
+        assert result_rag == [AccessGrant(principal_type="group", principal_id="grp-1", permission="read")]
+        assert result_llm == [AccessGrant(principal_type="group", principal_id="grp-2", permission="read")]
+
+    def test_non_aihub_and_malformed_groups_are_skipped(self) -> None:
+        groups = [
+            _group("custom-group", "grp-custom"),
+            _group("aihub:only-one-part", "grp-bad"),
+            _group("aihub:T1:R1", "grp-good"),
+        ]
+        tenant_rules = {"T1": ["aihub.user.agent.>"]}
+        role_rules = {"R1": ["aihub.user.agent.>"]}
+
+        result = OpenWebuiProvisioner._compute_access_for_model("rag", "default", groups, tenant_rules, role_rules)
+
+        assert len(result) == 1
+        assert result[0].principal_id == "grp-good"
 
 
 class TestParseAgentFromModel:
-    def test_parses_from_base_model_id(self):
-        model = {"id": "aihub-agent-cls-id", "base_model_id": "aihub-pipeline.cls.id"}
+    def test_parses_from_base_model_id(self) -> None:
+        model = {"id": f"{AIHUB_MODEL_PREFIX}cls-id", "base_model_id": "aihub-pipeline.cls.id"}
         result = OpenWebuiProvisioner._parse_agent_from_model(model)
         assert result == ("cls", "id")
 
-    def test_fallback_to_model_id(self):
-        model = {"id": "aihub-agent-cls-id", "base_model_id": ""}
+    def test_fallback_to_model_id(self) -> None:
+        model = {"id": f"{AIHUB_MODEL_PREFIX}cls-id", "base_model_id": ""}
         result = OpenWebuiProvisioner._parse_agent_from_model(model)
         assert result == ("cls", "id")
 
-    def test_returns_none_for_malformed(self):
-        model = {"id": "aihub-agent-nohyphen", "base_model_id": ""}
+    def test_returns_none_for_malformed(self) -> None:
+        model = {"id": f"{AIHUB_MODEL_PREFIX}nohyphen", "base_model_id": ""}
         result = OpenWebuiProvisioner._parse_agent_from_model(model)
         assert result is None
 
 
 class TestSyncAccessGrants:
     @pytest.mark.asyncio
-    async def test_updates_access_for_models(self, provisioner: OpenWebuiProvisioner):
+    async def test_sync_sets_access_grants_on_model(self, provisioner: OpenWebuiProvisioner) -> None:
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+
         with (
-            patch.object(provisioner, "_openwebui") as mock_client,
-            patch("swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.TenantEntity") as mock_tenant_cls,
-            patch("swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.RoleEntity") as mock_role_cls,
+            patch.object(
+                provisioner._openwebui,
+                "list_models",
+                return_value=[
+                    {"id": f"{AIHUB_MODEL_PREFIX}rag-default", "base_model_id": "aihub-pipeline.rag.default"}
+                ],
+            ),
+            patch.object(
+                provisioner._openwebui,
+                "list_groups",
+                return_value=[_group("aihub:T1:R1", "grp-1")],
+            ),
+            patch.object(provisioner._openwebui, "update_model_access") as mock_update,
+            patch("swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.TenantEntity") as mock_tenant,
+            patch("swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.RoleEntity") as mock_role,
         ):
-            mock_client.list_models = AsyncMock(
-                return_value=[{"id": "aihub-agent-cls-id1", "base_model_id": "aihub-pipeline.cls.id1"}]
-            )
-
-            group = _make_group("g1", "aihub:T1:Admin")
-            mock_client.list_groups = AsyncMock(return_value=[group])
-            mock_client.update_model_access = AsyncMock()
-
             tenant = MagicMock()
             tenant.name = "T1"
             tenant.access_rules = ["aihub.user.agent.>"]
-            mock_tenant_cls.objects.return_value = [tenant]
+            mock_tenant.objects.return_value = [tenant]
 
             role = MagicMock()
-            role.name = "Admin"
+            role.name = "R1"
             role.access_rules = ["aihub.user.agent.>"]
-            mock_role_cls.objects.return_value = [role]
+            mock_role.objects.return_value = [role]
 
-            import httpx
+            await provisioner._sync_access_grants(mock_client)
 
-            async with httpx.AsyncClient() as http:
-                await provisioner._sync_access_grants(http)
-
-            mock_client.update_model_access.assert_called_once()
+            mock_update.assert_called_once()
+            call_args = mock_update.call_args
+            assert call_args[0][1] == f"{AIHUB_MODEL_PREFIX}rag-default"
+            grants = call_args[0][2]
+            assert AccessGrant(principal_type="group", principal_id="grp-1", permission="read") in grants
 
     @pytest.mark.asyncio
-    async def test_skips_when_no_models(self, provisioner: OpenWebuiProvisioner):
-        with patch.object(provisioner, "_openwebui") as mock_client:
-            mock_client.list_models = AsyncMock(return_value=[])
+    async def test_sync_parses_agent_from_base_model_id(self, provisioner: OpenWebuiProvisioner) -> None:
+        """base_model_id is the preferred source for agent_class/agent_id parsing."""
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
 
-            import httpx
+        with (
+            patch.object(
+                provisioner._openwebui,
+                "list_models",
+                return_value=[
+                    {"id": f"{AIHUB_MODEL_PREFIX}my-rag-default", "base_model_id": "aihub-pipeline.my-rag.default"}
+                ],
+            ),
+            patch.object(
+                provisioner._openwebui,
+                "list_groups",
+                return_value=[_group("aihub:T1:R1", "grp-1")],
+            ),
+            patch.object(provisioner._openwebui, "update_model_access") as mock_update,
+            patch("swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.TenantEntity") as mock_tenant,
+            patch("swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.RoleEntity") as mock_role,
+        ):
+            tenant = MagicMock()
+            tenant.name = "T1"
+            tenant.access_rules = ["aihub.user.agent.my-rag.*"]
+            mock_tenant.objects.return_value = [tenant]
 
-            async with httpx.AsyncClient() as http:
-                await provisioner._sync_access_grants(http)
+            role = MagicMock()
+            role.name = "R1"
+            role.access_rules = ["aihub.user.agent.my-rag.*"]
+            mock_role.objects.return_value = [role]
 
-            mock_client.list_groups.assert_not_called()
+            await provisioner._sync_access_grants(mock_client)
+
+            mock_update.assert_called_once()
+            grants = mock_update.call_args[0][2]
+            assert len(grants) == 1
+
+    @pytest.mark.asyncio
+    async def test_sync_falls_back_to_model_id_parsing_without_base_model_id(
+        self, provisioner: OpenWebuiProvisioner
+    ) -> None:
+        """Without base_model_id, the parser splits the model ID suffix on the last hyphen."""
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+
+        with (
+            patch.object(
+                provisioner._openwebui,
+                "list_models",
+                return_value=[{"id": f"{AIHUB_MODEL_PREFIX}rag-default"}],
+            ),
+            patch.object(
+                provisioner._openwebui,
+                "list_groups",
+                return_value=[_group("aihub:T1:R1", "grp-1")],
+            ),
+            patch.object(provisioner._openwebui, "update_model_access") as mock_update,
+            patch("swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.TenantEntity") as mock_tenant,
+            patch("swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.RoleEntity") as mock_role,
+        ):
+            tenant = MagicMock()
+            tenant.name = "T1"
+            tenant.access_rules = ["aihub.user.agent.rag.*"]
+            mock_tenant.objects.return_value = [tenant]
+
+            role = MagicMock()
+            role.name = "R1"
+            role.access_rules = ["aihub.user.agent.rag.*"]
+            mock_role.objects.return_value = [role]
+
+            await provisioner._sync_access_grants(mock_client)
+
+            mock_update.assert_called_once()
+            grants = mock_update.call_args[0][2]
+            assert len(grants) == 1
+
+    @pytest.mark.asyncio
+    async def test_sync_skips_model_with_malformed_base_model_id(self, provisioner: OpenWebuiProvisioner) -> None:
+        """A base_model_id without a dot separator after the prefix is unparseable — model is skipped."""
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+
+        with (
+            patch.object(
+                provisioner._openwebui,
+                "list_models",
+                return_value=[{"id": f"{AIHUB_MODEL_PREFIX}broken", "base_model_id": "aihub-pipeline.nodot"}],
+            ),
+            patch.object(
+                provisioner._openwebui,
+                "list_groups",
+                return_value=[_group("aihub:T1:R1", "grp-1")],
+            ),
+            patch.object(provisioner._openwebui, "update_model_access") as mock_update,
+            patch("swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.TenantEntity") as mock_tenant,
+            patch("swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.RoleEntity") as mock_role,
+        ):
+            tenant = MagicMock()
+            tenant.name = "T1"
+            tenant.access_rules = ["aihub.user.agent.>"]
+            mock_tenant.objects.return_value = [tenant]
+
+            role = MagicMock()
+            role.name = "R1"
+            role.access_rules = ["aihub.user.agent.>"]
+            mock_role.objects.return_value = [role]
+
+            await provisioner._sync_access_grants(mock_client)
+
+            mock_update.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_model_accessible_by_multiple_groups(self, provisioner: OpenWebuiProvisioner) -> None:
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+
+        with (
+            patch.object(
+                provisioner._openwebui,
+                "list_models",
+                return_value=[
+                    {"id": f"{AIHUB_MODEL_PREFIX}rag-default", "base_model_id": "aihub-pipeline.rag.default"}
+                ],
+            ),
+            patch.object(
+                provisioner._openwebui,
+                "list_groups",
+                return_value=[
+                    _group("aihub:T1:R1", "grp-1"),
+                    _group("aihub:T1:R2", "grp-2"),
+                ],
+            ),
+            patch.object(provisioner._openwebui, "update_model_access") as mock_update,
+            patch("swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.TenantEntity") as mock_tenant,
+            patch("swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.RoleEntity") as mock_role,
+        ):
+            tenant = MagicMock()
+            tenant.name = "T1"
+            tenant.access_rules = ["aihub.user.agent.>"]
+            mock_tenant.objects.return_value = [tenant]
+
+            role1 = MagicMock()
+            role1.name = "R1"
+            role1.access_rules = ["aihub.user.agent.>"]
+            role2 = MagicMock()
+            role2.name = "R2"
+            role2.access_rules = ["aihub.user.agent.>"]
+            mock_role.objects.return_value = [role1, role2]
+
+            await provisioner._sync_access_grants(mock_client)
+
+            mock_update.assert_called_once()
+            grants = mock_update.call_args[0][2]
+            granted_ids = {g.principal_id for g in grants}
+            assert granted_ids == {"grp-1", "grp-2"}
+
+    @pytest.mark.asyncio
+    async def test_skips_when_no_models(self, provisioner: OpenWebuiProvisioner) -> None:
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+
+        with (
+            patch.object(provisioner._openwebui, "list_models", return_value=[]),
+            patch.object(provisioner._openwebui, "list_groups") as mock_list_groups,
+        ):
+            await provisioner._sync_access_grants(mock_client)
+
+            mock_list_groups.assert_not_called()
