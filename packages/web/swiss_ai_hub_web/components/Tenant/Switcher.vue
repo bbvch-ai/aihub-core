@@ -2,13 +2,19 @@
   <div class="flex items-center gap-2">
     <Button
       v-tooltip.bottom="{ value: t('tenant.switcher_label') }"
-      :label="tenantName ?? ''"
       icon="pi pi-building"
       variant="text"
       size="small"
       :aria-label="t('tenant.switcher_label')"
+      :disabled="!hasMultipleTenants"
       @click="toggle"
-    />
+    >
+      {{ tenantName }}
+      <i
+        v-if="hasMultipleTenants"
+        class="pi pi-chevron-down ml-1 text-xs"
+      />
+    </Button>
 
     <Popover ref="popoverRef">
       <div class="flex w-64 flex-col gap-2 p-2">
@@ -54,6 +60,7 @@ const { t } = useI18n()
 const { tenantName, setTenant } = useTenant()
 const { tenants, tenantsAreLoading } = useTenantMemberships()
 
+const hasMultipleTenants = computed(() => (tenants.value?.length ?? 0) > 1)
 const popoverRef = ref()
 
 function toggle(event: Event) {
