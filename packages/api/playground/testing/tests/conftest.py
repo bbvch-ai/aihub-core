@@ -11,12 +11,18 @@ from swiss_ai_hub.core.testing.auth_utils.user_mocks import mock_user_entity_aut
 
 OPENWEBUI_PROVISIONER = "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.OpenWebuiProvisioner"
 LANGFUSE_PROVISIONER = "swiss_ai_hub.core.infrastructure.langfuse.langfuse_provisioner.LangfuseProvisioner"
+ACCESS_CHANGE_HOOK = "swiss_ai_hub.core.persistence.access.access_change_hook.AccessChangeHook"
 
 
 @pytest.fixture(autouse=True, scope="session")
 def _skip_external_provisioning():
+    """Skip OpenWebUI and Langfuse provisioning during tests (not available in CI)."""
     with (
+        patch(f"{OPENWEBUI_PROVISIONER}.initialize"),
+        patch(f"{OPENWEBUI_PROVISIONER}.provision", new_callable=AsyncMock),
+        patch(f"{OPENWEBUI_PROVISIONER}.sync_access", new_callable=AsyncMock),
         patch(f"{OPENWEBUI_PROVISIONER}.sync_agents", new_callable=AsyncMock),
         patch(f"{LANGFUSE_PROVISIONER}.provision", new_callable=AsyncMock),
+        patch(f"{ACCESS_CHANGE_HOOK}.connect"),
     ):
         yield
