@@ -17,16 +17,9 @@ def _make_instance(agent_class: str, agent_id: str, *, is_conversational: bool =
     )
 
 
-def _make_service(
-    *,
-    redis: AsyncMock,
-    langfuse_provisioner: AsyncMock | None = None,
-    openwebui_provisioner: AsyncMock | None = None,
-) -> AgentEndpointsDiscoveryService:
+def _make_service(*, redis: AsyncMock) -> AgentEndpointsDiscoveryService:
     service = object.__new__(AgentEndpointsDiscoveryService)
     service._redis = redis
-    service._langfuse_provisioner = langfuse_provisioner
-    service._openwebui_provisioner = openwebui_provisioner
     service.locale_handler = AsyncMock()
     return service
 
@@ -38,11 +31,9 @@ class TestSyncAgentInstancesToProvisioners:
     @pytest.mark.asyncio
     async def test_skips_sync_when_hash_unchanged(self) -> None:
         redis = AsyncMock()
-        langfuse = AsyncMock()
-        openwebui = AsyncMock()
-        service = _make_service(redis=redis, langfuse_provisioner=langfuse, openwebui_provisioner=openwebui)
+        service = _make_service(redis=redis)
 
-        expected_hash = service._compute_agents_hash(_INSTANCES)
+        expected_hash = service._compute_agents_hash({(inst.agent_class, inst.agent_id) for inst in _INSTANCES})
         redis.get.return_value = expected_hash.encode()
 
         with (
@@ -60,7 +51,7 @@ class TestSyncAgentInstancesToProvisioners:
     async def test_syncs_and_stores_hash_when_changed(self) -> None:
         redis = AsyncMock()
         redis.get.return_value = None
-        service = _make_service(redis=redis, langfuse_provisioner=AsyncMock(), openwebui_provisioner=AsyncMock())
+        service = _make_service(redis=redis)
 
         with (
             patch.object(
@@ -83,7 +74,7 @@ class TestSyncAgentInstancesToProvisioners:
     async def test_does_not_store_hash_when_langfuse_fails(self) -> None:
         redis = AsyncMock()
         redis.get.return_value = None
-        service = _make_service(redis=redis, langfuse_provisioner=AsyncMock(), openwebui_provisioner=AsyncMock())
+        service = _make_service(redis=redis)
 
         with (
             patch.object(AgentEndpointsDiscoveryService, "_sync_agent_instances_to_langfuse", return_value=False),
@@ -99,7 +90,7 @@ class TestSyncAgentInstancesToProvisioners:
     async def test_does_not_store_hash_when_openwebui_fails(self) -> None:
         redis = AsyncMock()
         redis.get.return_value = None
-        service = _make_service(redis=redis, langfuse_provisioner=AsyncMock(), openwebui_provisioner=AsyncMock())
+        service = _make_service(redis=redis)
 
         with (
             patch.object(AgentEndpointsDiscoveryService, "_sync_agent_instances_to_langfuse", return_value=True),

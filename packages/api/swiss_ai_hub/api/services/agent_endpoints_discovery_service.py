@@ -65,6 +65,8 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
     2. Registers/deregisters dynamic API endpoints for agent events
     """
 
+    _AGENTS_HASH_TTL = 3600
+
     def __init__(
         self,
         nc: NATS,
@@ -189,9 +191,11 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
         if await self._agents_hash_unchanged(current_hash):
             return
 
-        await self._sync_agent_instances_to_langfuse(instances)
-        await self._sync_agent_instances_to_openwebui(instances)
-        await self._store_agents_hash(current_hash)
+        langfuse_ok = await self._sync_agent_instances_to_langfuse(instances)
+        openwebui_ok = await self._sync_agent_instances_to_openwebui(instances)
+
+        if langfuse_ok and openwebui_ok:
+            await self._store_agents_hash(current_hash)
 
     @staticmethod
     def _compute_agents_hash(agent_set: set[tuple[str, str]]) -> str:
@@ -205,19 +209,21 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
         return False
 
     async def _store_agents_hash(self, agents_hash: str) -> None:
-        await self._redis.set("discovery:agents:hash", agents_hash, ex=3600)
+        await self._redis.set("discovery:agents:hash", agents_hash, ex=self._AGENTS_HASH_TTL)
 
     @staticmethod
-    async def _sync_agent_instances_to_langfuse(instances: list) -> None:
+    async def _sync_agent_instances_to_langfuse(instances: list) -> bool:
         """Sync agent instances to Langfuse so they appear in the experiment model dropdown."""
         try:
             agent_models = sorted(f"{inst.agent_class}/{inst.agent_id}" for inst in instances)
             await LangfuseProvisioner().sync_agents(agent_models)
+            return True
         except Exception as e:
             logger.warning(f"Langfuse agent sync failed (non-fatal): {e}")
+            return False
 
     @staticmethod
-    async def _sync_agent_instances_to_openwebui(instances: list) -> None:
+    async def _sync_agent_instances_to_openwebui(instances: list) -> bool:
         """Sync agent instances to OpenWebUI as workspace models with access grants."""
         try:
             online_agents = [
@@ -226,8 +232,10 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
                 if inst.is_conversational
             ]
             await OpenWebuiProvisioner().sync_agents(online_agents)
+            return True
         except Exception as e:
             logger.warning(f"OpenWebUI agent sync failed (non-fatal): {e}")
+            return False
 
     def _register_class_endpoints(
         self,
