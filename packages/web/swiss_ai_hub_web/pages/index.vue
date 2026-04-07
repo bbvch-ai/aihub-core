@@ -16,7 +16,7 @@
 </template>
 
 <script setup lang="ts">
-import { getMyActiveTenant, getMyTenants } from '@core/sdk/client'
+import { getMyTenants } from '@core/sdk/client'
 
 const REDIRECT_KEY = 'aihub_redirect_after_login'
 

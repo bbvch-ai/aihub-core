@@ -128,7 +128,7 @@ class ApiRunner(Runner):
             "name": "tenant_id",
             "in": "path",
             "required": True,
-            "description": "Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant",
+            "description": "Tenant identifier: a name, ObjectId, or 'active'",
             "schema": {"type": "string", "title": "Tenant Id"},
         }
 

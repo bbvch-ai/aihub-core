@@ -78,25 +78,6 @@ class AuthHandler(ABC):
         return TenantIdentity.from_tenant_entity(tenant_entity)
 
     @staticmethod
-    def _resolve_tenant_by_name(tenant_name: str, user_id: str) -> TenantIdentity:
-        tenant_entity = TenantEntity.get_tenant_by_name(tenant_name)
-        if not tenant_entity:
-            logger.warning(f"Tenant with name '{tenant_name}' not found during resolution for user {user_id}")
-            raise HTTPException(status_code=403, detail="Access denied")
-
-        tenant_id_str = str(tenant_entity.id)
-        user_roles_in_tenant = UserTenantRoleEntity.get_roles_for_user_in_tenant(user_id, tenant_id_str)
-        if not user_roles_in_tenant:
-            logger.warning(f"User {user_id} attempted to access tenant '{tenant_name}' without membership")
-            raise HTTPException(status_code=403, detail="Access denied")
-
-        return TenantIdentity.from_tenant_entity(tenant_entity)
-
-    @staticmethod
-    def _is_object_id(value: str) -> bool:
-        return len(value) == 24 and all(c in "0123456789abcdef" for c in value)
-
-    @staticmethod
     def has_tenant_in_request(request: Request) -> bool:
         """Whether the request targets a tenant-scoped route (has ``{tenant_id}`` in the path)."""
         return "tenant_id" in request.path_params
@@ -116,10 +97,7 @@ class AuthHandler(ABC):
                 detail="No active tenant set. Please select a tenant first.",
             )
 
-        if AuthHandler._is_object_id(tenant_id):
-            return AuthHandler._resolve_tenant_by_id(tenant_id, user_id)
-
-        return AuthHandler._resolve_tenant_by_name(tenant_id, user_id)
+        return AuthHandler._resolve_tenant_by_id(tenant_id, user_id)
 
     @staticmethod
     def get_active_tenant_for_user(user_id: str) -> TenantIdentity:
