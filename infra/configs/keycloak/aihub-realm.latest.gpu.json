@@ -323,7 +323,7 @@
     {
       "clientId": "aihub-api-service",
       "name": "AI-Hub API Service Account",
-      "description": "Least-privilege service account for API backend. Only has view-identity-providers permission.",
+      "description": "Service account for API backend with user and group management permissions.",
       "enabled": true,
       "publicClient": false,
       "standardFlowEnabled": false,
@@ -529,7 +529,7 @@
       "enabled": true,
       "serviceAccountClientId": "aihub-api-service",
       "clientRoles": {
-        "realm-management": ["view-identity-providers"]
+        "realm-management": ["view-identity-providers", "manage-users", "view-users", "query-users", "query-groups", "view-groups"]
       }
     }
   ],

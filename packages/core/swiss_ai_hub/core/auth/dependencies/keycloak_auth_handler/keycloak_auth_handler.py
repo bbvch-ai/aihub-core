@@ -11,6 +11,10 @@ from jwt.algorithms import RSAAlgorithm
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.dependencies.keycloak_auth_handler.keycloak_settings import KeycloakSettings
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
+from swiss_ai_hub.core.auth.keycloak_admin_service import KeycloakAdminService
+from swiss_ai_hub.core.infrastructure.api.user_signup_settings import UserSignupSettings
+from swiss_ai_hub.core.persistence.access.entities.tenant_entity import TenantEntity
+from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 from swiss_ai_hub.core.persistence.user.user_entity import UserEntity
 
 logger = logging.getLogger(__name__)
@@ -100,6 +104,11 @@ class KeycloakAuthHandler(AuthHandler):
                 logger.warning("Token missing sub claim. Available claims: %s", list(decoded_token.keys()))
                 raise HTTPException(status_code=401, detail="Invalid token claims")
 
+            # Sync tenant memberships from JWT tenants claim
+            tenants_claim = decoded_token.get("tenants", [])
+            await self._sync_tenant_memberships(sub, tenants_claim)
+
+            # Dual-write: keep UserEntity populated during migration (Phase 1)
             user_entity = UserEntity.ensure_user_exists_for_auth(
                 oid=sub,
                 name=name,
@@ -107,9 +116,9 @@ class KeycloakAuthHandler(AuthHandler):
             )
 
             if request:
-                tenant = self.resolve_tenant_for_user(request, user_entity.id)
+                tenant = await self.resolve_tenant_for_user(request, user_entity.id)
             else:
-                tenant = self.get_active_tenant_for_user(user_entity.id)
+                tenant = await self.get_active_tenant_for_user(user_entity.id)
 
             return UserIdentity.from_user_entity(user_entity, tenant)
 
@@ -127,3 +136,49 @@ class KeycloakAuthHandler(AuthHandler):
         except Exception as e:
             logger.exception("Unexpected error during token validation: %s", str(e))
             raise HTTPException(status_code=500, detail="Authentication error")
+
+    @staticmethod
+    async def _sync_tenant_memberships(user_id: str, tenants_claim: list[str]) -> None:
+        """Syncs tenant memberships from the JWT tenants claim to UserTenantRoleEntity.
+
+        The tenants claim contains Keycloak group paths like /tenants/<tenant-id>
+        where tenant-id is the unique identifier for the tenant.
+        """
+        tenant_ids = [path.split("/")[-1] for path in tenants_claim if path.startswith("/tenants/")]
+        if not tenant_ids:
+            return
+
+        settings = UserSignupSettings()
+        first_valid_tenant_id: str | None = None
+
+        for tenant_id in tenant_ids:
+            tenant = TenantEntity.get_tenant_by_id(tenant_id)
+            if not tenant:
+                logger.warning("Tenant '%s' from JWT claim not found in database, skipping", tenant_id)
+                continue
+
+            tenant_id_str = str(tenant.id)
+            if first_valid_tenant_id is None:
+                first_valid_tenant_id = tenant_id_str
+
+            existing_roles = UserTenantRoleEntity.get_roles_for_user_in_tenant(user_id, tenant_id_str)
+            if not existing_roles:
+                roles_to_assign = settings.regular_user_roles_list
+                UserTenantRoleEntity.create_or_update(
+                    user_id=user_id,
+                    tenant_id=tenant_id_str,
+                    roles=roles_to_assign,
+                )
+                logger.info(
+                    "Created tenant association for user %s in tenant %s with roles: %s",
+                    user_id,
+                    tenant_id_str,
+                    roles_to_assign,
+                )
+
+        # Ensure user has an active tenant set in Keycloak
+        if first_valid_tenant_id:
+            active_tenant_id = await KeycloakAdminService.get_active_tenant_id(user_id)
+            if not active_tenant_id:
+                await KeycloakAdminService.set_active_tenant(user_id, first_valid_tenant_id)
+                logger.info("Set active tenant for user %s to %s", user_id, first_valid_tenant_id)

@@ -80,6 +80,7 @@ if TYPE_CHECKING:
         MilvusIndexType,
         create_milvus_vector_store,
     )
+    from swiss_ai_hub.core.persistence.user.user_dashboard_entity import UserDashboardEntity
     from swiss_ai_hub.core.persistence.user.user_entity import (
         Dashboard,
         DashboardItem,
@@ -147,6 +148,7 @@ __all__ = [
     "UPDATED_AT",
     "UsageLimit",
     "User",
+    "UserDashboardEntity",
     "UserEntity",
     "UserTenantRoleEntity",
     "VERSION",
@@ -217,6 +219,7 @@ _LAZY_IMPORTS = {
     "UPDATED_AT": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",
     "UsageLimit": "swiss_ai_hub.core.persistence.access.entities.role_entity",
     "User": "swiss_ai_hub.core.persistence.messaging.entities.thread_entity",
+    "UserDashboardEntity": "swiss_ai_hub.core.persistence.user.user_dashboard_entity",
     "UserEntity": "swiss_ai_hub.core.persistence.user.user_entity",
     "UserTenantRoleEntity": "swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity",
     "VERSION": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",

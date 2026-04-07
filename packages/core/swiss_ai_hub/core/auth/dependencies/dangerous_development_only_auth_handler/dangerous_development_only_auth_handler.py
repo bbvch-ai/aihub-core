@@ -57,9 +57,9 @@ class DangerousDevelopmentOnlyAuthHandler(AuthHandler):
 
         # Resolve tenant context from request or use default
         if request:
-            tenant = self.resolve_tenant_for_user(request, user_entity.id)
+            tenant = await self.resolve_tenant_for_user(request, user_entity.id)
         else:
             # Fallback for contexts without request
-            tenant = self.get_active_tenant_for_user(user_entity.id)
+            tenant = await self.get_active_tenant_for_user(user_entity.id)
 
         return UserIdentity.from_user_entity(user_entity, tenant)

@@ -1,5 +1,7 @@
+import asyncio
 from collections.abc import Generator
 from typing import Any
+from unittest.mock import patch
 
 import pytest
 from fastapi import HTTPException, Request
@@ -8,6 +10,7 @@ from pytest_bdd import given, parsers, scenarios, then, when
 
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
+from swiss_ai_hub.core.auth.keycloak_admin_service import KeycloakAdminService
 from swiss_ai_hub.core.infrastructure.api.ai_hub_settings import AIHubSettings
 from swiss_ai_hub.core.infrastructure.mongo.mongo_settings import MongoSettings
 from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
@@ -61,6 +64,27 @@ def cleanup_documents() -> Generator[list[Any]]:
 def auth_handler() -> ConcreteAuthHandler:
     """Create an auth handler instance for testing."""
     return ConcreteAuthHandler()
+
+
+@pytest.fixture(autouse=True)
+def mock_keycloak_active_tenant():
+    """Mock KeycloakAdminService active tenant methods with an in-memory store."""
+    active_tenants: dict[str, str | None] = {}
+
+    async def mock_get_active_tenant_id(user_id: str) -> str | None:
+        return active_tenants.get(user_id)
+
+    async def mock_set_active_tenant(user_id: str, tenant_id: str | None) -> None:
+        if tenant_id is None:
+            active_tenants.pop(user_id, None)
+        else:
+            active_tenants[user_id] = tenant_id
+
+    with (
+        patch.object(KeycloakAdminService, "get_active_tenant_id", side_effect=mock_get_active_tenant_id),
+        patch.object(KeycloakAdminService, "set_active_tenant", side_effect=mock_set_active_tenant),
+    ):
+        yield active_tenants
 
 
 def create_mock_request(
@@ -178,25 +202,30 @@ def ensure_user_entity(cleanup_documents: list[Any], user_id: str) -> UserEntity
 
 
 @given(parsers.parse('user "{user_id}" has active tenant set to the second tenant'))
-def set_active_tenant_to_second(cleanup_documents: list[Any], context: dict[str, Any], user_id: str) -> None:
+def set_active_tenant_to_second(
+    cleanup_documents: list[Any], context: dict[str, Any], mock_keycloak_active_tenant: dict, user_id: str
+) -> None:
     """Set a user's active tenant to the second tenant."""
-    user = ensure_user_entity(cleanup_documents, user_id)
-    user.set_active_tenant(str(context["second_tenant"].id))
+    ensure_user_entity(cleanup_documents, user_id)
+    mock_keycloak_active_tenant[user_id] = str(context["second_tenant"].id)
 
 
 @given(parsers.parse('user "{user_id}" has active tenant set to the default tenant'))
-def set_active_tenant_to_default(cleanup_documents: list[Any], context: dict[str, Any], user_id: str) -> None:
+def set_active_tenant_to_default(
+    cleanup_documents: list[Any], context: dict[str, Any], mock_keycloak_active_tenant: dict, user_id: str
+) -> None:
     """Set a user's active tenant to the default tenant."""
-    user = ensure_user_entity(cleanup_documents, user_id)
-    user.set_active_tenant(str(context["default_tenant"].id))
+    ensure_user_entity(cleanup_documents, user_id)
+    mock_keycloak_active_tenant[user_id] = str(context["default_tenant"].id)
 
 
 @given(parsers.parse('user "{user_id}" has active tenant set to "{tenant_id}"'))
-def set_active_tenant_to_id(cleanup_documents: list[Any], user_id: str, tenant_id: str) -> None:
+def set_active_tenant_to_id(
+    cleanup_documents: list[Any], mock_keycloak_active_tenant: dict, user_id: str, tenant_id: str
+) -> None:
     """Set a user's active tenant to a specific ID (possibly non-existent)."""
-    user = ensure_user_entity(cleanup_documents, user_id)
-    user.active_tenant_id = tenant_id
-    user.save()
+    ensure_user_entity(cleanup_documents, user_id)
+    mock_keycloak_active_tenant[user_id] = tenant_id
 
 
 # --- Given Steps for Request Context ---
@@ -233,7 +262,7 @@ def remove_default_tenant(context: dict[str, Any]) -> None:
 def resolve_tenant(context: dict[str, Any], auth_handler: ConcreteAuthHandler, user_id: str) -> None:
     """Resolve tenant for the given user."""
     request = context["request"]
-    tenant_identity = auth_handler.resolve_tenant_for_user(request, user_id)
+    tenant_identity = asyncio.run(auth_handler.resolve_tenant_for_user(request, user_id))
     context["resolved_tenant"] = tenant_identity
 
 
@@ -242,7 +271,7 @@ def resolve_tenant_expect_error(context: dict[str, Any], auth_handler: ConcreteA
     """Resolve tenant for the given user, expecting an error."""
     request = context["request"]
     try:
-        auth_handler.resolve_tenant_for_user(request, user_id)
+        asyncio.run(auth_handler.resolve_tenant_for_user(request, user_id))
         pytest.fail("Expected an HTTPException but none was raised")
     except HTTPException as e:
         context["error"] = e
@@ -258,7 +287,7 @@ def resolve_tenant_expect_error(context: dict[str, Any], auth_handler: ConcreteA
 @when(parsers.parse('the auth handler gets active tenant for user "{user_id}"'))
 def get_active_tenant(context: dict[str, Any], auth_handler: ConcreteAuthHandler, user_id: str) -> None:
     """Get the active tenant for the given user."""
-    tenant_identity = auth_handler.get_active_tenant_for_user(user_id)
+    tenant_identity = asyncio.run(auth_handler.get_active_tenant_for_user(user_id))
     context["resolved_tenant"] = tenant_identity
 
 
@@ -266,7 +295,7 @@ def get_active_tenant(context: dict[str, Any], auth_handler: ConcreteAuthHandler
 def get_active_tenant_expect_error(context: dict[str, Any], auth_handler: ConcreteAuthHandler, user_id: str) -> None:
     """Get the active tenant for the given user, expecting an error."""
     try:
-        auth_handler.get_active_tenant_for_user(user_id)
+        asyncio.run(auth_handler.get_active_tenant_for_user(user_id))
         pytest.fail("Expected an HTTPException but none was raised")
     except HTTPException as e:
         context["error"] = e
@@ -293,18 +322,16 @@ def check_error_status_and_message(context: dict[str, Any], status_code: int, ex
 
 
 @then(parsers.parse('user "{user_id}" should have active tenant set to the second tenant'))
-def check_active_tenant_is_second(context: dict[str, Any], user_id: str) -> None:
+def check_active_tenant_is_second(context: dict[str, Any], mock_keycloak_active_tenant: dict, user_id: str) -> None:
     """Verify the user's active tenant was updated to the second tenant."""
-    user = UserEntity.objects(id=user_id).only("active_tenant_id").first()
     expected = str(context["second_tenant"].id)
-    assert user is not None, f"User {user_id} not found"
-    assert user.active_tenant_id == expected, f"Expected active_tenant_id '{expected}', got '{user.active_tenant_id}'"
+    actual = mock_keycloak_active_tenant.get(user_id)
+    assert actual == expected, f"Expected active_tenant_id '{expected}', got '{actual}'"
 
 
 @then(parsers.parse('user "{user_id}" should have active tenant set to the default tenant'))
-def check_active_tenant_is_default(context: dict[str, Any], user_id: str) -> None:
+def check_active_tenant_is_default(context: dict[str, Any], mock_keycloak_active_tenant: dict, user_id: str) -> None:
     """Verify the user's active tenant was updated to the default tenant."""
-    user = UserEntity.objects(id=user_id).only("active_tenant_id").first()
     expected = str(context["default_tenant"].id)
-    assert user is not None, f"User {user_id} not found"
-    assert user.active_tenant_id == expected, f"Expected active_tenant_id '{expected}', got '{user.active_tenant_id}'"
+    actual = mock_keycloak_active_tenant.get(user_id)
+    assert actual == expected, f"Expected active_tenant_id '{expected}', got '{actual}'"

@@ -10,6 +10,7 @@ from fastapi import HTTPException
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
+from swiss_ai_hub.core.auth.dependencies.keycloak_auth_handler.keycloak_auth_handler import KeycloakAuthHandler
 from swiss_ai_hub.core.auth.dependencies.keycloak_auth_handler.keycloak_settings import KeycloakSettings
 from swiss_ai_hub.core.auth.identity.tenant_identity import TenantIdentity
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
@@ -63,11 +64,14 @@ def mock_database_operations(monkeypatch: pytest.MonkeyPatch):
         identity.roles = []
         return identity
 
-    def mock_get_default_tenant(user_id: str) -> TenantIdentity:
+    async def mock_get_default_tenant(user_id: str) -> TenantIdentity:
         tenant = MagicMock(spec=TenantIdentity)
         tenant.id = "default-tenant"
         tenant.name = "Default"
         return tenant
+
+    async def mock_sync_tenant_memberships(user_id: str, tenants_claim: list[str]) -> None:
+        pass
 
     monkeypatch.setattr(
         "swiss_ai_hub.core.persistence.user.user_entity.UserEntity.ensure_user_exists_for_auth", mock_ensure_user_exists
@@ -76,6 +80,7 @@ def mock_database_operations(monkeypatch: pytest.MonkeyPatch):
         "swiss_ai_hub.core.auth.identity.user_identity.UserIdentity.from_user_entity", mock_from_user_entity
     )
     monkeypatch.setattr(AuthHandler, "get_active_tenant_for_user", staticmethod(mock_get_default_tenant))
+    monkeypatch.setattr(KeycloakAuthHandler, "_sync_tenant_memberships", staticmethod(mock_sync_tenant_memberships))
 
 
 # --- Fixtures ---

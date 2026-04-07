@@ -16,7 +16,7 @@
       <excludeFolder url="file://$MODULE_DIR$/.venv" />
       <excludeFolder url="file://$MODULE_DIR$/.claude/worktrees" />
     </content>
-    <orderEntry type="jdk" jdkName="uv (swiss-ai-hub)" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="uv (aihub-core)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
   <component name="PyDocumentationSettings">

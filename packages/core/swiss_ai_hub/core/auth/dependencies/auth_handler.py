@@ -5,9 +5,9 @@ from fastapi import HTTPException, Request
 
 from swiss_ai_hub.core.auth.identity.tenant_identity import TenantIdentity
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
+from swiss_ai_hub.core.auth.keycloak_admin_service import KeycloakAdminService
 from swiss_ai_hub.core.persistence.access.entities.tenant_entity import TenantEntity
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
-from swiss_ai_hub.core.persistence.user.user_entity import UserEntity
 
 logger = logging.getLogger(__name__)
 
@@ -39,14 +39,14 @@ class AuthHandler(ABC):
         pass
 
     @staticmethod
-    def _resolve_active_tenant(user_id: str) -> TenantEntity | None:
-        user = UserEntity.objects(id=user_id).only("active_tenant_id").first()
-        if not user or not user.active_tenant_id:
+    async def _resolve_active_tenant(user_id: str) -> TenantEntity | None:
+        active_tenant_id = await KeycloakAdminService.get_active_tenant_id(user_id)
+        if not active_tenant_id:
             return None
 
-        tenant = TenantEntity.get_tenant_by_id(user.active_tenant_id)
+        tenant = TenantEntity.get_tenant_by_id(active_tenant_id)
         if not tenant:
-            UserEntity.objects(id=user_id).update_one(set__active_tenant_id=None)
+            await KeycloakAdminService.set_active_tenant(user_id, None)
             raise HTTPException(
                 status_code=400,
                 detail="Your active tenant is no longer accessible. Please select a new tenant.",
@@ -54,7 +54,7 @@ class AuthHandler(ABC):
 
         roles = UserTenantRoleEntity.get_roles_for_user_in_tenant(user_id, str(tenant.id))
         if not roles:
-            UserEntity.objects(id=user_id).update_one(set__active_tenant_id=None)
+            await KeycloakAdminService.set_active_tenant(user_id, None)
             raise HTTPException(
                 status_code=400,
                 detail="Your active tenant is no longer accessible. Please select a new tenant.",
@@ -78,13 +78,13 @@ class AuthHandler(ABC):
         return TenantIdentity.from_tenant_entity(tenant_entity)
 
     @staticmethod
-    def resolve_tenant_for_user(request: Request, user_id: str) -> TenantIdentity:
+    async def resolve_tenant_for_user(request: Request, user_id: str) -> TenantIdentity:
         tenant_id = request.path_params.get("tenant_id")
         if not tenant_id:
             raise HTTPException(status_code=400, detail="Missing tenant context")
 
         if tenant_id == AuthHandler.ACTIVE_TENANT_SLUG:
-            active_tenant = AuthHandler._resolve_active_tenant(user_id)
+            active_tenant = await AuthHandler._resolve_active_tenant(user_id)
             if active_tenant:
                 return TenantIdentity.from_tenant_entity(active_tenant)
             raise HTTPException(
@@ -95,8 +95,8 @@ class AuthHandler(ABC):
         return AuthHandler._resolve_tenant_by_id(tenant_id, user_id)
 
     @staticmethod
-    def get_active_tenant_for_user(user_id: str) -> TenantIdentity:
-        active_tenant = AuthHandler._resolve_active_tenant(user_id)
+    async def get_active_tenant_for_user(user_id: str) -> TenantIdentity:
+        active_tenant = await AuthHandler._resolve_active_tenant(user_id)
         if active_tenant:
             return TenantIdentity.from_tenant_entity(active_tenant)
         raise HTTPException(

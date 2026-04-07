@@ -61,7 +61,7 @@ def mock_database_operations(monkeypatch: pytest.MonkeyPatch):
         return MagicMock()
 
     # Mock resolve_tenant_for_user to return a mock tenant identity
-    def mock_resolve_tenant(_self, _request, _user_id: str) -> TenantIdentity:
+    async def mock_resolve_tenant(_self, _request, _user_id: str) -> TenantIdentity:
         """Return a mock tenant identity."""
         return TenantIdentity(id="default-tenant-id", name="Default Tenant", access_rules=[])
 

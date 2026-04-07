@@ -72,7 +72,7 @@ class OpenWebuiAuthHandler(AuthHandler):
             )
 
         # Resolve tenant context from request
-        tenant = self.resolve_tenant_for_user(request, user_entity.id)
+        tenant = await self.resolve_tenant_for_user(request, user_entity.id)
 
         return UserIdentity.from_user_entity(user_entity, tenant)
 

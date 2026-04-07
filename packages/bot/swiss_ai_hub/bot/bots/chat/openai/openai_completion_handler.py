@@ -134,7 +134,7 @@ class OpenaiCompletionHandler(CompletionHandler):
                 )
 
         user_entity = UserEntity.by_email(user_email)
-        tenant = AuthHandler.get_active_tenant_for_user(user_entity.id)
+        tenant = await AuthHandler.get_active_tenant_for_user(user_entity.id)
         user = UserIdentity.from_user_entity(user_entity, tenant)
 
         logger.debug(f"Using user identity: {user}")
