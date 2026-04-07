@@ -1007,6 +1007,16 @@ services:
     environment:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      MONGO_USERNAME: ${MONGO_USERNAME}
+      MONGO_PASSWORD: ${MONGO_PASSWORD}
+      MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
+      LANGFUSE_CLICKHOUSE_PASSWORD: ${LANGFUSE_CLICKHOUSE_PASSWORD}
+      REDIS_TOKEN: ${REDIS_TOKEN}
+      NATS_TOKEN: ${NATS_TOKEN}
+      S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
+      S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/backup-dagster-home:/dagster_home
       - ./configs/backup/backup-dagster.latest.yml:/dagster_home/dagster.yaml:ro
@@ -1030,7 +1040,7 @@ services:
       options:
         max-size: 10m
         max-file: 2
-    networks: [data]
+    networks: [data, storage]
   oauth2proxy-backup:
     container_name: oauth2proxy-backup
     image: ghcr.io/bbvch-ai/bbvch-ai/oauth2-proxy:latest
