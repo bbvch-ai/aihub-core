@@ -8,6 +8,7 @@ from botocore.config import Config
 from fastapi import FastAPI
 from mongoengine import connect, disconnect
 from pymilvus import MilvusClient
+from swiss_ai_hub.core.auth import AuthHandler
 from swiss_ai_hub.core.distributor import ExternalAgentEventDistributor, ExternalProcessEventDistributor
 from swiss_ai_hub.core.infrastructure import (
     AIHubSettings,
@@ -20,7 +21,6 @@ from swiss_ai_hub.core.infrastructure import (
     S3StorageSettings,
 )
 from swiss_ai_hub.core.persistence import AccessChangeHook
-from swiss_ai_hub.core.persistence.user.user_entity import UserEntity
 from swiss_ai_hub.core.subscribers import AgentNCSubscriber, ProcessNCSubscriber
 from swiss_ai_hub.core.topic_managers import AgentTopicManager, ProcessTopicManager
 
@@ -233,7 +233,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
             _background_tasks.add(task)
             task.add_done_callback(_background_tasks.discard)
 
-        UserEntity._on_active_tenant_changed = _on_tenant_switch
+        AuthHandler.register_active_tenant_hook(_on_tenant_switch)
 
         # Re-sync OpenWebUI when roles, tenants, or user-role assignments change
         AccessChangeHook.connect()

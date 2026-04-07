@@ -43,11 +43,11 @@ async def _sync_lock(redis: Redis | None, key: str) -> AsyncIterator[bool]:
     if not await lock.acquire(blocking=False):
         logger.debug("OpenWebUI %s skipped: another instance is syncing", key.rsplit(":", 1)[-1])
         yield False
-    else:
-        try:
-            yield True
-        finally:
-            await lock.release()
+        return
+    try:
+        yield True
+    finally:
+        await lock.release()
 
 
 class OpenWebuiProvisioner:

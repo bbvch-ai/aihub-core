@@ -1,7 +1,6 @@
 import logging
-from collections.abc import Callable
 from datetime import UTC, datetime
-from typing import ClassVar, Self
+from typing import Self
 from uuid import uuid4
 
 from mongoengine import (
@@ -57,8 +56,6 @@ class UserEntity(Document):
             {"fields": ["name"]},
         ],
     }
-    _on_active_tenant_changed: ClassVar[Callable[[], None] | None] = None
-
     id = StringField(primary_key=True)
     name = StringField(required=True)
     email = StringField(required=True)
@@ -87,8 +84,6 @@ class UserEntity(Document):
         self.active_tenant_id = tenant_id
         self.last_updated = datetime.now(UTC)
         self.save()
-        if UserEntity._on_active_tenant_changed:
-            UserEntity._on_active_tenant_changed()
 
     @staticmethod
     @trace_fn

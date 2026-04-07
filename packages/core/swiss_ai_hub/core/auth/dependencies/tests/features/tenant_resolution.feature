@@ -11,14 +11,19 @@ Feature: Tenant Resolution in Auth Handler
     And user "user-2" is a member of the default tenant only with roles "AIHubUser"
 
   Scenario: Explicit tenant path parameter resolves to specified tenant
-    Given a request with tenant path parameter set to the second tenant
+    Given user "user-1" has active tenant set to the default tenant
+    And a request with tenant path parameter set to the second tenant
     When the auth handler resolves tenant for user "user-1"
     Then the resolved tenant should be "Acme Corp"
+    And user "user-1" should have active tenant set to the second tenant
 
-  Scenario: Active tenant path parameter without active tenant returns 400 error
-    Given a request with tenant path parameter set to "active"
-    When the auth handler resolves tenant for user "user-1" expecting error
-    Then a 400 error should be raised with message "No active tenant set"
+  Scenario: Active tenant path parameter without active tenant falls back to default
+    Given user "user-1" has active tenant set to the default tenant
+    And user "user-1" has active tenant cleared
+    And a request with tenant path parameter set to "active"
+    When the auth handler resolves tenant for user "user-1"
+    Then the resolved tenant should be "Default Org"
+    And user "user-1" should have active tenant set to the default tenant
 
   Scenario: Invalid tenant ID returns 403 error
     Given a request with tenant path parameter set to "non-existent-tenant-id"
@@ -30,15 +35,18 @@ Feature: Tenant Resolution in Auth Handler
     When the auth handler resolves tenant for user "user-2" expecting error
     Then a 403 error should be raised with message "Access denied"
 
-  Scenario: No active tenant set returns 400 error regardless of default tenant
+  Scenario: No active tenant and no default tenant returns 500 error
     Given no default tenant exists
     And a request with tenant path parameter set to "active"
     When the auth handler resolves tenant for user "user-1" expecting error
-    Then a 400 error should be raised with message "No active tenant set"
+    Then a 500 error should be raised with message "No default tenant configured"
 
-  Scenario: Get active tenant for user without active tenant returns 400 error
-    When the auth handler gets active tenant for user "user-1" expecting error
-    Then a 400 error should be raised with message "No active tenant set"
+  Scenario: Get active tenant for user without active tenant falls back to default
+    Given user "user-1" has active tenant set to the default tenant
+    And user "user-1" has active tenant cleared
+    When the auth handler gets active tenant for user "user-1"
+    Then the resolved tenant should be "Default Org"
+    And user "user-1" should have active tenant set to the default tenant
 
   Scenario: Get active tenant for user with active tenant set resolves correctly
     Given user "user-1" has active tenant set to the second tenant
@@ -61,36 +69,40 @@ Feature: Tenant Resolution in Auth Handler
     When the auth handler resolves tenant for user "user-1"
     Then the resolved tenant should be "Acme Corp"
 
-  Scenario: Explicit tenant path parameter does not update active tenant
+  Scenario: Explicit tenant path parameter updates active tenant
     Given user "user-1" has active tenant set to the default tenant
     And a request with tenant path parameter set to the second tenant
     When the auth handler resolves tenant for user "user-1"
     Then the resolved tenant should be "Acme Corp"
-    And user "user-1" should have active tenant set to the default tenant
+    And user "user-1" should have active tenant set to the second tenant
 
-  Scenario: Stale active tenant returns 400 error
+  Scenario: Stale active tenant falls back to default
     Given user "user-1" has active tenant set to "000000000000000000000000"
     And a request with tenant path parameter set to "active"
-    When the auth handler resolves tenant for user "user-1" expecting error
-    Then a 400 error should be raised with message "Your active tenant is no longer accessible"
+    When the auth handler resolves tenant for user "user-1"
+    Then the resolved tenant should be "Default Org"
+    And user "user-1" should have active tenant set to the default tenant
 
-  Scenario: Active tenant without membership returns 400 error
+  Scenario: Active tenant without membership falls back to default
     Given user "user-2" has active tenant set to the second tenant
     And a request with tenant path parameter set to "active"
-    When the auth handler resolves tenant for user "user-2" expecting error
-    Then a 400 error should be raised with message "Your active tenant is no longer accessible"
+    When the auth handler resolves tenant for user "user-2"
+    Then the resolved tenant should be "Default Org"
+    And user "user-2" should have active tenant set to the default tenant
 
   Scenario: WebSocket context uses active tenant
     Given user "user-1" has active tenant set to the second tenant
     When the auth handler gets active tenant for user "user-1"
     Then the resolved tenant should be "Acme Corp"
 
-  Scenario: WebSocket with stale active tenant returns 400 error
+  Scenario: WebSocket with stale active tenant falls back to default
     Given user "user-1" has active tenant set to "000000000000000000000000"
-    When the auth handler gets active tenant for user "user-1" expecting error
-    Then a 400 error should be raised with message "Your active tenant is no longer accessible"
+    When the auth handler gets active tenant for user "user-1"
+    Then the resolved tenant should be "Default Org"
+    And user "user-1" should have active tenant set to the default tenant
 
-  Scenario: WebSocket with revoked tenant membership returns 400 error
+  Scenario: WebSocket with revoked tenant membership falls back to default
     Given user "user-2" has active tenant set to the second tenant
-    When the auth handler gets active tenant for user "user-2" expecting error
-    Then a 400 error should be raised with message "Your active tenant is no longer accessible"
+    When the auth handler gets active tenant for user "user-2"
+    Then the resolved tenant should be "Default Org"
+    And user "user-2" should have active tenant set to the default tenant
