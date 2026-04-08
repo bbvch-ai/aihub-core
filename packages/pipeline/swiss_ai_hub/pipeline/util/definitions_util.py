@@ -103,6 +103,7 @@ def default_definitions(
     document_partitions = DynamicPartitionsDefinition(name=f"{datalake_container_name}_document_partitions")
 
     data_lake_key = AssetKey([datalake_container_name, "datalake_to_vectorstore", "data_lake"])
+    placeholder_refdocs_key = AssetKey([datalake_container_name, "datalake_to_vectorstore", "placeholder_refdocs"])
     document_key = AssetKey([datalake_container_name, "datalake_to_vectorstore", "documents"])
     nodes_key = AssetKey([datalake_container_name, "datalake_to_vectorstore", "nodes"])
     removed_documents_key = AssetKey([datalake_container_name, "datalake_to_vectorstore", "removed_documents"])
@@ -115,6 +116,11 @@ def default_definitions(
     )
     assets = [
         observable_asset,
+        placeholder_refdocs_factory(
+            key=placeholder_refdocs_key,
+            data_lake_files_key=data_lake_key,
+            partitions=document_partitions,
+        ),
         removed_documents_factory(removed_documents_key, data_lake_key=data_lake_key),
         documents_factory(
             document_key,
@@ -327,7 +333,6 @@ def default_local_filesystem_to_datalake_definitions(
 
     filesystem_key = AssetKey([datalake_container_name, "local_fs_to_datalake", "local_fs"])
     data_lake_files_key = AssetKey([datalake_container_name, "local_fs_to_datalake", "data_lake_files"])
-    placeholder_refdocs_key = AssetKey([datalake_container_name, "local_fs_to_datalake", "placeholder_refdocs"])
     removed_data_lake_files_key = AssetKey([datalake_container_name, "local_fs_to_datalake", "removed_data_lake_files"])
 
     observable_filesystem_asset = observable_local_file_system_factory(
@@ -342,11 +347,6 @@ def default_local_filesystem_to_datalake_definitions(
         data_lake_file_factory(
             key=data_lake_files_key,
             source_key=filesystem_key,
-            partitions=filesystem_partitions,
-        ),
-        placeholder_refdocs_factory(
-            key=placeholder_refdocs_key,
-            data_lake_files_key=data_lake_files_key,
             partitions=filesystem_partitions,
         ),
         removed_data_lake_files_factory(
