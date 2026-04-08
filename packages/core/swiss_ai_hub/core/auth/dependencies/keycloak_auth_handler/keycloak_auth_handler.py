@@ -106,14 +106,7 @@ class KeycloakAuthHandler(AuthHandler):
                 email=email,
             )
 
-            if request and self.has_tenant_in_request(request):
-                tenant = self.resolve_tenant_for_user(request, user_entity.id)
-                return UserIdentity.from_user_entity(user_entity, tenant)
-            elif request:
-                return UserIdentity.from_user_entity_without_tenant(user_entity)
-            else:
-                tenant = self.get_active_tenant_for_user(user_entity.id)
-                return UserIdentity.from_user_entity(user_entity, tenant)
+            return self.build_identity(user_entity, request)
 
         except HTTPException:
             raise

@@ -15,12 +15,11 @@ export function useTenant() {
 
   const tenantId = computed(() => route.params.tenant as string | undefined)
 
-  function setTenant(id: string) {
+  async function setTenant(id: string) {
     if (id === tenantId.value) return
 
-    setMyActiveTenant({ composable: '$fetch', body: { tenant_id: id } })
-      .then(() => queryCache.invalidateQueries())
-      .catch((error: unknown) => console.error('Failed to sync active tenant:', error))
+    await setMyActiveTenant({ composable: '$fetch', body: { tenant_id: id } })
+    await queryCache.invalidateQueries()
 
     router.replace({
       name: route.name!,

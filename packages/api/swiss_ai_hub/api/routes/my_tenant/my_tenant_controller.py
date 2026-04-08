@@ -6,7 +6,8 @@ from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.routes import Controller
 
 from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
-from swiss_ai_hub.api.routes.my_tenant.dto.active_tenant_dto import ActiveTenantDTO, SetActiveTenantRequest
+from swiss_ai_hub.api.routes.my_tenant.dto.active_tenant_dto import ActiveTenantDTO
+from swiss_ai_hub.api.routes.my_tenant.dto.set_active_tenant_request import SetActiveTenantRequest
 from swiss_ai_hub.api.routes.my_tenant.dto.tenant_membership_dto import TenantMembershipDTO
 from swiss_ai_hub.api.routes.my_tenant.my_tenant_service import MyTenantService
 
@@ -14,7 +15,7 @@ from swiss_ai_hub.api.routes.my_tenant.my_tenant_service import MyTenantService
 class MyTenantController(Controller):
     """Global endpoints for managing the logged-in user's tenant context.
 
-    Not tenant-scoped — these endpoints live at ``/my-tenant/`` without a ``{tenant_id}`` prefix.
+    Not tenant-scoped — these endpoints live at ``/my-tenants/`` without a ``{tenant_id}`` prefix.
     """
 
     name = ApiLocaleString.from_i18n_path("api.controllers.my_tenant.name")
@@ -22,7 +23,7 @@ class MyTenantController(Controller):
     icon = "mage:building"
 
     def __init__(
-        self, *, auth: AuthHandler, route: str = "/my-tenant", additionally_required_permission: str | None = None
+        self, *, auth: AuthHandler, route: str = "/my-tenants", additionally_required_permission: str | None = None
     ):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
 

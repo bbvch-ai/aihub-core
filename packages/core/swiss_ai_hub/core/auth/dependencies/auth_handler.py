@@ -108,3 +108,14 @@ class AuthHandler(ABC):
             status_code=400,
             detail="No active tenant set. Please select a tenant first.",
         )
+
+    def build_identity(self, user: UserEntity, request: Request | None) -> UserIdentity:
+        """Builds a UserIdentity with tenant context resolved from the request or active tenant fallback."""
+        if request and self.has_tenant_in_request(request):
+            tenant = self.resolve_tenant_for_user(request, user.id)
+            return UserIdentity.from_user_entity(user, tenant)
+        elif request:
+            return UserIdentity.from_user_entity_without_tenant(user)
+        else:
+            tenant = self.get_active_tenant_for_user(user.id)
+            return UserIdentity.from_user_entity(user, tenant)

@@ -18,13 +18,15 @@
 <script setup lang="ts">
 import { getMyTenants } from '@core/sdk/client'
 
+import type { TenantMembershipDto } from '@core/sdk/client'
+
 const REDIRECT_KEY = 'aihub_redirect_after_login'
 
 const { t } = useI18n()
 const localePath = useLocalePath()
 
 const tenantsAreLoading = ref(true)
-const tenants = ref<Awaited<ReturnType<typeof getMyTenants>>['data']>(null)
+const tenants = ref<TenantMembershipDto[] | null>(null)
 
 onMounted(async () => {
   try {

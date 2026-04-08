@@ -14,7 +14,7 @@ class TenantScopedController(Controller):
     """A controller whose routes are scoped under a ``/{tenant_id}`` path prefix.
 
     All endpoints defined on subclasses will be mounted at
-    ``/{tenant_id}<base_route>/<endpoint>``. The ``tenant_id`` path parameter is
+    ``/{tenant_id}/<base_route>/<endpoint>``. The ``tenant_id`` path parameter is
     injected into the OpenAPI spec via a custom schema hook in ``ApiRunner``.
     """
 

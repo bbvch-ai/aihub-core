@@ -10,6 +10,7 @@
 <script setup lang="ts">
 const { t } = useI18n()
 const { myUser, myUserIsLoading } = useMyUser()
+const tenantPath = useTenantPath()
 
 const ACCESS_LEVEL_ADMIN = 2
 
@@ -22,7 +23,6 @@ watch(
   [myUserIsLoading, isAgentAdmin],
   ([isLoading, isAdmin]) => {
     if (!isLoading && !isAdmin) {
-      const tenantPath = useTenantPath()
       navigateTo(tenantPath('/service/openai'), { replace: true })
     }
   },

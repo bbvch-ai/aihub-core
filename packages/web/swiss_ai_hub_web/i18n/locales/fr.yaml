@@ -763,14 +763,14 @@ openwebui:
     user_memories: Souvenirs de l'Utilisateur
     org_memories: Souvenirs de l'Organisation
 tenant:
-  select_title: Select a Tenant
-  select_description: Choose which organization you want to work in
-  no_tenant_title: No Tenant Access
-  no_tenant_description: You don't have access to any tenant. Please contact your
-    administrator.
-  switcher_label: Switch Tenant
-  current_tenant: Current Tenant
-  mismatch_warning: Tenant Mismatch
-  mismatch_description: Your active tenant was changed to {tenant} in another session.
-    The chat interface uses the active tenant for all requests.
-  mismatch_switch_action: Switch Tenant
+  select_title: Sélectionner un locataire
+  select_description: Choisissez l'organisation dans laquelle vous souhaitez travailler
+  no_tenant_title: Aucun accès locataire
+  no_tenant_description: Vous n'avez accès à aucun locataire. Veuillez contacter votre
+    administrateur.
+  switcher_label: Changer de locataire
+  current_tenant: Locataire actuel
+  mismatch_warning: Conflit de locataire
+  mismatch_description: Votre locataire actif a été changé en {tenant} dans une autre
+    session. L'interface de chat utilise le locataire actif pour toutes les requêtes.
+  mismatch_switch_action: Changer de locataire

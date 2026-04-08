@@ -14,6 +14,7 @@ import { client } from './sdk/client/client.gen'
 const { getToken } = useAuth()
 const { t, locale } = useI18n()
 const localePath = useLocalePath()
+const route = useRoute()
 const toast = useToast()
 useNotificationPoller()
 client.setConfig({
@@ -34,7 +35,6 @@ client.setConfig({
     }
 
     // Suppress error toasts on pages without tenant context (login, select-tenant, callback)
-    const route = useRoute()
     if (!route.params.tenant) return
 
     const rawDetail = response._data?.detail

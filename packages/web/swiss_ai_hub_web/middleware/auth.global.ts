@@ -26,9 +26,10 @@ export default defineNuxtRouteMiddleware(async (to) => {
   try {
     const user = await $auth.getUser()
 
+    const isAuthPath = to.path.includes('/auth/')
+
     if (!user) {
-      // Store the intended destination so we can redirect after login
-      if (import.meta.client && to.fullPath !== '/') {
+      if (import.meta.client && to.fullPath !== '/' && !isAuthPath) {
         sessionStorage.setItem(REDIRECT_KEY, to.fullPath)
       }
       return navigateTo(`/${locale}/auth/login`)
@@ -39,7 +40,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
         await $auth.signinSilent()
       }
       catch {
-        if (import.meta.client && to.fullPath !== '/') {
+        if (import.meta.client && to.fullPath !== '/' && !isAuthPath) {
           sessionStorage.setItem(REDIRECT_KEY, to.fullPath)
         }
         return navigateTo(`/${locale}/auth/login`)

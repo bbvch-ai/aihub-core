@@ -56,7 +56,7 @@ export const getSuite = <TComposable extends Composable = '$fetch', DefaultT ext
  */
 export const getMyTenants = <TComposable extends Composable = '$fetch', DefaultT extends GetMyTenantsResponse = GetMyTenantsResponse>(options: Options<TComposable, GetMyTenantsData, GetMyTenantsResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetMyTenantsResponse | DefaultT, unknown, DefaultT>({
     security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/my-tenant',
+    url: '/my-tenants',
     ...options
 });
 
@@ -67,7 +67,7 @@ export const getMyTenants = <TComposable extends Composable = '$fetch', DefaultT
  */
 export const getMyActiveTenant = <TComposable extends Composable = '$fetch', DefaultT extends GetMyActiveTenantResponse = GetMyActiveTenantResponse>(options: Options<TComposable, GetMyActiveTenantData, GetMyActiveTenantResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetMyActiveTenantResponse | DefaultT, unknown, DefaultT>({
     security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/my-tenant/active',
+    url: '/my-tenants/active',
     ...options
 });
 
@@ -78,7 +78,7 @@ export const getMyActiveTenant = <TComposable extends Composable = '$fetch', Def
  */
 export const setMyActiveTenant = <TComposable extends Composable = '$fetch', DefaultT extends SetMyActiveTenantResponse = SetMyActiveTenantResponse>(options: Options<TComposable, SetMyActiveTenantData, SetMyActiveTenantResponse, DefaultT>) => (options.client ?? client).put<TComposable, SetMyActiveTenantResponse | DefaultT, SetMyActiveTenantError, DefaultT>({
     security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/my-tenant/active',
+    url: '/my-tenants/active',
     ...options,
     headers: {
         'Content-Type': 'application/json',

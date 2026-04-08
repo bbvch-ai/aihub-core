@@ -73,8 +73,8 @@ function toggle(event: Event) {
   popoverRef.value?.toggle(event)
 }
 
-function onSelect(tenant: TenantMembershipDto) {
+async function onSelect(tenant: TenantMembershipDto) {
   popoverRef.value?.hide()
-  setTenant(tenant.id)
+  await setTenant(tenant.id)
 }
 </script>

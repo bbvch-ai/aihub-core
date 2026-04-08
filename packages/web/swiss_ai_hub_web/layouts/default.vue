@@ -37,7 +37,12 @@
           :model="breadcrumbItems"
         >
           <template #item="{ item }">
-            <span>{{ item.label }}</span>
+            <NuxtLink
+              :to="item.route"
+              class="hover:underline"
+            >
+              {{ item.label }}
+            </NuxtLink>
           </template>
         </Breadcrumb>
         <img
@@ -91,11 +96,13 @@ const appIsActive = (app: MenuItem) => {
 }
 
 const breadcrumbItems = computed(() => {
-  // Skip locale and tenant segments from breadcrumbs
   const segments = route.path.split('/').filter(Boolean)
-  // segments: [locale, tenant, 'service', 'agents', ...]
+  const prefixSegments = segments.slice(0, 2)
   const contentSegments = segments.slice(2)
-  return contentSegments.map((label: string) => ({ label }))
+  return contentSegments.map((label: string, index: number) => ({
+    label,
+    route: '/' + [...prefixSegments, ...contentSegments.slice(0, index + 1)].join('/'),
+  }))
 })
 
 getHealth({

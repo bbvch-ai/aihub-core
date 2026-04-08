@@ -13447,7 +13447,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1775580257
+            default: 1775651424
         },
         owned_by: {
             type: 'string',
@@ -19007,19 +19007,13 @@ export const TenantMembershipDTOSchema = {
             type: 'string',
             title: 'Description',
             description: 'Tenant description'
-        },
-        is_default: {
-            type: 'boolean',
-            title: 'Is Default',
-            description: 'Whether this is the default tenant'
         }
     },
     type: 'object',
     required: [
         'id',
         'name',
-        'description',
-        'is_default'
+        'description'
     ],
     title: 'TenantMembershipDTO',
     description: 'A tenant the current user belongs to.'

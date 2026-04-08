@@ -12028,12 +12028,6 @@ export type TenantMembershipDto = {
      * Tenant description
      */
     description: string;
-    /**
-     * Is Default
-     *
-     * Whether this is the default tenant
-     */
-    is_default: boolean;
 };
 
 /**
@@ -20986,7 +20980,7 @@ export type GetSuiteData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
     };
@@ -21007,12 +21001,12 @@ export type GetMyTenantsData = {
     body?: never;
     path?: never;
     query?: never;
-    url: '/my-tenant';
+    url: '/my-tenants';
 };
 
 export type GetMyTenantsResponses = {
     /**
-     * Response Get My Tenants My Tenant Get
+     * Response Get My Tenants My Tenants Get
      *
      * Successful Response
      */
@@ -21025,7 +21019,7 @@ export type GetMyActiveTenantData = {
     body?: never;
     path?: never;
     query?: never;
-    url: '/my-tenant/active';
+    url: '/my-tenants/active';
 };
 
 export type GetMyActiveTenantResponses = {
@@ -21041,7 +21035,7 @@ export type SetMyActiveTenantData = {
     body: SetActiveTenantRequest;
     path?: never;
     query?: never;
-    url: '/my-tenant/active';
+    url: '/my-tenants/active';
 };
 
 export type SetMyActiveTenantErrors = {
@@ -21068,7 +21062,7 @@ export type GetMyAccountData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
     };
@@ -21091,7 +21085,7 @@ export type GetMyDashboardData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
     };
@@ -21116,7 +21110,7 @@ export type UpdateMyDashboardData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
     };
@@ -21148,7 +21142,7 @@ export type GetUserData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
         /**
@@ -21186,7 +21180,7 @@ export type GetUsersData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
     };
@@ -21231,7 +21225,7 @@ export type GetLocaleData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
     };
@@ -21254,7 +21248,7 @@ export type GetAgentEventsInThreadData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
         /**
@@ -21297,7 +21291,7 @@ export type GetAgentEventTimeseriesData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
         /**
@@ -21352,7 +21346,7 @@ export type GetLitellmModelsData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
     };
@@ -21377,7 +21371,7 @@ export type GetLitellmModelsByModeData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
         /**
@@ -21415,7 +21409,7 @@ export type GetLitellmModelData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
         /**
@@ -21451,7 +21445,7 @@ export type GetUserThreadsData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
     };
@@ -21496,7 +21490,7 @@ export type CreateThreadData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
     };
@@ -21528,7 +21522,7 @@ export type GetThreadData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
         /**
@@ -21564,7 +21558,7 @@ export type AddAgentToThreadData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
         /**
@@ -21600,7 +21594,7 @@ export type RemoveAgentFromThreadData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
         /**
@@ -21644,7 +21638,7 @@ export type AddUserToThreadData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
         /**
@@ -21680,7 +21674,7 @@ export type RemoveUserFromThreadData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
         /**
@@ -21720,7 +21714,7 @@ export type GetOpenChatHitlData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
         /**
@@ -21756,7 +21750,7 @@ export type GetAgentClassesData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
     };
@@ -21797,7 +21791,7 @@ export type GetAgentClassData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
         /**
@@ -21833,7 +21827,7 @@ export type GetAgentClassInstancesData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
         /**
@@ -21871,7 +21865,7 @@ export type CreateAgentInstanceData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
         /**
@@ -21907,7 +21901,7 @@ export type DeleteAgentInstanceData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
         /**
@@ -21947,7 +21941,7 @@ export type GetAgentInstanceData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
         /**
@@ -21987,7 +21981,7 @@ export type UpdateAgentInstanceData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
         /**
@@ -22027,7 +22021,7 @@ export type GetAgentInstanceThreadsData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
         /**
@@ -22080,7 +22074,7 @@ export type GetAllAgentInstancesData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
     };
@@ -22121,7 +22115,7 @@ export type InitiateFileUploadData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
         /**
@@ -22161,7 +22155,7 @@ export type ValidateFileUploadData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
         /**
@@ -22201,7 +22195,7 @@ export type GetProcessClassesData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
     };
@@ -22242,7 +22236,7 @@ export type GetProcessClassData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
         /**
@@ -22278,7 +22272,7 @@ export type GetProcessClassInstancesData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
         /**
@@ -22316,7 +22310,7 @@ export type CreateProcessInstanceData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
         /**
@@ -22352,7 +22346,7 @@ export type DeleteProcessInstanceData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
         /**
@@ -22392,7 +22386,7 @@ export type GetProcessInstanceData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
         /**
@@ -22432,7 +22426,7 @@ export type UpdateProcessInstanceData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
         /**
@@ -22472,7 +22466,7 @@ export type GetAllProcessInstancesData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
     };
@@ -22513,7 +22507,7 @@ export type GetProcessWalkthroughsData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
         /**
@@ -22566,7 +22560,7 @@ export type GetProcessStartFormsData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
         /**
@@ -22608,7 +22602,7 @@ export type GetProcessOpenFormsData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
         /**
@@ -22659,7 +22653,7 @@ export type SendProcessStartFormData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
         /**
@@ -22713,7 +22707,7 @@ export type SendProcessOpenFormData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
         /**
@@ -22766,7 +22760,7 @@ export type ListTokensEndpointData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
     };
@@ -22791,7 +22785,7 @@ export type CreateTokenEndpointData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
     };
@@ -22823,7 +22817,7 @@ export type RevokeTokenEndpointData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
         /**
@@ -22859,7 +22853,7 @@ export type DeleteRoleData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
         /**
@@ -22895,7 +22889,7 @@ export type GetRoleData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
         /**
@@ -22931,7 +22925,7 @@ export type UpdateRoleData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
         /**
@@ -22967,7 +22961,7 @@ export type GetRolesData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
     };
@@ -22992,7 +22986,7 @@ export type CreateRoleData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
     };
@@ -23024,7 +23018,7 @@ export type GetModelsData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
     };
@@ -23047,7 +23041,7 @@ export type GetModelWithAssistantsData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
         /**
@@ -23083,7 +23077,7 @@ export type GetEmbeddingsData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
     };
@@ -23115,7 +23109,7 @@ export type ChatCompletionWithAssistantsData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
     };
@@ -23147,7 +23141,7 @@ export type GenerateImageData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
     };
@@ -23179,7 +23173,7 @@ export type CreateTranscriptionData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
     };
@@ -23213,7 +23207,7 @@ export type CreateSpeechData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
     };
@@ -23243,7 +23237,7 @@ export type GetDatasetsData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
     };
@@ -23268,7 +23262,7 @@ export type CreateDatasetData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
     };
@@ -23300,7 +23294,7 @@ export type GetDatasetData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
         /**
@@ -23338,7 +23332,7 @@ export type UpdateDatasetData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
         /**
@@ -23376,7 +23370,7 @@ export type CreateNamespaceData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
         /**
@@ -23416,7 +23410,7 @@ export type UpdateNamespaceData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
         /**
@@ -23456,7 +23450,7 @@ export type GetDatabasesData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
     };
@@ -23481,7 +23475,7 @@ export type GetDocumentsForNamespaceData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
         /**
@@ -23552,7 +23546,7 @@ export type GetDocumentByIdData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
         /**
@@ -23596,7 +23590,7 @@ export type GetNodesForDocumentData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
         /**
@@ -23642,7 +23636,7 @@ export type GetSummaryNodesForDocumentData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
         /**
@@ -23688,7 +23682,7 @@ export type InitiateDocumentUploadData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
         /**
@@ -23728,7 +23722,7 @@ export type ValidateDocumentUploadData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
         /**
@@ -23768,7 +23762,7 @@ export type GetSupportedFileTypesData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
     };
@@ -23793,7 +23787,7 @@ export type GetDocumentUrlData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
         /**
@@ -23837,7 +23831,7 @@ export type GetFileUrlData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
         /**
@@ -23877,7 +23871,7 @@ export type GetAnonymousFileUrlData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
         /**
@@ -23928,7 +23922,7 @@ export type GetAnonymousFileRedirectData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
         /**
@@ -23979,7 +23973,7 @@ export type GetNotificationsData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
     };
@@ -24036,7 +24030,7 @@ export type UpdateNotificationsBulkData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
     };
@@ -24070,7 +24064,7 @@ export type UpdateNotificationData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
         /**
@@ -24106,7 +24100,7 @@ export type DeleteAllUserMemoriesData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
     };
@@ -24129,7 +24123,7 @@ export type GetUserMemoriesData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
     };
@@ -24168,7 +24162,7 @@ export type SearchUserMemoriesData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
     };
@@ -24231,7 +24225,7 @@ export type DeleteUserMemoryData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
         /**
@@ -24269,7 +24263,7 @@ export type UpdateUserMemoryData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
         /**
@@ -24307,7 +24301,7 @@ export type DeleteAllOrganizationMemoriesData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
     };
@@ -24330,7 +24324,7 @@ export type GetOrganizationMemoriesData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
     };
@@ -24369,7 +24363,7 @@ export type SearchOrganizationMemoriesData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
     };
@@ -24432,7 +24426,7 @@ export type DeleteOrganizationMemoryData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
         /**
@@ -24470,7 +24464,7 @@ export type UpdateOrganizationMemoryData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
         /**
@@ -24518,7 +24512,7 @@ export type ProcessDocumentData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
     };
@@ -24555,7 +24549,7 @@ export type TranslateTextData = {
         /**
          * Tenant Id
          *
-         * Tenant identifier: a name, MongoDB ObjectId, or 'active' to resolve the user's active tenant
+         * Tenant identifier: a name, ObjectId, or 'active'
          */
         tenant_id: string;
     };

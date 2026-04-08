@@ -61,6 +61,7 @@ const toast = useToast()
 const { t } = useI18n()
 const router = useRouter()
 const tenantPath = useTenantPath()
+const { tenantId } = useTenant()
 
 const { deleteRole } = useDeleteRole()
 
@@ -85,7 +86,7 @@ const confirmDelete = () => {
     },
     accept: async () => {
       await router.push(tenantPath('/service/roles'))
-      await deleteRole({ roleId: props.role.id })
+      await deleteRole({ roleId: props.role.id, tenantId: tenantId! })
       toast.add({ severity: 'success', summary: t('role.role_deleted.summary'), detail: t('role.role_deleted.detail'), life: 3000 })
     },
     reject: () => {

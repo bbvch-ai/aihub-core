@@ -42,9 +42,9 @@ const localePath = useLocalePath()
 const { mismatchDetected, backendTenantId, backendTenantName } = useTenantPolling()
 const { setTenant } = useTenant()
 
-function onSwitchToBackendTenant() {
+async function onSwitchToBackendTenant() {
   if (!backendTenantId.value) return
-  setTenant(backendTenantId.value)
+  await setTenant(backendTenantId.value)
 }
 
 let initialLoadDone = false

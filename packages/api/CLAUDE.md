@@ -61,10 +61,11 @@ of endpoints.
 here, otherwise they won't be served. `runner.create_app()` also mounts an MCP server at `/mcp`, making the API
 available as a Claude Code MCP tool for testing.
 
-**Tenant-scoped routing**: All controllers are mounted under `/api/v1/{tenant_id}/` via a Starlette `Mount`. The
-`{tenant_id}` is either a concrete MongoDB ObjectId or `"active"` (resolves to the user's persisted active tenant).
-Health endpoints are separated at `/api/v1/health/` (outside tenant scope). The `{tenant_id}` lives at the Starlette
-level, NOT in FastAPI routes — so it does not appear in the OpenAPI spec and controllers don't need to reference it.
+**Tenant-scoped routing**: Controllers extending `TenantScopedController` are mounted under `/api/v1/{tenant_id}/` and
+include `{tenant_id}` as a path parameter in the OpenAPI spec (injected via a schema hook). The `{tenant_id}` is either
+a concrete MongoDB ObjectId or `"active"` (resolves to the user's persisted active tenant). Global controllers extending
+`Controller` directly (e.g., `MyTenantController`, `HealthController`) are mounted without a tenant prefix. Auth uses
+`user_with_permission()` for tenant-scoped endpoints and `authenticated_user()` for global endpoints.
 
 **Commands**: `make run-dev` (uvicorn with hot reload on :8000), `make run-prod` (gunicorn multi-worker).
 

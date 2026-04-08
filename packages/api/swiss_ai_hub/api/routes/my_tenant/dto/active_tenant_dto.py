@@ -16,9 +16,3 @@ class ActiveTenantDTO(BaseModel):
             id=str(entity.id),
             name=entity.name,
         )
-
-
-class SetActiveTenantRequest(BaseModel):
-    """Request body for setting the active tenant."""
-
-    tenant_id: Annotated[str, Field(description="The tenant ID to set as active")]
