@@ -590,7 +590,8 @@ class ProcessService:
         """
         from swiss_ai_hub.core.persistence.agents import AgentClassEntity
         from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import AgentConfigEntityDocument
-        from swiss_ai_hub.core.persistence.user.user_entity import UserEntity
+
+        pass
 
         from swiss_ai_hub.api.routes.agent.dto.minimal_agent_instance_dto import MinimalAgentInstanceDTO
         from swiss_ai_hub.api.routes.user.dto.minimal_user_dto import MinimalUserDTO
@@ -627,13 +628,7 @@ class ProcessService:
                             else getattr(submitted_by, "profile_image", None)
                         )
 
-                        if not profile_image:
-                            try:
-                                user_entity = UserEntity.by_oid(user_id)
-                                involved_humans[user_id] = MinimalUserDTO.from_user_entity(user_entity)
-                            except Exception:
-                                pass
-                        else:
+                        if user_id not in involved_humans:
                             involved_humans[user_id] = MinimalUserDTO.model_validate(
                                 {
                                     "id": user_id,

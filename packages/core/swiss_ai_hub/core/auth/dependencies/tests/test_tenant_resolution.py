@@ -10,13 +10,12 @@ from pytest_bdd import given, parsers, scenarios, then, when
 
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
-from swiss_ai_hub.core.auth.keycloak_admin_service import KeycloakAdminService
+from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
 from swiss_ai_hub.core.infrastructure.api.ai_hub_settings import AIHubSettings
 from swiss_ai_hub.core.infrastructure.mongo.mongo_settings import MongoSettings
 from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
 from swiss_ai_hub.core.persistence.access.entities.tenant_entity import TenantEntity
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
-from swiss_ai_hub.core.persistence.user.user_entity import UserEntity
 
 scenarios("features/tenant_resolution.feature")
 
@@ -192,39 +191,21 @@ def add_user_to_second_only(cleanup_documents: list[Any], context: dict[str, Any
 # --- Active Tenant Steps ---
 
 
-def ensure_user_entity(cleanup_documents: list[Any], user_id: str) -> UserEntity:
-    """Ensure a UserEntity exists for the given user_id."""
-    user = UserEntity.objects(id=user_id).first()
-    if not user:
-        user = UserEntity.create_user(oid=user_id, name=f"Test User {user_id}", email=f"{user_id}@test.local")
-        cleanup_documents.append(user)
-    return user
-
-
 @given(parsers.parse('user "{user_id}" has active tenant set to the second tenant'))
-def set_active_tenant_to_second(
-    cleanup_documents: list[Any], context: dict[str, Any], mock_keycloak_active_tenant: dict, user_id: str
-) -> None:
+def set_active_tenant_to_second(context: dict[str, Any], mock_keycloak_active_tenant: dict, user_id: str) -> None:
     """Set a user's active tenant to the second tenant."""
-    ensure_user_entity(cleanup_documents, user_id)
     mock_keycloak_active_tenant[user_id] = str(context["second_tenant"].id)
 
 
 @given(parsers.parse('user "{user_id}" has active tenant set to the default tenant'))
-def set_active_tenant_to_default(
-    cleanup_documents: list[Any], context: dict[str, Any], mock_keycloak_active_tenant: dict, user_id: str
-) -> None:
+def set_active_tenant_to_default(context: dict[str, Any], mock_keycloak_active_tenant: dict, user_id: str) -> None:
     """Set a user's active tenant to the default tenant."""
-    ensure_user_entity(cleanup_documents, user_id)
     mock_keycloak_active_tenant[user_id] = str(context["default_tenant"].id)
 
 
 @given(parsers.parse('user "{user_id}" has active tenant set to "{tenant_id}"'))
-def set_active_tenant_to_id(
-    cleanup_documents: list[Any], mock_keycloak_active_tenant: dict, user_id: str, tenant_id: str
-) -> None:
+def set_active_tenant_to_id(mock_keycloak_active_tenant: dict, user_id: str, tenant_id: str) -> None:
     """Set a user's active tenant to a specific ID (possibly non-existent)."""
-    ensure_user_entity(cleanup_documents, user_id)
     mock_keycloak_active_tenant[user_id] = tenant_id
 
 

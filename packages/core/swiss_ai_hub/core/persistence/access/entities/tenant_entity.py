@@ -138,11 +138,12 @@ class TenantEntity(Document):
         """
         Deletes a tenant by its ID. Returns True if deleted, False if not found.
 
-        Cascades to delete all associated UserTenantRoleEntity and tenant-scoped RoleEntity records,
-        and clears the active tenant for affected users.
+        Cascades to delete all associated UserTenantRoleEntity and tenant-scoped RoleEntity records.
+        Active tenant cleanup in Keycloak must be handled by the caller via
+        KeycloakAdminService.clear_active_tenant_for_users_in_tenant().
         The default tenant cannot be deleted - attempting to do so will raise ValueError.
 
-        Uses deferred imports because UserEntity, RoleEntity, and UserTenantRoleEntity all import
+        Uses deferred imports because RoleEntity and UserTenantRoleEntity both import
         TenantEntity at module level — importing them here at module level would create circular imports.
         """
         from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
@@ -158,10 +159,6 @@ class TenantEntity(Document):
         # Cascade: remove all user-tenant-role associations and tenant-scoped roles
         UserTenantRoleEntity.objects(tenant_id=tenant_id).delete()
         RoleEntity.objects(tenant_id=tenant_id).delete()
-
-        from swiss_ai_hub.core.persistence.user.user_entity import UserEntity
-
-        UserEntity.objects(active_tenant_id=tenant_id).update(set__active_tenant_id=None)
 
         tenant.delete()
         return True

@@ -1,14 +1,15 @@
-from typing import TYPE_CHECKING, Annotated
+from typing import TYPE_CHECKING, Annotated, Self
 
 from nats.aio.client import Client as NATS
 from pydantic import BaseModel, Field
 from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.auth.access.access_level import AccessLevel
 from swiss_ai_hub.core.auth.identity.tenant_identity import TenantIdentity
+from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
-from swiss_ai_hub.core.persistence.user.user_entity import UserEntity
+from swiss_ai_hub.core.persistence.user.user_dashboard_entity import UserDashboardEntity
 
 from swiss_ai_hub.api.routes.user.dto.dashboard.dashboard_dto import DashboardDTO
 from swiss_ai_hub.api.routes.user.dto.user_dto import UserDTO
@@ -33,16 +34,16 @@ class UserWithAccessDTO(UserDTO):
     access: Annotated[Access, Field(description="User access levels")]
 
     @classmethod
-    async def from_user_entity(
-        cls, user_entity: UserEntity, tenant: TenantIdentity, runner: "Runner", nc: NATS, t: LocaleHandler
-    ):
+    async def from_user_identity(
+        cls, user: UserIdentity, tenant: TenantIdentity, runner: "Runner", nc: NATS, t: LocaleHandler
+    ) -> Self:
         from swiss_ai_hub.api.routes.agent.agent_service import AgentService
         from swiss_ai_hub.api.routes.process.process_service import ProcessService
 
-        dashboard_data = user_entity.dashboard.to_mongo()
-        dashboard_dto = DashboardDTO(**dashboard_data)
+        dashboard = UserDashboardEntity.get_dashboard(user.id)
+        dashboard_dto = DashboardDTO(**dashboard.to_mongo()) if dashboard else None
 
-        user_roles = UserTenantRoleEntity.get_roles_for_user_in_tenant(user_entity.id, tenant.id)
+        user_roles = UserTenantRoleEntity.get_roles_for_user_in_tenant(user.id, tenant.id)
         valid_roles = RoleEntity.filter_existing_roles(user_roles, tenant.id)
 
         access_rules = RoleEntity.get_access_rules_for_roles(user_roles, tenant.id)
@@ -83,13 +84,11 @@ class UserWithAccessDTO(UserDTO):
             access.processes.append(UserAccess(name=process.process_config.name, level=process_access))
 
         return cls(
-            id=user_entity.id,
-            name=user_entity.name,
-            email=user_entity.email,
-            profile_image=user_entity.profile_image,
+            id=user.id,
+            name=user.name,
+            email=user.email,
+            profile_image=None,
             dashboard=dashboard_dto,
-            favorite_modules=user_entity.favorite_modules,
             roles=valid_roles,
-            last_accessed=user_entity.last_updated,
             access=access,
         )

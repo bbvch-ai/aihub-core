@@ -14,7 +14,6 @@ from swiss_ai_hub.core.auth.dependencies.keycloak_auth_handler import KeycloakAu
 from swiss_ai_hub.core.infrastructure import AIHubSettings, MongoSettings
 from swiss_ai_hub.core.persistence.access.entities.tenant_entity import TenantEntity
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
-from swiss_ai_hub.core.persistence.user.user_entity import UserEntity
 from swiss_ai_hub.core.testing import (
     DummyResponse,
     generate_rsa_keypair,
@@ -103,37 +102,22 @@ def setup_test_user(mongo_db):
     """Create the test user with expected roles before the test runs."""
     config = DangerousDevelopmentOnlyAuthSettings()
 
-    # Remove any existing user with this OID to ensure clean state
-    try:
-        existing_user = UserEntity.objects.get(id=config.OID)
-        existing_user.delete()
-    except Exception:
-        pass
-
-    # Create the user
-    user = UserEntity.create_user(
-        oid=config.OID,
-        name=config.NAME,
-        email=config.EMAIL,
-    )
-
     # Assign the expected roles in the default tenant
     default_tenant = TenantEntity.get_default_tenant()
     user_tenant_role = None
     if default_tenant:
         user_tenant_role = UserTenantRoleEntity.create_or_update(
-            user_id=user.id,
+            user_id=config.OID,
             tenant_id=str(default_tenant.id),
             roles=config.ROLES,
-            validate_roles=False,  # Dev roles may not exist in DB
+            validate_roles=False,
         )
 
-    yield user
+    yield config
 
     # Cleanup
     if user_tenant_role:
         user_tenant_role.delete()
-    user.delete()
 
 
 @pytest.fixture

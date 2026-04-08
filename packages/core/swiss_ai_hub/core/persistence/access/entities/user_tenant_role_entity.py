@@ -156,19 +156,17 @@ class UserTenantRoleEntity(Document):
 
     @classmethod
     @trace_fn
-    def remove_user_from_tenant(cls, user_id: str, tenant_id: str) -> bool:
-        """
-        Removes a user from a tenant entirely. Returns True if the association was deleted.
+    async def remove_user_from_tenant(cls, user_id: str, tenant_id: str) -> bool:
+        """Removes a user from a tenant entirely. Returns True if the association was deleted."""
+        from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
 
-        Clears the user's active tenant if it matches the removed tenant.
-        Uses a deferred import because UserEntity imports UserTenantRoleEntity at module level.
-        """
         existing = cls.get_by_user_and_tenant(user_id, tenant_id)
         if existing:
             existing.delete()
 
-            from swiss_ai_hub.core.persistence.user.user_entity import UserEntity
+            active_tenant_id = await KeycloakAdminService.get_active_tenant_id(user_id)
+            if active_tenant_id == tenant_id:
+                await KeycloakAdminService.set_active_tenant(user_id, None)
 
-            UserEntity.objects(id=user_id, active_tenant_id=tenant_id).update_one(set__active_tenant_id=None)
             return True
         return False

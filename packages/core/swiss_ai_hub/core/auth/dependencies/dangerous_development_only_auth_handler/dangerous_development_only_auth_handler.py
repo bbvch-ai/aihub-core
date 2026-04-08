@@ -7,9 +7,9 @@ from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler
     DangerousDevelopmentOnlyAuthSettings,
 )
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
+from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
 from swiss_ai_hub.core.persistence.access.entities.tenant_entity import TenantEntity
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
-from swiss_ai_hub.core.persistence.user.user_entity import UserEntity
 
 logger = logging.getLogger(__name__)
 
@@ -32,34 +32,32 @@ class DangerousDevelopmentOnlyAuthHandler(AuthHandler):
         """
         Returns fake dev user identity - no actual authentication.
 
-        Creates/updates the dev user in the database to ensure it exists for other parts of the codebase.
-        The dev user is assigned roles from the DangerousDevelopmentOnlyAuthSettings config.
+        Ensures the dev user has tenant roles and an active tenant set.
         """
         logger.warning("DangerousDevelopmentOnlyAuthHandler is active. This is not recommended for production use.")
 
-        # Use ensure_user_exists (not ensure_user_exists_for_auth) because the dev handler
-        # manages tenant roles separately with validate_roles=False for dev-only roles.
-        user_entity = UserEntity.ensure_user_exists(
-            oid=self.config.OID,
-            name=self.config.NAME,
-            email=self.config.EMAIL,
-        )
-
-        # Ensure the dev user has the roles from config in the default tenant
         default_tenant = TenantEntity.get_default_tenant()
         if default_tenant:
             UserTenantRoleEntity.create_or_update(
-                user_id=user_entity.id,
+                user_id=self.config.OID,
                 tenant_id=str(default_tenant.id),
                 roles=self.config.ROLES,
-                validate_roles=False,  # Dev roles may not exist in DB
+                validate_roles=False,
             )
+            # Ensure active tenant is set in Keycloak
+            active_tenant_id = await KeycloakAdminService.get_active_tenant_id(self.config.OID)
+            if not active_tenant_id:
+                await KeycloakAdminService.set_active_tenant(self.config.OID, str(default_tenant.id))
 
-        # Resolve tenant context from request or use default
         if request:
-            tenant = await self.resolve_tenant_for_user(request, user_entity.id)
+            tenant = await self.resolve_tenant_for_user(request, self.config.OID)
         else:
-            # Fallback for contexts without request
-            tenant = await self.get_active_tenant_for_user(user_entity.id)
+            tenant = await self.get_active_tenant_for_user(self.config.OID)
 
-        return UserIdentity.from_user_entity(user_entity, tenant)
+        return UserIdentity(
+            id=self.config.OID,
+            name=self.config.NAME,
+            email=self.config.EMAIL,
+            roles=self.config.ROLES,
+            acting_within_tenant=tenant,
+        )

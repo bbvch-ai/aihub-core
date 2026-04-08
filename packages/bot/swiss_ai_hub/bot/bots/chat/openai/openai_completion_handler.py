@@ -21,11 +21,12 @@ from openai.types.chat import (
     ChatCompletionUserMessageParam,
 )
 from openai.types.chat.chat_completion_content_part_image_param import ChatCompletionContentPartImageParam, ImageURL
+from swiss_ai_hub.core.auth import KeycloakAdminService
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.infrastructure import LiteLLMService
-from swiss_ai_hub.core.persistence.user.user_entity import UserEntity
+from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 
 from swiss_ai_hub.bot.bots.chat.completion_handler import CompletionHandler
 from swiss_ai_hub.bot.persistence.entities.conversation_entity import Content, Message
@@ -133,9 +134,17 @@ class OpenaiCompletionHandler(CompletionHandler):
                     "Ensure the user has logged in via OAuth2 before using the bot."
                 )
 
-        user_entity = UserEntity.by_email(user_email)
-        tenant = await AuthHandler.get_active_tenant_for_user(user_entity.id)
-        user = UserIdentity.from_user_entity(user_entity, tenant)
+        keycloak_user = await KeycloakAdminService.find_user_by_email(user_email)
+        if not keycloak_user:
+            raise ValueError(f"User with email '{user_email}' not found in Keycloak")
+        tenant = await AuthHandler.get_active_tenant_for_user(keycloak_user.id)
+        user = UserIdentity(
+            id=keycloak_user.id,
+            name=keycloak_user.name,
+            email=keycloak_user.email,
+            roles=UserTenantRoleEntity.get_roles_for_user_in_tenant(keycloak_user.id, tenant.id),
+            acting_within_tenant=tenant,
+        )
 
         logger.debug(f"Using user identity: {user}")
 

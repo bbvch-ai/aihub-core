@@ -1,4 +1,3 @@
-from datetime import UTC, datetime
 from typing import Any
 from unittest.mock import MagicMock
 
@@ -9,7 +8,6 @@ from pytest_bdd import given, parsers, scenarios, then, when
 from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler import (  # noqa: E501
     DangerousDevelopmentOnlyAuthHandler,
 )
-from swiss_ai_hub.core.persistence.user.user_entity import UserEntity
 from swiss_ai_hub.core.testing.asyncio_utils.bdd import async_test
 
 # --- Scenario Declaration ---
@@ -26,49 +24,24 @@ def mock_database_operations(monkeypatch: pytest.MonkeyPatch):
     """Mock all database operations required by the auth handler."""
     from swiss_ai_hub.core.auth.identity.tenant_identity import TenantIdentity
 
-    # Mock UserEntity.ensure_user_exists
-    def mock_ensure_user_exists(oid: str, name: str, email: str, profile_image: str | None = None) -> MagicMock:
-        """Return a mock UserEntity with get_roles method."""
-        user = MagicMock(spec=UserEntity)
-        user.id = oid
-        user.name = name
-        user.email = email
-        user.profile_image = profile_image
-        user.last_updated = datetime(2025, 7, 4, 12, 14, 45, 185140, tzinfo=UTC)
-
-        # Mock get_roles to return roles from environment
-        def mock_get_roles(_tenant_id: str) -> list[str]:
-            from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_settings import (  # noqa: E501
-                DangerousDevelopmentOnlyAuthSettings,
-            )
-
-            return DangerousDevelopmentOnlyAuthSettings().ROLES
-
-        user.get_roles = mock_get_roles
-        return user
-
-    # Mock TenantEntity.get_default_tenant
     def mock_get_default_tenant() -> MagicMock:
-        """Return a mock default tenant."""
         tenant = MagicMock()
         tenant.id = "default-tenant-id"
         tenant.name = "Default Tenant"
         return tenant
 
-    # Mock UserTenantRoleEntity.create_or_update
     def mock_create_or_update(**kwargs) -> MagicMock:
-        """Return a mock UserTenantRoleEntity."""
         return MagicMock()
 
-    # Mock resolve_tenant_for_user to return a mock tenant identity
+    async def mock_get_active_tenant_id(user_id: str) -> str | None:
+        return "default-tenant-id"
+
+    async def mock_set_active_tenant(user_id: str, tenant_id: str | None) -> None:
+        pass
+
     async def mock_resolve_tenant(_self, _request, _user_id: str) -> TenantIdentity:
-        """Return a mock tenant identity."""
         return TenantIdentity(id="default-tenant-id", name="Default Tenant", access_rules=[])
 
-    # Apply monkeypatches
-    monkeypatch.setattr(
-        "swiss_ai_hub.core.persistence.user.user_entity.UserEntity.ensure_user_exists", mock_ensure_user_exists
-    )
     monkeypatch.setattr(
         "swiss_ai_hub.core.persistence.access.entities.tenant_entity.TenantEntity.get_default_tenant",
         mock_get_default_tenant,
@@ -76,6 +49,14 @@ def mock_database_operations(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(
         "swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity.UserTenantRoleEntity.create_or_update",
         mock_create_or_update,
+    )
+    monkeypatch.setattr(
+        "swiss_ai_hub.core.auth.keycloak.keycloak_admin_service.KeycloakAdminService.get_active_tenant_id",
+        mock_get_active_tenant_id,
+    )
+    monkeypatch.setattr(
+        "swiss_ai_hub.core.auth.keycloak.keycloak_admin_service.KeycloakAdminService.set_active_tenant",
+        mock_set_active_tenant,
     )
     monkeypatch.setattr(
         "swiss_ai_hub.core.auth.dependencies.auth_handler.AuthHandler.resolve_tenant_for_user", mock_resolve_tenant

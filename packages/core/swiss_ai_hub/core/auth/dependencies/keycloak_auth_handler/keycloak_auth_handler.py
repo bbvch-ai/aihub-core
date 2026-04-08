@@ -11,11 +11,10 @@ from jwt.algorithms import RSAAlgorithm
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.dependencies.keycloak_auth_handler.keycloak_settings import KeycloakSettings
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
-from swiss_ai_hub.core.auth.keycloak_admin_service import KeycloakAdminService
+from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
 from swiss_ai_hub.core.infrastructure.api.user_signup_settings import UserSignupSettings
 from swiss_ai_hub.core.persistence.access.entities.tenant_entity import TenantEntity
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
-from swiss_ai_hub.core.persistence.user.user_entity import UserEntity
 
 logger = logging.getLogger(__name__)
 
@@ -108,19 +107,20 @@ class KeycloakAuthHandler(AuthHandler):
             tenants_claim = decoded_token.get("tenants", [])
             await self._sync_tenant_memberships(sub, tenants_claim)
 
-            # Dual-write: keep UserEntity populated during migration (Phase 1)
-            user_entity = UserEntity.ensure_user_exists_for_auth(
-                oid=sub,
+            if request:
+                tenant = await self.resolve_tenant_for_user(request, sub)
+            else:
+                tenant = await self.get_active_tenant_for_user(sub)
+
+            roles = UserTenantRoleEntity.get_roles_for_user_in_tenant(sub, tenant.id)
+
+            return UserIdentity(
+                id=sub,
                 name=name,
                 email=email,
+                roles=roles,
+                acting_within_tenant=tenant,
             )
-
-            if request:
-                tenant = await self.resolve_tenant_for_user(request, user_entity.id)
-            else:
-                tenant = await self.get_active_tenant_for_user(user_entity.id)
-
-            return UserIdentity.from_user_entity(user_entity, tenant)
 
         except HTTPException:
             raise

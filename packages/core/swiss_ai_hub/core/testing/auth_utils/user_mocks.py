@@ -1,4 +1,3 @@
-from datetime import UTC, datetime
 from unittest.mock import patch
 
 import pytest
@@ -6,51 +5,53 @@ import pytest
 from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_settings import (  # noqa: E501
     DangerousDevelopmentOnlyAuthSettings,
 )
-from swiss_ai_hub.core.persistence.user.user_entity import UserEntity
+from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
+from swiss_ai_hub.core.auth.keycloak.models.keycloak_user import KeycloakUser
+from swiss_ai_hub.core.persistence.user.user_dashboard_entity import UserDashboardEntity
 
-MOCK_USER_LAST_UPDATED = datetime(2025, 7, 4, 12, 14, 45, 185140, tzinfo=UTC)
 
-
-def _create_mock_user(user_id: str | None = None, email: str | None = None) -> UserEntity:
-    """Create a mock UserEntity with properties from DangerousDevelopmentOnlyAuthSettings."""
+def _create_mock_keycloak_user(user_id: str | None = None, email: str | None = None) -> KeycloakUser:
     config = DangerousDevelopmentOnlyAuthSettings()
-    return UserEntity(
+    return KeycloakUser(
         id=user_id or config.OID,
-        name=config.NAME,
+        firstName=config.NAME,
+        lastName="",
+        username=email or config.EMAIL,
         email=email or config.EMAIL,
-        profile_image=None,
-        favorite_modules=[],
-        dashboard=UserEntity.create_default_dashboard(),
-        last_updated=MOCK_USER_LAST_UPDATED,
+        attributes={},
     )
 
 
 @pytest.fixture(autouse=True)
-def mock_user_entity_autouse():
+def mock_keycloak_admin_service_autouse():
     """
-    Mock UserEntity lookup and creation methods to return a dummy user.
+    Mock KeycloakAdminService methods to return dummy user data.
 
-    Mocks by_oid, by_email, and ensure_user_exists so tests don't need a real database.
-    The mock user has properties from DangerousDevelopmentOnlyAuthSettings.
+    Mocks get_user_by_id, find_user_by_email, get_users_by_ids, get_active_tenant_id,
+    and set_active_tenant so tests don't need a real Keycloak instance.
     """
 
-    def mock_by_oid(user_oid):
-        return _create_mock_user(user_id=user_oid)
+    async def mock_get_user_by_id(keycloak_user_id):
+        return _create_mock_keycloak_user(user_id=keycloak_user_id)
 
-    def mock_by_email(email):
-        return _create_mock_user(email=email)
+    async def mock_find_user_by_email(email):
+        return _create_mock_keycloak_user(email=email)
 
-    def mock_ensure_user_exists(oid, name, email, profile_image=None):
-        return _create_mock_user(user_id=oid, email=email)
+    async def mock_get_users_by_ids(keycloak_user_ids):
+        return {uid: _create_mock_keycloak_user(user_id=uid) for uid in keycloak_user_ids}
 
-    def mock_get_by_ids(user_ids):
-        return {uid: _create_mock_user(user_id=uid) for uid in user_ids}
+    async def mock_get_active_tenant_id(user_id):
+        return None
+
+    async def mock_set_active_tenant(user_id, tenant_id):
+        pass
 
     with (
-        patch.object(UserEntity, "by_oid", side_effect=mock_by_oid),
-        patch.object(UserEntity, "by_email", side_effect=mock_by_email),
-        patch.object(UserEntity, "ensure_user_exists", side_effect=mock_ensure_user_exists),
-        patch.object(UserEntity, "get_by_ids", side_effect=mock_get_by_ids),
+        patch.object(KeycloakAdminService, "get_user_by_id", side_effect=mock_get_user_by_id),
+        patch.object(KeycloakAdminService, "find_user_by_email", side_effect=mock_find_user_by_email),
+        patch.object(KeycloakAdminService, "get_users_by_ids", side_effect=mock_get_users_by_ids),
+        patch.object(KeycloakAdminService, "get_active_tenant_id", side_effect=mock_get_active_tenant_id),
+        patch.object(KeycloakAdminService, "set_active_tenant", side_effect=mock_set_active_tenant),
     ):
         yield
 
@@ -67,13 +68,10 @@ def get_expected_user_data(include_dashboard=True, include_access=True):
         "email": config.EMAIL,
         "profile_image": None,
         "roles": config.ROLES,
-        "favorite_modules": [],
-        "last_accessed": "2025-07-04T12:14:45.185140Z",
     }
 
     if include_dashboard:
-        # Create a version of the dashboard data without the random IDs
-        dashboard = UserEntity.create_default_dashboard()
+        dashboard = UserDashboardEntity.create_default_dashboard()
         dashboard_dict = {
             "minRow": dashboard.minRow,
             "margin": dashboard.margin,

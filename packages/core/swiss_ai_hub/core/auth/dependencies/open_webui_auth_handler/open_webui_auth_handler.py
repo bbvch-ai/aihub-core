@@ -4,13 +4,13 @@ import logging
 
 from fastapi import HTTPException, Request, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from mongoengine import DoesNotExist
 
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.dependencies.auth_settings import AuthSettings
 from swiss_ai_hub.core.auth.dependencies.bearer_auth_handler import BearerAuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
-from swiss_ai_hub.core.persistence.user.user_entity import UserEntity
+from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
+from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 
 logger = logging.getLogger(__name__)
 
@@ -60,21 +60,25 @@ class OpenWebuiAuthHandler(AuthHandler):
 
         logger.info("Successfully authenticated OpenWebUI user via signature")
 
-        # Lookup existing user by email
-        # OpenWebUI users must have previously logged in via OAuth2
-        try:
-            user_entity = UserEntity.by_email(user_email)
-        except DoesNotExist:
-            logger.error(f"OpenWebUI user with email {user_email} not found in database")
+        # Lookup existing user by email in Keycloak
+        keycloak_user = await KeycloakAdminService.find_user_by_email(user_email)
+        if not keycloak_user:
+            logger.error(f"OpenWebUI user with email {user_email} not found in Keycloak")
             raise HTTPException(
                 status_code=401,
                 detail="User not found. Please login via OAuth2 before using OpenWebUI integration.",
             )
 
-        # Resolve tenant context from request
-        tenant = await self.resolve_tenant_for_user(request, user_entity.id)
+        tenant = await self.resolve_tenant_for_user(request, keycloak_user.id)
+        roles = UserTenantRoleEntity.get_roles_for_user_in_tenant(keycloak_user.id, tenant.id)
 
-        return UserIdentity.from_user_entity(user_entity, tenant)
+        return UserIdentity(
+            id=keycloak_user.id,
+            name=keycloak_user.name,
+            email=keycloak_user.email,
+            roles=roles,
+            acting_within_tenant=tenant,
+        )
 
     async def authenticate_token(self, token: str) -> UserIdentity:
         """OpenWebuiAuthHandler requires request context and cannot be used for token-only authentication."""

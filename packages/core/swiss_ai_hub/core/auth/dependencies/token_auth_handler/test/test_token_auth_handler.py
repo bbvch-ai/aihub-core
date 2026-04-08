@@ -16,7 +16,6 @@ from swiss_ai_hub.core.infrastructure.mongo.mongo_settings import MongoSettings
 from swiss_ai_hub.core.persistence.access.entities.bearer_token import BearerToken
 from swiss_ai_hub.core.persistence.access.entities.tenant_entity import TenantEntity
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
-from swiss_ai_hub.core.persistence.user.user_entity import UserEntity
 from swiss_ai_hub.core.testing.asyncio_utils.bdd import async_test
 
 # --- MongoDB Connection Fixture ---
@@ -110,11 +109,6 @@ def insert_token_document(
     """Insert a token document in the database with the given user details."""
     roles_list = [r.strip() for r in roles.split(",")]
     user_oid = str(ObjectId())
-    user = UserEntity.create_user(
-        oid=user_oid,
-        name=name,
-        email=email,
-    )
 
     # Assign user to default tenant (skip role validation for test data)
     default_tenant = TenantEntity.get_default_tenant()
@@ -138,7 +132,6 @@ def insert_token_document(
     token_context["expected_user_oid"] = user_oid
     token_context["token_doc"] = token_doc
     token_context["user_roles"] = roles_list
-    cleanup_document.append(user)
     cleanup_document.append(token_doc)
 
 

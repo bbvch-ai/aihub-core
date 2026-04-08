@@ -13,7 +13,6 @@ from swiss_ai_hub.core.infrastructure import AIHubSettings, DefaultTenantSetting
 from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
 from swiss_ai_hub.core.persistence.access.entities.tenant_entity import TenantEntity
 from swiss_ai_hub.core.persistence.rag.datalake.entities import BucketEntity, NamespaceEntity
-from swiss_ai_hub.core.persistence.user.user_entity import UserEntity
 
 logger = logging.getLogger(__name__)
 
@@ -146,28 +145,14 @@ async def initialize_system_role(name: str, description: str, access_rules: list
 
 async def initialize_superuser() -> None:
     """
-    Initialize the superuser in the database if superuser auth is enabled.
+    Initialize the superuser.
 
-    This function ensures that the superuser account exists in the database.
-    Note: Superuser uses a virtual tenant when authenticating, but we still create
-    the user record for auditing purposes.
+    The superuser uses a virtual tenant and does not need a user record.
+    This is a no-op now that UserEntity is no longer used.
     """
     settings = SuperuserSettings()
-
-    try:
-        # Create the user entity (for audit trail, even though superuser uses virtual tenant)
-        UserEntity.ensure_user_exists(
-            oid=settings.OID,
-            name=settings.NAME,
-            email=settings.EMAIL,
-        )
-
-        logger.info(f"Superuser initialization completed for user '{settings.NAME}'")
-        logger.info("Note: Superuser operates with virtual tenant (full admin access)")
-
-    except Exception as e:
-        logger.error(f"Failed to initialize superuser: {e}")
-        raise
+    logger.info(f"Superuser initialization completed for user '{settings.NAME}'")
+    logger.info("Note: Superuser operates with virtual tenant (full admin access)")
 
 
 @no_trace

@@ -13,8 +13,6 @@ from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.dependencies.keycloak_auth_handler.keycloak_auth_handler import KeycloakAuthHandler
 from swiss_ai_hub.core.auth.dependencies.keycloak_auth_handler.keycloak_settings import KeycloakSettings
 from swiss_ai_hub.core.auth.identity.tenant_identity import TenantIdentity
-from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
-from swiss_ai_hub.core.persistence.user.user_entity import UserEntity
 from swiss_ai_hub.core.testing.asyncio_utils.bdd import async_test
 from swiss_ai_hub.core.testing.auth_utils.oauth2_utils.oauth2_test_utils import (
     base64url_encode,
@@ -47,23 +45,6 @@ def clear_handler_caches():
 def mock_database_operations(monkeypatch: pytest.MonkeyPatch):
     """Mock database and identity operations required by the auth handler."""
 
-    def mock_ensure_user_exists(oid: str, name: str, email: str, profile_image: str | None = None) -> MagicMock:
-        user = MagicMock(spec=UserEntity)
-        user.id = oid
-        user.name = name
-        user.email = email
-        user.profile_image = profile_image
-        user.get_roles = lambda _tenant_id: []
-        return user
-
-    def mock_from_user_entity(user, tenant=None):
-        identity = MagicMock(spec=UserIdentity)
-        identity.id = user.id
-        identity.name = user.name
-        identity.email = user.email
-        identity.roles = []
-        return identity
-
     async def mock_get_default_tenant(user_id: str) -> TenantIdentity:
         tenant = MagicMock(spec=TenantIdentity)
         tenant.id = "default-tenant"
@@ -73,11 +54,12 @@ def mock_database_operations(monkeypatch: pytest.MonkeyPatch):
     async def mock_sync_tenant_memberships(user_id: str, tenants_claim: list[str]) -> None:
         pass
 
+    def mock_get_roles(user_id: str, tenant_id: str) -> list[str]:
+        return []
+
     monkeypatch.setattr(
-        "swiss_ai_hub.core.persistence.user.user_entity.UserEntity.ensure_user_exists_for_auth", mock_ensure_user_exists
-    )
-    monkeypatch.setattr(
-        "swiss_ai_hub.core.auth.identity.user_identity.UserIdentity.from_user_entity", mock_from_user_entity
+        "swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity.UserTenantRoleEntity.get_roles_for_user_in_tenant",
+        mock_get_roles,
     )
     monkeypatch.setattr(AuthHandler, "get_active_tenant_for_user", staticmethod(mock_get_default_tenant))
     monkeypatch.setattr(KeycloakAuthHandler, "_sync_tenant_memberships", staticmethod(mock_sync_tenant_memberships))

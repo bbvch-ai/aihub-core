@@ -5,11 +5,12 @@ from bson import ObjectId
 from llama_index.core.base.llms.types import ChatMessage, ContentBlock, ImageBlock, MessageRole, TextBlock
 from microsoft_agents.hosting.core import TurnContext
 from nats.aio.client import Client as NATS
+from swiss_ai_hub.core.auth import KeycloakAdminService
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.distributor import ExternalAgentEventDistributor
 from swiss_ai_hub.core.events.agent import ExceptionEvent
-from swiss_ai_hub.core.persistence.user.user_entity import UserEntity
+from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 from swiss_ai_hub.core.routes import ChatService, JsonResources, StreamingResources
 
 from swiss_ai_hub.bot.bots.chat.completion_handler import CompletionHandler
@@ -139,9 +140,17 @@ class AgentCompletionHandler(CompletionHandler):
         chat_messages: list[ChatMessage] = [
             AgentCompletionHandler._message_to_chat_message(message) for message in persisted_messages
         ]
-        user_entity = UserEntity.by_email(turn_context.activity.from_property.name)
-        tenant = await AuthHandler.get_active_tenant_for_user(user_entity.id)
-        user = UserIdentity.from_user_entity(user_entity, tenant)
+        keycloak_user = await KeycloakAdminService.find_user_by_email(turn_context.activity.from_property.name)
+        if not keycloak_user:
+            raise ValueError(f"User with email '{turn_context.activity.from_property.name}' not found in Keycloak")
+        tenant = await AuthHandler.get_active_tenant_for_user(keycloak_user.id)
+        user = UserIdentity(
+            id=keycloak_user.id,
+            name=keycloak_user.name,
+            email=keycloak_user.email,
+            roles=UserTenantRoleEntity.get_roles_for_user_in_tenant(keycloak_user.id, tenant.id),
+            acting_within_tenant=tenant,
+        )
         if stream:
             return await ChatService.start_stream_chat_interaction(
                 user=user,

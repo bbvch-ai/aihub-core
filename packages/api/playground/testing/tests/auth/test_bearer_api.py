@@ -15,14 +15,13 @@ from swiss_ai_hub.core.persistence.access.entities.bearer_token import BearerTok
 from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
 from swiss_ai_hub.core.persistence.access.entities.tenant_entity import TenantEntity
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
-from swiss_ai_hub.core.persistence.user.user_entity import UserEntity
 
 from swiss_ai_hub.api.routes.my_account.my_account_controller import MyAccountController
 from swiss_ai_hub.api.runners.api_test_runner import ApiTestRunner
 
 BASE_URL = "http://test"
 USER_ENDPOINT = "/api/v1/active/my-account"
-EXPECTED_USER_FIELDS = ["id", "name", "email", "roles", "profile_image", "favorite_modules"]
+EXPECTED_USER_FIELDS = ["id", "name", "email", "roles", "profile_image"]
 
 
 @pytest.fixture
@@ -41,11 +40,7 @@ def mongo_db():
 def valid_token(mongo_db):
     """Insert a valid token document and return its token string."""
     config = DangerousDevelopmentOnlyAuthSettings()
-    user = UserEntity.create_user(
-        oid=os.getenv("OID", config.OID),
-        name=os.getenv("NAME", config.NAME),
-        email=os.getenv("EMAIL", config.EMAIL),
-    )
+    user_oid = os.getenv("OID", config.OID)
 
     # Create the test role in the DB so AccessChecker can resolve access rules
     role = RoleEntity.objects(name=config.ROLES[0]).first()
@@ -63,16 +58,15 @@ def valid_token(mongo_db):
     user_tenant_role = None
     if default_tenant:
         user_tenant_role = UserTenantRoleEntity.create_or_update(
-            user_id=user.id,
+            user_id=user_oid,
             tenant_id=str(default_tenant.id),
             roles=config.ROLES,
             validate_roles=False,
         )
 
     expiry = datetime.now(UTC) + timedelta(hours=1)
-    token_obj = BearerToken.create_new_token(name="token-name", expiry_date=expiry, user_oid=user.id)
+    token_obj = BearerToken.create_new_token(name="token-name", expiry_date=expiry, user_oid=user_oid)
     yield token_obj.token
-    user.delete()
     token_obj.delete()
     if user_tenant_role:
         user_tenant_role.delete()

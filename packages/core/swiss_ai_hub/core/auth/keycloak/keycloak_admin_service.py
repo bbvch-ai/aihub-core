@@ -3,6 +3,8 @@ import logging
 from keycloak import KeycloakAdmin, KeycloakGetError
 
 from swiss_ai_hub.core.auth.dependencies.keycloak_auth_handler.keycloak_settings import KeycloakSettings
+from swiss_ai_hub.core.auth.keycloak.models.keycloak_group import KeycloakGroup
+from swiss_ai_hub.core.auth.keycloak.models.keycloak_user import KeycloakUser
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 
 logger = logging.getLogger(__name__)
@@ -25,10 +27,10 @@ class KeycloakAdminService:
 
     @staticmethod
     @trace_fn
-    async def find_user_by_email(email: str) -> dict | None:
+    async def find_user_by_email(email: str) -> KeycloakUser | None:
         admin = _create_admin()
         users = await admin.a_get_users(query={"email": email, "exact": True})
-        return users[0] if users else None
+        return KeycloakUser.model_validate(users[0]) if users else None
 
     @staticmethod
     @trace_fn
@@ -42,28 +44,30 @@ class KeycloakAdminService:
 
     @staticmethod
     @trace_fn
-    async def get_user_by_id(keycloak_user_id: str) -> dict:
+    async def get_user_by_id(keycloak_user_id: str) -> KeycloakUser:
         admin = _create_admin()
-        return await admin.a_get_user(keycloak_user_id)
+        data = await admin.a_get_user(keycloak_user_id)
+        return KeycloakUser.model_validate(data)
 
     @staticmethod
     @trace_fn
-    async def get_users_by_ids(keycloak_user_ids: list[str]) -> dict[str, dict]:
+    async def get_users_by_ids(keycloak_user_ids: list[str]) -> dict[str, KeycloakUser]:
         admin = _create_admin()
-        result: dict[str, dict] = {}
+        result: dict[str, KeycloakUser] = {}
         for user_id in keycloak_user_ids:
             try:
-                user = await admin.a_get_user(user_id)
-                result[user_id] = user
+                data = await admin.a_get_user(user_id)
+                result[user_id] = KeycloakUser.model_validate(data)
             except KeycloakGetError:
                 logger.warning("User %s not found in Keycloak", user_id)
         return result
 
     @staticmethod
     @trace_fn
-    async def get_tenant_group(tenant_id: str) -> dict:
+    async def get_tenant_group(tenant_id: str) -> KeycloakGroup:
         admin = _create_admin()
-        return await admin.a_get_group_by_path(f"{TENANTS_GROUP_PATH}/{tenant_id}")
+        data = await admin.a_get_group_by_path(f"{TENANTS_GROUP_PATH}/{tenant_id}")
+        return KeycloakGroup.model_validate(data)
 
     @staticmethod
     @trace_fn
@@ -81,10 +85,11 @@ class KeycloakAdminService:
 
     @staticmethod
     @trace_fn
-    async def get_tenant_members(tenant_id: str, offset: int = 0, limit: int = 20) -> list[dict]:
+    async def get_tenant_members(tenant_id: str, offset: int = 0, limit: int = 20) -> list[KeycloakUser]:
         admin = _create_admin()
         group = await admin.a_get_group_by_path(f"{TENANTS_GROUP_PATH}/{tenant_id}")
-        return await admin.a_get_group_members(group["id"], query={"first": offset, "max": limit})
+        members = await admin.a_get_group_members(group["id"], query={"first": offset, "max": limit})
+        return [KeycloakUser.model_validate(m) for m in members]
 
     @staticmethod
     @trace_fn
@@ -105,9 +110,9 @@ class KeycloakAdminService:
     async def get_active_tenant_id(user_id: str) -> str | None:
         """Reads the active_tenant_id custom attribute from the Keycloak user."""
         admin = _create_admin()
-        user = await admin.a_get_user(user_id)
-        attributes = user.get("attributes", {})
-        active_tenant = attributes.get("active_tenant_id", [])
+        data = await admin.a_get_user(user_id)
+        user = KeycloakUser.model_validate(data)
+        active_tenant = user.attributes.get("active_tenant_id", [])
         return active_tenant[0] if active_tenant else None
 
     @staticmethod
@@ -130,8 +135,8 @@ class KeycloakAdminService:
             return
 
         members = await admin.a_get_group_members(group["id"], query={"first": 0, "max": 1000})
-        for member in members:
-            attributes = member.get("attributes", {})
-            active_tenant = attributes.get("active_tenant_id", [])
+        for member_data in members:
+            member = KeycloakUser.model_validate(member_data)
+            active_tenant = member.attributes.get("active_tenant_id", [])
             if active_tenant:
-                await admin.a_update_user(member["id"], {"attributes": {"active_tenant_id": []}})
+                await admin.a_update_user(member.id, {"attributes": {"active_tenant_id": []}})

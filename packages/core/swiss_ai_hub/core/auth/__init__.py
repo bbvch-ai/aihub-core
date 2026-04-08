@@ -17,7 +17,9 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.auth.dependencies.token_auth_handler.token_auth_handler import TokenAuthHandler
     from swiss_ai_hub.core.auth.identity.tenant_identity import TenantIdentity
     from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
-    from swiss_ai_hub.core.auth.keycloak_admin_service import KeycloakAdminService
+    from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
+    from swiss_ai_hub.core.auth.keycloak.models.keycloak_group import KeycloakGroup
+    from swiss_ai_hub.core.auth.keycloak.models.keycloak_user import KeycloakUser
 
 # KeycloakAuthHandler and TokenAndOauth2Handler are excluded because KeycloakAuthHandler
 # instantiates KeycloakSettings() at class definition time, requiring KEYCLOAK_URL to be set.
@@ -33,6 +35,8 @@ __all__ = [
     "DangerousDevelopmentOnlyAuthHandler",
     "DangerousDevelopmentOnlyAuthSettings",
     "KeycloakAdminService",
+    "KeycloakGroup",
+    "KeycloakUser",
     "SuperuserSettings",
     "TenantIdentity",
     "TokenAuthHandler",
@@ -44,7 +48,9 @@ _LAZY_IMPORTS = {
     "AccessChecker": "swiss_ai_hub.core.auth.access.access_checker",
     "AccessLevel": "swiss_ai_hub.core.auth.access.access_level",
     "AuthHandler": "swiss_ai_hub.core.auth.dependencies.auth_handler",
-    "KeycloakAdminService": "swiss_ai_hub.core.auth.keycloak_admin_service",
+    "KeycloakAdminService": "swiss_ai_hub.core.auth.keycloak.keycloak_admin_service",
+    "KeycloakGroup": "swiss_ai_hub.core.auth.keycloak.models.keycloak_group",
+    "KeycloakUser": "swiss_ai_hub.core.auth.keycloak.models.keycloak_user",
     "DangerousDevelopmentOnlyAuthHandler": "swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler",  # noqa: E501
     "DangerousDevelopmentOnlyAuthSettings": "swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_settings",  # noqa: E501
     "SuperuserSettings": "swiss_ai_hub.core.auth.dependencies.superuser_auth_handler.superuser_settings",
