@@ -12,7 +12,7 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette.routing import Mount
 from swiss_ai_hub.core.infrastructure import AIHubSettings
 from swiss_ai_hub.core.routes import Controller
-from swiss_ai_hub.core.routes.health.health_controller import HealthController
+from swiss_ai_hub.core.routes.tenant_scoped_controller import TenantScopedController
 from swiss_ai_hub.core.runners import Runner
 
 from swiss_ai_hub.api.i18n.api_locale_handler import ApiLocaleHandler
@@ -62,7 +62,6 @@ class ApiRunner(Runner):
         origins: list[str] | None = None,
     ):
         super().__init__(api_path, title, description, origins)
-        self._health_app = FastAPI(title=f"{title} Health", redirect_slashes=True)
 
     @property
     def lifetime_manager(self) -> Callable[[FastAPI], AbstractAsyncContextManager]:
@@ -96,14 +95,12 @@ class ApiRunner(Runner):
 
         app = Starlette(
             routes=[
-                Mount(self.api_path + "/health", app=self._health_app),
-                Mount(self.api_path + "/{tenant_id}", app=self._api_app),
+                Mount(self.api_path, app=self._api_app),
                 Mount("/mcp", app=mcp_app),
             ],
             lifespan=combined_lifespan,
         )
 
-        self._health_app.state = app.state
         app.state.api_app = self._api_app
         for controller in self.controllers:
             if isinstance(controller, AgentController):
@@ -119,12 +116,52 @@ class ApiRunner(Runner):
 
         return app
 
+    @staticmethod
+    def _inject_tenant_id_into_openapi(openapi_schema: dict) -> dict:
+        """Inject ``tenant_id`` as a path parameter into all tenant-scoped paths.
+
+        FastAPI doesn't auto-generate a parameter entry for variables that only
+        appear in the router prefix (not in endpoint function signatures).
+        This hook adds it so the generated SDK includes ``tenant_id`` in the types.
+        """
+        tenant_param = {
+            "name": "tenant_id",
+            "in": "path",
+            "required": True,
+            "description": "Tenant identifier: a name, ObjectId, or 'active'",
+            "schema": {"type": "string", "title": "Tenant Id"},
+        }
+
+        for path_key, path_val in openapi_schema.get("paths", {}).items():
+            if "{tenant_id}" not in path_key:
+                continue
+            for method_val in path_val.values():
+                if not isinstance(method_val, dict):
+                    continue
+                params = method_val.setdefault("parameters", [])
+                if not any(p.get("name") == "tenant_id" for p in params):
+                    params.insert(0, tenant_param)
+
+        return openapi_schema
+
     def _get_api_app(self) -> FastAPI:
         """
         Creates the API FastAPI application that will be mounted under `api_path`.
         Applies middleware like CORS and i18n. The controllers are mounted onto this app.
         """
         app = super()._get_api_app()
+
+        # Custom OpenAPI schema hook to inject tenant_id path parameter
+        original_openapi = app.openapi
+
+        def custom_openapi():
+            if app.openapi_schema:
+                return app.openapi_schema
+            schema = original_openapi()
+            app.openapi_schema = self._inject_tenant_id_into_openapi(schema)
+            return app.openapi_schema
+
+        app.openapi = custom_openapi  # type: ignore[method-assign]
 
         origins = self.origins or ["http://localhost:8080"]
         if AIHubSettings().FRONTEND_ORIGIN:
@@ -147,26 +184,19 @@ class ApiRunner(Runner):
         """
         Mounts one or more controllers onto the API application.
 
-        HealthController instances are mounted on a separate app at /api/v1/health
-        (outside the tenant-scoped path). All other controllers are mounted on the
-        main API app under /api/v1/{tenant_id}/.
+        Controllers extending ``TenantScopedController`` are mounted under
+        ``/{tenant_id}/<route>``. Global controllers (``Controller``, including
+        ``HealthController``) are mounted at their base route without a tenant prefix.
         """
-        health_controllers = [c for c in controllers if isinstance(c, HealthController)]
-        tenant_controllers = [c for c in controllers if not isinstance(c, HealthController)]
+        super().mount(*controllers)
 
-        for controller in health_controllers:
-            self._health_app.include_router(controller.router)
-            controller._runner = self
-            self.controllers.add(controller)
-
-        super().mount(*tenant_controllers)
-
+        tenant_scoped = [c for c in controllers if isinstance(c, TenantScopedController)]
         self._api_app.openapi_tags = [
             {
                 "name": ApiLocaleHandler().extract(controller.name, locale="en"),
                 "description": ApiLocaleHandler().extract(controller.description),
             }
-            for controller in tenant_controllers
+            for controller in tenant_scoped
         ]
 
         # Pre-populate state with controller references so they're available

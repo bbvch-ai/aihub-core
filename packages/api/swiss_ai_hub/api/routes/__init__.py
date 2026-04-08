@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.api.routes.memory.user_memory_controller import UserMemoryController
     from swiss_ai_hub.api.routes.model.model_controller import ModelController
     from swiss_ai_hub.api.routes.my_account.my_account_controller import MyAccountController
+    from swiss_ai_hub.api.routes.my_tenant.my_tenant_controller import MyTenantController
     from swiss_ai_hub.api.routes.notification.notification_controller import NotificationController
     from swiss_ai_hub.api.routes.openai.openai_controller import OpenaiController
     from swiss_ai_hub.api.routes.parsing.parsing_controller import ParsingController
@@ -37,6 +38,7 @@ __all__ = [
     "KnowledgeController",
     "ModelController",
     "MyAccountController",
+    "MyTenantController",
     "NotificationController",
     "OpenaiController",
     "OrganizationMemoryController",
@@ -62,6 +64,7 @@ _LAZY_IMPORTS: dict[str, str] = {
     "KnowledgeController": "swiss_ai_hub.api.routes.knowledge.knowledge_controller",
     "ModelController": "swiss_ai_hub.api.routes.model.model_controller",
     "MyAccountController": "swiss_ai_hub.api.routes.my_account.my_account_controller",
+    "MyTenantController": "swiss_ai_hub.api.routes.my_tenant.my_tenant_controller",
     "NotificationController": "swiss_ai_hub.api.routes.notification.notification_controller",
     "OpenaiController": "swiss_ai_hub.api.routes.openai.openai_controller",
     "OrganizationMemoryController": "swiss_ai_hub.api.routes.memory.organization_memory_controller",

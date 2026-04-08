@@ -137,6 +137,12 @@ class UserTenantRoleEntity(Document):
 
     @classmethod
     @trace_fn
+    def get_tenant_ids_for_user(cls, user_id: str) -> list[str]:
+        """Returns the list of tenant IDs that a user belongs to."""
+        return [assoc.tenant_id for assoc in cls.objects(user_id=user_id).only("tenant_id")]
+
+    @classmethod
+    @trace_fn
     def get_user_ids_in_tenant(cls, tenant_id: str) -> list[str]:
         """Returns the list of user IDs that belong to a specific tenant."""
         return [assoc.user_id for assoc in cls.objects(tenant_id=tenant_id).only("user_id")]

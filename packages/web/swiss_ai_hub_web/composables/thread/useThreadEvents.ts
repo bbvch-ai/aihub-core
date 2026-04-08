@@ -9,17 +9,18 @@ export const useThreadEvents = defineQuery(() => {
   const runtimeConfig = useRuntimeConfig()
 
   const route = useRoute()
-  const isRouteReady = useRouteReady('thread_id')
+  const { tenantId } = useTenant()
   const queryCache = useQueryCache()
 
   const { data: threadEvents, isPending: threadEventsAreLoading } = useQuery<ContextualizedAgentEvent[]>({
-    key: () => ['thread', route.params.thread_id as string, 'events'],
+    key: () => ['tenant', tenantId.value, 'thread', route.params.thread_id as string, 'events'],
     staleTime: minutesToMilliseconds(5),
-    enabled: isRouteReady,
+    enabled: useTenantReady('thread_id'),
     query: async () => {
       return await getAgentEventsInThread({
         composable: '$fetch',
         path: {
+          tenant_id: tenantId.value!,
           thread_id: route.params.thread_id as string,
         },
       })
@@ -49,7 +50,7 @@ export const useThreadEvents = defineQuery(() => {
       // Only process events for the current thread
       if (event.thread_id === route.params.thread_id) {
         // Get current events from cache
-        const key = ['thread', route.params.thread_id, 'events']
+        const key = ['tenant', tenantId.value, 'thread', route.params.thread_id, 'events']
         const currentEvents = queryCache.getQueryData<ContextualizedAgentEvent[]>(key) || []
 
         // Check if event already exists (avoid duplicates)
@@ -72,9 +73,9 @@ export const useThreadEvents = defineQuery(() => {
         const parents = event.event._parent_event_names
         if (parents.includes('StopEvent') || parents.includes('ExceptionEvent')) {
           new Promise(r => setTimeout(r, 500)).then(() => {
-            queryCache.invalidateQueries({ key: ['threads'] })
-            queryCache.invalidateQueries({ key: ['threads', event.thread_id] })
-            queryCache.invalidateQueries({ key: ['agent', event.agent_class, event.agent_id] })
+            queryCache.invalidateQueries({ key: ['tenant', tenantId.value, 'threads'] })
+            queryCache.invalidateQueries({ key: ['tenant', tenantId.value, 'threads', event.thread_id] })
+            queryCache.invalidateQueries({ key: ['tenant', tenantId.value, 'agent', event.agent_class, event.agent_id] })
           })
         }
       }

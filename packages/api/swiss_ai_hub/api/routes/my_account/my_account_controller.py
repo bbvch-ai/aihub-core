@@ -6,7 +6,7 @@ from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.dependencies import use_nats
 from swiss_ai_hub.core.i18n import LocaleHandler
-from swiss_ai_hub.core.routes import Controller
+from swiss_ai_hub.core.routes import TenantScopedController
 
 from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
 from swiss_ai_hub.api.i18n.dependencies.use_locale import use_locale
@@ -15,7 +15,7 @@ from swiss_ai_hub.api.routes.user.dto.dashboard.dashboard_dto import DashboardDT
 from swiss_ai_hub.api.routes.user.dto.user_with_access_dto import UserWithAccessDTO
 
 
-class MyAccountController(Controller):
+class MyAccountController(TenantScopedController):
     """Endpoints for the logged-in user's own account profile and dashboard."""
 
     name = ApiLocaleString.from_i18n_path("api.controllers.my_account.name")

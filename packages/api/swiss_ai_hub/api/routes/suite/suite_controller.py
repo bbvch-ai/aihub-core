@@ -4,7 +4,7 @@ from fastapi import Depends, Security
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.i18n import LocaleHandler
-from swiss_ai_hub.core.routes import Controller
+from swiss_ai_hub.core.routes import TenantScopedController
 
 from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
 from swiss_ai_hub.api.i18n.dependencies.use_locale import use_locale
@@ -12,7 +12,7 @@ from swiss_ai_hub.api.routes.suite.dto.suite_dto import SuiteDTO
 from swiss_ai_hub.api.routes.suite.suite_service import SuiteService
 
 
-class SuiteController(Controller):
+class SuiteController(TenantScopedController):
     name = ApiLocaleString.from_i18n_path("api.controllers.suite.name")
     description = ApiLocaleString.from_i18n_path("api.controllers.suite.description")
     icon = "mage:coin-a"

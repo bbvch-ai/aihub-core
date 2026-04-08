@@ -8,17 +8,18 @@ export const useDeleteProcessInstance = defineMutation(() => {
     isPending: isDeleting,
     error: deleteError,
   } = useMutation({
-    mutation: async ({ processClass, processId }: { processClass: string, processId: string }) => {
+    mutation: async ({ processClass, processId, tenantId }: { processClass: string, processId: string, tenantId: string }) => {
       await deleteProcessInstance({
         composable: '$fetch',
         path: {
+          tenant_id: tenantId,
           process_class: processClass,
           process_id: processId,
         },
       })
 
-      queryCache.invalidateQueries({ key: ['process-instances'] })
-      queryCache.invalidateQueries({ key: ['process-class-instances', processClass] })
+      queryCache.invalidateQueries({ key: ['tenant', tenantId, 'process-instances'] })
+      queryCache.invalidateQueries({ key: ['tenant', tenantId, 'process-class-instances', processClass] })
     },
   })
 

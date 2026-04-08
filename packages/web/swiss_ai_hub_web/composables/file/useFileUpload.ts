@@ -10,6 +10,7 @@ export interface UploadFileOptions {
   file: File
   namespace: string
   database: string
+  tenantId: string
   onProgress?: () => void
 }
 
@@ -33,7 +34,7 @@ export const useFileUpload = defineMutation(() => {
 
   const { mutateAsync: uploadFileMutation } = useMutation({
     mutation: async (options: UploadFileOptions) => {
-      const { filename, file, namespace, database } = options
+      const { filename, file, namespace, database, tenantId } = options
 
       const contentType = getMimeType(file)
 
@@ -47,6 +48,7 @@ export const useFileUpload = defineMutation(() => {
         composable: '$fetch',
         body: initiateRequest,
         path: {
+          tenant_id: tenantId,
           database,
           namespace,
         },
@@ -68,6 +70,7 @@ export const useFileUpload = defineMutation(() => {
         composable: '$fetch',
         body: validationRequest,
         path: {
+          tenant_id: tenantId,
           database,
           namespace,
         },
@@ -77,7 +80,7 @@ export const useFileUpload = defineMutation(() => {
     },
     onSuccess: (data, variables) => {
       queryCache.invalidateQueries({
-        key: ['knowledge', 'databases', variables.database, 'namespaces', variables.namespace, 'documents'],
+        key: ['tenant', variables.tenantId, 'knowledge'],
       })
     },
   })

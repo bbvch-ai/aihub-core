@@ -43,20 +43,20 @@ export function createMemoryComposables(context: MemoryContext) {
   const { type, agent_class, agent_id, thread_id } = context
 
   /**
-   * Generate cache keys with proper scoping for user vs organization memory
+   * Generate cache keys with proper scoping for user vs organization memory.
+   * Includes the tenant prefix for hierarchical cache invalidation.
    */
   const getCacheKey = (operation: string, params: Record<string, unknown> = {}) => {
     const baseParams = { ...params, agent_class, agent_id, thread_id }
-    if (type === 'user') {
-      return ['memories', 'user', operation, baseParams]
-    }
-    return ['memories', 'organization', operation, baseParams]
+    const memoryType = type === 'user' ? 'user' : 'organization'
+    return ['tenant', params.tenant, 'memories', memoryType, operation, baseParams]
   }
 
   /**
    * Composable for fetching and paginating memories
    */
   const useMemories = defineQuery(() => {
+    const { tenantId } = useTenant()
     const currentPage = ref(1)
     const pageSize = ref(20)
 
@@ -64,9 +64,9 @@ export function createMemoryComposables(context: MemoryContext) {
       data: memoriesData,
       isPending: memoriesAreLoading,
     } = useQuery<MemoriesResponse>({
-      key: () => getCacheKey('list', { page: currentPage.value }),
+      key: () => getCacheKey('list', { tenant: tenantId.value, page: currentPage.value }),
       staleTime: minutesToMilliseconds(5),
-      enabled: true,
+      enabled: useTenantReady(),
       query: async () => {
         // Use search endpoint when filters are provided (agent_class/agent_id/thread_id)
         const hasFilters = agent_class || agent_id || thread_id
@@ -76,6 +76,7 @@ export function createMemoryComposables(context: MemoryContext) {
             // Search endpoint supports filtering
             return await searchUserMemories({
               composable: '$fetch',
+              path: { tenant_id: tenantId.value! },
               query: {
                 query: '', // Empty query returns all memories
                 limit: 1000,
@@ -87,14 +88,15 @@ export function createMemoryComposables(context: MemoryContext) {
           }
           return await getUserMemories({
             composable: '$fetch',
+            path: { tenant_id: tenantId.value! },
             query: { limit: 1000 },
           })
         }
 
-        // Organization memory - tenant_id and tenant_namespace come from env-var only
         if (hasFilters) {
           return await searchOrganizationMemories({
             composable: '$fetch',
+            path: { tenant_id: tenantId.value! },
             query: {
               query: '', // Empty query returns all memories
               limit: 1000,
@@ -106,6 +108,7 @@ export function createMemoryComposables(context: MemoryContext) {
         }
         return await getOrganizationMemories({
           composable: '$fetch',
+          path: { tenant_id: tenantId.value! },
           query: {
             limit: 1000,
           },
@@ -158,6 +161,7 @@ export function createMemoryComposables(context: MemoryContext) {
    * Composable for semantic memory search
    */
   const useMemorySearch = defineQuery(() => {
+    const { tenantId } = useTenant()
     const query = ref<string>('')
     const limit = ref(100)
 
@@ -165,13 +169,14 @@ export function createMemoryComposables(context: MemoryContext) {
       data: searchData,
       isPending: searchIsLoading,
     } = useQuery<MemorySearchResponse>({
-      key: () => getCacheKey('search', { query: query.value, limit: limit.value }),
+      key: () => getCacheKey('search', { tenant: tenantId.value, query: query.value, limit: limit.value }),
       staleTime: minutesToMilliseconds(1),
-      enabled: () => !!query.value,
+      enabled: () => !!query.value && !!tenantId.value,
       query: async () => {
         if (type === 'user') {
           return await searchUserMemories({
             composable: '$fetch',
+            path: { tenant_id: tenantId.value! },
             query: {
               query: query.value,
               limit: limit.value,
@@ -182,9 +187,9 @@ export function createMemoryComposables(context: MemoryContext) {
           })
         }
 
-        // Organization memory - tenant_id and tenant_namespace come from env-var only
         return await searchOrganizationMemories({
           composable: '$fetch',
+          path: { tenant_id: tenantId.value! },
           query: {
             query: query.value,
             limit: limit.value,
@@ -223,25 +228,24 @@ export function createMemoryComposables(context: MemoryContext) {
     const queryCache = useQueryCache()
 
     const { mutate: updateMemoryMutation } = useMutation({
-      mutation: async ({ memoryId, data }: { memoryId: string, data: string }) => {
+      mutation: async ({ memoryId, data, tenantId }: { memoryId: string, data: string, tenantId: string }) => {
         if (type === 'user') {
           await updateUserMemory({
             composable: '$fetch',
-            path: { memory_id: memoryId },
+            path: { tenant_id: tenantId, memory_id: memoryId },
             body: { data },
           })
         }
         else {
-          // Organization memory - tenant_id and tenant_namespace come from env-var only
           await updateOrganizationMemory({
             composable: '$fetch',
-            path: { memory_id: memoryId },
+            path: { tenant_id: tenantId, memory_id: memoryId },
             body: { data },
           })
         }
 
         // Invalidate cache to trigger refetch
-        queryCache.invalidateQueries({ key: getCacheKey('list') })
+        queryCache.invalidateQueries({ key: getCacheKey('list', { tenant: tenantId }) })
       },
     })
 
@@ -255,43 +259,43 @@ export function createMemoryComposables(context: MemoryContext) {
     const queryCache = useQueryCache()
 
     const { mutate: deleteMemoryMutation } = useMutation({
-      mutation: async ({ memoryId }: { memoryId: string }) => {
+      mutation: async ({ memoryId, tenantId }: { memoryId: string, tenantId: string }) => {
         if (type === 'user') {
           await deleteUserMemory({
             composable: '$fetch',
-            path: { memory_id: memoryId },
+            path: { tenant_id: tenantId, memory_id: memoryId },
           })
         }
         else {
-          // Organization memory - tenant_id and tenant_namespace come from env-var only
           await deleteOrganizationMemory({
             composable: '$fetch',
-            path: { memory_id: memoryId },
+            path: { tenant_id: tenantId, memory_id: memoryId },
           })
         }
 
         // Invalidate cache to trigger refetch
-        queryCache.invalidateQueries({ key: getCacheKey('list') })
+        queryCache.invalidateQueries({ key: getCacheKey('list', { tenant: tenantId }) })
       },
     })
 
     const { mutate: deleteAllMemoriesMutation } = useMutation({
-      mutation: async () => {
+      mutation: async ({ tenantId }: { tenantId: string }) => {
         if (type === 'user') {
           await deleteAllUserMemories({
             composable: '$fetch',
+            path: { tenant_id: tenantId },
           })
         }
         else {
-          // Organization memory - tenant_id and tenant_namespace come from env-var only
           await deleteAllOrganizationMemories({
             composable: '$fetch',
+            path: { tenant_id: tenantId },
           })
         }
 
         // Invalidate both list and search cache
-        queryCache.invalidateQueries({ key: getCacheKey('list') })
-        queryCache.invalidateQueries({ key: getCacheKey('search') })
+        queryCache.invalidateQueries({ key: getCacheKey('list', { tenant: tenantId }) })
+        queryCache.invalidateQueries({ key: getCacheKey('search', { tenant: tenantId }) })
       },
     })
 

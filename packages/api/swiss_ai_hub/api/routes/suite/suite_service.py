@@ -5,6 +5,7 @@ from swiss_ai_hub.core.auth.access.access_level import AccessLevel
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.infrastructure import trace_fn
+from swiss_ai_hub.core.routes.tenant_scoped_controller import TenantScopedController
 
 from swiss_ai_hub.api.routes.suite.dto.service_dto import ServiceDTO
 from swiss_ai_hub.api.routes.suite.dto.suite_dto import SuiteDTO
@@ -20,6 +21,8 @@ class SuiteService:
         services: list[ServiceDTO] = []
         access_checker = AccessChecker.from_user(user)
         for controller in runner.controllers:
+            if not isinstance(controller, TenantScopedController):
+                continue
             user_service_access = access_checker.access_level_for_service(controller.service_name)
             if user_service_access == AccessLevel.ACCESS_DENIED:
                 continue

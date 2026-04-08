@@ -53,6 +53,9 @@ translation:
 my_account:
   name: Il mio account
   description: Gestisci le impostazioni dell'account
+my_tenant:
+  name: Tenant Management
+  description: View and switch between your tenants
 user:
   name: Gestione utenti
   description: Gestisci gli utenti e i loro accessi

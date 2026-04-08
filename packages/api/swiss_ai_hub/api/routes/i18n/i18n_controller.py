@@ -4,7 +4,7 @@ from fastapi import Depends, Security
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.i18n import LocaleHandler
-from swiss_ai_hub.core.routes import Controller
+from swiss_ai_hub.core.routes import TenantScopedController
 
 from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
 from swiss_ai_hub.api.i18n.dependencies.use_locale import use_locale
@@ -12,7 +12,7 @@ from swiss_ai_hub.api.routes.i18n.dto.locale_response import LocaleResponse
 from swiss_ai_hub.api.routes.i18n.i18n_service import I18nService
 
 
-class I18nController(Controller):
+class I18nController(TenantScopedController):
     """
     A controller for handling internationalization (i18n) operations, such as retrieving the user's current locale.
 

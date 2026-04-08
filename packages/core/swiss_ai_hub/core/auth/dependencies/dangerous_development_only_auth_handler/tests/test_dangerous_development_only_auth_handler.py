@@ -88,7 +88,13 @@ def mock_database_operations(monkeypatch: pytest.MonkeyPatch):
 @pytest.fixture
 def dummy_request() -> Request:
     """Create and return a dummy Request object."""
-    scope: dict[str, Any] = {"type": "http", "headers": [(b"host", b"testserver")], "method": "GET", "path": "/"}
+    scope: dict[str, Any] = {
+        "type": "http",
+        "headers": [(b"host", b"testserver")],
+        "method": "GET",
+        "path": "/",
+        "path_params": {"tenant_id": "active"},
+    }
     return Request(scope)
 
 

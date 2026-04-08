@@ -20,15 +20,13 @@ import { useI18n } from 'vue-i18n'
 
 import type { NavItem } from '@core/types/NavItem'
 
-import { useLocalePath } from '#i18n'
-
 const props = defineProps<{
   memoryType: 'user' | 'organization'
 }>()
 
 const router = useRouter()
 const route = useRoute()
-const localePath = useLocalePath()
+const tenantPath = useTenantPath()
 const { t } = useI18n()
 
 const basePath = computed(() => `/service/${props.memoryType}-memories`)
@@ -39,9 +37,9 @@ const subPath = (path: string) => {
 
 onMounted(() => {
   // Redirect to graph view by default
-  if (route.path === localePath(basePath.value)) {
+  if (route.path === tenantPath(basePath.value)) {
     router.push({
-      path: localePath(subPath('list')),
+      path: tenantPath(subPath('list')),
       query: route.query,
     })
   }
@@ -49,7 +47,7 @@ onMounted(() => {
 
 const isActive = (path: string) => {
   return () => {
-    const localizedPath = localePath(subPath(path))
+    const localizedPath = tenantPath(subPath(path))
     return route.path.startsWith(localizedPath)
   }
 }
@@ -63,7 +61,7 @@ const navItems = computed<NavItem[]>(() => {
 
 const toNavItem = (navItem: NavItem) => {
   router.push({
-    path: localePath(navItem.path),
+    path: tenantPath(navItem.path),
     query: route.query,
   })
 }

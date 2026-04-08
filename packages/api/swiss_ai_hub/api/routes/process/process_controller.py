@@ -10,7 +10,7 @@ from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.persistence.process import ProcessClassEntity
 from swiss_ai_hub.core.persistence.process.process_config_entity_document import ProcessConfigEntityDocument
 from swiss_ai_hub.core.processes import ProcessConfig
-from swiss_ai_hub.core.routes import Controller
+from swiss_ai_hub.core.routes import TenantScopedController
 
 from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
 from swiss_ai_hub.api.i18n.dependencies.use_locale import use_locale
@@ -26,7 +26,7 @@ from swiss_ai_hub.api.routes.process.dto.update_process_instance_dto import Upda
 from swiss_ai_hub.api.routes.process.process_service import ProcessService
 
 
-class ProcessController(Controller):
+class ProcessController(TenantScopedController):
     """
     A controller managing endpoints related to processes, including classes and instances.
 

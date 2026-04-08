@@ -2,15 +2,16 @@ import { updateNotification, type UpdateNotificationRequest } from '@core/sdk/cl
 
 export const useUpdateNotification = defineMutation(() => {
   const queryCache = useQueryCache()
+  const { tenantId } = useTenant()
   return useMutation({
-    mutation: ({ id, payload }: { id: string, payload: Ref<UpdateNotificationRequest> }) =>
+    mutation: ({ id, payload, tenantId }: { id: string, payload: Ref<UpdateNotificationRequest>, tenantId: string }) =>
       updateNotification({
         composable: '$fetch',
-        path: { notification_id: id },
+        path: { tenant_id: tenantId, notification_id: id },
         body: payload,
       }),
     onSuccess: () => {
-      queryCache.invalidateQueries({ key: ['notifications'] })
+      queryCache.invalidateQueries({ key: ['tenant', tenantId.value, 'notifications'] })
     },
   })
 })

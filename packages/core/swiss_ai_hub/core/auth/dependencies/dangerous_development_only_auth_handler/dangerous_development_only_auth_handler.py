@@ -55,11 +55,4 @@ class DangerousDevelopmentOnlyAuthHandler(AuthHandler):
                 validate_roles=False,  # Dev roles may not exist in DB
             )
 
-        # Resolve tenant context from request or use default
-        if request:
-            tenant = self.resolve_tenant_for_user(request, user_entity.id)
-        else:
-            # Fallback for contexts without request
-            tenant = self.get_active_tenant_for_user(user_entity.id)
-
-        return UserIdentity.from_user_entity(user_entity, tenant)
+        return self.build_identity(user_entity, request)

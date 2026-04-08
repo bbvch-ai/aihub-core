@@ -65,8 +65,8 @@
               : 'bg-surface-100 dark:bg-surface-900',
           ]"
         >
-          <nuxt-link-locale
-            :to="app.path"
+          <NuxtLink
+            :to="app.path === '/' ? tenantPath('/') : tenantPath(app.path)"
             class="flex h-[50px] items-center justify-center"
             @click="toggle"
           >
@@ -83,7 +83,7 @@
                 {{ app.label }}
               </p>
             </div>
-          </nuxt-link-locale>
+          </NuxtLink>
         </div>
         <div
           v-for="i in 4"
@@ -101,9 +101,8 @@
 import type { MenuItem } from 'primevue/menuitem'
 
 const router = useRouter()
-const localeRoute = useLocaleRoute()
 const route = useRoute()
-const localePath = useLocalePath()
+const tenantPath = useTenantPath()
 
 const { apps, appsLoading } = useApps()
 const { t } = useI18n()
@@ -121,7 +120,7 @@ const shownApps = computed(() => {
 
 const isActiveApp = (appPath: string | undefined) => {
   if (!appPath) return false
-  const localizedPath = localePath(appPath)
+  const localizedPath = tenantPath(appPath)
   // For home page, only match exact path
   if (appPath === '/') {
     return route.path === localizedPath
@@ -142,11 +141,8 @@ const toggle = (event: Event) => {
 
 const onEnter = (event: Event) => {
   if (shownApps.value.length > 0) {
-    const firstAppRoute = localeRoute(shownApps.value[0].path)
-    if (firstAppRoute) {
-      router.push(firstAppRoute)
-      toggle(event)
-    }
+    router.push(tenantPath(shownApps.value[0].path))
+    toggle(event)
   }
 }
 </script>

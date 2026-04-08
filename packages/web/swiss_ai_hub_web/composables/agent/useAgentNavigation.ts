@@ -1,11 +1,9 @@
 import type { NavItem } from '@core/types/NavItem'
 
-import { useLocalePath } from '#i18n'
-
 export function useAgentNavigation() {
   const router = useRouter()
   const route = useRoute()
-  const localePath = useLocalePath()
+  const tenantPath = useTenantPath()
   const { t } = useI18n()
 
   const navItems = computed<NavItem[]>(() => [
@@ -13,7 +11,7 @@ export function useAgentNavigation() {
       name: t('agent.tabs.myAgents'),
       key: 'agents',
       path: '/service/agents',
-      isActive: () => route.path.startsWith(localePath('/service/agents')) && !route.path.includes('/service/agents/templates'),
+      isActive: () => route.path.startsWith(tenantPath('/service/agents')) && !route.path.includes('/service/agents/templates'),
     },
     {
       name: t('agent.tabs.templates'),
@@ -29,7 +27,7 @@ export function useAgentNavigation() {
 
   const toNavItem = (navItem: NavItem | null) => {
     if (navItem) {
-      router.push(localePath(navItem.path))
+      router.push(tenantPath(navItem.path))
     }
   }
 

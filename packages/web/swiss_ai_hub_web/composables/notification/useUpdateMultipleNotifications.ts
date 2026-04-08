@@ -2,14 +2,16 @@ import { type UpdateNotificationRequest, updateNotificationsBulk } from '@core/s
 
 export const useUpdateMultipleNotifications = defineMutation(() => {
   const queryCache = useQueryCache()
+  const { tenantId } = useTenant()
   return useMutation({
-    mutation: ({ ids, payload }: { ids: string[], payload: Ref<UpdateNotificationRequest> }) =>
+    mutation: ({ ids, payload, tenantId }: { ids: string[], payload: Ref<UpdateNotificationRequest>, tenantId: string }) =>
       updateNotificationsBulk({
         composable: '$fetch',
+        path: { tenant_id: tenantId },
         body: { notification_ids: ids, updates: payload },
       }),
     onSuccess: () => {
-      queryCache.invalidateQueries({ key: ['notifications'] })
+      queryCache.invalidateQueries({ key: ['tenant', tenantId.value, 'notifications'] })
     },
   })
 })

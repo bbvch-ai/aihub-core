@@ -7,15 +7,18 @@ export const useUpdateAgentInstance = defineMutation(() => {
     mutation: async ({
       agentClass,
       agentId,
+      tenantId,
       configuration,
     }: {
       agentClass: string
       agentId: string
+      tenantId: string
       configuration: Record<string, unknown>
     }) => {
       const result = await updateAgentInstance({
         composable: '$fetch',
         path: {
+          tenant_id: tenantId,
           agent_class: agentClass,
           agent_id: agentId,
         },
@@ -23,9 +26,9 @@ export const useUpdateAgentInstance = defineMutation(() => {
           configuration,
         },
       })
-      queryCache.invalidateQueries({ key: ['agent-instances', agentClass, agentId] })
-      queryCache.invalidateQueries({ key: ['agent-instances'] })
-      queryCache.invalidateQueries({ key: ['agent-class-instances', agentClass] })
+      queryCache.invalidateQueries({ key: ['tenant', tenantId, 'agent-instances', agentClass, agentId] })
+      queryCache.invalidateQueries({ key: ['tenant', tenantId, 'agent-instances'] })
+      queryCache.invalidateQueries({ key: ['tenant', tenantId, 'agent-class-instances', agentClass] })
       return result
     },
   })

@@ -765,3 +765,15 @@ openwebui:
     graph: Graph
     user_memories: Benutzererinnerungen
     org_memories: Organisationserinnerungen
+tenant:
+  select_title: Mandant auswählen
+  select_description: Wählen Sie die Organisation, in der Sie arbeiten möchten
+  no_tenant_title: Kein Mandantenzugriff
+  no_tenant_description: Sie haben keinen Zugriff auf einen Mandanten. Bitte kontaktieren
+    Sie Ihren Administrator.
+  switcher_label: Mandant wechseln
+  current_tenant: Aktueller Mandant
+  mismatch_warning: Mandantenkonflikt
+  mismatch_description: Ihr aktiver Mandant wurde in einer anderen Sitzung auf {tenant}
+    geändert. Die Chat-Oberfläche verwendet den aktiven Mandanten für alle Anfragen.
+  mismatch_switch_action: Mandant wechseln

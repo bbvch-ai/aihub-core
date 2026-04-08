@@ -52,8 +52,6 @@ import { ref } from 'vue'
 
 import type { NavItem } from '@core/types/NavItem'
 
-import { useLocalePath } from '#i18n'
-
 const props = defineProps<{
   title: string
   navItemsMap: Record<string, NavItem[]>
@@ -66,11 +64,11 @@ const emit = defineEmits<{
 }>()
 
 const router = useRouter()
-const localePath = useLocalePath()
+const tenantPath = useTenantPath()
 const scrollContainerRef = ref<HTMLElement | null>(null)
 
 const toNavItem = (navItem: NavItem) => {
-  router.push(localePath(navItem.path))
+  router.push(tenantPath(navItem.path))
 }
 
 // Set up infinite scroll using vueuse

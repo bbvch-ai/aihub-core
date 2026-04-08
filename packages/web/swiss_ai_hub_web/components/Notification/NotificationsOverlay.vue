@@ -93,7 +93,7 @@ import type { NotificationDto } from '@core/sdk/client'
 const { t } = useI18n()
 const op = ref()
 const router = useRouter()
-const localeRoute = useLocaleRoute()
+const tenantPath = useTenantPath()
 const isPanelOpen = ref(false)
 
 const readFilter = ref<boolean | undefined>(false)
@@ -139,7 +139,7 @@ const handleNotificationClick = (notification: NotificationDto) => {
     updateNotification({ id: notification.id, payload: ref({ read: true }) })
   }
   if (notification.link) {
-    router.push(localeRoute(notification.link))
+    router.push(tenantPath(notification.link))
     op.value.hide()
   }
 }
@@ -157,6 +157,6 @@ const markAllAsRead = () => {
 
 const viewAll = () => {
   op.value.hide()
-  router.push(localeRoute('/notifications'))
+  router.push(tenantPath('/notifications'))
 }
 </script>

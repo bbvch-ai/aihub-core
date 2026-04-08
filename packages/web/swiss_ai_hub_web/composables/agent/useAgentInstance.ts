@@ -4,16 +4,17 @@ import { useRoute } from 'vue-router'
 
 export const useAgentInstance = defineQuery(() => {
   const route = useRoute()
-  const isRouteReady = useRouteReady('agent_id', 'agent_class')
+  const { tenantId } = useTenant()
 
   const { data: agentInstance, isPending: agentInstanceIsLoading } = useQuery<FullAgentInstanceDto>({
-    key: () => ['agent-instances', route.params.agent_class as string, route.params.agent_id as string],
+    key: () => ['tenant', tenantId.value, 'agent-instances', route.params.agent_class as string, route.params.agent_id as string],
     staleTime: minutesToMilliseconds(5),
-    enabled: isRouteReady,
+    enabled: useTenantReady('agent_id', 'agent_class'),
     query: async () => {
       return await getAgentInstance({
         composable: '$fetch',
         path: {
+          tenant_id: tenantId.value!,
           agent_id: route.params.agent_id as string,
           agent_class: route.params.agent_class as string,
         },
