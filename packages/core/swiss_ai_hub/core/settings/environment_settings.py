@@ -34,10 +34,16 @@ class EnvironmentSettings(BaseSettings):
         prefix: str,
         extra: Literal["allow", "ignore", "forbid"] = "ignore",
     ) -> SettingsConfigDict:
+        env_file = Path(__file__).parent.parent.parent.parent.parent.parent / ".env"
+        if not env_file.exists():
+            env_file = None
+
         # Only use secrets_dir if the directory exists (i.e., running in Docker with secrets)
         secrets_dir = DOCKER_SECRETS_DIR if DOCKER_SECRETS_DIR.exists() else None
 
         return SettingsConfigDict(
+            env_file=env_file,
+            env_file_encoding="utf-8",
             extra=extra,
             env_prefix=prefix,
             arbitrary_types_allowed=True,
