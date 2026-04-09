@@ -107,6 +107,26 @@ def check_agent_in_loop_request(orchestrator_runner: AgentTestRunner):
     assert orchestrator_runner.has_event_of_class(AgentInTheLoopRequestEvent)
 
 
+@then(parsers.parse("exactly {count:d} unique AgentInTheLoopResponse is received by the orchestrator"))
+def check_no_duplicate_aitl_response(orchestrator_runner: AgentTestRunner, count: int):
+    responses = orchestrator_runner.get_events_of_class(AgentInTheLoopResponseEvent)
+    unique_ids = {r.event_id for r in responses}
+    assert len(unique_ids) == count, (
+        f"Expected {count} unique AgentInTheLoopResponseEvent(s) but got {len(unique_ids)} — "
+        f"duplicate AITL responses indicate the ControlAndDisplayEvent dual-publish bug"
+    )
+
+
+@then(parsers.parse("exactly {count:d} unique OrchestrationResultEvent is received by the orchestrator"))
+def check_no_duplicate_orchestration_result(orchestrator_runner: AgentTestRunner, count: int):
+    results = orchestrator_runner.get_events_of_class(OrchestrationResultEvent)
+    unique_ids = {r.event_id for r in results}
+    assert len(unique_ids) == count, (
+        f"Expected {count} unique OrchestrationResultEvent(s) but got {len(unique_ids)} — "
+        f"duplicate results indicate a step ran multiple times due to duplicate AITL responses"
+    )
+
+
 @then(parsers.parse("an AgentInTheLoopResponse with result {result} is received by the orchestrator"))
 def check_agent_in_loop_response_with_result(orchestrator_runner: AgentTestRunner, result: str):
     assert orchestrator_runner.has_event_of_class(AgentInTheLoopResponseEvent)

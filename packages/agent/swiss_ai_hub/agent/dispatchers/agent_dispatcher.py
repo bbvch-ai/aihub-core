@@ -499,7 +499,7 @@ class AgentDispatcher(BaseDispatcher):
                 await self.publish_event(aitl_exception, topic)
 
         logger.debug(f"Temporarily subscribing to {aitl_request_event.other_agent_topic}")
-        event_subscriber = AgentNCSubscriber.for_all_thread_events(
+        event_subscriber = AgentNCSubscriber.for_thread_control_events(
             nc=self.nc,
             topic_manager=AgentThreadTopicManager.from_agent_topic(aitl_request_event.other_agent_topic),
             handler=convert_event_to_agent_in_the_loop_response,
