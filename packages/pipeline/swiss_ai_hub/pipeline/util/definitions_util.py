@@ -103,7 +103,6 @@ def default_definitions(
     document_partitions = DynamicPartitionsDefinition(name=f"{datalake_container_name}_document_partitions")
 
     data_lake_key = AssetKey([datalake_container_name, "datalake_to_vectorstore", "data_lake"])
-    placeholder_refdocs_key = AssetKey([datalake_container_name, "datalake_to_vectorstore", "placeholder_refdocs"])
     document_key = AssetKey([datalake_container_name, "datalake_to_vectorstore", "documents"])
     nodes_key = AssetKey([datalake_container_name, "datalake_to_vectorstore", "nodes"])
     removed_documents_key = AssetKey([datalake_container_name, "datalake_to_vectorstore", "removed_documents"])
@@ -116,11 +115,6 @@ def default_definitions(
     )
     assets = [
         observable_asset,
-        placeholder_refdocs_factory(
-            key=placeholder_refdocs_key,
-            data_lake_files_key=data_lake_key,
-            partitions=document_partitions,
-        ),
         removed_documents_factory(removed_documents_key, data_lake_key=data_lake_key),
         documents_factory(
             document_key,
