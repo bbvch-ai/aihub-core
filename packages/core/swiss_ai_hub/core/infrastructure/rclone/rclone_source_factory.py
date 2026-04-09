@@ -1,4 +1,3 @@
-import os
 from typing import Annotated
 
 from pydantic import Field
@@ -44,21 +43,22 @@ class RcloneSourceSettings(EnvironmentSettings):
 
     def _extract_options(self) -> dict[str, str]:
         """
-        Extract backend-specific rclone options from environment variables.
+        Extract rclone options from model_extra.
 
-        Scans os.environ for keys matching RCLONE_{SOURCE}_{OPTION} and returns
-        them as {option: value} with the prefix stripped and lowercased.
-        Declared fields (NAME, TYPE) are excluded.
+        Only include keys that match rclone_{source}_{option} pattern.
         """
+        options = {}
         if not self._source_name:
-            return {}
-        env_prefix = f"{RCLONE_ENV_PREFIX}{self._source_name.upper()}_"
-        known_fields = {f.upper() for f in self.model_fields}
-        return {
-            key[len(env_prefix) :].lower(): value
-            for key, value in os.environ.items()
-            if key.startswith(env_prefix) and key[len(env_prefix) :] not in known_fields
-        }
+            return options
+        expected_prefix = f"rclone_{self._source_name.lower()}_"
+
+        for key, value in (self.model_extra or {}).items():
+            key_lower = key.lower()
+            if key_lower.startswith(expected_prefix):
+                option_name = key_lower[len(expected_prefix) :]
+                options[option_name] = str(value)
+
+        return options
 
     @classmethod
     def load(cls, source: str) -> RcloneSourceConfig:
