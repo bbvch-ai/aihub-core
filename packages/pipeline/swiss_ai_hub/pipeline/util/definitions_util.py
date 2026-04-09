@@ -34,9 +34,6 @@ from swiss_ai_hub.pipeline.assets.factories.share_point_to_data_lake.observable_
     observable_share_point_factory,
 )
 from swiss_ai_hub.pipeline.assets.factories.source_to_data_lake.data_lake_file_factory import data_lake_file_factory
-from swiss_ai_hub.pipeline.assets.factories.source_to_data_lake.placeholder_refdocs_factory import (
-    placeholder_refdocs_factory,
-)
 from swiss_ai_hub.pipeline.assets.factories.source_to_data_lake.removed_data_lake_files_factory import (
     removed_data_lake_files_factory,
 )
