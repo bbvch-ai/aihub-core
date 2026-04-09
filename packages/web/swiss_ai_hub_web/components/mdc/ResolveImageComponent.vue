@@ -25,6 +25,7 @@ const props = defineProps<{
   height?: string | number
 }>()
 
+const { tenantId } = useTenant()
 const imageUrl = ref<string | null>(props.src)
 
 const fetchAndSetImageUrl = async () => {
@@ -42,6 +43,7 @@ const fetchAndSetImageUrl = async () => {
   const { url } = await getFileUrl({
     composable: '$fetch',
     path: {
+      tenant_id: tenantId.value!,
       container,
       file_path,
     },

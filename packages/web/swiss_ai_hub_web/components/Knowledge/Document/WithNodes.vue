@@ -38,6 +38,7 @@ const props = defineProps<{
 }>()
 
 const { t } = useI18n()
+const { tenantId } = useTenant()
 const { getDocumentSourceUrl } = useDocumentUrl()
 
 const { data: document, isPending: documentIsLoading } = useQuery<IngestedDocument>({
@@ -48,6 +49,7 @@ const { data: document, isPending: documentIsLoading } = useQuery<IngestedDocume
     return await getDocumentById({
       composable: '$fetch',
       path: {
+        tenant_id: tenantId.value!,
         database: props.db,
         namespace: props.namespace,
         document_id: props.documentId as string,
@@ -64,6 +66,7 @@ const { data: documentNodes, isPending: documentNodesAreLoading } = useQuery<Nod
     return await getNodesForDocument({
       composable: '$fetch',
       path: {
+        tenant_id: tenantId.value!,
         database: props.db,
         namespace: props.namespace,
         document_id: props.documentId as string,
