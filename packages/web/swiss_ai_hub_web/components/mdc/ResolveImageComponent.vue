@@ -32,6 +32,7 @@ const fetchAndSetImageUrl = async () => {
   if (props.src.startsWith('http')) {
     return props.src
   }
+  if (!tenantId.value) return
 
   let src = props.src
   if (src.includes('://')) {
