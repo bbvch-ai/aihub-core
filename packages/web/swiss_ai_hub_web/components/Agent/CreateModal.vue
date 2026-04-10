@@ -153,6 +153,7 @@ const { t, locale } = useI18n()
 const toast = useToast()
 const { agentClasses, agentClassesAreLoading } = useAgentClasses()
 const { createAgentInstance } = useCreateAgentInstance()
+const { tenantId } = useTenant()
 
 const {
   selectedClass,
@@ -215,6 +216,7 @@ async function handleFormSubmit() {
     const agentId = normalizedConfig.agent_id as string
     await createAgentInstance({
       agentClass: selectedClass.value,
+      tenantId: tenantId.value!,
       request: {
         agent_id: agentId,
         configuration: normalizedConfig,

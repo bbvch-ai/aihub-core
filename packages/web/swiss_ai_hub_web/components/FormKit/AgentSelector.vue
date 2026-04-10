@@ -137,6 +137,7 @@ interface AgentSelectorProps {
 
 const props = defineProps<AgentSelectorProps>()
 const { t, locale } = useI18n()
+const { tenantId } = useTenant()
 
 // Get custom props from context (FormKit passes them there, not as direct props)
 const startEvent = computed(() => props.context.startEvent)
@@ -246,6 +247,7 @@ async function fetchClasses() {
   try {
     const response = await getAgentClasses({
       composable: '$fetch',
+      path: { tenant_id: tenantId.value! },
     })
     agentClasses.value = response
   }
@@ -263,7 +265,7 @@ async function fetchInstances(agentClass: string) {
   try {
     const response = await getAgentClassInstances({
       composable: '$fetch',
-      path: { agent_class: agentClass },
+      path: { tenant_id: tenantId.value!, agent_class: agentClass },
     })
     agentInstances.value = response
   }
