@@ -15,9 +15,14 @@ class DefaultTenantSettings(EnvironmentSettings):
 
     model_config = EnvironmentSettings.create_settings_config("AIHUB_DEFAULT_TENANT_")
 
+    ID: Annotated[
+        str,
+        Field(description="Unique identifier for the default tenant. Also used as the Keycloak group name."),
+    ] = "default"
+
     NAME: Annotated[
         str,
-        Field(description="Name of the default tenant created on first startup."),
+        Field(description="Display name of the default tenant."),
     ] = "Default Organization"
 
     DESCRIPTION: Annotated[

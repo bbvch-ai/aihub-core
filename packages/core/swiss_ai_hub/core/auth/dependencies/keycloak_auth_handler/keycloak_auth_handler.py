@@ -9,9 +9,9 @@ from fastapi import HTTPException, Request, Security
 from jwt.algorithms import RSAAlgorithm
 
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
-from swiss_ai_hub.core.auth.dependencies.keycloak_auth_handler.keycloak_settings import KeycloakSettings
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
+from swiss_ai_hub.core.auth.keycloak.keycloak_settings import KeycloakSettings
 from swiss_ai_hub.core.infrastructure.api.user_signup_settings import UserSignupSettings
 from swiss_ai_hub.core.persistence.access.entities.tenant_entity import TenantEntity
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
@@ -142,8 +142,10 @@ class KeycloakAuthHandler(AuthHandler):
         """Syncs tenant memberships from the JWT tenants claim to UserTenantRoleEntity.
 
         The tenants claim contains Keycloak group paths like /tenants/<tenant-id>
-        where tenant-id is the unique identifier for the tenant.
+        where tenant-id is the readable slug matching TenantEntity.id.
         """
+        from swiss_ai_hub.core.auth.dependencies.superuser_auth_handler.superuser_settings import SuperuserSettings
+
         tenant_ids = [path.split("/")[-1] for path in tenants_claim if path.startswith("/tenants/")]
         if not tenant_ids:
             return
@@ -157,26 +159,33 @@ class KeycloakAuthHandler(AuthHandler):
                 logger.warning("Tenant '%s' from JWT claim not found in database, skipping", tenant_id)
                 continue
 
-            tenant_id_str = str(tenant.id)
             if first_valid_tenant_id is None:
-                first_valid_tenant_id = tenant_id_str
+                first_valid_tenant_id = tenant_id
 
-            existing_roles = UserTenantRoleEntity.get_roles_for_user_in_tenant(user_id, tenant_id_str)
+            existing_roles = UserTenantRoleEntity.get_roles_for_user_in_tenant(user_id, tenant_id)
             if not existing_roles:
-                roles_to_assign = settings.regular_user_roles_list
+                # First real user gets admin roles, others get regular roles
+                existing_user_ids = UserTenantRoleEntity.get_user_ids_in_tenant(tenant_id)
+                real_users = [uid for uid in existing_user_ids if uid != SuperuserSettings().OID]
+                if not real_users:
+                    roles_to_assign = settings.first_admin_user_roles_list
+                    logger.info("First user signup in tenant %s, assigning admin roles: %s", tenant_id, roles_to_assign)
+                else:
+                    roles_to_assign = settings.regular_user_roles_list
+
                 UserTenantRoleEntity.create_or_update(
                     user_id=user_id,
-                    tenant_id=tenant_id_str,
+                    tenant_id=tenant_id,
                     roles=roles_to_assign,
                 )
                 logger.info(
                     "Created tenant association for user %s in tenant %s with roles: %s",
                     user_id,
-                    tenant_id_str,
+                    tenant_id,
                     roles_to_assign,
                 )
 
-        # Ensure user has an active tenant set in Keycloak
+        # Ensure user has an active tenant set
         if first_valid_tenant_id:
             active_tenant_id = await KeycloakAdminService.get_active_tenant_id(user_id)
             if not active_tenant_id:

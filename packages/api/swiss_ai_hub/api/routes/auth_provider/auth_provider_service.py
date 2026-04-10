@@ -2,7 +2,7 @@ import json
 
 from keycloak import KeycloakAdmin
 from redis.asyncio import Redis
-from swiss_ai_hub.core.auth.dependencies.keycloak_auth_handler import KeycloakSettings
+from swiss_ai_hub.core.auth.keycloak import KeycloakSettings
 from swiss_ai_hub.core.infrastructure import trace_fn
 
 from swiss_ai_hub.api.routes.auth_provider.dto.auth_provider_response import AuthProviderResponse

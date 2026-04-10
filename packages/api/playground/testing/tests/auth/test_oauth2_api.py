@@ -10,7 +10,8 @@ from mongoengine import connect, disconnect
 from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_settings import (  # noqa: E501
     DangerousDevelopmentOnlyAuthSettings,
 )
-from swiss_ai_hub.core.auth.dependencies.keycloak_auth_handler import KeycloakAuthHandler, KeycloakSettings
+from swiss_ai_hub.core.auth.dependencies.keycloak_auth_handler import KeycloakAuthHandler
+from swiss_ai_hub.core.auth.keycloak import KeycloakSettings
 from swiss_ai_hub.core.infrastructure import AIHubSettings, MongoSettings
 from swiss_ai_hub.core.persistence.access.entities.tenant_entity import TenantEntity
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity

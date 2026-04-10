@@ -19,6 +19,11 @@
   "loginWithEmailAllowed": true,
   "duplicateEmailsAllowed": false,
   "resetPasswordAllowed": true,
+
+  "attributes": {
+    "upConfig": "{\"unmanagedAttributePolicy\":\"ADMIN_EDIT\",\"attributes\":[{\"name\":\"active_tenant_id\",\"displayName\":\"Active Tenant ID\",\"permissions\":{\"view\":[\"admin\"],\"edit\":[\"admin\"]}}]}"
+  },
+
   "editUsernameAllowed": false,
   "bruteForceProtected": true,
 
@@ -54,13 +59,13 @@
       "name": "tenants",
       "subGroups": [
         {
-          "name": "default"
+          "name": "${AIHUB_DEFAULT_TENANT_ID}"
         }
       ]
     }
   ],
 
-  "defaultGroups": ["/tenants/default"],
+  "defaultGroups": ["/tenants/${AIHUB_DEFAULT_TENANT_ID}"],
 
   "clients": [
     {

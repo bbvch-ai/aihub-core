@@ -2,18 +2,21 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
+    from swiss_ai_hub.core.auth.keycloak.keycloak_settings import KeycloakSettings
     from swiss_ai_hub.core.auth.keycloak.models.keycloak_group import KeycloakGroup
     from swiss_ai_hub.core.auth.keycloak.models.keycloak_user import KeycloakUser
 
 __all__ = [
     "KeycloakAdminService",
     "KeycloakGroup",
+    "KeycloakSettings",
     "KeycloakUser",
 ]
 
 _LAZY_IMPORTS = {
     "KeycloakAdminService": "swiss_ai_hub.core.auth.keycloak.keycloak_admin_service",
     "KeycloakGroup": "swiss_ai_hub.core.auth.keycloak.models.keycloak_group",
+    "KeycloakSettings": "swiss_ai_hub.core.auth.keycloak.keycloak_settings",
     "KeycloakUser": "swiss_ai_hub.core.auth.keycloak.models.keycloak_user",
 }
 

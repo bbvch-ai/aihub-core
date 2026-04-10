@@ -2,7 +2,7 @@ import logging
 
 from keycloak import KeycloakAdmin, KeycloakGetError
 
-from swiss_ai_hub.core.auth.dependencies.keycloak_auth_handler.keycloak_settings import KeycloakSettings
+from swiss_ai_hub.core.auth.keycloak.keycloak_settings import KeycloakSettings
 from swiss_ai_hub.core.auth.keycloak.models.keycloak_group import KeycloakGroup
 from swiss_ai_hub.core.auth.keycloak.models.keycloak_user import KeycloakUser
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
@@ -31,6 +31,13 @@ class KeycloakAdminService:
         admin = _create_admin()
         users = await admin.a_get_users(query={"email": email, "exact": True})
         return KeycloakUser.model_validate(users[0]) if users else None
+
+    @staticmethod
+    @trace_fn
+    async def get_all_users(max_results: int = 1000) -> list[KeycloakUser]:
+        admin = _create_admin()
+        users = await admin.a_get_users(query={"max": max_results})
+        return [KeycloakUser.model_validate(u) for u in users]
 
     @staticmethod
     @trace_fn
@@ -107,6 +114,50 @@ class KeycloakAdminService:
 
     @staticmethod
     @trace_fn
+    async def ensure_user_profile_attributes() -> None:
+        """Ensures the Keycloak user profile allows the active_tenant_id attribute.
+
+        Keycloak 26+ rejects unmanaged attributes by default. This method reads
+        the current user profile config and adds active_tenant_id if missing.
+        The upConfig in the realm import attributes is not applied by Keycloak's
+        user profile engine — it must be set via the User Profile Admin API.
+        """
+        import httpx
+
+        settings = KeycloakSettings()
+        admin = _create_admin()
+        token = await admin.a_token
+        profile_url = f"{settings.URL}/admin/realms/{settings.REALM}/users/profile"
+        headers = {"Authorization": f"Bearer {token['access_token']}", "Content-Type": "application/json"}
+
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(profile_url, headers=headers)
+            profile = response.json()
+
+            # Check if active_tenant_id attribute already exists
+            attr_names = [a["name"] for a in profile.get("attributes", [])]
+            if "active_tenant_id" in attr_names:
+                logger.debug("User profile already has active_tenant_id attribute")
+                return
+
+            # Add the attribute and set unmanaged policy
+            profile.setdefault("attributes", []).append(
+                {
+                    "name": "active_tenant_id",
+                    "displayName": "Active Tenant ID",
+                    "permissions": {"view": ["admin"], "edit": ["admin"]},
+                    "annotations": {"inputType": "text"},
+                    "group": "user-metadata",
+                }
+            )
+            profile["unmanagedAttributePolicy"] = "ADMIN_EDIT"
+
+            response = await client.put(profile_url, headers=headers, json=profile)
+            response.raise_for_status()
+            logger.info("Configured Keycloak user profile with active_tenant_id attribute")
+
+    @staticmethod
+    @trace_fn
     async def get_active_tenant_id(user_id: str) -> str | None:
         """Reads the active_tenant_id custom attribute from the Keycloak user."""
         admin = _create_admin()
@@ -118,25 +169,17 @@ class KeycloakAdminService:
     @staticmethod
     @trace_fn
     async def set_active_tenant(user_id: str, tenant_id: str | None) -> None:
-        """Writes the active_tenant_id custom attribute on the Keycloak user."""
-        admin = _create_admin()
-        value = [tenant_id] if tenant_id else []
-        await admin.a_update_user(user_id, {"attributes": {"active_tenant_id": value}})
+        """Writes the active_tenant_id custom attribute on the Keycloak user.
 
-    @staticmethod
-    @trace_fn
-    async def clear_active_tenant_for_users_in_tenant(tenant_id: str) -> None:
-        """Clears active_tenant_id for all members of a tenant group."""
+        Uses GET-merge-PUT to preserve existing user data and satisfy Keycloak's
+        user profile validation.
+        """
         admin = _create_admin()
-        try:
-            group = await admin.a_get_group_by_path(f"{TENANTS_GROUP_PATH}/{tenant_id}")
-        except KeycloakGetError:
-            logger.warning("Tenant group %s not found, skipping active tenant cleanup", tenant_id)
-            return
-
-        members = await admin.a_get_group_members(group["id"], query={"first": 0, "max": 1000})
-        for member_data in members:
-            member = KeycloakUser.model_validate(member_data)
-            active_tenant = member.attributes.get("active_tenant_id", [])
-            if active_tenant:
-                await admin.a_update_user(member.id, {"attributes": {"active_tenant_id": []}})
+        user = await admin.a_get_user(user_id)
+        attributes = user.get("attributes", {})
+        if tenant_id:
+            attributes["active_tenant_id"] = [tenant_id]
+        else:
+            attributes.pop("active_tenant_id", None)
+        user["attributes"] = attributes
+        await admin.a_update_user(user_id, user)

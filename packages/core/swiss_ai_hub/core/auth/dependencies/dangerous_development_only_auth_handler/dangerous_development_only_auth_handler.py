@@ -44,7 +44,7 @@ class DangerousDevelopmentOnlyAuthHandler(AuthHandler):
                 roles=self.config.ROLES,
                 validate_roles=False,
             )
-            # Ensure active tenant is set in Keycloak
+            # Ensure active tenant is set
             active_tenant_id = await KeycloakAdminService.get_active_tenant_id(self.config.OID)
             if not active_tenant_id:
                 await KeycloakAdminService.set_active_tenant(self.config.OID, str(default_tenant.id))

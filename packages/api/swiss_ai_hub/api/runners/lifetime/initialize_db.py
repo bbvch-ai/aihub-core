@@ -7,8 +7,10 @@ including tenants, roles, permissions, and other essential entities needed for t
 
 import logging
 
+from keycloak import KeycloakGetError
 from mongoengine import DoesNotExist
 from swiss_ai_hub.core.auth.dependencies.superuser_auth_handler.superuser_settings import SuperuserSettings
+from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
 from swiss_ai_hub.core.infrastructure import AIHubSettings, DefaultTenantSettings, UserSignupSettings, no_trace
 from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
 from swiss_ai_hub.core.persistence.access.entities.tenant_entity import TenantEntity
@@ -17,29 +19,65 @@ from swiss_ai_hub.core.persistence.rag.datalake.entities import BucketEntity, Na
 logger = logging.getLogger(__name__)
 
 
+async def _ensure_all_users_in_default_group(tenant_id: str) -> None:
+    """Ensures all existing Keycloak users are members of the default tenant group.
+
+    Keycloak's defaultGroups only applies to users created after the group is configured,
+    so users from the realm import (e.g. the admin user) need to be added explicitly.
+    """
+    members = await KeycloakAdminService.get_tenant_members(tenant_id, offset=0, limit=1000)
+    member_ids = {m.id for m in members}
+
+    all_users = await KeycloakAdminService.get_all_users()
+    for user in all_users:
+        if user.id not in member_ids:
+            await KeycloakAdminService.assign_user_to_tenant(user.id, tenant_id)
+            logger.info(f"Added user '{user.username}' to default tenant group")
+
+
 @no_trace
 async def initialize_default_tenant() -> TenantEntity | None:
     """
     Initialize the default tenant for the platform.
 
-    The default tenant is created on first startup and provides a backwards-compatible
-    single-tenant experience. All users are automatically added to this tenant.
+    Creates the MongoDB tenant entity and ensures a matching Keycloak group exists
+    under /tenants/<tenant-name>. The Keycloak realm configures this group as a
+    default group so all new users are automatically members.
     """
     settings = DefaultTenantSettings()
 
     existing_tenant = TenantEntity.get_default_tenant()
     if existing_tenant:
-        logger.info(f"Default tenant '{existing_tenant.name}' already exists, skipping creation")
-        return existing_tenant
+        logger.info(
+            f"Default tenant '{existing_tenant.name}' (id={existing_tenant.id}) already exists, skipping creation"
+        )
+    else:
+        existing_tenant = TenantEntity.ensure_default_tenant_exists(
+            tenant_id=settings.ID,
+            name=settings.NAME,
+            description=settings.DESCRIPTION,
+            access_rules=settings.access_rules_list,
+        )
+        logger.info(f"Successfully created default tenant '{existing_tenant.name}' (id={existing_tenant.id})")
 
-    tenant = TenantEntity.ensure_default_tenant_exists(
-        name=settings.NAME,
-        description=settings.DESCRIPTION,
-        access_rules=settings.access_rules_list,
-    )
+    # Ensure Keycloak user profile allows active_tenant_id attribute
+    try:
+        await KeycloakAdminService.ensure_user_profile_attributes()
+    except Exception:
+        logger.warning("Could not configure Keycloak user profile - active tenant attributes may not persist")
 
-    logger.info(f"Successfully created default tenant '{tenant.name}'")
-    return tenant
+    # Ensure the matching Keycloak group exists and all realm users are members
+    try:
+        await KeycloakAdminService.create_tenant_group(existing_tenant.id)
+        logger.info(f"Keycloak tenant group '/tenants/{existing_tenant.id}' ensured")
+        await _ensure_all_users_in_default_group(existing_tenant.id)
+    except KeycloakGetError:
+        logger.warning(
+            f"Could not sync Keycloak group for tenant '{existing_tenant.name}'"
+            " - Keycloak may not have the required permissions yet"
+        )
+
+    return existing_tenant
 
 
 @no_trace

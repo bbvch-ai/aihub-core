@@ -52,7 +52,7 @@ class AuthHandler(ABC):
                 detail="Your active tenant is no longer accessible. Please select a new tenant.",
             )
 
-        roles = UserTenantRoleEntity.get_roles_for_user_in_tenant(user_id, str(tenant.id))
+        roles = UserTenantRoleEntity.get_roles_for_user_in_tenant(user_id, tenant.id)
         if not roles:
             await KeycloakAdminService.set_active_tenant(user_id, None)
             raise HTTPException(
