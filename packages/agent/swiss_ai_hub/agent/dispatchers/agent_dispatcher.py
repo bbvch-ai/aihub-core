@@ -482,24 +482,24 @@ class AgentDispatcher(BaseDispatcher):
 
         async def convert_event_to_agent_in_the_loop_response(aitl_event: BaseEvent, aitl_topic: Topic):
             if aitl_event.is_stop_event:
-                await self.agent_run_tracer.end_aitl_wrapper_span(
-                    aitl_wrapper_span, success=True, target_topic=target_topic
-                )
                 aitl_response = response_event_class(stop_event=aitl_event)
                 logger.debug(f"Received Agent in the Loop StopEvent: {aitl_response}, stopping subscriber.")
                 await event_subscriber.stop()
+                await self.agent_run_tracer.end_aitl_wrapper_span(
+                    aitl_wrapper_span, success=True, target_topic=target_topic
+                )
                 await self.publish_event(aitl_response, topic)
             if aitl_event.is_exception_event:
-                await self.agent_run_tracer.end_aitl_wrapper_span(
-                    aitl_wrapper_span, success=False, target_topic=target_topic
-                )
                 aitl_exception = exception_event_class(exception_event=aitl_event)
                 logger.debug(f"Received Agent in the Loop ExceptionEvent: {aitl_exception}, stopping subscriber.")
                 await event_subscriber.stop()
+                await self.agent_run_tracer.end_aitl_wrapper_span(
+                    aitl_wrapper_span, success=False, target_topic=target_topic
+                )
                 await self.publish_event(aitl_exception, topic)
 
         logger.debug(f"Temporarily subscribing to {aitl_request_event.other_agent_topic}")
-        event_subscriber = AgentNCSubscriber.for_all_thread_events(
+        event_subscriber = AgentNCSubscriber.for_thread_control_events(
             nc=self.nc,
             topic_manager=AgentThreadTopicManager.from_agent_topic(aitl_request_event.other_agent_topic),
             handler=convert_event_to_agent_in_the_loop_response,
