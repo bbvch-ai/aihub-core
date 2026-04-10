@@ -107,6 +107,8 @@ class KeycloakAuthHandler(AuthHandler):
             tenants_claim = decoded_token.get("tenants", [])
             await self._sync_tenant_memberships(sub, tenants_claim)
 
+            # todo: return self.build_identity(user_entity, request)
+
             if request:
                 tenant = await self.resolve_tenant_for_user(request, sub)
             else:

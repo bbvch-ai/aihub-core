@@ -44,6 +44,7 @@ class TokenAuthHandler(BearerAuthHandler):
         user_id = access_token.user_oid
 
         # Resolve tenant context from request or use default
+        # todo: return self.build_identity(user, request)
         if request:
             tenant = await self.resolve_tenant_for_user(request, user_id)
         else:

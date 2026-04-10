@@ -8,7 +8,7 @@ from docker.models.containers import Container
 
 logger = logging.getLogger(__name__)
 
-_EXCLUDE_PREFIXES = ("backup-", "seaweedfs-", "etcd")
+_EXCLUDE_PREFIXES = ("backup-", "seaweedfs-", "etcd", "traefik")
 
 
 class ContainerDiscovery:
@@ -69,10 +69,9 @@ class ContainerDiscovery:
                 try:
                     previously_running.append(future.result())
                 except Exception:
-                    logger.exception("Failed to stop container %s", name)
-                    previously_running.append(name)
+                    logger.exception("Failed to stop container %s, it may still be running", name)
 
-        logger.info("Stopped %d containers", len(previously_running))
+        logger.info("Successfully stopped %d containers", len(previously_running))
         return previously_running
 
     def start_all(self, container_names: list[str]) -> None:

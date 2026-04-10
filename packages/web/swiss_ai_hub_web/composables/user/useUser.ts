@@ -4,19 +4,20 @@ import { useRoute } from 'vue-router'
 
 export default defineQuery(() => {
   const route = useRoute()
-  const isRouteReady = useRouteReady('user_id')
+  const { tenantId } = useTenant()
 
   const {
     data: user,
     isPending: userIsLoading,
   } = useQuery<UserWithAccessDto>({
-    key: () => ['users', route.params.user_id as string],
+    key: () => ['tenant', tenantId.value, 'users', route.params.user_id as string],
     staleTime: minutesToMilliseconds(5),
-    enabled: isRouteReady,
+    enabled: useTenantReady('user_id'),
     query: async () => {
       return await getUser({
         composable: '$fetch',
         path: {
+          tenant_id: tenantId.value!,
           user_id: route.params.user_id as string,
         },
       })

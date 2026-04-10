@@ -151,7 +151,8 @@
       "defaultClientScopes": [
         "openid",
         "profile",
-        "email"
+        "email",
+        "roles"
       ],
       "protocolMappers": [
         {
@@ -163,6 +164,20 @@
             "claim.name": "email",
             "user.attribute": "email",
             "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        },
+        {
+          "name": "realm-roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "claim.name": "roles",
+            "jsonType.label": "String",
+            "multivalued": "true",
             "id.token.claim": "true",
             "access.token.claim": "true",
             "userinfo.token.claim": "true"

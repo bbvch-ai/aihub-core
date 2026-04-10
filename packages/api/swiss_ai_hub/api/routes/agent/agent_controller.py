@@ -9,7 +9,7 @@ from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.persistence.agents import AgentClassEntity
 from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import AgentConfigEntityDocument
-from swiss_ai_hub.core.routes import Controller
+from swiss_ai_hub.core.routes import TenantScopedController
 
 from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
 from swiss_ai_hub.api.i18n.dependencies.use_locale import use_locale
@@ -29,7 +29,7 @@ from swiss_ai_hub.api.routes.agent.dto.update_agent_instance_dto import UpdateAg
 from swiss_ai_hub.api.routes.thread.dto.paginated_threads_response import PaginatedThreadsResponse
 
 
-class AgentController(Controller):
+class AgentController(TenantScopedController):
     """
     A controller managing endpoints related to agents, including classes and instances.
 

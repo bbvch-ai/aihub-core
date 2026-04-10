@@ -46,6 +46,7 @@ interface KnowledgeDatabaseSelectorProps {
 
 const props = defineProps<KnowledgeDatabaseSelectorProps>()
 const { t } = useI18n()
+const { tenantId } = useTenant()
 
 const placeholder = computed(() => props.context.placeholder)
 const filter = computed(() => props.context.filter ?? true)
@@ -72,6 +73,7 @@ async function fetchDatabases() {
   try {
     const response = await getDatabases({
       composable: '$fetch',
+      path: { tenant_id: tenantId.value! },
     })
     databases.value = response
   }

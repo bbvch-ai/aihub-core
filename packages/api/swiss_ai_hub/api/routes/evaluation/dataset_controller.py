@@ -6,7 +6,7 @@ from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.infrastructure import LangfuseSettings
-from swiss_ai_hub.core.routes import Controller
+from swiss_ai_hub.core.routes import TenantScopedController
 
 from swiss_ai_hub.api.routes.evaluation.dto.dataset.dataset import Dataset
 from swiss_ai_hub.api.routes.evaluation.dto.dataset.dataset_create import DatasetCreate
@@ -16,7 +16,7 @@ from swiss_ai_hub.api.routes.evaluation.dto.dataset.minimal_dataset import Minim
 from .dataset_service import DatasetService, get_langfuse_client, get_langfuse_settings
 
 
-class DatasetController(Controller):
+class DatasetController(TenantScopedController):
     """Manages evaluation datasets stored in Langfuse.
 
     Datasets contain question-answer pairs used to evaluate AI assistant quality.

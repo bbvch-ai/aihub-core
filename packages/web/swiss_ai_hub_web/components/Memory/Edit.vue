@@ -129,8 +129,6 @@ import { computed, ref, watch } from 'vue'
 
 import type { MemoryDto } from '@core/sdk/client'
 
-import { useLocalePath } from '#i18n'
-
 interface Props {
   memory: MemoryDto
 }
@@ -147,7 +145,7 @@ const confirm = useConfirm()
 const toast = useToast()
 const { t } = useI18n()
 const router = useRouter()
-const localePath = useLocalePath()
+const tenantPath = useTenantPath()
 
 const editedData = ref('')
 const isEditing = ref(false)
@@ -227,13 +225,13 @@ const threadDisplayUrl = computed(() => {
 
 const navigateToAgent = () => {
   if (canNavigateToAgent.value) {
-    router.push(localePath(agentUrl.value))
+    router.push(tenantPath(agentUrl.value))
   }
 }
 
 const navigateToThreadDisplay = () => {
   if (canNavigateToThread.value) {
-    router.push(localePath(threadDisplayUrl.value))
+    router.push(tenantPath(threadDisplayUrl.value))
   }
 }
 </script>

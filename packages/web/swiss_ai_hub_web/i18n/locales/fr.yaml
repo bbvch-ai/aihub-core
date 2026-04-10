@@ -762,3 +762,15 @@ openwebui:
     graph: Graphe
     user_memories: Souvenirs de l'Utilisateur
     org_memories: Souvenirs de l'Organisation
+tenant:
+  select_title: Sélectionner un locataire
+  select_description: Choisissez l'organisation dans laquelle vous souhaitez travailler
+  no_tenant_title: Aucun accès locataire
+  no_tenant_description: Vous n'avez accès à aucun locataire. Veuillez contacter votre
+    administrateur.
+  switcher_label: Changer de locataire
+  current_tenant: Locataire actuel
+  mismatch_warning: Conflit de locataire
+  mismatch_description: Votre locataire actif a été changé en {tenant} dans une autre
+    session. L'interface de chat utilise le locataire actif pour toutes les requêtes.
+  mismatch_switch_action: Changer de locataire

@@ -8,18 +8,19 @@ export const useCreateAgentInstance = defineMutation(() => {
     isPending: isCreating,
     error: createError,
   } = useMutation({
-    mutation: async ({ agentClass, request }: { agentClass: string, request: CreateAgentInstanceRequest }) => {
+    mutation: async ({ agentClass, request, tenantId }: { agentClass: string, request: CreateAgentInstanceRequest, tenantId: string }) => {
       const result = await createAgentInstance({
         composable: '$fetch',
         path: {
+          tenant_id: tenantId,
           agent_class: agentClass,
         },
         body: request,
       })
 
       // Invalidate agent instances cache to refresh the list
-      queryCache.invalidateQueries({ key: ['agent-instances'] })
-      queryCache.invalidateQueries({ key: ['agent-class-instances', agentClass] })
+      queryCache.invalidateQueries({ key: ['tenant', tenantId, 'agent-instances'] })
+      queryCache.invalidateQueries({ key: ['tenant', tenantId, 'agent-class-instances', agentClass] })
       return result
     },
   })

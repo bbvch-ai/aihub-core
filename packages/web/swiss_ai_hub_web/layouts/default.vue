@@ -5,10 +5,10 @@
         <ServiceSelection />
       </div>
       <div class="flex flex-col justify-center gap-2">
-        <nuxt-link-locale
+        <NuxtLink
           v-for="app in nonAdminApps"
           :key="app.path"
-          :to="app.path"
+          :to="app.path === '/' ? tenantPath('/') : tenantPath(app.path)"
           class="flex h-[50px] w-full items-center justify-center"
         >
           <Button
@@ -23,7 +23,7 @@
               class="h-[1.7rem] w-[1.2rem]"
             />
           </Button>
-        </nuxt-link-locale>
+        </NuxtLink>
       </div>
       <div>
         <UserSettings />
@@ -37,17 +37,12 @@
           :model="breadcrumbItems"
         >
           <template #item="{ item }">
-            <a
-              class="cursor-pointer"
-              :href="item.url"
+            <NuxtLink
+              :to="item.route"
+              class="hover:underline"
             >
-              <nuxt-link-locale
-                :to="item.path"
-                class="flex h-[50px] items-center justify-center"
-              >
-                <span>{{ item.label }}</span>
-              </nuxt-link-locale>
-            </a>
+              {{ item.label }}
+            </NuxtLink>
           </template>
         </Breadcrumb>
         <img
@@ -82,7 +77,7 @@ import { getHealth } from '@core/sdk/client'
 import type { MenuItem } from 'primevue/menuitem'
 
 const route = useRoute()
-const localePath = useLocalePath()
+const tenantPath = useTenantPath()
 
 const online = ref<boolean>(false)
 
@@ -93,16 +88,21 @@ const nonAdminApps = computed<MenuItem>(() => {
 })
 
 const appIsActive = (app: MenuItem) => {
-  const localizedPath = localePath(app.path)
+  const resolvedPath = app.path === '/' ? tenantPath('/') : tenantPath(app.path)
   if (app.path === '/') {
-    return route.path === localizedPath
+    return route.path === resolvedPath
   }
-  return route.path.startsWith(localizedPath)
+  return route.path.startsWith(resolvedPath)
 }
 
 const breadcrumbItems = computed(() => {
-  const paths = route.path.split('/').filter(Boolean).slice(1)
-  return paths.map((label: string) => ({ label }))
+  const segments = route.path.split('/').filter(Boolean)
+  const prefixSegments = segments.slice(0, 2)
+  const contentSegments = segments.slice(2)
+  return contentSegments.map((label: string, index: number) => ({
+    label,
+    route: '/' + [...prefixSegments, ...contentSegments.slice(0, index + 1)].join('/'),
+  }))
 })
 
 getHealth({

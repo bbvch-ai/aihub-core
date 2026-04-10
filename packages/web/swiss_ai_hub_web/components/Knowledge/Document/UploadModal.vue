@@ -158,6 +158,7 @@ const emit = defineEmits<{
 
 const { uploadFile } = useFileUpload()
 const { supportedFileTypes } = useSupportedFileTypes()
+const { tenantId } = useTenant()
 
 const acceptedFileTypesString = computed(() => {
   return (supportedFileTypes.value ?? []).join(', ')
@@ -265,6 +266,7 @@ const handleUpload = async () => {
       file,
       namespace,
       database,
+      tenantId: tenantId.value!,
     })
   }
 

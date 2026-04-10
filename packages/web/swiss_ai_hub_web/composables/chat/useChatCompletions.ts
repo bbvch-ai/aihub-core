@@ -9,9 +9,10 @@ type MessageType = Array<ChatCompletionDeveloperMessageParam | ChatCompletionSys
 
 export const useChatCompletions = defineMutation(() => {
   const { mutate: sendMessages } = useMutation({
-    mutation: ({ model, messages, threadId }: { model: string, messages: MessageType, threadId: string }) =>
+    mutation: ({ model, messages, threadId, tenantId }: { model: string, messages: MessageType, threadId: string, tenantId: string }) =>
       chatCompletionWithAssistants({
         composable: '$fetch',
+        path: { tenant_id: tenantId },
         body: {
           model,
           messages,

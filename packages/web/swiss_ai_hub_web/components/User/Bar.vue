@@ -1,5 +1,6 @@
 <template>
   <div class="flex flex-row items-center gap-5 pr-3">
+    <TenantSwitcher />
     <NotificationsOverlay />
 
     <Button

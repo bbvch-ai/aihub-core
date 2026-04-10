@@ -3,14 +3,14 @@ from typing import Annotated, Self
 from fastapi import Security
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
-from swiss_ai_hub.core.routes import Controller
+from swiss_ai_hub.core.routes import TenantScopedController
 
 from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
 from swiss_ai_hub.api.routes.model.dto.model_dto import ModelDTO, ModelTypeGroupDTO
 from swiss_ai_hub.api.routes.model.model_service import ModelService
 
 
-class ModelController(Controller):
+class ModelController(TenantScopedController):
     """
     A controller managing endpoints related to available models.
 

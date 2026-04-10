@@ -2,7 +2,7 @@ import { getProcessWalkthroughs, type ProcessWalkthroughDto } from '@core/sdk/cl
 
 export const useProcessWalkthroughs = defineQuery(() => {
   const route = useRoute()
-  const isRouteReady = useRouteReady('process_class', 'process_id')
+  const { tenantId } = useTenant()
 
   const currentPage = ref(1)
   const pageSize = ref(10)
@@ -11,14 +11,15 @@ export const useProcessWalkthroughs = defineQuery(() => {
   const processId = computed(() => route.params.process_id as string)
 
   const walkthroughsQuery = useQuery({
-    key: () => ['process-walkthroughs', processClass.value, processId.value, { page: currentPage.value, size: pageSize.value }],
-    enabled: isRouteReady,
+    key: () => ['tenant', tenantId.value, 'process-walkthroughs', processClass.value, processId.value, { page: currentPage.value, size: pageSize.value }],
+    enabled: useTenantReady('process_class', 'process_id'),
     query: async () => {
       const pageToFetch = Math.max(1, currentPage.value)
 
       return await getProcessWalkthroughs({
         composable: '$fetch',
         path: {
+          tenant_id: tenantId.value!,
           process_class: processClass.value,
           process_id: processId.value,
         },

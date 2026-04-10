@@ -1,24 +1,27 @@
 import { getNotifications, type NotificationDto } from '@core/sdk/client'
 import { useQuery, useQueryCache } from '@pinia/colada'
+import { useIntervalFn } from '@vueuse/core'
 import { useToast } from 'primevue/usetoast'
 
 export const useNotificationPoller = (options?: {
   pollingInterval?: number
   enabled?: boolean
 }) => {
+  const { tenantId } = useTenant()
   const toast = useToast()
   const queryCache = useQueryCache()
 
   const knownUnreadIds = ref(new Set<string>())
 
   const { data: unreadResponse, refetch } = useQuery({
-    key: () => ['notifications_poller_data'],
+    key: () => ['tenant', tenantId.value, 'notifications_poller_data'],
     query: () =>
       getNotifications({
         composable: '$fetch',
+        path: { tenant_id: tenantId.value! },
         query: { read: false, page_size: 100 },
       }),
-    enabled: false,
+    enabled: useTenantReady(),
   })
 
   watch(unreadResponse, (newData) => {
@@ -41,22 +44,16 @@ export const useNotificationPoller = (options?: {
     knownUnreadIds.value = new Set(newNotifications.map(n => n.id))
 
     if (hasNew) {
-      queryCache.invalidateQueries({ key: ['notifications'] })
+      queryCache.invalidateQueries({ key: ['tenant', tenantId.value, 'notifications'] })
     }
   })
 
-  const pollingInterval = options?.pollingInterval ?? 30_000 // Default 30 seconds
+  const pollingInterval = options?.pollingInterval ?? 30_000
   const enabled = options?.enabled ?? true
 
-  onMounted(() => {
-    if (!enabled) return
-
-    const intervalId = setInterval(() => {
+  useIntervalFn(() => {
+    if (tenantId.value) {
       refetch()
-    }, pollingInterval)
-
-    onUnmounted(() => {
-      clearInterval(intervalId)
-    })
-  })
+    }
+  }, pollingInterval, { immediate: enabled })
 }

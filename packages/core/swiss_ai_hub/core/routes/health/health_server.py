@@ -65,7 +65,7 @@ class HealthServer:
     def __init__(
         self,
         provider: HealthCheckProvider,
-        default_port: int = 8080,
+        default_port: int = 8090,
         port_env_var: str | None = None,
     ):
         """

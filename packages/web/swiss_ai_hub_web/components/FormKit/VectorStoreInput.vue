@@ -107,6 +107,7 @@ interface VectorStoreInputProps {
 
 const props = defineProps<VectorStoreInputProps>()
 const { t } = useI18n()
+const { tenantId } = useTenant()
 
 // Get custom props from context (FormKit passes them there, not as direct props)
 const databasePlaceholder = computed(() => props.context.databasePlaceholder)
@@ -183,6 +184,7 @@ async function fetchDatabases() {
   try {
     const response = await getDatabases({
       composable: '$fetch',
+      path: { tenant_id: tenantId.value! },
     })
     databases.value = response
   }

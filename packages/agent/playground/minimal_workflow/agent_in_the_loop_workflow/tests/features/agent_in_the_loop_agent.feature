@@ -19,6 +19,13 @@ Feature: Agent In The Loop Workflow
     And an AgentInTheLoopResponse with exception is received by the orchestrator
     And an OrchestrationResultEvent with result -1 is received by the orchestrator
 
+  Scenario: Test AITL response is not duplicated
+    Given an OrchestratorAgent runner
+    And a WorkerAgent runner
+    When a start event with message "8" is sent to the orchestrator
+    Then exactly 1 unique AgentInTheLoopResponse is received by the orchestrator
+    And exactly 1 unique OrchestrationResultEvent is received by the orchestrator
+
   Scenario: Test Orchestrator handles unknown Worker events
     Given an OrchestratorAgent runner
     And a WorkerAgent runner

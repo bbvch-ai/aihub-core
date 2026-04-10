@@ -38,16 +38,20 @@ const props = defineProps<{
 }>()
 
 const { t } = useI18n()
+const { tenantId } = useTenant()
 const { getDocumentSourceUrl } = useDocumentUrl()
+
+const isTenantReady = useTenantReady()
 
 const { data: document, isPending: documentIsLoading } = useQuery<IngestedDocument>({
   key: () => ['knowledge', 'db', props.db, 'namespace', props.namespace, 'document', props.documentId as string],
   staleTime: minutesToMilliseconds(5),
-  enabled: true,
+  enabled: isTenantReady,
   query: async () => {
     return await getDocumentById({
       composable: '$fetch',
       path: {
+        tenant_id: tenantId.value!,
         database: props.db,
         namespace: props.namespace,
         document_id: props.documentId as string,
@@ -59,11 +63,12 @@ const { data: document, isPending: documentIsLoading } = useQuery<IngestedDocume
 const { data: documentNodes, isPending: documentNodesAreLoading } = useQuery<Node[]>({
   key: () => ['knowledge', 'db', props.db, 'namespace', props.namespace, 'document', props.documentId, 'nodes'],
   staleTime: minutesToMilliseconds(5),
-  enabled: true,
+  enabled: isTenantReady,
   query: async () => {
     return await getNodesForDocument({
       composable: '$fetch',
       path: {
+        tenant_id: tenantId.value!,
         database: props.db,
         namespace: props.namespace,
         document_id: props.documentId as string,

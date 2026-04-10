@@ -759,3 +759,14 @@ openwebui:
     graph: Grafico
     user_memories: Ricordi dell'Utente
     org_memories: Ricordi dell'Organizzazione
+tenant:
+  select_title: Seleziona un tenant
+  select_description: Scegli l'organizzazione in cui desideri lavorare
+  no_tenant_title: Nessun accesso al tenant
+  no_tenant_description: Non hai accesso a nessun tenant. Contatta il tuo amministratore.
+  switcher_label: Cambia tenant
+  current_tenant: Tenant attuale
+  mismatch_warning: Conflitto di tenant
+  mismatch_description: Il tuo tenant attivo è stato cambiato in {tenant} in un'altra
+    sessione. L'interfaccia di chat utilizza il tenant attivo per tutte le richieste.
+  mismatch_switch_action: Cambia tenant

@@ -5,6 +5,142 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.273.6] - 2026-04-07 - Empowering Recovery: New System Restore Workflow
+
+### Added
+
+- ✨ **Enabled Full System Restore Workflow:** Introduced a comprehensive Dagster-based workflow for performing full
+  system restores, allowing recovery from a specified backup timestamp. This new capability orchestrates service
+  shutdowns, validates backup integrity, manages individual service restorations, and restarts all services upon
+  successful completion.
+- ⚙️ **Granular Container Lifecycle Management:** Implemented a new `ContainerLifecycleManager` resource to provide
+  precise control over starting, stopping, and health-checking specific groups of containers required by individual
+  services during the restore process.
+- 🧩 **Service Dependency Mapping:** Established a centralized mapping (`SERVICE_DEPS`) that defines the container
+  dependencies for each backup service, ensuring correct sequencing and isolation during parallel backup and restore
+  operations.
+- 🛠️ **Modular Service Handler Architecture:** Introduced a new `BackupHandler` interface and a factory mechanism to
+  standardize how backup and restore logic is implemented for each service, improving modularity and extensibility for
+  future service integrations.
+- ✅ **Backup Integrity Validation:** Added a critical pre-restore validation step that checks for the presence of all
+  expected backup files in S3, preventing restore attempts on incomplete or corrupted backups.
+- 🧪 **Comprehensive Restore Test Suite:** Included extensive new unit tests covering the container lifecycle management,
+  handler factory, restore definitions, and backup validation to ensure the reliability and correctness of the new
+  restore functionality.
+
+### Fixed
+
+- 🐛 **Improved Container Stop Logging:** Enhanced the accuracy of container stop logging, so that only successfully
+  stopped containers are counted, providing a more reliable report of system state during backup preparations.
+
+______________________________________________________________________
+
+## [v0.273.5] - 2026-04-07 - Robust Backup System with S3 Integration and Automated Operations
+
+### Added
+
+- ✨ **Introduced a comprehensive backup system:** The previously placeholder backup service is now fully functional,
+  providing robust data protection.
+- 🚀 **Integrated S3 storage for backups:** Backups are now securely stored on S3-compatible object storage, configurable
+  via environment variables.
+- 🗓️ **Implemented automated daily backups:** A new Dagster schedule runs daily at 1 AM (Zurich time) to perform
+  system-wide backups.
+- 🧹 **Added intelligent backup retention policies:** Old backups are automatically pruned based on configurable
+  retention days, while ensuring a minimum number of backups are always kept.
+- 🗄️ **Enabled service-aware backup for core components:** Explicit support for backing up critical services including
+  PostgreSQL, Milvus, Neo4j, ClickHouse, Valkey, and NATS.
+- ⚙️ **Streamlined configuration management for backup:** Sensitive credentials and backup settings are now securely
+  managed using `pydantic-settings` and exposed via Docker environment variables.
+- 🔄 **Dynamic partitioning for easier restore selection:** Dagster now dynamically partitions backups by timestamp,
+  simplifying the selection of a specific backup for restoration.
+- 🌐 **Dedicated 'storage' network for backup service:** The backup service now connects to a specific `storage` network
+  in Docker Compose, improving network isolation and access control.
+
+### Changed
+
+- 🛠️ **Enhanced backup session robustness:** The backup process now automatically purges any pre-existing, incomplete
+  backup artifacts for the current timestamp on S3 before starting a new session.
+- 📄 **Improved backup logging clarity:** Backup session logs now explicitly include the S3 bucket and prefix for easier
+  monitoring and debugging.
+
+### Fixed
+
+- 🐛 **Prevented Traefik service interruption during backup:** The backup process now correctly excludes `traefik`
+  containers from being stopped and restarted, ensuring continuous inbound traffic handling.
+
+### Removed
+
+- 🗑️ **Removed placeholder status from backup README:** The `README` for the backup package no longer states it's a
+  skeleton, reflecting its new, fully operational status.
+
+### Refactor
+
+- 🚰 **Streamlined Dagster resource injection for backup:** Refactored backup-related resources into a unified factory
+  for improved modularity and dependency management.
+- 🧱 **Centralized service mapping for backup assets:** Defined a clear mapping between backup service names and their
+  corresponding Dagster asset keys, enhancing code organization.
+- 📦 **Updated backup package dependencies:** Added `boto3` for S3 interaction and `pydantic-settings` for robust
+  configuration.
+
+______________________________________________________________________
+
+## [v0.273.4] - 2026-04-07 - Improved Authentication and Service Configuration
+
+### Added
+
+- ✨ **Keycloak Client Plugin**: Introduced a new client plugin dedicated to Keycloak API interactions, facilitating more
+  robust authentication management flows.
+- 💾 **LiteLLM Model Persistence**: Enabled the `STORE_MODEL_IN_DB` configuration for LiteLLM services, allowing models
+  to be stored and managed within the database.
+
+### Changed
+
+- 🔐 **Enhanced Logout Security**: Improved the logout process to explicitly revoke the Keycloak session using the
+  refresh token, ensuring a more complete and secure session termination.
+- 🔄 **Forced Login Prompt**: Modified the authentication flow to include `prompt: 'login'`, which will now consistently
+  prompt users for their credentials during login.
+- ⚙️ **Flexible Keycloak Configuration**: Updated Keycloak realm and identity provider template variables to use
+  `config_variant_suffix`, enhancing configuration flexibility across different deployment stages.
+- 🌐 **Open WebUI CORS Delimiter**: Adjusted the `CORS_ALLOW_ORIGIN` configuration in Open WebUI services to use a
+  semicolon (`;`) as a delimiter for multiple origins, improving compatibility.
+- 📄 **Jupyter Lab Boolean Format**: Standardized the `JUPYTER_ENABLE_LAB` setting to use the boolean `true` format for
+  consistency with Jupyter's configuration expectations.
+
+### Removed
+
+- 🗑️ **Development Configuration Cleanup**: Cleaned up obsolete blank lines and comments in development-specific
+  `docker-compose` files, enhancing configuration readability.
+
+______________________________________________________________________
+
+## [v0.273.3] - 2026-04-07 - OpenWebUI Integration & Agent Provisioning Enhancements
+
+### Added
+
+- ✨ **OpenWebUI Agent Workspace Integration:** Introduced comprehensive integration with OpenWebUI, allowing dynamic
+  provisioning and management of AI-Hub agent instances as workspace models. This enables a seamless experience for
+  users interacting with AI-Hub agents directly within OpenWebUI.
+- 🔑 **Keycloak Role-Based Access for OpenWebUI:** Configured Keycloak to include user roles in OpenID Connect tokens and
+  defined specific admin roles for OpenWebUI, enhancing security and access management for the new integration.
+- ⚙️ **Automated OpenWebUI Service Account Provisioning:** Implemented an automatic creation of a dedicated AI-Hub
+  service account with administrator privileges in OpenWebUI's database, facilitating secure and programmatic model
+  management via API.
+- 🧪 **Improved Agent Provisioning with Redis Caching:** Enhanced agent discovery and synchronization to external
+  platforms (Langfuse, OpenWebUI) by implementing a Redis-backed, hash-based caching mechanism, reducing redundant sync
+  operations and improving efficiency.
+- 🔐 **New JWT Library for OpenWebUI Security:** Added `pyjwt` as a new core dependency, providing essential
+  cryptographic capabilities for secure token-based communication with OpenWebUI APIs.
+
+### Changed
+
+- 🔄 **Standardized Agent and Process Health Check Ports:** Unified the default health check port for all agent and
+  process runners to `8090` (previously `8080`), preventing potential port conflicts and ensuring consistent monitoring.
+- 🚀 **Refactored External Provisioning Orchestration:** Streamlined the agent instance synchronization logic within the
+  API service, enabling a more robust and extensible system for provisioning agents to platforms like Langfuse and
+  OpenWebUI.
+
+______________________________________________________________________
+
 ## [v0.273.2] - 2026-04-07 - Establishing the Backup Service Framework
 
 ### Added

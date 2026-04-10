@@ -63,6 +63,7 @@ const filter = computed(() => props.context.filter ?? true)
 const showClear = computed(() => props.context.showClear ?? false)
 
 const { t } = useI18n()
+const { tenantId } = useTenant()
 
 const models = ref<ModelDto[]>([])
 const isLoading = ref(false)
@@ -84,7 +85,7 @@ async function fetchModels() {
   try {
     const response = await getLitellmModelsByMode({
       composable: '$fetch',
-      path: { mode: mode.value },
+      path: { tenant_id: tenantId.value!, mode: mode.value },
     })
     models.value = response
   }

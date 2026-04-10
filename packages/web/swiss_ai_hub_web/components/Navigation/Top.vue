@@ -18,16 +18,14 @@
 <script setup lang="ts">
 import type { NavItem } from '@core/types/NavItem'
 
-import { useLocalePath } from '#i18n'
-
 defineProps<{
   navItems: NavItem[]
 }>()
 
 const router = useRouter()
-const localePath = useLocalePath()
+const tenantPath = useTenantPath()
 
 const toNavItem = (navItem: NavItem) => {
-  router.push(localePath(navItem.path))
+  router.push(tenantPath(navItem.path))
 }
 </script>

@@ -7,3 +7,9 @@ class BackupContext(BaseModel):
     timestamp: str
     s3_prefix: str
     previously_running: list[str] = []
+
+
+class RestoreContext(BaseModel):
+    """Passed from restore_session to per-service restore assets."""
+
+    timestamp: str

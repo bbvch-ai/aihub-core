@@ -70,6 +70,24 @@ class AgentNCSubscriber(NCSubscriber[BaseEvent]):
         )
 
     @classmethod
+    def for_thread_control_events(
+        cls,
+        nc: NATS,
+        topic_manager: AgentThreadTopicManager,
+        handler: Callable[[ControlEvent, AgentInstanceTopic], Awaitable[None]],
+        subscriber_name: str = "Unnamed",
+    ):
+        """Subscribe to control events only within a specific thread."""
+        subject = topic_manager.get_subject_for_control_event_in_thread("*", "*")
+        return cls(
+            name=subscriber_name,
+            nc=nc,
+            subject=subject,
+            event_cls=ControlEvent,
+            handler=handler,
+        )
+
+    @classmethod
     def for_agent_class_discovery_request_events(
         cls,
         nc: NATS,

@@ -3,13 +3,16 @@ import { useQuery } from '@pinia/colada'
 import { minutesToMilliseconds } from 'date-fns'
 
 export const useAgentInstances = defineQuery((options?: { online?: boolean }) => {
+  const { tenantId } = useTenant()
+
   const { data: agentInstances, isPending: agentInstancesAreLoading } = useQuery<FullAgentInstanceDto[]>({
-    key: () => ['agent-instances', options?.online],
+    key: () => ['tenant', tenantId.value, 'agent-instances', options?.online],
     staleTime: minutesToMilliseconds(5),
-    enabled: true,
+    enabled: useTenantReady(),
     query: async () => {
       return await getAllAgentInstances({
         composable: '$fetch',
+        path: { tenant_id: tenantId.value! },
         query: {
           online: options?.online,
         },

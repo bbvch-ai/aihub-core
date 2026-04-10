@@ -9,7 +9,7 @@ from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.persistence.messaging.entities.persisted_agent_event_entity import TimeRange
 from swiss_ai_hub.core.persistence.utils import str_to_object_id
-from swiss_ai_hub.core.routes import Controller
+from swiss_ai_hub.core.routes import TenantScopedController
 
 from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
 from swiss_ai_hub.api.i18n.dependencies.use_locale import use_locale, use_locale_ws
@@ -23,7 +23,7 @@ from swiss_ai_hub.api.sockets.manager.web_socket_manager import WebSocketManager
 logger = logging.getLogger(__name__)
 
 
-class EventController(Controller):
+class EventController(TenantScopedController):
     """
     A controller that manages the event-related endpoints, including:
     - Retrieving a user’s persisted events.

@@ -47,6 +47,26 @@ export const AccessLevel = {
 export type AccessLevel = typeof AccessLevel[keyof typeof AccessLevel];
 
 /**
+ * ActiveTenantDTO
+ *
+ * The user's currently active tenant.
+ */
+export type ActiveTenantDto = {
+    /**
+     * Id
+     *
+     * Tenant identifier
+     */
+    id: string;
+    /**
+     * Name
+     *
+     * Tenant display name
+     */
+    name: string;
+};
+
+/**
  * AddAgentRequest
  */
 export type AddAgentRequest = {
@@ -888,8 +908,8 @@ export type AgentProcessStepDto = {
  * When used with AgentRef, the form submission is validated directly into AgentRef:
  *
  * ```python
- * from aihub_lib.nats.events.form.elements.AgentSelector import AgentSelector
- * from aihub_lib.nats.events.form.forms.AgentRef import AgentRef
+ * from swiss_ai_hub.core.form.elements.agent_selector import AgentSelector
+ * from swiss_ai_hub.core.form.forms.AgentRef import AgentRef
  *
  * class MyConfig(Form):
  * target_agent: Annotated[
@@ -1582,9 +1602,9 @@ export type BaseStoreMemoryEvent = {
 };
 
 /**
- * Body_create_transcription_openai_audio_transcriptions_post
+ * Body_create_transcription__tenant_id__openai_audio_transcriptions_post
  */
-export type BodyCreateTranscriptionOpenaiAudioTranscriptionsPost = {
+export type BodyCreateTranscriptionTenantIdOpenaiAudioTranscriptionsPost = {
     /**
      * File
      *
@@ -11450,6 +11470,20 @@ export type ServiceDto = {
 };
 
 /**
+ * SetActiveTenantRequest
+ *
+ * Request body for setting the active tenant.
+ */
+export type SetActiveTenantRequest = {
+    /**
+     * Tenant Id
+     *
+     * The tenant ID to set as active
+     */
+    tenant_id: string;
+};
+
+/**
  * SignedUrlDto
  */
 export type SignedUrlDto = {
@@ -11968,6 +12002,32 @@ export type TenantIdentity = {
      * Access rules granted to this tenant
      */
     access_rules: Array<string>;
+};
+
+/**
+ * TenantMembershipDTO
+ *
+ * A tenant the current user belongs to.
+ */
+export type TenantMembershipDto = {
+    /**
+     * Id
+     *
+     * Tenant identifier
+     */
+    id: string;
+    /**
+     * Name
+     *
+     * Tenant display name
+     */
+    name: string;
+    /**
+     * Description
+     *
+     * Tenant description
+     */
+    description: string;
 };
 
 /**
@@ -12729,6 +12789,12 @@ export type ToolEvent = {
      */
     display_description?: LocaleString | null;
     /**
+     * Tool Call Id
+     *
+     * Unique identifier linking this invocation to its result
+     */
+    tool_call_id?: string | null;
+    /**
      * Name
      *
      * The name of the tool being utilized
@@ -12769,7 +12835,7 @@ export type ToolEvent = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | string | null | string | null | {
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | string | null | string | null | string | null | {
         [key: string]: unknown;
     } | null | {
         [key: string]: unknown;
@@ -13322,7 +13388,7 @@ export type UserIdentity = {
     /**
      * The tenant context the user is operating within.
      */
-    acting_within_tenant: TenantIdentity;
+    acting_within_tenant?: TenantIdentity | null;
 };
 
 /**
@@ -13541,8 +13607,8 @@ export type ValidationError = {
  *
  * ### Example Usage
  * ```python
- * from aihub_lib.nats.events.form.elements.VectorStoreInput import VectorStoreInput
- * from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
+ * from swiss_ai_hub.core.form.elements.vector_store_input import VectorStoreInput
+ * from swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_vector_store_config import MilvusVectorStoreConfig
  *
  * class MyRetrieverConfig(Form):
  * vector_store: Annotated[
@@ -14329,8 +14395,8 @@ export type AgentProcessStepDtoWritable = {
  * When used with AgentRef, the form submission is validated directly into AgentRef:
  *
  * ```python
- * from aihub_lib.nats.events.form.elements.AgentSelector import AgentSelector
- * from aihub_lib.nats.events.form.forms.AgentRef import AgentRef
+ * from swiss_ai_hub.core.form.elements.agent_selector import AgentSelector
+ * from swiss_ai_hub.core.form.forms.AgentRef import AgentRef
  *
  * class MyConfig(Form):
  * target_agent: Annotated[
@@ -20617,6 +20683,12 @@ export type ToolEventWritable = {
      */
     display_description?: LocaleString | null;
     /**
+     * Tool Call Id
+     *
+     * Unique identifier linking this invocation to its result
+     */
+    tool_call_id?: string | null;
+    /**
      * Name
      *
      * The name of the tool being utilized
@@ -20644,7 +20716,7 @@ export type ToolEventWritable = {
     parameters?: {
         [key: string]: unknown;
     } | null;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | string | null | string | null | {
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | string | null | string | null | string | null | {
         [key: string]: unknown;
     } | null | {
         [key: string]: unknown;
@@ -20741,8 +20813,8 @@ export type UserMessageEventWritable = {
  *
  * ### Example Usage
  * ```python
- * from aihub_lib.nats.events.form.elements.VectorStoreInput import VectorStoreInput
- * from aihub_lib.persistence.rag.vectors.stores.MilvusVectorStoreConfig import MilvusVectorStoreConfig
+ * from swiss_ai_hub.core.form.elements.vector_store_input import VectorStoreInput
+ * from swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_vector_store_config import MilvusVectorStoreConfig
  *
  * class MyRetrieverConfig(Form):
  * vector_store: Annotated[
@@ -20904,9 +20976,16 @@ export type GetAuthProvidersResponse = GetAuthProvidersResponses[keyof GetAuthPr
 
 export type GetSuiteData = {
     body?: never;
-    path?: never;
+    path: {
+        /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+    };
     query?: never;
-    url: '/suites/';
+    url: '/{tenant_id}/suites/';
 };
 
 export type GetSuiteResponses = {
@@ -20918,11 +20997,77 @@ export type GetSuiteResponses = {
 
 export type GetSuiteResponse = GetSuiteResponses[keyof GetSuiteResponses];
 
-export type GetMyAccountData = {
+export type GetMyTenantsData = {
     body?: never;
     path?: never;
     query?: never;
-    url: '/my-account';
+    url: '/my-tenants';
+};
+
+export type GetMyTenantsResponses = {
+    /**
+     * Response Get My Tenants My Tenants Get
+     *
+     * Successful Response
+     */
+    200: Array<TenantMembershipDto>;
+};
+
+export type GetMyTenantsResponse = GetMyTenantsResponses[keyof GetMyTenantsResponses];
+
+export type GetMyActiveTenantData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/my-tenants/active';
+};
+
+export type GetMyActiveTenantResponses = {
+    /**
+     * Successful Response
+     */
+    200: ActiveTenantDto;
+};
+
+export type GetMyActiveTenantResponse = GetMyActiveTenantResponses[keyof GetMyActiveTenantResponses];
+
+export type SetMyActiveTenantData = {
+    body: SetActiveTenantRequest;
+    path?: never;
+    query?: never;
+    url: '/my-tenants/active';
+};
+
+export type SetMyActiveTenantErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SetMyActiveTenantError = SetMyActiveTenantErrors[keyof SetMyActiveTenantErrors];
+
+export type SetMyActiveTenantResponses = {
+    /**
+     * Successful Response
+     */
+    200: ActiveTenantDto;
+};
+
+export type SetMyActiveTenantResponse = SetMyActiveTenantResponses[keyof SetMyActiveTenantResponses];
+
+export type GetMyAccountData = {
+    body?: never;
+    path: {
+        /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+    };
+    query?: never;
+    url: '/{tenant_id}/my-account';
 };
 
 export type GetMyAccountResponses = {
@@ -20936,14 +21081,21 @@ export type GetMyAccountResponse = GetMyAccountResponses[keyof GetMyAccountRespo
 
 export type GetMyDashboardData = {
     body?: never;
-    path?: never;
+    path: {
+        /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+    };
     query?: never;
-    url: '/my-account/dashboard';
+    url: '/{tenant_id}/my-account/dashboard';
 };
 
 export type GetMyDashboardResponses = {
     /**
-     * Response Get My Dashboard My Account Dashboard Get
+     * Response Get My Dashboard  Tenant Id  My Account Dashboard Get
      *
      * Successful Response
      */
@@ -20954,9 +21106,16 @@ export type GetMyDashboardResponse = GetMyDashboardResponses[keyof GetMyDashboar
 
 export type UpdateMyDashboardData = {
     body: DashboardDto;
-    path?: never;
+    path: {
+        /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+    };
     query?: never;
-    url: '/my-account/dashboard';
+    url: '/{tenant_id}/my-account/dashboard';
 };
 
 export type UpdateMyDashboardErrors = {
@@ -20981,6 +21140,12 @@ export type GetUserData = {
     body?: never;
     path: {
         /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+        /**
          * User Id
          *
          * The user's unique identifier (OID).
@@ -20988,7 +21153,7 @@ export type GetUserData = {
         user_id: string;
     };
     query?: never;
-    url: '/users/{user_id}';
+    url: '/{tenant_id}/users/{user_id}';
 };
 
 export type GetUserErrors = {
@@ -21011,7 +21176,14 @@ export type GetUserResponse = GetUserResponses[keyof GetUserResponses];
 
 export type GetUsersData = {
     body?: never;
-    path?: never;
+    path: {
+        /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+    };
     query?: {
         /**
          * Page Number
@@ -21026,7 +21198,7 @@ export type GetUsersData = {
          */
         page_size?: number;
     };
-    url: '/users/';
+    url: '/{tenant_id}/users/';
 };
 
 export type GetUsersErrors = {
@@ -21049,9 +21221,16 @@ export type GetUsersResponse = GetUsersResponses[keyof GetUsersResponses];
 
 export type GetLocaleData = {
     body?: never;
-    path?: never;
+    path: {
+        /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+    };
     query?: never;
-    url: '/i18n/my-locale';
+    url: '/{tenant_id}/i18n/my-locale';
 };
 
 export type GetLocaleResponses = {
@@ -21067,6 +21246,12 @@ export type GetAgentEventsInThreadData = {
     body?: never;
     path: {
         /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+        /**
          * Thread ID
          */
         thread_id: string;
@@ -21077,7 +21262,7 @@ export type GetAgentEventsInThreadData = {
          */
         display_id?: string;
     };
-    url: '/events/agents/threads/{thread_id}';
+    url: '/{tenant_id}/events/agents/threads/{thread_id}';
 };
 
 export type GetAgentEventsInThreadErrors = {
@@ -21091,7 +21276,7 @@ export type GetAgentEventsInThreadError = GetAgentEventsInThreadErrors[keyof Get
 
 export type GetAgentEventsInThreadResponses = {
     /**
-     * Response Get Agent Events In Thread Events Agents Threads  Thread Id  Get
+     * Response Get Agent Events In Thread  Tenant Id  Events Agents Threads  Thread Id  Get
      *
      * Successful Response
      */
@@ -21103,6 +21288,12 @@ export type GetAgentEventsInThreadResponse = GetAgentEventsInThreadResponses[key
 export type GetAgentEventTimeseriesData = {
     body?: never;
     path: {
+        /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
         /**
          * Time Range
          *
@@ -21128,7 +21319,7 @@ export type GetAgentEventTimeseriesData = {
          */
         event_name?: string;
     };
-    url: '/events/agents/timeseries/{time_range}';
+    url: '/{tenant_id}/events/agents/timeseries/{time_range}';
 };
 
 export type GetAgentEventTimeseriesErrors = {
@@ -21151,14 +21342,21 @@ export type GetAgentEventTimeseriesResponse = GetAgentEventTimeseriesResponses[k
 
 export type GetLitellmModelsData = {
     body?: never;
-    path?: never;
+    path: {
+        /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+    };
     query?: never;
-    url: '/models';
+    url: '/{tenant_id}/models';
 };
 
 export type GetLitellmModelsResponses = {
     /**
-     * Response Get Litellm Models Models Get
+     * Response Get Litellm Models  Tenant Id  Models Get
      *
      * Successful Response
      */
@@ -21171,12 +21369,18 @@ export type GetLitellmModelsByModeData = {
     body?: never;
     path: {
         /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+        /**
          * Mode
          */
         mode: string;
     };
     query?: never;
-    url: '/models/mode/{mode}';
+    url: '/{tenant_id}/models/mode/{mode}';
 };
 
 export type GetLitellmModelsByModeErrors = {
@@ -21190,7 +21394,7 @@ export type GetLitellmModelsByModeError = GetLitellmModelsByModeErrors[keyof Get
 
 export type GetLitellmModelsByModeResponses = {
     /**
-     * Response Get Litellm Models By Mode Models Mode  Mode  Get
+     * Response Get Litellm Models By Mode  Tenant Id  Models Mode  Mode  Get
      *
      * Successful Response
      */
@@ -21203,12 +21407,18 @@ export type GetLitellmModelData = {
     body?: never;
     path: {
         /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+        /**
          * Model Name
          */
         model_name: string;
     };
     query?: never;
-    url: '/models/{model_name}';
+    url: '/{tenant_id}/models/{model_name}';
 };
 
 export type GetLitellmModelErrors = {
@@ -21231,7 +21441,14 @@ export type GetLitellmModelResponse = GetLitellmModelResponses[keyof GetLitellmM
 
 export type GetUserThreadsData = {
     body?: never;
-    path?: never;
+    path: {
+        /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+    };
     query?: {
         /**
          * Page Number
@@ -21246,7 +21463,7 @@ export type GetUserThreadsData = {
          */
         page_size?: number;
     };
-    url: '/threads/';
+    url: '/{tenant_id}/threads/';
 };
 
 export type GetUserThreadsErrors = {
@@ -21269,9 +21486,16 @@ export type GetUserThreadsResponse = GetUserThreadsResponses[keyof GetUserThread
 
 export type CreateThreadData = {
     body: CreateThreadRequest;
-    path?: never;
+    path: {
+        /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+    };
     query?: never;
-    url: '/threads/';
+    url: '/{tenant_id}/threads/';
 };
 
 export type CreateThreadErrors = {
@@ -21296,12 +21520,18 @@ export type GetThreadData = {
     body?: never;
     path: {
         /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+        /**
          * Thread ID
          */
         thread_id: string;
     };
     query?: never;
-    url: '/threads/{thread_id}';
+    url: '/{tenant_id}/threads/{thread_id}';
 };
 
 export type GetThreadErrors = {
@@ -21326,12 +21556,18 @@ export type AddAgentToThreadData = {
     body: AddAgentRequest;
     path: {
         /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+        /**
          * Thread ID
          */
         thread_id: string;
     };
     query?: never;
-    url: '/threads/{thread_id}/agents';
+    url: '/{tenant_id}/threads/{thread_id}/agents';
 };
 
 export type AddAgentToThreadErrors = {
@@ -21356,6 +21592,12 @@ export type RemoveAgentFromThreadData = {
     body?: never;
     path: {
         /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+        /**
          * Thread ID
          */
         thread_id: string;
@@ -21369,7 +21611,7 @@ export type RemoveAgentFromThreadData = {
         agent_id: string;
     };
     query?: never;
-    url: '/threads/{thread_id}/agents/{agent_class}/{agent_id}';
+    url: '/{tenant_id}/threads/{thread_id}/agents/{agent_class}/{agent_id}';
 };
 
 export type RemoveAgentFromThreadErrors = {
@@ -21394,12 +21636,18 @@ export type AddUserToThreadData = {
     body: AddUserRequest;
     path: {
         /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+        /**
          * Thread ID
          */
         thread_id: string;
     };
     query?: never;
-    url: '/threads/{thread_id}/users';
+    url: '/{tenant_id}/threads/{thread_id}/users';
 };
 
 export type AddUserToThreadErrors = {
@@ -21424,6 +21672,12 @@ export type RemoveUserFromThreadData = {
     body?: never;
     path: {
         /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+        /**
          * Thread ID
          */
         thread_id: string;
@@ -21433,7 +21687,7 @@ export type RemoveUserFromThreadData = {
         remove_user_id: string;
     };
     query?: never;
-    url: '/threads/{thread_id}/users/{remove_user_id}';
+    url: '/{tenant_id}/threads/{thread_id}/users/{remove_user_id}';
 };
 
 export type RemoveUserFromThreadErrors = {
@@ -21458,12 +21712,18 @@ export type GetOpenChatHitlData = {
     body?: never;
     path: {
         /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+        /**
          * Thread ID
          */
         thread_id: string;
     };
     query?: never;
-    url: '/threads/{thread_id}/open-chat-hitl';
+    url: '/{tenant_id}/threads/{thread_id}/open-chat-hitl';
 };
 
 export type GetOpenChatHitlErrors = {
@@ -21486,7 +21746,14 @@ export type GetOpenChatHitlResponse = GetOpenChatHitlResponses[keyof GetOpenChat
 
 export type GetAgentClassesData = {
     body?: never;
-    path?: never;
+    path: {
+        /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+    };
     query?: {
         /**
          * Online
@@ -21495,7 +21762,7 @@ export type GetAgentClassesData = {
          */
         online?: boolean | null;
     };
-    url: '/agents/classes';
+    url: '/{tenant_id}/agents/classes';
 };
 
 export type GetAgentClassesErrors = {
@@ -21509,7 +21776,7 @@ export type GetAgentClassesError = GetAgentClassesErrors[keyof GetAgentClassesEr
 
 export type GetAgentClassesResponses = {
     /**
-     * Response Get Agent Classes Agents Classes Get
+     * Response Get Agent Classes  Tenant Id  Agents Classes Get
      *
      * Successful Response
      */
@@ -21522,12 +21789,18 @@ export type GetAgentClassData = {
     body?: never;
     path: {
         /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+        /**
          * Agent Class
          */
         agent_class: string;
     };
     query?: never;
-    url: '/agents/classes/{agent_class}';
+    url: '/{tenant_id}/agents/classes/{agent_class}';
 };
 
 export type GetAgentClassErrors = {
@@ -21552,12 +21825,18 @@ export type GetAgentClassInstancesData = {
     body?: never;
     path: {
         /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+        /**
          * Agent Class
          */
         agent_class: string;
     };
     query?: never;
-    url: '/agents/classes/{agent_class}/instances';
+    url: '/{tenant_id}/agents/classes/{agent_class}/instances';
 };
 
 export type GetAgentClassInstancesErrors = {
@@ -21571,7 +21850,7 @@ export type GetAgentClassInstancesError = GetAgentClassInstancesErrors[keyof Get
 
 export type GetAgentClassInstancesResponses = {
     /**
-     * Response Get Agent Class Instances Agents Classes  Agent Class  Instances Get
+     * Response Get Agent Class Instances  Tenant Id  Agents Classes  Agent Class  Instances Get
      *
      * Successful Response
      */
@@ -21584,12 +21863,18 @@ export type CreateAgentInstanceData = {
     body: CreateAgentInstanceRequest;
     path: {
         /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+        /**
          * Agent Class
          */
         agent_class: string;
     };
     query?: never;
-    url: '/agents/classes/{agent_class}/instances';
+    url: '/{tenant_id}/agents/classes/{agent_class}/instances';
 };
 
 export type CreateAgentInstanceErrors = {
@@ -21614,6 +21899,12 @@ export type DeleteAgentInstanceData = {
     body?: never;
     path: {
         /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+        /**
          * Agent Class
          */
         agent_class: string;
@@ -21623,7 +21914,7 @@ export type DeleteAgentInstanceData = {
         agent_id: string;
     };
     query?: never;
-    url: '/agents/classes/{agent_class}/instances/{agent_id}';
+    url: '/{tenant_id}/agents/classes/{agent_class}/instances/{agent_id}';
 };
 
 export type DeleteAgentInstanceErrors = {
@@ -21648,6 +21939,12 @@ export type GetAgentInstanceData = {
     body?: never;
     path: {
         /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+        /**
          * Agent Class
          */
         agent_class: string;
@@ -21657,7 +21954,7 @@ export type GetAgentInstanceData = {
         agent_id: string;
     };
     query?: never;
-    url: '/agents/classes/{agent_class}/instances/{agent_id}';
+    url: '/{tenant_id}/agents/classes/{agent_class}/instances/{agent_id}';
 };
 
 export type GetAgentInstanceErrors = {
@@ -21682,6 +21979,12 @@ export type UpdateAgentInstanceData = {
     body: UpdateAgentInstanceDto;
     path: {
         /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+        /**
          * Agent Class
          */
         agent_class: string;
@@ -21691,7 +21994,7 @@ export type UpdateAgentInstanceData = {
         agent_id: string;
     };
     query?: never;
-    url: '/agents/classes/{agent_class}/instances/{agent_id}';
+    url: '/{tenant_id}/agents/classes/{agent_class}/instances/{agent_id}';
 };
 
 export type UpdateAgentInstanceErrors = {
@@ -21716,6 +22019,12 @@ export type GetAgentInstanceThreadsData = {
     body?: never;
     path: {
         /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+        /**
          * Agent Class
          */
         agent_class: string;
@@ -21738,7 +22047,7 @@ export type GetAgentInstanceThreadsData = {
          */
         page_size?: number;
     };
-    url: '/agents/classes/{agent_class}/instances/{agent_id}/threads';
+    url: '/{tenant_id}/agents/classes/{agent_class}/instances/{agent_id}/threads';
 };
 
 export type GetAgentInstanceThreadsErrors = {
@@ -21761,7 +22070,14 @@ export type GetAgentInstanceThreadsResponse = GetAgentInstanceThreadsResponses[k
 
 export type GetAllAgentInstancesData = {
     body?: never;
-    path?: never;
+    path: {
+        /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+    };
     query?: {
         /**
          * Online
@@ -21770,7 +22086,7 @@ export type GetAllAgentInstancesData = {
          */
         online?: boolean | null;
     };
-    url: '/agents/instances';
+    url: '/{tenant_id}/agents/instances';
 };
 
 export type GetAllAgentInstancesErrors = {
@@ -21784,7 +22100,7 @@ export type GetAllAgentInstancesError = GetAllAgentInstancesErrors[keyof GetAllA
 
 export type GetAllAgentInstancesResponses = {
     /**
-     * Response Get All Agent Instances Agents Instances Get
+     * Response Get All Agent Instances  Tenant Id  Agents Instances Get
      *
      * Successful Response
      */
@@ -21797,6 +22113,12 @@ export type InitiateFileUploadData = {
     body: AgentFileUploadRequest;
     path: {
         /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+        /**
          * Agent Class
          */
         agent_class: string;
@@ -21806,7 +22128,7 @@ export type InitiateFileUploadData = {
         agent_id: string;
     };
     query?: never;
-    url: '/agents/classes/{agent_class}/instances/{agent_id}/files/upload/initiate';
+    url: '/{tenant_id}/agents/classes/{agent_class}/instances/{agent_id}/files/upload/initiate';
 };
 
 export type InitiateFileUploadErrors = {
@@ -21831,6 +22153,12 @@ export type ValidateFileUploadData = {
     body: AgentFileValidationRequest;
     path: {
         /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+        /**
          * Agent Class
          */
         agent_class: string;
@@ -21840,7 +22168,7 @@ export type ValidateFileUploadData = {
         agent_id: string;
     };
     query?: never;
-    url: '/agents/classes/{agent_class}/instances/{agent_id}/files/upload/validate';
+    url: '/{tenant_id}/agents/classes/{agent_class}/instances/{agent_id}/files/upload/validate';
 };
 
 export type ValidateFileUploadErrors = {
@@ -21863,7 +22191,14 @@ export type ValidateFileUploadResponse = ValidateFileUploadResponses[keyof Valid
 
 export type GetProcessClassesData = {
     body?: never;
-    path?: never;
+    path: {
+        /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+    };
     query?: {
         /**
          * Online
@@ -21872,7 +22207,7 @@ export type GetProcessClassesData = {
          */
         online?: boolean | null;
     };
-    url: '/processes/classes';
+    url: '/{tenant_id}/processes/classes';
 };
 
 export type GetProcessClassesErrors = {
@@ -21886,7 +22221,7 @@ export type GetProcessClassesError = GetProcessClassesErrors[keyof GetProcessCla
 
 export type GetProcessClassesResponses = {
     /**
-     * Response Get Process Classes Processes Classes Get
+     * Response Get Process Classes  Tenant Id  Processes Classes Get
      *
      * Successful Response
      */
@@ -21899,12 +22234,18 @@ export type GetProcessClassData = {
     body?: never;
     path: {
         /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+        /**
          * Process Class
          */
         process_class: string;
     };
     query?: never;
-    url: '/processes/classes/{process_class}';
+    url: '/{tenant_id}/processes/classes/{process_class}';
 };
 
 export type GetProcessClassErrors = {
@@ -21929,12 +22270,18 @@ export type GetProcessClassInstancesData = {
     body?: never;
     path: {
         /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+        /**
          * Process Class
          */
         process_class: string;
     };
     query?: never;
-    url: '/processes/classes/{process_class}/instances';
+    url: '/{tenant_id}/processes/classes/{process_class}/instances';
 };
 
 export type GetProcessClassInstancesErrors = {
@@ -21948,7 +22295,7 @@ export type GetProcessClassInstancesError = GetProcessClassInstancesErrors[keyof
 
 export type GetProcessClassInstancesResponses = {
     /**
-     * Response Get Process Class Instances Processes Classes  Process Class  Instances Get
+     * Response Get Process Class Instances  Tenant Id  Processes Classes  Process Class  Instances Get
      *
      * Successful Response
      */
@@ -21961,12 +22308,18 @@ export type CreateProcessInstanceData = {
     body: CreateProcessInstanceRequest;
     path: {
         /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+        /**
          * Process Class
          */
         process_class: string;
     };
     query?: never;
-    url: '/processes/classes/{process_class}/instances';
+    url: '/{tenant_id}/processes/classes/{process_class}/instances';
 };
 
 export type CreateProcessInstanceErrors = {
@@ -21991,6 +22344,12 @@ export type DeleteProcessInstanceData = {
     body?: never;
     path: {
         /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+        /**
          * Process Class
          */
         process_class: string;
@@ -22000,7 +22359,7 @@ export type DeleteProcessInstanceData = {
         process_id: string;
     };
     query?: never;
-    url: '/processes/classes/{process_class}/instances/{process_id}';
+    url: '/{tenant_id}/processes/classes/{process_class}/instances/{process_id}';
 };
 
 export type DeleteProcessInstanceErrors = {
@@ -22025,6 +22384,12 @@ export type GetProcessInstanceData = {
     body?: never;
     path: {
         /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+        /**
          * Process Class
          */
         process_class: string;
@@ -22034,7 +22399,7 @@ export type GetProcessInstanceData = {
         process_id: string;
     };
     query?: never;
-    url: '/processes/classes/{process_class}/instances/{process_id}';
+    url: '/{tenant_id}/processes/classes/{process_class}/instances/{process_id}';
 };
 
 export type GetProcessInstanceErrors = {
@@ -22059,6 +22424,12 @@ export type UpdateProcessInstanceData = {
     body: UpdateProcessInstanceDto;
     path: {
         /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+        /**
          * Process Class
          */
         process_class: string;
@@ -22068,7 +22439,7 @@ export type UpdateProcessInstanceData = {
         process_id: string;
     };
     query?: never;
-    url: '/processes/classes/{process_class}/instances/{process_id}';
+    url: '/{tenant_id}/processes/classes/{process_class}/instances/{process_id}';
 };
 
 export type UpdateProcessInstanceErrors = {
@@ -22091,7 +22462,14 @@ export type UpdateProcessInstanceResponse = UpdateProcessInstanceResponses[keyof
 
 export type GetAllProcessInstancesData = {
     body?: never;
-    path?: never;
+    path: {
+        /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+    };
     query?: {
         /**
          * Online
@@ -22100,7 +22478,7 @@ export type GetAllProcessInstancesData = {
          */
         online?: boolean | null;
     };
-    url: '/processes/instances';
+    url: '/{tenant_id}/processes/instances';
 };
 
 export type GetAllProcessInstancesErrors = {
@@ -22114,7 +22492,7 @@ export type GetAllProcessInstancesError = GetAllProcessInstancesErrors[keyof Get
 
 export type GetAllProcessInstancesResponses = {
     /**
-     * Response Get All Process Instances Processes Instances Get
+     * Response Get All Process Instances  Tenant Id  Processes Instances Get
      *
      * Successful Response
      */
@@ -22126,6 +22504,12 @@ export type GetAllProcessInstancesResponse = GetAllProcessInstancesResponses[key
 export type GetProcessWalkthroughsData = {
     body?: never;
     path: {
+        /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
         /**
          * Process Class
          */
@@ -22149,7 +22533,7 @@ export type GetProcessWalkthroughsData = {
          */
         page_size?: number;
     };
-    url: '/processes/classes/{process_class}/instances/{process_id}/walkthroughs';
+    url: '/{tenant_id}/processes/classes/{process_class}/instances/{process_id}/walkthroughs';
 };
 
 export type GetProcessWalkthroughsErrors = {
@@ -22174,6 +22558,12 @@ export type GetProcessStartFormsData = {
     body?: never;
     path: {
         /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+        /**
          * Process Class
          */
         process_class: string;
@@ -22183,7 +22573,7 @@ export type GetProcessStartFormsData = {
         process_id: string;
     };
     query?: never;
-    url: '/processes/classes/{process_class}/instances/{process_id}/start_forms';
+    url: '/{tenant_id}/processes/classes/{process_class}/instances/{process_id}/start_forms';
 };
 
 export type GetProcessStartFormsErrors = {
@@ -22197,7 +22587,7 @@ export type GetProcessStartFormsError = GetProcessStartFormsErrors[keyof GetProc
 
 export type GetProcessStartFormsResponses = {
     /**
-     * Response Get Process Start Forms Processes Classes  Process Class  Instances  Process Id  Start Forms Get
+     * Response Get Process Start Forms  Tenant Id  Processes Classes  Process Class  Instances  Process Id  Start Forms Get
      *
      * Successful Response
      */
@@ -22209,6 +22599,12 @@ export type GetProcessStartFormsResponse = GetProcessStartFormsResponses[keyof G
 export type GetProcessOpenFormsData = {
     body?: never;
     path: {
+        /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
         /**
          * Process Class
          */
@@ -22223,7 +22619,7 @@ export type GetProcessOpenFormsData = {
         process_walkthrough_id: string;
     };
     query?: never;
-    url: '/processes/classes/{process_class}/instances/{process_id}/{process_walkthrough_id}/open_forms';
+    url: '/{tenant_id}/processes/classes/{process_class}/instances/{process_id}/{process_walkthrough_id}/open_forms';
 };
 
 export type GetProcessOpenFormsErrors = {
@@ -22237,7 +22633,7 @@ export type GetProcessOpenFormsError = GetProcessOpenFormsErrors[keyof GetProces
 
 export type GetProcessOpenFormsResponses = {
     /**
-     * Response Get Process Open Forms Processes Classes  Process Class  Instances  Process Id   Process Walkthrough Id  Open Forms Get
+     * Response Get Process Open Forms  Tenant Id  Processes Classes  Process Class  Instances  Process Id   Process Walkthrough Id  Open Forms Get
      *
      * Successful Response
      */
@@ -22254,6 +22650,12 @@ export type SendProcessStartFormData = {
         [key: string]: unknown;
     };
     path: {
+        /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
         /**
          * Process Class
          */
@@ -22273,7 +22675,7 @@ export type SendProcessStartFormData = {
          */
         submission_method: string;
     };
-    url: '/processes/classes/{process_class}/instances/{process_id}/submit_start_form';
+    url: '/{tenant_id}/processes/classes/{process_class}/instances/{process_id}/submit_start_form';
 };
 
 export type SendProcessStartFormErrors = {
@@ -22303,6 +22705,12 @@ export type SendProcessOpenFormData = {
     };
     path: {
         /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+        /**
          * Process Class
          */
         process_class: string;
@@ -22325,7 +22733,7 @@ export type SendProcessOpenFormData = {
          */
         submission_method: string;
     };
-    url: '/processes/classes/{process_class}/instances/{process_id}/{process_walkthrough_id}/submit_open_form';
+    url: '/{tenant_id}/processes/classes/{process_class}/instances/{process_id}/{process_walkthrough_id}/submit_open_form';
 };
 
 export type SendProcessOpenFormErrors = {
@@ -22348,14 +22756,21 @@ export type SendProcessOpenFormResponse = SendProcessOpenFormResponses[keyof Sen
 
 export type ListTokensEndpointData = {
     body?: never;
-    path?: never;
+    path: {
+        /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+    };
     query?: never;
-    url: '/tokens/';
+    url: '/{tenant_id}/tokens/';
 };
 
 export type ListTokensEndpointResponses = {
     /**
-     * Response List Tokens Endpoint Tokens  Get
+     * Response List Tokens Endpoint  Tenant Id  Tokens  Get
      *
      * Successful Response
      */
@@ -22366,9 +22781,16 @@ export type ListTokensEndpointResponse = ListTokensEndpointResponses[keyof ListT
 
 export type CreateTokenEndpointData = {
     body: CreateTokenRequest;
-    path?: never;
+    path: {
+        /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+    };
     query?: never;
-    url: '/tokens/';
+    url: '/{tenant_id}/tokens/';
 };
 
 export type CreateTokenEndpointErrors = {
@@ -22393,12 +22815,18 @@ export type RevokeTokenEndpointData = {
     body?: never;
     path: {
         /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+        /**
          * Token Id
          */
         token_id: string;
     };
     query?: never;
-    url: '/tokens/{token_id}';
+    url: '/{tenant_id}/tokens/{token_id}';
 };
 
 export type RevokeTokenEndpointErrors = {
@@ -22423,12 +22851,18 @@ export type DeleteRoleData = {
     body?: never;
     path: {
         /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+        /**
          * Role Id
          */
         role_id: string;
     };
     query?: never;
-    url: '/roles/{role_id}';
+    url: '/{tenant_id}/roles/{role_id}';
 };
 
 export type DeleteRoleErrors = {
@@ -22453,12 +22887,18 @@ export type GetRoleData = {
     body?: never;
     path: {
         /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+        /**
          * Role Id
          */
         role_id: string;
     };
     query?: never;
-    url: '/roles/{role_id}';
+    url: '/{tenant_id}/roles/{role_id}';
 };
 
 export type GetRoleErrors = {
@@ -22483,12 +22923,18 @@ export type UpdateRoleData = {
     body: UpdateRoleRequest;
     path: {
         /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+        /**
          * Role Id
          */
         role_id: string;
     };
     query?: never;
-    url: '/roles/{role_id}';
+    url: '/{tenant_id}/roles/{role_id}';
 };
 
 export type UpdateRoleErrors = {
@@ -22511,14 +22957,21 @@ export type UpdateRoleResponse = UpdateRoleResponses[keyof UpdateRoleResponses];
 
 export type GetRolesData = {
     body?: never;
-    path?: never;
+    path: {
+        /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+    };
     query?: never;
-    url: '/roles/';
+    url: '/{tenant_id}/roles/';
 };
 
 export type GetRolesResponses = {
     /**
-     * Response Get Roles Roles  Get
+     * Response Get Roles  Tenant Id  Roles  Get
      *
      * Successful Response
      */
@@ -22529,9 +22982,16 @@ export type GetRolesResponse = GetRolesResponses[keyof GetRolesResponses];
 
 export type CreateRoleData = {
     body: CreateRoleRequest;
-    path?: never;
+    path: {
+        /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+    };
     query?: never;
-    url: '/roles/';
+    url: '/{tenant_id}/roles/';
 };
 
 export type CreateRoleErrors = {
@@ -22554,9 +23014,16 @@ export type CreateRoleResponse = CreateRoleResponses[keyof CreateRoleResponses];
 
 export type GetModelsData = {
     body?: never;
-    path?: never;
+    path: {
+        /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+    };
     query?: never;
-    url: '/openai/models';
+    url: '/{tenant_id}/openai/models';
 };
 
 export type GetModelsResponses = {
@@ -22572,12 +23039,18 @@ export type GetModelWithAssistantsData = {
     body?: never;
     path: {
         /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+        /**
          * Full Path
          */
         full_path: string;
     };
     query?: never;
-    url: '/openai/models/{full_path}';
+    url: '/{tenant_id}/openai/models/{full_path}';
 };
 
 export type GetModelWithAssistantsErrors = {
@@ -22600,9 +23073,16 @@ export type GetModelWithAssistantsResponse = GetModelWithAssistantsResponses[key
 
 export type GetEmbeddingsData = {
     body: EmbeddingsRequest;
-    path?: never;
+    path: {
+        /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+    };
     query?: never;
-    url: '/openai/embeddings';
+    url: '/{tenant_id}/openai/embeddings';
 };
 
 export type GetEmbeddingsErrors = {
@@ -22625,9 +23105,16 @@ export type GetEmbeddingsResponse = GetEmbeddingsResponses[keyof GetEmbeddingsRe
 
 export type ChatCompletionWithAssistantsData = {
     body: ChatCompletionRequest;
-    path?: never;
+    path: {
+        /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+    };
     query?: never;
-    url: '/openai/chat/completions';
+    url: '/{tenant_id}/openai/chat/completions';
 };
 
 export type ChatCompletionWithAssistantsErrors = {
@@ -22650,9 +23137,16 @@ export type ChatCompletionWithAssistantsResponse = ChatCompletionWithAssistantsR
 
 export type GenerateImageData = {
     body: ImageGenerationRequest;
-    path?: never;
+    path: {
+        /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+    };
     query?: never;
-    url: '/openai/images/generations';
+    url: '/{tenant_id}/openai/images/generations';
 };
 
 export type GenerateImageErrors = {
@@ -22674,10 +23168,17 @@ export type GenerateImageResponses = {
 export type GenerateImageResponse = GenerateImageResponses[keyof GenerateImageResponses];
 
 export type CreateTranscriptionData = {
-    body: BodyCreateTranscriptionOpenaiAudioTranscriptionsPost;
-    path?: never;
+    body: BodyCreateTranscriptionTenantIdOpenaiAudioTranscriptionsPost;
+    path: {
+        /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+    };
     query?: never;
-    url: '/openai/audio/transcriptions';
+    url: '/{tenant_id}/openai/audio/transcriptions';
 };
 
 export type CreateTranscriptionErrors = {
@@ -22691,7 +23192,7 @@ export type CreateTranscriptionError = CreateTranscriptionErrors[keyof CreateTra
 
 export type CreateTranscriptionResponses = {
     /**
-     * Response Create Transcription Openai Audio Transcriptions Post
+     * Response Create Transcription  Tenant Id  Openai Audio Transcriptions Post
      *
      * Successful Response
      */
@@ -22702,9 +23203,16 @@ export type CreateTranscriptionResponse = CreateTranscriptionResponses[keyof Cre
 
 export type CreateSpeechData = {
     body: TextToSpeechRequest;
-    path?: never;
+    path: {
+        /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+    };
     query?: never;
-    url: '/openai/audio/speech';
+    url: '/{tenant_id}/openai/audio/speech';
 };
 
 export type CreateSpeechErrors = {
@@ -22725,14 +23233,21 @@ export type CreateSpeechResponses = {
 
 export type GetDatasetsData = {
     body?: never;
-    path?: never;
+    path: {
+        /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+    };
     query?: never;
-    url: '/datasets/';
+    url: '/{tenant_id}/datasets/';
 };
 
 export type GetDatasetsResponses = {
     /**
-     * Response Get Datasets Datasets  Get
+     * Response Get Datasets  Tenant Id  Datasets  Get
      *
      * Successful Response
      */
@@ -22743,9 +23258,16 @@ export type GetDatasetsResponse = GetDatasetsResponses[keyof GetDatasetsResponse
 
 export type CreateDatasetData = {
     body: DatasetCreate;
-    path?: never;
+    path: {
+        /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+    };
     query?: never;
-    url: '/datasets/';
+    url: '/{tenant_id}/datasets/';
 };
 
 export type CreateDatasetErrors = {
@@ -22770,6 +23292,12 @@ export type GetDatasetData = {
     body?: never;
     path: {
         /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+        /**
          * Dataset Id
          *
          * The unique identifier of the dataset to retrieve.
@@ -22777,7 +23305,7 @@ export type GetDatasetData = {
         dataset_id: string;
     };
     query?: never;
-    url: '/datasets/{dataset_id}';
+    url: '/{tenant_id}/datasets/{dataset_id}';
 };
 
 export type GetDatasetErrors = {
@@ -22802,6 +23330,12 @@ export type UpdateDatasetData = {
     body: DatasetUpdate;
     path: {
         /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+        /**
          * Dataset Id
          *
          * The unique identifier of the dataset to update.
@@ -22809,7 +23343,7 @@ export type UpdateDatasetData = {
         dataset_id: string;
     };
     query?: never;
-    url: '/datasets/{dataset_id}';
+    url: '/{tenant_id}/datasets/{dataset_id}';
 };
 
 export type UpdateDatasetErrors = {
@@ -22834,6 +23368,12 @@ export type CreateNamespaceData = {
     body: CreateNamespaceRequest;
     path: {
         /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+        /**
          * Database name
          */
         database: string;
@@ -22843,7 +23383,7 @@ export type CreateNamespaceData = {
         namespace: string;
     };
     query?: never;
-    url: '/knowledge/databases/{database}/namespaces/{namespace}';
+    url: '/{tenant_id}/knowledge/databases/{database}/namespaces/{namespace}';
 };
 
 export type CreateNamespaceErrors = {
@@ -22868,6 +23408,12 @@ export type UpdateNamespaceData = {
     body: UpdateNamespaceRequest;
     path: {
         /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+        /**
          * Database name
          */
         database: string;
@@ -22877,7 +23423,7 @@ export type UpdateNamespaceData = {
         namespace: string;
     };
     query?: never;
-    url: '/knowledge/databases/{database}/namespaces/{namespace}';
+    url: '/{tenant_id}/knowledge/databases/{database}/namespaces/{namespace}';
 };
 
 export type UpdateNamespaceErrors = {
@@ -22900,14 +23446,21 @@ export type UpdateNamespaceResponse = UpdateNamespaceResponses[keyof UpdateNames
 
 export type GetDatabasesData = {
     body?: never;
-    path?: never;
+    path: {
+        /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+    };
     query?: never;
-    url: '/knowledge/databases';
+    url: '/{tenant_id}/knowledge/databases';
 };
 
 export type GetDatabasesResponses = {
     /**
-     * Response Get Databases Knowledge Databases Get
+     * Response Get Databases  Tenant Id  Knowledge Databases Get
      *
      * Successful Response
      */
@@ -22919,6 +23472,12 @@ export type GetDatabasesResponse = GetDatabasesResponses[keyof GetDatabasesRespo
 export type GetDocumentsForNamespaceData = {
     body?: never;
     path: {
+        /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
         /**
          * Database name
          */
@@ -22960,7 +23519,7 @@ export type GetDocumentsForNamespaceData = {
          */
         sort_order?: number;
     };
-    url: '/knowledge/databases/{database}/namespaces/{namespace}/documents';
+    url: '/{tenant_id}/knowledge/databases/{database}/namespaces/{namespace}/documents';
 };
 
 export type GetDocumentsForNamespaceErrors = {
@@ -22985,6 +23544,12 @@ export type GetDocumentByIdData = {
     body?: never;
     path: {
         /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+        /**
          * Database name
          */
         database: string;
@@ -22998,7 +23563,7 @@ export type GetDocumentByIdData = {
         document_id: string;
     };
     query?: never;
-    url: '/knowledge/databases/{database}/namespaces/{namespace}/documents/{document_id}';
+    url: '/{tenant_id}/knowledge/databases/{database}/namespaces/{namespace}/documents/{document_id}';
 };
 
 export type GetDocumentByIdErrors = {
@@ -23023,6 +23588,12 @@ export type GetNodesForDocumentData = {
     body?: never;
     path: {
         /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+        /**
          * Database name
          */
         database: string;
@@ -23036,7 +23607,7 @@ export type GetNodesForDocumentData = {
         document_id: string;
     };
     query?: never;
-    url: '/knowledge/databases/{database}/namespaces/{namespace}/documents/{document_id}/nodes';
+    url: '/{tenant_id}/knowledge/databases/{database}/namespaces/{namespace}/documents/{document_id}/nodes';
 };
 
 export type GetNodesForDocumentErrors = {
@@ -23050,7 +23621,7 @@ export type GetNodesForDocumentError = GetNodesForDocumentErrors[keyof GetNodesF
 
 export type GetNodesForDocumentResponses = {
     /**
-     * Response Get Nodes For Document Knowledge Databases  Database  Namespaces  Namespace  Documents  Document Id  Nodes Get
+     * Response Get Nodes For Document  Tenant Id  Knowledge Databases  Database  Namespaces  Namespace  Documents  Document Id  Nodes Get
      *
      * Successful Response
      */
@@ -23062,6 +23633,12 @@ export type GetNodesForDocumentResponse = GetNodesForDocumentResponses[keyof Get
 export type GetSummaryNodesForDocumentData = {
     body?: never;
     path: {
+        /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
         /**
          * Database name
          */
@@ -23076,7 +23653,7 @@ export type GetSummaryNodesForDocumentData = {
         document_id: string;
     };
     query?: never;
-    url: '/knowledge/databases/{database}/namespaces/{namespace}/documents/{document_id}/summaries';
+    url: '/{tenant_id}/knowledge/databases/{database}/namespaces/{namespace}/documents/{document_id}/summaries';
 };
 
 export type GetSummaryNodesForDocumentErrors = {
@@ -23090,7 +23667,7 @@ export type GetSummaryNodesForDocumentError = GetSummaryNodesForDocumentErrors[k
 
 export type GetSummaryNodesForDocumentResponses = {
     /**
-     * Response Get Summary Nodes For Document Knowledge Databases  Database  Namespaces  Namespace  Documents  Document Id  Summaries Get
+     * Response Get Summary Nodes For Document  Tenant Id  Knowledge Databases  Database  Namespaces  Namespace  Documents  Document Id  Summaries Get
      *
      * Successful Response
      */
@@ -23103,6 +23680,12 @@ export type InitiateDocumentUploadData = {
     body: DocumentUploadRequest;
     path: {
         /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+        /**
          * Database name
          */
         database: string;
@@ -23112,7 +23695,7 @@ export type InitiateDocumentUploadData = {
         namespace: string;
     };
     query?: never;
-    url: '/knowledge/databases/{database}/namespaces/{namespace}/documents/upload/initiate';
+    url: '/{tenant_id}/knowledge/databases/{database}/namespaces/{namespace}/documents/upload/initiate';
 };
 
 export type InitiateDocumentUploadErrors = {
@@ -23137,6 +23720,12 @@ export type ValidateDocumentUploadData = {
     body: DocumentUploadValidationRequest;
     path: {
         /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+        /**
          * Database name
          */
         database: string;
@@ -23146,7 +23735,7 @@ export type ValidateDocumentUploadData = {
         namespace: string;
     };
     query?: never;
-    url: '/knowledge/databases/{database}/namespaces/{namespace}/documents/upload/validate';
+    url: '/{tenant_id}/knowledge/databases/{database}/namespaces/{namespace}/documents/upload/validate';
 };
 
 export type ValidateDocumentUploadErrors = {
@@ -23169,14 +23758,21 @@ export type ValidateDocumentUploadResponse = ValidateDocumentUploadResponses[key
 
 export type GetSupportedFileTypesData = {
     body?: never;
-    path?: never;
+    path: {
+        /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+    };
     query?: never;
-    url: '/knowledge/supported-types';
+    url: '/{tenant_id}/knowledge/supported-types';
 };
 
 export type GetSupportedFileTypesResponses = {
     /**
-     * Response Get Supported File Types Knowledge Supported Types Get
+     * Response Get Supported File Types  Tenant Id  Knowledge Supported Types Get
      *
      * Successful Response
      */
@@ -23188,6 +23784,12 @@ export type GetSupportedFileTypesResponse = GetSupportedFileTypesResponses[keyof
 export type GetDocumentUrlData = {
     body?: never;
     path: {
+        /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
         /**
          * Database name
          */
@@ -23202,7 +23804,7 @@ export type GetDocumentUrlData = {
         document_id: string;
     };
     query?: never;
-    url: '/knowledge/databases/{database}/namespaces/{namespace}/documents/{document_id}/url';
+    url: '/{tenant_id}/knowledge/databases/{database}/namespaces/{namespace}/documents/{document_id}/url';
 };
 
 export type GetDocumentUrlErrors = {
@@ -23227,6 +23829,12 @@ export type GetFileUrlData = {
     body?: never;
     path: {
         /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+        /**
          * Container
          */
         container: string;
@@ -23236,7 +23844,7 @@ export type GetFileUrlData = {
         file_path: string;
     };
     query?: never;
-    url: '/files/logged-in/url/{container}/{file_path}';
+    url: '/{tenant_id}/files/logged-in/url/{container}/{file_path}';
 };
 
 export type GetFileUrlErrors = {
@@ -23261,6 +23869,12 @@ export type GetAnonymousFileUrlData = {
     body?: never;
     path: {
         /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+        /**
          * Container
          */
         container: string;
@@ -23283,7 +23897,7 @@ export type GetAnonymousFileUrlData = {
          */
         signature: string;
     };
-    url: '/files/anonymous/url/{container}/{file_path}';
+    url: '/{tenant_id}/files/anonymous/url/{container}/{file_path}';
 };
 
 export type GetAnonymousFileUrlErrors = {
@@ -23306,6 +23920,12 @@ export type GetAnonymousFileRedirectData = {
     body?: never;
     path: {
         /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+        /**
          * Container
          */
         container: string;
@@ -23328,7 +23948,7 @@ export type GetAnonymousFileRedirectData = {
          */
         signature: string;
     };
-    url: '/files/anonymous/redirect/{container}/{file_path}';
+    url: '/{tenant_id}/files/anonymous/redirect/{container}/{file_path}';
 };
 
 export type GetAnonymousFileRedirectErrors = {
@@ -23349,7 +23969,14 @@ export type GetAnonymousFileRedirectResponses = {
 
 export type GetNotificationsData = {
     body?: never;
-    path?: never;
+    path: {
+        /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+    };
     query?: {
         /**
          * Page
@@ -23376,7 +24003,7 @@ export type GetNotificationsData = {
          */
         done?: boolean | null;
     };
-    url: '/notifications';
+    url: '/{tenant_id}/notifications';
 };
 
 export type GetNotificationsErrors = {
@@ -23399,9 +24026,16 @@ export type GetNotificationsResponse = GetNotificationsResponses[keyof GetNotifi
 
 export type UpdateNotificationsBulkData = {
     body: BulkUpdateNotificationRequest;
-    path?: never;
+    path: {
+        /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+    };
     query?: never;
-    url: '/notifications/';
+    url: '/{tenant_id}/notifications/';
 };
 
 export type UpdateNotificationsBulkErrors = {
@@ -23415,7 +24049,7 @@ export type UpdateNotificationsBulkError = UpdateNotificationsBulkErrors[keyof U
 
 export type UpdateNotificationsBulkResponses = {
     /**
-     * Response Update Notifications Bulk Notifications  Patch
+     * Response Update Notifications Bulk  Tenant Id  Notifications  Patch
      *
      * Successful Response
      */
@@ -23428,12 +24062,18 @@ export type UpdateNotificationData = {
     body: UpdateNotificationRequest;
     path: {
         /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+        /**
          * Notification Id
          */
         notification_id: string;
     };
     query?: never;
-    url: '/notifications/{notification_id}';
+    url: '/{tenant_id}/notifications/{notification_id}';
 };
 
 export type UpdateNotificationErrors = {
@@ -23456,9 +24096,16 @@ export type UpdateNotificationResponse = UpdateNotificationResponses[keyof Updat
 
 export type DeleteAllUserMemoriesData = {
     body?: never;
-    path?: never;
+    path: {
+        /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+    };
     query?: never;
-    url: '/user-memories';
+    url: '/{tenant_id}/user-memories';
 };
 
 export type DeleteAllUserMemoriesResponses = {
@@ -23472,7 +24119,14 @@ export type DeleteAllUserMemoriesResponse = DeleteAllUserMemoriesResponses[keyof
 
 export type GetUserMemoriesData = {
     body?: never;
-    path?: never;
+    path: {
+        /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+    };
     query?: {
         /**
          * Limit
@@ -23481,7 +24135,7 @@ export type GetUserMemoriesData = {
          */
         limit?: number;
     };
-    url: '/user-memories';
+    url: '/{tenant_id}/user-memories';
 };
 
 export type GetUserMemoriesErrors = {
@@ -23504,7 +24158,14 @@ export type GetUserMemoriesResponse = GetUserMemoriesResponses[keyof GetUserMemo
 
 export type SearchUserMemoriesData = {
     body?: never;
-    path?: never;
+    path: {
+        /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+    };
     query: {
         /**
          * Query
@@ -23537,7 +24198,7 @@ export type SearchUserMemoriesData = {
          */
         thread_id?: string | null;
     };
-    url: '/user-memories/search';
+    url: '/{tenant_id}/user-memories/search';
 };
 
 export type SearchUserMemoriesErrors = {
@@ -23562,6 +24223,12 @@ export type DeleteUserMemoryData = {
     body?: never;
     path: {
         /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+        /**
          * Memory Id
          *
          * Memory ID to delete
@@ -23569,7 +24236,7 @@ export type DeleteUserMemoryData = {
         memory_id: string;
     };
     query?: never;
-    url: '/user-memories/{memory_id}';
+    url: '/{tenant_id}/user-memories/{memory_id}';
 };
 
 export type DeleteUserMemoryErrors = {
@@ -23594,6 +24261,12 @@ export type UpdateUserMemoryData = {
     body: UpdateMemoryRequest;
     path: {
         /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+        /**
          * Memory Id
          *
          * Memory ID to update
@@ -23601,7 +24274,7 @@ export type UpdateUserMemoryData = {
         memory_id: string;
     };
     query?: never;
-    url: '/user-memories/{memory_id}';
+    url: '/{tenant_id}/user-memories/{memory_id}';
 };
 
 export type UpdateUserMemoryErrors = {
@@ -23624,9 +24297,16 @@ export type UpdateUserMemoryResponse = UpdateUserMemoryResponses[keyof UpdateUse
 
 export type DeleteAllOrganizationMemoriesData = {
     body?: never;
-    path?: never;
+    path: {
+        /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+    };
     query?: never;
-    url: '/organization-memories';
+    url: '/{tenant_id}/organization-memories';
 };
 
 export type DeleteAllOrganizationMemoriesResponses = {
@@ -23640,7 +24320,14 @@ export type DeleteAllOrganizationMemoriesResponse = DeleteAllOrganizationMemorie
 
 export type GetOrganizationMemoriesData = {
     body?: never;
-    path?: never;
+    path: {
+        /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+    };
     query?: {
         /**
          * Limit
@@ -23649,7 +24336,7 @@ export type GetOrganizationMemoriesData = {
          */
         limit?: number;
     };
-    url: '/organization-memories';
+    url: '/{tenant_id}/organization-memories';
 };
 
 export type GetOrganizationMemoriesErrors = {
@@ -23672,7 +24359,14 @@ export type GetOrganizationMemoriesResponse = GetOrganizationMemoriesResponses[k
 
 export type SearchOrganizationMemoriesData = {
     body?: never;
-    path?: never;
+    path: {
+        /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+    };
     query: {
         /**
          * Query
@@ -23705,7 +24399,7 @@ export type SearchOrganizationMemoriesData = {
          */
         thread_id?: string | null;
     };
-    url: '/organization-memories/search';
+    url: '/{tenant_id}/organization-memories/search';
 };
 
 export type SearchOrganizationMemoriesErrors = {
@@ -23730,6 +24424,12 @@ export type DeleteOrganizationMemoryData = {
     body?: never;
     path: {
         /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+        /**
          * Memory Id
          *
          * Memory ID to delete
@@ -23737,7 +24437,7 @@ export type DeleteOrganizationMemoryData = {
         memory_id: string;
     };
     query?: never;
-    url: '/organization-memories/{memory_id}';
+    url: '/{tenant_id}/organization-memories/{memory_id}';
 };
 
 export type DeleteOrganizationMemoryErrors = {
@@ -23762,6 +24462,12 @@ export type UpdateOrganizationMemoryData = {
     body: UpdateMemoryRequest;
     path: {
         /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+        /**
          * Memory Id
          *
          * Memory ID to update
@@ -23769,7 +24475,7 @@ export type UpdateOrganizationMemoryData = {
         memory_id: string;
     };
     query?: never;
-    url: '/organization-memories/{memory_id}';
+    url: '/{tenant_id}/organization-memories/{memory_id}';
 };
 
 export type UpdateOrganizationMemoryErrors = {
@@ -23802,14 +24508,21 @@ export type ProcessDocumentData = {
          */
         'x-file-name'?: string | null;
     };
-    path?: never;
+    path: {
+        /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+    };
     query?: {
         /**
          * Image handling: 's3' (signed URLs) or 'base64' (embedded data URIs)
          */
         image_mode?: ImageMode;
     };
-    url: '/parsing/process';
+    url: '/{tenant_id}/parsing/process';
 };
 
 export type ProcessDocumentErrors = {
@@ -23832,9 +24545,16 @@ export type ProcessDocumentResponse = ProcessDocumentResponses[keyof ProcessDocu
 
 export type TranslateTextData = {
     body: TranslationRequest;
-    path?: never;
+    path: {
+        /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+    };
     query?: never;
-    url: '/translation/';
+    url: '/{tenant_id}/translation/';
 };
 
 export type TranslateTextErrors = {

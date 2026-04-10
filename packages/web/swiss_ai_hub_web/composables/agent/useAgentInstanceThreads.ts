@@ -5,7 +5,7 @@ import { useRoute } from 'vue-router'
 
 export const useAgentInstanceThreads = defineQuery(() => {
   const route = useRoute()
-  const isRouteReady = useRouteReady('agent_id', 'agent_class')
+  const { tenantId } = useTenant()
 
   // Pagination state
   const currentPage = ref(1)
@@ -14,17 +14,20 @@ export const useAgentInstanceThreads = defineQuery(() => {
   // Query to fetch paginated threads
   const threadQuery = useQuery({
     key: () => [
+      'tenant',
+      tenantId.value,
       'agent-instance-threads',
       route.params.agent_id as string,
       route.params.agent_class as string,
       currentPage.value,
       pageSize.value,
     ],
-    enabled: isRouteReady,
+    enabled: useTenantReady('agent_id', 'agent_class'),
     query: async () => {
       return await getAgentInstanceThreads({
         composable: '$fetch',
         path: {
+          tenant_id: tenantId.value!,
           agent_id: route.params.agent_id as string,
           agent_class: route.params.agent_class as string,
         },

@@ -69,8 +69,6 @@
 import { useConfirm } from 'primevue/useconfirm'
 import { useToast } from 'primevue/usetoast'
 
-import { useLocalePath } from '#i18n'
-
 interface Props {
   translationPrefix: 'thread' | 'agent'
   contextName: string
@@ -92,7 +90,7 @@ const props = withDefaults(defineProps<Props>(), {
 const { t } = useI18n()
 const router = useRouter()
 const route = useRoute()
-const localePath = useLocalePath()
+const tenantPath = useTenantPath()
 const confirm = useConfirm()
 const toast = useToast()
 
@@ -146,7 +144,7 @@ const {
 const selectedMemoryId = computed(() => route.params.memory_id as string | undefined)
 
 const handleSelectMemory = (memory: { id: string }) => {
-  router.push(localePath(`${props.basePath}/${memory.id}?q=${searchInput.value ?? ''}`))
+  router.push(tenantPath(`${props.basePath}/${memory.id}?q=${searchInput.value ?? ''}`))
 }
 
 const handleDeleteAll = () => {

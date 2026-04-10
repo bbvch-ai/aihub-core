@@ -34,9 +34,6 @@ from swiss_ai_hub.pipeline.assets.factories.share_point_to_data_lake.observable_
     observable_share_point_factory,
 )
 from swiss_ai_hub.pipeline.assets.factories.source_to_data_lake.data_lake_file_factory import data_lake_file_factory
-from swiss_ai_hub.pipeline.assets.factories.source_to_data_lake.placeholder_refdocs_factory import (
-    placeholder_refdocs_factory,
-)
 from swiss_ai_hub.pipeline.assets.factories.source_to_data_lake.removed_data_lake_files_factory import (
     removed_data_lake_files_factory,
 )
@@ -224,7 +221,6 @@ def default_sharepoint_to_datalake_definitions(
 
     sharepoint_key = AssetKey([datalake_container_name, "sharepoint_to_datalake", "sharepoint"])
     data_lake_files_key = AssetKey([datalake_container_name, "sharepoint_to_datalake", "data_lake_files"])
-    placeholder_refdocs_key = AssetKey([datalake_container_name, "sharepoint_to_datalake", "placeholder_refdocs"])
     removed_data_lake_files_key = AssetKey(
         [datalake_container_name, "sharepoint_to_datalake", "removed_data_lake_files"]
     )
@@ -236,11 +232,6 @@ def default_sharepoint_to_datalake_definitions(
         data_lake_file_factory(
             key=data_lake_files_key,
             source_key=sharepoint_key,
-            partitions=sharepoint_partitions,
-        ),
-        placeholder_refdocs_factory(
-            key=placeholder_refdocs_key,
-            data_lake_files_key=data_lake_files_key,
             partitions=sharepoint_partitions,
         ),
         removed_data_lake_files_factory(
@@ -333,7 +324,6 @@ def default_local_filesystem_to_datalake_definitions(
 
     filesystem_key = AssetKey([datalake_container_name, "local_fs_to_datalake", "local_fs"])
     data_lake_files_key = AssetKey([datalake_container_name, "local_fs_to_datalake", "data_lake_files"])
-    placeholder_refdocs_key = AssetKey([datalake_container_name, "local_fs_to_datalake", "placeholder_refdocs"])
     removed_data_lake_files_key = AssetKey([datalake_container_name, "local_fs_to_datalake", "removed_data_lake_files"])
 
     observable_filesystem_asset = observable_local_file_system_factory(
@@ -348,11 +338,6 @@ def default_local_filesystem_to_datalake_definitions(
         data_lake_file_factory(
             key=data_lake_files_key,
             source_key=filesystem_key,
-            partitions=filesystem_partitions,
-        ),
-        placeholder_refdocs_factory(
-            key=placeholder_refdocs_key,
-            data_lake_files_key=data_lake_files_key,
             partitions=filesystem_partitions,
         ),
         removed_data_lake_files_factory(
@@ -529,6 +514,8 @@ def default_rclone_to_datalake_definitions(
 
     rclone_io_manager = RcloneIOManager(rclone_client=rclone_client, encode_partition_keys=encode)
 
+    store_name = get_db_name_from_bucket_name(bucket_name=datalake_container_name, auto_sync=True)
+
     return Definitions(
         assets=assets,
         resources={
@@ -539,6 +526,7 @@ def default_rclone_to_datalake_definitions(
                 directory_name=datalake_directory_name,
                 encode_partition_keys=encode,
             ),
+            **mongo_document_store_resource(document_store_name=store_name),
         },
         sensors=[default_automation_sensor(assets)],
         executor=default_process_executor(),

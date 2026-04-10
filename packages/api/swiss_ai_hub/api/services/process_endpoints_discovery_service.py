@@ -156,7 +156,7 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
 
     def _get_endpoint_base_path_for_process_class(self, process_class: str) -> str:
         """Returns the base path for class-level endpoints with dynamic {process_id} path parameter."""
-        return f"{self.controller.base_route}/classes/{process_class}/instances/{{process_id}}"
+        return f"{self._route_prefix}/classes/{process_class}/instances/{{process_id}}"
 
     def _deregister_endpoints_for_class(self, process_class: str):
         """Deregister all endpoints for a process class (class-level endpoints with dynamic {process_id})."""

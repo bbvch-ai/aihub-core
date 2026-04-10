@@ -70,6 +70,22 @@ class Controller(abc.ABC):
     def service_name(self):
         return self.__class__.__name__.lower().replace("controller", "")
 
+    def authenticated_user(self):
+        """Return a dependency that only authenticates — no tenant or permission checks.
+
+        Use this for global (non-tenant-scoped) endpoints that need a logged-in user
+        but don't operate within a tenant context.
+        """
+
+        def check_authenticated(
+            request: Request,
+            user: Annotated[UserIdentity, Depends(self.auth)],
+        ) -> UserIdentity:
+            self._enrich_span_with_context(user, request, "authenticated")
+            return user
+
+        return check_authenticated
+
     def user_with_permission(self, permission_template: str):
         def check_access(
             request: Request,
@@ -136,7 +152,8 @@ class Controller(abc.ABC):
         span.set_attribute("auth.required_permission", required_permission)
 
         # Tenant context (use resolved tenant, not raw path param which may be "active")
-        span.set_attribute("tenant.id", user.acting_within_tenant.id)
+        if user.acting_within_tenant:
+            span.set_attribute("tenant.id", user.acting_within_tenant.id)
 
         # Path parameters (business context)
         if request.path_params:

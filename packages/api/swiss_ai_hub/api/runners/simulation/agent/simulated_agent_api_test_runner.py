@@ -1,5 +1,6 @@
 import logging
 from typing import Self
+from unittest.mock import MagicMock
 
 from nats.aio.client import Client as NATS
 from nats.js import JetStreamContext
@@ -226,6 +227,7 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
                 api_app=self._api_app,
                 controller=self._api_app.state.agent_controller,
                 locale_handler=ApiLocaleHandler(),
+                redis=MagicMock(),
                 discovery_interval=60,
             )._register_class_endpoints(
                 agent_class=self.agent_class,

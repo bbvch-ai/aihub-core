@@ -4,7 +4,7 @@ from fastapi import Depends, Path, Query, Security
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.i18n import LocaleHandler
-from swiss_ai_hub.core.routes import Controller
+from swiss_ai_hub.core.routes import TenantScopedController
 
 from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
 from swiss_ai_hub.api.i18n.dependencies.use_locale import use_locale
@@ -16,7 +16,7 @@ from swiss_ai_hub.api.routes.memory.dto.update_memory_response import UpdateMemo
 from swiss_ai_hub.api.routes.memory.organization_memory_service import OrganizationMemoryService
 
 
-class OrganizationMemoryController(Controller):
+class OrganizationMemoryController(TenantScopedController):
     """Controller for managing organization/tenant memories."""
 
     name = ApiLocaleString.from_i18n_path("api.controllers.organization_memory.name")

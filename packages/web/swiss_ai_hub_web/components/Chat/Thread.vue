@@ -34,7 +34,7 @@ const props = defineProps<{
 }>()
 
 const router = useRouter()
-const localeRoute = useLocaleRoute()
+const tenantPath = useTenantPath()
 const { t } = useI18n()
 
 type ExtendedChatMessage = ChatMessage & {
@@ -55,7 +55,7 @@ const getAgentDto = (agent_class: string, agent_id: string) =>
   )
 
 const toDisplay = (msg: ExtendedChatMessage) => {
-  router.push(localeRoute(`/service/threads/${props.thread.id}/display/${msg.displayId}`))
+  router.push(tenantPath(`/service/threads/${props.thread.id}/display/${msg.displayId}`))
 }
 
 const createUserMessage = (
