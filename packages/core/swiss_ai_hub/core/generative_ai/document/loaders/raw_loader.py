@@ -36,8 +36,8 @@ class RawLoader(BaseReader):
         **kwargs,
     ) -> list[Document]:
         """Parse file into string."""
-        with fs.open(str(file), "r", encoding="utf-8") as f:
-            content = f.read()
+        file_bytes = fs.cat_file(str(file))
+        content = file_bytes.decode("utf-8", errors="replace")
         metadata = extra_info or {}
         return [Document(text=content, metadata=metadata)]
 
