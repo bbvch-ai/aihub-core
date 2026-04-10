@@ -77,11 +77,7 @@ class AgentNCSubscriber(NCSubscriber[BaseEvent]):
         handler: Callable[[ControlEvent, AgentInstanceTopic], Awaitable[None]],
         subscriber_name: str = "Unnamed",
     ):
-        """Subscribe to control events only within a specific thread.
-
-        Unlike for_all_thread_events, this avoids duplicate delivery for ControlAndDisplayEvent
-        types (e.g. StopEvent) which are published on both control and display subjects.
-        """
+        """Subscribe to control events only within a specific thread."""
         subject = topic_manager.get_subject_for_control_event_in_thread("*", "*")
         return cls(
             name=subscriber_name,
