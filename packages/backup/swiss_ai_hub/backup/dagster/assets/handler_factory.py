@@ -7,7 +7,7 @@ from swiss_ai_hub.backup.services.postgres import PostgresHandler
 from swiss_ai_hub.backup.services.milvus import MilvusHandler
 from swiss_ai_hub.backup.services.neo4j import Neo4jHandler
 from swiss_ai_hub.backup.services.clickhouse import ClickHouseHandler
-from swiss_ai_hub.backup.services.stubs import NatsHandler
+from swiss_ai_hub.backup.services.nats import NatsHandler
 from swiss_ai_hub.backup.services.valkey import ValkeyHandler
 from swiss_ai_hub.backup.settings import BackupSettings
 
