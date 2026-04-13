@@ -11,7 +11,6 @@ from mongoengine import (
     Document,
     EmbeddedDocument,
     EmbeddedDocumentField,
-    IntField,
     ListField,
     StringField,
 )
@@ -30,58 +29,6 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.form.base.formkit_element import FormkitElement
 
 logger = logging.getLogger(__name__)
-
-
-class EventPayloadField(EmbeddedDocument):
-    """Information about an event payload field."""
-
-    type = StringField(required=True)
-    description = StringField()
-
-
-class EventInfo(EmbeddedDocument):
-    """Information about an event."""
-
-    name = StringField(required=True)
-    full_name = StringField(required=True)
-    is_start_event = BooleanField(required=True)
-    is_stop_event = BooleanField(required=True)
-    payload = DictField(required=True)  # dict[str, EventPayloadField]
-
-
-class InputEventInfo(EmbeddedDocument):
-    """Information about an input event for a step."""
-
-    event_names = ListField(EmbeddedDocumentField(EventInfo), required=True)
-    optional = BooleanField(required=True)
-
-
-class NodeData(EmbeddedDocument):
-    """Data for a node in the workflow graph."""
-
-    id = StringField(required=True)
-    type = StringField(required=True)
-    node_id = StringField(required=True)
-    label = StringField(required=True)
-    description = StringField()
-    icon = StringField()
-    input_events = DictField(field=EmbeddedDocumentField(InputEventInfo))  # dict[str, InputEventInfo]
-    output_events = ListField(EmbeddedDocumentField(EventInfo))
-    max_executions = IntField()
-    stop_on_error = BooleanField()
-
-
-class EdgeData(EmbeddedDocument):
-    """Data for an edge in the workflow graph."""
-
-    source = StringField(required=True)
-    target = StringField(required=True)
-    edge_id = IntField(required=True)
-    event_name = StringField(required=True)
-    event_full_name = StringField(required=True)
-    is_start_event = BooleanField(required=True)
-    is_stop_event = BooleanField(required=True)
-    payload = DictField(required=True)  # dict[str, EventPayloadField]
 
 
 class EventSpec(EmbeddedDocument):
