@@ -25,10 +25,6 @@ class _StubHandler(BackupHandler):
         raise NotImplementedError(f"{self._name} restore not yet implemented")
 
 
-class Neo4jHandler(_StubHandler):
-    _name = "Neo4j"
-
-
 class ClickHouseHandler(_StubHandler):
     _name = "ClickHouse"
 

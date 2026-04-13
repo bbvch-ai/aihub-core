@@ -5,10 +5,10 @@ from swiss_ai_hub.backup.models import BACKUP_SERVICES
 from swiss_ai_hub.backup.services.base import BackupHandler
 from swiss_ai_hub.backup.services.postgres import PostgresHandler
 from swiss_ai_hub.backup.services.milvus import MilvusHandler
+from swiss_ai_hub.backup.services.neo4j import Neo4jHandler
 from swiss_ai_hub.backup.services.stubs import (
     ClickHouseHandler,
     NatsHandler,
-    Neo4jHandler,
 )
 from swiss_ai_hub.backup.services.valkey import ValkeyHandler
 
