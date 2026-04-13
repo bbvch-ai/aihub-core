@@ -11,15 +11,12 @@ Feature: Tenant Resolution in Auth Handler
     And user "user-2" is a member of the default tenant only with roles "AIHubUser"
 
   Scenario: Explicit tenant path parameter resolves to specified tenant
-    Given user "user-1" has active tenant set to the default tenant
-    And a request with tenant path parameter set to the second tenant
+    Given a request with tenant path parameter set to the second tenant
     When the auth handler resolves tenant for user "user-1"
     Then the resolved tenant should be "Acme Corp"
 
   Scenario: Active tenant path parameter without active tenant returns 400 error
-    Given user "user-1" has active tenant set to the default tenant
-    And user "user-1" has active tenant cleared
-    And a request with tenant path parameter set to "active"
+    Given a request with tenant path parameter set to "active"
     When the auth handler resolves tenant for user "user-1" expecting error
     Then a 400 error should be raised with message "No active tenant set"
 
@@ -33,16 +30,13 @@ Feature: Tenant Resolution in Auth Handler
     When the auth handler resolves tenant for user "user-2" expecting error
     Then a 403 error should be raised with message "Access denied"
 
-  Scenario: No active tenant returns 400 error even without default tenant
+  Scenario: No active tenant set returns 400 error regardless of default tenant
     Given no default tenant exists
-    And user "user-1" has active tenant cleared
     And a request with tenant path parameter set to "active"
     When the auth handler resolves tenant for user "user-1" expecting error
     Then a 400 error should be raised with message "No active tenant set"
 
   Scenario: Get active tenant for user without active tenant returns 400 error
-    Given user "user-1" has active tenant set to the default tenant
-    And user "user-1" has active tenant cleared
     When the auth handler gets active tenant for user "user-1" expecting error
     Then a 400 error should be raised with message "No active tenant set"
 

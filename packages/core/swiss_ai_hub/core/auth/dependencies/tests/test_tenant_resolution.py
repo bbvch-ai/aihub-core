@@ -199,14 +199,6 @@ def set_active_tenant_to_id(cleanup_documents: list[Any], user_id: str, tenant_i
     user.save()
 
 
-@given(parsers.parse('user "{user_id}" has active tenant cleared'))
-def clear_active_tenant(cleanup_documents: list[Any], user_id: str) -> None:
-    """Clear the user's active tenant."""
-    user = ensure_user_entity(cleanup_documents, user_id)
-    user.active_tenant_id = None
-    user.save()
-
-
 # --- Given Steps for Request Context ---
 
 
