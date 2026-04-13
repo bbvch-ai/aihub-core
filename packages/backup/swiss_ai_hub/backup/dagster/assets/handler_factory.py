@@ -7,8 +7,8 @@ from swiss_ai_hub.backup.services.stubs import (
     NatsHandler,
     Neo4jHandler,
     PostgresHandler,
-    ValkeyHandler,
 )
+from swiss_ai_hub.backup.services.valkey import ValkeyHandler
 from swiss_ai_hub.backup.settings import BackupSettings
 
 HANDLER_FACTORIES: dict[str, type[BackupHandler]] = {

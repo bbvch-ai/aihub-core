@@ -9,8 +9,8 @@ from swiss_ai_hub.backup.services.stubs import (
     NatsHandler,
     Neo4jHandler,
     PostgresHandler,
-    ValkeyHandler,
 )
+from swiss_ai_hub.backup.services.valkey import ValkeyHandler
 
 
 def test_handler_factories_covers_all_services() -> None:

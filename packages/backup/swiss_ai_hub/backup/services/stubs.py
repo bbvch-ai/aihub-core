@@ -41,9 +41,5 @@ class ClickHouseHandler(_StubHandler):
     _name = "ClickHouse"
 
 
-class ValkeyHandler(_StubHandler):
-    _name = "Valkey"
-
-
 class NatsHandler(_StubHandler):
     _name = "NATS"
