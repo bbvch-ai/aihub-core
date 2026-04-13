@@ -5459,6 +5459,37 @@ export const CreateRoleRequestSchema = {
     description: 'Request model for creating a new role.'
 } as const;
 
+export const CreateTenantRequestSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            title: 'Name',
+            description: 'The unique display name of the tenant.'
+        },
+        description: {
+            type: 'string',
+            title: 'Description',
+            description: 'A short description of the tenant.',
+            default: ''
+        },
+        access_rules: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Access Rules',
+            description: 'Access rules granted to this tenant.',
+            default: []
+        }
+    },
+    type: 'object',
+    required: [
+        'name'
+    ],
+    title: 'CreateTenantRequest',
+    description: 'Request model for creating a new tenant.'
+} as const;
+
 export const CreateThreadRequestSchema = {
     properties: {
         name: {
@@ -13447,7 +13478,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1775651424
+            default: 1776069057
         },
         owned_by: {
             type: 'string',
@@ -14397,6 +14428,31 @@ export const MultiSelectSchema = {
     ],
     title: 'MultiSelect',
     description: 'https://formkit-primevue.netlify.app/inputs/MultiSelect'
+} as const;
+
+export const MyTenantsResponseSchema = {
+    properties: {
+        tenants: {
+            items: {
+                $ref: '#/components/schemas/TenantMembershipDTO'
+            },
+            type: 'array',
+            title: 'Tenants',
+            description: 'Tenants the current user belongs to'
+        },
+        is_sys_admin: {
+            type: 'boolean',
+            title: 'Is Sys Admin',
+            description: 'Whether the user has system administrator privileges',
+            default: false
+        }
+    },
+    type: 'object',
+    required: [
+        'tenants'
+    ],
+    title: 'MyTenantsResponse',
+    description: 'Response for the GET /my-tenants endpoint, including sysadmin status.'
 } as const;
 
 export const NamespaceDTOSchema = {
@@ -19019,6 +19075,63 @@ export const TenantMembershipDTOSchema = {
     description: 'A tenant the current user belongs to.'
 } as const;
 
+export const TenantResponseSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            title: 'Id',
+            description: 'Unique tenant identifier.'
+        },
+        name: {
+            type: 'string',
+            title: 'Name',
+            description: 'Tenant display name.'
+        },
+        description: {
+            type: 'string',
+            title: 'Description',
+            description: 'Tenant description.'
+        },
+        access_rules: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Access Rules',
+            description: 'Access rules granted to this tenant.'
+        },
+        is_default: {
+            type: 'boolean',
+            title: 'Is Default',
+            description: 'Whether this is the default tenant.'
+        },
+        created_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Created At',
+            description: 'Tenant creation timestamp.'
+        },
+        updated_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Updated At',
+            description: 'Tenant last update timestamp.'
+        }
+    },
+    type: 'object',
+    required: [
+        'id',
+        'name',
+        'description',
+        'access_rules',
+        'is_default',
+        'created_at',
+        'updated_at'
+    ],
+    title: 'TenantResponse',
+    description: 'Response model for a tenant.'
+} as const;
+
 export const TextBlockSchema = {
     properties: {
         block_type: {
@@ -20822,6 +20935,53 @@ export const UpdateRoleRequestSchema = {
     type: 'object',
     title: 'UpdateRoleRequest',
     description: 'Request model for updating an existing role. All fields are optional.'
+} as const;
+
+export const UpdateTenantRequestSchema = {
+    properties: {
+        name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name',
+            description: 'The unique display name of the tenant.'
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Description',
+            description: 'A short description of the tenant.'
+        },
+        access_rules: {
+            anyOf: [
+                {
+                    items: {
+                        type: 'string'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Access Rules',
+            description: 'Access rules granted to this tenant.'
+        }
+    },
+    type: 'object',
+    title: 'UpdateTenantRequest',
+    description: 'Request model for updating a tenant. All fields are optional.'
 } as const;
 
 export const UsageDurationSchema = {

@@ -18,45 +18,38 @@
 <script setup lang="ts">
 import { getMyTenants } from '@core/sdk/client'
 
-import type { TenantMembershipDto } from '@core/sdk/client'
-
 const REDIRECT_KEY = 'aihub_redirect_after_login'
 
 const { t } = useI18n()
 const localePath = useLocalePath()
 
 const tenantsAreLoading = ref(true)
-const tenants = ref<TenantMembershipDto[] | null>(null)
+const tenants = ref<{ id: string }[] | null>(null)
 
 onMounted(async () => {
   try {
-    const tenantsResponse = await getMyTenants({ composable: '$fetch' })
-    tenants.value = tenantsResponse
+    const response = await getMyTenants({ composable: '$fetch' })
+    tenants.value = response.tenants
 
-    if (!tenantsResponse?.length) {
+    if (!response.tenants?.length) {
       tenantsAreLoading.value = false
       return
     }
 
-    // Check if we have a stored redirect URL from before login (e.g. user had a
-    // direct link with a tenant already in the path)
     const storedRedirect = sessionStorage.getItem(REDIRECT_KEY)
     sessionStorage.removeItem(REDIRECT_KEY)
 
     if (storedRedirect && storedRedirect !== '/') {
-      // The stored redirect already contains the tenant — go there directly
       await navigateTo(storedRedirect, { replace: true })
       return
     }
 
-    // Single tenant: auto-select and go
-    if (tenantsResponse.length === 1) {
-      const tenant = tenantsResponse[0]
+    if (response.tenants.length === 1) {
+      const tenant = response.tenants[0]
       await navigateTo(localePath(`/${tenant.id}/service/openai`), { replace: true })
       return
     }
 
-    // Multiple tenants and no stored redirect: show tenant selection
     await navigateTo(localePath('/select-tenant'), { replace: true })
   }
   catch {

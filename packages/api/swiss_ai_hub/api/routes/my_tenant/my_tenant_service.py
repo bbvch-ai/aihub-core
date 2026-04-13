@@ -5,6 +5,7 @@ from swiss_ai_hub.core.persistence.access.entities.tenant_entity import TenantEn
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 
 from swiss_ai_hub.api.routes.my_tenant.dto.active_tenant_dto import ActiveTenantDTO
+from swiss_ai_hub.api.routes.my_tenant.dto.my_tenants_response import MyTenantsResponse
 from swiss_ai_hub.api.routes.my_tenant.dto.tenant_membership_dto import TenantMembershipDTO
 
 
@@ -13,14 +14,17 @@ class MyTenantService:
 
     @staticmethod
     @trace_fn
-    def get_my_tenants(user_id: str) -> list[TenantMembershipDTO]:
-        """Returns all tenants the user belongs to."""
+    def get_my_tenants(user_id: str) -> MyTenantsResponse:
+        """Returns all tenants the user belongs to, along with sysadmin status."""
+        user = UserEntity.by_oid(user_id)
+
         tenant_ids = UserTenantRoleEntity.get_tenant_ids_for_user(user_id)
         if not tenant_ids:
-            return []
+            return MyTenantsResponse(tenants=[], is_sys_admin=user.is_sys_admin)
 
         tenant_entities = TenantEntity.objects(id__in=tenant_ids)
-        return [TenantMembershipDTO.from_entity(entity) for entity in tenant_entities]
+        tenants = [TenantMembershipDTO.from_entity(entity) for entity in tenant_entities]
+        return MyTenantsResponse(tenants=tenants, is_sys_admin=user.is_sys_admin)
 
     @staticmethod
     @trace_fn

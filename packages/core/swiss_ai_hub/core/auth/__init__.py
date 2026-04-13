@@ -15,6 +15,7 @@ if TYPE_CHECKING:
         TokenAndOauth2Handler,
     )
     from swiss_ai_hub.core.auth.dependencies.token_auth_handler.token_auth_handler import TokenAuthHandler
+    from swiss_ai_hub.core.auth.identity.sys_admin_identity import SysAdminIdentity
     from swiss_ai_hub.core.auth.identity.tenant_identity import TenantIdentity
     from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
     from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
@@ -22,11 +23,12 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.auth.keycloak.models.keycloak_group import KeycloakGroup
     from swiss_ai_hub.core.auth.keycloak.models.keycloak_user import KeycloakUser
 
-# KeycloakAuthHandler and TokenAndOauth2Handler are excluded because KeycloakAuthHandler
-# instantiates KeycloakSettings() at class definition time, requiring KEYCLOAK_URL to be set.
+# KeycloakAuthHandler, TokenAndOauth2Handler, and SysAdminAuthHandler are excluded because they
+# instantiate KeycloakSettings() at class definition time, requiring KEYCLOAK_URL to be set.
 # Import them directly:
 #   from swiss_ai_hub.core.auth.dependencies.keycloak_auth_handler.keycloak_auth_handler import KeycloakAuthHandler
 #   from swiss_ai_hub.core.auth.dependencies.token_and_oauth2_handler.token_and_oauth2_handler import TokenAndOauth2Handler
+#   from swiss_ai_hub.core.auth.dependencies.sys_admin_auth_handler.sys_admin_auth_handler import SysAdminAuthHandler
 
 __all__ = [
     "TokenAndOauth2Handler",
@@ -40,6 +42,7 @@ __all__ = [
     "KeycloakSettings",
     "KeycloakUser",
     "SuperuserSettings",
+    "SysAdminIdentity",
     "TenantIdentity",
     "TokenAuthHandler",
     "UserIdentity",
@@ -57,6 +60,7 @@ _LAZY_IMPORTS = {
     "DangerousDevelopmentOnlyAuthHandler": "swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler",  # noqa: E501
     "DangerousDevelopmentOnlyAuthSettings": "swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_settings",  # noqa: E501
     "SuperuserSettings": "swiss_ai_hub.core.auth.dependencies.superuser_auth_handler.superuser_settings",
+    "SysAdminIdentity": "swiss_ai_hub.core.auth.identity.sys_admin_identity",
     "TenantIdentity": "swiss_ai_hub.core.auth.identity.tenant_identity",
     "TokenAuthHandler": "swiss_ai_hub.core.auth.dependencies.token_auth_handler.token_auth_handler",
     "UserIdentity": "swiss_ai_hub.core.auth.identity.user_identity",

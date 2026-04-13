@@ -583,6 +583,38 @@ role:
     summary: Rôle enregistré
     detail: Rôle enregistré avec succès, les nouvelles règles d'accès prennent effet
       immédiatement.
+tenant_admin:
+  title: Administration des tenants
+  exit: Quitter
+  tenants_title: Tenants
+  select_description: Gérer les tenants, les règles d'accès et les paramètres système.
+  create_new: Nouveau tenant
+  cancel: Annuler
+  save: Enregistrer
+  default_tag: Par défaut
+  form:
+    name: Nom du tenant
+    description: Description
+  table:
+    name: Nom
+    description: Description
+    access_rules: Règles d'accès
+    default: Par défaut
+    actions: Actions
+  create_dialog:
+    description: Créez un nouveau tenant avec des règles d'accès qui définissent la
+      portée maximale pour tous les utilisateurs au sein de ce tenant.
+  delete_dialog:
+    confirm: Supprimer le tenant ?
+    explanation: La suppression du tenant "{name}" supprimera tous les rôles et attributions
+      d'utilisateurs associés. Cette action est irréversible.
+    proceed: Supprimer
+  tenant_deleted:
+    summary: Tenant supprimé
+    detail: Le tenant et toutes les données associées ont été supprimés.
+  tenant_saved:
+    summary: Tenant enregistré
+    detail: Tenant mis à jour avec succès.
 usage:
   title: Utilisation
   calls_remaining: '{current} / {limit} appels agent'

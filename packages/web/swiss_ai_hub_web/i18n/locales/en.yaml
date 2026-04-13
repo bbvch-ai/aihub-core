@@ -575,6 +575,38 @@ role:
   role_saved:
     summary: Role saved
     detail: Role saved successfully, the new access rules take effect immediately.
+tenant_admin:
+  title: Tenant Administration
+  exit: Exit
+  tenants_title: Tenants
+  select_description: Manage tenants, access rules, and system settings.
+  create_new: New Tenant
+  cancel: Cancel
+  save: Save
+  default_tag: Default
+  form:
+    name: Tenant Name
+    description: Description
+  table:
+    name: Name
+    description: Description
+    access_rules: Access Rules
+    default: Default
+    actions: Actions
+  create_dialog:
+    description: Create a new tenant with access rules that define the maximum scope
+      for all users within that tenant.
+  delete_dialog:
+    confirm: Delete Tenant?
+    explanation: Deleting tenant "{name}" will remove all associated roles and user
+      assignments. This action cannot be undone.
+    proceed: Delete
+  tenant_deleted:
+    summary: Tenant deleted
+    detail: The tenant and all associated data have been removed.
+  tenant_saved:
+    summary: Tenant saved
+    detail: Tenant updated successfully.
 usage:
   title: Usage
   calls_remaining: '{current} / {limit} agent calls'

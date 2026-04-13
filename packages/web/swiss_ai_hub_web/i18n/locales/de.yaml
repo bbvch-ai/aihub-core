@@ -584,6 +584,38 @@ role:
     summary: Rolle gespeichert
     detail: Rolle erfolgreich gespeichert, die neuen Zugriffsregeln treten sofort
       in Kraft.
+tenant_admin:
+  title: Tenant-Verwaltung
+  exit: Beenden
+  tenants_title: Tenants
+  select_description: Tenants, Zugriffsregeln und Systemeinstellungen verwalten.
+  create_new: Neuer Tenant
+  cancel: Abbrechen
+  save: Speichern
+  default_tag: Standard
+  form:
+    name: Tenant-Name
+    description: Beschreibung
+  table:
+    name: Name
+    description: Beschreibung
+    access_rules: Zugriffsregeln
+    default: Standard
+    actions: Aktionen
+  create_dialog:
+    description: Erstellen Sie einen neuen Tenant mit Zugriffsregeln, die den maximalen
+      Umfang für alle Benutzer innerhalb dieses Tenants definieren.
+  delete_dialog:
+    confirm: Tenant löschen?
+    explanation: Das Löschen des Tenants "{name}" entfernt alle zugehörigen Rollen
+      und Benutzerzuweisungen. Diese Aktion kann nicht rückgängig gemacht werden.
+    proceed: Löschen
+  tenant_deleted:
+    summary: Tenant gelöscht
+    detail: Der Tenant und alle zugehörigen Daten wurden entfernt.
+  tenant_saved:
+    summary: Tenant gespeichert
+    detail: Tenant erfolgreich aktualisiert.
 usage:
   title: Nutzung
   calls_remaining: '{current} / {limit} Agentenaufrufe'

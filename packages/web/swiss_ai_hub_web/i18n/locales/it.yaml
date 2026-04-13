@@ -580,6 +580,38 @@ role:
   role_saved:
     summary: Ruolo salvato
     detail: Ruolo salvato con successo, le nuove regole di accesso hanno effetto immediato.
+tenant_admin:
+  title: Amministrazione tenant
+  exit: Esci
+  tenants_title: Tenant
+  select_description: Gestisci tenant, regole di accesso e impostazioni di sistema.
+  create_new: Nuovo tenant
+  cancel: Annulla
+  save: Salva
+  default_tag: Predefinito
+  form:
+    name: Nome del tenant
+    description: Descrizione
+  table:
+    name: Nome
+    description: Descrizione
+    access_rules: Regole di accesso
+    default: Predefinito
+    actions: Azioni
+  create_dialog:
+    description: Crea un nuovo tenant con regole di accesso che definiscono l'ambito
+      massimo per tutti gli utenti all'interno di quel tenant.
+  delete_dialog:
+    confirm: Eliminare il tenant?
+    explanation: L'eliminazione del tenant "{name}" rimuoverà tutti i ruoli e le assegnazioni
+      utente associati. Questa azione non può essere annullata.
+    proceed: Elimina
+  tenant_deleted:
+    summary: Tenant eliminato
+    detail: Il tenant e tutti i dati associati sono stati rimossi.
+  tenant_saved:
+    summary: Tenant salvato
+    detail: Tenant aggiornato con successo.
 usage:
   title: Utilizzo
   calls_remaining: '{current} / {limit} chiamate agente'

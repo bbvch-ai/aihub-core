@@ -3343,6 +3343,32 @@ export type CreateRoleRequest = {
 };
 
 /**
+ * CreateTenantRequest
+ *
+ * Request model for creating a new tenant.
+ */
+export type CreateTenantRequest = {
+    /**
+     * Name
+     *
+     * The unique display name of the tenant.
+     */
+    name: string;
+    /**
+     * Description
+     *
+     * A short description of the tenant.
+     */
+    description?: string;
+    /**
+     * Access Rules
+     *
+     * Access rules granted to this tenant.
+     */
+    access_rules?: Array<string>;
+};
+
+/**
  * CreateThreadRequest
  */
 export type CreateThreadRequest = {
@@ -8962,6 +8988,26 @@ export type MultiSelect = {
 };
 
 /**
+ * MyTenantsResponse
+ *
+ * Response for the GET /my-tenants endpoint, including sysadmin status.
+ */
+export type MyTenantsResponse = {
+    /**
+     * Tenants
+     *
+     * Tenants the current user belongs to
+     */
+    tenants: Array<TenantMembershipDto>;
+    /**
+     * Is Sys Admin
+     *
+     * Whether the user has system administrator privileges
+     */
+    is_sys_admin?: boolean;
+};
+
+/**
  * NamespaceDTO
  */
 export type NamespaceDto = {
@@ -12031,6 +12077,56 @@ export type TenantMembershipDto = {
 };
 
 /**
+ * TenantResponse
+ *
+ * Response model for a tenant.
+ */
+export type TenantResponse = {
+    /**
+     * Id
+     *
+     * Unique tenant identifier.
+     */
+    id: string;
+    /**
+     * Name
+     *
+     * Tenant display name.
+     */
+    name: string;
+    /**
+     * Description
+     *
+     * Tenant description.
+     */
+    description: string;
+    /**
+     * Access Rules
+     *
+     * Access rules granted to this tenant.
+     */
+    access_rules: Array<string>;
+    /**
+     * Is Default
+     *
+     * Whether this is the default tenant.
+     */
+    is_default: boolean;
+    /**
+     * Created At
+     *
+     * Tenant creation timestamp.
+     */
+    created_at: Date;
+    /**
+     * Updated At
+     *
+     * Tenant last update timestamp.
+     */
+    updated_at: Date;
+};
+
+/**
  * TextBlock
  *
  * A representation of text data to directly pass to/from the LLM.
@@ -13148,6 +13244,32 @@ export type UpdateRoleRequest = {
      * Pattern-based usage limit rules.
      */
     usage_limits?: Array<UsageLimitDto> | null;
+};
+
+/**
+ * UpdateTenantRequest
+ *
+ * Request model for updating a tenant. All fields are optional.
+ */
+export type UpdateTenantRequest = {
+    /**
+     * Name
+     *
+     * The unique display name of the tenant.
+     */
+    name?: string | null;
+    /**
+     * Description
+     *
+     * A short description of the tenant.
+     */
+    description?: string | null;
+    /**
+     * Access Rules
+     *
+     * Access rules granted to this tenant.
+     */
+    access_rules?: Array<string> | null;
 };
 
 /**
@@ -21006,11 +21128,9 @@ export type GetMyTenantsData = {
 
 export type GetMyTenantsResponses = {
     /**
-     * Response Get My Tenants My Tenants Get
-     *
      * Successful Response
      */
-    200: Array<TenantMembershipDto>;
+    200: MyTenantsResponse;
 };
 
 export type GetMyTenantsResponse = GetMyTenantsResponses[keyof GetMyTenantsResponses];
@@ -23011,6 +23131,139 @@ export type CreateRoleResponses = {
 };
 
 export type CreateRoleResponse = CreateRoleResponses[keyof CreateRoleResponses];
+
+export type ListTenantsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/admin/tenants/';
+};
+
+export type ListTenantsResponses = {
+    /**
+     * Response List Tenants Admin Tenants  Get
+     *
+     * Successful Response
+     */
+    200: Array<TenantResponse>;
+};
+
+export type ListTenantsResponse = ListTenantsResponses[keyof ListTenantsResponses];
+
+export type CreateTenantData = {
+    body: CreateTenantRequest;
+    path?: never;
+    query?: never;
+    url: '/admin/tenants/';
+};
+
+export type CreateTenantErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CreateTenantError = CreateTenantErrors[keyof CreateTenantErrors];
+
+export type CreateTenantResponses = {
+    /**
+     * Successful Response
+     */
+    201: TenantResponse;
+};
+
+export type CreateTenantResponse = CreateTenantResponses[keyof CreateTenantResponses];
+
+export type DeleteTenantData = {
+    body?: never;
+    path: {
+        /**
+         * Tenant Id
+         */
+        tenant_id: string;
+    };
+    query?: never;
+    url: '/admin/tenants/{tenant_id}';
+};
+
+export type DeleteTenantErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type DeleteTenantError = DeleteTenantErrors[keyof DeleteTenantErrors];
+
+export type DeleteTenantResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type DeleteTenantResponse = DeleteTenantResponses[keyof DeleteTenantResponses];
+
+export type GetTenantData = {
+    body?: never;
+    path: {
+        /**
+         * Tenant Id
+         */
+        tenant_id: string;
+    };
+    query?: never;
+    url: '/admin/tenants/{tenant_id}';
+};
+
+export type GetTenantErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetTenantError = GetTenantErrors[keyof GetTenantErrors];
+
+export type GetTenantResponses = {
+    /**
+     * Successful Response
+     */
+    200: TenantResponse;
+};
+
+export type GetTenantResponse = GetTenantResponses[keyof GetTenantResponses];
+
+export type UpdateTenantData = {
+    body: UpdateTenantRequest;
+    path: {
+        /**
+         * Tenant Id
+         */
+        tenant_id: string;
+    };
+    query?: never;
+    url: '/admin/tenants/{tenant_id}';
+};
+
+export type UpdateTenantErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UpdateTenantError = UpdateTenantErrors[keyof UpdateTenantErrors];
+
+export type UpdateTenantResponses = {
+    /**
+     * Successful Response
+     */
+    200: TenantResponse;
+};
+
+export type UpdateTenantResponse = UpdateTenantResponses[keyof UpdateTenantResponses];
 
 export type GetModelsData = {
     body?: never;

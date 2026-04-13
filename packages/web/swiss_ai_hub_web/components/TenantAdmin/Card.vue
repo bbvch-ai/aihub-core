@@ -1,0 +1,99 @@
+<template>
+  <div
+    class="flex cursor-pointer flex-col gap-3 rounded-xl border border-surface-200 p-4 hover:bg-surface-100 dark:border-surface-800 hover:dark:bg-surface-800"
+    :class="{ 'bg-surface-100 dark:bg-surface-800': isActive }"
+  >
+    <div class="flex items-start gap-3">
+      <div class="flex flex-1 flex-col gap-3">
+        <div class="flex items-center gap-2">
+          <div
+            class="flex items-center justify-center rounded-full bg-white p-3 dark:bg-surface-900"
+          >
+            <Icon
+              name="mage:building-b"
+              size="1.5em"
+            />
+          </div>
+          <h3 class="font-semibold opacity-80">
+            {{ tenant.name }}
+          </h3>
+          <Tag
+            v-if="tenant.is_default"
+            :value="t('tenant_admin.default_tag')"
+            severity="info"
+          />
+        </div>
+        <span
+          v-if="tenant.description"
+          class="text-xs"
+        >
+          {{ tenant.description }}
+        </span>
+        <div class="flex flex-wrap gap-2 text-sm">
+          <Badge
+            v-for="access_rule in tenant.access_rules"
+            :key="access_rule"
+            :value="access_rule"
+            severity="secondary"
+            class="border border-gray-400/30"
+          />
+        </div>
+      </div>
+      <Button
+        v-if="!tenant.is_default"
+        icon="pi pi-trash"
+        severity="contrast"
+        variant="text"
+        rounded
+        aria-label="Delete"
+        @click.stop="confirmDelete"
+      />
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import type { TenantResponse } from '@core/sdk/client'
+
+const props = defineProps<{
+  tenant: TenantResponse
+}>()
+
+const route = useRoute()
+const confirm = useConfirm()
+const toast = useToast()
+const { t } = useI18n()
+const router = useRouter()
+const localePath = useLocalePath()
+
+const { deleteTenant } = useDeleteTenant()
+
+const isActive = computed(() => {
+  return route.params.tenant_id === props.tenant.id
+})
+
+const confirmDelete = () => {
+  confirm.require({
+    message: t('tenant_admin.delete_dialog.explanation', { name: props.tenant.name }),
+    header: t('tenant_admin.delete_dialog.confirm'),
+    icon: 'pi pi-exclamation-triangle',
+    position: 'bottom',
+    rejectProps: {
+      label: t('tenant_admin.cancel'),
+      severity: 'secondary',
+      outlined: true,
+    },
+    acceptProps: {
+      label: t('tenant_admin.delete_dialog.proceed'),
+      severity: 'danger',
+    },
+    accept: async () => {
+      if (isActive.value) {
+        await router.push(localePath('/sysadmin/tenants'))
+      }
+      await deleteTenant({ tenantId: props.tenant.id })
+      toast.add({ severity: 'success', summary: t('tenant_admin.tenant_deleted.summary'), detail: t('tenant_admin.tenant_deleted.detail'), life: 3000 })
+    },
+  })
+}
+</script>
