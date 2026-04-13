@@ -172,7 +172,7 @@ class UserTenantRoleEntity(Document):
 
             active_tenant_id = await KeycloakAdminService.get_active_tenant_id(user_id)
             if active_tenant_id == tenant_id:
-                await KeycloakAdminService.set_active_tenant(user_id, None)
+                await KeycloakAdminService.clear_active_tenant(user_id)
 
             return True
         return False

@@ -60,11 +60,7 @@ async def initialize_default_tenant() -> TenantEntity | None:
         )
         logger.info(f"Successfully created default tenant '{existing_tenant.name}' (id={existing_tenant.id})")
 
-    # Ensure Keycloak user profile allows active_tenant_id attribute
-    try:
-        await KeycloakAdminService.ensure_user_profile_attributes()
-    except Exception:
-        logger.warning("Could not configure Keycloak user profile - active tenant attributes may not persist")
+    await KeycloakAdminService.ensure_user_profile_attributes()
 
     # Ensure the matching Keycloak group exists and all realm users are members
     try:

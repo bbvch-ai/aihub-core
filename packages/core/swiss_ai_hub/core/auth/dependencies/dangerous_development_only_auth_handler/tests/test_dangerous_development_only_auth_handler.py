@@ -36,7 +36,10 @@ def mock_database_operations(monkeypatch: pytest.MonkeyPatch):
     async def mock_get_active_tenant_id(user_id: str) -> str | None:
         return "default-tenant-id"
 
-    async def mock_set_active_tenant(user_id: str, tenant_id: str | None) -> None:
+    async def mock_set_active_tenant(user_id: str, tenant_id: str) -> None:
+        pass
+
+    async def mock_clear_active_tenant(user_id: str) -> None:
         pass
 
     async def mock_resolve_tenant(_self, _request, _user_id: str) -> TenantIdentity:
@@ -57,6 +60,10 @@ def mock_database_operations(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(
         "swiss_ai_hub.core.auth.keycloak.keycloak_admin_service.KeycloakAdminService.set_active_tenant",
         mock_set_active_tenant,
+    )
+    monkeypatch.setattr(
+        "swiss_ai_hub.core.auth.keycloak.keycloak_admin_service.KeycloakAdminService.clear_active_tenant",
+        mock_clear_active_tenant,
     )
     monkeypatch.setattr(
         "swiss_ai_hub.core.auth.dependencies.auth_handler.AuthHandler.resolve_tenant_for_user", mock_resolve_tenant

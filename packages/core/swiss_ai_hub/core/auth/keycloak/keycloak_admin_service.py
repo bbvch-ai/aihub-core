@@ -117,44 +117,31 @@ class KeycloakAdminService:
     async def ensure_user_profile_attributes() -> None:
         """Ensures the Keycloak user profile allows the active_tenant_id attribute.
 
-        Keycloak 26+ rejects unmanaged attributes by default. This method reads
-        the current user profile config and adds active_tenant_id if missing.
-        The upConfig in the realm import attributes is not applied by Keycloak's
-        user profile engine — it must be set via the User Profile Admin API.
+        Keycloak 26+ rejects unmanaged attributes by default. The upConfig in the
+        realm import file is not applied by Keycloak's user profile engine, so we
+        configure it via the User Profile Admin API at startup instead.
         """
-        import httpx
-
-        settings = KeycloakSettings()
         admin = _create_admin()
-        token = await admin.a_token
-        profile_url = f"{settings.URL}/admin/realms/{settings.REALM}/users/profile"
-        headers = {"Authorization": f"Bearer {token['access_token']}", "Content-Type": "application/json"}
+        profile = await admin.a_get_realm_users_profile()
 
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.get(profile_url, headers=headers)
-            profile = response.json()
+        attr_names = [a["name"] for a in profile.get("attributes", [])]
+        if "active_tenant_id" in attr_names:
+            logger.debug("User profile already has active_tenant_id attribute")
+            return
 
-            # Check if active_tenant_id attribute already exists
-            attr_names = [a["name"] for a in profile.get("attributes", [])]
-            if "active_tenant_id" in attr_names:
-                logger.debug("User profile already has active_tenant_id attribute")
-                return
+        profile.setdefault("attributes", []).append(
+            {
+                "name": "active_tenant_id",
+                "displayName": "Active Tenant ID",
+                "permissions": {"view": ["admin"], "edit": ["admin"]},
+                "annotations": {"inputType": "text"},
+                "group": "user-metadata",
+            }
+        )
+        profile["unmanagedAttributePolicy"] = "ADMIN_EDIT"
 
-            # Add the attribute and set unmanaged policy
-            profile.setdefault("attributes", []).append(
-                {
-                    "name": "active_tenant_id",
-                    "displayName": "Active Tenant ID",
-                    "permissions": {"view": ["admin"], "edit": ["admin"]},
-                    "annotations": {"inputType": "text"},
-                    "group": "user-metadata",
-                }
-            )
-            profile["unmanagedAttributePolicy"] = "ADMIN_EDIT"
-
-            response = await client.put(profile_url, headers=headers, json=profile)
-            response.raise_for_status()
-            logger.info("Configured Keycloak user profile with active_tenant_id attribute")
+        await admin.a_update_realm_users_profile(profile)
+        logger.info("Configured Keycloak user profile with active_tenant_id attribute")
 
     @staticmethod
     @trace_fn
@@ -168,7 +155,7 @@ class KeycloakAdminService:
 
     @staticmethod
     @trace_fn
-    async def set_active_tenant(user_id: str, tenant_id: str | None) -> None:
+    async def set_active_tenant(user_id: str, tenant_id: str) -> None:
         """Writes the active_tenant_id custom attribute on the Keycloak user.
 
         Uses GET-merge-PUT to preserve existing user data and satisfy Keycloak's
@@ -177,9 +164,26 @@ class KeycloakAdminService:
         admin = _create_admin()
         user = await admin.a_get_user(user_id)
         attributes = user.get("attributes", {})
-        if tenant_id:
-            attributes["active_tenant_id"] = [tenant_id]
-        else:
-            attributes.pop("active_tenant_id", None)
+        attributes["active_tenant_id"] = [tenant_id]
+        user["attributes"] = attributes
+        await admin.a_update_user(user_id, user)
+
+        verification = await admin.a_get_user(user_id)
+        persisted = verification.get("attributes", {}).get("active_tenant_id", [])
+        if not persisted or persisted[0] != tenant_id:
+            raise RuntimeError(
+                f"Failed to persist active_tenant_id={tenant_id} on Keycloak user {user_id}. "
+                f"Keycloak returned attributes={verification.get('attributes')}. "
+                "Check that the User Profile config allows the active_tenant_id attribute."
+            )
+
+    @staticmethod
+    @trace_fn
+    async def clear_active_tenant(user_id: str) -> None:
+        """Removes the active_tenant_id custom attribute from the Keycloak user."""
+        admin = _create_admin()
+        user = await admin.a_get_user(user_id)
+        attributes = user.get("attributes", {})
+        attributes.pop("active_tenant_id", None)
         user["attributes"] = attributes
         await admin.a_update_user(user_id, user)

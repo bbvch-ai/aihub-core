@@ -35,12 +35,16 @@ def mock_keycloak_active_tenant():
     async def mock_get_active_tenant_id(user_id: str) -> str | None:
         return None
 
-    async def mock_set_active_tenant(user_id: str, tenant_id: str | None) -> None:
+    async def mock_set_active_tenant(user_id: str, tenant_id: str) -> None:
+        pass
+
+    async def mock_clear_active_tenant(user_id: str) -> None:
         pass
 
     with (
         patch.object(KeycloakAdminService, "get_active_tenant_id", side_effect=mock_get_active_tenant_id),
         patch.object(KeycloakAdminService, "set_active_tenant", side_effect=mock_set_active_tenant),
+        patch.object(KeycloakAdminService, "clear_active_tenant", side_effect=mock_clear_active_tenant),
     ):
         yield
 

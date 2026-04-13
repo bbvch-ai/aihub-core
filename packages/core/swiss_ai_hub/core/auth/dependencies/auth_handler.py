@@ -46,7 +46,7 @@ class AuthHandler(ABC):
 
         tenant = TenantEntity.get_tenant_by_id(active_tenant_id)
         if not tenant:
-            await KeycloakAdminService.set_active_tenant(user_id, None)
+            await KeycloakAdminService.clear_active_tenant(user_id)
             raise HTTPException(
                 status_code=400,
                 detail="Your active tenant is no longer accessible. Please select a new tenant.",
@@ -54,7 +54,7 @@ class AuthHandler(ABC):
 
         roles = UserTenantRoleEntity.get_roles_for_user_in_tenant(user_id, tenant.id)
         if not roles:
-            await KeycloakAdminService.set_active_tenant(user_id, None)
+            await KeycloakAdminService.clear_active_tenant(user_id)
             raise HTTPException(
                 status_code=400,
                 detail="Your active tenant is no longer accessible. Please select a new tenant.",
