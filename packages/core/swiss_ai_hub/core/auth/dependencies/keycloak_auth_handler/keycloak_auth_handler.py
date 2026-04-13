@@ -10,7 +10,9 @@ from jwt.algorithms import RSAAlgorithm
 
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
+from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
 from swiss_ai_hub.core.auth.keycloak.keycloak_settings import KeycloakSettings
+from swiss_ai_hub.core.infrastructure.api.default_tenant_settings import DefaultTenantSettings
 from swiss_ai_hub.core.infrastructure.api.user_signup_settings import UserSignupSettings
 from swiss_ai_hub.core.persistence.access.entities.tenant_entity import TenantEntity
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
@@ -105,6 +107,7 @@ class KeycloakAuthHandler(AuthHandler):
             # Sync tenant memberships from JWT tenants claim
             tenants_claim = decoded_token.get("tenants", [])
             self._sync_tenant_memberships(sub, tenants_claim)
+            await self._ensure_active_tenant(sub)
 
             return await self.build_identity(user_id=sub, name=name, email=email, request=request)
 
@@ -197,3 +200,34 @@ class KeycloakAuthHandler(AuthHandler):
 
         for tenant_id in tenant_ids:
             KeycloakAuthHandler._ensure_membership_for_tenant(user_id, tenant_id)
+
+    @staticmethod
+    async def _ensure_active_tenant(user_id: str) -> None:
+        """Ensures the user has a valid active tenant, auto-selecting one if needed.
+
+        Selection order when no valid active tenant is set:
+        1. The user's only tenant, if they have exactly one membership.
+        2. The configured default tenant (``AIHUB_DEFAULT_TENANT_ID``) if the user is a member.
+        3. The earliest-created tenant among the user's memberships.
+        """
+        user_tenant_ids = UserTenantRoleEntity.get_tenant_ids_for_user(user_id)
+        if not user_tenant_ids:
+            return
+
+        current = await KeycloakAdminService.get_active_tenant_id(user_id)
+        if current and current in user_tenant_ids and TenantEntity.get_tenant_by_id(current):
+            return
+
+        default_id = DefaultTenantSettings().ID
+        if len(user_tenant_ids) == 1:
+            selected_id = user_tenant_ids[0]
+        elif default_id in user_tenant_ids and TenantEntity.get_tenant_by_id(default_id):
+            selected_id = default_id
+        else:
+            earliest = TenantEntity.objects(id__in=user_tenant_ids).order_by("created_at").first()
+            if not earliest:
+                return
+            selected_id = earliest.id
+
+        await KeycloakAdminService.set_active_tenant(user_id, selected_id)
+        logger.info("Auto-selected active tenant %s for user %s", selected_id, user_id)

@@ -16,8 +16,7 @@
 </template>
 
 <script setup lang="ts">
-import { useSetActiveTenant } from '@core/composables/tenant/useActiveTenant'
-import { getMyTenants } from '@core/sdk/client'
+import { getMyActiveTenant, getMyTenants } from '@core/sdk/client'
 
 import type { TenantMembershipDto } from '@core/sdk/client'
 
@@ -25,7 +24,6 @@ const REDIRECT_KEY = 'aihub_redirect_after_login'
 
 const { t } = useI18n()
 const localePath = useLocalePath()
-const { setActiveTenant } = useSetActiveTenant()
 
 const tenantsAreLoading = ref(true)
 const tenants = ref<TenantMembershipDto[] | null>(null)
@@ -51,10 +49,9 @@ onMounted(async () => {
       return
     }
 
-    // Single tenant: auto-select, persist as active tenant, and go
+    // Single tenant: auto-select and go
     if (tenantsResponse.length === 1) {
       const tenant = tenantsResponse[0]
-      await setActiveTenant({ tenantId: tenant.id })
       await navigateTo(localePath(`/${tenant.id}/service/openai`), { replace: true })
       return
     }
