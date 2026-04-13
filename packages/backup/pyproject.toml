@@ -13,6 +13,7 @@ license = "Apache-2.0"
 readme = "README.md"
 dependencies = [
     "boto3>=1.41.5",
+    "clickhouse-connect>=0.15.1",
     "dagster>=1.11.2",
     "dagster-webserver>=1.11.2",
     "docker>=7.0",

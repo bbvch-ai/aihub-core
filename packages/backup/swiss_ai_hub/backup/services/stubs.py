@@ -25,9 +25,5 @@ class _StubHandler(BackupHandler):
         raise NotImplementedError(f"{self._name} restore not yet implemented")
 
 
-class ClickHouseHandler(_StubHandler):
-    _name = "ClickHouse"
-
-
 class NatsHandler(_StubHandler):
     _name = "NATS"
