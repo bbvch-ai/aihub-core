@@ -62,9 +62,7 @@
         v-else
         class="flex h-screen w-full items-center justify-center"
       >
-        <div
-          class="loader relative aspect-square w-[64px]"
-        />
+        <Loader />
       </div>
     </div>
   </div>
@@ -116,46 +114,3 @@ getHealth({
     online.value = false
   })
 </script>
-
-<style scoped>
-.loader:before,
-.loader:after {
-  content: "";
-  position: absolute;
-  border-radius: 50px;
-  box-shadow: 0 0 0 3px inset #808080;
-  animation: l4 2.5s infinite;
-}
-.loader:after {
-  animation-delay: -1.25s;
-}
-@keyframes l4 {
-  0% {
-    inset: 0 35px 35px 0;
-  }
-  12.5% {
-    inset: 0 35px 0 0;
-  }
-  25% {
-    inset: 35px 35px 0 0;
-  }
-  37.5% {
-    inset: 35px 0 0 0;
-  }
-  50% {
-    inset: 35px 0 0 35px;
-  }
-  62.5% {
-    inset: 0 0 0 35px;
-  }
-  75% {
-    inset: 0 0 35px 35px;
-  }
-  87.5% {
-    inset: 0 0 35px 0;
-  }
-  100% {
-    inset: 0 35px 35px 0;
-  }
-}
-</style>

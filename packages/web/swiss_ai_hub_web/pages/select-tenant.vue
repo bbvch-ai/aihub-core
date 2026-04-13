@@ -12,7 +12,7 @@
         v-if="tenantsAreLoading"
         class="flex justify-center"
       >
-        <ProgressSpinner style="width: 2.5rem; height: 2.5rem" />
+        <Loader :size="48" />
       </div>
 
       <div
