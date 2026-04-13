@@ -62,7 +62,7 @@
         v-else
         class="flex h-screen w-full items-center justify-center"
       >
-        <Loader />
+        <AppLoader />
       </div>
     </div>
   </div>

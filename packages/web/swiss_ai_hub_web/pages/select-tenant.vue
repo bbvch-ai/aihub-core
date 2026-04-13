@@ -12,7 +12,7 @@
         v-if="tenantsAreLoading"
         class="flex justify-center"
       >
-        <Loader :size="48" />
+        <AppLoader :size="48" />
       </div>
 
       <div

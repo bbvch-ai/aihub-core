@@ -35,46 +35,33 @@ class TenantAdminController(Controller):
         self._sys_admin_auth = SysAdminAuthHandler()
 
     def list_tenants(self, route: str = "/") -> Self:
-        @self.router.get(
-            route,
-            summary="List Tenants",
-            description="Lists all tenants in the system.",
-            tags=self.tags,
-        )
+        @self.router.get(route, tags=self.tags)
         async def list_tenants(
-            identity: Annotated[SysAdminIdentity, Depends(self._sys_admin_auth)],
+            _: Annotated[SysAdminIdentity, Depends(self._sys_admin_auth)],
         ) -> list[TenantResponse]:
+            """Lists all tenants in the system."""
             return TenantAdminService.list_tenants()
 
         return self
 
     def get_tenant(self, route: str = "/{tenant_id}") -> Self:
-        @self.router.get(
-            route,
-            summary="Get Tenant",
-            description="Retrieves a single tenant by its ID.",
-            tags=self.tags,
-        )
+        @self.router.get(route, tags=self.tags)
         async def get_tenant(
             tenant_id: str,
-            identity: Annotated[SysAdminIdentity, Depends(self._sys_admin_auth)],
+            _: Annotated[SysAdminIdentity, Depends(self._sys_admin_auth)],
         ) -> TenantResponse:
+            """Retrieves a single tenant by its ID."""
             return TenantAdminService.get_tenant(tenant_id)
 
         return self
 
     def create_tenant(self, route: str = "/") -> Self:
-        @self.router.post(
-            route,
-            summary="Create Tenant",
-            description="Creates a new tenant with a name, description, and access rules.",
-            status_code=status.HTTP_201_CREATED,
-            tags=self.tags,
-        )
+        @self.router.post(route, status_code=status.HTTP_201_CREATED, tags=self.tags)
         async def create_tenant(
             data: CreateTenantRequest,
-            identity: Annotated[SysAdminIdentity, Depends(self._sys_admin_auth)],
+            _: Annotated[SysAdminIdentity, Depends(self._sys_admin_auth)],
         ) -> TenantResponse:
+            """Creates a new tenant with a name, description, and access rules."""
             try:
                 return TenantAdminService.create_tenant(data)
             except NotUniqueError:
@@ -83,17 +70,13 @@ class TenantAdminController(Controller):
         return self
 
     def update_tenant(self, route: str = "/{tenant_id}") -> Self:
-        @self.router.patch(
-            route,
-            summary="Update Tenant",
-            description="Updates a tenant's name, description, or access rules.",
-            tags=self.tags,
-        )
+        @self.router.patch(route, tags=self.tags)
         async def update_tenant(
             tenant_id: str,
             data: UpdateTenantRequest,
-            identity: Annotated[SysAdminIdentity, Depends(self._sys_admin_auth)],
+            _: Annotated[SysAdminIdentity, Depends(self._sys_admin_auth)],
         ) -> TenantResponse:
+            """Updates a tenant's name, description, or access rules."""
             try:
                 return TenantAdminService.update_tenant(tenant_id, data)
             except NotUniqueError:
@@ -102,17 +85,12 @@ class TenantAdminController(Controller):
         return self
 
     def delete_tenant(self, route: str = "/{tenant_id}") -> Self:
-        @self.router.delete(
-            route,
-            summary="Delete Tenant",
-            description="Permanently deletes a tenant and all associated data. The default tenant cannot be deleted.",
-            status_code=status.HTTP_204_NO_CONTENT,
-            tags=self.tags,
-        )
+        @self.router.delete(route, status_code=status.HTTP_204_NO_CONTENT, tags=self.tags)
         async def delete_tenant(
             tenant_id: str,
-            identity: Annotated[SysAdminIdentity, Depends(self._sys_admin_auth)],
+            _: Annotated[SysAdminIdentity, Depends(self._sys_admin_auth)],
         ) -> None:
+            """Permanently deletes a tenant and all associated data. The default tenant cannot be deleted."""
             TenantAdminService.delete_tenant(tenant_id)
 
         return self
