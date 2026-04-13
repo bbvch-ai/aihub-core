@@ -16,13 +16,12 @@ Feature: Tenant Resolution in Auth Handler
     When the auth handler resolves tenant for user "user-1"
     Then the resolved tenant should be "Acme Corp"
 
-  Scenario: Active tenant path parameter without active tenant falls back to default
+  Scenario: Active tenant path parameter without active tenant returns 400 error
     Given user "user-1" has active tenant set to the default tenant
     And user "user-1" has active tenant cleared
     And a request with tenant path parameter set to "active"
-    When the auth handler resolves tenant for user "user-1"
-    Then the resolved tenant should be "Default Org"
-    And user "user-1" should have active tenant set to the default tenant
+    When the auth handler resolves tenant for user "user-1" expecting error
+    Then a 400 error should be raised with message "No active tenant set"
 
   Scenario: Invalid tenant ID returns 403 error
     Given a request with tenant path parameter set to "non-existent-tenant-id"
@@ -34,18 +33,18 @@ Feature: Tenant Resolution in Auth Handler
     When the auth handler resolves tenant for user "user-2" expecting error
     Then a 403 error should be raised with message "Access denied"
 
-  Scenario: No active tenant and no default tenant returns 500 error
+  Scenario: No active tenant returns 400 error even without default tenant
     Given no default tenant exists
+    And user "user-1" has active tenant cleared
     And a request with tenant path parameter set to "active"
     When the auth handler resolves tenant for user "user-1" expecting error
-    Then a 500 error should be raised with message "No default tenant configured"
+    Then a 400 error should be raised with message "No active tenant set"
 
-  Scenario: Get active tenant for user without active tenant falls back to default
+  Scenario: Get active tenant for user without active tenant returns 400 error
     Given user "user-1" has active tenant set to the default tenant
     And user "user-1" has active tenant cleared
-    When the auth handler gets active tenant for user "user-1"
-    Then the resolved tenant should be "Default Org"
-    And user "user-1" should have active tenant set to the default tenant
+    When the auth handler gets active tenant for user "user-1" expecting error
+    Then a 400 error should be raised with message "No active tenant set"
 
   Scenario: Get active tenant for user with active tenant set resolves correctly
     Given user "user-1" has active tenant set to the second tenant
@@ -75,33 +74,29 @@ Feature: Tenant Resolution in Auth Handler
     Then the resolved tenant should be "Acme Corp"
     And user "user-1" should have active tenant set to the default tenant
 
-  Scenario: Stale active tenant falls back to default
+  Scenario: Stale active tenant returns 400 error
     Given user "user-1" has active tenant set to "000000000000000000000000"
     And a request with tenant path parameter set to "active"
-    When the auth handler resolves tenant for user "user-1"
-    Then the resolved tenant should be "Default Org"
-    And user "user-1" should have active tenant set to the default tenant
+    When the auth handler resolves tenant for user "user-1" expecting error
+    Then a 400 error should be raised with message "Your active tenant is no longer accessible"
 
-  Scenario: Active tenant without membership falls back to default
+  Scenario: Active tenant without membership returns 400 error
     Given user "user-2" has active tenant set to the second tenant
     And a request with tenant path parameter set to "active"
-    When the auth handler resolves tenant for user "user-2"
-    Then the resolved tenant should be "Default Org"
-    And user "user-2" should have active tenant set to the default tenant
+    When the auth handler resolves tenant for user "user-2" expecting error
+    Then a 400 error should be raised with message "Your active tenant is no longer accessible"
 
   Scenario: WebSocket context uses active tenant
     Given user "user-1" has active tenant set to the second tenant
     When the auth handler gets active tenant for user "user-1"
     Then the resolved tenant should be "Acme Corp"
 
-  Scenario: WebSocket with stale active tenant falls back to default
+  Scenario: WebSocket with stale active tenant returns 400 error
     Given user "user-1" has active tenant set to "000000000000000000000000"
-    When the auth handler gets active tenant for user "user-1"
-    Then the resolved tenant should be "Default Org"
-    And user "user-1" should have active tenant set to the default tenant
+    When the auth handler gets active tenant for user "user-1" expecting error
+    Then a 400 error should be raised with message "Your active tenant is no longer accessible"
 
-  Scenario: WebSocket with revoked tenant membership falls back to default
+  Scenario: WebSocket with revoked tenant membership returns 400 error
     Given user "user-2" has active tenant set to the second tenant
-    When the auth handler gets active tenant for user "user-2"
-    Then the resolved tenant should be "Default Org"
-    And user "user-2" should have active tenant set to the default tenant
+    When the auth handler gets active tenant for user "user-2" expecting error
+    Then a 400 error should be raised with message "Your active tenant is no longer accessible"
