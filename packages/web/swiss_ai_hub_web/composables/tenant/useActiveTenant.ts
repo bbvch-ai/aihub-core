@@ -18,7 +18,7 @@ export const useSetActiveTenant = defineMutation(() => {
         composable: '$fetch',
         body: { tenant_id: tenantId },
       })
-      queryCache.setQueryData(['active-tenant'], result)
+      queryCache.invalidateQueries({ key: ['active-tenant'] })
       queryCache.invalidateQueries({ key: ['my-tenants'] })
       return result
     },

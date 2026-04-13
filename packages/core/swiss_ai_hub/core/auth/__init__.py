@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.auth.identity.tenant_identity import TenantIdentity
     from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
     from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
+    from swiss_ai_hub.core.auth.keycloak.keycloak_settings import KeycloakSettings
     from swiss_ai_hub.core.auth.keycloak.models.keycloak_group import KeycloakGroup
     from swiss_ai_hub.core.auth.keycloak.models.keycloak_user import KeycloakUser
 
@@ -36,6 +37,7 @@ __all__ = [
     "DangerousDevelopmentOnlyAuthSettings",
     "KeycloakAdminService",
     "KeycloakGroup",
+    "KeycloakSettings",
     "KeycloakUser",
     "SuperuserSettings",
     "TenantIdentity",
@@ -50,6 +52,7 @@ _LAZY_IMPORTS = {
     "AuthHandler": "swiss_ai_hub.core.auth.dependencies.auth_handler",
     "KeycloakAdminService": "swiss_ai_hub.core.auth.keycloak.keycloak_admin_service",
     "KeycloakGroup": "swiss_ai_hub.core.auth.keycloak.models.keycloak_group",
+    "KeycloakSettings": "swiss_ai_hub.core.auth.keycloak.keycloak_settings",
     "KeycloakUser": "swiss_ai_hub.core.auth.keycloak.models.keycloak_user",
     "DangerousDevelopmentOnlyAuthHandler": "swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler",  # noqa: E501
     "DangerousDevelopmentOnlyAuthSettings": "swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_settings",  # noqa: E501
