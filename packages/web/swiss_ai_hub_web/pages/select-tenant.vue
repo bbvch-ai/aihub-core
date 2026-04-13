@@ -8,7 +8,12 @@
         {{ t('tenant.select_description') }}
       </p>
 
-      <ProgressSpinner v-if="tenantsAreLoading" />
+      <div
+        v-if="tenantsAreLoading"
+        class="flex justify-center"
+      >
+        <ProgressSpinner style="width: 2.5rem; height: 2.5rem" />
+      </div>
 
       <div
         v-else
