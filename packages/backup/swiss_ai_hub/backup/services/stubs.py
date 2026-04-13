@@ -25,10 +25,6 @@ class _StubHandler(BackupHandler):
         raise NotImplementedError(f"{self._name} restore not yet implemented")
 
 
-class MilvusHandler(_StubHandler):
-    _name = "Milvus"
-
-
 class Neo4jHandler(_StubHandler):
     _name = "Neo4j"
 

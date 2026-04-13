@@ -4,9 +4,9 @@ from swiss_ai_hub.backup.dagster.assets.handler_factory import HANDLER_FACTORIES
 from swiss_ai_hub.backup.models import BACKUP_SERVICES
 from swiss_ai_hub.backup.services.base import BackupHandler
 from swiss_ai_hub.backup.services.postgres import PostgresHandler
+from swiss_ai_hub.backup.services.milvus import MilvusHandler
 from swiss_ai_hub.backup.services.stubs import (
     ClickHouseHandler,
-    MilvusHandler,
     NatsHandler,
     Neo4jHandler,
 )
