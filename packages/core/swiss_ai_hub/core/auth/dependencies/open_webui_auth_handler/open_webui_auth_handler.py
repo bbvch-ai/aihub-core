@@ -10,7 +10,6 @@ from swiss_ai_hub.core.auth.dependencies.auth_settings import AuthSettings
 from swiss_ai_hub.core.auth.dependencies.bearer_auth_handler import BearerAuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
-from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 
 logger = logging.getLogger(__name__)
 
@@ -69,15 +68,8 @@ class OpenWebuiAuthHandler(AuthHandler):
                 detail="User not found. Please login via OAuth2 before using OpenWebUI integration.",
             )
 
-        tenant = await self.resolve_tenant_for_user(request, keycloak_user.id)
-        roles = UserTenantRoleEntity.get_roles_for_user_in_tenant(keycloak_user.id, tenant.id)
-
-        return UserIdentity(
-            id=keycloak_user.id,
-            name=keycloak_user.name,
-            email=keycloak_user.email,
-            roles=roles,
-            acting_within_tenant=tenant,
+        return await self.build_identity(
+            user_id=keycloak_user.id, name=keycloak_user.name, email=keycloak_user.email, request=request
         )
 
     async def authenticate_token(self, token: str) -> UserIdentity:

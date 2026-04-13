@@ -7,7 +7,6 @@ from swiss_ai_hub.core.auth.dependencies.bearer_auth_handler import BearerAuthHa
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
 from swiss_ai_hub.core.persistence.access.entities.bearer_token import BearerToken
-from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 
 logger = logging.getLogger(__name__)
 
@@ -43,20 +42,7 @@ class TokenAuthHandler(BearerAuthHandler):
 
         user_id = access_token.user_oid
 
-        # Resolve tenant context from request or use default
-        # todo: return self.build_identity(user, request)
-        if request:
-            tenant = await self.resolve_tenant_for_user(request, user_id)
-        else:
-            tenant = await self.get_active_tenant_for_user(user_id)
-
-        roles = UserTenantRoleEntity.get_roles_for_user_in_tenant(user_id, tenant.id)
         keycloak_user = await KeycloakAdminService.get_user_by_id(user_id)
-
-        return UserIdentity(
-            id=user_id,
-            name=keycloak_user.name,
-            email=keycloak_user.email,
-            roles=roles,
-            acting_within_tenant=tenant,
+        return await self.build_identity(
+            user_id=user_id, name=keycloak_user.name, email=keycloak_user.email, request=request
         )

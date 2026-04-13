@@ -48,18 +48,6 @@ class DangerousDevelopmentOnlyAuthHandler(AuthHandler):
             active_tenant_id = await KeycloakAdminService.get_active_tenant_id(self.config.OID)
             if not active_tenant_id:
                 await KeycloakAdminService.set_active_tenant(self.config.OID, str(default_tenant.id))
-        # todo: return self.build_identity(user_entity, request)
-        if request:
-            tenant = await self.resolve_tenant_for_user(request, self.config.OID)
-        else:
-            tenant = await self.get_active_tenant_for_user(self.config.OID)
-
-        return UserIdentity(
-            id=self.config.OID,
-            name=self.config.NAME,
-            email=self.config.EMAIL,
-            roles=self.config.ROLES,
-            acting_within_tenant=tenant,
+        return await self.build_identity(
+            user_id=self.config.OID, name=self.config.NAME, email=self.config.EMAIL, request=request
         )
-
-

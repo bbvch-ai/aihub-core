@@ -109,13 +109,15 @@ class AuthHandler(ABC):
             detail="No active tenant set. Please select a tenant first.",
         )
 
-    def build_identity(self, user: UserEntity, request: Request | None) -> UserIdentity:
+    async def build_identity(self, *, user_id: str, name: str, email: str, request: Request | None) -> UserIdentity:
         """Builds a UserIdentity with tenant context resolved from the request or active tenant fallback."""
         if request and self.has_tenant_in_request(request):
-            tenant = self.resolve_tenant_for_user(request, user.id)
-            return UserIdentity.from_user_entity(user, tenant)
+            tenant = await self.resolve_tenant_for_user(request, user_id)
+            roles = UserTenantRoleEntity.get_roles_for_user_in_tenant(user_id, tenant.id)
+            return UserIdentity(id=user_id, name=name, email=email, roles=roles, acting_within_tenant=tenant)
         elif request:
-            return UserIdentity.from_user_entity_without_tenant(user)
+            return UserIdentity(id=user_id, name=name, email=email, roles=[])
         else:
-            tenant = self.get_active_tenant_for_user(user.id)
-            return UserIdentity.from_user_entity(user, tenant)
+            tenant = await self.get_active_tenant_for_user(user_id)
+            roles = UserTenantRoleEntity.get_roles_for_user_in_tenant(user_id, tenant.id)
+            return UserIdentity(id=user_id, name=name, email=email, roles=roles, acting_within_tenant=tenant)
