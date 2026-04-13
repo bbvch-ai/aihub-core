@@ -64,6 +64,107 @@ onMounted(() => {
   }, 350)
 })
 
+const COL_PITCH = NODE_WIDTH + COL_GAP
+const ROW_PITCH = NODE_HEIGHT + ROW_GAP
+
+type Adjacency = Map<string, string[]>
+type GridSlot = { row: number, col: number }
+type ColumnCount = 1 | 2 | 3
+
+const chooseColumnCount = (middleCount: number): ColumnCount => {
+  if (middleCount >= 12) return 3
+  if (middleCount >= 6) return 2
+  return 1
+}
+
+const FILL_ORDERS: Record<ColumnCount, [number[], number[]]> = {
+  1: [[0], [0]],
+  2: [[1, 0], [0, 1]],
+  3: [[1, 0, 2], [1, 2, 0]],
+}
+
+const fillOrderForRow = (colCount: ColumnCount, row: number): number[] =>
+  FILL_ORDERS[colCount][row % 2]
+
+const buildAdjacency = (links: { source: string, target: string }[]): { children: Adjacency, parents: Adjacency } => {
+  const children: Adjacency = new Map()
+  const parents: Adjacency = new Map()
+  for (const { source, target } of links) {
+    const kids = children.get(source) ?? []
+    kids.push(target)
+    children.set(source, kids)
+    const pars = parents.get(target) ?? []
+    pars.push(source)
+    parents.set(target, pars)
+  }
+  return { children, parents }
+}
+
+/** BFS from start nodes, yielding middle-node ids in visit order. */
+const bfsMiddleOrder = (startIds: string[], middleIds: Set<string>, children: Adjacency): string[] => {
+  const visited = new Set<string>(startIds)
+  const order: string[] = []
+  const queue = [...startIds]
+  while (queue.length) {
+    const current = queue.shift()!
+    for (const child of children.get(current) ?? []) {
+      if (visited.has(child)) continue
+      visited.add(child)
+      if (middleIds.has(child)) order.push(child)
+      queue.push(child)
+    }
+  }
+  return order
+}
+
+const requiredRowFor = (nodeId: string, parents: Adjacency, rowOf: Map<string, number>): number => {
+  let required = 0
+  for (const pid of parents.get(nodeId) ?? []) {
+    const pr = rowOf.get(pid)
+    if (pr !== undefined && pr + 1 > required) required = pr + 1
+  }
+  return required
+}
+
+const findFreeSlot = (
+  fromRow: number,
+  colCount: ColumnCount,
+  taken: Set<string>,
+): GridSlot => {
+  let row = fromRow
+  while (true) {
+    for (const col of fillOrderForRow(colCount, row)) {
+      if (!taken.has(`${row}:${col}`)) return { row, col }
+    }
+    row += 1
+  }
+}
+
+/** Assign (row, col) slots to each middle node in BFS order. */
+const assignSlots = (bfsOrder: string[], parents: Adjacency, colCount: ColumnCount): Map<string, GridSlot> => {
+  const slotOf = new Map<string, GridSlot>()
+  const taken = new Set<string>()
+  const rowOf = new Map<string, number>()
+  for (const nodeId of bfsOrder) {
+    const slot = findFreeSlot(requiredRowFor(nodeId, parents, rowOf), colCount, taken)
+    slotOf.set(nodeId, slot)
+    rowOf.set(nodeId, slot.row)
+    taken.add(`${slot.row}:${slot.col}`)
+  }
+  return slotOf
+}
+
+/** Column index → horizontal pixel offset. Column 1 (center in 3-col) is at x=0. */
+const columnX = (colCount: ColumnCount, col: number): number => {
+  if (colCount === 1) return 0
+  if (colCount === 2) return (col - 0.5) * COL_PITCH
+  return (col - 1) * COL_PITCH
+}
+
+/** Distribute `total` nodes horizontally around x=0. */
+const centeredGroupX = (index: number, total: number): number =>
+  (index - (total - 1) / 2) * COL_PITCH
+
 /**
  * Custom layout algorithm:
  * - Start and stop nodes are centered as groups on their own rows; their x
@@ -73,10 +174,7 @@ onMounted(() => {
  * - Processing order: BFS from start nodes.
  * - Each node's row = min row such that all its already-placed parents have
  *   lower rows (cycles back to earlier rows are ignored).
- * - Column fill order per row:
- *     1 col  → [0]
- *     2 cols → even rows [1, 0] (right→left), odd rows [0, 1] (left→right)
- *     3 cols → even rows [1, 0, 2] (center→left→right), odd rows [1, 2, 0]
+ * - Column fill order per row: center first, then alternate sides by row parity.
  * - If a row has no free columns at the required row, bump to the next row.
  */
 const layout = computed(() => {
@@ -85,103 +183,33 @@ const layout = computed(() => {
   const startNodes = graphNodes.filter(n => n.type === 'start')
   const stopNodes = graphNodes.filter(n => n.type === 'stop')
   const middleNodes = graphNodes.filter(n => n.type === 'step')
-
-  const colCount = middleNodes.length >= 12 ? 3 : middleNodes.length >= 6 ? 2 : 1
-
-  const childrenOf = new Map<string, string[]>()
-  const parentsOf = new Map<string, string[]>()
-  for (const link of links) {
-    const kids = childrenOf.get(link.source) ?? []
-    kids.push(link.target)
-    childrenOf.set(link.source, kids)
-    const pars = parentsOf.get(link.target) ?? []
-    pars.push(link.source)
-    parentsOf.set(link.target, pars)
-  }
-
-  // BFS from start nodes → ordered list of middle nodes (excluding start/stop).
   const middleIds = new Set(middleNodes.map(n => n.id))
-  const visited = new Set<string>()
-  const bfsOrder: string[] = []
-  const queue: string[] = startNodes.map(n => n.id)
-  startNodes.forEach(n => visited.add(n.id))
-  while (queue.length) {
-    const current = queue.shift()!
-    for (const child of childrenOf.get(current) ?? []) {
-      if (visited.has(child)) continue
-      visited.add(child)
-      if (middleIds.has(child)) bfsOrder.push(child)
-      queue.push(child)
-    }
-  }
-  // Any middle nodes not reachable from start (shouldn't happen, but be safe).
+  const colCount = chooseColumnCount(middleNodes.length)
+
+  const { children, parents } = buildAdjacency(links)
+
+  const bfsOrder = bfsMiddleOrder(startNodes.map(n => n.id), middleIds, children)
+  // Include any middle nodes unreachable from start (defensive).
   for (const n of middleNodes) {
     if (!bfsOrder.includes(n.id)) bfsOrder.push(n.id)
   }
 
-  const fillOrderForRow = (row: number): number[] => {
-    if (colCount === 1) return [0]
-    if (colCount === 2) return row % 2 === 0 ? [1, 0] : [0, 1]
-    return row % 2 === 0 ? [1, 0, 2] : [1, 2, 0]
-  }
-
-  const rowOf = new Map<string, number>()
-  const colOf = new Map<string, number>()
-  const slotKey = (r: number, c: number) => `${r}:${c}`
-  const takenSlots = new Set<string>()
-
-  for (const nodeId of bfsOrder) {
-    let requiredRow = 0
-    for (const pid of parentsOf.get(nodeId) ?? []) {
-      const pr = rowOf.get(pid)
-      if (pr !== undefined && pr + 1 > requiredRow) requiredRow = pr + 1
-    }
-    let placed = false
-    for (let r = requiredRow; !placed; r++) {
-      for (const c of fillOrderForRow(r)) {
-        if (!takenSlots.has(slotKey(r, c))) {
-          rowOf.set(nodeId, r)
-          colOf.set(nodeId, c)
-          takenSlots.add(slotKey(r, c))
-          placed = true
-          break
-        }
-      }
-    }
-  }
-
-  const colPitch = NODE_WIDTH + COL_GAP
-  const rowPitch = NODE_HEIGHT + ROW_GAP
-
-  // Column → visual x. col 1 (or col 0 in 1-col mode) is the center.
-  const colToX = (col: number): number => {
-    if (colCount === 1) return 0
-    if (colCount === 2) return (col - 0.5) * colPitch
-    return (col - 1) * colPitch
-  }
-
-  // Evenly distribute a centered group of n nodes horizontally.
-  const centeredGroupX = (index: number, total: number): number =>
-    (index - (total - 1) / 2) * colPitch
+  const slotOf = assignSlots(bfsOrder, parents, colCount)
 
   const layoutMap = new Map<string, { x: number, y: number }>()
-
-  // Start nodes on row 0, middle nodes on rows 1..maxRow+1, stop nodes below.
   startNodes.forEach((node, i) => {
     layoutMap.set(node.id, { x: centeredGroupX(i, startNodes.length), y: 0 })
   })
-  let maxMiddleRow = -1
+  let maxRow = -1
   middleNodes.forEach((node) => {
-    const r = rowOf.get(node.id)!
-    const c = colOf.get(node.id)!
-    if (r > maxMiddleRow) maxMiddleRow = r
-    layoutMap.set(node.id, { x: colToX(c), y: (r + 1) * rowPitch })
+    const { row, col } = slotOf.get(node.id)!
+    if (row > maxRow) maxRow = row
+    layoutMap.set(node.id, { x: columnX(colCount, col), y: (row + 1) * ROW_PITCH })
   })
-  const stopRow = maxMiddleRow + 2
+  const stopRow = maxRow + 2
   stopNodes.forEach((node, i) => {
-    layoutMap.set(node.id, { x: centeredGroupX(i, stopNodes.length), y: stopRow * rowPitch })
+    layoutMap.set(node.id, { x: centeredGroupX(i, stopNodes.length), y: stopRow * ROW_PITCH })
   })
-
   return layoutMap
 })
 

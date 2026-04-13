@@ -1,7 +1,6 @@
 from collections import defaultdict
-from typing import Any, cast
+from typing import Any
 
-import networkx as nx
 from swiss_ai_hub.agent.agents.agent import Agent
 
 from swiss_ai_hub.core.agents.visualizers.types.edge_data import EdgeData
@@ -20,11 +19,12 @@ EventType = type[BaseEvent]
 
 class WorkflowVisualizer:
     """
-    Builds a directed graph representation of an agent's workflow.
+    Builds a `WorkflowGraph` from an agent's step methods and event annotations.
 
-    Each node carries only the minimum needed for rendering: id, type, label, description, icon.
-    Edges are plain source→target arrows. One start node is created per concrete start event type
-    and one stop node per concrete stop event type, labeled with the event's display name.
+    Each node carries only what the UI needs: id, type, label, description, icon.
+    Edges are plain source→target arrows. One start node is emitted per concrete
+    start-event type and one stop node per concrete stop-event type, labeled with
+    the event's display name.
     """
 
     DEFAULT_START_ICON = "mage:play-circle-fill"
@@ -33,48 +33,71 @@ class WorkflowVisualizer:
     def __init__(self, agent: type[Agent], locale: str = "en") -> None:
         self.agent = agent
         self.locale = locale
-        self.graph: nx.DiGraph | None = None
 
-    def build_workflow_graph(self) -> nx.DiGraph:
-        G = nx.DiGraph()
+    def build(self) -> WorkflowGraph:
+        nodes: dict[str, NodeData] = {}
+        edges: set[tuple[str, str]] = set()
 
         steps = {step.__name__: step for step in self.agent.get_steps()}
         for step_name, step_method in steps.items():
-            self._add_step_node(G, step_name, step_method)
+            nodes[step_name] = NodeData(
+                id=step_name,
+                type="step",
+                label=self._locale(getattr(step_method, "_step_name", None)) or step_name,
+                description=self._locale(getattr(step_method, "_step_description", None)),
+                icon=getattr(step_method, "_step_icon", None),
+            )
 
         producers, consumers = self._collect_producers_and_consumers(steps)
-        self._add_edges(G, producers, consumers)
-        self._add_in_the_loop_edges(G, producers, consumers)
 
-        self.graph = G
-        return G
+        # Event-driven edges. Start/stop events become their own terminal nodes.
+        for event_class in set(producers) | set(consumers):
+            event_producers = producers.get(event_class, set())
+            event_consumers = consumers.get(event_class, set())
 
-    def _add_step_node(self, G: nx.DiGraph, step_name: str, step_method: Any) -> None:
-        G.add_node(
-            step_name,
-            type="step",
-            label=self._extract_locale(getattr(step_method, "_step_name", None)) or step_name,
-            description=self._extract_locale(getattr(step_method, "_step_description", None)),
-            icon=getattr(step_method, "_step_icon", None),
+            if issubclass(event_class, StartEvent):
+                if not event_consumers:
+                    continue
+                source_id = self._ensure_terminal_node(nodes, event_class, kind="start")
+                for consumer in event_consumers:
+                    edges.add((source_id, consumer))
+            elif issubclass(event_class, StopEvent):
+                if not event_producers:
+                    continue
+                target_id = self._ensure_terminal_node(nodes, event_class, kind="stop")
+                for producer in event_producers:
+                    edges.add((producer, target_id))
+            else:
+                for producer in event_producers:
+                    for consumer in event_consumers:
+                        edges.add((producer, consumer))
+
+        # Request/response "in-the-loop" pairs: close the loop from the producer of
+        # each *Request to the consumer of the matching *Response.
+        self._add_in_the_loop_edges(edges, producers, consumers)
+
+        return WorkflowGraph(
+            nodes=list(nodes.values()),
+            links=[EdgeData(source=s, target=t) for s, t in edges],
         )
 
-    def _add_terminal_node(self, G: nx.DiGraph, event_class: EventType, kind: str) -> str:
+    def _ensure_terminal_node(self, nodes: dict[str, NodeData], event_class: EventType, kind: str) -> str:
         node_id = f"{kind}_{event_class.__name__}"
-        if node_id in G.nodes:
+        if node_id in nodes:
             return node_id
-        G.add_node(
-            node_id,
+        nodes[node_id] = NodeData(
+            id=node_id,
             type=kind,
-            label=self._extract_locale(getattr(event_class, "_display_name", None)) or event_class.__name__,
-            description=self._extract_locale(getattr(event_class, "_display_description", None)),
+            label=self._locale(getattr(event_class, "_display_name", None)) or event_class.__name__,
+            description=self._locale(getattr(event_class, "_display_description", None)),
             icon=self.DEFAULT_START_ICON if kind == "start" else self.DEFAULT_STOP_ICON,
         )
         return node_id
 
-    def _extract_locale(self, locale_str: Any) -> str | None:
-        if not isinstance(locale_str, LocaleString):
+    def _locale(self, value: Any) -> str | None:
+        if not isinstance(value, LocaleString):
             return None
-        return LocaleHandler(self.locale).extract(locale_str)
+        return LocaleHandler(self.locale).extract(value)
 
     def _collect_producers_and_consumers(
         self, steps: dict[str, Any]
@@ -91,68 +114,26 @@ class WorkflowVisualizer:
                     producers[event_class].add(step_name)
         return producers, consumers
 
-    def _add_edges(
-        self,
-        G: nx.DiGraph,
-        producers: dict[EventType, set[str]],
-        consumers: dict[EventType, set[str]],
-    ) -> None:
-        for event_class in set(producers) | set(consumers):
-            event_producers = producers.get(event_class, set())
-            event_consumers = consumers.get(event_class, set())
-
-            if issubclass(event_class, StartEvent):
-                if not event_consumers:
-                    continue
-                source = self._add_terminal_node(G, event_class, kind="start")
-                for consumer in event_consumers:
-                    G.add_edge(source, consumer)
-            elif issubclass(event_class, StopEvent):
-                if not event_producers:
-                    continue
-                target = self._add_terminal_node(G, event_class, kind="stop")
-                for producer in event_producers:
-                    G.add_edge(producer, target)
-            else:
-                for producer in event_producers:
-                    for consumer in event_consumers:
-                        G.add_edge(producer, consumer)
-
     def _add_in_the_loop_edges(
         self,
-        G: nx.DiGraph,
+        edges: set[tuple[str, str]],
         producers: dict[EventType, set[str]],
         consumers: dict[EventType, set[str]],
     ) -> None:
-        """Pair Request producers with matching Response consumers so the graph closes the loop."""
         request_events = {
-            ec.__name__: (ec, ps)
+            ec.__name__: ps
             for ec, ps in producers.items()
             if "Request" in ec.__name__ and "Response" not in ec.__name__
         }
         response_events = {
-            ec.__name__: (ec, cs)
+            ec.__name__: cs
             for ec, cs in consumers.items()
             if "Response" in ec.__name__ and "Request" not in ec.__name__
         }
-
-        for req_name, (_, req_producers) in request_events.items():
-            resp_match = response_events.get(req_name.replace("Request", "Response"))
-            if not resp_match:
+        for req_name, req_producers in request_events.items():
+            resp_consumers = response_events.get(req_name.replace("Request", "Response"))
+            if not resp_consumers:
                 continue
-            _, resp_consumers = resp_match
             for producer in req_producers:
                 for consumer in resp_consumers:
-                    G.add_edge(producer, consumer)
-
-    def to_pydantic(self) -> WorkflowGraph:
-        if self.graph is None:
-            self.build_workflow_graph()
-        graph = cast(nx.DiGraph, self.graph)
-
-        nodes = [
-            NodeData(id=node, **{k: v for k, v in attrs.items() if v is not None})
-            for node, attrs in graph.nodes(data=True)
-        ]
-        links = [EdgeData(source=source, target=target) for source, target in graph.edges()]
-        return WorkflowGraph(directed=True, multigraph=False, graph={}, nodes=nodes, links=links)
+                    edges.add((producer, consumer))

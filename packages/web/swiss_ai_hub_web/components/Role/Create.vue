@@ -43,12 +43,13 @@ const emit = defineEmits<{
 }>()
 
 const { createRole } = useCreateRole()
+const { tenantId } = useTenant()
 
 const close = () => {
   emit('close')
 }
 const save = async () => {
-  await createRole({ createdRole: role.value })
+  await createRole({ createdRole: role.value, tenantId: tenantId.value! })
   emit('close')
 }
 </script>

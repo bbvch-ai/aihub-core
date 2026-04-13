@@ -36,6 +36,7 @@ const userInput = ref<string>('')
 const route = useRoute()
 const router = useRouter()
 const tenantPath = useTenantPath()
+const { tenantId } = useTenant()
 const { t } = useI18n()
 
 const { myUser } = useMyUser()
@@ -51,12 +52,14 @@ const submitMessage = async () => {
       agent_id: route.params.agent_id as string,
       agent_class: route.params.agent_class as string,
     }],
-  } satisfies CreateThreadRequest)
+    tenantId: tenantId.value!,
+  } satisfies CreateThreadRequest & { tenantId: string })
   const agentIdentifier = `${route.params.agent_class}/${route.params.agent_id}`
   sendMessages({
     model: agentIdentifier,
     messages: [{ role: 'user', content: userInput.value }],
     threadId: thread.id,
+    tenantId: tenantId.value!,
   })
   userInput.value = ''
   router.push(tenantPath(`/service/threads/${thread.id}/chat`))

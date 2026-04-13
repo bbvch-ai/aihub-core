@@ -6751,51 +6751,12 @@ export const EdgeDataSchema = {
             type: 'string',
             title: 'Target',
             description: 'ID of the target node'
-        },
-        edge_id: {
-            type: 'integer',
-            title: 'Edge Id',
-            description: 'Unique identifier for the edge'
-        },
-        event_name: {
-            type: 'string',
-            title: 'Event Name',
-            description: 'Event represented by this edge'
-        },
-        event_full_name: {
-            type: 'string',
-            title: 'Event Full Name',
-            description: 'Fully qualified name of the event'
-        },
-        is_start_event: {
-            type: 'boolean',
-            title: 'Is Start Event',
-            description: 'Whether this edge represents a start event'
-        },
-        is_stop_event: {
-            type: 'boolean',
-            title: 'Is Stop Event',
-            description: 'Whether this edge represents a stop event'
-        },
-        payload: {
-            additionalProperties: {
-                $ref: '#/components/schemas/EventPayloadField'
-            },
-            type: 'object',
-            title: 'Payload',
-            description: 'Payload information for the event'
         }
     },
     type: 'object',
     required: [
         'source',
-        'target',
-        'edge_id',
-        'event_name',
-        'event_full_name',
-        'is_start_event',
-        'is_stop_event',
-        'payload'
+        'target'
     ],
     title: 'EdgeData',
     description: 'Data for an edge in the workflow graph.'
@@ -7107,78 +7068,6 @@ export const EventBucketSchema = {
     ],
     title: 'EventBucket',
     description: 'Represents a time bucket with event counts by type.'
-} as const;
-
-export const EventInfoSchema = {
-    properties: {
-        name: {
-            type: 'string',
-            title: 'Name',
-            description: 'The name of the event class'
-        },
-        full_name: {
-            type: 'string',
-            title: 'Full Name',
-            description: 'The fully qualified name of the event class'
-        },
-        is_start_event: {
-            type: 'boolean',
-            title: 'Is Start Event',
-            description: 'Whether this is a start event'
-        },
-        is_stop_event: {
-            type: 'boolean',
-            title: 'Is Stop Event',
-            description: 'Whether this is a stop event'
-        },
-        payload: {
-            additionalProperties: {
-                $ref: '#/components/schemas/EventPayloadField'
-            },
-            type: 'object',
-            title: 'Payload',
-            description: 'Information about the event payload fields'
-        }
-    },
-    type: 'object',
-    required: [
-        'name',
-        'full_name',
-        'is_start_event',
-        'is_stop_event',
-        'payload'
-    ],
-    title: 'EventInfo',
-    description: 'Information about an event.'
-} as const;
-
-export const EventPayloadFieldSchema = {
-    properties: {
-        type: {
-            type: 'string',
-            title: 'Type',
-            description: 'The human-readable type of the payload field'
-        },
-        description: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Description',
-            description: 'Description of the payload field, if available'
-        }
-    },
-    type: 'object',
-    required: [
-        'type',
-        'description'
-    ],
-    title: 'EventPayloadField',
-    description: 'Information about an event payload field.'
 } as const;
 
 export const EventSpecsSchema = {
@@ -10081,31 +9970,6 @@ export const InputAudioSchema = {
         'format'
     ],
     title: 'InputAudio'
-} as const;
-
-export const InputEventInfoSchema = {
-    properties: {
-        event_names: {
-            items: {
-                $ref: '#/components/schemas/EventInfo'
-            },
-            type: 'array',
-            title: 'Event Names',
-            description: 'The events that can be accepted'
-        },
-        optional: {
-            type: 'boolean',
-            title: 'Optional',
-            description: 'Whether this input is optional'
-        }
-    },
-    type: 'object',
-    required: [
-        'event_names',
-        'optional'
-    ],
-    title: 'InputEventInfo',
-    description: 'Information about an input event for a step.'
 } as const;
 
 export const InputMaskSchema = {
@@ -13447,7 +13311,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1776081676
+            default: 1776094151
         },
         owned_by: {
             type: 'string',
@@ -14540,13 +14404,13 @@ export const NodeDataSchema = {
         },
         type: {
             type: 'string',
+            enum: [
+                'start',
+                'step',
+                'stop'
+            ],
             title: 'Type',
-            description: 'Type of node (step, start, stop)'
-        },
-        node_id: {
-            type: 'string',
-            title: 'Node Id',
-            description: 'Internal identifier for the node'
+            description: 'Type of node'
         },
         label: {
             type: 'string',
@@ -14576,67 +14440,12 @@ export const NodeDataSchema = {
             ],
             title: 'Icon',
             description: 'Icon for the node, if available'
-        },
-        input_events: {
-            anyOf: [
-                {
-                    additionalProperties: {
-                        $ref: '#/components/schemas/InputEventInfo'
-                    },
-                    type: 'object'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Input Events',
-            description: 'Input events required by this node'
-        },
-        output_events: {
-            anyOf: [
-                {
-                    items: {
-                        $ref: '#/components/schemas/EventInfo'
-                    },
-                    type: 'array'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Output Events',
-            description: 'Output events produced by this node'
-        },
-        max_executions: {
-            anyOf: [
-                {
-                    type: 'integer'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Max Executions',
-            description: 'Maximum number of times this node can be executed'
-        },
-        stop_on_error: {
-            anyOf: [
-                {
-                    type: 'boolean'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Stop On Error',
-            description: 'Whether workflow should stop on error in this node'
         }
     },
     type: 'object',
     required: [
         'id',
         'type',
-        'node_id',
         'label'
     ],
     title: 'NodeData',
@@ -21668,22 +21477,6 @@ export const VideoBlockSchema = {
 
 export const WorkflowGraphSchema = {
     properties: {
-        directed: {
-            type: 'boolean',
-            title: 'Directed',
-            description: 'Whether the graph is directed'
-        },
-        multigraph: {
-            type: 'boolean',
-            title: 'Multigraph',
-            description: 'Whether the graph is a multigraph'
-        },
-        graph: {
-            additionalProperties: true,
-            type: 'object',
-            title: 'Graph',
-            description: 'Graph-level attributes'
-        },
         nodes: {
             items: {
                 $ref: '#/components/schemas/NodeData'
@@ -21703,9 +21496,6 @@ export const WorkflowGraphSchema = {
     },
     type: 'object',
     required: [
-        'directed',
-        'multigraph',
-        'graph',
         'nodes',
         'links'
     ],

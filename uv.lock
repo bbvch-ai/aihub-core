@@ -5388,7 +5388,6 @@ dependencies = [
     { name = "mem0ai", extra = ["graph"] },
     { name = "mongoengine" },
     { name = "nats-py" },
-    { name = "networkx" },
     { name = "openai" },
     { name = "openinference-instrumentation" },
     { name = "openinference-instrumentation-llama-index" },
@@ -5425,7 +5424,6 @@ dependencies = [
 dev = [
     { name = "matplotlib" },
     { name = "pandas-stubs" },
-    { name = "types-networkx" },
     { name = "types-pyyaml" },
 ]
 
@@ -5454,7 +5452,6 @@ requires-dist = [
     { name = "mem0ai", extras = ["graph"], specifier = ">=1.0.2" },
     { name = "mongoengine", specifier = ">=0.29.1" },
     { name = "nats-py", specifier = ">=2.9.0" },
-    { name = "networkx", specifier = ">=3.4.2" },
     { name = "openai", specifier = ">=1.76.2" },
     { name = "openinference-instrumentation", specifier = ">=0.1.38" },
     { name = "openinference-instrumentation-llama-index", specifier = ">=4.2.1" },
@@ -5491,7 +5488,6 @@ requires-dist = [
 dev = [
     { name = "matplotlib", specifier = ">=3.10.1" },
     { name = "pandas-stubs", specifier = ">=2.3.3.251201" },
-    { name = "types-networkx", specifier = ">=3.4.2.20241115" },
     { name = "types-pyyaml", specifier = ">=6.0.12.20240917" },
 ]
 
@@ -5848,18 +5844,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/76/26/0aa563e229c269c528a3b8c709fc671ac2a5c564732fab0852ac6ee006cf/types_awscrt-0.31.3.tar.gz", hash = "sha256:09d3eaf00231e0f47e101bd9867e430873bc57040050e2a3bd8305cb4fc30865", size = 18178, upload-time = "2026-03-08T02:31:14.569Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/3e/e5/47a573bbbd0a790f8f9fe452f7188ea72b212d21c9be57d5fc0cbc442075/types_awscrt-0.31.3-py3-none-any.whl", hash = "sha256:e5ce65a00a2ab4f35eacc1e3d700d792338d56e4823ee7b4dbe017f94cfc4458", size = 43340, upload-time = "2026-03-08T02:31:13.38Z" },
-]
-
-[[package]]
-name = "types-networkx"
-version = "3.6.1.20260303"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "numpy" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/78/37/d8f7a68a5291cab793e27967d187abbf0c6db318d49e5b6e9dd32b13c2e5/types_networkx-3.6.1.20260303.tar.gz", hash = "sha256:8248aa6fcadc08bd7992af6e412bfc5cfa043bda5ce7ab407fa591c808ce8557", size = 73790, upload-time = "2026-03-03T04:03:46.201Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/f2/b7/eedcba86c567832699eb242709e8951c0df2b6658beb5f931e954292bcda/types_networkx-3.6.1.20260303-py3-none-any.whl", hash = "sha256:754c7c7bcaab3c317b0b86441240c0a5bd0d2f419aba80a88e9718248a5c89af", size = 162680, upload-time = "2026-03-03T04:03:44.081Z" },
 ]
 
 [[package]]

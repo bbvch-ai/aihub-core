@@ -613,7 +613,7 @@ class TestSchemaValidation:
             is_conversational=False,
             start_events=[event_specs],
             stop_events=[],
-            network_graph=WorkflowGraph(directed=True, multigraph=False, graph={}, nodes=[], links=[]),
+            network_graph=WorkflowGraph(nodes=[], links=[]),
             form=agent_config.to_formkit_form(),
             agent_config_specs=AgentConfigSpecs.from_agent_config(agent_config, agent_class="TestAgent"),
             hitl_request_events=[],
