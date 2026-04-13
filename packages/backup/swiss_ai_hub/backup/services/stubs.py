@@ -25,10 +25,6 @@ class _StubHandler(BackupHandler):
         raise NotImplementedError(f"{self._name} restore not yet implemented")
 
 
-class PostgresHandler(_StubHandler):
-    _name = "PostgreSQL"
-
-
 class MilvusHandler(_StubHandler):
     _name = "Milvus"
 
