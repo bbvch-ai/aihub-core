@@ -100,6 +100,18 @@ class KeycloakAdminService:
 
     @staticmethod
     @trace_fn
+    async def count_tenant_members(tenant_id: str) -> int:
+        """Counts members of a tenant group. Keycloak exposes no dedicated count endpoint,
+        so this fetches the full member list with a large upper bound."""
+        admin = _create_admin()
+        group = await admin.a_get_group_by_path(f"{TENANTS_GROUP_PATH}/{tenant_id}")
+        members = await admin.a_get_group_members(
+            group["id"], query={"first": 0, "max": 100000, "briefRepresentation": True}
+        )
+        return len(members)
+
+    @staticmethod
+    @trace_fn
     async def create_tenant_group(tenant_id: str) -> str | None:
         admin = _create_admin()
         parent = await admin.a_get_group_by_path(TENANTS_GROUP_PATH)

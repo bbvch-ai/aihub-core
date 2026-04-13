@@ -59,10 +59,6 @@ class UserService:
             return 0, []
         skip = (page - 1) * page_size
         members = await KeycloakAdminService.get_tenant_members(tenant_id, offset=skip, limit=page_size)
-        # Get total count by fetching with a large limit — Keycloak doesn't provide count separately
-        all_member_ids = UserTenantRoleEntity.get_user_ids_in_tenant(tenant_id)
-        total = len(all_member_ids)
-
+        total = await KeycloakAdminService.count_tenant_members(tenant_id)
         user_dtos = [UserDTO.from_keycloak_user_with_dashboard(m, None) for m in members]
-
         return total, user_dtos
