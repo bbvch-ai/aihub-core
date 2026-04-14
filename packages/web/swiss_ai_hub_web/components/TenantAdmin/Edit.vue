@@ -34,20 +34,22 @@
 <script setup lang="ts">
 import AccessRulesEditor from '@core/components/Role/AccessRulesEditor.vue'
 
-import type { CreateTenantRequest, TenantResponse } from '@core/sdk/client'
+import type { CreateTenantRequest, TenantResponse, UpdateTenantRequest } from '@core/sdk/client'
+
+type EditableTenant = TenantResponse | CreateTenantRequest | UpdateTenantRequest
 
 const { t } = useI18n()
 
 const props = defineProps<{
-  modelValue: TenantResponse | CreateTenantRequest
+  modelValue: EditableTenant
 }>()
 
 const emit = defineEmits<{
-  'update:modelValue': [TenantResponse | CreateTenantRequest]
+  'update:modelValue': [EditableTenant]
 }>()
 
 const initialAccessRules = ref<string[]>([...(props.modelValue.access_rules ?? [])])
-const tenant = ref<TenantResponse | CreateTenantRequest>(props.modelValue)
+const tenant = ref<EditableTenant>(props.modelValue)
 
 watch(() => props.modelValue, (newValue) => {
   tenant.value = newValue

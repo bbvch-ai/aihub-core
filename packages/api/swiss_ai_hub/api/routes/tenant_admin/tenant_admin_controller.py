@@ -1,11 +1,10 @@
 import logging
 from typing import Annotated, Self
 
-from fastapi import Depends, HTTPException, status
+from fastapi import HTTPException, Security, status
 from mongoengine.errors import NotUniqueError
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
-from swiss_ai_hub.core.auth.dependencies.sys_admin_auth_handler.sys_admin_auth_handler import SysAdminAuthHandler
-from swiss_ai_hub.core.auth.identity.sys_admin_identity import SysAdminIdentity
+from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.routes import Controller
 
 from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
@@ -33,12 +32,11 @@ class TenantAdminController(Controller):
         self, *, auth: AuthHandler, route: str = "/admin/tenants", additionally_required_permission: str | None = None
     ):
         super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
-        self._sys_admin_auth = SysAdminAuthHandler()
 
     def list_tenants(self, route: str = "/") -> Self:
         @self.router.get(route, tags=self.tags)
         async def list_tenants(
-            _: Annotated[SysAdminIdentity, Depends(self._sys_admin_auth)],
+            _: Annotated[UserIdentity, Security(self.sys_admin_user())],
         ) -> list[TenantResponse]:
             """Lists all tenants: active (Keycloak + metadata) and orphaned (metadata only)."""
             return await TenantAdminService.list_tenants()
@@ -48,7 +46,7 @@ class TenantAdminController(Controller):
     def list_unconfigured_tenants(self, route: str = "/unconfigured") -> Self:
         @self.router.get(route, tags=self.tags)
         async def list_unconfigured_tenants(
-            _: Annotated[SysAdminIdentity, Depends(self._sys_admin_auth)],
+            _: Annotated[UserIdentity, Security(self.sys_admin_user())],
         ) -> list[str]:
             """Lists Keycloak tenant group names that don't yet have metadata configured."""
             return await TenantAdminService.list_unconfigured_tenant_ids()
@@ -59,7 +57,7 @@ class TenantAdminController(Controller):
         @self.router.get(route, tags=self.tags)
         async def get_tenant(
             tenant_id: str,
-            _: Annotated[SysAdminIdentity, Depends(self._sys_admin_auth)],
+            _: Annotated[UserIdentity, Security(self.sys_admin_user())],
         ) -> TenantResponse:
             """Retrieves a single tenant by its ID."""
             return await TenantAdminService.get_tenant(tenant_id)
@@ -70,7 +68,7 @@ class TenantAdminController(Controller):
         @self.router.post(route, status_code=status.HTTP_201_CREATED, tags=self.tags)
         async def configure_tenant(
             data: ConfigureTenantRequest,
-            _: Annotated[SysAdminIdentity, Depends(self._sys_admin_auth)],
+            _: Annotated[UserIdentity, Security(self.sys_admin_user())],
         ) -> TenantResponse:
             """Attaches metadata (name, description, access rules) to an existing Keycloak tenant group."""
             try:
@@ -85,7 +83,7 @@ class TenantAdminController(Controller):
         async def update_tenant(
             tenant_id: str,
             data: UpdateTenantRequest,
-            _: Annotated[SysAdminIdentity, Depends(self._sys_admin_auth)],
+            _: Annotated[UserIdentity, Security(self.sys_admin_user())],
         ) -> TenantResponse:
             """Updates a tenant's name, description, or access rules. Not allowed on orphaned tenants."""
             try:
@@ -99,7 +97,7 @@ class TenantAdminController(Controller):
         @self.router.delete(route, status_code=status.HTTP_204_NO_CONTENT, tags=self.tags)
         async def delete_tenant(
             tenant_id: str,
-            _: Annotated[SysAdminIdentity, Depends(self._sys_admin_auth)],
+            _: Annotated[UserIdentity, Security(self.sys_admin_user())],
         ) -> None:
             """Removes the MongoDB metadata for the tenant. Allowed on both active and orphaned rows.
 

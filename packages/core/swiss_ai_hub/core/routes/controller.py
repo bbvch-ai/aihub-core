@@ -86,6 +86,25 @@ class Controller(abc.ABC):
 
         return check_authenticated
 
+    def sys_admin_user(self):
+        """Return a dependency that authenticates and requires the ``AIHubSysAdmin`` realm role.
+
+        Use for global sysadmin-only endpoints. Relies on ``UserIdentity.is_sys_admin``,
+        which is populated from the JWT ``roles`` claim by ``KeycloakAuthHandler``.
+        """
+
+        def check_sys_admin(
+            request: Request,
+            user: Annotated[UserIdentity, Depends(self.auth)],
+        ) -> UserIdentity:
+            if not user.is_sys_admin:
+                logger.warning("User %s attempted sysadmin access without the required role", user.email)
+                raise HTTPException(status_code=403, detail="Forbidden: Requires the AIHubSysAdmin role.")
+            self._enrich_span_with_context(user, request, "sys_admin")
+            return user
+
+        return check_sys_admin
+
     def user_with_permission(self, permission_template: str):
         def check_access(
             request: Request,
