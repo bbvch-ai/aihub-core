@@ -138,6 +138,33 @@ class KeycloakAdminService:
 
     @staticmethod
     @trace_fn
+    async def get_user_ids_with_active_tenant(tenant_id: str) -> set[str]:
+        """Returns the Keycloak IDs of users whose ``active_tenant_id`` attribute matches.
+
+        Uses Keycloak's attribute search (``q=active_tenant_id:<id>``) and paginates in
+        batches so there is no hard upper bound on the number of users returned.
+        """
+        admin = _create_admin()
+        page_size = 1000
+        result: set[str] = set()
+        offset = 0
+        while True:
+            batch = await admin.a_get_users(
+                query={
+                    "q": f"active_tenant_id:{tenant_id}",
+                    "first": offset,
+                    "max": page_size,
+                    "briefRepresentation": True,
+                }
+            )
+            result.update(u["id"] for u in batch if u.get("id"))
+            if len(batch) < page_size:
+                break
+            offset += page_size
+        return result
+
+    @staticmethod
+    @trace_fn
     async def get_active_tenant_id(user_id: str) -> str | None:
         """Reads the active_tenant_id custom attribute from the Keycloak user."""
         admin = _create_admin()
@@ -152,22 +179,32 @@ class KeycloakAdminService:
         """Writes the active_tenant_id custom attribute on the Keycloak user.
 
         Uses GET-merge-PUT to preserve existing user data and satisfy Keycloak's
-        user profile validation.
+        user profile validation. Notifies ``AccessChangeHook`` so downstream caches
+        invalidate.
         """
+        from swiss_ai_hub.core.persistence.access.access_change_hook import AccessChangeHook
+
         admin = _create_admin()
         user = await admin.a_get_user(user_id)
         attributes = user.get("attributes", {})
         attributes["active_tenant_id"] = [tenant_id]
         user["attributes"] = attributes
         await admin.a_update_user(user_id, user)
+        AccessChangeHook.notify()
 
     @staticmethod
     @trace_fn
     async def clear_active_tenant(user_id: str) -> None:
-        """Removes the active_tenant_id custom attribute from the Keycloak user."""
+        """Removes the active_tenant_id custom attribute from the Keycloak user.
+
+        Notifies ``AccessChangeHook`` so downstream caches invalidate.
+        """
+        from swiss_ai_hub.core.persistence.access.access_change_hook import AccessChangeHook
+
         admin = _create_admin()
         user = await admin.a_get_user(user_id)
         attributes = user.get("attributes", {})
         attributes.pop("active_tenant_id", None)
         user["attributes"] = attributes
         await admin.a_update_user(user_id, user)
+        AccessChangeHook.notify()

@@ -10,6 +10,7 @@ from scim2_client.engines.httpx import AsyncSCIMClient
 from scim2_models import Group, User
 
 from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
+from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
 from swiss_ai_hub.core.infrastructure.openwebui.access_grant import AccessGrant
 from swiss_ai_hub.core.infrastructure.openwebui.online_agent import OnlineAgent
 from swiss_ai_hub.core.infrastructure.openwebui.openwebui_client import OpenWebuiClient
@@ -19,7 +20,6 @@ from swiss_ai_hub.core.persistence.access.entities.tenant_entity import TenantEn
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 from swiss_ai_hub.core.persistence.agents.agent_class_entity import AgentClassEntity
 from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import AgentConfigEntityDocument
-from swiss_ai_hub.core.persistence.user.user_entity import UserEntity
 
 logger = logging.getLogger(__name__)
 
@@ -141,8 +141,8 @@ class OpenWebuiProvisioner:
         return mapping
 
     @staticmethod
-    def _get_active_user_ids(tenant_id: str) -> set[str]:
-        return UserEntity.get_user_ids_with_active_tenant(tenant_id)
+    async def _get_active_user_ids(tenant_id: str) -> set[str]:
+        return await KeycloakAdminService.get_user_ids_with_active_tenant(tenant_id)
 
     async def _sync_group_memberships(
         self,
@@ -154,7 +154,7 @@ class OpenWebuiProvisioner:
     ) -> None:
         for tenant in tenants:
             tenant_id = tenant["id"]
-            active_user_ids = self._get_active_user_ids(tenant_id)
+            active_user_ids = await self._get_active_user_ids(tenant_id)
 
             for role_data in roles_by_tenant.get(tenant["name"], []):
                 group_name = f"{AIHUB_GROUP_PREFIX}{tenant['name']}:{role_data['name']}"
@@ -193,7 +193,8 @@ class OpenWebuiProvisioner:
                 logger.info(f"OpenWebUI: Deleted orphaned group '{name}'")
 
             owui_users = await self._openwebui.list_users(scim=scim)
-            aihub_users = [{"id": u.id, "email": u.email} for u in UserEntity.objects()]
+            keycloak_users = await KeycloakAdminService.get_all_users()
+            aihub_users = [{"id": u.id, "email": u.email} for u in keycloak_users]
             user_id_mapping = self._build_user_id_mapping(aihub_users, owui_users)
 
             await self._sync_group_memberships(tenants, roles_by_tenant, aihub_groups, user_id_mapping, scim=scim)
