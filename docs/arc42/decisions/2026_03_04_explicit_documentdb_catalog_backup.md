@@ -21,8 +21,7 @@ document data but an empty catalog — FerretDB reports zero collections.
 
 Hardcoded list of DocumentDB catalog tables and sequences with native `COPY TO STDOUT` / `COPY FROM stdin` protocol.
 Backup produces `ext-catalog.sql.gz`; restore replays it after `pg_restore`. Restore skips gracefully when the artifact
-doesn't exist (backward compatible). Discovery query in source comments for verifying completeness against new extension
-versions.
+doesn't exist (backward compatible).
 
 ## Consequences
 
@@ -34,4 +33,4 @@ versions.
 
 ### Trade-offs
 
-- Hardcoded list must be updated manually if DocumentDB adds new catalog tables (discovery query mitigates this)
+- Hardcoded list must be updated manually if DocumentDB adds new catalog tables
