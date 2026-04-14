@@ -11,6 +11,9 @@ from mongoengine import connect, disconnect
 from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler import (  # noqa: E501
     DangerousDevelopmentOnlyAuthHandler,
 )
+from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_settings import (  # noqa: E501
+    DangerousDevelopmentOnlyAuthSettings,
+)
 from swiss_ai_hub.core.infrastructure import AIHubSettings, MongoSettings, enable_logging
 from swiss_ai_hub.core.persistence.access.entities.tenant_entity import TenantEntity
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
@@ -75,9 +78,12 @@ def setup_test_credentials():
     )
     tenant_id = str(default_tenant.id)
 
-    # Assign test user to default tenant with admin role
+    # Assign test user to default tenant with admin role. Use the OID that
+    # ``KeycloakAdminService.find_user_by_email`` resolves to in tests (the fake
+    # admin returns a single stub user keyed by this OID).
+    dev_oid = DangerousDevelopmentOnlyAuthSettings().OID
     UserTenantRoleEntity.create_or_update(
-        user_id="test_user_oid",
+        user_id=dev_oid,
         tenant_id=tenant_id,
         roles=["admin"],
         validate_roles=False,
@@ -89,7 +95,7 @@ def setup_test_credentials():
     try:
         PathEntity.objects(path=json_path).delete()
         PathEntity.objects(path=stream_path).delete()
-        UserTenantRoleEntity.objects(user_id="test_user_oid").delete()
+        UserTenantRoleEntity.objects(user_id=dev_oid).delete()
     except Exception:
         # Connection may already be closed, ignore cleanup errors
         pass
