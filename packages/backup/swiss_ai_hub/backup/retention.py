@@ -30,7 +30,7 @@ class RetentionService:
                 )
                 expired = []
             else:
-                expired = expired[:safe_to_delete]
+                expired = sorted(expired)[:safe_to_delete]
 
         expired_set = set(expired)
 
