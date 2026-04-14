@@ -4945,6 +4945,43 @@ export const CompletionUsageSchema = {
     description: 'Usage statistics for the completion request.'
 } as const;
 
+export const ConfigureTenantRequestSchema = {
+    properties: {
+        tenant_id: {
+            type: 'string',
+            title: 'Tenant Id',
+            description: 'Keycloak tenant group name to configure (must already exist in Keycloak).'
+        },
+        name: {
+            type: 'string',
+            title: 'Name',
+            description: 'The unique display name of the tenant.'
+        },
+        description: {
+            type: 'string',
+            title: 'Description',
+            description: 'A short description of the tenant.',
+            default: ''
+        },
+        access_rules: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Access Rules',
+            description: 'Access rules granted to this tenant.',
+            default: []
+        }
+    },
+    type: 'object',
+    required: [
+        'tenant_id',
+        'name'
+    ],
+    title: 'ConfigureTenantRequest',
+    description: 'Request model for attaching metadata to an existing Keycloak tenant group.\n\nThe `tenant_id` must match an existing Keycloak group under `/tenants/`. Use the\n`/admin/tenants/unconfigured` endpoint to list available tenant IDs.'
+} as const;
+
 export const ContextInsufficientRejectEventSchema = {
     properties: {
         event_id: {
@@ -5457,37 +5494,6 @@ export const CreateRoleRequestSchema = {
     ],
     title: 'CreateRoleRequest',
     description: 'Request model for creating a new role.'
-} as const;
-
-export const CreateTenantRequestSchema = {
-    properties: {
-        name: {
-            type: 'string',
-            title: 'Name',
-            description: 'The unique display name of the tenant.'
-        },
-        description: {
-            type: 'string',
-            title: 'Description',
-            description: 'A short description of the tenant.',
-            default: ''
-        },
-        access_rules: {
-            items: {
-                type: 'string'
-            },
-            type: 'array',
-            title: 'Access Rules',
-            description: 'Access rules granted to this tenant.',
-            default: []
-        }
-    },
-    type: 'object',
-    required: [
-        'name'
-    ],
-    title: 'CreateTenantRequest',
-    description: 'Request model for creating a new tenant.'
 } as const;
 
 export const CreateThreadRequestSchema = {
@@ -13478,7 +13484,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1776069057
+            default: 1776170452
         },
         owned_by: {
             type: 'string',
@@ -19080,7 +19086,7 @@ export const TenantResponseSchema = {
         id: {
             type: 'string',
             title: 'Id',
-            description: 'Unique tenant identifier.'
+            description: 'Unique tenant identifier (matches the Keycloak group name).'
         },
         name: {
             type: 'string',
@@ -19105,6 +19111,10 @@ export const TenantResponseSchema = {
             title: 'Is Default',
             description: 'Whether this is the default tenant.'
         },
+        state: {
+            $ref: '#/components/schemas/TenantState',
+            description: 'Whether the tenant also exists in Keycloak (active) or not (orphaned).'
+        },
         created_at: {
             type: 'string',
             format: 'date-time',
@@ -19125,11 +19135,22 @@ export const TenantResponseSchema = {
         'description',
         'access_rules',
         'is_default',
+        'state',
         'created_at',
         'updated_at'
     ],
     title: 'TenantResponse',
-    description: 'Response model for a tenant.'
+    description: 'Response model for a tenant, as seen by sysadmins.'
+} as const;
+
+export const TenantStateSchema = {
+    type: 'string',
+    enum: [
+        'active',
+        'orphaned'
+    ],
+    title: 'TenantState',
+    description: 'Visibility state of a tenant for the sysadmin view.\n\n- ACTIVE: exists both in Keycloak (as a group) and in MongoDB (as metadata).\n- ORPHANED: exists only in MongoDB; the Keycloak group is missing. Users cannot\n  reach this tenant. Shown to sysadmins read-only with a delete action only.'
 } as const;
 
 export const TextBlockSchema = {
@@ -21222,21 +21243,6 @@ export const UserDTOSchema = {
             title: 'Profile Image',
             description: 'User\'s profile image in base64.'
         },
-        last_accessed: {
-            type: 'string',
-            format: 'date-time',
-            title: 'Last Accessed',
-            description: 'Last time the user was updated'
-        },
-        favorite_modules: {
-            items: {
-                type: 'string'
-            },
-            type: 'array',
-            title: 'Favorite Modules',
-            description: 'List of favorite modules from aihub suite',
-            default: []
-        },
         dashboard: {
             anyOf: [
                 {
@@ -21253,8 +21259,7 @@ export const UserDTOSchema = {
     required: [
         'id',
         'name',
-        'email',
-        'last_accessed'
+        'email'
     ],
     title: 'UserDTO'
 } as const;
@@ -21294,6 +21299,12 @@ export const UserIdentitySchema = {
                 }
             ],
             description: 'The tenant context the user is operating within.'
+        },
+        is_sys_admin: {
+            type: 'boolean',
+            title: 'Is Sys Admin',
+            description: 'Whether the user has the AIHubSysAdmin realm role (from the JWT).',
+            default: false
         }
     },
     type: 'object',
@@ -21464,21 +21475,6 @@ export const UserWithAccessDTOSchema = {
             title: 'Profile Image',
             description: 'User\'s profile image in base64.'
         },
-        last_accessed: {
-            type: 'string',
-            format: 'date-time',
-            title: 'Last Accessed',
-            description: 'Last time the user was updated'
-        },
-        favorite_modules: {
-            items: {
-                type: 'string'
-            },
-            type: 'array',
-            title: 'Favorite Modules',
-            description: 'List of favorite modules from aihub suite',
-            default: []
-        },
         dashboard: {
             anyOf: [
                 {
@@ -21509,7 +21505,6 @@ export const UserWithAccessDTOSchema = {
         'id',
         'name',
         'email',
-        'last_accessed',
         'access'
     ],
     title: 'UserWithAccessDTO'

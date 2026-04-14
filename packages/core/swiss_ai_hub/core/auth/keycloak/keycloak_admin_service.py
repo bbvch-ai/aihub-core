@@ -80,11 +80,15 @@ class KeycloakAdminService:
     @staticmethod
     @trace_fn
     async def get_all_tenant_groups() -> list[KeycloakGroup]:
-        """Returns all direct children of the /tenants/ parent group."""
+        """Returns all direct children of the /tenants/ parent group.
+
+        Filters out malformed children with empty names (occasionally produced
+        by the realm import when /tenants/ itself gets a zero-length subgroup).
+        """
         admin = _create_admin()
         parent = await admin.a_get_group_by_path(TENANTS_GROUP_PATH)
         children = await admin.a_get_group_children(parent["id"])
-        return [KeycloakGroup.model_validate(c) for c in children]
+        return [KeycloakGroup.model_validate(c) for c in children if c.get("name")]
 
     @staticmethod
     @trace_fn

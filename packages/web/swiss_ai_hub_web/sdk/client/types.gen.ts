@@ -3014,6 +3014,41 @@ export type CompletionUsage = {
 };
 
 /**
+ * ConfigureTenantRequest
+ *
+ * Request model for attaching metadata to an existing Keycloak tenant group.
+ *
+ * The `tenant_id` must match an existing Keycloak group under `/tenants/`. Use the
+ * `/admin/tenants/unconfigured` endpoint to list available tenant IDs.
+ */
+export type ConfigureTenantRequest = {
+    /**
+     * Tenant Id
+     *
+     * Keycloak tenant group name to configure (must already exist in Keycloak).
+     */
+    tenant_id: string;
+    /**
+     * Name
+     *
+     * The unique display name of the tenant.
+     */
+    name: string;
+    /**
+     * Description
+     *
+     * A short description of the tenant.
+     */
+    description?: string;
+    /**
+     * Access Rules
+     *
+     * Access rules granted to this tenant.
+     */
+    access_rules?: Array<string>;
+};
+
+/**
  * ContextInsufficientRejectEvent
  *
  * Event indicating that the context sufficiency guard rejected the request.
@@ -3340,32 +3375,6 @@ export type CreateRoleRequest = {
      * Pattern-based usage limit rules.
      */
     usage_limits?: Array<UsageLimitDto>;
-};
-
-/**
- * CreateTenantRequest
- *
- * Request model for creating a new tenant.
- */
-export type CreateTenantRequest = {
-    /**
-     * Name
-     *
-     * The unique display name of the tenant.
-     */
-    name: string;
-    /**
-     * Description
-     *
-     * A short description of the tenant.
-     */
-    description?: string;
-    /**
-     * Access Rules
-     *
-     * Access rules granted to this tenant.
-     */
-    access_rules?: Array<string>;
 };
 
 /**
@@ -12079,13 +12088,13 @@ export type TenantMembershipDto = {
 /**
  * TenantResponse
  *
- * Response model for a tenant.
+ * Response model for a tenant, as seen by sysadmins.
  */
 export type TenantResponse = {
     /**
      * Id
      *
-     * Unique tenant identifier.
+     * Unique tenant identifier (matches the Keycloak group name).
      */
     id: string;
     /**
@@ -12113,6 +12122,10 @@ export type TenantResponse = {
      */
     is_default: boolean;
     /**
+     * Whether the tenant also exists in Keycloak (active) or not (orphaned).
+     */
+    state: TenantState;
+    /**
      * Created At
      *
      * Tenant creation timestamp.
@@ -12125,6 +12138,28 @@ export type TenantResponse = {
      */
     updated_at: Date;
 };
+
+/**
+ * TenantState
+ *
+ * Visibility state of a tenant for the sysadmin view.
+ *
+ * - ACTIVE: exists both in Keycloak (as a group) and in MongoDB (as metadata).
+ * - ORPHANED: exists only in MongoDB; the Keycloak group is missing. Users cannot
+ * reach this tenant. Shown to sysadmins read-only with a delete action only.
+ */
+export const TenantState = { ACTIVE: 'active', ORPHANED: 'orphaned' } as const;
+
+/**
+ * TenantState
+ *
+ * Visibility state of a tenant for the sysadmin view.
+ *
+ * - ACTIVE: exists both in Keycloak (as a group) and in MongoDB (as metadata).
+ * - ORPHANED: exists only in MongoDB; the Keycloak group is missing. Users cannot
+ * reach this tenant. Shown to sysadmins read-only with a delete action only.
+ */
+export type TenantState = typeof TenantState[keyof typeof TenantState];
 
 /**
  * TextBlock
@@ -13460,18 +13495,6 @@ export type UserDto = {
      */
     profile_image?: string | null;
     /**
-     * Last Accessed
-     *
-     * Last time the user was updated
-     */
-    last_accessed: Date;
-    /**
-     * Favorite Modules
-     *
-     * List of favorite modules from aihub suite
-     */
-    favorite_modules?: Array<string>;
-    /**
      * User dashboard configuration for index page
      */
     dashboard?: DashboardDto | null;
@@ -13511,6 +13534,12 @@ export type UserIdentity = {
      * The tenant context the user is operating within.
      */
     acting_within_tenant?: TenantIdentity | null;
+    /**
+     * Is Sys Admin
+     *
+     * Whether the user has the AIHubSysAdmin realm role (from the JWT).
+     */
+    is_sys_admin?: boolean;
 };
 
 /**
@@ -13653,18 +13682,6 @@ export type UserWithAccessDto = {
      * User's profile image in base64.
      */
     profile_image?: string | null;
-    /**
-     * Last Accessed
-     *
-     * Last time the user was updated
-     */
-    last_accessed: Date;
-    /**
-     * Favorite Modules
-     *
-     * List of favorite modules from aihub suite
-     */
-    favorite_modules?: Array<string>;
     /**
      * User dashboard configuration for index page
      */
@@ -23150,30 +23167,48 @@ export type ListTenantsResponses = {
 
 export type ListTenantsResponse = ListTenantsResponses[keyof ListTenantsResponses];
 
-export type CreateTenantData = {
-    body: CreateTenantRequest;
+export type ConfigureTenantData = {
+    body: ConfigureTenantRequest;
     path?: never;
     query?: never;
     url: '/admin/tenants/';
 };
 
-export type CreateTenantErrors = {
+export type ConfigureTenantErrors = {
     /**
      * Validation Error
      */
     422: HttpValidationError;
 };
 
-export type CreateTenantError = CreateTenantErrors[keyof CreateTenantErrors];
+export type ConfigureTenantError = ConfigureTenantErrors[keyof ConfigureTenantErrors];
 
-export type CreateTenantResponses = {
+export type ConfigureTenantResponses = {
     /**
      * Successful Response
      */
     201: TenantResponse;
 };
 
-export type CreateTenantResponse = CreateTenantResponses[keyof CreateTenantResponses];
+export type ConfigureTenantResponse = ConfigureTenantResponses[keyof ConfigureTenantResponses];
+
+export type ListUnconfiguredTenantsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/admin/tenants/unconfigured';
+};
+
+export type ListUnconfiguredTenantsResponses = {
+    /**
+     * Response List Unconfigured Tenants Admin Tenants Unconfigured Get
+     *
+     * Successful Response
+     */
+    200: Array<string>;
+};
+
+export type ListUnconfiguredTenantsResponse = ListUnconfiguredTenantsResponses[keyof ListUnconfiguredTenantsResponses];
 
 export type DeleteTenantData = {
     body?: never;
