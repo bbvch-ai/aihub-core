@@ -10,6 +10,7 @@ export const useDeleteTenant = defineMutation(() => {
         path: { tenant_id: tenantId },
       })
       queryCache.invalidateQueries({ key: ['admin-tenants'] })
+      queryCache.invalidateQueries({ key: ['admin-tenants', 'unconfigured'] })
       queryCache.invalidateQueries({ key: ['my-tenants'] })
     },
   })

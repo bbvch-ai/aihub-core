@@ -4,12 +4,11 @@ import jwt
 from fastapi import HTTPException, Request, Security
 
 from swiss_ai_hub.core.auth.dependencies.keycloak_auth_handler.keycloak_auth_handler import KeycloakAuthHandler
-from swiss_ai_hub.core.auth.dependencies.keycloak_auth_handler.keycloak_settings import KeycloakSettings
 from swiss_ai_hub.core.auth.identity.sys_admin_identity import SysAdminIdentity
+from swiss_ai_hub.core.auth.keycloak.keycloak_settings import KeycloakSettings
+from swiss_ai_hub.core.auth.roles import SYS_ADMIN_ROLE
 
 logger = logging.getLogger(__name__)
-
-SYS_ADMIN_ROLE = "AIHubSysAdmin"
 
 
 class SysAdminAuthHandler:

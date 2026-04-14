@@ -593,6 +593,22 @@ tenant_admin:
   cancel: Abbrechen
   save: Speichern
   default_tag: Standard
+  tenant_id: Tenant-ID
+  keycloak_unreachable: Keycloak ist nicht erreichbar — die Tenant-Liste ist möglicherweise
+    unvollständig. Bitte erneut versuchen.
+  state:
+    orphaned_label: Verwaist
+    orphaned_tooltip: Dieser Tenant hat Metadaten, aber keine passende Keycloak-Gruppe.
+      Benutzer können nicht darauf zugreifen.
+  configure:
+    title: Tenant konfigurieren
+    description: Hängen Sie Metadaten an eine bestehende Keycloak-Tenant-Gruppe an.
+      Die Tenant-ID muss einer Keycloak-Gruppe unter /tenants/ entsprechen, die noch
+      keine Metadaten hat.
+    tenant_id_label: Keycloak-Tenant-ID
+    tenant_id_placeholder: Keycloak-Tenant auswählen
+    empty_unconfigured: Keine unkonfigurierten Keycloak-Tenants verfügbar. Erstellen
+      Sie zuerst eine Tenant-Gruppe in der Keycloak-Admin-Konsole.
   form:
     name: Tenant-Name
     description: Beschreibung

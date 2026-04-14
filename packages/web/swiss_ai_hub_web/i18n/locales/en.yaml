@@ -584,6 +584,21 @@ tenant_admin:
   cancel: Cancel
   save: Save
   default_tag: Default
+  tenant_id: Tenant ID
+  keycloak_unreachable: Keycloak is unreachable — the tenant list may be incomplete.
+    Please retry.
+  state:
+    orphaned_label: Orphaned
+    orphaned_tooltip: This tenant has metadata but no matching Keycloak group. Users
+      cannot access it.
+  configure:
+    title: Configure Tenant
+    description: Attach metadata to an existing Keycloak tenant group. The tenant
+      ID must match a Keycloak group under /tenants/ that does not yet have metadata.
+    tenant_id_label: Keycloak Tenant ID
+    tenant_id_placeholder: Select a Keycloak tenant
+    empty_unconfigured: No unconfigured Keycloak tenants available. Create a tenant
+      group in the Keycloak admin console first.
   form:
     name: Tenant Name
     description: Description

@@ -9,7 +9,7 @@ from swiss_ai_hub.core.auth.identity.sys_admin_identity import SysAdminIdentity
 from swiss_ai_hub.core.routes import Controller
 
 from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
-from swiss_ai_hub.api.routes.tenant_admin.dto.create_tenant_request import CreateTenantRequest
+from swiss_ai_hub.api.routes.tenant_admin.dto.configure_tenant_request import ConfigureTenantRequest
 from swiss_ai_hub.api.routes.tenant_admin.dto.tenant_response import TenantResponse
 from swiss_ai_hub.api.routes.tenant_admin.dto.update_tenant_request import UpdateTenantRequest
 from swiss_ai_hub.api.routes.tenant_admin.tenant_admin_service import TenantAdminService
@@ -18,10 +18,11 @@ logger = logging.getLogger(__name__)
 
 
 class TenantAdminController(Controller):
-    """System administrator endpoints for tenant CRUD operations.
+    """System administrator endpoints for tenant metadata management.
 
     Not tenant-scoped — these endpoints live at ``/admin/tenants/`` and require
-    the ``AIHubSysAdmin`` Keycloak realm role.
+    the ``AIHubSysAdmin`` Keycloak realm role. Manages MongoDB metadata attached to
+    existing Keycloak tenant groups. See `TenantAdminService` for the ownership split.
     """
 
     name = ApiLocaleString.from_i18n_path("api.controllers.tenant_admin.name")
@@ -39,8 +40,18 @@ class TenantAdminController(Controller):
         async def list_tenants(
             _: Annotated[SysAdminIdentity, Depends(self._sys_admin_auth)],
         ) -> list[TenantResponse]:
-            """Lists all tenants in the system."""
-            return TenantAdminService.list_tenants()
+            """Lists all tenants: active (Keycloak + metadata) and orphaned (metadata only)."""
+            return await TenantAdminService.list_tenants()
+
+        return self
+
+    def list_unconfigured_tenants(self, route: str = "/unconfigured") -> Self:
+        @self.router.get(route, tags=self.tags)
+        async def list_unconfigured_tenants(
+            _: Annotated[SysAdminIdentity, Depends(self._sys_admin_auth)],
+        ) -> list[str]:
+            """Lists Keycloak tenant group names that don't yet have metadata configured."""
+            return await TenantAdminService.list_unconfigured_tenant_ids()
 
         return self
 
@@ -51,19 +62,19 @@ class TenantAdminController(Controller):
             _: Annotated[SysAdminIdentity, Depends(self._sys_admin_auth)],
         ) -> TenantResponse:
             """Retrieves a single tenant by its ID."""
-            return TenantAdminService.get_tenant(tenant_id)
+            return await TenantAdminService.get_tenant(tenant_id)
 
         return self
 
-    def create_tenant(self, route: str = "/") -> Self:
+    def configure_tenant(self, route: str = "/") -> Self:
         @self.router.post(route, status_code=status.HTTP_201_CREATED, tags=self.tags)
-        async def create_tenant(
-            data: CreateTenantRequest,
+        async def configure_tenant(
+            data: ConfigureTenantRequest,
             _: Annotated[SysAdminIdentity, Depends(self._sys_admin_auth)],
         ) -> TenantResponse:
-            """Creates a new tenant with a name, description, and access rules."""
+            """Attaches metadata (name, description, access rules) to an existing Keycloak tenant group."""
             try:
-                return TenantAdminService.create_tenant(data)
+                return await TenantAdminService.configure_tenant(data)
             except NotUniqueError:
                 raise HTTPException(status_code=409, detail=f"Tenant with name '{data.name}' already exists.")
 
@@ -76,9 +87,9 @@ class TenantAdminController(Controller):
             data: UpdateTenantRequest,
             _: Annotated[SysAdminIdentity, Depends(self._sys_admin_auth)],
         ) -> TenantResponse:
-            """Updates a tenant's name, description, or access rules."""
+            """Updates a tenant's name, description, or access rules. Not allowed on orphaned tenants."""
             try:
-                return TenantAdminService.update_tenant(tenant_id, data)
+                return await TenantAdminService.update_tenant(tenant_id, data)
             except NotUniqueError:
                 raise HTTPException(status_code=409, detail=f"Tenant with name '{data.name}' already exists.")
 
@@ -90,7 +101,11 @@ class TenantAdminController(Controller):
             tenant_id: str,
             _: Annotated[SysAdminIdentity, Depends(self._sys_admin_auth)],
         ) -> None:
-            """Permanently deletes a tenant and all associated data. The default tenant cannot be deleted."""
+            """Removes the MongoDB metadata for the tenant. Allowed on both active and orphaned rows.
+
+            The Keycloak group (if present) is not touched — manage it in the Keycloak admin console.
+            The default tenant cannot be deleted.
+            """
             TenantAdminService.delete_tenant(tenant_id)
 
         return self

@@ -1,45 +1,136 @@
+import logging
+
+import httpx
 from fastapi import HTTPException
+from keycloak import KeycloakError, KeycloakGetError
+from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from swiss_ai_hub.core.persistence.access.entities.tenant_entity import TenantEntity
 
-from swiss_ai_hub.api.routes.tenant_admin.dto.create_tenant_request import CreateTenantRequest
+from swiss_ai_hub.api.routes.tenant_admin.dto.configure_tenant_request import ConfigureTenantRequest
 from swiss_ai_hub.api.routes.tenant_admin.dto.tenant_response import TenantResponse
+from swiss_ai_hub.api.routes.tenant_admin.dto.tenant_state import TenantState
 from swiss_ai_hub.api.routes.tenant_admin.dto.update_tenant_request import UpdateTenantRequest
+
+logger = logging.getLogger(__name__)
 
 
 class TenantAdminService:
-    """Handles tenant CRUD operations for system administrators."""
+    """Handles tenant CRUD operations for system administrators.
+
+    Tenants live in two places: Keycloak (group under ``/tenants/``) owns existence
+    and user membership; MongoDB ``TenantEntity`` owns metadata (name, description,
+    access rules). A tenant is only accessible to end users when it exists in both.
+    Sysadmins can see orphaned metadata (MongoDB only) and delete it, but cannot edit it.
+    """
 
     @staticmethod
     @trace_fn
-    def list_tenants() -> list[TenantResponse]:
-        """Lists all tenants in the system."""
-        return [TenantResponse.from_entity(t) for t in TenantEntity.objects.all()]
+    async def list_tenants() -> list[TenantResponse]:
+        """Active tenants (both sources) + orphaned tenants (Mongo-only) for the sysadmin view.
+
+        Keycloak-only IDs (unconfigured) are served by ``list_unconfigured_tenant_ids``.
+        """
+        try:
+            keycloak_groups = await KeycloakAdminService.get_all_tenant_groups()
+        except (KeycloakError, KeycloakGetError, httpx.HTTPError) as e:
+            logger.warning("Keycloak unreachable while listing tenants: %s", e)
+            raise HTTPException(status_code=503, detail="Keycloak is unreachable")
+
+        keycloak_ids = {g.name for g in keycloak_groups}
+        result: list[TenantResponse] = []
+        for entity in TenantEntity.objects.all():
+            state = TenantState.ACTIVE if entity.id in keycloak_ids else TenantState.ORPHANED
+            result.append(TenantResponse.from_entity(entity, state=state))
+        return result
 
     @staticmethod
     @trace_fn
-    def get_tenant(tenant_id: str) -> TenantResponse:
-        """Retrieves a single tenant by its ID."""
+    async def list_unconfigured_tenant_ids() -> list[str]:
+        """Keycloak tenant IDs that don't yet have MongoDB metadata."""
+        try:
+            keycloak_groups = await KeycloakAdminService.get_all_tenant_groups()
+        except (KeycloakError, KeycloakGetError, httpx.HTTPError) as e:
+            logger.warning("Keycloak unreachable while listing unconfigured tenants: %s", e)
+            raise HTTPException(status_code=503, detail="Keycloak is unreachable")
+
+        keycloak_ids = {g.name for g in keycloak_groups}
+        configured_ids = {t.id for t in TenantEntity.objects.only("id")}
+        return sorted(keycloak_ids - configured_ids)
+
+    @staticmethod
+    @trace_fn
+    async def get_tenant(tenant_id: str) -> TenantResponse:
+        """Retrieves a single tenant and its state."""
         entity = TenantEntity.get_tenant_by_id(tenant_id)
         if not entity:
             raise HTTPException(status_code=404, detail="Tenant not found.")
-        return TenantResponse.from_entity(entity)
+
+        try:
+            await KeycloakAdminService.get_tenant_group(tenant_id)
+            state = TenantState.ACTIVE
+        except KeycloakGetError:
+            state = TenantState.ORPHANED
+        except (KeycloakError, httpx.HTTPError) as e:
+            logger.warning("Keycloak unreachable while fetching tenant %s: %s", tenant_id, e)
+            raise HTTPException(status_code=503, detail="Keycloak is unreachable")
+
+        return TenantResponse.from_entity(entity, state=state)
 
     @staticmethod
     @trace_fn
-    def create_tenant(data: CreateTenantRequest) -> TenantResponse:
-        """Creates a new tenant."""
+    async def configure_tenant(data: ConfigureTenantRequest) -> TenantResponse:
+        """Attaches metadata to an existing Keycloak tenant group.
+
+        Raises 400 if the Keycloak group does not exist, 409 if metadata is already present.
+        """
+        try:
+            await KeycloakAdminService.get_tenant_group(data.tenant_id)
+        except KeycloakGetError:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Keycloak tenant group '{data.tenant_id}' does not exist.",
+            )
+        except (KeycloakError, httpx.HTTPError) as e:
+            logger.warning("Keycloak unreachable while configuring tenant %s: %s", data.tenant_id, e)
+            raise HTTPException(status_code=503, detail="Keycloak is unreachable")
+
+        if TenantEntity.get_tenant_by_id(data.tenant_id):
+            raise HTTPException(
+                status_code=409,
+                detail=f"Tenant '{data.tenant_id}' is already configured.",
+            )
+
         entity = TenantEntity.create_tenant(
+            tenant_id=data.tenant_id,
             name=data.name,
             description=data.description,
             access_rules=data.access_rules,
         )
-        return TenantResponse.from_entity(entity)
+        return TenantResponse.from_entity(entity, state=TenantState.ACTIVE)
 
     @staticmethod
     @trace_fn
-    def update_tenant(tenant_id: str, data: UpdateTenantRequest) -> TenantResponse:
-        """Updates an existing tenant's fields."""
+    async def update_tenant(tenant_id: str, data: UpdateTenantRequest) -> TenantResponse:
+        """Updates MongoDB metadata for an active tenant.
+
+        Orphaned tenants are read-only (409).
+        """
+        existing = TenantEntity.get_tenant_by_id(tenant_id)
+        if not existing:
+            raise HTTPException(status_code=404, detail="Tenant not found.")
+
+        try:
+            await KeycloakAdminService.get_tenant_group(tenant_id)
+        except KeycloakGetError:
+            raise HTTPException(
+                status_code=409,
+                detail=f"Tenant '{tenant_id}' is orphaned (Keycloak group missing) and cannot be edited.",
+            )
+        except (KeycloakError, httpx.HTTPError) as e:
+            logger.warning("Keycloak unreachable while updating tenant %s: %s", tenant_id, e)
+            raise HTTPException(status_code=503, detail="Keycloak is unreachable")
+
         entity = TenantEntity.update_tenant(
             tenant_id=tenant_id,
             name=data.name,
@@ -48,12 +139,17 @@ class TenantAdminService:
         )
         if not entity:
             raise HTTPException(status_code=404, detail="Tenant not found.")
-        return TenantResponse.from_entity(entity)
+        return TenantResponse.from_entity(entity, state=TenantState.ACTIVE)
 
     @staticmethod
     @trace_fn
     def delete_tenant(tenant_id: str) -> None:
-        """Deletes a tenant. The default tenant cannot be deleted."""
+        """Removes the MongoDB metadata. Allowed on both ACTIVE and ORPHANED tenants.
+
+        The Keycloak group (if present) is left untouched — cleanup is a separate
+        concern managed via the Keycloak admin console. Default tenant cannot be
+        deleted (403).
+        """
         try:
             deleted = TenantEntity.delete_tenant(tenant_id)
         except ValueError as e:

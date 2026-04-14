@@ -9,6 +9,12 @@
       v-if="clonedTenant"
       class="flex flex-col gap-4"
     >
+      <div class="flex flex-col gap-1">
+        <label class="text-xs text-surface-500 dark:text-surface-400">
+          {{ t('tenant_admin.tenant_id') }}
+        </label>
+        <span class="font-mono text-sm">{{ tenantId }}</span>
+      </div>
       <TenantAdminEdit
         v-model="clonedTenant"
       />
@@ -31,6 +37,8 @@ import { cloneDeep } from 'lodash-es'
 import type { TenantResponse, UpdateTenantRequest } from '@core/sdk/client'
 
 const route = useRoute()
+const router = useRouter()
+const localePath = useLocalePath()
 const { t } = useI18n()
 const toast = useToast()
 
@@ -40,13 +48,18 @@ const { updateTenant } = useUpdateTenant()
 const tenantId = computed(() => route.params.tenant_id as string)
 
 const tenant = computed(() =>
-  tenants.value?.find((t: TenantResponse) => t.id === tenantId.value),
+  tenants.value?.find((tn: TenantResponse) => tn.id === tenantId.value),
 )
 
 const clonedTenant = ref<UpdateTenantRequest | null>(null)
 
-watch(tenant, (newTenant) => {
-  if (!newTenant) return
+// Redirect if tenant is missing or orphaned (edit view is not allowed for orphans).
+watch([tenant, tenantsAreLoading], ([newTenant, loading]) => {
+  if (loading) return
+  if (!newTenant || newTenant.state === 'orphaned') {
+    router.push(localePath('/sysadmin/tenants'))
+    return
+  }
   clonedTenant.value = cloneDeep({
     name: newTenant.name,
     description: newTenant.description,

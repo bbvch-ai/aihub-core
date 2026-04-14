@@ -79,6 +79,15 @@ class KeycloakAdminService:
 
     @staticmethod
     @trace_fn
+    async def get_all_tenant_groups() -> list[KeycloakGroup]:
+        """Returns all direct children of the /tenants/ parent group."""
+        admin = _create_admin()
+        parent = await admin.a_get_group_by_path(TENANTS_GROUP_PATH)
+        children = await admin.a_get_group_children(parent["id"])
+        return [KeycloakGroup.model_validate(c) for c in children]
+
+    @staticmethod
+    @trace_fn
     async def get_tenant_group(tenant_id: str) -> KeycloakGroup:
         admin = _create_admin()
         data = await admin.a_get_group_by_path(f"{TENANTS_GROUP_PATH}/{tenant_id}")

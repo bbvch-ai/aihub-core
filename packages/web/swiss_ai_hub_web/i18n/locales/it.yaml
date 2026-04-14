@@ -589,6 +589,22 @@ tenant_admin:
   cancel: Annulla
   save: Salva
   default_tag: Predefinito
+  tenant_id: ID del tenant
+  keycloak_unreachable: Keycloak non è raggiungibile — l'elenco dei tenant potrebbe
+    essere incompleto. Riprovare.
+  state:
+    orphaned_label: Orfano
+    orphaned_tooltip: Questo tenant ha metadati ma nessun gruppo Keycloak corrispondente.
+      Gli utenti non possono accedervi.
+  configure:
+    title: Configura tenant
+    description: Collega metadati a un gruppo di tenant Keycloak esistente. L'ID del
+      tenant deve corrispondere a un gruppo Keycloak sotto /tenants/ che non ha ancora
+      metadati.
+    tenant_id_label: ID del tenant Keycloak
+    tenant_id_placeholder: Seleziona un tenant Keycloak
+    empty_unconfigured: Nessun tenant Keycloak non configurato disponibile. Crea prima
+      un gruppo di tenant nella console di amministrazione Keycloak.
   form:
     name: Nome del tenant
     description: Descrizione

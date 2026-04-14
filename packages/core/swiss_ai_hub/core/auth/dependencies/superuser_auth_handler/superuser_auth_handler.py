@@ -55,4 +55,5 @@ class SuperuserAuthHandler(BearerAuthHandler):
             id=settings.OID,  # type: ignore[arg-type]
             roles=settings.ROLES,
             acting_within_tenant=virtual_superuser_tenant,
+            is_sys_admin=True,
         )

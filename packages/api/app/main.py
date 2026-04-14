@@ -90,7 +90,13 @@ runner.mount(
     .send_process_open_form(),
     TokenController(auth=auth).create_token().list_tokens().revoke_token(),
     RoleController(auth=auth).get_role().get_roles().create_role().update_role().delete_role(),
-    TenantAdminController(auth=auth).list_tenants().get_tenant().create_tenant().update_tenant().delete_tenant(),
+    TenantAdminController(auth=auth)
+    .list_tenants()
+    .list_unconfigured_tenants()
+    .get_tenant()
+    .configure_tenant()
+    .update_tenant()
+    .delete_tenant(),
     OpenaiController(auth=auth)
     .get_models()
     .get_model_with_assistants()

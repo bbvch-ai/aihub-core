@@ -33,7 +33,7 @@ class MyTenantController(Controller):
             user: Annotated[UserIdentity, Security(self.authenticated_user())],
         ) -> MyTenantsResponse:
             """Returns all tenants the current user belongs to, along with sysadmin status."""
-            return MyTenantService.get_my_tenants(user.id)
+            return MyTenantService.get_my_tenants(user)
 
         return self
 

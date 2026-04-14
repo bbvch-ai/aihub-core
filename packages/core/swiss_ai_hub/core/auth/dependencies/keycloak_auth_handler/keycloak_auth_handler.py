@@ -12,6 +12,7 @@ from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
 from swiss_ai_hub.core.auth.keycloak.keycloak_settings import KeycloakSettings
+from swiss_ai_hub.core.auth.roles import SYS_ADMIN_ROLE
 from swiss_ai_hub.core.infrastructure.api.default_tenant_settings import DefaultTenantSettings
 from swiss_ai_hub.core.infrastructure.api.user_signup_settings import UserSignupSettings
 from swiss_ai_hub.core.persistence.access.entities.tenant_entity import TenantEntity
@@ -109,7 +110,16 @@ class KeycloakAuthHandler(AuthHandler):
             self._sync_tenant_memberships(sub, tenants_claim)
             await self._ensure_active_tenant(sub)
 
-            return await self.build_identity(user_id=sub, name=name, email=email, request=request)
+            realm_roles = decoded_token.get("roles", [])
+            is_sys_admin = SYS_ADMIN_ROLE in realm_roles
+
+            return await self.build_identity(
+                user_id=sub,
+                name=name,
+                email=email,
+                request=request,
+                is_sys_admin=is_sys_admin,
+            )
 
         except HTTPException:
             raise

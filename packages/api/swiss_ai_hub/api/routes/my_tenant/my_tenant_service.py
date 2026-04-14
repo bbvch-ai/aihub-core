@@ -1,4 +1,5 @@
 from fastapi import HTTPException
+from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from swiss_ai_hub.core.persistence.access.entities.tenant_entity import TenantEntity
@@ -14,11 +15,13 @@ class MyTenantService:
 
     @staticmethod
     @trace_fn
-    def get_my_tenants(user_id: str) -> MyTenantsResponse:
-        """Returns all tenants the user belongs to, along with sysadmin status."""
-        user = UserEntity.by_oid(user_id)
+    def get_my_tenants(user: UserIdentity) -> MyTenantsResponse:
+        """Returns all tenants the user belongs to, along with sysadmin status.
 
-        tenant_ids = UserTenantRoleEntity.get_tenant_ids_for_user(user_id)
+        `is_sys_admin` is sourced from the JWT realm role claim (populated in `UserIdentity`
+        by the Keycloak auth handler), so no Keycloak Admin API call is required here.
+        """
+        tenant_ids = UserTenantRoleEntity.get_tenant_ids_for_user(user.id)
         if not tenant_ids:
             return MyTenantsResponse(tenants=[], is_sys_admin=user.is_sys_admin)
 

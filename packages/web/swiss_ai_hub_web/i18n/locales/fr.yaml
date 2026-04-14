@@ -592,6 +592,22 @@ tenant_admin:
   cancel: Annuler
   save: Enregistrer
   default_tag: Par défaut
+  tenant_id: ID du tenant
+  keycloak_unreachable: Keycloak est inaccessible — la liste des tenants peut être
+    incomplète. Veuillez réessayer.
+  state:
+    orphaned_label: Orphelin
+    orphaned_tooltip: Ce tenant a des métadonnées mais aucun groupe Keycloak correspondant.
+      Les utilisateurs n'y ont pas accès.
+  configure:
+    title: Configurer un tenant
+    description: Attachez des métadonnées à un groupe de tenants Keycloak existant.
+      L'ID du tenant doit correspondre à un groupe Keycloak sous /tenants/ qui n'a
+      pas encore de métadonnées.
+    tenant_id_label: ID du tenant Keycloak
+    tenant_id_placeholder: Sélectionner un tenant Keycloak
+    empty_unconfigured: Aucun tenant Keycloak non configuré disponible. Créez d'abord
+      un groupe de tenants dans la console d'administration Keycloak.
   form:
     name: Nom du tenant
     description: Description
