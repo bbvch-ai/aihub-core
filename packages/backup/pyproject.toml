@@ -1,6 +1,6 @@
 [project]
 name = "swiss-ai-hub-backup"
-version = "0.276.0"
+version = "0.277.0"
 description = "Backup and restore orchestration for AI-Hub data services"
 requires-python = ">=3.13, <3.14"
 authors = [
@@ -13,16 +13,24 @@ license = "Apache-2.0"
 readme = "README.md"
 dependencies = [
     "boto3>=1.41.5",
+    "clickhouse-connect>=0.15.1",
     "dagster>=1.11.2",
     "dagster-webserver>=1.11.2",
     "docker>=7.0",
     "pydantic>=2.10.3",
     "pydantic-settings>=2.13.1",
+    "pymilvus>=2.6.9",
+    "redis>=7.3.0",
 ]
 
 [dependency-groups]
 dev = [
+    "dagster-graphql>=1.12.18",
+    "pymongo>=4.16.0",
     "pytest>=8.4.1",
+    "pytest-timeout>=2.4.0",
+    "python-dotenv>=1.2.2",
+    "requests>=2.32.5",
     "ruff>=0.8.1",
 ]
 
@@ -43,4 +51,7 @@ select = ["E", "F", "UP", "I"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--strict-markers"
+addopts = "--strict-markers -m 'not e2e'"
+markers = [
+    "e2e: end-to-end tests requiring Docker infrastructure",
+]

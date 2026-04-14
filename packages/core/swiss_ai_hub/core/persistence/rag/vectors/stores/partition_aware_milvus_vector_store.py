@@ -65,6 +65,10 @@ class PartitionAwareMilvusVectorStore(MilvusVectorStore):
 
         self._has_manual_partitions: bool | None = None
 
+    def _ensure_collection_loaded(self) -> None:
+        """Lazily load collection into memory on first access. Idempotent — blocks until ready."""
+        self.client.load_collection(collection_name=self.collection_name)
+
     def _check_has_manual_partitions(self) -> bool:
         """Check if collection has 1023 manual partitions (partition_0...partition_1022)."""
         if self._has_manual_partitions is None:
@@ -78,6 +82,8 @@ class PartitionAwareMilvusVectorStore(MilvusVectorStore):
         """Insert nodes into their hashed partitions (or fallback to base class if no manual partitions)."""
         if not nodes:
             return []
+
+        self._ensure_collection_loaded()
 
         if not self._check_has_manual_partitions():
             return super().add(nodes, **add_kwargs)
@@ -147,6 +153,8 @@ class PartitionAwareMilvusVectorStore(MilvusVectorStore):
         - add(): Just set partition_name= per batch
         - query(): Just set partition_names= in kwargs
         """
+        self._ensure_collection_loaded()
+
         # Backward compatibility: fallback to base class if no manual partitions
         if not self._check_has_manual_partitions():
             return super().query(query, **kwargs)
@@ -262,10 +270,21 @@ class PartitionAwareMilvusVectorStore(MilvusVectorStore):
         nodes, similarities, ids = self._parse_from_milvus_results(res)
         return nodes, similarities, ids
 
+    def get_nodes(
+        self,
+        node_ids: list[str] | None = None,
+        filters: Any = None,
+        **kwargs: Any,
+    ) -> list[BaseNode]:
+        self._ensure_collection_loaded()
+        return super().get_nodes(node_ids=node_ids, filters=filters, **kwargs)
+
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
         Delete nodes associated with a ref_doc_id, scoped to a specific partition.
         """
+        self._ensure_collection_loaded()
+
         # Backward compatibility: fallback to base class if no manual partitions
         if not self._check_has_manual_partitions():
             return super().delete(ref_doc_id)

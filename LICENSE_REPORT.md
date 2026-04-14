@@ -4,7 +4,7 @@ Generated on: 14.04.2026
 
 This document contains license information for all dependencies across the monorepo:
 
-- Python packages (uv): **388 packages**
+- Python packages (uv): **391 packages**
 - Node.js packages (pnpm): **999 packages**
 - External Docker images: **31 images**
 
@@ -73,6 +73,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | cffi                                             | 2.0.0                 | MIT                                                          |                                                                      |
 | ✅     | charset-normalizer                               | 3.4.5                 | MIT                                                          |                                                                      |
 | ✅     | click                                            | 8.3.1                 | BSD-3-Clause (override)                                      |                                                                      |
+| ✅     | clickhouse-connect                               | 0.15.1                | Apache Software License                                      |                                                                      |
 | ✅     | cobble                                           | 0.1.4                 | BSD License                                                  |                                                                      |
 | ✅     | cohere                                           | 5.20.7                | MIT License                                                  |                                                                      |
 | ✅     | colorama                                         | 0.4.6                 | BSD License                                                  |                                                                      |
@@ -197,6 +198,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | llama-index-workflows                            | 2.15.1                | MIT (override)                                               |                                                                      |
 | ✅     | loguru                                           | 0.7.3                 | MIT License                                                  |                                                                      |
 | ✅     | lxml                                             | 6.0.2                 | BSD-3-Clause                                                 |                                                                      |
+| ✅     | lz4                                              | 4.4.5                 | BSD License                                                  |                                                                      |
 | ✅     | magika                                           | 0.6.3                 | Apache Software License                                      |                                                                      |
 | ✅     | maison                                           | 2.0.2                 | MIT                                                          |                                                                      |
 | ✅     | Mako                                             | 1.3.10                | MIT License                                                  |                                                                      |
@@ -327,6 +329,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | pytest-bdd                                       | 8.1.0                 | MIT License                                                  |                                                                      |
 | ✅     | pytest-cov                                       | 7.0.0                 | MIT                                                          |                                                                      |
 | ✅     | pytest-mock                                      | 3.15.1                | MIT License                                                  |                                                                      |
+| ✅     | pytest-timeout                                   | 2.4.0                 | DFSG approved; MIT License                                   |                                                                      |
 | ✅     | python-dateutil                                  | 2.9.0.post0           | Apache Software License; BSD License                         |                                                                      |
 | ✅     | python-dotenv                                    | 1.2.2                 | BSD-3-Clause                                                 |                                                                      |
 | ✅     | python-i18n                                      | 0.3.9                 | MIT License                                                  |                                                                      |
