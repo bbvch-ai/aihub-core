@@ -586,24 +586,22 @@
   ],
 
   "users": [
-    {%- if stage == 'dev' %}
     {
-      "username": "${KEYCLOAK_DEV_USER_USERNAME}",
-      "email": "${KEYCLOAK_DEV_USER_EMAIL}",
-      "firstName": "${KEYCLOAK_DEV_USER_FIRSTNAME}",
-      "lastName": "${KEYCLOAK_DEV_USER_LASTNAME}",
+      "username": "${SUPERUSER_USERNAME}",
+      "email": "${SUPERUSER_EMAIL}",
+      "firstName": "${SUPERUSER_FIRSTNAME}",
+      "lastName": "${SUPERUSER_LASTNAME}",
       "enabled": true,
       "emailVerified": true,
       "credentials": [
         {
           "type": "password",
-          "value": "${KEYCLOAK_DEV_USER_PASSWORD}",
+          "value": "${SUPERUSER_PASSWORD}",
           "temporary": false
         }
       ],
-      "realmRoles": ${KEYCLOAK_DEV_USER_ROLES_JSON}
+      "realmRoles": ${SUPERUSER_ROLES_JSON}
     },
-    {%- endif %}
     {
       "username": "service-account-aihub-api-service",
       "enabled": true,

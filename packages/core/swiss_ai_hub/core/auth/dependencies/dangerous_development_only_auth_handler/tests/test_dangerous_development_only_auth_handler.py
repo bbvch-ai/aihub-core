@@ -42,7 +42,7 @@ def mock_database_operations(monkeypatch: pytest.MonkeyPatch):
     async def mock_clear_active_tenant(user_id: str) -> None:
         pass
 
-    async def mock_resolve_tenant(_self, _request, _user_id: str) -> TenantIdentity:
+    async def mock_resolve_tenant(*_args, **_kwargs) -> TenantIdentity:
         return TenantIdentity(id="default-tenant-id", name="Default Tenant", access_rules=[])
 
     monkeypatch.setattr(

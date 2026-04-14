@@ -130,6 +130,7 @@ def expected_user_data():
         "email": DangerousDevelopmentOnlyAuthSettings().EMAIL,
         "profile_image": None,
         "roles": DangerousDevelopmentOnlyAuthSettings().ROLES,
+        "is_sys_admin": False,
     }
 
 

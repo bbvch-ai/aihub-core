@@ -13546,6 +13546,18 @@ export type UserDto = {
      * User dashboard configuration for index page
      */
     dashboard?: DashboardDto | null;
+    /**
+     * Roles
+     *
+     * Roles the user holds in the current tenant.
+     */
+    roles?: Array<string>;
+    /**
+     * Is Sys Admin
+     *
+     * Whether the user has the AIHubSysAdmin realm role in Keycloak.
+     */
+    is_sys_admin?: boolean;
 };
 
 /**
@@ -13737,9 +13749,15 @@ export type UserWithAccessDto = {
     /**
      * Roles
      *
-     * List of roles assigned to the user in the current tenant
+     * Roles the user holds in the current tenant.
      */
     roles?: Array<string>;
+    /**
+     * Is Sys Admin
+     *
+     * Whether the user has the AIHubSysAdmin realm role in Keycloak.
+     */
+    is_sys_admin?: boolean;
     /**
      * User access levels
      */

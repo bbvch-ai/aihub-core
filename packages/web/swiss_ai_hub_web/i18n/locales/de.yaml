@@ -95,7 +95,9 @@ user:
     email: E-Mail
     avatar: Profilbild
     roles: Rollen
-    last_accessed: Zuletzt zugegriffen
+    sys_admin: System-Admin
+    sys_admin_tag: Sys-Admin
+    sys_admin_no: Nein
 my_account:
   title: Mein Konto
   services: Dienste

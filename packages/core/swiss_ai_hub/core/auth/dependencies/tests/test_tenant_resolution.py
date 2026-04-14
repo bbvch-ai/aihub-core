@@ -139,18 +139,20 @@ def create_second_tenant(cleanup_documents: list[Any], context: dict[str, Any], 
 
 
 @given(parsers.parse('the system role "{role_name}" exists'))
-def ensure_system_role(cleanup_documents: list[Any], role_name: str) -> None:
-    """Ensure a system role exists."""
-    existing = RoleEntity.get_system_role_by_name(role_name)
-    if existing:
-        return
-
-    role = RoleEntity.create_system_role(
-        name=role_name,
-        description=f"System role {role_name} for testing",
-        access_rules=["aihub.user.>"],
-    )
-    cleanup_documents.append(role)
+def ensure_system_role(cleanup_documents: list[Any], context: dict[str, Any], role_name: str) -> None:
+    """Seed the role on every tenant in the context so tenant-scoped queries find it."""
+    tenants = [t for t in (context.get("default_tenant"), context.get("second_tenant")) if t is not None]
+    for tenant in tenants:
+        tenant_id = str(tenant.id)
+        if RoleEntity.objects(name=role_name, tenant_id=tenant_id).first():
+            continue
+        role = RoleEntity.create_tenant_role(
+            name=role_name,
+            description=f"Role {role_name} for testing",
+            access_rules=["aihub.user.>"],
+            tenant_id=tenant_id,
+        )
+        cleanup_documents.append(role)
 
 
 @given(parsers.parse('user "{user_id}" is a member of the default tenant with roles "{roles}"'))

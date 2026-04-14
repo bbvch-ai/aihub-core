@@ -62,19 +62,25 @@ def create_tenant(cleanup_documents: list[Any], context: dict[str, Any], name: s
 
 
 @given(parsers.parse('the system role "{role_name}" exists with access rules "{access_rules}"'))
-def ensure_system_role(cleanup_documents: list[Any], role_name: str, access_rules: str) -> None:
-    """Ensure a system role exists with the given access rules."""
-    existing = RoleEntity.get_system_role_by_name(role_name)
-    if existing:
-        return
-
+def ensure_system_role(
+    cleanup_documents: list[Any],
+    context: dict[str, Any],
+    role_name: str,
+    access_rules: str,
+) -> None:
+    """Seed a role with the given access rules in every tenant already registered in the context."""
     rules_list = [r.strip() for r in access_rules.split(",")]
-    role = RoleEntity.create_system_role(
-        name=role_name,
-        description=f"System role {role_name} for testing",
-        access_rules=rules_list,
-    )
-    cleanup_documents.append(role)
+    for tenant in context["tenants"].values():
+        tenant_id = str(tenant.id)
+        if RoleEntity.objects(name=role_name, tenant_id=tenant_id).first():
+            continue
+        role = RoleEntity.create_tenant_role(
+            name=role_name,
+            description=f"Role {role_name} for testing",
+            access_rules=rules_list,
+            tenant_id=tenant_id,
+        )
+        cleanup_documents.append(role)
 
 
 # --- Given Steps ---

@@ -42,19 +42,23 @@ def valid_token(mongo_db):
     config = DangerousDevelopmentOnlyAuthSettings()
     user_oid = os.getenv("OID", config.OID)
 
-    # Create the test role in the DB so AccessChecker can resolve access rules
-    role = RoleEntity.objects(name=config.ROLES[0]).first()
+    # Create the test role on the default tenant so AccessChecker can resolve access rules
+    default_tenant = TenantMetadataEntity.get_default_tenant_metadata()
+    role = None
     created_role = False
-    if not role:
-        role = RoleEntity.create_system_role(
-            name=config.ROLES[0],
-            description="Full admin access for testing",
-            access_rules=["aihub.admin.>"],
-        )
-        created_role = True
+    if default_tenant:
+        tenant_id = str(default_tenant.id)
+        role = RoleEntity.objects(name=config.ROLES[0], tenant_id=tenant_id).first()
+        if not role:
+            role = RoleEntity.create_tenant_role(
+                name=config.ROLES[0],
+                description="Full admin access for testing",
+                access_rules=["aihub.admin.>"],
+                tenant_id=tenant_id,
+            )
+            created_role = True
 
     # Assign roles to user in default tenant (required for multi-tenant auth)
-    default_tenant = TenantMetadataEntity.get_default_tenant_metadata()
     user_tenant_role = None
     if default_tenant:
         user_tenant_role = UserTenantRoleEntity.create_or_update(
@@ -83,6 +87,7 @@ def expected_user_data():
         "email": os.getenv("EMAIL", DangerousDevelopmentOnlyAuthSettings().EMAIL),
         "profile_image": None,
         "roles": DangerousDevelopmentOnlyAuthSettings().ROLES,
+        "is_sys_admin": False,
     }
 
 

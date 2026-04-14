@@ -10,7 +10,6 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_settings import (  # noqa: E501
         DangerousDevelopmentOnlyAuthSettings,
     )
-    from swiss_ai_hub.core.auth.dependencies.superuser_auth_handler.superuser_settings import SuperuserSettings
     from swiss_ai_hub.core.auth.dependencies.token_and_oauth2_handler.token_and_oauth2_handler import (
         TokenAndOauth2Handler,
     )
@@ -21,6 +20,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.auth.keycloak.keycloak_settings import KeycloakSettings
     from swiss_ai_hub.core.auth.keycloak.models.keycloak_group import KeycloakGroup
     from swiss_ai_hub.core.auth.keycloak.models.keycloak_user import KeycloakUser
+    from swiss_ai_hub.core.auth.superuser_settings import SuperuserSettings
 
 # KeycloakAuthHandler and TokenAndOauth2Handler are excluded because they
 # instantiate KeycloakSettings() at class definition time, requiring KEYCLOAK_URL to be set.
@@ -56,7 +56,7 @@ _LAZY_IMPORTS = {
     "KeycloakUser": "swiss_ai_hub.core.auth.keycloak.models.keycloak_user",
     "DangerousDevelopmentOnlyAuthHandler": "swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler",  # noqa: E501
     "DangerousDevelopmentOnlyAuthSettings": "swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_settings",  # noqa: E501
-    "SuperuserSettings": "swiss_ai_hub.core.auth.dependencies.superuser_auth_handler.superuser_settings",
+    "SuperuserSettings": "swiss_ai_hub.core.auth.superuser_settings",
     "TenantIdentity": "swiss_ai_hub.core.auth.identity.tenant_identity",
     "TokenAuthHandler": "swiss_ai_hub.core.auth.dependencies.token_auth_handler.token_auth_handler",
     "UserIdentity": "swiss_ai_hub.core.auth.identity.user_identity",

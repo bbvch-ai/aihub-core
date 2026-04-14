@@ -16,7 +16,7 @@ from swiss_ai_hub.core.auth.identity.tenant_identity import TenantIdentity
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.infrastructure.api.ai_hub_settings import AIHubSettings
 from swiss_ai_hub.core.infrastructure.mongo.mongo_settings import MongoSettings
-from swiss_ai_hub.core.persistence.access.entities.bearer_token import BearerToken
+from swiss_ai_hub.core.persistence.access.entities.bearer_token import TOKEN_PREFIX, BearerToken
 from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 from swiss_ai_hub.core.testing.asyncio_utils.bdd import async_test
@@ -86,10 +86,9 @@ def create_dummy_request(headers: dict[str, str]) -> Request:
     return Request(scope)
 
 
-def generate_dummy_valid_token(oid: str) -> str:
-    """Generate a dummy token string using the given OID (24 hex characters)."""
-    random_part = secrets.token_urlsafe(128)[:128]
-    return f"{oid}.{random_part}"
+def generate_dummy_valid_token() -> str:
+    """Generate a dummy ``sk-<random>`` token string that doesn't exist in the DB."""
+    return f"{TOKEN_PREFIX}{secrets.token_urlsafe(48)}"
 
 
 # --- Given Steps ---
@@ -187,11 +186,9 @@ def invalid_token_format(token_context: dict[str, Any], token: str, monkeypatch:
 
 @given(parsers.parse('a token does not exist in the database with token "{token}"'))
 def token_not_found(token_context: dict[str, Any], token: str, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Store a token (formatted as <oid>.<random>) that is not found in the database."""
-    parts = token.split(".")
-    if len(parts) != 2 or len(parts[0]) != 24 or len(parts[1]) != 128:
-        oid = parts[0] if len(parts[0]) == 24 else "123456789012345678901234"
-        token = generate_dummy_valid_token(oid)
+    """Store a properly-prefixed token that is not present in the database."""
+    if not token.startswith(TOKEN_PREFIX):
+        token = generate_dummy_valid_token()
     token_context["token_str"] = token
 
     # Mock handler to always raise token not found error
@@ -205,22 +202,14 @@ def token_not_found(token_context: dict[str, Any], token: str, monkeypatch: pyte
 
 @given("I modify the token to cause a mismatch")
 def modify_token_for_mismatch(token_context: dict[str, Any], monkeypatch: pytest.MonkeyPatch) -> None:
-    """Modify the token's random part to cause a mismatch."""
-    token_str = token_context["token_str"]
-    parts = token_str.split(".")
-    if len(parts) == 2:
-        oid, random_part = parts
-        new_char = "A" if random_part[0] != "A" else "B"
-        new_random = new_char + random_part[1:]
-        token_context["token_str"] = f"{oid}.{new_random}"
-    else:
-        token_context["token_str"] = token_str + "x"
+    """Replace the stored token with a well-formed one that won't match any row."""
+    token_context["token_str"] = generate_dummy_valid_token()
 
-    # Mock handler to always raise token mismatch error
+    # Mock handler to always raise token not found error
     async def mock_handler_call(
         self: OpenWebuiAuthHandler, request: Request, bearer_token: HTTPAuthorizationCredentials
     ) -> UserIdentity:
-        raise HTTPException(status_code=401, detail="Token mismatch")
+        raise HTTPException(status_code=401, detail="Token not found")
 
     monkeypatch.setattr(OpenWebuiAuthHandler, "__call__", mock_handler_call)
 

@@ -22,9 +22,10 @@ class RoleEntity(Document):
     """
     Represents a role in the system, which contains a set of access rules.
 
-    Roles can be either system-wide (tenant_id is None) or tenant-scoped.
-    System roles are available to all tenants and are created during initialization.
-    Tenant-scoped roles are created by tenant admins and only available within that tenant.
+    Roles are always tenant-scoped: every role belongs to exactly one tenant,
+    identified by its ``tenant_id``. The default role set (``AIHubUser``,
+    ``AIHubAdmin``, …) is seeded per-tenant at tenant-creation time, gated by
+    ``AIHubSettings().CREATE_DEFAULT_ROLES``.
     """
 
     meta = {
@@ -41,12 +42,7 @@ class RoleEntity(Document):
     description = StringField(required=True)
     access_rules = ListField(StringField(), default=list)
     usage_limits = EmbeddedDocumentListField(UsageLimit, default=list)
-    tenant_id = StringField(null=True, default=None)
-
-    @property
-    def is_system_role(self) -> bool:
-        """Returns True if this is a system-wide role (tenant_id is None)."""
-        return self.tenant_id is None
+    tenant_id = StringField(required=True)
 
     def clean(self) -> None:
         """Reject duplicate (pattern, period) combinations in usage_limits."""
@@ -59,24 +55,16 @@ class RoleEntity(Document):
 
     @classmethod
     @trace_fn
-    def get_system_role_by_name(cls, role_name: str) -> Self | None:
-        """Fetches a system role by its name. Returns None if not found."""
-        return cls.objects(name=role_name, tenant_id=None).first()
-
-    @classmethod
-    @trace_fn
     def get_access_rules_for_roles(cls, role_names: list[str], tenant_id: str) -> set[str]:
         """
-        Fetches all roles corresponding to the given role names and returns a
-        unique set of all their associated access rules.
-
-        Includes both system roles (tenant_id=None) and tenant-specific roles.
+        Fetches all tenant-scoped roles matching the given names within the given tenant
+        and returns the union of their access rules.
         """
         unique_role_names = list(set(role_names))
 
         roles_query = cls.objects(
             name__in=unique_role_names,
-            tenant_id__in=[None, tenant_id],
+            tenant_id=tenant_id,
         )
 
         all_rules = set()
@@ -89,28 +77,15 @@ class RoleEntity(Document):
     @trace_fn
     def filter_existing_roles(cls, role_names: list[str], tenant_id: str) -> list[str]:
         """
-        Filters a list of potential role names, returning only those that
-        exist in the database (as system roles or tenant-specific roles).
+        Filters a list of potential role names, returning only those that exist
+        as tenant-scoped roles for the given tenant.
         """
         existing_roles_query = cls.objects(
             name__in=role_names,
-            tenant_id__in=[None, tenant_id],
+            tenant_id=tenant_id,
         ).only("name")
 
         return list(set(role.name for role in existing_roles_query))
-
-    @classmethod
-    @trace_fn
-    def create_system_role(cls, name: str, description: str, access_rules: list[str]) -> Self:
-        """Creates a new system-wide role (available to all tenants)."""
-        role = cls(
-            name=name,
-            description=description,
-            access_rules=access_rules,
-            tenant_id=None,
-        )
-        role.save()
-        return role
 
     @classmethod
     @trace_fn
@@ -136,28 +111,21 @@ class RoleEntity(Document):
     @classmethod
     @trace_fn
     def get_roles_for_tenant(cls, tenant_id: str) -> list[Self]:
-        """Returns all roles available to a tenant (system roles + tenant-specific)."""
-        return list(cls.objects(tenant_id__in=[None, tenant_id]).order_by("name"))
-
-    @classmethod
-    @trace_fn
-    def get_system_roles(cls) -> list[Self]:
-        """Returns all system-wide roles."""
-        return list(cls.objects(tenant_id=None).order_by("name"))
+        """Returns all roles defined for the given tenant."""
+        return list(cls.objects(tenant_id=tenant_id).order_by("name"))
 
     @classmethod
     @trace_fn
     def update_role(
         cls,
         role_name: str,
-        tenant_id: str | None,
+        tenant_id: str,
         description: str | None = None,
         access_rules: list[str] | None = None,
     ) -> Self | None:
         """
         Updates an existing role. Returns the updated role or None if not found.
 
-        For system roles, pass tenant_id=None.
         Only provided fields are updated. Pass None to skip updating a field.
         """
         role = cls.objects(name=role_name, tenant_id=tenant_id).first()
@@ -174,12 +142,11 @@ class RoleEntity(Document):
 
     @classmethod
     @trace_fn
-    def delete_role(cls, role_name: str, tenant_id: str | None) -> bool:
+    def delete_role(cls, role_name: str, tenant_id: str) -> bool:
         """
         Deletes a role by its name and tenant_id. Returns True if deleted, False if not found.
 
         Also removes the role name from all UserTenantRoleEntity associations that reference it.
-        For system roles, pass tenant_id=None.
         """
         role = cls.objects(name=role_name, tenant_id=tenant_id).first()
         if not role:
@@ -188,10 +155,7 @@ class RoleEntity(Document):
         # Runtime import: RoleEntity ↔ UserTenantRoleEntity mutual reference for cascade deletes
         from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 
-        if tenant_id:
-            associations = UserTenantRoleEntity.objects(tenant_id=tenant_id, roles=role_name)
-        else:
-            associations = UserTenantRoleEntity.objects(roles=role_name)
+        associations = UserTenantRoleEntity.objects(tenant_id=tenant_id, roles=role_name)
 
         updated_count = 0
         for assoc in associations:
@@ -208,12 +172,8 @@ class RoleEntity(Document):
     @classmethod
     @trace_fn
     def get_usage_limits_for_roles(cls, role_names: list[str], tenant_id: str) -> list[list[RoleUsageLimit]]:
-        """
-        Returns a list of usage_limits per role.
-
-        Includes both system roles (tenant_id=None) and tenant-specific roles.
-        """
-        roles = cls.objects(name__in=role_names, tenant_id__in=[None, tenant_id]).only("usage_limits")
+        """Returns a list of usage_limits per role for the given tenant."""
+        roles = cls.objects(name__in=role_names, tenant_id=tenant_id).only("usage_limits")
         return [
             [
                 RoleUsageLimit(pattern=ul.pattern, limit=ul.limit, period=UsageLimitPeriod(ul.period))

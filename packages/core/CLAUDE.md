@@ -357,7 +357,6 @@ Key methods:
 | `BearerAuthHandler`                   | Bearer token header           |
 | `TokenAndOauth2Handler`               | Combined token + OAuth2       |
 | `OpenWebuiAuthHandler`                | OpenWebUI session integration |
-| `SuperuserAuthHandler`                | Hardcoded superuser token     |
 | `DangerousDevelopmentOnlyAuthHandler` | No validation (dev only)      |
 
 ### Permission System (AccessChecker)

@@ -51,8 +51,17 @@ def _build_fake_admin() -> MagicMock:
     Keeps a per-user-id in-memory store so sequences like
     ``set_active_tenant`` → ``get_active_tenant_id`` return the value that was just
     written. Tests never hit a real Keycloak server.
+
+    Seeds two users by default:
+    - the dev-auth fake user (``DangerousDevelopmentOnlyAuthSettings``) that powers
+      the bypassed auth flow used by most tests;
+    - the superuser (``SuperuserSettings``) so ``initialize_superuser_token`` finds
+      a Keycloak user by email during API lifespan startup.
     """
+    from swiss_ai_hub.core.auth.superuser_settings import SuperuserSettings
+
     config = DangerousDevelopmentOnlyAuthSettings()
+    superuser = SuperuserSettings()
 
     def _default_user(user_id: str) -> dict:
         return {
@@ -66,6 +75,17 @@ def _build_fake_admin() -> MagicMock:
 
     users = _FAKE_KEYCLOAK_USERS
     users.setdefault(config.OID, _default_user(config.OID))
+    users.setdefault(
+        f"superuser-{superuser.USERNAME}",
+        {
+            "id": f"superuser-{superuser.USERNAME}",
+            "username": superuser.USERNAME,
+            "email": superuser.EMAIL,
+            "firstName": "Super",
+            "lastName": "User",
+            "attributes": {"active_tenant_id": ["default"]},
+        },
+    )
 
     async def a_get_user(user_id: str) -> dict:
         return users.setdefault(user_id, _default_user(user_id))
@@ -97,6 +117,8 @@ def _build_fake_admin() -> MagicMock:
     fake.a_delete_group = AsyncMock(return_value=None)
     fake.a_group_user_add = AsyncMock(return_value=None)
     fake.a_group_user_remove = AsyncMock(return_value=None)
+    fake.a_get_realm_roles_of_user = AsyncMock(return_value=[])
+    fake.a_get_realm_role_members = AsyncMock(return_value=[])
     return fake
 
 
@@ -133,6 +155,7 @@ def get_expected_user_data(include_dashboard=True, include_access=True):
         "email": config.EMAIL,
         "profile_image": None,
         "roles": config.ROLES,
+        "is_sys_admin": False,
     }
 
     if include_dashboard:

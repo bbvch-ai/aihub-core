@@ -30,7 +30,6 @@ class Access(BaseModel):
 
 
 class UserWithAccessDTO(UserDTO):
-    roles: Annotated[list[str], Field(description="List of roles assigned to the user in the current tenant")] = []
     access: Annotated[Access, Field(description="User access levels")]
 
     @classmethod
@@ -90,5 +89,6 @@ class UserWithAccessDTO(UserDTO):
             profile_image=None,
             dashboard=dashboard_dto,
             roles=valid_roles,
+            is_sys_admin=user.is_sys_admin,
             access=access,
         )

@@ -62,7 +62,7 @@ def mock_tenant_entity_autouse():
     def mock_get_user_ids_in_tenant(tenant_id):
         return [config.OID]
 
-    async def mock_resolve_active_tenant(user_id):
+    async def mock_resolve_active_tenant(*_args, **_kwargs):
         return mock_tenant
 
     async def mock_tenant_exists(tenant_id):

@@ -85,17 +85,24 @@ def ensure_default_tenant(cleanup_documents: list[Any], context: dict[str, Any],
 
 
 @given(parsers.parse('the system role "{role_name}" exists with access rules "{access_rules}"'))
-def ensure_system_role(cleanup_documents: list[Any], role_name: str, access_rules: str) -> None:
-    """Ensure a system role exists."""
+def ensure_system_role(
+    cleanup_documents: list[Any],
+    context: dict[str, Any],
+    role_name: str,
+    access_rules: str,
+) -> None:
+    """Ensure a role exists on the default tenant (used as the de-facto 'system' role in tests)."""
     rules_list = [r.strip() for r in access_rules.split(",")]
-    existing = RoleEntity.get_system_role_by_name(role_name)
+    tenant_id = str(context["default_tenant"].id)
+    existing = RoleEntity.objects(name=role_name, tenant_id=tenant_id).first()
     if existing:
         return
 
-    role = RoleEntity.create_system_role(
+    role = RoleEntity.create_tenant_role(
         name=role_name,
-        description=f"System role {role_name} for testing",
+        description=f"Role {role_name} for testing",
         access_rules=rules_list,
+        tenant_id=tenant_id,
     )
     cleanup_documents.append(role)
 

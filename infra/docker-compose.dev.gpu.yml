@@ -629,13 +629,13 @@ services:
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
       KC_HEALTH_ENABLED: 'true'
       KC_METRICS_ENABLED: 'true'
-      # Dev user configuration (passed to realm template)
-      KEYCLOAK_DEV_USER_USERNAME: ${KEYCLOAK_DEV_USER_USERNAME}
-      KEYCLOAK_DEV_USER_PASSWORD: ${KEYCLOAK_DEV_USER_PASSWORD}
-      KEYCLOAK_DEV_USER_EMAIL: ${KEYCLOAK_DEV_USER_EMAIL}
-      KEYCLOAK_DEV_USER_FIRSTNAME: ${KEYCLOAK_DEV_USER_FIRSTNAME}
-      KEYCLOAK_DEV_USER_LASTNAME: ${KEYCLOAK_DEV_USER_LASTNAME}
-      KEYCLOAK_DEV_USER_ROLES_JSON: ${KEYCLOAK_DEV_USER_ROLES_JSON}
+      # Superuser (interactive Keycloak-seeded admin) — passed to realm template
+      SUPERUSER_USERNAME: ${SUPERUSER_USERNAME}
+      SUPERUSER_PASSWORD: ${SUPERUSER_PASSWORD}
+      SUPERUSER_EMAIL: ${SUPERUSER_EMAIL}
+      SUPERUSER_FIRSTNAME: ${SUPERUSER_FIRSTNAME}
+      SUPERUSER_LASTNAME: ${SUPERUSER_LASTNAME}
+      SUPERUSER_ROLES_JSON: ${SUPERUSER_ROLES_JSON}
       AIHUB_DEFAULT_TENANT_ID: ${AIHUB_DEFAULT_TENANT_ID}
       # Client secrets (used by bash_envsubst in realm template)
       KEYCLOAK_OPENWEBUI_CLIENT_SECRET: ${KEYCLOAK_OPENWEBUI_CLIENT_SECRET}
@@ -1587,21 +1587,6 @@ services:
   # These are the background workers and data processing pipelines
   # that power the platform's AI capabilities.
   # ===================================================================
-
-
-
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
 # ===================================================================
 # Network Configuration
 # ===================================================================

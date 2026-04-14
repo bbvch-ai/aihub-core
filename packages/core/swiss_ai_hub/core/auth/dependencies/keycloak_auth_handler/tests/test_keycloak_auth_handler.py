@@ -45,7 +45,7 @@ def clear_handler_caches():
 def mock_database_operations(monkeypatch: pytest.MonkeyPatch):
     """Mock database and identity operations required by the auth handler."""
 
-    async def mock_get_default_tenant(user_id: str) -> TenantIdentity:
+    async def mock_get_default_tenant(*_args, **_kwargs) -> TenantIdentity:
         tenant = MagicMock(spec=TenantIdentity)
         tenant.id = "default-tenant"
         tenant.name = "Default"

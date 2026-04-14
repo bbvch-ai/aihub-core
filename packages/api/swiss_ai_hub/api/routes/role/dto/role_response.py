@@ -1,6 +1,6 @@
 from typing import Annotated, Self
 
-from pydantic import BaseModel, Field, computed_field
+from pydantic import BaseModel, Field
 from swiss_ai_hub.core.auth.usage import AccessRuleDescriber
 from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
 
@@ -17,13 +17,7 @@ class RoleResponse(BaseModel):
     description: Annotated[str, Field(description="The description of the role.")]
     access_rules: Annotated[list[str], Field(description="The list of access rules for the role.")]
     usage_limits: Annotated[list[UsageLimitDTO], Field(description="Pattern-based usage limit rules.")] = []
-    tenant_id: Annotated[str | None, Field(description="Tenant ID this role belongs to, or None for system roles.")]
-
-    @computed_field  # type: ignore[prop-decorator]
-    @property
-    def is_system_role(self) -> bool:
-        """Whether this is a system-wide role (no tenant_id means system role)."""
-        return self.tenant_id is None
+    tenant_id: Annotated[str, Field(description="Tenant ID this role belongs to.")]
 
     @classmethod
     def from_role_entity(cls, role_entity: RoleEntity) -> Self:

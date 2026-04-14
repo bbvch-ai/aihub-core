@@ -8,6 +8,7 @@ from swiss_ai_hub.api.routes.tenant_admin.dto.configure_tenant_request import Co
 from swiss_ai_hub.api.routes.tenant_admin.dto.tenant_response import TenantResponse
 from swiss_ai_hub.api.routes.tenant_admin.dto.tenant_state import TenantState
 from swiss_ai_hub.api.routes.tenant_admin.dto.update_tenant_request import UpdateTenantRequest
+from swiss_ai_hub.api.runners.lifetime.initialize_db import initialize_default_roles_for_tenant
 
 
 class TenantAdminService:
@@ -93,6 +94,7 @@ class TenantAdminService:
             description=data.description,
             access_rules=data.access_rules,
         )
+        await initialize_default_roles_for_tenant(str(entity.id))
         return TenantResponse.from_entity(entity, state=TenantState.ACTIVE)
 
     @staticmethod

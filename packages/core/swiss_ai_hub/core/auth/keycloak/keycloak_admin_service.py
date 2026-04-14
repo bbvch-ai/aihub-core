@@ -173,6 +173,37 @@ class KeycloakAdminService:
 
     @staticmethod
     @trace_fn
+    async def get_user_realm_roles(keycloak_user_id: str) -> list[str]:
+        """Returns realm role names assigned to the user.
+
+        Used by ``TokenAuthHandler`` to derive ``is_sys_admin`` (checks for
+        ``AIHubSysAdmin``) since a static bearer token does not carry a JWT with
+        the ``roles`` claim.
+        """
+        admin = _create_admin()
+        try:
+            roles = await admin.a_get_realm_roles_of_user(keycloak_user_id)
+        except KeycloakGetError:
+            return []
+        return [r["name"] for r in roles if r.get("name")]
+
+    @staticmethod
+    @trace_fn
+    async def get_user_ids_with_realm_role(role_name: str) -> set[str]:
+        """Returns Keycloak user IDs that have the given realm role assigned.
+
+        Used to batch-resolve role membership (e.g. ``AIHubSysAdmin``) without
+        making one Keycloak call per user.
+        """
+        admin = _create_admin()
+        try:
+            members = await admin.a_get_realm_role_members(role_name)
+        except KeycloakGetError:
+            return set()
+        return {m["id"] for m in members if m.get("id")}
+
+    @staticmethod
+    @trace_fn
     async def get_user_ids_with_active_tenant(tenant_id: str) -> set[str]:
         """Returns the Keycloak IDs of users whose ``active_tenant_id`` attribute matches.
 

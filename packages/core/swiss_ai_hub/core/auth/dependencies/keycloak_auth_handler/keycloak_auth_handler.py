@@ -155,15 +155,13 @@ class KeycloakAuthHandler(AuthHandler):
     def _resolve_roles_for_new_member(tenant_id: str) -> list[str]:
         """Returns the roles to assign when creating a new user-tenant association.
 
-        The first real user (excluding the superuser) to join a tenant gets admin roles;
-        subsequent users get regular roles.
+        The first user to join a tenant gets admin roles; subsequent users get
+        regular roles. The seeded superuser is the natural first admin when
+        they log in during initial platform setup.
         """
-        from swiss_ai_hub.core.auth.dependencies.superuser_auth_handler.superuser_settings import SuperuserSettings
-
         settings = UserSignupSettings()
         existing_user_ids = UserTenantRoleEntity.get_user_ids_in_tenant(tenant_id)
-        real_users = [uid for uid in existing_user_ids if uid != SuperuserSettings().OID]
-        if not real_users:
+        if not existing_user_ids:
             logger.info("First user signup in tenant %s, assigning admin roles", tenant_id)
             return settings.first_admin_user_roles_list
         return settings.regular_user_roles_list

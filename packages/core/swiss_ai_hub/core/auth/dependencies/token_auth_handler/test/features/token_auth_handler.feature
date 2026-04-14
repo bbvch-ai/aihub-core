@@ -18,11 +18,11 @@ Feature: TokenAuthHandler
     When I invoke the TokenAuthHandler with an Authorization header using the token expecting error
     Then I should receive an HTTP error with detail "Token not found"
 
-  Scenario: Token mismatch causes rejection
+  Scenario: A modified token is rejected as not found
     Given a token exists in the database with user details: name "Mismatch User", email "mismatch@example.com", and roles "user,editor"
     And I modify the token to cause a mismatch
     When I invoke the TokenAuthHandler with an Authorization header using the token expecting error
-    Then I should receive an HTTP error with detail "Token mismatch"
+    Then I should receive an HTTP error with detail "Token not found"
 
   Scenario: Expired token is rejected
     Given a token exists in the database with user details: name "Expired User", email "expired@example.com", and roles "user,editor"

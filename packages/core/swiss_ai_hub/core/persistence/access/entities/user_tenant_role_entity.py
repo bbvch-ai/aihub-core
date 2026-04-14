@@ -149,6 +149,19 @@ class UserTenantRoleEntity(Document):
 
     @classmethod
     @trace_fn
+    def get_roles_map_for_users_in_tenant(cls, user_ids: list[str], tenant_id: str) -> dict[str, list[str]]:
+        """Batch-loads tenant role lists for many users in one query.
+
+        Users in ``user_ids`` that have no association in the tenant are absent
+        from the returned dict (callers should default to ``[]``).
+        """
+        if not user_ids:
+            return {}
+        assocs = cls.objects(user_id__in=user_ids, tenant_id=tenant_id).only("user_id", "roles")
+        return {assoc.user_id: list(assoc.roles) for assoc in assocs}
+
+    @classmethod
+    @trace_fn
     def remove_roles(cls, user_id: str, tenant_id: str, roles_to_remove: list[str]) -> Self | None:
         """Removes roles from a user in a tenant. Returns None if association doesn't exist."""
         existing = cls.get_by_user_and_tenant(user_id, tenant_id)
