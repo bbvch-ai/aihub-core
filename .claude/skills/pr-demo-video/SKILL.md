@@ -1,12 +1,13 @@
 ---
 name: pr-demo-video
-description: Analyze a screen recording and add a demo section to the current PR on bbvch-ai/aihub-core. Extracts frames with ffmpeg, describes what the video shows using vision, updates the PR body with a Demo section and video description, and checks off matching test plan items. Use when user says 'add demo video to PR', 'add video to PR', 'describe the video', 'add screen recording to PR', or 'pr demo'. Do NOT use for creating the PR itself (use /create-pr), reviewing code (use /review-diff), or recording videos.
+description: Analyze a screen recording and add a demo section as a comment on the linked GitHub issue for the current PR on bbvch-ai/aihub-core. Extracts frames with ffmpeg, describes what the video shows using vision, posts the demo as an issue comment, and checks off matching test plan items on the PR. Use when user says 'add demo video to PR', 'add video to PR', 'describe the video', 'add screen recording to PR', or 'pr demo'. Do NOT use for creating the PR itself (use /create-pr), reviewing code (use /review-diff), or recording videos.
 allowed-tools: Bash, Read, Grep, Glob, AskUserQuestion
 ---
 
 # PR Demo Video
 
-Add a demo video description to the current branch's pull request on `bbvch-ai/aihub-core`.
+Add a demo video description as a comment on the GitHub issue linked to the current branch's pull request on
+`bbvch-ai/aihub-core`.
 
 ## Step 1: Locate the Video
 
@@ -37,7 +38,7 @@ If no recording is found in any default location, ask the user for the path.
 ## Step 2: Ask About Key Moments
 
 Before extracting frames, ask the user what the video demonstrates and which moments are most important. Frame
-extraction at fixed intervals is lossy — a 10-second gap can miss a crucial UI state, API response, or transition.
+extraction at fixed intervals is lossy -- a 10-second gap can miss a crucial UI state, API response, or transition.
 
 Use AskUserQuestion to ask:
 
@@ -76,31 +77,38 @@ Read each extracted frame using the Read tool (which supports images). For each 
 - What the user is demonstrating
 
 Cross-reference against the key moments from Step 2. If any moment the user mentioned is NOT visible in the extracted
-frames, flag it — the user may need to provide a timestamp or the frame extraction interval was too coarse.
+frames, flag it -- the user may need to provide a timestamp or the frame extraction interval was too coarse.
 
 Build a chronological narrative of what the video shows.
 
-## Step 5: Get Current PR
+## Step 5: Find the Linked Issue
 
-Find the PR for the current branch:
+Find the PR for the current branch and its linked issue:
 
 ```bash
-gh pr view --json number,body -R bbvch-ai/aihub-core
+# Get the PR number
+PR_NUMBER=$(gh pr view --json number -q '.number' -R bbvch-ai/aihub-core)
+
+# Get linked issue numbers
+ISSUE_NUMBER=$(gh pr view $PR_NUMBER -R bbvch-ai/aihub-core --json closingIssuesReferences -q '.closingIssuesReferences[].number')
 ```
+
+If no linked issue is found, fall back to adding the demo as a comment on the PR itself.
 
 ## Step 6: Write the Demo Section
 
-Format the demo section following this repo's PR body convention:
+Format the demo section:
 
 ```markdown
 ## Demo
 
 > **Video description:** {One-line summary of what the video demonstrates} ({duration}).
-> 1. {First thing shown} -- {what it proves}
-> 2. {Second thing shown} -- {what it proves}
-> ...
 
-_(Upload video here -- drag `{VIDEO_PATH}` into this text area)_
+1. **{First thing shown}** -- {what it proves}
+2. **{Second thing shown}** -- {what it proves}
+...
+
+_(Upload video here -- drag `{VIDEO_PATH}` into this comment)_
 ```
 
 Key rules:
@@ -110,17 +118,33 @@ Key rules:
 - Connect each item to what it PROVES about the feature (e.g., "confirming health is outside tenant scope")
 - Include the full path to the video file so the user can drag-and-drop
 
-## Step 7: Update Test Plan
+## Step 7: Post the Demo Comment
 
-Read the existing `## Test plan` section. For each checklist item, check if the video visually demonstrates it. If so,
-mark it as checked (`- [x]`). Do NOT uncheck already-checked items.
-
-## Step 8: Update the PR
-
-Use `gh pr edit` to update the PR body with the new Demo section and updated Test plan:
+Post the demo as a comment on the linked issue:
 
 ```bash
-gh pr edit {PR_NUMBER} --body "$(cat <<'EOF'
+gh issue comment $ISSUE_NUMBER -R bbvch-ai/aihub-core --body "$(cat <<'EOF'
+{demo content}
+EOF
+)"
+```
+
+If no linked issue was found, fall back to commenting on the PR:
+
+```bash
+gh pr comment $PR_NUMBER -R bbvch-ai/aihub-core --body "$(cat <<'EOF'
+{demo content}
+EOF
+)"
+```
+
+## Step 8: Update Test Plan on PR
+
+Read the existing `## Test plan` section on the PR body. For each checklist item, check if the video visually
+demonstrates it. If so, mark it as checked (`- [x]`). Do NOT uncheck already-checked items.
+
+```bash
+gh pr edit $PR_NUMBER -R bbvch-ai/aihub-core --body "$(cat <<'EOF'
 {full updated PR body}
 EOF
 )"
@@ -128,7 +152,7 @@ EOF
 
 ## Step 9: Remind About Upload
 
-Tell the user to manually upload the video file by dragging it into the PR description on GitHub, since `gh` CLI cannot
+Tell the user to manually upload the video file by dragging it into the issue comment on GitHub, since `gh` CLI cannot
 upload video attachments. Include the exact file path for convenience.
 
 ## Common Mistakes
@@ -141,3 +165,5 @@ upload video attachments. Include the exact file path for convenience.
   already checked.
 - **Skipping the key moments question**: Always ask the user what the video shows before analyzing frames.
   Fixed-interval frame extraction misses transitions, and the user knows exactly which moments matter for the PR.
+- **Posting on the PR instead of the issue**: Always prefer posting the demo on the linked issue. Only fall back to the
+  PR if no issue is linked.

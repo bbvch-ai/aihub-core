@@ -10,11 +10,15 @@ SECRET_KEY = "test-secret-key-for-jwt-signing"
 SERVICE_ACCOUNT_ID = "00000000-0000-4000-a000-000000000001"
 
 
+SCIM_TOKEN = "test-scim-token"
+
+
 @pytest.fixture
 def owui_client() -> OpenWebuiClient:
     return OpenWebuiClient(
         base_url=BASE_URL,
         secret_key=SECRET_KEY,
+        scim_token=SCIM_TOKEN,
         service_account_id=SERVICE_ACCOUNT_ID,
     )
 
@@ -25,6 +29,22 @@ def _response(status_code: int = 200, json_data: dict | list | None = None) -> h
         json=json_data if json_data is not None else {},
         request=httpx.Request("GET", f"{BASE_URL}/test"),
     )
+
+
+class TestUpdateModelAccess:
+    @pytest.mark.asyncio
+    async def test_clears_access_when_no_grants(self, owui_client: OpenWebuiClient) -> None:
+        mock_client = AsyncMock(spec=httpx.AsyncClient)
+        mock_client.get.return_value = _response(
+            json_data={"id": "m1", "name": "Model 1", "meta": {}, "params": {}, "base_model_id": "base-1"}
+        )
+        mock_client.post.return_value = _response(json_data={"id": "m1"})
+
+        result = await owui_client.update_model_access(mock_client, "m1", [])
+        assert result == {"id": "m1"}
+
+        call_args = mock_client.post.call_args
+        assert call_args.kwargs["json"]["access_grants"] is None
 
 
 class TestListModels:

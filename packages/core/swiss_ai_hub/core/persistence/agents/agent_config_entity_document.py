@@ -27,6 +27,11 @@ class AgentConfigEntityDocument(AgentConfigEntity, Document):
 
     @classmethod
     @trace_fn
+    def find_for_classes(cls, agent_classes: list[str]) -> list["AgentConfigEntityDocument"]:
+        return list(cls.objects(agent_class__in=agent_classes))
+
+    @classmethod
+    @trace_fn
     def find_for_class(cls, agent_class: str) -> list["AgentConfigEntityDocument"]:
         """Find all configurations for a specific agent class."""
         return cls.objects(agent_class=agent_class)

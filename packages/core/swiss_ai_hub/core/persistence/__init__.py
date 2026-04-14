@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from swiss_ai_hub.core.persistence.access.access_change_hook import AccessChangeHook
     from swiss_ai_hub.core.persistence.access.entities.bearer_token import BearerToken
     from swiss_ai_hub.core.persistence.access.entities.role_entity import (
         RoleEntity,
@@ -84,6 +85,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.persistence.utils import str_to_object_id
 
 __all__ = [
+    "AccessChangeHook",
     "AgentClassEntity",
     "AgentConfigEntityDocument",
     "AgentInSpecsEntity",
@@ -152,6 +154,7 @@ __all__ = [
 ]
 
 _LAZY_IMPORTS = {
+    "AccessChangeHook": "swiss_ai_hub.core.persistence.access.access_change_hook",
     "AgentClassEntity": "swiss_ai_hub.core.persistence.agents.agent_class_entity",
     "AgentConfigEntityDocument": "swiss_ai_hub.core.persistence.agents.agent_config_entity_document",
     "AgentInSpecsEntity": "swiss_ai_hub.core.persistence.process.process_class_entity",

@@ -1905,7 +1905,7 @@ services:
       seaweedfs-s3:
         condition: service_healthy
       litellm:
-        condition: service_started
+        condition: service_healthy
       jupyter:
         condition: service_healthy
       playwright:
@@ -1923,7 +1923,9 @@ services:
       # Disable model caching to ensure pipeline models (agents) are always fetched
       ENABLE_BASE_MODELS_CACHE: False
       ENABLE_COMMUNITY_SHARING: False
-      ENABLE_USER_WEBHOOKS: False
+      BYPASS_MODEL_ACCESS_CONTROL: "False"
+      ENABLE_USER_WEBHOOKS: True
+      WEBHOOK_URL: http://{{ 'localhost' if stage == 'dev' else 'api' }}:8000/api/v1/webhook/openwebui?token=${OPENWEBUI_WEBHOOK_SECRET}
       ENABLE_LOGIN_FORM: False
       ENABLE_FORWARD_USER_INFO_HEADERS: True
       ENABLE_VERSION_UPDATE_CHECK: False
@@ -1946,7 +1948,7 @@ services:
       OTEL_SERVICE_NAME: open-webui
 
       # --- Auth & OIDC (Keycloak) ---
-      WEBUI_SECRET_KEY: ${WEBUI_SECRET_KEY}
+      WEBUI_SECRET_KEY: ${OPENWEBUI_SECRET_KEY}
       WEBUI_AUTH: True
       DEFAULT_USER_ROLE: user
       OAUTH_MERGE_ACCOUNTS_BY_EMAIL: True
@@ -1968,13 +1970,17 @@ services:
       OPENID_REDIRECT_URI: https://openwebui.${DOMAIN}/oauth/oidc/callback
       {%- endif %}
       OAUTH_ALLOWED_DOMAINS: '*'
-      OAUTH_SCOPES: openid email profile
+      OAUTH_SCOPES: openid email profile roles
       OAUTH_TIMEOUT: 60
       OAUTH_CODE_CHALLENGE_METHOD: S256
       OAUTH_USERNAME_CLAIM: preferred_username
       OAUTH_PICTURE_CLAIM: picture
       OAUTH_EMAIL_CLAIM: email
       OAUTH_GROUP_CLAIM: roles
+
+      # --- SCIM 2.0 Provisioning ---
+      SCIM_ENABLED: "true"
+      SCIM_TOKEN: ${OPENWEBUI_SCIM_TOKEN}
 
       # --- Data Storage (S3) ---
       STORAGE_PROVIDER: s3
@@ -2210,9 +2216,9 @@ services:
       OPENWEBUI_SERVICE_ACCOUNT_ID: ${OPENWEBUI_SERVICE_ACCOUNT_ID}
       FUNCTIONS_DIR: /functions
     volumes:
-      - ./configs/openwebui/init-functions.sh:/init-functions.sh:ro
+      - ./configs/openwebui/init-openwebui.sh:/init-openwebui.sh:ro
       - ./configs/openwebui/functions:/functions:ro
-    entrypoint: ["/bin/sh", "/init-functions.sh"]
+    entrypoint: ["/bin/sh", "/init-openwebui.sh"]
     logging:
       driver: json-file
       options:
@@ -2581,9 +2587,11 @@ services:
       LANGFUSE_PROJECT_ID: "aihub-project"
       AIHUB_OPENAI_API_BASE_URL: http://{{ 'localhost' if stage == 'dev' else 'api' }}:8000/api/v1/active/openai
 
-      # OpenWebUI (agent workspace model provisioning)
+      # OpenWebUI (agent visibility provisioning)
       OPENWEBUI_BASE_URL: http://{{ 'localhost' if stage == 'dev' else 'open-webui' }}:8080
       OPENWEBUI_SECRET_KEY: ${OPENWEBUI_SECRET_KEY}
+      OPENWEBUI_SCIM_TOKEN: ${OPENWEBUI_SCIM_TOKEN}
+      OPENWEBUI_WEBHOOK_SECRET: ${OPENWEBUI_WEBHOOK_SECRET}
       OPENWEBUI_SERVICE_ACCOUNT_ID: ${OPENWEBUI_SERVICE_ACCOUNT_ID}
 
 

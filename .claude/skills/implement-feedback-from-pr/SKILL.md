@@ -8,24 +8,51 @@ allowed-tools: Bash, Read, Edit, Grep, Glob
 
 Implement review feedback from PR \$ARGUMENTS in the `bbvch-ai/aihub-core` monorepo.
 
-## Step 1: Fetch All Feedback
+## Step 1: Fetch Unresolved Feedback Only
 
-Use the GitHub MCP server (`mcp__github__pull_request_read`) to gather structured PR data:
+Use the GitHub GraphQL API via `gh api graphql` to fetch **only unresolved, non-outdated** review threads:
 
-1. **PR overview**: `method: "get"` — title, description, author, base/head branches
-2. **Inline review comments**: `method: "get_review_comments"` — threaded code comments with `isResolved`/`isOutdated`
-   metadata. Skip resolved and outdated threads.
-3. **Conversation comments**: `method: "get_comments"` — general discussion comments
-4. **CI status**: `method: "get_status"` — build and check results
-5. **Changed files**: `method: "get_files"` — list of modified files for scope detection
+```bash
+gh api graphql -f query='
+{
+  repository(owner: "bbvch-ai", name: "aihub-core") {
+    pullRequest(number: $PR_NUMBER) {
+      reviewThreads(first: 50) {
+        nodes {
+          isResolved
+          isOutdated
+          comments(first: 10) {
+            nodes {
+              body
+              path
+              line
+              author { login }
+              createdAt
+            }
+          }
+        }
+      }
+    }
+  }
+}'
+```
 
-All calls use `owner: "bbvch-ai"`, `repo: "swiss-ai-hub"`, `pullNumber: $PR_NUMBER`.
+Filter to only threads where `isResolved: false` and `isOutdated: false`. Resolved and outdated threads have already
+been addressed — skip them entirely.
+
+Also fetch CI status and changed files for scope detection:
+
+```bash
+gh pr checks $PR_NUMBER -R bbvch-ai/aihub-core
+gh pr view $PR_NUMBER -R bbvch-ai/aihub-core --json files
+```
 
 ## Step 2: Triage Feedback
 
 ### Human Comments (TOP PRIORITY)
 
-Implement all human reviewer feedback first. Read the referenced file before making changes.
+Implement all **unresolved** human reviewer feedback. Read the referenced file before making changes. Skip resolved
+threads — they have already been addressed in previous commits.
 
 ### Bot Feedback (EVALUATE CRITICALLY)
 

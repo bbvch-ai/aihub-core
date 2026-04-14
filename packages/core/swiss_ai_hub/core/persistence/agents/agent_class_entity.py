@@ -291,6 +291,12 @@ class AgentClassEntity(Document):
 
     @classmethod
     @trace_fn
+    def get_online_conversational(cls) -> list["AgentClassEntity"]:
+        threshold = datetime.now() - cls.ONLINE_THRESHOLD
+        return list(cls.objects(is_conversational=True, last_discovered__gte=threshold))
+
+    @classmethod
+    @trace_fn
     def get_by_id(cls, agent_class_entity_id: str) -> Self:
         """Get an agent class by its MongoDB document ID."""
         return cls.objects().get(id=ObjectId(agent_class_entity_id))
