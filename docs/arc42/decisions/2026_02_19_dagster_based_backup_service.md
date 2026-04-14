@@ -21,9 +21,10 @@ already runs Dagster for data pipelines.
 ## Decision
 
 Standalone Dagster instance with SQLite storage (3 containers: `backup-code`, `backup-daemon`, `backup-webserver`),
-separate from the pipeline Dagster instance. Fan-out asset graph: session → 6 per-service assets → finalize. Daily
-schedule at 1 AM Europe/Zurich. Restores via partition selector in the Dagster Launchpad. Container stop/start
-parallelized via `ThreadPoolExecutor`. Failure hook restarts all managed containers. etcd is not backed up separately.
+separate from the pipeline Dagster instance. Fan-out asset graph: session → 6 per-service assets (PostgreSQL handles
+both hosts) → finalize. Daily schedule at 1 AM Europe/Zurich. Restores via partition selector in the Dagster Launchpad.
+Container stop/start parallelized via `ThreadPoolExecutor`. Failure hook restarts all managed containers. etcd is not
+backed up separately.
 
 ## Consequences
 
