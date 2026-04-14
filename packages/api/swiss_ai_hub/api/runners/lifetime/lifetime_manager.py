@@ -228,7 +228,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         # Provision OpenWebUI with groups, workspace models, and access grants
         await openwebui_provisioner.provision()
 
-        # Re-sync OpenWebUI when roles, tenants, or user-role assignments change (active tenant switches notify explicitly)
+        # Re-sync OpenWebUI when access entities change (active tenant switches notify explicitly)
         AccessChangeHook.connect(openwebui_provisioner)
 
         # Yield control back to FastAPI to start serving requests
