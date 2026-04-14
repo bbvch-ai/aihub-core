@@ -40,59 +40,28 @@
         variant="text"
         rounded
         aria-label="Trash"
-        @click.stop="confirmDelete($event)"
+        @click.stop="emit('delete', props.role)"
       />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { useDeleteRole } from '@core/composables/role/useDeleteRole'
-
 import type { RoleResponse } from '@core/sdk/client'
 
 const props = defineProps<{
   role: RoleResponse
 }>()
 
-const route = useRoute()
-const confirm = useConfirm()
-const toast = useToast()
-const { t } = useI18n()
-const router = useRouter()
-const tenantPath = useTenantPath()
-const { tenantId } = useTenant()
+const emit = defineEmits<{
+  delete: [role: RoleResponse]
+}>()
 
-const { deleteRole } = useDeleteRole()
+const route = useRoute()
 
 const isActive = computed(() => {
   return route.params.role_id === props.role.id
 })
-
-const confirmDelete = () => {
-  confirm.require({
-    message: t('role.remove_dialog.explanation'),
-    header: t('role.remove_dialog.confirm'),
-    icon: 'pi pi-exclamation-triangle',
-    position: 'bottom',
-    rejectProps: {
-      label: t('role.remove_dialog.cancel'),
-      severity: 'secondary',
-      outlined: true,
-    },
-    acceptProps: {
-      label: t('role.remove_dialog.proceed'),
-      severity: 'danger',
-    },
-    accept: async () => {
-      await router.push(tenantPath('/service/roles'))
-      await deleteRole({ roleId: props.role.id, tenantId: tenantId! })
-      toast.add({ severity: 'success', summary: t('role.role_deleted.summary'), detail: t('role.role_deleted.detail'), life: 3000 })
-    },
-    reject: () => {
-    },
-  })
-}
 </script>
 
 <style scoped>

@@ -593,6 +593,10 @@ tenant_admin:
   cancel: Abbrechen
   save: Speichern
   tenant_id: Tenant-ID
+  navigation:
+    overview: Übersicht
+    roles: Rollen
+    users: Benutzer
   keycloak_unreachable: Keycloak ist nicht erreichbar — die Tenant-Liste ist möglicherweise
     unvollständig. Bitte erneut versuchen.
   state:

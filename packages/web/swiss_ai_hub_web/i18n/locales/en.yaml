@@ -584,6 +584,10 @@ tenant_admin:
   cancel: Cancel
   save: Save
   tenant_id: Tenant ID
+  navigation:
+    overview: Overview
+    roles: Roles
+    users: Users
   keycloak_unreachable: Keycloak is unreachable — the tenant list may be incomplete.
     Please retry.
   state:

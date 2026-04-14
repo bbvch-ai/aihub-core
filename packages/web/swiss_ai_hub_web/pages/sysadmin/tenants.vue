@@ -91,6 +91,6 @@ const openConfigureModal = () => {
 
 const toTenant = (tenant: TenantResponse) => {
   if (tenant.state === 'orphaned') return
-  router.push(localePath(`/sysadmin/tenants/${tenant.id}`))
+  router.push(localePath(`/sysadmin/tenants/${tenant.id}/overview`))
 }
 </script>
