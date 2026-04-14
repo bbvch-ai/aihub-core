@@ -20,12 +20,22 @@
   "duplicateEmailsAllowed": false,
   "resetPasswordAllowed": true,
 
-  "attributes": {
-    "upConfig": "{\"unmanagedAttributePolicy\":\"ADMIN_EDIT\",\"attributes\":[{\"name\":\"active_tenant_id\",\"displayName\":\"Active Tenant ID\",\"permissions\":{\"view\":[\"admin\"],\"edit\":[\"admin\"]}}]}"
-  },
-
   "editUsernameAllowed": false,
   "bruteForceProtected": true,
+
+  "components": {
+    "org.keycloak.userprofile.UserProfileProvider": [
+      {
+        "providerId": "declarative-user-profile",
+        "subComponents": {},
+        "config": {
+          "kc.user.profile.config": [
+            "{\"unmanagedAttributePolicy\":\"ADMIN_EDIT\",\"attributes\":[{\"name\":\"username\",\"displayName\":\"${username}\",\"validations\":{\"length\":{\"min\":3,\"max\":255},\"username-prohibited-characters\":{},\"up-username-not-idn-homograph\":{}},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"email\",\"displayName\":\"${email}\",\"validations\":{\"email\":{},\"length\":{\"max\":255}},\"required\":{\"roles\":[\"user\"]},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"firstName\",\"displayName\":\"${firstName}\",\"validations\":{\"length\":{\"max\":255},\"person-name-prohibited-characters\":{}},\"required\":{\"roles\":[\"user\"]},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"lastName\",\"displayName\":\"${lastName}\",\"validations\":{\"length\":{\"max\":255},\"person-name-prohibited-characters\":{}},\"required\":{\"roles\":[\"user\"]},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"active_tenant_id\",\"displayName\":\"Active Tenant ID\",\"group\":\"user-metadata\",\"permissions\":{\"view\":[\"admin\"],\"edit\":[\"admin\"]},\"multivalued\":false}],\"groups\":[{\"name\":\"user-metadata\",\"displayHeader\":\"User metadata\",\"displayDescription\":\"Attributes, which refer to user metadata\"}]}"
+          ]
+        }
+      }
+    ]
+  },
 
   "roles": {
     "realm": [
@@ -599,7 +609,7 @@
       "enabled": true,
       "serviceAccountClientId": "aihub-api-service",
       "clientRoles": {
-        "realm-management": ["view-identity-providers", "manage-users", "view-users", "query-users", "query-groups", "view-groups", "manage-realm", "view-realm"]
+        "realm-management": ["view-identity-providers", "manage-users", "view-users", "query-users", "query-groups", "view-groups"]
       }
     }
   ],

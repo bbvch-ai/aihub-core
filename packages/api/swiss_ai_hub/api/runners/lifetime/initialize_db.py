@@ -49,7 +49,6 @@ async def initialize_default_tenant() -> TenantEntity | None:
         logger.info(
             f"Default tenant '{existing_tenant.name}' (id={existing_tenant.id}) already exists, skipping creation"
         )
-        await KeycloakAdminService.ensure_user_profile_attributes()
         return existing_tenant
 
     tenant = TenantEntity.ensure_default_tenant_exists(
@@ -59,8 +58,6 @@ async def initialize_default_tenant() -> TenantEntity | None:
         access_rules=settings.access_rules_list,
     )
     logger.info(f"Successfully created default tenant '{tenant.name}' (id={tenant.id})")
-
-    await KeycloakAdminService.ensure_user_profile_attributes()
 
     try:
         await KeycloakAdminService.create_tenant_group(tenant.id)

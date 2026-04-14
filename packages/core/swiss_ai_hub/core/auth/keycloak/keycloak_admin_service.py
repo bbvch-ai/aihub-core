@@ -1,4 +1,5 @@
 import logging
+from functools import lru_cache
 
 from keycloak import KeycloakAdmin, KeycloakGetError
 
@@ -12,7 +13,14 @@ logger = logging.getLogger(__name__)
 TENANTS_GROUP_PATH = "/tenants"
 
 
+@lru_cache(maxsize=1)
 def _create_admin() -> KeycloakAdmin:
+    """Returns a process-wide singleton KeycloakAdmin.
+
+    python-keycloak caches the access token inside the connection and refreshes it
+    automatically, so reusing a single instance avoids a client-credentials round-trip
+    on every Admin API call (critical for the auth hot path).
+    """
     settings = KeycloakSettings()
     return KeycloakAdmin(
         server_url=settings.URL,
@@ -101,8 +109,12 @@ class KeycloakAdminService:
     @staticmethod
     @trace_fn
     async def count_tenant_members(tenant_id: str) -> int:
-        """Counts members of a tenant group. Keycloak exposes no dedicated count endpoint,
-        so this fetches the full member list with a large upper bound."""
+        """Counts members of a tenant group.
+
+        Keycloak has no per-group member count endpoint, so this fetches the full member
+        list with brief representation (drops attributes/roles, ~10x smaller payload)
+        and takes ``len()``. Linear in tenant size — watch for large tenants.
+        """
         admin = _create_admin()
         group = await admin.a_get_group_by_path(f"{TENANTS_GROUP_PATH}/{tenant_id}")
         members = await admin.a_get_group_members(
@@ -123,37 +135,6 @@ class KeycloakAdminService:
         admin = _create_admin()
         group = await admin.a_get_group_by_path(f"{TENANTS_GROUP_PATH}/{tenant_id}")
         await admin.a_delete_group(group["id"])
-
-    @staticmethod
-    @trace_fn
-    async def ensure_user_profile_attributes() -> None:
-        """Ensures the Keycloak user profile allows the active_tenant_id attribute.
-
-        Keycloak 26+ rejects unmanaged attributes by default. The upConfig in the
-        realm import file is not applied by Keycloak's user profile engine, so we
-        configure it via the User Profile Admin API at startup instead.
-        """
-        admin = _create_admin()
-        profile = await admin.a_get_realm_users_profile()
-
-        attr_names = [a["name"] for a in profile.get("attributes", [])]
-        if "active_tenant_id" in attr_names:
-            logger.debug("User profile already has active_tenant_id attribute")
-            return
-
-        profile.setdefault("attributes", []).append(
-            {
-                "name": "active_tenant_id",
-                "displayName": "Active Tenant ID",
-                "permissions": {"view": ["admin"], "edit": ["admin"]},
-                "annotations": {"inputType": "text"},
-                "group": "user-metadata",
-            }
-        )
-        profile["unmanagedAttributePolicy"] = "ADMIN_EDIT"
-
-        await admin.a_update_realm_users_profile(profile)
-        logger.info("Configured Keycloak user profile with active_tenant_id attribute")
 
     @staticmethod
     @trace_fn
@@ -179,15 +160,6 @@ class KeycloakAdminService:
         attributes["active_tenant_id"] = [tenant_id]
         user["attributes"] = attributes
         await admin.a_update_user(user_id, user)
-
-        verification = await admin.a_get_user(user_id)
-        persisted = verification.get("attributes", {}).get("active_tenant_id", [])
-        if not persisted or persisted[0] != tenant_id:
-            raise RuntimeError(
-                f"Failed to persist active_tenant_id={tenant_id} on Keycloak user {user_id}. "
-                f"Keycloak returned attributes={verification.get('attributes')}. "
-                "Check that the User Profile config allows the active_tenant_id attribute."
-            )
 
     @staticmethod
     @trace_fn

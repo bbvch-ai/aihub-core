@@ -590,6 +590,7 @@ class ProcessService:
         """
         from swiss_ai_hub.core.persistence.agents import AgentClassEntity
         from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import AgentConfigEntityDocument
+
         from swiss_ai_hub.api.routes.agent.dto.minimal_agent_instance_dto import MinimalAgentInstanceDTO
         from swiss_ai_hub.api.routes.user.dto.minimal_user_dto import MinimalUserDTO
 
