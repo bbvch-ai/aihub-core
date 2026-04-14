@@ -83,7 +83,6 @@ def expected_user_data():
         "email": os.getenv("EMAIL", DangerousDevelopmentOnlyAuthSettings().EMAIL),
         "profile_image": None,
         "roles": DangerousDevelopmentOnlyAuthSettings().ROLES,
-        "favorite_modules": [],
     }
 
 

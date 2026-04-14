@@ -23,28 +23,50 @@ def _create_mock_keycloak_user(user_id: str | None = None, email: str | None = N
 
 
 def _build_fake_admin() -> MagicMock:
-    """Builds a MagicMock standing in for a ``KeycloakAdmin`` instance.
+    """Builds a stateful MagicMock standing in for a ``KeycloakAdmin`` instance.
 
-    Returns sensible defaults for every method the ``KeycloakAdminService`` uses so that
-    the real static methods can run end-to-end without hitting a real Keycloak server.
+    Keeps a per-user-id in-memory store so sequences like
+    ``set_active_tenant`` → ``get_active_tenant_id`` return the value that was just
+    written. Tests never hit a real Keycloak server.
     """
     config = DangerousDevelopmentOnlyAuthSettings()
-    user_dict = {
-        "id": config.OID,
-        "username": config.EMAIL,
-        "email": config.EMAIL,
-        "firstName": config.NAME,
-        "lastName": "",
-        "attributes": {},
-    }
+
+    def _default_user(user_id: str) -> dict:
+        return {
+            "id": user_id,
+            "username": config.EMAIL,
+            "email": config.EMAIL,
+            "firstName": config.NAME,
+            "lastName": "",
+            "attributes": {},
+        }
+
+    users: dict[str, dict] = {config.OID: _default_user(config.OID)}
+
+    async def a_get_user(user_id: str) -> dict:
+        return users.setdefault(user_id, _default_user(user_id))
+
+    async def a_get_users(query: dict | None = None) -> list[dict]:
+        return list(users.values())
+
+    async def a_create_user(payload: dict, exist_ok: bool = True) -> str:
+        user_id = payload.get("id") or config.OID
+        users.setdefault(user_id, _default_user(user_id))
+        return user_id
+
+    async def a_update_user(user_id: str, payload: dict) -> None:
+        existing = users.setdefault(user_id, _default_user(user_id))
+        existing.update(payload)
+        if "attributes" in payload:
+            existing["attributes"] = dict(payload["attributes"])
 
     fake = MagicMock()
-    fake.a_get_user = AsyncMock(return_value=user_dict)
-    fake.a_get_users = AsyncMock(return_value=[user_dict])
-    fake.a_create_user = AsyncMock(return_value=config.OID)
-    fake.a_update_user = AsyncMock(return_value=None)
+    fake.a_get_user = AsyncMock(side_effect=a_get_user)
+    fake.a_get_users = AsyncMock(side_effect=a_get_users)
+    fake.a_create_user = AsyncMock(side_effect=a_create_user)
+    fake.a_update_user = AsyncMock(side_effect=a_update_user)
     fake.a_get_group_by_path = AsyncMock(return_value={"id": "fake-group-id", "name": "tenants"})
-    fake.a_get_group_members = AsyncMock(return_value=[user_dict])
+    fake.a_get_group_members = AsyncMock(side_effect=lambda *_args, **_kwargs: list(users.values()))
     fake.a_create_group = AsyncMock(return_value="fake-group-id")
     fake.a_delete_group = AsyncMock(return_value=None)
     fake.a_group_user_add = AsyncMock(return_value=None)
