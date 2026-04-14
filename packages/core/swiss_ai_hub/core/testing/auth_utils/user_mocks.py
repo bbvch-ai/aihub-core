@@ -38,7 +38,7 @@ def _build_fake_admin() -> MagicMock:
             "email": config.EMAIL,
             "firstName": config.NAME,
             "lastName": "",
-            "attributes": {},
+            "attributes": {"active_tenant_id": ["default"]},
         }
 
     users: dict[str, dict] = {config.OID: _default_user(config.OID)}
