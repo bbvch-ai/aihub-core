@@ -42,11 +42,17 @@ packages/backup/swiss_ai_hub/backup/
 
 ## Key Patterns
 
-- **Asset graph**: session → 6 per-service assets (PostgreSQL handles both hosts) → finalize
+- **Asset graph**: session → 6 per-service assets → finalize (same structure for backup and restore)
+- **PostgreSQL**: `PostgresHandler` backs up both `postgres` and `postgres-ferretdb` in a single asset
 - **Container lifecycle**: All managed containers stopped before backup, restarted after. Excluded prefixes: `backup-`,
   `seaweedfs-`, `etcd`, `traefik`
 - **Parallel ops**: `ThreadPoolExecutor` for container stop/start
 - **Failure safety**: `restart_on_failure` hook restarts all containers if backup crashes mid-run
+- **Sync by design**: All handlers are synchronous. Dagster ops execute in a sync context, and all I/O is process-local
+  (Docker SDK, subprocess, boto3). Do not convert to async — this overrides the root-level "async consistently" rule
+- **Adding a new handler**: Implement `BackupHandler` ABC in `services/`. If the handler needs Docker access, type-hint
+  a `DockerManager` parameter in `__init__` — `create_handler()` introspects the signature to decide whether to inject
+  it. Register the handler in `HANDLER_FACTORIES` in `handler_factory.py`
 
 ## DocumentDB Catalog Maintenance
 
@@ -63,10 +69,11 @@ ORDER BY c.relkind, c.relname;
 
 ## Commands
 
-| Command                          | What it does                        |
-| -------------------------------- | ----------------------------------- |
-| `make test`                      | Run unit tests (excludes e2e)       |
-| `pytest -m e2e -v --timeout=600` | Run E2E tests (needs running stack) |
+| Command                          | What it does                           |
+| -------------------------------- | -------------------------------------- |
+| `make test`                      | Run unit tests (excludes e2e)          |
+| `make typecheck`                 | Run type checker (`ty check`)          |
+| `pytest -m e2e -v --timeout=600` | Run E2E tests (needs Docker dev stack) |
 
 ## Testing
 
