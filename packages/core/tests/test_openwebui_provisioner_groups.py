@@ -112,6 +112,7 @@ class TestSyncGroupsOrchestration:
             mock_role.get_roles_for_tenant.return_value = [role]
 
             mock_keycloak.get_user_ids_with_active_tenant = AsyncMock(return_value=set())
+            mock_keycloak.get_all_users = AsyncMock(return_value=[])
 
             mock_list_groups.return_value = []
             mock_create.return_value = _group("aihub:T1:R1", "grp-1")
@@ -139,6 +140,7 @@ class TestSyncGroupsOrchestration:
             mock_tenant.get_default_tenant.return_value = None
             mock_role.get_roles_for_tenant.return_value = []
             mock_keycloak.get_user_ids_with_active_tenant = AsyncMock(return_value=set())
+            mock_keycloak.get_all_users = AsyncMock(return_value=[])
 
             mock_list_groups.return_value = [_group("aihub:OldTenant:OldRole", "grp-orphan")]
 
@@ -165,6 +167,7 @@ class TestSyncGroupsOrchestration:
             mock_tenant.get_default_tenant.return_value = None
             mock_role.get_roles_for_tenant.return_value = []
             mock_keycloak.get_user_ids_with_active_tenant = AsyncMock(return_value=set())
+            mock_keycloak.get_all_users = AsyncMock(return_value=[])
 
             mock_list_groups.return_value = [_group("custom-group", "grp-custom")]
 
@@ -200,6 +203,10 @@ class TestSyncGroupsOrchestration:
             mock_role.get_roles_for_tenant.return_value = [role]
 
             mock_keycloak.get_user_ids_with_active_tenant = AsyncMock(return_value={"ah-user-1"})
+            kc_user = MagicMock()
+            kc_user.id = "ah-user-1"
+            kc_user.email = "alice@example.com"
+            mock_keycloak.get_all_users = AsyncMock(return_value=[kc_user])
 
             utr = MagicMock()
             utr.user_id = "ah-user-1"
@@ -241,6 +248,7 @@ class TestSyncGroupsOrchestration:
             mock_role.get_roles_for_tenant.return_value = [role]
 
             mock_keycloak.get_user_ids_with_active_tenant = AsyncMock(return_value=set())
+            mock_keycloak.get_all_users = AsyncMock(return_value=[])
 
             utr = MagicMock()
             utr.user_id = "ah-user-1"
@@ -281,6 +289,7 @@ class TestSyncGroupsOrchestration:
             mock_role.get_roles_for_tenant.return_value = [role]
 
             mock_keycloak.get_user_ids_with_active_tenant = AsyncMock(return_value=set())
+            mock_keycloak.get_all_users = AsyncMock(return_value=[])
             mock_utr.objects.return_value = []
 
             mock_list_groups.return_value = [_group("aihub:T1:R1", "grp-1")]
