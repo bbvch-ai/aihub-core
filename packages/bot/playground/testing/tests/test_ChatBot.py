@@ -21,6 +21,7 @@ from swiss_ai_hub.core.persistence.messaging.entities.thread_entity import Threa
 from swiss_ai_hub.core.persistence.utils import str_to_object_id
 from swiss_ai_hub.core.routes import HealthController
 from swiss_ai_hub.core.testing import ASGIAdapter
+from swiss_ai_hub.core.testing.auth_utils.user_mocks import register_fake_keycloak_user
 
 from swiss_ai_hub.bot.persistence.entities.conversation_entity import ConversationEntity
 from swiss_ai_hub.bot.persistence.entities.path_entity import Credentials, PathEntity
@@ -88,6 +89,11 @@ def setup_test_credentials():
         roles=["admin"],
         validate_roles=False,
     )
+
+    # Seed the fake Keycloak admin store so ``find_user_by_email(USER_EMAIL)``
+    # resolves to the dev OID. The bot sends ``from_property.name = USER_EMAIL``
+    # which is looked up via email.
+    register_fake_keycloak_user(user_id=dev_oid, name="Test User", email=USER_EMAIL)
 
     yield
 
