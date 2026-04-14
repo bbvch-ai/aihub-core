@@ -609,6 +609,15 @@ jupyter = [
 ]
 
 [[package]]
+name = "blinker"
+version = "1.9.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/21/28/9b3f50ce0e048515135495f198351908d99540d69bfdc8c1d15b73dc55ce/blinker-1.9.0.tar.gz", hash = "sha256:b4ce2265a7abece45e7cc896e98dbebe6cead56bcf805a3d23136d145f5445bf", size = 22460, upload-time = "2024-11-08T17:25:47.436Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/10/cb/f2ad4230dc2eb1a74edf38f1a38b9b52277f75bef262d8908e60d957e13c/blinker-1.9.0-py3-none-any.whl", hash = "sha256:ba0efaa9080b619ff2f3459d1d500c57bddea4a6b424b60a91141db6fd2f08bc", size = 8458, upload-time = "2024-11-08T17:25:46.184Z" },
+]
+
+[[package]]
 name = "boto3"
 version = "1.41.5"
 source = { registry = "https://pypi.org/simple" }
@@ -4984,6 +4993,30 @@ wheels = [
 ]
 
 [[package]]
+name = "scim2-client"
+version = "0.7.5"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "scim2-models" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/a0/af/55a8d97acee4f3488a0628f5a4538a2e7ccb40e33acdbca84a92ed14ab11/scim2_client-0.7.5.tar.gz", hash = "sha256:6667f4b39c5cd8fcd4caf59e8bad136bb6f92ba1f30ece04948f36728b291e20", size = 18526, upload-time = "2026-04-02T12:05:30.234Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b8/05/ac0ebd3aef5cbc889f0de9c506b92add9f835d9821da4cd324d5f7930f0e/scim2_client-0.7.5-py3-none-any.whl", hash = "sha256:bb2d3437027e6b13f2d620038a288c6b718284d3a7249f121c1ce43f5cf7fe1e", size = 20518, upload-time = "2026-04-02T12:05:29.055Z" },
+]
+
+[[package]]
+name = "scim2-models"
+version = "0.6.9"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pydantic", extra = ["email"] },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/3a/76/fccb9d63c7ffeb27a7605f2c964b55182c3327f40073b1102960eb5c1245/scim2_models-0.6.9.tar.gz", hash = "sha256:32849d74a05e09c4d2ab95c4373dff25c6b956adb866461b6b074f9084ba084a", size = 48193, upload-time = "2026-04-07T07:53:54.623Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/29/e2/da4b4d0f2afe983f2980fca67fb409dd750d8f1ed56ff8e22f1b75888d2a/scim2_models-0.6.9-py3-none-any.whl", hash = "sha256:760b6802fa8dc0aca57b022eede9df4efeb81e60edb077600846a841024c1998", size = 60595, upload-time = "2026-04-07T07:53:53.29Z" },
+]
+
+[[package]]
 name = "scipy"
 version = "1.17.1"
 source = { registry = "https://pypi.org/simple" }
@@ -5194,7 +5227,7 @@ wheels = [
 
 [[package]]
 name = "swiss-ai-hub-agent"
-version = "0.274.3"
+version = "0.274.4"
 source = { editable = "packages/agent" }
 dependencies = [
     { name = "fastmcp" },
@@ -5227,7 +5260,7 @@ dev = [
 
 [[package]]
 name = "swiss-ai-hub-api"
-version = "0.274.3"
+version = "0.274.4"
 source = { editable = "packages/api" }
 dependencies = [
     { name = "audioop-lts" },
@@ -5282,7 +5315,7 @@ dev = [{ name = "asgi-lifespan", specifier = ">=2.1.0" }]
 
 [[package]]
 name = "swiss-ai-hub-backup"
-version = "0.274.3"
+version = "0.274.4"
 source = { editable = "packages/backup" }
 dependencies = [
     { name = "boto3" },
@@ -5317,7 +5350,7 @@ dev = [
 
 [[package]]
 name = "swiss-ai-hub-bot"
-version = "0.274.3"
+version = "0.274.4"
 source = { editable = "packages/bot" }
 dependencies = [
     { name = "azure-identity" },
@@ -5362,12 +5395,13 @@ dev = [{ name = "asgi-lifespan", specifier = ">=2.1.0" }]
 
 [[package]]
 name = "swiss-ai-hub-core"
-version = "0.274.3"
+version = "0.274.4"
 source = { editable = "packages/core" }
 dependencies = [
     { name = "adlfs" },
     { name = "azure-ai-documentintelligence" },
     { name = "azure-storage-file-datalake" },
+    { name = "blinker" },
     { name = "boto3" },
     { name = "boto3-stubs", extra = ["s3"] },
     { name = "cachetools" },
@@ -5417,6 +5451,7 @@ dependencies = [
     { name = "pyyaml" },
     { name = "redis" },
     { name = "s3fs" },
+    { name = "scim2-client" },
     { name = "tabulate" },
     { name = "transformers" },
 ]
@@ -5434,6 +5469,7 @@ requires-dist = [
     { name = "adlfs", specifier = ">=2025.8.0" },
     { name = "azure-ai-documentintelligence", specifier = ">=1.0.2" },
     { name = "azure-storage-file-datalake", specifier = ">=12.22.0" },
+    { name = "blinker", specifier = ">=1.9.0" },
     { name = "boto3", specifier = ">=1.41.5" },
     { name = "boto3-stubs", extras = ["s3"], specifier = ">=1.42.30" },
     { name = "cachetools", specifier = ">=5.5.2" },
@@ -5483,6 +5519,7 @@ requires-dist = [
     { name = "pyyaml", specifier = ">=6.0.2" },
     { name = "redis", specifier = ">=5.2.1" },
     { name = "s3fs", specifier = ">=2024.10.0,<2025.0.0" },
+    { name = "scim2-client", specifier = ">=0.7.5" },
     { name = "tabulate", specifier = ">=0.9.0" },
     { name = "transformers", specifier = ">=4.57.3" },
 ]
@@ -5497,7 +5534,7 @@ dev = [
 
 [[package]]
 name = "swiss-ai-hub-pipeline"
-version = "0.274.3"
+version = "0.274.4"
 source = { editable = "packages/pipeline" }
 dependencies = [
     { name = "dagster-aws" },
@@ -5523,7 +5560,7 @@ dev = []
 
 [[package]]
 name = "swiss-ai-hub-process"
-version = "0.274.3"
+version = "0.274.4"
 source = { editable = "packages/process" }
 dependencies = [
     { name = "httpx" },
@@ -5552,7 +5589,7 @@ dev = [
 
 [[package]]
 name = "swiss-ai-hub-workspace"
-version = "0.274.3"
+version = "0.274.4"
 source = { virtual = "." }
 dependencies = [
     { name = "jinja2" },

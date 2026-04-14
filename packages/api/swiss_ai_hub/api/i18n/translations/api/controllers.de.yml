@@ -65,3 +65,6 @@ user_memory:
 organization_memory:
   name: Organisations-Erinnerungen
   description: Organisationsweite Erinnerungen aus mem0 anzeigen und verwalten
+webhook:
+  name: Webhooks
+  description: Webhook-Empfänger für externe Dienste

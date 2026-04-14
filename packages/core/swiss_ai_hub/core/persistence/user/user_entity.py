@@ -79,12 +79,16 @@ class UserEntity(Document):
 
     @trace_fn
     def set_active_tenant(self, tenant_id: str) -> None:
-        """Persists the user's active tenant if it changed."""
         if self.active_tenant_id == tenant_id:
             return
         self.active_tenant_id = tenant_id
         self.last_updated = datetime.now(UTC)
         self.save()
+
+        # Deferred: UserEntity → AccessChangeHook → RoleEntity → UsageLimits → UserIdentity → UserEntity
+        from swiss_ai_hub.core.persistence.access.access_change_hook import AccessChangeHook
+
+        AccessChangeHook.notify()
 
     @staticmethod
     @trace_fn
@@ -178,6 +182,12 @@ class UserEntity(Document):
     @trace_fn
     def by_email(cls, email: str) -> Self:
         return cls.objects.get(email=email)
+
+    @classmethod
+    @trace_fn
+    def get_user_ids_with_active_tenant(cls, tenant_id: str) -> set[str]:
+        """Returns IDs of users whose active tenant matches the given tenant."""
+        return {u.id for u in cls.objects(active_tenant_id=tenant_id).only("id")}
 
     @classmethod
     @trace_fn

@@ -14,8 +14,7 @@ from pydantic import BaseModel
 from redis.asyncio import Redis
 from starlette.responses import StreamingResponse
 from stringcase import snakecase
-from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
-from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
+from swiss_ai_hub.core.auth import AccessChecker, UserIdentity
 from swiss_ai_hub.core.auth.usage import (
     ResourceType,
     UsageLimitMessages,
@@ -33,9 +32,13 @@ from swiss_ai_hub.core.events.agent import (
 )
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.infrastructure import LangfuseProvisioner, OnlineAgent, OpenWebuiProvisioner
-from swiss_ai_hub.core.persistence.agents import AgentClassEntity
-from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import AgentConfigEntityDocument
-from swiss_ai_hub.core.persistence.messaging.entities.thread_entity import AgentInstanceRef, ThreadEntity, User
+from swiss_ai_hub.core.persistence import (
+    AgentClassEntity,
+    AgentConfigEntityDocument,
+    AgentInstanceRef,
+    ThreadEntity,
+    User,
+)
 from swiss_ai_hub.core.publishers import NCPublisher
 from swiss_ai_hub.core.subscribers import AgentNCSubscriber
 from swiss_ai_hub.core.topic_managers import AgentTopicManager
@@ -64,7 +67,7 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
     """
 
     _AGENTS_HASH_KEY = "discovery:agents:hash"
-    _AGENTS_HASH_TTL = 3600  # Expires after 1h to force a full re-sync as a self-healing mechanism
+    _AGENTS_HASH_TTL = 3600
 
     def __init__(
         self,
@@ -73,16 +76,14 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
         controller: AgentController,
         locale_handler: LocaleHandler,
         redis: Redis,
-        langfuse_provisioner: LangfuseProvisioner | None = None,
-        openwebui_provisioner: OpenWebuiProvisioner | None = None,
         discovery_interval: int = 60,
     ):
         super().__init__(nc, api_app, controller, locale_handler, discovery_interval)
         self.controller: AgentController = controller
         self.topic_manager: AgentTopicManager = AgentTopicManager()
         self._redis = redis
-        self._langfuse_provisioner = langfuse_provisioner
-        self._openwebui_provisioner = openwebui_provisioner
+        self._langfuse_provisioner = LangfuseProvisioner()
+        self._openwebui_provisioner = OpenWebuiProvisioner(redis=redis)
 
     @override
     async def _discover_and_register(self):
@@ -185,59 +186,57 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
         return list(unique_agents_dict.values())
 
     async def _sync_agent_instances_to_provisioners(self) -> None:
-        """Sync online agent instances to Langfuse and OpenWebUI workspace models."""
+        """Sync online agent instances to external provisioners when the set changes."""
         instances = await AgentService.get_all_agent_instances(t=self.locale_handler, online=True)
 
-        agents_hash = self._compute_agents_hash(instances)
-        if await self._agents_hash_unchanged(agents_hash):
+        current_set = {(inst.agent_class, inst.agent_id) for inst in instances}
+        current_hash = self._compute_agents_hash(current_set)
+
+        if await self._agents_hash_unchanged(current_hash):
             return
 
         langfuse_ok = await self._sync_agent_instances_to_langfuse(instances)
         openwebui_ok = await self._sync_agent_instances_to_openwebui(instances)
+
         if langfuse_ok and openwebui_ok:
-            await self._store_agents_hash(agents_hash)
+            await self._store_agents_hash(current_hash)
 
     @staticmethod
-    def _compute_agents_hash(instances: list[FullAgentInstanceDTO]) -> str:
-        keys = sorted(f"{inst.agent_class}/{inst.agent_id}" for inst in instances)
-        return hashlib.sha256("\n".join(keys).encode()).hexdigest()
+    def _compute_agents_hash(agent_set: set[tuple[str, str]]) -> str:
+        normalized = sorted(f"{ac}:{ai}" for ac, ai in agent_set)
+        return hashlib.sha256(",".join(normalized).encode()).hexdigest()
 
-    async def _agents_hash_unchanged(self, new_hash: str) -> bool:
-        stored = await self._redis.get(self._AGENTS_HASH_KEY)
-        return stored is not None and stored.decode() == new_hash
+    async def _agents_hash_unchanged(self, current_hash: str) -> bool:
+        stored_hash = await self._redis.get(self._AGENTS_HASH_KEY)
+        if stored_hash and stored_hash.decode() == current_hash:
+            return True
+        return False
 
     async def _store_agents_hash(self, agents_hash: str) -> None:
         await self._redis.set(self._AGENTS_HASH_KEY, agents_hash, ex=self._AGENTS_HASH_TTL)
 
     async def _sync_agent_instances_to_langfuse(self, instances: list[FullAgentInstanceDTO]) -> bool:
-        if self._langfuse_provisioner is None:
-            return True
-        agent_models = sorted(f"{inst.agent_class}/{inst.agent_id}" for inst in instances)
+        """Sync agent instances to Langfuse so they appear in the experiment model dropdown."""
         try:
+            agent_models = sorted(f"{inst.agent_class}/{inst.agent_id}" for inst in instances)
             await self._langfuse_provisioner.sync_agents(agent_models)
             return True
         except Exception as e:
-            logger.warning("Langfuse agent sync failed (non-fatal): %s", e)
+            logger.warning(f"Langfuse agent sync failed (non-fatal): {e}")
             return False
 
     async def _sync_agent_instances_to_openwebui(self, instances: list[FullAgentInstanceDTO]) -> bool:
-        if self._openwebui_provisioner is None:
-            return True
-        online_agents = [
-            OnlineAgent(
-                agent_class=inst.agent_class,
-                agent_id=inst.agent_id,
-                display_name=inst.name,
-            )
-            for inst in instances
-            if inst.is_conversational
-        ]
+        """Sync agent instances to OpenWebUI as workspace models with access grants."""
         try:
+            online_agents = [
+                OnlineAgent(agent_class=inst.agent_class, agent_id=inst.agent_id, display_name=inst.name)
+                for inst in instances
+                if inst.is_conversational
+            ]
             await self._openwebui_provisioner.sync_agents(online_agents)
             return True
         except Exception as e:
-            logger.warning("OpenWebUI agent sync failed (non-fatal): %s", e)
-            logger.debug("OpenWebUI sync error details", exc_info=True)
+            logger.warning(f"OpenWebUI agent sync failed (non-fatal): {e}")
             return False
 
     def _register_class_endpoints(

@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
@@ -18,6 +19,7 @@ from swiss_ai_hub.core.infrastructure import (
     RedisSettings,
     S3StorageSettings,
 )
+from swiss_ai_hub.core.persistence import AccessChangeHook
 from swiss_ai_hub.core.subscribers import AgentNCSubscriber, ProcessNCSubscriber
 from swiss_ai_hub.core.topic_managers import AgentTopicManager, ProcessTopicManager
 
@@ -37,6 +39,7 @@ from swiss_ai_hub.api.sockets.manager.web_socket_manager import WebSocketManager
 from swiss_ai_hub.api.sockets.sender.web_socket_sender import WebSocketSender
 
 logger = logging.getLogger(__name__)
+_background_tasks: set[asyncio.Task] = set()
 
 
 @asynccontextmanager
@@ -195,8 +198,6 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
                 controller=api_app.state.agent_controller,
                 locale_handler=ApiLocaleHandler(),
                 redis=redis,
-                langfuse_provisioner=langfuse_provisioner,
-                openwebui_provisioner=openwebui_provisioner,
                 discovery_interval=60,  # Check for new agents every 60 seconds
             )
             await agent_discovery_service.start()
@@ -223,6 +224,12 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
 
         # Provision Langfuse with AI-Hub LLM connections
         await langfuse_provisioner.provision()
+
+        # Provision OpenWebUI with groups, workspace models, and access grants
+        await openwebui_provisioner.provision()
+
+        # Re-sync OpenWebUI when access entities change (active tenant switches notify explicitly)
+        AccessChangeHook.connect(openwebui_provisioner)
 
         # Yield control back to FastAPI to start serving requests
         yield
