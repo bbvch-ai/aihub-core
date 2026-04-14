@@ -137,14 +137,8 @@ class OpenWebuiProvisioner:
         return mapping
 
     @staticmethod
-    def _get_active_user_ids(tenant_id: str, default_tenant_id: str | None) -> set[str]:
-        if tenant_id == default_tenant_id:
-            active_users = UserEntity.objects(
-                __raw__={"$or": [{"active_tenant_id": tenant_id}, {"active_tenant_id": None}]}
-            ).only("id")
-        else:
-            active_users = UserEntity.objects(active_tenant_id=tenant_id).only("id")
-        return {u.id for u in active_users}
+    def _get_active_user_ids(tenant_id: str) -> set[str]:
+        return UserEntity.get_user_ids_with_active_tenant(tenant_id)
 
     async def _sync_group_memberships(
         self,
@@ -154,12 +148,9 @@ class OpenWebuiProvisioner:
         user_id_mapping: AiHubToOwuiUserIdMapping,
         scim: AsyncSCIMClient | None = None,
     ) -> None:
-        default_tenant = TenantEntity.get_default_tenant()
-        default_tenant_id = str(default_tenant.id) if default_tenant else None
-
         for tenant in tenants:
             tenant_id = tenant["id"]
-            active_user_ids = self._get_active_user_ids(tenant_id, default_tenant_id)
+            active_user_ids = self._get_active_user_ids(tenant_id)
 
             for role_data in roles_by_tenant.get(tenant["name"], []):
                 group_name = f"{AIHUB_GROUP_PREFIX}{tenant['name']}:{role_data['name']}"

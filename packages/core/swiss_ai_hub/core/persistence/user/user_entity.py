@@ -185,6 +185,12 @@ class UserEntity(Document):
 
     @classmethod
     @trace_fn
+    def get_user_ids_with_active_tenant(cls, tenant_id: str) -> set[str]:
+        """Returns IDs of users whose active tenant matches the given tenant."""
+        return {u.id for u in cls.objects(active_tenant_id=tenant_id).only("id")}
+
+    @classmethod
+    @trace_fn
     def get_by_ids(cls, user_ids: list[str]) -> dict[str, Self]:
         """
         Retrieve multiple users by their IDs and return as a dict.
