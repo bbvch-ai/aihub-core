@@ -36,7 +36,7 @@
 <script setup lang="ts">
 import { Background } from '@vue-flow/background'
 import { VueFlow, MarkerType, Position, useVueFlow } from '@vue-flow/core'
-import { computed, onMounted } from 'vue'
+import { computed, onBeforeUnmount, onMounted } from 'vue'
 
 import '@vue-flow/core/dist/style.css'
 import '@vue-flow/core/dist/theme-default.css'
@@ -57,11 +57,21 @@ const { updateNodeInternals, fitView } = useVueFlow()
 // Re-measure handle positions after the modal's open animation has settled.
 // Without this, vue-flow's initial handleBounds are taken mid-animation and end
 // up ~10px off-center, shifting edge endpoints sideways from the actual handles.
+// The handle is cleared on unmount so a quick close-during-animation won't call
+// updateNodeInternals/fitView on a disposed VueFlow instance.
+let settleTimer: ReturnType<typeof setTimeout> | null = null
 onMounted(() => {
-  setTimeout(() => {
+  settleTimer = setTimeout(() => {
     updateNodeInternals(props.graphData.nodes.map(n => n.id))
     fitView({ padding: 0.15 })
+    settleTimer = null
   }, 350)
+})
+onBeforeUnmount(() => {
+  if (settleTimer !== null) {
+    clearTimeout(settleTimer)
+    settleTimer = null
+  }
 })
 
 const COL_PITCH = NODE_WIDTH + COL_GAP
@@ -131,13 +141,16 @@ const findFreeSlot = (
   colCount: ColumnCount,
   taken: Set<string>,
 ): GridSlot => {
-  let row = fromRow
-  while (true) {
+  // Upper bound: in the worst case every already-taken slot forces us to the
+  // next row. `taken.size` rows is always enough to find a fresh one since we
+  // place at most one node per call. +2 keeps the bound loose for safety.
+  const maxRows = taken.size + 2
+  for (let row = fromRow; row < fromRow + maxRows; row++) {
     for (const col of fillOrderForRow(colCount, row)) {
       if (!taken.has(`${row}:${col}`)) return { row, col }
     }
-    row += 1
   }
+  throw new Error(`findFreeSlot: no free slot found within ${maxRows} rows from ${fromRow}`)
 }
 
 /** Assign (row, col) slots to each middle node in BFS order. */
@@ -234,17 +247,18 @@ const edges = computed(() => props.graphData.links.map(link => ({
 })))
 </script>
 
-<style>
-/* Selected nodes: bolder red border + red glow so even start/end nodes
- * (already red) stand out clearly. */
-.vue-flow__node.selected > * {
+<style scoped>
+/* Selected nodes: bolder red border + red tint so even start/end nodes
+ * (already red) stand out clearly. Scoped + :deep keeps these rules from
+ * leaking into any sibling component that also uses vue-flow. */
+:deep(.vue-flow__node.selected > *) {
   border-color: rgb(239 68 68) !important; /* red-500 */
   background-color: oklch(88.5% 0.062 18.334) !important; /* red-100 */
 }
-.dark .vue-flow__node.selected > * {
+:deep(.dark .vue-flow__node.selected > *) {
   background-color: oklch(25.8% 0.092 26.042) !important;
 }
-.vue-flow__edge.selected .vue-flow__edge-path {
+:deep(.vue-flow__edge.selected .vue-flow__edge-path) {
   stroke: rgb(239 68 68) !important;
   stroke-width: 2 !important;
 }

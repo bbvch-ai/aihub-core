@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Any
+from typing import Any, Literal
 
 from swiss_ai_hub.agent.agents.agent import Agent
 
@@ -15,6 +15,7 @@ from swiss_ai_hub.core.i18n.locale_string import LocaleString
 from swiss_ai_hub.core.workflow.annotations.extractors.extract_return_events import extract_return_events
 
 EventType = type[BaseEvent]
+TerminalKind = Literal["start", "stop"]
 
 
 class WorkflowVisualizer:
@@ -50,8 +51,13 @@ class WorkflowVisualizer:
 
         producers, consumers = self._collect_producers_and_consumers(steps)
 
-        # Event-driven edges. Start/stop events become their own terminal nodes.
-        for event_class in set(producers) | set(consumers):
+        # Iterate event classes in a stable order so the serialized graph is
+        # deterministic across runs (avoids flaky tests and noisy API diffs).
+        event_classes = sorted(
+            set(producers) | set(consumers),
+            key=lambda ec: (ec.__module__, ec.__qualname__),
+        )
+        for event_class in event_classes:
             event_producers = producers.get(event_class, set())
             event_consumers = consumers.get(event_class, set())
 
@@ -76,12 +82,19 @@ class WorkflowVisualizer:
         # each *Request to the consumer of the matching *Response.
         self._add_in_the_loop_edges(edges, producers, consumers)
 
+        # Drop self-loops — a step that both produces and consumes the same event
+        # type would otherwise draw an arrow into itself.
+        edges = {(s, t) for s, t in edges if s != t}
+
         return WorkflowGraph(
-            nodes=list(nodes.values()),
-            links=[EdgeData(source=s, target=t) for s, t in edges],
+            nodes=sorted(nodes.values(), key=lambda n: n.id),
+            links=sorted(
+                (EdgeData(source=s, target=t) for s, t in edges),
+                key=lambda e: (e.source, e.target),
+            ),
         )
 
-    def _ensure_terminal_node(self, nodes: dict[str, NodeData], event_class: EventType, kind: str) -> str:
+    def _ensure_terminal_node(self, nodes: dict[str, NodeData], event_class: EventType, kind: TerminalKind) -> str:
         node_id = f"{kind}_{event_class.__name__}"
         if node_id in nodes:
             return node_id
