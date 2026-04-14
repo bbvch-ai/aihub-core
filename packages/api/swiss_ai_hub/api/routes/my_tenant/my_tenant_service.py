@@ -1,8 +1,8 @@
 from fastapi import HTTPException
+from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from swiss_ai_hub.core.persistence.access.entities.tenant_entity import TenantEntity
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
-from swiss_ai_hub.core.persistence.user.user_entity import UserEntity
 
 from swiss_ai_hub.api.routes.my_tenant.dto.active_tenant_dto import ActiveTenantDTO
 from swiss_ai_hub.api.routes.my_tenant.dto.tenant_membership_dto import TenantMembershipDTO
@@ -24,13 +24,13 @@ class MyTenantService:
 
     @staticmethod
     @trace_fn
-    def get_my_active_tenant(user_id: str) -> ActiveTenantDTO:
+    async def get_my_active_tenant(user_id: str) -> ActiveTenantDTO:
         """Returns the user's currently active tenant."""
-        user = UserEntity.by_oid(user_id)
-        if not user.active_tenant_id:
+        active_tenant_id = await KeycloakAdminService.get_active_tenant_id(user_id)
+        if not active_tenant_id:
             raise HTTPException(status_code=404, detail="No active tenant set.")
 
-        entity = TenantEntity.get_tenant_by_id(user.active_tenant_id)
+        entity = TenantEntity.get_tenant_by_id(active_tenant_id)
         if not entity:
             raise HTTPException(status_code=404, detail="Active tenant no longer exists.")
 
@@ -38,7 +38,7 @@ class MyTenantService:
 
     @staticmethod
     @trace_fn
-    def set_my_active_tenant(user_id: str, tenant_id: str) -> ActiveTenantDTO:
+    async def set_my_active_tenant(user_id: str, tenant_id: str) -> ActiveTenantDTO:
         """Sets the user's active tenant after validating membership."""
         roles = UserTenantRoleEntity.get_roles_for_user_in_tenant(user_id, tenant_id)
         if not roles:
@@ -48,7 +48,6 @@ class MyTenantService:
         if not entity:
             raise HTTPException(status_code=404, detail="Tenant not found.")
 
-        user = UserEntity.by_oid(user_id)
-        user.set_active_tenant(tenant_id)
+        await KeycloakAdminService.set_active_tenant(user_id, tenant_id)
 
         return ActiveTenantDTO.from_entity(entity)

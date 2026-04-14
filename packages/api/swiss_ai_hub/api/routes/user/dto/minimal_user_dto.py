@@ -1,7 +1,7 @@
-from typing import Annotated
+from typing import Annotated, Self
 
 from pydantic import BaseModel, Field
-from swiss_ai_hub.core.persistence.user.user_entity import UserEntity
+from swiss_ai_hub.core.auth.keycloak.models.keycloak_user import KeycloakUser
 
 
 class MinimalUserDTO(BaseModel):
@@ -11,7 +11,10 @@ class MinimalUserDTO(BaseModel):
     profile_image: Annotated[str | None, Field(description="User's profile image in base64.")] = None
 
     @classmethod
-    def from_user_entity(cls, user_entity: UserEntity):
+    def from_keycloak_user(cls, user: KeycloakUser) -> Self:
         return cls(
-            id=user_entity.id, name=user_entity.name, email=user_entity.email, profile_image=user_entity.profile_image
+            id=user.id,
+            name=user.name,
+            email=user.email,
+            profile_image=None,
         )

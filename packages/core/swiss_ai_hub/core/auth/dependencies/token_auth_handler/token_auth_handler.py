@@ -2,12 +2,11 @@ import logging
 
 from fastapi import HTTPException, Request, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from mongoengine import DoesNotExist
 
 from swiss_ai_hub.core.auth.dependencies.bearer_auth_handler import BearerAuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
+from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
 from swiss_ai_hub.core.persistence.access.entities.bearer_token import BearerToken
-from swiss_ai_hub.core.persistence.user.user_entity import UserEntity
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +16,7 @@ class TokenAuthHandler(BearerAuthHandler):
     A FastAPI dependency for token-based authentication.
 
     Validates bearer tokens from the database and returns user identity
-    directly from UserEntity.
+    using Keycloak for profile data.
     """
 
     async def __call__(
@@ -41,9 +40,9 @@ class TokenAuthHandler(BearerAuthHandler):
             logger.warning(f"Token authentication failed: {e}")
             raise HTTPException(status_code=401, detail=str(e))
 
-        try:
-            user = UserEntity.by_oid(access_token.user_oid)
-        except DoesNotExist:
-            raise HTTPException(status_code=401, detail="User not found.")
+        user_id = access_token.user_oid
 
-        return self.build_identity(user, request)
+        keycloak_user = await KeycloakAdminService.get_user_by_id(user_id)
+        return await self.build_identity(
+            user_id=user_id, name=keycloak_user.name, email=keycloak_user.email, request=request
+        )

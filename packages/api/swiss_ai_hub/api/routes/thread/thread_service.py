@@ -24,9 +24,9 @@ from swiss_ai_hub.core.events.agent import HumanInTheLoopRequestEvent, HumanInTh
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.infrastructure import trace_fn
 from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
+from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 from swiss_ai_hub.core.persistence.messaging.entities.persisted_agent_event_entity import PersistedAgentEventEntity
 from swiss_ai_hub.core.persistence.messaging.entities.thread_entity import AgentInstanceRef, ThreadEntity, User
-from swiss_ai_hub.core.persistence.user.user_entity import UserEntity
 
 from swiss_ai_hub.api.routes.agent.dto.agent_identifier import AgentIdentifier
 from swiss_ai_hub.api.routes.agent.dto.minimal_agent_instance_dto import MinimalAgentInstanceDTO
@@ -58,14 +58,11 @@ class ThreadService:
         agents: list[tuple[str, str]],
         tenant: TenantIdentity,
     ) -> None:
-        users = UserEntity.get_by_ids(user_ids)
         for user_id in user_ids:
-            user = users.get(user_id)
-            if not user:
-                raise HTTPException(status_code=404, detail=f"User {user_id} not found")
+            user_roles = UserTenantRoleEntity.get_roles_for_user_in_tenant(user_id, tenant.id)
+            if not user_roles:
+                raise HTTPException(status_code=404, detail=f"User {user_id} not found in tenant")
 
-            # If user is not in tenant, this will return an empty array
-            user_roles = user.get_roles(tenant.id)
             access_rules = RoleEntity.get_access_rules_for_roles(user_roles, tenant.id)
             access_checker = AccessChecker(list(access_rules), tenant_access_rules=tenant.access_rules)
 

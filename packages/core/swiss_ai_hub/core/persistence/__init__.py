@@ -81,11 +81,7 @@ if TYPE_CHECKING:
         MilvusIndexType,
         create_milvus_vector_store,
     )
-    from swiss_ai_hub.core.persistence.user.user_entity import (
-        Dashboard,
-        DashboardItem,
-        UserEntity,
-    )
+    from swiss_ai_hub.core.persistence.user.user_dashboard_entity import UserDashboardEntity
     from swiss_ai_hub.core.persistence.utils import str_to_object_id
 
 __all__ = [
@@ -100,8 +96,6 @@ __all__ = [
     "DOCUMENT_ID",
     "DOCUMENT_STORE_NAME",
     "DOCUMENT_TITLE",
-    "Dashboard",
-    "DashboardItem",
     "EventBucket",
     "H1",
     "H2",
@@ -149,7 +143,7 @@ __all__ = [
     "UPDATED_AT",
     "UsageLimit",
     "User",
-    "UserEntity",
+    "UserDashboardEntity",
     "UserTenantRoleEntity",
     "VERSION",
     "VectorStoreFactory",
@@ -171,8 +165,6 @@ _LAZY_IMPORTS = {
     "DOCUMENT_ID": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",
     "DOCUMENT_STORE_NAME": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",
     "DOCUMENT_TITLE": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",
-    "Dashboard": "swiss_ai_hub.core.persistence.user.user_entity",
-    "DashboardItem": "swiss_ai_hub.core.persistence.user.user_entity",
     "EventBucket": "swiss_ai_hub.core.persistence.messaging.entities.types.event_bucket",
     "H1": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",
     "H2": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",
@@ -220,7 +212,7 @@ _LAZY_IMPORTS = {
     "UPDATED_AT": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",
     "UsageLimit": "swiss_ai_hub.core.persistence.access.entities.role_entity",
     "User": "swiss_ai_hub.core.persistence.messaging.entities.thread_entity",
-    "UserEntity": "swiss_ai_hub.core.persistence.user.user_entity",
+    "UserDashboardEntity": "swiss_ai_hub.core.persistence.user.user_dashboard_entity",
     "UserTenantRoleEntity": "swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity",
     "VERSION": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",
     "VectorStoreFactory": "swiss_ai_hub.core.persistence.rag.vectors",

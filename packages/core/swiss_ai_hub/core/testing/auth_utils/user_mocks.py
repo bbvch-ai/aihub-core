@@ -1,58 +1,124 @@
-from datetime import UTC, datetime
-from unittest.mock import patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
 from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_settings import (  # noqa: E501
     DangerousDevelopmentOnlyAuthSettings,
 )
-from swiss_ai_hub.core.persistence.user.user_entity import UserEntity
+from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import _create_admin
+from swiss_ai_hub.core.auth.keycloak.models.keycloak_user import KeycloakUser
+from swiss_ai_hub.core.persistence.user.user_dashboard_entity import UserDashboardEntity
 
-MOCK_USER_LAST_UPDATED = datetime(2025, 7, 4, 12, 14, 45, 185140, tzinfo=UTC)
 
-
-def _create_mock_user(user_id: str | None = None, email: str | None = None) -> UserEntity:
-    """Create a mock UserEntity with properties from DangerousDevelopmentOnlyAuthSettings."""
+def _create_mock_keycloak_user(user_id: str | None = None, email: str | None = None) -> KeycloakUser:
     config = DangerousDevelopmentOnlyAuthSettings()
-    return UserEntity(
+    return KeycloakUser(
         id=user_id or config.OID,
-        name=config.NAME,
+        firstName=config.NAME,
+        lastName="",
+        username=email or config.EMAIL,
         email=email or config.EMAIL,
-        profile_image=None,
-        favorite_modules=[],
-        dashboard=UserEntity.create_default_dashboard(),
-        last_updated=MOCK_USER_LAST_UPDATED,
+        attributes={},
     )
 
 
-@pytest.fixture(autouse=True)
-def mock_user_entity_autouse():
+#: Shared in-memory user store for the fake Keycloak admin. Tests can populate this
+#: directly (e.g. via ``register_fake_keycloak_user``) to seed users that
+#: ``KeycloakAdminService.get_user_by_id`` / ``find_user_by_email`` should return.
+_FAKE_KEYCLOAK_USERS: dict[str, dict] = {}
+
+
+def register_fake_keycloak_user(user_id: str, *, name: str, email: str, attributes: dict | None = None) -> None:
+    """Registers a user in the fake Keycloak admin store.
+
+    Call from test steps when you need ``KeycloakAdminService.get_user_by_id`` (or
+    ``find_user_by_email``) to return a user with specific name/email for a given oid.
     """
-    Mock UserEntity lookup and creation methods to return a dummy user.
+    first, _, last = name.partition(" ")
+    _FAKE_KEYCLOAK_USERS[user_id] = {
+        "id": user_id,
+        "username": email,
+        "email": email,
+        "firstName": first,
+        "lastName": last,
+        "attributes": attributes or {"active_tenant_id": ["default"]},
+    }
 
-    Mocks by_oid, by_email, and ensure_user_exists so tests don't need a real database.
-    The mock user has properties from DangerousDevelopmentOnlyAuthSettings.
+
+def _build_fake_admin() -> MagicMock:
+    """Builds a stateful MagicMock standing in for a ``KeycloakAdmin`` instance.
+
+    Keeps a per-user-id in-memory store so sequences like
+    ``set_active_tenant`` → ``get_active_tenant_id`` return the value that was just
+    written. Tests never hit a real Keycloak server.
     """
+    config = DangerousDevelopmentOnlyAuthSettings()
 
-    def mock_by_oid(user_oid):
-        return _create_mock_user(user_id=user_oid)
+    def _default_user(user_id: str) -> dict:
+        return {
+            "id": user_id,
+            "username": config.EMAIL,
+            "email": config.EMAIL,
+            "firstName": config.NAME,
+            "lastName": "",
+            "attributes": {"active_tenant_id": ["default"]},
+        }
 
-    def mock_by_email(email):
-        return _create_mock_user(email=email)
+    users = _FAKE_KEYCLOAK_USERS
+    users.setdefault(config.OID, _default_user(config.OID))
 
-    def mock_ensure_user_exists(oid, name, email, profile_image=None):
-        return _create_mock_user(user_id=oid, email=email)
+    async def a_get_user(user_id: str) -> dict:
+        return users.setdefault(user_id, _default_user(user_id))
 
-    def mock_get_by_ids(user_ids):
-        return {uid: _create_mock_user(user_id=uid) for uid in user_ids}
+    async def a_get_users(query: dict | None = None) -> list[dict]:
+        if query and "email" in query:
+            return [u for u in users.values() if u.get("email") == query["email"]]
+        return list(users.values())
 
-    with (
-        patch.object(UserEntity, "by_oid", side_effect=mock_by_oid),
-        patch.object(UserEntity, "by_email", side_effect=mock_by_email),
-        patch.object(UserEntity, "ensure_user_exists", side_effect=mock_ensure_user_exists),
-        patch.object(UserEntity, "get_by_ids", side_effect=mock_get_by_ids),
+    async def a_create_user(payload: dict, exist_ok: bool = True) -> str:
+        user_id = payload.get("id") or config.OID
+        users.setdefault(user_id, _default_user(user_id))
+        return user_id
+
+    async def a_update_user(user_id: str, payload: dict) -> None:
+        existing = users.setdefault(user_id, _default_user(user_id))
+        existing.update(payload)
+        if "attributes" in payload:
+            existing["attributes"] = dict(payload["attributes"])
+
+    fake = MagicMock()
+    fake.a_get_user = AsyncMock(side_effect=a_get_user)
+    fake.a_get_users = AsyncMock(side_effect=a_get_users)
+    fake.a_create_user = AsyncMock(side_effect=a_create_user)
+    fake.a_update_user = AsyncMock(side_effect=a_update_user)
+    fake.a_get_group_by_path = AsyncMock(return_value={"id": "fake-group-id", "name": "tenants"})
+    fake.a_get_group_members = AsyncMock(side_effect=lambda *_args, **_kwargs: list(users.values()))
+    fake.a_create_group = AsyncMock(return_value="fake-group-id")
+    fake.a_delete_group = AsyncMock(return_value=None)
+    fake.a_group_user_add = AsyncMock(return_value=None)
+    fake.a_group_user_remove = AsyncMock(return_value=None)
+    return fake
+
+
+@pytest.fixture(autouse=True, scope="session")
+def mock_keycloak_admin_service_autouse():
+    """Patches ``_create_admin`` so every KeycloakAdminService method gets a fake client.
+
+    One patch at the factory level is more robust than patching each staticmethod
+    individually — it also survives ``@trace_fn``/``@staticmethod`` descriptor quirks
+    and lru_cache interaction. Individual tests can still override specific methods
+    via nested ``patch.object(KeycloakAdminService, ...)``.
+    """
+    _create_admin.cache_clear()
+    _FAKE_KEYCLOAK_USERS.clear()
+    fake_admin = _build_fake_admin()
+    with patch(
+        "swiss_ai_hub.core.auth.keycloak.keycloak_admin_service._create_admin",
+        return_value=fake_admin,
     ):
         yield
+    _FAKE_KEYCLOAK_USERS.clear()
+    _create_admin.cache_clear()
 
 
 def get_expected_user_data(include_dashboard=True, include_access=True):
@@ -67,13 +133,10 @@ def get_expected_user_data(include_dashboard=True, include_access=True):
         "email": config.EMAIL,
         "profile_image": None,
         "roles": config.ROLES,
-        "favorite_modules": [],
-        "last_accessed": "2025-07-04T12:14:45.185140Z",
     }
 
     if include_dashboard:
-        # Create a version of the dashboard data without the random IDs
-        dashboard = UserEntity.create_default_dashboard()
+        dashboard = UserDashboardEntity.create_default_dashboard()
         dashboard_dict = {
             "minRow": dashboard.minRow,
             "margin": dashboard.margin,

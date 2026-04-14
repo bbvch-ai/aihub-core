@@ -22,8 +22,6 @@ class ProgramWorkResponseDTO(WorkResponseDTO):
         cls, event_data: dict, event_id: str, event_name: str, created_at: int, t: "LocaleHandler"
     ) -> Self:
         """Creates a ProgramWorkResponseDTO from raw event data."""
-        from swiss_ai_hub.core.persistence.user.user_entity import UserEntity
-
         from swiss_ai_hub.api.routes.user.dto.minimal_user_dto import MinimalUserDTO
 
         display_name: str | None = None
@@ -48,30 +46,22 @@ class ProgramWorkResponseDTO(WorkResponseDTO):
                 else getattr(submitted_by_data, "profile_image", None)
             )
 
-            if not profile_image and user_id:
-                try:
-                    user_entity = UserEntity.by_oid(user_id)
-                    submitted_by = MinimalUserDTO.from_user_entity(user_entity)
-                except Exception:
-                    pass
-
-            if not submitted_by:
-                submitted_by = MinimalUserDTO.model_validate(
-                    {
-                        "id": user_id or "",
-                        "name": (
-                            submitted_by_data.get("name")
-                            if isinstance(submitted_by_data, dict)
-                            else getattr(submitted_by_data, "name", "")
-                        ),
-                        "email": (
-                            submitted_by_data.get("email")
-                            if isinstance(submitted_by_data, dict)
-                            else getattr(submitted_by_data, "email", "")
-                        ),
-                        "profile_image": profile_image,
-                    }
-                )
+            submitted_by = MinimalUserDTO.model_validate(
+                {
+                    "id": user_id or "",
+                    "name": (
+                        submitted_by_data.get("name")
+                        if isinstance(submitted_by_data, dict)
+                        else getattr(submitted_by_data, "name", "")
+                    ),
+                    "email": (
+                        submitted_by_data.get("email")
+                        if isinstance(submitted_by_data, dict)
+                        else getattr(submitted_by_data, "email", "")
+                    ),
+                    "profile_image": profile_image,
+                }
+            )
 
         return cls(
             event_id=event_id,

@@ -52,6 +52,7 @@ def create_tenant(cleanup_documents: list[Any], context: dict[str, Any], name: s
     """Create a tenant with the given access rules."""
     rules_list = [r.strip() for r in access_rules.split(",")]
     tenant = TenantEntity.create_tenant(
+        tenant_id=name.lower().replace(" ", "-"),
         name=name,
         description=f"Tenant {name} for testing",
         access_rules=rules_list,

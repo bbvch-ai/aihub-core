@@ -7,15 +7,30 @@ including tenants, roles, permissions, and other essential entities needed for t
 
 import logging
 
+from keycloak import KeycloakGetError
 from mongoengine import DoesNotExist
 from swiss_ai_hub.core.auth.dependencies.superuser_auth_handler.superuser_settings import SuperuserSettings
+from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
 from swiss_ai_hub.core.infrastructure import AIHubSettings, DefaultTenantSettings, UserSignupSettings, no_trace
 from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
 from swiss_ai_hub.core.persistence.access.entities.tenant_entity import TenantEntity
 from swiss_ai_hub.core.persistence.rag.datalake.entities import BucketEntity, NamespaceEntity
-from swiss_ai_hub.core.persistence.user.user_entity import UserEntity
 
 logger = logging.getLogger(__name__)
+
+
+async def _backfill_existing_users_into_default_group(tenant_id: str) -> None:
+    """One-time backfill: adds all pre-existing realm users to the default tenant group.
+
+    Keycloak's defaultGroups only affects users created after the group is configured.
+    Users that already existed in the realm (e.g. the seeded admin from the realm import)
+    need to be added explicitly. Only runs the first time the default tenant is created —
+    never on subsequent startups, so admin-initiated removals are not reverted.
+    """
+    all_users = await KeycloakAdminService.get_all_users()
+    for user in all_users:
+        await KeycloakAdminService.assign_user_to_tenant(user.id, tenant_id)
+        logger.info(f"Backfilled user '{user.username}' into default tenant group")
 
 
 @no_trace
@@ -23,23 +38,37 @@ async def initialize_default_tenant() -> TenantEntity | None:
     """
     Initialize the default tenant for the platform.
 
-    The default tenant is created on first startup and provides a backwards-compatible
-    single-tenant experience. All users are automatically added to this tenant.
+    Creates the MongoDB tenant entity and ensures a matching Keycloak group exists
+    under /tenants/<tenant-name>. The Keycloak realm configures this group as a
+    default group so all new users are automatically members.
     """
     settings = DefaultTenantSettings()
 
     existing_tenant = TenantEntity.get_default_tenant()
     if existing_tenant:
-        logger.info(f"Default tenant '{existing_tenant.name}' already exists, skipping creation")
+        logger.info(
+            f"Default tenant '{existing_tenant.name}' (id={existing_tenant.id}) already exists, skipping creation"
+        )
         return existing_tenant
 
     tenant = TenantEntity.ensure_default_tenant_exists(
+        tenant_id=settings.ID,
         name=settings.NAME,
         description=settings.DESCRIPTION,
         access_rules=settings.access_rules_list,
     )
+    logger.info(f"Successfully created default tenant '{tenant.name}' (id={tenant.id})")
 
-    logger.info(f"Successfully created default tenant '{tenant.name}'")
+    try:
+        await KeycloakAdminService.create_tenant_group(tenant.id)
+        logger.info(f"Keycloak tenant group '/tenants/{tenant.id}' created")
+        await _backfill_existing_users_into_default_group(tenant.id)
+    except KeycloakGetError:
+        logger.warning(
+            f"Could not sync Keycloak group for tenant '{tenant.name}'"
+            " - Keycloak may not have the required permissions yet"
+        )
+
     return tenant
 
 
@@ -146,28 +175,14 @@ async def initialize_system_role(name: str, description: str, access_rules: list
 
 async def initialize_superuser() -> None:
     """
-    Initialize the superuser in the database if superuser auth is enabled.
+    Initialize the superuser.
 
-    This function ensures that the superuser account exists in the database.
-    Note: Superuser uses a virtual tenant when authenticating, but we still create
-    the user record for auditing purposes.
+    The superuser uses a virtual tenant and does not need a user record.
+    This is a no-op now that UserEntity is no longer used.
     """
     settings = SuperuserSettings()
-
-    try:
-        # Create the user entity (for audit trail, even though superuser uses virtual tenant)
-        UserEntity.ensure_user_exists(
-            oid=settings.OID,
-            name=settings.NAME,
-            email=settings.EMAIL,
-        )
-
-        logger.info(f"Superuser initialization completed for user '{settings.NAME}'")
-        logger.info("Note: Superuser operates with virtual tenant (full admin access)")
-
-    except Exception as e:
-        logger.error(f"Failed to initialize superuser: {e}")
-        raise
+    logger.info(f"Superuser initialization completed for user '{settings.NAME}'")
+    logger.info("Note: Superuser operates with virtual tenant (full admin access)")
 
 
 @no_trace
