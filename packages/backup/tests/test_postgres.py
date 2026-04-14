@@ -359,16 +359,12 @@ def test_restore_replays_documentdb_catalog(mock_run: MagicMock, postgres_handle
 
 
 @patch("swiss_ai_hub.backup.services.postgres.subprocess.run")
-def test_restore_skips_catalog_when_no_ext_catalog_file(mock_run: MagicMock, postgres_handler: PostgresHandler) -> None:
+def test_restore_raises_when_no_ext_catalog_file(mock_run: MagicMock, postgres_handler: PostgresHandler) -> None:
     mock_run.side_effect = _make_run_for_restore()
     _setup_s3_for_restore(postgres_handler, has_ext_catalog=False)
 
-    postgres_handler.restore("2026-02-19_02-00-00")
-
-    catalog_psql_calls = [
-        call for call in mock_run.call_args_list if call.kwargs.get("input") and "TRUNCATE" in str(call.kwargs["input"])
-    ]
-    assert len(catalog_psql_calls) == 0
+    with pytest.raises(RuntimeError, match="Extension catalog backup missing"):
+        postgres_handler.restore("2026-02-19_02-00-00")
 
 
 @patch("swiss_ai_hub.backup.services.postgres.subprocess.run")
