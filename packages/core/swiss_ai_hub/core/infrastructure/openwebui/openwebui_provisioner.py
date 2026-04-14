@@ -95,19 +95,23 @@ class OpenWebuiProvisioner:
     @staticmethod
     def _get_known_online_agents() -> list[OnlineAgent]:
         """Queries the DB for agent instances whose class was recently discovered."""
+        class_entities = AgentClassEntity.get_online_conversational()
+        if not class_entities:
+            return []
+
+        agent_classes = [ce.agent_class for ce in class_entities]
+        all_configs = AgentConfigEntityDocument.find_for_classes(agent_classes)
+
         agents: list[OnlineAgent] = []
-        for class_entity in AgentClassEntity.get_all():
-            if not class_entity.is_online or not class_entity.is_conversational:
-                continue
-            for config in AgentConfigEntityDocument.find_for_class(class_entity.agent_class):
-                display_name = config.name.en or config.name.de or config.agent_id
-                agents.append(
-                    OnlineAgent(
-                        agent_class=class_entity.agent_class,
-                        agent_id=config.agent_id,
-                        display_name=display_name,
-                    )
+        for config in all_configs:
+            display_name = config.name.en or config.name.de or config.agent_id
+            agents.append(
+                OnlineAgent(
+                    agent_class=config.agent_class,
+                    agent_id=config.agent_id,
+                    display_name=display_name,
                 )
+            )
         return agents
 
     # ------------------------------------------------------------------
