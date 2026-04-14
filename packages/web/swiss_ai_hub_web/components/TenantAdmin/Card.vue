@@ -21,11 +21,6 @@
             {{ tenant.name }}
           </h3>
           <Tag
-            v-if="tenant.is_default"
-            :value="t('tenant_admin.default_tag')"
-            severity="info"
-          />
-          <Tag
             v-if="isOrphaned"
             v-tooltip.top="{ value: t('tenant_admin.state.orphaned_tooltip') }"
             :value="t('tenant_admin.state.orphaned_label')"
@@ -53,13 +48,23 @@
         </div>
       </div>
       <Button
-        v-if="!tenant.is_default"
+        v-if="canDelete"
         icon="pi pi-trash"
         severity="contrast"
         variant="text"
         rounded
         aria-label="Delete"
         @click.stop="confirmDelete"
+      />
+      <Button
+        v-else
+        v-tooltip.left="{ value: t('tenant_admin.delete_dialog.last_tenant_blocked') }"
+        icon="pi pi-trash"
+        severity="contrast"
+        variant="text"
+        rounded
+        disabled
+        aria-label="Delete (disabled)"
       />
     </div>
   </div>
@@ -68,9 +73,15 @@
 <script setup lang="ts">
 import type { TenantResponse } from '@core/sdk/client'
 
-const props = defineProps<{
-  tenant: TenantResponse
-}>()
+const props = withDefaults(
+  defineProps<{
+    tenant: TenantResponse
+    canDelete?: boolean
+  }>(),
+  {
+    canDelete: true,
+  },
+)
 
 const route = useRoute()
 const confirm = useConfirm()

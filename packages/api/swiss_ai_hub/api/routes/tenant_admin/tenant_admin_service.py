@@ -129,12 +129,15 @@ class TenantAdminService:
         """Removes the MongoDB metadata. Allowed on both ACTIVE and ORPHANED tenants.
 
         The Keycloak group (if present) is left untouched — cleanup is a separate
-        concern managed via the Keycloak admin console. Default tenant cannot be
-        deleted (403).
+        concern managed via the Keycloak admin console. The last remaining tenant
+        cannot be deleted (409) — that would leave the platform with no tenant at
+        all and prevent any user from doing anything.
         """
-        try:
-            deleted = TenantEntity.delete_tenant(tenant_id)
-        except ValueError as e:
-            raise HTTPException(status_code=403, detail=str(e))
+        if TenantEntity.objects.count() <= 1:
+            raise HTTPException(
+                status_code=409,
+                detail="Cannot delete the last remaining tenant; the platform must always have at least one.",
+            )
+        deleted = TenantEntity.delete_tenant(tenant_id)
         if not deleted:
             raise HTTPException(status_code=404, detail="Tenant not found.")

@@ -588,7 +588,6 @@ tenant_admin:
   create_new: Nuovo tenant
   cancel: Annulla
   save: Salva
-  default_tag: Predefinito
   tenant_id: ID del tenant
   keycloak_unreachable: Keycloak non è raggiungibile — l'elenco dei tenant potrebbe
     essere incompleto. Riprovare.
@@ -602,7 +601,6 @@ tenant_admin:
       tenant deve corrispondere a un gruppo Keycloak sotto /tenants/ che non ha ancora
       metadati.
     tenant_id_label: ID del tenant Keycloak
-    tenant_id_placeholder: Seleziona un tenant Keycloak
     empty_unconfigured: Nessun tenant Keycloak non configurato disponibile. Crea prima
       un gruppo di tenant nella console di amministrazione Keycloak.
   form:
@@ -622,6 +620,8 @@ tenant_admin:
     explanation: L'eliminazione del tenant "{name}" rimuoverà tutti i ruoli e le assegnazioni
       utente associati. Questa azione non può essere annullata.
     proceed: Elimina
+    last_tenant_blocked: Impossibile eliminare l'ultimo tenant rimanente. La piattaforma
+      deve sempre avere almeno un tenant.
   tenant_deleted:
     summary: Tenant eliminato
     detail: Il tenant e tutti i dati associati sono stati rimossi.

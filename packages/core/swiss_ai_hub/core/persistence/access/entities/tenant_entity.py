@@ -141,7 +141,11 @@ class TenantEntity(Document):
         Cascades to delete all associated UserTenantRoleEntity and tenant-scoped RoleEntity records.
         Active tenant cleanup in Keycloak must be handled by the caller via
         KeycloakAdminService.clear_active_tenant_for_users_in_tenant().
-        The default tenant cannot be deleted - attempting to do so will raise ValueError.
+
+        Note: ``is_default`` is just a marker for "created at startup" — it carries no
+        deletion-protection semantics. Callers that need to prevent leaving the system
+        without any tenant should enforce that themselves (e.g., by checking the
+        remaining tenant count).
 
         Uses deferred imports because RoleEntity and UserTenantRoleEntity both import
         TenantEntity at module level — importing them here at module level would create circular imports.
@@ -152,9 +156,6 @@ class TenantEntity(Document):
         tenant = cls.get_tenant_by_id(tenant_id)
         if not tenant:
             return False
-
-        if tenant.is_default:
-            raise ValueError("Cannot delete the default tenant")
 
         # Cascade: remove all user-tenant-role associations and tenant-scoped roles
         UserTenantRoleEntity.objects(tenant_id=tenant_id).delete()

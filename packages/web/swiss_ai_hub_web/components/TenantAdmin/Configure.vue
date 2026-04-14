@@ -11,7 +11,6 @@
           v-model="tenant.tenant_id"
           :options="unconfiguredTenantIds ?? []"
           :loading="unconfiguredTenantIdsAreLoading"
-          :placeholder="t('tenant_admin.configure.tenant_id_placeholder')"
           class="w-full"
         />
         <label for="tenant_id_select">

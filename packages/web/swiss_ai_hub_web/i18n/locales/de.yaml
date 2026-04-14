@@ -592,7 +592,6 @@ tenant_admin:
   create_new: Neuer Tenant
   cancel: Abbrechen
   save: Speichern
-  default_tag: Standard
   tenant_id: Tenant-ID
   keycloak_unreachable: Keycloak ist nicht erreichbar — die Tenant-Liste ist möglicherweise
     unvollständig. Bitte erneut versuchen.
@@ -606,7 +605,6 @@ tenant_admin:
       Die Tenant-ID muss einer Keycloak-Gruppe unter /tenants/ entsprechen, die noch
       keine Metadaten hat.
     tenant_id_label: Keycloak-Tenant-ID
-    tenant_id_placeholder: Keycloak-Tenant auswählen
     empty_unconfigured: Keine unkonfigurierten Keycloak-Tenants verfügbar. Erstellen
       Sie zuerst eine Tenant-Gruppe in der Keycloak-Admin-Konsole.
   form:
@@ -626,6 +624,8 @@ tenant_admin:
     explanation: Das Löschen des Tenants "{name}" entfernt alle zugehörigen Rollen
       und Benutzerzuweisungen. Diese Aktion kann nicht rückgängig gemacht werden.
     proceed: Löschen
+    last_tenant_blocked: Der letzte verbleibende Tenant kann nicht gelöscht werden.
+      Die Plattform muss immer mindestens einen Tenant haben.
   tenant_deleted:
     summary: Tenant gelöscht
     detail: Der Tenant und alle zugehörigen Daten wurden entfernt.

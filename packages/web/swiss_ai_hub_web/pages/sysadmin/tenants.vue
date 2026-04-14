@@ -18,6 +18,7 @@
           v-for="tenant in tenants"
           :key="tenant.id"
           :tenant="tenant"
+          :can-delete="(tenants?.length ?? 0) > 1"
           @click="() => toTenant(tenant)"
         />
 

@@ -583,7 +583,6 @@ tenant_admin:
   create_new: New Tenant
   cancel: Cancel
   save: Save
-  default_tag: Default
   tenant_id: Tenant ID
   keycloak_unreachable: Keycloak is unreachable — the tenant list may be incomplete.
     Please retry.
@@ -596,7 +595,6 @@ tenant_admin:
     description: Attach metadata to an existing Keycloak tenant group. The tenant
       ID must match a Keycloak group under /tenants/ that does not yet have metadata.
     tenant_id_label: Keycloak Tenant ID
-    tenant_id_placeholder: Select a Keycloak tenant
     empty_unconfigured: No unconfigured Keycloak tenants available. Create a tenant
       group in the Keycloak admin console first.
   form:
@@ -616,6 +614,8 @@ tenant_admin:
     explanation: Deleting tenant "{name}" will remove all associated roles and user
       assignments. This action cannot be undone.
     proceed: Delete
+    last_tenant_blocked: Cannot delete the last remaining tenant. The platform must
+      always have at least one tenant.
   tenant_deleted:
     summary: Tenant deleted
     detail: The tenant and all associated data have been removed.

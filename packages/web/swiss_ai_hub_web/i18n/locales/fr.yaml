@@ -591,7 +591,6 @@ tenant_admin:
   create_new: Nouveau tenant
   cancel: Annuler
   save: Enregistrer
-  default_tag: Par défaut
   tenant_id: ID du tenant
   keycloak_unreachable: Keycloak est inaccessible — la liste des tenants peut être
     incomplète. Veuillez réessayer.
@@ -605,7 +604,6 @@ tenant_admin:
       L'ID du tenant doit correspondre à un groupe Keycloak sous /tenants/ qui n'a
       pas encore de métadonnées.
     tenant_id_label: ID du tenant Keycloak
-    tenant_id_placeholder: Sélectionner un tenant Keycloak
     empty_unconfigured: Aucun tenant Keycloak non configuré disponible. Créez d'abord
       un groupe de tenants dans la console d'administration Keycloak.
   form:
@@ -625,6 +623,8 @@ tenant_admin:
     explanation: La suppression du tenant "{name}" supprimera tous les rôles et attributions
       d'utilisateurs associés. Cette action est irréversible.
     proceed: Supprimer
+    last_tenant_blocked: Impossible de supprimer le dernier tenant restant. La plateforme
+      doit toujours avoir au moins un tenant.
   tenant_deleted:
     summary: Tenant supprimé
     detail: Le tenant et toutes les données associées ont été supprimés.
