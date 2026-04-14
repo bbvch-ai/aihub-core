@@ -82,10 +82,6 @@ class WorkflowVisualizer:
         # each *Request to the consumer of the matching *Response.
         self._add_in_the_loop_edges(edges, producers, consumers)
 
-        # Drop self-loops — a step that both produces and consumes the same event
-        # type would otherwise draw an arrow into itself.
-        edges = {(s, t) for s, t in edges if s != t}
-
         return WorkflowGraph(
             nodes=sorted(nodes.values(), key=lambda n: n.id),
             links=sorted(
