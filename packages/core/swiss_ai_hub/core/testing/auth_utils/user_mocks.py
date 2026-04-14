@@ -22,6 +22,29 @@ def _create_mock_keycloak_user(user_id: str | None = None, email: str | None = N
     )
 
 
+#: Shared in-memory user store for the fake Keycloak admin. Tests can populate this
+#: directly (e.g. via ``register_fake_keycloak_user``) to seed users that
+#: ``KeycloakAdminService.get_user_by_id`` / ``find_user_by_email`` should return.
+_FAKE_KEYCLOAK_USERS: dict[str, dict] = {}
+
+
+def register_fake_keycloak_user(user_id: str, *, name: str, email: str, attributes: dict | None = None) -> None:
+    """Registers a user in the fake Keycloak admin store.
+
+    Call from test steps when you need ``KeycloakAdminService.get_user_by_id`` (or
+    ``find_user_by_email``) to return a user with specific name/email for a given oid.
+    """
+    first, _, last = name.partition(" ")
+    _FAKE_KEYCLOAK_USERS[user_id] = {
+        "id": user_id,
+        "username": email,
+        "email": email,
+        "firstName": first,
+        "lastName": last,
+        "attributes": attributes or {"active_tenant_id": ["default"]},
+    }
+
+
 def _build_fake_admin() -> MagicMock:
     """Builds a stateful MagicMock standing in for a ``KeycloakAdmin`` instance.
 
@@ -41,12 +64,15 @@ def _build_fake_admin() -> MagicMock:
             "attributes": {"active_tenant_id": ["default"]},
         }
 
-    users: dict[str, dict] = {config.OID: _default_user(config.OID)}
+    users = _FAKE_KEYCLOAK_USERS
+    users.setdefault(config.OID, _default_user(config.OID))
 
     async def a_get_user(user_id: str) -> dict:
         return users.setdefault(user_id, _default_user(user_id))
 
     async def a_get_users(query: dict | None = None) -> list[dict]:
+        if query and "email" in query:
+            return [u for u in users.values() if u.get("email") == query["email"]]
         return list(users.values())
 
     async def a_create_user(payload: dict, exist_ok: bool = True) -> str:
@@ -84,12 +110,14 @@ def mock_keycloak_admin_service_autouse():
     via nested ``patch.object(KeycloakAdminService, ...)``.
     """
     _create_admin.cache_clear()
+    _FAKE_KEYCLOAK_USERS.clear()
     fake_admin = _build_fake_admin()
     with patch(
         "swiss_ai_hub.core.auth.keycloak.keycloak_admin_service._create_admin",
         return_value=fake_admin,
     ):
         yield
+    _FAKE_KEYCLOAK_USERS.clear()
     _create_admin.cache_clear()
 
 

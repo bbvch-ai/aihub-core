@@ -17,6 +17,7 @@ from swiss_ai_hub.core.persistence.access.entities.bearer_token import BearerTok
 from swiss_ai_hub.core.persistence.access.entities.tenant_entity import TenantEntity
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 from swiss_ai_hub.core.testing.asyncio_utils.bdd import async_test
+from swiss_ai_hub.core.testing.auth_utils.user_mocks import register_fake_keycloak_user
 
 # --- MongoDB Connection Fixture ---
 
@@ -110,6 +111,9 @@ def insert_token_document(
     """Insert a token document in the database with the given user details."""
     roles_list = [r.strip() for r in roles.split(",")]
     user_oid = str(ObjectId())
+
+    # Seed the fake Keycloak admin store so get_user_by_id returns this user's data.
+    register_fake_keycloak_user(user_id=user_oid, name=name, email=email)
 
     # Assign user to default tenant (skip role validation for test data)
     default_tenant = TenantEntity.get_default_tenant()
