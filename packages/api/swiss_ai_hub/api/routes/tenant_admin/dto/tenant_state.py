@@ -1,7 +1,7 @@
-from enum import Enum
+from enum import StrEnum
 
 
-class TenantState(str, Enum):
+class TenantState(StrEnum):
     """Visibility state of a tenant for the sysadmin view.
 
     - ACTIVE: exists both in Keycloak (as a group) and in MongoDB (as metadata).

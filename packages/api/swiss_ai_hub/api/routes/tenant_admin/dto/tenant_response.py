@@ -15,7 +15,9 @@ class TenantResponse(BaseModel):
     description: Annotated[str, Field(description="Tenant description.")]
     access_rules: Annotated[list[str], Field(description="Access rules granted to this tenant.")]
     is_default: Annotated[bool, Field(description="Whether this is the default tenant.")]
-    state: Annotated[TenantState, Field(description="Whether the tenant also exists in Keycloak (active) or not (orphaned).")]
+    state: Annotated[
+        TenantState, Field(description="Whether the tenant also exists in Keycloak (active) or not (orphaned).")
+    ]
     created_at: Annotated[datetime, Field(description="Tenant creation timestamp.")]
     updated_at: Annotated[datetime, Field(description="Tenant last update timestamp.")]
 
