@@ -774,10 +774,17 @@ services:
     container_name: clickhouse
     image: {{ global.registry_prefix }}{{ image_tags.clickhouse }}
     restart: always
+    depends_on:
+      seaweedfs-s3:
+        condition: service_healthy
+      seaweedfs-init:
+        condition: service_completed_successfully
     environment:
       CLICKHOUSE_DB: default
       CLICKHOUSE_USER: "clickhouse"
       CLICKHOUSE_PASSWORD: ${LANGFUSE_CLICKHOUSE_PASSWORD}
+      S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
+      S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
     volumes:
     {%- if stage in ['dev', 'build'] %}
       # Named volumes avoid Windows bind-mount issues with ClickHouse atomic renames
@@ -787,6 +794,7 @@ services:
       - {{ global.volume_root }}/clickhouse-data:/var/lib/clickhouse
       - {{ global.volume_root }}/clickhouse-logs:/var/log/clickhouse-server
     {%- endif %}
+      - ./configs/clickhouse/clickhouse-backup{{ config_variant_suffix }}.xml:/etc/clickhouse-server/config.d/backup-s3.xml:ro
     {%- if stage in ['dev', 'local', 'build'] %}
     ports:
       - "127.0.0.1:8123:8123"
@@ -805,6 +813,7 @@ services:
         max-file: 2
     networks:
       - data
+      - storage
 
   langfuse-worker:
     container_name: langfuse-worker
