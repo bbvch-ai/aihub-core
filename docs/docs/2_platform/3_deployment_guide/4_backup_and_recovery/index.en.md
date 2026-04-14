@@ -29,7 +29,7 @@ ______________________________________________________________________
 | PostgreSQL (FerretDB) | `pg_dumpall` + `pg_dump` + `COPY` (DocumentDB catalog\*) | Agent configs, users, threads, tokens, RBAC roles |
 | Milvus                | `milvus-backup` (official tool)                          | Vector collections with consistent metadata       |
 | Neo4j                 | `neo4j-admin` via temp container                         | Agent memory graphs (Mem0)                        |
-| ClickHouse            | `BACKUP TO S3()` SQL command                             | Langfuse traces, observations, scores             |
+| ClickHouse            | `BACKUP TO Disk('backup_s3', ...)` SQL command           | Langfuse traces, observations, scores             |
 | Valkey                | `BGSAVE` + RDB copy (+ temp container on restore)        | Cache and session state (RDB snapshot)            |
 | NATS                  | `nats` CLI stream backup                                 | JetStream streams                                 |
 
