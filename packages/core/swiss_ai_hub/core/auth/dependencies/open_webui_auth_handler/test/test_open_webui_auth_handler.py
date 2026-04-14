@@ -34,6 +34,7 @@ def mongo_connection(monkeypatch: pytest.MonkeyPatch) -> Generator[None]:
 
     # Ensure default tenant exists for multi-tenant auth tests
     TenantEntity.ensure_default_tenant_exists(
+        tenant_id="default",
         name="Default Tenant",
         description="Default tenant for testing",
         access_rules=["aihub.admin.>"],

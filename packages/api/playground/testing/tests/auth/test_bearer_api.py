@@ -113,7 +113,6 @@ async def test_get_user_with_valid_token(token_api_client, valid_token, expected
     # These fields are tested in other tests
     del user_data["dashboard"]
     del user_data["access"]
-    del user_data["last_accessed"]
 
     assert all(key in user_data for key in EXPECTED_USER_FIELDS)
     assert user_data == expected_user_data

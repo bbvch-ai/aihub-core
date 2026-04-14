@@ -160,10 +160,8 @@ async def test_get_user_with_valid_keycloak_token(
     user_data = response.json()
 
     # These fields are tested in other tests
-    print("user_data", user_data)
     del user_data["dashboard"]
     del user_data["access"]
-    del user_data["last_accessed"]
 
     assert all(key in user_data for key in EXPECTED_USER_FIELDS)
     assert user_data == expected_user_data

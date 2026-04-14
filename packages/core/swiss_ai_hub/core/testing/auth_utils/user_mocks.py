@@ -1,11 +1,11 @@
-from unittest.mock import patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
 from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_settings import (  # noqa: E501
     DangerousDevelopmentOnlyAuthSettings,
 )
-from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
+from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import _create_admin
 from swiss_ai_hub.core.auth.keycloak.models.keycloak_user import KeycloakUser
 from swiss_ai_hub.core.persistence.user.user_dashboard_entity import UserDashboardEntity
 
@@ -22,38 +22,53 @@ def _create_mock_keycloak_user(user_id: str | None = None, email: str | None = N
     )
 
 
-@pytest.fixture(autouse=True)
+def _build_fake_admin() -> MagicMock:
+    """Builds a MagicMock standing in for a ``KeycloakAdmin`` instance.
+
+    Returns sensible defaults for every method the ``KeycloakAdminService`` uses so that
+    the real static methods can run end-to-end without hitting a real Keycloak server.
+    """
+    config = DangerousDevelopmentOnlyAuthSettings()
+    user_dict = {
+        "id": config.OID,
+        "username": config.EMAIL,
+        "email": config.EMAIL,
+        "firstName": config.NAME,
+        "lastName": "",
+        "attributes": {},
+    }
+
+    fake = MagicMock()
+    fake.a_get_user = AsyncMock(return_value=user_dict)
+    fake.a_get_users = AsyncMock(return_value=[user_dict])
+    fake.a_create_user = AsyncMock(return_value=config.OID)
+    fake.a_update_user = AsyncMock(return_value=None)
+    fake.a_get_group_by_path = AsyncMock(return_value={"id": "fake-group-id", "name": "tenants"})
+    fake.a_get_group_members = AsyncMock(return_value=[user_dict])
+    fake.a_create_group = AsyncMock(return_value="fake-group-id")
+    fake.a_delete_group = AsyncMock(return_value=None)
+    fake.a_group_user_add = AsyncMock(return_value=None)
+    fake.a_group_user_remove = AsyncMock(return_value=None)
+    return fake
+
+
+@pytest.fixture(autouse=True, scope="session")
 def mock_keycloak_admin_service_autouse():
+    """Patches ``_create_admin`` so every KeycloakAdminService method gets a fake client.
+
+    One patch at the factory level is more robust than patching each staticmethod
+    individually — it also survives ``@trace_fn``/``@staticmethod`` descriptor quirks
+    and lru_cache interaction. Individual tests can still override specific methods
+    via nested ``patch.object(KeycloakAdminService, ...)``.
     """
-    Mock KeycloakAdminService methods to return dummy user data.
-
-    Mocks get_user_by_id, find_user_by_email, get_users_by_ids, get_active_tenant_id,
-    and set_active_tenant so tests don't need a real Keycloak instance.
-    """
-
-    async def mock_get_user_by_id(keycloak_user_id):
-        return _create_mock_keycloak_user(user_id=keycloak_user_id)
-
-    async def mock_find_user_by_email(email):
-        return _create_mock_keycloak_user(email=email)
-
-    async def mock_get_users_by_ids(keycloak_user_ids):
-        return {uid: _create_mock_keycloak_user(user_id=uid) for uid in keycloak_user_ids}
-
-    async def mock_get_active_tenant_id(user_id):
-        return None
-
-    async def mock_set_active_tenant(user_id, tenant_id):
-        pass
-
-    with (
-        patch.object(KeycloakAdminService, "get_user_by_id", side_effect=mock_get_user_by_id),
-        patch.object(KeycloakAdminService, "find_user_by_email", side_effect=mock_find_user_by_email),
-        patch.object(KeycloakAdminService, "get_users_by_ids", side_effect=mock_get_users_by_ids),
-        patch.object(KeycloakAdminService, "get_active_tenant_id", side_effect=mock_get_active_tenant_id),
-        patch.object(KeycloakAdminService, "set_active_tenant", side_effect=mock_set_active_tenant),
+    _create_admin.cache_clear()
+    fake_admin = _build_fake_admin()
+    with patch(
+        "swiss_ai_hub.core.auth.keycloak.keycloak_admin_service._create_admin",
+        return_value=fake_admin,
     ):
         yield
+    _create_admin.cache_clear()
 
 
 def get_expected_user_data(include_dashboard=True, include_access=True):

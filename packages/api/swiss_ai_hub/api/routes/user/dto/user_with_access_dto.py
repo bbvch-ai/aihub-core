@@ -40,8 +40,8 @@ class UserWithAccessDTO(UserDTO):
         from swiss_ai_hub.api.routes.agent.agent_service import AgentService
         from swiss_ai_hub.api.routes.process.process_service import ProcessService
 
-        dashboard = UserDashboardEntity.get_dashboard(user.id)
-        dashboard_dto = DashboardDTO(**dashboard.to_mongo()) if dashboard else None
+        dashboard = UserDashboardEntity.get_dashboard(user.id) or UserDashboardEntity.create_default_dashboard()
+        dashboard_dto = DashboardDTO(**dashboard.to_mongo())
 
         user_roles = UserTenantRoleEntity.get_roles_for_user_in_tenant(user.id, tenant.id)
         valid_roles = RoleEntity.filter_existing_roles(user_roles, tenant.id)
