@@ -35,7 +35,6 @@ CONFIG_SPECS = [
     ("templates/configs/nats-config.conf.j2", "configs/nats", "nats-config.{stage}{hardware}.conf"),
     ("templates/configs/dagster-config.yml.j2", "configs/dagster", "dagster-config.{stage}{hardware}.yml"),
     ("templates/configs/workspace.yml.j2", "configs/dagster", "workspace.{stage}{hardware}.yml"),
-    ("templates/configs/clickhouse-backup.xml.j2", "configs/clickhouse", "clickhouse-backup.{stage}{hardware}.xml"),
     ("templates/configs/backup-dagster.yml.j2", "configs/backup", "backup-dagster.{stage}{hardware}.yml"),
     ("templates/configs/backup-workspace.yml.j2", "configs/backup", "backup-workspace.{stage}{hardware}.yml"),
     ("templates/configs/otel-config.yml.j2", "configs/otel", "otel-config.{stage}{hardware}.yml"),
@@ -43,6 +42,7 @@ CONFIG_SPECS = [
     ("templates/configs/traefik-middlewares.yml.j2", "configs/traefik", "middlewares.{stage}{hardware}.yml"),
     ("templates/configs/traefik-tls.yml.j2", "configs/traefik", "tls.{stage}{hardware}.yml"),
     # Static scripts - no stage/hardware variations
+    ("templates/configs/clickhouse-backup.xml.j2", "configs/clickhouse", "clickhouse-backup.xml"),
     ("templates/configs/init.Dockerfile.j2", "configs/etcd", "init.Dockerfile"),
     ("templates/configs/s3-entrypoint.sh.j2", "configs/seaweedfs", "s3-entrypoint.sh"),
     ("templates/configs/s3-init-buckets.sh.j2", "configs/seaweedfs", "init-buckets.sh"),

@@ -657,7 +657,7 @@ services:
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/clickhouse-data:/var/lib/clickhouse
       - ${VOLUME_ROOT:-./.docker-volumes}/clickhouse-logs:/var/log/clickhouse-server
-      - ./configs/clickhouse/clickhouse-backup.local.gpu.xml:/etc/clickhouse-server/config.d/backup-s3.xml:ro
+      - ./configs/clickhouse/clickhouse-backup.xml:/etc/clickhouse-server/config.d/backup-s3.xml:ro
     ports: [127.0.0.1:8123:8123, 127.0.0.1:9009:9000]
     healthcheck:
       test: wget --no-verbose --tries=1 --spider http://localhost:8123/ping || exit

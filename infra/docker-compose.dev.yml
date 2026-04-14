@@ -459,7 +459,7 @@ services:
       # Named volumes avoid Windows bind-mount issues with ClickHouse atomic renames
       - clickhouse-data:/var/lib/clickhouse
       - clickhouse-logs:/var/log/clickhouse-server
-      - ./configs/clickhouse/clickhouse-backup.dev.xml:/etc/clickhouse-server/config.d/backup-s3.xml:ro
+      - ./configs/clickhouse/clickhouse-backup.xml:/etc/clickhouse-server/config.d/backup-s3.xml:ro
     ports: [127.0.0.1:8123:8123, 127.0.0.1:9009:9000]
     healthcheck:
       test: wget --no-verbose --tries=1 --spider http://localhost:8123/ping || exit
@@ -1419,7 +1419,9 @@ services:
   # ===================================================================
 
 
+  
 
+  
 
   
 

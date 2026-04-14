@@ -647,7 +647,7 @@ services:
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/clickhouse-data:/var/lib/clickhouse
       - ${VOLUME_ROOT:-./.docker-volumes}/clickhouse-logs:/var/log/clickhouse-server
-      - ./configs/clickhouse/clickhouse-backup.nightly.gpu.xml:/etc/clickhouse-server/config.d/backup-s3.xml:ro
+      - ./configs/clickhouse/clickhouse-backup.xml:/etc/clickhouse-server/config.d/backup-s3.xml:ro
     healthcheck:
       test: wget --no-verbose --tries=1 --spider http://localhost:8123/ping || exit
         1

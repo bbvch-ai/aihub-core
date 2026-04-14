@@ -794,7 +794,7 @@ services:
       - {{ global.volume_root }}/clickhouse-data:/var/lib/clickhouse
       - {{ global.volume_root }}/clickhouse-logs:/var/log/clickhouse-server
     {%- endif %}
-      - ./configs/clickhouse/clickhouse-backup{{ config_variant_suffix }}.xml:/etc/clickhouse-server/config.d/backup-s3.xml:ro
+      - ./configs/clickhouse/clickhouse-backup.xml:/etc/clickhouse-server/config.d/backup-s3.xml:ro
     {%- if stage in ['dev', 'local', 'build'] %}
     ports:
       - "127.0.0.1:8123:8123"
