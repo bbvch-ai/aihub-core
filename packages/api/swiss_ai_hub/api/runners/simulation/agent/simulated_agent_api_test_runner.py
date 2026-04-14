@@ -139,7 +139,7 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
             stop_events=self.stop_events,
             hitl_request_events=self.hitl_request_events or [],
             hitl_response_events=self.hitl_response_events or [],
-            network_graph=WorkflowGraph(directed=True, multigraph=False, graph={}, nodes=[], links=[]),
+            network_graph=WorkflowGraph(nodes=[], links=[]),
             form=self.agent_config.to_formkit_form(),
             agent_config_specs=AgentConfigSpecs.from_agent_config(self.agent_config, self.agent_class),
         )
@@ -308,7 +308,7 @@ class SimulatedAgentApiTestRunner(ApiTestRunner):
             stop_events=self.stop_events or [],
             hitl_request_events=self.hitl_request_events or [],
             hitl_response_events=self.hitl_response_events or [],
-            network_graph=WorkflowGraph(directed=True, multigraph=False, graph={}, nodes=[], links=[]),
+            network_graph=WorkflowGraph(nodes=[], links=[]),
         )
 
         existing = AgentConfigEntityDocument.find_for_class_and_id(self.agent_class, self.agent_id)

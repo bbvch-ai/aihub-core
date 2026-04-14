@@ -109,6 +109,7 @@ const { notifications, isLoading, refetch } = useNotifications({
 
 const { mutate: updateNotification } = useUpdateNotification()
 const { mutate: updateMultipleNotifications } = useUpdateMultipleNotifications()
+const { tenantId } = useTenant()
 
 const unreadNotifications = computed(() => {
   if (!notifications.value) return []
@@ -136,7 +137,7 @@ const togglePanel = (event: Event) => {
 
 const handleNotificationClick = (notification: NotificationDto) => {
   if (!notification.read) {
-    updateNotification({ id: notification.id, payload: ref({ read: true }) })
+    updateNotification({ id: notification.id, payload: ref({ read: true }), tenantId: tenantId.value! })
   }
   if (notification.link) {
     router.push(tenantPath(notification.link))
@@ -150,6 +151,7 @@ const markAllAsRead = () => {
     updateMultipleNotifications({
       ids: unreadIds,
       payload: ref({ read: true }),
+      tenantId: tenantId.value!,
     })
     op.value.hide()
   }

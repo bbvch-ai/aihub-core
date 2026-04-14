@@ -4,8 +4,8 @@ Generated on: 14.04.2026
 
 This document contains license information for all dependencies across the monorepo:
 
-- Python packages (uv): **389 packages**
-- Node.js packages (pnpm): **1001 packages**
+- Python packages (uv): **388 packages**
+- Node.js packages (pnpm): **999 packages**
 - External Docker images: **31 images**
 
 ### License Compatibility
@@ -386,7 +386,6 @@ This document contains license information for all dependencies across the monor
 | ✅     | ty                                               | 0.0.21                | MIT License                                                  |                                                                      |
 | ✅     | typer                                            | 0.24.1                | MIT                                                          |                                                                      |
 | ✅     | types-awscrt                                     | 0.31.3                | MIT License                                                  |                                                                      |
-| ✅     | types-networkx                                   | 3.6.1.20260303        | Apache-2.0 (override)                                        |                                                                      |
 | ✅     | types-PyYAML                                     | 6.0.12.20250915       | Apache-2.0 (override)                                        |                                                                      |
 | ✅     | types-requests                                   | 2.32.4.20260107       | Apache-2.0 (override)                                        |                                                                      |
 | ✅     | types-s3transfer                                 | 0.16.0                | MIT                                                          |                                                                      |
@@ -456,8 +455,6 @@ This document contains license information for all dependencies across the monor
 | ✅     | @cloudflare/kv-asset-handler                       | 0.4.2         | MIT OR Apache-2.0                             |                                                                                                             |
 | ✅     | @csstools/selector-resolve-nested                  | 3.1.0         | MIT-0                                         |                                                                                                             |
 | ✅     | @csstools/selector-specificity                     | 5.0.0         | MIT-0                                         |                                                                                                             |
-| ✅     | @dagrejs/dagre                                     | 1.1.8         | MIT                                           |                                                                                                             |
-| ✅     | @dagrejs/graphlib                                  | 2.2.4         | MIT                                           |                                                                                                             |
 | ✅     | @dxup/nuxt                                         | 0.3.2         | MIT                                           |                                                                                                             |
 | ✅     | @dxup/unimport                                     | 0.1.2         | MIT                                           |                                                                                                             |
 | ✅     | @esbuild/linux-x64                                 | 0.25.12       | MIT                                           |                                                                                                             |

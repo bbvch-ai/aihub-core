@@ -27,6 +27,20 @@
                 class="text-surface-500"
               />
               <span class="text-lg font-medium">{{ group.name }}</span>
+              <Button
+                v-if="group.networkGraph"
+                v-tooltip.top="t('agent.workflow.view_tooltip')"
+                severity="secondary"
+                text
+                rounded
+                size="small"
+                @click="openWorkflowModal(group)"
+              >
+                <Icon
+                  name="mage:arrows-all-direction-2"
+                  size="1.25em"
+                />
+              </Button>
             </div>
             <span
               v-if="group.description"
@@ -56,6 +70,11 @@
         :initial-data="initialDataForCreate"
         @success="handleCreateSuccess"
       />
+      <WorkflowModal
+        v-model="workflowModalOpen"
+        :graph-data="selectedGroupForWorkflow?.networkGraph"
+        :header="selectedGroupForWorkflow ? `${t('agent.workflow.title')} — ${selectedGroupForWorkflow.name}` : undefined"
+      />
     </StructuralColumn>
 
     <NuxtPage />
@@ -63,7 +82,17 @@
 </template>
 
 <script setup lang="ts">
-import type { FullAgentInstanceDto } from '@core/sdk/client'
+import type { FullAgentInstanceDto, WorkflowGraph } from '@core/sdk/client'
+
+type AgentGroup = {
+  agentClass: string
+  name: string
+  description: string
+  icon: string
+  instances: FullAgentInstanceDto[]
+  isAvailable: boolean
+  networkGraph: WorkflowGraph | null
+}
 
 const router = useRouter()
 const route = useRoute()
@@ -81,6 +110,14 @@ const createModalOpen = ref(false)
 const selectedClassForCreate = ref('')
 const initialDataForCreate = ref<Record<string, unknown> | null>(null)
 
+const workflowModalOpen = ref(false)
+const selectedGroupForWorkflow = ref<AgentGroup | null>(null)
+
+const openWorkflowModal = (group: AgentGroup) => {
+  selectedGroupForWorkflow.value = group
+  workflowModalOpen.value = true
+}
+
 const openCreateModal = (agentClass: string) => {
   selectedClassForCreate.value = agentClass
   initialDataForCreate.value = null
@@ -93,15 +130,8 @@ const handleClone = (agent: FullAgentInstanceDto) => {
   createModalOpen.value = true
 }
 
-const groupedAgents = computed(() => {
-  const groups = new Map<string, {
-    agentClass: string
-    name: string
-    description: string
-    icon: string
-    instances: FullAgentInstanceDto[]
-    isAvailable: boolean
-  }>()
+const groupedAgents = computed<AgentGroup[]>(() => {
+  const groups = new Map<string, AgentGroup>()
 
   const localeKey = locale.value as 'de' | 'en' | 'fr' | 'it'
 
@@ -115,6 +145,7 @@ const groupedAgents = computed(() => {
         icon: classInfo.icon ?? 'meteor-icons:robot',
         instances: [],
         isAvailable: true,
+        networkGraph: classInfo.network_graph ?? null,
       })
     }
   }
@@ -134,6 +165,7 @@ const groupedAgents = computed(() => {
           icon: 'meteor-icons:robot',
           instances: [agent],
           isAvailable: false,
+          networkGraph: agent.network_graph ?? null,
         })
       }
     }

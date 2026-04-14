@@ -138,8 +138,7 @@ class AgentRunner(HealthCheckProvider):
         hitl_response_events = self.agent_type.get_hitl_response_events()
         hitl_response_event_specs = [EventSpecs.from_event_class(e) for e in hitl_response_events]
 
-        network_graph = WorkflowVisualizer(agent=self.agent_type)
-        network_graph.build_workflow_graph()
+        network_graph = WorkflowVisualizer(agent=self.agent_type).build()
 
         agent_config_specs = AgentConfigSpecs.from_agent_config(self.agent_config, self.agent_class)
 
@@ -157,7 +156,7 @@ class AgentRunner(HealthCheckProvider):
             stop_events=stop_event_specs,
             hitl_request_events=hitl_request_event_specs,
             hitl_response_events=hitl_response_event_specs,
-            network_graph=network_graph.to_pydantic(),
+            network_graph=network_graph,
             templates=templates_data,
         )
         await self.nc_publisher.publish_event(agent_discovery_response_event, subject)

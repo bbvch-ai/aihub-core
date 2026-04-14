@@ -312,6 +312,8 @@ agent:
     clone: Cloner
   workflow:
     title: Flux de travail agentique
+    view_tooltip: Afficher le flux de travail
+    empty: Aucun graphe de flux de travail disponible pour cette classe d'agent.
   threads:
     title: Fils de discussion de l'agent
   create:

@@ -125,7 +125,7 @@ class SimulatedAgentBotTestRunner(BotTestRunner):
             stop_events=stop_events,
             hitl_request_events=hitl_request_events,
             hitl_response_events=hitl_response_events,
-            network_graph=WorkflowGraph(directed=True, multigraph=False, graph={}, nodes=[], links=[]),
+            network_graph=WorkflowGraph(nodes=[], links=[]),
             form=self.agent_config.to_formkit_form(),
             agent_config_specs=AgentConfigSpecs.from_agent_config(self.agent_config, self.agent_class),
         )

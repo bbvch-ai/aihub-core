@@ -82,6 +82,7 @@ interface LocaleInputProps {
 const props = defineProps<LocaleInputProps>()
 const { t } = useI18n()
 const { translate, isTranslating } = useTranslate()
+const { tenantId } = useTenant()
 
 // Get custom props from context (FormKit passes them there, not as direct props)
 const inputType = computed(() => props.context.inputType ?? 'text')
@@ -138,8 +139,11 @@ const canTranslate = computed(() => {
 // Handle translation
 async function handleTranslate() {
   const response = await translate({
-    text: localeValue.value,
-    source_locale: activeLocale.value,
+    request: {
+      text: localeValue.value,
+      source_locale: activeLocale.value,
+    },
+    tenantId: tenantId.value!,
   })
   props.context.node.input(response.translated)
 }

@@ -116,6 +116,7 @@ const emit = defineEmits<{
 }>()
 
 const { mutateAsync: createNamespace } = useCreateNamespace()
+const { tenantId } = useTenant()
 
 const selectedDatabase = ref('')
 const name = ref('')
@@ -164,12 +165,13 @@ const handleCreate = async () => {
   isCreating.value = true
   error.value = ''
 
-  const requestBody: CreateNamespaceRequest & { database: string, namespace: string } = {
+  const requestBody: CreateNamespaceRequest & { database: string, namespace: string, tenantId: string } = {
     database: selectedDatabase.value,
     namespace: name.value,
     folder_name: name.value,
     display_name: displayName.value,
     description: description.value,
+    tenantId: tenantId.value!,
   }
 
   await createNamespace(requestBody)

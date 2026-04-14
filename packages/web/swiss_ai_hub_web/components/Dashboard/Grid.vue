@@ -74,6 +74,7 @@ const { agentInstances, agentInstancesAreLoading } = useAgentInstances()
 const { t } = useI18n()
 const { myUser, myUserIsLoading } = useMyUser()
 const { saveDashboard } = useSaveDashboard()
+const { tenantId } = useTenant()
 
 watch(myUser, () => {
   if (myUser.value?.dashboard?.children && grid) {
@@ -161,7 +162,7 @@ onBeforeUnmount(() => {
 const saveLayout = () => {
   if (grid) {
     const serializedData = grid.save(true, true)
-    saveDashboard({ grid: serializedData })
+    saveDashboard({ grid: serializedData, tenantId: tenantId.value! })
   }
 }
 

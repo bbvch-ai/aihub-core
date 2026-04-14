@@ -30,6 +30,7 @@ const route = useRoute()
 
 const { thread, threadIsLoading } = useThread()
 const { threadEvents, threadEventsAreLoading } = useThreadEvents()
+const { tenantId } = useTenant()
 const { t } = useI18n()
 
 const { sendMessages } = useChatCompletions()
@@ -43,6 +44,7 @@ const submitMessage = async () => {
     model: agentIdentifier,
     messages: [{ role: 'user', content: userInput.value }],
     threadId: route.params.thread_id as string,
+    tenantId: tenantId.value!,
   })
   userInput.value = ''
 }
