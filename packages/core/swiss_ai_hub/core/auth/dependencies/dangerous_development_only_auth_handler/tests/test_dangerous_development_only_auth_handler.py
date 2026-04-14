@@ -24,7 +24,7 @@ def mock_database_operations(monkeypatch: pytest.MonkeyPatch):
     """Mock all database operations required by the auth handler."""
     from swiss_ai_hub.core.auth.identity.tenant_identity import TenantIdentity
 
-    def mock_get_default_tenant() -> MagicMock:
+    def mock_get_default_tenant_metadata() -> MagicMock:
         tenant = MagicMock()
         tenant.id = "default-tenant-id"
         tenant.name = "Default Tenant"
@@ -46,8 +46,8 @@ def mock_database_operations(monkeypatch: pytest.MonkeyPatch):
         return TenantIdentity(id="default-tenant-id", name="Default Tenant", access_rules=[])
 
     monkeypatch.setattr(
-        "swiss_ai_hub.core.persistence.access.entities.tenant_entity.TenantEntity.get_default_tenant",
-        mock_get_default_tenant,
+        "swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity.TenantMetadataEntity.get_default_tenant_metadata",
+        mock_get_default_tenant_metadata,
     )
     monkeypatch.setattr(
         "swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity.UserTenantRoleEntity.create_or_update",

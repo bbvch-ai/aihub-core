@@ -15,7 +15,7 @@ from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler
     DangerousDevelopmentOnlyAuthSettings,
 )
 from swiss_ai_hub.core.infrastructure import AIHubSettings, MongoSettings, enable_logging
-from swiss_ai_hub.core.persistence.access.entities.tenant_entity import TenantEntity
+from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 from swiss_ai_hub.core.persistence.messaging.entities.thread_entity import ThreadEntity
 from swiss_ai_hub.core.persistence.utils import str_to_object_id
@@ -74,7 +74,7 @@ def setup_test_credentials():
     PathEntity(path=stream_path, credentials=test_credentials, system_message="Test system message").save()
 
     # Create default tenant and assign test user
-    default_tenant = TenantEntity.ensure_default_tenant_exists(
+    default_tenant = TenantMetadataEntity.ensure_default_tenant_metadata_exists(
         tenant_id="default", name="Test Tenant", access_rules=["aihub.admin.>"]
     )
     tenant_id = str(default_tenant.id)

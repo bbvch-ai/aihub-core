@@ -6,12 +6,21 @@ from mongoengine import BooleanField, DateTimeField, Document, ListField, NotUni
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 
 
-class TenantEntity(Document):
+class TenantMetadataEntity(Document):
     """
-    Represents a tenant (organization) in the multi-tenant system.
+    Metadata (display name, description, access rules) for a tenant.
 
-    The id is a human-readable slug (e.g. "default") that also serves as the
-    Keycloak group name under /tenants/. The name is a display name for the UI.
+    WARNING: This collection is NOT the source of truth for tenant existence.
+    Keycloak owns that — the group ``/tenants/<tenant_id>`` is the only authoritative
+    signal that a tenant exists. Callers MUST verify existence via
+    ``KeycloakAdminService.tenant_exists`` / ``get_tenant_group`` /
+    ``filter_existing_tenant_ids`` before acting on a tenant. The methods on this
+    class return metadata only; a returned entity does not imply the tenant still
+    exists in Keycloak (it may be orphaned), and a missing entity does not imply
+    the tenant is absent from Keycloak (it may be unconfigured).
+
+    The id is a human-readable slug (e.g. "default") that matches the Keycloak group
+    name under /tenants/. The name is a display name for the UI.
     """
 
     meta = {
@@ -33,25 +42,36 @@ class TenantEntity(Document):
 
     @classmethod
     @trace_fn
-    def get_tenant_by_id(cls, tenant_id: str) -> Self | None:
-        """Fetches a tenant by its ID (readable slug). Returns None if the tenant does not exist."""
+    def get_metadata_by_tenant_id(cls, tenant_id: str) -> Self | None:
+        """Fetches tenant metadata by id. Returns None if no metadata is stored.
+
+        Does NOT verify that the tenant exists in Keycloak — use
+        ``KeycloakAdminService.tenant_exists`` for that.
+        """
         return cls.objects(id=tenant_id).first()
 
     @classmethod
     @trace_fn
-    def get_tenant_by_name(cls, name: str) -> Self | None:
-        """Fetches a tenant by its display name. Returns None if the tenant does not exist."""
+    def get_metadata_by_tenant_name(cls, name: str) -> Self | None:
+        """Fetches tenant metadata by display name. Returns None if no metadata is stored.
+
+        Does NOT verify that the tenant exists in Keycloak — use
+        ``KeycloakAdminService.tenant_exists`` for that.
+        """
         return cls.objects(name=name).first()
 
     @classmethod
     @trace_fn
-    def get_default_tenant(cls) -> Self | None:
-        """Fetches the default tenant. Returns None if no default tenant exists."""
+    def get_default_tenant_metadata(cls) -> Self | None:
+        """Fetches metadata for the default tenant. Returns None if not stored.
+
+        Does NOT verify that the Keycloak group still exists.
+        """
         return cls.objects(is_default=True).first()
 
     @classmethod
     @trace_fn
-    def create_tenant(
+    def create_tenant_metadata(
         cls,
         tenant_id: str,
         name: str,
@@ -59,7 +79,11 @@ class TenantEntity(Document):
         access_rules: list[str] | None = None,
         is_default: bool = False,
     ) -> Self:
-        """Creates a new tenant with the given parameters."""
+        """Stores metadata for an existing Keycloak tenant group.
+
+        The caller is responsible for ensuring the Keycloak group exists first —
+        this method only touches the metadata collection.
+        """
         tenant = cls(
             id=tenant_id,
             name=name,
@@ -72,7 +96,7 @@ class TenantEntity(Document):
 
     @classmethod
     @trace_fn
-    def ensure_default_tenant_exists(
+    def ensure_default_tenant_metadata_exists(
         cls,
         tenant_id: str,
         name: str,
@@ -80,17 +104,16 @@ class TenantEntity(Document):
         access_rules: list[str] | None = None,
     ) -> Self:
         """
-        Ensures a default tenant exists, creating it if necessary.
+        Ensures default-tenant metadata exists in the collection, creating it if missing.
 
-        This is idempotent - if a default tenant already exists, it is returned.
-        The default tenant has is_default set to True and cannot be deleted.
+        Idempotent. Does not create or verify the corresponding Keycloak group.
         """
-        existing = cls.get_default_tenant()
+        existing = cls.get_default_tenant_metadata()
         if existing:
             return existing
 
         try:
-            return cls.create_tenant(
+            return cls.create_tenant_metadata(
                 tenant_id=tenant_id,
                 name=name,
                 description=description,
@@ -98,14 +121,14 @@ class TenantEntity(Document):
                 is_default=True,
             )
         except NotUniqueError:
-            existing = cls.get_default_tenant()
+            existing = cls.get_default_tenant_metadata()
             if existing:
                 return existing
             raise
 
     @classmethod
     @trace_fn
-    def update_tenant(
+    def update_tenant_metadata(
         cls,
         tenant_id: str,
         name: str | None = None,
@@ -113,11 +136,12 @@ class TenantEntity(Document):
         access_rules: list[str] | None = None,
     ) -> Self | None:
         """
-        Updates an existing tenant. Returns the updated tenant or None if not found.
+        Updates stored metadata for an existing tenant. Returns the updated entity or None if no metadata was stored.
 
         Only provided fields are updated. Pass None to skip updating a field.
+        Does NOT verify Keycloak group existence — callers that care should check first.
         """
-        tenant = cls.get_tenant_by_id(tenant_id)
+        tenant = cls.get_metadata_by_tenant_id(tenant_id)
         if not tenant:
             return None
 
@@ -134,9 +158,9 @@ class TenantEntity(Document):
 
     @classmethod
     @trace_fn
-    def delete_tenant(cls, tenant_id: str) -> bool:
+    def delete_tenant_metadata(cls, tenant_id: str) -> bool:
         """
-        Deletes a tenant by its ID. Returns True if deleted, False if not found.
+        Deletes stored metadata for a tenant. Returns True if deleted, False if no metadata was stored.
 
         Cascades to delete all associated UserTenantRoleEntity and tenant-scoped RoleEntity records.
         Active tenant cleanup in Keycloak must be handled by the caller via
@@ -148,16 +172,15 @@ class TenantEntity(Document):
         remaining tenant count).
 
         Uses deferred imports because RoleEntity and UserTenantRoleEntity both import
-        TenantEntity at module level — importing them here at module level would create circular imports.
+        this module at module level — importing them here at module level would create circular imports.
         """
         from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
         from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 
-        tenant = cls.get_tenant_by_id(tenant_id)
+        tenant = cls.get_metadata_by_tenant_id(tenant_id)
         if not tenant:
             return False
 
-        # Cascade: remove all user-tenant-role associations and tenant-scoped roles
         UserTenantRoleEntity.objects(tenant_id=tenant_id).delete()
         RoleEntity.objects(tenant_id=tenant_id).delete()
 

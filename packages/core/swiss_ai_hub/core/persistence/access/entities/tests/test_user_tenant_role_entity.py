@@ -11,7 +11,7 @@ from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdmin
 from swiss_ai_hub.core.infrastructure.api.ai_hub_settings import AIHubSettings
 from swiss_ai_hub.core.infrastructure.mongo.mongo_settings import MongoSettings
 from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
-from swiss_ai_hub.core.persistence.access.entities.tenant_entity import TenantEntity
+from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 
 scenarios("features/user_tenant_role_entity.feature")
@@ -74,7 +74,7 @@ def cleanup_documents() -> Generator[list[Any]]:
 def ensure_default_tenant(cleanup_documents: list[Any], context: dict[str, Any], access_rules: str) -> None:
     """Ensure the default tenant exists."""
     rules_list = [r.strip() for r in access_rules.split(",")]
-    tenant = TenantEntity.ensure_default_tenant_exists(
+    tenant = TenantMetadataEntity.ensure_default_tenant_metadata_exists(
         tenant_id="default",
         name="Test Default Tenant",
         description="Default tenant for testing",

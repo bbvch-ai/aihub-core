@@ -2,7 +2,7 @@ from fastapi import HTTPException
 from keycloak import KeycloakGetError
 from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
-from swiss_ai_hub.core.persistence.access.entities.tenant_entity import TenantEntity
+from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
 
 from swiss_ai_hub.api.routes.tenant_admin.dto.configure_tenant_request import ConfigureTenantRequest
 from swiss_ai_hub.api.routes.tenant_admin.dto.tenant_response import TenantResponse
@@ -14,9 +14,10 @@ class TenantAdminService:
     """Handles tenant CRUD operations for system administrators.
 
     Tenants live in two places: Keycloak (group under ``/tenants/``) owns existence
-    and user membership; MongoDB ``TenantEntity`` owns metadata (name, description,
-    access rules). A tenant is only accessible to end users when it exists in both.
-    Sysadmins can see orphaned metadata (MongoDB only) and delete it, but cannot edit it.
+    and user membership; MongoDB ``TenantMetadataEntity`` owns display metadata
+    (name, description, access rules). A tenant is only accessible to end users
+    when it exists in both. Sysadmins can see orphaned metadata (MongoDB only)
+    and delete it, but cannot edit it.
     """
 
     @staticmethod
@@ -29,7 +30,7 @@ class TenantAdminService:
         keycloak_groups = await KeycloakAdminService.get_all_tenant_groups()
         keycloak_ids = {g.name for g in keycloak_groups}
         result: list[TenantResponse] = []
-        for entity in TenantEntity.objects.all():
+        for entity in TenantMetadataEntity.objects.all():
             state = TenantState.ACTIVE if entity.id in keycloak_ids else TenantState.ORPHANED
             result.append(TenantResponse.from_entity(entity, state=state))
         return result
@@ -40,7 +41,7 @@ class TenantAdminService:
         """Keycloak tenant IDs that don't yet have MongoDB metadata."""
         keycloak_groups = await KeycloakAdminService.get_all_tenant_groups()
         keycloak_ids = {g.name for g in keycloak_groups}
-        configured_ids = {t.id for t in TenantEntity.objects.only("id")}
+        configured_ids = {t.id for t in TenantMetadataEntity.objects.only("id")}
         return sorted(keycloak_ids - configured_ids)
 
     @staticmethod
@@ -51,7 +52,7 @@ class TenantAdminService:
         ``KeycloakGetError`` is used here as control flow: its absence means the group
         exists (ACTIVE), its presence means the group is gone (ORPHANED).
         """
-        entity = TenantEntity.get_tenant_by_id(tenant_id)
+        entity = TenantMetadataEntity.get_metadata_by_tenant_id(tenant_id)
         if not entity:
             raise HTTPException(status_code=404, detail="Tenant not found.")
 
@@ -80,13 +81,13 @@ class TenantAdminService:
                 detail=f"Keycloak tenant group '{data.tenant_id}' does not exist.",
             )
 
-        if TenantEntity.get_tenant_by_id(data.tenant_id):
+        if TenantMetadataEntity.get_metadata_by_tenant_id(data.tenant_id):
             raise HTTPException(
                 status_code=409,
                 detail=f"Tenant '{data.tenant_id}' is already configured.",
             )
 
-        entity = TenantEntity.create_tenant(
+        entity = TenantMetadataEntity.create_tenant_metadata(
             tenant_id=data.tenant_id,
             name=data.name,
             description=data.description,
@@ -101,7 +102,7 @@ class TenantAdminService:
 
         Orphaned tenants are read-only (409). ``KeycloakGetError`` signals the orphan.
         """
-        existing = TenantEntity.get_tenant_by_id(tenant_id)
+        existing = TenantMetadataEntity.get_metadata_by_tenant_id(tenant_id)
         if not existing:
             raise HTTPException(status_code=404, detail="Tenant not found.")
 
@@ -113,7 +114,7 @@ class TenantAdminService:
                 detail=f"Tenant '{tenant_id}' is orphaned (Keycloak group missing) and cannot be edited.",
             )
 
-        entity = TenantEntity.update_tenant(
+        entity = TenantMetadataEntity.update_tenant_metadata(
             tenant_id=tenant_id,
             name=data.name,
             description=data.description,
@@ -133,11 +134,11 @@ class TenantAdminService:
         cannot be deleted (409) — that would leave the platform with no tenant at
         all and prevent any user from doing anything.
         """
-        if TenantEntity.objects.count() <= 1:
+        if TenantMetadataEntity.objects.count() <= 1:
             raise HTTPException(
                 status_code=409,
                 detail="Cannot delete the last remaining tenant; the platform must always have at least one.",
             )
-        deleted = TenantEntity.delete_tenant(tenant_id)
+        deleted = TenantMetadataEntity.delete_tenant_metadata(tenant_id)
         if not deleted:
             raise HTTPException(status_code=404, detail="Tenant not found.")

@@ -16,7 +16,7 @@ from swiss_ai_hub.core.infrastructure.openwebui.online_agent import OnlineAgent
 from swiss_ai_hub.core.infrastructure.openwebui.openwebui_client import OpenWebuiClient
 from swiss_ai_hub.core.infrastructure.openwebui.openwebui_settings import OpenWebuiSettings
 from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
-from swiss_ai_hub.core.persistence.access.entities.tenant_entity import TenantEntity
+from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 from swiss_ai_hub.core.persistence.agents.agent_class_entity import AgentClassEntity
 from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import AgentConfigEntityDocument
@@ -168,7 +168,9 @@ class OpenWebuiProvisioner:
                 await self._openwebui.update_group_members(aihub_groups[group_name].id, owui_member_ids, scim=scim)
 
     async def _sync_groups(self) -> None:
-        tenants = [{"name": t.name, "id": str(t.id), "access_rules": t.access_rules} for t in TenantEntity.objects()]
+        tenants = [
+            {"name": t.name, "id": str(t.id), "access_rules": t.access_rules} for t in TenantMetadataEntity.objects()
+        ]
 
         roles_by_tenant: dict[str, list[dict[str, Any]]] = {}
         for tenant in tenants:
@@ -306,7 +308,7 @@ class OpenWebuiProvisioner:
         if not aihub_groups:
             return
 
-        tenant_rules: TenantAccessRules = {t.name: t.access_rules for t in TenantEntity.objects()}
+        tenant_rules: TenantAccessRules = {t.name: t.access_rules for t in TenantMetadataEntity.objects()}
         role_rules = self._build_role_rules()
 
         # Limit concurrent HTTP requests to avoid overwhelming OpenWebUI

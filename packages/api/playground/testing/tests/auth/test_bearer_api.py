@@ -13,7 +13,7 @@ from swiss_ai_hub.core.auth.dependencies.token_auth_handler.token_auth_handler i
 from swiss_ai_hub.core.infrastructure import AIHubSettings, MongoSettings
 from swiss_ai_hub.core.persistence.access.entities.bearer_token import BearerToken
 from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
-from swiss_ai_hub.core.persistence.access.entities.tenant_entity import TenantEntity
+from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 
 from swiss_ai_hub.api.routes.my_account.my_account_controller import MyAccountController
@@ -54,7 +54,7 @@ def valid_token(mongo_db):
         created_role = True
 
     # Assign roles to user in default tenant (required for multi-tenant auth)
-    default_tenant = TenantEntity.get_default_tenant()
+    default_tenant = TenantMetadataEntity.get_default_tenant_metadata()
     user_tenant_role = None
     if default_tenant:
         user_tenant_role = UserTenantRoleEntity.create_or_update(

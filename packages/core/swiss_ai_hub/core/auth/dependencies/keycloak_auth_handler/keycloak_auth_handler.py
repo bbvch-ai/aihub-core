@@ -15,7 +15,7 @@ from swiss_ai_hub.core.auth.keycloak.keycloak_settings import KeycloakSettings
 from swiss_ai_hub.core.auth.roles import SYS_ADMIN_ROLE
 from swiss_ai_hub.core.infrastructure.api.default_tenant_settings import DefaultTenantSettings
 from swiss_ai_hub.core.infrastructure.api.user_signup_settings import UserSignupSettings
-from swiss_ai_hub.core.persistence.access.entities.tenant_entity import TenantEntity
+from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 
 logger = logging.getLogger(__name__)
@@ -172,16 +172,19 @@ class KeycloakAuthHandler(AuthHandler):
     def _ensure_membership_for_tenant(user_id: str, tenant_id: str) -> None:
         """Creates a `UserTenantRoleEntity` for the user in the given tenant if missing.
 
-        Skips silently if the tenant doesn't exist in the database or the membership
-        already has roles.
+        The tenant_id originates from the JWT ``tenants`` claim, which is issued by
+        Keycloak itself — Keycloak is therefore the source of truth that this
+        membership is legitimate, regardless of whether MongoDB metadata exists
+        for the tenant. Skips silently only if the membership already has roles.
         """
-        tenant = TenantEntity.get_tenant_by_id(tenant_id)
-        if not tenant:
-            logger.warning("Tenant '%s' from JWT claim not found in database, skipping", tenant_id)
-            return
-
         if UserTenantRoleEntity.get_roles_for_user_in_tenant(user_id, tenant_id):
             return
+
+        if not TenantMetadataEntity.get_metadata_by_tenant_id(tenant_id):
+            logger.info(
+                "Tenant '%s' from JWT claim has no metadata yet; membership created without display data",
+                tenant_id,
+            )
 
         roles_to_assign = KeycloakAuthHandler._resolve_roles_for_new_member(tenant_id)
         UserTenantRoleEntity.create_or_update(user_id=user_id, tenant_id=tenant_id, roles=roles_to_assign)
@@ -215,29 +218,38 @@ class KeycloakAuthHandler(AuthHandler):
     async def _ensure_active_tenant(user_id: str) -> None:
         """Ensures the user has a valid active tenant, auto-selecting one if needed.
 
+        Existence is always verified against Keycloak (source of truth) before a
+        tenant is accepted as current or auto-selected; the metadata collection
+        is only consulted for the earliest-created fallback ordering.
+
         Selection order when no valid active tenant is set:
         1. The user's only tenant, if they have exactly one membership.
         2. The configured default tenant (``AIHUB_DEFAULT_TENANT_ID``) if the user is a member.
-        3. The earliest-created tenant among the user's memberships.
+        3. The earliest-created tenant (by metadata timestamp) among the user's memberships.
         """
         user_tenant_ids = UserTenantRoleEntity.get_tenant_ids_for_user(user_id)
         if not user_tenant_ids:
             return
 
+        existing_tenant_ids = await KeycloakAdminService.filter_existing_tenant_ids(user_tenant_ids)
+        if not existing_tenant_ids:
+            return
+
         current = await KeycloakAdminService.get_active_tenant_id(user_id)
-        if current and current in user_tenant_ids and TenantEntity.get_tenant_by_id(current):
+        if current and current in existing_tenant_ids:
             return
 
         default_id = DefaultTenantSettings().ID
-        if len(user_tenant_ids) == 1:
-            selected_id = user_tenant_ids[0]
-        elif default_id in user_tenant_ids and TenantEntity.get_tenant_by_id(default_id):
+        if len(existing_tenant_ids) == 1:
+            selected_id = next(iter(existing_tenant_ids))
+        elif default_id in existing_tenant_ids:
             selected_id = default_id
         else:
-            earliest = TenantEntity.objects(id__in=user_tenant_ids).order_by("created_at").first()
-            if not earliest:
-                return
-            selected_id = earliest.id
+            earliest = TenantMetadataEntity.objects(id__in=list(existing_tenant_ids)).order_by("created_at").first()
+            if earliest:
+                selected_id = earliest.id
+            else:
+                selected_id = sorted(existing_tenant_ids)[0]
 
         await KeycloakAdminService.set_active_tenant(user_id, selected_id)
         logger.info("Auto-selected active tenant %s for user %s", selected_id, user_id)

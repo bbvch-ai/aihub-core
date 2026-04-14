@@ -13,7 +13,7 @@ from swiss_ai_hub.core.auth.dependencies.superuser_auth_handler.superuser_settin
 from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
 from swiss_ai_hub.core.infrastructure import AIHubSettings, DefaultTenantSettings, UserSignupSettings, no_trace
 from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
-from swiss_ai_hub.core.persistence.access.entities.tenant_entity import TenantEntity
+from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
 from swiss_ai_hub.core.persistence.rag.datalake.entities import BucketEntity, NamespaceEntity
 
 logger = logging.getLogger(__name__)
@@ -34,24 +34,24 @@ async def _backfill_existing_users_into_default_group(tenant_id: str) -> None:
 
 
 @no_trace
-async def initialize_default_tenant() -> TenantEntity | None:
+async def initialize_default_tenant() -> TenantMetadataEntity | None:
     """
     Initialize the default tenant for the platform.
 
-    Creates the MongoDB tenant entity and ensures a matching Keycloak group exists
+    Creates the MongoDB tenant metadata and ensures a matching Keycloak group exists
     under /tenants/<tenant-name>. The Keycloak realm configures this group as a
     default group so all new users are automatically members.
     """
     settings = DefaultTenantSettings()
 
-    existing_tenant = TenantEntity.get_default_tenant()
+    existing_tenant = TenantMetadataEntity.get_default_tenant_metadata()
     if existing_tenant:
         logger.info(
             f"Default tenant '{existing_tenant.name}' (id={existing_tenant.id}) already exists, skipping creation"
         )
         return existing_tenant
 
-    tenant = TenantEntity.ensure_default_tenant_exists(
+    tenant = TenantMetadataEntity.ensure_default_tenant_metadata_exists(
         tenant_id=settings.ID,
         name=settings.NAME,
         description=settings.DESCRIPTION,
@@ -137,7 +137,7 @@ async def _validate_signup_roles() -> None:
     settings = UserSignupSettings()
     all_configured_roles = set(settings.regular_user_roles_list + settings.first_admin_user_roles_list)
 
-    default_tenant = TenantEntity.get_default_tenant()
+    default_tenant = TenantMetadataEntity.get_default_tenant_metadata()
     tenant_id = str(default_tenant.id) if default_tenant else ""
 
     existing_roles = set(RoleEntity.filter_existing_roles(list(all_configured_roles), tenant_id))

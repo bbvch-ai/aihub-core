@@ -17,7 +17,7 @@ from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.infrastructure.api.ai_hub_settings import AIHubSettings
 from swiss_ai_hub.core.infrastructure.mongo.mongo_settings import MongoSettings
 from swiss_ai_hub.core.persistence.access.entities.bearer_token import BearerToken
-from swiss_ai_hub.core.persistence.access.entities.tenant_entity import TenantEntity
+from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 from swiss_ai_hub.core.testing.asyncio_utils.bdd import async_test
 
@@ -33,7 +33,7 @@ def mongo_connection(monkeypatch: pytest.MonkeyPatch) -> Generator[None]:
     )
 
     # Ensure default tenant exists for multi-tenant auth tests
-    TenantEntity.ensure_default_tenant_exists(
+    TenantMetadataEntity.ensure_default_tenant_metadata_exists(
         tenant_id="default",
         name="Default Tenant",
         description="Default tenant for testing",
@@ -136,7 +136,7 @@ def insert_token_document(
     cleanup_document.append(token_doc)
 
     # Assign user to default tenant (skip role validation for test data)
-    default_tenant = TenantEntity.get_default_tenant()
+    default_tenant = TenantMetadataEntity.get_default_tenant_metadata()
     if default_tenant:
         user_tenant_role = UserTenantRoleEntity.create_or_update(
             user_id=user_oid,
@@ -145,7 +145,7 @@ def insert_token_document(
             validate_roles=False,
         )
         cleanup_document.append(user_tenant_role)
-        tenant_identity = TenantIdentity.from_tenant_entity(default_tenant)
+        tenant_identity = TenantIdentity.from_tenant_metadata_entity(default_tenant)
     else:
         # Fallback - create a test tenant identity
         tenant_identity = TenantIdentity(

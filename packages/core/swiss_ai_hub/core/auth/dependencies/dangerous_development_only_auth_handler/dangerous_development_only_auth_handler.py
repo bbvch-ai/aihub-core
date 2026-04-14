@@ -8,7 +8,7 @@ from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler
 )
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
-from swiss_ai_hub.core.persistence.access.entities.tenant_entity import TenantEntity
+from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 
 logger = logging.getLogger(__name__)
@@ -36,7 +36,7 @@ class DangerousDevelopmentOnlyAuthHandler(AuthHandler):
         """
         logger.warning("DangerousDevelopmentOnlyAuthHandler is active. This is not recommended for production use.")
 
-        default_tenant = TenantEntity.get_default_tenant()
+        default_tenant = TenantMetadataEntity.get_default_tenant_metadata()
         if default_tenant:
             UserTenantRoleEntity.create_or_update(
                 user_id=self.config.OID,

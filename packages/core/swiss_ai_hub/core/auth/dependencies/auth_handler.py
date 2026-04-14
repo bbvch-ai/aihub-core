@@ -6,7 +6,7 @@ from fastapi import HTTPException, Request
 from swiss_ai_hub.core.auth.identity.tenant_identity import TenantIdentity
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
-from swiss_ai_hub.core.persistence.access.entities.tenant_entity import TenantEntity
+from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 
 logger = logging.getLogger(__name__)
@@ -39,21 +39,38 @@ class AuthHandler(ABC):
         pass
 
     @staticmethod
-    async def _resolve_active_tenant(user_id: str) -> TenantEntity | None:
+    async def _resolve_active_tenant(user_id: str, is_sys_admin: bool = False) -> TenantMetadataEntity | None:
+        """Resolves the user's active tenant.
+
+        Keycloak is the source of truth for tenant existence and for the active-tenant
+        attribute; the metadata collection is only consulted for display fields. If the
+        Keycloak group is gone or (for non-sysadmins) the user has no membership roles,
+        the active tenant is cleared and the caller is forced to pick a new one.
+        Sysadmins bypass the membership check — the ``AIHubSysAdmin`` realm role grants
+        implicit access to every tenant.
+        """
         active_tenant_id = await KeycloakAdminService.get_active_tenant_id(user_id)
         if not active_tenant_id:
             return None
 
-        tenant = TenantEntity.get_tenant_by_id(active_tenant_id)
-        if not tenant:
+        if not await KeycloakAdminService.tenant_exists(active_tenant_id):
             await KeycloakAdminService.clear_active_tenant(user_id)
             raise HTTPException(
                 status_code=400,
                 detail="Your active tenant is no longer accessible. Please select a new tenant.",
             )
 
-        roles = UserTenantRoleEntity.get_roles_for_user_in_tenant(user_id, tenant.id)
-        if not roles:
+        if not is_sys_admin:
+            roles = UserTenantRoleEntity.get_roles_for_user_in_tenant(user_id, active_tenant_id)
+            if not roles:
+                await KeycloakAdminService.clear_active_tenant(user_id)
+                raise HTTPException(
+                    status_code=400,
+                    detail="Your active tenant is no longer accessible. Please select a new tenant.",
+                )
+
+        tenant = TenantMetadataEntity.get_metadata_by_tenant_id(active_tenant_id)
+        if not tenant:
             await KeycloakAdminService.clear_active_tenant(user_id)
             raise HTTPException(
                 status_code=400,
@@ -63,19 +80,31 @@ class AuthHandler(ABC):
         return tenant
 
     @staticmethod
-    def _resolve_tenant_by_id(tenant_id: str, user_id: str) -> TenantIdentity:
-        tenant_entity = TenantEntity.get_tenant_by_id(tenant_id)
+    async def _resolve_tenant_by_id(tenant_id: str, user_id: str, is_sys_admin: bool = False) -> TenantIdentity:
+        """Resolves a tenant requested via URL path param.
+
+        Existence is validated against Keycloak; metadata is then loaded for the
+        display name. Non-sysadmins must have a membership in the tenant; sysadmins
+        bypass that check because they operate across tenants (e.g. tenant admin
+        endpoints take the tenant id as a target, not as a scope). Failures surface
+        as 403 to avoid leaking which tenants exist.
+        """
+        if not await KeycloakAdminService.tenant_exists(tenant_id):
+            logger.warning(f"Tenant {tenant_id} not found in Keycloak during resolution for user {user_id}")
+            raise HTTPException(status_code=403, detail="Access denied")
+
+        if not is_sys_admin:
+            user_roles_in_tenant = UserTenantRoleEntity.get_roles_for_user_in_tenant(user_id, tenant_id)
+            if not user_roles_in_tenant:
+                logger.warning(f"User {user_id} attempted to access tenant {tenant_id} without membership")
+                raise HTTPException(status_code=403, detail="Access denied")
+
+        tenant_entity = TenantMetadataEntity.get_metadata_by_tenant_id(tenant_id)
         if not tenant_entity:
-            logger.warning(f"Tenant {tenant_id} not found during resolution for user {user_id}")
+            logger.warning(f"Tenant {tenant_id} exists in Keycloak but has no metadata")
             raise HTTPException(status_code=403, detail="Access denied")
 
-        tenant_id_str = str(tenant_entity.id)
-        user_roles_in_tenant = UserTenantRoleEntity.get_roles_for_user_in_tenant(user_id, tenant_id_str)
-        if not user_roles_in_tenant:
-            logger.warning(f"User {user_id} attempted to access tenant {tenant_id_str} without membership")
-            raise HTTPException(status_code=403, detail="Access denied")
-
-        return TenantIdentity.from_tenant_entity(tenant_entity)
+        return TenantIdentity.from_tenant_metadata_entity(tenant_entity)
 
     @staticmethod
     def has_tenant_in_request(request: Request) -> bool:
@@ -83,27 +112,27 @@ class AuthHandler(ABC):
         return "tenant_id" in request.path_params
 
     @staticmethod
-    async def resolve_tenant_for_user(request: Request, user_id: str) -> TenantIdentity:
+    async def resolve_tenant_for_user(request: Request, user_id: str, is_sys_admin: bool = False) -> TenantIdentity:
         tenant_id = request.path_params.get("tenant_id")
         if not tenant_id:
             raise HTTPException(status_code=400, detail="Missing tenant context")
 
         if tenant_id == AuthHandler.ACTIVE_TENANT_SLUG:
-            active_tenant = await AuthHandler._resolve_active_tenant(user_id)
+            active_tenant = await AuthHandler._resolve_active_tenant(user_id, is_sys_admin=is_sys_admin)
             if active_tenant:
-                return TenantIdentity.from_tenant_entity(active_tenant)
+                return TenantIdentity.from_tenant_metadata_entity(active_tenant)
             raise HTTPException(
                 status_code=400,
                 detail="No active tenant set. Please select a tenant first.",
             )
 
-        return AuthHandler._resolve_tenant_by_id(tenant_id, user_id)
+        return await AuthHandler._resolve_tenant_by_id(tenant_id, user_id, is_sys_admin=is_sys_admin)
 
     @staticmethod
-    async def get_active_tenant_for_user(user_id: str) -> TenantIdentity:
-        active_tenant = await AuthHandler._resolve_active_tenant(user_id)
+    async def get_active_tenant_for_user(user_id: str, is_sys_admin: bool = False) -> TenantIdentity:
+        active_tenant = await AuthHandler._resolve_active_tenant(user_id, is_sys_admin=is_sys_admin)
         if active_tenant:
-            return TenantIdentity.from_tenant_entity(active_tenant)
+            return TenantIdentity.from_tenant_metadata_entity(active_tenant)
         raise HTTPException(
             status_code=400,
             detail="No active tenant set. Please select a tenant first.",
@@ -120,7 +149,7 @@ class AuthHandler(ABC):
     ) -> UserIdentity:
         """Builds a UserIdentity with tenant context resolved from the request or active tenant fallback."""
         if request and self.has_tenant_in_request(request):
-            tenant = await self.resolve_tenant_for_user(request, user_id)
+            tenant = await self.resolve_tenant_for_user(request, user_id, is_sys_admin=is_sys_admin)
             roles = UserTenantRoleEntity.get_roles_for_user_in_tenant(user_id, tenant.id)
             return UserIdentity(
                 id=user_id,
@@ -133,7 +162,7 @@ class AuthHandler(ABC):
         elif request:
             return UserIdentity(id=user_id, name=name, email=email, roles=[], is_sys_admin=is_sys_admin)
         else:
-            tenant = await self.get_active_tenant_for_user(user_id)
+            tenant = await self.get_active_tenant_for_user(user_id, is_sys_admin=is_sys_admin)
             roles = UserTenantRoleEntity.get_roles_for_user_in_tenant(user_id, tenant.id)
             return UserIdentity(
                 id=user_id,

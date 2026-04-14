@@ -13,7 +13,7 @@ from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler
 )
 from swiss_ai_hub.core.auth.dependencies.keycloak_auth_handler import KeycloakAuthHandler
 from swiss_ai_hub.core.infrastructure import AIHubSettings, MongoSettings
-from swiss_ai_hub.core.persistence.access.entities.tenant_entity import TenantEntity
+from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 from swiss_ai_hub.core.testing import (
     DummyResponse,
@@ -104,7 +104,7 @@ def setup_test_user(mongo_db):
     config = DangerousDevelopmentOnlyAuthSettings()
 
     # Assign the expected roles in the default tenant
-    default_tenant = TenantEntity.get_default_tenant()
+    default_tenant = TenantMetadataEntity.get_default_tenant_metadata()
     user_tenant_role = None
     if default_tenant:
         user_tenant_role = UserTenantRoleEntity.create_or_update(

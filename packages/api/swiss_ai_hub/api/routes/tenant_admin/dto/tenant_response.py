@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Annotated, Self
 
 from pydantic import BaseModel, Field
-from swiss_ai_hub.core.persistence.access.entities.tenant_entity import TenantEntity
+from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
 
 from swiss_ai_hub.api.routes.tenant_admin.dto.tenant_state import TenantState
 
@@ -22,7 +22,7 @@ class TenantResponse(BaseModel):
     updated_at: Annotated[datetime, Field(description="Tenant last update timestamp.")]
 
     @classmethod
-    def from_entity(cls, entity: TenantEntity, *, state: TenantState = TenantState.ACTIVE) -> Self:
+    def from_entity(cls, entity: TenantMetadataEntity, *, state: TenantState = TenantState.ACTIVE) -> Self:
         return cls(
             id=str(entity.id),
             name=entity.name,

@@ -99,6 +99,28 @@ class KeycloakAdminService:
 
     @staticmethod
     @trace_fn
+    async def tenant_exists(tenant_id: str) -> bool:
+        """Whether the Keycloak group ``/tenants/<tenant_id>`` exists.
+
+        Keycloak is the source of truth for tenant existence; the MongoDB metadata
+        collection only holds display data and must not be used to decide existence.
+        """
+        try:
+            await KeycloakAdminService.get_tenant_group(tenant_id)
+            return True
+        except KeycloakGetError:
+            return False
+
+    @staticmethod
+    @trace_fn
+    async def filter_existing_tenant_ids(tenant_ids: list[str]) -> set[str]:
+        """Returns the subset of ``tenant_ids`` whose Keycloak groups currently exist."""
+        existing = await KeycloakAdminService.get_all_tenant_groups()
+        existing_ids = {g.name for g in existing}
+        return {tid for tid in tenant_ids if tid in existing_ids}
+
+    @staticmethod
+    @trace_fn
     async def assign_user_to_tenant(keycloak_user_id: str, tenant_id: str) -> None:
         admin = _create_admin()
         group = await admin.a_get_group_by_path(f"{TENANTS_GROUP_PATH}/{tenant_id}")

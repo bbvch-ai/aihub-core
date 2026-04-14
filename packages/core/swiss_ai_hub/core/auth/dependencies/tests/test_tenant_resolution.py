@@ -14,7 +14,7 @@ from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdmin
 from swiss_ai_hub.core.infrastructure.api.ai_hub_settings import AIHubSettings
 from swiss_ai_hub.core.infrastructure.mongo.mongo_settings import MongoSettings
 from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
-from swiss_ai_hub.core.persistence.access.entities.tenant_entity import TenantEntity
+from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 
 scenarios("features/tenant_resolution.feature")
@@ -112,8 +112,8 @@ def ensure_default_tenant(cleanup_documents: list[Any], context: dict[str, Any],
     """Ensure the default tenant exists with the exact name specified."""
     rules_list = [r.strip() for r in access_rules.split(",")]
     # Remove all existing default tenants to guarantee clean test state
-    TenantEntity.objects(is_default=True).delete()
-    tenant = TenantEntity.create_tenant(
+    TenantMetadataEntity.objects(is_default=True).delete()
+    tenant = TenantMetadataEntity.create_tenant_metadata(
         tenant_id="default",
         name=name,
         description="Default tenant for testing",
@@ -128,7 +128,7 @@ def ensure_default_tenant(cleanup_documents: list[Any], context: dict[str, Any],
 def create_second_tenant(cleanup_documents: list[Any], context: dict[str, Any], name: str, access_rules: str) -> None:
     """Create a second tenant."""
     rules_list = [r.strip() for r in access_rules.split(",")]
-    tenant = TenantEntity.create_tenant(
+    tenant = TenantMetadataEntity.create_tenant_metadata(
         tenant_id=name.lower().replace(" ", "-"),
         name=name,
         description="Second tenant for testing",

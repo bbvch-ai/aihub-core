@@ -9,7 +9,7 @@ from swiss_ai_hub.core.auth.access.access_checker import AccessChecker, AccessLe
 from swiss_ai_hub.core.infrastructure.api.ai_hub_settings import AIHubSettings
 from swiss_ai_hub.core.infrastructure.mongo.mongo_settings import MongoSettings
 from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
-from swiss_ai_hub.core.persistence.access.entities.tenant_entity import TenantEntity
+from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 
 scenarios("features/multi_tenant_access.feature")
@@ -51,7 +51,7 @@ def cleanup_documents() -> Generator[list[Any]]:
 def create_tenant(cleanup_documents: list[Any], context: dict[str, Any], name: str, access_rules: str) -> None:
     """Create a tenant with the given access rules."""
     rules_list = [r.strip() for r in access_rules.split(",")]
-    tenant = TenantEntity.create_tenant(
+    tenant = TenantMetadataEntity.create_tenant_metadata(
         tenant_id=name.lower().replace(" ", "-"),
         name=name,
         description=f"Tenant {name} for testing",

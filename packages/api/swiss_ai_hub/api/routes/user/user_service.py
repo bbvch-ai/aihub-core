@@ -1,12 +1,12 @@
 from typing import TYPE_CHECKING
 
+from fastapi import HTTPException
 from mongoengine import DoesNotExist
 from nats.aio.client import Client as NATS
 from swiss_ai_hub.core.auth import KeycloakAdminService
 from swiss_ai_hub.core.auth.identity.tenant_identity import TenantIdentity
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.i18n import LocaleHandler
-from swiss_ai_hub.core.persistence.access.entities.tenant_entity import TenantEntity
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 from swiss_ai_hub.core.persistence.user.user_dashboard_entity import UserDashboardEntity
 
@@ -53,10 +53,15 @@ class UserService:
 
     @staticmethod
     async def get_paginated_users(tenant_id: str, page: int = 1, page_size: int = 20) -> tuple[int, list[UserDTO]]:
-        """Retrieves a paginated list of users belonging to the given tenant."""
-        tenant_entity = TenantEntity.get_tenant_by_id(tenant_id)
-        if not tenant_entity:
-            return 0, []
+        """Retrieves a paginated list of users belonging to the given tenant.
+
+        Existence is validated against Keycloak (source of truth); a missing or
+        orphaned tenant results in a 404 rather than a silent empty page.
+        """
+
+        if not await KeycloakAdminService.tenant_exists(tenant_id):
+            raise HTTPException(status_code=404, detail="Tenant not found.")
+
         skip = (page - 1) * page_size
         members = await KeycloakAdminService.get_tenant_members(tenant_id, offset=skip, limit=page_size)
         total = await KeycloakAdminService.count_tenant_members(tenant_id)

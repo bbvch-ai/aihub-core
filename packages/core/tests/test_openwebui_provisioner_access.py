@@ -131,7 +131,9 @@ class TestSyncAccessGrants:
                 return_value=[_group("aihub:T1:R1", "grp-1")],
             ),
             patch.object(provisioner._openwebui, "update_model_access") as mock_update,
-            patch("swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.TenantEntity") as mock_tenant,
+            patch(
+                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.TenantMetadataEntity"
+            ) as mock_tenant,
             patch("swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.RoleEntity") as mock_role,
         ):
             tenant = MagicMock()
@@ -171,7 +173,9 @@ class TestSyncAccessGrants:
                 return_value=[_group("aihub:T1:R1", "grp-1")],
             ),
             patch.object(provisioner._openwebui, "update_model_access") as mock_update,
-            patch("swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.TenantEntity") as mock_tenant,
+            patch(
+                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.TenantMetadataEntity"
+            ) as mock_tenant,
             patch("swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.RoleEntity") as mock_role,
         ):
             tenant = MagicMock()
@@ -207,7 +211,9 @@ class TestSyncAccessGrants:
                 return_value=[_group("aihub:T1:R1", "grp-1")],
             ),
             patch.object(provisioner._openwebui, "update_model_access") as mock_update,
-            patch("swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.TenantEntity") as mock_tenant,
+            patch(
+                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.TenantMetadataEntity"
+            ) as mock_tenant,
             patch("swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.RoleEntity") as mock_role,
         ):
             tenant = MagicMock()
@@ -241,7 +247,9 @@ class TestSyncAccessGrants:
                 return_value=[_group("aihub:T1:R1", "grp-1")],
             ),
             patch.object(provisioner._openwebui, "update_model_access") as mock_update,
-            patch("swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.TenantEntity") as mock_tenant,
+            patch(
+                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.TenantMetadataEntity"
+            ) as mock_tenant,
             patch("swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.RoleEntity") as mock_role,
         ):
             tenant = MagicMock()
@@ -279,7 +287,9 @@ class TestSyncAccessGrants:
                 ],
             ),
             patch.object(provisioner._openwebui, "update_model_access") as mock_update,
-            patch("swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.TenantEntity") as mock_tenant,
+            patch(
+                "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.TenantMetadataEntity"
+            ) as mock_tenant,
             patch("swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner.RoleEntity") as mock_role,
         ):
             tenant = MagicMock()
