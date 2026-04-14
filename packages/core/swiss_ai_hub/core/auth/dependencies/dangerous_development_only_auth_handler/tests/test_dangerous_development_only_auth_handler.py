@@ -53,9 +53,13 @@ def mock_database_operations(monkeypatch: pytest.MonkeyPatch):
         "swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity.UserTenantRoleEntity.create_or_update",
         mock_create_or_update,
     )
+    from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_settings import (  # noqa: E501
+        DangerousDevelopmentOnlyAuthSettings,
+    )
+
     monkeypatch.setattr(
         "swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity.UserTenantRoleEntity.get_roles_for_user_in_tenant",
-        lambda user_id, tenant_id: ["TestOnlyFullAdminAccess"],
+        lambda user_id, tenant_id: DangerousDevelopmentOnlyAuthSettings().ROLES,
     )
     monkeypatch.setattr(
         "swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity.UserTenantRoleEntity.get_tenant_ids_for_user",
