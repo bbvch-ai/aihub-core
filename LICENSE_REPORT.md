@@ -4,8 +4,8 @@ Generated on: 14.04.2026
 
 This document contains license information for all dependencies across the monorepo:
 
-- Python packages (uv): **392 packages**
-- Node.js packages (pnpm): **1001 packages**
+- Python packages (uv): **391 packages**
+- Node.js packages (pnpm): **999 packages**
 - External Docker images: **31 images**
 
 ### License Compatibility
