@@ -45,17 +45,17 @@ jobs:
         run: echo "${{ secrets.PAT_GITHUB_READ_PACKAGES }}" | docker login ghcr.io
           -u ${{ github.actor }} --password-stdin
       - name: Build backup image
-        run: docker compose -f infra/docker-compose.build.yml --env-file .env.dev
-          build backup-code
+        run: docker compose -f infra/docker-compose.dev.yml --env-file .env.dev build
+          backup-code
       - name: Pull infrastructure images
         run: |
-          docker compose -f infra/docker-compose.build.yml --env-file .env.dev pull --quiet \
+          docker compose -f infra/docker-compose.dev.yml --env-file .env.dev pull --quiet \
             postgres postgres-ferretdb ferretdb neo4j clickhouse valkey nats \
             seaweedfs-master seaweedfs-volume seaweedfs-filer seaweedfs-s3 seaweedfs-init \
             etcd etcd-init milvus-standalone
       - name: Start services
         run: |
-          docker compose -f infra/docker-compose.build.yml --env-file .env.dev up -d \
+          docker compose -f infra/docker-compose.dev.yml --env-file .env.dev up -d \
             backup-code backup-webserver backup-daemon postgres postgres-ferretdb ferretdb neo4j clickhouse valkey nats \
             seaweedfs-master seaweedfs-volume seaweedfs-filer seaweedfs-s3 seaweedfs-init \
             etcd etcd-init milvus-standalone
@@ -119,8 +119,8 @@ jobs:
         run: uv run pytest -m e2e -v --timeout=600 --junitxml=e2e-pytest.xml
       - name: Stop services
         if: always()
-        run: docker compose -f infra/docker-compose.build.yml --env-file .env.dev
-          down --remove-orphans
+        run: docker compose -f infra/docker-compose.dev.yml --env-file .env.dev down
+          --remove-orphans
       - name: Clean up SSH keys
         if: always()
         run: |
