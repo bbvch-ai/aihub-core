@@ -3,7 +3,7 @@ import { test as setup, expect, request } from '@playwright/test'
 /**
  * Authentication setup that logs in via Keycloak and saves the browser state.
  *
- * This runs once before all tests. It ensures a dedicated `e2e-test@ai-hub.local`
+ * This runs once before all tests. It ensures a dedicated `e2e-test@swiss-ai-hub.ch`
  * user exists in Keycloak via the Admin REST API, then logs in and persists the
  * session (cookies + localStorage) so tests start authenticated. The user is
  * created only once and reused across runs to keep its Keycloak ID stable
@@ -12,7 +12,7 @@ import { test as setup, expect, request } from '@playwright/test'
  * Works with any docker-compose stack — no manual Keycloak user setup required.
  */
 
-const E2E_EMAIL = 'e2e-test@ai-hub.local'
+const E2E_EMAIL = 'e2e-test@swiss-ai-hub.ch'
 const E2E_PASSWORD = 'e2e-test-password'
 const KEYCLOAK_ADMIN_USER = process.env.E2E_KEYCLOAK_ADMIN_USER ?? 'admin'
 const KEYCLOAK_ADMIN_PASSWORD = process.env.E2E_KEYCLOAK_ADMIN_PASSWORD ?? 'admin'

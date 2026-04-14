@@ -26,6 +26,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.no_trace import no_trace
     from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
     from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.smart_tracer import get_tracer
+    from swiss_ai_hub.core.infrastructure.openwebui.access_grant import AccessGrant
     from swiss_ai_hub.core.infrastructure.openwebui.online_agent import OnlineAgent
     from swiss_ai_hub.core.infrastructure.openwebui.openwebui_client import OpenWebuiClient
     from swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner import OpenWebuiProvisioner
@@ -59,6 +60,7 @@ __all__ = [
     "Memory",
     "AzureDocumentIntelligenceSettings",
     "AzureDataLakeSettings",
+    "AccessGrant",
     "AIHubSettings",
     "AihubInstrumentor",
     "DefaultTenantSettings",
@@ -104,6 +106,7 @@ _LAZY_IMPORTS = {
     "Memory": "swiss_ai_hub.core.infrastructure.mem0.types.memory",
     "AzureDocumentIntelligenceSettings": "swiss_ai_hub.core.infrastructure.azure_cognitive_services.azure_document_intelligence_settings",
     "AzureDataLakeSettings": "swiss_ai_hub.core.infrastructure.azure_data_lake.azure_data_lake_settings",
+    "AccessGrant": "swiss_ai_hub.core.infrastructure.openwebui.access_grant",
     "AIHubSettings": "swiss_ai_hub.core.infrastructure.api.ai_hub_settings",
     "AihubInstrumentor": "swiss_ai_hub.core.infrastructure.opentelemetry.aihub_instrumentor",
     "DefaultTenantSettings": "swiss_ai_hub.core.infrastructure.api.default_tenant_settings",

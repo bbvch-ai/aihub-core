@@ -31,6 +31,7 @@ from swiss_ai_hub.api.routes import (
     TranslationController,
     UserController,
     UserMemoryController,
+    WebhookController,
 )
 from swiss_ai_hub.api.runners import ApiRunner
 
@@ -128,6 +129,7 @@ runner.mount(
     .update_organization_memory(),
     ParsingController(auth=auth).parse_document(),
     TranslationController(auth=auth).translate(),
+    WebhookController(auth=auth).openwebui(),
 )
 
 app = runner.create_app()

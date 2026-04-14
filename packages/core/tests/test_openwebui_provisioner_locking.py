@@ -1,3 +1,5 @@
+"""Tests for OpenWebuiProvisioner distributed locking."""
+
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -27,11 +29,34 @@ class TestDistributedLocking:
             mock_models.assert_not_called()
 
     @pytest.mark.asyncio
+    async def test_sync_access_skipped_when_lock_held(
+        self, provisioner: OpenWebuiProvisioner, mock_redis: MagicMock
+    ) -> None:
+        mock_redis.lock.return_value = _make_lock(acquired=False)
+
+        with patch.object(provisioner, "_sync_groups") as mock_groups:
+            await provisioner.sync_access()
+            mock_groups.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_provision_skipped_when_lock_held(
+        self, provisioner: OpenWebuiProvisioner, mock_redis: MagicMock
+    ) -> None:
+        mock_redis.lock.return_value = _make_lock(acquired=False)
+
+        with patch.object(provisioner, "_sync_groups") as mock_groups:
+            await provisioner.provision()
+            mock_groups.assert_not_called()
+
+    @pytest.mark.asyncio
     async def test_lock_released_after_sync(self, provisioner: OpenWebuiProvisioner, mock_redis: MagicMock) -> None:
         mock_lock = _make_lock(acquired=True)
         mock_redis.lock.return_value = mock_lock
 
-        with patch.object(provisioner, "_sync_workspace_models", return_value=(0, 0)):
+        with (
+            patch.object(provisioner, "_sync_workspace_models"),
+            patch.object(provisioner, "_sync_access_grants"),
+        ):
             await provisioner.sync_agents([_RAG_AGENT])
             mock_lock.release.assert_awaited_once()
 
@@ -47,3 +72,22 @@ class TestDistributedLocking:
             await provisioner.sync_agents([_RAG_AGENT])
 
         mock_lock.release.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_agent_and_access_syncs_use_separate_locks(
+        self, provisioner: OpenWebuiProvisioner, mock_redis: MagicMock
+    ) -> None:
+        """Agent sync and access sync must not block each other."""
+        lock_keys: list[str] = []
+        mock_redis.lock.side_effect = lambda key, **_: (lock_keys.append(key), _make_lock(acquired=True))[1]
+
+        with (
+            patch.object(provisioner, "_sync_workspace_models"),
+            patch.object(provisioner, "_sync_access_grants"),
+            patch.object(provisioner, "_sync_groups"),
+        ):
+            await provisioner.sync_agents([_RAG_AGENT])
+            await provisioner.sync_access()
+
+        assert len(lock_keys) == 2
+        assert lock_keys[0] != lock_keys[1]

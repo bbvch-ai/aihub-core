@@ -13,9 +13,9 @@ def _make_instance(agent_class: str, agent_id: str, name: str, *, is_conversatio
     return SimpleNamespace(agent_class=agent_class, agent_id=agent_id, name=name, is_conversational=is_conversational)
 
 
-def _make_service(*, openwebui_provisioner: AsyncMock) -> AgentEndpointsDiscoveryService:
+def _make_service() -> AgentEndpointsDiscoveryService:
     service = object.__new__(AgentEndpointsDiscoveryService)
-    service._openwebui_provisioner = openwebui_provisioner
+    service._openwebui_provisioner = AsyncMock()
     return service
 
 
@@ -28,13 +28,11 @@ class TestOpenwebuiAgentFilter:
             _make_instance("chat", "main", "Chat Agent", is_conversational=True),
         ]
 
-        mock_provisioner = AsyncMock()
-        service = _make_service(openwebui_provisioner=mock_provisioner)
-
+        service = _make_service()
         await service._sync_agent_instances_to_openwebui(instances)
 
-        mock_provisioner.sync_agents.assert_awaited_once()
-        synced_agents = mock_provisioner.sync_agents.call_args[0][0]
+        service._openwebui_provisioner.sync_agents.assert_awaited_once()
+        synced_agents = service._openwebui_provisioner.sync_agents.call_args[0][0]
         assert OnlineAgent(agent_class="rag", agent_id="default", display_name="RAG Agent") in synced_agents
         assert OnlineAgent(agent_class="chat", agent_id="main", display_name="Chat Agent") in synced_agents
         assert len(synced_agents) == 2
@@ -45,15 +43,15 @@ class TestOpenwebuiAgentFilter:
             _make_instance("ingestion", "default", "Ingestion Worker", is_conversational=False),
         ]
 
-        mock_provisioner = AsyncMock()
-        service = _make_service(openwebui_provisioner=mock_provisioner)
-
+        service = _make_service()
         await service._sync_agent_instances_to_openwebui(instances)
 
-        mock_provisioner.sync_agents.assert_awaited_once_with([])
+        service._openwebui_provisioner.sync_agents.assert_awaited_once_with([])
 
     @pytest.mark.asyncio
-    async def test_sync_returns_true_when_no_provisioner(self) -> None:
-        service = _make_service(openwebui_provisioner=None)
+    async def test_returns_false_on_provisioner_error(self) -> None:
+        service = _make_service()
+        service._openwebui_provisioner.sync_agents.side_effect = RuntimeError("not configured")
+
         result = await service._sync_agent_instances_to_openwebui([])
-        assert result is True
+        assert result is False
