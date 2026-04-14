@@ -11,15 +11,15 @@ document data but an empty catalog — FerretDB reports zero collections.
 ## Decision Drivers
 
 - **Sequence preservation**\
-  Dynamic CSV-based approach would not capture sequence values. Post-restore ID collisions on first write.
-- **Format fragility**\
-  CSV parsing of BSON-derived catalog data introduces failure points (embedded quotes, NULLs, special characters).
+  Sequence values must survive backup/restore to prevent post-restore ID collisions.
 - **Native protocol reliability**\
-  PostgreSQL's `COPY` protocol passes data as an opaque byte stream — no intermediate parsing.
+  PostgreSQL's `COPY` protocol passes data as an opaque byte stream — no intermediate parsing needed.
+- **Fail-fast behavior**\
+  Errors during catalog backup must be surfaced immediately, not silently produce incomplete backups.
 
 ## Decision
 
-Hardcoded list of DocumentDB catalog tables and sequences with native `COPY TO STDOUT` / `COPY FROM stdin` protocol.
+Hardcoded list of DocumentDB catalog tables and sequences backed up via native `COPY TO STDOUT` / `COPY FROM stdin`.
 Backup produces `ext-catalog.sql.gz`; restore replays it after `pg_restore`. Restore skips gracefully when the artifact
 doesn't exist (backward compatible).
 
@@ -29,7 +29,7 @@ doesn't exist (backward compatible).
 
 - Sequence values preserved, no ID collisions
 - No intermediate parsing — psql handles escaping natively
-- Failures raise immediately instead of producing silent incomplete backups
+- Failures raise immediately
 
 ### Trade-offs
 
