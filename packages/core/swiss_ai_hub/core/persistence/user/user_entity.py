@@ -85,6 +85,11 @@ class UserEntity(Document):
         self.last_updated = datetime.now(UTC)
         self.save()
 
+        # Deferred: UserEntity → AccessChangeHook → RoleEntity → UsageLimits → UserIdentity → UserEntity
+        from swiss_ai_hub.core.persistence.access.access_change_hook import AccessChangeHook
+
+        AccessChangeHook.notify()
+
     @staticmethod
     @trace_fn
     def create_default_dashboard() -> Dashboard:

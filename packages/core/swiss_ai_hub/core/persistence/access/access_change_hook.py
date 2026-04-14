@@ -49,6 +49,14 @@ class AccessChangeHook:
         cls._connected = True
 
     @classmethod
+    def notify(cls) -> None:
+        """Explicitly schedule an OpenWebUI sync from outside the signal system."""
+        if not cls._connected:
+            return
+        logger.info("Explicit access change notification, scheduling OpenWebUI sync")
+        cls._schedule_sync()
+
+    @classmethod
     def _schedule_sync(cls) -> None:
         if cls._debounce_task and not cls._debounce_task.done():
             cls._debounce_task.cancel()
