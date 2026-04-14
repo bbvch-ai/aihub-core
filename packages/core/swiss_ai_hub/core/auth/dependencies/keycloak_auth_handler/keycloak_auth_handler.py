@@ -9,9 +9,13 @@ from fastapi import HTTPException, Request, Security
 from jwt.algorithms import RSAAlgorithm
 
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
-from swiss_ai_hub.core.auth.dependencies.keycloak_auth_handler.keycloak_settings import KeycloakSettings
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
-from swiss_ai_hub.core.persistence.user.user_entity import UserEntity
+from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
+from swiss_ai_hub.core.auth.keycloak.keycloak_settings import KeycloakSettings
+from swiss_ai_hub.core.infrastructure.api.default_tenant_settings import DefaultTenantSettings
+from swiss_ai_hub.core.infrastructure.api.user_signup_settings import UserSignupSettings
+from swiss_ai_hub.core.persistence.access.entities.tenant_entity import TenantEntity
+from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 
 logger = logging.getLogger(__name__)
 
@@ -100,13 +104,12 @@ class KeycloakAuthHandler(AuthHandler):
                 logger.warning("Token missing sub claim. Available claims: %s", list(decoded_token.keys()))
                 raise HTTPException(status_code=401, detail="Invalid token claims")
 
-            user_entity = UserEntity.ensure_user_exists_for_auth(
-                oid=sub,
-                name=name,
-                email=email,
-            )
+            # Sync tenant memberships from JWT tenants claim
+            tenants_claim = decoded_token.get("tenants", [])
+            self._sync_tenant_memberships(sub, tenants_claim)
+            await self._ensure_active_tenant(sub)
 
-            return self.build_identity(user_entity, request)
+            return await self.build_identity(user_id=sub, name=name, email=email, request=request)
 
         except HTTPException:
             raise
@@ -122,3 +125,109 @@ class KeycloakAuthHandler(AuthHandler):
         except Exception as e:
             logger.exception("Unexpected error during token validation: %s", str(e))
             raise HTTPException(status_code=500, detail="Authentication error")
+
+    @staticmethod
+    def _extract_tenant_ids_from_claim(tenants_claim: list[str]) -> list[str]:
+        """Parses the JWT `tenants` claim into a list of tenant IDs.
+
+        The claim contains Keycloak group paths like `/tenants/<tenant-id>`. Only entries
+        under the `/tenants/` parent are considered.
+        """
+        return [path.split("/")[-1] for path in tenants_claim if path.startswith("/tenants/")]
+
+    @staticmethod
+    def _needs_membership_sync(user_id: str, tenant_ids: list[str]) -> bool:
+        """Fast path: returns False if the user already has memberships for all tenants in the claim."""
+        db_tenant_ids = set(UserTenantRoleEntity.get_tenant_ids_for_user(user_id))
+        return not set(tenant_ids).issubset(db_tenant_ids)
+
+    @staticmethod
+    def _resolve_roles_for_new_member(tenant_id: str) -> list[str]:
+        """Returns the roles to assign when creating a new user-tenant association.
+
+        The first real user (excluding the superuser) to join a tenant gets admin roles;
+        subsequent users get regular roles.
+        """
+        from swiss_ai_hub.core.auth.dependencies.superuser_auth_handler.superuser_settings import SuperuserSettings
+
+        settings = UserSignupSettings()
+        existing_user_ids = UserTenantRoleEntity.get_user_ids_in_tenant(tenant_id)
+        real_users = [uid for uid in existing_user_ids if uid != SuperuserSettings().OID]
+        if not real_users:
+            logger.info("First user signup in tenant %s, assigning admin roles", tenant_id)
+            return settings.first_admin_user_roles_list
+        return settings.regular_user_roles_list
+
+    @staticmethod
+    def _ensure_membership_for_tenant(user_id: str, tenant_id: str) -> None:
+        """Creates a `UserTenantRoleEntity` for the user in the given tenant if missing.
+
+        Skips silently if the tenant doesn't exist in the database or the membership
+        already has roles.
+        """
+        tenant = TenantEntity.get_tenant_by_id(tenant_id)
+        if not tenant:
+            logger.warning("Tenant '%s' from JWT claim not found in database, skipping", tenant_id)
+            return
+
+        if UserTenantRoleEntity.get_roles_for_user_in_tenant(user_id, tenant_id):
+            return
+
+        roles_to_assign = KeycloakAuthHandler._resolve_roles_for_new_member(tenant_id)
+        UserTenantRoleEntity.create_or_update(user_id=user_id, tenant_id=tenant_id, roles=roles_to_assign)
+        logger.info(
+            "Created tenant association for user %s in tenant %s with roles: %s",
+            user_id,
+            tenant_id,
+            roles_to_assign,
+        )
+
+    @staticmethod
+    def _sync_tenant_memberships(user_id: str, tenants_claim: list[str]) -> None:
+        """Syncs tenant memberships from the JWT `tenants` claim to `UserTenantRoleEntity`.
+
+        Fast path: if the user's existing memberships already cover all tenants in the JWT
+        claim, skip the sync entirely. New tenants added to the user's Keycloak groups are
+        picked up on the next request. Removals are not propagated (would require explicit
+        cleanup).
+        """
+        tenant_ids = KeycloakAuthHandler._extract_tenant_ids_from_claim(tenants_claim)
+        if not tenant_ids:
+            return
+
+        if not KeycloakAuthHandler._needs_membership_sync(user_id, tenant_ids):
+            return
+
+        for tenant_id in tenant_ids:
+            KeycloakAuthHandler._ensure_membership_for_tenant(user_id, tenant_id)
+
+    @staticmethod
+    async def _ensure_active_tenant(user_id: str) -> None:
+        """Ensures the user has a valid active tenant, auto-selecting one if needed.
+
+        Selection order when no valid active tenant is set:
+        1. The user's only tenant, if they have exactly one membership.
+        2. The configured default tenant (``AIHUB_DEFAULT_TENANT_ID``) if the user is a member.
+        3. The earliest-created tenant among the user's memberships.
+        """
+        user_tenant_ids = UserTenantRoleEntity.get_tenant_ids_for_user(user_id)
+        if not user_tenant_ids:
+            return
+
+        current = await KeycloakAdminService.get_active_tenant_id(user_id)
+        if current and current in user_tenant_ids and TenantEntity.get_tenant_by_id(current):
+            return
+
+        default_id = DefaultTenantSettings().ID
+        if len(user_tenant_ids) == 1:
+            selected_id = user_tenant_ids[0]
+        elif default_id in user_tenant_ids and TenantEntity.get_tenant_by_id(default_id):
+            selected_id = default_id
+        else:
+            earliest = TenantEntity.objects(id__in=user_tenant_ids).order_by("created_at").first()
+            if not earliest:
+                return
+            selected_id = earliest.id
+
+        await KeycloakAdminService.set_active_tenant(user_id, selected_id)
+        logger.info("Auto-selected active tenant %s for user %s", selected_id, user_id)

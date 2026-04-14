@@ -1,10 +1,13 @@
+import asyncio
 from collections.abc import Generator
 from typing import Any
+from unittest.mock import patch
 
 import pytest
 from mongoengine import connect, disconnect
 from pytest_bdd import given, parsers, scenarios, then, when
 
+from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
 from swiss_ai_hub.core.infrastructure.api.ai_hub_settings import AIHubSettings
 from swiss_ai_hub.core.infrastructure.mongo.mongo_settings import MongoSettings
 from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
@@ -23,6 +26,27 @@ def mongo_connection() -> Generator[None]:
     )
     yield
     disconnect()
+
+
+@pytest.fixture(autouse=True)
+def mock_keycloak_active_tenant():
+    """Mock KeycloakAdminService active tenant methods for tests."""
+
+    async def mock_get_active_tenant_id(user_id: str) -> str | None:
+        return None
+
+    async def mock_set_active_tenant(user_id: str, tenant_id: str) -> None:
+        pass
+
+    async def mock_clear_active_tenant(user_id: str) -> None:
+        pass
+
+    with (
+        patch.object(KeycloakAdminService, "get_active_tenant_id", side_effect=mock_get_active_tenant_id),
+        patch.object(KeycloakAdminService, "set_active_tenant", side_effect=mock_set_active_tenant),
+        patch.object(KeycloakAdminService, "clear_active_tenant", side_effect=mock_clear_active_tenant),
+    ):
+        yield
 
 
 @pytest.fixture
@@ -51,6 +75,7 @@ def ensure_default_tenant(cleanup_documents: list[Any], context: dict[str, Any],
     """Ensure the default tenant exists."""
     rules_list = [r.strip() for r in access_rules.split(",")]
     tenant = TenantEntity.ensure_default_tenant_exists(
+        tenant_id="default",
         name="Test Default Tenant",
         description="Default tenant for testing",
         access_rules=rules_list,
@@ -82,7 +107,7 @@ def ensure_system_role(cleanup_documents: list[Any], role_name: str, access_rule
 def ensure_no_association(context: dict[str, Any], user_id: str) -> None:
     """Ensure the user does not have an association with the default tenant."""
     tenant = context["default_tenant"]
-    UserTenantRoleEntity.remove_user_from_tenant(user_id, str(tenant.id))
+    asyncio.run(UserTenantRoleEntity.remove_user_from_tenant(user_id, str(tenant.id)))
 
 
 @given(parsers.parse('a user "{user_id}" has roles "{roles}" in the default tenant'))
@@ -147,7 +172,7 @@ def remove_roles(context: dict[str, Any], user_id: str, roles: str) -> None:
 def remove_user(context: dict[str, Any], user_id: str) -> None:
     """Remove a user from the default tenant."""
     tenant = context["default_tenant"]
-    UserTenantRoleEntity.remove_user_from_tenant(user_id, str(tenant.id))
+    asyncio.run(UserTenantRoleEntity.remove_user_from_tenant(user_id, str(tenant.id)))
 
 
 @when(parsers.parse('I create an association for user "{user_id}" with roles "{roles}" without validation'))

@@ -15,8 +15,23 @@
   "loginWithEmailAllowed": true,
   "duplicateEmailsAllowed": false,
   "resetPasswordAllowed": true,
+
   "editUsernameAllowed": false,
   "bruteForceProtected": true,
+
+  "components": {
+    "org.keycloak.userprofile.UserProfileProvider": [
+      {
+        "providerId": "declarative-user-profile",
+        "subComponents": {},
+        "config": {
+          "kc.user.profile.config": [
+            "{\"unmanagedAttributePolicy\":\"ADMIN_EDIT\",\"attributes\":[{\"name\":\"username\",\"displayName\":\"${username}\",\"validations\":{\"length\":{\"min\":3,\"max\":255},\"username-prohibited-characters\":{},\"up-username-not-idn-homograph\":{}},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"email\",\"displayName\":\"${email}\",\"validations\":{\"email\":{},\"length\":{\"max\":255}},\"required\":{\"roles\":[\"user\"]},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"firstName\",\"displayName\":\"${firstName}\",\"validations\":{\"length\":{\"max\":255},\"person-name-prohibited-characters\":{}},\"required\":{\"roles\":[\"user\"]},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"lastName\",\"displayName\":\"${lastName}\",\"validations\":{\"length\":{\"max\":255},\"person-name-prohibited-characters\":{}},\"required\":{\"roles\":[\"user\"]},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"active_tenant_id\",\"displayName\":\"Active Tenant ID\",\"group\":\"user-metadata\",\"permissions\":{\"view\":[\"admin\"],\"edit\":[\"admin\"]},\"multivalued\":false}],\"groups\":[{\"name\":\"user-metadata\",\"displayHeader\":\"User metadata\",\"displayDescription\":\"Attributes, which refer to user metadata\"}]}"
+          ]
+        }
+      }
+    ]
+  },
 
   "roles": {
     "realm": [
@@ -50,13 +65,13 @@
       "name": "tenants",
       "subGroups": [
         {
-          "name": "default"
+          "name": "${AIHUB_DEFAULT_TENANT_ID}"
         }
       ]
     }
   ],
 
-  "defaultGroups": ["/tenants/default"],
+  "defaultGroups": ["/tenants/${AIHUB_DEFAULT_TENANT_ID}"],
 
   "clients": [
     {
@@ -338,7 +353,7 @@
     {
       "clientId": "aihub-api-service",
       "name": "AI-Hub API Service Account",
-      "description": "Least-privilege service account for API backend. Only has view-identity-providers permission.",
+      "description": "Service account for API backend with user and group management permissions.",
       "enabled": true,
       "publicClient": false,
       "standardFlowEnabled": false,
@@ -544,7 +559,7 @@
       "enabled": true,
       "serviceAccountClientId": "aihub-api-service",
       "clientRoles": {
-        "realm-management": ["view-identity-providers"]
+        "realm-management": ["view-identity-providers", "manage-users", "view-users", "query-users", "query-groups", "view-groups"]
       }
     }
   ],

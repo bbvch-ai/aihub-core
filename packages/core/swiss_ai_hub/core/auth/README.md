@@ -17,7 +17,7 @@ authorization model based on hierarchical permissions.
 The authentication system is built around these main abstractions:
 
 - **AuthHandlers**: Validate credentials and return user identities
-- **UserEntity**: Persistent user data with local role management
+- **KeycloakAdminService**: Reads user profile data and active tenant from Keycloak
 - **UserIdentity**: Lightweight DTO for authenticated users
 - **AccessChecker**: Enforces hierarchical permission-based authorization
 - **Multi-Tenant Roles**: Roles are managed locally, not fetched from identity providers
@@ -26,10 +26,11 @@ The authentication system is built around these main abstractions:
 
 1. **Credential Extraction**: AuthHandlers extract tokens/credentials from HTTP requests
 2. **Token Validation**: Handlers validate tokens against their respective authorities (OAuth2, database tokens, etc.)
-3. **User Resolution**: User data is extracted from token claims (OAuth2) or database lookup (Token auth)
-4. **User Persistence**: User is created or updated in UserEntity via `ensure_user_exists_for_auth()`
+3. **User Resolution**: User data is extracted from token claims (OAuth2) or Keycloak Admin API (Token auth)
+4. **Tenant Sync**: Tenant memberships from the JWT `tenants` claim are synced to UserTenantRoleEntity
 5. **Tenant Resolution**: Tenant context is resolved from the `tenant_id` path parameter. The special value `"active"`
-   resolves to the user's persisted active tenant. If no active tenant is set, the request is rejected with a 400 error
+   resolves to the user's active tenant stored as a Keycloak user attribute. If no active tenant is set, the request is
+   rejected with a 400 error
 6. **Membership Verification**: User's membership in the tenant is verified via UserTenantRoleEntity
 7. **Identity Creation**: UserIdentity DTO is created with embedded TenantIdentity
 8. **Permission Evaluation**: AccessChecker performs two-stage authorization (tenant + user) based on locally-managed
@@ -89,7 +90,7 @@ The system supports two types of permission checks:
 
 - Bearer token lookup in database
 - Token expiration validation
-- User identity from UserEntity to which the token belongs
+- User identity from Keycloak via KeycloakAdminService
 
 ### Superuser Authentication
 
@@ -113,26 +114,25 @@ The system supports two types of permission checks:
 
 ## User & Role Management
 
-### UserEntity
-
-- Persisted in MongoDB users collection
-- Contains profile info (name, email, profile_image)
-- **Does NOT store roles** - roles are fetched from UserTenantRoleEntity via `get_roles(tenant_id)`
-- Profile images must be valid http:// or https:// URLs (data URLs not allowed)
-- Additional user preferences (dashboard, favorite_modules)
-
 ### UserIdentity
 
 - Lightweight Pydantic representation of authenticated users
-- Created from UserEntity via `UserIdentity.from_user_entity(user, tenant)`
+- Constructed directly from JWT claims or Keycloak Admin API data
 - **Always includes tenant context** via `acting_within_tenant: TenantIdentity`
 - Roles are resolved for the specific tenant the user is acting within
 - No database dependencies
 
+### KeycloakAdminService
+
+- Wraps Keycloak Admin API for user and group management
+- User profile data (name, email) is read from Keycloak, not stored locally
+- Active tenant is stored as a Keycloak user attribute (`active_tenant_id`)
+- Tenant group membership is managed via Keycloak groups under `/tenants/`
+
 ### Multi-Tenant Roles
 
 - **TenantEntity**: Organization/tenant definitions with `access_rules` that define maximum permissions for all users
-- **UserTenantRoleEntity**: Authoritative source for user-tenant-role associations (replaces UserEntity.roles)
+- **UserTenantRoleEntity**: Authoritative source for user-tenant-role associations
 - **RoleEntity**: Role definitions with access rules, can be system-wide (`tenant_id=None`) or tenant-scoped
 - **TenantIdentity**: Resolved from `tenant_id` path parameter. No implicit fallback — an active tenant must be
   explicitly set

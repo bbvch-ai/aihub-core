@@ -11,14 +11,17 @@ from mongoengine import connect, disconnect
 from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler import (  # noqa: E501
     DangerousDevelopmentOnlyAuthHandler,
 )
+from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_settings import (  # noqa: E501
+    DangerousDevelopmentOnlyAuthSettings,
+)
 from swiss_ai_hub.core.infrastructure import AIHubSettings, MongoSettings, enable_logging
 from swiss_ai_hub.core.persistence.access.entities.tenant_entity import TenantEntity
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 from swiss_ai_hub.core.persistence.messaging.entities.thread_entity import ThreadEntity
-from swiss_ai_hub.core.persistence.user.user_entity import UserEntity
 from swiss_ai_hub.core.persistence.utils import str_to_object_id
 from swiss_ai_hub.core.routes import HealthController
 from swiss_ai_hub.core.testing import ASGIAdapter
+from swiss_ai_hub.core.testing.auth_utils.user_mocks import register_fake_keycloak_user
 
 from swiss_ai_hub.bot.persistence.entities.conversation_entity import ConversationEntity
 from swiss_ai_hub.bot.persistence.entities.path_entity import Credentials, PathEntity
@@ -71,20 +74,26 @@ def setup_test_credentials():
     PathEntity(path=stream_path, credentials=test_credentials, system_message="Test system message").save()
 
     # Create default tenant and assign test user
-    default_tenant = TenantEntity.ensure_default_tenant_exists(name="Test Tenant", access_rules=["aihub.admin.>"])
+    default_tenant = TenantEntity.ensure_default_tenant_exists(
+        tenant_id="default", name="Test Tenant", access_rules=["aihub.admin.>"]
+    )
     tenant_id = str(default_tenant.id)
 
-    # Create test user (looked up via from_property.name in AgentCompletionHandler)
-    UserEntity.objects(email=USER_EMAIL).delete()
-    UserEntity.create_user(oid="test_user_oid", name="Test User", email=USER_EMAIL, active_tenant_id=tenant_id)
-
-    # Assign user to default tenant with admin role
+    # Assign test user to default tenant with admin role. Use the OID that
+    # ``KeycloakAdminService.find_user_by_email`` resolves to in tests (the fake
+    # admin returns a single stub user keyed by this OID).
+    dev_oid = DangerousDevelopmentOnlyAuthSettings().OID
     UserTenantRoleEntity.create_or_update(
-        user_id="test_user_oid",
+        user_id=dev_oid,
         tenant_id=tenant_id,
         roles=["admin"],
         validate_roles=False,
     )
+
+    # Seed the fake Keycloak admin store so ``find_user_by_email(USER_EMAIL)``
+    # resolves to the dev OID. The bot sends ``from_property.name = USER_EMAIL``
+    # which is looked up via email.
+    register_fake_keycloak_user(user_id=dev_oid, name="Test User", email=USER_EMAIL)
 
     yield
 
@@ -92,8 +101,7 @@ def setup_test_credentials():
     try:
         PathEntity.objects(path=json_path).delete()
         PathEntity.objects(path=stream_path).delete()
-        UserEntity.objects(email=USER_EMAIL).delete()
-        UserTenantRoleEntity.objects(user_id="test_user_oid").delete()
+        UserTenantRoleEntity.objects(user_id=dev_oid).delete()
     except Exception:
         # Connection may already be closed, ignore cleanup errors
         pass

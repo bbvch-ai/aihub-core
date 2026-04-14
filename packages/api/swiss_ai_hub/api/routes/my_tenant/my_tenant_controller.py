@@ -43,7 +43,7 @@ class MyTenantController(Controller):
             user: Annotated[UserIdentity, Security(self.authenticated_user())],
         ) -> ActiveTenantDTO:
             """Returns the current user's active tenant."""
-            return MyTenantService.get_my_active_tenant(user.id)
+            return await MyTenantService.get_my_active_tenant(user.id)
 
         return self
 
@@ -54,6 +54,6 @@ class MyTenantController(Controller):
             user: Annotated[UserIdentity, Security(self.authenticated_user())],
         ) -> ActiveTenantDTO:
             """Sets the current user's active tenant."""
-            return MyTenantService.set_my_active_tenant(user.id, request_body.tenant_id)
+            return await MyTenantService.set_my_active_tenant(user.id, request_body.tenant_id)
 
         return self

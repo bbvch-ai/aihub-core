@@ -1,7 +1,6 @@
 from datetime import UTC, datetime
 from typing import Self
 
-from bson import ObjectId
 from mongoengine import BooleanField, DateTimeField, Document, ListField, NotUniqueError, StringField
 
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
@@ -11,10 +10,8 @@ class TenantEntity(Document):
     """
     Represents a tenant (organization) in the multi-tenant system.
 
-    Tenants provide isolation boundaries for users and roles. Each tenant has its
-    own set of access rules that define the maximum scope for all users within
-    that tenant. User roles are scoped to tenants, allowing users to have different
-    roles in different organizations.
+    The id is a human-readable slug (e.g. "default") that also serves as the
+    Keycloak group name under /tenants/. The name is a display name for the UI.
     """
 
     meta = {
@@ -26,6 +23,7 @@ class TenantEntity(Document):
         ],
     }
 
+    id = StringField(primary_key=True)
     name = StringField(required=True, unique=True)
     description = StringField(default="")
     access_rules = ListField(StringField(), default=list)
@@ -36,15 +34,13 @@ class TenantEntity(Document):
     @classmethod
     @trace_fn
     def get_tenant_by_id(cls, tenant_id: str) -> Self | None:
-        """Fetches a tenant by its ID. Returns None if the tenant does not exist."""
-        if not ObjectId.is_valid(tenant_id):
-            return None
+        """Fetches a tenant by its ID (readable slug). Returns None if the tenant does not exist."""
         return cls.objects(id=tenant_id).first()
 
     @classmethod
     @trace_fn
     def get_tenant_by_name(cls, name: str) -> Self | None:
-        """Fetches a tenant by its name. Returns None if the tenant does not exist."""
+        """Fetches a tenant by its display name. Returns None if the tenant does not exist."""
         return cls.objects(name=name).first()
 
     @classmethod
@@ -57,6 +53,7 @@ class TenantEntity(Document):
     @trace_fn
     def create_tenant(
         cls,
+        tenant_id: str,
         name: str,
         description: str = "",
         access_rules: list[str] | None = None,
@@ -64,6 +61,7 @@ class TenantEntity(Document):
     ) -> Self:
         """Creates a new tenant with the given parameters."""
         tenant = cls(
+            id=tenant_id,
             name=name,
             description=description,
             access_rules=access_rules or [],
@@ -76,6 +74,7 @@ class TenantEntity(Document):
     @trace_fn
     def ensure_default_tenant_exists(
         cls,
+        tenant_id: str,
         name: str,
         description: str = "",
         access_rules: list[str] | None = None,
@@ -92,6 +91,7 @@ class TenantEntity(Document):
 
         try:
             return cls.create_tenant(
+                tenant_id=tenant_id,
                 name=name,
                 description=description,
                 access_rules=access_rules,
@@ -138,11 +138,12 @@ class TenantEntity(Document):
         """
         Deletes a tenant by its ID. Returns True if deleted, False if not found.
 
-        Cascades to delete all associated UserTenantRoleEntity and tenant-scoped RoleEntity records,
-        and clears the active tenant for affected users.
+        Cascades to delete all associated UserTenantRoleEntity and tenant-scoped RoleEntity records.
+        Active tenant cleanup in Keycloak must be handled by the caller via
+        KeycloakAdminService.clear_active_tenant_for_users_in_tenant().
         The default tenant cannot be deleted - attempting to do so will raise ValueError.
 
-        Uses deferred imports because UserEntity, RoleEntity, and UserTenantRoleEntity all import
+        Uses deferred imports because RoleEntity and UserTenantRoleEntity both import
         TenantEntity at module level — importing them here at module level would create circular imports.
         """
         from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
@@ -158,10 +159,6 @@ class TenantEntity(Document):
         # Cascade: remove all user-tenant-role associations and tenant-scoped roles
         UserTenantRoleEntity.objects(tenant_id=tenant_id).delete()
         RoleEntity.objects(tenant_id=tenant_id).delete()
-
-        from swiss_ai_hub.core.persistence.user.user_entity import UserEntity
-
-        UserEntity.objects(active_tenant_id=tenant_id).update(set__active_tenant_id=None)
 
         tenant.delete()
         return True

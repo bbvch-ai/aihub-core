@@ -99,7 +99,7 @@ packages/core/swiss_ai_hub/core/
 │   ├── agents/                      # AgentConfigEntity
 │   ├── process/                     # ProcessConfigEntity
 │   ├── messaging/                   # ThreadEntity, PersistedAgentEventEntity, PersistedProcessEventEntity
-│   ├── user/                        # UserEntity (tenant-associated)
+│   ├── user/                        # UserDashboardEntity (user dashboard config)
 │   ├── i18n/                        # LocaleStringEntity
 │   ├── rag/                         # RAG document persistence
 │   └── notification/                # NotificationEntity
@@ -405,8 +405,8 @@ class RoleEntity(Document):
 
 **Key entities**: `RoleEntity` (access rules), `TenantEntity` (tenants), `UserTenantRoleEntity` (tenant-scoped role
 assignments), `ThreadEntity` (conversations), `PersistedAgentEventEntity` / `PersistedProcessEventEntity` (event
-storage), `AgentConfigEntity` / `ProcessConfigEntity` (configs), `UserEntity` (tenant-associated), `NotificationEntity`,
-`LocaleStringEntity`.
+storage), `AgentConfigEntity` / `ProcessConfigEntity` (configs), `UserDashboardEntity` (dashboard config),
+`NotificationEntity`, `LocaleStringEntity`.
 
 ## Infrastructure Settings
 
