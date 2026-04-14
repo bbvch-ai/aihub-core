@@ -17,6 +17,8 @@ from swiss_ai_hub.core.infrastructure.openwebui.openwebui_settings import OpenWe
 from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
 from swiss_ai_hub.core.persistence.access.entities.tenant_entity import TenantEntity
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
+from swiss_ai_hub.core.persistence.agents.agent_class_entity import AgentClassEntity
+from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import AgentConfigEntityDocument
 from swiss_ai_hub.core.persistence.user.user_entity import UserEntity
 
 logger = logging.getLogger(__name__)
@@ -67,7 +69,7 @@ class OpenWebuiProvisioner:
 
             async with httpx.AsyncClient(timeout=30.0) as http:
                 await self._sync_groups()
-                await self._sync_workspace_models(http, [])
+                await self._sync_workspace_models(http, self._get_known_online_agents())
                 await self._sync_access_grants(http)
 
             logger.info("OpenWebUI provisioning completed")
@@ -89,6 +91,24 @@ class OpenWebuiProvisioner:
             async with httpx.AsyncClient(timeout=30.0) as http:
                 await self._sync_groups()
                 await self._sync_access_grants(http)
+
+    @staticmethod
+    def _get_known_online_agents() -> list[OnlineAgent]:
+        """Queries the DB for agent instances whose class was recently discovered."""
+        agents: list[OnlineAgent] = []
+        for class_entity in AgentClassEntity.get_all():
+            if not class_entity.is_online or not class_entity.is_conversational:
+                continue
+            for config in AgentConfigEntityDocument.find_for_class(class_entity.agent_class):
+                display_name = config.name.en or config.name.de or config.agent_id
+                agents.append(
+                    OnlineAgent(
+                        agent_class=class_entity.agent_class,
+                        agent_id=config.agent_id,
+                        display_name=display_name,
+                    )
+                )
+        return agents
 
     # ------------------------------------------------------------------
     # Group sync
