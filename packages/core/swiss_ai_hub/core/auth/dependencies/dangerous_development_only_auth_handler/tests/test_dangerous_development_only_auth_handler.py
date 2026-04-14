@@ -54,6 +54,14 @@ def mock_database_operations(monkeypatch: pytest.MonkeyPatch):
         mock_create_or_update,
     )
     monkeypatch.setattr(
+        "swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity.UserTenantRoleEntity.get_roles_for_user_in_tenant",
+        lambda user_id, tenant_id: ["TestOnlyFullAdminAccess"],
+    )
+    monkeypatch.setattr(
+        "swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity.UserTenantRoleEntity.get_tenant_ids_for_user",
+        lambda user_id: ["default-tenant-id"],
+    )
+    monkeypatch.setattr(
         "swiss_ai_hub.core.auth.keycloak.keycloak_admin_service.KeycloakAdminService.get_active_tenant_id",
         mock_get_active_tenant_id,
     )

@@ -75,6 +75,7 @@ def ensure_default_tenant(cleanup_documents: list[Any], context: dict[str, Any],
     """Ensure the default tenant exists."""
     rules_list = [r.strip() for r in access_rules.split(",")]
     tenant = TenantEntity.ensure_default_tenant_exists(
+        tenant_id="default",
         name="Test Default Tenant",
         description="Default tenant for testing",
         access_rules=rules_list,

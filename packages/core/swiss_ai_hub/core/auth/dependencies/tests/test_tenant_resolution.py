@@ -114,6 +114,7 @@ def ensure_default_tenant(cleanup_documents: list[Any], context: dict[str, Any],
     # Remove all existing default tenants to guarantee clean test state
     TenantEntity.objects(is_default=True).delete()
     tenant = TenantEntity.create_tenant(
+        tenant_id="default",
         name=name,
         description="Default tenant for testing",
         access_rules=rules_list,
@@ -128,6 +129,7 @@ def create_second_tenant(cleanup_documents: list[Any], context: dict[str, Any], 
     """Create a second tenant."""
     rules_list = [r.strip() for r in access_rules.split(",")]
     tenant = TenantEntity.create_tenant(
+        tenant_id=name.lower().replace(" ", "-"),
         name=name,
         description="Second tenant for testing",
         access_rules=rules_list,
