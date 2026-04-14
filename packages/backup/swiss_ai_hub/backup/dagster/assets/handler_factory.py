@@ -3,11 +3,11 @@ import inspect
 from swiss_ai_hub.backup.docker_client import DockerManager
 from swiss_ai_hub.backup.s3 import S3Manager
 from swiss_ai_hub.backup.services.base import BackupHandler
-from swiss_ai_hub.backup.services.postgres import PostgresHandler
-from swiss_ai_hub.backup.services.milvus import MilvusHandler
-from swiss_ai_hub.backup.services.neo4j import Neo4jHandler
 from swiss_ai_hub.backup.services.clickhouse import ClickHouseHandler
+from swiss_ai_hub.backup.services.milvus import MilvusHandler
 from swiss_ai_hub.backup.services.nats import NatsHandler
+from swiss_ai_hub.backup.services.neo4j import Neo4jHandler
+from swiss_ai_hub.backup.services.postgres import PostgresHandler
 from swiss_ai_hub.backup.services.valkey import ValkeyHandler
 from swiss_ai_hub.backup.settings import BackupSettings
 

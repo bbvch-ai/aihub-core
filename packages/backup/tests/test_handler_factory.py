@@ -3,11 +3,11 @@ import pytest
 from swiss_ai_hub.backup.dagster.assets.handler_factory import HANDLER_FACTORIES, create_handler
 from swiss_ai_hub.backup.models import BACKUP_SERVICES
 from swiss_ai_hub.backup.services.base import BackupHandler
-from swiss_ai_hub.backup.services.postgres import PostgresHandler
-from swiss_ai_hub.backup.services.milvus import MilvusHandler
-from swiss_ai_hub.backup.services.neo4j import Neo4jHandler
 from swiss_ai_hub.backup.services.clickhouse import ClickHouseHandler
+from swiss_ai_hub.backup.services.milvus import MilvusHandler
 from swiss_ai_hub.backup.services.nats import NatsHandler
+from swiss_ai_hub.backup.services.neo4j import Neo4jHandler
+from swiss_ai_hub.backup.services.postgres import PostgresHandler
 from swiss_ai_hub.backup.services.valkey import ValkeyHandler
 
 

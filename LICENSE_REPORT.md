@@ -4,8 +4,8 @@ Generated on: 14.04.2026
 
 This document contains license information for all dependencies across the monorepo:
 
-- Python packages (uv): **388 packages**
-- Node.js packages (pnpm): **999 packages**
+- Python packages (uv): **392 packages**
+- Node.js packages (pnpm): **1001 packages**
 - External Docker images: **31 images**
 
 ### License Compatibility
@@ -73,6 +73,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | cffi                                             | 2.0.0                 | MIT                                                          |                                                                      |
 | ✅     | charset-normalizer                               | 3.4.5                 | MIT                                                          |                                                                      |
 | ✅     | click                                            | 8.3.1                 | BSD-3-Clause (override)                                      |                                                                      |
+| ✅     | clickhouse-connect                               | 0.15.1                | Apache Software License                                      |                                                                      |
 | ✅     | cobble                                           | 0.1.4                 | BSD License                                                  |                                                                      |
 | ✅     | cohere                                           | 5.20.7                | MIT License                                                  |                                                                      |
 | ✅     | colorama                                         | 0.4.6                 | BSD License                                                  |                                                                      |
@@ -197,6 +198,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | llama-index-workflows                            | 2.15.1                | MIT (override)                                               |                                                                      |
 | ✅     | loguru                                           | 0.7.3                 | MIT License                                                  |                                                                      |
 | ✅     | lxml                                             | 6.0.2                 | BSD-3-Clause                                                 |                                                                      |
+| ✅     | lz4                                              | 4.4.5                 | BSD License                                                  |                                                                      |
 | ✅     | magika                                           | 0.6.3                 | Apache Software License                                      |                                                                      |
 | ✅     | maison                                           | 2.0.2                 | MIT                                                          |                                                                      |
 | ✅     | Mako                                             | 1.3.10                | MIT License                                                  |                                                                      |
@@ -327,6 +329,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | pytest-bdd                                       | 8.1.0                 | MIT License                                                  |                                                                      |
 | ✅     | pytest-cov                                       | 7.0.0                 | MIT                                                          |                                                                      |
 | ✅     | pytest-mock                                      | 3.15.1                | MIT License                                                  |                                                                      |
+| ✅     | pytest-timeout                                   | 2.4.0                 | DFSG approved; MIT License                                   |                                                                      |
 | ✅     | python-dateutil                                  | 2.9.0.post0           | Apache Software License; BSD License                         |                                                                      |
 | ✅     | python-dotenv                                    | 1.2.2                 | BSD-3-Clause                                                 |                                                                      |
 | ✅     | python-i18n                                      | 0.3.9                 | MIT License                                                  |                                                                      |
@@ -339,17 +342,6 @@ This document contains license information for all dependencies across the monor
 | ✅     | qdrant-client                                    | 1.17.0                | Apache Software License                                      |                                                                      |
 | ✅     | rank-bm25                                        | 0.2.2                 | Apache2.0                                                    |                                                                      |
 | ✅     | redis                                            | 7.3.0                 | MIT                                                          |                                                                      |
-| ✅     | referencing                                      | 0.37.0                | MIT (override)                                               |                                                                      |
-| ✅     | regex                                            | 2026.2.28             | Apache-2.0 (override)                                        |                                                                      |
-| ✅     | requests                                         | 2.32.5                | Apache Software License                                      |                                                                      |
-| ✅     | requests-oauthlib                                | 2.0.0                 | BSD License                                                  |                                                                      |
-| ✅     | requests-toolbelt                                | 1.0.0                 | Apache Software License                                      |                                                                      |
-| ✅     | rich                                             | 14.3.3                | MIT License                                                  |                                                                      |
-| ✅     | rich-rst                                         | 1.3.2                 | MIT                                                          |                                                                      |
-| ✅     | rpds-py                                          | 0.30.0                | MIT (override)                                               |                                                                      |
-| ✅     | ruamel.yaml                                      | 0.19.1                | MIT License                                                  |                                                                      |
-| ✅     | ruff                                             | 0.15.1                | MIT License                                                  |                                                                      |
-| ✅     | ruyaml                                           | 0.91.0                | MIT License                                                  |                                                                      |
 | ✅     | s3fs                                             | 2024.12.0             | BSD License                                                  |                                                                      |
 | ✅     | s3transfer                                       | 0.15.0                | Apache Software License                                      |                                                                      |
 | ✅     | safetensors                                      | 0.7.0                 | Apache Software License                                      |                                                                      |
