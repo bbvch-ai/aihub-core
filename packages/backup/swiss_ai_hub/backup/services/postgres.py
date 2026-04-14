@@ -188,7 +188,8 @@ class PostgresHandler(BackupHandler):
         env = self._pg_env(password)
 
         if not self._s3.file_exists(s3_key):
-            raise RuntimeError(f"[{label}] Extension catalog backup missing at {s3_key} — restore would leave FerretDB with an empty catalog")
+            msg = f"[{label}] Extension catalog backup missing at {s3_key}"
+            raise RuntimeError(msg)
 
         catalog_file = tmp_dir / label / _EXT_CATALOG_FILENAME
         catalog_file.parent.mkdir(exist_ok=True)
