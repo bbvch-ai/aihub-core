@@ -9299,6 +9299,54 @@ export type OpenChatHitlResponse = {
 };
 
 /**
+ * OpenWebuiWebhookPayload
+ */
+export type OpenWebuiWebhookPayload = {
+    /**
+     * Action
+     *
+     * OpenWebUI webhook action type (e.g. 'signup', 'login')
+     */
+    action: string;
+    /**
+     * Message
+     */
+    message?: string;
+    user?: OpenWebuiWebhookUser;
+};
+
+/**
+ * OpenWebuiWebhookUser
+ */
+export type OpenWebuiWebhookUser = {
+    /**
+     * Id
+     *
+     * OpenWebUI user ID
+     */
+    id?: string;
+    /**
+     * Email
+     *
+     * User email address
+     */
+    email?: string;
+    /**
+     * Name
+     *
+     * User display name
+     */
+    name?: string;
+    /**
+     * Role
+     *
+     * OpenWebUI role
+     */
+    role?: string;
+    [key: string]: unknown | string | undefined;
+};
+
+/**
  * PaginatedDocumentsResponse
  */
 export type PaginatedDocumentsResponse = {
@@ -13895,6 +13943,18 @@ export type VideoBlock = {
      * Fps
      */
     fps?: number | null;
+};
+
+/**
+ * WebhookResponse
+ */
+export type WebhookResponse = {
+    /**
+     * Status
+     *
+     * Webhook processing result status
+     */
+    status: string;
 };
 
 /**
@@ -24862,3 +24922,35 @@ export type TranslateTextResponses = {
 };
 
 export type TranslateTextResponse = TranslateTextResponses[keyof TranslateTextResponses];
+
+export type ReceiveOpenwebuiWebhookData = {
+    body: OpenWebuiWebhookPayload;
+    path?: never;
+    query: {
+        /**
+         * Token
+         *
+         * Webhook authentication token
+         */
+        token: string;
+    };
+    url: '/webhook/openwebui';
+};
+
+export type ReceiveOpenwebuiWebhookErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ReceiveOpenwebuiWebhookError = ReceiveOpenwebuiWebhookErrors[keyof ReceiveOpenwebuiWebhookErrors];
+
+export type ReceiveOpenwebuiWebhookResponses = {
+    /**
+     * Successful Response
+     */
+    200: WebhookResponse;
+};
+
+export type ReceiveOpenwebuiWebhookResponse = ReceiveOpenwebuiWebhookResponses[keyof ReceiveOpenwebuiWebhookResponses];

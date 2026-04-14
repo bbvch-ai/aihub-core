@@ -13484,7 +13484,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1776170452
+            default: 1776179172
         },
         owned_by: {
             type: 'string',
@@ -14849,6 +14849,61 @@ export const OpenChatHitlResponseSchema = {
     ],
     title: 'OpenChatHitlResponse',
     description: 'Response indicating whether there\'s an open chat HITL request for a thread.'
+} as const;
+
+export const OpenWebuiWebhookPayloadSchema = {
+    properties: {
+        action: {
+            type: 'string',
+            title: 'Action',
+            description: 'OpenWebUI webhook action type (e.g. \'signup\', \'login\')'
+        },
+        message: {
+            type: 'string',
+            title: 'Message',
+            default: ''
+        },
+        user: {
+            $ref: '#/components/schemas/OpenWebuiWebhookUser'
+        }
+    },
+    type: 'object',
+    required: [
+        'action'
+    ],
+    title: 'OpenWebuiWebhookPayload'
+} as const;
+
+export const OpenWebuiWebhookUserSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            title: 'Id',
+            description: 'OpenWebUI user ID',
+            default: ''
+        },
+        email: {
+            type: 'string',
+            title: 'Email',
+            description: 'User email address',
+            default: ''
+        },
+        name: {
+            type: 'string',
+            title: 'Name',
+            description: 'User display name',
+            default: ''
+        },
+        role: {
+            type: 'string',
+            title: 'Role',
+            description: 'OpenWebUI role',
+            default: ''
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    title: 'OpenWebuiWebhookUser'
 } as const;
 
 export const PaginatedDocumentsResponseSchema = {
@@ -21819,6 +21874,21 @@ export const VideoBlockSchema = {
     type: 'object',
     title: 'VideoBlock',
     description: 'A representation of video data to directly pass to/from the LLM.'
+} as const;
+
+export const WebhookResponseSchema = {
+    properties: {
+        status: {
+            type: 'string',
+            title: 'Status',
+            description: 'Webhook processing result status'
+        }
+    },
+    type: 'object',
+    required: [
+        'status'
+    ],
+    title: 'WebhookResponse'
 } as const;
 
 export const WorkflowGraphSchema = {
