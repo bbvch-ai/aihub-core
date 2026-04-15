@@ -34,7 +34,10 @@ Supported authentication methods:
 - **OAuth2/OIDC**: JWT tokens from Keycloak (supports federated identity providers like Azure AD, Google, etc.)
 - **API Tokens**: Long-lived tokens for programmatic access
 - **OpenWebUI Integration**: Special handler for OpenWebUI users
-- **Development Mode**: Dangerous dev-only handler (never use in production!)
+
+For tests and interactive playground servers, a dedicated `TestAuthHandler` lives under
+`swiss_ai_hub.core.testing.auth_utils` (not `core.auth`) and bypasses token parsing to return a fixed test identity. It
+is deliberately not reachable from production code via the public auth interface.
 
 ### 2. User Resolution
 
@@ -327,7 +330,8 @@ tenant.save()
 
 ## Security Considerations
 
-- **Never use DangerousDevelopmentOnlyAuthHandler in production** - it bypasses all security
+- **Never mount `TestAuthHandler` on production entry points** — it lives under `core.testing` for this reason;
+  production `app/main.py` files must use `KeycloakAuthHandler` or `TokenAuthHandler`
 - **Validate JWTs properly** - always verify issuer, audience, and signature
 - **Use HTTPS** - never transmit tokens over unencrypted connections
 - **Rotate API tokens regularly** - implement token expiration and rotation

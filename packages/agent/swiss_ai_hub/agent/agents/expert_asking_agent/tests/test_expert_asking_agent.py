@@ -10,7 +10,6 @@ import pytest
 from dotenv import load_dotenv
 from mongoengine import connect, disconnect
 from pytest_bdd import given, scenarios, then, when
-from swiss_ai_hub.core.auth import DangerousDevelopmentOnlyAuthSettings
 from swiss_ai_hub.core.events.agent import (
     BotInTheLoopRequestEvent,
     BotInTheLoopResponderInfo,
@@ -21,6 +20,7 @@ from swiss_ai_hub.core.generative_ai import LLMConfig
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.infrastructure import AIHubSettings, MongoSettings, enable_logging
 from swiss_ai_hub.core.testing import async_test
+from swiss_ai_hub.core.testing.auth_utils import fake_user
 
 from swiss_ai_hub.agent.agents.expert_asking_agent.events.answer_stop_event import AnswerStopEvent
 from swiss_ai_hub.agent.agents.expert_asking_agent.events.ask_expert_start_event import AskExpertStartEvent
@@ -106,7 +106,7 @@ def _(expert_asking_agent_config):
 async def _(agent_runner: AgentTestRunner):
     """Send a question and simulate expert providing a sufficient answer."""
     async with agent_runner.test_run(delay_before_stop=120) as topic:
-        user = DangerousDevelopmentOnlyAuthSettings().get_user_identity()
+        user = fake_user()
 
         # Send the initial question to the expert
         await agent_runner.send_event_from_topic(
@@ -140,7 +140,7 @@ async def _(agent_runner: AgentTestRunner):
 async def _(agent_runner: AgentTestRunner):
     """Send a question where expert first gives vague answer, then a sufficient one."""
     async with agent_runner.test_run(delay_before_stop=120) as topic:
-        user = DangerousDevelopmentOnlyAuthSettings().get_user_identity()
+        user = fake_user()
 
         # Send the initial question
         await agent_runner.send_event_from_topic(
@@ -200,7 +200,7 @@ async def _(agent_runner: AgentTestRunner):
 async def _(agent_runner: AgentTestRunner):
     """Send a question where expert consistently gives insufficient answers until max loops."""
     async with agent_runner.test_run(delay_before_stop=120) as topic:
-        user = DangerousDevelopmentOnlyAuthSettings().get_user_identity()
+        user = fake_user()
 
         # Send the initial question
         await agent_runner.send_event_from_topic(

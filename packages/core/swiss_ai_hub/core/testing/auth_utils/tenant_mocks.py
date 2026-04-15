@@ -3,16 +3,16 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
-from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_settings import (  # noqa: E501
-    DangerousDevelopmentOnlyAuthSettings,
-)
 from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
 from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
-
-TEST_TENANT_ID = "__test_default_tenant__"
-TEST_TENANT_NAME = "Test Default Tenant"
-TEST_TENANT_ACCESS_RULES = ["aihub.admin.>"]
+from swiss_ai_hub.core.testing.auth_utils.test_identity import (
+    TEST_TENANT_ACCESS_RULES,
+    TEST_TENANT_ID,
+    TEST_TENANT_NAME,
+    TEST_USER_OID,
+    TEST_USER_ROLES,
+)
 
 
 def _create_mock_tenant() -> MagicMock:
@@ -24,7 +24,7 @@ def _create_mock_tenant() -> MagicMock:
     tenant = MagicMock()
     tenant.id = TEST_TENANT_ID
     tenant.name = TEST_TENANT_NAME
-    tenant.access_rules = TEST_TENANT_ACCESS_RULES
+    tenant.access_rules = list(TEST_TENANT_ACCESS_RULES)
     tenant.is_default = True
     return tenant
 
@@ -48,11 +48,10 @@ def mock_tenant_entity_autouse():
     - UserTenantRoleEntity.get_user_ids_in_tenant() → returns the dev user ID
     - AuthHandler._resolve_active_tenant() → returns the test metadata
     """
-    config = DangerousDevelopmentOnlyAuthSettings()
     mock_tenant = _create_mock_tenant()
 
     def mock_get_roles(user_id, tenant_id):
-        return config.ROLES
+        return list(TEST_USER_ROLES)
 
     def mock_create_or_update(user_id, tenant_id, roles, validate_roles=True):
         association = MagicMock()
@@ -62,7 +61,7 @@ def mock_tenant_entity_autouse():
         return association
 
     def mock_get_user_ids_in_tenant(tenant_id):
-        return [config.OID]
+        return [TEST_USER_OID]
 
     async def mock_resolve_active_tenant(*_args, **_kwargs):
         return mock_tenant

@@ -350,14 +350,17 @@ Key methods:
 
 `AuthHandler` (abstract) → extracts/validates credentials from HTTP requests → returns `UserIdentity`.
 
-| Handler                               | Mechanism                     |
-| ------------------------------------- | ----------------------------- |
-| `KeycloakAuthHandler`                 | Keycloak OIDC (JWT + JWKS)    |
-| `TokenAuthHandler`                    | Simple token validation       |
-| `BearerAuthHandler`                   | Bearer token header           |
-| `TokenAndOauth2Handler`               | Combined token + OAuth2       |
-| `OpenWebuiAuthHandler`                | OpenWebUI session integration |
-| `DangerousDevelopmentOnlyAuthHandler` | No validation (dev only)      |
+| Handler                 | Mechanism                     |
+| ----------------------- | ----------------------------- |
+| `KeycloakAuthHandler`   | Keycloak OIDC (JWT + JWKS)    |
+| `TokenAuthHandler`      | Simple token validation       |
+| `BearerAuthHandler`     | Bearer token header           |
+| `TokenAndOauth2Handler` | Combined token + OAuth2       |
+| `OpenWebuiAuthHandler`  | OpenWebUI session integration |
+
+Tests and playground servers use `TestAuthHandler` from `swiss_ai_hub.core.testing.auth_utils`, which bypasses token
+parsing and returns a fixed identity built from the constants in `test_identity.py`. It lives under `core.testing` — not
+`core.auth` — so it cannot be imported into production code by accident.
 
 Sysadmin-only endpoints (those requiring the `AIHubSysAdmin` Keycloak realm role) are NOT protected by a separate auth
 handler. They use `Security(self.sys_admin_user())` from the `Controller` base class, which wraps `authenticated_user()`
@@ -509,7 +512,7 @@ Real-time event emission for streaming LLM output to the UI:
   fixture that drops the test DB at session start. Failing to import this first means tests silently hit the dev
   database.
 - `@async_test`: Decorator for async pytest-bdd step functions (wraps with `asyncio.run()`)
-- `fake_user()`: Creates a mock `UserIdentity` for tests (uses `DangerousDevelopmentOnlyAuthSettings`)
+- `fake_user()`: Creates a mock `UserIdentity` for tests (uses constants in `auth_utils/test_identity.py`)
 - `ASGIAdapter`: ASGI adapter for testing FastAPI routes without a running server
 - User/role mocks in `auth_utils/user_mocks.py`, `role_mocks.py`
 - OAuth2 test utils in `auth_utils/oauth2_utils/`

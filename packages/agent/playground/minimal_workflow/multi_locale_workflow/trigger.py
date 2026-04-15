@@ -6,10 +6,10 @@ import asyncio  # noqa: E402
 import os  # noqa: E402
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole  # noqa: E402
-from swiss_ai_hub.core.auth import DangerousDevelopmentOnlyAuthSettings  # noqa: E402
 from swiss_ai_hub.core.events.agent import UserMessageEvent  # noqa: E402
 from swiss_ai_hub.core.i18n import LocaleString  # noqa: E402
 from swiss_ai_hub.core.infrastructure import enable_logging  # noqa: E402
+from swiss_ai_hub.core.testing.auth_utils import fake_user  # noqa: E402
 
 from playground.minimal_workflow.multi_locale_workflow.multi_locale_agent import (  # noqa: E402
     MultiLocaleAgent,
@@ -40,7 +40,7 @@ async def main():
             start_event=UserMessageEvent(
                 locale="en",
                 messages=[ChatMessage(content="Hello", role=MessageRole.USER)],
-                user=DangerousDevelopmentOnlyAuthSettings().get_user_identity(),
+                user=fake_user(),
             ),
             topic=topic,
         )

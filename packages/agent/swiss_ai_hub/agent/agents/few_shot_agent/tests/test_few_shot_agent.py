@@ -1,7 +1,6 @@
 import pytest
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from pytest_bdd import given, parsers, scenarios, then, when
-from swiss_ai_hub.core.auth import DangerousDevelopmentOnlyAuthSettings
 from swiss_ai_hub.core.events.agent import (
     AgentSuitabilityAcceptEvent,
     GuardRejectionEvent,
@@ -13,6 +12,7 @@ from swiss_ai_hub.core.generative_ai import FewShotExample, LLMConfig
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.infrastructure import enable_logging
 from swiss_ai_hub.core.testing import async_test
+from swiss_ai_hub.core.testing.auth_utils import fake_user
 
 from swiss_ai_hub.agent.agents.few_shot_agent.events.few_shot_event import FewShotEvent
 from swiss_ai_hub.agent.agents.few_shot_agent.events.few_shot_standalone_question_condenser_event import (
@@ -115,7 +115,7 @@ async def when_start_event_sent(agent_runner: AgentTestRunner, query: str):
             topic=topic,
             start_event=UserMessageEvent(
                 locale="en",
-                user=DangerousDevelopmentOnlyAuthSettings().get_user_identity(),
+                user=fake_user(),
                 messages=[ChatMessage(content=query, role=MessageRole.USER)],
             ),
         )

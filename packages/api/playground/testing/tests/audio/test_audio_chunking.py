@@ -4,9 +4,7 @@ import pytest
 from fastapi import UploadFile
 from pydub import AudioSegment
 from pydub.generators import Sine
-from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_settings import (  # noqa: E501
-    DangerousDevelopmentOnlyAuthSettings,
-)
+from swiss_ai_hub.core.testing.auth_utils import fake_user
 
 from swiss_ai_hub.api.audio.audio_chunking_service import AudioChunkingService
 
@@ -139,7 +137,7 @@ async def test_full_stt_with_chunking(create_test_audio, monkeypatch):
         with patch.object(OpenaiService, "_model_names_by_type", side_effect=mock_model_names):
             result = await OpenaiService.stt(
                 file=large_file,
-                user=DangerousDevelopmentOnlyAuthSettings().get_user_identity(),
+                user=fake_user(),
                 model_name="transcription/whisper-large-v3",
                 language="en",
                 prompt=None,

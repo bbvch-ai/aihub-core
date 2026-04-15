@@ -1,10 +1,10 @@
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from pytest_bdd import given, parsers, scenarios, then, when
-from swiss_ai_hub.core.auth import DangerousDevelopmentOnlyAuthSettings
 from swiss_ai_hub.core.events.agent import ChunkEvent, LLMEvent, UserMessageEvent
 from swiss_ai_hub.core.generative_ai import LLMConfig
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.testing import async_test
+from swiss_ai_hub.core.testing.auth_utils import fake_user
 
 from playground.minimal_workflow.llama_index_workflow.llama_index_agent import LlamaIndexAgent
 from playground.minimal_workflow.llama_index_workflow.llama_index_agent_config import LlamaIndexAgentConfig
@@ -34,7 +34,7 @@ async def _(agent_runner: AgentTestRunner, payload: str):
         await agent_runner.send_event_from_topic(
             start_event=UserMessageEvent(
                 messages=[ChatMessage(content=payload, role=MessageRole.USER)],
-                user=DangerousDevelopmentOnlyAuthSettings().get_user_identity(),
+                user=fake_user(),
             ),
             topic=topic,
         )

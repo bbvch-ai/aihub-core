@@ -2,9 +2,7 @@ import pytest
 import pytest_asyncio
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
-from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler import (  # noqa: E501
-    DangerousDevelopmentOnlyAuthHandler,
-)
+from swiss_ai_hub.core.testing.auth_utils import TestAuthHandler
 
 from swiss_ai_hub.api.routes.openai.openai_controller import OpenaiController
 from swiss_ai_hub.api.runners.api_test_runner import ApiTestRunner
@@ -18,7 +16,7 @@ EMBEDDING_MODEL = "embedding/bge-m3"
 @pytest_asyncio.fixture(scope="module", loop_scope="module")
 async def api_client():
     """Create an API client with OpenaiController endpoints mounted."""
-    auth = DangerousDevelopmentOnlyAuthHandler()
+    auth = TestAuthHandler()
     controller = OpenaiController(auth=auth).get_models().get_model().get_embeddings().chat_completion()
     runner = ApiTestRunner()
     runner.mount(controller)

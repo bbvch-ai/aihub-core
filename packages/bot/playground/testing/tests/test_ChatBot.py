@@ -8,12 +8,6 @@ import requests
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
 from mongoengine import connect, disconnect
-from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler import (  # noqa: E501
-    DangerousDevelopmentOnlyAuthHandler,
-)
-from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_settings import (  # noqa: E501
-    DangerousDevelopmentOnlyAuthSettings,
-)
 from swiss_ai_hub.core.infrastructure import AIHubSettings, MongoSettings, enable_logging
 from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
@@ -21,6 +15,7 @@ from swiss_ai_hub.core.persistence.messaging.entities.thread_entity import Threa
 from swiss_ai_hub.core.persistence.utils import str_to_object_id
 from swiss_ai_hub.core.routes import HealthController
 from swiss_ai_hub.core.testing import ASGIAdapter
+from swiss_ai_hub.core.testing.auth_utils import TEST_USER_OID, TestAuthHandler
 from swiss_ai_hub.core.testing.auth_utils.user_mocks import register_fake_keycloak_user
 
 from swiss_ai_hub.bot.persistence.entities.conversation_entity import ConversationEntity
@@ -82,7 +77,7 @@ def setup_test_credentials():
     # Assign test user to default tenant with admin role. Use the OID that
     # ``KeycloakAdminService.find_user_by_email`` resolves to in tests (the fake
     # admin returns a single stub user keyed by this OID).
-    dev_oid = DangerousDevelopmentOnlyAuthSettings().OID
+    dev_oid = TEST_USER_OID
     UserTenantRoleEntity.create_or_update(
         user_id=dev_oid,
         tenant_id=tenant_id,
@@ -151,7 +146,7 @@ async def test_runner(captured_responses):
     runner = SimulatedAgentBotTestRunner(agent_class=AGENT_CLASS, agent_id=AGENT_ID)
     runner.with_simple_chunk_events()
     runner.responses = captured_responses  # Wire captured responses to test_runner
-    auth = DangerousDevelopmentOnlyAuthHandler()
+    auth = TestAuthHandler()
     runner.mount(
         HealthController(auth=auth).get_health(), AgentChatController(auth=auth).completions_json().completions_stream()
     )

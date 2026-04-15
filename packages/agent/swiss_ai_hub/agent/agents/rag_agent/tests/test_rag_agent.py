@@ -13,7 +13,6 @@ from dotenv import load_dotenv
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.vector_stores.types import VectorStoreQueryMode
 from pytest_bdd import given, parsers, scenario, scenarios, then, when
-from swiss_ai_hub.core.auth import DangerousDevelopmentOnlyAuthSettings
 from swiss_ai_hub.core.events.agent import (
     AddMemoryToChatHistoryEvent,
     FewShotAcceptEvent,
@@ -38,6 +37,7 @@ from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.infrastructure import enable_logging
 from swiss_ai_hub.core.persistence import MilvusVectorStoreConfig, create_mongo_document_store
 from swiss_ai_hub.core.testing import async_test
+from swiss_ai_hub.core.testing.auth_utils import fake_user
 from swiss_ai_hub.core.testing.milvus_vector_store_content import drop_collection, fill_collection
 
 from swiss_ai_hub.agent.agents.rag_agent.configs.rag_agent_config import RAGAgentConfig
@@ -275,7 +275,7 @@ async def _(agent_runner: AgentTestRunner, query: str):
             topic=topic,
             start_event=UserMessageEvent(
                 messages=[ChatMessage(content=query, role=MessageRole.USER)],
-                user=DangerousDevelopmentOnlyAuthSettings().get_user_identity(),
+                user=fake_user(),
                 locale="en",
             ),
         )
@@ -368,7 +368,7 @@ async def _(agent_runner: AgentTestRunner, query: str, locale: str):
             topic=topic,
             start_event=UserMessageEvent(
                 locale=locale,
-                user=DangerousDevelopmentOnlyAuthSettings().get_user_identity(),
+                user=fake_user(),
                 messages=[ChatMessage(content=query, role=MessageRole.USER)],
             ),
         )

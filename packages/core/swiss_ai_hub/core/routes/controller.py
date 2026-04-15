@@ -7,9 +7,6 @@ from opentelemetry import trace
 
 from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
-from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler import (  # noqa: E501
-    DangerousDevelopmentOnlyAuthHandler,
-)
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
@@ -60,8 +57,14 @@ class Controller(abc.ABC):
     icon = "mage:server"  # https://icon-sets.iconify.design/
 
     def __init__(self, *, auth: AuthHandler, route: str, additionally_required_permission: str | None = None):
+        if auth is None:
+            raise TypeError(
+                f"{type(self).__name__} requires an explicit `auth` handler — pass a concrete "
+                "`AuthHandler` (e.g., `KeycloakAuthHandler`, `TokenAuthHandler`, or `TestAuthHandler` "
+                "from `swiss_ai_hub.core.testing.auth_utils` for tests)."
+            )
         self.base_route: str = route
-        self.auth: AuthHandler = auth or DangerousDevelopmentOnlyAuthHandler()
+        self.auth: AuthHandler = auth
         self.router: APIRouter = APIRouter()
         self.additionally_required_permission = additionally_required_permission
         self._runner: Runner | None = None

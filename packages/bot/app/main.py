@@ -1,4 +1,4 @@
-from swiss_ai_hub.core.auth import DangerousDevelopmentOnlyAuthHandler
+from swiss_ai_hub.core.auth.dependencies.keycloak_auth_handler import KeycloakAuthHandler
 from swiss_ai_hub.core.infrastructure import enable_logging
 from swiss_ai_hub.core.routes import HealthController
 
@@ -9,11 +9,12 @@ enable_logging()
 
 runner = BotRunner()
 
-# Controllers require an auth handler, but the Bot API performs actual authentication via Bot Framework credentials
-# stored in the database (RoutesService.get_adapter).
-# DangerousDevelopmentOnlyAuthHandler is used here as a placeholder since bot endpoints are not directly accessible -
-# they only process authenticated Bot Framework activities.
-auth = DangerousDevelopmentOnlyAuthHandler()
+# Bot endpoints are not directly reachable by end users — they process Bot Framework activities
+# whose authenticity is verified by `RoutesService.get_adapter()` against per-endpoint credentials
+# stored in MongoDB. The `auth` handler on each controller is therefore only a safety net for any
+# accidental external exposure; `KeycloakAuthHandler` is the right fail-closed choice there (it
+# rejects any request without a valid platform JWT).
+auth = KeycloakAuthHandler()
 
 runner.mount(
     HealthController(auth=auth).get_health(),

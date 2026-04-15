@@ -1,11 +1,9 @@
 import pytest_asyncio
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
-from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler import (  # noqa: E501
-    DangerousDevelopmentOnlyAuthHandler,
-)
 from swiss_ai_hub.core.auth.dependencies.keycloak_auth_handler import KeycloakAuthHandler
 from swiss_ai_hub.core.auth.dependencies.token_auth_handler.token_auth_handler import TokenAuthHandler
+from swiss_ai_hub.core.testing.auth_utils import TestAuthHandler
 
 from swiss_ai_hub.api.runners.api_test_runner import ApiTestRunner
 
@@ -15,7 +13,7 @@ BASE_URL = "http://test"
 @pytest_asyncio.fixture
 async def development_auth_api_client(controller_mount_func):
     """
-    Create an AsyncClient with DangerousDevelopmentOnlyAuthHandler for testing.
+    Create an AsyncClient with TestAuthHandler for testing.
 
     Usage:
         @pytest.mark.asyncio
@@ -27,7 +25,7 @@ async def development_auth_api_client(controller_mount_func):
             response = await client.get("/api/v1/my-account")
     """
     runner = ApiTestRunner()
-    auth = DangerousDevelopmentOnlyAuthHandler()
+    auth = TestAuthHandler()
     runner.mount(controller_mount_func(auth))
 
     app = runner.create_app()

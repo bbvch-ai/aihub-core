@@ -27,10 +27,12 @@ payload rather than in HTTP headers. Concrete handlers extract and validate cred
 signature, and checking audience and issuer claims. `TokenAuthHandler` validates API access tokens (format:
 `sk-<url-safe-random>`) against MongoDB with direct indexed lookup and expiry checking. `OpenWebuiAuthHandler` verifies
 HMAC-SHA256 signatures on OpenWebUI's custom headers (`X-OpenWebUI-User-Name`, `X-OpenWebUI-User-Email`,
-`X-OpenWebUI-Signature`) before delegating to a wrapped inner handler. `DangerousDevelopmentOnlyAuthHandler` skips all
-validation and returns a fake user identity for local development. The static superuser bearer token (`SUPERUSER_TOKEN`)
-is materialized into the `bearer_tokens` collection at API startup, bound to the seeded Keycloak superuser, and
-validated by `TokenAuthHandler` like any other bearer token — there is no dedicated superuser auth handler.
+`X-OpenWebUI-Signature`) before delegating to a wrapped inner handler. For tests and interactive playground servers,
+`TestAuthHandler` (in `swiss_ai_hub.core.testing.auth_utils` — not in `core.auth`) skips token validation and returns a
+fixed test identity; it is not reachable from the production auth public interface. The static superuser bearer token
+(`SUPERUSER_TOKEN`) is materialized into the `bearer_tokens` collection at API startup, bound to the seeded Keycloak
+superuser, and validated by `TokenAuthHandler` like any other bearer token — there is no dedicated superuser auth
+handler.
 
 The production handler, `TokenAndOauth2Handler`, composes these strategies dynamically based on environment settings. It
 tries OAuth2 handlers first (for browser-based SSO), then bearer token handlers (for API tokens and OpenWebUI pipeline

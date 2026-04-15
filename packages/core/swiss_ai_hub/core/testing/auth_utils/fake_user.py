@@ -1,8 +1,9 @@
-from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_settings import (  # noqa: E501
-    DangerousDevelopmentOnlyAuthSettings,
-)
-from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
+"""Backwards-compatible re-export of :func:`test_identity.fake_user`.
 
+Kept as a dedicated module because many call sites import
+``from swiss_ai_hub.core.testing.auth_utils.fake_user import fake_user`` directly.
+"""
 
-def fake_user() -> UserIdentity:
-    return DangerousDevelopmentOnlyAuthSettings().get_user_identity()
+from swiss_ai_hub.core.testing.auth_utils.test_identity import fake_user
+
+__all__ = ["fake_user"]

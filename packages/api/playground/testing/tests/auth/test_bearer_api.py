@@ -6,15 +6,13 @@ import pytest_asyncio
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
 from mongoengine import connect, disconnect
-from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_settings import (  # noqa: E501
-    DangerousDevelopmentOnlyAuthSettings,
-)
 from swiss_ai_hub.core.auth.dependencies.token_auth_handler.token_auth_handler import TokenAuthHandler
 from swiss_ai_hub.core.infrastructure import AIHubSettings, MongoSettings
 from swiss_ai_hub.core.persistence.access.entities.bearer_token import BearerToken
 from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
 from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
+from swiss_ai_hub.core.testing.auth_utils import TEST_USER_EMAIL, TEST_USER_NAME, TEST_USER_OID, TEST_USER_ROLES
 
 from swiss_ai_hub.api.routes.my_account.my_account_controller import MyAccountController
 from swiss_ai_hub.api.runners.api_test_runner import ApiTestRunner
@@ -39,7 +37,9 @@ def mongo_db():
 @pytest.fixture
 def valid_token(mongo_db):
     """Insert a valid token document and return its token string."""
-    config = DangerousDevelopmentOnlyAuthSettings()
+    from types import SimpleNamespace as _SimpleNamespace
+
+    config = _SimpleNamespace(OID=TEST_USER_OID, NAME=TEST_USER_NAME, EMAIL=TEST_USER_EMAIL, ROLES=TEST_USER_ROLES)
     user_oid = os.getenv("OID", config.OID)
 
     # Create the test role on the default tenant so AccessChecker can resolve access rules
@@ -82,11 +82,11 @@ def valid_token(mongo_db):
 def expected_user_data():
     """Return the expected user data based on environment variables."""
     return {
-        "id": os.getenv("OID", DangerousDevelopmentOnlyAuthSettings().OID),
-        "name": os.getenv("NAME", DangerousDevelopmentOnlyAuthSettings().NAME),
-        "email": os.getenv("EMAIL", DangerousDevelopmentOnlyAuthSettings().EMAIL),
+        "id": os.getenv("OID", TEST_USER_OID),
+        "name": os.getenv("NAME", TEST_USER_NAME),
+        "email": os.getenv("EMAIL", TEST_USER_EMAIL),
         "profile_image": None,
-        "roles": DangerousDevelopmentOnlyAuthSettings().ROLES,
+        "roles": TEST_USER_ROLES,
         "is_sys_admin": False,
     }
 

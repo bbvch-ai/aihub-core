@@ -2,9 +2,7 @@ import pytest
 import pytest_asyncio
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
-from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler import (  # noqa: E501
-    DangerousDevelopmentOnlyAuthHandler,
-)
+from swiss_ai_hub.core.testing.auth_utils import TestAuthHandler
 
 from swiss_ai_hub.api.routes.i18n.i18n_controller import I18nController
 from swiss_ai_hub.api.runners.api_test_runner import ApiTestRunner
@@ -16,8 +14,8 @@ DEFAULT_LANG_KEY = "lang"
 
 @pytest_asyncio.fixture(scope="module")
 async def api_client():
-    """Create an API client with I18nController mounted using DangerousDevelopmentOnlyAuthHandler."""
-    auth = DangerousDevelopmentOnlyAuthHandler()
+    """Create an API client with I18nController mounted using TestAuthHandler."""
+    auth = TestAuthHandler()
     controller = I18nController(auth=auth).get_my_locale()
     runner = ApiTestRunner()
     runner.mount(controller)

@@ -4,12 +4,7 @@ import pytest
 import pytest_asyncio
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
-from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler import (  # noqa: E501
-    DangerousDevelopmentOnlyAuthHandler,
-)
-from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_settings import (  # noqa: E501
-    DangerousDevelopmentOnlyAuthSettings,
-)
+from swiss_ai_hub.core.testing.auth_utils import TEST_USER_OID, TestAuthHandler
 
 from swiss_ai_hub.api.routes.memory.dto.delete_memory_response import DeleteAllMemoriesResponse, DeleteMemoryResponse
 from swiss_ai_hub.api.routes.memory.dto.memories_response import MemoriesResponse
@@ -30,7 +25,7 @@ ORG_MEMORIES_ENDPOINT = "/api/v1/active/organization-memories"
 async def user_memory_client():
     """Create a test client for the API with UserMemoryController mounted."""
     runner = ApiTestRunner()
-    auth = DangerousDevelopmentOnlyAuthHandler()
+    auth = TestAuthHandler()
     controller = UserMemoryController(auth=auth)
     controller.get_user_memories().search_user_memories().delete_user_memory().delete_all_user_memories().update_user_memory()
     runner.mount(controller)
@@ -44,7 +39,7 @@ async def user_memory_client():
 async def org_memory_client():
     """Create a test client for the API with OrganizationMemoryController mounted."""
     runner = ApiTestRunner()
-    auth = DangerousDevelopmentOnlyAuthHandler()
+    auth = TestAuthHandler()
     controller = OrganizationMemoryController(auth=auth)
     controller.get_organization_memories().search_organization_memories().delete_organization_memory().delete_all_organization_memories().update_organization_memory()
     runner.mount(controller)
@@ -681,7 +676,7 @@ class TestUserMemoryIntegration:
         from swiss_ai_hub.core.generative_ai.memory.agent_memory import AgentMemory
         from swiss_ai_hub.core.i18n import LocaleHandler, LocaleString
 
-        user_id = DangerousDevelopmentOnlyAuthSettings().OID
+        user_id = TEST_USER_OID
 
         # 1. Add memory via AgentMemory directly (simulates agent adding memory)
         agent_config = AgentConfig(
@@ -780,7 +775,7 @@ class TestUserMemoryIntegration:
         )
 
         # Now test with User B - the API client uses User B's identity
-        # Since we're using DangerousDevelopmentOnlyAuthHandler, it should return User B's context
+        # Since we're using TestAuthHandler, it should return User B's context
         # The test verifies that User B cannot see User A's memories
         response = await user_memory_client.get(USER_MEMORIES_ENDPOINT)
 

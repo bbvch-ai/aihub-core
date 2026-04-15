@@ -215,7 +215,9 @@ All resources stored in `app.state`, accessible via the dependencies listed abov
 **Key classes**: `ApiTestRunner` (sync tests), `SimulatedAgentApiTestRunner` (async, simulates agents via NATS —
 `.with_simple_chunk_events()`, `.create_agent_config_in_db()`, auto-responds to discovery requests).
 
-**Auth bypass**: `DangerousDevelopmentOnlyAuthHandler` with `DangerousDevelopmentOnlyIdentityProvider`.
+**Auth bypass**: `TestAuthHandler` from `swiss_ai_hub.core.testing.auth_utils`. Returns the fixed test identity defined
+in `core/testing/auth_utils/test_identity.py` (`TEST_USER_OID`, `TEST_USER_EMAIL`, `TEST_USER_ROLES`) and bypasses token
+parsing. Lives under `core.testing` — not `core.auth` — so it is not reachable from production code.
 
 **Interactive testing**: `cd playground/testing && python main.py` → http://localhost:8000 (frontend),
 http://localhost:8000/api/v1/active/docs (Swagger).

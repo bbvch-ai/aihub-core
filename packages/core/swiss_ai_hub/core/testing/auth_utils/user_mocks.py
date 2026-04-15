@@ -2,22 +2,24 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_settings import (  # noqa: E501
-    DangerousDevelopmentOnlyAuthSettings,
-)
 from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import _create_admin
 from swiss_ai_hub.core.auth.keycloak.models.keycloak_user import KeycloakUser
 from swiss_ai_hub.core.persistence.user.user_dashboard_entity import UserDashboardEntity
+from swiss_ai_hub.core.testing.auth_utils.test_identity import (
+    TEST_USER_EMAIL,
+    TEST_USER_NAME,
+    TEST_USER_OID,
+    TEST_USER_ROLES,
+)
 
 
 def _create_mock_keycloak_user(user_id: str | None = None, email: str | None = None) -> KeycloakUser:
-    config = DangerousDevelopmentOnlyAuthSettings()
     return KeycloakUser(
-        id=user_id or config.OID,
-        firstName=config.NAME,
+        id=user_id or TEST_USER_OID,
+        firstName=TEST_USER_NAME,
         lastName="",
-        username=email or config.EMAIL,
-        email=email or config.EMAIL,
+        username=email or TEST_USER_EMAIL,
+        email=email or TEST_USER_EMAIL,
         attributes={},
     )
 
@@ -53,28 +55,27 @@ def _build_fake_admin() -> MagicMock:
     written. Tests never hit a real Keycloak server.
 
     Seeds two users by default:
-    - the dev-auth fake user (``DangerousDevelopmentOnlyAuthSettings``) that powers
-      the bypassed auth flow used by most tests;
+    - the fake test user (constants from ``test_identity``) that powers the
+      bypassed auth flow used by most tests;
     - the superuser (``SuperuserSettings``) so ``initialize_superuser_token`` finds
       a Keycloak user by email during API lifespan startup.
     """
     from swiss_ai_hub.core.auth.superuser_settings import SuperuserSettings
 
-    config = DangerousDevelopmentOnlyAuthSettings()
     superuser = SuperuserSettings()
 
     def _default_user(user_id: str) -> dict:
         return {
             "id": user_id,
-            "username": config.EMAIL,
-            "email": config.EMAIL,
-            "firstName": config.NAME,
+            "username": TEST_USER_EMAIL,
+            "email": TEST_USER_EMAIL,
+            "firstName": TEST_USER_NAME,
             "lastName": "",
             "attributes": {"active_tenant_id": ["default"]},
         }
 
     users = _FAKE_KEYCLOAK_USERS
-    users.setdefault(config.OID, _default_user(config.OID))
+    users.setdefault(TEST_USER_OID, _default_user(TEST_USER_OID))
     users.setdefault(
         f"superuser-{superuser.USERNAME}",
         {
@@ -96,7 +97,7 @@ def _build_fake_admin() -> MagicMock:
         return list(users.values())
 
     async def a_create_user(payload: dict, exist_ok: bool = True) -> str:
-        user_id = payload.get("id") or config.OID
+        user_id = payload.get("id") or TEST_USER_OID
         users.setdefault(user_id, _default_user(user_id))
         return user_id
 
@@ -163,13 +164,12 @@ def get_expected_user_data(include_dashboard=True, include_access=True):
     Helper function to get expected user data for tests.
     Returns the user data that should be returned by API endpoints.
     """
-    config = DangerousDevelopmentOnlyAuthSettings()
     data = {
-        "id": config.OID,
-        "name": config.NAME,
-        "email": config.EMAIL,
+        "id": TEST_USER_OID,
+        "name": TEST_USER_NAME,
+        "email": TEST_USER_EMAIL,
         "profile_image": None,
-        "roles": config.ROLES,
+        "roles": list(TEST_USER_ROLES),
         "is_sys_admin": False,
     }
 
