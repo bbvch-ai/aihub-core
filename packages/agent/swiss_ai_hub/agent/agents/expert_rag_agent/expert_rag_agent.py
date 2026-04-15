@@ -43,7 +43,7 @@ from swiss_ai_hub.agent.agents.rag_agent.events.in_order_node_combiner_event imp
 from swiss_ai_hub.agent.agents.rag_agent.events.limit_chat_history_with_context_event import (
     LimitChatHistoryWithContextEvent,
 )
-from swiss_ai_hub.agent.agents.rag_agent.events.namespace_aware_user_message_event import NamespaceAwareUserMessageEvent
+from swiss_ai_hub.agent.agents.rag_agent.events.rag_start_event import RAGStartEvent
 from swiss_ai_hub.agent.agents.rag_agent.events.user_requests_expert_event import UserRequestsExpertEvent
 from swiss_ai_hub.agent.context.run.run_context import RunContext
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
@@ -194,7 +194,7 @@ class ExpertRAGAgent(Agent):
     )
     async def retrieve_user_memory_step(
         self,
-        event: UserMessageEvent | NamespaceAwareUserMessageEvent,
+        event: UserMessageEvent | RAGStartEvent,
         memory: AgentMemory,
     ) -> RetrieveUserMemoryEvent:
         """Retrieve user memories for personalized context."""
@@ -217,7 +217,7 @@ class ExpertRAGAgent(Agent):
     )
     async def retrieve_organization_memory_step(
         self,
-        event: UserMessageEvent | NamespaceAwareUserMessageEvent,
+        event: UserMessageEvent | RAGStartEvent,
         agent_config: ExpertRAGAgentConfig,
         memory: AgentMemory,
     ) -> RetrieveOrganizationMemoryEvent:
@@ -243,7 +243,7 @@ class ExpertRAGAgent(Agent):
     )
     async def add_memory_to_chat_history_step(
         self,
-        user_message_event: UserMessageEvent | NamespaceAwareUserMessageEvent,
+        user_message_event: UserMessageEvent | RAGStartEvent,
         user_memory_event: RetrieveUserMemoryEvent | None,
         org_memory_event: RetrieveOrganizationMemoryEvent | None,
         agent_config: ExpertRAGAgentConfig,
@@ -281,7 +281,7 @@ class ExpertRAGAgent(Agent):
     )
     async def limit_chat_history_step(
         self,
-        user_event: UserMessageEvent | NamespaceAwareUserMessageEvent,
+        user_event: UserMessageEvent | RAGStartEvent,
         memory_history_event: AddMemoryToChatHistoryEvent | None,
         agent_config: ExpertRAGAgentConfig,
     ) -> LimitChatHistoryEvent:
@@ -297,7 +297,7 @@ class ExpertRAGAgent(Agent):
     async def condense_standalone_question_step(
         self,
         event: LimitChatHistoryEvent,
-        start_event: UserMessageEvent | NamespaceAwareUserMessageEvent,
+        start_event: UserMessageEvent | RAGStartEvent,
         agent_config: ExpertRAGAgentConfig,
         t: LocaleHandler,
         displayer: EventDisplayer,
@@ -331,12 +331,12 @@ class ExpertRAGAgent(Agent):
         self,
         event: StandaloneQuestionCondenserEvent | ContextInsufficientWithQueryEvent,
         _: FewShotAcceptEvent,
-        start_event: UserMessageEvent | NamespaceAwareUserMessageEvent,
+        start_event: UserMessageEvent | RAGStartEvent,
         agent_config: ExpertRAGAgentConfig,
         t: LocaleHandler,
     ) -> RetrieverEvent:
         """Retrieves relevant nodes from multiple knowledge sources in parallel."""
-        if isinstance(start_event, NamespaceAwareUserMessageEvent):
+        if isinstance(start_event, RAGStartEvent):
             retrievers = filter_retrievers_by_namespace(agent_config.retrievers, start_event.selected_namespaces)
         else:
             retrievers = agent_config.retrievers
@@ -413,7 +413,7 @@ class ExpertRAGAgent(Agent):
         context_event: InOrderNodeCombinerEvent | ExpertAnswerContextEvent,
         chat_history_event: LimitChatHistoryEvent,
         _: ContextSufficientAcceptEvent | None,
-        start_event: UserMessageEvent | NamespaceAwareUserMessageEvent,
+        start_event: UserMessageEvent | RAGStartEvent,
         agent_config: ExpertRAGAgentConfig,
     ) -> LimitChatHistoryWithContextEvent:
         return do_limit_chat_history_with_context(
@@ -468,7 +468,7 @@ class ExpertRAGAgent(Agent):
     )
     async def forward_to_expert_asking_agent_step(
         self,
-        user_message_event: UserMessageEvent | NamespaceAwareUserMessageEvent,
+        user_message_event: UserMessageEvent | RAGStartEvent,
         _: UserRequestsExpertEvent,
         displayer: EventDisplayer,
         agent_config: ExpertRAGAgentConfig,
@@ -602,7 +602,7 @@ class ExpertRAGAgent(Agent):
     )
     async def store_user_memory_step(
         self,
-        user_message_event: UserMessageEvent | NamespaceAwareUserMessageEvent,
+        user_message_event: UserMessageEvent | RAGStartEvent,
         llm_event: LLMEvent,
         memory: AgentMemory,
         topic: AgentInstanceTopic,

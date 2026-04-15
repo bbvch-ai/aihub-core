@@ -1,7 +1,7 @@
 ---
-namespace_aware_user_message:
-  name: Namespace-bewusste Benutzernachricht
-  description: Ein Benutzernachricht-Event mit vorausgewählten Namespaces für RAG-Retrieval.
+rag_start:
+  name: RAG-Start-Event
+  description: Startet einen RAG-Lauf mit vorausgewählten Namespaces.
 determine_namespaces:
   name: Namespaces-Bestimmungs-Event
   description: Löst das LLM aus, um Namespaces aus dem Gesprächskontext zu bestimmen.
