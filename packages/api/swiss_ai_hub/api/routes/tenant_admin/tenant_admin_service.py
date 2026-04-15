@@ -95,6 +95,7 @@ class TenantAdminService:
             access_rules=data.access_rules,
         )
         await initialize_default_roles_for_tenant(str(entity.id))
+        await KeycloakAdminService.assign_superuser_to_tenant(data.tenant_id)
         return TenantResponse.from_entity(entity, state=TenantState.ACTIVE)
 
     @staticmethod

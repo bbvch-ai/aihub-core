@@ -10878,15 +10878,9 @@ export type RoleResponse = {
     /**
      * Tenant Id
      *
-     * Tenant ID this role belongs to, or None for system roles.
+     * Tenant ID this role belongs to.
      */
-    tenant_id: string | null;
-    /**
-     * Is System Role
-     *
-     * Whether this is a system-wide role (no tenant_id means system role).
-     */
-    readonly is_system_role: boolean;
+    tenant_id: string;
 };
 
 /**
@@ -19386,50 +19380,6 @@ export type RetrieverEventWritable = {
      */
     nodes?: Array<IngestedNode> | null;
     [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<IngestedNode> | null | undefined;
-};
-
-/**
- * RoleResponse
- *
- * Response model representing a role.
- */
-export type RoleResponseWritable = {
-    /**
-     * Id
-     *
-     * The unique identifier of the role.
-     */
-    id: string;
-    /**
-     * Name
-     *
-     * The name of the role.
-     */
-    name: string;
-    /**
-     * Description
-     *
-     * The description of the role.
-     */
-    description: string;
-    /**
-     * Access Rules
-     *
-     * The list of access rules for the role.
-     */
-    access_rules: Array<string>;
-    /**
-     * Usage Limits
-     *
-     * Pattern-based usage limit rules.
-     */
-    usage_limits?: Array<UsageLimitDto>;
-    /**
-     * Tenant Id
-     *
-     * Tenant ID this role belongs to, or None for system roles.
-     */
-    tenant_id: string | null;
 };
 
 /**

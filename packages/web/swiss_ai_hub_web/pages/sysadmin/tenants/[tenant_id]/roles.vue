@@ -2,7 +2,7 @@
   <StructuralColumn
     :title="t('role.title')"
     :loading="rolesAreLoading"
-    size="small"
+    size="normal"
   >
     <div class="grid grid-cols-2 gap-4 2xl:grid-cols-2">
       <RoleCard

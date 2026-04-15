@@ -3,7 +3,7 @@
     :title="tenant?.name"
     close-route="/sysadmin/tenants"
     :loading="tenantsAreLoading"
-    size="small"
+    size="normal"
   >
     <div
       v-if="clonedTenant"

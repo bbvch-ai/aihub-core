@@ -6,11 +6,14 @@ from keycloak import KeycloakAdmin, KeycloakGetError
 from swiss_ai_hub.core.auth.keycloak.keycloak_settings import KeycloakSettings
 from swiss_ai_hub.core.auth.keycloak.models.keycloak_group import KeycloakGroup
 from swiss_ai_hub.core.auth.keycloak.models.keycloak_user import KeycloakUser
+from swiss_ai_hub.core.auth.superuser_settings import SuperuserSettings
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 
 logger = logging.getLogger(__name__)
 
 TENANTS_GROUP_PATH = "/tenants"
+
+_superuser_id_cache: str | None = None
 
 
 @lru_cache(maxsize=1)
@@ -128,6 +131,43 @@ class KeycloakAdminService:
 
     @staticmethod
     @trace_fn
+    async def get_superuser_id() -> str:
+        """Returns the Keycloak user id of the seeded superuser, looked up by email.
+
+        Memoized for the process lifetime — the superuser identity does not change at
+        runtime. A concurrent cold-start race would store the same value twice; benign.
+        Raises ``RuntimeError`` if the superuser is missing from Keycloak (mirrors the
+        fail-fast pattern in ``initialize_superuser_token``).
+        """
+        global _superuser_id_cache
+        if _superuser_id_cache is not None:
+            return _superuser_id_cache
+
+        settings = SuperuserSettings()
+        keycloak_user = await KeycloakAdminService.find_user_by_email(settings.EMAIL)
+        if not keycloak_user:
+            raise RuntimeError(
+                f"Superuser not found in Keycloak (email={settings.EMAIL}). "
+                "Ensure the realm import creates a user with this email."
+            )
+        _superuser_id_cache = keycloak_user.id
+        return _superuser_id_cache
+
+    @staticmethod
+    @trace_fn
+    async def assign_superuser_to_tenant(tenant_id: str) -> None:
+        """Adds the superuser to the ``/tenants/<tenant_id>`` group.
+
+        Idempotent — Keycloak's group-add is a no-op for an existing member. Called from
+        the two paths through which a tenant becomes Active: default-tenant bootstrap and
+        ``TenantAdminService.configure_tenant``.
+        """
+        superuser_id = await KeycloakAdminService.get_superuser_id()
+        await KeycloakAdminService.assign_user_to_tenant(superuser_id, tenant_id)
+        logger.info(f"Superuser ({SuperuserSettings().EMAIL}) assigned to tenant '{tenant_id}'")
+
+    @staticmethod
+    @trace_fn
     async def remove_user_from_tenant(keycloak_user_id: str, tenant_id: str) -> None:
         admin = _create_admin()
         group = await admin.a_get_group_by_path(f"{TENANTS_GROUP_PATH}/{tenant_id}")
@@ -192,14 +232,16 @@ class KeycloakAdminService:
     async def get_user_ids_with_realm_role(role_name: str) -> set[str]:
         """Returns Keycloak user IDs that have the given realm role assigned.
 
-        Used to batch-resolve role membership (e.g. ``AIHubSysAdmin``) without
-        making one Keycloak call per user.
+        Single bulk call to the realm-role-members endpoint — used to batch-resolve
+        role membership (e.g. ``AIHubSysAdmin``) without one call per user.
+
+        ``briefRepresentation=True`` keeps the payload small (drops attributes/groups,
+        the ``id`` field is always included). Errors are not swallowed: a permission
+        problem on the service account or an unknown role name raises rather than
+        silently producing an empty set.
         """
         admin = _create_admin()
-        try:
-            members = await admin.a_get_realm_role_members(role_name)
-        except KeycloakGetError:
-            return set()
+        members = await admin.a_get_realm_role_members(role_name)
         return {m["id"] for m in members if m.get("id")}
 
     @staticmethod

@@ -2,7 +2,7 @@
   <StructuralColumn
     :title="t('user.title')"
     :loading="usersAreLoading"
-    size="small"
+    size="normal"
   >
     <UserList :users="users" />
     <div class="mt-4">

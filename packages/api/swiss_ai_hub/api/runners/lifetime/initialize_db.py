@@ -83,6 +83,7 @@ async def initialize_default_tenant() -> TenantMetadataEntity | None:
         await KeycloakAdminService.create_tenant_group(tenant.id)
         logger.info(f"Keycloak tenant group '/tenants/{tenant.id}' created")
         await _backfill_existing_users_into_default_group(tenant.id)
+        await KeycloakAdminService.assign_superuser_to_tenant(tenant.id)
     except KeycloakGetError:
         logger.warning(
             f"Could not sync Keycloak group for tenant '{tenant.name}'"

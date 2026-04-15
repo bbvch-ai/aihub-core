@@ -13484,7 +13484,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1776183829
+            default: 1776239517
         },
         owned_by: {
             type: 'string',
@@ -17306,22 +17306,9 @@ export const RoleResponseSchema = {
             default: []
         },
         tenant_id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
+            type: 'string',
             title: 'Tenant Id',
-            description: 'Tenant ID this role belongs to, or None for system roles.'
-        },
-        is_system_role: {
-            type: 'boolean',
-            title: 'Is System Role',
-            description: 'Whether this is a system-wide role (no tenant_id means system role).',
-            readOnly: true
+            description: 'Tenant ID this role belongs to.'
         }
     },
     type: 'object',
@@ -17330,8 +17317,7 @@ export const RoleResponseSchema = {
         'name',
         'description',
         'access_rules',
-        'tenant_id',
-        'is_system_role'
+        'tenant_id'
     ],
     title: 'RoleResponse',
     description: 'Response model representing a role.'
@@ -21308,6 +21294,21 @@ export const UserDTOSchema = {
                 }
             ],
             description: 'User dashboard configuration for index page'
+        },
+        roles: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Roles',
+            description: 'Roles the user holds in the current tenant.',
+            default: []
+        },
+        is_sys_admin: {
+            type: 'boolean',
+            title: 'Is Sys Admin',
+            description: 'Whether the user has the AIHubSysAdmin realm role in Keycloak.',
+            default: false
         }
     },
     type: 'object',
@@ -21547,8 +21548,14 @@ export const UserWithAccessDTOSchema = {
             },
             type: 'array',
             title: 'Roles',
-            description: 'List of roles assigned to the user in the current tenant',
+            description: 'Roles the user holds in the current tenant.',
             default: []
+        },
+        is_sys_admin: {
+            type: 'boolean',
+            title: 'Is Sys Admin',
+            description: 'Whether the user has the AIHubSysAdmin realm role in Keycloak.',
+            default: false
         },
         access: {
             $ref: '#/components/schemas/Access',
@@ -30897,65 +30904,6 @@ export const RetrieverEventWritableSchema = {
     additionalProperties: true,
     type: 'object',
     title: 'RetrieverEvent'
-} as const;
-
-export const RoleResponseWritableSchema = {
-    properties: {
-        id: {
-            type: 'string',
-            title: 'Id',
-            description: 'The unique identifier of the role.'
-        },
-        name: {
-            type: 'string',
-            title: 'Name',
-            description: 'The name of the role.'
-        },
-        description: {
-            type: 'string',
-            title: 'Description',
-            description: 'The description of the role.'
-        },
-        access_rules: {
-            items: {
-                type: 'string'
-            },
-            type: 'array',
-            title: 'Access Rules',
-            description: 'The list of access rules for the role.'
-        },
-        usage_limits: {
-            items: {
-                $ref: '#/components/schemas/UsageLimitDTO'
-            },
-            type: 'array',
-            title: 'Usage Limits',
-            description: 'Pattern-based usage limit rules.',
-            default: []
-        },
-        tenant_id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Tenant Id',
-            description: 'Tenant ID this role belongs to, or None for system roles.'
-        }
-    },
-    type: 'object',
-    required: [
-        'id',
-        'name',
-        'description',
-        'access_rules',
-        'tenant_id'
-    ],
-    title: 'RoleResponse',
-    description: 'Response model representing a role.'
 } as const;
 
 export const RouteOptionsWritableSchema = {
