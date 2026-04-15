@@ -1,9 +1,12 @@
+import contextlib
+import inspect
 import uuid
 from collections.abc import AsyncIterator
 
 import pytest
 import pytest_asyncio
-from keycloak import KeycloakAdmin, KeycloakGetError
+from keycloak import KeycloakAdmin
+from keycloak.exceptions import KeycloakDeleteError, KeycloakGetError
 
 from swiss_ai_hub.core.auth.keycloak import keycloak_admin_service as kas_module
 from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
@@ -38,10 +41,8 @@ async def seeded_user(admin: KeycloakAdmin) -> AsyncIterator[tuple[str, str]]:
     email = f"itest-{uuid.uuid4().hex[:8]}@example.com"
     user_id = await admin.a_create_user({"email": email, "username": email, "enabled": True})
     yield user_id, email
-    try:
+    with contextlib.suppress(KeycloakDeleteError, KeycloakGetError):
         await admin.a_delete_user(user_id)
-    except Exception:
-        pass
 
 
 @pytest_asyncio.fixture
@@ -51,29 +52,28 @@ async def seeded_tenant_group(admin: KeycloakAdmin) -> AsyncIterator[str]:
     parent = await admin.a_get_group_by_path("/tenants")
     await admin.a_create_group({"name": tenant_id}, parent=parent["id"])
     yield tenant_id
-    try:
+    with contextlib.suppress(KeycloakDeleteError, KeycloakGetError):
         group = await admin.a_get_group_by_path(f"/tenants/{tenant_id}")
         await admin.a_delete_group(group["id"])
-    except Exception:
-        pass
 
 
 class TestUserCrud:
     @pytest.mark.asyncio
     async def test_create_user(self, admin: KeycloakAdmin) -> None:
         email = f"itest-{uuid.uuid4().hex[:8]}@example.com"
+        user_id: str | None = None
         try:
             user_id = await KeycloakAdminService.create_user(email)
+            assert user_id is not None
 
             raw = await admin.a_get_user(user_id)
             assert raw["email"] == email
             assert raw["username"] == email
             assert raw["enabled"] is True
         finally:
-            try:
-                await admin.a_delete_user(user_id)
-            except Exception:
-                pass
+            if user_id is not None:
+                with contextlib.suppress(KeycloakDeleteError, KeycloakGetError):
+                    await admin.a_delete_user(user_id)
 
     @pytest.mark.asyncio
     async def test_find_user_by_email(self, seeded_user: tuple[str, str]) -> None:
@@ -128,11 +128,9 @@ class TestTenantGroups:
             raw = await admin.a_get_group_by_path(f"/tenants/{tenant_id}")
             assert raw["name"] == tenant_id
         finally:
-            try:
+            with contextlib.suppress(KeycloakDeleteError, KeycloakGetError):
                 raw = await admin.a_get_group_by_path(f"/tenants/{tenant_id}")
                 await admin.a_delete_group(raw["id"])
-            except Exception:
-                pass
 
     @pytest.mark.asyncio
     async def test_get_tenant_group(self, seeded_tenant_group: str) -> None:
@@ -274,10 +272,8 @@ class TestActiveTenantAttribute:
             assert result == matching
         finally:
             for uid in created_ids:
-                try:
+                with contextlib.suppress(KeycloakDeleteError, KeycloakGetError):
                     await admin.a_delete_user(uid)
-                except Exception:
-                    pass
 
     @pytest.mark.asyncio
     async def test_get_user_ids_with_active_tenant_empty(self) -> None:
@@ -293,6 +289,9 @@ class TestAccessChangeHookNotified:
     ) -> None:
         from swiss_ai_hub.core.persistence.access import access_change_hook as hook_module
 
+        assert not inspect.iscoroutinefunction(hook_module.AccessChangeHook.notify), (
+            "AccessChangeHook.notify became async — update these tests to use AsyncMock."
+        )
         calls = {"count": 0}
         monkeypatch.setattr(
             hook_module.AccessChangeHook,
@@ -311,6 +310,9 @@ class TestAccessChangeHookNotified:
     ) -> None:
         from swiss_ai_hub.core.persistence.access import access_change_hook as hook_module
 
+        assert not inspect.iscoroutinefunction(hook_module.AccessChangeHook.notify), (
+            "AccessChangeHook.notify became async — update these tests to use AsyncMock."
+        )
         user_id, _ = seeded_user
         raw = await admin.a_get_user(user_id)
         raw["attributes"] = {"active_tenant_id": [f"itest-tenant-{uuid.uuid4().hex[:8]}"]}
