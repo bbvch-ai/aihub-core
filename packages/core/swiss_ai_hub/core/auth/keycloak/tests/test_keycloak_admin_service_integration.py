@@ -237,9 +237,7 @@ class TestActiveTenantAttribute:
         assert "active_tenant_id" not in raw_after.get("attributes", {})
 
     @pytest.mark.asyncio
-    async def test_set_preserves_other_user_data(
-        self, admin: KeycloakAdmin, seeded_user: tuple[str, str]
-    ) -> None:
+    async def test_set_preserves_other_user_data(self, admin: KeycloakAdmin, seeded_user: tuple[str, str]) -> None:
         """Guards the GET-merge-PUT logic: setting the attribute must not wipe `firstName`."""
         user_id, _ = seeded_user
         raw = await admin.a_get_user(user_id)
