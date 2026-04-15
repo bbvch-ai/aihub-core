@@ -2,106 +2,94 @@
 
 ## Context
 
-ADR `2026_04_14_superuser_via_keycloak_realm_role` made the Superuser an ordinary Keycloak user
-identified by the `AIHubSysAdmin` realm role, and ADR `2026_04_15_sysadmin_implicit_admin_access`
-let any holder of that role act on any tenant without being a member of it. Combined, those two
-decisions make the Superuser **authorized** for every tenant.
+ADR `2026_04_14_superuser_via_keycloak_realm_role` made the Superuser an ordinary Keycloak user identified by the
+`AIHubSysAdmin` realm role, and ADR `2026_04_15_sysadmin_implicit_admin_access` let any holder of that role act on any
+tenant without being a member of it. Combined, those two decisions make the Superuser **authorized** for every tenant.
 
-What they do not do is make the Superuser **visible** in any tenant. The Superuser does not appear
-in `/tenants/<id>` group member listings, does not show up when iterating tenant members for
-provisioning or attribution, and does not exist in any per-tenant directory walked by adjacent
-tooling (Langfuse trace ownership, OpenWebUI group sync, etc.). Sysadmin actions worked, but
-sysadmin presence was invisible — a quiet asymmetry between authorization and identity.
+What they do not do is make the Superuser **visible** in any tenant. The Superuser does not appear in `/tenants/<id>`
+group member listings, does not show up when iterating tenant members for provisioning or attribution, and does not
+exist in any per-tenant directory walked by adjacent tooling (Langfuse trace ownership, OpenWebUI group sync, etc.).
+Sysadmin actions worked, but sysadmin presence was invisible — a quiet asymmetry between authorization and identity.
 
-A second motivation: the platform's two paths through which a tenant becomes Active are the
-default-tenant bootstrap and `TenantAdminService.configure_tenant` (per ADR
-`2026_04_15_keycloak_as_tenant_existence_authority`). Both already construct or validate the
-Keycloak group; both are natural seams for adding "the platform's own user" to that group as part
-of bringing the tenant into being. The alternative — leaving membership to ad-hoc operator action
-— produces a class of tenants where the Superuser is not a member by accident rather than by
-design.
+A second motivation: the platform's two paths through which a tenant becomes Active are the default-tenant bootstrap and
+`TenantAdminService.configure_tenant` (per ADR `2026_04_15_keycloak_as_tenant_existence_authority`). Both already
+construct or validate the Keycloak group; both are natural seams for adding "the platform's own user" to that group as
+part of bringing the tenant into being. The alternative — leaving membership to ad-hoc operator action — produces a
+class of tenants where the Superuser is not a member by accident rather than by design.
 
-The user explicitly framed the desired behaviour as a **default**, not an enforced invariant: if a
-sysadmin later removes the Superuser from a tenant via the Keycloak admin console, that removal
-should be respected. The platform should not "fight" the operator. This rules out periodic
-reconciliation and Keycloak SPI-based blocking.
+The user explicitly framed the desired behaviour as a **default**, not an enforced invariant: if a sysadmin later
+removes the Superuser from a tenant via the Keycloak admin console, that removal should be respected. The platform
+should not "fight" the operator. This rules out periodic reconciliation and Keycloak SPI-based blocking.
 
 ## Decision Drivers
 
-- **Authorization without presence is incomplete**: A principal authorized to act everywhere should
-  be visible everywhere. Membership is the surface that operator tooling and downstream services
-  read from; missing rows produce silent gaps in attribution and discovery.
-- **Add at creation, not by reconciliation**: A reconciler that re-adds the Superuser after
-  removal would override deliberate operator intent. The user's directive is that runtime removal
-  is a legitimate sysadmin action and must stand.
-- **Two well-defined creation paths**: Default-tenant bootstrap and `configure_tenant` are the
-  only routes by which a tenant becomes Active. Both already touch the Keycloak group; adding the
-  Superuser there is local to the operation that creates the tenant.
-- **Idempotent, low-cost mechanism**: Keycloak's group-add is a no-op for an existing member.
-  Calling it during creation costs one Admin API call per new tenant — negligible — and stays
-  correct regardless of prior state.
-- **No parallel role rows**: The authorization path remains the `AIHubSysAdmin` realm-role bypass
-  established by ADR `2026_04_15_sysadmin_implicit_admin_access`. The Superuser is added as a
-  group member only; no `UserTenantRoleEntity` rows are created for it. Reintroducing per-tenant
-  role rows for the Superuser would resurrect exactly the parallel data plane that ADR explicitly
-  rejected.
+- **Authorization without presence is incomplete**: A principal authorized to act everywhere should be visible
+  everywhere. Membership is the surface that operator tooling and downstream services read from; missing rows produce
+  silent gaps in attribution and discovery.
+- **Add at creation, not by reconciliation**: A reconciler that re-adds the Superuser after removal would override
+  deliberate operator intent. The user's directive is that runtime removal is a legitimate sysadmin action and must
+  stand.
+- **Two well-defined creation paths**: Default-tenant bootstrap and `configure_tenant` are the only routes by which a
+  tenant becomes Active. Both already touch the Keycloak group; adding the Superuser there is local to the operation
+  that creates the tenant.
+- **Idempotent, low-cost mechanism**: Keycloak's group-add is a no-op for an existing member. Calling it during creation
+  costs one Admin API call per new tenant — negligible — and stays correct regardless of prior state.
+- **No parallel role rows**: The authorization path remains the `AIHubSysAdmin` realm-role bypass established by ADR
+  `2026_04_15_sysadmin_implicit_admin_access`. The Superuser is added as a group member only; no `UserTenantRoleEntity`
+  rows are created for it. Reintroducing per-tenant role rows for the Superuser would resurrect exactly the parallel
+  data plane that ADR explicitly rejected.
 
 ## Decision
 
-**At tenant creation, the Superuser is added as a member of the new tenant's `/tenants/<id>`
-Keycloak group. This applies to both creation paths — the default-tenant bootstrap and the
-`configure_tenant` flow that attaches metadata to a pre-existing Keycloak group. After creation,
-the membership is treated as ordinary: no startup reconciliation, no periodic restoration, no
-Keycloak SPI to block removal. A sysadmin who removes the Superuser from a tenant via the
+**At tenant creation, the Superuser is added as a member of the new tenant's `/tenants/<id>` Keycloak group. This
+applies to both creation paths — the default-tenant bootstrap and the `configure_tenant` flow that attaches metadata to
+a pre-existing Keycloak group. After creation, the membership is treated as ordinary: no startup reconciliation, no
+periodic restoration, no Keycloak SPI to block removal. A sysadmin who removes the Superuser from a tenant via the
 Keycloak admin console removes them, and the removal stands.**
 
-The scope is **Active tenants only** — tenants that exist in both Keycloak and MongoDB metadata.
-Unconfigured Keycloak groups (groups under `/tenants/` with no metadata yet) are not touched; the
-Superuser is added at the moment those groups become Active via `configure_tenant`.
+The scope is **Active tenants only** — tenants that exist in both Keycloak and MongoDB metadata. Unconfigured Keycloak
+groups (groups under `/tenants/` with no metadata yet) are not touched; the Superuser is added at the moment those
+groups become Active via `configure_tenant`.
 
 The Superuser identity is resolved by email lookup against Keycloak (`SUPERUSER_EMAIL` →
-`KeycloakAdminService.find_user_by_email`) and the resulting user id is memoized for the process
-lifetime. The lookup is lazy — the first tenant creation in the process triggers it; subsequent
-creations reuse the cached id.
+`KeycloakAdminService.find_user_by_email`) and the resulting user id is memoized for the process lifetime. The lookup is
+lazy — the first tenant creation in the process triggers it; subsequent creations reuse the cached id.
 
 ## Consequences
 
 ### Positive
 
-- Every Active tenant has the Superuser as a visible member from the moment it comes into
-  existence. Tenant-member walks, per-tenant attribution, and operator tooling all see a
-  consistent picture.
-- The asymmetry between "the Superuser can act on this tenant" (authorized) and "the Superuser is
-  in this tenant" (visible) closes for the common path. The two ADRs that enable the former now
-  have a structural counterpart on the latter.
-- Operator intent is preserved end-to-end: the Superuser is in by default, but a deliberate
-  removal sticks. There is no surprise re-add behaviour to trip up troubleshooting.
-- The mechanism is local to the two creation paths and uses an idempotent Keycloak operation. No
-  background tasks, no extra deployment artefacts, no SPI compilation.
+- Every Active tenant has the Superuser as a visible member from the moment it comes into existence. Tenant-member
+  walks, per-tenant attribution, and operator tooling all see a consistent picture.
+- The asymmetry between "the Superuser can act on this tenant" (authorized) and "the Superuser is in this tenant"
+  (visible) closes for the common path. The two ADRs that enable the former now have a structural counterpart on the
+  latter.
+- Operator intent is preserved end-to-end: the Superuser is in by default, but a deliberate removal sticks. There is no
+  surprise re-add behaviour to trip up troubleshooting.
+- The mechanism is local to the two creation paths and uses an idempotent Keycloak operation. No background tasks, no
+  extra deployment artefacts, no SPI compilation.
 
 ### Trade-offs
 
-- **Tenants that existed before this change are not retroactively touched.** The default tenant in
-  the current deployment already has the Superuser via the existing first-startup user backfill,
-  so in practice this is a non-issue today; for any future migration where pre-existing tenants
-  matter, a one-shot manual add via the Keycloak admin console is the documented remedy.
-- **Drift is possible.** A sysadmin who removes the Superuser from a tenant gets exactly what they
-  asked for — including the loss of visibility benefits described above. This is the intended
-  semantics; documenting that "removal is permanent" is the operator-facing consequence.
-- **Tampering is not surfaced.** Because the platform does not reconcile, there is no log line or
-  alert when the Superuser is removed from a tenant out-of-band. If tampering detection is later
-  desired, it is a separate decision on top of this one (e.g., a periodic comparison job that
-  emits a security event without re-adding) and would not change the membership model itself.
-- **The first tenant creation per process pays for the Superuser-id lookup.** One additional
-  Keycloak Admin API call, cached thereafter. Acceptable; the alternative (resolving on every
-  call) would be wasteful, and the alternative (resolving at startup unconditionally) would couple
-  more code to startup ordering for no real benefit.
+- **Tenants that existed before this change are not retroactively touched.** The default tenant in the current
+  deployment already has the Superuser via the existing first-startup user backfill, so in practice this is a non-issue
+  today; for any future migration where pre-existing tenants matter, a one-shot manual add via the Keycloak admin
+  console is the documented remedy.
+- **Drift is possible.** A sysadmin who removes the Superuser from a tenant gets exactly what they asked for — including
+  the loss of visibility benefits described above. This is the intended semantics; documenting that "removal is
+  permanent" is the operator-facing consequence.
+- **Tampering is not surfaced.** Because the platform does not reconcile, there is no log line or alert when the
+  Superuser is removed from a tenant out-of-band. If tampering detection is later desired, it is a separate decision on
+  top of this one (e.g., a periodic comparison job that emits a security event without re-adding) and would not change
+  the membership model itself.
+- **The first tenant creation per process pays for the Superuser-id lookup.** One additional Keycloak Admin API call,
+  cached thereafter. Acceptable; the alternative (resolving on every call) would be wasteful, and the alternative
+  (resolving at startup unconditionally) would couple more code to startup ordering for no real benefit.
 
 ### Related Decisions
 
-- `2026_04_14_superuser_via_keycloak_realm_role.md` — Establishes the Superuser as an ordinary
-  Keycloak user (premise)
-- `2026_04_15_sysadmin_implicit_admin_access.md` — Establishes that the Superuser is authorized
-  on every tenant; this ADR adds the corresponding visibility
-- `2026_04_15_keycloak_as_tenant_existence_authority.md` — Defines the two creation paths
-  (`initialize_default_tenant`, `configure_tenant`) at which the Superuser is now added
+- `2026_04_14_superuser_via_keycloak_realm_role.md` — Establishes the Superuser as an ordinary Keycloak user (premise)
+- `2026_04_15_sysadmin_implicit_admin_access.md` — Establishes that the Superuser is authorized on every tenant; this
+  ADR adds the corresponding visibility
+- `2026_04_15_keycloak_as_tenant_existence_authority.md` — Defines the two creation paths (`initialize_default_tenant`,
+  `configure_tenant`) at which the Superuser is now added
