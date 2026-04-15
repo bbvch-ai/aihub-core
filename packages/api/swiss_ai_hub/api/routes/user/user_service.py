@@ -39,8 +39,7 @@ class UserService:
 
         Raises DoesNotExist if the user is not found or does not belong to the given tenant.
         """
-        tenant_user_ids = UserTenantRoleEntity.get_user_ids_in_tenant(tenant.id)
-        if user_oid not in tenant_user_ids:
+        if not await KeycloakAdminService.is_user_member_of_tenant(user_oid, tenant.id):
             raise DoesNotExist(f"User {user_oid} not found in tenant")
         keycloak_user = await KeycloakAdminService.get_user_by_id(user_oid)
         sys_admin_ids = await KeycloakAdminService.get_user_ids_with_realm_role(SYS_ADMIN_ROLE)

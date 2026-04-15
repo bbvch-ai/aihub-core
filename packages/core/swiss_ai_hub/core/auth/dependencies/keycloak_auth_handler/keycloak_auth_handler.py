@@ -105,13 +105,13 @@ class KeycloakAuthHandler(AuthHandler):
                 logger.warning("Token missing sub claim. Available claims: %s", list(decoded_token.keys()))
                 raise HTTPException(status_code=401, detail="Invalid token claims")
 
+            realm_roles = decoded_token.get("roles", [])
+            is_sys_admin = SYS_ADMIN_ROLE in realm_roles
+
             # Sync tenant memberships from JWT tenants claim
             tenants_claim = decoded_token.get("tenants", [])
             self._sync_tenant_memberships(sub, tenants_claim)
             await self._ensure_active_tenant(sub)
-
-            realm_roles = decoded_token.get("roles", [])
-            is_sys_admin = SYS_ADMIN_ROLE in realm_roles
 
             return await self.build_identity(
                 user_id=sub,
@@ -216,20 +216,17 @@ class KeycloakAuthHandler(AuthHandler):
     async def _ensure_active_tenant(user_id: str) -> None:
         """Ensures the user has a valid active tenant, auto-selecting one if needed.
 
-        Existence is always verified against Keycloak (source of truth) before a
-        tenant is accepted as current or auto-selected; the metadata collection
-        is only consulted for the earliest-created fallback ordering.
+        Keycloak is the sole source of truth for tenant membership; the candidate
+        set is exactly the groups the user belongs to in Keycloak. The superuser
+        naturally has every tenant available because they are explicitly added to
+        every tenant group on creation — no sysadmin short-circuit.
 
         Selection order when no valid active tenant is set:
         1. The user's only tenant, if they have exactly one membership.
         2. The configured default tenant (``AIHUB_DEFAULT_TENANT_ID``) if the user is a member.
         3. The earliest-created tenant (by metadata timestamp) among the user's memberships.
         """
-        user_tenant_ids = UserTenantRoleEntity.get_tenant_ids_for_user(user_id)
-        if not user_tenant_ids:
-            return
-
-        existing_tenant_ids = await KeycloakAdminService.filter_existing_tenant_ids(user_tenant_ids)
+        existing_tenant_ids = await KeycloakAdminService.get_user_tenant_ids(user_id)
         if not existing_tenant_ids:
             return
 

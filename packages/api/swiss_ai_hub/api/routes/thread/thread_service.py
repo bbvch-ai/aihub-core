@@ -19,6 +19,8 @@ from openai.types.chat.chat_completion_content_part_image_param import ImageURL
 from openai.types.chat.chat_completion_content_part_input_audio_param import InputAudio
 from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.auth.identity.tenant_identity import TenantIdentity
+from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
+from swiss_ai_hub.core.auth.roles import SYS_ADMIN_ROLE
 from swiss_ai_hub.core.events import BaseEvent
 from swiss_ai_hub.core.events.agent import HumanInTheLoopRequestEvent, HumanInTheLoopResponseEvent
 from swiss_ai_hub.core.i18n import LocaleHandler
@@ -53,18 +55,23 @@ class ThreadService:
     """
 
     @staticmethod
-    def validate_users_have_agent_access(
+    async def validate_users_have_agent_access(
         user_ids: list[str],
         agents: list[tuple[str, str]],
         tenant: TenantIdentity,
     ) -> None:
+        sys_admin_ids = await KeycloakAdminService.get_user_ids_with_realm_role(SYS_ADMIN_ROLE)
         for user_id in user_ids:
-            user_roles = UserTenantRoleEntity.get_roles_for_user_in_tenant(user_id, tenant.id)
-            if not user_roles:
+            if not await KeycloakAdminService.is_user_member_of_tenant(user_id, tenant.id):
                 raise HTTPException(status_code=404, detail=f"User {user_id} not found in tenant")
 
+            user_roles = UserTenantRoleEntity.get_roles_for_user_in_tenant(user_id, tenant.id)
             access_rules = RoleEntity.get_access_rules_for_roles(user_roles, tenant.id)
-            access_checker = AccessChecker(list(access_rules), tenant_access_rules=tenant.access_rules)
+            access_checker = AccessChecker(
+                list(access_rules),
+                tenant_access_rules=tenant.access_rules,
+                is_sys_admin=user_id in sys_admin_ids,
+            )
 
             for agent_class, agent_id in agents:
                 if not access_checker.has_access_to_agent(agent_class, agent_id):

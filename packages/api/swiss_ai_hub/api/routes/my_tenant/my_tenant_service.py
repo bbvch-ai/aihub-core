@@ -3,7 +3,6 @@ from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
-from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 
 from swiss_ai_hub.api.routes.my_tenant.dto.active_tenant_dto import ActiveTenantDTO
 from swiss_ai_hub.api.routes.my_tenant.dto.my_tenants_response import MyTenantsResponse
@@ -13,31 +12,23 @@ from swiss_ai_hub.api.routes.my_tenant.dto.tenant_membership_dto import TenantMe
 class MyTenantService:
     """Handles tenant-related operations for the logged-in user.
 
-    Keycloak is the source of truth for tenant existence; this service treats any
-    tenant_id that is not currently a Keycloak group under ``/tenants/`` as
-    non-existent, regardless of what the metadata collection contains. The
-    metadata collection is consulted only for display fields (name, description).
+    Keycloak is the sole source of truth for tenant existence AND tenant membership.
+    The metadata collection is consulted only for display fields (name, description).
+    Membership and permissions are orthogonal: ``AIHubSysAdmin`` grants admin-level
+    permissions within a tenant but does NOT grant membership. The superuser sees
+    every tenant because they are explicitly added to every tenant group on creation
+    (ADR ``2026_04_15_superuser_added_to_every_new_tenant``), not because of any role.
     """
 
     @staticmethod
     @trace_fn
     async def get_my_tenants(user: UserIdentity) -> MyTenantsResponse:
-        """Returns all tenants the user belongs to, along with sysadmin status.
-
-        ``is_sys_admin`` is sourced from the JWT realm role claim (populated in
-        ``UserIdentity`` by the Keycloak auth handler). The set of tenants is
-        filtered through Keycloak so orphaned metadata records (Keycloak group
-        deleted but MongoDB record remains) are not surfaced to end users.
-        """
-        tenant_ids = UserTenantRoleEntity.get_tenant_ids_for_user(user.id)
+        """Returns all tenants the user is a member of in Keycloak, along with sysadmin status."""
+        tenant_ids = await KeycloakAdminService.get_user_tenant_ids(user.id)
         if not tenant_ids:
             return MyTenantsResponse(tenants=[], is_sys_admin=user.is_sys_admin)
 
-        existing_tenant_ids = await KeycloakAdminService.filter_existing_tenant_ids(tenant_ids)
-        if not existing_tenant_ids:
-            return MyTenantsResponse(tenants=[], is_sys_admin=user.is_sys_admin)
-
-        tenant_entities = TenantMetadataEntity.objects(id__in=list(existing_tenant_ids))
+        tenant_entities = TenantMetadataEntity.objects(id__in=list(tenant_ids))
         tenants = [TenantMembershipDTO.from_entity(entity) for entity in tenant_entities]
         return MyTenantsResponse(tenants=tenants, is_sys_admin=user.is_sys_admin)
 
@@ -66,17 +57,11 @@ class MyTenantService:
     @staticmethod
     @trace_fn
     async def set_my_active_tenant(user_id: str, tenant_id: str) -> ActiveTenantDTO:
-        """Sets the user's active tenant after validating existence and membership.
-
-        Existence is validated against Keycloak (source of truth). Membership is
-        validated against the tenant role table, which is itself synced from the
-        JWT ``tenants`` claim at login.
-        """
+        """Sets the user's active tenant after validating existence and Keycloak membership."""
         if not await KeycloakAdminService.tenant_exists(tenant_id):
             raise HTTPException(status_code=404, detail="Tenant not found.")
 
-        roles = UserTenantRoleEntity.get_roles_for_user_in_tenant(user_id, tenant_id)
-        if not roles:
+        if not await KeycloakAdminService.is_user_member_of_tenant(user_id, tenant_id):
             raise HTTPException(status_code=403, detail="You are not a member of this tenant.")
 
         entity = TenantMetadataEntity.get_metadata_by_tenant_id(tenant_id)

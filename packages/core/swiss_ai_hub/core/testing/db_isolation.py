@@ -18,7 +18,7 @@ import os
 from collections.abc import Generator
 
 # Override at import time. Must precede any ``swiss_ai_hub.*`` import below.
-TEST_DB_NAME = "aihubtest"
+TEST_DB_NAME = "aihub_test"
 os.environ["AIHUB_MONGO_MAIN_DB_NAME"] = TEST_DB_NAME
 
 import pytest  # noqa: E402

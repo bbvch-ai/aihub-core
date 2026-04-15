@@ -105,6 +105,6 @@ class TenantAdminController(Controller):
             The last remaining tenant cannot be deleted (409); any tenant may be deleted as long as at
             least one other tenant exists.
             """
-            TenantAdminService.delete_tenant(tenant_id)
+            await TenantAdminService.delete_tenant(tenant_id)
 
         return self

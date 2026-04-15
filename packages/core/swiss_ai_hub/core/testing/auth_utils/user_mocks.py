@@ -106,11 +106,26 @@ def _build_fake_admin() -> MagicMock:
         if "attributes" in payload:
             existing["attributes"] = dict(payload["attributes"])
 
+    async def a_get_user_groups(user_id: str) -> list[dict]:
+        """Returns the user's Keycloak groups, derived from ``UserTenantRoleEntity`` rows.
+
+        Tests assert "user X is a member of tenant Y" by creating a role entity row;
+        since Keycloak is the real source of truth in production, the fake admin
+        mirrors those rows back as ``/tenants/<id>`` group paths so membership checks
+        that go through ``KeycloakAdminService.get_user_tenant_ids`` / ``is_user_member_of_tenant``
+        succeed exactly when a role row exists for the pair.
+        """
+        from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
+
+        tenant_ids = UserTenantRoleEntity.get_tenant_ids_for_user(user_id)
+        return [{"id": f"group-{tid}", "name": tid, "path": f"/tenants/{tid}"} for tid in tenant_ids]
+
     fake = MagicMock()
     fake.a_get_user = AsyncMock(side_effect=a_get_user)
     fake.a_get_users = AsyncMock(side_effect=a_get_users)
     fake.a_create_user = AsyncMock(side_effect=a_create_user)
     fake.a_update_user = AsyncMock(side_effect=a_update_user)
+    fake.a_get_user_groups = AsyncMock(side_effect=a_get_user_groups)
     fake.a_get_group_by_path = AsyncMock(return_value={"id": "fake-group-id", "name": "tenants"})
     fake.a_get_group_members = AsyncMock(side_effect=lambda *_args, **_kwargs: list(users.values()))
     fake.a_create_group = AsyncMock(return_value="fake-group-id")

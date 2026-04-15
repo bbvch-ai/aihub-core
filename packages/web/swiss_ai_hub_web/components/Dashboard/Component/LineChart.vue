@@ -28,7 +28,6 @@
 </template>
 
 <script setup lang="ts">
-import { useDark } from '@vueuse/core'
 import { computed } from 'vue'
 import VueApexChart from 'vue3-apexcharts'
 
@@ -42,7 +41,7 @@ const props = defineProps<{
   widgetData: DashboardWidget
 }>()
 
-const isDark = useDark({ storageKey: 'dark' })
+const isDark = useDarkMode()
 const { t } = useI18n()
 
 const { agentName } = useAgentNameFromDashboardWidget(props.widgetData)

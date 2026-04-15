@@ -504,7 +504,7 @@ Real-time event emission for streaming LLM output to the UI:
 **Utilities**:
 
 - `db_isolation`: REQUIRED. Every package's top-level `conftest.py` must import `swiss_ai_hub.core.testing.db_isolation`
-  BEFORE any other `swiss_ai_hub.*` import. The module sets `AIHUB_MONGO_MAIN_DB_NAME=aihubtest` at import time so all
+  BEFORE any other `swiss_ai_hub.*` import. The module sets `AIHUB_MONGO_MAIN_DB_NAME=aihub_test` at import time so all
   `AIHubSettings()` instances resolve to the test DB (never the dev/prod `aihub` DB), and registers a session-autouse
   fixture that drops the test DB at session start. Failing to import this first means tests silently hit the dev
   database.

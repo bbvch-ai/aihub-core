@@ -62,6 +62,16 @@ class TenantMetadataEntity(Document):
 
     @classmethod
     @trace_fn
+    def count_tenants(cls) -> int:
+        """Returns the number of stored tenant metadata rows.
+
+        Thin wrapper over ``cls.objects.count()`` that gives the last-tenant guard
+        in ``TenantAdminService.delete_tenant`` a stable, mockable seam.
+        """
+        return cls.objects.count()
+
+    @classmethod
+    @trace_fn
     def get_default_tenant_metadata(cls) -> Self | None:
         """Fetches metadata for the default tenant. Returns None if not stored.
 
@@ -159,30 +169,36 @@ class TenantMetadataEntity(Document):
     @classmethod
     @trace_fn
     def delete_tenant_metadata(cls, tenant_id: str) -> bool:
-        """
-        Deletes stored metadata for a tenant. Returns True if deleted, False if no metadata was stored.
+        """Atomically deletes the metadata row. Returns True if a row was removed, False otherwise.
 
-        Cascades to delete all associated UserTenantRoleEntity and tenant-scoped RoleEntity records.
-        Active tenant cleanup in Keycloak must be handled by the caller via
-        KeycloakAdminService.clear_active_tenant_for_users_in_tenant().
+        Does NOT cascade to ``RoleEntity`` / ``UserTenantRoleEntity``; call
+        ``cascade_delete_tenant_data`` separately once the caller has verified that
+        deletion does not violate higher-level invariants (e.g. "at least one tenant
+        must remain"). Splitting row-delete from cascade lets the caller undo a
+        metadata delete by re-creating the row, which would otherwise be impossible
+        once dependent rows are gone.
 
         Note: ``is_default`` is just a marker for "created at startup" — it carries no
-        deletion-protection semantics. Callers that need to prevent leaving the system
-        without any tenant should enforce that themselves (e.g., by checking the
-        remaining tenant count).
+        deletion-protection semantics.
+        """
+        return cls.objects(id=tenant_id).delete() > 0
 
-        Uses deferred imports because RoleEntity and UserTenantRoleEntity both import
-        this module at module level — importing them here at module level would create circular imports.
+    @classmethod
+    @trace_fn
+    def cascade_delete_tenant_data(cls, tenant_id: str) -> None:
+        """Deletes the tenant-scoped role and membership rows for a tenant.
+
+        Intended to run *after* ``delete_tenant_metadata`` once the caller has
+        confirmed the row-delete did not violate the last-tenant invariant. Using
+        deferred imports because ``RoleEntity`` and ``UserTenantRoleEntity`` import
+        this module at module level.
+
+        Active tenant cleanup in Keycloak must be handled by the caller via
+        ``KeycloakAdminService.get_user_ids_with_active_tenant`` +
+        ``clear_active_tenant``.
         """
         from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
         from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 
-        tenant = cls.get_metadata_by_tenant_id(tenant_id)
-        if not tenant:
-            return False
-
         UserTenantRoleEntity.objects(tenant_id=tenant_id).delete()
         RoleEntity.objects(tenant_id=tenant_id).delete()
-
-        tenant.delete()
-        return True

@@ -67,7 +67,14 @@ def auth_handler() -> ConcreteAuthHandler:
 
 @pytest.fixture(autouse=True)
 def mock_keycloak_active_tenant():
-    """Mock KeycloakAdminService active tenant methods with an in-memory store."""
+    """Mock KeycloakAdminService active-tenant + membership methods with in-memory stores.
+
+    Membership is derived from ``UserTenantRoleEntity`` rows for these BDD tests: if a
+    user has a role row in a tenant, they are treated as a Keycloak member of that
+    tenant. This mirrors the test fixture semantics (Given steps that create role rows
+    are expressing "user is a member of tenant X") without requiring tests to also
+    create Keycloak group memberships.
+    """
     active_tenants: dict[str, str | None] = {}
 
     async def mock_get_active_tenant_id(user_id: str) -> str | None:
@@ -79,10 +86,22 @@ def mock_keycloak_active_tenant():
     async def mock_clear_active_tenant(user_id: str) -> None:
         active_tenants.pop(user_id, None)
 
+    async def mock_tenant_exists(tenant_id: str) -> bool:
+        return TenantMetadataEntity.objects(id=tenant_id).first() is not None
+
+    async def mock_get_user_tenant_ids(user_id: str) -> set[str]:
+        return set(UserTenantRoleEntity.get_tenant_ids_for_user(user_id))
+
+    async def mock_is_user_member_of_tenant(user_id: str, tenant_id: str) -> bool:
+        return bool(UserTenantRoleEntity.get_roles_for_user_in_tenant(user_id, tenant_id))
+
     with (
         patch.object(KeycloakAdminService, "get_active_tenant_id", side_effect=mock_get_active_tenant_id),
         patch.object(KeycloakAdminService, "set_active_tenant", side_effect=mock_set_active_tenant),
         patch.object(KeycloakAdminService, "clear_active_tenant", side_effect=mock_clear_active_tenant),
+        patch.object(KeycloakAdminService, "tenant_exists", side_effect=mock_tenant_exists),
+        patch.object(KeycloakAdminService, "get_user_tenant_ids", side_effect=mock_get_user_tenant_ids),
+        patch.object(KeycloakAdminService, "is_user_member_of_tenant", side_effect=mock_is_user_member_of_tenant),
     ):
         yield active_tenants
 

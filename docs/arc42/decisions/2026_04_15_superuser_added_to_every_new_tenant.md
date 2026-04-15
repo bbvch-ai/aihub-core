@@ -3,13 +3,19 @@
 ## Context
 
 ADR `2026_04_14_superuser_via_keycloak_realm_role` made the Superuser an ordinary Keycloak user identified by the
-`AIHubSysAdmin` realm role, and ADR `2026_04_15_sysadmin_implicit_admin_access` let any holder of that role act on any
-tenant without being a member of it. Combined, those two decisions make the Superuser **authorized** for every tenant.
+`AIHubSysAdmin` realm role. ADR `2026_04_15_sysadmin_implicit_admin_access` makes holders of that role admins **within
+tenants they are a member of**, but explicitly does NOT grant implicit membership — membership is strictly a Keycloak
+group question. This ADR is the mechanism by which the Superuser — the one sysadmin that must reach every tenant by
+design — becomes a member of every tenant: through ordinary Keycloak group membership, added at tenant creation time. It
+is the counterpart to the authorization-only sysadmin bypass; together the two ADRs replace the earlier (and briefly
+considered) model in which the realm role alone granted both.
 
-What they do not do is make the Superuser **visible** in any tenant. The Superuser does not appear in `/tenants/<id>`
-group member listings, does not show up when iterating tenant members for provisioning or attribution, and does not
-exist in any per-tenant directory walked by adjacent tooling (Langfuse trace ownership, OpenWebUI group sync, etc.).
-Sysadmin actions worked, but sysadmin presence was invisible — a quiet asymmetry between authorization and identity.
+What the realm role does not do is make the Superuser **visible** in any tenant. The Superuser does not appear in
+`/tenants/<id>` group member listings, does not show up when iterating tenant members for provisioning or attribution,
+and does not exist in any per-tenant directory walked by adjacent tooling (Langfuse trace ownership, OpenWebUI group
+sync, etc.). Without explicit group membership, sysadmin presence is invisible — a quiet asymmetry between identity and
+the directories other services read from. Adding the Superuser to the group closes that asymmetry **and** is the sole
+mechanism by which the Superuser becomes an authorized actor within each tenant.
 
 A second motivation: the platform's two paths through which a tenant becomes Active are the default-tenant bootstrap and
 `TenantAdminService.configure_tenant` (per ADR `2026_04_15_keycloak_as_tenant_existence_authority`). Both already
@@ -34,10 +40,13 @@ should not "fight" the operator. This rules out periodic reconciliation and Keyc
   that creates the tenant.
 - **Idempotent, low-cost mechanism**: Keycloak's group-add is a no-op for an existing member. Calling it during creation
   costs one Admin API call per new tenant — negligible — and stays correct regardless of prior state.
-- **No parallel role rows**: The authorization path remains the `AIHubSysAdmin` realm-role bypass established by ADR
-  `2026_04_15_sysadmin_implicit_admin_access`. The Superuser is added as a group member only; no `UserTenantRoleEntity`
-  rows are created for it. Reintroducing per-tenant role rows for the Superuser would resurrect exactly the parallel
-  data plane that ADR explicitly rejected.
+- **No parallel role rows**: Within each tenant the Superuser is a member of, authorization follows the `AIHubSysAdmin`
+  realm-role bypass in `AccessChecker` (per ADR `2026_04_15_sysadmin_implicit_admin_access`). The Superuser is added as
+  a Keycloak group member only; no `UserTenantRoleEntity` rows are created for it. Reintroducing per-tenant role rows
+  for the Superuser would resurrect exactly the parallel data plane that ADR explicitly rejected.
+- **Membership is the sole mechanism for cross-tenant reach.** Because the sysadmin ADR was scoped to authorization and
+  not membership, this group-add is not merely additive (closing a visibility gap) — it is load-bearing: without it, the
+  Superuser would fail the Keycloak membership check on tenant-scoped endpoints.
 
 ## Decision
 
@@ -89,7 +98,10 @@ lazy — the first tenant creation in the process triggers it; subsequent creati
 ### Related Decisions
 
 - `2026_04_14_superuser_via_keycloak_realm_role.md` — Establishes the Superuser as an ordinary Keycloak user (premise)
-- `2026_04_15_sysadmin_implicit_admin_access.md` — Establishes that the Superuser is authorized on every tenant; this
-  ADR adds the corresponding visibility
+- `2026_04_15_sysadmin_implicit_admin_access.md` — Establishes that `AIHubSysAdmin` grants admin-level authorization
+  *within tenants the principal is a member of*; this ADR is the membership mechanism that makes that authorization
+  reachable for the Superuser on every tenant
 - `2026_04_15_keycloak_as_tenant_existence_authority.md` — Defines the two creation paths (`initialize_default_tenant`,
   `configure_tenant`) at which the Superuser is now added
+- `2026_02_20_keycloak_tenant_assignment_via_groups.md` — `/tenants/<id>` groups as the sole membership mechanism, which
+  this ADR uses directly

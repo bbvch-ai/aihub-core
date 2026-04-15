@@ -33,12 +33,10 @@
 </template>
 
 <script setup lang="ts">
-import { useDark } from '@vueuse/core'
-
 const { t } = useI18n()
 const localePath = useLocalePath()
 
-const isDark = useDark({ storageKey: 'dark' })
+const isDark = useDarkMode()
 
 function toggleDarkMode() {
   isDark.value = !isDark.value

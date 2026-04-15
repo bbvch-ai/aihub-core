@@ -131,6 +131,37 @@ class KeycloakAdminService:
 
     @staticmethod
     @trace_fn
+    async def get_user_tenant_ids(user_id: str) -> set[str]:
+        """Returns the tenant IDs the user is a member of according to Keycloak.
+
+        Keycloak is the sole source of truth for tenant membership. The
+        ``UserTenantRoleEntity`` collection only stores role assignments; an empty
+        row (or no row) does not imply non-membership, and a stale row does not
+        imply membership. The ``AIHubSysAdmin`` realm role grants permissions,
+        not membership — the superuser has access to every tenant because they
+        are explicitly added to every tenant group on creation, not because of
+        any role short-circuit.
+        """
+        admin = _create_admin()
+        groups = await admin.a_get_user_groups(user_id)
+        tenant_ids: set[str] = set()
+        for group in groups:
+            path = group.get("path", "")
+            if not path.startswith(f"{TENANTS_GROUP_PATH}/"):
+                continue
+            parts = path.split("/")
+            if len(parts) >= 3 and parts[2]:
+                tenant_ids.add(parts[2])
+        return tenant_ids
+
+    @staticmethod
+    @trace_fn
+    async def is_user_member_of_tenant(user_id: str, tenant_id: str) -> bool:
+        """Whether the user is a member of ``/tenants/<tenant_id>`` in Keycloak."""
+        return tenant_id in await KeycloakAdminService.get_user_tenant_ids(user_id)
+
+    @staticmethod
+    @trace_fn
     async def get_superuser_id() -> str:
         """Returns the Keycloak user id of the seeded superuser, looked up by email.
 

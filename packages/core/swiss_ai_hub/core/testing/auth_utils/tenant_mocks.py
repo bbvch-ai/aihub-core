@@ -32,7 +32,7 @@ def _create_mock_tenant() -> MagicMock:
 @pytest.fixture(autouse=True)
 def mock_tenant_entity_autouse():
     """
-    Mock tenant metadata, membership roles, Keycloak existence, and auth tenant resolution for tests.
+    Mock tenant metadata, membership, Keycloak existence, and auth tenant resolution for tests.
 
     This fixture ensures that auth handlers can resolve tenant context without a real database
     or Keycloak. It mocks:
@@ -41,6 +41,8 @@ def mock_tenant_entity_autouse():
     - TenantMetadataEntity.ensure_default_tenant_metadata_exists() → returns the test metadata
     - KeycloakAdminService.tenant_exists() → True (tests act as if Keycloak acknowledges the tenant)
     - KeycloakAdminService.filter_existing_tenant_ids() → echoes the input (all exist)
+    - KeycloakAdminService.get_user_tenant_ids() → returns {TEST_TENANT_ID} (authoritative membership)
+    - KeycloakAdminService.is_user_member_of_tenant() → True (source of truth for membership)
     - UserTenantRoleEntity.get_roles_for_user_in_tenant() → returns dev roles
     - UserTenantRoleEntity.create_or_update() → no-op returning a mock
     - UserTenantRoleEntity.get_user_ids_in_tenant() → returns the dev user ID
@@ -71,12 +73,20 @@ def mock_tenant_entity_autouse():
     async def mock_filter_existing_tenant_ids(tenant_ids):
         return set(tenant_ids)
 
+    async def mock_get_user_tenant_ids(user_id):
+        return {TEST_TENANT_ID}
+
+    async def mock_is_user_member_of_tenant(user_id, tenant_id):
+        return True
+
     with (
         patch.object(TenantMetadataEntity, "get_default_tenant_metadata", return_value=mock_tenant),
         patch.object(TenantMetadataEntity, "get_metadata_by_tenant_id", return_value=mock_tenant),
         patch.object(TenantMetadataEntity, "ensure_default_tenant_metadata_exists", return_value=mock_tenant),
         patch.object(KeycloakAdminService, "tenant_exists", side_effect=mock_tenant_exists),
         patch.object(KeycloakAdminService, "filter_existing_tenant_ids", side_effect=mock_filter_existing_tenant_ids),
+        patch.object(KeycloakAdminService, "get_user_tenant_ids", side_effect=mock_get_user_tenant_ids),
+        patch.object(KeycloakAdminService, "is_user_member_of_tenant", side_effect=mock_is_user_member_of_tenant),
         patch.object(UserTenantRoleEntity, "get_roles_for_user_in_tenant", side_effect=mock_get_roles),
         patch.object(UserTenantRoleEntity, "create_or_update", side_effect=mock_create_or_update),
         patch.object(UserTenantRoleEntity, "get_user_ids_in_tenant", side_effect=mock_get_user_ids_in_tenant),

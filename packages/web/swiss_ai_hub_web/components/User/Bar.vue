@@ -56,7 +56,6 @@
 
 <script setup lang="ts">
 import NotificationsOverlay from '@core/components/Notification/NotificationsOverlay.vue'
-import { useDark } from '@vueuse/core'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
@@ -67,8 +66,7 @@ const userInitials = computed(() =>
   myUser.value?.name?.split(' ').map(n => n[0]).join(''),
 )
 
-// Initialize the dark mode reactive state with persistence
-const isDark = useDark({ storageKey: 'dark' })
+const isDark = useDarkMode()
 
 function toggleDarkMode() {
   isDark.value = !isDark.value

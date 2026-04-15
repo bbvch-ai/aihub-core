@@ -3,6 +3,12 @@ from typing import Annotated
 from pydantic import BaseModel, Field, field_validator
 from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 
+from swiss_ai_hub.api.routes.tenant_admin.dto.tenant_field_constraints import (
+    TenantDescription,
+    TenantId,
+    TenantName,
+)
+
 
 class ConfigureTenantRequest(BaseModel):
     """Request model for attaching metadata to an existing Keycloak tenant group.
@@ -11,12 +17,9 @@ class ConfigureTenantRequest(BaseModel):
     `/admin/tenants/unconfigured` endpoint to list available tenant IDs.
     """
 
-    tenant_id: Annotated[
-        str,
-        Field(description="Keycloak tenant group name to configure (must already exist in Keycloak)."),
-    ]
-    name: Annotated[str, Field(description="The unique display name of the tenant.")]
-    description: Annotated[str, Field(description="A short description of the tenant.")] = ""
+    tenant_id: TenantId
+    name: TenantName
+    description: TenantDescription = ""
     access_rules: Annotated[list[str], Field(description="Access rules granted to this tenant.")] = []
 
     @field_validator("access_rules")

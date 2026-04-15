@@ -72,7 +72,17 @@ class TenantAdminService:
 
         Raises 400 if the Keycloak group does not exist (we use ``KeycloakGetError``
         as control flow — its presence means the Keycloak side does not have this id),
-        and 409 if metadata is already present.
+        and 409 if metadata is already present for this ``tenant_id`` or the display
+        ``name`` is taken.
+
+        Ordering invariant: all validation runs before any side effects, then both
+        idempotent side effects (role seeding, superuser group membership) run
+        before the metadata is persisted. The metadata row is the *last* write,
+        so any failure along the way leaves the tenant in the Unconfigured state —
+        a subsequent retry will re-enter this method and complete cleanly because
+        both side effects are idempotent. This preserves the three-state invariant
+        (Active / Orphaned / Unconfigured); a partially-configured state is not
+        reachable.
         """
         try:
             await KeycloakAdminService.get_tenant_group(data.tenant_id)
@@ -88,14 +98,21 @@ class TenantAdminService:
                 detail=f"Tenant '{data.tenant_id}' is already configured.",
             )
 
+        if TenantMetadataEntity.get_metadata_by_tenant_name(data.name):
+            raise HTTPException(
+                status_code=409,
+                detail=f"Tenant with name '{data.name}' already exists.",
+            )
+
+        await initialize_default_roles_for_tenant(data.tenant_id)
+        await KeycloakAdminService.assign_superuser_to_tenant(data.tenant_id)
+
         entity = TenantMetadataEntity.create_tenant_metadata(
             tenant_id=data.tenant_id,
             name=data.name,
             description=data.description,
             access_rules=data.access_rules,
         )
-        await initialize_default_roles_for_tenant(str(entity.id))
-        await KeycloakAdminService.assign_superuser_to_tenant(data.tenant_id)
         return TenantResponse.from_entity(entity, state=TenantState.ACTIVE)
 
     @staticmethod
@@ -129,19 +146,60 @@ class TenantAdminService:
 
     @staticmethod
     @trace_fn
-    def delete_tenant(tenant_id: str) -> None:
+    async def delete_tenant(tenant_id: str) -> None:
         """Removes the MongoDB metadata. Allowed on both ACTIVE and ORPHANED tenants.
 
         The Keycloak group (if present) is left untouched — cleanup is a separate
         concern managed via the Keycloak admin console. The last remaining tenant
         cannot be deleted (409) — that would leave the platform with no tenant at
         all and prevent any user from doing anything.
+
+        Race-safety: a naive ``count() <= 1`` pre-check is racy under concurrent
+        deletes (two sysadmins could each see ``count == 2`` and both proceed,
+        leaving the platform with zero tenants). The sequence here closes that gap
+        without requiring distributed locks or MongoDB transactions:
+
+        1. Preliminary count check — fast-fails the obvious case.
+        2. Snapshot the metadata (so we can undo).
+        3. Atomic single-document delete.
+        4. Re-count. If zero tenants remain, a concurrent delete took the other
+           one; restore the row we just deleted and raise 409. The restore is
+           itself atomic on a single document.
+        5. Only after the invariant is confirmed do we cascade the role/
+           membership cleanup — these cascades are irreversible, so deferring
+           them past the post-condition check is what makes the restore viable.
+
+        In any interleaving of concurrent deletes, either exactly one delete wins
+        and the rest get 409 (when one-of-two races), or all get 409 and every row
+        is restored (when both-of-two race). The invariant ``count >= 1`` holds
+        throughout in the steady state after all deletes resolve.
         """
-        if TenantMetadataEntity.objects.count() <= 1:
+        tenant = TenantMetadataEntity.get_metadata_by_tenant_id(tenant_id)
+        if not tenant:
+            raise HTTPException(status_code=404, detail="Tenant not found.")
+
+        if TenantMetadataEntity.count_tenants() <= 1:
             raise HTTPException(
                 status_code=409,
                 detail="Cannot delete the last remaining tenant; the platform must always have at least one.",
             )
-        deleted = TenantMetadataEntity.delete_tenant_metadata(tenant_id)
-        if not deleted:
+
+        snapshot = {
+            "tenant_id": tenant.id,
+            "name": tenant.name,
+            "description": tenant.description,
+            "access_rules": list(tenant.access_rules),
+            "is_default": tenant.is_default,
+        }
+
+        if not TenantMetadataEntity.delete_tenant_metadata(tenant_id):
             raise HTTPException(status_code=404, detail="Tenant not found.")
+
+        if TenantMetadataEntity.count_tenants() == 0:
+            TenantMetadataEntity.create_tenant_metadata(**snapshot)
+            raise HTTPException(
+                status_code=409,
+                detail="Cannot delete the last remaining tenant; a concurrent delete already removed the other.",
+            )
+
+        TenantMetadataEntity.cascade_delete_tenant_data(tenant_id)

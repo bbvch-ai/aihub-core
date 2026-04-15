@@ -44,7 +44,6 @@ const emit = defineEmits<{
 
 const { tenantId } = useTenant()
 const { createRole } = useCreateRole()
-const { tenantId } = useTenant()
 
 const close = () => {
   emit('close')
