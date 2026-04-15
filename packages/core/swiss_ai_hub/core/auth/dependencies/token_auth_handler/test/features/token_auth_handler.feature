@@ -14,7 +14,7 @@ Feature: TokenAuthHandler
     Then I should receive an HTTP error with detail "Invalid token format"
 
   Scenario: Token not found in database is rejected
-    Given a token does not exist in the database with token "123456789012345678901234.random123"
+    Given a token does not exist in the database with token "sk-nonexistenttokenvalue"
     When I invoke the TokenAuthHandler with an Authorization header using the token expecting error
     Then I should receive an HTTP error with detail "Token not found"
 

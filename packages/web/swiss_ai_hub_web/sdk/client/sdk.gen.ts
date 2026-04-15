@@ -769,7 +769,8 @@ export const listUnconfiguredTenants = <TComposable extends Composable = '$fetch
  * Removes the MongoDB metadata for the tenant. Allowed on both active and orphaned rows.
  *
  * The Keycloak group (if present) is not touched — manage it in the Keycloak admin console.
- * The default tenant cannot be deleted.
+ * The last remaining tenant cannot be deleted (409); any tenant may be deleted as long as at
+ * least one other tenant exists.
  */
 export const deleteTenant = <TComposable extends Composable = '$fetch', DefaultT extends DeleteTenantResponse = DeleteTenantResponse>(options: Options<TComposable, DeleteTenantData, DeleteTenantResponse, DefaultT>) => (options.client ?? client).delete<TComposable, DeleteTenantResponse | DefaultT, DeleteTenantError, DefaultT>({
     security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],

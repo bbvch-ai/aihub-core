@@ -151,24 +151,32 @@ AIHUB_USER_SIGNUP_DEFAULT_ROLES="AIHubUser,AIHubAgentUser"
 FIRST_AIHUB_USER_SIGNUP_DEFAULT_ROLES="AIHubAdmin"
 ```
 
-## Superuser bypass
+## Sysadmin access
 
-The global superuser role bypasses tenant restrictions:
+Users with the Keycloak realm role `AIHubSysAdmin` receive implicit admin access across every tenant and every resource.
+This is implemented in `AccessChecker.access_level()` — when `UserIdentity.is_sys_admin=True` the method short-circuits
+and returns `ACCESS_ADMIN` without evaluating tenant or user access rules. The two-stage check described above does not
+apply to sysadmins.
 
-- **Virtual superuser tenant**: Operates within a virtual tenant that has `aihub.admin.>` access rules
-- **Full admin access**: Has admin access to all resources across all tenants
-- **Bypasses boundaries**: While still going through the two-stage access control system, the virtual tenant ensures all
-  checks pass
-- **Always authenticated**: Uses a static token rather than identity provider authentication
+Key behaviors:
 
-Configure through:
+- **No `UserTenantRoleEntity` rows required**: sysadmins bypass membership checks. The auth pipeline's
+  `_resolve_tenant_by_id` and `_resolve_active_tenant` paths skip the membership lookup when the principal is a
+  sysadmin.
+- **May act with `acting_within_tenant=None`**: cross-tenant sysadmin endpoints (e.g. the tenant administration UI) do
+  not require a tenant context.
+- **Real Keycloak users only**: there is no synthetic "virtual tenant" or static OID anymore. Every authenticated
+  request resolves to a real Keycloak user with a real id, traceable through Langfuse and visible in tenant member
+  listings (per the tenant-scoped Superuser membership rule, see related ADR).
+- **Sysadmin endpoints**: gated by `Security(self.sys_admin_user())` from the `Controller` base class, which checks
+  `UserIdentity.is_sys_admin` and returns 403 otherwise. There is no separate sysadmin auth handler.
 
-```bash
-SUPERUSER_TOKEN="<secure-token>"
-SUPERUSER_OID="<user-id>"
-```
+Assign the `AIHubSysAdmin` realm role in Keycloak directly or via identity provider mappers. The platform also seeds a
+real Keycloak user from `SUPERUSER_USERNAME`/`SUPERUSER_EMAIL`/`SUPERUSER_PASSWORD` in the realm import and materializes
+`SUPERUSER_TOKEN` as a regular bearer token bound to that user; both are operator-supplied conveniences, neither is a
+synthetic identity.
 
-Use sparingly - superuser access exists for platform administration, not regular operations.
+Use sparingly — sysadmin access exists for platform administration, not regular operations.
 
 ## Validation rules
 

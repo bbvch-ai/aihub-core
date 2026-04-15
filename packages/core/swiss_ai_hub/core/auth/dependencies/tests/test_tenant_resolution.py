@@ -138,8 +138,8 @@ def create_second_tenant(cleanup_documents: list[Any], context: dict[str, Any], 
     cleanup_documents.append(tenant)
 
 
-@given(parsers.parse('the system role "{role_name}" exists'))
-def ensure_system_role(cleanup_documents: list[Any], context: dict[str, Any], role_name: str) -> None:
+@given(parsers.parse('the default role "{role_name}" exists'))
+def ensure_default_role(cleanup_documents: list[Any], context: dict[str, Any], role_name: str) -> None:
     """Seed the role on every tenant in the context so tenant-scoped queries find it."""
     tenants = [t for t in (context.get("default_tenant"), context.get("second_tenant")) if t is not None]
     for tenant in tenants:

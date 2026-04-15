@@ -15,7 +15,7 @@ packages/core/swiss_ai_hub/core/
 │   └── visualizers/types/           # Workflow graph types (NodeData, EdgeData, WorkflowGraph)
 ├── auth/                            # Authentication & authorization
 │   ├── access/access_checker.py      # Permission matching engine (hierarchical wildcards)
-│   ├── dependencies/                # Auth handlers (AuthHandler → OAuth2, Token, Bearer, OpenWebUI, Superuser, DevOnly)
+│   ├── dependencies/                # Auth handlers (AuthHandler → OAuth2, Token, Bearer, OpenWebUI, DevOnly)
 │   └── identity/                    # Identity models (UserIdentity, TenantIdentity)
 ├── context/                         # Context utilities
 ├── dependencies/                    # NATS client dependency injection (use_nats)
@@ -95,7 +95,7 @@ packages/core/swiss_ai_hub/core/
 │   ├── sharepoint/                  # SharePointSettings
 │   └── azure_*/                     # Azure Cognitive Services, Data Lake
 ├── persistence/                     # Database abstractions (MongoEngine ODM)
-│   ├── access/                      # RoleEntity, TenantEntity, UserTenantRoleEntity
+│   ├── access/                      # RoleEntity, TenantMetadataEntity, UserTenantRoleEntity
 │   ├── agents/                      # AgentConfigEntity
 │   ├── process/                     # ProcessConfigEntity
 │   ├── messaging/                   # ThreadEntity, PersistedAgentEventEntity, PersistedProcessEventEntity
@@ -359,6 +359,11 @@ Key methods:
 | `OpenWebuiAuthHandler`                | OpenWebUI session integration |
 | `DangerousDevelopmentOnlyAuthHandler` | No validation (dev only)      |
 
+Sysadmin-only endpoints (those requiring the `AIHubSysAdmin` Keycloak realm role) are NOT protected by a separate auth
+handler. They use `Security(self.sys_admin_user())` from the `Controller` base class, which wraps `authenticated_user()`
+and gates on `UserIdentity.is_sys_admin`. The flag itself is populated by the regular auth handlers from the JWT roles
+claim (or, for static tokens, via `KeycloakAdminService.get_user_realm_roles`).
+
 ### Permission System (AccessChecker)
 
 Hierarchical permission matching: `aihub.[user|admin].<resource>.<subresource>.<id>`
@@ -367,13 +372,35 @@ Hierarchical permission matching: `aihub.[user|admin].<resource>.<subresource>.<
 
 **AccessLevel**: `ACCESS_ADMIN` > `ACCESS_USER` > `ACCESS_DENIED`. Admin rules implicitly grant user access.
 
+### KeycloakAdminService
+
+Static-method service wrapping the Keycloak Admin API. Encodes platform-specific knowledge of the `/tenants/` hierarchy
+and the `AIHubSysAdmin` realm role. Selected methods:
+
+- `tenant_exists(tenant_id)` / `filter_existing_tenant_ids(ids)` — authoritative existence check (Keycloak owns
+  existence, not Mongo). Use these before trusting `TenantMetadataEntity` data.
+- `get_tenant_group(tenant_id)` / `get_all_tenant_groups()` / `create_tenant_group(tenant_id)` — group lifecycle.
+- `assign_user_to_tenant(user_id, tenant_id)` / `remove_user_from_tenant(user_id, tenant_id)` /
+  `get_tenant_members(tenant_id, ...)` / `count_tenant_members(tenant_id)` — membership.
+- `get_user_realm_roles(user_id)` / `get_user_ids_with_realm_role(role_name)` — realm role lookups.
+- `get_active_tenant_id(user_id)` / `set_active_tenant(user_id, tenant_id)` / `clear_active_tenant(user_id)` /
+  `get_user_ids_with_active_tenant(tenant_id)` — active-tenant attribute (per ADR `2026_04_07`).
+- `get_superuser_id()` (memoized) / `assign_superuser_to_tenant(tenant_id)` (idempotent) — superuser membership; the
+  latter is called from default-tenant bootstrap and `TenantAdminService.configure_tenant` (per ADR
+  `2026_04_15_superuser_added_to_every_new_tenant`).
+
 **Key methods**:
 
-- `AccessChecker.from_user(user)` — create checker from UserIdentity
+- `AccessChecker.from_user(user)` — create checker from UserIdentity (carries `is_sys_admin` through)
 - `.has_access_to_agent(agent_class, agent_id)` → bool
 - `.has_access_to_process(process_class, process_id)` → bool
 - `.has_access_to_service(service_name)` → bool
 - `.access_level(permission_template)` → AccessLevel
+
+**Sysadmin short-circuit**: When `UserIdentity.is_sys_admin=True`, `access_level()` returns `ACCESS_ADMIN`
+unconditionally, bypassing both the tenant-ceiling and user-rule stages. Sysadmins may have `acting_within_tenant=None`.
+The auth pipeline (`AuthHandler._resolve_tenant_by_id` / `_resolve_active_tenant`) also skips the `UserTenantRoleEntity`
+membership check for sysadmins. See ADR `2026_04_15_sysadmin_implicit_admin_access.md`.
 
 ## Internationalization (i18n)
 
@@ -402,8 +429,10 @@ class RoleEntity(Document):
         return {rule for role in cls.objects(name__in=role_names) for rule in role.access_rules}
 ```
 
-**Key entities**: `RoleEntity` (access rules), `TenantEntity` (tenants), `UserTenantRoleEntity` (tenant-scoped role
-assignments), `ThreadEntity` (conversations), `PersistedAgentEventEntity` / `PersistedProcessEventEntity` (event
+**Key entities**: `RoleEntity` (access rules; every role belongs to exactly one tenant), `TenantMetadataEntity` (tenant
+display metadata — name, description, access rules; **NOT** the source of truth for tenant existence, Keycloak's
+`/tenants/<id>` group is — verify via `KeycloakAdminService.tenant_exists()`), `UserTenantRoleEntity` (tenant-scoped
+role assignments), `ThreadEntity` (conversations), `PersistedAgentEventEntity` / `PersistedProcessEventEntity` (event
 storage), `AgentConfigEntity` / `ProcessConfigEntity` (configs), `UserDashboardEntity` (dashboard config),
 `NotificationEntity`, `LocaleStringEntity`.
 
@@ -474,6 +503,11 @@ Real-time event emission for streaming LLM output to the UI:
 
 **Utilities**:
 
+- `db_isolation`: REQUIRED. Every package's top-level `conftest.py` must import `swiss_ai_hub.core.testing.db_isolation`
+  BEFORE any other `swiss_ai_hub.*` import. The module sets `AIHUB_MONGO_MAIN_DB_NAME=aihubtest` at import time so all
+  `AIHubSettings()` instances resolve to the test DB (never the dev/prod `aihub` DB), and registers a session-autouse
+  fixture that drops the test DB at session start. Failing to import this first means tests silently hit the dev
+  database.
 - `@async_test`: Decorator for async pytest-bdd step functions (wraps with `asyncio.run()`)
 - `fake_user()`: Creates a mock `UserIdentity` for tests (uses `DangerousDevelopmentOnlyAuthSettings`)
 - `ASGIAdapter`: ASGI adapter for testing FastAPI routes without a running server

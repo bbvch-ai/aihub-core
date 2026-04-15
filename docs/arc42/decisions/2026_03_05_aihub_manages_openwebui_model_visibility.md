@@ -52,7 +52,7 @@ The provisioner runs on five triggers — all changes propagate immediately:
   authenticated proprietary endpoints.
 - **Active tenant scoping**: Users only belong to groups matching their active tenant, not all tenants they have roles
   in. This prevents cross-tenant visibility leakage.
-- **`AccessChangeHook` pattern**: MongoEngine `post_save`/`post_delete` signals on RoleEntity, TenantEntity, and
+- **`AccessChangeHook` pattern**: MongoEngine `post_save`/`post_delete` signals on RoleEntity, TenantMetadataEntity, and
   UserTenantRoleEntity automatically trigger `sync_access()`. Signals are connected by the API lifetime manager, so
   they're only active in production — not during unit tests. No manual notification calls in entity code. Rapid
   mutations are debounced with a 2-second quiet window so bulk operations (e.g. assigning 50 users) collapse into a

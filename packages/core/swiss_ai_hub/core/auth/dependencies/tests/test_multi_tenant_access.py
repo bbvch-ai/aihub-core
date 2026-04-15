@@ -61,8 +61,8 @@ def create_tenant(cleanup_documents: list[Any], context: dict[str, Any], name: s
     cleanup_documents.append(tenant)
 
 
-@given(parsers.parse('the system role "{role_name}" exists with access rules "{access_rules}"'))
-def ensure_system_role(
+@given(parsers.parse('the default role "{role_name}" exists with access rules "{access_rules}"'))
+def ensure_default_role(
     cleanup_documents: list[Any],
     context: dict[str, Any],
     role_name: str,

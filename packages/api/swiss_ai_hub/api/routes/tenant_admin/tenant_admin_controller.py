@@ -102,7 +102,8 @@ class TenantAdminController(Controller):
             """Removes the MongoDB metadata for the tenant. Allowed on both active and orphaned rows.
 
             The Keycloak group (if present) is not touched — manage it in the Keycloak admin console.
-            The default tenant cannot be deleted.
+            The last remaining tenant cannot be deleted (409); any tenant may be deleted as long as at
+            least one other tenant exists.
             """
             TenantAdminService.delete_tenant(tenant_id)
 
