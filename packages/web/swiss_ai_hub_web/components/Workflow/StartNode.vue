@@ -1,14 +1,14 @@
 <template>
-  <Handle
-    type="target"
-    :position="Position.Left"
+  <WorkflowNodeCard
+    :icon="data.icon ?? 'mage:play-circle-fill'"
+    :label="data.label"
+    :description="data.description"
+    accent="red"
   />
-  <div class="overflow-hidden rounded-md border border-surface-100 bg-red-500 p-6 text-lg font-bold text-white shadow-md">
-    {{ id }}
-  </div>
   <Handle
     type="source"
-    :position="Position.Right"
+    :position="Position.Bottom"
+    :connectable="false"
   />
 </template>
 

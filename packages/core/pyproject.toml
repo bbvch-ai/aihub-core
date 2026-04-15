@@ -1,6 +1,6 @@
 [project]
 name = "swiss-ai-hub-core"
-version = "0.275.0"
+version = "0.277.0"
 description = ""
 requires-python = ">=3.13, <3.14"
 authors = [
@@ -15,7 +15,6 @@ readme = "README.md"
 dependencies = [
     "mongoengine>=0.29.1",
     "llama-index-core==0.14.12",
-    "networkx>=3.4.2",
     "azure-ai-documentintelligence>=1.0.2",
     "pydantic-settings>=2.7.0",
     "python-i18n>=0.3.9",
@@ -75,7 +74,6 @@ dependencies = [
 dev = [
     "matplotlib>=3.10.1",
     "pandas-stubs>=2.3.3.251201",
-    "types-networkx>=3.4.2.20241115",
     "types-pyyaml>=6.0.12.20240917",
 ]
 

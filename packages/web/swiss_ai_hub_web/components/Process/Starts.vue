@@ -24,6 +24,7 @@ defineProps<{
 const route = useRoute()
 const { locale } = useI18n()
 const { sendProcessStartForm } = useSendProcessStartForm()
+const { tenantId } = useTenant()
 
 const resolveLocale = (localeString: LocaleString): string => {
   const key = locale.value as keyof LocaleString
@@ -37,6 +38,7 @@ const submitForm = async (form: Record<string, unknown>, humanInput: HumanInSpec
     submissionRoute: humanInput.route,
     submissionMethod: humanInput.method,
     data: form,
+    tenantId: tenantId.value!,
   })
 }
 </script>

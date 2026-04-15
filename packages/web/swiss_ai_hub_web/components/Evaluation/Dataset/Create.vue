@@ -65,6 +65,7 @@ const dataset = ref<DatasetCreate>({
 })
 
 const { createDataset } = useCreateDataset()
+const { tenantId } = useTenant()
 
 const emit = defineEmits<{
   close: []
@@ -74,7 +75,7 @@ const close = () => {
   emit('close')
 }
 const save = async () => {
-  await createDataset({ dataset: dataset.value })
+  await createDataset({ dataset: dataset.value, tenantId: tenantId.value! })
   emit('close')
 }
 </script>

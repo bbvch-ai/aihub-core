@@ -41,6 +41,7 @@ const confirm = useConfirm()
 const toast = useToast()
 
 const { updateDataset } = useUpdateDataset()
+const { tenantId } = useTenant()
 
 const changedItems = computed<DatasetItemCreate[]>(() => {
   return editableDataset.value.items
@@ -71,7 +72,7 @@ const safeDataset = (event) => {
     accept: async () => {
       const items = changedItems.value
       if (items.length > 0) {
-        await updateDataset({ dataset: { items } })
+        await updateDataset({ dataset: { items }, tenantId: tenantId.value! })
         toast.add({ severity: 'success', summary: t('evaluation.dataset.saved_summary'), detail: t('evaluation.dataset.saved_detail'), life: 3000 })
       }
     },

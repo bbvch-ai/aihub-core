@@ -1,0 +1,137 @@
+---
+name: Backup E2E Tests
+on:
+  push:
+    branches: [main]
+    paths:
+      - packages/backup/**
+      - infra/deployment/templates/docker-compose.yml.j2
+      - infra/deployment/compose-config.yml
+  pull_request:
+    branches: [main, initiative/*]
+    paths:
+      - packages/backup/**
+      - infra/deployment/templates/docker-compose.yml.j2
+      - infra/deployment/compose-config.yml
+    types: [opened, synchronize, reopened, ready_for_review]
+permissions:
+  contents: read
+  packages: read
+jobs:
+  e2e-backup:
+    name: Backup E2E
+    runs-on: ubuntu-latest
+    if: ${{ !github.event.pull_request.draft }}
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+      - name: Configure Git Authentication
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.PRIVATE_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+          git config --global url."git@github.com:".insteadOf "https://github.com/"
+      - name: Generate Docker Compose files
+        run: make generate-compose
+      - name: Login to GHCR
+        run: echo "${{ secrets.PAT_GITHUB_READ_PACKAGES }}" | docker login ghcr.io
+          -u ${{ github.actor }} --password-stdin
+      - name: Build backup image
+        run: docker compose -f infra/docker-compose.dev.yml --env-file .env.dev build
+          backup-code
+      - name: Pull infrastructure images
+        run: |
+          docker compose -f infra/docker-compose.dev.yml --env-file .env.dev pull --quiet \
+            postgres postgres-ferretdb ferretdb neo4j clickhouse valkey nats \
+            seaweedfs-master seaweedfs-volume seaweedfs-filer seaweedfs-s3 seaweedfs-init \
+            etcd etcd-init milvus-standalone
+      - name: Start services
+        run: |
+          docker compose -f infra/docker-compose.dev.yml --env-file .env.dev up -d \
+            backup-code backup-webserver backup-daemon postgres postgres-ferretdb ferretdb neo4j clickhouse valkey nats \
+            seaweedfs-master seaweedfs-volume seaweedfs-filer seaweedfs-s3 seaweedfs-init \
+            etcd etcd-init milvus-standalone
+      - name: Wait for services to become healthy
+        run: |
+          echo "Waiting for backup container to become healthy..."
+          MAX_WAIT=600
+          INTERVAL=10
+          ELAPSED=0
+          while [ $ELAPSED -lt $MAX_WAIT ]; do
+            STATUS=$(docker inspect --format='{{.State.Health.Status}}' backup-code 2>/dev/null || echo "not_found")
+            echo "  backup container status: $STATUS ($ELAPSED/${MAX_WAIT}s)"
+            if [ "$STATUS" = "healthy" ]; then
+              echo "Backup container is healthy — all dependencies ready."
+              docker ps --format "table {{.Names}}\t{{.Status}}"
+              break
+            fi
+            if [ "$STATUS" = "unhealthy" ]; then
+              echo "Backup container is unhealthy. Logs:"
+              docker logs backup-code --tail=50
+              exit 1
+            fi
+            sleep $INTERVAL
+            ELAPSED=$((ELAPSED + INTERVAL))
+          done
+          if [ $ELAPSED -ge $MAX_WAIT ]; then
+            echo "Timed out waiting for backup container after ${MAX_WAIT}s"
+            docker ps --format "table {{.Names}}\t{{.Status}}"
+            docker logs backup-code --tail=50
+            exit 1
+          fi
+      - name: Verify service connectivity
+        run: |
+          wait_for_port() {
+            local name=$1 url=$2 max_wait=${3:-120}
+            local elapsed=0
+            echo "Waiting for $name at $url..."
+            while [ $elapsed -lt $max_wait ]; do
+              if curl -sf --max-time 5 "$url" > /dev/null 2>&1; then
+                echo "  $name is reachable (${elapsed}s)"
+                return 0
+              fi
+              sleep 5
+              elapsed=$((elapsed + 5))
+            done
+            echo "  ERROR: $name not reachable after ${max_wait}s"
+            return 1
+          }
+          wait_for_port "Dagster" "http://127.0.0.1:3004/server_info"
+          wait_for_port "Milvus REST API" "http://127.0.0.1:9091/healthz" 180
+          wait_for_port "S3 (SeaweedFS)" "http://127.0.0.1:9000/status"
+          echo "All services reachable from host."
+      - name: Copy env for tests
+        run: cp .env.dev .env
+      - name: Install dependencies
+        run: uv sync --all-packages --dev --frozen
+      - name: Run E2E tests
+        id: pytest
+        continue-on-error: true
+        working-directory: packages/backup
+        run: uv run pytest -m e2e -v --timeout=600 --junitxml=e2e-pytest.xml
+      - name: Stop services
+        if: always()
+        run: docker compose -f infra/docker-compose.dev.yml --env-file .env.dev down
+          --remove-orphans
+      - name: Clean up SSH keys
+        if: always()
+        run: |
+          rm -rf ~/.ssh
+          git config --global --unset url."git@github.com:".insteadOf || true
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backup-e2e-test-report
+          path: packages/backup/e2e-pytest.xml
+      - name: Check test results
+        if: steps.pytest.outcome == 'failure'
+        run: exit 1
