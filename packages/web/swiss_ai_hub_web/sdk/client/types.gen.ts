@@ -4300,44 +4300,6 @@ export type EdgeData = {
      * ID of the target node
      */
     target: string;
-    /**
-     * Edge Id
-     *
-     * Unique identifier for the edge
-     */
-    edge_id: number;
-    /**
-     * Event Name
-     *
-     * Event represented by this edge
-     */
-    event_name: string;
-    /**
-     * Event Full Name
-     *
-     * Fully qualified name of the event
-     */
-    event_full_name: string;
-    /**
-     * Is Start Event
-     *
-     * Whether this edge represents a start event
-     */
-    is_start_event: boolean;
-    /**
-     * Is Stop Event
-     *
-     * Whether this edge represents a stop event
-     */
-    is_stop_event: boolean;
-    /**
-     * Payload
-     *
-     * Payload information for the event
-     */
-    payload: {
-        [key: string]: EventPayloadField;
-    };
 };
 
 /**
@@ -4522,66 +4484,6 @@ export type EventBucket = {
      * Total number of events in this bucket
      */
     total_events?: number;
-};
-
-/**
- * EventInfo
- *
- * Information about an event.
- */
-export type EventInfo = {
-    /**
-     * Name
-     *
-     * The name of the event class
-     */
-    name: string;
-    /**
-     * Full Name
-     *
-     * The fully qualified name of the event class
-     */
-    full_name: string;
-    /**
-     * Is Start Event
-     *
-     * Whether this is a start event
-     */
-    is_start_event: boolean;
-    /**
-     * Is Stop Event
-     *
-     * Whether this is a stop event
-     */
-    is_stop_event: boolean;
-    /**
-     * Payload
-     *
-     * Information about the event payload fields
-     */
-    payload: {
-        [key: string]: EventPayloadField;
-    };
-};
-
-/**
- * EventPayloadField
- *
- * Information about an event payload field.
- */
-export type EventPayloadField = {
-    /**
-     * Type
-     *
-     * The human-readable type of the payload field
-     */
-    type: string;
-    /**
-     * Description
-     *
-     * Description of the payload field, if available
-     */
-    description: string | null;
 };
 
 /**
@@ -6310,26 +6212,6 @@ export type InputAudio = {
      */
     format: 'wav' | 'mp3';
     [key: string]: unknown | string | 'wav' | 'mp3';
-};
-
-/**
- * InputEventInfo
- *
- * Information about an input event for a step.
- */
-export type InputEventInfo = {
-    /**
-     * Event Names
-     *
-     * The events that can be accepted
-     */
-    event_names: Array<EventInfo>;
-    /**
-     * Optional
-     *
-     * Whether this input is optional
-     */
-    optional: boolean;
 };
 
 /**
@@ -9133,15 +9015,9 @@ export type NodeData = {
     /**
      * Type
      *
-     * Type of node (step, start, stop)
+     * Type of node
      */
-    type: string;
-    /**
-     * Node Id
-     *
-     * Internal identifier for the node
-     */
-    node_id: string;
+    type: 'start' | 'step' | 'stop';
     /**
      * Label
      *
@@ -9160,32 +9036,6 @@ export type NodeData = {
      * Icon for the node, if available
      */
     icon?: string | null;
-    /**
-     * Input Events
-     *
-     * Input events required by this node
-     */
-    input_events?: {
-        [key: string]: InputEventInfo;
-    } | null;
-    /**
-     * Output Events
-     *
-     * Output events produced by this node
-     */
-    output_events?: Array<EventInfo> | null;
-    /**
-     * Max Executions
-     *
-     * Maximum number of times this node can be executed
-     */
-    max_executions?: number | null;
-    /**
-     * Stop On Error
-     *
-     * Whether workflow should stop on error in this node
-     */
-    stop_on_error?: boolean | null;
 };
 
 /**
@@ -13975,26 +13825,6 @@ export type WebhookResponse = {
  * Complete workflow graph representation.
  */
 export type WorkflowGraph = {
-    /**
-     * Directed
-     *
-     * Whether the graph is directed
-     */
-    directed: boolean;
-    /**
-     * Multigraph
-     *
-     * Whether the graph is a multigraph
-     */
-    multigraph: boolean;
-    /**
-     * Graph
-     *
-     * Graph-level attributes
-     */
-    graph: {
-        [key: string]: unknown;
-    };
     /**
      * Nodes
      *

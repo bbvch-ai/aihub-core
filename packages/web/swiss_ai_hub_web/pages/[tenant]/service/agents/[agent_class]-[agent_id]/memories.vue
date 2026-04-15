@@ -1,8 +1,8 @@
 <template>
   <MemoryManagementPage
     translation-prefix="agent"
-    :context-name="agent?.agent_config.name ?? ''"
-    :context-loading="agentIsLoading"
+    :context-name="agentInstance?.agent_config.name ?? ''"
+    :context-loading="agentInstanceIsLoading"
     :memory-context="{
       type: 'user',
       agent_class: route.params.agent_class as string,
@@ -16,6 +16,5 @@
 <script setup lang="ts">
 const route = useRoute()
 
-// Get agent info
-const { agent, agentIsLoading } = useAgent()
+const { agentInstance, agentInstanceIsLoading } = useAgentInstance()
 </script>

@@ -774,10 +774,17 @@ services:
     container_name: clickhouse
     image: {{ global.registry_prefix }}{{ image_tags.clickhouse }}
     restart: always
+    depends_on:
+      seaweedfs-s3:
+        condition: service_healthy
+      seaweedfs-init:
+        condition: service_completed_successfully
     environment:
       CLICKHOUSE_DB: default
       CLICKHOUSE_USER: "clickhouse"
       CLICKHOUSE_PASSWORD: ${LANGFUSE_CLICKHOUSE_PASSWORD}
+      S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
+      S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
     volumes:
     {%- if stage in ['dev', 'build'] %}
       # Named volumes avoid Windows bind-mount issues with ClickHouse atomic renames
@@ -787,6 +794,7 @@ services:
       - {{ global.volume_root }}/clickhouse-data:/var/lib/clickhouse
       - {{ global.volume_root }}/clickhouse-logs:/var/log/clickhouse-server
     {%- endif %}
+      - ./configs/clickhouse/clickhouse-backup.xml:/etc/clickhouse-server/config.d/backup-s3.xml:ro
     {%- if stage in ['dev', 'local', 'build'] %}
     ports:
       - "127.0.0.1:8123:8123"
@@ -805,6 +813,7 @@ services:
         max-file: 2
     networks:
       - data
+      - storage
 
   langfuse-worker:
     container_name: langfuse-worker
@@ -1200,6 +1209,23 @@ services:
     image: {{ global.registry_prefix }}{{ image_tags.backup[stage] }}
     {%- endif %}
     restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      postgres-ferretdb:
+        condition: service_healthy
+      seaweedfs-s3:
+        condition: service_healthy
+      neo4j:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+      milvus-standalone:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+      nats:
+        condition: service_started
     entrypoint:
       - dagster
       - api
@@ -1213,16 +1239,29 @@ services:
     environment:
       PYTHONUNBUFFERED: 1
       DAGSTER_HOME: /dagster_home
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS}
+      BACKUP_MINIMUM_KEEP: ${BACKUP_MINIMUM_KEEP}
+      POSTGRES_HOST: postgres
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_FERRETDB_HOST: postgres-ferretdb
       MONGO_USERNAME: ${MONGO_USERNAME}
       MONGO_PASSWORD: ${MONGO_PASSWORD}
+      MILVUS_HOST: {{ MILVUS_HOST }}
+      MILVUS_PORT: "{{ MILVUS_PORT }}"
       MILVUS_ROOT_PASSWORD: ${MILVUS_ROOT_PASSWORD}
+      NEO4J_CONTAINER: neo4j
+      CLICKHOUSE_HOST: clickhouse
+      CLICKHOUSE_USER: clickhouse
       LANGFUSE_CLICKHOUSE_PASSWORD: ${LANGFUSE_CLICKHOUSE_PASSWORD}
-      REDIS_TOKEN: ${REDIS_TOKEN}
-      NATS_TOKEN: ${NATS_TOKEN}
       S3_STORAGE_ACCESS_KEY: ${S3_STORAGE_ACCESS_KEY}
       S3_STORAGE_SECRET_KEY: ${S3_STORAGE_SECRET_KEY}
+      AWS_ENDPOINT_URL: {{ S3_STORAGE_ENDPOINT }}
+      BACKUP_S3_BUCKET: ${BACKUP_S3_BUCKET}
+      VALKEY_CONTAINER: valkey
+      REDIS_TOKEN: ${REDIS_TOKEN}
+      NATS_URL: {{ NATS_ENDPOINT }}
+      NATS_TOKEN: ${NATS_TOKEN}
     volumes:
       - {{ global.volume_root }}/backup-dagster-home:/dagster_home
       - ./configs/backup/backup-dagster{{ config_variant_suffix }}.yml:/dagster_home/dagster.yaml:ro

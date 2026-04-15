@@ -313,6 +313,8 @@ agent:
     clone: Clone
   workflow:
     title: Agentic Workflow
+    view_tooltip: View workflow
+    empty: No workflow graph available for this agent class.
   threads:
     title: Agent Threads
   create:

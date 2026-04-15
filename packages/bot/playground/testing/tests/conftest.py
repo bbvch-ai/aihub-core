@@ -7,10 +7,9 @@ load_dotenv(find_dotenv(usecwd=True))
 
 # MUST be the first ``swiss_ai_hub`` import — sets AIHUB_MONGO_MAIN_DB_NAME=aihub_test
 # at import time so subsequent ``AIHubSettings()`` instantiations resolve to the test DB.
-from swiss_ai_hub.core.testing.db_isolation import _isolate_test_db  # noqa: E402, F401
-
 from aiohttp import ClientResponse  # noqa: E402
 from swiss_ai_hub.core.testing.auth_utils.user_mocks import mock_keycloak_admin_service_autouse  # noqa: E402, F401
+from swiss_ai_hub.core.testing.db_isolation import _isolate_test_db  # noqa: E402, F401
 
 
 @pytest.fixture(autouse=True)

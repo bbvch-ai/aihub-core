@@ -33,6 +33,7 @@ const { t } = useI18n()
 const toast = useToast()
 
 const { updateRole } = useUpdateRole()
+const { tenantId } = useTenant()
 
 const clonedRole = ref<CreateRoleRequest>({
   name: '',
@@ -47,7 +48,7 @@ watch(role, (newRole: RoleResponse) => {
 })
 
 const saveRole = async () => {
-  await updateRole({ roleId: role.value.id, updatedRole: clonedRole.value })
+  await updateRole({ roleId: role.value.id, updatedRole: clonedRole.value, tenantId: tenantId.value! })
   toast.add({ severity: 'success', summary: t('role.role_saved.summary'), detail: t('role.role_saved.detail'), life: 3000 })
 }
 </script>

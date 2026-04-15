@@ -8,6 +8,7 @@ if TYPE_CHECKING:
     from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 
 from swiss_ai_hub.backup.container_discovery import ContainerDiscovery
+from swiss_ai_hub.backup.dagster.partitions import backup_partitions
 
 
 @failure_hook
@@ -44,6 +45,7 @@ def restore_asset_job(assets: list[AssetsDefinition]) -> UnresolvedAssetJobDefin
     return define_asset_job(
         name="full_restore_job",
         selection=assets,
+        partitions_def=backup_partitions,
         description="Restore all services from a backup. Select a partition to choose timestamp. "
         "On success, containers are restarted. On failure, containers stay stopped — human must investigate.",
     )
