@@ -315,6 +315,8 @@ agent:
     clone: Klonen
   workflow:
     title: Agenten-Workflow
+    view_tooltip: Workflow anzeigen
+    empty: Für diese Agentenklasse ist kein Workflow-Graph verfügbar.
   threads:
     title: Agenten-Threads
   create:

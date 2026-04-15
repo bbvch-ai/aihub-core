@@ -83,6 +83,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 const { mutateAsync: updateNamespace } = useUpdateNamespace()
+const { tenantId } = useTenant()
 
 const displayName = ref('')
 const description = ref('')
@@ -108,6 +109,7 @@ const handleSave = async () => {
     namespace: namespaceId,
     database: databaseId,
     payload: ref(updatePayload),
+    tenantId: tenantId.value!,
   })
 
   emit('success')

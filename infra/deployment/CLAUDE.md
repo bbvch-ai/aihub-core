@@ -24,6 +24,9 @@ deployment/
 │       ├── traefik-middlewares.yml.j2  # Security headers middleware
 │       ├── traefik-tls.yml.j2         # Self-signed cert config (local/build only)
 │       ├── milvus-config.yml.j2       # Milvus vector DB config
+│       ├── clickhouse-backup.xml.j2   # ClickHouse S3 named disk for BACKUP TO Disk()
+│       ├── backup-dagster.yml.j2      # Backup Dagster instance config (SQLite, logging)
+│       ├── backup-workspace.yml.j2    # Backup Dagster workspace (gRPC code server)
 │       ├── init.Dockerfile.j2         # etcd init container
 │       ├── init_etcd.sh.j2            # etcd auth setup (idempotent)
 │       ├── s3-entrypoint.sh.j2        # SeaweedFS S3 gateway startup
@@ -41,7 +44,7 @@ deployment/
 **Generated outputs** (under `infra/` — NEVER edit directly):
 
 - `infra/docker-compose.{stage}{.gpu}.yml` — 10 compose files
-- `infra/configs/{service}/{config}.{stage}{.gpu}.{ext}` — ~70 stage-variant config files
+- `infra/configs/{service}/{config}.{stage}{.gpu}.{ext}` — ~80 stage-variant config files
 - `infra/configs/{service}/{static-scripts}` — ~6 stage-independent scripts (etcd, seaweedfs, postgres, openwebui)
 
 ## Generation Pipeline

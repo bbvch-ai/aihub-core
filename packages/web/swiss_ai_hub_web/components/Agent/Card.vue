@@ -91,6 +91,7 @@ const route = useRoute()
 const { t } = useI18n()
 const toast = useToast()
 const confirm = useConfirm()
+const { tenantId } = useTenant()
 const { deleteAgentInstance, isDeleting } = useDeleteAgentInstance()
 
 const isActive = computed(() => {
@@ -114,6 +115,7 @@ async function handleDelete() {
     await deleteAgentInstance({
       agentClass: props.agent.agent_class,
       agentId: props.agent.agent_id,
+      tenantId: tenantId.value!,
     })
 
     toast.add({

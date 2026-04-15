@@ -42,6 +42,7 @@ CONFIG_SPECS = [
     ("templates/configs/traefik-middlewares.yml.j2", "configs/traefik", "middlewares.{stage}{hardware}.yml"),
     ("templates/configs/traefik-tls.yml.j2", "configs/traefik", "tls.{stage}{hardware}.yml"),
     # Static scripts - no stage/hardware variations
+    ("templates/configs/clickhouse-backup.xml.j2", "configs/clickhouse", "clickhouse-backup.xml"),
     ("templates/configs/init.Dockerfile.j2", "configs/etcd", "init.Dockerfile"),
     ("templates/configs/s3-entrypoint.sh.j2", "configs/seaweedfs", "s3-entrypoint.sh"),
     ("templates/configs/s3-init-buckets.sh.j2", "configs/seaweedfs", "init-buckets.sh"),

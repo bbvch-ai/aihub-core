@@ -1,6 +1,7 @@
 from dagster import AssetKey, Definitions
 
 from swiss_ai_hub.backup.dagster.assets.backup_finalize_factory import backup_finalize_factory
+from swiss_ai_hub.backup.dagster.assets.backup_service_factory import backup_service_factory
 from swiss_ai_hub.backup.dagster.assets.backup_session_factory import backup_session_factory
 from swiss_ai_hub.backup.dagster.assets.restore_finalize_factory import restore_finalize_factory
 from swiss_ai_hub.backup.dagster.assets.restore_service_factory import restore_service_factory
@@ -12,11 +13,22 @@ from swiss_ai_hub.backup.dagster.schedules.factory import daily_backup_schedule
 
 def backup_definitions() -> Definitions:
     session_key = AssetKey(["backup", "session"])
+    service_keys = {
+        "PostgreSQL": AssetKey(["backup", "postgres"]),
+        "Milvus": AssetKey(["backup", "milvus"]),
+        "Neo4j": AssetKey(["backup", "neo4j"]),
+        "ClickHouse": AssetKey(["backup", "clickhouse"]),
+        "Valkey": AssetKey(["backup", "valkey"]),
+        "NATS": AssetKey(["backup", "nats"]),
+    }
     finalize_key = AssetKey(["backup", "finalize"])
 
     session = backup_session_factory(session_key)
-    finalize = backup_finalize_factory(finalize_key, session_key)
-    backup_assets = [session, finalize]
+    service_assets = [
+        backup_service_factory(key, session_key, name, f"{name} backup") for name, key in service_keys.items()
+    ]
+    finalize = backup_finalize_factory(finalize_key, session_key, service_keys)
+    backup_assets = [session, *service_assets, finalize]
 
     restore_session_key = AssetKey(["restore", "session"])
     restore_service_keys = {
@@ -39,6 +51,7 @@ def backup_definitions() -> Definitions:
 
     backup_job = backup_asset_job(backup_assets)
     restore_job = restore_asset_job(restore_assets)
+
     schedule = daily_backup_schedule(backup_job)
 
     resources = backup_resources()

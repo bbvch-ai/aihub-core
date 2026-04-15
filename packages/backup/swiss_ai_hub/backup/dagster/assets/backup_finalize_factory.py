@@ -1,9 +1,9 @@
-from botocore.exceptions import ClientError
-from dagster import AssetExecutionContext, AssetIn, AssetKey, AssetsDefinition, ResourceParam, asset
+from dagster import AssetExecutionContext, AssetIn, AssetKey, AssetsDefinition, Failure, ResourceParam, asset
 
 from swiss_ai_hub.backup.container_discovery import ContainerDiscovery
 from swiss_ai_hub.backup.dagster.partitions import backup_partitions
 from swiss_ai_hub.backup.dagster.types import BackupContext
+from swiss_ai_hub.backup.models import ServiceResult, ServiceStatus
 from swiss_ai_hub.backup.retention import RetentionService
 from swiss_ai_hub.backup.s3 import BACKUP_PREFIX_RE, S3Manager
 from swiss_ai_hub.backup.settings import BackupSettings
@@ -12,11 +12,15 @@ from swiss_ai_hub.backup.settings import BackupSettings
 def backup_finalize_factory(
     key: AssetKey,
     session_key: AssetKey,
+    service_keys: dict[str, AssetKey],
 ) -> AssetsDefinition:
     @asset(
         key=key,
         group_name="backup",
-        ins={"session": AssetIn(key=session_key)},
+        ins={
+            "session": AssetIn(key=session_key),
+            **{name: AssetIn(key=ak) for name, ak in service_keys.items()},
+        },
         description="Restart services and run retention cleanup",
     )
     def backup_finalize(
@@ -25,24 +29,38 @@ def backup_finalize_factory(
         container_discovery: ResourceParam[ContainerDiscovery],
         backup_settings: ResourceParam[BackupSettings],
         s3_manager: ResourceParam[S3Manager],
-    ) -> None:
-        context.log.info(
-            "Restarting %d previously running containers...",
-            len(session.previously_running),
-        )
+        **service_results: ServiceResult,
+    ) -> list[ServiceResult]:
         container_discovery.start_all(session.previously_running)
-        context.log.info("All containers restarted")
 
         try:
             RetentionService.run(s3_manager, backup_settings.BACKUP_RETENTION_DAYS, backup_settings.BACKUP_MINIMUM_KEEP)
-        except (ClientError, RuntimeError):
-            context.log.warning("Retention cleanup failed", exc_info=True)
+        except Exception as e:
+            context.log.warning("Retention cleanup failed: %s", e)
 
         _sync_partitions(context, s3_manager)
 
+        results = list(service_results.values())
+        failed = [r for r in results if r.status == ServiceStatus.FAILED]
+
         context.add_output_metadata(
-            {"containers_restarted": len(session.previously_running)},
+            {
+                "total_services": len(results),
+                "succeeded": len([r for r in results if r.status == ServiceStatus.SUCCEEDED]),
+                "failed": len(failed),
+                "skipped": len([r for r in results if r.status == ServiceStatus.SKIPPED]),
+                "containers_restarted": len(session.previously_running),
+            },
         )
+
+        if failed:
+            failed_names = ", ".join(r.name for r in failed)
+            raise Failure(
+                description=f"Backup failed for: {failed_names}",
+                metadata={"failed_services": failed_names},
+            )
+
+        return results
 
     return backup_finalize
 

@@ -84,6 +84,9 @@ MongoDB-compatible over its own PostgreSQL), Milvus vector DB (:19530), Neo4j gr
 
 **Document Processing**: MinerU OCR + parsing (:5001)
 
+**Backup**: Backup Dagster webserver (:3004), gRPC code server, daemon — independent Dagster instance for scheduled
+backup/restore
+
 **Observability**: Langfuse web (:6006) + worker, OTEL Collector (:4317/:4318)
 
 **Utility**: Jupyter Lab (:8888, code execution sandbox), Playwright (:3036, browser automation), Attu (:3003, Milvus
@@ -100,6 +103,7 @@ Code shared by 2+ services belongs in `packages/core`. Service-specific code sta
 - **`packages/api`**: REST API + WebSocket gateway (FastAPI).
 - **`packages/web`**: Frontend UI (Nuxt 3, Vue 3, PrimeVue, Tailwind).
 - **`packages/bot`**: Collaboration platform integrations (MS Teams, Slack).
+- **`packages/backup`**: Centralized backup/restore service (independent Dagster instance).
 - **`.github/actions`**: Reusable GitHub Actions for CI/CD.
 - **`docs`**: arc42 documentation + ADRs (VitePress).
 
@@ -272,6 +276,7 @@ Local overrides (gitignored): `CLAUDE.local.md`, `.claude/settings.local.json`, 
 | Admin UI  | http://localhost:3333 |
 | API       | http://localhost:8000 |
 | Dagster   | http://localhost:3000 |
+| Backup UI | http://localhost:3004 |
 | Langfuse  | http://localhost:6006 |
 | SeaweedFS | http://localhost:8889 |
 
