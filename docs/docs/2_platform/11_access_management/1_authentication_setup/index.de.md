@@ -218,8 +218,8 @@ has_access = checker.has_access_to_service("llm-gateway")
 
 ```bash
 # Default Tenant Configuration
-AIHUB_DEFAULT_TENANT_NAME="Default Organization"
-AIHUB_DEFAULT_TENANT_DESCRIPTION="The default organization for all users."
+AIHUB_DEFAULT_TENANT_NAME="Swiss AI Hub"
+AIHUB_DEFAULT_TENANT_DESCRIPTION="This tenant was auto-created on startup of the swiss ai hub."
 AIHUB_DEFAULT_TENANT_ACCESS_RULES="aihub.admin.>"
 
 # User Signup Role Assignment

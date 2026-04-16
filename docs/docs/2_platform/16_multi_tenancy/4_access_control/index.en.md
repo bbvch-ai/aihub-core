@@ -142,7 +142,7 @@ Configure default behavior through environment variables:
 
 ```bash
 # Startup tenant (seeded on first boot; an ordinary tenant thereafter)
-AIHUB_STARTUP_TENANT_NAME="Default Organization"
+AIHUB_STARTUP_TENANT_NAME="Swiss AI Hub"
 AIHUB_STARTUP_TENANT_ACCESS_RULES="aihub.admin.>"
 
 # Automatic user signup

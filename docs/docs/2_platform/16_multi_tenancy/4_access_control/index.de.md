@@ -148,7 +148,7 @@ Konfigurieren Sie das Standardverhalten über Umgebungsvariablen:
 
 ```bash
 # Default tenant created on first startup
-AIHUB_DEFAULT_TENANT_NAME="Default Organization"
+AIHUB_DEFAULT_TENANT_NAME="Swiss AI Hub"
 AIHUB_DEFAULT_TENANT_ACCESS_RULES="aihub.admin.>"
 
 # Automatic user signup

@@ -25,12 +25,12 @@ class StartupTenantSettings(EnvironmentSettings):
     NAME: Annotated[
         str,
         Field(description="Display name of the startup tenant."),
-    ] = "Default Organization"
+    ] = "Swiss AI Hub"
 
     DESCRIPTION: Annotated[
         str,
         Field(description="Description of the startup tenant."),
-    ] = "The default organization for all users."
+    ] = "This tenant was auto-created on startup of the swiss ai hub."
 
     ACCESS_RULES: Annotated[
         str,
