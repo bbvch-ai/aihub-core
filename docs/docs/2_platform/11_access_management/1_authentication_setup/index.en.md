@@ -209,7 +209,7 @@ has_access = checker.has_access_to_service("llm-gateway")
 ```bash
 # Startup Tenant Configuration (seeded on first boot; an ordinary tenant thereafter)
 AIHUB_STARTUP_TENANT_NAME="Swiss AI Hub"
-AIHUB_STARTUP_TENANT_DESCRIPTION="This tenant was auto-created on startup of the Swiss AI Hub.."
+AIHUB_STARTUP_TENANT_DESCRIPTION="This tenant was auto-created on startup of the Swiss AI Hub."
 AIHUB_STARTUP_TENANT_ACCESS_RULES="aihub.admin.>"
 
 # User Signup Role Assignment
