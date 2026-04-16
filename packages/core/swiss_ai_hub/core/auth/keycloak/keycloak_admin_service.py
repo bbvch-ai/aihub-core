@@ -187,12 +187,9 @@ class KeycloakAdminService:
     @staticmethod
     @trace_fn
     async def assign_superuser_to_tenant(tenant_id: str) -> None:
-        """Adds the superuser to the ``/tenants/<tenant_id>`` group.
-
-        Idempotent — Keycloak's group-add is a no-op for an existing member. Called from
-        the two paths through which a tenant becomes Active: default-tenant bootstrap and
-        ``TenantAdminService.configure_tenant``.
-        """
+        """Adds the superuser to the ``/tenants/<tenant_id>`` group. Idempotent —
+        Keycloak's group-add is a no-op for an existing member, which matters because
+        the retryable tenant-configure flow can call this more than once."""
         superuser_id = await KeycloakAdminService.get_superuser_id()
         await KeycloakAdminService.assign_user_to_tenant(superuser_id, tenant_id)
         logger.info(f"Superuser ({SuperuserSettings().EMAIL}) assigned to tenant '{tenant_id}'")
@@ -245,12 +242,9 @@ class KeycloakAdminService:
     @staticmethod
     @trace_fn
     async def get_user_realm_roles(keycloak_user_id: str) -> list[str]:
-        """Returns realm role names assigned to the user.
-
-        Used by ``TokenAuthHandler`` to derive ``is_sys_admin`` (checks for
-        ``AIHubSysAdmin``) since a static bearer token does not carry a JWT with
-        the ``roles`` claim.
-        """
+        """Returns realm role names assigned to the user. Needed when the caller
+        doesn't have a JWT with a ``roles`` claim (e.g. static bearer tokens) and
+        must resolve realm roles out-of-band."""
         admin = _create_admin()
         try:
             roles = await admin.a_get_realm_roles_of_user(keycloak_user_id)
@@ -263,13 +257,10 @@ class KeycloakAdminService:
     async def get_user_ids_with_realm_role(role_name: str) -> set[str]:
         """Returns Keycloak user IDs that have the given realm role assigned.
 
-        Single bulk call to the realm-role-members endpoint — used to batch-resolve
-        role membership (e.g. ``AIHubSysAdmin``) without one call per user.
-
-        ``briefRepresentation=True`` keeps the payload small (drops attributes/groups,
-        the ``id`` field is always included). Errors are not swallowed: a permission
-        problem on the service account or an unknown role name raises rather than
-        silently producing an empty set.
+        Single bulk call to the realm-role-members endpoint, so role membership for
+        a whole list can be resolved without one call per user. Errors propagate —
+        a permission problem on the service account or an unknown role name raises
+        rather than silently producing an empty set.
         """
         admin = _create_admin()
         members = await admin.a_get_realm_role_members(role_name)

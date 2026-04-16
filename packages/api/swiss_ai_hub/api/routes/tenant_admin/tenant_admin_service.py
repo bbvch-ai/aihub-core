@@ -70,19 +70,12 @@ class TenantAdminService:
     async def configure_tenant(data: ConfigureTenantRequest) -> TenantResponse:
         """Attaches metadata to an existing Keycloak tenant group.
 
-        Raises 400 if the Keycloak group does not exist (we use ``KeycloakGetError``
-        as control flow — its presence means the Keycloak side does not have this id),
-        and 409 if metadata is already present for this ``tenant_id`` or the display
-        ``name`` is taken.
-
-        Ordering invariant: all validation runs before any side effects, then both
-        idempotent side effects (role seeding, superuser group membership) run
-        before the metadata is persisted. The metadata row is the *last* write,
-        so any failure along the way leaves the tenant in the Unconfigured state —
-        a subsequent retry will re-enter this method and complete cleanly because
-        both side effects are idempotent. This preserves the three-state invariant
-        (Active / Orphaned / Unconfigured); a partially-configured state is not
-        reachable.
+        Ordering invariant: validation runs first, then the idempotent side effects
+        (role seeding, superuser membership), and the metadata row is written last.
+        On any failure the tenant stays Unconfigured — a retry re-enters here and
+        completes cleanly because the side effects are idempotent. This keeps the
+        three-state invariant (Active / Orphaned / Unconfigured) intact; a
+        partially-configured state is not reachable.
         """
         try:
             await KeycloakAdminService.get_tenant_group(data.tenant_id)
@@ -149,30 +142,18 @@ class TenantAdminService:
     async def delete_tenant(tenant_id: str) -> None:
         """Removes the MongoDB metadata. Allowed on both ACTIVE and ORPHANED tenants.
 
-        The Keycloak group (if present) is left untouched — cleanup is a separate
-        concern managed via the Keycloak admin console. The last remaining tenant
-        cannot be deleted (409) — that would leave the platform with no tenant at
-        all and prevent any user from doing anything.
+        The Keycloak group (if present) is left untouched — cleanup is managed via
+        the Keycloak admin console. The last remaining tenant cannot be deleted,
+        otherwise the platform would end up with zero tenants and no user could do
+        anything.
 
-        Race-safety: a naive ``count() <= 1`` pre-check is racy under concurrent
-        deletes (two sysadmins could each see ``count == 2`` and both proceed,
-        leaving the platform with zero tenants). The sequence here closes that gap
-        without requiring distributed locks or MongoDB transactions:
-
-        1. Preliminary count check — fast-fails the obvious case.
-        2. Snapshot the metadata (so we can undo).
-        3. Atomic single-document delete.
-        4. Re-count. If zero tenants remain, a concurrent delete took the other
-           one; restore the row we just deleted and raise 409. The restore is
-           itself atomic on a single document.
-        5. Only after the invariant is confirmed do we cascade the role/
-           membership cleanup — these cascades are irreversible, so deferring
-           them past the post-condition check is what makes the restore viable.
-
-        In any interleaving of concurrent deletes, either exactly one delete wins
-        and the rest get 409 (when one-of-two races), or all get 409 and every row
-        is restored (when both-of-two race). The invariant ``count >= 1`` holds
-        throughout in the steady state after all deletes resolve.
+        Race-safety: a naive count-then-delete races under concurrent deletes (two
+        sysadmins each see ``count == 2``, both proceed, platform ends up empty).
+        We snapshot, atomic-delete, re-count, restore the row on a post-violation,
+        and only cascade once the invariant is confirmed. The cascade is deferred
+        past the re-count because it is irreversible, and the restore would
+        otherwise be impossible. The invariant ``count >= 1`` holds after all
+        concurrent deletes resolve.
         """
         tenant = TenantMetadataEntity.get_metadata_by_tenant_id(tenant_id)
         if not tenant:

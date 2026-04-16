@@ -43,40 +43,24 @@ class TenantMetadataEntity(Document):
     @classmethod
     @trace_fn
     def get_metadata_by_tenant_id(cls, tenant_id: str) -> Self | None:
-        """Fetches tenant metadata by id. Returns None if no metadata is stored.
-
-        Does NOT verify that the tenant exists in Keycloak — use
-        ``KeycloakAdminService.tenant_exists`` for that.
-        """
         return cls.objects(id=tenant_id).first()
 
     @classmethod
     @trace_fn
     def get_metadata_by_tenant_name(cls, name: str) -> Self | None:
-        """Fetches tenant metadata by display name. Returns None if no metadata is stored.
-
-        Does NOT verify that the tenant exists in Keycloak — use
-        ``KeycloakAdminService.tenant_exists`` for that.
-        """
         return cls.objects(name=name).first()
 
     @classmethod
     @trace_fn
     def count_tenants(cls) -> int:
-        """Returns the number of stored tenant metadata rows.
-
-        Thin wrapper over ``cls.objects.count()`` that gives the last-tenant guard
-        in ``TenantAdminService.delete_tenant`` a stable, mockable seam.
-        """
+        """Returns the number of stored tenant metadata rows. Kept as a dedicated
+        method so the last-tenant guard in the tenant-delete flow has a stable,
+        mockable seam instead of inlining ``cls.objects.count()``."""
         return cls.objects.count()
 
     @classmethod
     @trace_fn
     def get_default_tenant_metadata(cls) -> Self | None:
-        """Fetches metadata for the default tenant. Returns None if not stored.
-
-        Does NOT verify that the Keycloak group still exists.
-        """
         return cls.objects(is_default=True).first()
 
     @classmethod
@@ -186,17 +170,14 @@ class TenantMetadataEntity(Document):
     @classmethod
     @trace_fn
     def cascade_delete_tenant_data(cls, tenant_id: str) -> None:
-        """Deletes the tenant-scoped role and membership rows for a tenant.
+        """Deletes the tenant-scoped role and membership rows.
 
-        Intended to run *after* ``delete_tenant_metadata`` once the caller has
-        confirmed the row-delete did not violate the last-tenant invariant. Using
-        deferred imports because ``RoleEntity`` and ``UserTenantRoleEntity`` import
-        this module at module level.
-
-        Active tenant cleanup in Keycloak must be handled by the caller via
-        ``KeycloakAdminService.get_user_ids_with_active_tenant`` +
-        ``clear_active_tenant``.
+        Must run only after ``delete_tenant_metadata`` has confirmed the row-delete
+        does not violate the last-tenant invariant — this cascade is irreversible
+        and would block the restore path. Keycloak-side cleanup (``active_tenant_id``
+        attribute) is the caller's responsibility.
         """
+        # Deferred: RoleEntity / UserTenantRoleEntity import this module at top level.
         from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
         from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 

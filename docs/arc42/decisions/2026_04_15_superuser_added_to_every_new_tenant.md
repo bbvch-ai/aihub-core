@@ -50,11 +50,11 @@ should not "fight" the operator. This rules out periodic reconciliation and Keyc
 
 ## Decision
 
-**At tenant creation, the Superuser is added as a member of the new tenant's `/tenants/<id>` Keycloak group. This
-applies to both creation paths — the default-tenant bootstrap and the `configure_tenant` flow that attaches metadata to
-a pre-existing Keycloak group. After creation, the membership is treated as ordinary: no startup reconciliation, no
-periodic restoration, no Keycloak SPI to block removal. A sysadmin who removes the Superuser from a tenant via the
-Keycloak admin console removes them, and the removal stands.**
+**At tenant metadata creation, the Superuser is added as a member of the new tenant's `/tenants/<id>` Keycloak group.
+This applies to both creation paths — the default-tenant bootstrap and the `configure_tenant` flow that attaches
+metadata to a pre-existing Keycloak group. After creation, the membership is treated as ordinary: no startup
+reconciliation, no periodic restoration, no Keycloak SPI to block removal. A sysadmin who removes the Superuser from a
+tenant via the Keycloak admin console removes them, and the removal stands.**
 
 The scope is **Active tenants only** — tenants that exist in both Keycloak and MongoDB metadata. Unconfigured Keycloak
 groups (groups under `/tenants/` with no metadata yet) are not touched; the Superuser is added at the moment those

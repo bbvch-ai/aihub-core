@@ -3,10 +3,24 @@ from datetime import UTC, datetime
 from typing import Self
 
 from mongoengine import DateTimeField, Document, ListField, NotUniqueError, StringField
+from pydantic import BaseModel
 
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 
 logger = logging.getLogger(__name__)
+
+
+class TenantRolesByUser(BaseModel):
+    """Batch lookup of user roles within a single tenant.
+
+    Wraps ``{user_id: [role_name, ...]}`` so callers get a typed surface instead of
+    a raw dict. Users with no row in the tenant default to an empty role list.
+    """
+
+    roles_by_user: dict[str, list[str]]
+
+    def get_roles(self, user_id: str) -> list[str]:
+        return self.roles_by_user.get(user_id, [])
 
 
 class UserTenantRoleEntity(Document):
@@ -149,16 +163,12 @@ class UserTenantRoleEntity(Document):
 
     @classmethod
     @trace_fn
-    def get_roles_map_for_users_in_tenant(cls, user_ids: list[str], tenant_id: str) -> dict[str, list[str]]:
-        """Batch-loads tenant role lists for many users in one query.
-
-        Users in ``user_ids`` that have no association in the tenant are absent
-        from the returned dict (callers should default to ``[]``).
-        """
+    def get_roles_for_users_in_tenant(cls, user_ids: list[str], tenant_id: str) -> TenantRolesByUser:
+        """Batch-loads tenant role lists for many users in one query."""
         if not user_ids:
-            return {}
+            return TenantRolesByUser(roles_by_user={})
         assocs = cls.objects(user_id__in=user_ids, tenant_id=tenant_id).only("user_id", "roles")
-        return {assoc.user_id: list(assoc.roles) for assoc in assocs}
+        return TenantRolesByUser(roles_by_user={assoc.user_id: list(assoc.roles) for assoc in assocs})
 
     @classmethod
     @trace_fn

@@ -153,30 +153,18 @@ FIRST_AIHUB_USER_SIGNUP_DEFAULT_ROLES="AIHubAdmin"
 
 ## Sysadmin access
 
-Users with the Keycloak realm role `AIHubSysAdmin` receive implicit admin access across every tenant and every resource.
-This is implemented in `AccessChecker.access_level()` — when `UserIdentity.is_sys_admin=True` the method short-circuits
-and returns `ACCESS_ADMIN` without evaluating tenant or user access rules. The two-stage check described above does not
-apply to sysadmins.
+Users with the Keycloak realm role `AIHubSysAdmin` receive implicit admin access to every tenant and every resource. The
+two-stage tenant/user check described above is bypassed — a sysadmin is treated as an admin everywhere.
 
-Key behaviors:
-
-- **No `UserTenantRoleEntity` rows required**: sysadmins bypass membership checks. The auth pipeline's
-  `_resolve_tenant_by_id` and `_resolve_active_tenant` paths skip the membership lookup when the principal is a
-  sysadmin.
-- **May act with `acting_within_tenant=None`**: cross-tenant sysadmin endpoints (e.g. the tenant administration UI) do
-  not require a tenant context.
-- **Real Keycloak users only**: there is no synthetic "virtual tenant" or static OID anymore. Every authenticated
-  request resolves to a real Keycloak user with a real id, traceable through Langfuse and visible in tenant member
-  listings (per the tenant-scoped Superuser membership rule, see related ADR).
-- **Sysadmin endpoints**: gated by `Security(self.sys_admin_user())` from the `Controller` base class, which checks
-  `UserIdentity.is_sys_admin` and returns 403 otherwise. There is no separate sysadmin auth handler.
+Sysadmins can also act without a tenant context, which enables cross-tenant endpoints such as the tenant administration
+UI. Every sysadmin is a real Keycloak user with a real user id, so their actions remain traceable in Langfuse and they
+appear in tenant member listings like any other user.
 
 Assign the `AIHubSysAdmin` realm role in Keycloak directly or via identity provider mappers. The platform also seeds a
-real Keycloak user from `SUPERUSER_USERNAME`/`SUPERUSER_EMAIL`/`SUPERUSER_PASSWORD` in the realm import and materializes
-`SUPERUSER_TOKEN` as a regular bearer token bound to that user; both are operator-supplied conveniences, neither is a
-synthetic identity.
+dedicated Superuser account from `SUPERUSER_USERNAME` / `SUPERUSER_EMAIL` / `SUPERUSER_PASSWORD` and materializes
+`SUPERUSER_TOKEN` as a bearer token for that user so internal services can call the API without a browser session.
 
-Use sparingly — sysadmin access exists for platform administration, not regular operations.
+Use sparingly — sysadmin access exists for platform administration, not day-to-day operations.
 
 ## Validation rules
 

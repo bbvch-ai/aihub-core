@@ -10,6 +10,7 @@ from datetime import UTC, datetime, timedelta
 
 from keycloak import KeycloakGetError
 from mongoengine import DoesNotExist
+from pydantic import BaseModel
 from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
 from swiss_ai_hub.core.auth.roles import SYS_ADMIN_ROLE
 from swiss_ai_hub.core.auth.superuser_settings import SuperuserSettings
@@ -20,6 +21,12 @@ from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import
 from swiss_ai_hub.core.persistence.rag.datalake.entities import BucketEntity, NamespaceEntity
 
 logger = logging.getLogger(__name__)
+
+
+class _DefaultRoleDefinition(BaseModel):
+    name: str
+    description: str
+    access_rules: list[str]
 
 
 async def _backfill_existing_users_into_default_group(tenant_id: str) -> None:
@@ -36,18 +43,42 @@ async def _backfill_existing_users_into_default_group(tenant_id: str) -> None:
         logger.info(f"Backfilled user '{user.username}' into default tenant group")
 
 
-_DEFAULT_ROLE_DEFINITIONS: list[tuple[str, str, list[str]]] = [
-    ("AIHubUser", "Grants global user access to AI-Hub", ["aihub.user.>"]),
-    ("AIHubAdmin", "Grants global administrative access to AI-Hub", ["aihub.admin.>"]),
-    ("AIHubAgentUser", "Grants access to all agents but to nothing else", ["aihub.user.agent.>"]),
-    ("AIHubAgentAdmin", "Grants admin access to all agents but to nothing else", ["aihub.admin.agent.>"]),
-    (
-        "AIHubKnowledgeAdmin",
-        "Grants admin access to knowledge and agents",
-        ["aihub.admin.agent.>", "aihub.admin.knowledge.>"],
+_DEFAULT_ROLE_DEFINITIONS: list[_DefaultRoleDefinition] = [
+    _DefaultRoleDefinition(
+        name="AIHubUser",
+        description="Grants global user access to AI-Hub",
+        access_rules=["aihub.user.>"],
     ),
-    ("AIHubProcessUser", "Grants access to all processes but to nothing else", ["aihub.user.process.>"]),
-    ("AIHubProcessAdmin", "Grants admin access to all processes but to nothing else", ["aihub.admin.process.>"]),
+    _DefaultRoleDefinition(
+        name="AIHubAdmin",
+        description="Grants global administrative access to AI-Hub",
+        access_rules=["aihub.admin.>"],
+    ),
+    _DefaultRoleDefinition(
+        name="AIHubAgentUser",
+        description="Grants access to all agents but to nothing else",
+        access_rules=["aihub.user.agent.>"],
+    ),
+    _DefaultRoleDefinition(
+        name="AIHubAgentAdmin",
+        description="Grants admin access to all agents but to nothing else",
+        access_rules=["aihub.admin.agent.>"],
+    ),
+    _DefaultRoleDefinition(
+        name="AIHubKnowledgeAdmin",
+        description="Grants admin access to knowledge and agents",
+        access_rules=["aihub.admin.agent.>", "aihub.admin.knowledge.>"],
+    ),
+    _DefaultRoleDefinition(
+        name="AIHubProcessUser",
+        description="Grants access to all processes but to nothing else",
+        access_rules=["aihub.user.process.>"],
+    ),
+    _DefaultRoleDefinition(
+        name="AIHubProcessAdmin",
+        description="Grants admin access to all processes but to nothing else",
+        access_rules=["aihub.admin.process.>"],
+    ),
 ]
 
 
@@ -106,21 +137,21 @@ async def initialize_default_roles_for_tenant(tenant_id: str) -> None:
         logger.info(f"CREATE_DEFAULT_ROLES disabled; skipping default role seeding for tenant '{tenant_id}'")
         return
 
-    for name, description, access_rules in _DEFAULT_ROLE_DEFINITIONS:
-        existing = RoleEntity.objects(name=name, tenant_id=tenant_id).first()
+    for role_def in _DEFAULT_ROLE_DEFINITIONS:
+        existing = RoleEntity.objects(name=role_def.name, tenant_id=tenant_id).first()
         if existing:
-            logger.info(f"Role '{name}' already exists for tenant '{tenant_id}', skipping creation")
+            logger.info(f"Role '{role_def.name}' already exists for tenant '{tenant_id}', skipping creation")
             continue
         try:
             RoleEntity.create_tenant_role(
-                name=name,
-                description=description,
-                access_rules=access_rules,
+                name=role_def.name,
+                description=role_def.description,
+                access_rules=role_def.access_rules,
                 tenant_id=tenant_id,
             )
-            logger.info(f"Successfully created role '{name}' for tenant '{tenant_id}'")
+            logger.info(f"Successfully created role '{role_def.name}' for tenant '{tenant_id}'")
         except Exception as e:
-            logger.error(f"Failed to create role '{name}' for tenant '{tenant_id}': {e}")
+            logger.error(f"Failed to create role '{role_def.name}' for tenant '{tenant_id}': {e}")
             raise
 
 

@@ -1,5 +1,6 @@
 import os
 from datetime import UTC, datetime, timedelta
+from types import SimpleNamespace
 
 import pytest
 import pytest_asyncio
@@ -37,17 +38,17 @@ def mongo_db():
 @pytest.fixture
 def valid_token(mongo_db):
     """Insert a valid token document and return its token string."""
-    from types import SimpleNamespace as _SimpleNamespace
-
-    config = _SimpleNamespace(OID=TEST_USER_OID, NAME=TEST_USER_NAME, EMAIL=TEST_USER_EMAIL, ROLES=TEST_USER_ROLES)
+    config = SimpleNamespace(OID=TEST_USER_OID, NAME=TEST_USER_NAME, EMAIL=TEST_USER_EMAIL, ROLES=TEST_USER_ROLES)
     user_oid = os.getenv("OID", config.OID)
 
     # Create the test role on the default tenant so AccessChecker can resolve access rules
     default_tenant = TenantMetadataEntity.get_default_tenant_metadata()
-    role = None
+    role: RoleEntity | None = None
     created_role = False
     if default_tenant:
         tenant_id = str(default_tenant.id)
+        # Reuse the role if a prior test run left it behind; only track `created_role`
+        # when we actually insert so teardown doesn't delete rows we didn't create.
         role = RoleEntity.objects(name=config.ROLES[0], tenant_id=tenant_id).first()
         if not role:
             role = RoleEntity.create_tenant_role(

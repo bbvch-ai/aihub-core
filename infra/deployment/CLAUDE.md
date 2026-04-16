@@ -145,18 +145,6 @@ query-groups, view-groups, view-realm, view-clients
 `view-realm` and `view-clients` are required by the realm-role-members endpoint
 (`GET /admin/realms/{realm}/roles/{role}/users`) used to resolve sysadmin status.
 
-**Operator migration note**: Keycloak's `--import-realm` runs only on first realm creation — it does NOT update client
-roles on subsequent starts when the realm already exists in the Keycloak Postgres DB. For existing deployments where the
-realm was imported before this requirement was added, the new roles must be granted manually:
-
-1. Open the Keycloak admin console.
-2. Navigate to **Clients → aihub-api-service → Service Account Roles**.
-3. Click **Assign role**, filter by client `realm-management`, check `view-realm` and `view-clients`, click Assign.
-4. Restart the API process so python-keycloak fetches a fresh service-account token.
-
-Failing to do this produces 403 errors from `KeycloakAdminService.get_user_ids_with_realm_role` and any sysadmin
-endpoint that depends on it.
-
 ## Env Var Conventions
 
 - `.env.dev` — local development template (copy to `.env` to get started)

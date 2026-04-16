@@ -69,14 +69,14 @@ class UserService:
         total = await KeycloakAdminService.count_tenant_members(tenant_id)
 
         member_ids = [m.id for m in members]
-        roles_by_user = UserTenantRoleEntity.get_roles_map_for_users_in_tenant(member_ids, tenant_id)
+        roles_by_user = UserTenantRoleEntity.get_roles_for_users_in_tenant(member_ids, tenant_id)
         sys_admin_ids = await KeycloakAdminService.get_user_ids_with_realm_role(SYS_ADMIN_ROLE)
 
         user_dtos = [
             UserDTO.from_keycloak_user_with_dashboard(
                 m,
                 None,
-                roles=roles_by_user.get(m.id, []),
+                roles=roles_by_user.get_roles(m.id),
                 is_sys_admin=m.id in sys_admin_ids,
             )
             for m in members
