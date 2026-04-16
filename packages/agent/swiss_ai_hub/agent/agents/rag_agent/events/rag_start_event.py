@@ -2,11 +2,10 @@ from typing import Annotated, ClassVar
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from pydantic import Field
-from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
-from swiss_ai_hub.core.events.agent.control.start.start_event import StartEvent
-from swiss_ai_hub.core.events.agent.user.user_uploaded_file import UserUploadedFile
+from swiss_ai_hub.core.auth import UserIdentity
+from swiss_ai_hub.core.events.agent import StartEvent, UserUploadedFile
 from swiss_ai_hub.core.generative_ai import BucketNamespacePair
-from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
+from swiss_ai_hub.core.i18n import LocaleHandler
 
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 
@@ -42,10 +41,18 @@ class RAGStartEvent(StartEvent):
 
     @property
     def user_query(self) -> str:
+        """
+        Extracts the user query text from the chat history, returning the last user message content.
+        Note: This only returns text content. Use last_user_message for full message with all blocks.
+        """
         user_messages = [msg for msg in self.messages if msg.role == MessageRole.USER]
         return user_messages[-1].content if user_messages else ""
 
     @property
     def last_user_message(self) -> ChatMessage:
+        """
+        Extracts the complete last user message (with all blocks including images/audio) from chat history.
+        Use this when passing messages to LLMs to preserve multimodal content.
+        """
         user_messages = [msg for msg in self.messages if msg.role == MessageRole.USER]
         return user_messages[-1] if user_messages else ChatMessage(role=MessageRole.USER, content="")

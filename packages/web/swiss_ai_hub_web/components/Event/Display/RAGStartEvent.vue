@@ -28,8 +28,8 @@
         >
           <ChatMessage
             :message="message"
-            :name="message.role == 'user' ? event.event.user.name : message.role"
-            :email="message.role == 'user' ? event.event.user.email : ''"
+            :name="message.role === 'user' ? event.event.user.name : message.role"
+            :email="message.role === 'user' ? event.event.user.email : ''"
             :date="new Date(event.event.created_at / 1_000_000)"
             :icon="agentIcon"
           />
@@ -40,6 +40,9 @@
 </template>
 
 <script setup lang="ts">
+// HeyAPI generates PascalCase types (RagStartEvent), but the runtime _event_name from Python's
+// cls.__name__ is "RAGStartEvent". useEventComponent.ts maps against the runtime string;
+// this import is the SDK type only. Do not "fix" one side without the other.
 import type { ThreadDto, RagStartEvent, ContextualizedAgentEvent } from '@core/sdk/client'
 
 const props = defineProps<{
