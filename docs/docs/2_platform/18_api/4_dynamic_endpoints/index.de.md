@@ -54,13 +54,17 @@ Dynamische Endpunkte werden automatisch aktiviert, wenn Sie den Swiss AI Hub mit
 Für jeden entdeckten Agenten erstellt das System Endpunkte nach folgendem Muster:
 
 ```
-POST /api/v1/{tenant_id}/agents/{agent_class}/{agent_id}/{event_name}
+
+POST /api/v1/\{tenant_id}/agents/\{agent_class}/\{agent_id}/\{event_name}
+
 ```
 
 **Beispiel**: Ein Agent mit der Klasse `rag_agent` und der ID `customer_support`, der `UserMessageEvent` akzeptiert, würde folgendes erhalten:
 
 ```
-POST /api/v1/{tenant_id}/agents/rag_agent/customer_support/user_message_event
+
+POST /api/v1/\{tenant_id}/agents/rag_agent/customer_support/user_message_event
+
 ```
 
 ## Prozess-Endpunkt-Generierung
@@ -68,10 +72,12 @@ POST /api/v1/{tenant_id}/agents/rag_agent/customer_support/user_message_event
 Für jeden entdeckten Prozess erstellt das System Endpunkte basierend auf der Prozessdefinition:
 
 ```
-GET  /api/v1/{tenant_id}/processes/{process_class}/{process_id}/{route}         # Get form
-POST /api/v1/{tenant_id}/processes/{process_class}/{process_id}/{route}         # Submit form
-GET  /api/v1/{tenant_id}/processes/{process_class}/{process_id}/{walkthrough_id}/{route}  # Continue process
-POST /api/v1/{tenant_id}/processes/{process_class}/{process_id}/{walkthrough_id}/{route}  # Submit continuation
+
+GET /api/v1/\{tenant_id}/processes/\{process_class}/\{process_id}/\{route} # Get form POST
+/api/v1/\{tenant_id}/processes/\{process_class}/\{process_id}/\{route} # Submit form GET
+/api/v1/\{tenant_id}/processes/\{process_class}/\{process_id}/\{walkthrough_id}/\{route} # Continue process POST
+/api/v1/\{tenant_id}/processes/\{process_class}/\{process_id}/\{walkthrough_id}/\{route} # Submit continuation
+
 ```
 
 ## Verfügbare Funktionen

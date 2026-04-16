@@ -1,11 +1,13 @@
 ---
 title: Technische Referenz – Zugriffssteuerung
-source_sha: "93e35f7c6b98170ff2acdf61d2a235bc1d353daf042523392f049cfc7c640bc3"
+source_sha: 93e35f7c6b98170ff2acdf61d2a235bc1d353daf042523392f049cfc7c640bc3
 ---
 
 # Technische Referenz: Zugriffssteuerung
 
-Dieses Kapitel dokumentiert die technischen Details, wie die Plattform die Zugriffssteuerung durchsetzt. Diese Informationen sind nützlich für Systemadministratoren, die Mandanten und Rollen konfigurieren, sowie für Entwickler, die die Plattform erweitern.
+Dieses Kapitel dokumentiert die technischen Details, wie die Plattform die Zugriffssteuerung durchsetzt. Diese
+Informationen sind nützlich für Systemadministratoren, die Mandanten und Rollen konfigurieren, sowie für Entwickler, die
+die Plattform erweitern.
 
 ## Format der Zugriffsregeln
 
@@ -33,9 +35,11 @@ aihub.admin.service.tenant              # Tenant management service
 
 ### Admin- vs. Benutzerregeln
 
-Regeln, die mit `aihub.admin.*` beginnen, gewähren administrativen Zugriff. Benutzer mit Admin-Zugriff haben automatisch äquivalenten Benutzerzugriff.
+Regeln, die mit `aihub.admin.*` beginnen, gewähren administrativen Zugriff. Benutzer mit Admin-Zugriff haben automatisch
+äquivalenten Benutzerzugriff.
 
-Ein Benutzer mit `aihub.admin.agent.>` kann auf Ressourcen zugreifen, die entweder `aihub.admin.agent.*` oder `aihub.user.agent.*` erfordern.
+Ein Benutzer mit `aihub.admin.agent.>` kann auf Ressourcen zugreifen, die entweder `aihub.admin.agent.*` oder
+`aihub.user.agent.*` erfordern.
 
 ## Berechtigungsauflösung
 
@@ -71,11 +75,13 @@ Der Zugriff erfordert das Bestehen beider Schichten:
 
 **Schicht 1: Mandantengrenze** – Erlaubt der Mandant diese Ressource überhaupt?
 
-Wenn die Zugriffsregeln des Mandanten die angeforderte Ressource nicht enthalten, wird der Zugriff sofort verweigert, ohne die Benutzerrollen zu prüfen.
+Wenn die Zugriffsregeln des Mandanten die angeforderte Ressource nicht enthalten, wird der Zugriff sofort verweigert,
+ohne die Benutzerrollen zu prüfen.
 
 **Schicht 2: Benutzerberechtigungen** – Erlaubt die Rolle des Benutzers diese Aktion?
 
-Nachdem bestätigt wurde, dass der Mandant die Ressource erlaubt, prüft das System, ob die Rollen des Benutzers die erforderliche Berechtigung gewähren.
+Nachdem bestätigt wurde, dass der Mandant die Ressource erlaubt, prüft das System, ob die Rollen des Benutzers die
+erforderliche Berechtigung gewähren.
 
 Beide müssen bestanden werden, damit der Zugriff gewährt wird.
 
@@ -100,14 +106,16 @@ Benutzer fragt an: `aihub.user.agent.finance.instance-1`
 
 Jeder Service erfordert eine Basisberechtigung: `aihub.user.service.<service-name>`
 
-Bevor ressourcenspezifische Berechtigungen geprüft werden, verifiziert das System, ob der Benutzer Zugriff auf den Service selbst hat.
+Bevor ressourcenspezifische Berechtigungen geprüft werden, verifiziert das System, ob der Benutzer Zugriff auf den
+Service selbst hat.
 
 Um auf einen Agent zuzugreifen, benötigen Sie:
 
 - Service-Zugriff: `aihub.user.service.agent`
 - Ressourcen-Zugriff: `aihub.user.agent.<agent-class>.<agent-id>`
 
-Wenn der Mandant keinen Service-Zugriff gewährt, sind keine Ressourcen in diesem Service zugänglich, unabhängig von anderen Regeln.
+Wenn der Mandant keinen Service-Zugriff gewährt, sind keine Ressourcen in diesem Service zugänglich, unabhängig von
+anderen Regeln.
 
 ## Pfadparameter-Substitution
 
@@ -131,7 +139,8 @@ Das System gibt drei Stufen zurück:
 
 **ACCESS_ADMIN**: Zugriff auf Administratorebene zum Ändern, Konfigurieren oder Löschen der Ressource.
 
-Controller können zwischen Benutzer- und Admin-Zugriff für Audit-Zwecke unterscheiden, obwohl viele Operationen nur prüfen, ob der Zugriff gewährt (nicht verweigert) wird.
+Controller können zwischen Benutzer- und Admin-Zugriff für Audit-Zwecke unterscheiden, obwohl viele Operationen nur
+prüfen, ob der Zugriff gewährt (nicht verweigert) wird.
 
 ## Konfiguration über Umgebungsvariablen
 
@@ -150,11 +159,18 @@ FIRST_AIHUB_USER_SIGNUP_DEFAULT_ROLES="AIHubAdmin"
 
 ## Sysadmin-Zugriff
 
-Benutzer mit der Keycloak Realm-Rolle `AIHubSysAdmin` erhalten impliziten Admin-Zugriff auf jeden Mandanten und jede Ressource. Die oben beschriebene zweistufige Mandanten-/Benutzerprüfung wird umgangen – ein Sysadmin wird überall als Admin behandelt.
+Benutzer mit der Keycloak Realm-Rolle `AIHubSysAdmin` erhalten impliziten Admin-Zugriff auf jeden Mandanten und jede
+Ressource. Die oben beschriebene zweistufige Mandanten-/Benutzerprüfung wird umgangen – ein Sysadmin wird überall als
+Admin behandelt.
 
-Sysadmins können auch ohne Mandanten-Kontext agieren, was Cross-Tenant-Endpunkte wie die Mandantenverwaltungs-UI ermöglicht. Jeder Sysadmin ist ein echter Keycloak-Benutzer mit einer echten Benutzer-ID, sodass ihre Aktionen in Langfuse nachvollziehbar bleiben und sie in Mandanten-Mitgliederlisten wie jeder andere Benutzer erscheinen.
+Sysadmins können auch ohne Mandanten-Kontext agieren, was Cross-Tenant-Endpunkte wie die Mandantenverwaltungs-UI
+ermöglicht. Jeder Sysadmin ist ein echter Keycloak-Benutzer mit einer echten Benutzer-ID, sodass ihre Aktionen in
+Langfuse nachvollziehbar bleiben und sie in Mandanten-Mitgliederlisten wie jeder andere Benutzer erscheinen.
 
-Weisen Sie die `AIHubSysAdmin` Realm-Rolle in Keycloak direkt oder über Identity Provider Mapper zu. Die Plattform erstellt auch ein dediziertes Superuser-Konto aus `SUPERUSER_USERNAME` / `SUPERUSER_EMAIL` / `SUPERUSER_PASSWORD` und materialisiert `SUPERUSER_TOKEN` als Bearer-Token für diesen Benutzer, sodass interne Services die API ohne Browser-Session aufrufen können.
+Weisen Sie die `AIHubSysAdmin` Realm-Rolle in Keycloak direkt oder über Identity Provider Mapper zu. Die Plattform
+erstellt auch ein dediziertes Superuser-Konto aus `SUPERUSER_USERNAME` / `SUPERUSER_EMAIL` / `SUPERUSER_PASSWORD` und
+materialisiert `SUPERUSER_TOKEN` als Bearer-Token für diesen Benutzer, sodass interne Services die API ohne
+Browser-Session aufrufen können.
 
 Sparsam verwenden – Sysadmin-Zugriff dient der Plattformadministration, nicht dem täglichen Betrieb.
 
@@ -175,7 +191,8 @@ Beim Erstellen von Zugriffsregeln:
 - Sonderzeichen außer `.`, `-`, `_`, `*`, `>`
 - `>` in der Mitte einer Regel
 
-Das System validiert Regeln beim Erstellen oder Bearbeiten von Mandanten und Rollen. Ungültige Regeln lösen einen Fehler mit dem spezifischen Problem aus.
+Das System validiert Regeln beim Erstellen oder Bearbeiten von Mandanten und Rollen. Ungültige Regeln lösen einen Fehler
+mit dem spezifischen Problem aus.
 :::
 
 ## Häufige Muster
@@ -239,7 +256,8 @@ Bei der Fehlerbehebung prüfen Sie diese Punkte der Reihe nach:
 5. **Rollenregeln**: Überprüfen Sie, was diese Rollen erlauben
 6. **Service-Zugriff**: Überprüfen Sie, ob eine Service-Level-Berechtigung existiert
 
-Die Plattform gibt detaillierte Fehlermeldungen zurück, die angeben, welche Berechtigung fehlgeschlagen ist. Verwenden Sie diese, um die fehlende Regel zu identifizieren.
+Die Plattform gibt detaillierte Fehlermeldungen zurück, die angeben, welche Berechtigung fehlgeschlagen ist. Verwenden
+Sie diese, um die fehlende Regel zu identifizieren.
 :::
 
 ## Performance-Hinweise
@@ -251,4 +269,5 @@ Die Zugriffsprüfung ist optimiert:
 - Komplexe Wildcard-Muster haben minimale Auswirkungen auf die Performance
 - Rollenänderungen treten sofort ohne Cache-Verzögerungen in Kraft
 
-Das Wechseln von Mandanten löst eine vollständige Cache-Invalidierung im Frontend aus, wodurch Daten neu abgerufen werden.
+Das Wechseln von Mandanten löst eine vollständige Cache-Invalidierung im Frontend aus, wodurch Daten neu abgerufen
+werden.

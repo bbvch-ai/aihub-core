@@ -1,6 +1,6 @@
 ---
 title: Einrichtung der Authentifizierung
-source_sha: "c4860a0823b9007bdad8a261391c95a5b18692823254ebbd9fa8e297fa14bd8e"
+source_sha: c4860a0823b9007bdad8a261391c95a5b18692823254ebbd9fa8e297fa14bd8e
 ---
 
 # Einrichtung der Authentifizierung
@@ -11,10 +11,11 @@ Swiss AI Hub verwendet ein Multi-Mandanten-Authentifizierungs- und Autorisierung
 
 Das Authentifizierungssystem besteht aus mehreren Schlüsselkomponenten:
 
--   **Auth Handlers**: Validieren Anmeldeinformationen und lösen die Benutzeridentität auf
--   **Identity Models**: `UserIdentity` und `TenantIdentity` repräsentieren authentifizierte Benutzer und deren Mandantenkontext
--   **Access Control**: `AccessChecker` erzwingt Berechtigungen basierend auf hierarchischen Zugriffsregeln
--   **Multi-Tenancy**: Alle Operationen erfolgen innerhalb eines Mandantenkontexts
+- **Auth Handlers**: Validieren Anmeldeinformationen und lösen die Benutzeridentität auf
+- **Identity Models**: `UserIdentity` und `TenantIdentity` repräsentieren authentifizierte Benutzer und deren
+  Mandantenkontext
+- **Access Control**: `AccessChecker` erzwingt Berechtigungen basierend auf hierarchischen Zugriffsregeln
+- **Multi-Tenancy**: Alle Operationen erfolgen innerhalb eines Mandantenkontexts
 
 ## Authentifizierungsablauf
 
@@ -32,31 +33,48 @@ user_identity = await TokenAuthHandler()(request)
 
 Unterstützte Authentifizierungsmethoden:
 
--   **OAuth2/OIDC**: JWT-Tokens von Keycloak (unterstützt föderierte Identitätsanbieter wie Azure AD, Google usw.)
--   **API Tokens**: Langlebige Tokens für den programmatischen Zugriff
--   **OpenWebUI Integration**: Spezieller Handler für OpenWebUI-Benutzer
+- **OAuth2/OIDC**: JWT-Tokens von Keycloak (unterstützt föderierte Identitätsanbieter wie Azure AD, Google usw.)
+- **API Tokens**: Langlebige Tokens für den programmatischen Zugriff
+- **OpenWebUI Integration**: Spezieller Handler für OpenWebUI-Benutzer
 
 Für Tests und interaktive Playground-Server existiert ein dedizierter `TestAuthHandler` unter
-`swiss_ai_hub.core.testing.auth_utils` (nicht `core.auth`) und umgeht die Token-Analyse, um eine feste Testidentität zurückzugeben. Er ist absichtlich nicht über die öffentliche Auth-Schnittstelle aus dem Produktionscode erreichbar.
+`swiss_ai_hub.core.testing.auth_utils` (nicht `core.auth`) und umgeht die Token-Analyse, um eine feste Testidentität
+zurückzugeben. Er ist absichtlich nicht über die öffentliche Auth-Schnittstelle aus dem Produktionscode erreichbar.
 
 ### 2. Benutzerauflösung
 
-Benutzerprofildaten (Name, E-Mail) werden für OAuth2-Flows aus JWT-Claims gelesen oder über den `KeycloakAdminService` für Bearer-Tokens abgerufen. Es gibt keinen lokalen Benutzerdatensatz – Keycloak ist die einzige Quelle der Wahrheit für die Benutzeridentität.
+Benutzerprofildaten (Name, E-Mail) werden für OAuth2-Flows aus JWT-Claims gelesen oder über den `KeycloakAdminService`
+für Bearer-Tokens abgerufen. Es gibt keinen lokalen Benutzerdatensatz – Keycloak ist die einzige Quelle der Wahrheit für
+die Benutzeridentität.
 
-**Verhalten des ersten Benutzers**: Der erste Benutzer, der einem Mandanten beitritt, erhält automatisch Administratorrollen. Nachfolgende Benutzer erhalten Standardbenutzerrollen (konfigurierbar über `UserSignupSettings`). Dies gilt pro Mandant, nicht global, und wird in `UserTenantRoleEntity` erzwungen, wenn eine neue Mitgliedschaft erstellt wird.
+**Verhalten des ersten Benutzers**: Der erste Benutzer, der einem Mandanten beitritt, erhält automatisch
+Administratorrollen. Nachfolgende Benutzer erhalten Standardbenutzerrollen (konfigurierbar über `UserSignupSettings`).
+Dies gilt pro Mandant, nicht global, und wird in `UserTenantRoleEntity` erzwungen, wenn eine neue Mitgliedschaft
+erstellt wird.
 
 ### 3. Mandantenkontext-Auflösung
 
-Die meisten authentifizierten Anfragen haben einen Mandantenkontext. Der Mandant wird über einen `{tenant_id}`-Pfadparameter in der URL identifiziert – die meisten API-Routen sind unter `/api/v1/{tenant_id}/...` gemountet. Sysadmin-only-Endpunkte (z. B. der Mandantenadministrations-Controller) sind global ohne Mandantenpräfix gemountet.
+Die meisten authentifizierten Anfragen haben einen Mandantenkontext. Der Mandant wird über einen
+`{tenant_id}`-Pfadparameter in der URL identifiziert – die meisten API-Routen sind unter `/api/v1/{tenant_id}/...`
+gemountet. Sysadmin-only-Endpunkte (z. B. der Mandantenadministrations-Controller) sind global ohne Mandantenpräfix
+gemountet.
 
-Die Mandantenauflösung wird innerhalb von `AuthHandler.build_identity()` und `AuthHandler._resolve_tenant_by_id()` gehandhabt. Letzterer konsultiert zuerst `KeycloakAdminService.tenant_exists()` – Keycloak ist die Autorität darüber, ob ein Mandant existiert – und prüft erst dann die `UserTenantRoleEntity`-Mitgliedschaft. Die Mitgliedschaftsprüfung wird für Sysadmins vollständig übersprungen (siehe „Sysadmin-Zugriff“ unten). Controller rufen diese Resolver nicht direkt auf; sie sind in `user_with_permission()` und `sys_admin_user()` verdrahtet.
+Die Mandantenauflösung wird innerhalb von `AuthHandler.build_identity()` und `AuthHandler._resolve_tenant_by_id()`
+gehandhabt. Letzterer konsultiert zuerst `KeycloakAdminService.tenant_exists()` – Keycloak ist die Autorität darüber, ob
+ein Mandant existiert – und prüft erst dann die `UserTenantRoleEntity`-Mitgliedschaft. Die Mitgliedschaftsprüfung wird
+für Sysadmins vollständig übersprungen (siehe „Sysadmin-Zugriff“ unten). Controller rufen diese Resolver nicht direkt
+auf; sie sind in `user_with_permission()` und `sys_admin_user()` verdrahtet.
 
-**Mandanten-Pfadparameter**: Alle API-Anfragen müssen die `{tenant_id}` im URL-Pfad enthalten. Zwei Formate werden unterstützt:
+**Mandanten-Pfadparameter**: Alle API-Anfragen müssen die `{tenant_id}` im URL-Pfad enthalten. Zwei Formate werden
+unterstützt:
 
--   **Konkrete ID**: `/api/v1/507f1f77bcf86cd799439011/agents/...` – spezifiziert den Mandanten direkt per MongoDB ObjectId
--   **Aktiver Slug**: `/api/v1/active/agents/...` – löst sich zum persistenten aktiven Mandanten des Benutzers auf
+- **Konkrete ID**: `/api/v1/507f1f77bcf86cd799439011/agents/...` – spezifiziert den Mandanten direkt per MongoDB
+  ObjectId
+- **Aktiver Slug**: `/api/v1/active/agents/...` – löst sich zum persistenten aktiven Mandanten des Benutzers auf
 
-Der aktive Mandant wird während der Anfragenauflösung niemals automatisch aktualisiert. Er kann nur über einen dedizierten API-Endpunkt geändert werden. Health-Endpunkte bleiben außerhalb des Mandantenbereichs unter `/api/v1/health/`.
+Der aktive Mandant wird während der Anfragenauflösung niemals automatisch aktualisiert. Er kann nur über einen
+dedizierten API-Endpunkt geändert werden. Health-Endpunkte bleiben außerhalb des Mandantenbereichs unter
+`/api/v1/health/`.
 
 ### 4. Konstruktion der UserIdentity
 
@@ -74,7 +92,8 @@ return UserIdentity(
 ```
 
 Das Flag `is_sys_admin` ist das einzige Signal für den Plattform-Admin-Status – es überbrückt den Access Checker (siehe
-„Sysadmin-Zugriff“ unten) und bildet die Grundlage für die `Controller.sys_admin_user()`-Abhängigkeit, die Sysadmin-only-Endpunkte absichert.
+„Sysadmin-Zugriff“ unten) und bildet die Grundlage für die `Controller.sys_admin_user()`-Abhängigkeit, die
+Sysadmin-only-Endpunkte absichert.
 
 ## Multi-Mandanten-Rollenverwaltung
 
@@ -82,29 +101,31 @@ Das Flag `is_sys_admin` ist das einzige Signal für den Plattform-Admin-Status �
 
 **TenantMetadataEntity**
 
--   Enthält Anzeigemetadaten (Name, Beschreibung, Zugriffsregeln) für einen Mandanten
--   **NICHT** die Quelle der Wahrheit für die Existenz eines Mandanten – die Keycloak-Gruppe `/tenants/<id>` ist maßgeblich. Service-Code
-    muss die Existenz über `KeycloakAdminService.tenant_exists()` überprüfen, bevor den Metadaten vertraut wird.
--   Enthält `access_rules`, die begrenzen, worauf JEDER Benutzer im Mandanten zugreifen kann
--   Beispiel: `["aihub.user.agent.>"]` gewährt Zugriff auf alle Agents auf Benutzerebene
+- Enthält Anzeigemetadaten (Name, Beschreibung, Zugriffsregeln) für einen Mandanten
+- **NICHT** die Quelle der Wahrheit für die Existenz eines Mandanten – die Keycloak-Gruppe `/tenants/<id>` ist
+  maßgeblich. Service-Code muss die Existenz über `KeycloakAdminService.tenant_exists()` überprüfen, bevor den Metadaten
+  vertraut wird.
+- Enthält `access_rules`, die begrenzen, worauf JEDER Benutzer im Mandanten zugreifen kann
+- Beispiel: `["aihub.user.agent.>"]` gewährt Zugriff auf alle Agents auf Benutzerebene
 
 **UserTenantRoleEntity**
 
--   Ordnet Benutzern Mandanten mit spezifischen Rollen zu
--   Maßgebliche Quelle für Benutzer-Mandant-Rollen-Beziehungen
--   Benutzer können unterschiedliche Rollen in verschiedenen Mandanten haben
+- Ordnet Benutzern Mandanten mit spezifischen Rollen zu
+- Maßgebliche Quelle für Benutzer-Mandant-Rollen-Beziehungen
+- Benutzer können unterschiedliche Rollen in verschiedenen Mandanten haben
 
 **RoleEntity**
 
--   Jede Rolle gehört zu genau einem Mandanten – `tenant_id` ist erforderlich
--   Das Standardrollenset (`AIHubUser`, `AIHubAdmin`, `AIHubAgentUser`, usw.) wird pro Mandant bei der Erstellung initialisiert
--   Systemweite Rollen existieren nicht mehr; siehe ADR `2026_04_14_tenant_scoped_roles.md`
+- Jede Rolle gehört zu genau einem Mandanten – `tenant_id` ist erforderlich
+- Das Standardrollenset (`AIHubUser`, `AIHubAdmin`, `AIHubAgentUser`, usw.) wird pro Mandant bei der Erstellung
+  initialisiert
+- Systemweite Rollen existieren nicht mehr; siehe ADR `2026_04_14_tenant_scoped_roles.md`
 
 **Benutzerprofildaten**
 
--   Gespeichert in Keycloak, nicht lokal – `KeycloakAdminService.get_user_by_id()` / `find_user_by_email()` für die Suche
--   Name, E-Mail und Identitätsattribute stammen alle aus Keycloak; die Plattform schreibt nichts in Benutzerdatensätze
--   Rollen sind NICHT an den Benutzerdatensatz angehängt – sie werden aus `UserTenantRoleEntity` pro Mandant abgerufen
+- Gespeichert in Keycloak, nicht lokal – `KeycloakAdminService.get_user_by_id()` / `find_user_by_email()` für die Suche
+- Name, E-Mail und Identitätsattribute stammen alle aus Keycloak; die Plattform schreibt nichts in Benutzerdatensätze
+- Rollen sind NICHT an den Benutzerdatensatz angehängt – sie werden aus `UserTenantRoleEntity` pro Mandant abgerufen
 
 ### Zugriff auf Benutzerrollen
 
@@ -137,9 +158,9 @@ level = checker.access_level("aihub.user.agent.class-a.id-123")
 
 **KRITISCH**: Mandanten-Zugriffsregeln fungieren als OBERGRENZE/GRENZE für Benutzerberechtigungen.
 
-1.  **STUFE 1**: Bestimmen Sie das Zugriffslevel des Mandanten (Admin oder Benutzer)
-2.  **STUFE 2**: Bestimmen Sie das Zugriffslevel des Benutzers (Admin oder Benutzer)
-3.  **STUFE 3**: Geben Sie das MINIMUM beider Level zurück
+1. **STUFE 1**: Bestimmen Sie das Zugriffslevel des Mandanten (Admin oder Benutzer)
+2. **STUFE 2**: Bestimmen Sie das Zugriffslevel des Benutzers (Admin oder Benutzer)
+3. **STUFE 3**: Geben Sie das MINIMUM beider Level zurück
 
 **Beispiel**:
 
@@ -161,8 +182,8 @@ aihub.[admin|user].<resource>.<subresource>.<id>
 
 **Platzhalter**:
 
--   `*` - Ein-Ebenen-Platzhalter: `aihub.user.agent.*` passt auf jeden einzelnen Agent
--   `>` - Mehr-Ebenen-Platzhalter: `aihub.user.agent.>` passt auf alle Agents und Unterressourcen
+- `*` - Ein-Ebenen-Platzhalter: `aihub.user.agent.*` passt auf jeden einzelnen Agent
+- `>` - Mehr-Ebenen-Platzhalter: `aihub.user.agent.>` passt auf alle Agents und Unterressourcen
 
 **Beispiele**:
 
@@ -296,7 +317,9 @@ UserTenantRoleEntity.create_or_update(
 
 ### „Zugriff verweigert“, obwohl der Benutzer Admin-Rollen hat
 
-**Ursache**: Mandanten-Zugriffsregeln schränken die Benutzerberechtigungen ein. (Sysadmins – Benutzer mit der Keycloak Realm-Rolle `AIHubSysAdmin` – umgehen diese Prüfung vollständig; wenn das Problem für einen Sysadmin weiterhin besteht, ist die Umgehung selbst falsch konfiguriert.)
+**Ursache**: Mandanten-Zugriffsregeln schränken die Benutzerberechtigungen ein. (Sysadmins – Benutzer mit der Keycloak
+Realm-Rolle `AIHubSysAdmin` – umgehen diese Prüfung vollständig; wenn das Problem für einen Sysadmin weiterhin besteht,
+ist die Umgehung selbst falsch konfiguriert.)
 
 **Lösung**: Überprüfen Sie die Mandanten-Zugriffsregeln:
 
@@ -307,7 +330,8 @@ print(tenant.access_rules)  # Check what the tenant allows
 
 ### Leere Mandanten-Zugriffsregeln = Kein Zugriff
 
-Wenn ein Mandant keine Zugriffsregeln (`[]`) hat, wird ALLEN Benutzern in diesem Mandanten der Zugriff auf alles verweigert.
+Wenn ein Mandant keine Zugriffsregeln (`[]`) hat, wird ALLEN Benutzern in diesem Mandanten der Zugriff auf alles
+verweigert.
 
 **Lösung**: Legen Sie entsprechende Mandanten-Zugriffsregeln fest:
 
@@ -318,23 +342,24 @@ tenant.save()
 
 ## Sicherheitsaspekte
 
--   **Mounten Sie niemals `TestAuthHandler` an Produktions-Einstiegspunkten** – er befindet sich aus diesem Grund unter `core.testing`;
-    Produktionsdateien `app/main.py` müssen `KeycloakAuthHandler` oder `TokenAuthHandler` verwenden
--   **JWTs korrekt validieren** – Issuer, Audience und Signatur immer überprüfen
--   **HTTPS verwenden** – niemals Tokens über unverschlüsselte Verbindungen übertragen
--   **API-Tokens regelmäßig rotieren** – Token-Ablauf und Rotation implementieren
--   **Zugriffssteuerungsänderungen auditieren** – alle Rollen- und Berechtigungsmodifikationen protokollieren
--   **Prinzip der geringsten Privilegien** – minimal erforderlichen Zugriff gewähren
--   **Mandantenisolation** – Benutzer können nicht auf Ressourcen außerhalb der Grenzen ihres Mandanten zugreifen
+- **Mounten Sie niemals `TestAuthHandler` an Produktions-Einstiegspunkten** – er befindet sich aus diesem Grund unter
+  `core.testing`; Produktionsdateien `app/main.py` müssen `KeycloakAuthHandler` oder `TokenAuthHandler` verwenden
+- **JWTs korrekt validieren** – Issuer, Audience und Signatur immer überprüfen
+- **HTTPS verwenden** – niemals Tokens über unverschlüsselte Verbindungen übertragen
+- **API-Tokens regelmäßig rotieren** – Token-Ablauf und Rotation implementieren
+- **Zugriffssteuerungsänderungen auditieren** – alle Rollen- und Berechtigungsmodifikationen protokollieren
+- **Prinzip der geringsten Privilegien** – minimal erforderlichen Zugriff gewähren
+- **Mandantenisolation** – Benutzer können nicht auf Ressourcen außerhalb der Grenzen ihres Mandanten zugreifen
 
 ## Migration vom vorherigen System
 
 Frühere Versionen haben Rollen über die Microsoft Graph API von Azure AD abgerufen. Das neue System:
 
--   ✅ **Speichert Rollen lokal** in `UserTenantRoleEntity`
--   ✅ **Keine externen API-Aufrufe** während der Authentifizierung
--   ✅ **Mandantenbezogene Rollen** für Multi-Tenancy
--   ❌ **Keine automatische Rollensynchronisierung** vom Identitätsanbieter
--   ❌ **Kein automatisches Abrufen von Profilbildern** vom Identitätsanbieter
+- ✅ **Speichert Rollen lokal** in `UserTenantRoleEntity`
+- ✅ **Keine externen API-Aufrufe** während der Authentifizierung
+- ✅ **Mandantenbezogene Rollen** für Multi-Tenancy
+- ❌ **Keine automatische Rollensynchronisierung** vom Identitätsanbieter
+- ❌ **Kein automatisches Abrufen von Profilbildern** vom Identitätsanbieter
 
-Weitere Details finden Sie unter [ADR: Lokale Multi-Mandanten-Rollenverwaltung](/de/arc42/decisions/2025_12_25_local_role_management.md).
+Weitere Details finden Sie unter
+[ADR: Lokale Multi-Mandanten-Rollenverwaltung](/de/arc42/decisions/2025_12_25_local_role_management.md).
