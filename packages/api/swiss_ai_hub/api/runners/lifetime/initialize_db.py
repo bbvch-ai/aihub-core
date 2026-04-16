@@ -14,7 +14,7 @@ from pydantic import BaseModel
 from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
 from swiss_ai_hub.core.auth.realm_roles import SYS_ADMIN_ROLE
 from swiss_ai_hub.core.auth.superuser_settings import SuperuserSettings
-from swiss_ai_hub.core.infrastructure import AIHubSettings, DefaultTenantSettings, UserSignupSettings, no_trace
+from swiss_ai_hub.core.infrastructure import AIHubSettings, StartupTenantSettings, UserSignupSettings, no_trace
 from swiss_ai_hub.core.persistence.access.entities.bearer_token import BearerToken
 from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
 from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
@@ -29,18 +29,18 @@ class _DefaultRoleDefinition(BaseModel):
     access_rules: list[str]
 
 
-async def _backfill_existing_users_into_default_group(tenant_id: str) -> None:
-    """One-time backfill: adds all pre-existing realm users to the default tenant group.
+async def _backfill_existing_users_into_startup_group(tenant_id: str) -> None:
+    """One-time backfill: adds all pre-existing realm users to the startup tenant group.
 
     Keycloak's defaultGroups only affects users created after the group is configured.
     Users that already existed in the realm (e.g. the seeded admin from the realm import)
-    need to be added explicitly. Only runs the first time the default tenant is created —
+    need to be added explicitly. Only runs the first time the startup tenant is created —
     never on subsequent startups, so admin-initiated removals are not reverted.
     """
     all_users = await KeycloakAdminService.get_all_users()
     for user in all_users:
         await KeycloakAdminService.assign_user_to_tenant(user.id, tenant_id)
-        logger.info(f"Backfilled user '{user.username}' into default tenant group")
+        logger.info(f"Backfilled user '{user.username}' into startup tenant group")
 
 
 _DEFAULT_ROLE_DEFINITIONS: list[_DefaultRoleDefinition] = [
@@ -83,21 +83,21 @@ _DEFAULT_ROLE_DEFINITIONS: list[_DefaultRoleDefinition] = [
 
 
 @no_trace
-async def initialize_default_tenant() -> TenantMetadataEntity | None:
+async def initialize_startup_tenant() -> TenantMetadataEntity | None:
     """
-    Initialize the default tenant for the platform.
+    Initialize the startup tenant for the platform.
 
     Creates the MongoDB tenant metadata and ensures a matching Keycloak group exists
     under /tenants/<tenant-name>. The Keycloak realm configures this group as a
     default group so all new users are automatically members. Also seeds the
     tenant's default role set (idempotent, gated by ``CREATE_DEFAULT_ROLES``).
     """
-    settings = DefaultTenantSettings()
+    settings = StartupTenantSettings()
 
     existing_tenant = TenantMetadataEntity.get_startup_tenant_metadata()
     if existing_tenant:
         logger.info(
-            f"Default tenant '{existing_tenant.name}' (id={existing_tenant.id}) already exists, skipping creation"
+            f"Startup tenant '{existing_tenant.name}' (id={existing_tenant.id}) already exists, skipping creation"
         )
         await initialize_default_roles_for_tenant(str(existing_tenant.id))
         return existing_tenant
@@ -108,12 +108,12 @@ async def initialize_default_tenant() -> TenantMetadataEntity | None:
         description=settings.DESCRIPTION,
         access_rules=settings.access_rules_list,
     )
-    logger.info(f"Successfully created default tenant '{tenant.name}' (id={tenant.id})")
+    logger.info(f"Successfully created startup tenant '{tenant.name}' (id={tenant.id})")
 
     try:
         await KeycloakAdminService.create_tenant_group(tenant.id)
         logger.info(f"Keycloak tenant group '/tenants/{tenant.id}' created")
-        await _backfill_existing_users_into_default_group(tenant.id)
+        await _backfill_existing_users_into_startup_group(tenant.id)
         await KeycloakAdminService.assign_superuser_to_tenant(tenant.id)
     except KeycloakGetError:
         logger.warning(
@@ -166,15 +166,15 @@ async def _validate_signup_roles() -> None:
     settings = UserSignupSettings()
     all_configured_roles = set(settings.regular_user_roles_list + settings.first_admin_user_roles_list)
 
-    default_tenant = TenantMetadataEntity.get_startup_tenant_metadata()
-    tenant_id = str(default_tenant.id) if default_tenant else ""
+    startup_tenant = TenantMetadataEntity.get_startup_tenant_metadata()
+    tenant_id = str(startup_tenant.id) if startup_tenant else ""
 
     existing_roles = set(RoleEntity.filter_existing_roles(list(all_configured_roles), tenant_id))
     missing_roles = all_configured_roles - existing_roles
 
     if missing_roles:
         raise RuntimeError(
-            f"Configured signup roles do not exist in the default tenant: {sorted(missing_roles)}. "
+            f"Configured signup roles do not exist in the startup tenant: {sorted(missing_roles)}. "
             f"Check AIHUB_USER_SIGNUP_REGULAR_USER_ROLES and AIHUB_USER_SIGNUP_FIRST_ADMIN_USER_ROLES settings."
         )
 

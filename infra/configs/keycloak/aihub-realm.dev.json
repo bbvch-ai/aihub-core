@@ -65,13 +65,13 @@
       "name": "tenants",
       "subGroups": [
         {
-          "name": "${AIHUB_DEFAULT_TENANT_ID}"
+          "name": "${AIHUB_STARTUP_TENANT_ID}"
         }
       ]
     }
   ],
 
-  "defaultGroups": ["/tenants/${AIHUB_DEFAULT_TENANT_ID}"],
+  "defaultGroups": ["/tenants/${AIHUB_STARTUP_TENANT_ID}"],
 
   "clients": [
     {

@@ -35,8 +35,8 @@ authority over existence created a second source of truth that nothing actually 
 
 **The Keycloak group `/tenants/<tenant_id>` is the only authoritative signal that a tenant exists. The MongoDB
 collection `tenants` (renamed conceptually to `TenantMetadataEntity`) holds display metadata only — name, description,
-access rules, and the `is_default` startup marker. A returned metadata document does not imply the tenant still exists
-in Keycloak; a missing metadata document does not imply the tenant is absent from Keycloak.**
+and access rules. A returned metadata document does not imply the tenant still exists in Keycloak; a missing metadata
+document does not imply the tenant is absent from Keycloak.**
 
 The two stores can be in three states, all of which must be representable:
 
@@ -49,10 +49,10 @@ The two stores can be in three states, all of which must be representable:
 Any service method that acts on a tenant verifies group existence in Keycloak before trusting metadata. The metadata
 class documents this contract explicitly and exposes no methods that imply existence on their own.
 
-The `is_default` flag survives as a "created at startup" marker for bootstrap convenience, but carries no semantic
-weight beyond that — it does not gate deletion, does not grant additional access, and does not designate a fallback
-tenant for routing. (The deletion-protection invariant moved to a separate decision, ADR
-`2026_04_15_last_tenant_invariant_replaces_default_tenant_guard`.)
+The "startup tenant" — the one the platform seeds on first boot — is identified by its configured id
+(`StartupTenantSettings().ID`) rather than by a database flag; there is no schema-level distinction between it and
+operator-configured tenants. The deletion-protection invariant is a count-based check, not a per-tenant marker (ADR
+`2026_04_15_last_tenant_invariant_replaces_default_tenant_guard`).
 
 ## Consequences
 
@@ -95,4 +95,4 @@ tenant for routing. (The deletion-protection invariant moved to a separate decis
 - `2026_04_15_sysadmin_implicit_admin_access.md` — Companion: sysadmins must be able to act on Unconfigured/Orphaned
   tenants without membership rows
 - `2026_04_15_last_tenant_invariant_replaces_default_tenant_guard.md` — Deletion-protection invariant moved off
-  `is_default`
+  `is_default` (and the flag was subsequently removed entirely)

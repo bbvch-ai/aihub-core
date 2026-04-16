@@ -61,12 +61,12 @@ class TenantMetadataEntity(Document):
     def get_startup_tenant_metadata(cls) -> Self | None:
         """Metadata for the tenant seeded at platform startup, looked up by its
         configured id. There is no database flag — the "startup tenant" is simply
-        the one whose id matches ``DefaultTenantSettings().ID``."""
-        # Deferred: DefaultTenantSettings lives under core.infrastructure and
+        the one whose id matches ``StartupTenantSettings().ID``."""
+        # Deferred: StartupTenantSettings lives under core.infrastructure and
         # importing it at module load time would cycle through settings bootstrap.
-        from swiss_ai_hub.core.infrastructure.api.default_tenant_settings import DefaultTenantSettings
+        from swiss_ai_hub.core.infrastructure.api.startup_tenant_settings import StartupTenantSettings
 
-        return cls.get_metadata_by_tenant_id(DefaultTenantSettings().ID)
+        return cls.get_metadata_by_tenant_id(StartupTenantSettings().ID)
 
     @classmethod
     @trace_fn

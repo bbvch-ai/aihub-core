@@ -30,8 +30,8 @@ from swiss_ai_hub.api.rpc.agent_config_responder import AgentConfigResponder
 from swiss_ai_hub.api.rpc.process_config_responder import ProcessConfigResponder
 from swiss_ai_hub.api.runners.lifetime.initialize_db import (
     finalize_role_setup,
-    initialize_default_tenant,
     initialize_knowledge_buckets,
+    initialize_startup_tenant,
 )
 from swiss_ai_hub.api.services.agent_endpoints_discovery_service import AgentEndpointsDiscoveryService
 from swiss_ai_hub.api.services.process_endpoints_discovery_service import ProcessEndpointsDiscoveryService
@@ -218,7 +218,7 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         else:
             logger.warning("Unable to start ProcessEndpointsDiscoveryService due to missing state.process_controller")
 
-        await initialize_default_tenant()
+        await initialize_startup_tenant()
         await finalize_role_setup()
         await initialize_knowledge_buckets()
 

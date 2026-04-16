@@ -207,10 +207,10 @@ has_access = checker.has_access_to_service("llm-gateway")
 ### Environment Variables
 
 ```bash
-# Default Tenant Configuration
-AIHUB_DEFAULT_TENANT_NAME="Default Organization"
-AIHUB_DEFAULT_TENANT_DESCRIPTION="The default organization for all users."
-AIHUB_DEFAULT_TENANT_ACCESS_RULES="aihub.admin.>"
+# Startup Tenant Configuration (seeded on first boot; an ordinary tenant thereafter)
+AIHUB_STARTUP_TENANT_NAME="Default Organization"
+AIHUB_STARTUP_TENANT_DESCRIPTION="The default organization for all users."
+AIHUB_STARTUP_TENANT_ACCESS_RULES="aihub.admin.>"
 
 # User Signup Role Assignment
 AIHUB_USER_SIGNUP_DEFAULT_ROLES="AIHubUser"
@@ -227,12 +227,12 @@ OAUTH2_AUDIENCE="api://{app-id}"
 ### Settings Classes
 
 ```python
-from aihub_lib.infrastructure.api.DefaultTenantSettings import DefaultTenantSettings
-from aihub_lib.infrastructure.api.UserSignupSettings import UserSignupSettings
+from swiss_ai_hub.core.infrastructure.api.startup_tenant_settings import StartupTenantSettings
+from swiss_ai_hub.core.infrastructure.api.user_signup_settings import UserSignupSettings
 
-# Access default tenant settings
-tenant_settings = DefaultTenantSettings()
-print(tenant_settings.default_access_rules_list)  # ['aihub.admin.>']
+# Access startup tenant settings
+tenant_settings = StartupTenantSettings()
+print(tenant_settings.access_rules_list)  # ['aihub.admin.>']
 
 # Access user signup settings
 signup_settings = UserSignupSettings()

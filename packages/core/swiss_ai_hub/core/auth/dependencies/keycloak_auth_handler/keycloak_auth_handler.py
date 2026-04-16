@@ -13,7 +13,7 @@ from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
 from swiss_ai_hub.core.auth.keycloak.keycloak_settings import KeycloakSettings
 from swiss_ai_hub.core.auth.realm_roles import SYS_ADMIN_ROLE
-from swiss_ai_hub.core.infrastructure.api.default_tenant_settings import DefaultTenantSettings
+from swiss_ai_hub.core.infrastructure.api.startup_tenant_settings import StartupTenantSettings
 from swiss_ai_hub.core.infrastructure.api.user_signup_settings import UserSignupSettings
 from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
@@ -223,7 +223,7 @@ class KeycloakAuthHandler(AuthHandler):
 
         Selection order when no valid active tenant is set:
         1. The user's only tenant, if they have exactly one membership.
-        2. The configured default tenant (``AIHUB_DEFAULT_TENANT_ID``) if the user is a member.
+        2. The configured startup tenant (``AIHUB_STARTUP_TENANT_ID``) if the user is a member.
         3. The earliest-created tenant (by metadata timestamp) among the user's memberships.
         """
         existing_tenant_ids = await KeycloakAdminService.get_user_tenant_ids(user_id)
@@ -234,7 +234,7 @@ class KeycloakAuthHandler(AuthHandler):
         if current and current in existing_tenant_ids:
             return
 
-        default_id = DefaultTenantSettings().ID
+        default_id = StartupTenantSettings().ID
         if len(existing_tenant_ids) == 1:
             selected_id = next(iter(existing_tenant_ids))
         elif default_id in existing_tenant_ids:

@@ -48,7 +48,7 @@ is retired entirely.**
 
 ### Migration
 
-Existing installations that carry `tenant_id=None` roles need a one-shot update to stamp the default tenant's id onto
+Existing installations that carry `tenant_id=None` roles need a one-shot update to stamp the startup tenant's id onto
 those rows (or delete and re-seed them). This is a platform-wide breaking change; it is not backward compatible, in line
 with the "no backwards-compatibility shims" convention.
 

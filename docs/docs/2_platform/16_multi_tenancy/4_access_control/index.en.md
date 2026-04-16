@@ -141,9 +141,9 @@ whether access is granted (not denied).
 Configure default behavior through environment variables:
 
 ```bash
-# Default tenant created on first startup
-AIHUB_DEFAULT_TENANT_NAME="Default Organization"
-AIHUB_DEFAULT_TENANT_ACCESS_RULES="aihub.admin.>"
+# Startup tenant (seeded on first boot; an ordinary tenant thereafter)
+AIHUB_STARTUP_TENANT_NAME="Default Organization"
+AIHUB_STARTUP_TENANT_ACCESS_RULES="aihub.admin.>"
 
 # Automatic user signup
 AIHUB_USER_SIGNUP_DEFAULT_TENANT="default"

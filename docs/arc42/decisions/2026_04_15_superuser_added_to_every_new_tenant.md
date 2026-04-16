@@ -17,7 +17,7 @@ sync, etc.). Without explicit group membership, sysadmin presence is invisible �
 the directories other services read from. Adding the Superuser to the group closes that asymmetry **and** is the sole
 mechanism by which the Superuser becomes an authorized actor within each tenant.
 
-A second motivation: the platform's two paths through which a tenant becomes Active are the default-tenant bootstrap and
+A second motivation: the platform's two paths through which a tenant becomes Active are the startup-tenant bootstrap and
 `TenantAdminService.create_tenant_metadata` (per ADR `2026_04_15_keycloak_as_tenant_existence_authority`). Both already
 construct or validate the Keycloak group; both are natural seams for adding "the platform's own user" to that group as
 part of bringing the tenant into being. The alternative — leaving membership to ad-hoc operator action — produces a
@@ -51,7 +51,7 @@ should not "fight" the operator. This rules out periodic reconciliation and Keyc
 ## Decision
 
 **At tenant metadata creation, the Superuser is added as a member of the new tenant's `/tenants/<id>` Keycloak group.
-This applies to both creation paths — the default-tenant bootstrap and the `create_tenant_metadata` flow that attaches
+This applies to both creation paths — the startup-tenant bootstrap and the `create_tenant_metadata` flow that attaches
 metadata to a pre-existing Keycloak group. After creation, the membership is treated as ordinary: no startup
 reconciliation, no periodic restoration, no Keycloak SPI to block removal. A sysadmin who removes the Superuser from a
 tenant via the Keycloak admin console removes them, and the removal stands.**
@@ -80,7 +80,7 @@ lazy — the first tenant creation in the process triggers it; subsequent creati
 
 ### Trade-offs
 
-- **Tenants that existed before this change are not retroactively touched.** The default tenant in the current
+- **Tenants that existed before this change are not retroactively touched.** The startup tenant in the current
   deployment already has the Superuser via the existing first-startup user backfill, so in practice this is a non-issue
   today; for any future migration where pre-existing tenants matter, a one-shot manual add via the Keycloak admin
   console is the documented remedy.

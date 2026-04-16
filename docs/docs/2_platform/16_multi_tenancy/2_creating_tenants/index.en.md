@@ -169,10 +169,10 @@ Users can belong to multiple tenants. Someone might be:
 - Team lead in a cross-functional project tenant
 - Admin in a test tenant for trying out new features
 
-## Default tenant behavior
+## Startup tenant behavior
 
-When someone logs in for the first time, they automatically join the default tenant with standard user roles. Configure
-this behavior with environment variables:
+When someone logs in for the first time, they automatically join the startup tenant (the one the platform seeded on
+first boot — see `AIHUB_STARTUP_TENANT_*`) with standard user roles. Configure this behavior with environment variables:
 
 ```bash
 AIHUB_USER_SIGNUP_DEFAULT_TENANT="default"
@@ -242,9 +242,9 @@ cleanup of the group is a separate step in the Keycloak admin console. Deletion 
 
 ::: warning Last-Tenant Protection
 The platform requires at least one tenant to remain. Deletion is blocked when it would leave the system with no
-remaining tenants. Any tenant — including the default one — can be deleted as long as at least one other tenant exists.
-The `is_default` flag is now a passive marker for "tenant created at startup" and carries no deletion-protection
-semantics.
+remaining tenants. Any tenant — including the one the platform seeded on first boot — can be deleted as long as at least
+one other tenant exists. The startup tenant carries no database-level marker that distinguishes it from tenants
+configured later.
 :::
 
 ## Practical tips

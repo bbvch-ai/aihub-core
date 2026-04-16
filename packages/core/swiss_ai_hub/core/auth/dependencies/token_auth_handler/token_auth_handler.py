@@ -32,7 +32,8 @@ class TokenAuthHandler(BearerAuthHandler):
         """
         Authenticates a user using a bearer token string.
 
-        Resolves tenant context from the optional request parameter or uses the default tenant.
+        Resolves tenant context from the optional request parameter, falling back to
+        the user's active tenant when the request carries none.
         """
         if not token_str:
             raise HTTPException(status_code=401, detail="Token missing.")

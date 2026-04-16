@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from swiss_ai_hub.core.infrastructure.api.ai_hub_settings import AIHubSettings
-    from swiss_ai_hub.core.infrastructure.api.default_tenant_settings import DefaultTenantSettings
+    from swiss_ai_hub.core.infrastructure.api.startup_tenant_settings import StartupTenantSettings
     from swiss_ai_hub.core.infrastructure.api.user_signup_settings import UserSignupSettings
     from swiss_ai_hub.core.infrastructure.azure_cognitive_services.azure_document_intelligence_settings import (
         AzureDocumentIntelligenceSettings,
@@ -63,7 +63,7 @@ __all__ = [
     "AccessGrant",
     "AIHubSettings",
     "AihubInstrumentor",
-    "DefaultTenantSettings",
+    "StartupTenantSettings",
     "LangfuseProvisioner",
     "LangfuseSettings",
     "LiteLLMProxySettings",
@@ -109,7 +109,7 @@ _LAZY_IMPORTS = {
     "AccessGrant": "swiss_ai_hub.core.infrastructure.openwebui.access_grant",
     "AIHubSettings": "swiss_ai_hub.core.infrastructure.api.ai_hub_settings",
     "AihubInstrumentor": "swiss_ai_hub.core.infrastructure.opentelemetry.aihub_instrumentor",
-    "DefaultTenantSettings": "swiss_ai_hub.core.infrastructure.api.default_tenant_settings",
+    "StartupTenantSettings": "swiss_ai_hub.core.infrastructure.api.startup_tenant_settings",
     "LangfuseProvisioner": "swiss_ai_hub.core.infrastructure.langfuse.langfuse_provisioner",
     "LangfuseSettings": "swiss_ai_hub.core.infrastructure.langfuse.langfuse_settings",
     "LiteLLMProxySettings": "swiss_ai_hub.core.infrastructure.litellm.lite_llm_proxy_settings",
