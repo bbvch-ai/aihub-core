@@ -124,6 +124,8 @@ extend-exclude = '''
 [tool.pytest.ini_options]
 markers = [
     "slow: mark a test as slow",
+    "unit: hermetic test using fakes; safe to run anywhere",
+    "integration: requires real external services; opt-in",
 ]
 addopts = "--strict-markers"
 pythonpath = ["."]

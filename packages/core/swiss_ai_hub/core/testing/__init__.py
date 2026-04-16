@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from swiss_ai_hub.core.testing.asyncio_utils.bdd import async_test
+    from swiss_ai_hub.core.testing.conftest_utils import mark_tests_by_directory
     from swiss_ai_hub.core.testing.auth_utils.oauth2_utils.oauth2_test_utils import (
         DummyResponse,
         generate_rsa_keypair,
@@ -18,6 +19,7 @@ if TYPE_CHECKING:
 __all__ = [
     "async_test",
     "ASGIAdapter",
+    "mark_tests_by_directory",
     "DummyResponse",
     "generate_rsa_keypair",
     "get_expected_user_data",
@@ -29,6 +31,7 @@ __all__ = [
 
 _LAZY_IMPORTS = {
     "async_test": "swiss_ai_hub.core.testing.asyncio_utils.bdd",
+    "mark_tests_by_directory": "swiss_ai_hub.core.testing.conftest_utils",
     "ASGIAdapter": "swiss_ai_hub.core.testing.route_adapter.asgi_adapter",
     "DummyResponse": "swiss_ai_hub.core.testing.auth_utils.oauth2_utils.oauth2_test_utils",
     "generate_rsa_keypair": "swiss_ai_hub.core.testing.auth_utils.oauth2_utils.oauth2_test_utils",

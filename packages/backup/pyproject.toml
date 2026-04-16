@@ -51,7 +51,8 @@ select = ["E", "F", "UP", "I"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--strict-markers -m 'not e2e'"
+addopts = "--strict-markers"
 markers = [
-    "e2e: end-to-end tests requiring Docker infrastructure",
+    "unit: hermetic test using fakes; safe to run anywhere",
+    "integration: requires real external services; opt-in",
 ]
