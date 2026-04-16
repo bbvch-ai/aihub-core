@@ -30,7 +30,7 @@ class StartupTenantSettings(EnvironmentSettings):
     DESCRIPTION: Annotated[
         str,
         Field(description="Description of the startup tenant."),
-    ] = "This tenant was auto-created on startup of the swiss ai hub."
+    ] = "This tenant was auto-created on startup of the Swiss AI Hub.."
 
     ACCESS_RULES: Annotated[
         str,
