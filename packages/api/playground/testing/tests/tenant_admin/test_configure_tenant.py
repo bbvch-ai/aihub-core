@@ -187,6 +187,65 @@ async def test_configure_tenant_does_not_persist_metadata_if_superuser_assignmen
 
 
 @pytest.mark.asyncio
+async def test_configure_tenant_retry_after_midflight_failure_completes_cleanly(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The load-bearing three-state invariant: if ``assign_superuser_to_tenant`` raises on
+    attempt #1, the metadata row must not be written, leaving the tenant Unconfigured.
+    A retry (attempt #2) must then complete with exactly one metadata write and exactly
+    one role-seed pass's worth of roles. Role seeding runs on both attempts because it is
+    documented as idempotent — this test pins that contract.
+    """
+    _stub_keycloak_group_exists(monkeypatch)
+    _stub_metadata_lookups(monkeypatch)
+
+    role_calls: list[str] = []
+    superuser_calls: list[str] = []
+    create_calls: list[dict] = []
+
+    async def record_roles(tenant_id: str) -> None:
+        role_calls.append(tenant_id)
+
+    superuser_side_effects = iter([RuntimeError("keycloak flake"), None])
+
+    async def flaky_superuser(tenant_id: str) -> None:
+        superuser_calls.append(tenant_id)
+        outcome = next(superuser_side_effects)
+        if isinstance(outcome, Exception):
+            raise outcome
+
+    fake_entity = MagicMock()
+    fake_entity.id = "my-tenant"
+    fake_entity.name = "My Tenant"
+    fake_entity.description = "desc"
+    fake_entity.access_rules = []
+    fake_entity.is_default = False
+    fake_entity.created_at = datetime.now(UTC)
+    fake_entity.updated_at = datetime.now(UTC)
+
+    def record_create(**kwargs) -> MagicMock:
+        create_calls.append(kwargs)
+        return fake_entity
+
+    monkeypatch.setattr(INIT_ROLES_PATH, record_roles)
+    monkeypatch.setattr(KeycloakAdminService, "assign_superuser_to_tenant", flaky_superuser)
+    monkeypatch.setattr(TenantMetadataEntity, "create_tenant_metadata", record_create)
+
+    with pytest.raises(RuntimeError, match="keycloak flake"):
+        await TenantAdminService.configure_tenant(_make_request())
+
+    assert role_calls == ["my-tenant"], "role seed must have run once before the superuser step"
+    assert superuser_calls == ["my-tenant"], "superuser assignment must have been attempted"
+    assert create_calls == [], "metadata must not be persisted when a prior side effect failed"
+
+    await TenantAdminService.configure_tenant(_make_request())
+
+    assert role_calls == ["my-tenant", "my-tenant"], "role seed must run on the retry too (contract: idempotent)"
+    assert superuser_calls == ["my-tenant", "my-tenant"], "superuser assignment must be retried"
+    assert len(create_calls) == 1, "retry must produce exactly one metadata row"
+
+
+@pytest.mark.asyncio
 async def test_configure_tenant_assigns_superuser(monkeypatch: pytest.MonkeyPatch) -> None:
     _stub_keycloak_group_exists(monkeypatch)
     _stub_metadata_lookups(monkeypatch)

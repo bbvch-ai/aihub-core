@@ -573,6 +573,8 @@ role:
   create_dialog:
     description: Créez un nouveau rôle avec des règles d'accès. Pour attribuer le
       nouveau rôle aux utilisateurs, veuillez utiliser votre AD.
+    cancel: Annuler
+    save: Enregistrer
   remove_dialog:
     confirm: Êtes-vous sûr?
     explanation: Si vous supprimez ce rôle, les utilisateurs risquent de perdre l'accès

@@ -43,7 +43,7 @@
             :key="access_rule"
             :value="access_rule"
             severity="secondary"
-            class="border border-gray-400/30"
+            class="border border-surface-200 dark:border-surface-700"
           />
         </div>
       </div>

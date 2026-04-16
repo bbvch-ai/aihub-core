@@ -566,6 +566,8 @@ role:
   create_dialog:
     description: Create a new role with access rules. To assigne the new role to users,
       please use your AD.
+    cancel: Cancel
+    save: Save
   remove_dialog:
     confirm: Are you sure?
     explanation: If you remove this role, users might loose access to certain features

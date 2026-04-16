@@ -571,6 +571,8 @@ role:
   create_dialog:
     description: Crea un nuovo ruolo con regole di accesso. Per assegnare il nuovo
       ruolo agli utenti, utilizza il tuo AD.
+    cancel: Annulla
+    save: Salva
   remove_dialog:
     confirm: Sei sicuro?
     explanation: Se rimuovi questo ruolo, gli utenti potrebbero perdere l'accesso

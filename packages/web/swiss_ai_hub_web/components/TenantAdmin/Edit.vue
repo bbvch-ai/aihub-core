@@ -60,11 +60,7 @@ const accessRules = computed({
   set: (val) => { tenant.value.access_rules = val },
 })
 
-watch(() => [
-  tenant.value.name,
-  tenant.value.description,
-  JSON.stringify(tenant.value.access_rules),
-], () => {
-  emit('update:modelValue', tenant.value)
-})
+watch(tenant, (value) => {
+  emit('update:modelValue', value)
+}, { deep: true })
 </script>

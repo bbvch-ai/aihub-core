@@ -30,7 +30,7 @@
             :key="access_rule"
             :value="access_rule"
             severity="secondary"
-            class="border border-gray-400/30"
+            class="border border-surface-200 dark:border-surface-700"
           />
         </div>
       </div>
@@ -39,7 +39,7 @@
         severity="contrast"
         variant="text"
         rounded
-        aria-label="Trash"
+        :aria-label="t('common.actions.delete')"
         @click.stop="emit('delete', props.role)"
       />
     </div>
@@ -47,6 +47,8 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+
 import type { RoleResponse } from '@core/sdk/client'
 
 const props = defineProps<{
@@ -57,6 +59,7 @@ const emit = defineEmits<{
   delete: [role: RoleResponse]
 }>()
 
+const { t } = useI18n()
 const route = useRoute()
 
 const isActive = computed(() => {

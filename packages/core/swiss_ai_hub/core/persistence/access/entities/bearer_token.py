@@ -25,20 +25,26 @@ class BearerToken(Document):
     @classmethod
     @trace_fn
     def verify_token(cls, token_str: str) -> Self:
-        """Validates a bearer token by direct lookup and expiry check."""
+        """Validates a bearer token by direct lookup and expiry check.
+
+        Failure modes are distinct in the error message so operators can tell
+        malformed inputs (wrong prefix — often a misconfigured client or a stale
+        token from before the ``sk-`` migration) from unknown tokens (revoked
+        or never existed) from expired tokens (rotation overdue).
+        """
         if not token_str.startswith(TOKEN_PREFIX):
-            raise ValueError("Invalid token format")
+            raise ValueError(f"Malformed token: missing '{TOKEN_PREFIX}' prefix")
 
         token_obj = cls.objects(token=token_str).first()
         if not token_obj:
-            raise ValueError("Token not found")
+            raise ValueError("Unknown token: no matching row (revoked or never issued)")
 
         expiry_date = token_obj.expiry_date
         if expiry_date.tzinfo is None:
             expiry_date = expiry_date.replace(tzinfo=UTC)
 
         if expiry_date < datetime.now(UTC):
-            raise ValueError("Token expired")
+            raise ValueError("Expired token: expiry is in the past")
 
         return token_obj
 

@@ -32,9 +32,7 @@ class UpdateTenantRequest(BaseModel):
     @field_validator("access_rules")
     @classmethod
     def validate_access_rules(cls, value: list[str] | None) -> list[str] | None:
-        if value is None:
-            return value
-        for rule in value:
+        for rule in value or []:
             if not AccessChecker.validate_user_access_rule(rule):
                 raise ValueError(f"Invalid access rule: {rule!r}")
         return value

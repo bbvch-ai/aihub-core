@@ -28,10 +28,8 @@ class TenantAdminController(Controller):
     description = ApiLocaleString.from_i18n_path("api.controllers.tenant_admin.description")
     icon = "mage:building-tree"
 
-    def __init__(
-        self, *, auth: AuthHandler, route: str = "/admin/tenants", additionally_required_permission: str | None = None
-    ):
-        super().__init__(auth=auth, route=route, additionally_required_permission=additionally_required_permission)
+    def __init__(self, *, auth: AuthHandler, route: str = "/admin/tenants"):
+        super().__init__(auth=auth, route=route)
 
     def list_tenants(self, route: str = "/") -> Self:
         @self.router.get(route, tags=self.tags)

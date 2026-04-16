@@ -574,6 +574,8 @@ role:
   create_dialog:
     description: Erstellen Sie eine neue Rolle mit Zugriffsregeln. Um die neue Rolle
       Benutzern zuzuweisen, verwenden Sie bitte Ihr AD.
+    cancel: Abbrechen
+    save: Speichern
   remove_dialog:
     confirm: Sind Sie sicher?
     explanation: Wenn Sie diese Rolle entfernen, verlieren Benutzer möglicherweise
