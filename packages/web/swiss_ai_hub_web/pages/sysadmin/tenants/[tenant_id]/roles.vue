@@ -79,7 +79,7 @@ import { cloneDeep } from 'lodash-es'
 
 import type { RoleResponse } from '@core/sdk/client'
 
-definePageMeta({ layout: 'sysadmin' })
+definePageMeta({ layout: 'sysadmin', middleware: 'sysadmin' })
 
 const route = useRoute()
 const { t } = useI18n()

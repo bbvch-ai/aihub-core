@@ -18,7 +18,7 @@
 </template>
 
 <script setup lang="ts">
-definePageMeta({ layout: 'sysadmin' })
+definePageMeta({ layout: 'sysadmin', middleware: 'sysadmin' })
 
 const { t } = useI18n()
 

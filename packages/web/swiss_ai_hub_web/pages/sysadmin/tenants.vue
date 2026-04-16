@@ -64,7 +64,7 @@
 <script setup lang="ts">
 import type { TenantResponse } from '@core/sdk/client'
 
-definePageMeta({ layout: 'sysadmin' })
+definePageMeta({ layout: 'sysadmin', middleware: 'sysadmin' })
 
 const { t } = useI18n()
 const router = useRouter()

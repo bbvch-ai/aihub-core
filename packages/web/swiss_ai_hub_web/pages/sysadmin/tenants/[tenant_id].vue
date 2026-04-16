@@ -18,7 +18,7 @@
 <script setup lang="ts">
 import type { NavItem } from '@core/types/NavItem'
 
-definePageMeta({ layout: 'sysadmin' })
+definePageMeta({ layout: 'sysadmin', middleware: 'sysadmin' })
 
 const router = useRouter()
 const route = useRoute()

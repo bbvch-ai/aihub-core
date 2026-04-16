@@ -1,4 +1,3 @@
-from swiss_ai_hub.core.testing.auth_utils.fake_user import fake_user
 from swiss_ai_hub.core.testing.auth_utils.test_auth_handler import TestAuthHandler
 from swiss_ai_hub.core.testing.auth_utils.test_identity import (
     TEST_TENANT_ACCESS_RULES,
@@ -9,6 +8,7 @@ from swiss_ai_hub.core.testing.auth_utils.test_identity import (
     TEST_USER_OID,
     TEST_USER_ROLES,
     fake_tenant_identity,
+    fake_user,
 )
 
 __all__ = [

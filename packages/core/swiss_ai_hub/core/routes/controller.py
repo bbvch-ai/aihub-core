@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Annotated
 
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request
 from opentelemetry import trace
+from pydantic import ConfigDict, validate_call
 
 from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
@@ -56,13 +57,8 @@ class Controller(abc.ABC):
     description = LocaleString.from_i18n_path("lib.controllers.base.description")
     icon = "mage:server"  # https://icon-sets.iconify.design/
 
+    @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     def __init__(self, *, auth: AuthHandler, route: str, additionally_required_permission: str | None = None):
-        if auth is None:
-            raise TypeError(
-                f"{type(self).__name__} requires an explicit `auth` handler — pass a concrete "
-                "`AuthHandler` (e.g., `KeycloakAuthHandler`, `TokenAuthHandler`, or `TestAuthHandler` "
-                "from `swiss_ai_hub.core.testing.auth_utils` for tests)."
-            )
         self.base_route: str = route
         self.auth: AuthHandler = auth
         self.router: APIRouter = APIRouter()
