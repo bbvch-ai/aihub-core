@@ -1,3 +1,4 @@
+import json
 from typing import Annotated
 
 from pydantic import Field, SecretStr, field_validator
@@ -28,10 +29,13 @@ class SuperuserSettings(EnvironmentSettings):
 
     USERNAME: Annotated[str, Field(description="Keycloak username of the seeded superuser.")]
     EMAIL: Annotated[str, Field(description="Keycloak email used to look up the superuser.")]
-    ROLES: Annotated[
+    ROLES_JSON: Annotated[
         str,
         Field(
-            description="Comma-separated realm roles assigned to the superuser. Must include AIHubSysAdmin.",
+            description=(
+                "JSON array of realm roles assigned to the superuser, shared verbatim with the Keycloak "
+                "realm import via the same environment variable. Must include AIHubSysAdmin."
+            ),
         ),
     ]
     TOKEN: Annotated[
@@ -48,4 +52,7 @@ class SuperuserSettings(EnvironmentSettings):
 
     @property
     def roles_list(self) -> list[str]:
-        return [r.strip() for r in self.ROLES.split(",") if r.strip()]
+        parsed = json.loads(self.ROLES_JSON)
+        if not isinstance(parsed, list) or not all(isinstance(r, str) for r in parsed):
+            raise ValueError("SUPERUSER_ROLES_JSON must be a JSON array of strings.")
+        return parsed

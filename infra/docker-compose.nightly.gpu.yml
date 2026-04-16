@@ -2190,7 +2190,7 @@ services:
       # TokenAuthHandler + Keycloak realm roles (AIHubSysAdmin) grant sysadmin.
       SUPERUSER_USERNAME: ${SUPERUSER_USERNAME}
       SUPERUSER_EMAIL: ${SUPERUSER_EMAIL}
-      SUPERUSER_ROLES: ${SUPERUSER_ROLES}
+      SUPERUSER_ROLES_JSON: ${SUPERUSER_ROLES_JSON}
       SUPERUSER_TOKEN: ${SUPERUSER_TOKEN}
 
       # AI-Hub Settings

@@ -8,7 +8,7 @@ from nats.aio.client import Client as NATS
 from swiss_ai_hub.core.auth import KeycloakAdminService
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
-from swiss_ai_hub.core.auth.roles import SYS_ADMIN_ROLE
+from swiss_ai_hub.core.auth.realm_roles import SYS_ADMIN_ROLE
 from swiss_ai_hub.core.distributor import ExternalAgentEventDistributor
 from swiss_ai_hub.core.events.agent import ExceptionEvent
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity

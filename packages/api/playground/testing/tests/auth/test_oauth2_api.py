@@ -104,7 +104,7 @@ def setup_test_user(mongo_db):
     config = _SimpleNamespace(OID=TEST_USER_OID, NAME=TEST_USER_NAME, EMAIL=TEST_USER_EMAIL, ROLES=TEST_USER_ROLES)
 
     # Assign the expected roles in the default tenant
-    default_tenant = TenantMetadataEntity.get_default_tenant_metadata()
+    default_tenant = TenantMetadataEntity.get_startup_tenant_metadata()
     user_tenant_role = None
     if default_tenant:
         user_tenant_role = UserTenantRoleEntity.create_or_update(

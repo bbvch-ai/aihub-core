@@ -12,7 +12,7 @@ from keycloak import KeycloakGetError
 from mongoengine import DoesNotExist
 from pydantic import BaseModel
 from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
-from swiss_ai_hub.core.auth.roles import SYS_ADMIN_ROLE
+from swiss_ai_hub.core.auth.realm_roles import SYS_ADMIN_ROLE
 from swiss_ai_hub.core.auth.superuser_settings import SuperuserSettings
 from swiss_ai_hub.core.infrastructure import AIHubSettings, DefaultTenantSettings, UserSignupSettings, no_trace
 from swiss_ai_hub.core.persistence.access.entities.bearer_token import BearerToken
@@ -94,7 +94,7 @@ async def initialize_default_tenant() -> TenantMetadataEntity | None:
     """
     settings = DefaultTenantSettings()
 
-    existing_tenant = TenantMetadataEntity.get_default_tenant_metadata()
+    existing_tenant = TenantMetadataEntity.get_startup_tenant_metadata()
     if existing_tenant:
         logger.info(
             f"Default tenant '{existing_tenant.name}' (id={existing_tenant.id}) already exists, skipping creation"
@@ -102,7 +102,7 @@ async def initialize_default_tenant() -> TenantMetadataEntity | None:
         await initialize_default_roles_for_tenant(str(existing_tenant.id))
         return existing_tenant
 
-    tenant = TenantMetadataEntity.ensure_default_tenant_metadata_exists(
+    tenant = TenantMetadataEntity.ensure_startup_tenant_metadata_exists(
         tenant_id=settings.ID,
         name=settings.NAME,
         description=settings.DESCRIPTION,
@@ -166,7 +166,7 @@ async def _validate_signup_roles() -> None:
     settings = UserSignupSettings()
     all_configured_roles = set(settings.regular_user_roles_list + settings.first_admin_user_roles_list)
 
-    default_tenant = TenantMetadataEntity.get_default_tenant_metadata()
+    default_tenant = TenantMetadataEntity.get_startup_tenant_metadata()
     tenant_id = str(default_tenant.id) if default_tenant else ""
 
     existing_roles = set(RoleEntity.filter_existing_roles(list(all_configured_roles), tenant_id))
@@ -200,7 +200,7 @@ async def initialize_superuser_token() -> None:
 
     if SYS_ADMIN_ROLE not in settings.roles_list:
         raise RuntimeError(
-            f"SUPERUSER_ROLES must contain '{SYS_ADMIN_ROLE}' so the seeded superuser has sysadmin access "
+            f"SUPERUSER_ROLES_JSON must contain '{SYS_ADMIN_ROLE}' so the seeded superuser has sysadmin access "
             f"(got: {settings.roles_list})."
         )
 

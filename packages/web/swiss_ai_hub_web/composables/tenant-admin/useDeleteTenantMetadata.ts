@@ -1,11 +1,11 @@
-import { deleteTenant as deleteTenantApi } from '@core/sdk/client'
+import { deleteTenantMetadata as deleteTenantMetadataApi } from '@core/sdk/client'
 
-export const useDeleteTenant = defineMutation(() => {
+export const useDeleteTenantMetadata = defineMutation(() => {
   const queryCache = useQueryCache()
 
-  const { mutateAsync: deleteTenantMutation } = useMutation({
+  const { mutateAsync: deleteTenantMetadataMutation } = useMutation({
     mutation: async ({ tenantId }: { tenantId: string }) => {
-      await deleteTenantApi({
+      await deleteTenantMetadataApi({
         composable: '$fetch',
         path: { tenant_id: tenantId },
       })
@@ -15,6 +15,6 @@ export const useDeleteTenant = defineMutation(() => {
     },
   })
   return {
-    deleteTenant: deleteTenantMutation,
+    deleteTenantMetadata: deleteTenantMetadataMutation,
   }
 })

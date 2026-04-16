@@ -4,10 +4,10 @@ from pydantic import BaseModel, Field, StringConstraints, field_validator
 from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 
 
-class UpdateTenantRequest(BaseModel):
+class UpdateTenantMetadataRequest(BaseModel):
     """Request model for updating a tenant. All fields are optional.
 
-    Name and description constraints mirror ``ConfigureTenantRequest`` — an update
+    Name and description constraints mirror ``CreateTenantMetadataRequest`` — an update
     must not be able to slip a value past a constraint that create enforced.
     """
 

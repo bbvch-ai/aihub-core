@@ -33,7 +33,7 @@ def mongo_connection(monkeypatch: pytest.MonkeyPatch) -> Generator[None]:
     )
 
     # Ensure default tenant exists for multi-tenant auth tests
-    TenantMetadataEntity.ensure_default_tenant_metadata_exists(
+    TenantMetadataEntity.ensure_startup_tenant_metadata_exists(
         tenant_id="default",
         name="Default Tenant",
         description="Default tenant for testing",
@@ -135,7 +135,7 @@ def insert_token_document(
     cleanup_document.append(token_doc)
 
     # Assign user to default tenant (skip role validation for test data)
-    default_tenant = TenantMetadataEntity.get_default_tenant_metadata()
+    default_tenant = TenantMetadataEntity.get_startup_tenant_metadata()
     if default_tenant:
         user_tenant_role = UserTenantRoleEntity.create_or_update(
             user_id=user_oid,

@@ -12,7 +12,7 @@ class TenantState(StrEnum):
     appear here: they carry no MongoDB fields (name/description/access_rules) to
     wrap in a ``TenantResponse``, so they are served separately as ``list[str]``
     by ``/admin/tenants/unconfigured``. Promoting one to Active via
-    ``configure_tenant`` is what introduces the metadata row that makes a
+    ``create_tenant_metadata`` is what introduces the metadata row that makes a
     ``TenantState`` value meaningful.
     """
 

@@ -130,14 +130,13 @@ def create_mock_request(
 def ensure_default_tenant(cleanup_documents: list[Any], context: dict[str, Any], name: str, access_rules: str) -> None:
     """Ensure the default tenant exists with the exact name specified."""
     rules_list = [r.strip() for r in access_rules.split(",")]
-    # Remove all existing default tenants to guarantee clean test state
-    TenantMetadataEntity.objects(is_default=True).delete()
+    # Remove the existing default-tenant row (if any) to guarantee clean test state.
+    TenantMetadataEntity.objects(id="default").delete()
     tenant = TenantMetadataEntity.create_tenant_metadata(
         tenant_id="default",
         name=name,
         description="Default tenant for testing",
         access_rules=rules_list,
-        is_default=True,
     )
     context["default_tenant"] = tenant
     cleanup_documents.append(tenant)
@@ -254,10 +253,8 @@ def remove_default_tenant(context: dict[str, Any]) -> None:
     """Remove the default tenant to simulate no default tenant scenario."""
     tenant = context.get("default_tenant")
     if tenant:
-        # Temporarily mark it as not default for this test
-        tenant.is_default = False
-        tenant.save()
-        context["_original_default_state"] = True
+        tenant.delete()
+        context["_default_tenant_deleted"] = True
 
 
 # --- When Steps ---
@@ -281,12 +278,16 @@ def resolve_tenant_expect_error(context: dict[str, Any], auth_handler: ConcreteA
     except HTTPException as e:
         context["error"] = e
     finally:
-        # Restore default tenant state if it was modified
-        if context.get("_original_default_state"):
-            tenant = context.get("default_tenant")
-            if tenant:
-                tenant.is_default = True
-                tenant.save()
+        # Re-create the default tenant if an earlier step deleted it.
+        if context.get("_default_tenant_deleted"):
+            original = context.get("default_tenant")
+            if original:
+                TenantMetadataEntity.create_tenant_metadata(
+                    tenant_id=original.id,
+                    name=original.name,
+                    description=original.description or "",
+                    access_rules=list(original.access_rules or []),
+                )
 
 
 @when(parsers.parse('the auth handler gets active tenant for user "{user_id}"'))

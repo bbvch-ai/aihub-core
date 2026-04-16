@@ -4945,48 +4945,6 @@ export const CompletionUsageSchema = {
     description: 'Usage statistics for the completion request.'
 } as const;
 
-export const ConfigureTenantRequestSchema = {
-    properties: {
-        tenant_id: {
-            type: 'string',
-            maxLength: 255,
-            minLength: 1,
-            title: 'Tenant Id',
-            description: 'Keycloak tenant group name (must already exist under /tenants/).'
-        },
-        name: {
-            type: 'string',
-            maxLength: 120,
-            minLength: 1,
-            title: 'Name',
-            description: 'The unique display name of the tenant.'
-        },
-        description: {
-            type: 'string',
-            maxLength: 500,
-            title: 'Description',
-            description: 'A short description of the tenant.',
-            default: ''
-        },
-        access_rules: {
-            items: {
-                type: 'string'
-            },
-            type: 'array',
-            title: 'Access Rules',
-            description: 'Access rules granted to this tenant.',
-            default: []
-        }
-    },
-    type: 'object',
-    required: [
-        'tenant_id',
-        'name'
-    ],
-    title: 'ConfigureTenantRequest',
-    description: 'Request model for attaching metadata to an existing Keycloak tenant group.\n\n``tenant_id`` is not user-chosen here — it must already exist as a Keycloak group\nunder ``/tenants/``. Use the ``/admin/tenants/unconfigured`` endpoint to list\nconfigurable ids. A regex constraint is deliberately avoided because Keycloak\naccepts group names this layer would otherwise reject (e.g. ``MyTenant``,\n``customer.acme``); the only checks that belong here are a minimum length (reject\nempty payloads) and a maximum length matching Keycloak\'s group-name cap (DoS guard\nagainst unbounded strings reaching Mongo).'
-} as const;
-
 export const ContextInsufficientRejectEventSchema = {
     properties: {
         event_id: {
@@ -5499,6 +5457,48 @@ export const CreateRoleRequestSchema = {
     ],
     title: 'CreateRoleRequest',
     description: 'Request model for creating a new role.'
+} as const;
+
+export const CreateTenantMetadataRequestSchema = {
+    properties: {
+        tenant_id: {
+            type: 'string',
+            maxLength: 255,
+            minLength: 1,
+            title: 'Tenant Id',
+            description: 'Keycloak tenant group name (must already exist under /tenants/).'
+        },
+        name: {
+            type: 'string',
+            maxLength: 120,
+            minLength: 1,
+            title: 'Name',
+            description: 'The unique display name of the tenant.'
+        },
+        description: {
+            type: 'string',
+            maxLength: 500,
+            title: 'Description',
+            description: 'A short description of the tenant.',
+            default: ''
+        },
+        access_rules: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Access Rules',
+            description: 'Access rules granted to this tenant.',
+            default: []
+        }
+    },
+    type: 'object',
+    required: [
+        'tenant_id',
+        'name'
+    ],
+    title: 'CreateTenantMetadataRequest',
+    description: 'Request model for attaching metadata to an existing Keycloak tenant group.\n\n``tenant_id`` is not user-chosen here — it must already exist as a Keycloak group\nunder ``/tenants/``. Use the ``/admin/tenants/unconfigured`` endpoint to list\nconfigurable ids. A regex constraint is deliberately avoided because Keycloak\naccepts group names this layer would otherwise reject (e.g. ``MyTenant``,\n``customer.acme``); the only checks that belong here are a minimum length (reject\nempty payloads) and a maximum length matching Keycloak\'s group-name cap (DoS guard\nagainst unbounded strings reaching Mongo).'
 } as const;
 
 export const CreateThreadRequestSchema = {
@@ -13353,7 +13353,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1776343540
+            default: 1776354615
         },
         owned_by: {
             type: 'string',
@@ -14313,7 +14313,7 @@ export const MyTenantsResponseSchema = {
             },
             type: 'array',
             title: 'Tenants',
-            description: 'Tenants the current user belongs to'
+            description: 'Tenants the user making the call belongs to'
         },
         is_sys_admin: {
             type: 'boolean',
@@ -18961,11 +18961,6 @@ export const TenantResponseSchema = {
             title: 'Access Rules',
             description: 'Access rules granted to this tenant.'
         },
-        is_default: {
-            type: 'boolean',
-            title: 'Is Default',
-            description: 'Whether this is the default tenant.'
-        },
         state: {
             $ref: '#/components/schemas/TenantState',
             description: 'Whether the tenant also exists in Keycloak (active) or not (orphaned).'
@@ -18989,7 +18984,6 @@ export const TenantResponseSchema = {
         'name',
         'description',
         'access_rules',
-        'is_default',
         'state',
         'created_at',
         'updated_at'
@@ -19005,7 +18999,7 @@ export const TenantStateSchema = {
         'orphaned'
     ],
     title: 'TenantState',
-    description: 'Visibility state of a tenant for the sysadmin view.\n\n- ACTIVE: exists both in Keycloak (as a group) and in MongoDB (as metadata).\n- ORPHANED: exists only in MongoDB; the Keycloak group is missing. Users cannot\n  reach this tenant. Shown to sysadmins read-only with a delete action only.\n\nUnconfigured tenants (Keycloak group only, no metadata) deliberately do not\nappear here: they carry no MongoDB fields (name/description/access_rules) to\nwrap in a ``TenantResponse``, so they are served separately as ``list[str]``\nby ``/admin/tenants/unconfigured``. Promoting one to Active via\n``configure_tenant`` is what introduces the metadata row that makes a\n``TenantState`` value meaningful.'
+    description: 'Visibility state of a tenant for the sysadmin view.\n\n- ACTIVE: exists both in Keycloak (as a group) and in MongoDB (as metadata).\n- ORPHANED: exists only in MongoDB; the Keycloak group is missing. Users cannot\n  reach this tenant. Shown to sysadmins read-only with a delete action only.\n\nUnconfigured tenants (Keycloak group only, no metadata) deliberately do not\nappear here: they carry no MongoDB fields (name/description/access_rules) to\nwrap in a ``TenantResponse``, so they are served separately as ``list[str]``\nby ``/admin/tenants/unconfigured``. Promoting one to Active via\n``create_tenant_metadata`` is what introduces the metadata row that makes a\n``TenantState`` value meaningful.'
 } as const;
 
 export const TextBlockSchema = {
@@ -20813,7 +20807,7 @@ export const UpdateRoleRequestSchema = {
     description: 'Request model for updating an existing role. All fields are optional.'
 } as const;
 
-export const UpdateTenantRequestSchema = {
+export const UpdateTenantMetadataRequestSchema = {
     properties: {
         name: {
             anyOf: [
@@ -20859,8 +20853,8 @@ export const UpdateTenantRequestSchema = {
         }
     },
     type: 'object',
-    title: 'UpdateTenantRequest',
-    description: 'Request model for updating a tenant. All fields are optional.\n\nName and description constraints mirror ``ConfigureTenantRequest`` — an update\nmust not be able to slip a value past a constraint that create enforced.'
+    title: 'UpdateTenantMetadataRequest',
+    description: 'Request model for updating a tenant. All fields are optional.\n\nName and description constraints mirror ``CreateTenantMetadataRequest`` — an update\nmust not be able to slip a value past a constraint that create enforced.'
 } as const;
 
 export const UsageDurationSchema = {

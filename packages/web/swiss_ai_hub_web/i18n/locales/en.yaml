@@ -96,7 +96,8 @@ user:
     roles: Roles
     sys_admin: System Admin
     sys_admin_tag: Sys Admin
-    sys_admin_no: false
+    sys_admin_no: 'No'
+    last_accessed: Last accessed
 my_account:
   title: My Account
   services: Services

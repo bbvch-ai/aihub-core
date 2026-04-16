@@ -42,7 +42,7 @@ def valid_token(mongo_db):
     user_oid = os.getenv("OID", config.OID)
 
     # Create the test role on the default tenant so AccessChecker can resolve access rules
-    default_tenant = TenantMetadataEntity.get_default_tenant_metadata()
+    default_tenant = TenantMetadataEntity.get_startup_tenant_metadata()
     role: RoleEntity | None = None
     created_role = False
     if default_tenant:

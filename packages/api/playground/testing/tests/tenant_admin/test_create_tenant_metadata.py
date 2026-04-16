@@ -8,7 +8,7 @@ from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdmin
 from swiss_ai_hub.core.auth.keycloak.models.keycloak_group import KeycloakGroup
 from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
 
-from swiss_ai_hub.api.routes.tenant_admin.dto.configure_tenant_request import ConfigureTenantRequest
+from swiss_ai_hub.api.routes.tenant_admin.dto.create_tenant_metadata_request import CreateTenantMetadataRequest
 from swiss_ai_hub.api.routes.tenant_admin.tenant_admin_service import TenantAdminService
 
 INIT_ROLES_PATH = "swiss_ai_hub.api.routes.tenant_admin.tenant_admin_service.initialize_default_roles_for_tenant"
@@ -27,8 +27,8 @@ def _stub_keycloak_group_exists(monkeypatch: pytest.MonkeyPatch) -> None:
     )
 
 
-def _make_request() -> ConfigureTenantRequest:
-    return ConfigureTenantRequest(
+def _make_request() -> CreateTenantMetadataRequest:
+    return CreateTenantMetadataRequest(
         tenant_id="my-tenant",
         name="My Tenant",
         description="desc",
@@ -48,7 +48,6 @@ async def test_configure_tenant_persists_metadata_last(monkeypatch: pytest.Monke
     fake_entity.name = "My Tenant"
     fake_entity.description = "desc"
     fake_entity.access_rules = []
-    fake_entity.is_default = False
     fake_entity.created_at = datetime.now(UTC)
     fake_entity.updated_at = datetime.now(UTC)
 
@@ -66,7 +65,7 @@ async def test_configure_tenant_persists_metadata_last(monkeypatch: pytest.Monke
     monkeypatch.setattr(KeycloakAdminService, "assign_superuser_to_tenant", record_superuser)
     monkeypatch.setattr(TenantMetadataEntity, "create_tenant_metadata", record_create)
 
-    await TenantAdminService.configure_tenant(_make_request())
+    await TenantAdminService.create_tenant_metadata(_make_request())
 
     assert call_order == ["roles", "superuser", "metadata"]
 
@@ -90,7 +89,7 @@ async def test_configure_tenant_rejects_missing_keycloak_group_before_side_effec
     monkeypatch.setattr(TenantMetadataEntity, "create_tenant_metadata", create_mock)
 
     with pytest.raises(HTTPException) as exc:
-        await TenantAdminService.configure_tenant(_make_request())
+        await TenantAdminService.create_tenant_metadata(_make_request())
 
     assert exc.value.status_code == 400
     roles_mock.assert_not_awaited()
@@ -113,7 +112,7 @@ async def test_configure_tenant_rejects_existing_tenant_id_before_side_effects(
     monkeypatch.setattr(TenantMetadataEntity, "create_tenant_metadata", create_mock)
 
     with pytest.raises(HTTPException) as exc:
-        await TenantAdminService.configure_tenant(_make_request())
+        await TenantAdminService.create_tenant_metadata(_make_request())
 
     assert exc.value.status_code == 409
     roles_mock.assert_not_awaited()
@@ -134,7 +133,7 @@ async def test_configure_tenant_rejects_taken_name_before_side_effects(monkeypat
     monkeypatch.setattr(TenantMetadataEntity, "create_tenant_metadata", create_mock)
 
     with pytest.raises(HTTPException) as exc:
-        await TenantAdminService.configure_tenant(_make_request())
+        await TenantAdminService.create_tenant_metadata(_make_request())
 
     assert exc.value.status_code == 409
     roles_mock.assert_not_awaited()
@@ -157,7 +156,7 @@ async def test_configure_tenant_does_not_persist_metadata_if_role_seeding_fails(
     monkeypatch.setattr(TenantMetadataEntity, "create_tenant_metadata", create_mock)
 
     with pytest.raises(RuntimeError):
-        await TenantAdminService.configure_tenant(_make_request())
+        await TenantAdminService.create_tenant_metadata(_make_request())
 
     superuser_mock.assert_not_awaited()
     create_mock.assert_not_called()
@@ -181,7 +180,7 @@ async def test_configure_tenant_does_not_persist_metadata_if_superuser_assignmen
     monkeypatch.setattr(TenantMetadataEntity, "create_tenant_metadata", create_mock)
 
     with pytest.raises(RuntimeError):
-        await TenantAdminService.configure_tenant(_make_request())
+        await TenantAdminService.create_tenant_metadata(_make_request())
 
     create_mock.assert_not_called()
 
@@ -219,7 +218,6 @@ async def test_configure_tenant_retry_after_midflight_failure_completes_cleanly(
     fake_entity.name = "My Tenant"
     fake_entity.description = "desc"
     fake_entity.access_rules = []
-    fake_entity.is_default = False
     fake_entity.created_at = datetime.now(UTC)
     fake_entity.updated_at = datetime.now(UTC)
 
@@ -232,13 +230,13 @@ async def test_configure_tenant_retry_after_midflight_failure_completes_cleanly(
     monkeypatch.setattr(TenantMetadataEntity, "create_tenant_metadata", record_create)
 
     with pytest.raises(RuntimeError, match="keycloak flake"):
-        await TenantAdminService.configure_tenant(_make_request())
+        await TenantAdminService.create_tenant_metadata(_make_request())
 
     assert role_calls == ["my-tenant"], "role seed must have run once before the superuser step"
     assert superuser_calls == ["my-tenant"], "superuser assignment must have been attempted"
     assert create_calls == [], "metadata must not be persisted when a prior side effect failed"
 
-    await TenantAdminService.configure_tenant(_make_request())
+    await TenantAdminService.create_tenant_metadata(_make_request())
 
     assert role_calls == ["my-tenant", "my-tenant"], "role seed must run on the retry too (contract: idempotent)"
     assert superuser_calls == ["my-tenant", "my-tenant"], "superuser assignment must be retried"
@@ -255,7 +253,6 @@ async def test_configure_tenant_assigns_superuser(monkeypatch: pytest.MonkeyPatc
     fake_entity.name = "My Tenant"
     fake_entity.description = "desc"
     fake_entity.access_rules = []
-    fake_entity.is_default = False
     fake_entity.created_at = datetime.now(UTC)
     fake_entity.updated_at = datetime.now(UTC)
     monkeypatch.setattr(TenantMetadataEntity, "create_tenant_metadata", lambda **_kwargs: fake_entity)
@@ -264,6 +261,6 @@ async def test_configure_tenant_assigns_superuser(monkeypatch: pytest.MonkeyPatc
     mock_assign_superuser = AsyncMock(return_value=None)
     monkeypatch.setattr(KeycloakAdminService, "assign_superuser_to_tenant", mock_assign_superuser)
 
-    await TenantAdminService.configure_tenant(_make_request())
+    await TenantAdminService.create_tenant_metadata(_make_request())
 
     mock_assign_superuser.assert_awaited_once_with("my-tenant")

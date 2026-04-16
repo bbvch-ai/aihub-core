@@ -43,7 +43,7 @@ class TestAuthHandler(AuthHandler):
     async def authenticate_token(self, token_str: str, request: Request | None = None) -> UserIdentity:
         logger.warning("TestAuthHandler is active — no authentication performed. Do not use in production.")
 
-        default_tenant = TenantMetadataEntity.get_default_tenant_metadata()
+        default_tenant = TenantMetadataEntity.get_startup_tenant_metadata()
         if default_tenant:
             UserTenantRoleEntity.create_or_update(
                 user_id=TEST_USER_OID,

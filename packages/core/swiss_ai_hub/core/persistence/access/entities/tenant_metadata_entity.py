@@ -1,7 +1,7 @@
 from datetime import UTC, datetime
 from typing import Self
 
-from mongoengine import BooleanField, DateTimeField, Document, ListField, NotUniqueError, StringField
+from mongoengine import DateTimeField, Document, ListField, NotUniqueError, StringField
 
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 
@@ -28,7 +28,6 @@ class TenantMetadataEntity(Document):
         "strict": False,
         "indexes": [
             {"fields": ["name"], "unique": True},
-            {"fields": ["is_default"]},
         ],
     }
 
@@ -36,7 +35,6 @@ class TenantMetadataEntity(Document):
     name = StringField(required=True, unique=True)
     description = StringField(default="")
     access_rules = ListField(StringField(), default=list)
-    is_default = BooleanField(default=False)
     created_at = DateTimeField(default=lambda: datetime.now(UTC))
     updated_at = DateTimeField(default=lambda: datetime.now(UTC))
 
@@ -60,8 +58,15 @@ class TenantMetadataEntity(Document):
 
     @classmethod
     @trace_fn
-    def get_default_tenant_metadata(cls) -> Self | None:
-        return cls.objects(is_default=True).first()
+    def get_startup_tenant_metadata(cls) -> Self | None:
+        """Metadata for the tenant seeded at platform startup, looked up by its
+        configured id. There is no database flag — the "startup tenant" is simply
+        the one whose id matches ``DefaultTenantSettings().ID``."""
+        # Deferred: DefaultTenantSettings lives under core.infrastructure and
+        # importing it at module load time would cycle through settings bootstrap.
+        from swiss_ai_hub.core.infrastructure.api.default_tenant_settings import DefaultTenantSettings
+
+        return cls.get_metadata_by_tenant_id(DefaultTenantSettings().ID)
 
     @classmethod
     @trace_fn
@@ -71,7 +76,6 @@ class TenantMetadataEntity(Document):
         name: str,
         description: str = "",
         access_rules: list[str] | None = None,
-        is_default: bool = False,
     ) -> Self:
         """Stores metadata for an existing Keycloak tenant group.
 
@@ -83,26 +87,24 @@ class TenantMetadataEntity(Document):
             name=name,
             description=description,
             access_rules=access_rules or [],
-            is_default=is_default,
         )
         tenant.save()
         return tenant
 
     @classmethod
     @trace_fn
-    def ensure_default_tenant_metadata_exists(
+    def ensure_startup_tenant_metadata_exists(
         cls,
         tenant_id: str,
         name: str,
         description: str = "",
         access_rules: list[str] | None = None,
     ) -> Self:
-        """
-        Ensures default-tenant metadata exists in the collection, creating it if missing.
+        """Ensures the startup tenant's metadata row exists. Idempotent.
 
-        Idempotent. Does not create or verify the corresponding Keycloak group.
+        Does not create or verify the corresponding Keycloak group.
         """
-        existing = cls.get_default_tenant_metadata()
+        existing = cls.get_metadata_by_tenant_id(tenant_id)
         if existing:
             return existing
 
@@ -112,10 +114,9 @@ class TenantMetadataEntity(Document):
                 name=name,
                 description=description,
                 access_rules=access_rules,
-                is_default=True,
             )
         except NotUniqueError:
-            existing = cls.get_default_tenant_metadata()
+            existing = cls.get_metadata_by_tenant_id(tenant_id)
             if existing:
                 return existing
             raise
@@ -161,9 +162,6 @@ class TenantMetadataEntity(Document):
         must remain"). Splitting row-delete from cascade lets the caller undo a
         metadata delete by re-creating the row, which would otherwise be impossible
         once dependent rows are gone.
-
-        Note: ``is_default`` is just a marker for "created at startup" — it carries no
-        deletion-protection semantics.
         """
         return cls.objects(id=tenant_id).delete() > 0
 

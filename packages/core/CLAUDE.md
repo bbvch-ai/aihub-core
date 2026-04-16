@@ -389,7 +389,7 @@ and the `AIHubSysAdmin` realm role. Selected methods:
 - `get_active_tenant_id(user_id)` / `set_active_tenant(user_id, tenant_id)` / `clear_active_tenant(user_id)` /
   `get_user_ids_with_active_tenant(tenant_id)` — active-tenant attribute (per ADR `2026_04_07`).
 - `get_superuser_id()` (memoized) / `assign_superuser_to_tenant(tenant_id)` (idempotent) — superuser membership; the
-  latter is called from default-tenant bootstrap and `TenantAdminService.configure_tenant` (per ADR
+  latter is called from default-tenant bootstrap and `TenantAdminService.create_tenant_metadata` (per ADR
   `2026_04_15_superuser_added_to_every_new_tenant`).
 
 **Key methods**:

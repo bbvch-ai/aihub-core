@@ -34,9 +34,9 @@
 <script setup lang="ts">
 import AccessRulesEditor from '@core/components/Role/AccessRulesEditor.vue'
 
-import type { CreateTenantRequest, TenantResponse, UpdateTenantRequest } from '@core/sdk/client'
+import type { CreateTenantRequest, TenantResponse, UpdateTenantMetadataRequest } from '@core/sdk/client'
 
-type EditableTenant = TenantResponse | CreateTenantRequest | UpdateTenantRequest
+type EditableTenant = TenantResponse | CreateTenantRequest | UpdateTenantMetadataRequest
 
 const { t } = useI18n()
 

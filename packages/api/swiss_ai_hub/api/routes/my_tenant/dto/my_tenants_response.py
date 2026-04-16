@@ -8,5 +8,5 @@ from swiss_ai_hub.api.routes.my_tenant.dto.tenant_membership_dto import TenantMe
 class MyTenantsResponse(BaseModel):
     """Response for the GET /my-tenants endpoint, including sysadmin status."""
 
-    tenants: Annotated[list[TenantMembershipDTO], Field(description="Tenants the current user belongs to")]
+    tenants: Annotated[list[TenantMembershipDTO], Field(description="Tenants the user making the call belongs to")]
     is_sys_admin: Annotated[bool, Field(description="Whether the user has system administrator privileges")] = False

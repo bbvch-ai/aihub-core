@@ -8,9 +8,9 @@ from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.routes import Controller
 
 from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
-from swiss_ai_hub.api.routes.tenant_admin.dto.configure_tenant_request import ConfigureTenantRequest
+from swiss_ai_hub.api.routes.tenant_admin.dto.create_tenant_metadata_request import CreateTenantMetadataRequest
 from swiss_ai_hub.api.routes.tenant_admin.dto.tenant_response import TenantResponse
-from swiss_ai_hub.api.routes.tenant_admin.dto.update_tenant_request import UpdateTenantRequest
+from swiss_ai_hub.api.routes.tenant_admin.dto.update_tenant_metadata_request import UpdateTenantMetadataRequest
 from swiss_ai_hub.api.routes.tenant_admin.tenant_admin_service import TenantAdminService
 
 logger = logging.getLogger(__name__)
@@ -62,38 +62,38 @@ class TenantAdminController(Controller):
 
         return self
 
-    def configure_tenant(self, route: str = "/") -> Self:
+    def create_tenant_metadata(self, route: str = "/") -> Self:
         @self.router.post(route, status_code=status.HTTP_201_CREATED, tags=self.tags)
-        async def configure_tenant(
-            data: ConfigureTenantRequest,
+        async def create_tenant_metadata(
+            data: CreateTenantMetadataRequest,
             _: Annotated[UserIdentity, Security(self.sys_admin_user())],
         ) -> TenantResponse:
             """Attaches metadata (name, description, access rules) to an existing Keycloak tenant group."""
             try:
-                return await TenantAdminService.configure_tenant(data)
+                return await TenantAdminService.create_tenant_metadata(data)
             except NotUniqueError:
                 raise HTTPException(status_code=409, detail=f"Tenant with name '{data.name}' already exists.")
 
         return self
 
-    def update_tenant(self, route: str = "/{tenant_id}") -> Self:
+    def update_tenant_metadata(self, route: str = "/{tenant_id}") -> Self:
         @self.router.patch(route, tags=self.tags)
-        async def update_tenant(
+        async def update_tenant_metadata(
             tenant_id: str,
-            data: UpdateTenantRequest,
+            data: UpdateTenantMetadataRequest,
             _: Annotated[UserIdentity, Security(self.sys_admin_user())],
         ) -> TenantResponse:
             """Updates a tenant's name, description, or access rules. Not allowed on orphaned tenants."""
             try:
-                return await TenantAdminService.update_tenant(tenant_id, data)
+                return await TenantAdminService.update_tenant_metadata(tenant_id, data)
             except NotUniqueError:
                 raise HTTPException(status_code=409, detail=f"Tenant with name '{data.name}' already exists.")
 
         return self
 
-    def delete_tenant(self, route: str = "/{tenant_id}") -> Self:
+    def delete_tenant_metadata(self, route: str = "/{tenant_id}") -> Self:
         @self.router.delete(route, status_code=status.HTTP_204_NO_CONTENT, tags=self.tags)
-        async def delete_tenant(
+        async def delete_tenant_metadata(
             tenant_id: str,
             _: Annotated[UserIdentity, Security(self.sys_admin_user())],
         ) -> None:
@@ -103,6 +103,6 @@ class TenantAdminController(Controller):
             The last remaining tenant cannot be deleted (409); any tenant may be deleted as long as at
             least one other tenant exists.
             """
-            await TenantAdminService.delete_tenant(tenant_id)
+            await TenantAdminService.delete_tenant_metadata(tenant_id)
 
         return self

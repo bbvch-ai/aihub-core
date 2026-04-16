@@ -12,7 +12,7 @@ from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
 from swiss_ai_hub.core.auth.keycloak.keycloak_settings import KeycloakSettings
-from swiss_ai_hub.core.auth.roles import SYS_ADMIN_ROLE
+from swiss_ai_hub.core.auth.realm_roles import SYS_ADMIN_ROLE
 from swiss_ai_hub.core.infrastructure.api.default_tenant_settings import DefaultTenantSettings
 from swiss_ai_hub.core.infrastructure.api.user_signup_settings import UserSignupSettings
 from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity

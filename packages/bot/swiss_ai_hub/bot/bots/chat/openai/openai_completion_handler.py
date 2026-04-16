@@ -24,7 +24,7 @@ from openai.types.chat.chat_completion_content_part_image_param import ChatCompl
 from swiss_ai_hub.core.auth import KeycloakAdminService
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
-from swiss_ai_hub.core.auth.roles import SYS_ADMIN_ROLE
+from swiss_ai_hub.core.auth.realm_roles import SYS_ADMIN_ROLE
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.infrastructure import LiteLLMService
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity

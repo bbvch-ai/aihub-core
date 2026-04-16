@@ -106,7 +106,7 @@ class TestSyncGroupsOrchestration:
             tenant.id = "tid-1"
             tenant.access_rules = []
             mock_tenant.objects.return_value = [tenant]
-            mock_tenant.get_default_tenant_metadata.return_value = tenant
+            mock_tenant.get_startup_tenant_metadata.return_value = tenant
 
             role = MagicMock()
             role.name = "R1"
@@ -141,7 +141,7 @@ class TestSyncGroupsOrchestration:
             patch.object(provisioner._openwebui, "update_group_members"),
         ):
             mock_tenant.objects.return_value = []
-            mock_tenant.get_default_tenant_metadata.return_value = None
+            mock_tenant.get_startup_tenant_metadata.return_value = None
             mock_role.get_roles_for_tenant.return_value = []
             mock_keycloak.get_user_ids_with_active_tenant = AsyncMock(return_value=set())
             mock_keycloak.get_all_users = AsyncMock(return_value=[])
@@ -170,7 +170,7 @@ class TestSyncGroupsOrchestration:
             patch.object(provisioner._openwebui, "update_group_members"),
         ):
             mock_tenant.objects.return_value = []
-            mock_tenant.get_default_tenant_metadata.return_value = None
+            mock_tenant.get_startup_tenant_metadata.return_value = None
             mock_role.get_roles_for_tenant.return_value = []
             mock_keycloak.get_user_ids_with_active_tenant = AsyncMock(return_value=set())
             mock_keycloak.get_all_users = AsyncMock(return_value=[])
@@ -203,7 +203,7 @@ class TestSyncGroupsOrchestration:
             tenant.id = "tid-1"
             tenant.access_rules = []
             mock_tenant.objects.return_value = [tenant]
-            mock_tenant.get_default_tenant_metadata.return_value = tenant
+            mock_tenant.get_startup_tenant_metadata.return_value = tenant
 
             role = MagicMock()
             role.name = "R1"
@@ -250,7 +250,7 @@ class TestSyncGroupsOrchestration:
             tenant.id = "tid-1"
             tenant.access_rules = []
             mock_tenant.objects.return_value = [tenant]
-            mock_tenant.get_default_tenant_metadata.return_value = tenant
+            mock_tenant.get_startup_tenant_metadata.return_value = tenant
 
             role = MagicMock()
             role.name = "R1"
@@ -293,7 +293,7 @@ class TestSyncGroupsOrchestration:
             tenant.id = "tid-1"
             tenant.access_rules = []
             mock_tenant.objects.return_value = [tenant]
-            mock_tenant.get_default_tenant_metadata.return_value = tenant
+            mock_tenant.get_startup_tenant_metadata.return_value = tenant
 
             role = MagicMock()
             role.name = "R1"

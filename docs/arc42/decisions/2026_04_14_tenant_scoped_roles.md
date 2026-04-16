@@ -41,7 +41,7 @@ is retired entirely.**
   idempotently (existence check per role before insert).
 - Call sites:
   - `initialize_default_tenant()` calls it after tenant creation / on every startup (idempotent).
-  - `TenantAdminService.configure_tenant()` calls it after attaching metadata to a Keycloak group.
+  - `TenantAdminService.create_tenant_metadata()` calls it after attaching metadata to a Keycloak group.
 - `RoleResponse.is_system_role` computed field removed from the SDK; `tenant_id` is now a required string in the DTO.
 - Lifetime orchestration renamed: `initialize_roles()` → `finalize_role_setup()` (runs signup-role validation after
   tenant initialization has already seeded the defaults).

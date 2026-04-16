@@ -74,7 +74,7 @@ def cleanup_documents() -> Generator[list[Any]]:
 def ensure_default_tenant(cleanup_documents: list[Any], context: dict[str, Any], access_rules: str) -> None:
     """Ensure the default tenant exists."""
     rules_list = [r.strip() for r in access_rules.split(",")]
-    tenant = TenantMetadataEntity.ensure_default_tenant_metadata_exists(
+    tenant = TenantMetadataEntity.ensure_startup_tenant_metadata_exists(
         tenant_id="default",
         name="Test Default Tenant",
         description="Default tenant for testing",

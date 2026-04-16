@@ -90,7 +90,7 @@ const { t } = useI18n()
 const router = useRouter()
 const localePath = useLocalePath()
 
-const { deleteTenant } = useDeleteTenant()
+const { deleteTenantMetadata } = useDeleteTenantMetadata()
 
 const isActive = computed(() => {
   return route.params.tenant_id === props.tenant.id
@@ -117,7 +117,7 @@ const confirmDelete = () => {
       if (isActive.value) {
         await router.push(localePath('/sysadmin/tenants'))
       }
-      await deleteTenant({ tenantId: props.tenant.id })
+      await deleteTenantMetadata({ tenantId: props.tenant.id })
       toast.add({ severity: 'success', summary: t('tenant_admin.tenant_deleted.summary'), detail: t('tenant_admin.tenant_deleted.detail'), life: 3000 })
     },
   })

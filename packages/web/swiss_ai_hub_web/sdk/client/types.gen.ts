@@ -3014,46 +3014,6 @@ export type CompletionUsage = {
 };
 
 /**
- * ConfigureTenantRequest
- *
- * Request model for attaching metadata to an existing Keycloak tenant group.
- *
- * ``tenant_id`` is not user-chosen here — it must already exist as a Keycloak group
- * under ``/tenants/``. Use the ``/admin/tenants/unconfigured`` endpoint to list
- * configurable ids. A regex constraint is deliberately avoided because Keycloak
- * accepts group names this layer would otherwise reject (e.g. ``MyTenant``,
- * ``customer.acme``); the only checks that belong here are a minimum length (reject
- * empty payloads) and a maximum length matching Keycloak's group-name cap (DoS guard
- * against unbounded strings reaching Mongo).
- */
-export type ConfigureTenantRequest = {
-    /**
-     * Tenant Id
-     *
-     * Keycloak tenant group name (must already exist under /tenants/).
-     */
-    tenant_id: string;
-    /**
-     * Name
-     *
-     * The unique display name of the tenant.
-     */
-    name: string;
-    /**
-     * Description
-     *
-     * A short description of the tenant.
-     */
-    description?: string;
-    /**
-     * Access Rules
-     *
-     * Access rules granted to this tenant.
-     */
-    access_rules?: Array<string>;
-};
-
-/**
  * ContextInsufficientRejectEvent
  *
  * Event indicating that the context sufficiency guard rejected the request.
@@ -3380,6 +3340,46 @@ export type CreateRoleRequest = {
      * Pattern-based usage limit rules.
      */
     usage_limits?: Array<UsageLimitDto>;
+};
+
+/**
+ * CreateTenantMetadataRequest
+ *
+ * Request model for attaching metadata to an existing Keycloak tenant group.
+ *
+ * ``tenant_id`` is not user-chosen here — it must already exist as a Keycloak group
+ * under ``/tenants/``. Use the ``/admin/tenants/unconfigured`` endpoint to list
+ * configurable ids. A regex constraint is deliberately avoided because Keycloak
+ * accepts group names this layer would otherwise reject (e.g. ``MyTenant``,
+ * ``customer.acme``); the only checks that belong here are a minimum length (reject
+ * empty payloads) and a maximum length matching Keycloak's group-name cap (DoS guard
+ * against unbounded strings reaching Mongo).
+ */
+export type CreateTenantMetadataRequest = {
+    /**
+     * Tenant Id
+     *
+     * Keycloak tenant group name (must already exist under /tenants/).
+     */
+    tenant_id: string;
+    /**
+     * Name
+     *
+     * The unique display name of the tenant.
+     */
+    name: string;
+    /**
+     * Description
+     *
+     * A short description of the tenant.
+     */
+    description?: string;
+    /**
+     * Access Rules
+     *
+     * Access rules granted to this tenant.
+     */
+    access_rules?: Array<string>;
 };
 
 /**
@@ -8892,7 +8892,7 @@ export type MyTenantsResponse = {
     /**
      * Tenants
      *
-     * Tenants the current user belongs to
+     * Tenants the user making the call belongs to
      */
     tenants: Array<TenantMembershipDto>;
     /**
@@ -12013,12 +12013,6 @@ export type TenantResponse = {
      */
     access_rules: Array<string>;
     /**
-     * Is Default
-     *
-     * Whether this is the default tenant.
-     */
-    is_default: boolean;
-    /**
      * Whether the tenant also exists in Keycloak (active) or not (orphaned).
      */
     state: TenantState;
@@ -12049,7 +12043,7 @@ export type TenantResponse = {
  * appear here: they carry no MongoDB fields (name/description/access_rules) to
  * wrap in a ``TenantResponse``, so they are served separately as ``list[str]``
  * by ``/admin/tenants/unconfigured``. Promoting one to Active via
- * ``configure_tenant`` is what introduces the metadata row that makes a
+ * ``create_tenant_metadata`` is what introduces the metadata row that makes a
  * ``TenantState`` value meaningful.
  */
 export const TenantState = { ACTIVE: 'active', ORPHANED: 'orphaned' } as const;
@@ -12067,7 +12061,7 @@ export const TenantState = { ACTIVE: 'active', ORPHANED: 'orphaned' } as const;
  * appear here: they carry no MongoDB fields (name/description/access_rules) to
  * wrap in a ``TenantResponse``, so they are served separately as ``list[str]``
  * by ``/admin/tenants/unconfigured``. Promoting one to Active via
- * ``configure_tenant`` is what introduces the metadata row that makes a
+ * ``create_tenant_metadata`` is what introduces the metadata row that makes a
  * ``TenantState`` value meaningful.
  */
 export type TenantState = typeof TenantState[keyof typeof TenantState];
@@ -13193,14 +13187,14 @@ export type UpdateRoleRequest = {
 };
 
 /**
- * UpdateTenantRequest
+ * UpdateTenantMetadataRequest
  *
  * Request model for updating a tenant. All fields are optional.
  *
- * Name and description constraints mirror ``ConfigureTenantRequest`` — an update
+ * Name and description constraints mirror ``CreateTenantMetadataRequest`` — an update
  * must not be able to slip a value past a constraint that create enforced.
  */
-export type UpdateTenantRequest = {
+export type UpdateTenantMetadataRequest = {
     /**
      * Name
      */
@@ -23043,30 +23037,30 @@ export type ListTenantsResponses = {
 
 export type ListTenantsResponse = ListTenantsResponses[keyof ListTenantsResponses];
 
-export type ConfigureTenantData = {
-    body: ConfigureTenantRequest;
+export type CreateTenantMetadataData = {
+    body: CreateTenantMetadataRequest;
     path?: never;
     query?: never;
     url: '/admin/tenants/';
 };
 
-export type ConfigureTenantErrors = {
+export type CreateTenantMetadataErrors = {
     /**
      * Validation Error
      */
     422: HttpValidationError;
 };
 
-export type ConfigureTenantError = ConfigureTenantErrors[keyof ConfigureTenantErrors];
+export type CreateTenantMetadataError = CreateTenantMetadataErrors[keyof CreateTenantMetadataErrors];
 
-export type ConfigureTenantResponses = {
+export type CreateTenantMetadataResponses = {
     /**
      * Successful Response
      */
     201: TenantResponse;
 };
 
-export type ConfigureTenantResponse = ConfigureTenantResponses[keyof ConfigureTenantResponses];
+export type CreateTenantMetadataResponse = CreateTenantMetadataResponses[keyof CreateTenantMetadataResponses];
 
 export type ListUnconfiguredTenantsData = {
     body?: never;
@@ -23086,7 +23080,7 @@ export type ListUnconfiguredTenantsResponses = {
 
 export type ListUnconfiguredTenantsResponse = ListUnconfiguredTenantsResponses[keyof ListUnconfiguredTenantsResponses];
 
-export type DeleteTenantData = {
+export type DeleteTenantMetadataData = {
     body?: never;
     path: {
         /**
@@ -23098,23 +23092,23 @@ export type DeleteTenantData = {
     url: '/admin/tenants/{tenant_id}';
 };
 
-export type DeleteTenantErrors = {
+export type DeleteTenantMetadataErrors = {
     /**
      * Validation Error
      */
     422: HttpValidationError;
 };
 
-export type DeleteTenantError = DeleteTenantErrors[keyof DeleteTenantErrors];
+export type DeleteTenantMetadataError = DeleteTenantMetadataErrors[keyof DeleteTenantMetadataErrors];
 
-export type DeleteTenantResponses = {
+export type DeleteTenantMetadataResponses = {
     /**
      * Successful Response
      */
     204: void;
 };
 
-export type DeleteTenantResponse = DeleteTenantResponses[keyof DeleteTenantResponses];
+export type DeleteTenantMetadataResponse = DeleteTenantMetadataResponses[keyof DeleteTenantMetadataResponses];
 
 export type GetTenantData = {
     body?: never;
@@ -23146,8 +23140,8 @@ export type GetTenantResponses = {
 
 export type GetTenantResponse = GetTenantResponses[keyof GetTenantResponses];
 
-export type UpdateTenantData = {
-    body: UpdateTenantRequest;
+export type UpdateTenantMetadataData = {
+    body: UpdateTenantMetadataRequest;
     path: {
         /**
          * Tenant Id
@@ -23158,23 +23152,23 @@ export type UpdateTenantData = {
     url: '/admin/tenants/{tenant_id}';
 };
 
-export type UpdateTenantErrors = {
+export type UpdateTenantMetadataErrors = {
     /**
      * Validation Error
      */
     422: HttpValidationError;
 };
 
-export type UpdateTenantError = UpdateTenantErrors[keyof UpdateTenantErrors];
+export type UpdateTenantMetadataError = UpdateTenantMetadataErrors[keyof UpdateTenantMetadataErrors];
 
-export type UpdateTenantResponses = {
+export type UpdateTenantMetadataResponses = {
     /**
      * Successful Response
      */
     200: TenantResponse;
 };
 
-export type UpdateTenantResponse = UpdateTenantResponses[keyof UpdateTenantResponses];
+export type UpdateTenantMetadataResponse = UpdateTenantMetadataResponses[keyof UpdateTenantMetadataResponses];
 
 export type GetModelsData = {
     body?: never;

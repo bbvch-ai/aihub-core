@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field, StringConstraints, field_validator
 from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 
 
-class ConfigureTenantRequest(BaseModel):
+class CreateTenantMetadataRequest(BaseModel):
     """Request model for attaching metadata to an existing Keycloak tenant group.
 
     ``tenant_id`` is not user-chosen here — it must already exist as a Keycloak group

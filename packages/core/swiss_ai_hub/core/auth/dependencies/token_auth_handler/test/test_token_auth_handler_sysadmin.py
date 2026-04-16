@@ -18,7 +18,7 @@ from mongoengine import connect, disconnect
 
 from swiss_ai_hub.core.auth.dependencies.token_auth_handler.token_auth_handler import TokenAuthHandler
 from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
-from swiss_ai_hub.core.auth.roles import SYS_ADMIN_ROLE
+from swiss_ai_hub.core.auth.realm_roles import SYS_ADMIN_ROLE
 from swiss_ai_hub.core.infrastructure.api.ai_hub_settings import AIHubSettings
 from swiss_ai_hub.core.infrastructure.mongo.mongo_settings import MongoSettings
 from swiss_ai_hub.core.persistence.access.entities.bearer_token import BearerToken
@@ -33,7 +33,7 @@ def mongo_connection() -> Generator[None]:
         db=AIHubSettings().MONGO_MAIN_DB_NAME,
         host=MongoSettings().CONNECTION_STRING.get_secret_value(),
     )
-    TenantMetadataEntity.ensure_default_tenant_metadata_exists(
+    TenantMetadataEntity.ensure_startup_tenant_metadata_exists(
         tenant_id="default",
         name="Default Tenant",
         description="Default tenant for testing",

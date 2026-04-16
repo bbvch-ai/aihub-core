@@ -34,7 +34,7 @@
 <script setup lang="ts">
 import { cloneDeep } from 'lodash-es'
 
-import type { TenantResponse, UpdateTenantRequest } from '@core/sdk/client'
+import type { TenantResponse, UpdateTenantMetadataRequest } from '@core/sdk/client'
 
 definePageMeta({ layout: 'sysadmin', middleware: 'sysadmin' })
 
@@ -45,7 +45,7 @@ const { t } = useI18n()
 const toast = useToast()
 
 const { tenants, tenantsAreLoading } = useTenantAdminList()
-const { updateTenant } = useUpdateTenant()
+const { updateTenantMetadata } = useUpdateTenantMetadata()
 
 const tenantId = computed(() => route.params.tenant_id as string)
 
@@ -53,7 +53,7 @@ const tenant = computed(() =>
   tenants.value?.find((tn: TenantResponse) => tn.id === tenantId.value),
 )
 
-const clonedTenant = ref<UpdateTenantRequest | null>(null)
+const clonedTenant = ref<UpdateTenantMetadataRequest | null>(null)
 
 // Redirect if tenant is missing or orphaned (edit view is not allowed for orphans).
 watch([tenant, tenantsAreLoading], ([newTenant, loading]) => {
@@ -71,7 +71,7 @@ watch([tenant, tenantsAreLoading], ([newTenant, loading]) => {
 
 const saveTenant = async () => {
   if (!clonedTenant.value) return
-  await updateTenant({ tenantId: tenantId.value, data: clonedTenant.value })
+  await updateTenantMetadata({ tenantId: tenantId.value, data: clonedTenant.value })
   toast.add({ severity: 'success', summary: t('tenant_admin.tenant_saved.summary'), detail: t('tenant_admin.tenant_saved.detail'), life: 3000 })
 }
 </script>

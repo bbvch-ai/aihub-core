@@ -18,7 +18,7 @@ the directories other services read from. Adding the Superuser to the group clos
 mechanism by which the Superuser becomes an authorized actor within each tenant.
 
 A second motivation: the platform's two paths through which a tenant becomes Active are the default-tenant bootstrap and
-`TenantAdminService.configure_tenant` (per ADR `2026_04_15_keycloak_as_tenant_existence_authority`). Both already
+`TenantAdminService.create_tenant_metadata` (per ADR `2026_04_15_keycloak_as_tenant_existence_authority`). Both already
 construct or validate the Keycloak group; both are natural seams for adding "the platform's own user" to that group as
 part of bringing the tenant into being. The alternative — leaving membership to ad-hoc operator action — produces a
 class of tenants where the Superuser is not a member by accident rather than by design.
@@ -35,9 +35,9 @@ should not "fight" the operator. This rules out periodic reconciliation and Keyc
 - **Add at creation, not by reconciliation**: A reconciler that re-adds the Superuser after removal would override
   deliberate operator intent. The user's directive is that runtime removal is a legitimate sysadmin action and must
   stand.
-- **Two well-defined creation paths**: Default-tenant bootstrap and `configure_tenant` are the only routes by which a
-  tenant becomes Active. Both already touch the Keycloak group; adding the Superuser there is local to the operation
-  that creates the tenant.
+- **Two well-defined creation paths**: Default-tenant bootstrap and `create_tenant_metadata` are the only routes by
+  which a tenant becomes Active. Both already touch the Keycloak group; adding the Superuser there is local to the
+  operation that creates the tenant.
 - **Idempotent, low-cost mechanism**: Keycloak's group-add is a no-op for an existing member. Calling it during creation
   costs one Admin API call per new tenant — negligible — and stays correct regardless of prior state.
 - **No parallel role rows**: Within each tenant the Superuser is a member of, authorization follows the `AIHubSysAdmin`
@@ -51,14 +51,14 @@ should not "fight" the operator. This rules out periodic reconciliation and Keyc
 ## Decision
 
 **At tenant metadata creation, the Superuser is added as a member of the new tenant's `/tenants/<id>` Keycloak group.
-This applies to both creation paths — the default-tenant bootstrap and the `configure_tenant` flow that attaches
+This applies to both creation paths — the default-tenant bootstrap and the `create_tenant_metadata` flow that attaches
 metadata to a pre-existing Keycloak group. After creation, the membership is treated as ordinary: no startup
 reconciliation, no periodic restoration, no Keycloak SPI to block removal. A sysadmin who removes the Superuser from a
 tenant via the Keycloak admin console removes them, and the removal stands.**
 
 The scope is **Active tenants only** — tenants that exist in both Keycloak and MongoDB metadata. Unconfigured Keycloak
 groups (groups under `/tenants/` with no metadata yet) are not touched; the Superuser is added at the moment those
-groups become Active via `configure_tenant`.
+groups become Active via `create_tenant_metadata`.
 
 The Superuser identity is resolved by email lookup against Keycloak (`SUPERUSER_EMAIL` →
 `KeycloakAdminService.find_user_by_email`) and the resulting user id is memoized for the process lifetime. The lookup is
@@ -102,6 +102,6 @@ lazy — the first tenant creation in the process triggers it; subsequent creati
   *within tenants the principal is a member of*; this ADR is the membership mechanism that makes that authorization
   reachable for the Superuser on every tenant
 - `2026_04_15_keycloak_as_tenant_existence_authority.md` — Defines the two creation paths (`initialize_default_tenant`,
-  `configure_tenant`) at which the Superuser is now added
+  `create_tenant_metadata`) at which the Superuser is now added
 - `2026_02_20_keycloak_tenant_assignment_via_groups.md` — `/tenants/<id>` groups as the sole membership mechanism, which
   this ADR uses directly

@@ -94,9 +94,9 @@ runner.mount(
     .list_tenants()
     .list_unconfigured_tenants()
     .get_tenant()
-    .configure_tenant()
-    .update_tenant()
-    .delete_tenant(),
+    .create_tenant_metadata()
+    .update_tenant_metadata()
+    .delete_tenant_metadata(),
     OpenaiController(auth=auth)
     .get_models()
     .get_model_with_assistants()

@@ -74,14 +74,14 @@
 <script setup lang="ts">
 import AccessRulesEditor from '@core/components/Role/AccessRulesEditor.vue'
 
-import type { ConfigureTenantRequest } from '@core/sdk/client'
+import type { CreateTenantMetadataRequest } from '@core/sdk/client'
 
 const { t } = useI18n()
 
 const { unconfiguredTenantIds, unconfiguredTenantIdsAreLoading } = useUnconfiguredTenantIds()
-const { configureTenant } = useConfigureTenant()
+const { createTenantMetadata } = useCreateTenantMetadata()
 
-const tenant = ref<ConfigureTenantRequest>({
+const tenant = ref<CreateTenantMetadataRequest>({
   tenant_id: '',
   name: '',
   description: '',
@@ -104,7 +104,7 @@ const close = () => {
 }
 
 const save = async () => {
-  await configureTenant({ data: tenant.value })
+  await createTenantMetadata({ data: tenant.value })
   emit('close')
 }
 </script>

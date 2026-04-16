@@ -20,7 +20,7 @@ from openai.types.chat.chat_completion_content_part_input_audio_param import Inp
 from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.auth.identity.tenant_identity import TenantIdentity
 from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
-from swiss_ai_hub.core.auth.roles import SYS_ADMIN_ROLE
+from swiss_ai_hub.core.auth.realm_roles import SYS_ADMIN_ROLE
 from swiss_ai_hub.core.events import BaseEvent
 from swiss_ai_hub.core.events.agent import HumanInTheLoopRequestEvent, HumanInTheLoopResponseEvent
 from swiss_ai_hub.core.i18n import LocaleHandler

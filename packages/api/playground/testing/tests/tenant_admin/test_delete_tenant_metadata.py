@@ -14,7 +14,6 @@ def _fake_tenant(tenant_id: str = "my-tenant") -> MagicMock:
     tenant.name = "My Tenant"
     tenant.description = "desc"
     tenant.access_rules = ["aihub.admin.>"]
-    tenant.is_default = False
     tenant.created_at = datetime.now(UTC)
     tenant.updated_at = datetime.now(UTC)
     return tenant
@@ -27,7 +26,7 @@ def _stub_entity(
     counts: list[int],
     delete_returns: list[bool],
 ) -> dict[str, MagicMock]:
-    """Stubs out all TenantMetadataEntity surface the service uses in delete_tenant.
+    """Stubs out all TenantMetadataEntity surface the service uses in delete_tenant_metadata.
 
     ``counts`` and ``delete_returns`` are consumed in order across calls so a single
     test can simulate the pre-check / post-check race without hand-wiring state.
@@ -59,7 +58,7 @@ async def test_delete_tenant_happy_path_cascades(monkeypatch: pytest.MonkeyPatch
         delete_returns=[True],
     )
 
-    await TenantAdminService.delete_tenant("my-tenant")
+    await TenantAdminService.delete_tenant_metadata("my-tenant")
 
     mocks["delete"].assert_called_once_with("my-tenant")
     mocks["cascade"].assert_called_once_with("my-tenant")
@@ -71,7 +70,7 @@ async def test_delete_tenant_returns_404_when_not_found(monkeypatch: pytest.Monk
     mocks = _stub_entity(monkeypatch, tenant=None, counts=[], delete_returns=[])
 
     with pytest.raises(HTTPException) as exc:
-        await TenantAdminService.delete_tenant("does-not-exist")
+        await TenantAdminService.delete_tenant_metadata("does-not-exist")
 
     assert exc.value.status_code == 404
     mocks["delete"].assert_not_called()
@@ -88,7 +87,7 @@ async def test_delete_tenant_rejects_when_only_one_tenant_remains(monkeypatch: p
     )
 
     with pytest.raises(HTTPException) as exc:
-        await TenantAdminService.delete_tenant("my-tenant")
+        await TenantAdminService.delete_tenant_metadata("my-tenant")
 
     assert exc.value.status_code == 409
     assert "last remaining tenant" in exc.value.detail
@@ -110,7 +109,7 @@ async def test_delete_tenant_returns_404_if_concurrently_deleted_between_fetch_a
     )
 
     with pytest.raises(HTTPException) as exc:
-        await TenantAdminService.delete_tenant("my-tenant")
+        await TenantAdminService.delete_tenant_metadata("my-tenant")
 
     assert exc.value.status_code == 404
     mocks["cascade"].assert_not_called()
@@ -132,7 +131,7 @@ async def test_delete_tenant_restores_row_and_raises_when_concurrent_delete_took
     )
 
     with pytest.raises(HTTPException) as exc:
-        await TenantAdminService.delete_tenant("my-tenant")
+        await TenantAdminService.delete_tenant_metadata("my-tenant")
 
     assert exc.value.status_code == 409
     assert "concurrent delete" in exc.value.detail
@@ -144,7 +143,6 @@ async def test_delete_tenant_restores_row_and_raises_when_concurrent_delete_took
         name="My Tenant",
         description="desc",
         access_rules=["aihub.admin.>"],
-        is_default=False,
     )
 
 
@@ -170,7 +168,7 @@ async def test_delete_tenant_snapshots_before_delete_so_restore_survives_entity_
     monkeypatch.setattr(TenantMetadataEntity, "delete_tenant_metadata", mutate_access_rules_on_delete)
 
     with pytest.raises(HTTPException):
-        await TenantAdminService.delete_tenant("my-tenant")
+        await TenantAdminService.delete_tenant_metadata("my-tenant")
 
     mocks["create"].assert_called_once()
     restored_rules = mocks["create"].call_args.kwargs["access_rules"]

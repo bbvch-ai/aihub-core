@@ -69,7 +69,7 @@ def setup_test_credentials():
     PathEntity(path=stream_path, credentials=test_credentials, system_message="Test system message").save()
 
     # Create default tenant and assign test user
-    default_tenant = TenantMetadataEntity.ensure_default_tenant_metadata_exists(
+    default_tenant = TenantMetadataEntity.ensure_startup_tenant_metadata_exists(
         tenant_id="default", name="Test Tenant", access_rules=["aihub.admin.>"]
     )
     tenant_id = str(default_tenant.id)

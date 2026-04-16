@@ -168,25 +168,14 @@ class AuthHandler(ABC):
         """
         if request and self.has_tenant_in_request(request):
             tenant = await self.resolve_tenant_for_user(request, user_id)
-            roles = UserTenantRoleEntity.get_roles_for_user_in_tenant(user_id, tenant.id)
-            return UserIdentity(
-                id=user_id,
-                name=name,
-                email=email,
-                roles=roles,
-                acting_within_tenant=tenant,
-                is_sys_admin=is_sys_admin,
-            )
-        elif request:
-            return UserIdentity(id=user_id, name=name, email=email, roles=[], is_sys_admin=is_sys_admin)
         else:
             tenant = await self.get_active_tenant_for_user(user_id)
-            roles = UserTenantRoleEntity.get_roles_for_user_in_tenant(user_id, tenant.id)
-            return UserIdentity(
-                id=user_id,
-                name=name,
-                email=email,
-                roles=roles,
-                acting_within_tenant=tenant,
-                is_sys_admin=is_sys_admin,
-            )
+        roles = UserTenantRoleEntity.get_roles_for_user_in_tenant(user_id, tenant.id)
+        return UserIdentity(
+            id=user_id,
+            name=name,
+            email=email,
+            roles=roles,
+            acting_within_tenant=tenant,
+            is_sys_admin=is_sys_admin,
+        )

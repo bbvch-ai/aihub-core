@@ -97,6 +97,7 @@ user:
     sys_admin: Administrateur système
     sys_admin_tag: Admin système
     sys_admin_no: Non
+    last_accessed: Dernier accès
 my_account:
   title: Mon compte
   services: Services

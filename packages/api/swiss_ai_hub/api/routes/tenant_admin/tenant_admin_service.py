@@ -4,10 +4,10 @@ from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdmin
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
 
-from swiss_ai_hub.api.routes.tenant_admin.dto.configure_tenant_request import ConfigureTenantRequest
+from swiss_ai_hub.api.routes.tenant_admin.dto.create_tenant_metadata_request import CreateTenantMetadataRequest
 from swiss_ai_hub.api.routes.tenant_admin.dto.tenant_response import TenantResponse
 from swiss_ai_hub.api.routes.tenant_admin.dto.tenant_state import TenantState
-from swiss_ai_hub.api.routes.tenant_admin.dto.update_tenant_request import UpdateTenantRequest
+from swiss_ai_hub.api.routes.tenant_admin.dto.update_tenant_metadata_request import UpdateTenantMetadataRequest
 from swiss_ai_hub.api.runners.lifetime.initialize_db import initialize_default_roles_for_tenant
 
 
@@ -67,7 +67,7 @@ class TenantAdminService:
 
     @staticmethod
     @trace_fn
-    async def configure_tenant(data: ConfigureTenantRequest) -> TenantResponse:
+    async def create_tenant_metadata(data: CreateTenantMetadataRequest) -> TenantResponse:
         """Attaches metadata to an existing Keycloak tenant group.
 
         Ordering invariant: validation runs first, then the idempotent side effects
@@ -110,7 +110,7 @@ class TenantAdminService:
 
     @staticmethod
     @trace_fn
-    async def update_tenant(tenant_id: str, data: UpdateTenantRequest) -> TenantResponse:
+    async def update_tenant_metadata(tenant_id: str, data: UpdateTenantMetadataRequest) -> TenantResponse:
         """Updates MongoDB metadata for an active tenant.
 
         Orphaned tenants are read-only (409). ``KeycloakGetError`` signals the orphan.
@@ -139,7 +139,7 @@ class TenantAdminService:
 
     @staticmethod
     @trace_fn
-    async def delete_tenant(tenant_id: str) -> None:
+    async def delete_tenant_metadata(tenant_id: str) -> None:
         """Removes the MongoDB metadata. Allowed on both ACTIVE and ORPHANED tenants.
 
         The Keycloak group (if present) is left untouched — cleanup is managed via
@@ -170,7 +170,6 @@ class TenantAdminService:
             "name": tenant.name,
             "description": tenant.description,
             "access_rules": list(tenant.access_rules),
-            "is_default": tenant.is_default,
         }
 
         if not TenantMetadataEntity.delete_tenant_metadata(tenant_id):

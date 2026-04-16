@@ -98,6 +98,7 @@ user:
     sys_admin: System-Admin
     sys_admin_tag: Sys-Admin
     sys_admin_no: Nein
+    last_accessed: Zuletzt aktiv
 my_account:
   title: Mein Konto
   services: Dienste
