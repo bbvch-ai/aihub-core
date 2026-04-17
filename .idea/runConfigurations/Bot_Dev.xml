@@ -1,0 +1,8 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Bot Dev" type="MAKEFILE_TARGET_RUN_CONFIGURATION" factoryName="Makefile" folderName="Run Services">
+    <makefile filename="$PROJECT_DIR$/packages/bot/Makefile" target="run-dev" workingDirectory="$PROJECT_DIR$/packages/bot" arguments="">
+      <envs />
+    </makefile>
+    <method v="2" />
+  </configuration>
+</component>
