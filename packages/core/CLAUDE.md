@@ -201,7 +201,7 @@ BaseEvent (root — auto-registry, sequence numbering, trace dict)  [events/base
 │       ├── GuardEvent, AgentEvent
 │       └── ExceptionEvent
 │
-├── UserMessageEvent (user chat input)                             [events/agent/user/]
+├── UserMessageEvent (chat-UI contract — DO NOT subclass for domain data) [events/agent/user/]
 ├── CostEvent / LLMCostEvent (billing)                            [events/agent/cost/]
 └── Discovery events                                               [events/agent/discovery/, events/process/discovery/]
 ```

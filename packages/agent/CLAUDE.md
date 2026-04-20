@@ -292,6 +292,12 @@ constructing NATS subjects at each specificity level. See `packages/core/swiss_a
 - `AgentInTheLoopRequestEvent` / `ResponseEvent` — agent-to-agent delegation
 - Custom events: inherit from `ControlEvent`, define payload fields
 
+**`UserMessageEvent` is a chat UI contract.** It is the entry point every chat interface (OpenWebUI, Teams, Slack,
+WebChat) must publish and render. Keep its payload minimal — extending it (or subclassing it) raises the bar for every
+chat client. If an agent needs a richer, non-chat entry payload (e.g. from a custom domain front-end or from another
+agent delegating via `AgentInTheLoop`), subclass `StartEvent` directly and accept `UserMessageEvent | YourStartEvent` on
+the relevant steps.
+
 ## i18n
 
 - `AgentLocaleString.from_i18n_path()` for agent/step `name` and `description`

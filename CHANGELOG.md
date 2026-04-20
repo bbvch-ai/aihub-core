@@ -5,6 +5,45 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.277.2] - 2026-04-20 - Refined Event Protocol: Introducing `RAGStartEvent` and Clarifying Chat Contracts
+
+### Added
+
+- ✨ **Introduced `RAGStartEvent`**: A new, dedicated `StartEvent` for RAG agents. This event allows custom domain
+  front-ends or other agents to initiate RAG workflows with pre-selected namespaces, maintaining a clean separation from
+  the generic chat UI contract.
+- 🧪 **Unit Tests for `RAGStartEvent`**: Comprehensive unit tests were added to validate the properties and behavior of
+  the new `RAGStartEvent`, ensuring its reliability.
+- 🖼️ **Web UI Display for `RAGStartEvent`**: A new Vue component and updated event mapping were implemented to enable
+  proper rendering of `RAGStartEvent` in the web interface, showcasing selected namespaces and chat history.
+- 🌐 **Internationalization for `RAGStartEvent`**: Added translations across supported languages for the `RAGStartEvent`
+  and its associated "selected namespaces" property, enhancing multi-language support.
+
+### Changed
+
+- 📄 **Clarified `UserMessageEvent` as Chat UI Contract**: Updated documentation and internal guidance across `SKILL.md`,
+  agent reports, and `CLAUDE.md` files. This change emphasizes that `UserMessageEvent` is exclusively for generic chat
+  interfaces and advises subclassing `StartEvent` directly for agent- or domain-specific payloads.
+- 🔄 **RAG Agent Event Acceptance**: Modified `ExpertRAGAgent` and `RAGAgent` to explicitly accept the new
+  `RAGStartEvent` (alongside `UserMessageEvent`) for initiating RAG workflows, ensuring proper handling of
+  namespace-aware queries from non-chat sources.
+
+### Refactor
+
+- 🧹 **Replaced `NamespaceAwareUserMessageEvent` with `RAGStartEvent`**: Refactored internal agent logic and
+  configurations to transition from `NamespaceAwareUserMessageEvent` to the newly introduced `RAGStartEvent`,
+  streamlining the event model for RAG delegation.
+- ⚡️ **Optimized `UserMessageEvent.user_query` Property**: Performed a minor internal optimization to the `user_query`
+  property within `UserMessageEvent` for enhanced readability and maintainability.
+
+### Removed
+
+- 🗑️ **Deprecated `NamespaceAwareUserMessageEvent`**: The `NamespaceAwareUserMessageEvent` class was removed, as its
+  functionality has been superseded by the more appropriately designed `RAGStartEvent` which directly extends
+  `StartEvent`.
+
+______________________________________________________________________
+
 ## [v0.277.1] - 2026-04-17 - Enhanced Development Experience and Service Orchestration
 
 ### Added
