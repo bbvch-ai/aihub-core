@@ -1639,8 +1639,6 @@ services:
         condition: service_healthy
       keycloak:
         condition: service_healthy
-      api:
-        condition: service_healthy
     environment:
       # --- General Settings ---
       WEBUI_NAME: Swiss AI-Hub
@@ -1901,7 +1899,7 @@ services:
   openwebui-init:
     container_name: openwebui-init
     image: ghcr.io/bbvch-ai/aihub-core/postgres:17
-    restart: 'no'
+    restart: on-failure
     depends_on:
       open-webui:
         condition: service_healthy
@@ -2156,6 +2154,8 @@ services:
         condition: service_healthy
       mineru-api:
         condition: service_healthy
+      openwebui-init:
+        condition: service_completed_successfully
     environment:
       # Log Level
       LOG_LEVEL: ${LOG_LEVEL}

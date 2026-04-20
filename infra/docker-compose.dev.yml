@@ -1387,7 +1387,7 @@ services:
   openwebui-init:
     container_name: openwebui-init
     image: ghcr.io/bbvch-ai/aihub-core/postgres:17
-    restart: 'no'
+    restart: on-failure
     depends_on:
       open-webui:
         condition: service_healthy

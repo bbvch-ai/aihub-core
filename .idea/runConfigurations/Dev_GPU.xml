@@ -3,6 +3,12 @@
     <deployment type="docker-compose.yml">
       <settings>
         <option name="envFilePath" value="$PROJECT_DIR$/.env" />
+        <option name="envFilePaths">
+          <list>
+            <option value="$PROJECT_DIR$/.env" />
+          </list>
+        </option>
+        <option name="commandLineOptions" value="--build" />
         <option name="sourceFilePath" value="infra/docker-compose.dev.gpu.yml" />
       </settings>
     </deployment>
