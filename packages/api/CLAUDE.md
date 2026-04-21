@@ -177,10 +177,10 @@ in real-time, wrapped in `ContextualizedAgentEvent` (adds agent_class, thread_id
 
 **DisplayEvents union** (`sockets/events/server_to_user/contextualized_agent_event.py`): The `DisplayEvents` type alias
 is a discriminated union of all event types the WebSocket can serialize. The `event_discriminator` function walks
-`_parent_event_names` to find the closest match in the union. **When adding a new `ControlAndDisplayEvent` subclass
-(especially HITL subtypes), you MUST add it to the `DisplayEvents` union** — otherwise agent-specific subclasses
-silently downcast to the base class during serialization, and the frontend echoes back the wrong type. See PR #1031 for
-the bug this caused.
+`_parent_event_names` to find the closest match in the union. **When adding a new subclass of any event type already in
+the union, you MUST add the subclass to the `DisplayEvents` union too** — otherwise it silently downcasts to the parent
+class during serialization, and the frontend echoes back the wrong type. See PR #1031 for the bug this caused with HITL
+subtypes.
 
 **Agents → API** (RPC): `AgentConfigResponder` and `ProcessConfigResponder` serve configuration data via NATS
 request-reply on `aihub.rpc.config.agent.*.*` / `aihub.rpc.config.process.*.*`. Agents fetch their config at runtime
