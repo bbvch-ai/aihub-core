@@ -175,6 +175,13 @@ agent NATS topics. Agents subscribe to thread-specific subjects.
 stores ALL events to MongoDB (audit trail). `WebSocketSender` broadcasts display events to connected WebSocket clients
 in real-time, wrapped in `ContextualizedAgentEvent` (adds agent_class, thread_id, locale context).
 
+**DisplayEvents union** (`sockets/events/server_to_user/contextualized_agent_event.py`): The `DisplayEvents` type alias
+is a discriminated union of all event types the WebSocket can serialize. The `event_discriminator` function walks
+`_parent_event_names` to find the closest match in the union. **When adding a new `ControlAndDisplayEvent` subclass
+(especially HITL subtypes), you MUST add it to the `DisplayEvents` union** — otherwise agent-specific subclasses
+silently downcast to the base class during serialization, and the frontend echoes back the wrong type. See PR #1031 for
+the bug this caused.
+
 **Agents → API** (RPC): `AgentConfigResponder` and `ProcessConfigResponder` serve configuration data via NATS
 request-reply on `aihub.rpc.config.agent.*.*` / `aihub.rpc.config.process.*.*`. Agents fetch their config at runtime
 without needing it baked into event payloads.
@@ -247,6 +254,7 @@ http://localhost:8000/api/v1/active/docs (Swagger).
 - Event models: `packages/api/swiss_ai_hub/api/events/event_model_creation_service.py`
 - RPC responders: `packages/api/swiss_ai_hub/api/rpc/agent_config_responder.py`
 - WebSocket manager: `packages/api/swiss_ai_hub/api/sockets/manager/web_socket_manager.py`
+- DisplayEvents union: `packages/api/swiss_ai_hub/api/sockets/events/server_to_user/contextualized_agent_event.py`
 - i18n: `packages/api/swiss_ai_hub/api/i18n/api_locale_string.py`, `api_locale_handler.py`
 - Test runner: `packages/api/swiss_ai_hub/api/runners/simulation/agent/simulated_agent_api_test_runner.py`
 - Playground: `packages/api/playground/testing/main.py`
