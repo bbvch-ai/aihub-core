@@ -24,10 +24,11 @@ from swiss_ai_hub.core.events.agent import (
 )
 from swiss_ai_hub.core.generative_ai import (
     AgentMemory,
+    RetrievalRuntimeConfig,
     extend_chat_history_with_organization_memory,
     extend_chat_history_with_user_memory,
-    filter_retrievers_by_namespace,
     format_expert_conversation,
+    narrow_retrievers_for_rag_start,
 )
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.topics import AgentInstanceTopic
@@ -337,10 +338,14 @@ class ExpertRAGAgent(Agent):
     ) -> RetrieverEvent:
         """Retrieves relevant nodes from multiple knowledge sources in parallel."""
         if isinstance(start_event, RAGStartEvent):
-            retrievers = filter_retrievers_by_namespace(agent_config.retrievers, start_event.selected_namespaces)
+            runtime_configs = narrow_retrievers_for_rag_start(
+                agent_config.retrievers,
+                start_event.selected_namespaces,
+                start_event.additional_filters,
+            )
         else:
-            retrievers = agent_config.retrievers
-        return await do_retrieve(event, retrievers, t)
+            runtime_configs = [RetrievalRuntimeConfig.from_config(r) for r in agent_config.retrievers]
+        return await do_retrieve(event, runtime_configs, t)
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.rerank_nodes.name"),

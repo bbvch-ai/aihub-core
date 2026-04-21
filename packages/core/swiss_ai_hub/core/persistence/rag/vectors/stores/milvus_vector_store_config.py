@@ -24,6 +24,15 @@ class MilvusVectorStoreConfig(BasePydanticVectorStoreConfig):
 
     collection_name: Annotated[str, Field(description="Milvus collection name")]
     index_namespaces: Annotated[list[str], Field(description="Namespaces to retrieve from (empty = all)")] = []
+    allowed_metadata_filter_fields: Annotated[
+        list[str],
+        Field(
+            description=(
+                "Metadata keys that publishers may filter on at query time via `RAGStartEvent.additional_filters`. "
+                "The reserved `namespace` key is never allowed."
+            )
+        ),
+    ] = []
 
     # Override dimensions from base class with default from settings
     # This allows form submissions without dimensions to still validate

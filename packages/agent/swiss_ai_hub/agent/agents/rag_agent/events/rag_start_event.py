@@ -4,7 +4,7 @@ from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from pydantic import Field
 from swiss_ai_hub.core.auth import UserIdentity
 from swiss_ai_hub.core.events.agent import StartEvent, UserUploadedFile
-from swiss_ai_hub.core.generative_ai import BucketNamespacePair
+from swiss_ai_hub.core.generative_ai import BucketMetadataFilters, BucketNamespacePair
 from swiss_ai_hub.core.i18n import LocaleHandler
 
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
@@ -38,6 +38,17 @@ class RAGStartEvent(StartEvent):
         list[BucketNamespacePair],
         Field(description="List of bucket-namespace pairs restricting RAG retrieval."),
     ]
+    additional_filters: Annotated[
+        list[BucketMetadataFilters] | None,
+        Field(
+            description=(
+                "Per-bucket additional metadata filters (AND-combined with namespace filters). "
+                "Filter keys must be listed in the target retriever's "
+                "`MilvusVectorStoreConfig.allowed_metadata_filter_fields`. "
+                "The reserved `namespace` key is not permitted here — use `selected_namespaces` instead."
+            )
+        ),
+    ] = None
 
     @property
     def user_query(self) -> str:

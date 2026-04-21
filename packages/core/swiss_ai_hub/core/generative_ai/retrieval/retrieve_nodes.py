@@ -11,6 +11,7 @@ from llama_index.core.vector_stores.types import (
 
 from swiss_ai_hub.core.generative_ai.processors.min_max_score_normalizer import MinMaxScoreNormalizer
 from swiss_ai_hub.core.generative_ai.processors.score_scaler_post_processor import ScoreScalerPostProcessor
+from swiss_ai_hub.core.generative_ai.retrievers.metadata_filter_pair import MetadataFilterPair
 from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import NAMESPACE, TYPE
 
 
@@ -22,9 +23,12 @@ def retrieve_nodes(
     query_mode: VectorStoreQueryMode,
     node_types: list[str],
     vector_store: BasePydanticVectorStore,
+    additional_filters: list[MetadataFilterPair] | None = None,
 ) -> list[NodeWithScore] | None:
     if retrieve_k <= 0:
         raise ValueError("retrieve_k must be a positive integer")
+
+    extra_filters = [MetadataFilter(key=f.key, value=f.value) for f in (additional_filters or [])]
 
     if index_namespaces:
         filters = MetadataFilters(
@@ -33,10 +37,22 @@ def retrieve_nodes(
                     filters=[
                         MetadataFilter(key=NAMESPACE, value=ns),
                         MetadataFilter(key=TYPE, value=nt),
+                        *extra_filters,
                     ],
                     condition=FilterCondition.AND,
                 )
                 for ns in index_namespaces
+                for nt in node_types
+            ],
+            condition=FilterCondition.OR,
+        )
+    elif extra_filters:
+        filters = MetadataFilters(
+            filters=[
+                MetadataFilters(
+                    filters=[MetadataFilter(key=TYPE, value=nt), *extra_filters],
+                    condition=FilterCondition.AND,
+                )
                 for nt in node_types
             ],
             condition=FilterCondition.OR,
