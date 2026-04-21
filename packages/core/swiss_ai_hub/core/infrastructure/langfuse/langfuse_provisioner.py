@@ -7,7 +7,7 @@ from typing import Any
 
 import httpx
 
-from swiss_ai_hub.core.auth.dependencies.superuser_auth_handler.superuser_settings import SuperuserSettings
+from swiss_ai_hub.core.auth.superuser_settings import SuperuserSettings
 from swiss_ai_hub.core.infrastructure.api.ai_hub_settings import AIHubSettings
 from swiss_ai_hub.core.infrastructure.langfuse.langfuse_settings import LangfuseSettings
 from swiss_ai_hub.core.infrastructure.litellm.lite_llm_proxy_settings import LiteLLMProxySettings

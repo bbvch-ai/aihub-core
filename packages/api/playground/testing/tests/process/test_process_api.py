@@ -5,13 +5,11 @@ import pytest
 import pytest_asyncio
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
-from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler import (  # noqa: E501
-    DangerousDevelopmentOnlyAuthHandler,
-)
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.persistence.process import ProcessClassEntity
 from swiss_ai_hub.core.persistence.process.process_class_entity import HumanInSpecsEntity
 from swiss_ai_hub.core.persistence.process.process_config_entity_document import ProcessConfigEntityDocument
+from swiss_ai_hub.core.testing.auth_utils import TestAuthHandler
 
 from swiss_ai_hub.api.routes.process.process_controller import ProcessController
 from swiss_ai_hub.api.runners.simulation.process.simulated_process_api_test_runner import SimulatedProcessApiTestRunner
@@ -44,7 +42,7 @@ def setup_process_config_mock():
 
 @pytest_asyncio.fixture(scope="module", loop_scope="module")
 async def process_api_client(setup_process_config_mock):
-    auth = DangerousDevelopmentOnlyAuthHandler()
+    auth = TestAuthHandler()
     controller = (
         ProcessController(auth=auth)
         .get_process_classes()

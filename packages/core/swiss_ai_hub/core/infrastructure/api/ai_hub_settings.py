@@ -56,7 +56,11 @@ class AIHubSettings(EnvironmentSettings):
     MONGO_MAIN_DB_NAME: Annotated[
         str,
         Field(
-            pattern=r"^[A-Za-z]+$",
+            # Must start with a letter, then letters/digits/underscores only.
+            # Keeps the value safe for interpolation into Mongo URIs and commands
+            # (no slashes, dots, quotes, whitespace) while still allowing
+            # readable test/staging variants like ``aihub_test``.
+            pattern=r"^[A-Za-z][A-Za-z0-9_]*$",
             description="Name of mongodb database that will be used to store data",
         ),
     ] = "aihub"

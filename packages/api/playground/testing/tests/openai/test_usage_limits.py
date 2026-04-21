@@ -4,10 +4,8 @@ import pytest
 from asgi_lifespan import LifespanManager
 from fastapi import HTTPException
 from httpx import ASGITransport, AsyncClient
-from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler import (  # noqa: E501
-    DangerousDevelopmentOnlyAuthHandler,
-)
 from swiss_ai_hub.core.auth.usage import RoleUsageLimitStatus, UsageLimitPeriod, UsageStatus
+from swiss_ai_hub.core.testing.auth_utils import TestAuthHandler
 
 from swiss_ai_hub.api.routes.openai.openai_controller import OpenaiController
 from swiss_ai_hub.api.runners.api_test_runner import ApiTestRunner
@@ -58,7 +56,7 @@ class TestUsageLimitEnforcement:
             status_code=429, detail=build_exceeded_detail(exceeded, locale="en").model_dump()
         )
 
-        auth = DangerousDevelopmentOnlyAuthHandler()
+        auth = TestAuthHandler()
         controller = OpenaiController(auth=auth).chat_completion_with_assistants()
         runner = ApiTestRunner()
         runner.mount(controller)
@@ -83,7 +81,7 @@ class TestUsageLimitEnforcement:
     @patch("swiss_ai_hub.api.routes.openai.openai_service.UsageLimits.check_and_raise", new_callable=AsyncMock)
     async def test_direct_model_calls_not_counted(self, mock_check_usage: AsyncMock):
         """Test that direct model calls (not agent calls) are not counted."""
-        auth = DangerousDevelopmentOnlyAuthHandler()
+        auth = TestAuthHandler()
         controller = OpenaiController(auth=auth).chat_completion_with_assistants()
         runner = ApiTestRunner()
         runner.mount(controller)

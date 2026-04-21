@@ -29,12 +29,18 @@
           </div>
           <div class="flex flex-col items-start gap-2">
             <span class="font-semibold">
-              {{ t('user.list.last_accessed') }}
+              {{ t('user.list.sys_admin') }}
             </span>
             <Tag
-              v-if="user.last_accessed"
-              :value="getTimeAgo(user.last_accessed).text"
-              :severity="getTimeAgo(user.last_accessed).severity"
+              v-if="user.is_sys_admin"
+              :value="t('user.list.sys_admin_tag')"
+              severity="success"
+              icon="pi pi-crown"
+            />
+            <Tag
+              v-else
+              :value="t('user.list.sys_admin_no')"
+              severity="secondary"
             />
           </div>
           <div class="flex flex-col items-start gap-2">
@@ -102,7 +108,6 @@
 <script setup lang="ts">
 const { user, userIsLoading } = useUser()
 const { t } = useI18n()
-const { getTimeAgo } = useTimeAgo()
 </script>
 
 <style scoped>

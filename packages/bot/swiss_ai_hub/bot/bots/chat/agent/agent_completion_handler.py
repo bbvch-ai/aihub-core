@@ -8,6 +8,7 @@ from nats.aio.client import Client as NATS
 from swiss_ai_hub.core.auth import KeycloakAdminService
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
+from swiss_ai_hub.core.auth.realm_roles import SYS_ADMIN_ROLE
 from swiss_ai_hub.core.distributor import ExternalAgentEventDistributor
 from swiss_ai_hub.core.events.agent import ExceptionEvent
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
@@ -143,6 +144,8 @@ class AgentCompletionHandler(CompletionHandler):
         keycloak_user = await KeycloakAdminService.find_user_by_email(turn_context.activity.from_property.name)
         if not keycloak_user:
             raise ValueError(f"User with email '{turn_context.activity.from_property.name}' not found in Keycloak")
+        realm_roles = await KeycloakAdminService.get_user_realm_roles(keycloak_user.id)
+        is_sys_admin = SYS_ADMIN_ROLE in realm_roles
         tenant = await AuthHandler.get_active_tenant_for_user(keycloak_user.id)
         user = UserIdentity(
             id=keycloak_user.id,
@@ -150,6 +153,7 @@ class AgentCompletionHandler(CompletionHandler):
             email=keycloak_user.email,
             roles=UserTenantRoleEntity.get_roles_for_user_in_tenant(keycloak_user.id, tenant.id),
             acting_within_tenant=tenant,
+            is_sys_admin=is_sys_admin,
         )
         if stream:
             return await ChatService.start_stream_chat_interaction(

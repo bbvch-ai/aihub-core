@@ -29,14 +29,15 @@
       :header="t('user.list.email')"
     />
     <Column
-      field="last_accessed"
-      :header="t('user.list.last_accessed')"
+      field="is_sys_admin"
+      :header="t('user.list.sys_admin')"
     >
       <template #body="{ data }">
         <Tag
-          v-if="data.last_accessed"
-          :value="getTimeAgo(data.last_accessed).text"
-          :severity="getTimeAgo(data.last_accessed).severity"
+          v-if="data.is_sys_admin"
+          :value="t('user.list.sys_admin_tag')"
+          severity="success"
+          icon="pi pi-crown"
         />
       </template>
     </Column>
@@ -62,7 +63,6 @@ import type { UserDto } from '@core/sdk/client'
 
 const route = useRoute()
 const { t } = useI18n()
-const { getTimeAgo } = useTimeAgo()
 
 const props = defineProps<{
   users: UserDto[]

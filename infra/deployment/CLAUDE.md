@@ -132,6 +132,19 @@ storage+backend, `milvus-standalone` on data+storage, `api` on proxy+backend+dat
 
 See ADR: `docs/arc42/decisions/2025_12_22_docker_network_isolation.md`
 
+## Keycloak Realm Import (Operator Notes)
+
+The Keycloak realm template (`templates/configs/keycloak-realm.json.j2`) defines the `aihub-api-service` service account
+with a fixed set of `realm-management` client roles. The current minimum required for the API to function correctly is:
+
+```
+view-identity-providers, manage-users, view-users, query-users,
+query-groups, view-groups, view-realm, view-clients
+```
+
+`view-realm` and `view-clients` are required by the realm-role-members endpoint
+(`GET /admin/realms/{realm}/roles/{role}/users`) used to resolve sysadmin status.
+
 ## Env Var Conventions
 
 - `.env.dev` — local development template (copy to `.env` to get started)

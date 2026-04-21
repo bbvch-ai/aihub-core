@@ -5,8 +5,8 @@ Feature: Multi-Tenant Access Control Integration
   Background:
     Given tenant "Alpha Corp" exists with access rules "aihub.admin.>"
     And tenant "Beta Inc" exists with access rules "aihub.user.agent.>"
-    And the system role "AIHubAdmin" exists with access rules "aihub.admin.>"
-    And the system role "AIHubUser" exists with access rules "aihub.user.>"
+    And the default role "AIHubAdmin" exists with access rules "aihub.admin.>"
+    And the default role "AIHubUser" exists with access rules "aihub.user.>"
 
   Scenario: User with admin in one tenant and user in another gets correct access levels
     Given user "multi-tenant-user" has role "AIHubAdmin" in tenant "Alpha Corp"

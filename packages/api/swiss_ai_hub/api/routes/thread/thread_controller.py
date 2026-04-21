@@ -105,7 +105,7 @@ class ThreadController(TenantScopedController):
                 create_request_dto.user_ids.append(user.id)
 
             agents = [(agent.agent_class, agent.agent_id) for agent in create_request_dto.agents]
-            ThreadService.validate_users_have_agent_access(
+            await ThreadService.validate_users_have_agent_access(
                 user_ids=create_request_dto.user_ids,
                 agents=agents,
                 tenant=user.acting_within_tenant,
@@ -157,7 +157,7 @@ class ThreadController(TenantScopedController):
                 raise self.not_authorized_to_modify_exception
 
             user_ids = [u.id for u in thread.users]
-            ThreadService.validate_users_have_agent_access(
+            await ThreadService.validate_users_have_agent_access(
                 user_ids=user_ids,
                 agents=[(req.agent_class, req.agent_id)],
                 tenant=user.acting_within_tenant,
@@ -222,7 +222,7 @@ class ThreadController(TenantScopedController):
                 raise self.not_authorized_to_modify_exception
 
             agents = [(agent.agent_class, agent.agent_id) for agent in thread.agents]
-            ThreadService.validate_users_have_agent_access(
+            await ThreadService.validate_users_have_agent_access(
                 user_ids=[add_user_dto.user_id],
                 agents=agents,
                 tenant=user.acting_within_tenant,

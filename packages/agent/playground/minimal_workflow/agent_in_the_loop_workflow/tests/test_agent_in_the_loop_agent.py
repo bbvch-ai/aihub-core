@@ -3,7 +3,6 @@ import copy
 import pytest
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from pytest_bdd import given, parsers, scenarios, then, when
-from swiss_ai_hub.core.auth import DangerousDevelopmentOnlyAuthSettings
 from swiss_ai_hub.core.events import BaseEvent
 from swiss_ai_hub.core.events.agent import (
     AgentInTheLoopExceptionEvent,
@@ -13,6 +12,7 @@ from swiss_ai_hub.core.events.agent import (
 )
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.testing import async_test
+from swiss_ai_hub.core.testing.auth_utils import fake_user
 
 from playground.minimal_workflow.agent_in_the_loop_workflow.orchestrator_agent.events.orchestration_result_event import (  # noqa: E501
     OrchestrationResultEvent,
@@ -91,7 +91,7 @@ async def send_start_to_orchestrator(
             await orchestrator_runner.send_event_from_topic(
                 start_event=UserMessageEvent(
                     messages=[ChatMessage(content=message, role=MessageRole.USER)],
-                    user=DangerousDevelopmentOnlyAuthSettings().get_user_identity(),
+                    user=fake_user(),
                 ),
                 topic=topic,
             )

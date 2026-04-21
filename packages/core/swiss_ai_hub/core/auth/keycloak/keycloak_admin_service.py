@@ -6,11 +6,14 @@ from keycloak import KeycloakAdmin, KeycloakGetError
 from swiss_ai_hub.core.auth.keycloak.keycloak_settings import KeycloakSettings
 from swiss_ai_hub.core.auth.keycloak.models.keycloak_group import KeycloakGroup
 from swiss_ai_hub.core.auth.keycloak.models.keycloak_user import KeycloakUser
+from swiss_ai_hub.core.auth.superuser_settings import SuperuserSettings
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 
 logger = logging.getLogger(__name__)
 
 TENANTS_GROUP_PATH = "/tenants"
+
+_superuser_id_cache: str | None = None
 
 
 @lru_cache(maxsize=1)
@@ -79,6 +82,19 @@ class KeycloakAdminService:
 
     @staticmethod
     @trace_fn
+    async def get_all_tenant_groups() -> list[KeycloakGroup]:
+        """Returns all direct children of the /tenants/ parent group.
+
+        Filters out malformed children with empty names (occasionally produced
+        by the realm import when /tenants/ itself gets a zero-length subgroup).
+        """
+        admin = _create_admin()
+        parent = await admin.a_get_group_by_path(TENANTS_GROUP_PATH)
+        children = await admin.a_get_group_children(parent["id"])
+        return [KeycloakGroup.model_validate(c) for c in children if c.get("name")]
+
+    @staticmethod
+    @trace_fn
     async def get_tenant_group(tenant_id: str) -> KeycloakGroup:
         admin = _create_admin()
         data = await admin.a_get_group_by_path(f"{TENANTS_GROUP_PATH}/{tenant_id}")
@@ -86,10 +102,97 @@ class KeycloakAdminService:
 
     @staticmethod
     @trace_fn
+    async def tenant_exists(tenant_id: str) -> bool:
+        """Whether the Keycloak group ``/tenants/<tenant_id>`` exists.
+
+        Keycloak is the source of truth for tenant existence; the MongoDB metadata
+        collection only holds display data and must not be used to decide existence.
+        """
+        try:
+            await KeycloakAdminService.get_tenant_group(tenant_id)
+            return True
+        except KeycloakGetError:
+            return False
+
+    @staticmethod
+    @trace_fn
+    async def filter_existing_tenant_ids(tenant_ids: list[str]) -> set[str]:
+        """Returns the subset of ``tenant_ids`` whose Keycloak groups currently exist."""
+        existing = await KeycloakAdminService.get_all_tenant_groups()
+        existing_ids = {g.name for g in existing}
+        return {tid for tid in tenant_ids if tid in existing_ids}
+
+    @staticmethod
+    @trace_fn
     async def assign_user_to_tenant(keycloak_user_id: str, tenant_id: str) -> None:
         admin = _create_admin()
         group = await admin.a_get_group_by_path(f"{TENANTS_GROUP_PATH}/{tenant_id}")
         await admin.a_group_user_add(keycloak_user_id, group["id"])
+
+    @staticmethod
+    @trace_fn
+    async def get_user_tenant_ids(user_id: str) -> set[str]:
+        """Returns the tenant IDs the user is a member of according to Keycloak.
+
+        Keycloak is the sole source of truth for tenant membership. The
+        ``UserTenantRoleEntity`` collection only stores role assignments; an empty
+        row (or no row) does not imply non-membership, and a stale row does not
+        imply membership. The ``AIHubSysAdmin`` realm role grants permissions,
+        not membership — the superuser has access to every tenant because they
+        are explicitly added to every tenant group on creation, not because of
+        any role short-circuit.
+        """
+        admin = _create_admin()
+        groups = await admin.a_get_user_groups(user_id)
+        tenant_ids: set[str] = set()
+        for group in groups:
+            path = group.get("path", "")
+            if not path.startswith(f"{TENANTS_GROUP_PATH}/"):
+                continue
+            parts = path.split("/")
+            if len(parts) >= 3 and parts[2]:
+                tenant_ids.add(parts[2])
+        return tenant_ids
+
+    @staticmethod
+    @trace_fn
+    async def is_user_member_of_tenant(user_id: str, tenant_id: str) -> bool:
+        """Whether the user is a member of ``/tenants/<tenant_id>`` in Keycloak."""
+        return tenant_id in await KeycloakAdminService.get_user_tenant_ids(user_id)
+
+    @staticmethod
+    @trace_fn
+    async def get_superuser_id() -> str:
+        """Returns the Keycloak user id of the seeded superuser, looked up by email.
+
+        Memoized for the process lifetime — the superuser identity does not change at
+        runtime. A concurrent cold-start race would store the same value twice; benign.
+        Raises ``RuntimeError`` if the superuser is missing from Keycloak (mirrors the
+        fail-fast pattern in ``initialize_superuser_token``).
+        """
+        global _superuser_id_cache
+        if _superuser_id_cache is not None:
+            return _superuser_id_cache
+
+        settings = SuperuserSettings()
+        keycloak_user = await KeycloakAdminService.find_user_by_email(settings.EMAIL)
+        if not keycloak_user:
+            raise RuntimeError(
+                f"Superuser not found in Keycloak (email={settings.EMAIL}). "
+                "Ensure the realm import creates a user with this email."
+            )
+        _superuser_id_cache = keycloak_user.id
+        return _superuser_id_cache
+
+    @staticmethod
+    @trace_fn
+    async def assign_superuser_to_tenant(tenant_id: str) -> None:
+        """Adds the superuser to the ``/tenants/<tenant_id>`` group. Idempotent —
+        Keycloak's group-add is a no-op for an existing member, which matters because
+        the retryable tenant-configure flow can call this more than once."""
+        superuser_id = await KeycloakAdminService.get_superuser_id()
+        await KeycloakAdminService.assign_user_to_tenant(superuser_id, tenant_id)
+        logger.info(f"Superuser ({SuperuserSettings().EMAIL}) assigned to tenant '{tenant_id}'")
 
     @staticmethod
     @trace_fn
@@ -135,6 +238,33 @@ class KeycloakAdminService:
         admin = _create_admin()
         group = await admin.a_get_group_by_path(f"{TENANTS_GROUP_PATH}/{tenant_id}")
         await admin.a_delete_group(group["id"])
+
+    @staticmethod
+    @trace_fn
+    async def get_user_realm_roles(keycloak_user_id: str) -> list[str]:
+        """Returns realm role names assigned to the user. Needed when the caller
+        doesn't have a JWT with a ``roles`` claim (e.g. static bearer tokens) and
+        must resolve realm roles out-of-band."""
+        admin = _create_admin()
+        try:
+            roles = await admin.a_get_realm_roles_of_user(keycloak_user_id)
+        except KeycloakGetError:
+            return []
+        return [r["name"] for r in roles if r.get("name")]
+
+    @staticmethod
+    @trace_fn
+    async def get_user_ids_with_realm_role(role_name: str) -> set[str]:
+        """Returns Keycloak user IDs that have the given realm role assigned.
+
+        Single bulk call to the realm-role-members endpoint, so role membership for
+        a whole list can be resolved without one call per user. Errors propagate —
+        a permission problem on the service account or an unknown role name raises
+        rather than silently producing an empty set.
+        """
+        admin = _create_admin()
+        members = await admin.a_get_realm_role_members(role_name)
+        return {m["id"] for m in members if m.get("id")}
 
     @staticmethod
     @trace_fn

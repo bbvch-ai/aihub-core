@@ -1,9 +1,7 @@
 import pytest
 from fastapi.testclient import TestClient
-from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler import (  # noqa: E501
-    DangerousDevelopmentOnlyAuthHandler,
-)
 from swiss_ai_hub.core.routes import HealthController
+from swiss_ai_hub.core.testing.auth_utils import TestAuthHandler
 
 from swiss_ai_hub.api.runners.api_test_runner import ApiTestRunner
 
@@ -14,7 +12,7 @@ EXPECTED_STATUS = "ok"
 @pytest.fixture
 def api_client():
     """Fixture to create a test client for the API."""
-    auth = DangerousDevelopmentOnlyAuthHandler()
+    auth = TestAuthHandler()
     runner = ApiTestRunner()
     runner.mount(HealthController(auth=auth).get_health())
     return TestClient(runner.create_app())

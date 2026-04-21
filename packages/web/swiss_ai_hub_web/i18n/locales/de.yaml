@@ -95,7 +95,10 @@ user:
     email: E-Mail
     avatar: Profilbild
     roles: Rollen
-    last_accessed: Zuletzt zugegriffen
+    sys_admin: System-Admin
+    sys_admin_tag: Sys-Admin
+    sys_admin_no: Nein
+    last_accessed: Zuletzt aktiv
 my_account:
   title: Mein Konto
   services: Dienste
@@ -574,6 +577,8 @@ role:
   create_dialog:
     description: Erstellen Sie eine neue Rolle mit Zugriffsregeln. Um die neue Rolle
       Benutzern zuzuweisen, verwenden Sie bitte Ihr AD.
+    cancel: Abbrechen
+    save: Speichern
   remove_dialog:
     confirm: Sind Sie sicher?
     explanation: Wenn Sie diese Rolle entfernen, verlieren Benutzer möglicherweise
@@ -588,6 +593,58 @@ role:
     summary: Rolle gespeichert
     detail: Rolle erfolgreich gespeichert, die neuen Zugriffsregeln treten sofort
       in Kraft.
+tenant_admin:
+  title: Tenant-Verwaltung
+  exit: Beenden
+  tenants_title: Tenants
+  select_description: Tenants, Zugriffsregeln und Systemeinstellungen verwalten.
+  create_new: Neuer Tenant
+  cancel: Abbrechen
+  save: Speichern
+  tenant_id: Tenant-ID
+  navigation:
+    overview: Übersicht
+    roles: Rollen
+    users: Benutzer
+  keycloak_unreachable: Keycloak ist nicht erreichbar — die Tenant-Liste ist möglicherweise
+    unvollständig. Bitte erneut versuchen.
+  state:
+    orphaned_label: Verwaist
+    orphaned_tooltip: Dieser Tenant hat Metadaten, aber keine passende Keycloak-Gruppe.
+      Benutzer können nicht darauf zugreifen.
+  configure:
+    title: Tenant konfigurieren
+    description: Hängen Sie Metadaten an eine bestehende Keycloak-Tenant-Gruppe an.
+      Die Tenant-ID muss einer Keycloak-Gruppe unter /tenants/ entsprechen, die noch
+      keine Metadaten hat.
+    tenant_id_label: Keycloak-Tenant-ID
+    empty_unconfigured: Keine unkonfigurierten Keycloak-Tenants verfügbar. Erstellen
+      Sie zuerst eine Tenant-Gruppe in der Keycloak-Admin-Konsole.
+  form:
+    name: Tenant-Name
+    description: Beschreibung
+  table:
+    name: Name
+    description: Beschreibung
+    access_rules: Zugriffsregeln
+    default: Standard
+    actions: Aktionen
+  create_dialog:
+    description: Erstellen Sie einen neuen Tenant mit Zugriffsregeln, die den maximalen
+      Umfang für alle Benutzer innerhalb dieses Tenants definieren.
+  delete_dialog:
+    confirm: Tenant löschen?
+    explanation: Das Löschen des Tenants "{name}" entfernt alle zugehörigen Rollen
+      und Benutzerzuweisungen. Diese Aktion kann nicht rückgängig gemacht werden.
+    proceed: Löschen
+    last_tenant_blocked: Der letzte verbleibende Tenant kann nicht gelöscht werden.
+      Die Plattform muss immer mindestens einen Tenant haben.
+  tenant_deleted:
+    summary: Tenant gelöscht
+    detail: Der Tenant und alle zugehörigen Daten wurden entfernt.
+  tenant_saved:
+    summary: Tenant gespeichert
+    detail: Tenant erfolgreich aktualisiert.
 usage:
   title: Nutzung
   calls_remaining: '{current} / {limit} Agentenaufrufe'

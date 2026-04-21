@@ -2,9 +2,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 from fastapi.testclient import TestClient
-from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler import (  # noqa: E501
-    DangerousDevelopmentOnlyAuthHandler,
-)
+from swiss_ai_hub.core.testing.auth_utils import TestAuthHandler
 
 from swiss_ai_hub.api.routes.auth_provider.auth_provider_controller import AuthProviderController
 from swiss_ai_hub.api.routes.auth_provider.auth_provider_service import AuthProviderService
@@ -16,7 +14,7 @@ BASE_ENDPOINT = "/api/v1/auth-providers"
 
 @pytest.fixture
 def api_client():
-    auth = DangerousDevelopmentOnlyAuthHandler()
+    auth = TestAuthHandler()
     runner = ApiTestRunner()
     runner.mount(AuthProviderController(auth=auth).get_auth_providers())
     app = runner.create_app()

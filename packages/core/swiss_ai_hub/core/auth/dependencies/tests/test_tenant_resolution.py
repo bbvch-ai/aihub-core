@@ -14,7 +14,7 @@ from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdmin
 from swiss_ai_hub.core.infrastructure.api.ai_hub_settings import AIHubSettings
 from swiss_ai_hub.core.infrastructure.mongo.mongo_settings import MongoSettings
 from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
-from swiss_ai_hub.core.persistence.access.entities.tenant_entity import TenantEntity
+from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 
 scenarios("features/tenant_resolution.feature")
@@ -67,7 +67,14 @@ def auth_handler() -> ConcreteAuthHandler:
 
 @pytest.fixture(autouse=True)
 def mock_keycloak_active_tenant():
-    """Mock KeycloakAdminService active tenant methods with an in-memory store."""
+    """Mock KeycloakAdminService active-tenant + membership methods with in-memory stores.
+
+    Membership is derived from ``UserTenantRoleEntity`` rows for these BDD tests: if a
+    user has a role row in a tenant, they are treated as a Keycloak member of that
+    tenant. This mirrors the test fixture semantics (Given steps that create role rows
+    are expressing "user is a member of tenant X") without requiring tests to also
+    create Keycloak group memberships.
+    """
     active_tenants: dict[str, str | None] = {}
 
     async def mock_get_active_tenant_id(user_id: str) -> str | None:
@@ -79,10 +86,22 @@ def mock_keycloak_active_tenant():
     async def mock_clear_active_tenant(user_id: str) -> None:
         active_tenants.pop(user_id, None)
 
+    async def mock_tenant_exists(tenant_id: str) -> bool:
+        return TenantMetadataEntity.objects(id=tenant_id).first() is not None
+
+    async def mock_get_user_tenant_ids(user_id: str) -> set[str]:
+        return set(UserTenantRoleEntity.get_tenant_ids_for_user(user_id))
+
+    async def mock_is_user_member_of_tenant(user_id: str, tenant_id: str) -> bool:
+        return bool(UserTenantRoleEntity.get_roles_for_user_in_tenant(user_id, tenant_id))
+
     with (
         patch.object(KeycloakAdminService, "get_active_tenant_id", side_effect=mock_get_active_tenant_id),
         patch.object(KeycloakAdminService, "set_active_tenant", side_effect=mock_set_active_tenant),
         patch.object(KeycloakAdminService, "clear_active_tenant", side_effect=mock_clear_active_tenant),
+        patch.object(KeycloakAdminService, "tenant_exists", side_effect=mock_tenant_exists),
+        patch.object(KeycloakAdminService, "get_user_tenant_ids", side_effect=mock_get_user_tenant_ids),
+        patch.object(KeycloakAdminService, "is_user_member_of_tenant", side_effect=mock_is_user_member_of_tenant),
     ):
         yield active_tenants
 
@@ -111,14 +130,13 @@ def create_mock_request(
 def ensure_default_tenant(cleanup_documents: list[Any], context: dict[str, Any], name: str, access_rules: str) -> None:
     """Ensure the default tenant exists with the exact name specified."""
     rules_list = [r.strip() for r in access_rules.split(",")]
-    # Remove all existing default tenants to guarantee clean test state
-    TenantEntity.objects(is_default=True).delete()
-    tenant = TenantEntity.create_tenant(
+    # Remove the existing default-tenant row (if any) to guarantee clean test state.
+    TenantMetadataEntity.objects(id="default").delete()
+    tenant = TenantMetadataEntity.create_tenant_metadata(
         tenant_id="default",
         name=name,
         description="Default tenant for testing",
         access_rules=rules_list,
-        is_default=True,
     )
     context["default_tenant"] = tenant
     cleanup_documents.append(tenant)
@@ -128,7 +146,7 @@ def ensure_default_tenant(cleanup_documents: list[Any], context: dict[str, Any],
 def create_second_tenant(cleanup_documents: list[Any], context: dict[str, Any], name: str, access_rules: str) -> None:
     """Create a second tenant."""
     rules_list = [r.strip() for r in access_rules.split(",")]
-    tenant = TenantEntity.create_tenant(
+    tenant = TenantMetadataEntity.create_tenant_metadata(
         tenant_id=name.lower().replace(" ", "-"),
         name=name,
         description="Second tenant for testing",
@@ -138,19 +156,21 @@ def create_second_tenant(cleanup_documents: list[Any], context: dict[str, Any], 
     cleanup_documents.append(tenant)
 
 
-@given(parsers.parse('the system role "{role_name}" exists'))
-def ensure_system_role(cleanup_documents: list[Any], role_name: str) -> None:
-    """Ensure a system role exists."""
-    existing = RoleEntity.get_system_role_by_name(role_name)
-    if existing:
-        return
-
-    role = RoleEntity.create_system_role(
-        name=role_name,
-        description=f"System role {role_name} for testing",
-        access_rules=["aihub.user.>"],
-    )
-    cleanup_documents.append(role)
+@given(parsers.parse('the default role "{role_name}" exists'))
+def ensure_default_role(cleanup_documents: list[Any], context: dict[str, Any], role_name: str) -> None:
+    """Seed the role on every tenant in the context so tenant-scoped queries find it."""
+    tenants = [t for t in (context.get("default_tenant"), context.get("second_tenant")) if t is not None]
+    for tenant in tenants:
+        tenant_id = str(tenant.id)
+        if RoleEntity.objects(name=role_name, tenant_id=tenant_id).first():
+            continue
+        role = RoleEntity.create_tenant_role(
+            name=role_name,
+            description=f"Role {role_name} for testing",
+            access_rules=["aihub.user.>"],
+            tenant_id=tenant_id,
+        )
+        cleanup_documents.append(role)
 
 
 @given(parsers.parse('user "{user_id}" is a member of the default tenant with roles "{roles}"'))
@@ -233,10 +253,8 @@ def remove_default_tenant(context: dict[str, Any]) -> None:
     """Remove the default tenant to simulate no default tenant scenario."""
     tenant = context.get("default_tenant")
     if tenant:
-        # Temporarily mark it as not default for this test
-        tenant.is_default = False
-        tenant.save()
-        context["_original_default_state"] = True
+        tenant.delete()
+        context["_default_tenant_deleted"] = True
 
 
 # --- When Steps ---
@@ -260,12 +278,16 @@ def resolve_tenant_expect_error(context: dict[str, Any], auth_handler: ConcreteA
     except HTTPException as e:
         context["error"] = e
     finally:
-        # Restore default tenant state if it was modified
-        if context.get("_original_default_state"):
-            tenant = context.get("default_tenant")
-            if tenant:
-                tenant.is_default = True
-                tenant.save()
+        # Re-create the default tenant if an earlier step deleted it.
+        if context.get("_default_tenant_deleted"):
+            original = context.get("default_tenant")
+            if original:
+                TenantMetadataEntity.create_tenant_metadata(
+                    tenant_id=original.id,
+                    name=original.name,
+                    description=original.description or "",
+                    access_rules=list(original.access_rules or []),
+                )
 
 
 @when(parsers.parse('the auth handler gets active tenant for user "{user_id}"'))

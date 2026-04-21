@@ -19,7 +19,7 @@ from swiss_ai_hub.core.events.agent.semantic.llm.llm_stop_event import LLMStopEv
 from swiss_ai_hub.core.events.agent.user.user_message_event import UserMessageEvent
 from swiss_ai_hub.core.events.base_event import BaseEvent
 from swiss_ai_hub.core.infrastructure.logging.logger import enable_logging
-from swiss_ai_hub.core.testing.auth_utils.fake_user import fake_user
+from swiss_ai_hub.core.testing.auth_utils.test_identity import fake_user
 from swiss_ai_hub.core.topics import PartialAgentTopic
 
 enable_logging()

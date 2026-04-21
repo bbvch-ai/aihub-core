@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 from mongoengine import signals
 
 from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
-from swiss_ai_hub.core.persistence.access.entities.tenant_entity import TenantEntity
+from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 
 if TYPE_CHECKING:
@@ -38,13 +38,13 @@ class AccessChangeHook:
             logger.info("Access entity changed (%s), scheduling OpenWebUI sync", sender.__name__)
             cls._schedule_sync()
 
-        for entity_cls in [RoleEntity, TenantEntity, UserTenantRoleEntity]:
+        for entity_cls in [RoleEntity, TenantMetadataEntity, UserTenantRoleEntity]:
             signals.post_save.connect(_on_change, sender=entity_cls)
             signals.post_delete.connect(_on_change, sender=entity_cls)
 
         logger.info(
             "AccessChangeHook connected for %s",
-            [cls.__name__ for cls in [RoleEntity, TenantEntity, UserTenantRoleEntity]],
+            [cls.__name__ for cls in [RoleEntity, TenantMetadataEntity, UserTenantRoleEntity]],
         )
         cls._connected = True
 

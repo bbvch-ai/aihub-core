@@ -34,38 +34,31 @@ Supported authentication methods:
 - **OAuth2/OIDC**: JWT tokens from Keycloak (supports federated identity providers like Azure AD, Google, etc.)
 - **API Tokens**: Long-lived tokens for programmatic access
 - **OpenWebUI Integration**: Special handler for OpenWebUI users
-- **Development Mode**: Dangerous dev-only handler (never use in production!)
+
+For tests and interactive playground servers, a dedicated `TestAuthHandler` lives under
+`swiss_ai_hub.core.testing.auth_utils` (not `core.auth`) and bypasses token parsing to return a fixed test identity. It
+is deliberately not reachable from production code via the public auth interface.
 
 ### 2. User Resolution
 
-Auth handlers automatically create or update users on first login:
+User profile data (name, email) is read from JWT claims for OAuth2 flows or fetched via `KeycloakAdminService` for
+bearer tokens. There is no local user record — Keycloak is the single source of truth for user identity.
 
-```python
-user_entity = UserEntity.ensure_user_exists_for_auth(
-    oid=user_id,
-    name=user_name,
-    email=user_email,
-)
-```
-
-**First User Behavior**: The first user to authenticate automatically receives admin roles. Subsequent users receive
-standard user roles (configurable via `UserSignupSettings`).
+**First User Behavior**: The first user to join a tenant automatically receives admin roles. Subsequent users receive
+standard user roles (configurable via `UserSignupSettings`). This applies per-tenant, not globally, and is enforced in
+`UserTenantRoleEntity` when a new membership is created.
 
 ### 3. Tenant Context Resolution
 
-Every authenticated request must have a tenant context. The tenant is identified via a required `{tenant_id}` path
-parameter in the URL. All API routes are mounted at `/api/v1/{tenant_id}/...`.
+Most authenticated requests have a tenant context. The tenant is identified via a `{tenant_id}` path parameter in the
+URL — most API routes are mounted at `/api/v1/{tenant_id}/...`. Sysadmin-only endpoints (e.g. the tenant administration
+controller) are mounted globally without a tenant prefix.
 
-```python
-# Resolve tenant from {tenant_id} path parameter
-# tenant_id can be a MongoDB ObjectId or the special value "active"
-tenant = TenantIdentity.from_request_for_user(request, user_id)
-
-# Verify user has access to this tenant
-roles = UserTenantRoleEntity.get_roles_for_user_in_tenant(user_id, tenant.id)
-if not roles:
-    raise HTTPException(403, "User not assigned to tenant")
-```
+Tenant resolution is handled inside `AuthHandler.build_identity()` and `AuthHandler._resolve_tenant_by_id()`. The latter
+consults `KeycloakAdminService.tenant_exists()` first — Keycloak is the authority on whether a tenant exists — and only
+then checks `UserTenantRoleEntity` membership. The membership check is skipped entirely for sysadmins (see "Sysadmin
+access" below). Controllers do not call these resolvers directly; they are wired into `user_with_permission()` and
+`sys_admin_user()`.
 
 **Tenant Path Parameter**: All API requests must include the `{tenant_id}` in the URL path. Two formats are supported:
 
@@ -84,19 +77,26 @@ return UserIdentity(
     id=user.id,
     name=user.name,
     email=user.email,
-    roles=user.get_roles(tenant.id),
-    acting_within_tenant=tenant,
+    roles=roles,
+    acting_within_tenant=tenant,  # may be None for sysadmin-only requests
+    is_sys_admin=is_sys_admin,    # derived from the AIHubSysAdmin Keycloak realm role
 )
 ```
+
+The `is_sys_admin` flag is the single signal for platform-admin status — it short-circuits the access checker (see
+"Sysadmin access" below) and is the basis for the `Controller.sys_admin_user()` dependency that gates sysadmin-only
+endpoints.
 
 ## Multi-Tenant Role Management
 
 ### Core Entities
 
-**TenantEntity**
+**TenantMetadataEntity**
 
-- Defines organizational boundaries
-- Contains `access_rules` that limit what ANY user in the tenant can access
+- Holds display metadata (name, description, access rules) for a tenant
+- **NOT** the source of truth for tenant existence — the Keycloak group `/tenants/<id>` is authoritative. Service code
+  must verify existence via `KeycloakAdminService.tenant_exists()` before trusting metadata.
+- Contains `access_rules` that cap what ANY user in the tenant can access
 - Example: `["aihub.user.agent.>"]` grants user-level access to all agents
 
 **UserTenantRoleEntity**
@@ -107,14 +107,15 @@ return UserIdentity(
 
 **RoleEntity**
 
-- Defines roles with optional tenant scoping
-- System roles: `tenant_id=None` (available to all tenants)
-- Tenant-specific roles: `tenant_id=<specific-tenant>` (only for that tenant)
+- Every role belongs to exactly one tenant — `tenant_id` is required
+- The default role set (`AIHubUser`, `AIHubAdmin`, `AIHubAgentUser`, etc.) is seeded per tenant at creation time
+- System-wide roles no longer exist; see ADR `2026_04_14_tenant_scoped_roles.md`
 
-**UserEntity**
+**User profile data**
 
-- Stores user profile data (name, email, etc.)
-- **Does NOT store roles** - roles are fetched from `UserTenantRoleEntity`
+- Stored in Keycloak, not locally — `KeycloakAdminService.get_user_by_id()` / `find_user_by_email()` for lookup
+- Name, email, and identity attributes all flow from Keycloak; the platform writes nothing to user records
+- Roles are NOT attached to the user record — they are fetched from `UserTenantRoleEntity` per tenant
 
 ### Accessing User Roles
 
@@ -206,10 +207,10 @@ has_access = checker.has_access_to_service("llm-gateway")
 ### Environment Variables
 
 ```bash
-# Default Tenant Configuration
-AIHUB_DEFAULT_TENANT_NAME="Default Organization"
-AIHUB_DEFAULT_TENANT_DESCRIPTION="The default organization for all users."
-AIHUB_DEFAULT_TENANT_ACCESS_RULES="aihub.admin.>"
+# Startup Tenant Configuration (seeded on first boot; an ordinary tenant thereafter)
+AIHUB_STARTUP_TENANT_NAME="Swiss AI Hub"
+AIHUB_STARTUP_TENANT_DESCRIPTION="This tenant was auto-created on startup of the Swiss AI Hub."
+AIHUB_STARTUP_TENANT_ACCESS_RULES="aihub.admin.>"
 
 # User Signup Role Assignment
 AIHUB_USER_SIGNUP_DEFAULT_ROLES="AIHubUser"
@@ -226,12 +227,12 @@ OAUTH2_AUDIENCE="api://{app-id}"
 ### Settings Classes
 
 ```python
-from aihub_lib.infrastructure.api.DefaultTenantSettings import DefaultTenantSettings
-from aihub_lib.infrastructure.api.UserSignupSettings import UserSignupSettings
+from swiss_ai_hub.core.infrastructure.api.startup_tenant_settings import StartupTenantSettings
+from swiss_ai_hub.core.infrastructure.api.user_signup_settings import UserSignupSettings
 
-# Access default tenant settings
-tenant_settings = DefaultTenantSettings()
-print(tenant_settings.default_access_rules_list)  # ['aihub.admin.>']
+# Access startup tenant settings
+tenant_settings = StartupTenantSettings()
+print(tenant_settings.access_rules_list)  # ['aihub.admin.>']
 
 # Access user signup settings
 signup_settings = UserSignupSettings()
@@ -306,12 +307,13 @@ UserTenantRoleEntity.create_or_update(
 
 ### "Access Denied" Despite User Having Admin Roles
 
-**Cause**: Tenant access rules are limiting user permissions.
+**Cause**: Tenant access rules are limiting user permissions. (Sysadmins — users with the `AIHubSysAdmin` Keycloak realm
+role — bypass this check entirely; if the issue persists for a sysadmin, the bypass itself is misconfigured.)
 
 **Solution**: Check tenant access rules:
 
 ```python
-tenant = TenantEntity.get_tenant_by_id(tenant_id)
+tenant = TenantMetadataEntity.get_metadata_by_tenant_id(tenant_id)
 print(tenant.access_rules)  # Check what the tenant allows
 ```
 
@@ -328,7 +330,8 @@ tenant.save()
 
 ## Security Considerations
 
-- **Never use DangerousDevelopmentOnlyAuthHandler in production** - it bypasses all security
+- **Never mount `TestAuthHandler` on production entry points** — it lives under `core.testing` for this reason;
+  production `app/main.py` files must use `KeycloakAuthHandler` or `TokenAuthHandler`
 - **Validate JWTs properly** - always verify issuer, audience, and signature
 - **Use HTTPS** - never transmit tokens over unencrypted connections
 - **Rotate API tokens regularly** - implement token expiration and rotation

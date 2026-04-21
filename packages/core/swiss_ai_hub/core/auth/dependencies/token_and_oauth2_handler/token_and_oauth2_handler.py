@@ -4,10 +4,8 @@ from fastapi import HTTPException, Request, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
-from swiss_ai_hub.core.auth.dependencies.auth_settings import AuthSettings
 from swiss_ai_hub.core.auth.dependencies.keycloak_auth_handler.keycloak_auth_handler import KeycloakAuthHandler
 from swiss_ai_hub.core.auth.dependencies.open_webui_auth_handler.open_webui_auth_handler import OpenWebuiAuthHandler
-from swiss_ai_hub.core.auth.dependencies.superuser_auth_handler.superuser_auth_handler import SuperuserAuthHandler
 from swiss_ai_hub.core.auth.dependencies.token_auth_handler.token_auth_handler import TokenAuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.auth.keycloak.keycloak_settings import KeycloakSettings
@@ -74,21 +72,12 @@ class TokenAndOauth2Handler:
         bearer_handlers: list[AuthHandler] = []
         oauth2_handlers: list[KeycloakAuthHandler] = []
 
-        config = AuthSettings()
+        oauth2_handlers.append(KeycloakAuthHandler())
 
-        keycloak_handler = KeycloakAuthHandler()
-        oauth2_handlers.append(keycloak_handler)
-
-        logger.info("Using superuser authentication")
-        superuser_handler = SuperuserAuthHandler()
-        bearer_handlers.append(OpenWebuiAuthHandler(base_auth_handler=superuser_handler))
-        bearer_handlers.append(superuser_handler)
-
-        if config.ENABLE_API_ACCESS:
-            logger.info("Using token authentication")
-            token_handler = TokenAuthHandler()
-            bearer_handlers.append(OpenWebuiAuthHandler(base_auth_handler=token_handler))
-            bearer_handlers.append(token_handler)
+        logger.info("Using token authentication")
+        token_handler = TokenAuthHandler()
+        bearer_handlers.append(OpenWebuiAuthHandler(base_auth_handler=token_handler))
+        bearer_handlers.append(token_handler)
 
         return cls(
             bearer_handlers=bearer_handlers,

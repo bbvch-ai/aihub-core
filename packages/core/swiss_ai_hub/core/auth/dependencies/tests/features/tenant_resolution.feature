@@ -5,7 +5,7 @@ Feature: Tenant Resolution in Auth Handler
   Background:
     Given the default tenant exists with name "Default Org" and access rules "aihub.admin.>"
     And a second tenant exists with name "Acme Corp" and access rules "aihub.user.>"
-    And the system role "AIHubUser" exists
+    And the default role "AIHubUser" exists
     And user "user-1" is a member of the default tenant with roles "AIHubUser"
     And user "user-1" is a member of the second tenant with roles "AIHubUser"
     And user "user-2" is a member of the default tenant only with roles "AIHubUser"

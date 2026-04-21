@@ -32,8 +32,8 @@ tenants").
 
 ### Implementation
 
-- **Storage**: Keycloak user attribute `active_tenant_id` (single-valued, contains the MongoDB `TenantEntity` ObjectId
-  string).
+- **Storage**: Keycloak user attribute `active_tenant_id` (single-valued, contains the `TenantMetadataEntity` id — a
+  human-readable slug matching the Keycloak group name under `/tenants/`).
 - **Read**: `KeycloakAdminService.get_active_tenant_id(user_id)` calls `a_get_user(user_id)` and extracts
   `attributes.active_tenant_id[0]`.
 - **Write**: `KeycloakAdminService.set_active_tenant(user_id, tenant_id)` calls

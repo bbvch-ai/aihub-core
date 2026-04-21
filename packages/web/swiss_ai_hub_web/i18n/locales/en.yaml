@@ -94,7 +94,10 @@ user:
     email: E-Mail
     avatar: Profile image
     roles: Roles
-    last_accessed: Last active
+    sys_admin: System Admin
+    sys_admin_tag: Sys Admin
+    sys_admin_no: 'No'
+    last_accessed: Last accessed
 my_account:
   title: My Account
   services: Services
@@ -566,6 +569,8 @@ role:
   create_dialog:
     description: Create a new role with access rules. To assigne the new role to users,
       please use your AD.
+    cancel: Cancel
+    save: Save
   remove_dialog:
     confirm: Are you sure?
     explanation: If you remove this role, users might loose access to certain features
@@ -579,6 +584,57 @@ role:
   role_saved:
     summary: Role saved
     detail: Role saved successfully, the new access rules take effect immediately.
+tenant_admin:
+  title: Tenant Administration
+  exit: Exit
+  tenants_title: Tenants
+  select_description: Manage tenants, access rules, and system settings.
+  create_new: New Tenant
+  cancel: Cancel
+  save: Save
+  tenant_id: Tenant ID
+  navigation:
+    overview: Overview
+    roles: Roles
+    users: Users
+  keycloak_unreachable: Keycloak is unreachable — the tenant list may be incomplete.
+    Please retry.
+  state:
+    orphaned_label: Orphaned
+    orphaned_tooltip: This tenant has metadata but no matching Keycloak group. Users
+      cannot access it.
+  configure:
+    title: Configure Tenant
+    description: Attach metadata to an existing Keycloak tenant group. The tenant
+      ID must match a Keycloak group under /tenants/ that does not yet have metadata.
+    tenant_id_label: Keycloak Tenant ID
+    empty_unconfigured: No unconfigured Keycloak tenants available. Create a tenant
+      group in the Keycloak admin console first.
+  form:
+    name: Tenant Name
+    description: Description
+  table:
+    name: Name
+    description: Description
+    access_rules: Access Rules
+    default: Default
+    actions: Actions
+  create_dialog:
+    description: Create a new tenant with access rules that define the maximum scope
+      for all users within that tenant.
+  delete_dialog:
+    confirm: Delete Tenant?
+    explanation: Deleting tenant "{name}" will remove all associated roles and user
+      assignments. This action cannot be undone.
+    proceed: Delete
+    last_tenant_blocked: Cannot delete the last remaining tenant. The platform must
+      always have at least one tenant.
+  tenant_deleted:
+    summary: Tenant deleted
+    detail: The tenant and all associated data have been removed.
+  tenant_saved:
+    summary: Tenant saved
+    detail: Tenant updated successfully.
 usage:
   title: Usage
   calls_remaining: '{current} / {limit} agent calls'

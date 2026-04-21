@@ -11,7 +11,6 @@
 </template>
 
 <script setup lang="ts">
-import { useDark } from '@vueuse/core'
 import { computed } from 'vue'
 import VueApexChart from 'vue3-apexcharts'
 
@@ -28,7 +27,7 @@ const props = withDefaults(defineProps<{
 })
 
 const { t } = useI18n()
-const isDark = useDark({ storageKey: 'dark' })
+const isDark = useDarkMode()
 
 const chartSeries = computed(() => {
   if (!props.seriesInputs || props.seriesInputs.length === 0) {

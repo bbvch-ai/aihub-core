@@ -11,21 +11,21 @@ Feature: TokenAuthHandler
   Scenario: Token with invalid format is rejected
     Given an invalid token format "not_a_valid_token"
     When I invoke the TokenAuthHandler with an Authorization header using the token expecting error
-    Then I should receive an HTTP error with detail "Invalid token format"
+    Then I should receive an HTTP error with detail "Malformed token: missing 'sk-' prefix"
 
   Scenario: Token not found in database is rejected
-    Given a token does not exist in the database with token "123456789012345678901234.random123"
+    Given a token does not exist in the database with token "sk-nonexistenttokenvalue"
     When I invoke the TokenAuthHandler with an Authorization header using the token expecting error
-    Then I should receive an HTTP error with detail "Token not found"
+    Then I should receive an HTTP error with detail "Unknown token: no matching row (revoked or never issued)"
 
-  Scenario: Token mismatch causes rejection
+  Scenario: A modified token is rejected as not found
     Given a token exists in the database with user details: name "Mismatch User", email "mismatch@example.com", and roles "user,editor"
     And I modify the token to cause a mismatch
     When I invoke the TokenAuthHandler with an Authorization header using the token expecting error
-    Then I should receive an HTTP error with detail "Token mismatch"
+    Then I should receive an HTTP error with detail "Unknown token: no matching row (revoked or never issued)"
 
   Scenario: Expired token is rejected
     Given a token exists in the database with user details: name "Expired User", email "expired@example.com", and roles "user,editor"
     And I set the token expiry to a past time
     When I invoke the TokenAuthHandler with an Authorization header using the token expecting error
-    Then I should receive an HTTP error with detail "Token expired"
+    Then I should receive an HTTP error with detail "Expired token: expiry is in the past"
