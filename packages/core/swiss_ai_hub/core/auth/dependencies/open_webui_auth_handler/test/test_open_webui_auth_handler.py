@@ -15,6 +15,7 @@ from swiss_ai_hub.core.auth.dependencies.token_auth_handler.token_auth_handler i
 from swiss_ai_hub.core.auth.identity.tenant_identity import TenantIdentity
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.infrastructure.api.ai_hub_settings import AIHubSettings
+from swiss_ai_hub.core.infrastructure.api.startup_tenant_settings import StartupTenantSettings
 from swiss_ai_hub.core.infrastructure.mongo.mongo_settings import MongoSettings
 from swiss_ai_hub.core.persistence.access.entities.bearer_token import TOKEN_PREFIX, BearerToken
 from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
@@ -34,9 +35,9 @@ def mongo_connection(monkeypatch: pytest.MonkeyPatch) -> Generator[None]:
 
     # Ensure default tenant exists for multi-tenant auth tests
     TenantMetadataEntity.ensure_startup_tenant_metadata_exists(
-        tenant_id="default",
-        name="Default Tenant",
-        description="Default tenant for testing",
+        tenant_id=StartupTenantSettings().ID,
+        name=StartupTenantSettings().NAME,
+        description="Startup tenant for testing",
         access_rules=["aihub.admin.>"],
     )
 

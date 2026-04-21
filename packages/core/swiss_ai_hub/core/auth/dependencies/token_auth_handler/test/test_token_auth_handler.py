@@ -12,6 +12,7 @@ from pytest_bdd import given, parsers, scenarios, then, when
 
 from swiss_ai_hub.core.auth.dependencies.token_auth_handler.token_auth_handler import TokenAuthHandler
 from swiss_ai_hub.core.infrastructure.api.ai_hub_settings import AIHubSettings
+from swiss_ai_hub.core.infrastructure.api.startup_tenant_settings import StartupTenantSettings
 from swiss_ai_hub.core.infrastructure.mongo.mongo_settings import MongoSettings
 from swiss_ai_hub.core.persistence.access.entities.bearer_token import TOKEN_PREFIX, BearerToken
 from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
@@ -30,11 +31,14 @@ def mongo_connection(monkeypatch: pytest.MonkeyPatch) -> Generator[None]:
         host=MongoSettings().CONNECTION_STRING.get_secret_value(),
     )
 
-    # Ensure default tenant exists for multi-tenant auth tests
+    # Ensure the startup tenant exists for multi-tenant auth tests. Use the
+    # configured startup-tenant id (not a hardcoded "default") so the row
+    # matches ``StartupTenantSettings().ID`` — which the production code
+    # queries — regardless of whether CI has ``AIHUB_STARTUP_TENANT_ID`` set.
     TenantMetadataEntity.ensure_startup_tenant_metadata_exists(
-        tenant_id="default",
-        name="Default Tenant",
-        description="Default tenant for testing",
+        tenant_id=StartupTenantSettings().ID,
+        name=StartupTenantSettings().NAME,
+        description="Startup tenant for testing",
         access_rules=["aihub.admin.>"],
     )
 

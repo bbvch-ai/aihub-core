@@ -4,6 +4,7 @@ import pytest
 
 from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import _create_admin
 from swiss_ai_hub.core.auth.keycloak.models.keycloak_user import KeycloakUser
+from swiss_ai_hub.core.infrastructure.api.startup_tenant_settings import StartupTenantSettings
 from swiss_ai_hub.core.persistence.user.user_dashboard_entity import UserDashboardEntity
 from swiss_ai_hub.core.testing.auth_utils.test_identity import (
     TEST_USER_EMAIL,
@@ -43,7 +44,7 @@ def register_fake_keycloak_user(user_id: str, *, name: str, email: str, attribut
         "email": email,
         "firstName": first,
         "lastName": last,
-        "attributes": attributes or {"active_tenant_id": ["default"]},
+        "attributes": attributes or {"active_tenant_id": [StartupTenantSettings().ID]},
     }
 
 
@@ -71,7 +72,7 @@ def _build_fake_admin() -> MagicMock:
             "email": TEST_USER_EMAIL,
             "firstName": TEST_USER_NAME,
             "lastName": "",
-            "attributes": {"active_tenant_id": ["default"]},
+            "attributes": {"active_tenant_id": [StartupTenantSettings().ID]},
         }
 
     users = _FAKE_KEYCLOAK_USERS
@@ -84,7 +85,7 @@ def _build_fake_admin() -> MagicMock:
             "email": superuser.EMAIL,
             "firstName": "Super",
             "lastName": "User",
-            "attributes": {"active_tenant_id": ["default"]},
+            "attributes": {"active_tenant_id": [StartupTenantSettings().ID]},
         },
     )
 
