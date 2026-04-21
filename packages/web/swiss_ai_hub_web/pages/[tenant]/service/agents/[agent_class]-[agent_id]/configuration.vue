@@ -39,6 +39,7 @@ import type { AgentConfigDtoReadable } from '@core/sdk/client'
 type FormElement = NonNullable<AgentConfigDtoReadable['form']>[number]
 
 const route = useRoute()
+const { tenantId } = useTenant()
 const { agentInstance, agentInstanceIsLoading } = useAgentInstance()
 const { updateAgentInstance } = useUpdateAgentInstance()
 const { t } = useI18n()
@@ -87,10 +88,20 @@ const submitConfiguration = async (formData: Record<string, unknown>) => {
   const agentClass = route.params.agent_class as string
   const agentId = route.params.agent_id as string
 
+  if (!tenantId.value) {
+    toast.add({
+      severity: 'error',
+      summary: t('agent.configuration.saveError'),
+      life: 5000,
+    })
+    return
+  }
+
   try {
     await updateAgentInstance({
       agentClass,
       agentId,
+      tenantId: tenantId.value,
       configuration: formData,
     })
     toast.add({

@@ -74,14 +74,29 @@
       <label class="mb-1 block text-sm font-medium">
         {{ t('lib.vectorStore.allowedFilterFields.label') }}
       </label>
-      <AutoComplete
-        v-model="allowedFilterFields"
-        multiple
-        typeahead
-        :placeholder="allowedFilterFieldsPlaceholder ?? t('lib.vectorStore.allowedFilterFields.placeholder')"
-        class="w-full"
-        input-class="w-full"
-      />
+      <div class="flex flex-col gap-2">
+        <InputText
+          v-model="filterFieldDraft"
+          :placeholder="allowedFilterFieldsPlaceholder ?? t('lib.vectorStore.allowedFilterFields.placeholder')"
+          class="w-full"
+          @keydown.enter.stop.prevent="commitFilterFieldDraft"
+          @keyup.enter.stop.prevent
+          @keypress.enter.stop.prevent
+          @blur="commitFilterFieldDraft"
+        />
+        <div
+          v-if="allowedFilterFields.length > 0"
+          class="flex flex-wrap gap-2"
+        >
+          <Chip
+            v-for="key in allowedFilterFields"
+            :key="key"
+            :label="key"
+            removable
+            @remove="removeFilterField(key)"
+          />
+        </div>
+      </div>
       <small class="mt-1 text-surface-500">
         {{ t('lib.vectorStore.allowedFilterFields.help') }}
       </small>
@@ -166,7 +181,9 @@ const selectedNamespaces = computed({
   },
 })
 
-// Allowed metadata filter fields (free-form chips input)
+// Allowed metadata filter fields (explicit InputText + Chip list)
+const filterFieldDraft = ref('')
+
 const allowedFilterFields = computed({
   get: () => currentValue.value?.allowed_metadata_filter_fields ?? [],
   set: (value: string[]) => {
@@ -175,6 +192,20 @@ const allowedFilterFields = computed({
     }
   },
 })
+
+function commitFilterFieldDraft() {
+  const trimmed = filterFieldDraft.value.trim()
+  filterFieldDraft.value = ''
+  if (!trimmed)
+    return
+  if (allowedFilterFields.value.includes(trimmed))
+    return
+  allowedFilterFields.value = [...allowedFilterFields.value, trimmed]
+}
+
+function removeFilterField(key: string) {
+  allowedFilterFields.value = allowedFilterFields.value.filter(k => k !== key)
+}
 
 // Emit complete value object
 function emitValue(collectionName: string, namespaces: string[], allowedFilterFieldKeys: string[]) {
