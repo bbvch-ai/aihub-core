@@ -1,7 +1,7 @@
 import pytest
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from swiss_ai_hub.core.auth import UserIdentity
-from swiss_ai_hub.core.events.agent import UserMessageEvent
+from swiss_ai_hub.core.events.agent import RAGStartEvent, UserMessageEvent
 from swiss_ai_hub.core.generative_ai import (
     BucketMetadataFilters,
     BucketNamespacePair,
@@ -11,8 +11,6 @@ from swiss_ai_hub.core.generative_ai import (
 )
 from swiss_ai_hub.core.generative_ai.utils.narrow_retrievers_for_rag_start import narrow_retrievers_for_rag_start
 from swiss_ai_hub.core.persistence import MilvusVectorStoreConfig
-
-from swiss_ai_hub.agent.agents.rag_agent.events.rag_start_event import RAGStartEvent
 
 
 def _make_user() -> UserIdentity:

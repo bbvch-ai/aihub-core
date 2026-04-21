@@ -183,6 +183,8 @@ event:
     event_data: Ereignisdaten
   rag_start:
     selected_namespaces: 'Ausgewählte Namespaces:'
+    additional_filters: 'Zusätzliche Metadatenfilter:'
+    no_filters: Keine zusätzlichen Filter
   limitChatHistory:
     summary: Chat-Verlauf auf {count} Nachrichten begrenzt
     assistant: Assistent

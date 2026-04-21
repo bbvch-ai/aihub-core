@@ -181,6 +181,8 @@ event:
     event_data: Dati evento
   rag_start:
     selected_namespaces: 'Namespace selezionati:'
+    additional_filters: 'Filtri di metadati aggiuntivi:'
+    no_filters: Nessun filtro aggiuntivo
   limitChatHistory:
     summary: Cronologia chat limitata a {count} messaggi
     assistant: Assistente

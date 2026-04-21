@@ -122,7 +122,7 @@ export type AddMemoryToChatHistoryEvent = {
      *
      * Chat history extended with user memories.
      */
-    extended_history: Array<ChatMessage>;
+    extended_history: Array<ChatMessageOutput>;
     /**
      * Event Name
      *
@@ -136,7 +136,7 @@ export type AddMemoryToChatHistoryEvent = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessage> | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessageOutput> | Array<string> | undefined;
 };
 
 /**
@@ -171,7 +171,7 @@ export type AddOrganizationMemoryToChatHistoryEvent = {
      *
      * Chat history extended with user memories.
      */
-    extended_history: Array<ChatMessage>;
+    extended_history: Array<ChatMessageOutput>;
     /**
      * Event Name
      *
@@ -185,7 +185,7 @@ export type AddOrganizationMemoryToChatHistoryEvent = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessage> | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessageOutput> | Array<string> | undefined;
 };
 
 /**
@@ -220,7 +220,7 @@ export type AddUserMemoryToChatHistoryEvent = {
      *
      * Chat history extended with user memories.
      */
-    extended_history: Array<ChatMessage>;
+    extended_history: Array<ChatMessageOutput>;
     /**
      * Event Name
      *
@@ -234,7 +234,7 @@ export type AddUserMemoryToChatHistoryEvent = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessage> | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessageOutput> | Array<string> | undefined;
 };
 
 /**
@@ -1380,7 +1380,35 @@ export type Audio = {
  *
  * A representation of audio data to directly pass to/from the LLM.
  */
-export type AudioBlock = {
+export type AudioBlockInput = {
+    /**
+     * Block Type
+     */
+    block_type?: 'audio';
+    /**
+     * Audio
+     */
+    audio?: Blob | File | null;
+    /**
+     * Path
+     */
+    path?: string | null;
+    /**
+     * Url
+     */
+    url?: string | string | null;
+    /**
+     * Format
+     */
+    format?: string | null;
+};
+
+/**
+ * AudioBlock
+ *
+ * A representation of audio data to directly pass to/from the LLM.
+ */
+export type AudioBlockOutput = {
     /**
      * Block Type
      */
@@ -1647,6 +1675,49 @@ export type BodyCreateTranscriptionTenantIdOpenaiAudioTranscriptionsPost = {
      * Timestamp granularities (e.g. 'word' or 'segment'); only used with verbose_json response_format
      */
     timestamp_granularities?: Array<'word' | 'segment'> | null;
+};
+
+/**
+ * BucketMetadataFilters
+ *
+ * The metadata filters a publisher wants applied to one bucket at retrieval time.
+ *
+ * AND-combined with any namespace narrowing from `selected_namespaces`. Each filter key must be
+ * listed in the target retriever's `MilvusVectorStoreConfig.allowed_metadata_filter_fields`.
+ */
+export type BucketMetadataFilters = {
+    /**
+     * Bucket Name
+     *
+     * The name of the bucket these filters apply to.
+     */
+    bucket_name: string;
+    /**
+     * Filters
+     *
+     * Metadata key/value filters applied AND-wise to retrieval in this bucket.
+     */
+    filters: Array<MetadataFilterPair>;
+};
+
+/**
+ * BucketNamespacePair
+ *
+ * A bucket-namespace selection pair for RAG retrieval filtering.
+ */
+export type BucketNamespacePair = {
+    /**
+     * Bucket Name
+     *
+     * The name of the bucket
+     */
+    bucket_name: string;
+    /**
+     * Namespace Name
+     *
+     * The name of the selected namespace in the bucket
+     */
+    namespace_name: string;
 };
 
 /**
@@ -2549,7 +2620,7 @@ export type ChatCompletionUserMessageParam = {
  *
  * Chat message.
  */
-export type ChatMessage = {
+export type ChatMessageOutput = {
     role?: MessageRole;
     /**
      * Additional Kwargs
@@ -2562,23 +2633,23 @@ export type ChatMessage = {
         block_type: 'text';
     } & TextBlock) | ({
         block_type: 'image';
-    } & ImageBlock) | ({
+    } & ImageBlockOutput) | ({
         block_type: 'audio';
-    } & AudioBlock) | ({
+    } & AudioBlockOutput) | ({
         block_type: 'video';
-    } & VideoBlock) | ({
+    } & VideoBlockOutput) | ({
         block_type: 'document';
-    } & DocumentBlock) | ({
+    } & DocumentBlockOutput) | ({
         block_type: 'cache';
     } & CachePoint) | ({
         block_type: 'citable';
-    } & CitableBlock) | ({
+    } & CitableBlockOutput) | ({
         block_type: 'citation';
-    } & CitationBlock) | ({
+    } & CitationBlockOutput) | ({
         block_type: 'thinking';
-    } & ThinkingBlock) | ({
+    } & ThinkingBlockOutput) | ({
         block_type: 'tool_call';
-    } & ToolCallBlock)>;
+    } & ToolCallBlockOutput)>;
 };
 
 /**
@@ -2805,7 +2876,7 @@ export type ChunkEvent = {
  *
  * Supports providing citable content to LLMs that have built-in citation support.
  */
-export type CitableBlock = {
+export type CitableBlockInput = {
     /**
      * Block Type
      */
@@ -2825,9 +2896,39 @@ export type CitableBlock = {
         block_type: 'text';
     } & TextBlock) | ({
         block_type: 'image';
-    } & ImageBlock) | ({
+    } & ImageBlockInput) | ({
         block_type: 'document';
-    } & DocumentBlock)>;
+    } & DocumentBlockInput)>;
+};
+
+/**
+ * CitableBlock
+ *
+ * Supports providing citable content to LLMs that have built-in citation support.
+ */
+export type CitableBlockOutput = {
+    /**
+     * Block Type
+     */
+    block_type?: 'citable';
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Source
+     */
+    source: string;
+    /**
+     * Content
+     */
+    content: Array<({
+        block_type: 'text';
+    } & TextBlock) | ({
+        block_type: 'image';
+    } & ImageBlockOutput) | ({
+        block_type: 'document';
+    } & DocumentBlockOutput)>;
 };
 
 /**
@@ -2835,7 +2936,7 @@ export type CitableBlock = {
  *
  * A representation of cited content from past messages.
  */
-export type CitationBlock = {
+export type CitationBlockInput = {
     /**
      * Block Type
      */
@@ -2847,7 +2948,39 @@ export type CitationBlock = {
         block_type: 'text';
     } & TextBlock) | ({
         block_type: 'image';
-    } & ImageBlock);
+    } & ImageBlockInput);
+    /**
+     * Source
+     */
+    source: string;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Additional Location Info
+     */
+    additional_location_info: AdditionalLocationInfo;
+};
+
+/**
+ * CitationBlock
+ *
+ * A representation of cited content from past messages.
+ */
+export type CitationBlockOutput = {
+    /**
+     * Block Type
+     */
+    block_type?: 'citation';
+    /**
+     * Cited Content
+     */
+    cited_content: ({
+        block_type: 'text';
+    } & TextBlock) | ({
+        block_type: 'image';
+    } & ImageBlockOutput);
     /**
      * Source
      */
@@ -3195,7 +3328,7 @@ export type ContextualizedAgentEvent = {
      *
      * Data of the event itself.
      */
-    event: StartEvent | AgentInTheLoopResponseEvent | HumanInTheLoopRequestEvent | AgentInTheLoopRequestEvent | AgentInTheLoopExceptionEvent | HumanInTheLoopResponseEvent | LimitChatHistoryEvent | AddMemoryToChatHistoryEvent | AddUserMemoryToChatHistoryEvent | AddOrganizationMemoryToChatHistoryEvent | StandaloneQuestionCondenserEvent | LlmCostEvent | ChunkEvent | ThoughtEvent | GuardEvent | RouterEvent | GuardRejectionEvent | SemanticEvent | AgentEvent | ChainEvent | EmbeddingEvent | LlmEvent | LlmStopEvent | RerankerEvent | RetrieverEvent | ToolEvent | UserMessageEvent | ExceptionEvent | StopEvent | DisplayEvent | GuardAcceptEvent | AgentSuitabilityAcceptEvent | AgentSuitabilityRejectEvent | ContextSufficientAcceptEvent | ContextInsufficientRejectEvent | FewShotAcceptEvent | FewShotRejectEvent | SensitiveInfoAcceptEvent | SensitiveInfoRejectEvent | StoreUserMemoryEvent | BaseRetrieveMemoryEvent | BaseStoreMemoryEvent | RetrieveOrganizationMemoryEvent | RetrieveUserMemoryEvent | StoreOrganizationMemoryEvent;
+    event: StartEvent | AgentInTheLoopResponseEvent | HumanInTheLoopRequestEvent | AgentInTheLoopRequestEvent | AgentInTheLoopExceptionEvent | HumanInTheLoopResponseEvent | LimitChatHistoryEvent | AddMemoryToChatHistoryEvent | AddUserMemoryToChatHistoryEvent | AddOrganizationMemoryToChatHistoryEvent | StandaloneQuestionCondenserEvent | LlmCostEvent | ChunkEvent | ThoughtEvent | GuardEvent | RouterEvent | GuardRejectionEvent | SemanticEvent | AgentEvent | ChainEvent | EmbeddingEvent | LlmEvent | LlmStopEvent | RerankerEvent | RetrieverEvent | ToolEvent | UserMessageEvent | RagStartEvent | ExceptionEvent | StopEvent | DisplayEvent | GuardAcceptEvent | AgentSuitabilityAcceptEvent | AgentSuitabilityRejectEvent | ContextSufficientAcceptEvent | ContextInsufficientRejectEvent | FewShotAcceptEvent | FewShotRejectEvent | SensitiveInfoAcceptEvent | SensitiveInfoRejectEvent | StoreUserMemoryEvent | BaseRetrieveMemoryEvent | BaseStoreMemoryEvent | RetrieveOrganizationMemoryEvent | RetrieveUserMemoryEvent | StoreOrganizationMemoryEvent;
 };
 
 /**
@@ -3997,7 +4130,39 @@ export type DisplayStatistics = {
  *
  * A representation of a document to directly pass to the LLM.
  */
-export type DocumentBlock = {
+export type DocumentBlockInput = {
+    /**
+     * Block Type
+     */
+    block_type?: 'document';
+    /**
+     * Data
+     */
+    data?: Blob | File | null;
+    /**
+     * Path
+     */
+    path?: string | null;
+    /**
+     * Url
+     */
+    url?: string | null;
+    /**
+     * Title
+     */
+    title?: string | null;
+    /**
+     * Document Mimetype
+     */
+    document_mimetype?: string | null;
+};
+
+/**
+ * DocumentBlock
+ *
+ * A representation of a document to directly pass to the LLM.
+ */
+export type DocumentBlockOutput = {
     /**
      * Block Type
      */
@@ -5822,7 +5987,39 @@ export type Image = {
  *
  * A representation of image data to directly pass to/from the LLM.
  */
-export type ImageBlock = {
+export type ImageBlockInput = {
+    /**
+     * Block Type
+     */
+    block_type?: 'image';
+    /**
+     * Image
+     */
+    image?: Blob | File | null;
+    /**
+     * Path
+     */
+    path?: string | null;
+    /**
+     * Url
+     */
+    url?: string | string | null;
+    /**
+     * Image Mimetype
+     */
+    image_mimetype?: string | null;
+    /**
+     * Detail
+     */
+    detail?: string | null;
+};
+
+/**
+ * ImageBlock
+ *
+ * A representation of image data to directly pass to/from the LLM.
+ */
+export type ImageBlockOutput = {
     /**
      * Block Type
      */
@@ -7382,7 +7579,7 @@ export type LimitChatHistoryEvent = {
      *
      * Limited chat history based on number of input tokens.
      */
-    limited_history: Array<ChatMessage>;
+    limited_history: Array<ChatMessageOutput>;
     /**
      * Event Name
      *
@@ -7396,7 +7593,7 @@ export type LimitChatHistoryEvent = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessage> | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessageOutput> | Array<string> | undefined;
 };
 
 /**
@@ -8143,6 +8340,26 @@ export type Metadata = {
      * List of files to attach to the request, if supported by the model.
      */
     files?: Array<UserUploadedFile> | null;
+};
+
+/**
+ * MetadataFilterPair
+ *
+ * A metadata key/value equality filter for RAG retrieval.
+ */
+export type MetadataFilterPair = {
+    /**
+     * Key
+     *
+     * The metadata key to filter on.
+     */
+    key: string;
+    /**
+     * Value
+     *
+     * The value the metadata key must equal.
+     */
+    value: string | number | number | boolean;
 };
 
 /**
@@ -9981,6 +10198,113 @@ export type PromptTokensDetails = {
 };
 
 /**
+ * RAGStartEvent
+ *
+ * Namespace-aware start event for the RAG agent.
+ *
+ * `RAGStartEvent` is intended for non-chat publishers: custom domain front-ends that run their own namespace
+ * selection UI, or other agents delegating to RAG via `AgentInTheLoop`.
+ */
+export type RagStartEvent = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     *
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Locale
+     *
+     * The user's locale, guiding language or regional adaptations.
+     */
+    locale?: string;
+    /**
+     * User on whose behalf the RAG run is executed.
+     */
+    user: UserIdentity;
+    /**
+     * Messages
+     *
+     * Chat history providing the context and the user query for retrieval.
+     */
+    messages?: Array<ChatMessageOutput>;
+    /**
+     * Files
+     *
+     * Files uploaded alongside the query for additional context.
+     */
+    files?: Array<UserUploadedFile> | null;
+    /**
+     * Selected Namespaces
+     *
+     * List of bucket-namespace pairs restricting RAG retrieval.
+     */
+    selected_namespaces: Array<BucketNamespacePair>;
+    /**
+     * Additional Filters
+     *
+     * Per-bucket additional metadata filters (AND-combined with namespace filters). Filter keys must be listed in the target retriever's `MilvusVectorStoreConfig.allowed_metadata_filter_fields`. The reserved `namespace` key is not permitted here — use `selected_namespaces` instead.
+     */
+    additional_filters?: Array<BucketMetadataFilters> | null;
+    /**
+     * Event Name
+     *
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Parent Event Names
+     *
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | UserIdentity | Array<ChatMessageOutput> | Array<UserUploadedFile> | null | Array<BucketNamespacePair> | Array<BucketMetadataFilters> | null | Array<string> | undefined;
+};
+
+/**
+ * RAGStartEventInput
+ */
+export type RagStartEventInput = {
+    /**
+     * Messages
+     *
+     * Chat history providing the context and the user query for retrieval.
+     */
+    messages?: Array<JamboParserObjectTypeParserChatMessage1>;
+    /**
+     * Files
+     *
+     * Files uploaded alongside the query for additional context.
+     */
+    files?: Array<UserUploadedFile> | null;
+    /**
+     * Selected Namespaces
+     *
+     * List of bucket-namespace pairs restricting RAG retrieval.
+     */
+    selected_namespaces: Array<BucketNamespacePair>;
+    /**
+     * Additional Filters
+     *
+     * Per-bucket additional metadata filters (AND-combined with namespace filters). Filter keys must be listed in the target retriever's `MilvusVectorStoreConfig.allowed_metadata_filter_fields`. The reserved `namespace` key is not permitted here — use `selected_namespaces` instead.
+     */
+    additional_filters?: Array<BucketMetadataFilters> | null;
+};
+
+/**
  * RadioButton
  *
  * https://formkit-primevue.netlify.app/inputs/RadioButton
@@ -11539,7 +11863,7 @@ export type StandaloneQuestionCondenserEvent = {
     /**
      * Single chat message containing the condensed user question.
      */
-    condensed_chat_message: ChatMessage;
+    condensed_chat_message: ChatMessageOutput;
     /**
      * Event Name
      *
@@ -11553,7 +11877,7 @@ export type StandaloneQuestionCondenserEvent = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | ChatMessage | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | ChatMessageOutput | Array<string> | undefined;
 };
 
 /**
@@ -11664,6 +11988,24 @@ export type StopEvent = {
      */
     readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<string> | undefined;
+};
+
+/**
+ * StopEventOutput
+ */
+export type StopEventOutput = {
+    /**
+     * Display Name
+     *
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display Description
+     *
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
 };
 
 /**
@@ -12111,7 +12453,35 @@ export type Textarea = {
  *
  * A representation of the content streamed from reasoning/thinking processes by LLMs
  */
-export type ThinkingBlock = {
+export type ThinkingBlockInput = {
+    /**
+     * Block Type
+     */
+    block_type?: 'thinking';
+    /**
+     * Content
+     *
+     * Content of the reasoning/thinking process, if available
+     */
+    content?: string | null;
+    /**
+     * Num Tokens
+     *
+     * Number of token used for reasoning/thinking, if available
+     */
+    num_tokens?: number | null;
+    /**
+     * Additional Information
+     */
+    additional_information?: AdditionalInformation;
+};
+
+/**
+ * ThinkingBlock
+ *
+ * A representation of the content streamed from reasoning/thinking processes by LLMs
+ */
+export type ThinkingBlockOutput = {
     /**
      * Block Type
      */
@@ -12637,7 +13007,35 @@ export type TokenResponse = {
 /**
  * ToolCallBlock
  */
-export type ToolCallBlock = {
+export type ToolCallBlockInput = {
+    /**
+     * Block Type
+     */
+    block_type?: 'tool_call';
+    /**
+     * Tool Call Id
+     *
+     * ID of the tool call, if provided
+     */
+    tool_call_id?: string | null;
+    /**
+     * Tool Name
+     *
+     * Name of the called tool
+     */
+    tool_name: string;
+    /**
+     * Tool Kwargs
+     *
+     * Arguments provided to the tool, if available
+     */
+    tool_kwargs?: Sub0 | string;
+};
+
+/**
+ * ToolCallBlock
+ */
+export type ToolCallBlockOutput = {
     /**
      * Block Type
      */
@@ -13337,7 +13735,7 @@ export type UserMessageEvent = {
      *
      * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
      */
-    messages?: Array<ChatMessage>;
+    messages?: Array<ChatMessageOutput>;
     /**
      * Files
      *
@@ -13357,7 +13755,25 @@ export type UserMessageEvent = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | UserIdentity | Array<ChatMessage> | Array<UserUploadedFile> | null | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | UserIdentity | Array<ChatMessageOutput> | Array<UserUploadedFile> | null | Array<string> | undefined;
+};
+
+/**
+ * UserMessageEventInput
+ */
+export type UserMessageEventInput = {
+    /**
+     * Messages
+     *
+     * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
+     */
+    messages?: Array<JamboParserObjectTypeParserChatMessage2>;
+    /**
+     * Files
+     *
+     * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
+     */
+    files?: Array<UserUploadedFile> | null;
 };
 
 /**
@@ -13613,7 +14029,43 @@ export type VectorStoreInput = {
  *
  * A representation of video data to directly pass to/from the LLM.
  */
-export type VideoBlock = {
+export type VideoBlockInput = {
+    /**
+     * Block Type
+     */
+    block_type?: 'video';
+    /**
+     * Video
+     */
+    video?: Blob | File | null;
+    /**
+     * Path
+     */
+    path?: string | null;
+    /**
+     * Url
+     */
+    url?: string | string | null;
+    /**
+     * Video Mimetype
+     */
+    video_mimetype?: string | null;
+    /**
+     * Detail
+     */
+    detail?: string | null;
+    /**
+     * Fps
+     */
+    fps?: number | null;
+};
+
+/**
+ * VideoBlock
+ *
+ * A representation of video data to directly pass to/from the LLM.
+ */
+export type VideoBlockOutput = {
     /**
      * Block Type
      */
@@ -13674,6 +14126,103 @@ export type WorkflowGraph = {
      * List of edges in the graph
      */
     links: Array<EdgeData>;
+};
+
+/**
+ * ThinkingBlock.additional_information
+ *
+ * Additional information related to the thinking/reasoning process, if available
+ */
+export type AdditionalInformation = {
+    [key: string]: unknown;
+};
+
+/**
+ * ChatMessage.additional_kwargs
+ */
+export type AdditionalKwargs = {
+    [key: string]: unknown;
+};
+
+/**
+ * CitationBlock.additional_location_info
+ */
+export type AdditionalLocationInfo = {
+    [key: string]: unknown;
+};
+
+/**
+ * ChatMessage
+ *
+ * Chat message.
+ */
+export type JamboParserObjectTypeParserChatMessage1 = {
+    role?: MessageRole;
+    /**
+     * Additional Kwargs
+     */
+    additional_kwargs?: AdditionalKwargs;
+    /**
+     * Blocks
+     */
+    blocks?: Array<({
+        block_type: 'text';
+    } & TextBlock) | ({
+        block_type: 'image';
+    } & ImageBlockInput) | ({
+        block_type: 'audio';
+    } & AudioBlockInput) | ({
+        block_type: 'video';
+    } & VideoBlockInput) | ({
+        block_type: 'document';
+    } & DocumentBlockInput) | ({
+        block_type: 'cache';
+    } & CachePoint) | ({
+        block_type: 'citable';
+    } & CitableBlockInput) | ({
+        block_type: 'citation';
+    } & CitationBlockInput) | ({
+        block_type: 'thinking';
+    } & ThinkingBlockInput) | ({
+        block_type: 'tool_call';
+    } & ToolCallBlockInput)>;
+};
+
+/**
+ * ChatMessage
+ *
+ * Chat message.
+ */
+export type JamboParserObjectTypeParserChatMessage2 = {
+    role?: MessageRole;
+    /**
+     * Additional Kwargs
+     */
+    additional_kwargs?: AdditionalKwargs;
+    /**
+     * Blocks
+     */
+    blocks?: Array<({
+        block_type: 'text';
+    } & TextBlock) | ({
+        block_type: 'image';
+    } & ImageBlockInput) | ({
+        block_type: 'audio';
+    } & AudioBlockInput) | ({
+        block_type: 'video';
+    } & VideoBlockInput) | ({
+        block_type: 'document';
+    } & DocumentBlockInput) | ({
+        block_type: 'cache';
+    } & CachePoint) | ({
+        block_type: 'citable';
+    } & CitableBlockInput) | ({
+        block_type: 'citation';
+    } & CitationBlockInput) | ({
+        block_type: 'thinking';
+    } & ThinkingBlockInput) | ({
+        block_type: 'tool_call';
+    } & ToolCallBlockInput)>;
 };
 
 /**
@@ -13796,6 +14345,13 @@ export type OpenaiTypesImagesResponseUsage = {
 };
 
 /**
+ * ToolCallBlock.tool_kwargs.sub0
+ */
+export type Sub0 = {
+    [key: string]: unknown;
+};
+
+/**
  * AddMemoryToChatHistoryEvent
  *
  * A control and display event emitted when an agent extends chat history with retrieved memories.
@@ -13837,8 +14393,8 @@ export type AddMemoryToChatHistoryEventWritable = {
      *
      * Chat history extended with user memories.
      */
-    extended_history: Array<ChatMessage>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessage> | undefined;
+    extended_history: Array<ChatMessageOutput>;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessageOutput> | undefined;
 };
 
 /**
@@ -13873,8 +14429,8 @@ export type AddOrganizationMemoryToChatHistoryEventWritable = {
      *
      * Chat history extended with user memories.
      */
-    extended_history: Array<ChatMessage>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessage> | undefined;
+    extended_history: Array<ChatMessageOutput>;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessageOutput> | undefined;
 };
 
 /**
@@ -13909,8 +14465,8 @@ export type AddUserMemoryToChatHistoryEventWritable = {
      *
      * Chat history extended with user memories.
      */
-    extended_history: Array<ChatMessage>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessage> | undefined;
+    extended_history: Array<ChatMessageOutput>;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessageOutput> | undefined;
 };
 
 /**
@@ -15336,7 +15892,7 @@ export type ContextualizedAgentEventWritable = {
      *
      * Data of the event itself.
      */
-    event: StartEventWritable | AgentInTheLoopResponseEventWritable | HumanInTheLoopRequestEventWritable | AgentInTheLoopRequestEventWritable | AgentInTheLoopExceptionEventWritable | HumanInTheLoopResponseEventWritable | LimitChatHistoryEventWritable | AddMemoryToChatHistoryEventWritable | AddUserMemoryToChatHistoryEventWritable | AddOrganizationMemoryToChatHistoryEventWritable | StandaloneQuestionCondenserEventWritable | LlmCostEventWritable | ChunkEventWritable | ThoughtEventWritable | GuardEventWritable | RouterEventWritable | GuardRejectionEventWritable | SemanticEventWritable | AgentEventWritable | ChainEventWritable | EmbeddingEventWritable | LlmEventWritable | LlmStopEventWritable | RerankerEventWritable | RetrieverEventWritable | ToolEventWritable | UserMessageEventWritable | ExceptionEventWritable | StopEventWritable | DisplayEventWritable | GuardAcceptEventWritable | AgentSuitabilityAcceptEventWritable | AgentSuitabilityRejectEventWritable | ContextSufficientAcceptEventWritable | ContextInsufficientRejectEventWritable | FewShotAcceptEventWritable | FewShotRejectEventWritable | SensitiveInfoAcceptEventWritable | SensitiveInfoRejectEventWritable | StoreUserMemoryEventWritable | BaseRetrieveMemoryEventWritable | BaseStoreMemoryEventWritable | RetrieveOrganizationMemoryEventWritable | RetrieveUserMemoryEventWritable | StoreOrganizationMemoryEventWritable;
+    event: StartEventWritable | AgentInTheLoopResponseEventWritable | HumanInTheLoopRequestEventWritable | AgentInTheLoopRequestEventWritable | AgentInTheLoopExceptionEventWritable | HumanInTheLoopResponseEventWritable | LimitChatHistoryEventWritable | AddMemoryToChatHistoryEventWritable | AddUserMemoryToChatHistoryEventWritable | AddOrganizationMemoryToChatHistoryEventWritable | StandaloneQuestionCondenserEventWritable | LlmCostEventWritable | ChunkEventWritable | ThoughtEventWritable | GuardEventWritable | RouterEventWritable | GuardRejectionEventWritable | SemanticEventWritable | AgentEventWritable | ChainEventWritable | EmbeddingEventWritable | LlmEventWritable | LlmStopEventWritable | RerankerEventWritable | RetrieverEventWritable | ToolEventWritable | UserMessageEventWritable | RagStartEventWritable | ExceptionEventWritable | StopEventWritable | DisplayEventWritable | GuardAcceptEventWritable | AgentSuitabilityAcceptEventWritable | AgentSuitabilityRejectEventWritable | ContextSufficientAcceptEventWritable | ContextInsufficientRejectEventWritable | FewShotAcceptEventWritable | FewShotRejectEventWritable | SensitiveInfoAcceptEventWritable | SensitiveInfoRejectEventWritable | StoreUserMemoryEventWritable | BaseRetrieveMemoryEventWritable | BaseStoreMemoryEventWritable | RetrieveOrganizationMemoryEventWritable | RetrieveUserMemoryEventWritable | StoreOrganizationMemoryEventWritable;
 };
 
 /**
@@ -17532,8 +18088,8 @@ export type LimitChatHistoryEventWritable = {
      *
      * Limited chat history based on number of input tokens.
      */
-    limited_history: Array<ChatMessage>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessage> | undefined;
+    limited_history: Array<ChatMessageOutput>;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessageOutput> | undefined;
 };
 
 /**
@@ -18528,6 +19084,70 @@ export type ProcessWalkthroughDtoWritable = {
      * List of humans that submitted work in this walkthrough.
      */
     involved_humans?: Array<MinimalUserDto>;
+};
+
+/**
+ * RAGStartEvent
+ *
+ * Namespace-aware start event for the RAG agent.
+ *
+ * `RAGStartEvent` is intended for non-chat publishers: custom domain front-ends that run their own namespace
+ * selection UI, or other agents delegating to RAG via `AgentInTheLoop`.
+ */
+export type RagStartEventWritable = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     *
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Locale
+     *
+     * The user's locale, guiding language or regional adaptations.
+     */
+    locale?: string;
+    /**
+     * User on whose behalf the RAG run is executed.
+     */
+    user: UserIdentity;
+    /**
+     * Messages
+     *
+     * Chat history providing the context and the user query for retrieval.
+     */
+    messages?: Array<ChatMessageOutput>;
+    /**
+     * Files
+     *
+     * Files uploaded alongside the query for additional context.
+     */
+    files?: Array<UserUploadedFile> | null;
+    /**
+     * Selected Namespaces
+     *
+     * List of bucket-namespace pairs restricting RAG retrieval.
+     */
+    selected_namespaces: Array<BucketNamespacePair>;
+    /**
+     * Additional Filters
+     *
+     * Per-bucket additional metadata filters (AND-combined with namespace filters). Filter keys must be listed in the target retriever's `MilvusVectorStoreConfig.allowed_metadata_filter_fields`. The reserved `namespace` key is not permitted here — use `selected_namespaces` instead.
+     */
+    additional_filters?: Array<BucketMetadataFilters> | null;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | UserIdentity | Array<ChatMessageOutput> | Array<UserUploadedFile> | null | Array<BucketNamespacePair> | Array<BucketMetadataFilters> | null | undefined;
 };
 
 /**
@@ -19809,8 +20429,8 @@ export type StandaloneQuestionCondenserEventWritable = {
     /**
      * Single chat message containing the condensed user question.
      */
-    condensed_chat_message: ChatMessage;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | ChatMessage | undefined;
+    condensed_chat_message: ChatMessageOutput;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | ChatMessageOutput | undefined;
 };
 
 /**
@@ -20661,14 +21281,14 @@ export type UserMessageEventWritable = {
      *
      * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
      */
-    messages?: Array<ChatMessage>;
+    messages?: Array<ChatMessageOutput>;
     /**
      * Files
      *
      * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
      */
     files?: Array<UserUploadedFile> | null;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | UserIdentity | Array<ChatMessage> | Array<UserUploadedFile> | null | undefined;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | UserIdentity | Array<ChatMessageOutput> | Array<UserUploadedFile> | null | undefined;
 };
 
 /**
@@ -20812,6 +21432,36 @@ export type VectorStoreInputWritable = {
     [key: string]: unknown | true | string | null | string | null | 'vectorStoreInput' | string | null | LocaleString | string | LocaleString | string | null | string | number | number | boolean | Array<string> | {
         [key: string]: string;
     } | null | boolean | string | null | LocaleString | string | null | LocaleString | string | null | LocaleString | string | null | undefined;
+};
+
+/**
+ * ThinkingBlock.additional_information
+ *
+ * Additional information related to the thinking/reasoning process, if available
+ */
+export type AdditionalInformationWritable = {
+    [key: string]: unknown;
+};
+
+/**
+ * ChatMessage.additional_kwargs
+ */
+export type AdditionalKwargsWritable = {
+    [key: string]: unknown;
+};
+
+/**
+ * CitationBlock.additional_location_info
+ */
+export type AdditionalLocationInfoWritable = {
+    [key: string]: unknown;
+};
+
+/**
+ * ToolCallBlock.tool_kwargs.sub0
+ */
+export type Sub0Writable = {
+    [key: string]: unknown;
 };
 
 export type GetHealthData = {
@@ -24496,3 +25146,187 @@ export type ReceiveOpenwebuiWebhookResponses = {
 };
 
 export type ReceiveOpenwebuiWebhookResponse = ReceiveOpenwebuiWebhookResponses[keyof ReceiveOpenwebuiWebhookResponses];
+
+export type SendRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventPostData = {
+    body: RagStartEventInput;
+    path: {
+        /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+        /**
+         * Agent ID
+         *
+         * The specific agent instance ID
+         */
+        agent_id: string;
+    };
+    query?: {
+        /**
+         * Thread Id
+         */
+        thread_id?: string;
+        /**
+         * Display Id
+         */
+        display_id?: string;
+    };
+    url: '/{tenant_id}/agents/classes/RAGAgent/instances/{agent_id}/RAGStartEvent';
+};
+
+export type SendRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SendRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventPostError = SendRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventPostErrors[keyof SendRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventPostErrors];
+
+export type SendRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: StopEventOutput;
+};
+
+export type SendRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventPostResponse = SendRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventPostResponses[keyof SendRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventPostResponses];
+
+export type StreamRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventStreamPostData = {
+    body: RagStartEventInput;
+    path: {
+        /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+        /**
+         * Agent ID
+         *
+         * The specific agent instance ID
+         */
+        agent_id: string;
+    };
+    query?: {
+        /**
+         * Thread Id
+         */
+        thread_id?: string;
+        /**
+         * Display Id
+         */
+        display_id?: string;
+    };
+    url: '/{tenant_id}/agents/classes/RAGAgent/instances/{agent_id}/RAGStartEvent/stream';
+};
+
+export type StreamRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventStreamPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type StreamRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventStreamPostError = StreamRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventStreamPostErrors[keyof StreamRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventStreamPostErrors];
+
+export type StreamRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventStreamPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type SendUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostData = {
+    body: UserMessageEventInput;
+    path: {
+        /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+        /**
+         * Agent ID
+         *
+         * The specific agent instance ID
+         */
+        agent_id: string;
+    };
+    query?: {
+        /**
+         * Thread Id
+         */
+        thread_id?: string;
+        /**
+         * Display Id
+         */
+        display_id?: string;
+    };
+    url: '/{tenant_id}/agents/classes/RAGAgent/instances/{agent_id}/UserMessageEvent';
+};
+
+export type SendUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SendUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostError = SendUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostErrors[keyof SendUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostErrors];
+
+export type SendUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: StopEventOutput;
+};
+
+export type SendUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostResponse = SendUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostResponses[keyof SendUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostResponses];
+
+export type StreamUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventStreamPostData = {
+    body: UserMessageEventInput;
+    path: {
+        /**
+         * Tenant Id
+         *
+         * Tenant identifier: a name, ObjectId, or 'active'
+         */
+        tenant_id: string;
+        /**
+         * Agent ID
+         *
+         * The specific agent instance ID
+         */
+        agent_id: string;
+    };
+    query?: {
+        /**
+         * Thread Id
+         */
+        thread_id?: string;
+        /**
+         * Display Id
+         */
+        display_id?: string;
+    };
+    url: '/{tenant_id}/agents/classes/RAGAgent/instances/{agent_id}/UserMessageEvent/stream';
+};
+
+export type StreamUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventStreamPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type StreamUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventStreamPostError = StreamUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventStreamPostErrors[keyof StreamUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventStreamPostErrors];
+
+export type StreamUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventStreamPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};

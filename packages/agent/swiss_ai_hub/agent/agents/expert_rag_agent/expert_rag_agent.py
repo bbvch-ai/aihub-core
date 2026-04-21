@@ -13,6 +13,7 @@ from swiss_ai_hub.core.events.agent import (
     HumanInTheLoop,
     LimitChatHistoryEvent,
     LLMEvent,
+    RAGStartEvent,
     RerankerEvent,
     RetrieveOrganizationMemoryEvent,
     RetrieverEvent,
@@ -44,7 +45,6 @@ from swiss_ai_hub.agent.agents.rag_agent.events.in_order_node_combiner_event imp
 from swiss_ai_hub.agent.agents.rag_agent.events.limit_chat_history_with_context_event import (
     LimitChatHistoryWithContextEvent,
 )
-from swiss_ai_hub.agent.agents.rag_agent.events.rag_start_event import RAGStartEvent
 from swiss_ai_hub.agent.agents.rag_agent.events.user_requests_expert_event import UserRequestsExpertEvent
 from swiss_ai_hub.agent.context.run.run_context import RunContext
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString

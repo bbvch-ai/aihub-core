@@ -181,6 +181,8 @@ event:
     event_data: Event Data
   rag_start:
     selected_namespaces: 'Selected namespaces:'
+    additional_filters: 'Additional metadata filters:'
+    no_filters: No additional filters
   limitChatHistory:
     summary: Chat history limited to {count} messages
     assistant: Assistant

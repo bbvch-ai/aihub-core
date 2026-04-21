@@ -7,7 +7,7 @@
   >
     <div class="flex flex-col gap-4">
       <div
-        v-if="event.event.selected_namespaces.length > 0"
+        v-if="event.event.selected_namespaces && event.event.selected_namespaces.length > 0"
         class="flex flex-wrap items-center gap-2"
       >
         <span class="text-sm text-surface-600 dark:text-surface-400">
@@ -20,6 +20,29 @@
           severity="info"
         />
       </div>
+
+      <div
+        v-if="event.event.additional_filters && event.event.additional_filters.length > 0"
+        class="flex flex-col gap-2"
+      >
+        <span class="text-sm text-surface-600 dark:text-surface-400">
+          {{ $t('event.rag_start.additional_filters') }}
+        </span>
+        <div
+          v-for="(bucketFilter, bidx) in event.event.additional_filters"
+          :key="bidx"
+          class="flex flex-wrap items-center gap-2"
+        >
+          <span class="text-sm font-medium">{{ bucketFilter.bucket_name }}</span>
+          <Tag
+            v-for="(filter, fidx) in bucketFilter.filters"
+            :key="fidx"
+            :value="`${filter.key} = ${filter.value}`"
+            severity="secondary"
+          />
+        </div>
+      </div>
+
       <div class="flex flex-col gap-8">
         <div
           v-for="(message, index) in event.event.messages"
