@@ -37,9 +37,7 @@ def narrow_retrievers_for_rag_start(
             # Publisher's selected namespace is outside the agent's configured set — drop.
             if configured_namespaces and selected_namespace not in configured_namespaces:
                 continue
-            narrowed_vector_store = retriever.vector_store.model_copy(
-                update={"index_namespaces": [selected_namespace]}
-            )
+            narrowed_vector_store = retriever.vector_store.model_copy(update={"index_namespaces": [selected_namespace]})
             narrowed_config = retriever.model_copy(update={"vector_store": narrowed_vector_store})
 
         runtime_filters = filters_by_bucket.get(bucket, [])

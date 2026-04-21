@@ -697,6 +697,11 @@ lib:
       label: Spazi dei nomi
       placeholder: Seleziona gli spazi dei nomi (vuoto = tutti)
       help: Lascia vuoto per cercare tutti gli spazi dei nomi
+    allowedFilterFields:
+      label: Campi filtro consentiti
+      placeholder: Inserisci una chiave di metadati e premi Invio
+      help: Chiavi di metadati su cui i publisher possono filtrare in fase di query.
+        La chiave riservata `namespace` non è mai consentita.
 memory:
   title: Ricordi
   graph:

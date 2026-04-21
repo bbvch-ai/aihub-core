@@ -9094,6 +9094,54 @@ export type OpenChatHitlResponse = {
 };
 
 /**
+ * OpenWebuiWebhookPayload
+ */
+export type OpenWebuiWebhookPayload = {
+    /**
+     * Action
+     *
+     * OpenWebUI webhook action type (e.g. 'signup', 'login')
+     */
+    action: string;
+    /**
+     * Message
+     */
+    message?: string;
+    user?: OpenWebuiWebhookUser;
+};
+
+/**
+ * OpenWebuiWebhookUser
+ */
+export type OpenWebuiWebhookUser = {
+    /**
+     * Id
+     *
+     * OpenWebUI user ID
+     */
+    id?: string;
+    /**
+     * Email
+     *
+     * User email address
+     */
+    email?: string;
+    /**
+     * Name
+     *
+     * User display name
+     */
+    name?: string;
+    /**
+     * Role
+     *
+     * OpenWebUI role
+     */
+    role?: string;
+    [key: string]: unknown | string | undefined;
+};
+
+/**
  * PaginatedDocumentsResponse
  */
 export type PaginatedDocumentsResponse = {
@@ -13188,18 +13236,6 @@ export type UserDto = {
      */
     profile_image?: string | null;
     /**
-     * Last Accessed
-     *
-     * Last time the user was updated
-     */
-    last_accessed: Date;
-    /**
-     * Favorite Modules
-     *
-     * List of favorite modules from aihub suite
-     */
-    favorite_modules?: Array<string>;
-    /**
      * User dashboard configuration for index page
      */
     dashboard?: DashboardDto | null;
@@ -13382,18 +13418,6 @@ export type UserWithAccessDto = {
      */
     profile_image?: string | null;
     /**
-     * Last Accessed
-     *
-     * Last time the user was updated
-     */
-    last_accessed: Date;
-    /**
-     * Favorite Modules
-     *
-     * List of favorite modules from aihub suite
-     */
-    favorite_modules?: Array<string>;
-    /**
      * User dashboard configuration for index page
      */
     dashboard?: DashboardDto | null;
@@ -13440,15 +13464,20 @@ export type ValidationError = {
 /**
  * VectorStoreInput
  *
- *     A FormKit element for selecting a vector store collection and namespaces.
+ * A FormKit element for selecting a vector store collection, namespaces, and
+ * the metadata keys publishers are allowed to filter on at query time.
  *
- * This element renders as a cascading selection:
+ * This element renders as three controls:
  * 1. Database dropdown (loads from /api/v1/knowledge/databases)
  * 2. Namespace multi-select (populated based on selected database)
+ * 3. Free-form chips input for `allowed_metadata_filter_fields`
  *
- * The output is a structured object containing both the collection name and
- * the selected namespaces, matching the MilvusVectorStoreConfig fields:
- * {"collection_name": str, "index_namespaces": list[str]}
+ * The output matches the three configurable fields of `MilvusVectorStoreConfig`:
+ * {
+ * "collection_name": str,
+ * "index_namespaces": list[str],
+ * "allowed_metadata_filter_fields": list[str],
+ * }
  *
  * ### Form Duality
  * When used with MilvusVectorStoreConfig, the form submission is validated
@@ -13465,7 +13494,7 @@ export type ValidationError = {
  * MilvusVectorStoreConfig | VectorStoreInput,
  * Field(description="The vector store configuration"),
  * ]
- * reranking_model
+ *
  * # Form mode - for rendering:
  * config = MyRetrieverConfig(
  * vector_store=VectorStoreInput(
@@ -13478,6 +13507,7 @@ export type ValidationError = {
  * vector_store=MilvusVectorStoreConfig(
  * collection_name="my-database",
  * index_namespaces=["namespace1", "namespace2"],
+ * allowed_metadata_filter_fields=["department", "year"],
  * ),
  * )
  * ```
@@ -13558,6 +13588,12 @@ export type VectorStoreInput = {
      */
     namespacePlaceholder?: LocaleString | string | null;
     /**
+     * Allowedfilterfieldsplaceholder
+     *
+     * Placeholder for the allowed metadata filter fields chips input.
+     */
+    allowedFilterFieldsPlaceholder?: LocaleString | string | null;
+    /**
      * Filter
      *
      * Whether to enable filtering/search
@@ -13569,7 +13605,7 @@ export type VectorStoreInput = {
     readonly validation: string;
     [key: string]: unknown | true | string | null | string | null | 'vectorStoreInput' | string | null | LocaleString | string | LocaleString | string | null | string | number | number | boolean | Array<string> | {
         [key: string]: string;
-    } | null | boolean | string | null | LocaleString | string | null | LocaleString | string | null | string | undefined;
+    } | null | boolean | string | null | LocaleString | string | null | LocaleString | string | null | LocaleString | string | null | string | undefined;
 };
 
 /**
@@ -13606,6 +13642,18 @@ export type VideoBlock = {
      * Fps
      */
     fps?: number | null;
+};
+
+/**
+ * WebhookResponse
+ */
+export type WebhookResponse = {
+    /**
+     * Status
+     *
+     * Webhook processing result status
+     */
+    status: string;
 };
 
 /**
@@ -20626,15 +20674,20 @@ export type UserMessageEventWritable = {
 /**
  * VectorStoreInput
  *
- *     A FormKit element for selecting a vector store collection and namespaces.
+ * A FormKit element for selecting a vector store collection, namespaces, and
+ * the metadata keys publishers are allowed to filter on at query time.
  *
- * This element renders as a cascading selection:
+ * This element renders as three controls:
  * 1. Database dropdown (loads from /api/v1/knowledge/databases)
  * 2. Namespace multi-select (populated based on selected database)
+ * 3. Free-form chips input for `allowed_metadata_filter_fields`
  *
- * The output is a structured object containing both the collection name and
- * the selected namespaces, matching the MilvusVectorStoreConfig fields:
- * {"collection_name": str, "index_namespaces": list[str]}
+ * The output matches the three configurable fields of `MilvusVectorStoreConfig`:
+ * {
+ * "collection_name": str,
+ * "index_namespaces": list[str],
+ * "allowed_metadata_filter_fields": list[str],
+ * }
  *
  * ### Form Duality
  * When used with MilvusVectorStoreConfig, the form submission is validated
@@ -20651,7 +20704,7 @@ export type UserMessageEventWritable = {
  * MilvusVectorStoreConfig | VectorStoreInput,
  * Field(description="The vector store configuration"),
  * ]
- * reranking_model
+ *
  * # Form mode - for rendering:
  * config = MyRetrieverConfig(
  * vector_store=VectorStoreInput(
@@ -20664,6 +20717,7 @@ export type UserMessageEventWritable = {
  * vector_store=MilvusVectorStoreConfig(
  * collection_name="my-database",
  * index_namespaces=["namespace1", "namespace2"],
+ * allowed_metadata_filter_fields=["department", "year"],
  * ),
  * )
  * ```
@@ -20744,6 +20798,12 @@ export type VectorStoreInputWritable = {
      */
     namespacePlaceholder?: LocaleString | string | null;
     /**
+     * Allowedfilterfieldsplaceholder
+     *
+     * Placeholder for the allowed metadata filter fields chips input.
+     */
+    allowedFilterFieldsPlaceholder?: LocaleString | string | null;
+    /**
      * Filter
      *
      * Whether to enable filtering/search
@@ -20751,7 +20811,7 @@ export type VectorStoreInputWritable = {
     filter?: boolean;
     [key: string]: unknown | true | string | null | string | null | 'vectorStoreInput' | string | null | LocaleString | string | LocaleString | string | null | string | number | number | boolean | Array<string> | {
         [key: string]: string;
-    } | null | boolean | string | null | LocaleString | string | null | LocaleString | string | null | undefined;
+    } | null | boolean | string | null | LocaleString | string | null | LocaleString | string | null | LocaleString | string | null | undefined;
 };
 
 export type GetHealthData = {
@@ -24404,3 +24464,35 @@ export type TranslateTextResponses = {
 };
 
 export type TranslateTextResponse = TranslateTextResponses[keyof TranslateTextResponses];
+
+export type ReceiveOpenwebuiWebhookData = {
+    body: OpenWebuiWebhookPayload;
+    path?: never;
+    query: {
+        /**
+         * Token
+         *
+         * Webhook authentication token
+         */
+        token: string;
+    };
+    url: '/webhook/openwebui';
+};
+
+export type ReceiveOpenwebuiWebhookErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ReceiveOpenwebuiWebhookError = ReceiveOpenwebuiWebhookErrors[keyof ReceiveOpenwebuiWebhookErrors];
+
+export type ReceiveOpenwebuiWebhookResponses = {
+    /**
+     * Successful Response
+     */
+    200: WebhookResponse;
+};
+
+export type ReceiveOpenwebuiWebhookResponse = ReceiveOpenwebuiWebhookResponses[keyof ReceiveOpenwebuiWebhookResponses];

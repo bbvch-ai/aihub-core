@@ -7,3 +7,8 @@ namespaces:
   label: Namespaces
   placeholder: Select namespaces (empty = all)
   help: Leave empty to search all namespaces
+allowedFilterFields:
+  label: Allowed Filter Fields
+  placeholder: Add a metadata key and press Enter
+  help: Metadata keys publishers may filter on at query time (e.g. via `RAGStartEvent.additional_filters`).
+    The reserved `namespace` key is never allowed.

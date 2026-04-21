@@ -59,10 +59,10 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.generative_ai.retrievers.metadata_filter_pair import MetadataFilterPair
     from swiss_ai_hub.core.generative_ai.retrievers.retrieval_runtime_config import RetrievalRuntimeConfig
     from swiss_ai_hub.core.generative_ai.routing.route_to_event_using_llm import route_to_event_using_llm
+    from swiss_ai_hub.core.generative_ai.utils.image_processor import replace_s3_paths_with_signed_urls
     from swiss_ai_hub.core.generative_ai.utils.narrow_retrievers_for_rag_start import (
         narrow_retrievers_for_rag_start,
     )
-    from swiss_ai_hub.core.generative_ai.utils.image_processor import replace_s3_paths_with_signed_urls
     from swiss_ai_hub.core.generative_ai.utils.path_utils import (
         FIGURES_DIRECTORY_NAME,
         create_figures_folder_name,

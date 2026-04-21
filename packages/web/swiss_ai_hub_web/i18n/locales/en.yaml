@@ -692,6 +692,11 @@ lib:
       label: Namespaces
       placeholder: Select namespaces (empty = all)
       help: Leave empty to search all namespaces
+    allowedFilterFields:
+      label: Allowed Filter Fields
+      placeholder: Add a metadata key and press Enter
+      help: Metadata keys publishers may filter on at query time. The reserved `namespace`
+        key is never allowed.
 memory:
   title: Memories
   graph:

@@ -701,6 +701,11 @@ lib:
       label: Namensräume
       placeholder: Namensräume auswählen (leer = alle)
       help: Leer lassen, um alle Namensräume zu durchsuchen
+    allowedFilterFields:
+      label: Erlaubte Filterfelder
+      placeholder: Metadatenschlüssel eingeben und Enter drücken
+      help: Metadatenschlüssel, auf die Publisher beim Abfragen filtern dürfen. Der
+        reservierte Schlüssel `namespace` ist nie erlaubt.
 memory:
   title: Erinnerungen
   graph:

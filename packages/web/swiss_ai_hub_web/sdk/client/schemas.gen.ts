@@ -13311,7 +13311,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1776094151
+            default: 1776764509
         },
         owned_by: {
             type: 'string',
@@ -14596,6 +14596,61 @@ export const OpenChatHitlResponseSchema = {
     ],
     title: 'OpenChatHitlResponse',
     description: 'Response indicating whether there\'s an open chat HITL request for a thread.'
+} as const;
+
+export const OpenWebuiWebhookPayloadSchema = {
+    properties: {
+        action: {
+            type: 'string',
+            title: 'Action',
+            description: 'OpenWebUI webhook action type (e.g. \'signup\', \'login\')'
+        },
+        message: {
+            type: 'string',
+            title: 'Message',
+            default: ''
+        },
+        user: {
+            $ref: '#/components/schemas/OpenWebuiWebhookUser'
+        }
+    },
+    type: 'object',
+    required: [
+        'action'
+    ],
+    title: 'OpenWebuiWebhookPayload'
+} as const;
+
+export const OpenWebuiWebhookUserSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            title: 'Id',
+            description: 'OpenWebUI user ID',
+            default: ''
+        },
+        email: {
+            type: 'string',
+            title: 'Email',
+            description: 'User email address',
+            default: ''
+        },
+        name: {
+            type: 'string',
+            title: 'Name',
+            description: 'User display name',
+            default: ''
+        },
+        role: {
+            type: 'string',
+            title: 'Role',
+            description: 'OpenWebUI role',
+            default: ''
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    title: 'OpenWebuiWebhookUser'
 } as const;
 
 export const PaginatedDocumentsResponseSchema = {
@@ -20871,21 +20926,6 @@ export const UserDTOSchema = {
             title: 'Profile Image',
             description: 'User\'s profile image in base64.'
         },
-        last_accessed: {
-            type: 'string',
-            format: 'date-time',
-            title: 'Last Accessed',
-            description: 'Last time the user was updated'
-        },
-        favorite_modules: {
-            items: {
-                type: 'string'
-            },
-            type: 'array',
-            title: 'Favorite Modules',
-            description: 'List of favorite modules from aihub suite',
-            default: []
-        },
         dashboard: {
             anyOf: [
                 {
@@ -20902,8 +20942,7 @@ export const UserDTOSchema = {
     required: [
         'id',
         'name',
-        'email',
-        'last_accessed'
+        'email'
     ],
     title: 'UserDTO'
 } as const;
@@ -21113,21 +21152,6 @@ export const UserWithAccessDTOSchema = {
             title: 'Profile Image',
             description: 'User\'s profile image in base64.'
         },
-        last_accessed: {
-            type: 'string',
-            format: 'date-time',
-            title: 'Last Accessed',
-            description: 'Last time the user was updated'
-        },
-        favorite_modules: {
-            items: {
-                type: 'string'
-            },
-            type: 'array',
-            title: 'Favorite Modules',
-            description: 'List of favorite modules from aihub suite',
-            default: []
-        },
         dashboard: {
             anyOf: [
                 {
@@ -21158,7 +21182,6 @@ export const UserWithAccessDTOSchema = {
         'id',
         'name',
         'email',
-        'last_accessed',
         'access'
     ],
     title: 'UserWithAccessDTO'
@@ -21366,6 +21389,21 @@ export const VectorStoreInputSchema = {
             title: 'Namespaceplaceholder',
             description: 'Placeholder for namespace select'
         },
+        allowedFilterFieldsPlaceholder: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Allowedfilterfieldsplaceholder',
+            description: 'Placeholder for the allowed metadata filter fields chips input.'
+        },
         filter: {
             type: 'boolean',
             title: 'Filter',
@@ -21385,7 +21423,7 @@ export const VectorStoreInputSchema = {
         'validation'
     ],
     title: 'VectorStoreInput',
-    description: '    A FormKit element for selecting a vector store collection and namespaces.\n\n    This element renders as a cascading selection:\n    1. Database dropdown (loads from /api/v1/knowledge/databases)\n    2. Namespace multi-select (populated based on selected database)\n\n    The output is a structured object containing both the collection name and\n    the selected namespaces, matching the MilvusVectorStoreConfig fields:\n    {"collection_name": str, "index_namespaces": list[str]}\n\n    ### Form Duality\n    When used with MilvusVectorStoreConfig, the form submission is validated\n    directly into MilvusVectorStoreConfig (connection settings are read from\n    MilvusSettings at runtime).\n\n    ### Example Usage\n    ```python\n    from swiss_ai_hub.core.form.elements.vector_store_input import VectorStoreInput\n    from swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_vector_store_config import MilvusVectorStoreConfig\n\n    class MyRetrieverConfig(Form):\n        vector_store: Annotated[\n            MilvusVectorStoreConfig | VectorStoreInput,\n            Field(description="The vector store configuration"),\n        ]\nreranking_model\n    # Form mode - for rendering:\n    config = MyRetrieverConfig(\n        vector_store=VectorStoreInput(\n            label=LocaleString(en="Vector Store", de="Vektorspeicher"),\n        ),\n    )\n\n    # Data mode - from submission (Pydantic validates into MilvusVectorStoreConfig):\n    config = MyRetrieverConfig(\n        vector_store=MilvusVectorStoreConfig(\n            collection_name="my-database",\n            index_namespaces=["namespace1", "namespace2"],\n        ),\n    )\n    ```'
+    description: 'A FormKit element for selecting a vector store collection, namespaces, and\nthe metadata keys publishers are allowed to filter on at query time.\n\nThis element renders as three controls:\n1. Database dropdown (loads from /api/v1/knowledge/databases)\n2. Namespace multi-select (populated based on selected database)\n3. Free-form chips input for `allowed_metadata_filter_fields`\n\nThe output matches the three configurable fields of `MilvusVectorStoreConfig`:\n{\n    "collection_name": str,\n    "index_namespaces": list[str],\n    "allowed_metadata_filter_fields": list[str],\n}\n\n### Form Duality\nWhen used with MilvusVectorStoreConfig, the form submission is validated\ndirectly into MilvusVectorStoreConfig (connection settings are read from\nMilvusSettings at runtime).\n\n### Example Usage\n```python\nfrom swiss_ai_hub.core.form.elements.vector_store_input import VectorStoreInput\nfrom swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_vector_store_config import MilvusVectorStoreConfig\n\nclass MyRetrieverConfig(Form):\n    vector_store: Annotated[\n        MilvusVectorStoreConfig | VectorStoreInput,\n        Field(description="The vector store configuration"),\n    ]\n\n# Form mode - for rendering:\nconfig = MyRetrieverConfig(\n    vector_store=VectorStoreInput(\n        label=LocaleString(en="Vector Store", de="Vektorspeicher"),\n    ),\n)\n\n# Data mode - from submission (Pydantic validates into MilvusVectorStoreConfig):\nconfig = MyRetrieverConfig(\n    vector_store=MilvusVectorStoreConfig(\n        collection_name="my-database",\n        index_namespaces=["namespace1", "namespace2"],\n        allowed_metadata_filter_fields=["department", "year"],\n    ),\n)\n```'
 } as const;
 
 export const VideoBlockSchema = {
@@ -21473,6 +21511,21 @@ export const VideoBlockSchema = {
     type: 'object',
     title: 'VideoBlock',
     description: 'A representation of video data to directly pass to/from the LLM.'
+} as const;
+
+export const WebhookResponseSchema = {
+    properties: {
+        status: {
+            type: 'string',
+            title: 'Status',
+            description: 'Webhook processing result status'
+        }
+    },
+    type: 'object',
+    required: [
+        'status'
+    ],
+    title: 'WebhookResponse'
 } as const;
 
 export const WorkflowGraphSchema = {
@@ -33144,6 +33197,21 @@ export const VectorStoreInputWritableSchema = {
             title: 'Namespaceplaceholder',
             description: 'Placeholder for namespace select'
         },
+        allowedFilterFieldsPlaceholder: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Allowedfilterfieldsplaceholder',
+            description: 'Placeholder for the allowed metadata filter fields chips input.'
+        },
         filter: {
             type: 'boolean',
             title: 'Filter',
@@ -33157,5 +33225,5 @@ export const VectorStoreInputWritableSchema = {
         'label'
     ],
     title: 'VectorStoreInput',
-    description: '    A FormKit element for selecting a vector store collection and namespaces.\n\n    This element renders as a cascading selection:\n    1. Database dropdown (loads from /api/v1/knowledge/databases)\n    2. Namespace multi-select (populated based on selected database)\n\n    The output is a structured object containing both the collection name and\n    the selected namespaces, matching the MilvusVectorStoreConfig fields:\n    {"collection_name": str, "index_namespaces": list[str]}\n\n    ### Form Duality\n    When used with MilvusVectorStoreConfig, the form submission is validated\n    directly into MilvusVectorStoreConfig (connection settings are read from\n    MilvusSettings at runtime).\n\n    ### Example Usage\n    ```python\n    from swiss_ai_hub.core.form.elements.vector_store_input import VectorStoreInput\n    from swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_vector_store_config import MilvusVectorStoreConfig\n\n    class MyRetrieverConfig(Form):\n        vector_store: Annotated[\n            MilvusVectorStoreConfig | VectorStoreInput,\n            Field(description="The vector store configuration"),\n        ]\nreranking_model\n    # Form mode - for rendering:\n    config = MyRetrieverConfig(\n        vector_store=VectorStoreInput(\n            label=LocaleString(en="Vector Store", de="Vektorspeicher"),\n        ),\n    )\n\n    # Data mode - from submission (Pydantic validates into MilvusVectorStoreConfig):\n    config = MyRetrieverConfig(\n        vector_store=MilvusVectorStoreConfig(\n            collection_name="my-database",\n            index_namespaces=["namespace1", "namespace2"],\n        ),\n    )\n    ```'
+    description: 'A FormKit element for selecting a vector store collection, namespaces, and\nthe metadata keys publishers are allowed to filter on at query time.\n\nThis element renders as three controls:\n1. Database dropdown (loads from /api/v1/knowledge/databases)\n2. Namespace multi-select (populated based on selected database)\n3. Free-form chips input for `allowed_metadata_filter_fields`\n\nThe output matches the three configurable fields of `MilvusVectorStoreConfig`:\n{\n    "collection_name": str,\n    "index_namespaces": list[str],\n    "allowed_metadata_filter_fields": list[str],\n}\n\n### Form Duality\nWhen used with MilvusVectorStoreConfig, the form submission is validated\ndirectly into MilvusVectorStoreConfig (connection settings are read from\nMilvusSettings at runtime).\n\n### Example Usage\n```python\nfrom swiss_ai_hub.core.form.elements.vector_store_input import VectorStoreInput\nfrom swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_vector_store_config import MilvusVectorStoreConfig\n\nclass MyRetrieverConfig(Form):\n    vector_store: Annotated[\n        MilvusVectorStoreConfig | VectorStoreInput,\n        Field(description="The vector store configuration"),\n    ]\n\n# Form mode - for rendering:\nconfig = MyRetrieverConfig(\n    vector_store=VectorStoreInput(\n        label=LocaleString(en="Vector Store", de="Vektorspeicher"),\n    ),\n)\n\n# Data mode - from submission (Pydantic validates into MilvusVectorStoreConfig):\nconfig = MyRetrieverConfig(\n    vector_store=MilvusVectorStoreConfig(\n        collection_name="my-database",\n        index_namespaces=["namespace1", "namespace2"],\n        allowed_metadata_filter_fields=["department", "year"],\n    ),\n)\n```'
 } as const;
