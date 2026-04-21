@@ -9,6 +9,7 @@ from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
 from mongoengine import connect, disconnect
 from swiss_ai_hub.core.infrastructure import AIHubSettings, MongoSettings, enable_logging
+from swiss_ai_hub.core.infrastructure.api.startup_tenant_settings import StartupTenantSettings
 from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 from swiss_ai_hub.core.persistence.messaging.entities.thread_entity import ThreadEntity
@@ -70,7 +71,7 @@ def setup_test_credentials():
 
     # Create default tenant and assign test user
     default_tenant = TenantMetadataEntity.ensure_startup_tenant_metadata_exists(
-        tenant_id="default", name="Test Tenant", access_rules=["aihub.admin.>"]
+        tenant_id=StartupTenantSettings().ID, name=StartupTenantSettings().NAME, access_rules=["aihub.admin.>"]
     )
     tenant_id = str(default_tenant.id)
 
