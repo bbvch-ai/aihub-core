@@ -532,31 +532,37 @@ ______________________________________________________________________
 | `BotInTheLoopRequestEvent`    | BITL delegation                                    | Both                  |
 | `AgentInTheLoopRequestEvent`  | AITL delegation                                    | Both                  |
 
+**`UserMessageEvent` is a chat UI contract.** It is the canonical entry point for chat interfaces (OpenWebUI, Teams,
+Slack). Keep its payload minimal — every field added to it (or to a subclass) raises the bar for every chat client. If
+your agent needs a richer entry payload and the publisher is not a generic chat UI (e.g. a custom domain front-end or
+another agent delegating via `AgentInTheLoop`), subclass `StartEvent` directly and accept
+`UserMessageEvent | YourStartEvent` on the relevant steps.
+
 **Complete event selection guide** (from the report):
 
-| If your event represents...      | Inherit from                                                  |
-| -------------------------------- | ------------------------------------------------------------- |
-| Workflow start condition         | `StartEvent`                                                  |
-| User message initiating workflow | `UserMessageEvent`                                            |
-| Workflow termination             | `StopEvent`                                                   |
-| Error/failure                    | `ExceptionEvent`                                              |
-| LLM invocation result            | `LLMEvent`                                                    |
-| LLM terminal response            | `LLMStopEvent`                                                |
-| Document retrieval               | `RetrieverEvent`                                              |
-| Reranking operation              | `RerankerEvent`                                               |
-| Embedding generation             | `EmbeddingEvent`                                              |
-| Tool/function call               | `ToolEvent`                                                   |
-| Guardrail check                  | `GuardEvent`                                                  |
-| Chain execution                  | `ChainEvent`                                                  |
-| Human approval needed            | `HumanInTheLoopRequestEvent`                                  |
-| Agent delegation                 | `AgentInTheLoopRequestEvent`                                  |
-| Memory retrieval                 | `RetrieveUserMemoryEvent` / `RetrieveOrganizationMemoryEvent` |
-| Memory storage                   | `StoreUserMemoryEvent` / `StoreOrganizationMemoryEvent`       |
-| Streaming text chunk             | `ChunkEvent`                                                  |
-| Agent thought/reasoning          | `ThoughtEvent`                                                |
-| Cost information                 | `LLMCostEvent`                                                |
-| Generic workflow state           | `ControlAndDisplayEvent`                                      |
-| Generic UI update                | `DisplayEvent`                                                |
+| If your event represents...     | Inherit from                                                  |
+| ------------------------------- | ------------------------------------------------------------- |
+| Workflow start condition        | `StartEvent`                                                  |
+| User message from a **chat UI** | `UserMessageEvent`                                            |
+| Workflow termination            | `StopEvent`                                                   |
+| Error/failure                   | `ExceptionEvent`                                              |
+| LLM invocation result           | `LLMEvent`                                                    |
+| LLM terminal response           | `LLMStopEvent`                                                |
+| Document retrieval              | `RetrieverEvent`                                              |
+| Reranking operation             | `RerankerEvent`                                               |
+| Embedding generation            | `EmbeddingEvent`                                              |
+| Tool/function call              | `ToolEvent`                                                   |
+| Guardrail check                 | `GuardEvent`                                                  |
+| Chain execution                 | `ChainEvent`                                                  |
+| Human approval needed           | `HumanInTheLoopRequestEvent`                                  |
+| Agent delegation                | `AgentInTheLoopRequestEvent`                                  |
+| Memory retrieval                | `RetrieveUserMemoryEvent` / `RetrieveOrganizationMemoryEvent` |
+| Memory storage                  | `StoreUserMemoryEvent` / `StoreOrganizationMemoryEvent`       |
+| Streaming text chunk            | `ChunkEvent`                                                  |
+| Agent thought/reasoning         | `ThoughtEvent`                                                |
+| Cost information                | `LLMCostEvent`                                                |
+| Generic workflow state          | `ControlAndDisplayEvent`                                      |
+| Generic UI update               | `DisplayEvent`                                                |
 
 **Rule of thumb**: If a step consumes it → `ControlEvent`. If only the UI needs it → `DisplayEvent`. If both →
 `ControlAndDisplayEvent`. Most custom agent events are `ControlEvent`.

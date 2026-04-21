@@ -5,298 +5,367 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [v0.277.0] - 2026-04-14 - New: Centralized Backup & Disaster Recovery for All Services
+## [v0.277.2] - 2026-04-20 - Refined Event Protocol: Introducing `RAGStartEvent` and Clarifying Chat Contracts
 
 ### Added
 
-- ✨ **Centralized Backup and Restore Service**: Introduced a comprehensive, standalone backup service built on Dagster,
-  designed to orchestrate and manage backups for all stateful services.
-- 💾 **Automated Backup for Key Services**: Implemented robust backup and restore capabilities for PostgreSQL (main &
-  FerretDB), Milvus, Neo4j, ClickHouse, Valkey, and NATS JetStream.
-- ⚙️ **Configurable Backup Policies**: Added new environment variables (`BACKUP_RETENTION_DAYS`, `BACKUP_MINIMUM_KEEP`,
-  `BACKUP_S3_BUCKET`) to allow operators to configure backup retention policies and storage.
-- 📊 **Backup Service UI**: The new backup service provides its own Dagster web interface at `http://localhost:3004` for
-  monitoring backup schedules, viewing run history, and triggering manual backups or parameterized restores.
-- ✅ **End-to-End Backup Tests**: Introduced a new GitHub Actions workflow and extensive E2E tests to validate the
-  reliability and data integrity of the backup and restore processes against a live Docker stack.
-- 📄 **Architectural Decision Records for Backup**: Documented key design decisions for the backup service, including the
-  choice of a Dagster-based approach and specific workarounds for database challenges.
-- 🗄️ **Dedicated S3 Backup Bucket**: Configured automatic creation of a dedicated `backups` S3 bucket within SeaweedFS
-  for storing all service backups.
-- 📦 **ClickHouse S3 Backup Integration**: Added ClickHouse configuration to enable direct backups to S3 storage via a
-  named disk, leveraging SeaweedFS.
+- ✨ **Introduced `RAGStartEvent`**: A new, dedicated `StartEvent` for RAG agents. This event allows custom domain
+  front-ends or other agents to initiate RAG workflows with pre-selected namespaces, maintaining a clean separation from
+  the generic chat UI contract.
+- 🧪 **Unit Tests for `RAGStartEvent`**: Comprehensive unit tests were added to validate the properties and behavior of
+  the new `RAGStartEvent`, ensuring its reliability.
+- 🖼️ **Web UI Display for `RAGStartEvent`**: A new Vue component and updated event mapping were implemented to enable
+  proper rendering of `RAGStartEvent` in the web interface, showcasing selected namespaces and chat history.
+- 🌐 **Internationalization for `RAGStartEvent`**: Added translations across supported languages for the `RAGStartEvent`
+  and its associated "selected namespaces" property, enhancing multi-language support.
 
 ### Changed
 
-- 📝 **Enhanced Backup and Recovery Documentation**: Completely revamped the "Backup and Recovery" deployment guide with
-  detailed explanations of the new automated service, its configuration, supported data stores, and recovery procedures.
-- 🚀 **Milvus Collection Loading**: Improved Milvus Vector Store operations by explicitly ensuring collections are loaded
-  into memory before performing queries or adding new nodes, enhancing robustness and consistency.
+- 📄 **Clarified `UserMessageEvent` as Chat UI Contract**: Updated documentation and internal guidance across `SKILL.md`,
+  agent reports, and `CLAUDE.md` files. This change emphasizes that `UserMessageEvent` is exclusively for generic chat
+  interfaces and advises subclassing `StartEvent` directly for agent- or domain-specific payloads.
+- 🔄 **RAG Agent Event Acceptance**: Modified `ExpertRAGAgent` and `RAGAgent` to explicitly accept the new
+  `RAGStartEvent` (alongside `UserMessageEvent`) for initiating RAG workflows, ensuring proper handling of
+  namespace-aware queries from non-chat sources.
+
+### Refactor
+
+- 🧹 **Replaced `NamespaceAwareUserMessageEvent` with `RAGStartEvent`**: Refactored internal agent logic and
+  configurations to transition from `NamespaceAwareUserMessageEvent` to the newly introduced `RAGStartEvent`,
+  streamlining the event model for RAG delegation.
+- ⚡️ **Optimized `UserMessageEvent.user_query` Property**: Performed a minor internal optimization to the `user_query`
+  property within `UserMessageEvent` for enhanced readability and maintainability.
+
+### Removed
+
+- 🗑️ **Deprecated `NamespaceAwareUserMessageEvent`**: The `NamespaceAwareUserMessageEvent` class was removed, as its
+  functionality has been superseded by the more appropriately designed `RAGStartEvent` which directly extends
+  `StartEvent`.
+
+______________________________________________________________________
+
+## [v0.277.1] - 2026-04-17 - Enhanced Development Experience and Service Orchestration
+
+### Added
+
+- ✨ **New IntelliJ Run Configurations:** Introduced dedicated IntelliJ run configurations for `Bot Dev` and `Bot Prod`
+  to streamline local development and testing of bot services using Makefiles.
+
+### Changed
+
+- 🚀 **Improved IntelliJ Docker Compose Configurations:** Enhanced existing Docker Compose run configurations in IntelliJ
+  by explicitly defining environment file paths and ensuring services are rebuilt on each run.
+- ⚙️ **Streamlined Open WebUI Dependencies:** Optimized Docker Compose configurations to remove the direct dependency of
+  `open-webui` on the `api` service's health in non-development environments, improving startup times.
+- ♻️ **Enhanced `openwebui-init` Resilience:** Updated the `openwebui-init` service in Docker Compose to automatically
+  restart on failure, improving the stability and robustness of initialization tasks.
+- ⏱️ **Ensured Sequential Service Startup:** Configured `openwebui-manager` to wait for `openwebui-init` to successfully
+  complete its tasks before starting, preventing potential race conditions and ensuring correct setup.
+
+### Removed
+
+- 🗑️ **Deprecated Bot Run Configuration:** Removed the outdated IntelliJ Python run configuration for "Run Bots," now
+  superseded by the new, more specific Makefile-based configurations.
+
+### Refactor
+
+- 🧹 **Centralized Keycloak Client Dependency:** Relocated the `python-keycloak` dependency from the `packages/api`
+  module to `packages/core`, centralizing common authentication functionalities.
+
+______________________________________________________________________
+
+## [v0.277.0] - 2026-04-14 - Enhanced Data Resilience: Introducing a Centralized Backup and Restore Service
+
+### Added
+
+- 🚀 **New Centralized Backup and Restore Service:** Introduced a comprehensive, Dagster-powered backup service that
+  ensures data integrity across all stateful services, including PostgreSQL (main and FerretDB), Milvus, Neo4j,
+  ClickHouse, Valkey, and NATS.
+- ⏰ **Automated Daily Backups:** Configured daily backup schedules at 1 AM (Europe/Zurich) with automatic retention
+  cleanup policies, managed via the dedicated Dagster UI.
+- ↩️ **Self-Service Restore Capabilities:** Enabled parameterized point-in-time recovery for the entire platform through
+  the intuitive Dagster Launchpad in the Backup UI.
+- 📄 **Extensive Backup Documentation:** Provided detailed documentation covering the backup architecture, configuration,
+  operational procedures, and recovery steps for all data stores.
+- 🧪 **End-to-End Backup Tests:** Implemented a robust end-to-end (E2E) test suite to validate the entire backup and
+  restore lifecycle, ensuring reliability and data integrity in an integrated environment.
+- 📦 **Dedicated Backup S3 Bucket:** Automatically provisioned a new `backups` bucket within the internal SeaweedFS S3
+  storage for all backup artifacts.
+- 🛠️ **Native Backup Tooling Integration:** Incorporated official `milvus-backup` and `nats` CLI tools directly into the
+  backup service for precise and efficient data handling.
+- ⚙️ **ClickHouse S3 Integration:** Configured ClickHouse to directly utilize the internal SeaweedFS S3 for its native
+  `BACKUP TO Disk()` and `RESTORE FROM Disk()` operations.
+- 📦 **New `packages/backup` Module:** Introduced a new top-level Python package to house all the logic for the
+  centralized backup and restore service.
+
+### Changed
+
+- 🗃️ **Improved Backup Retention Logic:** Enhanced the backup retention policy to guarantee a minimum number of backups
+  are always preserved, even if they exceed the defined age limit.
+- 📈 **Milvus Collection Loading Reliability:** Updated Milvus vector store operations to explicitly ensure collections
+  are loaded into memory before use, preventing potential issues after service restarts or restores.
+- 🏗️ **Docker Compose Integration:** Updated core Docker Compose configurations across all stages to seamlessly
+  integrate the new backup service, manage its dependencies, and define necessary environment variables.
 
 ### Fixed
 
-- 🐛 **FerretDB DocumentDB Catalog Backup**: Resolved a critical issue where `pg_dump` silently skipped essential
-  DocumentDB extension catalog data in FerretDB's PostgreSQL backend. The backup service now explicitly copies and
-  restores this data using the `COPY` protocol, ensuring complete recovery of MongoDB-compatible data.
+- 🐛 **DocumentDB Catalog Backup Fix:** Resolved a critical issue where `pg_dump` would silently skip essential
+  DocumentDB catalog tables in FerretDB's PostgreSQL backend. The backup service now explicitly backs up and restores
+  these tables and sequences using the `COPY` protocol, ensuring consistent FerretDB restores.
 
 ### Removed
 
-- 🗑️ **Deprecated Backup Stubs**: Removed placeholder backup handler implementations, replacing them with fully
-  functional, production-ready backup and restore logic for all integrated services.
+- 🗑️ **Deprecated Backup Stubs:** Removed placeholder (stub) implementations for backup handlers, replacing them with
+  fully functional and robust service-specific backup logic.
 
 ______________________________________________________________________
 
-## [v0.276.0] - 2026-04-14 - Revamped Workflow Visualizations and Multi-Tenant API Enhancements
-
-### Added
-
-- ✨ **Introduced Workflow Visualization Modal**: A new dedicated modal component (`Workflow/Modal.vue`) has been added
-  to provide a clearer and more focused view of agent workflows.
-- 🖼️ **New Workflow Node Card Component**: Implemented `Workflow/NodeCard.vue` as a reusable component to standardize
-  the rendering of workflow nodes with consistent styling and information display.
-- 🌐 **Workflow View Tooltip and Empty State Messages**: Added internationalized messages for the workflow view tooltip
-  and a message for when no workflow graph is available, improving user guidance.
-- 🚀 **"View Workflow" Button on Agent List**: Integrated a new button on the agent listing page to easily access the
-  workflow visualization for each agent group, enhancing discoverability.
-
-### Changed
-
-- 🔑 **Enhanced Multi-Tenancy for API Calls**: Implemented `tenantId` propagation across numerous frontend API calls for
-  agent instances, datasets, roles, notifications, and translations, ensuring robust multi-tenant operation.
-- 📐 **Simplified Workflow Graph Data Model**: Streamlined the `WorkflowGraph` Pydantic model by removing generic graph
-  attributes (`directed`, `multigraph`, `graph`), focusing on a cleaner representation for UI rendering.
-- ⚡️ **Updated Workflow Node and Edge Data Structures**: Simplified the `NodeData` and `EdgeData` models by removing
-  detailed event payload information and workflow execution parameters, focusing on essential display attributes.
-- 🎨 **Refined Workflow Node Rendering**: Updated `StartNode`, `StepNode`, and `StopNode` components to utilize the new
-  `WorkflowNodeCard` and adopted a simplified handle positioning (Top/Bottom) for improved visual clarity and layout.
+## [v0.276.0] - 2026-04-14 - Streamlined Workflow Visualization and Enhanced Multi-Tenancy
 
 ### Refactor
 
-- 🧹 **Re-engineered Workflow Visualization Logic**: Completely rewrote the backend workflow visualization logic,
-  replacing the `networkx` dependency with a direct, streamlined approach for generating UI-centric graph data.
-- 🔄 **Optimized Frontend Graph Layout**: Replaced the `dagre` library with a custom, more controlled layout algorithm
-  for the frontend workflow visualization, enhancing performance and rendering consistency.
-- 💡 **Simplified Workflow Visualizer API**: Streamlined the `WorkflowVisualizer` class in the backend, making it simpler
-  to generate the `WorkflowGraph` Pydantic model directly.
-- ⚙️ **Consolidated Memory Management Context**: Standardized the `MemoryManagementPage` context variable naming for
-  agent instances, improving code consistency.
+- 🧹 **Agent Workflow Visualizer**: Completely re-engineered the backend workflow visualizer, eliminating the `networkx`
+  dependency and streamlining the internal graph representation for improved efficiency.
+- 🔄 **Frontend Workflow Visualization**: Overhauled the frontend workflow visualization to use a custom grid-based
+  layout algorithm, providing a more intuitive and performant display of agent structures without relying on external
+  graphing libraries.
+- 🦾 **Simplified Workflow Graph Models**: Refactored the underlying data models (`WorkflowGraph`, `NodeData`,
+  `EdgeData`) for agent workflows, removing verbose event details from the graph structure for a cleaner and more
+  focused representation.
+- 🏗️ **Standardized Workflow Node Components**: Restructured workflow node components (`StartNode`, `StepNode`,
+  `StopNode`) to utilize a new `WorkflowNodeCard` for consistent styling and updated connection handle positions for
+  better layout integration.
+- ⚡️ **Improved `useTenantPath` hook usage**: Applied minor refactorings to ensure consistent and efficient usage of the
+  `useTenantPath` hook across the application.
+
+### Added
+
+- 🖼️ **Agent Workflow Modal**: Introduced a new modal component for a dedicated, expanded view of agent workflow
+  diagrams, improving user experience for understanding agent logic.
+- ✨ **Generic Workflow Node Card**: Added a reusable `WorkflowNodeCard` component to standardize the appearance of nodes
+  across the new workflow visualization, ensuring a consistent look and feel.
+- 🚀 **View Workflow Button**: Implemented a "View workflow" button on the agent class list, allowing quick access to the
+  visual representation of an agent's logic directly from the overview.
+- 📄 **Localization for Workflow UI**: Added new localization strings to support the user interface elements of the
+  enhanced workflow visualization in multiple languages.
+
+### Changed
+
+- 🔑 **Enforced Tenant ID in API Calls**: Updated numerous frontend API calls to explicitly include the `tenantId`,
+  strengthening multi-tenancy enforcement and data isolation across various services.
+- 📊 **Streamlined WorkflowGraph Data Model**: Simplified the `WorkflowGraph` data model by removing `directed`,
+  `multigraph`, and generic `graph` attributes, focusing solely on `nodes` and `links` for a leaner representation.
 
 ### Removed
 
-- 🗑️ **Deprecated `networkx` Dependency**: Eliminated the `networkx` library and its related types from core
-  dependencies, simplifying the project's dependency graph.
-- 🗑️ **Removed Detailed Event Information Models**: Deleted Pydantic models (`EventInfo`, `EventPayloadField`,
-  `InputEventInfo`) and their corresponding MongoDB persistence models that previously held detailed event payload and
-  input/output specifications for workflow visualization, in favor of a simpler graph representation.
-- 🗑️ **Obsolete Workflow UI Components**: Removed frontend components (`Workflow/EventEdge.vue`,
-  `Workflow/EventSpecs.vue`) that displayed detailed event information, aligning with the simplified graph data model.
-- 🗑️ **Removed `dagre` Frontend Dependency**: Eliminated the `dagre` library from the web frontend, as its layout
-  functionality has been superseded by a custom implementation.
+- 🗑️ **Dropped Graphing Library Dependencies**: Eliminated `networkx` from backend dependencies and `@dagrejs/dagre`
+  from frontend dependencies, significantly reducing the package footprint and improving performance.
+- 🚫 **Deprecated Detailed Event Models**: Removed Pydantic and MongoEngine models (`EventInfo`, `EventPayloadField`,
+  `InputEventInfo`) that previously stored extensive event details within the graph, aligning with the simplified
+  visualization approach.
+- 🧹 **Legacy Workflow UI Components**: Removed old Vue components (`WorkflowEventEdge.vue`, `WorkflowEventSpecs.vue`)
+  that are no longer needed due to the redesigned workflow visualization.
 
 ______________________________________________________________________
 
-## [v0.275.0] - 2026-04-14 - Empowering Keycloak: A Major Refactor for User & Tenant Management
+## [v0.275.0] - 2026-04-14 - Keycloak as Source of Truth: Centralized User Management and Active Tenant Handling
+
+### Refactor
+
+- 🔄 **Centralized User Management**: Rearchitected user management by migrating user profile data (name, email) and
+  active tenant ID from the local MongoDB `UserEntity` collection to Keycloak. Keycloak now serves as the single source
+  of truth for user identities, reducing data duplication.
+- 🧹 **User Dashboard Persistence**: Refactored the storage of user dashboard configurations into a new, dedicated
+  MongoDB collection, **`UserDashboardEntity`**, separating it from core user identity data.
+- ⚡️ **Enhanced Keycloak Admin Permissions**: Updated the **`aihub-api-service` Keycloak client** with necessary
+  `manage-users` and `query-users` roles, enabling the application to perform user and group management operations
+  directly via the Keycloak Admin API.
+- ⚙️ **Configurable Default Tenant ID**: Standardized the **default tenant ID (`AIHUB_DEFAULT_TENANT_ID`)** across
+  environment variables and Keycloak realm configurations for improved consistency and flexibility.
+- 📄 **Internal API and Bot Codebase**: Performed extensive updates across the API and bot services to align with the new
+  user management architecture, removing all direct dependencies on the defunct `UserEntity` and migrating to
+  asynchronous Keycloak Admin Service calls.
 
 ### Added
 
-- ✨ **Keycloak Admin Service**: Introduced a dedicated service (`KeycloakAdminService`) to programmatically interact
-  with Keycloak's Admin API for comprehensive user and group management.
-- 🖼️ **Keycloak Models**: Added new Pydantic models (`KeycloakUser`, `KeycloakGroup`) to represent Keycloak user and
-  group data consistently within the application.
-- 📈 **User Dashboard Entity**: Implemented `UserDashboardEntity` as a separate MongoDB collection to store user-specific
-  dashboard configurations, detaching it from the core user profile.
-
-### Changed
-
-- 🔄 **User Profile Management**: The system now leverages **Keycloak** as the authoritative source for user profile
-  information (e.g., name, email) and active tenant selection, enhancing identity management.
-- 🔑 **Keycloak Realm Configuration**: Updated Keycloak realm configurations to define `active_tenant_id` as a custom
-  user attribute and grant the `aihub-api-service` service account necessary permissions for user and group management.
-- ⚙️ **Configurable Default Tenant ID**: The default tenant ID is now configurable via `AIHUB_DEFAULT_TENANT_ID`,
-  offering greater flexibility for multi-tenant deployments.
-- 🏗️ **Multi-Tenant Setup**: Enhanced default tenant initialization to automatically create a corresponding Keycloak
-  group and backfill existing Keycloak users into this group, streamlining onboarding.
-- 🔌 **API Service Adapters**: Modified various API services (e.g., `MyAccountService`, `MyTenantService`, `UserService`,
-  `OpenWebuiProvisioner`) to integrate with the new Keycloak-centric user data model and `UserDashboardEntity`.
-- 📄 **Internal Documentation**: Updated internal architectural decision records and module documentation to reflect the
-  significant shift to Keycloak for user data and active tenant management.
+- 🔑 **Keycloak Admin Service**: Introduced a new, robust **`KeycloakAdminService`** with methods for user lookup,
+  creation, and management, including reading and writing custom user attributes (like `active_tenant_id`) and managing
+  tenant groups.
+- 📊 **Dedicated User Dashboard Entity**: Implemented **`UserDashboardEntity`** to manage user dashboard configurations,
+  replacing the dashboard functionality previously embedded in `UserEntity`.
+- ✨ **Keycloak Data Models**: Introduced **`KeycloakUser`** and **`KeycloakGroup`** Pydantic models for structured
+  representation of Keycloak entities, improving type safety and development experience.
+- 🚀 **Automated Keycloak Tenant Group Provisioning**: Added logic to automatically create corresponding **Keycloak
+  tenant groups** for default tenants and to backfill existing Keycloak users into these groups upon initial setup.
 
 ### Removed
 
-- 🗑️ **Monolithic User Entity**: The `UserEntity` MongoDB collection has been entirely removed, distributing its
-  responsibilities between Keycloak (user profile, active tenant) and the new `UserDashboardEntity` (dashboard
-  settings).
-- 🚫 **Deprecated User Fields**: Removed `favorite_modules` and `last_accessed` fields from user-related Data Transfer
-  Objects (DTOs) and API responses.
-
-### Refactor
-
-- 🧹 **Core Authentication Handlers**: Performed a major refactoring of all authentication handlers (`AuthHandler`,
-  `KeycloakAuthHandler`, `TokenAuthHandler`, `DangerousDevelopmentOnlyAuthHandler`, `OpenWebuiAuthHandler`) to fetch
-  user data and manage active tenants exclusively through the new `KeycloakAdminService`.
-- ⚡️ **Asynchronous Tenant Resolution**: Switched tenant resolution logic, including active tenant retrieval and
-  setting, to fully asynchronous operations, improving performance and responsiveness.
-- 🛠️ **Test Infrastructure**: Revamped test utilities and mocks to accurately simulate Keycloak Admin API interactions,
-  ensuring robust testing for the new user and tenant management architecture.
-- 🗄️ **Tenant Persistence Model**: Updated the `TenantEntity` to utilize string-based primary keys (slugs) instead of
-  MongoDB ObjectIds, aligning with Keycloak group naming conventions and enhancing readability.
+- 🗑️ **Elimination of `UserEntity`**: Completely removed the **`UserEntity` MongoDB collection**, simplifying the
+  persistence layer by centralizing user identity in Keycloak.
+- ⛔️ **Removed User-Local Metadata**: Discontinued local storage of **`last_accessed`** timestamps and
+  **`favorite_modules`** lists from user profiles, reflecting the shift to Keycloak as the primary user data store.
+- 🚫 **Superuser Database Record**: The **superuser** no longer creates a persistent record in the local database,
+  operating purely as a virtual identity for system administration.
 
 ______________________________________________________________________
 
-## [v0.274.4] - 2026-04-14 - Enhanced OpenWebUI Integration and PR Workflow Streamlining
+## [v0.274.4] - 2026-04-14 - Introducing Fine-Grained OpenWebUI Agent Visibility & Workflow Enhancements
 
 ### Added
 
-- ✨ **Comprehensive OpenWebUI Access Control**: Implemented server-side provisioning for OpenWebUI, ensuring users only
-  see agents they have permission to use. This includes dynamic creation/deletion of OpenWebUI groups via SCIM, syncing
-  group memberships based on AI-Hub's tenant and role assignments, and applying granular access grants to workspace
-  models.
-- 🦾 **OpenWebUI Webhook Receiver**: Introduced a new API endpoint to receive webhooks from OpenWebUI. This specifically
-  triggers access re-synchronization upon new user sign-ups, ensuring immediate and accurate permission provisioning.
-- 🔑 **Access Change Hook**: Integrated a new mechanism using MongoEngine signals to automatically trigger OpenWebUI
-  access synchronization when roles, tenants, or user-tenant-role assignments are created, updated, or deleted. This
-  includes debouncing to efficiently handle rapid changes.
-- 📄 **Architectural Decision Record for OpenWebUI Integration**: Added a detailed ADR outlining the rationale, design
-  choices, and implications of AI-Hub managing OpenWebUI model visibility.
-- 🆕 **New Configuration Variables**: Added `OPENWEBUI_SCIM_TOKEN` and `OPENWEBUI_WEBHOOK_SECRET` environment variables
-  to configure the new OpenWebUI provisioning and webhook features.
-- ⚡️ **Database Query Enhancements**: Introduced new database query methods
-  (`AgentClassEntity.get_online_conversational`, `AgentConfigEntityDocument.find_for_classes`,
-  `UserEntity.get_user_ids_with_active_tenant`) to support the OpenWebUI provisioning logic.
+- 🛡️ **Implemented OpenWebUI Agent Visibility Provisioning:** AI-Hub now actively manages OpenWebUI's internal state,
+  including groups, workspace models, and access grants. This ensures users only see agents they are authorized to use,
+  enforcing granular access control based on AI-Hub's permission system.
+- ✨ **New Webhook Controller:** Introduced a `WebhookController` in the API to receive and process external service
+  notifications, currently used for OpenWebUI user signup events to trigger access synchronization.
+- ⚙️ **Access Change Hook:** Added an `AccessChangeHook` to automatically trigger OpenWebUI access synchronization when
+  AI-Hub roles, tenants, or user-role assignments are created, updated, or deleted, with built-in debouncing for
+  performance.
+- 📄 **OpenWebUI Access Control Documentation:** New architecture decision records and user documentation have been added
+  to explain the new OpenWebUI model visibility and access control mechanisms.
+- 🧪 **Comprehensive OpenWebUI Provisioner Tests:** Expanded unit and integration tests for OpenWebUI provisioning,
+  covering group management, access grant computation, and distributed locking.
+- 🛠️ **Utility Methods for Agent Discovery:** Introduced `AgentClassEntity.get_online_conversational()` and
+  `AgentConfigEntityDocument.find_for_classes()` to efficiently retrieve online conversational agent data for
+  provisioning.
 
 ### Changed
 
-- 🔄 **OpenWebUI Version Update**: Upgraded OpenWebUI to `v0.8.10`, along with necessary configuration updates to enable
-  advanced features like SCIM and webhooks.
-- 🚀 **Improved PR Feedback Workflow**: The `/implement-feedback-from-pr` skill now exclusively fetches unresolved and
-  non-outdated review threads from GitHub using GraphQL, streamlining the feedback implementation process and reducing
-  noise.
-- 📹 **PR Demo Video Workflow Improvement**: The `/pr-demo-video` skill now prioritizes adding demo videos as comments on
-  linked GitHub issues, falling back to PR comments if no issue is linked. This improves content organization for
-  feature development.
-- 🧹 **Internal Provisioner Management**: Refactored `AgentEndpointsDiscoveryService` to self-instantiate
-  `LangfuseProvisioner` and `OpenWebuiProvisioner`, simplifying the service's constructor and centralizing provisioner
-  setup within the API's lifetime manager.
-- 🛠️ **Agent Hash Computation**: Modified the logic for computing the hash of online agent instances to ensure more
-  robust change detection for external provisioners.
-- 🌐 **OIDC Scope Expansion**: Added `roles` to the OpenID Connect (OIDC) scopes for OpenWebUI, enabling better
-  integration with Keycloak for user role information.
-- 📧 **E2E Test User Email**: Updated the default E2E test user email address to align with branding.
+- 🚀 **Upgraded OpenWebUI Dependency:** Updated OpenWebUI Docker image to `v0.8.10`, enabling new features and security
+  enhancements required for integrated access control.
+- 🎯 **Refined PR Feedback Skill:** The `implement-feedback-from-pr` skill now intelligently fetches only unresolved,
+  non-outdated review comments from GitHub, streamlining the feedback implementation process.
+- 🎥 **PR Demo Video Workflow:** The `pr-demo-video` skill now posts demo video descriptions as comments directly on the
+  linked GitHub issue, falling back to the PR if no issue is connected, improving PR management and clarity.
+- 🔑 **OpenWebUI Configuration Parameters:** Added new environment variables (`OPENWEBUI_SCIM_TOKEN`,
+  `OPENWEBUI_WEBHOOK_SECRET`) and updated Docker Compose configurations to enable OpenWebUI's SCIM and webhook
+  capabilities, alongside disabling model access control bypass.
+- 🔄 **API Lifetime Management:** Integrated the OpenWebUI provisioner into the API's lifecycle manager, ensuring access
+  control is applied automatically on startup and updated when access entities change.
+- ⚡️ **Optimized Agent Instance Hashing:** Improved the internal logic for computing agent instance hashes, enhancing
+  the efficiency of change detection for provisioning services.
+- 📧 **Keycloak Development User Email:** Updated the default Keycloak development user email domain for consistency.
+- 👥 **User Active Tenant Sync Trigger:** Modified the `UserEntity.set_active_tenant` method to explicitly notify the
+  `AccessChangeHook`, ensuring OpenWebUI permissions are re-evaluated when a user changes their active tenant.
 
 ### Refactor
 
-- 🧹 **OpenWebUI Init Script Rename**: Renamed `init-functions.sh` to `init-openwebui.sh` in the OpenWebUI configuration
-  for clarity.
-- ⚙️ **OpenWebUI Configuration Keys**: Standardized `WEBUI_SECRET_KEY` to `OPENWEBUI_SECRET_KEY` in Docker Compose
-  configurations for better consistency.
+- 🧹 **OpenWebUI Initialization Script Renaming:** Renamed `infra/configs/openwebui/init-functions.sh` to
+  `init-openwebui.sh` for improved clarity and consistency with its expanded role in initializing OpenWebUI functions
+  and service accounts.
+- ⚙️ **Internal Provisioner Dependencies:** Refactored the `AgentEndpointsDiscoveryService` to internally instantiate
+  `LangfuseProvisioner` and `OpenWebuiProvisioner`, simplifying its constructor and centralizing dependency management.
 
 ______________________________________________________________________
 
-## [v0.274.3] - 2026-04-10 - Addressing Duplicate Event Handling in Agent-in-the-Loop Workflows
+## [v0.274.3] - 2026-04-10 - Addressing Duplicate Agent-in-the-Loop Responses and Enhancing Event Control
 
 ### Fixed
 
-- 🐛 **Fixed Duplicate Agent-in-the-Loop Responses**: Resolved a critical issue where **AgentInTheLoopResponse** and
-  **OrchestrationResultEvent** could be duplicated, leading to redundant processing and incorrect workflow execution
-  within Agent-in-the-Loop scenarios. This was caused by the agent dispatcher subscribing to an overly broad range of
-  events.
-- 🧹 **Refined Agent Event Subscription**: The **AgentDispatcher** now precisely subscribes only to **control events**
-  within Agent-in-the-Loop workflows. This targeted subscription prevents the "ControlAndDisplayEvent dual-publish bug"
-  and ensures that events are processed uniquely and as intended.
-- 🧪 **Enhanced Agent-in-the-Loop Test Coverage**: Introduced new, robust test scenarios to explicitly verify that
-  **AgentInTheLoopResponse** and **OrchestrationResultEvent** are received exactly once by the orchestrator, providing
-  strong protection against future regressions of event duplication.
-
-______________________________________________________________________
-
-## [v0.274.2] - 2026-04-10 - Improved Multi-Tenancy for Web UI Operations
-
-### Changed
-
-- 🔒 **Strengthened Multi-Tenancy for Agent Management:** Agent creation, class fetching, and instance retrieval in the
-  UI now correctly scope operations to the active tenant, ensuring proper resource isolation.
-- 📚 **Enhanced Knowledge Base Tenant Filtering:** Knowledge database and vector store selectors within the user
-  interface now accurately filter resources based on the active tenant.
-- 💡 **Tenant-Aware Model Selection:** Updated the model selection component to precisely fetch and display models
-  relevant to the active tenant.
-- 📄 **Improved Document Handling with Tenant Context:** Document uploads, viewing, and node retrieval are now correctly
-  filtered and managed within the context of the active tenant, including waiting for tenant readiness before fetching
-  data.
-- 🖼️ **Secured File and Image Resolution:** File and image URL resolution processes now correctly apply tenant context,
-  preventing unauthorized access to static assets.
-
-______________________________________________________________________
-
-## [v0.274.1] - 2026-04-10 - Core Refinements and Pipeline Enhancements
+- 🐛 **Agent-in-the-Loop response duplication:** Resolved a critical bug in the `AgentDispatcher` that previously led to
+  duplicate Agent-in-the-Loop (AITL) responses and unintended repeated execution of orchestration steps. The dispatcher
+  now accurately subscribes only to control events, preventing these issues.
+- ⚡️ **Tracing accuracy for AITL events:** Improved the timing of span completion for Agent-in-the-Loop interactions,
+  ensuring tracing data is precisely recorded before final responses are published.
 
 ### Added
 
-- ✨ **Introduced MongoDB Document Store for Rclone Pipelines:** Enabled persistent storage for `rclone_to_datalake`
-  pipelines by integrating a new MongoDB document store resource, enhancing data management capabilities.
+- ✨ **Dedicated control event subscription:** Introduced `AgentNCSubscriber.for_thread_control_events`, a new method
+  that allows agents to precisely subscribe only to control events within a thread, enhancing event handling efficiency
+  and reliability.
+- 📄 **Robust AITL response verification tests:** Added new comprehensive test scenarios to validate the uniqueness of
+  Agent-in-the-Loop responses and orchestration results, significantly improving the stability and correctness of agent
+  workflows.
 
-### Fixed
+______________________________________________________________________
 
-- 🐛 **Enhanced File Content Decoding:** Improved the robustness of file loading in the core generative AI document
-  loader, implementing more resilient UTF-8 decoding that gracefully handles malformed characters without errors.
+## [v0.274.2] - 2026-04-10 - Web Platform Tenant Context Enforcement
+
+### Changed
+
+- 🔐 **Enforced Tenant Scoping for Agent Management:** Operations for creating new agent instances and fetching available
+  agent classes or instances now correctly enforce tenant isolation, ensuring agent data is specific to the active
+  tenant.
+- 📚 **Improved Tenant Context for Knowledge Management:** Database selectors, document uploads, and detailed document
+  views now properly utilize the tenant context, ensuring knowledge base operations are isolated to the specific tenant.
+- 💡 **Applied Tenant Scoping to Model and File Access:** API calls for fetching LiteLLM models and resolving file URLs
+  now consistently respect the active tenant, enhancing data security and isolation for these resources.
+- 🚀 **Ensured Consistent Versioning Across Components:** All core packages, including `agent`, `api`, `backup`, `bot`,
+  `core`, `pipeline`, `process`, and `web`, have been updated to version `v0.274.2` for release consistency.
+
+______________________________________________________________________
+
+## [v0.274.1] - 2026-04-10 - Streamlined Data Lake Integrations and Document Handling
+
+### Added
+
+- ✨ **Introduced automatic MongoDB Document Store configuration**: Rclone to Data Lake pipelines now automatically
+  provision and configure a MongoDB document store based on the data lake container name, streamlining data ingestion
+  and indexing.
+
+### Changed
+
+- 🔄 **Enhanced RawLoader file reading robustness**: Updated the `RawLoader` to use a more robust byte-based file reading
+  approach with error replacement, improving handling of various file encodings and malformed characters.
 
 ### Removed
 
-- 🗑️ **Deprecated Placeholder Reference Document Assets:** The `placeholder_refdocs_factory` and its related assets have
-  been removed from SharePoint and local filesystem to data lake pipelines, streamlining asset definitions and pipeline
-  logic.
+- 🗑️ **Deprecated `placeholder_refdocs_factory`**: The `placeholder_refdocs_factory` asset has been removed from
+  SharePoint and local filesystem to Data Lake pipelines, simplifying asset definitions and reducing overhead.
 
 ______________________________________________________________________
 
-## [v0.274.0] - 2026-04-08 - Major Multi-Tenancy Upgrade: API, UI, and Routing Revamp
+## [v0.274.0] - 2026-04-08 - Enhanced Tenant Management and API Routing
 
 ### Added
 
-- ✨ **Tenant Management API**: Introduced new API endpoints (`/my-tenants`) for users to view their tenant memberships,
-  retrieve their currently active tenant, and switch between tenants.
-- 🖼️ **Tenant Switcher UI Component**: A new frontend UI component allows users to easily view and switch their active
-  tenant within the application.
-- 🚀 **Tenant-Scoped Frontend Routing**: Implemented dynamic tenant IDs in the frontend URL structure (e.g.,
-  `/{locale}/{tenantId}/service/agents`), ensuring all service pages are tenant-aware.
-- ⚡️ **Dedicated Tenant Selection Page**: A new page (`/select-tenant`) guides users to choose their desired
-  organizational context upon login or if their active tenant is invalid.
-- 📄 **Localization for Tenant Features**: Added new translations across multiple languages for the newly introduced
-  tenant management functionalities and UI elements.
-- 🔄 **Post-Login Redirect Enhancement**: Improved the authentication middleware to remember and redirect users to their
-  intended URL after successful login or token renewal, even with tenant-scoped paths.
-- 🦾 **User Tenant Role Helper**: Added a new utility to efficiently retrieve all tenant IDs a specific user belongs to.
+- ✨ **Introduced `MyTenantController`**: A new API controller providing endpoints for users to view and manage their
+  tenant memberships, including fetching all associated tenants and setting their active tenant.
+- 📄 **New Client-Side Tenant Management Composables**: Added a suite of Vue composables (`useTenant`, `useTenantPath`,
+  `useTenantMemberships`, `useActiveTenantQuery`, `useSetActiveTenant`, `useTenantPolling`, `useTenantReady`) to provide
+  robust and reactive tenant context management across the frontend application.
+- 🖼️ **Tenant Selection User Interface**: Introduced a dedicated `/select-tenant` page and a `TenantSwitcher` component,
+  enabling users to easily view and switch between their available tenants.
+- 🚀 **Tenant-Aware Root Landing Page**: The main landing page (`/`) now intelligently redirects users based on their
+  tenant access: auto-selecting for single-tenant users, or presenting a tenant selection page for users with multiple
+  tenants.
+- 🛠️ **`get_tenant_ids_for_user` Utility**: Added a new utility method to retrieve all tenant IDs a specific user
+  belongs to, supporting tenant management features.
 
 ### Changed
 
-- ⚡️ **Unified API Base URL**: The frontend now communicates with a global API base URL (`/api/v1`), with tenant context
-  dynamically handled by the API gateway and backend routing.
-- ⚙️ **OpenAPI Schema Generation**: The OpenAPI specification generation now dynamically injects the `tenant_id` path
-  parameter into tenant-scoped endpoints, ensuring accurate SDK generation.
-- 🔑 **User Identity with Optional Tenant Context**: The `UserIdentity` model in the core now supports an optional
-  `acting_within_tenant` field, allowing for global (non-tenant-scoped) endpoints.
-- 🌐 **Auth Providers Endpoint Scope**: The `/auth-providers` endpoint is now globally routed, providing authentication
-  provider information outside of a specific tenant context.
-- 📊 **Suite Service Controller Filtering**: The suite service now explicitly filters and exposes only
-  `TenantScopedController` instances, aligning with the new routing architecture.
-- 🐛 **Frontend Error Handling**: Enhanced API error handling in the frontend to gracefully manage "Access denied"
-  scenarios by redirecting to tenant selection and suppressing error toasts on non-tenant-scoped pages.
-- 🛠️ **Tenant-Aware Frontend Caching**: Updated frontend data fetching (Pinia Colada queries/mutations) to include the
-  tenant ID in cache keys and API call parameters, preventing data leakage and ensuring correct tenant context.
-- 🗺️ **Dynamic Breadcrumbs**: Adjusted the default layout's breadcrumb logic to correctly parse and display paths that
-  include the dynamic tenant ID.
+- 🔄 **API Base URL for Frontend**: The frontend's API base URL has been updated from a hardcoded tenant
+  (`/api/v1/active`) to a generic `/api/v1`, aligning with the new flexible tenant-scoped routing.
+- 🐛 **Improved Frontend Error Handling for Access Denied**: Enhanced the client-side API error handling to automatically
+  redirect users to the tenant selection page upon receiving an "Access denied" (403) response, ensuring a smoother user
+  experience.
+- 🍪 **Login Redirect URL Preservation**: The authentication middleware now stores the intended redirect URL before
+  login, allowing users to return to their specific page (including tenant context) after successful authentication.
+- 🏛️ **Global Auth Provider Endpoints**: The Auth Provider API endpoints are now consistently non-tenant-scoped,
+  accessible at `/api/v1/auth-providers`.
 
 ### Refactor
 
-- 🧹 **API Routing Architecture**: Performed a significant overhaul of the API routing, introducing a dedicated
-  `TenantScopedController` for endpoints that operate within a tenant context and standardizing how tenant context is
-  resolved and injected.
-- ⚙️ **Authentication Identity Building**: Consolidated and streamlined the logic for building `UserIdentity` across all
-  authentication handlers using a new `build_identity` method, improving consistency and maintainability.
-- 📄 **Frontend File Structure**: Restructured a majority of frontend service pages by moving them under
-  `pages/[tenant]/`, enforcing tenant-scoped routing at the file system level.
-- 🔗 **Frontend Internal Navigation**: Migrated most internal navigation links in the frontend to utilize a new
-  `useTenantPath` composable, which automatically injects the current tenant ID into URLs.
-- 🗑️ **Removed Separate Health App**: Eliminated the standalone FastAPI application for health checks; these endpoints
-  are now managed as global controllers within the main API application.
+- 🧹 **Comprehensive API Routing Overhaul**: Redesigned API routing to explicitly distinguish between global and
+  tenant-scoped controllers, with tenant-scoped endpoints automatically prefixed by `/{tenant_id}`.
+- 🚀 **Dynamic OpenAPI Schema Generation**: Implemented a custom OpenAPI schema hook to dynamically inject the
+  `{tenant_id}` path parameter into the OpenAPI specification for all tenant-scoped endpoints, ensuring accurate client
+  SDK generation.
+- ⚡️ **Consistent Tenant Context in API Calls**: Updated almost all frontend API calls and query keys to explicitly
+  include the `tenantId`, ensuring proper tenant context and more efficient cache invalidation.
+- 🌐 **Tenant-Aware Frontend Page Structure**: Major restructuring of the frontend's page directory, moving most
+  service-related pages under a `/[tenant]/` dynamic route to natively embed tenant context into URL paths.
+- ⚙️ **Modular Controller Architecture**: Introduced `TenantScopedController` as a base class for all tenant-specific
+  API controllers, enforcing consistent tenant-aware routing and authentication practices. Many existing controllers
+  (e.g., Agent, Model, User) now inherit from this new base class.
+- 📖 **Updated API Documentation for Routing**: The API documentation (`CLAUDE.md`) has been updated to reflect the new
+  tenant-scoped routing paradigm, clarifying how controllers are mounted and how `tenant_id` is handled.
+- 🛠️ **Dynamic Endpoint Discovery Integration**: Updated the endpoint discovery services to leverage the new
+  tenant-scoped routing, ensuring that dynamically generated endpoints (e.g., for agent and process instances) correctly
+  incorporate the tenant context.
+- 📍 **Unified Authentication Identity Building**: Refactored authentication handlers to use a single `build_identity`
+  method, which correctly resolves user and tenant context based on the incoming request, improving consistency and
+  maintainability.
 
 ______________________________________________________________________
 

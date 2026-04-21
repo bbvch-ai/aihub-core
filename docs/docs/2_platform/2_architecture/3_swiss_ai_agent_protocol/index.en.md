@@ -335,6 +335,18 @@ These events handle direct input from human users.
 | :--------------------- | :---------------- | :--------------------------------------------------------------------------------------------------------------------------- |
 | **`UserMessageEvent`** | Control & Display | A specialized `StartEvent` that is triggered by a user sending a message. It contains the message history and user identity. |
 
+::: warning `UserMessageEvent` is a Chat UI Contract
+`UserMessageEvent` is the canonical entry point for **chat interfaces** (OpenWebUI, Teams, Slack, WebChat). Every chat
+UI that wants to drive an agent must know how to publish and render it, so its payload must stay minimal — every field
+added to `UserMessageEvent` (or to a subclass riding on it) raises the bar for every chat client in the ecosystem.
+
+If your agent needs a richer entry payload and the publisher is **not** a generic chat UI (for example a custom domain
+front-end that runs its own selection flow, or another agent delegating via `AgentInTheLoop`), subclass `StartEvent`
+directly instead of `UserMessageEvent`, and have the agent declare `event: UserMessageEvent | YourStartEvent` on the
+relevant steps. The RAG agent follows this pattern with `RAGStartEvent`, which carries a `selected_namespaces` payload
+without leaking RAG concerns into the chat contract.
+:::
+
 #### Streaming and reasoning events
 
 These `Display Events` provide real-time updates to user interfaces about an agent's internal processing.

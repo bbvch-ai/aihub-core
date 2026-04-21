@@ -1,6 +1,6 @@
 [project]
 name = "swiss-ai-hub-core"
-version = "0.277.0"
+version = "0.277.2"
 description = ""
 requires-python = ">=3.13, <3.14"
 authors = [
@@ -68,6 +68,7 @@ dependencies = [
     "pyjwt>=2.11.0",
     "blinker>=1.9.0",
     "scim2-client>=0.7.5",
+    "python-keycloak>=7.1.1",
 ]
 
 [dependency-groups]

@@ -184,6 +184,8 @@ event:
     view_raw_data: Ereignis-Rohdaten anzeigen
     view_formatted: Formatiertes Ereignis anzeigen
     event_data: Ereignisdaten
+  rag_start:
+    selected_namespaces: 'Ausgewählte Namespaces:'
   limitChatHistory:
     summary: Chat-Verlauf auf {count} Nachrichten begrenzt
     assistant: Assistent

@@ -70,8 +70,7 @@ class UserMessageEvent(StartEvent):
         Extracts the user query text from the chat history, returning the last user message content.
         Note: This only returns text content. Use last_user_message for full message with all blocks.
         """
-        user_messages = [msg for msg in self.messages if msg.role == MessageRole.USER]
-        return user_messages[-1].content if user_messages else ""
+        return self.last_user_message.content or ""
 
     @property
     def last_user_message(self) -> ChatMessage:

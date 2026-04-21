@@ -35,7 +35,7 @@ from swiss_ai_hub.agent.agents.namespace_selection_agent.utils import (
     truncate_conversation_history,
     validate_namespace_selection,
 )
-from swiss_ai_hub.agent.agents.rag_agent.events.namespace_aware_user_message_event import NamespaceAwareUserMessageEvent
+from swiss_ai_hub.agent.agents.rag_agent.events.rag_start_event import RAGStartEvent
 from swiss_ai_hub.agent.context.run.run_context import RunContext
 from swiss_ai_hub.agent.context.thread.thread_context import ThreadContext
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
@@ -265,7 +265,7 @@ class NamespaceSelectionAgent(Agent):
     async def process_approval_approved_step(
         self,
         _: NamespaceApprovalResponseEvent,
-        start_event: UserMessageEvent | NamespaceAwareUserMessageEvent,
+        start_event: UserMessageEvent | RAGStartEvent,
         agent_config: NamespaceSelectionAgentConfig,
         run_context: RunContext,
         thread_context: ThreadContext,
@@ -287,7 +287,7 @@ class NamespaceSelectionAgent(Agent):
         return AgentInTheLoop.invoke(
             agent_class=agent_config.rag_delegation.rag_agent.agent_class,
             agent_id=agent_config.rag_delegation.rag_agent.agent_id,
-            start_event=NamespaceAwareUserMessageEvent(
+            start_event=RAGStartEvent(
                 messages=start_event.messages,
                 user=start_event.user,
                 locale=start_event.locale,
@@ -398,7 +398,7 @@ class NamespaceSelectionAgent(Agent):
         return AgentInTheLoop.invoke(
             agent_class=agent_config.rag_delegation.rag_agent.agent_class,
             agent_id=agent_config.rag_delegation.rag_agent.agent_id,
-            start_event=NamespaceAwareUserMessageEvent(
+            start_event=RAGStartEvent(
                 messages=event.messages,
                 user=event.user,
                 locale=event.locale,

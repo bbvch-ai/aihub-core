@@ -18,6 +18,7 @@ import {
   EventDisplayToolEvent,
   EventDisplayUnknownEvent,
   EventDisplayUserMessageEvent,
+  EventDisplayRAGStartEvent,
   EventDisplayGuardEvent,
   EventDisplayGuardAcceptEvent,
   EventDisplayGuardRejectionEvent,
@@ -32,6 +33,7 @@ export const useEventComponent = () => {
   const resolveComponentForEvent = (event: ContextualizedAgentEvent) => {
     const mapping = {
       UserMessageEvent: EventDisplayUserMessageEvent,
+      RAGStartEvent: EventDisplayRAGStartEvent,
       ChunkEvent: EventDisplayChunkEvent,
       LLMEvent: EventDisplayLLMEvent,
       LLMCostEvent: EventDisplayLLMCostEvent,
