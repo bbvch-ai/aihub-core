@@ -7,6 +7,7 @@ import asyncio
 
 from swiss_ai_hub.core.infrastructure import AIHubSettings, enable_logging
 
+from app.namespace_selection_agent.templates import ALL_TEMPLATES
 from swiss_ai_hub.agent.agents.namespace_selection_agent import NamespaceSelectionAgent
 from swiss_ai_hub.agent.agents.namespace_selection_agent.configs import NamespaceSelectionAgentConfig
 from swiss_ai_hub.agent.runners import AgentRunner
@@ -18,6 +19,7 @@ async def main():
     runner = AgentRunner(
         agent_type=NamespaceSelectionAgent,
         agent_config=NamespaceSelectionAgentConfig.as_form(),
+        templates=ALL_TEMPLATES,
     )
 
     await runner.run_forever()
