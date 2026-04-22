@@ -25,19 +25,24 @@ payload rather than in HTTP headers. Concrete handlers extract and validate cred
 
 `KeycloakAuthHandler` validates Keycloak JWT tokens by fetching JWKS keys (cached 6 hours), verifying the RS256
 signature, and checking audience and issuer claims. `TokenAuthHandler` validates API access tokens (format:
-`{ObjectId}.{128-char-random}`) against MongoDB with constant-time comparison and expiry checking.
-`OpenWebuiAuthHandler` verifies HMAC-SHA256 signatures on OpenWebUI's custom headers (`X-OpenWebUI-User-Name`,
-`X-OpenWebUI-User-Email`, `X-OpenWebUI-Signature`) before delegating to a wrapped inner handler. `SuperuserAuthHandler`
-compares bearer tokens against a hardcoded environment variable for service-to-service authentication.
-`DangerousDevelopmentOnlyAuthHandler` skips all validation and returns a fake user identity for local development.
+`sk-<url-safe-random>`) against MongoDB with direct indexed lookup and expiry checking. `OpenWebuiAuthHandler` verifies
+HMAC-SHA256 signatures on OpenWebUI's custom headers (`X-OpenWebUI-User-Name`, `X-OpenWebUI-User-Email`,
+`X-OpenWebUI-Signature`) before delegating to a wrapped inner handler. For tests and interactive playground servers,
+`TestAuthHandler` (in `swiss_ai_hub.core.testing.auth_utils` — not in `core.auth`) skips token validation and returns a
+fixed test identity; it is not reachable from the production auth public interface. The static superuser bearer token
+(`SUPERUSER_TOKEN`) is materialized into the `bearer_tokens` collection at API startup, bound to the seeded Keycloak
+superuser, and validated by `TokenAuthHandler` like any other bearer token — there is no dedicated superuser auth
+handler.
 
 The production handler, `TokenAndOauth2Handler`, composes these strategies dynamically based on environment settings. It
-tries OAuth2 handlers first (for browser-based SSO), then bearer token handlers (for API tokens, OpenWebUI pipeline
-calls, and superuser access). The first handler that succeeds determines the user's identity.
+tries OAuth2 handlers first (for browser-based SSO), then bearer token handlers (for API tokens and OpenWebUI pipeline
+calls). The first handler that succeeds determines the user's identity.
 
-After token validation extracts the user's `sub` claim from the Keycloak JWT, user data (name, email) is read directly
-from the token claims — no external API calls needed. On first login, `UserEntity.ensure_user_exists_for_auth()` creates
-a local user record in MongoDB.
+After token validation, user data (name, email) is read from JWT claims for OAuth2 flows or fetched via
+`KeycloakAdminService` for bearer tokens. No local user record is created — Keycloak is the sole store for user profile
+data. The `AIHubSysAdmin` realm role carried on the JWT (or resolved via `KeycloakAdminService` for bearer tokens)
+populates `UserIdentity.is_sys_admin`, which short-circuits `AccessChecker.access_level()` to `ACCESS_ADMIN` for
+platform administrators.
 
 ## Authorization
 

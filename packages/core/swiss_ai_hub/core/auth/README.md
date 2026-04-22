@@ -92,13 +92,15 @@ The system supports two types of permission checks:
 - Token expiration validation
 - User identity from Keycloak via KeycloakAdminService
 
-### Superuser Authentication
+### Sysadmin Access
 
-- Static token-based authentication for administrative access
-- Operates within a virtual "superuser tenant" with `aihub.admin.>` access rules
-- Bypasses tenant restrictions while still going through two-stage access control
-- Virtual tenant ensures all permission checks pass (tenant grants admin, user has admin)
-- Configurable via environment variables (SUPERUSER_TOKEN, SUPERUSER_OID, etc.)
+- Granted via the `AIHubSysAdmin` Keycloak realm role (carried on `UserIdentity.is_sys_admin`)
+- Short-circuits `AccessChecker.access_level()` to `ACCESS_ADMIN` for every resource in every tenant
+- Bypasses both the tenant-access-rules check and the `UserTenantRoleEntity` membership check
+- No synthetic identity or "virtual tenant" — sysadmins are real Keycloak users with real ids
+- The platform seeds a real Keycloak user from `SUPERUSER_USERNAME`/`SUPERUSER_EMAIL`/`SUPERUSER_PASSWORD`/
+  `SUPERUSER_FIRSTNAME`/`SUPERUSER_LASTNAME`/`SUPERUSER_ROLES_JSON` in the realm import and materializes
+  `SUPERUSER_TOKEN` as a regular bearer token bound to that user (validated by `TokenAuthHandler`, no dedicated handler)
 
 ### Development Authentication
 
@@ -131,9 +133,12 @@ The system supports two types of permission checks:
 
 ### Multi-Tenant Roles
 
-- **TenantEntity**: Organization/tenant definitions with `access_rules` that define maximum permissions for all users
+- **TenantMetadataEntity**: Display metadata (name, description, access_rules) for a tenant. **NOT** the source of truth
+  for tenant existence — the Keycloak group `/tenants/<id>` is authoritative. Verify existence via
+  `KeycloakAdminService.tenant_exists()` before trusting metadata.
 - **UserTenantRoleEntity**: Authoritative source for user-tenant-role associations
-- **RoleEntity**: Role definitions with access rules, can be system-wide (`tenant_id=None`) or tenant-scoped
+- **RoleEntity**: Role definitions with access rules. Every role belongs to exactly one tenant — `tenant_id` is
+  required. System-wide roles no longer exist; see ADR `2026_04_14_tenant_scoped_roles.md`.
 - **TenantIdentity**: Resolved from `tenant_id` path parameter. No implicit fallback — an active tenant must be
   explicitly set
 - First user signup automatically gets admin roles in default tenant (configurable via UserSignupSettings)

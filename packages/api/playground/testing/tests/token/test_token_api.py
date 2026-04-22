@@ -3,11 +3,9 @@ from datetime import UTC, datetime, timedelta
 import pytest
 from fastapi.testclient import TestClient
 from mongoengine import connect, disconnect
-from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler import (  # noqa: E501
-    DangerousDevelopmentOnlyAuthHandler,
-)
 from swiss_ai_hub.core.infrastructure import AIHubSettings, MongoSettings
 from swiss_ai_hub.core.persistence.access.entities.bearer_token import BearerToken
+from swiss_ai_hub.core.testing.auth_utils import TestAuthHandler
 
 from swiss_ai_hub.api.routes.token.token_controller import TokenController
 from swiss_ai_hub.api.runners.api_test_runner import ApiTestRunner
@@ -33,7 +31,7 @@ def mongodb():
 def api_client(mongodb):
     """Create test client with ApiTokenController mounted."""
     runner = ApiTestRunner()
-    auth = DangerousDevelopmentOnlyAuthHandler()
+    auth = TestAuthHandler()
     runner.mount(TokenController(auth=auth).create_token().list_tokens().revoke_token())
     with TestClient(runner.create_app(), raise_server_exceptions=True) as client:
         yield client

@@ -5,10 +5,10 @@ load_dotenv(find_dotenv(usecwd=True))
 import asyncio  # noqa: E402
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole  # noqa: E402
-from swiss_ai_hub.core.auth import DangerousDevelopmentOnlyAuthSettings  # noqa: E402
 from swiss_ai_hub.core.events.agent import UserMessageEvent  # noqa: E402
 from swiss_ai_hub.core.i18n import LocaleString  # noqa: E402
 from swiss_ai_hub.core.infrastructure import enable_logging  # noqa: E402
+from swiss_ai_hub.core.testing.auth_utils import fake_user  # noqa: E402
 
 from playground.minimal_workflow.simple_workflow.simple_agent import SimpleAgent  # noqa: E402
 from playground.minimal_workflow.simple_workflow.simple_agent_config import (  # noqa: E402
@@ -34,7 +34,7 @@ async def main():
             topic=topic,
             start_event=UserMessageEvent(
                 messages=[ChatMessage(content="Hello", role=MessageRole.USER)],
-                user=DangerousDevelopmentOnlyAuthSettings().get_user_identity(),
+                user=fake_user(),
             ),
         )
 

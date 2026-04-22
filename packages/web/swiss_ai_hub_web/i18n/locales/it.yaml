@@ -94,6 +94,9 @@ user:
     email: E-mail
     avatar: Avatar
     roles: Ruoli
+    sys_admin: Amministratore di sistema
+    sys_admin_tag: Sys Admin
+    sys_admin_no: 'No'
     last_accessed: Ultimo accesso
 my_account:
   title: Il mio account
@@ -573,6 +576,8 @@ role:
   create_dialog:
     description: Crea un nuovo ruolo con regole di accesso. Per assegnare il nuovo
       ruolo agli utenti, utilizza il tuo AD.
+    cancel: Annulla
+    save: Salva
   remove_dialog:
     confirm: Sei sicuro?
     explanation: Se rimuovi questo ruolo, gli utenti potrebbero perdere l'accesso
@@ -586,6 +591,58 @@ role:
   role_saved:
     summary: Ruolo salvato
     detail: Ruolo salvato con successo, le nuove regole di accesso hanno effetto immediato.
+tenant_admin:
+  title: Amministrazione tenant
+  exit: Esci
+  tenants_title: Tenant
+  select_description: Gestisci tenant, regole di accesso e impostazioni di sistema.
+  create_new: Nuovo tenant
+  cancel: Annulla
+  save: Salva
+  tenant_id: ID del tenant
+  navigation:
+    overview: Panoramica
+    roles: Ruoli
+    users: Utenti
+  keycloak_unreachable: Keycloak non è raggiungibile — l'elenco dei tenant potrebbe
+    essere incompleto. Riprovare.
+  state:
+    orphaned_label: Orfano
+    orphaned_tooltip: Questo tenant ha metadati ma nessun gruppo Keycloak corrispondente.
+      Gli utenti non possono accedervi.
+  configure:
+    title: Configura tenant
+    description: Collega metadati a un gruppo di tenant Keycloak esistente. L'ID del
+      tenant deve corrispondere a un gruppo Keycloak sotto /tenants/ che non ha ancora
+      metadati.
+    tenant_id_label: ID del tenant Keycloak
+    empty_unconfigured: Nessun tenant Keycloak non configurato disponibile. Crea prima
+      un gruppo di tenant nella console di amministrazione Keycloak.
+  form:
+    name: Nome del tenant
+    description: Descrizione
+  table:
+    name: Nome
+    description: Descrizione
+    access_rules: Regole di accesso
+    default: Predefinito
+    actions: Azioni
+  create_dialog:
+    description: Crea un nuovo tenant con regole di accesso che definiscono l'ambito
+      massimo per tutti gli utenti all'interno di quel tenant.
+  delete_dialog:
+    confirm: Eliminare il tenant?
+    explanation: L'eliminazione del tenant "{name}" rimuoverà tutti i ruoli e le assegnazioni
+      utente associati. Questa azione non può essere annullata.
+    proceed: Elimina
+    last_tenant_blocked: Impossibile eliminare l'ultimo tenant rimanente. La piattaforma
+      deve sempre avere almeno un tenant.
+  tenant_deleted:
+    summary: Tenant eliminato
+    detail: Il tenant e tutti i dati associati sono stati rimossi.
+  tenant_saved:
+    summary: Tenant salvato
+    detail: Tenant aggiornato con successo.
 usage:
   title: Utilizzo
   calls_remaining: '{current} / {limit} chiamate agente'

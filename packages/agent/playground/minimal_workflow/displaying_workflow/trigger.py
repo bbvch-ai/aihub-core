@@ -4,9 +4,9 @@ load_dotenv(find_dotenv(usecwd=True))
 
 import asyncio  # noqa: E402
 
-from swiss_ai_hub.core.auth import DangerousDevelopmentOnlyAuthSettings  # noqa: E402
 from swiss_ai_hub.core.events.agent import UserMessageEvent  # noqa: E402
 from swiss_ai_hub.core.i18n import LocaleString  # noqa: E402
+from swiss_ai_hub.core.testing.auth_utils import fake_user  # noqa: E402
 
 from playground.minimal_workflow.displaying_workflow.displaying_agent import (  # noqa: E402
     DisplayingAgent,
@@ -31,7 +31,7 @@ async def main():
             topic=topic,
             start_event=UserMessageEvent(
                 messages=[],
-                user=DangerousDevelopmentOnlyAuthSettings().get_user_identity(),
+                user=fake_user(),
             ),
         )
 

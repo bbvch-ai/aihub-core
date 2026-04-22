@@ -7,9 +7,6 @@ from opentelemetry import trace
 
 from swiss_ai_hub.core.auth.access.access_checker import AccessChecker
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
-from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler import (  # noqa: E501
-    DangerousDevelopmentOnlyAuthHandler,
-)
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
@@ -61,7 +58,7 @@ class Controller(abc.ABC):
 
     def __init__(self, *, auth: AuthHandler, route: str, additionally_required_permission: str | None = None):
         self.base_route: str = route
-        self.auth: AuthHandler = auth or DangerousDevelopmentOnlyAuthHandler()
+        self.auth: AuthHandler = auth
         self.router: APIRouter = APIRouter()
         self.additionally_required_permission = additionally_required_permission
         self._runner: Runner | None = None
@@ -85,6 +82,25 @@ class Controller(abc.ABC):
             return user
 
         return check_authenticated
+
+    def sys_admin_user(self):
+        """Return a dependency that authenticates and requires the ``AIHubSysAdmin`` realm role.
+
+        Use for global sysadmin-only endpoints. Relies on ``UserIdentity.is_sys_admin``,
+        which is populated from the JWT ``roles`` claim by ``KeycloakAuthHandler``.
+        """
+
+        def check_sys_admin(
+            request: Request,
+            user: Annotated[UserIdentity, Depends(self.auth)],
+        ) -> UserIdentity:
+            if not user.is_sys_admin:
+                logger.warning("User %s attempted sysadmin access without the required role", user.email)
+                raise HTTPException(status_code=403, detail="Forbidden: Requires the AIHubSysAdmin role.")
+            self._enrich_span_with_context(user, request, "sys_admin")
+            return user
+
+        return check_sys_admin
 
     def user_with_permission(self, permission_template: str):
         def check_access(

@@ -2,8 +2,8 @@
 
 import { type Client, type Composable, formDataBodySerializer, type Options as Options2, type TDataShape } from './client';
 import { client } from './client.gen';
-import { createDatasetResponseTransformer, createTokenEndpointResponseTransformer, getAgentEventTimeseriesResponseTransformer, getDatasetResponseTransformer, getDatasetsResponseTransformer, getNotificationsResponseTransformer, listTokensEndpointResponseTransformer, updateDatasetResponseTransformer, updateNotificationResponseTransformer, updateNotificationsBulkResponseTransformer } from './transformers.gen';
-import type { AddAgentToThreadData, AddAgentToThreadError, AddAgentToThreadResponse, AddUserToThreadData, AddUserToThreadError, AddUserToThreadResponse, ChatCompletionWithAssistantsData, ChatCompletionWithAssistantsError, ChatCompletionWithAssistantsResponse, CreateAgentInstanceData, CreateAgentInstanceError, CreateAgentInstanceResponse, CreateDatasetData, CreateDatasetError, CreateDatasetResponse, CreateNamespaceData, CreateNamespaceError, CreateNamespaceResponse, CreateProcessInstanceData, CreateProcessInstanceError, CreateProcessInstanceResponse, CreateRoleData, CreateRoleError, CreateRoleResponse, CreateSpeechData, CreateSpeechError, CreateThreadData, CreateThreadError, CreateThreadResponse, CreateTokenEndpointData, CreateTokenEndpointError, CreateTokenEndpointResponse, CreateTranscriptionData, CreateTranscriptionError, CreateTranscriptionResponse, DeleteAgentInstanceData, DeleteAgentInstanceError, DeleteAgentInstanceResponse, DeleteAllOrganizationMemoriesData, DeleteAllOrganizationMemoriesResponse, DeleteAllUserMemoriesData, DeleteAllUserMemoriesResponse, DeleteOrganizationMemoryData, DeleteOrganizationMemoryError, DeleteOrganizationMemoryResponse, DeleteProcessInstanceData, DeleteProcessInstanceError, DeleteProcessInstanceResponse, DeleteRoleData, DeleteRoleError, DeleteRoleResponse2, DeleteUserMemoryData, DeleteUserMemoryError, DeleteUserMemoryResponse, GenerateImageData, GenerateImageError, GenerateImageResponse, GetAgentClassData, GetAgentClassError, GetAgentClassesData, GetAgentClassesError, GetAgentClassesResponse, GetAgentClassInstancesData, GetAgentClassInstancesError, GetAgentClassInstancesResponse, GetAgentClassResponse, GetAgentEventsInThreadData, GetAgentEventsInThreadError, GetAgentEventsInThreadResponse, GetAgentEventTimeseriesData, GetAgentEventTimeseriesError, GetAgentEventTimeseriesResponse, GetAgentInstanceData, GetAgentInstanceError, GetAgentInstanceResponse, GetAgentInstanceThreadsData, GetAgentInstanceThreadsError, GetAgentInstanceThreadsResponse, GetAllAgentInstancesData, GetAllAgentInstancesError, GetAllAgentInstancesResponse, GetAllProcessInstancesData, GetAllProcessInstancesError, GetAllProcessInstancesResponse, GetAnonymousFileRedirectData, GetAnonymousFileRedirectError, GetAnonymousFileUrlData, GetAnonymousFileUrlError, GetAuthProvidersData, GetAuthProvidersResponse, GetDatabasesData, GetDatabasesResponse, GetDatasetData, GetDatasetError, GetDatasetResponse, GetDatasetsData, GetDatasetsResponse, GetDocumentByIdData, GetDocumentByIdError, GetDocumentByIdResponse, GetDocumentsForNamespaceData, GetDocumentsForNamespaceError, GetDocumentsForNamespaceResponse, GetDocumentUrlData, GetDocumentUrlError, GetDocumentUrlResponse, GetEmbeddingsData, GetEmbeddingsError, GetEmbeddingsResponse, GetFileUrlData, GetFileUrlError, GetFileUrlResponse, GetHealthData, GetHealthResponse, GetLitellmModelData, GetLitellmModelError, GetLitellmModelResponse, GetLitellmModelsByModeData, GetLitellmModelsByModeError, GetLitellmModelsByModeResponse, GetLitellmModelsData, GetLitellmModelsResponse, GetLocaleData, GetLocaleResponse, GetModelsData, GetModelsResponse, GetModelWithAssistantsData, GetModelWithAssistantsError, GetModelWithAssistantsResponse, GetMyAccountData, GetMyAccountResponse, GetMyActiveTenantData, GetMyActiveTenantResponse, GetMyDashboardData, GetMyDashboardResponse, GetMyTenantsData, GetMyTenantsResponse, GetNodesForDocumentData, GetNodesForDocumentError, GetNodesForDocumentResponse, GetNotificationsData, GetNotificationsError, GetNotificationsResponse, GetOpenChatHitlData, GetOpenChatHitlError, GetOpenChatHitlResponse, GetOrganizationMemoriesData, GetOrganizationMemoriesError, GetOrganizationMemoriesResponse, GetProcessClassData, GetProcessClassError, GetProcessClassesData, GetProcessClassesError, GetProcessClassesResponse, GetProcessClassInstancesData, GetProcessClassInstancesError, GetProcessClassInstancesResponse, GetProcessClassResponse, GetProcessInstanceData, GetProcessInstanceError, GetProcessInstanceResponse, GetProcessOpenFormsData, GetProcessOpenFormsError, GetProcessOpenFormsResponse, GetProcessStartFormsData, GetProcessStartFormsError, GetProcessStartFormsResponse, GetProcessWalkthroughsData, GetProcessWalkthroughsError, GetProcessWalkthroughsResponse, GetReadyData, GetReadyResponse, GetRoleData, GetRoleError, GetRoleResponse, GetRolesData, GetRolesResponse, GetSuiteData, GetSuiteResponse, GetSummaryNodesForDocumentData, GetSummaryNodesForDocumentError, GetSummaryNodesForDocumentResponse, GetSupportedFileTypesData, GetSupportedFileTypesResponse, GetThreadData, GetThreadError, GetThreadResponse, GetUserData, GetUserError, GetUserMemoriesData, GetUserMemoriesError, GetUserMemoriesResponse, GetUserResponse, GetUsersData, GetUsersError, GetUsersResponse, GetUserThreadsData, GetUserThreadsError, GetUserThreadsResponse, InitiateDocumentUploadData, InitiateDocumentUploadError, InitiateDocumentUploadResponse, InitiateFileUploadData, InitiateFileUploadError, InitiateFileUploadResponse, ListTokensEndpointData, ListTokensEndpointResponse, ProcessDocumentData, ProcessDocumentError, ProcessDocumentResponse, ReceiveOpenwebuiWebhookData, ReceiveOpenwebuiWebhookError, ReceiveOpenwebuiWebhookResponse, RemoveAgentFromThreadData, RemoveAgentFromThreadError, RemoveAgentFromThreadResponse, RemoveUserFromThreadData, RemoveUserFromThreadError, RemoveUserFromThreadResponse, RevokeTokenEndpointData, RevokeTokenEndpointError, RevokeTokenEndpointResponse, SearchOrganizationMemoriesData, SearchOrganizationMemoriesError, SearchOrganizationMemoriesResponse, SearchUserMemoriesData, SearchUserMemoriesError, SearchUserMemoriesResponse, SendProcessOpenFormData, SendProcessOpenFormError, SendProcessOpenFormResponse, SendProcessStartFormData, SendProcessStartFormError, SendProcessStartFormResponse, SendRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventPostData, SendRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventPostError, SendRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventPostResponse, SendUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostData, SendUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostError, SendUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostResponse, SetMyActiveTenantData, SetMyActiveTenantError, SetMyActiveTenantResponse, StreamRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventStreamPostData, StreamRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventStreamPostError, StreamUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventStreamPostData, StreamUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventStreamPostError, TranslateTextData, TranslateTextError, TranslateTextResponse, UpdateAgentInstanceData, UpdateAgentInstanceError, UpdateAgentInstanceResponse, UpdateDatasetData, UpdateDatasetError, UpdateDatasetResponse, UpdateMyDashboardData, UpdateMyDashboardError, UpdateMyDashboardResponse, UpdateNamespaceData, UpdateNamespaceError, UpdateNamespaceResponse, UpdateNotificationData, UpdateNotificationError, UpdateNotificationResponse, UpdateNotificationsBulkData, UpdateNotificationsBulkError, UpdateNotificationsBulkResponse, UpdateOrganizationMemoryData, UpdateOrganizationMemoryError, UpdateOrganizationMemoryResponse, UpdateProcessInstanceData, UpdateProcessInstanceError, UpdateProcessInstanceResponse, UpdateRoleData, UpdateRoleError, UpdateRoleResponse, UpdateUserMemoryData, UpdateUserMemoryError, UpdateUserMemoryResponse, ValidateDocumentUploadData, ValidateDocumentUploadError, ValidateDocumentUploadResponse, ValidateFileUploadData, ValidateFileUploadError, ValidateFileUploadResponse } from './types.gen';
+import { createDatasetResponseTransformer, createTenantMetadataResponseTransformer, createTokenEndpointResponseTransformer, getAgentEventTimeseriesResponseTransformer, getDatasetResponseTransformer, getDatasetsResponseTransformer, getNotificationsResponseTransformer, getTenantResponseTransformer, listTenantsResponseTransformer, listTokensEndpointResponseTransformer, updateDatasetResponseTransformer, updateNotificationResponseTransformer, updateNotificationsBulkResponseTransformer, updateTenantMetadataResponseTransformer } from './transformers.gen';
+import type { AddAgentToThreadData, AddAgentToThreadError, AddAgentToThreadResponse, AddUserToThreadData, AddUserToThreadError, AddUserToThreadResponse, ChatCompletionWithAssistantsData, ChatCompletionWithAssistantsError, ChatCompletionWithAssistantsResponse, CreateAgentInstanceData, CreateAgentInstanceError, CreateAgentInstanceResponse, CreateDatasetData, CreateDatasetError, CreateDatasetResponse, CreateNamespaceData, CreateNamespaceError, CreateNamespaceResponse, CreateProcessInstanceData, CreateProcessInstanceError, CreateProcessInstanceResponse, CreateRoleData, CreateRoleError, CreateRoleResponse, CreateSpeechData, CreateSpeechError, CreateTenantMetadataData, CreateTenantMetadataError, CreateTenantMetadataResponse, CreateThreadData, CreateThreadError, CreateThreadResponse, CreateTokenEndpointData, CreateTokenEndpointError, CreateTokenEndpointResponse, CreateTranscriptionData, CreateTranscriptionError, CreateTranscriptionResponse, DeleteAgentInstanceData, DeleteAgentInstanceError, DeleteAgentInstanceResponse, DeleteAllOrganizationMemoriesData, DeleteAllOrganizationMemoriesResponse, DeleteAllUserMemoriesData, DeleteAllUserMemoriesResponse, DeleteOrganizationMemoryData, DeleteOrganizationMemoryError, DeleteOrganizationMemoryResponse, DeleteProcessInstanceData, DeleteProcessInstanceError, DeleteProcessInstanceResponse, DeleteRoleData, DeleteRoleError, DeleteRoleResponse2, DeleteTenantMetadataData, DeleteTenantMetadataError, DeleteTenantMetadataResponse, DeleteUserMemoryData, DeleteUserMemoryError, DeleteUserMemoryResponse, GenerateImageData, GenerateImageError, GenerateImageResponse, GetAgentClassData, GetAgentClassError, GetAgentClassesData, GetAgentClassesError, GetAgentClassesResponse, GetAgentClassInstancesData, GetAgentClassInstancesError, GetAgentClassInstancesResponse, GetAgentClassResponse, GetAgentEventsInThreadData, GetAgentEventsInThreadError, GetAgentEventsInThreadResponse, GetAgentEventTimeseriesData, GetAgentEventTimeseriesError, GetAgentEventTimeseriesResponse, GetAgentInstanceData, GetAgentInstanceError, GetAgentInstanceResponse, GetAgentInstanceThreadsData, GetAgentInstanceThreadsError, GetAgentInstanceThreadsResponse, GetAllAgentInstancesData, GetAllAgentInstancesError, GetAllAgentInstancesResponse, GetAllProcessInstancesData, GetAllProcessInstancesError, GetAllProcessInstancesResponse, GetAnonymousFileRedirectData, GetAnonymousFileRedirectError, GetAnonymousFileUrlData, GetAnonymousFileUrlError, GetAuthProvidersData, GetAuthProvidersResponse, GetDatabasesData, GetDatabasesResponse, GetDatasetData, GetDatasetError, GetDatasetResponse, GetDatasetsData, GetDatasetsResponse, GetDocumentByIdData, GetDocumentByIdError, GetDocumentByIdResponse, GetDocumentsForNamespaceData, GetDocumentsForNamespaceError, GetDocumentsForNamespaceResponse, GetDocumentUrlData, GetDocumentUrlError, GetDocumentUrlResponse, GetEmbeddingsData, GetEmbeddingsError, GetEmbeddingsResponse, GetFileUrlData, GetFileUrlError, GetFileUrlResponse, GetHealthData, GetHealthResponse, GetLitellmModelData, GetLitellmModelError, GetLitellmModelResponse, GetLitellmModelsByModeData, GetLitellmModelsByModeError, GetLitellmModelsByModeResponse, GetLitellmModelsData, GetLitellmModelsResponse, GetLocaleData, GetLocaleResponse, GetModelsData, GetModelsResponse, GetModelWithAssistantsData, GetModelWithAssistantsError, GetModelWithAssistantsResponse, GetMyAccountData, GetMyAccountResponse, GetMyActiveTenantData, GetMyActiveTenantResponse, GetMyDashboardData, GetMyDashboardResponse, GetMyTenantsData, GetMyTenantsResponse, GetNodesForDocumentData, GetNodesForDocumentError, GetNodesForDocumentResponse, GetNotificationsData, GetNotificationsError, GetNotificationsResponse, GetOpenChatHitlData, GetOpenChatHitlError, GetOpenChatHitlResponse, GetOrganizationMemoriesData, GetOrganizationMemoriesError, GetOrganizationMemoriesResponse, GetProcessClassData, GetProcessClassError, GetProcessClassesData, GetProcessClassesError, GetProcessClassesResponse, GetProcessClassInstancesData, GetProcessClassInstancesError, GetProcessClassInstancesResponse, GetProcessClassResponse, GetProcessInstanceData, GetProcessInstanceError, GetProcessInstanceResponse, GetProcessOpenFormsData, GetProcessOpenFormsError, GetProcessOpenFormsResponse, GetProcessStartFormsData, GetProcessStartFormsError, GetProcessStartFormsResponse, GetProcessWalkthroughsData, GetProcessWalkthroughsError, GetProcessWalkthroughsResponse, GetReadyData, GetReadyResponse, GetRoleData, GetRoleError, GetRoleResponse, GetRolesData, GetRolesResponse, GetSuiteData, GetSuiteResponse, GetSummaryNodesForDocumentData, GetSummaryNodesForDocumentError, GetSummaryNodesForDocumentResponse, GetSupportedFileTypesData, GetSupportedFileTypesResponse, GetTenantData, GetTenantError, GetTenantResponse, GetThreadData, GetThreadError, GetThreadResponse, GetUserData, GetUserError, GetUserMemoriesData, GetUserMemoriesError, GetUserMemoriesResponse, GetUserResponse, GetUsersData, GetUsersError, GetUsersResponse, GetUserThreadsData, GetUserThreadsError, GetUserThreadsResponse, InitiateDocumentUploadData, InitiateDocumentUploadError, InitiateDocumentUploadResponse, InitiateFileUploadData, InitiateFileUploadError, InitiateFileUploadResponse, ListTenantsData, ListTenantsResponse, ListTokensEndpointData, ListTokensEndpointResponse, ListUnconfiguredTenantsData, ListUnconfiguredTenantsResponse, ProcessDocumentData, ProcessDocumentError, ProcessDocumentResponse, ReceiveOpenwebuiWebhookData, ReceiveOpenwebuiWebhookError, ReceiveOpenwebuiWebhookResponse, RemoveAgentFromThreadData, RemoveAgentFromThreadError, RemoveAgentFromThreadResponse, RemoveUserFromThreadData, RemoveUserFromThreadError, RemoveUserFromThreadResponse, RevokeTokenEndpointData, RevokeTokenEndpointError, RevokeTokenEndpointResponse, SearchOrganizationMemoriesData, SearchOrganizationMemoriesError, SearchOrganizationMemoriesResponse, SearchUserMemoriesData, SearchUserMemoriesError, SearchUserMemoriesResponse, SendProcessOpenFormData, SendProcessOpenFormError, SendProcessOpenFormResponse, SendProcessStartFormData, SendProcessStartFormError, SendProcessStartFormResponse, SetMyActiveTenantData, SetMyActiveTenantError, SetMyActiveTenantResponse, TranslateTextData, TranslateTextError, TranslateTextResponse, UpdateAgentInstanceData, UpdateAgentInstanceError, UpdateAgentInstanceResponse, UpdateDatasetData, UpdateDatasetError, UpdateDatasetResponse, UpdateMyDashboardData, UpdateMyDashboardError, UpdateMyDashboardResponse, UpdateNamespaceData, UpdateNamespaceError, UpdateNamespaceResponse, UpdateNotificationData, UpdateNotificationError, UpdateNotificationResponse, UpdateNotificationsBulkData, UpdateNotificationsBulkError, UpdateNotificationsBulkResponse, UpdateOrganizationMemoryData, UpdateOrganizationMemoryError, UpdateOrganizationMemoryResponse, UpdateProcessInstanceData, UpdateProcessInstanceError, UpdateProcessInstanceResponse, UpdateRoleData, UpdateRoleError, UpdateRoleResponse, UpdateTenantMetadataData, UpdateTenantMetadataError, UpdateTenantMetadataResponse, UpdateUserMemoryData, UpdateUserMemoryError, UpdateUserMemoryResponse, ValidateDocumentUploadData, ValidateDocumentUploadError, ValidateDocumentUploadResponse, ValidateFileUploadData, ValidateFileUploadError, ValidateFileUploadResponse } from './types.gen';
 
 export type Options<TComposable extends Composable = '$fetch', TData extends TDataShape = TDataShape, ResT = unknown, DefaultT = undefined> = Options2<TComposable, TData, ResT, DefaultT> & {
     /**
@@ -52,7 +52,7 @@ export const getSuite = <TComposable extends Composable = '$fetch', DefaultT ext
 /**
  * Get My Tenants
  *
- * Returns all tenants the current user belongs to.
+ * Returns all tenants the current user belongs to, along with sysadmin status.
  */
 export const getMyTenants = <TComposable extends Composable = '$fetch', DefaultT extends GetMyTenantsResponse = GetMyTenantsResponse>(options: Options<TComposable, GetMyTenantsData, GetMyTenantsResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetMyTenantsResponse | DefaultT, unknown, DefaultT>({
     security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
@@ -725,6 +725,88 @@ export const createRole = <TComposable extends Composable = '$fetch', DefaultT e
 });
 
 /**
+ * List Tenants
+ *
+ * Lists all tenants: active (Keycloak + metadata) and orphaned (metadata only).
+ */
+export const listTenants = <TComposable extends Composable = '$fetch', DefaultT extends ListTenantsResponse = ListTenantsResponse>(options: Options<TComposable, ListTenantsData, ListTenantsResponse, DefaultT>) => (options.client ?? client).get<TComposable, ListTenantsResponse | DefaultT, unknown, DefaultT>({
+    responseTransformer: listTenantsResponseTransformer,
+    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
+    url: '/admin/tenants/',
+    ...options
+});
+
+/**
+ * Create Tenant Metadata
+ *
+ * Attaches metadata (name, description, access rules) to an existing Keycloak tenant group.
+ */
+export const createTenantMetadata = <TComposable extends Composable = '$fetch', DefaultT extends CreateTenantMetadataResponse = CreateTenantMetadataResponse>(options: Options<TComposable, CreateTenantMetadataData, CreateTenantMetadataResponse, DefaultT>) => (options.client ?? client).post<TComposable, CreateTenantMetadataResponse | DefaultT, CreateTenantMetadataError, DefaultT>({
+    responseTransformer: createTenantMetadataResponseTransformer,
+    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
+    url: '/admin/tenants/',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List Unconfigured Tenants
+ *
+ * Lists Keycloak tenant group names that don't yet have metadata configured.
+ */
+export const listUnconfiguredTenants = <TComposable extends Composable = '$fetch', DefaultT extends ListUnconfiguredTenantsResponse = ListUnconfiguredTenantsResponse>(options: Options<TComposable, ListUnconfiguredTenantsData, ListUnconfiguredTenantsResponse, DefaultT>) => (options.client ?? client).get<TComposable, ListUnconfiguredTenantsResponse | DefaultT, unknown, DefaultT>({
+    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
+    url: '/admin/tenants/unconfigured',
+    ...options
+});
+
+/**
+ * Delete Tenant Metadata
+ *
+ * Removes the MongoDB metadata for the tenant. Allowed on both active and orphaned rows.
+ *
+ * The Keycloak group (if present) is not touched — manage it in the Keycloak admin console.
+ * The last remaining tenant cannot be deleted (409); any tenant may be deleted as long as at
+ * least one other tenant exists.
+ */
+export const deleteTenantMetadata = <TComposable extends Composable = '$fetch', DefaultT extends DeleteTenantMetadataResponse = DeleteTenantMetadataResponse>(options: Options<TComposable, DeleteTenantMetadataData, DeleteTenantMetadataResponse, DefaultT>) => (options.client ?? client).delete<TComposable, DeleteTenantMetadataResponse | DefaultT, DeleteTenantMetadataError, DefaultT>({
+    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
+    url: '/admin/tenants/{tenant_id}',
+    ...options
+});
+
+/**
+ * Get Tenant
+ *
+ * Retrieves a single tenant by its ID.
+ */
+export const getTenant = <TComposable extends Composable = '$fetch', DefaultT extends GetTenantResponse = GetTenantResponse>(options: Options<TComposable, GetTenantData, GetTenantResponse, DefaultT>) => (options.client ?? client).get<TComposable, GetTenantResponse | DefaultT, GetTenantError, DefaultT>({
+    responseTransformer: getTenantResponseTransformer,
+    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
+    url: '/admin/tenants/{tenant_id}',
+    ...options
+});
+
+/**
+ * Update Tenant Metadata
+ *
+ * Updates a tenant's name, description, or access rules. Not allowed on orphaned tenants.
+ */
+export const updateTenantMetadata = <TComposable extends Composable = '$fetch', DefaultT extends UpdateTenantMetadataResponse = UpdateTenantMetadataResponse>(options: Options<TComposable, UpdateTenantMetadataData, UpdateTenantMetadataResponse, DefaultT>) => (options.client ?? client).patch<TComposable, UpdateTenantMetadataResponse | DefaultT, UpdateTenantMetadataError, DefaultT>({
+    responseTransformer: updateTenantMetadataResponseTransformer,
+    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
+    url: '/admin/tenants/{tenant_id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
  * List Models
  *
  * Lists the currently available models, and provides basic information about each one such as the owner and availability.
@@ -1227,66 +1309,6 @@ export const translateText = <TComposable extends Composable = '$fetch', Default
  */
 export const receiveOpenwebuiWebhook = <TComposable extends Composable = '$fetch', DefaultT extends ReceiveOpenwebuiWebhookResponse = ReceiveOpenwebuiWebhookResponse>(options: Options<TComposable, ReceiveOpenwebuiWebhookData, ReceiveOpenwebuiWebhookResponse, DefaultT>) => (options.client ?? client).post<TComposable, ReceiveOpenwebuiWebhookResponse | DefaultT, ReceiveOpenwebuiWebhookError, DefaultT>({
     url: '/webhook/openwebui',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Send R A G Start Event To R A G Agent
- *
- * Send a specific event type to a specific agent. Returns either a stop event or HITL request event.
- */
-export const sendRAGStartEventToRAGAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventPost = <TComposable extends Composable = '$fetch', DefaultT extends SendRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventPostResponse = SendRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventPostResponse>(options: Options<TComposable, SendRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventPostData, SendRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventPostResponse, DefaultT>) => (options.client ?? client).post<TComposable, SendRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventPostResponse | DefaultT, SendRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventPostError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/{tenant_id}/agents/classes/RAGAgent/instances/{agent_id}/RAGStartEvent',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Stream R A G Start Event To R A G Agent
- *
- * Send a specific event type to a specific agent and stream all events as SSE.
- */
-export const streamRAGStartEventToRAGAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventStreamPost = <TComposable extends Composable = '$fetch', DefaultT = undefined>(options: Options<TComposable, StreamRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventStreamPostData, unknown, DefaultT>) => (options.client ?? client).post<TComposable, unknown | DefaultT, StreamRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventStreamPostError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/{tenant_id}/agents/classes/RAGAgent/instances/{agent_id}/RAGStartEvent/stream',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Send User Message Event To R A G Agent
- *
- * Send a specific event type to a specific agent. Returns either a stop event or HITL request event.
- */
-export const sendUserMessageEventToRAGAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventPost = <TComposable extends Composable = '$fetch', DefaultT extends SendUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostResponse = SendUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostResponse>(options: Options<TComposable, SendUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostData, SendUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostResponse, DefaultT>) => (options.client ?? client).post<TComposable, SendUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostResponse | DefaultT, SendUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/{tenant_id}/agents/classes/RAGAgent/instances/{agent_id}/UserMessageEvent',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Stream User Message Event To R A G Agent
- *
- * Send a specific event type to a specific agent and stream all events as SSE.
- */
-export const streamUserMessageEventToRAGAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventStreamPost = <TComposable extends Composable = '$fetch', DefaultT = undefined>(options: Options<TComposable, StreamUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventStreamPostData, unknown, DefaultT>) => (options.client ?? client).post<TComposable, unknown | DefaultT, StreamUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventStreamPostError, DefaultT>({
-    security: [{ scheme: 'bearer', type: 'http' }, { scheme: 'bearer', type: 'http' }],
-    url: '/{tenant_id}/agents/classes/RAGAgent/instances/{agent_id}/UserMessageEvent/stream',
     ...options,
     headers: {
         'Content-Type': 'application/json',

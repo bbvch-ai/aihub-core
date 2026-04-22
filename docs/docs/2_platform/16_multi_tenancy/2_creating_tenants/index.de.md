@@ -1,31 +1,32 @@
 ---
-title: Mandanten einrichten
-source_sha: 8a90ae04e94ba67f43c627281c437c07c777cf8e8c4e1ad66131e8ec9fe2c968
+title: Einrichten von Mandanten
+source_sha: 3dbedbf1f5403480d65d3405480b5a1866a07ab6f3b98208b65c8737bf3cc9f0
 ---
 
-# Mandanten einrichten
+# Einrichten von Mandanten
 
-Das Einrichten von Mandanten erfordert die Planung Ihrer Organisationsstruktur und das Verständnis, welche
-Berechtigungen jede Benutzergruppe haben soll. Dieses Kapitel führt Sie durch praktische Ansätze zum Mandantendesign.
+Das Erstellen von Mandanten erfordert eine sorgfältige Planung Ihrer Organisationsstruktur und ein klares Verständnis
+dessen, was jede Benutzergruppe tun können sollte. Dieses Kapitel beleuchtet praktische Ansätze für das
+Mandanten-Design.
 
-## Ihre Mandantenstruktur planen
+## Planung Ihrer Mandantenstruktur
 
-Beginnen Sie damit, die Gruppen zu identifizieren, die getrennte Arbeitsbereiche benötigen. Gängige Muster sind:
+Beginnen Sie mit der Identifizierung der Gruppen, die getrennte Arbeitsbereiche benötigen. Gängige Muster sind:
 
 **Organisationshierarchie**: Systemadministratoren, Manager und Abteilungen erhalten jeweils einen eigenen Mandanten.
-Dies trennt technische Operationen von der Geschäftsadministration und der täglichen Arbeit.
+Dies trennt technische Operationen von der Geschäftsverwaltung und der täglichen Arbeit.
 
-**Geschäftseinheiten**: Marketing, Vertrieb, Engineering, Operations erhalten jeweils einen Mandanten. Sie teilen sich
-einige Ressourcen (unternehmensweite Agents), haben aber einheitsspezifische Agents.
+**Geschäftseinheiten**: Marketing, Vertrieb, Engineering, Betrieb erhalten jeweils einen Mandanten. Sie teilen sich
+einige Ressourcen (unternehmensweite Agents), verfügen aber über einheitsspezifische Agents.
 
-**Kundenisolation**: Jeder Kunde erhält einen eigenen Mandanten. Nützlich für Service Provider oder SaaS-Deployments,
-bei denen Kunden niemals die Daten oder Agents anderer Kunden sehen dürfen.
+**Kundenisolation**: Jeder Kunde erhält einen eigenen Mandanten. Dies ist nützlich für Dienstleister oder
+SaaS-Deployments, bei denen Kunden niemals die Daten oder Agents anderer Kunden sehen dürfen.
 
-**Umgebungsseparation**: Entwicklung, Staging und Produktion laufen als separate Mandanten. Entwickler können im
-Entwicklungs-Mandanten experimentieren, ohne Produktionsbenutzer zu beeinträchtigen.
+**Umgebungstrennung**: Entwicklung, Staging und Produktion laufen als separate Mandanten. Entwickler können im
+Entwicklungs-Mandanten experimentieren, ohne die Produktionsbenutzer zu beeinträchtigen.
 
-**Compliance-Grenzen**: Gesetzliche Anforderungen können eine Trennung zwischen Entitäten, geografischen Regionen oder
-Datenklassifikationen vorschreiben. Jede regulierte Grenze wird zu einem Mandanten.
+**Compliance-Grenzen**: Rechtliche Anforderungen können eine Trennung zwischen Entitäten, geografischen Regionen oder
+Datenklassifizierungen vorschreiben. Jede regulierte Grenze wird zu einem Mandanten.
 
 ## Das Drei-Ebenen-Muster
 
@@ -61,11 +62,11 @@ graph TD
 Erstellen Sie einen Mandanten für Personen, die die Plattforminfrastruktur warten. Diese Benutzer:
 
 - Deployen Agent- und Prozesscode auf die Plattform
-- Konfigurieren Daten-Pipelines für das Einlesen von Dokumenten
-- Verwalten Plattform-Services und -Monitoring
-- Haben vollen Zugriff auf alle Plattformfunktionen
+- Konfigurieren Daten-Pipelines für das Einpflegen von Dokumenten
+- Verwalten Plattform-Services und Monitoring
+- Haben vollständigen Zugriff auf alle Plattformfunktionen
 
-Dies sind typischerweise 2-5 Personen: Ihr DevOps-Team, leitende Entwickler oder IT-Mitarbeiter, die für die Plattform
+Dies sind typischerweise 2-5 Personen: Ihr DevOps-Team, Lead-Entwickler oder IT-Mitarbeiter, die für die Plattform
 verantwortlich sind.
 
 ### Ebene 2: Geschäftsadministration
@@ -75,99 +76,99 @@ Erstellen Sie einen Mandanten für Personen, die die Plattform für Geschäftsbe
 - Erstellen und konfigurieren neue Mandanten
 - Fügen Benutzer zu Mandanten hinzu und weisen Rollen zu
 - Erstellen Agent-Instanzen aus deployten Klassen
-- Überwachen die Agent-Performance und führen Evaluationen durch
+- Überwachen die Agent-Performance und führen Evaluierungen durch
 - Verwalten Wissensdatenbanken (Ingestionsstatus anzeigen, Probleme beheben)
 
-Dies sind Business Analysts, Projektmanager oder Abteilungsleiter, die die Bedürfnisse der Organisation verstehen, aber
+Dies sind Business-Analysten, Projektmanager oder Abteilungsleiter, die die Bedürfnisse der Organisation verstehen, aber
 keinen Code schreiben.
 
 ### Ebene 3: Endbenutzer
 
-Erstellen Sie Mandanten für Personen, die Agents nutzen, um ihre Aufgaben zu erledigen. Diese Benutzer:
+Erstellen Sie Mandanten für Personen, die Agents nutzen, um Aufgaben zu erledigen. Diese Benutzer:
 
 - Chatten mit Agents, die für ihre Rolle relevant sind
 - Nehmen an Prozessen teil, die ihre Abteilung betreffen
 - Können keine administrativen Oberflächen sehen oder Agent-Instanzen erstellen
 
-Das ist jeder andere in Ihrer Organisation.
+Dies sind alle anderen in Ihrer Organisation.
 
 ## Einen Mandanten erstellen
 
-Navigieren Sie in der Admin-Oberfläche zu **Service** → **Mandanten**. Sie müssen sich in einem Mandanten befinden, der
+Navigieren Sie in der Admin-Oberfläche zu **Service** → **Tenants**. Sie müssen sich in einem Mandanten befinden, der
 administrativen Zugriff auf den Mandanten-Service hat.
 
-Klicken Sie auf **Mandant erstellen**. Sie benötigen drei Informationen:
+Klicken Sie auf **Create Tenant**. Sie benötigen drei Informationen:
 
-**Name**: Wählen Sie einen klaren und beschreibenden Namen. „Finanzabteilung“, „Kunde - Acme Corp“,
-„Produktionsumgebung“. Benutzer sehen diesen Namen, wenn sie auswählen, in welchem Mandanten sie arbeiten möchten.
+**Name**: Wählen Sie etwas Klares und Beschreibendes. „Finanzabteilung“, „Kunde - Acme Corp“, „Produktionsumgebung“.
+Benutzer sehen diesen Namen, wenn sie auswählen, in welchem Mandanten sie arbeiten möchten.
 
-**Beschreibung**: Erklären Sie, wofür dieser Mandant dient. „Benutzer der Finanzabteilung – Zugriff auf
+**Beschreibung**: Erklären Sie, wofür dieser Mandant gedacht ist. „Benutzer der Finanzabteilung – Zugriff auf
 Finanzberichts-Agents und Abteilungsrichtlinien.“ Dies hilft sowohl aktuellen als auch zukünftigen Administratoren, den
 Zweck des Mandanten zu verstehen.
 
-**Umfang**: Definieren Sie, auf welche Ressourcen dieser Mandant zugreifen kann. Für das Drei-Ebenen-Muster:
+**Geltungsbereich**: Definieren Sie, auf welche Ressourcen dieser Mandant zugreifen kann. Für das Drei-Ebenen-Muster:
 
 - Sysadmin-Ebene: Voller Plattformzugriff
 - Management-Ebene: Administrative Services, aber keine Deployment-Fähigkeiten
 - Endbenutzer-Ebene: Spezifische Agents und Prozesse, keine Services
 
-## Umfang der Mandanten festlegen
+## Mandanten-Scoping
 
-Der Umfang des Mandanten bestimmt den maximalen Zugriff, den jeder in diesem Mandanten haben kann. Stellen Sie es sich
-vor wie das Ziehen einer Grenze um Ressourcen.
+Der Geltungsbereich des Mandanten bestimmt den maximalen Zugriff, den jeder in diesem Mandanten haben kann. Stellen Sie
+es sich vor, wie das Ziehen einer Grenze um Ressourcen.
 
-Für einen Mandanten der Finanzabteilung könnten Sie den Umfang wie folgt festlegen:
+Für einen Mandanten der Finanzabteilung könnten Sie den Geltungsbereich festlegen auf:
 
-- Finanzbezogene Agents (Berichts-Agents, Richtlinien-Agents, Genehmigungs-Workflows)
-- Finanz-Wissensdatenbanken (für Manager, die Probleme bei der Datenaufnahme beheben)
+- Finanzbezogene Agents (Reporting-Agents, Richtlinien-Agents, Genehmigungs-Workflows)
+- Finanz-Wissensdatenbanken (für Manager, die Probleme mit der Datenaufnahme beheben)
 - Spezifische Prozesse (Budgetgenehmigungs-Workflow, Spesenabrechnung)
 
 Ein Benutzer im Finanz-Mandanten kann nicht auf HR-Agents zugreifen, selbst wenn Sie ihm eine Admin-Rolle innerhalb des
-Finanz-Mandanten zuweisen. Die Mandantengrenze verhindert dies.
+Finanz-Mandanten geben. Die Mandanten-Grenze verhindert dies.
 
-### Breiter oder enger Start
+### Breiter versus enger Geltungsbereich
 
 Sie haben zwei Ansätze:
 
-**Breiter Umfang**: Geben Sie dem Mandanten anfänglich Zugriff auf alles. Benutzer können alle Agents, alle Services und
-alle Prozesse sehen. Wenn Sie erfahren, was sie tatsächlich benötigen, schränken Sie den Umfang ein, indem Sie den
-Zugriff auf ungenutzte Ressourcen entfernen.
+**Breiter Geltungsbereich**: Geben Sie dem Mandanten zunächst Zugriff auf alles. Benutzer können alle Agents, alle
+Services, alle Prozesse sehen. Wenn Sie herausfinden, was sie tatsächlich benötigen, grenzen Sie den Geltungsbereich
+ein, indem Sie den Zugriff auf ungenutzte Ressourcen entfernen.
 
-**Enger Umfang**: Geben Sie dem Mandanten nur Zugriff auf spezifische Ressourcen. Wenn Benutzer weitere Funktionen
-anfordern, erweitern Sie den Umfang schrittweise.
+**Enger Geltungsbereich**: Geben Sie dem Mandanten nur Zugriff auf spezifische Ressourcen. Wenn Benutzer mehr Funktionen
+anfragen, erweitern Sie den Geltungsbereich schrittweise.
 
-Ein breiter Umfang ist anfänglich einfacher, erfordert aber später mehr Bereinigung. Ein enger Umfang ist sicherer, aber
-Benutzer werden Zugriff anfordern, sobald sie Bedürfnisse entdecken.
+Ein breiter Geltungsbereich ist anfänglich einfacher, erfordert aber später mehr Bereinigungsaufwand. Ein enger
+Geltungsbereich ist sicherer, aber Benutzer werden den Zugriff anfragen, wenn sie neue Bedürfnisse entdecken.
 
-Für Endbenutzer-Mandanten (Abteilungen, Kunden) beginnen Sie mit einem engen Umfang. Diese Benutzer benötigen keine
-breite Sichtbarkeit – sie benötigen spezifische Tools. Für Management-Mandanten beginnen Sie mit einem breiten Umfang,
-da diese Benutzer Flexibilität bei der Administration der Plattform benötigen.
+Für Endbenutzer-Mandanten (Abteilungen, Kunden) beginnen Sie eng. Diese Benutzer benötigen keine breite Sichtbarkeit –
+sie benötigen spezifische Tools. Für Management-Mandanten beginnen Sie breit, da diese Benutzer Flexibilität zur
+Administration der Plattform benötigen.
 
 ## Rollen innerhalb von Mandanten konfigurieren
 
 Nachdem Sie den Mandanten erstellt haben, konfigurieren Sie die Rollen, die Benutzer in diesem Mandanten haben können.
-Rollen definieren, was Benutzer innerhalb der Mandantengrenzen tun können.
+Rollen definieren, was Benutzer innerhalb der Grenzen des Mandanten tun können.
 
 Für einen Abteilungs-Mandanten könnten Sie erstellen:
 
 **Standardbenutzer**: Kann mit Abteilungs-Agents chatten, an Prozessen teilnehmen, aber nichts erstellen oder ändern.
 
-**Teamleiter**: Kann Agent-Instanzen erstellen, Agents für sein Team konfigurieren, Evaluationsergebnisse anzeigen, aber
-keine Benutzer verwalten oder Mandanten-Einstellungen ändern.
+**Teamleiter**: Kann Agent-Instanzen erstellen, Agents für sein Team konfigurieren, Evaluierungsergebnisse anzeigen,
+aber keine Benutzer verwalten oder Mandanteneinstellungen ändern.
 
 **Abteilungsadministrator**: Volle Kontrolle innerhalb des Abteilungs-Mandanten – kann Benutzer hinzufügen, Rollen
 zuweisen, Agents erstellen und alle Abteilungsressourcen verwalten.
 
 Diese Rollen gelten nur innerhalb dieses Mandanten. Ein Benutzer, der „Abteilungsadministrator“ in Finanzen ist, hat
-keine Berechtigungen im HR-Mandanten, es sei denn, sie wurden explizit erteilt.
+keine Berechtigungen im HR-Mandanten, es sei denn, diese wurden explizit gewährt.
 
 ## Benutzer zu Mandanten hinzufügen
 
-Nachdem Sie Rollen erstellt haben, fügen Sie Benutzer dem Mandanten hinzu und weisen ihnen Rollen zu.
+Nachdem Sie Rollen erstellt haben, fügen Sie Benutzer dem Mandanten hinzu und weisen Sie ihnen Rollen zu.
 
-Suchen Sie Benutzer nach E-Mail oder Namen. Wenn ein Benutzer noch nicht existiert (er hat sich noch nicht angemeldet),
-können Sie ihn trotzdem hinzufügen. Sein Profil wird erstellt, wenn er sich zum ersten Mal über Ihren Identitätsprovider
-authentifiziert.
+Suchen Sie nach Benutzern per E-Mail oder Namen. Wenn ein Benutzer noch nicht existiert (er hat sich noch nicht
+angemeldet), können Sie ihn trotzdem hinzufügen. Sein Profil wird erstellt, wenn er sich zum ersten Mal über Ihren
+Identitätsanbieter authentifiziert.
 
 Benutzer können mehreren Mandanten angehören. Jemand könnte sein:
 
@@ -175,7 +176,7 @@ Benutzer können mehreren Mandanten angehören. Jemand könnte sein:
 - Teamleiter in einem funktionsübergreifenden Projekt-Mandanten
 - Admin in einem Test-Mandanten zum Ausprobieren neuer Funktionen
 
-## Standardverhalten des Mandanten
+## Standardverhalten für Mandanten
 
 Wenn sich jemand zum ersten Mal anmeldet, tritt er automatisch dem Standard-Mandanten mit Standardbenutzerrollen bei.
 Konfigurieren Sie dieses Verhalten mit Umgebungsvariablen:
@@ -186,7 +187,7 @@ AIHUB_USER_SIGNUP_DEFAULT_ROLES="AIHubUser"
 FIRST_AIHUB_USER_SIGNUP_DEFAULT_ROLES="AIHubAdmin"
 ```
 
-Die erste Person, die sich anmeldet, erhält Admin-Rollen, wodurch sichergestellt wird, dass jemand die Plattform sofort
+Die erste Person, die sich anmeldet, erhält Administratorrollen, um sicherzustellen, dass jemand die Plattform sofort
 administrieren kann. Nachfolgende Benutzer erhalten Standardrollen.
 
 Diese automatische Zuweisung erfolgt nur einmal pro Benutzer. Danach fügen Sie sie bei Bedarf explizit zu anderen
@@ -194,7 +195,7 @@ Mandanten hinzu.
 
 ## Gängige Konfigurationen
 
-### Einzelunternehmen mit Abteilungen
+### Einzelnes Unternehmen mit Abteilungen
 
 Sysadmin-Mandant → Management-Mandant → Ein Mandant pro Abteilung
 
@@ -205,53 +206,75 @@ Abteilungsbenutzer sehen nur die Ressourcen ihrer Abteilung.
 
 Sysadmin-Mandant → Management-Mandant → Ein Mandant pro Kunde
 
-Jeder Kunden-Mandant ist isoliert. Kunden können die Agents oder Daten anderer Kunden nicht sehen. Manager onboarden
-neue Kunden, indem sie einen Mandanten erstellen, relevante Agents konfigurieren und die Benutzer dieses Kunden
+Jeder Kunden-Mandant ist isoliert. Kunden können die Agents oder Daten anderer Kunden nicht sehen. Manager nehmen neue
+Kunden auf, indem sie einen Mandanten erstellen, relevante Agents konfigurieren und die Benutzer dieses Kunden
 hinzufügen.
 
 ### Beratungsunternehmen
 
 Sysadmin-Mandant → Management-Mandant → Ein Mandant pro Kundenprojekt
 
-Projekt-Mandanten geben Beratern Zugriff auf kundenspezifische Agents und Wissen. Wenn ein Projekt endet, archivieren
+Projekt-Mandanten gewähren Beratern Zugriff auf kundenspezifische Agents und Wissen. Wenn ein Projekt endet, archivieren
 Sie den Mandanten. Wenn ein Berater einem neuen Projekt beitritt, fügen Sie ihn dem Mandanten dieses Projekts hinzu.
 
 ### Entwicklungs-Workflow
 
 Sysadmin-Mandant → Dev-Mandant → Staging-Mandant → Produktions-Mandant
 
-Entwickler arbeiten im Dev-Mandanten mit gelockerten Kontrollen. Der Staging-Mandant spiegelt die Produktion für Tests
+Entwickler arbeiten im Dev-Mandanten mit gelockerten Kontrollen. Der Staging-Mandant spiegelt die Produktion zum Testen
 wider. Der Produktions-Mandant hat strenge Zugriffskontrollen. Dieselben Agents, derselbe Code, unterschiedliche
 Mandanten für unterschiedliche Zwecke.
+
+## Mandanten-Zustände
+
+Da Mandanten in zwei Speichern existieren — Keycloak (Gruppe unter `/tenants/<id>`, die Quelle der Wahrheit für die
+Existenz) und dem eigenen Metadaten-Speicher der Plattform (Anzeigename, Beschreibung, Zugriffsregeln) — können sie in
+drei Zuständen beobachtet werden:
+
+- **Active**: Sowohl die Keycloak-Gruppe als auch die Metadaten sind vorhanden. Endbenutzer können den Mandanten
+  erreichen.
+- **Orphaned**: Metadaten sind vorhanden, aber die Keycloak-Gruppe ist verschwunden (z.B. hat ein Operator die Gruppe
+  out of band entfernt). Endbenutzer können den Mandanten nicht erreichen. Sysadmins sehen ihn als schreibgeschützt mit
+  nur einer Lösch-Metadaten-Aktion.
+- **Unconfigured**: Die Keycloak-Gruppe existiert, aber es wurden keine Metadaten angehängt. Endbenutzer können den
+  Mandanten noch nicht erreichen. Sysadmins sehen ihn im „Mandanten konfigurieren“-Workflow, wo das Anhängen von
+  Metadaten ihn zu Active hochstuft.
+
+Die Sysadmin-Mandantenadministrations-UI unter `/sysadmin/tenants/` zeigt alle drei Zustände an. Die Aktion „Mandanten
+konfigurieren“ hängt Metadaten an eine Unconfigured-Gruppe an und ist der primäre Pfad, über den eine von einem Operator
+erstellte Keycloak-Gruppe (z.B. für eine IDP-zu-Mandanten-Zuordnung) zu einem nutzbaren Mandanten wird.
 
 ## Mandanten-Lebenszyklus
 
 Mandanten bleiben bestehen, bis sie explizit gelöscht werden. Sie können:
 
-**Einen Mandanten archivieren**: Entfernen Sie alle Benutzer, behalten Sie aber den Mandanten und seine Rollen. Nützlich
-für abgeschlossene Projekte oder inaktive Kunden. Niemand kann darauf zugreifen, aber die Konfiguration bleibt erhalten,
+**Einen Mandanten archivieren**: Alle Benutzer entfernen, aber den Mandanten und seine Rollen behalten. Nützlich für
+abgeschlossene Projekte oder inaktive Kunden. Niemand kann darauf zugreifen, aber die Konfiguration bleibt erhalten,
 falls Sie ihn reaktivieren müssen.
 
-**Einen Mandanten löschen**: Entfernen Sie den Mandanten, alle seine Rollen und alle Benutzerzuordnungen. Permanent. Nur
-möglich, nachdem zuerst alle Benutzer entfernt wurden.
+**Einen Mandanten löschen**: Die Metadaten der Plattform für den Mandanten entfernen. Die Keycloak-Gruppe selbst bleibt
+unberührt — die Bereinigung der Gruppe ist ein separater Schritt in der Keycloak-Admin-Konsole. Die Löschung ist auf
+Metadaten-Seite permanent.
 
-::: warning Schutz des Standard-Mandanten
-Der Standard-Mandant kann nicht gelöscht werden. Dies stellt sicher, dass die Plattform immer mindestens einen
-funktionsfähigen Mandanten hat.
+::: warning Schutz des letzten Mandanten
+Die Plattform erfordert, dass mindestens ein Mandant verbleibt. Das Löschen wird blockiert, wenn es das System ohne
+verbleibende Mandanten hinterlassen würde. Jeder Mandant – einschliesslich des Standardmandanten – kann gelöscht werden,
+solange mindestens ein anderer Mandant existiert. Das `is_default`-Flag ist nun ein passiver Marker für „Mandant bei
+Start erstellt“ und hat keine Löschschutz-Semantik.
 :::
 
 ## Praktische Tipps
 
-::: tip Best Practices **Dokumentieren Sie Ihre Entscheidungen**: Halten Sie schriftlich fest, warum Sie jeden Mandanten erstellt haben und welchen Umfang er haben soll. Sechs Monate später, wenn sich Rollen geändert haben, verhindert diese Dokumentation Verwirrung.
-**Beginnen Sie einfach**: Ein Management-Mandant und ein Endbenutzer-Mandant reichen für viele Organisationen aus. Fügen
-Sie Komplexität nur hinzu, wenn Sie sie benötigen.
+::: tip Best Practices **Dokumentieren Sie Ihre Entscheidungen**: Schreiben Sie auf, warum Sie jeden Mandanten erstellt haben und welchen Geltungsbereich er haben sollte. Sechs Monate später, wenn sich Rollen geändert haben, verhindert diese Dokumentation Verwirrung.
+**Beginnen Sie einfach**: Ein Management-Mandant und ein Endbenutzer-Mandant funktionieren für viele Organisationen.
+Fügen Sie Komplexität nur hinzu, wenn Sie sie benötigen.
 
-**Testen Sie mit eingeschränkten Benutzern**: Erstellen Sie ein Testkonto, fügen Sie es einem neuen Mandanten hinzu und
+**Mit eingeschränkten Benutzern testen**: Erstellen Sie ein Testkonto, fügen Sie es einem neuen Mandanten hinzu und
 überprüfen Sie, was dieser Benutzer sehen kann. Nicht annehmen – überprüfen.
 
-**Vierteljährlich überprüfen**: Personen wechseln Rollen. Projekte enden. Neue Abteilungen entstehen. Ihre
-Mandantenstruktur sollte sich mit Ihrer Organisation entwickeln.
+**Vierteljährliche Überprüfung**: Personen wechseln Rollen. Projekte enden. Neue Abteilungen entstehen. Ihre
+Mandantenstruktur sollte sich mit Ihrer Organisation weiterentwickeln.
 
-**Planen Sie für Wachstum**: „Kunde 1“ funktioniert, wenn Sie drei Kunden haben. „Kunde - Acme Corp“ funktioniert, wenn
-Sie dreihundert haben.
+**Wachstum planen**: „Kunde 1“ funktioniert, wenn Sie drei Kunden haben. „Kunde - Acme Corp“ funktioniert, wenn Sie
+dreihundert haben.
 :::

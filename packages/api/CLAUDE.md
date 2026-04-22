@@ -25,6 +25,7 @@ packages/api/
 │   │   ├── memory/             # User & organization memory
 │   │   ├── evaluation/         # Dataset & evaluation management
 │   │   ├── role/               # Permission & role management
+│   │   ├── tenant_admin/       # Sysadmin tenant metadata management (list/configure/update/delete tenants)
 │   │   ├── file/               # File upload/download
 │   │   ├── model/              # LLM model access
 │   │   ├── notification/       # User notifications
@@ -64,8 +65,20 @@ available as a Claude Code MCP tool for testing.
 **Tenant-scoped routing**: Controllers extending `TenantScopedController` are mounted under `/api/v1/{tenant_id}/` and
 include `{tenant_id}` as a path parameter in the OpenAPI spec (injected via a schema hook). The `{tenant_id}` is either
 a concrete MongoDB ObjectId or `"active"` (resolves to the user's persisted active tenant). Global controllers extending
-`Controller` directly (e.g., `MyTenantController`, `HealthController`) are mounted without a tenant prefix. Auth uses
-`user_with_permission()` for tenant-scoped endpoints and `authenticated_user()` for global endpoints.
+`Controller` directly (e.g., `MyTenantController`, `HealthController`, `TenantAdminController`) are mounted without a
+tenant prefix. Three auth dependency patterns are available on the `Controller` base class:
+
+- `user_with_permission(template)` — for tenant-scoped endpoints; checks the AccessChecker template against the acting
+  tenant's rules.
+- `authenticated_user()` — for global endpoints that any authenticated user may hit.
+- `sys_admin_user()` — for sysadmin-only endpoints; gates on `UserIdentity.is_sys_admin` (the `AIHubSysAdmin` Keycloak
+  realm role) and returns 403 otherwise. Used by `TenantAdminController`.
+
+**Tenant states**: Tenants now have three observable states surfaced by `TenantAdminController` — **Active** (Keycloak
+group + metadata), **Orphaned** (metadata-only, group missing), **Unconfigured** (group exists, no metadata). The
+`TenantState` enum lives at `routes/tenant_admin/dto/tenant_state.py`. Attaching metadata to an Unconfigured group
+("configure tenant") promotes it to Active and adds the Superuser as a member of the Keycloak group (per ADR
+`2026_04_15_superuser_added_to_every_new_tenant`).
 
 **Commands**: `make run-dev` (uvicorn with hot reload on :8000), `make run-prod` (gunicorn multi-worker).
 
@@ -202,7 +215,9 @@ All resources stored in `app.state`, accessible via the dependencies listed abov
 **Key classes**: `ApiTestRunner` (sync tests), `SimulatedAgentApiTestRunner` (async, simulates agents via NATS —
 `.with_simple_chunk_events()`, `.create_agent_config_in_db()`, auto-responds to discovery requests).
 
-**Auth bypass**: `DangerousDevelopmentOnlyAuthHandler` with `DangerousDevelopmentOnlyIdentityProvider`.
+**Auth bypass**: `TestAuthHandler` from `swiss_ai_hub.core.testing.auth_utils`. Returns the fixed test identity defined
+in `core/testing/auth_utils/test_identity.py` (`TEST_USER_OID`, `TEST_USER_EMAIL`, `TEST_USER_ROLES`) and bypasses token
+parsing. Lives under `core.testing` — not `core.auth` — so it is not reachable from production code.
 
 **Interactive testing**: `cd playground/testing && python main.py` → http://localhost:8000 (frontend),
 http://localhost:8000/api/v1/active/docs (Swagger).

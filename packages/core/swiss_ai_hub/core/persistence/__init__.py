@@ -7,7 +7,7 @@ if TYPE_CHECKING:
         RoleEntity,
         UsageLimit,
     )
-    from swiss_ai_hub.core.persistence.access.entities.tenant_entity import TenantEntity
+    from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
     from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
     from swiss_ai_hub.core.persistence.agents.agent_class_entity import AgentClassEntity
     from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import AgentConfigEntityDocument
@@ -137,7 +137,7 @@ __all__ = [
     "SOURCE",
     "SOURCE_ORIGIN",
     "TYPE",
-    "TenantEntity",
+    "TenantMetadataEntity",
     "ThreadEntity",
     "TimeRange",
     "UPDATED_AT",
@@ -206,7 +206,7 @@ _LAZY_IMPORTS = {
     "SOURCE": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",
     "SOURCE_ORIGIN": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",
     "TYPE": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",
-    "TenantEntity": "swiss_ai_hub.core.persistence.access.entities.tenant_entity",
+    "TenantMetadataEntity": "swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity",
     "ThreadEntity": "swiss_ai_hub.core.persistence.messaging.entities.thread_entity",
     "TimeRange": "swiss_ai_hub.core.persistence.messaging.entities.persisted_agent_event_entity",
     "UPDATED_AT": "swiss_ai_hub.core.persistence.rag.vectors.node_metadata",

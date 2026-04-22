@@ -6,10 +6,8 @@ import pytest_asyncio
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
 from mongoengine import connect, disconnect
-from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler import (  # noqa: E501
-    DangerousDevelopmentOnlyAuthHandler,
-)
 from swiss_ai_hub.core.infrastructure import AIHubSettings, MongoSettings
+from swiss_ai_hub.core.testing.auth_utils import TestAuthHandler
 
 from swiss_ai_hub.api.routes.notification.dto.notification_dto import NotificationDTO
 from swiss_ai_hub.api.routes.notification.dto.paginated_notifications_response import PaginatedNotificationsResponse
@@ -36,7 +34,7 @@ def mongo_db():
 async def api_client():
     """Create a test client for the API with NotificationController mounted."""
     runner = ApiTestRunner()
-    auth = DangerousDevelopmentOnlyAuthHandler()
+    auth = TestAuthHandler()
     controller = NotificationController(auth=auth)
     controller.get_notifications().update_notification().update_notifications()
     runner.mount(controller)

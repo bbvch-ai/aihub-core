@@ -122,7 +122,7 @@ export type AddMemoryToChatHistoryEvent = {
      *
      * Chat history extended with user memories.
      */
-    extended_history: Array<ChatMessageOutput>;
+    extended_history: Array<ChatMessage>;
     /**
      * Event Name
      *
@@ -136,7 +136,7 @@ export type AddMemoryToChatHistoryEvent = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessageOutput> | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessage> | Array<string> | undefined;
 };
 
 /**
@@ -171,7 +171,7 @@ export type AddOrganizationMemoryToChatHistoryEvent = {
      *
      * Chat history extended with user memories.
      */
-    extended_history: Array<ChatMessageOutput>;
+    extended_history: Array<ChatMessage>;
     /**
      * Event Name
      *
@@ -185,7 +185,7 @@ export type AddOrganizationMemoryToChatHistoryEvent = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessageOutput> | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessage> | Array<string> | undefined;
 };
 
 /**
@@ -220,7 +220,7 @@ export type AddUserMemoryToChatHistoryEvent = {
      *
      * Chat history extended with user memories.
      */
-    extended_history: Array<ChatMessageOutput>;
+    extended_history: Array<ChatMessage>;
     /**
      * Event Name
      *
@@ -234,7 +234,7 @@ export type AddUserMemoryToChatHistoryEvent = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessageOutput> | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessage> | Array<string> | undefined;
 };
 
 /**
@@ -1380,35 +1380,7 @@ export type Audio = {
  *
  * A representation of audio data to directly pass to/from the LLM.
  */
-export type AudioBlockInput = {
-    /**
-     * Block Type
-     */
-    block_type?: 'audio';
-    /**
-     * Audio
-     */
-    audio?: Blob | File | null;
-    /**
-     * Path
-     */
-    path?: string | null;
-    /**
-     * Url
-     */
-    url?: string | string | null;
-    /**
-     * Format
-     */
-    format?: string | null;
-};
-
-/**
- * AudioBlock
- *
- * A representation of audio data to directly pass to/from the LLM.
- */
-export type AudioBlockOutput = {
+export type AudioBlock = {
     /**
      * Block Type
      */
@@ -1675,49 +1647,6 @@ export type BodyCreateTranscriptionTenantIdOpenaiAudioTranscriptionsPost = {
      * Timestamp granularities (e.g. 'word' or 'segment'); only used with verbose_json response_format
      */
     timestamp_granularities?: Array<'word' | 'segment'> | null;
-};
-
-/**
- * BucketMetadataFilters
- *
- * The metadata filters a publisher wants applied to one bucket at retrieval time.
- *
- * AND-combined with any namespace narrowing from `selected_namespaces`. Each filter key must be
- * listed in the target retriever's `MilvusVectorStoreConfig.allowed_metadata_filter_fields`.
- */
-export type BucketMetadataFilters = {
-    /**
-     * Bucket Name
-     *
-     * The name of the bucket these filters apply to.
-     */
-    bucket_name: string;
-    /**
-     * Filters
-     *
-     * Metadata key/value filters applied AND-wise to retrieval in this bucket.
-     */
-    filters: Array<MetadataFilterPair>;
-};
-
-/**
- * BucketNamespacePair
- *
- * A bucket-namespace selection pair for RAG retrieval filtering.
- */
-export type BucketNamespacePair = {
-    /**
-     * Bucket Name
-     *
-     * The name of the bucket
-     */
-    bucket_name: string;
-    /**
-     * Namespace Name
-     *
-     * The name of the selected namespace in the bucket
-     */
-    namespace_name: string;
 };
 
 /**
@@ -2620,7 +2549,7 @@ export type ChatCompletionUserMessageParam = {
  *
  * Chat message.
  */
-export type ChatMessageOutput = {
+export type ChatMessage = {
     role?: MessageRole;
     /**
      * Additional Kwargs
@@ -2633,23 +2562,23 @@ export type ChatMessageOutput = {
         block_type: 'text';
     } & TextBlock) | ({
         block_type: 'image';
-    } & ImageBlockOutput) | ({
+    } & ImageBlock) | ({
         block_type: 'audio';
-    } & AudioBlockOutput) | ({
+    } & AudioBlock) | ({
         block_type: 'video';
-    } & VideoBlockOutput) | ({
+    } & VideoBlock) | ({
         block_type: 'document';
-    } & DocumentBlockOutput) | ({
+    } & DocumentBlock) | ({
         block_type: 'cache';
     } & CachePoint) | ({
         block_type: 'citable';
-    } & CitableBlockOutput) | ({
+    } & CitableBlock) | ({
         block_type: 'citation';
-    } & CitationBlockOutput) | ({
+    } & CitationBlock) | ({
         block_type: 'thinking';
-    } & ThinkingBlockOutput) | ({
+    } & ThinkingBlock) | ({
         block_type: 'tool_call';
-    } & ToolCallBlockOutput)>;
+    } & ToolCallBlock)>;
 };
 
 /**
@@ -2876,7 +2805,7 @@ export type ChunkEvent = {
  *
  * Supports providing citable content to LLMs that have built-in citation support.
  */
-export type CitableBlockInput = {
+export type CitableBlock = {
     /**
      * Block Type
      */
@@ -2896,39 +2825,9 @@ export type CitableBlockInput = {
         block_type: 'text';
     } & TextBlock) | ({
         block_type: 'image';
-    } & ImageBlockInput) | ({
+    } & ImageBlock) | ({
         block_type: 'document';
-    } & DocumentBlockInput)>;
-};
-
-/**
- * CitableBlock
- *
- * Supports providing citable content to LLMs that have built-in citation support.
- */
-export type CitableBlockOutput = {
-    /**
-     * Block Type
-     */
-    block_type?: 'citable';
-    /**
-     * Title
-     */
-    title: string;
-    /**
-     * Source
-     */
-    source: string;
-    /**
-     * Content
-     */
-    content: Array<({
-        block_type: 'text';
-    } & TextBlock) | ({
-        block_type: 'image';
-    } & ImageBlockOutput) | ({
-        block_type: 'document';
-    } & DocumentBlockOutput)>;
+    } & DocumentBlock)>;
 };
 
 /**
@@ -2936,7 +2835,7 @@ export type CitableBlockOutput = {
  *
  * A representation of cited content from past messages.
  */
-export type CitationBlockInput = {
+export type CitationBlock = {
     /**
      * Block Type
      */
@@ -2948,39 +2847,7 @@ export type CitationBlockInput = {
         block_type: 'text';
     } & TextBlock) | ({
         block_type: 'image';
-    } & ImageBlockInput);
-    /**
-     * Source
-     */
-    source: string;
-    /**
-     * Title
-     */
-    title: string;
-    /**
-     * Additional Location Info
-     */
-    additional_location_info: AdditionalLocationInfo;
-};
-
-/**
- * CitationBlock
- *
- * A representation of cited content from past messages.
- */
-export type CitationBlockOutput = {
-    /**
-     * Block Type
-     */
-    block_type?: 'citation';
-    /**
-     * Cited Content
-     */
-    cited_content: ({
-        block_type: 'text';
-    } & TextBlock) | ({
-        block_type: 'image';
-    } & ImageBlockOutput);
+    } & ImageBlock);
     /**
      * Source
      */
@@ -3328,7 +3195,7 @@ export type ContextualizedAgentEvent = {
      *
      * Data of the event itself.
      */
-    event: StartEvent | AgentInTheLoopResponseEvent | HumanInTheLoopRequestEvent | AgentInTheLoopRequestEvent | AgentInTheLoopExceptionEvent | HumanInTheLoopResponseEvent | LimitChatHistoryEvent | AddMemoryToChatHistoryEvent | AddUserMemoryToChatHistoryEvent | AddOrganizationMemoryToChatHistoryEvent | StandaloneQuestionCondenserEvent | LlmCostEvent | ChunkEvent | ThoughtEvent | GuardEvent | RouterEvent | GuardRejectionEvent | SemanticEvent | AgentEvent | ChainEvent | EmbeddingEvent | LlmEvent | LlmStopEvent | RerankerEvent | RetrieverEvent | ToolEvent | UserMessageEvent | RagStartEvent | ExceptionEvent | StopEvent | DisplayEvent | GuardAcceptEvent | AgentSuitabilityAcceptEvent | AgentSuitabilityRejectEvent | ContextSufficientAcceptEvent | ContextInsufficientRejectEvent | FewShotAcceptEvent | FewShotRejectEvent | SensitiveInfoAcceptEvent | SensitiveInfoRejectEvent | StoreUserMemoryEvent | BaseRetrieveMemoryEvent | BaseStoreMemoryEvent | RetrieveOrganizationMemoryEvent | RetrieveUserMemoryEvent | StoreOrganizationMemoryEvent;
+    event: StartEvent | AgentInTheLoopResponseEvent | HumanInTheLoopRequestEvent | AgentInTheLoopRequestEvent | AgentInTheLoopExceptionEvent | HumanInTheLoopResponseEvent | LimitChatHistoryEvent | AddMemoryToChatHistoryEvent | AddUserMemoryToChatHistoryEvent | AddOrganizationMemoryToChatHistoryEvent | StandaloneQuestionCondenserEvent | LlmCostEvent | ChunkEvent | ThoughtEvent | GuardEvent | RouterEvent | GuardRejectionEvent | SemanticEvent | AgentEvent | ChainEvent | EmbeddingEvent | LlmEvent | LlmStopEvent | RerankerEvent | RetrieverEvent | ToolEvent | UserMessageEvent | ExceptionEvent | StopEvent | DisplayEvent | GuardAcceptEvent | AgentSuitabilityAcceptEvent | AgentSuitabilityRejectEvent | ContextSufficientAcceptEvent | ContextInsufficientRejectEvent | FewShotAcceptEvent | FewShotRejectEvent | SensitiveInfoAcceptEvent | SensitiveInfoRejectEvent | StoreUserMemoryEvent | BaseRetrieveMemoryEvent | BaseStoreMemoryEvent | RetrieveOrganizationMemoryEvent | RetrieveUserMemoryEvent | StoreOrganizationMemoryEvent;
 };
 
 /**
@@ -3473,6 +3340,46 @@ export type CreateRoleRequest = {
      * Pattern-based usage limit rules.
      */
     usage_limits?: Array<UsageLimitDto>;
+};
+
+/**
+ * CreateTenantMetadataRequest
+ *
+ * Request model for attaching metadata to an existing Keycloak tenant group.
+ *
+ * ``tenant_id`` is not user-chosen here — it must already exist as a Keycloak group
+ * under ``/tenants/``. Use the ``/admin/tenants/unconfigured`` endpoint to list
+ * configurable ids. A regex constraint is deliberately avoided because Keycloak
+ * accepts group names this layer would otherwise reject (e.g. ``MyTenant``,
+ * ``customer.acme``); the only checks that belong here are a minimum length (reject
+ * empty payloads) and a maximum length matching Keycloak's group-name cap (DoS guard
+ * against unbounded strings reaching Mongo).
+ */
+export type CreateTenantMetadataRequest = {
+    /**
+     * Tenant Id
+     *
+     * Keycloak tenant group name (must already exist under /tenants/).
+     */
+    tenant_id: string;
+    /**
+     * Name
+     *
+     * The unique display name of the tenant.
+     */
+    name: string;
+    /**
+     * Description
+     *
+     * A short description of the tenant.
+     */
+    description?: string;
+    /**
+     * Access Rules
+     *
+     * Access rules granted to this tenant.
+     */
+    access_rules?: Array<string>;
 };
 
 /**
@@ -4130,39 +4037,7 @@ export type DisplayStatistics = {
  *
  * A representation of a document to directly pass to the LLM.
  */
-export type DocumentBlockInput = {
-    /**
-     * Block Type
-     */
-    block_type?: 'document';
-    /**
-     * Data
-     */
-    data?: Blob | File | null;
-    /**
-     * Path
-     */
-    path?: string | null;
-    /**
-     * Url
-     */
-    url?: string | null;
-    /**
-     * Title
-     */
-    title?: string | null;
-    /**
-     * Document Mimetype
-     */
-    document_mimetype?: string | null;
-};
-
-/**
- * DocumentBlock
- *
- * A representation of a document to directly pass to the LLM.
- */
-export type DocumentBlockOutput = {
+export type DocumentBlock = {
     /**
      * Block Type
      */
@@ -5987,39 +5862,7 @@ export type Image = {
  *
  * A representation of image data to directly pass to/from the LLM.
  */
-export type ImageBlockInput = {
-    /**
-     * Block Type
-     */
-    block_type?: 'image';
-    /**
-     * Image
-     */
-    image?: Blob | File | null;
-    /**
-     * Path
-     */
-    path?: string | null;
-    /**
-     * Url
-     */
-    url?: string | string | null;
-    /**
-     * Image Mimetype
-     */
-    image_mimetype?: string | null;
-    /**
-     * Detail
-     */
-    detail?: string | null;
-};
-
-/**
- * ImageBlock
- *
- * A representation of image data to directly pass to/from the LLM.
- */
-export type ImageBlockOutput = {
+export type ImageBlock = {
     /**
      * Block Type
      */
@@ -7579,7 +7422,7 @@ export type LimitChatHistoryEvent = {
      *
      * Limited chat history based on number of input tokens.
      */
-    limited_history: Array<ChatMessageOutput>;
+    limited_history: Array<ChatMessage>;
     /**
      * Event Name
      *
@@ -7593,7 +7436,7 @@ export type LimitChatHistoryEvent = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessageOutput> | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessage> | Array<string> | undefined;
 };
 
 /**
@@ -8343,26 +8186,6 @@ export type Metadata = {
 };
 
 /**
- * MetadataFilterPair
- *
- * A metadata key/value equality filter for RAG retrieval.
- */
-export type MetadataFilterPair = {
-    /**
-     * Key
-     *
-     * The metadata key to filter on.
-     */
-    key: string;
-    /**
-     * Value
-     *
-     * The value the metadata key must equal.
-     */
-    value: string | number | number | boolean;
-};
-
-/**
  * MinimalAgentInstanceDTO
  *
  * Encapsulates the data transfer object (DTO) for a minimal agent INSTANCE.
@@ -9058,6 +8881,26 @@ export type MultiSelect = {
     } | null | boolean | string | null | LocaleString | string | null | Array<{
         [key: string]: unknown;
     }> | string | null | string | null | string | undefined;
+};
+
+/**
+ * MyTenantsResponse
+ *
+ * Response for the GET /my-tenants endpoint, including sysadmin status.
+ */
+export type MyTenantsResponse = {
+    /**
+     * Tenants
+     *
+     * Tenants the user making the call belongs to
+     */
+    tenants: Array<TenantMembershipDto>;
+    /**
+     * Is Sys Admin
+     *
+     * Whether the user has system administrator privileges
+     */
+    is_sys_admin?: boolean;
 };
 
 /**
@@ -10198,113 +10041,6 @@ export type PromptTokensDetails = {
 };
 
 /**
- * RAGStartEvent
- *
- * Namespace-aware start event for the RAG agent.
- *
- * `RAGStartEvent` is intended for non-chat publishers: custom domain front-ends that run their own namespace
- * selection UI, or other agents delegating to RAG via `AgentInTheLoop`.
- */
-export type RagStartEvent = {
-    /**
-     * Event Id
-     */
-    event_id?: string;
-    /**
-     * Created At
-     *
-     * The time (in ns since epoch) the event was stored in the event store
-     */
-    created_at?: number;
-    /**
-     * Display name for the event
-     */
-    display_name?: LocaleString | null;
-    /**
-     * Display description for the event
-     */
-    display_description?: LocaleString | null;
-    /**
-     * Locale
-     *
-     * The user's locale, guiding language or regional adaptations.
-     */
-    locale?: string;
-    /**
-     * User on whose behalf the RAG run is executed.
-     */
-    user: UserIdentity;
-    /**
-     * Messages
-     *
-     * Chat history providing the context and the user query for retrieval.
-     */
-    messages?: Array<ChatMessageOutput>;
-    /**
-     * Files
-     *
-     * Files uploaded alongside the query for additional context.
-     */
-    files?: Array<UserUploadedFile> | null;
-    /**
-     * Selected Namespaces
-     *
-     * List of bucket-namespace pairs restricting RAG retrieval.
-     */
-    selected_namespaces: Array<BucketNamespacePair>;
-    /**
-     * Additional Filters
-     *
-     * Per-bucket additional metadata filters (AND-combined with namespace filters). Filter keys must be listed in the target retriever's `MilvusVectorStoreConfig.allowed_metadata_filter_fields`. The reserved `namespace` key is not permitted here — use `selected_namespaces` instead.
-     */
-    additional_filters?: Array<BucketMetadataFilters> | null;
-    /**
-     * Event Name
-     *
-     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
-     * Used during deserialization to decide which subclass to instantiate.
-     */
-    readonly _event_name: string;
-    /**
-     * Parent Event Names
-     *
-     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
-     */
-    readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | UserIdentity | Array<ChatMessageOutput> | Array<UserUploadedFile> | null | Array<BucketNamespacePair> | Array<BucketMetadataFilters> | null | Array<string> | undefined;
-};
-
-/**
- * RAGStartEventInput
- */
-export type RagStartEventInput = {
-    /**
-     * Messages
-     *
-     * Chat history providing the context and the user query for retrieval.
-     */
-    messages?: Array<JamboParserObjectTypeParserChatMessage1>;
-    /**
-     * Files
-     *
-     * Files uploaded alongside the query for additional context.
-     */
-    files?: Array<UserUploadedFile> | null;
-    /**
-     * Selected Namespaces
-     *
-     * List of bucket-namespace pairs restricting RAG retrieval.
-     */
-    selected_namespaces: Array<BucketNamespacePair>;
-    /**
-     * Additional Filters
-     *
-     * Per-bucket additional metadata filters (AND-combined with namespace filters). Filter keys must be listed in the target retriever's `MilvusVectorStoreConfig.allowed_metadata_filter_fields`. The reserved `namespace` key is not permitted here — use `selected_namespaces` instead.
-     */
-    additional_filters?: Array<BucketMetadataFilters> | null;
-};
-
-/**
  * RadioButton
  *
  * https://formkit-primevue.netlify.app/inputs/RadioButton
@@ -10997,15 +10733,9 @@ export type RoleResponse = {
     /**
      * Tenant Id
      *
-     * Tenant ID this role belongs to, or None for system roles.
+     * Tenant ID this role belongs to.
      */
-    tenant_id: string | null;
-    /**
-     * Is System Role
-     *
-     * Whether this is a system-wide role (no tenant_id means system role).
-     */
-    readonly is_system_role: boolean;
+    tenant_id: string;
 };
 
 /**
@@ -11863,7 +11593,7 @@ export type StandaloneQuestionCondenserEvent = {
     /**
      * Single chat message containing the condensed user question.
      */
-    condensed_chat_message: ChatMessageOutput;
+    condensed_chat_message: ChatMessage;
     /**
      * Event Name
      *
@@ -11877,7 +11607,7 @@ export type StandaloneQuestionCondenserEvent = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | ChatMessageOutput | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | ChatMessage | Array<string> | undefined;
 };
 
 /**
@@ -11988,24 +11718,6 @@ export type StopEvent = {
      */
     readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<string> | undefined;
-};
-
-/**
- * StopEventOutput
- */
-export type StopEventOutput = {
-    /**
-     * Display Name
-     *
-     * Display name for the event
-     */
-    display_name?: LocaleString | null;
-    /**
-     * Display Description
-     *
-     * Display description for the event
-     */
-    display_description?: LocaleString | null;
 };
 
 /**
@@ -12271,6 +11983,90 @@ export type TenantMembershipDto = {
 };
 
 /**
+ * TenantResponse
+ *
+ * Response model for a tenant, as seen by sysadmins.
+ */
+export type TenantResponse = {
+    /**
+     * Id
+     *
+     * Unique tenant identifier (matches the Keycloak group name).
+     */
+    id: string;
+    /**
+     * Name
+     *
+     * Tenant display name.
+     */
+    name: string;
+    /**
+     * Description
+     *
+     * Tenant description.
+     */
+    description: string;
+    /**
+     * Access Rules
+     *
+     * Access rules granted to this tenant.
+     */
+    access_rules: Array<string>;
+    /**
+     * Whether the tenant also exists in Keycloak (active) or not (orphaned).
+     */
+    state: TenantState;
+    /**
+     * Created At
+     *
+     * Tenant creation timestamp.
+     */
+    created_at: Date;
+    /**
+     * Updated At
+     *
+     * Tenant last update timestamp.
+     */
+    updated_at: Date;
+};
+
+/**
+ * TenantState
+ *
+ * Visibility state of a tenant for the sysadmin view.
+ *
+ * - ACTIVE: exists both in Keycloak (as a group) and in MongoDB (as metadata).
+ * - ORPHANED: exists only in MongoDB; the Keycloak group is missing. Users cannot
+ * reach this tenant. Shown to sysadmins read-only with a delete action only.
+ *
+ * Unconfigured tenants (Keycloak group only, no metadata) deliberately do not
+ * appear here: they carry no MongoDB fields (name/description/access_rules) to
+ * wrap in a ``TenantResponse``, so they are served separately as ``list[str]``
+ * by ``/admin/tenants/unconfigured``. Promoting one to Active via
+ * ``create_tenant_metadata`` is what introduces the metadata row that makes a
+ * ``TenantState`` value meaningful.
+ */
+export const TenantState = { ACTIVE: 'active', ORPHANED: 'orphaned' } as const;
+
+/**
+ * TenantState
+ *
+ * Visibility state of a tenant for the sysadmin view.
+ *
+ * - ACTIVE: exists both in Keycloak (as a group) and in MongoDB (as metadata).
+ * - ORPHANED: exists only in MongoDB; the Keycloak group is missing. Users cannot
+ * reach this tenant. Shown to sysadmins read-only with a delete action only.
+ *
+ * Unconfigured tenants (Keycloak group only, no metadata) deliberately do not
+ * appear here: they carry no MongoDB fields (name/description/access_rules) to
+ * wrap in a ``TenantResponse``, so they are served separately as ``list[str]``
+ * by ``/admin/tenants/unconfigured``. Promoting one to Active via
+ * ``create_tenant_metadata`` is what introduces the metadata row that makes a
+ * ``TenantState`` value meaningful.
+ */
+export type TenantState = typeof TenantState[keyof typeof TenantState];
+
+/**
  * TextBlock
  *
  * A representation of text data to directly pass to/from the LLM.
@@ -12453,35 +12249,7 @@ export type Textarea = {
  *
  * A representation of the content streamed from reasoning/thinking processes by LLMs
  */
-export type ThinkingBlockInput = {
-    /**
-     * Block Type
-     */
-    block_type?: 'thinking';
-    /**
-     * Content
-     *
-     * Content of the reasoning/thinking process, if available
-     */
-    content?: string | null;
-    /**
-     * Num Tokens
-     *
-     * Number of token used for reasoning/thinking, if available
-     */
-    num_tokens?: number | null;
-    /**
-     * Additional Information
-     */
-    additional_information?: AdditionalInformation;
-};
-
-/**
- * ThinkingBlock
- *
- * A representation of the content streamed from reasoning/thinking processes by LLMs
- */
-export type ThinkingBlockOutput = {
+export type ThinkingBlock = {
     /**
      * Block Type
      */
@@ -13007,35 +12775,7 @@ export type TokenResponse = {
 /**
  * ToolCallBlock
  */
-export type ToolCallBlockInput = {
-    /**
-     * Block Type
-     */
-    block_type?: 'tool_call';
-    /**
-     * Tool Call Id
-     *
-     * ID of the tool call, if provided
-     */
-    tool_call_id?: string | null;
-    /**
-     * Tool Name
-     *
-     * Name of the called tool
-     */
-    tool_name: string;
-    /**
-     * Tool Kwargs
-     *
-     * Arguments provided to the tool, if available
-     */
-    tool_kwargs?: Sub0 | string;
-};
-
-/**
- * ToolCallBlock
- */
-export type ToolCallBlockOutput = {
+export type ToolCallBlock = {
     /**
      * Block Type
      */
@@ -13447,6 +13187,31 @@ export type UpdateRoleRequest = {
 };
 
 /**
+ * UpdateTenantMetadataRequest
+ *
+ * Request model for updating a tenant. All fields are optional.
+ *
+ * Name and description constraints mirror ``CreateTenantMetadataRequest`` — an update
+ * must not be able to slip a value past a constraint that create enforced.
+ */
+export type UpdateTenantMetadataRequest = {
+    /**
+     * Name
+     */
+    name?: string | null;
+    /**
+     * Description
+     */
+    description?: string | null;
+    /**
+     * Access Rules
+     *
+     * Access rules granted to this tenant.
+     */
+    access_rules?: Array<string> | null;
+};
+
+/**
  * UsageDuration
  *
  * Usage statistics for models billed by audio input duration.
@@ -13637,6 +13402,18 @@ export type UserDto = {
      * User dashboard configuration for index page
      */
     dashboard?: DashboardDto | null;
+    /**
+     * Roles
+     *
+     * Roles the user holds in the current tenant.
+     */
+    roles?: Array<string>;
+    /**
+     * Is Sys Admin
+     *
+     * Whether the user has the AIHubSysAdmin realm role in Keycloak.
+     */
+    is_sys_admin?: boolean;
 };
 
 /**
@@ -13673,6 +13450,12 @@ export type UserIdentity = {
      * The tenant context the user is operating within.
      */
     acting_within_tenant?: TenantIdentity | null;
+    /**
+     * Is Sys Admin
+     *
+     * Whether the user has the AIHubSysAdmin realm role (from the JWT).
+     */
+    is_sys_admin?: boolean;
 };
 
 /**
@@ -13735,7 +13518,7 @@ export type UserMessageEvent = {
      *
      * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
      */
-    messages?: Array<ChatMessageOutput>;
+    messages?: Array<ChatMessage>;
     /**
      * Files
      *
@@ -13755,25 +13538,7 @@ export type UserMessageEvent = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | UserIdentity | Array<ChatMessageOutput> | Array<UserUploadedFile> | null | Array<string> | undefined;
-};
-
-/**
- * UserMessageEventInput
- */
-export type UserMessageEventInput = {
-    /**
-     * Messages
-     *
-     * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
-     */
-    messages?: Array<JamboParserObjectTypeParserChatMessage2>;
-    /**
-     * Files
-     *
-     * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
-     */
-    files?: Array<UserUploadedFile> | null;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | UserIdentity | Array<ChatMessage> | Array<UserUploadedFile> | null | Array<string> | undefined;
 };
 
 /**
@@ -13840,9 +13605,15 @@ export type UserWithAccessDto = {
     /**
      * Roles
      *
-     * List of roles assigned to the user in the current tenant
+     * Roles the user holds in the current tenant.
      */
     roles?: Array<string>;
+    /**
+     * Is Sys Admin
+     *
+     * Whether the user has the AIHubSysAdmin realm role in Keycloak.
+     */
+    is_sys_admin?: boolean;
     /**
      * User access levels
      */
@@ -13880,20 +13651,15 @@ export type ValidationError = {
 /**
  * VectorStoreInput
  *
- * A FormKit element for selecting a vector store collection, namespaces, and
- * the metadata keys publishers are allowed to filter on at query time.
+ *     A FormKit element for selecting a vector store collection and namespaces.
  *
- * This element renders as three controls:
+ * This element renders as a cascading selection:
  * 1. Database dropdown (loads from /api/v1/knowledge/databases)
  * 2. Namespace multi-select (populated based on selected database)
- * 3. Free-form chips input for `allowed_metadata_filter_fields`
  *
- * The output matches the three configurable fields of `MilvusVectorStoreConfig`:
- * {
- * "collection_name": str,
- * "index_namespaces": list[str],
- * "allowed_metadata_filter_fields": list[str],
- * }
+ * The output is a structured object containing both the collection name and
+ * the selected namespaces, matching the MilvusVectorStoreConfig fields:
+ * {"collection_name": str, "index_namespaces": list[str]}
  *
  * ### Form Duality
  * When used with MilvusVectorStoreConfig, the form submission is validated
@@ -13910,7 +13676,7 @@ export type ValidationError = {
  * MilvusVectorStoreConfig | VectorStoreInput,
  * Field(description="The vector store configuration"),
  * ]
- *
+ * reranking_model
  * # Form mode - for rendering:
  * config = MyRetrieverConfig(
  * vector_store=VectorStoreInput(
@@ -13923,7 +13689,6 @@ export type ValidationError = {
  * vector_store=MilvusVectorStoreConfig(
  * collection_name="my-database",
  * index_namespaces=["namespace1", "namespace2"],
- * allowed_metadata_filter_fields=["department", "year"],
  * ),
  * )
  * ```
@@ -14004,12 +13769,6 @@ export type VectorStoreInput = {
      */
     namespacePlaceholder?: LocaleString | string | null;
     /**
-     * Allowedfilterfieldsplaceholder
-     *
-     * Placeholder for the allowed metadata filter fields chips input.
-     */
-    allowedFilterFieldsPlaceholder?: LocaleString | string | null;
-    /**
      * Filter
      *
      * Whether to enable filtering/search
@@ -14021,7 +13780,7 @@ export type VectorStoreInput = {
     readonly validation: string;
     [key: string]: unknown | true | string | null | string | null | 'vectorStoreInput' | string | null | LocaleString | string | LocaleString | string | null | string | number | number | boolean | Array<string> | {
         [key: string]: string;
-    } | null | boolean | string | null | LocaleString | string | null | LocaleString | string | null | LocaleString | string | null | string | undefined;
+    } | null | boolean | string | null | LocaleString | string | null | LocaleString | string | null | string | undefined;
 };
 
 /**
@@ -14029,43 +13788,7 @@ export type VectorStoreInput = {
  *
  * A representation of video data to directly pass to/from the LLM.
  */
-export type VideoBlockInput = {
-    /**
-     * Block Type
-     */
-    block_type?: 'video';
-    /**
-     * Video
-     */
-    video?: Blob | File | null;
-    /**
-     * Path
-     */
-    path?: string | null;
-    /**
-     * Url
-     */
-    url?: string | string | null;
-    /**
-     * Video Mimetype
-     */
-    video_mimetype?: string | null;
-    /**
-     * Detail
-     */
-    detail?: string | null;
-    /**
-     * Fps
-     */
-    fps?: number | null;
-};
-
-/**
- * VideoBlock
- *
- * A representation of video data to directly pass to/from the LLM.
- */
-export type VideoBlockOutput = {
+export type VideoBlock = {
     /**
      * Block Type
      */
@@ -14126,103 +13849,6 @@ export type WorkflowGraph = {
      * List of edges in the graph
      */
     links: Array<EdgeData>;
-};
-
-/**
- * ThinkingBlock.additional_information
- *
- * Additional information related to the thinking/reasoning process, if available
- */
-export type AdditionalInformation = {
-    [key: string]: unknown;
-};
-
-/**
- * ChatMessage.additional_kwargs
- */
-export type AdditionalKwargs = {
-    [key: string]: unknown;
-};
-
-/**
- * CitationBlock.additional_location_info
- */
-export type AdditionalLocationInfo = {
-    [key: string]: unknown;
-};
-
-/**
- * ChatMessage
- *
- * Chat message.
- */
-export type JamboParserObjectTypeParserChatMessage1 = {
-    role?: MessageRole;
-    /**
-     * Additional Kwargs
-     */
-    additional_kwargs?: AdditionalKwargs;
-    /**
-     * Blocks
-     */
-    blocks?: Array<({
-        block_type: 'text';
-    } & TextBlock) | ({
-        block_type: 'image';
-    } & ImageBlockInput) | ({
-        block_type: 'audio';
-    } & AudioBlockInput) | ({
-        block_type: 'video';
-    } & VideoBlockInput) | ({
-        block_type: 'document';
-    } & DocumentBlockInput) | ({
-        block_type: 'cache';
-    } & CachePoint) | ({
-        block_type: 'citable';
-    } & CitableBlockInput) | ({
-        block_type: 'citation';
-    } & CitationBlockInput) | ({
-        block_type: 'thinking';
-    } & ThinkingBlockInput) | ({
-        block_type: 'tool_call';
-    } & ToolCallBlockInput)>;
-};
-
-/**
- * ChatMessage
- *
- * Chat message.
- */
-export type JamboParserObjectTypeParserChatMessage2 = {
-    role?: MessageRole;
-    /**
-     * Additional Kwargs
-     */
-    additional_kwargs?: AdditionalKwargs;
-    /**
-     * Blocks
-     */
-    blocks?: Array<({
-        block_type: 'text';
-    } & TextBlock) | ({
-        block_type: 'image';
-    } & ImageBlockInput) | ({
-        block_type: 'audio';
-    } & AudioBlockInput) | ({
-        block_type: 'video';
-    } & VideoBlockInput) | ({
-        block_type: 'document';
-    } & DocumentBlockInput) | ({
-        block_type: 'cache';
-    } & CachePoint) | ({
-        block_type: 'citable';
-    } & CitableBlockInput) | ({
-        block_type: 'citation';
-    } & CitationBlockInput) | ({
-        block_type: 'thinking';
-    } & ThinkingBlockInput) | ({
-        block_type: 'tool_call';
-    } & ToolCallBlockInput)>;
 };
 
 /**
@@ -14345,13 +13971,6 @@ export type OpenaiTypesImagesResponseUsage = {
 };
 
 /**
- * ToolCallBlock.tool_kwargs.sub0
- */
-export type Sub0 = {
-    [key: string]: unknown;
-};
-
-/**
  * AddMemoryToChatHistoryEvent
  *
  * A control and display event emitted when an agent extends chat history with retrieved memories.
@@ -14393,8 +14012,8 @@ export type AddMemoryToChatHistoryEventWritable = {
      *
      * Chat history extended with user memories.
      */
-    extended_history: Array<ChatMessageOutput>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessageOutput> | undefined;
+    extended_history: Array<ChatMessage>;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessage> | undefined;
 };
 
 /**
@@ -14429,8 +14048,8 @@ export type AddOrganizationMemoryToChatHistoryEventWritable = {
      *
      * Chat history extended with user memories.
      */
-    extended_history: Array<ChatMessageOutput>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessageOutput> | undefined;
+    extended_history: Array<ChatMessage>;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessage> | undefined;
 };
 
 /**
@@ -14465,8 +14084,8 @@ export type AddUserMemoryToChatHistoryEventWritable = {
      *
      * Chat history extended with user memories.
      */
-    extended_history: Array<ChatMessageOutput>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessageOutput> | undefined;
+    extended_history: Array<ChatMessage>;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessage> | undefined;
 };
 
 /**
@@ -15892,7 +15511,7 @@ export type ContextualizedAgentEventWritable = {
      *
      * Data of the event itself.
      */
-    event: StartEventWritable | AgentInTheLoopResponseEventWritable | HumanInTheLoopRequestEventWritable | AgentInTheLoopRequestEventWritable | AgentInTheLoopExceptionEventWritable | HumanInTheLoopResponseEventWritable | LimitChatHistoryEventWritable | AddMemoryToChatHistoryEventWritable | AddUserMemoryToChatHistoryEventWritable | AddOrganizationMemoryToChatHistoryEventWritable | StandaloneQuestionCondenserEventWritable | LlmCostEventWritable | ChunkEventWritable | ThoughtEventWritable | GuardEventWritable | RouterEventWritable | GuardRejectionEventWritable | SemanticEventWritable | AgentEventWritable | ChainEventWritable | EmbeddingEventWritable | LlmEventWritable | LlmStopEventWritable | RerankerEventWritable | RetrieverEventWritable | ToolEventWritable | UserMessageEventWritable | RagStartEventWritable | ExceptionEventWritable | StopEventWritable | DisplayEventWritable | GuardAcceptEventWritable | AgentSuitabilityAcceptEventWritable | AgentSuitabilityRejectEventWritable | ContextSufficientAcceptEventWritable | ContextInsufficientRejectEventWritable | FewShotAcceptEventWritable | FewShotRejectEventWritable | SensitiveInfoAcceptEventWritable | SensitiveInfoRejectEventWritable | StoreUserMemoryEventWritable | BaseRetrieveMemoryEventWritable | BaseStoreMemoryEventWritable | RetrieveOrganizationMemoryEventWritable | RetrieveUserMemoryEventWritable | StoreOrganizationMemoryEventWritable;
+    event: StartEventWritable | AgentInTheLoopResponseEventWritable | HumanInTheLoopRequestEventWritable | AgentInTheLoopRequestEventWritable | AgentInTheLoopExceptionEventWritable | HumanInTheLoopResponseEventWritable | LimitChatHistoryEventWritable | AddMemoryToChatHistoryEventWritable | AddUserMemoryToChatHistoryEventWritable | AddOrganizationMemoryToChatHistoryEventWritable | StandaloneQuestionCondenserEventWritable | LlmCostEventWritable | ChunkEventWritable | ThoughtEventWritable | GuardEventWritable | RouterEventWritable | GuardRejectionEventWritable | SemanticEventWritable | AgentEventWritable | ChainEventWritable | EmbeddingEventWritable | LlmEventWritable | LlmStopEventWritable | RerankerEventWritable | RetrieverEventWritable | ToolEventWritable | UserMessageEventWritable | ExceptionEventWritable | StopEventWritable | DisplayEventWritable | GuardAcceptEventWritable | AgentSuitabilityAcceptEventWritable | AgentSuitabilityRejectEventWritable | ContextSufficientAcceptEventWritable | ContextInsufficientRejectEventWritable | FewShotAcceptEventWritable | FewShotRejectEventWritable | SensitiveInfoAcceptEventWritable | SensitiveInfoRejectEventWritable | StoreUserMemoryEventWritable | BaseRetrieveMemoryEventWritable | BaseStoreMemoryEventWritable | RetrieveOrganizationMemoryEventWritable | RetrieveUserMemoryEventWritable | StoreOrganizationMemoryEventWritable;
 };
 
 /**
@@ -18088,8 +17707,8 @@ export type LimitChatHistoryEventWritable = {
      *
      * Limited chat history based on number of input tokens.
      */
-    limited_history: Array<ChatMessageOutput>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessageOutput> | undefined;
+    limited_history: Array<ChatMessage>;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<ChatMessage> | undefined;
 };
 
 /**
@@ -19087,70 +18706,6 @@ export type ProcessWalkthroughDtoWritable = {
 };
 
 /**
- * RAGStartEvent
- *
- * Namespace-aware start event for the RAG agent.
- *
- * `RAGStartEvent` is intended for non-chat publishers: custom domain front-ends that run their own namespace
- * selection UI, or other agents delegating to RAG via `AgentInTheLoop`.
- */
-export type RagStartEventWritable = {
-    /**
-     * Event Id
-     */
-    event_id?: string;
-    /**
-     * Created At
-     *
-     * The time (in ns since epoch) the event was stored in the event store
-     */
-    created_at?: number;
-    /**
-     * Display name for the event
-     */
-    display_name?: LocaleString | null;
-    /**
-     * Display description for the event
-     */
-    display_description?: LocaleString | null;
-    /**
-     * Locale
-     *
-     * The user's locale, guiding language or regional adaptations.
-     */
-    locale?: string;
-    /**
-     * User on whose behalf the RAG run is executed.
-     */
-    user: UserIdentity;
-    /**
-     * Messages
-     *
-     * Chat history providing the context and the user query for retrieval.
-     */
-    messages?: Array<ChatMessageOutput>;
-    /**
-     * Files
-     *
-     * Files uploaded alongside the query for additional context.
-     */
-    files?: Array<UserUploadedFile> | null;
-    /**
-     * Selected Namespaces
-     *
-     * List of bucket-namespace pairs restricting RAG retrieval.
-     */
-    selected_namespaces: Array<BucketNamespacePair>;
-    /**
-     * Additional Filters
-     *
-     * Per-bucket additional metadata filters (AND-combined with namespace filters). Filter keys must be listed in the target retriever's `MilvusVectorStoreConfig.allowed_metadata_filter_fields`. The reserved `namespace` key is not permitted here — use `selected_namespaces` instead.
-     */
-    additional_filters?: Array<BucketMetadataFilters> | null;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | UserIdentity | Array<ChatMessageOutput> | Array<UserUploadedFile> | null | Array<BucketNamespacePair> | Array<BucketMetadataFilters> | null | undefined;
-};
-
-/**
  * RadioButton
  *
  * https://formkit-primevue.netlify.app/inputs/RadioButton
@@ -19667,50 +19222,6 @@ export type RetrieverEventWritable = {
      */
     nodes?: Array<IngestedNode> | null;
     [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<IngestedNode> | null | undefined;
-};
-
-/**
- * RoleResponse
- *
- * Response model representing a role.
- */
-export type RoleResponseWritable = {
-    /**
-     * Id
-     *
-     * The unique identifier of the role.
-     */
-    id: string;
-    /**
-     * Name
-     *
-     * The name of the role.
-     */
-    name: string;
-    /**
-     * Description
-     *
-     * The description of the role.
-     */
-    description: string;
-    /**
-     * Access Rules
-     *
-     * The list of access rules for the role.
-     */
-    access_rules: Array<string>;
-    /**
-     * Usage Limits
-     *
-     * Pattern-based usage limit rules.
-     */
-    usage_limits?: Array<UsageLimitDto>;
-    /**
-     * Tenant Id
-     *
-     * Tenant ID this role belongs to, or None for system roles.
-     */
-    tenant_id: string | null;
 };
 
 /**
@@ -20429,8 +19940,8 @@ export type StandaloneQuestionCondenserEventWritable = {
     /**
      * Single chat message containing the condensed user question.
      */
-    condensed_chat_message: ChatMessageOutput;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | ChatMessageOutput | undefined;
+    condensed_chat_message: ChatMessage;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | ChatMessage | undefined;
 };
 
 /**
@@ -21281,33 +20792,28 @@ export type UserMessageEventWritable = {
      *
      * A list of chat messages (user and assistant) that provide context, enabling the agent to understand what the user is asking for and what has been discussed so far.
      */
-    messages?: Array<ChatMessageOutput>;
+    messages?: Array<ChatMessage>;
     /**
      * Files
      *
      * A list of files that the user has uploaded, which can be used to provide additional context or information for the agent.
      */
     files?: Array<UserUploadedFile> | null;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | UserIdentity | Array<ChatMessageOutput> | Array<UserUploadedFile> | null | undefined;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | UserIdentity | Array<ChatMessage> | Array<UserUploadedFile> | null | undefined;
 };
 
 /**
  * VectorStoreInput
  *
- * A FormKit element for selecting a vector store collection, namespaces, and
- * the metadata keys publishers are allowed to filter on at query time.
+ *     A FormKit element for selecting a vector store collection and namespaces.
  *
- * This element renders as three controls:
+ * This element renders as a cascading selection:
  * 1. Database dropdown (loads from /api/v1/knowledge/databases)
  * 2. Namespace multi-select (populated based on selected database)
- * 3. Free-form chips input for `allowed_metadata_filter_fields`
  *
- * The output matches the three configurable fields of `MilvusVectorStoreConfig`:
- * {
- * "collection_name": str,
- * "index_namespaces": list[str],
- * "allowed_metadata_filter_fields": list[str],
- * }
+ * The output is a structured object containing both the collection name and
+ * the selected namespaces, matching the MilvusVectorStoreConfig fields:
+ * {"collection_name": str, "index_namespaces": list[str]}
  *
  * ### Form Duality
  * When used with MilvusVectorStoreConfig, the form submission is validated
@@ -21324,7 +20830,7 @@ export type UserMessageEventWritable = {
  * MilvusVectorStoreConfig | VectorStoreInput,
  * Field(description="The vector store configuration"),
  * ]
- *
+ * reranking_model
  * # Form mode - for rendering:
  * config = MyRetrieverConfig(
  * vector_store=VectorStoreInput(
@@ -21337,7 +20843,6 @@ export type UserMessageEventWritable = {
  * vector_store=MilvusVectorStoreConfig(
  * collection_name="my-database",
  * index_namespaces=["namespace1", "namespace2"],
- * allowed_metadata_filter_fields=["department", "year"],
  * ),
  * )
  * ```
@@ -21418,12 +20923,6 @@ export type VectorStoreInputWritable = {
      */
     namespacePlaceholder?: LocaleString | string | null;
     /**
-     * Allowedfilterfieldsplaceholder
-     *
-     * Placeholder for the allowed metadata filter fields chips input.
-     */
-    allowedFilterFieldsPlaceholder?: LocaleString | string | null;
-    /**
      * Filter
      *
      * Whether to enable filtering/search
@@ -21431,37 +20930,7 @@ export type VectorStoreInputWritable = {
     filter?: boolean;
     [key: string]: unknown | true | string | null | string | null | 'vectorStoreInput' | string | null | LocaleString | string | LocaleString | string | null | string | number | number | boolean | Array<string> | {
         [key: string]: string;
-    } | null | boolean | string | null | LocaleString | string | null | LocaleString | string | null | LocaleString | string | null | undefined;
-};
-
-/**
- * ThinkingBlock.additional_information
- *
- * Additional information related to the thinking/reasoning process, if available
- */
-export type AdditionalInformationWritable = {
-    [key: string]: unknown;
-};
-
-/**
- * ChatMessage.additional_kwargs
- */
-export type AdditionalKwargsWritable = {
-    [key: string]: unknown;
-};
-
-/**
- * CitationBlock.additional_location_info
- */
-export type AdditionalLocationInfoWritable = {
-    [key: string]: unknown;
-};
-
-/**
- * ToolCallBlock.tool_kwargs.sub0
- */
-export type Sub0Writable = {
-    [key: string]: unknown;
+    } | null | boolean | string | null | LocaleString | string | null | LocaleString | string | null | undefined;
 };
 
 export type GetHealthData = {
@@ -21546,11 +21015,9 @@ export type GetMyTenantsData = {
 
 export type GetMyTenantsResponses = {
     /**
-     * Response Get My Tenants My Tenants Get
-     *
      * Successful Response
      */
-    200: Array<TenantMembershipDto>;
+    200: MyTenantsResponse;
 };
 
 export type GetMyTenantsResponse = GetMyTenantsResponses[keyof GetMyTenantsResponses];
@@ -23552,6 +23019,157 @@ export type CreateRoleResponses = {
 
 export type CreateRoleResponse = CreateRoleResponses[keyof CreateRoleResponses];
 
+export type ListTenantsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/admin/tenants/';
+};
+
+export type ListTenantsResponses = {
+    /**
+     * Response List Tenants Admin Tenants  Get
+     *
+     * Successful Response
+     */
+    200: Array<TenantResponse>;
+};
+
+export type ListTenantsResponse = ListTenantsResponses[keyof ListTenantsResponses];
+
+export type CreateTenantMetadataData = {
+    body: CreateTenantMetadataRequest;
+    path?: never;
+    query?: never;
+    url: '/admin/tenants/';
+};
+
+export type CreateTenantMetadataErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CreateTenantMetadataError = CreateTenantMetadataErrors[keyof CreateTenantMetadataErrors];
+
+export type CreateTenantMetadataResponses = {
+    /**
+     * Successful Response
+     */
+    201: TenantResponse;
+};
+
+export type CreateTenantMetadataResponse = CreateTenantMetadataResponses[keyof CreateTenantMetadataResponses];
+
+export type ListUnconfiguredTenantsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/admin/tenants/unconfigured';
+};
+
+export type ListUnconfiguredTenantsResponses = {
+    /**
+     * Response List Unconfigured Tenants Admin Tenants Unconfigured Get
+     *
+     * Successful Response
+     */
+    200: Array<string>;
+};
+
+export type ListUnconfiguredTenantsResponse = ListUnconfiguredTenantsResponses[keyof ListUnconfiguredTenantsResponses];
+
+export type DeleteTenantMetadataData = {
+    body?: never;
+    path: {
+        /**
+         * Tenant Id
+         */
+        tenant_id: string;
+    };
+    query?: never;
+    url: '/admin/tenants/{tenant_id}';
+};
+
+export type DeleteTenantMetadataErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type DeleteTenantMetadataError = DeleteTenantMetadataErrors[keyof DeleteTenantMetadataErrors];
+
+export type DeleteTenantMetadataResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type DeleteTenantMetadataResponse = DeleteTenantMetadataResponses[keyof DeleteTenantMetadataResponses];
+
+export type GetTenantData = {
+    body?: never;
+    path: {
+        /**
+         * Tenant Id
+         */
+        tenant_id: string;
+    };
+    query?: never;
+    url: '/admin/tenants/{tenant_id}';
+};
+
+export type GetTenantErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetTenantError = GetTenantErrors[keyof GetTenantErrors];
+
+export type GetTenantResponses = {
+    /**
+     * Successful Response
+     */
+    200: TenantResponse;
+};
+
+export type GetTenantResponse = GetTenantResponses[keyof GetTenantResponses];
+
+export type UpdateTenantMetadataData = {
+    body: UpdateTenantMetadataRequest;
+    path: {
+        /**
+         * Tenant Id
+         */
+        tenant_id: string;
+    };
+    query?: never;
+    url: '/admin/tenants/{tenant_id}';
+};
+
+export type UpdateTenantMetadataErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UpdateTenantMetadataError = UpdateTenantMetadataErrors[keyof UpdateTenantMetadataErrors];
+
+export type UpdateTenantMetadataResponses = {
+    /**
+     * Successful Response
+     */
+    200: TenantResponse;
+};
+
+export type UpdateTenantMetadataResponse = UpdateTenantMetadataResponses[keyof UpdateTenantMetadataResponses];
+
 export type GetModelsData = {
     body?: never;
     path: {
@@ -25146,187 +24764,3 @@ export type ReceiveOpenwebuiWebhookResponses = {
 };
 
 export type ReceiveOpenwebuiWebhookResponse = ReceiveOpenwebuiWebhookResponses[keyof ReceiveOpenwebuiWebhookResponses];
-
-export type SendRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventPostData = {
-    body: RagStartEventInput;
-    path: {
-        /**
-         * Tenant Id
-         *
-         * Tenant identifier: a name, ObjectId, or 'active'
-         */
-        tenant_id: string;
-        /**
-         * Agent ID
-         *
-         * The specific agent instance ID
-         */
-        agent_id: string;
-    };
-    query?: {
-        /**
-         * Thread Id
-         */
-        thread_id?: string;
-        /**
-         * Display Id
-         */
-        display_id?: string;
-    };
-    url: '/{tenant_id}/agents/classes/RAGAgent/instances/{agent_id}/RAGStartEvent';
-};
-
-export type SendRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventPostErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type SendRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventPostError = SendRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventPostErrors[keyof SendRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventPostErrors];
-
-export type SendRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventPostResponses = {
-    /**
-     * Successful Response
-     */
-    200: StopEventOutput;
-};
-
-export type SendRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventPostResponse = SendRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventPostResponses[keyof SendRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventPostResponses];
-
-export type StreamRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventStreamPostData = {
-    body: RagStartEventInput;
-    path: {
-        /**
-         * Tenant Id
-         *
-         * Tenant identifier: a name, ObjectId, or 'active'
-         */
-        tenant_id: string;
-        /**
-         * Agent ID
-         *
-         * The specific agent instance ID
-         */
-        agent_id: string;
-    };
-    query?: {
-        /**
-         * Thread Id
-         */
-        thread_id?: string;
-        /**
-         * Display Id
-         */
-        display_id?: string;
-    };
-    url: '/{tenant_id}/agents/classes/RAGAgent/instances/{agent_id}/RAGStartEvent/stream';
-};
-
-export type StreamRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventStreamPostErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type StreamRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventStreamPostError = StreamRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventStreamPostErrors[keyof StreamRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventStreamPostErrors];
-
-export type StreamRagStartEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdRagStartEventStreamPostResponses = {
-    /**
-     * Successful Response
-     */
-    200: unknown;
-};
-
-export type SendUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostData = {
-    body: UserMessageEventInput;
-    path: {
-        /**
-         * Tenant Id
-         *
-         * Tenant identifier: a name, ObjectId, or 'active'
-         */
-        tenant_id: string;
-        /**
-         * Agent ID
-         *
-         * The specific agent instance ID
-         */
-        agent_id: string;
-    };
-    query?: {
-        /**
-         * Thread Id
-         */
-        thread_id?: string;
-        /**
-         * Display Id
-         */
-        display_id?: string;
-    };
-    url: '/{tenant_id}/agents/classes/RAGAgent/instances/{agent_id}/UserMessageEvent';
-};
-
-export type SendUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type SendUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostError = SendUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostErrors[keyof SendUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostErrors];
-
-export type SendUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostResponses = {
-    /**
-     * Successful Response
-     */
-    200: StopEventOutput;
-};
-
-export type SendUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostResponse = SendUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostResponses[keyof SendUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventPostResponses];
-
-export type StreamUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventStreamPostData = {
-    body: UserMessageEventInput;
-    path: {
-        /**
-         * Tenant Id
-         *
-         * Tenant identifier: a name, ObjectId, or 'active'
-         */
-        tenant_id: string;
-        /**
-         * Agent ID
-         *
-         * The specific agent instance ID
-         */
-        agent_id: string;
-    };
-    query?: {
-        /**
-         * Thread Id
-         */
-        thread_id?: string;
-        /**
-         * Display Id
-         */
-        display_id?: string;
-    };
-    url: '/{tenant_id}/agents/classes/RAGAgent/instances/{agent_id}/UserMessageEvent/stream';
-};
-
-export type StreamUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventStreamPostErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type StreamUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventStreamPostError = StreamUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventStreamPostErrors[keyof StreamUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventStreamPostErrors];
-
-export type StreamUserMessageEventToRagAgentTenantIdAgentsClassesRagAgentInstancesAgentIdUserMessageEventStreamPostResponses = {
-    /**
-     * Successful Response
-     */
-    200: unknown;
-};

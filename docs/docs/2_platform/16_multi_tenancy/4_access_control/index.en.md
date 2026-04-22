@@ -141,9 +141,9 @@ whether access is granted (not denied).
 Configure default behavior through environment variables:
 
 ```bash
-# Default tenant created on first startup
-AIHUB_DEFAULT_TENANT_NAME="Default Organization"
-AIHUB_DEFAULT_TENANT_ACCESS_RULES="aihub.admin.>"
+# Startup tenant (seeded on first boot; an ordinary tenant thereafter)
+AIHUB_STARTUP_TENANT_NAME="Swiss AI Hub"
+AIHUB_STARTUP_TENANT_ACCESS_RULES="aihub.admin.>"
 
 # Automatic user signup
 AIHUB_USER_SIGNUP_DEFAULT_TENANT="default"
@@ -151,24 +151,20 @@ AIHUB_USER_SIGNUP_DEFAULT_ROLES="AIHubUser,AIHubAgentUser"
 FIRST_AIHUB_USER_SIGNUP_DEFAULT_ROLES="AIHubAdmin"
 ```
 
-## Superuser bypass
+## Sysadmin access
 
-The global superuser role bypasses tenant restrictions:
+Users with the Keycloak realm role `AIHubSysAdmin` receive implicit admin access to every tenant and every resource. The
+two-stage tenant/user check described above is bypassed — a sysadmin is treated as an admin everywhere.
 
-- **Virtual superuser tenant**: Operates within a virtual tenant that has `aihub.admin.>` access rules
-- **Full admin access**: Has admin access to all resources across all tenants
-- **Bypasses boundaries**: While still going through the two-stage access control system, the virtual tenant ensures all
-  checks pass
-- **Always authenticated**: Uses a static token rather than identity provider authentication
+Sysadmins can also act without a tenant context, which enables cross-tenant endpoints such as the tenant administration
+UI. Every sysadmin is a real Keycloak user with a real user id, so their actions remain traceable in Langfuse and they
+appear in tenant member listings like any other user.
 
-Configure through:
+Assign the `AIHubSysAdmin` realm role in Keycloak directly or via identity provider mappers. The platform also seeds a
+dedicated Superuser account from `SUPERUSER_USERNAME` / `SUPERUSER_EMAIL` / `SUPERUSER_PASSWORD` and materializes
+`SUPERUSER_TOKEN` as a bearer token for that user so internal services can call the API without a browser session.
 
-```bash
-SUPERUSER_TOKEN="<secure-token>"
-SUPERUSER_OID="<user-id>"
-```
-
-Use sparingly - superuser access exists for platform administration, not regular operations.
+Use sparingly — sysadmin access exists for platform administration, not day-to-day operations.
 
 ## Validation rules
 

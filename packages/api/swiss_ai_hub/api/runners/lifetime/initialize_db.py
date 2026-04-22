@@ -6,183 +6,225 @@ including tenants, roles, permissions, and other essential entities needed for t
 """
 
 import logging
+from datetime import UTC, datetime, timedelta
 
 from keycloak import KeycloakGetError
 from mongoengine import DoesNotExist
-from swiss_ai_hub.core.auth.dependencies.superuser_auth_handler.superuser_settings import SuperuserSettings
+from pydantic import BaseModel
 from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
-from swiss_ai_hub.core.infrastructure import AIHubSettings, DefaultTenantSettings, UserSignupSettings, no_trace
+from swiss_ai_hub.core.auth.realm_roles import SYS_ADMIN_ROLE
+from swiss_ai_hub.core.auth.superuser_settings import SuperuserSettings
+from swiss_ai_hub.core.infrastructure import AIHubSettings, StartupTenantSettings, UserSignupSettings, no_trace
+from swiss_ai_hub.core.persistence.access.entities.bearer_token import BearerToken
 from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
-from swiss_ai_hub.core.persistence.access.entities.tenant_entity import TenantEntity
+from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
 from swiss_ai_hub.core.persistence.rag.datalake.entities import BucketEntity, NamespaceEntity
 
 logger = logging.getLogger(__name__)
 
 
-async def _backfill_existing_users_into_default_group(tenant_id: str) -> None:
-    """One-time backfill: adds all pre-existing realm users to the default tenant group.
+class _DefaultRoleDefinition(BaseModel):
+    name: str
+    description: str
+    access_rules: list[str]
+
+
+async def _backfill_existing_users_into_startup_group(tenant_id: str) -> None:
+    """One-time backfill: adds all pre-existing realm users to the startup tenant group.
 
     Keycloak's defaultGroups only affects users created after the group is configured.
     Users that already existed in the realm (e.g. the seeded admin from the realm import)
-    need to be added explicitly. Only runs the first time the default tenant is created —
+    need to be added explicitly. Only runs the first time the startup tenant is created —
     never on subsequent startups, so admin-initiated removals are not reverted.
     """
     all_users = await KeycloakAdminService.get_all_users()
     for user in all_users:
         await KeycloakAdminService.assign_user_to_tenant(user.id, tenant_id)
-        logger.info(f"Backfilled user '{user.username}' into default tenant group")
+        logger.info(f"Backfilled user '{user.username}' into startup tenant group")
+
+
+_DEFAULT_ROLE_DEFINITIONS: list[_DefaultRoleDefinition] = [
+    _DefaultRoleDefinition(
+        name="AIHubUser",
+        description="Grants global user access to AI-Hub",
+        access_rules=["aihub.user.>"],
+    ),
+    _DefaultRoleDefinition(
+        name="AIHubAdmin",
+        description="Grants global administrative access to AI-Hub",
+        access_rules=["aihub.admin.>"],
+    ),
+    _DefaultRoleDefinition(
+        name="AIHubAgentUser",
+        description="Grants access to all agents but to nothing else",
+        access_rules=["aihub.user.agent.>"],
+    ),
+    _DefaultRoleDefinition(
+        name="AIHubAgentAdmin",
+        description="Grants admin access to all agents but to nothing else",
+        access_rules=["aihub.admin.agent.>"],
+    ),
+    _DefaultRoleDefinition(
+        name="AIHubKnowledgeAdmin",
+        description="Grants admin access to knowledge and agents",
+        access_rules=["aihub.admin.agent.>", "aihub.admin.knowledge.>"],
+    ),
+    _DefaultRoleDefinition(
+        name="AIHubProcessUser",
+        description="Grants access to all processes but to nothing else",
+        access_rules=["aihub.user.process.>"],
+    ),
+    _DefaultRoleDefinition(
+        name="AIHubProcessAdmin",
+        description="Grants admin access to all processes but to nothing else",
+        access_rules=["aihub.admin.process.>"],
+    ),
+]
 
 
 @no_trace
-async def initialize_default_tenant() -> TenantEntity | None:
+async def initialize_startup_tenant() -> TenantMetadataEntity | None:
     """
-    Initialize the default tenant for the platform.
+    Initialize the startup tenant for the platform.
 
-    Creates the MongoDB tenant entity and ensures a matching Keycloak group exists
+    Creates the MongoDB tenant metadata and ensures a matching Keycloak group exists
     under /tenants/<tenant-name>. The Keycloak realm configures this group as a
-    default group so all new users are automatically members.
+    default group so all new users are automatically members. Also seeds the
+    tenant's default role set (idempotent, gated by ``CREATE_DEFAULT_ROLES``).
     """
-    settings = DefaultTenantSettings()
+    settings = StartupTenantSettings()
 
-    existing_tenant = TenantEntity.get_default_tenant()
+    existing_tenant = TenantMetadataEntity.get_startup_tenant_metadata()
     if existing_tenant:
         logger.info(
-            f"Default tenant '{existing_tenant.name}' (id={existing_tenant.id}) already exists, skipping creation"
+            f"Startup tenant '{existing_tenant.name}' (id={existing_tenant.id}) already exists, skipping creation"
         )
+        await initialize_default_roles_for_tenant(str(existing_tenant.id))
         return existing_tenant
 
-    tenant = TenantEntity.ensure_default_tenant_exists(
+    tenant = TenantMetadataEntity.ensure_startup_tenant_metadata_exists(
         tenant_id=settings.ID,
         name=settings.NAME,
         description=settings.DESCRIPTION,
         access_rules=settings.access_rules_list,
     )
-    logger.info(f"Successfully created default tenant '{tenant.name}' (id={tenant.id})")
+    logger.info(f"Successfully created startup tenant '{tenant.name}' (id={tenant.id})")
 
     try:
         await KeycloakAdminService.create_tenant_group(tenant.id)
         logger.info(f"Keycloak tenant group '/tenants/{tenant.id}' created")
-        await _backfill_existing_users_into_default_group(tenant.id)
+        await _backfill_existing_users_into_startup_group(tenant.id)
+        await KeycloakAdminService.assign_superuser_to_tenant(tenant.id)
     except KeycloakGetError:
         logger.warning(
             f"Could not sync Keycloak group for tenant '{tenant.name}'"
             " - Keycloak may not have the required permissions yet"
         )
 
+    await initialize_default_roles_for_tenant(str(tenant.id))
     return tenant
 
 
 @no_trace
-async def initialize_roles() -> None:
+async def initialize_default_roles_for_tenant(tenant_id: str) -> None:
     """
-    Initialize all required system roles in the database.
+    Seed the default role set for a tenant. Idempotent.
 
-    System roles are tenant-agnostic and available to all tenants.
-    This function orchestrates the creation of all necessary roles
-    for the AI-Hub to operate properly.
+    Gated by ``AIHubSettings().CREATE_DEFAULT_ROLES``: when disabled, tenants
+    start empty and an admin is expected to create roles manually.
     """
-    await initialize_system_role(
-        name="AIHubSuperuser",
-        description="Grants the AI-Hub Superuser global administrative access",
-        access_rules=["aihub.admin.>"],
-    )
+    if not AIHubSettings().CREATE_DEFAULT_ROLES:
+        logger.info(f"CREATE_DEFAULT_ROLES disabled; skipping default role seeding for tenant '{tenant_id}'")
+        return
 
-    if AIHubSettings().CREATE_DEFAULT_ROLES:
-        await initialize_system_role(
-            name="AIHubUser",
-            description="Grants global user access to AI-Hub",
-            access_rules=["aihub.user.>"],
-        )
-        await initialize_system_role(
-            name="AIHubAdmin",
-            description="Grants global administrative access to AI-Hub",
-            access_rules=["aihub.admin.>"],
-        )
-        await initialize_system_role(
-            name="AIHubAgentUser",
-            description="Grants access to all agents but to nothing else",
-            access_rules=["aihub.user.agent.>"],
-        )
-        await initialize_system_role(
-            name="AIHubAgentAdmin",
-            description="Grants admin access to all agents but to nothing else",
-            access_rules=["aihub.admin.agent.>"],
-        )
-        await initialize_system_role(
-            name="AIHubKnowledgeAdmin",
-            description="Grants admin access to knowledge and agents",
-            access_rules=["aihub.admin.agent.>", "aihub.admin.knowledge.>"],
-        )
-        await initialize_system_role(
-            name="AIHubProcessUser",
-            description="Grants access to all processes but to nothing else",
-            access_rules=["aihub.user.process.>"],
-        )
-        await initialize_system_role(
-            name="AIHubProcessAdmin",
-            description="Grants admin access to all processes but to nothing else",
-            access_rules=["aihub.admin.process.>"],
-        )
+    for role_def in _DEFAULT_ROLE_DEFINITIONS:
+        existing = RoleEntity.objects(name=role_def.name, tenant_id=tenant_id).first()
+        if existing:
+            logger.info(f"Role '{role_def.name}' already exists for tenant '{tenant_id}', skipping creation")
+            continue
+        try:
+            RoleEntity.create_tenant_role(
+                name=role_def.name,
+                description=role_def.description,
+                access_rules=role_def.access_rules,
+                tenant_id=tenant_id,
+            )
+            logger.info(f"Successfully created role '{role_def.name}' for tenant '{tenant_id}'")
+        except Exception as e:
+            logger.error(f"Failed to create role '{role_def.name}' for tenant '{tenant_id}': {e}")
+            raise
 
-    logger.info("Role initialization completed successfully")
 
-    # Validate that all configured signup roles exist in the database
+@no_trace
+async def finalize_role_setup() -> None:
+    """Runs post-tenant-initialization role checks and superuser bookkeeping."""
     await _validate_signup_roles()
-
-    # Initialize superuser if enabled
-    await initialize_superuser()
+    await initialize_superuser_token()
 
 
 async def _validate_signup_roles() -> None:
     settings = UserSignupSettings()
     all_configured_roles = set(settings.regular_user_roles_list + settings.first_admin_user_roles_list)
 
-    default_tenant = TenantEntity.get_default_tenant()
-    tenant_id = str(default_tenant.id) if default_tenant else ""
+    startup_tenant = TenantMetadataEntity.get_startup_tenant_metadata()
+    tenant_id = str(startup_tenant.id) if startup_tenant else ""
 
     existing_roles = set(RoleEntity.filter_existing_roles(list(all_configured_roles), tenant_id))
     missing_roles = all_configured_roles - existing_roles
 
     if missing_roles:
         raise RuntimeError(
-            f"Configured signup roles do not exist in the database: {sorted(missing_roles)}. "
+            f"Configured signup roles do not exist in the startup tenant: {sorted(missing_roles)}. "
             f"Check AIHUB_USER_SIGNUP_REGULAR_USER_ROLES and AIHUB_USER_SIGNUP_FIRST_ADMIN_USER_ROLES settings."
         )
 
     logger.info(f"All configured signup roles validated: {sorted(all_configured_roles)}")
 
 
-async def initialize_system_role(name: str, description: str, access_rules: list[str]) -> None:
+_SUPERUSER_TOKEN_NAME = "superuser-static-token"
+_SUPERUSER_TOKEN_TTL = timedelta(days=365 * 100)
+
+
+async def initialize_superuser_token() -> None:
     """
-    Initialize a system-wide role in the database if it doesn't already exist.
+    Ensures the superuser Keycloak user exists with the AIHubSysAdmin realm role,
+    then upserts a ``BearerToken`` row holding the static ``SUPERUSER_TOKEN`` env
+    var so internal services (OpenWebUI, RAG, images, audio, doc loader, Langfuse
+    provisioner) can authenticate against the API as that user via
+    ``TokenAuthHandler``.
 
-    System roles have tenant_id=None and are available to all tenants.
-    This is idempotent and safe to call multiple times.
-    """
-    existing_role = RoleEntity.get_system_role_by_name(name)
-
-    if existing_role:
-        logger.info(f"System role '{name}' already exists, skipping creation")
-        return
-
-    try:
-        RoleEntity.create_system_role(name=name, description=description, access_rules=access_rules)
-        logger.info(f"Successfully created system role '{name}'")
-    except Exception as e:
-        logger.error(f"Failed to create system role '{name}': {e}")
-        raise
-
-
-async def initialize_superuser() -> None:
-    """
-    Initialize the superuser.
-
-    The superuser uses a virtual tenant and does not need a user record.
-    This is a no-op now that UserEntity is no longer used.
+    Fails loudly if the seeded Keycloak user is missing or lacks the sysadmin
+    realm role — the platform cannot function correctly without it.
     """
     settings = SuperuserSettings()
-    logger.info(f"Superuser initialization completed for user '{settings.NAME}'")
-    logger.info("Note: Superuser operates with virtual tenant (full admin access)")
+
+    if SYS_ADMIN_ROLE not in settings.roles_list:
+        raise RuntimeError(
+            f"SUPERUSER_ROLES_JSON must contain '{SYS_ADMIN_ROLE}' so the seeded superuser has sysadmin access "
+            f"(got: {settings.roles_list})."
+        )
+
+    try:
+        keycloak_user = await KeycloakAdminService.find_user_by_email(settings.EMAIL)
+    except KeycloakGetError as e:
+        raise RuntimeError(
+            f"Could not query Keycloak for superuser (email={settings.EMAIL}): {e}. "
+            "Ensure the Keycloak realm import has completed before the API starts."
+        ) from e
+
+    if not keycloak_user:
+        raise RuntimeError(
+            f"Superuser not found in Keycloak (email={settings.EMAIL}). "
+            "Ensure the realm import creates a user with this email."
+        )
+
+    BearerToken.upsert_static_token(
+        name=_SUPERUSER_TOKEN_NAME,
+        token_value=settings.TOKEN.get_secret_value(),
+        expiry_date=datetime.now(UTC) + _SUPERUSER_TOKEN_TTL,
+        user_oid=keycloak_user.id,
+    )
+    logger.info(f"Superuser bearer token seeded for Keycloak user '{settings.USERNAME}' (id={keycloak_user.id})")
 
 
 @no_trace

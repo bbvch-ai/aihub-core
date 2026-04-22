@@ -5,13 +5,13 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageRole
 from mcp.types import TextContent, Tool
 from pytest_bdd import given, scenarios, then, when
-from swiss_ai_hub.core.auth import DangerousDevelopmentOnlyAuthSettings
 from swiss_ai_hub.core.events import BaseEvent
 from swiss_ai_hub.core.events.agent import ToolEvent, UserMessageEvent
 from swiss_ai_hub.core.generative_ai import LLMConfig
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.mcp.mcp_client_config import McpClientConfig
 from swiss_ai_hub.core.testing import async_test
+from swiss_ai_hub.core.testing.auth_utils import fake_user
 
 from playground.minimal_workflow.mcp_react_workflow.mcp_react_agent import McpReactAgent
 from playground.minimal_workflow.mcp_react_workflow.mcp_react_agent_config import McpReactAgentConfig
@@ -94,7 +94,7 @@ async def _(agent_runner: AgentTestRunner):
             await agent_runner.send_event_from_topic(
                 start_event=UserMessageEvent(
                     messages=[ChatMessage(content="Call echo", role=MessageRole.USER)],
-                    user=DangerousDevelopmentOnlyAuthSettings().get_user_identity(),
+                    user=fake_user(),
                 ),
                 topic=topic,
             )

@@ -1,9 +1,6 @@
 from typing import Annotated
 
 from llama_index.core.base.llms.types import ChatMessage
-from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_settings import (  # noqa: E501
-    DangerousDevelopmentOnlyAuthSettings,
-)
 from swiss_ai_hub.core.events.agent import UserMessageEvent
 from swiss_ai_hub.core.form import (
     CascadeSelect,
@@ -17,6 +14,7 @@ from swiss_ai_hub.core.form import (
     Textarea,
 )
 from swiss_ai_hub.core.i18n import LocaleString
+from swiss_ai_hub.core.testing.auth_utils import fake_user
 
 from playground.agentic_cv_process.events.agent.analyze_cv_request import AnalyzeCVRequest
 from playground.agentic_cv_process.events.human.accept_reject_request import AcceptRejectRequest
@@ -106,7 +104,7 @@ class AgenticCVProcess(AgenticProcess):
         return AnalyzeCVRequest(
             start_event=UserMessageEvent(
                 messages=[ChatMessage(role="user", content=f"Hey {cv.name}!")],
-                user=DangerousDevelopmentOnlyAuthSettings().get_user_identity(),
+                user=fake_user(),
             )
         )
 

@@ -65,13 +65,13 @@
       "name": "tenants",
       "subGroups": [
         {
-          "name": "${AIHUB_DEFAULT_TENANT_ID}"
+          "name": "${AIHUB_STARTUP_TENANT_ID}"
         }
       ]
     }
   ],
 
-  "defaultGroups": ["/tenants/${AIHUB_DEFAULT_TENANT_ID}"],
+  "defaultGroups": ["/tenants/${AIHUB_STARTUP_TENANT_ID}"],
 
   "clients": [
     {
@@ -555,27 +555,27 @@
 
   "users": [
     {
-      "username": "${KEYCLOAK_DEV_USER_USERNAME}",
-      "email": "${KEYCLOAK_DEV_USER_EMAIL}",
-      "firstName": "${KEYCLOAK_DEV_USER_FIRSTNAME}",
-      "lastName": "${KEYCLOAK_DEV_USER_LASTNAME}",
+      "username": "${SUPERUSER_USERNAME}",
+      "email": "${SUPERUSER_EMAIL}",
+      "firstName": "${SUPERUSER_FIRSTNAME}",
+      "lastName": "${SUPERUSER_LASTNAME}",
       "enabled": true,
       "emailVerified": true,
       "credentials": [
         {
           "type": "password",
-          "value": "${KEYCLOAK_DEV_USER_PASSWORD}",
+          "value": "${SUPERUSER_PASSWORD}",
           "temporary": false
         }
       ],
-      "realmRoles": ${KEYCLOAK_DEV_USER_ROLES_JSON}
+      "realmRoles": ${SUPERUSER_ROLES_JSON}
     },
     {
       "username": "service-account-aihub-api-service",
       "enabled": true,
       "serviceAccountClientId": "aihub-api-service",
       "clientRoles": {
-        "realm-management": ["view-identity-providers", "manage-users", "view-users", "query-users", "query-groups", "view-groups"]
+        "realm-management": ["view-identity-providers", "manage-users", "view-users", "query-users", "query-groups", "view-groups", "view-realm", "view-clients"]
       }
     }
   ],

@@ -2,10 +2,10 @@ import os
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from pytest_bdd import given, parsers, scenarios, then, when
-from swiss_ai_hub.core.auth import DangerousDevelopmentOnlyAuthSettings
 from swiss_ai_hub.core.events.agent import UserMessageEvent
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.testing import async_test
+from swiss_ai_hub.core.testing.auth_utils import fake_user
 
 from playground.minimal_workflow.multi_locale_workflow.events.multi_locale_event import MultiLocaleEvent
 from playground.minimal_workflow.multi_locale_workflow.multi_locale_agent import MultiLocaleAgent
@@ -38,7 +38,7 @@ async def _(agent_runner: AgentTestRunner, locale: str):
             start_event=UserMessageEvent(
                 locale=locale,
                 messages=[ChatMessage(content="Hello", role=MessageRole.USER)],
-                user=DangerousDevelopmentOnlyAuthSettings().get_user_identity(),
+                user=fake_user(),
             ),
             topic=topic,
         )
