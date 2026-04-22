@@ -1,5 +1,4 @@
 import pytest
-
 from dotenv import find_dotenv, load_dotenv
 
 load_dotenv(find_dotenv(usecwd=True))
@@ -8,8 +7,8 @@ load_dotenv(find_dotenv(usecwd=True))
 # at import time so subsequent ``AIHubSettings()`` instantiations resolve to the test DB.
 from swiss_ai_hub.core.testing.db_isolation import _isolate_test_db  # noqa: E402, F401
 
-
-from swiss_ai_hub.core.testing.conftest_utils import mark_tests_by_directory
+# isort: split
+from swiss_ai_hub.core.testing.conftest_utils import mark_tests_by_directory  # noqa: E402
 
 
 def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
