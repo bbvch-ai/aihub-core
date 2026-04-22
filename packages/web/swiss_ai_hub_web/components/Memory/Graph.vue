@@ -8,7 +8,6 @@
 
 <script setup lang="ts">
 import { EdgeCurvedArrowProgram } from '@sigma/edge-curve'
-import { useDark } from '@vueuse/core'
 import Graph from 'graphology'
 import forceAtlas2 from 'graphology-layout-forceatlas2'
 import Sigma from 'sigma'
@@ -39,7 +38,7 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{ selectNode: [nodeId: string] }>()
 
 const { myUser } = useMyUser()
-const isDark = useDark({ storageKey: 'dark' })
+const isDark = useDarkMode()
 const container = ref<HTMLDivElement>()
 
 let sigma: Sigma | null = null

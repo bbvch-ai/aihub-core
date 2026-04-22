@@ -4,9 +4,7 @@ import pytest
 import pytest_asyncio
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
-from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler import (  # noqa: E501
-    DangerousDevelopmentOnlyAuthHandler,
-)
+from swiss_ai_hub.core.testing.auth_utils import TestAuthHandler
 
 from swiss_ai_hub.api.routes.agent.agent_controller import AgentController
 from swiss_ai_hub.api.routes.agent.agent_file_upload_service import AgentFileUploadService
@@ -31,7 +29,7 @@ def mock_upload_service():
 
 @pytest_asyncio.fixture
 async def client(mock_upload_service):
-    auth = DangerousDevelopmentOnlyAuthHandler()
+    auth = TestAuthHandler()
     controller = AgentController(auth=auth).initiate_file_upload().validate_file_upload()
     runner = ApiTestRunner()
     runner.mount(controller)

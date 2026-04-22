@@ -12,9 +12,10 @@ from pytest_bdd import given, parsers, scenarios, then, when
 
 from swiss_ai_hub.core.auth.dependencies.token_auth_handler.token_auth_handler import TokenAuthHandler
 from swiss_ai_hub.core.infrastructure.api.ai_hub_settings import AIHubSettings
+from swiss_ai_hub.core.infrastructure.api.startup_tenant_settings import StartupTenantSettings
 from swiss_ai_hub.core.infrastructure.mongo.mongo_settings import MongoSettings
-from swiss_ai_hub.core.persistence.access.entities.bearer_token import BearerToken
-from swiss_ai_hub.core.persistence.access.entities.tenant_entity import TenantEntity
+from swiss_ai_hub.core.persistence.access.entities.bearer_token import TOKEN_PREFIX, BearerToken
+from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 from swiss_ai_hub.core.testing.asyncio_utils.bdd import async_test
 from swiss_ai_hub.core.testing.auth_utils.user_mocks import register_fake_keycloak_user
@@ -32,11 +33,14 @@ def mongo_connection(monkeypatch: pytest.MonkeyPatch) -> Generator[None]:
         host=MongoSettings().CONNECTION_STRING.get_secret_value(),
     )
 
-    # Ensure default tenant exists for multi-tenant auth tests
-    TenantEntity.ensure_default_tenant_exists(
-        tenant_id="default",
-        name="Default Tenant",
-        description="Default tenant for testing",
+    # Ensure the startup tenant exists for multi-tenant auth tests. Use the
+    # configured startup-tenant id (not a hardcoded "default") so the row
+    # matches ``StartupTenantSettings().ID`` — which the production code
+    # queries — regardless of whether CI has ``AIHUB_STARTUP_TENANT_ID`` set.
+    TenantMetadataEntity.ensure_startup_tenant_metadata_exists(
+        tenant_id=StartupTenantSettings().ID,
+        name=StartupTenantSettings().NAME,
+        description="Startup tenant for testing",
         access_rules=["aihub.admin.>"],
     )
 
@@ -93,10 +97,9 @@ def create_dummy_request(headers: dict[str, str], path_params: dict[str, str] | 
     return Request(scope)
 
 
-def generate_dummy_valid_token(oid: str) -> str:
-    """Generate a dummy token string using the given OID (24 hex characters)."""
-    random_part = secrets.token_urlsafe(128)[:128]
-    return f"{oid}.{random_part}"
+def generate_dummy_valid_token() -> str:
+    """Generate a dummy ``sk-<random>`` token string that doesn't exist in the DB."""
+    return f"{TOKEN_PREFIX}{secrets.token_urlsafe(48)}"
 
 
 # --- Given Steps ---
@@ -118,7 +121,7 @@ def insert_token_document(
     register_fake_keycloak_user(user_id=user_oid, name=name, email=email)
 
     # Assign user to default tenant (skip role validation for test data)
-    default_tenant = TenantEntity.get_default_tenant()
+    default_tenant = TenantMetadataEntity.get_startup_tenant_metadata()
     if default_tenant:
         user_tenant_role = UserTenantRoleEntity.create_or_update(
             user_id=user_oid,
@@ -150,26 +153,16 @@ def invalid_token_format(token_context: dict[str, Any], token: str) -> None:
 
 @given(parsers.parse('a token does not exist in the database with token "{token}"'))
 def token_not_found(token_context: dict[str, Any], token: str) -> None:
-    """Store a token (formatted as <oid>.<random>) that is not found in the database."""
-    parts = token.split(".")
-    if len(parts) != 2 or len(parts[0]) != 24 or len(parts[1]) != 128:
-        oid = parts[0] if len(parts[0]) == 24 else "123456789012345678901234"
-        token = generate_dummy_valid_token(oid)
+    """Store a properly-prefixed token that is not present in the database."""
+    if not token.startswith(TOKEN_PREFIX):
+        token = generate_dummy_valid_token()
     token_context["token_str"] = token
 
 
 @given("I modify the token to cause a mismatch")
 def modify_token_for_mismatch(token_context: dict[str, Any]) -> None:
-    """Modify the token's random part to cause a mismatch."""
-    token_str = token_context["token_str"]
-    parts = token_str.split(".")
-    if len(parts) == 2:
-        oid, random_part = parts
-        new_char = "A" if random_part[0] != "A" else "B"
-        new_random = new_char + random_part[1:]
-        token_context["token_str"] = f"{oid}.{new_random}"
-    else:
-        token_context["token_str"] = token_str + "x"
+    """Replace the stored token with a well-formed one that won't match any row."""
+    token_context["token_str"] = generate_dummy_valid_token()
 
 
 @given("I set the token expiry to a past time")

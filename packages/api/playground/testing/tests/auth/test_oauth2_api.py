@@ -8,18 +8,16 @@ from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
 from mongoengine import connect, disconnect
 from swiss_ai_hub.core.auth import KeycloakSettings
-from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_settings import (  # noqa: E501
-    DangerousDevelopmentOnlyAuthSettings,
-)
 from swiss_ai_hub.core.auth.dependencies.keycloak_auth_handler import KeycloakAuthHandler
 from swiss_ai_hub.core.infrastructure import AIHubSettings, MongoSettings
-from swiss_ai_hub.core.persistence.access.entities.tenant_entity import TenantEntity
+from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 from swiss_ai_hub.core.testing import (
     DummyResponse,
     generate_rsa_keypair,
     public_key_to_jwk,
 )
+from swiss_ai_hub.core.testing.auth_utils import TEST_USER_EMAIL, TEST_USER_NAME, TEST_USER_OID, TEST_USER_ROLES
 
 from swiss_ai_hub.api.routes.my_account.my_account_controller import MyAccountController
 from swiss_ai_hub.api.runners.api_test_runner import ApiTestRunner
@@ -84,12 +82,12 @@ def valid_keycloak_token(keycloak_config, rsa_keys):
     now = datetime.now(UTC)
     exp = now + timedelta(minutes=TOKEN_EXPIRY_MINUTES)
     payload = {
-        "name": DangerousDevelopmentOnlyAuthSettings().NAME,
-        "email": DangerousDevelopmentOnlyAuthSettings().EMAIL,
-        "preferred_username": DangerousDevelopmentOnlyAuthSettings().EMAIL,
-        "roles": DangerousDevelopmentOnlyAuthSettings().ROLES,
+        "name": TEST_USER_NAME,
+        "email": TEST_USER_EMAIL,
+        "preferred_username": TEST_USER_EMAIL,
+        "roles": TEST_USER_ROLES,
         "aud": "account",
-        "sub": DangerousDevelopmentOnlyAuthSettings().OID,
+        "sub": TEST_USER_OID,
         "iss": keycloak_config.ISSUER_URL,
         "exp": exp,
     }
@@ -101,10 +99,12 @@ def valid_keycloak_token(keycloak_config, rsa_keys):
 @pytest.fixture
 def setup_test_user(mongo_db):
     """Create the test user with expected roles before the test runs."""
-    config = DangerousDevelopmentOnlyAuthSettings()
+    from types import SimpleNamespace as _SimpleNamespace
+
+    config = _SimpleNamespace(OID=TEST_USER_OID, NAME=TEST_USER_NAME, EMAIL=TEST_USER_EMAIL, ROLES=TEST_USER_ROLES)
 
     # Assign the expected roles in the default tenant
-    default_tenant = TenantEntity.get_default_tenant()
+    default_tenant = TenantMetadataEntity.get_startup_tenant_metadata()
     user_tenant_role = None
     if default_tenant:
         user_tenant_role = UserTenantRoleEntity.create_or_update(
@@ -125,11 +125,12 @@ def setup_test_user(mongo_db):
 def expected_user_data():
     """Return the expected user data from token claims."""
     return {
-        "id": DangerousDevelopmentOnlyAuthSettings().OID,
-        "name": DangerousDevelopmentOnlyAuthSettings().NAME,
-        "email": DangerousDevelopmentOnlyAuthSettings().EMAIL,
+        "id": TEST_USER_OID,
+        "name": TEST_USER_NAME,
+        "email": TEST_USER_EMAIL,
         "profile_image": None,
-        "roles": DangerousDevelopmentOnlyAuthSettings().ROLES,
+        "roles": TEST_USER_ROLES,
+        "is_sys_admin": False,
     }
 
 

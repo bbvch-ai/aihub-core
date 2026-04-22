@@ -35,7 +35,12 @@ class AccessChecker:
         - Permission Template: `aihub.user.agent.class_a.?*` -> Match, user will enter with AccessLevel.ACCESS_ADMIN
     """
 
-    def __init__(self, user_access_rules: list[str], tenant_access_rules: list[str]):
+    def __init__(self, user_access_rules: list[str], tenant_access_rules: list[str], is_sys_admin: bool = False):
+        # Sysadmin short-circuit — the ``AIHubSysAdmin`` realm role grants implicit
+        # admin access to every resource in every tenant. This sidesteps the normal
+        # tenant/user rule evaluation entirely.
+        self.is_sys_admin = is_sys_admin
+
         # User access rules
         self.user_valid_access_rules = self._get_validated_access_rules(user_access_rules)
         self.user_admin_access_rules = {r for r in self.user_valid_access_rules if r.startswith("aihub.admin.")}
@@ -62,14 +67,24 @@ class AccessChecker:
         and the tenant's access rules are embedded in the TenantIdentity.
 
         IMPORTANT: Enforces tenant-level restrictions - tenant access rules act as a ceiling.
+        Sysadmins bypass both tiers — the ``AIHubSysAdmin`` realm role grants implicit
+        admin access across every tenant and every resource. No ``UserTenantRoleEntity``
+        rows are required and no tenant context is needed.
         """
+        if user.acting_within_tenant is None:
+            return cls(user_access_rules=[], tenant_access_rules=[], is_sys_admin=user.is_sys_admin)
+
         # User roles are already resolved for the acting tenant
         user_access_rules = RoleEntity.get_access_rules_for_roles(user.roles, tenant_id=user.acting_within_tenant.id)
 
         # Tenant access rules come from the embedded TenantIdentity
         tenant_access_rules = user.acting_within_tenant.access_rules
 
-        return cls(user_access_rules=list(user_access_rules), tenant_access_rules=tenant_access_rules)
+        return cls(
+            user_access_rules=list(user_access_rules),
+            tenant_access_rules=tenant_access_rules,
+            is_sys_admin=user.is_sys_admin,
+        )
 
     @staticmethod
     def validate_user_access_rule(access_rule: str) -> bool:
@@ -151,8 +166,13 @@ class AccessChecker:
         2. User's access level (what the user has been granted)
 
         If tenant has only user-level access, user is capped at user-level even if they have admin permissions.
+
+        Sysadmins bypass both tiers and always receive ``ACCESS_ADMIN``.
         """
         self.validate_permission_template(permission_template)
+
+        if self.is_sys_admin:
+            return AccessLevel.ACCESS_ADMIN
         is_implicit_check = "?" in permission_template
         match_func = (
             self._access_rule_fulfills_implicit_template

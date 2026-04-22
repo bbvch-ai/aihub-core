@@ -26,13 +26,17 @@ swiss_ai_hub_web/
 ├── composables/             # Pinia-Colada query/mutation wrappers (domain-organized)
 │   ├── agent/               # useAgentInstances, useAgentClasses, mutations
 │   ├── thread/              # useThreads, useThreadEvents (WebSocket real-time)
+│   ├── tenant/              # useTenant — reads tenant id from either route shape (`[tenant]` or `[tenant_id]`)
+│   ├── tenant-admin/        # useTenantAdminList, useConfigureTenant, useUpdateTenant, useDeleteTenant, useUnconfiguredTenantIds
 │   ├── form/                # useFormKitTransform (backend schema → FormKit nodes)
 │   ├── event/               # useEventComponent (event → display component resolver)
 │   └── ...                  # auth, chat, dashboard, document, evaluation, file, etc.
 ├── i18n/locales/            # de.yaml, en.yaml, fr.yaml, it.yaml
-├── layouts/                 # default.vue, anonymous.vue
+├── layouts/                 # default.vue, anonymous.vue, sysadmin.vue (sysadmin-only routes)
 ├── middleware/              # auth.global.ts (OIDC guard on all routes)
-├── pages/                   # File-based routing (all under /service/)
+├── pages/                   # File-based routing
+│   ├── [tenant]/service/    # Tenant-scoped admin pages (regular users + tenant admins)
+│   └── sysadmin/            # Sysadmin tenant management (requires AIHubSysAdmin realm role)
 ├── plugins/                 # oidc-client.ts, config-loader.client.ts, apexcharts.client.ts
 ├── sdk/client/              # Auto-generated HeyAPI TypeScript client (NEVER edit)
 ├── themes/                  # aihub-theme.ts (PrimeVue Aura preset customization)
@@ -209,6 +213,20 @@ registration. Don't add manual imports for them.
 
 Class-based: `.dark` on `<html>`. Both Tailwind (`darkMode: ['class']`) and PrimeVue theme (`darkModeSelector: '.dark'`)
 use this. Use `dark:` Tailwind prefix for dark-mode styles.
+
+## Sysadmin Layout
+
+A separate `sysadmin.vue` layout powers the `/sysadmin/tenants/...` route tree, used exclusively for tenant
+administration by users with the `AIHubSysAdmin` Keycloak realm role. The route shape is independent of the regular
+`/[tenant]/service/...` admin pages:
+
+- `/sysadmin/tenants` — tenant list (Active + Orphaned + Unconfigured states)
+- `/sysadmin/tenants/[tenant_id]/overview` — metadata edit
+- `/sysadmin/tenants/[tenant_id]/roles` — role management within the tenant
+- `/sysadmin/tenants/[tenant_id]/users` — user list within the tenant (read-only; user lifecycle managed in Keycloak)
+
+`useTenant()` reads from either `route.params.tenant` (regular routes) or `route.params.tenant_id` (sysadmin routes), so
+role/user composables work transparently in both contexts.
 
 ## Agent Class vs Agent Instance
 

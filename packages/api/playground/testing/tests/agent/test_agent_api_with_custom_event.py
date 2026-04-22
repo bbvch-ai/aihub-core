@@ -2,11 +2,9 @@ import pytest
 import pytest_asyncio
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
-from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler import (  # noqa: E501
-    DangerousDevelopmentOnlyAuthHandler,
-)
 from swiss_ai_hub.core.events import EventSpecs
 from swiss_ai_hub.core.infrastructure import enable_logging
+from swiss_ai_hub.core.testing.auth_utils import TestAuthHandler
 
 from playground.testing.tests.agent.events.TestStartEvent import TestStartEvent
 from playground.testing.tests.agent.events.TestStopEvent import TestStopEvent
@@ -26,7 +24,7 @@ enable_logging()
 
 @pytest_asyncio.fixture(scope="module", loop_scope="module")
 async def agent_api_client():
-    auth = DangerousDevelopmentOnlyAuthHandler()
+    auth = TestAuthHandler()
     controller = AgentController(auth=auth).get_all_agent_instances().get_agent_instance()
     runner = SimulatedAgentApiTestRunner(
         agent_class=AGENT_CLASS,

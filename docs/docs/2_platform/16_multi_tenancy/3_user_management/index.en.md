@@ -15,7 +15,7 @@ tenant memberships are managed within the platform itself.
 When someone logs in for the first time:
 
 1. Your identity provider verifies who they are
-2. The platform creates their user profile (name, email, profile picture)
+2. The platform reads their identity (name, email) from Keycloak — no local user record is created
 3. They automatically join the default tenant with standard user roles
 4. They see the default tenant's agents and resources
 

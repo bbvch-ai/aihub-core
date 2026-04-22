@@ -1,12 +1,12 @@
 import asyncio
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from swiss_ai_hub.core.auth import DangerousDevelopmentOnlyAuthSettings
 from swiss_ai_hub.core.events.agent import UserMessageEvent
 from swiss_ai_hub.core.generative_ai import LLMConfig
 from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.infrastructure import enable_logging
 from swiss_ai_hub.core.mcp.mcp_client_config import McpClientConfig
+from swiss_ai_hub.core.testing.auth_utils import fake_user
 
 from playground.minimal_workflow.mcp_react_workflow.mcp_react_agent import McpReactAgent
 from playground.minimal_workflow.mcp_react_workflow.mcp_react_agent_config import McpReactAgentConfig
@@ -32,7 +32,7 @@ async def main():
             topic=topic,
             start_event=UserMessageEvent(
                 messages=[ChatMessage(content="What is 17 + 25? Use the add tool.", role=MessageRole.USER)],
-                user=DangerousDevelopmentOnlyAuthSettings().get_user_identity(),
+                user=fake_user(),
             ),
         )
 

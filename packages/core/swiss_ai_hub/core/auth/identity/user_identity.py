@@ -15,3 +15,6 @@ class UserIdentity(BaseModel):
     acting_within_tenant: Annotated[
         TenantIdentity | None, Field(description="The tenant context the user is operating within.")
     ] = None
+    is_sys_admin: Annotated[
+        bool, Field(description="Whether the user has the AIHubSysAdmin realm role (from the JWT).")
+    ] = False

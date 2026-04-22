@@ -6,6 +6,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from swiss_ai_hub.core.auth.dependencies.bearer_auth_handler import BearerAuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
+from swiss_ai_hub.core.auth.realm_roles import SYS_ADMIN_ROLE
 from swiss_ai_hub.core.persistence.access.entities.bearer_token import BearerToken
 
 logger = logging.getLogger(__name__)
@@ -15,8 +16,10 @@ class TokenAuthHandler(BearerAuthHandler):
     """
     A FastAPI dependency for token-based authentication.
 
-    Validates bearer tokens from the database and returns user identity
-    using Keycloak for profile data.
+    Validates bearer tokens from the database and returns user identity using
+    Keycloak for profile data. Derives ``is_sys_admin`` from the token owner's
+    Keycloak realm roles so a token holder has the same sysadmin capability as
+    they would when logging in via OAuth2.
     """
 
     async def __call__(
@@ -29,7 +32,8 @@ class TokenAuthHandler(BearerAuthHandler):
         """
         Authenticates a user using a bearer token string.
 
-        Resolves tenant context from the optional request parameter or uses the default tenant.
+        Resolves tenant context from the optional request parameter, falling back to
+        the user's active tenant when the request carries none.
         """
         if not token_str:
             raise HTTPException(status_code=401, detail="Token missing.")
@@ -43,6 +47,12 @@ class TokenAuthHandler(BearerAuthHandler):
         user_id = access_token.user_oid
 
         keycloak_user = await KeycloakAdminService.get_user_by_id(user_id)
+        realm_roles = await KeycloakAdminService.get_user_realm_roles(user_id)
+        is_sys_admin = SYS_ADMIN_ROLE in realm_roles
         return await self.build_identity(
-            user_id=user_id, name=keycloak_user.name, email=keycloak_user.email, request=request
+            user_id=user_id,
+            name=keycloak_user.name,
+            email=keycloak_user.email,
+            request=request,
+            is_sys_admin=is_sys_admin,
         )

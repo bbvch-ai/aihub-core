@@ -3343,6 +3343,46 @@ export type CreateRoleRequest = {
 };
 
 /**
+ * CreateTenantMetadataRequest
+ *
+ * Request model for attaching metadata to an existing Keycloak tenant group.
+ *
+ * ``tenant_id`` is not user-chosen here — it must already exist as a Keycloak group
+ * under ``/tenants/``. Use the ``/admin/tenants/unconfigured`` endpoint to list
+ * configurable ids. A regex constraint is deliberately avoided because Keycloak
+ * accepts group names this layer would otherwise reject (e.g. ``MyTenant``,
+ * ``customer.acme``); the only checks that belong here are a minimum length (reject
+ * empty payloads) and a maximum length matching Keycloak's group-name cap (DoS guard
+ * against unbounded strings reaching Mongo).
+ */
+export type CreateTenantMetadataRequest = {
+    /**
+     * Tenant Id
+     *
+     * Keycloak tenant group name (must already exist under /tenants/).
+     */
+    tenant_id: string;
+    /**
+     * Name
+     *
+     * The unique display name of the tenant.
+     */
+    name: string;
+    /**
+     * Description
+     *
+     * A short description of the tenant.
+     */
+    description?: string;
+    /**
+     * Access Rules
+     *
+     * Access rules granted to this tenant.
+     */
+    access_rules?: Array<string>;
+};
+
+/**
  * CreateThreadRequest
  */
 export type CreateThreadRequest = {
@@ -8844,6 +8884,26 @@ export type MultiSelect = {
 };
 
 /**
+ * MyTenantsResponse
+ *
+ * Response for the GET /my-tenants endpoint, including sysadmin status.
+ */
+export type MyTenantsResponse = {
+    /**
+     * Tenants
+     *
+     * Tenants the user making the call belongs to
+     */
+    tenants: Array<TenantMembershipDto>;
+    /**
+     * Is Sys Admin
+     *
+     * Whether the user has system administrator privileges
+     */
+    is_sys_admin?: boolean;
+};
+
+/**
  * NamespaceDTO
  */
 export type NamespaceDto = {
@@ -9091,6 +9151,54 @@ export type OpenChatHitlResponse = {
      * The HITL request event if there is an open chat HITL, None otherwise.
      */
     hitl_request?: HumanInTheLoopRequestEvent | null;
+};
+
+/**
+ * OpenWebuiWebhookPayload
+ */
+export type OpenWebuiWebhookPayload = {
+    /**
+     * Action
+     *
+     * OpenWebUI webhook action type (e.g. 'signup', 'login')
+     */
+    action: string;
+    /**
+     * Message
+     */
+    message?: string;
+    user?: OpenWebuiWebhookUser;
+};
+
+/**
+ * OpenWebuiWebhookUser
+ */
+export type OpenWebuiWebhookUser = {
+    /**
+     * Id
+     *
+     * OpenWebUI user ID
+     */
+    id?: string;
+    /**
+     * Email
+     *
+     * User email address
+     */
+    email?: string;
+    /**
+     * Name
+     *
+     * User display name
+     */
+    name?: string;
+    /**
+     * Role
+     *
+     * OpenWebUI role
+     */
+    role?: string;
+    [key: string]: unknown | string | undefined;
 };
 
 /**
@@ -10625,15 +10733,9 @@ export type RoleResponse = {
     /**
      * Tenant Id
      *
-     * Tenant ID this role belongs to, or None for system roles.
+     * Tenant ID this role belongs to.
      */
-    tenant_id: string | null;
-    /**
-     * Is System Role
-     *
-     * Whether this is a system-wide role (no tenant_id means system role).
-     */
-    readonly is_system_role: boolean;
+    tenant_id: string;
 };
 
 /**
@@ -11881,6 +11983,90 @@ export type TenantMembershipDto = {
 };
 
 /**
+ * TenantResponse
+ *
+ * Response model for a tenant, as seen by sysadmins.
+ */
+export type TenantResponse = {
+    /**
+     * Id
+     *
+     * Unique tenant identifier (matches the Keycloak group name).
+     */
+    id: string;
+    /**
+     * Name
+     *
+     * Tenant display name.
+     */
+    name: string;
+    /**
+     * Description
+     *
+     * Tenant description.
+     */
+    description: string;
+    /**
+     * Access Rules
+     *
+     * Access rules granted to this tenant.
+     */
+    access_rules: Array<string>;
+    /**
+     * Whether the tenant also exists in Keycloak (active) or not (orphaned).
+     */
+    state: TenantState;
+    /**
+     * Created At
+     *
+     * Tenant creation timestamp.
+     */
+    created_at: Date;
+    /**
+     * Updated At
+     *
+     * Tenant last update timestamp.
+     */
+    updated_at: Date;
+};
+
+/**
+ * TenantState
+ *
+ * Visibility state of a tenant for the sysadmin view.
+ *
+ * - ACTIVE: exists both in Keycloak (as a group) and in MongoDB (as metadata).
+ * - ORPHANED: exists only in MongoDB; the Keycloak group is missing. Users cannot
+ * reach this tenant. Shown to sysadmins read-only with a delete action only.
+ *
+ * Unconfigured tenants (Keycloak group only, no metadata) deliberately do not
+ * appear here: they carry no MongoDB fields (name/description/access_rules) to
+ * wrap in a ``TenantResponse``, so they are served separately as ``list[str]``
+ * by ``/admin/tenants/unconfigured``. Promoting one to Active via
+ * ``create_tenant_metadata`` is what introduces the metadata row that makes a
+ * ``TenantState`` value meaningful.
+ */
+export const TenantState = { ACTIVE: 'active', ORPHANED: 'orphaned' } as const;
+
+/**
+ * TenantState
+ *
+ * Visibility state of a tenant for the sysadmin view.
+ *
+ * - ACTIVE: exists both in Keycloak (as a group) and in MongoDB (as metadata).
+ * - ORPHANED: exists only in MongoDB; the Keycloak group is missing. Users cannot
+ * reach this tenant. Shown to sysadmins read-only with a delete action only.
+ *
+ * Unconfigured tenants (Keycloak group only, no metadata) deliberately do not
+ * appear here: they carry no MongoDB fields (name/description/access_rules) to
+ * wrap in a ``TenantResponse``, so they are served separately as ``list[str]``
+ * by ``/admin/tenants/unconfigured``. Promoting one to Active via
+ * ``create_tenant_metadata`` is what introduces the metadata row that makes a
+ * ``TenantState`` value meaningful.
+ */
+export type TenantState = typeof TenantState[keyof typeof TenantState];
+
+/**
  * TextBlock
  *
  * A representation of text data to directly pass to/from the LLM.
@@ -13001,6 +13187,31 @@ export type UpdateRoleRequest = {
 };
 
 /**
+ * UpdateTenantMetadataRequest
+ *
+ * Request model for updating a tenant. All fields are optional.
+ *
+ * Name and description constraints mirror ``CreateTenantMetadataRequest`` — an update
+ * must not be able to slip a value past a constraint that create enforced.
+ */
+export type UpdateTenantMetadataRequest = {
+    /**
+     * Name
+     */
+    name?: string | null;
+    /**
+     * Description
+     */
+    description?: string | null;
+    /**
+     * Access Rules
+     *
+     * Access rules granted to this tenant.
+     */
+    access_rules?: Array<string> | null;
+};
+
+/**
  * UsageDuration
  *
  * Usage statistics for models billed by audio input duration.
@@ -13188,21 +13399,21 @@ export type UserDto = {
      */
     profile_image?: string | null;
     /**
-     * Last Accessed
-     *
-     * Last time the user was updated
-     */
-    last_accessed: Date;
-    /**
-     * Favorite Modules
-     *
-     * List of favorite modules from aihub suite
-     */
-    favorite_modules?: Array<string>;
-    /**
      * User dashboard configuration for index page
      */
     dashboard?: DashboardDto | null;
+    /**
+     * Roles
+     *
+     * Roles the user holds in the current tenant.
+     */
+    roles?: Array<string>;
+    /**
+     * Is Sys Admin
+     *
+     * Whether the user has the AIHubSysAdmin realm role in Keycloak.
+     */
+    is_sys_admin?: boolean;
 };
 
 /**
@@ -13239,6 +13450,12 @@ export type UserIdentity = {
      * The tenant context the user is operating within.
      */
     acting_within_tenant?: TenantIdentity | null;
+    /**
+     * Is Sys Admin
+     *
+     * Whether the user has the AIHubSysAdmin realm role (from the JWT).
+     */
+    is_sys_admin?: boolean;
 };
 
 /**
@@ -13382,27 +13599,21 @@ export type UserWithAccessDto = {
      */
     profile_image?: string | null;
     /**
-     * Last Accessed
-     *
-     * Last time the user was updated
-     */
-    last_accessed: Date;
-    /**
-     * Favorite Modules
-     *
-     * List of favorite modules from aihub suite
-     */
-    favorite_modules?: Array<string>;
-    /**
      * User dashboard configuration for index page
      */
     dashboard?: DashboardDto | null;
     /**
      * Roles
      *
-     * List of roles assigned to the user in the current tenant
+     * Roles the user holds in the current tenant.
      */
     roles?: Array<string>;
+    /**
+     * Is Sys Admin
+     *
+     * Whether the user has the AIHubSysAdmin realm role in Keycloak.
+     */
+    is_sys_admin?: boolean;
     /**
      * User access levels
      */
@@ -13606,6 +13817,18 @@ export type VideoBlock = {
      * Fps
      */
     fps?: number | null;
+};
+
+/**
+ * WebhookResponse
+ */
+export type WebhookResponse = {
+    /**
+     * Status
+     *
+     * Webhook processing result status
+     */
+    status: string;
 };
 
 /**
@@ -19002,50 +19225,6 @@ export type RetrieverEventWritable = {
 };
 
 /**
- * RoleResponse
- *
- * Response model representing a role.
- */
-export type RoleResponseWritable = {
-    /**
-     * Id
-     *
-     * The unique identifier of the role.
-     */
-    id: string;
-    /**
-     * Name
-     *
-     * The name of the role.
-     */
-    name: string;
-    /**
-     * Description
-     *
-     * The description of the role.
-     */
-    description: string;
-    /**
-     * Access Rules
-     *
-     * The list of access rules for the role.
-     */
-    access_rules: Array<string>;
-    /**
-     * Usage Limits
-     *
-     * Pattern-based usage limit rules.
-     */
-    usage_limits?: Array<UsageLimitDto>;
-    /**
-     * Tenant Id
-     *
-     * Tenant ID this role belongs to, or None for system roles.
-     */
-    tenant_id: string | null;
-};
-
-/**
  * RouteOptions
  */
 export type RouteOptionsWritable = {
@@ -20836,11 +21015,9 @@ export type GetMyTenantsData = {
 
 export type GetMyTenantsResponses = {
     /**
-     * Response Get My Tenants My Tenants Get
-     *
      * Successful Response
      */
-    200: Array<TenantMembershipDto>;
+    200: MyTenantsResponse;
 };
 
 export type GetMyTenantsResponse = GetMyTenantsResponses[keyof GetMyTenantsResponses];
@@ -22842,6 +23019,157 @@ export type CreateRoleResponses = {
 
 export type CreateRoleResponse = CreateRoleResponses[keyof CreateRoleResponses];
 
+export type ListTenantsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/admin/tenants/';
+};
+
+export type ListTenantsResponses = {
+    /**
+     * Response List Tenants Admin Tenants  Get
+     *
+     * Successful Response
+     */
+    200: Array<TenantResponse>;
+};
+
+export type ListTenantsResponse = ListTenantsResponses[keyof ListTenantsResponses];
+
+export type CreateTenantMetadataData = {
+    body: CreateTenantMetadataRequest;
+    path?: never;
+    query?: never;
+    url: '/admin/tenants/';
+};
+
+export type CreateTenantMetadataErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CreateTenantMetadataError = CreateTenantMetadataErrors[keyof CreateTenantMetadataErrors];
+
+export type CreateTenantMetadataResponses = {
+    /**
+     * Successful Response
+     */
+    201: TenantResponse;
+};
+
+export type CreateTenantMetadataResponse = CreateTenantMetadataResponses[keyof CreateTenantMetadataResponses];
+
+export type ListUnconfiguredTenantsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/admin/tenants/unconfigured';
+};
+
+export type ListUnconfiguredTenantsResponses = {
+    /**
+     * Response List Unconfigured Tenants Admin Tenants Unconfigured Get
+     *
+     * Successful Response
+     */
+    200: Array<string>;
+};
+
+export type ListUnconfiguredTenantsResponse = ListUnconfiguredTenantsResponses[keyof ListUnconfiguredTenantsResponses];
+
+export type DeleteTenantMetadataData = {
+    body?: never;
+    path: {
+        /**
+         * Tenant Id
+         */
+        tenant_id: string;
+    };
+    query?: never;
+    url: '/admin/tenants/{tenant_id}';
+};
+
+export type DeleteTenantMetadataErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type DeleteTenantMetadataError = DeleteTenantMetadataErrors[keyof DeleteTenantMetadataErrors];
+
+export type DeleteTenantMetadataResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type DeleteTenantMetadataResponse = DeleteTenantMetadataResponses[keyof DeleteTenantMetadataResponses];
+
+export type GetTenantData = {
+    body?: never;
+    path: {
+        /**
+         * Tenant Id
+         */
+        tenant_id: string;
+    };
+    query?: never;
+    url: '/admin/tenants/{tenant_id}';
+};
+
+export type GetTenantErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetTenantError = GetTenantErrors[keyof GetTenantErrors];
+
+export type GetTenantResponses = {
+    /**
+     * Successful Response
+     */
+    200: TenantResponse;
+};
+
+export type GetTenantResponse = GetTenantResponses[keyof GetTenantResponses];
+
+export type UpdateTenantMetadataData = {
+    body: UpdateTenantMetadataRequest;
+    path: {
+        /**
+         * Tenant Id
+         */
+        tenant_id: string;
+    };
+    query?: never;
+    url: '/admin/tenants/{tenant_id}';
+};
+
+export type UpdateTenantMetadataErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UpdateTenantMetadataError = UpdateTenantMetadataErrors[keyof UpdateTenantMetadataErrors];
+
+export type UpdateTenantMetadataResponses = {
+    /**
+     * Successful Response
+     */
+    200: TenantResponse;
+};
+
+export type UpdateTenantMetadataResponse = UpdateTenantMetadataResponses[keyof UpdateTenantMetadataResponses];
+
 export type GetModelsData = {
     body?: never;
     path: {
@@ -24404,3 +24732,35 @@ export type TranslateTextResponses = {
 };
 
 export type TranslateTextResponse = TranslateTextResponses[keyof TranslateTextResponses];
+
+export type ReceiveOpenwebuiWebhookData = {
+    body: OpenWebuiWebhookPayload;
+    path?: never;
+    query: {
+        /**
+         * Token
+         *
+         * Webhook authentication token
+         */
+        token: string;
+    };
+    url: '/webhook/openwebui';
+};
+
+export type ReceiveOpenwebuiWebhookErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ReceiveOpenwebuiWebhookError = ReceiveOpenwebuiWebhookErrors[keyof ReceiveOpenwebuiWebhookErrors];
+
+export type ReceiveOpenwebuiWebhookResponses = {
+    /**
+     * Successful Response
+     */
+    200: WebhookResponse;
+};
+
+export type ReceiveOpenwebuiWebhookResponse = ReceiveOpenwebuiWebhookResponses[keyof ReceiveOpenwebuiWebhookResponses];

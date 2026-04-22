@@ -10,7 +10,6 @@ AihubInstrumentor().instrument()
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from pytest_bdd import given, parsers, scenarios, then, when
-from swiss_ai_hub.core.auth import DangerousDevelopmentOnlyAuthSettings
 from swiss_ai_hub.core.events.agent import (
     AddUserMemoryToChatHistoryEvent,
     LLMEvent,
@@ -22,6 +21,7 @@ from swiss_ai_hub.core.generative_ai import LLMConfig
 from swiss_ai_hub.core.i18n import LocaleHandler, LocaleString
 from swiss_ai_hub.core.infrastructure import enable_logging
 from swiss_ai_hub.core.testing import async_test
+from swiss_ai_hub.core.testing.auth_utils import fake_user
 
 from playground.minimal_workflow.user_memory_workflow.user_memory_agent import UserMemoryAgent
 from playground.minimal_workflow.user_memory_workflow.user_memory_agent_config import UserMemoryAgentConfig
@@ -69,7 +69,7 @@ async def _(memory_text: str, agent_runner: AgentTestRunner):
     from swiss_ai_hub.core.generative_ai import AgentMemory
 
     # Get test user from auth settings
-    test_user = DangerousDevelopmentOnlyAuthSettings().get_user_identity()
+    test_user = fake_user()
 
     # Create AgentMemory instance with the agent config
     locale_handler = LocaleHandler(locale="en")
@@ -107,7 +107,7 @@ async def _(agent_runner: AgentTestRunner, query: str):
             topic=topic,
             start_event=UserMessageEvent(
                 messages=[ChatMessage(content=query, role=MessageRole.USER)],
-                user=DangerousDevelopmentOnlyAuthSettings().get_user_identity(),
+                user=fake_user(),
                 locale="en",
             ),
         )
@@ -122,7 +122,7 @@ async def _(agent_runner: AgentTestRunner, query: str, locale: str):
             topic=topic,
             start_event=UserMessageEvent(
                 messages=[ChatMessage(content=query, role=MessageRole.USER)],
-                user=DangerousDevelopmentOnlyAuthSettings().get_user_identity(),
+                user=fake_user(),
                 locale=locale,
             ),
         )

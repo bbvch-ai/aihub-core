@@ -2,22 +2,25 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_settings import (  # noqa: E501
-    DangerousDevelopmentOnlyAuthSettings,
-)
 from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import _create_admin
 from swiss_ai_hub.core.auth.keycloak.models.keycloak_user import KeycloakUser
+from swiss_ai_hub.core.infrastructure.api.startup_tenant_settings import StartupTenantSettings
 from swiss_ai_hub.core.persistence.user.user_dashboard_entity import UserDashboardEntity
+from swiss_ai_hub.core.testing.auth_utils.test_identity import (
+    TEST_USER_EMAIL,
+    TEST_USER_NAME,
+    TEST_USER_OID,
+    TEST_USER_ROLES,
+)
 
 
 def _create_mock_keycloak_user(user_id: str | None = None, email: str | None = None) -> KeycloakUser:
-    config = DangerousDevelopmentOnlyAuthSettings()
     return KeycloakUser(
-        id=user_id or config.OID,
-        firstName=config.NAME,
+        id=user_id or TEST_USER_OID,
+        firstName=TEST_USER_NAME,
         lastName="",
-        username=email or config.EMAIL,
-        email=email or config.EMAIL,
+        username=email or TEST_USER_EMAIL,
+        email=email or TEST_USER_EMAIL,
         attributes={},
     )
 
@@ -41,7 +44,7 @@ def register_fake_keycloak_user(user_id: str, *, name: str, email: str, attribut
         "email": email,
         "firstName": first,
         "lastName": last,
-        "attributes": attributes or {"active_tenant_id": ["default"]},
+        "attributes": attributes or {"active_tenant_id": [StartupTenantSettings().ID]},
     }
 
 
@@ -51,21 +54,40 @@ def _build_fake_admin() -> MagicMock:
     Keeps a per-user-id in-memory store so sequences like
     ``set_active_tenant`` → ``get_active_tenant_id`` return the value that was just
     written. Tests never hit a real Keycloak server.
+
+    Seeds two users by default:
+    - the fake test user (constants from ``test_identity``) that powers the
+      bypassed auth flow used by most tests;
+    - the superuser (``SuperuserSettings``) so ``initialize_superuser_token`` finds
+      a Keycloak user by email during API lifespan startup.
     """
-    config = DangerousDevelopmentOnlyAuthSettings()
+    from swiss_ai_hub.core.auth.superuser_settings import SuperuserSettings
+
+    superuser = SuperuserSettings()
 
     def _default_user(user_id: str) -> dict:
         return {
             "id": user_id,
-            "username": config.EMAIL,
-            "email": config.EMAIL,
-            "firstName": config.NAME,
+            "username": TEST_USER_EMAIL,
+            "email": TEST_USER_EMAIL,
+            "firstName": TEST_USER_NAME,
             "lastName": "",
-            "attributes": {"active_tenant_id": ["default"]},
+            "attributes": {"active_tenant_id": [StartupTenantSettings().ID]},
         }
 
     users = _FAKE_KEYCLOAK_USERS
-    users.setdefault(config.OID, _default_user(config.OID))
+    users.setdefault(TEST_USER_OID, _default_user(TEST_USER_OID))
+    users.setdefault(
+        f"superuser-{superuser.USERNAME}",
+        {
+            "id": f"superuser-{superuser.USERNAME}",
+            "username": superuser.USERNAME,
+            "email": superuser.EMAIL,
+            "firstName": "Super",
+            "lastName": "User",
+            "attributes": {"active_tenant_id": [StartupTenantSettings().ID]},
+        },
+    )
 
     async def a_get_user(user_id: str) -> dict:
         return users.setdefault(user_id, _default_user(user_id))
@@ -76,7 +98,7 @@ def _build_fake_admin() -> MagicMock:
         return list(users.values())
 
     async def a_create_user(payload: dict, exist_ok: bool = True) -> str:
-        user_id = payload.get("id") or config.OID
+        user_id = payload.get("id") or TEST_USER_OID
         users.setdefault(user_id, _default_user(user_id))
         return user_id
 
@@ -86,17 +108,34 @@ def _build_fake_admin() -> MagicMock:
         if "attributes" in payload:
             existing["attributes"] = dict(payload["attributes"])
 
+    async def a_get_user_groups(user_id: str) -> list[dict]:
+        """Returns the user's Keycloak groups, derived from ``UserTenantRoleEntity`` rows.
+
+        Tests assert "user X is a member of tenant Y" by creating a role entity row;
+        since Keycloak is the real source of truth in production, the fake admin
+        mirrors those rows back as ``/tenants/<id>`` group paths so membership checks
+        that go through ``KeycloakAdminService.get_user_tenant_ids`` / ``is_user_member_of_tenant``
+        succeed exactly when a role row exists for the pair.
+        """
+        from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
+
+        tenant_ids = UserTenantRoleEntity.get_tenant_ids_for_user(user_id)
+        return [{"id": f"group-{tid}", "name": tid, "path": f"/tenants/{tid}"} for tid in tenant_ids]
+
     fake = MagicMock()
     fake.a_get_user = AsyncMock(side_effect=a_get_user)
     fake.a_get_users = AsyncMock(side_effect=a_get_users)
     fake.a_create_user = AsyncMock(side_effect=a_create_user)
     fake.a_update_user = AsyncMock(side_effect=a_update_user)
+    fake.a_get_user_groups = AsyncMock(side_effect=a_get_user_groups)
     fake.a_get_group_by_path = AsyncMock(return_value={"id": "fake-group-id", "name": "tenants"})
     fake.a_get_group_members = AsyncMock(side_effect=lambda *_args, **_kwargs: list(users.values()))
     fake.a_create_group = AsyncMock(return_value="fake-group-id")
     fake.a_delete_group = AsyncMock(return_value=None)
     fake.a_group_user_add = AsyncMock(return_value=None)
     fake.a_group_user_remove = AsyncMock(return_value=None)
+    fake.a_get_realm_roles_of_user = AsyncMock(return_value=[])
+    fake.a_get_realm_role_members = AsyncMock(return_value=[])
     return fake
 
 
@@ -126,13 +165,13 @@ def get_expected_user_data(include_dashboard=True, include_access=True):
     Helper function to get expected user data for tests.
     Returns the user data that should be returned by API endpoints.
     """
-    config = DangerousDevelopmentOnlyAuthSettings()
     data = {
-        "id": config.OID,
-        "name": config.NAME,
-        "email": config.EMAIL,
+        "id": TEST_USER_OID,
+        "name": TEST_USER_NAME,
+        "email": TEST_USER_EMAIL,
         "profile_image": None,
-        "roles": config.ROLES,
+        "roles": list(TEST_USER_ROLES),
+        "is_sys_admin": False,
     }
 
     if include_dashboard:

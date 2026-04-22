@@ -11,7 +11,7 @@ from swiss_ai_hub.agent.agents.namespace_selection_agent.events.namespace_approv
     NamespaceApprovalRequestEvent,
     NamespaceApprovalResponseEvent,
 )
-from swiss_ai_hub.agent.agents.rag_agent.events.namespace_aware_user_message_event import NamespaceAwareUserMessageEvent
+from swiss_ai_hub.agent.agents.rag_agent.events.rag_start_event import RAGStartEvent
 
 __all__ = [
     "DetermineNamespacesEvent",
@@ -21,5 +21,5 @@ __all__ = [
     "NamespaceApprovalHitl",
     "NamespaceApprovalRequestEvent",
     "NamespaceApprovalResponseEvent",
-    "NamespaceAwareUserMessageEvent",
+    "RAGStartEvent",
 ]

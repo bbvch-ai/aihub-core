@@ -7,8 +7,8 @@ from swiss_ai_hub.core.routes import Controller
 
 from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
 from swiss_ai_hub.api.routes.my_tenant.dto.active_tenant_dto import ActiveTenantDTO
+from swiss_ai_hub.api.routes.my_tenant.dto.my_tenants_response import MyTenantsResponse
 from swiss_ai_hub.api.routes.my_tenant.dto.set_active_tenant_request import SetActiveTenantRequest
-from swiss_ai_hub.api.routes.my_tenant.dto.tenant_membership_dto import TenantMembershipDTO
 from swiss_ai_hub.api.routes.my_tenant.my_tenant_service import MyTenantService
 
 
@@ -31,9 +31,9 @@ class MyTenantController(Controller):
         @self.router.get(route, tags=self.tags)
         async def get_my_tenants(
             user: Annotated[UserIdentity, Security(self.authenticated_user())],
-        ) -> list[TenantMembershipDTO]:
-            """Returns all tenants the current user belongs to."""
-            return MyTenantService.get_my_tenants(user.id)
+        ) -> MyTenantsResponse:
+            """Returns all tenants the current user belongs to, along with sysadmin status."""
+            return await MyTenantService.get_my_tenants(user)
 
         return self
 

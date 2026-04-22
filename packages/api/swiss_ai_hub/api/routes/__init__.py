@@ -22,6 +22,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.api.routes.process.process_controller import ProcessController
     from swiss_ai_hub.api.routes.role.role_controller import RoleController
     from swiss_ai_hub.api.routes.suite.suite_controller import SuiteController
+    from swiss_ai_hub.api.routes.tenant_admin.tenant_admin_controller import TenantAdminController
     from swiss_ai_hub.api.routes.thread.thread_controller import ThreadController
     from swiss_ai_hub.api.routes.token.token_controller import TokenController
     from swiss_ai_hub.api.routes.translation.translation_controller import TranslationController
@@ -47,6 +48,7 @@ __all__ = [
     "ProcessController",
     "RoleController",
     "SuiteController",
+    "TenantAdminController",
     "ThreadController",
     "TokenController",
     "TranslationController",
@@ -74,6 +76,7 @@ _LAZY_IMPORTS: dict[str, str] = {
     "ProcessController": "swiss_ai_hub.api.routes.process.process_controller",
     "RoleController": "swiss_ai_hub.api.routes.role.role_controller",
     "SuiteController": "swiss_ai_hub.api.routes.suite.suite_controller",
+    "TenantAdminController": "swiss_ai_hub.api.routes.tenant_admin.tenant_admin_controller",
     "ThreadController": "swiss_ai_hub.api.routes.thread.thread_controller",
     "TokenController": "swiss_ai_hub.api.routes.token.token_controller",
     "TranslationController": "swiss_ai_hub.api.routes.translation.translation_controller",

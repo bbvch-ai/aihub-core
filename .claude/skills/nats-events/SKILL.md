@@ -193,30 +193,40 @@ async def finalize(self, cleanup: CleanupEvent) -> StopEvent:
     return StopEvent()
 ```
 
+### `UserMessageEvent` is a Chat UI Contract — Extend With Care
+
+`UserMessageEvent` is the canonical entry point for **chat interfaces** (OpenWebUI, Teams, Slack, WebChat). Every chat
+UI that wants to drive an agent must know how to publish and render it. Every new field added to `UserMessageEvent` — or
+to a subclass that rides on the same "chat start" contract — raises the bar for every chat client in the ecosystem.
+
+**Rule**: If the payload is agent-/domain-specific and the publisher is **not** a generic chat UI (e.g. a custom domain
+front-end that runs its own selection flow, or another agent delegating via `AgentInTheLoop`), do **not** subclass
+`UserMessageEvent`. Subclass `StartEvent` directly and have the agent accept `UserMessageEvent | YourStartEvent`.
+
 ### Choosing the Right Base Event
 
-| If your event represents...      | Inherit from                                                  | Benefits                                    |
-| -------------------------------- | ------------------------------------------------------------- | ------------------------------------------- |
-| Workflow start condition         | `StartEvent`                                                  | Recognized as entry point                   |
-| User message initiating workflow | `UserMessageEvent`                                            | Chat history, locale, user identity         |
-| Workflow termination             | `StopEvent`                                                   | Signals completion                          |
-| Error/failure                    | `ExceptionEvent`                                              | Error handling patterns                     |
-| LLM invocation result            | `LLMEvent`                                                    | Token counts, messages, OpenInference spans |
-| LLM terminal response            | `LLMStopEvent`                                                | Combines LLM data with workflow termination |
-| Document retrieval               | `RetrieverEvent`                                              | Retrieved nodes, OpenInference spans        |
-| Reranking operation              | `RerankerEvent`                                               | Input/output nodes, OpenInference spans     |
-| Embedding generation             | `EmbeddingEvent`                                              | Vectors, model info, OpenInference spans    |
-| Tool/function call               | `ToolEvent`                                                   | Tool name, parameters, OpenInference spans  |
-| Guardrail check                  | `GuardEvent`                                                  | Guard result, OpenInference spans           |
-| Human approval needed            | `HumanInTheLoopRequestEvent`                                  | Workflow suspension, UI prompt              |
-| Agent delegation                 | `AgentInTheLoopRequestEvent`                                  | Cross-agent communication                   |
-| Memory retrieval                 | `RetrieveUserMemoryEvent` / `RetrieveOrganizationMemoryEvent` | Memory search results                       |
-| Memory storage                   | `StoreUserMemoryEvent` / `StoreOrganizationMemoryEvent`       | Memory persistence confirmation             |
-| Streaming text chunk             | `ChunkEvent`                                                  | Real-time UI updates (display-only)         |
-| Agent thought/reasoning          | `ThoughtEvent`                                                | Transparency display (display-only)         |
-| Cost information                 | `LLMCostEvent`                                                | Token usage, pricing (display-only)         |
-| Generic workflow state           | `ControlAndDisplayEvent`                                      | Triggers dispatcher + UI display            |
-| Generic UI update                | `DisplayEvent`                                                | UI-only, no dispatcher overhead             |
+| If your event represents...     | Inherit from                                                  | Benefits                                    |
+| ------------------------------- | ------------------------------------------------------------- | ------------------------------------------- |
+| Workflow start condition        | `StartEvent`                                                  | Recognized as entry point                   |
+| User message from a **chat UI** | `UserMessageEvent`                                            | Chat history, locale, user identity         |
+| Workflow termination            | `StopEvent`                                                   | Signals completion                          |
+| Error/failure                   | `ExceptionEvent`                                              | Error handling patterns                     |
+| LLM invocation result           | `LLMEvent`                                                    | Token counts, messages, OpenInference spans |
+| LLM terminal response           | `LLMStopEvent`                                                | Combines LLM data with workflow termination |
+| Document retrieval              | `RetrieverEvent`                                              | Retrieved nodes, OpenInference spans        |
+| Reranking operation             | `RerankerEvent`                                               | Input/output nodes, OpenInference spans     |
+| Embedding generation            | `EmbeddingEvent`                                              | Vectors, model info, OpenInference spans    |
+| Tool/function call              | `ToolEvent`                                                   | Tool name, parameters, OpenInference spans  |
+| Guardrail check                 | `GuardEvent`                                                  | Guard result, OpenInference spans           |
+| Human approval needed           | `HumanInTheLoopRequestEvent`                                  | Workflow suspension, UI prompt              |
+| Agent delegation                | `AgentInTheLoopRequestEvent`                                  | Cross-agent communication                   |
+| Memory retrieval                | `RetrieveUserMemoryEvent` / `RetrieveOrganizationMemoryEvent` | Memory search results                       |
+| Memory storage                  | `StoreUserMemoryEvent` / `StoreOrganizationMemoryEvent`       | Memory persistence confirmation             |
+| Streaming text chunk            | `ChunkEvent`                                                  | Real-time UI updates (display-only)         |
+| Agent thought/reasoning         | `ThoughtEvent`                                                | Transparency display (display-only)         |
+| Cost information                | `LLMCostEvent`                                                | Token usage, pricing (display-only)         |
+| Generic workflow state          | `ControlAndDisplayEvent`                                      | Triggers dispatcher + UI display            |
+| Generic UI update               | `DisplayEvent`                                                | UI-only, no dispatcher overhead             |
 
 ### Extended Event Reference
 

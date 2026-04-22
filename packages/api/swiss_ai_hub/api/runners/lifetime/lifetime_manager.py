@@ -29,9 +29,9 @@ from swiss_ai_hub.api.routes.agent.agent_file_upload_service import AgentFileUpl
 from swiss_ai_hub.api.rpc.agent_config_responder import AgentConfigResponder
 from swiss_ai_hub.api.rpc.process_config_responder import ProcessConfigResponder
 from swiss_ai_hub.api.runners.lifetime.initialize_db import (
-    initialize_default_tenant,
+    finalize_role_setup,
     initialize_knowledge_buckets,
-    initialize_roles,
+    initialize_startup_tenant,
 )
 from swiss_ai_hub.api.services.agent_endpoints_discovery_service import AgentEndpointsDiscoveryService
 from swiss_ai_hub.api.services.process_endpoints_discovery_service import ProcessEndpointsDiscoveryService
@@ -218,8 +218,8 @@ async def lifetime_manager(app: FastAPI) -> AsyncGenerator:
         else:
             logger.warning("Unable to start ProcessEndpointsDiscoveryService due to missing state.process_controller")
 
-        await initialize_default_tenant()
-        await initialize_roles()
+        await initialize_startup_tenant()
+        await finalize_role_setup()
         await initialize_knowledge_buckets()
 
         # Provision Langfuse with AI-Hub LLM connections

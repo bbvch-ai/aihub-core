@@ -169,10 +169,10 @@ Users can belong to multiple tenants. Someone might be:
 - Team lead in a cross-functional project tenant
 - Admin in a test tenant for trying out new features
 
-## Default tenant behavior
+## Startup tenant behavior
 
-When someone logs in for the first time, they automatically join the default tenant with standard user roles. Configure
-this behavior with environment variables:
+When someone logs in for the first time, they automatically join the startup tenant (the one the platform seeded on
+first boot — see `AIHUB_STARTUP_TENANT_*`) with standard user roles. Configure this behavior with environment variables:
 
 ```bash
 AIHUB_USER_SIGNUP_DEFAULT_TENANT="default"
@@ -215,6 +215,21 @@ Sysadmin tenant → Dev tenant → Staging tenant → Production tenant
 Developers work in dev tenant with relaxed controls. Staging tenant mirrors production for testing. Production tenant
 has strict access controls. Same agents, same code, different tenants for different purposes.
 
+## Tenant states
+
+Because tenants live in two stores — Keycloak (group under `/tenants/<id>`, the source of truth for existence) and the
+platform's own metadata store (display name, description, access rules) — they can be observed in three states:
+
+- **Active**: both the Keycloak group and the metadata are present. End users can reach the tenant.
+- **Orphaned**: metadata is present but the Keycloak group is gone (e.g. an operator removed the group out of band). End
+  users cannot reach the tenant. Sysadmins see it as read-only with a delete-metadata action only.
+- **Unconfigured**: the Keycloak group exists but no metadata has been attached. End users cannot reach the tenant yet.
+  Sysadmins see it in the "configure tenant" flow, where attaching metadata promotes it to Active.
+
+The sysadmin tenant administration UI at `/sysadmin/tenants/` surfaces all three states. The configure-tenant action
+attaches metadata to an Unconfigured group and is the primary path through which an operator-created Keycloak group
+(e.g. for an IDP-to-tenant mapping) becomes a usable tenant.
+
 ## Tenant lifecycle
 
 Tenants persist until explicitly deleted. You can:
@@ -222,11 +237,14 @@ Tenants persist until explicitly deleted. You can:
 **Archive a tenant**: Remove all users but keep the tenant and its roles. Useful for completed projects or inactive
 customers. No one can access it but the configuration remains if you need to reactivate it.
 
-**Delete a tenant**: Remove the tenant, all its roles, and all user associations. Permanent. Only possible after
-removing all users first.
+**Delete a tenant**: Remove the platform's metadata for the tenant. The Keycloak group itself is left untouched —
+cleanup of the group is a separate step in the Keycloak admin console. Deletion is permanent on the metadata side.
 
-::: warning Default Tenant Protection
-The default tenant cannot be deleted. This ensures the platform always has at least one working tenant.
+::: warning Last-Tenant Protection
+The platform requires at least one tenant to remain. Deletion is blocked when it would leave the system with no
+remaining tenants. Any tenant — including the one the platform seeded on first boot — can be deleted as long as at least
+one other tenant exists. The startup tenant carries no database-level marker that distinguishes it from tenants
+configured later.
 :::
 
 ## Practical tips

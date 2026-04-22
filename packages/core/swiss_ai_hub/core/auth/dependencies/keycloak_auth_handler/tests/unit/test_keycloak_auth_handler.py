@@ -47,7 +47,7 @@ def clear_handler_caches():
 def mock_database_operations(monkeypatch: pytest.MonkeyPatch):
     """Mock database and identity operations required by the auth handler."""
 
-    async def mock_get_default_tenant(user_id: str) -> TenantIdentity:
+    async def mock_get_active_tenant_for_user(user_id: str) -> TenantIdentity:
         tenant = MagicMock(spec=TenantIdentity)
         tenant.id = "default-tenant"
         tenant.name = "Default"
@@ -66,7 +66,7 @@ def mock_database_operations(monkeypatch: pytest.MonkeyPatch):
         "swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity.UserTenantRoleEntity.get_roles_for_user_in_tenant",
         mock_get_roles,
     )
-    monkeypatch.setattr(AuthHandler, "get_active_tenant_for_user", staticmethod(mock_get_default_tenant))
+    monkeypatch.setattr(AuthHandler, "get_active_tenant_for_user", staticmethod(mock_get_active_tenant_for_user))
     monkeypatch.setattr(KeycloakAuthHandler, "_sync_tenant_memberships", staticmethod(mock_sync_tenant_memberships))
     monkeypatch.setattr(KeycloakAuthHandler, "_ensure_active_tenant", staticmethod(mock_ensure_active_tenant))
 

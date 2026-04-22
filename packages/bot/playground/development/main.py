@@ -4,11 +4,9 @@ load_dotenv(find_dotenv(usecwd=True))
 
 import asyncio  # noqa: E402
 
-from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler import (  # noqa: E402, E501
-    DangerousDevelopmentOnlyAuthHandler,
-)
 from swiss_ai_hub.core.infrastructure import enable_logging  # noqa: E402
 from swiss_ai_hub.core.routes import HealthController  # noqa: E402
+from swiss_ai_hub.core.testing.auth_utils import TestAuthHandler  # noqa: E402
 
 from swiss_ai_hub.bot.routes.agent.agent_chat_controller import AgentChatController  # noqa: E402
 from swiss_ai_hub.bot.routes.bot_in_the_loop.bot_in_the_loop_controller import BotInTheLoopController  # noqa: E402
@@ -20,7 +18,7 @@ enable_logging()
 
 async def main():
     runner = BotTestRunner(conversation_ttl_days=60)
-    auth = DangerousDevelopmentOnlyAuthHandler()
+    auth = TestAuthHandler()
 
     runner.mount(
         HealthController(auth=auth).get_health(),

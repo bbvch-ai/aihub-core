@@ -5,14 +5,9 @@ import pytest_asyncio
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
 from mongoengine import connect, disconnect
-from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler import (  # noqa: E501
-    DangerousDevelopmentOnlyAuthHandler,
-)
-from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_settings import (  # noqa: E501
-    DangerousDevelopmentOnlyAuthSettings,
-)
 from swiss_ai_hub.core.infrastructure import AIHubSettings, MongoSettings, enable_logging
 from swiss_ai_hub.core.persistence.messaging.entities.thread_entity import ThreadEntity
+from swiss_ai_hub.core.testing.auth_utils import TEST_USER_OID, TestAuthHandler
 
 from swiss_ai_hub.api.routes.thread.thread_controller import ThreadController
 from swiss_ai_hub.api.runners.simulation.agent.simulated_agent_api_test_runner import SimulatedAgentApiTestRunner
@@ -20,7 +15,7 @@ from swiss_ai_hub.api.runners.simulation.agent.simulated_agent_api_test_runner i
 enable_logging()
 
 THREAD_BASE = "/api/v1/active/threads"
-DEFAULT_USER_ID = DangerousDevelopmentOnlyAuthSettings().OID
+DEFAULT_USER_ID = TEST_USER_OID
 
 
 @pytest.fixture(scope="module")
@@ -53,7 +48,7 @@ async def api_client(agent_class, agent_id, mongodb) -> AsyncGenerator[AsyncClie
     """Create an API client with ThreadController endpoints mounted."""
     runner = SimulatedAgentApiTestRunner(agent_class=agent_class, agent_id=agent_id)
     runner.with_simple_chunk_events()
-    auth = DangerousDevelopmentOnlyAuthHandler()
+    auth = TestAuthHandler()
     controller = (
         ThreadController(auth=auth)
         .get_user_threads()

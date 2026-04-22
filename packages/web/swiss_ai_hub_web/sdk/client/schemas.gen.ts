@@ -5459,6 +5459,48 @@ export const CreateRoleRequestSchema = {
     description: 'Request model for creating a new role.'
 } as const;
 
+export const CreateTenantMetadataRequestSchema = {
+    properties: {
+        tenant_id: {
+            type: 'string',
+            maxLength: 255,
+            minLength: 1,
+            title: 'Tenant Id',
+            description: 'Keycloak tenant group name (must already exist under /tenants/).'
+        },
+        name: {
+            type: 'string',
+            maxLength: 120,
+            minLength: 1,
+            title: 'Name',
+            description: 'The unique display name of the tenant.'
+        },
+        description: {
+            type: 'string',
+            maxLength: 500,
+            title: 'Description',
+            description: 'A short description of the tenant.',
+            default: ''
+        },
+        access_rules: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Access Rules',
+            description: 'Access rules granted to this tenant.',
+            default: []
+        }
+    },
+    type: 'object',
+    required: [
+        'tenant_id',
+        'name'
+    ],
+    title: 'CreateTenantMetadataRequest',
+    description: 'Request model for attaching metadata to an existing Keycloak tenant group.\n\n``tenant_id`` is not user-chosen here — it must already exist as a Keycloak group\nunder ``/tenants/``. Use the ``/admin/tenants/unconfigured`` endpoint to list\nconfigurable ids. A regex constraint is deliberately avoided because Keycloak\naccepts group names this layer would otherwise reject (e.g. ``MyTenant``,\n``customer.acme``); the only checks that belong here are a minimum length (reject\nempty payloads) and a maximum length matching Keycloak\'s group-name cap (DoS guard\nagainst unbounded strings reaching Mongo).'
+} as const;
+
 export const CreateThreadRequestSchema = {
     properties: {
         name: {
@@ -13311,7 +13353,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1776094151
+            default: 1776356323
         },
         owned_by: {
             type: 'string',
@@ -14263,6 +14305,31 @@ export const MultiSelectSchema = {
     description: 'https://formkit-primevue.netlify.app/inputs/MultiSelect'
 } as const;
 
+export const MyTenantsResponseSchema = {
+    properties: {
+        tenants: {
+            items: {
+                $ref: '#/components/schemas/TenantMembershipDTO'
+            },
+            type: 'array',
+            title: 'Tenants',
+            description: 'Tenants the user making the call belongs to'
+        },
+        is_sys_admin: {
+            type: 'boolean',
+            title: 'Is Sys Admin',
+            description: 'Whether the user has system administrator privileges',
+            default: false
+        }
+    },
+    type: 'object',
+    required: [
+        'tenants'
+    ],
+    title: 'MyTenantsResponse',
+    description: 'Response for the GET /my-tenants endpoint, including sysadmin status.'
+} as const;
+
 export const NamespaceDTOSchema = {
     properties: {
         id: {
@@ -14596,6 +14663,61 @@ export const OpenChatHitlResponseSchema = {
     ],
     title: 'OpenChatHitlResponse',
     description: 'Response indicating whether there\'s an open chat HITL request for a thread.'
+} as const;
+
+export const OpenWebuiWebhookPayloadSchema = {
+    properties: {
+        action: {
+            type: 'string',
+            title: 'Action',
+            description: 'OpenWebUI webhook action type (e.g. \'signup\', \'login\')'
+        },
+        message: {
+            type: 'string',
+            title: 'Message',
+            default: ''
+        },
+        user: {
+            $ref: '#/components/schemas/OpenWebuiWebhookUser'
+        }
+    },
+    type: 'object',
+    required: [
+        'action'
+    ],
+    title: 'OpenWebuiWebhookPayload'
+} as const;
+
+export const OpenWebuiWebhookUserSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            title: 'Id',
+            description: 'OpenWebUI user ID',
+            default: ''
+        },
+        email: {
+            type: 'string',
+            title: 'Email',
+            description: 'User email address',
+            default: ''
+        },
+        name: {
+            type: 'string',
+            title: 'Name',
+            description: 'User display name',
+            default: ''
+        },
+        role: {
+            type: 'string',
+            title: 'Role',
+            description: 'OpenWebUI role',
+            default: ''
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    title: 'OpenWebuiWebhookUser'
 } as const;
 
 export const PaginatedDocumentsResponseSchema = {
@@ -16998,22 +17120,9 @@ export const RoleResponseSchema = {
             default: []
         },
         tenant_id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
+            type: 'string',
             title: 'Tenant Id',
-            description: 'Tenant ID this role belongs to, or None for system roles.'
-        },
-        is_system_role: {
-            type: 'boolean',
-            title: 'Is System Role',
-            description: 'Whether this is a system-wide role (no tenant_id means system role).',
-            readOnly: true
+            description: 'Tenant ID this role belongs to.'
         }
     },
     type: 'object',
@@ -17022,8 +17131,7 @@ export const RoleResponseSchema = {
         'name',
         'description',
         'access_rules',
-        'tenant_id',
-        'is_system_role'
+        'tenant_id'
     ],
     title: 'RoleResponse',
     description: 'Response model representing a role.'
@@ -18826,6 +18934,72 @@ export const TenantMembershipDTOSchema = {
     ],
     title: 'TenantMembershipDTO',
     description: 'A tenant the current user belongs to.'
+} as const;
+
+export const TenantResponseSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            title: 'Id',
+            description: 'Unique tenant identifier (matches the Keycloak group name).'
+        },
+        name: {
+            type: 'string',
+            title: 'Name',
+            description: 'Tenant display name.'
+        },
+        description: {
+            type: 'string',
+            title: 'Description',
+            description: 'Tenant description.'
+        },
+        access_rules: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Access Rules',
+            description: 'Access rules granted to this tenant.'
+        },
+        state: {
+            $ref: '#/components/schemas/TenantState',
+            description: 'Whether the tenant also exists in Keycloak (active) or not (orphaned).'
+        },
+        created_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Created At',
+            description: 'Tenant creation timestamp.'
+        },
+        updated_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Updated At',
+            description: 'Tenant last update timestamp.'
+        }
+    },
+    type: 'object',
+    required: [
+        'id',
+        'name',
+        'description',
+        'access_rules',
+        'state',
+        'created_at',
+        'updated_at'
+    ],
+    title: 'TenantResponse',
+    description: 'Response model for a tenant, as seen by sysadmins.'
+} as const;
+
+export const TenantStateSchema = {
+    type: 'string',
+    enum: [
+        'active',
+        'orphaned'
+    ],
+    title: 'TenantState',
+    description: 'Visibility state of a tenant for the sysadmin view.\n\n- ACTIVE: exists both in Keycloak (as a group) and in MongoDB (as metadata).\n- ORPHANED: exists only in MongoDB; the Keycloak group is missing. Users cannot\n  reach this tenant. Shown to sysadmins read-only with a delete action only.\n\nUnconfigured tenants (Keycloak group only, no metadata) deliberately do not\nappear here: they carry no MongoDB fields (name/description/access_rules) to\nwrap in a ``TenantResponse``, so they are served separately as ``list[str]``\nby ``/admin/tenants/unconfigured``. Promoting one to Active via\n``create_tenant_metadata`` is what introduces the metadata row that makes a\n``TenantState`` value meaningful.'
 } as const;
 
 export const TextBlockSchema = {
@@ -20633,6 +20807,56 @@ export const UpdateRoleRequestSchema = {
     description: 'Request model for updating an existing role. All fields are optional.'
 } as const;
 
+export const UpdateTenantMetadataRequestSchema = {
+    properties: {
+        name: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 120,
+                    minLength: 1,
+                    description: 'The unique display name of the tenant.'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name'
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 500,
+                    description: 'A short description of the tenant.'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Description'
+        },
+        access_rules: {
+            anyOf: [
+                {
+                    items: {
+                        type: 'string'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Access Rules',
+            description: 'Access rules granted to this tenant.'
+        }
+    },
+    type: 'object',
+    title: 'UpdateTenantMetadataRequest',
+    description: 'Request model for updating a tenant. All fields are optional.\n\nName and description constraints mirror ``CreateTenantMetadataRequest`` — an update\nmust not be able to slip a value past a constraint that create enforced.'
+} as const;
+
 export const UsageDurationSchema = {
     properties: {
         seconds: {
@@ -20871,21 +21095,6 @@ export const UserDTOSchema = {
             title: 'Profile Image',
             description: 'User\'s profile image in base64.'
         },
-        last_accessed: {
-            type: 'string',
-            format: 'date-time',
-            title: 'Last Accessed',
-            description: 'Last time the user was updated'
-        },
-        favorite_modules: {
-            items: {
-                type: 'string'
-            },
-            type: 'array',
-            title: 'Favorite Modules',
-            description: 'List of favorite modules from aihub suite',
-            default: []
-        },
         dashboard: {
             anyOf: [
                 {
@@ -20896,14 +21105,28 @@ export const UserDTOSchema = {
                 }
             ],
             description: 'User dashboard configuration for index page'
+        },
+        roles: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Roles',
+            description: 'Roles the user holds in the current tenant.',
+            default: []
+        },
+        is_sys_admin: {
+            type: 'boolean',
+            title: 'Is Sys Admin',
+            description: 'Whether the user has the AIHubSysAdmin realm role in Keycloak.',
+            default: false
         }
     },
     type: 'object',
     required: [
         'id',
         'name',
-        'email',
-        'last_accessed'
+        'email'
     ],
     title: 'UserDTO'
 } as const;
@@ -20943,6 +21166,12 @@ export const UserIdentitySchema = {
                 }
             ],
             description: 'The tenant context the user is operating within.'
+        },
+        is_sys_admin: {
+            type: 'boolean',
+            title: 'Is Sys Admin',
+            description: 'Whether the user has the AIHubSysAdmin realm role (from the JWT).',
+            default: false
         }
     },
     type: 'object',
@@ -21113,21 +21342,6 @@ export const UserWithAccessDTOSchema = {
             title: 'Profile Image',
             description: 'User\'s profile image in base64.'
         },
-        last_accessed: {
-            type: 'string',
-            format: 'date-time',
-            title: 'Last Accessed',
-            description: 'Last time the user was updated'
-        },
-        favorite_modules: {
-            items: {
-                type: 'string'
-            },
-            type: 'array',
-            title: 'Favorite Modules',
-            description: 'List of favorite modules from aihub suite',
-            default: []
-        },
         dashboard: {
             anyOf: [
                 {
@@ -21145,8 +21359,14 @@ export const UserWithAccessDTOSchema = {
             },
             type: 'array',
             title: 'Roles',
-            description: 'List of roles assigned to the user in the current tenant',
+            description: 'Roles the user holds in the current tenant.',
             default: []
+        },
+        is_sys_admin: {
+            type: 'boolean',
+            title: 'Is Sys Admin',
+            description: 'Whether the user has the AIHubSysAdmin realm role in Keycloak.',
+            default: false
         },
         access: {
             $ref: '#/components/schemas/Access',
@@ -21158,7 +21378,6 @@ export const UserWithAccessDTOSchema = {
         'id',
         'name',
         'email',
-        'last_accessed',
         'access'
     ],
     title: 'UserWithAccessDTO'
@@ -21473,6 +21692,21 @@ export const VideoBlockSchema = {
     type: 'object',
     title: 'VideoBlock',
     description: 'A representation of video data to directly pass to/from the LLM.'
+} as const;
+
+export const WebhookResponseSchema = {
+    properties: {
+        status: {
+            type: 'string',
+            title: 'Status',
+            description: 'Webhook processing result status'
+        }
+    },
+    type: 'object',
+    required: [
+        'status'
+    ],
+    title: 'WebhookResponse'
 } as const;
 
 export const WorkflowGraphSchema = {
@@ -30462,65 +30696,6 @@ export const RetrieverEventWritableSchema = {
     additionalProperties: true,
     type: 'object',
     title: 'RetrieverEvent'
-} as const;
-
-export const RoleResponseWritableSchema = {
-    properties: {
-        id: {
-            type: 'string',
-            title: 'Id',
-            description: 'The unique identifier of the role.'
-        },
-        name: {
-            type: 'string',
-            title: 'Name',
-            description: 'The name of the role.'
-        },
-        description: {
-            type: 'string',
-            title: 'Description',
-            description: 'The description of the role.'
-        },
-        access_rules: {
-            items: {
-                type: 'string'
-            },
-            type: 'array',
-            title: 'Access Rules',
-            description: 'The list of access rules for the role.'
-        },
-        usage_limits: {
-            items: {
-                $ref: '#/components/schemas/UsageLimitDTO'
-            },
-            type: 'array',
-            title: 'Usage Limits',
-            description: 'Pattern-based usage limit rules.',
-            default: []
-        },
-        tenant_id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Tenant Id',
-            description: 'Tenant ID this role belongs to, or None for system roles.'
-        }
-    },
-    type: 'object',
-    required: [
-        'id',
-        'name',
-        'description',
-        'access_rules',
-        'tenant_id'
-    ],
-    title: 'RoleResponse',
-    description: 'Response model representing a role.'
 } as const;
 
 export const RouteOptionsWritableSchema = {

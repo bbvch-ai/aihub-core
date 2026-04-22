@@ -9,7 +9,7 @@ from swiss_ai_hub.core.auth.access.access_checker import AccessChecker, AccessLe
 from swiss_ai_hub.core.infrastructure.api.ai_hub_settings import AIHubSettings
 from swiss_ai_hub.core.infrastructure.mongo.mongo_settings import MongoSettings
 from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
-from swiss_ai_hub.core.persistence.access.entities.tenant_entity import TenantEntity
+from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 from swiss_ai_hub.core.testing.auth_utils.user_mocks import mock_keycloak_admin_service_autouse  # noqa: F401
 
@@ -53,7 +53,7 @@ def cleanup_documents() -> Generator[list[Any]]:
 def create_tenant(cleanup_documents: list[Any], context: dict[str, Any], name: str, access_rules: str) -> None:
     """Create a tenant with the given access rules."""
     rules_list = [r.strip() for r in access_rules.split(",")]
-    tenant = TenantEntity.create_tenant(
+    tenant = TenantMetadataEntity.create_tenant_metadata(
         tenant_id=name.lower().replace(" ", "-"),
         name=name,
         description=f"Tenant {name} for testing",
@@ -63,20 +63,26 @@ def create_tenant(cleanup_documents: list[Any], context: dict[str, Any], name: s
     cleanup_documents.append(tenant)
 
 
-@given(parsers.parse('the system role "{role_name}" exists with access rules "{access_rules}"'))
-def ensure_system_role(cleanup_documents: list[Any], role_name: str, access_rules: str) -> None:
-    """Ensure a system role exists with the given access rules."""
-    existing = RoleEntity.get_system_role_by_name(role_name)
-    if existing:
-        return
-
+@given(parsers.parse('the default role "{role_name}" exists with access rules "{access_rules}"'))
+def ensure_default_role(
+    cleanup_documents: list[Any],
+    context: dict[str, Any],
+    role_name: str,
+    access_rules: str,
+) -> None:
+    """Seed a role with the given access rules in every tenant already registered in the context."""
     rules_list = [r.strip() for r in access_rules.split(",")]
-    role = RoleEntity.create_system_role(
-        name=role_name,
-        description=f"System role {role_name} for testing",
-        access_rules=rules_list,
-    )
-    cleanup_documents.append(role)
+    for tenant in context["tenants"].values():
+        tenant_id = str(tenant.id)
+        if RoleEntity.objects(name=role_name, tenant_id=tenant_id).first():
+            continue
+        role = RoleEntity.create_tenant_role(
+            name=role_name,
+            description=f"Role {role_name} for testing",
+            access_rules=rules_list,
+            tenant_id=tenant_id,
+        )
+        cleanup_documents.append(role)
 
 
 # --- Given Steps ---

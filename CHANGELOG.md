@@ -5,6 +5,169 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.278.0] - 2026-04-21 - Next-Gen Multi-Tenancy: Keycloak-First Identity & Admin Workflows
+
+### Added
+
+- 🦾 **Dedicated Sysadmin Tenant Management API**: Introduced a new set of API endpoints (`/admin/tenants`) for system
+  administrators to manage tenant metadata, including listing, configuring, updating, and deleting tenants.
+- 🔑 **`AIHubSysAdmin` Keycloak Realm Role**: A new Keycloak realm role, `AIHubSysAdmin`, now designates platform
+  administrators, granting implicit admin-level access within any tenant they are a member of.
+- 🆕 **`TenantMetadataEntity` for Tenant Display Information**: A new database entity `TenantMetadataEntity` is
+  introduced to store display-related tenant information (name, description, access rules), complementing Keycloak as
+  the authoritative source for tenant existence.
+- 🧪 **`TestAuthHandler` for Development & Testing**: A dedicated authentication handler (`TestAuthHandler`) replaces the
+  `DangerousDevelopmentOnlyAuthHandler`, ensuring a clearer separation between test utilities and production code and
+  simplifying local development setup.
+- 🔄 **Automatic Superuser Membership in New Tenants**: The platform's superuser account (now a regular Keycloak user) is
+  automatically added to every new tenant's Keycloak group upon creation, ensuring immediate and explicit access for
+  platform administration.
+- 📄 **New Architectural Decision Records (ADRs)**: Multiple new ADRs have been added to thoroughly document the
+  rationale and implementation details of significant architectural changes in multi-tenancy, authorization, and token
+  management.
+
+### Changed
+
+- 🔑 **Superuser Identity Transition**: The global superuser is no longer a synthetic identity but a regular Keycloak
+  user, identified by `SUPERUSER_USERNAME` and `SUPERUSER_EMAIL`, simplifying identity management and leveraging
+  Keycloak as the single source of truth.
+- ⚙️ **`SUPERUSER_TOKEN` Repurposed**: The `SUPERUSER_TOKEN` now serves as a static bearer token, bound to the Keycloak
+  superuser, enabling internal services to authenticate against the API through the standard `TokenAuthHandler`.
+- 🚀 **`StartupTenantSettings` Introduced**: The previous `AIHUB_DEFAULT_TENANT_ID` and related settings are now
+  `AIHUB_STARTUP_TENANT_ID` and `StartupTenantSettings`, clarifying that this tenant is treated as an ordinary tenant
+  after initial seeding, losing its special "default" status.
+- ⚡️ **Refined `AuthHandler` Tenant Resolution**: The logic for resolving active and requested tenants has been updated,
+  with `KeycloakAdminService` now the authoritative source for tenant existence and membership checks, improving
+  consistency and reliability.
+- 👤 **User Profile Data Sourced from Keycloak**: User profile data (name, email) is now exclusively read from Keycloak
+  (JWT claims for OAuth2, `KeycloakAdminService` for bearer tokens), eliminating the need for a local `UserEntity` in
+  MongoDB.
+- 📚 **Updated Documentation for Admin/Sysadmin UI**: User-facing documentation and UI layouts for admin functionality
+  are now separated, with dedicated sections for tenant-scoped admin pages (`/[tenant]/service/`) and global sysadmin
+  pages (`/sysadmin/`).
+- 🔗 **Dynamic Endpoints Include Tenant ID**: Dynamic Agent and Process endpoints now explicitly include the tenant ID in
+  their URL paths: `POST /api/v1/{tenant_id}/agents/{agent_class}/{agent_id}/{event_name}`.
+- 📈 **`get_my_tenants` Returns Sysadmin Status**: The `/my-tenants` API endpoint now includes the user's `is_sys_admin`
+  status in its response, providing a clearer overview of user privileges.
+- 🛡️ **Bot API Authentication Hardened**: The Bot API's main entry point (`packages/bot/app/main.py`) now uses
+  `KeycloakAuthHandler` as a fail-closed safety net, replacing the `DangerousDevelopmentOnlyAuthHandler` placeholder.
+- 📊 **Stricter `MONGO_MAIN_DB_NAME` Validation**: Updated validation for `AIHubSettings().MONGO_MAIN_DB_NAME` to ensure
+  stricter adherence to valid MongoDB database naming conventions.
+- 🛠️ **Agent `RunContext`/`ThreadContext` Backing Changed**: `RunContext` and `ThreadContext` for agents are now backed
+  by Valkey (Redis), providing ephemeral (RunContext) and persistent (ThreadContext) key-value storage.
+- 🔗 **Keycloak Service Account Permissions Extended**: The `aihub-api-service` Keycloak client now requires `view-realm`
+  and `view-clients` roles in `realm-management` to enable proper sysadmin status resolution.
+
+### Fixed
+
+- 🐛 **PostgreSQL FerretDB Catalog Backup Workaround**: Implemented a specific workaround for PostgreSQL FerretDB catalog
+  tables to ensure their data is correctly backed up and restored, preventing empty catalogs after recovery.
+- 🐛 **MongoDB Test Database Isolation**: Ensured robust isolation of MongoDB test databases by enforcing an early import
+  in `conftest.py` that sets `AIHUB_MONGO_MAIN_DB_NAME` to `aihub_test`, preventing accidental data leakage to dev/prod
+  databases.
+- 🐛 **Token Verification Error Messages**: Improved error messages for bearer token verification to distinguish between
+  malformed, unknown, and expired tokens, aiding in debugging and troubleshooting.
+
+### Removed
+
+- 🗑️ **`TenantEntity` Database Collection**: The `TenantEntity` MongoDB collection has been completely removed, with its
+  metadata functionality replaced by `TenantMetadataEntity` and existence managed by Keycloak.
+- ❌ **`DangerousDevelopmentOnlyAuthHandler`**: The insecure `DangerousDevelopmentOnlyAuthHandler` has been entirely
+  removed, promoting more secure authentication practices even in development environments.
+- 🚫 **`SuperuserAuthHandler`**: The dedicated `SuperuserAuthHandler` has been removed as the superuser is now an
+  ordinary Keycloak user authenticated via the standard `TokenAuthHandler`.
+- 🗑️ **System-Wide Roles**: The concept and implementation of system-wide roles (roles with `tenant_id=None`) have been
+  removed; all roles are now strictly tenant-scoped.
+- 🗑️ **`is_default` Flag on Tenants**: The `is_default` boolean flag has been removed from tenant metadata, simplifying
+  the tenant model and delegating "startup tenant" identification to configuration.
+- 🗑️ **Legacy `KEYCLOAK_DEV_USER_*` Environment Variables**: The `KEYCLOAK_DEV_USER_*` environment variables, previously
+  used for a configurable development user, have been removed in favor of the more robust `SUPERUSER_*` configuration.
+
+### Security
+
+- 🔒 **Opaque API Bearer Token Format**: API bearer tokens now use an opaque `sk-<random>` format, enhancing security by
+  removing sensitive database internal IDs and improving token opacity, requiring rotation of existing tokens.
+- 🛡️ **Sysadmin Authorization Bypass Refinement**: Sysadmin access now grants `ACCESS_ADMIN` within any tenant the
+  principal is a member of, bypassing normal rule evaluation, while explicitly NOT granting implicit membership,
+  aligning with the principle of least privilege.
+- 👮 **Stricter Tenant Request Validation**: New DTOs and validation rules for tenant administration API endpoints
+  prevent malformed or invalid tenant IDs and names from reaching business logic or Keycloak, mitigating potential
+  injection risks.
+- 🚨 **Explicit Auth Handler Requirement**: `Controller.__init__(auth=...)` now explicitly raises a `TypeError` if no
+  auth handler is provided, preventing silent activation of insecure bypass mechanisms.
+- 🕵️ **Tenant Enumeration Protection**: Tenant resolution via URL path parameter now consistently returns a generic
+  "Access denied" (403) for non-existent, non-member, or unconfigured tenants, preventing attackers from enumerating
+  valid tenant IDs.
+- 🛑 **Last Tenant Deletion Guard**: The tenant deletion service now explicitly prevents the removal of the last
+  remaining tenant, ensuring continuous platform availability and integrity.
+
+### Refactor
+
+- 🧹 **Consolidated Superuser Configuration**: The configuration for the platform superuser is consolidated into a single
+  `SUPERUSER_` block in `.env` files, simplifying setup and maintenance.
+- 🧽 **Race-Safe Tenant Deletion Logic**: The tenant deletion process is refactored with robust race-safety mechanisms,
+  including snapshotting and a post-deletion recount, to ensure the "at least one tenant must remain" invariant is never
+  violated by concurrent operations.
+- 🧹 **Centralized Keycloak Admin Service**: The `KeycloakAdminService` is significantly expanded with new static methods
+  for comprehensive tenant group, user membership, and realm role management, centralizing Keycloak interactions and
+  improving testability.
+- 🧹 **Streamlined Auth Handler Composition**: The `TokenAndOauth2Handler` composition logic is streamlined, removing
+  unused authentication paths and clarifying the overall authentication flow.
+- 🧹 **Unified Test Identity Management**: Test identity constants (OID, name, email, roles) and a `fake_user()` helper
+  are moved to `swiss_ai_hub.core.testing.auth_utils.test_identity.py`, explicitly separating test-only values from
+  production settings.
+- 🧹 **Updated `AccessChangeHook` for New Entities**: The `AccessChangeHook` now correctly tracks changes on
+  `TenantMetadataEntity` instead of the removed `TenantEntity`, maintaining consistency for OpenWebUI synchronization.
+- 🧹 **Standardized Agent Playground Triggers**: Agent playground trigger scripts now consistently use `fake_user()` from
+  the new `core.testing.auth_utils` for mock user identities, promoting uniformity and ease of testing.
+- 🧹 **Consolidated Role Card Deletion Logic**: Role card deletion in the UI now uses a unified confirmation dialog and
+  delegates to a shared composable for improved user experience and maintainability.
+- 🎨 **Standardized UI Loading Indicator**: Introduced a new `AppLoader` component for a consistent and visually
+  appealing loading indicator across the UI.
+- 🧹 **General Code Cleanup and Consistency**: Various minor code cleanups, including improved logging, removal of
+  redundant code, and consistency adjustments across the codebase.
+
+______________________________________________________________________
+
+## [v0.277.2] - 2026-04-20 - Refined Event Protocol: Introducing `RAGStartEvent` and Clarifying Chat Contracts
+
+### Added
+
+- ✨ **Introduced `RAGStartEvent`**: A new, dedicated `StartEvent` for RAG agents. This event allows custom domain
+  front-ends or other agents to initiate RAG workflows with pre-selected namespaces, maintaining a clean separation from
+  the generic chat UI contract.
+- 🧪 **Unit Tests for `RAGStartEvent`**: Comprehensive unit tests were added to validate the properties and behavior of
+  the new `RAGStartEvent`, ensuring its reliability.
+- 🖼️ **Web UI Display for `RAGStartEvent`**: A new Vue component and updated event mapping were implemented to enable
+  proper rendering of `RAGStartEvent` in the web interface, showcasing selected namespaces and chat history.
+- 🌐 **Internationalization for `RAGStartEvent`**: Added translations across supported languages for the `RAGStartEvent`
+  and its associated "selected namespaces" property, enhancing multi-language support.
+
+### Changed
+
+- 📄 **Clarified `UserMessageEvent` as Chat UI Contract**: Updated documentation and internal guidance across `SKILL.md`,
+  agent reports, and `CLAUDE.md` files. This change emphasizes that `UserMessageEvent` is exclusively for generic chat
+  interfaces and advises subclassing `StartEvent` directly for agent- or domain-specific payloads.
+- 🔄 **RAG Agent Event Acceptance**: Modified `ExpertRAGAgent` and `RAGAgent` to explicitly accept the new
+  `RAGStartEvent` (alongside `UserMessageEvent`) for initiating RAG workflows, ensuring proper handling of
+  namespace-aware queries from non-chat sources.
+
+### Refactor
+
+- 🧹 **Replaced `NamespaceAwareUserMessageEvent` with `RAGStartEvent`**: Refactored internal agent logic and
+  configurations to transition from `NamespaceAwareUserMessageEvent` to the newly introduced `RAGStartEvent`,
+  streamlining the event model for RAG delegation.
+- ⚡️ **Optimized `UserMessageEvent.user_query` Property**: Performed a minor internal optimization to the `user_query`
+  property within `UserMessageEvent` for enhanced readability and maintainability.
+
+### Removed
+
+- 🗑️ **Deprecated `NamespaceAwareUserMessageEvent`**: The `NamespaceAwareUserMessageEvent` class was removed, as its
+  functionality has been superseded by the more appropriately designed `RAGStartEvent` which directly extends
+  `StartEvent`.
+
+______________________________________________________________________
+
 ## [v0.277.1] - 2026-04-17 - Enhanced Development Experience and Service Orchestration
 
 ### Added

@@ -79,9 +79,11 @@ implicitly grant user access.
 
 Persistence entities follow the active record pattern using MongoEngine. Each entity is a Document subclass that
 combines schema definition with repository classmethods. Key entities include RoleEntity (roles, access rules, usage
-limits), ThreadEntity (conversation threads with embedded user and agent references), AgentConfigEntity and
-ProcessConfigEntity (persisted configuration), PersistedAgentEventEntity and PersistedProcessEventEntity (event
-storage), and UserEntity (user profiles).
+limits; every role is tenant-scoped), TenantMetadataEntity (tenant display metadata — Keycloak owns existence),
+UserTenantRoleEntity (tenant-scoped role assignments), ThreadEntity (conversation threads with embedded user and agent
+references), AgentConfigEntity and ProcessConfigEntity (persisted configuration), and PersistedAgentEventEntity and
+PersistedProcessEventEntity (event storage). User profile data (name, email) is read from Keycloak — there is no local
+user entity.
 
 #### Infrastructure configuration
 

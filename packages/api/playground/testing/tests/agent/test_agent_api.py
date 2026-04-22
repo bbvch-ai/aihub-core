@@ -3,11 +3,9 @@ import pytest_asyncio
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
 from llama_index.core.base.llms.types import ChatMessage
-from swiss_ai_hub.core.auth.dependencies.dangerous_development_only_auth_handler.dangerous_development_only_auth_handler import (  # noqa: E501
-    DangerousDevelopmentOnlyAuthHandler,
-)
 from swiss_ai_hub.core.events.agent import UserMessageEvent
 from swiss_ai_hub.core.infrastructure import enable_logging
+from swiss_ai_hub.core.testing.auth_utils import TestAuthHandler
 
 from swiss_ai_hub.api.routes.agent.agent_controller import AgentController
 from swiss_ai_hub.api.runners.simulation.agent.simulated_agent_api_test_runner import SimulatedAgentApiTestRunner
@@ -21,7 +19,7 @@ enable_logging()
 
 @pytest_asyncio.fixture
 async def agent_api_client():
-    auth = DangerousDevelopmentOnlyAuthHandler()
+    auth = TestAuthHandler()
     controller = AgentController(auth=auth).get_all_agent_instances().get_agent_instance()
     runner = SimulatedAgentApiTestRunner(agent_class=AGENT_CLASS, agent_id=AGENT_ID).with_simple_chunk_events()
     runner.mount(controller)

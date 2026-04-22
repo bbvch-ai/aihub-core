@@ -30,7 +30,6 @@ class Access(BaseModel):
 
 
 class UserWithAccessDTO(UserDTO):
-    roles: Annotated[list[str], Field(description="List of roles assigned to the user in the current tenant")] = []
     access: Annotated[Access, Field(description="User access levels")]
 
     @classmethod
@@ -46,9 +45,7 @@ class UserWithAccessDTO(UserDTO):
         user_roles = UserTenantRoleEntity.get_roles_for_user_in_tenant(user.id, tenant.id)
         valid_roles = RoleEntity.filter_existing_roles(user_roles, tenant.id)
 
-        access_rules = RoleEntity.get_access_rules_for_roles(user_roles, tenant.id)
-
-        access_checker = AccessChecker(list(access_rules), tenant_access_rules=tenant.access_rules)
+        access_checker = AccessChecker.from_user(user)
         access = Access()
 
         for controller in runner.controllers:
@@ -90,5 +87,6 @@ class UserWithAccessDTO(UserDTO):
             profile_image=None,
             dashboard=dashboard_dto,
             roles=valid_roles,
+            is_sys_admin=user.is_sys_admin,
             access=access,
         )

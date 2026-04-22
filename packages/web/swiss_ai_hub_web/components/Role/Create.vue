@@ -10,13 +10,13 @@
       <div class="flex justify-end gap-2">
         <Button
           type="button"
-          :label="t('evaluation.dataset.cancel')"
+          :label="t('role.create_dialog.cancel')"
           severity="secondary"
           @click="close"
         />
         <Button
           type="button"
-          :label="t('evaluation.dataset.save')"
+          :label="t('role.create_dialog.save')"
           :disabled="!role.name || !role.description || !role.access_rules?.length"
           @click="save"
         />
@@ -42,8 +42,8 @@ const emit = defineEmits<{
   close: []
 }>()
 
-const { createRole } = useCreateRole()
 const { tenantId } = useTenant()
+const { createRole } = useCreateRole()
 
 const close = () => {
   emit('close')
