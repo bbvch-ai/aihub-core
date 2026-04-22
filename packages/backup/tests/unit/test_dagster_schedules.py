@@ -5,7 +5,6 @@ from dagster import job, op
 
 from swiss_ai_hub.backup.dagster.schedules.factory import daily_backup_schedule
 
-import pytest
 
 @op
 def _noop() -> None:

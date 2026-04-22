@@ -3,8 +3,6 @@ from unittest.mock import MagicMock, patch
 
 from swiss_ai_hub.backup.retention import RetentionService
 
-import pytest
-
 FROZEN_NOW = datetime(2026, 2, 18, 12, 0, 0, tzinfo=UTC)
 
 

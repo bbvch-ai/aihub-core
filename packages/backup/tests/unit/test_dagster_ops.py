@@ -13,8 +13,6 @@ from swiss_ai_hub.backup.dagster.resources.container_lifecycle_resource import C
 from swiss_ai_hub.backup.dagster.resources.docker_manager_resource import DockerManagerResource
 from swiss_ai_hub.backup.dagster.resources.s3_manager_resource import S3ManagerResource
 
-import pytest
-
 _TIMESTAMP = "2026-02-19_02-00-00"
 
 

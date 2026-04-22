@@ -1,6 +1,6 @@
+
 from swiss_ai_hub.backup.dagster.definitions import backup_definitions
 
-import pytest
 
 def test_backup_definitions_loads() -> None:
     defs = backup_definitions()

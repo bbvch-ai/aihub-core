@@ -25,7 +25,6 @@ from swiss_ai_hub.core.form.form import Form
 from swiss_ai_hub.core.form.template_data import TemplateData
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
 from swiss_ai_hub.core.processes.process_config import ProcessConfig
-
 from swiss_ai_hub.core.testing.auth_utils.user_mocks import mock_keycloak_admin_service_autouse  # noqa: F401
 
 # =============================================================================

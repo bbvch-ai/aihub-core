@@ -4,7 +4,6 @@ from pytest_bdd import given, parsers, scenarios, then, when
 from swiss_ai_hub.core.auth.access.access_checker import AccessChecker, AccessLevel
 from swiss_ai_hub.core.testing.auth_utils.user_mocks import mock_keycloak_admin_service_autouse  # noqa: F401
 
-
 scenarios("./features/access_checker.feature")
 
 

@@ -6,7 +6,6 @@ from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
 from swiss_ai_hub.core.testing.auth_utils.user_mocks import mock_keycloak_admin_service_autouse  # noqa: F401
 
-
 LANG_FOLDER = os.path.join(os.path.dirname(__file__), "../translations")
 
 

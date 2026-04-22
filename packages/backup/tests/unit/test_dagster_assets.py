@@ -12,7 +12,6 @@ from swiss_ai_hub.backup.dagster.resources.docker_manager_resource import Docker
 from swiss_ai_hub.backup.dagster.resources.s3_manager_resource import S3ManagerResource
 from swiss_ai_hub.backup.models import ServiceStatus
 
-import pytest
 
 def _resources() -> dict[str, object]:
     settings = BackupSettingsResource()

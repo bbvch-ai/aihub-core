@@ -3,8 +3,8 @@ import json
 from swiss_ai_hub.core.events.agent.display.display_event import DisplayEvent
 from swiss_ai_hub.core.events.base_event import BaseEvent
 from swiss_ai_hub.core.events.utils import get_inheritance_depth, get_parent_classes_until_base
-
 from swiss_ai_hub.core.testing.auth_utils.user_mocks import mock_keycloak_admin_service_autouse  # noqa: F401
+
 
 def test_get_inheritance_depth_simple_hierarchy():
     """Test basic inheritance depth calculation for single inheritance path."""

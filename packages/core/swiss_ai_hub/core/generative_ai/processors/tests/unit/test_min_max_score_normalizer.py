@@ -1,9 +1,8 @@
 from llama_index.core.schema import NodeWithScore, TextNode
 
 from swiss_ai_hub.core.generative_ai.processors.min_max_score_normalizer import MinMaxScoreNormalizer
-
-import pytest
 from swiss_ai_hub.core.testing.auth_utils.user_mocks import mock_keycloak_admin_service_autouse  # noqa: F401
+
 
 class TestMinMaxScoreNormalizer:
     def test_normalizes_scores_to_range(self) -> None:

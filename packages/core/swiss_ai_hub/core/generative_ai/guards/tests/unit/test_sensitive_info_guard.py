@@ -7,7 +7,6 @@ from swiss_ai_hub.core.generative_ai.guards.sensitive_info_guard import Sensitiv
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 from swiss_ai_hub.core.testing.auth_utils.user_mocks import mock_keycloak_admin_service_autouse  # noqa: F401
 
-
 scenarios("./features/sensitive_info_guard.feature")
 
 

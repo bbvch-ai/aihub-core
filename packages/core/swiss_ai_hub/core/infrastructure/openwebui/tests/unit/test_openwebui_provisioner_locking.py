@@ -8,7 +8,6 @@ from swiss_ai_hub.core.infrastructure.openwebui.online_agent import OnlineAgent
 from swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner import OpenWebuiProvisioner
 from swiss_ai_hub.core.testing.auth_utils.user_mocks import mock_keycloak_admin_service_autouse  # noqa: F401
 
-
 _RAG_AGENT = OnlineAgent(agent_class="rag", agent_id="default", display_name="RAG Agent")
 
 

@@ -15,9 +15,8 @@ from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import (
     UPDATED_AT,
 )
 from swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_vector_store_config import MilvusVectorStoreConfig
-from swiss_ai_hub.core.testing.milvus_vector_store_content import drop_collection, fill_collection, run_with_event_loop
 from swiss_ai_hub.core.testing.auth_utils.user_mocks import mock_keycloak_admin_service_autouse  # noqa: F401
-
+from swiss_ai_hub.core.testing.milvus_vector_store_content import drop_collection, fill_collection, run_with_event_loop
 
 scenarios("features/vector_prev_next_post_processor.feature")
 

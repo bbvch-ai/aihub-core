@@ -8,7 +8,6 @@ from swiss_ai_hub.core.auth.usage.usage_limit_models import ResourceType, RoleUs
 from swiss_ai_hub.core.auth.usage.usage_limits import UsageLimits
 from swiss_ai_hub.core.testing.auth_utils.user_mocks import mock_keycloak_admin_service_autouse  # noqa: F401
 
-
 AGENT_PREFIX = "aihub.user.agent."
 TEST_TENANT_ID = "test-tenant"
 
