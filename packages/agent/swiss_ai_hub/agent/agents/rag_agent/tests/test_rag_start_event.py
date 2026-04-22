@@ -8,8 +8,8 @@ from swiss_ai_hub.core.generative_ai import (
     EmbeddingModelConfig,
     KnowledgeRetrieverConfig,
     MetadataFilterPair,
+    narrow_retrievers,
 )
-from swiss_ai_hub.core.generative_ai.utils.narrow_retrievers_for_rag_start import narrow_retrievers_for_rag_start
 from swiss_ai_hub.core.persistence import MilvusVectorStoreConfig
 
 
@@ -89,7 +89,7 @@ class TestNamespaceFilteringBranch:
         )
 
         assert isinstance(start_event, RAGStartEvent)
-        runtime_configs = narrow_retrievers_for_rag_start(retrievers, start_event.selected_namespaces)
+        runtime_configs = narrow_retrievers(retrievers, start_event.selected_namespaces)
 
         assert len(runtime_configs) == 1
         assert runtime_configs[0].config.vector_store.collection_name == "bucket_a"
@@ -132,9 +132,7 @@ class TestAdditionalFiltersWiring:
                 BucketMetadataFilters(bucket_name="bucket_a", filters=[MetadataFilterPair(key="snk", value="42")])
             ],
         )
-        runtime_configs = narrow_retrievers_for_rag_start(
-            retrievers, start_event.selected_namespaces, start_event.additional_filters
-        )
+        runtime_configs = narrow_retrievers(retrievers, start_event.selected_namespaces, start_event.additional_filters)
         assert len(runtime_configs) == 1
         assert runtime_configs[0].additional_metadata_filters == [MetadataFilterPair(key="snk", value="42")]
 
@@ -149,7 +147,7 @@ class TestAdditionalFiltersWiring:
             ],
         )
         with pytest.raises(ValueError):
-            narrow_retrievers_for_rag_start(retrievers, start_event.selected_namespaces, start_event.additional_filters)
+            narrow_retrievers(retrievers, start_event.selected_namespaces, start_event.additional_filters)
 
     def test_none_additional_filters_is_no_op(self):
         retrievers = self._make_retrievers()
@@ -157,7 +155,5 @@ class TestAdditionalFiltersWiring:
             namespaces=[BucketNamespacePair(bucket_name="bucket_a", namespace_name="ns1")],
         )
         assert start_event.additional_filters is None
-        runtime_configs = narrow_retrievers_for_rag_start(
-            retrievers, start_event.selected_namespaces, start_event.additional_filters
-        )
+        runtime_configs = narrow_retrievers(retrievers, start_event.selected_namespaces, start_event.additional_filters)
         assert runtime_configs[0].additional_metadata_filters == []

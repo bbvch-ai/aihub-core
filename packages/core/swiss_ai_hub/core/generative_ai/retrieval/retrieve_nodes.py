@@ -27,6 +27,8 @@ def retrieve_nodes(
 ) -> list[NodeWithScore] | None:
     if retrieve_k <= 0:
         raise ValueError("retrieve_k must be a positive integer")
+    if not node_types:
+        raise ValueError("node_types must contain at least one entry")
 
     extra_filters = [MetadataFilter(key=f.key, value=f.value) for f in (additional_filters or [])]
 

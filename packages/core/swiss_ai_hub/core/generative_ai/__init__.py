@@ -60,8 +60,8 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.generative_ai.retrievers.retrieval_runtime_config import RetrievalRuntimeConfig
     from swiss_ai_hub.core.generative_ai.routing.route_to_event_using_llm import route_to_event_using_llm
     from swiss_ai_hub.core.generative_ai.utils.image_processor import replace_s3_paths_with_signed_urls
-    from swiss_ai_hub.core.generative_ai.utils.narrow_retrievers_for_rag_start import (
-        narrow_retrievers_for_rag_start,
+    from swiss_ai_hub.core.generative_ai.utils.narrow_retrievers import (
+        narrow_retrievers,
     )
     from swiss_ai_hub.core.generative_ai.utils.path_utils import (
         FIGURES_DIRECTORY_NAME,
@@ -111,7 +111,7 @@ __all__ = [
     "extend_chat_history_with_organization_memory",
     "extend_chat_history_with_user_memory",
     "few_shot_guard",
-    "narrow_retrievers_for_rag_start",
+    "narrow_retrievers",
     "format_expert_conversation",
     "limit_chat_history",
     "limit_chat_history_with_context",
@@ -166,7 +166,7 @@ _LAZY_IMPORTS = {
     "extend_chat_history_with_organization_memory": "swiss_ai_hub.core.generative_ai.chat_history.extend_chat_history_with_organization_memory",
     "extend_chat_history_with_user_memory": "swiss_ai_hub.core.generative_ai.chat_history.extend_chat_history_with_user_memory",
     "few_shot_guard": "swiss_ai_hub.core.generative_ai.guards.few_shot_guard",
-    "narrow_retrievers_for_rag_start": "swiss_ai_hub.core.generative_ai.utils.narrow_retrievers_for_rag_start",
+    "narrow_retrievers": "swiss_ai_hub.core.generative_ai.utils.narrow_retrievers",
     "format_expert_conversation": "swiss_ai_hub.core.generative_ai.chat_history.format_expert_conversation",
     "limit_chat_history": "swiss_ai_hub.core.generative_ai.chat_history.limit_chat_history",
     "limit_chat_history_with_context": "swiss_ai_hub.core.generative_ai.chat_history.limit_chat_history_with_context",

@@ -418,6 +418,8 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
                 agent_id=agent_id,
                 input_event_parents=start_event_parents,
                 input_event_name=start_event_name,
+                # exclude_none keeps the wire payload minimal; no dispatched StartEvent distinguishes
+                # "field absent" from "field explicitly null" — Pydantic rehydrates missing optionals as None.
                 raw_event_data=start_event_input.model_dump(mode="json", exclude_none=True),
                 external_agent_event_distributor=external_agent_event_distributor,
                 thread_id=thread_id,
@@ -501,6 +503,8 @@ class AgentEndpointsDiscoveryService(EndpointsDiscoveryService):
                 agent_id=agent_id,
                 input_event_parents=start_event_parents,
                 input_event_name=start_event_name,
+                # exclude_none keeps the wire payload minimal; no dispatched StartEvent distinguishes
+                # "field absent" from "field explicitly null" — Pydantic rehydrates missing optionals as None.
                 raw_event_data=start_event_input.model_dump(mode="json", exclude_none=True),
                 external_agent_event_distributor=external_agent_event_distributor,
                 thread_id=thread_id,

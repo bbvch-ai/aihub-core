@@ -5,7 +5,7 @@ from swiss_ai_hub.core.generative_ai.retrievers.bucket_metadata_filters import B
 from swiss_ai_hub.core.generative_ai.retrievers.bucket_namespace_pair import BucketNamespacePair
 from swiss_ai_hub.core.generative_ai.retrievers.knowledge_retriever_config import KnowledgeRetrieverConfig
 from swiss_ai_hub.core.generative_ai.retrievers.metadata_filter_pair import MetadataFilterPair
-from swiss_ai_hub.core.generative_ai.utils.narrow_retrievers_for_rag_start import narrow_retrievers_for_rag_start
+from swiss_ai_hub.core.generative_ai.utils.narrow_retrievers import narrow_retrievers
 from swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_vector_store_config import MilvusVectorStoreConfig
 
 
@@ -29,7 +29,7 @@ def _retriever(
 class TestNamespaceNarrowing:
     def test_empty_inputs_wrap_retrievers_unchanged(self):
         retrievers = [_retriever("bucket_a", ["ns1"])]
-        runtime_configs = narrow_retrievers_for_rag_start(retrievers, [], None)
+        runtime_configs = narrow_retrievers(retrievers, [], None)
         assert len(runtime_configs) == 1
         assert runtime_configs[0].config is retrievers[0]
         assert runtime_configs[0].additional_metadata_filters == []
@@ -39,7 +39,7 @@ class TestNamespaceNarrowing:
             _retriever("bucket_a", ["ns1", "ns2"]),
             _retriever("bucket_b", ["ns3"]),
         ]
-        runtime_configs = narrow_retrievers_for_rag_start(
+        runtime_configs = narrow_retrievers(
             retrievers,
             [BucketNamespacePair(bucket_name="bucket_a", namespace_name="ns1")],
         )
@@ -49,7 +49,7 @@ class TestNamespaceNarrowing:
 
     def test_namespace_outside_configured_set_drops_retriever(self):
         retrievers = [_retriever("bucket_a", ["ns1"])]
-        runtime_configs = narrow_retrievers_for_rag_start(
+        runtime_configs = narrow_retrievers(
             retrievers,
             [BucketNamespacePair(bucket_name="bucket_a", namespace_name="other")],
         )
@@ -62,7 +62,7 @@ class TestAdditionalFiltersThreading:
             _retriever("bucket_a", ["ns1"], allowed=["snk"]),
             _retriever("bucket_b", ["ns2"], allowed=["snk"]),
         ]
-        runtime_configs = narrow_retrievers_for_rag_start(
+        runtime_configs = narrow_retrievers(
             retrievers,
             [
                 BucketNamespacePair(bucket_name="bucket_a", namespace_name="ns1"),
@@ -76,7 +76,7 @@ class TestAdditionalFiltersThreading:
 
     def test_missing_bucket_in_filters_keeps_retriever_without_extras(self):
         retrievers = [_retriever("bucket_a", ["ns1"], allowed=["snk"])]
-        runtime_configs = narrow_retrievers_for_rag_start(
+        runtime_configs = narrow_retrievers(
             retrievers,
             [BucketNamespacePair(bucket_name="bucket_a", namespace_name="ns1")],
             [],
@@ -88,7 +88,7 @@ class TestAdditionalFiltersThreading:
         """Publisher sends no namespace selection but does send filters — the agent's configured
         namespace scope is preserved unchanged (this is the 'query all configured namespaces' path)."""
         retrievers = [_retriever("bucket_a", ["ns1", "ns2"], allowed=["snk"])]
-        runtime_configs = narrow_retrievers_for_rag_start(
+        runtime_configs = narrow_retrievers(
             retrievers,
             [],
             [BucketMetadataFilters(bucket_name="bucket_a", filters=[MetadataFilterPair(key="snk", value="X")])],
@@ -100,7 +100,7 @@ class TestAdditionalFiltersThreading:
     def test_config_untouched_when_no_narrowing_applies(self):
         """Config identity is preserved if neither namespace nor filters apply to this bucket."""
         retrievers = [_retriever("bucket_a", ["ns1"], allowed=["snk"])]
-        runtime_configs = narrow_retrievers_for_rag_start(retrievers, [], None)
+        runtime_configs = narrow_retrievers(retrievers, [], None)
         assert runtime_configs[0].config is retrievers[0]
 
 
@@ -108,7 +108,7 @@ class TestEnforcement:
     def test_unlisted_key_raises(self):
         retrievers = [_retriever("bucket_a", ["ns1"], allowed=["snk"])]
         with pytest.raises(ValueError, match="not allowed on bucket 'bucket_a'"):
-            narrow_retrievers_for_rag_start(
+            narrow_retrievers(
                 retrievers,
                 [BucketNamespacePair(bucket_name="bucket_a", namespace_name="ns1")],
                 [
@@ -121,7 +121,7 @@ class TestEnforcement:
     def test_reserved_namespace_key_raises(self):
         retrievers = [_retriever("bucket_a", ["ns1"], allowed=["namespace"])]
         with pytest.raises(ValueError, match="reserved"):
-            narrow_retrievers_for_rag_start(
+            narrow_retrievers(
                 retrievers,
                 [BucketNamespacePair(bucket_name="bucket_a", namespace_name="ns1")],
                 [
@@ -134,7 +134,7 @@ class TestEnforcement:
     def test_unknown_bucket_raises(self):
         retrievers = [_retriever("bucket_a", ["ns1"], allowed=["snk"])]
         with pytest.raises(ValueError, match="unknown bucket"):
-            narrow_retrievers_for_rag_start(
+            narrow_retrievers(
                 retrievers,
                 [BucketNamespacePair(bucket_name="bucket_a", namespace_name="ns1")],
                 [BucketMetadataFilters(bucket_name="bucket_typo", filters=[MetadataFilterPair(key="snk", value="X")])],
@@ -143,7 +143,7 @@ class TestEnforcement:
     def test_duplicate_bucket_entry_raises(self):
         retrievers = [_retriever("bucket_a", ["ns1"], allowed=["snk"])]
         with pytest.raises(ValueError, match="Duplicate additional_filters entry"):
-            narrow_retrievers_for_rag_start(
+            narrow_retrievers(
                 retrievers,
                 [BucketNamespacePair(bucket_name="bucket_a", namespace_name="ns1")],
                 [

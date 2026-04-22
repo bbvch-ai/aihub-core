@@ -11,14 +11,17 @@ class RetrievalRuntimeConfig(BaseModel):
 
     Unlike `*Config` classes that inherit from `Form`, this is a plain `BaseModel` — it carries data
     that must not pollute the design-time form schema (e.g. publisher-supplied metadata filters
-    injected by `narrow_retrievers_for_rag_start`).
+    injected by `narrow_retrievers`).
     """
 
     config: Annotated[KnowledgeRetrieverConfig, Field(description="The base retriever configuration.")]
     additional_metadata_filters: Annotated[
         list[MetadataFilterPair],
-        Field(description="Runtime metadata filters applied AND-wise to this retrieval."),
-    ] = []
+        Field(
+            default_factory=list,
+            description="Runtime metadata filters applied AND-wise to this retrieval.",
+        ),
+    ]
 
     @classmethod
     def from_config(cls, config: KnowledgeRetrieverConfig) -> Self:

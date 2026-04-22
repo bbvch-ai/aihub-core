@@ -29,7 +29,7 @@ from swiss_ai_hub.core.generative_ai import (
     extend_chat_history_with_organization_memory,
     extend_chat_history_with_user_memory,
     format_expert_conversation,
-    narrow_retrievers_for_rag_start,
+    narrow_retrievers,
 )
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.topics import AgentInstanceTopic
@@ -338,7 +338,7 @@ class ExpertRAGAgent(Agent):
     ) -> RetrieverEvent:
         """Retrieves relevant nodes from multiple knowledge sources in parallel."""
         if isinstance(start_event, RAGStartEvent):
-            runtime_configs = narrow_retrievers_for_rag_start(
+            runtime_configs = narrow_retrievers(
                 agent_config.retrievers,
                 start_event.selected_namespaces,
                 start_event.additional_filters,

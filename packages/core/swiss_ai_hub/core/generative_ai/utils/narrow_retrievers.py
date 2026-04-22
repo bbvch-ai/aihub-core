@@ -6,16 +6,17 @@ from swiss_ai_hub.core.generative_ai.retrievers.retrieval_runtime_config import 
 from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import NAMESPACE
 
 
-def narrow_retrievers_for_rag_start(
+def narrow_retrievers(
     retrievers: list[KnowledgeRetrieverConfig],
     selected_namespaces: list[BucketNamespacePair],
     additional_filters: list[BucketMetadataFilters] | None = None,
 ) -> list[RetrievalRuntimeConfig]:
-    """Apply `RAGStartEvent` narrowing to a list of retriever configs.
+    """Narrow configured retrievers by publisher-selected namespaces and runtime metadata filters.
 
-    The agent's configured `index_namespaces` is always the upper bound: a publisher-supplied namespace
-    outside that set drops the retriever. `additional_filters` keys must be listed in
-    `allowed_metadata_filter_fields`; the reserved `namespace` key is rejected.
+    Primary caller is the `RAGStartEvent` path in RAG agents. The agent's configured `index_namespaces`
+    is always the upper bound: a publisher-supplied namespace outside that set drops the retriever.
+    `additional_filters` keys must be listed in `allowed_metadata_filter_fields`; the reserved
+    `namespace` key is rejected.
     """
     selected_namespace_by_bucket = {pair.bucket_name: pair.namespace_name for pair in selected_namespaces}
     filters_by_bucket = _index_filters_by_bucket(additional_filters)
