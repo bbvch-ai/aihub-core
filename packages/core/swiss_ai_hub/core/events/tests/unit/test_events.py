@@ -20,9 +20,8 @@ from swiss_ai_hub.core.events.agent.user.user_message_event import UserMessageEv
 from swiss_ai_hub.core.events.base_event import BaseEvent
 from swiss_ai_hub.core.infrastructure.logging.logger import enable_logging
 from swiss_ai_hub.core.testing.auth_utils.test_identity import fake_user
-from swiss_ai_hub.core.topics import PartialAgentTopic
 from swiss_ai_hub.core.testing.auth_utils.user_mocks import mock_keycloak_admin_service_autouse  # noqa: F401
-
+from swiss_ai_hub.core.topics import PartialAgentTopic
 
 enable_logging()
 
