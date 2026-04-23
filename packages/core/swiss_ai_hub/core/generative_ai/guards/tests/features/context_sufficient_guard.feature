@@ -63,3 +63,25 @@ Feature: Context Sufficient Guard Logic
     When the context sufficient guard is executed
     Then the guard should accept the request
     And the LLM prompt should render chat history as an empty string
+
+  Scenario Outline: Guard prompt renders chat history block in each locale
+    Given a locale handler with locale "<locale>"
+    And a user query "What is our vacation policy?"
+    And the following context "Employee handbook chapter 3."
+    And no previous queries
+    And more hops are available
+    And the following chat history:
+      | role   | content                                |
+      | system | [Org memory] Vacation policy: 25 days. |
+      | user   | What is our vacation policy?           |
+    And the LLM returns success=True with reasoning="Memory contains the answer"
+    When the context sufficient guard is executed with chat history
+    Then the guard should accept the request
+    And the LLM prompt should include the chat history
+
+    Examples:
+      | locale |
+      | en     |
+      | de     |
+      | fr     |
+      | it     |
