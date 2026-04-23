@@ -1,14 +1,3 @@
-"""Regression tests for HITL subclass preservation through ContextualizedAgentEvent.
-
-Bug history: PR #841 (2026-01-05) introduced HumanInTheLoop{Input,Confirmation,Chat}RequestEvent
-subclasses but did not add them to the `DisplayEvents` discriminated union in
-`contextualized_agent_event.py`. As a result, any agent-specific HITL subclass fell through
-to the base `HumanInTheLoopRequestEvent` tag and got downcast during WebSocket serialization.
-The frontend then echoed the downgraded event back in its POST body; the agent-side outer
-validator (`FollowUpQuestionResponseEvent.request_event: HumanInTheLoopInputRequestEvent`)
-rejected the base-class instance, silently dropping the message and hanging the run.
-"""
-
 from swiss_ai_hub.core.events.agent import (
     DisplayEvent,
     HumanInTheLoopChatRequestEvent,
