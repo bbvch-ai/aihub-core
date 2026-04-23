@@ -1,6 +1,5 @@
 from swiss_ai_hub.core.generative_ai import (
     EmbeddingModelConfig,
-    FewShotGuardExample,
     KnowledgeRetrieverConfig,
     LLMConfig,
     LLMParameter,
@@ -73,38 +72,6 @@ TEMPLATE = RAGAgentConfig(
         ),
     ],
     reranking_config=RerankingConfig(enabled=False),
-    few_shot_guard_examples=[
-        FewShotGuardExample(
-            user=LocaleString(
-                en="What is our company's vacation policy?",
-                de="Wie lautet unsere Urlaubsregelung?",
-                fr="Quelle est notre politique de vacances?",
-                it="Qual è la nostra politica sulle ferie?",
-            ),
-            success=True,
-            reason=LocaleString(
-                en="Question concerns shared organizational knowledge retrievable from documents.",
-                de="Frage betrifft geteiltes Unternehmenswissen, das aus Dokumenten abgerufen werden kann.",
-                fr="La question porte sur des connaissances organisationnelles partagées, récupérables dans les documents.",
-                it="La domanda riguarda conoscenze organizzative condivise, recuperabili dai documenti.",
-            ),
-        ),
-        FewShotGuardExample(
-            user=LocaleString(
-                en="Book me a flight to Paris next Monday.",
-                de="Buche mir einen Flug nach Paris nächsten Montag.",
-                fr="Réserve-moi un vol pour Paris lundi prochain.",
-                it="Prenotami un volo per Parigi lunedì prossimo.",
-            ),
-            success=False,
-            reason=LocaleString(
-                en="Request asks for an action (booking) outside the scope of knowledge retrieval.",
-                de="Anfrage verlangt eine Aktion (Buchung), die ausserhalb des Wissensabruf-Umfangs liegt.",
-                fr="La demande sollicite une action (réservation) hors du périmètre de récupération de connaissances.",
-                it="La richiesta chiede un'azione (prenotazione) al di fuori dell'ambito del recupero di conoscenze.",
-            ),
-        ),
-    ],
     enable_organization_memory=True,
     enable_user_memory_retrieval=True,
     enable_user_memory_storage=True,
