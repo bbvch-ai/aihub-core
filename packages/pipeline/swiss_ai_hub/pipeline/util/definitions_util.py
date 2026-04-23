@@ -6,10 +6,11 @@ from dagster import (
     AssetSelection,
     Definitions,
     DynamicPartitionsDefinition,
+    SensorDefinition,
 )
 from swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_model_config import EmbeddingModelConfig
 from swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config import LLMConfig
-from swiss_ai_hub.core.infrastructure import MilvusSettings
+from swiss_ai_hub.core.infrastructure import MilvusSettings, NotificationSettings
 from swiss_ai_hub.core.infrastructure.rclone import RcloneSourceConfig
 from swiss_ai_hub.core.topic_managers import PipelineInstanceTopicManager
 
@@ -63,7 +64,23 @@ from swiss_ai_hub.pipeline.resources.share_point.share_point_resource import Sha
 from swiss_ai_hub.pipeline.schedules.factory import daily_schedule_at
 from swiss_ai_hub.pipeline.sensors.factory import default_automation_sensor
 from swiss_ai_hub.pipeline.sensors.nats.nats_document_uploaded_sensor import nats_document_uploaded_sensor
+from swiss_ai_hub.pipeline.sensors.run_failure_notification_sensor import run_failure_notification_sensor
 from swiss_ai_hub.pipeline.util.bucket_utils import get_db_name_from_bucket_name
+
+
+def _failure_notification_sensors() -> list[SensorDefinition]:
+    """Builds the Apprise-backed run-failure sensor when NOTIFICATION_URLS is configured."""
+    settings = NotificationSettings()
+    if not settings.enabled:
+        return []
+    return [
+        run_failure_notification_sensor(
+            urls=settings.URLS,
+            dagster_ui_base_url=settings.DAGSTER_UI_BASE_URL,
+            title_prefix=settings.TITLE_PREFIX,
+            minimum_interval_seconds=settings.MIN_INTERVAL_SECONDS,
+        ),
+    ]
 
 
 def default_definitions(
@@ -182,6 +199,7 @@ def default_definitions(
                     target_id=store_name,
                 ),
             ),
+            *_failure_notification_sensors(),
         ],
         executor=default_process_executor(),
         jobs=[job, remove_job],
@@ -272,7 +290,7 @@ def default_sharepoint_to_datalake_definitions(
             ),
             **mongo_document_store_resource(document_store_name=store_name),
         },
-        sensors=[default_automation_sensor(assets)],
+        sensors=[default_automation_sensor(assets), *_failure_notification_sensors()],
         executor=default_process_executor(),
         jobs=[observe_job, remove_job],
         schedules=[
@@ -382,7 +400,7 @@ def default_local_filesystem_to_datalake_definitions(
             ),
             **mongo_document_store_resource(document_store_name=store_name),
         },
-        sensors=[default_automation_sensor(assets)],
+        sensors=[default_automation_sensor(assets), *_failure_notification_sensors()],
         executor=default_process_executor(),
         jobs=[observe_job, remove_job],
         schedules=[
@@ -528,7 +546,7 @@ def default_rclone_to_datalake_definitions(
             ),
             **mongo_document_store_resource(document_store_name=store_name),
         },
-        sensors=[default_automation_sensor(assets)],
+        sensors=[default_automation_sensor(assets), *_failure_notification_sensors()],
         executor=default_process_executor(),
         jobs=[observe_job, remove_job],
         schedules=[
