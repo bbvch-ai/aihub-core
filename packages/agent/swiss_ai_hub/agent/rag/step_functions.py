@@ -195,13 +195,13 @@ async def do_context_sufficient_guard(
     llm_config: LLMConfig,
     displayer: EventDisplayer,
     t: LocaleHandler,
-    organization_memory_content: str | None = None,
+    chat_history: list[ChatMessage] | None = None,
 ) -> ContextSufficientAcceptEvent | ContextInsufficientRejectEvent | ContextInsufficientWithQueryEvent:
     """Execute context sufficient guard with hop management.
 
-    When ``organization_memory_content`` is provided it is concatenated onto ``context`` so
-    that stored organization memories (e.g. prior expert answers) can satisfy the guard and
-    avoid re-escalation for questions that have already been answered.
+    ``chat_history`` — passed through to the guard prompt so that prior turns and any
+    injected user/organization memory system messages can satisfy sufficiency without
+    re-escalation for questions that have already been answered.
     """
     if not check_context_sufficiency:
         return ContextSufficientAcceptEvent(reason=t("agent.thought.no_context_sufficiency_check"))
@@ -210,20 +210,15 @@ async def do_context_sufficient_guard(
     hop_count = await run_context.get("hop_count", 1)
     more_hops_available = hop_count < max_hops
 
-    combined_context = context or ""
-    if organization_memory_content:
-        combined_context = (
-            f"{combined_context}\n\n{organization_memory_content}" if combined_context else organization_memory_content
-        )
-
     async with llm_config.cost_reporting_llm(displayer) as llm:
         guard_result = await context_sufficient_guard(
             llm=llm,
             t=t,
             user_query=user_query,
-            context=combined_context,
+            context=context,
             prev_queries=prev_queries,
             more_hops_available=more_hops_available,
+            chat_history=chat_history,
         )
 
     if guard_result.success:

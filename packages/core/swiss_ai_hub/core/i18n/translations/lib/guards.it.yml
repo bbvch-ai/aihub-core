@@ -94,6 +94,10 @@ context_sufficient_guard:
     <Domanda>
     {user_query}
     </Domanda>
+    Cronologia della conversazione (include eventuali memorie utente o organizzative inserite come messaggi di sistema — trattala come contesto aggiuntivo che potrebbe già rispondere alla domanda):
+    <Chat_History>
+    {chat_history}
+    </Chat_History>
     Contesto:
     <Contesto>
     {context}

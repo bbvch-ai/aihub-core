@@ -93,6 +93,10 @@ context_sufficient_guard:
       <Question>
       { user_query }
       </Question>
+    Historique de la conversation (inclut toute mémoire utilisateur ou organisationnelle insérée comme messages système — traitez-les comme un contexte supplémentaire qui peut déjà répondre à la question):
+      <Chat_History>
+      { chat_history }
+      </Chat_History>
     Contexte:
       <Context>
       { context }

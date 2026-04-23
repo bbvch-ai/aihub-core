@@ -93,6 +93,10 @@ context_sufficient_guard:
     <Question>
     {user_query}
     </Question>
+    Gesprächsverlauf (enthält alle als Systemnachrichten eingefügten Benutzer- oder Organisationsspeicher — behandle sie als zusätzlichen Kontext, der die Frage bereits beantworten kann):
+    <Chat_History>
+    {chat_history}
+    </Chat_History>
     Kontext:
     <Context>
     {context}
