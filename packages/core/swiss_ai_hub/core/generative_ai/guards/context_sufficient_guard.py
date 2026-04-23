@@ -57,8 +57,13 @@ async def context_sufficient_guard(
     sufficiency_prompt = PromptTemplate(t("lib.guards.context_sufficient_guard.prompt"))
     if prev_queries:
         prev_queries = "\n".join(prev_queries)
-    llm_kwargs = {}
-    if not llm.metadata.is_function_calling_model:
+    llm_kwargs: dict = {}
+    if llm.metadata.is_function_calling_model:
+        # Force the structured-output tool so the model can't fall back to plain text,
+        # which breaks llama_index's structured_predict (ValueError: got 0 tool calls).
+        # This matters especially when chat_history is long (e.g. retrieved memory).
+        llm_kwargs["tool_choice"] = "required"
+    else:
         llm_kwargs["tool_choice"] = NOT_GIVEN
 
     result = llm.structured_predict(
