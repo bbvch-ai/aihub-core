@@ -30,6 +30,7 @@ from swiss_ai_hub.core.generative_ai import (
     extend_chat_history_with_user_memory,
     format_expert_conversation,
     narrow_retrievers,
+    render_organization_memory_content,
 )
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.topics import AgentInstanceTopic
@@ -393,7 +394,13 @@ class ExpertRAGAgent(Agent):
         event: InOrderNodeCombinerEvent,
         user_query_event: StandaloneQuestionCondenserEvent,
         run_context: RunContext,
+        org_memory_event: RetrieveOrganizationMemoryEvent | None = None,
     ) -> ContextSufficientAcceptEvent | ContextInsufficientRejectEvent | ContextInsufficientWithQueryEvent:
+        organization_memory_content: str | None = None
+        if org_memory_event is not None:
+            organization_memory_content = render_organization_memory_content(
+                org_memory_event.memories, org_memory_event.relations, t
+            )
         return await do_context_sufficient_guard(
             user_query_event.condensed_chat_message.content,
             event.context_message.content,
@@ -403,6 +410,7 @@ class ExpertRAGAgent(Agent):
             agent_config.llm,
             displayer,
             t,
+            organization_memory_content=organization_memory_content,
         )
 
     @step(

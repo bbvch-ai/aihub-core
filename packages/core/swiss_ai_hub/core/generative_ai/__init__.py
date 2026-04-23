@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from swiss_ai_hub.core.generative_ai.chat_history.extend_chat_history_with_organization_memory import (
         extend_chat_history_with_organization_memory,
+        render_organization_memory_content,
     )
     from swiss_ai_hub.core.generative_ai.chat_history.extend_chat_history_with_user_memory import (
         extend_chat_history_with_user_memory,
@@ -117,6 +118,7 @@ __all__ = [
     "limit_chat_history_with_context",
     "merge_consecutive_messages",
     "refine_document_tables_with_metadata",
+    "render_organization_memory_content",
     "replace_s3_paths_with_signed_urls",
     "rerank_nodes",
     "retrieve_from_all_sources",
@@ -172,6 +174,7 @@ _LAZY_IMPORTS = {
     "limit_chat_history_with_context": "swiss_ai_hub.core.generative_ai.chat_history.limit_chat_history_with_context",
     "merge_consecutive_messages": "swiss_ai_hub.core.generative_ai.resources.models.llm.message_preprocessor",
     "refine_document_tables_with_metadata": "swiss_ai_hub.core.generative_ai.document.refinement",
+    "render_organization_memory_content": "swiss_ai_hub.core.generative_ai.chat_history.extend_chat_history_with_organization_memory",
     "replace_s3_paths_with_signed_urls": "swiss_ai_hub.core.generative_ai.utils.image_processor",
     "rerank_nodes": "swiss_ai_hub.core.generative_ai.rerank.rerank_nodes",
     "retrieve_from_all_sources": "swiss_ai_hub.core.generative_ai.retrieval.retrieve_from_all_sources",
