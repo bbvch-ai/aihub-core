@@ -45,8 +45,8 @@ TEMPLATE = RAGAgentConfig(
         default_parameter=LLMParameter(temperature=0.1, timeout=120.0),
     ),
     number_of_input_tokens=128000,
-    max_hops=1,
-    check_context_sufficiency=False,
+    max_hops=2,
+    check_context_sufficiency=True,
     retrievers=[
         KnowledgeRetrieverConfig(
             embed_model=EmbeddingModelConfig(model_name="embedding/bge-m3"),
@@ -68,7 +68,7 @@ TEMPLATE = RAGAgentConfig(
         ),
     ],
     reranking_config=RerankingConfig(enabled=False),
-    enable_organization_memory=False,
-    enable_user_memory_retrieval=False,
-    enable_user_memory_storage=False,
+    enable_organization_memory=True,
+    enable_user_memory_retrieval=True,
+    enable_user_memory_storage=True,
 )
