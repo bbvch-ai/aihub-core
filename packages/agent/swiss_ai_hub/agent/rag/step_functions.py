@@ -199,11 +199,9 @@ async def do_context_sufficient_guard(
 ) -> ContextSufficientAcceptEvent | ContextInsufficientRejectEvent | ContextInsufficientWithQueryEvent:
     """Execute context sufficient guard with hop management.
 
-    ``chat_history`` — system-role messages are forwarded to the guard prompt so injected
-    user/organization memory (stored as system messages) can satisfy sufficiency without
-    re-escalation. Non-system messages are filtered out to keep the prompt compact —
-    including the whole conversation here tends to push structured-output models
-    (e.g. gpt-oss-120b) into skipping their tool call.
+    ``chat_history`` — the full limited chat history (with any injected user/organization
+    memory system messages) is forwarded to the guard prompt so the guard sees prior turns
+    and stored memory alongside the freshly retrieved context.
     """
     if not check_context_sufficiency:
         return ContextSufficientAcceptEvent(reason=t("agent.thought.no_context_sufficiency_check"))
@@ -211,10 +209,6 @@ async def do_context_sufficient_guard(
     prev_queries = await run_context.get("prev_queries", [])
     hop_count = await run_context.get("hop_count", 1)
     more_hops_available = hop_count < max_hops
-
-    system_chat_history = (
-        [message for message in chat_history if message.role == MessageRole.SYSTEM] if chat_history else None
-    )
 
     async with llm_config.cost_reporting_llm(displayer) as llm:
         guard_result = await context_sufficient_guard(
@@ -224,7 +218,7 @@ async def do_context_sufficient_guard(
             context=context,
             prev_queries=prev_queries,
             more_hops_available=more_hops_available,
-            chat_history=system_chat_history,
+            chat_history=chat_history,
         )
 
     if guard_result.success:

@@ -107,13 +107,11 @@ async def test_organization_memory_system_message_reaches_guard_prompt(
 
     rendered_chat_history = mock_llm.structured_predict.call_args.kwargs["chat_history"]
     assert memory_text in rendered_chat_history
-    # The original USER message is filtered out — the guard only sees SYSTEM messages
-    # (memory + behavior prompts) to keep the prompt compact.
-    assert "user: What is our vacation policy?" not in rendered_chat_history
+    assert "user: What is our vacation policy?" in rendered_chat_history
 
 
 @pytest.mark.asyncio
-async def test_guard_filters_non_system_messages_from_chat_history(
+async def test_guard_forwards_full_chat_history_including_user_and_assistant_turns(
     mock_llm, llm_config, displayer, run_context, locale_handler
 ):
     chat_history = [
@@ -137,8 +135,9 @@ async def test_guard_filters_non_system_messages_from_chat_history(
 
     rendered = mock_llm.structured_predict.call_args.kwargs["chat_history"]
     assert "system: Memory: 25 vacation days." in rendered
-    assert "user:" not in rendered
-    assert "assistant:" not in rendered
+    assert "user: First question" in rendered
+    assert "assistant: Earlier answer" in rendered
+    assert "user: Follow-up" in rendered
 
 
 @pytest.mark.asyncio
