@@ -8,14 +8,6 @@ config:
     label: Max input tokens
     help: Maximum number of tokens allowed in the LLM input. Limits context size to
       manage costs and avoid exceeding model limits.
-  check_context_sufficiency:
-    label: Check context sufficiency
-    help: When enabled, the agent verifies if retrieved context contains enough information
-      before generating a response.
-  max_hops:
-    label: Max retrieval hops
-    help: Maximum number of retrieval iterations when initial context is insufficient.
-      Higher values may improve answers but increase latency.
   system_prompt:
     label: System prompt
     help: Instructions defining the agent's personality, role, and behavior guidelines.

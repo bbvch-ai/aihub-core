@@ -1,10 +1,26 @@
 from llama_index.core.base.llms.types import ChatMessage
 
 
-def format_chat_history(chat_history: list[ChatMessage]) -> str:
-    """Serialize chat messages as ``role: content`` lines for inclusion in prompt templates.
+def _condense(content: str) -> str:
+    lines = [line.strip() for line in content.splitlines()]
+    return "\n".join(line for line in lines if line)
 
-    Messages with empty content (e.g. tool-call placeholders) are skipped so the resulting
-    block stays compact.
+
+def format_chat_history(chat_history: list[ChatMessage]) -> str:
+    """Serialize chat messages as ``role: content`` entries for inclusion in prompt templates.
+
+    Within each message the content keeps its line structure, but blank lines and
+    per-line indentation are stripped — memory-origin system messages ship with a
+    heavily-formatted Jinja template (blank separators between sections, indented
+    bullet blocks) that inflates the guard prompt without carrying information.
+    Empty messages (e.g. tool-call placeholders) are skipped.
     """
-    return "\n".join(f"{message.role.value}: {message.content}" for message in chat_history if message.content)
+    entries = []
+    for message in chat_history:
+        if not message.content:
+            continue
+        condensed = _condense(message.content)
+        if not condensed:
+            continue
+        entries.append(f"{message.role.value}:\n{condensed}")
+    return "\n".join(entries)

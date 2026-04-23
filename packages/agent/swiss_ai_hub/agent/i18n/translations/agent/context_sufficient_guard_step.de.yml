@@ -1,0 +1,16 @@
+---
+config:
+  check_context_sufficiency:
+    label: Kontext-Suffizienz prüfen
+    help: Führe vor der Antwortgenerierung eine Guard-LLM aus, um zu entscheiden,
+      ob der abgerufene Kontext zur Beantwortung der Benutzerfrage ausreicht.
+  max_hops:
+    label: Maximale Abruf-Sprünge
+    help: Maximale Anzahl von Abruf-Iterationen, wenn der Guard den aktuellen Kontext
+      ablehnt. Höhere Werte können Antworten verbessern, erhöhen aber die Latenz.
+  max_non_system_messages_in_guard:
+    label: Max. Gesprächszüge im Guard
+    help: Maximale Anzahl aktueller Benutzer-/Assistent-Nachrichten, die an den Guard-Prompt
+      weitergegeben werden. Speicher (System-Nachrichten) wird immer einbezogen. Kleinere
+      Werte verkürzen den Guard-Prompt und verbessern die Zuverlässigkeit strukturierter
+      Ausgabe bei Open-Weight-Modellen.

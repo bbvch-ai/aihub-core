@@ -114,7 +114,8 @@ def _(llm, chat_history):
     call_kwargs = llm.structured_predict.call_args.kwargs
     rendered = call_kwargs["chat_history"]
     for message in chat_history:
-        assert f"{message.role.value}: {message.content}" in rendered
+        assert message.role.value in rendered
+        assert message.content in rendered
 
 
 @then("the LLM prompt should render chat history as an empty string")

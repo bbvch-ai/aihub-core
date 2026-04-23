@@ -186,6 +186,30 @@ async def do_order_nodes_by_documents(
     return InOrderNodeCombinerEvent(context_message=context_message)
 
 
+def _strip_leading_behavior_prompt(chat_history: list[ChatMessage]) -> list[ChatMessage]:
+    """Drop the first message when it is a system message — in the RAG flow that slot
+    holds the agent behavior prompt, which is irrelevant to the sufficiency decision."""
+    if chat_history and chat_history[0].role == MessageRole.SYSTEM:
+        return chat_history[1:]
+    return chat_history
+
+
+def _trim_non_system_turns(chat_history: list[ChatMessage], max_non_system_messages: int) -> list[ChatMessage]:
+    """Keep all SYSTEM messages (memory) in place, keep only the last
+    ``max_non_system_messages`` user/assistant messages, and preserve original order."""
+    non_system_count = sum(1 for message in chat_history if message.role != MessageRole.SYSTEM)
+    if non_system_count <= max_non_system_messages:
+        return chat_history
+    drop_count = non_system_count - max_non_system_messages
+    trimmed: list[ChatMessage] = []
+    for message in chat_history:
+        if message.role != MessageRole.SYSTEM and drop_count > 0:
+            drop_count -= 1
+            continue
+        trimmed.append(message)
+    return trimmed
+
+
 async def do_context_sufficient_guard(
     user_query: str | None,
     context: str | None,
@@ -196,12 +220,14 @@ async def do_context_sufficient_guard(
     displayer: EventDisplayer,
     t: LocaleHandler,
     chat_history: list[ChatMessage] | None = None,
+    max_non_system_messages_in_guard: int = 6,
 ) -> ContextSufficientAcceptEvent | ContextInsufficientRejectEvent | ContextInsufficientWithQueryEvent:
     """Execute context sufficient guard with hop management.
 
-    ``chat_history`` — the full limited chat history (with any injected user/organization
-    memory system messages) is forwarded to the guard prompt so the guard sees prior turns
-    and stored memory alongside the freshly retrieved context.
+    ``chat_history`` — full limited history. The first system message (agent behavior prompt)
+    is dropped, and non-system messages are truncated to the most recent
+    ``max_non_system_messages_in_guard`` turns to keep the guard prompt short.
+    Memory-origin system messages are always retained.
     """
     if not check_context_sufficiency:
         return ContextSufficientAcceptEvent(reason=t("agent.thought.no_context_sufficiency_check"))
@@ -209,6 +235,11 @@ async def do_context_sufficient_guard(
     prev_queries = await run_context.get("prev_queries", [])
     hop_count = await run_context.get("hop_count", 1)
     more_hops_available = hop_count < max_hops
+
+    guard_chat_history: list[ChatMessage] | None = None
+    if chat_history:
+        guard_chat_history = _strip_leading_behavior_prompt(chat_history)
+        guard_chat_history = _trim_non_system_turns(guard_chat_history, max_non_system_messages_in_guard)
 
     async with llm_config.cost_reporting_llm(displayer) as llm:
         guard_result = await context_sufficient_guard(
@@ -218,7 +249,7 @@ async def do_context_sufficient_guard(
             context=context,
             prev_queries=prev_queries,
             more_hops_available=more_hops_available,
-            chat_history=chat_history,
+            chat_history=guard_chat_history,
         )
 
     if guard_result.success:

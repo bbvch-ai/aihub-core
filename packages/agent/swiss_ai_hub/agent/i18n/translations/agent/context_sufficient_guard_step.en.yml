@@ -1,0 +1,15 @@
+---
+config:
+  check_context_sufficiency:
+    label: Check context sufficiency
+    help: Run a guard LLM before generation to decide whether the retrieved context
+      is enough to answer the user's question.
+  max_hops:
+    label: Max retrieval hops
+    help: Maximum number of retrieval iterations when the guard rejects the current
+      context. Higher values may improve answers but increase latency.
+  max_non_system_messages_in_guard:
+    label: Max chat turns in guard
+    help: Maximum number of recent user/assistant messages forwarded to the guard
+      prompt. Memory (system messages) is always included. Lower values shorten the
+      guard prompt and improve structured-output reliability for open-weight models.

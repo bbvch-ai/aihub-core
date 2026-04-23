@@ -8,15 +8,6 @@ config:
     label: Tokens d'entrée max
     help: Nombre maximum de tokens autorisés dans l'entrée du LLM. Limite la taille
       du contexte pour gérer les coûts et éviter de dépasser les limites du modèle.
-  check_context_sufficiency:
-    label: Vérifier suffisance du contexte
-    help: Lorsqu'activé, l'agent vérifie si le contexte récupéré contient suffisamment
-      d'informations avant de générer une réponse.
-  max_hops:
-    label: Sauts de récupération max
-    help: Nombre maximum d'itérations de récupération lorsque le contexte initial
-      est insuffisant. Des valeurs plus élevées peuvent améliorer les réponses mais
-      augmentent la latence.
   system_prompt:
     label: Prompt système
     help: Instructions définissant la personnalité, le rôle et les directives de comportement

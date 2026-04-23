@@ -8,14 +8,6 @@ config:
     label: Maximale Eingabe-Tokens
     help: Maximale Anzahl von Tokens in der LLM-Eingabe. Begrenzt die Kontextgrösse
       zur Kostenkontrolle und Vermeidung von Modellgrenzen.
-  check_context_sufficiency:
-    label: Kontext-Suffizienz prüfen
-    help: Wenn aktiviert, prüft der Agent, ob der abgerufene Kontext genügend Informationen
-      enthält, bevor eine Antwort generiert wird.
-  max_hops:
-    label: Maximale Abruf-Sprünge
-    help: Maximale Anzahl von Abruf-Iterationen, wenn der ursprüngliche Kontext unzureichend
-      ist. Höhere Werte können Antworten verbessern, erhöhen aber die Latenz.
   system_prompt:
     label: Systemprompt
     help: Anweisungen, die Persönlichkeit, Rolle und Verhaltensrichtlinien des Agenten

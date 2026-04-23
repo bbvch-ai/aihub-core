@@ -73,6 +73,7 @@ from swiss_ai_hub.agent.rag.step_functions import (
     do_respond_with_llm,
     do_retrieve,
 )
+from swiss_ai_hub.agent.steps.guards.context_sufficient_guard_step import ContextSufficientGuardStepConfig
 from swiss_ai_hub.agent.workflow.decorators.precondition import precondition
 from swiss_ai_hub.agent.workflow.decorators.step import step
 
@@ -389,6 +390,7 @@ class ExpertRAGAgent(Agent):
     async def context_sufficient_guard_step(
         self,
         agent_config: ExpertRAGAgentConfig,
+        guard_config: ContextSufficientGuardStepConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
         event: InOrderNodeCombinerEvent,
@@ -399,13 +401,14 @@ class ExpertRAGAgent(Agent):
         return await do_context_sufficient_guard(
             user_query_event.condensed_chat_message.content,
             event.context_message.content,
-            agent_config.check_context_sufficiency,
-            agent_config.max_hops,
+            guard_config.check_context_sufficiency,
+            guard_config.max_hops,
             run_context,
             agent_config.llm,
             displayer,
             t,
             chat_history=chat_history_event.limited_history,
+            max_non_system_messages_in_guard=guard_config.max_non_system_messages_in_guard,
         )
 
     @step(

@@ -86,8 +86,13 @@ async def test_organization_memory_system_message_reaches_guard_prompt(
     and do_context_sufficient_guard must forward that chat history into the LLM prompt so the
     guard can accept based on stored memory instead of requiring fresh retrieval."""
     memory_text = "Vacation policy allows 25 days per year."
+    # Production flow: a behavior system prompt is already present; memory gets inserted after it.
+    # The guard drops the first (behavior) system message and keeps everything else — including memory.
     chat_history_with_memory = extend_chat_history_with_organization_memory(
-        chat_history=[ChatMessage(role=MessageRole.USER, content="What is our vacation policy?")],
+        chat_history=[
+            ChatMessage(role=MessageRole.SYSTEM, content="You are a helpful assistant."),
+            ChatMessage(role=MessageRole.USER, content="What is our vacation policy?"),
+        ],
         memories=[_build_org_memory(memory_text)],
         relations=None,
         t=locale_handler,
@@ -107,7 +112,8 @@ async def test_organization_memory_system_message_reaches_guard_prompt(
 
     rendered_chat_history = mock_llm.structured_predict.call_args.kwargs["chat_history"]
     assert memory_text in rendered_chat_history
-    assert "user: What is our vacation policy?" in rendered_chat_history
+    assert "user:" in rendered_chat_history
+    assert "What is our vacation policy?" in rendered_chat_history
 
 
 @pytest.mark.asyncio
@@ -115,6 +121,7 @@ async def test_guard_forwards_full_chat_history_including_user_and_assistant_tur
     mock_llm, llm_config, displayer, run_context, locale_handler
 ):
     chat_history = [
+        ChatMessage(role=MessageRole.SYSTEM, content="You are a helpful assistant."),
         ChatMessage(role=MessageRole.SYSTEM, content="Memory: 25 vacation days."),
         ChatMessage(role=MessageRole.USER, content="First question"),
         ChatMessage(role=MessageRole.ASSISTANT, content="Earlier answer"),
@@ -134,10 +141,79 @@ async def test_guard_forwards_full_chat_history_including_user_and_assistant_tur
     )
 
     rendered = mock_llm.structured_predict.call_args.kwargs["chat_history"]
-    assert "system: Memory: 25 vacation days." in rendered
-    assert "user: First question" in rendered
-    assert "assistant: Earlier answer" in rendered
-    assert "user: Follow-up" in rendered
+    assert "Memory: 25 vacation days." in rendered
+    assert "First question" in rendered
+    assert "Earlier answer" in rendered
+    assert "Follow-up" in rendered
+
+
+@pytest.mark.asyncio
+async def test_guard_drops_leading_behavior_system_prompt(mock_llm, llm_config, displayer, run_context, locale_handler):
+    """The first SYSTEM message in the RAG flow is the agent behavior prompt. It tells
+    the assistant HOW to answer — useless for the guard's sufficiency decision and just
+    inflates the prompt. Ensure it's dropped before the guard sees chat_history."""
+    behavior_prompt = "You are a helpful HR assistant. Answer politely."
+    memory_message = "Memory: vacation policy is 25 days."
+    chat_history = [
+        ChatMessage(role=MessageRole.SYSTEM, content=behavior_prompt),
+        ChatMessage(role=MessageRole.SYSTEM, content=memory_message),
+        ChatMessage(role=MessageRole.USER, content="Follow-up"),
+    ]
+
+    await do_context_sufficient_guard(
+        user_query="Follow-up",
+        context="Some context.",
+        check_context_sufficiency=True,
+        max_hops=3,
+        run_context=run_context,
+        llm_config=llm_config,
+        displayer=displayer,
+        t=locale_handler,
+        chat_history=chat_history,
+    )
+
+    rendered = mock_llm.structured_predict.call_args.kwargs["chat_history"]
+    assert behavior_prompt not in rendered
+    assert memory_message in rendered
+    assert "Follow-up" in rendered
+
+
+@pytest.mark.asyncio
+async def test_guard_trims_non_system_messages_to_configured_limit(
+    mock_llm, llm_config, displayer, run_context, locale_handler
+):
+    """Keep memory (system messages) intact but truncate to the most recent N non-system
+    turns so the guard prompt stays bounded regardless of conversation length."""
+    chat_history = [
+        ChatMessage(role=MessageRole.SYSTEM, content="You are a helpful assistant."),
+        ChatMessage(role=MessageRole.SYSTEM, content="Memory: 25 vacation days."),
+        ChatMessage(role=MessageRole.USER, content="Q1"),
+        ChatMessage(role=MessageRole.ASSISTANT, content="A1"),
+        ChatMessage(role=MessageRole.USER, content="Q2"),
+        ChatMessage(role=MessageRole.ASSISTANT, content="A2"),
+        ChatMessage(role=MessageRole.USER, content="Q3"),
+    ]
+
+    await do_context_sufficient_guard(
+        user_query="Q3",
+        context="ctx",
+        check_context_sufficiency=True,
+        max_hops=3,
+        run_context=run_context,
+        llm_config=llm_config,
+        displayer=displayer,
+        t=locale_handler,
+        chat_history=chat_history,
+        max_non_system_messages_in_guard=2,
+    )
+
+    rendered = mock_llm.structured_predict.call_args.kwargs["chat_history"]
+    assert "Memory: 25 vacation days." in rendered
+    assert "Q1" not in rendered
+    assert "A1" not in rendered
+    assert "Q2" not in rendered
+    assert "A2" in rendered
+    assert "Q3" in rendered
 
 
 @pytest.mark.asyncio

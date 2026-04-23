@@ -10,6 +10,7 @@ from swiss_ai_hub.core.persistence import MilvusVectorStoreConfig
 
 from swiss_ai_hub.agent.agents.rag_agent import RAGAgentConfig
 from swiss_ai_hub.agent.agents.rag_agent.configs.reranking_config import RerankingConfig
+from swiss_ai_hub.agent.steps.guards.context_sufficient_guard_step import ContextSufficientGuardStepConfig
 
 _settings = AIHubSettings()
 
@@ -45,8 +46,11 @@ TEMPLATE = RAGAgentConfig(
         default_parameter=LLMParameter(temperature=0.1, timeout=120.0),
     ),
     number_of_input_tokens=128000,
-    max_hops=2,
-    check_context_sufficiency=True,
+    context_sufficient_guard=ContextSufficientGuardStepConfig(
+        check_context_sufficiency=True,
+        max_hops=2,
+        max_non_system_messages_in_guard=6,
+    ),
     retrievers=[
         KnowledgeRetrieverConfig(
             embed_model=EmbeddingModelConfig(model_name="embedding/bge-m3"),
