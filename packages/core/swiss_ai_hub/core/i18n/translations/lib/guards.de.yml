@@ -73,26 +73,14 @@ context_sufficient_guard:
     Eine überarbeitete Abfrage, um bessere Suchergebnisse zu erhalten, wenn der Kontext unzureichend war, wobei darauf zu achten ist, dass sich die Abfrage ausreichend 
     von den bestehenden Abfragen unterscheiden.
   prompt: |
-    Ich gebe Ihnen einen Kontext, eine Frage und frühere Abfragen, falls welche erstellt wurden.
-    Wenn die Frage mit dem angegebenen Kontext beantwortet werden kann, kann die Konversation fortgesetzt werden (success=True).
-    Ist die Beantwortung der Frage mit dem Kontext nicht möglich, sollte die Konversation beendet werden (success=False).
-    Wenn success=False ist, müssen Sie eine neue Abfrage erstellen, mit der Sie weitere Informationen sammeln können. Wenn Sie eine neue Abfrage erstellen:
-    1. PRIORISIEREN SIE ÜBERGEORDNETE KONZEPTE: Ihre primäre Strategie sollte darin bestehen, in der Begriffshierarchie nach oben zu gehen, um breitere Bereiche zu finden, die auf natürliche Weise Informationen über das ursprüngliche Thema enthalten würden.
-       - Wenn z. B. die Frage nach „neuronalen Netzen“ unzureichende Ergebnisse liefert, wechseln Sie zu „Methoden des maschinellen Lernens“ oder „Berechnungsmodelle“, anstatt anders nach neuronalen Netzen zu fragen.
-       - Wenn ein Thema keine Ergebnisse liefert, überlegen Sie, zu welchem akademischen Bereich, welcher Branche oder Wissensdomäne es gehört.
-    2. Analysieren Sie die vorherigen Abfragen, um Wiederholungen oder geringfügige Variationen derselben Frage zu vermeiden.
-    3. Wenn übergeordnete Konzepte bereits erforscht wurden, versuchen Sie diese alternativen Strategien:
-       - Untersuchen Sie verwandte Bereiche, die sich mit dem Hauptthema überschneiden.
-       - Suchen Sie nach grundlegenden Konzepten, die das Thema untermauern
-       - Suchen Sie nach Informationen über die übergeordnete Kategorie oder das Klassifizierungssystem
-       - Bitten Sie um Informationen über breitere technologische oder wissenschaftliche Prinzipien
-       - Berücksichtigen Sie interdisziplinäre Verbindungen zu anderen Bereichen.
-    4. Die neue Abfrage MUSS sich deutlich von allen vorherigen Abfragen unterscheiden und sich von dem spezifischen Thema entfernen, wenn direkte Ansätze fehlgeschlagen sind.
-    5. Jede nachfolgende Abfrage sollte eine grössere konzeptionelle Veränderung darstellen als die vorhergehenden.
     Frage:
     <Question>
     {user_query}
     </Question>
+    Vorherige Abfragen:
+    <Previous_Queries>
+    {prev_queries}
+    <\Previous_Queries>
     Gesprächsverlauf (enthält alle als Systemnachrichten eingefügten Benutzer- oder Organisationsspeicher — behandle sie als zusätzlichen Kontext, der die Frage bereits beantworten kann):
     <Chat_History>
     {chat_history}
@@ -101,10 +89,17 @@ context_sufficient_guard:
     <Context>
     {context}
     </Context>
-    Vorherige Abfragen:
-    <Previous_Queries>
-    {prev_queries}
-    <\Previous_Queries>
+    ---
+    ANWEISUNGEN:
+    Entscheide, ob die Frage mit Gesprächsverlauf und/oder Kontext beantwortet werden kann.
+    - Wenn ja → success=True.
+    - Wenn nein → success=False und erzeuge eine new_query für weitere Informationen. Leitfaden für new_query:
+      1. PRIORISIERE ÜBERGEORDNETE KONZEPTE: Gehe in der Begriffshierarchie nach oben zu breiteren Domänen (z. B. „neuronale Netze“ → „Methoden des maschinellen Lernens“).
+      2. Vermeide Wiederholungen oder geringfügige Variationen einer vorherigen Abfrage.
+      3. Wurden übergeordnete Konzepte bereits erforscht, versuche verwandte Felder, grundlegende Konzepte, übergeordnete Kategorien, breitere Prinzipien oder interdisziplinäre Verbindungen.
+      4. new_query MUSS sich klar von jeder vorherigen Abfrage unterscheiden.
+      5. Jede nachfolgende Abfrage sollte einen grösseren konzeptionellen Sprung darstellen als die vorherige.
+    WICHTIG: Du MUSST über den bereitgestellten strukturierten Ausgabe-Tool antworten. Antworte NICHT in Klartext. Gib genau einen Tool-Aufruf mit deiner Entscheidung zurück.
   reason_no_hops: |
     Begründung, warum der Kontext ausreichend ist oder nicht (keine zusätzlichen Sprünge verfügbar).
   success_no_hops: |

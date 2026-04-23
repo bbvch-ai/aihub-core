@@ -71,22 +71,6 @@ context_sufficient_guard:
     A revised query to get better search results if the context was insufficient, make sure to differentiate it enough 
     from the existing queries.
   prompt: |
-    I will give you a context, a question, and previous queries if any have been generated.
-    If the question can be answered with the provided context, then the conversation may continue (success=True).
-    If answering the question is not possible with the context, then the conversation needs more context (success=False).
-    When success=False, you must generate a new query that will be used to gather more information. When creating a new query:
-    1. PRIORITIZE HIGHER-LEVEL CONCEPTS: Your primary strategy should be to move up conceptual hierarchies to broader domains that would naturally include information about the original topic.
-       - For example, if asking about "neural networks" yields insufficient results, move to "machine learning methods" or "computational models" instead of asking about neural networks differently.
-       - If a topic isn't yielding results, consider what academic field, industry, or knowledge domain it belongs to.
-    2. Analyze the previous queries to avoid repetition or minor variations of the same question.
-    3. If higher-level concepts have already been explored, try these alternative strategies:
-       - Examine related fields that intersect with the main topic
-       - Look for foundational concepts that underpin the topic
-       - Seek information about the parent category or classification system
-       - Request information about broader technological or scientific principles
-       - Consider interdisciplinary connections to other domains
-    4. The new query MUST be clearly distinct from all previous queries and move away from the specific topic if direct approaches have failed.
-    5. Each successive query should represent a more significant conceptual shift than the previous ones.
     Question:
     <Question>
     {user_query}
@@ -103,6 +87,17 @@ context_sufficient_guard:
     <Context>
     {context}
     </Context>
+    ---
+    INSTRUCTIONS:
+    Decide whether the Question can be answered from the Chat History and/or Context above.
+    - If yes → success=True.
+    - If no → success=False, and generate a new_query to gather more information. Guidance for new_query:
+      1. PRIORITIZE HIGHER-LEVEL CONCEPTS: move up the conceptual hierarchy to broader domains that naturally include the original topic (e.g. "neural networks" → "machine learning methods").
+      2. Avoid repetition or minor variations of any Previous Query.
+      3. If higher-level concepts have already been explored, try related fields, foundational concepts, parent categories, broader principles, or interdisciplinary connections.
+      4. new_query MUST be clearly distinct from every Previous Query.
+      5. Each successive query should represent a larger conceptual shift than the last.
+    IMPORTANT: You MUST respond by invoking the provided structured-output tool. Do NOT answer in plain text. Emit exactly one tool call containing your decision.
   reason_no_hops: |
     Reasoning explaining why the context is or is not sufficient (no additional hops available).
   success_no_hops: |

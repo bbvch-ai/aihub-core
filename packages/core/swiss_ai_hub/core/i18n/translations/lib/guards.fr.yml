@@ -73,26 +73,14 @@ context_sufficient_guard:
     Une requête révisée pour obtenir de meilleurs résultats de recherche si le contexte était insuffisant, assurez-vous de la différencier suffisamment des requêtes existantes. 
     des requêtes existantes.
   prompt: |
-    Je vais vous donner un contexte, une question et les requêtes précédentes si elles ont été générées.
-    Si le contexte fourni permet de répondre à la question, la conversation peut se poursuivre (success=True).
-    Si le contexte ne permet pas de répondre à la question, la conversation doit être interrompue (success=False).
-    Si success=False, vous devez générer une nouvelle requête qui sera utilisée pour recueillir plus d'informations. Lors de la création d'une nouvelle requête :
-    1. DONNEZ LA PRIORITÉ AUX CONCEPTS DE HAUT NIVEAU : Votre stratégie principale doit consister à remonter les hiérarchies conceptuelles vers des domaines plus larges qui incluraient naturellement des informations sur le sujet d'origine.
-       - Par exemple, si une requête sur les « réseaux neuronaux » ne donne pas de résultats suffisants, passez aux « méthodes d'apprentissage automatique » ou aux « modèles informatiques » au lieu de poser une question différente sur les réseaux neuronaux.
-       - Si un sujet ne donne pas de résultats, réfléchissez au domaine académique, à l'industrie ou au domaine de connaissances auquel il appartient.
-    2. Analysez les requêtes précédentes pour éviter les répétitions ou les variations mineures de la même question.
-    3. Si des concepts de plus haut niveau ont déjà été explorés, essayez ces stratégies alternatives :
-       - Examiner les domaines connexes qui recoupent le sujet principal
-       - rechercher les concepts fondamentaux qui sous-tendent le sujet
-       - Rechercher des informations sur la catégorie ou le système de classification d'origine
-       - Demander des informations sur des principes technologiques ou scientifiques plus larges
-       - Envisager des liens interdisciplinaires avec d'autres domaines
-    4. La nouvelle requête DOIT être clairement distincte de toutes les requêtes précédentes et s'éloigner du sujet spécifique si les approches directes ont échoué.
-    5. Chaque requête successive doit représenter un changement conceptuel plus important que les précédentes.
     Question:
       <Question>
       { user_query }
       </Question>
+    Requêtes précédentes:
+    <Previous_Queries>
+    { prev_queries }
+    <\Previous_Queries>
     Historique de la conversation (inclut toute mémoire utilisateur ou organisationnelle insérée comme messages système — traitez-les comme un contexte supplémentaire qui peut déjà répondre à la question):
       <Chat_History>
       { chat_history }
@@ -101,10 +89,17 @@ context_sufficient_guard:
       <Context>
       { context }
       </Context>
-    Requêtes précédentes:
-    <Previous_Queries>
-    { prev_queries }
-    <\Previous_Queries>
+    ---
+    INSTRUCTIONS :
+    Décidez si la Question peut être répondue à partir de l'Historique de la conversation et/ou du Contexte.
+    - Si oui → success=True.
+    - Si non → success=False et générez une new_query pour recueillir plus d'informations. Recommandations pour new_query :
+      1. DONNEZ LA PRIORITÉ AUX CONCEPTS DE HAUT NIVEAU : remontez la hiérarchie conceptuelle vers des domaines plus larges (p. ex. « réseaux neuronaux » → « méthodes d'apprentissage automatique »).
+      2. Évitez les répétitions ou variations mineures des Requêtes précédentes.
+      3. Si les concepts de haut niveau ont déjà été explorés, essayez des domaines connexes, des concepts fondamentaux, des catégories parentes, des principes plus larges ou des liens interdisciplinaires.
+      4. new_query DOIT être clairement distincte de chaque Requête précédente.
+      5. Chaque requête successive doit représenter un saut conceptuel plus grand que la précédente.
+    IMPORTANT : Vous DEVEZ répondre en invoquant l'outil de sortie structurée fourni. Ne répondez PAS en texte brut. Émettez exactement un appel d'outil contenant votre décision.
   reason_no_hops: |
     Raisonnement expliquant pourquoi le contexte est ou n'est pas suffisant (aucun saut supplémentaire disponible).
   success_no_hops: |

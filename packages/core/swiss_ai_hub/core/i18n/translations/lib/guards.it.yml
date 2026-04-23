@@ -74,26 +74,14 @@ context_sufficient_guard:
     Una query rielaborata per ottenere risultati di ricerca migliori se il contesto era insufficiente, assicurarsi di differenziarla abbastanza 
     dalle query esistenti.
   prompt: |
-    Fornirò un contesto, una domanda e le query precedenti, se sono state generate.
-    Se è possibile rispondere alla domanda con il contesto fornito, la conversazione può continuare (success=True).
-    Se non è possibile rispondere alla domanda con il contesto, la conversazione deve essere interrotta (success=False).
-    Quando success=False, è necessario generare una nuova query che verrà utilizzata per raccogliere ulteriori informazioni. Quando si crea una nuova query:
-    1. DARE PRIORITÀ AI CONCETTI DI LIVELLO SUPERIORE: La strategia principale dovrebbe essere quella di risalire le gerarchie concettuali verso domini più ampi che includano naturalmente informazioni sull'argomento originale.
-       - Ad esempio, se la richiesta di “reti neurali” non produce risultati sufficienti, spostatevi su “metodi di apprendimento automatico” o “modelli computazionali” invece di chiedere le reti neurali in modo diverso.
-       - Se un argomento non produce risultati, considerate il campo accademico, l'industria o il dominio di conoscenza a cui appartiene.
-    2. Analizzate le query precedenti per evitare ripetizioni o piccole variazioni della stessa domanda.
-    3. Se i concetti di livello superiore sono già stati esplorati, provate queste strategie alternative:
-       - Esaminare i campi correlati che si intersecano con l'argomento principale.
-       - Cercare i concetti fondamentali che stanno alla base dell'argomento
-       - Cercare informazioni sulla categoria o sul sistema di classificazione di riferimento.
-       - Richiedere informazioni su principi tecnologici o scientifici più ampi
-       - Considerare collegamenti interdisciplinari con altri ambiti
-    4. La nuova interrogazione DEVE essere chiaramente distinta da tutte le interrogazioni precedenti e allontanarsi dall'argomento specifico se gli approcci diretti hanno fallito.
-    5. Ogni domanda successiva deve rappresentare un cambiamento concettuale più significativo di quelle precedenti.
     Domanda:
     <Domanda>
     {user_query}
     </Domanda>
+    Quesiti precedenti:
+    <Questioni_precedenti>
+    {prev_queries}
+    <Questioni_precedenti>
     Cronologia della conversazione (include eventuali memorie utente o organizzative inserite come messaggi di sistema — trattala come contesto aggiuntivo che potrebbe già rispondere alla domanda):
     <Chat_History>
     {chat_history}
@@ -102,10 +90,17 @@ context_sufficient_guard:
     <Contesto>
     {context}
     </Contesto>
-    Quesiti precedenti:
-    <Questioni_precedenti>
-    {prev_queries}
-    <Questioni_precedenti>
+    ---
+    ISTRUZIONI:
+    Decidi se la Domanda può essere risposta usando la Cronologia della conversazione e/o il Contesto.
+    - Se sì → success=True.
+    - Se no → success=False e genera una new_query per raccogliere altre informazioni. Linee guida per new_query:
+      1. DAI PRIORITÀ AI CONCETTI DI LIVELLO SUPERIORE: sali nella gerarchia concettuale verso domini più ampi (es. "reti neurali" → "metodi di apprendimento automatico").
+      2. Evita ripetizioni o lievi variazioni di qualsiasi Quesito precedente.
+      3. Se i concetti di livello superiore sono già stati esplorati, prova campi correlati, concetti fondamentali, categorie superiori, principi più ampi o connessioni interdisciplinari.
+      4. new_query DEVE essere chiaramente distinta da ogni Quesito precedente.
+      5. Ogni query successiva deve rappresentare un salto concettuale maggiore della precedente.
+    IMPORTANTE: DEVI rispondere invocando lo strumento di output strutturato fornito. NON rispondere in testo semplice. Emetti esattamente una chiamata allo strumento contenente la tua decisione.
   reason_no_hops: |
     Motivo che spiega perché il contesto è o non è sufficiente (nessun salto aggiuntivo disponibile).
   success_no_hops: |
