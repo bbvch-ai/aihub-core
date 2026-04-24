@@ -139,9 +139,7 @@ class TestFromSettings:
 
     def test_passes_all_parsed_urls_to_apprise_resource(self, monkeypatch) -> None:
         monkeypatch.setenv("NOTIFICATION_URLS", "slack://a/b/c/#ops, mailto://u:p@smtp.example.com")
-        with patch(
-            "swiss_ai_hub.pipeline.sensors.run_failure_notification_sensor.AppriseResource"
-        ) as resource_cls:
+        with patch("swiss_ai_hub.pipeline.sensors.run_failure_notification_sensor.AppriseResource") as resource_cls:
             run_failure_notification_sensors_from_settings()
             resource_cls.assert_called_once()
             config_arg = resource_cls.call_args.kwargs["config"]
