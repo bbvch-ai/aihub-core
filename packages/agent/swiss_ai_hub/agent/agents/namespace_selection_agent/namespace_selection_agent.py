@@ -5,7 +5,7 @@ from typing import ClassVar
 from llama_index.core.prompts import RichPromptTemplate
 from mongoengine import DoesNotExist
 from swiss_ai_hub.core.displayers import EventDisplayer
-from swiss_ai_hub.core.events.agent import AgentInTheLoop, StopEvent, UserMessageEvent
+from swiss_ai_hub.core.events.agent import AgentInTheLoop, RAGStartEvent, StopEvent, UserMessageEvent
 from swiss_ai_hub.core.generative_ai import BucketNamespacePair
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.persistence import BucketEntity, NamespaceEntity
@@ -35,7 +35,6 @@ from swiss_ai_hub.agent.agents.namespace_selection_agent.utils import (
     truncate_conversation_history,
     validate_namespace_selection,
 )
-from swiss_ai_hub.agent.agents.rag_agent.events.rag_start_event import RAGStartEvent
 from swiss_ai_hub.agent.context.run.run_context import RunContext
 from swiss_ai_hub.agent.context.thread.thread_context import ThreadContext
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString

@@ -5,6 +5,77 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.279.0] - 2026-04-24 - Advanced RAG Filtering and Configuration Management
+
+### Added
+
+- ✨ **Introduced Per-Run RAG Metadata Filtering**: Publishers can now supply `additional_filters` with `RAGStartEvent`
+  to dynamically narrow retrieval results based on metadata keys, allowing for more granular control over RAG contexts.
+- 🦾 **New `RetrievalRuntimeConfig` Model**: A new plain Pydantic `BaseModel` (`RetrievalRuntimeConfig`) has been added
+  to cleanly separate design-time agent configuration from per-run runtime overrides. This enhances modularity and
+  security by preventing publisher-only fields from appearing in the Admin UI.
+- ⚙️ **Configurable Allowed Metadata Filter Fields**: Agent administrators can now define a whitelist of metadata keys
+  (`allowed_metadata_filter_fields`) within the `MilvusVectorStoreConfig` for each retriever, ensuring publishers can
+  only filter on explicitly permitted fields.
+- 🌐 **Admin UI for Allowed Filter Fields**: The Admin UI's `VectorStoreInput` now includes a dedicated control for
+  specifying `allowed_metadata_filter_fields`, making this powerful new RAG filtering capability easy to configure.
+- 📊 **Display of RAG Start Event Filters**: The agent event stream now visually presents `additional_filters` and
+  `selected_namespaces` when a `RAGStartEvent` occurs, providing better visibility into retrieval parameters.
+- 📄 **Architectural Decision Record**: A new architectural decision record (`2026_04_22_form_runtime_config_wrapper.md`)
+  has been added, documenting the rationale and pattern for separating design-time configurations from runtime
+  overrides.
+
+### Changed
+
+- 🔄 **Updated RAG Retrieval Logic**: The internal RAG retrieval steps now leverage the new `RetrievalRuntimeConfig`
+  wrapper, allowing for the application of per-run `additional_metadata_filters` directly during the node retrieval
+  process.
+- 🚀 **Optimized API Event Payloads**: `StartEvent` input data in agent discovery services now uses `exclude_none=True`
+  when dumping models to JSON, resulting in smaller and more efficient wire payloads.
+- 📚 **Refined Event Protocol Documentation**: Examples in the Swiss AI Agent Protocol documentation were updated to
+  reflect the use of message `blocks` instead of plain `content` for `UserMessageEvent`s.
+
+### Refactor
+
+- 📦 **Relocated `RAGStartEvent`**: The `RAGStartEvent` has been moved to the `core` package
+  (`swiss_ai_hub.core.events.agent.control.start`) to make it more broadly accessible across the application.
+- 🧹 **Replaced Namespace Filtering Utility**: The `filter_retrievers_by_namespace` utility has been replaced by the more
+  comprehensive `narrow_retrievers` function, which now handles both namespace narrowing and
+  `additional_metadata_filters` validation.
+
+### Removed
+
+- 🗑️ **Deprecated `filter_retrievers_by_namespace`**: The previous utility for filtering retrievers by namespace has
+  been removed, as its functionality is superseded by the new `narrow_retrievers` mechanism.
+
+______________________________________________________________________
+
+## [v0.278.1] - 2026-04-23 - Strengthened Event Serialization for HITL Subtypes
+
+### Fixed
+
+- 🐛 **Resolved Human-in-the-Loop (HITL) Event Downcasting**: Fixed a critical bug where specific HITL event subclasses
+  (such as input, confirmation, and chat requests and their corresponding responses) were silently downcasted to their
+  parent event types during WebSocket serialization. This ensures that the frontend now receives accurate and specific
+  HITL event types.
+- ⚡️ **Corrected Event Discriminator Logic**: Enhanced the `DisplayEvents` union to correctly discriminate between
+  agent-specific HITL request and response event subclasses, preserving their distinct type information when events are
+  broadcast over WebSockets.
+
+### Added
+
+- ✅ **Comprehensive Event Serialization Tests**: Introduced new unit tests to rigorously validate that Human-in-the-Loop
+  event subclasses are properly discriminated and their precise type is preserved throughout the WebSocket serialization
+  and deserialization process, preventing future regressions.
+
+### Changed
+
+- 📄 **Updated Event Serialization Guidelines**: Added crucial documentation to `CLAUDE.md` files in both `api` and
+  `core` packages, providing clear guidance on how to correctly add new event subclasses to the `DisplayEvents` union to
+  prevent silent downcasting during WebSocket serialization.
+
+______________________________________________________________________
+
 ## [v0.278.0] - 2026-04-21 - Next-Gen Multi-Tenancy: Keycloak-First Identity & Admin Workflows
 
 ### Added

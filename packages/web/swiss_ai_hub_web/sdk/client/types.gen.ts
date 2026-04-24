@@ -1650,6 +1650,49 @@ export type BodyCreateTranscriptionTenantIdOpenaiAudioTranscriptionsPost = {
 };
 
 /**
+ * BucketMetadataFilters
+ *
+ * The metadata filters a publisher wants applied to one bucket at retrieval time.
+ *
+ * AND-combined with any namespace narrowing from `selected_namespaces`. Each filter key must be
+ * listed in the target retriever's `MilvusVectorStoreConfig.allowed_metadata_filter_fields`.
+ */
+export type BucketMetadataFilters = {
+    /**
+     * Bucket Name
+     *
+     * The name of the bucket these filters apply to.
+     */
+    bucket_name: string;
+    /**
+     * Filters
+     *
+     * Metadata key/value filters applied AND-wise to retrieval in this bucket.
+     */
+    filters: Array<MetadataFilterPair>;
+};
+
+/**
+ * BucketNamespacePair
+ *
+ * A bucket-namespace selection pair for RAG retrieval filtering.
+ */
+export type BucketNamespacePair = {
+    /**
+     * Bucket Name
+     *
+     * The name of the bucket
+     */
+    bucket_name: string;
+    /**
+     * Namespace Name
+     *
+     * The name of the selected namespace in the bucket
+     */
+    namespace_name: string;
+};
+
+/**
  * BulkUpdateNotificationRequest
  *
  * Request model for updating multiple notifications at once.
@@ -3195,7 +3238,7 @@ export type ContextualizedAgentEvent = {
      *
      * Data of the event itself.
      */
-    event: StartEvent | AgentInTheLoopResponseEvent | HumanInTheLoopRequestEvent | AgentInTheLoopRequestEvent | AgentInTheLoopExceptionEvent | HumanInTheLoopResponseEvent | LimitChatHistoryEvent | AddMemoryToChatHistoryEvent | AddUserMemoryToChatHistoryEvent | AddOrganizationMemoryToChatHistoryEvent | StandaloneQuestionCondenserEvent | LlmCostEvent | ChunkEvent | ThoughtEvent | GuardEvent | RouterEvent | GuardRejectionEvent | SemanticEvent | AgentEvent | ChainEvent | EmbeddingEvent | LlmEvent | LlmStopEvent | RerankerEvent | RetrieverEvent | ToolEvent | UserMessageEvent | ExceptionEvent | StopEvent | DisplayEvent | GuardAcceptEvent | AgentSuitabilityAcceptEvent | AgentSuitabilityRejectEvent | ContextSufficientAcceptEvent | ContextInsufficientRejectEvent | FewShotAcceptEvent | FewShotRejectEvent | SensitiveInfoAcceptEvent | SensitiveInfoRejectEvent | StoreUserMemoryEvent | BaseRetrieveMemoryEvent | BaseStoreMemoryEvent | RetrieveOrganizationMemoryEvent | RetrieveUserMemoryEvent | StoreOrganizationMemoryEvent;
+    event: StartEvent | AgentInTheLoopResponseEvent | HumanInTheLoopRequestEvent | AgentInTheLoopRequestEvent | AgentInTheLoopExceptionEvent | HumanInTheLoopResponseEvent | LimitChatHistoryEvent | AddMemoryToChatHistoryEvent | AddUserMemoryToChatHistoryEvent | AddOrganizationMemoryToChatHistoryEvent | StandaloneQuestionCondenserEvent | LlmCostEvent | ChunkEvent | ThoughtEvent | GuardEvent | RouterEvent | GuardRejectionEvent | SemanticEvent | AgentEvent | ChainEvent | EmbeddingEvent | LlmEvent | LlmStopEvent | RerankerEvent | RetrieverEvent | ToolEvent | UserMessageEvent | RagStartEvent | ExceptionEvent | StopEvent | DisplayEvent | GuardAcceptEvent | AgentSuitabilityAcceptEvent | AgentSuitabilityRejectEvent | ContextSufficientAcceptEvent | ContextInsufficientRejectEvent | FewShotAcceptEvent | FewShotRejectEvent | SensitiveInfoAcceptEvent | SensitiveInfoRejectEvent | StoreUserMemoryEvent | BaseRetrieveMemoryEvent | BaseStoreMemoryEvent | RetrieveOrganizationMemoryEvent | RetrieveUserMemoryEvent | StoreOrganizationMemoryEvent;
 };
 
 /**
@@ -8186,6 +8229,26 @@ export type Metadata = {
 };
 
 /**
+ * MetadataFilterPair
+ *
+ * A metadata key/value equality filter for RAG retrieval.
+ */
+export type MetadataFilterPair = {
+    /**
+     * Key
+     *
+     * The metadata key to filter on.
+     */
+    key: string;
+    /**
+     * Value
+     *
+     * The value the metadata key must equal.
+     */
+    value: string | number | number | boolean;
+};
+
+/**
  * MinimalAgentInstanceDTO
  *
  * Encapsulates the data transfer object (DTO) for a minimal agent INSTANCE.
@@ -10038,6 +10101,83 @@ export type PromptTokensDetails = {
      */
     cached_tokens?: number | null;
     [key: string]: unknown | number | null | number | null | undefined;
+};
+
+/**
+ * RAGStartEvent
+ *
+ * Namespace-aware start event for the RAG agent.
+ *
+ * `RAGStartEvent` is intended for non-chat publishers: custom domain front-ends that run their own namespace
+ * selection UI, or other agents delegating to RAG via `AgentInTheLoop`.
+ */
+export type RagStartEvent = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     *
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Locale
+     *
+     * The user's locale, guiding language or regional adaptations.
+     */
+    locale?: string;
+    /**
+     * User on whose behalf the RAG run is executed.
+     */
+    user: UserIdentity;
+    /**
+     * Messages
+     *
+     * Chat history providing the context and the user query for retrieval.
+     */
+    messages?: Array<ChatMessage>;
+    /**
+     * Files
+     *
+     * Files uploaded alongside the query for additional context.
+     */
+    files?: Array<UserUploadedFile> | null;
+    /**
+     * Selected Namespaces
+     *
+     * List of bucket-namespace pairs restricting RAG retrieval.
+     */
+    selected_namespaces: Array<BucketNamespacePair>;
+    /**
+     * Additional Filters
+     *
+     * Per-bucket additional metadata filters (AND-combined with namespace filters). Filter keys must be listed in the target retriever's `MilvusVectorStoreConfig.allowed_metadata_filter_fields`. The reserved `namespace` key is not permitted here — use `selected_namespaces` instead.
+     */
+    additional_filters?: Array<BucketMetadataFilters> | null;
+    /**
+     * Event Name
+     *
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Parent Event Names
+     *
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | UserIdentity | Array<ChatMessage> | Array<UserUploadedFile> | null | Array<BucketNamespacePair> | Array<BucketMetadataFilters> | null | Array<string> | undefined;
 };
 
 /**
@@ -13651,15 +13791,20 @@ export type ValidationError = {
 /**
  * VectorStoreInput
  *
- *     A FormKit element for selecting a vector store collection and namespaces.
+ * A FormKit element for selecting a vector store collection, namespaces, and
+ * the metadata keys publishers are allowed to filter on at query time.
  *
- * This element renders as a cascading selection:
+ * This element renders as three controls:
  * 1. Database dropdown (loads from /api/v1/knowledge/databases)
  * 2. Namespace multi-select (populated based on selected database)
+ * 3. Free-form chips input for `allowed_metadata_filter_fields`
  *
- * The output is a structured object containing both the collection name and
- * the selected namespaces, matching the MilvusVectorStoreConfig fields:
- * {"collection_name": str, "index_namespaces": list[str]}
+ * The output matches the three configurable fields of `MilvusVectorStoreConfig`:
+ * {
+ * "collection_name": str,
+ * "index_namespaces": list[str],
+ * "allowed_metadata_filter_fields": list[str],
+ * }
  *
  * ### Form Duality
  * When used with MilvusVectorStoreConfig, the form submission is validated
@@ -13676,7 +13821,7 @@ export type ValidationError = {
  * MilvusVectorStoreConfig | VectorStoreInput,
  * Field(description="The vector store configuration"),
  * ]
- * reranking_model
+ *
  * # Form mode - for rendering:
  * config = MyRetrieverConfig(
  * vector_store=VectorStoreInput(
@@ -13689,6 +13834,7 @@ export type ValidationError = {
  * vector_store=MilvusVectorStoreConfig(
  * collection_name="my-database",
  * index_namespaces=["namespace1", "namespace2"],
+ * allowed_metadata_filter_fields=["department", "year"],
  * ),
  * )
  * ```
@@ -13769,6 +13915,12 @@ export type VectorStoreInput = {
      */
     namespacePlaceholder?: LocaleString | string | null;
     /**
+     * Allowedfilterfieldsplaceholder
+     *
+     * Placeholder for the allowed metadata filter fields chips input.
+     */
+    allowedFilterFieldsPlaceholder?: LocaleString | string | null;
+    /**
      * Filter
      *
      * Whether to enable filtering/search
@@ -13780,7 +13932,7 @@ export type VectorStoreInput = {
     readonly validation: string;
     [key: string]: unknown | true | string | null | string | null | 'vectorStoreInput' | string | null | LocaleString | string | LocaleString | string | null | string | number | number | boolean | Array<string> | {
         [key: string]: string;
-    } | null | boolean | string | null | LocaleString | string | null | LocaleString | string | null | string | undefined;
+    } | null | boolean | string | null | LocaleString | string | null | LocaleString | string | null | LocaleString | string | null | string | undefined;
 };
 
 /**
@@ -15511,7 +15663,7 @@ export type ContextualizedAgentEventWritable = {
      *
      * Data of the event itself.
      */
-    event: StartEventWritable | AgentInTheLoopResponseEventWritable | HumanInTheLoopRequestEventWritable | AgentInTheLoopRequestEventWritable | AgentInTheLoopExceptionEventWritable | HumanInTheLoopResponseEventWritable | LimitChatHistoryEventWritable | AddMemoryToChatHistoryEventWritable | AddUserMemoryToChatHistoryEventWritable | AddOrganizationMemoryToChatHistoryEventWritable | StandaloneQuestionCondenserEventWritable | LlmCostEventWritable | ChunkEventWritable | ThoughtEventWritable | GuardEventWritable | RouterEventWritable | GuardRejectionEventWritable | SemanticEventWritable | AgentEventWritable | ChainEventWritable | EmbeddingEventWritable | LlmEventWritable | LlmStopEventWritable | RerankerEventWritable | RetrieverEventWritable | ToolEventWritable | UserMessageEventWritable | ExceptionEventWritable | StopEventWritable | DisplayEventWritable | GuardAcceptEventWritable | AgentSuitabilityAcceptEventWritable | AgentSuitabilityRejectEventWritable | ContextSufficientAcceptEventWritable | ContextInsufficientRejectEventWritable | FewShotAcceptEventWritable | FewShotRejectEventWritable | SensitiveInfoAcceptEventWritable | SensitiveInfoRejectEventWritable | StoreUserMemoryEventWritable | BaseRetrieveMemoryEventWritable | BaseStoreMemoryEventWritable | RetrieveOrganizationMemoryEventWritable | RetrieveUserMemoryEventWritable | StoreOrganizationMemoryEventWritable;
+    event: StartEventWritable | AgentInTheLoopResponseEventWritable | HumanInTheLoopRequestEventWritable | AgentInTheLoopRequestEventWritable | AgentInTheLoopExceptionEventWritable | HumanInTheLoopResponseEventWritable | LimitChatHistoryEventWritable | AddMemoryToChatHistoryEventWritable | AddUserMemoryToChatHistoryEventWritable | AddOrganizationMemoryToChatHistoryEventWritable | StandaloneQuestionCondenserEventWritable | LlmCostEventWritable | ChunkEventWritable | ThoughtEventWritable | GuardEventWritable | RouterEventWritable | GuardRejectionEventWritable | SemanticEventWritable | AgentEventWritable | ChainEventWritable | EmbeddingEventWritable | LlmEventWritable | LlmStopEventWritable | RerankerEventWritable | RetrieverEventWritable | ToolEventWritable | UserMessageEventWritable | RagStartEventWritable | ExceptionEventWritable | StopEventWritable | DisplayEventWritable | GuardAcceptEventWritable | AgentSuitabilityAcceptEventWritable | AgentSuitabilityRejectEventWritable | ContextSufficientAcceptEventWritable | ContextInsufficientRejectEventWritable | FewShotAcceptEventWritable | FewShotRejectEventWritable | SensitiveInfoAcceptEventWritable | SensitiveInfoRejectEventWritable | StoreUserMemoryEventWritable | BaseRetrieveMemoryEventWritable | BaseStoreMemoryEventWritable | RetrieveOrganizationMemoryEventWritable | RetrieveUserMemoryEventWritable | StoreOrganizationMemoryEventWritable;
 };
 
 /**
@@ -18706,6 +18858,70 @@ export type ProcessWalkthroughDtoWritable = {
 };
 
 /**
+ * RAGStartEvent
+ *
+ * Namespace-aware start event for the RAG agent.
+ *
+ * `RAGStartEvent` is intended for non-chat publishers: custom domain front-ends that run their own namespace
+ * selection UI, or other agents delegating to RAG via `AgentInTheLoop`.
+ */
+export type RagStartEventWritable = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     *
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Locale
+     *
+     * The user's locale, guiding language or regional adaptations.
+     */
+    locale?: string;
+    /**
+     * User on whose behalf the RAG run is executed.
+     */
+    user: UserIdentity;
+    /**
+     * Messages
+     *
+     * Chat history providing the context and the user query for retrieval.
+     */
+    messages?: Array<ChatMessage>;
+    /**
+     * Files
+     *
+     * Files uploaded alongside the query for additional context.
+     */
+    files?: Array<UserUploadedFile> | null;
+    /**
+     * Selected Namespaces
+     *
+     * List of bucket-namespace pairs restricting RAG retrieval.
+     */
+    selected_namespaces: Array<BucketNamespacePair>;
+    /**
+     * Additional Filters
+     *
+     * Per-bucket additional metadata filters (AND-combined with namespace filters). Filter keys must be listed in the target retriever's `MilvusVectorStoreConfig.allowed_metadata_filter_fields`. The reserved `namespace` key is not permitted here — use `selected_namespaces` instead.
+     */
+    additional_filters?: Array<BucketMetadataFilters> | null;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | UserIdentity | Array<ChatMessage> | Array<UserUploadedFile> | null | Array<BucketNamespacePair> | Array<BucketMetadataFilters> | null | undefined;
+};
+
+/**
  * RadioButton
  *
  * https://formkit-primevue.netlify.app/inputs/RadioButton
@@ -20805,15 +21021,20 @@ export type UserMessageEventWritable = {
 /**
  * VectorStoreInput
  *
- *     A FormKit element for selecting a vector store collection and namespaces.
+ * A FormKit element for selecting a vector store collection, namespaces, and
+ * the metadata keys publishers are allowed to filter on at query time.
  *
- * This element renders as a cascading selection:
+ * This element renders as three controls:
  * 1. Database dropdown (loads from /api/v1/knowledge/databases)
  * 2. Namespace multi-select (populated based on selected database)
+ * 3. Free-form chips input for `allowed_metadata_filter_fields`
  *
- * The output is a structured object containing both the collection name and
- * the selected namespaces, matching the MilvusVectorStoreConfig fields:
- * {"collection_name": str, "index_namespaces": list[str]}
+ * The output matches the three configurable fields of `MilvusVectorStoreConfig`:
+ * {
+ * "collection_name": str,
+ * "index_namespaces": list[str],
+ * "allowed_metadata_filter_fields": list[str],
+ * }
  *
  * ### Form Duality
  * When used with MilvusVectorStoreConfig, the form submission is validated
@@ -20830,7 +21051,7 @@ export type UserMessageEventWritable = {
  * MilvusVectorStoreConfig | VectorStoreInput,
  * Field(description="The vector store configuration"),
  * ]
- * reranking_model
+ *
  * # Form mode - for rendering:
  * config = MyRetrieverConfig(
  * vector_store=VectorStoreInput(
@@ -20843,6 +21064,7 @@ export type UserMessageEventWritable = {
  * vector_store=MilvusVectorStoreConfig(
  * collection_name="my-database",
  * index_namespaces=["namespace1", "namespace2"],
+ * allowed_metadata_filter_fields=["department", "year"],
  * ),
  * )
  * ```
@@ -20923,6 +21145,12 @@ export type VectorStoreInputWritable = {
      */
     namespacePlaceholder?: LocaleString | string | null;
     /**
+     * Allowedfilterfieldsplaceholder
+     *
+     * Placeholder for the allowed metadata filter fields chips input.
+     */
+    allowedFilterFieldsPlaceholder?: LocaleString | string | null;
+    /**
      * Filter
      *
      * Whether to enable filtering/search
@@ -20930,7 +21158,7 @@ export type VectorStoreInputWritable = {
     filter?: boolean;
     [key: string]: unknown | true | string | null | string | null | 'vectorStoreInput' | string | null | LocaleString | string | LocaleString | string | null | string | number | number | boolean | Array<string> | {
         [key: string]: string;
-    } | null | boolean | string | null | LocaleString | string | null | LocaleString | string | null | undefined;
+    } | null | boolean | string | null | LocaleString | string | null | LocaleString | string | null | LocaleString | string | null | undefined;
 };
 
 export type GetHealthData = {

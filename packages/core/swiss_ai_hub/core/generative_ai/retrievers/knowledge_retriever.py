@@ -4,6 +4,7 @@ from swiss_ai_hub.core.generative_ai.retrieval.retrieve_parent_summary_nodes imp
 from swiss_ai_hub.core.generative_ai.retrieval.retrieve_prev_next_nodes import retrieve_prev_next_nodes
 from swiss_ai_hub.core.generative_ai.retrievers.base_retriever import BaseRetriever
 from swiss_ai_hub.core.generative_ai.retrievers.knowledge_retriever_config import KnowledgeRetrieverConfig
+from swiss_ai_hub.core.generative_ai.retrievers.metadata_filter_pair import MetadataFilterPair
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
 
@@ -11,9 +12,14 @@ from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn 
 class KnowledgeRetriever(BaseRetriever):
     """Retriever for knowledge from a vector store (Milvus)."""
 
-    def __init__(self, config: KnowledgeRetrieverConfig):
+    def __init__(
+        self,
+        config: KnowledgeRetrieverConfig,
+        additional_metadata_filters: list[MetadataFilterPair] | None = None,
+    ):
         super().__init__(config)
         self.config: KnowledgeRetrieverConfig = config
+        self.additional_metadata_filters: list[MetadataFilterPair] = additional_metadata_filters or []
 
     @trace_fn
     async def retrieve(self, query: str, t: LocaleHandler) -> list[IngestedNode]:
@@ -29,6 +35,7 @@ class KnowledgeRetriever(BaseRetriever):
             query_mode=self.config.query_mode,
             node_types=self.config.node_types,
             vector_store=vector_store,
+            additional_filters=self.additional_metadata_filters,
         )
 
         if not nodes:

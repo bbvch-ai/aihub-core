@@ -205,3 +205,9 @@ add_organization_memory_to_chat_history_event:
   name: Mémoire d'Organisation Ajoutée au Contexte
   description: L'agent a étendu l'historique de chat avec les mémoires organisationnelles
     partagées
+rag_start_event:
+  name: Récupération du Contexte Pertinent
+  description: La génération augmentée par récupération (RAG) a démarré. L'agent récupère
+    le contexte pertinent depuis les sources de connaissances sélectionnées — en utilisant
+    les namespaces choisis et d'éventuels filtres de métadonnées — avant de générer
+    une réponse.

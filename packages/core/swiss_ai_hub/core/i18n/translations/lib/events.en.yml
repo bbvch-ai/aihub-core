@@ -196,3 +196,8 @@ add_user_memory_to_chat_history_event:
 add_organization_memory_to_chat_history_event:
   name: Organization Memory Added to Context
   description: Agent extended chat history with shared organizational memories
+rag_start_event:
+  name: Relevant Context Retrieval
+  description: Retrieval-augmented generation has started. The agent is fetching relevant
+    context from the selected knowledge sources — using the chosen namespaces and
+    any additional metadata filters — before generating an answer.

@@ -26,12 +26,19 @@ from swiss_ai_hub.core.events.agent import (
     GuardAcceptEvent,
     GuardEvent,
     GuardRejectionEvent,
+    HumanInTheLoopChatRequestEvent,
+    HumanInTheLoopChatResponseEvent,
+    HumanInTheLoopConfirmationRequestEvent,
+    HumanInTheLoopConfirmationResponseEvent,
+    HumanInTheLoopInputRequestEvent,
+    HumanInTheLoopInputResponseEvent,
     HumanInTheLoopRequestEvent,
     HumanInTheLoopResponseEvent,
     LimitChatHistoryEvent,
     LLMCostEvent,
     LLMEvent,
     LLMStopEvent,
+    RAGStartEvent,
     RerankerEvent,
     RetrieveOrganizationMemoryEvent,
     RetrieverEvent,
@@ -56,9 +63,15 @@ from swiss_ai_hub.core.persistence.messaging.entities.persisted_agent_event_enti
 DisplayEvents = (
     Annotated[StartEvent, Tag("StartEvent")]
     | Annotated[AgentInTheLoopResponseEvent, Tag("AgentInTheLoopResponseEvent")]
+    | Annotated[HumanInTheLoopInputRequestEvent, Tag("HumanInTheLoopInputRequestEvent")]
+    | Annotated[HumanInTheLoopConfirmationRequestEvent, Tag("HumanInTheLoopConfirmationRequestEvent")]
+    | Annotated[HumanInTheLoopChatRequestEvent, Tag("HumanInTheLoopChatRequestEvent")]
     | Annotated[HumanInTheLoopRequestEvent, Tag("HumanInTheLoopRequestEvent")]
     | Annotated[AgentInTheLoopRequestEvent, Tag("AgentInTheLoopRequestEvent")]
     | Annotated[AgentInTheLoopExceptionEvent, Tag("AgentInTheLoopExceptionEvent")]
+    | Annotated[HumanInTheLoopInputResponseEvent, Tag("HumanInTheLoopInputResponseEvent")]
+    | Annotated[HumanInTheLoopConfirmationResponseEvent, Tag("HumanInTheLoopConfirmationResponseEvent")]
+    | Annotated[HumanInTheLoopChatResponseEvent, Tag("HumanInTheLoopChatResponseEvent")]
     | Annotated[HumanInTheLoopResponseEvent, Tag("HumanInTheLoopResponseEvent")]
     | Annotated[LimitChatHistoryEvent, Tag("LimitChatHistoryEvent")]
     | Annotated[AddMemoryToChatHistoryEvent, Tag("AddMemoryToChatHistoryEvent")]
@@ -81,6 +94,7 @@ DisplayEvents = (
     | Annotated[RetrieverEvent, Tag("RetrieverEvent")]
     | Annotated[ToolEvent, Tag("ToolEvent")]
     | Annotated[UserMessageEvent, Tag("UserMessageEvent")]
+    | Annotated[RAGStartEvent, Tag("RAGStartEvent")]
     | Annotated[ExceptionEvent, Tag("ExceptionEvent")]
     | Annotated[StopEvent, Tag("StopEvent")]
     | Annotated[DisplayEvent, Tag("DisplayEvent")]

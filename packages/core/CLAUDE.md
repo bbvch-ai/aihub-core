@@ -223,6 +223,9 @@ Events are organized by which system they belong to:
 2. Place in `events/agent/`, `events/process/`, or `events/pipeline/` based on scope
 3. Auto-registers on import — no manual registration needed
 4. Do NOT add eager imports to any `__init__.py` — this causes duplicate registration errors
+5. If the event subclasses any type already in the `DisplayEvents` union
+   (`packages/api/.../contextualized_agent_event.py`), add the new subclass to the union too — otherwise it silently
+   downcasts during WebSocket serialization (see `packages/api/CLAUDE.md` → DisplayEvents union)
 
 ## Form System (Form Duality Pattern)
 
