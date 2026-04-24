@@ -74,6 +74,10 @@ context_sufficient_guard:
     Una query rielaborata per ottenere risultati di ricerca migliori se il contesto era insufficiente, assicurarsi di differenziarla abbastanza 
     dalle query esistenti.
   prompt: |
+    Cronologia della conversazione (include eventuali memorie utente o organizzative inserite come messaggi di sistema — trattala come contesto aggiuntivo che potrebbe già rispondere alla domanda):
+    <Chat_History>
+    {chat_history}
+    </Chat_History>
     Domanda:
     <Domanda>
     {user_query}
@@ -82,10 +86,6 @@ context_sufficient_guard:
     <Questioni_precedenti>
     {prev_queries}
     <Questioni_precedenti>
-    Cronologia della conversazione (include eventuali memorie utente o organizzative inserite come messaggi di sistema — trattala come contesto aggiuntivo che potrebbe già rispondere alla domanda):
-    <Chat_History>
-    {chat_history}
-    </Chat_History>
     Contesto:
     <Contesto>
     {context}

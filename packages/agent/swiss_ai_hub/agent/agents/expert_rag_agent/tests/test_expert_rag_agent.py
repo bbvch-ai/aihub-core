@@ -45,7 +45,9 @@ from swiss_ai_hub.agent.agents.rag_agent.configs.expert_escalation_config import
 from swiss_ai_hub.agent.agents.rag_agent.configs.reranking_config import RerankingConfig
 from swiss_ai_hub.agent.agents.rag_agent.events.user_requests_expert_event import UserRequestsExpertEvent
 from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner
-from swiss_ai_hub.agent.steps.guards.context_sufficient_guard_step import ContextSufficientGuardStepConfig
+from swiss_ai_hub.agent.steps.guards.context_sufficient_guard_step.context_sufficient_guard_step_config import (
+    ContextSufficientGuardStepConfig,
+)
 
 enable_logging()
 

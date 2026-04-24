@@ -48,7 +48,9 @@ from swiss_ai_hub.agent.agents.rag_agent.events.limit_chat_history_with_context_
 )
 from swiss_ai_hub.agent.agents.rag_agent.rag_agent import RAGAgent
 from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner
-from swiss_ai_hub.agent.steps.guards.context_sufficient_guard_step import ContextSufficientGuardStepConfig
+from swiss_ai_hub.agent.steps.guards.context_sufficient_guard_step.context_sufficient_guard_step_config import (
+    ContextSufficientGuardStepConfig,
+)
 
 enable_logging()
 

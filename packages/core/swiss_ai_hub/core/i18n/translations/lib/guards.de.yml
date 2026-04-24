@@ -73,6 +73,10 @@ context_sufficient_guard:
     Eine überarbeitete Abfrage, um bessere Suchergebnisse zu erhalten, wenn der Kontext unzureichend war, wobei darauf zu achten ist, dass sich die Abfrage ausreichend 
     von den bestehenden Abfragen unterscheiden.
   prompt: |
+    Gesprächsverlauf (enthält alle als Systemnachrichten eingefügten Benutzer- oder Organisationsspeicher — behandle sie als zusätzlichen Kontext, der die Frage bereits beantworten kann):
+    <Chat_History>
+    {chat_history}
+    </Chat_History>
     Frage:
     <Question>
     {user_query}
@@ -81,10 +85,6 @@ context_sufficient_guard:
     <Previous_Queries>
     {prev_queries}
     <\Previous_Queries>
-    Gesprächsverlauf (enthält alle als Systemnachrichten eingefügten Benutzer- oder Organisationsspeicher — behandle sie als zusätzlichen Kontext, der die Frage bereits beantworten kann):
-    <Chat_History>
-    {chat_history}
-    </Chat_History>
     Kontext:
     <Context>
     {context}

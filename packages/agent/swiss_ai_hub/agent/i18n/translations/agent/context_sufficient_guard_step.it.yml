@@ -8,12 +8,6 @@ config:
     label: Salti di recupero max
     help: Numero massimo di iterazioni di recupero quando il guard rifiuta il contesto
       attuale. Valori più alti possono migliorare le risposte ma aumentano la latenza.
-  max_non_system_messages_in_guard:
-    label: Max turni di conversazione nel guard
-    help: Numero massimo di messaggi utente/assistente recenti inoltrati al prompt
-      del guard. La memoria (messaggi di sistema) è sempre inclusa. Valori più bassi
-      accorciano il prompt del guard e migliorano l'affidabilità dell'output strutturato
-      per modelli open-weight.
   context_insufficient_prompt:
     label: Prompt contesto insufficiente
     help: Messaggio mostrato quando l'agente non trova informazioni sufficienti. Guida

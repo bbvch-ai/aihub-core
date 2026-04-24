@@ -71,6 +71,10 @@ context_sufficient_guard:
     A revised query to get better search results if the context was insufficient, make sure to differentiate it enough 
     from the existing queries.
   prompt: |
+    Chat History (includes any retrieved user or organization memory injected as system messages — treat these as additional context that may already answer the question):
+    <Chat_History>
+    {chat_history}
+    </Chat_History>
     Question:
     <Question>
     {user_query}
@@ -79,10 +83,6 @@ context_sufficient_guard:
     <Previous_Queries>
     {prev_queries}
     <\Previous_Queries>
-    Chat History (includes any retrieved user or organization memory injected as system messages — treat these as additional context that may already answer the question):
-    <Chat_History>
-    {chat_history}
-    </Chat_History>
     Context:
     <Context>
     {context}

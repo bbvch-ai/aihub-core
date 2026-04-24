@@ -73,6 +73,10 @@ context_sufficient_guard:
     Une requête révisée pour obtenir de meilleurs résultats de recherche si le contexte était insuffisant, assurez-vous de la différencier suffisamment des requêtes existantes. 
     des requêtes existantes.
   prompt: |
+    Historique de la conversation (inclut toute mémoire utilisateur ou organisationnelle insérée comme messages système — traitez-les comme un contexte supplémentaire qui peut déjà répondre à la question):
+      <Chat_History>
+      { chat_history }
+      </Chat_History>
     Question:
       <Question>
       { user_query }
@@ -81,10 +85,6 @@ context_sufficient_guard:
     <Previous_Queries>
     { prev_queries }
     <\Previous_Queries>
-    Historique de la conversation (inclut toute mémoire utilisateur ou organisationnelle insérée comme messages système — traitez-les comme un contexte supplémentaire qui peut déjà répondre à la question):
-      <Chat_History>
-      { chat_history }
-      </Chat_History>
     Contexte:
       <Context>
       { context }

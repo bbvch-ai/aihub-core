@@ -28,8 +28,6 @@ from swiss_ai_hub.core.generative_ai import (
     merge_consecutive_messages,
     rerank_nodes,
     retrieve_from_all_sources,
-    strip_leading_behavior_prompt,
-    trim_non_system_turns,
 )
 from swiss_ai_hub.core.i18n import LocaleHandler, LocaleString
 
@@ -198,14 +196,13 @@ async def do_context_sufficient_guard(
     displayer: EventDisplayer,
     t: LocaleHandler,
     chat_history: list[ChatMessage],
-    max_non_system_messages_in_guard: int = 6,
 ) -> ContextSufficientAcceptEvent | ContextInsufficientRejectEvent | ContextInsufficientWithQueryEvent:
     """Execute context sufficient guard with hop management.
 
-    ``chat_history`` — full limited history. The first system message (agent behavior prompt)
-    is dropped, and non-system messages are truncated to the most recent
-    ``max_non_system_messages_in_guard`` turns to keep the guard prompt short.
-    Memory-origin system messages are always retained.
+    ``chat_history`` is forwarded verbatim — it is already token-bounded upstream by
+    ``limit_chat_history``, which preserves system messages (including any injected
+    user/organization memory). The guard prompt instructs the model to treat these
+    system messages as additional context.
     """
     if not check_context_sufficiency:
         return ContextSufficientAcceptEvent(reason=t("agent.thought.no_context_sufficiency_check"))
@@ -213,9 +210,6 @@ async def do_context_sufficient_guard(
     prev_queries = await run_context.get("prev_queries", [])
     hop_count = await run_context.get("hop_count", 1)
     more_hops_available = hop_count < max_hops
-
-    guard_chat_history = strip_leading_behavior_prompt(chat_history)
-    guard_chat_history = trim_non_system_turns(guard_chat_history, max_non_system_messages_in_guard)
 
     async with llm_config.cost_reporting_llm(displayer) as llm:
         guard_result = await context_sufficient_guard(
@@ -225,7 +219,7 @@ async def do_context_sufficient_guard(
             context=context,
             prev_queries=prev_queries,
             more_hops_available=more_hops_available,
-            chat_history=guard_chat_history,
+            chat_history=chat_history,
         )
 
     if guard_result.success:

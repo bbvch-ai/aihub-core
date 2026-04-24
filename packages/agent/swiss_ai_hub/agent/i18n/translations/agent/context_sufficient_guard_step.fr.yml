@@ -9,12 +9,6 @@ config:
     help: Nombre maximum d'itérations de récupération lorsque le garde rejette le
       contexte actuel. Des valeurs plus élevées peuvent améliorer les réponses mais
       augmentent la latence.
-  max_non_system_messages_in_guard:
-    label: Max. tours de conversation dans le garde
-    help: Nombre maximum de messages récents utilisateur/assistant transmis au prompt
-      du garde. La mémoire (messages système) est toujours incluse. Des valeurs plus
-      faibles raccourcissent le prompt du garde et améliorent la fiabilité de la sortie
-      structurée pour les modèles open-weight.
   context_insufficient_prompt:
     label: Prompt contexte insuffisant
     help: Message affiché lorsque l'agent ne trouve pas suffisamment d'informations.

@@ -72,7 +72,9 @@ from swiss_ai_hub.agent.rag.step_functions import (
     do_respond_with_llm,
     do_retrieve,
 )
-from swiss_ai_hub.agent.steps.guards.context_sufficient_guard_step import ContextSufficientGuardStepConfig
+from swiss_ai_hub.agent.steps.guards.context_sufficient_guard_step.context_sufficient_guard_step_config import (
+    ContextSufficientGuardStepConfig,
+)
 from swiss_ai_hub.agent.workflow.decorators.precondition import precondition
 from swiss_ai_hub.agent.workflow.decorators.step import step
 
@@ -407,7 +409,6 @@ class ExpertRAGAgent(Agent):
             displayer,
             t,
             chat_history=chat_history_event.limited_history,
-            max_non_system_messages_in_guard=guard_config.max_non_system_messages_in_guard,
         )
 
     @step(

@@ -1,11 +1,13 @@
 from swiss_ai_hub.agent.agents.few_shot_agent import FewShotAgentConfig
 
-from .structured_data_extractor import TEMPLATE as STRUCTURED_DATA_EXTRACTOR
-from .support_ticket_classifier import TEMPLATE as SUPPORT_TICKET_CLASSIFIER
-from .tone_rewriter import TEMPLATE as TONE_REWRITER
 
-ALL_TEMPLATES: list[FewShotAgentConfig] = [
-    SUPPORT_TICKET_CLASSIFIER,
-    STRUCTURED_DATA_EXTRACTOR,
-    TONE_REWRITER,
-]
+def get_all_templates() -> list[FewShotAgentConfig]:
+    from .structured_data_extractor import build as build_structured_data_extractor
+    from .support_ticket_classifier import build as build_support_ticket_classifier
+    from .tone_rewriter import build as build_tone_rewriter
+
+    return [
+        build_support_ticket_classifier(),
+        build_structured_data_extractor(),
+        build_tone_rewriter(),
+    ]

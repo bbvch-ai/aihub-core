@@ -36,18 +36,22 @@ export function stripNullsForGroups(
 
   for (const [key, value] of Object.entries(data)) {
     const element = elements.find(el => el.name === key)
-    const formkitType = element ? getFormkitType(element) : undefined
+    if (!element) {
+      result[key] = value
+      continue
+    }
+    const formkitType = getFormkitType(element)
 
     if ((formkitType === 'group' || formkitType === 'repeater') && value === null) {
       continue
     }
 
+    const children = (element.children as FormElement[] | undefined) ?? []
+
     if (formkitType === 'group' && value && typeof value === 'object' && !Array.isArray(value)) {
-      const children = (element!.children as FormElement[] | undefined) ?? []
       result[key] = stripNullsForGroups(value as Record<string, unknown>, children)
     }
     else if (formkitType === 'repeater' && Array.isArray(value)) {
-      const children = (element!.children as FormElement[] | undefined) ?? []
       result[key] = value.map(item =>
         item && typeof item === 'object' && !Array.isArray(item)
           ? stripNullsForGroups(item as Record<string, unknown>, children)

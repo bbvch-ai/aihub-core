@@ -8,11 +8,6 @@ config:
     label: Max retrieval hops
     help: Maximum number of retrieval iterations when the guard rejects the current
       context. Higher values may improve answers but increase latency.
-  max_non_system_messages_in_guard:
-    label: Max chat turns in guard
-    help: Maximum number of recent user/assistant messages forwarded to the guard
-      prompt. Memory (system messages) is always included. Lower values shorten the
-      guard prompt and improve structured-output reliability for open-weight models.
   context_insufficient_prompt:
     label: Context insufficient prompt
     help: Message shown when the agent cannot find sufficient information to answer.
