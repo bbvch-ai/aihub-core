@@ -207,3 +207,9 @@ add_user_memory_to_chat_history_event:
 add_organization_memory_to_chat_history_event:
   name: Organisationserinnerungen zum Kontext Hinzugefügt
   description: Agent hat Chat-Verlauf mit gemeinsamen Organisationserinnerungen erweitert
+rag_start_event:
+  name: Abruf Relevanter Kontexte
+  description: Die Retrieval-Augmented Generation wurde gestartet. Der Agent ruft
+    relevanten Kontext aus den ausgewählten Wissensquellen ab – unter Verwendung der
+    gewählten Namensräume und optionaler Metadatenfilter – bevor eine Antwort generiert
+    wird.

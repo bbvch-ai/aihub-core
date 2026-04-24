@@ -68,6 +68,39 @@
         {{ t('lib.vectorStore.namespaces.help') }}
       </small>
     </div>
+
+    <!-- Allowed metadata filter fields (shown when database selected) -->
+    <div v-if="selectedDatabase">
+      <label class="mb-1 block text-sm font-medium">
+        {{ t('lib.vectorStore.allowedFilterFields.label') }}
+      </label>
+      <div class="flex flex-col gap-2">
+        <InputText
+          v-model="filterFieldDraft"
+          :placeholder="allowedFilterFieldsPlaceholder ?? t('lib.vectorStore.allowedFilterFields.placeholder')"
+          class="w-full"
+          @keydown.enter.stop.prevent="commitFilterFieldDraft"
+          @keyup.enter.stop.prevent
+          @keypress.enter.stop.prevent
+          @blur="commitFilterFieldDraft"
+        />
+        <div
+          v-if="allowedFilterFields.length > 0"
+          class="flex flex-wrap gap-2"
+        >
+          <Chip
+            v-for="key in allowedFilterFields"
+            :key="key"
+            :label="key"
+            removable
+            @remove="removeFilterField(key)"
+          />
+        </div>
+      </div>
+      <small class="mt-1 text-surface-500">
+        {{ t('lib.vectorStore.allowedFilterFields.help') }}
+      </small>
+    </div>
   </div>
 </template>
 
@@ -80,6 +113,7 @@ import type { DatabaseDto } from '@core/sdk/client'
 interface VectorStoreInputValue {
   collection_name: string
   index_namespaces: string[]
+  allowed_metadata_filter_fields: string[]
 }
 
 interface DatabaseOption {
@@ -101,6 +135,7 @@ interface VectorStoreInputProps {
     attrs: Record<string, unknown>
     databasePlaceholder?: string
     namespacePlaceholder?: string
+    allowedFilterFieldsPlaceholder?: string
     filter?: boolean
   }
 }
@@ -112,6 +147,7 @@ const { tenantId } = useTenant()
 // Get custom props from context (FormKit passes them there, not as direct props)
 const databasePlaceholder = computed(() => props.context.databasePlaceholder)
 const namespacePlaceholder = computed(() => props.context.namespacePlaceholder)
+const allowedFilterFieldsPlaceholder = computed(() => props.context.allowedFilterFieldsPlaceholder)
 const filter = computed(() => props.context.filter ?? true)
 
 // State
@@ -126,8 +162,8 @@ const selectedDatabase = computed({
   get: () => currentValue.value?.collection_name ?? null,
   set: (value: string | null) => {
     if (value) {
-      // When database changes, reset namespaces
-      emitValue(value, [])
+      // When database changes, reset namespaces and allowed filter fields
+      emitValue(value, [], [])
     }
     else {
       props.context.node.input(null)
@@ -140,16 +176,43 @@ const selectedNamespaces = computed({
   get: () => currentValue.value?.index_namespaces ?? [],
   set: (value: string[]) => {
     if (selectedDatabase.value) {
-      emitValue(selectedDatabase.value, value)
+      emitValue(selectedDatabase.value, value, allowedFilterFields.value)
     }
   },
 })
 
+// Allowed metadata filter fields (explicit InputText + Chip list)
+const filterFieldDraft = ref('')
+
+const allowedFilterFields = computed({
+  get: () => currentValue.value?.allowed_metadata_filter_fields ?? [],
+  set: (value: string[]) => {
+    if (selectedDatabase.value) {
+      emitValue(selectedDatabase.value, selectedNamespaces.value, value)
+    }
+  },
+})
+
+function commitFilterFieldDraft() {
+  const trimmed = filterFieldDraft.value.trim()
+  filterFieldDraft.value = ''
+  if (!trimmed)
+    return
+  if (allowedFilterFields.value.includes(trimmed))
+    return
+  allowedFilterFields.value = [...allowedFilterFields.value, trimmed]
+}
+
+function removeFilterField(key: string) {
+  allowedFilterFields.value = allowedFilterFields.value.filter(k => k !== key)
+}
+
 // Emit complete value object
-function emitValue(collectionName: string, namespaces: string[]) {
+function emitValue(collectionName: string, namespaces: string[], allowedFilterFieldKeys: string[]) {
   props.context.node.input({
     collection_name: collectionName,
     index_namespaces: namespaces,
+    allowed_metadata_filter_fields: allowedFilterFieldKeys,
   })
 }
 

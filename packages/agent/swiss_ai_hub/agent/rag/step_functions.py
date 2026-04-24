@@ -17,8 +17,8 @@ from swiss_ai_hub.core.events.agent import (
 )
 from swiss_ai_hub.core.generative_ai import (
     IngestedNode,
-    KnowledgeRetrieverConfig,
     LLMConfig,
+    RetrievalRuntimeConfig,
     combine_nodes_in_order,
     condense_standalone_question,
     context_sufficient_guard,
@@ -131,7 +131,7 @@ async def do_few_shot_guard(
 
 async def do_retrieve(
     event: StandaloneQuestionCondenserEvent | ContextInsufficientWithQueryEvent,
-    retrievers: list[KnowledgeRetrieverConfig],
+    runtime_configs: list[RetrievalRuntimeConfig],
     t: LocaleHandler,
 ) -> RetrieverEvent:
     """Retrieve nodes from all sources and return RetrieverEvent."""
@@ -139,7 +139,7 @@ async def do_retrieve(
         query = event.condensed_chat_message.content or ""
     else:
         query = event.new_query
-    all_nodes = await retrieve_from_all_sources(query, retrievers, t)
+    all_nodes = await retrieve_from_all_sources(query, runtime_configs, t)
     nodes_with_score = [node.to_llama_index_node_with_score() for node in all_nodes]
     return RetrieverEvent.from_nodes(nodes_with_score)
 

@@ -184,6 +184,8 @@ event:
     event_data: Données d'événement
   rag_start:
     selected_namespaces: 'Namespaces sélectionnés :'
+    additional_filters: 'Filtres de métadonnées supplémentaires :'
+    no_filters: Aucun filtre supplémentaire
   limitChatHistory:
     summary: Historique de chat limité à {count} messages
     assistant: Assistant
@@ -757,6 +759,11 @@ lib:
       label: Espaces de noms
       placeholder: Sélectionner les espaces de noms (vide = tous)
       help: Laisser vide pour rechercher tous les espaces de noms
+    allowedFilterFields:
+      label: Champs de filtre autorisés
+      placeholder: Saisir une clé de métadonnées puis appuyer sur Entrée
+      help: Clés de métadonnées sur lesquelles les publieurs peuvent filtrer lors
+        de la requête. La clé réservée `namespace` n'est jamais autorisée.
 memory:
   title: Souvenirs
   graph:

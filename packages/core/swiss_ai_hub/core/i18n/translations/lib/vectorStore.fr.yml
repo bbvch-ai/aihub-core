@@ -7,3 +7,9 @@ namespaces:
   label: Espaces de noms
   placeholder: Sélectionner les espaces de noms (vide = tous)
   help: Laisser vide pour rechercher tous les espaces de noms
+allowedFilterFields:
+  label: Champs de filtre autorisés
+  placeholder: Saisir une clé de métadonnées puis appuyer sur Entrée
+  help: Clés de métadonnées sur lesquelles les publieurs peuvent filtrer lors de la
+    requête (p. ex. via `RAGStartEvent.additional_filters`). La clé réservée `namespace`
+    n'est jamais autorisée.
