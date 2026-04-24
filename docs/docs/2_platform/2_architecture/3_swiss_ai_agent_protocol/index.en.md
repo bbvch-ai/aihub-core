@@ -438,7 +438,7 @@ the API Gateway. The `/stream` suffix indicates that the client expects a stream
 ```json
 {
   "messages": [
-    { "role": "user", "content": "Hello" }
+    { "role": "user", "blocks": [{ "block_type": "text", "text": "Hello" }] }
   ]
 }
 ```
@@ -462,7 +462,9 @@ a `UserMessageEvent`. It then publishes this `Control Event` to the event bus on
   "_parent_event_names": ["UserMessageEvent", "StartEvent", "ControlAndDisplayEvent", "ControlEvent", "DisplayEvent"],
   "locale": "en",
   "user": { "id": "cc4af21b-981a-4a76-826d-e722715082e0", "name": "Test User" },
-  "messages": [{ "role": "user", "content": "Hello" }]
+  "messages": [
+    { "role": "user", "blocks": [{ "block_type": "text", "text": "Hello" }] }
+  ]
 }
 ```
 :::
@@ -565,7 +567,10 @@ POST /agents/RAGAgent/prod_rag/UserMessageEvent
 ```json
 {
   "messages": [
-    { "role": "user", "content": "What is the Swiss AI Hub?" }
+    {
+      "role": "user",
+      "blocks": [{ "block_type": "text", "text": "What is the Swiss AI Hub?" }]
+    }
   ]
 }
 ```
@@ -589,7 +594,12 @@ connection open, waiting for a final event to form the response.
   "created_at": 1755015355940833270,
   "_event_name": "UserMessageEvent",
   "_parent_event_names": ["UserMessageEvent", "StartEvent", "ControlAndDisplayEvent", "ControlEvent", "DisplayEvent"],
-  "messages": [{ "role": "user", "content": "What is the Swiss AI Hub?" }]
+  "messages": [
+    {
+      "role": "user",
+      "blocks": [{ "block_type": "text", "text": "What is the Swiss AI Hub?" }]
+    }
+  ]
 }
 ```
 :::

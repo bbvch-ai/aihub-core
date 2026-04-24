@@ -206,3 +206,9 @@ add_organization_memory_to_chat_history_event:
   name: Memoria Organizzativa Aggiunta al Contesto
   description: L'agente ha esteso la cronologia chat con le memorie organizzative
     condivise
+rag_start_event:
+  name: Recupero del Contesto Rilevante
+  description: La generazione aumentata dal recupero (RAG) è iniziata. L'agente sta
+    recuperando il contesto rilevante dalle fonti di conoscenza selezionate — utilizzando
+    i namespace scelti e gli eventuali filtri di metadati — prima di generare una
+    risposta.

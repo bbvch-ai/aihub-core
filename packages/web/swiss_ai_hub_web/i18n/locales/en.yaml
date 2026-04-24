@@ -184,6 +184,8 @@ event:
     event_data: Event Data
   rag_start:
     selected_namespaces: 'Selected namespaces:'
+    additional_filters: 'Additional metadata filters:'
+    no_filters: No additional filters
   limitChatHistory:
     summary: Chat history limited to {count} messages
     assistant: Assistant
@@ -748,6 +750,11 @@ lib:
       label: Namespaces
       placeholder: Select namespaces (empty = all)
       help: Leave empty to search all namespaces
+    allowedFilterFields:
+      label: Allowed Filter Fields
+      placeholder: Add a metadata key and press Enter
+      help: Metadata keys publishers may filter on at query time. The reserved `namespace`
+        key is never allowed.
 memory:
   title: Memories
   graph:

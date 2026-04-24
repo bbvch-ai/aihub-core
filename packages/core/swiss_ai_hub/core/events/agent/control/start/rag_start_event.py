@@ -2,12 +2,14 @@ from typing import Annotated, ClassVar
 
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from pydantic import Field
-from swiss_ai_hub.core.auth import UserIdentity
-from swiss_ai_hub.core.events.agent import StartEvent, UserUploadedFile
-from swiss_ai_hub.core.generative_ai import BucketNamespacePair
-from swiss_ai_hub.core.i18n import LocaleHandler
 
-from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
+from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
+from swiss_ai_hub.core.events.agent.control.start.start_event import StartEvent
+from swiss_ai_hub.core.events.agent.user.user_uploaded_file import UserUploadedFile
+from swiss_ai_hub.core.generative_ai.retrievers.bucket_metadata_filters import BucketMetadataFilters
+from swiss_ai_hub.core.generative_ai.retrievers.bucket_namespace_pair import BucketNamespacePair
+from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
+from swiss_ai_hub.core.i18n.locale_string import LocaleString
 
 
 class RAGStartEvent(StartEvent):
@@ -18,8 +20,8 @@ class RAGStartEvent(StartEvent):
     selection UI, or other agents delegating to RAG via `AgentInTheLoop`.
     """
 
-    _display_name: ClassVar = AgentLocaleString.from_i18n_path("agent.events.rag_start.name")
-    _display_description: ClassVar = AgentLocaleString.from_i18n_path("agent.events.rag_start.description")
+    _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.rag_start_event.name")
+    _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.rag_start_event.description")
 
     locale: Annotated[
         str,
@@ -38,20 +40,25 @@ class RAGStartEvent(StartEvent):
         list[BucketNamespacePair],
         Field(description="List of bucket-namespace pairs restricting RAG retrieval."),
     ]
+    additional_filters: Annotated[
+        list[BucketMetadataFilters] | None,
+        Field(
+            description=(
+                "Per-bucket additional metadata filters (AND-combined with namespace filters). "
+                "Filter keys must be listed in the target retriever's "
+                "`MilvusVectorStoreConfig.allowed_metadata_filter_fields`. "
+                "The reserved `namespace` key is not permitted here — use `selected_namespaces` instead."
+            )
+        ),
+    ] = None
 
     @property
     def user_query(self) -> str:
-        """
-        Extracts the user query text from the chat history, returning the last user message content.
-        Note: This only returns text content. Use last_user_message for full message with all blocks.
-        """
+        """Last user message content as text. Use `last_user_message` for multimodal blocks."""
         return self.last_user_message.content or ""
 
     @property
     def last_user_message(self) -> ChatMessage:
-        """
-        Extracts the complete last user message (with all blocks including images/audio) from chat history.
-        Use this when passing messages to LLMs to preserve multimodal content.
-        """
+        """Complete last user message including non-text blocks (images/audio)."""
         user_messages = [msg for msg in self.messages if msg.role == MessageRole.USER]
         return user_messages[-1] if user_messages else ChatMessage(role=MessageRole.USER, content="")

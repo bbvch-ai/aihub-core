@@ -53,11 +53,16 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.generative_ai.retrieval.retrieve_from_all_sources import retrieve_from_all_sources
     from swiss_ai_hub.core.generative_ai.retrieval.retrieve_nodes import retrieve_nodes
     from swiss_ai_hub.core.generative_ai.retrieval.retrieve_prev_next_nodes import retrieve_prev_next_nodes
+    from swiss_ai_hub.core.generative_ai.retrievers.bucket_metadata_filters import BucketMetadataFilters
     from swiss_ai_hub.core.generative_ai.retrievers.bucket_namespace_pair import BucketNamespacePair
     from swiss_ai_hub.core.generative_ai.retrievers.knowledge_retriever_config import KnowledgeRetrieverConfig
+    from swiss_ai_hub.core.generative_ai.retrievers.metadata_filter_pair import MetadataFilterPair
+    from swiss_ai_hub.core.generative_ai.retrievers.retrieval_runtime_config import RetrievalRuntimeConfig
     from swiss_ai_hub.core.generative_ai.routing.route_to_event_using_llm import route_to_event_using_llm
-    from swiss_ai_hub.core.generative_ai.utils.filter_retrievers_by_namespace import filter_retrievers_by_namespace
     from swiss_ai_hub.core.generative_ai.utils.image_processor import replace_s3_paths_with_signed_urls
+    from swiss_ai_hub.core.generative_ai.utils.narrow_retrievers import (
+        narrow_retrievers,
+    )
     from swiss_ai_hub.core.generative_ai.utils.path_utils import (
         FIGURES_DIRECTORY_NAME,
         create_figures_folder_name,
@@ -67,6 +72,7 @@ if TYPE_CHECKING:
 
 __all__ = [
     "AgentMemory",
+    "BucketMetadataFilters",
     "BucketNamespacePair",
     "DocumentIntelligenceLoader",
     "EmbeddingModelConfig",
@@ -83,6 +89,8 @@ __all__ = [
     "MarkItDownLoader",
     "MarkdownStructuralNodeParser",
     "MemorySettings",
+    "MetadataFilterPair",
+    "RetrievalRuntimeConfig",
     "MineruLoader",
     "ModeOptions",
     "OrganizationMemory",
@@ -103,7 +111,7 @@ __all__ = [
     "extend_chat_history_with_organization_memory",
     "extend_chat_history_with_user_memory",
     "few_shot_guard",
-    "filter_retrievers_by_namespace",
+    "narrow_retrievers",
     "format_expert_conversation",
     "limit_chat_history",
     "limit_chat_history_with_context",
@@ -119,6 +127,7 @@ __all__ = [
 
 _LAZY_IMPORTS = {
     "AgentMemory": "swiss_ai_hub.core.generative_ai.memory.agent_memory",
+    "BucketMetadataFilters": "swiss_ai_hub.core.generative_ai.retrievers.bucket_metadata_filters",
     "BucketNamespacePair": "swiss_ai_hub.core.generative_ai.retrievers.bucket_namespace_pair",
     "DocumentIntelligenceLoader": "swiss_ai_hub.core.generative_ai.document.loaders.document_intelligence_loader",
     "EmbeddingModelConfig": "swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_model_config",
@@ -135,6 +144,8 @@ _LAZY_IMPORTS = {
     "MarkItDownLoader": "swiss_ai_hub.core.generative_ai.document.loaders.mark_it_down_loader",
     "MarkdownStructuralNodeParser": "swiss_ai_hub.core.generative_ai.document.parsers.markdown_structural_node_parser",
     "MemorySettings": "swiss_ai_hub.core.generative_ai.memory.memory_settings",
+    "MetadataFilterPair": "swiss_ai_hub.core.generative_ai.retrievers.metadata_filter_pair",
+    "RetrievalRuntimeConfig": "swiss_ai_hub.core.generative_ai.retrievers.retrieval_runtime_config",
     "MineruLoader": "swiss_ai_hub.core.generative_ai.document.loaders.mineru_loader",
     "ModeOptions": "swiss_ai_hub.core.generative_ai.processors.vector_prev_next_post_processor",
     "OrganizationMemory": "swiss_ai_hub.core.generative_ai.memory.organization_memory",
@@ -155,7 +166,7 @@ _LAZY_IMPORTS = {
     "extend_chat_history_with_organization_memory": "swiss_ai_hub.core.generative_ai.chat_history.extend_chat_history_with_organization_memory",
     "extend_chat_history_with_user_memory": "swiss_ai_hub.core.generative_ai.chat_history.extend_chat_history_with_user_memory",
     "few_shot_guard": "swiss_ai_hub.core.generative_ai.guards.few_shot_guard",
-    "filter_retrievers_by_namespace": "swiss_ai_hub.core.generative_ai.utils.filter_retrievers_by_namespace",
+    "narrow_retrievers": "swiss_ai_hub.core.generative_ai.utils.narrow_retrievers",
     "format_expert_conversation": "swiss_ai_hub.core.generative_ai.chat_history.format_expert_conversation",
     "limit_chat_history": "swiss_ai_hub.core.generative_ai.chat_history.limit_chat_history",
     "limit_chat_history_with_context": "swiss_ai_hub.core.generative_ai.chat_history.limit_chat_history_with_context",

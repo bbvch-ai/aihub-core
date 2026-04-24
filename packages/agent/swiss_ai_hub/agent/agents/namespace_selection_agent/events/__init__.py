@@ -1,3 +1,5 @@
+from swiss_ai_hub.core.events.agent import RAGStartEvent
+
 from swiss_ai_hub.agent.agents.namespace_selection_agent.events.determine_namespaces_event import (
     DetermineNamespacesEvent,
 )
@@ -11,7 +13,6 @@ from swiss_ai_hub.agent.agents.namespace_selection_agent.events.namespace_approv
     NamespaceApprovalRequestEvent,
     NamespaceApprovalResponseEvent,
 )
-from swiss_ai_hub.agent.agents.rag_agent.events.rag_start_event import RAGStartEvent
 
 __all__ = [
     "DetermineNamespacesEvent",

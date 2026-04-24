@@ -2282,6 +2282,53 @@ export const Body_create_transcription__tenant_id__openai_audio_transcriptions_p
     title: 'Body_create_transcription__tenant_id__openai_audio_transcriptions_post'
 } as const;
 
+export const BucketMetadataFiltersSchema = {
+    properties: {
+        bucket_name: {
+            type: 'string',
+            title: 'Bucket Name',
+            description: 'The name of the bucket these filters apply to.'
+        },
+        filters: {
+            items: {
+                $ref: '#/components/schemas/MetadataFilterPair'
+            },
+            type: 'array',
+            title: 'Filters',
+            description: 'Metadata key/value filters applied AND-wise to retrieval in this bucket.'
+        }
+    },
+    type: 'object',
+    required: [
+        'bucket_name',
+        'filters'
+    ],
+    title: 'BucketMetadataFilters',
+    description: 'The metadata filters a publisher wants applied to one bucket at retrieval time.\n\nAND-combined with any namespace narrowing from `selected_namespaces`. Each filter key must be\nlisted in the target retriever\'s `MilvusVectorStoreConfig.allowed_metadata_filter_fields`.'
+} as const;
+
+export const BucketNamespacePairSchema = {
+    properties: {
+        bucket_name: {
+            type: 'string',
+            title: 'Bucket Name',
+            description: 'The name of the bucket'
+        },
+        namespace_name: {
+            type: 'string',
+            title: 'Namespace Name',
+            description: 'The name of the selected namespace in the bucket'
+        }
+    },
+    type: 'object',
+    required: [
+        'bucket_name',
+        'namespace_name'
+    ],
+    title: 'BucketNamespacePair',
+    description: 'A bucket-namespace selection pair for RAG retrieval filtering.'
+} as const;
+
 export const BulkUpdateNotificationRequestSchema = {
     properties: {
         notification_ids: {
@@ -5215,6 +5262,9 @@ export const ContextualizedAgentEventSchema = {
                 },
                 {
                     $ref: '#/components/schemas/UserMessageEvent'
+                },
+                {
+                    $ref: '#/components/schemas/RAGStartEvent'
                 },
                 {
                     $ref: '#/components/schemas/ExceptionEvent'
@@ -13167,6 +13217,41 @@ export const MetadataSchema = {
     title: 'Metadata'
 } as const;
 
+export const MetadataFilterPairSchema = {
+    properties: {
+        key: {
+            type: 'string',
+            title: 'Key',
+            description: 'The metadata key to filter on.'
+        },
+        value: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'boolean'
+                }
+            ],
+            title: 'Value',
+            description: 'The value the metadata key must equal.'
+        }
+    },
+    type: 'object',
+    required: [
+        'key',
+        'value'
+    ],
+    title: 'MetadataFilterPair',
+    description: 'A metadata key/value equality filter for RAG retrieval.'
+} as const;
+
 export const MinimalAgentInstanceDTOSchema = {
     properties: {
         agent_class: {
@@ -13353,7 +13438,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1776356323
+            default: 1776847046
         },
         owned_by: {
             type: 'string',
@@ -15965,6 +16050,124 @@ export const PromptTokensDetailsSchema = {
     type: 'object',
     title: 'PromptTokensDetails',
     description: 'Breakdown of tokens used in the prompt.'
+} as const;
+
+export const RAGStartEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display name for the event'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display description for the event'
+        },
+        locale: {
+            type: 'string',
+            title: 'Locale',
+            description: 'The user\'s locale, guiding language or regional adaptations.',
+            default: 'de'
+        },
+        user: {
+            $ref: '#/components/schemas/UserIdentity',
+            description: 'User on whose behalf the RAG run is executed.'
+        },
+        messages: {
+            items: {
+                $ref: '#/components/schemas/ChatMessage'
+            },
+            type: 'array',
+            title: 'Messages',
+            description: 'Chat history providing the context and the user query for retrieval.',
+            default: []
+        },
+        files: {
+            anyOf: [
+                {
+                    items: {
+                        $ref: '#/components/schemas/UserUploadedFile'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Files',
+            description: 'Files uploaded alongside the query for additional context.'
+        },
+        selected_namespaces: {
+            items: {
+                $ref: '#/components/schemas/BucketNamespacePair'
+            },
+            type: 'array',
+            title: 'Selected Namespaces',
+            description: 'List of bucket-namespace pairs restricting RAG retrieval.'
+        },
+        additional_filters: {
+            anyOf: [
+                {
+                    items: {
+                        $ref: '#/components/schemas/BucketMetadataFilters'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Additional Filters',
+            description: 'Per-bucket additional metadata filters (AND-combined with namespace filters). Filter keys must be listed in the target retriever\'s `MilvusVectorStoreConfig.allowed_metadata_filter_fields`. The reserved `namespace` key is not permitted here — use `selected_namespaces` instead.'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: 'The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.',
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: [
+        'user',
+        'selected_namespaces',
+        '_event_name',
+        '_parent_event_names'
+    ],
+    title: 'RAGStartEvent',
+    description: 'Namespace-aware start event for the RAG agent.\n\n`RAGStartEvent` is intended for non-chat publishers: custom domain front-ends that run their own namespace\nselection UI, or other agents delegating to RAG via `AgentInTheLoop`.'
 } as const;
 
 export const RadioButtonSchema = {
@@ -21585,6 +21788,21 @@ export const VectorStoreInputSchema = {
             title: 'Namespaceplaceholder',
             description: 'Placeholder for namespace select'
         },
+        allowedFilterFieldsPlaceholder: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Allowedfilterfieldsplaceholder',
+            description: 'Placeholder for the allowed metadata filter fields chips input.'
+        },
         filter: {
             type: 'boolean',
             title: 'Filter',
@@ -21604,7 +21822,7 @@ export const VectorStoreInputSchema = {
         'validation'
     ],
     title: 'VectorStoreInput',
-    description: '    A FormKit element for selecting a vector store collection and namespaces.\n\n    This element renders as a cascading selection:\n    1. Database dropdown (loads from /api/v1/knowledge/databases)\n    2. Namespace multi-select (populated based on selected database)\n\n    The output is a structured object containing both the collection name and\n    the selected namespaces, matching the MilvusVectorStoreConfig fields:\n    {"collection_name": str, "index_namespaces": list[str]}\n\n    ### Form Duality\n    When used with MilvusVectorStoreConfig, the form submission is validated\n    directly into MilvusVectorStoreConfig (connection settings are read from\n    MilvusSettings at runtime).\n\n    ### Example Usage\n    ```python\n    from swiss_ai_hub.core.form.elements.vector_store_input import VectorStoreInput\n    from swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_vector_store_config import MilvusVectorStoreConfig\n\n    class MyRetrieverConfig(Form):\n        vector_store: Annotated[\n            MilvusVectorStoreConfig | VectorStoreInput,\n            Field(description="The vector store configuration"),\n        ]\nreranking_model\n    # Form mode - for rendering:\n    config = MyRetrieverConfig(\n        vector_store=VectorStoreInput(\n            label=LocaleString(en="Vector Store", de="Vektorspeicher"),\n        ),\n    )\n\n    # Data mode - from submission (Pydantic validates into MilvusVectorStoreConfig):\n    config = MyRetrieverConfig(\n        vector_store=MilvusVectorStoreConfig(\n            collection_name="my-database",\n            index_namespaces=["namespace1", "namespace2"],\n        ),\n    )\n    ```'
+    description: 'A FormKit element for selecting a vector store collection, namespaces, and\nthe metadata keys publishers are allowed to filter on at query time.\n\nThis element renders as three controls:\n1. Database dropdown (loads from /api/v1/knowledge/databases)\n2. Namespace multi-select (populated based on selected database)\n3. Free-form chips input for `allowed_metadata_filter_fields`\n\nThe output matches the three configurable fields of `MilvusVectorStoreConfig`:\n{\n    "collection_name": str,\n    "index_namespaces": list[str],\n    "allowed_metadata_filter_fields": list[str],\n}\n\n### Form Duality\nWhen used with MilvusVectorStoreConfig, the form submission is validated\ndirectly into MilvusVectorStoreConfig (connection settings are read from\nMilvusSettings at runtime).\n\n### Example Usage\n```python\nfrom swiss_ai_hub.core.form.elements.vector_store_input import VectorStoreInput\nfrom swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_vector_store_config import MilvusVectorStoreConfig\n\nclass MyRetrieverConfig(Form):\n    vector_store: Annotated[\n        MilvusVectorStoreConfig | VectorStoreInput,\n        Field(description="The vector store configuration"),\n    ]\n\n# Form mode - for rendering:\nconfig = MyRetrieverConfig(\n    vector_store=VectorStoreInput(\n        label=LocaleString(en="Vector Store", de="Vektorspeicher"),\n    ),\n)\n\n# Data mode - from submission (Pydantic validates into MilvusVectorStoreConfig):\nconfig = MyRetrieverConfig(\n    vector_store=MilvusVectorStoreConfig(\n        collection_name="my-database",\n        index_namespaces=["namespace1", "namespace2"],\n        allowed_metadata_filter_fields=["department", "year"],\n    ),\n)\n```'
 } as const;
 
 export const VideoBlockSchema = {
@@ -24294,6 +24512,9 @@ export const ContextualizedAgentEventWritableSchema = {
                 },
                 {
                     $ref: '#/components/schemas/UserMessageEventWritable'
+                },
+                {
+                    $ref: '#/components/schemas/RAGStartEventWritable'
                 },
                 {
                     $ref: '#/components/schemas/ExceptionEventWritable'
@@ -29746,6 +29967,107 @@ export const ProcessWalkthroughDTOWritableSchema = {
     description: 'DTO representing a process walkthrough with detailed step information.'
 } as const;
 
+export const RAGStartEventWritableSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display name for the event'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display description for the event'
+        },
+        locale: {
+            type: 'string',
+            title: 'Locale',
+            description: 'The user\'s locale, guiding language or regional adaptations.',
+            default: 'de'
+        },
+        user: {
+            $ref: '#/components/schemas/UserIdentity',
+            description: 'User on whose behalf the RAG run is executed.'
+        },
+        messages: {
+            items: {
+                $ref: '#/components/schemas/ChatMessage'
+            },
+            type: 'array',
+            title: 'Messages',
+            description: 'Chat history providing the context and the user query for retrieval.',
+            default: []
+        },
+        files: {
+            anyOf: [
+                {
+                    items: {
+                        $ref: '#/components/schemas/UserUploadedFile'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Files',
+            description: 'Files uploaded alongside the query for additional context.'
+        },
+        selected_namespaces: {
+            items: {
+                $ref: '#/components/schemas/BucketNamespacePair'
+            },
+            type: 'array',
+            title: 'Selected Namespaces',
+            description: 'List of bucket-namespace pairs restricting RAG retrieval.'
+        },
+        additional_filters: {
+            anyOf: [
+                {
+                    items: {
+                        $ref: '#/components/schemas/BucketMetadataFilters'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Additional Filters',
+            description: 'Per-bucket additional metadata filters (AND-combined with namespace filters). Filter keys must be listed in the target retriever\'s `MilvusVectorStoreConfig.allowed_metadata_filter_fields`. The reserved `namespace` key is not permitted here — use `selected_namespaces` instead.'
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: [
+        'user',
+        'selected_namespaces'
+    ],
+    title: 'RAGStartEvent',
+    description: 'Namespace-aware start event for the RAG agent.\n\n`RAGStartEvent` is intended for non-chat publishers: custom domain front-ends that run their own namespace\nselection UI, or other agents delegating to RAG via `AgentInTheLoop`.'
+} as const;
+
 export const RadioButtonWritableSchema = {
     properties: {
         is_formkit_element: {
@@ -33319,6 +33641,21 @@ export const VectorStoreInputWritableSchema = {
             title: 'Namespaceplaceholder',
             description: 'Placeholder for namespace select'
         },
+        allowedFilterFieldsPlaceholder: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Allowedfilterfieldsplaceholder',
+            description: 'Placeholder for the allowed metadata filter fields chips input.'
+        },
         filter: {
             type: 'boolean',
             title: 'Filter',
@@ -33332,5 +33669,5 @@ export const VectorStoreInputWritableSchema = {
         'label'
     ],
     title: 'VectorStoreInput',
-    description: '    A FormKit element for selecting a vector store collection and namespaces.\n\n    This element renders as a cascading selection:\n    1. Database dropdown (loads from /api/v1/knowledge/databases)\n    2. Namespace multi-select (populated based on selected database)\n\n    The output is a structured object containing both the collection name and\n    the selected namespaces, matching the MilvusVectorStoreConfig fields:\n    {"collection_name": str, "index_namespaces": list[str]}\n\n    ### Form Duality\n    When used with MilvusVectorStoreConfig, the form submission is validated\n    directly into MilvusVectorStoreConfig (connection settings are read from\n    MilvusSettings at runtime).\n\n    ### Example Usage\n    ```python\n    from swiss_ai_hub.core.form.elements.vector_store_input import VectorStoreInput\n    from swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_vector_store_config import MilvusVectorStoreConfig\n\n    class MyRetrieverConfig(Form):\n        vector_store: Annotated[\n            MilvusVectorStoreConfig | VectorStoreInput,\n            Field(description="The vector store configuration"),\n        ]\nreranking_model\n    # Form mode - for rendering:\n    config = MyRetrieverConfig(\n        vector_store=VectorStoreInput(\n            label=LocaleString(en="Vector Store", de="Vektorspeicher"),\n        ),\n    )\n\n    # Data mode - from submission (Pydantic validates into MilvusVectorStoreConfig):\n    config = MyRetrieverConfig(\n        vector_store=MilvusVectorStoreConfig(\n            collection_name="my-database",\n            index_namespaces=["namespace1", "namespace2"],\n        ),\n    )\n    ```'
+    description: 'A FormKit element for selecting a vector store collection, namespaces, and\nthe metadata keys publishers are allowed to filter on at query time.\n\nThis element renders as three controls:\n1. Database dropdown (loads from /api/v1/knowledge/databases)\n2. Namespace multi-select (populated based on selected database)\n3. Free-form chips input for `allowed_metadata_filter_fields`\n\nThe output matches the three configurable fields of `MilvusVectorStoreConfig`:\n{\n    "collection_name": str,\n    "index_namespaces": list[str],\n    "allowed_metadata_filter_fields": list[str],\n}\n\n### Form Duality\nWhen used with MilvusVectorStoreConfig, the form submission is validated\ndirectly into MilvusVectorStoreConfig (connection settings are read from\nMilvusSettings at runtime).\n\n### Example Usage\n```python\nfrom swiss_ai_hub.core.form.elements.vector_store_input import VectorStoreInput\nfrom swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_vector_store_config import MilvusVectorStoreConfig\n\nclass MyRetrieverConfig(Form):\n    vector_store: Annotated[\n        MilvusVectorStoreConfig | VectorStoreInput,\n        Field(description="The vector store configuration"),\n    ]\n\n# Form mode - for rendering:\nconfig = MyRetrieverConfig(\n    vector_store=VectorStoreInput(\n        label=LocaleString(en="Vector Store", de="Vektorspeicher"),\n    ),\n)\n\n# Data mode - from submission (Pydantic validates into MilvusVectorStoreConfig):\nconfig = MyRetrieverConfig(\n    vector_store=MilvusVectorStoreConfig(\n        collection_name="my-database",\n        index_namespaces=["namespace1", "namespace2"],\n        allowed_metadata_filter_fields=["department", "year"],\n    ),\n)\n```'
 } as const;
