@@ -17,16 +17,26 @@ from swiss_ai_hub.core.events.agent.control.stop.stop_event import StopEvent
 from swiss_ai_hub.core.events.agent.display.chunk_event import ChunkEvent
 from swiss_ai_hub.core.events.agent.display.display_event import DisplayEvent
 from swiss_ai_hub.core.events.agent.display.thought_event import ThoughtEvent
+from swiss_ai_hub.core.events.agent.hitl.request.human_in_the_loop_chat_request_event import (
+    HumanInTheLoopChatRequestEvent,
+)
+from swiss_ai_hub.core.events.agent.hitl.request.human_in_the_loop_input_request_event import (
+    HumanInTheLoopInputRequestEvent,
+)
 from swiss_ai_hub.core.events.agent.hitl.request.human_in_the_loop_request_event import (
     HumanInTheLoopRequestEvent,
+)
+from swiss_ai_hub.core.events.agent.hitl.response.human_in_the_loop_chat_response_event import (
+    HumanInTheLoopChatResponseEvent,
+)
+from swiss_ai_hub.core.events.agent.hitl.response.human_in_the_loop_input_response_event import (
+    HumanInTheLoopInputResponseEvent,
 )
 from swiss_ai_hub.core.events.agent.hitl.response.human_in_the_loop_response_event import (
     HumanInTheLoopResponseEvent,
 )
 from swiss_ai_hub.core.events.agent.user.user_message_event import UserMessageEvent
 from swiss_ai_hub.core.events.agent.user.user_uploaded_file import UserUploadedFile
-from swiss_ai_hub.core.events.base_event import BaseEvent
-from swiss_ai_hub.core.events.utils import get_parent_classes_until_base
 from swiss_ai_hub.core.generative_ai.resources.costs.llm_costs import LLMCosts
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.trace_fn import trace_fn
@@ -122,13 +132,24 @@ class ChatService:
         if len(hitl_requests) != len(hitl_responses):
             open_hitl_request = HumanInTheLoopRequestEvent.deserialize_event(hitl_requests[-1].event_data)
             topic = open_hitl_request.topic
-            parent_classes = [topic.event_name, HumanInTheLoopResponseEvent.event_name_from_class()] + list(
-                get_parent_classes_until_base(HumanInTheLoopResponseEvent, BaseEvent)
-            )
+
+            if isinstance(open_hitl_request, HumanInTheLoopInputRequestEvent):
+                response_class = HumanInTheLoopInputResponseEvent
+            elif isinstance(open_hitl_request, HumanInTheLoopChatRequestEvent):
+                response_class = HumanInTheLoopChatResponseEvent
+            else:
+                raise ValueError(
+                    f"Chat interaction cannot respond to HITL request of type "
+                    f"{type(open_hitl_request).__name__}. Only input and chat HITL requests are "
+                    f"answerable via the chat flow; confirmation requests must use the dedicated "
+                    f"agent endpoints."
+                )
+
+            parent_event_names = [topic.event_name, *response_class.parent_event_names_from_class()]
             event = HumanInTheLoopResponseEvent.deserialize_event(
                 {
                     "_event_name": topic.event_name,
-                    "_parent_event_names": parent_classes,
+                    "_parent_event_names": parent_event_names,
                     "response": messages[-1].content,
                     "request_event": open_hitl_request.model_dump(),
                 }

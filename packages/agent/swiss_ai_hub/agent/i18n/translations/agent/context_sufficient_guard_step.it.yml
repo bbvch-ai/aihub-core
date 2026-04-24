@@ -1,0 +1,16 @@
+---
+config:
+  check_context_sufficiency:
+    label: Verifica sufficienza del contesto
+    help: Esegue un LLM guard prima della generazione per decidere se il contesto
+      recuperato è sufficiente per rispondere alla domanda dell'utente.
+  max_hops:
+    label: Salti di recupero max
+    help: Numero massimo di iterazioni di recupero quando il guard rifiuta il contesto
+      attuale. Valori più alti possono migliorare le risposte ma aumentano la latenza.
+  context_insufficient_prompt:
+    label: Prompt contesto insufficiente
+    help: Messaggio mostrato quando l'agente non trova informazioni sufficienti. Guida
+      come l'agente comunica le limitazioni.
+    default: "Informa l'utente che non puoi rispondere alla domanda per il seguente\
+      \ motivo:"

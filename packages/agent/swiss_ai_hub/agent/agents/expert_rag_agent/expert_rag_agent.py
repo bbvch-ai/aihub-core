@@ -72,6 +72,9 @@ from swiss_ai_hub.agent.rag.step_functions import (
     do_respond_with_llm,
     do_retrieve,
 )
+from swiss_ai_hub.agent.steps.guards.context_sufficient_guard_step.context_sufficient_guard_step_config import (
+    ContextSufficientGuardStepConfig,
+)
 from swiss_ai_hub.agent.workflow.decorators.precondition import precondition
 from swiss_ai_hub.agent.workflow.decorators.step import step
 
@@ -388,21 +391,24 @@ class ExpertRAGAgent(Agent):
     async def context_sufficient_guard_step(
         self,
         agent_config: ExpertRAGAgentConfig,
+        guard_config: ContextSufficientGuardStepConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
         event: InOrderNodeCombinerEvent,
         user_query_event: StandaloneQuestionCondenserEvent,
+        chat_history_event: LimitChatHistoryEvent,
         run_context: RunContext,
     ) -> ContextSufficientAcceptEvent | ContextInsufficientRejectEvent | ContextInsufficientWithQueryEvent:
         return await do_context_sufficient_guard(
             user_query_event.condensed_chat_message.content,
             event.context_message.content,
-            agent_config.check_context_sufficiency,
-            agent_config.max_hops,
+            guard_config.check_context_sufficiency,
+            guard_config.max_hops,
             run_context,
             agent_config.llm,
             displayer,
             t,
+            chat_history=chat_history_event.limited_history,
         )
 
     @step(
@@ -583,6 +589,7 @@ class ExpertRAGAgent(Agent):
         event: LimitChatHistoryWithContextEvent | FewShotRejectEvent | ExpertRejectEvent,
         limited_history_without_context: LimitChatHistoryEvent,
         agent_config: ExpertRAGAgentConfig,
+        guard_config: ContextSufficientGuardStepConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
     ) -> LLMEvent:
@@ -591,7 +598,7 @@ class ExpertRAGAgent(Agent):
         return await do_respond_with_llm(
             event,
             limited_history_without_context.limited_history,
-            agent_config.context_insufficient_prompt,
+            guard_config.context_insufficient_prompt,
             agent_config.system_prompt,
             agent_config.llm,
             displayer,

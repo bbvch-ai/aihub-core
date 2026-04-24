@@ -7,7 +7,7 @@ import asyncio
 
 from swiss_ai_hub.core.infrastructure import AIHubSettings, enable_logging
 
-from app.llm_wrapping_agent.templates import ALL_TEMPLATES
+from app.llm_wrapping_agent.templates import get_all_templates
 from swiss_ai_hub.agent.agents.llm_wrapping_agent import LLMWrappingAgent, LLMWrappingAgentConfig
 from swiss_ai_hub.agent.runners import AgentRunner
 
@@ -18,7 +18,7 @@ async def main():
     runner = AgentRunner(
         agent_type=LLMWrappingAgent,
         agent_config=LLMWrappingAgentConfig.as_form(),
-        templates=ALL_TEMPLATES,
+        templates=get_all_templates(),
     )
 
     await runner.run_forever()

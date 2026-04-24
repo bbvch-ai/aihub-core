@@ -7,6 +7,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.generative_ai.chat_history.extend_chat_history_with_user_memory import (
         extend_chat_history_with_user_memory,
     )
+    from swiss_ai_hub.core.generative_ai.chat_history.format_chat_history import format_chat_history
     from swiss_ai_hub.core.generative_ai.chat_history.format_expert_conversation import format_expert_conversation
     from swiss_ai_hub.core.generative_ai.chat_history.limit_chat_history import limit_chat_history
     from swiss_ai_hub.core.generative_ai.chat_history.limit_chat_history_with_context import (
@@ -112,6 +113,7 @@ __all__ = [
     "extend_chat_history_with_user_memory",
     "few_shot_guard",
     "narrow_retrievers",
+    "format_chat_history",
     "format_expert_conversation",
     "limit_chat_history",
     "limit_chat_history_with_context",
@@ -167,6 +169,7 @@ _LAZY_IMPORTS = {
     "extend_chat_history_with_user_memory": "swiss_ai_hub.core.generative_ai.chat_history.extend_chat_history_with_user_memory",
     "few_shot_guard": "swiss_ai_hub.core.generative_ai.guards.few_shot_guard",
     "narrow_retrievers": "swiss_ai_hub.core.generative_ai.utils.narrow_retrievers",
+    "format_chat_history": "swiss_ai_hub.core.generative_ai.chat_history.format_chat_history",
     "format_expert_conversation": "swiss_ai_hub.core.generative_ai.chat_history.format_expert_conversation",
     "limit_chat_history": "swiss_ai_hub.core.generative_ai.chat_history.limit_chat_history",
     "limit_chat_history_with_context": "swiss_ai_hub.core.generative_ai.chat_history.limit_chat_history_with_context",
