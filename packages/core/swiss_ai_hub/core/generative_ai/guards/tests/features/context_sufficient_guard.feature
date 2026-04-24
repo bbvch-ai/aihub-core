@@ -37,3 +37,51 @@ Feature: Context Sufficient Guard Logic
     Then the guard should reject the request
     And the reasoning should be "Insufficient economic data in context"
     And no new query should be generated
+
+  Scenario: Guard forwards chat history to the LLM prompt when provided
+    Given a locale handler with locale "en"
+    And a user query "What is our vacation policy?"
+    And the following context "Employee handbook chapter 3."
+    And no previous queries
+    And more hops are available
+    And the following chat history:
+      | role   | content                                |
+      | system | [Org memory] Vacation policy: 25 days. |
+      | user   | What is our vacation policy?           |
+    And the LLM returns success=True with reasoning="Organization memory already answers this"
+    When the context sufficient guard is executed with chat history
+    Then the guard should accept the request
+    And the LLM prompt should include the chat history
+
+  Scenario: Guard defaults to empty chat history when none provided
+    Given a locale handler with locale "en"
+    And a user query "What is the capital of France?"
+    And the following context "France is a country in Europe. Paris is the capital."
+    And no previous queries
+    And more hops are available
+    And the LLM returns success=True with reasoning="Context states Paris is the capital"
+    When the context sufficient guard is executed
+    Then the guard should accept the request
+    And the LLM prompt should render chat history as an empty string
+
+  Scenario Outline: Guard prompt renders chat history block in each locale
+    Given a locale handler with locale "<locale>"
+    And a user query "What is our vacation policy?"
+    And the following context "Employee handbook chapter 3."
+    And no previous queries
+    And more hops are available
+    And the following chat history:
+      | role   | content                                |
+      | system | [Org memory] Vacation policy: 25 days. |
+      | user   | What is our vacation policy?           |
+    And the LLM returns success=True with reasoning="Memory contains the answer"
+    When the context sufficient guard is executed with chat history
+    Then the guard should accept the request
+    And the LLM prompt should include the chat history
+
+    Examples:
+      | locale |
+      | en     |
+      | de     |
+      | fr     |
+      | it     |

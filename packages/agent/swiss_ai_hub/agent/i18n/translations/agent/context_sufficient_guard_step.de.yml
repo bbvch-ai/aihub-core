@@ -1,0 +1,16 @@
+---
+config:
+  check_context_sufficiency:
+    label: Kontext-Suffizienz prüfen
+    help: Führe vor der Antwortgenerierung eine Guard-LLM aus, um zu entscheiden,
+      ob der abgerufene Kontext zur Beantwortung der Benutzerfrage ausreicht.
+  max_hops:
+    label: Maximale Abruf-Sprünge
+    help: Maximale Anzahl von Abruf-Iterationen, wenn der Guard den aktuellen Kontext
+      ablehnt. Höhere Werte können Antworten verbessern, erhöhen aber die Latenz.
+  context_insufficient_prompt:
+    label: Unzureichender-Kontext-Prompt
+    help: Nachricht, die angezeigt wird, wenn der Agent nicht genügend Informationen
+      findet. Leitet, wie der Agent Einschränkungen kommuniziert.
+    default: 'Informiere den Benutzer, dass du die Frage nicht beantworten kannst,
+      aufgrund des folgenden Grundes:'

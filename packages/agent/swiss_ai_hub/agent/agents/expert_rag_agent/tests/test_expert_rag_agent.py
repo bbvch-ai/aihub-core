@@ -45,6 +45,9 @@ from swiss_ai_hub.agent.agents.rag_agent.configs.expert_escalation_config import
 from swiss_ai_hub.agent.agents.rag_agent.configs.reranking_config import RerankingConfig
 from swiss_ai_hub.agent.agents.rag_agent.events.user_requests_expert_event import UserRequestsExpertEvent
 from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner
+from swiss_ai_hub.agent.steps.guards.context_sufficient_guard_step.context_sufficient_guard_step_config import (
+    ContextSufficientGuardStepConfig,
+)
 
 enable_logging()
 
@@ -83,8 +86,8 @@ def test_collection(event_loop):
 
     embedding_config = EmbeddingModelConfig(model_name="embedding/bge-m3")
     vector_store: MilvusVectorStoreConfig = MilvusVectorStoreConfig(
-        uri="http://localhost",
         collection_name="development",
+        index_namespaces=["ai_knowledge"],
         dimensions=1024,
     )
     doc_store = create_mongo_document_store(document_store_name="development")
@@ -121,21 +124,19 @@ def expert_rag_agent_config(test_collection):
     reranking_config = RerankingModelConfig(model_name="reranker/bge")
     embedding_config = EmbeddingModelConfig(model_name="embedding/bge-m3")
     vector_store: MilvusVectorStoreConfig = MilvusVectorStoreConfig(
-        uri="http://localhost",
         collection_name="development",
+        index_namespaces=["ai_knowledge"],
         dimensions=1024,
     )
 
     return ExpertRAGAgentConfig(
         agent_id="expert_rag_agent",
-        agent_class=ExpertRAGAgent.__name__,
         name=LocaleString(en="Expert RAG Agent"),
         description=LocaleString(en="Expert RAG agent with expert escalation for insufficient context"),
         llm=llm_config,
         retrievers=[
             KnowledgeRetrieverConfig(
                 embed_model=embedding_config,
-                index_namespaces=["ai_knowledge"],
                 retrieve_k=5,
                 query_mode=VectorStoreQueryMode.HYBRID,
                 node_types=["content"],
@@ -147,8 +148,7 @@ def expert_rag_agent_config(test_collection):
             ),
         ],
         number_of_input_tokens=8192,
-        check_context_sufficiency=True,
-        max_hops=1,
+        context_sufficient_guard=ContextSufficientGuardStepConfig(check_context_sufficiency=True, max_hops=1),
         expert_escalation=ExpertEscalationConfig(
             agent=AgentRef(
                 agent_class="ExpertAskingAgent",

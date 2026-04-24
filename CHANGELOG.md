@@ -5,6 +5,43 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.279.1] - 2026-04-24 - Core Agent Refinements and New Shared Knowledge Capabilities
+
+### Added
+
+- 🧠 **New Shared Knowledge Agents:** Introduced `Shared Knowledge Selector` and `Shared Knowledge RAG` agent templates,
+  enabling agents to intelligently route and retrieve information from designated shared knowledge buckets.
+- 🛡️ **Dedicated Context Sufficiency Guard Configuration:** A new `ContextSufficientGuardStepConfig` allows for granular
+  control over how agents verify if retrieved context is adequate to answer a user's query, improving response accuracy.
+- 💬 **Chat History Formatting Utility:** Added `format_chat_history` to consistently present conversation history for
+  LLM prompts, enhancing the context provided to AI models.
+
+### Changed
+
+- ⚙️ **Refined RAG Agent Configuration:** The RAG and Expert RAG agent configurations now embed context sufficiency
+  guard settings within the new `ContextSufficientGuardStepConfig`, streamlining agent setup.
+- 🔍 **Enhanced Context Guard Logic:** The core context sufficiency guard now utilizes the full chat history, including
+  organizational memory, to make more informed decisions about whether sufficient information is available.
+- 📝 **Updated Context Guard Prompts:** Adjusted the internal prompts for the context sufficiency guard across all
+  supported languages to incorporate chat history for better decision-making.
+
+### Fixed
+
+- 🐛 **Improved UI Form Hydration:** Resolved an issue where agent and process creation forms failed to hydrate correctly
+  when nested optional configurations were explicitly `null`, enhancing the reliability of agent management in the UI.
+- 📦 **Robust Human-in-the-Loop Dispatch:** Enhanced the chat service's ability to correctly identify and dispatch
+  appropriate Human-in-the-Loop (HITL) response events based on the type of HITL request, preventing potential
+  interaction errors.
+
+### Refactor
+
+- 🔄 **Standardized Agent Template Loading:** Refactored how templates for Few-Shot and LLM-Wrapping agents are loaded,
+  moving from static `TEMPLATE` variables to dynamic `build()` functions for greater flexibility and maintainability.
+- 🧹 **Centralized Context Sufficiency Settings:** Consolidated all configurations related to context sufficiency checks
+  into the new `ContextSufficientGuardStepConfig`, simplifying agent codebases and improving modularity.
+
+______________________________________________________________________
+
 ## [v0.279.0] - 2026-04-24 - Advanced RAG Filtering and Configuration Management
 
 ### Added
