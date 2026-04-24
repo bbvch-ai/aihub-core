@@ -30,7 +30,6 @@ from swiss_ai_hub.core.generative_ai import (
     extend_chat_history_with_user_memory,
     format_expert_conversation,
     narrow_retrievers,
-    render_organization_memory_content,
 )
 from swiss_ai_hub.core.i18n import LocaleHandler
 from swiss_ai_hub.core.topics import AgentInstanceTopic
