@@ -10,6 +10,7 @@ from dagster import (
     run_failure_sensor,
 )
 from dagster_apprise import AppriseConfig, AppriseResource
+from swiss_ai_hub.core.infrastructure import NotificationSettings
 
 logger = logging.getLogger(__name__)
 
@@ -61,6 +62,26 @@ def run_failure_notification_sensor(
             )
 
     return _sensor
+
+
+def run_failure_notification_sensors_from_settings() -> list[SensorDefinition]:
+    """Env-driven variant: returns a single-element list with the configured sensor, or ``[]`` when disabled.
+
+    Reads ``NotificationSettings`` from the environment and, if ``URLS`` is non-empty, constructs a sensor via
+    :func:`run_failure_notification_sensor`. Intended to be spread into a ``Definitions(sensors=[...])`` list so that
+    builders can opt in to env-driven notifications without importing settings themselves.
+    """
+    settings = NotificationSettings()
+    if not settings.enabled:
+        return []
+    return [
+        run_failure_notification_sensor(
+            urls=settings.URLS,
+            dagster_ui_base_url=settings.DAGSTER_UI_BASE_URL,
+            title_prefix=settings.TITLE_PREFIX,
+            minimum_interval_seconds=settings.MIN_INTERVAL_SECONDS,
+        ),
+    ]
 
 
 def _format_failure_message(context: RunFailureSensorContext) -> str:

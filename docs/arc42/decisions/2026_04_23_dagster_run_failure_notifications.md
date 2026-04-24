@@ -65,10 +65,23 @@ Add a thin library wrapper around `dagster_apprise.AppriseResource.notify_run_st
 - **Consumer escape hatch**: consumers that compose `Definitions` manually (e.g.,
   `playground/quick_start/my_document_pipeline.py`) can import `run_failure_notification_sensor` directly and pass
   `monitored_jobs=[my_job]` or custom URLs when they want more than the default env-driven behaviour.
-- **Env propagation**: `.env.dev`/`.env.prod` and `infra/deployment/templates/docker-compose.yml.j2` carry
-  `NOTIFICATION_URLS`, `NOTIFICATION_DAGSTER_UI_BASE_URL`, `NOTIFICATION_TITLE_PREFIX`,
-  `NOTIFICATION_MIN_INTERVAL_SECONDS` into the `default_rag_pipeline` and `shared_rag_pipeline` code-location
-  containers. Empty defaults mean "disabled"; no compose regeneration needed to toggle.
+- **Env propagation — three-way split to minimize operator-facing env vars**. The four `NOTIFICATION_*` env vars the
+  `NotificationSettings` Pydantic class consumes are sourced from three places depending on what kind of value they
+  carry:
+  - **`.env.dev`/`.env.prod` (operator-supplied)** — only `NOTIFICATION_URLS`, because it carries secrets (Slack tokens,
+    SMTP credentials). `.env.dev` additionally keeps `NOTIFICATION_DAGSTER_UI_BASE_URL='http://localhost:3000'` for
+    developers running pipelines locally outside Docker via `make playground` (the Python process reads env directly
+    there, not through the compose template).
+  - **`infra/deployment/templates/docker-compose.yml.j2` (stage-derived)** — `NOTIFICATION_DAGSTER_UI_BASE_URL` is
+    computed by a Jinja `{% set %}` at the top of the template:
+    `"http://localhost:3000" if stage == 'dev' else "https://dagster.${DOMAIN}"`. The non-dev branch relies on the same
+    `${DOMAIN}`-based Traefik host used by the Dagster webserver itself, so the link always points where the operator
+    actually reaches Dagster.
+  - **`infra/deployment/compose-config.yml` (platform defaults)** — `NOTIFICATION_TITLE_PREFIX` and
+    `NOTIFICATION_MIN_INTERVAL_SECONDS` live under a `notifications:` block and are baked into the generated compose
+    files at render time. Changing them means editing one value and running `make generate-compose`, not updating every
+    operator's `.env`. Empty `NOTIFICATION_URLS` means "disabled"; no compose regeneration needed to toggle the feature
+    on/off.
 
 ## Consequences
 

@@ -124,3 +124,11 @@ image_tags:
     local: backup:latest
     nightly: backup:nightly
     latest: backup:latest
+# -------------------------------------------------------------------
+# Pipeline Run-Failure Notification Defaults
+# Operator-supplied secrets (NOTIFICATION_URLS) remain in .env files;
+# these are platform defaults baked into the generated compose.
+# -------------------------------------------------------------------
+notifications:
+  title_prefix: Swiss AI Hub Pipeline
+  min_interval_seconds: 30
