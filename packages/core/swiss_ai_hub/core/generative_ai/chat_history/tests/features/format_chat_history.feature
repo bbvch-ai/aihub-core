@@ -30,9 +30,8 @@ Feature: Format Chat History
     When the chat history is formatted
     Then the result should equal "user:\nWhat time?\nuser:\nHello?"
 
-  Scenario: Multi-line content keeps structure but drops blank lines and indentation
-    Given a chat history with a multi-line system message containing blank lines and indentation
+  Scenario: Multi-line content is preserved verbatim under the role header
+    Given a chat history with a multi-line system message containing blank lines
     When the chat history is formatted
-    Then the result has no blank lines
-    And the result has no leading whitespace on any line
-    And every non-empty content line from the input appears in the output
+    Then every non-empty content line from the input appears in the output
+    And the content appears verbatim after the role header

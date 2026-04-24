@@ -31,7 +31,7 @@ def _(datatable) -> list[ChatMessage]:
 
 
 @given(
-    "a chat history with a multi-line system message containing blank lines and indentation",
+    "a chat history with a multi-line system message containing blank lines",
     target_fixture="chat_history",
 )
 def _() -> list[ChatMessage]:
@@ -48,20 +48,13 @@ def _(formatted: str, expected: str) -> None:
     assert formatted == expected.replace("\\n", "\n")
 
 
-@then("the result has no blank lines")
-def _(formatted: str) -> None:
-    assert "\n\n" not in formatted
-    assert not formatted.endswith("\n")
-
-
-@then("the result has no leading whitespace on any line")
-def _(formatted: str) -> None:
-    for line in formatted.splitlines():
-        assert line == line.lstrip(), f"Line has leading whitespace: {line!r}"
-
-
 @then("every non-empty content line from the input appears in the output")
 def _(formatted: str) -> None:
     expected_lines = [line.strip() for line in _MULTILINE_SYSTEM_CONTENT.splitlines() if line.strip()]
     for line in expected_lines:
         assert line in formatted, f"Missing expected line: {line!r}"
+
+
+@then("the content appears verbatim after the role header")
+def _(formatted: str) -> None:
+    assert formatted == f"system:\n{_MULTILINE_SYSTEM_CONTENT}"
