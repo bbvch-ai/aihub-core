@@ -589,6 +589,7 @@ class ExpertRAGAgent(Agent):
         event: LimitChatHistoryWithContextEvent | FewShotRejectEvent | ExpertRejectEvent,
         limited_history_without_context: LimitChatHistoryEvent,
         agent_config: ExpertRAGAgentConfig,
+        guard_config: ContextSufficientGuardStepConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
     ) -> LLMEvent:
@@ -597,7 +598,7 @@ class ExpertRAGAgent(Agent):
         return await do_respond_with_llm(
             event,
             limited_history_without_context.limited_history,
-            agent_config.context_insufficient_prompt,
+            guard_config.context_insufficient_prompt,
             agent_config.system_prompt,
             agent_config.llm,
             displayer,

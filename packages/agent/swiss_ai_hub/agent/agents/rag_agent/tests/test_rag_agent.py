@@ -48,6 +48,7 @@ from swiss_ai_hub.agent.agents.rag_agent.events.limit_chat_history_with_context_
 )
 from swiss_ai_hub.agent.agents.rag_agent.rag_agent import RAGAgent
 from swiss_ai_hub.agent.runners.agent_test_runner import AgentTestRunner
+from swiss_ai_hub.agent.steps.guards.context_sufficient_guard_step import ContextSufficientGuardStepConfig
 
 enable_logging()
 
@@ -107,14 +108,12 @@ def build_rag_agent_config(
     """
     return RAGAgentConfig(
         agent_id="rag_agent",
-        agent_class=RAGAgent.__name__,
         name=LocaleString(en="RAG Agent"),
         description=LocaleString(en="This is an agent that can be used to answer user questions using RAG"),
         llm=llm_config,
         retrievers=[
             KnowledgeRetrieverConfig(
                 embed_model=embedding_config,
-                index_namespaces=["ai_knowledge"],
                 retrieve_k=5,
                 query_mode=query_mode,
                 node_types=["content"],
@@ -126,7 +125,7 @@ def build_rag_agent_config(
             ),
         ],
         number_of_input_tokens=8192,
-        check_context_sufficiency=False,
+        context_sufficient_guard=ContextSufficientGuardStepConfig(check_context_sufficiency=False),
         reranking_config=RerankingConfig(enabled=False, reranking_model=reranking_config),
     )
 
@@ -145,14 +144,12 @@ def build_rag_agent_config_with_memory(
     """
     return RAGAgentConfig(
         agent_id="rag_agent_with_memory",
-        agent_class=RAGAgent.__name__,
         name=LocaleString(en="RAG Agent with Memory"),
         description=LocaleString(en="Agent with organization memory enabled for testing"),
         llm=llm_config,
         retrievers=[
             KnowledgeRetrieverConfig(
                 embed_model=embedding_config,
-                index_namespaces=["ai_knowledge"],
                 retrieve_k=5,
                 query_mode=query_mode,
                 node_types=["content"],
@@ -164,7 +161,7 @@ def build_rag_agent_config_with_memory(
             ),
         ],
         number_of_input_tokens=8192,
-        check_context_sufficiency=False,
+        context_sufficient_guard=ContextSufficientGuardStepConfig(check_context_sufficiency=False),
         reranking_config=RerankingConfig(enabled=False, reranking_model=reranking_config),
         enable_organization_memory=True,
         tenant_id=tenant_id,
@@ -210,8 +207,8 @@ def memory_enabled_agent_config(test_collection):
     reranking_config = RerankingModelConfig(model_name="reranker/bge")
     embedding_config = EmbeddingModelConfig(model_name="embedding/bge-m3")
     vector_store: MilvusVectorStoreConfig = MilvusVectorStoreConfig(
-        uri="http://localhost",
         collection_name="development",
+        index_namespaces=["ai_knowledge"],
         dimensions=1024,
     )
 
@@ -235,8 +232,8 @@ def self_hosted_agent_config(test_collection):
     reranking_config = RerankingModelConfig(model_name="reranker/bge")
     embedding_config = EmbeddingModelConfig(model_name="embedding/bge-m3")
     vector_store: MilvusVectorStoreConfig = MilvusVectorStoreConfig(
-        uri="http://localhost",
         collection_name="development",
+        index_namespaces=["ai_knowledge"],
         dimensions=1024,
     )
 
@@ -251,8 +248,8 @@ def self_hosted_agent_config(test_collection):
 
 @given(parsers.parse('check_context_sufficiency set to "{flag}" and max_hops to "{max_hops:d}"'))
 def _(flag: bool, max_hops: int, agent_runner: AgentTestRunner):
-    agent_runner.agent_config.check_context_sufficiency = flag
-    agent_runner.agent_config.max_hops = max_hops
+    agent_runner.agent_config.context_sufficient_guard.check_context_sufficiency = flag
+    agent_runner.agent_config.context_sufficient_guard.max_hops = max_hops
 
 
 @pytest.mark.usefixtures("self_hosted_agent_config")

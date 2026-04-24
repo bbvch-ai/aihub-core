@@ -90,6 +90,7 @@ async def _(llm, locale_handler, user_query, context, prev_queries, more_hops_av
         context=context,
         prev_queries=prev_queries,
         more_hops_available=more_hops_available,
+        chat_history=[],
     )
     return result
 

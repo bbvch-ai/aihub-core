@@ -14,3 +14,9 @@ config:
       del guard. La memoria (messaggi di sistema) è sempre inclusa. Valori più bassi
       accorciano il prompt del guard e migliorano l'affidabilità dell'output strutturato
       per modelli open-weight.
+  context_insufficient_prompt:
+    label: Prompt contesto insufficiente
+    help: Messaggio mostrato quando l'agente non trova informazioni sufficienti. Guida
+      come l'agente comunica le limitazioni.
+    default: "Informa l'utente che non puoi rispondere alla domanda per il seguente\
+      \ motivo:"

@@ -15,3 +15,9 @@ config:
       du garde. La mémoire (messages système) est toujours incluse. Des valeurs plus
       faibles raccourcissent le prompt du garde et améliorent la fiabilité de la sortie
       structurée pour les modèles open-weight.
+  context_insufficient_prompt:
+    label: Prompt contexte insuffisant
+    help: Message affiché lorsque l'agent ne trouve pas suffisamment d'informations.
+      Guide la façon dont l'agent communique ses limitations.
+    default: "Informez l'utilisateur que vous ne pouvez pas répondre à la question\
+      \ pour la raison suivante :"

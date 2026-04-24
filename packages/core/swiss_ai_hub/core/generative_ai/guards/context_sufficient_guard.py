@@ -52,7 +52,7 @@ async def context_sufficient_guard(
     context: str,
     prev_queries: list[str],
     more_hops_available: bool,
-    chat_history: list[ChatMessage] | None = None,
+    chat_history: list[ChatMessage],
 ) -> ContextGuardResult:
     sufficiency_prompt = PromptTemplate(t("lib.guards.context_sufficient_guard.prompt"))
     if prev_queries:
@@ -73,7 +73,7 @@ async def context_sufficient_guard(
         user_query=user_query,
         context=context,
         prev_queries=prev_queries,
-        chat_history=format_chat_history(chat_history) if chat_history else "",
+        chat_history=format_chat_history(chat_history),
     )
 
     guard_result = ContextGuardResult.model_validate(result)

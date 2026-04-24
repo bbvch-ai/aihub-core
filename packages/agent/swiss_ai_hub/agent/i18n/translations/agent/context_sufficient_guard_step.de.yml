@@ -14,3 +14,9 @@ config:
       weitergegeben werden. Speicher (System-Nachrichten) wird immer einbezogen. Kleinere
       Werte verkürzen den Guard-Prompt und verbessern die Zuverlässigkeit strukturierter
       Ausgabe bei Open-Weight-Modellen.
+  context_insufficient_prompt:
+    label: Unzureichender-Kontext-Prompt
+    help: Nachricht, die angezeigt wird, wenn der Agent nicht genügend Informationen
+      findet. Leitet, wie der Agent Einschränkungen kommuniziert.
+    default: 'Informiere den Benutzer, dass du die Frage nicht beantworten kannst,
+      aufgrund des folgenden Grundes:'

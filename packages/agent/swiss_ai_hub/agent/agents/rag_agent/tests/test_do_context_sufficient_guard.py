@@ -217,7 +217,7 @@ async def test_guard_trims_non_system_messages_to_configured_limit(
 
 
 @pytest.mark.asyncio
-async def test_guard_without_chat_history_still_renders_empty_placeholder(
+async def test_guard_with_empty_chat_history_still_renders_empty_placeholder(
     mock_llm, llm_config, displayer, run_context, locale_handler
 ):
     await do_context_sufficient_guard(
@@ -229,6 +229,7 @@ async def test_guard_without_chat_history_still_renders_empty_placeholder(
         llm_config=llm_config,
         displayer=displayer,
         t=locale_handler,
+        chat_history=[],
     )
 
     assert mock_llm.structured_predict.call_args.kwargs["chat_history"] == ""

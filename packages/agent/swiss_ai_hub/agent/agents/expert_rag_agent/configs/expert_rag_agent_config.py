@@ -35,12 +35,10 @@ class ExpertRAGAgentConfig(RAGAgentConfig):
             llm=base_form.llm,
             retrievers=base_form.retrievers,
             number_of_input_tokens=base_form.number_of_input_tokens,
-            check_context_sufficiency=base_form.check_context_sufficiency,
-            max_hops=base_form.max_hops,
+            context_sufficient_guard=base_form.context_sufficient_guard,
             reranking_config=base_form.reranking_config,
             few_shot_guard_examples=base_form.few_shot_guard_examples,
             system_prompt=base_form.system_prompt,
             context_prompt=base_form.context_prompt,
-            context_insufficient_prompt=base_form.context_insufficient_prompt,
             expert_escalation=ExpertEscalationConfig.as_form(),
         )

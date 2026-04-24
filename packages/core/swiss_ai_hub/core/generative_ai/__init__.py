@@ -13,6 +13,10 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.generative_ai.chat_history.limit_chat_history_with_context import (
         limit_chat_history_with_context,
     )
+    from swiss_ai_hub.core.generative_ai.chat_history.strip_leading_behavior_prompt import (
+        strip_leading_behavior_prompt,
+    )
+    from swiss_ai_hub.core.generative_ai.chat_history.trim_non_system_turns import trim_non_system_turns
     from swiss_ai_hub.core.generative_ai.document.accessor.s3_anonymous_file_access_service import (
         S3AnonymousFileAccessService,
     )
@@ -125,6 +129,8 @@ __all__ = [
     "retrieve_nodes",
     "retrieve_prev_next_nodes",
     "route_to_event_using_llm",
+    "strip_leading_behavior_prompt",
+    "trim_non_system_turns",
 ]
 
 _LAZY_IMPORTS = {
@@ -181,6 +187,8 @@ _LAZY_IMPORTS = {
     "retrieve_nodes": "swiss_ai_hub.core.generative_ai.retrieval.retrieve_nodes",
     "retrieve_prev_next_nodes": "swiss_ai_hub.core.generative_ai.retrieval.retrieve_prev_next_nodes",
     "route_to_event_using_llm": "swiss_ai_hub.core.generative_ai.routing.route_to_event_using_llm",
+    "strip_leading_behavior_prompt": "swiss_ai_hub.core.generative_ai.chat_history.strip_leading_behavior_prompt",
+    "trim_non_system_turns": "swiss_ai_hub.core.generative_ai.chat_history.trim_non_system_turns",
 }
 
 

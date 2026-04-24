@@ -2,8 +2,9 @@ from typing import Annotated, Self
 
 from pydantic import Field
 from swiss_ai_hub.core.agents import StepConfig
-from swiss_ai_hub.core.form import Checkbox, InputNumber
+from swiss_ai_hub.core.form import Checkbox, InputNumber, LocaleInput
 from swiss_ai_hub.core.form.constraints import Ge
+from swiss_ai_hub.core.i18n import LocaleString
 
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
 
@@ -40,6 +41,14 @@ class ContextSufficientGuardStepConfig(StepConfig):
         ),
         Ge(0),
     ] = 6
+    context_insufficient_prompt: Annotated[
+        LocaleString | LocaleInput | None,
+        Field(
+            description="Prompt fragment used when the guard rejects and the agent must communicate that it cannot answer.",
+        ),
+    ] = AgentLocaleString.from_i18n_path(
+        "agent.context_sufficient_guard_step.config.context_insufficient_prompt.default"
+    )
 
     @classmethod
     def as_form(cls) -> Self:
@@ -71,6 +80,16 @@ class ContextSufficientGuardStepConfig(StepConfig):
                 min=0,
                 max=50,
                 step=1,
+                condition_if="$get(check_context_sufficiency_enabled).value",
+            ),
+            context_insufficient_prompt=LocaleString.as_form(
+                label=AgentLocaleString.from_i18n_path(
+                    "agent.context_sufficient_guard_step.config.context_insufficient_prompt.label"
+                ),
+                help_text=AgentLocaleString.from_i18n_path(
+                    "agent.context_sufficient_guard_step.config.context_insufficient_prompt.help"
+                ),
+                input_type="textarea",
                 condition_if="$get(check_context_sufficiency_enabled).value",
             ),
         )

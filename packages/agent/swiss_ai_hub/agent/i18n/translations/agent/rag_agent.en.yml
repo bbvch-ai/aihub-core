@@ -39,12 +39,6 @@ config:
       {% endif %}\n{% endfor %}\n</context_documents>\n\nInstruction: Using the information\
       \ from the provided documents, generate a detailed and well-structured response\n\
       to the user's question.\n{% endchat %}\n"
-  context_insufficient_prompt:
-    label: Context insufficient prompt
-    help: Message shown when the agent cannot find sufficient information to answer.
-      Guides how the agent communicates limitations.
-    default: 'Inform the user that you can not answer the question due to the following
-      reason:'
   reranking_enabled:
     label: Enable reranking
     help: Use a reranking model to improve the relevance of retrieved documents before

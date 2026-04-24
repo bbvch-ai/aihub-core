@@ -28,6 +28,8 @@ from swiss_ai_hub.core.generative_ai import (
     merge_consecutive_messages,
     rerank_nodes,
     retrieve_from_all_sources,
+    strip_leading_behavior_prompt,
+    trim_non_system_turns,
 )
 from swiss_ai_hub.core.i18n import LocaleHandler, LocaleString
 
@@ -186,30 +188,6 @@ async def do_order_nodes_by_documents(
     return InOrderNodeCombinerEvent(context_message=context_message)
 
 
-def _strip_leading_behavior_prompt(chat_history: list[ChatMessage]) -> list[ChatMessage]:
-    """Drop the first message when it is a system message — in the RAG flow that slot
-    holds the agent behavior prompt, which is irrelevant to the sufficiency decision."""
-    if chat_history and chat_history[0].role == MessageRole.SYSTEM:
-        return chat_history[1:]
-    return chat_history
-
-
-def _trim_non_system_turns(chat_history: list[ChatMessage], max_non_system_messages: int) -> list[ChatMessage]:
-    """Keep all SYSTEM messages (memory) in place, keep only the last
-    ``max_non_system_messages`` user/assistant messages, and preserve original order."""
-    non_system_count = sum(1 for message in chat_history if message.role != MessageRole.SYSTEM)
-    if non_system_count <= max_non_system_messages:
-        return chat_history
-    drop_count = non_system_count - max_non_system_messages
-    trimmed: list[ChatMessage] = []
-    for message in chat_history:
-        if message.role != MessageRole.SYSTEM and drop_count > 0:
-            drop_count -= 1
-            continue
-        trimmed.append(message)
-    return trimmed
-
-
 async def do_context_sufficient_guard(
     user_query: str | None,
     context: str | None,
@@ -219,7 +197,7 @@ async def do_context_sufficient_guard(
     llm_config: LLMConfig,
     displayer: EventDisplayer,
     t: LocaleHandler,
-    chat_history: list[ChatMessage] | None = None,
+    chat_history: list[ChatMessage],
     max_non_system_messages_in_guard: int = 6,
 ) -> ContextSufficientAcceptEvent | ContextInsufficientRejectEvent | ContextInsufficientWithQueryEvent:
     """Execute context sufficient guard with hop management.
@@ -236,10 +214,8 @@ async def do_context_sufficient_guard(
     hop_count = await run_context.get("hop_count", 1)
     more_hops_available = hop_count < max_hops
 
-    guard_chat_history: list[ChatMessage] | None = None
-    if chat_history:
-        guard_chat_history = _strip_leading_behavior_prompt(chat_history)
-        guard_chat_history = _trim_non_system_turns(guard_chat_history, max_non_system_messages_in_guard)
+    guard_chat_history = strip_leading_behavior_prompt(chat_history)
+    guard_chat_history = trim_non_system_turns(guard_chat_history, max_non_system_messages_in_guard)
 
     async with llm_config.cost_reporting_llm(displayer) as llm:
         guard_result = await context_sufficient_guard(

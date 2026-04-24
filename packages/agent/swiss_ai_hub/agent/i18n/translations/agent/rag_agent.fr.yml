@@ -42,12 +42,6 @@ config:
       {% endif %}\n{% endfor %}\n</context_documents>\n\nInstruction : En utilisant\
       \ les informations des documents fournis, générez une réponse détaillée et bien\
       \ structurée\nà la question de l'utilisateur.\n{% endchat %}\n"
-  context_insufficient_prompt:
-    label: Prompt contexte insuffisant
-    help: Message affiché lorsque l'agent ne trouve pas suffisamment d'informations.
-      Guide la façon dont l'agent communique ses limitations.
-    default: "Informez l'utilisateur que vous ne pouvez pas répondre à la question\
-      \ pour la raison suivante :"
   reranking_enabled:
     label: Activer le reclassement
     help: Utilisez un modèle de reclassement pour améliorer la pertinence des documents

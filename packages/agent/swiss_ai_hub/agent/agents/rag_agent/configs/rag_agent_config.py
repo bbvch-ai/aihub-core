@@ -51,13 +51,6 @@ class RAGAgentConfig(AgentConfig):
             title="Context Sufficient Guard",
         ),
     ] = ContextSufficientGuardStepConfig()
-    context_insufficient_prompt: Annotated[
-        LocaleString | LocaleInput | None,
-        Field(
-            description="Prompt used when the retrieved context is insufficient to answer the user's question.",
-            title="Context Insufficient Prompt",
-        ),
-    ] = AgentLocaleString.from_i18n_path("agent.rag_agent.config.context_insufficient_prompt.default")
     retrievers: Annotated[
         list[KnowledgeRetrieverConfig],
         Field(description="List of knowledge retriever configurations.", title="Retrievers"),
@@ -129,12 +122,6 @@ class RAGAgentConfig(AgentConfig):
                 label=AgentLocaleString.from_i18n_path("agent.rag_agent.config.context_prompt.label"),
                 help_text=AgentLocaleString.from_i18n_path("agent.rag_agent.config.context_prompt.help"),
                 input_type="textarea",
-            ),
-            context_insufficient_prompt=LocaleString.as_form(
-                label=AgentLocaleString.from_i18n_path("agent.rag_agent.config.context_insufficient_prompt.label"),
-                help_text=AgentLocaleString.from_i18n_path("agent.rag_agent.config.context_insufficient_prompt.help"),
-                input_type="textarea",
-                condition_if="$get(check_context_sufficiency_enabled).value",
             ),
             enable_organization_memory=Checkbox(
                 label=AgentLocaleString.from_i18n_path("agent.rag_agent.config.enable_organization_memory.label"),
