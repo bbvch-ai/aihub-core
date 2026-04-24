@@ -5,6 +5,9 @@ from pydantic_settings import NoDecode
 
 from swiss_ai_hub.core.settings.environment_settings import EnvironmentSettings
 
+DEFAULT_TITLE_PREFIX = "Swiss AI Hub Pipeline"
+DEFAULT_MIN_INTERVAL_SECONDS = 30
+
 
 class NotificationSettings(EnvironmentSettings):
     """Settings for pipeline run-failure notifications dispatched via Apprise."""
@@ -33,14 +36,14 @@ class NotificationSettings(EnvironmentSettings):
     TITLE_PREFIX: Annotated[
         str,
         Field(
-            default="Swiss AI Hub Pipeline",
+            default=DEFAULT_TITLE_PREFIX,
             description="Prefix prepended to the notification title.",
         ),
     ]
     MIN_INTERVAL_SECONDS: Annotated[
         int,
         Field(
-            default=30,
+            default=DEFAULT_MIN_INTERVAL_SECONDS,
             description="Minimum interval between sensor ticks in seconds.",
         ),
     ]

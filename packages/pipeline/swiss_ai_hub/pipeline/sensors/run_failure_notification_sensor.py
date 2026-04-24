@@ -11,6 +11,10 @@ from dagster import (
 )
 from dagster_apprise import AppriseConfig, AppriseResource
 from swiss_ai_hub.core.infrastructure import NotificationSettings
+from swiss_ai_hub.core.infrastructure.notification.notification_settings import (
+    DEFAULT_MIN_INTERVAL_SECONDS,
+    DEFAULT_TITLE_PREFIX,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -18,16 +22,17 @@ type MonitoredJob = JobDefinition | GraphDefinition
 
 _MAX_ASSET_KEYS_IN_MESSAGE = 5
 _MAX_ERROR_PREVIEW_CHARS = 500
+_DEFAULT_SENSOR_NAME = "run_failure_notification_sensor"
 
 
 def run_failure_notification_sensor(
     *,
     urls: Sequence[str],
     dagster_ui_base_url: str | None = None,
-    title_prefix: str = "Swiss AI Hub Pipeline",
+    title_prefix: str = DEFAULT_TITLE_PREFIX,
     monitored_jobs: Sequence[MonitoredJob] | None = None,
-    minimum_interval_seconds: int = 30,
-    name: str = "run_failure_notification_sensor",
+    minimum_interval_seconds: int = DEFAULT_MIN_INTERVAL_SECONDS,
+    name: str = _DEFAULT_SENSOR_NAME,
 ) -> SensorDefinition:
     """Dispatches a notification via Apprise whenever a run in this code location fails.
 
@@ -68,12 +73,18 @@ def run_failure_notification_sensor(
     return _sensor
 
 
-def run_failure_notification_sensors_from_settings() -> list[SensorDefinition]:
+def run_failure_notification_sensors_from_settings(
+    *,
+    name: str = _DEFAULT_SENSOR_NAME,
+) -> list[SensorDefinition]:
     """Env-driven variant: returns a single-element list with the configured sensor, or ``[]`` when disabled.
 
     Reads ``NotificationSettings`` from the environment and, if ``URLS`` is non-empty, constructs a sensor via
     :func:`run_failure_notification_sensor`. Intended to be spread into a ``Definitions(sensors=[...])`` list so that
     builders can opt in to env-driven notifications without importing settings themselves.
+
+    Pass a unique ``name`` when composing more than one ``Definitions`` into the same code location to avoid a
+    duplicate-sensor-name collision.
     """
     settings = NotificationSettings()
     if not settings.enabled:
@@ -84,6 +95,7 @@ def run_failure_notification_sensors_from_settings() -> list[SensorDefinition]:
             dagster_ui_base_url=settings.DAGSTER_UI_BASE_URL,
             title_prefix=settings.TITLE_PREFIX,
             minimum_interval_seconds=settings.MIN_INTERVAL_SECONDS,
+            name=name,
         ),
     ]
 

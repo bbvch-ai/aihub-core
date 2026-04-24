@@ -29,8 +29,9 @@ Use `dagster-apprise` behind a thin library wrapper and wire it into every `Defi
   including the ones auto-materialize spawns.
 - **Factory**: `run_failure_notification_sensor()` in
   `packages/pipeline/swiss_ai_hub/pipeline/sensors/run_failure_notification_sensor.py` wraps
-  `AppriseResource.notify_run_status`. Message body adds asset keys (truncated to 5), error preview (truncated to 500
-  chars), and a deep link to `{base_url}/runs/{run_id}`.
+  `AppriseResource.notify_run_status`. Our message body contributes asset keys (truncated to 5) and error preview
+  (truncated to 500 chars); job name, run id, and the deep link (`{base_url}/runs/{run_id}`) are added by
+  `AppriseResource.notify_run_status` itself via `AppriseConfig.base_url`.
 - **Automatic wiring**: `run_failure_notification_sensors_from_settings()` lives in the same module and reads
   `NotificationSettings`; each `default_*_definitions()` builder spreads it into its `sensors=[...]`. Apps in
   `app/default_rag_pipeline/`, `app/shared_rag_pipeline/`, and `playground/` inherit the sensor unchanged.
@@ -65,6 +66,13 @@ Use `dagster-apprise` behind a thin library wrapper and wire it into every `Defi
   (already handled by the compose template).
 - Complementary to OTEL alerting, not a replacement: covers Dagster run lifecycle only. Request-path, LLM, and infra
   failures still flow through OTEL/SigNoz.
+- **Error previews may leak internal details to notification channels.** The 500-char preview can include file paths, DB
+  names, query fragments, or credentials embedded in connection strings. Truncation bounds the blast radius but does not
+  redact. Operators sending failures to shared or public channels should keep this in mind; if it becomes a problem we
+  can downgrade to exception type + first line.
+- **Backup Dagster (`packages/backup`, :3004) is intentionally out of scope.** It runs its own Dagster instance and
+  builders; failure notifications for backup/restore runs are a follow-up. Revisit if backup failures become a recurring
+  ops blind spot.
 
 ## Related Decisions
 

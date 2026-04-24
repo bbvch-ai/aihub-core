@@ -12,6 +12,7 @@ from dagster import (
 )
 
 from swiss_ai_hub.pipeline.sensors.run_failure_notification_sensor import (
+    _MAX_ERROR_PREVIEW_CHARS,
     _format_failure_message,
     run_failure_notification_sensor,
     run_failure_notification_sensors_from_settings,
@@ -64,7 +65,9 @@ class TestFormatFailureMessage:
         long_error = "x" * 1000
         context = self._build_context(None, long_error)
         message = _format_failure_message(context)
-        assert len(message) < 600
+        # Exact shape: "Error: " prefix + capped preview (ending in "..." for inputs longer than the cap).
+        assert message.startswith("Error: ")
+        assert len(message) == len("Error: ") + _MAX_ERROR_PREVIEW_CHARS
         assert message.endswith("...")
 
     def test_empty_when_no_assets_and_no_error(self) -> None:
@@ -133,3 +136,19 @@ class TestFromSettings:
         sensors = run_failure_notification_sensors_from_settings()
         assert len(sensors) == 1
         assert sensors[0].name == "run_failure_notification_sensor"
+
+    def test_passes_all_parsed_urls_to_apprise_resource(self, monkeypatch) -> None:
+        monkeypatch.setenv("NOTIFICATION_URLS", "slack://a/b/c/#ops, mailto://u:p@smtp.example.com")
+        with patch(
+            "swiss_ai_hub.pipeline.sensors.run_failure_notification_sensor.AppriseResource"
+        ) as resource_cls:
+            run_failure_notification_sensors_from_settings()
+            resource_cls.assert_called_once()
+            config_arg = resource_cls.call_args.kwargs["config"]
+            assert config_arg.urls == ["slack://a/b/c/#ops", "mailto://u:p@smtp.example.com"]
+
+    def test_accepts_custom_sensor_name_to_avoid_collisions(self, monkeypatch) -> None:
+        monkeypatch.setenv("NOTIFICATION_URLS", "slack://a/b/c/#ops")
+        sensors = run_failure_notification_sensors_from_settings(name="custom_sensor_name")
+        assert len(sensors) == 1
+        assert sensors[0].name == "custom_sensor_name"
