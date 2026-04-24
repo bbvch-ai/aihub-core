@@ -1,4 +1,3 @@
-
 from swiss_ai_hub.backup.models import BackupEntry
 
 
