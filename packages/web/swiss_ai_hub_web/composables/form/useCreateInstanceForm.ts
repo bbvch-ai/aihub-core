@@ -21,6 +21,47 @@ export interface ClassDataLike {
   templates?: Array<Record<string, unknown>>
 }
 
+/**
+ * Drops keys whose matching form-schema node is a group/repeater and whose incoming
+ * value is `null`. FormKit rejects `null` for group values (must be an object) and for
+ * repeater values (must be an array), so template payloads that serialise optional
+ * nested configs as `null` (Pydantic `Form | None = None`) would otherwise throw during
+ * hydration.
+ */
+export function stripNullsForGroups(
+  data: Record<string, unknown>,
+  elements: FormElement[],
+): Record<string, unknown> {
+  const result: Record<string, unknown> = {}
+
+  for (const [key, value] of Object.entries(data)) {
+    const element = elements.find(el => el.name === key)
+    const formkitType = element ? getFormkitType(element) : undefined
+
+    if ((formkitType === 'group' || formkitType === 'repeater') && value === null) {
+      continue
+    }
+
+    if (formkitType === 'group' && value && typeof value === 'object' && !Array.isArray(value)) {
+      const children = (element!.children as FormElement[] | undefined) ?? []
+      result[key] = stripNullsForGroups(value as Record<string, unknown>, children)
+    }
+    else if (formkitType === 'repeater' && Array.isArray(value)) {
+      const children = (element!.children as FormElement[] | undefined) ?? []
+      result[key] = value.map(item =>
+        item && typeof item === 'object' && !Array.isArray(item)
+          ? stripNullsForGroups(item as Record<string, unknown>, children)
+          : item,
+      )
+    }
+    else {
+      result[key] = value
+    }
+  }
+
+  return result
+}
+
 export interface CreateInstanceFormOptions<T extends ClassDataLike> {
   /** Reactive list of available class definitions (agent classes, process classes, etc.) */
   classes: Ref<T[] | undefined>
@@ -160,7 +201,8 @@ export function useCreateInstanceForm<T extends ClassDataLike>(options: CreateIn
 
   function applyInitialData(data: Record<string, unknown>) {
     const base = initializeGroupData(configForm.value as FormElement[], {})
-    formData.value = merge(base, data)
+    const sanitized = stripNullsForGroups(data, configForm.value as FormElement[])
+    formData.value = merge(base, sanitized)
   }
 
   function resetForm() {
