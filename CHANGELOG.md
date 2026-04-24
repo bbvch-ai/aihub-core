@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.278.1] - 2026-04-23 - Strengthened Event Serialization for HITL Subtypes
+
+### Fixed
+
+- 🐛 **Resolved Human-in-the-Loop (HITL) Event Downcasting**: Fixed a critical bug where specific HITL event subclasses
+  (such as input, confirmation, and chat requests and their corresponding responses) were silently downcasted to their
+  parent event types during WebSocket serialization. This ensures that the frontend now receives accurate and specific
+  HITL event types.
+- ⚡️ **Corrected Event Discriminator Logic**: Enhanced the `DisplayEvents` union to correctly discriminate between
+  agent-specific HITL request and response event subclasses, preserving their distinct type information when events are
+  broadcast over WebSockets.
+
+### Added
+
+- ✅ **Comprehensive Event Serialization Tests**: Introduced new unit tests to rigorously validate that Human-in-the-Loop
+  event subclasses are properly discriminated and their precise type is preserved throughout the WebSocket serialization
+  and deserialization process, preventing future regressions.
+
+### Changed
+
+- 📄 **Updated Event Serialization Guidelines**: Added crucial documentation to `CLAUDE.md` files in both `api` and
+  `core` packages, providing clear guidance on how to correctly add new event subclasses to the `DisplayEvents` union to
+  prevent silent downcasting during WebSocket serialization.
+
+______________________________________________________________________
+
 ## [v0.278.0] - 2026-04-21 - Next-Gen Multi-Tenancy: Keycloak-First Identity & Admin Workflows
 
 ### Added
