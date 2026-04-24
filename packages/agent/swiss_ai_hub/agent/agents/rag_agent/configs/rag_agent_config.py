@@ -3,12 +3,14 @@ from typing import Annotated, Self
 from pydantic import Field
 from swiss_ai_hub.core.agents import AgentConfig
 from swiss_ai_hub.core.form import Checkbox, InputNumber, InputText, LocaleInput
-from swiss_ai_hub.core.form.constraints import Ge
 from swiss_ai_hub.core.generative_ai import FewShotGuardExample, KnowledgeRetrieverConfig, LLMConfig, MemorySettings
 from swiss_ai_hub.core.i18n import LocaleString
 
 from swiss_ai_hub.agent.agents.rag_agent.configs.reranking_config import RerankingConfig
 from swiss_ai_hub.agent.i18n.agent_locale_string import AgentLocaleString
+from swiss_ai_hub.agent.steps.guards.context_sufficient_guard_step.context_sufficient_guard_step_config import (
+    ContextSufficientGuardStepConfig,
+)
 
 
 class RAGAgentConfig(AgentConfig):
@@ -44,26 +46,13 @@ class RAGAgentConfig(AgentConfig):
         int | InputNumber,
         Field(description="Maximum tokens allowed in input to manage context size or cost."),
     ] = 128000
-    max_hops: Annotated[
-        int | InputNumber,
+    context_sufficient_guard: Annotated[
+        ContextSufficientGuardStepConfig,
         Field(
-            description="Maximum number of retrieval hops to perform if context is insufficient.",
+            description="Configuration for the context-sufficient guard step.",
+            title="Context Sufficient Guard",
         ),
-        Ge(1),
-    ] = 1
-    check_context_sufficiency: Annotated[
-        bool | None | Checkbox,
-        Field(
-            description="Whether or not to check if the retrieved context is sufficient for generating a response.",
-        ),
-    ] = False
-    context_insufficient_prompt: Annotated[
-        LocaleString | LocaleInput | None,
-        Field(
-            description="Prompt used when the retrieved context is insufficient to answer the user's question.",
-            title="Context Insufficient Prompt",
-        ),
-    ] = AgentLocaleString.from_i18n_path("agent.rag_agent.config.context_insufficient_prompt.default")
+    ] = ContextSufficientGuardStepConfig()
     retrievers: Annotated[
         list[KnowledgeRetrieverConfig],
         Field(description="List of knowledge retriever configurations.", title="Retrievers"),
@@ -123,18 +112,7 @@ class RAGAgentConfig(AgentConfig):
                 max=128000,
                 step=1024,
             ),
-            check_context_sufficiency=Checkbox(
-                label=AgentLocaleString.from_i18n_path("agent.rag_agent.config.check_context_sufficiency.label"),
-                help=AgentLocaleString.from_i18n_path("agent.rag_agent.config.check_context_sufficiency.help"),
-                ref="check_context_sufficiency_enabled",
-            ),
-            max_hops=InputNumber(
-                label=AgentLocaleString.from_i18n_path("agent.rag_agent.config.max_hops.label"),
-                help=AgentLocaleString.from_i18n_path("agent.rag_agent.config.max_hops.help"),
-                min=1,
-                max=10,
-                step=1,
-            ),
+            context_sufficient_guard=ContextSufficientGuardStepConfig.as_form(),
             reranking_config=RerankingConfig.as_form(),
             few_shot_guard_examples=[FewShotGuardExample.as_form()],
             system_prompt=LocaleString.as_form(
@@ -146,12 +124,6 @@ class RAGAgentConfig(AgentConfig):
                 label=AgentLocaleString.from_i18n_path("agent.rag_agent.config.context_prompt.label"),
                 help_text=AgentLocaleString.from_i18n_path("agent.rag_agent.config.context_prompt.help"),
                 input_type="textarea",
-            ),
-            context_insufficient_prompt=LocaleString.as_form(
-                label=AgentLocaleString.from_i18n_path("agent.rag_agent.config.context_insufficient_prompt.label"),
-                help_text=AgentLocaleString.from_i18n_path("agent.rag_agent.config.context_insufficient_prompt.help"),
-                input_type="textarea",
-                condition_if="$get(check_context_sufficiency_enabled).value",
             ),
             enable_organization_memory=Checkbox(
                 label=AgentLocaleString.from_i18n_path("agent.rag_agent.config.enable_organization_memory.label"),

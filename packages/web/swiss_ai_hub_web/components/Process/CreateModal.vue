@@ -44,7 +44,7 @@
         </div>
 
         <div
-          v-if="selectedClassData && configForm.length > 0"
+          v-if="selectedClassData && configForm.length > 0 && formReady"
           class="content flex flex-col gap-2"
         >
           <FormKit
@@ -177,6 +177,7 @@ const {
   locale,
 })
 
+const formReady = ref(false)
 const hasFixedClass = computed(() => !!props.initialClass)
 
 const visible = computed({
@@ -184,10 +185,16 @@ const visible = computed({
   set: (value: boolean) => emit('update:modelValue', value),
 })
 
-watch(visible, (isVisible) => {
-  if (isVisible && props.initialData) {
-    nextTick(() => applyInitialData(props.initialData!))
+watch(visible, async (isVisible) => {
+  if (!isVisible) {
+    formReady.value = false
+    return
   }
+  await nextTick()
+  if (props.initialData) {
+    applyInitialData(props.initialData)
+  }
+  formReady.value = true
 })
 
 function closeModal() {

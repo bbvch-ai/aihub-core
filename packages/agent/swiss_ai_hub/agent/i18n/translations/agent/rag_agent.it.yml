@@ -8,14 +8,6 @@ config:
     label: Token di input max
     help: Numero massimo di token consentiti nell'input del LLM. Limita la dimensione
       del contesto per gestire i costi ed evitare di superare i limiti del modello.
-  check_context_sufficiency:
-    label: Verifica sufficienza contesto
-    help: Quando abilitato, l'agente verifica se il contesto recuperato contiene informazioni
-      sufficienti prima di generare una risposta.
-  max_hops:
-    label: Salti di recupero max
-    help: Numero massimo di iterazioni di recupero quando il contesto iniziale è insufficiente.
-      Valori più alti possono migliorare le risposte ma aumentano la latenza.
   system_prompt:
     label: Prompt di sistema
     help: Istruzioni che definiscono personalità, ruolo e linee guida comportamentali
@@ -49,12 +41,6 @@ config:
       {% endif %}\n{% endfor %}\n</context_documents>\n\nIstruzione: Utilizzando le\
       \ informazioni dai documenti forniti, genera una risposta dettagliata e ben\
       \ strutturata\nalla domanda dell'utente.\n{% endchat %}\n"
-  context_insufficient_prompt:
-    label: Prompt contesto insufficiente
-    help: Messaggio mostrato quando l'agente non trova informazioni sufficienti. Guida
-      come l'agente comunica le limitazioni.
-    default: "Informa l'utente che non puoi rispondere alla domanda per il seguente\
-      \ motivo:"
   reranking_enabled:
     label: Abilita riclassificazione
     help: Usa un modello di riclassificazione per migliorare la rilevanza dei documenti
