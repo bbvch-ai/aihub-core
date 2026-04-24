@@ -47,7 +47,7 @@ def run_failure_notification_sensor(
 
     @run_failure_sensor(
         name=name,
-        monitored_jobs=list(monitored_jobs) if monitored_jobs else None,
+        monitored_jobs=list(monitored_jobs) if monitored_jobs is not None else None,
         default_status=DefaultSensorStatus.RUNNING,
         minimum_interval_seconds=minimum_interval_seconds,
     )
