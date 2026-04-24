@@ -9,7 +9,6 @@ from swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner import (
     AIHUB_MODEL_PREFIX,
     OpenWebuiProvisioner,
 )
-from swiss_ai_hub.core.testing.auth_utils.user_mocks import mock_keycloak_admin_service_autouse  # noqa: F401
 
 
 def _group(display_name: str, group_id: str) -> Group:

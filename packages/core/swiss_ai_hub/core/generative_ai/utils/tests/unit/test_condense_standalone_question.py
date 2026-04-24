@@ -5,7 +5,6 @@ from llama_index.core.base.llms.types import ChatMessage, ChatResponse, ImageBlo
 
 from swiss_ai_hub.core.generative_ai.retrieval.condense_standalone_question import condense_standalone_question
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
-from swiss_ai_hub.core.testing.auth_utils.user_mocks import mock_keycloak_admin_service_autouse  # noqa: F401
 
 
 @pytest.fixture

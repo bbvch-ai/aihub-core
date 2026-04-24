@@ -4,7 +4,6 @@ import pytest
 
 from swiss_ai_hub.core.auth.usage.rate_limit_store import RateLimitStore
 from swiss_ai_hub.core.auth.usage.usage_limit_models import RoleUsageLimit, UsageLimitPeriod
-from swiss_ai_hub.core.testing.auth_utils.user_mocks import mock_keycloak_admin_service_autouse  # noqa: F401
 
 
 def rl(pattern: str, limit: int, period: str) -> RoleUsageLimit:

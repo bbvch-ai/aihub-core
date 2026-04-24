@@ -21,7 +21,6 @@ from swiss_ai_hub.core.persistence.access.entities.bearer_token import TOKEN_PRE
 from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 from swiss_ai_hub.core.testing.asyncio_utils.bdd import async_test
-from swiss_ai_hub.core.testing.auth_utils.user_mocks import mock_keycloak_admin_service_autouse  # noqa: F401
 
 # --- MongoDB Connection Fixture ---
 

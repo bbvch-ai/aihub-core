@@ -9,7 +9,6 @@ from swiss_ai_hub.core.generative_ai.document.tables.markdown_table import (
     parse_markdown_table,
     split_dataframe_into_chunks,
 )
-from swiss_ai_hub.core.testing.auth_utils.user_mocks import mock_keycloak_admin_service_autouse  # noqa: F401
 
 
 class TestHasIntegerColumnIndices:

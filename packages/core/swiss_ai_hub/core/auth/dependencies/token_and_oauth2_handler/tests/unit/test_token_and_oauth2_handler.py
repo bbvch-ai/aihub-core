@@ -9,7 +9,6 @@ from swiss_ai_hub.core.auth.identity.tenant_identity import TenantIdentity
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.auth.keycloak.keycloak_settings import KeycloakSettings
 from swiss_ai_hub.core.testing.asyncio_utils.bdd import async_test
-from swiss_ai_hub.core.testing.auth_utils.user_mocks import mock_keycloak_admin_service_autouse  # noqa: F401
 
 # --- Dummy authentication handler implementations ---
 

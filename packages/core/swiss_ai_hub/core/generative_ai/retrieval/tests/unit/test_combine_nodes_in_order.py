@@ -28,7 +28,6 @@ from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import (
     UPDATED_AT,
     VERSION,
 )
-from swiss_ai_hub.core.testing.auth_utils.user_mocks import mock_keycloak_admin_service_autouse  # noqa: F401
 
 scenarios("./features/combine_nodes_in_order.feature")
 

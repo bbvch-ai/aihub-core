@@ -19,7 +19,6 @@ from swiss_ai_hub.core.testing.auth_utils.oauth2_utils.oauth2_test_utils import 
     generate_rsa_keypair,
     public_key_to_jwk,
 )
-from swiss_ai_hub.core.testing.auth_utils.user_mocks import mock_keycloak_admin_service_autouse  # noqa: F401
 
 scenarios("features/keycloak_auth_handler.feature")
 

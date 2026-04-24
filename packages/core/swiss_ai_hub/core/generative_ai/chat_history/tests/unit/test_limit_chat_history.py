@@ -3,7 +3,6 @@ from llama_index.core.base.llms.types import ChatMessage
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from swiss_ai_hub.core.generative_ai.chat_history.limit_chat_history import limit_chat_history
-from swiss_ai_hub.core.testing.auth_utils.user_mocks import mock_keycloak_admin_service_autouse  # noqa: F401
 
 scenarios("./features/limit_chat_history.feature")
 

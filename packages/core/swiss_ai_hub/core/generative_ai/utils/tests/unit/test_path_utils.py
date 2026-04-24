@@ -4,7 +4,6 @@ from swiss_ai_hub.core.generative_ai.utils.path_utils import (
     decode_partition_key,
     encode_partition_key,
 )
-from swiss_ai_hub.core.testing.auth_utils.user_mocks import mock_keycloak_admin_service_autouse  # noqa: F401
 
 
 class TestEncodePartitionKey:

@@ -5,7 +5,6 @@ from swiss_ai_hub.core.agents.agent_config import AgentConfig, StepConfig
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
 from swiss_ai_hub.core.persistence.agents.agent_config_entity_embedded_document import AgentConfigEntityEmbeddedDocument
 from swiss_ai_hub.core.persistence.i18n.locale_string_entity import LocaleStringEntity
-from swiss_ai_hub.core.testing.auth_utils.user_mocks import mock_keycloak_admin_service_autouse  # noqa: F401
 
 
 @pytest.fixture

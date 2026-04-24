@@ -2,7 +2,6 @@ import pytest
 
 from swiss_ai_hub.core.auth.usage.access_rule_describer import AccessRuleDescriber
 from swiss_ai_hub.core.auth.usage.usage_limit_models import UsageLimitPeriod
-from swiss_ai_hub.core.testing.auth_utils.user_mocks import mock_keycloak_admin_service_autouse  # noqa: F401
 
 describe_pattern = AccessRuleDescriber.describe_pattern
 get_period_label = AccessRuleDescriber.get_period_label

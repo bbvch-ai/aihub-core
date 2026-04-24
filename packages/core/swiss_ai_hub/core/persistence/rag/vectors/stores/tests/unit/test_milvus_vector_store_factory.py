@@ -11,7 +11,6 @@ from swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_vector_store_factor
     MilvusIndexType,
     create_milvus_vector_store,
 )
-from swiss_ai_hub.core.testing.auth_utils.user_mocks import mock_keycloak_admin_service_autouse  # noqa: F401
 from swiss_ai_hub.core.testing.milvus_vector_store_content import drop_collection, run_with_event_loop
 
 scenarios("./features/milvus_vector_store.feature")

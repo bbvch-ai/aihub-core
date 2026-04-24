@@ -11,7 +11,6 @@ from swiss_ai_hub.core.infrastructure.mem0.types.memory_search_result import Mem
 from swiss_ai_hub.core.infrastructure.mem0.types.memory_type import MemoryType
 from swiss_ai_hub.core.infrastructure.mem0.types.modified_memory import ModifiedMemory
 from swiss_ai_hub.core.infrastructure.mem0.types.modified_relations import ModifiedRelations
-from swiss_ai_hub.core.testing.auth_utils.user_mocks import mock_keycloak_admin_service_autouse  # noqa: F401
 
 
 class TestStoreUserMemoryEvent:

@@ -4,7 +4,6 @@ import httpx
 import pytest
 
 from swiss_ai_hub.core.infrastructure.openwebui.openwebui_client import OpenWebuiClient
-from swiss_ai_hub.core.testing.auth_utils.user_mocks import mock_keycloak_admin_service_autouse  # noqa: F401
 
 BASE_URL = "http://open-webui:8080"
 SECRET_KEY = "test-secret-key-for-jwt-signing"

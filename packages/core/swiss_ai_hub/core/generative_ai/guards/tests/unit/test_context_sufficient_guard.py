@@ -6,7 +6,6 @@ from pytest_bdd import given, parsers, scenarios, then, when
 from swiss_ai_hub.core.generative_ai.guards.context_sufficient_guard import ContextGuardResult, context_sufficient_guard
 from swiss_ai_hub.core.i18n.locale_handler import LocaleHandler
 from swiss_ai_hub.core.testing.asyncio_utils.bdd import async_test
-from swiss_ai_hub.core.testing.auth_utils.user_mocks import mock_keycloak_admin_service_autouse  # noqa: F401
 
 scenarios("./features/context_sufficient_guard.feature")
 

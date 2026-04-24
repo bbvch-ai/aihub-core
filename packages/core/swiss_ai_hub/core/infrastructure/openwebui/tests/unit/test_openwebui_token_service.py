@@ -1,7 +1,6 @@
 import jwt
 
 from swiss_ai_hub.core.infrastructure.openwebui.openwebui_token_service import OpenWebuiTokenService
-from swiss_ai_hub.core.testing.auth_utils.user_mocks import mock_keycloak_admin_service_autouse  # noqa: F401
 
 SECRET_KEY = "test-secret-key-for-jwt-signing"
 SERVICE_ACCOUNT_ID = "00000000-0000-4000-a000-000000000001"

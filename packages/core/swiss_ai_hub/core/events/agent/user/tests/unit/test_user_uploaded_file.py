@@ -2,7 +2,6 @@ import pytest
 from pydantic import ValidationError
 
 from swiss_ai_hub.core.events.agent.user.user_uploaded_file import UserUploadedFile
-from swiss_ai_hub.core.testing.auth_utils.user_mocks import mock_keycloak_admin_service_autouse  # noqa: F401
 
 VALID_UUID4 = "550e8400-e29b-41d4-a716-446655440000"
 

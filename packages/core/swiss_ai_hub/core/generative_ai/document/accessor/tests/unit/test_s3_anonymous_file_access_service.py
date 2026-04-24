@@ -5,7 +5,6 @@ import pytest
 from swiss_ai_hub.core.generative_ai.document.accessor.s3_anonymous_file_access_service import (
     S3AnonymousFileAccessService,
 )
-from swiss_ai_hub.core.testing.auth_utils.user_mocks import mock_keycloak_admin_service_autouse  # noqa: F401
 
 
 def _create_service(s3_client: MagicMock | None = None) -> S3AnonymousFileAccessService:

@@ -6,7 +6,6 @@ from fastapi import HTTPException
 from swiss_ai_hub.core.auth.usage.rate_limit_store import CounterState, RateLimitStore
 from swiss_ai_hub.core.auth.usage.usage_limit_models import ResourceType, RoleUsageLimit, UsageLimitPeriod
 from swiss_ai_hub.core.auth.usage.usage_limits import UsageLimits
-from swiss_ai_hub.core.testing.auth_utils.user_mocks import mock_keycloak_admin_service_autouse  # noqa: F401
 
 AGENT_PREFIX = "aihub.user.agent."
 TEST_TENANT_ID = "test-tenant"

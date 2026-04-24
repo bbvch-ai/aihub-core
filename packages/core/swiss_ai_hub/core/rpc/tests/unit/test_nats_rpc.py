@@ -12,7 +12,6 @@ from swiss_ai_hub.core.rpc.models import (
     FetchAgentConfigRequest,
     FetchAgentConfigResponse,
 )
-from swiss_ai_hub.core.testing.auth_utils.user_mocks import mock_keycloak_admin_service_autouse  # noqa: F401
 
 
 # Test models

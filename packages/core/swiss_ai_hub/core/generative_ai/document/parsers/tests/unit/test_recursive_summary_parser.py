@@ -6,7 +6,6 @@ from llama_index.llms.openai_like import OpenAILike
 
 from swiss_ai_hub.core.generative_ai.document.parsers.recursive_summary_parser import RecursiveNodeSummarizer
 from swiss_ai_hub.core.persistence.rag.vectors.node_metadata import HEADING_LEVEL, INDEX, NODE_TYPE_SUMMARY, TYPE
-from swiss_ai_hub.core.testing.auth_utils.user_mocks import mock_keycloak_admin_service_autouse  # noqa: F401
 
 
 @pytest.fixture

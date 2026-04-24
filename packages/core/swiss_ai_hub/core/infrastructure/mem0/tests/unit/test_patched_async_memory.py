@@ -8,7 +8,6 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from swiss_ai_hub.core.infrastructure.mem0.patched_async_memory import PatchedAsyncMemory
-from swiss_ai_hub.core.testing.auth_utils.user_mocks import mock_keycloak_admin_service_autouse  # noqa: F401
 
 
 @pytest.fixture
