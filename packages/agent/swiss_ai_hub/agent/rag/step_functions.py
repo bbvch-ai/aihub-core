@@ -197,13 +197,6 @@ async def do_context_sufficient_guard(
     t: LocaleHandler,
     chat_history: list[ChatMessage],
 ) -> ContextSufficientAcceptEvent | ContextInsufficientRejectEvent | ContextInsufficientWithQueryEvent:
-    """Execute context sufficient guard with hop management.
-
-    ``chat_history`` is forwarded verbatim — it is already token-bounded upstream by
-    ``limit_chat_history``, which preserves system messages (including any injected
-    user/organization memory). The guard prompt instructs the model to treat these
-    system messages as additional context.
-    """
     if not check_context_sufficiency:
         return ContextSufficientAcceptEvent(reason=t("agent.thought.no_context_sufficiency_check"))
 
