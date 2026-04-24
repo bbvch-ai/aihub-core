@@ -42,10 +42,12 @@ def locale_handler() -> LocaleHandler:
 def mock_llm() -> MagicMock:
     llm = MagicMock()
     llm.metadata.is_function_calling_model = True
-    llm.structured_predict.return_value = ContextGuardResult(
-        reasoning="Memory already provides the answer",
-        success=True,
-        new_query=None,
+    llm.astructured_predict = AsyncMock(
+        return_value=ContextGuardResult(
+            reasoning="Memory already provides the answer",
+            success=True,
+            new_query=None,
+        )
     )
     return llm
 
@@ -107,7 +109,7 @@ async def test_organization_memory_system_message_reaches_guard_prompt(
         chat_history=chat_history_with_memory,
     )
 
-    rendered_chat_history = mock_llm.structured_predict.call_args.kwargs["chat_history"]
+    rendered_chat_history = mock_llm.astructured_predict.call_args.kwargs["chat_history"]
     assert memory_text in rendered_chat_history
     assert "user:" in rendered_chat_history
     assert "What is our vacation policy?" in rendered_chat_history
@@ -137,7 +139,7 @@ async def test_guard_forwards_full_chat_history_including_user_and_assistant_tur
         chat_history=chat_history,
     )
 
-    rendered = mock_llm.structured_predict.call_args.kwargs["chat_history"]
+    rendered = mock_llm.astructured_predict.call_args.kwargs["chat_history"]
     assert "Memory: 25 vacation days." in rendered
     assert "First question" in rendered
     assert "Earlier answer" in rendered
@@ -160,4 +162,4 @@ async def test_guard_with_empty_chat_history_still_renders_empty_placeholder(
         chat_history=[],
     )
 
-    assert mock_llm.structured_predict.call_args.kwargs["chat_history"] == ""
+    assert mock_llm.astructured_predict.call_args.kwargs["chat_history"] == ""

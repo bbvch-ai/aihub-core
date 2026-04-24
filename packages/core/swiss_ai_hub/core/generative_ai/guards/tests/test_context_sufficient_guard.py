@@ -1,4 +1,4 @@
-from unittest.mock import Mock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 from llama_index.core.base.llms.types import ChatMessage
@@ -60,7 +60,7 @@ def _():
 def _(llm, success, reasoning):
     success_bool = success == "True"
     result = ContextGuardResult(reasoning=reasoning, success=success_bool, new_query=None)
-    llm.structured_predict.return_value = result
+    llm.astructured_predict = AsyncMock(return_value=result)
     return result
 
 
@@ -71,7 +71,7 @@ def _(llm, success, reasoning):
 def _(llm, success, reasoning, new_query):
     success_bool = success == "True"
     result = ContextGuardResult(reasoning=reasoning, success=success_bool, new_query=new_query)
-    llm.structured_predict.return_value = result
+    llm.astructured_predict = AsyncMock(return_value=result)
     return result
 
 
@@ -112,7 +112,7 @@ async def _(llm, locale_handler, user_query, context, prev_queries, more_hops_av
 
 @then("the LLM prompt should include the chat history")
 def _(llm, chat_history):
-    call_kwargs = llm.structured_predict.call_args.kwargs
+    call_kwargs = llm.astructured_predict.call_args.kwargs
     rendered = call_kwargs["chat_history"]
     for message in chat_history:
         assert message.role.value in rendered
@@ -121,7 +121,7 @@ def _(llm, chat_history):
 
 @then("the LLM prompt should render chat history as an empty string")
 def _(llm):
-    assert llm.structured_predict.call_args.kwargs["chat_history"] == ""
+    assert llm.astructured_predict.call_args.kwargs["chat_history"] == ""
 
 
 @then("the guard should accept the request")

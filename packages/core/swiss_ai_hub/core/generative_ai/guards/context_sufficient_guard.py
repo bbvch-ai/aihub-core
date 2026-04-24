@@ -55,21 +55,20 @@ async def context_sufficient_guard(
     chat_history: list[ChatMessage],
 ) -> ContextGuardResult:
     sufficiency_prompt = PromptTemplate(t("lib.guards.context_sufficient_guard.prompt"))
-    if prev_queries:
-        prev_queries = "\n".join(prev_queries)
+    prev_queries_str = "\n".join(prev_queries)
     llm_kwargs: dict = {}
     if llm.metadata.is_function_calling_model:
         llm_kwargs["tool_choice"] = "required"
     else:
         llm_kwargs["tool_choice"] = NOT_GIVEN
 
-    result = llm.structured_predict(
+    result = await llm.astructured_predict(
         context_guard_result_factory(t=t, more_hops_available=more_hops_available),
         sufficiency_prompt,
         llm_kwargs=llm_kwargs,
         user_query=user_query,
         context=context,
-        prev_queries=prev_queries,
+        prev_queries=prev_queries_str,
         chat_history=format_chat_history(chat_history),
     )
 
