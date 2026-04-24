@@ -197,14 +197,15 @@ class AgentMemory:
         departments within a company). If not provided, searches across all memories for the tenant.
         This enables both broad tenant-wide knowledge and department-specific context.
 
-        Organization memory is tenant-scoped and shared across agents and users within the tenant
-        — `user_id` and `agent_id` are intentionally NOT applied as search filters, otherwise a
-        memory written by one agent/user would be invisible to another. Those fields remain on the
-        stored memory's metadata as trace information (who wrote it), but do not partition reads.
-        The `user_id` parameter is kept for caller symmetry with `search_user_memory` but is
-        ignored for filtering.
+        Organization memory is tenant-scoped and shared across agents within the tenant. Filtering
+        by the searching agent (`self.agent_id`) is intentionally NOT applied — otherwise a memory
+        written by one agent would be invisible to another. The writer's `_agent_id` remains on
+        the stored memory's metadata as trace information, but does not partition reads.
+
+        The caller controls `user_id` scoping: pass `None` (the default) for fully shared
+        tenant-wide retrieval; pass a concrete `user_id` only if the caller wants to restrict
+        results to memories written on behalf of that user.
         """
-        _ = user_id
         return await self.mem0service.search(
             query=query,
             owner_id=tenant_id,
@@ -212,7 +213,7 @@ class AgentMemory:
             display_id=display_id,
             run_id=run_id,
             memory_type=MemoryType.ORGANIZATION_MEMORY,
-            user_id=None,
+            user_id=user_id,
             agent_id=None,
             tenant_namespace=tenant_namespace,
             tenant_id=tenant_id,
