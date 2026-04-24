@@ -35,9 +35,11 @@ def run_failure_notification_sensor(
     ``AutomationConditionSensorDefinition``, because `@run_failure_sensor` fires on any failed run
     in the code location when ``monitored_jobs`` is ``None``.
     """
+    url_list = list(urls)
+    url_count = len(url_list)
     resource = AppriseResource(
         config=AppriseConfig(
-            urls=list(urls),
+            urls=url_list,
             base_url=dagster_ui_base_url,
             title_prefix=title_prefix,
         ),
@@ -58,7 +60,9 @@ def run_failure_notification_sensor(
         )
         if not sent:
             logger.error(
-                "Apprise failure notification was not accepted by any endpoint for run %s", context.dagster_run.run_id
+                "Apprise failure notification rejected by all %d endpoint(s) for run %s",
+                url_count,
+                context.dagster_run.run_id,
             )
 
     return _sensor

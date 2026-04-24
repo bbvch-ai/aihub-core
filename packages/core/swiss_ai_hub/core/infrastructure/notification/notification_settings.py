@@ -7,8 +7,7 @@ from swiss_ai_hub.core.settings.environment_settings import EnvironmentSettings
 
 
 class NotificationSettings(EnvironmentSettings):
-    """Settings for pipeline run-failure notifications dispatched via Apprise.
-    """
+    """Settings for pipeline run-failure notifications dispatched via Apprise."""
 
     model_config = EnvironmentSettings.create_settings_config("NOTIFICATION_")
 
