@@ -24,9 +24,9 @@ REPACK_HANDLER_NAMES: tuple[str, ...] = ("postgres_repack",)
 # Keep that knowledge here rather than scattering it across three near-identical
 # handler files.
 _LOG_LEVEL_HANDLERS: dict[str, tuple[str, str]] = {
-    "dagster_debug_logs": ("10", "MAINTENANCE_DEBUG_LOG_RETENTION_DAYS"),
-    "dagster_info_logs": ("20", "MAINTENANCE_INFO_LOG_RETENTION_DAYS"),
-    "dagster_warning_logs": ("30", "MAINTENANCE_WARNING_LOG_RETENTION_DAYS"),
+    "dagster_debug_logs": ("10", "DAGSTER_DEBUG_LOG_RETENTION_DAYS"),
+    "dagster_info_logs": ("20", "DAGSTER_INFO_LOG_RETENTION_DAYS"),
+    "dagster_warning_logs": ("30", "DAGSTER_WARNING_LOG_RETENTION_DAYS"),
 }
 
 
@@ -47,11 +47,11 @@ def create_maintenance_handler(
             level=level,
             engine=engine,
             delete_after_days=getattr(settings, retention_attr),
-            batch_limit=settings.MAINTENANCE_BATCH_LIMIT,
+            batch_limit=settings.DAGSTER_CLEANUP_BATCH_LIMIT,
         )
     if service_name == "dagster_unimportant_events":
         return DagsterUnimportantEventsHandler(
-            engine, settings.MAINTENANCE_UNIMPORTANT_EVENT_RETENTION_DAYS, settings.MAINTENANCE_BATCH_LIMIT
+            engine, settings.DAGSTER_UNIMPORTANT_EVENT_RETENTION_DAYS, settings.DAGSTER_CLEANUP_BATCH_LIMIT
         )
     if service_name == "postgres_repack":
         return PostgresRepackHandler(settings)

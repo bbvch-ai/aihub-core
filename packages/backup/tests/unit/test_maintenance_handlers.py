@@ -151,10 +151,10 @@ def test_postgres_repack_handler_runs_for_each_table_when_binary_present(
     mock_subprocess.return_value = MagicMock(returncode=0, stdout="", stderr="")
     settings = MagicMock()
     settings.POSTGRES_PASSWORD.get_secret_value.return_value = "secret"
-    settings.MAINTENANCE_POSTGRES_HOST = "postgres"
-    settings.MAINTENANCE_POSTGRES_PORT = 5432
+    settings.POSTGRES_HOST = "postgres"
+    settings.POSTGRES_PORT = 5432
     settings.POSTGRES_USER = "admin"
-    settings.MAINTENANCE_DAGSTER_DB = "dagster"
+    settings.DAGSTER_DB = "dagster"
     handler = PostgresRepackHandler(settings)
     result = handler.run()
     assert result.succeeded
@@ -309,10 +309,10 @@ def test_postgres_repack_handler_returns_skipped_when_extension_missing(
     )
     settings = MagicMock()
     settings.POSTGRES_PASSWORD.get_secret_value.return_value = "secret"
-    settings.MAINTENANCE_POSTGRES_HOST = "postgres"
-    settings.MAINTENANCE_POSTGRES_PORT = 5432
+    settings.POSTGRES_HOST = "postgres"
+    settings.POSTGRES_PORT = 5432
     settings.POSTGRES_USER = "admin"
-    settings.MAINTENANCE_DAGSTER_DB = "dagster"
+    settings.DAGSTER_DB = "dagster"
     result = PostgresRepackHandler(settings).run()
     assert result.succeeded
     skipped = result.metadata.get("skipped", "")
@@ -342,10 +342,10 @@ def test_postgres_repack_handler_returns_failure_on_unexpected_error(
 def _mock_repack_settings() -> MagicMock:
     settings = MagicMock()
     settings.POSTGRES_PASSWORD.get_secret_value.return_value = "secret"
-    settings.MAINTENANCE_POSTGRES_HOST = "postgres"
-    settings.MAINTENANCE_POSTGRES_PORT = 5432
+    settings.POSTGRES_HOST = "postgres"
+    settings.POSTGRES_PORT = 5432
     settings.POSTGRES_USER = "admin"
-    settings.MAINTENANCE_DAGSTER_DB = "dagster"
+    settings.DAGSTER_DB = "dagster"
     return settings
 
 

@@ -146,13 +146,12 @@ ORDER BY c.relkind, c.relname;
 
 Three layers, mirroring the test pyramid:
 
-- **Layer 1 — Unit tests** (`tests/unit/`, marker `unit`): mock Docker, S3, subprocess, SQLAlchemy. No infrastructure
-  needed. ~227 tests, ~20s. Always run.
+- **Layer 1 — Unit tests** (`tests/unit/`, marker `unit`): hermetic. Docker, S3, subprocess, and SQLAlchemy are mocked.
+  No infrastructure needed.
 
-- **Layer 2 — SQL contract tests** (`tests/integration/test_maintenance_postgres.py`, marker `integration`): exercise
-  the maintenance handlers against a real Postgres with a minimal `event_logs` schema. Verifies the semantic contract
-  (ASSET_MATERIALIZATION preserved, batch_limit respected, idempotency). Skips automatically if no Postgres is
-  reachable. ~17 tests, ~4s.
+- **Layer 2 — SQL contract tests** (`tests/integration/`, marker `integration`): exercise handlers that talk to Postgres
+  against a real Postgres with a minimal seeded schema. Verifies semantic contracts the unit tests cannot (preserving
+  load-bearing rows, idempotency, real-`jsonb` behavior). Skips automatically when no Postgres is reachable.
 
   Run via either:
 

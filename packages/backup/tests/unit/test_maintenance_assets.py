@@ -41,11 +41,11 @@ def _mock_settings_instance(maintenance_disabled: bool = False) -> MagicMock:
     """Mock returned by patching ``BackupSettings`` inside ``backup_settings_resource``."""
     m = MagicMock()
     m.MAINTENANCE_DISABLED = maintenance_disabled
-    m.MAINTENANCE_DEBUG_LOG_RETENTION_DAYS = 7
-    m.MAINTENANCE_INFO_LOG_RETENTION_DAYS = 60
-    m.MAINTENANCE_WARNING_LOG_RETENTION_DAYS = 60
-    m.MAINTENANCE_UNIMPORTANT_EVENT_RETENTION_DAYS = 30
-    m.MAINTENANCE_BATCH_LIMIT = 1_000_000
+    m.DAGSTER_DEBUG_LOG_RETENTION_DAYS = 7
+    m.DAGSTER_INFO_LOG_RETENTION_DAYS = 60
+    m.DAGSTER_WARNING_LOG_RETENTION_DAYS = 60
+    m.DAGSTER_UNIMPORTANT_EVENT_RETENTION_DAYS = 30
+    m.DAGSTER_CLEANUP_BATCH_LIMIT = 1_000_000
     return m
 
 

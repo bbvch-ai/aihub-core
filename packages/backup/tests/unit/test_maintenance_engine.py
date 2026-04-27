@@ -15,14 +15,14 @@ from swiss_ai_hub.backup.settings import BackupSettings
 def test_build_dagster_engine_constructs_url_from_maintenance_settings(
     mock_create_engine: MagicMock, settings: BackupSettings
 ) -> None:
-    """Engine targets MAINTENANCE_POSTGRES_HOST/PORT, not POSTGRES_HOST directly.
+    """Engine targets POSTGRES_HOST/PORT, not POSTGRES_HOST directly.
 
     They default to the same value but the indirection lets operators override
     the connection (e.g., bypass pgbouncer) without touching backup config.
     """
-    settings.MAINTENANCE_POSTGRES_HOST = "custom-postgres"
-    settings.MAINTENANCE_POSTGRES_PORT = 6543
-    settings.MAINTENANCE_DAGSTER_DB = "my_dagster_db"
+    settings.POSTGRES_HOST = "custom-postgres"
+    settings.POSTGRES_PORT = 6543
+    settings.DAGSTER_DB = "my_dagster_db"
 
     build_dagster_engine(settings)
 

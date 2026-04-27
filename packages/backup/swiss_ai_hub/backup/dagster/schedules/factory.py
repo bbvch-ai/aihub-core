@@ -39,16 +39,7 @@ def weekly_cleanup_schedule(cleanup_job: JobDefinition | UnresolvedAssetJobDefin
 
 
 def monthly_repack_schedule(repack_job: JobDefinition | UnresolvedAssetJobDefinition) -> ScheduleDefinition:
-    """First Sunday of the month at 4 AM Europe/Zurich — after the weekly cleanup completes.
-
-    pg_repack on event_logs can run for an hour or more on large deployments.
-
-    NOTE on cron semantics: Vixie cron (and croniter, which Dagster uses) applies
-    OR semantics when both day-of-month and day-of-week are restricted —
-    ``0 4 1-7 * 0`` would fire on day 1-7 OR every Sunday (~10 days/month). To
-    get true "first Sunday" semantics we run every Sunday at 04:00 and gate
-    inside the schedule body via ``SkipReason``.
-    """
+    """First Sunday of the month at 4 AM Europe/Zurich — after the weekly cleanup completes."""
 
     @schedule(cron_schedule="0 4 * * 0", job=repack_job, execution_timezone="Europe/Zurich")
     def monthly_repack(context: ScheduleEvaluationContext) -> RunRequest | SkipReason:
