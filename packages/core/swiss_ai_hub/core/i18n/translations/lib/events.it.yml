@@ -212,3 +212,8 @@ rag_start_event:
     recuperando il contesto rilevante dalle fonti di conoscenza selezionate — utilizzando
     i namespace scelti e gli eventuali filtri di metadati — prima di generare una
     risposta.
+rag_stop_event:
+  name: Esecuzione RAG Completata
+  description: L'esecuzione aumentata dal recupero è terminata. Contiene un flag che
+    indica se la risposta è basata sul contesto recuperato o se è ricaduta su una
+    risposta "Non lo so".

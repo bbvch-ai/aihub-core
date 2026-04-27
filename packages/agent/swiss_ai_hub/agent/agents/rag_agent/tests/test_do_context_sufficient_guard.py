@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from swiss_ai_hub.core.events.agent.guard.context_insufficient_reject_event import ContextInsufficientRejectEvent
 from swiss_ai_hub.core.generative_ai.chat_history.extend_chat_history_with_organization_memory import (
     extend_chat_history_with_organization_memory,
 )
@@ -163,3 +164,51 @@ async def test_guard_with_empty_chat_history_still_renders_empty_placeholder(
     )
 
     assert mock_llm.astructured_predict.call_args.kwargs["chat_history"] == ""
+
+
+@pytest.mark.asyncio
+async def test_guard_sets_context_sufficient_false_when_no_more_hops(
+    mock_llm, llm_config, displayer, run_context, locale_handler
+):
+    mock_llm.astructured_predict = AsyncMock(
+        return_value=ContextGuardResult(
+            reasoning="Context does not answer the question",
+            success=False,
+            new_query=None,
+        )
+    )
+
+    result = await do_context_sufficient_guard(
+        user_query="What is the meaning of life?",
+        context="Unrelated document.",
+        check_context_sufficiency=True,
+        max_hops=1,
+        run_context=run_context,
+        llm_config=llm_config,
+        displayer=displayer,
+        t=locale_handler,
+        chat_history=[],
+    )
+
+    assert isinstance(result, ContextInsufficientRejectEvent)
+    run_context.set.assert_any_await("context_sufficient", False)
+
+
+@pytest.mark.asyncio
+async def test_guard_does_not_write_context_sufficient_on_accept(
+    mock_llm, llm_config, displayer, run_context, locale_handler
+):
+    await do_context_sufficient_guard(
+        user_query="What is the capital of France?",
+        context="Paris is the capital of France.",
+        check_context_sufficiency=True,
+        max_hops=3,
+        run_context=run_context,
+        llm_config=llm_config,
+        displayer=displayer,
+        t=locale_handler,
+        chat_history=[],
+    )
+
+    written_keys = [call.args[0] for call in run_context.set.await_args_list]
+    assert "context_sufficient" not in written_keys

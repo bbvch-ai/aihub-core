@@ -213,3 +213,8 @@ rag_start_event:
     relevanten Kontext aus den ausgewählten Wissensquellen ab – unter Verwendung der
     gewählten Namensräume und optionaler Metadatenfilter – bevor eine Antwort generiert
     wird.
+rag_stop_event:
+  name: RAG-Lauf Abgeschlossen
+  description: Der Retrieval-Augmented-Lauf ist beendet. Enthält ein Flag, das angibt,
+    ob die Antwort auf abgerufenem Kontext basiert oder auf eine „Ich weiß es nicht"-Antwort
+    zurückgefallen ist.

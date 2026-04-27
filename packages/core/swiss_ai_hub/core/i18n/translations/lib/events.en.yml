@@ -201,3 +201,8 @@ rag_start_event:
   description: Retrieval-augmented generation has started. The agent is fetching relevant
     context from the selected knowledge sources — using the chosen namespaces and
     any additional metadata filters — before generating an answer.
+rag_stop_event:
+  name: RAG Run Completed
+  description: The retrieval-augmented run has finished. Carries a flag indicating
+    whether the answer was grounded in retrieved context or fell back to an "I don't
+    know" response.

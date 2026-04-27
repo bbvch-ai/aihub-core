@@ -14,8 +14,8 @@ class RAGStopEvent(StopEvent):
     whether the LLM was forced to respond with an "I don't know"-style fallback.
     """
 
-    _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.stop_event.name")
-    _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.stop_event.description")
+    _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.rag_stop_event.name")
+    _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.rag_stop_event.description")
 
     context_sufficient: Annotated[
         bool,

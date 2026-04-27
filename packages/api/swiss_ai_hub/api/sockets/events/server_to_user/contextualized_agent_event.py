@@ -39,6 +39,7 @@ from swiss_ai_hub.core.events.agent import (
     LLMEvent,
     LLMStopEvent,
     RAGStartEvent,
+    RAGStopEvent,
     RerankerEvent,
     RetrieveOrganizationMemoryEvent,
     RetrieverEvent,
@@ -96,6 +97,7 @@ DisplayEvents = (
     | Annotated[UserMessageEvent, Tag("UserMessageEvent")]
     | Annotated[RAGStartEvent, Tag("RAGStartEvent")]
     | Annotated[ExceptionEvent, Tag("ExceptionEvent")]
+    | Annotated[RAGStopEvent, Tag("RAGStopEvent")]
     | Annotated[StopEvent, Tag("StopEvent")]
     | Annotated[DisplayEvent, Tag("DisplayEvent")]
     | Annotated[GuardAcceptEvent, Tag("GuardAcceptEvent")]
