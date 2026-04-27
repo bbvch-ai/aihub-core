@@ -49,3 +49,27 @@ def restore_asset_job(assets: list[AssetsDefinition]) -> UnresolvedAssetJobDefin
         description="Restore all services from a backup. Select a partition to choose timestamp. "
         "On success, containers are restarted. On failure, containers stay stopped — human must investigate.",
     )
+
+
+def cleanup_asset_job(assets: list[AssetsDefinition]) -> UnresolvedAssetJobDefinition:
+    return define_asset_job(
+        name="dagster_cleanup_job",
+        selection=assets,
+        description=(
+            "Online-safe Postgres maintenance for the dagster DB: prune verbose Python logs and "
+            "transient framework events from event_logs, ensure cleanup indexes exist, apply "
+            "autovacuum tuning. UI-safe by construction — never touches ASSET_MATERIALIZATION, "
+            "STEP_SUCCESS, or STEP_FAILURE events."
+        ),
+    )
+
+
+def repack_asset_job(assets: list[AssetsDefinition]) -> UnresolvedAssetJobDefinition:
+    return define_asset_job(
+        name="postgres_repack_job",
+        selection=assets,
+        description=(
+            "Run pg_repack on the heavy Dagster tables to return disk space to the OS. "
+            "VACUUM alone marks dead rows reusable internally but does not free disk pages."
+        ),
+    )

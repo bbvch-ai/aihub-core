@@ -8,3 +8,15 @@ python_logs:
   python_log_level: INFO
   managed_python_loggers:
     - swiss_ai_hub
+
+# The backup Dagster instance also accumulates ticks from its own daily backup
+# schedule + weekly cleanup + monthly repack schedules. Same retention as the
+# main instance to keep the SQLite tick table bounded.
+retention:
+  schedule:
+    purge_after_days: 90
+  sensor:
+    purge_after_days:
+      skipped: 7
+      failure: 30
+      success: 30

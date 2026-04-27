@@ -1,10 +1,10 @@
 # License Report
 
-Generated on: 24.04.2026
+Generated on: 27.04.2026
 
 This document contains license information for all dependencies across the monorepo:
 
-- Python packages (uv): **394 packages**
+- Python packages (uv): **399 packages**
 - Node.js packages (pnpm): **999 packages**
 - External Docker images: **31 images**
 
@@ -231,6 +231,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | microsoft-agents-hosting-aiohttp                 | 0.8.0                 | MIT                                                          |                                                                      |
 | ✅     | microsoft-agents-hosting-core                    | 0.8.0                 | MIT                                                          |                                                                      |
 | ✅     | milvus-lite                                      | 2.5.1                 | Apache-2.0 (override)                                        |                                                                      |
+| ✅     | mirakuru                                         | 3.0.2                 | LGPL-3.0-or-later                                            |                                                                      |
 | ✅     | mongoengine                                      | 0.29.1                | MIT License                                                  |                                                                      |
 | ✅     | more-itertools                                   | 10.8.0                | MIT                                                          |                                                                      |
 | ✅     | motor                                            | 3.7.1                 | Apache Software License                                      |                                                                      |
@@ -304,12 +305,15 @@ This document contains license information for all dependencies across the monor
 | ✅     | pillow                                           | 12.1.1                | MIT-CMU (override)                                           |                                                                      |
 | ✅     | platformdirs                                     | 4.9.4                 | MIT                                                          |                                                                      |
 | ✅     | pluggy                                           | 1.6.0                 | MIT License                                                  |                                                                      |
+| ✅     | port-for                                         | 1.0.0                 | MIT License                                                  |                                                                      |
 | ✅     | portalocker                                      | 3.2.0                 | BSD-3-Clause                                                 |                                                                      |
 | ✅     | posthog                                          | 7.9.7                 | MIT License                                                  |                                                                      |
 | ✅     | prompt_toolkit                                   | 3.0.52                | BSD License                                                  |                                                                      |
 | ✅     | propcache                                        | 0.4.1                 | Apache Software License                                      |                                                                      |
 | ✅     | protobuf                                         | 5.29.6                | 3-Clause BSD License                                         |                                                                      |
 | ✅     | psutil                                           | 7.2.2                 | BSD-3-Clause                                                 |                                                                      |
+| ✅     | psycopg                                          | 3.3.3                 | LGPL-3.0-only                                                |                                                                      |
+| ✅     | psycopg-binary                                   | 3.3.3                 | LGPL-3.0-only                                                |                                                                      |
 | ✅     | psycopg2-binary                                  | 2.9.11                | GNU Library or Lesser General Public License (LGPL)          |                                                                      |
 | ✅     | ptyprocess                                       | 0.7.0                 | ISC License (ISCL)                                           |                                                                      |
 | ✅     | pure_eval                                        | 0.2.3                 | MIT License                                                  |                                                                      |
@@ -332,6 +336,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | pytest-bdd                                       | 8.1.0                 | MIT License                                                  |                                                                      |
 | ✅     | pytest-cov                                       | 7.0.0                 | MIT                                                          |                                                                      |
 | ✅     | pytest-mock                                      | 3.15.1                | MIT License                                                  |                                                                      |
+| ✅     | pytest-postgresql                                | 8.0.0                 | GNU Lesser General Public License v3 or later (LGPLv3+)      |                                                                      |
 | ✅     | pytest-timeout                                   | 2.4.0                 | DFSG approved; MIT License                                   |                                                                      |
 | ✅     | python-dateutil                                  | 2.9.0.post0           | Apache Software License; BSD License                         |                                                                      |
 | ✅     | python-dotenv                                    | 1.2.2                 | BSD-3-Clause                                                 |                                                                      |
