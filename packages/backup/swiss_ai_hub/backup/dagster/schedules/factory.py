@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from dagster import JobDefinition, RunRequest, ScheduleEvaluationContext, schedule
+from dagster import JobDefinition, RunRequest, ScheduleEvaluationContext, SkipReason, schedule
 
 if TYPE_CHECKING:
     from dagster import ScheduleDefinition
@@ -42,12 +42,18 @@ def monthly_repack_schedule(repack_job: JobDefinition | UnresolvedAssetJobDefini
     """First Sunday of the month at 4 AM Europe/Zurich — after the weekly cleanup completes.
 
     pg_repack on event_logs can run for an hour or more on large deployments.
-    Cron does not support 'first Sunday of month' directly — we use the standard
-    workaround of '0 4 1-7 * 0' (day-of-month 1-7 AND day-of-week Sunday).
+
+    NOTE on cron semantics: Vixie cron (and croniter, which Dagster uses) applies
+    OR semantics when both day-of-month and day-of-week are restricted —
+    ``0 4 1-7 * 0`` would fire on day 1-7 OR every Sunday (~10 days/month). To
+    get true "first Sunday" semantics we run every Sunday at 04:00 and gate
+    inside the schedule body via ``SkipReason``.
     """
 
-    @schedule(cron_schedule="0 4 1-7 * 0", job=repack_job, execution_timezone="Europe/Zurich")
-    def monthly_repack(context: ScheduleEvaluationContext) -> RunRequest:
+    @schedule(cron_schedule="0 4 * * 0", job=repack_job, execution_timezone="Europe/Zurich")
+    def monthly_repack(context: ScheduleEvaluationContext) -> RunRequest | SkipReason:
+        if context.scheduled_execution_time.day > 7:
+            return SkipReason("Skipping: only the first Sunday of the month triggers pg_repack.")
         return RunRequest()
 
     return monthly_repack

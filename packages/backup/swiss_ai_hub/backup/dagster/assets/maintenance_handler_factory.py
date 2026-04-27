@@ -1,10 +1,8 @@
 from sqlalchemy import Engine
 
 from swiss_ai_hub.backup.maintenance.base import MaintenanceHandler
-from swiss_ai_hub.backup.maintenance.dagster_debug_logs import DagsterDebugLogsHandler
-from swiss_ai_hub.backup.maintenance.dagster_info_logs import DagsterInfoLogsHandler
 from swiss_ai_hub.backup.maintenance.dagster_unimportant_events import DagsterUnimportantEventsHandler
-from swiss_ai_hub.backup.maintenance.dagster_warning_logs import DagsterWarningLogsHandler
+from swiss_ai_hub.backup.maintenance.log_level_cleanup_handler import LogLevelCleanupHandler
 from swiss_ai_hub.backup.maintenance.postgres_autovacuum_tune import PostgresAutovacuumTuneHandler
 from swiss_ai_hub.backup.maintenance.postgres_indexes import PostgresIndexesHandler
 from swiss_ai_hub.backup.maintenance.postgres_repack import PostgresRepackHandler
@@ -22,6 +20,15 @@ CLEANUP_HANDLER_NAMES: tuple[str, ...] = (
 )
 REPACK_HANDLER_NAMES: tuple[str, ...] = ("postgres_repack",)
 
+# Three of the cleanup handlers differ only in log level + retention window.
+# Keep that knowledge here rather than scattering it across three near-identical
+# handler files.
+_LOG_LEVEL_HANDLERS: dict[str, tuple[str, str]] = {
+    "dagster_debug_logs": ("10", "MAINTENANCE_DEBUG_LOG_RETENTION_DAYS"),
+    "dagster_info_logs": ("20", "MAINTENANCE_INFO_LOG_RETENTION_DAYS"),
+    "dagster_warning_logs": ("30", "MAINTENANCE_WARNING_LOG_RETENTION_DAYS"),
+}
+
 
 def create_maintenance_handler(
     service_name: str,
@@ -33,17 +40,14 @@ def create_maintenance_handler(
         return PostgresIndexesHandler(engine)
     if service_name == "postgres_autovacuum_tune":
         return PostgresAutovacuumTuneHandler(engine)
-    if service_name == "dagster_debug_logs":
-        return DagsterDebugLogsHandler(
-            engine, settings.MAINTENANCE_DEBUG_LOG_RETENTION_DAYS, settings.MAINTENANCE_BATCH_LIMIT
-        )
-    if service_name == "dagster_info_logs":
-        return DagsterInfoLogsHandler(
-            engine, settings.MAINTENANCE_INFO_LOG_RETENTION_DAYS, settings.MAINTENANCE_BATCH_LIMIT
-        )
-    if service_name == "dagster_warning_logs":
-        return DagsterWarningLogsHandler(
-            engine, settings.MAINTENANCE_WARNING_LOG_RETENTION_DAYS, settings.MAINTENANCE_BATCH_LIMIT
+    if service_name in _LOG_LEVEL_HANDLERS:
+        level, retention_attr = _LOG_LEVEL_HANDLERS[service_name]
+        return LogLevelCleanupHandler(
+            label=service_name,
+            level=level,
+            engine=engine,
+            delete_after_days=getattr(settings, retention_attr),
+            batch_limit=settings.MAINTENANCE_BATCH_LIMIT,
         )
     if service_name == "dagster_unimportant_events":
         return DagsterUnimportantEventsHandler(

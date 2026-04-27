@@ -6,16 +6,26 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from swiss_ai_hub.backup.maintenance.dagster_debug_logs import DagsterDebugLogsHandler
-from swiss_ai_hub.backup.maintenance.dagster_info_logs import DagsterInfoLogsHandler
 from swiss_ai_hub.backup.maintenance.dagster_unimportant_events import (
     _UNIMPORTANT_EVENT_TYPES,
     DagsterUnimportantEventsHandler,
 )
-from swiss_ai_hub.backup.maintenance.dagster_warning_logs import DagsterWarningLogsHandler
+from swiss_ai_hub.backup.maintenance.log_level_cleanup_handler import LogLevelCleanupHandler
 from swiss_ai_hub.backup.maintenance.postgres_autovacuum_tune import PostgresAutovacuumTuneHandler
 from swiss_ai_hub.backup.maintenance.postgres_indexes import PostgresIndexesHandler
 from swiss_ai_hub.backup.maintenance.postgres_repack import PostgresRepackHandler
+
+
+def _debug_handler(engine: MagicMock | object, retention: int = 7, limit: int = 1_000_000) -> LogLevelCleanupHandler:
+    return LogLevelCleanupHandler("dagster_debug_logs", "10", engine, retention, limit)
+
+
+def _info_handler(engine: MagicMock | object, retention: int = 60, limit: int = 1_000_000) -> LogLevelCleanupHandler:
+    return LogLevelCleanupHandler("dagster_info_logs", "20", engine, retention, limit)
+
+
+def _warning_handler(engine: MagicMock | object, retention: int = 60, limit: int = 1_000_000) -> LogLevelCleanupHandler:
+    return LogLevelCleanupHandler("dagster_warning_logs", "30", engine, retention, limit)
 
 
 def _mock_engine_with_rowcount(rowcount: int) -> MagicMock:
@@ -39,13 +49,10 @@ def _captured_delete_sql(engine: MagicMock) -> str:
 
 
 @pytest.mark.unit
-@pytest.mark.parametrize(
-    "handler_cls",
-    [DagsterDebugLogsHandler, DagsterInfoLogsHandler, DagsterWarningLogsHandler],
-)
-def test_log_cleanup_handlers_return_rows_deleted(handler_cls) -> None:
+@pytest.mark.parametrize("handler_factory", [_debug_handler, _info_handler, _warning_handler])
+def test_log_cleanup_handlers_return_rows_deleted(handler_factory) -> None:
     engine = _mock_engine_with_rowcount(42)
-    handler = handler_cls(engine, delete_after_days=7, batch_limit=1_000_000)
+    handler = handler_factory(engine)
     result = handler.run()
     assert result.succeeded
     assert result.rows_affected == 42
@@ -71,7 +78,7 @@ def test_unimportant_events_handler_excludes_asset_materialization() -> None:
 def test_log_cleanup_handler_returns_failure_on_db_error() -> None:
     engine = MagicMock()
     engine.begin.return_value.__enter__.side_effect = RuntimeError("connection refused")
-    handler = DagsterDebugLogsHandler(engine, delete_after_days=7, batch_limit=1_000_000)
+    handler = _debug_handler(engine)
     result = handler.run()
     assert not result.succeeded
     assert "connection refused" in (result.error or "")
@@ -164,7 +171,7 @@ def test_postgres_repack_handler_runs_for_each_table_when_binary_present(
 @pytest.mark.unit
 def test_debug_logs_handler_targets_level_10_user_logs_only() -> None:
     engine = _mock_engine_with_rowcount(0)
-    DagsterDebugLogsHandler(engine, 7, 100).run()
+    _debug_handler(engine, retention=7, limit=100).run()
     sql = _captured_delete_sql(engine)
     assert "dagster_event_type IS NULL" in sql
     assert "event::jsonb->>'level' = '10'" in sql
@@ -173,7 +180,7 @@ def test_debug_logs_handler_targets_level_10_user_logs_only() -> None:
 @pytest.mark.unit
 def test_info_logs_handler_targets_level_20_user_logs_only() -> None:
     engine = _mock_engine_with_rowcount(0)
-    DagsterInfoLogsHandler(engine, 60, 100).run()
+    _info_handler(engine, retention=60, limit=100).run()
     sql = _captured_delete_sql(engine)
     assert "dagster_event_type IS NULL" in sql
     assert "event::jsonb->>'level' = '20'" in sql
@@ -182,7 +189,7 @@ def test_info_logs_handler_targets_level_20_user_logs_only() -> None:
 @pytest.mark.unit
 def test_warning_logs_handler_targets_level_30_user_logs_only() -> None:
     engine = _mock_engine_with_rowcount(0)
-    DagsterWarningLogsHandler(engine, 60, 100).run()
+    _warning_handler(engine, retention=60, limit=100).run()
     sql = _captured_delete_sql(engine)
     assert "dagster_event_type IS NULL" in sql
     assert "event::jsonb->>'level' = '30'" in sql
@@ -209,17 +216,16 @@ def test_unimportant_events_handler_targets_documented_event_types() -> None:
 
 @pytest.mark.unit
 @pytest.mark.parametrize(
-    ("handler_cls", "after_days", "limit"),
+    ("handler_factory", "after_days", "limit"),
     [
-        (DagsterDebugLogsHandler, 14, 500_000),
-        (DagsterInfoLogsHandler, 90, 250_000),
-        (DagsterWarningLogsHandler, 30, 100_000),
-        (DagsterUnimportantEventsHandler, 7, 1_000),
+        (_debug_handler, 14, 500_000),
+        (_info_handler, 90, 250_000),
+        (_warning_handler, 30, 100_000),
     ],
 )
-def test_log_handlers_pass_configured_retention_and_limit(handler_cls, after_days: int, limit: int) -> None:
+def test_log_handlers_pass_configured_retention_and_limit(handler_factory, after_days: int, limit: int) -> None:
     engine = _mock_engine_with_rowcount(0)
-    handler_cls(engine, after_days, limit).run()
+    handler_factory(engine, retention=after_days, limit=limit).run()
     cm = engine.begin.return_value.__enter__.return_value
     delete_call = next(c for c in cm.execute.call_args_list if "DELETE FROM event_logs" in str(c.args[0]))
     params = delete_call.args[1]
@@ -227,11 +233,22 @@ def test_log_handlers_pass_configured_retention_and_limit(handler_cls, after_day
 
 
 @pytest.mark.unit
-def test_log_handler_metadata_includes_retention_and_limit() -> None:
+def test_unimportant_events_handler_passes_configured_retention_and_limit() -> None:
+    engine = _mock_engine_with_rowcount(0)
+    DagsterUnimportantEventsHandler(engine, 7, 1_000).run()
+    cm = engine.begin.return_value.__enter__.return_value
+    delete_call = next(c for c in cm.execute.call_args_list if "DELETE FROM event_logs" in str(c.args[0]))
+    params = delete_call.args[1]
+    assert params == {"delete_after_days": 7, "batch_limit": 1_000}
+
+
+@pytest.mark.unit
+def test_log_handler_metadata_includes_retention_limit_and_level() -> None:
     engine = _mock_engine_with_rowcount(99)
-    result = DagsterDebugLogsHandler(engine, delete_after_days=14, batch_limit=500_000).run()
+    result = _debug_handler(engine, retention=14, limit=500_000).run()
     assert result.metadata["retention_days"] == 14
     assert result.metadata["batch_limit"] == 500_000
+    assert result.metadata["level"] == "10"
 
 
 @pytest.mark.unit
@@ -316,12 +333,116 @@ def test_postgres_repack_handler_returns_failure_on_unexpected_error(
     mock_subprocess.side_effect = sp.CalledProcessError(
         returncode=1, cmd="pg_repack", stderr="pg_repack: ERROR: relation event_logs does not have a primary key"
     )
+    settings = _mock_repack_settings()
+    result = PostgresRepackHandler(settings).run()
+    assert not result.succeeded
+    assert "primary key" in (result.error or "")
+
+
+def _mock_repack_settings() -> MagicMock:
     settings = MagicMock()
     settings.POSTGRES_PASSWORD.get_secret_value.return_value = "secret"
     settings.MAINTENANCE_POSTGRES_HOST = "postgres"
     settings.MAINTENANCE_POSTGRES_PORT = 5432
     settings.POSTGRES_USER = "admin"
     settings.MAINTENANCE_DAGSTER_DB = "dagster"
+    return settings
+
+
+@pytest.mark.unit
+@patch("swiss_ai_hub.backup.maintenance.postgres_repack.subprocess.run")
+@patch("swiss_ai_hub.backup.maintenance.postgres_repack.shutil.which")
+def test_postgres_repack_handler_fails_loudly_on_missing_table(
+    mock_which: MagicMock,
+    mock_subprocess: MagicMock,
+) -> None:
+    """A 'relation does not exist' error is NOT the missing-extension case —
+    classify as failure rather than silent skip. Regression guard against the
+    earlier ``or "does not exist"`` heuristic."""
+    import subprocess as sp
+
+    mock_which.return_value = "/usr/bin/pg_repack"
+    mock_subprocess.side_effect = sp.CalledProcessError(
+        returncode=1, cmd="pg_repack", stderr='pg_repack: ERROR: relation "event_logs" does not exist'
+    )
+    settings = _mock_repack_settings()
     result = PostgresRepackHandler(settings).run()
     assert not result.succeeded
-    assert "primary key" in (result.error or "")
+    assert "does not exist" in (result.error or "")
+
+
+@pytest.mark.unit
+@patch("swiss_ai_hub.backup.maintenance.postgres_repack.subprocess.run")
+@patch("swiss_ai_hub.backup.maintenance.postgres_repack.shutil.which")
+def test_postgres_repack_handler_fails_loudly_on_missing_column(
+    mock_which: MagicMock,
+    mock_subprocess: MagicMock,
+) -> None:
+    """A 'column does not exist' error is NOT the missing-extension case."""
+    import subprocess as sp
+
+    mock_which.return_value = "/usr/bin/pg_repack"
+    mock_subprocess.side_effect = sp.CalledProcessError(
+        returncode=1, cmd="pg_repack", stderr='pg_repack: ERROR: column "ctid" does not exist'
+    )
+    settings = _mock_repack_settings()
+    result = PostgresRepackHandler(settings).run()
+    assert not result.succeeded
+    assert "column" in (result.error or "")
+
+
+@pytest.mark.unit
+@patch("swiss_ai_hub.backup.maintenance.postgres_repack.subprocess.run")
+@patch("swiss_ai_hub.backup.maintenance.postgres_repack.shutil.which")
+def test_postgres_repack_handler_skips_on_explicit_not_installed_message(
+    mock_which: MagicMock,
+    mock_subprocess: MagicMock,
+) -> None:
+    """The wording pg_repack actually uses for the missing-extension case."""
+    import subprocess as sp
+
+    mock_which.return_value = "/usr/bin/pg_repack"
+    mock_subprocess.side_effect = sp.CalledProcessError(
+        returncode=1, cmd="pg_repack", stderr='pg_repack: ERROR: pg_repack is not installed in the database "dagster"'
+    )
+    settings = _mock_repack_settings()
+    result = PostgresRepackHandler(settings).run()
+    assert result.succeeded
+    skipped = result.metadata.get("skipped", "")
+    assert "no extension" in skipped
+
+
+@pytest.mark.unit
+@patch("swiss_ai_hub.backup.maintenance.postgres_repack.subprocess.run")
+@patch("swiss_ai_hub.backup.maintenance.postgres_repack.shutil.which")
+def test_postgres_repack_handler_returns_failure_on_timeout(
+    mock_which: MagicMock,
+    mock_subprocess: MagicMock,
+) -> None:
+    """subprocess.TimeoutExpired must be caught — the per-handler failure-isolation
+    contract requires returning MaintenanceResult, not raising."""
+    import subprocess as sp
+
+    mock_which.return_value = "/usr/bin/pg_repack"
+    mock_subprocess.side_effect = sp.TimeoutExpired(cmd="pg_repack", timeout=7200)
+    settings = _mock_repack_settings()
+    result = PostgresRepackHandler(settings).run()
+    assert not result.succeeded
+    assert "timed out" in (result.error or "")
+
+
+@pytest.mark.unit
+@patch("swiss_ai_hub.backup.maintenance.postgres_repack.subprocess.run")
+@patch("swiss_ai_hub.backup.maintenance.postgres_repack.shutil.which")
+def test_postgres_repack_handler_sets_pgappname_for_pg_stat_activity(
+    mock_which: MagicMock,
+    mock_subprocess: MagicMock,
+) -> None:
+    """PGAPPNAME parity with the SQLAlchemy application_name lets DBAs see
+    consistent labels in pg_stat_activity."""
+    mock_which.return_value = "/usr/bin/pg_repack"
+    mock_subprocess.return_value = MagicMock(returncode=0, stdout="", stderr="")
+    settings = _mock_repack_settings()
+    PostgresRepackHandler(settings).run()
+    env = mock_subprocess.call_args.kwargs["env"]
+    assert env["PGAPPNAME"] == "swiss-ai-hub-maintenance"

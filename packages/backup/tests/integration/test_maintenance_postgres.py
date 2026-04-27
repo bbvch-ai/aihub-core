@@ -17,14 +17,25 @@ from __future__ import annotations
 import pytest
 from sqlalchemy import Engine, text
 
-from swiss_ai_hub.backup.maintenance.dagster_debug_logs import DagsterDebugLogsHandler
-from swiss_ai_hub.backup.maintenance.dagster_info_logs import DagsterInfoLogsHandler
 from swiss_ai_hub.backup.maintenance.dagster_unimportant_events import DagsterUnimportantEventsHandler
-from swiss_ai_hub.backup.maintenance.dagster_warning_logs import DagsterWarningLogsHandler
+from swiss_ai_hub.backup.maintenance.log_level_cleanup_handler import LogLevelCleanupHandler
 from swiss_ai_hub.backup.maintenance.postgres_autovacuum_tune import PostgresAutovacuumTuneHandler
 from swiss_ai_hub.backup.maintenance.postgres_indexes import PostgresIndexesHandler
 
 from .conftest import count_rows
+
+
+def _debug(engine, retention=7, limit=10_000) -> LogLevelCleanupHandler:
+    return LogLevelCleanupHandler("dagster_debug_logs", "10", engine, retention, limit)
+
+
+def _info(engine, retention=60, limit=10_000) -> LogLevelCleanupHandler:
+    return LogLevelCleanupHandler("dagster_info_logs", "20", engine, retention, limit)
+
+
+def _warning(engine, retention=60, limit=10_000) -> LogLevelCleanupHandler:
+    return LogLevelCleanupHandler("dagster_warning_logs", "30", engine, retention, limit)
+
 
 pytestmark = pytest.mark.integration
 
@@ -41,7 +52,7 @@ def test_debug_logs_handler_deletes_only_old_level_10_user_logs(event_logs_engin
     seed_events(age_days=10, dagster_event_type="ASSET_MATERIALIZATION")  # framework event → keep
     seed_events(age_days=10, dagster_event_type="ENGINE_EVENT")  # framework event → keep
 
-    result = DagsterDebugLogsHandler(event_logs_engine, delete_after_days=7, batch_limit=10_000).run()
+    result = _debug(event_logs_engine, retention=7, limit=10_000).run()
     assert result.succeeded
     assert result.rows_affected == 1
     # Only the old DEBUG was deleted; everything else preserved.
@@ -54,7 +65,7 @@ def test_info_logs_handler_deletes_only_old_level_20_user_logs(event_logs_engine
     seed_events(age_days=70, level="10")  # old DEBUG → keep (different handler)
     seed_events(age_days=70, level="30")  # old WARNING → keep (different handler)
 
-    result = DagsterInfoLogsHandler(event_logs_engine, delete_after_days=60, batch_limit=10_000).run()
+    result = _info(event_logs_engine, retention=60, limit=10_000).run()
     assert result.succeeded
     assert result.rows_affected == 1
     assert count_rows(event_logs_engine) == 3
@@ -65,7 +76,7 @@ def test_warning_logs_handler_deletes_only_old_level_30_user_logs(event_logs_eng
     seed_events(age_days=10, level="30")
     seed_events(age_days=70, level="20")
 
-    result = DagsterWarningLogsHandler(event_logs_engine, delete_after_days=60, batch_limit=10_000).run()
+    result = _warning(event_logs_engine, retention=60, limit=10_000).run()
     assert result.succeeded
     assert result.rows_affected == 1
     assert count_rows(event_logs_engine) == 2
@@ -143,9 +154,9 @@ def test_cleanup_handlers_run_together_preserve_user_visible_data(event_logs_eng
     seed_events(age_days=200, dagster_event_type="STEP_FAILURE")
     seed_events(age_days=200, dagster_event_type="RUN_SUCCESS")
 
-    DagsterDebugLogsHandler(event_logs_engine, 7, 10_000).run()
-    DagsterInfoLogsHandler(event_logs_engine, 60, 10_000).run()
-    DagsterWarningLogsHandler(event_logs_engine, 60, 10_000).run()
+    _debug(event_logs_engine, 7, 10_000).run()
+    _info(event_logs_engine, 60, 10_000).run()
+    _warning(event_logs_engine, 60, 10_000).run()
     DagsterUnimportantEventsHandler(event_logs_engine, 30, 10_000).run()
 
     with event_logs_engine.connect() as conn:
