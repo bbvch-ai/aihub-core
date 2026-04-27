@@ -226,7 +226,8 @@ collection_name, dimensions, index_type: HNSW or IVF_FLAT).
 - `s3_data_lake_resources(container_name)` — client, file_system, io_manager, resource
 - `mongo_document_store_resource(store_name)` — doc_store, io_manager, resource
 - `milvus_vector_store_resource(uri, collection_name, dimensions)` — vector_store, io_manager
-- `default_io_manager_s3_datalake_resources(container_name)` — Dagster PickleIOManager for inter-op data
+- `default_io_manager_s3_datalake_resources(container_name)` — Dagster PickleIOManager for inter-op data; intermediates
+  land in the shared `dagster` bucket under `<container_name>/` with a bucket-wide 1-day TTL.
 - `local_mongo_milvus_storage_context_resource(vector_store_uri, store_name)` — combined MongoDB + Milvus
 
 ## Observable Assets & Dynamic Partitions
