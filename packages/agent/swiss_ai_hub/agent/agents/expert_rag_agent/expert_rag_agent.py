@@ -231,7 +231,7 @@ class ExpertRAGAgent(Agent):
             query=query,
             tenant_id=agent_config.tenant_id,
             tenant_namespace=agent_config.tenant_namespace,
-            user_id=event.user.id,
+            user_id=None,
             limit=10,
             threshold=0.5,
             rerank=True,
