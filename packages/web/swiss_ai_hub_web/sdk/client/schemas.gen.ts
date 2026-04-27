@@ -5189,6 +5189,15 @@ export const ContextualizedAgentEventSchema = {
                     $ref: '#/components/schemas/AgentInTheLoopResponseEvent'
                 },
                 {
+                    $ref: '#/components/schemas/HumanInTheLoopInputRequestEvent'
+                },
+                {
+                    $ref: '#/components/schemas/HumanInTheLoopConfirmationRequestEvent'
+                },
+                {
+                    $ref: '#/components/schemas/HumanInTheLoopChatRequestEvent'
+                },
+                {
                     $ref: '#/components/schemas/HumanInTheLoopRequestEvent'
                 },
                 {
@@ -5196,6 +5205,15 @@ export const ContextualizedAgentEventSchema = {
                 },
                 {
                     $ref: '#/components/schemas/AgentInTheLoopExceptionEvent'
+                },
+                {
+                    $ref: '#/components/schemas/HumanInTheLoopInputResponseEvent'
+                },
+                {
+                    $ref: '#/components/schemas/HumanInTheLoopConfirmationResponseEvent'
+                },
+                {
+                    $ref: '#/components/schemas/HumanInTheLoopChatResponseEvent'
                 },
                 {
                     $ref: '#/components/schemas/HumanInTheLoopResponseEvent'
@@ -5268,6 +5286,9 @@ export const ContextualizedAgentEventSchema = {
                 },
                 {
                     $ref: '#/components/schemas/ExceptionEvent'
+                },
+                {
+                    $ref: '#/components/schemas/RAGStopEvent'
                 },
                 {
                     $ref: '#/components/schemas/StopEvent'
@@ -8656,6 +8677,468 @@ export const HumanInSpecsSchema = {
     ],
     title: 'HumanInSpecs',
     description: 'Defines a piece of work that can be submitted by a human.\nIt holds information about the form that the user must fill in in order to generate the exact\ndata structure defined in the event specs of the work event.\nIt also holds the route and http method that must be used to finally post that work event data\nto the API, which will forward it to the appropriate process.'
+} as const;
+
+export const HumanInTheLoopChatRequestEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display name for the event'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display description for the event'
+        },
+        question: {
+            type: 'string',
+            title: 'Question',
+            description: 'The query or prompt presented to the human operator.'
+        },
+        topic: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/PartialAgentTopic'
+                },
+                {
+                    $ref: '#/components/schemas/AgentInstanceTopic'
+                }
+            ],
+            title: 'Topic',
+            description: 'A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.'
+        },
+        hitl_type: {
+            type: 'string',
+            const: 'chat',
+            title: 'Hitl Type',
+            default: 'chat'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: 'The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.',
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: [
+        'question',
+        'topic',
+        '_event_name',
+        '_parent_event_names'
+    ],
+    title: 'HumanInTheLoopChatRequestEvent',
+    description: 'Request chat-style input from a human operator.\n\nUnlike input/confirmation types that show popup dialogs, chat requests appear\nas regular chat messages. The user responds by typing a normal chat message.'
+} as const;
+
+export const HumanInTheLoopChatResponseEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display name for the event'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display description for the event'
+        },
+        response: {
+            type: 'string',
+            title: 'Response',
+            description: 'The human operator\'s chat message.'
+        },
+        request_event: {
+            $ref: '#/components/schemas/HumanInTheLoopChatRequestEvent',
+            description: 'The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: 'The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.',
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: [
+        'response',
+        'request_event',
+        '_event_name',
+        '_parent_event_names'
+    ],
+    title: 'HumanInTheLoopChatResponseEvent',
+    description: 'Response containing chat-style input from a human operator.'
+} as const;
+
+export const HumanInTheLoopConfirmationRequestEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display name for the event'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display description for the event'
+        },
+        question: {
+            type: 'string',
+            title: 'Question',
+            description: 'The query or prompt presented to the human operator.'
+        },
+        topic: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/PartialAgentTopic'
+                },
+                {
+                    $ref: '#/components/schemas/AgentInstanceTopic'
+                }
+            ],
+            title: 'Topic',
+            description: 'A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.'
+        },
+        hitl_type: {
+            type: 'string',
+            const: 'confirmation',
+            title: 'Hitl Type',
+            default: 'confirmation'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: 'The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.',
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: [
+        'question',
+        'topic',
+        '_event_name',
+        '_parent_event_names'
+    ],
+    title: 'HumanInTheLoopConfirmationRequestEvent',
+    description: 'Request yes/no confirmation from a human operator.'
+} as const;
+
+export const HumanInTheLoopConfirmationResponseEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display name for the event'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display description for the event'
+        },
+        response: {
+            type: 'boolean',
+            title: 'Response',
+            description: 'The human operator\'s confirmation (True for yes, False for no).'
+        },
+        request_event: {
+            $ref: '#/components/schemas/HumanInTheLoopConfirmationRequestEvent',
+            description: 'The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: 'The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.',
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: [
+        'response',
+        'request_event',
+        '_event_name',
+        '_parent_event_names'
+    ],
+    title: 'HumanInTheLoopConfirmationResponseEvent',
+    description: 'Response containing yes/no confirmation from a human operator.'
+} as const;
+
+export const HumanInTheLoopInputRequestEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display name for the event'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display description for the event'
+        },
+        question: {
+            type: 'string',
+            title: 'Question',
+            description: 'The query or prompt presented to the human operator.'
+        },
+        topic: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/PartialAgentTopic'
+                },
+                {
+                    $ref: '#/components/schemas/AgentInstanceTopic'
+                }
+            ],
+            title: 'Topic',
+            description: 'A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.'
+        },
+        hitl_type: {
+            type: 'string',
+            const: 'input',
+            title: 'Hitl Type',
+            default: 'input'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: 'The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.',
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: [
+        'question',
+        'topic',
+        '_event_name',
+        '_parent_event_names'
+    ],
+    title: 'HumanInTheLoopInputRequestEvent',
+    description: 'Request free-form text input from a human operator.'
+} as const;
+
+export const HumanInTheLoopInputResponseEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display name for the event'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display description for the event'
+        },
+        response: {
+            type: 'string',
+            title: 'Response',
+            description: 'The human operator\'s text input.'
+        },
+        request_event: {
+            $ref: '#/components/schemas/HumanInTheLoopInputRequestEvent',
+            description: 'The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: 'The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.',
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: [
+        'response',
+        'request_event',
+        '_event_name',
+        '_parent_event_names'
+    ],
+    title: 'HumanInTheLoopInputResponseEvent',
+    description: 'Response containing free-form text input from a human operator.'
 } as const;
 
 export const HumanInTheLoopRequestEventSchema = {
@@ -13438,7 +13921,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1776847046
+            default: 1777306425
         },
         owned_by: {
             type: 'string',
@@ -16168,6 +16651,71 @@ export const RAGStartEventSchema = {
     ],
     title: 'RAGStartEvent',
     description: 'Namespace-aware start event for the RAG agent.\n\n`RAGStartEvent` is intended for non-chat publishers: custom domain front-ends that run their own namespace\nselection UI, or other agents delegating to RAG via `AgentInTheLoop`.'
+} as const;
+
+export const RAGStopEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display name for the event'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display description for the event'
+        },
+        context_sufficient: {
+            type: 'boolean',
+            title: 'Context Sufficient',
+            description: 'Whether the retrieved context was sufficient to ground the answer. True covers three cases: (a) the sufficiency guard ran and accepted the context, (b) the guard was disabled via `check_context_sufficiency=False`, or (c) the guard step was never reached on this run. False means the guard ran, exhausted all retrieval hops, and judged the final context insufficient — so the LLM was forced to produce an "I don\'t know"-style fallback answer.',
+            default: true
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: 'The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.',
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: [
+        '_event_name',
+        '_parent_event_names'
+    ],
+    title: 'RAGStopEvent',
+    description: 'Stop event emitted by RAG-style agents.\n\nCarries a `context_sufficient` flag so a parent agent (e.g. via `AgentInTheLoop`) can\nbranch on whether the RAG run produced an answer grounded in retrieved context, or\nwhether the LLM was forced to respond with an "I don\'t know"-style fallback.'
 } as const;
 
 export const RadioButtonSchema = {
@@ -24439,6 +24987,15 @@ export const ContextualizedAgentEventWritableSchema = {
                     $ref: '#/components/schemas/AgentInTheLoopResponseEventWritable'
                 },
                 {
+                    $ref: '#/components/schemas/HumanInTheLoopInputRequestEventWritable'
+                },
+                {
+                    $ref: '#/components/schemas/HumanInTheLoopConfirmationRequestEventWritable'
+                },
+                {
+                    $ref: '#/components/schemas/HumanInTheLoopChatRequestEventWritable'
+                },
+                {
                     $ref: '#/components/schemas/HumanInTheLoopRequestEventWritable'
                 },
                 {
@@ -24446,6 +25003,15 @@ export const ContextualizedAgentEventWritableSchema = {
                 },
                 {
                     $ref: '#/components/schemas/AgentInTheLoopExceptionEventWritable'
+                },
+                {
+                    $ref: '#/components/schemas/HumanInTheLoopInputResponseEventWritable'
+                },
+                {
+                    $ref: '#/components/schemas/HumanInTheLoopConfirmationResponseEventWritable'
+                },
+                {
+                    $ref: '#/components/schemas/HumanInTheLoopChatResponseEventWritable'
                 },
                 {
                     $ref: '#/components/schemas/HumanInTheLoopResponseEventWritable'
@@ -24518,6 +25084,9 @@ export const ContextualizedAgentEventWritableSchema = {
                 },
                 {
                     $ref: '#/components/schemas/ExceptionEventWritable'
+                },
+                {
+                    $ref: '#/components/schemas/RAGStopEventWritable'
                 },
                 {
                     $ref: '#/components/schemas/StopEventWritable'
@@ -26061,6 +26630,366 @@ export const HumanInSpecsWritableSchema = {
     ],
     title: 'HumanInSpecs',
     description: 'Defines a piece of work that can be submitted by a human.\nIt holds information about the form that the user must fill in in order to generate the exact\ndata structure defined in the event specs of the work event.\nIt also holds the route and http method that must be used to finally post that work event data\nto the API, which will forward it to the appropriate process.'
+} as const;
+
+export const HumanInTheLoopChatRequestEventWritableSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display name for the event'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display description for the event'
+        },
+        question: {
+            type: 'string',
+            title: 'Question',
+            description: 'The query or prompt presented to the human operator.'
+        },
+        topic: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/PartialAgentTopic'
+                },
+                {
+                    $ref: '#/components/schemas/AgentInstanceTopic'
+                }
+            ],
+            title: 'Topic',
+            description: 'A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.'
+        },
+        hitl_type: {
+            type: 'string',
+            const: 'chat',
+            title: 'Hitl Type',
+            default: 'chat'
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: [
+        'question',
+        'topic'
+    ],
+    title: 'HumanInTheLoopChatRequestEvent',
+    description: 'Request chat-style input from a human operator.\n\nUnlike input/confirmation types that show popup dialogs, chat requests appear\nas regular chat messages. The user responds by typing a normal chat message.'
+} as const;
+
+export const HumanInTheLoopChatResponseEventWritableSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display name for the event'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display description for the event'
+        },
+        response: {
+            type: 'string',
+            title: 'Response',
+            description: 'The human operator\'s chat message.'
+        },
+        request_event: {
+            $ref: '#/components/schemas/HumanInTheLoopChatRequestEventWritable',
+            description: 'The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.'
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: [
+        'response',
+        'request_event'
+    ],
+    title: 'HumanInTheLoopChatResponseEvent',
+    description: 'Response containing chat-style input from a human operator.'
+} as const;
+
+export const HumanInTheLoopConfirmationRequestEventWritableSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display name for the event'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display description for the event'
+        },
+        question: {
+            type: 'string',
+            title: 'Question',
+            description: 'The query or prompt presented to the human operator.'
+        },
+        topic: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/PartialAgentTopic'
+                },
+                {
+                    $ref: '#/components/schemas/AgentInstanceTopic'
+                }
+            ],
+            title: 'Topic',
+            description: 'A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.'
+        },
+        hitl_type: {
+            type: 'string',
+            const: 'confirmation',
+            title: 'Hitl Type',
+            default: 'confirmation'
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: [
+        'question',
+        'topic'
+    ],
+    title: 'HumanInTheLoopConfirmationRequestEvent',
+    description: 'Request yes/no confirmation from a human operator.'
+} as const;
+
+export const HumanInTheLoopConfirmationResponseEventWritableSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display name for the event'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display description for the event'
+        },
+        response: {
+            type: 'boolean',
+            title: 'Response',
+            description: 'The human operator\'s confirmation (True for yes, False for no).'
+        },
+        request_event: {
+            $ref: '#/components/schemas/HumanInTheLoopConfirmationRequestEventWritable',
+            description: 'The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.'
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: [
+        'response',
+        'request_event'
+    ],
+    title: 'HumanInTheLoopConfirmationResponseEvent',
+    description: 'Response containing yes/no confirmation from a human operator.'
+} as const;
+
+export const HumanInTheLoopInputRequestEventWritableSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display name for the event'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display description for the event'
+        },
+        question: {
+            type: 'string',
+            title: 'Question',
+            description: 'The query or prompt presented to the human operator.'
+        },
+        topic: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/PartialAgentTopic'
+                },
+                {
+                    $ref: '#/components/schemas/AgentInstanceTopic'
+                }
+            ],
+            title: 'Topic',
+            description: 'A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.'
+        },
+        hitl_type: {
+            type: 'string',
+            const: 'input',
+            title: 'Hitl Type',
+            default: 'input'
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: [
+        'question',
+        'topic'
+    ],
+    title: 'HumanInTheLoopInputRequestEvent',
+    description: 'Request free-form text input from a human operator.'
+} as const;
+
+export const HumanInTheLoopInputResponseEventWritableSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display name for the event'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display description for the event'
+        },
+        response: {
+            type: 'string',
+            title: 'Response',
+            description: 'The human operator\'s text input.'
+        },
+        request_event: {
+            $ref: '#/components/schemas/HumanInTheLoopInputRequestEventWritable',
+            description: 'The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.'
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: [
+        'response',
+        'request_event'
+    ],
+    title: 'HumanInTheLoopInputResponseEvent',
+    description: 'Response containing free-form text input from a human operator.'
 } as const;
 
 export const HumanInTheLoopRequestEventWritableSchema = {
@@ -30066,6 +30995,52 @@ export const RAGStartEventWritableSchema = {
     ],
     title: 'RAGStartEvent',
     description: 'Namespace-aware start event for the RAG agent.\n\n`RAGStartEvent` is intended for non-chat publishers: custom domain front-ends that run their own namespace\nselection UI, or other agents delegating to RAG via `AgentInTheLoop`.'
+} as const;
+
+export const RAGStopEventWritableSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display name for the event'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display description for the event'
+        },
+        context_sufficient: {
+            type: 'boolean',
+            title: 'Context Sufficient',
+            description: 'Whether the retrieved context was sufficient to ground the answer. True covers three cases: (a) the sufficiency guard ran and accepted the context, (b) the guard was disabled via `check_context_sufficiency=False`, or (c) the guard step was never reached on this run. False means the guard ran, exhausted all retrieval hops, and judged the final context insufficient — so the LLM was forced to produce an "I don\'t know"-style fallback answer.',
+            default: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    title: 'RAGStopEvent',
+    description: 'Stop event emitted by RAG-style agents.\n\nCarries a `context_sufficient` flag so a parent agent (e.g. via `AgentInTheLoop`) can\nbranch on whether the RAG run produced an answer grounded in retrieved context, or\nwhether the LLM was forced to respond with an "I don\'t know"-style fallback.'
 } as const;
 
 export const RadioButtonWritableSchema = {

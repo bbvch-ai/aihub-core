@@ -195,7 +195,7 @@ async def test_guard_sets_context_sufficient_false_when_no_more_hops(
 
 
 @pytest.mark.asyncio
-async def test_guard_does_not_write_context_sufficient_on_accept(
+async def test_guard_sets_context_sufficient_true_on_accept(
     mock_llm, llm_config, displayer, run_context, locale_handler
 ):
     await do_context_sufficient_guard(
@@ -210,5 +210,4 @@ async def test_guard_does_not_write_context_sufficient_on_accept(
         chat_history=[],
     )
 
-    written_keys = [call.args[0] for call in run_context.set.await_args_list]
-    assert "context_sufficient" not in written_keys
+    run_context.set.assert_any_await("context_sufficient", True)

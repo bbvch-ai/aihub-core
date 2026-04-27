@@ -3238,7 +3238,7 @@ export type ContextualizedAgentEvent = {
      *
      * Data of the event itself.
      */
-    event: StartEvent | AgentInTheLoopResponseEvent | HumanInTheLoopRequestEvent | AgentInTheLoopRequestEvent | AgentInTheLoopExceptionEvent | HumanInTheLoopResponseEvent | LimitChatHistoryEvent | AddMemoryToChatHistoryEvent | AddUserMemoryToChatHistoryEvent | AddOrganizationMemoryToChatHistoryEvent | StandaloneQuestionCondenserEvent | LlmCostEvent | ChunkEvent | ThoughtEvent | GuardEvent | RouterEvent | GuardRejectionEvent | SemanticEvent | AgentEvent | ChainEvent | EmbeddingEvent | LlmEvent | LlmStopEvent | RerankerEvent | RetrieverEvent | ToolEvent | UserMessageEvent | RagStartEvent | ExceptionEvent | StopEvent | DisplayEvent | GuardAcceptEvent | AgentSuitabilityAcceptEvent | AgentSuitabilityRejectEvent | ContextSufficientAcceptEvent | ContextInsufficientRejectEvent | FewShotAcceptEvent | FewShotRejectEvent | SensitiveInfoAcceptEvent | SensitiveInfoRejectEvent | StoreUserMemoryEvent | BaseRetrieveMemoryEvent | BaseStoreMemoryEvent | RetrieveOrganizationMemoryEvent | RetrieveUserMemoryEvent | StoreOrganizationMemoryEvent;
+    event: StartEvent | AgentInTheLoopResponseEvent | HumanInTheLoopInputRequestEvent | HumanInTheLoopConfirmationRequestEvent | HumanInTheLoopChatRequestEvent | HumanInTheLoopRequestEvent | AgentInTheLoopRequestEvent | AgentInTheLoopExceptionEvent | HumanInTheLoopInputResponseEvent | HumanInTheLoopConfirmationResponseEvent | HumanInTheLoopChatResponseEvent | HumanInTheLoopResponseEvent | LimitChatHistoryEvent | AddMemoryToChatHistoryEvent | AddUserMemoryToChatHistoryEvent | AddOrganizationMemoryToChatHistoryEvent | StandaloneQuestionCondenserEvent | LlmCostEvent | ChunkEvent | ThoughtEvent | GuardEvent | RouterEvent | GuardRejectionEvent | SemanticEvent | AgentEvent | ChainEvent | EmbeddingEvent | LlmEvent | LlmStopEvent | RerankerEvent | RetrieverEvent | ToolEvent | UserMessageEvent | RagStartEvent | ExceptionEvent | RagStopEvent | StopEvent | DisplayEvent | GuardAcceptEvent | AgentSuitabilityAcceptEvent | AgentSuitabilityRejectEvent | ContextSufficientAcceptEvent | ContextInsufficientRejectEvent | FewShotAcceptEvent | FewShotRejectEvent | SensitiveInfoAcceptEvent | SensitiveInfoRejectEvent | StoreUserMemoryEvent | BaseRetrieveMemoryEvent | BaseStoreMemoryEvent | RetrieveOrganizationMemoryEvent | RetrieveUserMemoryEvent | StoreOrganizationMemoryEvent;
 };
 
 /**
@@ -5447,6 +5447,327 @@ export type HumanInSpecs = {
      * Formkit elements of the work event.
      */
     form?: Array<HtmlElement | AgentSelector | CascadeSelect | Checkbox | ColorPicker | DatePicker | Group | IconSelector | InputMask | InputNumber | InputOtp | InputText | KnowledgeDatabaseSelector | Knob | Listbox | LocaleInput | ModelSelect | MultiSelect | Password | RadioButton | Rating | Repeater | Select | SelectButton | Slider | Textarea | ToggleButton | ToggleSwitch | VectorStoreInput>;
+};
+
+/**
+ * HumanInTheLoopChatRequestEvent
+ *
+ * Request chat-style input from a human operator.
+ *
+ * Unlike input/confirmation types that show popup dialogs, chat requests appear
+ * as regular chat messages. The user responds by typing a normal chat message.
+ */
+export type HumanInTheLoopChatRequestEvent = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     *
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Question
+     *
+     * The query or prompt presented to the human operator.
+     */
+    question: string;
+    /**
+     * Topic
+     *
+     * A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.
+     */
+    topic: PartialAgentTopic | AgentInstanceTopic;
+    /**
+     * Hitl Type
+     */
+    hitl_type?: 'chat';
+    /**
+     * Event Name
+     *
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Parent Event Names
+     *
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | PartialAgentTopic | AgentInstanceTopic | 'chat' | Array<string> | undefined;
+};
+
+/**
+ * HumanInTheLoopChatResponseEvent
+ *
+ * Response containing chat-style input from a human operator.
+ */
+export type HumanInTheLoopChatResponseEvent = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     *
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Response
+     *
+     * The human operator's chat message.
+     */
+    response: string;
+    /**
+     * The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.
+     */
+    request_event: HumanInTheLoopChatRequestEvent;
+    /**
+     * Event Name
+     *
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Parent Event Names
+     *
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | HumanInTheLoopChatRequestEvent | Array<string> | undefined;
+};
+
+/**
+ * HumanInTheLoopConfirmationRequestEvent
+ *
+ * Request yes/no confirmation from a human operator.
+ */
+export type HumanInTheLoopConfirmationRequestEvent = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     *
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Question
+     *
+     * The query or prompt presented to the human operator.
+     */
+    question: string;
+    /**
+     * Topic
+     *
+     * A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.
+     */
+    topic: PartialAgentTopic | AgentInstanceTopic;
+    /**
+     * Hitl Type
+     */
+    hitl_type?: 'confirmation';
+    /**
+     * Event Name
+     *
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Parent Event Names
+     *
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | PartialAgentTopic | AgentInstanceTopic | 'confirmation' | Array<string> | undefined;
+};
+
+/**
+ * HumanInTheLoopConfirmationResponseEvent
+ *
+ * Response containing yes/no confirmation from a human operator.
+ */
+export type HumanInTheLoopConfirmationResponseEvent = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     *
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Response
+     *
+     * The human operator's confirmation (True for yes, False for no).
+     */
+    response: boolean;
+    /**
+     * The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.
+     */
+    request_event: HumanInTheLoopConfirmationRequestEvent;
+    /**
+     * Event Name
+     *
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Parent Event Names
+     *
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | boolean | HumanInTheLoopConfirmationRequestEvent | Array<string> | undefined;
+};
+
+/**
+ * HumanInTheLoopInputRequestEvent
+ *
+ * Request free-form text input from a human operator.
+ */
+export type HumanInTheLoopInputRequestEvent = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     *
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Question
+     *
+     * The query or prompt presented to the human operator.
+     */
+    question: string;
+    /**
+     * Topic
+     *
+     * A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.
+     */
+    topic: PartialAgentTopic | AgentInstanceTopic;
+    /**
+     * Hitl Type
+     */
+    hitl_type?: 'input';
+    /**
+     * Event Name
+     *
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Parent Event Names
+     *
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | PartialAgentTopic | AgentInstanceTopic | 'input' | Array<string> | undefined;
+};
+
+/**
+ * HumanInTheLoopInputResponseEvent
+ *
+ * Response containing free-form text input from a human operator.
+ */
+export type HumanInTheLoopInputResponseEvent = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     *
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Response
+     *
+     * The human operator's text input.
+     */
+    response: string;
+    /**
+     * The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.
+     */
+    request_event: HumanInTheLoopInputRequestEvent;
+    /**
+     * Event Name
+     *
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Parent Event Names
+     *
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | HumanInTheLoopInputRequestEvent | Array<string> | undefined;
 };
 
 /**
@@ -10178,6 +10499,56 @@ export type RagStartEvent = {
      */
     readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | UserIdentity | Array<ChatMessage> | Array<UserUploadedFile> | null | Array<BucketNamespacePair> | Array<BucketMetadataFilters> | null | Array<string> | undefined;
+};
+
+/**
+ * RAGStopEvent
+ *
+ * Stop event emitted by RAG-style agents.
+ *
+ * Carries a `context_sufficient` flag so a parent agent (e.g. via `AgentInTheLoop`) can
+ * branch on whether the RAG run produced an answer grounded in retrieved context, or
+ * whether the LLM was forced to respond with an "I don't know"-style fallback.
+ */
+export type RagStopEvent = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     *
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Context Sufficient
+     *
+     * Whether the retrieved context was sufficient to ground the answer. True covers three cases: (a) the sufficiency guard ran and accepted the context, (b) the guard was disabled via `check_context_sufficiency=False`, or (c) the guard step was never reached on this run. False means the guard ran, exhausted all retrieval hops, and judged the final context insufficient — so the LLM was forced to produce an "I don't know"-style fallback answer.
+     */
+    context_sufficient?: boolean;
+    /**
+     * Event Name
+     *
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Parent Event Names
+     *
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | boolean | Array<string> | undefined;
 };
 
 /**
@@ -15663,7 +16034,7 @@ export type ContextualizedAgentEventWritable = {
      *
      * Data of the event itself.
      */
-    event: StartEventWritable | AgentInTheLoopResponseEventWritable | HumanInTheLoopRequestEventWritable | AgentInTheLoopRequestEventWritable | AgentInTheLoopExceptionEventWritable | HumanInTheLoopResponseEventWritable | LimitChatHistoryEventWritable | AddMemoryToChatHistoryEventWritable | AddUserMemoryToChatHistoryEventWritable | AddOrganizationMemoryToChatHistoryEventWritable | StandaloneQuestionCondenserEventWritable | LlmCostEventWritable | ChunkEventWritable | ThoughtEventWritable | GuardEventWritable | RouterEventWritable | GuardRejectionEventWritable | SemanticEventWritable | AgentEventWritable | ChainEventWritable | EmbeddingEventWritable | LlmEventWritable | LlmStopEventWritable | RerankerEventWritable | RetrieverEventWritable | ToolEventWritable | UserMessageEventWritable | RagStartEventWritable | ExceptionEventWritable | StopEventWritable | DisplayEventWritable | GuardAcceptEventWritable | AgentSuitabilityAcceptEventWritable | AgentSuitabilityRejectEventWritable | ContextSufficientAcceptEventWritable | ContextInsufficientRejectEventWritable | FewShotAcceptEventWritable | FewShotRejectEventWritable | SensitiveInfoAcceptEventWritable | SensitiveInfoRejectEventWritable | StoreUserMemoryEventWritable | BaseRetrieveMemoryEventWritable | BaseStoreMemoryEventWritable | RetrieveOrganizationMemoryEventWritable | RetrieveUserMemoryEventWritable | StoreOrganizationMemoryEventWritable;
+    event: StartEventWritable | AgentInTheLoopResponseEventWritable | HumanInTheLoopInputRequestEventWritable | HumanInTheLoopConfirmationRequestEventWritable | HumanInTheLoopChatRequestEventWritable | HumanInTheLoopRequestEventWritable | AgentInTheLoopRequestEventWritable | AgentInTheLoopExceptionEventWritable | HumanInTheLoopInputResponseEventWritable | HumanInTheLoopConfirmationResponseEventWritable | HumanInTheLoopChatResponseEventWritable | HumanInTheLoopResponseEventWritable | LimitChatHistoryEventWritable | AddMemoryToChatHistoryEventWritable | AddUserMemoryToChatHistoryEventWritable | AddOrganizationMemoryToChatHistoryEventWritable | StandaloneQuestionCondenserEventWritable | LlmCostEventWritable | ChunkEventWritable | ThoughtEventWritable | GuardEventWritable | RouterEventWritable | GuardRejectionEventWritable | SemanticEventWritable | AgentEventWritable | ChainEventWritable | EmbeddingEventWritable | LlmEventWritable | LlmStopEventWritable | RerankerEventWritable | RetrieverEventWritable | ToolEventWritable | UserMessageEventWritable | RagStartEventWritable | ExceptionEventWritable | RagStopEventWritable | StopEventWritable | DisplayEventWritable | GuardAcceptEventWritable | AgentSuitabilityAcceptEventWritable | AgentSuitabilityRejectEventWritable | ContextSufficientAcceptEventWritable | ContextInsufficientRejectEventWritable | FewShotAcceptEventWritable | FewShotRejectEventWritable | SensitiveInfoAcceptEventWritable | SensitiveInfoRejectEventWritable | StoreUserMemoryEventWritable | BaseRetrieveMemoryEventWritable | BaseStoreMemoryEventWritable | RetrieveOrganizationMemoryEventWritable | RetrieveUserMemoryEventWritable | StoreOrganizationMemoryEventWritable;
 };
 
 /**
@@ -16538,6 +16909,249 @@ export type HumanInSpecsWritable = {
      * Formkit elements of the work event.
      */
     form?: Array<HtmlElement | AgentSelectorWritable | CascadeSelectWritable | CheckboxWritable | ColorPickerWritable | DatePickerWritable | GroupWritable | IconSelectorWritable | InputMaskWritable | InputNumberWritable | InputOtpWritable | InputTextWritable | KnowledgeDatabaseSelectorWritable | KnobWritable | ListboxWritable | LocaleInputWritable | ModelSelectWritable | MultiSelectWritable | PasswordWritable | RadioButtonWritable | RatingWritable | RepeaterWritable | SelectWritable | SelectButtonWritable | SliderWritable | TextareaWritable | ToggleButtonWritable | ToggleSwitchWritable | VectorStoreInputWritable>;
+};
+
+/**
+ * HumanInTheLoopChatRequestEvent
+ *
+ * Request chat-style input from a human operator.
+ *
+ * Unlike input/confirmation types that show popup dialogs, chat requests appear
+ * as regular chat messages. The user responds by typing a normal chat message.
+ */
+export type HumanInTheLoopChatRequestEventWritable = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     *
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Question
+     *
+     * The query or prompt presented to the human operator.
+     */
+    question: string;
+    /**
+     * Topic
+     *
+     * A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.
+     */
+    topic: PartialAgentTopic | AgentInstanceTopic;
+    /**
+     * Hitl Type
+     */
+    hitl_type?: 'chat';
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | PartialAgentTopic | AgentInstanceTopic | 'chat' | undefined;
+};
+
+/**
+ * HumanInTheLoopChatResponseEvent
+ *
+ * Response containing chat-style input from a human operator.
+ */
+export type HumanInTheLoopChatResponseEventWritable = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     *
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Response
+     *
+     * The human operator's chat message.
+     */
+    response: string;
+    /**
+     * The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.
+     */
+    request_event: HumanInTheLoopChatRequestEventWritable;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | HumanInTheLoopChatRequestEventWritable | undefined;
+};
+
+/**
+ * HumanInTheLoopConfirmationRequestEvent
+ *
+ * Request yes/no confirmation from a human operator.
+ */
+export type HumanInTheLoopConfirmationRequestEventWritable = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     *
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Question
+     *
+     * The query or prompt presented to the human operator.
+     */
+    question: string;
+    /**
+     * Topic
+     *
+     * A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.
+     */
+    topic: PartialAgentTopic | AgentInstanceTopic;
+    /**
+     * Hitl Type
+     */
+    hitl_type?: 'confirmation';
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | PartialAgentTopic | AgentInstanceTopic | 'confirmation' | undefined;
+};
+
+/**
+ * HumanInTheLoopConfirmationResponseEvent
+ *
+ * Response containing yes/no confirmation from a human operator.
+ */
+export type HumanInTheLoopConfirmationResponseEventWritable = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     *
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Response
+     *
+     * The human operator's confirmation (True for yes, False for no).
+     */
+    response: boolean;
+    /**
+     * The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.
+     */
+    request_event: HumanInTheLoopConfirmationRequestEventWritable;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | boolean | HumanInTheLoopConfirmationRequestEventWritable | undefined;
+};
+
+/**
+ * HumanInTheLoopInputRequestEvent
+ *
+ * Request free-form text input from a human operator.
+ */
+export type HumanInTheLoopInputRequestEventWritable = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     *
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Question
+     *
+     * The query or prompt presented to the human operator.
+     */
+    question: string;
+    /**
+     * Topic
+     *
+     * A partial or full agent topic specifying the event type and name of the expected response event, ensuring the correct workflow step resumes once the human replies.
+     */
+    topic: PartialAgentTopic | AgentInstanceTopic;
+    /**
+     * Hitl Type
+     */
+    hitl_type?: 'input';
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | PartialAgentTopic | AgentInstanceTopic | 'input' | undefined;
+};
+
+/**
+ * HumanInTheLoopInputResponseEvent
+ *
+ * Response containing free-form text input from a human operator.
+ */
+export type HumanInTheLoopInputResponseEventWritable = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     *
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Response
+     *
+     * The human operator's text input.
+     */
+    response: string;
+    /**
+     * The original `HumanInTheLoopRequestEvent` that led to this response, providing context for where and why the workflow paused.
+     */
+    request_event: HumanInTheLoopInputRequestEventWritable;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | HumanInTheLoopInputRequestEventWritable | undefined;
 };
 
 /**
@@ -18919,6 +19533,43 @@ export type RagStartEventWritable = {
      */
     additional_filters?: Array<BucketMetadataFilters> | null;
     [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | UserIdentity | Array<ChatMessage> | Array<UserUploadedFile> | null | Array<BucketNamespacePair> | Array<BucketMetadataFilters> | null | undefined;
+};
+
+/**
+ * RAGStopEvent
+ *
+ * Stop event emitted by RAG-style agents.
+ *
+ * Carries a `context_sufficient` flag so a parent agent (e.g. via `AgentInTheLoop`) can
+ * branch on whether the RAG run produced an answer grounded in retrieved context, or
+ * whether the LLM was forced to respond with an "I don't know"-style fallback.
+ */
+export type RagStopEventWritable = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     *
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Context Sufficient
+     *
+     * Whether the retrieved context was sufficient to ground the answer. True covers three cases: (a) the sufficiency guard ran and accepted the context, (b) the guard was disabled via `check_context_sufficiency=False`, or (c) the guard step was never reached on this run. False means the guard ran, exhausted all retrieval hops, and judged the final context insufficient — so the LLM was forced to produce an "I don't know"-style fallback answer.
+     */
+    context_sufficient?: boolean;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | boolean | undefined;
 };
 
 /**

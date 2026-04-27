@@ -216,6 +216,7 @@ async def do_context_sufficient_guard(
         )
 
     if guard_result.success:
+        await run_context.set("context_sufficient", True)
         await displayer.display_thought(t("agent.thought.context_sufficient"))
         return ContextSufficientAcceptEvent(reason=guard_result.reasoning)
 

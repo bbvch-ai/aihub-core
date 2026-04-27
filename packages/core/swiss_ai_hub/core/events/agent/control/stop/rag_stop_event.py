@@ -21,9 +21,13 @@ class RAGStopEvent(StopEvent):
         bool,
         Field(
             description=(
-                "True if retrieved context was judged sufficient to answer the user query "
-                "(or the sufficiency guard was disabled). False if the run terminated via "
-                "the context-insufficient path."
+                "Whether the retrieved context was sufficient to ground the answer. "
+                "True covers three cases: (a) the sufficiency guard ran and accepted the "
+                "context, (b) the guard was disabled via `check_context_sufficiency=False`, "
+                "or (c) the guard step was never reached on this run. "
+                "False means the guard ran, exhausted all retrieval hops, and judged the "
+                "final context insufficient — so the LLM was forced to produce an "
+                '"I don\'t know"-style fallback answer.'
             )
         ),
     ] = True
