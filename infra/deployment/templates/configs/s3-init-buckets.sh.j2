@@ -14,7 +14,7 @@ DEFAULT_BUCKET=${AIHUB_DEFAULT_BUCKET_NAME}
 SHARED_BUCKET=${AIHUB_SHARED_BUCKET_NAME}
 
 # Always create core infrastructure buckets
-BUCKETS="open-webui milvus langfuse backups"
+BUCKETS="open-webui milvus langfuse backups dagster"
 
 # Conditionally add knowledge buckets
 if [ "$CREATE_DEFAULT_BUCKETS" = "True" ] || [ "$CREATE_DEFAULT_BUCKETS" = "true" ]; then
@@ -61,3 +61,29 @@ for bucket in $BUCKETS; do
 done
 
 echo "Bucket initialization and CORS configuration complete!"
+
+# Apply lifecycle expiration to the dagster bucket.
+# Everything in this bucket is op-internal handoff data written by Dagster's default
+# S3PickleIOManager. Asset finals route to domain stores (MongoDB / Milvus / data lake
+# buckets) via explicit io_manager_key — they do NOT live here.
+echo "Configuring lifecycle expiration for dagster bucket..."
+cat > /tmp/lifecycle-dagster.json <<EOF
+{
+  "Rules": [
+    {
+      "ID": "expire-op-intermediates",
+      "Status": "Enabled",
+      "Filter": {},
+      "Expiration": { "Days": 1 }
+    }
+  ]
+}
+EOF
+aws --endpoint-url $ENDPOINT s3api put-bucket-lifecycle-configuration \
+  --bucket dagster \
+  --lifecycle-configuration file:///tmp/lifecycle-dagster.json \
+  || echo "Lifecycle configuration failed for dagster bucket (verify SeaweedFS lifecycle support)"
+
+echo "Verifying lifecycle configuration for dagster:"
+aws --endpoint-url $ENDPOINT s3api get-bucket-lifecycle-configuration --bucket dagster 2>/dev/null \
+  || echo "No lifecycle configuration found"
