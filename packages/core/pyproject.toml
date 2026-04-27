@@ -1,6 +1,6 @@
 [project]
 name = "swiss-ai-hub-core"
-version = "0.280.0"
+version = "0.280.1"
 description = ""
 requires-python = ">=3.13, <3.14"
 authors = [
@@ -126,6 +126,8 @@ extend-exclude = '''
 [tool.pytest.ini_options]
 markers = [
     "slow: mark a test as slow",
+    "unit: hermetic test using fakes; safe to run anywhere",
+    "integration: requires real external services; opt-in",
 ]
 addopts = "--strict-markers"
 pythonpath = ["."]

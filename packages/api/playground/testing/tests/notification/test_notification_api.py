@@ -14,11 +14,13 @@ from swiss_ai_hub.api.routes.notification.dto.paginated_notifications_response i
 from swiss_ai_hub.api.routes.notification.notification_controller import NotificationController
 from swiss_ai_hub.api.runners.api_test_runner import ApiTestRunner
 
+pytestmark = pytest.mark.usefixtures("mongo_db")
+
 BASE_URL = "http://test"
 NOTIFICATIONS_ENDPOINT = "/api/v1/active/notifications"
 
 
-@pytest.fixture(scope="module", autouse=True)
+@pytest.fixture(scope="module")
 def mongo_db():
     """Set up and tear down the MongoDB connection for tests."""
     connect(

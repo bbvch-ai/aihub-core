@@ -5,6 +5,43 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.280.1] - 2026-04-27 - Precision Testing: Unit/Integration Split & Keycloak Validation
+
+### Added
+
+- ✨ **Enhanced Pytest Utilities**: Introduced new generic utilities (`mark_tests_by_directory`,
+  `attach_fixtures_to_items`) to automatically categorize tests as `unit` or `integration` and explicitly manage fixture
+  application, significantly improving test suite organization.
+- 🔑 **Robust Keycloak Integration Tests**: Implemented comprehensive integration tests for the `KeycloakAdminService`,
+  covering user management, tenant group operations, and active tenant attribute handling to ensure reliable interaction
+  with Keycloak.
+- 🛠️ **Real Keycloak Admin Client Utility**: Provided a new utility function to easily create and configure real
+  Keycloak Admin clients for dedicated use in integration testing environments.
+
+### Changed
+
+- 🚀 **Expanded CI/CD Test Environments**: Updated GitHub Actions workflows to include a Keycloak service in the test
+  environments for the `core` and `api` packages, enabling more thorough integration testing.
+- ⚡️ **Improved Test Execution Commands**: Introduced granular `Makefile` targets (`test`, `test-integration`,
+  `test-all`) in the `backup` and `core` packages, allowing developers to run specific sets of unit or integration
+  tests.
+- 🏷️ **Standardized Pytest Markers**: Defined official `unit` and `integration` pytest markers in `pyproject.toml` files
+  for the `backup` and `core` packages, replacing previous conventions for clearer test categorization.
+
+### Refactor
+
+- 🧹 **Comprehensive Test Suite Restructuring**: Performed a significant overhaul of the entire test suite, relocating
+  numerous test files across `agent`, `api`, `backup`, `bot`, `core`, `pipeline`, and `process` packages into dedicated
+  `unit/` and `integration/` subdirectories for clearer separation and management.
+- 🔄 **Unified Fixture Management**: Transitioned many fixtures (including database isolation, Keycloak mocks, tenant
+  mocks, role mocks, MSAL/aiohttp mocks) from implicit `autouse=True` to explicit attachment via
+  `pytest_collection_modifyitems` hooks and `pytestmark` in `conftest.py` files, offering more granular control over
+  test setup.
+- 📄 **Minor Configuration Description Clarity**: Adjusted the prompt description for `context_insufficient_prompt` in
+  the agent's `ContextSufficientGuardStepConfig` for improved readability.
+
+______________________________________________________________________
+
 ## [v0.280.0] - 2026-04-27 - Proactive Pipeline Monitoring with Apprise Notifications
 
 ### Added

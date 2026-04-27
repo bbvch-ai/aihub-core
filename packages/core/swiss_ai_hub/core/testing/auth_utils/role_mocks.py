@@ -5,7 +5,7 @@ import pytest
 from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def mock_role_entity_methods():
     """
     Mock RoleEntity methods to ensure the 'TestOnlyFullAdminAccess' role is recognized during tests.

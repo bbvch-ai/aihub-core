@@ -33,7 +33,9 @@ class ContextSufficientGuardStepConfig(StepConfig):
     context_insufficient_prompt: Annotated[
         LocaleString | LocaleInput | None,
         Field(
-            description="Prompt fragment used when the guard rejects and the agent must communicate that it cannot answer.",
+            description=(
+                "Prompt fragment used when the guard rejects and the agent must communicate that it cannot answer."
+            ),
         ),
     ] = AgentLocaleString.from_i18n_path(
         "agent.context_sufficient_guard_step.config.context_insufficient_prompt.default"

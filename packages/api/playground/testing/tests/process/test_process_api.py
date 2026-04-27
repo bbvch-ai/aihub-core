@@ -14,11 +14,13 @@ from swiss_ai_hub.core.testing.auth_utils import TestAuthHandler
 from swiss_ai_hub.api.routes.process.process_controller import ProcessController
 from swiss_ai_hub.api.runners.simulation.process.simulated_process_api_test_runner import SimulatedProcessApiTestRunner
 
+pytestmark = pytest.mark.usefixtures("setup_process_config_mock")
+
 PROCESS_CLASS = "test_process"
 PROCESS_ID = "test_process_1"
 
 
-@pytest.fixture(scope="module", autouse=True)
+@pytest.fixture(scope="module")
 def setup_process_config_mock():
     """Set up mock for ProcessConfigEntityDocument.find_for_class_and_id."""
     mock_entity = Mock(spec=ProcessConfigEntityDocument)
