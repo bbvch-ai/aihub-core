@@ -12,11 +12,7 @@ from swiss_ai_hub.core.i18n.locale_string import LocaleString
 
 
 class HumanInTheLoopChatResponseEvent(HumanInTheLoopResponseEvent[HumanInTheLoopChatRequestEvent]):
-    """Response containing chat-style input from a human operator.
-
-    This response is sent when a user replies to a chat HITL request via
-    a normal chat message instead of a popup dialog.
-    """
+    """Response containing chat-style input from a human operator."""
 
     _display_name: ClassVar[LocaleString] = LocaleString.from_i18n_path("lib.events.hitl_chat_response_event.name")
     _display_description: ClassVar[LocaleString] = LocaleString.from_i18n_path(

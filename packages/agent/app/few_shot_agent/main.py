@@ -7,7 +7,7 @@ import asyncio
 
 from swiss_ai_hub.core.infrastructure import AIHubSettings, enable_logging
 
-from app.few_shot_agent.templates import ALL_TEMPLATES
+from app.few_shot_agent.templates import get_all_templates
 from swiss_ai_hub.agent.agents.few_shot_agent import FewShotAgent, FewShotAgentConfig
 from swiss_ai_hub.agent.runners import AgentRunner
 
@@ -18,7 +18,7 @@ async def main():
     runner = AgentRunner(
         agent_type=FewShotAgent,
         agent_config=FewShotAgentConfig.as_form(),
-        templates=ALL_TEMPLATES,
+        templates=get_all_templates(),
     )
 
     await runner.run_forever()

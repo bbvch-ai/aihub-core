@@ -8,14 +8,6 @@ config:
     label: Max input tokens
     help: Maximum number of tokens allowed in the LLM input. Limits context size to
       manage costs and avoid exceeding model limits.
-  check_context_sufficiency:
-    label: Check context sufficiency
-    help: When enabled, the agent verifies if retrieved context contains enough information
-      before generating a response.
-  max_hops:
-    label: Max retrieval hops
-    help: Maximum number of retrieval iterations when initial context is insufficient.
-      Higher values may improve answers but increase latency.
   system_prompt:
     label: System prompt
     help: Instructions defining the agent's personality, role, and behavior guidelines.
@@ -47,12 +39,6 @@ config:
       {% endif %}\n{% endfor %}\n</context_documents>\n\nInstruction: Using the information\
       \ from the provided documents, generate a detailed and well-structured response\n\
       to the user's question.\n{% endchat %}\n"
-  context_insufficient_prompt:
-    label: Context insufficient prompt
-    help: Message shown when the agent cannot find sufficient information to answer.
-      Guides how the agent communicates limitations.
-    default: 'Inform the user that you can not answer the question due to the following
-      reason:'
   reranking_enabled:
     label: Enable reranking
     help: Use a reranking model to improve the relevance of retrieved documents before
