@@ -1,6 +1,6 @@
 [project]
 name = "swiss-ai-hub-pipeline"
-version = "0.279.2"
+version = "0.280.0"
 description = "pipeline core"
 requires-python = ">=3.13, <3.14"
 authors = [
@@ -19,6 +19,8 @@ dependencies = [
     "dagster-azure>=0.27.2",
     "dagster-aws>=0.27.2",
     "matplotlib>=3.9.2",
+    "dagster-apprise>=0.0.2",
+    "apprise>=1.9.9",
 ]
 
 [dependency-groups]

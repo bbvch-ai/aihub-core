@@ -119,7 +119,8 @@
     "opentelemetry-sdk": "Apache-2.0",
     "opentelemetry-semantic-conventions": "Apache-2.0",
     "types-requests": "Apache-2.0",
-    "neo4j-graphrag": "Apache-2.0"
+    "neo4j-graphrag": "Apache-2.0",
+    "dagster-apprise": "Apache-2.0"
   },
   "reviewed_packages": [
     {

@@ -257,6 +257,25 @@ Three triggering mechanisms work together:
 - **Daily schedules**: `daily_schedule_at(job, hour, minute)` — cron-based observation for sources that don't push
   events.
 
+## Run-Failure Notifications
+
+A fourth sensor fires on every **failed run** in the code location and dispatches via Apprise to any configured channel
+(80+ services: Slack, Teams, Discord, Telegram, PagerDuty, mailto, webhook, …). One sensor covers both job-based runs
+(observe/materialize/remove) and the runs spawned by the auto-materialize sensor — so asset-centric pipelines get
+failure alerts without per-asset wiring.
+
+- **Factory**: `run_failure_notification_sensor(urls=..., dagster_ui_base_url=..., monitored_jobs=..., ...)` in
+  `swiss_ai_hub.pipeline.sensors.run_failure_notification_sensor`. Wraps
+  `dagster_apprise.AppriseResource.notify_run_status` with a custom message body (asset keys, error preview, deep link
+  to the Dagster UI).
+- **Opt-in via env**: set `NOTIFICATION_URLS` (comma-separated Apprise URIs) to enable; leave empty to disable.
+  `NotificationSettings` reads `NOTIFICATION_URLS`, `NOTIFICATION_DAGSTER_UI_BASE_URL`, `NOTIFICATION_TITLE_PREFIX`,
+  `NOTIFICATION_MIN_INTERVAL_SECONDS`.
+- **Automatic wiring**: all four `default_*_definitions()` builders in `util/definitions_util.py` append the sensor
+  automatically when the env is configured — consumer code in `app/*/__init__.py` needs no change.
+- **Manual composition**: consumers that build their own `Definitions` can import the factory directly and narrow
+  `monitored_jobs=[...]` to specific jobs.
+
 ## Playground
 
 - `playground/__init__.py` — Full RAG pipeline using `default_definitions()` with playground bucket

@@ -21,6 +21,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.infrastructure.mineru.mineru_settings import MineruSettings
     from swiss_ai_hub.core.infrastructure.mongo.mongo_settings import MongoSettings
     from swiss_ai_hub.core.infrastructure.nats.nats_settings import NatsSettings
+    from swiss_ai_hub.core.infrastructure.notification.notification_settings import NotificationSettings
     from swiss_ai_hub.core.infrastructure.opentelemetry.aihub_instrumentor import AihubInstrumentor
     from swiss_ai_hub.core.infrastructure.opentelemetry.open_telemetry_settings import OpenTelemetrySettings
     from swiss_ai_hub.core.infrastructure.opentelemetry.tracing.decorators.no_trace import no_trace
@@ -72,6 +73,7 @@ __all__ = [
     "MineruSettings",
     "MongoSettings",
     "NatsSettings",
+    "NotificationSettings",
     "OnlineAgent",
     "OpenWebuiClient",
     "OpenWebuiProvisioner",
@@ -118,6 +120,7 @@ _LAZY_IMPORTS = {
     "MineruSettings": "swiss_ai_hub.core.infrastructure.mineru.mineru_settings",
     "MongoSettings": "swiss_ai_hub.core.infrastructure.mongo.mongo_settings",
     "NatsSettings": "swiss_ai_hub.core.infrastructure.nats.nats_settings",
+    "NotificationSettings": "swiss_ai_hub.core.infrastructure.notification.notification_settings",
     "OnlineAgent": "swiss_ai_hub.core.infrastructure.openwebui.online_agent",
     "OpenWebuiClient": "swiss_ai_hub.core.infrastructure.openwebui.openwebui_client",
     "OpenWebuiProvisioner": "swiss_ai_hub.core.infrastructure.openwebui.openwebui_provisioner",

@@ -63,6 +63,9 @@ from swiss_ai_hub.pipeline.resources.share_point.share_point_resource import Sha
 from swiss_ai_hub.pipeline.schedules.factory import daily_schedule_at
 from swiss_ai_hub.pipeline.sensors.factory import default_automation_sensor
 from swiss_ai_hub.pipeline.sensors.nats.nats_document_uploaded_sensor import nats_document_uploaded_sensor
+from swiss_ai_hub.pipeline.sensors.run_failure_notification_sensor import (
+    run_failure_notification_sensors_from_settings,
+)
 from swiss_ai_hub.pipeline.util.bucket_utils import get_db_name_from_bucket_name
 
 
@@ -182,6 +185,7 @@ def default_definitions(
                     target_id=store_name,
                 ),
             ),
+            *run_failure_notification_sensors_from_settings(),
         ],
         executor=default_process_executor(),
         jobs=[job, remove_job],
@@ -272,7 +276,7 @@ def default_sharepoint_to_datalake_definitions(
             ),
             **mongo_document_store_resource(document_store_name=store_name),
         },
-        sensors=[default_automation_sensor(assets)],
+        sensors=[default_automation_sensor(assets), *run_failure_notification_sensors_from_settings()],
         executor=default_process_executor(),
         jobs=[observe_job, remove_job],
         schedules=[
@@ -382,7 +386,7 @@ def default_local_filesystem_to_datalake_definitions(
             ),
             **mongo_document_store_resource(document_store_name=store_name),
         },
-        sensors=[default_automation_sensor(assets)],
+        sensors=[default_automation_sensor(assets), *run_failure_notification_sensors_from_settings()],
         executor=default_process_executor(),
         jobs=[observe_job, remove_job],
         schedules=[
@@ -528,7 +532,7 @@ def default_rclone_to_datalake_definitions(
             ),
             **mongo_document_store_resource(document_store_name=store_name),
         },
-        sensors=[default_automation_sensor(assets)],
+        sensors=[default_automation_sensor(assets), *run_failure_notification_sensors_from_settings()],
         executor=default_process_executor(),
         jobs=[observe_job, remove_job],
         schedules=[
