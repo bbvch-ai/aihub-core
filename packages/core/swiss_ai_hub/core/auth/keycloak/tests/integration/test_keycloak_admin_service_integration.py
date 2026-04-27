@@ -8,8 +8,24 @@ import pytest_asyncio
 from keycloak import KeycloakAdmin
 from keycloak.exceptions import KeycloakDeleteError, KeycloakGetError
 
+from swiss_ai_hub.core.auth.keycloak import keycloak_admin_service as kas_module
 from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
 from swiss_ai_hub.core.testing.auth_utils.keycloak_utils import create_real_keycloak_admin
+
+pytestmark = pytest.mark.usefixtures("_fresh_keycloak_admin_per_test")
+
+
+@pytest.fixture
+def _fresh_keycloak_admin_per_test(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Replaces the lru-cached ``_create_admin`` with a fresh-per-call factory.
+
+    pytest-asyncio uses a fresh event loop per test. The cached ``KeycloakAdmin``'s
+    httpx async client binds to the loop alive at first use; on the next test the loop
+    is closed, surfacing as ``KeycloakConnectionError: Can't connect to server`` /
+    ``RuntimeError: Event loop is closed``. Bypassing the cache makes every
+    ``KeycloakAdminService`` call build a fresh client tied to the current loop.
+    """
+    monkeypatch.setattr(kas_module, "_create_admin", create_real_keycloak_admin)
 
 
 @pytest.fixture
