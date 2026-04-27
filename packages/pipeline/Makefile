@@ -1,3 +1,5 @@
+.PHONY: lint format typecheck pr-ready test-cov test playground quickstart rag-pipelines
+
 lint:
 	@echo "Running linter for pipelines..."
 	uv run ruff check --fix

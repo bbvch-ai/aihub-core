@@ -1,10 +1,10 @@
 # License Report
 
-Generated on: 14.04.2026
+Generated on: 24.04.2026
 
 This document contains license information for all dependencies across the monorepo:
 
-- Python packages (uv): **391 packages**
+- Python packages (uv): **394 packages**
 - Node.js packages (pnpm): **999 packages**
 - External Docker images: **31 images**
 
@@ -36,6 +36,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | annotated-types                                  | 0.7.0                 | MIT License                                                  |                                                                      |
 | ✅     | antlr4-python3-runtime                           | 4.13.2                | BSD                                                          |                                                                      |
 | ✅     | anyio                                            | 4.12.1                | MIT (override)                                               |                                                                      |
+| ✅     | apprise                                          | 1.9.9                 | BSD-2-Clause                                                 |                                                                      |
 | ✅     | asgi-lifespan                                    | 2.1.0                 | MIT                                                          |                                                                      |
 | ✅     | asgiref                                          | 3.11.1                | BSD License                                                  |                                                                      |
 | ✅     | asttokens                                        | 3.0.1                 | Apache 2.0                                                   |                                                                      |
@@ -85,6 +86,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | cycler                                           | 0.12.1                | BSD License                                                  |                                                                      |
 | ✅     | cyclopts                                         | 4.8.0                 | Apache-2.0                                                   |                                                                      |
 | ✅     | dagster                                          | 1.12.18               | Apache-2.0                                                   |                                                                      |
+| ✅     | dagster-apprise                                  | 0.0.2                 | Apache-2.0 (override)                                        |                                                                      |
 | ✅     | dagster-aws                                      | 0.28.18               | Apache-2.0                                                   |                                                                      |
 | ✅     | dagster-azure                                    | 0.28.18               | Apache-2.0                                                   |                                                                      |
 | ✅     | dagster-graphql                                  | 1.12.18               | Apache-2.0                                                   |                                                                      |
@@ -203,6 +205,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | maison                                           | 2.0.2                 | MIT                                                          |                                                                      |
 | ✅     | Mako                                             | 1.3.10                | MIT License                                                  |                                                                      |
 | ✅     | mammoth                                          | 1.11.0                | BSD License                                                  |                                                                      |
+| ✅     | Markdown                                         | 3.10.2                | BSD-3-Clause                                                 |                                                                      |
 | ✅     | markdown-it-py                                   | 4.0.0                 | MIT License                                                  |                                                                      |
 | ✅     | markdownify                                      | 1.2.2                 | MIT License                                                  |                                                                      |
 | ✅     | markitdown                                       | 0.1.5                 | MIT                                                          |                                                                      |

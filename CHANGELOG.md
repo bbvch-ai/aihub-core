@@ -5,6 +5,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.280.0] - 2026-04-27 - Proactive Pipeline Monitoring with Apprise Notifications
+
+### Added
+
+- ✨ **Introduced Pipeline Run-Failure Notifications:** A new, comprehensive system leveraging `dagster-apprise` to
+  provide immediate alerts for failed pipeline runs across all code locations. This includes failures in both explicit
+  jobs and automatically materialized assets, ensuring better visibility into pipeline health.
+- ⚙️ **Configurable Notification Settings:** Added new environment variables (`NOTIFICATION_URLS`,
+  `NOTIFICATION_DAGSTER_UI_BASE_URL`, `NOTIFICATION_TITLE_PREFIX`, `NOTIFICATION_MIN_INTERVAL_SECONDS`) to easily
+  configure diverse notification channels (e.g., Slack, Teams, email, PagerDuty) and customize notification behavior.
+- 📚 **Integrated `NotificationSettings` Module:** A new Pydantic-based settings module was added to centralize and
+  robustly parse, validate, and manage all notification-related environment variables.
+- 🔗 **Automatic Sensor Wiring for Default Pipelines:** Default pipeline definitions now automatically include the
+  run-failure notification sensor when configured via environment variables, ensuring broad coverage without requiring
+  manual code changes for standard deployments.
+- 📄 **New Architectural Decision Record (ADR):** A detailed ADR documenting the rationale, design choices, and
+  trade-offs of the new pipeline run-failure notification system has been added to the documentation.
+- 📖 **Updated Pipeline Documentation:** The pipeline documentation (`CLAUDE.md`) has been updated with a dedicated
+  section explaining the new run-failure notification capabilities, including configuration and usage.
+- 📦 **Added `dagster-apprise` and `apprise` Dependencies:** Integrated the necessary libraries to power the
+  multi-channel notification system.
+
+### Changed
+
+- 🔄 **Deployment Configuration Updates:** Docker Compose templates and generated files have been updated to dynamically
+  provision the new notification-related environment variables to pipeline services, streamlining deployment setup for
+  the new feature.
+
+### Refactor
+
+- 🧹 **Improved Makefile Declarations:** Added `.PHONY` declarations to the pipeline Makefile, enhancing clarity and
+  reliability for build and test commands.
+
+______________________________________________________________________
+
 ## [v0.279.2] - 2026-04-27 - Enhanced Organization Memory Sharing
 
 ### Changed
