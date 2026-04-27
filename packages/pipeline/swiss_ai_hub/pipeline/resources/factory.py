@@ -128,15 +128,15 @@ def default_io_manager_s3_datalake_resources(container_name: str) -> dict[str, C
         endpoint_url=s3_config.ENDPOINT,
         region_name=s3_config.REGION,
     )
-    s3_pickle_io_manager = S3PickleIOManager(
+    op_intermediates_io_manager = S3PickleIOManager(
         s3_resource=s3_resource,
-        s3_bucket=container_name,
-        s3_prefix=f".{container_name}-dagster/",
+        s3_bucket="dagster",
+        s3_prefix=f"{container_name}/",
     )
 
     return {
         "s3": s3_resource,
-        "io_manager": s3_pickle_io_manager,
+        "io_manager": op_intermediates_io_manager,
     }
 
 

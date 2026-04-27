@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.281.0] - 2026-04-27 - Enhanced Dagster Data Lifecycle Management
+
+### Added
+
+- ✨ **Introduced Dedicated `dagster` Bucket:** A new S3 bucket named `dagster` is now automatically provisioned during
+  infrastructure setup, specifically for storing Dagster's intermediate operational data.
+- ⏳ **Automated Expiration for Intermediate Data:** The newly created `dagster` bucket is configured with a 1-day
+  time-to-live (TTL) policy, ensuring automatic cleanup of temporary pipeline execution data to optimize storage.
+
+### Changed
+
+- 🔄 **Optimized Dagster Intermediate Storage:** The `S3PickleIOManager` used by
+  `default_io_manager_s3_datalake_resources` now directs all intermediate pipeline data to the dedicated `dagster`
+  bucket, utilizing a streamlined `container_name/` prefix for improved organization and adherence to the new lifecycle
+  management.
+- 📄 **Updated Resource Documentation:** Documentation for `default_io_manager_s3_datalake_resources` has been updated to
+  clarify that intermediate data is now stored in the `dagster` bucket with a 1-day expiration policy, providing
+  accurate information on data persistence.
+
+### Refactor
+
+- 🧹 **Improved Intermediate I/O Manager Naming:** The internal variable for the `S3PickleIOManager` was renamed to
+  `op_intermediates_io_manager` for enhanced clarity and better reflection of its purpose within the pipeline resources.
+
+______________________________________________________________________
+
 ## [v0.280.1] - 2026-04-27 - Precision Testing: Unit/Integration Split & Keycloak Validation
 
 ### Added
