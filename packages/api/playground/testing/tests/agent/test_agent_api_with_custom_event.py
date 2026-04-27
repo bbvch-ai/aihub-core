@@ -12,6 +12,8 @@ from swiss_ai_hub.api.routes.agent.agent_controller import AgentController
 from swiss_ai_hub.api.runners.simulation.agent.simulated_agent_api_test_runner import SimulatedAgentApiTestRunner
 from swiss_ai_hub.api.services.model_creation_service import ModelCreationService
 
+pytestmark = pytest.mark.usefixtures("cleanup_db_and_cache")
+
 AGENT_CLASS = "TestAgent"
 AGENT_ID = "test_agent_1"
 TEST_START_EVENT = TestStartEvent.event_name_from_class()
@@ -48,7 +50,7 @@ async def agent_api_client():
             yield client
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def cleanup_db_and_cache():
     yield
 

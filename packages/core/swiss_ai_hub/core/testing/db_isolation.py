@@ -28,8 +28,8 @@ from swiss_ai_hub.core.infrastructure.api.ai_hub_settings import AIHubSettings  
 from swiss_ai_hub.core.infrastructure.mongo.mongo_settings import MongoSettings  # noqa: E402
 
 
-@pytest.fixture(autouse=True, scope="session")
-def _isolate_test_db() -> Generator[None]:
+@pytest.fixture(scope="session")
+def isolate_test_db() -> Generator[None]:
     db_name = AIHubSettings().MONGO_MAIN_DB_NAME
     assert db_name == TEST_DB_NAME, (
         f"Test isolation broken: AIHUB_MONGO_MAIN_DB_NAME resolved to '{db_name}', "

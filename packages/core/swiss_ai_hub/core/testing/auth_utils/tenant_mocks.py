@@ -28,8 +28,8 @@ def _create_mock_tenant() -> MagicMock:
     return tenant
 
 
-@pytest.fixture(autouse=True)
-def mock_tenant_entity_autouse():
+@pytest.fixture
+def mock_tenant_entity():
     """
     Mock tenant metadata, membership, Keycloak existence, and auth tenant resolution for tests.
 

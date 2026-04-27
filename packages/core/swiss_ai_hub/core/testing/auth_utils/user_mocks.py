@@ -139,8 +139,8 @@ def _build_fake_admin() -> MagicMock:
     return fake
 
 
-@pytest.fixture(autouse=True, scope="session")
-def mock_keycloak_admin_service_autouse():
+@pytest.fixture
+def mock_keycloak_admin_service():
     """Patches ``_create_admin`` so every KeycloakAdminService method gets a fake client.
 
     One patch at the factory level is more robust than patching each staticmethod
