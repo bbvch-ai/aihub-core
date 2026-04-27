@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.279.2] - 2026-04-27 - Enhanced Organization Memory Sharing
+
+### Changed
+
+- ✨ **Improved Organization Memory Accessibility:** RAG agents and the core `AgentMemory` service now default to
+  tenant-wide retrieval for organization memory by explicitly passing `user_id=None` and `agent_id=None` to the
+  underlying search function. This change ensures that knowledge stored in organization memory is fully shared and
+  broadly accessible across all agents within a tenant, promoting consistent information access.
+- 📄 **Expanded Memory Scoping Documentation:** Updated the `AgentMemory` service documentation with detailed
+  explanations on how organization memory is shared across agents and how to control `user_id` scoping for either fully
+  shared tenant-wide or user-specific retrieval.
+
+______________________________________________________________________
+
 ## [v0.279.1] - 2026-04-24 - Core Agent Refinements and New Shared Knowledge Capabilities
 
 ### Added
