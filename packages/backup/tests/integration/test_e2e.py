@@ -32,7 +32,7 @@ DAGSTER_HOST = "127.0.0.1"
 DAGSTER_PORT = 3004
 BACKUP_CONTAINER = "backup-code"
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
+REPO_ROOT = Path(__file__).resolve().parents[4]
 S3_ENDPOINT = "http://127.0.0.1:9000"
 MILVUS_API = "http://127.0.0.1:19530/v2/vectordb"
 
