@@ -186,6 +186,9 @@ event:
     selected_namespaces: 'Namespace selezionati:'
     additional_filters: 'Filtri di metadati aggiuntivi:'
     no_filters: Nessun filtro aggiuntivo
+  rag_stop:
+    context_insufficient: Il contesto recuperato era insufficiente — la risposta è
+      un ripiego e non è ancorata alle vostre fonti di conoscenza.
   limitChatHistory:
     summary: Cronologia chat limitata a {count} messaggi
     assistant: Assistente

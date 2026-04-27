@@ -186,6 +186,9 @@ event:
     selected_namespaces: 'Selected namespaces:'
     additional_filters: 'Additional metadata filters:'
     no_filters: No additional filters
+  rag_stop:
+    context_insufficient: Retrieved context was insufficient — the answer is a fallback,
+      not grounded in your knowledge sources.
   limitChatHistory:
     summary: Chat history limited to {count} messages
     assistant: Assistant

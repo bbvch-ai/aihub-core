@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from swiss_ai_hub.core.events.agent.guard.context_insufficient_reject_event import ContextInsufficientRejectEvent
+from swiss_ai_hub.core.events.agent import ContextInsufficientRejectEvent
 from swiss_ai_hub.core.generative_ai.chat_history.extend_chat_history_with_organization_memory import (
     extend_chat_history_with_organization_memory,
 )

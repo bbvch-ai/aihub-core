@@ -188,6 +188,9 @@ event:
     selected_namespaces: 'Ausgewählte Namespaces:'
     additional_filters: 'Zusätzliche Metadatenfilter:'
     no_filters: Keine zusätzlichen Filter
+  rag_stop:
+    context_insufficient: Der abgerufene Kontext war unzureichend – die Antwort ist
+      eine Notlösung und nicht in Ihren Wissensquellen verankert.
   limitChatHistory:
     summary: Chat-Verlauf auf {count} Nachrichten begrenzt
     assistant: Assistent

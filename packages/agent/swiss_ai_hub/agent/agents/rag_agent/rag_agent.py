@@ -10,7 +10,6 @@ from swiss_ai_hub.core.events.agent import (
     LimitChatHistoryEvent,
     LLMEvent,
     RAGStartEvent,
-    RAGStopEvent,
     RerankerEvent,
     RetrieveOrganizationMemoryEvent,
     RetrieverEvent,
@@ -56,6 +55,7 @@ from swiss_ai_hub.agent.rag.step_functions import (
     do_condense_standalone_question,
     do_context_sufficient_guard,
     do_few_shot_guard,
+    do_finalize_rag_stop,
     do_limit_chat_history,
     do_limit_chat_history_with_context,
     do_order_nodes_by_documents,
@@ -472,5 +472,4 @@ class RAGAgent(Agent):
         run_context: RunContext,
     ) -> StopEvent:
         """Final step that ensures all required steps are complete before stopping."""
-        context_sufficient = await run_context.get("context_sufficient", True)
-        return RAGStopEvent(context_sufficient=context_sufficient)
+        return await do_finalize_rag_stop(run_context)

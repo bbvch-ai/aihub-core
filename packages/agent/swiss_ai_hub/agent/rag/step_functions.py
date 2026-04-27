@@ -11,6 +11,7 @@ from swiss_ai_hub.core.events.agent import (
     LimitChatHistoryEvent,
     LLMEvent,
     LLMStopEvent,
+    RAGStopEvent,
     RerankerEvent,
     RetrieverEvent,
     StandaloneQuestionCondenserEvent,
@@ -250,3 +251,8 @@ def do_limit_chat_history_with_context(
         number_of_input_tokens=number_of_input_tokens,
     )
     return LimitChatHistoryWithContextEvent(limited_history_with_context=limited_history)
+
+
+async def do_finalize_rag_stop(run_context: RunContext) -> RAGStopEvent:
+    context_sufficient = await run_context.get("context_sufficient", True)
+    return RAGStopEvent(context_sufficient=context_sufficient)
