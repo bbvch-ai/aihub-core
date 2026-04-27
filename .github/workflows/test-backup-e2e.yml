@@ -116,7 +116,7 @@ jobs:
         id: pytest
         continue-on-error: true
         working-directory: packages/backup
-        run: uv run pytest -m e2e -v --timeout=600 --junitxml=e2e-pytest.xml
+        run: uv run pytest -m integration -v --timeout=600 --junitxml=e2e-pytest.xml
       - name: Stop services
         if: always()
         run: docker compose -f infra/docker-compose.dev.yml --env-file .env.dev down

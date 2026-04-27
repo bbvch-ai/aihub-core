@@ -9,16 +9,28 @@ load_dotenv(find_dotenv(usecwd=True))
 # import time so anything that later constructs ``AIHubSettings`` picks up the test DB name.
 # The ``# isort: split`` marker below stops ruff/isort from merging this with the block that
 # follows and re-alphabetising the lines, which would move this import below the auth mocks.
-from swiss_ai_hub.core.testing.db_isolation import _isolate_test_db  # noqa: E402, F401
+from swiss_ai_hub.core.testing.db_isolation import isolate_test_db  # noqa: E402, F401
 
 # isort: split
 from aiohttp import ClientResponse  # noqa: E402
-from swiss_ai_hub.core.testing.auth_utils.user_mocks import mock_keycloak_admin_service_autouse  # noqa: E402, F401
+from swiss_ai_hub.core.testing.auth_utils.user_mocks import mock_keycloak_admin_service  # noqa: E402, F401
+from swiss_ai_hub.core.testing.conftest_utils import attach_fixtures_to_items  # noqa: E402
 
 
-@pytest.fixture(autouse=True)
+def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
+    """Activates conftest-scoped fixtures on every collected test."""
+    attach_fixtures_to_items(
+        items,
+        "isolate_test_db",
+        "mock_keycloak_admin_service",
+        "mock_msal_auth",
+        "mock_aiohttp_requests",
+    )
+
+
+@pytest.fixture
 def mock_msal_auth(monkeypatch):
-    """Mock MSAL authentication to prevent actual HTTP calls to Azure AD."""
+    """Mocks MSAL authentication to prevent actual HTTP calls to Azure AD."""
 
     # Mock the MsalAuth.get_access_token method to return a fake token
     async def mock_get_access_token(self, *args, **kwargs):
@@ -38,7 +50,7 @@ def captured_responses():
     return responses
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def mock_aiohttp_requests(monkeypatch, captured_responses):
     """Mock aiohttp requests to prevent DNS resolution failures and capture responses."""
 

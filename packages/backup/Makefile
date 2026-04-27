@@ -14,5 +14,13 @@ pr-ready: format lint
 	@echo "Running full check (format, lint)..."
 
 test:
-	@echo "Running tests in swiss_ai_hub.backup..."
+	@echo "Running unit tests in swiss_ai_hub.backup..."
+	uv run pytest -m unit
+
+test-integration:
+	@echo "Running integration tests in swiss_ai_hub.backup..."
+	uv run pytest -m integration
+
+test-all:
+	@echo "Running all tests in swiss_ai_hub.backup..."
 	uv run pytest

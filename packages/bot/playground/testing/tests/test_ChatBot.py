@@ -24,6 +24,8 @@ from swiss_ai_hub.bot.persistence.entities.path_entity import Credentials, PathE
 from swiss_ai_hub.bot.routes.agent.agent_chat_controller import AgentChatController
 from swiss_ai_hub.bot.runners.simulated_agent_bot_test_runner import SimulatedAgentBotTestRunner
 
+pytestmark = pytest.mark.usefixtures("cleanup_conversation")
+
 enable_logging()
 
 BASE_URL = "http://test/api/v1"
@@ -123,7 +125,7 @@ def patch_requests_adapter(monkeypatch, test_runner):
     yield
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def cleanup_conversation():
     """Clean up conversation and thread state before each test."""
     thread_id = str(str_to_object_id(CONVERSATION_ID))

@@ -22,6 +22,8 @@ from swiss_ai_hub.core.testing.auth_utils import TEST_USER_EMAIL, TEST_USER_NAME
 from swiss_ai_hub.api.routes.my_account.my_account_controller import MyAccountController
 from swiss_ai_hub.api.runners.api_test_runner import ApiTestRunner
 
+pytestmark = pytest.mark.usefixtures("mongo_db", "keycloak_config", "monkeypatch_httpx")
+
 # Constants for the tests
 BASE_URL = "http://test"
 USER_ENDPOINT = "/api/v1/active/my-account"
@@ -29,7 +31,7 @@ EXPECTED_USER_FIELDS = ["id", "name", "email"]
 TOKEN_EXPIRY_MINUTES = 10
 
 
-@pytest.fixture(scope="module", autouse=True)
+@pytest.fixture(scope="module")
 def mongo_db():
     """Set up and tear down the MongoDB connection for tests."""
     connect(
@@ -41,7 +43,7 @@ def mongo_db():
     disconnect()
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def keycloak_config(monkeypatch):
     """Set Keycloak env vars and return a KeycloakSettings instance."""
     return KeycloakSettings()
@@ -62,7 +64,7 @@ def fake_jwks_response(rsa_keys):
     return {"keys": [rsa_keys["jwk"]]}
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def monkeypatch_httpx(monkeypatch, fake_jwks_response, keycloak_config):
     """Monkeypatch httpx.AsyncClient.get to return a fake JWKS response only for JWKS URL."""
 

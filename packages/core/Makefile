@@ -13,13 +13,21 @@ typecheck:
 pr-ready: format lint
 	@echo "Running full check (format, lint)..."
 
+test:
+	@echo "Running unit tests in swiss_ai_hub.core..."
+	uv run pytest -m unit
+
+test-integration:
+	@echo "Running integration tests in swiss_ai_hub.core..."
+	uv run pytest -m integration
+
+test-all:
+	@echo "Running all tests in swiss_ai_hub.core..."
+	uv run pytest
+
 test-cov:
-	@echo "Running tests in swiss_ai_hub.core with coverage..."
-	uv run pytest --cov=. \
+	@echo "Running unit tests in swiss_ai_hub.core with coverage..."
+	uv run pytest -m unit --cov=. \
 	                  --cov-report=xml:coverage.xml \
 	                  --cov-report=term-missing \
 	                  --junitxml=pytest.xml
-
-test:
-	@echo "Running tests in swiss_ai_hub.core..."
-	uv run pytest
