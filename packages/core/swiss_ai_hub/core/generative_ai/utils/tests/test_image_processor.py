@@ -1,11 +1,11 @@
 """
-Tests for image_processor focused on the dedup + compression behavior added to
+Tests for image_processor focused on the dedup behavior added to
 extract_and_upload_images. See image_processor.py for the rationale behind the
 chosen hash function (dHash, hash_size=8) and the threshold (12 bits).
 """
 
 import base64
-import os
+import hashlib
 import re
 from io import BytesIO
 
@@ -15,7 +15,7 @@ from PIL import Image, ImageDraw
 
 from swiss_ai_hub.core.generative_ai.utils.image_processor import (
     _HASH_MATCH_THRESHOLD,
-    _compress_png,
+    _detect_extension,
     _find_perceptual_match,
     _perceptual_hash,
     extract_and_upload_images,
@@ -55,6 +55,12 @@ class _FakeWriter:
         self._fs.files[self._path] = self._buf.getvalue()
 
 
+def _jpeg_bytes(img: Image.Image) -> bytes:
+    out = BytesIO()
+    img.convert("RGB").save(out, format="JPEG", quality=85)
+    return out.getvalue()
+
+
 def _png_bytes(img: Image.Image) -> bytes:
     out = BytesIO()
     img.save(out, format="PNG")
@@ -62,7 +68,8 @@ def _png_bytes(img: Image.Image) -> bytes:
 
 
 def _b64(img: Image.Image) -> str:
-    return base64.b64encode(_png_bytes(img)).decode()
+    """Mimic MinerU output: JPEG bytes wrapped in a data URI."""
+    return f"data:image/jpeg;base64,{base64.b64encode(_jpeg_bytes(img)).decode()}"
 
 
 def _make_logo(dx: int = 0, dy: int = 0, scale: float = 1.0) -> Image.Image:
@@ -100,26 +107,21 @@ def _make_distinct_figure(kind: str) -> Image.Image:
     return img
 
 
-def _random_photograph(size: int = 256) -> Image.Image:
-    """RGB noise with > 50k unique colors — exercises the photograph branch of _compress_png."""
-    return Image.frombytes("RGB", (size, size), os.urandom(size * size * 3))
-
-
 class TestPerceptualHash:
     def test_identical_bytes_produce_identical_hash(self) -> None:
-        img_bytes = _png_bytes(_make_logo())
+        img_bytes = _jpeg_bytes(_make_logo())
         assert _perceptual_hash(img_bytes) == _perceptual_hash(img_bytes)
 
     def test_distinct_figures_produce_different_hashes(self) -> None:
-        h_lines = _perceptual_hash(_png_bytes(_make_distinct_figure("lines")))
-        h_circle = _perceptual_hash(_png_bytes(_make_distinct_figure("circle")))
+        h_lines = _perceptual_hash(_jpeg_bytes(_make_distinct_figure("lines")))
+        h_circle = _perceptual_hash(_jpeg_bytes(_make_distinct_figure("circle")))
         assert h_lines != h_circle
 
     def test_crop_jitter_stays_within_threshold(self) -> None:
         """The whole point of dHash: small crop offsets must yield small Hamming distances."""
-        ref = _perceptual_hash(_png_bytes(_make_logo(0, 0, 1.0)))
+        ref = _perceptual_hash(_jpeg_bytes(_make_logo(0, 0, 1.0)))
         for dx, dy, scale in [(1, 0, 1.0), (-1, 0, 1.0), (0, 2, 1.0), (3, -1, 1.0), (0, 0, 0.97)]:
-            jittered = _perceptual_hash(_png_bytes(_make_logo(dx, dy, scale)))
+            jittered = _perceptual_hash(_jpeg_bytes(_make_logo(dx, dy, scale)))
             assert ref - jittered <= _HASH_MATCH_THRESHOLD, (
                 f"crop variation (dx={dx}, dy={dy}, scale={scale}) exceeded threshold "
                 f"({ref - jittered} > {_HASH_MATCH_THRESHOLD})"
@@ -127,9 +129,9 @@ class TestPerceptualHash:
 
     def test_distinct_figures_exceed_threshold(self) -> None:
         """Threshold must not collapse genuinely different content."""
-        h_lines = _perceptual_hash(_png_bytes(_make_distinct_figure("lines")))
-        h_circle = _perceptual_hash(_png_bytes(_make_distinct_figure("circle")))
-        h_tri = _perceptual_hash(_png_bytes(_make_distinct_figure("triangle")))
+        h_lines = _perceptual_hash(_jpeg_bytes(_make_distinct_figure("lines")))
+        h_circle = _perceptual_hash(_jpeg_bytes(_make_distinct_figure("circle")))
+        h_tri = _perceptual_hash(_jpeg_bytes(_make_distinct_figure("triangle")))
         assert h_lines - h_circle > _HASH_MATCH_THRESHOLD
         assert h_lines - h_tri > _HASH_MATCH_THRESHOLD
         assert h_circle - h_tri > _HASH_MATCH_THRESHOLD
@@ -142,79 +144,44 @@ class TestFindPerceptualMatch:
 
     def test_exact_match_returns_uri(self) -> None:
         h = imagehash.hex_to_hash("abcd1234abcd1234")
-        assert _find_perceptual_match(h, [(h, "s3://bucket/figure_1.png")]) == "s3://bucket/figure_1.png"
+        assert _find_perceptual_match(h, [(h, "s3://bucket/figure_1.jpg")]) == "s3://bucket/figure_1.jpg"
 
     def test_within_threshold_returns_uri(self) -> None:
         zero = imagehash.hex_to_hash("0000000000000000")
         # 12 bits set → Hamming distance exactly equal to the threshold (12).
         within = imagehash.hex_to_hash("0000000000000fff")
-        assert _find_perceptual_match(within, [(zero, "s3://bucket/figure_1.png")]) == "s3://bucket/figure_1.png"
+        assert _find_perceptual_match(within, [(zero, "s3://bucket/figure_1.jpg")]) == "s3://bucket/figure_1.jpg"
 
     def test_beyond_threshold_returns_none(self) -> None:
         zero = imagehash.hex_to_hash("0000000000000000")
         # 13 bits set → Hamming distance one above the threshold.
         beyond = imagehash.hex_to_hash("0000000000001fff")
-        assert _find_perceptual_match(beyond, [(zero, "s3://bucket/figure_1.png")]) is None
+        assert _find_perceptual_match(beyond, [(zero, "s3://bucket/figure_1.jpg")]) is None
 
     def test_returns_first_matching_uri(self) -> None:
         """When several stored hashes match, the earliest-inserted one wins (insertion-order semantics)."""
         zero = imagehash.hex_to_hash("0000000000000000")
         seen = [
-            (zero, "s3://bucket/first.png"),
-            (zero, "s3://bucket/second.png"),
+            (zero, "s3://bucket/first.jpg"),
+            (zero, "s3://bucket/second.jpg"),
         ]
-        assert _find_perceptual_match(zero, seen) == "s3://bucket/first.png"
+        assert _find_perceptual_match(zero, seen) == "s3://bucket/first.jpg"
 
 
-class TestCompressPng:
-    def test_output_is_valid_png(self) -> None:
-        compressed = _compress_png(_png_bytes(_make_distinct_figure("lines")))
-        with Image.open(BytesIO(compressed)) as img:
-            assert img.format == "PNG"
+class TestDetectExtension:
+    def test_data_uri_jpeg_returns_jpg(self) -> None:
+        assert _detect_extension("data:image/jpeg;base64", "anything", b"") == "jpg"
 
-    def test_output_preserves_dimensions(self) -> None:
-        original = _make_distinct_figure("circle")
-        compressed = _compress_png(_png_bytes(original))
-        with Image.open(BytesIO(compressed)) as img:
-            assert img.size == original.size
+    def test_data_uri_png_returns_png(self) -> None:
+        assert _detect_extension("data:image/png;base64", "anything", b"") == "png"
 
-    def test_graphics_image_is_quantized(self) -> None:
-        """Graphics with few colors must end up as paletted PNGs (mode 'P')."""
-        compressed = _compress_png(_png_bytes(_make_distinct_figure("lines")))
-        with Image.open(BytesIO(compressed)) as img:
-            assert img.mode == "P", f"expected paletted PNG, got mode {img.mode}"
+    def test_falls_back_to_filename_extension(self) -> None:
+        assert _detect_extension("", "logo.webp", b"") == "webp"
 
-    def test_photograph_is_not_quantized(self) -> None:
-        """High-color images (>50k unique colors) must keep truecolor depth — quantizing photos causes banding."""
-        photo_bytes = _png_bytes(_random_photograph())
-        compressed = _compress_png(photo_bytes)
-        # The defensive fallback may return the original bytes unchanged for already-incompressible
-        # noise. Either way, the result must not be a paletted image.
-        with Image.open(BytesIO(compressed)) as img:
-            assert img.mode in ("RGB", "RGBA"), f"photograph was quantized to mode {img.mode}"
-
-    def test_graphics_compress_smaller(self) -> None:
-        original_bytes = _png_bytes(_make_distinct_figure("lines"))
-        compressed = _compress_png(original_bytes)
-        assert len(compressed) <= len(original_bytes)
-
-    def test_returns_original_when_compression_would_grow_file(self) -> None:
-        """Defensive fallback: never replace input bytes with a larger 'compressed' result."""
-        # An already-tiny PNG can't be compressed further. _compress_png must return the original.
-        tiny = Image.new("RGB", (1, 1), "white")
-        original_bytes = _png_bytes(tiny)
-        compressed = _compress_png(original_bytes)
-        assert len(compressed) <= len(original_bytes)
-
-    def test_alpha_channel_preserved(self) -> None:
-        """RGBA inputs must round-trip with alpha intact — Pillow's MEDIANCUT path can't dither alpha,
-        so the production code skips quantization for alpha-bearing images and relies on optimize=True."""
-        img = Image.new("RGBA", (50, 50), (255, 0, 0, 128))
-        compressed = _compress_png(_png_bytes(img))
-        with Image.open(BytesIO(compressed)) as result:
-            assert result.mode == "RGBA"
-            # Sample a pixel to confirm alpha survived the round-trip.
-            assert result.getpixel((25, 25))[3] == 128
+    def test_falls_back_to_pil_sniffing(self) -> None:
+        jpeg = _jpeg_bytes(_make_distinct_figure("lines"))
+        # No data URI prefix, no extension on the source name — must sniff JPEG via PIL.
+        assert _detect_extension("", "no_extension", jpeg) == "jpg"
 
 
 class TestExtractAndUploadImages:
@@ -229,9 +196,9 @@ class TestExtractAndUploadImages:
     @pytest.mark.asyncio
     async def test_writes_one_file_per_unique_image(self) -> None:
         images = {
-            "fig_a.png": _b64(_make_distinct_figure("lines")),
-            "fig_b.png": _b64(_make_distinct_figure("circle")),
-            "fig_c.png": _b64(_make_distinct_figure("triangle")),
+            "fig_a.jpg": _b64(_make_distinct_figure("lines")),
+            "fig_b.jpg": _b64(_make_distinct_figure("circle")),
+            "fig_c.jpg": _b64(_make_distinct_figure("triangle")),
         }
         md = "".join(f"![](images/{k})\n" for k in images)
 
@@ -245,9 +212,9 @@ class TestExtractAndUploadImages:
     async def test_300_identical_logos_collapse_to_one_file(self) -> None:
         """The headline scenario: a 300-page PDF with the same logo on every page must store the logo once."""
         logo_b64 = _b64(_make_logo())
-        images = {f"logo_p{i}.png": logo_b64 for i in range(300)}
+        images = {f"logo_p{i}.jpg": logo_b64 for i in range(300)}
         for kind in ("lines", "circle", "triangle"):
-            images[f"fig_{kind}.png"] = _b64(_make_distinct_figure(kind))
+            images[f"fig_{kind}.jpg"] = _b64(_make_distinct_figure(kind))
 
         md = "".join(f"![](images/{k})\n" for k in images)
 
@@ -264,9 +231,9 @@ class TestExtractAndUploadImages:
     async def test_logo_crop_variants_collapse_to_one_file(self) -> None:
         """VLM crop bounds drift between pages — re-cropped logos must still dedup."""
         crop_variations = [(0, 0, 1.0), (1, 0, 1.0), (-1, 0, 1.0), (0, 2, 1.0), (3, -1, 1.0), (0, 0, 0.97)]
-        images = {f"logo_p{i}.png": _b64(_make_logo(*v)) for i, v in enumerate(crop_variations)}
+        images = {f"logo_p{i}.jpg": _b64(_make_logo(*v)) for i, v in enumerate(crop_variations)}
         for kind in ("lines", "circle"):
-            images[f"fig_{kind}.png"] = _b64(_make_distinct_figure(kind))
+            images[f"fig_{kind}.jpg"] = _b64(_make_distinct_figure(kind))
 
         md = "".join(f"![](images/{k})\n" for k in images)
 
@@ -291,9 +258,9 @@ class TestExtractAndUploadImages:
     @pytest.mark.asyncio
     async def test_distinct_figures_remain_distinct(self) -> None:
         images = {
-            "a.png": _b64(_make_distinct_figure("lines")),
-            "b.png": _b64(_make_distinct_figure("circle")),
-            "c.png": _b64(_make_distinct_figure("triangle")),
+            "a.jpg": _b64(_make_distinct_figure("lines")),
+            "b.jpg": _b64(_make_distinct_figure("circle")),
+            "c.jpg": _b64(_make_distinct_figure("triangle")),
         }
         md = "".join(f"![](images/{k})\n" for k in images)
 
@@ -304,54 +271,77 @@ class TestExtractAndUploadImages:
         assert len(unique_uris) == 3
 
     @pytest.mark.asyncio
-    async def test_output_files_are_png_extension(self) -> None:
-        """Re-encoding always produces PNG; the source extension from MinerU is irrelevant."""
-        images = {"weird_name.jpeg": _b64(_make_distinct_figure("lines"))}
-        md = "![](images/weird_name.jpeg)"
+    async def test_filename_uses_content_hash_and_input_extension(self) -> None:
+        """Output filename = figure_<sha256[:16]>.<detected_ext> — content-addressed and idempotent."""
+        figure = _make_distinct_figure("lines")
+        figure_b64 = _b64(figure)
+        expected_bytes = base64.b64decode(figure_b64.split(",", 1)[1])
+        expected_hash = hashlib.sha256(expected_bytes).hexdigest()[:16]
 
         fs = _FakeFileSystem()
-        result = await extract_and_upload_images(md, images, fs, "bucket/docs/report.pdf")
+        await extract_and_upload_images("![](images/a.jpg)", {"a.jpg": figure_b64}, fs, "bucket/docs/report.pdf")
 
         figure_files = [p for p in fs.files if "__figures__" in p]
         assert len(figure_files) == 1
-        assert figure_files[0].endswith(".png")
-        assert ".png)" in result
+        assert figure_files[0].endswith(f"figure_{expected_hash}.jpg")
 
     @pytest.mark.asyncio
-    async def test_handles_data_uri_prefixed_base64(self) -> None:
-        """MinerU sometimes returns 'data:image/png;base64,XYZ' — we strip the prefix."""
-        raw_b64 = _b64(_make_distinct_figure("lines"))
-        images = {"a.png": f"data:image/png;base64,{raw_b64}"}
-        md = "![](images/a.png)"
+    async def test_uploaded_bytes_are_unchanged(self) -> None:
+        """We trust MinerU's JPEG output and never re-encode — bytes must round-trip verbatim."""
+        figure_b64 = _b64(_make_distinct_figure("circle"))
+        expected_bytes = base64.b64decode(figure_b64.split(",", 1)[1])
 
         fs = _FakeFileSystem()
-        await extract_and_upload_images(md, images, fs, "bucket/docs/report.pdf")
+        await extract_and_upload_images("![](images/a.jpg)", {"a.jpg": figure_b64}, fs, "bucket/docs/report.pdf")
 
-        figure_files = [p for p in fs.files if "__figures__" in p]
-        assert len(figure_files) == 1
-        # And the file must be a valid PNG, proving we stripped the prefix correctly.
-        with Image.open(BytesIO(fs.files[figure_files[0]])) as img:
+        [stored_path] = [p for p in fs.files if "__figures__" in p]
+        assert fs.files[stored_path] == expected_bytes
+
+    @pytest.mark.asyncio
+    async def test_png_input_keeps_png_extension(self) -> None:
+        """If a loader ever feeds us PNG (MarkItDown tabular extraction, etc.), preserve the format."""
+        png_b64 = base64.b64encode(_png_bytes(_make_distinct_figure("lines"))).decode()
+        images = {"a.png": f"data:image/png;base64,{png_b64}"}
+
+        fs = _FakeFileSystem()
+        await extract_and_upload_images("![](images/a.png)", images, fs, "bucket/docs/report.pdf")
+
+        [path] = [p for p in fs.files if "__figures__" in p]
+        assert path.endswith(".png")
+        with Image.open(BytesIO(fs.files[path])) as img:
             assert img.format == "PNG"
 
     @pytest.mark.asyncio
+    async def test_handles_raw_base64_without_data_uri_prefix(self) -> None:
+        """Some callers pass raw base64; we sniff the format from filename or PIL."""
+        raw_b64 = base64.b64encode(_jpeg_bytes(_make_distinct_figure("lines"))).decode()
+        images = {"a.jpg": raw_b64}
+
+        fs = _FakeFileSystem()
+        await extract_and_upload_images("![](images/a.jpg)", images, fs, "bucket/docs/report.pdf")
+
+        [path] = [p for p in fs.files if "__figures__" in p]
+        assert path.endswith(".jpg")
+
+    @pytest.mark.asyncio
     async def test_markdown_wraps_references_in_figure_tags(self) -> None:
-        images = {"a.png": _b64(_make_distinct_figure("lines"))}
-        md = "Before ![](images/a.png) after."
+        images = {"a.jpg": _b64(_make_distinct_figure("lines"))}
+        md = "Before ![](images/a.jpg) after."
 
         fs = _FakeFileSystem()
         result = await extract_and_upload_images(md, images, fs, "bucket/docs/report.pdf")
 
         assert "<figure>" in result
         assert "</figure>" in result
-        assert "images/a.png" not in result
+        assert "images/a.jpg" not in result
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize(
         "ref_pattern",
-        ["images/a.png", "./images/a.png", "a.png"],
+        ["images/a.jpg", "./images/a.jpg", "a.jpg"],
     )
     async def test_rewrites_all_known_reference_styles(self, ref_pattern: str) -> None:
-        images = {"a.png": _b64(_make_distinct_figure("lines"))}
+        images = {"a.jpg": _b64(_make_distinct_figure("lines"))}
         md = f"![alt]({ref_pattern})"
 
         fs = _FakeFileSystem()

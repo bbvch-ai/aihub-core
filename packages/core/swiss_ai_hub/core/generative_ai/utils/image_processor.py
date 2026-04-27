@@ -4,10 +4,16 @@ Image processing utilities for document loaders.
 Provides shared functionality for extracting, uploading, and referencing images
 from parsed documents. Used by MineruLoader and MarkItDownLoader to ensure
 consistent image handling across different parsing backends.
+
+MinerU emits figures as JPEG (mineru/utils/pdf_image_tools.py:cut_image), so we
+write the bytes through unchanged — re-encoding a JPEG photograph to PNG would
+inflate the payload by an order of magnitude. Per-document dedup via dHash still
+collapses repeated logos.
 """
 
 import asyncio
 import base64
+import hashlib
 import logging
 import os
 import re
@@ -28,12 +34,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-# Empirical cutoff: continuous-tone photographs typically have well over 50k unique
-# colors, while logos/diagrams/screenshots stay under it. Quantizing photographs to
-# 256 colors can produce visible banding, so we keep them truecolor.
-_QUANTIZATION_UNIQUE_COLOR_LIMIT = 50_000
-_QUANTIZATION_PALETTE_SIZE = 256
-
 # dHash on a downscaled image is translation-tolerant: it encodes neighbor-pixel
 # gradients, which barely shift when the crop bounds move a few pixels. pHash was
 # evaluated and rejected — high-frequency DCT coefficients flip dramatically on
@@ -45,6 +45,18 @@ _QUANTIZATION_PALETTE_SIZE = 256
 # A threshold of 12 sits in the gap and tolerates realistic VLM crop variance.
 _HASH_SIZE = 8
 _HASH_MATCH_THRESHOLD = 12
+
+_DATA_URI_MIME_RE = re.compile(r"^data:image/([a-zA-Z0-9.+-]+)(?:;[^,]*)?,")
+_MIME_TO_EXT = {
+    "jpeg": "jpg",
+    "jpg": "jpg",
+    "png": "png",
+    "gif": "gif",
+    "webp": "webp",
+    "bmp": "bmp",
+    "tiff": "tiff",
+    "svg+xml": "svg",
+}
 
 
 async def extract_and_upload_images(
@@ -58,7 +70,9 @@ async def extract_and_upload_images(
 
     Takes a dictionary of image paths to base64-encoded data, uploads each image
     to S3 using fsspec, and replaces the image references in the markdown content
-    with the S3 paths wrapped in <figure> tags.
+    with the S3 paths wrapped in <figure> tags. Filenames are content-addressed
+    (sha256 prefix) so re-runs are idempotent and bytewise duplicates collapse
+    naturally; perceptual dedup still catches near-duplicates with different bytes.
     """
     if not images:
         return markdown_content
@@ -70,11 +84,7 @@ async def extract_and_upload_images(
     seen: list[tuple[imagehash.ImageHash, str]] = []
 
     for idx, (rel_path, data_uri) in enumerate(images.items()):
-        if "," in data_uri:
-            base64_data = data_uri.split(",", 1)[1]
-        else:
-            base64_data = data_uri
-
+        base64_data, mime_prefix = _split_data_uri(data_uri)
         image_bytes = base64.b64decode(base64_data)
 
         phash = await asyncio.to_thread(_perceptual_hash, image_bytes)
@@ -83,17 +93,15 @@ async def extract_and_upload_images(
             s3_uri = existing_uri
             logger.debug(f"Image {idx + 1} matches a previously uploaded figure (pHash={phash}); reusing {s3_uri}")
         else:
-            compressed_bytes = await asyncio.to_thread(_compress_png, image_bytes)
+            extension = _detect_extension(mime_prefix, rel_path, image_bytes)
+            content_hash = hashlib.sha256(image_bytes).hexdigest()[:16]
+            blob_path = f"{figures_dir}/figure_{content_hash}.{extension}"
 
-            figure_filename = f"figure_{idx + 1}.png"
-            blob_path = f"{figures_dir}/{figure_filename}"
+            await asyncio.to_thread(_write_file, fs, blob_path, image_bytes)
 
-            await asyncio.to_thread(_write_file, fs, blob_path, compressed_bytes)
-
-            # s3://bucket/key format is consumed by replace_s3_paths_with_signed_urls
             s3_uri = blob_path if blob_path.startswith("s3://") else f"s3://{blob_path}"
             seen.append((phash, s3_uri))
-            logger.debug(f"Uploaded image {idx + 1} to {s3_uri} ({len(image_bytes)} → {len(compressed_bytes)} bytes)")
+            logger.debug(f"Uploaded image {idx + 1} to {s3_uri} ({len(image_bytes)} bytes)")
 
         markdown_figure = f"![Figure {idx + 1}]({s3_uri})"
         figure_tag = f"<{NODE_CONTENT_TYPE_FIGURE}>{markdown_figure}</{NODE_CONTENT_TYPE_FIGURE}>"
@@ -120,6 +128,29 @@ def _write_file(fs: "AbstractFileSystem", path: str, content: bytes) -> None:
         f.write(content)
 
 
+def _split_data_uri(data_uri: str) -> tuple[str, str]:
+    """Return (base64_payload, mime_prefix). mime_prefix is empty for raw base64 input."""
+    if "," in data_uri and data_uri.startswith("data:"):
+        prefix, payload = data_uri.split(",", 1)
+        return payload, prefix
+    if "," in data_uri:
+        return data_uri.split(",", 1)[1], ""
+    return data_uri, ""
+
+
+def _detect_extension(mime_prefix: str, rel_path: str, image_bytes: bytes) -> str:
+    """Pick the on-disk extension from the data URI MIME, then the source filename, then PIL sniffing."""
+    if (match := _DATA_URI_MIME_RE.match(mime_prefix + ",")) is not None:
+        mime_subtype = match.group(1).lower()
+        if (ext := _MIME_TO_EXT.get(mime_subtype)) is not None:
+            return ext
+    _, file_ext = os.path.splitext(rel_path)
+    if (normalised := file_ext.lower().lstrip(".")) in _MIME_TO_EXT.values():
+        return normalised
+    with Image.open(BytesIO(image_bytes)) as img:
+        return (img.format or "jpg").lower().replace("jpeg", "jpg")
+
+
 def _perceptual_hash(image_bytes: bytes) -> imagehash.ImageHash:
     """Perceptual hash robust to sub-pixel crop shifts and rendering artifacts from VLM-driven figure extraction."""
     with Image.open(BytesIO(image_bytes)) as img:
@@ -135,28 +166,6 @@ def _find_perceptual_match(
         if phash - existing_phash <= _HASH_MATCH_THRESHOLD:
             return existing_uri
     return None
-
-
-def _compress_png(image_bytes: bytes) -> bytes:
-    """Lossy-but-invisible PNG compression: palette quantization for graphics, lossless optimize for photos."""
-    with Image.open(BytesIO(image_bytes)) as img:
-        img.load()
-        has_alpha = img.mode in ("RGBA", "LA") or (img.mode == "P" and "transparency" in img.info)
-        working = img.convert("RGBA" if has_alpha else "RGB")
-
-        unique_colors = working.getcolors(maxcolors=_QUANTIZATION_UNIQUE_COLOR_LIMIT)
-        if unique_colors is not None and not has_alpha:
-            working = working.quantize(
-                colors=_QUANTIZATION_PALETTE_SIZE,
-                method=Image.Quantize.MEDIANCUT,
-                dither=Image.Dither.FLOYDSTEINBERG,
-            )
-
-        out = BytesIO()
-        working.save(out, format="PNG", optimize=True)
-        compressed = out.getvalue()
-
-    return compressed if len(compressed) < len(image_bytes) else image_bytes
 
 
 def embed_images_as_base64(

@@ -1,10 +1,10 @@
 # License Report
 
-Generated on: 24.04.2026
+Generated on: 27.04.2026
 
 This document contains license information for all dependencies across the monorepo:
 
-- Python packages (uv): **394 packages**
+- Python packages (uv): **396 packages**
 - Node.js packages (pnpm): **999 packages**
 - External Docker images: **31 images**
 
@@ -144,6 +144,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | humanfriendly                                    | 10.0                  | MIT License                                                  |                                                                      |
 | ✅     | hyperframe                                       | 6.1.0                 | MIT License                                                  |                                                                      |
 | ✅     | idna                                             | 3.11                  | BSD-3-Clause                                                 |                                                                      |
+| ✅     | ImageHash                                        | 4.3.2                 | 2-clause BSD License                                         |                                                                      |
 | ✅     | importlib_metadata                               | 8.7.1                 | Apache-2.0                                                   |                                                                      |
 | ✅     | iniconfig                                        | 2.3.0                 | MIT                                                          |                                                                      |
 | ✅     | ipython                                          | 9.11.0                | BSD-3-Clause                                                 |                                                                      |
@@ -341,6 +342,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | python-pptx                                      | 1.0.2                 | MIT License                                                  |                                                                      |
 | ✅     | pytokens                                         | 0.4.1                 | MIT License                                                  |                                                                      |
 | ✅     | pytz                                             | 2026.1.post1          | MIT License                                                  |                                                                      |
+| ✅     | PyWavelets                                       | 1.9.0                 | MIT AND BSD-3-Clause                                         |                                                                      |
 | ✅     | PyYAML                                           | 6.0.3                 | MIT License                                                  |                                                                      |
 | ✅     | qdrant-client                                    | 1.17.0                | Apache Software License                                      |                                                                      |
 | ✅     | rank-bm25                                        | 0.2.2                 | Apache2.0                                                    |                                                                      |
