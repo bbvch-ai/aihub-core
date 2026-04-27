@@ -13,6 +13,8 @@ from swiss_ai_hub.core.persistence.rag.vectors.stores.milvus_vector_store_factor
 )
 from swiss_ai_hub.core.testing.milvus_vector_store_content import drop_collection, run_with_event_loop
 
+pytestmark = pytest.mark.usefixtures("cleanup_test_collections")
+
 scenarios("./features/milvus_vector_store.feature")
 
 
@@ -43,7 +45,7 @@ def milvus_client(context):
     return context["client"]
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def cleanup_test_collections(context):
     """Auto-cleanup test collections before and after each scenario."""
     yield

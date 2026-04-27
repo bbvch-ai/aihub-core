@@ -20,13 +20,15 @@ from swiss_ai_hub.core.testing.auth_utils.oauth2_utils.oauth2_test_utils import 
     public_key_to_jwk,
 )
 
+pytestmark = pytest.mark.usefixtures("clear_handler_caches", "mock_database_operations")
+
 scenarios("features/keycloak_auth_handler.feature")
 
 
 # --- Cache Cleanup Fixture ---
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def clear_handler_caches():
     """Clear class-level JWKS and RSA key caches between tests."""
     from swiss_ai_hub.core.auth.dependencies.keycloak_auth_handler.keycloak_auth_handler import KeycloakAuthHandler
@@ -41,7 +43,7 @@ def clear_handler_caches():
 # --- Database Mocking Fixture ---
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def mock_database_operations(monkeypatch: pytest.MonkeyPatch):
     """Mock database and identity operations required by the auth handler."""
 

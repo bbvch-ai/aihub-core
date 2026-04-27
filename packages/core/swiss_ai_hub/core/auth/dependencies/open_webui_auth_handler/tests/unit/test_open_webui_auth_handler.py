@@ -22,10 +22,12 @@ from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 from swiss_ai_hub.core.testing.asyncio_utils.bdd import async_test
 
+pytestmark = pytest.mark.usefixtures("mongo_connection")
+
 # --- MongoDB Connection Fixture ---
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def mongo_connection(monkeypatch: pytest.MonkeyPatch) -> Generator[None]:
     """Set up a MongoDB connection for testing and disconnect after."""
     connect(

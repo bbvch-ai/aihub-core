@@ -14,10 +14,12 @@ from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
 from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 
+pytestmark = pytest.mark.usefixtures("mongo_connection", "mock_keycloak_active_tenant")
+
 scenarios("features/user_tenant_role_entity.feature")
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def mongo_connection() -> Generator[None]:
     """Set up a MongoDB connection for testing and disconnect after."""
     connect(
@@ -28,7 +30,7 @@ def mongo_connection() -> Generator[None]:
     disconnect()
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def mock_keycloak_active_tenant():
     """Mock KeycloakAdminService active tenant methods for tests."""
 

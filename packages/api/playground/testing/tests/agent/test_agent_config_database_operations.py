@@ -6,10 +6,12 @@ from swiss_ai_hub.core.i18n import LocaleString
 from swiss_ai_hub.core.infrastructure import enable_logging
 from swiss_ai_hub.core.persistence.agents.agent_config_entity_document import AgentConfigEntityDocument
 
+pytestmark = pytest.mark.usefixtures("cleanup_db_and_cache")
+
 enable_logging()
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def cleanup_db_and_cache(sample_agent_config):
     yield
 

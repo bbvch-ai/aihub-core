@@ -8,8 +8,10 @@ from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdmin
 from swiss_ai_hub.core.auth.keycloak.models.keycloak_user import KeycloakUser
 from swiss_ai_hub.core.auth.superuser_settings import SuperuserSettings
 
+pytestmark = pytest.mark.usefixtures("reset_superuser_cache")
 
-@pytest.fixture(autouse=True)
+
+@pytest.fixture
 def reset_superuser_cache() -> Generator[None]:
     kas_module._superuser_id_cache = None
     yield

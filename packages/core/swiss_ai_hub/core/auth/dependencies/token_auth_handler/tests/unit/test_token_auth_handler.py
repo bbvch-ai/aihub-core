@@ -20,10 +20,12 @@ from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity impor
 from swiss_ai_hub.core.testing.asyncio_utils.bdd import async_test
 from swiss_ai_hub.core.testing.auth_utils.user_mocks import register_fake_keycloak_user
 
+pytestmark = pytest.mark.usefixtures("mongo_connection")
+
 # --- MongoDB Connection Fixture ---
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def mongo_connection(monkeypatch: pytest.MonkeyPatch) -> Generator[None]:
     """Set up a MongoDB connection for testing and disconnect after."""
     connect(

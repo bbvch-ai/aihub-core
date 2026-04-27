@@ -12,12 +12,14 @@ from swiss_ai_hub.core.testing.auth_utils import TestAuthHandler
 from swiss_ai_hub.api.routes.my_account.my_account_controller import MyAccountController
 from swiss_ai_hub.api.runners.api_test_runner import ApiTestRunner
 
+pytestmark = pytest.mark.usefixtures("mongo_db")
+
 BASE_URL = "http://test"
 USER_ENDPOINT = "/api/v1/active/my-account"
 EXPECTED_USER_FIELDS = ["id", "name", "email"]
 
 
-@pytest.fixture(scope="module", autouse=True)
+@pytest.fixture(scope="module")
 def mongo_db():
     """Set up and tear down the MongoDB connection for tests."""
     connect(

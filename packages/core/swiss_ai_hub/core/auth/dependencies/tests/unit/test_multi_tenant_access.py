@@ -12,10 +12,12 @@ from swiss_ai_hub.core.persistence.access.entities.role_entity import RoleEntity
 from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import TenantMetadataEntity
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 
+pytestmark = pytest.mark.usefixtures("mongo_connection")
+
 scenarios("features/multi_tenant_access.feature")
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def mongo_connection() -> Generator[None]:
     """Set up a MongoDB connection for testing and disconnect after."""
     connect(

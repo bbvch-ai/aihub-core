@@ -27,8 +27,10 @@ from swiss_ai_hub.core.persistence.access.entities.tenant_metadata_entity import
 from swiss_ai_hub.core.persistence.access.entities.user_tenant_role_entity import UserTenantRoleEntity
 from swiss_ai_hub.core.testing.auth_utils.user_mocks import register_fake_keycloak_user
 
+pytestmark = pytest.mark.usefixtures("mongo_connection")
 
-@pytest.fixture(autouse=True)
+
+@pytest.fixture
 def mongo_connection() -> Generator[None]:
     connect(
         db=AIHubSettings().MONGO_MAIN_DB_NAME,
