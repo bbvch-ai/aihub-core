@@ -11,7 +11,11 @@ import base64
 import logging
 import os
 import re
+from io import BytesIO
 from typing import TYPE_CHECKING
+
+import imagehash
+from PIL import Image
 
 from swiss_ai_hub.core.generative_ai.document.accessor.s3_anonymous_file_access_service import (
     S3AnonymousFileAccessService,
@@ -23,6 +27,24 @@ if TYPE_CHECKING:
     from fsspec import AbstractFileSystem
 
 logger = logging.getLogger(__name__)
+
+# Empirical cutoff: continuous-tone photographs typically have well over 50k unique
+# colors, while logos/diagrams/screenshots stay under it. Quantizing photographs to
+# 256 colors can produce visible banding, so we keep them truecolor.
+_QUANTIZATION_UNIQUE_COLOR_LIMIT = 50_000
+_QUANTIZATION_PALETTE_SIZE = 256
+
+# dHash on a downscaled image is translation-tolerant: it encodes neighbor-pixel
+# gradients, which barely shift when the crop bounds move a few pixels. pHash was
+# evaluated and rejected — high-frequency DCT coefficients flip dramatically on
+# vertical jitter (74-bit jumps for 2px shifts), making it impossible to set a
+# threshold that catches re-cropped logos without merging unrelated figures.
+# With hash_size=8 (64-bit fingerprint), measured distances:
+#   - same logo, different crop offsets / sub-pixel rescaling: ≤10 bits
+#   - genuinely distinct figures: ≥25 bits
+# A threshold of 12 sits in the gap and tolerates realistic VLM crop variance.
+_HASH_SIZE = 8
+_HASH_MATCH_THRESHOLD = 12
 
 
 async def extract_and_upload_images(
@@ -45,6 +67,8 @@ async def extract_and_upload_images(
 
     await asyncio.to_thread(fs.makedirs, figures_dir, exist_ok=True)
 
+    seen: list[tuple[imagehash.ImageHash, str]] = []
+
     for idx, (rel_path, data_uri) in enumerate(images.items()):
         if "," in data_uri:
             base64_data = data_uri.split(",", 1)[1]
@@ -53,17 +77,24 @@ async def extract_and_upload_images(
 
         image_bytes = base64.b64decode(base64_data)
 
-        _, ext = os.path.splitext(rel_path)
-        if not ext:
-            ext = ".png"
+        phash = await asyncio.to_thread(_perceptual_hash, image_bytes)
 
-        figure_filename = f"figure_{idx + 1}{ext}"
-        blob_path = f"{figures_dir}/{figure_filename}"
+        if (existing_uri := _find_perceptual_match(phash, seen)) is not None:
+            s3_uri = existing_uri
+            logger.debug(f"Image {idx + 1} matches a previously uploaded figure (pHash={phash}); reusing {s3_uri}")
+        else:
+            compressed_bytes = await asyncio.to_thread(_compress_png, image_bytes)
 
-        await asyncio.to_thread(_write_file, fs, blob_path, image_bytes)
+            figure_filename = f"figure_{idx + 1}.png"
+            blob_path = f"{figures_dir}/{figure_filename}"
 
-        # s3://bucket/key format is consumed by replace_s3_paths_with_signed_urls
-        s3_uri = blob_path if blob_path.startswith("s3://") else f"s3://{blob_path}"
+            await asyncio.to_thread(_write_file, fs, blob_path, compressed_bytes)
+
+            # s3://bucket/key format is consumed by replace_s3_paths_with_signed_urls
+            s3_uri = blob_path if blob_path.startswith("s3://") else f"s3://{blob_path}"
+            seen.append((phash, s3_uri))
+            logger.debug(f"Uploaded image {idx + 1} to {s3_uri} ({len(image_bytes)} → {len(compressed_bytes)} bytes)")
+
         markdown_figure = f"![Figure {idx + 1}]({s3_uri})"
         figure_tag = f"<{NODE_CONTENT_TYPE_FIGURE}>{markdown_figure}</{NODE_CONTENT_TYPE_FIGURE}>"
 
@@ -80,8 +111,6 @@ async def extract_and_upload_images(
                 markdown_content,
             )
 
-        logger.debug(f"Uploaded image {idx + 1} to {s3_uri}")
-
     return markdown_content
 
 
@@ -89,6 +118,45 @@ def _write_file(fs: "AbstractFileSystem", path: str, content: bytes) -> None:
     """Write content to a file using fsspec (synchronous helper for asyncio.to_thread)."""
     with fs.open(path, "wb") as f:
         f.write(content)
+
+
+def _perceptual_hash(image_bytes: bytes) -> imagehash.ImageHash:
+    """Perceptual hash robust to sub-pixel crop shifts and rendering artifacts from VLM-driven figure extraction."""
+    with Image.open(BytesIO(image_bytes)) as img:
+        return imagehash.dhash(img, hash_size=_HASH_SIZE)
+
+
+def _find_perceptual_match(
+    phash: imagehash.ImageHash,
+    seen: list[tuple[imagehash.ImageHash, str]],
+) -> str | None:
+    """Linear scan: returns the first stored URI whose hash is within the perceptual-match threshold."""
+    for existing_phash, existing_uri in seen:
+        if phash - existing_phash <= _HASH_MATCH_THRESHOLD:
+            return existing_uri
+    return None
+
+
+def _compress_png(image_bytes: bytes) -> bytes:
+    """Lossy-but-invisible PNG compression: palette quantization for graphics, lossless optimize for photos."""
+    with Image.open(BytesIO(image_bytes)) as img:
+        img.load()
+        has_alpha = img.mode in ("RGBA", "LA") or (img.mode == "P" and "transparency" in img.info)
+        working = img.convert("RGBA" if has_alpha else "RGB")
+
+        unique_colors = working.getcolors(maxcolors=_QUANTIZATION_UNIQUE_COLOR_LIMIT)
+        if unique_colors is not None and not has_alpha:
+            working = working.quantize(
+                colors=_QUANTIZATION_PALETTE_SIZE,
+                method=Image.Quantize.MEDIANCUT,
+                dither=Image.Dither.FLOYDSTEINBERG,
+            )
+
+        out = BytesIO()
+        working.save(out, format="PNG", optimize=True)
+        compressed = out.getvalue()
+
+    return compressed if len(compressed) < len(image_bytes) else image_bytes
 
 
 def embed_images_as_base64(
