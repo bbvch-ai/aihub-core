@@ -1,5 +1,6 @@
 from typing import Annotated
 
+from apprise import Apprise
 from pydantic import Field, field_validator
 from pydantic_settings import NoDecode
 
@@ -22,7 +23,7 @@ class NotificationSettings(EnvironmentSettings):
             description=(
                 "Apprise notification URIs (comma-separated). "
                 "Examples: 'slack://TokenA/TokenB/TokenC/#alerts', 'mailto://user:pw@smtp.example.com', "
-                "'msteams://TokenA/TokenB/TokenC/'. See https://github.com/caronc/apprise for the full list."
+                "'discord://webhook_id/webhook_token'. See https://github.com/caronc/apprise for the full list."
             ),
         ),
     ]
@@ -53,6 +54,17 @@ class NotificationSettings(EnvironmentSettings):
     def _split_comma_separated(cls, value: object) -> object:
         if isinstance(value, str):
             return [item.strip() for item in value.split(",") if item.strip()]
+        return value
+
+    @field_validator("URLS", mode="after")
+    @classmethod
+    def _validate_apprise_urls(cls, value: list[str]) -> list[str]:
+        invalid = [url for url in value if Apprise.instantiate(url) is None]
+        if invalid:
+            raise ValueError(
+                f"Invalid Apprise URL(s) in NOTIFICATION_URLS: {', '.join(invalid)}. "
+                "See https://github.com/caronc/apprise for the supported schemes."
+            )
         return value
 
     @property

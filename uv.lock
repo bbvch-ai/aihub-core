@@ -5513,6 +5513,7 @@ version = "0.279.0"
 source = { editable = "packages/core" }
 dependencies = [
     { name = "adlfs" },
+    { name = "apprise" },
     { name = "azure-ai-documentintelligence" },
     { name = "azure-storage-file-datalake" },
     { name = "blinker" },
@@ -5580,6 +5581,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "adlfs", specifier = ">=2025.8.0" },
+    { name = "apprise", specifier = ">=1.9.9" },
     { name = "azure-ai-documentintelligence", specifier = ">=1.0.2" },
     { name = "azure-storage-file-datalake", specifier = ">=12.22.0" },
     { name = "blinker", specifier = ">=1.9.0" },

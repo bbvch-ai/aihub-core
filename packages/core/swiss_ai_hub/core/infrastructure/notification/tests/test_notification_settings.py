@@ -1,3 +1,6 @@
+import pytest
+from pydantic import ValidationError
+
 from swiss_ai_hub.core.infrastructure.notification.notification_settings import NotificationSettings
 
 
@@ -15,9 +18,9 @@ class TestNotificationSettingsUrlParsing:
         assert settings.enabled is False
 
     def test_comma_separated_values_are_split(self, monkeypatch) -> None:
-        monkeypatch.setenv("NOTIFICATION_URLS", "slack://a/b/c,mailto://u:p@smtp.example.com,msteams://d/e/f")
+        monkeypatch.setenv("NOTIFICATION_URLS", "slack://a/b/c,mailto://u:p@smtp.example.com,discord://d/e")
         settings = NotificationSettings()
-        assert settings.URLS == ["slack://a/b/c", "mailto://u:p@smtp.example.com", "msteams://d/e/f"]
+        assert settings.URLS == ["slack://a/b/c", "mailto://u:p@smtp.example.com", "discord://d/e"]
         assert settings.enabled is True
 
     def test_whitespace_and_empty_segments_are_stripped(self, monkeypatch) -> None:
@@ -52,3 +55,31 @@ class TestNotificationSettingsDefaults:
         settings = NotificationSettings()
         assert settings.TITLE_PREFIX == "Custom Prefix"
         assert settings.MIN_INTERVAL_SECONDS == 120
+
+
+class TestNotificationSettingsUrlValidation:
+    def test_valid_urls_pass(self, monkeypatch) -> None:
+        monkeypatch.setenv(
+            "NOTIFICATION_URLS",
+            "slack://TokenA/TokenB/TokenC/#alerts,mailto://user:pw@smtp.example.com",
+        )
+        settings = NotificationSettings()
+        assert len(settings.URLS) == 2
+
+    def test_invalid_url_raises(self, monkeypatch) -> None:
+        monkeypatch.setenv("NOTIFICATION_URLS", "not-a-real-url")
+        with pytest.raises(ValidationError, match="Invalid Apprise URL"):
+            NotificationSettings()
+
+    def test_unknown_scheme_raises(self, monkeypatch) -> None:
+        monkeypatch.setenv("NOTIFICATION_URLS", "bogus://foo/bar")
+        with pytest.raises(ValidationError, match="bogus://foo/bar"):
+            NotificationSettings()
+
+    def test_mixed_valid_and_invalid_raises_with_invalid_listed(self, monkeypatch) -> None:
+        monkeypatch.setenv(
+            "NOTIFICATION_URLS",
+            "slack://TokenA/TokenB/TokenC/#alerts,bogus://foo",
+        )
+        with pytest.raises(ValidationError, match="bogus://foo"):
+            NotificationSettings()
