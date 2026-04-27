@@ -220,6 +220,7 @@ async def do_context_sufficient_guard(
         return ContextSufficientAcceptEvent(reason=guard_result.reasoning)
 
     if not more_hops_available:
+        await run_context.set("context_sufficient", False)
         return ContextInsufficientRejectEvent(reason=guard_result.reasoning)
 
     await run_context.set("hop_count", hop_count + 1)

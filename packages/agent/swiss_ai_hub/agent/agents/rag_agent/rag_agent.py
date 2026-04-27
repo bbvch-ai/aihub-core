@@ -10,6 +10,7 @@ from swiss_ai_hub.core.events.agent import (
     LimitChatHistoryEvent,
     LLMEvent,
     RAGStartEvent,
+    RAGStopEvent,
     RerankerEvent,
     RetrieveOrganizationMemoryEvent,
     RetrieverEvent,
@@ -468,6 +469,8 @@ class RAGAgent(Agent):
         _llm_event: LLMEvent,
         _store_memory_event: StoreUserMemoryEvent | None,
         agent_config: RAGAgentConfig,
+        run_context: RunContext,
     ) -> StopEvent:
         """Final step that ensures all required steps are complete before stopping."""
-        return StopEvent()
+        context_sufficient = await run_context.get("context_sufficient", True)
+        return RAGStopEvent(context_sufficient=context_sufficient)
