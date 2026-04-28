@@ -15,7 +15,6 @@ from swiss_ai_hub.core.events.agent import (
     LimitChatHistoryEvent,
     LLMEvent,
     RAGStartEvent,
-    RAGStopEvent,
     RerankerEvent,
     RetrieveOrganizationMemoryEvent,
     RetrieverEvent,
@@ -650,7 +649,7 @@ class ExpertRAGAgent(Agent):
         few_shot_reject: FewShotRejectEvent | None,
         context_insufficient_reject: ContextInsufficientRejectEvent | None,
         agent_config: ExpertRAGAgentConfig,
-    ) -> RAGStopEvent:
+    ) -> GroundedRAGStopEvent | UngroundedRAGStopEvent:
         """Final step that ensures all required steps are complete before stopping."""
         # Expert provided usable context — overrides any earlier "context insufficient" verdict
         # so the final stop event reports a grounded answer.

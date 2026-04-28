@@ -211,11 +211,6 @@ rag_start_event:
     le contexte pertinent depuis les sources de connaissances sélectionnées — en utilisant
     les namespaces choisis et d'éventuels filtres de métadonnées — avant de générer
     une réponse.
-rag_stop_event:
-  name: Exécution RAG Terminée
-  description: Une exécution augmentée par récupération est terminée. Les sous-classes
-    concrètes indiquent si la réponse s'appuie sur le contexte récupéré ou si elle
-    s'est rabattue sur une réponse « Je ne sais pas ».
 grounded_rag_stop_event:
   name: Réponse Fondée
   description: L'exécution augmentée par récupération a produit une réponse fondée

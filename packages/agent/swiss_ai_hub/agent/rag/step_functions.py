@@ -12,7 +12,6 @@ from swiss_ai_hub.core.events.agent import (
     LimitChatHistoryEvent,
     LLMEvent,
     LLMStopEvent,
-    RAGStopEvent,
     RerankerEvent,
     RetrieverEvent,
     StandaloneQuestionCondenserEvent,
@@ -257,7 +256,7 @@ def do_limit_chat_history_with_context(
 def do_finalize_rag_stop(
     few_shot_reject: FewShotRejectEvent | None,
     context_insufficient_reject: ContextInsufficientRejectEvent | None,
-) -> RAGStopEvent:
+) -> GroundedRAGStopEvent | UngroundedRAGStopEvent:
     if few_shot_reject is not None:
         return UngroundedRAGStopEvent(reason=UngroundedReason.FEW_SHOT_FALLBACK)
     if context_insufficient_reject is not None:

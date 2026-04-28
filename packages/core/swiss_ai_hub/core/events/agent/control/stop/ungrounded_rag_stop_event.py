@@ -2,12 +2,12 @@ from typing import Annotated, ClassVar
 
 from pydantic import Field
 
-from swiss_ai_hub.core.events.agent.control.stop.rag_stop_event import RAGStopEvent
+from swiss_ai_hub.core.events.agent.control.stop.stop_event import StopEvent
 from swiss_ai_hub.core.events.agent.control.stop.ungrounded_reason import UngroundedReason
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
 
 
-class UngroundedRAGStopEvent(RAGStopEvent):
+class UngroundedRAGStopEvent(StopEvent):
     """Stop event emitted when a RAG run terminated without an answer grounded in retrieved context.
 
     The `reason` field tells the parent agent which path produced the ungrounded outcome — context

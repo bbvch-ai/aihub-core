@@ -31,7 +31,6 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.events.agent.control.start.rag_start_event import RAGStartEvent
     from swiss_ai_hub.core.events.agent.control.start.start_event import StartEvent
     from swiss_ai_hub.core.events.agent.control.stop.grounded_rag_stop_event import GroundedRAGStopEvent
-    from swiss_ai_hub.core.events.agent.control.stop.rag_stop_event import RAGStopEvent
     from swiss_ai_hub.core.events.agent.control.stop.stop_event import StopEvent
     from swiss_ai_hub.core.events.agent.control.stop.ungrounded_rag_stop_event import UngroundedRAGStopEvent
     from swiss_ai_hub.core.events.agent.control.stop.ungrounded_reason import UngroundedReason
@@ -176,7 +175,6 @@ __all__ = [
     "LimitChatHistoryEvent",
     "Message",
     "RAGStartEvent",
-    "RAGStopEvent",
     "RerankerEvent",
     "RetrieveOrganizationMemoryEvent",
     "RetrieveUserMemoryEvent",
@@ -261,7 +259,6 @@ _LAZY_IMPORTS: dict[str, str] = {
     "LimitChatHistoryEvent": "swiss_ai_hub.core.events.agent.common.limit_chat_history_event",
     "Message": "swiss_ai_hub.core.events.agent.semantic.llm.message",
     "RAGStartEvent": "swiss_ai_hub.core.events.agent.control.start.rag_start_event",
-    "RAGStopEvent": "swiss_ai_hub.core.events.agent.control.stop.rag_stop_event",
     "RerankerEvent": "swiss_ai_hub.core.events.agent.semantic.reranker.reranker_event",
     "RetrieveOrganizationMemoryEvent": "swiss_ai_hub.core.events.agent.memory.retrieve.retrieve_organization_memory_event",
     "RetrieveUserMemoryEvent": "swiss_ai_hub.core.events.agent.memory.retrieve.retrieve_user_memory_event",

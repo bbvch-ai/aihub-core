@@ -23,7 +23,6 @@ from swiss_ai_hub.core.events.agent import (
     HumanInTheLoopConfirmation,
     HumanInTheLoopConfirmationRequestEvent,
     LLMEvent,
-    RAGStopEvent,
     UngroundedRAGStopEvent,
     UngroundedReason,
     UserMessageEvent,
@@ -288,8 +287,10 @@ def _(expert_rag_agent_runner: AgentTestRunner):
 @then("a StopEvent is present")
 def _(expert_rag_agent_runner: AgentTestRunner):
     assert expert_rag_agent_runner.has_stop_event, "Agent did not produce StopEvent"
-    assert expert_rag_agent_runner.has_event_of_class(RAGStopEvent), (
-        "ExpertRAGAgent should emit RAGStopEvent (or a subclass) so parents can branch on the outcome"
+    assert expert_rag_agent_runner.has_event_of_class(
+        GroundedRAGStopEvent
+    ) or expert_rag_agent_runner.has_event_of_class(UngroundedRAGStopEvent), (
+        "ExpertRAGAgent should emit a GroundedRAGStopEvent or UngroundedRAGStopEvent so parents can branch on the outcome"
     )
 
 
