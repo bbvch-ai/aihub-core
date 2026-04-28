@@ -1,11 +1,3 @@
-"""Shared SQL execution helper for the four dagster_cleanup handlers.
-
-Each handler issues one parameterized DELETE with a LIMIT cap (the docs use
-unbounded DELETEs; we cap to avoid WAL spikes on backlogged DBs). The
-LIMIT is applied via a CTE since standard PostgreSQL DELETE does not
-support LIMIT directly.
-"""
-
 from __future__ import annotations
 
 import logging
