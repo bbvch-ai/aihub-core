@@ -5,6 +5,8 @@ from __future__ import annotations
 from unittest.mock import MagicMock, patch
 
 import pytest
+from pydantic import SecretStr
+from sqlalchemy.engine import URL
 
 from swiss_ai_hub.backup.maintenance.postgres_engine import build_dagster_engine
 from swiss_ai_hub.backup.settings import BackupSettings
@@ -12,14 +14,9 @@ from swiss_ai_hub.backup.settings import BackupSettings
 
 @pytest.mark.unit
 @patch("swiss_ai_hub.backup.maintenance.postgres_engine.create_engine")
-def test_build_dagster_engine_constructs_url_from_maintenance_settings(
-    mock_create_engine: MagicMock, settings: BackupSettings
-) -> None:
-    """Engine targets POSTGRES_HOST/PORT, not POSTGRES_HOST directly.
-
-    They default to the same value but the indirection lets operators override
-    the connection (e.g., bypass pgbouncer) without touching backup config.
-    """
+def test_build_dagster_engine_passes_url_object(mock_create_engine: MagicMock, settings: BackupSettings) -> None:
+    """create_engine receives a URL object, not a hand-built string. URL.create
+    handles credential escaping; f-string interpolation does not."""
     settings.POSTGRES_HOST = "custom-postgres"
     settings.POSTGRES_PORT = 6543
     settings.DAGSTER_DB = "my_dagster_db"
@@ -27,12 +24,14 @@ def test_build_dagster_engine_constructs_url_from_maintenance_settings(
     build_dagster_engine(settings)
 
     assert mock_create_engine.call_count == 1
-    args, kwargs = mock_create_engine.call_args
+    args, _ = mock_create_engine.call_args
     url = args[0]
-    assert "custom-postgres" in url
-    assert ":6543/" in url
-    assert "/my_dagster_db" in url
-    assert settings.POSTGRES_USER in url
+    assert isinstance(url, URL)
+    assert url.host == "custom-postgres"
+    assert url.port == 6543
+    assert url.database == "my_dagster_db"
+    assert url.username == settings.POSTGRES_USER
+    assert url.drivername == "postgresql+psycopg"
 
 
 @pytest.mark.unit
@@ -61,4 +60,30 @@ def test_build_dagster_engine_uses_psycopg_driver(mock_create_engine: MagicMock,
     """URL must use postgresql+psycopg, not generic postgresql:// (which would pick psycopg2)."""
     build_dagster_engine(settings)
     args, _ = mock_create_engine.call_args
-    assert args[0].startswith("postgresql+psycopg://")
+    assert args[0].drivername == "postgresql+psycopg"
+
+
+@pytest.mark.unit
+@patch("swiss_ai_hub.backup.maintenance.postgres_engine.create_engine")
+def test_build_dagster_engine_escapes_url_reserved_chars_in_password(
+    mock_create_engine: MagicMock,
+    settings: BackupSettings,
+) -> None:
+    """Regression guard: passwords with @, :, /, #, ? must not break URL parsing.
+
+    f-string interpolation (the previous implementation) would silently produce
+    a malformed URL for any of these characters; URL.create() escapes them
+    correctly when the URL is rendered.
+    """
+    nasty_password = "p@ss:word/with#reserved?chars"
+    settings.POSTGRES_PASSWORD = SecretStr(nasty_password)
+
+    build_dagster_engine(settings)
+
+    args, _ = mock_create_engine.call_args
+    url = args[0]
+    # URL stores the password unescaped on the object — escaping happens at render time.
+    assert url.password == nasty_password
+    # render_as_string with hide_password=False produces the percent-encoded form.
+    rendered = url.render_as_string(hide_password=False)
+    assert "p%40ss%3Aword%2Fwith%23reserved%3Fchars" in rendered
