@@ -18,6 +18,7 @@ RUN apt-get update && \
     apt-get update && \
     apt-get install -y --no-install-recommends \
         postgresql-client-17 \
+        postgresql-17-repack \
         gzip \
         curl \
         unzip && \

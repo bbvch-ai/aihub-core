@@ -603,7 +603,13 @@ services:
 
   postgres:
     container_name: postgres
-    image: {{ global.registry_prefix }}{{ image_tags.postgres }}
+    {%- if image_tags.postgres[stage] == 'localbuild' %}
+    build:
+      context: ./deployment/docker/postgres
+      dockerfile: Dockerfile
+    {%- else %}
+    image: {{ global.registry_prefix }}{{ image_tags.postgres[stage] }}
+    {%- endif %}
     restart: always
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
@@ -1263,6 +1269,14 @@ services:
       REDIS_TOKEN: ${REDIS_TOKEN}
       NATS_URL: {{ NATS_ENDPOINT }}
       NATS_TOKEN: ${NATS_TOKEN}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      DAGSTER_DB: ${DAGSTER_DB}
+      DAGSTER_DEBUG_LOG_RETENTION_DAYS: ${DAGSTER_DEBUG_LOG_RETENTION_DAYS}
+      DAGSTER_INFO_LOG_RETENTION_DAYS: ${DAGSTER_INFO_LOG_RETENTION_DAYS}
+      DAGSTER_WARNING_LOG_RETENTION_DAYS: ${DAGSTER_WARNING_LOG_RETENTION_DAYS}
+      DAGSTER_UNIMPORTANT_EVENT_RETENTION_DAYS: ${DAGSTER_UNIMPORTANT_EVENT_RETENTION_DAYS}
+      DAGSTER_CLEANUP_BATCH_LIMIT: ${DAGSTER_CLEANUP_BATCH_LIMIT}
+      MAINTENANCE_DISABLED: ${MAINTENANCE_DISABLED}
     volumes:
       - {{ global.volume_root }}/backup-dagster-home:/dagster_home
       - ./configs/backup/backup-dagster{{ config_variant_suffix }}.yml:/dagster_home/dagster.yaml:ro
@@ -1764,9 +1778,13 @@ services:
 
   playwright:
     container_name: playwright-server
+    {%- if image_tags.playwright[stage] == 'localbuild' %}
     build:
       context: ./configs/playwright
       dockerfile: Dockerfile
+    {%- else %}
+    image: {{ global.registry_prefix }}{{ image_tags.playwright[stage] }}
+    {%- endif %}
     restart: always
     {%- if stage in ['dev', 'local', 'build'] %}
     ports:

@@ -83,7 +83,6 @@ This file drives everything: template rendering, CI/CD service discovery, and im
 
 ```yaml
 # Infrastructure (flat string — always included):
-postgres: pgvector:pg17
 nats: nats:2.11.4
 
 # Custom service (dict — per-stage tags):
@@ -93,7 +92,30 @@ api:
   nightly: api:nightly
   latest: api:latest
 # No 'dev' key → api is excluded from docker-compose.dev.yml
+
+# Postgres is per-stage — the build stage builds a custom image from
+# infra/deployment/docker/postgres/Dockerfile that extends pgvector/pgvector:pg17
+# with postgresql-17-repack (required by the maintenance subsystem in
+# packages/backup). Other stages pull pgvector-repack:pg17 from ghcr.
+postgres:
+  build: localbuild
+  dev: pgvector-repack:pg17
+  local: pgvector-repack:pg17
+  nightly: pgvector-repack:pg17
+  latest: pgvector-repack:pg17
 ```
+
+### Publishing the postgres image
+
+The postgres image is project-managed. Unlike upstream-mirrored images (`make mirror-image`), it's built from our own
+Dockerfile and published manually via `make -C infra/deployment build-and-push-postgres-image` (requires
+`docker login ghcr.io`). Re-publish whenever:
+
+- The base pgvector tag in `docker/postgres/Dockerfile` changes (Postgres major bump, e.g. `pg17` → `pg18`)
+- The `postgresql-17-repack` package needs upgrading (security or bugfix)
+
+After publishing, non-build stages pick up the new image automatically via `docker compose pull`. The `build` stage
+continues to build locally so developers test Dockerfile edits without round-tripping through the registry.
 
 **CI/CD integration**: GitHub Actions workflows (`build-agents.yml`, `set-latest.yml`) parse `compose-config.yml` at
 runtime to dynamically discover which services to build and promote. Adding a new agent here is all you need for CI.

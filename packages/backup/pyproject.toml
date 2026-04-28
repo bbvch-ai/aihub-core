@@ -1,6 +1,6 @@
 [project]
 name = "swiss-ai-hub-backup"
-version = "0.283.0"
+version = "0.284.0"
 description = "Backup and restore orchestration for AI-Hub data services"
 requires-python = ">=3.13, <3.14"
 authors = [
@@ -17,10 +17,12 @@ dependencies = [
     "dagster>=1.11.2",
     "dagster-webserver>=1.11.2",
     "docker>=7.0",
+    "psycopg[binary]>=3.3.3",
     "pydantic>=2.10.3",
     "pydantic-settings>=2.13.1",
     "pymilvus>=2.6.9",
     "redis>=7.3.0",
+    "sqlalchemy>=2.0.48",
 ]
 
 [dependency-groups]
@@ -28,6 +30,7 @@ dev = [
     "dagster-graphql>=1.12.18",
     "pymongo>=4.16.0",
     "pytest>=8.4.1",
+    "pytest-postgresql>=8.0.0",
     "pytest-timeout>=2.4.0",
     "python-dotenv>=1.2.2",
     "requests>=2.32.5",

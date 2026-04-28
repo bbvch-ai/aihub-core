@@ -147,6 +147,57 @@ application-consistent snapshots (Azure with VM agent, VMware with quiesce). Cre
 
 ______________________________________________________________________
 
+## Continuous Postgres maintenance
+
+The same Dagster instance that runs backup also runs **continuous Postgres health maintenance** so the platform's
+`event_logs` and `runs` tables don't grow without bound on long-running deployments. Two additional jobs are wired into
+the same backup Dagster UI at `http://localhost:3004`:
+
+- **`dagster_cleanup_job`** — Sundays at 3 AM Europe/Zurich. Prunes verbose Python logs and curated framework-internal
+  events (`HANDLED_OUTPUT`, `LOADED_INPUT`, `ENGINE_EVENT`, `ASSET_MATERIALIZATION_PLANNED`, `STEP_OUTPUT`) past their
+  retention windows. Idempotently ensures the cleanup query indexes exist and applies tighter autovacuum tuning to the
+  heavy tables.
+- **`postgres_repack_job`** — first Sunday of each month at 4 AM. Runs `pg_repack` on `event_logs`, `runs`, and
+  `job_ticks` to return disk pages to the OS (plain `VACUUM` only marks dead rows reusable internally).
+
+**UI-safe by construction**: cleanup never deletes rows the Dagster UI depends on (`ASSET_MATERIALIZATION`,
+`STEP_SUCCESS`, `STEP_FAILURE`, `RUN_SUCCESS`, `RUN_FAILURE`, the `runs` table, asset catalog, sensor cursors).
+
+**Mutually exclusive with backup**: every job that touches Postgres carries a `postgres-mutex` tag. The backup Dagster's
+run coordinator caps concurrency for that tag at one, so cleanup or repack ticks queue behind a still-running backup
+instead of starting concurrently. Within each run, intra-run parallelism (e.g. parallel per-service backups) is
+unaffected.
+
+**`pg_repack` ships in the platform Postgres image**: the project-managed image extends `pgvector/pgvector:pg17` with
+`postgresql-17-repack` and the extension is registered in the `dagster` database on first init. Deployments using a
+foreign Postgres image without the extension still work — repack reports a clean skip in the run metadata; cleanup works
+unconditionally.
+
+### Configuration
+
+```bash
+# Retention windows (defaults follow the official Dagster docs recipe)
+DAGSTER_DEBUG_LOG_RETENTION_DAYS="7"
+DAGSTER_INFO_LOG_RETENTION_DAYS="60"
+DAGSTER_WARNING_LOG_RETENTION_DAYS="60"
+DAGSTER_UNIMPORTANT_EVENT_RETENTION_DAYS="30"
+
+# Per-DELETE row cap — protects against WAL-flooding on first run against a backlogged DB
+DAGSTER_CLEANUP_BATCH_LIMIT="1000000"
+
+# Kill switch — set to true and the maintenance handlers no-op; backup is unaffected
+MAINTENANCE_DISABLED="false"
+
+DAGSTER_DB="dagster"
+POSTGRES_PORT="5432"
+```
+
+A heavily backlogged DB drains over multiple weekly ticks (`DAGSTER_CLEANUP_BATCH_LIMIT` rows per tick × 4 cleanup
+handlers). Operators wanting a faster initial drain can manually launch `dagster_cleanup_job` repeatedly through the
+Dagster UI.
+
+______________________________________________________________________
+
 ## Backup storage layout
 
 Each backup is stored in a flat, timestamped directory:
