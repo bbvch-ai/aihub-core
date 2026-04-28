@@ -1,6 +1,6 @@
 [project]
 name = "swiss-ai-hub-agent"
-version = "1.0.0"
+version = "0.282.0"
 description = "agents core"
 requires-python = ">=3.13, <3.14"
 authors = [
