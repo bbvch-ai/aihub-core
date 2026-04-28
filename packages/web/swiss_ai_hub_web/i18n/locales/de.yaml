@@ -189,8 +189,15 @@ event:
     additional_filters: 'Zusätzliche Metadatenfilter:'
     no_filters: Keine zusätzlichen Filter
   rag_stop:
-    context_insufficient: Der abgerufene Kontext war unzureichend – die Antwort ist
-      eine Notlösung und nicht in Ihren Wissensquellen verankert.
+    ungrounded_reason:
+      context_insufficient: Der abgerufene Kontext war unzureichend – die Antwort
+        ist eine Notlösung und nicht in Ihren Wissensquellen verankert.
+      expert_declined: Der menschliche Experte konnte keine Antwort liefern – dieser
+        Lauf hat keine fundierte Antwort produziert.
+      expert_errored: Die Experten-Eskalation ist mit einem Fehler fehlgeschlagen
+        – dieser Lauf hat keine fundierte Antwort produziert.
+      few_shot_fallback: Die Anfrage entsprach keinem bekannten Muster, daher wurde
+        die Antwort ohne Retrieval erzeugt.
   limitChatHistory:
     summary: Chat-Verlauf auf {count} Nachrichten begrenzt
     assistant: Assistent

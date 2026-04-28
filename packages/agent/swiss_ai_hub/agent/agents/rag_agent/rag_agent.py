@@ -10,12 +10,12 @@ from swiss_ai_hub.core.events.agent import (
     LimitChatHistoryEvent,
     LLMEvent,
     RAGStartEvent,
+    RAGStopEvent,
     RerankerEvent,
     RetrieveOrganizationMemoryEvent,
     RetrieverEvent,
     RetrieveUserMemoryEvent,
     StandaloneQuestionCondenserEvent,
-    StopEvent,
     StoreUserMemoryEvent,
     UserMessageEvent,
 )
@@ -295,9 +295,15 @@ class RAGAgent(Agent):
         agent_config: RAGAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
+        run_context: RunContext,
     ) -> FewShotRejectEvent | FewShotAcceptEvent:
         return await do_few_shot_guard(
-            event.condensed_chat_message.content, agent_config.few_shot_guard_examples, agent_config.llm, displayer, t
+            event.condensed_chat_message.content,
+            agent_config.few_shot_guard_examples,
+            agent_config.llm,
+            displayer,
+            t,
+            run_context,
         )
 
     @step(
@@ -470,6 +476,6 @@ class RAGAgent(Agent):
         _store_memory_event: StoreUserMemoryEvent | None,
         agent_config: RAGAgentConfig,
         run_context: RunContext,
-    ) -> StopEvent:
+    ) -> RAGStopEvent:
         """Final step that ensures all required steps are complete before stopping."""
         return await do_finalize_rag_stop(run_context)

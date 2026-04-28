@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from swiss_ai_hub.core.events.agent import ContextInsufficientRejectEvent
+from swiss_ai_hub.core.events.agent import ContextInsufficientRejectEvent, UngroundedReason
 from swiss_ai_hub.core.generative_ai.chat_history.extend_chat_history_with_organization_memory import (
     extend_chat_history_with_organization_memory,
 )
@@ -192,6 +192,7 @@ async def test_guard_sets_context_sufficient_false_when_no_more_hops(
 
     assert isinstance(result, ContextInsufficientRejectEvent)
     run_context.set.assert_any_await("context_sufficient", False)
+    run_context.set.assert_any_await("ungrounded_reason", UngroundedReason.CONTEXT_INSUFFICIENT)
 
 
 @pytest.mark.asyncio

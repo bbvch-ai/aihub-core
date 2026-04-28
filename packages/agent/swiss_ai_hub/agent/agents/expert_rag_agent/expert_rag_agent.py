@@ -20,8 +20,9 @@ from swiss_ai_hub.core.events.agent import (
     RetrieverEvent,
     RetrieveUserMemoryEvent,
     StandaloneQuestionCondenserEvent,
-    StopEvent,
     StoreUserMemoryEvent,
+    UngroundedRAGStopEvent,
+    UngroundedReason,
     UserMessageEvent,
 )
 from swiss_ai_hub.core.generative_ai import (
@@ -323,9 +324,15 @@ class ExpertRAGAgent(Agent):
         agent_config: ExpertRAGAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
+        run_context: RunContext,
     ) -> FewShotRejectEvent | FewShotAcceptEvent:
         return await do_few_shot_guard(
-            event.condensed_chat_message.content, agent_config.few_shot_guard_examples, agent_config.llm, displayer, t
+            event.condensed_chat_message.content,
+            agent_config.few_shot_guard_examples,
+            agent_config.llm,
+            displayer,
+            t,
+            run_context,
         )
 
     @step(
@@ -549,15 +556,13 @@ class ExpertRAGAgent(Agent):
         displayer: EventDisplayer,
         _: AgentInTheLoop.response,
         t: LocaleHandler,
-        run_context: RunContext,
-    ) -> RAGStopEvent:
+    ) -> UngroundedRAGStopEvent:
         await displayer.display_thought(t("agent.expert_rag_agent.thoughts.expert_unable_to_answer"))
         await displayer.display_chunk(
             t("agent.expert_rag_agent.messages.expert_unable_to_answer"),
             model_name=ExpertRAGAgent.__name__,
         )
-        await run_context.set("context_sufficient", False)
-        return await do_finalize_rag_stop(run_context)
+        return UngroundedRAGStopEvent(reason=UngroundedReason.EXPERT_DECLINED)
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.expert_rag_agent.steps.expert_answer_error.name"),
@@ -569,8 +574,7 @@ class ExpertRAGAgent(Agent):
         displayer: EventDisplayer,
         exception_event: AgentInTheLoop.exception,
         t: LocaleHandler,
-        run_context: RunContext,
-    ) -> RAGStopEvent:
+    ) -> UngroundedRAGStopEvent:
         await displayer.display_thought(
             t(
                 "agent.expert_rag_agent.thoughts.expert_error",
@@ -582,8 +586,7 @@ class ExpertRAGAgent(Agent):
             t("agent.expert_rag_agent.messages.expert_error_occurred"),
             model_name=ExpertRAGAgent.__name__,
         )
-        await run_context.set("context_sufficient", False)
-        return await do_finalize_rag_stop(run_context)
+        return UngroundedRAGStopEvent(reason=UngroundedReason.EXPERT_ERRORED)
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.respond_with_llm.name"),
@@ -646,6 +649,6 @@ class ExpertRAGAgent(Agent):
         _store_memory_event: StoreUserMemoryEvent | None,
         agent_config: ExpertRAGAgentConfig,
         run_context: RunContext,
-    ) -> StopEvent:
+    ) -> RAGStopEvent:
         """Final step that ensures all required steps are complete before stopping."""
         return await do_finalize_rag_stop(run_context)

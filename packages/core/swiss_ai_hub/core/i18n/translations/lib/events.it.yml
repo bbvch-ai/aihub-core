@@ -214,6 +214,15 @@ rag_start_event:
     risposta.
 rag_stop_event:
   name: Esecuzione RAG Completata
-  description: L'esecuzione aumentata dal recupero è terminata. Contiene un flag che
-    indica se la risposta è basata sul contesto recuperato o se è ricaduta su una
+  description: Un'esecuzione aumentata dal recupero è terminata. Le sottoclassi concrete
+    indicano se la risposta è basata sul contesto recuperato o se è ricaduta su una
     risposta "Non lo so".
+grounded_rag_stop_event:
+  name: Risposta Fondata
+  description: L'esecuzione aumentata dal recupero ha prodotto una risposta fondata
+    sul contesto recuperato.
+ungrounded_rag_stop_event:
+  name: Risposta Non Fondata
+  description: L'esecuzione aumentata dal recupero è terminata senza una risposta
+    fondata sul contesto recuperato. Il campo reason spiega quale percorso ha portato
+    al fallback.

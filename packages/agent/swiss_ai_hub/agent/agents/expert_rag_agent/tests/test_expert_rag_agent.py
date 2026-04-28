@@ -19,10 +19,13 @@ from swiss_ai_hub.core.events.agent import (
     AgentInTheLoopRequestEvent,
     AgentInTheLoopResponseEvent,
     ExpertRejectEvent,
+    GroundedRAGStopEvent,
     HumanInTheLoopConfirmation,
     HumanInTheLoopConfirmationRequestEvent,
     LLMEvent,
     RAGStopEvent,
+    UngroundedRAGStopEvent,
+    UngroundedReason,
     UserMessageEvent,
 )
 from swiss_ai_hub.core.generative_ai import (
@@ -286,5 +289,20 @@ def _(expert_rag_agent_runner: AgentTestRunner):
 def _(expert_rag_agent_runner: AgentTestRunner):
     assert expert_rag_agent_runner.has_stop_event, "Agent did not produce StopEvent"
     assert expert_rag_agent_runner.has_event_of_class(RAGStopEvent), (
-        "ExpertRAGAgent should emit RAGStopEvent (not plain StopEvent) so parents can branch on context_sufficient"
+        "ExpertRAGAgent should emit RAGStopEvent (or a subclass) so parents can branch on the outcome"
+    )
+
+
+@then("an UngroundedRAGStopEvent with reason context_insufficient is present")
+def _(expert_rag_agent_runner: AgentTestRunner):
+    event = expert_rag_agent_runner.get_event_of_class(UngroundedRAGStopEvent)
+    assert event.reason == UngroundedReason.CONTEXT_INSUFFICIENT, (
+        f"Expected reason=context_insufficient, got {event.reason}"
+    )
+
+
+@then("a GroundedRAGStopEvent is present")
+def _(expert_rag_agent_runner: AgentTestRunner):
+    assert expert_rag_agent_runner.has_event_of_class(GroundedRAGStopEvent), (
+        "Expert-provided context should yield a GroundedRAGStopEvent"
     )

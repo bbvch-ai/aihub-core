@@ -8,6 +8,7 @@ from swiss_ai_hub.core.events.agent import (
     ExpertRejectEvent,
     FewShotAcceptEvent,
     FewShotRejectEvent,
+    GroundedRAGStopEvent,
     LimitChatHistoryEvent,
     LLMEvent,
     LLMStopEvent,
@@ -15,6 +16,8 @@ from swiss_ai_hub.core.events.agent import (
     RerankerEvent,
     RetrieverEvent,
     StandaloneQuestionCondenserEvent,
+    UngroundedRAGStopEvent,
+    UngroundedReason,
 )
 from swiss_ai_hub.core.generative_ai import (
     IngestedNode,
@@ -111,6 +114,7 @@ async def do_few_shot_guard(
     llm_config: LLMConfig,
     displayer: EventDisplayer,
     t: LocaleHandler,
+    run_context: RunContext,
 ) -> FewShotRejectEvent | FewShotAcceptEvent:
     """Execute few-shot guard logic and return appropriate event."""
     if not examples:
@@ -125,6 +129,8 @@ async def do_few_shot_guard(
         )
 
     if not guard_result.success:
+        await run_context.set("context_sufficient", False)
+        await run_context.set("ungrounded_reason", UngroundedReason.FEW_SHOT_FALLBACK)
         return FewShotRejectEvent(reason=guard_result.reasoning)
 
     return FewShotAcceptEvent(reason=guard_result.reasoning)
@@ -223,6 +229,7 @@ async def do_context_sufficient_guard(
 
     if not more_hops_available:
         await run_context.set("context_sufficient", False)
+        await run_context.set("ungrounded_reason", UngroundedReason.CONTEXT_INSUFFICIENT)
         return ContextInsufficientRejectEvent(reason=guard_result.reasoning)
 
     await run_context.set("hop_count", hop_count + 1)
@@ -255,4 +262,7 @@ def do_limit_chat_history_with_context(
 
 async def do_finalize_rag_stop(run_context: RunContext) -> RAGStopEvent:
     context_sufficient = await run_context.get("context_sufficient", True)
-    return RAGStopEvent(context_sufficient=context_sufficient)
+    if context_sufficient:
+        return GroundedRAGStopEvent()
+    reason = await run_context.get("ungrounded_reason", UngroundedReason.CONTEXT_INSUFFICIENT)
+    return UngroundedRAGStopEvent(reason=UngroundedReason(reason))

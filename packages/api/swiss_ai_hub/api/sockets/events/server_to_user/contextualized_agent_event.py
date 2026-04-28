@@ -23,6 +23,7 @@ from swiss_ai_hub.core.events.agent import (
     ExceptionEvent,
     FewShotAcceptEvent,
     FewShotRejectEvent,
+    GroundedRAGStopEvent,
     GuardAcceptEvent,
     GuardEvent,
     GuardRejectionEvent,
@@ -55,6 +56,7 @@ from swiss_ai_hub.core.events.agent import (
     StoreUserMemoryEvent,
     ThoughtEvent,
     ToolEvent,
+    UngroundedRAGStopEvent,
     UserMessageEvent,
 )
 from swiss_ai_hub.core.i18n import LocaleHandler
@@ -97,6 +99,8 @@ DisplayEvents = (
     | Annotated[UserMessageEvent, Tag("UserMessageEvent")]
     | Annotated[RAGStartEvent, Tag("RAGStartEvent")]
     | Annotated[ExceptionEvent, Tag("ExceptionEvent")]
+    | Annotated[GroundedRAGStopEvent, Tag("GroundedRAGStopEvent")]
+    | Annotated[UngroundedRAGStopEvent, Tag("UngroundedRAGStopEvent")]
     | Annotated[RAGStopEvent, Tag("RAGStopEvent")]
     | Annotated[StopEvent, Tag("StopEvent")]
     | Annotated[DisplayEvent, Tag("DisplayEvent")]

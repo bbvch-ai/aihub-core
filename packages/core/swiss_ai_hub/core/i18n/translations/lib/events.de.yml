@@ -215,6 +215,15 @@ rag_start_event:
     wird.
 rag_stop_event:
   name: RAG-Lauf Abgeschlossen
-  description: Der Retrieval-Augmented-Lauf ist beendet. Enthält ein Flag, das angibt,
-    ob die Antwort auf abgerufenem Kontext basiert oder auf eine „Ich weiß es nicht"-Antwort
-    zurückgefallen ist.
+  description: Ein Retrieval-Augmented-Lauf ist beendet. Konkrete Unterklassen geben
+    an, ob die Antwort auf abgerufenem Kontext basiert oder auf eine „Ich weiß es
+    nicht"-Antwort zurückgefallen ist.
+grounded_rag_stop_event:
+  name: Fundierte Antwort
+  description: Der Retrieval-Augmented-Lauf hat eine im abgerufenen Kontext fundierte
+    Antwort erzeugt.
+ungrounded_rag_stop_event:
+  name: Unfundierte Antwort
+  description: Der Retrieval-Augmented-Lauf ist ohne im abgerufenen Kontext fundierte
+    Antwort beendet worden. Das Reason-Feld erklärt, welcher Pfad zum Fallback geführt
+    hat.

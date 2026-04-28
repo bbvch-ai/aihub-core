@@ -203,6 +203,14 @@ rag_start_event:
     any additional metadata filters — before generating an answer.
 rag_stop_event:
   name: RAG Run Completed
-  description: The retrieval-augmented run has finished. Carries a flag indicating
-    whether the answer was grounded in retrieved context or fell back to an "I don't
-    know" response.
+  description: A retrieval-augmented run finished. Concrete subclasses indicate whether
+    the answer was grounded in retrieved context or fell back to an "I don't know"
+    response.
+grounded_rag_stop_event:
+  name: Grounded Answer
+  description: The retrieval-augmented run produced an answer grounded in retrieved
+    context.
+ungrounded_rag_stop_event:
+  name: Ungrounded Answer
+  description: The retrieval-augmented run finished without an answer grounded in
+    retrieved context. The reason field explains which path led to the fallback.

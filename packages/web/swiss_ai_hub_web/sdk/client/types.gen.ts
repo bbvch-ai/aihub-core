@@ -10530,25 +10530,31 @@ export type RagStopEvent = {
      */
     display_description?: LocaleString | null;
     /**
-     * Context Sufficient
-     *
-     * Whether the retrieved context was sufficient to ground the answer. True covers three cases: (a) the sufficiency guard ran and accepted the context, (b) the guard was disabled via `check_context_sufficiency=False`, or (c) the guard step was never reached on this run. False means the guard ran, exhausted all retrieval hops, and judged the final context insufficient — so the LLM was forced to produce an "I don't know"-style fallback answer.
-     */
-    context_sufficient?: boolean;
-    /**
      * Event Name
-     *
-     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
-     * Used during deserialization to decide which subclass to instantiate.
      */
     readonly _event_name: string;
     /**
      * Parent Event Names
-     *
-     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | boolean | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<string> | undefined;
+};
+
+export type GroundedRagStopEvent = RagStopEvent;
+
+export const UngroundedReason = {
+    CONTEXT_INSUFFICIENT: 'context_insufficient',
+    EXPERT_DECLINED: 'expert_declined',
+    EXPERT_ERRORED: 'expert_errored',
+    FEW_SHOT_FALLBACK: 'few_shot_fallback',
+} as const;
+export type UngroundedReason = (typeof UngroundedReason)[keyof typeof UngroundedReason];
+
+export type UngroundedRagStopEvent = RagStopEvent & {
+    /**
+     * Why this run did not produce a grounded answer.
+     */
+    reason: UngroundedReason;
 };
 
 /**
