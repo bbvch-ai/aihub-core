@@ -10471,6 +10471,12 @@ export type RagFailureStopEvent = {
      */
     display_description?: LocaleString | null;
     /**
+     * Answer
+     *
+     * Final assistant answer text, populated for non-streaming consumers.
+     */
+    answer?: string | null;
+    /**
      * Why this run failed to produce a useful answer.
      */
     reason: RagFailureReason;
@@ -10487,7 +10493,7 @@ export type RagFailureStopEvent = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | RagFailureReason | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | string | null | RagFailureReason | Array<string> | undefined;
 };
 
 /**
@@ -10592,6 +10598,12 @@ export type RagSuccessStopEvent = {
      */
     display_description?: LocaleString | null;
     /**
+     * Answer
+     *
+     * Final assistant answer text, populated for non-streaming consumers.
+     */
+    answer?: string | null;
+    /**
      * Event Name
      *
      * The event type name, usually the class name. If unknown, uses _unknown_event_name.
@@ -10604,7 +10616,7 @@ export type RagSuccessStopEvent = {
      * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<string> | undefined;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | string | null | Array<string> | undefined;
 };
 
 /**
@@ -19555,10 +19567,16 @@ export type RagFailureStopEventWritable = {
      */
     display_description?: LocaleString | null;
     /**
+     * Answer
+     *
+     * Final assistant answer text, populated for non-streaming consumers.
+     */
+    answer?: string | null;
+    /**
      * Why this run failed to produce a useful answer.
      */
     reason: RagFailureReason;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | RagFailureReason | undefined;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | string | null | RagFailureReason | undefined;
 };
 
 /**
@@ -19649,7 +19667,13 @@ export type RagSuccessStopEventWritable = {
      * Display description for the event
      */
     display_description?: LocaleString | null;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | undefined;
+    /**
+     * Answer
+     *
+     * Final assistant answer text, populated for non-streaming consumers.
+     */
+    answer?: string | null;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | string | null | undefined;
 };
 
 /**

@@ -13924,7 +13924,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1777366377
+            default: 1777367344
         },
         owned_by: {
             type: 'string',
@@ -16583,6 +16583,18 @@ export const RAGFailureStopEventSchema = {
             ],
             description: 'Display description for the event'
         },
+        answer: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Answer',
+            description: 'Final assistant answer text, populated for non-streaming consumers.'
+        },
         reason: {
             $ref: '#/components/schemas/RAGFailureReason',
             description: 'Why this run failed to produce a useful answer.'
@@ -16764,6 +16776,18 @@ export const RAGSuccessStopEventSchema = {
                 }
             ],
             description: 'Display description for the event'
+        },
+        answer: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Answer',
+            description: 'Final assistant answer text, populated for non-streaming consumers.'
         },
         _event_name: {
             type: 'string',
@@ -31005,6 +31029,18 @@ export const RAGFailureStopEventWritableSchema = {
             ],
             description: 'Display description for the event'
         },
+        answer: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Answer',
+            description: 'Final assistant answer text, populated for non-streaming consumers.'
+        },
         reason: {
             $ref: '#/components/schemas/RAGFailureReason',
             description: 'Why this run failed to produce a useful answer.'
@@ -31152,6 +31188,18 @@ export const RAGSuccessStopEventWritableSchema = {
                 }
             ],
             description: 'Display description for the event'
+        },
+        answer: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Answer',
+            description: 'Final assistant answer text, populated for non-streaming consumers.'
         }
     },
     additionalProperties: true,
