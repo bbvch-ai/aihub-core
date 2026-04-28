@@ -8,7 +8,7 @@ Feature: Expert RAG Agent
     * an ExpertRejectEvent is present
     * an LLMEvent is present with a generated response
     * a StopEvent is present
-    * an UngroundedRAGStopEvent with reason context_insufficient is present
+    * a RAGFailureStopEvent with reason context_insufficient is present
 
   Scenario: Test ExpertRAGAgent expert escalation user accepts
     Given an ExpertRAGAgent runner with expert escalation enabled
@@ -18,4 +18,4 @@ Feature: Expert RAG Agent
     * an AgentInTheLoopRequestEvent is present
     * an LLMEvent is present with a generated response
     * a StopEvent is present
-    * a GroundedRAGStopEvent is present
+    * a RAGSuccessStopEvent is present

@@ -187,7 +187,7 @@ event:
     additional_filters: 'Additional metadata filters:'
     no_filters: No additional filters
   rag_stop:
-    ungrounded_reason:
+    failure_reason:
       context_insufficient: Retrieved context was insufficient — the answer is a fallback,
         not grounded in your knowledge sources.
       expert_declined: The human expert could not provide an answer — this run did

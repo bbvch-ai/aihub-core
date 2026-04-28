@@ -7,17 +7,17 @@ from swiss_ai_hub.core.events.agent import (
     ContextSufficientAcceptEvent,
     FewShotAcceptEvent,
     FewShotRejectEvent,
-    GroundedRAGStopEvent,
     LimitChatHistoryEvent,
     LLMEvent,
+    RAGFailureStopEvent,
     RAGStartEvent,
+    RAGSuccessStopEvent,
     RerankerEvent,
     RetrieveOrganizationMemoryEvent,
     RetrieverEvent,
     RetrieveUserMemoryEvent,
     StandaloneQuestionCondenserEvent,
     StoreUserMemoryEvent,
-    UngroundedRAGStopEvent,
     UserMessageEvent,
 )
 from swiss_ai_hub.core.generative_ai import (
@@ -476,6 +476,6 @@ class RAGAgent(Agent):
         few_shot_reject: FewShotRejectEvent | None,
         context_insufficient_reject: ContextInsufficientRejectEvent | None,
         agent_config: RAGAgentConfig,
-    ) -> GroundedRAGStopEvent | UngroundedRAGStopEvent:
+    ) -> RAGSuccessStopEvent | RAGFailureStopEvent:
         """Final step that ensures all required steps are complete before stopping."""
         return do_finalize_rag_stop(few_shot_reject, context_insufficient_reject)

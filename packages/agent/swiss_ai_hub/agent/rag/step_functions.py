@@ -8,15 +8,15 @@ from swiss_ai_hub.core.events.agent import (
     ExpertRejectEvent,
     FewShotAcceptEvent,
     FewShotRejectEvent,
-    GroundedRAGStopEvent,
     LimitChatHistoryEvent,
     LLMEvent,
     LLMStopEvent,
+    RAGFailureReason,
+    RAGFailureStopEvent,
+    RAGSuccessStopEvent,
     RerankerEvent,
     RetrieverEvent,
     StandaloneQuestionCondenserEvent,
-    UngroundedRAGStopEvent,
-    UngroundedReason,
 )
 from swiss_ai_hub.core.generative_ai import (
     IngestedNode,
@@ -256,9 +256,9 @@ def do_limit_chat_history_with_context(
 def do_finalize_rag_stop(
     few_shot_reject: FewShotRejectEvent | None,
     context_insufficient_reject: ContextInsufficientRejectEvent | None,
-) -> GroundedRAGStopEvent | UngroundedRAGStopEvent:
+) -> RAGSuccessStopEvent | RAGFailureStopEvent:
     if few_shot_reject is not None:
-        return UngroundedRAGStopEvent(reason=UngroundedReason.FEW_SHOT_FALLBACK)
+        return RAGFailureStopEvent(reason=RAGFailureReason.FEW_SHOT_FALLBACK)
     if context_insufficient_reject is not None:
-        return UngroundedRAGStopEvent(reason=UngroundedReason.CONTEXT_INSUFFICIENT)
-    return GroundedRAGStopEvent()
+        return RAGFailureStopEvent(reason=RAGFailureReason.CONTEXT_INSUFFICIENT)
+    return RAGSuccessStopEvent()

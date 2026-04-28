@@ -213,12 +213,10 @@ rag_start_event:
     relevanten Kontext aus den ausgewählten Wissensquellen ab – unter Verwendung der
     gewählten Namensräume und optionaler Metadatenfilter – bevor eine Antwort generiert
     wird.
-grounded_rag_stop_event:
-  name: Fundierte Antwort
-  description: Der Retrieval-Augmented-Lauf hat eine im abgerufenen Kontext fundierte
-    Antwort erzeugt.
-ungrounded_rag_stop_event:
-  name: Unfundierte Antwort
-  description: Der Retrieval-Augmented-Lauf ist ohne im abgerufenen Kontext fundierte
-    Antwort beendet worden. Das Reason-Feld erklärt, welcher Pfad zum Fallback geführt
-    hat.
+rag_success_stop_event:
+  name: RAG Erfolg
+  description: Der Retrieval-Augmented-Lauf hat eine Antwort für den Benutzer erzeugt.
+rag_failure_stop_event:
+  name: RAG Fehlschlag
+  description: Der Retrieval-Augmented-Lauf konnte keine nützliche Antwort liefern.
+    Das Reason-Feld erklärt, welcher Pfad zum Fehlschlag geführt hat.

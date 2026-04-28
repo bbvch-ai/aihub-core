@@ -201,11 +201,10 @@ rag_start_event:
   description: Retrieval-augmented generation has started. The agent is fetching relevant
     context from the selected knowledge sources — using the chosen namespaces and
     any additional metadata filters — before generating an answer.
-grounded_rag_stop_event:
-  name: Grounded Answer
-  description: The retrieval-augmented run produced an answer grounded in retrieved
-    context.
-ungrounded_rag_stop_event:
-  name: Ungrounded Answer
-  description: The retrieval-augmented run finished without an answer grounded in
-    retrieved context. The reason field explains which path led to the fallback.
+rag_success_stop_event:
+  name: RAG Success
+  description: The retrieval-augmented run produced an answer for the user.
+rag_failure_stop_event:
+  name: RAG Failure
+  description: The retrieval-augmented run failed to produce a useful answer. The
+    reason field explains which path led to the failure.

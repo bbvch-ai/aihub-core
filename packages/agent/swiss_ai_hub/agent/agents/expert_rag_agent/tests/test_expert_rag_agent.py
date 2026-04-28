@@ -19,12 +19,12 @@ from swiss_ai_hub.core.events.agent import (
     AgentInTheLoopRequestEvent,
     AgentInTheLoopResponseEvent,
     ExpertRejectEvent,
-    GroundedRAGStopEvent,
     HumanInTheLoopConfirmation,
     HumanInTheLoopConfirmationRequestEvent,
     LLMEvent,
-    UngroundedRAGStopEvent,
-    UngroundedReason,
+    RAGFailureReason,
+    RAGFailureStopEvent,
+    RAGSuccessStopEvent,
     UserMessageEvent,
 )
 from swiss_ai_hub.core.generative_ai import (
@@ -288,22 +288,22 @@ def _(expert_rag_agent_runner: AgentTestRunner):
 def _(expert_rag_agent_runner: AgentTestRunner):
     assert expert_rag_agent_runner.has_stop_event, "Agent did not produce StopEvent"
     assert expert_rag_agent_runner.has_event_of_class(
-        GroundedRAGStopEvent
-    ) or expert_rag_agent_runner.has_event_of_class(UngroundedRAGStopEvent), (
-        "ExpertRAGAgent should emit a GroundedRAGStopEvent or UngroundedRAGStopEvent so parents can branch on the outcome"
+        RAGSuccessStopEvent
+    ) or expert_rag_agent_runner.has_event_of_class(RAGFailureStopEvent), (
+        "ExpertRAGAgent should emit a RAGSuccessStopEvent or RAGFailureStopEvent so parents can branch on the outcome"
     )
 
 
-@then("an UngroundedRAGStopEvent with reason context_insufficient is present")
+@then("a RAGFailureStopEvent with reason context_insufficient is present")
 def _(expert_rag_agent_runner: AgentTestRunner):
-    event = expert_rag_agent_runner.get_event_of_class(UngroundedRAGStopEvent)
-    assert event.reason == UngroundedReason.CONTEXT_INSUFFICIENT, (
+    event = expert_rag_agent_runner.get_event_of_class(RAGFailureStopEvent)
+    assert event.reason == RAGFailureReason.CONTEXT_INSUFFICIENT, (
         f"Expected reason=context_insufficient, got {event.reason}"
     )
 
 
-@then("a GroundedRAGStopEvent is present")
+@then("a RAGSuccessStopEvent is present")
 def _(expert_rag_agent_runner: AgentTestRunner):
-    assert expert_rag_agent_runner.has_event_of_class(GroundedRAGStopEvent), (
-        "Expert-provided context should yield a GroundedRAGStopEvent"
+    assert expert_rag_agent_runner.has_event_of_class(RAGSuccessStopEvent), (
+        "Expert-provided context should yield a RAGSuccessStopEvent"
     )

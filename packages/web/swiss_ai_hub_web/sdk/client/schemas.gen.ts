@@ -5288,13 +5288,10 @@ export const ContextualizedAgentEventSchema = {
                     $ref: '#/components/schemas/ExceptionEvent'
                 },
                 {
-                    $ref: '#/components/schemas/GroundedRAGStopEvent'
+                    $ref: '#/components/schemas/RAGSuccessStopEvent'
                 },
                 {
-                    $ref: '#/components/schemas/UngroundedRAGStopEvent'
-                },
-                {
-                    $ref: '#/components/schemas/RAGStopEvent'
+                    $ref: '#/components/schemas/RAGFailureStopEvent'
                 },
                 {
                     $ref: '#/components/schemas/StopEvent'
@@ -7901,65 +7898,6 @@ export const FunctionDefinitionSchema = {
         'name'
     ],
     title: 'FunctionDefinition'
-} as const;
-
-export const GroundedRAGStopEventSchema = {
-    properties: {
-        event_id: {
-            type: 'string',
-            title: 'Event Id'
-        },
-        created_at: {
-            type: 'integer',
-            title: 'Created At',
-            description: 'The time (in ns since epoch) the event was stored in the event store'
-        },
-        display_name: {
-            anyOf: [
-                {
-                    $ref: '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'Display name for the event'
-        },
-        display_description: {
-            anyOf: [
-                {
-                    $ref: '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'Display description for the event'
-        },
-        _event_name: {
-            type: 'string',
-            title: 'Event Name',
-            description: 'The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.',
-            readOnly: true
-        },
-        _parent_event_names: {
-            items: {
-                type: 'string'
-            },
-            type: 'array',
-            title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
-            readOnly: true
-        }
-    },
-    additionalProperties: true,
-    type: 'object',
-    required: [
-        '_event_name',
-        '_parent_event_names'
-    ],
-    title: 'GroundedRAGStopEvent',
-    description: 'Stop event emitted when a RAG run produced an answer grounded in retrieved context.'
 } as const;
 
 export const GroupSchema = {
@@ -13986,7 +13924,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1777361904
+            default: 1777366022
         },
         owned_by: {
             type: 'string',
@@ -16600,6 +16538,82 @@ export const PromptTokensDetailsSchema = {
     description: 'Breakdown of tokens used in the prompt.'
 } as const;
 
+export const RAGFailureReasonSchema = {
+    type: 'string',
+    enum: [
+        'context_insufficient',
+        'expert_declined',
+        'expert_errored',
+        'few_shot_fallback'
+    ],
+    title: 'RAGFailureReason',
+    description: 'Why a RAG run failed to produce a useful answer.'
+} as const;
+
+export const RAGFailureStopEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display name for the event'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display description for the event'
+        },
+        reason: {
+            $ref: '#/components/schemas/RAGFailureReason',
+            description: 'Why this run failed to produce a useful answer.'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: 'The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.',
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: [
+        'reason',
+        '_event_name',
+        '_parent_event_names'
+    ],
+    title: 'RAGFailureStopEvent',
+    description: 'Stop event emitted when a RAG run failed to produce a useful answer.\n\nThe `reason` field tells the parent agent which path produced the failure — context insufficient,\nexpert declined, expert errored, or a few-shot fallback that bypassed retrieval.'
+} as const;
+
 export const RAGStartEventSchema = {
     properties: {
         event_id: {
@@ -16718,7 +16732,7 @@ export const RAGStartEventSchema = {
     description: 'Namespace-aware start event for the RAG agent.\n\n`RAGStartEvent` is intended for non-chat publishers: custom domain front-ends that run their own namespace\nselection UI, or other agents delegating to RAG via `AgentInTheLoop`.'
 } as const;
 
-export const RAGStopEventSchema = {
+export const RAGSuccessStopEventSchema = {
     properties: {
         event_id: {
             type: 'string',
@@ -16773,8 +16787,8 @@ export const RAGStopEventSchema = {
         '_event_name',
         '_parent_event_names'
     ],
-    title: 'RAGStopEvent',
-    description: 'Abstract stop event for RAG-style agent runs.\n\nConcrete runs emit one of two subclasses: `GroundedRAGStopEvent` when the answer was grounded in\nretrieved context, or `UngroundedRAGStopEvent` (carrying a reason) when no grounded answer was\nproduced. Parent agents (e.g. via `AgentInTheLoop`) can type their step on the abstract base to\nmatch any RAG outcome, on a concrete subclass to branch on grounded vs ungrounded, or read\n`UngroundedRAGStopEvent.reason` for fine-grained dispatch.'
+    title: 'RAGSuccessStopEvent',
+    description: 'Stop event emitted when a RAG run successfully produced an answer for the user.'
 } as const;
 
 export const RadioButtonSchema = {
@@ -21420,82 +21434,6 @@ export const TranslationResponseSchema = {
     description: 'Response containing the translated LocaleString with all supported locales populated.'
 } as const;
 
-export const UngroundedRAGStopEventSchema = {
-    properties: {
-        event_id: {
-            type: 'string',
-            title: 'Event Id'
-        },
-        created_at: {
-            type: 'integer',
-            title: 'Created At',
-            description: 'The time (in ns since epoch) the event was stored in the event store'
-        },
-        display_name: {
-            anyOf: [
-                {
-                    $ref: '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'Display name for the event'
-        },
-        display_description: {
-            anyOf: [
-                {
-                    $ref: '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'Display description for the event'
-        },
-        reason: {
-            $ref: '#/components/schemas/UngroundedReason',
-            description: 'Why this run did not produce a grounded answer.'
-        },
-        _event_name: {
-            type: 'string',
-            title: 'Event Name',
-            description: 'The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.',
-            readOnly: true
-        },
-        _parent_event_names: {
-            items: {
-                type: 'string'
-            },
-            type: 'array',
-            title: 'Parent Event Names',
-            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
-            readOnly: true
-        }
-    },
-    additionalProperties: true,
-    type: 'object',
-    required: [
-        'reason',
-        '_event_name',
-        '_parent_event_names'
-    ],
-    title: 'UngroundedRAGStopEvent',
-    description: 'Stop event emitted when a RAG run terminated without an answer grounded in retrieved context.\n\nThe `reason` field tells the parent agent which path produced the ungrounded outcome — context\ninsufficient, expert declined, expert errored, or a few-shot fallback that bypassed retrieval.'
-} as const;
-
-export const UngroundedReasonSchema = {
-    type: 'string',
-    enum: [
-        'context_insufficient',
-        'expert_declined',
-        'expert_errored',
-        'few_shot_fallback'
-    ],
-    title: 'UngroundedReason',
-    description: 'Why a RAG run terminated without producing an answer grounded in retrieved context.'
-} as const;
-
 export const UpdateAgentInstanceDTOSchema = {
     properties: {
         configuration: {
@@ -25221,13 +25159,10 @@ export const ContextualizedAgentEventWritableSchema = {
                     $ref: '#/components/schemas/ExceptionEventWritable'
                 },
                 {
-                    $ref: '#/components/schemas/GroundedRAGStopEventWritable'
+                    $ref: '#/components/schemas/RAGSuccessStopEventWritable'
                 },
                 {
-                    $ref: '#/components/schemas/UngroundedRAGStopEventWritable'
-                },
-                {
-                    $ref: '#/components/schemas/RAGStopEventWritable'
+                    $ref: '#/components/schemas/RAGFailureStopEventWritable'
                 },
                 {
                     $ref: '#/components/schemas/StopEventWritable'
@@ -26187,46 +26122,6 @@ export const FullProcessInstanceDTOWritableSchema = {
     ],
     title: 'FullProcessInstanceDTO',
     description: 'A data transfer object for representing FULL process INSTANCE information in responses.\nCombines class metadata and instance-specific data.\n\nNOTE: This represents an INSTANCE (with process_id), not a process CLASS.\nFor minimal instance data, use MinimalProcessInstanceDTO.\nFor class-level data only, use ProcessClassDTO.'
-} as const;
-
-export const GroundedRAGStopEventWritableSchema = {
-    properties: {
-        event_id: {
-            type: 'string',
-            title: 'Event Id'
-        },
-        created_at: {
-            type: 'integer',
-            title: 'Created At',
-            description: 'The time (in ns since epoch) the event was stored in the event store'
-        },
-        display_name: {
-            anyOf: [
-                {
-                    $ref: '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'Display name for the event'
-        },
-        display_description: {
-            anyOf: [
-                {
-                    $ref: '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'Display description for the event'
-        }
-    },
-    additionalProperties: true,
-    type: 'object',
-    title: 'GroundedRAGStopEvent',
-    description: 'Stop event emitted when a RAG run produced an answer grounded in retrieved context.'
 } as const;
 
 export const GroupWritableSchema = {
@@ -31077,6 +30972,53 @@ export const ProcessWalkthroughDTOWritableSchema = {
     description: 'DTO representing a process walkthrough with detailed step information.'
 } as const;
 
+export const RAGFailureStopEventWritableSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display name for the event'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display description for the event'
+        },
+        reason: {
+            $ref: '#/components/schemas/RAGFailureReason',
+            description: 'Why this run failed to produce a useful answer.'
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: [
+        'reason'
+    ],
+    title: 'RAGFailureStopEvent',
+    description: 'Stop event emitted when a RAG run failed to produce a useful answer.\n\nThe `reason` field tells the parent agent which path produced the failure — context insufficient,\nexpert declined, expert errored, or a few-shot fallback that bypassed retrieval.'
+} as const;
+
 export const RAGStartEventWritableSchema = {
     properties: {
         event_id: {
@@ -31178,7 +31120,7 @@ export const RAGStartEventWritableSchema = {
     description: 'Namespace-aware start event for the RAG agent.\n\n`RAGStartEvent` is intended for non-chat publishers: custom domain front-ends that run their own namespace\nselection UI, or other agents delegating to RAG via `AgentInTheLoop`.'
 } as const;
 
-export const RAGStopEventWritableSchema = {
+export const RAGSuccessStopEventWritableSchema = {
     properties: {
         event_id: {
             type: 'string',
@@ -31214,8 +31156,8 @@ export const RAGStopEventWritableSchema = {
     },
     additionalProperties: true,
     type: 'object',
-    title: 'RAGStopEvent',
-    description: 'Abstract stop event for RAG-style agent runs.\n\nConcrete runs emit one of two subclasses: `GroundedRAGStopEvent` when the answer was grounded in\nretrieved context, or `UngroundedRAGStopEvent` (carrying a reason) when no grounded answer was\nproduced. Parent agents (e.g. via `AgentInTheLoop`) can type their step on the abstract base to\nmatch any RAG outcome, on a concrete subclass to branch on grounded vs ungrounded, or read\n`UngroundedRAGStopEvent.reason` for fine-grained dispatch.'
+    title: 'RAGSuccessStopEvent',
+    description: 'Stop event emitted when a RAG run successfully produced an answer for the user.'
 } as const;
 
 export const RadioButtonWritableSchema = {
@@ -34551,53 +34493,6 @@ export const ToolEventWritableSchema = {
     additionalProperties: true,
     type: 'object',
     title: 'ToolEvent'
-} as const;
-
-export const UngroundedRAGStopEventWritableSchema = {
-    properties: {
-        event_id: {
-            type: 'string',
-            title: 'Event Id'
-        },
-        created_at: {
-            type: 'integer',
-            title: 'Created At',
-            description: 'The time (in ns since epoch) the event was stored in the event store'
-        },
-        display_name: {
-            anyOf: [
-                {
-                    $ref: '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'Display name for the event'
-        },
-        display_description: {
-            anyOf: [
-                {
-                    $ref: '#/components/schemas/LocaleString'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            description: 'Display description for the event'
-        },
-        reason: {
-            $ref: '#/components/schemas/UngroundedReason',
-            description: 'Why this run did not produce a grounded answer.'
-        }
-    },
-    additionalProperties: true,
-    type: 'object',
-    required: [
-        'reason'
-    ],
-    title: 'UngroundedRAGStopEvent',
-    description: 'Stop event emitted when a RAG run terminated without an answer grounded in retrieved context.\n\nThe `reason` field tells the parent agent which path produced the ungrounded outcome — context\ninsufficient, expert declined, expert errored, or a few-shot fallback that bypassed retrieval.'
 } as const;
 
 export const UserMessageEventWritableSchema = {

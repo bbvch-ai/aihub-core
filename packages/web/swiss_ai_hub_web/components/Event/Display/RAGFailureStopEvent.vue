@@ -11,16 +11,16 @@
       variant="simple"
       size="small"
     >
-      {{ t(`event.rag_stop.ungrounded_reason.${event.event.reason}`) }}
+      {{ t(`event.rag_stop.failure_reason.${event.event.reason}`) }}
     </Message>
   </EventDisplayBase>
 </template>
 
 <script setup lang="ts">
-import type { ThreadDto, UngroundedRagStopEvent, ContextualizedAgentEvent } from '@core/sdk/client'
+import type { ThreadDto, RagFailureStopEvent, ContextualizedAgentEvent } from '@core/sdk/client'
 
 defineProps<{
-  event: ContextualizedAgentEvent & { event: UngroundedRagStopEvent }
+  event: ContextualizedAgentEvent & { event: RagFailureStopEvent }
   thread: ThreadDto
 }>()
 

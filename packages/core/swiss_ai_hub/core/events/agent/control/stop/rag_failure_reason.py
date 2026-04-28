@@ -1,8 +1,8 @@
 from enum import StrEnum
 
 
-class UngroundedReason(StrEnum):
-    """Why a RAG run terminated without producing an answer grounded in retrieved context."""
+class RAGFailureReason(StrEnum):
+    """Why a RAG run failed to produce a useful answer."""
 
     CONTEXT_INSUFFICIENT = "context_insufficient"
     EXPERT_DECLINED = "expert_declined"

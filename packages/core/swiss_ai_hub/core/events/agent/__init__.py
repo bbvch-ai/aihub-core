@@ -30,10 +30,10 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.events.agent.control.exception.exception_event import ExceptionEvent
     from swiss_ai_hub.core.events.agent.control.start.rag_start_event import RAGStartEvent
     from swiss_ai_hub.core.events.agent.control.start.start_event import StartEvent
-    from swiss_ai_hub.core.events.agent.control.stop.grounded_rag_stop_event import GroundedRAGStopEvent
+    from swiss_ai_hub.core.events.agent.control.stop.rag_failure_reason import RAGFailureReason
+    from swiss_ai_hub.core.events.agent.control.stop.rag_failure_stop_event import RAGFailureStopEvent
+    from swiss_ai_hub.core.events.agent.control.stop.rag_success_stop_event import RAGSuccessStopEvent
     from swiss_ai_hub.core.events.agent.control.stop.stop_event import StopEvent
-    from swiss_ai_hub.core.events.agent.control.stop.ungrounded_rag_stop_event import UngroundedRAGStopEvent
-    from swiss_ai_hub.core.events.agent.control.stop.ungrounded_reason import UngroundedReason
     from swiss_ai_hub.core.events.agent.control_and_display_event import ControlAndDisplayEvent
     from swiss_ai_hub.core.events.agent.cost.cost_event import CostEvent
     from swiss_ai_hub.core.events.agent.cost.llm_cost_event import LLMCostEvent
@@ -151,7 +151,6 @@ __all__ = [
     "ExpertRejectEvent",
     "FewShotAcceptEvent",
     "FewShotRejectEvent",
-    "GroundedRAGStopEvent",
     "GuardAcceptEvent",
     "GuardEvent",
     "GuardRejectionEvent",
@@ -174,7 +173,10 @@ __all__ = [
     "LanguageEvent",
     "LimitChatHistoryEvent",
     "Message",
+    "RAGFailureReason",
+    "RAGFailureStopEvent",
     "RAGStartEvent",
+    "RAGSuccessStopEvent",
     "RerankerEvent",
     "RetrieveOrganizationMemoryEvent",
     "RetrieveUserMemoryEvent",
@@ -194,8 +196,6 @@ __all__ = [
     "TextContent",
     "ThoughtEvent",
     "ToolEvent",
-    "UngroundedRAGStopEvent",
-    "UngroundedReason",
     "UserMessageEvent",
     "UserUploadedFile",
 ]
@@ -235,7 +235,6 @@ _LAZY_IMPORTS: dict[str, str] = {
     "ExpertRejectEvent": "swiss_ai_hub.core.events.agent.guard.expert_reject_event",
     "FewShotAcceptEvent": "swiss_ai_hub.core.events.agent.guard.few_shot_accept_event",
     "FewShotRejectEvent": "swiss_ai_hub.core.events.agent.guard.few_shot_reject_event",
-    "GroundedRAGStopEvent": "swiss_ai_hub.core.events.agent.control.stop.grounded_rag_stop_event",
     "GuardAcceptEvent": "swiss_ai_hub.core.events.agent.guard.guard_accept_event",
     "GuardEvent": "swiss_ai_hub.core.events.agent.semantic.guard.guard_event",
     "GuardRejectionEvent": "swiss_ai_hub.core.events.agent.guard.guard_rejection_event",
@@ -258,7 +257,10 @@ _LAZY_IMPORTS: dict[str, str] = {
     "LanguageEvent": "swiss_ai_hub.core.events.agent.common.language_event",
     "LimitChatHistoryEvent": "swiss_ai_hub.core.events.agent.common.limit_chat_history_event",
     "Message": "swiss_ai_hub.core.events.agent.semantic.llm.message",
+    "RAGFailureReason": "swiss_ai_hub.core.events.agent.control.stop.rag_failure_reason",
+    "RAGFailureStopEvent": "swiss_ai_hub.core.events.agent.control.stop.rag_failure_stop_event",
     "RAGStartEvent": "swiss_ai_hub.core.events.agent.control.start.rag_start_event",
+    "RAGSuccessStopEvent": "swiss_ai_hub.core.events.agent.control.stop.rag_success_stop_event",
     "RerankerEvent": "swiss_ai_hub.core.events.agent.semantic.reranker.reranker_event",
     "RetrieveOrganizationMemoryEvent": "swiss_ai_hub.core.events.agent.memory.retrieve.retrieve_organization_memory_event",
     "RetrieveUserMemoryEvent": "swiss_ai_hub.core.events.agent.memory.retrieve.retrieve_user_memory_event",
@@ -278,8 +280,6 @@ _LAZY_IMPORTS: dict[str, str] = {
     "TextContent": "swiss_ai_hub.core.events.agent.semantic.llm.message",
     "ThoughtEvent": "swiss_ai_hub.core.events.agent.display.thought_event",
     "ToolEvent": "swiss_ai_hub.core.events.agent.semantic.tool.tool_event",
-    "UngroundedRAGStopEvent": "swiss_ai_hub.core.events.agent.control.stop.ungrounded_rag_stop_event",
-    "UngroundedReason": "swiss_ai_hub.core.events.agent.control.stop.ungrounded_reason",
     "UserMessageEvent": "swiss_ai_hub.core.events.agent.user.user_message_event",
     "UserUploadedFile": "swiss_ai_hub.core.events.agent.user.user_uploaded_file",
 }

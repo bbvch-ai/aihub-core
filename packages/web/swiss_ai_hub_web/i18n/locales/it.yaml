@@ -187,7 +187,7 @@ event:
     additional_filters: 'Filtri di metadati aggiuntivi:'
     no_filters: Nessun filtro aggiuntivo
   rag_stop:
-    ungrounded_reason:
+    failure_reason:
       context_insufficient: Il contesto recuperato era insufficiente — la risposta
         è un ripiego e non è ancorata alle vostre fonti di conoscenza.
       expert_declined: L'esperto umano non ha potuto fornire una risposta — questa
