@@ -10,6 +10,7 @@ from swiss_ai_hub.core.events.agent import (
     ExpertRejectEvent,
     FewShotAcceptEvent,
     FewShotRejectEvent,
+    GroundedRAGStopEvent,
     HumanInTheLoop,
     LimitChatHistoryEvent,
     LLMEvent,
@@ -324,7 +325,6 @@ class ExpertRAGAgent(Agent):
         agent_config: ExpertRAGAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
-        run_context: RunContext,
     ) -> FewShotRejectEvent | FewShotAcceptEvent:
         return await do_few_shot_guard(
             event.condensed_chat_message.content,
@@ -332,7 +332,6 @@ class ExpertRAGAgent(Agent):
             agent_config.llm,
             displayer,
             t,
-            run_context,
         )
 
     @step(
@@ -528,13 +527,9 @@ class ExpertRAGAgent(Agent):
         displayer: EventDisplayer,
         event: AgentInTheLoop.response,
         t: LocaleHandler,
-        run_context: RunContext,
     ) -> ExpertAnswerContextEvent:
         await displayer.display_thought(t("agent.expert_rag_agent.thoughts.expert_answered"))
         await displayer.display_thought(t("agent.expert_rag_agent.thoughts.can_answer_question"))
-        # Expert provided usable context — overrides any earlier "context insufficient" verdict
-        # set by the sufficiency guard so the final stop event reports a grounded answer.
-        await run_context.set("context_sufficient", True)
 
         # Format the expert conversation as context
         expert_conversation = event.stop_event.expert_conversation
@@ -651,8 +646,14 @@ class ExpertRAGAgent(Agent):
         self,
         _llm_event: LLMEvent,
         _store_memory_event: StoreUserMemoryEvent | None,
+        expert_answer_context: ExpertAnswerContextEvent | None,
+        few_shot_reject: FewShotRejectEvent | None,
+        context_insufficient_reject: ContextInsufficientRejectEvent | None,
         agent_config: ExpertRAGAgentConfig,
-        run_context: RunContext,
     ) -> RAGStopEvent:
         """Final step that ensures all required steps are complete before stopping."""
-        return await do_finalize_rag_stop(run_context)
+        # Expert provided usable context — overrides any earlier "context insufficient" verdict
+        # so the final stop event reports a grounded answer.
+        if expert_answer_context is not None:
+            return GroundedRAGStopEvent()
+        return do_finalize_rag_stop(few_shot_reject, context_insufficient_reject)
