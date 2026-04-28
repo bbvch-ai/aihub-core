@@ -2,7 +2,7 @@
   <EventDisplayBase
     :event="event"
     :thread="thread"
-    icon="icon-park-twotone:success"
+    icon="icon-park-twotone:close-one"
     :is-warning="true"
   >
     <Message

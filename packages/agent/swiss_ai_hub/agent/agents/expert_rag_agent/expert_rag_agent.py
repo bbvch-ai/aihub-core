@@ -653,9 +653,9 @@ class ExpertRAGAgent(Agent):
         agent_config: ExpertRAGAgentConfig,
     ) -> RAGSuccessStopEvent | RAGFailureStopEvent:
         """Final step that ensures all required steps are complete before stopping."""
-        # Expert provided usable context — overrides any earlier "context insufficient" verdict
-        # so the final stop event reports a grounded answer.
-        if expert_answer_context is not None:
-            answer = llm_event.output_messages[-1].content if llm_event.output_messages else None
-            return RAGSuccessStopEvent(answer=answer)
-        return do_finalize_rag_stop(llm_event, few_shot_reject, context_insufficient_reject)
+        return do_finalize_rag_stop(
+            llm_event=llm_event,
+            expert_answer_context=expert_answer_context,
+            few_shot_reject=few_shot_reject,
+            context_insufficient_reject=context_insufficient_reject,
+        )

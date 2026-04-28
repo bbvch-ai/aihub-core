@@ -189,3 +189,4 @@ async def test_guard_emits_reject_event_when_no_more_hops(mock_llm, llm_config, 
     )
 
     assert isinstance(result, ContextInsufficientRejectEvent)
+    assert result.reason == "Context does not answer the question"

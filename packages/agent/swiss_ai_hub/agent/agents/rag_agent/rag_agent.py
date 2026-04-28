@@ -478,4 +478,9 @@ class RAGAgent(Agent):
         agent_config: RAGAgentConfig,
     ) -> RAGSuccessStopEvent | RAGFailureStopEvent:
         """Final step that ensures all required steps are complete before stopping."""
-        return do_finalize_rag_stop(llm_event, few_shot_reject, context_insufficient_reject)
+        return do_finalize_rag_stop(
+            llm_event=llm_event,
+            expert_answer_context=None,
+            few_shot_reject=few_shot_reject,
+            context_insufficient_reject=context_insufficient_reject,
+        )
