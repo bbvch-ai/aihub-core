@@ -212,3 +212,10 @@ rag_start_event:
     recuperando il contesto rilevante dalle fonti di conoscenza selezionate — utilizzando
     i namespace scelti e gli eventuali filtri di metadati — prima di generare una
     risposta.
+rag_success_stop_event:
+  name: Successo RAG
+  description: L'esecuzione aumentata dal recupero ha prodotto una risposta per l'utente.
+rag_failure_stop_event:
+  name: Fallimento RAG
+  description: L'esecuzione aumentata dal recupero non è riuscita a produrre una risposta
+    utile. Il campo reason spiega quale percorso ha portato al fallimento.

@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from swiss_ai_hub.core.events.agent import ContextInsufficientRejectEvent
 from swiss_ai_hub.core.generative_ai.chat_history.extend_chat_history_with_organization_memory import (
     extend_chat_history_with_organization_memory,
 )
@@ -163,3 +164,29 @@ async def test_guard_with_empty_chat_history_still_renders_empty_placeholder(
     )
 
     assert mock_llm.astructured_predict.call_args.kwargs["chat_history"] == ""
+
+
+@pytest.mark.asyncio
+async def test_guard_emits_reject_event_when_no_more_hops(mock_llm, llm_config, displayer, run_context, locale_handler):
+    mock_llm.astructured_predict = AsyncMock(
+        return_value=ContextGuardResult(
+            reasoning="Context does not answer the question",
+            success=False,
+            new_query=None,
+        )
+    )
+
+    result = await do_context_sufficient_guard(
+        user_query="What is the meaning of life?",
+        context="Unrelated document.",
+        check_context_sufficiency=True,
+        max_hops=1,
+        run_context=run_context,
+        llm_config=llm_config,
+        displayer=displayer,
+        t=locale_handler,
+        chat_history=[],
+    )
+
+    assert isinstance(result, ContextInsufficientRejectEvent)
+    assert result.reason == "Context does not answer the question"
