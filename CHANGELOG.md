@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.283.0] - 2026-04-28 - Smarter Image Handling with Perceptual Deduplication
+
+### Added
+
+- ✨ **Introduced Perceptual Deduplication for Images:** Implemented new logic to perceptually hash images during
+  document processing, enabling the identification and reuse of identical or near-identical figures (e.g., logos) to
+  significantly reduce storage and upload overhead.
+- 🧮 **Enabled Content-Addressed Filenaming:** Uploaded image files are now named using a SHA256 content hash, which
+  ensures idempotency and automatically collapses bytewise duplicate images.
+- 🖼️ **Enhanced Image Format Detection:** Improved the mechanism for determining appropriate image file extensions,
+  leveraging data URI MIME types, original filenames, and robust PIL sniffing.
+- 🧪 **Added Comprehensive Image Processing Tests:** A new dedicated test suite ensures the reliability and correctness
+  of image extraction, hashing, and upload functionalities.
+
+### Changed
+
+- 🚀 **Optimized Image Upload Workflow:** The `extract_and_upload_images` utility now intelligently processes images,
+  checking for perceptual matches against previously uploaded figures before initiating new S3 uploads.
+- 📄 **Standardized Markdown Figure Tags:** Markdown image references are now consistently wrapped in `<figure>` tags
+  after being uploaded to S3, improving semantic structure.
+
+______________________________________________________________________
+
 ## [v0.282.0] - 2026-04-28 - Granular RAG Execution Outcomes for Better Visibility and Control
 
 ### Added
