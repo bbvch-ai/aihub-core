@@ -1,4 +1,24 @@
-.PHONY: mirror-image
+.PHONY: mirror-image build-and-push-postgres-image
+
+# Build the project-managed postgres image (pgvector + pg_repack) and push to ghcr.
+#
+# Unlike `mirror-image`, the source isn't an upstream tag — we build it from
+# `docker/postgres/Dockerfile` (FROM pgvector/pgvector:pg17 + apt install
+# postgresql-17-repack). pg_repack is required by the maintenance subsystem in
+# packages/backup. Re-run this whenever:
+#   - the base pgvector tag in the Dockerfile changes (Postgres major bump)
+#   - the postgresql-17-repack package needs an upgrade
+# After running, non-build stages in compose-config.yml pick up the new image
+# automatically via `docker compose pull`.
+build-and-push-postgres-image:
+	@echo "Building ghcr.io/bbvch-ai/aihub-core/pgvector-repack:pg17..."
+	@docker login ghcr.io
+	@docker build \
+		-t ghcr.io/bbvch-ai/aihub-core/pgvector-repack:pg17 \
+		-f docker/postgres/Dockerfile \
+		docker/postgres
+	@docker push ghcr.io/bbvch-ai/aihub-core/pgvector-repack:pg17
+	@echo "Successfully published pgvector-repack:pg17"
 
 # Mirror an image from source to target
 # Usage: make mirror-image SOURCE=source/image:tag TARGET=target/image:tag

@@ -26,6 +26,13 @@ image_tags:
   milvus: milvus:v2.6.7
   attu: attu:v2.5.12
   postgres:
+    # Project-managed image: extends pgvector/pgvector:pg17 with postgresql-17-repack
+    # (required by the maintenance subsystem in packages/backup). The Dockerfile
+    # lives at infra/deployment/docker/postgres/Dockerfile.
+    # `build` stage builds locally; other stages pull pgvector-repack:pg17 from
+    # ghcr.io/bbvch-ai/aihub-core/. Publish via `make -C infra/deployment
+    # build-and-push-postgres-image` whenever the Dockerfile changes (Postgres
+    # version bump or pg_repack package upgrade).
     build: localbuild
     dev: pgvector-repack:pg17
     local: pgvector-repack:pg17
