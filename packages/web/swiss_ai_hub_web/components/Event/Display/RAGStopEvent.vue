@@ -18,8 +18,6 @@
 </template>
 
 <script setup lang="ts">
-// HeyAPI generates PascalCase types (RagStopEvent), but the runtime _event_name from Python's
-// cls.__name__ is "RAGStopEvent". useEventComponent.ts maps against the runtime string.
 import type { ThreadDto, RagStopEvent, ContextualizedAgentEvent } from '@core/sdk/client'
 
 defineProps<{
