@@ -194,7 +194,7 @@ event:
         not produce a grounded response.
       expert_errored: The expert escalation failed with an error — this run did not
         produce a grounded response.
-      few_shot_fallback: The query did not match any known pattern, so the answer
+      few_shot_rejected: The query did not match any known pattern, so the answer
         was produced without retrieval.
   limitChatHistory:
     summary: Chat history limited to {count} messages

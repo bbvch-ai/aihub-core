@@ -13924,7 +13924,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1777366022
+            default: 1777366377
         },
         owned_by: {
             type: 'string',
@@ -16544,7 +16544,7 @@ export const RAGFailureReasonSchema = {
         'context_insufficient',
         'expert_declined',
         'expert_errored',
-        'few_shot_fallback'
+        'few_shot_rejected'
     ],
     title: 'RAGFailureReason',
     description: 'Why a RAG run failed to produce a useful answer.'

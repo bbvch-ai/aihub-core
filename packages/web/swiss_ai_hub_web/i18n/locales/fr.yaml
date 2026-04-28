@@ -194,7 +194,7 @@ event:
         n'a pas produit de réponse fondée.
       expert_errored: L'escalade vers l'expert a échoué — cette exécution n'a pas
         produit de réponse fondée.
-      few_shot_fallback: La requête ne correspondait à aucun motif connu, la réponse
+      few_shot_rejected: La requête ne correspondait à aucun motif connu, la réponse
         a donc été produite sans récupération.
   limitChatHistory:
     summary: Historique de chat limité à {count} messages

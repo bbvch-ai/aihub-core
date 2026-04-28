@@ -258,7 +258,7 @@ def do_finalize_rag_stop(
     context_insufficient_reject: ContextInsufficientRejectEvent | None,
 ) -> RAGSuccessStopEvent | RAGFailureStopEvent:
     if few_shot_reject is not None:
-        return RAGFailureStopEvent(reason=RAGFailureReason.FEW_SHOT_FALLBACK)
+        return RAGFailureStopEvent(reason=RAGFailureReason.FEW_SHOT_REJECTED)
     if context_insufficient_reject is not None:
         return RAGFailureStopEvent(reason=RAGFailureReason.CONTEXT_INSUFFICIENT)
     return RAGSuccessStopEvent()

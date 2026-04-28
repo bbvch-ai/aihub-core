@@ -7,4 +7,4 @@ class RAGFailureReason(StrEnum):
     CONTEXT_INSUFFICIENT = "context_insufficient"
     EXPERT_DECLINED = "expert_declined"
     EXPERT_ERRORED = "expert_errored"
-    FEW_SHOT_FALLBACK = "few_shot_fallback"
+    FEW_SHOT_REJECTED = "few_shot_rejected"

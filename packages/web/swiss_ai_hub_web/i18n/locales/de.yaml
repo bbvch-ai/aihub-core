@@ -196,7 +196,7 @@ event:
         Lauf hat keine fundierte Antwort produziert.
       expert_errored: Die Experten-Eskalation ist mit einem Fehler fehlgeschlagen
         – dieser Lauf hat keine fundierte Antwort produziert.
-      few_shot_fallback: Die Anfrage entsprach keinem bekannten Muster, daher wurde
+      few_shot_rejected: Die Anfrage entsprach keinem bekannten Muster, daher wurde
         die Antwort ohne Retrieval erzeugt.
   limitChatHistory:
     summary: Chat-Verlauf auf {count} Nachrichten begrenzt
