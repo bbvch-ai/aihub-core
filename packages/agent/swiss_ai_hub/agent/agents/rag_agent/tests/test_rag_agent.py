@@ -348,7 +348,7 @@ def _(agent_runner: AgentTestRunner):
 @then("a GroundedRAGStopEvent is present")
 def _(agent_runner: AgentTestRunner):
     assert agent_runner.has_event_of_class(GroundedRAGStopEvent), (
-        "RAGAgent should emit GroundedRAGStopEvent when context_sufficient defaults to True"
+        "RAGAgent should emit GroundedRAGStopEvent when no reject events were emitted"
     )
 
 

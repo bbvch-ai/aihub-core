@@ -295,7 +295,6 @@ class RAGAgent(Agent):
         agent_config: RAGAgentConfig,
         displayer: EventDisplayer,
         t: LocaleHandler,
-        run_context: RunContext,
     ) -> FewShotRejectEvent | FewShotAcceptEvent:
         return await do_few_shot_guard(
             event.condensed_chat_message.content,
@@ -303,7 +302,6 @@ class RAGAgent(Agent):
             agent_config.llm,
             displayer,
             t,
-            run_context,
         )
 
     @step(
@@ -474,8 +472,9 @@ class RAGAgent(Agent):
         self,
         _llm_event: LLMEvent,
         _store_memory_event: StoreUserMemoryEvent | None,
+        few_shot_reject: FewShotRejectEvent | None,
+        context_insufficient_reject: ContextInsufficientRejectEvent | None,
         agent_config: RAGAgentConfig,
-        run_context: RunContext,
     ) -> RAGStopEvent:
         """Final step that ensures all required steps are complete before stopping."""
-        return await do_finalize_rag_stop(run_context)
+        return do_finalize_rag_stop(few_shot_reject, context_insufficient_reject)

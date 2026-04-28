@@ -114,7 +114,6 @@ async def do_few_shot_guard(
     llm_config: LLMConfig,
     displayer: EventDisplayer,
     t: LocaleHandler,
-    run_context: RunContext,
 ) -> FewShotRejectEvent | FewShotAcceptEvent:
     """Execute few-shot guard logic and return appropriate event."""
     if not examples:
@@ -129,8 +128,6 @@ async def do_few_shot_guard(
         )
 
     if not guard_result.success:
-        await run_context.set("context_sufficient", False)
-        await run_context.set("ungrounded_reason", UngroundedReason.FEW_SHOT_FALLBACK)
         return FewShotRejectEvent(reason=guard_result.reasoning)
 
     return FewShotAcceptEvent(reason=guard_result.reasoning)
@@ -223,13 +220,10 @@ async def do_context_sufficient_guard(
         )
 
     if guard_result.success:
-        await run_context.set("context_sufficient", True)
         await displayer.display_thought(t("agent.thought.context_sufficient"))
         return ContextSufficientAcceptEvent(reason=guard_result.reasoning)
 
     if not more_hops_available:
-        await run_context.set("context_sufficient", False)
-        await run_context.set("ungrounded_reason", UngroundedReason.CONTEXT_INSUFFICIENT)
         return ContextInsufficientRejectEvent(reason=guard_result.reasoning)
 
     await run_context.set("hop_count", hop_count + 1)
@@ -260,9 +254,12 @@ def do_limit_chat_history_with_context(
     return LimitChatHistoryWithContextEvent(limited_history_with_context=limited_history)
 
 
-async def do_finalize_rag_stop(run_context: RunContext) -> RAGStopEvent:
-    context_sufficient = await run_context.get("context_sufficient", True)
-    if context_sufficient:
-        return GroundedRAGStopEvent()
-    reason = await run_context.get("ungrounded_reason", UngroundedReason.CONTEXT_INSUFFICIENT)
-    return UngroundedRAGStopEvent(reason=UngroundedReason(reason))
+def do_finalize_rag_stop(
+    few_shot_reject: FewShotRejectEvent | None,
+    context_insufficient_reject: ContextInsufficientRejectEvent | None,
+) -> RAGStopEvent:
+    if few_shot_reject is not None:
+        return UngroundedRAGStopEvent(reason=UngroundedReason.FEW_SHOT_FALLBACK)
+    if context_insufficient_reject is not None:
+        return UngroundedRAGStopEvent(reason=UngroundedReason.CONTEXT_INSUFFICIENT)
+    return GroundedRAGStopEvent()
