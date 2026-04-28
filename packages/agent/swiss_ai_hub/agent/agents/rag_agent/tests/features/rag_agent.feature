@@ -8,6 +8,7 @@ Feature: RAG Agent
     Then an LLMEvent is present with a generated response
     * the LLM received the system prompt "<prompt>"
     * a StopEvent is present
+    * a GroundedRAGStopEvent is present
 
     Examples:
       | locale | prompt                                                                  | query               |
@@ -26,6 +27,7 @@ Feature: RAG Agent
     * a LimitChatHistoryWithContextEvent is present with limited history and context
     * an LLMEvent is present with a generated response
     * a StopEvent is present
+    * a GroundedRAGStopEvent is present
 
   Scenario: Test RAGAgent with reranking enabled
     Given a RAGAgent runner with a valid self hosted configuration
@@ -37,6 +39,7 @@ Feature: RAG Agent
     * the RerankerEvent should limit results to "2" nodes
     * an LLMEvent is present with a generated response
     * a StopEvent is present
+    * a GroundedRAGStopEvent is present
 
   Scenario: Test RAGAgent retrieves organization memory alongside knowledge base documents
     Given a RAGAgent runner with organization memory enabled
@@ -47,4 +50,5 @@ Feature: RAG Agent
     * a RetrieverEvent is present with retrieved nodes
     * an LLMEvent is present with a generated response
     * a StopEvent is present
+    * a GroundedRAGStopEvent is present
 

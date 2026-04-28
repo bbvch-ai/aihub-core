@@ -17,6 +17,7 @@ from swiss_ai_hub.core.events.agent import (
     AddMemoryToChatHistoryEvent,
     FewShotAcceptEvent,
     FewShotRejectEvent,
+    GroundedRAGStopEvent,
     LimitChatHistoryEvent,
     LLMEvent,
     RerankerEvent,
@@ -342,6 +343,13 @@ def _(agent_runner: AgentTestRunner):
 @then("a StopEvent is present")
 def _(agent_runner: AgentTestRunner):
     assert agent_runner.has_stop_event, "Agent did not produce StopEvent"
+
+
+@then("a GroundedRAGStopEvent is present")
+def _(agent_runner: AgentTestRunner):
+    assert agent_runner.has_event_of_class(GroundedRAGStopEvent), (
+        "RAGAgent should emit GroundedRAGStopEvent when context_sufficient defaults to True"
+    )
 
 
 @given("with few shot guard examples")
