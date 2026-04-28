@@ -471,11 +471,11 @@ class RAGAgent(Agent):
     )
     async def stop_step(
         self,
-        _llm_event: LLMEvent,
+        llm_event: LLMEvent,
         _store_memory_event: StoreUserMemoryEvent | None,
         few_shot_reject: FewShotRejectEvent | None,
         context_insufficient_reject: ContextInsufficientRejectEvent | None,
         agent_config: RAGAgentConfig,
     ) -> RAGSuccessStopEvent | RAGFailureStopEvent:
         """Final step that ensures all required steps are complete before stopping."""
-        return do_finalize_rag_stop(few_shot_reject, context_insufficient_reject)
+        return do_finalize_rag_stop(llm_event, few_shot_reject, context_insufficient_reject)

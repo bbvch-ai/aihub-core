@@ -3,11 +3,11 @@ from typing import Annotated, ClassVar
 from pydantic import Field
 
 from swiss_ai_hub.core.events.agent.control.stop.rag_failure_reason import RAGFailureReason
-from swiss_ai_hub.core.events.agent.control.stop.stop_event import StopEvent
+from swiss_ai_hub.core.events.agent.control.stop.rag_stop_event import RAGStopEvent
 from swiss_ai_hub.core.i18n.locale_string import LocaleString
 
 
-class RAGFailureStopEvent(StopEvent):
+class RAGFailureStopEvent(RAGStopEvent):
     """Stop event emitted when a RAG run failed to produce a useful answer.
 
     The `reason` field tells the parent agent which path produced the failure — context insufficient,

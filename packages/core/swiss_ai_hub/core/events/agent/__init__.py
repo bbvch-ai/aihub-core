@@ -32,6 +32,7 @@ if TYPE_CHECKING:
     from swiss_ai_hub.core.events.agent.control.start.start_event import StartEvent
     from swiss_ai_hub.core.events.agent.control.stop.rag_failure_reason import RAGFailureReason
     from swiss_ai_hub.core.events.agent.control.stop.rag_failure_stop_event import RAGFailureStopEvent
+    from swiss_ai_hub.core.events.agent.control.stop.rag_stop_event import RAGStopEvent
     from swiss_ai_hub.core.events.agent.control.stop.rag_success_stop_event import RAGSuccessStopEvent
     from swiss_ai_hub.core.events.agent.control.stop.stop_event import StopEvent
     from swiss_ai_hub.core.events.agent.control_and_display_event import ControlAndDisplayEvent
@@ -176,6 +177,7 @@ __all__ = [
     "RAGFailureReason",
     "RAGFailureStopEvent",
     "RAGStartEvent",
+    "RAGStopEvent",
     "RAGSuccessStopEvent",
     "RerankerEvent",
     "RetrieveOrganizationMemoryEvent",
@@ -260,6 +262,7 @@ _LAZY_IMPORTS: dict[str, str] = {
     "RAGFailureReason": "swiss_ai_hub.core.events.agent.control.stop.rag_failure_reason",
     "RAGFailureStopEvent": "swiss_ai_hub.core.events.agent.control.stop.rag_failure_stop_event",
     "RAGStartEvent": "swiss_ai_hub.core.events.agent.control.start.rag_start_event",
+    "RAGStopEvent": "swiss_ai_hub.core.events.agent.control.stop.rag_stop_event",
     "RAGSuccessStopEvent": "swiss_ai_hub.core.events.agent.control.stop.rag_success_stop_event",
     "RerankerEvent": "swiss_ai_hub.core.events.agent.semantic.reranker.reranker_event",
     "RetrieveOrganizationMemoryEvent": "swiss_ai_hub.core.events.agent.memory.retrieve.retrieve_organization_memory_event",

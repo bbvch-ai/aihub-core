@@ -556,11 +556,12 @@ class ExpertRAGAgent(Agent):
         t: LocaleHandler,
     ) -> RAGFailureStopEvent:
         await displayer.display_thought(t("agent.expert_rag_agent.thoughts.expert_unable_to_answer"))
+        unable_to_answer_message = t("agent.expert_rag_agent.messages.expert_unable_to_answer")
         await displayer.display_chunk(
-            t("agent.expert_rag_agent.messages.expert_unable_to_answer"),
+            unable_to_answer_message,
             model_name=ExpertRAGAgent.__name__,
         )
-        return RAGFailureStopEvent(reason=RAGFailureReason.EXPERT_DECLINED)
+        return RAGFailureStopEvent(reason=RAGFailureReason.EXPERT_DECLINED, answer=unable_to_answer_message)
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.expert_rag_agent.steps.expert_answer_error.name"),
@@ -580,11 +581,12 @@ class ExpertRAGAgent(Agent):
                 error_message=exception_event.exception_event.message,
             )
         )
+        error_occurred_message = t("agent.expert_rag_agent.messages.expert_error_occurred")
         await displayer.display_chunk(
-            t("agent.expert_rag_agent.messages.expert_error_occurred"),
+            error_occurred_message,
             model_name=ExpertRAGAgent.__name__,
         )
-        return RAGFailureStopEvent(reason=RAGFailureReason.EXPERT_ERRORED)
+        return RAGFailureStopEvent(reason=RAGFailureReason.EXPERT_ERRORED, answer=error_occurred_message)
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.respond_with_llm.name"),
@@ -643,7 +645,7 @@ class ExpertRAGAgent(Agent):
     )
     async def stop_step(
         self,
-        _llm_event: LLMEvent,
+        llm_event: LLMEvent,
         _store_memory_event: StoreUserMemoryEvent | None,
         expert_answer_context: ExpertAnswerContextEvent | None,
         few_shot_reject: FewShotRejectEvent | None,
@@ -654,5 +656,6 @@ class ExpertRAGAgent(Agent):
         # Expert provided usable context — overrides any earlier "context insufficient" verdict
         # so the final stop event reports a grounded answer.
         if expert_answer_context is not None:
-            return RAGSuccessStopEvent()
-        return do_finalize_rag_stop(few_shot_reject, context_insufficient_reject)
+            answer = llm_event.output_messages[-1].content if llm_event.output_messages else None
+            return RAGSuccessStopEvent(answer=answer)
+        return do_finalize_rag_stop(llm_event, few_shot_reject, context_insufficient_reject)

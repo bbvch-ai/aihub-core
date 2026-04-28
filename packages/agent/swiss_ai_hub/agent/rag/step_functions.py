@@ -254,11 +254,13 @@ def do_limit_chat_history_with_context(
 
 
 def do_finalize_rag_stop(
+    llm_event: LLMEvent,
     few_shot_reject: FewShotRejectEvent | None,
     context_insufficient_reject: ContextInsufficientRejectEvent | None,
 ) -> RAGSuccessStopEvent | RAGFailureStopEvent:
+    answer = llm_event.output_messages[-1].content if llm_event.output_messages else None
     if few_shot_reject is not None:
-        return RAGFailureStopEvent(reason=RAGFailureReason.FEW_SHOT_REJECTED)
+        return RAGFailureStopEvent(reason=RAGFailureReason.FEW_SHOT_REJECTED, answer=answer)
     if context_insufficient_reject is not None:
-        return RAGFailureStopEvent(reason=RAGFailureReason.CONTEXT_INSUFFICIENT)
-    return RAGSuccessStopEvent()
+        return RAGFailureStopEvent(reason=RAGFailureReason.CONTEXT_INSUFFICIENT, answer=answer)
+    return RAGSuccessStopEvent(answer=answer)
