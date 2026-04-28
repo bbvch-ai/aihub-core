@@ -186,6 +186,16 @@ event:
     selected_namespaces: 'Namespaces sélectionnés :'
     additional_filters: 'Filtres de métadonnées supplémentaires :'
     no_filters: Aucun filtre supplémentaire
+  rag_stop:
+    failure_reason:
+      context_insufficient: Le contexte récupéré était insuffisant — la réponse est
+        une solution de repli et n'est pas ancrée dans vos sources de connaissances.
+      expert_declined: L'expert humain n'a pas pu fournir de réponse — cette exécution
+        n'a pas produit de réponse fondée.
+      expert_errored: L'escalade vers l'expert a échoué — cette exécution n'a pas
+        produit de réponse fondée.
+      few_shot_rejected: La requête ne correspondait à aucun motif connu, la réponse
+        a donc été produite sans récupération.
   limitChatHistory:
     summary: Historique de chat limité à {count} messages
     assistant: Assistant

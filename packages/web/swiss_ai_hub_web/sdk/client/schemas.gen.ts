@@ -5288,6 +5288,12 @@ export const ContextualizedAgentEventSchema = {
                     $ref: '#/components/schemas/ExceptionEvent'
                 },
                 {
+                    $ref: '#/components/schemas/RAGSuccessStopEvent'
+                },
+                {
+                    $ref: '#/components/schemas/RAGFailureStopEvent'
+                },
+                {
                     $ref: '#/components/schemas/StopEvent'
                 },
                 {
@@ -13918,7 +13924,7 @@ export const ModelDetailsSchema = {
             type: 'integer',
             title: 'Created',
             description: 'The Unix timestamp of when the model was created.',
-            default: 1777361836
+            default: 1777367344
         },
         owned_by: {
             type: 'string',
@@ -16532,6 +16538,94 @@ export const PromptTokensDetailsSchema = {
     description: 'Breakdown of tokens used in the prompt.'
 } as const;
 
+export const RAGFailureReasonSchema = {
+    type: 'string',
+    enum: [
+        'context_insufficient',
+        'expert_declined',
+        'expert_errored',
+        'few_shot_rejected'
+    ],
+    title: 'RAGFailureReason',
+    description: 'Why a RAG run failed to produce a useful answer.'
+} as const;
+
+export const RAGFailureStopEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display name for the event'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display description for the event'
+        },
+        answer: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Answer',
+            description: 'Final assistant answer text, populated for non-streaming consumers.'
+        },
+        reason: {
+            $ref: '#/components/schemas/RAGFailureReason',
+            description: 'Why this run failed to produce a useful answer.'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: 'The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.',
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: [
+        'reason',
+        '_event_name',
+        '_parent_event_names'
+    ],
+    title: 'RAGFailureStopEvent',
+    description: 'Stop event emitted when a RAG run failed to produce a useful answer.\n\nThe `reason` field tells the parent agent which path produced the failure — context insufficient,\nexpert declined, expert errored, or a few-shot fallback that bypassed retrieval.'
+} as const;
+
 export const RAGStartEventSchema = {
     properties: {
         event_id: {
@@ -16648,6 +16742,77 @@ export const RAGStartEventSchema = {
     ],
     title: 'RAGStartEvent',
     description: 'Namespace-aware start event for the RAG agent.\n\n`RAGStartEvent` is intended for non-chat publishers: custom domain front-ends that run their own namespace\nselection UI, or other agents delegating to RAG via `AgentInTheLoop`.'
+} as const;
+
+export const RAGSuccessStopEventSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display name for the event'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display description for the event'
+        },
+        answer: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Answer',
+            description: 'Final assistant answer text, populated for non-streaming consumers.'
+        },
+        _event_name: {
+            type: 'string',
+            title: 'Event Name',
+            description: 'The event type name, usually the class name. If unknown, uses _unknown_event_name.\nUsed during deserialization to decide which subclass to instantiate.',
+            readOnly: true
+        },
+        _parent_event_names: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Parent Event Names',
+            description: 'Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.',
+            readOnly: true
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: [
+        '_event_name',
+        '_parent_event_names'
+    ],
+    title: 'RAGSuccessStopEvent',
+    description: 'Stop event emitted when a RAG run successfully produced an answer for the user.'
 } as const;
 
 export const RadioButtonSchema = {
@@ -25018,6 +25183,12 @@ export const ContextualizedAgentEventWritableSchema = {
                     $ref: '#/components/schemas/ExceptionEventWritable'
                 },
                 {
+                    $ref: '#/components/schemas/RAGSuccessStopEventWritable'
+                },
+                {
+                    $ref: '#/components/schemas/RAGFailureStopEventWritable'
+                },
+                {
                     $ref: '#/components/schemas/StopEventWritable'
                 },
                 {
@@ -30825,6 +30996,65 @@ export const ProcessWalkthroughDTOWritableSchema = {
     description: 'DTO representing a process walkthrough with detailed step information.'
 } as const;
 
+export const RAGFailureStopEventWritableSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display name for the event'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display description for the event'
+        },
+        answer: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Answer',
+            description: 'Final assistant answer text, populated for non-streaming consumers.'
+        },
+        reason: {
+            $ref: '#/components/schemas/RAGFailureReason',
+            description: 'Why this run failed to produce a useful answer.'
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    required: [
+        'reason'
+    ],
+    title: 'RAGFailureStopEvent',
+    description: 'Stop event emitted when a RAG run failed to produce a useful answer.\n\nThe `reason` field tells the parent agent which path produced the failure — context insufficient,\nexpert declined, expert errored, or a few-shot fallback that bypassed retrieval.'
+} as const;
+
 export const RAGStartEventWritableSchema = {
     properties: {
         event_id: {
@@ -30924,6 +31154,58 @@ export const RAGStartEventWritableSchema = {
     ],
     title: 'RAGStartEvent',
     description: 'Namespace-aware start event for the RAG agent.\n\n`RAGStartEvent` is intended for non-chat publishers: custom domain front-ends that run their own namespace\nselection UI, or other agents delegating to RAG via `AgentInTheLoop`.'
+} as const;
+
+export const RAGSuccessStopEventWritableSchema = {
+    properties: {
+        event_id: {
+            type: 'string',
+            title: 'Event Id'
+        },
+        created_at: {
+            type: 'integer',
+            title: 'Created At',
+            description: 'The time (in ns since epoch) the event was stored in the event store'
+        },
+        display_name: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display name for the event'
+        },
+        display_description: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/LocaleString'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            description: 'Display description for the event'
+        },
+        answer: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Answer',
+            description: 'Final assistant answer text, populated for non-streaming consumers.'
+        }
+    },
+    additionalProperties: true,
+    type: 'object',
+    title: 'RAGSuccessStopEvent',
+    description: 'Stop event emitted when a RAG run successfully produced an answer for the user.'
 } as const;
 
 export const RadioButtonWritableSchema = {

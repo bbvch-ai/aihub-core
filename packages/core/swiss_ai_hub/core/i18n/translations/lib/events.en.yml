@@ -201,3 +201,10 @@ rag_start_event:
   description: Retrieval-augmented generation has started. The agent is fetching relevant
     context from the selected knowledge sources — using the chosen namespaces and
     any additional metadata filters — before generating an answer.
+rag_success_stop_event:
+  name: RAG Success
+  description: The retrieval-augmented run produced an answer for the user.
+rag_failure_stop_event:
+  name: RAG Failure
+  description: The retrieval-augmented run failed to produce a useful answer. The
+    reason field explains which path led to the failure.

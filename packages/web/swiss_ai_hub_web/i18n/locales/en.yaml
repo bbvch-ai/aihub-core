@@ -186,6 +186,16 @@ event:
     selected_namespaces: 'Selected namespaces:'
     additional_filters: 'Additional metadata filters:'
     no_filters: No additional filters
+  rag_stop:
+    failure_reason:
+      context_insufficient: Retrieved context was insufficient — the answer is a fallback,
+        not grounded in your knowledge sources.
+      expert_declined: The human expert could not provide an answer — this run did
+        not produce a grounded response.
+      expert_errored: The expert escalation failed with an error — this run did not
+        produce a grounded response.
+      few_shot_rejected: The query did not match any known pattern, so the answer
+        was produced without retrieval.
   limitChatHistory:
     summary: Chat history limited to {count} messages
     assistant: Assistant
