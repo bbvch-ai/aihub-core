@@ -23,3 +23,11 @@ if [ -n "${POSTGRES_MULTIPLE_DATABASES:-}" ]; then
   done
   echo "All requested databases handled."
 fi
+
+# pg_repack extension — required by the maintenance subsystem in
+# packages/backup (postgres_repack handler). Installed in the custom postgres
+# image (infra/deployment/docker/postgres/Dockerfile); enabled per-DB here.
+# IF NOT EXISTS keeps this idempotent across restarts.
+echo "Enabling pg_repack extension in dagster database..."
+psql -U "$POSTGRES_USER" -d dagster -c "CREATE EXTENSION IF NOT EXISTS pg_repack;" \
+  || echo "pg_repack extension not available (image may not include postgresql-17-repack); skipping"

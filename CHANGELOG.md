@@ -5,6 +5,70 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.284.0] - 2026-04-28 - Introducing Continuous Postgres Maintenance for Dagster
+
+### Added
+
+- ✨ **Automated Dagster Database Maintenance:** Launched a comprehensive subsystem within the existing backup Dagster
+  instance to keep the `dagster` database bounded and healthy over long-running deployments. This includes:
+  - 🧹 **Weekly Log Cleanup:** A new `dagster_cleanup_job` that automatically prunes verbose Python logs (DEBUG, INFO,
+    WARNING) and transient framework-internal events (e.g., `HANDLED_OUTPUT`, `LOADED_INPUT`, `ENGINE_EVENT`) from the
+    `event_logs` table, based on configurable retention policies.
+  - 📦 **Monthly Disk Space Reclamation:** A `postgres_repack_job` that runs `pg_repack` on heavy tables like
+    `event_logs`, `runs`, and `job_ticks` to physically return unused disk pages to the operating system.
+  - 🛡️ **UI-Safe Pruning Guarantees:** The cleanup process is meticulously designed to *never* delete critical data
+    required by the Dagster UI, such as asset materializations, step success/failure records, run history, or asset
+    catalog entries.
+  - ⚙️ **Configurable Retention & Batch Limits:** New environment variables (`DAGSTER_DEBUG_LOG_RETENTION_DAYS`,
+    `DAGSTER_INFO_LOG_RETENTION_DAYS`, `DAGSTER_WARNING_LOG_RETENTION_DAYS`, `DAGSTER_UNIMPORTANT_EVENT_RETENTION_DAYS`,
+    `DAGSTER_CLEANUP_BATCH_LIMIT`, `MAINTENANCE_DISABLED`) provide fine-grained control over retention windows, cleanup
+    performance, and a kill switch for maintenance.
+- 🐳 **Custom Postgres Image with `pg_repack`:** Integrated a project-managed Postgres Docker image
+  (`pgvector-repack:pg17`) that extends the base `pgvector` image with the `postgresql-17-repack` extension, a
+  prerequisite for efficient disk space reclamation.
+- ✅ **Extensive Testing for Database Maintenance:** Added new layers of unit and integration tests, including SQL
+  contract tests against a real Postgres instance, to ensure the correctness and safety of the new maintenance
+  subsystem.
+
+### Changed
+
+- 🔄 **Serialized Postgres Operations:** Implemented tag-based concurrency limits using Dagster's `QueuedRunCoordinator`
+  for all Postgres-affecting jobs (backup, restore, cleanup, and repack). This ensures these critical operations run
+  sequentially, preventing conflicts and improving system reliability.
+- 📄 **Enhanced Documentation for Data Retention & Maintenance:** Updated architecture decision records (`arc42`) and
+  user guides with detailed explanations of the new continuous Postgres maintenance subsystem, covering its purpose,
+  configuration, safety guarantees, and operational implications.
+- 🕰️ **Dagster Tick History Retention:** Configured automatic retention policies for Dagster job and sensor tick history
+  in both the main and backup Dagster instances, preventing unbounded growth of internal tick metadata.
+- ⚙️ **Streamlined Image Management:** Updated internal infrastructure configurations and `Makefile` targets for
+  building and publishing project-managed Docker images (Postgres and Playwright), allowing for local builds in
+  development and consistent pulls in other stages.
+
+______________________________________________________________________
+
+## [v0.283.0] - 2026-04-28 - Smarter Image Handling with Perceptual Deduplication
+
+### Added
+
+- ✨ **Introduced Perceptual Deduplication for Images:** Implemented new logic to perceptually hash images during
+  document processing, enabling the identification and reuse of identical or near-identical figures (e.g., logos) to
+  significantly reduce storage and upload overhead.
+- 🧮 **Enabled Content-Addressed Filenaming:** Uploaded image files are now named using a SHA256 content hash, which
+  ensures idempotency and automatically collapses bytewise duplicate images.
+- 🖼️ **Enhanced Image Format Detection:** Improved the mechanism for determining appropriate image file extensions,
+  leveraging data URI MIME types, original filenames, and robust PIL sniffing.
+- 🧪 **Added Comprehensive Image Processing Tests:** A new dedicated test suite ensures the reliability and correctness
+  of image extraction, hashing, and upload functionalities.
+
+### Changed
+
+- 🚀 **Optimized Image Upload Workflow:** The `extract_and_upload_images` utility now intelligently processes images,
+  checking for perceptual matches against previously uploaded figures before initiating new S3 uploads.
+- 📄 **Standardized Markdown Figure Tags:** Markdown image references are now consistently wrapped in `<figure>` tags
+  after being uploaded to S3, improving semantic structure.
+
+______________________________________________________________________
+
 ## [v0.282.0] - 2026-04-28 - Granular RAG Execution Outcomes for Better Visibility and Control
 
 ### Added

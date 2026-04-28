@@ -108,3 +108,15 @@ run_monitoring:
   start_timeout_seconds: 300     # Fail if worker doesn't start in 5 min
   cancel_timeout_seconds: 180    # Force-cancel stuck CANCELING runs after 3 min
   poll_interval_seconds: 120     # Check run status every 2 min
+
+# Tick history retention. Daemon-managed; covers job_ticks only — the heavy
+# event_logs / runs tables are pruned by the maintenance jobs in the backup
+# Dagster instance (see packages/backup/swiss_ai_hub/backup/maintenance/).
+retention:
+  schedule:
+    purge_after_days: 90
+  sensor:
+    purge_after_days:
+      skipped: 7
+      failure: 30
+      success: 30

@@ -124,3 +124,91 @@ def test_restore_finalize_depends_on_all_services() -> None:
     assert "restore/clickhouse" in parent_strings
     assert "restore/valkey" in parent_strings
     assert "restore/nats" in parent_strings
+
+
+def test_maintenance_definitions_has_all_cleanup_assets() -> None:
+    defs = backup_definitions()
+    asset_graph = defs.resolve_asset_graph()
+    all_keys = {key.to_user_string() for key in asset_graph.get_all_asset_keys()}
+
+    assert "maintenance/session" in all_keys
+    assert "maintenance/postgres_indexes" in all_keys
+    assert "maintenance/postgres_autovacuum_tune" in all_keys
+    assert "maintenance/dagster_debug_logs" in all_keys
+    assert "maintenance/dagster_info_logs" in all_keys
+    assert "maintenance/dagster_warning_logs" in all_keys
+    assert "maintenance/dagster_unimportant_events" in all_keys
+    assert "maintenance/cleanup_finalize" in all_keys
+    assert "maintenance/postgres_repack" in all_keys
+    assert "maintenance/repack_finalize" in all_keys
+
+
+def test_maintenance_jobs_registered() -> None:
+    defs = backup_definitions()
+    cleanup = defs.get_job_def("dagster_cleanup_job")
+    repack = defs.get_job_def("postgres_repack_job")
+    assert cleanup.name == "dagster_cleanup_job"
+    assert repack.name == "postgres_repack_job"
+
+
+def test_maintenance_handlers_depend_on_session() -> None:
+    defs = backup_definitions()
+    asset_graph = defs.resolve_asset_graph()
+
+    handler_keys = [
+        "maintenance/postgres_indexes",
+        "maintenance/postgres_autovacuum_tune",
+        "maintenance/dagster_debug_logs",
+        "maintenance/dagster_info_logs",
+        "maintenance/dagster_warning_logs",
+        "maintenance/dagster_unimportant_events",
+        "maintenance/postgres_repack",
+    ]
+    for key_str in handler_keys:
+        matching = [k for k in asset_graph.get_all_asset_keys() if k.to_user_string() == key_str]
+        assert matching, f"Asset {key_str} not found"
+        parent_keys = asset_graph.get(matching[0]).parent_keys
+        parent_strings = {p.to_user_string() for p in parent_keys}
+        assert "maintenance/session" in parent_strings, f"{key_str} should depend on maintenance/session"
+
+
+def test_cleanup_delete_handlers_depend_on_postgres_indexes() -> None:
+    """The four DELETE handlers must run AFTER postgres_indexes so the cleanup
+    queries use the partial indexes instead of seq-scanning event_logs.
+    Regression guard for the missing-deps bug originally raised on PR #1040."""
+    defs = backup_definitions()
+    asset_graph = defs.resolve_asset_graph()
+
+    delete_handlers = [
+        "maintenance/dagster_debug_logs",
+        "maintenance/dagster_info_logs",
+        "maintenance/dagster_warning_logs",
+        "maintenance/dagster_unimportant_events",
+    ]
+    for key_str in delete_handlers:
+        matching = [k for k in asset_graph.get_all_asset_keys() if k.to_user_string() == key_str]
+        parent_strings = {p.to_user_string() for p in asset_graph.get(matching[0]).parent_keys}
+        assert "maintenance/postgres_indexes" in parent_strings, (
+            f"{key_str} must depend on maintenance/postgres_indexes (got parents: {parent_strings})"
+        )
+
+
+def test_postgres_affecting_jobs_carry_mutex_tag() -> None:
+    """All jobs that touch Postgres must carry ``postgres-mutex=true`` so the
+    QueuedRunCoordinator serializes them. Without the tag, a cleanup tick could
+    fire mid-backup (postgres stopped → cleanup queries fail)."""
+    defs = backup_definitions()
+    for job_name in ("backup_asset_job", "full_restore_job", "dagster_cleanup_job", "postgres_repack_job"):
+        job = defs.get_job_def(job_name)
+        assert job.tags.get("postgres-mutex") == "true", (
+            f"{job_name} is missing the postgres-mutex tag (got tags: {job.tags})"
+        )
+
+
+def test_postgres_indexes_does_not_depend_on_other_handlers() -> None:
+    """postgres_indexes must run FIRST — it should depend only on session."""
+    defs = backup_definitions()
+    asset_graph = defs.resolve_asset_graph()
+    matching = [k for k in asset_graph.get_all_asset_keys() if k.to_user_string() == "maintenance/postgres_indexes"]
+    parent_strings = {p.to_user_string() for p in asset_graph.get(matching[0]).parent_keys}
+    assert parent_strings == {"maintenance/session"}

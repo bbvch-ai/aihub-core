@@ -1,6 +1,6 @@
 [project]
 name = "swiss-ai-hub-core"
-version = "0.282.0"
+version = "0.284.0"
 description = ""
 requires-python = ">=3.13, <3.14"
 authors = [
@@ -70,6 +70,8 @@ dependencies = [
     "scim2-client>=0.7.5",
     "python-keycloak>=7.1.1",
     "apprise>=1.9.9",
+    "pillow>=12.1.1",
+    "imagehash>=4.3.2",
 ]
 
 [dependency-groups]
