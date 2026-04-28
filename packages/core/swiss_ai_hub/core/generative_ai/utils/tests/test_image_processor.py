@@ -17,7 +17,7 @@ from swiss_ai_hub.core.generative_ai.utils.image_processor import (
     _HASH_MATCH_THRESHOLD,
     _detect_extension,
     _find_perceptual_match,
-    _perceptual_hash,
+    _image_hash,
     extract_and_upload_images,
 )
 
@@ -110,18 +110,18 @@ def _make_distinct_figure(kind: str) -> Image.Image:
 class TestPerceptualHash:
     def test_identical_bytes_produce_identical_hash(self) -> None:
         img_bytes = _jpeg_bytes(_make_logo())
-        assert _perceptual_hash(img_bytes) == _perceptual_hash(img_bytes)
+        assert _image_hash(img_bytes) == _image_hash(img_bytes)
 
     def test_distinct_figures_produce_different_hashes(self) -> None:
-        h_lines = _perceptual_hash(_jpeg_bytes(_make_distinct_figure("lines")))
-        h_circle = _perceptual_hash(_jpeg_bytes(_make_distinct_figure("circle")))
+        h_lines = _image_hash(_jpeg_bytes(_make_distinct_figure("lines")))
+        h_circle = _image_hash(_jpeg_bytes(_make_distinct_figure("circle")))
         assert h_lines != h_circle
 
     def test_crop_jitter_stays_within_threshold(self) -> None:
         """The whole point of dHash: small crop offsets must yield small Hamming distances."""
-        ref = _perceptual_hash(_jpeg_bytes(_make_logo(0, 0, 1.0)))
+        ref = _image_hash(_jpeg_bytes(_make_logo(0, 0, 1.0)))
         for dx, dy, scale in [(1, 0, 1.0), (-1, 0, 1.0), (0, 2, 1.0), (3, -1, 1.0), (0, 0, 0.97)]:
-            jittered = _perceptual_hash(_jpeg_bytes(_make_logo(dx, dy, scale)))
+            jittered = _image_hash(_jpeg_bytes(_make_logo(dx, dy, scale)))
             assert ref - jittered <= _HASH_MATCH_THRESHOLD, (
                 f"crop variation (dx={dx}, dy={dy}, scale={scale}) exceeded threshold "
                 f"({ref - jittered} > {_HASH_MATCH_THRESHOLD})"
@@ -129,9 +129,9 @@ class TestPerceptualHash:
 
     def test_distinct_figures_exceed_threshold(self) -> None:
         """Threshold must not collapse genuinely different content."""
-        h_lines = _perceptual_hash(_jpeg_bytes(_make_distinct_figure("lines")))
-        h_circle = _perceptual_hash(_jpeg_bytes(_make_distinct_figure("circle")))
-        h_tri = _perceptual_hash(_jpeg_bytes(_make_distinct_figure("triangle")))
+        h_lines = _image_hash(_jpeg_bytes(_make_distinct_figure("lines")))
+        h_circle = _image_hash(_jpeg_bytes(_make_distinct_figure("circle")))
+        h_tri = _image_hash(_jpeg_bytes(_make_distinct_figure("triangle")))
         assert h_lines - h_circle > _HASH_MATCH_THRESHOLD
         assert h_lines - h_tri > _HASH_MATCH_THRESHOLD
         assert h_circle - h_tri > _HASH_MATCH_THRESHOLD

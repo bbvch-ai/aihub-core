@@ -87,11 +87,11 @@ async def extract_and_upload_images(
         base64_data, mime_prefix = _split_data_uri(data_uri)
         image_bytes = base64.b64decode(base64_data)
 
-        dhash = await asyncio.to_thread(_perceptual_hash, image_bytes)
+        image_hash = await asyncio.to_thread(_image_hash, image_bytes)
 
-        if (existing_uri := _find_perceptual_match(dhash, seen)) is not None:
+        if (existing_uri := _find_perceptual_match(image_hash, seen)) is not None:
             s3_uri = existing_uri
-            logger.debug(f"Image {idx + 1} matches a previously uploaded figure (dHash={dhash}); reusing {s3_uri}")
+            logger.debug(f"Image {idx + 1} matches a previously uploaded figure (hash={image_hash}); reusing {s3_uri}")
         else:
             extension = _detect_extension(mime_prefix, rel_path, image_bytes)
             content_hash = hashlib.sha256(image_bytes).hexdigest()[:16]
@@ -100,7 +100,7 @@ async def extract_and_upload_images(
             await asyncio.to_thread(_write_file, fs, blob_path, image_bytes)
 
             s3_uri = blob_path if blob_path.startswith("s3://") else f"s3://{blob_path}"
-            seen.append((dhash, s3_uri))
+            seen.append((image_hash, s3_uri))
             logger.debug(f"Uploaded image {idx + 1} to {s3_uri} ({len(image_bytes)} bytes)")
 
         markdown_figure = f"![Figure {idx + 1}]({s3_uri})"
@@ -151,19 +151,19 @@ def _detect_extension(mime_prefix: str, rel_path: str, image_bytes: bytes) -> st
         return (img.format or "jpg").lower().replace("jpeg", "jpg")
 
 
-def _perceptual_hash(image_bytes: bytes) -> imagehash.ImageHash:
+def _image_hash(image_bytes: bytes) -> imagehash.ImageHash:
     """Perceptual hash robust to sub-pixel crop shifts and rendering artifacts from VLM-driven figure extraction."""
     with Image.open(BytesIO(image_bytes)) as img:
         return imagehash.dhash(img, hash_size=_HASH_SIZE)
 
 
 def _find_perceptual_match(
-    dhash: imagehash.ImageHash,
+    image_hash: imagehash.ImageHash,
     seen: list[tuple[imagehash.ImageHash, str]],
 ) -> str | None:
     """Linear scan: returns the first stored URI whose hash is within the perceptual-match threshold."""
-    for existing_dhash, existing_uri in seen:
-        if dhash - existing_dhash <= _HASH_MATCH_THRESHOLD:
+    for existing_hash, existing_uri in seen:
+        if image_hash - existing_hash <= _HASH_MATCH_THRESHOLD:
             return existing_uri
     return None
 
