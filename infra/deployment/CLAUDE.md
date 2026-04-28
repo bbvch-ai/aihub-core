@@ -83,7 +83,6 @@ This file drives everything: template rendering, CI/CD service discovery, and im
 
 ```yaml
 # Infrastructure (flat string — always included):
-postgres: pgvector:pg17
 nats: nats:2.11.4
 
 # Custom service (dict — per-stage tags):
@@ -93,6 +92,18 @@ api:
   nightly: api:nightly
   latest: api:latest
 # No 'dev' key → api is excluded from docker-compose.dev.yml
+
+# Postgres is per-stage — the build stage builds a custom image from
+# infra/deployment/docker/postgres/Dockerfile that extends pgvector/pgvector:pg17
+# with postgresql-17-repack (required by the maintenance subsystem in
+# packages/backup). Other stages reference pgvector-repack:pg17 mirrored to ghcr
+# via `make mirror-image`.
+postgres:
+  build: localbuild
+  dev: pgvector-repack:pg17
+  local: pgvector-repack:pg17
+  nightly: pgvector-repack:pg17
+  latest: pgvector-repack:pg17
 ```
 
 **CI/CD integration**: GitHub Actions workflows (`build-agents.yml`, `set-latest.yml`) parse `compose-config.yml` at

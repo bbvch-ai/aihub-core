@@ -175,6 +175,20 @@ pipelines, processes) during and after updates.
 
 ______________________________________________________________________
 
+## Continuous Postgres maintenance
+
+The platform includes automated database maintenance that operators do not need to schedule manually. Two jobs run in
+the same Dagster instance as backup (UI at `http://localhost:3004`) and keep the `dagster` database bounded over time:
+weekly `dagster_cleanup_job` prunes verbose log entries and transient framework events from `event_logs`, and monthly
+`postgres_repack_job` reclaims disk pages via `pg_repack`. Both are mutually exclusive with backup via Dagster's
+run-coordinator tag concurrency.
+
+This is what keeps a 5-year-old deployment's Postgres footprint comparable to a 3-month-old one. See
+[Backup and Recovery](../4_backup_and_recovery/#continuous-postgres-maintenance) for retention windows and the
+`MAINTENANCE_DISABLED` kill switch.
+
+______________________________________________________________________
+
 ## Related documentation
 
 - [Deployment Options](../1_deployment_options/) - Per-instance architecture

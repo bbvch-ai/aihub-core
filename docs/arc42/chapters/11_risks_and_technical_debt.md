@@ -26,7 +26,10 @@ simultaneously. A backup taken while an agent is mid-run may capture an inconsis
 log), FerretDB (persisted events), and Valkey (step tracking). Platform-level backup using internal S3 snapshots and
 infrastructure-level off-site replication via SeaweedFS are both tracked as P0 items and are in progress. **Planned
 mitigation**: A two-tier backup strategy is being implemented. Tier 1: Offen-based automated daily backups to S3 for all
-stateful volumes. Tier 2: SeaweedFS asynchronous replication for off-site disaster recovery of object storage.
+stateful volumes. Tier 2: SeaweedFS asynchronous replication for off-site disaster recovery of object storage. **Update
+2026-04**: Daily Dagster-orchestrated backup of all stateful services to S3 has shipped (`packages/backup`), along with
+weekly `event_logs` cleanup and monthly `pg_repack` to keep the platform Postgres bounded over long-running deployments.
+Off-site replication and application-consistent cross-store snapshots remain open.
 
 ### Mime-type trust in file uploads
 

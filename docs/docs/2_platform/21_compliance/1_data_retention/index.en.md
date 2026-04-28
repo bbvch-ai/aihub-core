@@ -21,3 +21,12 @@ and business needs.
 **Operational implications**: Organizations have a 30-day window for forensic analysis of workflow execution details.
 Critical execution information should be persisted to permanent storage before the 30-day threshold for long-term
 retention. Compliance investigations requiring workflow reconstruction are limited to the available retention window.
+
+**Dagster operational logs (separate retention track)**: Verbose Python logger entries (`DEBUG`, `INFO`, `WARNING`)
+emitted by pipelines and agents and transient framework-internal events (`HANDLED_OUTPUT`, `LOADED_INPUT`,
+`ENGINE_EVENT`, `ASSET_MATERIALIZATION_PLANNED`, `STEP_OUTPUT`) are pruned automatically by the platform's continuous
+maintenance subsystem to prevent unbounded Postgres growth. Default retention windows are 7 days for `DEBUG`, 60 days
+for `INFO`/`WARNING`, and 30 days for transient framework events; configurable per deployment via
+`DAGSTER_*_LOG_RETENTION_DAYS` environment variables. Asset materializations, step success/failure, and run records are
+**never** pruned by this subsystem — they remain available for the lifetime of the deployment unless deleted explicitly.
+See [Backup and Recovery](../../3_deployment_guide/4_backup_and_recovery/#continuous-postgres-maintenance) for details.
