@@ -5,39 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [v1.0.0] - 2026-04-28 - Precision in RAG Outcomes: New Success and Failure Events
+## [v0.282.0] - 2026-04-28 - Granular RAG Execution Outcomes for Better Visibility and Control
 
 ### Added
 
-- ✨ **Introduced Granular RAG Stop Events:** New event types, `RAGSuccessStopEvent` and `RAGFailureStopEvent`, have been
-  added to provide more explicit and detailed feedback on the outcome of Retrieval-Augmented Generation (RAG) agent
-  runs.
-- 🚦 **Detailed RAG Failure Reasons:** The `RAGFailureStopEvent` now includes a `RAGFailureReason` enum, clearly
-  indicating why a RAG run might have failed (e.g., `CONTEXT_INSUFFICIENT`, `EXPERT_DECLINED`, `FEW_SHOT_REJECTED`).
-- 🦾 **Centralized RAG Stop Logic:** A new helper function, `do_finalize_rag_stop`, was introduced to centralize the
-  decision-making process for determining the final RAG stop event, improving consistency across RAG agents.
-- 📄 **Localized RAG Outcome Messages:** Comprehensive internationalization (i18n) translations were added for the new
-  RAG success and failure events, including specific messages for each failure reason, enhancing multi-language support.
-- 🖥️ **RAG Stop Event UI Components:** Dedicated user interface components (`RAGSuccessStopEvent.vue` and
-  `RAGFailureStopEvent.vue`) have been added to visually represent these new RAG outcome events in the frontend,
-  providing clear feedback to users.
+- ✨ **Introduced Granular RAG Stop Events:** New event types (`RAGSuccessStopEvent`, `RAGFailureStopEvent`, and
+  `RAGStopEvent` as their common ancestor) and an associated `RAGFailureReason` enumeration have been added. These
+  provide detailed and specific outcomes for Retrieval-Augmented Generation (RAG) agent runs, distinguishing between
+  successful responses and various failure conditions.
+- 🦾 **Implemented `do_finalize_rag_stop` Logic:** A new step function, `do_finalize_rag_stop`, was introduced to
+  intelligently determine the final RAG outcome. It consolidates information from the LLM's response and any prior
+  rejection events (such as few-shot rejection, insufficient context, or expert decline/error) to emit the most
+  appropriate RAG stop event.
+- 🌐 **Integrated RAG Outcome Display in UI:** Dedicated UI components and internationalized messages have been added to
+  visually represent RAG success and various failure events within the application, offering clearer, contextualized
+  feedback to users.
 
 ### Changed
 
-- 🔄 **Updated RAG Agent Termination:** Both `RAGAgent` and `ExpertRAGAgent` now utilize the new `RAGSuccessStopEvent` or
-  `RAGFailureStopEvent` instead of the generic `StopEvent` to signal the conclusion of a RAG run, offering more specific
-  insights into the process.
-- ✍️ **Expert Escalation Outcomes:** The `expert_unable_to_answer` and `expert_answer_error` steps within the
-  `ExpertRAGAgent` now explicitly return `RAGFailureStopEvent` with relevant reasons, ensuring consistent failure
-  reporting.
-- 🛡️ **Context Sufficiency Guard Feedback:** The `do_context_sufficient_guard` function can now explicitly emit
-  `ContextInsufficientRejectEvent`, which is integrated into the new RAG termination logic to accurately report
-  context-related failures.
-
-### Removed
-
-- 🗑️ **Generic `StopEvent` from RAG Agents:** The direct usage of the generic `StopEvent` for terminating RAG agent
-  workflows has been removed, replaced by the more specific `RAGSuccessStopEvent` and `RAGFailureStopEvent`.
+- 🔄 **Updated RAG Agent Termination Flow:** Both the RAG and Expert RAG agents now utilize the new `RAGSuccessStopEvent`
+  or `RAGFailureStopEvent` for run termination, replacing the generic `StopEvent`. This change provides richer, more
+  contextualized information about the completion status of agent runs.
+- 💬 **Improved Expert RAG Agent Error Handling:** The Expert RAG agent's internal response paths for when an expert
+  declines to answer or encounters an error now explicitly emit a `RAGFailureStopEvent` with a specific reason,
+  enhancing the clarity of situations where a grounded answer could not be produced.
+- 🛠️ **Refined Context Sufficiency Guard Logic:** The `do_context_sufficient_guard` step has been updated to correctly
+  emit a `ContextInsufficientRejectEvent` when the maximum number of retrieval hops is exhausted, ensuring accurate
+  reporting for ungrounded answers due to insufficient context.
 
 ______________________________________________________________________
 
