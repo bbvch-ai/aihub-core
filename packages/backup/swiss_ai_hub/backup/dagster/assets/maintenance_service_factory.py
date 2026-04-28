@@ -12,18 +12,25 @@ def maintenance_service_factory(
     session_key: AssetKey,
     service_name: str,
     description: str,
+    extra_deps: list[AssetKey] | None = None,
 ) -> AssetsDefinition:
     """Per-handler asset. Failures are returned as MaintenanceResult, NOT raised.
 
     This isolates each handler — one failed cleanup does not stop the others.
     The finalize asset aggregates results and decides whether to mark the run
     as failed.
+
+    ``extra_deps`` adds non-data dependencies (using Dagster ``deps=``) — used to
+    ensure the four cleanup DELETEs run AFTER ``postgres_indexes`` so that the
+    first run on a backlogged DB uses the partial indexes instead of seq-scanning
+    a multi-GiB ``event_logs`` table.
     """
 
     @asset(
         key=key,
         group_name="maintenance",
         ins={"session": AssetIn(key=session_key)},
+        deps=extra_deps or [],
         description=description,
     )
     def maintenance_service(

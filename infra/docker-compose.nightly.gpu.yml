@@ -467,7 +467,7 @@ services:
   # ===================================================================
   postgres:
     container_name: postgres
-    image: ghcr.io/bbvch-ai/aihub-core/pgvector:pg17
+    image: ghcr.io/bbvch-ai/aihub-core/pgvector-repack:pg17
     restart: always
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
@@ -1056,6 +1056,14 @@ services:
       REDIS_TOKEN: ${REDIS_TOKEN}
       NATS_URL: nats://nats:4222
       NATS_TOKEN: ${NATS_TOKEN}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      DAGSTER_DB: ${DAGSTER_DB}
+      DAGSTER_DEBUG_LOG_RETENTION_DAYS: ${DAGSTER_DEBUG_LOG_RETENTION_DAYS}
+      DAGSTER_INFO_LOG_RETENTION_DAYS: ${DAGSTER_INFO_LOG_RETENTION_DAYS}
+      DAGSTER_WARNING_LOG_RETENTION_DAYS: ${DAGSTER_WARNING_LOG_RETENTION_DAYS}
+      DAGSTER_UNIMPORTANT_EVENT_RETENTION_DAYS: ${DAGSTER_UNIMPORTANT_EVENT_RETENTION_DAYS}
+      DAGSTER_CLEANUP_BATCH_LIMIT: ${DAGSTER_CLEANUP_BATCH_LIMIT}
+      MAINTENANCE_DISABLED: ${MAINTENANCE_DISABLED}
     volumes:
       - ${VOLUME_ROOT:-./.docker-volumes}/backup-dagster-home:/dagster_home
       - ./configs/backup/backup-dagster.nightly.gpu.yml:/dagster_home/dagster.yaml:ro

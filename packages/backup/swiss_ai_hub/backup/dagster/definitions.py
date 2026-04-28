@@ -73,8 +73,24 @@ def backup_definitions() -> Definitions:
     repack_finalize_key = AssetKey(["maintenance", "repack_finalize"])
 
     maintenance_session_asset = maintenance_session_factory(maintenance_session_key)
+    # The four DELETE handlers must run AFTER postgres_indexes so the first run
+    # on a backlogged DB uses the partial indexes instead of seq-scanning. The
+    # autovacuum tune is independent (idempotent ALTER TABLE, milliseconds).
+    indexes_key = cleanup_service_keys["postgres_indexes"]
+    deps_on_indexes = {
+        "dagster_debug_logs",
+        "dagster_info_logs",
+        "dagster_warning_logs",
+        "dagster_unimportant_events",
+    }
     cleanup_service_assets = [
-        maintenance_service_factory(key, maintenance_session_key, name, f"Maintenance: {name}")
+        maintenance_service_factory(
+            key,
+            maintenance_session_key,
+            name,
+            f"Maintenance: {name}",
+            extra_deps=[indexes_key] if name in deps_on_indexes else None,
+        )
         for name, key in cleanup_service_keys.items()
     ]
     cleanup_finalize = maintenance_finalize_factory(cleanup_finalize_key, maintenance_session_key, cleanup_service_keys)

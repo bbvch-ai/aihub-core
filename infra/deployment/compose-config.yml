@@ -25,7 +25,12 @@ image_tags:
   etcd: etcd:v3.5.25
   milvus: milvus:v2.6.7
   attu: attu:v2.5.12
-  postgres: pgvector:pg17
+  postgres:
+    build: localbuild
+    dev: pgvector-repack:pg17
+    local: pgvector-repack:pg17
+    nightly: pgvector-repack:pg17
+    latest: pgvector-repack:pg17
   clickhouse: clickhouse/clickhouse-server:25.8
   langfuse_web: langfuse/langfuse:3
   langfuse_worker: langfuse/langfuse-worker:3

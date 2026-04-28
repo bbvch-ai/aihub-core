@@ -170,3 +170,45 @@ def test_maintenance_handlers_depend_on_session() -> None:
         parent_keys = asset_graph.get(matching[0]).parent_keys
         parent_strings = {p.to_user_string() for p in parent_keys}
         assert "maintenance/session" in parent_strings, f"{key_str} should depend on maintenance/session"
+
+
+def test_cleanup_delete_handlers_depend_on_postgres_indexes() -> None:
+    """The four DELETE handlers must run AFTER postgres_indexes so the cleanup
+    queries use the partial indexes instead of seq-scanning event_logs.
+    Regression guard for the missing-deps bug originally raised on PR #1040."""
+    defs = backup_definitions()
+    asset_graph = defs.resolve_asset_graph()
+
+    delete_handlers = [
+        "maintenance/dagster_debug_logs",
+        "maintenance/dagster_info_logs",
+        "maintenance/dagster_warning_logs",
+        "maintenance/dagster_unimportant_events",
+    ]
+    for key_str in delete_handlers:
+        matching = [k for k in asset_graph.get_all_asset_keys() if k.to_user_string() == key_str]
+        parent_strings = {p.to_user_string() for p in asset_graph.get(matching[0]).parent_keys}
+        assert "maintenance/postgres_indexes" in parent_strings, (
+            f"{key_str} must depend on maintenance/postgres_indexes (got parents: {parent_strings})"
+        )
+
+
+def test_postgres_affecting_jobs_carry_mutex_tag() -> None:
+    """All jobs that touch Postgres must carry ``postgres-mutex=true`` so the
+    QueuedRunCoordinator serializes them. Without the tag, a cleanup tick could
+    fire mid-backup (postgres stopped → cleanup queries fail)."""
+    defs = backup_definitions()
+    for job_name in ("backup_asset_job", "full_restore_job", "dagster_cleanup_job", "postgres_repack_job"):
+        job = defs.get_job_def(job_name)
+        assert job.tags.get("postgres-mutex") == "true", (
+            f"{job_name} is missing the postgres-mutex tag (got tags: {job.tags})"
+        )
+
+
+def test_postgres_indexes_does_not_depend_on_other_handlers() -> None:
+    """postgres_indexes must run FIRST — it should depend only on session."""
+    defs = backup_definitions()
+    asset_graph = defs.resolve_asset_graph()
+    matching = [k for k in asset_graph.get_all_asset_keys() if k.to_user_string() == "maintenance/postgres_indexes"]
+    parent_strings = {p.to_user_string() for p in asset_graph.get(matching[0]).parent_keys}
+    assert parent_strings == {"maintenance/session"}

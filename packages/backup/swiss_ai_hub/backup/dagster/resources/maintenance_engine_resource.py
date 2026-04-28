@@ -1,10 +1,11 @@
 from collections.abc import Generator
+from contextlib import contextmanager
 
-from dagster import ConfigurableResource, InitResourceContext
+from dagster import ConfigurableResource, InitResourceContext, ResourceDependency
 from sqlalchemy import Engine
 
-from swiss_ai_hub.backup.dagster.resources.backup_settings_resource import BackupSettingsResource
 from swiss_ai_hub.backup.maintenance.postgres_engine import build_dagster_engine
+from swiss_ai_hub.backup.settings import BackupSettings
 
 
 class MaintenanceEngineResource(ConfigurableResource[Engine]):
@@ -16,10 +17,11 @@ class MaintenanceEngineResource(ConfigurableResource[Engine]):
     connection state and silence SQLAlchemy "Engine not disposed" warnings.
     """
 
-    settings: BackupSettingsResource
+    settings: ResourceDependency[BackupSettings]
 
+    @contextmanager
     def yield_for_execution(self, context: InitResourceContext) -> Generator[Engine]:
-        engine = build_dagster_engine(self.settings.create_resource(context))
+        engine = build_dagster_engine(self.settings)
         try:
             yield engine
         finally:
