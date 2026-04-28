@@ -20,8 +20,8 @@ logger = logging.getLogger(__name__)
 
 
 class TableAnalyzer:
-    def __init__(self, llm_config: "LLMConfig") -> None:
-        self.llm, _ = llm_config.to_llama_index()
+    def __init__(self, llm_config: "LLMConfig", extra_headers: dict[str, str] | None = None) -> None:
+        self.llm, _ = llm_config.to_llama_index(extra_headers=extra_headers)
 
     def detect_splits(self, table_text: str) -> TableSplitAnalysis:
         prompt = PromptTemplate(SPLIT_DETECTION_PROMPT)

@@ -2,6 +2,8 @@ from dagster import ConfigurableResource, InitResourceContext, ResourceDependenc
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from swiss_ai_hub.core.generative_ai.resources.models.llm.embedding_model_config import EmbeddingModelConfig
 
+from swiss_ai_hub.pipeline.resources.llm.litellm_headers import PIPELINE_REDACTION_HEADERS
+
 
 class EmbeddingModelResource(ConfigurableResource[BaseEmbedding]):
     """
@@ -38,7 +40,7 @@ class EmbeddingModelResource(ConfigurableResource[BaseEmbedding]):
     embedding_config: ResourceDependency[EmbeddingModelConfig]
 
     def create_resource(self, context: InitResourceContext) -> BaseEmbedding:
-        model, _ = self.embedding_config.to_llama_index()
+        model, _ = self.embedding_config.to_llama_index(extra_headers=PIPELINE_REDACTION_HEADERS)
         if not isinstance(model, BaseEmbedding):
             raise ValueError("The returned model is not an instance of BaseEmbedding.")
         return model

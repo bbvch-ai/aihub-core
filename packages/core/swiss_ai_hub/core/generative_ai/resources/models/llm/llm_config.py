@@ -115,7 +115,7 @@ class LLMConfig(LiteLLMBase[OpenAILike]):
             default_parameter=LLMParameter.as_form(),
         )
 
-    def to_llama_index(self) -> tuple[OpenAILike, LLMCostTracker]:
+    def to_llama_index(self, extra_headers: dict[str, str] | None = None) -> tuple[OpenAILike, LLMCostTracker]:
         """
         Instantiate an OpenAILike model with local endpoint logic and a LLMCostTracker.
 
@@ -139,6 +139,8 @@ class LLMConfig(LiteLLMBase[OpenAILike]):
 
         default_headers = {}
         inject(default_headers)
+        if extra_headers:
+            default_headers.update(extra_headers)
 
         open_ai_like = OpenAILike(
             model=self.model_name,

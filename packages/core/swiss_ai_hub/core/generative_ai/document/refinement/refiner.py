@@ -25,7 +25,11 @@ logger = logging.getLogger(__name__)
 TABLE_PATTERN = re.compile(r"<table>(.*?)</table>", re.DOTALL)
 
 
-def refine_document_tables_with_metadata(markdown_text: str, llm_config: "LLMConfig") -> TableRefinementResult:
+def refine_document_tables_with_metadata(
+    markdown_text: str,
+    llm_config: "LLMConfig",
+    extra_headers: dict[str, str] | None = None,
+) -> TableRefinementResult:
     """
     Refine tables in markdown text using LLM to detect structure and split merged tables.
 
@@ -51,7 +55,7 @@ def refine_document_tables_with_metadata(markdown_text: str, llm_config: "LLMCon
 
     logger.info(f"Refining {len(matches)} table(s) with LLM")
 
-    analyzer = TableAnalyzer(llm_config)
+    analyzer = TableAnalyzer(llm_config, extra_headers=extra_headers)
     result = markdown_text
     offset = 0
     table_stats: list[TableRefinementStats] = []

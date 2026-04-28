@@ -1409,7 +1409,7 @@ services:
     networks: [backend]
   litellm:
     container_name: litellm
-    image: ghcr.io/bbvch-ai/aihub-core/litellm:v1.80.5-stable.1
+    image: ghcr.io/bbvch-ai/aihub-core/litellm:v1.83.10-stable
     restart: always
     ports: [4000:4000]
     environment:

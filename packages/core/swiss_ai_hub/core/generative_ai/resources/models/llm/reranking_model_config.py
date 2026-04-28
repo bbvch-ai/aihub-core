@@ -47,7 +47,10 @@ class RerankingModelConfig(LiteLLMBase[CohereRerank]):
             ),
         )
 
-    def to_llama_index(self) -> tuple[CohereRerank, LLMCostTracker]:
+    def to_llama_index(self, extra_headers: dict[str, str] | None = None) -> tuple[CohereRerank, LLMCostTracker]:
+        # extra_headers accepted for LiteLLMBase signature parity but unused —
+        # llama_index CohereRerank does not expose a header injection point.
+        del extra_headers
         config = LiteLLMProxySettings()
         model_info = self.get_model_info()
 

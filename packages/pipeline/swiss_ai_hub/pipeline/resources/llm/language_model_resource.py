@@ -2,6 +2,8 @@ from dagster import ConfigurableResource, InitResourceContext, ResourceDependenc
 from llama_index.core.llms import LLM
 from swiss_ai_hub.core.generative_ai.resources.models.llm.llm_config import LLMConfig
 
+from swiss_ai_hub.pipeline.resources.llm.litellm_headers import PIPELINE_REDACTION_HEADERS
+
 
 class LanguageModelResource(ConfigurableResource[LLM]):
     """
@@ -35,7 +37,7 @@ class LanguageModelResource(ConfigurableResource[LLM]):
     llm_config: ResourceDependency[LLMConfig]
 
     def create_resource(self, context: InitResourceContext) -> LLM:
-        llm, _ = self.llm_config.to_llama_index()
+        llm, _ = self.llm_config.to_llama_index(extra_headers=PIPELINE_REDACTION_HEADERS)
         if not isinstance(llm, LLM):
             raise ValueError("The returned model is not an instance of LLM.")
         return llm
