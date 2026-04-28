@@ -14,6 +14,7 @@ from swiss_ai_hub.core.events.agent import (
     LimitChatHistoryEvent,
     LLMEvent,
     RAGStartEvent,
+    RAGStopEvent,
     RerankerEvent,
     RetrieveOrganizationMemoryEvent,
     RetrieverEvent,
@@ -548,13 +549,15 @@ class ExpertRAGAgent(Agent):
         displayer: EventDisplayer,
         _: AgentInTheLoop.response,
         t: LocaleHandler,
-    ) -> StopEvent:
+        run_context: RunContext,
+    ) -> RAGStopEvent:
         await displayer.display_thought(t("agent.expert_rag_agent.thoughts.expert_unable_to_answer"))
         await displayer.display_chunk(
             t("agent.expert_rag_agent.messages.expert_unable_to_answer"),
             model_name=ExpertRAGAgent.__name__,
         )
-        return StopEvent()
+        await run_context.set("context_sufficient", False)
+        return await do_finalize_rag_stop(run_context)
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.expert_rag_agent.steps.expert_answer_error.name"),
@@ -566,7 +569,8 @@ class ExpertRAGAgent(Agent):
         displayer: EventDisplayer,
         exception_event: AgentInTheLoop.exception,
         t: LocaleHandler,
-    ) -> StopEvent:
+        run_context: RunContext,
+    ) -> RAGStopEvent:
         await displayer.display_thought(
             t(
                 "agent.expert_rag_agent.thoughts.expert_error",
@@ -578,7 +582,8 @@ class ExpertRAGAgent(Agent):
             t("agent.expert_rag_agent.messages.expert_error_occurred"),
             model_name=ExpertRAGAgent.__name__,
         )
-        return StopEvent()
+        await run_context.set("context_sufficient", False)
+        return await do_finalize_rag_stop(run_context)
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.respond_with_llm.name"),

@@ -22,6 +22,7 @@ from swiss_ai_hub.core.events.agent import (
     HumanInTheLoopConfirmation,
     HumanInTheLoopConfirmationRequestEvent,
     LLMEvent,
+    RAGStopEvent,
     UserMessageEvent,
 )
 from swiss_ai_hub.core.generative_ai import (
@@ -284,3 +285,6 @@ def _(expert_rag_agent_runner: AgentTestRunner):
 @then("a StopEvent is present")
 def _(expert_rag_agent_runner: AgentTestRunner):
     assert expert_rag_agent_runner.has_stop_event, "Agent did not produce StopEvent"
+    assert expert_rag_agent_runner.has_event_of_class(RAGStopEvent), (
+        "ExpertRAGAgent should emit RAGStopEvent (not plain StopEvent) so parents can branch on context_sufficient"
+    )
