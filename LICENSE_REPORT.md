@@ -6,7 +6,7 @@ This document contains license information for all dependencies across the monor
 
 - Python packages (uv): **399 packages**
 - Node.js packages (pnpm): **999 packages**
-- External Docker images: **30 images**
+- External Docker images: **32 images**
 
 ### License Compatibility
 
@@ -1457,6 +1457,8 @@ This document contains license information for all dependencies across the monor
 | ✅     | neo4j                           | `ghcr.io/bbvch-ai/aihub-core/neo4j:5.26.16-community`                       | GPL                | Permissive license                                            |
 | ⚠️     | open-webui                      | `ghcr.io/bbvch-ai/aihub-core/open-webui:v0.8.10`                            | BSD-3-Clause       | Permissive with required branding retention                   |
 | ✅     | pgbouncer                       | `ghcr.io/bbvch-ai/aihub-core/pgbouncer:v1.24.1-p1`                          | ISC                | Based on edoburu/pgbouncer (MIT wrapper); permissive licenses |
+| ✅     | pgvector-repack                 | `ghcr.io/bbvch-ai/aihub-core/pgvector-repack:pg17`                          | PostgreSQL License | BSD-style permissive license                                  |
+| ✅     | playwright                      | `ghcr.io/bbvch-ai/aihub-core/playwright:v1.49.0-jammy`                      | Apache-2.0         | Permissive license                                            |
 | ✅     | postgres-documentdb             | `ghcr.io/bbvch-ai/aihub-core/postgres-documentdb:17.0.106.0-ferretdb-2.5.0` | Apache-2.0         | Permissive licenses                                           |
 | ✅     | postgres                        | `ghcr.io/bbvch-ai/aihub-core/postgres:17`                                   | PostgreSQL License | BSD-style permissive license                                  |
 | ✅     | presidio-analyzer               | `ghcr.io/bbvch-ai/aihub-core/presidio-analyzer:2.2.359`                     | MIT                | Permissive license                                            |

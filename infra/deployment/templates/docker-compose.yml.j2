@@ -1778,9 +1778,13 @@ services:
 
   playwright:
     container_name: playwright-server
+    {%- if image_tags.playwright[stage] == 'localbuild' %}
     build:
       context: ./configs/playwright
       dockerfile: Dockerfile
+    {%- else %}
+    image: {{ global.registry_prefix }}{{ image_tags.playwright[stage] }}
+    {%- endif %}
     restart: always
     {%- if stage in ['dev', 'local', 'build'] %}
     ports:

@@ -1491,9 +1491,7 @@ services:
     networks: [backend]
   playwright:
     container_name: playwright-server
-    build:
-      context: ./configs/playwright
-      dockerfile: Dockerfile
+    image: ghcr.io/bbvch-ai/aihub-core/playwright:v1.49.0-jammy
     restart: always
     environment:
       NODE_ENV: production
