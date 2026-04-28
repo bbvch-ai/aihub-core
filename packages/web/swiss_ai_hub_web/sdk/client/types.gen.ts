@@ -3238,7 +3238,7 @@ export type ContextualizedAgentEvent = {
      *
      * Data of the event itself.
      */
-    event: StartEvent | AgentInTheLoopResponseEvent | HumanInTheLoopInputRequestEvent | HumanInTheLoopConfirmationRequestEvent | HumanInTheLoopChatRequestEvent | HumanInTheLoopRequestEvent | AgentInTheLoopRequestEvent | AgentInTheLoopExceptionEvent | HumanInTheLoopInputResponseEvent | HumanInTheLoopConfirmationResponseEvent | HumanInTheLoopChatResponseEvent | HumanInTheLoopResponseEvent | LimitChatHistoryEvent | AddMemoryToChatHistoryEvent | AddUserMemoryToChatHistoryEvent | AddOrganizationMemoryToChatHistoryEvent | StandaloneQuestionCondenserEvent | LlmCostEvent | ChunkEvent | ThoughtEvent | GuardEvent | RouterEvent | GuardRejectionEvent | SemanticEvent | AgentEvent | ChainEvent | EmbeddingEvent | LlmEvent | LlmStopEvent | RerankerEvent | RetrieverEvent | ToolEvent | UserMessageEvent | RagStartEvent | ExceptionEvent | RagStopEvent | StopEvent | DisplayEvent | GuardAcceptEvent | AgentSuitabilityAcceptEvent | AgentSuitabilityRejectEvent | ContextSufficientAcceptEvent | ContextInsufficientRejectEvent | FewShotAcceptEvent | FewShotRejectEvent | SensitiveInfoAcceptEvent | SensitiveInfoRejectEvent | StoreUserMemoryEvent | BaseRetrieveMemoryEvent | BaseStoreMemoryEvent | RetrieveOrganizationMemoryEvent | RetrieveUserMemoryEvent | StoreOrganizationMemoryEvent;
+    event: StartEvent | AgentInTheLoopResponseEvent | HumanInTheLoopInputRequestEvent | HumanInTheLoopConfirmationRequestEvent | HumanInTheLoopChatRequestEvent | HumanInTheLoopRequestEvent | AgentInTheLoopRequestEvent | AgentInTheLoopExceptionEvent | HumanInTheLoopInputResponseEvent | HumanInTheLoopConfirmationResponseEvent | HumanInTheLoopChatResponseEvent | HumanInTheLoopResponseEvent | LimitChatHistoryEvent | AddMemoryToChatHistoryEvent | AddUserMemoryToChatHistoryEvent | AddOrganizationMemoryToChatHistoryEvent | StandaloneQuestionCondenserEvent | LlmCostEvent | ChunkEvent | ThoughtEvent | GuardEvent | RouterEvent | GuardRejectionEvent | SemanticEvent | AgentEvent | ChainEvent | EmbeddingEvent | LlmEvent | LlmStopEvent | RerankerEvent | RetrieverEvent | ToolEvent | UserMessageEvent | RagStartEvent | ExceptionEvent | GroundedRagStopEvent | UngroundedRagStopEvent | RagStopEvent | StopEvent | DisplayEvent | GuardAcceptEvent | AgentSuitabilityAcceptEvent | AgentSuitabilityRejectEvent | ContextSufficientAcceptEvent | ContextInsufficientRejectEvent | FewShotAcceptEvent | FewShotRejectEvent | SensitiveInfoAcceptEvent | SensitiveInfoRejectEvent | StoreUserMemoryEvent | BaseRetrieveMemoryEvent | BaseStoreMemoryEvent | RetrieveOrganizationMemoryEvent | RetrieveUserMemoryEvent | StoreOrganizationMemoryEvent;
 };
 
 /**
@@ -5037,6 +5037,46 @@ export type FunctionDefinition = {
     [key: string]: unknown | string | {
         [key: string]: unknown;
     } | boolean | null | undefined;
+};
+
+/**
+ * GroundedRAGStopEvent
+ *
+ * Stop event emitted when a RAG run produced an answer grounded in retrieved context.
+ */
+export type GroundedRagStopEvent = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     *
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Event Name
+     *
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Parent Event Names
+     *
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<string> | undefined;
 };
 
 /**
@@ -10504,11 +10544,13 @@ export type RagStartEvent = {
 /**
  * RAGStopEvent
  *
- * Stop event emitted by RAG-style agents.
+ * Abstract stop event for RAG-style agent runs.
  *
- * Carries a `context_sufficient` flag so a parent agent (e.g. via `AgentInTheLoop`) can
- * branch on whether the RAG run produced an answer grounded in retrieved context, or
- * whether the LLM was forced to respond with an "I don't know"-style fallback.
+ * Concrete runs emit one of two subclasses: `GroundedRAGStopEvent` when the answer was grounded in
+ * retrieved context, or `UngroundedRAGStopEvent` (carrying a reason) when no grounded answer was
+ * produced. Parent agents (e.g. via `AgentInTheLoop`) can type their step on the abstract base to
+ * match any RAG outcome, on a concrete subclass to branch on grounded vs ungrounded, or read
+ * `UngroundedRAGStopEvent.reason` for fine-grained dispatch.
  */
 export type RagStopEvent = {
     /**
@@ -10531,30 +10573,18 @@ export type RagStopEvent = {
     display_description?: LocaleString | null;
     /**
      * Event Name
+     *
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
      */
     readonly _event_name: string;
     /**
      * Parent Event Names
+     *
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
      */
     readonly _parent_event_names: Array<string>;
     [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | Array<string> | undefined;
-};
-
-export type GroundedRagStopEvent = RagStopEvent;
-
-export const UngroundedReason = {
-    CONTEXT_INSUFFICIENT: 'context_insufficient',
-    EXPERT_DECLINED: 'expert_declined',
-    EXPERT_ERRORED: 'expert_errored',
-    FEW_SHOT_FALLBACK: 'few_shot_fallback',
-} as const;
-export type UngroundedReason = (typeof UngroundedReason)[keyof typeof UngroundedReason];
-
-export type UngroundedRagStopEvent = RagStopEvent & {
-    /**
-     * Why this run did not produce a grounded answer.
-     */
-    reason: UngroundedReason;
 };
 
 /**
@@ -13568,6 +13598,72 @@ export type TranslationResponse = {
 };
 
 /**
+ * UngroundedRAGStopEvent
+ *
+ * Stop event emitted when a RAG run terminated without an answer grounded in retrieved context.
+ *
+ * The `reason` field tells the parent agent which path produced the ungrounded outcome — context
+ * insufficient, expert declined, expert errored, or a few-shot fallback that bypassed retrieval.
+ */
+export type UngroundedRagStopEvent = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     *
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Why this run did not produce a grounded answer.
+     */
+    reason: UngroundedReason;
+    /**
+     * Event Name
+     *
+     * The event type name, usually the class name. If unknown, uses _unknown_event_name.
+     * Used during deserialization to decide which subclass to instantiate.
+     */
+    readonly _event_name: string;
+    /**
+     * Parent Event Names
+     *
+     * Contains the names of all parent classes up until BaseEvent, ordered from deepest to least deep inheritance.
+     */
+    readonly _parent_event_names: Array<string>;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | UngroundedReason | Array<string> | undefined;
+};
+
+/**
+ * UngroundedReason
+ *
+ * Why a RAG run terminated without producing an answer grounded in retrieved context.
+ */
+export const UngroundedReason = {
+    CONTEXT_INSUFFICIENT: 'context_insufficient',
+    EXPERT_DECLINED: 'expert_declined',
+    EXPERT_ERRORED: 'expert_errored',
+    FEW_SHOT_FALLBACK: 'few_shot_fallback'
+} as const;
+
+/**
+ * UngroundedReason
+ *
+ * Why a RAG run terminated without producing an answer grounded in retrieved context.
+ */
+export type UngroundedReason = typeof UngroundedReason[keyof typeof UngroundedReason];
+
+/**
  * UpdateAgentInstanceDTO
  *
  * Request body for updating an agent instance configuration.
@@ -16040,7 +16136,7 @@ export type ContextualizedAgentEventWritable = {
      *
      * Data of the event itself.
      */
-    event: StartEventWritable | AgentInTheLoopResponseEventWritable | HumanInTheLoopInputRequestEventWritable | HumanInTheLoopConfirmationRequestEventWritable | HumanInTheLoopChatRequestEventWritable | HumanInTheLoopRequestEventWritable | AgentInTheLoopRequestEventWritable | AgentInTheLoopExceptionEventWritable | HumanInTheLoopInputResponseEventWritable | HumanInTheLoopConfirmationResponseEventWritable | HumanInTheLoopChatResponseEventWritable | HumanInTheLoopResponseEventWritable | LimitChatHistoryEventWritable | AddMemoryToChatHistoryEventWritable | AddUserMemoryToChatHistoryEventWritable | AddOrganizationMemoryToChatHistoryEventWritable | StandaloneQuestionCondenserEventWritable | LlmCostEventWritable | ChunkEventWritable | ThoughtEventWritable | GuardEventWritable | RouterEventWritable | GuardRejectionEventWritable | SemanticEventWritable | AgentEventWritable | ChainEventWritable | EmbeddingEventWritable | LlmEventWritable | LlmStopEventWritable | RerankerEventWritable | RetrieverEventWritable | ToolEventWritable | UserMessageEventWritable | RagStartEventWritable | ExceptionEventWritable | RagStopEventWritable | StopEventWritable | DisplayEventWritable | GuardAcceptEventWritable | AgentSuitabilityAcceptEventWritable | AgentSuitabilityRejectEventWritable | ContextSufficientAcceptEventWritable | ContextInsufficientRejectEventWritable | FewShotAcceptEventWritable | FewShotRejectEventWritable | SensitiveInfoAcceptEventWritable | SensitiveInfoRejectEventWritable | StoreUserMemoryEventWritable | BaseRetrieveMemoryEventWritable | BaseStoreMemoryEventWritable | RetrieveOrganizationMemoryEventWritable | RetrieveUserMemoryEventWritable | StoreOrganizationMemoryEventWritable;
+    event: StartEventWritable | AgentInTheLoopResponseEventWritable | HumanInTheLoopInputRequestEventWritable | HumanInTheLoopConfirmationRequestEventWritable | HumanInTheLoopChatRequestEventWritable | HumanInTheLoopRequestEventWritable | AgentInTheLoopRequestEventWritable | AgentInTheLoopExceptionEventWritable | HumanInTheLoopInputResponseEventWritable | HumanInTheLoopConfirmationResponseEventWritable | HumanInTheLoopChatResponseEventWritable | HumanInTheLoopResponseEventWritable | LimitChatHistoryEventWritable | AddMemoryToChatHistoryEventWritable | AddUserMemoryToChatHistoryEventWritable | AddOrganizationMemoryToChatHistoryEventWritable | StandaloneQuestionCondenserEventWritable | LlmCostEventWritable | ChunkEventWritable | ThoughtEventWritable | GuardEventWritable | RouterEventWritable | GuardRejectionEventWritable | SemanticEventWritable | AgentEventWritable | ChainEventWritable | EmbeddingEventWritable | LlmEventWritable | LlmStopEventWritable | RerankerEventWritable | RetrieverEventWritable | ToolEventWritable | UserMessageEventWritable | RagStartEventWritable | ExceptionEventWritable | GroundedRagStopEventWritable | UngroundedRagStopEventWritable | RagStopEventWritable | StopEventWritable | DisplayEventWritable | GuardAcceptEventWritable | AgentSuitabilityAcceptEventWritable | AgentSuitabilityRejectEventWritable | ContextSufficientAcceptEventWritable | ContextInsufficientRejectEventWritable | FewShotAcceptEventWritable | FewShotRejectEventWritable | SensitiveInfoAcceptEventWritable | SensitiveInfoRejectEventWritable | StoreUserMemoryEventWritable | BaseRetrieveMemoryEventWritable | BaseStoreMemoryEventWritable | RetrieveOrganizationMemoryEventWritable | RetrieveUserMemoryEventWritable | StoreOrganizationMemoryEventWritable;
 };
 
 /**
@@ -16641,6 +16737,33 @@ export type FullProcessInstanceDtoWritable = {
     configuration?: {
         [key: string]: unknown;
     };
+};
+
+/**
+ * GroundedRAGStopEvent
+ *
+ * Stop event emitted when a RAG run produced an answer grounded in retrieved context.
+ */
+export type GroundedRagStopEventWritable = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     *
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | undefined;
 };
 
 /**
@@ -19544,11 +19667,13 @@ export type RagStartEventWritable = {
 /**
  * RAGStopEvent
  *
- * Stop event emitted by RAG-style agents.
+ * Abstract stop event for RAG-style agent runs.
  *
- * Carries a `context_sufficient` flag so a parent agent (e.g. via `AgentInTheLoop`) can
- * branch on whether the RAG run produced an answer grounded in retrieved context, or
- * whether the LLM was forced to respond with an "I don't know"-style fallback.
+ * Concrete runs emit one of two subclasses: `GroundedRAGStopEvent` when the answer was grounded in
+ * retrieved context, or `UngroundedRAGStopEvent` (carrying a reason) when no grounded answer was
+ * produced. Parent agents (e.g. via `AgentInTheLoop`) can type their step on the abstract base to
+ * match any RAG outcome, on a concrete subclass to branch on grounded vs ungrounded, or read
+ * `UngroundedRAGStopEvent.reason` for fine-grained dispatch.
  */
 export type RagStopEventWritable = {
     /**
@@ -19569,13 +19694,7 @@ export type RagStopEventWritable = {
      * Display description for the event
      */
     display_description?: LocaleString | null;
-    /**
-     * Context Sufficient
-     *
-     * Whether the retrieved context was sufficient to ground the answer. True covers three cases: (a) the sufficiency guard ran and accepted the context, (b) the guard was disabled via `check_context_sufficiency=False`, or (c) the guard step was never reached on this run. False means the guard ran, exhausted all retrieval hops, and judged the final context insufficient — so the LLM was forced to produce an "I don't know"-style fallback answer.
-     */
-    context_sufficient?: boolean;
-    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | boolean | undefined;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | undefined;
 };
 
 /**
@@ -21603,6 +21722,40 @@ export type ToolEventWritable = {
     } | null | {
         [key: string]: unknown;
     } | null | undefined;
+};
+
+/**
+ * UngroundedRAGStopEvent
+ *
+ * Stop event emitted when a RAG run terminated without an answer grounded in retrieved context.
+ *
+ * The `reason` field tells the parent agent which path produced the ungrounded outcome — context
+ * insufficient, expert declined, expert errored, or a few-shot fallback that bypassed retrieval.
+ */
+export type UngroundedRagStopEventWritable = {
+    /**
+     * Event Id
+     */
+    event_id?: string;
+    /**
+     * Created At
+     *
+     * The time (in ns since epoch) the event was stored in the event store
+     */
+    created_at?: number;
+    /**
+     * Display name for the event
+     */
+    display_name?: LocaleString | null;
+    /**
+     * Display description for the event
+     */
+    display_description?: LocaleString | null;
+    /**
+     * Why this run did not produce a grounded answer.
+     */
+    reason: UngroundedReason;
+    [key: string]: unknown | string | number | LocaleString | null | LocaleString | null | UngroundedReason | undefined;
 };
 
 /**

@@ -528,9 +528,13 @@ class ExpertRAGAgent(Agent):
         displayer: EventDisplayer,
         event: AgentInTheLoop.response,
         t: LocaleHandler,
+        run_context: RunContext,
     ) -> ExpertAnswerContextEvent:
         await displayer.display_thought(t("agent.expert_rag_agent.thoughts.expert_answered"))
         await displayer.display_thought(t("agent.expert_rag_agent.thoughts.can_answer_question"))
+        # Expert provided usable context — overrides any earlier "context insufficient" verdict
+        # set by the sufficiency guard so the final stop event reports a grounded answer.
+        await run_context.set("context_sufficient", True)
 
         # Format the expert conversation as context
         expert_conversation = event.stop_event.expert_conversation
