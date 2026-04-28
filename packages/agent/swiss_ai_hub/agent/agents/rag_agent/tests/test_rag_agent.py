@@ -19,6 +19,7 @@ from swiss_ai_hub.core.events.agent import (
     FewShotRejectEvent,
     LimitChatHistoryEvent,
     LLMEvent,
+    RAGSuccessStopEvent,
     RerankerEvent,
     RetrieveOrganizationMemoryEvent,
     RetrieverEvent,
@@ -342,6 +343,13 @@ def _(agent_runner: AgentTestRunner):
 @then("a StopEvent is present")
 def _(agent_runner: AgentTestRunner):
     assert agent_runner.has_stop_event, "Agent did not produce StopEvent"
+
+
+@then("a RAGSuccessStopEvent is present")
+def _(agent_runner: AgentTestRunner):
+    assert agent_runner.has_event_of_class(RAGSuccessStopEvent), (
+        "RAGAgent should emit RAGSuccessStopEvent when no reject events were emitted"
+    )
 
 
 @given("with few shot guard examples")

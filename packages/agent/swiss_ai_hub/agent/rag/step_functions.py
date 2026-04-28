@@ -11,6 +11,9 @@ from swiss_ai_hub.core.events.agent import (
     LimitChatHistoryEvent,
     LLMEvent,
     LLMStopEvent,
+    RAGFailureReason,
+    RAGFailureStopEvent,
+    RAGSuccessStopEvent,
     RerankerEvent,
     RetrieverEvent,
     StandaloneQuestionCondenserEvent,
@@ -35,6 +38,7 @@ from swiss_ai_hub.agent.agents.rag_agent.configs.reranking_config import Reranki
 from swiss_ai_hub.agent.agents.rag_agent.events.context_insufficient_with_query_event import (
     ContextInsufficientWithQueryEvent,
 )
+from swiss_ai_hub.agent.agents.rag_agent.events.expert_answer_context_event import ExpertAnswerContextEvent
 from swiss_ai_hub.agent.agents.rag_agent.events.in_order_node_combiner_event import InOrderNodeCombinerEvent
 from swiss_ai_hub.agent.agents.rag_agent.events.limit_chat_history_with_context_event import (
     LimitChatHistoryWithContextEvent,
@@ -248,3 +252,22 @@ def do_limit_chat_history_with_context(
         number_of_input_tokens=number_of_input_tokens,
     )
     return LimitChatHistoryWithContextEvent(limited_history_with_context=limited_history)
+
+
+def do_finalize_rag_stop(
+    llm_event: LLMEvent,
+    expert_answer_context: ExpertAnswerContextEvent | None,
+    few_shot_reject: FewShotRejectEvent | None,
+    context_insufficient_reject: ContextInsufficientRejectEvent | None,
+) -> RAGSuccessStopEvent | RAGFailureStopEvent:
+    """Resolve the final RAG stop event from the run's reject/accept signals."""
+    answer = llm_event.output_messages[-1].content if llm_event.output_messages else None
+    # Expert-supplied context grounds the answer and overrides any earlier "context insufficient" verdict.
+    if expert_answer_context is not None:
+        return RAGSuccessStopEvent(answer=answer)
+    # Few-shot rejection is decided before retrieval, so its verdict wins over context-sufficiency outcomes.
+    if few_shot_reject is not None:
+        return RAGFailureStopEvent(reason=RAGFailureReason.FEW_SHOT_REJECTED, answer=answer)
+    if context_insufficient_reject is not None:
+        return RAGFailureStopEvent(reason=RAGFailureReason.CONTEXT_INSUFFICIENT, answer=answer)
+    return RAGSuccessStopEvent(answer=answer)

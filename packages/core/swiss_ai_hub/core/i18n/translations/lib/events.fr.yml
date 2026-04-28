@@ -211,3 +211,10 @@ rag_start_event:
     le contexte pertinent depuis les sources de connaissances sélectionnées — en utilisant
     les namespaces choisis et d'éventuels filtres de métadonnées — avant de générer
     une réponse.
+rag_success_stop_event:
+  name: Succès RAG
+  description: L'exécution augmentée par récupération a produit une réponse pour l'utilisateur.
+rag_failure_stop_event:
+  name: Échec RAG
+  description: L'exécution augmentée par récupération n'a pas pu produire de réponse
+    utile. Le champ reason explique quel chemin a conduit à l'échec.

@@ -13,13 +13,15 @@ from swiss_ai_hub.core.events.agent import (
     HumanInTheLoop,
     LimitChatHistoryEvent,
     LLMEvent,
+    RAGFailureReason,
+    RAGFailureStopEvent,
     RAGStartEvent,
+    RAGSuccessStopEvent,
     RerankerEvent,
     RetrieveOrganizationMemoryEvent,
     RetrieverEvent,
     RetrieveUserMemoryEvent,
     StandaloneQuestionCondenserEvent,
-    StopEvent,
     StoreUserMemoryEvent,
     UserMessageEvent,
 )
@@ -65,6 +67,7 @@ from swiss_ai_hub.agent.rag.step_functions import (
     do_condense_standalone_question,
     do_context_sufficient_guard,
     do_few_shot_guard,
+    do_finalize_rag_stop,
     do_limit_chat_history,
     do_limit_chat_history_with_context,
     do_order_nodes_by_documents,
@@ -323,7 +326,11 @@ class ExpertRAGAgent(Agent):
         t: LocaleHandler,
     ) -> FewShotRejectEvent | FewShotAcceptEvent:
         return await do_few_shot_guard(
-            event.condensed_chat_message.content, agent_config.few_shot_guard_examples, agent_config.llm, displayer, t
+            event.condensed_chat_message.content,
+            agent_config.few_shot_guard_examples,
+            agent_config.llm,
+            displayer,
+            t,
         )
 
     @step(
@@ -547,13 +554,14 @@ class ExpertRAGAgent(Agent):
         displayer: EventDisplayer,
         _: AgentInTheLoop.response,
         t: LocaleHandler,
-    ) -> StopEvent:
+    ) -> RAGFailureStopEvent:
         await displayer.display_thought(t("agent.expert_rag_agent.thoughts.expert_unable_to_answer"))
+        unable_to_answer_message = t("agent.expert_rag_agent.messages.expert_unable_to_answer")
         await displayer.display_chunk(
-            t("agent.expert_rag_agent.messages.expert_unable_to_answer"),
+            unable_to_answer_message,
             model_name=ExpertRAGAgent.__name__,
         )
-        return StopEvent()
+        return RAGFailureStopEvent(reason=RAGFailureReason.EXPERT_DECLINED, answer=unable_to_answer_message)
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.expert_rag_agent.steps.expert_answer_error.name"),
@@ -565,7 +573,7 @@ class ExpertRAGAgent(Agent):
         displayer: EventDisplayer,
         exception_event: AgentInTheLoop.exception,
         t: LocaleHandler,
-    ) -> StopEvent:
+    ) -> RAGFailureStopEvent:
         await displayer.display_thought(
             t(
                 "agent.expert_rag_agent.thoughts.expert_error",
@@ -573,11 +581,12 @@ class ExpertRAGAgent(Agent):
                 error_message=exception_event.exception_event.message,
             )
         )
+        error_occurred_message = t("agent.expert_rag_agent.messages.expert_error_occurred")
         await displayer.display_chunk(
-            t("agent.expert_rag_agent.messages.expert_error_occurred"),
+            error_occurred_message,
             model_name=ExpertRAGAgent.__name__,
         )
-        return StopEvent()
+        return RAGFailureStopEvent(reason=RAGFailureReason.EXPERT_ERRORED, answer=error_occurred_message)
 
     @step(
         name=AgentLocaleString.from_i18n_path("agent.rag_agent.steps.respond_with_llm.name"),
@@ -636,9 +645,17 @@ class ExpertRAGAgent(Agent):
     )
     async def stop_step(
         self,
-        _llm_event: LLMEvent,
+        llm_event: LLMEvent,
         _store_memory_event: StoreUserMemoryEvent | None,
+        expert_answer_context: ExpertAnswerContextEvent | None,
+        few_shot_reject: FewShotRejectEvent | None,
+        context_insufficient_reject: ContextInsufficientRejectEvent | None,
         agent_config: ExpertRAGAgentConfig,
-    ) -> StopEvent:
+    ) -> RAGSuccessStopEvent | RAGFailureStopEvent:
         """Final step that ensures all required steps are complete before stopping."""
-        return StopEvent()
+        return do_finalize_rag_stop(
+            llm_event=llm_event,
+            expert_answer_context=expert_answer_context,
+            few_shot_reject=few_shot_reject,
+            context_insufficient_reject=context_insufficient_reject,
+        )

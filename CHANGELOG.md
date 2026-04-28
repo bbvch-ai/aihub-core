@@ -5,6 +5,45 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.282.0] - 2026-04-28 - Granular RAG Execution Outcomes for Better Visibility and Control
+
+### Added
+
+- ✨ **Introduced Granular RAG Stop Events:** New event types (`RAGSuccessStopEvent`, `RAGFailureStopEvent`, and
+  `RAGStopEvent` as their common ancestor) and an associated `RAGFailureReason` enumeration have been added. These
+  provide detailed and specific outcomes for Retrieval-Augmented Generation (RAG) agent runs, distinguishing between
+  successful responses and various failure conditions.
+- 🦾 **Implemented `do_finalize_rag_stop` Logic:** A new step function, `do_finalize_rag_stop`, was introduced to
+  intelligently determine the final RAG outcome. It consolidates information from the LLM's response and any prior
+  rejection events (such as few-shot rejection, insufficient context, or expert decline/error) to emit the most
+  appropriate RAG stop event.
+- 🌐 **Integrated RAG Outcome Display in UI:** Dedicated UI components and internationalized messages have been added to
+  visually represent RAG success and various failure events within the application, offering clearer, contextualized
+  feedback to users.
+
+### Changed
+
+- 🔄 **Updated RAG Agent Termination Flow:** Both the RAG and Expert RAG agents now utilize the new `RAGSuccessStopEvent`
+  or `RAGFailureStopEvent` for run termination, replacing the generic `StopEvent`. This change provides richer, more
+  contextualized information about the completion status of agent runs.
+- 💬 **Improved Expert RAG Agent Error Handling:** The Expert RAG agent's internal response paths for when an expert
+  declines to answer or encounters an error now explicitly emit a `RAGFailureStopEvent` with a specific reason,
+  enhancing the clarity of situations where a grounded answer could not be produced.
+- 🛠️ **Refined Context Sufficiency Guard Logic:** The `do_context_sufficient_guard` step has been updated to correctly
+  emit a `ContextInsufficientRejectEvent` when the maximum number of retrieval hops is exhausted, ensuring accurate
+  reporting for ungrounded answers due to insufficient context.
+
+______________________________________________________________________
+
+## [v0.281.1] - 2026-04-28 - Routine Version Increment
+
+### Changed
+
+- 🔄 **Version alignment:** Updated the main project and all associated packages (agent, api, backup, bot, core,
+  pipeline, process, web) to version `0.281.1`.
+
+______________________________________________________________________
+
 ## [v0.281.0] - 2026-04-27 - Enhanced Dagster Data Lifecycle Management
 
 ### Added
