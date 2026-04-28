@@ -56,19 +56,20 @@ class LiteLLMBase[OpenAILike](Form, abc.ABC):
         return Tokenizer
 
     @abc.abstractmethod
-    def to_llama_index(self) -> tuple[OpenAILike, LLMCostTracker]:
+    def to_llama_index(self, extra_headers: dict[str, str] | None = None) -> tuple[OpenAILike, LLMCostTracker]:
         pass
 
     @asynccontextmanager
     async def cost_reporting_llm(
         self,
         displayer: "EventDisplayer",
+        extra_headers: dict[str, str] | None = None,
     ) -> AsyncIterator[OpenAILike]:
         """
         Async context manager that yields an LLM configured with merged parameters and a system prompt.
         After the block, it reports costs to `displayer`.
         """
-        llm, cost_tracker = self.to_llama_index()
+        llm, cost_tracker = self.to_llama_index(extra_headers=extra_headers)
         yield llm
         await displayer.display_llm_costs(self.model_name, cost_tracker)
 

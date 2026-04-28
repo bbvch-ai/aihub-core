@@ -30,9 +30,12 @@ class LiteLLMService:
 
         user_response = await client.get("/user/info", params={"user_id": user.id})
 
-        user_response.raise_for_status()
-        user_data = user_response.json()
-        user_exists = user_data.get("user_info", {}).get("user_alias")
+        # LiteLLM ≥ 1.83 returns 404 when the user doesn't exist; 1.80 returned 200 with empty fields.
+        if user_response.status_code == 404:
+            user_exists = False
+        else:
+            user_response.raise_for_status()
+            user_exists = user_response.json().get("user_info", {}).get("user_alias")
 
         if user_exists:
             return LiteLLMService.generate_key_for_user(user)

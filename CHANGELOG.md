@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.284.1] - 2026-04-28 - Optimized LiteLLM Logging for Pipeline Efficiency
+
+### Added
+
+- ✨ **Introduced pipeline LLM message redaction:** Significantly reduces LiteLLM spend log database size by redacting
+  message content from pipeline-originated LLM calls (e.g., embeddings) while preserving essential cost and token
+  tracking. This prevents database bloat from high-volume, reproducible pipeline traffic.
+- 📄 **Documented LiteLLM message redaction decision:** Added an Architecture Decision Record (ADR) detailing the
+  rationale, drivers, and consequences of implementing pipeline message redaction.
+
+### Changed
+
+- 🚀 **Upgraded LiteLLM proxy version:** Updated the LiteLLM proxy to `v1.83.10-stable` to enable the new message
+  redaction header and incorporate other upstream improvements.
+- 🔄 **Enhanced LLM configuration flexibility:** Core LLM and Embedding Model configurations now support injecting custom
+  HTTP headers, enabling fine-grained control over LiteLLM proxy interactions for specific call types.
+- ⚙️ **Applied redaction to pipeline LLM resources:** Configured all pipeline-related LLM, embedding, and table
+  refinement resources to automatically send message redaction headers, ensuring efficient log management for data
+  processing workflows.
+
+### Fixed
+
+- 🐛 **Resolved LiteLLM user service compatibility:** Adjusted user key retrieval logic to correctly handle HTTP 404
+  responses from the updated LiteLLM proxy when a user does not exist, ensuring robust user management.
+
+______________________________________________________________________
+
 ## [v0.284.0] - 2026-04-28 - Introducing Continuous Postgres Maintenance for Dagster
 
 ### Added

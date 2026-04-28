@@ -45,7 +45,7 @@ image_tags:
   valkey: valkey:8.0.5
   ferretdb: ferretdb:2.5.0
   neo4j: neo4j:5.26.16-community
-  litellm: litellm:v1.80.5-stable.1
+  litellm: litellm:v1.83.10-stable
   mineru_api: mineru-api:v2.7.5
   mineru_vlm: mineru-vlm:v2.7.5
   jupyter: minimal-notebook:notebook-7.0.6

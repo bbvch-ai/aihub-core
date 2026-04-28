@@ -1452,7 +1452,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | keycloak                        | `ghcr.io/bbvch-ai/aihub-core/keycloak:26.5.4`                               | Apache-2.0         | Permissive license                                            |
 | ✅     | langfuse-worker                 | `ghcr.io/bbvch-ai/aihub-core/langfuse/langfuse-worker:3`                    | MIT                | Langfuse background worker                                    |
 | ✅     | langfuse                        | `ghcr.io/bbvch-ai/aihub-core/langfuse/langfuse:3`                           | MIT                | Open-source LLM observability and evaluation platform         |
-| ✅     | litellm                         | `ghcr.io/bbvch-ai/aihub-core/litellm:v1.80.5-stable.1`                      | MIT                | Permissive license                                            |
+| ✅     | litellm                         | `ghcr.io/bbvch-ai/aihub-core/litellm:v1.83.10-stable`                       | MIT                | Permissive license                                            |
 | ✅     | milvus                          | `ghcr.io/bbvch-ai/aihub-core/milvus:v2.6.7`                                 | Apache-2.0         | Permissive license                                            |
 | ✅     | minimal-notebook                | `ghcr.io/bbvch-ai/aihub-core/minimal-notebook:notebook-7.0.6`               | BSD-3-Clause       | Jupyter base image                                            |
 | ✅     | nats                            | `ghcr.io/bbvch-ai/aihub-core/nats:2.11.4`                                   | Apache-2.0         | Permissive license                                            |

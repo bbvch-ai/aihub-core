@@ -111,7 +111,7 @@ class EmbeddingModelConfig(LiteLLMBase[OpenAILikeEmbedding]):
             default_parameter=EmbeddingLLMParameter.as_form(),
         )
 
-    def to_llama_index(self) -> tuple[OpenAILikeEmbedding, LLMCostTracker]:
+    def to_llama_index(self, extra_headers: dict[str, str] | None = None) -> tuple[OpenAILikeEmbedding, LLMCostTracker]:
         config = LiteLLMProxySettings()
         model_info = self.get_model_info()
 
@@ -123,6 +123,8 @@ class EmbeddingModelConfig(LiteLLMBase[OpenAILikeEmbedding]):
 
         default_headers = {}
         inject(default_headers)
+        if extra_headers:
+            default_headers.update(extra_headers)
 
         open_ai_like_embedding = OpenAILikeEmbedding(
             model_name=self.model_name,
