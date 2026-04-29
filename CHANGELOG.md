@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.284.2] - 2026-04-29 - API Documentation Refinements and Localization Improvements
+
+### Changed
+
+- ✨ **Enhanced OpenAPI Tag Generation:** The API documentation (Swagger UI) now comprehensively includes tags for all
+  mounted controllers and intelligently prevents duplicate tag entries, providing a more complete and accurate overview
+  of available API endpoints.
+- 🌍 **Localized API Endpoint Tags:** Switched API endpoint tags from hardcoded strings to dynamically generated,
+  internationalized strings, significantly improving multi-language support and consistency for API documentation.
+
+______________________________________________________________________
+
 ## [v0.284.1] - 2026-04-28 - Optimized LiteLLM Logging for Pipeline Efficiency
 
 ### Added
