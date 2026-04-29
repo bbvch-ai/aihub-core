@@ -359,6 +359,12 @@
       "license": "Apache-2.0",
       "status": "✅",
       "notes": "Permissive license"
+    },
+    {
+      "service": "searxng",
+      "license": "AGPL-3.0",
+      "status": "✅",
+      "notes": "AGPL-3.0 — used as an unmodified self-hosted service over the network only; AGPL network-use clause is satisfied because users access SearXNG via OpenWebUI and we do not modify or redistribute the code."
     }
   ]
 }

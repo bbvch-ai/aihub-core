@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.285.0] - 2026-04-29 - Introducing Self-Hosted Web Search (SearXNG) and Playwright Update
+
+### Added
+
+- ✨ **Self-Hosted Web Search with SearXNG:** Integrated a self-hosted [SearXNG](https://docs.searxng.org/) meta-search
+  instance, providing privacy-aware web search capabilities directly within the platform. This offers greater control,
+  eliminates per-query costs, and ensures auditable egress for web queries.
+- 📄 **Comprehensive Web Search Documentation:** Added a new, detailed documentation guide explaining how Open-WebUI
+  leverages SearXNG for web search, including the curated list of privacy-first search engines, customization options,
+  and instructions on how to disable the feature.
+- 🔑 **New `SEARXNG_SECRET_KEY` Environment Variable:** Introduced a new environment variable to secure the self-hosted
+  SearXNG instance, enhancing operational security.
+
+### Changed
+
+- 🔄 **Switched Web Search Provider to SearXNG:** The platform's web search functionality now exclusively uses the
+  integrated SearXNG service, transitioning away from the previous Jina AI integration.
+- 🌐 **Updated Network Requirements for Web Search:** The documentation for network requirements has been updated to
+  reflect the new set of upstream search engines (e.g., Brave, DuckDuckGo, Mojeek, Qwant, Startpage, Wikidata,
+  Wikipedia) queried by SearXNG.
+- 🚀 **Playwright Updated to v1.58.0:** Upgraded the Playwright browser automation library to version `v1.58.0`, ensuring
+  compatibility with the latest browser features and security updates for web browsing services.
+
+### Removed
+
+- 🗑️ **Removed Jina AI Integration:** The dependency on Jina AI for web search has been entirely removed from the
+  platform, including its associated API key configuration.
+
+______________________________________________________________________
+
 ## [v0.284.2] - 2026-04-29 - API Documentation Refinements and Localization Improvements
 
 ### Changed

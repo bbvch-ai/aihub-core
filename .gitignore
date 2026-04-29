@@ -15,6 +15,7 @@ docs/swiss-ai-hub
 .idea/copilot*
 .idea/compiler.xml
 .idea/misc.xml
+.idea/jsLibraryMappings.xml
 aihub_*/.idea/
 *.log
 .mypy_cache/
