@@ -1511,7 +1511,7 @@ services:
       - egress  # Outbound internet access for web browsing
   searxng:
     container_name: searxng
-    image: ghcr.io/bbvch-ai/aihub-core/searxng:latest
+    image: ghcr.io/bbvch-ai/aihub-core/searxng:2026.4.29-cba0cffa8
     restart: always
     volumes: [./configs/searxng/settings.yml:/etc/searxng/settings.yml:ro]
     environment:
@@ -1957,7 +1957,6 @@ services:
         max-file: 2
     networks:
       - data
-
   # ===================================================================
   # Dagster Stack (Data Pipeline Orchestration)
   # ===================================================================
@@ -2165,7 +2164,6 @@ services:
     networks:
       - proxy
       - backend  # Traefik routes to backend services
-
   # ===================================================================
   # API Stack (Backend Logic)
   # ===================================================================
@@ -2335,7 +2333,6 @@ services:
       - backend
       - data
       - storage
-
   # ===================================================================
   # Suite UI Stack (Frontend)
   # ===================================================================
@@ -2932,7 +2929,6 @@ services:
       - backend
       - data
       - storage
-
   # ===================================================================
   # Bot Service (MS Teams Integration)
   # ===================================================================

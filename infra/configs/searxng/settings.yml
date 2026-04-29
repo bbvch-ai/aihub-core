@@ -1,5 +1,31 @@
 ---
-use_default_settings: true
+# SearXNG instance configuration for Swiss AI-Hub.
+# Reference: https://docs.searxng.org/admin/settings/index.html
+# Inherit baseline settings from the upstream image, then narrow the engine
+# list to a curated set. Explicit enumeration keeps the outbound network
+# surface predictable (relevant for data-sovereignty deployments — see
+# docs/docs/2_platform/3_deployment_guide/7_network_requirements/) instead
+# of relying on the ~70 engines enabled by default.
+#
+# Engine selection rationale (full reasoning in
+# docs/arc42/decisions/2026_04_29_searxng_engine_selection.md): privacy-first
+# with a Swiss/European lean, biased toward truly independent indexes. Google
+# and Bing are intentionally excluded — Startpage proxies Google with tracking
+# stripped, and DuckDuckGo proxies Bing — so dropping the originals removes
+# the worst privacy offenders without losing result coverage.
+use_default_settings:
+  engines:
+    keep_only:
+      - brave  # Independent crawler/index, US (no tracking).
+      - duckduckgo  # Mature no-tracking policy, proxies Bing for breadth.
+      - mojeek  # UK truly-independent index (not proxying Google/Bing).
+      - qwant  # French/EU, GDPR-native.
+      - startpage  # Dutch, anonymizes Google results.
+      - wikidata  # Structured knowledge graph.
+      - wikipedia  # Encyclopedic lookup.
+      # Marginalia is intentionally NOT included: the upstream engine module
+      # is disabled-by-default and requires a per-deployment API key that we
+      # do not currently provision. Re-add here once an API key flow exists.
 general:
   instance_name: AI-Hub SearXNG
 search:
@@ -7,6 +33,11 @@ search:
   autocomplete: ''
   formats: [html, json]
 server:
+  # Internal-only service: SearXNG is reachable solely from the `backend`
+  # network (Open-WebUI is the only client) and is never exposed via Traefik.
+  # Disabling the rate limiter and image proxy is therefore safe and avoids
+  # the bot-detection false-positives the limiter triggers for trusted
+  # automated callers. Do NOT copy this config to a public-facing instance.
   limiter: false
   image_proxy: false
   port: 8080

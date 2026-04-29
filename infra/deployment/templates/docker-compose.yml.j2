@@ -2312,7 +2312,7 @@ services:
     networks:
       - data
 
-  {% if image_tags.dagster[stage] %}
+  {%- if image_tags.dagster[stage] %}
   # ===================================================================
   # Dagster Stack (Data Pipeline Orchestration)
   # ===================================================================
@@ -2570,7 +2570,7 @@ services:
       - backend  # Traefik routes to backend services
   {%- endif %}
 
-  {% if image_tags.api[stage] %}
+  {%- if image_tags.api[stage] %}
   # ===================================================================
   # API Stack (Backend Logic)
   # ===================================================================
@@ -2753,7 +2753,7 @@ services:
       - storage
   {%- endif %}
 
-  {% if image_tags.web[stage] %}
+  {%- if image_tags.web[stage] %}
   # ===================================================================
   # Suite UI Stack (Frontend)
   # ===================================================================
@@ -2903,7 +2903,7 @@ services:
       - data
   {%- endif %}
 
-  {% if image_tags.rag_agent[stage] %}
+  {%- if image_tags.rag_agent[stage] %}
   rag_agent:
     container_name: rag-agent
     restart: always
@@ -2978,7 +2978,7 @@ services:
       - storage
   {%- endif %}
 
-  {% if image_tags.expert_rag_agent[stage] %}
+  {%- if image_tags.expert_rag_agent[stage] %}
   expert_rag_agent:
     container_name: expert-rag-agent
     restart: always
@@ -3043,7 +3043,7 @@ services:
       - storage
   {%- endif %}
 
-  {% if image_tags.expert_asking_agent[stage] %}
+  {%- if image_tags.expert_asking_agent[stage] %}
   expert_asking_agent:
     container_name: expert-asking-agent
     restart: always
@@ -3107,7 +3107,7 @@ services:
       - data
   {%- endif %}
 
-  {% if image_tags.retrieval_agent[stage] %}
+  {%- if image_tags.retrieval_agent[stage] %}
   retrieval_agent:
     container_name: retrieval-agent
     restart: always
@@ -3172,7 +3172,7 @@ services:
       - storage
   {%- endif %}
 
-  {% if image_tags.few_shot_agent[stage] %}
+  {%- if image_tags.few_shot_agent[stage] %}
   few_shot_agent:
     container_name: few-shot-agent
     restart: always
@@ -3228,7 +3228,7 @@ services:
       - data
   {%- endif %}
 
-  {% if image_tags.namespace_selection_agent[stage] %}
+  {%- if image_tags.namespace_selection_agent[stage] %}
   namespace_selection_agent:
     container_name: namespace-selection-agent
     restart: always
@@ -3284,7 +3284,7 @@ services:
       - data
   {%- endif %}
 
-  {% if image_tags.default_rag_pipeline[stage] %}
+  {%- if image_tags.default_rag_pipeline[stage] %}
   default_rag_pipeline:
     container_name: default-rag-pipeline
     restart: always
@@ -3361,7 +3361,7 @@ services:
       - storage
   {%- endif %}
 
-  {% if image_tags.shared_rag_pipeline[stage] %}
+  {%- if image_tags.shared_rag_pipeline[stage] %}
   shared_rag_pipeline:
     container_name: shared-rag-pipeline
     restart: always
@@ -3448,7 +3448,7 @@ services:
       - storage
   {%- endif %}
 
-  {% if image_tags.bot[stage] %}
+  {%- if image_tags.bot[stage] %}
   # ===================================================================
   # Bot Service (MS Teams Integration)
   # ===================================================================

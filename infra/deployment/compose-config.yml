@@ -74,7 +74,7 @@ image_tags:
   pgbouncer: pgbouncer:v1.24.1-p1
   rclone: ghcr.io/bbvch-ai/aihub-core/rclone:1.71.2
   keycloak: keycloak:26.5.4
-  searxng: searxng:latest
+  searxng: searxng:2026.4.29-cba0cffa8
 
   # --- Custom Application Services ---
   api:

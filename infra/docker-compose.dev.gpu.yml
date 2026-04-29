@@ -1250,7 +1250,7 @@ services:
       - egress  # Outbound internet access for web browsing
   searxng:
     container_name: searxng
-    image: ghcr.io/bbvch-ai/aihub-core/searxng:latest
+    image: ghcr.io/bbvch-ai/aihub-core/searxng:2026.4.29-cba0cffa8
     restart: always
     ports: [8881:8080]
     volumes: [./configs/searxng/settings.yml:/etc/searxng/settings.yml:ro]
@@ -1661,22 +1661,6 @@ services:
   # These are the background workers and data processing pipelines
   # that power the platform's AI capabilities.
   # ===================================================================
-
-
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
 # ===================================================================
 # Network Configuration
 # ===================================================================

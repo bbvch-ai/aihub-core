@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project version="4">
-  <component name="JavaScriptLibraryMappings">
-    <excludedPredefinedLibrary name="aihub-core/docs/node_modules" />
-    <excludedPredefinedLibrary name="aihub-core/packages/web/swiss_ai_hub_web/.app/node_modules" />
-    <excludedPredefinedLibrary name="aihub-core/packages/web/swiss_ai_hub_web/.playground/node_modules" />
-    <excludedPredefinedLibrary name="aihub-core/packages/web/swiss_ai_hub_web/node_modules" />
-  </component>
-</project>
