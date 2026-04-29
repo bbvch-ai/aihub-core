@@ -3,9 +3,9 @@
 # Reference: https://docs.searxng.org/admin/settings/index.html
 #
 # `keep_only` enumerates the engine set this deployment queries. The list is
-# privacy-first with a Swiss/European lean (full rationale in
-# docs/arc42/decisions/2026_04_29_searxng_engine_selection.md). The active
-# hostnames are also documented for operators in
+# privacy-first with a Swiss/European lean. See
+# docs/docs/2_platform/3_deployment_guide/8_web_search/ for the selection
+# rationale and customisation guide; outbound hostnames are documented in
 # docs/docs/2_platform/3_deployment_guide/7_network_requirements/.
 use_default_settings:
   engines:
