@@ -1,0 +1,143 @@
+---
+# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+version: 2
+updates:
+  # ----------------------------------------------------------------------------
+  # Python (uv workspace) — single lockfile at repo root covers all packages/*
+  # ----------------------------------------------------------------------------
+  - package-ecosystem: uv
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: 06:00
+      timezone: Europe/Zurich
+    open-pull-requests-limit: 10
+    labels: [dependencies, python, patch]
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      python-patch:
+        update-types: [patch]
+      python-minor:
+        update-types: [minor]
+      python-dev:
+        dependency-type: development
+        update-types:
+          - patch
+          - minor
+
+  # ----------------------------------------------------------------------------
+  # Frontend (pnpm) — admin/process UI
+  # ----------------------------------------------------------------------------
+  - package-ecosystem: npm
+    directory: /packages/web/swiss_ai_hub_web
+    schedule:
+      interval: weekly
+      day: monday
+      time: 06:00
+      timezone: Europe/Zurich
+    open-pull-requests-limit: 10
+    labels: [dependencies, frontend, patch]
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      web-patch:
+        update-types: [patch]
+      web-minor:
+        update-types: [minor]
+      web-dev:
+        dependency-type: development
+        update-types:
+          - patch
+          - minor
+
+  # ----------------------------------------------------------------------------
+  # Docs site (VitePress, pnpm)
+  # ----------------------------------------------------------------------------
+  - package-ecosystem: npm
+    directory: /docs
+    schedule:
+      interval: weekly
+      day: monday
+      time: 06:00
+      timezone: Europe/Zurich
+    open-pull-requests-limit: 5
+    labels: [dependencies, docs, patch]
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      docs-all:
+        update-types:
+          - patch
+          - minor
+
+  # ----------------------------------------------------------------------------
+  # E2E tests (Playwright, pnpm)
+  # ----------------------------------------------------------------------------
+  - package-ecosystem: npm
+    directory: /e2e
+    schedule:
+      interval: weekly
+      day: monday
+      time: 06:00
+      timezone: Europe/Zurich
+    open-pull-requests-limit: 5
+    labels: [dependencies, tests, patch]
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      e2e-all:
+        update-types:
+          - patch
+          - minor
+
+  # ----------------------------------------------------------------------------
+  # Docker base images — one entry per Dockerfile
+  # ----------------------------------------------------------------------------
+  - package-ecosystem: docker
+    directories:
+      - /packages/api
+      - /packages/bot
+      - /packages/backup
+      - /packages/pipeline
+      - /packages/web/swiss_ai_hub_web
+      - /infra/configs/playwright
+    schedule:
+      interval: weekly
+      day: monday
+      time: 06:00
+      timezone: Europe/Zurich
+    open-pull-requests-limit: 5
+    labels: [dependencies, docker, patch]
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      docker-images:
+        update-types:
+          - patch
+          - minor
+
+  # ----------------------------------------------------------------------------
+  # GitHub Actions — pinned action versions in workflows + reusable actions
+  # ----------------------------------------------------------------------------
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: 06:00
+      timezone: Europe/Zurich
+    open-pull-requests-limit: 5
+    labels: [dependencies, ci-cd, patch]
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      github-actions:
+        update-types: [patch, minor, major]

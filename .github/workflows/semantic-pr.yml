@@ -38,6 +38,8 @@ jobs:
             rag
             tracing
             workflows
+            deps
+            deps-dev
           types: |
             fix
             feat
@@ -67,6 +69,7 @@ jobs:
             main
             /^([a-z]{2,})\/([a-z-0-9]{2,})$/
             /^claude\/[a-zA-Z0-9-]+$/
+            /^dependabot\/[a-z0-9_-]+\/.+$/
   check-version-label:
     name: Check Version Label
     runs-on: ubuntu-latest
