@@ -24,8 +24,8 @@ GPU deployments running local vLLM do not require outbound connectivity to LLM p
 
 ::: details Web search engines (SearXNG meta-search)
 The platform's self-hosted SearXNG aggregator queries the search engines below on behalf of Open-WebUI when web search
-is enabled. Engines are explicitly enumerated in `infra/configs/searxng/settings.yml` (the upstream SearXNG default list
-is intentionally narrowed for predictable egress).
+is enabled. The active engine set is configured in `infra/configs/searxng/settings.yml` (rationale documented in
+[ADR 2026-04-29](../../../../arc42/decisions/2026_04_29_searxng_engine_selection.md)).
 
 | Engine     | Endpoint            | Port | Purpose                                           |
 | ---------- | ------------------- | ---- | ------------------------------------------------- |
