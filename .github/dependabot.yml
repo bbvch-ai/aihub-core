@@ -1,10 +1,19 @@
 ---
 # https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+#
+# Convention: each ecosystem is split into THREE update entries — patch / minor / major —
+# so the version label applied to the PR matches the actual update type. add-tag.yml
+# reads PR labels to decide the semver bump on merge, so a wrong label silently
+# produces a wrong release tag.
+#
+# Production groups carry `dependency-type: production` so dev-only updates do not
+# leak into production groups (which would otherwise route to whichever entry
+# matches first).
 version: 2
 updates:
-  # ----------------------------------------------------------------------------
+  # ============================================================================
   # Python (uv workspace) — single lockfile at repo root covers all packages/*
-  # ----------------------------------------------------------------------------
+  # ============================================================================
   - package-ecosystem: uv
     directory: /
     schedule:
@@ -18,19 +27,48 @@ updates:
       prefix: chore
       include: scope
     groups:
-      python-patch:
+      python-prod-patch:
+        dependency-type: production
         update-types: [patch]
-      python-minor:
-        update-types: [minor]
       python-dev:
         dependency-type: development
-        update-types:
-          - patch
-          - minor
+        update-types: [patch, minor]
+  - package-ecosystem: uv
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: 06:00
+      timezone: Europe/Zurich
+    open-pull-requests-limit: 10
+    labels: [dependencies, python, minor]
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      python-prod-minor:
+        dependency-type: production
+        update-types: [minor]
+  - package-ecosystem: uv
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: 06:00
+      timezone: Europe/Zurich
+    open-pull-requests-limit: 5
+    labels: [dependencies, python, major]
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      python-prod-major:
+        dependency-type: production
+        update-types: [major]
 
-  # ----------------------------------------------------------------------------
+  # ============================================================================
   # Frontend (pnpm) — admin/process UI
-  # ----------------------------------------------------------------------------
+  # ============================================================================
   - package-ecosystem: npm
     directory: /packages/web/swiss_ai_hub_web
     schedule:
@@ -44,19 +82,48 @@ updates:
       prefix: chore
       include: scope
     groups:
-      web-patch:
+      web-prod-patch:
+        dependency-type: production
         update-types: [patch]
-      web-minor:
-        update-types: [minor]
       web-dev:
         dependency-type: development
-        update-types:
-          - patch
-          - minor
+        update-types: [patch, minor]
+  - package-ecosystem: npm
+    directory: /packages/web/swiss_ai_hub_web
+    schedule:
+      interval: weekly
+      day: monday
+      time: 06:00
+      timezone: Europe/Zurich
+    open-pull-requests-limit: 10
+    labels: [dependencies, frontend, minor]
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      web-prod-minor:
+        dependency-type: production
+        update-types: [minor]
+  - package-ecosystem: npm
+    directory: /packages/web/swiss_ai_hub_web
+    schedule:
+      interval: weekly
+      day: monday
+      time: 06:00
+      timezone: Europe/Zurich
+    open-pull-requests-limit: 5
+    labels: [dependencies, frontend, major]
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      web-prod-major:
+        dependency-type: production
+        update-types: [major]
 
-  # ----------------------------------------------------------------------------
+  # ============================================================================
   # Docs site (VitePress, pnpm)
-  # ----------------------------------------------------------------------------
+  # ============================================================================
   - package-ecosystem: npm
     directory: /docs
     schedule:
@@ -70,14 +137,42 @@ updates:
       prefix: chore
       include: scope
     groups:
-      docs-all:
-        update-types:
-          - patch
-          - minor
+      docs-patch:
+        update-types: [patch]
+  - package-ecosystem: npm
+    directory: /docs
+    schedule:
+      interval: weekly
+      day: monday
+      time: 06:00
+      timezone: Europe/Zurich
+    open-pull-requests-limit: 5
+    labels: [dependencies, docs, minor]
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      docs-minor:
+        update-types: [minor]
+  - package-ecosystem: npm
+    directory: /docs
+    schedule:
+      interval: weekly
+      day: monday
+      time: 06:00
+      timezone: Europe/Zurich
+    open-pull-requests-limit: 5
+    labels: [dependencies, docs, major]
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      docs-major:
+        update-types: [major]
 
-  # ----------------------------------------------------------------------------
+  # ============================================================================
   # E2E tests (Playwright, pnpm)
-  # ----------------------------------------------------------------------------
+  # ============================================================================
   - package-ecosystem: npm
     directory: /e2e
     schedule:
@@ -91,14 +186,42 @@ updates:
       prefix: chore
       include: scope
     groups:
-      e2e-all:
-        update-types:
-          - patch
-          - minor
+      e2e-patch:
+        update-types: [patch]
+  - package-ecosystem: npm
+    directory: /e2e
+    schedule:
+      interval: weekly
+      day: monday
+      time: 06:00
+      timezone: Europe/Zurich
+    open-pull-requests-limit: 5
+    labels: [dependencies, tests, minor]
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      e2e-minor:
+        update-types: [minor]
+  - package-ecosystem: npm
+    directory: /e2e
+    schedule:
+      interval: weekly
+      day: monday
+      time: 06:00
+      timezone: Europe/Zurich
+    open-pull-requests-limit: 5
+    labels: [dependencies, tests, major]
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      e2e-major:
+        update-types: [major]
 
-  # ----------------------------------------------------------------------------
+  # ============================================================================
   # Docker base images — one entry per Dockerfile
-  # ----------------------------------------------------------------------------
+  # ============================================================================
   - package-ecosystem: docker
     directories:
       - /packages/api
@@ -118,14 +241,54 @@ updates:
       prefix: chore
       include: scope
     groups:
-      docker-images:
-        update-types:
-          - patch
-          - minor
+      docker-patch:
+        update-types: [patch]
+  - package-ecosystem: docker
+    directories:
+      - /packages/api
+      - /packages/bot
+      - /packages/backup
+      - /packages/pipeline
+      - /packages/web/swiss_ai_hub_web
+      - /infra/configs/playwright
+    schedule:
+      interval: weekly
+      day: monday
+      time: 06:00
+      timezone: Europe/Zurich
+    open-pull-requests-limit: 5
+    labels: [dependencies, docker, minor]
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      docker-minor:
+        update-types: [minor]
+  - package-ecosystem: docker
+    directories:
+      - /packages/api
+      - /packages/bot
+      - /packages/backup
+      - /packages/pipeline
+      - /packages/web/swiss_ai_hub_web
+      - /infra/configs/playwright
+    schedule:
+      interval: weekly
+      day: monday
+      time: 06:00
+      timezone: Europe/Zurich
+    open-pull-requests-limit: 5
+    labels: [dependencies, docker, major]
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      docker-major:
+        update-types: [major]
 
-  # ----------------------------------------------------------------------------
+  # ============================================================================
   # GitHub Actions — pinned action versions in workflows + reusable actions
-  # ----------------------------------------------------------------------------
+  # ============================================================================
   - package-ecosystem: github-actions
     directory: /
     schedule:
@@ -139,5 +302,35 @@ updates:
       prefix: chore
       include: scope
     groups:
-      github-actions:
-        update-types: [patch, minor, major]
+      github-actions-patch:
+        update-types: [patch]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: 06:00
+      timezone: Europe/Zurich
+    open-pull-requests-limit: 5
+    labels: [dependencies, ci-cd, minor]
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      github-actions-minor:
+        update-types: [minor]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: 06:00
+      timezone: Europe/Zurich
+    open-pull-requests-limit: 5
+    labels: [dependencies, ci-cd, major]
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      github-actions-major:
+        update-types: [major]

@@ -15,7 +15,7 @@ jobs:
   lint-pr-title:
     name: Lint PR Title
     runs-on: ubuntu-latest
-    if: ${{ !github.event.pull_request.draft }}
+    if: ${{ !github.event.pull_request.draft && github.event.pull_request.user.login != 'dependabot[bot]' }}
     permissions:
       checks: write
       contents: read
