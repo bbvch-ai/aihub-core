@@ -40,6 +40,7 @@
 {%- set PRESIDIO_ANALYZER_API_BASE = "http://presidio-analyzer:3000" %}
 {%- set PRESIDIO_ANONYMIZER_API_BASE = "http://presidio-anonymizer:3000" %}
 {%- set PLAYWRIGHT_WS_URL = "ws://playwright:3000" %}
+{%- set SEARXNG_QUERY_URL = "http://localhost:8881/search?q=<query>&format=json" if stage == 'dev' else "http://searxng:8080/search?q=<query>&format=json" %}
 {%- set DAGSTER_WEBSERVER_URL = "http://dagster-webserver:3000" %}
 {%- set NOTIFICATION_DAGSTER_UI_BASE_URL = "http://localhost:3000" if stage == 'dev' else "https://dagster.${DOMAIN}" %}
 {%- set BACKUP_WEBSERVER_URL = "http://backup-webserver:3000" %}
@@ -1807,6 +1808,34 @@ services:
       - backend  # Internal service communication
       - egress   # Outbound internet access for web browsing
 
+  searxng:
+    container_name: searxng
+    image: {{ global.registry_prefix }}{{ image_tags.searxng }}
+    restart: always
+    {%- if stage in ['dev', 'local', 'build'] %}
+    ports:
+      - "8881:8080"
+    {%- endif %}
+    volumes:
+      - ./configs/searxng/settings.yml:/etc/searxng/settings.yml:ro
+    environment:
+      SEARXNG_BASE_URL: http://searxng:8080
+      SEARXNG_SECRET: ${SEARXNG_SECRET_KEY}
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "--quiet", "http://localhost:8080/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks:
+      - backend
+      - egress
+
   # ===================================================================
   # Document Processing Stack
   # ===================================================================
@@ -1967,6 +1996,8 @@ services:
       jupyter:
         condition: service_healthy
       playwright:
+        condition: service_healthy
+      searxng:
         condition: service_healthy
       keycloak:
         condition: service_healthy
@@ -2144,8 +2175,8 @@ services:
 
       # --- Web Search ---
       ENABLE_WEB_SEARCH: True
-      WEB_SEARCH_ENGINE: jina
-      JINA_API_KEY: ${JINA_API_KEY}
+      WEB_SEARCH_ENGINE: searxng
+      SEARXNG_QUERY_URL: {{ SEARXNG_QUERY_URL }}
       WEB_SEARCH_RESULT_COUNT: 6
       WEB_SEARCH_CONCURRENT_REQUESTS: 6
       BYPASS_WEB_SEARCH_EMBEDDING_AND_RETRIEVAL: True

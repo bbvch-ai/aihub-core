@@ -1,7 +1,7 @@
-FROM mcr.microsoft.com/playwright:v1.49.0-jammy
+FROM mcr.microsoft.com/playwright:v1.58.0-jammy
 
 # Install playwright package globally (browsers are already in base image)
-RUN npm install -g playwright@1.49.0
+RUN npm install -g playwright@1.58.0
 
 # Expose the server port
 EXPOSE 3000

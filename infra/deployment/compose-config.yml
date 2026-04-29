@@ -58,22 +58,23 @@ image_tags:
   oauth2proxy: ghcr.io/bbvch-ai/bbvch-ai/oauth2-proxy:latest
   open_webui: open-webui:v0.8.10
   playwright:
-    # Project-managed image: extends mcr.microsoft.com/playwright:v1.49.0-jammy
+    # Project-managed image: extends mcr.microsoft.com/playwright:v1.58.0-jammy
     # with the npm playwright package and a server entrypoint. Dockerfile lives
     # at infra/configs/playwright/Dockerfile.
     # `build` stage builds locally; other stages pull from ghcr.
     # Re-publish via `make -C infra/deployment build-and-push-playwright-image`
     # whenever the Dockerfile or playwright version changes.
     build: localbuild
-    dev: playwright:v1.49.0-jammy
-    local: playwright:v1.49.0-jammy
-    nightly: playwright:v1.49.0-jammy
-    latest: playwright:v1.49.0-jammy
+    dev: playwright:v1.58.0-jammy
+    local: playwright:v1.58.0-jammy
+    nightly: playwright:v1.58.0-jammy
+    latest: playwright:v1.58.0-jammy
   vllm: vllm-openai:v0.15.1
   speaches: ghcr.io/speaches-ai/speaches:latest-cuda-12.6.3
   pgbouncer: pgbouncer:v1.24.1-p1
   rclone: ghcr.io/bbvch-ai/aihub-core/rclone:1.71.2
   keycloak: keycloak:26.5.4
+  searxng: searxng:latest
 
   # --- Custom Application Services ---
   api:

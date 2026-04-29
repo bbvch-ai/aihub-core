@@ -1056,7 +1056,7 @@ services:
     networks: [backend]
   playwright:
     container_name: playwright-server
-    image: ghcr.io/bbvch-ai/aihub-core/playwright:v1.49.0-jammy
+    image: ghcr.io/bbvch-ai/aihub-core/playwright:v1.58.0-jammy
     restart: always
     ports: [3036:3000]
     environment:
@@ -1075,6 +1075,34 @@ services:
     networks:
       - backend  # Internal service communication
       - egress  # Outbound internet access for web browsing
+  searxng:
+    container_name: searxng
+    image: ghcr.io/bbvch-ai/aihub-core/searxng:latest
+    restart: always
+    ports: [8881:8080]
+    volumes: [./configs/searxng/settings.yml:/etc/searxng/settings.yml:ro]
+    environment:
+      SEARXNG_BASE_URL: http://searxng:8080
+      SEARXNG_SECRET: ${SEARXNG_SECRET_KEY}
+    healthcheck:
+      test:
+        - CMD
+        - wget
+        - --spider
+        - --quiet
+        - http://localhost:8080/healthz
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks:
+      - backend
+      - egress
 
   # ===================================================================
   # Document Processing Stack
@@ -1178,6 +1206,8 @@ services:
       jupyter:
         condition: service_healthy
       playwright:
+        condition: service_healthy
+      searxng:
         condition: service_healthy
       keycloak:
         condition: service_healthy
@@ -1342,8 +1372,8 @@ services:
 
       # --- Web Search ---
       ENABLE_WEB_SEARCH: true
-      WEB_SEARCH_ENGINE: jina
-      JINA_API_KEY: ${JINA_API_KEY}
+      WEB_SEARCH_ENGINE: searxng
+      SEARXNG_QUERY_URL: http://localhost:8881/search?q=<query>&format=json
       WEB_SEARCH_RESULT_COUNT: 6
       WEB_SEARCH_CONCURRENT_REQUESTS: 6
       BYPASS_WEB_SEARCH_EMBEDDING_AND_RETRIEVAL: true
