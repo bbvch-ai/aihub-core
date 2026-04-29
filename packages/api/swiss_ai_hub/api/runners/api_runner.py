@@ -12,7 +12,6 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette.routing import Mount
 from swiss_ai_hub.core.infrastructure import AIHubSettings
 from swiss_ai_hub.core.routes import Controller
-from swiss_ai_hub.core.routes.tenant_scoped_controller import TenantScopedController
 from swiss_ai_hub.core.runners import Runner
 
 from swiss_ai_hub.api.i18n.api_locale_handler import ApiLocaleHandler
@@ -190,13 +189,16 @@ class ApiRunner(Runner):
         """
         super().mount(*controllers)
 
-        tenant_scoped = [c for c in controllers if isinstance(c, TenantScopedController)]
-        self._api_app.openapi_tags = [
+        existing_tag_names = {tag["name"] for tag in (self._api_app.openapi_tags or [])}
+        new_tags = [
             {
                 "name": ApiLocaleHandler().extract(controller.name, locale="en"),
-                "description": ApiLocaleHandler().extract(controller.description),
+                "description": ApiLocaleHandler().extract(controller.description, locale="en"),
             }
-            for controller in tenant_scoped
+            for controller in controllers
+        ]
+        self._api_app.openapi_tags = (self._api_app.openapi_tags or []) + [
+            tag for tag in new_tags if tag["name"] not in existing_tag_names
         ]
 
         # Pre-populate state with controller references so they're available
