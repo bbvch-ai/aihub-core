@@ -20,6 +20,7 @@ from swiss_ai_hub.core.subscribers import ProcessNCSubscriber
 from swiss_ai_hub.core.topic_managers import ProcessTopicManager
 
 from swiss_ai_hub.api.events.event_model_creation_service import EventModelCreationService
+from swiss_ai_hub.api.i18n.api_locale_string import ApiLocaleString
 from swiss_ai_hub.api.i18n.dependencies.use_locale import use_locale
 from swiss_ai_hub.api.routes.process.dto.in_specs.human_in_dto import HumanInDTO
 from swiss_ai_hub.api.routes.process.dto.process_class_dto import ProcessClassDTO
@@ -206,7 +207,7 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
             ),
             methods=["GET"],
             name=get_endpoint_name,
-            tags=["Processes"],
+            tags=[ApiLocaleString.from_i18n_path("api.controllers.process.name").en],
         )
 
         # POST endpoint that accepts form
@@ -221,7 +222,7 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
             ),
             methods=[human_input.method],
             name=post_endpoint_name,
-            tags=["Processes"],
+            tags=[ApiLocaleString.from_i18n_path("api.controllers.process.name").en],
         )
         logger.info(f"Successfully registered endpoints for {process_class}")
 
@@ -256,7 +257,7 @@ class ProcessEndpointsDiscoveryService(EndpointsDiscoveryService):
             ),
             methods=[program_input.method],
             name=post_endpoint_name,
-            tags=["Processes"],
+            tags=[ApiLocaleString.from_i18n_path("api.controllers.process.name").en],
         )
         logger.info(f"Successfully registered endpoints for {process_class}")
 
