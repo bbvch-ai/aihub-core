@@ -16,7 +16,7 @@ jobs:
       version: ${{ steps.create-tag.outputs.version }}
     steps:
       - name: Checkout the repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0  # Important: fetch all history for git diff to work
       - name: Create new version number & tag
@@ -144,11 +144,11 @@ jobs:
     continue-on-error: true
     steps:
       - name: Checkout the repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - name: Use Python 3.13
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.13'
       - name: Install uv
@@ -172,7 +172,7 @@ jobs:
         run: make changelog
       - name: Upload changelog artifact
         if: ${{ hashFiles('CHANGELOG.md') != '' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: changelog
           path: CHANGELOG.md
@@ -183,11 +183,11 @@ jobs:
     continue-on-error: true
     steps:
       - name: Checkout the repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - name: Use Python 3.13
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.13'
       - name: Install additional dependencies for license check
@@ -208,7 +208,7 @@ jobs:
           make license-check
       - name: Upload license artifact
         if: ${{ hashFiles('LICENSE_REPORT.md') != '' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: licenses
           path: LICENSE_REPORT.md
@@ -219,15 +219,15 @@ jobs:
     continue-on-error: true
     steps:
       - name: Checkout the repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
         with:
           version: 10.13.1
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '20'
           cache: pnpm
@@ -251,7 +251,7 @@ jobs:
         working-directory: ./docs
         run: pnpm run docs:sync
       - name: Upload docs artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: docs
           path: docs/
@@ -265,29 +265,29 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - name: Download changelog (if any)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: changelog
           path: .
         continue-on-error: true
       - name: Download licenses (if any)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: licenses
           path: .
         continue-on-error: true
       - name: Download docs (if any)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: docs
           path: docs/
         continue-on-error: true
       - name: Set up Python 3.13
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.13'
       - name: Install uv
