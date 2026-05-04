@@ -19,8 +19,6 @@ updates:
     schedule:
       interval: weekly
       day: monday
-      time: 06:00
-      timezone: Europe/Zurich
     open-pull-requests-limit: 10
     labels: [dependencies, python, patch]
     commit-message:
@@ -38,8 +36,6 @@ updates:
     schedule:
       interval: weekly
       day: monday
-      time: 06:00
-      timezone: Europe/Zurich
     open-pull-requests-limit: 10
     labels: [dependencies, python, minor]
     commit-message:
@@ -54,8 +50,6 @@ updates:
     schedule:
       interval: weekly
       day: monday
-      time: 06:00
-      timezone: Europe/Zurich
     open-pull-requests-limit: 5
     labels: [dependencies, python, major]
     commit-message:
@@ -74,8 +68,6 @@ updates:
     schedule:
       interval: weekly
       day: monday
-      time: 06:00
-      timezone: Europe/Zurich
     open-pull-requests-limit: 10
     labels: [dependencies, frontend, patch]
     commit-message:
@@ -93,8 +85,6 @@ updates:
     schedule:
       interval: weekly
       day: monday
-      time: 06:00
-      timezone: Europe/Zurich
     open-pull-requests-limit: 10
     labels: [dependencies, frontend, minor]
     commit-message:
@@ -109,8 +99,6 @@ updates:
     schedule:
       interval: weekly
       day: monday
-      time: 06:00
-      timezone: Europe/Zurich
     open-pull-requests-limit: 5
     labels: [dependencies, frontend, major]
     commit-message:
@@ -129,8 +117,6 @@ updates:
     schedule:
       interval: weekly
       day: monday
-      time: 06:00
-      timezone: Europe/Zurich
     open-pull-requests-limit: 5
     labels: [dependencies, docs, patch]
     commit-message:
@@ -144,8 +130,6 @@ updates:
     schedule:
       interval: weekly
       day: monday
-      time: 06:00
-      timezone: Europe/Zurich
     open-pull-requests-limit: 5
     labels: [dependencies, docs, minor]
     commit-message:
@@ -159,8 +143,6 @@ updates:
     schedule:
       interval: weekly
       day: monday
-      time: 06:00
-      timezone: Europe/Zurich
     open-pull-requests-limit: 5
     labels: [dependencies, docs, major]
     commit-message:
@@ -178,8 +160,6 @@ updates:
     schedule:
       interval: weekly
       day: monday
-      time: 06:00
-      timezone: Europe/Zurich
     open-pull-requests-limit: 5
     labels: [dependencies, tests, patch]
     commit-message:
@@ -193,8 +173,6 @@ updates:
     schedule:
       interval: weekly
       day: monday
-      time: 06:00
-      timezone: Europe/Zurich
     open-pull-requests-limit: 5
     labels: [dependencies, tests, minor]
     commit-message:
@@ -208,8 +186,6 @@ updates:
     schedule:
       interval: weekly
       day: monday
-      time: 06:00
-      timezone: Europe/Zurich
     open-pull-requests-limit: 5
     labels: [dependencies, tests, major]
     commit-message:
@@ -233,8 +209,6 @@ updates:
     schedule:
       interval: weekly
       day: monday
-      time: 06:00
-      timezone: Europe/Zurich
     open-pull-requests-limit: 5
     labels: [dependencies, docker, patch]
     commit-message:
@@ -254,8 +228,6 @@ updates:
     schedule:
       interval: weekly
       day: monday
-      time: 06:00
-      timezone: Europe/Zurich
     open-pull-requests-limit: 5
     labels: [dependencies, docker, minor]
     commit-message:
@@ -275,8 +247,6 @@ updates:
     schedule:
       interval: weekly
       day: monday
-      time: 06:00
-      timezone: Europe/Zurich
     open-pull-requests-limit: 5
     labels: [dependencies, docker, major]
     commit-message:
@@ -294,8 +264,6 @@ updates:
     schedule:
       interval: weekly
       day: monday
-      time: 06:00
-      timezone: Europe/Zurich
     open-pull-requests-limit: 5
     labels: [dependencies, ci-cd, patch]
     commit-message:
@@ -309,8 +277,6 @@ updates:
     schedule:
       interval: weekly
       day: monday
-      time: 06:00
-      timezone: Europe/Zurich
     open-pull-requests-limit: 5
     labels: [dependencies, ci-cd, minor]
     commit-message:
@@ -324,8 +290,6 @@ updates:
     schedule:
       interval: weekly
       day: monday
-      time: 06:00
-      timezone: Europe/Zurich
     open-pull-requests-limit: 5
     labels: [dependencies, ci-cd, major]
     commit-message:
