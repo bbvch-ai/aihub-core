@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/playwright:v1.58.0-jammy
+FROM mcr.microsoft.com/playwright:v1.59.1-jammy
 
 # Install playwright package globally (browsers are already in base image)
 RUN npm install -g playwright@1.58.0
