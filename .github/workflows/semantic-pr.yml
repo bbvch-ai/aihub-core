@@ -38,8 +38,6 @@ jobs:
             rag
             tracing
             workflows
-            deps
-            deps-dev
           types: |
             fix
             feat
@@ -73,7 +71,7 @@ jobs:
   check-version-label:
     name: Check Version Label
     runs-on: ubuntu-latest
-    if: ${{ !github.event.pull_request.draft }}
+    if: ${{ !github.event.pull_request.draft && github.event.pull_request.user.login != 'dependabot[bot]' }}
     permissions:
       checks: write
       contents: read
