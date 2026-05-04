@@ -328,3 +328,74 @@ def check_error_detail(error_context: dict[str, Any], expected_detail: str) -> N
     """Check that the error detail matches the expected detail."""
     error = error_context.get("error")
     assert error == expected_detail, f"Expected error detail '{expected_detail}', got '{error}'"
+
+
+# --- End-to-end regression test for issue #1050 ---
+# Exercises the REAL ``OpenWebuiAuthHandler.__call__`` (no monkeypatch on __call__) to
+# prove that a bearer-token owner with no tenant membership and no active_tenant_id
+# does not block end-users with a valid tenant.
+
+
+def test_openwebui_auth_succeeds_when_token_owner_has_no_tenant(
+    cleanup_document: list[Any],
+) -> None:
+    import hashlib
+    import hmac
+
+    from swiss_ai_hub.core.auth.dependencies.auth_settings import AuthSettings
+    from swiss_ai_hub.core.testing.auth_utils.user_mocks import register_fake_keycloak_user
+
+    # Token owner: simulates seeded superuser — no /tenants/<id> membership, no active_tenant_id.
+    token_owner_oid = str(ObjectId())
+    register_fake_keycloak_user(
+        user_id=token_owner_oid,
+        name="Service Account",
+        email="svc@example.com",
+        attributes={},  # No active_tenant_id — would trigger the bug under the old code path.
+    )
+    expiry = datetime.now(UTC) + timedelta(hours=1)
+    token_doc = BearerToken.create_new_token(name="svc-token", expiry_date=expiry, user_oid=token_owner_oid)
+    cleanup_document.append(token_doc)
+
+    # End user: has /tenants/<startup> membership and active_tenant_id pointing at it.
+    end_user_oid = str(ObjectId())
+    end_user_email = "end.user@example.com"
+    end_user_name = "End User"
+    register_fake_keycloak_user(user_id=end_user_oid, name=end_user_name, email=end_user_email)
+    default_tenant = TenantMetadataEntity.get_startup_tenant_metadata()
+    assert default_tenant is not None
+    user_tenant_role = UserTenantRoleEntity.create_or_update(
+        user_id=end_user_oid,
+        tenant_id=str(default_tenant.id),
+        roles=["aihub-admin"],
+        validate_roles=False,
+    )
+    cleanup_document.append(user_tenant_role)
+
+    # Mirror the production HMAC computation in OpenWebuiAuthHandler._verify_signature.
+    secret = AuthSettings().OPEN_WEBUI_SIGNING_SECRET.get_secret_value().encode("utf-8")
+    message = f"name:{end_user_name},email:{end_user_email}".encode()
+    signature = hmac.new(secret, message, hashlib.sha256).hexdigest()
+
+    headers = {
+        "X-OpenWebUI-User-Name": end_user_name,
+        "X-OpenWebUI-User-Email": end_user_email,
+        "X-OpenWebUI-Signature": signature,
+        "Authorization": f"Bearer {token_doc.token}",
+    }
+    request = create_dummy_request(headers)
+
+    handler = OpenWebuiAuthHandler(base_auth_handler=TokenAuthHandler())
+
+    import asyncio
+
+    async def run() -> UserIdentity:
+        security = await HTTPBearer()(request)
+        return await handler(request, security)
+
+    user = asyncio.run(run())
+
+    assert user.email == end_user_email
+    assert user.id == end_user_oid
+    assert user.acting_within_tenant is not None
+    assert user.acting_within_tenant.id == str(default_tenant.id)
