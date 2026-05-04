@@ -45,7 +45,7 @@
     "@formkit/nuxt": "^1.7.2",
     "@hey-api/nuxt": "^0.2.1",
     "@nuxt/fonts": "^0.11.4",
-    "@nuxt/icon": "^1.15.0",
+    "@nuxt/icon": "^2.2.1",
     "@nuxtjs/i18n": "9.5.5",
     "@nuxtjs/mdc": "^0.17.4",
     "@nuxtjs/robots": "^5.7.0",
