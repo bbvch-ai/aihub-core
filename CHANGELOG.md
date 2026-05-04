@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.285.4] - 2026-05-04 - Enhanced Authentication Robustness and Performance
+
+### Fixed
+
+- 🐛 **Resolved OpenWebUI authentication issue (Issue #1050):** Fixed a bug where authentication failed for proxied users
+  if the underlying bearer token was owned by a service account without tenant membership, even when the proxied user
+  had valid tenant associations. Token verification is now correctly decoupled from the token owner's tenant context.
+- ✅ **Added comprehensive regression tests:** New end-to-end tests for the OpenWebUI authentication handler confirm the
+  fix for issue #1050, and additional unit tests for `TokenAuthHandler` ensure robust token verification.
+
+### Changed
+
+- ⚡️ **Optimized user and role retrieval:** Keycloak calls for fetching user details and realm roles in
+  `TokenAuthHandler` are now executed concurrently using `asyncio.gather`, improving authentication performance.
+
+### Refactor
+
+- 🧹 **Decoupled token verification:** The authentication process has been refactored to clearly separate the initial
+  validation of a bearer token from the subsequent resolution of the associated user's details and tenant context,
+  enhancing modularity and robustness.
+- 🔄 **Renamed `BearerAuthHandler` to `TokenAuthHandler`:** The core bearer authentication handler has been renamed for
+  improved clarity and consistency across the codebase.
+
+______________________________________________________________________
+
 ## [v0.285.3] - 2026-05-04 - Refined Image Management for Deployment Builds
 
 ### Refactor
