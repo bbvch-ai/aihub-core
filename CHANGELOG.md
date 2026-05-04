@@ -5,6 +5,92 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.285.4] - 2026-05-04 - Enhanced Authentication Robustness and Performance
+
+### Fixed
+
+- 🐛 **Resolved OpenWebUI authentication issue (Issue #1050):** Fixed a bug where authentication failed for proxied users
+  if the underlying bearer token was owned by a service account without tenant membership, even when the proxied user
+  had valid tenant associations. Token verification is now correctly decoupled from the token owner's tenant context.
+- ✅ **Added comprehensive regression tests:** New end-to-end tests for the OpenWebUI authentication handler confirm the
+  fix for issue #1050, and additional unit tests for `TokenAuthHandler` ensure robust token verification.
+
+### Changed
+
+- ⚡️ **Optimized user and role retrieval:** Keycloak calls for fetching user details and realm roles in
+  `TokenAuthHandler` are now executed concurrently using `asyncio.gather`, improving authentication performance.
+
+### Refactor
+
+- 🧹 **Decoupled token verification:** The authentication process has been refactored to clearly separate the initial
+  validation of a bearer token from the subsequent resolution of the associated user's details and tenant context,
+  enhancing modularity and robustness.
+- 🔄 **Renamed `BearerAuthHandler` to `TokenAuthHandler`:** The core bearer authentication handler has been renamed for
+  improved clarity and consistency across the codebase.
+
+______________________________________________________________________
+
+## [v0.285.3] - 2026-05-04 - Refined Image Management for Deployment Builds
+
+### Refactor
+
+- 🧹 **Streamlined Image Configuration**: Simplified the `compose-config.yml` by removing redundant `build: localbuild`
+  directives and stage-specific image tags for project-managed images like **Postgres** and **Playwright**. These images
+  are now consistently referenced by their pinned, pre-built tags across all deployment stages.
+- 🔄 **Enhanced Image Tagging Automation**: Refined the internal logic for identifying and tagging images during
+  releases, ensuring that only actively rebuilt **application images** (those marked for per-release publishing) are
+  updated with the `:latest` tag. Project-managed base images with specific version pins are now explicitly excluded
+  from this automatic retagging process.
+- 📦 **Reorganized Playwright Dockerfile**: Moved the **Playwright Dockerfile** to a more logical and standardized
+  location within the `infra/deployment/docker` directory, improving project structure and maintainability.
+- ⚙️ **Simplified Docker Compose Generation**: The internal templates for generating Docker Compose files have been
+  updated, removing conditional build instructions for **Postgres** and **Playwright** services. These services now
+  uniformly pull their pre-built, version-pinned images from the registry.
+
+### Changed
+
+- 📄 **Clarified Postgres Image Documentation**: Updated the documentation for the **Postgres image** within `CLAUDE.md`
+  to explicitly describe it as a project-managed image that is published out-of-band and consumed with a pinned tag,
+  providing clearer guidance on its lifecycle.
+
+______________________________________________________________________
+
+## [v0.285.2] - 2026-05-04 - Enhanced Release Workflow for Protected Branches
+
+### Changed
+
+- ⚙️ **Streamlined Release Finalization**: The `add-tag.yml` GitHub Actions workflow now utilizes a dedicated deploy key
+  for repository checkout. This enhancement ensures the workflow can successfully amend merge commits and force-push to
+  the protected `main` branch, improving the reliability and integrity of the release finalization process.
+
+______________________________________________________________________
+
+## [v0.285.1] - 2026-05-04 - Automated Dependency Management and CI/CD Streamlining
+
+### Added
+
+- ✨ **Automated Dependency Management:** Introduced **Dependabot** configuration to automatically detect and create pull
+  requests for dependency updates across Python, Node.js (frontend, docs, E2E), Docker base images, and GitHub Actions,
+  significantly enhancing project maintainability and security.
+
+### Changed
+
+- 📄 **Improved Documentation:** Updated the description for the `github_token` input in the backend linting action,
+  clarifying its specific use by **reviewdog** for posting review comments.
+
+### Refactor
+
+- 🧹 **Optimized Pull Request Checks:** Configured **semantic PR checks** to bypass title linting and version label
+  requirements specifically for Dependabot-generated pull requests, streamlining the process for automated dependency
+  updates.
+
+### Removed
+
+- 🗑️ **Streamlined CI/CD Workflows:** Eliminated explicit **Git SSH key configuration** steps from various GitHub
+  Actions workflows, simplifying pipeline setup and reducing configuration overhead.
+
+______________________________________________________________________
+
 ## [v0.285.0] - 2026-04-29 - Introducing Self-Hosted Web Search (SearXNG) and Playwright Update
 
 ### Added

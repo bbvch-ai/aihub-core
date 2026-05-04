@@ -23,17 +23,17 @@ build-and-push-postgres-image:
 # Build the project-managed playwright image (Microsoft playwright base + npm
 # package + server entrypoint) and push to ghcr.
 #
-# The Dockerfile lives at `infra/configs/playwright/Dockerfile`. Re-run this
-# whenever the base playwright tag or the npm playwright version changes.
-# After running, non-build stages pick up the new image automatically via
-# `docker compose pull`.
+# The Dockerfile lives at `infra/deployment/docker/playwright/Dockerfile`.
+# Re-run this whenever the base playwright tag or the npm playwright version
+# changes. After running, non-build stages pick up the new image automatically
+# via `docker compose pull`.
 build-and-push-playwright-image:
 	@echo "Building ghcr.io/bbvch-ai/aihub-core/playwright:v1.58.0-jammy..."
 	@docker login ghcr.io
 	@docker build \
 		-t ghcr.io/bbvch-ai/aihub-core/playwright:v1.58.0-jammy \
-		-f ../configs/playwright/Dockerfile \
-		../configs/playwright
+		-f docker/playwright/Dockerfile \
+		docker/playwright
 	@docker push ghcr.io/bbvch-ai/aihub-core/playwright:v1.58.0-jammy
 	@echo "Successfully published playwright:v1.58.0-jammy"
 

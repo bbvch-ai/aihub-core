@@ -93,16 +93,13 @@ api:
   latest: api:latest
 # No 'dev' key → api is excluded from docker-compose.dev.yml
 
-# Postgres is per-stage — the build stage builds a custom image from
-# infra/deployment/docker/postgres/Dockerfile that extends pgvector/pgvector:pg17
+# Postgres is project-managed but published out-of-band: the Dockerfile at
+# infra/deployment/docker/postgres/Dockerfile extends pgvector/pgvector:pg17
 # with postgresql-17-repack (required by the maintenance subsystem in
-# packages/backup). Other stages pull pgvector-repack:pg17 from ghcr.
-postgres:
-  build: localbuild
-  dev: pgvector-repack:pg17
-  local: pgvector-repack:pg17
-  nightly: pgvector-repack:pg17
-  latest: pgvector-repack:pg17
+# packages/backup). All stages pull the same pinned tag from ghcr; re-publish
+# via `make -C infra/deployment build-and-push-postgres-image` after editing
+# the Dockerfile.
+postgres: pgvector-repack:pg17
 ```
 
 ### Publishing the postgres image

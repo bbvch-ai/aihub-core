@@ -1,3 +1,4 @@
+import asyncio
 import logging
 
 from fastapi import HTTPException, Request, Security
@@ -35,24 +36,26 @@ class TokenAuthHandler(BearerAuthHandler):
         Resolves tenant context from the optional request parameter, falling back to
         the user's active tenant when the request carries none.
         """
-        if not token_str:
-            raise HTTPException(status_code=401, detail="Token missing.")
-
-        try:
-            access_token = BearerToken.verify_token(token_str)
-        except ValueError as e:
-            logger.warning(f"Token authentication failed: {e}")
-            raise HTTPException(status_code=401, detail=str(e))
-
-        user_id = access_token.user_oid
-
-        keycloak_user = await KeycloakAdminService.get_user_by_id(user_id)
-        realm_roles = await KeycloakAdminService.get_user_realm_roles(user_id)
+        access_token = self.verify_token(token_str)
+        keycloak_user, realm_roles = await asyncio.gather(
+            KeycloakAdminService.get_user_by_id(access_token.user_oid),
+            KeycloakAdminService.get_user_realm_roles(access_token.user_oid),
+        )
         is_sys_admin = SYS_ADMIN_ROLE in realm_roles
         return await self.build_identity(
-            user_id=user_id,
+            user_id=access_token.user_oid,
             name=keycloak_user.name,
             email=keycloak_user.email,
             request=request,
             is_sys_admin=is_sys_admin,
         )
+
+    @staticmethod
+    def verify_token(token_str: str) -> BearerToken:
+        if not token_str:
+            raise HTTPException(status_code=401, detail="Token missing.")
+        try:
+            return BearerToken.verify_token(token_str)
+        except ValueError as e:
+            logger.warning(f"Token authentication failed: {e}")
+            raise HTTPException(status_code=401, detail=str(e))
