@@ -50,7 +50,7 @@
     "@nuxtjs/mdc": "^0.17.4",
     "@nuxtjs/robots": "^5.7.0",
     "@nuxtjs/tailwindcss": "^6.14.0",
-    "@pinia/colada": "^0.17.9",
+    "@pinia/colada": "^1.2.1",
     "@pinia/colada-nuxt": "^0.2.6",
     "@pinia/nuxt": "^0.11.3",
     "@primeuix/themes": "1.1.1",
