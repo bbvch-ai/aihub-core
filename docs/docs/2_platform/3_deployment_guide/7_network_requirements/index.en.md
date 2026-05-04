@@ -17,10 +17,27 @@ Which providers you need depends on your deployment configuration.
 | Service         | Endpoint                                      | Port | Purpose                                             |
 | --------------- | --------------------------------------------- | ---- | --------------------------------------------------- |
 | Swiss LLM Cloud | Configured via `SWISS_LLM_CLOUD_API_BASE_URL` | 443  | Text generation, embedding, reranking, whisper, OCR |
-| Jina AI         | `api.jina.ai`                                 | 443  | Web search and embeddings                           |
 | Hugging Face    | `huggingface.co`                              | 443  | Model downloads for self-hosted inference           |
 
 GPU deployments running local vLLM do not require outbound connectivity to LLM providers.
+:::
+
+::: details Web search engines (SearXNG meta-search)
+The platform's self-hosted SearXNG aggregator queries the search engines below on behalf of Open-WebUI when web search
+is enabled. The active engine set is configured in `infra/configs/searxng/settings.yml`; see
+[Web search](../8_web_search/) for the engine selection rationale and customisation guide.
+
+| Engine     | Endpoint            | Port | Purpose                                           |
+| ---------- | ------------------- | ---- | ------------------------------------------------- |
+| Brave      | `search.brave.com`  | 443  | General web search (independent index)            |
+| DuckDuckGo | `duckduckgo.com`    | 443  | General web search (no-tracking, proxies Bing)    |
+| Mojeek     | `www.mojeek.com`    | 443  | General web search (UK truly-independent crawler) |
+| Qwant      | `www.qwant.com`     | 443  | General web search (French/EU, GDPR-native)       |
+| Startpage  | `www.startpage.com` | 443  | Anonymized Google results (Dutch)                 |
+| Wikidata   | `www.wikidata.org`  | 443  | Structured-data lookup                            |
+| Wikipedia  | `*.wikipedia.org`   | 443  | Encyclopedia lookup                               |
+
+Disable web search in Open-WebUI to drop all of these requirements.
 :::
 
 Agents and pipelines can call your existing enterprise systems.

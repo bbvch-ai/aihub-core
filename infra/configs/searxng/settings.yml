@@ -1,0 +1,35 @@
+---
+# SearXNG instance configuration for Swiss AI-Hub.
+# Reference: https://docs.searxng.org/admin/settings/index.html
+#
+# `keep_only` enumerates the engine set this deployment queries. The list is
+# privacy-first with a Swiss/European lean. See
+# docs/docs/2_platform/3_deployment_guide/8_web_search/ for the selection
+# rationale and customisation guide; outbound hostnames are documented in
+# docs/docs/2_platform/3_deployment_guide/7_network_requirements/.
+use_default_settings:
+  engines:
+    keep_only:
+      - brave  # Independent crawler/index, US (no tracking).
+      - duckduckgo  # Mature no-tracking policy, proxies Bing for breadth.
+      - mojeek  # UK truly-independent index (not proxying Google/Bing).
+      - qwant  # French/EU, GDPR-native.
+      - startpage  # Dutch, anonymizes Google results.
+      - wikidata  # Structured knowledge graph.
+      - wikipedia  # Encyclopedic lookup.
+general:
+  instance_name: AI-Hub SearXNG
+search:
+  safe_search: 0
+  autocomplete: ''
+  formats: [html, json]
+server:
+  # Internal-only service: SearXNG is reachable solely from the `backend`
+  # network (Open-WebUI is the only client) and is never exposed via Traefik.
+  # `limiter: false` and `image_proxy: false` are safe in this topology and
+  # avoid the bot-detection false-positives the limiter triggers for trusted
+  # automated callers. Do NOT copy this config to a public-facing instance.
+  limiter: false
+  image_proxy: false
+  port: 8080
+  bind_address: 0.0.0.0

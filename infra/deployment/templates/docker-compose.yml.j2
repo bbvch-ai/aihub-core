@@ -40,6 +40,7 @@
 {%- set PRESIDIO_ANALYZER_API_BASE = "http://presidio-analyzer:3000" %}
 {%- set PRESIDIO_ANONYMIZER_API_BASE = "http://presidio-anonymizer:3000" %}
 {%- set PLAYWRIGHT_WS_URL = "ws://playwright:3000" %}
+{%- set SEARXNG_QUERY_URL = "http://localhost:8881/search?q=<query>&format=json" if stage == 'dev' else "http://searxng:8080/search?q=<query>&format=json" %}
 {%- set DAGSTER_WEBSERVER_URL = "http://dagster-webserver:3000" %}
 {%- set NOTIFICATION_DAGSTER_UI_BASE_URL = "http://localhost:3000" if stage == 'dev' else "https://dagster.${DOMAIN}" %}
 {%- set BACKUP_WEBSERVER_URL = "http://backup-webserver:3000" %}
@@ -1807,6 +1808,34 @@ services:
       - backend  # Internal service communication
       - egress   # Outbound internet access for web browsing
 
+  searxng:
+    container_name: searxng
+    image: {{ global.registry_prefix }}{{ image_tags.searxng }}
+    restart: always
+    {%- if stage in ['dev', 'local', 'build'] %}
+    ports:
+      - "8881:8080"
+    {%- endif %}
+    volumes:
+      - ./configs/searxng/settings.yml:/etc/searxng/settings.yml:ro
+    environment:
+      SEARXNG_BASE_URL: http://searxng:8080
+      SEARXNG_SECRET: ${SEARXNG_SECRET_KEY}
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "--quiet", "http://localhost:8080/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: 2
+    networks:
+      - backend
+      - egress
+
   # ===================================================================
   # Document Processing Stack
   # ===================================================================
@@ -1967,6 +1996,8 @@ services:
       jupyter:
         condition: service_healthy
       playwright:
+        condition: service_healthy
+      searxng:
         condition: service_healthy
       keycloak:
         condition: service_healthy
@@ -2144,8 +2175,8 @@ services:
 
       # --- Web Search ---
       ENABLE_WEB_SEARCH: True
-      WEB_SEARCH_ENGINE: jina
-      JINA_API_KEY: ${JINA_API_KEY}
+      WEB_SEARCH_ENGINE: searxng
+      SEARXNG_QUERY_URL: {{ SEARXNG_QUERY_URL }}
       WEB_SEARCH_RESULT_COUNT: 6
       WEB_SEARCH_CONCURRENT_REQUESTS: 6
       BYPASS_WEB_SEARCH_EMBEDDING_AND_RETRIEVAL: True
@@ -2281,7 +2312,7 @@ services:
     networks:
       - data
 
-  {% if image_tags.dagster[stage] %}
+  {%- if image_tags.dagster[stage] %}
   # ===================================================================
   # Dagster Stack (Data Pipeline Orchestration)
   # ===================================================================
@@ -2539,7 +2570,7 @@ services:
       - backend  # Traefik routes to backend services
   {%- endif %}
 
-  {% if image_tags.api[stage] %}
+  {%- if image_tags.api[stage] %}
   # ===================================================================
   # API Stack (Backend Logic)
   # ===================================================================
@@ -2722,7 +2753,7 @@ services:
       - storage
   {%- endif %}
 
-  {% if image_tags.web[stage] %}
+  {%- if image_tags.web[stage] %}
   # ===================================================================
   # Suite UI Stack (Frontend)
   # ===================================================================
@@ -2872,7 +2903,7 @@ services:
       - data
   {%- endif %}
 
-  {% if image_tags.rag_agent[stage] %}
+  {%- if image_tags.rag_agent[stage] %}
   rag_agent:
     container_name: rag-agent
     restart: always
@@ -2947,7 +2978,7 @@ services:
       - storage
   {%- endif %}
 
-  {% if image_tags.expert_rag_agent[stage] %}
+  {%- if image_tags.expert_rag_agent[stage] %}
   expert_rag_agent:
     container_name: expert-rag-agent
     restart: always
@@ -3012,7 +3043,7 @@ services:
       - storage
   {%- endif %}
 
-  {% if image_tags.expert_asking_agent[stage] %}
+  {%- if image_tags.expert_asking_agent[stage] %}
   expert_asking_agent:
     container_name: expert-asking-agent
     restart: always
@@ -3076,7 +3107,7 @@ services:
       - data
   {%- endif %}
 
-  {% if image_tags.retrieval_agent[stage] %}
+  {%- if image_tags.retrieval_agent[stage] %}
   retrieval_agent:
     container_name: retrieval-agent
     restart: always
@@ -3141,7 +3172,7 @@ services:
       - storage
   {%- endif %}
 
-  {% if image_tags.few_shot_agent[stage] %}
+  {%- if image_tags.few_shot_agent[stage] %}
   few_shot_agent:
     container_name: few-shot-agent
     restart: always
@@ -3197,7 +3228,7 @@ services:
       - data
   {%- endif %}
 
-  {% if image_tags.namespace_selection_agent[stage] %}
+  {%- if image_tags.namespace_selection_agent[stage] %}
   namespace_selection_agent:
     container_name: namespace-selection-agent
     restart: always
@@ -3253,7 +3284,7 @@ services:
       - data
   {%- endif %}
 
-  {% if image_tags.default_rag_pipeline[stage] %}
+  {%- if image_tags.default_rag_pipeline[stage] %}
   default_rag_pipeline:
     container_name: default-rag-pipeline
     restart: always
@@ -3330,7 +3361,7 @@ services:
       - storage
   {%- endif %}
 
-  {% if image_tags.shared_rag_pipeline[stage] %}
+  {%- if image_tags.shared_rag_pipeline[stage] %}
   shared_rag_pipeline:
     container_name: shared-rag-pipeline
     restart: always
@@ -3417,7 +3448,7 @@ services:
       - storage
   {%- endif %}
 
-  {% if image_tags.bot[stage] %}
+  {%- if image_tags.bot[stage] %}
   # ===================================================================
   # Bot Service (MS Teams Integration)
   # ===================================================================
