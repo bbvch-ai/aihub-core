@@ -15,7 +15,7 @@ jobs:
   lint-pr-title:
     name: Lint PR Title
     runs-on: ubuntu-latest
-    if: ${{ !github.event.pull_request.draft }}
+    if: ${{ !github.event.pull_request.draft && github.event.pull_request.user.login != 'dependabot[bot]' }}
     permissions:
       checks: write
       contents: read
@@ -67,10 +67,11 @@ jobs:
             main
             /^([a-z]{2,})\/([a-z-0-9]{2,})$/
             /^claude\/[a-zA-Z0-9-]+$/
+            /^dependabot\/[a-z0-9_-]+\/.+$/
   check-version-label:
     name: Check Version Label
     runs-on: ubuntu-latest
-    if: ${{ !github.event.pull_request.draft }}
+    if: ${{ !github.event.pull_request.draft && github.event.pull_request.user.login != 'dependabot[bot]' }}
     permissions:
       checks: write
       contents: read
