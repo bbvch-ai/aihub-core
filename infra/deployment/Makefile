@@ -28,14 +28,14 @@ build-and-push-postgres-image:
 # After running, non-build stages pick up the new image automatically via
 # `docker compose pull`.
 build-and-push-playwright-image:
-	@echo "Building ghcr.io/bbvch-ai/aihub-core/playwright:v1.49.0-jammy..."
+	@echo "Building ghcr.io/bbvch-ai/aihub-core/playwright:v1.58.0-jammy..."
 	@docker login ghcr.io
 	@docker build \
-		-t ghcr.io/bbvch-ai/aihub-core/playwright:v1.49.0-jammy \
+		-t ghcr.io/bbvch-ai/aihub-core/playwright:v1.58.0-jammy \
 		-f ../configs/playwright/Dockerfile \
 		../configs/playwright
-	@docker push ghcr.io/bbvch-ai/aihub-core/playwright:v1.49.0-jammy
-	@echo "Successfully published playwright:v1.49.0-jammy"
+	@docker push ghcr.io/bbvch-ai/aihub-core/playwright:v1.58.0-jammy
+	@echo "Successfully published playwright:v1.58.0-jammy"
 
 # Mirror an image from source to target
 # Usage: make mirror-image SOURCE=source/image:tag TARGET=target/image:tag
