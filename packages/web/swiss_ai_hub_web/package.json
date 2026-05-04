@@ -99,7 +99,7 @@
     "@types/node": "^22.19.7",
     "eslint": "^9.39.2",
     "eslint-plugin-import": "^2.32.0",
-    "eslint-plugin-sonarjs": "^3.0.6",
+    "eslint-plugin-sonarjs": "^4.0.3",
     "eslint-plugin-tailwindcss": "^3.18.2",
     "nuxt": "^3.21.0",
     "tailwindcss": "^3.4.19",
