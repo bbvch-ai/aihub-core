@@ -264,10 +264,17 @@ jobs:
       - sync-docs
     runs-on: ubuntu-latest
     steps:
+      # Authenticate via a deploy key (not the default GITHUB_TOKEN) because this
+      # job amends the merge commit and force-pushes it to `main`. The `main`
+      # branch is protected (PR-only, required status checks, no force-push), and
+      # GITHUB_TOKEN cannot bypass those rules. The deploy key stored in
+      # PRIVATE_SSH_KEY is registered with bypass permissions, so pushes from
+      # this step are accepted.
       - name: Checkout the repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ssh-key: ${{ secrets.PRIVATE_SSH_KEY }}
       - name: Download changelog (if any)
         uses: actions/download-artifact@v4
         with:
