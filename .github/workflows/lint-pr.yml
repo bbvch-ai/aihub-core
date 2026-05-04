@@ -45,9 +45,9 @@ jobs:
     if: ${{ !github.event.pull_request.draft }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Set up Python 3.13
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.13'
       - name: Install system dependencies
@@ -61,7 +61,7 @@ jobs:
       - name: Install dev dependencies
         run: uv sync --all-packages --dev --frozen
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 22.x
       - name: Install pnpm
