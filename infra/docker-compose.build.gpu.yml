@@ -1522,7 +1522,7 @@ services:
   playwright:
     container_name: playwright-server
     build:
-      context: ./configs/playwright
+      context: ./deployment/docker/playwright
       dockerfile: Dockerfile
     restart: always
     ports: [3036:3000]

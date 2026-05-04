@@ -25,19 +25,7 @@ image_tags:
   etcd: etcd:v3.5.25
   milvus: milvus:v2.6.7
   attu: attu:v2.5.12
-  postgres:
-    # Project-managed image: extends pgvector/pgvector:pg17 with postgresql-17-repack
-    # (required by the maintenance subsystem in packages/backup). The Dockerfile
-    # lives at infra/deployment/docker/postgres/Dockerfile.
-    # `build` stage builds locally; other stages pull pgvector-repack:pg17 from
-    # ghcr.io/bbvch-ai/aihub-core/. Publish via `make -C infra/deployment
-    # build-and-push-postgres-image` whenever the Dockerfile changes (Postgres
-    # version bump or pg_repack package upgrade).
-    build: localbuild
-    dev: pgvector-repack:pg17
-    local: pgvector-repack:pg17
-    nightly: pgvector-repack:pg17
-    latest: pgvector-repack:pg17
+  postgres: pgvector-repack:pg17
   clickhouse: clickhouse/clickhouse-server:25.8
   langfuse_web: langfuse/langfuse:3
   langfuse_worker: langfuse/langfuse-worker:3
@@ -57,18 +45,7 @@ image_tags:
   presidio_anonymizer: presidio-anonymizer:2.2.359
   oauth2proxy: ghcr.io/bbvch-ai/bbvch-ai/oauth2-proxy:latest
   open_webui: open-webui:v0.8.10
-  playwright:
-    # Project-managed image: extends mcr.microsoft.com/playwright:v1.58.0-jammy
-    # with the npm playwright package and a server entrypoint. Dockerfile lives
-    # at infra/configs/playwright/Dockerfile.
-    # `build` stage builds locally; other stages pull from ghcr.
-    # Re-publish via `make -C infra/deployment build-and-push-playwright-image`
-    # whenever the Dockerfile or playwright version changes.
-    build: localbuild
-    dev: playwright:v1.58.0-jammy
-    local: playwright:v1.58.0-jammy
-    nightly: playwright:v1.58.0-jammy
-    latest: playwright:v1.58.0-jammy
+  playwright: playwright:v1.58.0-jammy
   vllm: vllm-openai:v0.15.1
   speaches: ghcr.io/speaches-ai/speaches:latest-cuda-12.6.3
   pgbouncer: pgbouncer:v1.24.1-p1
