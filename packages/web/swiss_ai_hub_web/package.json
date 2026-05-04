@@ -53,7 +53,7 @@
     "@pinia/colada": "^1.2.1",
     "@pinia/colada-nuxt": "^1.0.0",
     "@pinia/nuxt": "^0.11.3",
-    "@primeuix/themes": "1.1.1",
+    "@primeuix/themes": "2.0.3",
     "@primevue/forms": "4.5.5",
     "@primevue/nuxt-module": "4.5.5",
     "@sfxcode/formkit-primevue-nuxt": "^1.7.0",
