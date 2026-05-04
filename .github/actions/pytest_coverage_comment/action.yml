@@ -9,19 +9,19 @@ runs:
   using: composite
   steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
     - name: Sanitize artifact name
       id: sanitize
       shell: bash
       run: echo "artifact_prefix=$(echo '${{ inputs.working_directory }}' | tr '/'
         '-')" >> "$GITHUB_OUTPUT"
     - name: Download pytest reports
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         name: ${{ steps.sanitize.outputs.artifact_prefix }}-pytest-report
         path: ${{ inputs.working_directory }}
     - name: Download coverage reports
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         name: ${{ steps.sanitize.outputs.artifact_prefix }}-coverage-report
         path: ${{ inputs.working_directory }}

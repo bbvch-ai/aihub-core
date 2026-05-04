@@ -49,7 +49,7 @@ jobs:
               seaweedfs-init etcd-init etcd milvus-standalone
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Run Tests
         uses: ./.github/actions/test_backend
         with:

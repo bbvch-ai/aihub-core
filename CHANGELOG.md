@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.286.0] - 2026-05-04 - Infrastructure Modernization and Dependency Upgrades
+
+### Changed
+
+- 🛠️ **Modernized CI/CD Infrastructure**: Upgraded core GitHub Actions, including `checkout`, `setup-python`,
+  `setup-node`, and artifact management, to enhance build reliability, performance, and security across all workflows.
+- 🚀 **Advanced Platform Technologies**: Updated Node.js runtime versions across development environments and Docker
+  images, providing a more current and efficient foundation for frontend services and CI processes.
+- ✨ **Enhanced Web Application Dependencies**: Performed comprehensive updates to key frontend libraries and frameworks,
+  including significant version bumps for `FormKit` and `Pinia Colada`, ensuring the web application benefits from the
+  latest features and stability.
+- 🧩 **Improved Development and Testing Toolchain**: Upgraded essential development dependencies such as `pytest`,
+  `ruff`, and `Playwright`, leading to a more robust testing framework and optimized code quality checks.
+- 📄 **Modernized Documentation Dependencies**: Updated various documentation-related packages like `vitepress`,
+  `mermaid`, and `cytoscape` to ensure the documentation platform remains current and performant.
+
+### Refactor
+
+- 🔄 **Refined Test Mocking**: Enhanced the flexibility of `aiohttp` request mocks in bot playground tests to improve
+  test resilience and adaptability to evolving API interactions.
+- 🔒 **Standardized Dependency Constraints**: Applied a precise version constraint for the `mem0ai[graph]` dependency to
+  ensure compatibility and prevent unintended breaking changes from future major releases.
+
+______________________________________________________________________
+
 ## [v0.285.4] - 2026-05-04 - Enhanced Authentication Robustness and Performance
 
 ### Fixed

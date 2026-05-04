@@ -1,6 +1,6 @@
 [project]
 name = "swiss-ai-hub-workspace"
-version = "0.285.4"
+version = "0.286.0"
 requires-python = ">=3.13, <3.14"
 description = "Swiss AI Hub Monorepo Workspace"
 dependencies = [
@@ -12,18 +12,18 @@ dependencies = [
 [dependency-groups]
 dev = [
     # Testing
-    "pytest>=8.4.1",
+    "pytest>=9.0.3",
     "pytest-asyncio>=0.24.0",
     "pytest-bdd>=8.1.0",
-    "pytest-cov>=6.0.0",
+    "pytest-cov>=7.1.0",
     "pytest-mock>=3.14.0",
     # Linting & formatting
     "black[jupyter]>=26.1.0",
-    "ty>=0.0.1a7",
-    "ruff>=0.8.1",
-    "toml-sort>=0.24.2",
+    "ty>=0.0.34",
+    "ruff>=0.15.12",
+    "toml-sort>=0.24.4",
     # Utilities
-    "pip-licenses>=5.0.0",
+    "pip-licenses>=5.5.5",
     "mdformat>=0.7.21",
     "mdformat-gfm>=0.4.1",
     "mdformat-simple-breaks>=0.0.1",
