@@ -5,6 +5,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.285.2] - 2026-05-04 - Enhanced Release Workflow for Protected Branches
+
+### Changed
+
+- ⚙️ **Streamlined Release Finalization**: The `add-tag.yml` GitHub Actions workflow now utilizes a dedicated deploy key
+  for repository checkout. This enhancement ensures the workflow can successfully amend merge commits and force-push to
+  the protected `main` branch, improving the reliability and integrity of the release finalization process.
+
+______________________________________________________________________
+
+## [v0.285.1] - 2026-05-04 - Automated Dependency Management and CI/CD Streamlining
+
+### Added
+
+- ✨ **Automated Dependency Management:** Introduced **Dependabot** configuration to automatically detect and create pull
+  requests for dependency updates across Python, Node.js (frontend, docs, E2E), Docker base images, and GitHub Actions,
+  significantly enhancing project maintainability and security.
+
+### Changed
+
+- 📄 **Improved Documentation:** Updated the description for the `github_token` input in the backend linting action,
+  clarifying its specific use by **reviewdog** for posting review comments.
+
+### Refactor
+
+- 🧹 **Optimized Pull Request Checks:** Configured **semantic PR checks** to bypass title linting and version label
+  requirements specifically for Dependabot-generated pull requests, streamlining the process for automated dependency
+  updates.
+
+### Removed
+
+- 🗑️ **Streamlined CI/CD Workflows:** Eliminated explicit **Git SSH key configuration** steps from various GitHub
+  Actions workflows, simplifying pipeline setup and reducing configuration overhead.
+
+______________________________________________________________________
+
 ## [v0.285.0] - 2026-04-29 - Introducing Self-Hosted Web Search (SearXNG) and Playwright Update
 
 ### Added
