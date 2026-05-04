@@ -32,13 +32,6 @@ jobs:
           python-version: '3.13'
       - name: Install uv
         uses: astral-sh/setup-uv@v7
-      - name: Configure Git Authentication
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.PRIVATE_SSH_KEY }}" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan github.com >> ~/.ssh/known_hosts
-          git config --global url."git@github.com:".insteadOf "https://github.com/"
       - name: Generate Docker Compose files
         run: make generate-compose
       - name: Login to GHCR
@@ -121,11 +114,6 @@ jobs:
         if: always()
         run: docker compose -f infra/docker-compose.dev.yml --env-file .env.dev down
           --remove-orphans
-      - name: Clean up SSH keys
-        if: always()
-        run: |
-          rm -rf ~/.ssh
-          git config --global --unset url."git@github.com:".insteadOf || true
       - name: Upload test report
         if: always()
         uses: actions/upload-artifact@v4

@@ -195,13 +195,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y jq
           npm install -g pnpm
-      - name: Set up SSH for GitHub private dependencies
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.PRIVATE_SSH_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan github.com >> ~/.ssh/known_hosts
-          git config --global url."git@github.com:".insteadOf "https://github.com/"
       - name: Install uv
         uses: astral-sh/setup-uv@v7
         with:
@@ -271,10 +264,17 @@ jobs:
       - sync-docs
     runs-on: ubuntu-latest
     steps:
+      # Authenticate via a deploy key (not the default GITHUB_TOKEN) because this
+      # job amends the merge commit and force-pushes it to `main`. The `main`
+      # branch is protected (PR-only, required status checks, no force-push), and
+      # GITHUB_TOKEN cannot bypass those rules. The deploy key stored in
+      # RELEASE_FINALIZE_DEPLOY_KEY is registered with bypass permissions, so
+      # pushes from this step are accepted.
       - name: Checkout the repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ssh-key: ${{ secrets.RELEASE_FINALIZE_DEPLOY_KEY }}
       - name: Download changelog (if any)
         uses: actions/download-artifact@v4
         with:
@@ -301,13 +301,6 @@ jobs:
         uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
-      - name: Set up SSH for GitHub bypass
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.PRIVATE_SSH_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan github.com >> ~/.ssh/known_hosts
-          git config --global url."git@github.com:".insteadOf "https://github.com/"
       - name: Increment version in project files
         env:
           VERSION: ${{ needs.compute-and-initial-tag.outputs.version }}
@@ -354,10 +347,6 @@ jobs:
           echo "Setting 'nightly' tag to same commit as $VERSION..."
           git tag -f nightly "${VERSION}"
           git push origin refs/tags/nightly --force
-      - name: Clean up SSH keys
-        run: |
-          rm -rf ~/.ssh
-          git config --global --unset url."git@github.com:".insteadOf
   notify-release:
     name: Notify Release Dispatch
     needs: [finalize-release, compute-and-initial-tag]
