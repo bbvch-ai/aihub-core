@@ -71,14 +71,14 @@ runs:
   using: composite
   steps:
     - name: Checkout Repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
     - name: Sanitize artifact name
       id: sanitize
       shell: bash
       run: echo "artifact_prefix=$(echo '${{ inputs.working_directory }}' | tr '/'
         '-')" >> "$GITHUB_OUTPUT"
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{ inputs.python_version }}
     - name: Install uv
@@ -233,12 +233,12 @@ runs:
       run: |
         docker compose -f infra/docker-compose.dev.yml down --remove-orphans
     - name: Upload Coverage Report
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: ${{ steps.sanitize.outputs.artifact_prefix }}-coverage-report
         path: ${{ inputs.working_directory }}/coverage.xml
     - name: Upload Pytest Report
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: ${{ steps.sanitize.outputs.artifact_prefix }}-pytest-report
         path: ${{ inputs.working_directory }}/pytest.xml
