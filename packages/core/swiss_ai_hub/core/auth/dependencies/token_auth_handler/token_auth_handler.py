@@ -1,3 +1,4 @@
+import asyncio
 import logging
 
 from fastapi import HTTPException, Request, Security
@@ -36,8 +37,10 @@ class TokenAuthHandler(BearerAuthHandler):
         the user's active tenant when the request carries none.
         """
         access_token = self.verify_token(token_str)
-        keycloak_user = await KeycloakAdminService.get_user_by_id(access_token.user_oid)
-        realm_roles = await KeycloakAdminService.get_user_realm_roles(access_token.user_oid)
+        keycloak_user, realm_roles = await asyncio.gather(
+            KeycloakAdminService.get_user_by_id(access_token.user_oid),
+            KeycloakAdminService.get_user_realm_roles(access_token.user_oid),
+        )
         is_sys_admin = SYS_ADMIN_ROLE in realm_roles
         return await self.build_identity(
             user_id=access_token.user_oid,
