@@ -195,13 +195,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y jq
           npm install -g pnpm
-      - name: Set up SSH for GitHub private dependencies
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.PRIVATE_SSH_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan github.com >> ~/.ssh/known_hosts
-          git config --global url."git@github.com:".insteadOf "https://github.com/"
       - name: Install uv
         uses: astral-sh/setup-uv@v7
         with:
@@ -301,13 +294,6 @@ jobs:
         uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
-      - name: Set up SSH for GitHub bypass
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.PRIVATE_SSH_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan github.com >> ~/.ssh/known_hosts
-          git config --global url."git@github.com:".insteadOf "https://github.com/"
       - name: Increment version in project files
         env:
           VERSION: ${{ needs.compute-and-initial-tag.outputs.version }}
@@ -354,10 +340,6 @@ jobs:
           echo "Setting 'nightly' tag to same commit as $VERSION..."
           git tag -f nightly "${VERSION}"
           git push origin refs/tags/nightly --force
-      - name: Clean up SSH keys
-        run: |
-          rm -rf ~/.ssh
-          git config --global --unset url."git@github.com:".insteadOf
   notify-release:
     name: Notify Release Dispatch
     needs: [finalize-release, compute-and-initial-tag]

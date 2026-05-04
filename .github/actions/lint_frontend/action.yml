@@ -34,10 +34,6 @@ runs:
         key: ${{ runner.os }}-pnpm-${{ hashFiles(inputs.lockfile) }}
         restore-keys: |
           ${{ runner.os }}-pnpm-
-    - name: Configure Git to Use `GITHUB_TOKEN`
-      shell: bash
-      run: git config --global url."https://${{ inputs.github_token }}@github.com/".insteadOf
-        "https://github.com/"
     - name: Install dependencies
       shell: bash
       run: pnpm install --frozen-lockfile
