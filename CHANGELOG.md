@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.285.3] - 2026-05-04 - Refined Image Management for Deployment Builds
+
+### Refactor
+
+- 🧹 **Streamlined Image Configuration**: Simplified the `compose-config.yml` by removing redundant `build: localbuild`
+  directives and stage-specific image tags for project-managed images like **Postgres** and **Playwright**. These images
+  are now consistently referenced by their pinned, pre-built tags across all deployment stages.
+- 🔄 **Enhanced Image Tagging Automation**: Refined the internal logic for identifying and tagging images during
+  releases, ensuring that only actively rebuilt **application images** (those marked for per-release publishing) are
+  updated with the `:latest` tag. Project-managed base images with specific version pins are now explicitly excluded
+  from this automatic retagging process.
+- 📦 **Reorganized Playwright Dockerfile**: Moved the **Playwright Dockerfile** to a more logical and standardized
+  location within the `infra/deployment/docker` directory, improving project structure and maintainability.
+- ⚙️ **Simplified Docker Compose Generation**: The internal templates for generating Docker Compose files have been
+  updated, removing conditional build instructions for **Postgres** and **Playwright** services. These services now
+  uniformly pull their pre-built, version-pinned images from the registry.
+
+### Changed
+
+- 📄 **Clarified Postgres Image Documentation**: Updated the documentation for the **Postgres image** within `CLAUDE.md`
+  to explicitly describe it as a project-managed image that is published out-of-band and consumed with a pinned tag,
+  providing clearer guidance on its lifecycle.
+
+______________________________________________________________________
+
 ## [v0.285.2] - 2026-05-04 - Enhanced Release Workflow for Protected Branches
 
 ### Changed

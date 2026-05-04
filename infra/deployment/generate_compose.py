@@ -117,12 +117,18 @@ def _pin_image_tags_to_version(config_data, version):
     image tag with the release version so the rendered compose files reference
     the correct versioned images.
 
-    Only pins images that have a 'build' key, which marks them as our own images
-    (as opposed to third-party images that use flat strings or dicts without 'build').
+    Only pins services whose 'latest' value follows the per-release publishing
+    convention `{service}:latest`. Project-managed images that are published
+    out-of-band (e.g. postgres -> pgvector-repack:pg17, playwright ->
+    playwright:v1.58.0-jammy) keep their literal pinned tag.
     """
     image_tags = config_data.get("image_tags", {})
     for service, tag_value in image_tags.items():
-        if isinstance(tag_value, dict) and "build" in tag_value and "latest" in tag_value:
+        if not isinstance(tag_value, dict):
+            continue
+        if "build" not in tag_value:
+            continue
+        if tag_value.get("latest") == f"{service}:latest":
             tag_value["latest"] = f"{service}:{version}"
 
 
