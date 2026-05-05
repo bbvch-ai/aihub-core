@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.286.1] - 2026-05-05 - Enhanced Build Stability and Dependency Optimization
+
+### Changed
+
+- 🛡️ **Strengthened Agent Build Validation:** The CI/CD pipeline now enforces stricter validation for agent builds. All
+  individual agent builds within a matrix must successfully complete for the entire workflow to pass, preventing silent
+  partial failures.
+
+### Fixed
+
+- 🐛 **Resolved `apache-age-python` Dependency Issue:** Eliminated an unnecessary transitive dependency on
+  `apache-age-python` (pulled by `mem0ai[graph]`), which previously caused build complications due to its `psycopg2`
+  requirement for system libraries. This improves build reliability and streamlines dependency management.
+
+______________________________________________________________________
+
 ## [v0.286.0] - 2026-05-04 - Infrastructure Modernization and Dependency Upgrades
 
 ### Changed

@@ -1,10 +1,10 @@
 # License Report
 
-Generated on: 04.05.2026
+Generated on: 05.05.2026
 
 This document contains license information for all dependencies across the monorepo:
 
-- Python packages (uv): **407 packages**
+- Python packages (uv): **403 packages**
 - Node.js packages (pnpm): **1002 packages**
 - External Docker images: **33 images**
 
@@ -35,9 +35,7 @@ This document contains license information for all dependencies across the monor
 | ✅     | annotated-doc                                    | 0.0.4                 | MIT                                                          |                                                                      |
 | ✅     | annotated-types                                  | 0.7.0                 | MIT License                                                  |                                                                      |
 | ✅     | antlr4-python3-runtime                           | 4.13.2                | BSD                                                          |                                                                      |
-| ✅     | antlr4-tools                                     | 0.2.2                 | MIT License                                                  |                                                                      |
 | ✅     | anyio                                            | 4.13.0                | MIT (override)                                               |                                                                      |
-| ✅     | apache-age-python                                | 0.0.6                 | Apache2.0                                                    |                                                                      |
 | ✅     | apprise                                          | 1.10.0                | BSD-2-Clause                                                 |                                                                      |
 | ✅     | asgi-lifespan                                    | 2.1.0                 | MIT                                                          |                                                                      |
 | ✅     | asgiref                                          | 3.11.1                | BSD License                                                  |                                                                      |
@@ -149,7 +147,6 @@ This document contains license information for all dependencies across the monor
 | ✅     | ImageHash                                        | 4.3.2                 | 2-clause BSD License                                         |                                                                      |
 | ✅     | importlib_metadata                               | 8.7.1                 | Apache-2.0                                                   |                                                                      |
 | ✅     | iniconfig                                        | 2.3.0                 | MIT                                                          |                                                                      |
-| ✅     | install-jdk                                      | 1.1.0                 | MIT License                                                  |                                                                      |
 | ✅     | ipython                                          | 9.13.0                | BSD-3-Clause                                                 |                                                                      |
 | ✅     | ipython_pygments_lexers                          | 1.1.1                 | BSD License                                                  |                                                                      |
 | ✅     | isodate                                          | 0.7.2                 | BSD License                                                  |                                                                      |
@@ -320,7 +317,6 @@ This document contains license information for all dependencies across the monor
 | ✅     | psutil                                           | 7.2.2                 | BSD-3-Clause                                                 |                                                                      |
 | ✅     | psycopg                                          | 3.3.4                 | LGPL-3.0-only                                                |                                                                      |
 | ✅     | psycopg-binary                                   | 3.3.4                 | LGPL-3.0-only                                                |                                                                      |
-| ✅     | psycopg2                                         | 2.9.12                | GNU Library or Lesser General Public License (LGPL)          |                                                                      |
 | ✅     | psycopg2-binary                                  | 2.9.12                | GNU Library or Lesser General Public License (LGPL)          |                                                                      |
 | ✅     | ptyprocess                                       | 0.7.0                 | ISC License (ISCL)                                           |                                                                      |
 | ✅     | pure_eval                                        | 0.2.3                 | MIT License                                                  |                                                                      |
