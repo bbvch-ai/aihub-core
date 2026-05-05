@@ -13,6 +13,10 @@ from pathlib import Path
 import yaml
 from jinja2 import Environment, FileSystemLoader
 
+from env_check import check_env_vs_compose
+from env_docs import write_env_var_docs
+from env_inventory import build_consumers
+
 # Paths
 REPO_ROOT = Path(__file__).parent.parent.parent.resolve()
 ROOT_DIR = Path(__file__).parent.parent.resolve()
@@ -246,7 +250,7 @@ def _copy_release_static_files(variant_dir):
     return copied
 
 
-def generate_release(env, config_data, version, output_dir, project):
+def generate_release(env, config_data, version, output_dir, project, strict_env_check=False, consumers=None):
     """Generate self-contained release bundles for CPU and GPU variants.
 
     Uses stage='latest' for template rendering so all production conditionals
@@ -326,6 +330,14 @@ def generate_release(env, config_data, version, output_dir, project):
             print(f"Copied {static_count} static files into {folder_name}/")
             stats["static-files"] = stats.get("static-files", 0) + static_count
 
+        check_env_vs_compose(
+            env_file=variant_dir / ".env.template",
+            compose_file=variant_dir / "docker-compose.yml",
+            consumers=consumers or {},
+            label=f"{folder_name} ({variant_label})",
+            strict=strict_env_check,
+        )
+
     return stats
 
 
@@ -353,6 +365,21 @@ def parse_args():
         metavar="PATH",
         help="Output directory for release artifacts (default: project root)",
     )
+    parser.add_argument(
+        "--strict-env-check",
+        action="store_true",
+        help="Fail if .env.template defines unused vars or compose references undefined vars",
+    )
+    parser.add_argument(
+        "--check-env",
+        action="store_true",
+        help="Run env/compose consistency check against .env.prod and rendered latest compose files (no generation)",
+    )
+    parser.add_argument(
+        "--write-env-docs",
+        action="store_true",
+        help="Generate the environment-variables reference page in docs/",
+    )
     return parser.parse_args()
 
 
@@ -362,14 +389,45 @@ def main():
     config_data = load_config()
     env = Environment(loader=FileSystemLoader(DEPLOYMENT_DIR), keep_trailing_newline=True)
 
+    if args.check_env:
+        env_file = REPO_ROOT / ".env.prod"
+        compose_cpu = ROOT_DIR / "docker-compose.latest.yml"
+        compose_gpu = ROOT_DIR / "docker-compose.latest.gpu.yml"
+        if not compose_cpu.exists() or not compose_gpu.exists():
+            print("ERROR: Run `make generate-compose` first to produce latest compose files", file=sys.stderr)
+            sys.exit(1)
+        consumers = build_consumers()
+        ok_cpu = check_env_vs_compose(env_file, compose_cpu, consumers, "latest CPU", args.strict_env_check)
+        ok_gpu = check_env_vs_compose(env_file, compose_gpu, consumers, "latest GPU", args.strict_env_check)
+        sys.exit(0 if (ok_cpu and ok_gpu) else 1)
+
+    if args.write_env_docs:
+        consumers = build_consumers()
+        compose_variants = {
+            "CPU": ROOT_DIR / "docker-compose.latest.yml",
+            "GPU": ROOT_DIR / "docker-compose.latest.gpu.yml",
+        }
+        if not all(p.exists() for p in compose_variants.values()):
+            print("ERROR: Run `make generate-compose` first to produce latest compose files", file=sys.stderr)
+            sys.exit(1)
+        docs_path = REPO_ROOT / "docs/docs/2_platform/3_deployment_guide/9_environment_variables/index.en.md"
+        write_env_var_docs(docs_path, consumers, compose_variants)
+        print(f"Wrote env-var docs to {docs_path.relative_to(REPO_ROOT)}")
+        return
+
     if args.release:
         version = args.tag
         project = args.project
         output_dir = Path(args.output_dir) if args.output_dir else ROOT_DIR
         output_dir = output_dir.resolve()
 
+        consumers = build_consumers()
         print(f"Generating release artifacts for {project} {version}...\n")
-        stats = generate_release(env, config_data, version, output_dir, project)
+        stats = generate_release(
+            env, config_data, version, output_dir, project,
+            strict_env_check=args.strict_env_check,
+            consumers=consumers,
+        )
     else:
         print("Generating configuration files...\n")
         stats = generate_default(env, config_data)

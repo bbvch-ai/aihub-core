@@ -270,7 +270,7 @@ services:
       OAUTH2_PROXY_SCOPE: openid email profile roles
       OAUTH2_PROXY_CLIENT_ID: oauth2-proxy-datalake
       OAUTH2_PROXY_PROVIDER: oidc
-      OAUTH2_PROXY_PROVIDER_DISPLAY_NAME: ${OAUTH_PROVIDER_NAME}
+      OAUTH2_PROXY_PROVIDER_DISPLAY_NAME: Keycloak
       OAUTH2_PROXY_SKIP_OIDC_DISCOVERY: 'true'
       OAUTH2_PROXY_OIDC_ISSUER_URL: https://auth.${DOMAIN}/realms/aihub
       OAUTH2_PROXY_LOGIN_URL: https://auth.${DOMAIN}/realms/aihub/protocol/openid-connect/auth
@@ -437,7 +437,7 @@ services:
       OAUTH2_PROXY_SCOPE: openid email profile roles
       OAUTH2_PROXY_CLIENT_ID: oauth2-proxy-attu
       OAUTH2_PROXY_PROVIDER: oidc
-      OAUTH2_PROXY_PROVIDER_DISPLAY_NAME: ${OAUTH_PROVIDER_NAME}
+      OAUTH2_PROXY_PROVIDER_DISPLAY_NAME: Keycloak
       OAUTH2_PROXY_SKIP_OIDC_DISCOVERY: 'true'
       OAUTH2_PROXY_OIDC_ISSUER_URL: https://auth.${DOMAIN}/realms/aihub
       OAUTH2_PROXY_LOGIN_URL: https://auth.${DOMAIN}/realms/aihub/protocol/openid-connect/auth
@@ -511,10 +511,10 @@ services:
       DB_NAME: dagster
       AUTH_TYPE: scram-sha-256
       POOL_MODE: transaction
-      MAX_CLIENT_CONN: ${PGBOUNCER_MAX_CLIENT_CONN:-1000}
-      DEFAULT_POOL_SIZE: ${PGBOUNCER_DEFAULT_POOL_SIZE:-20}
-      MIN_POOL_SIZE: ${PGBOUNCER_MIN_POOL_SIZE:-2}
-      RESERVE_POOL_SIZE: ${PGBOUNCER_RESERVE_POOL_SIZE:-3}
+      MAX_CLIENT_CONN: '1000'
+      DEFAULT_POOL_SIZE: '20'
+      MIN_POOL_SIZE: '2'
+      RESERVE_POOL_SIZE: '3'
       LISTEN_ADDR: 0.0.0.0
       LISTEN_PORT: '6432'
       ADMIN_USERS: ${POSTGRES_USER}
@@ -740,7 +740,7 @@ services:
     ports: [6006:3000]
     environment:
       HOSTNAME: 0.0.0.0
-      NEXTAUTH_URL: ${LANGFUSE_NEXTAUTH_URL}
+      NEXTAUTH_URL: https://langfuse.${DOMAIN}
       NEXTAUTH_SECRET: ${LANGFUSE_NEXTAUTH_SECRET}
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/langfuse
       SALT: ${LANGFUSE_SALT}
@@ -1116,7 +1116,7 @@ services:
       OAUTH2_PROXY_UPSTREAMS: http://backup-webserver:3000
       OAUTH2_PROXY_CLIENT_ID: oauth2-proxy-backup
       OAUTH2_PROXY_PROVIDER: oidc
-      OAUTH2_PROXY_PROVIDER_DISPLAY_NAME: ${OAUTH_PROVIDER_NAME}
+      OAUTH2_PROXY_PROVIDER_DISPLAY_NAME: Keycloak
       OAUTH2_PROXY_SKIP_OIDC_DISCOVERY: 'true'
       OAUTH2_PROXY_OIDC_ISSUER_URL: https://auth.${DOMAIN}/realms/aihub
       OAUTH2_PROXY_LOGIN_URL: https://auth.${DOMAIN}/realms/aihub/protocol/openid-connect/auth
@@ -1539,7 +1539,7 @@ services:
       ENABLE_OAUTH_ROLE_MANAGEMENT: true
       OAUTH_ROLES_CLAIM: roles
       OAUTH_ADMIN_ROLES: ${OAUTH_ADMIN_ROLES_OPENWEBUI}
-      OAUTH_PROVIDER_NAME: ${OAUTH_PROVIDER_NAME}
+      OAUTH_PROVIDER_NAME: Keycloak
       OAUTH_CLIENT_ID: openwebui
       OAUTH_CLIENT_SECRET: ${KEYCLOAK_OPENWEBUI_CLIENT_SECRET}
       OPENID_PROVIDER_URL: http://keycloak:8080/realms/aihub/.well-known/openid-configuration
@@ -1800,7 +1800,7 @@ services:
       OAUTH2_PROXY_UPSTREAMS: http://dagster-webserver:3000
       OAUTH2_PROXY_CLIENT_ID: oauth2-proxy-dagster
       OAUTH2_PROXY_PROVIDER: oidc
-      OAUTH2_PROXY_PROVIDER_DISPLAY_NAME: ${OAUTH_PROVIDER_NAME}
+      OAUTH2_PROXY_PROVIDER_DISPLAY_NAME: Keycloak
       OAUTH2_PROXY_SKIP_OIDC_DISCOVERY: 'true'
       OAUTH2_PROXY_OIDC_ISSUER_URL: https://auth.${DOMAIN}/realms/aihub
       OAUTH2_PROXY_LOGIN_URL: https://auth.${DOMAIN}/realms/aihub/protocol/openid-connect/auth
@@ -2066,6 +2066,17 @@ services:
       AIHUB_DEFAULT_NAMESPACE_NAME: ${AIHUB_DEFAULT_NAMESPACE_NAME}
       AIHUB_SHARED_NAMESPACE_NAME: ${AIHUB_SHARED_NAMESPACE_NAME}
 
+      # Startup tenant — read by StartupTenantSettings on first boot to seed
+      # the initial tenant. ID also goes to keycloak for realm-import group naming.
+      AIHUB_STARTUP_TENANT_ID: ${AIHUB_STARTUP_TENANT_ID}
+      AIHUB_STARTUP_TENANT_NAME: ${AIHUB_STARTUP_TENANT_NAME}
+      AIHUB_STARTUP_TENANT_DESCRIPTION: ${AIHUB_STARTUP_TENANT_DESCRIPTION}
+      AIHUB_STARTUP_TENANT_ACCESS_RULES: ${AIHUB_STARTUP_TENANT_ACCESS_RULES}
+
+      # User signup roles — read by UserSignupSettings.
+      AIHUB_USER_SIGNUP_FIRST_ADMIN_USER_ROLES: ${AIHUB_USER_SIGNUP_FIRST_ADMIN_USER_ROLES}
+      AIHUB_USER_SIGNUP_REGULAR_USER_ROLES: ${AIHUB_USER_SIGNUP_REGULAR_USER_ROLES}
+
       # LiteLLM Access
       LITE_LLM_PROXY_BASE_URL: http://litellm:4000
       LITE_LLM_PROXY_API_KEY: ${LITELLM_MASTER_KEY}
@@ -2115,9 +2126,9 @@ services:
       NEO4J_PASSWORD: ${NEO4J_PASSWORD}
 
       # Mem0
-      MEM0_LLM_NAME: text-generation/gpt-oss-120b
-      MEM0_EMBEDDING_MODEL_NAME: embedding/bge-m3
-      MEM0_RERANKING_MODEL_NAME: reranker/bge
+      MEM0_LLM_NAME: ${MEM0_LLM_NAME}
+      MEM0_EMBEDDING_MODEL_NAME: ${MEM0_EMBEDDING_MODEL_NAME}
+      MEM0_RERANKING_MODEL_NAME: ${MEM0_RERANKING_MODEL_NAME}
 
       # Jupyter (for open-webui code interpreter)
       JUPYTER_URL: http://jupyter:8888
@@ -2270,9 +2281,9 @@ services:
       NEO4J_PASSWORD: ${NEO4J_PASSWORD}
 
       # Mem0
-      MEM0_LLM_NAME: text-generation/gpt-oss-120b
-      MEM0_EMBEDDING_MODEL_NAME: embedding/bge-m3
-      MEM0_RERANKING_MODEL_NAME: reranker/bge
+      MEM0_LLM_NAME: ${MEM0_LLM_NAME}
+      MEM0_EMBEDDING_MODEL_NAME: ${MEM0_EMBEDDING_MODEL_NAME}
+      MEM0_RERANKING_MODEL_NAME: ${MEM0_RERANKING_MODEL_NAME}
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
@@ -2340,9 +2351,9 @@ services:
       NEO4J_PASSWORD: ${NEO4J_PASSWORD}
 
       # Mem0
-      MEM0_LLM_NAME: text-generation/gpt-oss-120b
-      MEM0_EMBEDDING_MODEL_NAME: embedding/bge-m3
-      MEM0_RERANKING_MODEL_NAME: reranker/bge
+      MEM0_LLM_NAME: ${MEM0_LLM_NAME}
+      MEM0_EMBEDDING_MODEL_NAME: ${MEM0_EMBEDDING_MODEL_NAME}
+      MEM0_RERANKING_MODEL_NAME: ${MEM0_RERANKING_MODEL_NAME}
 
       # OpenTelemetry Configuration
       OTEL_ENABLED: ${OTEL_ENABLED}
@@ -2753,9 +2764,9 @@ services:
       NEO4J_PASSWORD: ${NEO4J_PASSWORD}
 
       # Mem0
-      MEM0_LLM_NAME: text-generation/gpt-oss-120b
-      MEM0_EMBEDDING_MODEL_NAME: embedding/bge-m3
-      MEM0_RERANKING_MODEL_NAME: reranker/bge
+      MEM0_LLM_NAME: ${MEM0_LLM_NAME}
+      MEM0_EMBEDDING_MODEL_NAME: ${MEM0_EMBEDDING_MODEL_NAME}
+      MEM0_RERANKING_MODEL_NAME: ${MEM0_RERANKING_MODEL_NAME}
 
       # Pipeline run-failure notifications (Apprise)
       NOTIFICATION_URLS: ${NOTIFICATION_URLS}
@@ -2808,17 +2819,13 @@ services:
       NEO4J_URL: bolt://neo4j:7687
       NEO4J_USERNAME: ${NEO4J_USERNAME}
       NEO4J_PASSWORD: ${NEO4J_PASSWORD}
-      MEM0_LLM_NAME: text-generation/gpt-oss-120b
-      MEM0_EMBEDDING_MODEL_NAME: embedding/bge-m3
-      MEM0_RERANKING_MODEL_NAME: reranker/bge
+      MEM0_LLM_NAME: ${MEM0_LLM_NAME}
+      MEM0_EMBEDDING_MODEL_NAME: ${MEM0_EMBEDDING_MODEL_NAME}
+      MEM0_RERANKING_MODEL_NAME: ${MEM0_RERANKING_MODEL_NAME}
       LOG_LEVEL: ${LOG_LEVEL}
       NUM_WORKERS: 1
       AIHUB_VERSION: ${AIHUB_VERSION}
       AIHUB_FRONTEND_ORIGIN: ${DOMAIN}
-      DANGEROUS_DEV_ONLY_AUTH_FAKE_NAME: ${BOT_AUTH_FAKE_NAME}
-      DANGEROUS_DEV_ONLY_AUTH_FAKE_EMAIL: ${BOT_AUTH_FAKE_EMAIL}
-      DANGEROUS_DEV_ONLY_AUTH_FAKE_OID: ${BOT_AUTH_FAKE_OID}
-      DANGEROUS_DEV_ONLY_AUTH_FAKE_ROLES: ${BOT_AUTH_FAKE_ROLES}
     healthcheck:
       test: [CMD, curl, -f, http://localhost:8001/api/v1/health]
       interval: 30s

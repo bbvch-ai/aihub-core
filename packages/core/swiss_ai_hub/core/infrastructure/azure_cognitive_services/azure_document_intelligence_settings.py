@@ -17,7 +17,7 @@ class AzureDocumentIntelligenceSettings(EnvironmentSettings):
 
     ENDPOINT: Annotated[str, Field(pattern=r"^https://.*\.cognitiveservices\.azure\.com/$")]
     API_KEY: Annotated[SecretStr, Field(description="API key for Document Intelligence")]
-    API_VERSION: Annotated[str, Field(pattern=r"^\d{4}-\d{2}-\d{2}(-preview)?$")] = "2024-11-30"
+    API_VERSION: Annotated[str, Field(pattern=r"^\d{4}-\d{2}-\d{2}(-preview)?$")]
     EXTENSIONS: Annotated[
         list[str],
         Field(
