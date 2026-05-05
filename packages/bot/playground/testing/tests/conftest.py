@@ -60,13 +60,13 @@ def mock_aiohttp_requests(monkeypatch, captured_responses):
     mock_response.ok = True
     mock_response.headers = {}
 
-    async def mock_json():
+    async def mock_json(*args, **kwargs):
         return {"id": "test_response_id"}
 
-    async def mock_text():
+    async def mock_text(*args, **kwargs):
         return '{"id": "test_response_id"}'
 
-    async def mock_read():
+    async def mock_read(*args, **kwargs):
         return b'{"id": "test_response_id"}'
 
     mock_response.json = mock_json

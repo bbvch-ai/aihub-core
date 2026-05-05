@@ -49,13 +49,7 @@ jobs:
               seaweedfs-init etcd-init etcd milvus-standalone
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Setup SSH
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.PRIVATE_SSH_KEY }}" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan github.com >> ~/.ssh/known_hosts
+        uses: actions/checkout@v6
       - name: Run Tests
         uses: ./.github/actions/test_backend
         with:
@@ -75,10 +69,6 @@ jobs:
           swiss_llm_cloud_ocr_api_base_url: ${{ secrets.SWISS_LLM_CLOUD_OCR_API_BASE_URL }}
           swiss_llm_cloud_ocr_api_key: ${{ secrets.SWISS_LLM_CLOUD_OCR_API_KEY }}
           regenerate_compose: 'true'
-      - name: Clean up SSH keys
-        run: |
-          rm -rf ~/.ssh
-          git config --global --unset url."git@github.com:".insteadOf
   pytest-coverage-comment:
     name: Pytest Coverage Comment
     needs: test-modules

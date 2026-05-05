@@ -475,9 +475,7 @@ services:
   # ===================================================================
   postgres:
     container_name: postgres
-    build:
-      context: ./deployment/docker/postgres
-      dockerfile: Dockerfile
+    image: ghcr.io/bbvch-ai/aihub-core/pgvector-repack:pg17
     restart: always
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
@@ -1348,9 +1346,7 @@ services:
     networks: [backend]
   playwright:
     container_name: playwright-server
-    build:
-      context: ./configs/playwright
-      dockerfile: Dockerfile
+    image: ghcr.io/bbvch-ai/aihub-core/playwright:v1.58.0-jammy
     restart: always
     ports: [3036:3000]
     environment:

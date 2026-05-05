@@ -252,3 +252,43 @@ def check_error_detail(error_context: dict[str, Any], expected_detail: str) -> N
     """Check that the error detail matches the expected detail."""
     error = error_context.get("error")
     assert error == expected_detail, f"Expected error detail '{expected_detail}', got '{error}'"
+
+
+# --- Plain pytest tests for verify_token ---
+
+
+def test_verify_token_returns_bearer_token_without_keycloak_or_tenant_resolution(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """``verify_token`` must NOT call Keycloak or tenant resolution — superuser tokens with no tenant must succeed."""
+    from unittest.mock import AsyncMock
+
+    from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
+
+    fail = AsyncMock(side_effect=AssertionError("verify_token must not call Keycloak or tenant resolution"))
+    monkeypatch.setattr(KeycloakAdminService, "get_user_by_id", fail)
+    monkeypatch.setattr(KeycloakAdminService, "get_user_realm_roles", fail)
+    monkeypatch.setattr(KeycloakAdminService, "get_active_tenant_id", fail)
+    monkeypatch.setattr(KeycloakAdminService, "is_user_member_of_tenant", fail)
+
+    user_oid = str(ObjectId())
+    expiry = datetime.now(UTC) + timedelta(hours=1)
+    token_doc = BearerToken.create_new_token(name="svc-token", expiry_date=expiry, user_oid=user_oid)
+    try:
+        result = TokenAuthHandler.verify_token(token_doc.token)
+
+        assert result.user_oid == user_oid
+    finally:
+        token_doc.delete()
+
+
+def test_verify_token_rejects_empty_token() -> None:
+    with pytest.raises(HTTPException) as excinfo:
+        TokenAuthHandler.verify_token("")
+    assert excinfo.value.status_code == 401
+
+
+def test_verify_token_rejects_unknown_token() -> None:
+    with pytest.raises(HTTPException) as excinfo:
+        TokenAuthHandler.verify_token(generate_dummy_valid_token())
+    assert excinfo.value.status_code == 401

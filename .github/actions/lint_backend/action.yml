@@ -3,7 +3,7 @@ name: Lint Backend Code
 description: Run linter on python backend
 inputs:
   github_token:
-    description: GitHub token for authentication
+    description: GitHub token used by reviewdog to post review comments
     required: true
   working_directory:
     description: Working directory for the linter
@@ -16,19 +16,15 @@ runs:
   using: composite
   steps:
     - name: Checkout Repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{ inputs.python_version }}
     - name: Set up uv
       uses: astral-sh/setup-uv@v7
       with:
         enable-cache: true
-    - name: Configure Git to Use `GITHUB_TOKEN`
-      shell: bash
-      run: git config --global url."https://${{ inputs.github_token }}@github.com/".insteadOf
-        "https://github.com/"
     - name: Install dependencies
       shell: bash
       run: uv sync --all-packages --dev --frozen
