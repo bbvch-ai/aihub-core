@@ -49,8 +49,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: discover-agents
     strategy:
+      fail-fast: false
       matrix: ${{ fromJson(needs.discover-agents.outputs.matrix) }}
-    continue-on-error: true
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -86,3 +86,21 @@ jobs:
           file: ./packages/agent/app/${{ matrix.image }}/Dockerfile
           github_token: ${{ secrets.GITHUB_TOKEN }}
           secondary_tag: ${{ github.event_name == 'repository_dispatch' && 'nightly' || github.event.inputs.secondary_tag }}
+  # ---------------------------------------------------------------------------
+  # Aggregate matrix results: fail the workflow if any agent build failed
+  # ---------------------------------------------------------------------------
+  build-summary:
+    runs-on: ubuntu-latest
+    needs: build
+    if: always() && needs.build.result != 'skipped'
+    steps:
+      - name: Check matrix results
+        env:
+          BUILD_RESULT: ${{ needs.build.result }}
+        run: |-
+          echo "Aggregate build result: $BUILD_RESULT"
+          if [ "$BUILD_RESULT" != "success" ]; then
+            echo "::error::One or more agent builds failed"
+            exit 1
+          fi
+          echo "All agent builds succeeded"
