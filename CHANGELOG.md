@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.286.3] - 2026-05-05 - Build Process Modernization and Dependency Streamlining
+
+### Changed
+
+- ⚡️ **Updated Node.js Base Image:** Migrated the Docker build environment from the Long-Term Support (LTS) Node.js
+  version to the latest Node.js v25, enabling access to current features and performance enhancements.
+
+### Refactor
+
+- 🧹 **Modernized Corepack and pnpm Setup:** Re-engineered the Dockerfile's dependency management strategy to explicitly
+  install Corepack and leverage its `corepack install` command, ensuring the use of the exact pnpm version defined in
+  `package.json` for improved consistency.
+- 🔑 **Improved Build Environment Security:** Enhanced the build process by pinning Corepack to a specific version and
+  removing potential conflicts from pre-shipped Yarn shims, contributing to a more secure and reliable build.
+
+______________________________________________________________________
+
 ## [v0.286.2] - 2026-05-05 - Streamlined Release Promotion and Smart Versioning
 
 ### Added
