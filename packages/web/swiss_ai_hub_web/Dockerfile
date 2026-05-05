@@ -4,8 +4,9 @@ FROM node:25-alpine AS builder
 
 # Install corepack (no longer bundled with Node.js as of v25). Remove the
 # pre-shipped yarn shim so the corepack install does not collide with it.
+# Pinned + --ignore-scripts to satisfy supply-chain security policy.
 RUN rm -f /usr/local/bin/yarn /usr/local/bin/yarnpkg \
- && npm install -g corepack@latest
+ && npm install -g --ignore-scripts corepack@0.34.7
 
 # Set working directory
 WORKDIR /app
