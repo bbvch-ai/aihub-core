@@ -7,7 +7,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from swiss_ai_hub.core.auth.dependencies.auth_handler import AuthHandler
 from swiss_ai_hub.core.auth.dependencies.auth_settings import AuthSettings
-from swiss_ai_hub.core.auth.dependencies.bearer_auth_handler import BearerAuthHandler
+from swiss_ai_hub.core.auth.dependencies.token_auth_handler.token_auth_handler import TokenAuthHandler
 from swiss_ai_hub.core.auth.identity.user_identity import UserIdentity
 from swiss_ai_hub.core.auth.keycloak.keycloak_admin_service import KeycloakAdminService
 
@@ -22,8 +22,8 @@ class OpenWebuiAuthHandler(AuthHandler):
     from the local database.
     """
 
-    def __init__(self, base_auth_handler: BearerAuthHandler):
-        """Initialize with a base auth handler to validate the bearer token."""
+    def __init__(self, base_auth_handler: TokenAuthHandler):
+        """Initialize with a token auth handler to verify the bearer token."""
         self.base_auth_handler = base_auth_handler
 
         secret = AuthSettings().OPEN_WEBUI_SIGNING_SECRET.get_secret_value()
@@ -38,7 +38,7 @@ class OpenWebuiAuthHandler(AuthHandler):
     async def __call__(
         self, request: Request, bearer_token: HTTPAuthorizationCredentials = Security(HTTPBearer())
     ) -> UserIdentity:
-        await self.base_auth_handler(request, bearer_token)
+        self.base_auth_handler.verify_token(bearer_token.credentials)
 
         user_name = request.headers.get("X-OpenWebUI-User-Name")
         user_email = request.headers.get("X-OpenWebUI-User-Email")

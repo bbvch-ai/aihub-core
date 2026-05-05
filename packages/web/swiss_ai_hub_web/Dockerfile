@@ -1,6 +1,6 @@
 # Stage 1: Build the Nuxt application
 # Use the Long-Term Support (LTS) version of Node.js for stability
-FROM node:20-alpine AS builder
+FROM node:25-alpine AS builder
 
 # Enable and prepare pnpm via corepack
 RUN corepack enable && corepack prepare pnpm@latest --activate

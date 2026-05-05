@@ -26,7 +26,7 @@ runs:
   using: composite
   steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         fetch-depth: 0
     - name: Sanitize artifact name
@@ -35,7 +35,7 @@ runs:
       run: echo "artifact_prefix=$(echo '${{ inputs.working_directory }}' | tr '/'
         '-')" >> "$GITHUB_OUTPUT"
     - name: Download Coverage (if exists)
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       if: inputs.report_coverage == 'true'
       with:
         name: ${{ steps.sanitize.outputs.artifact_prefix }}-coverage-report

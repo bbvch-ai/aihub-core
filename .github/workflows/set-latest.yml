@@ -57,16 +57,25 @@ jobs:
       matrix: ${{ steps.parse.outputs.matrix }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Parse custom app images from compose-config.yml
         id: parse
         run: |
-          # Extract image names where build == "localbuild" (images we build ourselves)
+          # Extract images that follow the per-release publishing convention:
+          # latest == "{service}:latest" indicates the image is rebuilt on every
+          # release tag. Project-managed images published out-of-band (postgres ->
+          # pgvector-repack:pg17, playwright -> playwright:v1.58.0-jammy) carry a
+          # literal tag and must NOT be retagged here.
           images=$(python3 -c "
           import yaml, json
           with open('infra/deployment/compose-config.yml') as f:
               config = yaml.safe_load(f)
-          images = [k for k, v in config['image_tags'].items() if isinstance(v, dict) and v.get('build') == 'localbuild']
+          images = [
+              k for k, v in config['image_tags'].items()
+              if isinstance(v, dict)
+              and 'build' in v
+              and v.get('latest') == f'{k}:latest'
+          ]
           print(json.dumps(images))
           ")
           echo "Discovered images: $images"
@@ -81,7 +90,7 @@ jobs:
       contents: write
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - name: Move latest git tag
@@ -139,7 +148,7 @@ jobs:
       matrix: ${{ fromJson(needs.discover-images.outputs.matrix) }}
     steps:
       - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
