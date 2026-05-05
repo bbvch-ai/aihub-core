@@ -13,9 +13,11 @@ from pathlib import Path
 import yaml
 from jinja2 import Environment, FileSystemLoader
 
-from env_check import check_env_vs_compose
-from env_docs import write_env_var_docs
-from env_inventory import build_consumers
+# Note: env_check / env_docs / env_inventory are imported lazily inside the
+# CLI branches that need them. They depend on pydantic_settings, which is only
+# installed when `uv sync --all-packages` has run. CI workflows that only do
+# `make generate-compose` (e.g. test-backup-e2e.yml) skip the all-packages sync,
+# so these imports must not fire at module load time.
 
 # Paths
 REPO_ROOT = Path(__file__).parent.parent.parent.resolve()
@@ -251,6 +253,10 @@ def _copy_release_static_files(variant_dir):
 
 
 def generate_release(env, config_data, version, output_dir, project, strict_env_check=False, consumers=None):
+    # Lazy import — only the release path needs env_check (which depends on
+    # pydantic_settings, an all-packages dep that plain `make generate-compose`
+    # CI workflows do not install).
+    from env_check import check_env_vs_compose
     """Generate self-contained release bundles for CPU and GPU variants.
 
     Uses stage='latest' for template rendering so all production conditionals
@@ -390,6 +396,9 @@ def main():
     env = Environment(loader=FileSystemLoader(DEPLOYMENT_DIR), keep_trailing_newline=True)
 
     if args.check_env:
+        from env_check import check_env_vs_compose
+        from env_inventory import build_consumers
+
         env_file = REPO_ROOT / ".env.prod"
         compose_cpu = ROOT_DIR / "docker-compose.latest.yml"
         compose_gpu = ROOT_DIR / "docker-compose.latest.gpu.yml"
@@ -402,6 +411,9 @@ def main():
         sys.exit(0 if (ok_cpu and ok_gpu) else 1)
 
     if args.write_env_docs:
+        from env_docs import write_env_var_docs
+        from env_inventory import build_consumers
+
         consumers = build_consumers()
         compose_variants = {
             "CPU": ROOT_DIR / "docker-compose.latest.yml",
@@ -416,6 +428,8 @@ def main():
         return
 
     if args.release:
+        from env_inventory import build_consumers
+
         version = args.tag
         project = args.project
         output_dir = Path(args.output_dir) if args.output_dir else ROOT_DIR
