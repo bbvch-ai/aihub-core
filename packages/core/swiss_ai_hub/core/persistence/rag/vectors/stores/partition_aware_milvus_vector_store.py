@@ -2,7 +2,7 @@ from typing import Any
 
 from llama_index.core.schema import BaseNode
 from llama_index.core.utils import iter_batch
-from llama_index.core.vector_stores import MetadataFilter, MetadataFilters
+from llama_index.core.vector_stores import MetadataFilters
 from llama_index.core.vector_stores.types import VectorStoreQuery, VectorStoreQueryMode, VectorStoreQueryResult
 from llama_index.core.vector_stores.utils import node_to_metadata_dict
 from llama_index.vector_stores.milvus import MilvusVectorStore
@@ -88,7 +88,7 @@ class PartitionAwareMilvusVectorStore(MilvusVectorStore):
             manual_partitions = [p for p in partitions if p.startswith("partition_")]
             self._has_manual_partitions = len(manual_partitions) == MAX_PARTITIONS
 
-        return self._has_manual_partitions or False
+        return self._has_manual_partitions
 
     def add(self, nodes: list[BaseNode], **add_kwargs: Any) -> list[str]:
         """Insert nodes into their hashed partitions (or fallback to base class if no manual partitions)."""
@@ -204,12 +204,11 @@ class PartitionAwareMilvusVectorStore(MilvusVectorStore):
         """Extract namespace values from query filters (handles 2-level nesting)."""
         if not query.filters or not hasattr(query.filters, "filters"):
             return []
-        filters: MetadataFilters = query.filters
-        return self._extract_namespaces_from_metadata_filters(filters)
+        return self._extract_namespaces_from_metadata_filters(query.filters)
 
     def _extract_namespaces_from_metadata_filters(self, filters: MetadataFilters) -> list[str]:
         namespaces: list[str] = []
-        for filter_item in filters:
+        for filter_item in filters.filters:
             if self._is_namespace_filter(filter_item):
                 namespaces.append(filter_item.value)
             elif hasattr(filter_item, "filters"):
@@ -310,7 +309,7 @@ class PartitionAwareMilvusVectorStore(MilvusVectorStore):
             self._ensure_collection_loaded()
             return super().delete(ref_doc_id)
 
-        partition_name: str = delete_kwargs.get("partition_name")
+        partition_name: str | None = delete_kwargs.get("partition_name")
         self._ensure_collection_loaded([partition_name] if partition_name else None)
         doc_ids = [ref_doc_id] if not isinstance(ref_doc_id, list) else ref_doc_id
         doc_ids_expr = ['"' + entry + '"' for entry in doc_ids]
