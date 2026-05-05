@@ -1,15 +1,22 @@
 # Stage 1: Build the Nuxt application
-# Use the Long-Term Support (LTS) version of Node.js for stability
+# Use the current (latest) version of Node.js
 FROM node:25-alpine AS builder
 
-# Enable and prepare pnpm via corepack
-RUN corepack enable && corepack prepare pnpm@latest --activate
+# Install corepack (no longer bundled with Node.js as of v25). Remove the
+# pre-shipped yarn shim so the corepack install does not collide with it.
+# Pinned + --ignore-scripts to satisfy supply-chain security policy.
+RUN rm -f /usr/local/bin/yarn /usr/local/bin/yarnpkg \
+ && npm install -g --ignore-scripts corepack@0.34.7
 
 # Set working directory
 WORKDIR /app
 
 # Copy package files to leverage Docker layer caching
 COPY package.json pnpm-lock.yaml ./
+
+# Install the exact pnpm version pinned (with SHA512 integrity check) in
+# package.json's "packageManager" field. Single source of truth.
+RUN corepack enable && corepack install
 
 # Install dependencies securely and efficiently
 RUN pnpm install --frozen-lockfile --ignore-scripts
