@@ -184,8 +184,19 @@ fi
 # ── Resolve version ──────────────────────────────────────────────────────────
 
 if [ -z "$VERSION" ]; then
+    # Prefer the GitHub "Latest" release (skips pre-releases). The /releases/latest
+    # URL redirects to /releases/tag/<version>; if no full release exists yet, the
+    # redirect target is /releases instead — detect that and fall back.
+    # `|| true` keeps the bootstrap fallback reachable: when no promoted release
+    # exists, the redirect targets /releases (no /tag/), grep -o exits 1, and
+    # under `set -euo pipefail` the substitution would otherwise abort the script.
     VERSION=$(curl -sI "https://github.com/${GITHUB_REPO}/releases/latest" \
-        | grep -i "^location:" | sed 's|.*/tag/||' | tr -d '\r\n')
+        | grep -i "^location:" | grep -o '/tag/[^[:space:]]*' | sed 's|/tag/||' | tr -d '\r\n' || true)
+    if [ -z "$VERSION" ]; then
+        warn "No promoted release found; falling back to most recent pre-release."
+        VERSION=$(curl -fsSL "https://api.github.com/repos/${GITHUB_REPO}/releases?per_page=1" \
+            | grep -m1 '"tag_name"' | sed -E 's/.*"tag_name": *"([^"]+)".*/\1/')
+    fi
     if [ -z "$VERSION" ]; then
         err "Failed to determine latest release version."
         err "Try specifying a version with --version"

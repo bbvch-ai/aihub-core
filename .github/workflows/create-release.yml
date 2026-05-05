@@ -80,5 +80,7 @@ jobs:
           gh release create "${VERSION}" \
             --title "Swiss AI Hub ${VERSION}" \
             --notes-file release-notes.md \
+            --prerelease \
+            --latest=false \
             "swissaihub-${VERSION}.tar.gz" \
             "swissaihub-${VERSION}-gpu.tar.gz"

@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.286.2] - 2026-05-05 - Streamlined Release Promotion and Smart Versioning
+
+### Added
+
+- ✨ **New Release Promotion Workflow:** Introduced a dedicated GitHub Actions job to explicitly promote pre-releases to
+  full "latest" status, ensuring consistency across Git tags, Docker images, and GitHub Releases.
+
+### Changed
+
+- 🚀 **Phased GitHub Releases:** New GitHub releases are now initially marked as pre-releases, allowing for a controlled
+  testing period before official promotion to "latest."
+- 🔍 **Smarter Installer Version Resolution:** The `install.sh` script now intelligently distinguishes between official
+  "latest" releases and pre-releases, prioritizing promoted versions while gracefully falling back to the most recent
+  pre-release if no official "latest" is yet available.
+
+______________________________________________________________________
+
 ## [v0.286.1] - 2026-05-05 - Enhanced Build Stability and Dependency Optimization
 
 ### Changed
