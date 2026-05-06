@@ -2,9 +2,13 @@
 # https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
 #
 # Dependabot enforces uniqueness on (package-ecosystem, directory, target-branch) —
-# we therefore have ONE entry per ecosystem. Per-update-type routing happens
-# through `groups`: production / development for languages that distinguish
-# them, and a single bundle otherwise.
+# we therefore have ONE entry per ecosystem. To minimize PR noise, each entry
+# defines a single catch-all group that bundles every update type (patch, minor,
+# major) for every package into ONE PR per ecosystem per run.
+#
+# Anything that does not match a group becomes its own PR — which is exactly
+# what happened before when major bumps escaped a `[patch, minor]` group filter.
+# `patterns: ["*"]` + all update-types prevents that escape.
 #
 # We deliberately do NOT apply major/minor/patch labels here. The release
 # workflow (.github/workflows/add-tag.yml) defaults to a patch bump when no
@@ -27,12 +31,9 @@ updates:
       prefix: chore
       include: scope
     groups:
-      python-prod:
-        dependency-type: production
-        update-types: [patch, minor]
-      python-dev:
-        dependency-type: development
-        update-types: [patch, minor]
+      python:
+        patterns: ['*']
+        update-types: [patch, minor, major]
 
   # ============================================================================
   # Frontend (pnpm) — admin/process UI
@@ -48,12 +49,9 @@ updates:
       prefix: chore
       include: scope
     groups:
-      web-prod:
-        dependency-type: production
-        update-types: [patch, minor]
-      web-dev:
-        dependency-type: development
-        update-types: [patch, minor]
+      web:
+        patterns: ['*']
+        update-types: [patch, minor, major]
 
   # ============================================================================
   # Docs site (VitePress, pnpm)
@@ -70,7 +68,8 @@ updates:
       include: scope
     groups:
       docs:
-        update-types: [patch, minor]
+        patterns: ['*']
+        update-types: [patch, minor, major]
 
   # ============================================================================
   # E2E tests (Playwright, pnpm)
@@ -87,7 +86,8 @@ updates:
       include: scope
     groups:
       e2e:
-        update-types: [patch, minor]
+        patterns: ['*']
+        update-types: [patch, minor, major]
 
   # ============================================================================
   # Docker base images — one entry per Dockerfile
@@ -110,7 +110,8 @@ updates:
       include: scope
     groups:
       docker:
-        update-types: [patch, minor]
+        patterns: ['*']
+        update-types: [patch, minor, major]
 
   # ============================================================================
   # GitHub Actions — pinned action versions in workflows + reusable actions
@@ -127,4 +128,5 @@ updates:
       include: scope
     groups:
       github-actions:
+        patterns: ['*']
         update-types: [patch, minor, major]
