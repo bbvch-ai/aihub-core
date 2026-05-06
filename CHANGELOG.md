@@ -5,6 +5,47 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.286.5] - 2026-05-06 - Enhanced Dependency Update Management
+
+### Changed
+
+- 🚫 **Disabled Automatic Major Dependency Updates:** Configured Dependabot to explicitly ignore major version bumps
+  across all dependencies, ensuring that significant upgrades are handled with deliberate, planned migrations rather
+  than automatically.
+- 🔄 **Streamlined Dependabot Grouping and Logic:** Consolidated Python and Web dependency update groups and standardized
+  grouping patterns across all ecosystems for minor and patch updates, reducing PR noise and clarifying update bundles.
+- 📝 **Enhanced Dependabot Configuration Documentation:** Updated comments within the `dependabot.yml` file to provide
+  clearer explanations of Dependabot's grouping behavior, uniqueness enforcement, and the updated major version update
+  policy.
+
+______________________________________________________________________
+
+## [v0.286.4] - 2026-05-06 - Optimized Milvus Vector Store for Scalable RAG
+
+### Added
+
+- 🧪 **Unit Tests for Filter Logic:** Introduced comprehensive unit tests for the namespace filter extraction logic
+  within the `PartitionAwareMilvusVectorStore`, ensuring its correctness and robustness for partition-aware operations.
+
+### Changed
+
+- 🚀 **Enhanced Milvus Partition Loading:** Optimized the `PartitionAwareMilvusVectorStore` to intelligently load only
+  necessary Milvus partitions during `add`, `query`, `get_nodes`, and `delete` operations. This significantly reduces
+  memory consumption and improves performance for large-scale RAG systems by avoiding full collection loads.
+
+### Fixed
+
+- 🐛 **Robust Namespace Filter Extraction:** Addressed an issue in the `PartitionAwareMilvusVectorStore` where nested
+  `MetadataFilters` might not have been correctly parsed, potentially leading to inefficient full collection loads
+  during queries. Namespace extraction is now more robust, ensuring precise partition targeting.
+
+### Refactor
+
+- 🧹 **Project Structure Modularization:** The IntelliJ IDEA project configuration has been updated to reflect a more
+  modular structure, with separate module files for different components like agent, api, core, and pipeline.
+
+______________________________________________________________________
+
 ## [v0.286.3] - 2026-05-05 - Build Process Modernization and Dependency Streamlining
 
 ### Changed
