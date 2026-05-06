@@ -2,27 +2,21 @@
 # https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
 #
 # Dependabot enforces uniqueness on (package-ecosystem, directory, target-branch).
-# To minimize PR noise, every update entry below defines a single catch-all
-# group (`patterns: ['*']` × all update-types) that bundles every change for
-# that (ecosystem, directory) tuple into ONE PR per run. Some ecosystems have
-# multiple entries (npm covers /packages/web, /docs, /e2e separately; docker
-# uses `directories:` to fan out across each Dockerfile) — each entry produces
-# its own grouped PR.
+# Each entry below defines a single catch-all group (`patterns: ['*']`) that
+# bundles every patch and minor bump for that (ecosystem, directory) tuple
+# into ONE PR per run. Some ecosystems span multiple entries (npm covers
+# /packages/web, /docs, /e2e separately; docker uses `directories:` to fan
+# out across each Dockerfile) — each entry produces its own grouped PR.
 #
-# Anything that does not match a group becomes its own PR — which is exactly
-# what happened before when major bumps escaped a `[patch, minor]` filter.
-# `patterns: ['*']` + all update-types prevents that escape.
+# We deliberately ignore major version bumps (`version-update:semver-major`)
+# everywhere. Majors usually require code migration (e.g. nuxt 3→4, vue 2→3,
+# tailwind 3→4) and should be done as a deliberate, isolated upgrade on a
+# feature branch — not as a casual auto-PR riding on a weekly bundle.
 #
-# Escape hatch when a single bad major bump (e.g. nuxt 3→4) blocks the rest of
-# the bundle: comment `@dependabot ignore <dep> major-version` on the PR. The
-# grouped PR will be regenerated without that dep, letting the patches/minors
-# ship while the major is held for a dedicated upgrade.
-#
-# We deliberately do NOT apply major/minor/patch labels here. The release
-# workflow (.github/workflows/add-tag.yml) defaults to a patch bump when no
-# version label is present, and `check-version-label` is bypassed for
-# `dependabot[bot]` PRs. Reviewers can override by adding `minor` or `major`
-# manually before merge if a bump warrants it.
+# We deliberately do NOT apply major/minor/patch labels. The release workflow
+# (.github/workflows/add-tag.yml) defaults to a patch bump when no version
+# label is present, and `check-version-label` is bypassed for `dependabot[bot]`
+# PRs. Reviewers can add `minor` manually if a bump warrants it.
 version: 2
 updates:
   # ============================================================================
@@ -38,10 +32,13 @@ updates:
     commit-message:
       prefix: chore
       include: scope
+    ignore:
+      - dependency-name: '*'
+        update-types: [version-update:semver-major]
     groups:
       python:
         patterns: ['*']
-        update-types: [patch, minor, major]
+        update-types: [patch, minor]
 
   # ============================================================================
   # Frontend (pnpm) — admin/process UI
@@ -56,10 +53,13 @@ updates:
     commit-message:
       prefix: chore
       include: scope
+    ignore:
+      - dependency-name: '*'
+        update-types: [version-update:semver-major]
     groups:
       web:
         patterns: ['*']
-        update-types: [patch, minor, major]
+        update-types: [patch, minor]
 
   # ============================================================================
   # Docs site (VitePress, pnpm)
@@ -74,10 +74,13 @@ updates:
     commit-message:
       prefix: chore
       include: scope
+    ignore:
+      - dependency-name: '*'
+        update-types: [version-update:semver-major]
     groups:
       docs:
         patterns: ['*']
-        update-types: [patch, minor, major]
+        update-types: [patch, minor]
 
   # ============================================================================
   # E2E tests (Playwright, pnpm)
@@ -92,10 +95,13 @@ updates:
     commit-message:
       prefix: chore
       include: scope
+    ignore:
+      - dependency-name: '*'
+        update-types: [version-update:semver-major]
     groups:
       e2e:
         patterns: ['*']
-        update-types: [patch, minor, major]
+        update-types: [patch, minor]
 
   # ============================================================================
   # Docker base images — one entry per Dockerfile
@@ -116,10 +122,13 @@ updates:
     commit-message:
       prefix: chore
       include: scope
+    ignore:
+      - dependency-name: '*'
+        update-types: [version-update:semver-major]
     groups:
       docker:
         patterns: ['*']
-        update-types: [patch, minor, major]
+        update-types: [patch, minor]
 
   # ============================================================================
   # GitHub Actions — pinned action versions in workflows + reusable actions
@@ -134,7 +143,10 @@ updates:
     commit-message:
       prefix: chore
       include: scope
+    ignore:
+      - dependency-name: '*'
+        update-types: [version-update:semver-major]
     groups:
       github-actions:
         patterns: ['*']
-        update-types: [patch, minor, major]
+        update-types: [patch, minor]
