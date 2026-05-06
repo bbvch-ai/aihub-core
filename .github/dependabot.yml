@@ -1,16 +1,22 @@
 ---
 # https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
 #
-# Dependabot enforces uniqueness on (package-ecosystem, directory, target-branch) —
-# we therefore have ONE entry per ecosystem. Per-update-type routing happens
-# through `groups`: production / development for languages that distinguish
-# them, and a single bundle otherwise.
+# Dependabot enforces uniqueness on (package-ecosystem, directory, target-branch).
+# Each entry below defines a single catch-all group (`patterns: ['*']`) that
+# bundles every patch and minor bump for that (ecosystem, directory) tuple
+# into ONE PR per run. Some ecosystems span multiple entries (npm covers
+# /packages/web, /docs, /e2e separately; docker uses `directories:` to fan
+# out across each Dockerfile) — each entry produces its own grouped PR.
 #
-# We deliberately do NOT apply major/minor/patch labels here. The release
-# workflow (.github/workflows/add-tag.yml) defaults to a patch bump when no
-# version label is present, and `check-version-label` is bypassed for
-# `dependabot[bot]` PRs. Reviewers can override by adding `minor` or `major`
-# manually before merge if a bump warrants it.
+# We deliberately ignore major version bumps (`version-update:semver-major`)
+# everywhere. Majors usually require code migration (e.g. nuxt 3→4, vue 2→3,
+# tailwind 3→4) and should be done as a deliberate, isolated upgrade on a
+# feature branch — not as a casual auto-PR riding on a weekly bundle.
+#
+# We deliberately do NOT apply major/minor/patch labels. The release workflow
+# (.github/workflows/add-tag.yml) defaults to a patch bump when no version
+# label is present, and `check-version-label` is bypassed for `dependabot[bot]`
+# PRs. Reviewers can add `minor` manually if a bump warrants it.
 version: 2
 updates:
   # ============================================================================
@@ -26,12 +32,12 @@ updates:
     commit-message:
       prefix: chore
       include: scope
+    ignore:
+      - dependency-name: '*'
+        update-types: [version-update:semver-major]
     groups:
-      python-prod:
-        dependency-type: production
-        update-types: [patch, minor]
-      python-dev:
-        dependency-type: development
+      python:
+        patterns: ['*']
         update-types: [patch, minor]
 
   # ============================================================================
@@ -47,12 +53,12 @@ updates:
     commit-message:
       prefix: chore
       include: scope
+    ignore:
+      - dependency-name: '*'
+        update-types: [version-update:semver-major]
     groups:
-      web-prod:
-        dependency-type: production
-        update-types: [patch, minor]
-      web-dev:
-        dependency-type: development
+      web:
+        patterns: ['*']
         update-types: [patch, minor]
 
   # ============================================================================
@@ -68,8 +74,12 @@ updates:
     commit-message:
       prefix: chore
       include: scope
+    ignore:
+      - dependency-name: '*'
+        update-types: [version-update:semver-major]
     groups:
       docs:
+        patterns: ['*']
         update-types: [patch, minor]
 
   # ============================================================================
@@ -85,8 +95,12 @@ updates:
     commit-message:
       prefix: chore
       include: scope
+    ignore:
+      - dependency-name: '*'
+        update-types: [version-update:semver-major]
     groups:
       e2e:
+        patterns: ['*']
         update-types: [patch, minor]
 
   # ============================================================================
@@ -108,8 +122,12 @@ updates:
     commit-message:
       prefix: chore
       include: scope
+    ignore:
+      - dependency-name: '*'
+        update-types: [version-update:semver-major]
     groups:
       docker:
+        patterns: ['*']
         update-types: [patch, minor]
 
   # ============================================================================
@@ -125,6 +143,10 @@ updates:
     commit-message:
       prefix: chore
       include: scope
+    ignore:
+      - dependency-name: '*'
+        update-types: [version-update:semver-major]
     groups:
       github-actions:
-        update-types: [patch, minor, major]
+        patterns: ['*']
+        update-types: [patch, minor]
