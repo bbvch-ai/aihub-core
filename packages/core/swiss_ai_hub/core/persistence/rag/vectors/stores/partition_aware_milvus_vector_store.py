@@ -2,6 +2,7 @@ from typing import Any
 
 from llama_index.core.schema import BaseNode
 from llama_index.core.utils import iter_batch
+from llama_index.core.vector_stores import MetadataFilters
 from llama_index.core.vector_stores.types import VectorStoreQuery, VectorStoreQueryMode, VectorStoreQueryResult
 from llama_index.core.vector_stores.utils import node_to_metadata_dict
 from llama_index.vector_stores.milvus import MilvusVectorStore
@@ -65,9 +66,20 @@ class PartitionAwareMilvusVectorStore(MilvusVectorStore):
 
         self._has_manual_partitions: bool | None = None
 
-    def _ensure_collection_loaded(self) -> None:
-        """Lazily load collection into memory on first access. Idempotent — blocks until ready."""
-        self.client.load_collection(collection_name=self.collection_name)
+    def _ensure_collection_loaded(self, partition_names: list[str] | None = None) -> None:
+        """Lazily load partitions (or whole collection if none specified). Idempotent — blocks until ready.
+
+        Loading the full collection on a 1023-partition store is ~54 GB and will not fit
+        in a typical query-node memory budget; always pass partition_names when known.
+        Memory eviction of unused partitions is handled by Milvus itself.
+        """
+        if partition_names:
+            self.client.load_partitions(
+                collection_name=self.collection_name,
+                partition_names=partition_names,
+            )
+        else:
+            self.client.load_collection(collection_name=self.collection_name)
 
     def _check_has_manual_partitions(self) -> bool:
         """Check if collection has 1023 manual partitions (partition_0...partition_1022)."""
@@ -83,12 +95,13 @@ class PartitionAwareMilvusVectorStore(MilvusVectorStore):
         if not nodes:
             return []
 
-        self._ensure_collection_loaded()
-
         if not self._check_has_manual_partitions():
+            self._ensure_collection_loaded()
             return super().add(nodes, **add_kwargs)
 
         by_namespace = self._group_nodes_by_namespace(nodes)
+        partition_names = [get_partition_name_for_namespace(ns) for ns in by_namespace]
+        self._ensure_collection_loaded(partition_names=partition_names)
 
         all_ids: list[str] = []
         for namespace, ns_nodes in by_namespace.items():
@@ -153,16 +166,18 @@ class PartitionAwareMilvusVectorStore(MilvusVectorStore):
         - add(): Just set partition_name= per batch
         - query(): Just set partition_names= in kwargs
         """
-        self._ensure_collection_loaded()
-
         # Backward compatibility: fallback to base class if no manual partitions
         if not self._check_has_manual_partitions():
+            self._ensure_collection_loaded()
             return super().query(query, **kwargs)
 
-        namespaces = self._extract_namespaces_from_filters(query)
+        namespaces = self._extract_namespaces_from_query(query)
+        partition_names: list[str] | None = None
         if namespaces:
             partition_names = get_partition_names_for_namespaces(namespaces=namespaces)
             kwargs["milvus_partition_names"] = partition_names
+
+        self._ensure_collection_loaded(partition_names=partition_names)
 
         # HYBRID mode workaround: base class doesn't pass kwargs, so handle it ourselves
         if query.mode == VectorStoreQueryMode.HYBRID:
@@ -185,20 +200,21 @@ class PartitionAwareMilvusVectorStore(MilvusVectorStore):
         nodes, similarities, ids = self._hybrid_search(query, string_expr, output_fields, **kwargs)
         return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)
 
-    def _extract_namespaces_from_filters(self, query: VectorStoreQuery) -> list[str]:
+    def _extract_namespaces_from_query(self, query: VectorStoreQuery) -> list[str]:
         """Extract namespace values from query filters (handles 2-level nesting)."""
         if not query.filters or not hasattr(query.filters, "filters"):
             return []
+        return self._extract_namespaces_from_metadata_filters(query.filters)
 
+    def _extract_namespaces_from_metadata_filters(self, filters: MetadataFilters) -> list[str]:
         namespaces: list[str] = []
-        for filter_item in query.filters.filters:
+        for filter_item in filters.filters:
             if self._is_namespace_filter(filter_item):
                 namespaces.append(filter_item.value)
             elif hasattr(filter_item, "filters"):
                 for nested in filter_item.filters:
                     if self._is_namespace_filter(nested):
                         namespaces.append(nested.value)
-
         return namespaces
 
     @staticmethod
@@ -273,23 +289,28 @@ class PartitionAwareMilvusVectorStore(MilvusVectorStore):
     def get_nodes(
         self,
         node_ids: list[str] | None = None,
-        filters: Any = None,
+        filters: MetadataFilters | None = None,
         **kwargs: Any,
     ) -> list[BaseNode]:
-        self._ensure_collection_loaded()
+        partition_names: list[str] | None = None
+        if filters is not None:
+            namespaces = self._extract_namespaces_from_metadata_filters(filters)
+            if namespaces:
+                partition_names = get_partition_names_for_namespaces(namespaces=namespaces)
+        self._ensure_collection_loaded(partition_names)
         return super().get_nodes(node_ids=node_ids, filters=filters, **kwargs)
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
         Delete nodes associated with a ref_doc_id, scoped to a specific partition.
         """
-        self._ensure_collection_loaded()
-
         # Backward compatibility: fallback to base class if no manual partitions
         if not self._check_has_manual_partitions():
+            self._ensure_collection_loaded()
             return super().delete(ref_doc_id)
 
-        partition_name = delete_kwargs.get("partition_name")
+        partition_name: str | None = delete_kwargs.get("partition_name")
+        self._ensure_collection_loaded([partition_name] if partition_name else None)
         doc_ids = [ref_doc_id] if not isinstance(ref_doc_id, list) else ref_doc_id
         doc_ids_expr = ['"' + entry + '"' for entry in doc_ids]
 
