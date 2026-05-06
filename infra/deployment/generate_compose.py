@@ -252,11 +252,7 @@ def _copy_release_static_files(variant_dir):
     return copied
 
 
-def generate_release(env, config_data, version, output_dir, project, strict_env_check=False, consumers=None):
-    # Lazy import — only the release path needs env_check (which depends on
-    # pydantic_settings, an all-packages dep that plain `make generate-compose`
-    # CI workflows do not install).
-    from env_check import check_env_vs_compose
+def generate_release(env, config_data, version, output_dir, project):
     """Generate self-contained release bundles for CPU and GPU variants.
 
     Uses stage='latest' for template rendering so all production conditionals
@@ -265,10 +261,16 @@ def generate_release(env, config_data, version, output_dir, project, strict_env_
     clean filenames without stage/hardware suffixes.
 
     Output folders: <project>-<version> (CPU) and <project>-<version>-gpu (GPU).
+
+    Note: env/compose consistency is verified separately via `make check-env`,
+    which diffs `.env.prod` against the same `latest`-stage compose files this
+    function would produce. There is no point re-running the same check here
+    after the bundle is already on disk — it can't undo the writes, and the
+    strict-mode caller path is always coupled to the dedicated `--check-env`
+    invocation.
     """
     _pin_image_tags_to_version(config_data, version)
     stats = {}
-    env_check_failures: list[str] = []
 
     variants = [
         (False, f"{project}-{version}"),
@@ -336,23 +338,6 @@ def generate_release(env, config_data, version, output_dir, project, strict_env_
         if static_count > 0:
             print(f"Copied {static_count} static files into {folder_name}/")
             stats["static-files"] = stats.get("static-files", 0) + static_count
-
-        # Run non-strict so the report covers every variant even when one
-        # fails. Aggregate strict-mode decision below.
-        ok = check_env_vs_compose(
-            env_file=variant_dir / ".env.template",
-            compose_file=variant_dir / "docker-compose.yml",
-            consumers=consumers or {},
-            label=f"{folder_name} ({variant_label})",
-            strict=False,
-        )
-        if not ok:
-            env_check_failures.append(folder_name)
-
-    if strict_env_check and env_check_failures:
-        raise SystemExit(
-            f"Env/compose mismatch in release variants: {', '.join(env_check_failures)} (strict mode)"
-        )
 
     return stats
 
@@ -443,20 +428,13 @@ def main():
         return
 
     if args.release:
-        from env_inventory import build_consumers
-
         version = args.tag
         project = args.project
         output_dir = Path(args.output_dir) if args.output_dir else ROOT_DIR
         output_dir = output_dir.resolve()
 
-        consumers = build_consumers()
         print(f"Generating release artifacts for {project} {version}...\n")
-        stats = generate_release(
-            env, config_data, version, output_dir, project,
-            strict_env_check=args.strict_env_check,
-            consumers=consumers,
-        )
+        stats = generate_release(env, config_data, version, output_dir, project)
     else:
         print("Generating configuration files...\n")
         stats = generate_default(env, config_data)
