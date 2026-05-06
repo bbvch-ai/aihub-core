@@ -5797,7 +5797,7 @@ requires-dist = [
     { name = "llama-index-vector-stores-milvus", specifier = ">=0.9.4" },
     { name = "lxml", specifier = ">=5.4.0" },
     { name = "markitdown", extras = ["docx", "outlook", "pptx", "xlsx"], specifier = ">=0.1.4" },
-    { name = "mem0ai", extras = ["graph"], specifier = ">=1.0.2,<2" },
+    { name = "mem0ai", extras = ["graph"], specifier = ">=1.0.11,<2" },
     { name = "mongoengine", specifier = ">=0.29.1" },
     { name = "nats-py", specifier = ">=2.9.0" },
     { name = "openai", specifier = ">=1.76.2" },
