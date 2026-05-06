@@ -1,14 +1,22 @@
 ---
 # https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
 #
-# Dependabot enforces uniqueness on (package-ecosystem, directory, target-branch) —
-# we therefore have ONE entry per ecosystem. To minimize PR noise, each entry
-# defines a single catch-all group that bundles every update type (patch, minor,
-# major) for every package into ONE PR per ecosystem per run.
+# Dependabot enforces uniqueness on (package-ecosystem, directory, target-branch).
+# To minimize PR noise, every update entry below defines a single catch-all
+# group (`patterns: ['*']` × all update-types) that bundles every change for
+# that (ecosystem, directory) tuple into ONE PR per run. Some ecosystems have
+# multiple entries (npm covers /packages/web, /docs, /e2e separately; docker
+# uses `directories:` to fan out across each Dockerfile) — each entry produces
+# its own grouped PR.
 #
 # Anything that does not match a group becomes its own PR — which is exactly
-# what happened before when major bumps escaped a `[patch, minor]` group filter.
-# `patterns: ["*"]` + all update-types prevents that escape.
+# what happened before when major bumps escaped a `[patch, minor]` filter.
+# `patterns: ['*']` + all update-types prevents that escape.
+#
+# Escape hatch when a single bad major bump (e.g. nuxt 3→4) blocks the rest of
+# the bundle: comment `@dependabot ignore <dep> major-version` on the PR. The
+# grouped PR will be regenerated without that dep, letting the patches/minors
+# ship while the major is held for a dedicated upgrade.
 #
 # We deliberately do NOT apply major/minor/patch labels here. The release
 # workflow (.github/workflows/add-tag.yml) defaults to a patch bump when no
