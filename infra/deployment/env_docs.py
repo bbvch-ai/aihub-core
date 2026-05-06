@@ -43,7 +43,13 @@ def write_env_var_docs(
     origins = _compute_variant_origins(compose_variants)
     by_role = _group_by_role(consumers, compose)
 
-    base_vars = {name for name, where in origins.items() if base_label in where}
+    # Universe = anything we'd render in any role table (Pydantic consumers +
+    # compose interpolations + compose-supplied env-block keys). Vars without
+    # a compose origin (consumer-only, e.g. optional Azure / SharePoint
+    # secrets) belong to the base — operators using only the base must still
+    # see them in the docs even though they're never referenced by compose.
+    universe = set(consumers) | compose.all_interpolated | compose.supplied_vars
+    base_vars = {n for n in universe if base_label in origins.get(n, set())} | (universe - origins.keys())
 
     lines = list(_render_intro(base_label, extension_labels))
     lines.append(f"## Variables for the base deployment (`{base_label}`)")
@@ -94,7 +100,7 @@ def _render_role_sections(
     if compose_required:
         lines.extend(_render_compose_required_section(compose_required, consumers, compose))
     if app_required:
-        lines.extend(_render_app_required_section(app_required, consumers))
+        lines.extend(_render_app_required_section(app_required, consumers, compose))
     if optional:
         lines.extend(_render_optional_section(optional, consumers, compose))
 
@@ -164,9 +170,7 @@ def _render_intro(base_label: str, extension_labels: list[str]) -> list[str]:
     return lines
 
 
-def _render_compose_required_section(
-    names: list[str], consumers: ConsumerIndex, compose: ComposeUsage
-) -> list[str]:
+def _render_compose_required_section(names: list[str], consumers: ConsumerIndex, compose: ComposeUsage) -> list[str]:
     lines = [
         "### Required by docker-compose interpolation",
         "",
@@ -176,46 +180,54 @@ def _render_compose_required_section(
             "render empty values if `.env` does not define them. The Consumer column "
             "shows the Pydantic settings field that reads the variable when our Python "
             "code consumes it; otherwise it points at the config file that embeds it "
-            "(Keycloak realm import, identity-provider config, etc.) or the compose "
-            "service whose `environment:` block receives the value."
+            "(Keycloak realm import, identity-provider config, etc.) or — if neither — "
+            "is left empty. The Service(s) column lists the compose service(s) whose "
+            "`environment:` block receives the variable."
         ),
         "",
-        "| Variable | Consumer | Description |",
-        "|---|---|---|",
+        "| Variable | Consumer | Service(s) | Description |",
+        "|---|---|---|---|",
     ]
     for name in names:
         cs = consumers.get(name, [])
-        lines.append(f"| `{name}` | {_consumer_label(name, cs, compose)} | {_render_description(cs)} |")
-    lines.append("")
-    return lines
-
-
-def _render_app_required_section(names: list[str], consumers: ConsumerIndex) -> list[str]:
-    lines = [
-        "### Required by application services",
-        "",
-        (
-            "These variables are read as required fields by a Pydantic `BaseSettings` "
-            "class and are not supplied by docker-compose. The application will refuse "
-            "to start if they are unset."
-        ),
-        "",
-        "| Variable | Consumer | Description |",
-        "|---|---|---|",
-    ]
-    for name in names:
-        cs = consumers[name]
-        primary = next(c for c in cs if c.required)
         lines.append(
-            f"| `{name}` | `{primary.cls_name}.{primary.field_name}` | {_render_description([primary])} |"
+            f"| `{name}` | {_consumer_label(name, cs, compose)} | "
+            f"{_render_services(name, compose)} | {_render_description(cs)} |"
         )
     lines.append("")
     return lines
 
 
-def _render_optional_section(
-    names: list[str], consumers: ConsumerIndex, compose: ComposeUsage
-) -> list[str]:
+def _render_app_required_section(names: list[str], consumers: ConsumerIndex, compose: ComposeUsage) -> list[str]:
+    lines = [
+        "### Required by SDK settings classes (not used by the default deployment)",
+        "",
+        (
+            "These variables are declared as required fields on a Pydantic `BaseSettings` "
+            "class and are **not** consumed by any service in the default docker-compose stack. "
+            "The empty Service(s) column reflects this: no container in the default deployment "
+            "loads the settings class. They become operationally required only when a custom "
+            "agent, pipeline, or other extension is added to docker-compose that activates the "
+            "corresponding SDK functionality (e.g. the SharePoint connector or Azure Document "
+            "Intelligence loader). Until then, leaving the placeholders unchanged is fine — "
+            "Pydantic only validates the class when something instantiates it."
+        ),
+        "",
+        "| Variable | Consumer | Service(s) | Description |",
+        "|---|---|---|---|",
+    ]
+    for name in names:
+        cs = consumers[name]
+        primary = next(c for c in cs if c.required)
+        lines.append(
+            f"| `{name}` | `{primary.cls_name}.{primary.field_name}` | "
+            f"{_render_services(name, compose)} | {_render_description([primary])} |"
+        )
+    lines.append("")
+    return lines
+
+
+def _render_optional_section(names: list[str], consumers: ConsumerIndex, compose: ComposeUsage) -> list[str]:
     lines = [
         "### Optional: override platform defaults",
         "",
@@ -227,14 +239,15 @@ def _render_optional_section(
             "so setting them in `.env` has no effect."
         ),
         "",
-        "| Variable | Consumer | Default | Description |",
-        "|---|---|---|---|",
+        "| Variable | Consumer | Default | Service(s) | Description |",
+        "|---|---|---|---|---|",
     ]
     for name in names:
         primary = consumers[name][0]
         lines.append(
             f"| `{name}` | `{primary.cls_name}.{primary.field_name}` "
-            f"| {_render_default(name, primary, compose)} | {_render_description([primary])} |"
+            f"| {_render_default(name, primary, compose)} | "
+            f"{_render_services(name, compose)} | {_render_description([primary])} |"
         )
     lines.append("")
     return lines
@@ -249,9 +262,8 @@ def _consumer_label(name: str, var_consumers: list[Consumer], compose: ComposeUs
     """Render the Consumer column. Preference order:
 
     1. Pydantic settings field (our Python code reads it).
-    2. Config file basename (the var is expanded inside a mounted config).
-    3. Compose service names (the receiving container's env block).
-    4. Plain ``_(no known consumer)_`` fallback.
+    2. Config-template file basename (the var is expanded inside a mounted config).
+    3. Empty cell — the Service(s) column already lists the receiving container.
     """
     if var_consumers:
         primary = var_consumers[0]
@@ -259,10 +271,17 @@ def _consumer_label(name: str, var_consumers: list[Consumer], compose: ComposeUs
     files = compose.config_template_refs.get(name, [])
     if files:
         return ", ".join(f"`{f}`" for f in files)
+    return ""
+
+
+def _render_services(name: str, compose: ComposeUsage) -> str:
+    """Render the Service(s) column — comma-separated compose services that
+    receive the var via their ``environment:`` block (literally or via
+    ``${VAR}`` interpolation). Empty if no compose service supplies the var."""
     services = compose.supplied_to_services.get(name, [])
-    if services:
-        return "passed to " + ", ".join(f"`{s}`" for s in services)
-    return "_(no known consumer)_"
+    if not services:
+        return ""
+    return ", ".join(f"`{s}`" for s in services)
 
 
 def _render_default(name: str, primary: Consumer, compose: ComposeUsage) -> str:

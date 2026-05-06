@@ -41,6 +41,7 @@ from pathlib import Path
 
 import yaml
 from pydantic_settings import BaseSettings
+from swiss_ai_hub.core.settings.environment_settings import EnvironmentSettings
 
 # ---------------------------------------------------------------------------
 # Paths and patterns
@@ -171,7 +172,7 @@ def _discover_settings_files() -> list[Path]:
             for path in src_root.glob(pattern):
                 if path.name in _SKIP_FILES:
                     continue
-                if "__pycache__" in path.parts or any("test" in p for p in path.parts):
+                if "__pycache__" in path.parts or any(p in {"test", "tests", "testing"} for p in path.parts):
                     continue
                 found.add(path)
     return sorted(found)
@@ -201,7 +202,9 @@ def _settings_classes_in(module) -> list[type[BaseSettings]]:
             continue
         if attr.__module__ != module_name:
             continue
-        if attr.__name__ == "EnvironmentSettings":
+        # Identity comparison — robust against an unrelated class that
+        # happens to be named "EnvironmentSettings" elsewhere in the codebase.
+        if attr is EnvironmentSettings:
             continue
         if not attr.model_fields:
             continue

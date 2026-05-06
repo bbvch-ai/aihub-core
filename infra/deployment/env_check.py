@@ -19,6 +19,8 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from env_inventory import (
+    ComposeUsage,
+    Consumer,
     ConsumerIndex,
     Role,
     analyze_compose,
@@ -45,7 +47,7 @@ def check_env_vs_compose(
     compose = analyze_compose([compose_file])
 
     findings: list[_Finding] = []
-    universe = defined | compose.all_interpolated | consumers.keys()
+    universe = defined | compose.all_interpolated | set(consumers)
     for name in sorted(universe):
         var_consumers = consumers.get(name, [])
         finding = _classify_var(name, defined, compose.role_for(name, var_consumers), var_consumers)
@@ -61,7 +63,12 @@ def check_env_vs_compose(
     return not has_errors
 
 
-def _classify_var(name, defined, role, var_consumers) -> _Finding | None:
+def _classify_var(
+    name: str,
+    defined: set[str],
+    role: Role | None,
+    var_consumers: list[Consumer],
+) -> _Finding | None:
     """Produce a finding for a single var if its env/role combination is notable."""
     in_env = name in defined
 
@@ -97,7 +104,14 @@ def _describe(description: str | None) -> str:
     return f" ({description})" if description else ""
 
 
-def _print_summary(label, env_file, compose_file, defined, compose, consumers):
+def _print_summary(
+    label: str,
+    env_file: Path,
+    compose_file: Path,
+    defined: set[str],
+    compose: ComposeUsage,
+    consumers: ConsumerIndex,
+) -> None:
     print(f"\n  Env consistency check ({label})")
     print(f"    env file:  {format_repo_path(env_file)}")
     print(f"    compose:   {format_repo_path(compose_file)}")

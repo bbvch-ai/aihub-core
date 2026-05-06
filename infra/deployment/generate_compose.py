@@ -198,12 +198,12 @@ def _release_compose_header(project, version, gpu_enabled):
     variant = "GPU-enabled" if gpu_enabled else "CPU-only"
     return (
         f"# {project} {version} - Docker Compose Configuration ({variant})\n"
-        f"#\n"
+        "#\n"
         f"# This is the {'GPU-enabled' if gpu_enabled else 'CPU-only (no GPU)'} deployment configuration.\n"
         + (
-            f"# It includes GPU-accelerated services such as vLLM and Speaches.\n"
+            "# It includes GPU-accelerated services such as vLLM and Speaches.\n"
             if gpu_enabled
-            else f"# GPU-accelerated services are excluded from this configuration.\n"
+            else "# GPU-accelerated services are excluded from this configuration.\n"
         )
         + f"# For the {'CPU-only' if gpu_enabled else 'GPU-enabled'} variant, "
         f"see the {project}-{version}{'' if gpu_enabled else '-gpu'} bundle.\n\n"
@@ -268,6 +268,7 @@ def generate_release(env, config_data, version, output_dir, project, strict_env_
     """
     _pin_image_tags_to_version(config_data, version)
     stats = {}
+    env_check_failures: list[str] = []
 
     variants = [
         (False, f"{project}-{version}"),
@@ -336,12 +337,21 @@ def generate_release(env, config_data, version, output_dir, project, strict_env_
             print(f"Copied {static_count} static files into {folder_name}/")
             stats["static-files"] = stats.get("static-files", 0) + static_count
 
-        check_env_vs_compose(
+        # Run non-strict so the report covers every variant even when one
+        # fails. Aggregate strict-mode decision below.
+        ok = check_env_vs_compose(
             env_file=variant_dir / ".env.template",
             compose_file=variant_dir / "docker-compose.yml",
             consumers=consumers or {},
             label=f"{folder_name} ({variant_label})",
-            strict=strict_env_check,
+            strict=False,
+        )
+        if not ok:
+            env_check_failures.append(folder_name)
+
+    if strict_env_check and env_check_failures:
+        raise SystemExit(
+            f"Env/compose mismatch in release variants: {', '.join(env_check_failures)} (strict mode)"
         )
 
     return stats
@@ -406,9 +416,14 @@ def main():
             print("ERROR: Run `make generate-compose` first to produce latest compose files", file=sys.stderr)
             sys.exit(1)
         consumers = build_consumers()
-        ok_cpu = check_env_vs_compose(env_file, compose_cpu, consumers, "latest CPU", args.strict_env_check)
-        ok_gpu = check_env_vs_compose(env_file, compose_gpu, consumers, "latest GPU", args.strict_env_check)
-        sys.exit(0 if (ok_cpu and ok_gpu) else 1)
+        # Run both variants non-strict so the report covers CPU AND GPU even
+        # when one fails. Apply the strict-exit decision in aggregate.
+        ok_cpu = check_env_vs_compose(env_file, compose_cpu, consumers, "latest CPU", strict=False)
+        ok_gpu = check_env_vs_compose(env_file, compose_gpu, consumers, "latest GPU", strict=False)
+        all_ok = ok_cpu and ok_gpu
+        if args.strict_env_check and not all_ok:
+            sys.exit(1)
+        sys.exit(0 if all_ok else 1)
 
     if args.write_env_docs:
         from env_docs import write_env_var_docs
