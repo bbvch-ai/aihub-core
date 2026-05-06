@@ -265,23 +265,31 @@ def analyze_compose(compose_files: list[Path]) -> ComposeUsage:
 
 
 def _read_compose_supplied_by_service(path: Path) -> dict[str, set[str]]:
-    """Map env var name -> services that receive it via their `environment:` block.
+    """Map env var name -> services that receive it via any service field.
 
     A service is recorded for a var if either:
-    - the var name appears as a key in the service's `environment:` block, OR
-    - the var appears as `${VAR}` inside any value in that block (the service
-      receives the .env value, possibly under a different name on the LHS —
-      e.g., `KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}` records
-      `keycloak` as a consumer of `KEYCLOAK_ADMIN_PASSWORD`).
+    - the var name appears as a key in the service's `environment:` block (so
+      its value reaches the container under that exact name), OR
+    - the var appears as `${VAR}` *anywhere* in the service mapping —
+      ``environment:``, ``labels:``, ``command:``, ``entrypoint:``,
+      ``volumes:``, ``ports:``, etc. Examples:
+        - ``KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}`` records
+          ``keycloak`` as a consumer of ``KEYCLOAK_ADMIN_PASSWORD``.
+        - ``- "traefik.http.middlewares.admin.basicauth.users=admin:${ADMIN_PASSWORD_HASH}"``
+          records the labelled service as a consumer of ``ADMIN_PASSWORD_HASH``.
     """
     data = yaml.safe_load(path.read_text(encoding="utf-8"))
     by_var: dict[str, set[str]] = defaultdict(set)
     for service_name, service in (data.get("services") or {}).items():
-        for key, value in _iter_environment_entries(service.get("environment")):
+        # Special-case the environment: block so we record the LHS keys (which
+        # are env-var names received by the container even when the value is a
+        # literal). Every other service field only contributes via ${VAR}
+        # interpolation, captured by the recursive walk below.
+        for key, _value in _iter_environment_entries(service.get("environment")):
             if _ENV_VAR_NAME_RE.fullmatch(key):
                 by_var[key].add(service_name)
-            for match in _COMPOSE_REF_RE.finditer(value):
-                by_var[match.group(1)].add(service_name)
+        for var in _iter_compose_refs_in(service):
+            by_var[var].add(service_name)
     return by_var
 
 
@@ -295,6 +303,22 @@ def _iter_environment_entries(env) -> Iterator[tuple[str, str]]:
             if isinstance(entry, str) and "=" in entry:
                 k, v = entry.split("=", 1)
                 yield k, v
+
+
+def _iter_compose_refs_in(node) -> Iterator[str]:
+    """Recursively yield every ``${VAR}`` name found in any string anywhere in
+    a parsed docker-compose mapping. Walks dicts, lists, and scalar leaves.
+    Catches refs in `labels:`, `command:`, `entrypoint:`, `volumes:`, etc.
+    """
+    if isinstance(node, str):
+        for match in _COMPOSE_REF_RE.finditer(node):
+            yield match.group(1)
+    elif isinstance(node, dict):
+        for value in node.values():
+            yield from _iter_compose_refs_in(value)
+    elif isinstance(node, list):
+        for item in node:
+            yield from _iter_compose_refs_in(item)
 
 
 def _collect_config_template_refs() -> FilesByVar:

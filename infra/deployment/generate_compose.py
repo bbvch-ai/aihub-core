@@ -402,13 +402,13 @@ def main():
             sys.exit(1)
         consumers = build_consumers()
         # Run both variants non-strict so the report covers CPU AND GPU even
-        # when one fails. Apply the strict-exit decision in aggregate.
+        # when one fails. Apply the strict-exit decision in aggregate:
+        #   strict=True  → exit 1 if any variant has errors
+        #   strict=False → always exit 0 (report-only, useful for local runs)
         ok_cpu = check_env_vs_compose(env_file, compose_cpu, consumers, "latest CPU", strict=False)
         ok_gpu = check_env_vs_compose(env_file, compose_gpu, consumers, "latest GPU", strict=False)
         all_ok = ok_cpu and ok_gpu
-        if args.strict_env_check and not all_ok:
-            sys.exit(1)
-        sys.exit(0 if all_ok else 1)
+        sys.exit(1 if args.strict_env_check and not all_ok else 0)
 
     if args.write_env_docs:
         from env_docs import write_env_var_docs
