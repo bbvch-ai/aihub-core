@@ -52,13 +52,22 @@ def test_list_streams_raises_on_connection_error(nats_handler: NatsHandler) -> N
             nats_handler._list_streams()
 
 
-def test_wait_for_ready_succeeds_on_first_ping(nats_handler: NatsHandler) -> None:
+def test_wait_for_ready_probes_jetstream(nats_handler: NatsHandler) -> None:
     with patch("swiss_ai_hub.backup.services.nats.subprocess.run") as mock_run:
         mock_run.return_value = MagicMock(stdout="", returncode=0)
         nats_handler._wait_for_ready()
 
     assert mock_run.call_count == 1
-    assert "rtt" in mock_run.call_args[0][0]
+    cmd = mock_run.call_args[0][0]
+    assert "stream" in cmd and "list" in cmd
+
+
+def test_wait_for_ready_treats_no_streams_as_ready(nats_handler: NatsHandler) -> None:
+    with patch("swiss_ai_hub.backup.services.nats.subprocess.run") as mock_run:
+        mock_run.return_value = MagicMock(stdout="", stderr="no streams defined", returncode=1)
+        nats_handler._wait_for_ready()
+
+    assert mock_run.call_count == 1
 
 
 def test_wait_for_ready_retries_until_success(nats_handler: NatsHandler) -> None:
@@ -83,6 +92,35 @@ def test_wait_for_ready_raises_on_timeout(nats_handler: NatsHandler) -> None:
     ):
         mock_run.return_value = MagicMock(stdout="", stderr="no servers", returncode=1)
         nats_handler._wait_for_ready()
+
+
+def test_list_streams_retries_on_transient_connect_error(nats_handler: NatsHandler) -> None:
+    """A NATS restart mid-run must not abort the backup if the server returns shortly."""
+    with (
+        patch("swiss_ai_hub.backup.services.nats.subprocess.run") as mock_run,
+        patch.object(nats_handler, "_wait_for_ready") as mock_wait,
+    ):
+        fail = MagicMock(stdout="", stderr="nats: error: no servers available for connection", returncode=1)
+        ok = MagicMock(stdout="EVENTS\nCOMMANDS\n", stderr="", returncode=0)
+        mock_run.side_effect = [fail, ok]
+        assert nats_handler._list_streams() == ["EVENTS", "COMMANDS"]
+
+    assert mock_run.call_count == 2
+    mock_wait.assert_called_once()
+
+
+def test_run_nats_does_not_retry_on_non_transient_error(nats_handler: NatsHandler) -> None:
+    """Real failures (e.g. stream not found) must surface immediately, not retry."""
+    with (
+        patch("swiss_ai_hub.backup.services.nats.subprocess.run") as mock_run,
+        patch.object(nats_handler, "_wait_for_ready") as mock_wait,
+        pytest.raises(RuntimeError, match="failed"),
+    ):
+        mock_run.return_value = MagicMock(stdout="", stderr="stream not found", returncode=1)
+        nats_handler._run_nats(["stream", "backup", "MISSING", "/tmp/x"])
+
+    assert mock_run.call_count == 1
+    mock_wait.assert_not_called()
 
 
 def test_backup_uploads_empty_archive_when_no_streams(tmp_dir: Path, nats_handler: NatsHandler) -> None:

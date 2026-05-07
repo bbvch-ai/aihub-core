@@ -70,6 +70,9 @@ packages/backup/swiss_ai_hub/backup/
   (Docker SDK, subprocess, boto3). Do not convert to async — this overrides the root-level "async consistently" rule
 - **Postgres subprocess timeout**: `POSTGRES_SUBPROCESS_TIMEOUT_SECONDS` (default 6h) caps every `pg_dump` /
   `pg_restore` / `psql` invocation. Sized for >100GB dagster DBs; lower for small deployments
+- **NATS readiness**: `NatsHandler._wait_for_ready` probes `stream list` (not `rtt`) so it actually checks JetStream,
+  and `_run_nats_subprocess` retries up to 3× on transient connect errors ("no servers available", "connection
+  refused/reset") with a re-probe between attempts. Non-transient errors (e.g. stream-not-found) surface immediately
 - **Adding a new handler**: Implement `BackupHandler` ABC in `services/`. If the handler needs Docker access, type-hint
   a `DockerManager` parameter in `__init__` — `create_handler()` introspects the signature to decide whether to inject
   it. Register the handler in `HANDLER_FACTORIES` in `handler_factory.py`

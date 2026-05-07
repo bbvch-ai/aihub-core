@@ -15,7 +15,15 @@ logger = logging.getLogger(__name__)
 
 NATS_LIST_TIMEOUT = 30
 NATS_STREAM_TIMEOUT = 120
-NATS_READY_TIMEOUT = 30
+NATS_READY_TIMEOUT = 60
+NATS_READY_PROBE_TIMEOUT = 10
+NATS_READY_POLL_INTERVAL = 2
+
+# Substrings that indicate the NATS client could not establish a connection
+# (e.g. server restarted mid-run). Operations that fail with these are safe to
+# retry after waiting for readiness — the command never reached the server.
+_TRANSIENT_CONNECT_ERRORS = ("no servers available", "connection refused", "connection reset")
+_NO_STREAMS_MARKERS = ("no streams", "no jetstream")
 
 
 class NatsHandler(BackupHandler):
@@ -102,21 +110,33 @@ class NatsHandler(BackupHandler):
             shutil.rmtree(tmp_dir, ignore_errors=True)
 
     def _wait_for_ready(self) -> None:
+        """Probe JetStream itself, not just the core NATS connection.
+
+        ``nats rtt`` only verifies the TCP/TLS handshake — JetStream may still
+        be replaying its WAL. ``stream list`` exercises the JS API the backup
+        actually depends on, so a successful probe means the next operation
+        will not fail with "no servers available" / "JetStream not enabled".
+        """
         deadline = time.monotonic() + NATS_READY_TIMEOUT
+        last_error = ""
         while True:
             result = subprocess.run(
-                [*self._nats_base_args(), "rtt"],
+                [*self._nats_base_args(), "stream", "list", "--names"],
                 capture_output=True,
                 text=True,
                 check=False,
                 env=self._nats_env(),
-                timeout=5,
+                timeout=NATS_READY_PROBE_TIMEOUT,
             )
             if result.returncode == 0:
                 return
+            stderr = result.stderr or ""
+            if any(marker in stderr.lower() for marker in _NO_STREAMS_MARKERS):
+                return
+            last_error = stderr.strip()
             if time.monotonic() >= deadline:
-                raise RuntimeError(f"NATS not ready after {NATS_READY_TIMEOUT}s: {result.stderr.strip()}")
-            time.sleep(2)
+                raise RuntimeError(f"NATS not ready after {NATS_READY_TIMEOUT}s: {last_error}")
+            time.sleep(NATS_READY_POLL_INTERVAL)
 
     def _nats_base_args(self) -> list[str]:
         return ["nats", "-s", self._settings.NATS_URL]
@@ -128,33 +148,58 @@ class NatsHandler(BackupHandler):
         }
 
     def _list_streams(self) -> list[str]:
-        result = subprocess.run(
-            [*self._nats_base_args(), "stream", "list", "--names"],
-            capture_output=True,
-            text=True,
-            check=False,
-            env=self._nats_env(),
-            timeout=NATS_LIST_TIMEOUT,
-        )
+        result = self._run_nats_subprocess(["stream", "list", "--names"], timeout=NATS_LIST_TIMEOUT)
         if result.returncode == 0:
             if not result.stdout.strip():
                 return []
             return [name.strip() for name in result.stdout.strip().split("\n") if name.strip()]
 
         stderr = result.stderr.lower() if result.stderr else ""
-        if "no streams" in stderr or "no jetstream" in stderr:
+        if any(marker in stderr for marker in _NO_STREAMS_MARKERS):
             return []
         raise RuntimeError(f"nats stream list failed (exit {result.returncode}): {result.stderr}")
 
     def _run_nats(self, args: list[str]) -> str:
-        result = subprocess.run(
-            [*self._nats_base_args(), *args],
-            capture_output=True,
-            text=True,
-            check=False,
-            env=self._nats_env(),
-            timeout=NATS_STREAM_TIMEOUT,
-        )
+        result = self._run_nats_subprocess(args, timeout=NATS_STREAM_TIMEOUT)
         if result.returncode != 0:
             raise RuntimeError(f"nats {' '.join(args)} failed (exit {result.returncode}): {result.stderr.strip()}")
         return result.stdout
+
+    def _run_nats_subprocess(
+        self, args: list[str], timeout: int, max_attempts: int = 3
+    ) -> subprocess.CompletedProcess[str]:
+        """Run a `nats` CLI command with bounded retry on transient connect errors.
+
+        A NATS server restart mid-run produces "no servers available for
+        connection". The command never reached the server, so re-running is
+        safe. Between attempts we re-probe readiness so we don't hammer a
+        still-restarting server.
+        """
+        last_result: subprocess.CompletedProcess[str] | None = None
+        for attempt in range(1, max_attempts + 1):
+            result = subprocess.run(
+                [*self._nats_base_args(), *args],
+                capture_output=True,
+                text=True,
+                check=False,
+                env=self._nats_env(),
+                timeout=timeout,
+            )
+            last_result = result
+            if result.returncode == 0:
+                return result
+            stderr = (result.stderr or "").lower()
+            if not any(marker in stderr for marker in _TRANSIENT_CONNECT_ERRORS):
+                return result
+            if attempt == max_attempts:
+                return result
+            logger.warning(
+                "nats %s hit transient connect error (attempt %d/%d), re-probing readiness: %s",
+                " ".join(args),
+                attempt,
+                max_attempts,
+                result.stderr.strip(),
+            )
+            self._wait_for_ready()
+        assert last_result is not None
+        return last_result
