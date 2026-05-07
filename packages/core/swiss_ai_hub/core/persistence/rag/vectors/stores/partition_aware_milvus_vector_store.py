@@ -298,7 +298,12 @@ class PartitionAwareMilvusVectorStore(MilvusVectorStore):
             if namespaces:
                 partition_names = get_partition_names_for_namespaces(namespaces=namespaces)
         self._ensure_collection_loaded(partition_names)
-        return super().get_nodes(node_ids=node_ids, filters=filters, **kwargs)
+        # MilvusVectorStore.get_nodes rejects passing both node_ids and filters. When
+        # callers pass both (e.g. post-processors scoping a fetch by namespace), use
+        # filters only for partition selection and forward node_ids to super.
+        if node_ids is not None:
+            return super().get_nodes(node_ids=node_ids, **kwargs)
+        return super().get_nodes(filters=filters, **kwargs)
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
