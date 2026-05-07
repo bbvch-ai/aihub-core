@@ -5,12 +5,16 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class BackupSettings(BaseSettings):
-    """Field names match the platform-wide .env variable names."""
+    """All env vars are prefixed with ``BACKUP_`` (e.g. ``BACKUP_POSTGRES_HOST``).
 
-    model_config = SettingsConfigDict()
+    Field names omit the prefix — pydantic prepends it via ``env_prefix``.
+    Don't add a ``BACKUP_`` to a field name; that would read ``BACKUP_BACKUP_*``.
+    """
 
-    BACKUP_RETENTION_DAYS: Annotated[int, Field(ge=0)] = 7
-    BACKUP_MINIMUM_KEEP: Annotated[int, Field(ge=1)] = 3
+    model_config = SettingsConfigDict(env_prefix="BACKUP_")
+
+    RETENTION_DAYS: Annotated[int, Field(ge=0)] = 7
+    MINIMUM_KEEP: Annotated[int, Field(ge=1)] = 3
 
     POSTGRES_HOST: str = "postgres"
     POSTGRES_PORT: Annotated[int, Field(gt=0)] = 5432
@@ -48,7 +52,7 @@ class BackupSettings(BaseSettings):
     S3_STORAGE_ACCESS_KEY: str = "admin"
     S3_STORAGE_SECRET_KEY: SecretStr
     AWS_ENDPOINT_URL: str = "http://seaweedfs-s3:9000"
-    BACKUP_S3_BUCKET: str = "backups"
+    S3_BUCKET: str = "backups"
 
     # Maintenance subsystem — Postgres health for the dagster DB. The
     # maintenance code location runs alongside the backup code in the same

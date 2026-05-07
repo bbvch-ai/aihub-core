@@ -30,6 +30,6 @@ def settings() -> BackupSettings:
         S3_STORAGE_ACCESS_KEY="test",
         S3_STORAGE_SECRET_KEY=SecretStr("testpass"),
         AWS_ENDPOINT_URL="http://localhost:9000",
-        BACKUP_S3_BUCKET="test-backups",
-        BACKUP_RETENTION_DAYS=7,
+        S3_BUCKET="test-backups",
+        RETENTION_DAYS=7,
     )
