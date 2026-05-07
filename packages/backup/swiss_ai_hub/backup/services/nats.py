@@ -22,7 +22,15 @@ NATS_READY_POLL_INTERVAL = 2
 # Substrings that indicate the NATS client could not establish a connection
 # (e.g. server restarted mid-run). Operations that fail with these are safe to
 # retry after waiting for readiness — the command never reached the server.
-_TRANSIENT_CONNECT_ERRORS = ("no servers available", "connection refused", "connection reset")
+_TRANSIENT_CONNECT_ERRORS = (
+    "no servers available",
+    "connection refused",
+    "connection reset",
+    "context deadline exceeded",
+    "i/o timeout",
+    "tls handshake error",
+    "eof",
+)
 _NO_STREAMS_MARKERS = ("no streams", "no jetstream")
 
 
@@ -174,6 +182,14 @@ class NatsHandler(BackupHandler):
         connection". The command never reached the server, so re-running is
         safe. Between attempts we re-probe readiness so we don't hammer a
         still-restarting server.
+
+        Partial-execution caveat for write commands (`stream backup`,
+        `stream restore`, `stream rm`): a "connection reset" can fire AFTER
+        the server received the request, so a retry may hit a non-transient
+        follow-up error (e.g. "stream already exists" on restore, or refusal
+        to overwrite an existing backup directory). Those surface as
+        non-transient and abort the run loudly — no silent corruption — but
+        operators may need to clean up partial state before re-running.
         """
         last_result: subprocess.CompletedProcess[str] | None = None
         for attempt in range(1, max_attempts + 1):

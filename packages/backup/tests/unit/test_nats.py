@@ -109,6 +109,21 @@ def test_list_streams_retries_on_transient_connect_error(nats_handler: NatsHandl
     mock_wait.assert_called_once()
 
 
+def test_run_nats_raises_after_three_transient_failures(nats_handler: NatsHandler) -> None:
+    """The retry cap is the load-bearing safety mechanism — exhaustion must surface."""
+    with (
+        patch("swiss_ai_hub.backup.services.nats.subprocess.run") as mock_run,
+        patch.object(nats_handler, "_wait_for_ready") as mock_wait,
+        pytest.raises(RuntimeError, match="failed"),
+    ):
+        fail = MagicMock(stdout="", stderr="nats: error: no servers available for connection", returncode=1)
+        mock_run.side_effect = [fail, fail, fail]
+        nats_handler._run_nats(["stream", "list", "--names"])
+
+    assert mock_run.call_count == 3
+    assert mock_wait.call_count == 2
+
+
 def test_run_nats_does_not_retry_on_non_transient_error(nats_handler: NatsHandler) -> None:
     """Real failures (e.g. stream not found) must surface immediately, not retry."""
     with (
