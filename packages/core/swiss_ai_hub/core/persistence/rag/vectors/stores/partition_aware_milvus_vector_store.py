@@ -299,8 +299,11 @@ class PartitionAwareMilvusVectorStore(MilvusVectorStore):
                 partition_names = get_partition_names_for_namespaces(namespaces=namespaces)
         self._ensure_collection_loaded(partition_names)
         # MilvusVectorStore.get_nodes rejects passing both node_ids and filters. When
-        # callers pass both (e.g. post-processors scoping a fetch by namespace), use
-        # filters only for partition selection and forward node_ids to super.
+        # callers pass both (e.g. post-processors scoping by namespace), forward
+        # node_ids and pass partition scoping via milvus_partition_names so the
+        # underlying client.query is constrained to the right partition.
+        if partition_names is not None:
+            kwargs.setdefault("milvus_partition_names", partition_names)
         if node_ids is not None:
             return super().get_nodes(node_ids=node_ids, **kwargs)
         return super().get_nodes(filters=filters, **kwargs)
