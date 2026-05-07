@@ -27,10 +27,9 @@
 
         <FormKit
           v-if="modelValue"
-          :id="`${name}-${index}`"
+          :id="`__validate__${name}__${index}`"
           v-model="modelValue[index]"
-          :name="`${name}-${index}`"
-          :ignore="true"
+          :name="`__validate__${name}__${index}`"
           type="group"
         >
           <FormKitSchema
