@@ -1,5 +1,9 @@
 ---
 retrieve_prev_next:
+  enabled:
+    label: Recupera nodi precedenti/successivi
+    help: Recupera i chunk immediatamente prima e dopo ogni chunk recuperato per contesto
+      aggiuntivo.
   num_nodes:
     label: Numero di nodi
     help: Numero di nodi precedenti e successivi da recuperare per contesto aggiuntivo.
@@ -7,6 +11,10 @@ retrieve_prev_next:
     label: Modalità di recupero
     help: Se recuperare i nodi precedenti, successivi o entrambi.
 retrieve_summaries:
+  enabled:
+    label: Recupera riepiloghi genitore
+    help: Risale l'albero del documento e include i nodi di riepilogo genitore insieme
+      ai chunk recuperati.
   max_parent_levels:
     label: Livelli genitore max.
     help: Numero massimo di livelli genitore da attraversare durante il recupero dei

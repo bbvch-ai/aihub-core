@@ -1,5 +1,9 @@
 ---
 retrieve_prev_next:
+  enabled:
+    label: Vorherige/nächste Knoten abrufen
+    help: Holt die Chunks unmittelbar vor und nach jedem abgerufenen Chunk für zusätzlichen
+      Kontext.
   num_nodes:
     label: Anzahl der Knoten
     help: Anzahl der vorherigen und nächsten Knoten, die für zusätzlichen Kontext
@@ -8,6 +12,10 @@ retrieve_prev_next:
     label: Abrufmodus
     help: Ob vorherige Knoten, nächste Knoten oder beide abgerufen werden sollen.
 retrieve_summaries:
+  enabled:
+    label: Übergeordnete Zusammenfassungen abrufen
+    help: Geht im Dokumentbaum nach oben und nimmt übergeordnete Zusammenfassungsknoten
+      zusätzlich zu den abgerufenen Chunks auf.
   max_parent_levels:
     label: Max. übergeordnete Ebenen
     help: Maximale Anzahl der übergeordneten Ebenen beim Abrufen von Zusammenfassungsknoten.

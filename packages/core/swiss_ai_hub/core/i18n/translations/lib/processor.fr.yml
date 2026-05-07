@@ -1,5 +1,9 @@
 ---
 retrieve_prev_next:
+  enabled:
+    label: Récupérer les nœuds précédents/suivants
+    help: Récupère les chunks immédiatement avant et après chaque chunk récupéré pour
+      un contexte supplémentaire.
   num_nodes:
     label: Nombre de nœuds
     help: Nombre de nœuds précédents et suivants à récupérer pour un contexte supplémentaire.
@@ -7,6 +11,10 @@ retrieve_prev_next:
     label: Mode de récupération
     help: Récupérer les nœuds précédents, suivants ou les deux.
 retrieve_summaries:
+  enabled:
+    label: Récupérer les résumés parents
+    help: Remonte l'arborescence du document et inclut les nœuds de résumé parents
+      en plus des chunks récupérés.
   max_parent_levels:
     label: Niveaux parents max.
     help: Nombre maximum de niveaux parents à parcourir lors de la récupération des
